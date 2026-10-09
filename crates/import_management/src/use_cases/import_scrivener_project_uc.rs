@@ -99,6 +99,8 @@ impl LongOperation for ImportScrivenerProjectUseCase {
             language: dto.language.as_deref(),
             copy_research_files: dto.copy_research_files,
             now: chrono::Utc::now(),
+            // The writer's day, as the interface has it: a deadline's plan starts on it.
+            today: dto.today.date_naive(),
         };
 
         // Spelled for the `Failed` event by `failure::for_long_operation`: the typed

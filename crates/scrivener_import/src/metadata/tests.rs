@@ -188,7 +188,26 @@ fn words() -> Words {
                 category: StatusCategory::Final,
             },
         ],
+        metadata: metadata_words(),
     }
+}
+
+/// Every word of the second half, marked; patterns hold their slots.
+pub(super) fn metadata_words() -> MetadataWords {
+    let mut words = MetadataWords::default();
+    for key in MetadataWords::ORDER {
+        let value = match *key {
+            "keyword-details" | "field-details" | "collection-details" => {
+                format!("W-{key} {TITLE_SLOT}")
+            }
+            "unnamed-keyword" => format!("W-keyword {TITLE_SLOT}"),
+            "keyword-tag" | "collection-tag" | "field-tag" => format!("{TITLE_SLOT} W-({key})"),
+            "field-value" | "label-value" => format!("{TITLE_SLOT}: {}", super::VALUE_SLOT),
+            other => format!("W-{other}"),
+        };
+        words.set(key, &value);
+    }
+    words
 }
 
 /// A small novel: a Draft with a chapter folder holding two scenes and a third scene, the
@@ -845,5 +864,721 @@ fn only_a_code_or_a_bracketed_title_is_a_placeholder() {
         "The $ Game",
     ] {
         assert!(!is_placeholder(title), "{title}");
+    }
+}
+
+// ---------------------------------------------------------------- the second half (D4-6 to D4-20)
+
+mod second_half {
+    use chrono::NaiveDate;
+    use common::entities::GoalUnit;
+
+    use super::*;
+    use crate::model::{
+        Collection, CustomFieldDef, CustomValue, DocTarget, KeywordRow, Link, ListOption, RawTarget,
+    };
+    use crate::structure::{BinderKind, NoteSection, Role, RowRef, SubRole};
+
+    fn today() -> NaiveDate {
+        NaiveDate::from_ymd_opt(2026, 10, 5).unwrap_or_default()
+    }
+
+    fn run(p: &P) -> (StructurePlan, Extended) {
+        let plan = p.plan();
+        let e = extended(&p.project, &plan, &[], &words(), Some("en"), today());
+        (plan, e)
+    }
+
+    fn tag_names(e: &Extended) -> Vec<&str> {
+        e.tags.iter().map(|t| t.name.as_str()).collect()
+    }
+
+    fn keyword(depth: u16, id: i64, title: &str) -> KeywordRow {
+        KeywordRow {
+            depth,
+            id,
+            title: Some(title.to_string()),
+            color: None,
+        }
+    }
+
+    fn field(id: &str, title: &str, kind: Option<&str>) -> CustomFieldDef {
+        CustomFieldDef {
+            id: id.to_string(),
+            title: Some(title.to_string()),
+            kind: kind.map(str::to_string),
+            wraps: None,
+            align: None,
+            color: None,
+            none_label: None,
+            options: Vec::new(),
+            other_attributes: Vec::new(),
+        }
+    }
+
+    fn value(p: &mut P, item: u32, field: &str, value: &str) {
+        p.project.binder[item as usize]
+            .meta
+            .custom
+            .push(CustomValue {
+                field: field.to_string(),
+                value: value.to_string(),
+            });
+    }
+
+    fn target(p: &mut P, item: u32, value: &str, kind: &str) {
+        p.project.binder[item as usize].target = Some(DocTarget {
+            kind: Some(kind.to_string()),
+            value: value.to_string(),
+            notify: false,
+        });
+    }
+
+    fn draft_target(p: &mut P, value: &str, attributes: &[(&str, &str)]) {
+        p.project.targets.draft = Some(RawTarget {
+            value: value.to_string(),
+            attributes: attributes
+                .iter()
+                .map(|(k, v)| (k.to_string(), v.to_string()))
+                .collect(),
+        });
+    }
+
+    fn key(p: &P, item: u32) -> ItemKey {
+        p.project.binder[item as usize]
+            .key
+            .unwrap_or(ItemKey::Number(0))
+    }
+
+    /// Two keywords of one name are told apart by their parents; one with no name is named
+    /// with its number, in the writer's language (D4-7, D4-9).
+    #[test]
+    fn keywords_of_one_name_are_told_apart_by_where_they_sit() {
+        let (mut p, [_, a, b, c, _, _]) = novel();
+        p.project.keywords = vec![
+            keyword(0, 1, "Quarto"),
+            keyword(1, 2, "Book"),
+            keyword(0, 3, "Options"),
+            keyword(1, 4, "Book"),
+            keyword(0, 7, ""),
+        ];
+        p.project.binder[a as usize].keyword_ids = vec![2];
+        p.project.binder[b as usize].keyword_ids = vec![4, 4];
+        p.project.binder[c as usize].keyword_ids = vec![7, 99];
+        let (plan, e) = run(&p);
+        assert_eq!(tag_names(&e), ["Book", "Book (Options)", "W-keyword 7"]);
+        assert_eq!(e.tags[1].details, "W-keyword-details Options › Book");
+        assert!(e.notices.contains(&MetadataNotice::UnnamedValue {
+            field: Field::Keyword,
+            id: 7
+        }));
+        let (binder, row) = rows_of(&plan, b)[0];
+        assert_eq!(
+            e.row_tags[binder][row],
+            vec![1],
+            "a keyword worn twice is one tag"
+        );
+        assert!(
+            !e.notices
+                .iter()
+                .any(|n| matches!(n, MetadataNotice::UnusedKeywordsSkipped { .. })),
+            "the groups hold worn keywords"
+        );
+    }
+
+    /// A tag of each kind meeting a label's name says what it is; the story bible's and the
+    /// labels' names are never taken (D4-9).
+    #[test]
+    fn a_name_another_kind_holds_is_marked_with_its_kind() {
+        let (mut p, [_, a, _, _, _, _]) = novel();
+        p.project.keywords = vec![keyword(0, 1, "Mara")];
+        p.project.binder[a as usize].keyword_ids = vec![1];
+        p.project.collections = vec![Collection {
+            kind: Some("Arbitrary".to_string()),
+            id: None,
+            title: Some("mara".to_string()),
+            color: None,
+            members: vec![key(&p, a)],
+            search: None,
+        }];
+        let plan = p.plan();
+        let e = extended(
+            &p.project,
+            &plan,
+            &["MARA".to_string()],
+            &words(),
+            None,
+            today(),
+        );
+        assert_eq!(
+            tag_names(&e),
+            ["Mara W-(keyword-tag)", "mara W-(collection-tag)"]
+        );
+        assert!(e.notices.contains(&MetadataNotice::TagNameDisambiguated {
+            names: vec![
+                "Mara W-(keyword-tag)".to_string(),
+                "mara W-(collection-tag)".to_string()
+            ]
+        }));
+    }
+
+    /// A date field's value is kept as written, never read as a date (its XML is
+    /// unverified, R1 §13); a checkbox carrying a setting the import cannot read is said;
+    /// a list's none and a value naming no option are no tag (D4-8).
+    #[test]
+    fn custom_fields_keep_dates_verbatim_and_say_what_they_cannot_read() {
+        let (mut p, [_, a, b, c, _, _]) = novel();
+        let mut boxed = field("done", "Done", Some("Checkbox"));
+        boxed.other_attributes = vec!["Default".to_string()];
+        let mut list = field("pf", "Platform", Some("List"));
+        list.options = vec![
+            ListOption {
+                id: 14,
+                name: "Mac".to_string(),
+            },
+            ListOption {
+                id: 0,
+                name: String::new(),
+            },
+        ];
+        p.project.custom_fields = vec![field("when", "Due", Some("Date")), boxed, list];
+        value(&mut p, a, "when", "2024-03-14 10:30:45 +0100");
+        value(&mut p, a, "pf", "0");
+        value(&mut p, b, "pf", "-1");
+        value(&mut p, c, "pf", "Mac");
+        value(&mut p, c, "done", "yes");
+        let (_, e) = run(&p);
+        let note = e.note(NoteSection::CustomMetadata).unwrap_or_default();
+        let text = skrib_format::djot_plain_text(note)
+            .map(|(t, _)| t)
+            .unwrap_or_default();
+        assert!(text.contains("Due"), "{text}");
+        assert!(text.contains("2024-03-14 10:30:45 +0100"), "{text}");
+        assert_eq!(
+            tag_names(&e),
+            ["Done", "Platform: 0"],
+            "in the fields' order; an unnamed option by its id"
+        );
+        assert!(e.notices.contains(&MetadataNotice::CheckboxDefaultUnknown {
+            field: "Done".to_string()
+        }));
+        assert!(e.notices.contains(&MetadataNotice::ListValueInvalid {
+            field: "Platform".to_string(),
+            count: 1
+        }));
+    }
+
+    /// Targets in pages are no goal; a draft target in pages goes to the folder; the unit
+    /// is the one most goals count in (D4-11, X-30).
+    #[test]
+    fn pages_are_no_goal_and_most_goals_choose_the_unit() {
+        let (mut p, [_, a, b, c, _, _]) = novel();
+        target(&mut p, a, "300", "Characters");
+        target(&mut p, b, "400", "Characters");
+        target(&mut p, c, "8", "Pages");
+        draft_target(&mut p, "8", &[("Type", "Pages")]);
+        let (plan, e) = run(&p);
+        assert_eq!(e.goal_unit, GoalUnit::Characters);
+        let (binder, row) = rows_of(&plan, a)[0];
+        let at = RowRef {
+            binder: if binder == 0 {
+                BinderKind::Manuscript
+            } else {
+                BinderKind::Notes
+            },
+            row: row as u32,
+        };
+        assert_eq!(e.goals.get(&at), Some(&(0, 300)));
+        assert!(
+            e.notices
+                .contains(&MetadataNotice::TargetsInPages { count: 1 })
+        );
+        assert!(e.notices.contains(&MetadataNotice::DraftTargetNotKept {
+            reason: DraftTargetReason::Pages,
+            value: 8,
+            unit: TargetUnit::Pages
+        }));
+        let project = e.note(NoteSection::Project).unwrap_or_default();
+        assert!(project.contains("8 (W-unit-pages)"), "{project}");
+    }
+
+    /// A deadline whose date cannot be read makes no plan, and is listed as written.
+    #[test]
+    fn an_unreadable_deadline_is_listed_as_written() {
+        let (mut p, _) = novel();
+        draft_target(
+            &mut p,
+            "50000",
+            &[
+                ("Type", "Words"),
+                ("Deadline", "sometime soon"),
+                ("IgnoreDeadline", "No"),
+            ],
+        );
+        let (_, e) = run(&p);
+        assert!(e.pace.is_none());
+        assert!(e.notices.contains(&MetadataNotice::DeadlineNotPlanned {
+            reason: DeadlineReason::Unreadable,
+            day: None
+        }));
+        assert!(
+            e.note(NoteSection::Project)
+                .is_some_and(|n| n.contains("sometime soon"))
+        );
+    }
+
+    /// The values of a field named like a point of view hint at it when they name a
+    /// story-bible entry exactly; nothing is linked (D4-6).
+    #[test]
+    fn a_point_of_view_field_hints_and_links_nothing() {
+        let (mut p, [_, a, _, _, _, _]) = novel();
+        let bible = p.add(0, ItemKind::Folder, "Characters");
+        let entry = p.text(1, "Orveth");
+        let _ = (bible, entry);
+        p.project.custom_fields = vec![field("pc", "ChiefStoryteller POV", None)];
+        value(&mut p, a, "pc", "orveth");
+        let (plan, e) = run(&p);
+        assert!(
+            plan.notes.iter().any(|r| r.tag.is_some()),
+            "the folder is the story bible"
+        );
+        assert!(e.notices.contains(&MetadataNotice::PovHint {
+            values: vec!["orveth".to_string()],
+            matches: vec!["Orveth".to_string()]
+        }));
+    }
+
+    /// A container whose own text became its first child wears its keyword on both rows
+    /// (D4-1, N3); its document target goes to the row holding its text.
+    #[test]
+    fn a_split_container_wears_its_tags_on_both_rows() {
+        let mut p = P::new();
+        p.add(0, ItemKind::DraftFolder, "Draft");
+        let part = p.add(1, ItemKind::Folder, "Part One");
+        p.writing(part);
+        let chapter = p.add(2, ItemKind::Folder, "Chapter 1");
+        p.text(3, "Scene");
+        let _ = chapter;
+        p.project.keywords = vec![keyword(0, 1, "Arc")];
+        p.project.binder[part as usize].keyword_ids = vec![1];
+        target(&mut p, part, "500", "Words");
+        let (plan, e) = run(&p);
+        let carrying = rows_of(&plan, part);
+        assert!(carrying.len() >= 2, "{carrying:?}");
+        for (binder, row) in &carrying {
+            assert_eq!(e.row_tags[*binder][*row], vec![0]);
+        }
+        let text_row = plan.placements[part as usize]
+            .text
+            .as_ref()
+            .map(|(at, _)| *at);
+        assert_eq!(
+            text_row.and_then(|at| e.goals.get(&at)),
+            Some(&(500, 0)),
+            "the goal on the row holding the text"
+        );
+    }
+
+    /// A project with nothing a field cannot hold makes no folder.
+    #[test]
+    fn nothing_to_list_makes_no_folder() {
+        let (p, _) = novel();
+        let plan = p.plan();
+        assert!(
+            plan.notes
+                .iter()
+                .all(|r| !matches!(r.origin, Origin::FromScrivener)),
+        );
+        assert!(import_note_sections(&p.project, &plan).is_empty());
+    }
+
+    /// A bookmark to a document's own row is dropped; a 1.x reference's description stays
+    /// with the line listing it; a scheme a reader may not follow stays text.
+    #[test]
+    fn bookmarks_list_what_no_surface_shows() {
+        let (mut p, [_, a, b, _, note, _]) = novel();
+        let b_key = key(&p, b);
+        let a_key = key(&p, a);
+        p.project.binder[a as usize].links = vec![
+            Link {
+                target: Some(b_key),
+                destination: None,
+                local_file: false,
+                text: Some("the quay at 10:30:45".to_string()),
+            },
+            Link {
+                target: Some(a_key),
+                destination: None,
+                local_file: false,
+                text: None,
+            },
+            Link {
+                target: None,
+                destination: Some("message://%3cid%3e".to_string()),
+                local_file: false,
+                text: Some("Mail".to_string()),
+            },
+        ];
+        let note_key = key(&p, note);
+        p.project.binder[note as usize].links = vec![Link {
+            target: Some(note_key),
+            destination: None,
+            local_file: false,
+            text: None,
+        }];
+        let (_, e) = run(&p);
+        assert!(e.edges.is_empty(), "a scene to a scene is shown nowhere");
+        let listing = e.note(NoteSection::Bookmarks).unwrap_or_default();
+        let text = skrib_format::djot_plain_text(listing)
+            .map(|(t, _)| t)
+            .unwrap_or_default();
+        assert!(
+            text.contains("Draft › Chapter 1 › Harbour: the quay at 10:30:45"),
+            "{text}"
+        );
+        assert!(text.contains("Mail: message://%3cid%3e"), "{text}");
+        assert!(!listing.contains("](message:"), "{listing}");
+        assert!(
+            !e.notices
+                .iter()
+                .any(|n| matches!(n, MetadataNotice::BookmarksUnresolved { .. })),
+            "a bookmark to itself is no unresolved one"
+        );
+    }
+
+    /// The plan's row carrying `item` first.
+    fn row_at(plan: &StructurePlan, item: u32) -> RowRef {
+        let (binder, row) = rows_of(plan, item)[0];
+        RowRef {
+            binder: if binder == 0 {
+                BinderKind::Manuscript
+            } else {
+                BinderKind::Notes
+            },
+            row: row as u32,
+        }
+    }
+
+    fn bookmark(p: &mut P, from: u32, to: u32) {
+        let target = key(p, to);
+        p.project.binder[from as usize].links.push(Link {
+            target: Some(target),
+            destination: None,
+            local_file: false,
+            text: None,
+        });
+    }
+
+    /// A notes folder has no Details page, so no *Links*: its bookmark to a plain note is
+    /// listed rather than stored where nothing shows it. One to a story-bible entry is the
+    /// folder's *Cast*, which the Inspector shows (X-35, D4-14).
+    #[test]
+    fn a_notes_folder_keeps_only_what_its_cast_shows() {
+        let mut p = P::new();
+        p.add(0, ItemKind::DraftFolder, "Draft");
+        p.text(1, "Arrival");
+        p.add(0, ItemKind::ResearchFolder, "Research");
+        let mara = p.text(1, "Mara");
+        let places = p.add(1, ItemKind::Folder, "Places");
+        let harbour = p.text(2, "Harbour notes");
+        p.add(0, ItemKind::Folder, "Characters");
+        let orveth = p.text(1, "Orveth");
+        bookmark(&mut p, places, mara);
+        bookmark(&mut p, places, orveth);
+        bookmark(&mut p, mara, harbour);
+        let (plan, e) = run(&p);
+        let folder = row_at(&plan, places);
+        let row = &plan.notes[folder.row as usize];
+        assert_eq!((&row.role, &row.sub_role), (&Role::Folder, &SubRole::Note));
+        assert!(plan.notes[row_at(&plan, orveth).row as usize].tag.is_some());
+        assert_eq!(
+            e.edges,
+            vec![
+                // A note's bookmark to a plain note is its Links.
+                (row_at(&plan, mara), row_at(&plan, harbour)),
+                // The folder's to a story-bible entry is its Cast.
+                (folder, row_at(&plan, orveth)),
+            ]
+        );
+        let listing = e.note(NoteSection::Bookmarks).unwrap_or_default();
+        let text = skrib_format::djot_plain_text(listing)
+            .map(|(t, _)| t)
+            .unwrap_or_default();
+        assert!(text.contains("Research › Places"), "{text}");
+        assert!(text.contains("Research › Mara"), "{text}");
+        assert!(!text.contains("Orveth"), "{text}");
+    }
+
+    /// A target on a document split at its headings measures the whole document, which no
+    /// one chapter holds: it is listed, never a goal on the first chapter alone.
+    #[test]
+    fn a_target_on_a_split_document_is_listed_not_put_on_one_chapter() {
+        let mut p = P::new();
+        p.add(0, ItemKind::DraftFolder, "Draft");
+        let doc = p.text(1, "Novel");
+        p.facts.items[doc as usize].text.headings = (1..=3)
+            .map(|k| crate::content::Heading {
+                block: k * 10,
+                title: format!("CHAPTER {k}"),
+            })
+            .collect();
+        target(&mut p, doc, "90000", "Words");
+        let (plan, e) = run(&p);
+        assert!(
+            plan.manuscript
+                .iter()
+                .any(|r| matches!(r.origin, Origin::SplitPart { .. })),
+            "the document is split"
+        );
+        assert!(e.goals.is_empty(), "{:?}", e.goals);
+        assert!(
+            e.notices
+                .contains(&MetadataNotice::TargetsOnSplitDocuments { count: 1 })
+        );
+        assert!(
+            !e.notices
+                .iter()
+                .any(|n| matches!(n, MetadataNotice::GoalsKept { .. }))
+        );
+        let listed = e.note(NoteSection::Targets).unwrap_or_default();
+        assert!(listed.contains("Novel"), "{listed}");
+        assert!(listed.contains("90000"), "{listed}");
+    }
+
+    /// A list field named like a point of view hints by its options' names, never their
+    /// numbers; its none is no candidate (D4-6).
+    #[test]
+    fn a_point_of_view_list_hints_by_its_options_names() {
+        let (mut p, [_, a, b, c, _, _]) = novel();
+        p.add(0, ItemKind::Folder, "Characters");
+        p.text(1, "Anna");
+        p.text(1, "Bob");
+        let mut pov = field("pov", "POV", Some("List"));
+        pov.options = vec![
+            ListOption {
+                id: 0,
+                name: "Anna".to_string(),
+            },
+            ListOption {
+                id: 1,
+                name: "Bob".to_string(),
+            },
+        ];
+        p.project.custom_fields = vec![pov];
+        value(&mut p, a, "pov", "0");
+        value(&mut p, b, "pov", "1");
+        value(&mut p, c, "pov", "-1");
+        let (_, e) = run(&p);
+        assert!(e.notices.contains(&MetadataNotice::PovHint {
+            values: vec!["Anna".to_string(), "Bob".to_string()],
+            matches: vec!["Anna".to_string(), "Bob".to_string()]
+        }));
+    }
+
+    fn deadline_today(p: &mut P, day_off: bool) {
+        draft_target(
+            p,
+            "50000",
+            &[
+                ("Type", "Words"),
+                ("Deadline", "2026-10-05 23:59:00 -0700"),
+                ("IgnoreDeadline", "No"),
+            ],
+        );
+        p.project.targets.session = Some(RawTarget {
+            value: "0".to_string(),
+            attributes: vec![(
+                "CanWriteOnDeadlineDate".to_string(),
+                if day_off { "No" } else { "Yes" }.to_string(),
+            )],
+        });
+    }
+
+    /// A deadline that is the day of the import, on the writer's calendar, still leaves
+    /// that day to write on; unless the deadline itself is a day off, and then no day is
+    /// left, which a plan cannot be made of (D4-12).
+    #[test]
+    fn a_deadline_today_plans_only_when_today_is_a_writing_day() {
+        let (mut p, _) = novel();
+        deadline_today(&mut p, false);
+        let (_, e) = run(&p);
+        let pace = e.pace.clone();
+        assert_eq!(
+            pace.as_ref().map(|pace| (pace.start, pace.end)),
+            Some((today(), today()))
+        );
+        let (mut p, _) = novel();
+        deadline_today(&mut p, true);
+        let (plan, e) = run(&p);
+        assert!(e.pace.is_none(), "{:?}", e.pace);
+        let said = MetadataNotice::DeadlineNotPlanned {
+            reason: DeadlineReason::NoWritingDayLeft,
+            day: today()
+                .and_hms_opt(0, 0, 0)
+                .map(|d| d.and_utc().timestamp()),
+        };
+        assert!(e.notices.contains(&said), "{:?}", e.notices);
+        assert!(foreseen(&p.project, &plan, today()).contains(&said));
+        // The writer's day is the import's: a day later, it has passed.
+        let tomorrow = today().succ_opt().unwrap_or_default();
+        assert!(
+            foreseen(&p.project, &plan, tomorrow)
+                .iter()
+                .any(|n| matches!(
+                    n,
+                    MetadataNotice::DeadlineNotPlanned {
+                        reason: DeadlineReason::Passed,
+                        ..
+                    }
+                ))
+        );
+    }
+
+    /// A target past what a goal holds is no goal: two of them in one chapter would make
+    /// the chapter's sum no number. It is said, with the draft target's (D4-11).
+    #[test]
+    fn a_target_past_what_a_goal_holds_is_said_and_not_kept() {
+        let (mut p, [_, a, b, c, _, _]) = novel();
+        target(&mut p, a, "1e300", "Words");
+        target(&mut p, b, "9223372036854775807", "Words");
+        target(&mut p, c, "1500", "Words");
+        draft_target(&mut p, "5000000000000000000", &[("Type", "Words")]);
+        let (plan, e) = run(&p);
+        assert_eq!(e.goals.len(), 1, "{:?}", e.goals);
+        assert_eq!(e.goals.get(&row_at(&plan, c)), Some(&(1500, 0)));
+        assert!(
+            e.notices
+                .contains(&MetadataNotice::TargetsUnreadable { count: 3 }),
+            "{:?}",
+            e.notices
+        );
+        assert!(
+            !e.notices
+                .iter()
+                .any(|n| matches!(n, MetadataNotice::DraftTargetKept { .. }))
+        );
+    }
+
+    /// A title is not bounded in Scrivener, and a path repeats every title above an item
+    /// for every item under it: a long title over many documents lists a bounded path for
+    /// each, so the listing grows with the documents, not with the title times them.
+    #[test]
+    fn a_long_title_over_many_documents_lists_bounded_paths() {
+        let mut p = P::new();
+        let title = "x".repeat(100_000);
+        p.add(0, ItemKind::DraftFolder, &title);
+        p.project.custom_fields = vec![field("f", "Field", None)];
+        let n = 400u32;
+        for k in 0..n {
+            let item = p.text(1, &format!("Scene {k}"));
+            value(&mut p, item, "f", "a value");
+        }
+        let started = std::time::Instant::now();
+        let (_, e) = run(&p);
+        let note = e.note(NoteSection::CustomMetadata).unwrap_or_default();
+        assert!(
+            note.contains("Scene 399"),
+            "the paths still name each document"
+        );
+        // A path is at most a thousand characters, each at most four bytes.
+        let bound = n as usize * 8_000;
+        assert!(note.len() < bound, "{} bytes for {n} documents", note.len());
+        let seconds = started.elapsed().as_secs_f64();
+        assert!(seconds < 20.0, "{seconds:.1} s");
+    }
+
+    /// The review page foresees what the import will say: the same notices, in the same
+    /// order, but the names of the tags the import renames, which depend on its words.
+    #[test]
+    fn the_review_foresees_what_the_import_says() {
+        let (mut p, [_, a, b, c, d, _]) = novel();
+        // A keyword a label's tag name already holds, so the import renames it.
+        p.project.keywords = vec![keyword(0, 1, "Quarto"), keyword(1, 2, "Mara")];
+        p.project.binder[a as usize].keyword_ids = vec![2];
+        // As many goals in words as in characters: the language decides the unit.
+        target(&mut p, b, "300", "Words");
+        target(&mut p, c, "400", "Characters");
+        target(&mut p, d, "8", "Pages");
+        // A deadline still ahead, on some days of the week only.
+        draft_target(
+            &mut p,
+            "50000",
+            &[
+                ("Type", "Words"),
+                ("Deadline", "2027-03-01 12:00:00 +0100"),
+                ("IgnoreDeadline", "No"),
+            ],
+        );
+        p.project.targets.session = Some(RawTarget {
+            value: "500".to_string(),
+            attributes: vec![
+                ("WritingDays".to_string(), "1-2, 4-6".to_string()),
+                ("CanWriteOnDeadlineDate".to_string(), "No".to_string()),
+            ],
+        });
+        let plan = p.plan();
+        for language in ["en", "fr", "zh"] {
+            let e = extended(
+                &p.project,
+                &plan,
+                &["Mara".to_string()],
+                &words(),
+                Some(language),
+                today(),
+            );
+            assert!(
+                e.notices
+                    .iter()
+                    .any(|n| matches!(n, MetadataNotice::TagNameDisambiguated { .. })),
+                "the fixture renames a tag"
+            );
+            assert!(
+                e.notices
+                    .iter()
+                    .any(|n| matches!(n, MetadataNotice::PacePlanned { day_off: true, .. }))
+            );
+            let said: Vec<MetadataNotice> = e
+                .notices
+                .into_iter()
+                .filter(|n| !matches!(n, MetadataNotice::TagNameDisambiguated { .. }))
+                .collect();
+            assert_eq!(foreseen(&p.project, &plan, today()), said, "{language}");
+        }
+        // A day later than the deadline, the review says it has passed, as the import would.
+        let late = NaiveDate::from_ymd_opt(2027, 3, 2).unwrap_or_default();
+        assert!(foreseen(&p.project, &plan, late).iter().any(|n| matches!(
+            n,
+            MetadataNotice::DeadlineNotPlanned {
+                reason: DeadlineReason::Passed,
+                ..
+            }
+        )));
+    }
+
+    /// Writing about every kind takes time in proportion to the project.
+    #[test]
+    fn the_second_half_is_linear_in_the_project() {
+        let mut p = P::new();
+        p.add(0, ItemKind::DraftFolder, "Draft");
+        let n = 20_000u32;
+        p.project.keywords = (0..200).map(|k| keyword(0, k, &format!("K{k}"))).collect();
+        p.project.custom_fields = vec![field("f", "Field", None)];
+        for k in 0..n {
+            let item = p.text(1, &format!("Scene {k}"));
+            p.project.binder[item as usize].keyword_ids = vec![i64::from(k % 200)];
+            value(&mut p, item, "f", "a value");
+            let target_key = ItemKey::Number(100 + (k + 1) % n);
+            p.project.binder[item as usize].links = vec![Link {
+                target: Some(target_key),
+                destination: None,
+                local_file: false,
+                text: None,
+            }];
+        }
+        let started = std::time::Instant::now();
+        let (_, e) = run(&p);
+        assert!(!e.tags.is_empty());
+        let seconds = started.elapsed().as_secs_f64();
+        assert!(seconds < 20.0, "{seconds:.1} s for {n} documents");
     }
 }

@@ -519,6 +519,61 @@ fn the_strip_lists_one_line_per_kind_in_group_order() {
     });
 }
 
+/// The strip says what the metadata mapping will do, one line for each field, collection
+/// or note a kind names: the custom metadata and the targets of items without a row are
+/// two facts, and two notes of the "From Scrivener" folder list two things.
+#[test]
+fn the_strip_says_each_field_and_each_note_of_its_own() {
+    crate::test_support::with_real_messages(|| {
+        let token = |name: &str, value: &str| ScrivenerArg::Token {
+            name: name.into(),
+            value: value.into(),
+        };
+        let count = |name: &str, value: i64| ScrivenerArg::Count {
+            name: name.into(),
+            value,
+        };
+        let without_row = |field: &str, items: i64| {
+            finding(
+                "scrivener-metadata-values-without-row",
+                ScrivenerReportGroup::LeftBehind,
+                vec![token("field", field), count("items", items)],
+            )
+        };
+        let listed = |section: &str, n: i64| {
+            finding(
+                "scrivener-metadata-listed-in-import-note",
+                ScrivenerReportGroup::BroughtAcrossDifferently,
+                vec![token("section", section), count("count", n)],
+            )
+        };
+        let (custom, target) = (without_row("custom-field", 7), without_row("target", 1));
+        let (bookmarks, project) = (listed("bookmarks", 12), listed("project", 3));
+        let keywords = finding(
+            "scrivener-metadata-keywords-became-tags",
+            ScrivenerReportGroup::BroughtAcrossDifferently,
+            vec![count("tags", 4), count("rows", 9)],
+        );
+        let lines: Vec<String> = before_lines(&[&custom, &bookmarks, &keywords, &target, &project])
+            .iter()
+            .map(|l| l.resolve_now())
+            .collect();
+        assert_eq!(
+            lines,
+            [
+                "12 bookmarks no link of Skribisto shows are listed in the note “Bookmarks” of \
+                 the “From Scrivener” folder.",
+                "4 keywords become tags, on 9 items.",
+                "3 details of the project are listed in the note \
+                 “Project” of the “From Scrivener” folder.",
+                "The custom metadata of 7 items with no place in the new project does not come \
+                 across.",
+                "The target of 1 item with no place in the new project does not come across.",
+            ]
+        );
+    });
+}
+
 /// The headline counts the kinds that could not be read or need checking, never what
 /// came across differently, and the result waits for the writer only when it counts one.
 #[test]
@@ -771,6 +826,27 @@ fn the_words_written_into_the_project_are_the_interfaces() {
                 );
             }
             assert_eq!(dto.list_separator, ", ", "{locale}");
+            // The second half's words: one per key in the converter's order, each resolved,
+            // each pattern holding the slots its key takes.
+            assert_eq!(
+                dto.metadata_words.len(),
+                METADATA_WORD_ORDER.len(),
+                "{locale}"
+            );
+            for (key, value) in METADATA_WORD_ORDER.iter().zip(&dto.metadata_words) {
+                assert!(
+                    !value.trim().is_empty() && !value.starts_with("import-scrivener-"),
+                    "{locale}: {key} {value:?}"
+                );
+                let slots = match *key {
+                    "keyword-details" | "unnamed-keyword" | "keyword-tag" | "collection-tag"
+                    | "field-details" | "field-tag" => 1,
+                    "field-value" | "label-value" => 2,
+                    _ => 0,
+                };
+                let found = value.matches(TITLE_SLOT).count() + value.matches(VALUE_SLOT).count();
+                assert_eq!(found, slots, "{locale}: {key} {value:?}");
+            }
             assert_eq!(
                 dto.default_statuses.len(),
                 4,
@@ -1941,4 +2017,16 @@ fn the_logs_see_report_opens_the_import_its_row_describes() {
             "the row's See report opened the report of the import the row describes"
         );
     });
+}
+
+/// The import and the review ask on the writer's own calendar day, as every pace plan
+/// counts its days: a writer a day ahead of UTC is never on UTC's date.
+#[test]
+fn the_import_asks_on_the_writers_own_day() {
+    use crate::shared::stamps::{Zone, override_writer_zone};
+    let _ahead = override_writer_zone(Zone::a_day_ahead());
+    let today = writer_today();
+    assert_eq!(today.date_naive(), crate::shared::stamps::today());
+    assert_ne!(today.date_naive(), chrono::Utc::now().date_naive());
+    assert_eq!(today.time(), chrono::NaiveTime::MIN, "kept at midnight UTC");
 }

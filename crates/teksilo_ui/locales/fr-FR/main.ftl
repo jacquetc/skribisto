@@ -1450,6 +1450,14 @@ import-scrivener-report-items-toggle-named = { $count ->
     [one] { $count } élément : { $line }
    *[other] { $count } éléments : { $line }
 }
+import-scrivener-report-names-toggle = { $count ->
+    [one] { $count } nom
+   *[other] { $count } noms
+}
+import-scrivener-report-names-toggle-named = { $count ->
+    [one] { $count } nom : { $line }
+   *[other] { $count } noms : { $line }
+}
 import-scrivener-report-more = { $count ->
     [one] Et { $count } autre.
    *[other] Et { $count } autres.
@@ -1479,6 +1487,57 @@ import-scrivener-unnamed-label = Libellé { $number }
 import-scrivener-unnamed-status = Statut { $number }
 import-scrivener-label-tag = { $name } (libellé)
 import-scrivener-untitled-tag = Sans titre
+import-scrivener-keyword-details = Le mot-clé « { $path } » de Scrivener
+import-scrivener-unnamed-keyword = Mot-clé { $number }
+import-scrivener-keyword-tag = { $name } (mot-clé)
+import-scrivener-collection-details = Une collection de Scrivener
+import-scrivener-collection-tag = { $name } (collection)
+import-scrivener-field-details = Du champ « { $field } » de Scrivener
+import-scrivener-field-value = { $field } : { $option }
+import-scrivener-field-tag = { $name } (champ)
+import-scrivener-deadline-day = Échéance
+import-scrivener-from-scrivener = Venu de Scrivener
+import-scrivener-note-project = Projet
+import-scrivener-note-project-bookmarks = Signets du projet
+import-scrivener-note-replacements = Remplacements à la compilation
+import-scrivener-note-auto-complete = Entrées d’autocomplétion
+import-scrivener-note-saved-searches = Recherches enregistrées
+import-scrivener-note-custom-metadata = Métadonnées personnalisées
+import-scrivener-note-targets = Objectifs
+import-scrivener-note-bookmarks = Signets
+import-scrivener-abbreviated-title = Titre abrégé
+import-scrivener-subjects = Sujets
+import-scrivener-company = Société
+import-scrivener-session-target = Objectif de session
+import-scrivener-writing-days = Jours d’écriture
+import-scrivener-draft-target = Objectif du manuscrit
+import-scrivener-deadline = Échéance
+import-scrivener-unit-words = mots
+import-scrivener-unit-characters = caractères
+import-scrivener-unit-pages = pages
+import-scrivener-search-query = Recherche
+import-scrivener-search-in = Dans
+import-scrivener-search-operator = Correspondance
+# Ce qu’une recherche enregistrée parcourt, selon le type que Scrivener nomme.
+import-scrivener-search-in-all = tout
+import-scrivener-search-in-title = titres
+import-scrivener-search-in-text = texte
+import-scrivener-search-in-notes = notes
+import-scrivener-search-in-synopsis = synopsis
+import-scrivener-search-in-keywords = mots-clés
+import-scrivener-search-in-label = libellés
+import-scrivener-search-in-status = statuts
+import-scrivener-search-in-section-type = types de section
+import-scrivener-search-in-custom-metadata = métadonnées personnalisées
+# Comment les mots d’une recherche enregistrée se combinent.
+import-scrivener-search-any = n’importe quel mot
+import-scrivener-search-all = tous les mots
+import-scrivener-search-exact = expression exacte
+# Une ligne d’une liste : la place d’un signet et sa note, ou les mots d’un lien et son adresse.
+import-scrivener-label-value = { $label } : { $value }
+import-scrivener-replacement-regex = expression régulière
+import-scrivener-replacement-off = désactivé
+import-scrivener-in-own-note = Dans sa propre note.
 
 
 ## Importer un projet Scrivener : ce que l’import dit du projet, dans les mots de l’auteur.
@@ -1905,29 +1964,29 @@ import-scrivener-structure-compile-as-is-not-kept-line = { $count ->
 
 ## Ce que l’import a fait des libellés, de la liste d’états et des dates
 import-scrivener-metadata-status-categories-guessed-line = { $count ->
-    [one] { $count } statut que Skribisto ne reconnaissait pas a reçu un type d’après sa place dans la liste. Vérifiez-le dans Paramètres ▸ Œuvre ▸ Statuts.
-   *[other] { $count } statuts que Skribisto ne reconnaissait pas ont reçu un type d’après leur place dans la liste. Vérifiez-les dans Paramètres ▸ Œuvre ▸ Statuts.
+    [one] { $count } statut que Skribisto ne reconnaît pas reçoit un type d’après sa place dans la liste. Vérifiez-le dans Paramètres ▸ Œuvre ▸ Statuts.
+   *[other] { $count } statuts que Skribisto ne reconnaît pas reçoivent un type d’après leur place dans la liste. Vérifiez-les dans Paramètres ▸ Œuvre ▸ Statuts.
 }
 import-scrivener-metadata-dates-unreadable-line = { $count ->
     [one] Les dates de { $count } élément n’ont pas pu être lues : il porte la date de l’import.
    *[other] Les dates de { $count } éléments n’ont pas pu être lues : ils portent la date de l’import.
 }
 import-scrivener-metadata-labels-became-tags-line = { $tags ->
-    [one] Les libellés sont devenus { $tags } étiquette, sur { $rows ->
+    [one] Les libellés deviennent { $tags } étiquette, sur { $rows ->
         [one] { $rows } élément
        *[other] { $rows } éléments
     }.
-   *[other] Les libellés sont devenus { $tags } étiquettes, sur { $rows ->
+   *[other] Les libellés deviennent { $tags } étiquettes, sur { $rows ->
         [one] { $rows } élément
        *[other] { $rows } éléments
     }.
 }
 import-scrivener-metadata-statuses-became-ladder-line = { $rungs ->
-    [one] La liste d’états est devenue le statut du projet, sur { $rows ->
+    [one] La liste d’états devient le statut du projet, sur { $rows ->
         [one] { $rows } élément
        *[other] { $rows } éléments
     }.
-   *[other] La liste d’états est devenue les { $rungs } statuts du projet, sur { $rows ->
+   *[other] La liste d’états devient les { $rungs } statuts du projet, sur { $rows ->
         [one] { $rows } élément
        *[other] { $rows } éléments
     }.
@@ -1949,20 +2008,236 @@ import-scrivener-metadata-none-status-collapsed-line = { $count ->
 import-scrivener-metadata-unnamed-label-line = Un libellé sans nom est nommé d’après son numéro, { $id }.
 import-scrivener-metadata-unnamed-status-line = Un état sans nom est nommé d’après son numéro, { $id }.
 import-scrivener-metadata-tag-name-disambiguated-line = { $count ->
-    [one] { $count } étiquette de libellé a pris un nouveau nom, car une autre étiquette portait déjà le sien.
-   *[other] { $count } étiquettes de libellé ont pris un nouveau nom, car d’autres étiquettes portaient déjà le leur.
+    [one] { $count } étiquette prend un nouveau nom, car une autre étiquette porte déjà le sien.
+   *[other] { $count } étiquettes prennent un nouveau nom, car d’autres étiquettes portent déjà le leur.
 }
 import-scrivener-metadata-unused-labels-skipped-line = { $count ->
     [one] { $count } libellé qu’aucun document ne porte n’est pas importé.
    *[other] { $count } libellés qu’aucun document ne porte ne sont pas importés.
 }
 import-scrivener-metadata-labels-without-row-line = { $count ->
-    [one] Le libellé de { $count } élément sans place dans le nouveau projet n’a pas été repris.
-   *[other] Les libellés de { $count } éléments sans place dans le nouveau projet n’ont pas été repris.
+    [one] Le libellé de { $count } élément sans place dans le nouveau projet n’est pas repris.
+   *[other] Les libellés de { $count } éléments sans place dans le nouveau projet ne sont pas repris.
 }
 import-scrivener-metadata-statuses-without-row-line = { $count ->
-    [one] L’état de { $count } élément sans place dans le nouveau projet n’a pas été repris.
-   *[other] Les états de { $count } éléments sans place dans le nouveau projet n’ont pas été repris.
+    [one] L’état de { $count } élément sans place dans le nouveau projet n’est pas repris.
+   *[other] Les états de { $count } éléments sans place dans le nouveau projet ne sont pas repris.
+}
+
+import-scrivener-metadata-unnamed-keyword-line = Un mot-clé sans nom est nommé d’après son numéro, { $id }.
+import-scrivener-metadata-keywords-without-row-line = { $count ->
+    [one] Les mots-clés de { $count } élément sans place dans le nouveau projet ne sont pas repris.
+   *[other] Les mots-clés de { $count } éléments sans place dans le nouveau projet ne sont pas repris.
+}
+import-scrivener-metadata-custom-values-without-row-line = { $count ->
+    [one] Les métadonnées personnalisées de { $count } élément sans place dans le nouveau projet ne sont pas reprises.
+   *[other] Les métadonnées personnalisées de { $count } éléments sans place dans le nouveau projet ne sont pas reprises.
+}
+import-scrivener-metadata-bookmarks-without-row-line = { $count ->
+    [one] Les signets de { $count } élément sans place dans le nouveau projet ne sont pas repris.
+   *[other] Les signets de { $count } éléments sans place dans le nouveau projet ne sont pas repris.
+}
+import-scrivener-metadata-targets-without-row-line = { $count ->
+    [one] L’objectif de { $count } élément sans place dans le nouveau projet n’est pas repris.
+   *[other] Les objectifs de { $count } éléments sans place dans le nouveau projet ne sont pas repris.
+}
+
+## Ce que l’import fait des mots-clés, des métadonnées personnalisées, des collections, des
+## signets, des objectifs, de l’échéance, de la liste d’autocomplétion et des icônes. Chaque
+## ligne est dite deux fois : sur la page Vérifier avant l’import, puis dans son compte
+## rendu ; elle se lit donc de la même façon aux deux moments. `$note` et `$folder` sont les
+## titres que l’import donne à une note et à son dossier « Venu de Scrivener » ; `$day` est un
+## jour au format AAAA-MM-JJ.
+import-scrivener-metadata-pov-hint-line = { $count ->
+    [one] Le libellé ou la valeur de champ { $values } correspond à la fiche de la bible narrative { $matches }. S’il désigne le point de vue, indiquez-le dans l’Inspecteur : l’import ne relie rien.
+   *[other] Les libellés ou valeurs de champ { $values } correspondent aux fiches de la bible narrative { $matches }. S’ils désignent des points de vue, indiquez-les dans l’Inspecteur : l’import ne relie rien.
+}
+import-scrivener-metadata-checkbox-default-unknown-line = Le champ case à cocher « { $field } » porte un réglage que Skribisto ne sait pas lire, comme une case cochée par défaut. Seuls les documents cochés un par un portent son étiquette.
+import-scrivener-metadata-goals-in-other-unit-line = { $count ->
+    [one] { $count } objectif est fixé dans l’autre unité de comptage. Il est gardé, et apparaît dès que vous changez d’unité dans Paramètres ▸ Œuvre ▸ Structure.
+   *[other] { $count } objectifs sont fixés dans l’autre unité de comptage. Ils sont gardés, et apparaissent dès que vous changez d’unité dans Paramètres ▸ Œuvre ▸ Structure.
+}
+import-scrivener-metadata-counting-differs-line = Scrivener comptait l’objectif du manuscrit sur d’autres documents que Skribisto. L’objectif du livre compte les scènes incluses dans les exports.
+import-scrivener-metadata-writing-days-not-read-line = Les jours d’écriture « { $raw } » ne peuvent pas être lus : le Rythme du livre compte donc chaque jour comme un jour d’écriture. Modifiez-les là.
+import-scrivener-metadata-script-mode-rows-line = { $count ->
+    [one] { $count } élément était en mode script dans Scrivener. Skribisto garde ses mots en prose, sans la mise en page du scénario.
+   *[other] { $count } éléments étaient en mode script dans Scrivener. Skribisto garde leurs mots en prose, sans la mise en page du scénario.
+}
+import-scrivener-metadata-keywords-became-tags-line = { $tags ->
+    [one] { $tags } mot-clé devient une étiquette, sur { $rows ->
+        [one] { $rows } élément
+       *[other] { $rows } éléments
+    }.
+   *[other] { $tags } mots-clés deviennent des étiquettes, sur { $rows ->
+        [one] { $rows } élément
+       *[other] { $rows } éléments
+    }.
+}
+import-scrivener-metadata-keyword-hierarchy-flattened-line = { $count ->
+    [one] { $count } mot-clé était rangé dans un autre dans Scrivener. Les étiquettes n’ont pas de niveaux : les détails de son étiquette disent où il était.
+   *[other] { $count } mots-clés étaient rangés dans d’autres dans Scrivener. Les étiquettes n’ont pas de niveaux : les détails de chaque étiquette disent où était son mot-clé.
+}
+import-scrivener-metadata-fields-became-tags-line = { $fields ->
+    [one] { $fields } champ liste ou case à cocher devient { $tags ->
+        [one] { $tags } étiquette
+       *[other] { $tags } étiquettes
+    }, sur { $rows ->
+        [one] { $rows } élément
+       *[other] { $rows } éléments
+    }.
+   *[other] { $fields } champs liste et case à cocher deviennent { $tags ->
+        [one] { $tags } étiquette
+       *[other] { $tags } étiquettes
+    }, sur { $rows ->
+        [one] { $rows } élément
+       *[other] { $rows } éléments
+    }.
+}
+import-scrivener-metadata-collections-became-tags-line = { $tags ->
+    [one] { $tags } collection devient une étiquette, sur { $rows ->
+        [one] { $rows } élément
+       *[other] { $rows } éléments
+    }.
+   *[other] { $tags } collections deviennent des étiquettes, sur { $rows ->
+        [one] { $rows } élément
+       *[other] { $rows } éléments
+    }.
+}
+import-scrivener-metadata-collection-order-lost-line = { $count ->
+    [one] Une étiquette n’a pas d’ordre : l’ordre des documents de { $count } collection n’est pas gardé.
+   *[other] Une étiquette n’a pas d’ordre : l’ordre des documents de { $count } collections n’est pas gardé.
+}
+import-scrivener-metadata-bookmarks-became-links-line = { $count ->
+    [one] { $count } signet devient un lien entre deux notes, ou entre une scène et une fiche de la bible narrative : voir Liens et Présence.
+   *[other] { $count } signets deviennent des liens entre notes, ou entre scènes et fiches de la bible narrative : voir Liens et Présence.
+}
+import-scrivener-metadata-goals-kept-line = { $count ->
+    [one] { $count } objectif de document devient un objectif.
+   *[other] { $count } objectifs de document deviennent des objectifs.
+}
+import-scrivener-metadata-draft-target-kept-words-line = { $value ->
+    [one] L’objectif du manuscrit, { $value } mot, devient l’objectif du livre.
+   *[other] L’objectif du manuscrit, { $value } mots, devient l’objectif du livre.
+}
+import-scrivener-metadata-draft-target-kept-characters-line = { $value ->
+    [one] L’objectif du manuscrit, { $value } caractère, devient l’objectif du livre.
+   *[other] L’objectif du manuscrit, { $value } caractères, devient l’objectif du livre.
+}
+import-scrivener-metadata-pace-planned-line = L’échéance, { $day }, devient le Rythme du livre, qui planifie les mots de chaque jour à partir du jour de l’import.
+import-scrivener-metadata-pace-planned-day-off-line = L’échéance, { $day }, devient le Rythme du livre, qui planifie les mots de chaque jour à partir du jour de l’import. Comme dans Scrivener, le jour de l’échéance est un congé.
+import-scrivener-metadata-dictionary-words-line = { $count ->
+    [one] { $count } mot d’autocomplétion entre dans le dictionnaire personnel du projet : il n’est pas signalé comme faute.
+   *[other] { $count } mots d’autocomplétion entrent dans le dictionnaire personnel du projet : ils ne sont pas signalés comme fautes.
+}
+import-scrivener-metadata-listed-project-line = { $count ->
+    [one] { $count } renseignement sur le projet figure dans la note « { $note } » du dossier « { $folder } ».
+   *[other] { $count } renseignements sur le projet figurent dans la note « { $note } » du dossier « { $folder } ».
+}
+import-scrivener-metadata-listed-project-bookmarks-line = { $count ->
+    [one] { $count } signet du projet figure dans la note « { $note } » du dossier « { $folder } ».
+   *[other] { $count } signets du projet figurent dans la note « { $note } » du dossier « { $folder } ».
+}
+import-scrivener-metadata-listed-replacements-line = { $count ->
+    [one] { $count } remplacement à la compilation figure dans la note « { $note } » du dossier « { $folder } ». Skribisto ne le fait pas.
+   *[other] { $count } remplacements à la compilation figurent dans la note « { $note } » du dossier « { $folder } ». Skribisto ne les fait pas.
+}
+import-scrivener-metadata-listed-auto-complete-line = { $count ->
+    [one] { $count } entrée d’autocomplétion de plusieurs mots figure dans la note « { $note } » du dossier « { $folder } ».
+   *[other] { $count } entrées d’autocomplétion de plusieurs mots figurent dans la note « { $note } » du dossier « { $folder } ».
+}
+import-scrivener-metadata-listed-saved-searches-line = { $count ->
+    [one] { $count } recherche enregistrée figure dans la note « { $note } » du dossier « { $folder } ».
+   *[other] { $count } recherches enregistrées figurent dans la note « { $note } » du dossier « { $folder } ».
+}
+import-scrivener-metadata-listed-custom-metadata-line = { $count ->
+    [one] { $count } valeur de métadonnée personnalisée qu’une étiquette ne peut pas porter figure dans la note « { $note } » du dossier « { $folder } ».
+   *[other] { $count } valeurs de métadonnées personnalisées qu’une étiquette ne peut pas porter figurent dans la note « { $note } » du dossier « { $folder } ».
+}
+import-scrivener-metadata-listed-targets-line = { $count ->
+    [one] { $count } objectif de document figure dans la note « { $note } » du dossier « { $folder } ».
+   *[other] { $count } objectifs de document figurent dans la note « { $note } » du dossier « { $folder } ».
+}
+import-scrivener-metadata-listed-bookmarks-line = { $count ->
+    [one] { $count } signet qu’aucun lien de Skribisto ne montre figure dans la note « { $note } » du dossier « { $folder } ».
+   *[other] { $count } signets qu’aucun lien de Skribisto ne montre figurent dans la note « { $note } » du dossier « { $folder } ».
+}
+import-scrivener-metadata-targets-on-notes-line = { $count ->
+    [one] { $count } objectif de document porte sur une note, dont aucun objectif ne compte l’écriture : il ne devient pas un objectif.
+   *[other] { $count } objectifs de document portent sur des notes, dont aucun objectif ne compte l’écriture : ils ne deviennent pas des objectifs.
+}
+import-scrivener-metadata-targets-on-split-documents-line = { $count ->
+    [one] { $count } objectif de document porte sur un document découpé à ses titres, dont aucun objectif ne compte ensemble les chapitres : il ne devient pas un objectif.
+   *[other] { $count } objectifs de document portent sur des documents découpés à leurs titres, dont aucun objectif ne compte ensemble les chapitres : ils ne deviennent pas des objectifs.
+}
+import-scrivener-metadata-bookmark-ends-without-row-line = { $count ->
+    [one] { $count } signet mène à un document sans place dans le nouveau projet, comme un modèle de document. Il est indiqué par la place du document dans Scrivener.
+   *[other] { $count } signets mènent à des documents sans place dans le nouveau projet, comme des modèles de document. Ils sont indiqués par la place des documents dans Scrivener.
+}
+import-scrivener-metadata-unused-keywords-skipped-line = { $count ->
+    [one] { $count } mot-clé qu’aucun document ne porte n’est pas importé.
+   *[other] { $count } mots-clés qu’aucun document ne porte ne sont pas importés.
+}
+import-scrivener-metadata-list-value-invalid-line = { $count ->
+    [one] { $count } valeur du champ liste « { $field } » ne désigne aucune de ses options : elle n’est pas importée.
+   *[other] { $count } valeurs du champ liste « { $field } » ne désignent aucune de ses options : elles ne sont pas importées.
+}
+import-scrivener-metadata-undefined-custom-field-line = { $count ->
+    [one] { $count } valeur appartient à un champ personnalisé que le projet ne définit plus, et que Scrivener n’affiche pas non plus. Elle n’est pas importée.
+   *[other] { $count } valeurs appartiennent à des champs personnalisés que le projet ne définit plus, et que Scrivener n’affiche pas non plus. Elles ne sont pas importées.
+}
+import-scrivener-metadata-collection-members-missing-line = { $count ->
+    [one] { $count } document de la collection « { $name } » n’a pas de place dans le nouveau projet, ou a disparu du projet Scrivener.
+   *[other] { $count } documents de la collection « { $name } » n’ont pas de place dans le nouveau projet, ou ont disparu du projet Scrivener.
+}
+import-scrivener-metadata-empty-collections-skipped-line = { $count ->
+    [one] { $count } collection qui ne contient aucun document n’est pas importée.
+   *[other] { $count } collections qui ne contiennent aucun document ne sont pas importées.
+}
+import-scrivener-metadata-bookmarks-unresolved-line = { $count ->
+    [one] { $count } signet mène à un document que le projet Scrivener ne contient plus : il n’est pas importé.
+   *[other] { $count } signets mènent à des documents que le projet Scrivener ne contient plus : ils ne sont pas importés.
+}
+import-scrivener-metadata-targets-in-pages-line = { $count ->
+    [one] { $count } objectif de document compte des pages, ce que Skribisto ne compte pas : il ne devient pas un objectif.
+   *[other] { $count } objectifs de document comptent des pages, ce que Skribisto ne compte pas : ils ne deviennent pas des objectifs.
+}
+import-scrivener-metadata-targets-unreadable-line = { $count ->
+    [one] { $count } objectif n’est pas importé : son nombre n’en est pas un, est négatif, ou dépasse ce qu’un objectif peut contenir.
+   *[other] { $count } objectifs ne sont pas importés : leur nombre n’en est pas un, est négatif, ou dépasse ce qu’un objectif peut contenir.
+}
+import-scrivener-metadata-draft-target-in-pages-line = { $value ->
+    [one] L’objectif du manuscrit, { $value } page, ne devient pas un objectif : Skribisto compte des mots ou des caractères. Il figure dans la note « { $note } » du dossier « { $folder } ».
+   *[other] L’objectif du manuscrit, { $value } pages, ne devient pas un objectif : Skribisto compte des mots ou des caractères. Il figure dans la note « { $note } » du dossier « { $folder } ».
+}
+import-scrivener-metadata-draft-target-no-book-words-line = { $value ->
+    [one] L’objectif du manuscrit, { $value } mot, ne devient pas un objectif, car le manuscrit donne plusieurs livres, ou aucun. Il figure dans la note « { $note } » du dossier « { $folder } ».
+   *[other] L’objectif du manuscrit, { $value } mots, ne devient pas un objectif, car le manuscrit donne plusieurs livres, ou aucun. Il figure dans la note « { $note } » du dossier « { $folder } ».
+}
+import-scrivener-metadata-draft-target-no-book-characters-line = { $value ->
+    [one] L’objectif du manuscrit, { $value } caractère, ne devient pas un objectif, car le manuscrit donne plusieurs livres, ou aucun. Il figure dans la note « { $note } » du dossier « { $folder } ».
+   *[other] L’objectif du manuscrit, { $value } caractères, ne devient pas un objectif, car le manuscrit donne plusieurs livres, ou aucun. Il figure dans la note « { $note } » du dossier « { $folder } ».
+}
+import-scrivener-metadata-deadline-passed-line = L’échéance, { $day }, est passée : elle ne donne pas de Rythme. Elle figure dans la note « { $note } » du dossier « { $folder } ».
+import-scrivener-metadata-deadline-no-writing-day-line = L’échéance, { $day }, est le jour de l’import et, comme dans Scrivener, le jour de l’échéance est un congé : il ne reste aucun jour pour écrire, elle ne donne donc pas de Rythme. Elle figure dans la note « { $note } » du dossier « { $folder } ».
+import-scrivener-metadata-deadline-no-word-goal-line = L’échéance, { $day }, ne donne pas de Rythme, car le manuscrit n’a pas d’objectif de mots vers lequel avancer. Elle figure dans la note « { $note } » du dossier « { $folder } ».
+import-scrivener-metadata-deadline-character-goal-line = L’échéance, { $day }, ne donne pas de Rythme, car l’objectif du manuscrit compte des caractères et un Rythme compte des mots. Elle figure dans la note « { $note } » du dossier « { $folder } ».
+import-scrivener-metadata-deadline-no-book-line = L’échéance, { $day }, ne donne pas de Rythme, car le manuscrit donne plusieurs livres, ou aucun. Elle figure dans la note « { $note } » du dossier « { $folder } ».
+import-scrivener-metadata-deadline-unreadable-line = L’échéance ne peut pas être lue : elle ne donne pas de Rythme. Elle figure telle qu’écrite dans la note « { $note } » du dossier « { $folder } ».
+import-scrivener-metadata-session-target-words-line = { $value ->
+    [one] L’objectif de session, { $value } mot, n’est pas importé : dans Skribisto, l’objectif de la session d’écriture est un seul réglage pour tous les projets. Il figure dans la note « { $note } » du dossier « { $folder } ».
+   *[other] L’objectif de session, { $value } mots, n’est pas importé : dans Skribisto, l’objectif de la session d’écriture est un seul réglage pour tous les projets. Il figure dans la note « { $note } » du dossier « { $folder } ».
+}
+import-scrivener-metadata-session-target-characters-line = { $value ->
+    [one] L’objectif de session, { $value } caractère, n’est pas importé : dans Skribisto, l’objectif de la session d’écriture est un seul réglage pour tous les projets, en mots. Il figure dans la note « { $note } » du dossier « { $folder } ».
+   *[other] L’objectif de session, { $value } caractères, n’est pas importé : dans Skribisto, l’objectif de la session d’écriture est un seul réglage pour tous les projets, en mots. Il figure dans la note « { $note } » du dossier « { $folder } ».
+}
+import-scrivener-metadata-session-target-pages-line = { $value ->
+    [one] L’objectif de session, { $value } page, n’est pas importé : dans Skribisto, l’objectif de la session d’écriture est un seul réglage pour tous les projets, en mots. Il figure dans la note « { $note } » du dossier « { $folder } ».
+   *[other] L’objectif de session, { $value } pages, n’est pas importé : dans Skribisto, l’objectif de la session d’écriture est un seul réglage pour tous les projets, en mots. Il figure dans la note « { $note } » du dossier « { $folder } ».
+}
+import-scrivener-metadata-icons-dropped-line = { $count ->
+    [one] { $count } élément avait une icône dans le classeur, qui n’est pas reprise : Skribisto montre l’icône de chaque élément d’après son type.
+   *[other] { $count } éléments avaient des icônes dans le classeur, qui ne sont pas reprises : Skribisto montre l’icône de chaque élément d’après son type.
 }
 
 ## Ce que la conversion de la prose a fait, comme le dit le compte rendu de l’import. `$count` est

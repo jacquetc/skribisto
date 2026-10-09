@@ -24,6 +24,8 @@ fn title_of(row: &PlannedRow) -> String {
         PlannedTitle::ProjectTitle(t) => format!("[{t}]"),
         PlannedTitle::ProjectNotes => "<project notes>".to_string(),
         PlannedTitle::Recovered => "<recovered>".to_string(),
+        PlannedTitle::FromScrivener => "<from scrivener>".to_string(),
+        PlannedTitle::FromScrivenerNote(section) => format!("<{}>", section.token()),
     }
 }
 
@@ -116,6 +118,15 @@ fn every_generation_plans_the_same_novel() {
         }
         if matches!(generation, Generation::Format10 | Generation::Format15) {
             notes.extend(["Folder/Note <project notes>", "  Item/Note General"]);
+        }
+        if !stub {
+            // The session target and the custom value on a scene have no field to go to:
+            // the "From Scrivener" folder lists them, before the Trash (X-29).
+            notes.extend([
+                "Folder/Note <from scrivener>",
+                "  Item/Note <project>",
+                "  Item/Note <custom-metadata>",
+            ]);
         }
         notes.push("Item/Note Deleted scene ~");
         assert_eq!(show(&plan.notes), notes, "{label}");
@@ -393,7 +404,7 @@ proptest! {
             .flat_map(|r| &r.contents)
             .filter_map(|c| match &c.body {
                 structure::Body::From(sources) => Some(sources.clone()),
-                structure::Body::Title => None,
+                structure::Body::Title | structure::Body::Generated(_) => None,
             })
             .flatten()
             .filter(|s| matches!(s, Source::Text { .. } | Source::TextPart { part: 0, .. }))

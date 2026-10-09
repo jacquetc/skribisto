@@ -849,6 +849,50 @@ mod tests {
         );
     }
 
+    /// The log's row for a finished import keeps **Open now** under a name its replay
+    /// hook answers, naming the project the import wrote: it used to be archived with no
+    /// name, a button in the log that did nothing. The row shows the latest import, so the
+    /// name is that import's, not the first one's.
+    #[test]
+    fn the_logs_open_now_names_the_project_its_import_wrote() {
+        use crate::shared::import_warnings::{Replay, replay_of};
+        use crate::shared::project_import::archived_open_name;
+
+        let _registry = IsolatedOpenRegistry::new();
+        let dir = tempfile::tempdir().unwrap();
+        let app_ctx = Rc::new(AppContext::new());
+        let vm = filled(&app_ctx, dir.path());
+        let (mut tree, _toasts, archive) = tree_with_archive(&app_ctx);
+        for name in ["first", "second"] {
+            vm.name().set(name.into());
+            import_to_completion(&mut tree, &app_ctx, &vm);
+        }
+        let written = dir
+            .path()
+            .join("second.skrib")
+            .to_string_lossy()
+            .into_owned();
+        assert!(std::path::Path::new(&written).exists());
+
+        let rows = archived(&archive);
+        let result = rows
+            .iter()
+            .find(|e| e.dedup_id.as_deref() == Some(MANUSKRIPT.toast_id))
+            .expect("the import's own toast is in the log");
+        let open_now = tr!(project_import_open_now()).resolve_now();
+        let action = result
+            .actions
+            .iter()
+            .find(|a| a.label == open_now)
+            .expect("the row keeps Open now");
+        assert_eq!(
+            action.intent_name.as_deref(),
+            Some(archived_open_name(&written).as_str()),
+            "named after the project the latest import wrote"
+        );
+        assert_eq!(replay_of(action), Some(Replay::OpenProject(written)));
+    }
+
     /// A failure is the one thing an import must always get in front of the
     /// writer, however many other messages are already up: dropped for want of
     /// room, it would be reported nowhere, not even in the log. It arrives as a

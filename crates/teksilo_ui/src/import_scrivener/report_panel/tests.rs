@@ -358,6 +358,51 @@ fn opening_a_lines_items_shows_them() {
     });
 }
 
+/// A line about the project lists the names it is about behind a disclosure that says
+/// names, not items, and none of them is a link: no row holds a keyword left behind.
+#[test]
+fn a_line_of_names_says_names_and_links_none() {
+    crate::test_support::with_real_messages(|| {
+        let report = ImportReport::from_result(&ScrivenerImportResult {
+            output_path: "/books/The Lighthouse.skrib".into(),
+            research_folder: String::new(),
+            totals: ScrivenerTotals::Empty,
+            findings: vec![ScrivenerFinding::Reported {
+                key: "scrivener-metadata-unused-keywords-skipped".into(),
+                family: ScrivenerFindingFamily::Metadata,
+                group: ScrivenerReportGroup::LeftBehind,
+                place: ScrivenerPlace::Project,
+                item: -1,
+                binder_path: Vec::new(),
+                item_uid: None,
+                args: vec![ScrivenerArg::Texts {
+                    name: "names".into(),
+                    values: vec!["Unused".into(), "Places".into()],
+                }],
+            }],
+            record: None,
+        });
+        let finder: ItemFinder = std::rc::Rc::new(|_| Some((1, "Arrival".to_string())));
+        let (mut tree, id, _) = mount_report(report, Some(finder), REPORT_W, REPORT_H);
+        // The group is closed by default: open it, then the line's list.
+        let group = button_named(&tree, id, "Left behind (1)").expect("the group");
+        open(&mut tree, group);
+        assert!(named_starting(&tree, id, "2 items").is_none());
+        let header = named_starting(&tree, id, "2 names").expect("the line's list of names");
+        open(&mut tree, header);
+        let texts = tree_texts(&tree, id);
+        assert!(
+            texts.contains("Unused") && texts.contains("Places"),
+            "{texts}"
+        );
+        let links = every_node(&tree, id)
+            .into_iter()
+            .filter(|n| tree.accessibility_node(*n).role() == Role::Link)
+            .count();
+        assert_eq!(links, 0, "a name opens no row");
+    });
+}
+
 /// In a window without focus, a group and a line's list of items still open to their full
 /// height. The scheduler of teksilo before 0.15.1 held every animation of such a window,
 /// one-shot tweens included, so an accordion opened there by an automation client, an

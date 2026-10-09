@@ -7,6 +7,7 @@
 //! Field for field, with no interpretation: every decision was the converter's, and a
 //! second opinion here would be one the import does not share.
 
+use chrono::NaiveDate;
 use scrivener_import::analyze::SiblingChoice;
 use scrivener_import::metadata::{AuthorSource, LanguageSource, TitleSource};
 use scrivener_import::model::{Container, Generation, ItemKind, ManifestChoice, Platform, Project};
@@ -31,7 +32,17 @@ use crate::dtos::{
 
 /// The plan as the review page shows it. Its notices are named with `names`, which the
 /// analysis of the same project made; nothing is written yet, so no finding has a uid.
-pub(crate) fn structure(plan: &StructurePlan, names: &SourceNames) -> ScrivenerStructure {
+///
+/// The notices are the structure mapping's, then what the metadata mapping foresees of
+/// `project` over this plan on `today` (keywords, custom metadata, collections, bookmarks,
+/// targets, the deadline, icons: D7-5's "before you import"), each one the import will
+/// give again in its report.
+pub(crate) fn structure(
+    plan: &StructurePlan,
+    project: &Project,
+    names: &SourceNames,
+    today: NaiveDate,
+) -> ScrivenerStructure {
     let locator = Locator::before_import(names);
     let rows = [
         (BinderKind::Manuscript, &plan.manuscript),
@@ -46,6 +57,12 @@ pub(crate) fn structure(plan: &StructurePlan, names: &SourceNames) -> ScrivenerS
             PlannedTitle::ProjectTitle(title) => (ScrivenerTitleKind::ProjectTitle, title.clone()),
             PlannedTitle::ProjectNotes => (ScrivenerTitleKind::ProjectNotes, String::new()),
             PlannedTitle::Recovered => (ScrivenerTitleKind::Recovered, String::new()),
+            PlannedTitle::FromScrivener => (ScrivenerTitleKind::FromScrivener, String::new()),
+            // Which note it is travels as its stable token: the interface names it.
+            PlannedTitle::FromScrivenerNote(section) => (
+                ScrivenerTitleKind::FromScrivenerNote,
+                section.token().to_string(),
+            ),
         };
         ScrivenerPreviewRow::Row {
             binder: binder(kind),
@@ -149,6 +166,11 @@ pub(crate) fn structure(plan: &StructurePlan, names: &SourceNames) -> ScrivenerS
             .notices
             .iter()
             .map(|n| findings::structure_notice(n, &locator))
+            .chain(
+                scrivener_import::metadata::foreseen(project, plan, today)
+                    .iter()
+                    .map(findings::metadata_notice),
+            )
             .collect(),
         choices: choices_to_dto(&plan.choices),
     }
@@ -175,7 +197,9 @@ fn origin_item(origin: &Origin) -> i64 {
         | Origin::ProjectNotes
         | Origin::ProjectNote { .. }
         | Origin::Recovered
-        | Origin::RecoveredText { .. } => -1,
+        | Origin::RecoveredText { .. }
+        | Origin::FromScrivener
+        | Origin::FromScrivenerNote { .. } => -1,
     }
 }
 

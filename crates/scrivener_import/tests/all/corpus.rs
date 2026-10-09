@@ -46,7 +46,7 @@ use scrivener_import::structure::{
     self, Adjustment, BooksChoice, ContainerRung, Destination, Shape, StructurePlan, TextKind,
     TrashChoice,
 };
-use scrivener_import::{Analysis, Answers, Options, ReadProject, analyze};
+use scrivener_import::{Analysis, Answers, MetadataNotice, Options, ReadProject, analyze};
 
 /// The projects the importer must hold up on: the largest, the deepest, the ones
 /// with the most notes and the most sync debris.
@@ -794,6 +794,7 @@ fn corpus_every_project_converts_and_loads_back() {
                 category: common::entities::StatusCategory::Final,
             },
         ],
+        metadata: crate::convert::metadata_words(),
     };
     let scratch = match tempfile::tempdir_in(env!("CARGO_TARGET_TMPDIR")) {
         Ok(dir) => dir,
@@ -817,6 +818,7 @@ fn corpus_every_project_converts_and_loads_back() {
     let (mut rows, mut words_total, mut footnotes, mut comments, mut pictures) =
         (0u64, 0u64, 0u64, 0u64, 0u64);
     let (mut texts, mut orphans) = (0u64, 0u64);
+    let mut s2 = SecondHalf::default();
     let started = Instant::now();
 
     for entry in &entries {
@@ -858,6 +860,7 @@ fn corpus_every_project_converts_and_loads_back() {
                 language: None,
                 copy_research_files: true,
                 now: chrono::Utc::now(),
+                today: chrono::Utc::now().date_naive(),
             };
             reset_peak();
             let t = Instant::now();
@@ -887,12 +890,17 @@ fn corpus_every_project_converts_and_loads_back() {
             };
             let mut project_texts = 0u64;
             let mut project_orphans = 0u64;
+            // Label tags: the second half's tags carry its own words in their details.
             let labels: std::collections::BTreeSet<u64> = bundle
                 .tags
                 .iter()
-                .filter(|t| !t.discoverable)
+                .filter(|t| !t.discoverable && !t.details.starts_with("W-"))
                 .map(|t| t.file_id)
                 .collect();
+            if let Analysis::Read(read) = analyze(&path, &answers, &options) {
+                s2.source(&read.project);
+            }
+            s2.converted(&bundle, &summary.metadata);
             label_tags += labels.len() as u64;
             rungs += bundle.statuses.len() as u64;
             for rung in &bundle.statuses {
@@ -1005,6 +1013,7 @@ fn corpus_every_project_converts_and_loads_back() {
          {projects_with_rungs_worn} projects)"
     );
     eprintln!("convert: rungs by kind {categories:?}");
+    s2.print();
     eprintln!("convert: metadata notices (key: how many):");
     for (key, count) in &metadata_notices {
         eprintln!("  {key:<60} {count}");
@@ -1026,4 +1035,263 @@ fn corpus_every_project_converts_and_loads_back() {
         "SKRIBISTO_SCRIVENER_CORPUS holds no pinned project"
     );
     assert!(failures.is_empty(), "{} failures", failures.len());
+}
+
+/// The second half of the metadata over the corpus, per kind: how many projects hold it,
+/// how much of it the projects hold, how much came across, and what was said. Counts only.
+#[derive(Default)]
+struct SecondHalf {
+    /// Per kind: projects holding it, and values they hold.
+    held: BTreeMap<&'static str, (u64, u64)>,
+    /// Per kind: values that came across (tags worn, goals, links, words, plans, listed).
+    came: BTreeMap<&'static str, u64>,
+    /// Per notice key: projects saying it, and the sum of its first count.
+    said: BTreeMap<String, (u64, u64)>,
+}
+
+impl SecondHalf {
+    fn hold(&mut self, kind: &'static str, values: u64) {
+        if values > 0 {
+            let entry = self.held.entry(kind).or_default();
+            entry.0 += 1;
+            entry.1 += values;
+        }
+    }
+
+    fn came(&mut self, kind: &'static str, values: u64) {
+        *self.came.entry(kind).or_default() += values;
+    }
+
+    /// What the project holds of each kind, as Scrivener wrote it.
+    fn source(&mut self, project: &scrivener_import::model::Project) {
+        let binder = &project.binder;
+        let sum = |f: &dyn Fn(&scrivener_import::model::BinderRow) -> u64| -> u64 {
+            binder.iter().map(f).sum()
+        };
+        self.hold("keyword assignments", sum(&|r| r.keyword_ids.len() as u64));
+        self.hold("keywords defined", project.keywords.len() as u64);
+        let kind_of = |id: &str| {
+            project
+                .custom_fields
+                .iter()
+                .find(|f| f.id == id)
+                .map(|f| f.kind.clone().unwrap_or_else(|| "1.x".to_string()))
+        };
+        let mut by_kind: BTreeMap<String, u64> = BTreeMap::new();
+        for row in binder {
+            for value in &row.meta.custom {
+                if !value.value.trim().is_empty() {
+                    let kind = kind_of(&value.field).unwrap_or_else(|| "undefined".to_string());
+                    *by_kind.entry(kind).or_default() += 1;
+                }
+            }
+        }
+        self.hold("custom values", by_kind.values().sum());
+        for (kind, count) in by_kind {
+            let label: &'static str = match kind.as_str() {
+                "Text" => "custom values: Text",
+                "List" => "custom values: List",
+                "Checkbox" => "custom values: Checkbox",
+                "Date" => "custom values: Date",
+                "1.x" => "custom values: format 1.x",
+                "undefined" => "custom values: no field",
+                _ => "custom values: other type",
+            };
+            self.hold(label, count);
+        }
+        let collections = |kind: &str| {
+            project
+                .collections
+                .iter()
+                .filter(|c| c.kind.as_deref() == Some(kind))
+                .count() as u64
+        };
+        self.hold(
+            "collections (Arbitrary, with members)",
+            project
+                .collections
+                .iter()
+                .filter(|c| c.kind.as_deref() == Some("Arbitrary") && !c.members.is_empty())
+                .count() as u64,
+        );
+        self.hold(
+            "collection members",
+            project
+                .collections
+                .iter()
+                .filter(|c| c.kind.as_deref() == Some("Arbitrary"))
+                .map(|c| c.members.len() as u64)
+                .sum(),
+        );
+        self.hold("saved searches", collections("SavedSearch"));
+        self.hold(
+            "document bookmarks: internal",
+            sum(&|r| r.links.iter().filter(|l| l.target.is_some()).count() as u64),
+        );
+        self.hold(
+            "document bookmarks: external",
+            sum(&|r| {
+                r.links
+                    .iter()
+                    .filter(|l| l.target.is_none() && l.destination.is_some())
+                    .count() as u64
+            }),
+        );
+        self.hold(
+            "project bookmarks and favourites",
+            (project.project_links.len() + project.favorites.len()) as u64,
+        );
+        let positive = |raw: &str| raw.trim().parse::<f64>().is_ok_and(|v| v > 0.0);
+        self.hold(
+            "document targets (non-zero)",
+            sum(&|r| u64::from(r.target.as_ref().is_some_and(|t| positive(&t.value)))),
+        );
+        let attribute = |t: &scrivener_import::model::RawTarget, name: &str| {
+            t.attributes
+                .iter()
+                .find(|(n, _)| n == name)
+                .map(|(_, v)| v.trim().to_string())
+        };
+        if let Some(draft) = &project.targets.draft {
+            self.hold("draft target (non-zero)", u64::from(positive(&draft.value)));
+            let in_force = attribute(draft, "IgnoreDeadline").as_deref() == Some("No")
+                && attribute(draft, "Deadline").is_some();
+            self.hold("deadline in force", u64::from(in_force));
+        }
+        if let Some(session) = &project.targets.session {
+            self.hold(
+                "session target (non-zero)",
+                u64::from(positive(&session.value)),
+            );
+            let days = attribute(session, "WritingDays").unwrap_or_default();
+            self.hold("writing days set", u64::from(!days.is_empty()));
+        }
+        self.hold(
+            "auto-complete entries",
+            project
+                .auto_complete
+                .iter()
+                .filter(|e| !e.trim().is_empty())
+                .count() as u64,
+        );
+        self.hold(
+            "compile replacements",
+            project.compile.replacements.len() as u64,
+        );
+        self.hold(
+            "icons",
+            sum(&|r| u64::from(r.meta.icon.as_deref().is_some_and(|i| !i.trim().is_empty()))),
+        );
+        self.hold("script mode", sum(&|r| u64::from(r.script_mode)));
+    }
+
+    /// What came across of each kind, and what was said.
+    fn converted(&mut self, bundle: &skrib_format::WorkBundle, notices: &[MetadataNotice]) {
+        let rows = || bundle.binders.iter().flat_map(|b| b.items.iter());
+        for (kind, prefix) in [
+            ("keyword tags", "W-keyword-details"),
+            ("field tags", "W-field-details"),
+            ("collection tags", "W-collection-details"),
+        ] {
+            let ids: std::collections::BTreeSet<u64> = bundle
+                .tags
+                .iter()
+                .filter(|t| t.details.starts_with(prefix))
+                .map(|t| t.file_id)
+                .collect();
+            self.came(kind, ids.len() as u64);
+            let worn: u64 = rows()
+                .map(|i| i.item.tag_ids.iter().filter(|t| ids.contains(t)).count() as u64)
+                .sum();
+            self.came(
+                match kind {
+                    "keyword tags" => "keyword tags worn",
+                    "field tags" => "field tags worn",
+                    _ => "collection tags worn",
+                },
+                worn,
+            );
+        }
+        self.came(
+            "goals (rows)",
+            rows()
+                .filter(|i| i.item.word_count_goal > 0 || i.item.char_count_goal > 0)
+                .count() as u64,
+        );
+        self.came(
+            "references (all, prose links included)",
+            rows().map(|i| i.item.reference_ids.len() as u64).sum(),
+        );
+        self.came("dictionary words", bundle.dict_words.len() as u64);
+        self.came("pace plans", bundle.paces.len() as u64);
+        for notice in notices {
+            let (key, first): (String, u64) = match notice {
+                MetadataNotice::ListedInImportNote { section, count } => (
+                    format!("{} [{}]", notice.key(), section.token()),
+                    u64::from(*count),
+                ),
+                MetadataNotice::ValuesWithoutRow { field, items } => {
+                    (format!("{} [{field:?}]", notice.key()), u64::from(*items))
+                }
+                MetadataNotice::BookmarksBecameLinks { count }
+                | MetadataNotice::BookmarksUnresolved { count }
+                | MetadataNotice::BookmarkEndsWithoutRow { count }
+                | MetadataNotice::TargetsOnNotes { count }
+                | MetadataNotice::TargetsOnSplitDocuments { count }
+                | MetadataNotice::TargetsUnreadable { count }
+                | MetadataNotice::TargetsInPages { count }
+                | MetadataNotice::DictionaryWords { count }
+                | MetadataNotice::GoalsInOtherUnit { count } => {
+                    (notice.key().to_string(), u64::from(*count))
+                }
+                MetadataNotice::KeywordsBecameTags { tags, .. }
+                | MetadataNotice::CollectionsBecameTags { tags, .. }
+                | MetadataNotice::FieldsBecameTags { tags, .. } => {
+                    (notice.key().to_string(), u64::from(*tags))
+                }
+                MetadataNotice::UnusedKeywordsSkipped { names }
+                | MetadataNotice::EmptyCollectionsSkipped { names }
+                | MetadataNotice::CollectionOrderLost { names } => {
+                    (notice.key().to_string(), names.len() as u64)
+                }
+                MetadataNotice::ListValueInvalid { count, .. }
+                | MetadataNotice::CollectionMembersMissing { count, .. } => {
+                    (notice.key().to_string(), u64::from(*count))
+                }
+                MetadataNotice::UndefinedCustomField { values, .. } => {
+                    (notice.key().to_string(), u64::from(*values))
+                }
+                MetadataNotice::IconsDropped { rows, .. }
+                | MetadataNotice::ScriptModeRows { rows }
+                | MetadataNotice::GoalsKept { rows } => {
+                    (notice.key().to_string(), u64::from(*rows))
+                }
+                MetadataNotice::DeadlineNotPlanned { reason, .. } => {
+                    (format!("{} [{reason:?}]", notice.key()), 1)
+                }
+                MetadataNotice::DraftTargetNotKept { reason, .. } => {
+                    (format!("{} [{reason:?}]", notice.key()), 1)
+                }
+                other => (other.key().to_string(), 1),
+            };
+            let entry = self.said.entry(key).or_default();
+            entry.0 += 1;
+            entry.1 += first;
+        }
+    }
+
+    fn print(&self) {
+        eprintln!("convert: second half, held by the projects (kind: projects, values):");
+        for (kind, (projects, values)) in &self.held {
+            eprintln!("  {kind:<44} {projects:>4} {values:>7}");
+        }
+        eprintln!("convert: second half, came across (kind: values):");
+        for (kind, values) in &self.came {
+            eprintln!("  {kind:<44} {values:>7}");
+        }
+        eprintln!("convert: second half, said (key: projects, how many):");
+        for (key, (projects, count)) in &self.said {
+            eprintln!("  {key:<70} {projects:>4} {count:>7}");
+        }
+    }
 }

@@ -10,6 +10,7 @@
 //! with the writer's choices. The import runs the same mapping on the same inputs, so the
 //! preview and the import cannot disagree. Nothing here reads a file or touches a store.
 
+use chrono::NaiveDate;
 use scrivener_import::ContentFacts;
 use scrivener_import::SourceNames;
 use scrivener_import::model::Project;
@@ -77,10 +78,13 @@ impl ScrivenerReview {
         })
     }
 
-    /// The plan with the writer's `choices`, each a change from what was detected.
+    /// The plan with the writer's `choices`, each a change from what was detected, as it
+    /// stands on `today`, the writer's calendar day: a deadline is ahead or behind the day
+    /// the writer looks, as the import will count it.
     pub fn structure(
         &self,
         choices: &[ScrivenerChoice],
+        today: NaiveDate,
     ) -> Result<ScrivenerStructure, ScrivenerReviewError> {
         let choices = plan::choices_from_dto(choices).map_err(|out| match out {
             ChoiceOutOfRange::Depth(depth) => ScrivenerReviewError::DepthNotOffered { depth },
@@ -102,6 +106,6 @@ impl ScrivenerReview {
                     detail: other.to_string(),
                 },
             })?;
-        Ok(plan::structure(&planned, &self.names))
+        Ok(plan::structure(&planned, &self.project, &self.names, today))
     }
 }

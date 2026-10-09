@@ -95,6 +95,7 @@ pub struct AnalyzeScrivenerProjectDto {
     pub upgraded_sibling: ScrivenerSiblingChoice,
     pub accept_unmerged_mobile_edits: bool,
     pub accept_no_text: bool,
+    pub today: chrono::DateTime<chrono::Utc>,
 }
 
 #[derive(Serialize, Deserialize, Default, Clone, Debug, PartialEq, Eq)]
@@ -446,6 +447,8 @@ pub enum ScrivenerTitleKind {
     ProjectTitle,
     ProjectNotes,
     Recovered,
+    FromScrivener,
+    FromScrivenerNote,
 }
 
 #[derive(Serialize, Deserialize, Default, Clone, Debug, PartialEq, Eq)]
@@ -676,6 +679,8 @@ pub struct ImportScrivenerProjectDto {
     pub label_tag_pattern: String,
     pub untitled_tag_name: String,
     pub default_statuses: Vec<ScrivenerDefaultRung>,
+    pub metadata_words: Vec<String>,
+    pub today: chrono::DateTime<chrono::Utc>,
 }
 
 #[derive(Serialize, Deserialize, Default, Clone, Debug, PartialEq, Eq)]
@@ -687,6 +692,7 @@ pub enum ScrivenerDefaultRung {
         category: StatusCategory,
     },
 }
+
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct ImportScrivenerProjectResultDto {
     pub output_path: String,

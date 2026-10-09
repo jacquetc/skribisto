@@ -1,6 +1,7 @@
 Un import fait venir un projet Scrivener entier : son classeur, son texte, ses synopsis et ses
-notes, ses commentaires et ses notes de bas de page, ses libellés et sa liste d’états. Il crée
-un **nouveau** projet Skribisto. Votre projet Scrivener est seulement lu, jamais modifié : vous
+notes, ses commentaires et ses notes de bas de page, ses libellés et sa liste d’états, ses
+mots-clés, ses métadonnées personnalisées, ses collections, ses signets et ses objectifs. Il
+crée un **nouveau** projet Skribisto. Votre projet Scrivener est seulement lu, jamais modifié : vous
 pouvez y revenir à tout moment.
 
 Pour un projet créé dans Manuskript ou Plume Creator, voir
@@ -82,8 +83,9 @@ sera chaque élément, et *Exporté* s’il sera inclus quand vous exporterez le
   deviennent des séparateurs de scènes* décident de ce qui devient un séparateur de scènes
   dans votre texte.
 
-Sous l’arborescence, *Avant d’importer* énumère ce que l’import fait de votre classeur, et ce
-qu’il laisse de côté : vous le savez avant d’importer.
+Sous l’arborescence, *Avant d’importer* énumère ce que l’import fait de votre classeur et de vos
+mots-clés, métadonnées personnalisées, collections, signets et objectifs, et ce qu’il laisse de
+côté : vous le savez avant d’importer.
 
 Chaque élément peut être retypé ensuite depuis le classeur. Voir
 [le modèle d’écriture](:help-writing-model) pour ce qu’est chaque type.
@@ -107,16 +109,54 @@ dossier à côté de lui.
 - Vos commentaires et vos notes de bas de page, y compris ceux écrits dans le texte même. Une
   annotation dans le texte devient un commentaire.
 - Vos libellés en étiquettes colorées, et votre liste d’états en statuts du projet.
+- Vos mots-clés, vos collections, et vos champs personnalisés de type liste et case à cocher,
+  en étiquettes sur les documents qui les portent. La place d’un mot-clé parmi vos mots-clés
+  figure dans les détails de son étiquette.
+- Les objectifs des documents de votre manuscrit, en objectifs, et l’objectif du manuscrit, en
+  objectif du livre. Une échéance encore à venir, avec un objectif du manuscrit en mots,
+  devient le *Rythme* du livre.
+- Un signet d’une note vers une autre, ou d’une scène ou d’un dossier de notes vers une fiche
+  de la bible narrative, en lien : vous le trouvez sous *Liens* ou *Présence*.
+- Les mots seuls de votre liste d’autocomplétion, dans le dictionnaire personnel du projet,
+  pour qu’ils ne soient pas signalés comme des fautes.
 - La case de Scrivener qui inclut un élément dans la compilation, qui devient *Inclure dans
   les exports*.
 - Vos modèles de documents, en modèles de notes.
 - Les images de vos recherches, chacune dans une note.
 
+## Le dossier « Venu de Scrivener »
+
+Ce que votre projet contient et qui n’a pas de place à lui dans Skribisto arrive sous forme de
+texte, pour que vous puissiez encore le lire et y copier ce qu’il faut. Il va dans un dossier de
+notes appelé *Venu de Scrivener*, après vos propres notes et avant la corbeille, qui n’est
+jamais inclus dans les exports. Chaque note énumère une sorte de chose, et une note n’est là
+que si elle a quelque chose à énumérer :
+
+- *Projet* : le titre abrégé, les sujets et la société de vos réglages de compilation,
+  l’objectif de session, les jours d’écriture, un objectif du manuscrit qui n’est pas devenu
+  un objectif, et l’échéance, même quand elle est devenue un *Rythme*.
+- *Signets du projet*.
+- *Remplacements à la compilation*. Skribisto ne les fait pas quand il exporte.
+- *Entrées d’autocomplétion* de plusieurs mots.
+- *Recherches enregistrées*, avec ce que chacune cherchait.
+- *Métadonnées personnalisées* : vos champs de texte et de date, document par document.
+- *Objectifs* fixés sur des notes, dont aucun objectif ne compte l’écriture, et sur des
+  documents découpés à leurs titres, dont aucun objectif ne compte ensemble les chapitres.
+- *Signets* qu’aucun lien de Skribisto ne peut montrer, comme un signet d’une scène vers une
+  autre scène ou vers une page web.
+
+Les métadonnées personnalisées et les signets d’une note à part entière, comme une fiche de
+personnage, sont ajoutés à la fin de cette note.
+
 ## Ce qui n’a pas de place ici
 
 - **Les instantanés.** Vos versions précédentes restent dans votre projet Scrivener.
-- **Les mots-clés, les métadonnées personnalisées, les collections et les icônes du
-  classeur.**
+- **Les icônes du classeur et le mode script.** L’icône de chaque élément vient de son type,
+  et un script garde ses mots en prose.
+- **Le point de vue.** Quand vos libellés ou un champ nomment des personnages de votre bible
+  narrative, le compte rendu le signale : indiquez le point de vue dans l’Inspecteur.
+- **L’ordre d’une collection**, puisqu’une étiquette n’a pas d’ordre, et **les objectifs qui
+  comptent des pages**.
 - **La couleur du texte, le surlignage et les polices.** Skribisto règle lui-même l’aspect du
   texte.
 - **Les fichiers de recherche qui ne sont pas des images**, comme les PDF, les sons ou les
@@ -144,13 +184,16 @@ vous avez choisi, puis range le reste en quatre parties :
 - *Laissé de côté* : ce qui reste dans votre projet Scrivener.
 
 Chaque ligne nomme les documents concernés, tels qu’ils s’appellent dans votre classeur
-Scrivener. *Copier le compte rendu* copie tout le compte rendu, pour le garder ou l’envoyer.
+Scrivener, ou les mots-clés, collections ou icônes dont elle parle. *Copier le compte rendu*
+copie tout le compte rendu, pour le garder ou l’envoyer.
 
 Skribisto garde les comptes rendus de vos derniers imports jusqu’à sa fermeture. Pour en
-rouvrir un, appuyez sur *Voir le compte rendu* tant que le message est affiché, ou choisissez
-*Afficher le compte rendu de l’import Scrivener* dans la palette de commandes de la fenêtre
-d’un projet.
-Dans la fenêtre du nouveau projet, chaque document qu’il nomme s’ouvre d’un clic.
+rouvrir un, appuyez sur *Voir le compte rendu* dans le message, ou dans son entrée sous la
+cloche de la barre d’état et dans *Paramètres ▸ Apparence et comportement ▸ Notifications*, ou
+choisissez *Afficher le compte rendu de l’import Scrivener* dans la palette de commandes de la
+fenêtre d’un projet. L’entrée garde aussi *Ouvrir maintenant*, qui ouvre le nouveau projet dans
+une fenêtre à lui. Dans la fenêtre du nouveau projet, chaque document qu’il nomme s’ouvre d’un
+clic.
 
 Le nouveau projet est un unique fichier `.skrib`. Si vous préférez un dossier, utilisez ensuite
 *Œuvre ▸ Enregistrer comme dossier…*.

@@ -158,14 +158,75 @@ pub enum PlannedTitle {
     ProjectNotes,
     /// The folder of texts found on disk that no binder item listed.
     Recovered,
+    /// The "From Scrivener" folder: what the project held that Skribisto has no place for,
+    /// listed (D4-20).
+    FromScrivener,
+    /// One note of that folder, named after what it lists.
+    FromScrivenerNote(NoteSection),
 }
 
 impl PlannedTitle {
-    /// The words known now, empty for a folder the converter names.
+    /// The words known now, empty for a folder or note the converter names.
     pub fn text(&self) -> &str {
         match self {
             PlannedTitle::Own(t) | PlannedTitle::NotesOf(t) | PlannedTitle::ProjectTitle(t) => t,
-            PlannedTitle::ProjectNotes | PlannedTitle::Recovered => "",
+            PlannedTitle::ProjectNotes
+            | PlannedTitle::Recovered
+            | PlannedTitle::FromScrivener
+            | PlannedTitle::FromScrivenerNote(_) => "",
+        }
+    }
+}
+
+/// A note of the "From Scrivener" folder (D4-20, X-29): one kind of what a Scrivener project
+/// held that Skribisto has no place for, listed in words the writer can read and copy from.
+/// A note exists only when it lists something.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
+pub enum NoteSection {
+    /// What the project states about itself with no field to hold it: an abbreviated title,
+    /// subjects, a company, a session target, writing days, a draft target no book took, a
+    /// deadline no plan took.
+    Project,
+    /// The project's own bookmarks (format 2.0), references and favourites (format 1.x).
+    ProjectBookmarks,
+    /// The replacements Scrivener's compile makes in the text it writes.
+    Replacements,
+    /// Auto-complete entries of more than one word, which a dictionary cannot hold.
+    AutoComplete,
+    /// Saved searches: what each looked for.
+    SavedSearches,
+    /// Custom metadata a tag cannot hold: text and date fields, per document.
+    CustomMetadata,
+    /// Document targets on documents whose writing no goal measures.
+    Targets,
+    /// Document bookmarks and references no Skribisto surface shows as a link.
+    Bookmarks,
+}
+
+impl NoteSection {
+    /// Every note, in the folder's order.
+    pub const ALL: [NoteSection; 8] = [
+        NoteSection::Project,
+        NoteSection::ProjectBookmarks,
+        NoteSection::Replacements,
+        NoteSection::AutoComplete,
+        NoteSection::SavedSearches,
+        NoteSection::CustomMetadata,
+        NoteSection::Targets,
+        NoteSection::Bookmarks,
+    ];
+
+    /// A stable kebab-case token, for an interface choosing the note's words.
+    pub fn token(&self) -> &'static str {
+        match self {
+            NoteSection::Project => "project",
+            NoteSection::ProjectBookmarks => "project-bookmarks",
+            NoteSection::Replacements => "replacements",
+            NoteSection::AutoComplete => "auto-complete",
+            NoteSection::SavedSearches => "saved-searches",
+            NoteSection::CustomMetadata => "custom-metadata",
+            NoteSection::Targets => "targets",
+            NoteSection::Bookmarks => "bookmarks",
         }
     }
 }
@@ -184,6 +245,9 @@ pub enum Body {
     Title,
     /// What these sources hold, one after the other.
     From(Vec<Source>),
+    /// The import's own listing for one note of the "From Scrivener" folder, which the
+    /// converter writes from the project's metadata.
+    Generated(NoteSection),
 }
 
 /// A piece of the Scrivener project a content is made from. Items are binder
@@ -264,6 +328,12 @@ pub enum Origin {
     Recovered,
     RecoveredText {
         text: u32,
+    },
+    /// The "From Scrivener" folder (D4-20).
+    FromScrivener,
+    /// One of its notes.
+    FromScrivenerNote {
+        section: NoteSection,
     },
 }
 
@@ -763,9 +833,94 @@ pub fn plan(
             }));
         }
     }
-    let plan = build::build(project, facts, choices)?;
+    let mut plan = build::build(project, facts, choices)?;
+    let sections = crate::metadata::import_note_sections(project, &plan);
+    add_import_note(&mut plan, &sections);
     check(project, facts, &plan).map_err(PlanError::Violation)?;
     Ok(plan)
+}
+
+/// The "From Scrivener" folder, one note per section in `sections`, put in the notes
+/// binder after everything the writer had and before the Trash (X-29). Nothing when
+/// `sections` is empty. Every row index after the folder moves down by its rows.
+fn add_import_note(plan: &mut StructurePlan, sections: &[NoteSection]) {
+    if sections.is_empty() {
+        return;
+    }
+    let at = plan
+        .trash_roots
+        .iter()
+        .copied()
+        .min()
+        .unwrap_or(plan.notes.len() as u32)
+        .min(plan.notes.len() as u32);
+    let mut rows = Vec::with_capacity(sections.len() + 1);
+    rows.push(PlannedRow {
+        depth: 0,
+        role: Role::Folder,
+        sub_role: SubRole::Note,
+        title: PlannedTitle::FromScrivener,
+        contents: Vec::new(),
+        exportable: false,
+        activated: true,
+        exclude_from_numbering: false,
+        origin: Origin::FromScrivener,
+        why: Why::Synthesised,
+        tag: None,
+    });
+    for section in sections {
+        rows.push(PlannedRow {
+            depth: 1,
+            role: Role::Item,
+            sub_role: SubRole::Note,
+            title: PlannedTitle::FromScrivenerNote(*section),
+            contents: vec![PlannedContent {
+                role: ContentRole::NoteText,
+                body: Body::Generated(*section),
+            }],
+            exportable: false,
+            activated: true,
+            exclude_from_numbering: false,
+            origin: Origin::FromScrivenerNote { section: *section },
+            why: Why::Synthesised,
+            tag: None,
+        });
+    }
+    let added = rows.len() as u32;
+    let shift = |row: &mut u32| {
+        if *row >= at {
+            *row += added;
+        }
+    };
+    for root in &mut plan.trash_roots {
+        shift(root);
+    }
+    for tag in &mut plan.tags {
+        shift(&mut tag.creates_in);
+    }
+    let shift_ref = |at_ref: &mut RowRef| {
+        if at_ref.binder == BinderKind::Notes && at_ref.row >= at {
+            at_ref.row += added;
+        }
+    };
+    for placement in &mut plan.placements {
+        if let Some(r) = placement.item.as_mut() {
+            shift_ref(r);
+        }
+        if let Some((r, _)) = placement.text.as_mut() {
+            shift_ref(r);
+        }
+        if let Some(r) = placement.notes.as_mut() {
+            shift_ref(r);
+        }
+        if let Some(r) = placement.synopsis.as_mut() {
+            shift_ref(r);
+        }
+    }
+    plan.shape.notes_rows += added;
+    let tail = plan.notes.split_off(at as usize);
+    plan.notes.extend(rows);
+    plan.notes.extend(tail);
 }
 
 /// The plan with one more of the writer's choices applied.

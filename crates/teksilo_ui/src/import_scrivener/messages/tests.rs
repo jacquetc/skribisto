@@ -54,10 +54,24 @@ fn every_arg() -> Vec<ScrivenerArg> {
         token("field", "label"),
         token("what", "colour"),
         token("reading", "markers-counted"),
+        text("raw", "1-2, 4-6"),
+        token("section", "bookmarks"),
+        token("unit", "words"),
         texts("examples"),
         texts("copies"),
         texts("rungs"),
         texts("names"),
+        texts("values"),
+        texts("matches"),
+        texts("ids"),
+        ScrivenerArg::Day {
+            name: "day".into(),
+            value: "2027-03-01".into(),
+        },
+        ScrivenerArg::Flag {
+            name: "day_off".into(),
+            value: true,
+        },
         ScrivenerArg::Flag {
             name: "this_machine".into(),
             value: false,
@@ -92,6 +106,10 @@ fn every_arg() -> Vec<ScrivenerArg> {
         "rows",
         "id",
         "paragraphs",
+        "fields",
+        "keywords",
+        "value",
+        "values",
     ] {
         args.push(count(name, 3));
     }
@@ -644,7 +662,7 @@ fn every_count_takes_its_own_plural() {
                 rows = 1_i64
             ))
             .resolve_now(),
-            "The labels became 1 tag, on 1 item."
+            "The labels become 1 tag, on 1 item."
         );
         assert_eq!(
             tr!(import_scrivener_metadata_statuses_became_ladder_line(
@@ -652,7 +670,24 @@ fn every_count_takes_its_own_plural() {
                 rows = 1_i64
             ))
             .resolve_now(),
-            "The status list became the project’s 4 statuses, on 1 item."
+            "The status list becomes the project’s 4 statuses, on 1 item."
+        );
+        assert_eq!(
+            tr!(import_scrivener_metadata_fields_became_tags_line(
+                fields = 1_i64,
+                tags = 2_i64,
+                rows = 1_i64
+            ))
+            .resolve_now(),
+            "1 list or checkbox field becomes 2 tags, on 1 item."
+        );
+        assert_eq!(
+            tr!(import_scrivener_metadata_keywords_became_tags_line(
+                tags = 3_i64,
+                rows = 1_i64
+            ))
+            .resolve_now(),
+            "3 keywords become tags, on 1 item."
         );
         let line = tr!(import_scrivener_structure_paratext_not_counted_line(
             documents = 1_i64,
@@ -1087,4 +1122,270 @@ fn the_reports_own_sentences_read_in_both_locales() {
             }
         });
     }
+}
+
+/// A metadata finding of `key` with `args`, about the project as a whole.
+fn metadata(key: &str, args: Vec<ScrivenerArg>) -> ScrivenerFinding {
+    ScrivenerFinding::Reported {
+        key: key.into(),
+        family: ScrivenerFindingFamily::Metadata,
+        group: ScrivenerReportGroup::Unfiled,
+        place: ScrivenerPlace::Item,
+        item: -1,
+        binder_path: Vec::new(),
+        item_uid: None,
+        args,
+    }
+}
+
+fn arg_day(name: &str, value: &str) -> ScrivenerArg {
+    ScrivenerArg::Day {
+        name: name.into(),
+        value: value.into(),
+    }
+}
+
+fn arg_flag(name: &str, value: bool) -> ScrivenerArg {
+    ScrivenerArg::Flag {
+        name: name.into(),
+        value,
+    }
+}
+
+fn arg_texts(name: &str, values: &[&str]) -> ScrivenerArg {
+    ScrivenerArg::Texts {
+        name: name.into(),
+        values: values.iter().map(|v| v.to_string()).collect(),
+    }
+}
+
+/// Every sentence a metadata key of the second half can say, one finding each: a note of
+/// the "From Scrivener" folder, a unit, a reason, a field, a day off or none.
+fn every_metadata_variant() -> Vec<(&'static str, ScrivenerFinding)> {
+    let mut out = Vec::new();
+    for section in [
+        "project",
+        "project-bookmarks",
+        "replacements",
+        "auto-complete",
+        "saved-searches",
+        "custom-metadata",
+        "targets",
+        "bookmarks",
+    ] {
+        out.push((
+            section,
+            metadata(
+                "scrivener-metadata-listed-in-import-note",
+                vec![arg_token("section", section), arg_count("count", 3)],
+            ),
+        ));
+    }
+    for unit in ["words", "characters"] {
+        out.push((
+            unit,
+            metadata(
+                "scrivener-metadata-draft-target-kept",
+                vec![arg_count("value", 80_000), arg_token("unit", unit)],
+            ),
+        ));
+    }
+    for (reason, unit) in [
+        ("pages", "pages"),
+        ("no-single-book", "words"),
+        ("no-single-book", "characters"),
+    ] {
+        out.push((
+            unit,
+            metadata(
+                "scrivener-metadata-draft-target-not-kept",
+                vec![
+                    arg_token("reason", reason),
+                    arg_count("value", 8),
+                    arg_token("unit", unit),
+                ],
+            ),
+        ));
+    }
+    for reason in [
+        "passed",
+        "no-word-goal",
+        "character-goal",
+        "no-single-book",
+        "unreadable",
+    ] {
+        let mut args = vec![arg_token("reason", reason)];
+        if reason != "unreadable" {
+            args.push(arg_day("day", "2012-07-01"));
+        }
+        out.push((
+            reason,
+            metadata("scrivener-metadata-deadline-not-planned", args),
+        ));
+    }
+    for unit in ["words", "characters", "pages"] {
+        out.push((
+            unit,
+            metadata(
+                "scrivener-metadata-session-target-not-imported",
+                vec![arg_count("value", 500), arg_token("unit", unit)],
+            ),
+        ));
+    }
+    for day_off in [false, true] {
+        out.push((
+            if day_off { "day off" } else { "no day off" },
+            metadata(
+                "scrivener-metadata-pace-planned",
+                vec![arg_day("day", "2099-12-01"), arg_flag("day_off", day_off)],
+            ),
+        ));
+    }
+    for field in [
+        "label",
+        "status",
+        "keyword",
+        "custom-field",
+        "bookmark",
+        "target",
+    ] {
+        out.push((
+            field,
+            metadata(
+                "scrivener-metadata-values-without-row",
+                vec![arg_token("field", field), arg_count("items", 3)],
+            ),
+        ));
+    }
+    for field in ["label", "status", "keyword"] {
+        out.push((
+            field,
+            metadata(
+                "scrivener-metadata-unnamed-value",
+                vec![arg_token("field", field), arg_count("id", 7)],
+            ),
+        ));
+    }
+    out
+}
+
+/// Each variant of a metadata key is a sentence of its own, in both shipped locales: a
+/// unit, a reason or a field the finding names is never said as another's.
+#[test]
+fn every_metadata_variant_says_its_own_sentence() {
+    for locale in LOCALES {
+        crate::test_support::with_shipped_messages(locale, || {
+            let mut said: std::collections::HashMap<String, Vec<String>> = Default::default();
+            for (variant, found) in every_metadata_variant() {
+                let key = key_of(&found).to_string();
+                let line = summary_line(&key, &[&found])
+                    .unwrap_or_else(|| panic!("{key} {variant} has no line"));
+                assert_reads(locale, &key, &line);
+                let text = line.resolve_now();
+                let before = said.entry(key.clone()).or_default();
+                assert!(
+                    !before.contains(&text),
+                    "{locale} {key} {variant}: said as another variant: {text}"
+                );
+                before.push(text);
+            }
+        });
+    }
+}
+
+/// The notes of the "From Scrivener" folder are named as the import titles them, in the
+/// writer's language, and a line about what one lists names that note and the folder.
+#[test]
+fn a_listed_line_names_the_note_and_the_folder_the_import_makes() {
+    for locale in LOCALES {
+        crate::test_support::with_shipped_messages(locale, || {
+            let folder = tr!(import_scrivener_from_scrivener()).resolve_now();
+            for (section, found) in every_metadata_variant()
+                .into_iter()
+                .filter(|(_, f)| key_of(f) == "scrivener-metadata-listed-in-import-note")
+            {
+                let note = note_title(section)
+                    .unwrap_or_else(|| panic!("{section} has no title"))
+                    .resolve_now();
+                let line = summary_line(key_of(&found), &[&found])
+                    .expect("a line")
+                    .resolve_now();
+                assert!(line.contains(&note), "{locale} {section}: {line}");
+                assert!(line.contains(&folder), "{locale} {section}: {line}");
+            }
+            assert!(note_title("a-later-note").is_none());
+        });
+    }
+}
+
+/// The way to the counting unit names the sections the Settings window shows.
+#[test]
+fn the_way_to_the_counting_unit_names_the_settings_sections() {
+    for locale in LOCALES {
+        crate::test_support::with_shipped_messages(locale, || {
+            let path = format!(
+                "{} ▸ {} ▸ {}",
+                tr!(settings_title()).resolve_now(),
+                tr!(settings_sec_work()).resolve_now(),
+                tr!(settings_page_structure()).resolve_now()
+            );
+            for count in [1_i64, 3] {
+                let line = tr!(import_scrivener_metadata_goals_in_other_unit_line(
+                    count = count
+                ))
+                .resolve_now();
+                assert!(line.contains(&path), "{locale}: {line} does not say {path}");
+            }
+        });
+    }
+}
+
+/// Lines about the links and the story bible use the names the app shows for them.
+#[test]
+fn the_links_and_the_story_bible_are_called_what_the_app_calls_them() {
+    for locale in LOCALES {
+        crate::test_support::with_shipped_messages(locale, || {
+            let bible = tr!(segment_story_bible()).resolve_now().to_lowercase();
+            let links = tr!(note_details_links()).resolve_now();
+            let cast = tr!(cast_section()).resolve_now();
+            for count in [1_i64, 3] {
+                let line = tr!(import_scrivener_metadata_bookmarks_became_links_line(
+                    count = count
+                ))
+                .resolve_now();
+                assert!(line.to_lowercase().contains(&bible), "{locale}: {line}");
+                assert!(line.contains(&links), "{locale}: {line}");
+                assert!(line.contains(&cast), "{locale}: {line}");
+                let hint = tr!(import_scrivener_metadata_pov_hint_line(
+                    count = count,
+                    values = "Ysolt",
+                    matches = "Ysolt Brenn"
+                ))
+                .resolve_now();
+                assert!(hint.to_lowercase().contains(&bible), "{locale}: {hint}");
+                assert!(
+                    hint.contains(&tr!(inspector()).resolve_now()),
+                    "{locale}: {hint}"
+                );
+            }
+        });
+    }
+}
+
+/// A finding that lists names gives them to the report, as the project wrote them; one
+/// that lists none gives none.
+#[test]
+fn a_finding_lists_the_names_it_is_about() {
+    let unused = metadata(
+        "scrivener-metadata-unused-keywords-skipped",
+        vec![arg_texts("names", &["Unused", "Places"])],
+    );
+    assert_eq!(listed_names(&unused), ["Unused", "Places"]);
+    let unknown = metadata(
+        "scrivener-metadata-undefined-custom-field",
+        vec![arg_texts("ids", &["ghost"]), arg_count("values", 1)],
+    );
+    assert_eq!(listed_names(&unknown), ["ghost"]);
+    let kept = metadata("scrivener-metadata-goals-kept", vec![arg_count("rows", 2)]);
+    assert!(listed_names(&kept).is_empty());
 }

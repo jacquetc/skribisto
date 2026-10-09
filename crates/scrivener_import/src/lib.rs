@@ -20,8 +20,10 @@
 //! writes a newest-version `.skrib` of it: every row the plan lists, its prose read
 //! through Scrivener's own dialect ([`prose`]), its footnotes, comments and pictures,
 //! the story bible's tags, the labels as tags and the status list as the workflow
-//! ladder ([`metadata`]), every row dated as Scrivener dated it, the note templates
-//! and the Trash. Snapshots and the daily writing history stay in the Scrivener
+//! ladder, the keywords, fields and collections as tags, the targets as goals, the
+//! deadline as a pace plan, bookmarks as links, the auto-complete list as the dictionary,
+//! and a "From Scrivener" folder listing what has no field ([`metadata`]), every row
+//! dated as Scrivener dated it, the note templates and the Trash. Snapshots and the daily writing history stay in the Scrivener
 //! project, counted in the report. Store-free, like the other whole-project
 //! importers: the interface opens the result with the ordinary `load_work`.
 //!
@@ -110,7 +112,7 @@ pub use convert::{
     ConvertError, DefaultRung, Request, Summary, TITLE_SLOT, Totals, Words, WrittenRow, convert,
 };
 pub use lock::this_host;
-pub use metadata::{MetadataNotice, Proposals};
+pub use metadata::{MetadataNotice, MetadataWords, Proposals, VALUE_SLOT};
 pub use model::SourceNames;
 pub use outcome::{Notice, Question, Refusal, Tier};
 pub use prose::{CompileTreatment, LeftOut, Place, ProseChoices, ProseNotice};

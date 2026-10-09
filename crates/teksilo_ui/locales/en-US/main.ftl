@@ -1455,6 +1455,15 @@ import-scrivener-report-items-toggle-named = { $count ->
     [one] 1 item: { $line }
    *[other] { $count } items: { $line }
 }
+import-scrivener-report-names-toggle = { $count ->
+    [one] 1 name
+   *[other] { $count } names
+}
+# The same, as a screen reader hears it, naming the line it belongs to.
+import-scrivener-report-names-toggle-named = { $count ->
+    [one] 1 name: { $line }
+   *[other] { $count } names: { $line }
+}
 import-scrivener-report-more = { $count ->
     [one] And 1 more.
    *[other] And { $count } more.
@@ -1486,6 +1495,63 @@ import-scrivener-unnamed-label = Label { $number }
 import-scrivener-unnamed-status = Status { $number }
 import-scrivener-label-tag = { $name } (label)
 import-scrivener-untitled-tag = Untitled
+# The tags, the pace plan and the "From Scrivener" folder the import makes from what a
+# Scrivener project holds beyond its labels and status.
+import-scrivener-keyword-details = The keyword “{ $path }” in Scrivener
+import-scrivener-unnamed-keyword = Keyword { $number }
+import-scrivener-keyword-tag = { $name } (keyword)
+import-scrivener-collection-details = A collection in Scrivener
+import-scrivener-collection-tag = { $name } (collection)
+import-scrivener-field-details = From the “{ $field }” field in Scrivener
+# A tag made from one option of a list field.
+import-scrivener-field-value = { $field }: { $option }
+import-scrivener-field-tag = { $name } (field)
+# The day off a pace plan takes on its deadline.
+import-scrivener-deadline-day = Deadline
+import-scrivener-from-scrivener = From Scrivener
+import-scrivener-note-project = Project
+import-scrivener-note-project-bookmarks = Project bookmarks
+import-scrivener-note-replacements = Compile replacements
+import-scrivener-note-auto-complete = Auto-complete entries
+import-scrivener-note-saved-searches = Saved searches
+import-scrivener-note-custom-metadata = Custom metadata
+import-scrivener-note-targets = Targets
+import-scrivener-note-bookmarks = Bookmarks
+import-scrivener-abbreviated-title = Abbreviated title
+import-scrivener-subjects = Subjects
+import-scrivener-company = Company
+import-scrivener-session-target = Session target
+import-scrivener-writing-days = Writing days
+import-scrivener-draft-target = Draft target
+import-scrivener-deadline = Deadline
+# A unit after a count, in parentheses: "1000 (words)".
+import-scrivener-unit-words = words
+import-scrivener-unit-characters = characters
+import-scrivener-unit-pages = pages
+import-scrivener-search-query = Searched for
+import-scrivener-search-in = Searched in
+import-scrivener-search-operator = Matching
+# What a saved search looks in, by the kind Scrivener names.
+import-scrivener-search-in-all = everything
+import-scrivener-search-in-title = titles
+import-scrivener-search-in-text = text
+import-scrivener-search-in-notes = notes
+import-scrivener-search-in-synopsis = synopses
+import-scrivener-search-in-keywords = keywords
+import-scrivener-search-in-label = labels
+import-scrivener-search-in-status = statuses
+import-scrivener-search-in-section-type = section types
+import-scrivener-search-in-custom-metadata = custom metadata
+# How a saved search's words combine.
+import-scrivener-search-any = any word
+import-scrivener-search-all = all words
+import-scrivener-search-exact = exact phrase
+# One line of a listing: a bookmark's place and its note, or a link's words and its address.
+import-scrivener-label-value = { $label }: { $value }
+import-scrivener-replacement-regex = regular expression
+import-scrivener-replacement-off = switched off
+# Said of a note whose own text lists its custom metadata or bookmarks.
+import-scrivener-in-own-note = Listed in its own note.
 
 
 ## Import a Scrivener project: what the import says about the project, in the writer's words.
@@ -1916,29 +1982,29 @@ import-scrivener-structure-compile-as-is-not-kept-line = { $count ->
 
 ## What the import did with the labels, the status list and the dates
 import-scrivener-metadata-status-categories-guessed-line = { $count ->
-    [one] 1 status Skribisto did not recognise was given a kind by its place in the list. Check it in Settings ▸ Work ▸ Statuses.
-   *[other] { $count } statuses Skribisto did not recognise were given a kind by their place in the list. Check them in Settings ▸ Work ▸ Statuses.
+    [one] 1 status Skribisto does not recognise is given a kind by its place in the list. Check it in Settings ▸ Work ▸ Statuses.
+   *[other] { $count } statuses Skribisto does not recognise are given a kind by their place in the list. Check them in Settings ▸ Work ▸ Statuses.
 }
 import-scrivener-metadata-dates-unreadable-line = { $count ->
     [one] The dates of 1 item could not be read: it carries the date of the import.
    *[other] The dates of { $count } items could not be read: they carry the date of the import.
 }
 import-scrivener-metadata-labels-became-tags-line = { $tags ->
-    [one] The labels became 1 tag, on { $rows ->
+    [one] The labels become 1 tag, on { $rows ->
         [one] { $rows } item
        *[other] { $rows } items
     }.
-   *[other] The labels became { $tags } tags, on { $rows ->
+   *[other] The labels become { $tags } tags, on { $rows ->
         [one] { $rows } item
        *[other] { $rows } items
     }.
 }
 import-scrivener-metadata-statuses-became-ladder-line = { $rungs ->
-    [one] The status list became the project’s 1 status, on { $rows ->
+    [one] The status list becomes the project’s 1 status, on { $rows ->
         [one] { $rows } item
        *[other] { $rows } items
     }.
-   *[other] The status list became the project’s { $rungs } statuses, on { $rows ->
+   *[other] The status list becomes the project’s { $rungs } statuses, on { $rows ->
         [one] { $rows } item
        *[other] { $rows } items
     }.
@@ -1960,20 +2026,235 @@ import-scrivener-metadata-none-status-collapsed-line = { $count ->
 import-scrivener-metadata-unnamed-label-line = A label with no name is named after its number, { $id }.
 import-scrivener-metadata-unnamed-status-line = A status with no name is named after its number, { $id }.
 import-scrivener-metadata-tag-name-disambiguated-line = { $count ->
-    [one] 1 label tag took a new name, because another tag already held its own.
-   *[other] { $count } label tags took a new name, because another tag already held theirs.
+    [one] 1 tag takes a new name, because another tag already holds its own.
+   *[other] { $count } tags take a new name, because other tags already hold theirs.
 }
 import-scrivener-metadata-unused-labels-skipped-line = { $count ->
     [one] 1 label no document wears is not imported.
    *[other] { $count } labels no document wears are not imported.
 }
 import-scrivener-metadata-labels-without-row-line = { $count ->
-    [one] The label of 1 item with no place in the new project did not come across.
-   *[other] The labels of { $count } items with no place in the new project did not come across.
+    [one] The label of 1 item with no place in the new project does not come across.
+   *[other] The labels of { $count } items with no place in the new project do not come across.
 }
 import-scrivener-metadata-statuses-without-row-line = { $count ->
-    [one] The status of 1 item with no place in the new project did not come across.
-   *[other] The statuses of { $count } items with no place in the new project did not come across.
+    [one] The status of 1 item with no place in the new project does not come across.
+   *[other] The statuses of { $count } items with no place in the new project do not come across.
+}
+
+import-scrivener-metadata-unnamed-keyword-line = A keyword with no name is named after its number, { $id }.
+import-scrivener-metadata-keywords-without-row-line = { $count ->
+    [one] The keywords of 1 item with no place in the new project do not come across.
+   *[other] The keywords of { $count } items with no place in the new project do not come across.
+}
+import-scrivener-metadata-custom-values-without-row-line = { $count ->
+    [one] The custom metadata of 1 item with no place in the new project does not come across.
+   *[other] The custom metadata of { $count } items with no place in the new project does not come across.
+}
+import-scrivener-metadata-bookmarks-without-row-line = { $count ->
+    [one] The bookmarks of 1 item with no place in the new project do not come across.
+   *[other] The bookmarks of { $count } items with no place in the new project do not come across.
+}
+import-scrivener-metadata-targets-without-row-line = { $count ->
+    [one] The target of 1 item with no place in the new project does not come across.
+   *[other] The targets of { $count } items with no place in the new project do not come across.
+}
+
+## What the import does with the keywords, custom metadata, collections, bookmarks, targets,
+## the deadline, the auto-complete list and the icons. Each line is said twice: on the Review
+## page before the import, then in its report, so it reads the same at both times. `$note`
+## and `$folder` are the titles the import gives a note and its "From Scrivener" folder;
+## `$day` is a day as YYYY-MM-DD.
+import-scrivener-metadata-pov-hint-line = { $count ->
+    [one] The label or field value { $values } matches the story bible entry { $matches }. If it names the point of view, set it in the Inspector: the import links nothing.
+   *[other] The labels or field values { $values } match the story bible entries { $matches }. If they name points of view, set them in the Inspector: the import links nothing.
+}
+import-scrivener-metadata-checkbox-default-unknown-line = The checkbox field “{ $field }” has a setting Skribisto cannot read, such as being ticked by default. Only the documents ticked one by one wear its tag.
+import-scrivener-metadata-goals-in-other-unit-line = { $count ->
+    [one] 1 goal is set in the other counting unit. It is kept, and shows once you switch the counting unit in Settings ▸ Work ▸ Structure.
+   *[other] { $count } goals are set in the other counting unit. They are kept, and show once you switch the counting unit in Settings ▸ Work ▸ Structure.
+}
+import-scrivener-metadata-counting-differs-line = Scrivener counted the draft target over other documents than Skribisto does. The book’s goal counts the scenes included in exports.
+import-scrivener-metadata-writing-days-not-read-line = The writing days “{ $raw }” cannot be read, so the book’s Pace counts every day as a writing day. Change them there.
+import-scrivener-metadata-script-mode-rows-line = { $count ->
+    [one] 1 item was in script mode in Scrivener. Skribisto keeps its words as prose, without the screenplay layout.
+   *[other] { $count } items were in script mode in Scrivener. Skribisto keeps their words as prose, without the screenplay layout.
+}
+import-scrivener-metadata-keywords-became-tags-line = { $tags ->
+    [one] 1 keyword becomes a tag, on { $rows ->
+        [one] { $rows } item
+       *[other] { $rows } items
+    }.
+   *[other] { $tags } keywords become tags, on { $rows ->
+        [one] { $rows } item
+       *[other] { $rows } items
+    }.
+}
+import-scrivener-metadata-keyword-hierarchy-flattened-line = { $count ->
+    [one] 1 keyword sat inside another in Scrivener. Tags are flat: its tag’s details say where it sat.
+   *[other] { $count } keywords sat inside others in Scrivener. Tags are flat: each tag’s details say where its keyword sat.
+}
+import-scrivener-metadata-fields-became-tags-line = { $fields ->
+    [one] 1 list or checkbox field becomes { $tags ->
+        [one] { $tags } tag
+       *[other] { $tags } tags
+    }, on { $rows ->
+        [one] { $rows } item
+       *[other] { $rows } items
+    }.
+   *[other] { $fields } list and checkbox fields become { $tags ->
+        [one] { $tags } tag
+       *[other] { $tags } tags
+    }, on { $rows ->
+        [one] { $rows } item
+       *[other] { $rows } items
+    }.
+}
+import-scrivener-metadata-collections-became-tags-line = { $tags ->
+    [one] 1 collection becomes a tag, on { $rows ->
+        [one] { $rows } item
+       *[other] { $rows } items
+    }.
+   *[other] { $tags } collections become tags, on { $rows ->
+        [one] { $rows } item
+       *[other] { $rows } items
+    }.
+}
+import-scrivener-metadata-collection-order-lost-line = { $count ->
+    [one] A tag holds no order, so the order of the documents in 1 collection is not kept.
+   *[other] A tag holds no order, so the order of the documents in { $count } collections is not kept.
+}
+import-scrivener-metadata-bookmarks-became-links-line = { $count ->
+    [one] 1 bookmark becomes a link between two notes, or between a scene and a story bible entry: see Links and Cast.
+   *[other] { $count } bookmarks become links between notes, or between scenes and story bible entries: see Links and Cast.
+}
+import-scrivener-metadata-goals-kept-line = { $count ->
+    [one] 1 document target becomes a goal.
+   *[other] { $count } document targets become goals.
+}
+import-scrivener-metadata-draft-target-kept-words-line = { $value ->
+    [one] The draft target of 1 word becomes the book’s goal.
+   *[other] The draft target of { $value } words becomes the book’s goal.
+}
+import-scrivener-metadata-draft-target-kept-characters-line = { $value ->
+    [one] The draft target of 1 character becomes the book’s goal.
+   *[other] The draft target of { $value } characters becomes the book’s goal.
+}
+import-scrivener-metadata-pace-planned-line = The deadline, { $day }, becomes the book’s Pace, which plans the words of each day from the day of the import.
+import-scrivener-metadata-pace-planned-day-off-line = The deadline, { $day }, becomes the book’s Pace, which plans the words of each day from the day of the import. As in Scrivener, the deadline itself is a day off.
+import-scrivener-metadata-dictionary-words-line = { $count ->
+    [one] 1 auto-complete word goes into the project’s personal dictionary, so it is not marked as misspelled.
+   *[other] { $count } auto-complete words go into the project’s personal dictionary, so they are not marked as misspelled.
+}
+import-scrivener-metadata-listed-project-line = { $count ->
+    [one] 1 detail of the project is listed in the note “{ $note }” of the “{ $folder }” folder.
+   *[other] { $count } details of the project are listed in the note “{ $note }” of the “{ $folder }” folder.
+}
+import-scrivener-metadata-listed-project-bookmarks-line = { $count ->
+    [one] 1 project bookmark is listed in the note “{ $note }” of the “{ $folder }” folder.
+   *[other] { $count } project bookmarks are listed in the note “{ $note }” of the “{ $folder }” folder.
+}
+import-scrivener-metadata-listed-replacements-line = { $count ->
+    [one] 1 compile replacement is listed in the note “{ $note }” of the “{ $folder }” folder. Skribisto does not make it.
+   *[other] { $count } compile replacements are listed in the note “{ $note }” of the “{ $folder }” folder. Skribisto does not make them.
+}
+import-scrivener-metadata-listed-auto-complete-line = { $count ->
+    [one] 1 auto-complete entry of several words is listed in the note “{ $note }” of the “{ $folder }” folder.
+   *[other] { $count } auto-complete entries of several words are listed in the note “{ $note }” of the “{ $folder }” folder.
+}
+import-scrivener-metadata-listed-saved-searches-line = { $count ->
+    [one] 1 saved search is listed in the note “{ $note }” of the “{ $folder }” folder.
+   *[other] { $count } saved searches are listed in the note “{ $note }” of the “{ $folder }” folder.
+}
+import-scrivener-metadata-listed-custom-metadata-line = { $count ->
+    [one] 1 custom metadata value a tag cannot hold is listed in the note “{ $note }” of the “{ $folder }” folder.
+   *[other] { $count } custom metadata values a tag cannot hold are listed in the note “{ $note }” of the “{ $folder }” folder.
+}
+import-scrivener-metadata-listed-targets-line = { $count ->
+    [one] 1 document target is listed in the note “{ $note }” of the “{ $folder }” folder.
+   *[other] { $count } document targets are listed in the note “{ $note }” of the “{ $folder }” folder.
+}
+import-scrivener-metadata-listed-bookmarks-line = { $count ->
+    [one] 1 bookmark no link of Skribisto shows is listed in the note “{ $note }” of the “{ $folder }” folder.
+   *[other] { $count } bookmarks no link of Skribisto shows are listed in the note “{ $note }” of the “{ $folder }” folder.
+}
+import-scrivener-metadata-targets-on-notes-line = { $count ->
+    [one] 1 document target sits on a note, whose writing no goal counts, so it does not become a goal.
+   *[other] { $count } document targets sit on notes, whose writing no goal counts, so they do not become goals.
+}
+import-scrivener-metadata-targets-on-split-documents-line = { $count ->
+    [one] 1 document target sits on a document split at its headings, whose chapters no one goal counts together, so it does not become a goal.
+   *[other] { $count } document targets sit on documents split at their headings, whose chapters no one goal counts together, so they do not become goals.
+}
+import-scrivener-metadata-bookmark-ends-without-row-line = { $count ->
+    [one] 1 bookmark leads to a document with no place in the new project, such as a document template. It is listed by where the document was in Scrivener.
+   *[other] { $count } bookmarks lead to documents with no place in the new project, such as document templates. They are listed by where the documents were in Scrivener.
+}
+import-scrivener-metadata-unused-keywords-skipped-line = { $count ->
+    [one] 1 keyword no document wears is not imported.
+   *[other] { $count } keywords no document wears are not imported.
+}
+import-scrivener-metadata-list-value-invalid-line = { $count ->
+    [one] 1 value of the list field “{ $field }” names none of its options, and is not imported.
+   *[other] { $count } values of the list field “{ $field }” name none of its options, and are not imported.
+}
+import-scrivener-metadata-undefined-custom-field-line = { $count ->
+    [one] 1 value belongs to a custom field the project no longer defines, which Scrivener does not show either. It is not imported.
+   *[other] { $count } values belong to custom fields the project no longer defines, which Scrivener does not show either. They are not imported.
+}
+import-scrivener-metadata-collection-members-missing-line = { $count ->
+    [one] 1 document of the collection “{ $name }” has no place in the new project, or is gone from the Scrivener project.
+   *[other] { $count } documents of the collection “{ $name }” have no place in the new project, or are gone from the Scrivener project.
+}
+import-scrivener-metadata-empty-collections-skipped-line = { $count ->
+    [one] 1 collection that holds no document is not imported.
+   *[other] { $count } collections that hold no document are not imported.
+}
+import-scrivener-metadata-bookmarks-unresolved-line = { $count ->
+    [one] 1 bookmark leads to a document the Scrivener project no longer holds, and is not imported.
+   *[other] { $count } bookmarks lead to documents the Scrivener project no longer holds, and are not imported.
+}
+import-scrivener-metadata-targets-in-pages-line = { $count ->
+    [one] 1 document target counts pages, which Skribisto does not count, so it does not become a goal.
+   *[other] { $count } document targets count pages, which Skribisto does not count, so they do not become goals.
+}
+import-scrivener-metadata-targets-unreadable-line = { $count ->
+    [one] 1 target is not imported: its count is not a number, is below zero, or is more than a goal can hold.
+   *[other] { $count } targets are not imported: their counts are not numbers, are below zero, or are more than a goal can hold.
+}
+import-scrivener-metadata-draft-target-in-pages-line = { $value ->
+    [one] The draft target of 1 page does not become a goal: Skribisto counts words or characters. It is listed in the note “{ $note }” of the “{ $folder }” folder.
+   *[other] The draft target of { $value } pages does not become a goal: Skribisto counts words or characters. It is listed in the note “{ $note }” of the “{ $folder }” folder.
+}
+import-scrivener-metadata-draft-target-no-book-words-line = { $value ->
+    [one] The draft target of 1 word does not become a goal, because the manuscript makes several books, or none. It is listed in the note “{ $note }” of the “{ $folder }” folder.
+   *[other] The draft target of { $value } words does not become a goal, because the manuscript makes several books, or none. It is listed in the note “{ $note }” of the “{ $folder }” folder.
+}
+import-scrivener-metadata-draft-target-no-book-characters-line = { $value ->
+    [one] The draft target of 1 character does not become a goal, because the manuscript makes several books, or none. It is listed in the note “{ $note }” of the “{ $folder }” folder.
+   *[other] The draft target of { $value } characters does not become a goal, because the manuscript makes several books, or none. It is listed in the note “{ $note }” of the “{ $folder }” folder.
+}
+import-scrivener-metadata-deadline-passed-line = The deadline, { $day }, has passed, so it makes no Pace. It is listed in the note “{ $note }” of the “{ $folder }” folder.
+import-scrivener-metadata-deadline-no-writing-day-line = The deadline, { $day }, is the day of the import, and as in Scrivener the deadline itself is a day off: no day is left to write on, so it makes no Pace. It is listed in the note “{ $note }” of the “{ $folder }” folder.
+import-scrivener-metadata-deadline-no-word-goal-line = The deadline, { $day }, makes no Pace, because the draft has no word target to plan towards. It is listed in the note “{ $note }” of the “{ $folder }” folder.
+import-scrivener-metadata-deadline-character-goal-line = The deadline, { $day }, makes no Pace, because the draft target counts characters and a Pace counts words. It is listed in the note “{ $note }” of the “{ $folder }” folder.
+import-scrivener-metadata-deadline-no-book-line = The deadline, { $day }, makes no Pace, because the manuscript makes several books, or none. It is listed in the note “{ $note }” of the “{ $folder }” folder.
+import-scrivener-metadata-deadline-unreadable-line = The deadline cannot be read, so it makes no Pace. It is listed as written in the note “{ $note }” of the “{ $folder }” folder.
+import-scrivener-metadata-session-target-words-line = { $value ->
+    [one] The session target of 1 word is not imported: in Skribisto, the writing session’s goal is one setting for every project. It is listed in the note “{ $note }” of the “{ $folder }” folder.
+   *[other] The session target of { $value } words is not imported: in Skribisto, the writing session’s goal is one setting for every project. It is listed in the note “{ $note }” of the “{ $folder }” folder.
+}
+import-scrivener-metadata-session-target-characters-line = { $value ->
+    [one] The session target of 1 character is not imported: in Skribisto, the writing session’s goal is one setting for every project, in words. It is listed in the note “{ $note }” of the “{ $folder }” folder.
+   *[other] The session target of { $value } characters is not imported: in Skribisto, the writing session’s goal is one setting for every project, in words. It is listed in the note “{ $note }” of the “{ $folder }” folder.
+}
+import-scrivener-metadata-session-target-pages-line = { $value ->
+    [one] The session target of 1 page is not imported: in Skribisto, the writing session’s goal is one setting for every project, in words. It is listed in the note “{ $note }” of the “{ $folder }” folder.
+   *[other] The session target of { $value } pages is not imported: in Skribisto, the writing session’s goal is one setting for every project, in words. It is listed in the note “{ $note }” of the “{ $folder }” folder.
+}
+import-scrivener-metadata-icons-dropped-line = { $count ->
+    [one] 1 item had a binder icon, which does not come across: Skribisto shows each item’s icon from its type.
+   *[other] { $count } items had binder icons, which do not come across: Skribisto shows each item’s icon from its type.
 }
 
 ## What converting the prose did, as the import's report says it. `$count` is how many texts,

@@ -70,7 +70,7 @@ pub(super) fn section(
                 .color(TextRole::Secondary),
         );
         col = col.child(
-            SpinBox::new(value, 0_i64, 100_000_000)
+            SpinBox::new(value, 0_i64, skribisto_model::goal_unit::MAX_GOAL)
                 .single_step(100)
                 // `0` is the no-target sentinel this field has always used, so
                 // the bottom of the range has to *read* as "none" rather than

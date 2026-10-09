@@ -29,6 +29,7 @@ mod review;
 #[cfg(test)]
 mod tests;
 
+use chrono::NaiveDate;
 use scrivener_import::{Analysis, ReadProject, Summary};
 
 use crate::dtos::{
@@ -48,6 +49,14 @@ pub use review::{ScrivenerReview, ScrivenerReviewError};
 /// name in the two details patterns, a number in the two unnamed-value patterns, a label's
 /// name in `label_tag_pattern`. A pattern without it has the value put before it.
 pub const TITLE_SLOT: char = scrivener_import::TITLE_SLOT;
+
+/// Where the second value of a two-value pattern goes: an option's name in the
+/// `field-value` word of `metadata_words`, whose field's name goes in [`TITLE_SLOT`].
+pub const VALUE_SLOT: char = scrivener_import::VALUE_SLOT;
+
+/// The order of an import request's `metadata_words`: the interface resolves each key and
+/// sends the words as one list in this order.
+pub const METADATA_WORD_ORDER: &[&str] = scrivener_import::MetadataWords::ORDER;
 
 impl std::fmt::Debug for ScrivenerComputers {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -102,12 +111,16 @@ impl ScrivenerQuestion {
     }
 }
 
-/// An analysis as the wizard receives it.
+/// An analysis as the wizard receives it, its plan as it stands on `today`, the writer's
+/// calendar day (a deadline is ahead or behind on it).
 ///
 /// Fails only when what the review recomputes the plan from cannot be written out, which a
 /// model the analysis itself built never does; the use case then reports it as the defect
 /// it would be.
-pub(crate) fn analysis_to_dto(analysis: Analysis) -> anyhow::Result<ScrivenerAnalysisDto> {
+pub(crate) fn analysis_to_dto(
+    analysis: Analysis,
+    today: NaiveDate,
+) -> anyhow::Result<ScrivenerAnalysisDto> {
     match analysis {
         Analysis::Refused { refusal, notices } => {
             let names = scrivener_import::SourceNames::default();
@@ -129,11 +142,11 @@ pub(crate) fn analysis_to_dto(analysis: Analysis) -> anyhow::Result<ScrivenerAna
                 ..ScrivenerAnalysisDto::default()
             })
         }
-        Analysis::Read(read) => read_to_dto(*read),
+        Analysis::Read(read) => read_to_dto(*read, today),
     }
 }
 
-fn read_to_dto(read: ReadProject) -> anyhow::Result<ScrivenerAnalysisDto> {
+fn read_to_dto(read: ReadProject, today: NaiveDate) -> anyhow::Result<ScrivenerAnalysisDto> {
     let ReadProject {
         project,
         content,
@@ -204,7 +217,7 @@ fn read_to_dto(read: ReadProject) -> anyhow::Result<ScrivenerAnalysisDto> {
         proposed_language_source: plan::language_source(
             proposals.language.as_ref().map(|l| l.source),
         ),
-        structure: plan::structure(&structure, &names),
+        structure: plan::structure(&structure, &project, &names, today),
         fingerprint,
         ..ScrivenerAnalysisDto::default()
     };

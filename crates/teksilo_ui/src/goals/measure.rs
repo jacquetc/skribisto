@@ -270,7 +270,9 @@ mod imp {
             // of the plan.
             let goal = goal_in(it, unit);
             if it.activated && goal > 0 && compile::is_row(&it.sub_role) {
-                descendant_goal_total += goal;
+                // Saturating: an imported or hand-edited project can carry targets past
+                // what a goal field accepts, and the sum must stay a number.
+                descendant_goal_total = descendant_goal_total.saturating_add(goal);
                 descendant_goal_items += 1;
             }
         }

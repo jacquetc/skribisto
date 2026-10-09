@@ -1,6 +1,6 @@
 An import brings a whole Scrivener project across: its binder, its text, its synopses and
-notes, its comments and footnotes, its labels and its status list. It creates a **new**
-Skribisto project. Your Scrivener project is only read, never changed, so you can go back to
+notes, its comments and footnotes, its labels and status list, its keywords, custom metadata,
+collections, bookmarks and targets. It creates a **new** Skribisto project. Your Scrivener project is only read, never changed, so you can go back to
 it at any time.
 
 For a project made in Manuskript or Plume Creator, see
@@ -74,8 +74,9 @@ Beside the tree, the choices change how the binder comes across:
 - *Blank lines become scene breaks* and *Lines of ornaments become scene breaks* decide what
   becomes a scene break in your text.
 
-Under the tree, *Before you import* lists what the import does with your binder, and what
-it leaves behind, so you know before you import.
+Under the tree, *Before you import* lists what the import does with your binder and with your
+keywords, custom metadata, collections, bookmarks and targets, and what it leaves behind, so
+you know before you import.
 
 Every item can be retyped afterwards from the binder. See
 [the writing model](:help-writing-model) for what each type is.
@@ -97,14 +98,51 @@ research files beside the new project* puts them in a folder next to it.
 - Your comments and footnotes, including the ones written inside the text. An inline
   annotation becomes a comment.
 - Your labels as colored tags, and your status list as the project's statuses.
+- Your keywords, your collections, and your list and checkbox custom fields, as tags on the
+  documents that wear them. A keyword's place among your keywords is in its tag's details.
+- The targets of your manuscript's documents, as their goals, and the draft target as the
+  book's goal. A deadline that is still ahead, with a draft target in words, becomes the
+  book's *Pace*.
+- A bookmark from one note to another, or from a scene or a folder of notes to a story bible
+  entry, as a link: you find it under *Links* or *Cast*.
+- The single words of your auto-complete list, in the project's personal dictionary, so they
+  are not marked as misspelled.
 - The "Include in Compile" box, which becomes *Include in exports*.
 - Your document templates, as note templates.
 - The pictures in your research, each in a note of its own.
 
+## The "From Scrivener" folder
+
+What your project holds that has no place of its own in Skribisto comes across as text, so
+you can still read it and copy from it. It goes into a folder of notes called *From
+Scrivener*, after your own notes and before the Trash, which is never included in exports.
+Each note lists one kind of thing, and a note is there only when it has something to list:
+
+- *Project*: the abbreviated title, subjects and company of your compile settings, the
+  session target, the writing days, a draft target that did not become a goal, and the
+  deadline, even when it became a *Pace*.
+- *Project bookmarks*.
+- *Compile replacements*. Skribisto does not make them when it exports.
+- *Auto-complete entries* of more than one word.
+- *Saved searches*, with what each one looked for.
+- *Custom metadata*: your text and date fields, document by document.
+- *Targets* set on notes, whose writing no goal counts, and on documents split at their
+  headings, whose chapters no one goal counts together.
+- *Bookmarks* that no link in Skribisto can show, such as one from a scene to another scene
+  or to a web page.
+
+The custom metadata and bookmarks of a note of its own, such as a character sheet, are added
+at the end of that note instead.
+
 ## What has no home here
 
 - **Snapshots.** Your earlier versions stay in your Scrivener project.
-- **Keywords, custom metadata, collections and binder icons.**
+- **Binder icons and script mode.** Each item's icon comes from its type, and a script keeps
+  its words as prose.
+- **The point of view.** When your labels or a field name characters of your story bible,
+  the report says so: set the point of view in the Inspector.
+- **The order of a collection**, since a tag holds no order, and **targets that count
+  pages**.
 - **Text color, highlighting and fonts.** Skribisto sets the look of the text itself.
 - **Research files that are not pictures**, such as PDF files, sound or web pages. Each one
   becomes a note that names the file, which stays in your Scrivener project unless you copy
@@ -130,13 +168,16 @@ then lists the rest in four parts:
   Skribisto has no place for it.
 - *Left behind*: what stays in your Scrivener project.
 
-Each line names the documents concerned, as they are called in your Scrivener binder. *Copy
-report* copies the whole report, to keep it or send it.
+Each line names the documents concerned, as they are called in your Scrivener binder, or the
+keywords, collections or icons it is about. *Copy report* copies the whole report, to keep it
+or send it.
 
 Skribisto keeps the reports of your latest imports until it closes. To open one again,
-press *See report* while the message is up, or choose *Show Scrivener Import Report* in the
-command palette of a project's window. In the new project's window, each document the report
-names opens with a click.
+press *See report* on the message, or on its entry under the bell in the status bar and in
+*Settings ▸ Appearance & Behavior ▸ Notifications*, or choose *Show Scrivener Import Report*
+in the command palette of a project's window. The entry also keeps *Open now*, which opens
+the new project in a window of its own. In the new project's window, each document the
+report names opens with a click.
 
 The new project is a single `.skrib` file. If you prefer a folder, use *Work ▸ Save as
 folder…* afterwards.

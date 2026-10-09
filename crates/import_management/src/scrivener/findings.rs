@@ -17,14 +17,16 @@
 
 use std::collections::HashMap;
 
-use scrivener_import::metadata::{AuthorSource, Field, TitleSource};
+use scrivener_import::metadata::{
+    AuthorSource, DeadlineReason, DraftTargetReason, Field, TargetUnit, TitleSource,
+};
 use scrivener_import::model::{ItemKey, TextRole};
 use scrivener_import::outcome::{
     BackupSign, DanglingKind, ManifestDamage, ReadProblem, TemplateDamage, UnsafeName,
 };
 use scrivener_import::prose::{Formatting, LeftOut, RangeReading};
 use scrivener_import::structure::{
-    Level, Origin, Placement, PlanError, ReportGroup, RowRef, StructureNotice,
+    Level, NoteSection, Origin, Placement, PlanError, ReportGroup, RowRef, StructureNotice,
 };
 use scrivener_import::{
     MetadataNotice, Notice, Place, ProseNotice, Question, Refusal, SourceNames, WrittenRow,
@@ -359,7 +361,50 @@ fn field(field: Field) -> &'static str {
     match field {
         Field::Label => "label",
         Field::Status => "status",
+        Field::Keyword => "keyword",
+        Field::CustomField => "custom-field",
+        Field::Bookmark => "bookmark",
+        Field::Target => "target",
     }
+}
+
+fn target_unit(unit: TargetUnit) -> &'static str {
+    match unit {
+        TargetUnit::Words => "words",
+        TargetUnit::Characters => "characters",
+        TargetUnit::Pages => "pages",
+    }
+}
+
+fn draft_target_reason(reason: DraftTargetReason) -> &'static str {
+    match reason {
+        DraftTargetReason::Pages => "pages",
+        DraftTargetReason::NoSingleBook => "no-single-book",
+    }
+}
+
+fn deadline_reason(reason: DeadlineReason) -> &'static str {
+    match reason {
+        DeadlineReason::Passed => "passed",
+        DeadlineReason::NoWritingDayLeft => "no-writing-day-left",
+        DeadlineReason::NoWordGoal => "no-word-goal",
+        DeadlineReason::CharacterGoal => "character-goal",
+        DeadlineReason::NoSingleBook => "no-single-book",
+        DeadlineReason::Unreadable => "unreadable",
+    }
+}
+
+fn note_section(section: NoteSection) -> &'static str {
+    section.token()
+}
+
+/// A day the converter gives as the Unix timestamp of its midnight, as the report names
+/// days: `YYYY-MM-DD`.
+fn unix_day(name: &str, seconds: i64) -> ScrivenerArg {
+    let value = chrono::DateTime::from_timestamp(seconds, 0)
+        .map(|at| at.format("%Y-%m-%d").to_string())
+        .unwrap_or_default();
+    day(name, &value)
 }
 
 fn range_reading(reading: RangeReading) -> &'static str {
@@ -975,6 +1020,80 @@ pub(crate) fn metadata_notice(notice: &MetadataNotice) -> ScrivenerFinding {
         MetadataNotice::UnusedLabelsSkipped { names } => vec![texts("names", names)],
         MetadataNotice::ValuesWithoutRow { field: f, items } => {
             vec![token("field", field(*f)), count("items", *items)]
+        }
+        MetadataNotice::PovHint { values, matches } => {
+            vec![texts("values", values), texts("matches", matches)]
+        }
+        MetadataNotice::CheckboxDefaultUnknown { field: f } => vec![text("field", f)],
+        MetadataNotice::GoalsInOtherUnit { count: n } => vec![count("count", *n)],
+        MetadataNotice::CountingDiffers => Vec::new(),
+        MetadataNotice::WritingDaysNotRead { raw } => vec![text("raw", raw)],
+        MetadataNotice::ScriptModeRows { rows } => vec![count("rows", *rows)],
+        MetadataNotice::KeywordsBecameTags { tags, rows } => {
+            vec![count("tags", *tags), count("rows", *rows)]
+        }
+        MetadataNotice::KeywordHierarchyFlattened { keywords } => {
+            vec![count("keywords", *keywords)]
+        }
+        MetadataNotice::FieldsBecameTags { fields, tags, rows } => vec![
+            count("fields", *fields),
+            count("tags", *tags),
+            count("rows", *rows),
+        ],
+        MetadataNotice::CollectionsBecameTags { tags, rows } => {
+            vec![count("tags", *tags), count("rows", *rows)]
+        }
+        MetadataNotice::CollectionOrderLost { names } => vec![texts("names", names)],
+        MetadataNotice::BookmarksBecameLinks { count: n } => vec![count("count", *n)],
+        MetadataNotice::GoalsKept { rows } => vec![count("rows", *rows)],
+        MetadataNotice::DraftTargetKept { value, unit } => {
+            vec![count("value", *value), token("unit", target_unit(*unit))]
+        }
+        MetadataNotice::PacePlanned { day: d, day_off } => {
+            vec![unix_day("day", *d), flag("day_off", *day_off)]
+        }
+        MetadataNotice::DictionaryWords { count: n } => vec![count("count", *n)],
+        MetadataNotice::ListedInImportNote { section, count: n } => {
+            vec![token("section", note_section(*section)), count("count", *n)]
+        }
+        MetadataNotice::TargetsOnNotes { count: n } => vec![count("count", *n)],
+        MetadataNotice::BookmarkEndsWithoutRow { count: n } => vec![count("count", *n)],
+        MetadataNotice::UnusedKeywordsSkipped { names } => vec![texts("names", names)],
+        MetadataNotice::ListValueInvalid { field: f, count: n } => {
+            vec![text("field", f), count("count", *n)]
+        }
+        MetadataNotice::UndefinedCustomField { ids, values } => {
+            vec![texts("ids", ids), count("values", *values)]
+        }
+        MetadataNotice::CollectionMembersMissing { name, count: n } => {
+            vec![text("name", name), count("count", *n)]
+        }
+        MetadataNotice::EmptyCollectionsSkipped { names } => vec![texts("names", names)],
+        MetadataNotice::BookmarksUnresolved { count: n } => vec![count("count", *n)],
+        MetadataNotice::TargetsInPages { count: n }
+        | MetadataNotice::TargetsUnreadable { count: n }
+        | MetadataNotice::TargetsOnSplitDocuments { count: n } => vec![count("count", *n)],
+        MetadataNotice::DraftTargetNotKept {
+            reason,
+            value,
+            unit,
+        } => vec![
+            token("reason", draft_target_reason(*reason)),
+            count("value", *value),
+            token("unit", target_unit(*unit)),
+        ],
+        MetadataNotice::DeadlineNotPlanned { reason, day: d } => {
+            let mut args = vec![token("reason", deadline_reason(*reason))];
+            if let Some(d) = d {
+                args.push(unix_day("day", *d));
+            }
+            args
+        }
+        MetadataNotice::SessionTargetNotImported { value, unit } => {
+            vec![count("value", *value), token("unit", target_unit(*unit))]
+        }
+        MetadataNotice::IconsDropped { rows, names } => {
+            vec![count("rows", *rows), texts("names", names)]
         }
     };
     whole(

@@ -14,8 +14,9 @@
 //! every row's contents made from the Scrivener texts the plan lists for it, footnotes and
 //! comments beside the prose that cites them, pictures as assets, the story bible's tags,
 //! the labels as tags and the status list as the workflow ladder on the rows that wore them
-//! ([`metadata::vocabularies`]), the note templates, and one trash entry per trashed
-//! subtree. The project's title, author and language are the Save page's, else what the
+//! ([`metadata::vocabularies`]), the keywords, fields and collections as tags, the goals,
+//! the references, the dictionary, the pace plan and the "From Scrivener" folder's notes
+//! ([`metadata::extended`]), the note templates, and one trash entry per trashed subtree. The project's title, author and language are the Save page's, else what the
 //! project states ([`metadata::Proposals`]). A row carries the dates of the Scrivener item
 //! whose data it holds, read strictly; an unreadable one, and everything the import makes
 //! up, carries the import's own instant (D6.9). Titles and names the import adds are the
@@ -42,7 +43,7 @@ use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, NaiveDate, Utc};
 use common::entities::{CommentAnchorKind, ContentRole, StatusCategory};
 use document_ingest::pictures::{DocumentPictures, PictureRefusal};
 use document_ingest::plan::{PlannedComment, RowPart, assemble_row};
@@ -53,9 +54,9 @@ use serde::{Deserialize, Serialize};
 use skrib_format::importing::{OutputRefused, StagedOutput};
 use skrib_format::{
     BinderFile, BinderItemFile, BinderStatusFile, BinderTagFile, BundledBinder, BundledItem,
-    CommentFile, FORMAT_VERSION, FootnoteFile, InlineContent, NoteTemplateFile, ProjectManifest,
-    ProseRef, ShapeTag, TrashInfoFile, WorkBundle, WorkFile, binder_dir_name, new_unique_id,
-    prose_file_name, prose_kind, prose_relpath,
+    CommentFile, DictWordFile, FORMAT_VERSION, FootnoteFile, HolidayFile, InlineContent,
+    NoteTemplateFile, PaceFile, ProjectManifest, ProseRef, ShapeTag, TrashInfoFile, WorkBundle,
+    WorkFile, binder_dir_name, new_unique_id, prose_file_name, prose_kind, prose_relpath,
 };
 use skribisto_model::comment_anchor;
 use uuid::Uuid;
@@ -64,13 +65,13 @@ use crate::analyze::{self, Answers, Moved, Options, ReadProject};
 use crate::disk::{Cancellable, RealDisk};
 use crate::index::{MAX_MEMBER_BYTES, ReadError};
 use crate::layout::Tree;
-use crate::metadata::{self, MetadataNotice, PALETTE};
+use crate::metadata::{self, Extended, MetadataNotice, MetadataWords, PALETTE};
 use crate::model::{ItemKey, ItemKind, MemberRef, Project, SourceNames, TextRole};
 use crate::outcome::{Notice, Question, Refusal};
 use crate::prose::{self, Pictures, Place, ProseChoices, ProseNotice, dialect, sidecar, styles};
 use crate::structure::{
-    self, BinderKind, Body, ChapterEncoding, Choices, Origin, PlanError, PlannedRow, PlannedTitle,
-    RowRef, Source, StructureNotice, StructurePlan, SubRole,
+    self, BinderKind, Body, ChapterEncoding, Choices, NoteSection, Origin, PlanError, PlannedRow,
+    PlannedTitle, RowRef, Source, StructureNotice, StructurePlan, SubRole,
 };
 
 mod research;
@@ -118,6 +119,9 @@ pub struct Words {
     /// preset, resolved in the writer's language, as a new project gets it. Empty seeds
     /// nothing.
     pub default_statuses: Vec<DefaultRung>,
+    /// The words of the second half of the metadata mapping: the keyword, field and
+    /// collection tags, the pace plan, and the "From Scrivener" folder.
+    pub metadata: MetadataWords,
 }
 
 /// A rung of the default ladder, as the interface resolved it.
@@ -160,6 +164,10 @@ pub struct Request<'a> {
     pub copy_research_files: bool,
     /// The instant of the import: the date of everything Scrivener does not date.
     pub now: DateTime<Utc>,
+    /// The day of the import on the writer's own calendar, which a pace plan starts on and
+    /// a deadline must not be behind: the interface's, which knows the writer's time zone
+    /// (`now`'s UTC date is a day early or late for part of every day).
+    pub today: NaiveDate,
 }
 
 /// What the new project holds.
@@ -433,10 +441,18 @@ impl Ids {
     }
 }
 
-/// The tags a row wears (its story-bible tag, its label's) and its rung, as file ids.
-struct Worn {
+/// What a row wears and holds beyond its writing: its tags (its story-bible tag, its
+/// label's, its keywords', its fields', its collections') and its rung, as file ids, its
+/// goals, and what its own note lists of its metadata.
+struct Worn<'e> {
     tags: Vec<u64>,
     status: Option<u64>,
+    /// Its word goal and its character goal.
+    goals: (i64, i64),
+    /// Djot to follow its note text: its own custom metadata and bookmarks (D4-8, D4-20).
+    sheet: Option<&'e str>,
+    /// The metadata mapping's notes, for a row of the "From Scrivener" folder.
+    extended: &'e Extended,
 }
 
 /// One text's contribution to a content, before the content is assembled.
@@ -619,6 +635,23 @@ impl<'c, 't, 'i, 'd, 'r> Converter<'c, 't, 'i, 'd, 'r> {
             .iter()
             .map(|_| self.ids.take())
             .collect();
+        // The keywords, fields, collections, targets, bookmarks, deadline and dictionary
+        // (D4-6 to D4-20), named against every tag above.
+        let language = self.work_language();
+        let earlier: Vec<String> = bible_names
+            .iter()
+            .chain(vocabularies.tags.iter().map(|t| &t.name))
+            .cloned()
+            .collect();
+        let extended = metadata::extended(
+            self.project,
+            plan,
+            &earlier,
+            words,
+            language.as_deref(),
+            self.request.today,
+        );
+        let extended_ids: Vec<u64> = extended.tags.iter().map(|_| self.ids.take()).collect();
 
         let mut binders: Vec<BundledBinder> = Vec::new();
         let mut binder_order: Vec<u64> = Vec::new();
@@ -651,6 +684,10 @@ impl<'c, 't, 'i, 'd, 'r> Converter<'c, 't, 'i, 'd, 'r> {
                 if cancel.load(Ordering::Relaxed) {
                     return Err(ConvertError::Cancelled.into());
                 }
+                let at = RowRef {
+                    binder: kind,
+                    row: r as u32,
+                };
                 let worn = Worn {
                     tags: row
                         .tag
@@ -663,12 +700,22 @@ impl<'c, 't, 'i, 'd, 'r> Converter<'c, 't, 'i, 'd, 'r> {
                                 .flatten()
                                 .and_then(|t| label_ids.get(t as usize).copied()),
                         )
+                        .chain(
+                            extended.row_tags[index]
+                                .get(r)
+                                .into_iter()
+                                .flatten()
+                                .filter_map(|t| extended_ids.get(*t as usize).copied()),
+                        )
                         .collect(),
                     status: vocabularies.row_rungs[index]
                         .get(r)
                         .copied()
                         .flatten()
                         .and_then(|k| rung_ids.get(k as usize).copied()),
+                    goals: extended.goals.get(&at).copied().unwrap_or((0, 0)),
+                    sheet: extended.sheets.get(&at).map(String::as_str),
+                    extended: &extended,
                 };
                 let (item, row_links) = self.row(kind, row, row_ids[index][r], &dir, worn)?;
                 self.written.push(WrittenRow {
@@ -702,6 +749,24 @@ impl<'c, 't, 'i, 'd, 'r> Converter<'c, 't, 'i, 'd, 'r> {
             binder_order.push(binder_id);
         }
         self.resolve_links(&mut binders, &row_ids, links);
+        // Bookmarks Skribisto shows, beside the links the prose made, each once (X-35).
+        let file_id_of = |at: RowRef| match at.binder {
+            BinderKind::Manuscript => row_ids[0].get(at.row as usize).copied(),
+            BinderKind::Notes => row_ids[1].get(at.row as usize).copied(),
+        };
+        let edges: Vec<(u64, u64)> = extended
+            .edges
+            .iter()
+            .filter_map(|(owner, target)| Some((file_id_of(*owner)?, file_id_of(*target)?)))
+            .collect();
+        attach_references(
+            binders
+                .iter_mut()
+                .flat_map(|b| b.items.iter_mut())
+                .map(|i| (i.item.file_id, &mut i.item.reference_ids)),
+            &edges,
+            cancel,
+        )?;
 
         // Note templates (D3.16).
         let mut note_templates = Vec::with_capacity(plan.templates.len());
@@ -808,6 +873,26 @@ impl<'c, 't, 'i, 'd, 'r> Converter<'c, 't, 'i, 'd, 'r> {
                     note_template: None,
                 }),
         );
+        // Keywords, fields and collections (D4-7, D4-8, D4-13): tags on the rows that wore
+        // them, never story-bible material.
+        tags.extend(
+            extended
+                .tags
+                .iter()
+                .zip(&extended_ids)
+                .map(|(tag, file_id)| BinderTagFile {
+                    file_id: *file_id,
+                    uid: common::uid::new_uid(),
+                    created_at: self.now.clone(),
+                    updated_at: self.now.clone(),
+                    name: tag.name.clone(),
+                    color: tag.color.clone(),
+                    details: tag.details.clone(),
+                    discoverable: false,
+                    creates_in: None,
+                    note_template: None,
+                }),
+        );
         self.totals.tags = tags.len() as u32;
         // The workflow ladder (D4-4), in the list's order.
         let statuses: Vec<BinderStatusFile> = vocabularies
@@ -828,6 +913,71 @@ impl<'c, 't, 'i, 'd, 'r> Converter<'c, 't, 'i, 'd, 'r> {
             .collect();
         self.totals.rungs = statuses.len() as u32;
         self.metadata.extend(vocabularies.notices);
+        // One line for every tag renamed, whichever half renamed it.
+        for notice in extended.notices.iter().cloned() {
+            match (
+                notice,
+                self.metadata
+                    .iter_mut()
+                    .find(|n| matches!(n, MetadataNotice::TagNameDisambiguated { .. })),
+            ) {
+                (
+                    MetadataNotice::TagNameDisambiguated { names },
+                    Some(MetadataNotice::TagNameDisambiguated { names: earlier }),
+                ) => earlier.extend(names),
+                (notice, _) => self.metadata.push(notice),
+            }
+        }
+
+        // The project's dictionary: auto-complete words (D4-17).
+        let dict_words: Vec<DictWordFile> = extended
+            .dictionary
+            .iter()
+            .map(|word| DictWordFile {
+                file_id: self.ids.take(),
+                created_at: self.now.clone(),
+                updated_at: self.now.clone(),
+                word: word.clone(),
+            })
+            .collect();
+
+        // The deadline's pace plan (D4-12): from the import's day to the deadline's, both
+        // midnight UTC as the format stores days.
+        let midnight = |day: chrono::NaiveDate| {
+            day.and_hms_opt(0, 0, 0)
+                .map(|d| d.and_utc().to_rfc3339())
+                .unwrap_or_else(|| self.now.clone())
+        };
+        let paces: Vec<PaceFile> = extended
+            .pace
+            .iter()
+            .filter_map(|pace| {
+                let book = file_id_of(pace.book)?;
+                Some(PaceFile {
+                    file_id: self.ids.take(),
+                    created_at: self.now.clone(),
+                    updated_at: self.now.clone(),
+                    book_item: Some(book),
+                    start_date: midnight(pace.start),
+                    end_date: midnight(pace.end),
+                    weekday_mask: pace.weekday_mask,
+                    active: true,
+                    holidays: pace
+                        .day_off
+                        .iter()
+                        .map(|label| HolidayFile {
+                            file_id: self.ids.take(),
+                            created_at: self.now.clone(),
+                            updated_at: self.now.clone(),
+                            label: label.clone(),
+                            start_date: midnight(pace.end),
+                            end_date: None,
+                        })
+                        .collect(),
+                    milestones: Vec::new(),
+                })
+            })
+            .collect();
 
         // One trash entry per trashed subtree, dated the import (X-28).
         let trash_infos: Vec<TrashInfoFile> = plan
@@ -866,21 +1016,18 @@ impl<'c, 't, 'i, 'd, 'r> Converter<'c, 't, 'i, 'd, 'r> {
         }
         self.totals.pictures = assets.len() as u32;
 
-        let language = self.work_language();
         let work = WorkFile {
             file_id: self.ids.take(),
             created_at: self.now.clone(),
             updated_at: self.now.clone(),
             title: self.work_title(),
             author_name: self.work_author(),
-            // The unit New Work would start a project in this language with; S2 reads the
-            // project's own targets over it.
-            goal_unit: skribisto_model::goal_unit::default_unit_for_language(
-                language.as_deref().unwrap_or_default(),
-            ),
+            // The project's own targets' unit, else the one New Work would start a project
+            // in this language with (X-30).
+            goal_unit: extended.goal_unit.clone(),
             dict_language: language.into_iter().collect(),
             tag_ids: tags.iter().map(|t| t.file_id).collect(),
-            dict_word_ids: Vec::new(),
+            dict_word_ids: dict_words.iter().map(|w| w.file_id).collect(),
             unique_id: new_unique_id(),
             chapter_flat: plan.chapter_encoding == ChapterEncoding::Flat,
             text_replacement_rule_ids: Vec::new(),
@@ -909,7 +1056,7 @@ impl<'c, 't, 'i, 'd, 'r> Converter<'c, 't, 'i, 'd, 'r> {
                 backup_created_at: None,
             },
             tags,
-            dict_words: Vec::new(),
+            dict_words,
             text_replacement_rules: Vec::new(),
             note_templates,
             statuses,
@@ -917,7 +1064,7 @@ impl<'c, 't, 'i, 'd, 'r> Converter<'c, 't, 'i, 'd, 'r> {
             note_template_bodies,
             asset_bytes,
             trash_infos,
-            paces: Vec::new(),
+            paces,
             progress_snapshots: Vec::new(),
             orphan_comments: Vec::new(),
             orphan_footnotes: Vec::new(),
@@ -972,6 +1119,20 @@ impl<'c, 't, 'i, 'd, 'r> Converter<'c, 't, 'i, 'd, 'r> {
                 .map_or_else(|| t.clone(), str::to_string),
             PlannedTitle::ProjectNotes => words.project_notes.clone(),
             PlannedTitle::Recovered => words.recovered.clone(),
+            PlannedTitle::FromScrivener => words.metadata.from_scrivener.clone(),
+            PlannedTitle::FromScrivenerNote(section) => {
+                let w = &words.metadata;
+                match section {
+                    NoteSection::Project => w.note_project.clone(),
+                    NoteSection::ProjectBookmarks => w.note_project_bookmarks.clone(),
+                    NoteSection::Replacements => w.note_replacements.clone(),
+                    NoteSection::AutoComplete => w.note_auto_complete.clone(),
+                    NoteSection::SavedSearches => w.note_saved_searches.clone(),
+                    NoteSection::CustomMetadata => w.note_custom_metadata.clone(),
+                    NoteSection::Targets => w.note_targets.clone(),
+                    NoteSection::Bookmarks => w.note_bookmarks.clone(),
+                }
+            }
         }
     }
 
@@ -1006,7 +1167,9 @@ impl<'c, 't, 'i, 'd, 'r> Converter<'c, 't, 'i, 'd, 'r> {
             | Origin::BookEnd
             | Origin::ProjectNotes
             | Origin::Recovered
-            | Origin::RecoveredText { .. } => None,
+            | Origin::RecoveredText { .. }
+            | Origin::FromScrivener
+            | Origin::FromScrivenerNote { .. } => None,
         };
         let Some((index, row)) = item else {
             return (self.now.clone(), self.now.clone());
@@ -1110,6 +1273,56 @@ impl<'c, 't, 'i, 'd, 'r> Converter<'c, 't, 'i, 'd, 'r> {
                     }
                     prose_map.insert(content_id, out.djot);
                 }
+                Body::Generated(section) => {
+                    // A note of the "From Scrivener" folder: the metadata mapping's listing.
+                    let Some(djot) = worn.extended.note(*section).filter(|d| !d.is_empty()) else {
+                        continue;
+                    };
+                    let Some(name) = prose_file_name(item_uid, &title, &content.role) else {
+                        continue;
+                    };
+                    prose_refs.push(ProseRef {
+                        file_id: content_id,
+                        uid: common::uid::new_uid(),
+                        created_at: created.clone(),
+                        updated_at: updated.clone(),
+                        activated: row.activated,
+                        role: content.role.clone(),
+                        path: prose_relpath(dir, &name),
+                    });
+                    prose_map.insert(content_id, djot.to_string());
+                }
+            }
+        }
+        // A note-like row's own custom metadata and bookmarks, after its text (D4-8,
+        // D4-20): its note text grows, or begins with them.
+        if let Some(extra) = worn.sheet.filter(|d| !d.is_empty())
+            && skribisto_model::content_allowed(&row.role, &row.sub_role, &ContentRole::NoteText)
+        {
+            let existing = prose_refs
+                .iter()
+                .find(|p| p.role == ContentRole::NoteText)
+                .map(|p| p.file_id);
+            match existing.and_then(|id| prose_map.get_mut(&id)) {
+                Some(djot) => {
+                    djot.push_str("\n\n");
+                    djot.push_str(extra);
+                }
+                None => {
+                    if let Some(name) = prose_file_name(item_uid, &title, &ContentRole::NoteText) {
+                        let content_id = self.ids.take();
+                        prose_refs.push(ProseRef {
+                            file_id: content_id,
+                            uid: common::uid::new_uid(),
+                            created_at: created.clone(),
+                            updated_at: updated.clone(),
+                            activated: row.activated,
+                            role: ContentRole::NoteText,
+                            path: prose_relpath(dir, &name),
+                        });
+                        prose_map.insert(content_id, extra.to_string());
+                    }
+                }
             }
         }
         self.totals.rows += 1;
@@ -1131,8 +1344,8 @@ impl<'c, 't, 'i, 'd, 'r> Converter<'c, 't, 'i, 'd, 'r> {
             is_exportable: row.exportable,
             exclude_from_numbering: row.exclude_from_numbering,
             indent: i64::from(row.depth),
-            word_count_goal: 0,
-            char_count_goal: 0,
+            word_count_goal: worn.goals.0,
+            char_count_goal: worn.goals.1,
             dict_language: Vec::new(),
             aliases: Vec::new(),
             status_id: worn.status,
@@ -2041,9 +2254,74 @@ fn footnote_marker(bytes: &[u8]) -> Option<String> {
         .filter(|t| !t.is_empty())
 }
 
+/// Add each of `edges` (owner, target, by file id) to its owner's references, once and
+/// beside the ones its prose already made, in time linear in the rows and the edges: the
+/// rows found by id once, each owner's references gathered once. Checks `cancel` as it
+/// goes, as the rows before it did.
+fn attach_references<'r>(
+    rows: impl Iterator<Item = (u64, &'r mut Vec<u64>)>,
+    edges: &[(u64, u64)],
+    cancel: &AtomicBool,
+) -> Result<(), ConvertError> {
+    if edges.is_empty() {
+        return Ok(());
+    }
+    let mut references: HashMap<u64, &'r mut Vec<u64>> = rows.collect();
+    let mut held: HashMap<u64, HashSet<u64>> = HashMap::new();
+    for (n, (owner, target)) in edges.iter().enumerate() {
+        if n % 1024 == 0 && cancel.load(Ordering::Relaxed) {
+            return Err(ConvertError::Cancelled);
+        }
+        let Some(list) = references.get_mut(owner) else {
+            continue;
+        };
+        let seen = held
+            .entry(*owner)
+            .or_insert_with(|| list.iter().copied().collect());
+        if seen.insert(*target) {
+            list.push(*target);
+        }
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Many bookmarks over many rows attach in time linear in both, each once, beside the
+    /// references the prose made.
+    #[test]
+    fn references_attach_in_linear_time_each_once() {
+        let n = 60_000u64;
+        let mut rows: Vec<(u64, Vec<u64>)> = (0..n).map(|id| (id, Vec::new())).collect();
+        rows[5].1.push(6);
+        let mut edges: Vec<(u64, u64)> = Vec::new();
+        for owner in 0..n {
+            for k in 1..=10 {
+                edges.push((owner, (owner + k) % n));
+            }
+        }
+        edges.push((5, 6));
+        edges.push((5, 7));
+        let started = std::time::Instant::now();
+        let attached = attach_references(
+            rows.iter_mut().map(|(id, refs)| (*id, refs)),
+            &edges,
+            &AtomicBool::new(false),
+        );
+        let seconds = started.elapsed().as_secs_f64();
+        assert!(attached.is_ok());
+        assert!(seconds < 10.0, "{seconds:.1} s for {} edges", edges.len());
+        assert_eq!(rows[5].1, vec![6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
+        assert_eq!(rows[0].1.len(), 10);
+        let cancelled = attach_references(
+            rows.iter_mut().map(|(id, refs)| (*id, refs)),
+            &edges,
+            &AtomicBool::new(true),
+        );
+        assert!(matches!(cancelled, Err(ConvertError::Cancelled)));
+    }
 
     #[test]
     fn a_pattern_puts_the_title_in_its_slot_or_before_it() {

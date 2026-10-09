@@ -15,8 +15,10 @@
 //! * **One line per kind, not per instance** (D7-8): a key's findings make one sentence
 //!   with their count, and the items behind it are listed under it, in Scrivener's binder
 //!   order and named by their binder path (with the writing it is about, when that is not
-//!   the text). A finding of the document importer says its own sentence about the first
-//!   place and how many more there are. A notice the Project page already showed about one
+//!   the text). A line about the project as a whole lists the names it is about instead,
+//!   when it has some: the keywords and collections left behind, the icons dropped. A
+//!   finding of the document importer says its own sentence about the first place and
+//!   how many more there are. A notice the Project page already showed about one
 //!   item keeps its own sentence, which names it.
 //! * **The writer's own choices** (D7 critique 4): which project, binder file or copy was
 //!   read, what they accepted, how each level or folder they changed came across, the
@@ -29,6 +31,8 @@
 //!
 //! Nothing here is written into the project (D7 Q2): the report lives as long as the
 //! session that made it.
+
+use std::collections::{HashMap, HashSet};
 
 use teksilo::i18n::{LocalizedString, localized};
 use teksilo::prelude::*;
@@ -79,8 +83,22 @@ pub(crate) struct ReportGroup {
 #[derive(Clone)]
 pub(crate) struct ReportLine {
     pub(crate) text: LocalizedString,
-    /// The items, in Scrivener's binder order, each once.
+    /// The items, in Scrivener's binder order, each once; or the names the line lists, in
+    /// the order the project gave them ([`Listed`]).
     pub(crate) items: Vec<ReportItem>,
+    /// What [`Self::items`] are.
+    pub(crate) listed: Listed,
+}
+
+/// What a line lists under its sentence.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Listed {
+    /// The documents it is about, by their path in Scrivener's binder.
+    Items,
+    /// Names the project gave things that are not documents: the keywords or the
+    /// collections it leaves behind, the icons it drops. Each is listed as the project
+    /// wrote it, and none opens a row.
+    Names,
 }
 
 /// An item a line is about.
@@ -431,6 +449,9 @@ fn group_findings(
     record: Option<&ImportRecord>,
 ) -> Vec<ReportGroup> {
     let mut gathered: Vec<Gathering<'_>> = Vec::new();
+    // The line each shared identity started, so a finding finds its line in one lookup:
+    // a crafted project can make tens of thousands of findings of one kind.
+    let mut lines_of: HashMap<(Group, (String, Option<String>)), usize> = HashMap::new();
     for finding in findings {
         if matches!(finding, ScrivenerFinding::Empty) {
             continue;
@@ -465,17 +486,17 @@ fn group_findings(
             continue;
         };
         let identity = (key.to_string(), variant);
-        match gathered
-            .iter_mut()
-            .find(|g| g.group == group && g.shared.as_ref() == Some(&identity))
-        {
-            Some(line) => line.findings.push(finding),
-            None => gathered.push(Gathering {
-                group,
-                shared: Some(identity),
-                findings: vec![finding],
-                changed,
-            }),
+        match lines_of.get(&(group, identity.clone())) {
+            Some(&line) => gathered[line].findings.push(finding),
+            None => {
+                lines_of.insert((group, identity.clone()), gathered.len());
+                gathered.push(Gathering {
+                    group,
+                    shared: Some(identity),
+                    findings: vec![finding],
+                    changed,
+                });
+            }
         }
     }
     GROUPS
@@ -484,9 +505,18 @@ fn group_findings(
             let lines: Vec<ReportLine> = gathered
                 .iter()
                 .filter(|g| g.group == group)
-                .map(|g| ReportLine {
-                    text: line_text(g),
-                    items: items_of(&g.findings),
+                .map(|g| {
+                    let names = names_of(&g.findings);
+                    let (items, listed) = if names.is_empty() {
+                        (items_of(&g.findings), Listed::Items)
+                    } else {
+                        (names, Listed::Names)
+                    };
+                    ReportLine {
+                        text: line_text(g),
+                        items,
+                        listed,
+                    }
                 })
                 .collect();
             (!lines.is_empty()).then_some(ReportGroup { group, lines })
@@ -526,10 +556,37 @@ fn unworded(finding: &ScrivenerFinding) -> LocalizedString {
     }
 }
 
+/// The names findings list (`messages::listed_names`), each once, in the order the
+/// findings give them: listed under the line like items, though no row holds them.
+fn names_of(findings: &[&ScrivenerFinding]) -> Vec<ReportItem> {
+    let mut names: Vec<ReportItem> = Vec::new();
+    let mut seen: HashSet<String> = HashSet::new();
+    for finding in findings {
+        for name in messages::listed_names(finding) {
+            if !seen.insert(name.clone()) {
+                continue;
+            }
+            let order = (true, names.len() as i64);
+            names.push(ReportItem {
+                path: vec![name],
+                place: ScrivenerPlace::Item,
+                uid: None,
+                order,
+            });
+        }
+    }
+    names
+}
+
 /// The items findings are about, each once, in Scrivener's binder order. A finding about
 /// the project as a whole names none.
 fn items_of(findings: &[&ScrivenerFinding]) -> Vec<ReportItem> {
     let mut items: Vec<ReportItem> = Vec::new();
+    let mut seen: HashSet<(
+        Vec<String>,
+        std::mem::Discriminant<ScrivenerPlace>,
+        Option<Uuid>,
+    )> = HashSet::new();
     for finding in findings {
         let ScrivenerFinding::Reported {
             item,
@@ -556,9 +613,13 @@ fn items_of(findings: &[&ScrivenerFinding]) -> Vec<ReportItem> {
             uid: *item_uid,
             order: (*item < 0, *item),
         };
-        if !items.iter().any(|i| {
-            i.path == candidate.path && i.place == candidate.place && i.uid == candidate.uid
-        }) {
+        // `ScrivenerPlace` holds no data, so its variant is the whole of it.
+        let identity = (
+            candidate.path.clone(),
+            std::mem::discriminant(&candidate.place),
+            candidate.uid,
+        );
+        if seen.insert(identity) {
             items.push(candidate);
         }
     }

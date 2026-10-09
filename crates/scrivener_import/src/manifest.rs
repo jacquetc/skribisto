@@ -30,7 +30,7 @@ use crate::dates::{stamp, stamp_opt};
 use crate::model::{
     BinderRow, Collection, CustomFieldDef, CustomValue, DocTarget, ItemKey, ItemKind, ItemMeta,
     KeywordRow, Link, ListOption, Payload, ProjectProperties, ProjectTargets, RawTarget, Rgb,
-    SectionTypeDef, SectionTypes, Stamp, VocabEntry, Vocabulary,
+    SearchSettings, SectionTypeDef, SectionTypes, Stamp, VocabEntry, Vocabulary,
 };
 use crate::names::{is_extension, is_item_number, is_uuid};
 use crate::outcome::ManifestDamage;
@@ -376,9 +376,16 @@ fn read_link(node: roxmltree::Node<'_, '_>) -> Link {
     }
 }
 
+/// The schemes whose address is a place on a disk, the writer's or a shared one, rather
+/// than a page or a mailbox: a link to another Scrivener project (`x-scrivener-item:`,
+/// whose path holds the writer's home folder), and the network shares. What follows the
+/// scheme is a path, and its last step is all a line keeps.
+const PATH_SCHEMES: &[&str] = &["x-scrivener-item:", "smb:", "afp:", "nfs:", "cifs:"];
+
 /// When `destination` names a file on the writer's disk (a `file:` URL, an
-/// absolute or home-relative path, a Windows drive or network path), its file
-/// name alone.
+/// absolute or home-relative path, a Windows drive or network path) or on a shared one
+/// ([`PATH_SCHEMES`]), its file name alone: a path names the writer's folders, and a
+/// project is a file the writer sends to others.
 pub(crate) fn local_file_name(destination: &str) -> Option<String> {
     let trimmed = destination.trim();
     let lower = trimmed.to_ascii_lowercase();
@@ -392,10 +399,19 @@ pub(crate) fn local_file_name(destination: &str) -> Option<String> {
         || trimmed.starts_with('~')
         || trimmed.starts_with("\\\\")
         || drive;
-    if !local {
+    let shared = PATH_SCHEMES.iter().any(|scheme| lower.starts_with(scheme));
+    if !local && !shared {
         return None;
     }
-    let name = trimmed
+    // What follows a shared place's scheme is its path; its query and fragment (`?id=…`)
+    // name what is inside the file, never the file.
+    let path = if shared {
+        let rest = trimmed.split_once(':').map_or("", |(_, rest)| rest);
+        rest.split(['?', '#']).next().unwrap_or_default()
+    } else {
+        trimmed
+    };
+    let name = path
         .trim_end_matches(['/', '\\'])
         .rsplit(['/', '\\'])
         .next()
@@ -593,6 +609,12 @@ fn read_field(node: roxmltree::Node<'_, '_>) -> CustomFieldDef {
                     .collect()
             })
             .unwrap_or_default(),
+        other_attributes: node
+            .attributes()
+            .map(|a| a.name())
+            .filter(|name| !matches!(*name, "ID" | "Type" | "Wraps" | "Align" | "Color"))
+            .map(str::to_string)
+            .collect(),
     }
 }
 
@@ -645,6 +667,21 @@ fn read_collection(node: roxmltree::Node<'_, '_>) -> Collection {
         title: child_text(node, "Title"),
         color: node.attribute("Color").and_then(rgb),
         members,
+        search: child(node, "SearchSettings").map(|settings| SearchSettings {
+            query: text(settings).unwrap_or_default(),
+            kind: settings.attribute("Type").map(str::to_string),
+            operator: settings.attribute("Operator").map(str::to_string),
+            fields: settings
+                .attribute("CustomIDs")
+                .map(|ids| {
+                    ids.split(',')
+                        .map(str::trim)
+                        .filter(|id| !id.is_empty())
+                        .map(str::to_string)
+                        .collect()
+                })
+                .unwrap_or_default(),
+        }),
     }
 }
 
@@ -747,6 +784,20 @@ mod tests {
             local_file_name("\\\\server\\share\\a.pdf").as_deref(),
             Some("a.pdf")
         );
+        assert_eq!(
+            local_file_name("x-scrivener-item:///Users/jane/Documents/Series.scriv?id=0F2A-11#top")
+                .as_deref(),
+            Some("Series.scriv")
+        );
+        assert_eq!(
+            local_file_name("smb://host/share/jane/draft.docx").as_deref(),
+            Some("draft.docx")
+        );
+        assert_eq!(
+            local_file_name("AFP://host/jane/Notes/").as_deref(),
+            Some("Notes")
+        );
+        assert_eq!(local_file_name("x-scrivener-item:").as_deref(), Some(""));
         assert_eq!(local_file_name("https://example.org/page"), None);
         assert_eq!(local_file_name("mailto:someone@example.org"), None);
     }

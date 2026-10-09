@@ -6,7 +6,7 @@
 //! closed choices are tokens a Fluent selector can match; items resolve to where the
 //! writer knew them and to the row that holds them now.
 
-use scrivener_import::metadata::{AuthorSource, Field, TitleSource};
+use scrivener_import::metadata::{AuthorSource, TitleSource};
 use scrivener_import::model::{Generation, ItemKey, TextRole};
 use scrivener_import::outcome::{
     BackupSign, DanglingKind, ManifestDamage, ReadProblem, TemplateDamage, UnsafeName,
@@ -425,38 +425,8 @@ fn every_structure_notice() -> Vec<StructureNotice> {
 }
 
 fn every_metadata_notice() -> Vec<MetadataNotice> {
-    vec![
-        MetadataNotice::StatusCategoriesGuessed {
-            rungs: vec![s("Idea")],
-        },
-        MetadataNotice::DatesUnreadable { items: 2 },
-        MetadataNotice::LabelsBecameTags { tags: 2, rows: 5 },
-        MetadataNotice::StatusesBecameLadder { rungs: 3, rows: 4 },
-        MetadataNotice::LadderSeeded { rungs: 5 },
-        MetadataNotice::FieldRenamed {
-            field: Field::Label,
-            title: s("Time"),
-        },
-        MetadataNotice::NoneValueCollapsed {
-            field: Field::Status,
-            name: s("N/A"),
-            items: 2,
-        },
-        MetadataNotice::UnnamedValue {
-            field: Field::Label,
-            id: 4,
-        },
-        MetadataNotice::TagNameDisambiguated {
-            names: vec![s("Mara (label)")],
-        },
-        MetadataNotice::UnusedLabelsSkipped {
-            names: vec![s("Keeper")],
-        },
-        MetadataNotice::ValuesWithoutRow {
-            field: Field::Label,
-            items: 1,
-        },
-    ]
+    // One of every kind, as the converter keeps them: a kind added there is a row here.
+    scrivener_import::metadata::every_example()
 }
 
 /// A sample of the prose notices: one per shape of argument, each place.
@@ -742,6 +712,42 @@ fn every_metadata_notice_is_a_row_about_the_project() {
     }
 }
 
+/// A day the converter gives as a timestamp reaches the report as the writer's calendar
+/// day; a closed choice as a token.
+#[test]
+fn a_deadline_reaches_the_report_as_a_day_and_a_reason() {
+    use scrivener_import::metadata::DeadlineReason;
+    let planned = row(super::metadata_notice(&MetadataNotice::PacePlanned {
+        day: 4_099_766_400,
+        day_off: true,
+    }));
+    assert_eq!(
+        planned.args,
+        vec![
+            ScrivenerArg::Day {
+                name: s("day"),
+                value: s("2099-12-01")
+            },
+            ScrivenerArg::Flag {
+                name: s("day_off"),
+                value: true
+            },
+        ]
+    );
+    let passed = row(super::metadata_notice(
+        &MetadataNotice::DeadlineNotPlanned {
+            reason: DeadlineReason::Passed,
+            day: None,
+        },
+    ));
+    assert_eq!(
+        passed.args,
+        vec![ScrivenerArg::Token {
+            name: s("reason"),
+            value: s("passed")
+        }]
+    );
+}
 #[test]
 fn a_prose_notice_names_the_writing_it_is_about_and_the_row_holding_it() {
     let names = names();

@@ -192,7 +192,7 @@ pub(crate) fn positional_category(rank: usize, count: usize) -> StatusCategory {
 /// The item a row carries the labels and status of: its own row, a container's own text,
 /// a chapter split out of it, the Draft's own writing. Never the note of its document notes
 /// nor what a template could not hold.
-fn item_of(origin: &Origin) -> Option<u32> {
+pub(crate) fn item_of(origin: &Origin) -> Option<u32> {
     match origin {
         Origin::Item { item }
         | Origin::OwnText { item }
@@ -205,7 +205,9 @@ fn item_of(origin: &Origin) -> Option<u32> {
         | Origin::ProjectNotes
         | Origin::ProjectNote { .. }
         | Origin::Recovered
-        | Origin::RecoveredText { .. } => None,
+        | Origin::RecoveredText { .. }
+        | Origin::FromScrivener
+        | Origin::FromScrivenerNote { .. } => None,
     }
 }
 

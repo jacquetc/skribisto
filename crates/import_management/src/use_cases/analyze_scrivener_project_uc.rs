@@ -93,8 +93,8 @@ impl LongOperation for AnalyzeScrivenerProjectUseCase {
         };
         // Only a model the analysis itself built reaches here, and one always writes out:
         // a failure would be this crate's defect, reported with its chain as one.
-        let dto =
-            scrivener::analysis_to_dto(analysis).map_err(crate::failure::for_long_operation)?;
+        let dto = scrivener::analysis_to_dto(analysis, self.dto.today.date_naive())
+            .map_err(crate::failure::for_long_operation)?;
         if cancel_flag.load(Ordering::Relaxed) {
             return Err(cancelled());
         }

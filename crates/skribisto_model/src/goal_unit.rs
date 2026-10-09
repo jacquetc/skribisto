@@ -11,6 +11,11 @@
 
 pub use common::entities::GoalUnit;
 
+/// The most a word or character goal holds, in either unit: what the goal fields accept
+/// from the writer, and what an importer brings across. A goal is summed over a subtree,
+/// so a bound on each is what keeps the sum a number.
+pub const MAX_GOAL: i64 = 100_000_000;
+
 /// The unit to start a project in, from the primary subtag of its writing language.
 ///
 /// Unlisted or unset languages get [`GoalUnit::Words`].

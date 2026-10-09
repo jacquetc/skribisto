@@ -36,7 +36,8 @@ pub mod traps;
 
 pub use files::{Files, TemplateEncoding, template};
 pub use project::{
-    Author, Backup, Compile, Format, Generation, Item, Kind, Platform, Properties, Spec,
+    Author, Backup, Bookmark, CollectionSpec, Compile, Format, Generation, Item, Kind, Platform,
+    Properties, Replacement, Spec, Targets, TypedField,
 };
 
 /// A 1×1 PNG.

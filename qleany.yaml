@@ -2430,6 +2430,11 @@ features:
         type: boolean
       - name: accept_no_text
         type: boolean
+      # The writer's calendar day as the interface asks, at midnight UTC (how a pace plan's
+      # days are kept): a deadline is still ahead or behind on that day, and a pace plan
+      # the import makes starts on it. The interface's, which knows the writer's time zone.
+      - name: today
+        type: datetime
     dto_out:
       name: ScrivenerAnalysisDto
       fields:
@@ -2723,6 +2728,8 @@ features:
         - ProjectTitle
         - ProjectNotes
         - Recovered
+        - FromScrivener
+        - FromScrivenerNote
       - name: signal_kind
         type: enum
         enum_name: ScrivenerSignal
@@ -2948,6 +2955,20 @@ features:
         enum_values:
         - Empty
         - "Rung { name: String, category: StatusCategory }"
+      # The words of the metadata mapping's second half (keyword, field and collection tags,
+      # the pace plan's day off, the "From Scrivener" folder, its notes and their labels),
+      # resolved by the interface in its own language, as one list in
+      # `scrivener_import::MetadataWords::ORDER` like the other importers' seeded names. A
+      # pattern holds TITLE_SLOT where its value goes; `field-value` also holds
+      # `scrivener_import::VALUE_SLOT`.
+      - name: metadata_words
+        type: string
+        is_list: true
+      # The writer's calendar day as the interface asks, at midnight UTC (how a pace plan's
+      # days are kept): a deadline is still ahead or behind on that day, and a pace plan
+      # the import makes starts on it. The interface's, which knows the writer's time zone.
+      - name: today
+        type: datetime
     dto_out:
       name: ImportScrivenerProjectResultDto
       fields:

@@ -222,12 +222,16 @@ pub(super) fn planner(
 
     // Schedule section: goal + deadline + weekdays + active.
     let goal_field = FixedSize::new().width(160.0).child(
-        SpinBox::new(goal_local.clone(), 0_i64, 100_000_000)
-            .step_type(StepType::Adaptive)
-            .on_value_changed({
-                let vm = vm.clone();
-                move |v, _c| vm.set_goal_words(v)
-            }),
+        SpinBox::new(
+            goal_local.clone(),
+            0_i64,
+            skribisto_model::goal_unit::MAX_GOAL,
+        )
+        .step_type(StepType::Adaptive)
+        .on_value_changed({
+            let vm = vm.clone();
+            move |v, _c| vm.set_goal_words(v)
+        }),
     );
     let deadline_field = FixedSize::new().width(200.0).child(
         DateEdit::new(end_local.clone())

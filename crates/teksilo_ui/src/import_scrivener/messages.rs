@@ -43,15 +43,16 @@ pub(crate) enum Tier {
     /// Something about what the project states (title, author, language): a hint on the
     /// Save page, beside the field it is about.
     SaveHint,
-    /// Something the import does with the binder, or leaves behind: a line in the Review
-    /// page's "before you import" strip.
+    /// Something the import does with the binder or the metadata, or leaves behind: a line
+    /// in the Review page's "before you import" strip, and again in the import's report.
     BeforeImport,
-    /// Said only after the import, in its report (the metadata the import maps).
+    /// Said only after the import, in its report: the prose, and what became of the labels,
+    /// the status list and the dates.
     Report,
 }
 
 /// The four fixed groups of the import report, in their order.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub(crate) enum Group {
     CouldNotBeRead,
     CheckThese,
@@ -446,7 +447,7 @@ pub(crate) const TABLE: &[Entry] = &[
         BeforeImport,
         Some(Left),
     ),
-    // ── the labels, the status list and the dates ────────────────────────────────────────
+    // ── the labels, the status list and the dates: the import's own ──────────────────────
     e(
         "scrivener-metadata-status-categories-guessed",
         Report,
@@ -478,9 +479,11 @@ pub(crate) const TABLE: &[Entry] = &[
         Report,
         Some(Differently),
     ),
+    // A keyword with no name is foreseen before the import (below); a label or a status
+    // with none is said by the import alone.
     e(
         "scrivener-metadata-unnamed-value",
-        Report,
+        BeforeImport,
         Some(Differently),
     ),
     e(
@@ -493,7 +496,167 @@ pub(crate) const TABLE: &[Entry] = &[
         Report,
         Some(Left),
     ),
-    e("scrivener-metadata-values-without-row", Report, Some(Left)),
+    e(
+        "scrivener-metadata-values-without-row",
+        BeforeImport,
+        Some(Left),
+    ),
+    // ── the keywords, custom metadata, collections, bookmarks, targets and the rest ──────
+    // The Review page foresees every one of these from the plan it shows (D7-5), and the
+    // import says them again in its report: their sentences read the same before and
+    // after.
+    e("scrivener-metadata-pov-hint", BeforeImport, Some(Check)),
+    e(
+        "scrivener-metadata-checkbox-default-unknown",
+        BeforeImport,
+        Some(Check),
+    ),
+    e(
+        "scrivener-metadata-goals-in-other-unit",
+        BeforeImport,
+        Some(Check),
+    ),
+    e(
+        "scrivener-metadata-counting-differs",
+        BeforeImport,
+        Some(Check),
+    ),
+    e(
+        "scrivener-metadata-writing-days-not-read",
+        BeforeImport,
+        Some(Check),
+    ),
+    e(
+        "scrivener-metadata-script-mode-rows",
+        BeforeImport,
+        Some(Check),
+    ),
+    e(
+        "scrivener-metadata-keywords-became-tags",
+        BeforeImport,
+        Some(Differently),
+    ),
+    e(
+        "scrivener-metadata-keyword-hierarchy-flattened",
+        BeforeImport,
+        Some(Differently),
+    ),
+    e(
+        "scrivener-metadata-fields-became-tags",
+        BeforeImport,
+        Some(Differently),
+    ),
+    e(
+        "scrivener-metadata-collections-became-tags",
+        BeforeImport,
+        Some(Differently),
+    ),
+    e(
+        "scrivener-metadata-collection-order-lost",
+        BeforeImport,
+        Some(Differently),
+    ),
+    e(
+        "scrivener-metadata-bookmarks-became-links",
+        BeforeImport,
+        Some(Differently),
+    ),
+    e(
+        "scrivener-metadata-goals-kept",
+        BeforeImport,
+        Some(Differently),
+    ),
+    e(
+        "scrivener-metadata-draft-target-kept",
+        BeforeImport,
+        Some(Differently),
+    ),
+    e(
+        "scrivener-metadata-pace-planned",
+        BeforeImport,
+        Some(Differently),
+    ),
+    e(
+        "scrivener-metadata-dictionary-words",
+        BeforeImport,
+        Some(Differently),
+    ),
+    e(
+        "scrivener-metadata-listed-in-import-note",
+        BeforeImport,
+        Some(Differently),
+    ),
+    e(
+        "scrivener-metadata-targets-on-notes",
+        BeforeImport,
+        Some(Differently),
+    ),
+    e(
+        "scrivener-metadata-targets-on-split-documents",
+        BeforeImport,
+        Some(Differently),
+    ),
+    e(
+        "scrivener-metadata-bookmark-ends-without-row",
+        BeforeImport,
+        Some(Differently),
+    ),
+    e(
+        "scrivener-metadata-unused-keywords-skipped",
+        BeforeImport,
+        Some(Left),
+    ),
+    e(
+        "scrivener-metadata-list-value-invalid",
+        BeforeImport,
+        Some(Left),
+    ),
+    e(
+        "scrivener-metadata-undefined-custom-field",
+        BeforeImport,
+        Some(Left),
+    ),
+    e(
+        "scrivener-metadata-collection-members-missing",
+        BeforeImport,
+        Some(Left),
+    ),
+    e(
+        "scrivener-metadata-empty-collections-skipped",
+        BeforeImport,
+        Some(Left),
+    ),
+    e(
+        "scrivener-metadata-bookmarks-unresolved",
+        BeforeImport,
+        Some(Left),
+    ),
+    e(
+        "scrivener-metadata-targets-in-pages",
+        BeforeImport,
+        Some(Left),
+    ),
+    e(
+        "scrivener-metadata-targets-unreadable",
+        BeforeImport,
+        Some(Left),
+    ),
+    e(
+        "scrivener-metadata-draft-target-not-kept",
+        BeforeImport,
+        Some(Left),
+    ),
+    e(
+        "scrivener-metadata-deadline-not-planned",
+        BeforeImport,
+        Some(Left),
+    ),
+    e(
+        "scrivener-metadata-session-target-not-imported",
+        BeforeImport,
+        Some(Left),
+    ),
+    e("scrivener-metadata-icons-dropped", BeforeImport, Some(Left)),
     // ── the prose: the import's own, said only in its report ─────────────────────────────
     // The converter files each of these itself (`group_of` reads its filing first); the
     // groups here are the same, for a test to hold every row to one.
@@ -1815,6 +1978,9 @@ pub(crate) fn summary_line(key: &str, findings: &[&ScrivenerFinding]) -> Option<
             "label" => tr!(import_scrivener_metadata_unnamed_label_line(
                 id = num(a, "id")
             )),
+            "keyword" => tr!(import_scrivener_metadata_unnamed_keyword_line(
+                id = num(a, "id")
+            )),
             _ => tr!(import_scrivener_metadata_unnamed_status_line(
                 id = num(a, "id")
             )),
@@ -1829,14 +1995,289 @@ pub(crate) fn summary_line(key: &str, findings: &[&ScrivenerFinding]) -> Option<
                 count = list(a, "names").len() as i64
             ))
         }
-        "scrivener-metadata-values-without-row" => match txt(a, "field").as_str() {
-            "label" => tr!(import_scrivener_metadata_labels_without_row_line(
-                count = total(findings, "items")
+        "scrivener-metadata-values-without-row" => {
+            let count = total(findings, "items");
+            match txt(a, "field").as_str() {
+                "label" => tr!(import_scrivener_metadata_labels_without_row_line(
+                    count = count
+                )),
+                "keyword" => tr!(import_scrivener_metadata_keywords_without_row_line(
+                    count = count
+                )),
+                "custom-field" => tr!(import_scrivener_metadata_custom_values_without_row_line(
+                    count = count
+                )),
+                "bookmark" => tr!(import_scrivener_metadata_bookmarks_without_row_line(
+                    count = count
+                )),
+                "target" => tr!(import_scrivener_metadata_targets_without_row_line(
+                    count = count
+                )),
+                _ => tr!(import_scrivener_metadata_statuses_without_row_line(
+                    count = count
+                )),
+            }
+        }
+        // The keywords, custom metadata, collections, bookmarks, targets and the rest:
+        // whole-project findings, one per kind, but a field's, a collection's and a note's
+        // own (`line_variant`).
+        "scrivener-metadata-pov-hint" => {
+            let (values, matches) = (list(a, "values"), list(a, "matches"));
+            let count = values.len() as i64;
+            localized(move || {
+                tr!(import_scrivener_metadata_pov_hint_line(
+                    count = count,
+                    values = joined(&values),
+                    matches = joined(&matches)
+                ))
+                .resolve_now()
+            })
+        }
+        "scrivener-metadata-checkbox-default-unknown" => {
+            tr!(import_scrivener_metadata_checkbox_default_unknown_line(
+                field = txt(a, "field")
+            ))
+        }
+        "scrivener-metadata-goals-in-other-unit" => {
+            tr!(import_scrivener_metadata_goals_in_other_unit_line(
+                count = num(a, "count")
+            ))
+        }
+        "scrivener-metadata-counting-differs" => {
+            tr!(import_scrivener_metadata_counting_differs_line())
+        }
+        "scrivener-metadata-writing-days-not-read" => {
+            tr!(import_scrivener_metadata_writing_days_not_read_line(
+                raw = txt(a, "raw")
+            ))
+        }
+        "scrivener-metadata-script-mode-rows" => {
+            tr!(import_scrivener_metadata_script_mode_rows_line(
+                count = num(a, "rows")
+            ))
+        }
+        "scrivener-metadata-keywords-became-tags" => {
+            tr!(import_scrivener_metadata_keywords_became_tags_line(
+                tags = num(a, "tags"),
+                rows = num(a, "rows")
+            ))
+        }
+        "scrivener-metadata-keyword-hierarchy-flattened" => {
+            tr!(import_scrivener_metadata_keyword_hierarchy_flattened_line(
+                count = num(a, "keywords")
+            ))
+        }
+        "scrivener-metadata-fields-became-tags" => {
+            tr!(import_scrivener_metadata_fields_became_tags_line(
+                fields = num(a, "fields"),
+                tags = num(a, "tags"),
+                rows = num(a, "rows")
+            ))
+        }
+        "scrivener-metadata-collections-became-tags" => {
+            tr!(import_scrivener_metadata_collections_became_tags_line(
+                tags = num(a, "tags"),
+                rows = num(a, "rows")
+            ))
+        }
+        "scrivener-metadata-collection-order-lost" => {
+            tr!(import_scrivener_metadata_collection_order_lost_line(
+                count = list(a, "names").len() as i64
+            ))
+        }
+        "scrivener-metadata-bookmarks-became-links" => {
+            tr!(import_scrivener_metadata_bookmarks_became_links_line(
+                count = num(a, "count")
+            ))
+        }
+        "scrivener-metadata-goals-kept" => {
+            tr!(import_scrivener_metadata_goals_kept_line(
+                count = num(a, "rows")
+            ))
+        }
+        "scrivener-metadata-draft-target-kept" => match txt(a, "unit").as_str() {
+            "characters" => tr!(import_scrivener_metadata_draft_target_kept_characters_line(
+                value = num(a, "value")
             )),
-            _ => tr!(import_scrivener_metadata_statuses_without_row_line(
-                count = total(findings, "items")
+            _ => tr!(import_scrivener_metadata_draft_target_kept_words_line(
+                value = num(a, "value")
             )),
         },
+        "scrivener-metadata-pace-planned" => {
+            if flag(a, "day_off") {
+                tr!(import_scrivener_metadata_pace_planned_day_off_line(
+                    day = txt(a, "day")
+                ))
+            } else {
+                tr!(import_scrivener_metadata_pace_planned_line(
+                    day = txt(a, "day")
+                ))
+            }
+        }
+        "scrivener-metadata-dictionary-words" => {
+            tr!(import_scrivener_metadata_dictionary_words_line(
+                count = num(a, "count")
+            ))
+        }
+        "scrivener-metadata-listed-in-import-note" => {
+            listed_line(txt(a, "section"), num(a, "count"))
+        }
+        "scrivener-metadata-targets-on-notes" => {
+            tr!(import_scrivener_metadata_targets_on_notes_line(
+                count = num(a, "count")
+            ))
+        }
+        "scrivener-metadata-targets-on-split-documents" => {
+            tr!(import_scrivener_metadata_targets_on_split_documents_line(
+                count = num(a, "count")
+            ))
+        }
+        "scrivener-metadata-bookmark-ends-without-row" => {
+            tr!(import_scrivener_metadata_bookmark_ends_without_row_line(
+                count = num(a, "count")
+            ))
+        }
+        "scrivener-metadata-unused-keywords-skipped" => {
+            tr!(import_scrivener_metadata_unused_keywords_skipped_line(
+                count = list(a, "names").len() as i64
+            ))
+        }
+        "scrivener-metadata-list-value-invalid" => {
+            tr!(import_scrivener_metadata_list_value_invalid_line(
+                field = txt(a, "field"),
+                count = total(findings, "count")
+            ))
+        }
+        "scrivener-metadata-undefined-custom-field" => {
+            tr!(import_scrivener_metadata_undefined_custom_field_line(
+                count = num(a, "values")
+            ))
+        }
+        "scrivener-metadata-collection-members-missing" => {
+            tr!(import_scrivener_metadata_collection_members_missing_line(
+                name = txt(a, "name"),
+                count = total(findings, "count")
+            ))
+        }
+        "scrivener-metadata-empty-collections-skipped" => {
+            tr!(import_scrivener_metadata_empty_collections_skipped_line(
+                count = list(a, "names").len() as i64
+            ))
+        }
+        "scrivener-metadata-bookmarks-unresolved" => {
+            tr!(import_scrivener_metadata_bookmarks_unresolved_line(
+                count = num(a, "count")
+            ))
+        }
+        "scrivener-metadata-targets-in-pages" => {
+            tr!(import_scrivener_metadata_targets_in_pages_line(
+                count = num(a, "count")
+            ))
+        }
+        "scrivener-metadata-targets-unreadable" => {
+            tr!(import_scrivener_metadata_targets_unreadable_line(
+                count = num(a, "count")
+            ))
+        }
+        "scrivener-metadata-draft-target-not-kept" => {
+            let value = num(a, "value");
+            let (reason, unit) = (txt(a, "reason"), txt(a, "unit"));
+            in_note("project", move |note, folder| {
+                match (reason.as_str(), unit.as_str()) {
+                    ("pages", _) | (_, "pages") => {
+                        tr!(import_scrivener_metadata_draft_target_in_pages_line(
+                            value = value,
+                            note = note,
+                            folder = folder
+                        ))
+                    }
+                    (_, "characters") => {
+                        tr!(
+                            import_scrivener_metadata_draft_target_no_book_characters_line(
+                                value = value,
+                                note = note,
+                                folder = folder
+                            )
+                        )
+                    }
+                    _ => tr!(import_scrivener_metadata_draft_target_no_book_words_line(
+                        value = value,
+                        note = note,
+                        folder = folder
+                    )),
+                }
+            })
+        }
+        "scrivener-metadata-deadline-not-planned" => {
+            let (day, reason) = (txt(a, "day"), txt(a, "reason"));
+            in_note("project", move |note, folder| {
+                let day = day.clone();
+                match reason.as_str() {
+                    _ if day.is_empty() => {
+                        tr!(import_scrivener_metadata_deadline_unreadable_line(
+                            note = note,
+                            folder = folder
+                        ))
+                    }
+                    "passed" => tr!(import_scrivener_metadata_deadline_passed_line(
+                        day = day,
+                        note = note,
+                        folder = folder
+                    )),
+                    "no-writing-day-left" => {
+                        tr!(import_scrivener_metadata_deadline_no_writing_day_line(
+                            day = day,
+                            note = note,
+                            folder = folder
+                        ))
+                    }
+                    "character-goal" => {
+                        tr!(import_scrivener_metadata_deadline_character_goal_line(
+                            day = day,
+                            note = note,
+                            folder = folder
+                        ))
+                    }
+                    "no-single-book" => tr!(import_scrivener_metadata_deadline_no_book_line(
+                        day = day,
+                        note = note,
+                        folder = folder
+                    )),
+                    // No word goal to plan towards, and any reason this version does not
+                    // know: a day that reads and no plan is what the line says.
+                    _ => tr!(import_scrivener_metadata_deadline_no_word_goal_line(
+                        day = day,
+                        note = note,
+                        folder = folder
+                    )),
+                }
+            })
+        }
+        "scrivener-metadata-session-target-not-imported" => {
+            let (value, unit) = (num(a, "value"), txt(a, "unit"));
+            in_note("project", move |note, folder| match unit.as_str() {
+                "characters" => tr!(import_scrivener_metadata_session_target_characters_line(
+                    value = value,
+                    note = note,
+                    folder = folder
+                )),
+                "pages" => tr!(import_scrivener_metadata_session_target_pages_line(
+                    value = value,
+                    note = note,
+                    folder = folder
+                )),
+                _ => tr!(import_scrivener_metadata_session_target_words_line(
+                    value = value,
+                    note = note,
+                    folder = folder
+                )),
+            })
+        }
+        "scrivener-metadata-icons-dropped" => {
+            tr!(import_scrivener_metadata_icons_dropped_line(
+                count = num(a, "rows")
+            ))
+        }
         // The prose: `count` is how many places (texts, notes, synopses) a key was found
         // in, `total` adds up what it counted in each.
         "scrivener-prose-unreadable" => tr!(import_scrivener_prose_unreadable_line(count = count)),
@@ -2119,19 +2560,134 @@ fn first_value(findings: &[&ScrivenerFinding], name: &str) -> String {
         .unwrap_or_default()
 }
 
+/// `values` as one phrase of the interface's language, each as the project wrote it.
+fn joined(values: &[String]) -> String {
+    values.join(&tr!(import_scrivener_list_separator()).resolve_now())
+}
+
+/// The name of a note of the "From Scrivener" folder, by the token the converter gives
+/// it: the words the interface gave the converter for that note's title.
+pub(crate) fn note_title(section: &str) -> Option<LocalizedString> {
+    Some(match section {
+        "project" => tr!(import_scrivener_note_project()),
+        "project-bookmarks" => tr!(import_scrivener_note_project_bookmarks()),
+        "replacements" => tr!(import_scrivener_note_replacements()),
+        "auto-complete" => tr!(import_scrivener_note_auto_complete()),
+        "saved-searches" => tr!(import_scrivener_note_saved_searches()),
+        "custom-metadata" => tr!(import_scrivener_note_custom_metadata()),
+        "targets" => tr!(import_scrivener_note_targets()),
+        "bookmarks" => tr!(import_scrivener_note_bookmarks()),
+        _ => return None,
+    })
+}
+
+/// A sentence naming the note of `section` in the "From Scrivener" folder, and the folder,
+/// as the import titles them: resolved when it is read, so it follows a change of
+/// language as the sentence around them does. A section this version does not know is
+/// named by its token rather than by nothing.
+fn in_note(
+    section: &'static str,
+    sentence: impl Fn(String, String) -> LocalizedString + 'static,
+) -> LocalizedString {
+    localized(move || {
+        let note = note_title(section).map_or_else(|| section.to_string(), |t| t.resolve_now());
+        let folder = tr!(import_scrivener_from_scrivener()).resolve_now();
+        sentence(note, folder).resolve_now()
+    })
+}
+
+/// What one note of the "From Scrivener" folder lists, and that it lists it there.
+fn listed_line(section: String, count: i64) -> LocalizedString {
+    localized(move || {
+        let note = note_title(&section).map_or_else(|| section.clone(), |t| t.resolve_now());
+        let folder = tr!(import_scrivener_from_scrivener()).resolve_now();
+        match section.as_str() {
+            "project" => tr!(import_scrivener_metadata_listed_project_line(
+                count = count,
+                note = note,
+                folder = folder
+            )),
+            "project-bookmarks" => tr!(import_scrivener_metadata_listed_project_bookmarks_line(
+                count = count,
+                note = note,
+                folder = folder
+            )),
+            "replacements" => tr!(import_scrivener_metadata_listed_replacements_line(
+                count = count,
+                note = note,
+                folder = folder
+            )),
+            "auto-complete" => tr!(import_scrivener_metadata_listed_auto_complete_line(
+                count = count,
+                note = note,
+                folder = folder
+            )),
+            "saved-searches" => tr!(import_scrivener_metadata_listed_saved_searches_line(
+                count = count,
+                note = note,
+                folder = folder
+            )),
+            "custom-metadata" => tr!(import_scrivener_metadata_listed_custom_metadata_line(
+                count = count,
+                note = note,
+                folder = folder
+            )),
+            "targets" => tr!(import_scrivener_metadata_listed_targets_line(
+                count = count,
+                note = note,
+                folder = folder
+            )),
+            // The bookmarks, and a note this version does not know, named by its token.
+            _ => tr!(import_scrivener_metadata_listed_bookmarks_line(
+                count = count,
+                note = note,
+                folder = folder
+            )),
+        }
+        .resolve_now()
+    })
+}
+
+/// The names a finding lists, as the project wrote them, for the report to list under
+/// its line: the labels and keywords no document wears, the collections it leaves out or
+/// whose order it loses, the field ids it does not know, the rungs it guessed a kind
+/// for, the icons it drops, the tags it renamed. Empty for a finding that lists none.
+pub(crate) fn listed_names(finding: &ScrivenerFinding) -> Vec<String> {
+    let a = args_of(finding);
+    let name = match key_of(finding) {
+        "scrivener-metadata-unused-labels-skipped"
+        | "scrivener-metadata-unused-keywords-skipped"
+        | "scrivener-metadata-empty-collections-skipped"
+        | "scrivener-metadata-collection-order-lost"
+        | "scrivener-metadata-tag-name-disambiguated"
+        | "scrivener-metadata-icons-dropped" => "names",
+        "scrivener-metadata-undefined-custom-field" => "ids",
+        "scrivener-metadata-status-categories-guessed" => "rungs",
+        _ => return Vec::new(),
+    };
+    list(a, name)
+}
+
 /// The token that makes one key say several sentences, one line each: what formatting
 /// was lost, what content was left out, which reading placed a comment. `None` for a key
 /// whose findings make one line.
 ///
 /// The metadata findings are said once per field (a renamed Label field and a renamed
-/// Status field are two facts), and a value without a name or a value read as none once
-/// per value: each names what it is about, so none may stand for another.
+/// Status field are two facts; so are two checkbox fields, or the invalid values of two
+/// list fields), once per collection missing documents, once per note of the "From
+/// Scrivener" folder, and a value without a name or a value read as none once per value:
+/// each names what it is about, so none may stand for another.
 pub(crate) fn line_variant(finding: &ScrivenerFinding) -> Option<String> {
     let a = args_of(finding);
     let name = match key_of(finding) {
         "scrivener-prose-formatting-lost" | "scrivener-prose-left-out" => "what",
         "scrivener-prose-range-comment-reading" => "reading",
-        "scrivener-metadata-field-renamed" | "scrivener-metadata-values-without-row" => "field",
+        "scrivener-metadata-field-renamed"
+        | "scrivener-metadata-values-without-row"
+        | "scrivener-metadata-checkbox-default-unknown"
+        | "scrivener-metadata-list-value-invalid" => "field",
+        "scrivener-metadata-collection-members-missing" => "name",
+        "scrivener-metadata-listed-in-import-note" => "section",
         "scrivener-metadata-unnamed-value" => {
             return Some(format!("{}:{}", txt(a, "field"), num(a, "id")));
         }

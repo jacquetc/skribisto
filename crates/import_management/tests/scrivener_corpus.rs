@@ -39,6 +39,14 @@ use import_management::{
     ScrivenerPlace, ScrivenerStructure,
 };
 
+/// The writer's calendar day every request of these tests is made on, at midnight UTC as
+/// the interface sends it: the analysis and the review plan on the same day.
+fn today() -> chrono::DateTime<chrono::Utc> {
+    chrono::NaiveDate::from_ymd_opt(2026, 10, 5)
+        .and_then(|d| d.and_hms_opt(0, 0, 0))
+        .map(|d| d.and_utc())
+        .unwrap_or_default()
+}
 /// The projects whose analysis and import times are printed on their own: the largest.
 const TIMED: &[&str] = &["m2-buhler-dissertation", "ll-manual-source"];
 
@@ -83,6 +91,7 @@ fn import_request(
     };
     ImportScrivenerProjectDto {
         source_path: source.to_string_lossy().into_owned(),
+        today: today(),
         fingerprint: analysis.fingerprint.clone(),
         choices: choices.clone(),
         blank_lines_as_scene_breaks: true,
@@ -115,6 +124,20 @@ fn import_request(
             rung("Draft", StatusCategory::Drafting),
             rung("Done", StatusCategory::Final),
         ],
+        // Every word the second half writes, marked with its key: patterns hold their slots.
+        metadata_words: import_management::scrivener::METADATA_WORD_ORDER
+            .iter()
+            .map(|key| match *key {
+                "field-value" => {
+                    format!("{TITLE_SLOT}: {}", import_management::scrivener::VALUE_SLOT)
+                }
+                k if k.ends_with("-tag") => format!("{TITLE_SLOT} ({k})"),
+                k if k.ends_with("-details") || k == "unnamed-keyword" => {
+                    format!("{k} {TITLE_SLOT}")
+                }
+                k => k.to_string(),
+            })
+            .collect(),
         ..ImportScrivenerProjectDto::default()
     }
 }
@@ -184,6 +207,7 @@ fn corpus_every_project_goes_through_both_use_cases() {
                 &mut long_ops,
                 &AnalyzeScrivenerProjectDto {
                     source_path: source.to_string_lossy().into_owned(),
+                    today: today(),
                     ..AnalyzeScrivenerProjectDto::default()
                 },
             )
@@ -238,7 +262,7 @@ fn corpus_every_project_goes_through_both_use_cases() {
                     continue;
                 }
             };
-            if review.structure(choices).as_ref() != Ok(&analysis.structure) {
+            if review.structure(choices, today().date_naive()).as_ref() != Ok(&analysis.structure) {
                 failures.push(format!(
                     "{label}: the review's plan differs from the analysis's"
                 ));

@@ -97,7 +97,9 @@ before importing. Plume carries no author name, so set yours in *Settings ▸ Wo
 
 ## After the import
 
-A message offers *Open now*, which opens the new project.
+A message offers *Open now*, which opens the new project. Its entry under the bell in the
+status bar keeps *Open now* after the message is gone, and opens the project in a window of
+its own.
 
 If the import reports anything it could not transfer, click *Details* to read the list, written
 in the language Skribisto is set to. You can find that report again under the bell in the status

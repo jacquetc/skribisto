@@ -187,7 +187,8 @@ mod imp {
                     None => return Err(ScrivenerReviewError::Unreadable),
                 }
             };
-            review.structure(choices)
+            // On the writer's own calendar, as the import will plan a deadline.
+            review.structure(choices, crate::shared::stamps::today())
         }
 
         /// Subscribe this window's tree to the four long-operation events. Called on every
@@ -370,6 +371,32 @@ mod imp {
             key: key.to_string(),
             family,
             group: ScrivenerReportGroup::Unfiled,
+            place: ScrivenerPlace::Project,
+            item: -1,
+            binder_path: Vec::new(),
+            item_uid: None,
+            args,
+        }
+    }
+
+    fn token_arg(name: &str, value: &str) -> ScrivenerArg {
+        ScrivenerArg::Token {
+            name: name.to_string(),
+            value: value.to_string(),
+        }
+    }
+
+    /// A finding of the metadata mapping, about the project as a whole, filed as the
+    /// converter files it.
+    fn metadata(
+        key: &str,
+        group: ScrivenerReportGroup,
+        args: Vec<ScrivenerArg>,
+    ) -> ScrivenerFinding {
+        ScrivenerFinding::Reported {
+            key: key.to_string(),
+            family: ScrivenerFindingFamily::Metadata,
+            group,
             place: ScrivenerPlace::Project,
             item: -1,
             binder_path: Vec::new(),
@@ -776,6 +803,87 @@ mod imp {
                 }
             }
         }
+        // What the project holds with no field to go to, listed in the "From Scrivener"
+        // folder after the writer's own notes, one note per kind, named by its token.
+        rows.push(ScrivenerPreviewRow::Row {
+            binder: Notes,
+            depth: 0,
+            role: R::Folder,
+            sub_role: S::Note,
+            title: String::new(),
+            title_kind: ScrivenerTitleKind::FromScrivener,
+            exportable: false,
+            activated: true,
+            item: -1,
+            why: ScrivenerSignal::Synthesised,
+        });
+        for (token, listed) in [("project", 3), ("custom-metadata", 4)] {
+            rows.push(ScrivenerPreviewRow::Row {
+                binder: Notes,
+                depth: 1,
+                role: R::Item,
+                sub_role: S::Note,
+                title: token.into(),
+                title_kind: ScrivenerTitleKind::FromScrivenerNote,
+                exportable: false,
+                activated: true,
+                item: -1,
+                why: ScrivenerSignal::Synthesised,
+            });
+            notices.push(metadata(
+                "scrivener-metadata-listed-in-import-note",
+                ScrivenerReportGroup::BroughtAcrossDifferently,
+                vec![token_arg("section", token), count("count", listed)],
+            ));
+        }
+        // What the metadata mapping foresees beyond the folder: a novel's keywords and
+        // collections as tags, its deadline as the book's Pace, keywords no document wears
+        // and the binder icons left behind.
+        notices.extend([
+            metadata(
+                "scrivener-metadata-keywords-became-tags",
+                ScrivenerReportGroup::BroughtAcrossDifferently,
+                vec![count("tags", 4), count("rows", 9)],
+            ),
+            metadata(
+                "scrivener-metadata-collections-became-tags",
+                ScrivenerReportGroup::BroughtAcrossDifferently,
+                vec![count("tags", 1), count("rows", 3)],
+            ),
+            metadata(
+                "scrivener-metadata-pace-planned",
+                ScrivenerReportGroup::BroughtAcrossDifferently,
+                vec![
+                    ScrivenerArg::Day {
+                        name: "day".into(),
+                        value: "2099-12-01".into(),
+                    },
+                    ScrivenerArg::Flag {
+                        name: "day_off".into(),
+                        value: true,
+                    },
+                ],
+            ),
+            metadata(
+                "scrivener-metadata-unused-keywords-skipped",
+                ScrivenerReportGroup::LeftBehind,
+                vec![ScrivenerArg::Texts {
+                    name: "names".into(),
+                    values: vec!["Unused".into()],
+                }],
+            ),
+            metadata(
+                "scrivener-metadata-icons-dropped",
+                ScrivenerReportGroup::LeftBehind,
+                vec![
+                    count("rows", 2),
+                    ScrivenerArg::Texts {
+                        name: "names".into(),
+                        values: vec!["Book (Blue Book)".into()],
+                    },
+                ],
+            ),
+        ]);
         match trash {
             ScrivenerTrashChoice::Import => {
                 for (n, title) in ["Deleted scene", "Old opening"].iter().enumerate() {
@@ -881,7 +989,9 @@ pub use imp::ScrivenerInspection;
 /// screenshots can walk each of them.
 #[cfg(all(test, feature = "mocks"))]
 mod mock_tests {
-    use frontend::import_management::{ScrivenerAnalysisOutcome, ScrivenerQuestion};
+    use frontend::import_management::{
+        ScrivenerAnalysisOutcome, ScrivenerQuestion, ScrivenerStructure,
+    };
 
     use super::imp::fabricated_for_test as fabricated;
     use crate::import_scrivener::messages::{Tier, entry, key_of};
@@ -922,5 +1032,23 @@ mod mock_tests {
             assert!(tiers.contains(&tier), "{tier:?} is not fabricated");
         }
         assert_eq!(tiers.len(), novel.notices.len(), "every notice is worded");
+        // The plan foresees what the metadata mapping does, as the real one does, and
+        // every one of it is worded for the "before you import" strip.
+        let ScrivenerStructure::Planned { notices, .. } = &novel.structure else {
+            panic!("the novel plans");
+        };
+        let metadata: Vec<&str> = notices
+            .iter()
+            .map(key_of)
+            .filter(|k| k.starts_with("scrivener-metadata-"))
+            .collect();
+        assert!(metadata.len() >= 5, "{metadata:?}");
+        for key in metadata {
+            assert_eq!(
+                entry(key).map(|e| e.tier),
+                Some(Tier::BeforeImport),
+                "{key}"
+            );
+        }
     }
 }

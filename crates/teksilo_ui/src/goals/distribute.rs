@@ -115,7 +115,7 @@ pub fn plan(parent_goal: i64, children: &[Child], weighting: Weighting, overwrit
                 proposed,
             })
             .collect();
-        let total = rows.iter().map(|r| r.proposed).sum();
+        let total = rows.iter().map(|r| r.proposed).fold(0, i64::saturating_add);
         return Plan {
             rows,
             total,
@@ -123,8 +123,14 @@ pub fn plan(parent_goal: i64, children: &[Child], weighting: Weighting, overwrit
         };
     }
 
-    let kept: i64 = children.iter().filter(|c| c.goal > 0).map(|c| c.goal).sum();
-    let remaining = parent_goal - kept;
+    // Saturating: a stored target is the writer's, but a hand-edited or crafted project can
+    // carry one past what a goal field accepts, and the sum must stay a number.
+    let kept: i64 = children
+        .iter()
+        .filter(|c| c.goal > 0)
+        .map(|c| c.goal)
+        .fold(0, i64::saturating_add);
+    let remaining = parent_goal.saturating_sub(kept);
     if remaining < 0 {
         // Every row stays as it is; the caller shows the shortfall and refuses to commit.
         let rows: Vec<Proposal> = children
@@ -162,7 +168,7 @@ pub fn plan(parent_goal: i64, children: &[Child], weighting: Weighting, overwrit
             }
         })
         .collect();
-    let total = rows.iter().map(|r| r.proposed).sum();
+    let total = rows.iter().map(|r| r.proposed).fold(0, i64::saturating_add);
     Plan {
         rows,
         total,
@@ -191,6 +197,18 @@ mod tests {
             },
             subtree_rows: rows,
         }
+    }
+
+    /// Targets past what a goal holds, which no field lets a writer type but a hand-edited
+    /// or crafted project can carry, add up to the most a number holds rather than
+    /// overflowing: the plan says the parent's target is exceeded.
+    #[test]
+    fn targets_too_large_to_add_up_are_over_budget_not_an_overflow() {
+        let kids = vec![child(1, i64::MAX, 1, 1), child(2, i64::MAX, 1, 1)];
+        let p = plan(90_000, &kids, Weighting::Length, false);
+        assert_eq!(p.total, i64::MAX);
+        assert!(p.over_budget.is_some());
+        assert!(!p.is_committable());
     }
 
     #[test]

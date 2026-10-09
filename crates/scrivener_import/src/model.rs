@@ -532,6 +532,11 @@ pub struct CustomFieldDef {
     pub none_label: Option<String>,
     /// A list field's options, in display order.
     pub options: Vec<ListOption>,
+    /// The names of the definition's attributes beyond the ones every field carries (`ID`,
+    /// `Type`, `Wraps`, `Align`, `Color`), as written: a checkbox's "ticked by default", whose
+    /// spelling no real project shows, would be one.
+    #[serde(default)]
+    pub other_attributes: Vec<String>,
 }
 
 /// One option of a list field.
@@ -570,6 +575,22 @@ pub struct Collection {
     pub color: Option<Rgb>,
     /// Its members, in the collection's own order.
     pub members: Vec<ItemKey>,
+    /// A saved search's settings (`SearchSettings`), when it has them.
+    #[serde(default)]
+    pub search: Option<SearchSettings>,
+}
+
+/// What a saved or recent search looks for, as written.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SearchSettings {
+    /// The words searched for, the element's text.
+    pub query: String,
+    /// What it searches (`Type`: `All`, `Title`, `CustomMetaData`…), as written.
+    pub kind: Option<String>,
+    /// How the words combine (`Operator`: `Any`, `All`, `Exact`…), as written.
+    pub operator: Option<String>,
+    /// The custom metadata fields a search of them reads (`CustomIDs`), by field id.
+    pub fields: Vec<String>,
 }
 
 /// A format 1.x project note.
@@ -652,6 +673,30 @@ pub struct CompileFacts {
     pub last_format: Option<String>,
     /// The compile formats saved inside the project, in file-name order.
     pub formats: Vec<CompileFormat>,
+    /// `ProjectSettings/MetaData/Subjects/Subject`, in order (format 2.0).
+    #[serde(default)]
+    pub subjects: Vec<String>,
+    /// `ProjectSettings/MetaData/Company` (format 2.0).
+    #[serde(default)]
+    pub company: Option<String>,
+    /// The replacements a compile makes in the text it writes, never in the project:
+    /// `compile.xml`'s project replacements, then `compile.plist`'s variable replacements.
+    #[serde(default)]
+    pub replacements: Vec<CompileReplacement>,
+}
+
+/// One replacement a compile makes, as written.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CompileReplacement {
+    pub file: CompileFile,
+    /// What is replaced.
+    pub replace: String,
+    /// What replaces it.
+    pub with: String,
+    /// `replace` is a regular expression (`RegEx="Yes"`).
+    pub regex: bool,
+    /// Switched off in Scrivener (`Ignore="Yes"`).
+    pub ignored: bool,
 }
 
 /// One author of a format 2.0 compile's metadata.

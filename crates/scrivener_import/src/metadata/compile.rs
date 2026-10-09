@@ -6,13 +6,16 @@
 //! Each generation keeps them in its own file, and the import reads each only as far as it
 //! must:
 //!
-//! * `Settings/compile.xml` (format 2.0): the project's title, abbreviated title, authors
-//!   and language (`ProjectSettings/MetaData`), whether a compile removes struck-through
-//!   text (`ProjectSettings/Options/DeleteStruckThroughText`), and which compile format was
-//!   used last (`LastUsedFormats` under `CurrentFileType`).
+//! * `Settings/compile.xml` (format 2.0): the project's title, abbreviated title, authors,
+//!   subjects, company and language (`ProjectSettings/MetaData`), whether a compile removes
+//!   struck-through text (`ProjectSettings/Options/DeleteStruckThroughText`), the
+//!   replacements a compile makes (`ProjectSettings/Replacements`), and which compile format
+//!   was used last (`LastUsedFormats` under `CurrentFileType`).
 //! * `Settings/compile.plist` (Scrivener 2 for Mac, an XML property list): the e-book
-//!   language (`SCRCompileEBookLanguageKey`) and the struck-through switch
-//!   (`SCRCompileDeleteStruckThroughTextKey`). Its e-book authors and title are not read:
+//!   language (`SCRCompileEBookLanguageKey`), the struck-through switch
+//!   (`SCRCompileDeleteStruckThroughTextKey`) and the variable replacements
+//!   (`SCRCompileVariableReplacementsKey`, `SCRCompileProjectVariableReplacementsKey`: arrays
+//!   of `variable` and `replacement` pairs). Its e-book authors and title are not read:
 //!   in the corpus they are template residue (the template maker's name in writers'
 //!   novels), never the writer's byline.
 //! * `Settings/compile.ini` (Scrivener for Windows 1.x and the Linux beta, Qt settings):
@@ -24,7 +27,7 @@
 //! cannot be read is reported by the analysis like any settings file, and what it would have
 //! said is simply not stated.
 
-use crate::model::{CompileAuthor, CompileFormat};
+use crate::model::{CompileAuthor, CompileFile, CompileFormat, CompileReplacement};
 use crate::xml::{self, XmlProblem, child, child_text, children, text};
 
 /// The most styles one compile format is read with: far past any real one (the largest
@@ -38,6 +41,10 @@ const MAX_NAME_CHARS: usize = 200;
 /// longest names one), and a bound on what a crafted list costs and proposes.
 pub(crate) const MAX_AUTHORS: usize = 100;
 
+/// The most subjects and the most replacements read from one compile's settings: the
+/// corpus's largest holds six replacements and three subjects.
+pub(crate) const MAX_LISTED: usize = 1_000;
+
 /// What `Settings/compile.xml` states.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub(crate) struct CompileXml {
@@ -49,6 +56,9 @@ pub(crate) struct CompileXml {
     pub(crate) language: Option<String>,
     pub(crate) delete_struck_through: Option<bool>,
     pub(crate) last_format: Option<String>,
+    pub(crate) subjects: Vec<String>,
+    pub(crate) company: Option<String>,
+    pub(crate) replacements: Vec<CompileReplacement>,
 }
 
 /// Read `Settings/compile.xml`.
@@ -64,6 +74,13 @@ pub(crate) fn read_xml(part: &str, bytes: &[u8]) -> Result<CompileXml, XmlProble
         out.surname = child_text(meta, "Surname");
         out.forename = child_text(meta, "Forename");
         out.language = child_text(meta, "EbookLanguage");
+        out.company = child_text(meta, "Company");
+        if let Some(subjects) = child(meta, "Subjects") {
+            out.subjects = children(subjects, "Subject")
+                .take(MAX_LISTED)
+                .filter_map(text)
+                .collect();
+        }
         if let Some(authors) = child(meta, "Authors") {
             out.authors = children(authors, "Author")
                 .take(MAX_AUTHORS)
@@ -74,6 +91,22 @@ pub(crate) fn read_xml(part: &str, bytes: &[u8]) -> Result<CompileXml, XmlProble
                 })
                 .collect();
         }
+    }
+    if let Some(replacements) = settings.and_then(|s| child(s, "Replacements")) {
+        let yes = |node: roxmltree::Node<'_, '_>, name: &str| {
+            node.attribute(name)
+                .is_some_and(|v| v.trim().eq_ignore_ascii_case("yes"))
+        };
+        out.replacements = children(replacements, "Replacement")
+            .take(MAX_LISTED)
+            .map(|r| CompileReplacement {
+                file: CompileFile::Xml,
+                replace: child_text(r, "Replace").unwrap_or_default(),
+                with: child_text(r, "With").unwrap_or_default(),
+                regex: yes(r, "RegEx"),
+                ignored: yes(r, "Ignore"),
+            })
+            .collect();
     }
     out.delete_struck_through = settings
         .and_then(|s| child(s, "Options"))
@@ -92,11 +125,13 @@ pub(crate) fn read_xml(part: &str, bytes: &[u8]) -> Result<CompileXml, XmlProble
     Ok(out)
 }
 
-/// What `Settings/compile.plist` states: the e-book language and the struck-through switch.
+/// What `Settings/compile.plist` states: the e-book language, the struck-through switch and
+/// the variable replacements.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub(crate) struct CompilePlist {
     pub(crate) language: Option<String>,
     pub(crate) delete_struck_through: Option<bool>,
+    pub(crate) replacements: Vec<CompileReplacement>,
 }
 
 /// Read `Settings/compile.plist`, an XML property list: one top-level `dict` of `key`
@@ -120,6 +155,39 @@ pub(crate) fn read_plist(part: &str, bytes: &[u8]) -> Result<CompilePlist, XmlPr
         match key.trim() {
             "SCRCompileEBookLanguageKey" if value.tag_name().name() == "string" => {
                 out.language = text(value);
+            }
+            "SCRCompileVariableReplacementsKey" | "SCRCompileProjectVariableReplacementsKey"
+                if value.tag_name().name() == "array" =>
+            {
+                for pair in children(value, "dict").take(MAX_LISTED) {
+                    let (mut variable, mut replacement) = (None, None);
+                    let mut fields = pair.children().filter(|c| c.is_element());
+                    while let Some(field) = fields.next() {
+                        if field.tag_name().name() != "key" {
+                            continue;
+                        }
+                        let Some(value) = fields.next() else {
+                            break;
+                        };
+                        if value.tag_name().name() != "string" {
+                            continue;
+                        }
+                        match text(field).unwrap_or_default().trim() {
+                            "variable" => variable = Some(text(value).unwrap_or_default()),
+                            "replacement" => replacement = Some(text(value).unwrap_or_default()),
+                            _ => {}
+                        }
+                    }
+                    if let Some(replace) = variable.filter(|v| !v.trim().is_empty()) {
+                        out.replacements.push(CompileReplacement {
+                            file: CompileFile::Plist,
+                            replace,
+                            with: replacement.unwrap_or_default(),
+                            regex: false,
+                            ignored: false,
+                        });
+                    }
+                }
             }
             "SCRCompileDeleteStruckThroughTextKey" => {
                 out.delete_struck_through = match value.tag_name().name() {
@@ -220,7 +288,22 @@ mod tests {
             <Surname>Doe</Surname>
             <Forename>Jane</Forename>
             <EbookLanguage>fr</EbookLanguage>
+            <Company>Harbour Press</Company>
+            <Subjects>
+                <Subject>Sea</Subject>
+                <Subject>Lights</Subject>
+            </Subjects>
         </MetaData>
+        <Replacements>
+            <Replacement Ignore="Yes" RegEx="Yes">
+                <Replace>\s+\[@</Replace>
+                <With>[@</With>
+            </Replacement>
+            <Replacement>
+                <Replace>{Name}</Replace>
+                <With>Mara</With>
+            </Replacement>
+        </Replacements>
     </ProjectSettings>
     <CurrentFileType>txt</CurrentFileType>
     <LastUsedFormats>
@@ -240,6 +323,27 @@ mod tests {
         assert_eq!(
             read.last_format.as_deref(),
             Some("A3AAA52A-1166-4FF7-8952-3742980C806D")
+        );
+        assert_eq!(read.company.as_deref(), Some("Harbour Press"));
+        assert_eq!(read.subjects, ["Sea", "Lights"]);
+        assert_eq!(
+            read.replacements,
+            [
+                CompileReplacement {
+                    file: CompileFile::Xml,
+                    replace: r"\s+\[@".to_string(),
+                    with: "[@".to_string(),
+                    regex: true,
+                    ignored: true,
+                },
+                CompileReplacement {
+                    file: CompileFile::Xml,
+                    replace: "{Name}".to_string(),
+                    with: "Mara".to_string(),
+                    regex: false,
+                    ignored: false,
+                },
+            ]
         );
     }
 
@@ -268,11 +372,30 @@ mod tests {
 	<string>de</string>
 	<key>SCRCompileEBookTitleKey</key>
 	<string>Novel Template</string>
+	<key>SCRCompileVariableReplacementsKey</key>
+	<array>
+		<dict>
+			<key>replacement</key>
+			<string>&lt;$n:figure:$@&gt;</string>
+			<key>variable</key>
+			<string>!fig($@)</string>
+		</dict>
+	</array>
 </dict>
 </plist>"#;
         let read = read_plist("compile.plist", plist.as_bytes()).expect("reads");
         assert_eq!(read.language.as_deref(), Some("de"));
         assert_eq!(read.delete_struck_through, Some(true));
+        assert_eq!(
+            read.replacements,
+            [CompileReplacement {
+                file: CompileFile::Plist,
+                replace: "!fig($@)".to_string(),
+                with: "<$n:figure:$@>".to_string(),
+                regex: false,
+                ignored: false,
+            }]
+        );
     }
 
     #[test]

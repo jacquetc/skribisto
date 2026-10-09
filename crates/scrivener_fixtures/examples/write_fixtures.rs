@@ -20,7 +20,10 @@
 //! * `ios`: a project with edits from an iPhone or iPad not yet merged;
 //! * `scrivener1`: a Scrivener 1 for Mac project, which the import refuses;
 //! * `large`: the novel with `N` more scenes (500 by default; the probe asks for 3,000),
-//!   long enough to cancel.
+//!   long enough to cancel;
+//! * `s2`: the Scrivener 3 novel with every kind of metadata the second half of the mapping
+//!   reads ([`Spec::with_s2`]): keywords, custom metadata, collections, bookmarks, targets, a
+//!   deadline still ahead, an auto-complete list, compile replacements and icons.
 //!
 //! Test tooling: every project is invented ([`scrivener_fixtures::text`]), nothing is
 //! copied from a real one.
@@ -115,6 +118,11 @@ fn write_all(out: &Path, scale: usize) -> std::io::Result<()> {
         "scrivener1",
         &write(&one.build(), out, "scrivener1", &one.folder())?,
     );
+
+    let s2 = Spec::novel(Generation::Format20, Platform::Mac)
+        .with_metadata()
+        .with_s2();
+    say("s2", &write(&s2.build(), out, "s2", &s2.folder())?);
 
     let large = large(scale);
     say(

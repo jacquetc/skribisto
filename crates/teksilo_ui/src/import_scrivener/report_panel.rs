@@ -42,7 +42,7 @@ use teksilo::widgets::{
     Link, Padding, Panel, RectWidget, Repeater, ScrollArea, Shrinkable, TextWidget, VStack,
 };
 
-use super::report::{ReportGroup, ReportItem, ReportLine};
+use super::report::{Listed, ReportGroup, ReportItem, ReportLine};
 use super::report_vm::ImportReportViewModel;
 
 /// The dialog's preferred size (D7-8), and the floor it does not shrink past in a smaller
@@ -325,15 +325,27 @@ fn line_view(
     let count = line.items.len() as i64;
     let sentence = line.text.clone();
     // A screen reader meets the button on its own when tabbing: it names its line.
+    let listed = line.listed;
     let named = localized(move || {
-        tr!(import_scrivener_report_items_toggle_named(
-            count = count,
-            line = sentence.resolve_now()
-        ))
+        let line = sentence.resolve_now();
+        match listed {
+            Listed::Items => tr!(import_scrivener_report_items_toggle_named(
+                count = count,
+                line = line
+            )),
+            Listed::Names => tr!(import_scrivener_report_names_toggle_named(
+                count = count,
+                line = line
+            )),
+        }
         .resolve_now()
     });
+    let title = match listed {
+        Listed::Items => tr!(import_scrivener_report_items_toggle(count = count)),
+        Listed::Names => tr!(import_scrivener_report_names_toggle(count = count)),
+    };
     let items = Disclosure::new(
-        tr!(import_scrivener_report_items_toggle(count = count)),
+        title,
         named,
         Signal::new(false),
         Some(group_reachable.clone()),

@@ -1996,6 +1996,9 @@ fn read_compile(
                 facts.surname = read.surname;
                 facts.forename = read.forename;
                 facts.last_format = read.last_format;
+                facts.subjects = read.subjects;
+                facts.company = read.company;
+                facts.replacements = read.replacements;
                 // Scrivener 3 writes the switch only when it is on: silent is off.
                 struck_xml = Some(read.delete_struck_through.unwrap_or(false));
                 if let Some(value) = read.language {
@@ -2015,6 +2018,7 @@ fn read_compile(
         match metadata::compile::read_plist(&m.path, &bytes) {
             Ok(read) => {
                 struck_plist = read.delete_struck_through;
+                facts.replacements.extend(read.replacements);
                 if let Some(value) = read.language {
                     facts.languages.push(CompileLanguage {
                         file: CompileFile::Plist,

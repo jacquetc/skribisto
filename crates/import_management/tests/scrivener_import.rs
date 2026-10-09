@@ -105,9 +105,19 @@ fn write(spec: &Spec, parent: &Path) -> PathBuf {
     folder
 }
 
+/// The writer's calendar day every request of these tests is made on, at midnight UTC as
+/// the interface sends it: the analysis and the review plan on the same day.
+fn today() -> chrono::DateTime<chrono::Utc> {
+    chrono::NaiveDate::from_ymd_opt(2026, 10, 5)
+        .and_then(|d| d.and_hms_opt(0, 0, 0))
+        .map(|d| d.and_utc())
+        .unwrap_or_default()
+}
+
 fn analysis_request(source: &Path) -> AnalyzeScrivenerProjectDto {
     AnalyzeScrivenerProjectDto {
         source_path: source.to_string_lossy().into_owned(),
+        today: today(),
         ..AnalyzeScrivenerProjectDto::default()
     }
 }
@@ -140,8 +150,29 @@ fn french(request: ImportScrivenerProjectDto) -> ImportScrivenerProjectDto {
             rung("Relu", StatusCategory::Revised),
             rung("Terminé", StatusCategory::Final),
         ],
+        metadata_words: french_metadata_words(),
         ..request
     }
+}
+
+/// The second half's words, in French, one per key in the converter's order.
+fn french_metadata_words() -> Vec<String> {
+    use import_management::scrivener::{METADATA_WORD_ORDER, VALUE_SLOT};
+    METADATA_WORD_ORDER
+        .iter()
+        .map(|key| match *key {
+            "keyword-details" => format!("Le mot-clé « {TITLE_SLOT} » de Scrivener"),
+            "unnamed-keyword" => format!("Mot-clé {TITLE_SLOT}"),
+            "keyword-tag" => format!("{TITLE_SLOT} (mot-clé)"),
+            "collection-details" => "Une collection de Scrivener".to_string(),
+            "collection-tag" => format!("{TITLE_SLOT} (collection)"),
+            "field-details" => format!("Du champ « {TITLE_SLOT} » de Scrivener"),
+            "field-value" => format!("{TITLE_SLOT} : {VALUE_SLOT}"),
+            "field-tag" => format!("{TITLE_SLOT} (champ)"),
+            "from-scrivener" => "Venu de Scrivener".to_string(),
+            other => format!("Mot français {other}"),
+        })
+        .collect()
 }
 
 /// The import of what `analysis` read, with its fingerprint and its detected choices, into
@@ -156,6 +187,7 @@ fn import_request(
     };
     french(ImportScrivenerProjectDto {
         source_path: source.to_string_lossy().into_owned(),
+        today: today(),
         fingerprint: analysis.fingerprint.clone(),
         choices: choices.clone(),
         blank_lines_as_scene_breaks: true,
@@ -272,8 +304,12 @@ fn a_project_is_analysed_imported_and_opened() {
         };
         assert!(!rows.is_empty());
         let review = ScrivenerReview::open(&analysis.review_data).expect("the review opens");
-        assert_eq!(review.structure(&[]).as_ref(), Ok(&analysis.structure));
-        assert_eq!(review.structure(choices).as_ref(), Ok(&analysis.structure));
+        let day = today().date_naive();
+        assert_eq!(review.structure(&[], day).as_ref(), Ok(&analysis.structure));
+        assert_eq!(
+            review.structure(choices, day).as_ref(),
+            Ok(&analysis.structure)
+        );
 
         let output = dir.path().join("novel.skrib");
         let result = backend.imported(&import_request(&source, &analysis, &output));
@@ -710,6 +746,9 @@ fn with_french_words_no_english_reaches_the_project() {
         // What the project itself holds, which it may bring in any language.
         let mut own: BTreeSet<String> = spec.items.iter().filter_map(|i| i.title.clone()).collect();
         own.extend(spec.labels.iter().map(|(_, name)| name.clone()));
+        own.extend(spec.keywords.iter().map(|(_, _, name)| name.clone()));
+        // The novel's collection of the scenes to revise.
+        own.insert("To revise".to_string());
         // The fixture's format 1.x project note, titled as Scrivener titles its first one.
         own.insert("General".to_string());
         own.insert(analysis.proposed_title.clone());
@@ -724,6 +763,11 @@ fn with_french_words_no_english_reaches_the_project() {
             "Venu de Scrivener",
             "(étiquette)",
             "Sans titre",
+            "(mot-clé)",
+            "Le mot-clé « ",
+            "Une collection de Scrivener",
+            "Du champ « ",
+            "Mot français ",
         ];
         let from_the_interface = |text: &str| french_words.iter().any(|w| text.contains(w));
         let rungs: BTreeSet<String> = request
@@ -795,5 +839,50 @@ fn with_french_words_no_english_reaches_the_project() {
             .filter(|name| name.contains("documentation"))
             .collect();
         assert_eq!(research, ["roman - documentation"], "{generation:?}");
+    }
+}
+
+/// The review page foresees what the metadata mapping does: every metadata finding of the
+/// plan the analysis hands over is one the import then reports, word for word, so the
+/// "before you import" strip never says what the report does not.
+#[test]
+fn the_review_foresees_the_metadata_the_import_reports() {
+    for generation in [Generation::Format20, Generation::Format15] {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let spec = Spec::novel(generation, Platform::Windows)
+            .with_metadata()
+            .with_s2();
+        let source = write(&spec, dir.path());
+        let mut backend = Backend::new();
+        let analysis = backend.analyse(&analysis_request(&source));
+        let ScrivenerStructure::Planned { notices, .. } = &analysis.structure else {
+            panic!("{generation:?}: the analysis planned no structure");
+        };
+        let foreseen: Vec<&ScrivenerFinding> = notices
+            .iter()
+            .filter(|f| reported(f).1 == &ScrivenerFindingFamily::Metadata)
+            .collect();
+        let keys: BTreeSet<&str> = foreseen.iter().map(|f| reported(f).0).collect();
+        for key in [
+            "scrivener-metadata-keywords-became-tags",
+            "scrivener-metadata-collections-became-tags",
+            "scrivener-metadata-pace-planned",
+            "scrivener-metadata-listed-in-import-note",
+            "scrivener-metadata-icons-dropped",
+            "scrivener-metadata-unused-keywords-skipped",
+        ] {
+            assert!(
+                keys.contains(key),
+                "{generation:?}: {key} is not foreseen in {keys:?}"
+            );
+        }
+        let output = dir.path().join("roman.skrib");
+        let result = backend.imported(&import_request(&source, &analysis, &output));
+        for finding in foreseen {
+            assert!(
+                result.findings.contains(finding),
+                "{generation:?}: the review said {finding:?}, the import did not"
+            );
+        }
     }
 }

@@ -190,6 +190,8 @@ fn title_of(row: &PlannedRow) -> String {
         PlannedTitle::ProjectTitle(t) => format!("[{t}]"),
         PlannedTitle::ProjectNotes => "<project notes>".to_string(),
         PlannedTitle::Recovered => "<recovered>".to_string(),
+        PlannedTitle::FromScrivener => "<from scrivener>".to_string(),
+        PlannedTitle::FromScrivenerNote(section) => format!("<{}>", section.token()),
     }
 }
 

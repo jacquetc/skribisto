@@ -345,6 +345,8 @@ fn every_spec() -> Vec<Spec> {
             // The same project with every piece of metadata the importer maps.
             if g != Generation::ScrivenerOne {
                 specs.push(spec.clone().with_metadata());
+                // And every piece the second half of the mapping reads.
+                specs.push(spec.clone().with_metadata().with_s2());
             }
             // The same project with a lock and a placeholder spare binder.
             spec.lock_host = Some("Test-Host".to_string());

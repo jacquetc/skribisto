@@ -96,8 +96,14 @@ pub struct Item {
     pub section_type: Option<usize>,
     /// Custom metadata values: field id, value.
     pub custom: Vec<(String, String)>,
-    /// A document target, in words.
+    /// A document target, in words unless `target_kind` names another unit.
     pub target: Option<u32>,
+    /// The document target's `Type` (`Words`, `Characters`); `None` writes `Words`.
+    pub target_kind: Option<String>,
+    /// Document bookmarks (format 2.0) or references (format 1.x).
+    pub bookmarks: Vec<Bookmark>,
+    /// Written in script mode (`TextMode` = `Script`; formats 1.5 and 2.0).
+    pub script_mode: bool,
     /// `Created`, as written; `None` writes the fixed [`DATE`].
     pub created: Option<String>,
     /// `Modified`, as written; `None` writes the fixed [`DATE`].
@@ -125,6 +131,9 @@ impl Item {
             section_type: None,
             custom: Vec::new(),
             target: None,
+            target_kind: None,
+            bookmarks: Vec::new(),
+            script_mode: false,
             created: None,
             modified: None,
             icon: None,
@@ -151,6 +160,109 @@ impl Item {
         self.include_in_compile = true;
         self
     }
+}
+
+/// A bookmark (format 2.0) or a reference (format 1.x): to an item of the project, or to a
+/// destination outside it.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Bookmark {
+    /// The item it points at, by index.
+    pub target: Option<usize>,
+    /// It points at an item the binder does not hold.
+    pub dangling: bool,
+    /// A URL, as written.
+    pub destination: Option<String>,
+    /// A format 1.x reference's description, or a bookmark's label.
+    pub text: Option<String>,
+}
+
+impl Bookmark {
+    /// A bookmark to item `index`.
+    pub fn to(index: usize) -> Self {
+        Bookmark {
+            target: Some(index),
+            ..Bookmark::default()
+        }
+    }
+
+    /// A bookmark to a web page.
+    pub fn web(url: &str, label: Option<&str>) -> Self {
+        Bookmark {
+            destination: Some(url.to_string()),
+            text: label.map(str::to_string),
+            ..Bookmark::default()
+        }
+    }
+}
+
+/// A custom metadata field of a type format 2.0 writes: a list or a checkbox.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TypedField {
+    pub id: String,
+    pub title: String,
+    /// `List` or `Checkbox`.
+    pub kind: String,
+    /// A list's options, id and name, in display order.
+    pub options: Vec<(i64, String)>,
+    /// A list's name for "no option".
+    pub none: Option<String>,
+}
+
+/// A collection.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CollectionSpec {
+    /// `Binder`, `RecentSearch`, `SavedSearch` or `Arbitrary`.
+    pub kind: String,
+    pub title: String,
+    /// Its members, by item index.
+    pub members: Vec<usize>,
+    /// A search's words, `Type`, `Operator` and `CustomIDs` (format 2.0 for a saved one).
+    pub search: Option<(String, String, String, Option<String>)>,
+}
+
+/// The project targets.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Targets {
+    pub draft: u32,
+    /// `Words`, `Characters`.
+    pub draft_kind: String,
+    pub deadline: Option<String>,
+    pub ignore_deadline: bool,
+    pub count_included_only: bool,
+    pub compile_group_only: bool,
+    pub session: u32,
+    pub session_kind: String,
+    /// `WritingDays`, as written.
+    pub writing_days: String,
+    pub can_write_on_deadline: bool,
+}
+
+impl Default for Targets {
+    /// What a novel's targets hold: an 80,000-word draft target with its deadline ignored,
+    /// a 1,000-word session target, every day a writing day.
+    fn default() -> Self {
+        Targets {
+            draft: 80_000,
+            draft_kind: "Words".to_string(),
+            deadline: Some(LATER.to_string()),
+            ignore_deadline: true,
+            count_included_only: true,
+            compile_group_only: false,
+            session: 1_000,
+            session_kind: "Words".to_string(),
+            writing_days: String::new(),
+            can_write_on_deadline: false,
+        }
+    }
+}
+
+/// A compile replacement (format 2.0 `compile.xml`).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Replacement {
+    pub replace: String,
+    pub with: String,
+    pub regex: bool,
+    pub ignore: bool,
 }
 
 /// Scrivener's spare binder copy, `Files/binder.backup`.
@@ -204,12 +316,25 @@ pub struct Spec {
     pub compile: Compile,
     /// The days of `Files/writing.history` (format 2.0), as written.
     pub writing_days: Vec<String>,
+    /// List and checkbox fields (format 2.0).
+    pub typed_fields: Vec<TypedField>,
+    /// The collections; `None` writes the novel's (the binder, and one holding the first
+    /// two texts).
+    pub collections: Option<Vec<CollectionSpec>>,
+    pub targets: Targets,
+    /// Project bookmarks (format 2.0).
+    pub project_bookmarks: Vec<Bookmark>,
+    /// Favourites, by item index (format 1.x).
+    pub favorites: Vec<usize>,
+    /// The auto-complete list (format 2.0), as written.
+    pub auto_complete: Vec<String>,
 }
 
 /// Format 1.x `ProjectProperties`.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Properties {
     pub title: Option<String>,
+    pub abbreviated_title: Option<String>,
     pub full_name: Option<String>,
     pub first_name: Option<String>,
     pub last_name: Option<String>,
@@ -252,6 +377,14 @@ pub struct Compile {
     pub formats: Vec<Format>,
     /// The format last compiled to rich text, by id.
     pub last_format: Option<String>,
+    /// Format 2.0's `ProjectAbbreviatedTitle`, `Subjects` and `Company`.
+    pub abbreviated_title: Option<String>,
+    pub subjects: Vec<String>,
+    pub company: Option<String>,
+    /// Format 2.0's project replacements.
+    pub replacements: Vec<Replacement>,
+    /// Scrivener 2 for Mac's variable replacements (`compile.plist`): variable, replacement.
+    pub variable_replacements: Vec<(String, String)>,
 }
 
 /// A fixed date in Scrivener's form.
@@ -380,6 +513,12 @@ impl Spec {
             properties: None,
             compile: Compile::default(),
             writing_days: vec!["2024-03-14".to_string()],
+            typed_fields: Vec::new(),
+            collections: None,
+            targets: Targets::default(),
+            project_bookmarks: Vec::new(),
+            favorites: Vec::new(),
+            auto_complete: Vec::new(),
         };
         spec.template_folder = spec.index_of("Templates");
         spec
@@ -417,10 +556,12 @@ impl Spec {
                 raw: Vec::new(),
             }],
             last_format: Some(uuid_for(self.seed ^ 0xF0, 1)),
+            ..Compile::default()
         };
         if matches!(g, Generation::Format10 | Generation::Format15) {
             self.properties = Some(Properties {
                 title: Some("The Lighthouse Keepers".to_string()),
+                abbreviated_title: None,
                 full_name: Some("Mara Holt".to_string()),
                 first_name: None,
                 last_name: None,
@@ -472,6 +613,255 @@ impl Spec {
                 item.modified = modified.map(str::to_string);
             }
         }
+        self
+    }
+
+    /// The same project with every piece of metadata the second half of the mapping reads
+    /// set, as far as the generation writes it: a story-bible folder of two entries, nested
+    /// keywords (one unused), text fields with a value on a scene, a note and a document
+    /// template, list and checkbox fields (format 2.0), collections of every kind (a saved
+    /// search in format 2.0), bookmarks and references of every kind (to a note, to a
+    /// story-bible entry, to the web, to itself, to nothing, to a template), project
+    /// bookmarks (format 2.0) or favourites (format 1.x), document targets on a scene and on
+    /// notes, a future deadline Scrivener would plan towards, an auto-complete list (format
+    /// 2.0), compile replacements, an abbreviated title, subjects and a company, icons, and a
+    /// document in script mode (formats 1.5 and 2.0).
+    pub fn with_s2(mut self) -> Self {
+        let g = self.generation;
+        let v3 = g == Generation::Format20;
+        let x = matches!(g, Generation::Format10 | Generation::Format15);
+        // A story-bible folder before the Trash.
+        if let Some(trash) = self.items.iter().position(|i| i.kind == Kind::Trash) {
+            let bible = [
+                Item::new(0, Kind::Folder, "Characters"),
+                Item::new(1, Kind::Text, "Mara Holt").with_text(12, 1),
+                Item::new(1, Kind::Text, "The Inspector").with_text(13, 1),
+            ];
+            for (k, item) in bible.into_iter().enumerate() {
+                self.items.insert(trash + k, item);
+            }
+        }
+        let at = |spec: &Spec, title: &str| spec.index_of(title).unwrap_or(0);
+        let (arrival, harbour, night, mara, ideas, sheet, inspector, holt) = (
+            at(&self, "Arrival"),
+            at(&self, "The Harbour"),
+            at(&self, "Night Watch"),
+            at(&self, "Mara"),
+            at(&self, "Ideas"),
+            at(&self, "Scene sheet"),
+            at(&self, "The Inspector"),
+            at(&self, "Mara Holt"),
+        );
+        self.keywords = vec![
+            (0, 1, "People".to_string()),
+            (1, 2, "Mara".to_string()),
+            (1, 3, "The inspector".to_string()),
+            (0, 4, "Places".to_string()),
+            (1, 5, "Harbour town".to_string()),
+            (0, 6, "Unused".to_string()),
+        ];
+        self.custom_fields = vec![
+            ("setting".to_string(), "Setting".to_string()),
+            ("eyes".to_string(), "Eyes".to_string()),
+        ];
+        if v3 {
+            self.typed_fields = vec![
+                TypedField {
+                    id: "platform".to_string(),
+                    title: "Platform".to_string(),
+                    kind: "List".to_string(),
+                    options: vec![(14, "Mac".to_string()), (0, "Windows".to_string())],
+                    none: Some("All".to_string()),
+                },
+                TypedField {
+                    id: "done".to_string(),
+                    title: "Done".to_string(),
+                    kind: "Checkbox".to_string(),
+                    options: Vec::new(),
+                    none: None,
+                },
+            ];
+        }
+        let description = |text: &str| x.then(|| text.to_string());
+        for (index, edit) in [
+            (arrival, 0usize),
+            (harbour, 1),
+            (night, 2),
+            (mara, 3),
+            (ideas, 4),
+            (sheet, 5),
+        ] {
+            let item = &mut self.items[index];
+            match edit {
+                0 => {
+                    item.custom.push(("platform".to_string(), "14".to_string()));
+                    item.custom.push(("done".to_string(), "No".to_string()));
+                    item.bookmarks = vec![
+                        Bookmark {
+                            text: description("Where she grew up"),
+                            ..Bookmark::to(mara)
+                        },
+                        Bookmark::to(inspector),
+                        Bookmark::web("https://example.org/tides", Some("Tide chart")),
+                        Bookmark::to(arrival),
+                        Bookmark {
+                            dangling: true,
+                            ..Bookmark::default()
+                        },
+                        Bookmark::to(sheet),
+                    ];
+                    item.icon = Some("Book (Blue Book)".to_string());
+                }
+                1 => {
+                    item.keywords = vec![5];
+                    item.custom = vec![
+                        ("setting".to_string(), "Quay: 10:30:45".to_string()),
+                        ("platform".to_string(), "0".to_string()),
+                        ("done".to_string(), "Yes".to_string()),
+                    ];
+                    item.target = Some(900);
+                    item.icon = Some("Book (Blue Book)".to_string());
+                }
+                2 => {
+                    item.custom.push(("platform".to_string(), "-1".to_string()));
+                    item.script_mode = true;
+                }
+                3 => {
+                    item.custom.push((
+                        "eyes".to_string(),
+                        "Grey\nAt 10:30:45 she said \"no\"".to_string(),
+                    ));
+                    item.bookmarks = vec![
+                        Bookmark::to(ideas),
+                        Bookmark::web("https://example.org/map", Some("Map")),
+                    ];
+                    item.target = Some(600);
+                }
+                4 => {
+                    item.custom = vec![
+                        ("platform".to_string(), "99".to_string()),
+                        ("ghost".to_string(), "Boo".to_string()),
+                    ];
+                    item.target = Some(2000);
+                    item.target_kind = Some("Characters".to_string());
+                    item.icon = Some("To Do (Ticked)".to_string());
+                }
+                _ => {
+                    item.keywords = vec![3];
+                    item.custom = vec![("setting".to_string(), "Anywhere".to_string())];
+                    item.bookmarks = vec![Bookmark::to(ideas)];
+                    item.target = Some(100);
+                }
+            }
+        }
+        // The text and the platform values only where the generation writes them.
+        if !v3 {
+            for item in &mut self.items {
+                item.custom
+                    .retain(|(field, _)| field != "platform" && field != "done");
+            }
+        }
+        let mut collections = vec![
+            CollectionSpec {
+                kind: "Binder".to_string(),
+                title: "Binder".to_string(),
+                members: Vec::new(),
+                search: None,
+            },
+            CollectionSpec {
+                kind: "Arbitrary".to_string(),
+                title: "To revise".to_string(),
+                members: vec![arrival, harbour],
+                search: None,
+            },
+            CollectionSpec {
+                kind: "Arbitrary".to_string(),
+                title: "Cast".to_string(),
+                members: vec![holt],
+                search: None,
+            },
+            CollectionSpec {
+                kind: "Arbitrary".to_string(),
+                title: "Empty".to_string(),
+                members: Vec::new(),
+                search: None,
+            },
+            CollectionSpec {
+                kind: "Arbitrary".to_string(),
+                title: "Templates only".to_string(),
+                members: vec![sheet],
+                search: None,
+            },
+            CollectionSpec {
+                kind: "RecentSearch".to_string(),
+                title: "Search Results".to_string(),
+                members: Vec::new(),
+                search: Some((
+                    "harbour".to_string(),
+                    "All".to_string(),
+                    "Any".to_string(),
+                    None,
+                )),
+            },
+        ];
+        if v3 {
+            collections.push(CollectionSpec {
+                kind: "SavedSearch".to_string(),
+                title: "Settings".to_string(),
+                members: Vec::new(),
+                search: Some((
+                    "Quay".to_string(),
+                    "CustomMetaData".to_string(),
+                    "Exact".to_string(),
+                    Some("setting".to_string()),
+                )),
+            });
+            self.project_bookmarks = vec![
+                Bookmark::to(ideas),
+                Bookmark::web("https://example.org", Some("Site")),
+            ];
+            self.auto_complete = vec![
+                "Mara".to_string(),
+                "Mara".to_string(),
+                "LUKE".to_string(),
+                " Harbour ".to_string(),
+                "Harbour master".to_string(),
+                String::new(),
+            ];
+            self.compile.abbreviated_title = Some("Keepers".to_string());
+            self.compile.subjects = vec!["Sea".to_string(), "Lights".to_string()];
+            self.compile.company = Some("Harbour Press".to_string());
+            self.compile.replacements = vec![
+                Replacement {
+                    replace: r"\s+\[@".to_string(),
+                    with: "[@".to_string(),
+                    regex: true,
+                    ignore: true,
+                },
+                Replacement {
+                    replace: "{Name}".to_string(),
+                    with: "Mara".to_string(),
+                    regex: false,
+                    ignore: false,
+                },
+            ];
+        }
+        if x {
+            self.favorites = vec![ideas];
+            let mut properties = self.properties.clone().unwrap_or_default();
+            properties.abbreviated_title = Some("Keepers".to_string());
+            self.properties = Some(properties);
+            if self.platform == Platform::Mac {
+                self.compile.variable_replacements =
+                    vec![("!fig($@)".to_string(), "<$n:figure:$@>".to_string())];
+            }
+        }
+        self.collections = Some(collections);
+        self.targets = Targets {
+            deadline: Some("2099-12-01 10:00:00 +0100".to_string()),
+            ignore_deadline: false,
+            ..Targets::default()
+        };
         self
     }
 
@@ -936,10 +1326,51 @@ impl Spec {
                         xml_escape(forename)
                     ));
                 }
+                if let Some(abbreviated) = &c.abbreviated_title {
+                    meta.push_str(&format!(
+                        "            <ProjectAbbreviatedTitle>{}</ProjectAbbreviatedTitle>\n",
+                        xml_escape(abbreviated)
+                    ));
+                }
+                if !c.subjects.is_empty() {
+                    meta.push_str("            <Subjects>\n");
+                    for subject in &c.subjects {
+                        meta.push_str(&format!(
+                            "                <Subject>{}</Subject>\n",
+                            xml_escape(subject)
+                        ));
+                    }
+                    meta.push_str("            </Subjects>\n");
+                }
+                if let Some(company) = &c.company {
+                    meta.push_str(&format!(
+                        "            <Company>{}</Company>\n",
+                        xml_escape(company)
+                    ));
+                }
                 meta.push_str(&format!(
                     "            <EbookLanguage>{}</EbookLanguage>\n",
                     xml_escape(c.language.as_deref().unwrap_or("en"))
                 ));
+                let mut replacements = String::new();
+                if !c.replacements.is_empty() {
+                    replacements.push_str("        <Replacements>\n");
+                    for r in &c.replacements {
+                        let mut attributes = String::new();
+                        if r.ignore {
+                            attributes.push_str(" Ignore=\"Yes\"");
+                        }
+                        if r.regex {
+                            attributes.push_str(" RegEx=\"Yes\"");
+                        }
+                        replacements.push_str(&format!(
+                            "            <Replacement{attributes}>\n                <Replace>{}</Replace>\n                <With>{}</With>\n            </Replacement>\n",
+                            xml_escape(&r.replace),
+                            xml_escape(&r.with)
+                        ));
+                    }
+                    replacements.push_str("        </Replacements>\n");
+                }
                 let struck = if c.delete_struck_through { "Yes" } else { "No" };
                 let last = c
                     .last_format
@@ -954,7 +1385,7 @@ impl Spec {
                 files.put(
                     "Settings/compile.xml",
                     format!(
-                        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CompileSettings>\n    <ProjectSettings>\n        <Options>\n            <RemoveAnnotations>Yes</RemoveAnnotations>\n            <DeleteStruckThroughText>{struck}</DeleteStruckThroughText>\n        </Options>\n        <MetaData>\n{meta}        </MetaData>\n    </ProjectSettings>\n{last}</CompileSettings>\n"
+                        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CompileSettings>\n    <ProjectSettings>\n        <Options>\n            <RemoveAnnotations>Yes</RemoveAnnotations>\n            <DeleteStruckThroughText>{struck}</DeleteStruckThroughText>\n        </Options>\n        <MetaData>\n{meta}        </MetaData>\n{replacements}    </ProjectSettings>\n{last}</CompileSettings>\n"
                     ),
                 );
                 for format in &c.formats {
@@ -986,10 +1417,25 @@ impl Spec {
                 } else {
                     "<false/>"
                 };
+                let mut variables =
+                    String::from("\t<key>SCRCompileVariableReplacementsKey</key>\n");
+                if c.variable_replacements.is_empty() {
+                    variables.push_str("\t<array/>\n");
+                } else {
+                    variables.push_str("\t<array>\n");
+                    for (variable, replacement) in &c.variable_replacements {
+                        variables.push_str(&format!(
+                            "\t\t<dict>\n\t\t\t<key>replacement</key>\n\t\t\t<string>{}</string>\n\t\t\t<key>variable</key>\n\t\t\t<string>{}</string>\n\t\t</dict>\n",
+                            xml_escape(replacement),
+                            xml_escape(variable)
+                        ));
+                    }
+                    variables.push_str("\t</array>\n");
+                }
                 files.put(
                     "Settings/compile.plist",
                     format!(
-                        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\">\n<dict>\n\t<key>SCRCompileDeleteStruckThroughTextKey</key>\n\t{struck}\n\t<key>SCRCompileEBookAuthorsKey</key>\n\t<array/>\n\t<key>SCRCompileEBookLanguageKey</key>\n\t<string>{}</string>\n</dict>\n</plist>\n",
+                        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\">\n<dict>\n\t<key>SCRCompileDeleteStruckThroughTextKey</key>\n\t{struck}\n\t<key>SCRCompileEBookAuthorsKey</key>\n\t<array/>\n\t<key>SCRCompileEBookLanguageKey</key>\n\t<string>{}</string>\n{variables}</dict>\n</plist>\n",
                         xml_escape(c.language.as_deref().unwrap_or("en"))
                     ),
                 );
@@ -1073,6 +1519,7 @@ impl Spec {
             }
         }
         out.push_str(&self.targets_xml(g == Generation::IosStub));
+        out.push_str(&self.project_lists_xml());
         if g == Generation::Format20 {
             out.push_str(
                 "    <RecentWritingHistory Date=\"2024-06-02 00:00:00 +0200\">\n        <DraftWordCount>0</DraftWordCount>\n        <DraftCharCount>0</DraftCharCount>\n        <OtherWordCount>0</OtherWordCount>\n        <OtherCharCount>0</OtherCharCount>\n    </RecentWritingHistory>\n",
@@ -1162,11 +1609,16 @@ impl Spec {
                 } else {
                     " Notify=\"No\""
                 };
+                let kind = xml_escape(item.target_kind.as_deref().unwrap_or("Words"));
                 out.push_str(&format!(
-                    "{pad}        <Target Type=\"Words\"{notify}>{target}</Target>\n"
+                    "{pad}        <Target Type=\"{kind}\"{notify}>{target}</Target>\n"
                 ));
             }
+            if item.script_mode && matches!(g, Generation::Format15 | Generation::Format20) {
+                out.push_str(&format!("{pad}        <TextMode>Script</TextMode>\n"));
+            }
             out.push_str(&format!("{pad}    </TextSettings>\n"));
+            out.push_str(&self.bookmarks_xml(&item.bookmarks, &pad));
             if !item.keywords.is_empty() && g != Generation::IosStub {
                 out.push_str(&format!("{pad}    <Keywords>\n"));
                 for k in &item.keywords {
@@ -1249,8 +1701,102 @@ impl Spec {
         format!("{pad}    <MetaData>\n{meta}{pad}    </MetaData>\n")
     }
 
+    /// Document bookmarks (format 2.0) or references (format 1.x).
+    fn bookmarks_xml(&self, bookmarks: &[Bookmark], pad: &str) -> String {
+        let g = self.generation;
+        if bookmarks.is_empty() || g == Generation::IosStub {
+            return String::new();
+        }
+        let v3 = g == Generation::Format20;
+        let (list, entry) = if v3 {
+            ("Bookmarks", "Bookmark")
+        } else {
+            ("References", "Reference")
+        };
+        let mut out = format!("{pad}    <{list}>\n");
+        for line in bookmarks.iter().filter_map(|b| self.link_xml(b, entry)) {
+            out.push_str(&format!("{pad}        {line}\n"));
+        }
+        out.push_str(&format!("{pad}    </{list}>\n"));
+        out
+    }
+
+    /// One bookmark or reference element.
+    fn link_xml(&self, bookmark: &Bookmark, entry: &str) -> Option<String> {
+        let v3 = self.generation == Generation::Format20;
+        let mut attributes = String::new();
+        if bookmark.target.is_some() || bookmark.dangling {
+            let target = if v3 {
+                let uuid = match bookmark.target {
+                    Some(t) => self.uuid(t),
+                    None => uuid_for(self.seed ^ 0xDA, 1),
+                };
+                format!("BinderUUID=\"{uuid}\"")
+            } else {
+                let number = match bookmark.target {
+                    Some(t) => self.number(t),
+                    None => 9_999,
+                };
+                format!("BinderID=\"{number}\" Destination=\"[Internal Link]\"")
+            };
+            attributes.push_str(&target);
+        } else if let Some(url) = &bookmark.destination {
+            attributes.push_str(&format!("Destination=\"{}\"", xml_escape(url)));
+        } else {
+            return None;
+        }
+        Some(match &bookmark.text {
+            Some(text) => format!("<{entry} {attributes}>{}</{entry}>", xml_escape(text)),
+            None => format!("<{entry} {attributes}/>"),
+        })
+    }
+
     fn collections_xml(&self) -> String {
         let v3 = self.generation == Generation::Format20;
+        if let Some(collections) = &self.collections {
+            let mut out = String::from("    <Collections>\n");
+            for (k, c) in collections.iter().enumerate() {
+                out.push_str(&format!(
+                    "        <Collection Type=\"{}\" ID=\"{}\" Color=\"0.8 0.4 0.4\">\n            <Title>{}</Title>\n",
+                    xml_escape(&c.kind),
+                    uuid_for(self.seed ^ 0xC1, k as u32 + 10),
+                    xml_escape(&c.title)
+                ));
+                if !c.members.is_empty() {
+                    if v3 {
+                        let list: Vec<String> = c.members.iter().map(|&i| self.uuid(i)).collect();
+                        out.push_str(&format!(
+                            "            <BinderUUIDs>{}</BinderUUIDs>\n",
+                            list.join(",")
+                        ));
+                    } else {
+                        out.push_str("            <BinderIDs>\n");
+                        for &i in &c.members {
+                            out.push_str(&format!(
+                                "                <BinderID>{}</BinderID>\n",
+                                self.number(i)
+                            ));
+                        }
+                        out.push_str("            </BinderIDs>\n");
+                    }
+                }
+                if let Some((query, kind, operator, ids)) = &c.search {
+                    let ids = ids
+                        .as_ref()
+                        .map(|ids| format!(" CustomIDs=\"{}\"", xml_escape(ids)))
+                        .unwrap_or_default();
+                    out.push_str(&format!(
+                        "            <SearchSettings Operator=\"{}\" Type=\"{}\"{ids} CaseSensitive=\"No\">{}</SearchSettings>\n",
+                        xml_escape(operator),
+                        xml_escape(kind),
+                        xml_escape(query)
+                    ));
+                }
+                out.push_str("        </Collection>\n");
+            }
+            out.push_str("    </Collections>\n");
+            return out;
+        }
         let mut out = String::from("    <Collections>\n");
         out.push_str(&format!(
             "        <Collection Type=\"Binder\" ID=\"{}\" Color=\"0.5 0.5 0.5\">\n            <Title>Binder</Title>\n        </Collection>\n",
@@ -1334,6 +1880,7 @@ impl Spec {
         let mut out = String::from("    <ProjectProperties>\n");
         for (element, value) in [
             ("ProjectTitle", &props.title),
+            ("AbbreviatedTitle", &props.abbreviated_title),
             ("FullName", &props.full_name),
             ("FirstName", &props.first_name),
             ("LastName", &props.last_name),
@@ -1384,10 +1931,36 @@ impl Spec {
     }
 
     fn custom_fields_xml(&self, v3: bool) -> String {
-        if self.custom_fields.is_empty() {
+        if self.custom_fields.is_empty() && !(v3 && !self.typed_fields.is_empty()) {
             return String::new();
         }
         let mut out = String::from("    <CustomMetaDataSettings>\n");
+        if v3 {
+            for field in &self.typed_fields {
+                out.push_str(&format!(
+                    "        <MetaDataField Type=\"{}\" ID=\"{}\">\n            <Title>{}</Title>\n",
+                    xml_escape(&field.kind),
+                    xml_escape(&field.id),
+                    xml_escape(&field.title)
+                ));
+                if field.kind == "List" {
+                    let none = field
+                        .none
+                        .as_ref()
+                        .map(|n| format!(" None=\"{}\"", xml_escape(n)))
+                        .unwrap_or_default();
+                    out.push_str(&format!("            <ListOptions{none}>\n"));
+                    for (id, name) in &field.options {
+                        out.push_str(&format!(
+                            "                <Option ID=\"{id}\">{}</Option>\n",
+                            xml_escape(name)
+                        ));
+                    }
+                    out.push_str("            </ListOptions>\n");
+                }
+                out.push_str("        </MetaDataField>\n");
+            }
+        }
         for (id, title) in &self.custom_fields {
             if v3 {
                 out.push_str(&format!(
@@ -1430,9 +2003,72 @@ impl Spec {
         if ios {
             return "    <ProjectTargets>\n        <DraftTarget Type=\"Words\">0</DraftTarget>\n        <PreviousSession Words=\"0\" Characters=\"0\"/>\n    </ProjectTargets>\n".to_string();
         }
+        let t = &self.targets;
+        let yes_no = |b: bool| if b { "Yes" } else { "No" };
+        let deadline = t
+            .deadline
+            .as_ref()
+            .map(|d| {
+                format!(
+                    " Deadline=\"{}\" IgnoreDeadline=\"{}\"",
+                    xml_escape(d),
+                    yes_no(t.ignore_deadline)
+                )
+            })
+            .unwrap_or_default();
         format!(
-            "    <ProjectTargets Notify=\"No\">\n        <DraftTarget Type=\"Words\" CountIncludedOnly=\"Yes\" CurrentCompileGroupOnly=\"No\" Deadline=\"{LATER}\" IgnoreDeadline=\"Yes\">80000</DraftTarget>\n        <SessionTarget Type=\"Words\" CountDraftOnly=\"Yes\" AllowNegatives=\"Yes\" ResetType=\"Midnight\" DeterminedFromDeadline=\"No\" WritingDays=\"\" CanWriteOnDeadlineDate=\"No\">1000</SessionTarget>\n        <PreviousSession Words=\"0\" Characters=\"0\" Date=\"{DATE}\"/>\n    </ProjectTargets>\n"
+            "    <ProjectTargets Notify=\"No\">\n        <DraftTarget Type=\"{}\" CountIncludedOnly=\"{}\" CurrentCompileGroupOnly=\"{}\"{deadline}>{}</DraftTarget>\n        <SessionTarget Type=\"{}\" CountDraftOnly=\"Yes\" AllowNegatives=\"Yes\" ResetType=\"Midnight\" DeterminedFromDeadline=\"No\" WritingDays=\"{}\" CanWriteOnDeadlineDate=\"{}\">{}</SessionTarget>\n        <PreviousSession Words=\"0\" Characters=\"0\" Date=\"{DATE}\"/>\n    </ProjectTargets>\n",
+            xml_escape(&t.draft_kind),
+            yes_no(t.count_included_only),
+            yes_no(t.compile_group_only),
+            t.draft,
+            xml_escape(&t.session_kind),
+            xml_escape(&t.writing_days),
+            yes_no(t.can_write_on_deadline),
+            t.session,
         )
+    }
+
+    /// Project bookmarks (format 2.0), favourites (format 1.x) and the auto-complete list
+    /// (format 2.0).
+    fn project_lists_xml(&self) -> String {
+        let g = self.generation;
+        let mut out = String::new();
+        if g == Generation::Format20 {
+            let lines: Vec<String> = self
+                .project_bookmarks
+                .iter()
+                .filter_map(|b| self.link_xml(b, "Bookmark"))
+                .collect();
+            if !lines.is_empty() {
+                out.push_str("    <ProjectBookmarks>\n");
+                for line in lines {
+                    out.push_str(&format!("        {line}\n"));
+                }
+                out.push_str("    </ProjectBookmarks>\n");
+            }
+            if !self.auto_complete.is_empty() {
+                out.push_str("    <AutoCompleteList>\n");
+                for entry in &self.auto_complete {
+                    out.push_str(&format!(
+                        "        <Completion Scope=\"0\">{}</Completion>\n",
+                        xml_escape(entry)
+                    ));
+                }
+                out.push_str("    </AutoCompleteList>\n");
+            }
+        }
+        if matches!(g, Generation::Format10 | Generation::Format15) && !self.favorites.is_empty() {
+            out.push_str("    <Favorites>\n");
+            for &i in &self.favorites {
+                out.push_str(&format!(
+                    "        <BinderID>{}</BinderID>\n",
+                    self.number(i)
+                ));
+            }
+            out.push_str("    </Favorites>\n");
+        }
+        out
     }
 }
 

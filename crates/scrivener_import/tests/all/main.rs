@@ -19,6 +19,9 @@
 //! * `metadata`: the title, authors and language a project states, its labels and its
 //!   status list, its dates, what stays in Scrivener, for every generation that writes
 //!   them, and their round trip through the store;
+//! * `s2`: the second half of the metadata (keywords, custom metadata, collections,
+//!   bookmarks, targets, the deadline, the auto-complete list, the "From Scrivener"
+//!   folder) for every generation that writes each, and its round trip through the store;
 //! * `corpus`: real projects, opt-in (see its module doc).
 
 mod containers;
@@ -28,6 +31,7 @@ mod generations;
 mod hostile;
 mod metadata;
 mod properties;
+mod s2;
 mod structure;
 mod support;
 mod traps;

@@ -32,11 +32,45 @@
 //! the workflow ladder. Everything it writes into the project is either the writer's own
 //! words from Scrivener, stored literally, or words the interface resolved in the writer's
 //! language ([`crate::Words`]). What it did is reported as [`MetadataNotice`]s.
+//!
+//! # Everything else a project holds (D4-6 to D4-21)
+//!
+//! [`extended()`] maps the rest onto the same plan, each kind where the design puts it:
+//!
+//! * **keywords** become flat tags on the rows that wear them, their place in Scrivener's
+//!   keyword list in the details; **list** and **checkbox** fields become tags (one per
+//!   option worn, `<field>: <option>`; one per checkbox ticked); **collections** of
+//!   documents become tags on their documents. Never story-bible tags, never on a row whose
+//!   item no document wears, and never a name another tag holds (D4-9).
+//! * **text and date fields** (and every format 1.x field) are listed: a note-like row's
+//!   own values follow its own text, every other document's go to the "From Scrivener"
+//!   folder.
+//! * **bookmarks and references** become links only where Skribisto shows one (a note to a
+//!   note, a scene to a story-bible entry: X-35); the others are listed under their
+//!   document, with a 1.x reference's description.
+//! * **document targets** become goals on rows whose writing a goal measures, the **draft
+//!   target** the book's goal, and the project counts in its draft target's unit (else most
+//!   goals', else its language's); targets on notes are listed (X-30).
+//! * **a deadline** still ahead with a word target becomes the book's pace plan, every day a
+//!   writing day, the deadline itself kept free when Scrivener's calculator kept it.
+//! * **auto-complete** words become the project's dictionary; phrases, compile replacements,
+//!   saved searches, project bookmarks, the session target and what else the project
+//!   states with no field to hold it are listed.
+//!
+//! What has nowhere to go and is not listed (icons, script mode, a template's metadata,
+//! values naming nothing) is said. The "From Scrivener" folder holds one note per kind that
+//! lists something ([`import_note_sections`]); the structure plan places it, so the review
+//! shows what the import writes. Every word the import adds is the interface's
+//! ([`MetadataWords`]).
 
+mod collect;
 pub(crate) mod compile;
+mod extended;
 pub(crate) mod language;
+mod listing;
 mod notice;
 mod vocabulary;
+mod words;
 
 use std::collections::HashSet;
 
@@ -46,9 +80,23 @@ use crate::content::{ContentFacts, Letters};
 use crate::model::{CompileFacts, CompileFormat, ItemKind, Project};
 use crate::structure::clean_title;
 
-pub use notice::{Field, MetadataNotice};
+pub use extended::{Extended, ExtendedTag, PlannedPace, extended, foreseen};
+#[doc(hidden)]
+pub use notice::every_example;
+pub use notice::{DeadlineReason, DraftTargetReason, Field, MetadataNotice, TargetUnit};
 pub use vocabulary::{LabelTag, Rung, Vocabularies, vocabularies};
 pub(crate) use vocabulary::{PALETTE, folded};
+pub use words::{MetadataWords, VALUE_SLOT};
+
+/// The notes the "From Scrivener" folder holds for `plan`: those listing something (D4-20).
+/// What the structure plan places, and what the converter writes, are decided by the same
+/// function over the same rows.
+pub fn import_note_sections(
+    project: &Project,
+    plan: &crate::structure::StructurePlan,
+) -> Vec<crate::structure::NoteSection> {
+    collect::collect(project, plan).listing.sections()
+}
 
 /// What a project states about itself, for the Save page to pre-fill.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -127,7 +175,7 @@ pub enum Refused {
 /// Whether a stated title or name is a template's placeholder rather than words: it holds a
 /// `<$…>` code (a name after `<$`, closed on the same line), or is one `<…>` in angle
 /// brackets (`<Proposal Title>`). A title that only holds `<$` (`Deals under <$5`) is words.
-fn is_placeholder(value: &str) -> bool {
+pub(crate) fn is_placeholder(value: &str) -> bool {
     let trimmed = value.trim();
     let holds_code = trimmed.match_indices("<$").any(|(at, _)| {
         let code = &trimmed[at + 2..];

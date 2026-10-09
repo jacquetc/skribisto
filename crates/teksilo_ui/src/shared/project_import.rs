@@ -19,9 +19,10 @@
 //!   reports a phase code, or the title of the entry it is converting, which
 //!   `shared::progress_text` words in the writer's language or shows as data; a
 //!   screen reader hears one sentence per phase, never a percentage or a title.
-//! * **Completion**: a result with **Open now**, and, when the importer has
-//!   something to say, the persistent report notice of `shared::import_warnings`,
-//!   reopenable from the notification log.
+//! * **Completion**: a result with **Open now**, which the notification log can
+//!   still replay once the notice is gone, and, when the importer has something to
+//!   say, the persistent report notice of `shared::import_warnings`, reopenable
+//!   from the notification log.
 //! * **Failure**: the typed reason worded by `shared::import_failure`, the
 //!   technical chain behind **Details**.
 //! * **Cancel is over when the converter has stopped**, not when it was asked
@@ -74,6 +75,24 @@ use crate::shared::import_failure::{self, OwnWords};
 use crate::shared::import_warnings::{LiveNotice, WarningsNotice};
 use crate::shared::long_op::{event_id, parse_payload, payload_id};
 use crate::shared::progress_text;
+
+/// What the name of an archived **Open now** starts with, the path its import wrote
+/// following it. The notification log keeps no closure, only an action's name, so the
+/// name says which project to open, and the log's replay hook
+/// (`shared::import_warnings::replay_archived_action`) opens it. Stable: it is persisted
+/// in the notification archive.
+const ARCHIVED_OPEN_PREFIX: &str = "import.open_now:";
+
+/// The name an archived **Open now** of the import that wrote `output_path` keeps.
+pub(crate) fn archived_open_name(output_path: &str) -> String {
+    format!("{ARCHIVED_OPEN_PREFIX}{output_path}")
+}
+
+/// The project an archived action's `name` opens, if it is an archived **Open now**.
+pub(crate) fn archived_open_path(name: &str) -> Option<&str> {
+    name.strip_prefix(ARCHIVED_OPEN_PREFIX)
+        .filter(|path| !path.is_empty())
+}
 
 /// What a finished import produced, in the writer's words.
 pub(crate) struct ImportOutcome {
@@ -550,16 +569,20 @@ impl ProjectImportJob {
                     None => Toast::success(outcome.result.clone()),
                 };
                 let report_of = output.clone();
-                let mut toast = import_toast(running.toast_id, toast).action(ToastAction::primary(
-                    tr!(project_import_open_now()),
-                    move |c| {
+                // Named after this import's path, so the notification log can still open
+                // the project once this notice and its closures are gone: its archived
+                // row used to show an **Open now** that did nothing.
+                let archived_open = archived_open_name(&output);
+                let mut toast = import_toast(running.toast_id, toast).action(
+                    ToastAction::primary(tr!(project_import_open_now()), move |c| {
                         // Through an intent the window answers, never `load_work`
                         // outright: replacing the project in a window goes through
                         // its unsaved-changes guard (`work.open_path`), and opening
                         // one beside it through the one door every window uses.
                         c.send_intent(open_now(output.clone()));
-                    },
-                ));
+                    })
+                    .shortcut_id(archived_open),
+                );
                 if let Some(see) = outcome.see_report {
                     let archived = (see.archived_as)(&report_of);
                     // Reading the report is not dismissing the result: the notice keeps

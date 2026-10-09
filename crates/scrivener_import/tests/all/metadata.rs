@@ -59,6 +59,7 @@ fn convert_stated(source: &Path, out: &Path) -> Summary {
         language: None,
         copy_research_files: false,
         now: instant(),
+        today: instant().date_naive(),
     };
     match convert(&request, &|_, _| {}, &AtomicBool::new(false)) {
         Ok(summary) => summary,
@@ -184,11 +185,12 @@ fn every_generation_brings_its_title_labels_ladder_and_dates() {
             assert!(work.dict_language.is_empty());
         }
 
-        // Labels: the ones rows wear, in the list's order, with the writer's colours.
+        // Labels: the ones rows wear, in the list's order, with the writer's colours. (The
+        // keywords and collections the novel also holds are tags of their own.)
         let labels: Vec<(&str, &str, &str, bool)> = bundle
             .tags
             .iter()
-            .filter(|t| !t.discoverable)
+            .filter(|t| !t.discoverable && t.details.starts_with("W-field"))
             .map(|t| {
                 (
                     t.name.as_str(),
@@ -207,15 +209,18 @@ fn every_generation_brings_its_title_labels_ladder_and_dates() {
             ],
             "{label}"
         );
-        assert_eq!(
-            tags_of(&bundle, item(&bundle, "Arrival")),
-            ["Mara"],
-            "{label}"
-        );
-        assert_eq!(tags_of(&bundle, item(&bundle, "The Harbour")), ["Scene"]);
-        assert_eq!(tags_of(&bundle, item(&bundle, "Chapter 1")), ["Keeper"]);
-        assert_eq!(tags_of(&bundle, item(&bundle, "Mara")), ["Mara"], "{label}");
-        assert!(tags_of(&bundle, item(&bundle, "Night Watch")).is_empty());
+        let label_tags = |title: &str| -> Vec<&str> {
+            let names: Vec<&str> = labels.iter().map(|(name, ..)| *name).collect();
+            tags_of(&bundle, item(&bundle, title))
+                .into_iter()
+                .filter(|t| names.contains(t))
+                .collect()
+        };
+        assert_eq!(label_tags("Arrival"), ["Mara"], "{label}");
+        assert_eq!(label_tags("The Harbour"), ["Scene"]);
+        assert_eq!(label_tags("Chapter 1"), ["Keeper"]);
+        assert_eq!(label_tags("Mara"), ["Mara"], "{label}");
+        assert!(label_tags("Night Watch").is_empty());
         assert!(bundle.manifest.work.tag_ids.len() >= 3);
 
         // The ladder, in the list's order, each rung's kind from its name.
@@ -326,6 +331,7 @@ fn the_writers_answers_on_the_save_page_are_what_is_written() {
         language: Some("ja"),
         copy_research_files: false,
         now: instant(),
+        today: instant().date_naive(),
     };
     if let Err(e) = convert(&request, &|_, _| {}, &AtomicBool::new(false)) {
         panic!("the conversion failed: {e}");
@@ -336,8 +342,8 @@ fn the_writers_answers_on_the_save_page_are_what_is_written() {
     assert_eq!(work.dict_language, ["ja"]);
     assert_eq!(
         work.goal_unit,
-        common::entities::GoalUnit::Characters,
-        "a Japanese manuscript counts characters, as New Work would start it"
+        common::entities::GoalUnit::Words,
+        "the draft target's unit, whatever the manuscript's language (X-30)"
     );
 }
 
@@ -397,7 +403,13 @@ fn the_upgrade_residue_is_none() {
     let out = dir.path().join("novel.skrib");
     let summary = convert_stated(&folder, &out);
     let bundle = read(&out);
-    assert!(bundle.tags.iter().all(|t| t.discoverable), "no label tag");
+    assert!(
+        bundle
+            .tags
+            .iter()
+            .all(|t| !t.details.starts_with("W-field")),
+        "no label tag"
+    );
     let ladder: Vec<&str> = bundle.statuses.iter().map(|s| s.name.as_str()).collect();
     assert_eq!(ladder, ["To Do", "Done"]);
     assert!(items(&bundle).all(|i| i.item.status_id.is_none()));

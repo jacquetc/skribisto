@@ -325,9 +325,13 @@ impl Widget for AddMilestoneRow {
                 ))
                 .child(
                     FixedSize::new().width(TARGET_FIELD_WIDTH).child(
-                        SpinBox::new(self.words.clone(), 0_i64, 100_000_000)
-                            .single_step(1_000)
-                            .special_value_text(tr!(milestone_no_target())),
+                        SpinBox::new(
+                            self.words.clone(),
+                            0_i64,
+                            skribisto_model::goal_unit::MAX_GOAL,
+                        )
+                        .single_step(1_000)
+                        .special_value_text(tr!(milestone_no_target())),
                     ),
                 )
                 .child(

@@ -4,7 +4,7 @@
 //! What the wizard sends, as the converter takes it: the writer's answers and the words
 //! the import writes into the project.
 
-use scrivener_import::{Answers, DefaultRung, Words};
+use scrivener_import::{Answers, DefaultRung, MetadataWords, Words};
 
 use super::plan::sibling_choice;
 use crate::dtos::{
@@ -85,5 +85,6 @@ pub(crate) fn words(dto: &ImportScrivenerProjectDto) -> Words {
                 }),
             })
             .collect(),
+        metadata: MetadataWords::from_list(&dto.metadata_words),
     }
 }

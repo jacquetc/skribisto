@@ -63,6 +63,7 @@ use teksilo::widgets::{
 
 /// One importer's warnings notice: the name its **Details** action is archived
 /// under. The words are the same for every importer.
+#[derive(Debug, PartialEq, Eq)]
 pub(crate) struct WarningsNotice {
     /// The archived name of the **Details** action, and the prefix of every
     /// notice's own id. Stable: it is persisted in the notification archive, and
@@ -209,29 +210,59 @@ fn notice_for(action: &ArchivedAction) -> Option<&'static WarningsNotice> {
 /// and the toast's body. For an import's **Details** that is everything the
 /// dialog needs, so the list reopens as it was first shown, in any window and
 /// after a restart. A Scrivener import's **See report** names the path its import wrote,
-/// and opens that import's report, as the notice's own button did. Any other name is
-/// ignored: nothing else in the application archives a replayable action.
+/// and opens that import's report, as the notice's own button did. A finished import's
+/// **Open now** names the project it wrote, and asks the window it is replayed in for a
+/// window of its own on it, as the Scrivener notice's live button does: a project window
+/// opens it beside itself, or brings forward the window already showing it, and the
+/// Launcher does the same and then closes, as every other way into a project from it
+/// does. Replacing the project a window shows belongs to that window's own guard, never
+/// to a row of a list. Any other name is ignored: nothing else in the application
+/// archives a replayable action.
 pub(crate) fn replay_archived_action(
     entry: &NotificationEntry,
     action: &ArchivedAction,
     ctx: &mut EventContext,
 ) {
+    match replay_of(action) {
+        Some(Replay::Details(notice)) => {
+            notice.present_details(ctx, entry.body.as_deref().unwrap_or_default());
+        }
+        Some(Replay::OpenProject(path)) => {
+            ctx.send_intent(crate::intents::AppIntent::OpenWorkPathInNewWindow { path });
+        }
+        // A Scrivener import's **See report**: its report is a dialog, not the body, and
+        // the row shows the latest of the imports that share its id, so the name says
+        // which import's report to open. Never the window's last report, which can be
+        // another's.
+        Some(Replay::Report(output_path)) => {
+            ctx.send_intent(crate::intents::AppIntent::ImportScrivenerReportOf { output_path });
+        }
+        None => {}
+    }
+}
+
+/// What replaying an archived action does.
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) enum Replay {
+    /// An import's **Details**: its list, which the row's body holds.
+    Details(&'static WarningsNotice),
+    /// A finished import's **Open now**: the project it wrote.
+    OpenProject(String),
+    /// A Scrivener import's **See report**: the report of the import that wrote this path.
+    Report(String),
+}
+
+/// What an archived `action` replays, by its name alone; `None` for a name nothing here
+/// archives.
+pub(crate) fn replay_of(action: &ArchivedAction) -> Option<Replay> {
     if let Some(notice) = notice_for(action) {
-        notice.present_details(ctx, entry.body.as_deref().unwrap_or_default());
-        return;
+        return Some(Replay::Details(notice));
     }
-    // A Scrivener import's **See report**: its report is a dialog, not the body, and the
-    // row shows the latest of the imports that share its id, so the name says which
-    // import's report to open. Never the window's last report, which can be another's.
-    if let Some(output_path) = action
-        .intent_name
-        .as_deref()
-        .and_then(crate::import_scrivener::archived_report_path)
-    {
-        ctx.send_intent(crate::intents::AppIntent::ImportScrivenerReportOf {
-            output_path: output_path.to_string(),
-        });
+    let name = action.intent_name.as_deref()?;
+    if let Some(project) = crate::shared::project_import::archived_open_path(name) {
+        return Some(Replay::OpenProject(project.to_string()));
     }
+    crate::import_scrivener::archived_report_path(name).map(|path| Replay::Report(path.to_string()))
 }
 
 /// A notification archive holding one import's notice for `warnings`, filed
@@ -595,7 +626,118 @@ mod tests {
         assert!(!asked.last, "not the window's last report");
     }
 
-    /// Only the two import notices replay; any other archived name is inert.
+    /// An archived **Open now** asks the window it is replayed in for the project, as the
+    /// live notice's button does, so the window answers as its own doors do: the Launcher
+    /// opens a project window and closes itself, a project window opens one beside it.
+    #[test]
+    fn an_archived_open_now_asks_the_window_it_is_replayed_in() {
+        use teksilo::core::action::Action;
+
+        /// A widget that registers the action, as the Launcher and a window's `App` do.
+        #[derive(Debug)]
+        struct Registers(Rc<RefCell<Option<String>>>);
+        impl Widget for Registers {
+            fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+                let asked = self.0.clone();
+                ctx.register_action_global(Action::new("work.open_path_new_window").on_invoke(
+                    move |i, _c| {
+                        if let Some(crate::intents::AppIntent::OpenWorkPathInNewWindow { path }) =
+                            crate::intents::AppIntent::from_intent(i)
+                        {
+                            *asked.borrow_mut() = Some(path.clone());
+                        }
+                    },
+                ));
+                Vec::new()
+            }
+
+            fn layout_response(
+                &self,
+                proposal: SizeProposal,
+                _ctx: &LayoutContext,
+            ) -> LayoutResponse {
+                proposal.resolve(0.0, 0.0).into()
+            }
+        }
+
+        let (mut tree, _registry, _archive) = window();
+        let asked = Rc::new(RefCell::new(None));
+        tree.add(Registers(asked.clone()));
+        tree.layout(SizeProposal::exact(480.0, 360.0));
+        let entry = NotificationEntry {
+            id: 1,
+            severity: BannerSeverity::Success,
+            priority: ToastPriority::High,
+            title: "Scrivener project imported".into(),
+            body: None,
+            actions: Vec::new(),
+            timestamp: jiff::Timestamp::UNIX_EPOCH,
+            group: None,
+            source: None,
+            read: false,
+            dedup_id: None,
+            updates: Vec::new(),
+            route: ToastRoute::Broadcast,
+        };
+        let action = ArchivedAction {
+            label: "Open now".into(),
+            intent_name: Some(crate::shared::project_import::archived_open_name(
+                "/books/The Lighthouse.skrib",
+            )),
+            style: ArchivedActionStyle::SecondaryButton,
+            closes_on_invoke: true,
+        };
+        press(&mut tree, move |c| {
+            replay_archived_action(&entry, &action, c)
+        });
+        tree.layout(SizeProposal::exact(480.0, 360.0));
+        assert_eq!(
+            asked.borrow().as_deref(),
+            Some("/books/The Lighthouse.skrib")
+        );
+    }
+
+    /// Each name an import archives replays what its button did: the list, the project
+    /// it wrote, the report of the import it names. A name with nothing after its prefix
+    /// names no project and no report, and replays nothing.
+    #[test]
+    fn every_archived_import_action_replays_what_it_did() {
+        let named = |name: &str| ArchivedAction {
+            label: "x".into(),
+            intent_name: Some(name.to_string()),
+            style: ArchivedActionStyle::Link,
+            closes_on_invoke: true,
+        };
+        assert_eq!(
+            replay_of(&named(PLUME.action)),
+            Some(Replay::Details(&PLUME))
+        );
+        let path = "/books/The Lighthouse.skrib";
+        assert_eq!(
+            replay_of(&named(&crate::shared::project_import::archived_open_name(
+                path
+            ))),
+            Some(Replay::OpenProject(path.to_string()))
+        );
+        assert_eq!(
+            replay_of(&named(&crate::import_scrivener::archived_report_name(path))),
+            Some(Replay::Report(path.to_string()))
+        );
+        for inert in [
+            crate::shared::project_import::archived_open_name(""),
+            crate::import_scrivener::archived_report_name(""),
+            "app.build.retry".to_string(),
+        ] {
+            assert_eq!(replay_of(&named(&inert)), None, "{inert}");
+        }
+        let unnamed = ArchivedAction {
+            intent_name: None,
+            ..named("")
+        };
+        assert_eq!(replay_of(&unnamed), None);
+    }
+
+    /// Only the import notices' own actions replay; any other archived name is inert.
     #[test]
     fn an_unknown_archived_action_does_nothing() {
         let (mut tree, _registry, _archive) = window();

@@ -482,6 +482,56 @@ fn metadata_findings_about_each_field_each_say_themselves() {
     });
 }
 
+/// A line about the project lists the names it is about under it, as the project wrote
+/// them, and the copied report lists every one: the keywords no document
+/// wears, the icons dropped. A line that names nothing lists nothing.
+#[test]
+fn a_metadata_line_lists_the_names_it_is_about() {
+    crate::test_support::with_real_messages(|| {
+        let names = |values: &[&str]| ScrivenerArg::Texts {
+            name: "names".into(),
+            values: values.iter().map(|v| v.to_string()).collect(),
+        };
+        let report = ImportReport::from_result(&result(
+            vec![
+                metadata(
+                    "scrivener-metadata-unused-keywords-skipped",
+                    vec![names(&["Unused", "Places"])],
+                ),
+                metadata(
+                    "scrivener-metadata-icons-dropped",
+                    vec![count("rows", 3), names(&["Book (Blue Book)"])],
+                ),
+                metadata("scrivener-metadata-goals-kept", vec![count("rows", 2)]),
+            ],
+            None,
+        ));
+        let lines: Vec<&ReportLine> = report.groups.iter().flat_map(|g| &g.lines).collect();
+        let named = |prefix: &str| {
+            lines
+                .iter()
+                .find(|l| l.text.resolve_now().starts_with(prefix))
+                .unwrap_or_else(|| panic!("no line starts {prefix:?}"))
+        };
+        let unused = named("2 keywords no document wears");
+        assert_eq!(unused.listed, Listed::Names);
+        let shown: Vec<String> = unused
+            .items
+            .iter()
+            .map(|i| i.label().resolve_now())
+            .collect();
+        assert_eq!(shown, ["Unused", "Places"]);
+        assert!(unused.items.iter().all(|i| i.uid.is_none()));
+        assert_eq!(named("3 items had binder icons").items.len(), 1);
+        let goals = named("2 document targets become goals");
+        assert_eq!(goals.listed, Listed::Items);
+        assert!(goals.items.is_empty());
+        let copied = report.text();
+        assert!(copied.contains("\n    Places\n"), "{copied}");
+        assert!(copied.contains("\n    Book (Blue Book)\n"), "{copied}");
+    });
+}
+
 /// A document importer's finding met in many texts is one line, saying how many more
 /// places there are, with every place listed under it; a warning and an information of
 /// the same kind are two lines.
@@ -734,5 +784,40 @@ fn the_project_pages_answers_come_first() {
                 .text()
                 .contains("Read from /books/Lighthouse.scriv\n")
         );
+    });
+}
+
+/// A report about a project with a great many names, or a great many findings of one
+/// kind, is built in time linear in them: it is built on the interface's thread, and a
+/// crafted project can define as many unused keywords as its manifest holds.
+#[test]
+fn a_report_of_many_names_and_findings_is_built_in_linear_time() {
+    crate::test_support::with_real_messages(|| {
+        let n = 60_000;
+        let names = ScrivenerArg::Texts {
+            name: "names".into(),
+            values: (0..n).map(|k| format!("Keyword {k}")).collect(),
+        };
+        let mut findings = vec![metadata(
+            "scrivener-metadata-unused-keywords-skipped",
+            vec![names],
+        )];
+        findings.extend((0..n).map(|k| {
+            metadata(
+                "scrivener-metadata-collection-members-missing",
+                vec![text("name", &format!("Collection {k}")), count("count", 1)],
+            )
+        }));
+        findings.extend((0..n).map(|k| annotations(k, &format!("Scene {k}"), 1)));
+        let started = std::time::Instant::now();
+        let report = ImportReport::from_result(&result(findings, None));
+        let seconds = started.elapsed().as_secs_f64();
+        assert!(seconds < 10.0, "{seconds:.1} s");
+        let lines: Vec<&ReportLine> = report.groups.iter().flat_map(|g| &g.lines).collect();
+        let unused = lines
+            .iter()
+            .find(|l| l.listed == Listed::Names)
+            .unwrap_or_else(|| panic!("no line lists the names"));
+        assert_eq!(unused.items.len(), n as usize, "each name once");
     });
 }

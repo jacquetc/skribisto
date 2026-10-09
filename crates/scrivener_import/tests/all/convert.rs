@@ -49,7 +49,28 @@ pub(crate) fn words() -> Words {
                 category: common::entities::StatusCategory::Final,
             },
         ],
+        metadata: metadata_words(),
     }
+}
+
+/// Every word of the metadata mapping's second half, marked so a test can tell it from the
+/// project's own words: patterns hold their slots.
+pub(crate) fn metadata_words() -> scrivener_import::MetadataWords {
+    use scrivener_import::{MetadataWords, VALUE_SLOT};
+    let mut words = MetadataWords::default();
+    for key in MetadataWords::ORDER {
+        let value = match *key {
+            "keyword-details" | "field-details" | "collection-details" => {
+                format!("W-{key} {TITLE_SLOT}")
+            }
+            "unnamed-keyword" => format!("W-keyword {TITLE_SLOT}"),
+            "keyword-tag" | "collection-tag" | "field-tag" => format!("{TITLE_SLOT} W-({key})"),
+            "field-value" => format!("{TITLE_SLOT}: {VALUE_SLOT}"),
+            other => format!("W-{other}"),
+        };
+        words.set(key, &value);
+    }
+    words
 }
 
 pub(crate) fn instant() -> DateTime<Utc> {
@@ -79,6 +100,7 @@ pub(crate) fn request<'a>(
         language: Some("en-US"),
         copy_research_files: true,
         now: instant(),
+        today: instant().date_naive(),
     }
 }
 

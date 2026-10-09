@@ -106,6 +106,9 @@ pub enum Violation {
     TrashMismatch { item: u32 },
     /// A card image reported left behind on an item whose note could hold it.
     CardLeftOnSheet { item: u32 },
+    /// A listing of the "From Scrivener" folder anywhere but as the note text of its own
+    /// note in the notes binder, or such a note under anything but that folder.
+    ImportNoteMisplaced { binder: BinderKind, row: u32 },
 }
 
 fn rank(row: &PlannedRow) -> Option<u8> {
@@ -271,6 +274,18 @@ fn routing(plan: &StructurePlan) -> Result<(), Violation> {
     for (binder, rows) in binders {
         for (r, row) in rows.iter().enumerate() {
             for content in &row.contents {
+                if let Body::Generated(section) = content.body {
+                    let at_home = binder == BinderKind::Notes
+                        && content.role == ContentRole::NoteText
+                        && row.origin == Origin::FromScrivenerNote { section };
+                    if !at_home {
+                        return Err(Violation::ImportNoteMisplaced {
+                            binder,
+                            row: r as u32,
+                        });
+                    }
+                    continue;
+                }
                 let Body::From(sources) = &content.body else {
                     continue;
                 };
@@ -430,10 +445,27 @@ fn manuscript(rows: &[PlannedRow]) -> Result<(), Violation> {
 
 fn notes(plan: &StructurePlan) -> Result<(), Violation> {
     let rows = &plan.notes;
+    let mut parent_origin: Vec<(u16, Origin)> = Vec::new();
     for (r, row) in rows.iter().enumerate() {
         if row.sub_role != SubRole::Note {
             return Err(Violation::NotANote { row: r as u32 });
         }
+        while parent_origin.last().is_some_and(|(d, _)| *d >= row.depth) {
+            parent_origin.pop();
+        }
+        let under_folder = parent_origin
+            .last()
+            .is_some_and(|(_, origin)| *origin == Origin::FromScrivener);
+        let listing = matches!(row.origin, Origin::FromScrivenerNote { .. });
+        if listing != under_folder
+            || (row.origin == Origin::FromScrivener && (row.depth != 0 || !row.activated))
+        {
+            return Err(Violation::ImportNoteMisplaced {
+                binder: BinderKind::Notes,
+                row: r as u32,
+            });
+        }
+        parent_origin.push((row.depth, row.origin));
     }
     let ends = subtree_ends(rows);
     let mut trashed = vec![false; rows.len()];
@@ -515,7 +547,7 @@ fn conservation(
         .flat_map(|row| &row.contents)
         .filter_map(|c| match &c.body {
             Body::From(sources) => Some(sources.iter().copied()),
-            Body::Title => None,
+            Body::Title | Body::Generated(_) => None,
         })
         .flatten()
         .chain(plan.templates.iter().filter_map(|t| t.body));

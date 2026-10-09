@@ -106,7 +106,9 @@ indiquez le vôtre dans *Paramètres ▸ Œuvre : <projet> ▸ Auteur*.
 
 ## Après l’import
 
-Un message propose *Ouvrir maintenant*, qui ouvre le nouveau projet.
+Un message propose *Ouvrir maintenant*, qui ouvre le nouveau projet. Son entrée sous la cloche
+de la barre d’état garde *Ouvrir maintenant* une fois le message parti, et ouvre le projet dans
+une fenêtre à lui.
 
 Si l’import signale des éléments qui n’ont pas pu être repris, cliquez sur *Détails* pour
 consulter la liste, rédigée dans la langue de Skribisto. Vous pouvez retrouver ce compte rendu sous

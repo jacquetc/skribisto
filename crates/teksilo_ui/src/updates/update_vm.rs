@@ -37,7 +37,8 @@
 //!   what it did: teksilo replays `intent_name` only through an
 //!   `on_action_invoked` hook, and the one both logs install here
 //!   (`shared::import_warnings::replay_archived_action`) knows an import's
-//!   warnings and the Scrivener import's report, and nothing else.
+//!   warnings, its **Open now** and the Scrivener import's report, and nothing
+//!   else.
 //!
 //! All three come from the same mismatch. The archive is a log of *events*, and
 //! "a newer version exists" is not an event, it is a standing fact. A fact

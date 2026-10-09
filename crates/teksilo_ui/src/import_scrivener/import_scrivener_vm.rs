@@ -44,6 +44,7 @@ use frontend::AppContext;
 use frontend::commands::import_management_commands;
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
 use frontend::import_management::scrivener::ScrivenerReviewError;
+use frontend::import_management::scrivener::{METADATA_WORD_ORDER, VALUE_SLOT};
 use frontend::import_management::{
     AnalyzeScrivenerProjectDto, ImportScrivenerProjectDto, ImportScrivenerProjectResultDto,
     ScrivenerAnalysisDto, ScrivenerAnalysisOutcome, ScrivenerBinder, ScrivenerBooksChoice,
@@ -924,6 +925,7 @@ impl ImportScrivenerViewModel {
                 upgraded_sibling: answers.upgraded_sibling.clone(),
                 accept_unmerged_mobile_edits: false,
                 accept_no_text: false,
+                today: writer_today(),
             }
         };
         self.inner.inspection.start(request);
@@ -1681,6 +1683,8 @@ impl ImportScrivenerViewModel {
             label_tag_pattern: words.label_tag,
             untitled_tag_name: words.untitled_tag,
             default_statuses: words.default_statuses,
+            metadata_words: words.metadata,
+            today: writer_today(),
         })
     }
 
@@ -2044,6 +2048,8 @@ struct Words {
     label_tag: String,
     untitled_tag: String,
     default_statuses: Vec<ScrivenerDefaultRung>,
+    /// The second half of the metadata mapping's words, in the converter's order.
+    metadata: Vec<String>,
 }
 
 impl Words {
@@ -2072,8 +2078,95 @@ impl Words {
                     category: row.category,
                 })
                 .collect(),
+            metadata: metadata_words(),
         }
     }
+}
+
+/// The writer's calendar day, at midnight UTC as a pace plan's days are kept: the day a
+/// deadline is ahead or behind, and the day an imported pace plan starts. The backend
+/// knows only UTC, whose date is a day early or late for part of every day.
+fn writer_today() -> chrono::DateTime<chrono::Utc> {
+    crate::shared::stamps::today()
+        .and_hms_opt(0, 0, 0)
+        .map(|midnight| midnight.and_utc())
+        .unwrap_or_default()
+}
+
+/// The word of the second half of the metadata mapping `key` names, resolved now; `None`
+/// for a key this interface does not know, which the converter then writes empty.
+fn metadata_word(key: &str) -> Option<LocalizedString> {
+    let slot = || TITLE_SLOT.to_string();
+    Some(match key {
+        "keyword-details" => tr!(import_scrivener_keyword_details(path = slot())),
+        "unnamed-keyword" => tr!(import_scrivener_unnamed_keyword(number = slot())),
+        "keyword-tag" => tr!(import_scrivener_keyword_tag(name = slot())),
+        "collection-details" => tr!(import_scrivener_collection_details()),
+        "collection-tag" => tr!(import_scrivener_collection_tag(name = slot())),
+        "field-details" => tr!(import_scrivener_field_details(field = slot())),
+        "field-value" => tr!(import_scrivener_field_value(
+            field = slot(),
+            option = VALUE_SLOT.to_string()
+        )),
+        "field-tag" => tr!(import_scrivener_field_tag(name = slot())),
+        "deadline-day" => tr!(import_scrivener_deadline_day()),
+        "from-scrivener" => tr!(import_scrivener_from_scrivener()),
+        // The folder's notes, titled as the report names them.
+        note if note.starts_with("note-") => return messages::note_title(&note["note-".len()..]),
+        "abbreviated-title" => tr!(import_scrivener_abbreviated_title()),
+        "subjects" => tr!(import_scrivener_subjects()),
+        "company" => tr!(import_scrivener_company()),
+        "session-target" => tr!(import_scrivener_session_target()),
+        "writing-days" => tr!(import_scrivener_writing_days()),
+        "draft-target" => tr!(import_scrivener_draft_target()),
+        "deadline" => tr!(import_scrivener_deadline()),
+        "unit-words" => tr!(import_scrivener_unit_words()),
+        "unit-characters" => tr!(import_scrivener_unit_characters()),
+        "unit-pages" => tr!(import_scrivener_unit_pages()),
+        "search-query" => tr!(import_scrivener_search_query()),
+        "search-in" => tr!(import_scrivener_search_in()),
+        "search-operator" => tr!(import_scrivener_search_operator()),
+        "search-in-all" => tr!(import_scrivener_search_in_all()),
+        "search-in-title" => tr!(import_scrivener_search_in_title()),
+        "search-in-text" => tr!(import_scrivener_search_in_text()),
+        "search-in-notes" => tr!(import_scrivener_search_in_notes()),
+        "search-in-synopsis" => tr!(import_scrivener_search_in_synopsis()),
+        "search-in-keywords" => tr!(import_scrivener_search_in_keywords()),
+        "search-in-label" => tr!(import_scrivener_search_in_label()),
+        "search-in-status" => tr!(import_scrivener_search_in_status()),
+        "search-in-section-type" => tr!(import_scrivener_search_in_section_type()),
+        "search-in-custom-metadata" => tr!(import_scrivener_search_in_custom_metadata()),
+        "search-any" => tr!(import_scrivener_search_any()),
+        "search-all" => tr!(import_scrivener_search_all()),
+        "search-exact" => tr!(import_scrivener_search_exact()),
+        "label-value" => tr!(import_scrivener_label_value(
+            label = slot(),
+            value = VALUE_SLOT.to_string()
+        )),
+        "replacement-regex" => tr!(import_scrivener_replacement_regex()),
+        "replacement-off" => tr!(import_scrivener_replacement_off()),
+        "in-own-note" => tr!(import_scrivener_in_own_note()),
+        _ => return None,
+    })
+}
+
+/// Every word of the second half, resolved in the interface's language, one per key in the
+/// converter's order; a key this interface does not know is left empty.
+fn metadata_words() -> Vec<String> {
+    METADATA_WORD_ORDER
+        .iter()
+        .map(|key| {
+            metadata_word(key)
+                .map(|word| word.resolve_now())
+                .unwrap_or_default()
+        })
+        .collect()
+}
+
+/// The name of a note of the "From Scrivener" folder, by the token the plan gives it; a
+/// note this version does not know is named by its token rather than by nothing.
+fn import_note_title(token: &str) -> LocalizedString {
+    messages::note_title(token).unwrap_or_else(|| lit!(token.to_string()))
 }
 
 // ── pure helpers ─────────────────────────────────────────────────────────────────────────
@@ -2784,6 +2877,10 @@ pub(crate) fn preview_rows(rows: &[ScrivenerPreviewRow]) -> Vec<PreviewRowView> 
                 }
                 ScrivenerTitleKind::ProjectNotes => (tr!(import_scrivener_project_notes()), false),
                 ScrivenerTitleKind::Recovered => (tr!(import_scrivener_recovered()), false),
+                ScrivenerTitleKind::FromScrivener => {
+                    (tr!(import_scrivener_from_scrivener()), false)
+                }
+                ScrivenerTitleKind::FromScrivenerNote => (import_note_title(title), false),
             };
             let depth = usize::try_from(*depth).unwrap_or(0) + 1;
             let folded_by_default = match binder {
@@ -2809,25 +2906,32 @@ pub(crate) fn preview_rows(rows: &[ScrivenerPreviewRow]) -> Vec<PreviewRowView> 
 }
 
 /// One line per kind of finding, in the report groups' order, for the "before you import"
-/// strip.
+/// strip. A kind that says one sentence per field, collection or note (`line_variant`)
+/// gives one line for each, as the report does: the custom metadata of two fields left
+/// without a row are two facts, which one line about the first would hide.
 pub(crate) fn before_lines(findings: &[&ScrivenerFinding]) -> Vec<LocalizedString> {
-    let mut keys: Vec<(messages::Group, String)> = Vec::new();
+    type Identity = (String, Option<String>);
+    let identity = |f: &ScrivenerFinding| -> Identity {
+        (messages::key_of(f).to_string(), messages::line_variant(f))
+    };
+    let mut lines: Vec<(messages::Group, Identity)> = Vec::new();
     for finding in findings {
-        let key = messages::key_of(finding).to_string();
+        let found = identity(finding);
         let group = messages::group_of(finding).unwrap_or(messages::Group::LeftBehind);
-        if !keys.iter().any(|(_, k)| *k == key) {
-            keys.push((group, key));
+        if !lines.iter().any(|(_, known)| *known == found) {
+            lines.push((group, found));
         }
     }
-    keys.sort_by_key(|(group, _)| *group);
-    keys.iter()
-        .filter_map(|(_, key)| {
-            let of_key: Vec<&ScrivenerFinding> = findings
+    lines.sort_by_key(|(group, _)| *group);
+    lines
+        .iter()
+        .filter_map(|(_, line)| {
+            let of_line: Vec<&ScrivenerFinding> = findings
                 .iter()
                 .copied()
-                .filter(|f| messages::key_of(f) == key)
+                .filter(|f| identity(f) == *line)
                 .collect();
-            messages::summary_line(key, &of_key)
+            messages::summary_line(&line.0, &of_line)
         })
         .collect()
 }
