@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SearchIndexes Version="1.0">
+    <Documents>
+        <Document ID="25784BBD-10C6-42F1-916B-DAE837909D87">
+            <Text>This is a sample sentence.*</Text>
+            <Comments>My comment
+My footnote</Comments>
+        </Document>
+    </Documents>
+</SearchIndexes>

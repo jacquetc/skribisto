@@ -37,11 +37,16 @@
 //!
 //! # The rules, by decision of the design (D5)
 //!
-//! * Markers pair on a stack; a note inside a note, a closer with nothing open, an opener
-//!   never closed or an unknown `\Scrv_` word stay the literal text they are, counted (D5.2).
-//! * Notes split by formatting are joined back when nothing separates them, and so are the
-//!   one-pair-per-paragraph notes Scrivener for Windows writes, when only paragraph breaks
-//!   and empty paragraphs separate them; a gap of spaces keeps two notes apart (D5.3).
+//! * Markers pair on a stack. Notes never nest, but a note typed right after another is
+//!   written with its opener before the previous note's closer, the two touching
+//!   (`{\Scrv_fn=\end_Scrv_annot}`): that is two notes side by side, the second opening
+//!   where the closer ends, and never joined, even of one kind. Any other note inside a
+//!   note, a closer with nothing open, an opener never closed or an unknown `\Scrv_` word
+//!   stay the literal text they are, counted (D5.2).
+//! * Notes split by formatting, a closer then an opener, are joined back when nothing
+//!   separates them, and so are the one-pair-per-paragraph notes Scrivener for Windows
+//!   writes, when only paragraph breaks and empty paragraphs separate them; a gap of spaces
+//!   keeps two notes apart (D5.3).
 //! * A paragraph break just inside a note's edge belongs to the text around it; every other
 //!   break inside is the note's own (D5.4).
 //! * A footnote is cited where it opened (D5.5); an annotation becomes a comment on the
@@ -107,6 +112,10 @@ pub(crate) struct Input<'a> {
     pub(crate) scene_breaks: SceneBreaks,
     /// Keep inline annotations as prose: the document holds nothing else.
     pub(crate) annotations_as_prose: bool,
+    /// The project is in Scrivener's older format, saved by Scrivener 3: what its export to
+    /// that format writes, which keeps `<$ScrKeepWithNext>` and drops the style markers
+    /// beside it (C20).
+    pub(crate) older_format_export: bool,
 }
 
 /// A picture the text links to rather than holds.
@@ -132,6 +141,9 @@ pub(crate) struct Found {
     pub(crate) preserve_formatting: u32,
     pub(crate) nested_unwrapped: u32,
     pub(crate) styles_unresolved: u32,
+    /// Paragraphs of a project Scrivener 3 exported to its older format holding
+    /// `<$ScrKeepWithNext>` and no style: the export keeps the one and drops the other.
+    pub(crate) styles_lost_in_export: u32,
     /// Style names with no meaning here, and the paragraphs or characters they covered.
     pub(crate) styles_not_carried: BTreeMap<String, u32>,
     /// Styles the project's compile leaves out or passes raw, by name and treatment, and
@@ -205,6 +217,8 @@ const CODE_FONT: i32 = -1_000_000;
 /// break rather than as spacing around a figure or a list (the D5 critique's measured rule).
 const SCENE_PROSE_PARAGRAPHS: usize = 5;
 const SCENE_PROSE_CHARS: usize = 60;
+/// Scrivener 3 for Mac's own inline annotation colour, a dark red.
+const DEFAULT_ANNOTATION: [f32; 3] = [0.543_234, 0.0, 0.023_817];
 /// The longest line read as an ornament.
 const ORNAMENT_CHARS: usize = 16;
 
@@ -551,6 +565,20 @@ struct Pair {
     kind: NoteKind2,
     open: (usize, usize),
     close: (usize, usize),
+    /// It opened where the note before it closed, its opener written before that note's
+    /// closer: a note typed right after another, never a piece of the one before.
+    typed_after: bool,
+}
+
+/// The note open while pairing.
+struct Opened {
+    kind: NoteKind2,
+    /// Its opener's start and end; both where the note before ended when it was typed
+    /// right after that one.
+    at: (usize, usize),
+    /// When it was typed right after another: that note's pair, and where this note's own
+    /// opener was written, inside that pair's closing markers.
+    after: Option<(usize, (usize, usize))>,
 }
 
 /// A note's span taken out of the host text.
@@ -609,6 +637,24 @@ enum ParaKey {
     Heading(u8),
     Quote,
     CodeBlock,
+}
+
+/// A heading's bold, taken off when it covers every word of the heading: Scrivener's
+/// heading styles are bold, so the bold comes with the style and says nothing the heading
+/// does not already say. Bold over some words only is the writer's, and stays.
+fn unbold_whole_heading(inlines: &mut [Inline]) {
+    let mut words = inlines.iter().filter_map(|inline| match inline {
+        Inline::Text(run) if !run.text.trim().is_empty() => Some(run.props.bold),
+        _ => None,
+    });
+    let first = words.next();
+    if first == Some(true) && words.all(|bold| bold) {
+        for inline in inlines.iter_mut() {
+            if let Inline::Text(run) = inline {
+                run.props.bold = false;
+            }
+        }
+    }
 }
 
 impl Pass<'_, '_> {
@@ -877,6 +923,7 @@ impl Pass<'_, '_> {
                 ranges.push((family, n, start, end));
             }
         }
+        self.styles_lost_in_export(seg, tokens, &ranges);
         if ranges.is_empty() {
             return;
         }
@@ -1002,6 +1049,49 @@ impl Pass<'_, '_> {
         }
     }
 
+    /// Count the paragraphs holding `<$ScrKeepWithNext>` that no style covers, in a project
+    /// Scrivener 3 exported to its older format: Scrivener 3 writes the mark beside a
+    /// heading's style markers, and that export keeps it and drops them (C20), so the
+    /// heading comes across as an ordinary paragraph. Anywhere else the mark is only the
+    /// paragraph's own setting, and a style opened in an earlier paragraph, or closed at
+    /// the start of this one, still covers it.
+    fn styles_lost_in_export(
+        &mut self,
+        seg: &Segment,
+        tokens: &[Token],
+        ranges: &[(Family, u32, usize, usize)],
+    ) {
+        if self.input.role != Role::Stream || !self.input.older_format_export {
+            return;
+        }
+        let paragraph_of = |at: usize| seg.at.get(at).and_then(|atom| seg.para.get(*atom)).copied();
+        let mut kept: BTreeSet<u32> = BTreeSet::new();
+        let mut styled: HashSet<u32> = HashSet::new();
+        for token in tokens {
+            match &token.kind {
+                TokenKind::ScrMarker
+                    if seg.text[token.start..token.end]
+                        .iter()
+                        .copied()
+                        .eq("<$ScrKeepWithNext>".chars()) =>
+                {
+                    let covered = ranges
+                        .iter()
+                        .any(|&(_, _, start, end)| start <= token.start && token.start < end);
+                    if covered {
+                        styled.extend(paragraph_of(token.start));
+                    } else {
+                        kept.extend(paragraph_of(token.start));
+                    }
+                }
+                TokenKind::StyleOpen(..) => styled.extend(paragraph_of(token.start)),
+                _ => {}
+            }
+        }
+        self.found.styles_lost_in_export +=
+            kept.iter().filter(|p| !styled.contains(p)).count() as u32;
+    }
+
     // ── markers that simply go, and what they stand for ──────────────────────────────
 
     fn markers(&mut self, seg: &mut Segment, tokens: &[Token]) {
@@ -1025,7 +1115,10 @@ impl Pass<'_, '_> {
                                 origin: PictureOrigin::Bare,
                                 name: Some(target.rsplit('/').next().unwrap_or(target).to_string()),
                                 // Points, taken as the logical pixels the editor measures in;
-                                // fifteen twips to one.
+                                // fifteen twips to one. Unverified (A18, O3): no linked picture
+                                // has been seen from a real project, and an embedded one on
+                                // Scrivener 3.5.2 for Mac is laid out at one point per pixel,
+                                // so these may need twenty twips to the point instead.
                                 goal_width: width.map(|w| (w as i32).saturating_mul(15)),
                                 goal_height: height.map(|h| (h as i32).saturating_mul(15)),
                                 ..Picture::default()
@@ -1047,20 +1140,57 @@ impl Pass<'_, '_> {
     // ── inline notes ─────────────────────────────────────────────────────────────────
 
     fn notes(&mut self, seg: &mut Segment, tokens: &[Token]) {
-        // Pair on a stack of one: Scrivener's notes do not nest.
+        // Pair on a stack of one: Scrivener's notes do not nest. The open note carries,
+        // when it opened touching the closer of the one before, that pair's index and
+        // where its own opener was written.
         let mut pairs: Vec<Pair> = Vec::new();
-        let mut open: Option<(NoteKind2, (usize, usize))> = None;
-        for token in tokens {
+        let mut open: Option<Opened> = None;
+        let mut tokens = tokens.iter().peekable();
+        while let Some(token) = tokens.next() {
             match &token.kind {
-                TokenKind::Open(kind) => match open {
-                    Some(_) => self.found.unmatched += 1,
-                    None => open = Some((kind.clone(), (token.start, token.end))),
+                TokenKind::Open(kind) => match open.take() {
+                    // A note typed right after another: Scrivener writes the next one's
+                    // opener before the previous one's closer, with nothing between them
+                    // (`{\Scrv_fn=\end_Scrv_annot}`). Both markers close the open note; the
+                    // new one opens, empty-handed, where they end.
+                    Some(opened)
+                        if tokens.peek().is_some_and(|next| {
+                            next.start == token.end
+                                && matches!(&next.kind, TokenKind::Close(k) if opened.kind.same_kind(k))
+                        }) =>
+                    {
+                        let end = tokens.next().map_or(token.end, |next| next.end);
+                        pairs.push(Pair {
+                            kind: opened.kind,
+                            open: opened.at,
+                            close: (token.start, end),
+                            typed_after: opened.after.is_some(),
+                        });
+                        open = Some(Opened {
+                            kind: kind.clone(),
+                            at: (end, end),
+                            after: Some((pairs.len() - 1, (token.start, token.end))),
+                        });
+                    }
+                    Some(other) => {
+                        // An opener inside an open note: literal, and the note stays open.
+                        self.found.unmatched += 1;
+                        open = Some(other);
+                    }
+                    None => {
+                        open = Some(Opened {
+                            kind: kind.clone(),
+                            at: (token.start, token.end),
+                            after: None,
+                        });
+                    }
                 },
                 TokenKind::Close(kind) => match open.take() {
-                    Some((opened, at)) if opened.same_kind(kind) => pairs.push(Pair {
-                        kind: opened,
-                        open: at,
+                    Some(opened) if opened.kind.same_kind(kind) => pairs.push(Pair {
+                        kind: opened.kind,
+                        open: opened.at,
                         close: (token.start, token.end),
+                        typed_after: opened.after.is_some(),
                     }),
                     Some(other) => {
                         // A closer of another kind: literal, and the open note stays open.
@@ -1073,7 +1203,15 @@ impl Pass<'_, '_> {
                 _ => {}
             }
         }
-        if open.is_some() {
+        if let Some(opened) = open {
+            // An opener never closed stays the literal text it is. One written touching the
+            // closer before it was taken with that closer: give it back, so the closer alone
+            // ends the note before.
+            if let Some((index, opener)) = opened.after
+                && let Some(pair) = pairs.get_mut(index)
+            {
+                pair.close.0 = opener.1;
+            }
             self.found.unmatched += 1;
         }
 
@@ -1127,12 +1265,14 @@ impl Pass<'_, '_> {
     }
 
     /// Join pairs of one note: those nothing separates, and those only paragraph breaks and
-    /// empty paragraphs separate (D5.3).
+    /// empty paragraphs separate (D5.3). A note typed right after another is never joined
+    /// to it, whatever its kind: a note split by formatting closes before it opens again.
     fn merge(&mut self, seg: &Segment, pairs: Vec<Pair>) -> Vec<Group> {
         let mut groups: Vec<Group> = Vec::new();
         for pair in pairs {
             if let Some(last) = groups.last_mut()
                 && last.kind == pair.kind
+                && !pair.typed_after
                 && !matches!(pair.kind, NoteKind2::Preserve)
             {
                 // The report counts notes, not joins: a note made of three pieces is one.
@@ -1248,7 +1388,11 @@ impl Pass<'_, '_> {
     fn annotation(&mut self, seg: &mut Segment, group: &Group, span: Span, nearest: &Nearest) {
         let first = seg.at[group.open.0];
         let last = seg.at[group.close.1 - 1];
-        let colour = matches!(&group.kind, NoteKind2::Annotation(Some(_)));
+        // Scrivener's own annotation red is no colour the writer chose.
+        let colour = matches!(
+            &group.kind,
+            NoteKind2::Annotation(Some(colour)) if !super::sidecar::is_default(colour, DEFAULT_ANNOTATION)
+        );
         let Some((start, end)) = span.body else {
             self.found.blank_notes += 1;
             return;
@@ -1700,6 +1844,7 @@ impl Pass<'_, '_> {
             footnote_marker: None,
             scene_breaks: SceneBreaks::default(),
             annotations_as_prose: false,
+            older_format_export: false,
         };
         let rewritten = rewrite(body, &inner_input);
         self.found.nested_unwrapped += rewritten.found.nested_unwrapped;
@@ -1790,7 +1935,7 @@ impl Pass<'_, '_> {
         out
     }
 
-    fn paragraph(&mut self, seg: &Segment, meta: u32, inlines: Vec<Inline>) -> Paragraph {
+    fn paragraph(&mut self, seg: &Segment, meta: u32, mut inlines: Vec<Inline>) -> Paragraph {
         let Some(m) = seg.metas.get(meta as usize) else {
             return Paragraph {
                 inlines,
@@ -1807,6 +1952,7 @@ impl Pass<'_, '_> {
             ParaMeaning::Heading(level) => {
                 props.style = Some(self.synthetic_style(ParaKey::Heading(level)));
                 props.outline_level = None;
+                unbold_whole_heading(&mut inlines);
             }
             ParaMeaning::Quote => {
                 props.style = Some(self.synthetic_style(ParaKey::Quote));
@@ -1884,6 +2030,11 @@ impl Pass<'_, '_> {
             })
             .collect();
 
+        // A block quote and code are indented by their kind, which the text keeps.
+        let indented_by_kind: HashSet<i32> = [ParaKey::Quote, ParaKey::CodeBlock]
+            .iter()
+            .filter_map(|key| self.synthetic.get(key).copied())
+            .collect();
         for (block, text) in blocks.iter().zip(&texts) {
             let (Block::Paragraph(p), Some(text)) = (block, text) else {
                 continue;
@@ -1894,7 +2045,14 @@ impl Pass<'_, '_> {
             if text.starts_with([' ', '\t']) {
                 self.found.typed_indents += 1;
             }
-            if p.props.left_indent > 0 && p.props.list.is_none() && p.label.is_none() {
+            if p.props.left_indent > 0
+                && p.props.list.is_none()
+                && p.label.is_none()
+                && !p
+                    .props
+                    .style
+                    .is_some_and(|style| indented_by_kind.contains(&style))
+            {
                 self.found.left_indents += 1;
             }
             if p.props.alignment == Some(Alignment::Justify) {

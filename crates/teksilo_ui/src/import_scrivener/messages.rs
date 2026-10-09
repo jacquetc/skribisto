@@ -327,6 +327,11 @@ pub(crate) const TABLE: &[Entry] = &[
         Some(Differently),
     ),
     e(
+        "scrivener-structure-untitled-item",
+        BeforeImport,
+        Some(Differently),
+    ),
+    e(
         "scrivener-structure-title-cleaned",
         BeforeImport,
         Some(Differently),
@@ -488,6 +493,11 @@ pub(crate) const TABLE: &[Entry] = &[
     ),
     e(
         "scrivener-metadata-tag-name-disambiguated",
+        Report,
+        Some(Differently),
+    ),
+    e(
+        "scrivener-metadata-rung-names-disambiguated",
         Report,
         Some(Differently),
     ),
@@ -665,6 +675,7 @@ pub(crate) const TABLE: &[Entry] = &[
     e("scrivener-prose-read-as-plain-text", Report, Some(Check)),
     e("scrivener-prose-inline-note-unmatched", Report, Some(Check)),
     e("scrivener-prose-style-unresolved", Report, Some(Check)),
+    e("scrivener-prose-styles-lost-in-export", Report, Some(Check)),
     e(
         "scrivener-prose-comment-anchor-without-entry",
         Report,
@@ -1803,6 +1814,9 @@ pub(crate) fn summary_line(key: &str, findings: &[&ScrivenerFinding]) -> Option<
                 count = count
             ))
         }
+        "scrivener-structure-untitled-item" => {
+            tr!(import_scrivener_structure_untitled_item_line(count = count))
+        }
         "scrivener-structure-title-cleaned" => {
             tr!(import_scrivener_structure_title_cleaned_line(count = count))
         }
@@ -1987,6 +2001,11 @@ pub(crate) fn summary_line(key: &str, findings: &[&ScrivenerFinding]) -> Option<
         },
         "scrivener-metadata-tag-name-disambiguated" => {
             tr!(import_scrivener_metadata_tag_name_disambiguated_line(
+                count = list(a, "names").len() as i64
+            ))
+        }
+        "scrivener-metadata-rung-names-disambiguated" => {
+            tr!(import_scrivener_metadata_rung_names_disambiguated_line(
                 count = list(a, "names").len() as i64
             ))
         }
@@ -2243,6 +2262,11 @@ pub(crate) fn summary_line(key: &str, findings: &[&ScrivenerFinding]) -> Option<
                         note = note,
                         folder = folder
                     )),
+                    "template" => tr!(import_scrivener_metadata_deadline_template_line(
+                        day = day,
+                        note = note,
+                        folder = folder
+                    )),
                     // No word goal to plan towards, and any reason this version does not
                     // know: a day that reads and no plan is what the line says.
                     _ => tr!(import_scrivener_metadata_deadline_no_word_goal_line(
@@ -2251,6 +2275,32 @@ pub(crate) fn summary_line(key: &str, findings: &[&ScrivenerFinding]) -> Option<
                         folder = folder
                     )),
                 }
+            })
+        }
+        "scrivener-metadata-session-target-not-imported" if flag(a, "calculated") => {
+            let (value, unit) = (num(a, "value"), txt(a, "unit"));
+            in_note("project", move |note, folder| match unit.as_str() {
+                "characters" => tr!(
+                    import_scrivener_metadata_session_target_calculated_characters_line(
+                        value = value,
+                        note = note,
+                        folder = folder
+                    )
+                ),
+                "pages" => tr!(
+                    import_scrivener_metadata_session_target_calculated_pages_line(
+                        value = value,
+                        note = note,
+                        folder = folder
+                    )
+                ),
+                _ => tr!(
+                    import_scrivener_metadata_session_target_calculated_words_line(
+                        value = value,
+                        note = note,
+                        folder = folder
+                    )
+                ),
             })
         }
         "scrivener-metadata-session-target-not-imported" => {
@@ -2311,6 +2361,9 @@ pub(crate) fn summary_line(key: &str, findings: &[&ScrivenerFinding]) -> Option<
         "scrivener-prose-style-unresolved" => tr!(import_scrivener_prose_style_unresolved_line(
             count = total(findings, "count")
         )),
+        "scrivener-prose-styles-lost-in-export" => tr!(
+            import_scrivener_prose_styles_lost_in_export_line(count = total(findings, "count"))
+        ),
         "scrivener-prose-comment-anchor-without-entry" => {
             tr!(import_scrivener_prose_comment_anchor_without_entry_line(
                 count = total(findings, "count")
@@ -2660,6 +2713,7 @@ pub(crate) fn listed_names(finding: &ScrivenerFinding) -> Vec<String> {
         | "scrivener-metadata-empty-collections-skipped"
         | "scrivener-metadata-collection-order-lost"
         | "scrivener-metadata-tag-name-disambiguated"
+        | "scrivener-metadata-rung-names-disambiguated"
         | "scrivener-metadata-icons-dropped" => "names",
         "scrivener-metadata-undefined-custom-field" => "ids",
         "scrivener-metadata-status-categories-guessed" => "rungs",

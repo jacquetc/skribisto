@@ -277,10 +277,37 @@ fn project(listing: &Listing, words: &MetadataWords, separator: &str) -> String 
                     .join(&separator_of(separator)),
             ),
             ProjectLine::Company(company) => (&words.company, inline(company)),
-            ProjectLine::SessionTarget { value, unit } => {
-                (&words.session_target, quantity(*value, *unit, words))
-            }
+            ProjectLine::SessionTarget {
+                value,
+                unit,
+                calculated,
+            } => (
+                if *calculated {
+                    &words.session_target_calculated
+                } else {
+                    &words.session_target
+                },
+                quantity(*value, *unit, words),
+            ),
             ProjectLine::WritingDays(raw) => (&words.writing_days, inline(raw)),
+            ProjectLine::WritingWeekdays(mask) => (
+                &words.writing_days,
+                [
+                    &words.weekday_monday,
+                    &words.weekday_tuesday,
+                    &words.weekday_wednesday,
+                    &words.weekday_thursday,
+                    &words.weekday_friday,
+                    &words.weekday_saturday,
+                    &words.weekday_sunday,
+                ]
+                .iter()
+                .enumerate()
+                .filter(|(bit, _)| mask & (1 << bit) != 0)
+                .map(|(_, day)| inline(day))
+                .collect::<Vec<_>>()
+                .join(&separator_of(separator)),
+            ),
             ProjectLine::DraftTarget { value, unit } => {
                 (&words.draft_target, quantity(*value, *unit, words))
             }

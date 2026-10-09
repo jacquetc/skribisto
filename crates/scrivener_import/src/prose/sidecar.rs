@@ -73,6 +73,27 @@ impl Sidecar {
     }
 }
 
+/// Scrivener 3 for Mac's own comment colour, a pale yellow: a comment in it carries no
+/// colour the writer chose.
+const DEFAULT_COMMENT: [f32; 3] = [0.99913, 0.954_826, 0.756_384];
+
+/// Whether `colour`, three numbers between 0 and 1 (`0.99913 0.954826 0.756384`, or
+/// `\R=0.543234\G=0.0\B=0.023817` as an inline annotation writes them), is `default`
+/// within a thousandth. A colour that does not read as three numbers is not.
+pub(crate) fn is_default(colour: &str, default: [f32; 3]) -> bool {
+    let numbers: Vec<f32> = colour
+        .split(|c: char| !(c.is_ascii_digit() || c == '.'))
+        .filter(|part| !part.is_empty())
+        .map(|part| part.parse::<f32>())
+        .collect::<Result<_, _>>()
+        .unwrap_or_default();
+    numbers.len() == 3
+        && numbers
+            .iter()
+            .zip(default)
+            .all(|(n, d)| (n - d).abs() <= 1e-3)
+}
+
 /// Read a `content.comments` or `<ID>.comments` file.
 pub(crate) fn read_comments(bytes: &[u8]) -> Result<Sidecar, xml::XmlProblem> {
     let text = xml::text_of(bytes)?;
@@ -93,7 +114,9 @@ pub(crate) fn read_comments(bytes: &[u8]) -> Result<Sidecar, xml::XmlProblem> {
                 .map(str::trim)
                 .filter(|a| !a.is_empty())
                 .map(str::to_string),
-            coloured: comment.attribute("Color").is_some(),
+            coloured: comment
+                .attribute("Color")
+                .is_some_and(|colour| !is_default(colour, DEFAULT_COMMENT)),
             body: xml::text(comment).unwrap_or_default(),
             range: None,
         });
@@ -157,6 +180,29 @@ fn range_of(text: &str) -> Option<(u64, u64)> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Scrivener 3 for Mac's own comment yellow is no colour the writer chose: losing it is
+    /// nothing to report. Any other colour is the writer's (C8).
+    #[test]
+    fn the_default_comment_yellow_is_no_colour_of_the_writers() {
+        let file = |colour: &str| {
+            format!(
+                r#"<Comments><Comment ID="A" Color="{colour}"><![CDATA[{{\rtf1 x}}]]></Comment></Comments>"#
+            )
+        };
+        let coloured = |colour: &str| {
+            read_comments(file(colour).as_bytes())
+                .map(|s| s.entries[0].coloured)
+                .unwrap_or_default()
+        };
+        assert!(!coloured("0.99913 0.954826 0.756384"));
+        assert!(!coloured("0.9995 0.9545 0.7560"), "within a thousandth");
+        assert!(coloured("0.5 0.8 1.0"));
+        assert!(
+            coloured("0.99913 0.954826"),
+            "a colour this cannot read is kept as one"
+        );
+    }
 
     #[test]
     fn a_comments_file_tells_footnotes_from_comments() {

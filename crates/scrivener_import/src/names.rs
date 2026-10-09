@@ -250,12 +250,17 @@ fn undecorated(name: &str, hosts: &[String], upgradable: bool) -> String {
             return name[..name.len() - extension.len()].trim_end().to_string();
         }
     }
-    // `.bak`, `.bak3`: a zipped backup.
-    if let Some(at) = lower.rfind(".bak")
-        && at > 0
-        && lower[at + 4..].bytes().all(|b| b.is_ascii_digit())
+    // `.bak`, `.bak3`: a zipped backup; `-bak`, `-bak1` on Scrivener 3 for Mac.
+    if let Some(at) = lower.rfind("bak")
+        && at > 1
+        && matches!(lower.as_bytes()[at - 1], b'.' | b'-')
+        && lower[at + 3..].bytes().all(|b| b.is_ascii_digit())
     {
-        return name[..at].trim_end().to_string();
+        return name[..at - 1].trim_end().to_string();
+    }
+    // ` 2026-10-05 15-40`: File > Back Up > Back Up To on Scrivener 3 for Mac.
+    if crate::pick::is_minute_stamped(&lower) && lower.len() > 17 {
+        return name[..name.len() - 17].trim_end().to_string();
     }
     // ` Backup`: the copy Scrivener keeps before upgrading a project, which is of the
     // format it upgrades from.
@@ -598,6 +603,14 @@ mod tests {
             ("Novel Backup.scriv", "Novel"),
             ("Novel.bak3.zip", "Novel"),
             ("Novel.bak.zip", "Novel"),
+            // Scrivener 3 for Mac's automatic backups and its Back Up To (G11, G12).
+            ("Novel-bak.zip", "Novel"),
+            ("Novel-bak1.zip", "Novel"),
+            ("Novel-bak12", "Novel"),
+            ("Novel 2026-10-05 15-40.zip", "Novel"),
+            ("Novel 2026-10-05 15-40", "Novel"),
+            ("Novel-bakery.zip", "Novel-bakery"),
+            ("Novel 2026-10-05.zip", "Novel 2026-10-05"),
             ("Novel [2025_06_01_05_14_50].zip", "Novel"),
             ("Novel.scriv.zip", "Novel"),
             ("Starter.scrivtemplate", "Starter"),

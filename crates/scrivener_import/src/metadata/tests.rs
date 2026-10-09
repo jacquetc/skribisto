@@ -47,7 +47,7 @@ impl P {
                     version_stamp: None,
                     id_scheme: IdScheme::Uuid,
                     template_title: None,
-                    created_from_template: None,
+                    saved_as_template: None,
                 },
                 binder: Vec::new(),
                 labels: Vocabulary::default(),
@@ -255,6 +255,63 @@ fn rung_names(v: &Vocabularies) -> Vec<&str> {
 }
 
 // ---------------------------------------------------------------- labels (D4-3)
+
+/// Scrivener allows two statuses of one name (M5: `Revised Draft` twice in the Mac ground
+/// truth); a ladder whose rungs share a name would let the writer pick the wrong one, so
+/// the second takes an ordinal, said (C11).
+#[test]
+fn two_statuses_of_one_name_become_two_rungs_told_apart() {
+    let (mut p, [_, a, b, _, _, _]) = novel();
+    p.project.statuses = list(
+        "Status",
+        &[
+            (-1, "No Status"),
+            (2, "First Draft"),
+            (3, "Revised Draft"),
+            (4, "revised draft"),
+            (5, "Revised Draft (2)"),
+        ],
+    );
+    p.status(a, 3);
+    p.status(b, 4);
+    let plan = p.plan();
+    let v = vocabularies(&p.project, &plan, &[], &words());
+    assert_eq!(
+        rung_names(&v),
+        [
+            "First Draft",
+            "Revised Draft",
+            "revised draft (3)",
+            "Revised Draft (2)"
+        ]
+    );
+    assert!(
+        v.notices.contains(&MetadataNotice::RungNamesDisambiguated {
+            names: vec!["revised draft (3)".to_string()]
+        }),
+        "{:?}",
+        v.notices
+    );
+}
+
+/// Two statuses of one name Scrivener has no kind for: the report names the guessed rungs
+/// as the ladder shows them, the second with its ordinal, never the first name twice.
+#[test]
+fn guessed_kinds_name_the_rungs_as_they_were_told_apart() {
+    let (mut p, _) = novel();
+    p.project.statuses = list("Status", &[(-1, "No Status"), (2, "Polish"), (3, "Polish")]);
+    let plan = p.plan();
+    let v = vocabularies(&p.project, &plan, &[], &words());
+    assert_eq!(rung_names(&v), ["Polish", "Polish (2)"]);
+    assert!(
+        v.notices
+            .contains(&MetadataNotice::StatusCategoriesGuessed {
+                rungs: vec!["Polish".to_string(), "Polish (2)".to_string()]
+            }),
+        "{:?}",
+        v.notices
+    );
+}
 
 /// One tag per label a row wears, in the list's order, on the rows that carry the item;
 /// `0` is a real label; a label no document wears stays behind and is listed.
@@ -645,6 +702,25 @@ fn the_title_is_what_the_settings_state_else_the_folders_name() {
     assert_eq!(refused, [Refused::Title(TitleSource::ProjectProperties)]);
 }
 
+/// A template is known by its own title, the one the card shows: its compile settings
+/// state the name of the project it was saved from (C13).
+#[test]
+fn a_templates_own_title_comes_before_what_its_settings_state() {
+    let (mut p, _) = novel();
+    p.project.source.container = Container::Template(crate::model::TemplateEncoding::Base64);
+    p.project.source.template_title = Some("Starter".to_string());
+    p.project.compile.title = Some("Saved from".to_string());
+    let (proposals, refused) = propose(&p.project, &p.facts);
+    assert_eq!(proposals.title.title, "Starter");
+    assert_eq!(proposals.title.source, TitleSource::Template);
+    assert!(refused.is_empty());
+    // With no title of its own, what its settings state.
+    p.project.source.template_title = Some("  ".to_string());
+    let (proposals, _) = propose(&p.project, &p.facts);
+    assert_eq!(proposals.title.title, "Saved from");
+    assert_eq!(proposals.title.source, TitleSource::CompileSettings);
+}
+
 /// Each author with no role or the author's role, the sorting form written as it prints;
 /// else the forename and surname; else the format 1.x properties. Never a placeholder.
 #[test]
@@ -912,6 +988,9 @@ mod second_half {
             color: None,
             none_label: None,
             options: Vec::new(),
+            checkbox_default: None,
+            date_type: None,
+            date_format: None,
             other_attributes: Vec::new(),
         }
     }
@@ -1022,12 +1101,13 @@ mod second_half {
         }));
     }
 
-    /// A date field's value is kept as written, never read as a date (its XML is
-    /// unverified, R1 §13); a checkbox carrying a setting the import cannot read is said;
-    /// a list's none and a value naming no option are no tag (D4-8).
+    /// A date field's value is listed as the calendar day the writer saw, fraction of a
+    /// second or not (M10), and kept as written when it is no date; a checkbox carrying a
+    /// default the import cannot read is said; a list's none and a value naming no option
+    /// are no tag (D4-8).
     #[test]
-    fn custom_fields_keep_dates_verbatim_and_say_what_they_cannot_read() {
-        let (mut p, [_, a, b, c, _, _]) = novel();
+    fn custom_fields_list_dates_as_days_and_say_what_they_cannot_read() {
+        let (mut p, [chapter, a, b, c, _, _]) = novel();
         let mut boxed = field("done", "Done", Some("Checkbox"));
         boxed.other_attributes = vec!["Default".to_string()];
         let mut list = field("pf", "Platform", Some("List"));
@@ -1041,8 +1121,13 @@ mod second_half {
                 name: String::new(),
             },
         ];
-        p.project.custom_fields = vec![field("when", "Due", Some("Date")), boxed, list];
+        let mut due = field("when", "Due", Some("Date"));
+        due.date_type = Some("Short".to_string());
+        due.date_format = Some(String::new());
+        p.project.custom_fields = vec![due, boxed, list];
         value(&mut p, a, "when", "2024-03-14 10:30:45 +0100");
+        value(&mut p, b, "when", "2024-03-15 23:30:00.00000 -0700");
+        value(&mut p, chapter, "when", "next spring");
         value(&mut p, a, "pf", "0");
         value(&mut p, b, "pf", "-1");
         value(&mut p, c, "pf", "Mac");
@@ -1053,7 +1138,16 @@ mod second_half {
             .map(|(t, _)| t)
             .unwrap_or_default();
         assert!(text.contains("Due"), "{text}");
-        assert!(text.contains("2024-03-14 10:30:45 +0100"), "{text}");
+        assert!(text.contains("2024-03-14"), "{text}");
+        assert!(
+            !text.contains("10:30"),
+            "a short date shows no time: {text}"
+        );
+        assert!(
+            text.contains("2024-03-15") && !text.contains("2024-03-16"),
+            "the day the writer saw, not the day in UTC: {text}"
+        );
+        assert!(text.contains("next spring"), "kept as written: {text}");
         assert_eq!(
             tag_names(&e),
             ["Done", "Platform: 0"],
@@ -1066,6 +1160,90 @@ mod second_half {
             field: "Platform".to_string(),
             count: 1
         }));
+    }
+
+    /// A date field that shows the time of day lists it with the day.
+    #[test]
+    fn a_date_field_showing_the_time_lists_it() {
+        let (mut p, [_, a, _, _, _, _]) = novel();
+        let mut due = field("when", "Due", Some("Date"));
+        due.date_type = Some("Short".to_string());
+        due.date_format = Some("yyyy-MM-dd HH:mm".to_string());
+        p.project.custom_fields = vec![due];
+        value(&mut p, a, "when", "2024-03-14 10:30:45.00000 +0100");
+        let (_, e) = run(&p);
+        let note = e.note(NoteSection::CustomMetadata).unwrap_or_default();
+        let text = skrib_format::djot_plain_text(note)
+            .map(|(t, _)| t)
+            .unwrap_or_default();
+        assert!(text.contains("2024-03-14 10:30"), "{text}");
+        assert!(!text.contains("+0100"), "{text}");
+    }
+
+    /// Scrivener writes a checkbox's value only where it differs from the field's default
+    /// (M9): ticked by default, every document, folder and research note that writes no
+    /// value wears the tag, never the Draft, Research or Trash folders; an explicit `No`
+    /// stays unticked, and a default the import reads is nothing to report.
+    #[test]
+    fn a_checkbox_ticked_by_default_ticks_every_row_that_writes_no_value() {
+        let (mut p, [chapter, a, b, c, note, draft]) = novel();
+        let mut boxed = field("checked", "Checked", Some("Checkbox"));
+        boxed.checkbox_default = Some(true);
+        p.project.custom_fields = vec![boxed];
+        value(&mut p, b, "checked", "No");
+        let (plan, e) = run(&p);
+        assert_eq!(tag_names(&e), ["Checked"]);
+        let wears = |item: u32| {
+            let rows = rows_of(&plan, item);
+            assert!(!rows.is_empty(), "item {item} has a row");
+            rows.iter()
+                .all(|(binder, row)| e.row_tags[*binder][*row].contains(&0))
+        };
+        for item in [chapter, a, c, note] {
+            assert!(wears(item), "item {item} is ticked by default");
+        }
+        assert!(!wears(b), "an explicit No stays unticked");
+        let research = 5;
+        for root in [draft, research] {
+            for (binder, row) in rows_of(&plan, root) {
+                assert!(!e.row_tags[binder][row].contains(&0), "root {root}");
+            }
+        }
+        assert!(
+            !e.notices
+                .iter()
+                .any(|n| matches!(n, MetadataNotice::CheckboxDefaultUnknown { .. })),
+            "{:?}",
+            e.notices
+        );
+    }
+
+    /// Unticked by default, or with no default, a checkbox is ticked only where a document
+    /// says `Yes`.
+    #[test]
+    fn a_checkbox_unticked_by_default_ticks_only_what_says_yes() {
+        for default in [Some(false), None] {
+            let (mut p, [_, a, b, _, _, _]) = novel();
+            let mut boxed = field("checked", "Checked", Some("Checkbox"));
+            boxed.checkbox_default = default;
+            p.project.custom_fields = vec![boxed];
+            value(&mut p, a, "checked", "Yes");
+            let (plan, e) = run(&p);
+            assert_eq!(tag_names(&e), ["Checked"], "{default:?}");
+            for (binder, row) in rows_of(&plan, a) {
+                assert!(e.row_tags[binder][row].contains(&0));
+            }
+            for (binder, row) in rows_of(&plan, b) {
+                assert!(e.row_tags[binder][row].is_empty(), "{default:?}");
+            }
+        }
+        // Unticked by default and ticked nowhere: no tag at all.
+        let (mut p, _) = novel();
+        let mut boxed = field("checked", "Checked", Some("Checkbox"));
+        boxed.checkbox_default = Some(false);
+        p.project.custom_fields = vec![boxed];
+        let (_, e) = run(&p);
+        assert!(tag_names(&e).is_empty());
     }
 
     /// Targets in pages are no goal; a draft target in pages goes to the folder; the unit
@@ -1392,6 +1570,195 @@ mod second_half {
                 if day_off { "No" } else { "Yes" }.to_string(),
             )],
         });
+    }
+
+    /// A template carries the deadline saved in it, not one set for the project started
+    /// from it: the goals stay, no Pace is planned, and the deadline is listed and said
+    /// (C9, O5).
+    #[test]
+    fn a_template_keeps_its_goals_and_plans_no_pace_from_its_deadline() {
+        let (mut p, [_, a, _, _, _, _]) = novel();
+        p.project.source.container = Container::Template(crate::model::TemplateEncoding::Base64);
+        target(&mut p, a, "1200", "Words");
+        draft_target(
+            &mut p,
+            "50000",
+            &[
+                ("Type", "Words"),
+                ("Deadline", "2027-10-05 14:55:00 +0200"),
+                ("IgnoreDeadline", "No"),
+            ],
+        );
+        let (plan, e) = run(&p);
+        assert!(e.pace.is_none(), "{:?}", e.pace);
+        assert_eq!(e.goals.get(&row_at(&plan, a)), Some(&(1200, 0)));
+        let said = MetadataNotice::DeadlineNotPlanned {
+            reason: DeadlineReason::Template,
+            day: NaiveDate::from_ymd_opt(2027, 10, 5)
+                .and_then(|d| d.and_hms_opt(0, 0, 0))
+                .map(|d| d.and_utc().timestamp()),
+        };
+        assert!(e.notices.contains(&said), "{:?}", e.notices);
+        assert!(foreseen(&p.project, &plan, today()).contains(&said));
+        let note = e.note(NoteSection::Project).unwrap_or_default();
+        assert!(note.contains("2027-10-05"), "{note}");
+        assert!(
+            !e.notices
+                .iter()
+                .any(|n| matches!(n, MetadataNotice::PacePlanned { .. }))
+        );
+    }
+
+    /// A session target Scrivener calculated from the deadline and the writing days is
+    /// listed as calculated, and said so (M19): with writing days set, Scrivener 3 for Mac
+    /// stores no target the writer typed. One the writer typed is listed as before.
+    #[test]
+    fn a_calculated_session_target_is_listed_as_calculated() {
+        for calculated in [true, false] {
+            let (mut p, _) = novel();
+            p.project.targets.session = Some(RawTarget {
+                value: "318".to_string(),
+                attributes: vec![
+                    ("Type".to_string(), "Words".to_string()),
+                    (
+                        "DeterminedFromDeadline".to_string(),
+                        if calculated { "Yes" } else { "No" }.to_string(),
+                    ),
+                ],
+            });
+            let (_, e) = run(&p);
+            assert!(
+                e.notices
+                    .contains(&MetadataNotice::SessionTargetNotImported {
+                        value: 318,
+                        unit: TargetUnit::Words,
+                        calculated,
+                    }),
+                "{:?}",
+                e.notices
+            );
+            let note = e.note(NoteSection::Project).unwrap_or_default();
+            let label = if calculated {
+                "W-session-target-calculated"
+            } else {
+                "W-session-target"
+            };
+            assert!(note.contains(&format!("*{label}*")), "{note}");
+        }
+    }
+
+    /// The Pace keeps the writing days the writer chose in Scrivener (M18), and a deadline
+    /// that is the day of the import plans only when that day is one of them: 2026-10-05,
+    /// the day of the import here, is a Monday.
+    #[test]
+    fn the_pace_keeps_the_writing_days_and_today_must_be_one_of_them() {
+        let with_days = |days: &str| {
+            let (mut p, _) = novel();
+            deadline_today(&mut p, false);
+            if let Some(session) = p.project.targets.session.as_mut() {
+                session
+                    .attributes
+                    .push(("WritingDays".to_string(), days.to_string()));
+            }
+            let (plan, e) = run(&p);
+            (p, plan, e)
+        };
+        let (_, _, e) = with_days("2, 4, 6");
+        assert_eq!(e.pace.as_ref().map(|pace| pace.weekday_mask), Some(21));
+        assert!(
+            !e.notices
+                .iter()
+                .any(|n| matches!(n, MetadataNotice::WritingDaysNotRead { .. })),
+            "{:?}",
+            e.notices
+        );
+        // Wednesday only: the deadline is today, a Monday, and no writing day is left.
+        let (p, plan, e) = with_days("4");
+        assert!(e.pace.is_none(), "{:?}", e.pace);
+        let said = MetadataNotice::DeadlineNotPlanned {
+            reason: DeadlineReason::NoWritingDayLeft,
+            day: today()
+                .and_hms_opt(0, 0, 0)
+                .map(|d| d.and_utc().timestamp()),
+        };
+        assert!(e.notices.contains(&said), "{:?}", e.notices);
+        assert!(foreseen(&p.project, &plan, today()).contains(&said));
+        // Days that cannot be read count every day, said.
+        let (_, _, e) = with_days("Monday");
+        assert_eq!(e.pace.as_ref().map(|pace| pace.weekday_mask), Some(127));
+        assert!(e.notices.contains(&MetadataNotice::WritingDaysNotRead {
+            raw: "Monday".to_string()
+        }));
+    }
+
+    /// Writing days read that no Pace keeps are listed in the Project note by their names,
+    /// Monday first, so the writer's choice is kept somewhere; a Pace that keeps them is
+    /// where they are, and they are not listed again.
+    #[test]
+    fn writing_days_no_pace_keeps_are_listed_by_name() {
+        let listed = |note: &str| {
+            let days: Vec<&str> = [
+                "W-weekday-monday",
+                "W-weekday-tuesday",
+                "W-weekday-wednesday",
+                "W-weekday-thursday",
+                "W-weekday-friday",
+                "W-weekday-saturday",
+                "W-weekday-sunday",
+            ]
+            .into_iter()
+            .filter(|day| note.contains(day))
+            .collect();
+            (note.contains("*W-writing-days*"), days)
+        };
+        let with = |deadline: bool, days: &str| {
+            let (mut p, _) = novel();
+            if deadline {
+                deadline_today(&mut p, false);
+            }
+            let session = p.project.targets.session.get_or_insert_with(|| RawTarget {
+                value: String::new(),
+                attributes: Vec::new(),
+            });
+            session
+                .attributes
+                .push(("WritingDays".to_string(), days.to_string()));
+            let (_, e) = run(&p);
+            (
+                e.pace.is_some(),
+                e.note(NoteSection::Project).unwrap_or_default().to_string(),
+            )
+        };
+        // Kept by the Pace.
+        let (paced, note) = with(true, "2, 4, 6");
+        assert!(paced);
+        assert_eq!(listed(&note), (false, vec![]), "{note}");
+        // No writing day left before today's deadline: no Pace, so listed.
+        let (paced, note) = with(true, "4");
+        assert!(!paced);
+        assert_eq!(listed(&note), (true, vec!["W-weekday-wednesday"]), "{note}");
+        // No deadline at all: listed, Sunday last though Scrivener numbers it first.
+        let (paced, note) = with(false, "1, 2, 4, 6");
+        assert!(!paced);
+        assert_eq!(
+            listed(&note),
+            (
+                true,
+                vec![
+                    "W-weekday-monday",
+                    "W-weekday-wednesday",
+                    "W-weekday-friday",
+                    "W-weekday-sunday"
+                ]
+            ),
+            "{note}"
+        );
+        let monday = note.find("W-weekday-monday").unwrap_or_default();
+        let sunday = note.find("W-weekday-sunday").unwrap_or_default();
+        assert!(monday < sunday, "{note}");
+        // Every day: nothing to keep.
+        let (_, note) = with(false, "1-7");
+        assert_eq!(listed(&note), (false, vec![]), "{note}");
     }
 
     /// A deadline that is the day of the import, on the writer's calendar, still leaves

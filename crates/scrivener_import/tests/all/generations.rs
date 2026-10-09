@@ -133,7 +133,7 @@ fn novel_reads_back(generation: FixtureGeneration, platform: FixturePlatform) {
     );
     assert_eq!(source.folder_name, spec.folder());
     if !stub {
-        assert_eq!(source.created_from_template.as_deref(), Some("Novel"));
+        assert_eq!(source.saved_as_template.as_deref(), Some("Novel"));
     }
     assert_eq!(
         read.card.device.is_some(),

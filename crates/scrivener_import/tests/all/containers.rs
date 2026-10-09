@@ -53,7 +53,8 @@ fn the_same_project_reads_the_same_from_a_folder_a_zip_and_a_template() {
     );
     let from_zip = read(run(&zipped));
     assert_eq!(from_zip.project.source.container, Container::Zip);
-    assert!(has(&from_zip, "scrivener-notice-project-found-below-pick"));
+    // The project is all the archive holds: nothing was found below what the writer picked.
+    assert!(!has(&from_zip, "scrivener-notice-project-found-below-pick"));
     assert_eq!(
         shape(&from_zip.project.binder),
         shape(&from_folder.project.binder)
@@ -176,6 +177,71 @@ fn a_folder_around_projects_finds_one_or_asks_which() {
     ));
     assert_eq!(answered.project.source.folder_name, "Harbour.scriv");
     assert!(first.exists());
+}
+
+/// Asked which of several projects to import, the writer is offered the backups and the
+/// templates beside them too, by their names alone (C19); answered with one, it is read as
+/// the archive it is. One project beside backups is still imported without a question.
+#[test]
+fn several_projects_offer_the_backups_and_templates_beside_them() {
+    let dir = temp();
+    let shelf = dir.path().join("Shelf");
+    let spec = Spec::novel(Generation::Format20, Platform::Mac);
+    write(&spec, &shelf);
+    let backup = spec.build().zip(Some(&spec.folder())).unwrap_or_default();
+    write_file(&backup, &shelf, "Lighthouse-bak1.zip");
+    write_file(&backup, &shelf, "Lighthouse 2026-10-05 15-40.zip");
+    write_file(&backup, &shelf, "Holiday photos.zip");
+    let starter = scrivener_fixtures::template(
+        &spec.build().zip(None).unwrap_or_default(),
+        scrivener_fixtures::TemplateEncoding::Base64,
+        "Starter",
+    );
+    write_file(&starter, &shelf, "Starter.scrivtemplate");
+    // One project folder: no question, whatever lies beside it.
+    let alone = read(run(&shelf));
+    assert_eq!(alone.project.source.folder_name, spec.folder());
+
+    let mut other = Spec::novel(Generation::Format15, Platform::Mac);
+    other.name = "Harbour".to_string();
+    write(&other, &shelf);
+    let asked = question(run(&shelf));
+    let Question::SeveralProjects { candidates } = &asked else {
+        panic!("expected several projects, got {asked:?}");
+    };
+    let paths: Vec<&str> = candidates.iter().map(|c| c.path.as_str()).collect();
+    assert_eq!(
+        paths,
+        vec![
+            "Harbour.scriv",
+            "Lighthouse.scriv",
+            "Lighthouse 2026-10-05 15-40.zip",
+            "Lighthouse-bak1.zip",
+            "Starter.scrivtemplate",
+        ]
+    );
+    let answered = read(run_with(
+        &shelf,
+        &Answers {
+            project: Some("Lighthouse-bak1.zip".to_string()),
+            ..Answers::default()
+        },
+    ));
+    assert_eq!(answered.project.source.container, Container::Zip);
+    assert!(answered.notices.contains(&Notice::SourceIsBackup {
+        sign: BackupSign::BakArchive
+    }));
+    let template = read(run_with(
+        &shelf,
+        &Answers {
+            project: Some("Starter.scrivtemplate".to_string()),
+            ..Answers::default()
+        },
+    ));
+    assert!(matches!(
+        template.project.source.container,
+        Container::Template(_)
+    ));
 }
 
 /// A project is never searched inside: the stale manifest a template leaves in
@@ -405,7 +471,40 @@ fn finder_litter_in_an_archive_is_dropped_silently() {
         .map(|n| n.key())
         .filter(|k| !crate::support::about_any_project(k))
         .collect();
-    assert_eq!(keys, vec!["scrivener-notice-project-found-below-pick"]);
+    assert!(keys.is_empty(), "{keys:?}");
+}
+
+/// A project deeper in an archive, or beside something else in it, was found below what
+/// the writer picked, and is said to be; one wrapping folder alone is the archive's own
+/// shape (Scrivener's backups, Finder's "Compress") and says nothing (C12).
+#[test]
+fn a_project_below_an_archives_one_folder_is_said_to_be() {
+    let dir = temp();
+    let spec = Spec::novel(Generation::Format20, Platform::Mac);
+    let deeper = spec.build().nested(&format!("Writing/{}", spec.folder()));
+    let zip = write_file(
+        &deeper.zip(None).unwrap_or_default(),
+        dir.path(),
+        "Writing.zip",
+    );
+    assert!(
+        read(run(&zip))
+            .notices
+            .contains(&Notice::ProjectFoundBelowPick {
+                path: format!("Writing/{}", spec.folder())
+            })
+    );
+    let mut beside = spec.build().nested(&spec.folder());
+    beside.put("Read me.txt", b"Notes about the novel.".to_vec());
+    let zip = write_file(
+        &beside.zip(None).unwrap_or_default(),
+        dir.path(),
+        "Beside.zip",
+    );
+    assert!(has(
+        &read(run(&zip)),
+        "scrivener-notice-project-found-below-pick"
+    ));
 }
 
 /// A caller about to open a file can tell a Scrivener project from anything

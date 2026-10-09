@@ -22,7 +22,8 @@ use common::entities::GoalUnit;
 use super::notice::{DeadlineReason, DraftTargetReason, Field, MetadataNotice, TargetUnit};
 use super::vocabulary::{folded, item_of};
 use crate::model::{
-    CompileReplacement, ItemKey, KeywordRow, Link, Project, RawTarget, Rgb, parents_of,
+    CompileReplacement, Container, CustomFieldDef, ItemKey, ItemKind, KeywordRow, Link, Project,
+    RawTarget, Rgb, parents_of,
 };
 use crate::structure::{
     BinderKind, NoteSection, Origin, PlannedRow, Role, RowRef, StructurePlan, SubRole, clean_title,
@@ -71,9 +72,14 @@ pub(crate) enum ProjectLine {
     SessionTarget {
         value: i64,
         unit: TargetUnit,
+        /// Scrivener calculated it from the deadline (`DeterminedFromDeadline="Yes"`).
+        calculated: bool,
     },
-    /// The writing days, as written, when they are some days only.
+    /// The writing days, as written, when they cannot be read.
     WritingDays(String),
+    /// The writing days read, when they are some days only: the Pace's weekday mask, Monday
+    /// in its lowest bit. Taken off again when a Pace keeps them.
+    WritingWeekdays(i64),
     /// The draft target, when no book's goal took it.
     DraftTarget {
         value: i64,
@@ -207,9 +213,12 @@ pub(crate) struct PaceInputs {
     pub(crate) end: NaiveDate,
     /// No writing scheduled on the deadline itself (`CanWriteOnDeadlineDate="No"`).
     pub(crate) day_off: bool,
-    /// The writing days, as written, when they are some days only (the plan counts every
-    /// day, said).
-    pub(crate) partial_days: Option<String>,
+    /// The writing days, Monday = 1 to Sunday = 64, as the Pace counts them: every day
+    /// when Scrivener names none, or names them in a way this cannot read.
+    pub(crate) weekday_mask: i64,
+    /// The writing days, as written, when they cannot be read (the plan counts every day,
+    /// said).
+    pub(crate) unread_days: Option<String>,
 }
 
 /// Everything decided.
@@ -727,7 +736,9 @@ fn collections(ctx: &Ctx<'_>, out: &mut Collected) {
 enum FieldKind {
     List,
     Checkbox,
-    /// Text, a date (kept as written), and every format 1.x field.
+    /// A date, listed as the day it names (M10).
+    Date,
+    /// Text, and every format 1.x field.
     Text,
 }
 
@@ -735,7 +746,29 @@ fn field_kind(kind: Option<&str>) -> FieldKind {
     match kind.map(str::trim) {
         Some("List") => FieldKind::List,
         Some("Checkbox") => FieldKind::Checkbox,
+        Some("Date") => FieldKind::Date,
         _ => FieldKind::Text,
+    }
+}
+
+/// A date field's value as a line lists it: the day the writer saw (`YYYY-MM-DD`), with the
+/// time of day when the field shows one, both in the offset Scrivener wrote. The text as
+/// written when it is no date this can read.
+fn date_value(def: &CustomFieldDef, raw: &str) -> String {
+    let Some(at) = crate::dates::field_date(raw) else {
+        return raw.to_string();
+    };
+    // A field shows the time when it has a time style, or a pattern of its own that holds
+    // an hour; Scrivener's own short date (`DateType="Short"`, an empty pattern) shows none.
+    let shows_time = def.other_attributes.iter().any(|a| a == "TimeType")
+        || def
+            .date_format
+            .as_deref()
+            .is_some_and(|f| f.contains(['H', 'h', 'k', 'K']));
+    if shows_time {
+        at.format("%Y-%m-%d %H:%M").to_string()
+    } else {
+        at.format("%Y-%m-%d").to_string()
     }
 }
 
@@ -758,7 +791,7 @@ fn fields(ctx: &Ctx<'_>, out: &mut Collected) {
     let title_of = |d: usize| titles[d].clone();
     for (d, def) in defs.iter().enumerate() {
         if field_kind(def.kind.as_deref()) == FieldKind::Checkbox
-            && !def.other_attributes.is_empty()
+            && def.other_attributes.iter().any(|a| a == "Default")
         {
             out.notices
                 .push(MetadataNotice::CheckboxDefaultUnknown { field: title_of(d) });
@@ -780,6 +813,14 @@ fn fields(ctx: &Ctx<'_>, out: &mut Collected) {
         let carried = ctx.carried(item);
         let mut holds_any = false;
         let mut seen_fields: HashSet<usize> = HashSet::new();
+        // A checkbox ticked by default is ticked on every document, folder and research note
+        // that writes no value for it (M9), never on the Draft, Research or Trash folders,
+        // which Scrivener shows no metadata for.
+        let takes_defaults = carried
+            && !matches!(
+                row.kind,
+                ItemKind::DraftFolder | ItemKind::ResearchFolder | ItemKind::TrashFolder
+            );
         for value in &row.meta.custom {
             let Some(&d) = def_of.get(value.field.as_str()) else {
                 undefined_ids.insert(value.field.clone());
@@ -818,7 +859,7 @@ fn fields(ctx: &Ctx<'_>, out: &mut Collected) {
                         }
                     }
                 }
-                FieldKind::Text => {
+                kind @ (FieldKind::Text | FieldKind::Date) => {
                     if raw.is_empty() {
                         continue;
                     }
@@ -826,25 +867,36 @@ fn fields(ctx: &Ctx<'_>, out: &mut Collected) {
                     if !carried {
                         continue;
                     }
+                    let shown = match kind {
+                        FieldKind::Date => date_value(&defs[d], raw),
+                        _ => value.value.clone(),
+                    };
                     let path = ctx.path(item);
                     match ctx.sheet(item) {
                         Some(at) => {
-                            sheet_values
-                                .entry(at)
-                                .or_default()
-                                .push((d, value.value.clone()));
+                            sheet_values.entry(at).or_default().push((d, shown));
                             texts.entry(d).or_default().push(Entry::InOwnNote { path });
                         }
-                        None => texts.entry(d).or_default().push(Entry::Listed {
-                            path,
-                            value: value.value.clone(),
-                        }),
+                        None => texts
+                            .entry(d)
+                            .or_default()
+                            .push(Entry::Listed { path, value: shown }),
                     }
                 }
             }
         }
         if holds_any && !carried {
             without_row += 1;
+        }
+        if takes_defaults {
+            for (d, def) in defs.iter().enumerate() {
+                if field_kind(def.kind.as_deref()) == FieldKind::Checkbox
+                    && def.checkbox_default == Some(true)
+                    && !seen_fields.contains(&d)
+                {
+                    box_worn.entry(d).or_default().push(item);
+                }
+            }
         }
     }
     for (at, mut values) in sheet_values {
@@ -1163,35 +1215,33 @@ fn measurable(binder: BinderKind, row: &PlannedRow) -> bool {
             ))
 }
 
-/// Which days of the week `raw` names (Scrivener's `WritingDays`: `1-2, 4-6`), when it
-/// names all seven or none: every day. `None` for some days only, or a list this cannot
-/// read: the day numbering is not established (D4-12), so no single day is assumed.
-fn every_day(raw: &str) -> Option<()> {
+/// The writing days `raw` names (Scrivener's `WritingDays`: `2, 4, 6` or `1-2, 4-6`), as
+/// the Pace's mask counts them (Monday = 1 to Sunday = 64). Scrivener numbers the days from
+/// Sunday: day 1 is Sunday and day 7 Saturday (M18, from Monday, Wednesday and Friday written
+/// as `2, 4, 6`). Every day when it names none; `None` for a list this cannot read.
+fn writing_day_mask(raw: &str) -> Option<i64> {
     let raw = raw.trim();
     if raw.is_empty() {
-        return Some(());
+        return Some(127);
     }
-    let mut days = [false; 7];
+    let mut mask = 0i64;
     for part in raw.split(',') {
         let part = part.trim();
         let (from, to) = match part.split_once('-') {
-            Some((a, b)) => (
-                a.trim().parse::<usize>().ok()?,
-                b.trim().parse::<usize>().ok()?,
-            ),
+            Some((a, b)) => (a.trim().parse::<i64>().ok()?, b.trim().parse::<i64>().ok()?),
             None => {
-                let d = part.parse::<usize>().ok()?;
+                let d = part.parse::<i64>().ok()?;
                 (d, d)
             }
         };
         if !(1..=7).contains(&from) || !(1..=7).contains(&to) || from > to {
             return None;
         }
-        for day in &mut days[from - 1..to] {
-            *day = true;
+        for day in from..=to {
+            mask |= 1 << ((day + 5) % 7);
         }
     }
-    days.iter().all(|d| *d).then_some(())
+    Some(mask)
 }
 
 fn targets(ctx: &Ctx<'_>, out: &mut Collected) {
@@ -1356,16 +1406,22 @@ fn targets(ctx: &Ctx<'_>, out: &mut Collected) {
 
     // The deadline in force (D4-12).
     let session = project.targets.session.as_ref();
+    // The writing days drive the Pace whether Scrivener computes the session target from the
+    // deadline or not: they are the writer's choice either way.
     let writing_days = session
         .and_then(|s| attribute(s, "WritingDays"))
         .unwrap_or_default();
-    let partial_days = every_day(writing_days)
-        .is_none()
-        .then(|| writing_days.to_string());
-    if let Some(raw) = &partial_days {
-        out.listing
+    let weekday_mask = writing_day_mask(writing_days);
+    let unread_days = weekday_mask.is_none().then(|| writing_days.to_string());
+    match (weekday_mask, &unread_days) {
+        (_, Some(raw)) => out
+            .listing
             .project
-            .push(ProjectLine::WritingDays(raw.clone()));
+            .push(ProjectLine::WritingDays(raw.clone())),
+        (Some(mask), None) if mask & 127 != 127 => {
+            out.listing.project.push(ProjectLine::WritingWeekdays(mask))
+        }
+        _ => {}
     }
     let Some(target) = draft else {
         return;
@@ -1383,8 +1439,11 @@ fn targets(ctx: &Ctx<'_>, out: &mut Collected) {
     let unix_day = day
         .and_then(|d| d.and_hms_opt(0, 0, 0))
         .map(|d| d.and_utc().timestamp());
+    let template = matches!(project.source.container, Container::Template(_));
     let blocked = match (day, draft_value, goal_unit(draft_unit), single_book) {
         (None, ..) => Some(DeadlineReason::Unreadable),
+        // A template's deadline was saved in the template, not set for this project (C9).
+        _ if template => Some(DeadlineReason::Template),
         (_, None, ..) | (_, _, None, _) => Some(DeadlineReason::NoWordGoal),
         (_, _, Some(GoalUnit::Characters), _) => Some(DeadlineReason::CharacterGoal),
         (_, _, _, None) => Some(DeadlineReason::NoSingleBook),
@@ -1396,7 +1455,8 @@ fn targets(ctx: &Ctx<'_>, out: &mut Collected) {
                 book,
                 end,
                 day_off: session.and_then(|s| attribute(s, "CanWriteOnDeadlineDate")) == Some("No"),
-                partial_days,
+                weekday_mask: weekday_mask.unwrap_or(127),
+                unread_days,
             });
         }
         (reason, _, _) => {
@@ -1445,12 +1505,20 @@ fn project_lines(ctx: &Ctx<'_>, out: &mut Collected) {
         && let Some(value) = count_of(&session.value).value()
     {
         let unit = unit_of(attribute(session, "Type"));
-        lines.push(ProjectLine::SessionTarget { value, unit });
-        out.notices
-            .push(MetadataNotice::SessionTargetNotImported { value, unit });
+        let calculated = attribute(session, "DeterminedFromDeadline") == Some("Yes");
+        lines.push(ProjectLine::SessionTarget {
+            value,
+            unit,
+            calculated,
+        });
+        out.notices.push(MetadataNotice::SessionTargetNotImported {
+            value,
+            unit,
+            calculated,
+        });
     }
-    // The lines the targets wrote (a draft target no book took, partial writing days, the
-    // deadline) come after these.
+    // The lines the targets wrote (a draft target no book took, writing days some days
+    // only or unread, the deadline) come after these.
     lines.append(&mut out.listing.project);
     out.listing.project = lines;
 }
@@ -1555,7 +1623,7 @@ fn pov_hint(ctx: &Ctx<'_>, out: &mut Collected) {
                     .ok()
                     .and_then(|id| def.options.iter().find(|o| o.id == id))
                     .map(|o| o.name.as_str()),
-                FieldKind::List | FieldKind::Checkbox => None,
+                FieldKind::List | FieldKind::Checkbox | FieldKind::Date => None,
             };
             let name = clean_title(named).0;
             if !name.is_empty() && seen.insert(folded(&name)) {
@@ -1639,15 +1707,20 @@ fn icons_and_script(ctx: &Ctx<'_>, out: &mut Collected) {
 mod tests {
     use super::*;
 
+    /// Scrivener numbers the days from Sunday (Monday, Wednesday and Friday are `2, 4, 6`,
+    /// M18); the Pace's mask counts from Monday = 1 to Sunday = 64.
     #[test]
-    fn writing_days_are_every_day_only_when_all_seven_or_none() {
-        assert!(every_day("").is_some());
-        assert!(every_day("1-7").is_some());
-        assert!(every_day("1, 2,3-5 ,6-7").is_some());
-        assert!(every_day("1-2, 4-6").is_none());
-        assert!(every_day("0-7").is_none());
-        assert!(every_day("Monday").is_none());
-        assert!(every_day("5-3").is_none());
+    fn writing_days_are_read_sunday_first_into_the_paces_mask() {
+        assert_eq!(writing_day_mask("2, 4, 6"), Some(1 + 4 + 16));
+        assert_eq!(writing_day_mask(""), Some(127));
+        assert_eq!(writing_day_mask("1-7"), Some(127));
+        assert_eq!(writing_day_mask("1, 2,3-5 ,6-7"), Some(127));
+        assert_eq!(writing_day_mask("1"), Some(64));
+        assert_eq!(writing_day_mask("7"), Some(32));
+        assert_eq!(writing_day_mask("1-2, 4-6"), Some(64 + 1 + 4 + 8 + 16));
+        for unreadable in ["0", "8", "x", "0-7", "Monday", "5-3"] {
+            assert_eq!(writing_day_mask(unreadable), None, "{unreadable}");
+        }
     }
 
     #[test]

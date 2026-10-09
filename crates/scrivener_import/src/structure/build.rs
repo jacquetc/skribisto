@@ -2714,6 +2714,7 @@ impl<'a> Builder<'a> {
     // ------------------------------------------------ afterwards
 
     fn finish(mut self) -> StructurePlan {
+        self.untitled_notices();
         self.adoption();
         self.link_templates();
         self.draft_notices();
@@ -2744,6 +2745,30 @@ impl<'a> Builder<'a> {
             shape,
             notices: self.notices,
         }
+    }
+
+    /// Items with no title at all, each once, wherever their own row went: the Draft,
+    /// Research and Trash folders aside, which Scrivener always names.
+    fn untitled_notices(&mut self) {
+        let mut said: HashSet<u32> = HashSet::new();
+        let mut untitled = Vec::new();
+        for row in self.manuscript.iter().chain(&self.notes) {
+            let Origin::Item { item } = row.origin else {
+                continue;
+            };
+            let source = &self.project.binder[item as usize];
+            if self.titles[item as usize].is_empty()
+                && !matches!(
+                    source.kind,
+                    ItemKind::DraftFolder | ItemKind::ResearchFolder | ItemKind::TrashFolder
+                )
+                && source.title.as_deref().is_none_or(|t| t.trim().is_empty())
+                && said.insert(item)
+            {
+                untitled.push(StructureNotice::UntitledItem { item });
+            }
+        }
+        self.notices.extend(untitled);
     }
 
     /// Texts that follow a chapter among their siblings end that chapter in the

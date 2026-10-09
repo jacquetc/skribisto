@@ -52,7 +52,7 @@ impl P {
                     version_stamp: None,
                     id_scheme: IdScheme::Uuid,
                     template_title: None,
-                    created_from_template: None,
+                    saved_as_template: None,
                 },
                 binder: Vec::new(),
                 labels: Vocabulary::default(),
@@ -1376,6 +1376,15 @@ fn titles_are_cleaned_never_invented_and_placeholders_are_stored_blank() {
     );
     assert!(has(&plan, &StructureNotice::TitleCleaned { item: nfd }));
     assert_eq!(row_of(&plan, blank).title, PlannedTitle::Own(String::new()));
+    // An item with no title at all (the starting document of Scrivener's Blank template)
+    // is stored blank and said, once (C16); a placeholder title is said as one, not as
+    // untitled, and the Draft itself is the book's row, titled after the project.
+    let untitled: Vec<&StructureNotice> = plan
+        .notices
+        .iter()
+        .filter(|n| matches!(n, StructureNotice::UntitledItem { .. }))
+        .collect();
+    assert_eq!(untitled, [&StructureNotice::UntitledItem { item: blank }]);
     assert!(has(
         &plan,
         &StructureNotice::TitleRepeatsNumber { item: numbered }
@@ -2342,6 +2351,7 @@ fn every_notice_has_one_listed_key_and_a_group() {
         StructureNotice::LooksLikeManuscript { item: 0 },
         StructureNotice::GenericSheetTitle { item: 0 },
         StructureNotice::PlaceholderTitle { item: 0 },
+        StructureNotice::UntitledItem { item: 0 },
         StructureNotice::TitleCleaned { item: 0 },
         StructureNotice::OwnTextMoved { item: 0 },
         StructureNotice::TextWithChildren { item: 0 },

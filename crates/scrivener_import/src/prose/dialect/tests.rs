@@ -29,6 +29,7 @@ fn input() -> Input<'static> {
         footnote_marker: None,
         scene_breaks: SceneBreaks::default(),
         annotations_as_prose: false,
+        older_format_export: false,
     }
 }
 
@@ -236,6 +237,16 @@ fn an_annotation_inside_a_paragraph_marks_the_word_before_it() {
     assert!(out.doc.annotations[0].reference.is_some());
 }
 
+/// Scrivener 3 for Mac's own annotation red is no colour the writer chose (C8).
+#[test]
+fn the_default_annotation_red_is_no_colour_of_the_writers() {
+    let out = run(
+        r"{\rtf1 The keeper \{\\Scrv_annot \\color=\{\\R=0.543234\\G=0.0\\B=0.023817\} \\text=check this date\\end_Scrv_annot\} counted.\par}",
+    );
+    assert_eq!(out.found.annotations, 1);
+    assert_eq!(out.found.annotation_colours, 0);
+}
+
 /// Opening its paragraph, an annotation marks the word after it.
 #[test]
 fn an_annotation_opening_a_paragraph_marks_the_word_after_it() {
@@ -384,6 +395,141 @@ fn style_markers_give_paragraphs_their_kind_whichever_writer_placed_them() {
     assert_eq!(out.found.styles_not_carried.get("Verse"), Some(&1));
     assert_eq!(out.found.styles_not_carried.get("Emphasis"), Some(&6));
     assert_eq!(out.found.styles_unresolved, 1);
+}
+
+/// The words of `paragraph` that are bold.
+fn bold_words(paragraph: &Block) -> Vec<String> {
+    match paragraph {
+        Block::Paragraph(p) => p
+            .runs()
+            .filter(|r| r.props.bold && !r.text.trim().is_empty())
+            .map(|r| r.text.trim().to_string())
+            .collect(),
+        Block::Table(_) => Vec::new(),
+    }
+}
+
+/// Scrivener's Heading 1 is bold by its style, so every word of a heading comes out bold:
+/// the heading already says so, and `# {*First line*}` would make the bold a choice of the
+/// writer's (Scene B of the Mac ground truth, C6). Bold on some words only is the
+/// writer's own, and stays.
+#[test]
+fn a_heading_wholly_bold_by_its_style_loses_the_bold_and_one_bold_word_keeps_it() {
+    let list: Vec<String> = ["S0"].iter().map(|s| s.to_string()).collect();
+    let table = style_table();
+    let rewrite_with_styles = |rtf: &str| {
+        rewrite(
+            parse(rtf),
+            &Input {
+                styles: StreamStyles {
+                    list: Some(&list),
+                    table: Some(&table),
+                },
+                ..input()
+            },
+        )
+    };
+    let whole = rewrite_with_styles(
+        r"{\rtf1 {\fonttbl\f0\fswiss Helvetica;\f1\froman Palatino-Bold;}\f0\fs24 <$ScrKeepWithNext><$Scr_H::1><$Scr_Ps::0>
+\f1\b\fs36 First line\par
+\f0\b0\fs24 <!$Scr_H::1><!$Scr_Ps::0>Body text.\par}",
+    );
+    assert_eq!(texts(&whole.doc), ["First line", "Body text."]);
+    assert!(
+        bold_words(&whole.doc.body[0]).is_empty(),
+        "{:?}",
+        whole.doc.body[0]
+    );
+    let partial = rewrite_with_styles(r"{\rtf1 <$Scr_H::1>The {\b storm} came<!$Scr_H::1>\par}");
+    assert_eq!(texts(&partial.doc), ["The storm came"]);
+    assert_eq!(bold_words(&partial.doc.body[0]), ["storm"]);
+}
+
+/// A block quote is indented by its kind: its indent is no formatting lost. Any other
+/// paragraph's left indent is (C10).
+#[test]
+fn a_block_quotes_indent_is_not_counted_as_lost() {
+    let list: Vec<String> = ["S0", "S1"].iter().map(|s| s.to_string()).collect();
+    let table = style_table();
+    let out = rewrite(
+        parse(
+            r"{\rtf1 \pard\li720 <$Scr_Ps::1>Quoted words.<!$Scr_Ps::1>\par \pard\li720 Indented prose.\par}",
+        ),
+        &Input {
+            styles: StreamStyles {
+                list: Some(&list),
+                table: Some(&table),
+            },
+            ..input()
+        },
+    );
+    assert_eq!(texts(&out.doc), ["Quoted words.", "Indented prose."]);
+    assert_eq!(out.found.left_indents, 1);
+}
+
+/// Scrivener's export to its older format keeps a heading's `<$ScrKeepWithNext>` and drops
+/// the style markers beside it (`gt-writing-v2`): in such a project, a paragraph holding the
+/// one without the others is counted, for the report to say its style may have been lost
+/// (C20). With its style markers, as Scrivener 3 writes it, it is nothing to report.
+#[test]
+fn a_keep_with_next_mark_with_no_style_is_counted_in_an_export() {
+    let exported = rewrite(
+        parse(r"{\rtf1 {\b\fs36 <$ScrKeepWithNext>First line\par}Body text.\par}"),
+        &Input {
+            older_format_export: true,
+            ..input()
+        },
+    );
+    assert_eq!(texts(&exported.doc), ["First line", "Body text."]);
+    assert_eq!(exported.found.styles_lost_in_export, 1);
+    let list: Vec<String> = ["S0"].iter().map(|s| s.to_string()).collect();
+    let table = style_table();
+    let styled = rewrite(
+        parse(
+            r"{\rtf1 <$ScrKeepWithNext><$Scr_H::1><$Scr_Ps::0>First line\par <!$Scr_H::1><!$Scr_Ps::0>Body text.\par}",
+        ),
+        &Input {
+            styles: StreamStyles {
+                list: Some(&list),
+                table: Some(&table),
+            },
+            older_format_export: true,
+            ..input()
+        },
+    );
+    assert_eq!(styled.found.styles_lost_in_export, 0);
+}
+
+/// In a project Scrivener 3 saved in its own format, keep-with-next on a paragraph with no
+/// style is the writer's setting: nothing was exported, nothing is said.
+#[test]
+fn a_keep_with_next_mark_in_a_native_project_is_not_counted() {
+    let native = run(r"{\rtf1 {\b\fs36 <$ScrKeepWithNext>First line\par}Body text.\par}");
+    assert_eq!(native.found.styles_lost_in_export, 0);
+}
+
+/// A style's opener is written once, at the first paragraph of its run, and its closer at
+/// the start of the paragraph after: the paragraphs between, keep-with-next carried on
+/// each, are still in the style, even in an export.
+#[test]
+fn a_keep_with_next_mark_inside_a_style_run_is_not_counted() {
+    let list: Vec<String> = ["S0", "S1"].iter().map(|s| s.to_string()).collect();
+    let table = style_table();
+    let rtf = r"{\rtf1 <$ScrKeepWithNext><$Scr_H::1><$Scr_Ps::0>Part one\par <$ScrKeepWithNext><!$Scr_H::1><$Scr_H::2><!$Scr_Ps::0><$Scr_Ps::1>The harbour\par <$ScrKeepWithNext>Second line of the heading\par <$ScrKeepWithNext><!$Scr_Ps::1><!$Scr_H::2>Body text.\par}";
+    for older_format_export in [false, true] {
+        let out = rewrite(
+            parse(rtf),
+            &Input {
+                styles: StreamStyles {
+                    list: Some(&list),
+                    table: Some(&table),
+                },
+                older_format_export,
+                ..input()
+            },
+        );
+        assert_eq!(out.found.styles_lost_in_export, 0, "{older_format_export}");
+    }
 }
 
 /// With no style list, a marker names nothing: removed and counted, never guessed.
@@ -1052,4 +1198,211 @@ fn many_annotations_in_one_paragraph_are_placed_in_linear_time() {
         "{:?}",
         started.elapsed()
     );
+}
+
+// ── notes typed one right after another (the Mac ground truth, A7) ─────────────────
+
+/// The end of Scene A's last paragraph exactly as Scrivener 3.5.2 for Mac wrote it: an
+/// inline annotation, turned off, then an inline footnote typed straight after it. The
+/// footnote's opener is written before the annotation's closer (`{\Scrv_fn=\end_Scrv_annot}`),
+/// which reads as the footnote opening inside the annotation unless the two are taken as
+/// what they are, two notes side by side.
+const ANNOTATION_THEN_FOOTNOTE: &str = r"{\rtf1\ansi\ansicpg1252\cocoartf2870
+{\fonttbl\f0\froman\fcharset0 Palatino-Roman;\f3\fswiss\fcharset0 Helvetica;}
+\pard\fi360\sl264\slmult1\pardirnatural\partightenfactor0
+\f0\fs26 \cf0 This is a 4
+\fs18 \super th
+\fs26 \nosupersub  sentence.
+\f3\fs24 \{\\Scrv_annot \\color=\{\\R=0.543234\\G=0.0\\B=0.023817\} \\text=
+\f0\fs26 inline note
+\f3\fs24 \{\\Scrv_fn=\\end_Scrv_annot\}
+\f0\fs26 inline footnote
+\f3\fs24 \\end_Scrv_fn\}}";
+
+/// No marker of Scrivener's is left anywhere: in the prose, a footnote or a comment.
+fn no_marker_left(out: &Rewritten) {
+    let mut every: Vec<String> = texts(&out.doc);
+    every.extend((0..out.doc.notes.len()).flat_map(|n| note(&out.doc, n)));
+    every.extend((0..out.doc.annotations.len()).flat_map(|n| comment(&out.doc, n)));
+    for text in every {
+        assert!(!text.contains("Scrv"), "a marker is left in {text:?}");
+    }
+}
+
+#[test]
+fn an_annotation_then_a_footnote_typed_after_it_are_two_notes() {
+    let out = run(ANNOTATION_THEN_FOOTNOTE);
+    assert_eq!(out.found.unmatched, 0);
+    assert_eq!(texts(&out.doc), ["This is a 4th {[}{c0}sentence.{]}{fn0}"]);
+    assert_eq!(comment(&out.doc, 0), ["inline note"]);
+    assert_eq!(note(&out.doc, 0), ["inline footnote"]);
+    assert_eq!(out.found.annotations, 1);
+    no_marker_left(&out);
+}
+
+/// The other order: the annotation's opener written before the footnote's closer.
+#[test]
+fn a_footnote_then_an_annotation_typed_after_it_are_two_notes() {
+    let out = run(
+        r"{\rtf1 The tide turned.\{\\Scrv_fn=A footnote first.\{\\Scrv_annot \\color=\{\\R=0.543234\\G=0.0\\B=0.023817\} \\text=\\end_Scrv_fn\}then a remark\\end_Scrv_annot\}\par}",
+    );
+    assert_eq!(out.found.unmatched, 0);
+    // The remark marks where it was typed, after the footnote's reference, as an
+    // annotation closing its paragraph does.
+    assert_eq!(texts(&out.doc), ["The tide turned.{fn0}{c0}"]);
+    assert_eq!(note(&out.doc, 0), ["A footnote first."]);
+    assert_eq!(comment(&out.doc, 0), ["then a remark"]);
+    no_marker_left(&out);
+}
+
+/// Two annotations typed one after the other, the second's opener before the first's
+/// closer: two remarks, in one colour as in two. A note split by formatting closes before
+/// it opens again; this form is a second note typed straight after the first.
+#[test]
+fn two_annotations_typed_one_after_the_other_are_two_remarks() {
+    let annotations = |second: &str| {
+        run(&format!(
+            r"{{\rtf1 Lamps were lit.\{{\\Scrv_annot \\color=\{{\\R=1.0\\G=0.0\\B=0.0\}} \\text=first part\{{\\Scrv_annot \\color=\{{{second}\}} \\text=\\end_Scrv_annot\}} second part\\end_Scrv_annot\}}\par}}"
+        ))
+    };
+    for second in [r"\\R=1.0\\G=0.0\\B=0.0", r"\\R=0.0\\G=0.0\\B=1.0"] {
+        let out = annotations(second);
+        assert_eq!(out.found.unmatched, 0);
+        assert_eq!(out.found.merged, 0);
+        assert_eq!(out.doc.annotations.len(), 2, "{second}");
+        assert_eq!(comment(&out.doc, 0), ["first part"]);
+        assert_eq!(comment(&out.doc, 1), [" second part"]);
+        no_marker_left(&out);
+    }
+}
+
+/// Two footnotes typed one after the other are two footnotes, each cited, each with its
+/// own words: never one note with their texts run together.
+#[test]
+fn two_footnotes_typed_one_after_the_other_are_two_footnotes() {
+    let out = run(
+        r"{\rtf1 The claim stood.\{\\Scrv_fn=See Smith.\{\\Scrv_fn=\\end_Scrv_fn\}Ibid.\\end_Scrv_fn\}\par}",
+    );
+    assert_eq!(out.found.unmatched, 0);
+    assert_eq!(out.found.merged, 0);
+    assert_eq!(texts(&out.doc), ["The claim stood.{fn0}{fn1}"]);
+    assert_eq!(note(&out.doc, 0), ["See Smith."]);
+    assert_eq!(note(&out.doc, 1), ["Ibid."]);
+    no_marker_left(&out);
+}
+
+/// A note typed after another whose own closer is missing, as in a damaged file: its
+/// opener stays the literal text the report says it is, and the note before still ends
+/// at its closer.
+#[test]
+fn an_opener_typed_after_a_note_and_never_closed_stays_as_text() {
+    let out = run(
+        r"{\rtf1 Lamps were lit.\{\\Scrv_annot \\text=A remark\{\\Scrv_fn=\\end_Scrv_annot\}Then prose.\par}",
+    );
+    assert_eq!(out.found.unmatched, 1);
+    assert_eq!(out.doc.notes.len(), 0);
+    assert_eq!(out.doc.annotations.len(), 1);
+    assert_eq!(comment(&out.doc, 0), [r"A remark{\Scrv_fn="]);
+    let prose = texts(&out.doc).concat();
+    assert!(prose.contains("Then prose."), "{prose}");
+    assert!(!prose.contains("end_Scrv"), "{prose}");
+}
+
+mod interleaved {
+    use super::*;
+    use proptest::prelude::*;
+
+    /// A note's opener as Scrivener writes it.
+    fn opener(annotation: bool) -> &'static str {
+        if annotation {
+            r"\{\\Scrv_annot \\color=\{\\R=0.5\\G=0.0\\B=0.0\} \\text="
+        } else {
+            r"\{\\Scrv_fn="
+        }
+    }
+
+    fn closer(annotation: bool) -> &'static str {
+        if annotation {
+            r"\\end_Scrv_annot\}"
+        } else {
+            r"\\end_Scrv_fn\}"
+        }
+    }
+
+    proptest! {
+        #![proptest_config(ProptestConfig { cases: 256, ..ProptestConfig::default() })]
+
+        /// Any run of notes typed one right after another, each next opener written before
+        /// the previous closer, pairs into one note per note typed, of its own kind, in its
+        /// own order, with its own words, and no marker text left over.
+        #[test]
+        fn notes_typed_one_after_another_pair_with_nothing_left_over(
+            kinds in proptest::collection::vec(any::<bool>(), 1..8)
+        ) {
+            let mut rtf = String::from(r"{\rtf1 Words before.");
+            for (i, annotation) in kinds.iter().enumerate() {
+                if i == 0 {
+                    rtf.push_str(opener(*annotation));
+                }
+                rtf.push_str(&format!("note {i}"));
+                if let Some(next) = kinds.get(i + 1) {
+                    rtf.push_str(opener(*next));
+                }
+                rtf.push_str(closer(*annotation));
+            }
+            rtf.push_str(r"\par}");
+            let out = run(&rtf);
+            prop_assert_eq!(out.found.unmatched, 0, "{}", rtf);
+            prop_assert_eq!(out.found.merged, 0, "{}", rtf);
+            // Each note's words, in the order it was typed, by kind.
+            let words_of = |annotation: bool| -> Vec<Vec<String>> {
+                kinds
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, a)| **a == annotation)
+                    .map(|(i, _)| vec![format!("note {i}")])
+                    .collect()
+            };
+            let footnotes: Vec<Vec<String>> =
+                (0..out.doc.notes.len()).map(|n| note(&out.doc, n)).collect();
+            let remarks: Vec<Vec<String>> =
+                (0..out.doc.annotations.len()).map(|n| comment(&out.doc, n)).collect();
+            prop_assert_eq!(&footnotes, &words_of(false), "{}", rtf);
+            prop_assert_eq!(&remarks, &words_of(true), "{}", rtf);
+            // The prose is its own words and the notes' marks, nothing else: every
+            // reference once, the footnotes' in their order.
+            let prose = texts(&out.doc).concat();
+            let mut plain = String::new();
+            let mut marks: Vec<String> = Vec::new();
+            let mut mark: Option<String> = None;
+            for c in prose.chars() {
+                match (c, mark.as_mut()) {
+                    ('{', None) => mark = Some(String::new()),
+                    ('}', Some(_)) => marks.extend(mark.take()),
+                    (c, Some(m)) => m.push(c),
+                    (c, None) => plain.push(c),
+                }
+            }
+            prop_assert_eq!(plain.as_str(), "Words before.", "{}", rtf);
+            let cited = |prefix: &str| -> Vec<String> {
+                marks
+                    .iter()
+                    .filter(|m| m.starts_with(prefix) && m[prefix.len()..].parse::<usize>().is_ok())
+                    .cloned()
+                    .collect()
+            };
+            let in_order = |prefix: &str, n: usize| -> Vec<String> {
+                (0..n).map(|k| format!("{prefix}{k}")).collect()
+            };
+            prop_assert_eq!(cited("fn"), in_order("fn", footnotes.len()), "{}", prose);
+            let mut anchors = cited("c");
+            anchors.sort();
+            let mut expected = in_order("c", remarks.len());
+            expected.sort();
+            prop_assert_eq!(anchors, expected, "{}", prose);
+            for text in footnotes.iter().chain(&remarks).flatten() {
+                prop_assert!(!text.contains("Scrv"), "{:?} from {}", text, rtf);
+            }
+        }
+    }
 }

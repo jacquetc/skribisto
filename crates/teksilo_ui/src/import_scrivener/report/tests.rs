@@ -716,7 +716,10 @@ fn a_save_page_hint_says_what_was_proposed_and_what_the_writer_did() {
         let lines = all_lines(&kept);
         assert!(
             lines.contains(
-                &"Skribisto proposed the title the project’s compile settings state.".to_string()
+                &"Skribisto proposed the title the project’s compile settings state: the name \
+                  the project had when it was created, unless a title was set there in \
+                  Scrivener."
+                    .to_string()
             ),
             "{lines:#?}"
         );

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SnapshotIndexes Version="1.0" BinderUUID="1B4F5CEF-F577-45AF-AD2F-FC774DFD9C99">
+    <Snapshot Date="2026-10-05 14:54:13 +0200">
+        <Title>Untitled Snapshot</Title>
+        <Text>This is an example sentence with a subscript and a superscript. We met at 10:30:45.
+This is a 2nd sentence.
+This is a 3rd sentence.
+This is a 4th sentence.inline note</Text>
+        <Comments>comment one
+spans two paragraphs
+linked footnote</Comments>
+    </Snapshot>
+</SnapshotIndexes>

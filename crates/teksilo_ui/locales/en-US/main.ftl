@@ -1416,7 +1416,7 @@ import-scrivener-report-chose-upgraded = You imported “{ $current }”, the pr
 import-scrivener-report-chose-backup = You imported “{ $backup }”, the older copy Scrivener kept before an update.
 import-scrivener-report-title-placeholder-rejected = The title in the project’s settings was a template placeholder, so Skribisto proposed the project’s name instead.
 import-scrivener-report-author-placeholder-rejected = The author’s name in the project’s settings was a template placeholder, so Skribisto proposed none.
-import-scrivener-report-title-from-compile-settings = Skribisto proposed the title the project’s compile settings state.
+import-scrivener-report-title-from-compile-settings = Skribisto proposed the title the project’s compile settings state: the name the project had when it was created, unless a title was set there in Scrivener.
 import-scrivener-report-title-from-template = Skribisto proposed the template’s own title.
 import-scrivener-report-title-from-folder-name = Skribisto proposed the project’s name as its title.
 import-scrivener-report-title-from-project-properties = Skribisto proposed the title the project’s properties state.
@@ -1523,7 +1523,15 @@ import-scrivener-abbreviated-title = Abbreviated title
 import-scrivener-subjects = Subjects
 import-scrivener-company = Company
 import-scrivener-session-target = Session target
+import-scrivener-session-target-calculated = Session target, calculated by Scrivener from the deadline
 import-scrivener-writing-days = Writing days
+import-scrivener-weekday-monday = Monday
+import-scrivener-weekday-tuesday = Tuesday
+import-scrivener-weekday-wednesday = Wednesday
+import-scrivener-weekday-thursday = Thursday
+import-scrivener-weekday-friday = Friday
+import-scrivener-weekday-saturday = Saturday
+import-scrivener-weekday-sunday = Sunday
 import-scrivener-draft-target = Draft target
 import-scrivener-deadline = Deadline
 # A unit after a count, in parentheses: "1000 (words)".
@@ -1828,7 +1836,7 @@ import-scrivener-notice-writing-history-not-imported-line = { $days ->
 }
 import-scrivener-notice-title-placeholder-rejected-hint = The title in the project’s settings is a template placeholder, so the project’s name is proposed instead.
 import-scrivener-notice-author-placeholder-rejected-hint = The author’s name in the project’s settings is a template placeholder, so none is proposed.
-import-scrivener-notice-title-from-project-hint-compile-settings = This title is the one the project’s compile settings state.
+import-scrivener-notice-title-from-project-hint-compile-settings = This title is the one the project’s compile settings state. Until a title is set there, Scrivener keeps the name the project had when it was created.
 import-scrivener-notice-title-from-project-hint-template = This title is the template’s own.
 import-scrivener-notice-title-from-project-hint-folder-name = This title is the project’s name.
 import-scrivener-notice-title-from-project-hint-project-properties = This title is the one the project’s properties state.
@@ -1871,6 +1879,10 @@ import-scrivener-structure-generic-sheet-title-line = { $count ->
 import-scrivener-structure-placeholder-title-line = { $count ->
     [one] 1 title only named its level and is left blank: the binder and exports number it.
    *[other] { $count } titles only named their level and are left blank: the binder and exports number them.
+}
+import-scrivener-structure-untitled-item-line = { $count ->
+    [one] 1 item had no title in Scrivener and stays untitled.
+   *[other] { $count } items had no title in Scrivener and stay untitled.
 }
 import-scrivener-structure-title-cleaned-line = { $count ->
     [one] 1 title held line breaks or tabs, which are removed.
@@ -2031,6 +2043,10 @@ import-scrivener-metadata-tag-name-disambiguated-line = { $count ->
     [one] 1 tag takes a new name, because another tag already holds its own.
    *[other] { $count } tags take a new name, because other tags already hold theirs.
 }
+import-scrivener-metadata-rung-names-disambiguated-line = { $count ->
+    [one] 1 status has the same name as another, so it takes a number after its name. Check it in Settings ▸ Work ▸ Statuses.
+   *[other] { $count } statuses have the same name as another, so each takes a number after its name. Check them in Settings ▸ Work ▸ Statuses.
+}
 import-scrivener-metadata-unused-labels-skipped-line = { $count ->
     [one] 1 label no document wears is not imported.
    *[other] { $count } labels no document wears are not imported.
@@ -2071,7 +2087,7 @@ import-scrivener-metadata-pov-hint-line = { $count ->
     [one] The label or field value { $values } matches the story bible entry { $matches }. If it names the point of view, set it in the Inspector: the import links nothing.
    *[other] The labels or field values { $values } match the story bible entries { $matches }. If they name points of view, set them in the Inspector: the import links nothing.
 }
-import-scrivener-metadata-checkbox-default-unknown-line = The checkbox field “{ $field }” has a setting Skribisto cannot read, such as being ticked by default. Only the documents ticked one by one wear its tag.
+import-scrivener-metadata-checkbox-default-unknown-line = The checkbox field “{ $field }” has a default Skribisto cannot read, so it cannot tell which documents are ticked by default. Only the documents ticked one by one wear its tag.
 import-scrivener-metadata-goals-in-other-unit-line = { $count ->
     [one] 1 goal is set in the other counting unit. It is kept, and shows once you switch the counting unit in Settings ▸ Work ▸ Structure.
    *[other] { $count } goals are set in the other counting unit. They are kept, and show once you switch the counting unit in Settings ▸ Work ▸ Structure.
@@ -2142,8 +2158,8 @@ import-scrivener-metadata-draft-target-kept-characters-line = { $value ->
     [one] The draft target of 1 character becomes the book’s goal.
    *[other] The draft target of { $value } characters becomes the book’s goal.
 }
-import-scrivener-metadata-pace-planned-line = The deadline, { $day }, becomes the book’s Pace, which plans the words of each day from the day of the import.
-import-scrivener-metadata-pace-planned-day-off-line = The deadline, { $day }, becomes the book’s Pace, which plans the words of each day from the day of the import. As in Scrivener, the deadline itself is a day off.
+import-scrivener-metadata-pace-planned-line = The deadline, { $day }, becomes the book’s Pace, which plans the words of each writing day you chose in Scrivener, from the day of the import.
+import-scrivener-metadata-pace-planned-day-off-line = The deadline, { $day }, becomes the book’s Pace, which plans the words of each writing day you chose in Scrivener, from the day of the import. As in Scrivener, the deadline itself is a day off.
 import-scrivener-metadata-dictionary-words-line = { $count ->
     [one] 1 auto-complete word goes into the project’s personal dictionary, so it is not marked as misspelled.
    *[other] { $count } auto-complete words go into the project’s personal dictionary, so they are not marked as misspelled.
@@ -2237,7 +2253,8 @@ import-scrivener-metadata-draft-target-no-book-characters-line = { $value ->
    *[other] The draft target of { $value } characters does not become a goal, because the manuscript makes several books, or none. It is listed in the note “{ $note }” of the “{ $folder }” folder.
 }
 import-scrivener-metadata-deadline-passed-line = The deadline, { $day }, has passed, so it makes no Pace. It is listed in the note “{ $note }” of the “{ $folder }” folder.
-import-scrivener-metadata-deadline-no-writing-day-line = The deadline, { $day }, is the day of the import, and as in Scrivener the deadline itself is a day off: no day is left to write on, so it makes no Pace. It is listed in the note “{ $note }” of the “{ $folder }” folder.
+import-scrivener-metadata-deadline-no-writing-day-line = No writing day is left from the day of the import to the deadline, { $day }, so it makes no Pace. It is listed in the note “{ $note }” of the “{ $folder }” folder.
+import-scrivener-metadata-deadline-template-line = The deadline, { $day }, was saved in the template, so it makes no Pace. It is listed in the note “{ $note }” of the “{ $folder }” folder.
 import-scrivener-metadata-deadline-no-word-goal-line = The deadline, { $day }, makes no Pace, because the draft has no word target to plan towards. It is listed in the note “{ $note }” of the “{ $folder }” folder.
 import-scrivener-metadata-deadline-character-goal-line = The deadline, { $day }, makes no Pace, because the draft target counts characters and a Pace counts words. It is listed in the note “{ $note }” of the “{ $folder }” folder.
 import-scrivener-metadata-deadline-no-book-line = The deadline, { $day }, makes no Pace, because the manuscript makes several books, or none. It is listed in the note “{ $note }” of the “{ $folder }” folder.
@@ -2253,6 +2270,18 @@ import-scrivener-metadata-session-target-characters-line = { $value ->
 import-scrivener-metadata-session-target-pages-line = { $value ->
     [one] The session target of 1 page is not imported: in Skribisto, the writing session’s goal is one setting for every project, in words. It is listed in the note “{ $note }” of the “{ $folder }” folder.
    *[other] The session target of { $value } pages is not imported: in Skribisto, the writing session’s goal is one setting for every project, in words. It is listed in the note “{ $note }” of the “{ $folder }” folder.
+}
+import-scrivener-metadata-session-target-calculated-words-line = { $value ->
+    [one] The session target of 1 word, which Scrivener calculated from the deadline and the writing days, is not imported: in Skribisto, the writing session’s goal is one setting for every project. It is listed in the note “{ $note }” of the “{ $folder }” folder.
+   *[other] The session target of { $value } words, which Scrivener calculated from the deadline and the writing days, is not imported: in Skribisto, the writing session’s goal is one setting for every project. It is listed in the note “{ $note }” of the “{ $folder }” folder.
+}
+import-scrivener-metadata-session-target-calculated-characters-line = { $value ->
+    [one] The session target of 1 character, which Scrivener calculated from the deadline and the writing days, is not imported: in Skribisto, the writing session’s goal is one setting for every project, in words. It is listed in the note “{ $note }” of the “{ $folder }” folder.
+   *[other] The session target of { $value } characters, which Scrivener calculated from the deadline and the writing days, is not imported: in Skribisto, the writing session’s goal is one setting for every project, in words. It is listed in the note “{ $note }” of the “{ $folder }” folder.
+}
+import-scrivener-metadata-session-target-calculated-pages-line = { $value ->
+    [one] The session target of 1 page, which Scrivener calculated from the deadline and the writing days, is not imported: in Skribisto, the writing session’s goal is one setting for every project, in words. It is listed in the note “{ $note }” of the “{ $folder }” folder.
+   *[other] The session target of { $value } pages, which Scrivener calculated from the deadline and the writing days, is not imported: in Skribisto, the writing session’s goal is one setting for every project, in words. It is listed in the note “{ $note }” of the “{ $folder }” folder.
 }
 import-scrivener-metadata-icons-dropped-line = { $count ->
     [one] 1 item had a binder icon, which does not come across: Skribisto shows each item’s icon from its type.
@@ -2280,6 +2309,10 @@ import-scrivener-prose-inline-note-unmatched-line = { $count ->
 import-scrivener-prose-style-unresolved-line = { $count ->
     [one] 1 style marker names a style the project does not define. It is removed, and the text keeps its formatting.
    *[other] { $count } style markers name a style the project does not define. They are removed, and the text keeps its formatting.
+}
+import-scrivener-prose-styles-lost-in-export-line = { $count ->
+    [one] 1 paragraph may be a heading that lost its style when Scrivener 3 exported the project to its older format, and comes across as an ordinary paragraph. Check it, or import the project it was exported from.
+   *[other] { $count } paragraphs may be headings that lost their style when Scrivener 3 exported the project to its older format, and come across as ordinary paragraphs. Check them, or import the project they were exported from.
 }
 import-scrivener-prose-comment-anchor-without-entry-line = { $count ->
     [one] 1 comment or footnote had lost its content in Scrivener. The words it marked are kept, without it.

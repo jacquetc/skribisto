@@ -381,6 +381,7 @@ fn every_structure_notice() -> Vec<StructureNotice> {
         StructureNotice::LooksLikeManuscript { item: 3 },
         StructureNotice::GenericSheetTitle { item: 3 },
         StructureNotice::PlaceholderTitle { item: 1 },
+        StructureNotice::UntitledItem { item: 1 },
         StructureNotice::TitleCleaned { item: 1 },
         StructureNotice::OwnTextMoved { item: 1 },
         StructureNotice::TextWithChildren { item: 1 },

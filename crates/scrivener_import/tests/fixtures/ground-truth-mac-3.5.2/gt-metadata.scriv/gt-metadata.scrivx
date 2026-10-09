@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ScrivenerProject Identifier="03014722-7301-419A-B00D-58BDF6B9830E" Version="2.0" Creator="SCRMAC-3.5.2-17486" Device="Writers-Mac" Author="" Modified="2026-10-05 15:37:22 +0200" ModID="B6D55565-98C3-43BF-9017-60E20A51B1F5">
+    <Binder>
+        <BinderItem UUID="A5FE6052-3CBA-406B-91C7-52B3B3A4AC0F" Type="DraftFolder" Created="2026-10-05 14:55:01 +0200" Modified="2026-10-05 14:55:01 +0200">
+            <Title>Draft</Title>
+            <MetaData>
+                <IncludeInCompile>Yes</IncludeInCompile>
+            </MetaData>
+            <Children>
+                <BinderItem UUID="B8838479-DC10-48A0-A8F3-02AA19007755" Type="Text" Created="2026-10-05 14:55:01 +0200" Modified="2026-10-05 15:23:05 +0200">
+                    <Title>One</Title>
+                    <MetaData>
+                        <SectionType>6912BEF4-87A5-418B-AC54-32FC205DB18F</SectionType>
+                        <LabelID>0</LabelID>
+                        <IncludeInCompile>Yes</IncludeInCompile>
+                        <CustomMetaData>
+                            <MetaDataItem>
+                                <FieldID>place</FieldID>
+                                <Value>1</Value>
+                            </MetaDataItem>
+                            <MetaDataItem>
+                                <FieldID>mood</FieldID>
+                                <Value>Calm</Value>
+                            </MetaDataItem>
+                            <MetaDataItem>
+                                <FieldID>when</FieldID>
+                                <Value>2026-10-05 15:02:00.00000 +0200</Value>
+                            </MetaDataItem>
+                        </CustomMetaData>
+                    </MetaData>
+                    <TextSettings>
+                        <TextSelection>7,0</TextSelection>
+                        <Target Type="Words" Notify="No">1200</Target>
+                    </TextSettings>
+                    <Keywords>
+                        <KeywordID>1</KeywordID>
+                    </Keywords>
+                    <Bookmarks>
+                        <Bookmark BinderUUID="6141A0AF-5DCF-4ADC-BF5A-6DA77C6261F3"/>
+                    </Bookmarks>
+                </BinderItem>
+                <BinderItem UUID="6141A0AF-5DCF-4ADC-BF5A-6DA77C6261F3" Type="Text" Created="2026-10-05 14:55:26 +0200" Modified="2026-10-05 15:11:58 +0200">
+                    <Title>Two</Title>
+                    <MetaData>
+                        <LabelID>0</LabelID>
+                        <CustomMetaData>
+                            <MetaDataItem>
+                                <FieldID>checked</FieldID>
+                                <Value>No</Value>
+                            </MetaDataItem>
+                            <MetaDataItem>
+                                <FieldID>when</FieldID>
+                                <Value>2026-10-23 15:52:00.00000 +0200</Value>
+                            </MetaDataItem>
+                        </CustomMetaData>
+                    </MetaData>
+                    <TextSettings>
+                        <TextSelection>0,0</TextSelection>
+                    </TextSettings>
+                    <Bookmarks>
+                        <Bookmark BinderUUID="B8838479-DC10-48A0-A8F3-02AA19007755"/>
+                    </Bookmarks>
+                </BinderItem>
+            </Children>
+        </BinderItem>
+        <BinderItem UUID="071681F1-257A-4577-9237-C062EB09FC14" Type="ResearchFolder" Created="2026-10-05 14:55:01 +0200" Modified="2026-10-05 14:55:01 +0200">
+            <Title>Research</Title>
+            <MetaData>
+                <IncludeInCompile>Yes</IncludeInCompile>
+            </MetaData>
+            <Children>
+                <BinderItem UUID="C8FB7FA8-5B5F-4D01-8AD2-BFB3E3C97EA9" Type="PDF" Created="2026-10-05 15:31:58 +0200" Modified="2026-10-05 15:31:58 +0200">
+                    <Title>Sample</Title>
+                    <MetaData>
+                        <IncludeInCompile>Yes</IncludeInCompile>
+                        <FileExtension>pdf</FileExtension>
+                    </MetaData>
+                    <MediaSettings>
+                        <CurrentPDFPage>0</CurrentPDFPage>
+                    </MediaSettings>
+                </BinderItem>
+            </Children>
+        </BinderItem>
+        <BinderItem UUID="11B47390-F033-4AE1-BD17-E12158372466" Type="TrashFolder" Created="2026-10-05 14:55:01 +0200" Modified="2026-10-05 14:55:01 +0200">
+            <Title>Trash</Title>
+            <MetaData>
+                <IncludeInCompile>Yes</IncludeInCompile>
+            </MetaData>
+        </BinderItem>
+        <BinderItem UUID="ECFB124C-E614-4BCA-8903-82D9D6D67287" Type="Folder" Created="2026-10-05 14:55:45 +0200" Modified="2026-10-05 14:55:50 +0200">
+            <Title>Characters</Title>
+            <MetaData>
+                <IncludeInCompile>Yes</IncludeInCompile>
+                <IconFileName>Characters (Character Sheet)</IconFileName>
+            </MetaData>
+            <TextSettings>
+                <TextSelection>0,0</TextSelection>
+            </TextSettings>
+            <Children>
+                <BinderItem UUID="2DBDCAFE-3D1A-44F6-AAAF-E3307EF8EEC2" Type="Text" Created="2026-10-05 14:56:25 +0200" Modified="2026-10-05 14:56:26 +0200">
+                    <Title>Hero</Title>
+                    <MetaData>
+                        <IncludeInCompile>Yes</IncludeInCompile>
+                    </MetaData>
+                    <TextSettings>
+                        <TextSelection>0,0</TextSelection>
+                    </TextSettings>
+                </BinderItem>
+            </Children>
+        </BinderItem>
+        <BinderItem UUID="2D2BF3EA-8119-49FF-90A9-D3C75B75CDAA" Type="Folder" Created="2026-10-05 15:32:35 +0200" Modified="2026-10-05 15:32:39 +0200">
+            <Title>Templates</Title>
+            <MetaData>
+                <IncludeInCompile>Yes</IncludeInCompile>
+            </MetaData>
+            <TextSettings>
+                <TextSelection>0,0</TextSelection>
+            </TextSettings>
+            <Children>
+                <BinderItem UUID="DC905236-88B3-48E9-80B5-67A3F57D48C8" Type="Text" Created="2026-10-05 15:32:44 +0200" Modified="2026-10-05 15:32:59 +0200">
+                    <Title>Sheet</Title>
+                    <MetaData>
+                        <IncludeInCompile>Yes</IncludeInCompile>
+                    </MetaData>
+                    <TextSettings>
+                        <TextSelection>20,0</TextSelection>
+                    </TextSettings>
+                </BinderItem>
+            </Children>
+        </BinderItem>
+    </Binder>
+    <Collections>
+        <Collection Type="Binder" ID="E21539D2-295B-497A-B288-57FC6413AE86" Color="0.974804 0.974804 0.974804">
+            <Title>Binder</Title>
+        </Collection>
+        <Collection Type="RecentSearch" ID="529903B8-78F0-4DC1-82F4-B2C852A7C96B" Color="0.922173 0.818612 0.999627">
+            <Title>Search Results</Title>
+            <SearchSettings Operator="Any" Type="All" CaseSensitive="No" IgnoreDiacritics="No">autho</SearchSettings>
+        </Collection>
+        <Collection Type="Arbitrary" ID="5EC3D381-A37C-4045-9EE7-A191588FCBD2" Color="0.995288 0.788485 0.732724">
+            <Title>Revise</Title>
+            <BinderUUIDs>B8838479-DC10-48A0-A8F3-02AA19007755</BinderUUIDs>
+        </Collection>
+    </Collections>
+    <Keywords>
+        <Keyword ID="0">
+            <Title>Magic</Title>
+            <Color>0.943039 0.654989 0.986895</Color>
+            <Children>
+                <Keyword ID="1">
+                    <Title>Fire</Title>
+                    <Color>0.752901 0.659771 0.986605</Color>
+                </Keyword>
+            </Children>
+        </Keyword>
+    </Keywords>
+    <SectionTypes>
+        <TypeDefinitions>
+            <Type ID="770CB80E-7C02-47FE-BDEB-09089EE5AF3F">Heading</Type>
+            <Type ID="6912BEF4-87A5-418B-AC54-32FC205DB18F">Sub-Heading</Type>
+            <Type ID="2D31DBC0-A3A6-44C3-B784-2948E987726B">Section</Type>
+        </TypeDefinitions>
+        <LevelTypes>
+            <Folders>
+                <Type>770CB80E-7C02-47FE-BDEB-09089EE5AF3F</Type>
+            </Folders>
+            <Containers>
+                <Type>2D31DBC0-A3A6-44C3-B784-2948E987726B</Type>
+            </Containers>
+            <Files>
+                <Type>2D31DBC0-A3A6-44C3-B784-2948E987726B</Type>
+            </Files>
+        </LevelTypes>
+    </SectionTypes>
+    <LabelSettings>
+        <Title>Label</Title>
+        <DefaultLabelID>-1</DefaultLabelID>
+        <Labels>
+            <Label ID="-1">No Label</Label>
+            <Label ID="0" Color="0.993495 0.701227 0.732594">Warning</Label>
+            <Label ID="1" Color="0.995418 0.790968 0.65239">Orange</Label>
+            <Label ID="2" Color="0.99772 0.892753 0.652574">Yellow</Label>
+            <Label ID="3" Color="0.715848 0.948734 0.697698">Green</Label>
+            <Label ID="4" Color="0.702312 0.888297 0.97426">Blue</Label>
+            <Label ID="5" Color="0.957564 0.766768 0.999625">Purple</Label>
+        </Labels>
+    </LabelSettings>
+    <StatusSettings>
+        <Title>Status</Title>
+        <DefaultStatusID>-1</DefaultStatusID>
+        <StatusItems>
+            <Status ID="-1">No Status</Status>
+            <Status ID="2">First Draft</Status>
+            <Status ID="3">Revised Draft</Status>
+            <Status ID="4">Revised Draft</Status>
+        </StatusItems>
+    </StatusSettings>
+    <CustomMetaDataSettings>
+        <MetaDataField ID="mood" Type="Text" Wraps="No" Align="Left">
+            <Title>Mood</Title>
+        </MetaDataField>
+        <MetaDataField ID="checked" Type="Checkbox" Default="Yes">
+            <Title>Checked</Title>
+        </MetaDataField>
+        <MetaDataField ID="place" Type="List">
+            <Title>Place</Title>
+            <ListOptions None="None">
+                <Option ID="0">Paris</Option>
+                <Option ID="1">Rome</Option>
+            </ListOptions>
+        </MetaDataField>
+        <MetaDataField ID="when" Type="Date" DateType="Short">
+            <Title>When</Title>
+            <DateFormat></DateFormat>
+        </MetaDataField>
+    </CustomMetaDataSettings>
+    <ProjectTargets Notify="No">
+        <DraftTarget Type="Words" CountIncludedOnly="Yes" CurrentCompileGroupOnly="No" Deadline="2027-10-05 14:55:00 +0200" IgnoreDeadline="No">50000</DraftTarget>
+        <SessionTarget Type="Words" CountDraftOnly="Yes" AllowNegatives="Yes" NextResetDate="2026-10-06 01:00:00 +0200" ResetType="Time" ResetTime="00:00" DeterminedFromDeadline="Yes" WritingDays="2, 4, 6" CanWriteOnDeadlineDate="No">318</SessionTarget>
+        <PreviousSession Words="2" Characters="7" Date="2026-10-05 14:55:00 +0200"/>
+    </ProjectTargets>
+    <RecentWritingHistory Date="2026-10-05 14:55:00 +0200">
+        <DraftWordCount>2</DraftWordCount>
+        <DraftCharCount>7</DraftCharCount>
+        <OtherWordCount>6</OtherWordCount>
+        <OtherCharCount>20</OtherCharCount>
+    </RecentWritingHistory>
+    <TemplateFolderUUID>2D2BF3EA-8119-49FF-90A9-D3C75B75CDAA</TemplateFolderUUID>
+    <PrintSettings PaperSize="595.0,842.0" LeftMargin="72.0" RightMargin="72.0" TopMargin="90.0" BottomMargin="90.0" PaperType="iso-a4" Orientation="Portrait" HorizontalPagination="Clip" VerticalPagination="Auto" ScaleFactor="1.0" HorizontallyCentered="Yes" VerticallyCentered="Yes" Collates="Yes" PagesAcross="1" PagesDown="1"/>
+</ScrivenerProject>

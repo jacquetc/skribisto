@@ -106,6 +106,10 @@ pub enum ProseNotice {
     /// Style markers naming a style the project does not define: the markers are removed,
     /// the text keeps its formatting.
     StyleUnresolved { at: Place, count: u32 },
+    /// Paragraphs of a project Scrivener 3 exported to its older format that may be headings
+    /// whose style the export dropped (`<$ScrKeepWithNext>` with no style): they come across
+    /// as ordinary paragraphs.
+    StylesLostInExport { at: Place, count: u32 },
     /// A comment or footnote anchor whose body the project no longer holds: the words stay,
     /// the anchor does not.
     CommentAnchorWithoutEntry { at: Place, count: u32 },
@@ -315,6 +319,7 @@ impl ProseNotice {
         "scrivener-prose-undecodable-characters",
         "scrivener-prose-media-file-copied",
         "scrivener-prose-media-file-not-carried",
+        "scrivener-prose-styles-lost-in-export",
     ];
 
     /// The key the interface translates.
@@ -410,6 +415,7 @@ impl ProseNotice {
             ProseNotice::UndecodableCharacters { .. } => "scrivener-prose-undecodable-characters",
             ProseNotice::MediaFileCopied { .. } => "scrivener-prose-media-file-copied",
             ProseNotice::MediaFileNotCarried { .. } => "scrivener-prose-media-file-not-carried",
+            ProseNotice::StylesLostInExport { .. } => "scrivener-prose-styles-lost-in-export",
             ProseNotice::Document { key, .. } => key,
         }
     }
@@ -423,6 +429,7 @@ impl ProseNotice {
             ProseNotice::ReadAsPlainText { .. }
             | ProseNotice::InlineNoteUnmatched { .. }
             | ProseNotice::StyleUnresolved { .. }
+            | ProseNotice::StylesLostInExport { .. }
             | ProseNotice::CommentAnchorWithoutEntry { .. }
             | ProseNotice::CommentEntryWithoutAnchor { .. }
             | ProseNotice::FootnoteEntryWithoutAnchor { .. }
@@ -455,6 +462,7 @@ impl ProseNotice {
             | ProseNotice::CommentsUnreadable { at }
             | ProseNotice::InlineNoteUnmatched { at, .. }
             | ProseNotice::StyleUnresolved { at, .. }
+            | ProseNotice::StylesLostInExport { at, .. }
             | ProseNotice::CommentAnchorWithoutEntry { at, .. }
             | ProseNotice::CommentEntryWithoutAnchor { at, .. }
             | ProseNotice::FootnoteEntryWithoutAnchor { at, .. }
@@ -627,6 +635,7 @@ mod tests {
             ProseNotice::UndecodableCharacters { at, count: 1 },
             ProseNotice::MediaFileCopied { at, path: name() },
             ProseNotice::MediaFileNotCarried { at, name: name() },
+            ProseNotice::StylesLostInExport { at, count: 1 },
         ]
     }
 
@@ -692,6 +701,7 @@ mod tests {
             ProseNotice::UndecodableCharacters { .. } => 49,
             ProseNotice::MediaFileCopied { .. } => 50,
             ProseNotice::MediaFileNotCarried { .. } => 51,
+            ProseNotice::StylesLostInExport { .. } => 52,
             ProseNotice::Document { .. } => return None,
         })
     }

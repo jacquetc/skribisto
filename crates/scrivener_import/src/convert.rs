@@ -66,7 +66,9 @@ use crate::disk::{Cancellable, RealDisk};
 use crate::index::{MAX_MEMBER_BYTES, ReadError};
 use crate::layout::Tree;
 use crate::metadata::{self, Extended, MetadataNotice, MetadataWords, PALETTE};
-use crate::model::{ItemKey, ItemKind, MemberRef, Project, SourceNames, TextRole};
+use crate::model::{
+    Generation, ItemKey, ItemKind, MemberRef, Platform, Project, SourceFacts, SourceNames, TextRole,
+};
 use crate::outcome::{Notice, Question, Refusal};
 use crate::prose::{self, Pictures, Place, ProseChoices, ProseNotice, dialect, sidecar, styles};
 use crate::structure::{
@@ -1798,6 +1800,7 @@ impl<'c, 't, 'i, 'd, 'r> Converter<'c, 't, 'i, 'd, 'r> {
             splits,
             compiled: self.printed.get(),
             struck_compiled_away: self.project.compile.delete_struck_through,
+            older_format_export: older_format_export(&self.project.source),
         };
         let label = &self.label;
         let mint = || {
@@ -2233,6 +2236,25 @@ fn whole_paragraphs(
     let mut paragraph = comment_anchor::capture(text, s, e, first);
     paragraph.block_span = last - first + 1;
     Some(paragraph)
+}
+
+/// Whether a project is in Scrivener's older format and was saved by Scrivener 3 for Mac
+/// or Windows: what Scrivener 3's export to that format writes (`gt-writing-v2`, format 1.5
+/// from `SCRMAC-3.5.2`), and nothing else does, since Scrivener 3 opens an older project
+/// only to upgrade it.
+fn older_format_export(source: &SourceFacts) -> bool {
+    let older = matches!(
+        source.generation,
+        Generation::Format10 | Generation::Format15
+    );
+    let desktop = matches!(source.writer.platform, Platform::Mac | Platform::Windows);
+    let scrivener_3 = source
+        .writer
+        .version
+        .as_deref()
+        .and_then(|v| v.split('.').next())
+        == Some("3");
+    older && desktop && scrivener_3
 }
 
 /// The glyph a project anchors new footnotes to, when it does

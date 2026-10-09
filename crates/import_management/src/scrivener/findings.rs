@@ -391,6 +391,7 @@ fn deadline_reason(reason: DeadlineReason) -> &'static str {
         DeadlineReason::CharacterGoal => "character-goal",
         DeadlineReason::NoSingleBook => "no-single-book",
         DeadlineReason::Unreadable => "unreadable",
+        DeadlineReason::Template => "template",
     }
 }
 
@@ -790,6 +791,7 @@ pub(crate) fn structure_notice(
         | StructureNotice::LooksLikeManuscript { item: i }
         | StructureNotice::GenericSheetTitle { item: i }
         | StructureNotice::PlaceholderTitle { item: i }
+        | StructureNotice::UntitledItem { item: i }
         | StructureNotice::TitleCleaned { item: i }
         | StructureNotice::OwnTextMoved { item: i }
         | StructureNotice::TextWithChildren { item: i }
@@ -844,6 +846,7 @@ pub(crate) fn prose_notice(notice: &ProseNotice, locator: &Locator<'_>) -> Scriv
         | ProseNotice::AnnotationOnlyDocumentKept { .. } => Vec::new(),
         ProseNotice::InlineNoteUnmatched { count: n, .. }
         | ProseNotice::StyleUnresolved { count: n, .. }
+        | ProseNotice::StylesLostInExport { count: n, .. }
         | ProseNotice::CommentAnchorWithoutEntry { count: n, .. }
         | ProseNotice::CommentEntryWithoutAnchor { count: n, .. }
         | ProseNotice::FootnoteEntryWithoutAnchor { count: n, .. }
@@ -1017,6 +1020,7 @@ pub(crate) fn metadata_notice(notice: &MetadataNotice) -> ScrivenerFinding {
             vec![token("field", field(*f)), count("id", *id)]
         }
         MetadataNotice::TagNameDisambiguated { names } => vec![texts("names", names)],
+        MetadataNotice::RungNamesDisambiguated { names } => vec![texts("names", names)],
         MetadataNotice::UnusedLabelsSkipped { names } => vec![texts("names", names)],
         MetadataNotice::ValuesWithoutRow { field: f, items } => {
             vec![token("field", field(*f)), count("items", *items)]
@@ -1089,9 +1093,15 @@ pub(crate) fn metadata_notice(notice: &MetadataNotice) -> ScrivenerFinding {
             }
             args
         }
-        MetadataNotice::SessionTargetNotImported { value, unit } => {
-            vec![count("value", *value), token("unit", target_unit(*unit))]
-        }
+        MetadataNotice::SessionTargetNotImported {
+            value,
+            unit,
+            calculated,
+        } => vec![
+            count("value", *value),
+            token("unit", target_unit(*unit)),
+            flag("calculated", *calculated),
+        ],
         MetadataNotice::IconsDropped { rows, names } => {
             vec![count("rows", *rows), texts("names", names)]
         }

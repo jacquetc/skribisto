@@ -83,7 +83,8 @@ pub struct Project {
     /// `Files/writing.history` (or the iOS copy), when present.
     pub writing_history: Option<MemberRef>,
     /// The day of the manifest's own cache of the latest writing-history day
-    /// (`RecentWritingHistory/@Date`, format 2.0), as written.
+    /// (`RecentWritingHistory/@Date`, format 2.0), as written. Unverified: Scrivener 3.5.2
+    /// for Mac wrote the project's creation instant there, with one day of history (M20).
     #[serde(default)]
     pub recent_writing_day: Option<Stamp>,
     /// Custom binder icons in `Icons/`, by file name.
@@ -129,9 +130,10 @@ pub struct SourceFacts {
     pub id_scheme: IdScheme,
     /// The title of the template a `.scrivtemplate` carries.
     pub template_title: Option<String>,
-    /// The title of the template the project was created from
-    /// (`Settings/templateinfo.xml`), when it records one.
-    pub created_from_template: Option<String>,
+    /// The title of a template this project was saved as (`Settings/templateinfo.xml`):
+    /// Scrivener 3 for Mac writes the file into the project File > Save As Template ran
+    /// from, not into a project created from a template (G14). Read, and used for nothing.
+    pub saved_as_template: Option<String>,
 }
 
 /// What the writer handed over.
@@ -532,9 +534,21 @@ pub struct CustomFieldDef {
     pub none_label: Option<String>,
     /// A list field's options, in display order.
     pub options: Vec<ListOption>,
-    /// The names of the definition's attributes beyond the ones every field carries (`ID`,
-    /// `Type`, `Wraps`, `Align`, `Color`), as written: a checkbox's "ticked by default", whose
-    /// spelling no real project shows, would be one.
+    /// Whether a checkbox is ticked on a document that writes no value for it: Scrivener 3
+    /// for Mac writes `Default="Yes"` on the definition and then a value only where a
+    /// document differs from it (`<Value>No</Value>`), never `Yes` (M9). `None` when the
+    /// field states no default, or one this import cannot read (then `Default` stays in
+    /// [`Self::other_attributes`]).
+    #[serde(default)]
+    pub checkbox_default: Option<bool>,
+    /// A date field's style, as written (`DateType="Short"`).
+    #[serde(default)]
+    pub date_type: Option<String>,
+    /// A date field's own format pattern (`<DateFormat>`), empty for the system's.
+    #[serde(default)]
+    pub date_format: Option<String>,
+    /// The names of the definition's attributes beyond the ones read (`ID`, `Type`, `Wraps`,
+    /// `Align`, `Color`, `DateType`, and a `Default` this import can read), as written.
     #[serde(default)]
     pub other_attributes: Vec<String>,
 }

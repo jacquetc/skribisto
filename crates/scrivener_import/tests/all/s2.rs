@@ -565,10 +565,70 @@ fn a_past_deadline_is_listed_not_planned() {
     );
 }
 
-/// Writing days set to some days only: every day is a writing day, said, and the days are
-/// listed as written.
+/// A checkbox ticked by default (`Default="Yes"`, as Scrivener 3.5.2 for Mac writes it, M9)
+/// ticks every document that writes no value for it; an explicit `No` stays unticked, and
+/// the default is nothing to report.
 #[test]
-fn partial_writing_days_count_every_day_and_say_so() {
+fn a_checkbox_ticked_by_default_ticks_what_writes_no_value() {
+    let mut spec = Spec::novel(Generation::Format20, Platform::Mac)
+        .with_metadata()
+        .with_s2();
+    for field in &mut spec.typed_fields {
+        if field.kind == "Checkbox" {
+            field.default = Some("Yes".to_string());
+        }
+    }
+    let (_dir, bundle, summary) = converted(&spec, Some("en-US"));
+    let done = |title: &str| tags_of(&bundle, item(&bundle, title)).contains(&"Done".to_string());
+    assert!(done("The Harbour"), "ticked one by one");
+    assert!(done("Night Watch"), "no value: the default");
+    assert!(done("Mara"), "a research note takes the default too");
+    assert!(!done("Arrival"), "an explicit No");
+    assert!(
+        !summary
+            .metadata
+            .iter()
+            .any(|n| matches!(n, MetadataNotice::CheckboxDefaultUnknown { .. })),
+        "{:?}",
+        summary.metadata
+    );
+}
+
+/// A session target Scrivener calculated from the deadline is listed as calculated and
+/// said so (M19); one the writer typed keeps its line.
+#[test]
+fn a_calculated_session_target_is_listed_and_said_as_calculated() {
+    for calculated in [true, false] {
+        let mut spec = Spec::novel(Generation::Format20, Platform::Mac);
+        spec.targets.determined_from_deadline = calculated;
+        let (_dir, bundle, summary) = converted(&spec, None);
+        assert!(
+            has(
+                &summary,
+                &MetadataNotice::SessionTargetNotImported {
+                    value: 1_000,
+                    unit: TargetUnit::Words,
+                    calculated,
+                }
+            ),
+            "{:?}",
+            summary.metadata
+        );
+        let project = note_text(item(&bundle, "W-note-project"));
+        let label = if calculated {
+            "W-session-target-calculated\n1000"
+        } else {
+            "W-session-target\n1000"
+        };
+        assert!(project.contains(label), "{project}");
+    }
+}
+
+/// Writing days set to some days only: the Pace keeps them (Scrivener numbers the days
+/// from Sunday, so `1-2, 4-6` is Sunday, Monday, Wednesday, Thursday and Friday), nothing
+/// is said, and the import note does not list them again.
+#[test]
+fn partial_writing_days_are_the_paces_writing_days() {
     let mut spec = Spec::novel(Generation::Format20, Platform::Mac);
     spec.targets = Targets {
         deadline: Some("2099-01-01 10:00:00 +0000".to_string()),
@@ -579,19 +639,46 @@ fn partial_writing_days_count_every_day_and_say_so() {
     };
     let (_dir, bundle, summary) = converted(&spec, None);
     assert_eq!(bundle.paces.len(), 1);
-    assert_eq!(bundle.paces[0].weekday_mask, 127);
+    assert_eq!(bundle.paces[0].weekday_mask, 64 + 1 + 4 + 8 + 16);
     assert!(
         bundle.paces[0].holidays.is_empty(),
         "writing allowed on the day"
     );
+    assert!(
+        !summary
+            .metadata
+            .iter()
+            .any(|n| matches!(n, MetadataNotice::WritingDaysNotRead { .. })),
+        "{:?}",
+        summary.metadata
+    );
+    let project = note_text(item(&bundle, "W-note-project"));
+    assert!(!project.contains("W-writing-days"), "{project}");
+}
+
+/// Writing days that cannot be read: every day is a writing day, said, and the days are
+/// listed as written.
+#[test]
+fn unreadable_writing_days_count_every_day_and_say_so() {
+    let mut spec = Spec::novel(Generation::Format20, Platform::Mac);
+    spec.targets = Targets {
+        deadline: Some("2099-01-01 10:00:00 +0000".to_string()),
+        ignore_deadline: false,
+        writing_days: "2-9".to_string(),
+        can_write_on_deadline: true,
+        ..Targets::default()
+    };
+    let (_dir, bundle, summary) = converted(&spec, None);
+    assert_eq!(bundle.paces.len(), 1);
+    assert_eq!(bundle.paces[0].weekday_mask, 127);
     assert!(has(
         &summary,
         &MetadataNotice::WritingDaysNotRead {
-            raw: "1-2, 4-6".to_string()
+            raw: "2-9".to_string()
         }
     ));
     let project = note_text(item(&bundle, "W-note-project"));
-    assert!(project.contains("W-writing-days\n1-2, 4-6"), "{project}");
+    assert!(project.contains("W-writing-days\n2-9"), "{project}");
 }
 
 /// A draft target in characters is the book's goal and the project's unit; a pace plan

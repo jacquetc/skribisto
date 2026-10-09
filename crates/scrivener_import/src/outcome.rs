@@ -427,9 +427,11 @@ pub enum ReadProblem {
 pub enum BackupSign {
     /// A folder named `Backups` on its path.
     BackupsFolder,
-    /// An archive named `.bak.zip` or `.bak<N>.zip`.
+    /// An archive named `.bak.zip` or `.bak<N>.zip`, or on Scrivener 3 for Mac `-bak.zip` or
+    /// `-bak<N>.zip`.
     BakArchive,
-    /// A name stamped `[YYYY_MM_DD_HH_MM_SS]`.
+    /// A name stamped `[YYYY_MM_DD_HH_MM_SS]`, or an archive named `<name> YYYY-MM-DD
+    /// HH-MM.zip` (File > Back Up > Back Up To on Scrivener 3 for Mac).
     DateStamped,
 }
 

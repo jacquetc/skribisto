@@ -69,7 +69,17 @@ pub struct MetadataWords {
     pub subjects: String,
     pub company: String,
     pub session_target: String,
+    /// The session target's label when Scrivener calculated it from the deadline.
+    pub session_target_calculated: String,
     pub writing_days: String,
+    /// The days of the week, Monday first, as the writing days list them.
+    pub weekday_monday: String,
+    pub weekday_tuesday: String,
+    pub weekday_wednesday: String,
+    pub weekday_thursday: String,
+    pub weekday_friday: String,
+    pub weekday_saturday: String,
+    pub weekday_sunday: String,
     pub draft_target: String,
     pub deadline: String,
     /// The units a target counts in, as a heading names them.
@@ -167,6 +177,14 @@ impl MetadataWords {
         "replacement-regex",
         "replacement-off",
         "in-own-note",
+        "session-target-calculated",
+        "weekday-monday",
+        "weekday-tuesday",
+        "weekday-wednesday",
+        "weekday-thursday",
+        "weekday-friday",
+        "weekday-saturday",
+        "weekday-sunday",
     ];
 
     /// The word `key` names, to be set.
@@ -194,7 +212,15 @@ impl MetadataWords {
             "subjects" => &mut self.subjects,
             "company" => &mut self.company,
             "session-target" => &mut self.session_target,
+            "session-target-calculated" => &mut self.session_target_calculated,
             "writing-days" => &mut self.writing_days,
+            "weekday-monday" => &mut self.weekday_monday,
+            "weekday-tuesday" => &mut self.weekday_tuesday,
+            "weekday-wednesday" => &mut self.weekday_wednesday,
+            "weekday-thursday" => &mut self.weekday_thursday,
+            "weekday-friday" => &mut self.weekday_friday,
+            "weekday-saturday" => &mut self.weekday_saturday,
+            "weekday-sunday" => &mut self.weekday_sunday,
             "draft-target" => &mut self.draft_target,
             "deadline" => &mut self.deadline,
             "unit-words" => &mut self.unit_words,

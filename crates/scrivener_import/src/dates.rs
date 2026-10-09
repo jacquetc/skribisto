@@ -6,16 +6,18 @@
 //! # One form, read strictly
 //!
 //! Every format 1.0, 1.5 and 2.0 file, on every platform and on iOS, writes an instant as
-//! `YYYY-MM-DD HH:MM:SS ±HHMM`: over 42,000 dates in the measured corpus, every one of them,
-//! with offsets from `-1000` to `+1300`. The only other shapes ever seen (`2024-01-15T10:00:00Z`)
-//! come from a third-party tool's hand-made fixtures. So the reader accepts exactly that
-//! grammar (surrounding white space aside) and nothing close to it: a calendar date that
-//! exists, a time of day under twenty-four hours with no leap second, an offset under a day,
-//! and an instant that is still in the years 0 to 9999 in UTC, the only ones the app writes.
-//! Whatever else a file holds keeps its text in the model, so the report can say a date was
-//! not read rather than lose it quietly; the converter dates such a row with the import's
-//! own instant instead (D6.9), since one unconverted date in a `.skrib` refuses the whole
-//! project on load.
+//! `YYYY-MM-DD HH:MM:SS ±HHMM`: over 42,000 dates in the measured corpus, every one of
+//! them, with offsets from `-1000` to `+1300`. The one exception is a custom date field's
+//! value, which Scrivener 3 for Mac writes with a fraction of a second
+//! (`2026-10-05 15:02:00.00000 +0200`), and which is read through [`field_date`] alone. The
+//! only other shapes ever seen (`2024-01-15T10:00:00Z`) come from a third-party tool's
+//! hand-made fixtures. So the reader accepts exactly that grammar (surrounding white space
+//! aside) and nothing close to it: a calendar date that exists, a time of day under
+//! twenty-four hours with no leap second, an offset under a day, and an instant that is
+//! still in the years 0 to 9999 in UTC, the only ones the app writes. Whatever else a file
+//! holds keeps its text in the model, so the report can say a date was not read rather than
+//! lose it quietly; the converter dates such a row with the import's own instant instead
+//! (D6.9), since one unconverted date in a `.skrib` refuses the whole project on load.
 //!
 //! # Instants and days
 //!
@@ -94,6 +96,22 @@ pub(crate) fn parse(raw: &str) -> Option<DateTime<FixedOffset>> {
     // carries before year 0 or past 9999 would be written as no RFC 3339 reader takes it,
     // and would refuse the whole project on load.
     (0..=9999).contains(&at.naive_utc().year()).then_some(at)
+}
+
+/// A custom date field's value: Scrivener's one form, with an optional fraction of a second
+/// after the seconds (`2026-10-05 15:02:00.00000 +0200`), which is dropped.
+pub(crate) fn field_date(raw: &str) -> Option<DateTime<FixedOffset>> {
+    let raw = raw.trim();
+    match (raw.get(..19), raw.get(19..)) {
+        (Some(head), Some(rest)) if rest.starts_with('.') => {
+            let (fraction, offset) = rest[1..].split_once(' ')?;
+            if fraction.is_empty() || !fraction.bytes().all(|b| b.is_ascii_digit()) {
+                return None;
+            }
+            parse(&format!("{head} {offset}"))
+        }
+        _ => parse(raw),
+    }
 }
 
 /// The instant a readable stamp names, as the app stores instants: RFC 3339, in UTC.
@@ -232,6 +250,35 @@ mod tests {
                 "{raw} is stored as {stored:?}"
             );
         }
+    }
+
+    /// A custom date field's value carries a fraction of a second (Scrivener 3.5.2 for Mac,
+    /// M10); nothing else does, and a fraction that is not digits is no date.
+    #[test]
+    fn a_date_fields_value_reads_with_its_fraction_of_a_second() {
+        let day = |raw: &str| field_date(raw).map(|at| at.date_naive());
+        assert_eq!(
+            day("2026-10-05 15:02:00.00000 +0200"),
+            NaiveDate::from_ymd_opt(2026, 10, 5)
+        );
+        assert_eq!(
+            day("2026-10-23 15:52:00 +0200"),
+            NaiveDate::from_ymd_opt(2026, 10, 23)
+        );
+        assert_eq!(
+            field_date("2026-10-05 23:30:00.5 -0700").map(|at| at.timestamp()),
+            parse("2026-10-05 23:30:00 -0700").map(|at| at.timestamp())
+        );
+        for unread in [
+            "2026-10-05 15:02:00. +0200",
+            "2026-10-05 15:02:00.12x +0200",
+            "2026-10-05",
+            "next spring",
+        ] {
+            assert_eq!(field_date(unread), None, "{unread}");
+        }
+        // The stamps every other file writes stay as strict as ever.
+        assert_eq!(parse("2026-10-05 15:02:00.00000 +0200"), None);
     }
 
     /// Just after midnight in Paris is still the day before in UTC: the day the writer saw is

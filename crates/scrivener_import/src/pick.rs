@@ -170,6 +170,10 @@ pub(crate) struct Found {
     pub(crate) strong: Vec<String>,
     /// Folders holding only a manifest.
     pub(crate) weak: Vec<String>,
+    /// Files named as Scrivener names its backups and templates (`Novel-bak1.zip`,
+    /// `Novel 2026-10-05 15-40.zip`, `Starter.scrivtemplate`), relative to the pick, sorted:
+    /// offered beside the project folders when the writer is asked which to import.
+    pub(crate) archives: Vec<String>,
     /// The search gave up past [`SEARCH_LIMIT`] folders.
     pub(crate) too_wide: bool,
 }
@@ -208,6 +212,13 @@ pub(crate) fn search_disk(disk: &dyn Disk, pick: &Path, depth: usize) -> Found {
             Strength::Weak => found.weak.push(rel.clone()),
             Strength::None => {}
         }
+        found.archives.extend(
+            listing
+                .entries
+                .iter()
+                .filter(|(name, kind)| *kind == EntryKind::File && names_an_archive(name))
+                .map(|(name, _)| join(&rel, name)),
+        );
         if level >= depth {
             continue;
         }
@@ -224,7 +235,20 @@ pub(crate) fn search_disk(disk: &dyn Disk, pick: &Path, depth: usize) -> Found {
     }
     found.strong.sort();
     found.weak.sort();
+    found.archives.sort();
     found
+}
+
+/// Whether a file's name is one Scrivener gives a backup or a template.
+fn names_an_archive(name: &str) -> bool {
+    let lower = name.to_lowercase();
+    !name.starts_with("._")
+        && (lower.ends_with(".scrivtemplate")
+            || (lower.ends_with(".zip")
+                && matches!(
+                    backup_sign(Path::new(name)),
+                    Some(BackupSign::BakArchive | BackupSign::DateStamped)
+                )))
 }
 
 /// Search an archive's index, `depth` levels down.
@@ -304,13 +328,36 @@ pub(crate) fn backup_sign(pick: &Path) -> Option<BackupSign> {
         .file_name()
         .map(|n| n.to_string_lossy().to_lowercase())
         .unwrap_or_default();
-    if let Some(stem) = name.strip_suffix(".zip")
-        && let Some(at) = stem.rfind(".bak")
-        && stem[at + 4..].bytes().all(|b| b.is_ascii_digit())
-    {
-        return Some(BackupSign::BakArchive);
+    if let Some(stem) = name.strip_suffix(".zip") {
+        // `Novel.bak3.zip`, and on Scrivener 3 for Mac `Novel-bak.zip` and `Novel-bak1.zip`.
+        if let Some(at) = stem.rfind("bak")
+            && at > 0
+            && matches!(stem.as_bytes()[at - 1], b'.' | b'-')
+            && stem[at + 3..].bytes().all(|b| b.is_ascii_digit())
+        {
+            return Some(BackupSign::BakArchive);
+        }
+        if sign.is_none() && is_minute_stamped(stem) {
+            return Some(BackupSign::DateStamped);
+        }
     }
     sign
+}
+
+/// A name ending ` YYYY-MM-DD HH-MM`, as File > Back Up > Back Up To names its archives on
+/// Scrivener 3 for Mac.
+pub(crate) fn is_minute_stamped(stem: &str) -> bool {
+    let bytes = stem.as_bytes();
+    let Some(at) = bytes.len().checked_sub(16) else {
+        return false;
+    };
+    at > 0
+        && bytes[at - 1] == b' '
+        && bytes[at..].iter().enumerate().all(|(j, b)| match j {
+            4 | 7 | 13 => *b == b'-',
+            10 => *b == b' ',
+            _ => b.is_ascii_digit(),
+        })
 }
 
 /// A name stamped `[YYYY_MM_DD_HH_MM_SS]`, as Scrivener's timestamped backups
@@ -390,6 +437,27 @@ mod tests {
             Some(BackupSign::DateStamped)
         );
         assert_eq!(backup_sign(Path::new("/x/Writing/Novel.scriv")), None);
+        // Scrivener 3 for Mac names its automatic backups `-bak` (G11).
+        assert_eq!(
+            backup_sign(Path::new("/x/Novel-bak.zip")),
+            Some(BackupSign::BakArchive)
+        );
+        assert_eq!(
+            backup_sign(Path::new("/x/Novel-bak1.zip")),
+            Some(BackupSign::BakArchive)
+        );
+        assert_eq!(backup_sign(Path::new("/x/Novel-bakery.zip")), None);
+        assert_eq!(backup_sign(Path::new("/x/Novel.bakery.zip")), None);
+        // File > Back Up > Back Up To names the archive after the project and the minute (G12).
+        assert_eq!(
+            backup_sign(Path::new("/x/Novel 2026-10-05 15-40.zip")),
+            Some(BackupSign::DateStamped)
+        );
+        assert_eq!(backup_sign(Path::new("/x/Novel 2026-10-05.zip")), None);
+        assert_eq!(
+            backup_sign(Path::new("/x/Novel 2026-10-05 15-40 notes.zip")),
+            None
+        );
     }
 
     #[test]

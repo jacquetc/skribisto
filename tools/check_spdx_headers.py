@@ -131,6 +131,11 @@ SKIP_PATH_PREFIXES: tuple[str, ...] = (
 # header, and stamping a Cyril Jacquet copyright on public-domain Verne
 # excerpts would be a false claim. The generator beside them (`generate.py`)
 # is source and stays in scope.
+# `tests/fixtures/ground-truth-mac-3.5.2/` holds real Scrivener projects as
+# Scrivener wrote them, byte for byte apart from the scrub its NOTICE describes:
+# a header in any of their files would make them projects Scrivener never wrote.
+# The scrub script (`scripts/scrivener_corpus/scrub_ground_truth.py`) is source
+# and stays in scope.
 SKIP_PATH_SUBSTRINGS: tuple[str, ...] = (
     "target/",
     "dist/",
@@ -140,6 +145,7 @@ SKIP_PATH_SUBSTRINGS: tuple[str, ...] = (
     "vendor/",
     "node_modules/",
     "tests/fixtures/tour-du-monde/",
+    "tests/fixtures/ground-truth-mac-3.5.2/",
 )
 
 LICENSE_LINE_RE = re.compile(r"SPDX-License-Identifier:\s*(\S+)")

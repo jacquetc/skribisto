@@ -1411,7 +1411,7 @@ import-scrivener-report-chose-upgraded = Vous avez importé « { $current } »
 import-scrivener-report-chose-backup = Vous avez importé « { $backup } », la copie plus ancienne que Scrivener a gardée avant une mise à jour.
 import-scrivener-report-title-placeholder-rejected = Le titre indiqué dans les réglages du projet était une balise de modèle : Skribisto a proposé le nom du projet à la place.
 import-scrivener-report-author-placeholder-rejected = Le nom d’auteur indiqué dans les réglages du projet était une balise de modèle : Skribisto n’en a proposé aucun.
-import-scrivener-report-title-from-compile-settings = Skribisto a proposé le titre qu’indiquent les réglages de compilation du projet.
+import-scrivener-report-title-from-compile-settings = Skribisto a proposé le titre qu’indiquent les réglages de compilation du projet : le nom que le projet avait à sa création, sauf si un titre y a été indiqué dans Scrivener.
 import-scrivener-report-title-from-template = Skribisto a proposé le titre du modèle.
 import-scrivener-report-title-from-folder-name = Skribisto a proposé le nom du projet comme titre.
 import-scrivener-report-title-from-project-properties = Skribisto a proposé le titre qu’indiquent les propriétés du projet.
@@ -1511,7 +1511,15 @@ import-scrivener-abbreviated-title = Titre abrégé
 import-scrivener-subjects = Sujets
 import-scrivener-company = Société
 import-scrivener-session-target = Objectif de session
+import-scrivener-session-target-calculated = Objectif de session, calculé par Scrivener d’après l’échéance
 import-scrivener-writing-days = Jours d’écriture
+import-scrivener-weekday-monday = lundi
+import-scrivener-weekday-tuesday = mardi
+import-scrivener-weekday-wednesday = mercredi
+import-scrivener-weekday-thursday = jeudi
+import-scrivener-weekday-friday = vendredi
+import-scrivener-weekday-saturday = samedi
+import-scrivener-weekday-sunday = dimanche
 import-scrivener-draft-target = Objectif du manuscrit
 import-scrivener-deadline = Échéance
 import-scrivener-unit-words = mots
@@ -1810,7 +1818,7 @@ import-scrivener-notice-writing-history-not-imported-line = { $days ->
 }
 import-scrivener-notice-title-placeholder-rejected-hint = Le titre indiqué dans les réglages du projet est une balise de modèle : le nom du projet est proposé à la place.
 import-scrivener-notice-author-placeholder-rejected-hint = Le nom d’auteur indiqué dans les réglages du projet est une balise de modèle : aucun n’est proposé.
-import-scrivener-notice-title-from-project-hint-compile-settings = Ce titre est celui qu’indiquent les réglages de compilation du projet.
+import-scrivener-notice-title-from-project-hint-compile-settings = Ce titre est celui qu’indiquent les réglages de compilation du projet. Scrivener y met le nom que le projet avait à sa création, tant qu’aucun titre n’y est indiqué.
 import-scrivener-notice-title-from-project-hint-template = Ce titre est celui du modèle.
 import-scrivener-notice-title-from-project-hint-folder-name = Ce titre est le nom du projet.
 import-scrivener-notice-title-from-project-hint-project-properties = Ce titre est celui qu’indiquent les propriétés du projet.
@@ -1853,6 +1861,10 @@ import-scrivener-structure-generic-sheet-title-line = { $count ->
 import-scrivener-structure-placeholder-title-line = { $count ->
     [one] { $count } titre ne faisait que nommer son niveau et est laissé vide : le classeur et les exports le numérotent.
    *[other] { $count } titres ne faisaient que nommer leur niveau et sont laissés vides : le classeur et les exports les numérotent.
+}
+import-scrivener-structure-untitled-item-line = { $count ->
+    [one] { $count } élément n’avait pas de titre dans Scrivener et reste sans titre.
+   *[other] { $count } éléments n’avaient pas de titre dans Scrivener et restent sans titre.
 }
 import-scrivener-structure-title-cleaned-line = { $count ->
     [one] { $count } titre contenait des retours à la ligne ou des tabulations, qui sont retirés.
@@ -2013,6 +2025,10 @@ import-scrivener-metadata-tag-name-disambiguated-line = { $count ->
     [one] { $count } étiquette prend un nouveau nom, car une autre étiquette porte déjà le sien.
    *[other] { $count } étiquettes prennent un nouveau nom, car d’autres étiquettes portent déjà le leur.
 }
+import-scrivener-metadata-rung-names-disambiguated-line = { $count ->
+    [one] { $count } statut porte le même nom qu’un autre : il prend un numéro après son nom. Vérifiez-le dans Paramètres ▸ Œuvre ▸ Statuts.
+   *[other] { $count } statuts portent le même nom qu’un autre : chacun prend un numéro après son nom. Vérifiez-les dans Paramètres ▸ Œuvre ▸ Statuts.
+}
 import-scrivener-metadata-unused-labels-skipped-line = { $count ->
     [one] { $count } libellé qu’aucun document ne porte n’est pas importé.
    *[other] { $count } libellés qu’aucun document ne porte ne sont pas importés.
@@ -2054,7 +2070,7 @@ import-scrivener-metadata-pov-hint-line = { $count ->
     [one] Le libellé ou la valeur de champ { $values } correspond à la fiche de la bible narrative { $matches }. S’il désigne le point de vue, indiquez-le dans l’Inspecteur : l’import ne relie rien.
    *[other] Les libellés ou valeurs de champ { $values } correspondent aux fiches de la bible narrative { $matches }. S’ils désignent des points de vue, indiquez-les dans l’Inspecteur : l’import ne relie rien.
 }
-import-scrivener-metadata-checkbox-default-unknown-line = Le champ case à cocher « { $field } » porte un réglage que Skribisto ne sait pas lire, comme une case cochée par défaut. Seuls les documents cochés un par un portent son étiquette.
+import-scrivener-metadata-checkbox-default-unknown-line = Le champ case à cocher « { $field } » a une valeur par défaut que Skribisto ne sait pas lire : il ne peut pas savoir quels documents sont cochés par défaut. Seuls les documents cochés un par un portent son étiquette.
 import-scrivener-metadata-goals-in-other-unit-line = { $count ->
     [one] { $count } objectif est fixé dans l’autre unité de comptage. Il est gardé, et apparaît dès que vous changez d’unité dans Paramètres ▸ Œuvre ▸ Structure.
    *[other] { $count } objectifs sont fixés dans l’autre unité de comptage. Ils sont gardés, et apparaissent dès que vous changez d’unité dans Paramètres ▸ Œuvre ▸ Structure.
@@ -2125,8 +2141,8 @@ import-scrivener-metadata-draft-target-kept-characters-line = { $value ->
     [one] L’objectif du manuscrit, { $value } caractère, devient l’objectif du livre.
    *[other] L’objectif du manuscrit, { $value } caractères, devient l’objectif du livre.
 }
-import-scrivener-metadata-pace-planned-line = L’échéance, { $day }, devient le Rythme du livre, qui planifie les mots de chaque jour à partir du jour de l’import.
-import-scrivener-metadata-pace-planned-day-off-line = L’échéance, { $day }, devient le Rythme du livre, qui planifie les mots de chaque jour à partir du jour de l’import. Comme dans Scrivener, le jour de l’échéance est un congé.
+import-scrivener-metadata-pace-planned-line = L’échéance, { $day }, devient le Rythme du livre, qui planifie les mots de chaque jour d’écriture choisi dans Scrivener, à partir du jour de l’import.
+import-scrivener-metadata-pace-planned-day-off-line = L’échéance, { $day }, devient le Rythme du livre, qui planifie les mots de chaque jour d’écriture choisi dans Scrivener, à partir du jour de l’import. Comme dans Scrivener, le jour de l’échéance est un congé.
 import-scrivener-metadata-dictionary-words-line = { $count ->
     [one] { $count } mot d’autocomplétion entre dans le dictionnaire personnel du projet : il n’est pas signalé comme faute.
    *[other] { $count } mots d’autocomplétion entrent dans le dictionnaire personnel du projet : ils ne sont pas signalés comme fautes.
@@ -2220,7 +2236,8 @@ import-scrivener-metadata-draft-target-no-book-characters-line = { $value ->
    *[other] L’objectif du manuscrit, { $value } caractères, ne devient pas un objectif, car le manuscrit donne plusieurs livres, ou aucun. Il figure dans la note « { $note } » du dossier « { $folder } ».
 }
 import-scrivener-metadata-deadline-passed-line = L’échéance, { $day }, est passée : elle ne donne pas de Rythme. Elle figure dans la note « { $note } » du dossier « { $folder } ».
-import-scrivener-metadata-deadline-no-writing-day-line = L’échéance, { $day }, est le jour de l’import et, comme dans Scrivener, le jour de l’échéance est un congé : il ne reste aucun jour pour écrire, elle ne donne donc pas de Rythme. Elle figure dans la note « { $note } » du dossier « { $folder } ».
+import-scrivener-metadata-deadline-no-writing-day-line = Il ne reste aucun jour d’écriture entre le jour de l’import et l’échéance, { $day } : elle ne donne donc pas de Rythme. Elle figure dans la note « { $note } » du dossier « { $folder } ».
+import-scrivener-metadata-deadline-template-line = L’échéance, { $day }, est celle enregistrée dans le modèle : elle ne donne pas de Rythme. Elle figure dans la note « { $note } » du dossier « { $folder } ».
 import-scrivener-metadata-deadline-no-word-goal-line = L’échéance, { $day }, ne donne pas de Rythme, car le manuscrit n’a pas d’objectif de mots vers lequel avancer. Elle figure dans la note « { $note } » du dossier « { $folder } ».
 import-scrivener-metadata-deadline-character-goal-line = L’échéance, { $day }, ne donne pas de Rythme, car l’objectif du manuscrit compte des caractères et un Rythme compte des mots. Elle figure dans la note « { $note } » du dossier « { $folder } ».
 import-scrivener-metadata-deadline-no-book-line = L’échéance, { $day }, ne donne pas de Rythme, car le manuscrit donne plusieurs livres, ou aucun. Elle figure dans la note « { $note } » du dossier « { $folder } ».
@@ -2236,6 +2253,18 @@ import-scrivener-metadata-session-target-characters-line = { $value ->
 import-scrivener-metadata-session-target-pages-line = { $value ->
     [one] L’objectif de session, { $value } page, n’est pas importé : dans Skribisto, l’objectif de la session d’écriture est un seul réglage pour tous les projets, en mots. Il figure dans la note « { $note } » du dossier « { $folder } ».
    *[other] L’objectif de session, { $value } pages, n’est pas importé : dans Skribisto, l’objectif de la session d’écriture est un seul réglage pour tous les projets, en mots. Il figure dans la note « { $note } » du dossier « { $folder } ».
+}
+import-scrivener-metadata-session-target-calculated-words-line = { $value ->
+    [one] L’objectif de session, { $value } mot, calculé par Scrivener d’après l’échéance et les jours d’écriture, n’est pas importé : dans Skribisto, l’objectif de la session d’écriture est un seul réglage pour tous les projets. Il figure dans la note « { $note } » du dossier « { $folder } ».
+   *[other] L’objectif de session, { $value } mots, calculé par Scrivener d’après l’échéance et les jours d’écriture, n’est pas importé : dans Skribisto, l’objectif de la session d’écriture est un seul réglage pour tous les projets. Il figure dans la note « { $note } » du dossier « { $folder } ».
+}
+import-scrivener-metadata-session-target-calculated-characters-line = { $value ->
+    [one] L’objectif de session, { $value } caractère, calculé par Scrivener d’après l’échéance et les jours d’écriture, n’est pas importé : dans Skribisto, l’objectif de la session d’écriture est un seul réglage pour tous les projets, en mots. Il figure dans la note « { $note } » du dossier « { $folder } ».
+   *[other] L’objectif de session, { $value } caractères, calculé par Scrivener d’après l’échéance et les jours d’écriture, n’est pas importé : dans Skribisto, l’objectif de la session d’écriture est un seul réglage pour tous les projets, en mots. Il figure dans la note « { $note } » du dossier « { $folder } ».
+}
+import-scrivener-metadata-session-target-calculated-pages-line = { $value ->
+    [one] L’objectif de session, { $value } page, calculé par Scrivener d’après l’échéance et les jours d’écriture, n’est pas importé : dans Skribisto, l’objectif de la session d’écriture est un seul réglage pour tous les projets, en mots. Il figure dans la note « { $note } » du dossier « { $folder } ».
+   *[other] L’objectif de session, { $value } pages, calculé par Scrivener d’après l’échéance et les jours d’écriture, n’est pas importé : dans Skribisto, l’objectif de la session d’écriture est un seul réglage pour tous les projets, en mots. Il figure dans la note « { $note } » du dossier « { $folder } ».
 }
 import-scrivener-metadata-icons-dropped-line = { $count ->
     [one] { $count } élément avait une icône dans le classeur, qui n’est pas reprise : Skribisto montre l’icône de chaque élément d’après son type.
@@ -2263,6 +2292,10 @@ import-scrivener-prose-inline-note-unmatched-line = { $count ->
 import-scrivener-prose-style-unresolved-line = { $count ->
     [one] { $count } marque de style nomme un style que le projet ne définit pas. Elle est retirée, et le texte garde sa mise en forme.
    *[other] { $count } marques de style nomment un style que le projet ne définit pas. Elles sont retirées, et le texte garde sa mise en forme.
+}
+import-scrivener-prose-styles-lost-in-export-line = { $count ->
+    [one] { $count } paragraphe est peut-être un titre qui a perdu son style quand Scrivener 3 a exporté le projet vers son ancien format, et arrive comme un paragraphe ordinaire. Vérifiez-le, ou importez le projet d’origine de l’export.
+   *[other] { $count } paragraphes sont peut-être des titres qui ont perdu leur style quand Scrivener 3 a exporté le projet vers son ancien format, et arrivent comme des paragraphes ordinaires. Vérifiez-les, ou importez le projet d’origine de l’export.
 }
 import-scrivener-prose-comment-anchor-without-entry-line = { $count ->
     [one] { $count } commentaire ou note de bas de page avait perdu son contenu dans Scrivener. Les mots qu’il marquait sont gardés, sans lui.

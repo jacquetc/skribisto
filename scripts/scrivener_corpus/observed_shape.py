@@ -4,7 +4,11 @@
 """Census the shape of real Scrivener projects: structure only, never content.
 
     python3 scripts/scrivener_corpus/observed_shape.py ~/scrivener-corpus \
+        crates/scrivener_import/tests/fixtures/ground-truth-mac-3.5.2 \
         > crates/scrivener_fixtures/observed_shape.json
+
+Every folder named is walked; the census is the union. The second is the project owner's own
+ground truth, which the repository holds (UQ-48).
 
 Writes, per generation and platform, every XML element path and attribute name the manifests
 and Scrivener's own sidecar files use, the shape of every file path inside a project (UUIDs,
@@ -125,10 +129,17 @@ SIDE = {
 }
 
 
+def walk_all(bases):
+    for base in bases:
+        yield from os.walk(base)
+
+
 def main():
-    base = sys.argv[1]
+    bases = sys.argv[1:]
+    if not bases:
+        sys.exit("usage: observed_shape.py FOLDER [FOLDER...]")
     manifests, sidecars, files, lock_keys, templates = {}, {}, {}, set(), set()
-    for dp, dn, fn in os.walk(base):
+    for dp, dn, fn in walk_all(bases):
         dn[:] = sorted(d for d in dn if d not in (".git", "__MACOSX"))
         names = set(fn)
         scrivx = sorted(f for f in fn if f.lower().endswith(".scrivx") and not f.startswith("._"))

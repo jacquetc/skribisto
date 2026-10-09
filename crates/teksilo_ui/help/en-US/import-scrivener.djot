@@ -27,7 +27,9 @@ A Scrivener project looks different depending on where you work:
 You can also drop the project on the *Project* page, or type or paste its path.
 
 A backup made by Scrivener works as it is, without unpacking it: choose the `.zip`. A
-`.scrivtemplate` file works too, and makes a new project from the template.
+`.scrivtemplate` file works too, and makes a new project from the template. When you choose a
+folder that holds several projects, the page asks which one to import, and also offers the
+backups and templates beside them.
 
 Projects from Scrivener 3 and Scrivener 2 on the Mac, from Scrivener on Windows, from the
 Scrivener for Linux beta, and projects made on an iPhone or iPad can all be imported. A
@@ -87,6 +89,10 @@ Every item can be retyped afterwards from the binder. See
 default. It also shows the *Title*, *Author* and *Language* your project states. Change any
 of them before you import.
 
+Scrivener 3 keeps a title and an author only in its compile settings. Until you set them
+there, it keeps the name the project had when you created it, and no author: the page then
+proposes that name and leaves *Author* empty. A template proposes its own title.
+
 When your research holds files Skribisto cannot open, such as PDF files or sounds, *Copy
 research files beside the new project* puts them in a folder next to it.
 
@@ -100,9 +106,11 @@ research files beside the new project* puts them in a folder next to it.
 - Your labels as colored tags, and your status list as the project's statuses.
 - Your keywords, your collections, and your list and checkbox custom fields, as tags on the
   documents that wear them. A keyword's place among your keywords is in its tag's details.
+  A checkbox ticked by default is ticked on every document where you did not untick it.
 - The targets of your manuscript's documents, as their goals, and the draft target as the
   book's goal. A deadline that is still ahead, with a draft target in words, becomes the
-  book's *Pace*.
+  book's *Pace*, which keeps the writing days you chose in Scrivener. The deadline saved in a
+  project template makes no *Pace*.
 - A bookmark from one note to another, or from a scene or a folder of notes to a story bible
   entry, as a link: you find it under *Links* or *Cast*.
 - The single words of your auto-complete list, in the project's personal dictionary, so they
@@ -119,8 +127,9 @@ Scrivener*, after your own notes and before the Trash, which is never included i
 Each note lists one kind of thing, and a note is there only when it has something to list:
 
 - *Project*: the abbreviated title, subjects and company of your compile settings, the
-  session target, the writing days, a draft target that did not become a goal, and the
-  deadline, even when it became a *Pace*.
+  session target, marked as calculated when Scrivener worked it out from your deadline and
+  writing days, the writing days when no *Pace* keeps them or Skribisto could not read them,
+  a draft target that did not become a goal, and the deadline, even when it became a *Pace*.
 - *Project bookmarks*.
 - *Compile replacements*. Skribisto does not make them when it exports.
 - *Auto-complete entries* of more than one word.

@@ -206,6 +206,9 @@ pub struct TypedField {
     pub options: Vec<(i64, String)>,
     /// A list's name for "no option".
     pub none: Option<String>,
+    /// A checkbox's `Default`, as written (`Yes` on Scrivener 3 for Mac when it is ticked
+    /// by default); `None` writes no attribute.
+    pub default: Option<String>,
 }
 
 /// A collection.
@@ -235,6 +238,9 @@ pub struct Targets {
     /// `WritingDays`, as written.
     pub writing_days: String,
     pub can_write_on_deadline: bool,
+    /// `DeterminedFromDeadline`: Scrivener calculates the session target from the deadline
+    /// and the writing days.
+    pub determined_from_deadline: bool,
 }
 
 impl Default for Targets {
@@ -252,6 +258,7 @@ impl Default for Targets {
             session_kind: "Words".to_string(),
             writing_days: String::new(),
             can_write_on_deadline: false,
+            determined_from_deadline: false,
         }
     }
 }
@@ -672,6 +679,7 @@ impl Spec {
                     kind: "List".to_string(),
                     options: vec![(14, "Mac".to_string()), (0, "Windows".to_string())],
                     none: Some("All".to_string()),
+                    default: None,
                 },
                 TypedField {
                     id: "done".to_string(),
@@ -679,6 +687,7 @@ impl Spec {
                     kind: "Checkbox".to_string(),
                     options: Vec::new(),
                     none: None,
+                    default: None,
                 },
             ];
         }
@@ -1196,20 +1205,30 @@ impl Spec {
                 _ => self.number(i).to_string(),
             };
             out.push_str(&format!("        <Document ID=\"{id}\">\n"));
+            // In Scrivener's own order: title, synopsis, text, comments, notes.
             out.push_str(&format!(
                 "            <Title>{}</Title>\n",
                 xml_escape(item.title.as_deref().unwrap_or_default())
             ));
+            if let Some(synopsis) = &item.synopsis {
+                out.push_str(&format!(
+                    "            <Synopsis>{}</Synopsis>\n",
+                    xml_escape(synopsis)
+                ));
+            }
             if !item.text.is_empty() {
                 out.push_str(&format!(
                     "            <Text>{}</Text>\n",
                     xml_escape(&item.text.join("\n"))
                 ));
             }
-            if let Some(synopsis) = &item.synopsis {
+            if item.comments > 0 {
+                let comments: Vec<&str> = (0..item.comments)
+                    .map(|c| text::sentence(i + c as usize))
+                    .collect();
                 out.push_str(&format!(
-                    "            <Synopsis>{}</Synopsis>\n",
-                    xml_escape(synopsis)
+                    "            <Comments>{}</Comments>\n",
+                    xml_escape(&comments.join("\n"))
                 ));
             }
             if !item.notes.is_empty() {
@@ -1371,7 +1390,13 @@ impl Spec {
                     }
                     replacements.push_str("        </Replacements>\n");
                 }
-                let struck = if c.delete_struck_through { "Yes" } else { "No" };
+                // An untouched Scrivener 3 project writes these four options and no
+                // `DeleteStruckThroughText`, which appears once the writer sets it.
+                let struck = if c.delete_struck_through {
+                    "            <DeleteStruckThroughText>Yes</DeleteStruckThroughText>\n"
+                } else {
+                    ""
+                };
                 let last = c
                     .last_format
                     .as_ref()
@@ -1385,7 +1410,7 @@ impl Spec {
                 files.put(
                     "Settings/compile.xml",
                     format!(
-                        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CompileSettings>\n    <ProjectSettings>\n        <Options>\n            <RemoveAnnotations>Yes</RemoveAnnotations>\n            <DeleteStruckThroughText>{struck}</DeleteStruckThroughText>\n        </Options>\n        <MetaData>\n{meta}        </MetaData>\n{replacements}    </ProjectSettings>\n{last}</CompileSettings>\n"
+                        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CompileSettings>\n    <ProjectSettings>\n        <Options>\n            <RemoveComments>Yes</RemoveComments>\n            <RemoveAnnotations>Yes</RemoveAnnotations>\n            <ResampleImages DPI=\"72\">No</ResampleImages>\n            <ConvertTablesAndListToMMD>Yes</ConvertTablesAndListToMMD>\n{struck}        </Options>\n        <MetaData>\n{meta}        </MetaData>\n{replacements}    </ProjectSettings>\n{last}</CompileSettings>\n"
                     ),
                 );
                 for format in &c.formats {
@@ -1518,7 +1543,7 @@ impl Spec {
                 out.push_str(&self.section_types_xml());
             }
         }
-        out.push_str(&self.targets_xml(g == Generation::IosStub));
+        out.push_str(&self.targets_xml(g));
         out.push_str(&self.project_lists_xml());
         if g == Generation::Format20 {
             out.push_str(
@@ -1937,8 +1962,13 @@ impl Spec {
         let mut out = String::from("    <CustomMetaDataSettings>\n");
         if v3 {
             for field in &self.typed_fields {
+                let default = field
+                    .default
+                    .as_ref()
+                    .map(|d| format!(" Default=\"{}\"", xml_escape(d)))
+                    .unwrap_or_default();
                 out.push_str(&format!(
-                    "        <MetaDataField Type=\"{}\" ID=\"{}\">\n            <Title>{}</Title>\n",
+                    "        <MetaDataField Type=\"{}\" ID=\"{}\"{default}>\n            <Title>{}</Title>\n",
                     xml_escape(&field.kind),
                     xml_escape(&field.id),
                     xml_escape(&field.title)
@@ -1999,8 +2029,8 @@ impl Spec {
         out
     }
 
-    fn targets_xml(&self, ios: bool) -> String {
-        if ios {
+    fn targets_xml(&self, g: Generation) -> String {
+        if g == Generation::IosStub {
             return "    <ProjectTargets>\n        <DraftTarget Type=\"Words\">0</DraftTarget>\n        <PreviousSession Words=\"0\" Characters=\"0\"/>\n    </ProjectTargets>\n".to_string();
         }
         let t = &self.targets;
@@ -2016,13 +2046,21 @@ impl Spec {
                 )
             })
             .unwrap_or_default();
+        // Scrivener 3 resets the session at a time of day and writes when it next will;
+        // the older formats say only that it resets at midnight.
+        let reset = if g == Generation::Format20 {
+            format!("NextResetDate=\"{DATE}\" ResetType=\"Time\" ResetTime=\"00:00\"")
+        } else {
+            "ResetType=\"Midnight\"".to_string()
+        };
         format!(
-            "    <ProjectTargets Notify=\"No\">\n        <DraftTarget Type=\"{}\" CountIncludedOnly=\"{}\" CurrentCompileGroupOnly=\"{}\"{deadline}>{}</DraftTarget>\n        <SessionTarget Type=\"{}\" CountDraftOnly=\"Yes\" AllowNegatives=\"Yes\" ResetType=\"Midnight\" DeterminedFromDeadline=\"No\" WritingDays=\"{}\" CanWriteOnDeadlineDate=\"{}\">{}</SessionTarget>\n        <PreviousSession Words=\"0\" Characters=\"0\" Date=\"{DATE}\"/>\n    </ProjectTargets>\n",
+            "    <ProjectTargets Notify=\"No\">\n        <DraftTarget Type=\"{}\" CountIncludedOnly=\"{}\" CurrentCompileGroupOnly=\"{}\"{deadline}>{}</DraftTarget>\n        <SessionTarget Type=\"{}\" CountDraftOnly=\"Yes\" AllowNegatives=\"Yes\" {reset} DeterminedFromDeadline=\"{}\" WritingDays=\"{}\" CanWriteOnDeadlineDate=\"{}\">{}</SessionTarget>\n        <PreviousSession Words=\"0\" Characters=\"0\" Date=\"{DATE}\"/>\n    </ProjectTargets>\n",
             xml_escape(&t.draft_kind),
             yes_no(t.count_included_only),
             yes_no(t.compile_group_only),
             t.draft,
             xml_escape(&t.session_kind),
+            yes_no(t.determined_from_deadline),
             xml_escape(&t.writing_days),
             yes_no(t.can_write_on_deadline),
             t.session,

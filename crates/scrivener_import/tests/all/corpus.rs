@@ -10,7 +10,9 @@
 //! # Running it
 //!
 //! The corpus is not in the repository and never may be: most projects carry no
-//! licence, and Literature & Latte's downloads are theirs. Rebuild it anywhere
+//! licence, and Literature & Latte's downloads are theirs. The one exception is the
+//! project owner's own ground truth (UQ-48), committed in `tests/fixtures/` and read by
+//! `ground_truth.rs`, not here. Rebuild it anywhere
 //! outside a git work tree, then point the test at it:
 //!
 //! ```text

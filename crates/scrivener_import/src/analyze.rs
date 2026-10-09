@@ -51,7 +51,7 @@ use crate::model::{
     ItemKey, ItemKind, ManifestChoice, ManifestOrigin, MemberRef, Platform, Project, ProjectNote,
     SettingsFiles, SourceFacts, Stamp, Writer,
 };
-use crate::names::{conflict_original, folded, nfc};
+use crate::names::{self, conflict_original, folded, nfc};
 use crate::outcome::{
     DanglingKind, ManifestCandidate, ManifestEvidence, MobileEdits, Notice, ProjectCandidate,
     Question, Refusal, TemplateDamage,
@@ -394,6 +394,15 @@ fn folder_pick(
         let rel = choose_root(&found, answers, notices, |weak| {
             weak_refusal_disk(disk, pick, weak)
         })?;
+        if found.archives.contains(&rel) {
+            // A backup or a template the writer chose among the projects: read as the
+            // file it is, as if picked.
+            let file = pick.join(&rel);
+            if let Some(sign) = pick::backup_sign(&file) {
+                notices.push(Notice::SourceIsBackup { sign });
+            }
+            return file_pick(disk, &file, answers, options, notices, visit);
+        }
         if rel.is_empty() {
             pick.to_path_buf()
         } else {
@@ -461,12 +470,17 @@ fn choose_root(
             .into());
         }
         [only] => only.clone(),
+        // Several projects: the backups and templates beside them are offered too, by
+        // their names alone; the one chosen is read as what it is.
         several => match &answers.project {
-            Some(answer) if several.contains(answer) => answer.clone(),
+            Some(answer) if several.contains(answer) || found.archives.contains(answer) => {
+                answer.clone()
+            }
             _ => {
                 return Err(Stop::Choose(Question::SeveralProjects {
                     candidates: several
                         .iter()
+                        .chain(&found.archives)
                         .map(|path| ProjectCandidate { path: path.clone() })
                         .collect(),
                 }));
@@ -681,6 +695,20 @@ fn archive_root(
                 .is_some_and(|h| h.is_mobile_stub());
         weak_refusal(manifests.first().cloned(), stub)
     })?;
+    // An archive that holds the project's folder and nothing else (Scrivener's backups and
+    // templates, Finder's "Compress") has that shape by design: the project is what the
+    // writer picked, not something found below it.
+    if !root.is_empty() && !root.contains('/') {
+        let top = pick::list_index(index, "");
+        let mut real = top
+            .entries
+            .iter()
+            .filter(|(name, _)| name != "__MACOSX" && !names::is_litter(name));
+        if real.next().is_some_and(|(name, _)| *name == root) && real.next().is_none() {
+            notices
+                .retain(|n| !matches!(n, Notice::ProjectFoundBelowPick { path } if *path == root));
+        }
+    }
     let folder_name = if root.is_empty() {
         String::new()
     } else {
@@ -1115,7 +1143,7 @@ fn evaluate(
         compile_formats: Vec::new(),
     };
     let compile = read_compile(tree, &mut settings, &mut used, notices)?;
-    let created_from_template = match &settings.template_info {
+    let saved_as_template = match &settings.template_info {
         Some(info) => template_info_title(tree, info, notices)?,
         None => None,
     };
@@ -1307,7 +1335,7 @@ fn evaluate(
             version_stamp,
             id_scheme,
             template_title: ctx.template_title.clone(),
-            created_from_template,
+            saved_as_template,
         },
         binder: rows,
         labels: blocks.labels,

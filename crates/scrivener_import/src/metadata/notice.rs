@@ -52,8 +52,9 @@ pub enum DraftTargetReason {
 pub enum DeadlineReason {
     /// The day is behind the import.
     Passed,
-    /// The day is the day of the import, and Scrivener's calculator keeps the deadline
-    /// itself free of writing: no day is left to write on.
+    /// No writing day is left from the day of the import to the deadline: none of the
+    /// writing days falls in between, the deadline itself a day off when Scrivener's
+    /// calculator keeps it free of writing.
     NoWritingDayLeft,
     /// The draft has no word target to plan towards.
     NoWordGoal,
@@ -63,6 +64,9 @@ pub enum DeadlineReason {
     NoSingleBook,
     /// The date could not be read.
     Unreadable,
+    /// The project is a template: its deadline is the one saved in the template, not one
+    /// set for the project being started from it.
+    Template,
 }
 
 /// Something mapping the metadata did that the writer should know.
@@ -122,6 +126,9 @@ pub enum MetadataNotice {
     UnnamedValue { field: Field, id: i64 },
     /// Tags whose name another tag already held, renamed: the names they took.
     TagNameDisambiguated { names: Vec<String> },
+    /// Statuses whose name an earlier status already held (Scrivener allows two of one
+    /// name), their rungs renamed with an ordinal: the names they took.
+    RungNamesDisambiguated { names: Vec<String> },
     /// The keywords documents wear, now tags on those documents.
     KeywordsBecameTags { tags: u32, rows: u32 },
     /// Keywords nested in Scrivener's keyword list, flat tags now: each tag's details name
@@ -199,8 +206,15 @@ pub enum MetadataNotice {
         day: Option<i64>,
     },
     /// The session target, an application setting in Skribisto rather than a project's:
-    /// listed in the "From Scrivener" folder.
-    SessionTargetNotImported { value: i64, unit: TargetUnit },
+    /// listed in the "From Scrivener" folder. `calculated` when Scrivener worked it out from
+    /// the deadline and the writing days (`DeterminedFromDeadline="Yes"`) rather than the
+    /// writer typing it: Scrivener 3 for Mac stores no typed target once writing days are
+    /// set (M19).
+    SessionTargetNotImported {
+        value: i64,
+        unit: TargetUnit,
+        calculated: bool,
+    },
     /// Binder icons, which Skribisto draws from the kind of each row: `rows` rows had one,
     /// `names` the five most used, as written.
     IconsDropped { rows: u32, names: Vec<String> },
@@ -218,6 +232,7 @@ impl MetadataNotice {
         "scrivener-metadata-none-value-collapsed",
         "scrivener-metadata-unnamed-value",
         "scrivener-metadata-tag-name-disambiguated",
+        "scrivener-metadata-rung-names-disambiguated",
         "scrivener-metadata-unused-labels-skipped",
         "scrivener-metadata-values-without-row",
         "scrivener-metadata-pov-hint",
@@ -271,6 +286,9 @@ impl MetadataNotice {
             MetadataNotice::UnnamedValue { .. } => "scrivener-metadata-unnamed-value",
             MetadataNotice::TagNameDisambiguated { .. } => {
                 "scrivener-metadata-tag-name-disambiguated"
+            }
+            MetadataNotice::RungNamesDisambiguated { .. } => {
+                "scrivener-metadata-rung-names-disambiguated"
             }
             MetadataNotice::UnusedLabelsSkipped { .. } => {
                 "scrivener-metadata-unused-labels-skipped"
@@ -353,6 +371,7 @@ impl MetadataNotice {
             | MetadataNotice::NoneValueCollapsed { .. }
             | MetadataNotice::UnnamedValue { .. }
             | MetadataNotice::TagNameDisambiguated { .. }
+            | MetadataNotice::RungNamesDisambiguated { .. }
             | MetadataNotice::KeywordsBecameTags { .. }
             | MetadataNotice::KeywordHierarchyFlattened { .. }
             | MetadataNotice::FieldsBecameTags { .. }
@@ -411,6 +430,7 @@ pub fn every_example() -> Vec<MetadataNotice> {
             id: 3,
         },
         MetadataNotice::TagNameDisambiguated { names: names() },
+        MetadataNotice::RungNamesDisambiguated { names: names() },
         MetadataNotice::UnusedLabelsSkipped { names: names() },
         MetadataNotice::ValuesWithoutRow {
             field: Field::CustomField,
@@ -485,6 +505,7 @@ pub fn every_example() -> Vec<MetadataNotice> {
         MetadataNotice::SessionTargetNotImported {
             value: 1_000,
             unit: TargetUnit::Words,
+            calculated: false,
         },
         MetadataNotice::IconsDropped {
             rows: 3,

@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
+# The Scrivener ground truth is the bytes Scrivener wrote, line ends included: checked out
+# as written on every platform, never converted.
+crates/scrivener_import/tests/fixtures/ground-truth-mac-3.5.2/** -text

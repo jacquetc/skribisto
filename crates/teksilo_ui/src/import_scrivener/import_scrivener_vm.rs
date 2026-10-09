@@ -2115,7 +2115,15 @@ fn metadata_word(key: &str) -> Option<LocalizedString> {
         "subjects" => tr!(import_scrivener_subjects()),
         "company" => tr!(import_scrivener_company()),
         "session-target" => tr!(import_scrivener_session_target()),
+        "session-target-calculated" => tr!(import_scrivener_session_target_calculated()),
         "writing-days" => tr!(import_scrivener_writing_days()),
+        "weekday-monday" => tr!(import_scrivener_weekday_monday()),
+        "weekday-tuesday" => tr!(import_scrivener_weekday_tuesday()),
+        "weekday-wednesday" => tr!(import_scrivener_weekday_wednesday()),
+        "weekday-thursday" => tr!(import_scrivener_weekday_thursday()),
+        "weekday-friday" => tr!(import_scrivener_weekday_friday()),
+        "weekday-saturday" => tr!(import_scrivener_weekday_saturday()),
+        "weekday-sunday" => tr!(import_scrivener_weekday_sunday()),
         "draft-target" => tr!(import_scrivener_draft_target()),
         "deadline" => tr!(import_scrivener_deadline()),
         "unit-words" => tr!(import_scrivener_unit_words()),
@@ -2382,9 +2390,11 @@ fn card_view(analysis: &ScrivenerAnalysisDto) -> CardView {
         }
         _ => analysis.folder_title.clone(),
     };
-    let device = match &analysis.computers {
-        ScrivenerComputers::Named { device, .. } => device.clone(),
-        ScrivenerComputers::Unknown => None,
+    // A template's device is the computer of whoever made the template, not the writer's.
+    let device = match (&analysis.container, &analysis.computers) {
+        (ScrivenerContainer::Template, _) => None,
+        (_, ScrivenerComputers::Named { device, .. }) => device.clone(),
+        (_, ScrivenerComputers::Unknown) => None,
     };
     let saved_on = analysis
         .modified

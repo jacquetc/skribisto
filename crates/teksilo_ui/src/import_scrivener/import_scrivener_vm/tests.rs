@@ -690,6 +690,38 @@ fn a_readable_project_fills_every_page() {
     });
 }
 
+/// A template's card names no computer: the device its manifest names is the computer of
+/// whoever made the template, someone else (C18). A project's card names its own.
+#[test]
+fn a_templates_card_names_no_computer() {
+    crate::test_support::with_real_messages(|| {
+        let (_dir, project) = project_on_disk();
+        let named = || ScrivenerComputers::Named {
+            device: Some("Ada's Laptop".into()),
+            lock_host: None,
+        };
+        let vm = wizard();
+        let mut analysis = readable(&project);
+        analysis.computers = named();
+        read(&vm, &project, analysis);
+        assert!(
+            vm.card_saved_on().get().contains("Ada's Laptop"),
+            "{}",
+            vm.card_saved_on().get()
+        );
+
+        let vm = wizard();
+        let mut analysis = readable(&project);
+        analysis.computers = named();
+        analysis.container = ScrivenerContainer::Template;
+        analysis.template_title = "Starter".into();
+        read(&vm, &project, analysis);
+        let saved_on = vm.card_saved_on().get();
+        assert!(saved_on.starts_with("Saved on 2024-06-01"), "{saved_on}");
+        assert!(!saved_on.contains("Ada"), "{saved_on}");
+    });
+}
+
 /// A question to accept keeps Next off until it is accepted, and the import then carries
 /// the acceptance.
 #[test]

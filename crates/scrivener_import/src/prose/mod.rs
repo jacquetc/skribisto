@@ -88,6 +88,8 @@ pub(crate) struct Stream<'a> {
     pub(crate) compiled: bool,
     /// The project's compile removes struck-through text (D5.21).
     pub(crate) struck_compiled_away: bool,
+    /// The project is in Scrivener's older format, saved by Scrivener 3 (C20).
+    pub(crate) older_format_export: bool,
 }
 
 /// A text converted: one document per part, what it links to, and what to report.
@@ -143,6 +145,7 @@ pub(crate) fn rtf_stream(
         footnote_marker: stream.footnote_marker,
         scene_breaks: stream.scene_breaks,
         annotations_as_prose: false,
+        older_format_export: stream.older_format_export,
     };
     // A document holding nothing but annotations keeps them as its text (X-03): known only
     // once they are taken out, so the model is kept for a second reading when it may.
@@ -534,6 +537,9 @@ fn found_notices(at: Place, found: &dialect::Found) -> Vec<ProseNotice> {
     });
     count(found.styles_unresolved, &|count| {
         ProseNotice::StyleUnresolved { at, count }
+    });
+    count(found.styles_lost_in_export, &|count| {
+        ProseNotice::StylesLostInExport { at, count }
     });
     count(found.anchors_without_entry, &|count| {
         ProseNotice::CommentAnchorWithoutEntry { at, count }

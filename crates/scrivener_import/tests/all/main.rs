@@ -22,12 +22,15 @@
 //! * `s2`: the second half of the metadata (keywords, custom metadata, collections,
 //!   bookmarks, targets, the deadline, the auto-complete list, the "From Scrivener"
 //!   folder) for every generation that writes each, and its round trip through the store;
-//! * `corpus`: real projects, opt-in (see its module doc).
+//! * `corpus`: real projects, opt-in (see its module doc);
+//! * `ground_truth`: the project owner's own projects, written by Scrivener 3.5.2 for Mac
+//!   and committed under `tests/fixtures/`, one test per change they asked for.
 
 mod containers;
 mod convert;
 mod corpus;
 mod generations;
+mod ground_truth;
 mod hostile;
 mod metadata;
 mod properties;

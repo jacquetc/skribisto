@@ -13,10 +13,10 @@
 
 use std::collections::{HashMap, HashSet};
 
-use chrono::NaiveDate;
+use chrono::{Datelike, NaiveDate};
 use common::entities::GoalUnit;
 
-use super::collect::{Collected, Goal, PaceInputs, RawTag, TagSource, collect};
+use super::collect::{Collected, Goal, PaceInputs, ProjectLine, RawTag, TagSource, collect};
 use super::listing;
 use super::notice::{DeadlineReason, MetadataNotice};
 use super::vocabulary::{PALETTE, folded, hex};
@@ -221,7 +221,7 @@ pub fn extended(
         dictionary,
         pace,
         deadline_blocked,
-        listing,
+        mut listing,
         sheets,
         mut notices,
     } = collect(project, plan);
@@ -262,6 +262,13 @@ pub fn extended(
     // The pace plan, for a deadline still ahead (D4-12).
     let (planned, pace_notices) = plan_pace(pace, deadline_blocked, today, &w.deadline_day);
     notices.extend(pace_notices);
+    // Writing days a Pace keeps are not listed as well; with no Pace, the Project note is
+    // where they are kept.
+    if planned.is_some() {
+        listing
+            .project
+            .retain(|line| !matches!(line, ProjectLine::WritingWeekdays(_)));
+    }
 
     // The folder's notes, and what each note-like row lists of its own.
     let notes = listing
@@ -341,6 +348,30 @@ fn other_unit_notice(
     (other_unit > 0).then_some(MetadataNotice::GoalsInOtherUnit { count: other_unit })
 }
 
+/// Whether a writing day is left from `today` to the deadline: one of the writing days, and
+/// not the deadline itself when that is a day off.
+fn writing_day_left(inputs: &PaceInputs, today: NaiveDate) -> bool {
+    let last = if inputs.day_off {
+        match inputs.end.pred_opt() {
+            Some(day) => day,
+            None => return false,
+        }
+    } else {
+        inputs.end
+    };
+    if last < today {
+        return false;
+    }
+    // A week holds every day of it: any writing day at all is one left.
+    if (last - today).num_days() >= 6 {
+        return inputs.weekday_mask & 127 != 0;
+    }
+    today
+        .iter_days()
+        .take_while(|day| *day <= last)
+        .any(|day| inputs.weekday_mask & (1 << day.weekday().num_days_from_monday()) != 0)
+}
+
 /// The pace plan the deadline becomes when a writing day is left before it, from `today` on,
 /// and what the writer is told either way. A deadline that is today leaves today to write
 /// on, unless the deadline itself is a day off. `deadline_day` labels that day off.
@@ -353,25 +384,25 @@ fn plan_pace(
     let midnight = |day: NaiveDate| day.and_hms_opt(0, 0, 0).map(|d| d.and_utc().timestamp());
     let mut notices = Vec::new();
     let planned = match (pace, deadline_blocked) {
-        (Some(inputs), _) if inputs.end > today || (inputs.end == today && !inputs.day_off) => {
+        (Some(inputs), _) if writing_day_left(&inputs, today) => {
             notices.push(MetadataNotice::PacePlanned {
                 day: midnight(inputs.end).unwrap_or_default(),
                 day_off: inputs.day_off,
             });
-            if let Some(raw) = &inputs.partial_days {
+            if let Some(raw) = &inputs.unread_days {
                 notices.push(MetadataNotice::WritingDaysNotRead { raw: raw.clone() });
             }
             Some(PlannedPace {
                 book: inputs.book,
                 start: today,
                 end: inputs.end,
-                weekday_mask: 127,
+                weekday_mask: inputs.weekday_mask,
                 day_off: inputs.day_off.then(|| deadline_day.to_string()),
             })
         }
         (Some(inputs), _) => {
             notices.push(MetadataNotice::DeadlineNotPlanned {
-                reason: if inputs.end == today {
+                reason: if inputs.end >= today {
                     DeadlineReason::NoWritingDayLeft
                 } else {
                     DeadlineReason::Passed

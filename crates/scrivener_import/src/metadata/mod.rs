@@ -77,7 +77,7 @@ use std::collections::HashSet;
 use serde::{Deserialize, Serialize};
 
 use crate::content::{ContentFacts, Letters};
-use crate::model::{CompileFacts, CompileFormat, ItemKind, Project};
+use crate::model::{CompileFacts, CompileFormat, Container, ItemKind, Project};
 use crate::structure::clean_title;
 
 pub use extended::{Extended, ExtendedTag, PlannedPace, extended, foreseen};
@@ -231,18 +231,26 @@ pub(crate) fn stated_title(
     None
 }
 
-/// The project's title: what its settings state, else a template's own title, else its
-/// folder's name.
+/// The project's title: a template's own title, the one its card shows, since its
+/// settings state the name of the project it was saved from (C13); else what its settings
+/// state; else its folder's name.
 fn title(project: &Project, refusals: &mut Vec<Refused>) -> TitleProposal {
-    if let Some((title, source)) = stated_title(project, refusals) {
-        return TitleProposal { title, source };
-    }
     let template = project
         .source
         .template_title
         .as_deref()
         .map(|t| clean_title(Some(t)).0)
         .filter(|t| !t.is_empty() && !is_placeholder(t));
+    let is_template = matches!(project.source.container, Container::Template(_));
+    if let Some(title) = template.clone().filter(|_| is_template) {
+        return TitleProposal {
+            title,
+            source: TitleSource::Template,
+        };
+    }
+    if let Some((title, source)) = stated_title(project, refusals) {
+        return TitleProposal { title, source };
+    }
     if let Some(title) = template {
         return TitleProposal {
             title,

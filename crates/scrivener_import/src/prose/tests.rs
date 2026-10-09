@@ -68,6 +68,7 @@ fn stream<'a>(splits: &'a [u32]) -> Stream<'a> {
         splits,
         compiled: true,
         struck_compiled_away: false,
+        older_format_export: false,
     }
 }
 

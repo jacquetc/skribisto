@@ -348,6 +348,18 @@ fn every_spec() -> Vec<Spec> {
                 // And every piece the second half of the mapping reads.
                 specs.push(spec.clone().with_metadata().with_s2());
             }
+            // A checkbox ticked by default and a session target Scrivener calculated, as
+            // Scrivener 3.5.2 for Mac writes them (the owner's ground truth).
+            if g == Generation::Format20 {
+                let mut ticked = spec.clone().with_metadata().with_s2();
+                for field in &mut ticked.typed_fields {
+                    if field.kind == "Checkbox" {
+                        field.default = Some("Yes".to_string());
+                    }
+                }
+                ticked.targets.determined_from_deadline = true;
+                specs.push(ticked);
+            }
             // The same project with a lock and a placeholder spare binder.
             spec.lock_host = Some("Test-Host".to_string());
             spec.backup = Backup::Placeholder;

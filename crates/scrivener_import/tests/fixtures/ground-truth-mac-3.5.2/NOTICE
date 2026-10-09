@@ -1,0 +1,60 @@
+SCRIVENER GROUND-TRUTH FIXTURES: RIGHTS AND PROVENANCE
+=====================================================
+
+Skribisto's own source code is licensed GPL-3.0-only (see COPYING at the repository
+root). The projects in this directory are released under that same licence.
+
+
+What these files are
+--------------------
+
+Real Scrivener projects, written by Scrivener 3.5.2 (17486) for Mac on macOS 26.5 on
+2026-10-05. The project owner made them for this purpose, following a written protocol,
+and typed only their own words into them: no text from a manuscript, a Scrivener
+template, Scrivener's tutorial or its manual. They exist so the importer's tests can read
+what Scrivener itself writes, where every other fixture in this crate is built by
+`scrivener_fixtures` from this project's own reading of the format.
+
+* gt-writing.scriv: prose, comments, footnotes, inline notes, styles, a picture, a
+  snapshot and the Trash.
+* gt-metadata.scriv: labels, a status list, custom metadata, keywords, targets, a
+  collection, bookmarks, a research file and a templates folder.
+* gt-footnote-marker.scriv: a project with the footnote marker option turned on.
+* gt-writing-v2.scriv: gt-writing as File > Export > as Scrivener 2 Project writes it.
+* gt-template.scrivtemplate: gt-metadata as File > Save As Template writes it.
+* gt-writing-bak.zip and gt-writing-bak1.zip: two of Scrivener's own automatic backups,
+  names unchanged.
+* "gt-writing 2026-10-05 15-40.zip": File > Back Up > Back Up To, name unchanged.
+
+
+What was changed, and nothing else
+----------------------------------
+
+`scripts/scrivener_corpus/scrub_ground_truth.py` wrote this directory from the owner's
+handover, and refuses to write it unless every check it runs passes. It changed only:
+
+* the Mac's name, in every manifest's `Device` attribute and every lock's `host`, which
+  is now `Writers-Mac` everywhere;
+* the folder in each lock's `project_path`, which is now
+  `/Users/writer/Desktop/skribisto-ground-truth/`;
+* the research PDF, a downloaded file that was not the owner's: it is replaced by a
+  generated one-page PDF with no metadata, its item is titled `Sample`, and its
+  search-index entry holds the new page's text;
+* the picture in Scene B, replaced by a generated 225 x 225 palette PNG with no text
+  chunks, with the `docs.checksum` lines that were right before recomputed (the one that
+  was already stale is kept stale on purpose);
+* the rendered preview Scrivener keeps for the Finder, left out, and the hidden files the
+  Finder added around the handover, never copied;
+* the zips, rebuilt member for member with the same names, order, compression and
+  timestamps, and with uid 501 and gid 20.
+
+Git keeps no empty folder, so the empty folders Scrivener makes (one per document, and
+an empty `Settings/User/`) are absent from the project folders here; the zips keep
+theirs. The importer reads a missing folder exactly as an empty one, and the scrub
+script checks that both copies raise the same notices.
+
+The scrub also checks that no byte here, inside the zips and the template's payload
+included, holds the Mac's name, the macOS user name, the owner's name, or the downloaded
+PDF's title and author. `tests/all/ground_truth.rs` keeps checking, on every test run,
+that the device, the lock's host and the home folder are still the scrubbed ones and
+that none of the files the Finder adds has come back.

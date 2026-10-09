@@ -3,9 +3,12 @@
 
 //! Synthetic Scrivener projects, for the Scrivener importer's tests.
 //!
-//! Real Scrivener projects can never enter this repository: most carry no
+//! Real Scrivener projects can never enter this repository, except the project
+//! owner's own ground-truth projects (UQ-48: made for this purpose, in their own
+//! words, released under the repository licence, in
+//! `crates/scrivener_import/tests/fixtures/ground-truth-mac-3.5.2/`): most carry no
 //! licence, and Literature & Latte's templates, tutorials and manual are theirs.
-//! So every fixture is built here, at test time, from a [`Spec`]: a project of any
+//! So every other fixture is built here, at test time, from a [`Spec`]: a project of any
 //! generation (Scrivener 1 for Mac, formats 1.0, 1.5 and 2.0, an iOS project never
 //! opened on a desktop), for any platform, written byte for byte in the layout
 //! that generation writes, into any container (a folder, a zip, a

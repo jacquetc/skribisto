@@ -391,7 +391,9 @@ pub fn vocabularies(
         .map(|(i, _)| i)
         .collect();
     let mut rung_of_entry: HashMap<usize, u32> = HashMap::new();
-    let mut guessed = Vec::new();
+    // The rungs whose kind was guessed, by place in the ladder: named once every name is
+    // final, so the report names the rung the writer will see.
+    let mut guessed: Vec<usize> = Vec::new();
     for (rank, e) in real.iter().enumerate() {
         let entry = &project.statuses.entries[*e];
         let mut name = clean_title(Some(&entry.name)).0;
@@ -405,7 +407,7 @@ pub fn vocabularies(
         let category = match shipped_category(&name) {
             Some(category) => category,
             None => {
-                guessed.push(name.clone());
+                guessed.push(out.ladder.len());
                 positional_category(rank, real.len())
             }
         };
@@ -415,6 +417,33 @@ pub fn vocabularies(
             category,
             details: status_details.clone(),
             status: Some(entry.id),
+        });
+    }
+    // Two statuses of one name (Scrivener allows it, M5) become rungs the writer can tell
+    // apart: every one after the first takes an ordinal no status of the project holds.
+    let reserved: HashSet<String> = out.ladder.iter().map(|r| folded(&r.name)).collect();
+    let mut seen: HashSet<String> = HashSet::new();
+    let mut renamed_rungs = Vec::new();
+    for rung in &mut out.ladder {
+        if seen.insert(folded(&rung.name)) {
+            continue;
+        }
+        let mut n = 2u32;
+        let name = loop {
+            let candidate = format!("{} ({n})", rung.name);
+            let key = folded(&candidate);
+            if !reserved.contains(&key) && !seen.contains(&key) {
+                break candidate;
+            }
+            n = n.saturating_add(1);
+        };
+        seen.insert(folded(&name));
+        rung.name = name.clone();
+        renamed_rungs.push(name);
+    }
+    if !renamed_rungs.is_empty() {
+        out.notices.push(MetadataNotice::RungNamesDisambiguated {
+            names: renamed_rungs,
         });
     }
     let from_project = !out.ladder.is_empty();
@@ -485,8 +514,12 @@ pub fn vocabularies(
         }
     }
     if !guessed.is_empty() {
+        let rungs = guessed
+            .iter()
+            .filter_map(|&k| out.ladder.get(k).map(|rung| rung.name.clone()))
+            .collect();
         out.notices
-            .push(MetadataNotice::StatusCategoriesGuessed { rungs: guessed });
+            .push(MetadataNotice::StatusCategoriesGuessed { rungs });
     }
     for (field, list, worn) in [
         (Field::Label, &project.labels, &labels),

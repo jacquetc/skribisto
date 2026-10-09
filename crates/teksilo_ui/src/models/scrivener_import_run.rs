@@ -749,6 +749,15 @@ mod imp {
                 vec![words("names", &["Harbour (collection)"])],
             ),
         ]);
+        // Two statuses of one name, the second told apart: only a project with a list.
+        if statuses {
+            findings.push(project_finding(
+                "scrivener-metadata-rung-names-disambiguated",
+                Metadata,
+                Differently,
+                vec![words("names", &["Revised (2)"])],
+            ));
+        }
         // A value kept beside "none" under the same name, one line per field and name.
         for (field, name, items) in [("label", "None", 2), ("status", "N/A", 3)] {
             if field != "status" || statuses {

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SearchIndexes Version="1.0">
+    <Documents>
+        <Document ID="1B4F5CEF-F577-45AF-AD2F-FC774DFD9C99">
+            <Title>Scene A</Title>
+            <Synopsis>Scene A synopsis</Synopsis>
+            <Text>This is an example sentence with a subscript and a superscript. We met at 10:30:45.
+This is a 2nd sentence.
+This is a 3rd sentence.
+This is a 4th sentence.inline noteinline footnote</Text>
+            <Comments>comment one
+spans two paragraphs
+linked footnote</Comments>
+        </Document>
+        <Document ID="A3A61FFA-09FC-46AC-BC43-3DBB68198085">
+            <Title>Scene B</Title>
+            <Text>First line
+Block Quote
+Centered paragraph
+Right-aligned paragraph
+	•	Item 1
+	•	Item 2
+	•	Item 3
+	1.	Item 1
+	2.	Item2
+A
+B
+C
+D
+#
+Paragraph 1
+* * *
+Paragraph 2
+Paragraph 1
+
+Paragraph 2</Text>
+            <Notes>Scene B note</Notes>
+        </Document>
+    </Documents>
+</SearchIndexes>

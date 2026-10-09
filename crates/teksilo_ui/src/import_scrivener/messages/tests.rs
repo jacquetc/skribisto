@@ -1209,9 +1209,11 @@ fn every_metadata_variant() -> Vec<(&'static str, ScrivenerFinding)> {
     }
     for reason in [
         "passed",
+        "no-writing-day-left",
         "no-word-goal",
         "character-goal",
         "no-single-book",
+        "template",
         "unreadable",
     ] {
         let mut args = vec![arg_token("reason", reason)];
@@ -1224,13 +1226,19 @@ fn every_metadata_variant() -> Vec<(&'static str, ScrivenerFinding)> {
         ));
     }
     for unit in ["words", "characters", "pages"] {
-        out.push((
-            unit,
-            metadata(
-                "scrivener-metadata-session-target-not-imported",
-                vec![arg_count("value", 500), arg_token("unit", unit)],
-            ),
-        ));
+        for calculated in [false, true] {
+            out.push((
+                if calculated { "calculated" } else { unit },
+                metadata(
+                    "scrivener-metadata-session-target-not-imported",
+                    vec![
+                        arg_count("value", 500),
+                        arg_token("unit", unit),
+                        arg_flag("calculated", calculated),
+                    ],
+                ),
+            ));
+        }
     }
     for day_off in [false, true] {
         out.push((

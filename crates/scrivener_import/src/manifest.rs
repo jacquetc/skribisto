@@ -73,7 +73,10 @@ pub(crate) struct Blocks {
     pub(crate) favorites: Vec<ItemKey>,
     pub(crate) auto_complete: Vec<String>,
     pub(crate) properties: ProjectProperties,
-    /// `RecentWritingHistory/@Date`: the latest day of writing history the manifest caches.
+    /// `RecentWritingHistory/@Date`, read as the latest day of writing history the manifest
+    /// caches. Unverified: in the Mac ground truth (3.5.2) it is the project's creation
+    /// instant, in both projects holding one day of history, so it may be when the history
+    /// began rather than its latest day (M20).
     pub(crate) recent_writing_day: Option<Stamp>,
 }
 
@@ -587,6 +590,11 @@ fn read_field(node: roxmltree::Node<'_, '_>) -> CustomFieldDef {
             .filter(|t| !t.is_empty())
     });
     let options = child(node, "ListOptions");
+    let checkbox_default = match node.attribute("Default").map(str::trim) {
+        Some(v) if v.eq_ignore_ascii_case("yes") => Some(true),
+        Some(v) if v.eq_ignore_ascii_case("no") => Some(false),
+        _ => None,
+    };
     CustomFieldDef {
         id: node.attribute("ID").unwrap_or_default().to_string(),
         title,
@@ -609,10 +617,19 @@ fn read_field(node: roxmltree::Node<'_, '_>) -> CustomFieldDef {
                     .collect()
             })
             .unwrap_or_default(),
+        checkbox_default,
+        date_type: node.attribute("DateType").map(str::to_string),
+        date_format: child(node, "DateFormat").map(|f| text(f).unwrap_or_default()),
         other_attributes: node
             .attributes()
             .map(|a| a.name())
-            .filter(|name| !matches!(*name, "ID" | "Type" | "Wraps" | "Align" | "Color"))
+            .filter(|name| {
+                !matches!(
+                    *name,
+                    "ID" | "Type" | "Wraps" | "Align" | "Color" | "DateType"
+                )
+            })
+            .filter(|name| !(*name == "Default" && checkbox_default.is_some()))
             .map(str::to_string)
             .collect(),
     }
@@ -800,6 +817,41 @@ mod tests {
         assert_eq!(local_file_name("x-scrivener-item:").as_deref(), Some(""));
         assert_eq!(local_file_name("https://example.org/page"), None);
         assert_eq!(local_file_name("mailto:someone@example.org"), None);
+    }
+
+    fn field_of(xml: &str) -> CustomFieldDef {
+        match roxmltree::Document::parse(xml) {
+            Ok(doc) => read_field(doc.root_element()),
+            Err(e) => panic!("{e}"),
+        }
+    }
+
+    /// Scrivener 3.5.2 for Mac spells a checkbox's default `Default="Yes"` (M9); a
+    /// spelling this import cannot read stays listed, for the report to say so.
+    #[test]
+    fn a_checkbox_default_is_read_and_an_unreadable_one_kept_as_written() {
+        let ticked = field_of(
+            r#"<MetaDataField ID="checked" Type="Checkbox" Default="Yes"><Title>Checked</Title></MetaDataField>"#,
+        );
+        assert_eq!(ticked.checkbox_default, Some(true));
+        assert!(ticked.other_attributes.is_empty());
+        let unticked = field_of(r#"<MetaDataField ID="c" Type="Checkbox" Default="No"/>"#);
+        assert_eq!(unticked.checkbox_default, Some(false));
+        assert!(unticked.other_attributes.is_empty());
+        let unread = field_of(r#"<MetaDataField ID="c" Type="Checkbox" Default="Maybe"/>"#);
+        assert_eq!(unread.checkbox_default, None);
+        assert_eq!(unread.other_attributes, ["Default"]);
+    }
+
+    /// A date field's style and its format pattern, as Scrivener 3.5.2 for Mac writes them.
+    #[test]
+    fn a_date_fields_style_and_format_are_read() {
+        let when = field_of(
+            r#"<MetaDataField ID="when" Type="Date" DateType="Short"><Title>When</Title><DateFormat></DateFormat></MetaDataField>"#,
+        );
+        assert_eq!(when.date_type.as_deref(), Some("Short"));
+        assert_eq!(when.date_format.as_deref(), Some(""));
+        assert!(when.other_attributes.is_empty());
     }
 
     #[test]

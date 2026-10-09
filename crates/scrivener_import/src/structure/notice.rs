@@ -62,6 +62,9 @@ pub enum StructureNotice {
     PlaceholderTitle { item: u32 },
     /// A title with line breaks, tabs or decomposed accents, cleaned (D3.18).
     TitleCleaned { item: u32 },
+    /// An item with no title at all (Scrivener's Blank template starts the Draft with
+    /// one), stored blank: the binder shows it untitled.
+    UntitledItem { item: u32 },
     /// A container's own text, moved to a first child with its title (D3.6).
     OwnTextMoved { item: u32 },
     /// A text with documents under it, which became a folder (D3.6).
@@ -136,6 +139,7 @@ impl StructureNotice {
         "scrivener-structure-generic-sheet-title",
         "scrivener-structure-placeholder-title",
         "scrivener-structure-title-cleaned",
+        "scrivener-structure-untitled-item",
         "scrivener-structure-own-text-moved",
         "scrivener-structure-text-with-children",
         "scrivener-structure-empty-folder-plain",
@@ -179,6 +183,7 @@ impl StructureNotice {
             }
             StructureNotice::GenericSheetTitle { .. } => "scrivener-structure-generic-sheet-title",
             StructureNotice::PlaceholderTitle { .. } => "scrivener-structure-placeholder-title",
+            StructureNotice::UntitledItem { .. } => "scrivener-structure-untitled-item",
             StructureNotice::TitleCleaned { .. } => "scrivener-structure-title-cleaned",
             StructureNotice::OwnTextMoved { .. } => "scrivener-structure-own-text-moved",
             StructureNotice::TextWithChildren { .. } => "scrivener-structure-text-with-children",
@@ -236,6 +241,7 @@ impl StructureNotice {
             | StructureNotice::LooksLikeManuscript { .. }
             | StructureNotice::GenericSheetTitle { .. } => ReportGroup::CheckThese,
             StructureNotice::PlaceholderTitle { .. }
+            | StructureNotice::UntitledItem { .. }
             | StructureNotice::TitleCleaned { .. }
             | StructureNotice::OwnTextMoved { .. }
             | StructureNotice::TextWithChildren { .. }
@@ -274,6 +280,7 @@ impl StructureNotice {
             | StructureNotice::LooksLikeManuscript { item }
             | StructureNotice::GenericSheetTitle { item }
             | StructureNotice::PlaceholderTitle { item }
+            | StructureNotice::UntitledItem { item }
             | StructureNotice::TitleCleaned { item }
             | StructureNotice::OwnTextMoved { item }
             | StructureNotice::TextWithChildren { item }
