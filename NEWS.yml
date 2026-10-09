@@ -1,12 +1,40 @@
-Version: 3.0.5
+Version: 3.1.0
 Date: 2026-09-28
-Type: stable
+Type: development
 Description:
 - "Added app interfaces in Arabic (Saudi Arabia), Czech, Danish, Greek, Hebrew, Hungarian, Norwegian Bokmål, Dutch, Romanian, Swedish and Turkish, including menus, dialogs, settings and tooltips. Longer help articles use English"
 - "Added interfaces in German (Germany), Italian, Spanish, Portuguese (Portugal), Polish, Finnish, Russian, Ukrainian, Korean (South Korea), Japanese and Esperanto, including menus, dialogs, settings and tooltips"
 - "Added help articles in German, Italian, Spanish, Portuguese (Portugal) and Polish. Finnish, Russian, Ukrainian, Korean, Japanese and Esperanto use English for the longer help articles"
 - "English and French help now gives clearer steps for starting a project, saving, importing and exporting, with less jargon and fewer technical details"
-- "Updated the Teksilo interface libraries to 0.15.0"
+- "Updated the Teksilo interface libraries to 0.16.0"
+- "Copying, cutting or dragging text that runs out of a table takes the whole table and nothing else, so a cut pasted back gives the text back as it was. Text after the table used to be lost from the copy, or the table came back twice"
+- "Dragging a passage over a table drops it where you release it, dragging selected table cells no longer leaves an empty grid behind, and selected table cells are shown as selected"
+- "A numbered list keeps the number it starts at when the project is saved and opened again, and when it is copied"
+- "Two quotations one after the other stay two quotations when the project is opened again"
+- "Pasting several paragraphs into an empty scene keeps the format you gave its first line, such as a quotation for an epigraph"
+- "Tab, Shift+Tab and Enter work in a table inside a quotation"
+- "Typing with an input method over a selection replaces the selection once, without leaving the first candidate in the text"
+- "Importing or exporting no longer leaves idle background tasks running until Skribisto is closed"
+- "The command palette and the keyboard shortcut settings show the group of each command, such as File or Edit, in the language Skribisto is set to, and the palette finds a command when you type its group's name in that language. The General group of the shortcut settings is translated too"
+- "A window that is minimized or hidden behind other windows stops drawing until it is shown again, which spares the battery. On macOS every window rests the same way while the display sleeps or the screen is locked"
+- "On macOS, a window opened while the display sleeps or the screen is locked no longer keeps a processor core busy until it appears"
+- "On Linux under Wayland, Skribisto no longer wakes the processor twice for everything it does, which it did on desktops that support drawing tablets, whether or not a tablet was attached"
+- "With a screen reader running, each change is drawn once rather than twice, and the screen reader is sent only what has changed"
+- "A text holding pictures takes less work to scroll and redraw, as its pictures are no longer copied each time the window is drawn"
+- "When closing a window has a question to ask first, such as what to do with unsaved changes, the question appears at once. It used to wait for the next key press or mouse movement"
+- "On Windows and on Linux under X11, the Enter that answers a system dialog, such as the file chooser, no longer acts a second time in the window behind it"
+- "The notifications list shows how an import ended: its entry names what the last notice offered, a failed import is listed as an error, and an import run again comes back to the top of the list with its own date. The entry used to keep the Cancel of the import's progress notice, and a later import was listed under the date of the first"
+- "A checkbox beside other controls, such as Preserve case in the replace bar, shows its label, shortened only when the row runs out of room. It used to show an ellipsis in place of the label"
+- "Alt with the underlined letter of a menu opens that menu when the menu bar is folded into its menu button, and no longer closes a menu it should open. While a dialog is open, it no longer reaches the menu bar behind the dialog"
+- "After an item is chosen from a submenu, one click on the menu's name opens it again. It used to take two"
+- "Part of a window that changed while it was scrolled out of view shows its new content when it comes back into view, rather than what it showed before"
+- "A section opened while its window is in the background, for instance by a screen reader, unfolds at once. It used to stay folded under a header that said it was open"
+- "A list or a box partly scrolled out of the top of the window no longer lets its contents show past its own lower edge"
+---
+Version: 3.0.5
+Date: 2026-09-28
+Type: stable
+Description:
 - "Dates and times in the Versions dock, the Timeline, the backups list, the Trash, the project switcher, the Welcome window and the restore confirmations are shown in your own time zone. They were shown in UTC while presenting themselves as local time, which could put a version on the wrong day"
 - "Pace and daily progress credit words to the day you wrote them, on your own calendar. A writer west of UTC used to see evening words counted for the next day"
 - "The Versions dock lists the earlier versions of front and back matter, such as a preface, as it does for any other text"
