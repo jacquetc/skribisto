@@ -59,6 +59,10 @@ pub enum FolderPurpose {
     /// shared one with Plume: a writer arriving from Manuskript is not the same
     /// writer arriving from Plume, and their projects do not live in one place.
     ImportManuskript,
+    /// Picking a Scrivener project to convert: its own purpose for the same reason as
+    /// Manuskript's, and because a writer leaving Scrivener keeps those projects where
+    /// Scrivener put them.
+    ImportScrivener,
     /// Inserting a picture into the manuscript, and choosing a cover.
     InsertImage,
     /// Where an exported book is written.
@@ -83,6 +87,7 @@ impl FolderPurpose {
         FolderPurpose::ImportDocuments,
         FolderPurpose::ImportPlume,
         FolderPurpose::ImportManuskript,
+        FolderPurpose::ImportScrivener,
         FolderPurpose::InsertImage,
         FolderPurpose::Export,
         FolderPurpose::SaveAs,
@@ -90,6 +95,39 @@ impl FolderPurpose {
         FolderPurpose::AddDictionary,
         FolderPurpose::DataInterchange,
     ];
+
+    /// The purpose's name in the file, as its serde form spells it.
+    pub fn name(self) -> &'static str {
+        match self {
+            FolderPurpose::OpenProject => "open_project",
+            FolderPurpose::NewProjectLocation => "new_project_location",
+            FolderPurpose::ImportDocuments => "import_documents",
+            FolderPurpose::ImportPlume => "import_plume",
+            FolderPurpose::ImportManuskript => "import_manuskript",
+            FolderPurpose::ImportScrivener => "import_scrivener",
+            FolderPurpose::InsertImage => "insert_image",
+            FolderPurpose::Export => "export",
+            FolderPurpose::SaveAs => "save_as",
+            FolderPurpose::BackupDestination => "backup_destination",
+            FolderPurpose::AddDictionary => "add_dictionary",
+            FolderPurpose::DataInterchange => "data_interchange",
+        }
+    }
+
+    /// The purpose a name in the file spells, if this build knows it.
+    pub fn from_name(name: &str) -> Option<Self> {
+        Self::ALL.iter().copied().find(|p| p.name() == name)
+    }
+
+    /// Whether every released build knows this purpose, so its row may go in `folders`.
+    ///
+    /// Skribisto 3.0.5 and earlier read `folders` into this enum with no fallback: one row
+    /// naming a purpose they do not know fails the whole file, and every dialog of theirs
+    /// then forgets where it was. A purpose added since is written to `later_folders`,
+    /// which they do not read. This list never grows: a later purpose goes there too.
+    fn released(self) -> bool {
+        !matches!(self, FolderPurpose::ImportScrivener)
+    }
 }
 
 /// One purpose's remembered directory.
@@ -101,15 +139,80 @@ pub struct RememberedFolder {
     pub path: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-pub struct FolderMemoryFile {
+/// The file as it is read and written. One build's file is read by another (a distribution
+/// package beside a newer build, a step back to an earlier release), so a purpose is a
+/// name here, never the enum: a name this build does not know is kept as it was, not
+/// refused with the whole file.
+#[derive(Serialize, Deserialize)]
+struct StoredFile {
     #[serde(default = "default_version")]
+    version: u32,
+    /// The purposes every released build knows (see [`FolderPurpose::released`]).
+    #[serde(default)]
+    folders: Vec<NamedFolder>,
+    /// The purposes added since, where the released builds do not look.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    later_folders: Vec<NamedFolder>,
+}
+
+/// A remembered directory under its purpose's name, known to this build or not.
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub struct NamedFolder {
+    pub purpose: String,
+    pub path: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[serde(from = "StoredFile", into = "StoredFile")]
+pub struct FolderMemoryFile {
     pub version: u32,
     /// A `Vec` rather than a map: TOML round trips `[[array-of-tables]]` cleanly, and
     /// with ten entries a linear scan is not worth a thought. The same shape every
     /// sibling settings file uses.
-    #[serde(default)]
     pub folders: Vec<RememberedFolder>,
+    /// The rows of purposes this build does not know, a later build's: kept, and written
+    /// back as they were read.
+    pub unknown: Vec<NamedFolder>,
+}
+
+impl From<StoredFile> for FolderMemoryFile {
+    fn from(stored: StoredFile) -> Self {
+        let mut folders: Vec<RememberedFolder> = Vec::new();
+        let mut unknown = Vec::new();
+        for row in stored.folders.into_iter().chain(stored.later_folders) {
+            match FolderPurpose::from_name(&row.purpose) {
+                Some(purpose) if !folders.iter().any(|r| r.purpose == purpose) => {
+                    folders.push(RememberedFolder {
+                        purpose,
+                        path: row.path,
+                    })
+                }
+                Some(_) => {}
+                None => unknown.push(row),
+            }
+        }
+        Self {
+            version: stored.version,
+            folders,
+            unknown,
+        }
+    }
+}
+
+impl From<FolderMemoryFile> for StoredFile {
+    fn from(file: FolderMemoryFile) -> Self {
+        let named = |row: &RememberedFolder| NamedFolder {
+            purpose: row.purpose.name().to_string(),
+            path: row.path.clone(),
+        };
+        let (released, later): (Vec<&RememberedFolder>, Vec<&RememberedFolder>) =
+            file.folders.iter().partition(|row| row.purpose.released());
+        Self {
+            version: file.version,
+            folders: released.into_iter().map(named).collect(),
+            later_folders: later.into_iter().map(named).chain(file.unknown).collect(),
+        }
+    }
 }
 
 fn default_version() -> u32 {
@@ -121,6 +224,7 @@ impl Default for FolderMemoryFile {
         Self {
             version: Self::CURRENT_VERSION,
             folders: Vec::new(),
+            unknown: Vec::new(),
         }
     }
 }
@@ -438,6 +542,98 @@ mod tests {
             svc.last(FolderPurpose::SaveAs),
             Some(real),
             "a relative path must be ignored rather than overwrite a usable answer"
+        );
+    }
+}
+
+#[cfg(test)]
+mod compatibility_tests {
+    use super::*;
+
+    /// The purposes Skribisto 3.0.5 and every release before it know, by the names they
+    /// read. A row naming any other purpose in `folders` makes those releases refuse the
+    /// whole file, and every dialog of theirs then forgets where it was.
+    const RELEASED: &[&str] = &[
+        "open_project",
+        "new_project_location",
+        "import_documents",
+        "import_plume",
+        "import_manuskript",
+        "insert_image",
+        "export",
+        "save_as",
+        "backup_destination",
+        "add_dictionary",
+        "data_interchange",
+    ];
+
+    /// A file another build wrote, holding a purpose this one does not know, still
+    /// reads: the purposes it knows keep their folders, and the unknown one survives a
+    /// write.
+    /// Each purpose's name in the file is the one its serde form, which the released
+    /// builds read, spells.
+    #[test]
+    fn every_purpose_is_named_as_released_builds_spell_it() {
+        for purpose in FolderPurpose::ALL {
+            let spelled = toml::Value::try_from(purpose).expect("serialize");
+            assert_eq!(spelled.as_str(), Some(purpose.name()));
+            assert_eq!(FolderPurpose::from_name(purpose.name()), Some(*purpose));
+        }
+    }
+
+    #[test]
+    fn a_purpose_this_build_does_not_know_is_kept_not_refused() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let known = dir.path().join("exports");
+        std::fs::create_dir_all(&known).expect("mkdir");
+        let path = dir.path().join("folders.toml");
+        let file = format!(
+            "version = 1\n\n[[folders]]\npurpose = \"export\"\npath = {:?}\n\n\
+             [[folders]]\npurpose = \"a_purpose_from_a_later_release\"\npath = \"/later\"\n",
+            known.to_string_lossy()
+        );
+        std::fs::write(&path, file).expect("write");
+
+        let svc = FolderMemoryService::open_at(path.clone()).expect("open settings");
+        assert_eq!(svc.last(FolderPurpose::Export), Some(known.clone()));
+        svc.remember_dir(FolderPurpose::SaveAs, &known);
+        let written = std::fs::read_to_string(&path).expect("read");
+        assert!(
+            written.contains("a_purpose_from_a_later_release"),
+            "the later release's folder survives: {written}"
+        );
+    }
+
+    /// Every purpose the released builds do not know is written where they do not look,
+    /// so a Scrivener pick does not make them refuse the file.
+    #[test]
+    fn a_released_build_can_still_read_the_file() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let path = dir.path().join("folders.toml");
+        let svc = FolderMemoryService::open_at(path.clone()).expect("open settings");
+        for (i, purpose) in FolderPurpose::ALL.iter().enumerate() {
+            let sub = dir.path().join(format!("dir{i}"));
+            std::fs::create_dir_all(&sub).expect("mkdir");
+            svc.remember_dir(*purpose, &sub);
+        }
+        let written = std::fs::read_to_string(&path).expect("read");
+        let table: toml::Table = written.parse().expect("toml");
+        let rows = table
+            .get("folders")
+            .and_then(|f| f.as_array())
+            .cloned()
+            .unwrap_or_default();
+        for row in &rows {
+            let purpose = row.get("purpose").and_then(|p| p.as_str()).unwrap_or("");
+            assert!(
+                RELEASED.contains(&purpose),
+                "`folders` holds {purpose:?}, which 3.0.5 cannot read"
+            );
+        }
+        assert_eq!(
+            rows.len(),
+            RELEASED.len(),
+            "every released purpose is there"
         );
     }
 }

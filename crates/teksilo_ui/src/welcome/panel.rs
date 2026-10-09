@@ -56,8 +56,8 @@ use crate::models::ExamplesListModel;
 use crate::settings::SettingsPanel;
 use crate::shared::shortcut_group::{ShortcutGroup, ShortcutGroupExt};
 use crate::shell::launcher_menu::{
-    ACTION_IMPORT_MANUSKRIPT, ACTION_IMPORT_PLUME, ACTION_NEW, ACTION_NEW_FROM_DOCUMENTS,
-    ACTION_OPEN, ACTION_SETTINGS,
+    ACTION_IMPORT_MANUSKRIPT, ACTION_IMPORT_PLUME, ACTION_IMPORT_SCRIVENER, ACTION_NEW,
+    ACTION_NEW_FROM_DOCUMENTS, ACTION_OPEN, ACTION_SETTINGS,
 };
 use crate::welcome::{DISCORD_URL, GITHUB_URL, WelcomeViewModel};
 
@@ -91,6 +91,10 @@ pub struct WelcomePanel {
     /// build would hand the `SearchField` a fresh query signal every frame —
     /// the field would write into one and the list would filter on another.
     vm: Option<WelcomeViewModel>,
+    /// This window's Import a Scrivener project wizard (Tier 3): made on the first build,
+    /// where the process's import job can be read from app state, and kept from then on,
+    /// since the inspection it runs is wired to this window's tree.
+    import_scrivener: Option<crate::import_scrivener::ImportScrivenerViewModel>,
     examples: ExamplesListModel,
     /// Bar selection (source of truth); seeded to the first tab so Works shows.
     selected_tab: Signal<Option<TabId>>,
@@ -122,6 +126,7 @@ impl WelcomePanel {
         let selected_tab = Signal::new(Some(tab_ids[0]));
         Self {
             vm: None,
+            import_scrivener: None,
             examples: ExamplesListModel::new(app_ctx.clone()),
             app_ctx,
             selected_tab,
@@ -616,6 +621,10 @@ fn create_from_button() -> impl Widget + 'static {
         .item(
             MenuItem::new(tr!(menu_import_manuskript()))
                 .on_activate_fn(|ctx| ctx.send_intent(Intent::new(ACTION_IMPORT_MANUSKRIPT))),
+        )
+        .item(
+            MenuItem::new(tr!(menu_import_scrivener()))
+                .on_activate_fn(|ctx| ctx.send_intent(Intent::new(ACTION_IMPORT_SCRIVENER))),
         );
     PopoverButton::new(Button::new(tr!(welcome_create_from())).variant(ButtonVariant::Plain))
         .bare()
@@ -890,6 +899,75 @@ impl Widget for WelcomePanel {
             Action::new(ACTION_IMPORT_MANUSKRIPT)
                 .on_invoke(|_i, c| crate::import_manuskript::panel::present_import_manuskript(c)),
         );
+        // The Scrivener wizard, over this window's own view-model: its inspection is
+        // wired to this window's tree, and an import needs no open project.
+        if self.import_scrivener.is_none()
+            && let Some(job) = ctx
+                .app_state::<crate::shared::project_import::ProjectImportJob>()
+                .cloned()
+        {
+            self.import_scrivener = Some(crate::import_scrivener::ImportScrivenerViewModel::new(
+                self.app_ctx.clone(),
+                job,
+            ));
+        }
+        ctx.register_shortcut_global(
+            Shortcut::new(ACTION_IMPORT_SCRIVENER)
+                .name(tr!(shortcut_name_work_import_scrivener()))
+                .build(),
+        );
+        // The Scrivener import report, reopened by name (the command palette) or for one
+        // import (its result notice's **See report**, live or archived). The
+        // Launcher shows no project, so a report's items are not linked here.
+        ctx.register_shortcut_global(
+            Shortcut::new(crate::import_scrivener::REPORT_ACTION)
+                .name(tr!(shortcut_name_work_import_scrivener_report()))
+                .build(),
+        );
+        if let Some(import) = self.import_scrivener.clone() {
+            import.wire(ctx);
+            {
+                let reporting = import.clone();
+                ctx.register_action_global(
+                    Action::new(crate::import_scrivener::REPORT_ACTION)
+                        .on_invoke(move |_i, c| reporting.show_window_report(c, None, None)),
+                );
+                let reporting = import.clone();
+                ctx.register_action_global(
+                    Action::new("work.import_scrivener_report_of").on_invoke(move |i, c| {
+                        if let Some(crate::intents::AppIntent::ImportScrivenerReportOf {
+                            output_path,
+                        }) = crate::intents::AppIntent::from_intent(i)
+                        {
+                            reporting.show_report_of(c, output_path, None, None);
+                        }
+                    }),
+                );
+            }
+            let reviewing = import.clone();
+            ctx.register_action_global(Action::new(ACTION_IMPORT_SCRIVENER).on_invoke(
+                move |_i, c| {
+                    crate::import_scrivener::panel::present_import_scrivener(
+                        c,
+                        import.clone(),
+                        None,
+                    )
+                },
+            ));
+            ctx.register_action_global(Action::new("work.import_scrivener_path").on_invoke(
+                move |i, c| {
+                    if let Some(crate::intents::AppIntent::ImportScrivenerPath { path }) =
+                        crate::intents::AppIntent::from_intent(i)
+                    {
+                        crate::import_scrivener::panel::present_import_scrivener(
+                            c,
+                            reviewing.clone(),
+                            Some(path.clone()),
+                        );
+                    }
+                },
+            ));
+        }
 
         // The import's toast is `broadcast()`, so its **Open now** button reaches
         // this window too — and fires `work.open_path`, which nothing in the
@@ -900,6 +978,16 @@ impl Widget for WelcomePanel {
         // other launch door here does.
         ctx.register_action_global(Action::new("work.open_path").on_invoke(|i, c| {
             if let Some(crate::intents::AppIntent::OpenWorkPath { path }) =
+                crate::intents::AppIntent::from_intent(i)
+            {
+                crate::shell::windows::open_or_focus_project(c, path);
+                c.close_window();
+            }
+        }));
+        // The Scrivener import's **Open now** asks for a window of its own, which from the
+        // Launcher is the same thing as any other launch door.
+        ctx.register_action_global(Action::new("work.open_path_new_window").on_invoke(|i, c| {
+            if let Some(crate::intents::AppIntent::OpenWorkPathInNewWindow { path }) =
                 crate::intents::AppIntent::from_intent(i)
             {
                 crate::shell::windows::open_or_focus_project(c, path);

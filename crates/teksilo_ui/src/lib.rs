@@ -160,6 +160,7 @@ pub mod identity;
 pub mod import_document;
 pub mod import_manuskript;
 pub mod import_plume;
+pub mod import_scrivener;
 pub mod intents;
 pub mod ipc_serve;
 pub mod locales;

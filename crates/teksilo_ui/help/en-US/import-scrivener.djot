@@ -1,0 +1,166 @@
+An import brings a whole Scrivener project across: its binder, its text, its synopses and
+notes, its comments and footnotes, its labels and its status list. It creates a **new**
+Skribisto project. Your Scrivener project is only read, never changed, so you can go back to
+it at any time.
+
+For a project made in Manuskript or Plume Creator, see
+[bringing a whole project across](:help-import-projects).
+
+## Starting an import
+
+With a project open, choose *Work ▸ Import from ▸ Scrivener (.scriv)…*. In the Launcher, the
+same import sits behind *Create from…*. You can also type *Import Scrivener Project…* in the
+command palette (*Help ▸ Command Palette…*).
+
+The import has three pages: *Project*, *Review* and *Save*. Nothing is written until you
+press *Import* on the last one.
+
+## Choosing the project
+
+A Scrivener project looks different depending on where you work:
+
+- **On Windows and Linux** a project is a folder whose name ends in `.scriv`. Choose it with
+  *Choose a folder…*, or open it and choose the `.scrivx` file inside with *Choose a file…*.
+- **On a Mac** a project shows as a single file when Scrivener is installed. Choose it with
+  *Choose a file…*. If it shows as a folder, use *Choose a folder…*.
+
+You can also drop the project on the *Project* page, or type or paste its path.
+
+A backup made by Scrivener works as it is, without unpacking it: choose the `.zip`. A
+`.scrivtemplate` file works too, and makes a new project from the template.
+
+Projects from Scrivener 3 and Scrivener 2 on the Mac, from Scrivener on Windows, from the
+Scrivener for Linux beta, and projects made on an iPhone or iPad can all be imported. A
+project from Scrivener 1 on the Mac must first be opened once in Scrivener 2 or 3.
+
+## What the import checks first
+
+As soon as you choose a project, the *Project* page says which Scrivener last saved it,
+when, and how many documents it holds. It also tells you about anything that needs your
+attention:
+
+- **Several binder files.** Scrivener keeps the list of your documents in a `.scrivx` file,
+  and a sync service sometimes leaves extra copies of it. Choose the one you last worked in.
+  When the page can tell which one that is, it is already selected.
+- **The copy kept before an update.** When Scrivener moves a project to a newer version, it
+  keeps the old one beside it, with "Backup" added to its name. The page offers the project
+  you went on writing in.
+- **Changes from an iPhone or iPad.** If Scrivener on an iPhone or iPad changed the project
+  since it was last opened on a computer, those changes are not in the files yet. Open the
+  project once in Scrivener on your computer first, or tick *Import it without those
+  changes*.
+- **A copy with none of its text.** If a sync service has not finished copying the project,
+  its documents would arrive empty. Wait for the copy to finish, or tick *Import the
+  documents empty*.
+- **A project still open in Scrivener.** Close it there first, so that every change is
+  saved.
+
+Copies of your documents left behind by a sync service come across in a folder of their
+own, so you can compare them with the documents. Extra copies of Scrivener's own settings
+files are set aside, as Scrivener itself does.
+
+## Reviewing before you import
+
+*Review* shows the binder of the new project before any of it exists. *Becomes* says what
+each item will be, and *In exports* whether it is included when you export the book.
+
+Beside the tree, the choices change how the binder comes across:
+
+- *Levels* says what the folders and documents at each level become, such as *Parts*,
+  *Chapters* or *Scenes*.
+- *Top-level folders* says where each folder beside your manuscript goes: *Notes*, *Story
+  bible*, *Another book*, or *Leave out* for one you do not want to bring.
+- *Bring the Trash across* brings the items in Scrivener's Trash, in Skribisto's Trash.
+- *Blank lines become scene breaks* and *Lines of ornaments become scene breaks* decide what
+  becomes a scene break in your text.
+
+Under the tree, *Before you import* lists what the import does with your binder, and what
+it leaves behind, so you know before you import.
+
+Every item can be retyped afterwards from the binder. See
+[the writing model](:help-writing-model) for what each type is.
+
+## Saving the new project
+
+*Save* asks for a *Destination folder* and a *File name*, beside your Scrivener project by
+default. It also shows the *Title*, *Author* and *Language* your project states. Change any
+of them before you import.
+
+When your research holds files Skribisto cannot open, such as PDF files or sounds, *Copy
+research files beside the new project* puts them in a folder next to it.
+
+## What Scrivener brings with it
+
+- Your text, in binder order, with its bold, italics, lists, tables and pictures.
+- Each document's synopsis, as its synopsis in Skribisto.
+- Each document's notes, as a note beside it.
+- Your comments and footnotes, including the ones written inside the text. An inline
+  annotation becomes a comment.
+- Your labels as colored tags, and your status list as the project's statuses.
+- The "Include in Compile" box, which becomes *Include in exports*.
+- Your document templates, as note templates.
+- The pictures in your research, each in a note of its own.
+
+## What has no home here
+
+- **Snapshots.** Your earlier versions stay in your Scrivener project.
+- **Keywords, custom metadata, collections and binder icons.**
+- **Text color, highlighting and fonts.** Skribisto sets the look of the text itself.
+- **Research files that are not pictures**, such as PDF files, sound or web pages. Each one
+  becomes a note that names the file, which stays in your Scrivener project unless you copy
+  it beside the new one.
+- **Placeholders** such as `<$wc>` or `<$title>`. They are kept as plain text: replace them
+  by hand.
+- **Compile settings and the record of words written each day.** Set up your export in
+  Skribisto. See [exporting](:help-export).
+
+## After the import
+
+A message says how many items the new project holds and offers *Open now*, which opens the
+new project in a window of its own. When the import has more to report, the message stays
+until you close it.
+
+*See report* opens a report of the import. It says what came across and what you chose,
+then lists the rest in four parts:
+
+- *Could not be read*: text, comments, pictures or files the import could not read, or
+  that are missing from the copy.
+- *Check these*: what you should look at in the new project.
+- *Brought across differently*: what changed shape on the way, or was dropped because
+  Skribisto has no place for it.
+- *Left behind*: what stays in your Scrivener project.
+
+Each line names the documents concerned, as they are called in your Scrivener binder. *Copy
+report* copies the whole report, to keep it or send it.
+
+Skribisto keeps the reports of your latest imports until it closes. To open one again,
+press *See report* while the message is up, or choose *Show Scrivener Import Report* in the
+command palette of a project's window. In the new project's window, each document the report
+names opens with a click.
+
+The new project is a single `.skrib` file. If you prefer a folder, use *Work ▸ Save as
+folder…* afterwards.
+
+## If the import cannot read your project
+
+The *Project* page says why, and what to do. Most often it is enough to open the project
+once in Scrivener, which repairs and updates it, and then to import it again.
+
+If that is not possible, a Word document is the way across. In Scrivener, choose "File ▸
+Compile…" and compile for Word. In the compile format, give chapter titles the "Heading 1"
+style and section titles "Heading 2", and keep comments as margin comments. Then, in
+Skribisto, choose *Work ▸ Import from ▸ Documents (Markdown, Word, ODT)…*, and on its
+*Review* page set *Heading levels* so that the first level becomes a Chapter and the second
+a Scene. See [importing documents](:help-import-documents).
+
+Named styles such as "Heading 1" exist only in Scrivener 3. From an older Scrivener, export
+one file per document instead, as Word (.docx) or OpenDocument (.odt) files, and import
+them together. Do not keep Rich Text (.rtf), the format Scrivener offers first: Skribisto
+does not import it.
+
+A compiled document carries your text, with its pictures, your comments and your
+footnotes, but not your synopses, notes, labels, snapshots or the files in your research
+folder.
+
+Scrivener is a trademark of Literature and Latte Ltd. Skribisto is not affiliated with
+Literature and Latte.

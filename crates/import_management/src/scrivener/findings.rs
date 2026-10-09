@@ -843,7 +843,7 @@ pub(crate) fn prose_notice(notice: &ProseNotice, locator: &Locator<'_>) -> Scriv
         | ProseNotice::LongDocument { paragraphs, .. } => vec![count("paragraphs", *paragraphs)],
         ProseNotice::PlaceholdersInExportedText { kind, count: n, .. }
         | ProseNotice::PlaceholdersInOtherText { kind, count: n, .. } => {
-            vec![text("kind", kind), count("count", *n)]
+            vec![text("placeholder", kind), count("count", *n)]
         }
         // The treatment is in the key: the two are two sentences.
         ProseNotice::CompiledAwayStylePrinted { name, count: n, .. }

@@ -93,8 +93,10 @@ braille display. Please get in touch if you hit a glaring gap.
 - Version history built out of those backups: read what a scene said last week, set it against
   what it says now, put it back, or bring back a row you deleted months ago
 - Opens legacy `.skrib` SQLite projects, upgrading them on load
-- Imports whole projects from Manuskript (`.msk`, folder or single file) and Plume
-  Creator (`.plume`)
+- Imports whole projects from Scrivener (`.scriv` from Scrivener 2 and 3 on the Mac,
+  Scrivener for Windows and the Linux beta, a backup `.zip` or a `.scrivtemplate`), reviewed
+  before anything is written and reported in plain language afterwards, Manuskript (`.msk`,
+  folder or single file) and Plume Creator (`.plume`)
 - Imports documents (Markdown, plain text, ODT and DOCX) with their pictures, showing you
   every row it would create before anything is
 - Sends a chapter out to an editor as DOCX or ODT and takes it back: their comments arrive as
@@ -513,5 +515,13 @@ Skribisto's behaviour, adds or removes features, or ships from a fork rather tha
 upstream releases. If you maintain a package and are not sure which side of that line your
 patch set falls on, write to <trademarks@ferntech.eu> rather than renaming preemptively. We
 would rather answer the question than lose the package.
+
+### Third-party names
+
+Skribisto names other programs only to say what it works with: the importers name Scrivener,
+Manuskript and Plume Creator, and the document importer and the exporter name Word and
+LibreOffice. These names belong to their owners. Scrivener is a trademark of Literature and
+Latte Ltd. Skribisto is not affiliated with Literature and Latte, nor endorsed by it, and uses
+no Scrivener logo or icon.
 
 For anything not covered here, contact <trademarks@ferntech.eu>.

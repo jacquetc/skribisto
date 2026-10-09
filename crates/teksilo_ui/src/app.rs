@@ -706,6 +706,10 @@ pub struct App {
     /// `app::wiring::long_ops`), which is why it must outlive the modal: the
     /// panel is built and destroyed around it, not the other way round.
     import_document: crate::import_document::ImportDocumentViewModel,
+    /// The Import a Scrivener project wizard's state, one per window (Tier 3): made on the
+    /// first build, when the process's import job can be read from app state, and kept
+    /// across rebuilds, since the wizard and the inspection it runs outlive any one build.
+    import_scrivener: Option<crate::import_scrivener::ImportScrivenerViewModel>,
     /// The Tier-1 registry every open Work registers into once its own
     /// `LoadWork`/`NewWork` resolves a real `work_id` (see the `LoadWork`/
     /// `NewWork` subscribers in `build`, which also bind this window's id to
@@ -950,6 +954,7 @@ impl App {
             focus,
             export,
             import_document,
+            import_scrivener: None,
             registry,
             quit,
             save_as_vm,
@@ -1897,6 +1902,22 @@ impl Widget for App {
         // Every global action + shortcut, grouped by feature in `app::commands`. They are
         // pure registration — each closure clones what it needs out of `CommandDeps` — so
         // they lived here only by accident of history and made this function unreadable.
+        // The Scrivener wizard's view-model, made once per window, and its inspection
+        // wired to this window's tree on every build (the framework drops a rebuilt
+        // widget's subscriptions).
+        if self.import_scrivener.is_none()
+            && let Some(job) = ctx
+                .app_state::<crate::shared::project_import::ProjectImportJob>()
+                .cloned()
+        {
+            self.import_scrivener = Some(crate::import_scrivener::ImportScrivenerViewModel::new(
+                self.app_ctx.clone(),
+                job,
+            ));
+        }
+        if let Some(import_scrivener) = &self.import_scrivener {
+            import_scrivener.wire(ctx);
+        }
         let command_deps = commands::CommandDeps {
             app_ctx: self.app_ctx.clone(),
             ids: session.ids.clone(),
@@ -1919,6 +1940,7 @@ impl Widget for App {
             user_dictionary: session.user_dictionary.clone(),
             export: self.export.clone(),
             import_document: self.import_document.clone(),
+            import_scrivener: self.import_scrivener.clone(),
             search_dock: self.search_dock,
             trash_dock: self.trash_dock,
             footnotes_dock: self.footnotes_dock,

@@ -1,6 +1,7 @@
 A project import brings a whole project across from Manuskript or from Plume Creator: its
 chapters, its cast, its notes. If what you have is a folder of documents instead, see
-[importing documents](:help-import-documents).
+[importing documents](:help-import-documents). For a Scrivener project, see
+[coming from Scrivener](:help-import-scrivener).
 
 An import creates a **new** Skribisto project.
 

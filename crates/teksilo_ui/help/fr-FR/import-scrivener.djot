@@ -1,0 +1,181 @@
+Un import fait venir un projet Scrivener entier : son classeur, son texte, ses synopsis et ses
+notes, ses commentaires et ses notes de bas de page, ses libellés et sa liste d’états. Il crée
+un **nouveau** projet Skribisto. Votre projet Scrivener est seulement lu, jamais modifié : vous
+pouvez y revenir à tout moment.
+
+Pour un projet créé dans Manuskript ou Plume Creator, voir
+[faire venir un projet entier](:help-import-projects).
+
+## Lancer un import
+
+Avec un projet ouvert, choisissez *Œuvre ▸ Importer depuis ▸ Scrivener (.scriv)…*. Dans le
+Lanceur, le même import se trouve derrière *Créer depuis…*. Vous pouvez aussi taper
+*Importer un projet Scrivener…* dans la palette de commandes (*Aide ▸ Palette de commandes…*).
+
+L’import comporte trois pages : *Projet*, *Vérifier* et *Enregistrer*. Rien n’est écrit avant
+que vous n’appuyiez sur *Importer*, sur la dernière.
+
+## Choisir le projet
+
+Un projet Scrivener ne se présente pas de la même façon selon l’endroit où vous travaillez :
+
+- **Sous Windows et Linux**, un projet est un dossier dont le nom se termine par `.scriv`.
+  Choisissez-le avec *Choisir un dossier…*, ou ouvrez-le et choisissez le fichier `.scrivx`
+  qu’il contient avec *Choisir un fichier…*.
+- **Sur un Mac**, un projet apparaît comme un seul fichier quand Scrivener est installé.
+  Choisissez-le avec *Choisir un fichier…*. S’il apparaît comme un dossier, utilisez
+  *Choisir un dossier…*.
+
+Vous pouvez aussi déposer le projet sur la page *Projet*, ou taper ou coller son chemin.
+
+Une copie de secours faite par Scrivener convient telle quelle, sans la décompresser :
+choisissez le `.zip`. Un fichier `.scrivtemplate` convient aussi, et crée un nouveau projet à
+partir du modèle.
+
+Les projets de Scrivener 3 et de Scrivener 2 sur Mac, de Scrivener sous Windows, de la version
+bêta de Scrivener pour Linux, et les projets créés sur iPhone ou iPad peuvent tous être
+importés. Un projet de Scrivener 1 sur Mac doit d’abord être ouvert une fois dans Scrivener 2
+ou 3.
+
+## Ce que l’import vérifie d’abord
+
+Dès que vous choisissez un projet, la page *Projet* indique quel Scrivener l’a enregistré en
+dernier, quand, et combien de documents il contient. Elle vous signale aussi ce qui demande
+votre attention :
+
+- **Plusieurs fichiers de classeur.** Scrivener garde la liste de vos documents dans un
+  fichier `.scrivx`, et un service de synchronisation en laisse parfois des copies en trop.
+  Choisissez celui dans lequel vous avez travaillé en dernier. Quand la page peut le savoir,
+  il est déjà sélectionné.
+- **La copie gardée avant une mise à jour.** Quand Scrivener fait passer un projet à une
+  version plus récente, il garde l’ancien à côté, avec « Backup » ajouté à son nom. La page
+  propose le projet dans lequel vous avez continué d’écrire.
+- **Des modifications venues d’un iPhone ou d’un iPad.** Si Scrivener sur iPhone ou iPad a
+  modifié le projet depuis sa dernière ouverture sur un ordinateur, ces modifications ne sont
+  pas encore dans les fichiers. Ouvrez d’abord une fois le projet dans Scrivener sur votre
+  ordinateur, ou cochez *L’importer sans ces modifications*.
+- **Une copie sans son texte.** Si un service de synchronisation n’a pas fini de copier le
+  projet, ses documents arriveraient vides. Attendez la fin de la copie, ou cochez *Importer
+  les documents vides*.
+- **Un projet encore ouvert dans Scrivener.** Fermez-le d’abord, pour que toutes les
+  modifications soient enregistrées.
+
+Les copies de vos documents laissées par un service de synchronisation arrivent dans un
+dossier à part, pour que vous puissiez les comparer aux documents. Les copies en trop des
+fichiers de réglages de Scrivener sont mises de côté, comme le fait Scrivener lui-même.
+
+## Vérifier avant d’importer
+
+*Vérifier* montre le classeur du nouveau projet avant qu’il n’existe. *Devient* indique ce que
+sera chaque élément, et *Exporté* s’il sera inclus quand vous exporterez le livre.
+
+À côté de l’arborescence, les choix changent la façon dont le classeur est repris :
+
+- *Niveaux* indique ce que deviennent les dossiers et les documents de chaque niveau, comme
+  *Parties*, *Chapitres* ou *Scènes*.
+- *Dossiers de premier niveau* indique où va chaque dossier placé à côté de votre manuscrit :
+  *Notes*, *Bible narrative*, *Un autre livre*, ou *Laisser de côté* pour un dossier que vous
+  ne voulez pas reprendre.
+- *Reprendre la corbeille* fait venir les éléments de la corbeille de Scrivener, dans la
+  corbeille de Skribisto.
+- *Les lignes vides deviennent des séparateurs de scènes* et *Les lignes d’ornements
+  deviennent des séparateurs de scènes* décident de ce qui devient un séparateur de scènes
+  dans votre texte.
+
+Sous l’arborescence, *Avant d’importer* énumère ce que l’import fait de votre classeur, et ce
+qu’il laisse de côté : vous le savez avant d’importer.
+
+Chaque élément peut être retypé ensuite depuis le classeur. Voir
+[le modèle d’écriture](:help-writing-model) pour ce qu’est chaque type.
+
+## Enregistrer le nouveau projet
+
+*Enregistrer* demande un *Dossier de destination* et un *Nom du fichier*, à côté de votre
+projet Scrivener par défaut. La page montre aussi le *Titre*, l’*Auteur* et la *Langue* que
+votre projet indique. Modifiez-les avant d’importer si besoin.
+
+Quand vos recherches contiennent des fichiers que Skribisto ne sait pas ouvrir, comme des PDF
+ou des sons, *Copier les fichiers de recherche à côté du nouveau projet* les place dans un
+dossier à côté de lui.
+
+## Ce que Scrivener apporte avec lui
+
+- Votre texte, dans l’ordre du classeur, avec son gras, son italique, ses listes, ses tableaux
+  et ses images.
+- Le synopsis de chaque document, qui devient son synopsis dans Skribisto.
+- Les notes de chaque document, en une note placée à côté de lui.
+- Vos commentaires et vos notes de bas de page, y compris ceux écrits dans le texte même. Une
+  annotation dans le texte devient un commentaire.
+- Vos libellés en étiquettes colorées, et votre liste d’états en statuts du projet.
+- La case de Scrivener qui inclut un élément dans la compilation, qui devient *Inclure dans
+  les exports*.
+- Vos modèles de documents, en modèles de notes.
+- Les images de vos recherches, chacune dans une note.
+
+## Ce qui n’a pas de place ici
+
+- **Les instantanés.** Vos versions précédentes restent dans votre projet Scrivener.
+- **Les mots-clés, les métadonnées personnalisées, les collections et les icônes du
+  classeur.**
+- **La couleur du texte, le surlignage et les polices.** Skribisto règle lui-même l’aspect du
+  texte.
+- **Les fichiers de recherche qui ne sont pas des images**, comme les PDF, les sons ou les
+  pages web. Chacun devient une note qui nomme le fichier, lequel reste dans votre projet
+  Scrivener, sauf si vous le copiez à côté du nouveau.
+- **Les balises** comme `<$wc>` ou `<$title>`. Elles sont gardées telles quelles :
+  remplacez-les à la main.
+- **Les réglages de compilation et le relevé des mots écrits chaque jour.** Préparez votre
+  export dans Skribisto. Voir [exporter](:help-export).
+
+## Après l’import
+
+Un message indique combien d’éléments le nouveau projet contient et propose *Ouvrir
+maintenant*, qui ouvre le nouveau projet dans une fenêtre à lui. Quand l’import a autre chose
+à signaler, le message reste jusqu’à ce que vous le fermiez.
+
+*Voir le compte rendu* ouvre un compte rendu de l’import. Il dit ce qui est arrivé et ce que
+vous avez choisi, puis range le reste en quatre parties :
+
+- *Illisible* : le texte, les commentaires, les images ou les fichiers que l’import n’a pas pu
+  lire, ou qui manquent dans la copie.
+- *À vérifier* : ce qu’il faut regarder dans le nouveau projet.
+- *Repris autrement* : ce qui a changé de forme en route, ou a été laissé faute de place dans
+  Skribisto.
+- *Laissé de côté* : ce qui reste dans votre projet Scrivener.
+
+Chaque ligne nomme les documents concernés, tels qu’ils s’appellent dans votre classeur
+Scrivener. *Copier le compte rendu* copie tout le compte rendu, pour le garder ou l’envoyer.
+
+Skribisto garde les comptes rendus de vos derniers imports jusqu’à sa fermeture. Pour en
+rouvrir un, appuyez sur *Voir le compte rendu* tant que le message est affiché, ou choisissez
+*Afficher le compte rendu de l’import Scrivener* dans la palette de commandes de la fenêtre
+d’un projet.
+Dans la fenêtre du nouveau projet, chaque document qu’il nomme s’ouvre d’un clic.
+
+Le nouveau projet est un unique fichier `.skrib`. Si vous préférez un dossier, utilisez ensuite
+*Œuvre ▸ Enregistrer comme dossier…*.
+
+## Si l’import ne peut pas lire votre projet
+
+La page *Projet* dit pourquoi, et quoi faire. Le plus souvent, il suffit d’ouvrir une fois le
+projet dans Scrivener, qui le répare et le met à jour, puis de l’importer de nouveau.
+
+Si ce n’est pas possible, un document Word permet de passer. Dans Scrivener, compilez le projet
+au format Word (.docx). Dans le format de compilation, donnez aux titres de chapitre le premier
+style de titre (« Heading 1 », ou « Titre 1 » selon la langue de Scrivener) et aux titres de
+section le deuxième, et gardez les commentaires en marge. Ensuite, dans Skribisto, choisissez
+*Œuvre ▸ Importer depuis ▸ Documents (Markdown, Word, ODT)…*, et sur sa page *Vérifier*,
+réglez *Niveaux de titre* pour que le premier niveau devienne un Chapitre et le deuxième une
+Scène. Voir [importer des documents](:help-import-documents).
+
+Les styles nommés comme « Heading 1 » n’existent que dans Scrivener 3. Depuis un Scrivener plus
+ancien, exportez plutôt un fichier par document, au format Word (.docx) ou OpenDocument (.odt),
+et importez-les ensemble. Ne gardez pas le Rich Text (.rtf) que Scrivener propose d’abord :
+Skribisto ne l’importe pas.
+
+Un document compilé apporte votre texte, avec ses images, vos commentaires et vos notes de bas
+de page, mais pas vos synopsis, vos notes, vos libellés, vos instantanés ni les fichiers de
+votre dossier de recherche.
+
+Scrivener est une marque de Literature and Latte Ltd. Skribisto n’est pas affilié à Literature
+and Latte.

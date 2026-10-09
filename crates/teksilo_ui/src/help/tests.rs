@@ -120,13 +120,59 @@ fn every_shipped_locale_has_a_body_for_every_topic() {
         let HelpBody::Djot(table) = &topic.body else {
             continue;
         };
+        let awaiting: &[&str] = AWAITING_TRANSLATION
+            .iter()
+            .find(|(key, _)| *key == topic.key)
+            .map_or(&[], |(_, locales)| locales);
         for locale in &locales {
+            if awaiting.contains(&locale.as_str()) {
+                continue;
+            }
             assert!(
                 table.iter().any(|(tag, _)| tag == locale),
                 "topic '{}' has no body for locale '{locale}', which the help directory \
                  ships; add crates/teksilo_ui/help/{locale}/<topic>.djot and its row in \
                  help.rs, or delete the locale directory",
                 topic.key
+            );
+        }
+    }
+}
+
+/// A topic listed as awaiting a locale really lacks it, body and file, and the locale is
+/// one the help set ships: once its page is written, the entry has to go, so the list
+/// never claims a gap that is not there.
+#[test]
+fn every_topic_awaiting_translation_still_lacks_it() {
+    let locales = shipped_locales();
+    let topics = builtin_topics();
+    for (key, missing) in AWAITING_TRANSLATION {
+        let topic = topics
+            .iter()
+            .find(|t| t.key == *key)
+            .unwrap_or_else(|| panic!("'{key}' awaits translation but is no built-in topic"));
+        let HelpBody::Djot(table) = &topic.body else {
+            panic!("'{key}' awaits translation but has no Djot body");
+        };
+        let stem = key
+            .strip_prefix("help-")
+            .expect("a built-in topic key starts with `help-`");
+        for locale in *missing {
+            assert!(
+                locales.iter().any(|l| l == locale),
+                "'{key}' awaits '{locale}', which the help set does not ship"
+            );
+            assert!(
+                !table.iter().any(|(tag, _)| tag == locale),
+                "'{key}' has a body for '{locale}': take it out of AWAITING_TRANSLATION"
+            );
+            assert!(
+                !help_dir()
+                    .join(locale)
+                    .join(format!("{stem}.djot"))
+                    .exists(),
+                "help/{locale}/{stem}.djot exists: include it in the topic and take '{locale}' \
+                 out of AWAITING_TRANSLATION"
             );
         }
     }

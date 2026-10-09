@@ -1,6 +1,8 @@
 Importez des fichiers Word, LibreOffice, Markdown ou texte brut dans votre projet. Pour un
 manuscrit renvoyé par un lecteur, voir [récupérer les corrections et commentaires](:help-round-trip).
-Pour Manuskript ou Plume Creator, voir [importer un projet](:help-import-projects).
+Pour Manuskript ou Plume Creator, voir [importer un projet](:help-import-projects), et pour
+Scrivener, [venir de Scrivener](:help-import-scrivener). Un document Word compilé depuis un projet
+Scrivener que l’import ne peut pas lire entre par ici.
 
 ## Importer vos fichiers
 

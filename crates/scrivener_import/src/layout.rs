@@ -315,7 +315,7 @@ pub(crate) fn resolve_payloads(
                 Layout::Folders(_) => format!("content.{ext}"),
                 Layout::Flat => format!(".{ext}"),
             });
-            let wanted_path = wanted.and_then(&want);
+            let wanted_path = wanted.and_then(want);
             // Pictures and research files are read later, if at all: a
             // placeholder or a link among them does not block the import.
             let file = found(wanted_path.clone(), false, &mut res);

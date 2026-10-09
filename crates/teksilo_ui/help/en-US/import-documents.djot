@@ -1,6 +1,8 @@
 Import Word, LibreOffice, Markdown or plain-text files into your project. For a manuscript
 returned by a reader, see [bringing back edits and comments](:help-round-trip). For Manuskript
-or Plume Creator, see [importing projects](:help-import-projects).
+or Plume Creator, see [importing projects](:help-import-projects), and for Scrivener,
+[coming from Scrivener](:help-import-scrivener). A Word document compiled from a Scrivener
+project that cannot be imported comes in here.
 
 ## Import your files
 

@@ -2486,6 +2486,12 @@ features:
         enum_values:
         - Empty
         - "Reported { key: String, family: ScrivenerFindingFamily, group: ScrivenerReportGroup, place: ScrivenerPlace, item: i64, binder_path: Vec<String>, item_uid: Option<Uuid>, args: Vec<ScrivenerArg> }"
+      # Where the project read is, when it was read: its folder, or the archive or template
+      # file it came in. Not always the path picked (a folder around it or inside it, a link,
+      # a pre-upgrade copy beside it): the Save page decides what is beside the project and
+      # what is inside it from this.
+      - name: project_path
+        type: string
       # The project card, when the project was read: its name (the folder's, cleaned of what
       # backups and sync services add: the Save page's file name), a template's own title,
       # what it came in, which generation and which Scrivener last saved it, which manifest

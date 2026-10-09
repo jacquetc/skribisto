@@ -238,6 +238,81 @@ fn a_pick_inside_a_project_offers_the_project() {
     ));
 }
 
+/// The analysis says where the project it read is, whatever the writer picked: a
+/// folder inside it, the folder around it, the project chosen among several, the zip
+/// it came in, a link to it. What is beside the project, and what is inside it, is
+/// decided from that, never from the pick.
+#[test]
+fn the_project_read_is_located_whatever_was_picked() {
+    let dir = temp();
+    let spec = Spec::novel(Generation::Format20, Platform::Mac);
+    let folder = write(&spec, dir.path());
+    let enclosing = Answers {
+        use_enclosing_project: true,
+        ..Answers::default()
+    };
+    assert_eq!(read(run(&folder)).location, folder);
+    assert_eq!(
+        read(run_with(&folder.join("Files").join("Data"), &enclosing)).location,
+        folder,
+        "a folder inside the project"
+    );
+    assert_eq!(
+        read(run_with(
+            &folder.join("Files").join("binder.autosave"),
+            &enclosing
+        ))
+        .location,
+        folder,
+        "a file inside the project"
+    );
+    assert_eq!(
+        read(run(&folder.join("Lighthouse.scrivx"))).location,
+        folder,
+        "its manifest"
+    );
+    assert_eq!(
+        read(run(dir.path())).location,
+        folder,
+        "the folder around it"
+    );
+
+    let mut other = Spec::novel(Generation::Format15, Platform::Mac);
+    other.name = "Harbour".to_string();
+    let harbour = write(&other, dir.path());
+    let chosen = Answers {
+        project: Some("Harbour.scriv".to_string()),
+        ..Answers::default()
+    };
+    assert_eq!(
+        read(run_with(dir.path(), &chosen)).location,
+        harbour,
+        "the project chosen among several"
+    );
+
+    let zipped = write_file(
+        &spec.build().zip(Some(&spec.folder())).unwrap_or_default(),
+        dir.path(),
+        "Lighthouse.scriv.zip",
+    );
+    assert_eq!(read(run(&zipped)).location, zipped, "the zip it came in");
+
+    #[cfg(unix)]
+    {
+        let link = dir.path().join("Shortcut.scriv");
+        if let Err(e) = std::os::unix::fs::symlink(&folder, &link) {
+            panic!("a link: {e}");
+        }
+        let real = std::fs::canonicalize(&folder).unwrap_or(folder.clone());
+        let located = read(run(&link)).location;
+        assert_eq!(
+            std::fs::canonicalize(&located).unwrap_or(located),
+            real,
+            "the project a link leads to"
+        );
+    }
+}
+
 /// A folder holding only manifests (published ones, or a copy that lost its
 /// files) is refused by name, and a folder of nothing Scrivener made is not a
 /// project.

@@ -331,6 +331,9 @@ fn a_failure_to_start_is_worded_and_lets_go_of_the_target() {
         allow_overwrite: |request| request,
         launch: |_, _| Err(anyhow::anyhow!("the manager is gone")),
         outcome: |_, _| None,
+        source: |request| request.clone(),
+        review_again: None,
+        open_now: |path| crate::intents::AppIntent::OpenWorkPath { path },
     };
     let starting = job.clone();
     let request = target.clone();
@@ -349,6 +352,59 @@ fn a_failure_to_start_is_worded_and_lets_go_of_the_target() {
     assert_ne!(
         body, "the manager is gone",
         "a sentence, not the bare chain"
+    );
+}
+
+/// A failure the importer's own review answers offers that review first, on the project
+/// the import read, with the technical chain still behind Details; a failure it does not
+/// answer offers Details alone.
+#[test]
+fn a_failure_the_review_answers_offers_the_review_again() {
+    let _registry = IsolatedOpenRegistry::new();
+    let dir = tempfile::tempdir().unwrap();
+    let target = dir
+        .path()
+        .join("novel.skrib")
+        .to_string_lossy()
+        .into_owned();
+    let app_ctx = Rc::new(AppContext::new());
+
+    static REVIEWS: Importer<String> = Importer {
+        toast_id: "import.test.review",
+        notice: &crate::shared::import_warnings::SCRIVENER,
+        progress_title: || lit!("Importing"),
+        own_words: |_| None,
+        target: |request| request.clone(),
+        allow_overwrite: |request| request,
+        launch: |_, _| Err(anyhow::anyhow!("the project moved")),
+        outcome: |_, _| None,
+        source: |_| "/books/Novel.scriv".to_string(),
+        review_again: Some(crate::shared::project_import::ReviewAgain {
+            applies: |reason| matches!(reason, FailureReason::Internal { .. }),
+            label: || lit!("Look again"),
+            intent: |path| crate::intents::AppIntent::ImportScrivenerPath { path },
+        }),
+        open_now: |path| crate::intents::AppIntent::OpenWorkPathInNewWindow { path },
+    };
+    let job = ProjectImportJob::new(app_ctx.clone());
+    let (mut tree, archive) = tree_with_archive(&app_ctx);
+    let starting = job.clone();
+    let request = target.clone();
+    press(&mut tree, move |c| {
+        starting.start(c, &REVIEWS, request.clone())
+    });
+    let error = archived(&archive)
+        .into_iter()
+        .find(|e| e.dedup_id.as_deref() == Some("import.test.review"))
+        .expect("the failure is reported");
+    let labels: Vec<String> = error.actions.iter().map(|a| a.label.clone()).collect();
+    assert_eq!(
+        labels,
+        [
+            "Look again".to_string(),
+            tr!(project_import_details()).resolve_now()
+        ],
+        "the review first, then Details"
     );
 }
 
@@ -419,6 +475,9 @@ static STILL_WRITING: Importer<String> = Importer {
         )
     },
     outcome: |_, _| None,
+    source: |request| request.clone(),
+    review_again: None,
+    open_now: |path| crate::intents::AppIntent::OpenWorkPath { path },
 };
 
 /// Start [`STILL_WRITING`] into `target` on `job`, and wait until its staged
@@ -599,4 +658,184 @@ fn an_import_another_copy_started_meanwhile_is_not_joined() {
     );
     assert!(!Path::new(&format!("{target}.importing")).exists());
     std::fs::write(format!("{target}.release"), b"").unwrap();
+}
+
+/// A conversion that finishes at once.
+struct Finishes;
+
+impl frontend::common::long_operation::LongOperation for Finishes {
+    type Output = i64;
+
+    fn execute(
+        &self,
+        _progress: Box<dyn Fn(frontend::common::long_operation::OperationProgress) + Send>,
+        _cancel: std::sync::Arc<std::sync::atomic::AtomicBool>,
+    ) -> anyhow::Result<i64> {
+        Ok(0)
+    }
+}
+
+/// An importer whose report is a dialog of its own, and whose import always finishes.
+static REPORTS: Importer<String> = Importer {
+    toast_id: "import.test.report",
+    notice: &crate::shared::import_warnings::SCRIVENER,
+    progress_title: || lit!("Importing"),
+    own_words: |_| None,
+    target: |request| request.clone(),
+    allow_overwrite: |request| request,
+    launch: |app_ctx, _| {
+        Ok(
+            frontend::common::long_operation::lock_or_recover(&app_ctx.long_operation_manager)
+                .start_operation(Finishes),
+        )
+    },
+    outcome: |_, _| {
+        Some(ImportOutcome {
+            output_path: "/books/Novel.skrib".into(),
+            result: lit!("The new project holds 12 items."),
+            headline: Some(lit!("Imported")),
+            report: Vec::new(),
+            persistent: true,
+            see_report: Some(SeeReport {
+                label: || lit!("See report"),
+                intent: |output_path| crate::intents::AppIntent::ImportScrivenerReportOf {
+                    output_path,
+                },
+                archived_as: crate::import_scrivener::archived_report_name,
+            }),
+        })
+    },
+    source: |request| request.clone(),
+    review_again: None,
+    open_now: |path| crate::intents::AppIntent::OpenWorkPathInNewWindow { path },
+};
+
+/// The result of an importer whose report is a dialog offers **See report** beside **Open
+/// now**, on the notice itself; the command palette's entry is the way back once the
+/// notice is closed.
+#[test]
+fn a_result_with_a_report_offers_see_report() {
+    use teksilo::presets::intui;
+    use teksilo::widgets::{Expand, FixedSize, Spacer, ToastHost, VStack, ZStack};
+
+    let _registry = IsolatedOpenRegistry::new();
+    let dir = tempfile::tempdir().unwrap();
+    let target = dir
+        .path()
+        .join("novel.skrib")
+        .to_string_lossy()
+        .into_owned();
+    let app_ctx = Rc::new(AppContext::new());
+    let job = ProjectImportJob::new(app_ctx.clone());
+    let options = ToastInstallOptions {
+        archive: None,
+        ..ToastInstallOptions::default()
+    };
+    let toasts = ToastRegistry::new(options.clone());
+    let mut tree = crate::test_support::tree_with_toast_registry(&app_ctx, &toasts);
+    tree.set_theme(intui::light());
+    let root = tree.add(
+        VStack::new().child(
+            FixedSize::new()
+                .width(400.0)
+                .height(300.0)
+                .child(Spacer::new()),
+        ),
+    );
+    let host = tree.add(ToastHost::new(toasts.clone(), options));
+    let filled = tree.add(Expand::new().respect_intrinsic().child(root));
+    tree.add(ZStack::new().child(filled).child(host));
+
+    let starting = job.clone();
+    press(&mut tree, move |c| {
+        starting.start(c, &REPORTS, target.clone())
+    });
+    let op = job.active_operation().expect("started");
+    wait_for(&app_ctx, &op);
+    let completed = event(LongOperationEvent::Completed, serde_json::json!({"id": op}));
+    let finishing = job.clone();
+    press(&mut tree, move |c| {
+        finishing.on_long_op_completed(c, &completed)
+    });
+    assert_eq!(toasts.live_count(), 1, "the result is up");
+    assert!(
+        tree.find_by_label(&tr!(project_import_open_now()).resolve_now())
+            .is_some()
+    );
+    assert!(
+        tree.find_by_label("See report").is_some(),
+        "the result offers its report"
+    );
+}
+
+/// Once the result has left the screen, the notification log still offers its report: the
+/// import's row shows the result as it ended, a success offering **See report**, and no
+/// longer the progress notice's Cancel. The row is the one the progress notice opened,
+/// unread once, however many times the notice changed on the way.
+#[test]
+fn the_log_offers_the_report_of_a_finished_import() {
+    use teksilo::widgets::BannerSeverity;
+
+    let _registry = IsolatedOpenRegistry::new();
+    let dir = tempfile::tempdir().unwrap();
+    let target = dir
+        .path()
+        .join("novel.skrib")
+        .to_string_lossy()
+        .into_owned();
+    let app_ctx = Rc::new(AppContext::new());
+    let job = ProjectImportJob::new(app_ctx.clone());
+    let (mut tree, archive) = tree_with_archive(&app_ctx);
+
+    let starting = job.clone();
+    press(&mut tree, move |c| {
+        starting.start(c, &REPORTS, target.clone())
+    });
+    let op = job.active_operation().expect("started");
+    let row = |archive: &NotificationArchiveModel| {
+        archived(archive)
+            .into_iter()
+            .filter(|e| e.dedup_id.as_deref() == Some(REPORTS.toast_id))
+            .collect::<Vec<_>>()
+    };
+    let progress = row(&archive);
+    assert_eq!(progress.len(), 1, "the progress notice is in the log");
+    let cancel = tr!(project_import_cancel()).resolve_now();
+    assert!(
+        progress[0].actions.iter().any(|a| a.label == cancel),
+        "while the import runs, its row offers Cancel"
+    );
+
+    wait_for(&app_ctx, &op);
+    let completed = event(LongOperationEvent::Completed, serde_json::json!({"id": op}));
+    let finishing = job.clone();
+    press(&mut tree, move |c| {
+        finishing.on_long_op_completed(c, &completed)
+    });
+
+    let rows = row(&archive);
+    assert_eq!(
+        rows.len(),
+        1,
+        "the result updated the progress notice's row"
+    );
+    let result = &rows[0];
+    assert_eq!(result.severity, BannerSeverity::Success);
+    assert!(
+        result.actions.iter().any(|a| a.label == "See report"
+            && a.intent_name.as_deref()
+                == Some("work.import_scrivener_report_of:/books/Novel.skrib")),
+        "the log can open the report of this import: {:?}",
+        result.actions
+    );
+    assert!(
+        result.actions.iter().all(|a| a.label != cancel),
+        "nothing is left to cancel: {:?}",
+        result.actions
+    );
+    assert_eq!(
+        archive.unread_count().get(),
+        1,
+        "one import, one unread row, whatever the notice said on the way"
+    );
 }

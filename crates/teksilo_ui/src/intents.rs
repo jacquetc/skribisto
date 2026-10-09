@@ -91,6 +91,27 @@ pub enum AppIntent {
     /// `work.import_manuskript` action in `App::build`.
     #[name = "work.import_manuskript"]
     ImportManuskript,
+    /// Open the Import a Scrivener project wizard. Fired from Work ▸ Import from ▸
+    /// Scrivener, the Launcher's Create from, and the command palette; backed by a global
+    /// `work.import_scrivener` action on each window's own tree (`App::build`,
+    /// `WelcomePanel::build`), over that window's own wizard view-model.
+    #[name = "work.import_scrivener"]
+    ImportScrivener,
+    /// Open the Scrivener wizard already reading `path`: what a failed import's
+    /// **Review again** sends, when the project changed after it was reviewed.
+    #[name = "work.import_scrivener_path"]
+    ImportScrivenerPath { path: String },
+    /// Reopen this window's last Scrivener import report: the one it showed last, else
+    /// the one about the project it shows, else the last import of the session. Fired by
+    /// name from the command palette; backed by a global `work.import_scrivener_report`
+    /// action on each window's tree, over that window's own wizard view-model.
+    #[name = "work.import_scrivener_report"]
+    ImportScrivenerReport,
+    /// Show the report of the Scrivener import that wrote `output_path`: what a finished
+    /// import's **See report** sends, on its notice or replayed from the notification log,
+    /// so the button opens that import's report and no other.
+    #[name = "work.import_scrivener_report_of"]
+    ImportScrivenerReportOf { output_path: String },
 
     /// Import Markdown / plain-text documents **into the open project** —
     /// presents the Import documents wizard. Fired from Work ▸ Import from ▸
@@ -116,6 +137,15 @@ pub enum AppIntent {
     /// is what keeps the view-model graph a DAG — same shape as `binder.trash`.
     #[name = "work.open_path"]
     OpenWorkPath { path: String },
+
+    /// Open an already-chosen `.skrib` in a window of its own, leaving this window's
+    /// project where it is. Fired by **Open now** after a Scrivener import: a project
+    /// brought across from another program is a new project beside the one being
+    /// written, never in its place. Consumed by a global `work.open_path_new_window`
+    /// action, which goes through `shell::windows::open_or_focus_project` (and, in the
+    /// Launcher, closes the Launcher afterwards as every launch door there does).
+    #[name = "work.open_path_new_window"]
+    OpenWorkPathInNewWindow { path: String },
 
     /// Open (or focus) the editor tab for a binder item (primary pane).
     #[name = "editor.open_item"]
@@ -324,6 +354,38 @@ mod tests {
         match AppIntent::from_intent(&intent) {
             Some(AppIntent::OpenWorkPath { path }) => assert_eq!(path, "/tmp/novel.skrib"),
             other => panic!("expected OpenWorkPath, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn the_scrivener_intents_round_trip_their_path() {
+        let intent: Intent = AppIntent::ImportScrivenerPath {
+            path: "/books/Novel.scriv".into(),
+        }
+        .into();
+        match AppIntent::from_intent(&intent) {
+            Some(AppIntent::ImportScrivenerPath { path }) => assert_eq!(path, "/books/Novel.scriv"),
+            other => panic!("expected ImportScrivenerPath, got {other:?}"),
+        }
+        let intent: Intent = AppIntent::ImportScrivenerReportOf {
+            output_path: "/books/Novel.skrib".into(),
+        }
+        .into();
+        match AppIntent::from_intent(&intent) {
+            Some(AppIntent::ImportScrivenerReportOf { output_path }) => {
+                assert_eq!(output_path, "/books/Novel.skrib")
+            }
+            other => panic!("expected ImportScrivenerReportOf, got {other:?}"),
+        }
+        let intent: Intent = AppIntent::OpenWorkPathInNewWindow {
+            path: "/books/Novel.skrib".into(),
+        }
+        .into();
+        match AppIntent::from_intent(&intent) {
+            Some(AppIntent::OpenWorkPathInNewWindow { path }) => {
+                assert_eq!(path, "/books/Novel.skrib")
+            }
+            other => panic!("expected OpenWorkPathInNewWindow, got {other:?}"),
         }
     }
 

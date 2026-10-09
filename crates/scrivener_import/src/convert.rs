@@ -570,13 +570,22 @@ impl<'c, 't, 'i, 'd, 'r> Converter<'c, 't, 'i, 'd, 'r> {
         let total = (plan.manuscript.len() + plan.notes.len() + plan.templates.len()) as u64;
         report(20.0, "import.converting");
         let mut done = 0u64;
-        // The title of the row just converted, as data.
+        // Reported by the percent, not by the row, and always at the last row, with the
+        // title of the row just converted as data: each report redraws a notice on the
+        // interface's thread, and one per row of a large project kept that thread too busy
+        // to take the notice's Cancel in time.
+        let reported = std::cell::Cell::new(u64::MAX);
         let tick = |done: u64, title: &str| {
             let share = if total == 0 {
                 1.0
             } else {
                 done as f32 / total as f32
             };
+            let percent = (100.0 * share) as u64;
+            if percent == reported.get() && done != total {
+                return;
+            }
+            reported.set(percent);
             report(20.0 + 70.0 * share, title);
         };
 

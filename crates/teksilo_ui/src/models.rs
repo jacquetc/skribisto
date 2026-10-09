@@ -56,6 +56,7 @@ mod pace_model;
 mod paratext_presets;
 mod recent_work_list_model;
 mod row_search;
+pub(crate) mod scrivener_inspection;
 mod search_results_model;
 mod search_settings_file;
 mod search_tree_model;

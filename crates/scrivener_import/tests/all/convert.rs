@@ -753,7 +753,7 @@ fn what_a_split_text_holds_before_its_first_heading_is_never_left_behind() {
     assert!(
         summary.prose.iter().any(|n| matches!(
             n,
-            ProseNotice::PlaceholdersInExportedText { kind, count: 1, .. } if kind == "wc"
+            ProseNotice::PlaceholdersInExportedText { kind, count: 1, .. } if kind == "<$wc>"
         )),
         "{:?}",
         summary.prose
@@ -1348,6 +1348,56 @@ fn progress_never_goes_back_when_the_project_is_read_again() {
         assert!(pair[1].0 >= pair[0].0, "progress went back: {seen:?}");
     }
     assert_eq!(seen.last(), Some(&(100.0, "import.done".to_string())));
+}
+
+/// A large project's conversion reports its progress by the percent, not by the row: each
+/// report is a notice redrawn on the interface's thread, and three thousand of them kept
+/// that thread too busy to take the Cancel the notice offers before the import was over.
+#[test]
+fn a_large_conversion_reports_progress_by_the_percent() {
+    let dir = temp();
+    let mut spec = Spec::novel(Generation::Format20, Platform::Mac);
+    let at = spec.index_of("Research").unwrap_or(spec.items.len());
+    let mut more = vec![Item::new(2, Kind::Folder, "Chapter 3").compiled()];
+    more.extend((0..600).map(|i| {
+        Item::new(3, Kind::Text, &format!("Crossing {i}"))
+            .compiled()
+            .with_text(i, 1)
+    }));
+    spec.items.splice(at..at, more);
+    let folder = write_files(&spec.build(), dir.path(), &spec.folder());
+    let out = dir.path().join("large.skrib");
+    let output = out.to_string_lossy().into_owned();
+    let (choices, words, answers, options) =
+        (Choices::default(), words(), Answers::default(), options());
+    let request = request(&folder, &output, &choices, &words, &answers, &options);
+    let seen = std::cell::RefCell::new(Vec::<(f32, String)>::new());
+    let report = |percent: f32, label: &str| seen.borrow_mut().push((percent, label.to_string()));
+    let summary = convert(&request, &report, &AtomicBool::new(false));
+    assert!(summary.is_ok(), "{:?}", summary.err());
+    let seen = seen.into_inner();
+    // The converting phase, then the titles of the rows it reports, until writing begins.
+    let start = seen
+        .iter()
+        .position(|(_, label)| label == "import.converting")
+        .expect("the conversion says it is converting");
+    let end = seen
+        .iter()
+        .position(|(_, label)| label == "import.writing")
+        .expect("and then that it is writing");
+    let converting = &seen[start..end];
+    // The start, then at most one per percent of the rows.
+    assert!(
+        converting.len() <= 102,
+        "{} reports for one conversion",
+        converting.len()
+    );
+    assert_eq!(
+        converting.last().map(|(percent, _)| *percent),
+        Some(90.0),
+        "the last row is reported: {:?}",
+        converting.last()
+    );
 }
 
 // ── what the report names rows by ────────────────────────────────────────────────────────

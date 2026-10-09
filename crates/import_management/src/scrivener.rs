@@ -9,7 +9,7 @@
 //! * the writer's answers, structure choices and words, as the converter takes them
 //!   (`request`, [`choices_from_dto`](crate::scrivener::choices_from_dto));
 //! * every refusal, question and notice the converter gives, as the typed row the
-//!   interface words ([`ScrivenerFinding`](crate::dtos::ScrivenerFinding),
+//!   interface words ([`ScrivenerFinding`],
 //!   [`every_key`](crate::scrivener::every_key));
 //! * the analysis and the conversion's summary as the wizard receives them;
 //! * the review page's own recomputation of the plan
@@ -18,7 +18,7 @@
 //! # Nothing personal crosses into the project
 //!
 //! The computers a project names (the manifest's `Device`, the lock file's host) reach the
-//! project card through [`ScrivenerComputers`](crate::dtos::ScrivenerComputers) and nowhere
+//! project card through [`ScrivenerComputers`] and nowhere
 //! else: not a finding, not the import's result, not the new project, and not a `{:?}` (its
 //! `Debug` withholds them).
 
@@ -143,6 +143,7 @@ fn read_to_dto(read: ReadProject) -> anyhow::Result<ScrivenerAnalysisDto> {
         notices,
         pending,
         fingerprint,
+        location,
     } = read;
     let names = project.source_names();
     let locator = Locator::before_import(&names);
@@ -161,6 +162,9 @@ fn read_to_dto(read: ReadProject) -> anyhow::Result<ScrivenerAnalysisDto> {
         outcome: ScrivenerAnalysisOutcome::Read,
         pending: pending.iter().map(plan::question).collect(),
         notices: notices.iter().map(|n| notice(n, &locator)).collect(),
+        // A path that is not Unicode cannot be named in a string: the wizard then falls
+        // back to the path it picked.
+        project_path: location.to_str().map(str::to_string).unwrap_or_default(),
         folder_title: source.folder_title.clone(),
         template_title: source.template_title.clone().unwrap_or_default(),
         container: plan::container(source.container),

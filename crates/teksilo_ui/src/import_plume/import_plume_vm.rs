@@ -30,6 +30,7 @@ use frontend::import_management::ImportPlumeCreatorFileDto;
 use skrib_format::importing::TITLE_SLOT;
 
 use super::messages;
+use crate::intents::AppIntent;
 use crate::shared::form_checks::{CachedValidation, DiskChecked, FolderMessages};
 use crate::shared::import_destination::{DestinationMessages, ImportDestination};
 use crate::shared::import_warnings::{PLUME as NOTICE, notice_sentence};
@@ -50,6 +51,9 @@ pub(crate) static PLUME: Importer<ImportPlumeCreatorFileDto> = Importer {
         import_management_commands::import_plume_creator_file(app_ctx, request)
     },
     outcome,
+    source: |request| request.source_path.clone(),
+    review_again: None,
+    open_now: |path| AppIntent::OpenWorkPath { path },
 };
 
 /// The finished import's result, in the writer's words.
@@ -67,6 +71,9 @@ fn outcome(app_ctx: &AppContext, op_id: &str) -> Option<ImportOutcome> {
             .map(|raw| notice_sentence(raw))
             .collect(),
         output_path: result.output_path,
+        persistent: false,
+        headline: None,
+        see_report: None,
     })
 }
 
@@ -1020,9 +1027,9 @@ mod tests {
             })
             .count();
         assert_eq!(notices, 6, "every import's list is in the log");
-        // The log merges a re-raised id into its first row, updating the title
-        // and body only, so the title is what shows which state was admitted
-        // last.
+        // One row per id: the log updates the row the progress notice opened
+        // with each later state of the notice, so its title is what shows which
+        // state was admitted last.
         let progress = tr!(import_plume_progress_title()).resolve_now();
         let result = rows
             .iter()
@@ -1099,8 +1106,8 @@ mod tests {
             .into_iter()
             .find(|e| e.dedup_id.as_deref() == Some(PLUME.toast_id))
             .expect("the failure was admitted, so it is in the log");
-        // The log merges a re-raised id into its first row, the progress notice,
-        // updating its title and body: those are what show the failure arrived.
+        // One row per id: the log updates the row the progress notice opened
+        // with the failure, so its title and body are what show it arrived.
         assert_eq!(error.title, tr!(project_import_error_title()).resolve_now());
         assert_eq!(
             error.body.as_deref(),

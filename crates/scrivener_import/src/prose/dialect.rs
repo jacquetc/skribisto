@@ -155,7 +155,7 @@ pub(crate) struct Found {
     pub(crate) markdown: u32,
     pub(crate) citations: u32,
     pub(crate) tables: u32,
-    /// Placeholders by name, and how many.
+    /// Placeholders as the project writes them, and how many.
     pub(crate) placeholders: BTreeMap<String, u32>,
     /// Pictures linked to a file on disk, by file name.
     pub(crate) linked_on_disk: Vec<String>,
@@ -572,6 +572,10 @@ struct Group {
     close: (usize, usize),
     /// Every marker of the pairs joined, the first opener and the last closer included.
     markers: Vec<(usize, usize)>,
+    /// Whether it took a pair nothing separated, or one only paragraph breaks did: each
+    /// counts the note once in the report, however many pieces it joined.
+    merged: bool,
+    joined_across: bool,
 }
 
 /// One field of a segment: its id, the atom that opens it and the atom that closes it.
@@ -1131,15 +1135,22 @@ impl Pass<'_, '_> {
                 && last.kind == pair.kind
                 && !matches!(pair.kind, NoteKind2::Preserve)
             {
+                // The report counts notes, not joins: a note made of three pieces is one.
                 match gap(seg, last.close.1, pair.open.0) {
                     Gap::None => {
-                        self.found.merged += 1;
+                        if !last.merged {
+                            last.merged = true;
+                            self.found.merged += 1;
+                        }
                         last.close = pair.close;
                         last.markers.extend([pair.open, pair.close]);
                         continue;
                     }
                     Gap::Breaks => {
-                        self.found.joined_across += 1;
+                        if !last.joined_across {
+                            last.joined_across = true;
+                            self.found.joined_across += 1;
+                        }
                         last.close = pair.close;
                         last.markers.extend([pair.open, pair.close]);
                         continue;
@@ -1152,6 +1163,8 @@ impl Pass<'_, '_> {
                 open: pair.open,
                 close: pair.close,
                 markers: vec![pair.open, pair.close],
+                merged: false,
+                joined_across: false,
             });
         }
         groups
@@ -2865,13 +2878,11 @@ fn angle_token(text: &[char], i: usize) -> Option<(TokenKind, usize)> {
     if text[close] != '>' {
         return None;
     }
-    let kind: String = text[dollar + 1..close]
-        .iter()
-        .take_while(|c| c.is_alphanumeric() || **c == '_')
-        .flat_map(|c| c.to_lowercase())
-        .collect();
-    // Only the name is kept: a placeholder is never removed, so its whole text stays.
-    Some((TokenKind::Placeholder(kind), close + 1 - i))
+    // Kept as the project writes it, case and argument included: `<$R>` is not `<$r>`,
+    // and the report quotes what the writer can search for. A placeholder is never
+    // removed, so its whole text stays.
+    let written: String = text[i..=close].iter().collect();
+    Some((TokenKind::Placeholder(written), close + 1 - i))
 }
 
 #[cfg(test)]

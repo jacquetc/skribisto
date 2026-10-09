@@ -157,6 +157,13 @@ pub struct ReadProject {
     /// A digest of the manifest and of every file the model refers to, so an
     /// import can tell the project did not change since this analysis.
     pub fingerprint: String,
+    /// Where the project read is on disk: its folder, or the archive or template file it
+    /// came in. Not always the path the writer picked, which may be a folder around the
+    /// project, a file inside it, a link to it, or a pre-upgrade copy beside the project
+    /// read instead: what is beside the project, and what is inside it, is decided from
+    /// this.
+    #[serde(default)]
+    pub location: PathBuf,
 }
 
 /// What the project card may show and nothing may keep: personal data.
@@ -183,6 +190,14 @@ impl std::fmt::Debug for Card {
 }
 
 impl Analysis {
+    /// The analysis, with the project it read located at `at` when it read one.
+    fn located(mut self, at: &Path) -> Self {
+        if let Analysis::Read(read) = &mut self {
+            read.location = at.to_path_buf();
+        }
+        self
+    }
+
     /// Every notice the analysis produced.
     pub fn notices(&self) -> &[Notice] {
         match self {
@@ -409,7 +424,7 @@ fn folder_pick(
         notices,
         visit,
     );
-    settle(&index, result)
+    settle(&index, result).map(|analysis| analysis.located(&root))
 }
 
 /// Check the index for members that moved, and turn the evaluation into an
@@ -591,6 +606,7 @@ fn archive_pick(
         notices,
         visit,
     )
+    .map(|analysis| analysis.located(pick))
 }
 
 fn template_pick(
@@ -641,6 +657,7 @@ fn template_pick(
         notices,
         visit,
     )
+    .map(|analysis| analysis.located(pick))
 }
 
 fn archive_root(
@@ -1329,6 +1346,7 @@ fn evaluate(
         notices: std::mem::take(notices),
         pending,
         fingerprint,
+        location: PathBuf::new(),
     };
     if let Some(visit) = visit.as_mut() {
         visit(tree, &read).map_err(|Moved| Stop::Changed(1))?;

@@ -61,7 +61,7 @@ use frontend::AppContext;
 use frontend::commands::long_operation_commands;
 use frontend::common::event::{Event, LongOperationEvent, Origin};
 use frontend::common::long_operation::lock_or_recover;
-use frontend::import_management::failure::ProjectImportFailure;
+use frontend::import_management::failure::{FailureReason, ProjectImportFailure};
 use teksilo::i18n::{LocalizedString, localized};
 use teksilo::prelude::*;
 use teksilo::widgets::{
@@ -81,8 +81,45 @@ pub(crate) struct ImportOutcome {
     pub(crate) output_path: String,
     /// The result line: what came across.
     pub(crate) result: LocalizedString,
+    /// A short title for the result notice, the result line then its body; `None`
+    /// keeps the result line as the title, for a result short enough to be one.
+    pub(crate) headline: Option<LocalizedString>,
     /// What the writer should know, one line each; empty when there is nothing.
     pub(crate) report: Vec<LocalizedString>,
+    /// The result waits for the writer instead of leaving after a few seconds: it says
+    /// something the writer has to act on, and is the only place that says it.
+    pub(crate) persistent: bool,
+    /// **See report** beside **Open now**, for an importer whose report is a dialog of its
+    /// own; `None` for one whose report is the notice of `shared::import_warnings`.
+    pub(crate) see_report: Option<SeeReport>,
+}
+
+/// The result notice's **See report**: an intent the window it is pressed in answers by
+/// showing the report of this import, and the name of the action the notification log
+/// replays once the notice's closures are gone.
+#[derive(Clone, Copy)]
+pub(crate) struct SeeReport {
+    /// The action's label.
+    pub(crate) label: fn() -> LocalizedString,
+    /// The intent that shows the report of the import that wrote this path.
+    pub(crate) intent: fn(String) -> AppIntent,
+    /// The name an archived row replays, given the path the import wrote: an archived row
+    /// keeps no closure, so its name says which import's report it opens. Stable: it is
+    /// persisted in the notification archive.
+    pub(crate) archived_as: fn(&str) -> String,
+}
+
+/// What a failure notice offers beside **Details** when the importer's own review answers
+/// the failure: the project changed since it was reviewed, say. Its action opens the
+/// importer again on the same project.
+#[derive(Clone, Copy)]
+pub(crate) struct ReviewAgain {
+    /// Whether a fresh review answers this failure.
+    pub(crate) applies: fn(&FailureReason) -> bool,
+    /// The action's label.
+    pub(crate) label: fn() -> LocalizedString,
+    /// The intent that opens the importer on the project the import read.
+    pub(crate) intent: fn(String) -> AppIntent,
 }
 
 /// One project importer, as the job sees it.
@@ -92,7 +129,8 @@ pub(crate) struct ImportOutcome {
 pub(crate) struct Importer<R: 'static> {
     /// The update-in-place id of the import's own toast, which goes from progress
     /// to result, cancellation or failure. Kept per importer: the notification
-    /// log merges a re-raised id into its first row.
+    /// log keeps one row per id, which a later import under the same id brings
+    /// back to the top.
     pub(crate) toast_id: &'static str,
     /// The report notice, and the name its **Details** is archived under.
     pub(crate) notice: &'static WarningsNotice,
@@ -109,6 +147,13 @@ pub(crate) struct Importer<R: 'static> {
     /// Read the finished operation's result, in the writer's words, or `None`
     /// when there is none to read.
     pub(crate) outcome: fn(&AppContext, &str) -> Option<ImportOutcome>,
+    /// The project a request reads, for [`ReviewAgain`].
+    pub(crate) source: fn(&R) -> String,
+    /// What a failure the importer's review answers offers; `None` for an importer
+    /// with no review.
+    pub(crate) review_again: Option<ReviewAgain>,
+    /// What **Open now** asks the window it is pressed in to do with the new project.
+    pub(crate) open_now: fn(String) -> AppIntent,
 }
 
 /// The import that is running: what its own toasts need, whatever its request.
@@ -127,6 +172,10 @@ struct Running {
     progress_title: fn() -> LocalizedString,
     own_words: OwnWords,
     outcome: fn(&AppContext, &str) -> Option<ImportOutcome>,
+    /// The project the import reads, for [`ReviewAgain`].
+    source: String,
+    review_again: Option<ReviewAgain>,
+    open_now: fn(String) -> AppIntent,
 }
 
 /// Why a second import is refused while one runs.
@@ -187,6 +236,13 @@ impl ProjectImportJob {
     /// Whether an import is running.
     pub(crate) fn is_running(&self) -> bool {
         self.inner.active.get().is_some()
+    }
+
+    /// Whether an import is running, as a signal a form can bind: a second import cannot
+    /// start until this one has ended. Derived from the job's own state, so reading it
+    /// touches nothing.
+    pub(crate) fn running(&self) -> Signal<bool> {
+        self.inner.active.map(|active| active.is_some())
     }
 
     /// The long-operation id of the running import, if any.
@@ -283,6 +339,9 @@ impl ProjectImportJob {
             progress_title: importer.progress_title,
             own_words: importer.own_words,
             outcome: importer.outcome,
+            source: (importer.source)(&request),
+            review_again: importer.review_again,
+            open_now: importer.open_now,
         };
         match (importer.launch)(&self.inner.app_ctx, &request) {
             Ok(op_id) => {
@@ -485,19 +544,41 @@ impl ProjectImportJob {
         match (running.outcome)(&self.inner.app_ctx, &running.op_id) {
             Some(outcome) => {
                 let output = outcome.output_path.clone();
-                ctx.show_toast(
-                    import_toast(running.toast_id, Toast::success(outcome.result.clone())).action(
-                        ToastAction::primary(tr!(project_import_open_now()), move |c| {
-                            // Opening the imported project *replaces* the one in
-                            // this window, so this goes through the
-                            // `work.open_path` intent and its unsaved-changes
-                            // guard, never `load_work` outright.
-                            c.send_intent(AppIntent::OpenWorkPath {
-                                path: output.clone(),
-                            });
-                        }),
-                    ),
-                );
+                let open_now = running.open_now;
+                let toast = match &outcome.headline {
+                    Some(headline) => Toast::success(headline.clone()).body(outcome.result.clone()),
+                    None => Toast::success(outcome.result.clone()),
+                };
+                let report_of = output.clone();
+                let mut toast = import_toast(running.toast_id, toast).action(ToastAction::primary(
+                    tr!(project_import_open_now()),
+                    move |c| {
+                        // Through an intent the window answers, never `load_work`
+                        // outright: replacing the project in a window goes through
+                        // its unsaved-changes guard (`work.open_path`), and opening
+                        // one beside it through the one door every window uses.
+                        c.send_intent(open_now(output.clone()));
+                    },
+                ));
+                if let Some(see) = outcome.see_report {
+                    let archived = (see.archived_as)(&report_of);
+                    // Reading the report is not dismissing the result: the notice keeps
+                    // **Open now** for after it, where the Launcher has no other way to
+                    // the new project. Named after this import's path, so the
+                    // notification log can still open its report once this notice and its
+                    // closures are gone.
+                    toast = toast.action(
+                        ToastAction::new((see.label)(), move |c| {
+                            c.send_intent((see.intent)(report_of.clone()))
+                        })
+                        .closes_toast(false)
+                        .shortcut_id(archived),
+                    );
+                }
+                if outcome.persistent {
+                    toast = toast.persistent();
+                }
+                ctx.show_toast(toast);
                 // What the importer could not carry across, or had to guess at.
                 // Read by nobody, that is an import that quietly lost data, so it
                 // gets a notice of its own that waits for the writer and can be
@@ -654,23 +735,36 @@ impl ProjectImportJob {
         failure: &ProjectImportFailure,
     ) {
         let (body, details) = import_failure::failure_text(failure, running.own_words);
-        ctx.show_toast(
-            import_toast(
-                running.toast_id,
-                Toast::error(tr!(project_import_error_title())),
-            )
-            .body(body)
-            .persistent()
-            .action(ToastAction::primary(
-                tr!(project_import_details()),
-                move |c| {
-                    MessageBox::warning(tr!(project_import_error_title()))
-                        .text(lit!(details.clone()))
-                        .buttons(MessageBoxButtons::Ok)
-                        .present(c);
-                },
-            )),
-        );
+        let mut toast = import_toast(
+            running.toast_id,
+            Toast::error(tr!(project_import_error_title())),
+        )
+        .body(body)
+        .persistent();
+        // A failure the importer's own review answers: offer the review again, on the
+        // project the import read, before the technical account.
+        let offer = running
+            .review_again
+            .filter(|offer| (offer.applies)(&failure.reason));
+        if let Some(offer) = offer {
+            let source = running.source.clone();
+            toast = toast.action(ToastAction::primary((offer.label)(), move |c| {
+                c.send_intent((offer.intent)(source.clone()));
+            }));
+        }
+        let details = move |c: &mut EventContext| {
+            MessageBox::warning(tr!(project_import_error_title()))
+                .text(lit!(details.clone()))
+                .buttons(MessageBoxButtons::Ok)
+                .present(c);
+        };
+        // The one primary action is what fixes the failure, when there is one.
+        let details = if offer.is_some() {
+            ToastAction::new(tr!(project_import_details()), details)
+        } else {
+            ToastAction::primary(tr!(project_import_details()), details)
+        };
+        ctx.show_toast(toast.action(details));
     }
 }
 

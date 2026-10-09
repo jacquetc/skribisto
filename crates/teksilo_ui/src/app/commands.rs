@@ -140,6 +140,9 @@ pub(super) struct CommandDeps {
     /// the Work whose window it was opened from, so an `app_state` lookup could
     /// land a whole imported manuscript in the wrong project.
     pub import_document: crate::import_document::ImportDocumentViewModel,
+    /// Tier-3 (per WINDOW): the Scrivener wizard this window opens, whose inspection is
+    /// wired to this window's tree. `None` only in a tree with no project-import job.
+    pub import_scrivener: Option<crate::import_scrivener::ImportScrivenerViewModel>,
     /// Fixed dock ids (see [`crate::docks`]) — the reveal targets.
     pub search_dock: DockWidgetId,
     pub trash_dock: DockWidgetId,

@@ -123,8 +123,21 @@ fn one_pair_per_paragraph_is_one_note_of_several_paragraphs() {
         note(&out.doc, 0),
         ["ENDNOTES", "The first remark.", "The second remark."]
     );
-    assert_eq!(out.found.joined_across, 2);
+    // One note came across, made of three pairs: the report counts notes, not joins.
+    assert_eq!(out.found.joined_across, 1);
     assert_eq!(out.doc.notes.len(), 1);
+}
+
+/// A note Scrivener split into three runs where its formatting changed is one note joined
+/// back, counted once.
+#[test]
+fn a_note_split_three_ways_counts_as_one_note() {
+    let out = run(
+        r"{\rtf1 Born in the \{\\Scrv_fn=2\\end_Scrv_fn\}{\super \{\\Scrv_fn=0\\end_Scrv_fn\}}{\b \{\\Scrv_fn=th\\end_Scrv_fn\}} century.\par}",
+    );
+    assert_eq!(texts(&out.doc), ["Born in the {fn0} century."]);
+    assert_eq!(note(&out.doc, 0), ["20th"]);
+    assert_eq!(out.found.merged, 1);
 }
 
 /// A space between two notes keeps them apart: they are two remarks.
@@ -598,16 +611,27 @@ fn a_picture_linked_to_a_project_item_becomes_a_picture_and_one_on_disk_is_named
     );
 }
 
+/// A placeholder is counted as the project writes it, so the report quotes text the
+/// writer can search for: `<$R>` (upper-case Roman numerals) is not `<$r>`, and a
+/// placeholder's argument is part of it.
 #[test]
-fn placeholders_stay_as_written_and_are_counted_by_name() {
-    let out = run(r"{\rtf1 Chapter <$n> of <$projecttitle> by <$custom:Author>.\par}");
+fn placeholders_stay_as_written_and_are_counted_as_written() {
+    let out = run(
+        r"{\rtf1 Chapter <$n> of <$projecttitle> by <$custom:Author>, part <$R> and <$r>.\par}",
+    );
     assert_eq!(
         texts(&out.doc),
-        ["Chapter <$n> of <$projecttitle> by <$custom:Author>."]
+        ["Chapter <$n> of <$projecttitle> by <$custom:Author>, part <$R> and <$r>."]
     );
-    assert_eq!(out.found.placeholders.get("n"), Some(&1));
-    assert_eq!(out.found.placeholders.get("projecttitle"), Some(&1));
-    assert_eq!(out.found.placeholders.get("custom"), Some(&1));
+    for written in [
+        "<$n>",
+        "<$projecttitle>",
+        "<$custom:Author>",
+        "<$R>",
+        "<$r>",
+    ] {
+        assert_eq!(out.found.placeholders.get(written), Some(&1), "{written}");
+    }
 }
 
 // ── tables, scene breaks ─────────────────────────────────────────────────────────

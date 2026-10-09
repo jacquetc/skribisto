@@ -17,6 +17,7 @@ use teksilo::prelude::*;
 use crate::import_document::panel::{ImportDocumentOptions, present_import_document};
 use crate::import_manuskript::panel::present_import_manuskript;
 use crate::import_plume::panel::present_import_plume;
+use crate::import_scrivener::panel::present_import_scrivener;
 use crate::intents::AppIntent;
 use crate::new_work::panel::NewWorkPanel;
 use crate::project::PendingSwitch;
@@ -174,6 +175,41 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
         Action::new("work.import_manuskript").on_invoke(|_i, c| present_import_manuskript(c)),
     );
 
+    // Import a Scrivener project: the wizard over this window's own view-model (Tier 3),
+    // since the inspection it runs is wired to this window's tree. No chord, so the
+    // command palette lists it by name, the shape of `help.shortcuts`; the Launcher
+    // registers the same action on its own tree over its own view-model.
+    ctx.register_shortcut_global(
+        Shortcut::new("work.import_scrivener")
+            .name(tr!(shortcut_name_work_import_scrivener()))
+            .build(),
+    );
+    if let Some(import) = deps.import_scrivener.clone() {
+        let reviewing = import.clone();
+        let opening = import.clone();
+        ctx.register_action_global(
+            Action::new("work.import_scrivener").on_invoke(move |_i, c| {
+                present_import_scrivener(c, opening.clone(), None);
+            }),
+        );
+        // A failed import's **Review again**: the wizard, already reading the project.
+        ctx.register_action_global(Action::new("work.import_scrivener_path").on_invoke(
+            move |i, c| {
+                if let Some(AppIntent::ImportScrivenerPath { path }) = AppIntent::from_intent(i) {
+                    present_import_scrivener(c, reviewing.clone(), Some(path.clone()));
+                }
+            },
+        ));
+        register_scrivener_report(ctx, deps, import);
+    }
+    // **Open now** after a Scrivener import: the new project in a window of its own,
+    // beside this one, through the door every "a window on this project" goes through.
+    ctx.register_action_global(Action::new("work.open_path_new_window").on_invoke(|i, c| {
+        if let Some(AppIntent::OpenWorkPathInNewWindow { path }) = AppIntent::from_intent(i) {
+            crate::shell::windows::open_or_focus_project(c, path);
+        }
+    }));
+
     // Import documents (Markdown / plain text) INTO the open project: presents the wizard.
     // Menu-only, no shortcut. Global so the title-bar overlay menu reaches it.
     //
@@ -306,4 +342,69 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     ctx.register_action_global(
         Action::new("welcome.show").on_invoke(|_i, c| c.send_intent(Intent::new("work.close"))),
     );
+}
+
+/// The Scrivener import report's two doors in a project window: the command palette's
+/// entry, which reopens this window's last report, and a result notice's **See report**
+/// (on the notice or in the notification log), which opens that import's. No chord, so the palette lists
+/// it by name. Each item of a report about the project this window shows opens its row.
+fn register_scrivener_report(
+    ctx: &mut BuildContext,
+    deps: &CommandDeps,
+    import: crate::import_scrivener::ImportScrivenerViewModel,
+) {
+    ctx.register_shortcut_global(
+        Shortcut::new(crate::import_scrivener::REPORT_ACTION)
+            .name(tr!(shortcut_name_work_import_scrivener_report()))
+            .build(),
+    );
+    let window = WindowProject {
+        app_ctx: deps.app_ctx.clone(),
+        ids: deps.ids.clone(),
+    };
+    {
+        let (import, window) = (import.clone(), window.clone());
+        ctx.register_action_global(
+            Action::new(crate::import_scrivener::REPORT_ACTION).on_invoke(move |_i, c| {
+                let project = window.path();
+                import.show_window_report(c, project.as_deref(), Some(window.finder()));
+            }),
+        );
+    }
+    ctx.register_action_global(Action::new("work.import_scrivener_report_of").on_invoke(
+        move |i, c| {
+            if let Some(AppIntent::ImportScrivenerReportOf { output_path }) =
+                AppIntent::from_intent(i)
+            {
+                let project = window.path();
+                import.show_report_of(c, output_path, project.as_deref(), Some(window.finder()));
+            }
+        },
+    ));
+}
+
+/// The project this window shows, as the import report asks about it.
+#[derive(Clone)]
+struct WindowProject {
+    app_ctx: std::rc::Rc<frontend::AppContext>,
+    ids: crate::app_ids::AppIds,
+}
+
+impl WindowProject {
+    /// The `.skrib` this window shows, if any.
+    fn path(&self) -> Option<String> {
+        crate::current_project_path(&self.app_ctx, &self.ids)
+    }
+
+    /// Finds a live row of this window's project by uid: its id and its title.
+    fn finder(&self) -> crate::import_scrivener::report_vm::ItemFinder {
+        let (app_ctx, ids) = (self.app_ctx.clone(), self.ids.clone());
+        std::rc::Rc::new(move |uid| {
+            let work_id = ids.work_id.get()?;
+            crate::models::binder_stream::ordered_flat_items(&app_ctx, work_id)
+                .into_iter()
+                .find(|(_, item)| item.uid == uid)
+                .map(|(_, item)| (item.id, item.title))
+        })
+    }
 }

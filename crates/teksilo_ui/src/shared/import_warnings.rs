@@ -35,10 +35,10 @@
 //! live region announces; the list is the body, there to read and in the log
 //! afterwards.
 //!
-//! Each import's notice carries an id of its own. The archive merges a toast into
-//! any earlier row with the same id, across sessions, so a shared id would fold
-//! every import's warnings into one row, and reopening it would show the last
-//! import's list under the first import's date.
+//! Each import's notice carries an id of its own. The archive keeps one row per
+//! id, across sessions, and a toast raised under an id it already holds replaces
+//! that row's words, so a shared id would fold every import's warnings into one
+//! row and leave in the log only the last import's list.
 //!
 //! **Only the latest notice of an importer stays on screen** ([`LiveNotice`]).
 //! A notice that waits for the writer and is always admitted would otherwise
@@ -80,13 +80,19 @@ pub(crate) static MANUSKRIPT: WarningsNotice = WarningsNotice {
     action: "import.manuskript.warnings",
 };
 
+/// The Scrivener importer's notice. Its report is a dialog of its own, so this one only
+/// names the action its archived rows are filed under.
+pub(crate) static SCRIVENER: WarningsNotice = WarningsNotice {
+    action: "import.scrivener.warnings",
+};
+
 /// The headline, given the number of things to know.
 fn title(count: i64) -> LocalizedString {
     tr!(project_import_report(count = count))
 }
 
 /// Every notice an archived action can name.
-static ALL: [&WarningsNotice; 2] = [&PLUME, &MANUSKRIPT];
+static ALL: [&WarningsNotice; 3] = [&PLUME, &MANUSKRIPT, &SCRIVENER];
 
 impl WarningsNotice {
     /// The notice for one import's `warnings`, already worded, or `None` when
@@ -202,8 +208,9 @@ fn notice_for(action: &ArchivedAction) -> Option<&'static WarningsNotice> {
 /// An archived entry has lost its closures; what it kept is the action's name
 /// and the toast's body. For an import's **Details** that is everything the
 /// dialog needs, so the list reopens as it was first shown, in any window and
-/// after a restart. Any other name is ignored: nothing else in the application
-/// archives a replayable action.
+/// after a restart. A Scrivener import's **See report** names the path its import wrote,
+/// and opens that import's report, as the notice's own button did. Any other name is
+/// ignored: nothing else in the application archives a replayable action.
 pub(crate) fn replay_archived_action(
     entry: &NotificationEntry,
     action: &ArchivedAction,
@@ -211,6 +218,19 @@ pub(crate) fn replay_archived_action(
 ) {
     if let Some(notice) = notice_for(action) {
         notice.present_details(ctx, entry.body.as_deref().unwrap_or_default());
+        return;
+    }
+    // A Scrivener import's **See report**: its report is a dialog, not the body, and the
+    // row shows the latest of the imports that share its id, so the name says which
+    // import's report to open. Never the window's last report, which can be another's.
+    if let Some(output_path) = action
+        .intent_name
+        .as_deref()
+        .and_then(crate::import_scrivener::archived_report_path)
+    {
+        ctx.send_intent(crate::intents::AppIntent::ImportScrivenerReportOf {
+            output_path: output_path.to_string(),
+        });
     }
 }
 
@@ -490,6 +510,89 @@ mod tests {
             MANUSKRIPT.show(c, &warnings(), &result(), &manuskript)
         });
         assert_eq!(registry.live_count(), 2);
+    }
+
+    /// An archived **See report** of a Scrivener import opens the report of the import its
+    /// name says, through the action a result notice's own button sends: its report is a
+    /// dialog, not the row's body. Never the window's last report, which can be another's.
+    #[test]
+    fn an_archived_see_report_opens_the_report_it_names() {
+        use teksilo::core::action::Action;
+
+        /// What a window was asked: the report of a path, or its last report.
+        #[derive(Debug, Default)]
+        struct Asked {
+            of: Option<String>,
+            last: bool,
+        }
+
+        /// A widget that registers the actions, as a window's `App` does.
+        #[derive(Debug)]
+        struct Registers(Rc<RefCell<Asked>>);
+        impl Widget for Registers {
+            fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+                let asked = self.0.clone();
+                ctx.register_action_global(
+                    Action::new(crate::import_scrivener::REPORT_ACTION)
+                        .on_invoke(move |_i, _c| asked.borrow_mut().last = true),
+                );
+                let asked = self.0.clone();
+                ctx.register_action_global(
+                    Action::new("work.import_scrivener_report_of").on_invoke(move |i, _c| {
+                        if let Some(crate::intents::AppIntent::ImportScrivenerReportOf {
+                            output_path,
+                        }) = crate::intents::AppIntent::from_intent(i)
+                        {
+                            asked.borrow_mut().of = Some(output_path.clone());
+                        }
+                    }),
+                );
+                Vec::new()
+            }
+
+            fn layout_response(
+                &self,
+                proposal: SizeProposal,
+                _ctx: &LayoutContext,
+            ) -> LayoutResponse {
+                proposal.resolve(0.0, 0.0).into()
+            }
+        }
+
+        let (mut tree, _registry, _archive) = window();
+        let asked = Rc::new(RefCell::new(Asked::default()));
+        tree.add(Registers(asked.clone()));
+        tree.layout(SizeProposal::exact(480.0, 360.0));
+        let entry = NotificationEntry {
+            id: 1,
+            severity: BannerSeverity::Success,
+            priority: ToastPriority::High,
+            title: "Scrivener project imported".into(),
+            body: None,
+            actions: Vec::new(),
+            timestamp: jiff::Timestamp::UNIX_EPOCH,
+            group: None,
+            source: None,
+            read: false,
+            dedup_id: None,
+            updates: Vec::new(),
+            route: ToastRoute::Broadcast,
+        };
+        let action = ArchivedAction {
+            label: "See report".into(),
+            intent_name: Some(crate::import_scrivener::archived_report_name(
+                "/books/The Lighthouse.skrib",
+            )),
+            style: ArchivedActionStyle::SecondaryButton,
+            closes_on_invoke: true,
+        };
+        press(&mut tree, move |c| {
+            replay_archived_action(&entry, &action, c)
+        });
+        tree.layout(SizeProposal::exact(480.0, 360.0));
+        let asked = asked.borrow();
+        assert_eq!(asked.of.as_deref(), Some("/books/The Lighthouse.skrib"));
+        assert!(!asked.last, "not the window's last report");
     }
 
     /// Only the two import notices replay; any other archived name is inert.

@@ -215,6 +215,7 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
                 .item(
                     MenuEntry::new(tr!(menu_import_manuskript())).intent("work.import_manuskript"),
                 )
+                .item(MenuEntry::new(tr!(menu_import_scrivener())).intent("work.import_scrivener"))
                 .item(
                     MenuEntry::new(tr!(menu_import_document()))
                         .visible(show_docs)

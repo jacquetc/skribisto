@@ -96,6 +96,11 @@ pub(crate) const ACTION_IMPORT_PLUME: &str = "work.import_plume";
 /// on each window's own tree (see [`build_launcher_menu`]).
 pub(crate) const ACTION_IMPORT_MANUSKRIPT: &str = "work.import_manuskript";
 
+/// "Create a project from a Scrivener project": the same action name the project
+/// window's Work ▸ Import from ▸ Scrivener uses, registered separately on each window's
+/// own tree over that window's own wizard view-model (see [`build_launcher_menu`]).
+pub(crate) const ACTION_IMPORT_SCRIVENER: &str = "work.import_scrivener";
+
 /// "Open the preferences window" — the same action name the project window's
 /// Work ▸ Settings row and the App menu's ⌘, both fire, over a body that opens
 /// [`SettingsPanel::without_project`](crate::settings::SettingsPanel::without_project)
@@ -154,6 +159,7 @@ pub(crate) fn build_launcher_menu() -> MenuModel {
                 .item(
                     MenuEntry::new(tr!(menu_import_manuskript())).intent(ACTION_IMPORT_MANUSKRIPT),
                 )
+                .item(MenuEntry::new(tr!(menu_import_scrivener())).intent(ACTION_IMPORT_SCRIVENER))
             })
             .separator()
             // App preferences — in the same slot the project window's Work menu
@@ -289,8 +295,9 @@ mod tests {
         assert_eq!(title.resolve_now(), tr!(menu_create_from()).resolve_now());
         assert_eq!(
             children.len(),
-            3,
-            "three ways in — a document set, a Plume Creator project, a Manuskript project"
+            4,
+            "four ways in: a document set, a Plume Creator project, a Manuskript project, \
+             a Scrivener project"
         );
         assert!(
             children.iter().all(|n| matches!(n, MenuNode::Item(_))),

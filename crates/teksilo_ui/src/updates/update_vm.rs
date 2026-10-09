@@ -22,10 +22,13 @@
 //! verified behaviours of teksilo's archive make an update notice a poor fit for
 //! it, all of them correct for the events it *was* built for:
 //!
-//! - `NotificationArchiveModel::push` merges by `dedup_id` and then sets
-//!   `read = false` and bumps the unread count regardless ("an in-place update IS
-//!   new information for the user"). A daily re-check would therefore relight the
-//!   badge every day, which is the nag this feature exists to avoid.
+//! - A toast raised under the `dedup_id` of an archived row is that notice
+//!   raised again (`NotificationArchiveModel::push`): the row comes back
+//!   to the top, unread, even when it says exactly what it said before. Only an
+//!   update of a notice still on screen (`push_update`) leaves an unchanged row
+//!   alone, and yesterday's notice is long gone when the next check runs. A daily
+//!   re-check would therefore relight the badge every day, which is the nag this
+//!   feature exists to avoid.
 //! - The bell marks entries read when its popover *closes*, scoped by
 //!   `route_visible`, and a `Broadcast` entry is visible at every scope. Opening
 //!   the bell to look at an export notice and pressing Escape would consume the
@@ -34,7 +37,7 @@
 //!   what it did: teksilo replays `intent_name` only through an
 //!   `on_action_invoked` hook, and the one both logs install here
 //!   (`shared::import_warnings::replay_archived_action`) knows an import's
-//!   warnings and nothing else.
+//!   warnings and the Scrivener import's report, and nothing else.
 //!
 //! All three come from the same mismatch. The archive is a log of *events*, and
 //! "a newer version exists" is not an event, it is a standing fact. A fact

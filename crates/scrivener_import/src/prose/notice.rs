@@ -137,7 +137,8 @@ pub enum ProseNotice {
     /// Paragraphs holding citation keys (`[@key]`) for a bibliography tool: kept as text.
     CitationKeysAsText { at: Place, paragraphs: u32 },
     /// Compile placeholders (`<$n>`, `<$projecttitle>`) in text that exports: kept as the
-    /// text they are, which Skribisto prints as written. `kind` is the placeholder's name.
+    /// text they are, which Skribisto prints as written. `kind` is the placeholder as the
+    /// project writes it (`<$R>`, `<$custom:Mood>`), for the report to quote.
     PlaceholdersInExportedText { at: Place, kind: String, count: u32 },
     /// The same, in text that does not export.
     PlaceholdersInOtherText { at: Place, kind: String, count: u32 },

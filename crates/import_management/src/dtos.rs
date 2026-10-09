@@ -111,6 +111,7 @@ pub struct ScrivenerAnalysisDto {
     pub question: ScrivenerQuestion,
     pub pending: Vec<ScrivenerQuestion>,
     pub notices: Vec<ScrivenerFinding>,
+    pub project_path: String,
     pub folder_title: String,
     pub template_title: String,
     pub container: ScrivenerContainer,
