@@ -78,6 +78,14 @@
 /// The most nested block containers Markdown may declare before it is converted.
 pub const MAX_MARKDOWN_DEPTH: usize = crate::djot_depth::MAX_DEPTH;
 
+/// The quotation levels text-document keeps when it reads Markdown or HTML.
+///
+/// From text-document 1.12.4 a quotation nested deeper is folded into the 64th level,
+/// every word kept, which is also as deep as the editor's Tab takes one. A Markdown
+/// document at [`MAX_MARKDOWN_DEPTH`] therefore converts with its quotations 64 deep:
+/// under the ceiling this module guards, and not a level this crate chooses.
+pub const MARKUP_QUOTE_LEVELS_KEPT: usize = 64;
+
 /// The most nested elements HTML may reach before it is converted.
 pub const MAX_HTML_DEPTH: usize = 64;
 

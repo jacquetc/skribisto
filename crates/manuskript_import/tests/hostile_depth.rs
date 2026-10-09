@@ -540,10 +540,11 @@ fn a_markdown_body_nested_past_the_ceiling_keeps_its_words_and_names_the_row() {
         "> ".repeat(skrib_format::MAX_MARKDOWN_DEPTH)
     );
     let (prose, warnings) = import_body("md", &at);
-    assert!(
-        prose.contains(&"> ".repeat(skrib_format::MAX_MARKDOWN_DEPTH)),
-        "{prose:.200}"
-    );
+    // text-document keeps this many quotation levels and folds deeper ones into the
+    // last, every word kept.
+    let kept = skrib_format::MARKUP_QUOTE_LEVELS_KEPT.min(skrib_format::MAX_MARKDOWN_DEPTH);
+    assert!(prose.contains(&"> ".repeat(kept)), "{prose:.200}");
+    assert!(prose.contains("Deep words."), "{prose:.200}");
     assert!(!told_about_the_scene(&warnings), "{warnings:?}");
 
     for levels in [skrib_format::MAX_MARKDOWN_DEPTH + 1, 5_000] {

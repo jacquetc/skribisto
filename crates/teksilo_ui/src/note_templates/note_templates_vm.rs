@@ -547,7 +547,11 @@ mod tests {
         let at = skrib_format::MAX_MARKDOWN_DEPTH;
         let quoted = format!("{}Deep words.\n", "> ".repeat(at));
         let body = read_on_a_long_operation_stack("quoted.md", quoted).expect("at the ceiling");
-        assert!(body.contains(&"> ".repeat(at)), "{body:.200}");
+        // text-document keeps this many quotation levels and folds deeper ones into the
+        // last, every word kept.
+        let kept = skrib_format::MARKUP_QUOTE_LEVELS_KEPT.min(at);
+        assert!(body.contains(&"> ".repeat(kept)), "{body:.200}");
+        assert!(body.contains("Deep words."), "{body:.200}");
         let listed = format!("{}Deep words.\n", "- ".repeat(skrib_format::MAX_DJOT_DEPTH));
         read_on_a_long_operation_stack("listed.djot", listed).expect("at the ceiling");
     }

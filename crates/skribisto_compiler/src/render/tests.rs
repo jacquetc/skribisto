@@ -3493,11 +3493,11 @@ fn a_quotation_inside_scene_prose_is_not_marked_as_an_epigraph() {
     assert!(!html.contains("epigraph"), "but not an epigraph: {html}");
 }
 
-/// Several quotations on one node arrive as one marked blockquote holding them all:
-/// this parser folds `>` groups separated by a blank line into a single frame. What
-/// matters is that none of the text escapes the marked quote and the marker is not
-/// repeated — an epigraph is one piece of front matter however many quotations the
-/// author put in it.
+/// Several quotations on one node arrive as several marked blockquotes, one each:
+/// `mark_epigraph` treats each quotation as an epigraph in its own right, and since
+/// text-document 1.12.4 two `>` groups separated by a blank line stay two quotations
+/// (1.12.3 folded them into one frame, which is all this test saw before). What
+/// matters is that none of the text escapes a marked quote.
 #[test]
 fn every_quotation_in_an_epigraph_field_is_marked() {
     let g = gathered(
@@ -3521,8 +3521,8 @@ fn every_quotation_in_an_epigraph_field_is_marked() {
     let html = render_to_string(&req(&g, &[400], &p, ExportFormat::Html)).unwrap();
     assert_eq!(
         html.matches(r#"epub:type="epigraph""#).count(),
-        1,
-        "one marked quote, not one per quotation: {html}"
+        2,
+        "one marked quote per quotation: {html}"
     );
     for quote in ["First quotation.", "Second quotation."] {
         assert!(html.contains(quote), "{quote} missing: {html}");

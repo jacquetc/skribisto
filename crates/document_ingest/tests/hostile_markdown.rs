@@ -92,10 +92,12 @@ fn markdown_nested_to_the_ceiling_keeps_its_structure_from_a_long_operation_stac
         doc.diagnostics
     );
     let djot = prose_djot(&doc);
+    // text-document keeps this many quotation levels and folds deeper ones into the
+    // last, every word kept: the structure is the most a quotation holds after a read.
+    let kept = skrib_format::MARKUP_QUOTE_LEVELS_KEPT.min(MAX_MARKDOWN_DEPTH);
     assert!(
-        djot.iter()
-            .any(|djot| djot.contains(&"> ".repeat(MAX_MARKDOWN_DEPTH))),
-        "the quotation keeps every level: {djot:?}"
+        djot.iter().any(|djot| djot.contains(&"> ".repeat(kept))),
+        "the quotation keeps every level text-document keeps: {djot:?}"
     );
     for djot in djot {
         assert!(skrib_format::djot_depth::check(djot).is_ok());

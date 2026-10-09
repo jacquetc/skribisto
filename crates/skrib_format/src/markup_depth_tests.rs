@@ -151,11 +151,10 @@ fn markdown_without_nesting_keeps_every_word_and_nothing_else() {
 fn markdown_at_and_past_the_ceiling_converts_from_a_two_mebibyte_thread() {
     let at = markdown_on_a_long_operation_stack(quoted_markdown(MAX_MARKDOWN_DEPTH));
     assert!(!at.flattened, "at the ceiling the markup is kept");
-    assert!(
-        at.djot.contains(&"> ".repeat(MAX_MARKDOWN_DEPTH)),
-        "{:?}",
-        at.djot
-    );
+    // text-document folds quotations past the levels it keeps into the deepest one.
+    let kept = crate::markup_depth::MARKUP_QUOTE_LEVELS_KEPT.min(MAX_MARKDOWN_DEPTH);
+    assert!(at.djot.contains(&"> ".repeat(kept)), "{:?}", at.djot);
+    assert!(!at.djot.contains(&"> ".repeat(kept + 1)), "{:?}", at.djot);
     assert!(at.text.contains("Deep words."));
     assert!(crate::djot_depth::check(&at.djot).is_ok());
 
