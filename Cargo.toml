@@ -25,6 +25,8 @@ members = [
     "crates/import_management",
     "crates/plume_import",
     "crates/manuskript_import",
+    "crates/scrivener_import",
+    "crates/scrivener_fixtures",
     "crates/spellcheck_engine",
     "crates/search_management",
     "crates/frontend",
@@ -94,6 +96,9 @@ document_ingest = { package = "skribisto-document-ingest", version = "3.0.5", pa
 rtf_reader = { package = "skribisto-rtf-reader", version = "3.0.5", path = "crates/rtf_reader" }
 plume_import = { package = "skribisto-plume-import", version = "3.0.5", path = "crates/plume_import" }
 manuskript_import = { package = "skribisto-manuskript-import", version = "3.0.5", path = "crates/manuskript_import" }
+scrivener_import = { package = "skribisto-scrivener-import", version = "3.0.5", path = "crates/scrivener_import" }
+# Test-only: never a normal dependency of anything.
+scrivener_fixtures = { package = "skribisto-scrivener-fixtures", version = "3.0.5", path = "crates/scrivener_fixtures" }
 spellcheck_engine = { package = "skribisto-spellcheck-engine", version = "3.0.5", path = "crates/spellcheck_engine" }
 skribisto_compiler = { package = "skribisto-compiler", version = "3.0.5", path = "crates/skribisto_compiler" }
 skribisto_fonts = { package = "skribisto-fonts", version = "3.0.5", path = "crates/skribisto-fonts" }

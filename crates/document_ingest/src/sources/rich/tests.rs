@@ -160,6 +160,35 @@ fn a_paragraph_that_is_only_a_break_glyph_is_a_break_whatever_it_was_styled() {
     }
 }
 
+/// Except in a code block, which is verbatim by definition: a line of code reading `#` or
+/// `* * *` (a shell comment, a Markdown rule in a tutorial) stays the code it is.
+#[test]
+fn a_line_of_code_is_never_a_scene_break() {
+    for glyph in ["#", "* * *", "***", "*"] {
+        let doc = assemble_doc(
+            vec![
+                RichBlock::body(vec![Run::plain("Before.")]),
+                RichBlock::Paragraph {
+                    kind: ParagraphKind::CodeBlock,
+                    runs: vec![Run::plain(glyph)],
+                    props: BlockProps::default(),
+                },
+                RichBlock::body(vec![Run::plain("After.")]),
+            ],
+            Vec::new(),
+        );
+        assert!(
+            !doc.blocks
+                .iter()
+                .any(|b| matches!(b, SourceBlock::SceneBreak { .. })),
+            "{glyph:?} in a code block was read as a break: {:?}",
+            doc.blocks
+        );
+        let text: Vec<&str> = doc.blocks.iter().map(SourceBlock::plain_text).collect();
+        assert_eq!(text.join("\n"), format!("Before.\n{glyph}\nAfter."));
+    }
+}
+
 #[test]
 fn consecutive_paragraphs_become_one_prose_block() {
     let doc = assemble_doc(

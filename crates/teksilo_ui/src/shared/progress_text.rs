@@ -141,6 +141,11 @@ mod tests {
             (IMPORT_CONVERTING, "manuskript_import/src/lib.rs"),
             (IMPORT_WRITING, "manuskript_import/src/lib.rs"),
             (IMPORT_DONE, "manuskript_import/src/lib.rs"),
+            (IMPORT_OPENING, "scrivener_import/src/convert.rs"),
+            (IMPORT_OUTLINE, "scrivener_import/src/convert.rs"),
+            (IMPORT_CONVERTING, "scrivener_import/src/convert.rs"),
+            (IMPORT_WRITING, "scrivener_import/src/convert.rs"),
+            (IMPORT_DONE, "scrivener_import/src/convert.rs"),
             (
                 IMPORT_STRUCTURE,
                 "import_management/src/use_cases/analyze_document_import_uc.rs",

@@ -1355,9 +1355,19 @@ enum Boundary {
 /// the text before asking the style is what keeps every format answering the same
 /// way. It is also what stops a re-imported Skribisto export from turning its own
 /// major break into a spurious chapter.
+///
+/// A line of a code block is the one exception: code is verbatim by definition, and `#` or
+/// `* * *` there is a comment or a Markdown rule a tutorial shows, not a break.
 fn classify(block: &RichBlock) -> Boundary {
     let text = block.plain_text();
-    if let Some(tier) = scene_break::tier_of_plain_line(text.trim()) {
+    let code = matches!(
+        block,
+        RichBlock::Paragraph {
+            kind: ParagraphKind::CodeBlock,
+            ..
+        }
+    );
+    if !code && let Some(tier) = scene_break::tier_of_plain_line(text.trim()) {
         return Boundary::SceneBreak(tier);
     }
     match block {

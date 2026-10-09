@@ -453,7 +453,7 @@ fn a_picture_past_the_readers_limit_is_left_out_and_the_text_kept() {
         conversion.diagnostics,
         [ImportDiagnostic::ImageNotIngested {
             path: ORIGIN.into(),
-            target: "picture 1".into(),
+            target: "1".into(),
             reason: PictureRefusal::TooLarge,
         }]
     );

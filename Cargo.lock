@@ -5964,6 +5964,44 @@ dependencies = [
 ]
 
 [[package]]
+name = "skribisto-scrivener-fixtures"
+version = "3.0.5"
+dependencies = [
+ "base64 0.22.1",
+ "roxmltree 0.21.1",
+ "serde_json",
+ "tempfile",
+ "zip 8.6.0",
+]
+
+[[package]]
+name = "skribisto-scrivener-import"
+version = "3.0.5"
+dependencies = [
+ "base64 0.22.1",
+ "blake3",
+ "chrono",
+ "gethostname",
+ "libc",
+ "proptest",
+ "roxmltree 0.21.1",
+ "serde",
+ "serde_json",
+ "skribisto-common",
+ "skribisto-document-ingest",
+ "skribisto-model",
+ "skribisto-rtf-reader",
+ "skribisto-scrivener-fixtures",
+ "skribisto-skrib-format",
+ "skribisto-work-management",
+ "tempfile",
+ "text-document",
+ "unicode-normalization",
+ "uuid",
+ "zip 8.6.0",
+]
+
+[[package]]
 name = "skribisto-search-management"
 version = "3.0.5"
 dependencies = [

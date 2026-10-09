@@ -193,6 +193,16 @@ Sur = "Sur"
 ODF = "ODF"
 odf = "odf"
 capitulo = "capitulo"
+# ── The Scrivener importer's structure lexicon (`scrivener_import`'s
+#    `structure/lexicon.rs`), which recognises titles naming their level in the
+#    languages real projects are written in: German *Szene* (scene) and *ein*
+#    (one, as in *einundzwanzig*), French *quarante* (forty), Italian *tre*
+#    (three). Matched against writers' titles, so they must be spelled as those
+#    languages spell them.
+szene = "szene"
+ein = "ein"
+quarante = "quarante"
+tre = "tre"
 signes = "signes"
 espaces = "espaces"
 seeked = "seeked"

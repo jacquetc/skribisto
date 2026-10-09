@@ -1,0 +1,2434 @@
+{
+ "version": 2,
+ "generated": "2026-09-26",
+ "note": "Pins and expected outcomes only. No file of any project enters the Skribisto repository. Each root's path is relative to the harvest directory; its expected outcome comes from the D2 prototype (an independent Python reader) adjusted for decisions UQ-07 (Scrivener 1 refused) and S5 (damaged manifests refused until spare binders are read).",
+ "entries": [
+  {
+   "id": "s1mac-mmd-gallery",
+   "kind": "git",
+   "repo": "https://github.com/fletcher/MultiMarkdown-Gallery.git",
+   "commit": "3001ce98e6a1e1ee3f4d48ce48ab2fbb2e507008",
+   "paths": [
+    "Sample-Document/sample.scriv"
+   ],
+   "licence": "None",
+   "files": 51,
+   "bytes": 389404,
+   "tree_sha256": "445dfe56ac7cd535ad76ee646ff948f0c34c4f797c591606f100ef3757089036",
+   "roots": [
+    {
+     "path": "s1mac-mmd-gallery/Sample-Document/sample.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "s1mac-mmd-gallery/Sample-Document/sample.scriv/sample.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "s1mac-mmd-gallery",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "s1mac-mididuino",
+   "kind": "git",
+   "repo": "https://github.com/wesen/mididuino.git",
+   "commit": "8c91acbc2482787d4a8ed914f7a8d03ef126d4f4",
+   "paths": [
+    "doc/mididuino.scriv"
+   ],
+   "licence": "BSD-2-Clause",
+   "files": 26,
+   "bytes": 747563,
+   "tree_sha256": "72567821d741077e4a8554d8a5fa288f7257a276412c24198ce4c71e98628ca9",
+   "roots": [
+    {
+     "path": "s1mac-mididuino/doc/mididuino.scriv",
+     "pick": "folder",
+     "expect": "refuse",
+     "key": "scrivener-refusal-scrivener-one-for-mac",
+     "why": "decision UQ-07: Scrivener 1 for Mac is refused"
+    },
+    {
+     "path": "s1mac-mididuino",
+     "pick": "around",
+     "expect": "refuse",
+     "key": "scrivener-refusal-scrivener-one-for-mac",
+     "why": "decision UQ-07: Scrivener 1 for Mac is refused"
+    }
+   ]
+  },
+  {
+   "id": "lin-nanowrimo2015",
+   "kind": "git",
+   "repo": "https://github.com/astranchet/NaNoWriMo-2015.git",
+   "commit": "9c2a2874d47f701e38daed1796caf7847ceab166",
+   "paths": [
+    "Untitled.scriv"
+   ],
+   "licence": "None",
+   "files": 44,
+   "bytes": 1064336,
+   "tree_sha256": "206bf156ca37618b817ed915939f2e47ce1ac5e80a70b3aea65cb082d2f14f77",
+   "roots": [
+    {
+     "path": "lin-nanowrimo2015/Untitled.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "lin-nanowrimo2015/Untitled.scriv/project.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "lin-nanowrimo2015",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "w1-chronicles",
+   "kind": "git",
+   "repo": "https://github.com/anthonydeaver/scrivener.git",
+   "commit": "08194675cdd75aa7f407a9516456221ffbf59f7b",
+   "paths": [
+    "Chronicles-Season One.scriv"
+   ],
+   "licence": "None",
+   "files": 97,
+   "bytes": 1193176,
+   "tree_sha256": "7b05bd7ea21a85aaccf68335a9ef3cf13ce9d9d166eb8db5b9c1719b5213fe78",
+   "roots": [
+    {
+     "path": "w1-chronicles/Chronicles-Season One.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "w1-chronicles/Chronicles-Season One.scriv/Chronicles-Season One.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "w1-chronicles",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "w1-dialex-nano",
+   "kind": "git",
+   "repo": "https://github.com/dialex/NaNoWriMo.git",
+   "commit": "12428c906d9f33699a2e7075673adc96d5f68a83",
+   "paths": [
+    "Volume 1"
+   ],
+   "licence": "None",
+   "files": 204,
+   "bytes": 48366778,
+   "tree_sha256": "07c38b6395bb28aa055017f2787f5fb6c4c9146a33033685e88d9da1c33cbfc8",
+   "roots": [
+    {
+     "path": "w1-dialex-nano/Volume 1",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "w1-dialex-nano/Volume 1/project.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "w1-dialex-nano",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "w1-dlayer",
+   "kind": "git",
+   "repo": "https://github.com/deanblackborough/dlayer-docs-scrivener.git",
+   "commit": "38200328e12aa6ec25d6d7c2bed5ad038b45d780",
+   "paths": [
+    "Dlayer.scriv"
+   ],
+   "licence": "MIT",
+   "files": 12,
+   "bytes": 41953,
+   "tree_sha256": "91b41d54340aefe6684a3692fed614bfbcf6e2d519fa8b613530b265ed004405",
+   "roots": [
+    {
+     "path": "w1-dlayer/Dlayer.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "w1-dlayer/Dlayer.scriv/Dlayer.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "w1-dlayer",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "w1-paperstarter",
+   "kind": "git",
+   "repo": "https://github.com/plbt5/ScrivenerTemplate4ScientificPaper.git",
+   "commit": "ba6a0032d5fc4846cbbb7e68fea47d1e9e7de7ce",
+   "paths": [
+    "paperStarter.scriv"
+   ],
+   "licence": "MIT",
+   "files": 42,
+   "bytes": 153299,
+   "tree_sha256": "1c0766e9a9ce553597c4c6c8c317788842d475f0e351a943cb821dbcbd0e7519",
+   "roots": [
+    {
+     "path": "w1-paperstarter/paperStarter.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "w1-paperstarter/paperStarter.scriv/paperStarter.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "w1-paperstarter",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "w1-hutia-script",
+   "kind": "git",
+   "repo": "https://github.com/chimerror/hutia.git",
+   "commit": "916b7965b47b8c4d401dee0f8f27afe204b246f3",
+   "paths": [
+    "Script.scriv"
+   ],
+   "licence": "MIT",
+   "files": 29,
+   "bytes": 144299,
+   "tree_sha256": "744dc358f51aa74d0d0746dd56534078bb09255c68e52f874f1ca26e4844db60",
+   "roots": [
+    {
+     "path": "w1-hutia-script/Script.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "w1-hutia-script/Script.scriv/Script.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "w1-hutia-script",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "w1-pith",
+   "kind": "git",
+   "repo": "https://github.com/extratone/pith.git",
+   "commit": "97343c08b525f4e493900e3fd2b8171d0a299c26",
+   "paths": [
+    "Pith.scriv",
+    "Blimp's Burden.scriv"
+   ],
+   "licence": "Unlicense",
+   "files": 67,
+   "bytes": 3471744,
+   "tree_sha256": "2c69d629839a9159b82e65f0cbd0e3ed52cb1092199f55917521e55d28fec8b2",
+   "roots": [
+    {
+     "path": "w1-pith/Blimp's Burden.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "w1-pith/Blimp's Burden.scriv/Blimp's Burden.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "w1-pith/Pith.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "w1-pith/Pith.scriv/Pith.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "w1-pith",
+     "pick": "around",
+     "expect": "choose",
+     "key": "scrivener-question-several-projects"
+    }
+   ]
+  },
+  {
+   "id": "w1-devolution",
+   "kind": "git",
+   "repo": "https://github.com/Surayo/COSC345-codebound.git",
+   "commit": "f0316d535a86afb38585ee3a296f7c0f12ebcf92",
+   "paths": [
+    "Story Assets/Devolution.scriv"
+   ],
+   "licence": "None",
+   "files": 117,
+   "bytes": 801311,
+   "tree_sha256": "51d702ef8ff085140443e1ce7e1d9851e641881ab1a745e771af25d2b9a71244",
+   "roots": [
+    {
+     "path": "w1-devolution/Story Assets/Devolution.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "w1-devolution/Story Assets/Devolution.scriv/Devolution.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "w1-devolution",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "w1-within-a-lifetime",
+   "kind": "git",
+   "repo": "https://github.com/Weresdrim/within-a-lifetime.git",
+   "commit": "32093237e045d59c867ce7277620c8b2fe0d20ef",
+   "paths": [
+    "draft02.scriv"
+   ],
+   "licence": "None",
+   "files": 93,
+   "bytes": 576810,
+   "tree_sha256": "a32048fd1d3653864b6aea112dcb062b5300530cbfebc13f645025a02b381f58",
+   "roots": [
+    {
+     "path": "w1-within-a-lifetime/draft02.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "w1-within-a-lifetime/draft02.scriv/draft02.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "w1-within-a-lifetime",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "w29-scrivener-latex",
+   "kind": "git",
+   "repo": "https://github.com/AbstractGeek/scrivener-latex.git",
+   "commit": "228731b9687e7a0aceff4e9311c287bf73118314",
+   "paths": [
+    "thesis-example.scriv"
+   ],
+   "licence": "MIT",
+   "files": 45,
+   "bytes": 540768,
+   "tree_sha256": "1b6d1c02a300d36a7d8f88199cfc0f37ad6b37eb275c471fb7a0f01bc3b4c30a",
+   "roots": [
+    {
+     "path": "w29-scrivener-latex/thesis-example.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "w29-scrivener-latex/thesis-example.scriv/thesis-example.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "w29-scrivener-latex",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "pronom",
+   "kind": "git",
+   "repo": "https://github.com/digital-preservation/PRONOM_Research.git",
+   "commit": "9864e9d221a67a8682896f817c77f48344490d3b",
+   "paths": [
+    "Submissions/Scrivener"
+   ],
+   "licence": "None",
+   "files": 106,
+   "bytes": 1197148,
+   "tree_sha256": "525411caeb9f96d118c938486dd5b972c60360aab2486d7aa31c5a43d3540ad6",
+   "roots": [
+    {
+     "path": "pronom/Submissions/Scrivener/Samples/Scrivener1-s01.scriv",
+     "pick": "folder",
+     "expect": "refuse",
+     "key": "scrivener-refusal-scrivener-one-for-mac",
+     "why": "decision UQ-07: Scrivener 1 for Mac is refused"
+    },
+    {
+     "path": "pronom/Submissions/Scrivener/Samples/Scrivener1-s02.scriv",
+     "pick": "folder",
+     "expect": "refuse",
+     "key": "scrivener-refusal-scrivener-one-for-mac",
+     "why": "decision UQ-07: Scrivener 1 for Mac is refused"
+    },
+    {
+     "path": "pronom/Submissions/Scrivener/Samples/Scrivener1-s03.scriv",
+     "pick": "folder",
+     "expect": "refuse",
+     "key": "scrivener-refusal-scrivener-one-for-mac",
+     "why": "decision UQ-07: Scrivener 1 for Mac is refused"
+    },
+    {
+     "path": "pronom/Submissions/Scrivener/Samples/Scrivener2-s01.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "pronom/Submissions/Scrivener/Samples/Scrivener2-s01.scriv/Scrivener2-s01.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "pronom/Submissions/Scrivener/Samples/Scrivener2-s02.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "pronom/Submissions/Scrivener/Samples/Scrivener2-s02.scriv/Scrivener2-s02.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "pronom/Submissions/Scrivener/Samples/Scrivener3-s01.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "pronom/Submissions/Scrivener/Samples/Scrivener3-s01.scriv/Scrivener3-s01.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "pronom/Submissions/Scrivener/Samples/Scrivener3-s02.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "pronom/Submissions/Scrivener/Samples/Scrivener3-s02.scriv/Scrivener3-s02.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "pronom",
+     "pick": "around",
+     "expect": "refuse",
+     "key": "scrivener-refusal-not-a-scrivener-project"
+    }
+   ]
+  },
+  {
+   "id": "w3-metron-essay",
+   "kind": "git",
+   "repo": "https://github.com/aappleby/metron.git",
+   "commit": "4ef5607b05c59053319da7c7fc64f56fba14692e",
+   "paths": [
+    "essay/Temporal_Programming.scriv"
+   ],
+   "licence": "MIT",
+   "files": 88,
+   "bytes": 12428696,
+   "tree_sha256": "dd4356a91896b753d943583d18bd7795cf30ef0e5b913a6ad5f942bf0e3c5ac7",
+   "roots": [
+    {
+     "path": "w3-metron-essay/essay/Temporal_Programming.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "w3-metron-essay/essay/Temporal_Programming.scriv/Temporal_Programming.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "w3-metron-essay",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "w3-ebookbuild",
+   "kind": "git",
+   "repo": "https://github.com/inferno986return/ebookbuild.git",
+   "commit": "bb563a3ea5f37a63902067dd54ec880c3f271d4a",
+   "paths": [
+    "docs/ebookbuild-manual.scriv"
+   ],
+   "licence": "GPL-3.0",
+   "files": 38,
+   "bytes": 836844,
+   "tree_sha256": "3ed3221e21d4369af7e7ef58d26d48db5454f0b4b26e85cce69397f6f842adc0",
+   "roots": [
+    {
+     "path": "w3-ebookbuild/docs/ebookbuild-manual.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "w3-ebookbuild/docs/ebookbuild-manual.scriv/ebookbuild-manual.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "w3-ebookbuild",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "w3-countwordula",
+   "kind": "git",
+   "repo": "https://github.com/coldino/CountWordula.git",
+   "commit": "eeea48b62f501922ff89b4195664284a94d154d1",
+   "paths": [
+    "tests/data/WordCounterExamples.scriv"
+   ],
+   "licence": "None",
+   "files": 19,
+   "bytes": 38335,
+   "tree_sha256": "7f1f11e13d20a8a06986b06638624f7350e43e2348fd0fd20c68ec377596c064",
+   "roots": [
+    {
+     "path": "w3-countwordula/tests/data/WordCounterExamples.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "w3-countwordula/tests/data/WordCounterExamples.scriv/WordCounterExamples.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "w3-countwordula",
+     "pick": "around",
+     "expect": "refuse",
+     "key": "scrivener-refusal-not-a-scrivener-project"
+    }
+   ]
+  },
+  {
+   "id": "w3-cor-fixtures",
+   "kind": "git",
+   "repo": "https://github.com/Boswell-Digital-Solutions/COR.git",
+   "commit": "34028c03a4bcd91cd49ec30480425021bc5d0659",
+   "paths": [
+    "fixtures/scrivener"
+   ],
+   "licence": "None",
+   "files": 1398,
+   "bytes": 22245906,
+   "tree_sha256": "5e92b61b25f1b726cbb86128ba061d39f9c6dedd2faec21c0f1e6a0c27301022",
+   "roots": [
+    {
+     "path": "w3-cor-fixtures/fixtures/scrivener/ambiguous/scriv-sanitized-fixture-v1/scriv-sanitized-fixture-v1.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "w3-cor-fixtures/fixtures/scrivener/ambiguous/scriv-sanitized-fixture-v1/scriv-sanitized-fixture-v1.scriv/scriv-sanitized-fixture-v1.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "w3-cor-fixtures/fixtures/scrivener/ambiguous/scriv-sanitized-fixture-v1/scriv-sanitized-fixture-v1.zip",
+     "pick": "archive",
+     "expect": "import"
+    },
+    {
+     "path": "w3-cor-fixtures/fixtures/scrivener/negative/faith-in-a-firestorm-corrupt-scrivx-negative-fixture/faith-in-a-firestorm-corrupt-scrivx-negative-fixture.zip",
+     "pick": "archive",
+     "expect": "refuse",
+     "key": "scrivener-refusal-damaged-manifest",
+     "why": "prototype offers recovery (RecoveredManifest); spare binders are read in milestone S5"
+    },
+    {
+     "path": "w3-cor-fixtures/fixtures/scrivener/negative/faith-in-a-firestorm-sanitized-corrupt-scrivx-negative-fixture/faith-in-a-firestorm-sanitized-corrupt-scrivx-negative-fixture.zip",
+     "pick": "archive",
+     "expect": "refuse",
+     "key": "scrivener-refusal-damaged-manifest",
+     "why": "prototype offers recovery (RescueWithoutBinder); spare binders are read in milestone S5"
+    },
+    {
+     "path": "w3-cor-fixtures/fixtures/scrivener/negative/faith-in-a-firestorm-sanitized-corrupt-scrivx-negative-fixture/faith-in-a-firestorm-sanitized-v1.scriv",
+     "pick": "folder",
+     "expect": "refuse",
+     "key": "scrivener-refusal-damaged-manifest",
+     "why": "prototype offers recovery (RescueWithoutBinder); spare binders are read in milestone S5"
+    },
+    {
+     "path": "w3-cor-fixtures/fixtures/scrivener/negative/faith-in-a-firestorm-sanitized-corrupt-scrivx-negative-fixture/faith-in-a-firestorm-sanitized-v1.scriv/Faith in a Firestorm.scrivx",
+     "pick": "manifest",
+     "expect": "refuse",
+     "key": "scrivener-refusal-damaged-manifest",
+     "why": "prototype offers recovery (RescueWithoutBinder); spare binders are read in milestone S5"
+    },
+    {
+     "path": "w3-cor-fixtures/fixtures/scrivener/negative/symbiogenesis-gunnach-protocol-sanitized-multi-authority-negative-fixture",
+     "pick": "folder",
+     "expect": "choose",
+     "key": "scrivener-question-several-manifests"
+    },
+    {
+     "path": "w3-cor-fixtures/fixtures/scrivener/negative/symbiogenesis-gunnach-protocol-sanitized-multi-authority-negative-fixture/Symbiogenesis - Gunnach Protocol - conflicting.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "w3-cor-fixtures/fixtures/scrivener/negative/symbiogenesis-gunnach-protocol-sanitized-multi-authority-negative-fixture/Symbiogenesis - Gunnach Protocol.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "w3-cor-fixtures/fixtures/scrivener/negative/the-heart-of-the-storm-sanitized-missing-content-negative-fixture/the-heart-of-the-storm-sanitized-missing-content-negative-fixture.zip",
+     "pick": "archive",
+     "expect": "import"
+    },
+    {
+     "path": "w3-cor-fixtures/fixtures/scrivener/negative/the-heart-of-the-storm-sanitized-missing-content-negative-fixture/the-heart-of-the-storm-sanitized-v1.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "w3-cor-fixtures/fixtures/scrivener/negative/the-heart-of-the-storm-sanitized-missing-content-negative-fixture/the-heart-of-the-storm-sanitized-v1.scriv/the-heart-of-the-storm-sanitized-v1.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "w3-cor-fixtures/fixtures/scrivener/positive/faith-in-a-firestorm-sanitized-v1/faith-in-a-firestorm-sanitized-v1.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "w3-cor-fixtures/fixtures/scrivener/positive/faith-in-a-firestorm-sanitized-v1/faith-in-a-firestorm-sanitized-v1.scriv/Faith in a Firestorm.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "w3-cor-fixtures/fixtures/scrivener/positive/faith-in-a-firestorm-sanitized-v1/faith-in-a-firestorm-sanitized-v1.zip",
+     "pick": "archive",
+     "expect": "import"
+    },
+    {
+     "path": "w3-cor-fixtures/fixtures/scrivener/positive/scriv-mixed-structure-sanitized-v1/scriv-mixed-structure-sanitized-v1.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "w3-cor-fixtures/fixtures/scrivener/positive/scriv-mixed-structure-sanitized-v1/scriv-mixed-structure-sanitized-v1.scriv/scriv-mixed-structure-sanitized-v1.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "w3-cor-fixtures/fixtures/scrivener/positive/scriv-mixed-structure-sanitized-v1/scriv-sanitized-fixture-v2.zip",
+     "pick": "archive",
+     "expect": "import"
+    },
+    {
+     "path": "w3-cor-fixtures",
+     "pick": "around",
+     "expect": "refuse",
+     "key": "scrivener-refusal-not-a-scrivener-project"
+    }
+   ]
+  },
+  {
+   "id": "w3-wrioter",
+   "kind": "git",
+   "repo": "https://github.com/stephanduval/Wrioter.git",
+   "commit": "ac6716c33929ab3a41610df6b379907059e98e18",
+   "paths": [
+    "Scrivener Zip Files/Scrivener tutorial [2025_06_01_05_17_17]",
+    "Scrivener Zip Files/Colette Graphic Novel [2025_06_01_05_14_50]"
+   ],
+   "licence": "None",
+   "files": 359,
+   "bytes": 6629933,
+   "tree_sha256": "68bdf955a8619adfa11170c8fef11f776a921b0aacbf03ecada208abec3bc4b5",
+   "roots": [
+    {
+     "path": "w3-wrioter/Scrivener Zip Files/Colette Graphic Novel [2025_06_01_05_14_50]/Colette Graphic Novel.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "w3-wrioter/Scrivener Zip Files/Colette Graphic Novel [2025_06_01_05_14_50]/Colette Graphic Novel.scriv/Colette Graphic Novel.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "w3-wrioter/Scrivener Zip Files/Scrivener tutorial [2025_06_01_05_17_17]/scrivener tutorial.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "w3-wrioter/Scrivener Zip Files/Scrivener tutorial [2025_06_01_05_17_17]/scrivener tutorial.scriv/scrivener tutorial.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "w3-wrioter",
+     "pick": "around",
+     "expect": "refuse",
+     "key": "scrivener-refusal-not-a-scrivener-project"
+    }
+   ]
+  },
+  {
+   "id": "w3-draftview-ios",
+   "kind": "git",
+   "repo": "https://github.com/aclarke6/DraftView.git",
+   "commit": "b7d3d6a4a813cf6493724577f432e95987a94f0b",
+   "paths": [
+    "DraftView.Web/_discovery"
+   ],
+   "licence": "None",
+   "files": 5,
+   "bytes": 65964,
+   "tree_sha256": "88e55d0fd60e0297d173ea86741668be1af68d8b40570f21c7c6cb334b30a3fe",
+   "roots": [
+    {
+     "path": "w3-draftview-ios/DraftView.Web/_discovery/A Necessary Woman",
+     "pick": "folder",
+     "expect": "refuse",
+     "key": "scrivener-refusal-manifest-without-files"
+    },
+    {
+     "path": "w3-draftview-ios/DraftView.Web/_discovery/A Necessary Woman/A Necessary Woman.scrivx",
+     "pick": "manifest",
+     "expect": "refuse",
+     "key": "scrivener-refusal-manifest-without-files"
+    },
+    {
+     "path": "w3-draftview-ios/DraftView.Web/_discovery/Issren Project",
+     "pick": "folder",
+     "expect": "refuse",
+     "key": "scrivener-refusal-ios-stub-without-mobile-data"
+    },
+    {
+     "path": "w3-draftview-ios/DraftView.Web/_discovery/Issren Project/Issren Project.scrivx",
+     "pick": "manifest",
+     "expect": "refuse",
+     "key": "scrivener-refusal-ios-stub-without-mobile-data"
+    },
+    {
+     "path": "w3-draftview-ios/DraftView.Web/_discovery/The Siege Runner",
+     "pick": "folder",
+     "expect": "refuse",
+     "key": "scrivener-refusal-manifest-without-files"
+    },
+    {
+     "path": "w3-draftview-ios/DraftView.Web/_discovery/The Siege Runner/The Siege Runner.scrivx",
+     "pick": "manifest",
+     "expect": "refuse",
+     "key": "scrivener-refusal-manifest-without-files"
+    },
+    {
+     "path": "w3-draftview-ios/DraftView.Web/_discovery/Unaccepted",
+     "pick": "folder",
+     "expect": "refuse",
+     "key": "scrivener-refusal-manifest-without-files"
+    },
+    {
+     "path": "w3-draftview-ios/DraftView.Web/_discovery/Unaccepted/Unaccepted.scrivx",
+     "pick": "manifest",
+     "expect": "refuse",
+     "key": "scrivener-refusal-manifest-without-files"
+    },
+    {
+     "path": "w3-draftview-ios/DraftView.Web/_discovery/Writing Notes",
+     "pick": "folder",
+     "expect": "refuse",
+     "key": "scrivener-refusal-manifest-without-files"
+    },
+    {
+     "path": "w3-draftview-ios/DraftView.Web/_discovery/Writing Notes/Writing Notes.scrivx",
+     "pick": "manifest",
+     "expect": "refuse",
+     "key": "scrivener-refusal-manifest-without-files"
+    },
+    {
+     "path": "w3-draftview-ios",
+     "pick": "around",
+     "expect": "refuse",
+     "key": "scrivener-refusal-not-a-scrivener-project"
+    }
+   ]
+  },
+  {
+   "id": "w3-gladius",
+   "kind": "git",
+   "repo": "https://github.com/jyurkiw/GladiusPeninsula.git",
+   "commit": "42f3daadecce0e1be512d72a3f10a5528b445c61",
+   "paths": [
+    "."
+   ],
+   "licence": "None",
+   "files": 52,
+   "bytes": 6775894,
+   "tree_sha256": "bd89fca7b7766c56ea9b692d0a099292b67850921c684198fe239f930edd0d13",
+   "roots": [
+    {
+     "path": "w3-gladius",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "w3-gladius/GladiusPeninsula.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "w3-gladius",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "w3-screenwriting",
+   "kind": "git",
+   "repo": "https://github.com/45inertia/Screenwriting-Project-Dissertation.git",
+   "commit": "6e967eaffe82e8110fea4dedfc1b329be28b7db5",
+   "paths": [
+    "Documentation/market_research/scrivener"
+   ],
+   "licence": "MIT",
+   "files": 234,
+   "bytes": 7508131,
+   "tree_sha256": "66513e2ce5bf0010b0694d1f11777246b2e405940ed693579bb2343b7b8e3af3",
+   "roots": [
+    {
+     "path": "w3-screenwriting/Documentation/market_research/scrivener/star_wars_test.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "w3-screenwriting/Documentation/market_research/scrivener/star_wars_test.scriv/star_wars_test.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "w3-screenwriting/Documentation/market_research/scrivener/test_project.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "w3-screenwriting/Documentation/market_research/scrivener/test_project.scriv/test_project.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "w3-screenwriting",
+     "pick": "around",
+     "expect": "refuse",
+     "key": "scrivener-refusal-not-a-scrivener-project"
+    }
+   ]
+  },
+  {
+   "id": "w3-sune",
+   "kind": "git",
+   "repo": "https://github.com/el-nuru/RPG-visual-novel.git",
+   "commit": "89457457f36f955446a9b734a2e505caee03898f",
+   "paths": [
+    "scriv/sune.scriv"
+   ],
+   "licence": "None",
+   "files": 24,
+   "bytes": 225635,
+   "tree_sha256": "fb5cbcbf5b9d71edd33ce4934299e36b4ab524a355c8e80d60b4437740e48f11",
+   "roots": [
+    {
+     "path": "w3-sune/scriv/sune.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "w3-sune/scriv/sune.scriv/sune.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "w3-sune",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "m2-starter",
+   "kind": "git",
+   "repo": "https://github.com/carsomyr/scrivener_starter.git",
+   "commit": "ebe61124c2553b3c5a9a529689ea4b0dde86cc3c",
+   "paths": [
+    "starter.scriv"
+   ],
+   "licence": "Apache-2.0",
+   "files": 6,
+   "bytes": 3399,
+   "tree_sha256": "6d92861a92eac4ca8918bf20e3e291037030ea9e0873917c8f2cdd82ed3914bd",
+   "roots": [
+    {
+     "path": "m2-starter/starter.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "m2-starter/starter.scriv/starter.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m2-starter",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "m2-nano2011-fr",
+   "kind": "git",
+   "repo": "https://github.com/tut-tuuut/NaNoWriMo2011.git",
+   "commit": "be6d63151f555d87949db7018d01e05a8f3060d1",
+   "paths": [
+    "NaNoWriMo2011.scriv"
+   ],
+   "licence": "None",
+   "files": 147,
+   "bytes": 4989923,
+   "tree_sha256": "901c1e65879dbbf74da5aba4e441e4c11da27c884d0642be7c3d91e286f5c8a2",
+   "roots": [
+    {
+     "path": "m2-nano2011-fr/NaNoWriMo2011.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "m2-nano2011-fr/NaNoWriMo2011.scriv/NaNoWriMo2011.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m2-nano2011-fr",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "m2-noemi-fr",
+   "kind": "git",
+   "repo": "https://github.com/tut-tuuut/Noemi.git",
+   "commit": "160c8b094df542a93479fcd5ced50746bab34c84",
+   "paths": [
+    "Noemi.scriv"
+   ],
+   "licence": "None",
+   "files": 59,
+   "bytes": 874610,
+   "tree_sha256": "2a4dbb47aa6bea171302e3234f71e42ef997dc105ba8c19b201ca094547a5dfc",
+   "roots": [
+    {
+     "path": "m2-noemi-fr/Noemi.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "m2-noemi-fr/Noemi.scriv/Noemi.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m2-noemi-fr",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "m2-jenee-tutorial",
+   "kind": "git",
+   "repo": "https://github.com/jenee/Thesis.git",
+   "commit": "48d3ca9425b5e6d03e5a9a61e9bfae43fea7a1d2",
+   "paths": [
+    "Scrivener/ScrivenerTutorial.scriv"
+   ],
+   "licence": "None",
+   "files": 77,
+   "bytes": 3120112,
+   "tree_sha256": "3ae43d987ed347d5f826d58ce36397b8cc435db3fb5c3486cc4c3681433f5722",
+   "roots": [
+    {
+     "path": "m2-jenee-tutorial/Scrivener/ScrivenerTutorial.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "m2-jenee-tutorial/Scrivener/ScrivenerTutorial.scriv/ScrivenerTutorial.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m2-jenee-tutorial",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "m2-codingguidelines",
+   "kind": "git",
+   "repo": "https://github.com/richardbuckle/CodingGuidelines.git",
+   "commit": "903191f50d38ab08d4a187db02a9a912e6d63caa",
+   "paths": [
+    "Coding guidelines.scriv"
+   ],
+   "licence": "MIT",
+   "files": 41,
+   "bytes": 222226,
+   "tree_sha256": "f81b84a8a913f212b1b5cec1430e692a96d64f33310b4aaac12045cc6d62d367",
+   "roots": [
+    {
+     "path": "m2-codingguidelines/Coding guidelines.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "m2-codingguidelines/Coding guidelines.scriv/Coding guidelines.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m2-codingguidelines",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "m2-tears-rain",
+   "kind": "git",
+   "repo": "https://github.com/Merovex/tears-in-the-rain.git",
+   "commit": "5dc033231f8f42834472ccddca037032966967e7",
+   "paths": [
+    "tears-in-the-rain.scriv"
+   ],
+   "licence": "NOASSERTION",
+   "files": 21,
+   "bytes": 151217,
+   "tree_sha256": "d0dc00232e7c2484622a2c4d4d94eae0bc13d508bdd4d60d3286072edd3a949e",
+   "roots": [
+    {
+     "path": "m2-tears-rain/tears-in-the-rain.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "m2-tears-rain/tears-in-the-rain.scriv/tears-in-the-rain.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m2-tears-rain",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "m2-lazerous",
+   "kind": "git",
+   "repo": "https://github.com/abuxton/lazerous_scrivener.git",
+   "commit": "147af21c410891bf56992ef1e03b66350d08cbf7",
+   "paths": [
+    "lazerous.scriv"
+   ],
+   "licence": "Apache-2.0",
+   "files": 32,
+   "bytes": 2338946,
+   "tree_sha256": "1d3aa4806ba03a9be99672eb3a22db2b71d98517649ec1ec5367f82d3c863706",
+   "roots": [
+    {
+     "path": "m2-lazerous/lazerous.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "m2-lazerous/lazerous.scriv/lazerous.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m2-lazerous",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "m2-altaf-thesis",
+   "kind": "git",
+   "repo": "https://github.com/altaf-ali/scrivener_templates.git",
+   "commit": "a12a5d7616ca1ce8697b2c3fdc04219701f0f907",
+   "paths": [
+    "thesis"
+   ],
+   "licence": "None",
+   "files": 19,
+   "bytes": 83777,
+   "tree_sha256": "8a4c72fd0ebec65475d69e8b89d2201428c64298374042abba395bc6e1137b40",
+   "roots": [
+    {
+     "path": "m2-altaf-thesis/thesis/thesis.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "m2-altaf-thesis/thesis/thesis.scriv/thesis.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m2-altaf-thesis",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "m2-monsters-conflicts",
+   "kind": "git",
+   "repo": "https://github.com/jlombard/fieldops.agency.git",
+   "commit": "7d0bb9d2a3096a9344d2f0761515412ff2223cdb",
+   "paths": [
+    "Planning docs and artifacts/Monsters and Gods.scriv"
+   ],
+   "licence": "GPL-3.0",
+   "files": 232,
+   "bytes": 100221254,
+   "tree_sha256": "bf4135188ae57b9f7529b71093efac862b02cd634131c37d53bdc8b3ac825a6d",
+   "roots": [
+    {
+     "path": "m2-monsters-conflicts/Planning docs and artifacts/Monsters and Gods.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "m2-monsters-conflicts/Planning docs and artifacts/Monsters and Gods.scriv/Monsters and Gods-conflicted-2017-01-05T18-00-45-0500.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m2-monsters-conflicts/Planning docs and artifacts/Monsters and Gods.scriv/Monsters and Gods-conflicted-2017-01-05T18-04-13-0500.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m2-monsters-conflicts/Planning docs and artifacts/Monsters and Gods.scriv/Monsters and Gods-conflicted-2017-01-11T18-15-28-0500.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m2-monsters-conflicts/Planning docs and artifacts/Monsters and Gods.scriv/Monsters and Gods-conflicted-2017-01-12T15-33-56-0500.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m2-monsters-conflicts/Planning docs and artifacts/Monsters and Gods.scriv/Monsters and Gods-conflicted-2017-01-25T18-26-23-0500.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m2-monsters-conflicts/Planning docs and artifacts/Monsters and Gods.scriv/Monsters and Gods-conflicted-2017-01-30T22-33-03-0500.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m2-monsters-conflicts/Planning docs and artifacts/Monsters and Gods.scriv/Monsters and Gods.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m2-monsters-conflicts",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "m2-cascades",
+   "kind": "git",
+   "repo": "https://github.com/rickosborne/cascades.git",
+   "commit": "007d13821c6db3e06453848402d778d964ee0edf",
+   "paths": [
+    "Cascades.scriv"
+   ],
+   "licence": "None",
+   "files": 102,
+   "bytes": 17426479,
+   "tree_sha256": "74ac7cbff628fbdbeefc86fb2794243b89cb979b3b1036bc25c82ddf4b515ea0",
+   "roots": [
+    {
+     "path": "m2-cascades/Cascades.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "m2-cascades/Cascades.scriv/Cascades.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m2-cascades",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "m3-bartleby",
+   "kind": "git",
+   "repo": "https://github.com/mindfu23/bartleby.git",
+   "commit": "426ff2de6f64f43e886f6bcc2e5f53c4197ce998",
+   "paths": [
+    "Tutorial.scriv",
+    "example.scriv",
+    "example_v2-comments.scriv",
+    "example_v1.scriv"
+   ],
+   "licence": "None",
+   "files": 236,
+   "bytes": 6933883,
+   "tree_sha256": "1c1e73b2c02a97a68f5846e4612bdf98af6d8a57c84744f3ac6f80e2819774a5",
+   "roots": [
+    {
+     "path": "m3-bartleby/Tutorial.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "m3-bartleby/Tutorial.scriv/Tutorial.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m3-bartleby/example.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "m3-bartleby/example.scriv/example.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m3-bartleby/example_v1.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "m3-bartleby/example_v1.scriv/example_v1.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m3-bartleby/example_v2-comments.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "m3-bartleby/example_v2-comments.scriv/example_v2-comments.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m3-bartleby",
+     "pick": "around",
+     "expect": "choose",
+     "key": "scrivener-question-several-projects"
+    }
+   ]
+  },
+  {
+   "id": "m3-chickenscratch",
+   "kind": "git",
+   "repo": "https://github.com/roethlar/ChickenScratch.git",
+   "commit": "4404fea443aaf42a28d62f8c1632d921b95bb1ca",
+   "paths": [
+    "samples"
+   ],
+   "licence": "MIT",
+   "files": 112,
+   "bytes": 539610,
+   "tree_sha256": "a1e901ff4b9dea28798970f899062ffa840da5bb1f6dcaca91a5f238dcc674a3",
+   "roots": [
+    {
+     "path": "m3-chickenscratch/samples/Corn.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "m3-chickenscratch/samples/Corn.scriv/Corn.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m3-chickenscratch/samples/Crit 2.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "m3-chickenscratch/samples/Crit 2.scriv/Crit 2.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m3-chickenscratch/samples/Zoe 2.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "m3-chickenscratch/samples/Zoe 2.scriv/Zoe 2.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m3-chickenscratch",
+     "pick": "around",
+     "expect": "choose",
+     "key": "scrivener-question-several-projects"
+    }
+   ]
+  },
+  {
+   "id": "m3-kebra-nagast",
+   "kind": "git",
+   "repo": "https://github.com/Octoven-Press/book-glory-of-the-kings-of-ethiopia.git",
+   "commit": "2b6dc75dbb38d6d1c7ea88196451c1f0385b13c5",
+   "paths": [
+    "Kebra Nagast 1932.scriv",
+    "Kebra Negast 202x.scriv"
+   ],
+   "licence": "None",
+   "files": 376,
+   "bytes": 2564887,
+   "tree_sha256": "dcc3a11df47452127ba040ff5f4fe472121bde58e2f0124a0cf70396c67a199c",
+   "roots": [
+    {
+     "path": "m3-kebra-nagast/Kebra Nagast 1932.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "m3-kebra-nagast/Kebra Nagast 1932.scriv/KebraNagast1932.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m3-kebra-nagast/Kebra Negast 202x.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "m3-kebra-nagast/Kebra Negast 202x.scriv/Kebra Negast 202x.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m3-kebra-nagast",
+     "pick": "around",
+     "expect": "choose",
+     "key": "scrivener-question-several-projects"
+    }
+   ]
+  },
+  {
+   "id": "m3-modern-retro",
+   "kind": "git",
+   "repo": "https://github.com/markd2/Modern-Retro.git",
+   "commit": "83f09f6f0b43f4053382cb0f9f0398ca90746de4",
+   "paths": [
+    "Modern Retro.scriv"
+   ],
+   "licence": "NOASSERTION",
+   "files": 59,
+   "bytes": 423844,
+   "tree_sha256": "cfe9ecbd74d9139231bca498645fb187a01c714509afecbb0fe7120850889305",
+   "roots": [
+    {
+     "path": "m3-modern-retro/Modern Retro.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "m3-modern-retro/Modern Retro.scriv/Modern Retro.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m3-modern-retro",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "m3-playdate",
+   "kind": "git",
+   "repo": "https://github.com/markd2/Playdate.git",
+   "commit": "3160573245ee4a31ca22c206612043d3b1fe341d",
+   "paths": [
+    "Playdate-Writing.scriv"
+   ],
+   "licence": "None",
+   "files": 20,
+   "bytes": 81738,
+   "tree_sha256": "631c9040250f37fa2b21b328caf0b19cff2a10f1e202dbdf4bc8fb3ba71d343d",
+   "roots": [
+    {
+     "path": "m3-playdate/Playdate-Writing.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "m3-playdate/Playdate-Writing.scriv/Playdate-Writing.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m3-playdate",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "m3-zh-thesis",
+   "kind": "git",
+   "repo": "https://github.com/HanYouyang/GrowUp2017.git",
+   "commit": "d0cd8dc61fd37cd3b0c1de7c233ca6da2c8463ae",
+   "paths": [
+    "2持续耕耘/学位论文.scriv"
+   ],
+   "licence": "None",
+   "files": 13,
+   "bytes": 118146,
+   "tree_sha256": "d043995c6e27a57ee8fa74e0b26a5d7a600e659ae47637cc2451b605cb4114d7",
+   "roots": [
+    {
+     "path": "m3-zh-thesis/2持续耕耘/学位论文.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "m3-zh-thesis/2持续耕耘/学位论文.scriv/学位论文.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m3-zh-thesis",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "m3-es-cubawiki",
+   "kind": "git",
+   "repo": "https://github.com/CubaWiki/AED2-ApunteFinal-Rama.git",
+   "commit": "dd59213300bbf1a77b4d363652699e0783ca9fb9",
+   "paths": [
+    "ereader/Resumen Algo 2 - Kindle.scriv"
+   ],
+   "licence": "GPL-2.0",
+   "files": 15,
+   "bytes": 1468011,
+   "tree_sha256": "96f34915f70e3902d5dcebd4fdd93d02554b2e65b5e39c3f4be75508fe12b16c",
+   "roots": [
+    {
+     "path": "m3-es-cubawiki/ereader/Resumen Algo 2 - Kindle.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "m3-es-cubawiki/ereader/Resumen Algo 2 - Kindle.scriv/Resumen Algo 2 - Kindle.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m3-es-cubawiki",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "m3-pt-abntex",
+   "kind": "git",
+   "repo": "https://github.com/bcdavasconcelos/ABNTeX-o-matic.git",
+   "commit": "940b52f087ed1d54f1fc3939857b2c239eb329bd",
+   "paths": [
+    "Scrivener"
+   ],
+   "licence": "None",
+   "files": 96,
+   "bytes": 616079,
+   "tree_sha256": "6ea38c6c55587b57392c71766144c8847d6b338050ee05cf216ca1d286ed6317",
+   "roots": [
+    {
+     "path": "m3-pt-abntex/Scrivener/Sample.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "m3-pt-abntex/Scrivener/Sample.scriv/Sample.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m3-pt-abntex",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "mx-formality-upgrade",
+   "kind": "git",
+   "repo": "https://github.com/steveloughran/formality.git",
+   "commit": "98323988e84c95beccbe261cd8da06891a7cb4c9",
+   "paths": [
+    "the_madness_beyond_the_gate/book/kerberos_the_madness.scriv",
+    "the_madness_beyond_the_gate/book/kerberos_the_madness Backup.scriv"
+   ],
+   "licence": "Apache-2.0",
+   "files": 127,
+   "bytes": 693420,
+   "tree_sha256": "a3546ecaccc0abcf8c2ec3de567c5192265c145279dbf64cd1fd6a1cdede4d71",
+   "roots": [
+    {
+     "path": "mx-formality-upgrade/the_madness_beyond_the_gate/book/kerberos_the_madness Backup.scriv",
+     "pick": "folder",
+     "expect": "choose",
+     "key": "scrivener-question-upgraded-sibling"
+    },
+    {
+     "path": "mx-formality-upgrade/the_madness_beyond_the_gate/book/kerberos_the_madness Backup.scriv/kerberos_the_madness.scrivx",
+     "pick": "manifest",
+     "expect": "choose",
+     "key": "scrivener-question-upgraded-sibling",
+     "why": "D2.6 applies to a picked manifest's folder; the prototype missed it"
+    },
+    {
+     "path": "mx-formality-upgrade/the_madness_beyond_the_gate/book/kerberos_the_madness.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "mx-formality-upgrade/the_madness_beyond_the_gate/book/kerberos_the_madness.scriv/kerberos_the_madness.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "mx-formality-upgrade",
+     "pick": "around",
+     "expect": "refuse",
+     "key": "scrivener-refusal-not-a-scrivener-project"
+    }
+   ]
+  },
+  {
+   "id": "mx-aboveasisbelow-upgrade",
+   "kind": "git",
+   "repo": "https://github.com/abuxton/scriviner_AboveAsIsBelow.git",
+   "commit": "1e25d297712171bfa325b01b250151ef4bee80b0",
+   "paths": [
+    "aboveasisbelow.scriv",
+    "aboveasisbelow Backup.scriv"
+   ],
+   "licence": "Apache-2.0",
+   "files": 40,
+   "bytes": 299143,
+   "tree_sha256": "1cae88a88d22dc15495342c058a0c5a613ce3be0ca7282dd0d58aecf62d0198c",
+   "roots": [
+    {
+     "path": "mx-aboveasisbelow-upgrade/aboveasisbelow Backup.scriv",
+     "pick": "folder",
+     "expect": "choose",
+     "key": "scrivener-question-upgraded-sibling"
+    },
+    {
+     "path": "mx-aboveasisbelow-upgrade/aboveasisbelow Backup.scriv/aboveasisbelow.scrivx",
+     "pick": "manifest",
+     "expect": "choose",
+     "key": "scrivener-question-upgraded-sibling",
+     "why": "D2.6 applies to a picked manifest's folder; the prototype missed it"
+    },
+    {
+     "path": "mx-aboveasisbelow-upgrade/aboveasisbelow.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "mx-aboveasisbelow-upgrade/aboveasisbelow.scriv/aboveasisbelow.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "mx-aboveasisbelow-upgrade",
+     "pick": "around",
+     "expect": "choose",
+     "key": "scrivener-question-several-projects"
+    }
+   ]
+  },
+  {
+   "id": "m3-guitarvydas",
+   "kind": "git",
+   "repo": "https://github.com/guitarvydas/guitarvydas.github.io.git",
+   "commit": "b27f0961b600d660fba927c12be8b0be01462545",
+   "paths": [
+    "_src/References.scriv",
+    "_src/Complexity.scriv",
+    "_on deck/github pages.scriv"
+   ],
+   "licence": "None",
+   "files": 48,
+   "bytes": 198435,
+   "tree_sha256": "6e6c8ba215c03422110499aa0c7914b6f018f04c2f928dea731cadfeda2c0465",
+   "roots": [
+    {
+     "path": "m3-guitarvydas/_on deck/github pages.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "m3-guitarvydas/_on deck/github pages.scriv/github pages.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m3-guitarvydas/_src/Complexity.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "m3-guitarvydas/_src/Complexity.scriv/Complexity.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m3-guitarvydas/_src/References.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "m3-guitarvydas/_src/References.scriv/References.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m3-guitarvydas",
+     "pick": "around",
+     "expect": "choose",
+     "key": "scrivener-question-several-projects"
+    }
+   ]
+  },
+  {
+   "id": "m3-wodecki",
+   "kind": "git",
+   "repo": "https://github.com/wodecki/writing.git",
+   "commit": "14e776cb45a5badb56063ce1cba97d8ebfafc7d0",
+   "paths": [
+    "draft.scriv"
+   ],
+   "licence": "None",
+   "files": 17,
+   "bytes": 129858,
+   "tree_sha256": "a3b3b2821a36d41bb57d4599d1cb1238c92aa4c9e940ccc7f0e883156ac950e2",
+   "roots": [
+    {
+     "path": "m3-wodecki/draft.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "m3-wodecki/draft.scriv/draft.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m3-wodecki",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "m3-antitrope",
+   "kind": "git",
+   "repo": "https://github.com/cemacmillan/antitrope.git",
+   "commit": "f4a93a9e7cb3eb3e6e629d9668621854ac9a2f5a",
+   "paths": [
+    "testsForTools/Formulas.scriv"
+   ],
+   "licence": "None",
+   "files": 27,
+   "bytes": 49009,
+   "tree_sha256": "372886e58455f17b8fe67e1d475f9de7f8fa71e502599a3aa1e8cf322fe991a1",
+   "roots": [
+    {
+     "path": "m3-antitrope/testsForTools/Formulas.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "m3-antitrope/testsForTools/Formulas.scriv/Formulas.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m3-antitrope",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "m3-codeinserter",
+   "kind": "git",
+   "repo": "https://github.com/julzhk/scrivener_code_inserter.git",
+   "commit": "db14b9a46dd237b5b5fc34cf3c2f50aa6016f9b1",
+   "paths": [
+    "testproject.scriv"
+   ],
+   "licence": "None",
+   "files": 16,
+   "bytes": 107561,
+   "tree_sha256": "b5a5a9831f1d5c684349250195f2d7ad3ed0b33a322c0824fea8950137000fbd",
+   "roots": [
+    {
+     "path": "m3-codeinserter/testproject.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "m3-codeinserter/testproject.scriv/testproject.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m3-codeinserter",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "m3-nextrock",
+   "kind": "git",
+   "repo": "https://github.com/cliffhall/NextRock.git",
+   "commit": "670a56e666cc3958031b1c98958041f8c1b766fd",
+   "paths": [
+    "NextRock - Ep1.scriv"
+   ],
+   "licence": "None",
+   "files": 38,
+   "bytes": 282132,
+   "tree_sha256": "b9766172cac73f40fdc543d4debd9433b17a72bb44ea5199a0569230808a1666",
+   "roots": [
+    {
+     "path": "m3-nextrock/NextRock - Ep1.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "m3-nextrock/NextRock - Ep1.scriv/NextRock - Ep1.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m3-nextrock",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "m3-javascriv",
+   "kind": "git",
+   "repo": "https://github.com/LDK/javascriv.git",
+   "commit": "8fa043fdb012dc79c759b634db4807ed334807c7",
+   "paths": [
+    "public"
+   ],
+   "licence": "None",
+   "files": 108,
+   "bytes": 23116110,
+   "tree_sha256": "81a4b6fe3bdc9c6ad8ab1fa2dbbe2df8f96f2516c9ea847ba1dc4d07a5645d3e",
+   "roots": [
+    {
+     "path": "m3-javascriv/public",
+     "pick": "folder",
+     "expect": "refuse",
+     "key": "scrivener-refusal-manifest-without-files"
+    },
+    {
+     "path": "m3-javascriv/public/sample.scrivx",
+     "pick": "manifest",
+     "expect": "refuse",
+     "key": "scrivener-refusal-manifest-without-files"
+    },
+    {
+     "path": "m3-javascriv",
+     "pick": "around",
+     "expect": "refuse",
+     "key": "scrivener-refusal-manifest-without-files"
+    }
+   ]
+  },
+  {
+   "id": "t-kit-scrivtemplate",
+   "kind": "git",
+   "repo": "https://github.com/Mela/KIT-Scrivener-Template.git",
+   "commit": "bcd13647c6434f67c39dc4fd8b98c238f9ade747",
+   "paths": [
+    "."
+   ],
+   "licence": "CC0-1.0",
+   "files": 6,
+   "bytes": 7632882,
+   "tree_sha256": "5c9dc863a80fa976e1a7784ecd2c85e75adc4860ceeae1c2584a32fedced1695",
+   "exclude": [
+    "_extracted"
+   ],
+   "roots": [
+    {
+     "path": "t-kit-scrivtemplate/KIT-Scrivener-Vorlage.scrivtemplate",
+     "pick": "archive",
+     "expect": "import"
+    },
+    {
+     "path": "t-kit-scrivtemplate",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "t-rtiangha-templates",
+   "kind": "git",
+   "repo": "https://github.com/rtiangha/ScrivenerTemplates.git",
+   "commit": "dd178710a80fe7489d7fa0a1e83df8e2a4c44744",
+   "paths": [
+    "."
+   ],
+   "licence": "none",
+   "files": 349,
+   "bytes": 8092235,
+   "tree_sha256": "7dc022069d6d3d2f4aae404756c0e712b2b7b20cb5931d301de3a52b1aa3be9b",
+   "roots": [
+    {
+     "path": "t-rtiangha-templates/Blank.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "t-rtiangha-templates/Blank.scriv/Blank.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "t-rtiangha-templates/FICTION/AeonTimelineNovel.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "t-rtiangha-templates/FICTION/AeonTimelineNovel.scriv/AeonTimelineNovel.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "t-rtiangha-templates/FICTION/Novel.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "t-rtiangha-templates/FICTION/Novel.scriv/Novel.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "t-rtiangha-templates/FICTION/NovelWithParts.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "t-rtiangha-templates/FICTION/NovelWithParts.scriv/NovelWithParts.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "t-rtiangha-templates/FICTION/ShortStory.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "t-rtiangha-templates/FICTION/ShortStory.scriv/ShortStory.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "t-rtiangha-templates/MISC/PersuasiveLecture.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "t-rtiangha-templates/MISC/PersuasiveLecture.scriv/PersuasiveLecture.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "t-rtiangha-templates/MISC/RecipeCollection.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "t-rtiangha-templates/MISC/RecipeCollection.scriv/RecipeCollection.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "t-rtiangha-templates/NONFICTION/AeonTimeLineNonFiction.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "t-rtiangha-templates/NONFICTION/AeonTimeLineNonFiction.scriv/AeonTimeLineNonFiction.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "t-rtiangha-templates/NONFICTION/NonFictionSubheads.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "t-rtiangha-templates/NONFICTION/NonFictionSubheads.scriv/NonFictionSubheads.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "t-rtiangha-templates/NONFICTION/ResearchProposal.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "t-rtiangha-templates/NONFICTION/ResearchProposal.scriv/ResearchProposal.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "t-rtiangha-templates/NONFICTION/UndergradEssay.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "t-rtiangha-templates/NONFICTION/UndergradEssay.scriv/UndergradEssay.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "t-rtiangha-templates/SCRIPTWRITING/BBCRadioSceneStyle.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "t-rtiangha-templates/SCRIPTWRITING/BBCRadioSceneStyle.scriv/BBCRadioSceneStyle.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "t-rtiangha-templates/SCRIPTWRITING/BBCTapedDrama.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "t-rtiangha-templates/SCRIPTWRITING/BBCTapedDrama.scriv/BBCTapedDrama.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "t-rtiangha-templates/SCRIPTWRITING/ComicScript.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "t-rtiangha-templates/SCRIPTWRITING/ComicScript.scriv/ComicScript.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "t-rtiangha-templates/SCRIPTWRITING/Screenplay.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "t-rtiangha-templates/SCRIPTWRITING/Screenplay.scriv/Screenplay.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "t-rtiangha-templates/SCRIPTWRITING/StagePlayUK.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "t-rtiangha-templates/SCRIPTWRITING/StagePlayUK.scriv/StagePlayUK.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "t-rtiangha-templates/SCRIPTWRITING/StagePlayUS.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "t-rtiangha-templates/SCRIPTWRITING/StagePlayUS.scriv/StagePlayUS.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "t-rtiangha-templates",
+     "pick": "around",
+     "expect": "choose",
+     "key": "scrivener-question-several-projects"
+    }
+   ]
+  },
+  {
+   "id": "t-elspencer-qme",
+   "kind": "git",
+   "repo": "https://github.com/elspencer23/ScrivenerTemplates.git",
+   "commit": "188414476b83812f968043edb3fcbc76c6260d96",
+   "paths": [
+    "."
+   ],
+   "licence": "none",
+   "files": 134,
+   "bytes": 359197,
+   "tree_sha256": "ecaa62dbb786be5c87ab00ef87a7cbec3179bcca98cfa86976a305fca6d660fb",
+   "roots": [
+    {
+     "path": "t-elspencer-qme/January 2026 QME Report Template.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "t-elspencer-qme/January 2026 QME Report Template.scriv/January 2026 QME Report Template.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "t-elspencer-qme/January 2026 Supplemental Report Template.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "t-elspencer-qme/January 2026 Supplemental Report Template.scriv/January 2026 QME Report Template.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "t-elspencer-qme",
+     "pick": "around",
+     "expect": "choose",
+     "key": "scrivener-question-several-projects"
+    }
+   ]
+  },
+  {
+   "id": "m3-ime-1202",
+   "kind": "git",
+   "repo": "https://github.com/whaynes/IME.git",
+   "commit": "5e3db2a21c34db92564cfd2b4fb7b198ac3deaa4",
+   "paths": [
+    "Scrivener/IME.scriv"
+   ],
+   "licence": "None",
+   "files": 1904,
+   "bytes": 95630792,
+   "tree_sha256": "c4a6603218fa980d33a83d2d2bb82288b90f5aa5323d5c71fe9efe1d9c7c8554",
+   "roots": [
+    {
+     "path": "m3-ime-1202/Scrivener/IME.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "m3-ime-1202/Scrivener/IME.scriv/IME.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m3-ime-1202",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "m2-buhler-dissertation",
+   "kind": "git",
+   "repo": "https://github.com/drbuhler/dissertation-template.git",
+   "commit": "77261328e3082267fe6db7e1a4a5d384991e81b3",
+   "paths": [
+    "Drafts/Buhler Dissertation Scrivener.scriv",
+    "Drafts/May - Dissertation.scriv",
+    "Drafts/Chapter 5.scriv"
+   ],
+   "licence": "None",
+   "files": 1602,
+   "bytes": 46829327,
+   "tree_sha256": "da5b8426169d96f9977efcc5b157e2a607c7c569b17339bd500b63544557697f",
+   "roots": [
+    {
+     "path": "m2-buhler-dissertation/Drafts/Buhler Dissertation Scrivener.scriv",
+     "pick": "folder",
+     "expect": "choose",
+     "key": "scrivener-question-several-manifests"
+    },
+    {
+     "path": "m2-buhler-dissertation/Drafts/Buhler Dissertation Scrivener.scriv/Buhler Dissertation Scrivener.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m2-buhler-dissertation/Drafts/Buhler Dissertation Scrivener.scriv/Dissertation D5 back up.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m2-buhler-dissertation/Drafts/Buhler Dissertation Scrivener.scriv/Dissertation November-1.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m2-buhler-dissertation/Drafts/Buhler Dissertation Scrivener.scriv/Dissertation November.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m2-buhler-dissertation/Drafts/Buhler Dissertation Scrivener.scriv/Dissertation Story 5-9.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m2-buhler-dissertation/Drafts/Buhler Dissertation Scrivener.scriv/Dissertation Story.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m2-buhler-dissertation/Drafts/Buhler Dissertation Scrivener.scriv/May Dissertation Story.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m2-buhler-dissertation/Drafts/Chapter 5.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "m2-buhler-dissertation/Drafts/Chapter 5.scriv/Chapter 5.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m2-buhler-dissertation/Drafts/May - Dissertation.scriv",
+     "pick": "folder",
+     "expect": "choose",
+     "key": "scrivener-question-several-manifests"
+    },
+    {
+     "path": "m2-buhler-dissertation/Drafts/May - Dissertation.scriv/0 April - Dissertation.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m2-buhler-dissertation/Drafts/May - Dissertation.scriv/Dissertation D5 back up.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m2-buhler-dissertation/Drafts/May - Dissertation.scriv/Dissertation November-1.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m2-buhler-dissertation/Drafts/May - Dissertation.scriv/Dissertation November.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m2-buhler-dissertation",
+     "pick": "around",
+     "expect": "choose",
+     "key": "scrivener-question-several-projects"
+    }
+   ]
+  },
+  {
+   "id": "m3-tamareth",
+   "kind": "git",
+   "repo": "https://github.com/bpkennedy/tamareth.git",
+   "commit": "e7e50d16d1be54149541ac02b124fc0955d0c7ae",
+   "paths": [
+    "Tamareth.scriv"
+   ],
+   "licence": "None",
+   "files": 262,
+   "bytes": 5750482,
+   "tree_sha256": "9199990e7d75f7ecc078569fb0c5ca9a526abaca83776992902adf5e7ae040d2",
+   "roots": [
+    {
+     "path": "m3-tamareth/Tamareth.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "m3-tamareth/Tamareth.scriv/Tamareth.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "m3-tamareth",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "ll-manual-source",
+   "kind": "url",
+   "url": "https://www.literatureandlatte.com/docs/scrivener_3-user_manual_source.zip",
+   "sha256": "6eef40d470b4fc3eb6e4666f25a7003e6f3c07b95c3a87f4f5c2e59fca1ff6cd",
+   "bytes": 6369474,
+   "licence": "Literature and Latte (all rights reserved; fetch, never redistribute)",
+   "unpack": "zip",
+   "roots": [
+    {
+     "path": "ll-manual-source/Scrivener 3 - User Manual.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "ll-manual-source/Scrivener 3 - User Manual.scriv/Scrivener 3 - User Manual.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "ll-manual-source",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "ll-ios-tutorial",
+   "kind": "url",
+   "url": "https://www.literatureandlatte.com/docs/Scrivener_iOS-Tutorial.zip",
+   "sha256": "03f790e1f38e795daa046c85c3049f0ccdf3460d2c47ae4bb868f8f117186fe4",
+   "bytes": 245111,
+   "licence": "Literature and Latte (all rights reserved; fetch, never redistribute)",
+   "unpack": "zip",
+   "roots": [
+    {
+     "path": "ll-ios-tutorial/Tutorial.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "ll-ios-tutorial/Tutorial.scriv/Tutorial.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "ll-ios-tutorial",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "ll-extras-pack",
+   "kind": "url",
+   "url": "https://www.literatureandlatte.com/docs/extras-pack.zip",
+   "sha256": "b8446f2f02e774ff59084475678d3567967d18ce77da7a9ad51788486298584f",
+   "bytes": 842011,
+   "licence": "Literature and Latte (all rights reserved; fetch, never redistribute)",
+   "unpack": "zip",
+   "roots": [
+    {
+     "path": "ll-extras-pack/extras_pack/2-section_types-simple_example.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "ll-extras-pack/extras_pack/2-section_types-simple_example.scriv/2-examples-section_types-simple_example.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "ll-extras-pack/extras_pack/3-complex_layouts.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "ll-extras-pack/extras_pack/3-complex_layouts.scriv/3-complex_layouts.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "ll-extras-pack/extras_pack/8-compile_separators_demonstration.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "ll-extras-pack/extras_pack/8-compile_separators_demonstration.scriv/8-compile_separators_demonstration.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "ll-extras-pack/extras_pack/9-extended_latex_stylesheet.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "ll-extras-pack/extras_pack/9-extended_latex_stylesheet.scriv/9-extended_latex_stylesheet.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "ll-extras-pack",
+     "pick": "around",
+     "expect": "choose",
+     "key": "scrivener-question-several-projects"
+    }
+   ]
+  },
+  {
+   "id": "ll-upgrade-mac",
+   "kind": "url",
+   "url": "https://www.literatureandlatte.com/docs/UpgradeGuide-macOS.zip",
+   "sha256": "f148d79f8df163f61369aa9eee1c2c9842285479afe0061fa0330771dd409319",
+   "bytes": 526005,
+   "licence": "Literature and Latte (all rights reserved; fetch, never redistribute)",
+   "unpack": "zip",
+   "roots": [
+    {
+     "path": "ll-upgrade-mac/Upgrade Guide.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "ll-upgrade-mac/Upgrade Guide.scriv/UpdatingToScriv3.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "ll-upgrade-mac",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "ll-upgrade-win",
+   "kind": "url",
+   "url": "https://www.literatureandlatte.com/docs/UpgradeGuide-win.zip",
+   "sha256": "0bb0b09369ebc91ce62ab4acd6be6e21393ca877ddd65ece29283cc06c129a0f",
+   "bytes": 498043,
+   "licence": "Literature and Latte (all rights reserved; fetch, never redistribute)",
+   "unpack": "zip",
+   "roots": [
+    {
+     "path": "ll-upgrade-win/UpgradeGuide-win/Upgrade Guide.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "ll-upgrade-win/UpgradeGuide-win/Upgrade Guide.scriv/Upgrade Guide.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    },
+    {
+     "path": "ll-upgrade-win",
+     "pick": "around",
+     "expect": "import"
+    }
+   ]
+  },
+  {
+   "id": "t-kit-scrivtemplate/_extracted",
+   "kind": "derive",
+   "from": "t-kit-scrivtemplate",
+   "action": "scrivtemplate-unpack",
+   "input": "KIT-Scrivener-Vorlage.scrivtemplate",
+   "output": "_extracted",
+   "roots": [
+    {
+     "path": "t-kit-scrivtemplate/_extracted/KIT-Scrivener-Vorlage.scriv",
+     "pick": "folder",
+     "expect": "import"
+    },
+    {
+     "path": "t-kit-scrivtemplate/_extracted/KIT-Scrivener-Vorlage.scriv/KIT-Scrivener-Vorlage.scrivx",
+     "pick": "manifest",
+     "expect": "import"
+    }
+   ]
+  }
+ ]
+}

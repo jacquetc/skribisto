@@ -1153,7 +1153,9 @@ fn author_of(annotation: &rtf_reader::Annotation) -> String {
 fn picture_name(id: usize, picture: &Picture) -> String {
     match picture.name.as_deref().filter(|n| !n.trim().is_empty()) {
         Some(name) => name.to_string(),
-        None => format!("picture {}", id + 1),
+        // By its number, in no language: the name of a picture brought in is kept with it
+        // in the project.
+        None => (id + 1).to_string(),
     }
 }
 

@@ -16,6 +16,10 @@ build*
 # source directory starts with the same word. Git does not descend into an
 # ignored directory, so the directory itself has to be un-ignored, not its files.
 !crates/skrib_format/examples/build_example/
+# ...and so is every Rust source file, whatever its name starts with: `build*`
+# swallowed the Scrivener importer's `structure/build.rs`, so the commit that
+# brought the structure mapping compiled only in the checkout that wrote it.
+!*.rs
 out/
 temp
 # Local cargo config, deliberately NOT committed. Two things live here, and

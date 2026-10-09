@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
+# Hand-written, test-only. Builds synthetic Scrivener projects, byte for byte in
+# the layout each generation writes, and the traps real projects hold (sync
+# copies, partial copies, hostile archives), at test time. The text is invented
+# English; no real project, template or manual text is ever copied in. Never a
+# normal dependency of anything: only dev-dependencies name it.
+[package]
+name = "skribisto-scrivener-fixtures"
+description = "Synthetic Scrivener projects and traps for the Scrivener importer's tests"
+authors.workspace = true
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+readme = "../../README.md"
+publish = false
+
+[lib]
+name = "scrivener_fixtures"
+
+[dependencies]
+# Writing the zip containers (backups, iOS exports, a template's project).
+zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
+# A Scrivener 3 .scrivtemplate's project zip.
+base64 = "0.22"
+
+[dev-dependencies]
+# The observed-shape fence reads the census and parses what the builders write.
+serde_json = "1.0"
+roxmltree = "0.21.1"
+tempfile = "3"
+
+[lints]
+workspace = true

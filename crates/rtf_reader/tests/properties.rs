@@ -584,6 +584,37 @@ fn a_binary_length_past_the_limit_drops_the_picture_and_keeps_the_text() {
     assert_eq!(all_text(&doc), "Before  after.");
 }
 
+/// A `\binN` promising more than the whole input, past the limit: the reader steps over
+/// what is there without copying it, drops the picture once, and says the data ran short.
+/// In a group RTF says to skip, the same length drops nothing and refuses nothing.
+#[test]
+fn a_binary_length_past_the_input_is_skipped_without_being_held() {
+    let mut input = b"{\\rtf1 Before {\\pict\\pngblip 0102\\bin999999999999 ".to_vec();
+    input.extend(std::iter::repeat_n(0xABu8, 40));
+    let doc = match parse_with(&input, &small_limits()) {
+        Ok(doc) => doc,
+        Err(refusal) => panic!("the text is read, not refused: {refusal}"),
+    };
+    assert_eq!(doc.pictures.len(), 1);
+    assert!(doc.pictures[0].oversized);
+    assert!(doc.pictures[0].data.is_empty());
+    assert_eq!(doc.stats.picture_bytes, 0);
+    assert_eq!(doc.diagnostics.count(&Diagnostic::PictureTooLarge), 1);
+    assert_eq!(doc.diagnostics.count(&Diagnostic::BinaryTruncated), 1);
+    assert_eq!(all_text(&doc), "Before ");
+
+    let mut input = b"{\\rtf1 Before {\\*\\unknown \\bin5000 ".to_vec();
+    input.extend(std::iter::repeat_n(0xABu8, 5_000));
+    input.extend_from_slice(b"} after.}");
+    let doc = match parse_with(&input, &small_limits()) {
+        Ok(doc) => doc,
+        Err(refusal) => panic!("the text is read, not refused: {refusal}"),
+    };
+    assert!(doc.pictures.is_empty());
+    assert_eq!(doc.diagnostics.count(&Diagnostic::PictureTooLarge), 0);
+    assert_eq!(all_text(&doc), "Before  after.");
+}
+
 #[test]
 fn a_picture_past_the_limit_is_dropped_and_the_text_around_it_kept() {
     let options = small_limits();
