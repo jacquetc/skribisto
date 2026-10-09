@@ -578,6 +578,95 @@ fn a_cancel_is_not_the_end_while_the_converter_still_writes() {
         .map(|e| e.title)
         .unwrap_or_default();
     assert_eq!(cancelled, tr!(project_import_cancelled()).resolve_now());
+    assert_eq!(
+        archived(&archive)
+            .iter()
+            .filter(|e| e.dedup_id.as_deref() == Some("import.test.writing"))
+            .count(),
+        1,
+        "the log keeps one row for the import, from its progress to its cancellation"
+    );
+}
+
+/// The notice that says an import was cancelled has no spinner: the loading notice
+/// it takes over spun while the converter worked, and the converter has stopped.
+#[test]
+fn the_cancelled_notice_stops_spinning() {
+    use crate::test_support::{shows_a_spinner, tree_with_toast_host};
+
+    let _registry = IsolatedOpenRegistry::new();
+    let dir = tempfile::tempdir().unwrap();
+    let target = dir
+        .path()
+        .join("novel.skrib")
+        .to_string_lossy()
+        .into_owned();
+    let app_ctx = Rc::new(AppContext::new());
+    let sent = app_ctx.event_hub.subscribe_receiver();
+    let job = ProjectImportJob::new(app_ctx.clone());
+    let (mut tree, toasts) = tree_with_toast_host(&app_ctx);
+
+    let op = start_still_writing(&mut tree, &job, &target);
+    assert!(shows_a_spinner(&tree), "the import's notice spins");
+
+    let cancelling = job.clone();
+    press(&mut tree, move |c| cancelling.cancel(c));
+    deliver_sent(&mut tree, &job, sent.try_iter().collect());
+    assert!(
+        shows_a_spinner(&tree),
+        "it spins on while the converter finishes writing"
+    );
+
+    std::fs::write(format!("{target}.release"), b"").unwrap();
+    wait_for(&app_ctx, &op);
+    deliver_sent(&mut tree, &job, sent.try_iter().collect());
+
+    assert!(!job.is_running(), "the import was cancelled");
+    assert_eq!(toasts.live_count(), 1, "the cancelled notice is up");
+    assert!(
+        !shows_a_spinner(&tree),
+        "the cancelled notice must not spin: nothing is running any more"
+    );
+}
+
+/// An import that ends with no result to read clears its loading notice rather than
+/// leave it spinning: the plain notice that replaces it has no spinner either.
+#[test]
+fn an_import_ending_with_nothing_to_read_stops_spinning() {
+    use crate::test_support::{shows_a_spinner, tree_with_toast_host};
+
+    let _registry = IsolatedOpenRegistry::new();
+    let dir = tempfile::tempdir().unwrap();
+    let target = dir
+        .path()
+        .join("novel.skrib")
+        .to_string_lossy()
+        .into_owned();
+    let app_ctx = Rc::new(AppContext::new());
+    let job = ProjectImportJob::new(app_ctx.clone());
+    let (mut tree, toasts) = tree_with_toast_host(&app_ctx);
+
+    let op = start_still_writing(&mut tree, &job, &target);
+    assert!(shows_a_spinner(&tree), "the import's notice spins");
+
+    // `STILL_WRITING` has no outcome to read, whatever its operation says.
+    let completed = event(
+        LongOperationEvent::Completed,
+        serde_json::json!({ "id": op.clone() }),
+    );
+    let finishing = job.clone();
+    press(&mut tree, move |c| {
+        finishing.on_long_op_completed(c, &completed)
+    });
+
+    assert!(!job.is_running());
+    assert_eq!(toasts.live_count(), 1, "one notice is up");
+    assert!(
+        !shows_a_spinner(&tree),
+        "the notice that ends the import must not spin"
+    );
+    std::fs::write(format!("{target}.release"), b"").unwrap();
+    wait_for(&app_ctx, &op);
 }
 
 /// The last window closing ends the process without the quit sequence: the
@@ -758,6 +847,10 @@ fn a_result_with_a_report_offers_see_report() {
         finishing.on_long_op_completed(c, &completed)
     });
     assert_eq!(toasts.live_count(), 1, "the result is up");
+    assert!(
+        !crate::test_support::shows_a_spinner(&tree),
+        "the result does not spin"
+    );
     assert!(
         tree.find_by_label(&tr!(project_import_open_now()).resolve_now())
             .is_some()

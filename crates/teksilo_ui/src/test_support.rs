@@ -90,6 +90,39 @@ pub(crate) fn tree_with_toast_registry(
     tree_with_events_and_state(app_ctx, state)
 }
 
+/// [`tree_with_toast_registry`] with a [`ToastHost`] mounted over a blank page, so a
+/// toast is built into widgets the way a window shows it: what a test then finds in the
+/// tree is what the writer sees, spinner included.
+pub(crate) fn tree_with_toast_host(app_ctx: &Rc<AppContext>) -> (WidgetTree, ToastRegistry) {
+    use teksilo::presets::intui;
+    use teksilo::widgets::{Expand, FixedSize, Spacer, ToastHost, ToastInstallOptions, ZStack};
+
+    let options = ToastInstallOptions {
+        archive: None,
+        ..ToastInstallOptions::default()
+    };
+    let registry = ToastRegistry::new(options.clone());
+    let mut tree = tree_with_toast_registry(app_ctx, &registry);
+    tree.set_theme(intui::light());
+    let page = tree.add(
+        FixedSize::new()
+            .width(400.0)
+            .height(300.0)
+            .child(Spacer::new()),
+    );
+    let host = tree.add(ToastHost::new(registry.clone(), options));
+    let filled = tree.add(Expand::new().respect_intrinsic().child(page));
+    tree.add(ZStack::new().child(filled).child(host));
+    (tree, registry)
+}
+
+/// Whether a toast in `tree` shows a spinner: the progress indicator a loading toast
+/// leads with, and the only one a tree from [`tree_with_toast_host`] can hold.
+pub(crate) fn shows_a_spinner(tree: &WidgetTree) -> bool {
+    tree.find_by_role(teksilo::core::accesskit::Role::ProgressIndicator)
+        .is_some()
+}
+
 /// Click `id` in `tree` via an AccessKit `Click` action — the same
 /// synthetic-activation path `outline.rs`'s rename tests use, so a wired
 /// `Button::on_activate_fn` (or any `on_activate_fn`) handler runs with a

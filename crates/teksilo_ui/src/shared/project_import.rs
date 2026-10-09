@@ -75,6 +75,7 @@ use crate::shared::import_failure::{self, OwnWords};
 use crate::shared::import_warnings::{LiveNotice, WarningsNotice};
 use crate::shared::long_op::{event_id, parse_payload, payload_id};
 use crate::shared::progress_text;
+use crate::shared::progress_toast::ProgressToast;
 
 /// What the name of an archived **Open now** starts with, the path its import wrote
 /// following it. The notification log keeps no closure, only an action's name, so the
@@ -236,6 +237,8 @@ struct Inner {
     notices: RefCell<HashMap<&'static str, LiveNotice>>,
     /// What to do once the running import has ended (see [`ProjectImportJob::stop_then`]).
     after_stop: RefCell<Vec<AfterStop>>,
+    /// The running import's loading notice, and the notice that ends it.
+    progress: ProgressToast,
 }
 
 impl ProjectImportJob {
@@ -248,6 +251,7 @@ impl ProjectImportJob {
                 target_hold: TargetHold::default(),
                 notices: RefCell::new(HashMap::new()),
                 after_stop: RefCell::new(Vec::new()),
+                progress: ProgressToast::default(),
             }),
         }
     }
@@ -374,7 +378,8 @@ impl ProjectImportJob {
                 // the enclosing modal would do nothing. The form is the topmost
                 // overlay either way.
                 ctx.dismiss_top_overlay();
-                ctx.show_toast(self.progress_toast(&running, 0.0, Stage::Starting));
+                let progress = self.progress_toast(&running, 0.0, Stage::Starting);
+                self.inner.progress.show(ctx, progress);
                 *self.inner.running.borrow_mut() = Some(running);
                 self.inner.active.set(Some(op_id));
             }
@@ -404,7 +409,7 @@ impl ProjectImportJob {
             running.clone()
         };
         if long_operation_commands::cancel_operation(&self.inner.app_ctx, &stopping.op_id) {
-            ctx.show_toast(stopping_toast(&stopping));
+            self.inner.progress.show(ctx, stopping_toast(&stopping));
             return;
         }
         // The manager no longer knows the operation: it ended long ago, and the
@@ -551,7 +556,8 @@ impl ProjectImportJob {
         } else {
             Stage::Said(message.to_string())
         };
-        ctx.show_toast(self.progress_toast(&running, percent, stage));
+        let progress = self.progress_toast(&running, percent, stage);
+        self.inner.progress.show(ctx, progress);
     }
 
     /// The import finished: the result, with **Open now**, and its report.
@@ -601,7 +607,7 @@ impl ProjectImportJob {
                 if outcome.persistent {
                     toast = toast.persistent();
                 }
-                ctx.show_toast(toast);
+                self.inner.progress.end_in_place(ctx, toast);
                 // What the importer could not carry across, or had to guess at.
                 // Read by nobody, that is an import that quietly lost data, so it
                 // gets a notice of its own that waits for the writer and can be
@@ -613,9 +619,11 @@ impl ProjectImportJob {
                 running.notice.show(ctx, &lines, &outcome.result, &live);
             }
             // Completed without a result to read (should not happen): clear the
-            // loading toast rather than leave a spinner up for ever.
+            // loading toast rather than leave a spinner up for ever. An `Info`
+            // notice, so it replaces the loading one rather than updating it.
             None => {
-                ctx.show_toast(
+                self.inner.progress.end_replacing(
+                    ctx,
                     import_toast(running.toast_id, Toast::info((running.progress_title)()))
                         .auto_dismiss_after(BRIEF),
                 );
@@ -652,8 +660,13 @@ impl ProjectImportJob {
     }
 
     /// Say that the import `running` was cancelled, then run what waited for it.
+    ///
+    /// An `Info` notice, so it replaces the loading one rather than updating it:
+    /// updated in place it would keep the spinner (see
+    /// [`ProgressToast`](crate::shared::progress_toast::ProgressToast)).
     fn cancelled(&self, ctx: &mut EventContext, running: &Running) {
-        ctx.show_toast(
+        self.inner.progress.end_replacing(
+            ctx,
             import_toast(
                 running.toast_id,
                 Toast::info(tr!(project_import_cancelled())),
@@ -787,7 +800,7 @@ impl ProjectImportJob {
         } else {
             ToastAction::primary(tr!(project_import_details()), details)
         };
-        ctx.show_toast(toast.action(details));
+        self.inner.progress.end_in_place(ctx, toast.action(details));
     }
 }
 

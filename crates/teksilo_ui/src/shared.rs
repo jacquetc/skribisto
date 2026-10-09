@@ -65,6 +65,9 @@ mod progress_recorder;
 /// translated, everything else shown as data. `pub(crate)` for the same reason
 /// as `long_op`.
 pub(crate) mod progress_text;
+// A long operation's loading notice and the notice that ends it, without leaving the
+// spinner on: the export and the project importers.
+pub(crate) mod progress_toast;
 // The one project-import job every whole-project importer drives, and the quit
 // sequence stops: single-flight, progress, completion, report, failure.
 pub(crate) mod project_import;

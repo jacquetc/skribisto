@@ -45,6 +45,8 @@ Description:
 - "Part of a window that changed while it was scrolled out of view shows its new content when it comes back into view, rather than what it showed before"
 - "A section opened while its window is in the background, for instance by a screen reader, unfolds at once. It used to stay folded under a header that said it was open"
 - "A list or a box partly scrolled out of the top of the window no longer lets its contents show past its own lower edge"
+- "A cancelled import or export no longer leaves the loading spinner turning in its notice after the work has stopped"
+- "A backup's notice no longer keeps spinning once the backup has ended. When a backup taken on closing fails before reaching any destination, the dialog names the error, and a backup whose outcome cannot be read says so"
 ---
 Version: 3.0.5
 Date: 2026-09-28

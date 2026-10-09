@@ -316,9 +316,12 @@ impl BackupRestoreViewModel {
         };
         let pending = {
             let mut slot = self.pending.borrow_mut();
-            match slot.as_ref() {
-                Some(p) if p.tracked.matches(&op_id) => slot.take().unwrap(),
-                _ => return, // not our restore op
+            if !slot.as_ref().is_some_and(|p| p.tracked.matches(&op_id)) {
+                return; // not our restore op
+            }
+            match slot.take() {
+                Some(p) => p,
+                None => return,
             }
         };
 

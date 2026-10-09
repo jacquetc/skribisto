@@ -50,6 +50,7 @@ use skribisto_model::compile::{
 use crate::app_ids::AppIds;
 use crate::export::choose::ChooseModel;
 use crate::shared::long_op::{CapturedWork, TrackedOp, event_id, parse_payload, payload_id};
+use crate::shared::progress_toast::ProgressToast;
 use crate::toast_scope::ToastWorkExt;
 
 /// Update-in-place key for the single toast an export drives (loading → progress →
@@ -182,6 +183,8 @@ pub struct ExportViewModel {
     /// Work) makes the pairing structural — "set one, forget the other" is
     /// not a spelling available at all.
     active: Signal<Option<TrackedOp>>,
+    /// The in-flight export's loading notice, and the notice that ends it.
+    progress: ProgressToast,
 
     // ── Choose… (Custom scope) state ─────────────────────────────────────────
     /// Whether the Choose tree reveals items marked non-exportable (default off).
@@ -213,6 +216,7 @@ impl ExportViewModel {
             preset: Signal::new(builtin_presets().into_iter().next()),
             output_path: Signal::new(String::new()),
             active: Signal::new(None),
+            progress: ProgressToast::default(),
             show_non_exportable: Signal::new(false),
             choose: Rc::new(RefCell::new(None)),
             choose_show: Rc::new(Cell::new(false)),
@@ -852,10 +856,10 @@ impl ExportViewModel {
                 // overwrite-confirmation path — whose `on_result` context is anchored at the
                 // tree root — still closes the panel; it is the topmost overlay in both paths.
                 ctx.dismiss_top_overlay();
-                ctx.show_toast(
-                    self.progress_toast(0.0, "")
-                        .target_work(self.active_work_id()),
-                );
+                let progress = self
+                    .progress_toast(0.0, "")
+                    .target_work(self.active_work_id());
+                self.progress.show(ctx, progress);
             }
             Err(e) => self.show_error(ctx, &format!("{e:#}"), self.ids.work_id.get(), None),
         }
@@ -924,10 +928,10 @@ impl ExportViewModel {
             .get("message")
             .and_then(|m| m.as_str())
             .unwrap_or("");
-        ctx.show_toast(
-            self.progress_toast(percent, message)
-                .target_work(tracked.work_id()),
-        );
+        let progress = self
+            .progress_toast(percent, message)
+            .target_work(tracked.work_id());
+        self.progress.show(ctx, progress);
     }
 
     pub fn on_long_op_completed(&self, ctx: &mut EventContext, event: &Event) {
@@ -973,7 +977,8 @@ impl ExportViewModel {
                 } else {
                     res.output_path.clone()
                 };
-                ctx.show_toast(
+                self.progress.end_in_place(
+                    ctx,
                     Toast::success(done)
                         .scoped_op_id(EXPORT_TOAST_ID, work_id, &op_id)
                         .body(lit!(body))
@@ -989,8 +994,12 @@ impl ExportViewModel {
                         })),
                 );
             }
+            // No result to read: a plain notice ends the export. An `Info` one, so it
+            // replaces the loading notice rather than updating it, which would keep
+            // the spinner (see `ProgressToast`).
             Ok(None) | Err(_) => {
-                ctx.show_toast(
+                self.progress.end_replacing(
+                    ctx,
                     Toast::info(tr!(export_progress_title()))
                         .scoped_op_id(EXPORT_TOAST_ID, work_id, &op_id)
                         .auto_dismiss_after(Duration::from_secs(4))
@@ -1013,7 +1022,10 @@ impl ExportViewModel {
         // Captured BEFORE clearing — see `Self::active_work_id`'s doc.
         let work_id = tracked.work_id();
         self.active.set(None);
-        ctx.show_toast(
+        // An `Info` notice, so it replaces the loading one rather than updating
+        // it, which would keep the spinner (see `ProgressToast`).
+        self.progress.end_replacing(
+            ctx,
             Toast::info(tr!(export_cancelled()))
                 .scoped_op_id(EXPORT_TOAST_ID, work_id, &id)
                 .auto_dismiss_after(Duration::from_secs(4))
@@ -1068,7 +1080,8 @@ impl ExportViewModel {
         let work_id = work_id.into();
         let details = message.to_string();
         let toast = Toast::error(tr!(export_error_title()));
-        ctx.show_toast(
+        self.progress.end_in_place(
+            ctx,
             match op_id {
                 Some(op) => toast.scoped_op_id(EXPORT_TOAST_ID, work_id, op),
                 None => toast.scoped_id(EXPORT_TOAST_ID, work_id),
@@ -1328,6 +1341,118 @@ mod tests {
         assert_ne!(
             id_a, id_b,
             "two different Works' export toasts must never collide"
+        );
+    }
+
+    /// A long-operation event of `kind` about `op`, carrying `extra` beside its id.
+    fn op_event(
+        kind: frontend::common::event::LongOperationEvent,
+        op: &str,
+        extra: serde_json::Value,
+    ) -> Event {
+        let mut payload = serde_json::json!({ "id": op });
+        if let (Some(payload), serde_json::Value::Object(extra)) = (payload.as_object_mut(), extra)
+        {
+            payload.extend(extra);
+        }
+        Event {
+            origin: frontend::common::event::Origin::LongOperation(kind),
+            ids: Vec::new(),
+            data: Some(payload.to_string()),
+        }
+    }
+
+    /// An export in flight whose progress notice is up and spinning, in a tree that
+    /// builds its toasts.
+    fn exporting() -> (
+        ExportViewModel,
+        teksilo::core::widget_tree::WidgetTree,
+        teksilo::widgets::ToastRegistry,
+    ) {
+        use frontend::common::event::LongOperationEvent;
+
+        let app_ctx = Rc::new(AppContext::new());
+        let vm = ExportViewModel::new(app_ctx.clone(), AppIds::new());
+        vm.active.set(Some(TrackedOp::given(
+            "export-op".to_string(),
+            CapturedWork::for_test(None),
+        )));
+        let (mut tree, toasts) = crate::test_support::tree_with_toast_host(&app_ctx);
+        let progressing = vm.clone();
+        let tick = op_event(
+            LongOperationEvent::Progress,
+            "export-op",
+            serde_json::json!({ "percentage": 40.0 }),
+        );
+        crate::test_support::press(&mut tree, move |c| {
+            progressing.on_long_op_progress(c, &tick)
+        });
+        assert!(
+            crate::test_support::shows_a_spinner(&tree),
+            "the export's notice spins"
+        );
+        (vm, tree, toasts)
+    }
+
+    /// The notice that says an export was cancelled has no spinner.
+    #[test]
+    fn the_cancelled_export_notice_stops_spinning() {
+        use frontend::common::event::LongOperationEvent;
+
+        let (vm, mut tree, toasts) = exporting();
+        let cancelled = op_event(
+            LongOperationEvent::Cancelled,
+            "export-op",
+            serde_json::Value::Null,
+        );
+        crate::test_support::press(&mut tree, move |c| vm.on_long_op_cancelled(c, &cancelled));
+
+        assert_eq!(toasts.live_count(), 1, "the cancelled notice is up");
+        assert!(
+            !crate::test_support::shows_a_spinner(&tree),
+            "the cancelled notice must not spin: nothing is running any more"
+        );
+    }
+
+    /// An export that completes with no result to read leaves a plain notice, not a
+    /// spinner.
+    #[test]
+    fn an_export_ending_with_nothing_to_read_stops_spinning() {
+        use frontend::common::event::LongOperationEvent;
+
+        let (vm, mut tree, toasts) = exporting();
+        // No such operation in the manager: there is no result to read.
+        let completed = op_event(
+            LongOperationEvent::Completed,
+            "export-op",
+            serde_json::Value::Null,
+        );
+        crate::test_support::press(&mut tree, move |c| vm.on_long_op_completed(c, &completed));
+
+        assert_eq!(toasts.live_count(), 1, "one notice is up");
+        assert!(
+            !crate::test_support::shows_a_spinner(&tree),
+            "the notice that ends the export must not spin"
+        );
+    }
+
+    /// A failed export's notice has no spinner either.
+    #[test]
+    fn the_failed_export_notice_stops_spinning() {
+        use frontend::common::event::LongOperationEvent;
+
+        let (vm, mut tree, toasts) = exporting();
+        let failed = op_event(
+            LongOperationEvent::Failed,
+            "export-op",
+            serde_json::json!({ "error": "disk full" }),
+        );
+        crate::test_support::press(&mut tree, move |c| vm.on_long_op_failed(c, &failed));
+
+        assert_eq!(toasts.live_count(), 1, "the failure is up");
+        assert!(
+            !crate::test_support::shows_a_spinner(&tree),
+            "the failure must not spin"
         );
     }
 

@@ -50,6 +50,17 @@
 //! with a [`crate::shared::long_op::CapturedWork`] captured once in [`BackupSchedulerViewModel::start`] —
 //! every `on_long_op_*` handler below routes and scopes its toast on
 //! `tracked.work_id()`, never `self.ids.work_id.get()`.
+//!
+//! **Every ending ends the loading notice.** A backup's progress is a loading
+//! toast updated in place on every tick, held through a
+//! [`crate::shared::progress_toast::ProgressToast`]. Each way a backup can end
+//! takes it over: a success, a warning or a failure that says how it ended, the
+//! same with a close waiting on it (the window may stay up while a quit moves on
+//! to the next project, and a second window may still show this Work), or, when
+//! a close is waiting and no copy was made, nothing at all, because the
+//! Retry/Discard dialog raised in the same breath says it. A result that cannot
+//! be read, or that names no destination, is said to be unknown rather than
+//! called a success.
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -71,6 +82,7 @@ use crate::backup::BackupSettingsViewModel;
 use crate::backup::is_destination_available;
 use crate::models::{BackupPolicy, RetentionMode, uid_is_usable};
 use crate::shared::long_op::{TrackedOp, event_id, parse_payload, payload_id};
+use crate::shared::progress_toast::ProgressToast;
 use crate::singles::{SingleWork, SingleWorkInfo};
 use crate::toast_scope::ToastWorkExt;
 use crate::workspace_layout::WorkspaceLayoutViewModel;
@@ -168,6 +180,10 @@ pub struct BackupSchedulerViewModel {
     /// no-ops (a backup window never backs itself up).
     backup_mode: Signal<bool>,
     pending: Signal<Option<Pending>>,
+    /// The running backup's loading notice, and the notice that ends it. Shared
+    /// by every clone, so whichever window's subscriber handles the ending
+    /// takes down the notice every window's ticks raised.
+    progress: ProgressToast,
     /// Bumped every time a backup actually happens (written or already-current).
     /// The App's interval timer watches this and restarts its countdown, so
     /// "every N hours" means N hours since the *last backup*, whatever triggered
@@ -202,6 +218,7 @@ impl BackupSchedulerViewModel {
             single_work_info,
             backup_mode,
             pending: Signal::new(None),
+            progress: ProgressToast::default(),
             completed_epoch: Signal::new(0),
             flush_hooks: Rc::new(RefCell::new(HashMap::new())),
             quit: Rc::new(RefCell::new(None)),
@@ -624,7 +641,10 @@ impl BackupSchedulerViewModel {
             }
             Err(e) => {
                 if let Some(ctx) = ctx {
-                    ctx.show_toast(
+                    // Through the progress notice: a rerun for a close starts
+                    // here while the previous run's notice may still be up.
+                    self.progress.end_in_place(
+                        ctx,
                         Toast::error(tr!(backup_error(error = e.to_string())))
                             .scoped_id(BACKUP_TOAST_ID, self.ids.work_id.get())
                             .target_work(self.ids.work_id.get()),
@@ -734,7 +754,8 @@ impl BackupSchedulerViewModel {
             .get("message")
             .and_then(|m| m.as_str())
             .unwrap_or("");
-        ctx.show_toast(
+        self.progress.show(
+            ctx,
             progress_toast(pending.tracked.work_id(), percent, message)
                 .target_work(pending.tracked.work_id()),
         );
@@ -763,6 +784,10 @@ impl BackupSchedulerViewModel {
         // written, or already current and therefore still a copy. This is the
         // verdict a safety backup's caller acts on.
         let mut copy_exists = false;
+        // The notice that says how the backup ended. With no result to read, it
+        // says the outcome is unknown: nothing here shows a copy was made, and
+        // nothing shows one was not.
+        let mut ending = Some(no_result_notice(&pending));
 
         if let Some(res) = result {
             let now = chrono::Utc::now().to_rfc3339();
@@ -808,53 +833,65 @@ impl BackupSchedulerViewModel {
             // behind a "Details" action).
             let detail = failure_detail(&res.failed_reasons, &res.delete_errors);
 
-            // Quiet on a pure no-op close (nothing written, nothing failed); noisy
-            // enough to reassure on a manual/successful write, and warn on failure
-            // (incl. a write success whose retention prune failed). When
-            // *everything* failed on close we prompt below instead of toasting.
-            if produced_nothing {
-                if pending.close.is_none() {
-                    show_result_toast(
-                        ctx,
-                        Toast::error(tr!(backup_partial(ok = ok, failed = failed)))
-                            .scoped_id(BACKUP_TOAST_ID, pending.tracked.work_id())
-                            .auto_dismiss_after(Duration::from_secs(6))
-                            .target_work(pending.tracked.work_id()),
+            // Reassure on a write, warn on a failure (incl. a write success whose
+            // retention prune failed), with or without a close waiting: until the
+            // window goes, its notice is what says how the backup ended. When
+            // *everything* failed on close, the dialog below says it instead.
+            ending = if produced_nothing {
+                pending.close.is_none().then(|| {
+                    with_details(
+                        backup_notice(
+                            Toast::error(tr!(backup_partial(ok = ok, failed = failed))),
+                            &pending,
+                        )
+                        .auto_dismiss_after(Duration::from_secs(6)),
                         detail,
-                    );
-                }
+                    )
+                })
             } else if failed > 0 {
-                show_result_toast(
-                    ctx,
-                    Toast::warning(tr!(backup_partial(ok = ok, failed = failed)))
-                        .scoped_id(BACKUP_TOAST_ID, pending.tracked.work_id())
-                        .auto_dismiss_after(Duration::from_secs(6))
-                        .target_work(pending.tracked.work_id()),
+                Some(with_details(
+                    backup_notice(
+                        Toast::warning(tr!(backup_partial(ok = ok, failed = failed))),
+                        &pending,
+                    )
+                    .auto_dismiss_after(Duration::from_secs(6)),
                     detail,
-                );
+                ))
             } else if has_delete_errors {
                 // Every destination wrote fine — only the post-write prune
                 // failed somewhere. Still a warning: silently swallowing this
                 // would leave the user believing everything is clean.
-                show_result_toast(
-                    ctx,
-                    Toast::warning(tr!(backup_complete_prune_warning(
-                        ok = ok,
-                        skipped = skipped
-                    )))
-                    .scoped_id(BACKUP_TOAST_ID, pending.tracked.work_id())
-                    .auto_dismiss_after(Duration::from_secs(6))
-                    .target_work(pending.tracked.work_id()),
+                Some(with_details(
+                    backup_notice(
+                        Toast::warning(tr!(backup_complete_prune_warning(
+                            ok = ok,
+                            skipped = skipped
+                        ))),
+                        &pending,
+                    )
+                    .auto_dismiss_after(Duration::from_secs(6)),
                     detail,
-                );
-            } else if pending.close.is_none() && (ok > 0 || skipped > 0) {
-                ctx.show_toast(
-                    Toast::success(tr!(backup_complete(ok = ok, skipped = skipped)))
-                        .scoped_id(BACKUP_TOAST_ID, pending.tracked.work_id())
-                        .auto_dismiss_after(Duration::from_secs(4))
-                        .target_work(pending.tracked.work_id()),
-                );
-            }
+                ))
+            } else if ok > 0 || skipped > 0 {
+                Some(
+                    backup_notice(
+                        Toast::success(tr!(backup_complete(ok = ok, skipped = skipped))),
+                        &pending,
+                    )
+                    .auto_dismiss_after(Duration::from_secs(4)),
+                )
+            } else {
+                // No copy written, none already current, none failed: nothing
+                // in this result says a copy exists.
+                Some(no_result_notice(&pending))
+            };
+        }
+
+        // Every ending takes over the loading notice, so nothing spins once the
+        // backup is over. `None` is the on-close backup that made no copy: the
+        // dialog below says so, and takes the notice down itself.
+        if let Some(ending) = ending {
+            self.progress.end_in_place(ctx, ending);
         }
 
         // Before the close branch below, which can return early: a safety
@@ -870,7 +907,7 @@ impl BackupSchedulerViewModel {
             // this is the backstop: don't silently quit without a backup — let the
             // user fix it and retry, or knowingly discard.
             if produced_nothing {
-                return self.prompt_backup_failed(ctx, then);
+                return self.prompt_backup_failed(ctx, then, None);
             }
             if pending.rerun_for_close {
                 // That backup was already running when the close arrived, so its
@@ -909,32 +946,50 @@ impl BackupSchedulerViewModel {
             .unwrap_or_default()
             .to_string();
         // The operation failed outright, so nothing was written anywhere.
-        if let Some(hook) = pending.then {
+        if let Some(hook) = pending.then.as_ref() {
             hook(ctx, false);
         }
         // On close, a failed backup means no copy was made — same backstop as
-        // "every destination failed": prompt rather than quit silently.
+        // "every destination failed": prompt rather than quit silently. The
+        // prompt names the error, since no destination was even reached.
         if let Some(then) = pending.close {
-            return self.prompt_backup_failed(ctx, then);
+            // An error with no words falls back to the dialog's plain sentence
+            // rather than ending one on an empty colon.
+            let named = (!error.trim().is_empty()).then(|| error.clone());
+            return self.prompt_backup_failed(ctx, then, named);
         }
         // Headline stays a translated sentence; the raw error string is a
         // detail behind a "Details" action, not the headline itself.
-        show_result_toast(
+        self.progress.end_in_place(
             ctx,
-            Toast::error(tr!(backup_failed_title()))
-                .scoped_id(BACKUP_TOAST_ID, pending.tracked.work_id())
-                .target_work(pending.tracked.work_id()),
-            Some(error),
+            with_details(
+                backup_notice(Toast::error(tr!(backup_failed_title())), &pending),
+                Some(error),
+            ),
         );
     }
 
-    /// The backup ran but nothing was written (or it failed outright) and a close
-    /// is pending. Offer to retry — the retry re-scans the destinations, so a
-    /// freshly-plugged drive is picked up — or to quit without a backup.
-    fn prompt_backup_failed(&self, ctx: &mut EventContext, then: PendingExit) {
+    /// The backup ran but nothing was written (or it failed outright with
+    /// `error`) and a close is pending. Offer to retry — the retry re-scans the
+    /// destinations, so a freshly-plugged drive is picked up — or to quit without
+    /// a backup.
+    ///
+    /// The dialog says how the backup ended, so the loading notice goes rather
+    /// than spin on beneath it.
+    fn prompt_backup_failed(
+        &self,
+        ctx: &mut EventContext,
+        then: PendingExit,
+        error: Option<String>,
+    ) {
+        self.progress.dismiss(ctx);
+        let text = match error {
+            Some(error) => tr!(backup_failed_close_error_text(error = error)),
+            None => tr!(backup_failed_close_text()),
+        };
         let me = self.clone();
         MessageBox::warning(tr!(backup_failed_close_title()))
-            .text(tr!(backup_failed_close_text()))
+            .text(text)
             .buttons(MessageBoxButtons::Custom(vec![
                 StandardButton::Retry.into(),
                 StandardButton::Discard.into(),
@@ -1012,11 +1067,28 @@ fn failure_detail(reasons: &[String], delete_errors: &[String]) -> Option<String
     }
 }
 
-/// Show `toast`, attaching a **Details** action (opening a plain message box
-/// with the raw content) when `detail` is `Some` — the raw OS/anyhow strings
-/// stay a detail, never the headline.
-fn show_result_toast(ctx: &mut EventContext, toast: Toast, detail: Option<String>) {
-    let toast = match detail {
+/// `toast` as the notice that ends `pending`'s backup: under the backup's own
+/// id, so it takes over the loading notice in place, and routed to the windows
+/// showing the Work it ran for.
+fn backup_notice(toast: Toast, pending: &Pending) -> Toast {
+    toast
+        .scoped_id(BACKUP_TOAST_ID, pending.tracked.work_id())
+        .target_work(pending.tracked.work_id())
+}
+
+/// The notice that ends a backup whose result says nothing about a copy: none
+/// to read at all, or one naming no destination. A warning, since it cannot
+/// promise a copy was made.
+fn no_result_notice(pending: &Pending) -> Toast {
+    backup_notice(Toast::warning(tr!(backup_no_result())), pending)
+        .auto_dismiss_after(Duration::from_secs(8))
+}
+
+/// `toast` with a **Details** action (opening a plain message box with the raw
+/// content) when `detail` is `Some` — the raw OS/anyhow strings stay a detail,
+/// never the headline.
+fn with_details(toast: Toast, detail: Option<String>) -> Toast {
+    match detail {
         Some(d) => toast.action(ToastAction::primary(tr!(backup_details()), move |c| {
             MessageBox::warning(tr!(backup_issues_title()))
                 .text(lit!(d.clone()))
@@ -1024,8 +1096,7 @@ fn show_result_toast(ctx: &mut EventContext, toast: Toast, detail: Option<String
                 .present(c);
         })),
         None => toast,
-    };
-    ctx.show_toast(toast);
+    }
 }
 
 /// Classification of a completed backup result against the destinations this

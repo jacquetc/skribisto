@@ -774,3 +774,332 @@ fn a_close_attached_to_a_running_backup_asks_for_a_fresh_copy_on_completion() {
         "the completion takes the on-close copy afresh"
     );
 }
+
+// ── Every ending of a backup ends its loading notice ──────────────────────
+//
+// A backup's progress notice is a loading toast, updated in place on every
+// tick. Each way the backup can end must leave either a final notice that
+// says how it ended, with no spinner, or no notice at all when a dialog tells
+// the story instead. These mount a real toast host, so what they find in the
+// tree is what the writer sees.
+
+/// The long-operation id every test below gives its backup.
+const BACKUP_OP: &str = "backup-op";
+
+/// A long-operation event of `kind` about [`BACKUP_OP`], carrying `extra`
+/// beside its id.
+fn backup_event(
+    kind: frontend::common::event::LongOperationEvent,
+    extra: serde_json::Value,
+) -> Event {
+    let mut payload = serde_json::json!({ "id": BACKUP_OP });
+    if let (Some(payload), serde_json::Value::Object(extra)) = (payload.as_object_mut(), extra) {
+        payload.extend(extra);
+    }
+    Event {
+        origin: frontend::common::event::Origin::LongOperation(kind),
+        ids: Vec::new(),
+        data: Some(payload.to_string()),
+    }
+}
+
+/// An open project with a backup in flight to one destination, `close`
+/// waiting on it, and its loading notice up and spinning in a tree that builds
+/// its toasts.
+fn backing_up(
+    close: Option<PendingExit>,
+) -> (
+    BackupSchedulerViewModel,
+    teksilo::core::widget_tree::WidgetTree,
+    teksilo::widgets::ToastRegistry,
+) {
+    use frontend::common::event::LongOperationEvent;
+
+    let s = opened("ne6qxlag");
+    s.pending.set(Some(Pending {
+        tracked: TrackedOp::start(&s.ids, BACKUP_OP.to_string()),
+        uid: "ne6qxlag".to_string(),
+        path: "/tmp/novel.skrib".to_string(),
+        dirs: vec!["/tmp/backups".to_string()],
+        close,
+        then: None,
+        rerun_for_close: false,
+    }));
+    let (mut tree, toasts) = crate::test_support::tree_with_toast_host(&s.app_ctx);
+    // A window showing the Work, as `App::build` sets one up: a backup's notice
+    // goes to the windows showing its Work, and a tree with no window would
+    // show it nowhere.
+    let window = TeksiloWindowId::new(1);
+    tree.set_window_state(teksilo::core::window::WindowState::new(
+        teksilo::core::WindowStateInit {
+            id: window,
+            string_id: Some("project".to_string()),
+            placement: teksilo::core::window::WindowPlacement::Floating,
+            title: "Novel".to_string(),
+            size: (900, 600),
+            position: (0, 0),
+            focused: true,
+            resizable: true,
+            always_on_top: false,
+        },
+    ));
+    let work = s.ids.work_id.get().expect("an open project has a Work id");
+    toasts.set_window_audience(window, Some(teksilo::widgets::ToastAudience::new(work)));
+    let ticking = s.clone();
+    let tick = backup_event(
+        LongOperationEvent::Progress,
+        serde_json::json!({ "percentage": 40.0, "message": "backup.start" }),
+    );
+    crate::test_support::press(&mut tree, move |c| ticking.on_long_op_progress(c, &tick));
+    assert!(
+        crate::test_support::shows_a_spinner(&tree),
+        "the backup's notice spins while it runs"
+    );
+    (s, tree, toasts)
+}
+
+/// What the engine reports for [`BACKUP_OP`]: `written` copies, `failed`
+/// destinations, and a prune that could not delete `delete_errors`.
+fn engine_reports(
+    s: &BackupSchedulerViewModel,
+    written: usize,
+    failed: usize,
+    delete_errors: usize,
+) {
+    let result = BackupResultDto {
+        content_hash: "hash".to_string(),
+        succeeded_paths: (0..written)
+            .map(|i| format!("/tmp/backups/novel-{i}.skrib"))
+            .collect(),
+        skipped_directories: Vec::new(),
+        failed_directories: (0..failed).map(|_| "/tmp/backups".to_string()).collect(),
+        failed_reasons: (0..failed).map(|_| "disk full".to_string()).collect(),
+        deleted_paths: Vec::new(),
+        delete_errors: (0..delete_errors)
+            .map(|_| "permission denied".to_string())
+            .collect(),
+    };
+    frontend::common::long_operation::lock_or_recover(&s.app_ctx.long_operation_manager)
+        .store_operation_result(BACKUP_OP, result)
+        .expect("a backup result serializes");
+}
+
+/// Send the completion of [`BACKUP_OP`] through a real `EventContext`.
+fn complete(s: &BackupSchedulerViewModel, tree: &mut teksilo::core::widget_tree::WidgetTree) {
+    let done = backup_event(
+        frontend::common::event::LongOperationEvent::Completed,
+        serde_json::Value::Null,
+    );
+    let s = s.clone();
+    crate::test_support::press(tree, move |c| s.on_long_op_completed(c, &done));
+}
+
+/// Send the outright failure of [`BACKUP_OP`] through a real `EventContext`.
+fn fail(s: &BackupSchedulerViewModel, tree: &mut teksilo::core::widget_tree::WidgetTree) {
+    fail_with(
+        s,
+        tree,
+        serde_json::json!({ "error": "the engine stopped" }),
+    );
+}
+
+/// The backup fails outright with `payload` as the event's data.
+fn fail_with(
+    s: &BackupSchedulerViewModel,
+    tree: &mut teksilo::core::widget_tree::WidgetTree,
+    payload: serde_json::Value,
+) {
+    let failed = backup_event(frontend::common::event::LongOperationEvent::Failed, payload);
+    let s = s.clone();
+    crate::test_support::press(tree, move |c| s.on_long_op_failed(c, &failed));
+}
+
+/// The text `message` resolves to, for comparing with what the tree shows.
+fn text(message: LocalizedString) -> String {
+    message.resolve_now()
+}
+
+/// The on-close backup that wrote its copy says so before the window goes, in
+/// place of the spinner. It used to say nothing, and the spinner stayed up
+/// over a backup that had finished, in every window still showing the Work
+/// while the quit moved on to the next project.
+#[test]
+fn an_on_close_backup_that_succeeded_ends_its_notice() {
+    crate::test_support::with_real_messages(|| {
+        let (s, mut tree, toasts) = backing_up(Some(PendingExit::Quit));
+        engine_reports(&s, 1, 0, 0);
+        complete(&s, &mut tree);
+
+        assert_eq!(toasts.live_count(), 1, "the backup's final notice is up");
+        assert!(
+            !crate::test_support::shows_a_spinner(&tree),
+            "the notice of a finished backup must not spin"
+        );
+        let said = text(tr!(backup_complete(ok = 1, skipped = 0)));
+        assert!(
+            tree.find_by_label(&said).is_some(),
+            "the notice says the backup is complete: {said}"
+        );
+    });
+}
+
+/// The on-close backup that wrote no copy anywhere asks what to do in a
+/// dialog. The dialog tells the story, so the loading notice goes: it used to
+/// keep spinning under the dialog that said the backup had failed.
+#[test]
+fn an_on_close_backup_that_wrote_nothing_leaves_the_story_to_its_dialog() {
+    crate::test_support::with_real_messages(|| {
+        let (s, mut tree, toasts) = backing_up(Some(PendingExit::Quit));
+        engine_reports(&s, 0, 1, 0);
+        complete(&s, &mut tree);
+
+        assert!(
+            !crate::test_support::shows_a_spinner(&tree),
+            "no spinner over the dialog that says the backup failed"
+        );
+        assert_eq!(toasts.live_count(), 0, "the loading notice is gone");
+        assert_eq!(
+            crate::test_support::drain_dialog_titles(&mut tree),
+            vec![text(tr!(backup_failed_close_title()))],
+            "the dialog asks whether to retry or close without a backup"
+        );
+    });
+}
+
+/// The same for an on-close backup that failed outright: the dialog, and no
+/// spinner under it. The dialog names the error rather than claiming every
+/// destination failed, since none was even reached.
+#[test]
+fn an_on_close_backup_that_failed_leaves_the_story_to_its_dialog() {
+    crate::test_support::with_real_messages(|| {
+        let (s, mut tree, toasts) = backing_up(Some(PendingExit::Quit));
+        fail(&s, &mut tree);
+
+        assert!(
+            !crate::test_support::shows_a_spinner(&tree),
+            "no spinner over the dialog that says the backup failed"
+        );
+        assert_eq!(toasts.live_count(), 0, "the loading notice is gone");
+        let mut requests = tree.drain_pending_modal_requests();
+        assert_eq!(requests.len(), 1, "one dialog asks what to do");
+        let request = requests.remove(0).request;
+        assert_eq!(
+            request.title,
+            Some(text(tr!(backup_failed_close_title()))),
+            "the dialog asks whether to retry or close without a backup"
+        );
+        let teksilo::core::modal::ModalContent::Deferred(builder) = request.content else {
+            panic!("a MessageBox presents deferred content");
+        };
+        builder(&mut tree);
+        tree.layout(SizeProposal::exact(900.0, 600.0));
+        let said = text(tr!(backup_failed_close_error_text(
+            error = "the engine stopped"
+        )));
+        assert!(
+            tree.find_by_label(&said).is_some(),
+            "the dialog names what went wrong: {said}"
+        );
+    });
+}
+
+/// A failure that carries no words keeps the dialog's plain sentence, never
+/// one ending on an empty colon.
+#[test]
+fn an_on_close_backup_failing_without_words_keeps_a_whole_sentence() {
+    crate::test_support::with_real_messages(|| {
+        let (s, mut tree, _toasts) = backing_up(Some(PendingExit::Quit));
+        fail_with(&s, &mut tree, serde_json::json!({ "error": "  " }));
+
+        let mut requests = tree.drain_pending_modal_requests();
+        assert_eq!(requests.len(), 1, "one dialog asks what to do");
+        let request = requests.remove(0).request;
+        let teksilo::core::modal::ModalContent::Deferred(builder) = request.content else {
+            panic!("a MessageBox presents deferred content");
+        };
+        builder(&mut tree);
+        tree.layout(SizeProposal::exact(900.0, 600.0));
+        let plain = text(tr!(backup_failed_close_text()));
+        assert!(
+            tree.find_by_label(&plain).is_some(),
+            "the dialog says the backup failed in a whole sentence: {plain}"
+        );
+    });
+}
+
+/// A backup whose result cannot be read ends with a notice that says so. It
+/// used to end with nothing, and the spinner kept turning for good.
+#[test]
+fn a_backup_whose_result_cannot_be_read_ends_its_notice() {
+    crate::test_support::with_real_messages(|| {
+        let (s, mut tree, toasts) = backing_up(None);
+        // Nothing stored for the operation: there is no result to read.
+        complete(&s, &mut tree);
+
+        assert_eq!(toasts.live_count(), 1, "a final notice is up");
+        assert!(
+            !crate::test_support::shows_a_spinner(&tree),
+            "the notice of an ended backup must not spin"
+        );
+        let said = text(tr!(backup_no_result()));
+        assert!(
+            tree.find_by_label(&said).is_some(),
+            "the notice says the outcome is unknown, not that a copy was made: {said}"
+        );
+    });
+}
+
+/// The same when the result reads but reports no destination at all: no copy
+/// written, none already current, none failed. Nothing in it supports a
+/// success, so it gets the same notice.
+#[test]
+fn a_backup_reporting_no_destination_ends_its_notice() {
+    crate::test_support::with_real_messages(|| {
+        let (s, mut tree, toasts) = backing_up(Some(PendingExit::Quit));
+        engine_reports(&s, 0, 0, 0);
+        complete(&s, &mut tree);
+
+        assert_eq!(toasts.live_count(), 1, "a final notice is up");
+        assert!(!crate::test_support::shows_a_spinner(&tree));
+        let said = text(tr!(backup_no_result()));
+        assert!(tree.find_by_label(&said).is_some(), "{said}");
+    });
+}
+
+/// Every other ending, with or without a close waiting: a final notice, and
+/// no spinner.
+#[test]
+fn every_other_backup_ending_stops_the_spinner() {
+    // (close waiting, written, failed, prune errors)
+    let reports = [
+        (None, 1, 0, 0),
+        (None, 0, 1, 0),
+        (None, 1, 1, 0),
+        (None, 1, 0, 1),
+        (Some(PendingExit::Quit), 1, 1, 0),
+        (Some(PendingExit::Quit), 1, 0, 1),
+    ];
+    for (close, written, failed, prune_errors) in reports {
+        let (s, mut tree, toasts) = backing_up(close);
+        engine_reports(&s, written, failed, prune_errors);
+        complete(&s, &mut tree);
+        assert_eq!(
+            toasts.live_count(),
+            1,
+            "a final notice: close {close:?}, {written} written, {failed} failed"
+        );
+        assert!(
+            !crate::test_support::shows_a_spinner(&tree),
+            "no spinner: close {close:?}, {written} written, {failed} failed, \
+             {prune_errors} prune errors"
+        );
+    }
+
+    let (s, mut tree, toasts) = backing_up(None);
+    fail(&s, &mut tree);
+    assert_eq!(toasts.live_count(), 1, "the failure is up");
+    assert!(
+        !crate::test_support::shows_a_spinner(&tree),
+        "a failed backup's notice must not spin"
+    );
+}
