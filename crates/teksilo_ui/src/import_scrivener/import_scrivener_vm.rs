@@ -8,7 +8,9 @@
 //! two windows can each hold a wizard. What it starts, the import itself, belongs to the
 //! process's one `shared::project_import::ProjectImportJob` (Tier 1): one import at a time,
 //! the progress notice, Cancel, the result with **Open now**, a failure worded in the
-//! writer's language.
+//! writer's language. The job starts the conversion and reads its result through
+//! `models::scrivener_import_run`, the import's data seam, so the mocks build walks the same
+//! path to the report on a fabricated run.
 //!
 //! Three steps, as the panel shows them:
 //!
@@ -41,7 +43,6 @@ use teksilo::prelude::*;
 use teksilo::widgets::{MessageBox, MessageBoxButtons, StepperController, ValidationState};
 
 use frontend::AppContext;
-use frontend::commands::import_management_commands;
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
 use frontend::import_management::scrivener::ScrivenerReviewError;
 use frontend::import_management::scrivener::{METADATA_WORD_ORDER, VALUE_SLOT};
@@ -64,6 +65,7 @@ use super::report_panel::present_import_report;
 use super::report_vm::{ImportReportViewModel, ItemFinder};
 use crate::binder::create_labels::recommendation_label;
 use crate::intents::AppIntent;
+use crate::models::scrivener_import_run::ScrivenerImportRun;
 use crate::models::scrivener_inspection::{InspectState, ScrivenerInspection};
 use crate::shared::form_checks::{CachedValidation, DiskChecked, FolderMessages, folder_state};
 use crate::shared::import_destination::{DestinationMessages, ImportDestination};
@@ -126,9 +128,7 @@ pub(crate) static SCRIVENER: Importer<ImportScrivenerProjectDto> = Importer {
         overwrite: true,
         ..request
     },
-    launch: |app_ctx, request| {
-        import_management_commands::import_scrivener_project(app_ctx, request)
-    },
+    launch: ScrivenerImportRun::start,
     outcome,
     source: |request| request.source_path.clone(),
     review_again: Some(ReviewAgain {
@@ -295,9 +295,7 @@ fn remember_finished(result: Rc<ScrivenerImportResult>) {
 /// The finished import's result, in the writer's words: how many items the new project
 /// holds and how many kinds of thing need a look. Keeps the whole result for the report.
 fn outcome(app_ctx: &AppContext, op_id: &str) -> Option<ImportOutcome> {
-    let result =
-        import_management_commands::get_import_scrivener_project_result(app_ctx, op_id).ok()??;
-    Some(record_outcome(result))
+    Some(record_outcome(ScrivenerImportRun::result(app_ctx, op_id)?))
 }
 
 /// Keep `result` as the last import, with the record of the wizard that started it, and

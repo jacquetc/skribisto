@@ -2030,3 +2030,7 @@ fn the_import_asks_on_the_writers_own_day() {
     assert_ne!(today.date_naive(), chrono::Utc::now().date_naive());
     assert_eq!(today.time(), chrono::NaiveTime::MIN, "kept at midnight UTC");
 }
+
+/// The mocks build walks an import to its report on the fabricated run.
+#[cfg(feature = "mocks")]
+mod mock_import;

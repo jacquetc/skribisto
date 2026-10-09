@@ -20,7 +20,11 @@
 //!   cover every tier the wizard shows: refusals (`refuse`, `cloud`), questions to choose
 //!   (`several`, `manifests`, `backup`), questions to accept (`ipad`, `empty`), and a
 //!   readable novel with notices to know (anything else). Its recomputation applies the
-//!   choices to the fabricated plan.
+//!   choices to the fabricated plan. The novel's draft target, deadline and status list are
+//!   chosen by words too (`pages`, `characters`, `overdue`, `lastday`, `undated`,
+//!   `statusless`), and its binder rows are named from one table the fabricated import
+//!   (`models::scrivener_import_run`) reads as well. A project whose fabricated import
+//!   failed on `question` or `unaccepted` is read again with that question asked.
 //!
 //! **Never log or `{:?}` an analysis.** Its `review_data` keeps the raw folder name and member
 //! paths, where a sync copy's file name can name a person; `InspectState`'s own `Debug`
@@ -288,8 +292,12 @@ mod imp {
 
 #[cfg(feature = "mocks")]
 mod imp {
+    use std::cell::RefCell;
+    use std::collections::BTreeSet;
     use std::rc::Rc;
+    use std::sync::{Mutex, PoisonError};
 
+    use chrono::{DateTime, Days, NaiveDate, Utc};
     use teksilo::prelude::*;
 
     use frontend::AppContext;
@@ -312,12 +320,15 @@ mod imp {
     #[derive(Clone)]
     pub struct ScrivenerInspection {
         state: Signal<InspectState>,
+        /// The project last read, which every choice plans again.
+        project: Rc<RefCell<Fabricated>>,
     }
 
     impl ScrivenerInspection {
         pub fn new(_app_ctx: Rc<AppContext>) -> Self {
             Self {
                 state: Signal::new(InspectState::Idle),
+                project: Rc::new(RefCell::new(Fabricated::default())),
             }
         }
 
@@ -331,6 +342,7 @@ mod imp {
 
         /// Answer at once with the analysis the picked path's name asks for.
         pub fn start(&self, request: AnalyzeScrivenerProjectDto) {
+            *self.project.borrow_mut() = Fabricated::of(&request.source_path, request.today);
             self.state
                 .set(InspectState::Read(Rc::new(fabricate(&request))));
         }
@@ -346,7 +358,7 @@ mod imp {
         ) -> Result<ScrivenerStructure, ScrivenerReviewError> {
             match self.state.get().analysis() {
                 Some(analysis) if analysis.outcome == ScrivenerAnalysisOutcome::Read => {
-                    Ok(novel_structure(choices))
+                    Ok(novel_structure(&self.project.borrow(), choices))
                 }
                 _ => Err(ScrivenerReviewError::Unreadable),
             }
@@ -405,11 +417,11 @@ mod imp {
         }
     }
 
+    /// A finding of the structure mapping about the binder row `of`.
     fn at_item(
         key: &str,
         group: ScrivenerReportGroup,
-        item: i64,
-        path: &[&str],
+        of: &FabricatedItem,
         args: Vec<ScrivenerArg>,
     ) -> ScrivenerFinding {
         ScrivenerFinding::Reported {
@@ -417,8 +429,8 @@ mod imp {
             family: ScrivenerFindingFamily::Structure,
             group,
             place: ScrivenerPlace::Item,
-            item,
-            binder_path: path.iter().map(|p| p.to_string()).collect(),
+            item: of.item,
+            binder_path: of.path.clone(),
             item_uid: None,
             args,
         }
@@ -460,20 +472,12 @@ mod imp {
                 ],
             });
         }
-        if has("manifests") && request.chosen_manifest.is_empty() {
-            return choose(ScrivenerQuestion::SeveralManifests {
-                candidates: vec![
-                    manifest("Novel.scrivx", Some(1_717_236_000), Some(86)),
-                    manifest(
-                        "Novel (conflicted copy).scrivx",
-                        Some(1_717_100_000),
-                        Some(84),
-                    ),
-                    manifest("Novel 2.scrivx", None, None),
-                ],
-                preselected: None,
-                evidence: Vec::new(),
-            });
+        // What a failed import said had happened since its review, this look sees.
+        let failed_before = import_failed_before(&request.source_path);
+        if (has("manifests") || (has("question") && failed_before))
+            && request.chosen_manifest.is_empty()
+        {
+            return choose(several_manifests());
         }
         if (has("backup") || has("upgrade"))
             && request.upgraded_sibling == ScrivenerSiblingChoice::Unanswered
@@ -485,7 +489,7 @@ mod imp {
                 preselect_sibling: true,
             });
         }
-        let mut analysis = novel();
+        let mut analysis = novel(&Fabricated::of(&request.source_path, request.today));
         analysis.project_path = located(request);
         if request.upgraded_sibling == ScrivenerSiblingChoice::Backup {
             analysis.notices.push(whole(
@@ -494,7 +498,9 @@ mod imp {
                 Vec::new(),
             ));
         }
-        if has("ipad") && !request.accept_unmerged_mobile_edits {
+        if (has("ipad") || (has("unaccepted") && failed_before))
+            && !request.accept_unmerged_mobile_edits
+        {
             analysis
                 .pending
                 .push(ScrivenerQuestion::UnmergedMobileEdits {
@@ -556,9 +562,49 @@ mod imp {
         }
     }
 
+    /// The question a project with several manifests asks: which one is the project.
+    pub(crate) fn several_manifests() -> ScrivenerQuestion {
+        ScrivenerQuestion::SeveralManifests {
+            candidates: vec![
+                manifest("Novel.scrivx", Some(1_717_236_000), Some(86)),
+                manifest(
+                    "Novel (conflicted copy).scrivx",
+                    Some(1_717_100_000),
+                    Some(84),
+                ),
+                manifest("Novel 2.scrivx", None, None),
+            ],
+            preselected: None,
+            evidence: Vec::new(),
+        }
+    }
+
+    /// The projects whose fabricated import failed on a word of their path, by the path
+    /// the writer picked. What the word stands for happened between that review and that
+    /// import: the next look at the project sees it (a manifest to choose, edits to
+    /// accept), and the next import does not meet it again.
+    static FAILED_IMPORTS: Mutex<BTreeSet<String>> = Mutex::new(BTreeSet::new());
+
+    /// The fabricated import of the project picked at `source` failed on a word of its path.
+    pub(crate) fn remember_failed_import(source: &str) {
+        FAILED_IMPORTS
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .insert(source.to_string());
+    }
+
+    /// Whether a fabricated import of the project picked at `source` already failed on a
+    /// word of its path.
+    pub(crate) fn import_failed_before(source: &str) -> bool {
+        FAILED_IMPORTS
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .contains(source)
+    }
+
     /// A readable novel: a part, chapters and scenes in the Draft, characters and research
     /// beside it, and the notices a writer meets most.
-    fn novel() -> ScrivenerAnalysisDto {
+    fn novel(project: &Fabricated) -> ScrivenerAnalysisDto {
         ScrivenerAnalysisDto {
             outcome: ScrivenerAnalysisOutcome::Read,
             notices: vec![
@@ -627,17 +673,478 @@ mod imp {
             proposed_title_source: ScrivenerTitleSource::CompileSettings,
             proposed_authors: vec!["Ada Marlowe".into()],
             proposed_language_source: ScrivenerLanguageSource::NotStated,
-            structure: novel_structure(&[]),
+            structure: novel_structure(project, &[]),
             fingerprint: "mock".into(),
             ..ScrivenerAnalysisDto::default()
         }
     }
 
+    // ── the fabricated project ───────────────────────────────────────────────────────────
+
     // The binder rows of the fabricated project, by their place in Scrivener's binder.
+    pub(crate) const DRAFT: &str = "Draft";
     const CHARACTERS: i64 = 20;
-    const RESEARCH: i64 = 24;
-    const IDEAS: i64 = 27;
+    pub(crate) const RESEARCH: i64 = 24;
+    pub(crate) const IDEAS: i64 = 27;
     const SCENE_DEPTH: i64 = 3;
+    const PARTS: [&str; 2] = ["Part One: The Light", "Part Two: The Storm"];
+    /// A title that only names its level: the import stores it blank and the binder
+    /// numbers the row.
+    const PLACEHOLDER_TITLE: &str = "Chapter";
+    /// The chapters' titles in Scrivener, in binder order, two to a part.
+    const CHAPTERS: [&str; 4] = ["Chapter 1", PLACEHOLDER_TITLE, "Chapter 3", "Chapter 4"];
+    const SCENES: [&str; 3] = ["Scene 1", "Scene 2", "Scene 3"];
+    /// The root folders beside the Draft, each with its documents' titles.
+    const ROOTS: [(i64, &str, &[&str]); 3] = [
+        (CHARACTERS, "Characters", &["Mara Varga", "Tomas Reed"]),
+        (
+            RESEARCH,
+            "Research",
+            &["Harbour chart", "Foghorn recording"],
+        ),
+        (
+            IDEAS,
+            "Old ideas",
+            &[
+                "A ghost in the lamp room",
+                "A second narrator",
+                "A winter ending",
+            ],
+        ),
+    ];
+    /// What the writer deleted, in Scrivener's Trash after the root folders' documents.
+    const TRASH: &str = "Trash";
+    const TRASHED: [&str; 2] = ["Deleted scene", "Old opening"];
+    const FIRST_TRASHED: i64 = 31;
+
+    /// One binder row of the fabricated project: its number in Scrivener's binder and
+    /// where the writer knew it there. The one table of names the fabricated review and the
+    /// fabricated import both read, so a row is named alike on every page and every line.
+    #[derive(Clone, Debug, PartialEq, Eq)]
+    pub(crate) struct FabricatedItem {
+        pub(crate) item: i64,
+        pub(crate) path: Vec<String>,
+    }
+
+    impl FabricatedItem {
+        fn new(item: i64, path: &[&str]) -> Self {
+            Self {
+                item,
+                path: path.iter().map(|p| p.to_string()).collect(),
+            }
+        }
+
+        /// Its title in Scrivener.
+        pub(crate) fn title(&self) -> &str {
+            self.path.last().map(String::as_str).unwrap_or_default()
+        }
+
+        /// Whether its title only named its level, which the import stores blank.
+        fn placeholder(&self) -> bool {
+            self.title() == PLACEHOLDER_TITLE
+        }
+    }
+
+    /// Every binder row of the fabricated project, in binder order: the Draft's parts,
+    /// chapters and scenes, the root folders and their documents, then the Trash.
+    pub(crate) fn fabricated_binder() -> Vec<FabricatedItem> {
+        let mut items = Vec::new();
+        let mut item = 1;
+        let mut chapters = CHAPTERS.iter();
+        for part in PARTS {
+            items.push(FabricatedItem::new(item, &[DRAFT, part]));
+            item += 1;
+            for chapter in chapters.by_ref().take(2) {
+                items.push(FabricatedItem::new(item, &[DRAFT, part, chapter]));
+                item += 1;
+                for scene in SCENES {
+                    items.push(FabricatedItem::new(item, &[DRAFT, part, chapter, scene]));
+                    item += 1;
+                }
+            }
+        }
+        for (root, title, children) in ROOTS {
+            items.push(FabricatedItem::new(root, &[title]));
+            for (n, child) in (1..).zip(children) {
+                items.push(FabricatedItem::new(root + n, &[title, child]));
+            }
+        }
+        for (n, title) in (0..).zip(TRASHED) {
+            items.push(FabricatedItem::new(FIRST_TRASHED + n, &[TRASH, title]));
+        }
+        items
+    }
+
+    /// The binder row `item` of the fabricated project.
+    pub(crate) fn fabricated_item(item: i64) -> Option<FabricatedItem> {
+        fabricated_binder().into_iter().find(|i| i.item == item)
+    }
+
+    /// The documents directly below the root folder or the Trash titled `title`.
+    fn below(binder: &[FabricatedItem], title: &str) -> Vec<FabricatedItem> {
+        binder
+            .iter()
+            .filter(|i| i.path.len() == 2 && i.path[0] == title)
+            .cloned()
+            .collect()
+    }
+
+    /// What the fabricated project holds that a project has only one of (one draft target,
+    /// one deadline, a status list or none), chosen like every other case by a word in the
+    /// last component of the picked path: `pages` (a draft target in pages), `characters`
+    /// (in characters), `overdue` (a deadline already past), `lastday` (a deadline that is
+    /// the day of the import), `undated` (a deadline that cannot be read) and `statusless`
+    /// (no status list). Anything else has a draft target in words, a deadline far ahead
+    /// and a status list. The review plans it and the import reports it from here, so the
+    /// two cannot disagree.
+    #[derive(Clone, Debug, Default)]
+    pub(crate) struct Fabricated {
+        /// The last component of the picked path, lower-cased.
+        name: String,
+        /// The writer's day: the import plans from it, as the converter does.
+        today: NaiveDate,
+    }
+
+    /// A draft target: its count, and its unit as the converter's token names it.
+    #[derive(Clone, Copy)]
+    struct DraftTarget {
+        value: i64,
+        unit: &'static str,
+    }
+
+    impl Fabricated {
+        /// The project picked at `source_path`, read on the writer's day `today`.
+        pub(crate) fn of(source_path: &str, today: DateTime<Utc>) -> Self {
+            Self {
+                name: std::path::Path::new(source_path)
+                    .file_name()
+                    .map(|n| n.to_string_lossy().to_lowercase())
+                    .unwrap_or_default(),
+                today: today.date_naive(),
+            }
+        }
+
+        fn has(&self, word: &str) -> bool {
+            self.name.contains(word)
+        }
+
+        /// Whether the project has a status list.
+        pub(crate) fn has_statuses(&self) -> bool {
+            !self.has("statusless")
+        }
+
+        fn draft_target(&self) -> DraftTarget {
+            if self.has("pages") {
+                DraftTarget {
+                    value: 320,
+                    unit: "pages",
+                }
+            } else if self.has("characters") {
+                DraftTarget {
+                    value: 480_000,
+                    unit: "characters",
+                }
+            } else {
+                DraftTarget {
+                    value: 90_000,
+                    unit: "words",
+                }
+            }
+        }
+
+        /// The deadline's day, `None` when it cannot be read.
+        fn deadline(&self) -> Option<NaiveDate> {
+            if self.has("undated") {
+                None
+            } else if self.has("overdue") {
+                // Two months before the import, whatever day it is.
+                self.today.checked_sub_days(Days::new(61))
+            } else if self.has("lastday") {
+                Some(self.today)
+            } else {
+                NaiveDate::from_ymd_opt(2099, 12, 1)
+            }
+        }
+    }
+
+    fn text_arg(name: &str, value: &str) -> ScrivenerArg {
+        ScrivenerArg::Text {
+            name: name.to_string(),
+            value: value.to_string(),
+        }
+    }
+
+    fn texts_arg(name: &str, values: &[&str]) -> ScrivenerArg {
+        ScrivenerArg::Texts {
+            name: name.to_string(),
+            values: values.iter().map(|v| v.to_string()).collect(),
+        }
+    }
+
+    /// A calendar day as the converter gives it, `YYYY-MM-DD`: a date's own spelling, read
+    /// on no clock.
+    fn day_arg(day: NaiveDate) -> ScrivenerArg {
+        ScrivenerArg::Day {
+            name: "day".to_string(),
+            value: day.to_string(),
+        }
+    }
+
+    /// What the metadata mapping foresees for `project` when its manuscript holds `books`
+    /// books: every notice the converter gives before the import, filed as it files them.
+    fn foreseen(project: &Fabricated, books: usize) -> Vec<ScrivenerFinding> {
+        use ScrivenerReportGroup::{
+            BroughtAcrossDifferently as Differently, CheckThese as Check, LeftBehind as Left,
+        };
+        let characters = ROOTS[0].2;
+        let single_book = books == 1;
+        let target = project.draft_target();
+        let mut notices = vec![
+            // Check these.
+            metadata(
+                "scrivener-metadata-pov-hint",
+                Check,
+                vec![
+                    texts_arg("values", characters),
+                    texts_arg("matches", characters),
+                ],
+            ),
+            metadata(
+                "scrivener-metadata-goals-in-other-unit",
+                Check,
+                vec![count("count", 2)],
+            ),
+            metadata(
+                "scrivener-metadata-script-mode-rows",
+                Check,
+                vec![count("rows", 1)],
+            ),
+            // Brought across differently.
+            metadata(
+                "scrivener-metadata-keywords-became-tags",
+                Differently,
+                vec![count("tags", 4), count("rows", 9)],
+            ),
+            metadata(
+                "scrivener-metadata-keyword-hierarchy-flattened",
+                Differently,
+                vec![count("keywords", 3)],
+            ),
+            metadata(
+                "scrivener-metadata-fields-became-tags",
+                Differently,
+                vec![count("fields", 4), count("tags", 9), count("rows", 12)],
+            ),
+            metadata(
+                "scrivener-metadata-collections-became-tags",
+                Differently,
+                vec![count("tags", 2), count("rows", 5)],
+            ),
+            metadata(
+                "scrivener-metadata-collection-order-lost",
+                Differently,
+                vec![texts_arg("names", &["Harbour", "Night scenes"])],
+            ),
+            metadata(
+                "scrivener-metadata-bookmarks-became-links",
+                Differently,
+                vec![count("count", 5)],
+            ),
+            metadata(
+                "scrivener-metadata-goals-kept",
+                Differently,
+                vec![count("rows", 6)],
+            ),
+            metadata(
+                "scrivener-metadata-dictionary-words",
+                Differently,
+                vec![count("count", 12)],
+            ),
+            metadata(
+                "scrivener-metadata-targets-on-notes",
+                Differently,
+                vec![count("count", 2)],
+            ),
+            metadata(
+                "scrivener-metadata-targets-on-split-documents",
+                Differently,
+                vec![count("count", 1)],
+            ),
+            metadata(
+                "scrivener-metadata-bookmark-ends-without-row",
+                Differently,
+                vec![count("count", 1)],
+            ),
+            // Left behind.
+            metadata(
+                "scrivener-metadata-unused-keywords-skipped",
+                Left,
+                vec![texts_arg("names", &["Unused"])],
+            ),
+            metadata(
+                "scrivener-metadata-undefined-custom-field",
+                Left,
+                vec![texts_arg("ids", &["season", "act"]), count("values", 3)],
+            ),
+            metadata(
+                "scrivener-metadata-empty-collections-skipped",
+                Left,
+                vec![texts_arg("names", &["To read aloud"])],
+            ),
+            metadata(
+                "scrivener-metadata-bookmarks-unresolved",
+                Left,
+                vec![count("count", 2)],
+            ),
+            metadata(
+                "scrivener-metadata-targets-in-pages",
+                Left,
+                vec![count("count", 1)],
+            ),
+            metadata(
+                "scrivener-metadata-targets-unreadable",
+                Left,
+                vec![count("count", 1)],
+            ),
+            metadata(
+                "scrivener-metadata-session-target-not-imported",
+                Left,
+                vec![count("value", 1_500), token_arg("unit", "words")],
+            ),
+            metadata(
+                "scrivener-metadata-icons-dropped",
+                Left,
+                vec![count("rows", 2), texts_arg("names", &["Book (Blue Book)"])],
+            ),
+        ];
+        // One line per field, per collection: two of each.
+        for field in ["Needs research", "Revisit"] {
+            notices.push(metadata(
+                "scrivener-metadata-checkbox-default-unknown",
+                Check,
+                vec![text_arg("field", field)],
+            ));
+        }
+        for (field, values) in [("Mood", 2), ("Weather", 1)] {
+            notices.push(metadata(
+                "scrivener-metadata-list-value-invalid",
+                Left,
+                vec![text_arg("field", field), count("count", values)],
+            ));
+        }
+        for (name, missing) in [("Harbour", 1), ("Night scenes", 2)] {
+            notices.push(metadata(
+                "scrivener-metadata-collection-members-missing",
+                Left,
+                vec![text_arg("name", name), count("count", missing)],
+            ));
+        }
+        // The labels and statuses with no name, and the metadata of rows the new project
+        // does not have, one line per field: a status only where there is a status list.
+        let statuses = project.has_statuses();
+        for (field, id) in [("label", 7), ("status", 4)] {
+            if field != "status" || statuses {
+                notices.push(metadata(
+                    "scrivener-metadata-unnamed-value",
+                    Differently,
+                    vec![token_arg("field", field), count("id", id)],
+                ));
+            }
+        }
+        for (field, items) in [
+            ("label", 2),
+            ("status", 2),
+            ("keyword", 3),
+            ("custom-field", 1),
+            ("bookmark", 1),
+            ("target", 1),
+        ] {
+            if field != "status" || statuses {
+                notices.push(metadata(
+                    "scrivener-metadata-values-without-row",
+                    Left,
+                    vec![token_arg("field", field), count("items", items)],
+                ));
+            }
+        }
+
+        // The draft target: the book's goal when there is one book and it counts no pages.
+        let target_args = |reason: Option<&str>| {
+            let mut args: Vec<ScrivenerArg> = reason
+                .map(|reason| token_arg("reason", reason))
+                .into_iter()
+                .collect();
+            args.extend([count("value", target.value), token_arg("unit", target.unit)]);
+            args
+        };
+        if target.unit == "pages" {
+            notices.push(metadata(
+                "scrivener-metadata-draft-target-not-kept",
+                Left,
+                target_args(Some("pages")),
+            ));
+        } else if !single_book {
+            notices.push(metadata(
+                "scrivener-metadata-draft-target-not-kept",
+                Left,
+                target_args(Some("no-single-book")),
+            ));
+        } else {
+            notices.push(metadata(
+                "scrivener-metadata-draft-target-kept",
+                Differently,
+                target_args(None),
+            ));
+            notices.push(metadata(
+                "scrivener-metadata-counting-differs",
+                Check,
+                Vec::new(),
+            ));
+        }
+
+        // The deadline: the book's pace plan, unless something stands in its way.
+        let deadline = project.deadline();
+        let blocked = match deadline {
+            None => Some("unreadable"),
+            Some(_) if !single_book => Some("no-single-book"),
+            Some(day) if day < project.today => Some("passed"),
+            Some(day) if day == project.today => Some("no-writing-day-left"),
+            Some(_) if target.unit == "pages" => Some("no-word-goal"),
+            Some(_) if target.unit == "characters" => Some("character-goal"),
+            Some(_) => None,
+        };
+        match (blocked, deadline) {
+            (Some(reason), day) => {
+                let mut args = vec![token_arg("reason", reason)];
+                args.extend(day.map(day_arg));
+                notices.push(metadata(
+                    "scrivener-metadata-deadline-not-planned",
+                    Left,
+                    args,
+                ));
+            }
+            (None, Some(day)) => {
+                notices.push(metadata(
+                    "scrivener-metadata-pace-planned",
+                    Differently,
+                    vec![
+                        day_arg(day),
+                        ScrivenerArg::Flag {
+                            name: "day_off".into(),
+                            value: true,
+                        },
+                    ],
+                ));
+                notices.push(metadata(
+                    "scrivener-metadata-writing-days-not-read",
+                    Check,
+                    vec![text_arg("raw", "Mon Wed Fri")],
+                ));
+            }
+            (None, None) => {}
+        }
+        notices
+    }
 
     fn row(
         binder: ScrivenerBinder,
@@ -660,35 +1167,41 @@ mod imp {
         }
     }
 
-    fn item_ref(item: i64, path: &[&str]) -> ScrivenerItemRef {
+    fn item_ref(of: &FabricatedItem) -> ScrivenerItemRef {
         ScrivenerItemRef::Item {
-            item,
-            binder_path: path.iter().map(|p| p.to_string()).collect(),
+            item: of.item,
+            binder_path: of.path.clone(),
         }
     }
 
-    /// The fabricated plan with `choices` applied, as the real review applies them onto
-    /// what was detected.
-    fn novel_structure(choices: &[ScrivenerChoice]) -> ScrivenerStructure {
+    /// The fabricated plan of `project` with `choices` applied, as the real review applies
+    /// them onto what was detected.
+    fn novel_structure(project: &Fabricated, choices: &[ScrivenerChoice]) -> ScrivenerStructure {
         use BinderItemRole as R;
         use BinderItemSubRole as S;
         use ScrivenerBinder::{Manuscript, Notes};
 
+        let binder = fabricated_binder();
         let mut part_rung = ScrivenerContainerRung::Part;
         let mut chapter_rung = ScrivenerContainerRung::Chapter;
         let mut texts = ScrivenerTextKind::Scenes;
         let mut trash = ScrivenerTrashChoice::LeaveOut;
-        let mut roots = vec![
-            (
-                CHARACTERS,
-                "Characters",
-                2,
-                ScrivenerDestination::StoryBible,
-            ),
-            (RESEARCH, "Research", 2, ScrivenerDestination::Notes),
-            (IDEAS, "Old ideas", 3, ScrivenerDestination::Notes),
-        ];
-        let detected: Vec<ScrivenerDestination> = roots.iter().map(|r| r.3.clone()).collect();
+        let mut roots: Vec<(FabricatedItem, Vec<FabricatedItem>, ScrivenerDestination)> = ROOTS
+            .iter()
+            .map(|(item, title, _)| {
+                let detected = if *item == CHARACTERS {
+                    ScrivenerDestination::StoryBible
+                } else {
+                    ScrivenerDestination::Notes
+                };
+                (
+                    FabricatedItem::new(*item, &[title]),
+                    below(&binder, title),
+                    detected,
+                )
+            })
+            .collect();
+        let detected: Vec<ScrivenerDestination> = roots.iter().map(|r| r.2.clone()).collect();
         for choice in choices {
             match choice {
                 ScrivenerChoice::Containers { depth: 1, rung } => part_rung = rung.clone(),
@@ -696,8 +1209,8 @@ mod imp {
                 ScrivenerChoice::Texts { kind, .. } => texts = kind.clone(),
                 ScrivenerChoice::Trash { choice } => trash = choice.clone(),
                 ScrivenerChoice::Root { item, destination } => {
-                    if let Some(root) = roots.iter_mut().find(|r| r.0 == *item) {
-                        root.3 = destination.clone();
+                    if let Some(root) = roots.iter_mut().find(|r| r.0.item == *item) {
+                        root.2 = destination.clone();
                     }
                 }
                 _ => {}
@@ -725,78 +1238,66 @@ mod imp {
             item: 0,
             why: ScrivenerSignal::Synthesised,
         }];
-        let mut item = 1;
-        let mut chapter_number = 0;
-        for part in ["Part One: The Light", "Part Two: The Storm"] {
-            rows.push(row(Manuscript, 1, folder(&part_rung), part, item));
-            item += 1;
-            for _ in 0..2 {
-                chapter_number += 1;
-                rows.push(row(
-                    Manuscript,
-                    2,
-                    folder(&chapter_rung),
-                    &format!("Chapter {chapter_number}"),
-                    item,
+        let mut notices = Vec::new();
+        let draft: Vec<&FabricatedItem> = binder
+            .iter()
+            .filter(|i| i.path.first().map(String::as_str) == Some(DRAFT))
+            .collect();
+        for entry in &draft {
+            let depth = entry.path.len() as i64 - 1;
+            let kind = match depth {
+                1 => folder(&part_rung),
+                2 => folder(&chapter_rung),
+                _ => text.clone(),
+            };
+            let title = if entry.placeholder() {
+                ""
+            } else {
+                entry.title()
+            };
+            rows.push(row(Manuscript, depth, kind, title, entry.item));
+            if entry.placeholder() {
+                notices.push(at_item(
+                    "scrivener-structure-placeholder-title",
+                    ScrivenerReportGroup::BroughtAcrossDifferently,
+                    entry,
+                    Vec::new(),
                 ));
-                item += 1;
-                for scene in 1..=3 {
-                    rows.push(row(
-                        Manuscript,
-                        SCENE_DEPTH,
-                        text.clone(),
-                        &format!("Scene {scene}"),
-                        item,
-                    ));
-                    item += 1;
-                }
             }
         }
-        let mut notices = vec![at_item(
-            "scrivener-structure-placeholder-title",
-            ScrivenerReportGroup::BroughtAcrossDifferently,
-            3,
-            &["Draft", "Part One: The Light", "Chapter"],
-            Vec::new(),
-        )];
-        for (root, title, items, destination) in &roots {
+        let mut books = 1;
+        for (root, children, destination) in &roots {
+            let items = children.len() as i64;
             match destination {
                 ScrivenerDestination::LeaveOut => notices.push(at_item(
                     "scrivener-structure-left-out",
                     ScrivenerReportGroup::LeftBehind,
-                    *root,
-                    &[title],
-                    vec![count("items", *items)],
+                    root,
+                    vec![count("items", items)],
                 )),
                 ScrivenerDestination::Manuscript => {
-                    rows.push(row(Manuscript, 0, (R::Folder, S::Book), title, *root));
-                    for n in 1..=*items {
-                        rows.push(row(
-                            Manuscript,
-                            1,
-                            text.clone(),
-                            &format!("{title} {n}"),
-                            root + n,
-                        ));
+                    books += 1;
+                    rows.push(row(
+                        Manuscript,
+                        0,
+                        (R::Folder, S::Book),
+                        root.title(),
+                        root.item,
+                    ));
+                    for child in children {
+                        rows.push(row(Manuscript, 1, text.clone(), child.title(), child.item));
                     }
                 }
                 ScrivenerDestination::Notes | ScrivenerDestination::StoryBible => {
-                    rows.push(row(Notes, 0, (R::Folder, S::Note), title, *root));
-                    for n in 1..=*items {
-                        rows.push(row(
-                            Notes,
-                            1,
-                            (R::Item, S::Note),
-                            &format!("{title} {n}"),
-                            root + n,
-                        ));
+                    rows.push(row(Notes, 0, (R::Folder, S::Note), root.title(), root.item));
+                    for child in children {
+                        rows.push(row(Notes, 1, (R::Item, S::Note), child.title(), child.item));
                     }
                     if *destination == ScrivenerDestination::StoryBible {
                         notices.push(at_item(
                             "scrivener-structure-story-bible-folder",
                             ScrivenerReportGroup::BroughtAcrossDifferently,
-                            *root,
-                            &[title],
+                            root,
                             Vec::new(),
                         ));
                     }
@@ -836,83 +1337,41 @@ mod imp {
                 vec![token_arg("section", token), count("count", listed)],
             ));
         }
-        // What the metadata mapping foresees beyond the folder: a novel's keywords and
-        // collections as tags, its deadline as the book's Pace, keywords no document wears
-        // and the binder icons left behind.
-        notices.extend([
-            metadata(
-                "scrivener-metadata-keywords-became-tags",
-                ScrivenerReportGroup::BroughtAcrossDifferently,
-                vec![count("tags", 4), count("rows", 9)],
-            ),
-            metadata(
-                "scrivener-metadata-collections-became-tags",
-                ScrivenerReportGroup::BroughtAcrossDifferently,
-                vec![count("tags", 1), count("rows", 3)],
-            ),
-            metadata(
-                "scrivener-metadata-pace-planned",
-                ScrivenerReportGroup::BroughtAcrossDifferently,
-                vec![
-                    ScrivenerArg::Day {
-                        name: "day".into(),
-                        value: "2099-12-01".into(),
-                    },
-                    ScrivenerArg::Flag {
-                        name: "day_off".into(),
-                        value: true,
-                    },
-                ],
-            ),
-            metadata(
-                "scrivener-metadata-unused-keywords-skipped",
-                ScrivenerReportGroup::LeftBehind,
-                vec![ScrivenerArg::Texts {
-                    name: "names".into(),
-                    values: vec!["Unused".into()],
-                }],
-            ),
-            metadata(
-                "scrivener-metadata-icons-dropped",
-                ScrivenerReportGroup::LeftBehind,
-                vec![
-                    count("rows", 2),
-                    ScrivenerArg::Texts {
-                        name: "names".into(),
-                        values: vec!["Book (Blue Book)".into()],
-                    },
-                ],
-            ),
-        ]);
+        // What the metadata mapping foresees beyond the folder: the tags, the goals, the
+        // pace, the links and what has no row to go to.
+        notices.extend(foreseen(project, books));
+        let trashed = below(&binder, TRASH);
+        let trashed_items = trashed.len() as i64;
         match trash {
             ScrivenerTrashChoice::Import => {
-                for (n, title) in ["Deleted scene", "Old opening"].iter().enumerate() {
+                for entry in &trashed {
                     rows.push(ScrivenerPreviewRow::Row {
                         binder: Manuscript,
                         depth: 1,
                         role: R::Item,
                         sub_role: S::Scene,
-                        title: (*title).into(),
+                        title: entry.title().into(),
                         title_kind: ScrivenerTitleKind::Own,
                         exportable: false,
                         activated: false,
-                        item: 30 + n as i64,
+                        item: entry.item,
                         why: ScrivenerSignal::Text,
                     });
                 }
                 notices.push(whole(
                     "scrivener-structure-trash-brought-across",
                     ScrivenerFindingFamily::Structure,
-                    vec![count("items", 2), count("with_writing", 1)],
+                    vec![count("items", trashed_items), count("with_writing", 1)],
                 ));
             }
             ScrivenerTrashChoice::LeaveOut => notices.push(whole(
                 "scrivener-structure-trash-left-out",
                 ScrivenerFindingFamily::Structure,
-                vec![count("items", 2), count("with_writing", 1)],
+                vec![count("items", trashed_items), count("with_writing", 1)],
             )),
         }
 
+        let example = |depth: usize| draft.iter().find(|i| i.path.len() == depth + 1);
         let mut controls = vec![
             ScrivenerControl::Containers {
                 depth: 1,
@@ -921,7 +1380,7 @@ mod imp {
                 detected: ScrivenerContainerRung::Part,
                 mixed: false,
                 chosen: (part_rung != ScrivenerContainerRung::Part).then_some(part_rung),
-                examples: vec![item_ref(1, &["Draft", "Part One: The Light"])],
+                examples: example(1).map(|i| item_ref(i)).into_iter().collect(),
                 signals: Vec::new(),
                 flags: Vec::new(),
             },
@@ -932,7 +1391,7 @@ mod imp {
                 detected: ScrivenerContainerRung::Chapter,
                 mixed: false,
                 chosen: (chapter_rung != ScrivenerContainerRung::Chapter).then_some(chapter_rung),
-                examples: vec![item_ref(2, &["Draft", "Part One: The Light", "Chapter 1"])],
+                examples: example(2).map(|i| item_ref(i)).into_iter().collect(),
                 signals: Vec::new(),
                 flags: Vec::new(),
             },
@@ -945,17 +1404,17 @@ mod imp {
                 median_words: 1_840,
             },
         ];
-        for ((root, title, items, destination), detected) in roots.iter().zip(detected) {
+        for ((root, children, destination), detected) in roots.iter().zip(detected) {
             controls.push(ScrivenerControl::Root {
-                item: item_ref(*root, &[title]),
-                items: *items,
+                item: item_ref(root),
+                items: children.len() as i64,
                 chosen: (*destination != detected).then(|| destination.clone()),
                 detected,
-                looks_like_manuscript: *root == IDEAS,
+                looks_like_manuscript: root.item == IDEAS,
             });
         }
         controls.push(ScrivenerControl::Trash {
-            items: 2,
+            items: trashed_items,
             with_writing: 1,
             chosen: trash.clone(),
         });
@@ -974,6 +1433,24 @@ mod imp {
         }
     }
 
+    /// The analysis this fabricated inspection gives `request`: what the fabricated import
+    /// (`models::scrivener_import_run`) reads again, as the converter reads a real project
+    /// again before it writes anything.
+    pub(crate) fn fabricated_analysis(
+        request: &AnalyzeScrivenerProjectDto,
+    ) -> ScrivenerAnalysisDto {
+        fabricate(request)
+    }
+
+    /// The plan this fabricated inspection gives `project` with `choices`, for the
+    /// fabricated import.
+    pub(crate) fn fabricated_plan(
+        project: &Fabricated,
+        choices: &[ScrivenerChoice],
+    ) -> ScrivenerStructure {
+        novel_structure(project, choices)
+    }
+
     #[cfg(test)]
     pub(crate) fn fabricated_for_test(path: &str) -> ScrivenerAnalysisDto {
         fabricate(&AnalyzeScrivenerProjectDto {
@@ -984,6 +1461,14 @@ mod imp {
 }
 
 pub use imp::ScrivenerInspection;
+
+/// The fabricated reading and plan, for the fabricated import to read the same project again.
+#[cfg(feature = "mocks")]
+pub(crate) use imp::{
+    DRAFT, Fabricated, FabricatedItem, RESEARCH, fabricated_analysis, fabricated_binder,
+    fabricated_item, fabricated_plan, import_failed_before, remember_failed_import,
+    several_manifests,
+};
 
 /// The fabricated analyses cover every tier the wizard shows, so the mock build and its
 /// screenshots can walk each of them.
