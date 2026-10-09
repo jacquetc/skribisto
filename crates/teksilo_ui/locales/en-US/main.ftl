@@ -1158,6 +1158,16 @@ project-import-failed-nested = The project was not imported: its part “{ $part
 project-import-failed-entities = The project was not imported: its part “{ $part }” declares XML entities. Expanding them could take more memory than the computer has and crash Skribisto. Nothing was written.
 project-import-failed-folders = The project was not imported: one of its files sits more than { $limit } folders deep, and reading it could crash Skribisto. Nothing was written.
 project-import-failed-malformed = The project was not imported: its part “{ $part }” is damaged and cannot be read ({ $reason }). Nothing was written.
+# A Scrivener project the importer cannot bring across (a Scrivener 1 for Mac project, a
+# damaged binder file). Why is the Scrivener importer's own to say; Details holds its key.
+project-import-failed-scrivener-refused = Skribisto cannot import this Scrivener project. Nothing was written.
+# The Scrivener project asks something its review did not answer: a project or a binder
+# file appeared in it since.
+project-import-failed-scrivener-question = The Scrivener project asks a question its review did not answer. Review it again, then import. Nothing was written.
+# The Scrivener project raises a question the writer has to accept before it imports.
+project-import-failed-scrivener-not-accepted = The Scrivener project raises a question you have not accepted yet. Review it again, then import. Nothing was written.
+# The Scrivener project changed after the writer reviewed it.
+project-import-failed-scrivener-changed = The Scrivener project changed after you reviewed it. Review it again, then import. Nothing was written.
 # An error nothing above accounts for; $detail is its technical description.
 project-import-failed-internal = The import stopped on an error Skribisto did not expect: { $detail }
 

@@ -1160,6 +1160,17 @@ project-import-failed-nested = Le projet n’a pas été importé : sa partie �
 project-import-failed-entities = Le projet n’a pas été importé : sa partie « { $part } » déclare des entités XML. Les développer pourrait demander plus de mémoire que n’en a l’ordinateur et provoquer l’arrêt brutal de Skribisto. Rien n’a été écrit.
 project-import-failed-folders = Le projet n’a pas été importé : l’un de ses fichiers se trouve à plus de { $limit } niveaux de dossiers de profondeur, et le lire pourrait provoquer l’arrêt brutal de Skribisto. Rien n’a été écrit.
 project-import-failed-malformed = Le projet n’a pas été importé : sa partie « { $part } » est endommagée et ne peut pas être lue ({ $reason }). Rien n’a été écrit.
+# Un projet Scrivener que l’import ne peut pas reprendre (un projet de Scrivener 1 pour Mac,
+# un fichier de classeur endommagé). Dire pourquoi revient à l’import Scrivener ; les
+# détails en donnent la clé.
+project-import-failed-scrivener-refused = Skribisto ne peut pas importer ce projet Scrivener. Rien n’a été écrit.
+# Le projet Scrivener pose une question que sa vérification n’a pas tranchée : un projet
+# ou un fichier de classeur y est apparu depuis.
+project-import-failed-scrivener-question = Le projet Scrivener pose une question à laquelle sa vérification n’a pas répondu. Vérifiez-le de nouveau, puis importez. Rien n’a été écrit.
+# Le projet Scrivener pose une question que l’auteur doit accepter avant l’import.
+project-import-failed-scrivener-not-accepted = Le projet Scrivener pose une question que vous n’avez pas encore acceptée. Vérifiez-le de nouveau, puis importez. Rien n’a été écrit.
+# Le projet Scrivener a changé après que l’auteur l’a vérifié.
+project-import-failed-scrivener-changed = Le projet Scrivener a changé depuis que vous l’avez vérifié. Vérifiez-le de nouveau, puis importez. Rien n’a été écrit.
 # Une erreur que rien ci-dessus ne prévoit ; $detail en est la description technique.
 project-import-failed-internal = L’import s’est arrêté sur une erreur que Skribisto n’attendait pas : { $detail }
 

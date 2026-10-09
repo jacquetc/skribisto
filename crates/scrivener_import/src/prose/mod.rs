@@ -711,42 +711,9 @@ fn carried_notices(at: Place, carried: &NotCarried) -> Vec<ProseNotice> {
 
 /// One of the document importer's own findings, under its own key.
 pub(crate) fn document_notice(at: Place, diagnostic: &ImportDiagnostic) -> ProseNotice {
-    use ImportDiagnostic::*;
-    let (count, detail): (usize, String) = match diagnostic {
-        FileUnreadable { reason, .. } => (1, reason.clone()),
-        NestedTooDeep { part, .. } | ArchiveTooLarge { part, .. } => (1, part.clone()),
-        LossyDecode { replacements, .. } => (*replacements, String::new()),
-        DecodedFromBom { encoding, .. } => (1, (*encoding).to_string()),
-        EmptyFile { .. } | NoHeadings { .. } => (1, String::new()),
-        UnsupportedFormat { extension, .. } => (1, extension.clone()),
-        FrontMatterNotFlat { key, .. } => (1, key.clone()),
-        UnknownStyleLevel { style, .. } => (1, style.clone()),
-        FootnotesDegraded { count, .. }
-        | FootnoteNotCarried { count, .. }
-        | RawHtmlDropped { count, .. }
-        | NestedBreakDropped { count, .. }
-        | TrackedChangesFlattened { count, .. }
-        | TextBoxDropped { count, .. }
-        | EmbeddedObjectDropped { count, .. }
-        | FieldFlattened { count, .. }
-        | ProseNotVerbatim { count, .. }
-        | StyledSpacesNotCarried { count, .. }
-        | ListNestingFlattened { count, .. }
-        | TableReadAsParagraphs { count, .. }
-        | SpacesShortened { count, .. }
-        | CommentRepliesFlattened { count, .. } => (*count, String::new()),
-        ImageNotIngested { target, .. } | PictureFirstFrameOnly { target, .. } => {
-            (1, target.clone())
-        }
-        CommentUnanchored { quote, .. } | CommentNotCarried { quote, .. } => (1, quote.clone()),
-        DuplicateTitle {
-            title, occurrences, ..
-        } => (*occurrences, title.clone()),
-        HeadingLevelJump { title, .. }
-        | IllegalCombination { title, .. }
-        | EpigraphNotCarried { title, .. } => (1, title.clone()),
-        EpigraphPlacementAmbiguous { above, .. } => (1, above.clone()),
-    };
+    // What the document import's own review row carries, so the sentences written for
+    // its keys word this finding alike.
+    let (detail, count) = diagnostic.detail_and_count();
     ProseNotice::Document {
         at,
         key: diagnostic.key().to_string(),

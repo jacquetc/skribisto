@@ -95,6 +95,8 @@ enum Backing<'d> {
     Archive {
         archive: RefCell<ZipArchive<Box<dyn ReadSeek>>>,
         guard: RefCell<ZipGuard>,
+        /// The disk the archive was opened through, asked before each member is read.
+        disk: &'d dyn Disk,
     },
 }
 
@@ -279,17 +281,26 @@ impl<'d> Index<'d> {
             file: label.clone(),
             reason: e.to_string(),
         })?;
-        let mut index = Index::of_archive(Box::new(file), label)?;
+        let mut index = Index::of_archive(disk, Box::new(file), label)?;
         index.container_file = Some((path.to_path_buf(), meta));
         Ok(index)
     }
 
-    /// Index an archive held in memory (a template's project, a spare binder).
-    pub(crate) fn of_archive_bytes(bytes: Vec<u8>, label: String) -> Result<Self, Refusal> {
-        Index::of_archive(Box::new(std::io::Cursor::new(bytes)), label)
+    /// Index an archive held in memory (a template's project, a spare binder), its
+    /// members read only while `disk` says reading may go on.
+    pub(crate) fn of_archive_bytes(
+        disk: &'d dyn Disk,
+        bytes: Vec<u8>,
+        label: String,
+    ) -> Result<Self, Refusal> {
+        Index::of_archive(disk, Box::new(std::io::Cursor::new(bytes)), label)
     }
 
-    fn of_archive(mut reader: Box<dyn ReadSeek>, label: String) -> Result<Self, Refusal> {
+    fn of_archive(
+        disk: &'d dyn Disk,
+        mut reader: Box<dyn ReadSeek>,
+        label: String,
+    ) -> Result<Self, Refusal> {
         let unreadable = |reason: String| Refusal::ArchiveUnreadable {
             file: label.clone(),
             reason,
@@ -386,6 +397,7 @@ impl<'d> Index<'d> {
         index.backing = Backing::Archive {
             archive: RefCell::new(archive),
             guard: RefCell::new(guard),
+            disk,
         };
         Ok(index)
     }
@@ -540,7 +552,17 @@ impl<'d> Index<'d> {
                 }
                 bytes
             }
-            (Backing::Archive { archive, guard }, Location::Archive { index, compression }) => {
+            (
+                Backing::Archive {
+                    archive,
+                    guard,
+                    disk,
+                },
+                Location::Archive { index, compression },
+            ) => {
+                // A member comes out of the archive's own handle, not through the disk: a
+                // cancel is honoured here, before the next one is inflated.
+                disk.go_on().map_err(|e| ReadError::from_io(&e))?;
                 if let Some(method) = compression {
                     return Err(ReadError::Refused(Refusal::ArchiveUnsupportedCompression {
                         member: key.to_string(),
@@ -632,6 +654,14 @@ impl<'d> Index<'d> {
         self.container_file
             .as_ref()
             .map(|(path, meta)| (file_name(path), meta.len, meta.modified_ns))
+    }
+
+    /// The disk the index reads through: an archive nested in it (a spare binder) is read
+    /// through the same one, so a cancel reaches it too.
+    pub(crate) fn disk(&self) -> &'d dyn Disk {
+        match &self.backing {
+            Backing::Folder { disk } | Backing::Archive { disk, .. } => *disk,
+        }
     }
 
     /// Whether the index is over an archive rather than a folder.
@@ -757,4 +787,45 @@ fn declared_entries(reader: &mut Box<dyn ReadSeek>) -> std::io::Result<Option<u6
     let mut total = [0u8; 8];
     total.copy_from_slice(&head[32..40]);
     Ok(Some(u64::from_le_bytes(total)))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::disk::{Cancellable, RealDisk};
+    use std::sync::atomic::{AtomicBool, Ordering};
+
+    /// An archive's members come out of its own handle, not through the disk: once the
+    /// writer cancels, the next one is refused rather than inflated, so a large backup or
+    /// template is not read to its end after the import was stopped.
+    #[test]
+    fn a_cancel_stops_an_archive_at_its_next_member() {
+        let mut files = scrivener_fixtures::Files::new();
+        files.put("Novel.scriv/Novel.scrivx", "<ScrivenerProject/>");
+        files.put("Novel.scriv/Files/Data/a.rtf", "{\\rtf1 One.}");
+        let bytes = match files.zip(None) {
+            Ok(bytes) => bytes,
+            Err(e) => panic!("the archive: {e}"),
+        };
+        let cancel = AtomicBool::new(false);
+        let disk = Cancellable {
+            inner: &RealDisk,
+            cancel: &cancel,
+        };
+        let index = match Index::of_archive_bytes(&disk, bytes, "Backup.zip".to_string()) {
+            Ok(index) => index,
+            Err(refusal) => panic!("the archive indexes: {refusal:?}"),
+        };
+        assert!(index.read("Novel.scriv/Novel.scrivx", 1 << 20).is_ok());
+        cancel.store(true, Ordering::Relaxed);
+        assert!(matches!(
+            index.read("Novel.scriv/Files/Data/a.rtf", 1 << 20),
+            Err(ReadError::Unreadable(_))
+        ));
+        assert_eq!(
+            index.read_hashes().len(),
+            1,
+            "nothing read after the cancel"
+        );
+    }
 }

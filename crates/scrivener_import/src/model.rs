@@ -808,6 +808,85 @@ impl Project {
             .iter()
             .find(|row| row.owns_key && row.key == Some(key))
     }
+
+    /// How the writer knew each thing of the project a notice can name ([`SourceNames`]).
+    /// One walk over the flat binder with a stack of open ancestors, never recursion.
+    pub fn source_names(&self) -> SourceNames {
+        let mut open: Vec<(u16, String)> = Vec::new();
+        let mut items = Vec::with_capacity(self.binder.len());
+        for row in &self.binder {
+            while open.last().is_some_and(|(depth, _)| *depth >= row.depth) {
+                open.pop();
+            }
+            open.push((row.depth, row.title.clone().unwrap_or_default()));
+            items.push(open.iter().map(|(_, title)| title.clone()).collect());
+        }
+        let mut names = SourceNames {
+            items,
+            keys: self.binder.iter().map(|row| row.key).collect(),
+            owns_key: self.binder.iter().map(|row| row.owns_key).collect(),
+            project_notes: self
+                .project_notes
+                .iter()
+                .map(|note| note.title.clone().unwrap_or_default())
+                .collect(),
+            recovered: Vec::with_capacity(self.recovered.len()),
+        };
+        for text in &self.recovered {
+            let path = text
+                .names
+                .and_then(|key| names.item_by_key(key, true))
+                .and_then(|item| names.items.get(item as usize).cloned())
+                .unwrap_or_else(|| {
+                    // The number the file's name gives, as the recovered row is titled,
+                    // else nothing: never the name itself, which in a sync service's copy
+                    // carries a person's or a computer's name.
+                    let number = crate::names::recovered_number(&text.member.path);
+                    if number.is_empty() {
+                        Vec::new()
+                    } else {
+                        vec![number]
+                    }
+                });
+            names.recovered.push(path);
+        }
+        names
+    }
+}
+
+/// How the writer knew each thing of a project a notice can name: where they will recognise
+/// it (`Draft › Part One › Scene 3`), never where Scrivener keeps it
+/// (`Files/Data/<UUID>/content.rtf`). A report names an item by these; nothing here is a
+/// sentence, and nothing personal is in it.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SourceNames {
+    /// One per binder row, in the binder's order: the titles from the top of Scrivener's
+    /// binder down to the item's own. An untitled item's title is empty.
+    pub items: Vec<Vec<String>>,
+    /// Each binder row's key, as the binder gives it.
+    pub keys: Vec<Option<ItemKey>>,
+    /// Whether each binder row owns its key (an earlier row may already carry it).
+    pub owns_key: Vec<bool>,
+    /// One per format 1.x project note: its title, empty when the notes' index gives none.
+    pub project_notes: Vec<String>,
+    /// One per recovered text: the path of the item its file names, else the Scrivener
+    /// document number its file's name gives, which is the title of the row that holds it,
+    /// else nothing. Never the file's own name, which a sync service writes a person's or a
+    /// computer's name into.
+    pub recovered: Vec<Vec<String>>,
+}
+
+impl SourceNames {
+    /// The binder row carrying `key`: the one that owns it when `owner`, else one that
+    /// carries it without owning it; either way, any row carrying it when no row fits.
+    pub fn item_by_key(&self, key: ItemKey, owner: bool) -> Option<u32> {
+        let carries = |i: &usize| self.keys.get(*i).copied().flatten() == Some(key);
+        (0..self.keys.len())
+            .filter(carries)
+            .find(|i| self.owns_key.get(*i).copied().unwrap_or(false) == owner)
+            .or_else(|| (0..self.keys.len()).find(carries))
+            .map(|i| i as u32)
+    }
 }
 
 /// Why a flat list of rows does not describe a tree.

@@ -1273,6 +1273,67 @@ fn recovered_texts_have_a_folder_of_their_own() {
     assert_eq!(plan.review.set_aside.recovered, 4);
 }
 
+/// A report names a recovered text as its row is titled: by the path of the item it is a
+/// copy of, else by the document number its file's name gives, else by nothing. Never by
+/// the file's own name, which a sync service writes a person's or a computer's name into
+/// (X-18): the report crosses to the interface, and from there to anything that logs it.
+#[test]
+fn a_recovered_text_is_named_as_its_row_is_titled() {
+    let mut p = P::new();
+    p.draft();
+    let scene = p.text(1, "Scene");
+    let gone = ItemKey::Uuid(uuid::Uuid::from_u128(
+        0x4A1D_6B18_0952_42EB_A487_D179_15DD_3BA1,
+    ));
+    p.project.recovered = vec![
+        RecoveredText {
+            origin: RecoveredOrigin::OrphanCopy(ConflictScheme::Dropbox),
+            role: TextRole::Text,
+            member: member("Files/Docs/88 (Jane Doe's conflicted copy 2019-03-04).rtf"),
+            names: Some(ItemKey::Number(88)),
+        },
+        RecoveredText {
+            origin: RecoveredOrigin::OrphanCopy(ConflictScheme::Syncthing),
+            role: TextRole::Text,
+            member: member(
+                "Files/Data/4A1D6B18-0952-42EB-A487-D17915DD3BA1/content.sync-conflict-20190304-101112-JANEDSK.rtf",
+            ),
+            names: Some(gone),
+        },
+        RecoveredText {
+            origin: RecoveredOrigin::SyncConflict(ConflictScheme::Stem),
+            role: TextRole::Text,
+            member: member("Files/Docs/89-DESKTOP-JANE.rtf"),
+            names: p.project.binder[scene as usize].key,
+        },
+    ];
+    p.facts.recovered = vec![Carries::Yes; 3];
+    let names = p.project.source_names();
+    assert_eq!(
+        names.recovered,
+        vec![
+            vec!["88".to_string()],
+            Vec::new(),
+            vec!["Draft".to_string(), "Scene".to_string()],
+        ]
+    );
+    let spelled = format!("{names:?}");
+    for personal in ["Jane", "JANE", "conflict", ".rtf"] {
+        assert!(!spelled.contains(personal), "{personal} in {spelled}");
+    }
+    // The rows the plan titles agree with what the report calls them.
+    let plan = p.plan();
+    assert_eq!(
+        show(&plan.notes),
+        [
+            "Folder/Note <recovered>",
+            "  Item/Note 88",
+            "  Item/Note",
+            "  Item/Note Scene",
+        ]
+    );
+}
+
 // ---------------------------------------------------------------- D3.18 titles, A3
 
 #[test]

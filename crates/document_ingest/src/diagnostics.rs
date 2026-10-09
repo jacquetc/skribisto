@@ -397,6 +397,77 @@ impl ImportDiagnostic {
             EpigraphPlacementAmbiguous { .. } => "epigraph-placement-ambiguous",
         }
     }
+
+    /// The one string and the one number a report carries for this diagnostic, the
+    /// variant's own payload, for the interface to put into its translated sentence: the
+    /// document import's review row, and the finding the Scrivener importer makes of a
+    /// text it converted, which the same sentences word. One mapping for both, so the two
+    /// cannot mean different things by the same key.
+    ///
+    /// Neither value is ever a *separator-packed* pair. `HeadingLevelJump` used to send
+    /// `"{title}|{from}|{to}"` for the UI to split on `|`, which any title containing a
+    /// pipe would have broken, silently and only for that writer. Every variant maps to at
+    /// most one string and one number, and anything else the sentence needs is read off
+    /// the row the diagnostic is attached to: a row-scoped diagnostic's title and type are
+    /// already there, so sending them twice only creates two places for them to disagree.
+    pub fn detail_and_count(&self) -> (String, i64) {
+        use ImportDiagnostic::*;
+        match self {
+            FileUnreadable { reason, .. } => (reason.clone(), 0),
+            // The part refused, and the ceiling it went past. The sentence uses only the
+            // ceiling; the part is there for anyone reading the row as data.
+            NestedTooDeep { part, limit, .. } => (part.clone(), *limit as i64),
+            // The member refused, for anyone reading the row as data; the sentence itself
+            // names no size, only that the file would unpack far larger than it is.
+            ArchiveTooLarge { part, .. } => (part.clone(), 0),
+            LossyDecode { replacements, .. } => (String::new(), *replacements as i64),
+            DecodedFromBom { encoding, .. } => ((*encoding).to_string(), 0),
+            EmptyFile { .. } | NoHeadings { .. } => (String::new(), 0),
+            UnsupportedFormat { extension, .. } => (extension.clone(), 0),
+            FrontMatterNotFlat { key, .. } => (key.clone(), 0),
+            FootnotesDegraded { count, .. }
+            | FootnoteNotCarried { count, .. }
+            | RawHtmlDropped { count, .. }
+            | NestedBreakDropped { count, .. } => (String::new(), *count as i64),
+            // The picture as the document named it. Which of the reasons it was left out for is
+            // in the key, one sentence each.
+            ImageNotIngested { target, .. } | PictureFirstFrameOnly { target, .. } => {
+                (target.clone(), 0)
+            }
+            // The one variant whose `detail` is a **list**, and still one string: the
+            // UI interpolates it whole and never splits it, so this is not the
+            // separator-packed pair the rule above forbids. Empty for a file that
+            // records no author, and the sentence then simply omits the clause.
+            TrackedChangesFlattened { count, authors, .. } => (authors.join(", "), *count as i64),
+            TextBoxDropped { count, .. }
+            | EmbeddedObjectDropped { count, .. }
+            | FieldFlattened { count, .. }
+            | CommentRepliesFlattened { count, .. }
+            | ProseNotVerbatim { count, .. }
+            | StyledSpacesNotCarried { count, .. }
+            | TableReadAsParagraphs { count, .. } => (String::new(), *count as i64),
+            // How many items, and the level they were placed at, as the two fields. The
+            // level is a number sent as text, the way `HeadingLevelJump` sends its first.
+            ListNestingFlattened { count, limit, .. } => (limit.to_string(), *count as i64),
+            // How many runs, and the length each was cut to, in the same two fields.
+            SpacesShortened { count, limit, .. } => (limit.to_string(), *count as i64),
+            UnknownStyleLevel { style, .. } => (style.clone(), 0),
+            // The comment's own opening words, so the writer recognises which note the
+            // importer could not place. Its body, not the prose it was about: a
+            // sentence naming the prose reads as though the manuscript were at fault.
+            CommentUnanchored { quote, .. } | CommentNotCarried { quote, .. } => (quote.clone(), 0),
+            DuplicateTitle { title, occurrences } => (title.clone(), *occurrences as i64),
+            // The two levels, as the two fields, with no separator to parse. The title
+            // comes from the row.
+            HeadingLevelJump { from, to, .. } => (from.to_string(), *to as i64),
+            // Nothing: the row carries both the title and the offending type.
+            IllegalCombination { .. } | EpigraphNotCarried { .. } => (String::new(), 0),
+            // The *other* heading, the one the epigraph could also have belonged to. This
+            // one is not on the row: the diagnostic is attached to the row that got the
+            // epigraph, and the whole point of the sentence is to name the one that did not.
+            EpigraphPlacementAmbiguous { below, .. } => (below.clone(), 0),
+        }
+    }
 }
 
 /// An untranslated rendering, for tests and logs. The UI never uses this — it

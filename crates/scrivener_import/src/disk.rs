@@ -30,6 +30,7 @@
 use std::ffi::OsString;
 use std::io::{self, Read};
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 
 /// What kind of thing a path is, without following a link.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -70,6 +71,12 @@ pub(crate) trait Disk {
     fn read(&self, path: &Path, limit: u64) -> io::Result<Vec<u8>>;
     /// The first `count` bytes of the regular file at `path`, or fewer.
     fn read_head(&self, path: &Path, count: u64) -> io::Result<Vec<u8>>;
+    /// Whether reading may go on. A read this disk does not make itself asks first: a
+    /// member of an archive opened through it, read from the archive's own handle. Always,
+    /// but on a disk the writer can cancel.
+    fn go_on(&self) -> io::Result<()> {
+        Ok(())
+    }
 }
 
 /// The filesystem, through the standard library.
@@ -174,6 +181,56 @@ impl Disk for RealDisk {
         let mut out = Vec::new();
         file.take(count).read_to_end(&mut out)?;
         Ok(out)
+    }
+}
+
+/// A disk that stops answering once the writer cancels: every call after `cancel` is set
+/// fails at once, and so does every read of an archive opened through it, so neither a
+/// folder project on a slow drive nor a large backup is read to its end after the import
+/// was stopped. What the refused calls make of the analysis does not matter: the caller
+/// checks `cancel` when it returns and discards the result.
+pub(crate) struct Cancellable<'a> {
+    pub(crate) inner: &'a dyn Disk,
+    pub(crate) cancel: &'a AtomicBool,
+}
+
+impl Disk for Cancellable<'_> {
+    fn go_on(&self) -> io::Result<()> {
+        if self.cancel.load(Ordering::Relaxed) {
+            Err(io::Error::from(io::ErrorKind::Interrupted))
+        } else {
+            self.inner.go_on()
+        }
+    }
+
+    fn metadata(&self, path: &Path) -> io::Result<Meta> {
+        self.go_on()?;
+        self.inner.metadata(path)
+    }
+
+    fn metadata_following(&self, path: &Path) -> io::Result<Meta> {
+        self.go_on()?;
+        self.inner.metadata_following(path)
+    }
+
+    fn resolve(&self, path: &Path) -> io::Result<PathBuf> {
+        self.go_on()?;
+        self.inner.resolve(path)
+    }
+
+    fn list(&self, dir: &Path, limit: usize) -> io::Result<Vec<(OsString, Meta)>> {
+        self.go_on()?;
+        self.inner.list(dir, limit)
+    }
+
+    fn read(&self, path: &Path, limit: u64) -> io::Result<Vec<u8>> {
+        self.go_on()?;
+        self.inner.read(path, limit)
+    }
+
+    fn read_head(&self, path: &Path, count: u64) -> io::Result<Vec<u8>> {
+        self.go_on()?;
+        self.inner.read_head(path, count)
     }
 }
 

@@ -15,13 +15,22 @@
 //! [`ProjectImportFailure::details`](crate::failure::ProjectImportFailure::details),
 //! behind **Details**.
 //!
-//! Shared by the Plume and Manuskript use cases, which both end in exactly this; a
-//! module rather than a use case calling a use case. Hand-written, like `events`: the
+//! Shared by the Plume, Manuskript and Scrivener use cases, which all end in exactly this;
+//! a module rather than a use case calling a use case. Hand-written, like `events`: the
 //! failure channel is a plain `String` the generator knows nothing about.
+//!
+//! A Scrivener refusal crosses as the very row the analysis shows on the project card
+//! ([`ScrivenerFinding`]), and a question as the question the wizard asks
+//! ([`ScrivenerQuestion`]), so the interface words a refusal the same way before and
+//! after the review. A project that changed since the review is its own reason, for the
+//! interface to offer the review again.
 
 use serde::{Deserialize, Serialize};
 use skrib_format::ZipRefused;
 use skrib_format::importing::{ImportCancelled, OutputRefused};
+
+use crate::dtos::{ScrivenerFinding, ScrivenerQuestion};
+use crate::scrivener::{self, ChoiceOutOfRange};
 
 /// What a failed import message starts with, so a reader can tell the typed
 /// spelling from a failure some other layer reported in its own words (a panic
@@ -108,6 +117,21 @@ pub enum FailureReason {
     ManuskriptTooManyFiles { limit: u64 },
     /// Larger than a Manuskript project may be, in mebibytes.
     ManuskriptTooLarge { limit_mib: u64 },
+    /// The Scrivener project cannot be imported: the refusal, keyed and typed as the
+    /// analysis gives it.
+    ScrivenerRefused { refusal: ScrivenerFinding },
+    /// The Scrivener project asks a question the review did not answer (a manifest or a
+    /// project appeared since): the review must be run again.
+    ScrivenerQuestionFirst { question: ScrivenerQuestion },
+    /// Questions the writer must accept before importing were not accepted.
+    ScrivenerNotAccepted { questions: Vec<ScrivenerQuestion> },
+    /// The Scrivener project changed since the review (its fingerprint moved): the review
+    /// must be run again, and nothing was written.
+    ScrivenerChangedSinceReview,
+    /// A structure choice names a depth the review does not offer.
+    ScrivenerDepthNotOffered { depth: i64 },
+    /// A structure choice names a binder row that is not a root item the review offers.
+    ScrivenerRootNotOffered { item: i64 },
     /// Something no refusal accounts for: `detail` is the technical chain.
     Internal { detail: String },
 }
@@ -197,6 +221,12 @@ fn reason_of(error: &anyhow::Error) -> FailureReason {
         if let Some(refused) = cause.downcast_ref::<manuskript_import::Refusal>() {
             return manuskript_refused(refused);
         }
+        if let Some(refused) = cause.downcast_ref::<scrivener_import::ConvertError>() {
+            return scrivener_refused(refused);
+        }
+        if let Some(out) = cause.downcast_ref::<ChoiceOutOfRange>() {
+            return scrivener_choice_out_of_range(out);
+        }
     }
     FailureReason::Internal {
         detail: format!("{error:#}"),
@@ -285,6 +315,50 @@ fn manuskript_refused(refused: &manuskript_import::Refusal) -> FailureReason {
         },
         Refusal::TooManyFiles { limit } => FailureReason::ManuskriptTooManyFiles { limit },
         Refusal::TooLarge { limit_mib } => FailureReason::ManuskriptTooLarge { limit_mib },
+    }
+}
+
+/// Why a Scrivener conversion wrote nothing.
+fn scrivener_refused(refused: &scrivener_import::ConvertError) -> FailureReason {
+    use scrivener_import::ConvertError;
+    use scrivener_import::structure::{ChoiceError, PlanError};
+    match refused {
+        ConvertError::Refused(refusal) => FailureReason::ScrivenerRefused {
+            refusal: scrivener::refusal(refusal),
+        },
+        ConvertError::Choose(question) => FailureReason::ScrivenerQuestionFirst {
+            question: scrivener::question(question),
+        },
+        ConvertError::NotAccepted(questions) => FailureReason::ScrivenerNotAccepted {
+            questions: questions.iter().map(scrivener::question).collect(),
+        },
+        ConvertError::ChangedSinceReview => FailureReason::ScrivenerChangedSinceReview,
+        ConvertError::Plan(PlanError::Choice(ChoiceError::DepthOutOfRange { depth })) => {
+            FailureReason::ScrivenerDepthNotOffered {
+                depth: i64::from(*depth),
+            }
+        }
+        ConvertError::Plan(PlanError::Choice(ChoiceError::RootNotOffered { item })) => {
+            FailureReason::ScrivenerRootNotOffered {
+                item: i64::from(*item),
+            }
+        }
+        // Any other broken plan is the importer's defect, refused as the analysis refuses
+        // one: under the same key, with the broken invariant behind Details.
+        ConvertError::Plan(error) => FailureReason::ScrivenerRefused {
+            refusal: scrivener::refusal(&scrivener_import::Refusal::StructureUnmappable {
+                error: error.clone(),
+            }),
+        },
+        ConvertError::Output(refused) => output_refused(refused),
+        ConvertError::Cancelled => FailureReason::Cancelled,
+    }
+}
+
+fn scrivener_choice_out_of_range(out: &ChoiceOutOfRange) -> FailureReason {
+    match out {
+        ChoiceOutOfRange::Depth(depth) => FailureReason::ScrivenerDepthNotOffered { depth: *depth },
+        ChoiceOutOfRange::Item(item) => FailureReason::ScrivenerRootNotOffered { item: *item },
     }
 }
 
@@ -555,6 +629,18 @@ mod tests {
             FailureReason::ManuskriptTooManyFiles { limit: 100_000 },
             FailureReason::ManuskriptTooLarge { limit_mib: 1024 },
             FailureReason::Internal { detail: s("boom") },
+            FailureReason::ScrivenerRefused {
+                refusal: scrivener::refusal(&scrivener_import::Refusal::ScrivenerOneForMac),
+            },
+            FailureReason::ScrivenerQuestionFirst {
+                question: ScrivenerQuestion::NoTextInCopy { text_items: 12 },
+            },
+            FailureReason::ScrivenerNotAccepted {
+                questions: vec![ScrivenerQuestion::NoTextInCopy { text_items: 12 }],
+            },
+            FailureReason::ScrivenerChangedSinceReview,
+            FailureReason::ScrivenerDepthNotOffered { depth: 7 },
+            FailureReason::ScrivenerRootNotOffered { item: 3 },
         ]
     }
 
@@ -587,13 +673,125 @@ mod tests {
             FailureReason::Internal { .. } => 23,
             FailureReason::DeclaresEntities { .. } => 24,
             FailureReason::TargetIsFolder { .. } => 25,
+            FailureReason::ScrivenerRefused { .. } => 26,
+            FailureReason::ScrivenerQuestionFirst { .. } => 27,
+            FailureReason::ScrivenerNotAccepted { .. } => 28,
+            FailureReason::ScrivenerChangedSinceReview => 29,
+            FailureReason::ScrivenerDepthNotOffered { .. } => 30,
+            FailureReason::ScrivenerRootNotOffered { .. } => 31,
         }
     }
 
     #[test]
     fn the_list_of_reasons_holds_every_variant() {
         let slots: std::collections::BTreeSet<usize> = every_reason().iter().map(slot).collect();
-        assert_eq!(slots, (0..=25).collect());
+        assert_eq!(slots, (0..=31).collect());
         assert_eq!(every_reason().len(), slots.len());
+    }
+
+    /// Every way a Scrivener conversion can end without writing reaches the interface as
+    /// its own typed reason, read back from the one string the manager keeps.
+    #[test]
+    fn every_scrivener_conversion_error_reaches_the_ui_typed() {
+        use scrivener_import::structure::{ChoiceError, PlanError};
+        use scrivener_import::{ConvertError, Question, Refusal};
+        let convert = |e: ConvertError| received(anyhow::Error::new(e));
+        assert_eq!(
+            convert(ConvertError::ChangedSinceReview).reason,
+            FailureReason::ScrivenerChangedSinceReview
+        );
+        assert_eq!(
+            convert(ConvertError::Cancelled).reason,
+            FailureReason::Cancelled
+        );
+        let refused = convert(ConvertError::Refused(Refusal::NewerFormatStamp {
+            stamp: 24,
+            newest: 23,
+        }));
+        let FailureReason::ScrivenerRefused {
+            refusal: ScrivenerFinding::Reported { key, args, .. },
+        } = refused.reason
+        else {
+            panic!("expected a Scrivener refusal, got {:?}", refused.reason);
+        };
+        assert_eq!(key, "scrivener-refusal-newer-format-stamp");
+        assert_eq!(
+            args,
+            vec![
+                crate::dtos::ScrivenerArg::Count {
+                    name: "stamp".into(),
+                    value: 24
+                },
+                crate::dtos::ScrivenerArg::Count {
+                    name: "newest".into(),
+                    value: 23
+                },
+            ]
+        );
+        assert_eq!(
+            convert(ConvertError::Choose(Question::NoTextInCopy {
+                text_items: 40
+            }))
+            .reason,
+            FailureReason::ScrivenerQuestionFirst {
+                question: ScrivenerQuestion::NoTextInCopy { text_items: 40 }
+            }
+        );
+        assert_eq!(
+            convert(ConvertError::NotAccepted(vec![Question::NoTextInCopy {
+                text_items: 40
+            }]))
+            .reason,
+            FailureReason::ScrivenerNotAccepted {
+                questions: vec![ScrivenerQuestion::NoTextInCopy { text_items: 40 }]
+            }
+        );
+        assert_eq!(
+            convert(ConvertError::Plan(PlanError::Choice(
+                ChoiceError::DepthOutOfRange { depth: 5 }
+            )))
+            .reason,
+            FailureReason::ScrivenerDepthNotOffered { depth: 5 }
+        );
+        assert_eq!(
+            convert(ConvertError::Plan(PlanError::Choice(
+                ChoiceError::RootNotOffered { item: 9 }
+            )))
+            .reason,
+            FailureReason::ScrivenerRootNotOffered { item: 9 }
+        );
+        // A broken plan is refused under the analysis's own key for it.
+        let broken = convert(ConvertError::Plan(PlanError::FactsMismatch {
+            items: 3,
+            facts: 2,
+        }));
+        assert!(
+            matches!(
+                &broken.reason,
+                FailureReason::ScrivenerRefused {
+                    refusal: ScrivenerFinding::Reported { key, .. }
+                } if key == "scrivener-refusal-structure-unmappable"
+            ),
+            "{:?}",
+            broken.reason
+        );
+        assert_eq!(
+            convert(ConvertError::Output(OutputRefused::TargetExists {
+                file: "novel.skrib".into()
+            }))
+            .reason,
+            FailureReason::TargetExists {
+                file: "novel.skrib".into()
+            }
+        );
+        // A choice out of every range is refused by name before anything is read.
+        assert_eq!(
+            received(anyhow::Error::new(ChoiceOutOfRange::Depth(-1))).reason,
+            FailureReason::ScrivenerDepthNotOffered { depth: -1 }
+        );
+        assert_eq!(
+            received(anyhow::Error::new(ChoiceOutOfRange::Item(-4))).reason,
+            FailureReason::ScrivenerRootNotOffered { item: -4 }
+        );
     }
 }

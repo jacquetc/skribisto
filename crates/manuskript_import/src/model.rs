@@ -25,8 +25,8 @@ pub struct Project {
     ///
     /// The title fallback for a project whose `infos.txt` carries none, which is
     /// every project the writer never filled that field in for. Without it such a
-    /// project arrives called "Imported Manuskript project", having had a perfectly
-    /// good name on disk all along.
+    /// project arrives under the interface's word for a project with no name, having
+    /// had a perfectly good name on disk all along.
     pub source_name: String,
     pub summary: Summary,
     /// The label vocabulary, in file order. **Referenced 1-based**: an item's

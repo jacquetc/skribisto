@@ -503,73 +503,10 @@ fn row_to_dto(row: &PlannedRow) -> DocumentImportRow {
 /// mapping instead of a second copy of it. A test that reimplements the mapping
 /// it is checking proves only that the copy agrees with itself.
 pub fn diagnostic_to_dto(d: &ImportDiagnostic, row_index: i64) -> ImportDiagnosticRow {
-    use ImportDiagnostic::*;
-
-    // `detail` and `count` carry the variant's own payload, so the UI can
-    // interpolate them into a translated sentence.
-    //
-    // Neither field is ever a *separator-packed* pair. `HeadingLevelJump` used to
-    // send `"{title}|{from}|{to}"` for the UI to split on `|` — which any title
-    // containing a pipe would have broken, silently and only for that writer.
-    // Every variant now maps to at most one string and one number, and anything
-    // else the sentence needs is read off the row `row_index` names: a row-scoped
-    // diagnostic's title and type are already in the plan, so sending them twice
-    // only creates two places for them to disagree.
-    let (detail, count) = match d {
-        FileUnreadable { reason, .. } => (reason.clone(), 0),
-        // The part refused, and the ceiling it went past. The sentence uses only the
-        // ceiling; the part is there for anyone reading the row as data.
-        NestedTooDeep { part, limit, .. } => (part.clone(), *limit as i64),
-        // The member refused, for anyone reading the row as data; the sentence itself
-        // names no size, only that the file would unpack far larger than it is.
-        ArchiveTooLarge { part, .. } => (part.clone(), 0),
-        LossyDecode { replacements, .. } => (String::new(), *replacements as i64),
-        DecodedFromBom { encoding, .. } => ((*encoding).to_string(), 0),
-        EmptyFile { .. } | NoHeadings { .. } => (String::new(), 0),
-        UnsupportedFormat { extension, .. } => (extension.clone(), 0),
-        FrontMatterNotFlat { key, .. } => (key.clone(), 0),
-        FootnotesDegraded { count, .. }
-        | FootnoteNotCarried { count, .. }
-        | RawHtmlDropped { count, .. }
-        | NestedBreakDropped { count, .. } => (String::new(), *count as i64),
-        // The picture as the document named it. Which of the reasons it was left out for is
-        // in the key, one sentence each.
-        ImageNotIngested { target, .. } | PictureFirstFrameOnly { target, .. } => {
-            (target.clone(), 0)
-        }
-        // The one variant whose `detail` is a **list**, and still one string: the
-        // UI interpolates it whole and never splits it, so this is not the
-        // separator-packed pair the rule above forbids. Empty for a file that
-        // records no author, and the sentence then simply omits the clause.
-        TrackedChangesFlattened { count, authors, .. } => (authors.join(", "), *count as i64),
-        TextBoxDropped { count, .. }
-        | EmbeddedObjectDropped { count, .. }
-        | FieldFlattened { count, .. }
-        | CommentRepliesFlattened { count, .. }
-        | ProseNotVerbatim { count, .. }
-        | StyledSpacesNotCarried { count, .. }
-        | TableReadAsParagraphs { count, .. } => (String::new(), *count as i64),
-        // How many items, and the level they were placed at, as the two fields. The
-        // level is a number sent as text, the way `HeadingLevelJump` sends its first.
-        ListNestingFlattened { count, limit, .. } => (limit.to_string(), *count as i64),
-        // How many runs, and the length each was cut to, in the same two fields.
-        SpacesShortened { count, limit, .. } => (limit.to_string(), *count as i64),
-        UnknownStyleLevel { style, .. } => (style.clone(), 0),
-        // The comment's own opening words, so the writer recognises which note the
-        // importer could not place. Its body, not the prose it was about — a
-        // sentence naming the prose reads as though the manuscript were at fault.
-        CommentUnanchored { quote, .. } | CommentNotCarried { quote, .. } => (quote.clone(), 0),
-        DuplicateTitle { title, occurrences } => (title.clone(), *occurrences as i64),
-        // The two levels, as the two fields — no separator to parse. The title
-        // comes from the row.
-        HeadingLevelJump { from, to, .. } => (from.to_string(), *to as i64),
-        // Nothing: the row carries both the title and the offending type.
-        IllegalCombination { .. } | EpigraphNotCarried { .. } => (String::new(), 0),
-        // The *other* heading — the one the epigraph could also have belonged to. This
-        // one is not on the row: `row_index` names the row that got the epigraph, and the
-        // whole point of the sentence is to name the one that did not.
-        EpigraphPlacementAmbiguous { below, .. } => (below.clone(), 0),
-    };
+    // `detail` and `count` carry the variant's own payload, so the UI can interpolate
+    // them into a translated sentence; what each holds is `detail_and_count`'s to say,
+    // shared with the Scrivener importer's findings, which the same sentences word.
+    let (detail, count) = d.detail_and_count();
 
     ImportDiagnosticRow::Reported {
         key: d.key().to_string(),

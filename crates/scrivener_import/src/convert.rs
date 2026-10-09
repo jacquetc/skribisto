@@ -58,25 +58,27 @@ use skrib_format::{
     prose_file_name, prose_kind, prose_relpath,
 };
 use skribisto_model::comment_anchor;
+use uuid::Uuid;
 
 use crate::analyze::{self, Answers, Moved, Options, ReadProject};
-use crate::disk::RealDisk;
+use crate::disk::{Cancellable, RealDisk};
 use crate::index::{MAX_MEMBER_BYTES, ReadError};
 use crate::layout::Tree;
 use crate::metadata::{self, MetadataNotice, PALETTE};
-use crate::model::{ItemKey, ItemKind, MemberRef, Project, TextRole};
+use crate::model::{ItemKey, ItemKind, MemberRef, Project, SourceNames, TextRole};
 use crate::outcome::{Notice, Question, Refusal};
 use crate::prose::{self, Pictures, Place, ProseChoices, ProseNotice, dialect, sidecar, styles};
 use crate::structure::{
     self, BinderKind, Body, ChapterEncoding, Choices, Origin, PlanError, PlannedRow, PlannedTitle,
-    Source, StructureNotice, StructurePlan, SubRole,
+    RowRef, Source, StructureNotice, StructurePlan, SubRole,
 };
 
 mod research;
 use research::ResearchCopy;
 
-/// Where the item's title goes in [`Words::notes_of`].
-pub const TITLE_SLOT: char = '\u{E000}';
+/// Where a pattern's value goes in [`Words`]: the one slot every importer's patterns hold,
+/// so the interface resolves all of them alike.
+pub use skrib_format::importing::TITLE_SLOT;
 
 /// The words the import writes into the project, in the writer's language. The interface
 /// resolves them once, when it starts the import; the converter stores them as they are.
@@ -197,8 +199,23 @@ pub struct Summary {
     pub metadata: Vec<MetadataNotice>,
     /// Where each binder item went (D3.21), for the report and the tests.
     pub placements: Vec<structure::Placement>,
+    /// Every row written, in the plan's order: the uid each carries in the new project, so
+    /// the report can open the row a notice is about, and what it came from.
+    pub rows: Vec<WrittenRow>,
+    /// How the writer knew each item, project note and recovered text the notices name.
+    pub names: SourceNames,
     /// The folder beside the project the research files were copied into, by name.
     pub research_folder: Option<String>,
+}
+
+/// A row the conversion wrote.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct WrittenRow {
+    /// Which planned row it is: what [`Summary::placements`] point at.
+    pub at: RowRef,
+    /// The uid it carries in the new project, which a reload keeps.
+    pub uid: Uuid,
+    pub origin: Origin,
 }
 
 /// Why a conversion wrote nothing.
@@ -250,6 +267,15 @@ pub fn convert(
     report: &dyn Fn(f32, &str),
     cancel: &AtomicBool,
 ) -> Result<Summary, ConvertError> {
+    // A project read again because it moved under the read (a sync service catching up)
+    // goes through its phases a second time; the share of the work the writer watches
+    // never goes back, and the phase says what is happening again.
+    let furthest = Cell::new(0.0f32);
+    let report = &|percent: f32, label: &str| {
+        let percent = percent.max(furthest.get());
+        furthest.set(percent);
+        report(percent, label);
+    };
     // Before the project is even opened: whether the target may be replaced.
     let output =
         StagedOutput::begin(request.output, request.overwrite).map_err(ConvertError::Output)?;
@@ -276,17 +302,26 @@ pub fn convert(
         }
     };
     let mut visit_ref: analyze::Visit<'_> = Some(&mut visit);
+    // Every read stops once the writer cancels, so a project on a slow drive is not read to
+    // its end first; what the refused reads made of the analysis is then set aside.
+    let disk = Cancellable {
+        inner: &RealDisk,
+        cancel,
+    };
     let analysis = analyze::analyze_visiting(
-        &RealDisk,
+        &disk,
         request.source,
         request.answers,
         request.options,
         &mut visit_ref,
     );
-    let notices = match analysis {
+    if cancel.load(Ordering::Relaxed) {
+        return Err(ConvertError::Cancelled);
+    }
+    let (notices, names) = match analysis {
         analyze::Analysis::Refused { refusal, .. } => return Err(ConvertError::Refused(refusal)),
         analyze::Analysis::Choose { question, .. } => return Err(ConvertError::Choose(question)),
-        analyze::Analysis::Read(read) => read.notices,
+        analyze::Analysis::Read(read) => (read.notices, read.project.source_names()),
     };
     let built = match built {
         Some(result) => result?,
@@ -323,6 +358,8 @@ pub fn convert(
         prose: built.prose,
         metadata: built.metadata,
         placements: built.placements,
+        rows: built.rows,
+        names,
         research_folder,
     })
 }
@@ -335,6 +372,7 @@ struct Built {
     prose: Vec<ProseNotice>,
     metadata: Vec<MetadataNotice>,
     placements: Vec<structure::Placement>,
+    rows: Vec<WrittenRow>,
 }
 
 /// Why building stopped.
@@ -378,6 +416,7 @@ fn build(
         prose: std::mem::take(&mut converter.notices),
         metadata: std::mem::take(&mut converter.metadata),
         placements: plan.placements.clone(),
+        rows: std::mem::take(&mut converter.written),
         bundle,
     })
 }
@@ -445,6 +484,8 @@ struct Converter<'c, 't, 'i, 'd, 'r> {
     /// left out of it will print, and is said.
     printed: Cell<bool>,
     totals: Totals,
+    /// Every row written, in the plan's order.
+    written: Vec<WrittenRow>,
 }
 
 impl<'c, 't, 'i, 'd, 'r> Converter<'c, 't, 'i, 'd, 'r> {
@@ -490,6 +531,7 @@ impl<'c, 't, 'i, 'd, 'r> Converter<'c, 't, 'i, 'd, 'r> {
             undated: RefCell::new(BTreeSet::new()),
             printed: Cell::new(false),
             totals: Totals::default(),
+            written: Vec::new(),
         }
     }
 
@@ -620,6 +662,14 @@ impl<'c, 't, 'i, 'd, 'r> Converter<'c, 't, 'i, 'd, 'r> {
                         .and_then(|k| rung_ids.get(k as usize).copied()),
                 };
                 let (item, row_links) = self.row(kind, row, row_ids[index][r], &dir, worn)?;
+                self.written.push(WrittenRow {
+                    at: RowRef {
+                        binder: kind,
+                        row: r as u32,
+                    },
+                    uid: item.item.uid,
+                    origin: row.origin,
+                });
                 if let Some((place, targets)) = row_links {
                     links.push((kind, r, place, targets));
                 }

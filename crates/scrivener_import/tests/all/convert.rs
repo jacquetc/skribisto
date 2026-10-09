@@ -1302,3 +1302,134 @@ fn a_cancel_at_any_point_leaves_nothing() {
         "a cancel after the last report never stops a whole import"
     );
 }
+
+/// A document written to while the conversion reads it (a sync service catching up) has the
+/// whole project read again; the progress the writer watches still never goes back, and
+/// ends at the end.
+#[test]
+fn progress_never_goes_back_when_the_project_is_read_again() {
+    let dir = temp();
+    let spec = Spec::novel(Generation::Format20, Platform::Mac);
+    let folder = write_files(&spec.build(), dir.path(), &spec.folder());
+    let index = spec.index_of("Arrival").expect("the scene");
+    let text = folder.join(spec.text_path(index));
+    let out = dir.path().join("novel.skrib");
+    let output = out.to_string_lossy().into_owned();
+    let (choices, words, answers, options) =
+        (Choices::default(), words(), Answers::default(), options());
+    let request = request(&folder, &output, &choices, &words, &answers, &options);
+    let seen = std::cell::RefCell::new(Vec::<(f32, String)>::new());
+    let touched = std::cell::Cell::new(false);
+    let converting = std::cell::Cell::new(false);
+    let report = |percent: f32, label: &str| {
+        seen.borrow_mut().push((percent, label.to_string()));
+        if label == "import.converting" {
+            converting.set(true);
+        }
+        // The first row converted: its title, after the converting phase began.
+        let a_row = converting.get() && !label.starts_with("import.");
+        if a_row && !touched.get() {
+            touched.set(true);
+            let mut rtf = std::fs::read(&text).expect("the scene reads");
+            let at = rtf.iter().rposition(|b| *b == b'}').expect("an RTF group");
+            rtf.splice(at..at, b"\\par One more line.".iter().copied());
+            std::fs::write(&text, rtf).expect("the scene writes");
+        }
+    };
+    let summary = convert(&request, &report, &AtomicBool::new(false));
+    assert!(summary.is_ok(), "{:?}", summary.err());
+    let seen = seen.into_inner();
+    let readings = seen
+        .iter()
+        .filter(|(_, label)| label == "import.outline")
+        .count();
+    assert_eq!(readings, 2, "the project was read again: {seen:?}");
+    for pair in seen.windows(2) {
+        assert!(pair[1].0 >= pair[0].0, "progress went back: {seen:?}");
+    }
+    assert_eq!(seen.last(), Some(&(100.0, "import.done".to_string())));
+}
+
+// ── what the report names rows by ────────────────────────────────────────────────────────
+
+/// Every row written is in the summary with the uid the project holds for it, in the
+/// plan's order, and every placement points at a row written.
+#[test]
+fn every_row_written_carries_the_uid_the_project_holds() {
+    let dir = temp();
+    let folder = novel_with(Generation::Format20, Platform::Mac, dir.path(), &[]);
+    let out = dir.path().join("novel.skrib");
+    let summary = converted(&folder, &out);
+    let bundle = read(&out);
+    let held: Vec<uuid::Uuid> = items(&bundle).map(|i| i.item.uid).collect();
+    let written: Vec<uuid::Uuid> = summary.rows.iter().map(|r| r.uid).collect();
+    assert_eq!(written, held, "one per row, in the plan's order");
+    let at: std::collections::BTreeSet<_> = summary
+        .rows
+        .iter()
+        .map(|r| (format!("{:?}", r.at.binder), r.at.row))
+        .collect();
+    for placement in &summary.placements {
+        for row in [
+            placement.item,
+            placement.text.as_ref().map(|(row, _)| *row),
+            placement.notes,
+            placement.synopsis,
+        ]
+        .into_iter()
+        .flatten()
+        {
+            assert!(at.contains(&(format!("{:?}", row.binder), row.row)));
+        }
+    }
+}
+
+/// An item is named where the writer knew it: its titles from the top of the binder.
+#[test]
+fn an_item_is_named_by_its_place_in_the_binder() {
+    let dir = temp();
+    let folder = novel_with(Generation::Format15, Platform::Windows, dir.path(), &[]);
+    let out = dir.path().join("novel.skrib");
+    let summary = converted(&folder, &out);
+    let spec = Spec::novel(Generation::Format15, Platform::Windows);
+    let Some(arrival) = spec.index_of("Arrival") else {
+        panic!("no fixture item Arrival");
+    };
+    assert_eq!(
+        summary.names.items[arrival],
+        ["Manuscript", "Part One", "Chapter 1", "Arrival"]
+    );
+    assert_eq!(summary.names.items.len(), spec.items.len());
+    // The untitled scene keeps an empty title: named by nothing the import invented.
+    assert!(
+        summary
+            .names
+            .items
+            .iter()
+            .any(|path| path.last().is_some_and(String::is_empty))
+    );
+    // Format 1.x project notes are named by their own titles.
+    assert_eq!(summary.names.project_notes, ["General"]);
+}
+
+/// An analysis the writer stopped says nothing, and one they did not stop reads the project.
+#[test]
+fn a_cancelled_analysis_is_no_analysis() {
+    let dir = temp();
+    let folder = novel_with(Generation::Format20, Platform::Mac, dir.path(), &[]);
+    let answers = Answers::default();
+    let stopped = scrivener_import::analyze_cancellable(
+        &folder,
+        &answers,
+        &options(),
+        &AtomicBool::new(true),
+    );
+    assert!(stopped.is_none());
+    let read = scrivener_import::analyze_cancellable(
+        &folder,
+        &answers,
+        &options(),
+        &AtomicBool::new(false),
+    );
+    assert!(matches!(read, Some(scrivener_import::Analysis::Read(_))));
+}

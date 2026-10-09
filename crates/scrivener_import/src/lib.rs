@@ -103,13 +103,15 @@ mod xml;
 
 pub use analyze::{
     Analysis, Answers, Card, NEWEST_STAMP, Options, ReadProject, SiblingChoice, analyze,
+    analyze_cancellable,
 };
 pub use content::ContentFacts;
 pub use convert::{
-    ConvertError, DefaultRung, Request, Summary, TITLE_SLOT, Totals, Words, convert,
+    ConvertError, DefaultRung, Request, Summary, TITLE_SLOT, Totals, Words, WrittenRow, convert,
 };
 pub use lock::this_host;
 pub use metadata::{MetadataNotice, Proposals};
+pub use model::SourceNames;
 pub use outcome::{Notice, Question, Refusal, Tier};
 pub use prose::{CompileTreatment, LeftOut, Place, ProseChoices, ProseNotice};
 

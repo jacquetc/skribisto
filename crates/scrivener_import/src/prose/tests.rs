@@ -835,3 +835,266 @@ mod round_trip {
         }
     }
 }
+
+/// Every finding of the document importer's, one of each and every picture's reason, for
+/// the test below: [`every_diagnostic_is_listed`] keeps the list whole.
+fn every_document_diagnostic() -> Vec<ImportDiagnostic> {
+    use ImportDiagnostic as D;
+    let path = || "Draft › Scene".to_string();
+    let mut every = vec![
+        D::FileUnreadable {
+            path: path(),
+            reason: "denied".into(),
+        },
+        D::NestedTooDeep {
+            path: path(),
+            part: "content".into(),
+            limit: 256,
+        },
+        D::ArchiveTooLarge {
+            path: path(),
+            part: "content".into(),
+        },
+        D::LossyDecode {
+            path: path(),
+            replacements: 3,
+        },
+        D::DecodedFromBom {
+            path: path(),
+            encoding: "UTF-16LE",
+        },
+        D::EmptyFile { path: path() },
+        D::NoHeadings { path: path() },
+        D::UnsupportedFormat {
+            path: path(),
+            extension: "odt".into(),
+        },
+        D::FrontMatterNotFlat {
+            path: path(),
+            key: "tags".into(),
+        },
+        D::FootnotesDegraded {
+            path: path(),
+            count: 2,
+        },
+        D::FootnoteNotCarried {
+            path: path(),
+            count: 1,
+        },
+        D::RawHtmlDropped {
+            path: path(),
+            count: 1,
+        },
+        D::NestedBreakDropped {
+            path: path(),
+            count: 4,
+        },
+        D::PictureFirstFrameOnly {
+            path: path(),
+            target: "spin.gif".into(),
+        },
+        D::DuplicateTitle {
+            title: "Later".into(),
+            occurrences: 2,
+        },
+        D::HeadingLevelJump {
+            title: "Deep".into(),
+            from: 1,
+            to: 4,
+        },
+        D::IllegalCombination {
+            title: "A part".into(),
+            kind: skribisto_model::CreateType::Part,
+        },
+        D::TrackedChangesFlattened {
+            path: path(),
+            count: 2,
+            authors: vec!["Ada Rees".into(), "Marc Dubois".into()],
+        },
+        D::TextBoxDropped {
+            path: path(),
+            count: 1,
+        },
+        D::EmbeddedObjectDropped {
+            path: path(),
+            count: 2,
+        },
+        D::FieldFlattened {
+            path: path(),
+            count: 9,
+        },
+        D::UnknownStyleLevel {
+            path: path(),
+            style: "HeadingChapter".into(),
+        },
+        D::CommentUnanchored {
+            path: path(),
+            quote: "Is this the right word?".into(),
+        },
+        D::CommentNotCarried {
+            path: path(),
+            quote: "Nothing to keep me on.".into(),
+        },
+        D::CommentRepliesFlattened {
+            path: path(),
+            count: 3,
+        },
+        D::ProseNotVerbatim {
+            path: path(),
+            count: 2,
+        },
+        D::StyledSpacesNotCarried {
+            path: path(),
+            count: 3,
+        },
+        D::ListNestingFlattened {
+            path: path(),
+            count: 4,
+            limit: 16,
+        },
+        D::TableReadAsParagraphs {
+            path: path(),
+            count: 1,
+        },
+        D::SpacesShortened {
+            path: path(),
+            count: 2,
+            limit: 1_000,
+        },
+        D::EpigraphNotCarried {
+            title: "A scene".into(),
+            kind: skribisto_model::CreateType::Scene,
+        },
+        D::EpigraphPlacementAmbiguous {
+            above: "Part One".into(),
+            below: "Chapter One".into(),
+        },
+    ];
+    for reason in [
+        PictureRefusal::Unsupported { format: "EMF" },
+        PictureRefusal::Remote,
+        PictureRefusal::Outside,
+        PictureRefusal::Missing,
+        PictureRefusal::TooLarge,
+        PictureRefusal::Unreadable,
+        PictureRefusal::InHeading,
+        PictureRefusal::InNote,
+        PictureRefusal::InHtml,
+        PictureRefusal::DocumentFull,
+    ] {
+        every.push(D::ImageNotIngested {
+            path: path(),
+            target: "cover.png".into(),
+            reason,
+        });
+    }
+    every
+}
+
+/// Which of the document importer's findings `diagnostic` is, by an exhaustive match: a new
+/// kind fails to compile here until [`every_document_diagnostic`] lists it.
+fn diagnostic_slot(diagnostic: &ImportDiagnostic) -> usize {
+    use ImportDiagnostic as D;
+    match diagnostic {
+        D::FileUnreadable { .. } => 0,
+        D::NestedTooDeep { .. } => 1,
+        D::ArchiveTooLarge { .. } => 2,
+        D::LossyDecode { .. } => 3,
+        D::DecodedFromBom { .. } => 4,
+        D::EmptyFile { .. } => 5,
+        D::NoHeadings { .. } => 6,
+        D::UnsupportedFormat { .. } => 7,
+        D::FrontMatterNotFlat { .. } => 8,
+        D::FootnotesDegraded { .. } => 9,
+        D::FootnoteNotCarried { .. } => 10,
+        D::RawHtmlDropped { .. } => 11,
+        D::NestedBreakDropped { .. } => 12,
+        D::ImageNotIngested { .. } => 13,
+        D::PictureFirstFrameOnly { .. } => 14,
+        D::DuplicateTitle { .. } => 15,
+        D::HeadingLevelJump { .. } => 16,
+        D::IllegalCombination { .. } => 17,
+        D::TrackedChangesFlattened { .. } => 18,
+        D::TextBoxDropped { .. } => 19,
+        D::EmbeddedObjectDropped { .. } => 20,
+        D::FieldFlattened { .. } => 21,
+        D::UnknownStyleLevel { .. } => 22,
+        D::CommentUnanchored { .. } => 23,
+        D::CommentNotCarried { .. } => 24,
+        D::CommentRepliesFlattened { .. } => 25,
+        D::ProseNotVerbatim { .. } => 26,
+        D::StyledSpacesNotCarried { .. } => 27,
+        D::ListNestingFlattened { .. } => 28,
+        D::TableReadAsParagraphs { .. } => 29,
+        D::SpacesShortened { .. } => 30,
+        D::EpigraphNotCarried { .. } => 31,
+        D::EpigraphPlacementAmbiguous { .. } => 32,
+    }
+}
+
+#[test]
+fn every_diagnostic_is_listed() {
+    let slots: std::collections::BTreeSet<usize> = every_document_diagnostic()
+        .iter()
+        .map(diagnostic_slot)
+        .collect();
+    assert_eq!(slots, (0..=32).collect());
+}
+
+/// A finding of the document importer's carries the one string and the one number the
+/// document importer's own row carries for it, under its key, so the sentence written for
+/// that row reads it alike: the level a list was flattened to, the longest run of spaces
+/// kept, the ceiling a part nested past, the two levels of a heading's jump, the heading an
+/// epigraph did not go to.
+#[test]
+fn a_document_finding_carries_what_the_document_importer_s_row_carries() {
+    let at = Place::Text { item: 1 };
+    for diagnostic in every_document_diagnostic() {
+        let ProseNotice::Document {
+            key,
+            count,
+            detail,
+            warning,
+            ..
+        } = document_notice(at, &diagnostic)
+        else {
+            panic!("{diagnostic:?} is not a document finding");
+        };
+        assert_eq!(key, diagnostic.key());
+        assert_eq!(
+            warning,
+            diagnostic.severity() != DiagnosticSeverity::Info,
+            "{key}"
+        );
+        let (row_detail, row_count) = diagnostic.detail_and_count();
+        assert_eq!((detail, i64::from(count)), (row_detail, row_count), "{key}");
+    }
+    // The ones the review's sentences cannot do without, spelled out.
+    let carried = |diagnostic: ImportDiagnostic| match document_notice(at, &diagnostic) {
+        ProseNotice::Document { count, detail, .. } => (count, detail),
+        other => panic!("{other:?}"),
+    };
+    assert_eq!(
+        carried(ImportDiagnostic::ListNestingFlattened {
+            path: String::new(),
+            count: 4,
+            limit: 16,
+        }),
+        (4, "16".to_string())
+    );
+    assert_eq!(
+        carried(ImportDiagnostic::HeadingLevelJump {
+            title: "Deep".into(),
+            from: 1,
+            to: 4,
+        }),
+        (4, "1".to_string())
+    );
+    assert_eq!(
+        carried(ImportDiagnostic::EpigraphPlacementAmbiguous {
+            above: "Part One".into(),
+            below: "Chapter One".into(),
+        }),
+        (0, "Chapter One".to_string())
+    );
+}

@@ -454,6 +454,26 @@ pub(crate) fn is_item_number(s: &str) -> bool {
     !s.is_empty() && s.len() <= 9 && s.bytes().all(|b| b.is_ascii_digit())
 }
 
+/// The Scrivener document number a recovered file's name gives (`630` for
+/// `Files/Docs/630.rtf`, `630_notes.rtf` or a sync copy of either), or blank. What a
+/// recovered text is called when no binder item names it: never the rest of the file's
+/// name, which is an English word Scrivener chose (`content.rtf`) or, in a sync copy's, a
+/// person's or a computer's name (`630 (Jane's conflicted copy 2019-03-04).rtf`,
+/// `content-DESKTOP-1.rtf`).
+pub(crate) fn recovered_number(path: &str) -> String {
+    let name = path.rsplit('/').next().unwrap_or_default();
+    let digits: String = name.chars().take_while(char::is_ascii_digit).collect();
+    let rest = &name[digits.len()..];
+    let document = rest.is_empty() || rest.starts_with(['.', '_', ' ', '[', '-', '~']);
+    if !(is_item_number(&digits) && document) {
+        return String::new();
+    }
+    match digits.trim_start_matches('0') {
+        "" => "0".to_string(),
+        number => number.to_string(),
+    }
+}
+
 /// A file extension a binder item may name: one to sixteen ASCII letters and
 /// digits (the longest real one is `webarchive`).
 pub(crate) fn is_extension(s: &str) -> bool {

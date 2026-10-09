@@ -2381,6 +2381,592 @@ features:
         type: string
         is_list: true
 
+  # Scrivener import, in two halves, as the wizard needs it: read the project and say what
+  # it holds before anything is written (the Project and Review pages), then convert it with
+  # the writer's answers (the Save page). Qleany's Scenario 4, except that the second half is
+  # a file -> file transform like the Plume and Manuskript importers, never a store write:
+  # both touch no entity (`entities: []`), and the interface opens the result with the
+  # ordinary `load_work`. Long operations for the IO: a cloud or network folder, a 2,500-item
+  # manual, a template of several megabytes. No use case calls the other: what both need
+  # (the answers, the typed findings) is the hand-written `import_management::scrivener`
+  # module.
+  #
+  # Nothing either returns is a sentence. Every refusal, question and notice travels as a
+  # stable key and typed arguments for the interface to word in the writer's language; the
+  # names the import writes into the project arrive already worded, in the interface's
+  # language, from the caller.
+  - name: analyze_scrivener_project
+    entities: []
+    undoable: false
+    read_only: true
+    long_operation: true
+    dto_in:
+      name: AnalyzeScrivenerProjectDto
+      fields:
+      # What the writer picked: a project folder, a `.scrivx` in one (pinned), a folder
+      # around one, a backup `.zip` or a `.scrivtemplate`.
+      - name: source_path
+        type: string
+      # The writer's answers to what an earlier analysis asked, all unanswered the first
+      # time: which project, when the pick held several (a candidate's path, empty for
+      # none); which manifest (a candidate's name, empty for none); whether to import the
+      # project the pick sits inside; which of a pre-upgrade copy and its upgraded sibling.
+      - name: chosen_project
+        type: string
+      - name: chosen_manifest
+        type: string
+      - name: use_enclosing_project
+        type: boolean
+      - name: upgraded_sibling
+        type: enum
+        enum_name: ScrivenerSiblingChoice
+        enum_values:
+        - Unanswered
+        - Sibling
+        - Backup
+      # What the writer accepted: the desktop state without the iPhone or iPad edits never
+      # merged, and a copy whose documents are missing as empty documents.
+      - name: accept_unmerged_mobile_edits
+        type: boolean
+      - name: accept_no_text
+        type: boolean
+    dto_out:
+      name: ScrivenerAnalysisDto
+      fields:
+      # Read (the card, the proposals and the plan are filled), Choose (`question` must be
+      # answered and the analysis run again), or Refused (`refusal` says why).
+      - name: outcome
+        type: enum
+        enum_name: ScrivenerAnalysisOutcome
+        enum_values:
+        - Read
+        - Choose
+        - Refused
+      # A finding: a stable key, where it happened (the Scrivener binder row, -1 for none,
+      # which orders a report's items as the binder did; the item's path in Scrivener's
+      # binder; the new row's uid once there is one), which group of the report the
+      # converter files it in (`Unfiled` when the interface decides), and its arguments,
+      # typed and named. Never a sentence.
+      - name: refusal
+        type: enum
+        enum_name: ScrivenerFinding
+        enum_values:
+        - Empty
+        - "Reported { key: String, family: ScrivenerFindingFamily, group: ScrivenerReportGroup, place: ScrivenerPlace, item: i64, binder_path: Vec<String>, item_uid: Option<Uuid>, args: Vec<ScrivenerArg> }"
+      # The question to answer before anything more can be read.
+      - name: question
+        type: enum
+        enum_name: ScrivenerQuestion
+        enum_values:
+        - Empty
+        - "SeveralProjects { candidates: Vec<String> }"
+        - "SeveralManifests { candidates: Vec<ScrivenerManifestCandidate>, preselected: Option<String>, evidence: Vec<ScrivenerManifestEvidence> }"
+        - "EnclosingProject { project: String, levels_up: i64 }"
+        - "UpgradedSibling { backup: String, sibling: String, sibling_generation: Option<ScrivenerGeneration>, preselect_sibling: bool }"
+        - "UnmergedMobileEdits { source: ScrivenerMobileEdits }"
+        - "NoTextInCopy { text_items: i64 }"
+      # The questions to accept before importing, when the project was read.
+      - name: pending
+        type: enum
+        enum_name: ScrivenerQuestion
+        is_list: true
+        enum_values:
+        - Empty
+        - "SeveralProjects { candidates: Vec<String> }"
+        - "SeveralManifests { candidates: Vec<ScrivenerManifestCandidate>, preselected: Option<String>, evidence: Vec<ScrivenerManifestEvidence> }"
+        - "EnclosingProject { project: String, levels_up: i64 }"
+        - "UpgradedSibling { backup: String, sibling: String, sibling_generation: Option<ScrivenerGeneration>, preselect_sibling: bool }"
+        - "UnmergedMobileEdits { source: ScrivenerMobileEdits }"
+        - "NoTextInCopy { text_items: i64 }"
+      # What the analysis found, whatever its outcome.
+      - name: notices
+        type: enum
+        enum_name: ScrivenerFinding
+        is_list: true
+        enum_values:
+        - Empty
+        - "Reported { key: String, family: ScrivenerFindingFamily, group: ScrivenerReportGroup, place: ScrivenerPlace, item: i64, binder_path: Vec<String>, item_uid: Option<Uuid>, args: Vec<ScrivenerArg> }"
+      # The project card, when the project was read: its name (the folder's, cleaned of what
+      # backups and sync services add: the Save page's file name), a template's own title,
+      # what it came in, which generation and which Scrivener last saved it, which manifest
+      # was read and why, when it was last saved (seconds since the Unix epoch and the offset
+      # it was written with; absent from many format 1.0 manifests), and what it holds.
+      - name: folder_title
+        type: string
+      - name: template_title
+        type: string
+      - name: container
+        type: enum
+        enum_name: ScrivenerContainer
+        enum_values:
+        - Folder
+        - Zip
+        - Template
+      - name: generation
+        type: enum
+        enum_name: ScrivenerGeneration
+        enum_values:
+        - Format20
+        - Format15
+        - Format10
+        - IosStub
+      - name: platform
+        type: enum
+        enum_name: ScrivenerPlatform
+        enum_values:
+        - Unknown
+        - Mac
+        - Windows
+        - Linux
+        - Ios
+      # The version the `Creator` spells (`3.5.2`), and the `Creator` as written when it
+      # could not be read.
+      - name: writer_version
+        type: string
+      - name: creator
+        type: string
+      - name: manifest
+        type: string
+      - name: manifest_choice
+        type: enum
+        enum_name: ScrivenerManifestChoice
+        enum_values:
+        - Only
+        - Picked
+        - Answered
+        - Identical
+        - Automatic
+        - MobileBinder
+      - name: modified
+        type: integer
+        optional: true
+      - name: modified_offset_minutes
+        type: integer
+        optional: true
+      # Binder items; documents (texts), of them in the Draft, and with a file of writing on
+      # disk; pictures and other files; research files Skribisto cannot open; items in the
+      # Trash; snapshots Scrivener keeps (not imported).
+      - name: items
+        type: integer
+      - name: documents
+        type: integer
+      - name: manuscript_documents
+        type: integer
+      - name: documents_present
+        type: integer
+      - name: media_items
+        type: integer
+      - name: research_files
+        type: integer
+      - name: trashed_items
+        type: integer
+      - name: snapshots
+        type: integer
+      # The computers the project names: the manifest's `Device` and the lock's host.
+      # Personal data: shown on the card, never written anywhere, withheld from `Debug`.
+      - name: computers
+        type: enum
+        enum_name: ScrivenerComputers
+        enum_values:
+        - Unknown
+        - "Named { device: Option<String>, lock_host: Option<String> }"
+      # What the project states about itself, for the Save page to pre-fill. An empty
+      # language is one the project does not state: the interface proposes its own.
+      - name: proposed_title
+        type: string
+      - name: proposed_title_source
+        type: enum
+        enum_name: ScrivenerTitleSource
+        enum_values:
+        - FolderName
+        - CompileSettings
+        - ProjectProperties
+        - Template
+      - name: proposed_authors
+        type: string
+        is_list: true
+      - name: proposed_author_source
+        type: enum
+        enum_name: ScrivenerAuthorSource
+        enum_values:
+        - NotStated
+        - CompileSettings
+        - ProjectProperties
+      - name: proposed_language
+        type: string
+      - name: proposed_language_source
+        type: enum
+        enum_name: ScrivenerLanguageSource
+        enum_values:
+        - NotStated
+        - CompileSettings
+        - Script
+      # The structure mapping with the detected choices: the preview's rows (both binders,
+      # in order), the review's controls, the text that comes back although the writer may
+      # believe it gone, the counts, the note templates and story-bible tags it makes, what
+      # the writer should check, and the choices it was made with. The review recomputes it
+      # on every change through `import_management::scrivener::ScrivenerReview`, from
+      # `review_data`, synchronously: the same pure mapping the import applies.
+      - name: structure
+        type: enum
+        enum_name: ScrivenerStructure
+        enum_values:
+        - Empty
+        - "Planned { rows: Vec<ScrivenerPreviewRow>, controls: Vec<ScrivenerControl>, set_aside_trashed: i64, set_aside_recovered: i64, shape: ScrivenerShape, chapter_encoding: ScrivenerChapterEncoding, templates: Vec<String>, tags: Vec<String>, notices: Vec<ScrivenerFinding>, choices: Vec<ScrivenerChoice> }"
+      # What the review recomputes the plan from, for `ScrivenerReview::open` alone.
+      - name: review_data
+        type: string
+      # What the import checks the project against: a project changed since is refused, for
+      # the interface to analyse it again.
+      - name: fingerprint
+        type: string
+      # Declaration-only fields: these exist so the types the fields above carry are
+      # declared. Every one is left at its default.
+      - name: finding_family
+        type: enum
+        enum_name: ScrivenerFindingFamily
+        enum_values:
+        - Refusal
+        - Source
+        - Structure
+        - Prose
+        - Document
+        - Metadata
+      - name: report_group
+        type: enum
+        enum_name: ScrivenerReportGroup
+        enum_values:
+        - Unfiled
+        - CouldNotBeRead
+        - CheckThese
+        - BroughtAcrossDifferently
+        - LeftBehind
+      # The project as a whole, an item (the item itself, its main text, its document notes,
+      # its synopsis, its picture or file, its index-card picture), a format 1.x project note,
+      # or a recovered text.
+      - name: place
+        type: enum
+        enum_name: ScrivenerPlace
+        enum_values:
+        - Project
+        - Item
+        - Text
+        - Notes
+        - Synopsis
+        - Media
+        - CardImage
+        - ProjectNote
+        - Recovered
+      # An argument, by the name the converter gives it: a count, a value from the project
+      # (a file name, a title, a placeholder, what a parser said), several, a flag, a closed
+      # choice as a stable kebab-case token for a Fluent selector, a day (`YYYY-MM-DD`, the
+      # writer's own calendar), or another item.
+      - name: arg
+        type: enum
+        enum_name: ScrivenerArg
+        enum_values:
+        - Empty
+        - "Count { name: String, value: i64 }"
+        - "Text { name: String, value: String }"
+        - "Texts { name: String, values: Vec<String> }"
+        - "Flag { name: String, value: bool }"
+        - "Token { name: String, value: String }"
+        - "Day { name: String, value: String }"
+        - "Item { name: String, binder_path: Vec<String>, item_uid: Option<Uuid> }"
+      - name: manifest_candidate
+        type: enum
+        enum_name: ScrivenerManifestCandidate
+        enum_values:
+        - Empty
+        - "Candidate { name: String, creator: Option<String>, version: Option<String>, modified: Option<i64>, items: Option<i64>, matches_autosave: bool, identical_to_preselected: bool }"
+      - name: manifest_evidence
+        type: enum
+        enum_name: ScrivenerManifestEvidence
+        enum_values:
+        - MatchesAutosave
+        - FolderName
+        - Newest
+      - name: mobile_edits
+        type: enum
+        enum_name: ScrivenerMobileEdits
+        enum_values:
+        - MobileFolder
+        - NewerMobileBinder
+      # A row of the preview: its binder, depth, kind and title (the item's own, another
+      # item's for its notes, the project's, or one the import names), whether it exports and
+      # is live, the binder row it represents (-1 for a row the import makes), and what
+      # decided its kind.
+      - name: preview_row
+        type: enum
+        enum_name: ScrivenerPreviewRow
+        enum_values:
+        - Empty
+        - "Row { binder: ScrivenerBinder, depth: i64, role: BinderItemRole, sub_role: BinderItemSubRole, title: String, title_kind: ScrivenerTitleKind, exportable: bool, activated: bool, item: i64, why: ScrivenerSignal }"
+      - name: binder
+        type: enum
+        enum_name: ScrivenerBinder
+        enum_values:
+        - Manuscript
+        - Notes
+      - name: title_kind
+        type: enum
+        enum_name: ScrivenerTitleKind
+        enum_values:
+        - Own
+        - NotesOf
+        - ProjectTitle
+        - ProjectNotes
+        - Recovered
+      - name: signal_kind
+        type: enum
+        enum_name: ScrivenerSignal
+        enum_values:
+        - SectionType
+        - InheritedSectionType
+        - Title
+        - SiblingTitles
+        - LevelType
+        - Shape
+        - Minority
+        - ClaimsBelow
+        - ParatextChildren
+        - EmptyFolder
+        - Floor
+        - Choice
+        - Text
+        - Heading
+        - Inside
+        - Media
+        - Matter
+        - StoryBible
+        - Notes
+        - Synthesised
+      # One control of the review page, with what was detected and what is chosen.
+      - name: control
+        type: enum
+        enum_name: ScrivenerControl
+        enum_values:
+        - Empty
+        - "Containers { depth: i64, containers: i64, adjustable: i64, detected: ScrivenerContainerRung, mixed: bool, chosen: Option<ScrivenerContainerRung>, examples: Vec<ScrivenerItemRef>, signals: Vec<ScrivenerSignalCount>, flags: Vec<ScrivenerShapeFlag> }"
+        - "Texts { depth: i64, texts: i64, detected: ScrivenerTextKind, chosen: Option<ScrivenerTextKind>, examples: Vec<ScrivenerItemRef>, median_words: i64 }"
+        - "Root { item: ScrivenerItemRef, items: i64, detected: ScrivenerDestination, chosen: Option<ScrivenerDestination>, looks_like_manuscript: bool }"
+        - "Books { claimed: Vec<ScrivenerItemRef>, detected: ScrivenerBooksChoice, chosen: Option<ScrivenerBooksChoice> }"
+        - "Split { item: ScrivenerItemRef, headings: i64, detected: bool, chosen: Option<bool> }"
+        - "Trash { items: i64, with_writing: i64, chosen: ScrivenerTrashChoice }"
+      # A binder row of the Scrivener project, and where it sits there.
+      - name: item_ref
+        type: enum
+        enum_name: ScrivenerItemRef
+        enum_values:
+        - Empty
+        - "Item { item: i64, binder_path: Vec<String> }"
+      - name: signal_count
+        type: enum
+        enum_name: ScrivenerSignalCount
+        enum_values:
+        - Empty
+        - "Counted { signal: ScrivenerSignal, count: i64 }"
+      - name: shape_flag
+        type: enum
+        enum_name: ScrivenerShapeFlag
+        enum_values:
+        - MedianDiffersFromMaximum
+        - LoneWrapper
+        - MinorityContainers
+        - AdoptsTexts
+      - name: container_rung
+        type: enum
+        enum_name: ScrivenerContainerRung
+        enum_values:
+        - Part
+        - Chapter
+        - Plain
+      - name: text_kind
+        type: enum
+        enum_name: ScrivenerTextKind
+        enum_values:
+        - Scenes
+        - Chapters
+      - name: destination
+        type: enum
+        enum_name: ScrivenerDestination
+        enum_values:
+        - Notes
+        - StoryBible
+        - Manuscript
+        - LeaveOut
+      - name: books_choice
+        type: enum
+        enum_name: ScrivenerBooksChoice
+        enum_values:
+        - One
+        - Several
+      - name: trash_choice
+        type: enum
+        enum_name: ScrivenerTrashChoice
+        enum_values:
+        - Import
+        - LeaveOut
+      - name: shape
+        type: enum
+        enum_name: ScrivenerShape
+        enum_values:
+        - Empty
+        - "Counted { books: i64, parts: i64, chapter_folders: i64, flat_chapters: i64, scenes: i64, paratexts: i64, plain_folders: i64, manuscript_notes: i64, notes_rows: i64, trashed_rows: i64, templates: i64, tags: i64 }"
+      - name: chapter_encoding
+        type: enum
+        enum_name: ScrivenerChapterEncoding
+        enum_values:
+        - Folder
+        - Flat
+      # One of the writer's structure choices, a change from what was detected; binder rows
+      # are numbered as the analysis with this fingerprint numbered them.
+      - name: choice
+        type: enum
+        enum_name: ScrivenerChoice
+        enum_values:
+        - Empty
+        - "Containers { depth: i64, rung: ScrivenerContainerRung }"
+        - "Texts { depth: i64, kind: ScrivenerTextKind }"
+        - "Root { item: i64, destination: ScrivenerDestination }"
+        - "Books { choice: ScrivenerBooksChoice }"
+        - "Split { item: i64, split: bool }"
+        - "Trash { choice: ScrivenerTrashChoice }"
+
+  - name: import_scrivener_project
+    entities: []
+    undoable: false
+    read_only: true
+    long_operation: true
+    dto_in:
+      name: ImportScrivenerProjectDto
+      fields:
+      - name: source_path
+        type: string
+      # The answers the analysis was given, again: the import reads the project anew.
+      - name: chosen_project
+        type: string
+      - name: chosen_manifest
+        type: string
+      - name: use_enclosing_project
+        type: boolean
+      - name: upgraded_sibling
+        type: enum
+        enum_name: ScrivenerSiblingChoice
+        enum_values:
+        - Unanswered
+        - Sibling
+        - Backup
+      - name: accept_unmerged_mobile_edits
+        type: boolean
+      - name: accept_no_text
+        type: boolean
+      # The analysis's fingerprint. Empty imports whatever is read.
+      - name: fingerprint
+        type: string
+      # The writer's structure choices, each a change from what was detected.
+      - name: choices
+        type: enum
+        enum_name: ScrivenerChoice
+        is_list: true
+        enum_values:
+        - Empty
+        - "Containers { depth: i64, rung: ScrivenerContainerRung }"
+        - "Texts { depth: i64, kind: ScrivenerTextKind }"
+        - "Root { item: i64, destination: ScrivenerDestination }"
+        - "Books { choice: ScrivenerBooksChoice }"
+        - "Split { item: i64, split: bool }"
+        - "Trash { choice: ScrivenerTrashChoice }"
+      # The two prose choices: blank lines between paragraphs of prose, and centred
+      # ornament lines, as scene breaks.
+      - name: blank_lines_as_scene_breaks
+        type: boolean
+      - name: ornaments_as_scene_breaks
+        type: boolean
+      - name: output_path
+        type: string
+      - name: overwrite
+        type: boolean
+      # The Save page's title, author and manuscript language (a language tag). None takes
+      # what the project states.
+      - name: title
+        type: string
+        optional: true
+      - name: author
+        type: string
+        optional: true
+      - name: language
+        type: string
+        optional: true
+      # Copy the research files Skribisto cannot open into a folder beside the project.
+      - name: copy_research_files
+        type: boolean
+      # The words the import writes into the project, resolved by the interface in its own
+      # language when the import starts, and stored as they are: nothing English is
+      # defaulted here. A pattern holds `import_management::scrivener::TITLE_SLOT` where its
+      # value goes (an item's title, the project's file name, a field's name, a number).
+      - name: manuscript_binder_name
+        type: string
+      - name: notes_binder_name
+        type: string
+      - name: notes_of_pattern
+        type: string
+      - name: project_notes_name
+        type: string
+      - name: recovered_name
+        type: string
+      - name: untitled_template_name
+        type: string
+      - name: research_folder_pattern
+        type: string
+      - name: list_separator
+        type: string
+      - name: label_details_pattern
+        type: string
+      - name: status_details_pattern
+        type: string
+      - name: unnamed_label_pattern
+        type: string
+      - name: unnamed_status_pattern
+        type: string
+      - name: label_tag_pattern
+        type: string
+      - name: untitled_tag_name
+        type: string
+      # The ladder a project with no status list starts with: Skribisto's default preset,
+      # named in the interface's language. Empty seeds none.
+      - name: default_statuses
+        type: enum
+        enum_name: ScrivenerDefaultRung
+        is_list: true
+        enum_values:
+        - Empty
+        - "Rung { name: String, category: StatusCategory }"
+    dto_out:
+      name: ImportScrivenerProjectResultDto
+      fields:
+      - name: output_path
+        type: string
+      # The folder beside the project the research files were copied into, by name; empty
+      # when none was.
+      - name: research_folder
+        type: string
+      - name: totals
+        type: enum
+        enum_name: ScrivenerTotals
+        enum_values:
+        - Empty
+        - "Counted { rows: i64, words: i64, footnotes: i64, comments: i64, pictures: i64, templates: i64, tags: i64, rungs: i64, trashed: i64, research_files: i64, synopses: i64, document_notes: i64 }"
+      # Every notice, one row per kind and item: the analysis's again, the structure's, the
+      # prose's and the metadata's.
+      - name: findings
+        type: enum
+        enum_name: ScrivenerFinding
+        is_list: true
+        enum_values:
+        - Empty
+        - "Reported { key: String, family: ScrivenerFindingFamily, group: ScrivenerReportGroup, place: ScrivenerPlace, item: i64, binder_path: Vec<String>, item_uid: Option<Uuid>, args: Vec<ScrivenerArg> }"
+
   # Document import, part one of two: read the chosen files and work out what
   # tree they would make. Writes nothing.
   #

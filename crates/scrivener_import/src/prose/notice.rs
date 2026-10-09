@@ -244,8 +244,10 @@ pub enum ProseNotice {
 
     // ------------------------------------------------ the document importer's own
     /// One of the document importer's findings about this text, under its own key
-    /// (`ImportDiagnostic::key`), with its count and its one string (a picture's name, a
-    /// comment's first words).
+    /// (`ImportDiagnostic::key`), with the one number and the one string that importer's
+    /// own review row carries for it (`ImportDiagnostic::detail_and_count`: a picture's
+    /// name, a comment's first words, the level a list was flattened to), so the sentences
+    /// written for that row word it alike.
     Document {
         at: Place,
         key: String,
@@ -256,6 +258,64 @@ pub enum ProseNotice {
 }
 
 impl ProseNotice {
+    /// Every key a notice of this importer's own can have, for the interface's translation
+    /// tests. [`ProseNotice::Document`] carries the document importer's keys, which that
+    /// importer's own tests cover.
+    pub const KEYS: &'static [&'static str] = &[
+        "scrivener-prose-unreadable",
+        "scrivener-prose-read-as-plain-text",
+        "scrivener-prose-comments-unreadable",
+        "scrivener-prose-inline-note-unmatched",
+        "scrivener-prose-style-unresolved",
+        "scrivener-prose-comment-anchor-without-entry",
+        "scrivener-prose-comment-entry-without-anchor",
+        "scrivener-prose-footnote-entry-without-anchor",
+        "scrivener-prose-range-comment-reading",
+        "scrivener-prose-range-comment-approximate",
+        "scrivener-prose-document-link-unresolved",
+        "scrivener-prose-linked-picture-not-read",
+        "scrivener-prose-heading-repeats-title",
+        "scrivener-prose-markdown-as-text",
+        "scrivener-prose-citation-keys-as-text",
+        "scrivener-prose-placeholders-in-exported-text",
+        "scrivener-prose-placeholders-in-other-text",
+        "scrivener-prose-ornament-lines-kept",
+        "scrivener-prose-long-document",
+        "scrivener-prose-pictures-without-description",
+        "scrivener-prose-struck-text-compiled-away",
+        "scrivener-prose-compile-deleted-style-printed",
+        "scrivener-prose-compile-raw-style-printed",
+        "scrivener-prose-inline-notes-merged",
+        "scrivener-prose-inline-notes-joined-across-paragraphs",
+        "scrivener-prose-blank-notes-dropped",
+        "scrivener-prose-annotations-became-comments",
+        "scrivener-prose-annotation-only-document-kept",
+        "scrivener-prose-preserve-formatting-passages",
+        "scrivener-prose-nested-note-unwrapped",
+        "scrivener-prose-style-not-carried",
+        "scrivener-prose-document-links-dropped",
+        "scrivener-prose-document-links-kept",
+        "scrivener-prose-other-links-kept-as-text",
+        "scrivener-prose-soft-breaks-split",
+        "scrivener-prose-typed-indents-removed",
+        "scrivener-prose-left-indents-not-kept",
+        "scrivener-prose-blank-lines-removed",
+        "scrivener-prose-verse-stanza-gaps-lost",
+        "scrivener-prose-blank-lines-became-scene-breaks",
+        "scrivener-prose-ornaments-became-scene-breaks",
+        "scrivener-prose-table-first-row-header",
+        "scrivener-prose-table-cells-joined",
+        "scrivener-prose-formatting-lost",
+        "scrivener-prose-justified-text-not-kept",
+        "scrivener-prose-comment-colours-lost",
+        "scrivener-prose-control-characters-removed",
+        "scrivener-prose-note-on-heading-lost",
+        "scrivener-prose-left-out",
+        "scrivener-prose-undecodable-characters",
+        "scrivener-prose-media-file-copied",
+        "scrivener-prose-media-file-not-carried",
+    ];
+
     /// The key the interface translates.
     pub fn key(&self) -> &str {
         match self {
@@ -472,5 +532,181 @@ mod tests {
         };
         assert_eq!(passed.key(), "comment-unanchored");
         assert_eq!(passed.group(), ReportGroup::CheckThese);
+    }
+
+    /// One notice of each of this importer's own kinds, both compile treatments apart: they
+    /// are two keys.
+    fn one_of_each() -> Vec<ProseNotice> {
+        let at = Place::Text { item: 1 };
+        let name = || "Scene".to_string();
+        vec![
+            ProseNotice::Unreadable { at },
+            ProseNotice::ReadAsPlainText { at },
+            ProseNotice::CommentsUnreadable { at },
+            ProseNotice::InlineNoteUnmatched { at, count: 1 },
+            ProseNotice::StyleUnresolved { at, count: 1 },
+            ProseNotice::CommentAnchorWithoutEntry { at, count: 1 },
+            ProseNotice::CommentEntryWithoutAnchor { at, count: 1 },
+            ProseNotice::FootnoteEntryWithoutAnchor { at, count: 1 },
+            ProseNotice::RangeCommentReading {
+                at,
+                reading: RangeReading::MarkersCounted,
+                count: 1,
+            },
+            ProseNotice::RangeCommentApproximate { at, count: 1 },
+            ProseNotice::DocumentLinkUnresolved { at, count: 1 },
+            ProseNotice::LinkedPictureNotRead { at, name: name() },
+            ProseNotice::HeadingRepeatsTitle { at },
+            ProseNotice::MarkdownAsText { at, paragraphs: 1 },
+            ProseNotice::CitationKeysAsText { at, paragraphs: 1 },
+            ProseNotice::PlaceholdersInExportedText {
+                at,
+                kind: name(),
+                count: 1,
+            },
+            ProseNotice::PlaceholdersInOtherText {
+                at,
+                kind: name(),
+                count: 1,
+            },
+            ProseNotice::OrnamentLinesKept { at, count: 1 },
+            ProseNotice::LongDocument { at, paragraphs: 1 },
+            ProseNotice::PicturesWithoutDescription { at, count: 1 },
+            ProseNotice::StruckTextCompiledAway { at, count: 1 },
+            ProseNotice::CompiledAwayStylePrinted {
+                at,
+                name: name(),
+                treatment: CompileTreatment::Deleted,
+                count: 1,
+            },
+            ProseNotice::CompiledAwayStylePrinted {
+                at,
+                name: name(),
+                treatment: CompileTreatment::RawMarkup,
+                count: 1,
+            },
+            ProseNotice::InlineNotesMerged { at, count: 1 },
+            ProseNotice::InlineNotesJoinedAcrossParagraphs { at, count: 1 },
+            ProseNotice::BlankNotesDropped { at, count: 1 },
+            ProseNotice::AnnotationsBecameComments { at, count: 1 },
+            ProseNotice::AnnotationOnlyDocumentKept { at },
+            ProseNotice::PreserveFormattingPassages { at, count: 1 },
+            ProseNotice::NestedNoteUnwrapped { at, count: 1 },
+            ProseNotice::StyleNotCarried {
+                at,
+                name: name(),
+                count: 1,
+            },
+            ProseNotice::DocumentLinksDropped { at, count: 1 },
+            ProseNotice::DocumentLinksKept { at, count: 1 },
+            ProseNotice::OtherLinksKeptAsText { at, count: 1 },
+            ProseNotice::SoftBreaksSplit { at, count: 1 },
+            ProseNotice::TypedIndentsRemoved { at, count: 1 },
+            ProseNotice::LeftIndentsNotKept { at, count: 1 },
+            ProseNotice::BlankLinesRemoved { at, count: 1 },
+            ProseNotice::VerseStanzaGapsLost { at, count: 1 },
+            ProseNotice::BlankLinesBecameSceneBreaks { at, count: 1 },
+            ProseNotice::OrnamentsBecameSceneBreaks { at, count: 1 },
+            ProseNotice::TableFirstRowHeader { at, count: 1 },
+            ProseNotice::TableCellsJoined { at, count: 1 },
+            ProseNotice::FormattingLost {
+                at,
+                what: Formatting::Colour,
+                count: 1,
+            },
+            ProseNotice::JustifiedTextNotKept { at, count: 1 },
+            ProseNotice::CommentColoursLost { at, count: 1 },
+            ProseNotice::ControlCharactersRemoved { at, count: 1 },
+            ProseNotice::NoteOnHeadingLost { at, count: 1 },
+            ProseNotice::LeftOut {
+                at,
+                what: LeftOut::HeaderOrFooter,
+                count: 1,
+            },
+            ProseNotice::UndecodableCharacters { at, count: 1 },
+            ProseNotice::MediaFileCopied { at, path: name() },
+            ProseNotice::MediaFileNotCarried { at, name: name() },
+        ]
+    }
+
+    /// Which entry of [`one_of_each`] a notice is, by an exhaustive match: a new kind fails
+    /// to compile here until it has an entry there and a key in [`ProseNotice::KEYS`].
+    fn slot(notice: &ProseNotice) -> Option<usize> {
+        Some(match notice {
+            ProseNotice::Unreadable { .. } => 0,
+            ProseNotice::ReadAsPlainText { .. } => 1,
+            ProseNotice::CommentsUnreadable { .. } => 2,
+            ProseNotice::InlineNoteUnmatched { .. } => 3,
+            ProseNotice::StyleUnresolved { .. } => 4,
+            ProseNotice::CommentAnchorWithoutEntry { .. } => 5,
+            ProseNotice::CommentEntryWithoutAnchor { .. } => 6,
+            ProseNotice::FootnoteEntryWithoutAnchor { .. } => 7,
+            ProseNotice::RangeCommentReading { .. } => 8,
+            ProseNotice::RangeCommentApproximate { .. } => 9,
+            ProseNotice::DocumentLinkUnresolved { .. } => 10,
+            ProseNotice::LinkedPictureNotRead { .. } => 11,
+            ProseNotice::HeadingRepeatsTitle { .. } => 12,
+            ProseNotice::MarkdownAsText { .. } => 13,
+            ProseNotice::CitationKeysAsText { .. } => 14,
+            ProseNotice::PlaceholdersInExportedText { .. } => 15,
+            ProseNotice::PlaceholdersInOtherText { .. } => 16,
+            ProseNotice::OrnamentLinesKept { .. } => 17,
+            ProseNotice::LongDocument { .. } => 18,
+            ProseNotice::PicturesWithoutDescription { .. } => 19,
+            ProseNotice::StruckTextCompiledAway { .. } => 20,
+            ProseNotice::CompiledAwayStylePrinted {
+                treatment: CompileTreatment::Deleted,
+                ..
+            } => 21,
+            ProseNotice::CompiledAwayStylePrinted {
+                treatment: CompileTreatment::RawMarkup,
+                ..
+            } => 22,
+            ProseNotice::InlineNotesMerged { .. } => 23,
+            ProseNotice::InlineNotesJoinedAcrossParagraphs { .. } => 24,
+            ProseNotice::BlankNotesDropped { .. } => 25,
+            ProseNotice::AnnotationsBecameComments { .. } => 26,
+            ProseNotice::AnnotationOnlyDocumentKept { .. } => 27,
+            ProseNotice::PreserveFormattingPassages { .. } => 28,
+            ProseNotice::NestedNoteUnwrapped { .. } => 29,
+            ProseNotice::StyleNotCarried { .. } => 30,
+            ProseNotice::DocumentLinksDropped { .. } => 31,
+            ProseNotice::DocumentLinksKept { .. } => 32,
+            ProseNotice::OtherLinksKeptAsText { .. } => 33,
+            ProseNotice::SoftBreaksSplit { .. } => 34,
+            ProseNotice::TypedIndentsRemoved { .. } => 35,
+            ProseNotice::LeftIndentsNotKept { .. } => 36,
+            ProseNotice::BlankLinesRemoved { .. } => 37,
+            ProseNotice::VerseStanzaGapsLost { .. } => 38,
+            ProseNotice::BlankLinesBecameSceneBreaks { .. } => 39,
+            ProseNotice::OrnamentsBecameSceneBreaks { .. } => 40,
+            ProseNotice::TableFirstRowHeader { .. } => 41,
+            ProseNotice::TableCellsJoined { .. } => 42,
+            ProseNotice::FormattingLost { .. } => 43,
+            ProseNotice::JustifiedTextNotKept { .. } => 44,
+            ProseNotice::CommentColoursLost { .. } => 45,
+            ProseNotice::ControlCharactersRemoved { .. } => 46,
+            ProseNotice::NoteOnHeadingLost { .. } => 47,
+            ProseNotice::LeftOut { .. } => 48,
+            ProseNotice::UndecodableCharacters { .. } => 49,
+            ProseNotice::MediaFileCopied { .. } => 50,
+            ProseNotice::MediaFileNotCarried { .. } => 51,
+            ProseNotice::Document { .. } => return None,
+        })
+    }
+
+    #[test]
+    fn every_own_key_is_listed_once() {
+        let all = one_of_each();
+        let slots: Vec<Option<usize>> = all.iter().map(slot).collect();
+        assert_eq!(slots, (0..all.len()).map(Some).collect::<Vec<_>>());
+        assert_eq!(all.len(), ProseNotice::KEYS.len());
+        for (notice, listed) in all.iter().zip(ProseNotice::KEYS) {
+            assert_eq!(notice.key(), *listed, "{notice:?}");
+        }
+        let mut keys = ProseNotice::KEYS.to_vec();
+        keys.sort_unstable();
+        keys.dedup();
+        assert_eq!(keys.len(), ProseNotice::KEYS.len(), "a key listed twice");
     }
 }

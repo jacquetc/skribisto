@@ -2598,7 +2598,7 @@ impl<'a> Builder<'a> {
                     PlannedTitle::NotesOf(self.titles[i].clone())
                 }
                 Some(i) => PlannedTitle::Own(self.titles[i].clone()),
-                None => PlannedTitle::Own(recovered_number(&text.member.path)),
+                None => PlannedTitle::Own(crate::names::recovered_number(&text.member.path)),
             };
             let row = PlannedRow {
                 depth: 1,
@@ -2974,22 +2974,6 @@ fn row_item(row: &PlannedRow) -> Option<u32> {
     match row.origin {
         Origin::Item { item } | Origin::SplitPart { item, .. } => Some(item),
         _ => None,
-    }
-}
-
-/// The Scrivener document number a recovered file's name gives (`630` for
-/// `Files/Docs/630.rtf`, `630_notes.rtf` or a sync copy of either), or blank.
-fn recovered_number(path: &str) -> String {
-    let name = path.rsplit('/').next().unwrap_or_default();
-    let digits: String = name.chars().take_while(char::is_ascii_digit).collect();
-    let rest = &name[digits.len()..];
-    let document = rest.is_empty() || rest.starts_with(['.', '_', ' ', '[', '-', '~']);
-    if !(crate::names::is_item_number(&digits) && document) {
-        return String::new();
-    }
-    match digits.trim_start_matches('0') {
-        "" => "0".to_string(),
-        number => number.to_string(),
     }
 }
 

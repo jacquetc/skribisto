@@ -121,9 +121,24 @@ fn shared_words(failure: &ProjectImportFailure) -> LocalizedString {
         | FailureReason::ManuskriptNotAProject
         | FailureReason::ManuskriptFormatTooNew { .. }
         | FailureReason::ManuskriptTooManyFiles { .. }
-        | FailureReason::ManuskriptTooLarge { .. } => tr!(project_import_failed_internal(
+        | FailureReason::ManuskriptTooLarge { .. }
+        // A choice the review never offers: the defect the sentence below is for.
+        | FailureReason::ScrivenerDepthNotOffered { .. }
+        | FailureReason::ScrivenerRootNotOffered { .. } => tr!(project_import_failed_internal(
             detail = failure.details.clone()
         )),
+        // What the Scrivener importer answers rather than meets: until its wizard words
+        // each refusal itself, what is true of all of them, and what to do next.
+        FailureReason::ScrivenerRefused { .. } => tr!(project_import_failed_scrivener_refused()),
+        FailureReason::ScrivenerQuestionFirst { .. } => {
+            tr!(project_import_failed_scrivener_question())
+        }
+        FailureReason::ScrivenerNotAccepted { .. } => {
+            tr!(project_import_failed_scrivener_not_accepted())
+        }
+        FailureReason::ScrivenerChangedSinceReview => {
+            tr!(project_import_failed_scrivener_changed())
+        }
         FailureReason::Internal { detail } => {
             tr!(project_import_failed_internal(detail = detail.clone()))
         }
@@ -211,6 +226,31 @@ pub(crate) fn every_reason() -> Vec<FailureReason> {
         FailureReason::Internal {
             detail: s("operation panicked: boom"),
         },
+        FailureReason::ScrivenerRefused {
+            refusal: frontend::import_management::ScrivenerFinding::Reported {
+                key: s("scrivener-refusal-scrivener-one-for-mac"),
+                family: frontend::import_management::ScrivenerFindingFamily::Refusal,
+                group: frontend::import_management::ScrivenerReportGroup::Unfiled,
+                place: frontend::import_management::ScrivenerPlace::Project,
+                item: -1,
+                binder_path: Vec::new(),
+                item_uid: None,
+                args: Vec::new(),
+            },
+        },
+        FailureReason::ScrivenerQuestionFirst {
+            question: frontend::import_management::ScrivenerQuestion::NoTextInCopy {
+                text_items: 12,
+            },
+        },
+        FailureReason::ScrivenerNotAccepted {
+            questions: vec![
+                frontend::import_management::ScrivenerQuestion::NoTextInCopy { text_items: 12 },
+            ],
+        },
+        FailureReason::ScrivenerChangedSinceReview,
+        FailureReason::ScrivenerDepthNotOffered { depth: 7 },
+        FailureReason::ScrivenerRootNotOffered { item: 3 },
     ]
 }
 
@@ -244,6 +284,12 @@ fn reason_slot(reason: &FailureReason) -> usize {
         FailureReason::Internal { .. } => 23,
         FailureReason::DeclaresEntities { .. } => 24,
         FailureReason::TargetIsFolder { .. } => 25,
+        FailureReason::ScrivenerRefused { .. } => 26,
+        FailureReason::ScrivenerQuestionFirst { .. } => 27,
+        FailureReason::ScrivenerNotAccepted { .. } => 28,
+        FailureReason::ScrivenerChangedSinceReview => 29,
+        FailureReason::ScrivenerDepthNotOffered { .. } => 30,
+        FailureReason::ScrivenerRootNotOffered { .. } => 31,
     }
 }
 
@@ -331,7 +377,7 @@ mod tests {
     fn the_list_of_reasons_holds_every_variant() {
         let slots: std::collections::BTreeSet<usize> =
             every_reason().iter().map(reason_slot).collect();
-        assert_eq!(slots, (0..=25).collect());
+        assert_eq!(slots, (0..=31).collect());
         assert_eq!(every_reason().len(), slots.len());
     }
 
@@ -340,6 +386,58 @@ mod tests {
     #[test]
     fn every_reason_has_a_shared_sentence() {
         assert_every_failure_worded(|_| None, |_| false);
+    }
+
+    /// A Scrivener project refused, asking a question, not accepted or changed since its
+    /// review is an answer the importer expected, never worded as an error it did not: in
+    /// both locales each has a sentence of its own, which says nothing was written. Only
+    /// a choice the review never offers is the defect the unexpected-error sentence is for.
+    #[test]
+    fn a_scrivener_answer_is_not_worded_as_an_unexpected_error() {
+        let expected: Vec<FailureReason> = every_reason()
+            .into_iter()
+            .filter(|reason| {
+                matches!(
+                    reason,
+                    FailureReason::ScrivenerRefused { .. }
+                        | FailureReason::ScrivenerQuestionFirst { .. }
+                        | FailureReason::ScrivenerNotAccepted { .. }
+                        | FailureReason::ScrivenerChangedSinceReview
+                )
+            })
+            .collect();
+        assert_eq!(expected.len(), 4);
+        for locale in ["en-US", "fr-FR"] {
+            crate::test_support::with_shipped_messages(locale, || {
+                let details = "the technical chain".to_string();
+                let unexpected =
+                    tr!(project_import_failed_internal(detail = details.clone())).resolve_now();
+                let mut bodies = std::collections::BTreeSet::new();
+                for reason in &expected {
+                    let failure = ProjectImportFailure {
+                        reason: reason.clone(),
+                        details: details.clone(),
+                    };
+                    let body = failure_text(&failure, |_| None).0.resolve_now();
+                    assert_ne!(body, unexpected, "{locale} {reason:?}");
+                    assert!(!body.contains(&details), "{locale} {reason:?}: {body}");
+                    bodies.insert(body);
+                }
+                // The review again for a question or a change, the refusal on its own.
+                assert_eq!(bodies.len(), 4, "{locale}: {bodies:?}");
+                for defect in [
+                    FailureReason::ScrivenerDepthNotOffered { depth: 7 },
+                    FailureReason::ScrivenerRootNotOffered { item: 3 },
+                ] {
+                    let failure = ProjectImportFailure {
+                        reason: defect,
+                        details: details.clone(),
+                    };
+                    let body = failure_text(&failure, |_| None).0.resolve_now();
+                    assert_eq!(body, unexpected, "{locale}");
+                }
+            });
+        }
     }
 
     /// A failure the backend did not type keeps its words, quoted inside a

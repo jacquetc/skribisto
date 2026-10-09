@@ -34,12 +34,13 @@
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use serde::{Deserialize, Serialize};
 
 use crate::completeness;
 use crate::content::{self, ContentFacts};
-use crate::disk::{Disk, EntryKind, RealDisk};
+use crate::disk::{Cancellable, Disk, EntryKind, RealDisk};
 use crate::index::{Index, MAX_MEMBER_BYTES, MAX_TEXT_BYTES, ReadError, file_name, join};
 use crate::layout::{self, Layout, Referenced, Tree, uuid_name};
 use crate::lock;
@@ -194,6 +195,25 @@ impl Analysis {
 /// Analyse the Scrivener project at `path`.
 pub fn analyze(path: &Path, answers: &Answers, options: &Options) -> Analysis {
     analyze_with(&RealDisk, path, answers, options)
+}
+
+/// [`analyze`], stopped when `cancel` is set: `None` then. A folder project stops at the
+/// next file it would have read, an archive or a template at the next member.
+pub fn analyze_cancellable(
+    path: &Path,
+    answers: &Answers,
+    options: &Options,
+    cancel: &AtomicBool,
+) -> Option<Analysis> {
+    if cancel.load(Ordering::Relaxed) {
+        return None;
+    }
+    let disk = Cancellable {
+        inner: &RealDisk,
+        cancel,
+    };
+    let analysis = analyze_with(&disk, path, answers, options);
+    (!cancel.load(Ordering::Relaxed)).then_some(analysis)
 }
 
 /// [`analyze`] over any disk: the seam tests use.
@@ -610,7 +630,7 @@ fn template_pick(
     notices.push(Notice::SourceIsTemplate {
         title: decoded.title.clone(),
     });
-    let mut index = Index::of_archive_bytes(decoded.zip, file)?;
+    let mut index = Index::of_archive_bytes(disk, decoded.zip, file)?;
     index.set_container_file(pick.to_path_buf(), meta);
     archive_root(
         &index,
@@ -1431,7 +1451,7 @@ fn read_autosave(
         return Ok(None);
     };
     used.insert(rel.clone());
-    let Ok(inner) = Index::of_archive_bytes(bytes, rel) else {
+    let Ok(inner) = Index::of_archive_bytes(tree.index.disk(), bytes, rel) else {
         return Ok(None);
     };
     let manifests: Vec<String> = inner

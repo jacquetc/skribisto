@@ -40,10 +40,16 @@ uuid = { workspace = true }
 plume_import = { workspace = true }
 # The Manuskript -> .skrib conversion, likewise a store-free crate of its own.
 manuskript_import = { workspace = true }
+# The Scrivener -> .skrib conversion and the analysis the review shows, likewise.
+scrivener_import = { workspace = true }
 
 [dev-dependencies]
 # The ANALYSE->APPLY integration test builds a real store through direct_access.
 direct_access = { workspace = true }
+# The Scrivener use cases' tests build their projects at test time, of every generation,
+# and open what the import wrote through the ordinary `load_work`.
+scrivener_fixtures = { workspace = true }
+work_management = { workspace = true }
 skribisto_model = { workspace = true }
 # The integration test builds `.plume` fixtures (zip + loose dir) in a scratch
 # dir; `skrib_format` (a normal dep) reads the produced `.skrib` back.
