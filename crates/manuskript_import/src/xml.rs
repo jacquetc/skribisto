@@ -25,7 +25,7 @@ use skrib_format::xml_depth::{self, Dtd, XmlError};
 /// Parse a Manuskript XML member. `member` names it in a refusal.
 pub fn parse<'a>(member: &str, text: &'a str) -> Result<roxmltree::Document<'a>> {
     xml_depth::parse(member, text, Dtd::Allow).map_err(|e| match e {
-        XmlError::Malformed(e) => anyhow!("parsing XML: {e}"),
+        XmlError::Malformed(e) => anyhow!("{e}"),
         other => anyhow::Error::new(other),
     })
 }

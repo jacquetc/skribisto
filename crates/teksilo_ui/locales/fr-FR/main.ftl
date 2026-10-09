@@ -988,10 +988,6 @@ new-work-target-open-title = Ce projet est ouvert
 new-work-target-open-text = « { $name } » est ouvert dans Skribisto. Créer un nouveau projet à sa place remplacerait le projet sur lequel vous travaillez, et votre prochain enregistrement réécrirait ce projet par-dessus le nouveau. Choisissez un autre nom ou un autre dossier, ou fermez d’abord le projet.
 target-importing-title = Un import écrit ce projet
 target-importing-text = Un import écrit encore « { $name } ». Attendez qu’il soit terminé, ou choisissez un autre nom.
-import-plume-busy-title = Un autre projet Plume Creator est en cours d’import
-import-plume-busy-text = Les projets Plume Creator s’importent un à la fois. Attendez que l’import en cours soit terminé, ou annulez-le, puis relancez celui-ci.
-import-manuskript-busy-title = Un autre projet Manuskript est en cours d’import
-import-manuskript-busy-text = Les projets Manuskript s’importent un à la fois. Attendez que l’import en cours soit terminé, ou annulez-le, puis relancez celui-ci.
 backup-restore-importing-text = Un import écrit encore « { $name } », le projet sur lequel cette copie de secours serait restaurée. Restaurez-la une fois l’import terminé.
 
 ## Libellés des modèles de nouvelle œuvre (transmis au backend, qui ne fait pas d'i18n)
@@ -1017,36 +1013,20 @@ new-work-places = Lieux
 
 ## Boîte de dialogue d'import Plume Creator
 import-plume-title = Importer un projet Plume Creator
-import-plume-close = Fermer
 import-plume-source = Projet Plume
 import-plume-source-hint = Choisissez un fichier .plume ou .plume_backup (n’importe quelle version de Plume Creator).
-import-plume-location = Dossier de destination
-import-plume-name = Nom du fichier
-import-plume-name-placeholder = Nom du projet
-import-plume-will-create = Créera
 import-plume-trash-warning = ⚠ Les éléments à la corbeille / supprimés ne sont pas migrés.
-import-plume-cancel = Annuler
-import-plume-import = Importer
 # Validation des champs
 import-plume-source-required = Choisissez un fichier de projet Plume
 import-plume-source-missing = Ce fichier n’existe pas
 import-plume-source-not-file = Ce chemin n’est pas un fichier
-import-plume-location-required = Choisissez un dossier de destination
-import-plume-location-missing = Ce dossier n’existe pas
-import-plume-location-not-folder = Ce chemin n’est pas un dossier
-import-plume-location-readonly = Ce dossier n’est pas accessible en écriture
-import-plume-name-required = Saisissez un nom de fichier
-import-plume-name-exists = Un fichier de ce nom existe déjà ici. L’import demandera confirmation du remplacement
-# Confirmation de remplacement
-import-plume-overwrite-title = Remplacer le fichier existant ?
-import-plume-overwrite-text = « { $name } » existe déjà. Le remplacer par le projet importé ?
 # Noms de classeurs transmis au backend (qui ne fait pas d'i18n)
 import-plume-manuscript-binder = Manuscrit
 import-plume-story-bible-binder = Bible narrative
+import-plume-notes-of = { $name } (notes)
+import-plume-content-of = { $name } (texte)
 # Toast de progression (l'import est une opération longue)
 import-plume-progress-title = Importation du projet Plume…
-import-plume-cancel-import = Annuler
-import-plume-cancelled = Importation annulée
 # Résultat
 import-plume-done = { $imported ->
     [one] { $imported } élément importé.
@@ -1055,53 +1035,31 @@ import-plume-done = { $imported ->
     [one] { $skipped } élément à la corbeille n’a pas été migré.
    *[other] { $skipped } éléments à la corbeille n’ont pas été migrés.
 }
-import-plume-open-now = Ouvrir maintenant
-# Affiché quand l'importateur n'a pas pu tout reprendre à l'identique.
-import-plume-warnings = { $count ->
-    [one] 1 point n’a pas pu être importé à l’identique
-   *[other] { $count } points n’ont pas pu être importés à l’identique
-}
-import-plume-details = Détails
-import-plume-warnings-title = Avertissements d’importation
-# Toast d'erreur : motif court dans le corps, chaîne technique complète derrière « Détails »
-import-plume-error-title = Impossible d’importer le projet
-# Projet refusé sans être lu : l’une de ses parties imbrique son XML au-delà
-# de ce que l’application accepte. $part est le nom de la partie (tree,
-# attendance, info) ; $limit est le plafond, un nombre.
+# Pourquoi un projet Plume Creator n’a pas été importé. $part est le nom de la
+# partie dans le projet (tree, attendance, info) ; $limit est le plafond, un nombre.
 import-plume-nested-too-deep = Le projet n’a pas été importé : sa partie « { $part } » est imbriquée sur plus de { $limit } niveaux. Aucun projet Plume Creator n’en approche, et la lire pourrait provoquer l’arrêt brutal de Skribisto. Rien n’a été écrit.
 # Projet refusé sans être lu : l’une de ses parties déclare des entités XML,
 # qui pourraient occuper plus de mémoire que n’en a l’ordinateur une fois
 # développées. $part est le nom de la partie (tree, attendance, info).
 import-plume-declares-entities = Le projet n’a pas été importé : sa partie « { $part } » déclare des entités XML, ce qu’aucun projet Plume Creator ne fait. Les développer pourrait demander plus de mémoire que n’en a l’ordinateur et provoquer l’arrêt brutal de Skribisto. Rien n’a été écrit.
-import-plume-error-details = Détails
+import-plume-no-outline = Ce fichier est une archive compressée, mais pas un projet Plume Creator : il n’a pas de plan. Rien n’a été écrit.
+import-plume-empty-outline = Le fichier de plan de ce projet Plume Creator est vide : il n’y a rien à importer. Rien n’a été écrit.
+# $tag est le nom du document que la partie s’est révélée être.
+import-plume-wrong-document = Ce n’est pas un projet Plume Creator : sa partie « { $part } » est un document « { $tag } ». Rien n’a été écrit.
+# $version est la version de la partie, $supported la plus récente que l’import lit.
+import-plume-too-new = La partie « { $part } » de ce projet a été écrite par un Plume Creator plus récent (version { $version }) que ce que Skribisto sait lire (jusqu’à { $supported }). Rien n’a été écrit.
 
 ## Boîte de dialogue d'import de projet Manuskript
 import-manuskript-title = Importer un projet Manuskript
-import-manuskript-close = Fermer
 import-manuskript-source = Projet Manuskript
 # Un projet Manuskript est un fichier .msk plus, dans son mode habituel, un
 # dossier du même nom à côté. L'un ou l'autre convient, le dossier aussi.
 import-manuskript-source-hint = Choisissez le fichier .msk ou le dossier du projet (n’importe quelle version de Manuskript).
 import-manuskript-source-file = Choisir un fichier…
 import-manuskript-source-folder = Choisir un dossier…
-import-manuskript-location = Dossier de destination
-import-manuskript-name = Nom du fichier
-import-manuskript-name-placeholder = Nom du projet
-import-manuskript-will-create = Créera
-import-manuskript-cancel = Annuler
-import-manuskript-import = Importer
 # Validation des champs
 import-manuskript-source-required = Choisissez un projet Manuskript
 import-manuskript-source-missing = Ce fichier ou ce dossier n’existe pas
-import-manuskript-location-required = Choisissez un dossier de destination
-import-manuskript-location-missing = Ce dossier n’existe pas
-import-manuskript-location-not-folder = Ce chemin n’est pas un dossier
-import-manuskript-location-readonly = Ce dossier n’est pas accessible en écriture
-import-manuskript-name-required = Saisissez un nom de fichier
-import-manuskript-name-exists = Un fichier de ce nom existe déjà ici. L’import demandera confirmation du remplacement
-# Confirmation de remplacement
-import-manuskript-overwrite-title = Remplacer le fichier existant ?
-import-manuskript-overwrite-text = « { $name } » existe déjà. Le remplacer par le projet importé ?
 # Noms transmis au backend (qui ne fait pas d'i18n). Manuskript n'en stocke
 # aucun : il n'a ni classeurs ni groupes de bible, et son échelle d'importance
 # est faite de trois nombres dont les noms vivent dans son interface.
@@ -1115,10 +1073,9 @@ import-manuskript-summary-note = Résumé
 import-manuskript-importance-minor = Mineur
 import-manuskript-importance-secondary = Secondaire
 import-manuskript-importance-main = Principal
+import-manuskript-notes-of = { $title } (notes)
 # Toast de progression (l'import est une opération longue)
 import-manuskript-progress-title = Importation du projet Manuskript…
-import-manuskript-cancel-import = Annuler
-import-manuskript-cancelled = Importation annulée
 # Résultat
 import-manuskript-done = { $imported ->
     [one] { $imported } élément importé.
@@ -1128,42 +1085,98 @@ import-manuskript-done = { $imported ->
     [one] { $revisions } version antérieure a suivi.
    *[other] { $revisions } versions antérieures ont suivi.
 }
-import-manuskript-open-now = Ouvrir maintenant
-# Affiché quand l'importateur n'a pas pu tout reprendre à l'identique.
-import-manuskript-warnings = { $count ->
-    [one] 1 chose à savoir sur cet import
-   *[other] { $count } choses à savoir sur cet import
-}
-import-manuskript-details = Détails
-import-manuskript-warnings-title = À propos de cet import
-# Toast d'erreur : motif court dans le corps, chaîne technique complète derrière « Détails »
-import-manuskript-error-title = Impossible d’importer le projet
-# Projet refusé sans être lu : l’un de ses fichiers imbrique son XML au-delà
-# de ce que l’application accepte. $part est le nom de ce fichier dans le projet
-# (world.opml, plots.xml…) ; $limit est le plafond, un nombre.
+# Pourquoi un projet Manuskript n’a pas été importé. $part est le nom de ce
+# fichier dans le projet (world.opml, plots.xml…) ; $limit est le plafond, un nombre.
 import-manuskript-nested-too-deep = Le projet n’a pas été importé : son fichier « { $part } » est imbriqué sur plus de { $limit } niveaux. Aucun projet Manuskript n’en approche, et le lire pourrait provoquer l’arrêt brutal de Skribisto. Rien n’a été écrit.
-# Projet refusé sans être lu : l’un de ses fichiers est rangé dans des
-# dossiers imbriqués au-delà de ce que l’application accepte (Manuskript range
-# le plan d’un projet en dossiers, un par niveau). $limit est le plafond, un
-# nombre.
+# L’un de ses fichiers est rangé dans des dossiers imbriqués au-delà de ce que
+# l’application accepte (Manuskript range le plan d’un projet en dossiers, un par niveau).
 import-manuskript-folders-too-deep = Le projet n’a pas été importé : l’un de ses fichiers se trouve à plus de { $limit } niveaux de dossiers de profondeur. Aucun projet Manuskript n’en approche, et le lire pourrait provoquer l’arrêt brutal de Skribisto. Rien n’a été écrit.
 # Projet refusé sans être lu : l’un de ses fichiers déclare des entités XML,
 # qui pourraient occuper plus de mémoire que n’en a l’ordinateur une fois
 # développées. $part est le nom de ce fichier dans le projet (world.opml,
 # plots.xml…).
 import-manuskript-declares-entities = Le projet n’a pas été importé : son fichier « { $part } » déclare des entités XML, ce qu’aucun projet Manuskript ne fait. Les développer pourrait demander plus de mémoire que n’en a l’ordinateur et provoquer l’arrêt brutal de Skribisto. Rien n’a été écrit.
-import-manuskript-error-details = Détails
+import-manuskript-not-a-project-file = « { $file } » n’est ni l’archive d’un projet Manuskript ni le petit fichier .msk qui désigne le dossier d’un projet. Rien n’a été écrit.
+import-manuskript-folder-missing = « { $stub } » désigne un dossier de projet nommé « { $folder } » à côté de lui, et ce dossier n’y est pas. Un projet Manuskript en mode dossier est fait des deux, qui doivent voyager ensemble. Rien n’a été écrit.
+import-manuskript-not-a-project = Ceci ne ressemble pas à un projet Manuskript : il n’a ni marqueur Manuskript ni plan. Rien n’a été écrit.
+import-manuskript-format-too-new = Ce projet est au format Manuskript { $version }, plus récent que ce que Skribisto sait lire (jusqu’à { $supported }). Rien n’a été écrit.
+import-manuskript-too-many-files = Le projet n’a pas été importé : il contient plus de { $limit } fichiers, bien plus que n’importe quel projet Manuskript. Rien n’a été écrit.
+import-manuskript-too-large = Le projet n’a pas été importé : il dépasse les { $limit } Mo que Skribisto lit d’un projet Manuskript. Rien n’a été écrit.
+project-import-close = Fermer
+project-import-location = Dossier de destination
+# Le titre de la boîte de choix de dossier.
+project-import-location-title = Choisir un dossier de destination
+project-import-name = Nom du fichier
+project-import-name-placeholder = Nom du projet
+project-import-will-create = Créera
+project-import-cancel = Annuler
+project-import-import = Importer
+# Validation des champs
+project-import-location-required = Choisissez un dossier de destination
+project-import-location-missing = Ce dossier n’existe pas
+project-import-location-not-folder = Ce chemin n’est pas un dossier
+project-import-location-readonly = Ce dossier n’est pas accessible en écriture
+project-import-name-required = Saisissez un nom de fichier
+project-import-name-exists = Un fichier de ce nom existe déjà ici. L’import demandera confirmation du remplacement
+project-import-name-is-folder = Un dossier de ce nom est déjà ici, peut-être un projet gardé en dossier. Un import ne peut pas le remplacer : choisissez un autre nom
+# Confirmation de remplacement
+project-import-overwrite-title = Remplacer le fichier existant ?
+project-import-overwrite-text = « { $name } » existe déjà. Le remplacer par le projet importé ?
+# Les projets s’importent un à la fois, quel que soit l’import qui le demande.
+project-import-busy-title = Un autre projet est en cours d’import
+project-import-busy-text = Les projets s’importent un à la fois. Attendez que l’import en cours soit terminé, ou annulez-le, puis relancez celui-ci.
+# Lu par un lecteur d’écran une fois par étape, jamais affiché : le titre du
+# toast, puis le nom de l’étape.
+project-import-progress-announcement = { $title } { $phase }
+# Le toast une fois « Annuler » pressé, jusqu’à l’arrêt effectif de l’import : il
+# termine peut-être un fichier qu’il ne peut pas laisser à moitié écrit.
+project-import-stopping = Arrêt de l’import…
+project-import-cancelled = Importation annulée
+project-import-open-now = Ouvrir maintenant
+project-import-details = Détails
+# Le compte rendu de l’import : ce que l’auteur doit savoir de ce qui est arrivé.
+project-import-report = { $count ->
+    [one] { $count } chose à savoir sur cet import
+   *[other] { $count } choses à savoir sur cet import
+}
+project-import-report-title = À propos de cet import
+# Toast d'erreur : motif court dans le corps, chaîne technique complète derrière « Détails »
+project-import-error-title = Impossible d’importer le projet
+# Pourquoi un projet n’a pas été importé, quel que soit l’import qui l’a lu. $file
+# est un nom de fichier, $folder un chemin complet (c’est le dossier sur lequel
+# l’auteur doit agir), $reason ce qu’a dit le système ou un analyseur, $limit un nombre.
+project-import-failed-cancelled = L’import a été annulé. Rien n’a été écrit.
+project-import-failed-target-exists = « { $file } » existe déjà, et l’import n’avait pas le droit de le remplacer. Rien n’a été écrit.
+project-import-failed-target-folder = « { $file } » est un dossier, peut-être un projet gardé en dossier, et un import ne peut pas le remplacer. Choisissez un autre nom. Rien n’a été écrit.
+project-import-failed-not-written = « { $file } » n’a pas pu être écrit dans « { $folder } » ({ $reason }). Rien n’a été écrit.
+project-import-failed-disk-full = Il ne reste pas assez de place dans « { $folder } » pour écrire « { $file } ». Libérez de la place à cet endroit, puis relancez l’import. Rien n’a été écrit.
+project-import-failed-source-missing = « { $file } » n’est plus là. Rien n’a été écrit.
+project-import-failed-unreadable = Skribisto n’a pas pu lire « { $file } » ({ $reason }). Rien n’a été écrit.
+project-import-failed-archive-damaged = « { $file } » est un fichier compressé qui n’a pas pu être lu, sans doute parce qu’il est endommagé ({ $reason }). Rien n’a été écrit.
+project-import-failed-archive-entries = Le projet n’a pas été importé : son archive liste { $entries } fichiers, plus que les { $limit } qu’un projet peut contenir, ce que seul un fichier conçu pour épuiser la mémoire fait. Rien n’a été écrit.
+project-import-failed-archive-member = Le projet n’a pas été importé : sa partie « { $part } » se décompresse en plus de { $limit } Mo, ce que seul un fichier conçu pour épuiser la mémoire fait. Rien n’a été écrit.
+project-import-failed-archive-size = Le projet n’a pas été importé : il se décompresse en plus de { $limit } Mo, ce que seul un fichier conçu pour épuiser la mémoire fait. Rien n’a été écrit.
+project-import-failed-nested = Le projet n’a pas été importé : sa partie « { $part } » est imbriquée sur plus de { $limit } niveaux, et la lire pourrait provoquer l’arrêt brutal de Skribisto. Rien n’a été écrit.
+project-import-failed-entities = Le projet n’a pas été importé : sa partie « { $part } » déclare des entités XML. Les développer pourrait demander plus de mémoire que n’en a l’ordinateur et provoquer l’arrêt brutal de Skribisto. Rien n’a été écrit.
+project-import-failed-folders = Le projet n’a pas été importé : l’un de ses fichiers se trouve à plus de { $limit } niveaux de dossiers de profondeur, et le lire pourrait provoquer l’arrêt brutal de Skribisto. Rien n’a été écrit.
+project-import-failed-malformed = Le projet n’a pas été importé : sa partie « { $part } » est endommagée et ne peut pas être lue ({ $reason }). Rien n’a été écrit.
+# Une erreur que rien ci-dessus ne prévoit ; $detail en est la description technique.
+project-import-failed-internal = L’import s’est arrêté sur une erreur que Skribisto n’attendait pas : { $detail }
 
 ## Import de projet, commun aux boîtes de dialogue Plume Creator et Manuskript
 # La destination choisie est un projet ouvert dans une fenêtre, ici ou dans une autre
 # instance de Skribisto. L’import est refusé plutôt qu’écrit par-dessus.
 import-target-open-title = Ce projet est ouvert
 import-target-open-text = « { $name } » est ouvert dans Skribisto. Un import à cet emplacement remplacerait le projet sur lequel vous travaillez, et votre prochain enregistrement réécrirait ce projet par-dessus l’import. Choisissez un autre nom de fichier, ou fermez d’abord le projet.
-# Lu par un lecteur d’écran quand l’avis d’un import apparaît, jamais affiché.
-# $result est la ligne de résultat de l’import (« 12 éléments importés. »), $notice
-# le titre de l’avis (« 2 éléments n’ont pas pu être importés à l’identique »).
+# Lu par un lecteur d’écran quand le compte rendu d’un import apparaît, jamais affiché.
+# $result est la ligne de résultat de l’import (« 12 éléments importés. »), $notice
+# le titre de l’avis (« 2 choses à savoir sur cet import »).
 # L’avis est lu par-dessus le résultat : il dit donc les deux.
 import-warnings-announcement = { $result } { $notice }.
+# Quitter pendant un import. $name est le fichier que l’import écrit.
+quit-import-running-title = Un import est encore en cours
+quit-import-running-text = Skribisto importe encore « { $name } ». Quitter maintenant arrête l’import : rien n’est écrit, et le projet que vous importez reste tel qu’il était.
+quit-import-stop = Arrêter l’import et quitter
 
 ## Dialogue d'exportation
 export-title = Exporter
@@ -2958,6 +2971,7 @@ dialog-save-as-file-title = Enregistrer comme fichier .skrib unique
 dialog-save-as-folder-title = Choisir le dossier parent de l’œuvre
 dialog-manuskript-file-title = Choisir un projet Manuskript
 dialog-manuskript-folder-title = Choisir le dossier d’un projet Manuskript
+dialog-plume-file-title = Choisir un projet Plume Creator
 dialog-filter-skrib = Œuvre Skribisto
 dialog-filter-manuskript = Projet Manuskript
 dialog-filter-plume = Projet Plume Creator

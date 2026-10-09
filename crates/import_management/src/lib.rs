@@ -11,9 +11,9 @@ pub mod dtos;
 /// the completion event. Hand-written: `Event.data` is a plain `String` the
 /// generator knows nothing about.
 pub mod events;
-/// How a project import's failure is spelled for the long-operation channel.
-/// Hand-written, shared by the Plume and Manuskript use cases.
-pub(crate) mod failure;
+/// How a project import's failure crosses the long-operation channel, typed, for
+/// the UI to word. Hand-written, shared by the Plume and Manuskript use cases.
+pub mod failure;
 pub mod import_management_controller;
 pub(crate) mod kind_mapping;
 mod units_of_work;

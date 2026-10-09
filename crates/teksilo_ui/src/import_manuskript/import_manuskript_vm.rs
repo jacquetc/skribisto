@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-//! `ImportManuskriptViewModel` — the Import Manuskript feature's business logic.
+//! `ImportManuskriptViewModel` — the Import Manuskript form's business logic.
 //!
 //! Single-instance live state, created once in `startup.rs` and registered as
-//! app-state (so `App::build` can wire the long-operation events to it and the
-//! panel can reach it). It owns the form's `Signal`s (the source project, the
-//! destination folder, the output name) **and** the in-flight import job.
+//! app-state (so the panel can reach it). It owns the form's `Signal`s (the
+//! source project, the destination folder, the output name).
 //!
 //! **The source may be a file or a folder**, which is what makes this form
 //! different from the Plume one beside it. A Manuskript project in its modern
@@ -16,72 +15,79 @@
 //! accepted, so the panel offers a Browse for each and this validator takes
 //! either.
 //!
-//! Import is a **long operation**: starting it returns
-//! immediately), closes the panel, and shows a *loading* toast with a live
-//! percentage and a **Cancel** button. The backend's `Origin::LongOperation(...)`
-//! events — routed here by `app::wiring::long_ops` and by the Launcher — update
-//! that one toast in place: progress ticks, then a success toast (with **Open
-//! now**), a cancelled notice, or an error toast with **Details**. What the
-//! importer could not carry across comes as a separate notice that stays until
-//! the writer closes it and can be reopened from the notification log (see
-//! `shared::import_warnings`).
+//! Everything from the moment **Import** is pressed belongs to the shared
+//! `shared::project_import::ProjectImportJob`, which this form drives through
+//! [`MANUSKRIPT`]: the overwrite question, the refusal of a project that is open,
+//! one import at a time, the progress notice, the result with **Open now**, the
+//! report, and a failure worded in the writer's language. What stays here is what
+//! only Manuskript has: its source, its request, and its words
+//! (`super::messages`).
 //!
 //! The destination is `shared::import_destination`, shared with the Plume form:
-//! its checks run when a field changes rather than on every read, and an import
-//! aimed at a project open in a window is refused.
+//! its checks run when a field changes rather than on every read.
 
 use std::path::Path;
-use std::rc::Rc;
-use std::time::Duration;
 
 use teksilo::prelude::*;
-use teksilo::widgets::{
-    MessageBox, MessageBoxButtons, StandardButton, Toast, ToastAction, ToastPriority,
-    ValidationState,
-};
+use teksilo::widgets::ValidationState;
 
 use frontend::AppContext;
-use frontend::commands::{import_management_commands, long_operation_commands};
-use frontend::common::event::{Event, LongOperationEvent, Origin};
+use frontend::commands::import_management_commands;
 use frontend::import_management::ImportManuskriptProjectDto;
-use skrib_format::{FoldersTooDeep, XmlDeclaresEntities, XmlTooDeep};
+use skrib_format::importing::TITLE_SLOT;
 
-use crate::intents::AppIntent;
+use super::messages;
 use crate::shared::form_checks::{CachedValidation, DiskChecked, FolderMessages};
-use crate::shared::import_destination::{
-    BusyRefusal, DestinationMessages, ImportDestination, TargetHold, refuse_if_busy, refuse_if_open,
+use crate::shared::import_destination::{DestinationMessages, ImportDestination};
+use crate::shared::import_warnings::{MANUSKRIPT as NOTICE, notice_sentence};
+use crate::shared::project_import::{ImportOutcome, Importer, ProjectImportJob};
+
+/// The Manuskript importer, as the shared job drives it.
+pub(crate) static MANUSKRIPT: Importer<ImportManuskriptProjectDto> = Importer {
+    toast_id: "import.manuskript",
+    notice: &NOTICE,
+    progress_title: || tr!(import_manuskript_progress_title()),
+    own_words: messages::own_failure,
+    target: |request| request.output_path.clone(),
+    allow_overwrite: |request| ImportManuskriptProjectDto {
+        overwrite: true,
+        ..request
+    },
+    launch: |app_ctx, request| {
+        import_management_commands::import_manuskript_project(app_ctx, request)
+    },
+    outcome,
 };
-use crate::shared::import_failure;
-use crate::shared::import_warnings::{LiveNotice, MANUSKRIPT as WARNINGS};
-use crate::shared::long_op::{event_id, parse_payload, payload_id};
 
-/// Update-in-place key for the single toast the import drives through its
-/// lifecycle (loading → progress → success / cancelled / error).
-const IMPORT_TOAST_ID: &str = "import.manuskript";
-
-/// The import's own toast, in whichever state it is in: one entry updated in
-/// place under [`IMPORT_TOAST_ID`], broadcast (see
-/// [`ImportManuskriptViewModel::progress_toast`]), and admitted at `High`
-/// priority. At the default priority a toast reaching a corner that already
-/// holds five is dropped without being logged, and this one carries the only
-/// Cancel, the only Open now and the only report of a failure.
-fn import_toast(toast: Toast) -> Toast {
-    toast
-        .id(IMPORT_TOAST_ID)
-        .priority(ToastPriority::High)
-        .broadcast()
+/// The finished import's result, in the writer's words.
+fn outcome(app_ctx: &AppContext, op_id: &str) -> Option<ImportOutcome> {
+    let result =
+        import_management_commands::get_import_manuskript_project_result(app_ctx, op_id).ok()??;
+    Some(ImportOutcome {
+        result: tr!(import_manuskript_done(
+            imported = result.imported_items,
+            revisions = result.imported_revisions
+        )),
+        report: result
+            .warnings
+            .iter()
+            .map(|raw| notice_sentence(raw))
+            .collect(),
+        output_path: result.output_path,
+    })
 }
 
 /// The destination fields' words.
 static DESTINATION: DestinationMessages = DestinationMessages {
     folder: FolderMessages {
-        required: || tr!(import_manuskript_location_required()),
-        missing: || tr!(import_manuskript_location_missing()),
-        not_folder: || tr!(import_manuskript_location_not_folder()),
-        readonly: || tr!(import_manuskript_location_readonly()),
+        required: || tr!(project_import_location_required()),
+        missing: || tr!(project_import_location_missing()),
+        not_folder: || tr!(project_import_location_not_folder()),
+        readonly: || tr!(project_import_location_readonly()),
     },
-    name_required: || tr!(import_manuskript_name_required()),
-    name_exists: || tr!(import_manuskript_name_exists()),
+    name_required: || tr!(project_import_name_required()),
+    name_exists: || tr!(project_import_name_exists()),
+    name_is_folder: || tr!(project_import_name_is_folder()),
 };
 
 /// Strip a `.msk` extension from a source path's file name, yielding the default
@@ -120,12 +126,6 @@ fn source_state(source: &str) -> ValidationState {
     ValidationState::None
 }
 
-/// Why a second import is refused while this form's first still runs.
-static BUSY: BusyRefusal = BusyRefusal {
-    title: || tr!(import_manuskript_busy_title()),
-    text: || tr!(import_manuskript_busy_text()),
-};
-
 #[derive(Clone)]
 pub struct ImportManuskriptViewModel {
     /// The chosen project: a `.msk` of either kind, or a project folder.
@@ -134,22 +134,12 @@ pub struct ImportManuskriptViewModel {
     source_check: CachedValidation,
     /// The destination folder and output name, with their checks.
     destination: ImportDestination,
-    /// The long-operation id of the import running right now, if any — set on
-    /// start, cleared when it completes / is cancelled / fails. Drives event
-    /// filtering (only events for *this* op touch the toast) and Cancel.
-    active: Signal<Option<String>>,
-    /// The target the running import is writing, held until it completes, fails or
-    /// is cancelled, so nothing opens or writes it meanwhile.
-    target_hold: TargetHold,
-    /// The warnings notice of the latest import that had any, while it is on
-    /// screen: the next one takes its place rather than piling up beside it.
-    warnings_notice: LiveNotice,
-    app_ctx: Rc<AppContext>,
+    /// The process's one project-import job, shared with every other importer.
+    job: ProjectImportJob,
 }
 
-#[allow(dead_code)]
 impl ImportManuskriptViewModel {
-    pub fn new(app_ctx: Rc<AppContext>) -> Self {
+    pub(crate) fn new(job: ProjectImportJob) -> Self {
         let source = Signal::new(String::new());
         let source_check = {
             let picked = source.clone();
@@ -159,15 +149,12 @@ impl ImportManuskriptViewModel {
             source,
             source_check,
             destination: ImportDestination::new(&DESTINATION),
-            active: Signal::new(None),
-            target_hold: TargetHold::default(),
-            warnings_notice: LiveNotice::default(),
-            app_ctx,
+            job,
         }
     }
 
     /// Clear the form fields — called when the panel is (re)opened so a previous
-    /// session's paths don't linger. The in-flight job is independent.
+    /// session's paths don't linger. The running import, if any, is the job's.
     pub fn reset_form(&self) {
         self.source.set(String::new());
         self.destination.clear();
@@ -220,6 +207,13 @@ impl ImportManuskriptViewModel {
         self.destination.location_validation()
     }
 
+    /// Inline validation for the file-name field: blank → error; a name whose
+    /// target `.skrib` already exists → a *warning* (import still proceeds, after
+    /// an overwrite confirmation). Cached, like the folder's.
+    pub fn name_validation(&self) -> Signal<ValidationState> {
+        self.destination.name_validation()
+    }
+
     /// Whether "Import" may fire: a valid source **and** a valid destination
     /// **and** a non-blank name. Derived from the cached verdicts only.
     pub fn can_import(&self) -> Signal<bool> {
@@ -255,8 +249,9 @@ impl ImportManuskriptViewModel {
                 tr!(import_manuskript_importance_secondary()).into(),
                 tr!(import_manuskript_importance_main()).into(),
             ],
-            // The headings of the notes the import writes, in the order the importer
-            // reads them back. Seeded text, so the interface's language, once.
+            // The headings of the notes the import writes and the titles it makes up,
+            // in the order the importer reads them back. Seeded text, so the
+            // interface's language, once.
             section_names: manuskript_import::map::SectionNames::ORDER
                 .iter()
                 .map(|key| section_name(key))
@@ -264,19 +259,10 @@ impl ImportManuskriptViewModel {
         }
     }
 
-    /// Inline validation for the file-name field: blank → error; a name whose
-    /// target `.skrib` already exists → a *warning* (import still proceeds, after
-    /// an overwrite confirmation). Cached, like the folder's.
-    pub fn name_validation(&self) -> Signal<ValidationState> {
-        self.destination.name_validation()
-    }
-
-    /// "Import": check every field against the disk again, refuse a target that
-    /// is a project open in a window, confirm an overwrite, then start.
+    /// "Import": check every field against the disk again, then hand the request
+    /// to the shared job, which refuses a second import and a target that is
+    /// open, confirms an overwrite, then starts.
     pub fn import(&self, ctx: &mut EventContext) {
-        if refuse_if_busy(ctx, &self.active, &BUSY) {
-            return;
-        }
         // The verdicts on screen were worked out when the fields last changed,
         // and the disk may have moved on since. Both checks run, so every field
         // shows its fresh verdict, before either answer is acted on.
@@ -285,279 +271,7 @@ impl ImportManuskriptViewModel {
         if !(source_ok && destination_ok) {
             return;
         }
-        // Everything below acts on this one request, taken from the form now.
-        // The form is one view-model every window shares, and the overwrite
-        // question is modal in its own window only: while it waits, another
-        // window can open this importer and fill the form in afresh. OK then
-        // imports the file that was asked about and checked, never the one the
-        // form names by that time.
-        let request = self.dto(false);
-        let target = request.output_path.clone();
-        if refuse_if_open(ctx, &target) {
-            return;
-        }
-        if Path::new(&target).exists() {
-            let vm = self.clone();
-            let fname = Path::new(&target)
-                .file_name()
-                .and_then(|n| n.to_str())
-                .unwrap_or_default()
-                .to_string();
-            MessageBox::warning(tr!(import_manuskript_overwrite_title()))
-                .text(tr!(import_manuskript_overwrite_text(name = fname)))
-                .buttons(MessageBoxButtons::OkCancel)
-                .on_result(move |r, c| {
-                    // The confirmation can sit open while the writer opens that
-                    // very project in another window, so the refusal is asked
-                    // again at the last moment.
-                    if r.button == StandardButton::Ok && !refuse_if_open(c, &target) {
-                        vm.run_import(
-                            c,
-                            ImportManuskriptProjectDto {
-                                overwrite: true,
-                                ..request.clone()
-                            },
-                        );
-                    }
-                })
-                .present(ctx);
-        } else {
-            self.run_import(ctx, request);
-        }
-    }
-
-    /// Start the conversion of `request` (a long operation). Returns
-    /// immediately; the panel closes and a loading toast takes over. Only a
-    /// failure to *start* is handled inline; the import's own errors arrive as
-    /// a `Failed` event.
-    fn run_import(&self, ctx: &mut EventContext, request: ImportManuskriptProjectDto) {
-        // Asked again here: an overwrite question can wait while another window
-        // starts an import from this same form, which this one would take over.
-        if refuse_if_busy(ctx, &self.active, &BUSY) {
-            return;
-        }
-        // Held before the conversion starts, so there is no moment it runs unheld,
-        // and looked at again once held, for a load another copy started meanwhile.
-        if !self.target_hold.hold_unless_open(ctx, &request.output_path) {
-            return;
-        }
-        match import_management_commands::import_manuskript_project(&self.app_ctx, &request) {
-            Ok(op_id) => {
-                self.active.set(Some(op_id));
-                // `dismiss_top_overlay`, not `dismiss_modal`: on the overwrite
-                // path this runs from the confirmation MessageBox's `on_result`,
-                // whose context is anchored at the tree root, so `dismiss_modal`'s
-                // walk to the enclosing modal would no-op. The import panel is the
-                // topmost overlay either way.
-                ctx.dismiss_top_overlay();
-                ctx.show_toast(self.progress_toast(0.0, ""));
-            }
-            Err(e) => {
-                self.target_hold.release();
-                self.show_error(ctx, &format!("{e:#}"));
-            }
-        }
-    }
-
-    /// The loading toast the import lives in: spinner, a `NN% · message` body and
-    /// a **Cancel** button, re-shown under the same id so one surface updates in
-    /// place.
-    ///
-    /// Broadcast, for the same reason the Plume import's is: the job belongs to no
-    /// open Work — it produces a `.skrib` nobody has opened yet — and this one
-    /// shared view-model is wired from every window, so a window-scoped toast
-    /// would put one redundant entry in each.
-    fn progress_toast(&self, percent: f32, message: &str) -> Toast {
-        let vm = self.clone();
-        let body = crate::shared::progress_text::progress_body(percent, message);
-        import_toast(Toast::loading(tr!(import_manuskript_progress_title())))
-            .body(body)
-            .action(
-                ToastAction::destructive(tr!(import_manuskript_cancel_import()), move |c| {
-                    vm.cancel(c)
-                })
-                .closes_toast(false),
-            )
-    }
-
-    /// Cancel the running import. The backend stops at its next checkpoint and
-    /// emits `Cancelled`, which becomes the final toast.
-    pub fn cancel(&self, _ctx: &mut EventContext) {
-        if let Some(op_id) = self.active.get() {
-            long_operation_commands::cancel_operation(&self.app_ctx, &op_id);
-        }
-    }
-
-    /// Subscribe a widget tree to this import's four long-operation events.
-    ///
-    /// **Called once per window that can start an import**, and there are two:
-    /// `app::wiring::long_ops` for a project window, and `WelcomePanel::build`
-    /// for the Launcher. The Launcher's is not optional — subscriptions are per
-    /// `WidgetTree`, so an import started with no project window open would
-    /// otherwise sit under a toast that never ticked and never offered **Open
-    /// now**.
-    ///
-    /// Subscribing from several windows at once is safe by construction: every
-    /// handler filters on the operation id this view-model started and clears it
-    /// on the first terminal event, so whichever subscriber runs second finds
-    /// nothing to do.
-    pub fn wire_long_operation(&self, ctx: &mut BuildContext) {
-        type Handler = fn(&ImportManuskriptViewModel, &mut EventContext, &Event);
-        const HANDLERS: &[(LongOperationEvent, Handler)] = &[
-            (LongOperationEvent::Progress, |v, c, e| {
-                v.on_long_op_progress(c, e)
-            }),
-            (LongOperationEvent::Completed, |v, c, e| {
-                v.on_long_op_completed(c, e)
-            }),
-            (LongOperationEvent::Cancelled, |v, c, e| {
-                v.on_long_op_cancelled(c, e)
-            }),
-            (LongOperationEvent::Failed, |v, c, e| {
-                v.on_long_op_failed(c, e)
-            }),
-        ];
-        for (event, handler) in HANDLERS {
-            let vm = self.clone();
-            let handler = *handler;
-            ctx.subscribe_event_with_ctx(
-                Origin::LongOperation(event.clone()),
-                move |e: &Event, c| handler(&vm, c, e),
-            );
-        }
-    }
-
-    /// A progress tick: update the loading toast in place.
-    pub fn on_long_op_progress(&self, ctx: &mut EventContext, event: &Event) {
-        let Some(op_id) = self.active.get() else {
-            return;
-        };
-        let Some(payload) = parse_payload(event) else {
-            return;
-        };
-        if payload_id(&payload) != Some(op_id.as_str()) {
-            return;
-        }
-        let percent = payload
-            .get("percentage")
-            .and_then(|p| p.as_f64())
-            .unwrap_or(0.0) as f32;
-        let message = payload
-            .get("message")
-            .and_then(|m| m.as_str())
-            .unwrap_or("");
-        ctx.show_toast(self.progress_toast(percent, message));
-    }
-
-    /// The operation finished: replace the loading toast with a success toast
-    /// offering **Open now**.
-    pub fn on_long_op_completed(&self, ctx: &mut EventContext, event: &Event) {
-        let Some(op_id) = self.active.get() else {
-            return;
-        };
-        if event_id(event) != Some(op_id.clone()) {
-            return;
-        }
-        self.active.set(None);
-        self.target_hold.release();
-        match import_management_commands::get_import_manuskript_project_result(
-            &self.app_ctx,
-            &op_id,
-        ) {
-            Ok(Some(res)) => {
-                let output = res.output_path.clone();
-                let done = tr!(import_manuskript_done(
-                    imported = res.imported_items,
-                    revisions = res.imported_revisions
-                ));
-                ctx.show_toast(import_toast(Toast::success(done.clone())).action(
-                    ToastAction::primary(tr!(import_manuskript_open_now()), move |c| {
-                        // Opening the imported project *replaces* the one in this
-                        // window, so this goes through the `work.open_path` intent
-                        // → the unsaved-changes guard, rather than calling
-                        // `load_work` outright and discarding unsaved edits.
-                        c.send_intent(AppIntent::OpenWorkPath {
-                            path: output.clone(),
-                        });
-                    }),
-                ));
-                // The importer records everything it could not carry across, and
-                // everything the source itself is ambiguous about. Collected and
-                // then never read would be an import that quietly lost data, so
-                // they get a notice of their own that waits for the writer and can
-                // be reopened from the notification log. Raised after the result,
-                // which it comments on, and which its spoken name repeats: a
-                // screen reader hears the notice over it.
-                WARNINGS.show(ctx, &res.warnings, &done, &self.warnings_notice);
-            }
-            // Completed with no recoverable result (should not happen): clear the
-            // loading toast with a neutral, self-dismissing notice rather than
-            // leaving a spinner up for ever.
-            Ok(None) | Err(_) => {
-                ctx.show_toast(
-                    import_toast(Toast::info(tr!(import_manuskript_progress_title())))
-                        .auto_dismiss_after(Duration::from_secs(4)),
-                );
-            }
-        }
-    }
-
-    /// Cancelled: a neutral, self-dismissing notice.
-    pub fn on_long_op_cancelled(&self, ctx: &mut EventContext, event: &Event) {
-        let Some(op_id) = self.active.get() else {
-            return;
-        };
-        if event_id(event) != Some(op_id.clone()) {
-            return;
-        }
-        self.active.set(None);
-        self.target_hold.release();
-        ctx.show_toast(
-            import_toast(Toast::info(tr!(import_manuskript_cancelled())))
-                .auto_dismiss_after(Duration::from_secs(4)),
-        );
-    }
-
-    /// Failed: an error toast whose body is the reason and whose **Details**
-    /// shows the whole flattened chain.
-    pub fn on_long_op_failed(&self, ctx: &mut EventContext, event: &Event) {
-        let Some(op_id) = self.active.get() else {
-            return;
-        };
-        let Some(payload) = parse_payload(event) else {
-            return;
-        };
-        if payload_id(&payload) != Some(op_id.as_str()) {
-            return;
-        }
-        self.active.set(None);
-        self.target_hold.release();
-        let error = payload
-            .get("error")
-            .and_then(|e| e.as_str())
-            .unwrap_or_default()
-            .to_string();
-        self.show_error(ctx, &error);
-    }
-
-    /// Replace/raise the error toast: reason in the body, full message behind
-    /// **Details**, persistent so the writer dismisses it themselves.
-    fn show_error(&self, ctx: &mut EventContext, message: &str) {
-        let (body, details) = failure_text(message);
-        ctx.show_toast(
-            import_toast(Toast::error(tr!(import_manuskript_error_title())))
-                .body(body)
-                .persistent()
-                .action(ToastAction::primary(
-                    tr!(import_manuskript_error_details()),
-                    move |c| {
-                        MessageBox::warning(tr!(import_manuskript_error_title()))
-                            .text(lit!(details.clone()))
-                            .buttons(MessageBoxButtons::Ok)
-                            .present(c);
-                    },
-                )),
-        );
+        self.job.import(ctx, &MANUSKRIPT, self.dto(false));
     }
 }
 
@@ -580,44 +294,6 @@ impl DiskChecked for ImportManuskriptViewModel {
         }
         self.destination.retry_refused_folder();
     }
-}
-
-/// What the error toast says for a failed import's `message`, and what its
-/// **Details** shows: `shared::import_failure`'s answer, plus the one refusal
-/// only a Manuskript project can raise, a file sitting in folders nested past the
-/// ceiling (format 1 keeps the outline as folders, one per level).
-fn failure_text(message: &str) -> (LocalizedString, String) {
-    match FoldersTooDeep::from_failure_message(message) {
-        Some(refused) => (folders_too_deep(&refused), refused.to_string()),
-        None => import_failure::failure_text(message, nested_too_deep, declares_entities),
-    }
-}
-
-/// The error toast's sentence for a project refused because one of its files
-/// nests its XML past the ceiling (see `shared::import_failure`).
-fn nested_too_deep(refused: &XmlTooDeep) -> LocalizedString {
-    tr!(import_manuskript_nested_too_deep(
-        part = refused.part.clone(),
-        limit = refused.limit() as i64
-    ))
-}
-
-/// The error toast's sentence for a project refused because one of its files
-/// declares an XML entity, which no Manuskript project does (see
-/// `shared::import_failure`).
-fn declares_entities(refused: &XmlDeclaresEntities) -> LocalizedString {
-    tr!(import_manuskript_declares_entities(
-        part = refused.part.clone()
-    ))
-}
-
-/// The error toast's sentence for a project refused because one of its files
-/// sits more folders deep than the ceiling. The path itself goes behind
-/// **Details**: at that depth it runs to hundreds of folder names.
-fn folders_too_deep(refused: &FoldersTooDeep) -> LocalizedString {
-    tr!(import_manuskript_folders_too_deep(
-        limit = refused.limit() as i64
-    ))
 }
 
 /// The heading of one section of an imported note, by its key in
@@ -649,6 +325,8 @@ fn section_name(key: &str) -> String {
         "page" => tr!(import_manuskript_section_page()),
         "full" => tr!(import_manuskript_section_full()),
         "untitled_project" => tr!(import_manuskript_untitled_project()),
+        // The pattern's argument is the slot the converter fills with the row's title.
+        "notes_of" => tr!(import_manuskript_notes_of(title = TITLE_SLOT.to_string())),
         _ => return String::new(),
     };
     name.into()
@@ -668,10 +346,13 @@ mod tests {
     }
     use std::any::{Any, TypeId};
     use std::collections::HashMap;
-    use std::time::Instant;
+    use std::rc::Rc;
+    use std::time::{Duration, Instant};
+
+    use frontend::commands::long_operation_commands;
+    use teksilo::widgets::{StandardButton, Toast};
 
     use teksilo::core::ModalContent;
-    use teksilo::core::styles::BannerSeverity;
     use teksilo::core::widget_tree::WidgetTree;
     use teksilo::widgets::{
         NotificationArchiveModel, NotificationEntry, ToastInstallOptions, ToastRegistry,
@@ -700,11 +381,60 @@ mod tests {
 
     /// A form filled in with the fixture and `<dir>/novel.skrib`.
     fn filled(app_ctx: &Rc<AppContext>, dir: &Path) -> ImportManuskriptViewModel {
-        let vm = ImportManuskriptViewModel::new(app_ctx.clone());
+        let vm = form(app_ctx);
         vm.source().set(fixture());
         vm.location().set(dir.to_string_lossy().into_owned());
         vm.name().set("novel".into());
         vm
+    }
+
+    /// A form over a job of its own, as each running copy of Skribisto has one.
+    fn form(app_ctx: &Rc<AppContext>) -> ImportManuskriptViewModel {
+        ImportManuskriptViewModel::new(ProjectImportJob::new(app_ctx.clone()))
+    }
+
+    /// Every word the import writes into the project is resolved in the interface's
+    /// language, in both shipped locales: never a message id, and the notes pattern holds
+    /// the slot the row's title goes into exactly once.
+    #[test]
+    fn the_words_written_into_the_project_are_the_interface_s() {
+        for locale in ["en-US", "fr-FR"] {
+            crate::test_support::with_shipped_messages(locale, || {
+                let dto = form(&Rc::new(AppContext::new())).dto(false);
+                let mut words = vec![
+                    &dto.manuscript_binder_name,
+                    &dto.story_bible_binder_name,
+                    &dto.characters_group_name,
+                    &dto.world_group_name,
+                    &dto.plots_group_name,
+                    &dto.project_info_note_name,
+                    &dto.summary_note_name,
+                ];
+                words.extend(dto.importance_names.iter());
+                let order = manuskript_import::map::SectionNames::ORDER;
+                assert_eq!(dto.section_names.len(), order.len());
+                let mut notes_of = None;
+                for (key, word) in order.iter().zip(&dto.section_names) {
+                    if *key == "notes_of" {
+                        notes_of = Some(word);
+                    } else {
+                        words.push(word);
+                    }
+                }
+                for word in words {
+                    assert!(
+                        !word.trim().is_empty() && !word.starts_with("import-manuskript-"),
+                        "{locale}: {word:?}"
+                    );
+                }
+                let notes_of = notes_of.expect("the notes title is seeded");
+                assert_eq!(
+                    notes_of.matches(TITLE_SLOT).count(),
+                    1,
+                    "{locale}: {notes_of:?}"
+                );
+            });
+        }
     }
 
     /// The title of the one dialog a press raised, if it raised one.
@@ -762,7 +492,7 @@ mod tests {
         let importing = vm.clone();
         press(&mut tree, move |c| importing.import(c));
 
-        assert!(vm.active.get().is_none(), "nothing may start");
+        assert!(vm.job.active_operation().is_none(), "nothing may start");
         assert!(matches!(
             vm.location_validation().get(),
             ValidationState::Error(_)
@@ -802,7 +532,7 @@ mod tests {
             Some(tr!(import_target_open_title()).resolve_now()),
             "the refusal, not the overwrite confirmation"
         );
-        assert!(vm.active.get().is_none(), "nothing may start");
+        assert!(vm.job.active_operation().is_none(), "nothing may start");
         assert_eq!(
             std::fs::read(&target).unwrap(),
             b"PK",
@@ -831,7 +561,7 @@ mod tests {
             only_dialog_title(&mut tree),
             Some(tr!(import_target_open_title()).resolve_now())
         );
-        assert!(vm.active.get().is_none());
+        assert!(vm.job.active_operation().is_none());
     }
 
     /// A target that exists but is open nowhere still gets the ordinary
@@ -862,7 +592,7 @@ mod tests {
         press(&mut tree, move |c| importing.import(c));
         assert_eq!(
             only_dialog_title(&mut tree),
-            Some(tr!(import_manuskript_overwrite_title()).resolve_now())
+            Some(tr!(project_import_overwrite_title()).resolve_now())
         );
     }
 
@@ -897,7 +627,7 @@ mod tests {
     fn is_notice(row: &NotificationEntry) -> bool {
         row.actions
             .iter()
-            .any(|a| a.intent_name.as_deref() == Some(WARNINGS.action))
+            .any(|a| a.intent_name.as_deref() == Some(NOTICE.action))
     }
 
     /// Press Import on a filled form, wait for the long operation, and deliver
@@ -909,7 +639,7 @@ mod tests {
     ) {
         let importing = vm.clone();
         press(tree, move |c| importing.import(c));
-        let op_id = vm.active.get().expect("the import started");
+        let op_id = vm.job.active_operation().expect("the import started");
         let deadline = Instant::now() + Duration::from_secs(60);
         while long_operation_commands::is_operation_finished(app_ctx, &op_id) != Some(true) {
             assert!(Instant::now() < deadline, "the import never finished");
@@ -921,7 +651,9 @@ mod tests {
             data: Some(format!(r#"{{"id":"{op_id}"}}"#)),
         };
         let finishing = vm.clone();
-        press(tree, move |c| finishing.on_long_op_completed(c, &completed));
+        press(tree, move |c| {
+            finishing.job.on_long_op_completed(c, &completed)
+        });
     }
 
     /// The target is held while the conversion runs, so no window opens it and nothing
@@ -942,7 +674,7 @@ mod tests {
 
         let importing = vm.clone();
         press(&mut tree, move |c| importing.import(c));
-        let op_id = vm.active.get().expect("the import started");
+        let op_id = vm.job.active_operation().expect("the import started");
         assert!(open_registry::importing(&target), "held while it runs");
         let deadline = Instant::now() + Duration::from_secs(60);
         while long_operation_commands::is_operation_finished(&app_ctx, &op_id) != Some(true) {
@@ -956,7 +688,7 @@ mod tests {
         };
         let finishing = vm.clone();
         press(&mut tree, move |c| {
-            finishing.on_long_op_completed(c, &completed)
+            finishing.job.on_long_op_completed(c, &completed)
         });
         assert!(!open_registry::importing(&target), "let go of once done");
     }
@@ -980,12 +712,14 @@ mod tests {
             panic!("nothing stands in the way of the load");
         };
         let starting = vm.clone();
-        press(&mut tree, move |c| starting.run_import(c, request.clone()));
+        press(&mut tree, move |c| {
+            starting.job.start(c, &MANUSKRIPT, request.clone())
+        });
         assert_eq!(
             drain_dialog_titles(&mut tree),
             vec![tr!(import_target_open_title()).resolve_now()]
         );
-        assert!(vm.active.get().is_none(), "nothing started");
+        assert!(vm.job.active_operation().is_none(), "nothing started");
         assert!(!open_registry::importing(&target), "the hold was let go of");
         drop(loading);
     }
@@ -1012,8 +746,8 @@ mod tests {
 
         let importing = vm.clone();
         press(&mut tree, move |c| importing.import(c));
-        let op_id = vm.active.get().expect("the first import started");
-        let busy = tr!(import_manuskript_busy_title()).resolve_now();
+        let op_id = vm.job.active_operation().expect("the first import started");
+        let busy = tr!(project_import_busy_title()).resolve_now();
 
         vm.name().set("second".into());
         let pressing = vm.clone();
@@ -1026,14 +760,14 @@ mod tests {
         assert_eq!(request.output_path, second);
         let confirming = vm.clone();
         press(&mut tree, move |c| {
-            confirming.run_import(c, request.clone())
+            confirming.job.start(c, &MANUSKRIPT, request.clone())
         });
         assert!(
             drain_dialog_titles(&mut tree).contains(&busy),
             "an overwrite question's OK is refused too"
         );
         assert_eq!(
-            vm.active.get(),
+            vm.job.active_operation(),
             Some(op_id.clone()),
             "the first is still the one"
         );
@@ -1055,7 +789,7 @@ mod tests {
         };
         let finishing = vm.clone();
         press(&mut tree, move |c| {
-            finishing.on_long_op_completed(c, &completed)
+            finishing.job.on_long_op_completed(c, &completed)
         });
         assert!(!open_registry::importing(&first));
         assert!(
@@ -1095,7 +829,7 @@ mod tests {
         let progress = tr!(import_manuskript_progress_title()).resolve_now();
         let result = rows
             .iter()
-            .find(|e| e.dedup_id.as_deref() == Some(IMPORT_TOAST_ID))
+            .find(|e| e.dedup_id.as_deref() == Some(MANUSKRIPT.toast_id))
             .expect("the import's own toast is in the log");
         assert_ne!(
             result.title, progress,
@@ -1110,11 +844,24 @@ mod tests {
 
     /// A failure is the one thing an import must always get in front of the
     /// writer, however many other messages are already up: dropped for want of
-    /// room, it would be reported nowhere, not even in the log.
+    /// room, it would be reported nowhere, not even in the log. It arrives as a
+    /// sentence in the writer's language, never the backend's chain, which stays
+    /// behind Details.
     #[test]
     fn a_failure_reaches_the_writer_however_full_the_corner() {
+        use frontend::common::long_operation::OperationStatus;
+
+        let _registry = IsolatedOpenRegistry::new();
+        let dir = tempfile::tempdir().unwrap();
+        // A folder holding nothing that makes a Manuskript project.
+        let source = dir.path().join("Not a project");
+        std::fs::create_dir(&source).unwrap();
+        std::fs::write(source.join("notes.txt"), "Just notes.").unwrap();
         let app_ctx = Rc::new(AppContext::new());
-        let vm = ImportManuskriptViewModel::new(app_ctx.clone());
+        let vm = form(&app_ctx);
+        vm.source().set(source.to_string_lossy().into_owned());
+        vm.location().set(dir.path().to_string_lossy().into_owned());
+        vm.name().set("novel".into());
         let (mut tree, _toasts, archive) = tree_with_archive(&app_ctx);
         press(&mut tree, |c| {
             for i in 0..5 {
@@ -1126,17 +873,45 @@ mod tests {
             }
         });
 
+        let importing = vm.clone();
+        press(&mut tree, move |c| importing.import(c));
+        let op_id = vm.job.active_operation().expect("the import started");
+        let deadline = Instant::now() + Duration::from_secs(60);
+        while long_operation_commands::is_operation_finished(&app_ctx, &op_id) != Some(true) {
+            assert!(Instant::now() < deadline, "the import never finished");
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        let Some(OperationStatus::Failed(message)) =
+            long_operation_commands::get_operation_status(&app_ctx, &op_id)
+        else {
+            panic!("a folder that is not a project is refused");
+        };
+        let failed = Event {
+            origin: Origin::LongOperation(LongOperationEvent::Failed),
+            ids: Vec::new(),
+            data: Some(serde_json::json!({"id": op_id, "error": message}).to_string()),
+        };
         let failing = vm.clone();
         press(&mut tree, move |c| {
-            failing.show_error(c, "No space left on device")
+            failing.job.on_long_op_failed(c, &failed)
         });
 
         let error = archived(&archive)
             .into_iter()
-            .find(|e| e.dedup_id.as_deref() == Some(IMPORT_TOAST_ID))
+            .find(|e| e.dedup_id.as_deref() == Some(MANUSKRIPT.toast_id))
             .expect("the failure was admitted, so it is in the log");
-        assert_eq!(error.severity, BannerSeverity::Error);
-        assert_eq!(error.body.as_deref(), Some("No space left on device"));
+        // The log merges a re-raised id into its first row, the progress notice,
+        // updating its title and body: those are what show the failure arrived.
+        assert_eq!(error.title, tr!(project_import_error_title()).resolve_now());
+        assert_eq!(
+            error.body.as_deref(),
+            Some(
+                tr!(import_manuskript_not_a_project())
+                    .resolve_now()
+                    .as_str()
+            ),
+            "the reason, in the writer's words"
+        );
     }
 
     /// The overwrite question can sit open while the writer opens that very
@@ -1165,7 +940,7 @@ mod tests {
             .request;
         assert_eq!(
             request.title,
-            Some(tr!(import_manuskript_overwrite_title()).resolve_now())
+            Some(tr!(project_import_overwrite_title()).resolve_now())
         );
 
         // Meanwhile, the writer opens the project in a window of this process.
@@ -1191,7 +966,7 @@ mod tests {
             Some(tr!(import_target_open_title()).resolve_now()),
             "OK is answered with the refusal"
         );
-        assert!(vm.active.get().is_none(), "nothing may start");
+        assert!(vm.job.active_operation().is_none(), "nothing may start");
         assert_eq!(std::fs::read(&target).unwrap(), b"PK");
     }
 
@@ -1232,7 +1007,7 @@ mod tests {
             .request;
         assert_eq!(
             request.title,
-            Some(tr!(import_manuskript_overwrite_title()).resolve_now())
+            Some(tr!(project_import_overwrite_title()).resolve_now())
         );
 
         // Meanwhile, another window opens the importer and fills it in again.
@@ -1256,7 +1031,10 @@ mod tests {
             "the file asked about is open nowhere"
         );
 
-        let op_id = vm.active.get().expect("the confirmed import started");
+        let op_id = vm
+            .job
+            .active_operation()
+            .expect("the confirmed import started");
         let deadline = Instant::now() + Duration::from_secs(60);
         while long_operation_commands::is_operation_finished(&app_ctx, &op_id) != Some(true) {
             assert!(Instant::now() < deadline, "the import never finished");
@@ -1294,7 +1072,7 @@ mod tests {
             .find(|e| {
                 e.actions
                     .iter()
-                    .any(|a| a.intent_name.as_deref() == Some(WARNINGS.action))
+                    .any(|a| a.intent_name.as_deref() == Some(NOTICE.action))
             })
             .expect("the warnings notice is archived with a replayable Details");
         let body = notice.body.clone().unwrap_or_default();
@@ -1306,63 +1084,44 @@ mod tests {
         );
     }
 
-    /// The refusal reaches the writer as a sentence in their language, naming the
-    /// file, in both shipped locales, with every argument filled in.
+    /// The report reaches a French writer in French: the notices are typed on the
+    /// wire and worded when the import completes, in the interface language. It
+    /// used to be English in every locale.
     #[test]
-    fn a_nesting_refusal_is_worded_for_the_writer_in_both_locales() {
-        crate::shared::import_failure::assert_worded_in_both_locales("world.opml", nested_too_deep);
-    }
+    fn a_french_writer_reads_the_report_in_french() {
+        crate::test_support::with_shipped_messages("fr-FR", || {
+            let _registry = IsolatedOpenRegistry::new();
+            let dir = tempfile::tempdir().unwrap();
+            let app_ctx = Rc::new(AppContext::new());
+            let vm = filled(&app_ctx, dir.path());
+            let (mut tree, _toasts, archive) = tree_with_archive(&app_ctx);
 
-    /// A project refused for declaring an entity reaches the writer as a sentence
-    /// in their language, naming the file, in both shipped locales.
-    #[test]
-    fn an_entity_refusal_is_worded_for_the_writer_in_both_locales() {
-        crate::shared::import_failure::assert_entity_refusal_worded_in_both_locales(
-            "world.opml",
-            declares_entities,
-        );
-    }
+            import_to_completion(&mut tree, &app_ctx, &vm);
 
-    /// A project refused for its folders reaches the writer as a sentence in
-    /// their language naming the ceiling, in both shipped locales, with the path
-    /// behind **Details** and never the wire form in the body.
-    #[test]
-    fn a_folder_refusal_is_worded_for_the_writer_in_both_locales() {
-        let refused = FoldersTooDeep {
-            part: format!(
-                "outline/{}0-Scene.md",
-                "0-Part/".repeat(skrib_format::MAX_XML_DEPTH)
-            ),
-            depth: skrib_format::MAX_XML_DEPTH + 1,
-        };
-        let message = refused.failure_message();
-        for locale in ["en-US", "fr-FR"] {
-            crate::test_support::with_shipped_messages(locale, || {
-                let (body, details) = failure_text(&message);
-                let body = body.resolve_now();
-                assert!(
-                    body.contains(&skrib_format::MAX_XML_DEPTH.to_string()),
-                    "{locale}: {body}"
-                );
-                assert!(
-                    !body.contains("{$") && !body.contains("{ $"),
-                    "{locale} left an argument unfilled: {body}"
-                );
-                assert!(
-                    !body.contains("folders-nested-too-deep") && !body.contains("0-Part/"),
-                    "{locale} showed the wire form or the path: {body}"
-                );
-                assert_eq!(details, refused.to_string(), "{locale}");
-            });
-        }
-    }
-
-    /// The folder refusal is recognised ahead of the shared wording, and every
-    /// other failure still goes through it unchanged.
-    #[test]
-    fn any_other_failure_is_worded_as_the_shared_helper_words_it() {
-        let (body, details) = failure_text("reading 'x.msk': permission denied");
-        assert_eq!(body.resolve_now(), "reading 'x.msk': permission denied");
-        assert_eq!(details, "reading 'x.msk': permission denied");
+            let notice = archived(&archive)
+                .into_iter()
+                .find(|e| {
+                    e.actions
+                        .iter()
+                        .any(|a| a.intent_name.as_deref() == Some(NOTICE.action))
+                })
+                .expect("the report is archived");
+            let body = notice.body.unwrap_or_default();
+            assert!(
+                body.contains("copie"),
+                "which copy was read, in French: {body}"
+            );
+            assert!(body.contains("folder.txt"), "{body}");
+            assert!(
+                !body.contains("was imported") && !body.contains("Read the"),
+                "no English line: {body}"
+            );
+            let lines = body.lines().filter(|l| !l.trim().is_empty()).count() as i64;
+            assert_eq!(
+                notice.title,
+                tr!(project_import_report(count = lines)).resolve_now(),
+                "the title is French too"
+            );
+        });
     }
 }

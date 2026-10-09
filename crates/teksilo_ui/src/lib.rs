@@ -440,6 +440,7 @@ pub fn run() {
         dictionaries,
         workspace_layout_service,
         tree_expansion_service,
+        project_import,
         import_manuskript,
         import_plume,
         folder_memory,
@@ -743,6 +744,7 @@ pub fn run() {
         .app_state(initial_state.session.tree_expansion.clone())
         .app_state(initial_state.session.mention_index.clone())
         .app_state(initial_state.session.progress_recorder.clone())
+        .app_state(project_import.clone())
         .app_state(import_manuskript.clone())
         .app_state(import_plume.clone())
         .app_state(export_styles.clone())
@@ -785,6 +787,11 @@ pub fn run() {
         .initial_window(initial_window_config)
         .run();
 
+    // The last window can close with an import still running (the Launcher has no
+    // close guard), and the process must not end under a converter mid-write.
+    if !project_import.stop_at_exit(shared::project_import::EXIT_PATIENCE) {
+        eprintln!("an import was still writing when Skribisto closed; it did not stop in time");
+    }
     startup::shutdown(&app_ctx, &backup_settings, is_primary);
 }
 

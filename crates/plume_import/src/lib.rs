@@ -8,8 +8,15 @@
 //! **or** the pre-0.3 old-system directory — and writes a `.skrib` zip at the
 //! newest format version. The entity store is never touched; the UI loads the
 //! result afterward via the existing `load_work`.
+//!
+//! Nothing it says is a sentence: progress is a phase code or the title of the
+//! entry being mapped, what the writer should know is an [`ImportNotice`], and a
+//! project it cannot import is refused with a [`Refusal`] (or one of the typed
+//! refusals `skrib_format` raises on its behalf). The interface words all three in
+//! the writer's language.
 
 mod attend_parse;
+pub mod diagnostics;
 mod dict_parse;
 mod info_parse;
 mod map;
@@ -18,13 +25,13 @@ mod source;
 mod tree_parse;
 mod version;
 
-use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use anyhow::{Context, Result, bail};
+use anyhow::{Context, Result};
 use skrib_format::import_notice::ImportNotice;
-use skrib_format::{SkribShape, write_bundle};
+use skrib_format::importing::{ImportCancelled, StagedOutput, fill_title};
 
+pub use diagnostics::Refusal;
 use model::{PlumeAttendance, PlumeInfo};
 use source::PlumeSource;
 
@@ -42,7 +49,8 @@ pub struct ImportSummary {
 
 /// Text the import writes into the project that Plume itself does not store: the
 /// three story-bible groups an old (0.3 and earlier) project implies without naming,
-/// and the title of a project that names itself nowhere.
+/// the title of a project that names itself nowhere, and the titles the import makes
+/// up for a sheet's or a folder's own notes and a folder's own text.
 ///
 /// Seeded text, so not this crate's to word: the app resolves it in the interface
 /// language, once, and it is stored as it is from then on. [`Default`] is the
@@ -55,15 +63,22 @@ pub struct SeededNames {
     pub items_group: String,
     pub places_group: String,
     pub untitled_project: String,
+    /// The title of a note holding a sheet's or a folder's own notes, with
+    /// [`TITLE_SLOT`](skrib_format::importing::TITLE_SLOT) where its name goes.
+    pub notes_of: String,
+    /// The title of a scene holding a folder's own text, the same way.
+    pub content_of: String,
 }
 
 impl SeededNames {
     /// The order the names travel in. Append, never reorder.
-    pub const ORDER: [&'static str; 4] = [
+    pub const ORDER: [&'static str; 6] = [
         "characters_group",
         "items_group",
         "places_group",
         "untitled_project",
+        "notes_of",
+        "content_of",
     ];
 
     /// The names from a list in [`Self::ORDER`]; a missing or blank entry keeps its
@@ -75,6 +90,8 @@ impl SeededNames {
             &mut names.items_group,
             &mut names.places_group,
             &mut names.untitled_project,
+            &mut names.notes_of,
+            &mut names.content_of,
         ];
         for (slot, given) in slots.into_iter().zip(list) {
             if !given.trim().is_empty() {
@@ -82,6 +99,16 @@ impl SeededNames {
             }
         }
         names
+    }
+
+    /// The title of the note holding `name`'s own notes.
+    pub(crate) fn notes_title(&self, name: &str) -> String {
+        fill_title(&self.notes_of, name)
+    }
+
+    /// The title of the scene holding `name`'s own text.
+    pub(crate) fn content_title(&self, name: &str) -> String {
+        fill_title(&self.content_of, name)
     }
 }
 
@@ -92,6 +119,8 @@ impl Default for SeededNames {
             items_group: "Items".to_string(),
             places_group: "Places".to_string(),
             untitled_project: "Imported Plume project".to_string(),
+            notes_of: format!("{} (notes)", skrib_format::importing::TITLE_SLOT),
+            content_of: format!("{} (content)", skrib_format::importing::TITLE_SLOT),
         }
     }
 }
@@ -128,11 +157,12 @@ pub fn import(
 /// `report(percent, label)` drives the UI's progress toast. `label` is either a
 /// phase code (`import.opening`, `import.outline`, …), which the UI translates —
 /// this crate has no catalogue — or the title of the entry being mapped, shown
-/// as data. `cancel` is polled
-/// at every phase boundary and once per mapped node. Cancellation leaves nothing
-/// on disk: the `.skrib` is written to a sibling temp file and atomically renamed
-/// into place only after the final cancel check, so an existing `output_path`
-/// (overwrite) survives an aborted or failed import untouched.
+/// as data. `cancel` is polled at every phase boundary and once per mapped node.
+/// Cancellation leaves nothing on disk: the `.skrib` is staged beside its target
+/// and moved into place only after the final cancel check (see
+/// `skrib_format::importing::StagedOutput`), so an existing `output_path`
+/// (overwrite) survives an aborted or failed import untouched, and no partial
+/// file is left on any way out.
 #[allow(clippy::too_many_arguments)]
 pub fn import_with_progress(
     source_path: &str,
@@ -145,9 +175,7 @@ pub fn import_with_progress(
     report: &dyn Fn(f32, &str),
     cancel: &AtomicBool,
 ) -> Result<ImportSummary> {
-    if !overwrite && Path::new(output_path).exists() {
-        bail!("'{output_path}' already exists (choose another name or allow overwrite)");
-    }
+    let output = StagedOutput::begin(output_path, overwrite)?;
 
     report(2.0, "import.opening");
     let src = PlumeSource::open(source_path)?;
@@ -171,19 +199,13 @@ pub fn import_with_progress(
     .map_err(anyhow::Error::new)??;
     bail_if_cancelled(cancel)?;
 
-    // Write to a sibling temp file, then atomically rename into place — so an
-    // existing target (overwrite) is only replaced once the write fully succeeds
-    // and no late cancel arrived.
+    // Written beside the target, then moved over it: an existing target
+    // (overwrite) is only replaced once the write fully succeeded and no late
+    // cancel arrived. Every return before `commit` removes what was written.
     report(92.0, "import.writing");
-    let tmp_path = format!("{output_path}.importing");
-    write_bundle(&tmp_path, SkribShape::ZipFile, &mapped.bundle)
-        .with_context(|| format!("writing '{output_path}'"))?;
-    if cancel.load(Ordering::Relaxed) {
-        let _ = std::fs::remove_file(&tmp_path);
-        bail!("import cancelled");
-    }
-    std::fs::rename(&tmp_path, output_path)
-        .with_context(|| format!("finalising '{output_path}'"))?;
+    output.write(&mapped.bundle)?;
+    bail_if_cancelled(cancel)?;
+    output.commit()?;
 
     report(100.0, "import.done");
     Ok(ImportSummary {
@@ -261,7 +283,7 @@ fn read_and_map(
 /// Abort the import if the cancel token has been set, before any file is written.
 fn bail_if_cancelled(cancel: &AtomicBool) -> Result<()> {
     if cancel.load(Ordering::Relaxed) {
-        bail!("import cancelled");
+        return Err(anyhow::Error::new(ImportCancelled));
     }
     Ok(())
 }

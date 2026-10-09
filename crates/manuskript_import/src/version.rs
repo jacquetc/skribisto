@@ -21,7 +21,9 @@
 //! that is not a number at all is treated the same way rather than refused — those
 //! are the cases where being strict would reject a real project.
 
-use anyhow::{Result, bail};
+use anyhow::Result;
+
+use crate::diagnostics::Refusal;
 
 /// The newest format generation this importer understands.
 ///
@@ -60,10 +62,10 @@ pub fn resolve(marker: Option<&str>) -> Result<FormatVersion> {
     match n {
         0 => Ok(FormatVersion::V0),
         1 => Ok(FormatVersion::V1),
-        _ => bail!(
-            "this Manuskript project's format is version {n} — newer than this importer \
-             supports ({TERMINAL})"
-        ),
+        _ => Err(anyhow::Error::new(Refusal::FormatTooNew {
+            version: n,
+            supported: TERMINAL,
+        })),
     }
 }
 
@@ -89,9 +91,15 @@ mod tests {
     fn a_newer_numeric_marker_is_refused_by_name() {
         let err = match resolve(Some("2")) {
             Ok(v) => panic!("expected a refusal, got {v:?}"),
-            Err(e) => e.to_string(),
+            Err(e) => e,
         };
-        assert!(err.contains('2'), "{err}");
+        assert_eq!(
+            err.downcast_ref::<Refusal>(),
+            Some(&Refusal::FormatTooNew {
+                version: 2,
+                supported: TERMINAL
+            })
+        );
         assert!(resolve(Some("9999")).is_err());
     }
 

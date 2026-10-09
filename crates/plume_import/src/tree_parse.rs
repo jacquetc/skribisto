@@ -14,7 +14,7 @@
 //! Only a wrong root tag (not a Plume tree) or a version newer than the terminal
 //! `0.5` is rejected.
 
-use anyhow::{Result, bail};
+use anyhow::Result;
 
 use super::model::{PlumeKind, PlumeNode, PlumeTree};
 use super::version::{check_root, parse_xml, version_newer_than};
@@ -28,10 +28,11 @@ pub fn parse(xml: &str) -> Result<PlumeTree> {
 
     check_root(&root, &["plume-tree", "plume"], "tree")?;
     if version_newer_than(root.attribute("version"), TREE_TERMINAL) {
-        bail!(
-            "this Plume project's tree is version {} — newer than this importer supports ({TREE_TERMINAL})",
-            root.attribute("version").unwrap_or("?")
-        );
+        return Err(anyhow::Error::new(crate::diagnostics::Refusal::TooNew {
+            part: "tree".to_string(),
+            version: root.attribute("version").unwrap_or("?").to_string(),
+            supported: TREE_TERMINAL.to_string(),
+        }));
     }
 
     Ok(PlumeTree {

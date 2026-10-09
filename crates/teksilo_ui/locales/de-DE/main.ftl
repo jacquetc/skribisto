@@ -822,10 +822,6 @@ new-work-target-open-title = Dieses Projekt ist geöffnet
 new-work-target-open-text = „{ $name }“ ist in Skribisto geöffnet. Ein neues Projekt an seiner Stelle würde das bearbeitete Projekt ersetzen, und beim nächsten Speichern würde dieses das neue Projekt wieder überschreiben. Wählen Sie einen anderen Namen oder Ordner, oder schließen Sie zuerst das Projekt.
 target-importing-title = Ein Import schreibt in dieses Projekt
 target-importing-text = Ein Import schreibt noch in „{ $name }“. Warten Sie auf den Abschluss oder wählen Sie einen anderen Namen.
-import-plume-busy-title = Ein anderes Plume-Creator-Projekt wird gerade importiert
-import-plume-busy-text = Plume-Creator-Projekte werden einzeln importiert. Warten Sie auf den Abschluss des laufenden Imports oder brechen Sie ihn ab, bevor Sie diesen erneut starten.
-import-manuskript-busy-title = Ein anderes Manuskript-Projekt wird gerade importiert
-import-manuskript-busy-text = Manuskript-Projekte werden einzeln importiert. Warten Sie auf den Abschluss des laufenden Imports oder brechen Sie ihn ab, bevor Sie diesen erneut starten.
 backup-restore-importing-text = Ein Import schreibt noch in „{ $name }“, das durch diese Sicherung ersetzt würde. Stellen Sie die Sicherung erst nach Abschluss des Imports wieder her.
 new-work-manuscript = Manuskript
 new-work-notes = Notizen
@@ -847,32 +843,15 @@ new-work-note-templates-hint = Die Ausgangsform einer Notiz in der Geschichtenbi
 new-work-characters = Figuren
 new-work-places = Orte
 import-plume-title = Plume-Creator-Projekt importieren
-import-plume-close = Schließen
 import-plume-source = Plume-Projekt
 import-plume-source-hint = Wählen Sie eine .plume- oder .plume_backup-Datei (beliebige Plume-Creator-Version).
-import-plume-location = Zielordner
-import-plume-name = Dateiname
-import-plume-name-placeholder = Projektname
-import-plume-will-create = Wird erstellt
 import-plume-trash-warning = ⚠ Einträge im Papierkorb und gelöschte Einträge werden nicht übernommen.
-import-plume-cancel = Abbrechen
-import-plume-import = Importieren
 import-plume-source-required = Wählen Sie eine Plume-Projektdatei
 import-plume-source-missing = Diese Datei existiert nicht
 import-plume-source-not-file = Dieser Pfad ist keine Datei
-import-plume-location-required = Wählen Sie einen Zielordner
-import-plume-location-missing = Dieser Ordner existiert nicht
-import-plume-location-not-folder = Dieser Pfad ist kein Ordner
-import-plume-location-readonly = Dieser Ordner ist nicht beschreibbar
-import-plume-name-required = Geben Sie einen Dateinamen ein
-import-plume-name-exists = Hier existiert bereits eine Datei mit diesem Namen. Das Überschreiben wird beim Import bestätigt
-import-plume-overwrite-title = Vorhandene Datei ersetzen?
-import-plume-overwrite-text = „{ $name }“ existiert bereits. Durch das importierte Projekt ersetzen?
 import-plume-manuscript-binder = Manuskript
 import-plume-story-bible-binder = Geschichtenbibel
 import-plume-progress-title = Plume-Projekt wird importiert…
-import-plume-cancel-import = Abbrechen
-import-plume-cancelled = Import abgebrochen
 import-plume-done = { $imported ->
     [one] { $imported } Eintrag importiert.
    *[other] { $imported } Einträge importiert.
@@ -880,39 +859,15 @@ import-plume-done = { $imported ->
     [one] { $skipped } Eintrag im Papierkorb wurde nicht übernommen.
    *[other] { $skipped } Einträge im Papierkorb wurden nicht übernommen.
 }
-import-plume-open-now = Jetzt öffnen
-import-plume-warnings = { $count ->
-        [one] 1 Element konnte nicht originalgetreu importiert werden
-       *[other] { $count } Elemente konnten nicht originalgetreu importiert werden
-    }
-import-plume-details = Details
-import-plume-warnings-title = Importwarnungen
-import-plume-error-title = Projekt konnte nicht importiert werden
 import-plume-nested-too-deep = Das Projekt wurde nicht importiert: Sein Teil „{ $part }“ ist tiefer als { $limit } Ebenen verschachtelt. Kein Plume-Creator-Projekt erreicht diese Tiefe; das Einlesen könnte Skribisto zum Absturz bringen. Es wurde nichts geschrieben.
 import-plume-declares-entities = Das Projekt wurde nicht importiert: Sein Teil „{ $part }“ deklariert XML-Entitäten, was kein Plume-Creator-Projekt tut. Ihre Auflösung könnte mehr Speicher benötigen, als der Computer hat, und Skribisto zum Absturz bringen. Es wurde nichts geschrieben.
-import-plume-error-details = Details
 import-manuskript-title = Manuskript-Projekt importieren
-import-manuskript-close = Schließen
 import-manuskript-source = Manuskript-Projekt
 import-manuskript-source-hint = Wählen Sie die .msk-Datei oder den Projektordner (beliebige Manuskript-Version).
 import-manuskript-source-file = Datei auswählen…
 import-manuskript-source-folder = Ordner auswählen…
-import-manuskript-location = Zielordner
-import-manuskript-name = Dateiname
-import-manuskript-name-placeholder = Projektname
-import-manuskript-will-create = Wird erstellt
-import-manuskript-cancel = Abbrechen
-import-manuskript-import = Importieren
 import-manuskript-source-required = Wählen Sie ein Manuskript-Projekt
 import-manuskript-source-missing = Diese Datei oder dieser Ordner existiert nicht
-import-manuskript-location-required = Wählen Sie einen Zielordner
-import-manuskript-location-missing = Dieser Ordner existiert nicht
-import-manuskript-location-not-folder = Dieser Pfad ist kein Ordner
-import-manuskript-location-readonly = Dieser Ordner ist nicht beschreibbar
-import-manuskript-name-required = Geben Sie einen Dateinamen ein
-import-manuskript-name-exists = Hier existiert bereits eine Datei mit diesem Namen. Das Überschreiben wird beim Import bestätigt
-import-manuskript-overwrite-title = Vorhandene Datei ersetzen?
-import-manuskript-overwrite-text = „{ $name }“ existiert bereits. Durch das importierte Projekt ersetzen?
 import-manuskript-manuscript-binder = Manuskript
 import-manuskript-story-bible-binder = Geschichtenbibel
 import-manuskript-characters-group = Figuren
@@ -924,8 +879,6 @@ import-manuskript-importance-minor = Nebensächlich
 import-manuskript-importance-secondary = Zweitrangig
 import-manuskript-importance-main = Zentral
 import-manuskript-progress-title = Manuskript-Projekt wird importiert…
-import-manuskript-cancel-import = Abbrechen
-import-manuskript-cancelled = Import abgebrochen
 import-manuskript-done = { $imported ->
     [one] { $imported } Eintrag importiert.
    *[other] { $imported } Einträge importiert.
@@ -934,18 +887,9 @@ import-manuskript-done = { $imported ->
     [one] { $revisions } frühere Version wurde übernommen.
    *[other] { $revisions } frühere Versionen wurden übernommen.
 }
-import-manuskript-open-now = Jetzt öffnen
-import-manuskript-warnings = { $count ->
-    [one] 1 Hinweis zu diesem Import
-   *[other] { $count } Hinweise zu diesem Import
-}
-import-manuskript-details = Details
-import-manuskript-warnings-title = Über diesen Import
-import-manuskript-error-title = Projekt konnte nicht importiert werden
 import-manuskript-nested-too-deep = Das Projekt wurde nicht importiert: Seine Datei „{ $part }“ ist tiefer als { $limit } Ebenen verschachtelt. Kein Manuskript-Projekt erreicht diese Tiefe; das Einlesen könnte Skribisto zum Absturz bringen. Es wurde nichts geschrieben.
 import-manuskript-folders-too-deep = Das Projekt wurde nicht importiert: Eine seiner Dateien liegt mehr als { $limit } Ordnerebenen tief. Kein Manuskript-Projekt erreicht diese Tiefe; das Einlesen könnte Skribisto zum Absturz bringen. Es wurde nichts geschrieben.
 import-manuskript-declares-entities = Das Projekt wurde nicht importiert: Seine Datei „{ $part }“ deklariert XML-Entitäten, was kein Manuskript-Projekt tut. Ihre Auflösung könnte mehr Speicher benötigen, als der Computer hat, und Skribisto zum Absturz bringen. Es wurde nichts geschrieben.
-import-manuskript-error-details = Details
 import-target-open-title = Dieses Projekt ist geöffnet
 import-target-open-text = „{ $name }“ ist in Skribisto geöffnet. Ein Import darüber würde das bearbeitete Projekt ersetzen, und beim nächsten Speichern würde dieses den Import wieder überschreiben. Wählen Sie einen anderen Dateinamen oder schließen Sie zuerst das Projekt.
 import-warnings-announcement = { $result } { $notice }.

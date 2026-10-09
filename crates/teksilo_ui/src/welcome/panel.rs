@@ -907,21 +907,15 @@ impl Widget for WelcomePanel {
             }
         }));
 
-        // Drive that import's progress/result toast from this window as well:
-        // long-operation subscriptions are per widget tree, and the project
+        // Drive a project import's progress/result toast from this window as
+        // well: long-operation subscriptions are per widget tree, and the project
         // window's (`app::wiring::long_ops`) does not exist when the Launcher is
         // the only window on screen.
-        if let Some(plume) = ctx
-            .app_state::<crate::import_plume::ImportPlumeViewModel>()
+        if let Some(job) = ctx
+            .app_state::<crate::shared::project_import::ProjectImportJob>()
             .cloned()
         {
-            plume.wire_long_operation(ctx);
-        }
-        if let Some(manuskript) = ctx
-            .app_state::<crate::import_manuskript::ImportManuskriptViewModel>()
-            .cloned()
-        {
-            manuskript.wire_long_operation(ctx);
+            job.wire_long_operation(ctx);
         }
 
         // Help, on the Launcher's own registry for the same reason `app.quit` is: each

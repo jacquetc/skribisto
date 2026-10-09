@@ -987,10 +987,6 @@ new-work-target-open-title = This project is open
 new-work-target-open-text = “{ $name }” is open in Skribisto. Creating a new project in its place would replace the project you are working on, and your next save would write that project back over the new one. Choose another name or folder, or close the project first.
 target-importing-title = An import is writing this project
 target-importing-text = An import is still writing “{ $name }”. Wait until it has finished, or choose another name.
-import-plume-busy-title = Another Plume Creator project is being imported
-import-plume-busy-text = Plume Creator projects are imported one at a time. Wait until the import under way has finished, or cancel it, then start this one again.
-import-manuskript-busy-title = Another Manuskript project is being imported
-import-manuskript-busy-text = Manuskript projects are imported one at a time. Wait until the import under way has finished, or cancel it, then start this one again.
 backup-restore-importing-text = An import is still writing “{ $name }”, the project this backup would be restored over. Restore the backup once the import has finished.
 
 ## New-work template labels (passed to the backend, which can't do i18n)
@@ -1016,36 +1012,20 @@ new-work-places = Places
 
 ## Import Plume Creator dialog
 import-plume-title = Import Plume Creator project
-import-plume-close = Close
 import-plume-source = Plume project
 import-plume-source-hint = Choose a .plume or .plume_backup file (any Plume Creator version).
-import-plume-location = Destination folder
-import-plume-name = File name
-import-plume-name-placeholder = Project name
-import-plume-will-create = Will create
 import-plume-trash-warning = ⚠ Trashed / deleted items are not migrated.
-import-plume-cancel = Cancel
-import-plume-import = Import
 # Field validation
 import-plume-source-required = Choose a Plume project file
 import-plume-source-missing = This file does not exist
 import-plume-source-not-file = This path is not a file
-import-plume-location-required = Choose a destination folder
-import-plume-location-missing = This folder does not exist
-import-plume-location-not-folder = This path is not a folder
-import-plume-location-readonly = This folder is not writable
-import-plume-name-required = Enter a file name
-import-plume-name-exists = A file with this name already exists here. Import will confirm overwrite
-# Overwrite confirmation
-import-plume-overwrite-title = Replace existing file?
-import-plume-overwrite-text = “{ $name }” already exists. Replace it with the imported project?
 # Binder names passed to the backend (which can't do i18n)
 import-plume-manuscript-binder = Manuscript
 import-plume-story-bible-binder = Story Bible
+import-plume-notes-of = { $name } (notes)
+import-plume-content-of = { $name } (content)
 # Progress toast (the import runs as a long operation)
 import-plume-progress-title = Importing Plume project…
-import-plume-cancel-import = Cancel
-import-plume-cancelled = Import canceled
 # Result
 import-plume-done = Imported { $imported ->
     [one] { $imported } item.
@@ -1054,53 +1034,31 @@ import-plume-done = Imported { $imported ->
     [one] { $skipped } trashed item was not migrated.
    *[other] { $skipped } trashed items were not migrated.
 }
-import-plume-open-now = Open now
-# Shown when the importer could not carry something over verbatim.
-import-plume-warnings = { $count ->
-    [one] 1 thing could not be imported exactly
-   *[other] { $count } things could not be imported exactly
-}
-import-plume-details = Details
-import-plume-warnings-title = Import warnings
-# Error toast: a short reason in the body, the full technical chain behind Details
-import-plume-error-title = Could not import the project
-# The project was refused unread because one of its parts nests its XML deeper
-# than the app will read. $part is the part's own name (tree, attendance, info);
-# $limit is the ceiling, a number.
+# Why a Plume Creator project was not imported. $part is the part's own name
+# inside the project (tree, attendance, info); $limit is the ceiling, a number.
 import-plume-nested-too-deep = The project was not imported: its “{ $part }” part is nested more than { $limit } levels deep. No Plume Creator project comes near that, and reading it could crash Skribisto. Nothing was written.
 # The project was refused unread because one of its parts declares XML
 # entities, which could expand into more memory than the computer has. $part
 # is the part's own name (tree, attendance, info).
 import-plume-declares-entities = The project was not imported: its “{ $part }” part declares XML entities, which no Plume Creator project does. Expanding them could take more memory than the computer has and crash Skribisto. Nothing was written.
-import-plume-error-details = Details
+import-plume-no-outline = This file is a compressed archive, but not a Plume Creator project: it has no outline. Nothing was written.
+import-plume-empty-outline = The outline file of this Plume Creator project is empty, so there is nothing to import. Nothing was written.
+# $tag is the name of the document the part turned out to be.
+import-plume-wrong-document = This is not a Plume Creator project: its “{ $part }” part is a “{ $tag }” document. Nothing was written.
+# $version is the part's own version, $supported the newest this importer reads.
+import-plume-too-new = The “{ $part }” part of this project was written by a newer Plume Creator (version { $version }) than Skribisto can read (up to { $supported }). Nothing was written.
 
 ## Import Manuskript project dialog
 import-manuskript-title = Import Manuskript project
-import-manuskript-close = Close
 import-manuskript-source = Manuskript project
 # A Manuskript project is a .msk file plus, in its usual mode, a folder of the
 # same name beside it. Either one gets you there, and so does the folder itself.
 import-manuskript-source-hint = Choose the .msk file or the project folder (any Manuskript version).
 import-manuskript-source-file = Choose file…
 import-manuskript-source-folder = Choose folder…
-import-manuskript-location = Destination folder
-import-manuskript-name = File name
-import-manuskript-name-placeholder = Project name
-import-manuskript-will-create = Will create
-import-manuskript-cancel = Cancel
-import-manuskript-import = Import
 # Field validation
 import-manuskript-source-required = Choose a Manuskript project
 import-manuskript-source-missing = This file or folder does not exist
-import-manuskript-location-required = Choose a destination folder
-import-manuskript-location-missing = This folder does not exist
-import-manuskript-location-not-folder = This path is not a folder
-import-manuskript-location-readonly = This folder is not writable
-import-manuskript-name-required = Enter a file name
-import-manuskript-name-exists = A file with this name already exists here. Import will confirm overwrite
-# Overwrite confirmation
-import-manuskript-overwrite-title = Replace existing file?
-import-manuskript-overwrite-text = “{ $name }” already exists. Replace it with the imported project?
 # Names passed to the backend (which can't do i18n). Manuskript stores none of
 # these: it has no binders, no story-bible groups, and its importance scale is
 # three numbers whose names live in its own interface.
@@ -1114,10 +1072,9 @@ import-manuskript-summary-note = Summary
 import-manuskript-importance-minor = Minor
 import-manuskript-importance-secondary = Secondary
 import-manuskript-importance-main = Main
+import-manuskript-notes-of = { $title } (notes)
 # Progress toast (the import is a long operation)
 import-manuskript-progress-title = Importing Manuskript project…
-import-manuskript-cancel-import = Cancel
-import-manuskript-cancelled = Import canceled
 # Result
 import-manuskript-done = { $imported ->
     [one] { $imported } item imported.
@@ -1127,40 +1084,97 @@ import-manuskript-done = { $imported ->
     [one] { $revisions } earlier version came with it.
    *[other] { $revisions } earlier versions came with them.
 }
-import-manuskript-open-now = Open now
-# Shown when the importer could not carry everything across as it was.
-import-manuskript-warnings = { $count ->
-    [one] 1 thing to know about this import
-   *[other] { $count } things to know about this import
-}
-import-manuskript-details = Details
-import-manuskript-warnings-title = About this import
-# Error toast: short reason in the body, full technical chain behind “Details”
-import-manuskript-error-title = Could not import the project
-# The project was refused unread because one of its files nests its XML deeper
-# than the app will read. $part is that file's name inside the project
-# (world.opml, plots.xml…); $limit is the ceiling, a number.
+# Why a Manuskript project was not imported. $part is that file's name inside the
+# project (world.opml, plots.xml…); $limit is the ceiling, a number.
 import-manuskript-nested-too-deep = The project was not imported: its file “{ $part }” is nested more than { $limit } levels deep. No Manuskript project comes near that, and reading it could crash Skribisto. Nothing was written.
-# The project was refused unread because one of its files sits in folders
-# nested deeper than the app will read (Manuskript keeps a project's outline
-# as folders, one per level). $limit is the ceiling, a number.
+# One of its files sits in folders nested deeper than the app will read
+# (Manuskript keeps a project's outline as folders, one per level).
 import-manuskript-folders-too-deep = The project was not imported: one of its files sits more than { $limit } folders deep. No Manuskript project comes near that, and reading it could crash Skribisto. Nothing was written.
 # The project was refused unread because one of its files declares XML
 # entities, which could expand into more memory than the computer has. $part
 # is that file's name inside the project (world.opml, plots.xml…).
 import-manuskript-declares-entities = The project was not imported: its file “{ $part }” declares XML entities, which no Manuskript project does. Expanding them could take more memory than the computer has and crash Skribisto. Nothing was written.
-import-manuskript-error-details = Details
+import-manuskript-not-a-project-file = “{ $file }” is neither a Manuskript project archive nor the small .msk file that points at a project folder. Nothing was written.
+import-manuskript-folder-missing = “{ $stub }” points at a project folder named “{ $folder }” beside it, and that folder is not there. A Manuskript project in folder mode is both, and they have to travel together. Nothing was written.
+import-manuskript-not-a-project = This does not look like a Manuskript project: it has no Manuskript marker and no outline. Nothing was written.
+import-manuskript-format-too-new = This project is in Manuskript format { $version }, newer than Skribisto can read (up to { $supported }). Nothing was written.
+import-manuskript-too-many-files = The project was not imported: it holds more than { $limit } files, far more than any Manuskript project. Nothing was written.
+import-manuskript-too-large = The project was not imported: it is larger than the { $limit } MB Skribisto reads from a Manuskript project. Nothing was written.
+project-import-close = Close
+project-import-location = Destination folder
+# The folder dialog's title.
+project-import-location-title = Choose a destination folder
+project-import-name = File name
+project-import-name-placeholder = Project name
+project-import-will-create = Will create
+project-import-cancel = Cancel
+project-import-import = Import
+# Field validation
+project-import-location-required = Choose a destination folder
+project-import-location-missing = This folder does not exist
+project-import-location-not-folder = This path is not a folder
+project-import-location-readonly = This folder is not writable
+project-import-name-required = Enter a file name
+project-import-name-exists = A file with this name already exists here. Import will confirm overwrite
+project-import-name-is-folder = A folder with this name is already here, perhaps a project kept as a folder. An import cannot replace it: choose another name
+# Overwrite confirmation
+project-import-overwrite-title = Replace existing file?
+project-import-overwrite-text = “{ $name }” already exists. Replace it with the imported project?
+# Projects are imported one at a time, whichever importer asks.
+project-import-busy-title = Another project is being imported
+project-import-busy-text = Projects are imported one at a time. Wait until the import under way has finished, or cancel it, then start this one again.
+# Spoken by a screen reader once per phase, never shown: the toast's title, then
+# the phase's name.
+project-import-progress-announcement = { $title } { $phase }
+# The notice once Cancel is pressed, until the converter has stopped: it may be
+# finishing a file it cannot leave half written.
+project-import-stopping = Stopping the import…
+project-import-cancelled = Import canceled
+project-import-open-now = Open now
+project-import-details = Details
+# The import's report: what the writer should know about what came across.
+project-import-report = { $count ->
+    [one] 1 thing to know about this import
+   *[other] { $count } things to know about this import
+}
+project-import-report-title = About this import
+# Error toast: a short reason in the body, the full technical chain behind Details.
+project-import-error-title = Could not import the project
+# Why a project was not imported, whichever importer read it. A $file is a file
+# name, a $folder a full path (it is the folder the writer has to act on), a
+# $reason what the system or a parser said, a $limit a number.
+project-import-failed-cancelled = The import was canceled. Nothing was written.
+project-import-failed-target-exists = “{ $file }” already exists, and the import was not allowed to replace it. Nothing was written.
+project-import-failed-target-folder = “{ $file }” is a folder, perhaps a project kept as a folder, and an import cannot replace it. Choose another name. Nothing was written.
+project-import-failed-not-written = “{ $file }” could not be written in “{ $folder }” ({ $reason }). Nothing was written.
+project-import-failed-disk-full = There is not enough space left in “{ $folder }” to write “{ $file }”. Free some space there, then import again. Nothing was written.
+project-import-failed-source-missing = “{ $file }” is no longer there. Nothing was written.
+project-import-failed-unreadable = Skribisto could not read “{ $file }” ({ $reason }). Nothing was written.
+project-import-failed-archive-damaged = “{ $file }” is a compressed file that could not be read, probably because it is damaged ({ $reason }). Nothing was written.
+project-import-failed-archive-entries = The project was not imported: its archive lists { $entries } files, more than the { $limit } a project may hold, which only a file built to exhaust memory does. Nothing was written.
+project-import-failed-archive-member = The project was not imported: its part “{ $part }” unpacks to more than { $limit } MB, which only a file built to exhaust memory does. Nothing was written.
+project-import-failed-archive-size = The project was not imported: it unpacks to more than { $limit } MB, which only a file built to exhaust memory does. Nothing was written.
+project-import-failed-nested = The project was not imported: its part “{ $part }” is nested more than { $limit } levels deep, and reading it could crash Skribisto. Nothing was written.
+project-import-failed-entities = The project was not imported: its part “{ $part }” declares XML entities. Expanding them could take more memory than the computer has and crash Skribisto. Nothing was written.
+project-import-failed-folders = The project was not imported: one of its files sits more than { $limit } folders deep, and reading it could crash Skribisto. Nothing was written.
+project-import-failed-malformed = The project was not imported: its part “{ $part }” is damaged and cannot be read ({ $reason }). Nothing was written.
+# An error nothing above accounts for; $detail is its technical description.
+project-import-failed-internal = The import stopped on an error Skribisto did not expect: { $detail }
 
 ## Project import, shared by the Plume Creator and Manuskript dialogs
 # The chosen destination is a project open in a window, here or in another
 # running copy of Skribisto. The import is refused rather than written over it.
 import-target-open-title = This project is open
 import-target-open-text = “{ $name }” is open in Skribisto. Importing over it would replace the project you are working on, and your next save would write that project back over the import. Choose another file name, or close the project first.
-# Spoken by a screen reader when an import's warnings notice appears, never shown.
+# Spoken by a screen reader when an import's report notice appears, never shown.
 # $result is the import's own result line ("Imported 12 items."), $notice the
-# notice's title ("2 things could not be imported exactly"). The notice is read out
+# notice's title ("2 things to know about this import"). The notice is read out
 # over the result, so it says both.
 import-warnings-announcement = { $result } { $notice }.
+# Quitting while an import runs. $name is the file the import is writing.
+quit-import-running-title = An import is still running
+quit-import-running-text = Skribisto is still importing “{ $name }”. Quitting now stops the import: nothing is written, and the project you are importing from is left as it was.
+quit-import-stop = Stop the import and quit
 
 ## Export dialog
 export-title = Export
@@ -2745,6 +2759,7 @@ help-concept-round-trip-marks = Round-trip markers
 # The epigraph's attribution control. See tabs/shared/panes.rs::attribution_control.
 epigraph-mark-attribution = Source line
 epigraph-mark-attribution-tip = Mark the line the caret is in as the quotation's source, so it prints as an attribution
+
 ## Margin lane: the strip beside the scrollbar that maps a document
 margin-lane-name = Margin marks
 margin-lane-provider-comments = Comments
@@ -2973,6 +2988,7 @@ dialog-save-as-file-title = Save as a single .skrib file
 dialog-save-as-folder-title = Choose a parent folder for the work
 dialog-manuskript-file-title = Choose a Manuskript project
 dialog-manuskript-folder-title = Choose a Manuskript project folder
+dialog-plume-file-title = Choose a Plume Creator project
 dialog-filter-skrib = Skribisto work
 dialog-filter-manuskript = Manuskript project
 dialog-filter-plume = Plume Creator project

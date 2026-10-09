@@ -18,7 +18,12 @@ The panel asks for:
 Nothing is written until you press *Import*. The import shows its progress, and *Cancel* leaves
 nothing behind.
 
-If the destination is a project already open in Skribisto, choose another file name.
+If the destination is a project already open in Skribisto, choose another file name. While an
+import runs, its file is kept for it: nothing else opens it or writes a project there until the
+import has finished.
+
+Projects are imported one at a time: while one import runs, starting another says so. If you quit
+Skribisto during an import, it asks first, and stopping the import leaves nothing behind either.
 
 ## Pointing at a Manuskript project
 
@@ -93,8 +98,12 @@ before importing. Plume carries no author name, so set yours in *Settings ▸ Wo
 
 A message offers *Open now*, which opens the new project.
 
-If the import reports anything it could not transfer, click *Details* to read the list.
-You can find that report again under the bell in the status bar.
+If the import reports anything it could not transfer, click *Details* to read the list, written
+in the language Skribisto is set to. You can find that report again under the bell in the status
+bar.
+
+If a project cannot be imported, the message says why, and its *Details* hold the technical
+description to pass on if you report the problem.
 
 The new project is a single `.skrib` file. If you kept your old one as a folder for version
 control, use *Work ▸ Save as folder…* afterwards. See

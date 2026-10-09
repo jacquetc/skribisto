@@ -821,10 +821,6 @@ new-work-target-open-title = Ez a projekt meg van nyitva
 new-work-target-open-text = A(z) „{ $name }” meg van nyitva a Skribistóban. Ha a helyére új projektet hoz létre, az lecserélné azt a projektet, amelyen dolgozik, és a következő mentés azt írná vissza az új fölé. Válasszon másik nevet vagy mappát, vagy előbb zárja be a projektet.
 target-importing-title = Egy importálás éppen írja ezt a projektet
 target-importing-text = Egy importálás még írja a(z) „{ $name }” projektet. Várja meg, amíg befejeződik, vagy válasszon másik nevet.
-import-plume-busy-title = Egy másik Plume Creator-projekt importálása folyamatban
-import-plume-busy-text = A Plume Creator-projektek egyenként importálhatók. Várja meg, amíg a folyamatban lévő importálás befejeződik, vagy szakítsa meg, majd indítsa újra ezt.
-import-manuskript-busy-title = Egy másik Manuskript-projekt importálása folyamatban
-import-manuskript-busy-text = A Manuskript-projektek egyenként importálhatók. Várja meg, amíg a folyamatban lévő importálás befejeződik, vagy szakítsa meg, majd indítsa újra ezt.
 backup-restore-importing-text = Egy importálás még írja a(z) „{ $name }” projektet, amelyre ez a biztonsági másolat visszaállítódna. Az importálás befejeződése után állítsa vissza a biztonsági másolatot.
 new-work-manuscript = Kézirat
 new-work-notes = Jegyzetek
@@ -846,32 +842,15 @@ new-work-note-templates-hint = A forma, amellyel egy történetbiblia-jegyzet in
 new-work-characters = Szereplők
 new-work-places = Helyszínek
 import-plume-title = Plume Creator-projekt importálása
-import-plume-close = Bezárás
 import-plume-source = Plume-projekt
 import-plume-source-hint = Válasszon egy .plume vagy .plume_backup fájlt (bármely Plume Creator-verzióból).
-import-plume-location = Célmappa
-import-plume-name = Fájlnév
-import-plume-name-placeholder = Projektnév
-import-plume-will-create = Létrejön
 import-plume-trash-warning = ⚠ A kukába dobott vagy törölt elemek nem kerülnek át.
-import-plume-cancel = Mégse
-import-plume-import = Importálás
 import-plume-source-required = Válasszon egy Plume-projektfájlt
 import-plume-source-missing = Ez a fájl nem létezik
 import-plume-source-not-file = Ez az útvonal nem fájl
-import-plume-location-required = Válasszon célmappát
-import-plume-location-missing = Ez a mappa nem létezik
-import-plume-location-not-folder = Ez az útvonal nem mappa
-import-plume-location-readonly = Ez a mappa nem írható
-import-plume-name-required = Adjon meg egy fájlnevet
-import-plume-name-exists = Itt már van ilyen nevű fájl. Az importálás rákérdez a felülírásra
-import-plume-overwrite-title = Lecseréli a meglévő fájlt?
-import-plume-overwrite-text = A(z) „{ $name }” már létezik. Lecseréli az importált projektre?
 import-plume-manuscript-binder = Kézirat
 import-plume-story-bible-binder = Történetbiblia
 import-plume-progress-title = Plume-projekt importálása…
-import-plume-cancel-import = Mégse
-import-plume-cancelled = Az importálás megszakítva
 import-plume-done = Importálva: { $imported ->
     [one] { $imported } elem.
    *[other] { $imported } elem.
@@ -879,39 +858,15 @@ import-plume-done = Importálva: { $imported ->
     [one] { $skipped } kukába dobott elem nem került át.
    *[other] { $skipped } kukába dobott elem nem került át.
 }
-import-plume-open-now = Megnyitás most
-import-plume-warnings = { $count ->
-    [one] 1 dolgot nem sikerült pontosan importálni
-   *[other] { $count } dolgot nem sikerült pontosan importálni
-}
-import-plume-details = Részletek
-import-plume-warnings-title = Importálási figyelmeztetések
-import-plume-error-title = Nem sikerült importálni a projektet
 import-plume-nested-too-deep = A projekt nem lett importálva: a(z) „{ $part }” része több mint { $limit } szint mélységig van egymásba ágyazva. Egyetlen Plume Creator-projekt sem közelíti meg ezt, és a beolvasása összeomlaszthatná a Skribistót. Semmi sem lett kiírva.
 import-plume-declares-entities = A projekt nem lett importálva: a(z) „{ $part }” része XML-entitásokat deklarál, amit egyetlen Plume Creator-projekt sem tesz. A kibontásuk több memóriát igényelhet, mint amennyi a számítógépben van, és összeomlaszthatná a Skribistót. Semmi sem lett kiírva.
-import-plume-error-details = Részletek
 import-manuskript-title = Manuskript-projekt importálása
-import-manuskript-close = Bezárás
 import-manuskript-source = Manuskript-projekt
 import-manuskript-source-hint = Válassza ki a .msk fájlt vagy a projekt mappáját (bármely Manuskript-verzióból).
 import-manuskript-source-file = Fájl kiválasztása…
 import-manuskript-source-folder = Mappa kiválasztása…
-import-manuskript-location = Célmappa
-import-manuskript-name = Fájlnév
-import-manuskript-name-placeholder = Projektnév
-import-manuskript-will-create = Létrejön
-import-manuskript-cancel = Mégse
-import-manuskript-import = Importálás
 import-manuskript-source-required = Válasszon egy Manuskript-projektet
 import-manuskript-source-missing = Ez a fájl vagy mappa nem létezik
-import-manuskript-location-required = Válasszon célmappát
-import-manuskript-location-missing = Ez a mappa nem létezik
-import-manuskript-location-not-folder = Ez az útvonal nem mappa
-import-manuskript-location-readonly = Ez a mappa nem írható
-import-manuskript-name-required = Adjon meg egy fájlnevet
-import-manuskript-name-exists = Itt már van ilyen nevű fájl. Az importálás rákérdez a felülírásra
-import-manuskript-overwrite-title = Lecseréli a meglévő fájlt?
-import-manuskript-overwrite-text = A(z) „{ $name }” már létezik. Lecseréli az importált projektre?
 import-manuskript-manuscript-binder = Kézirat
 import-manuskript-story-bible-binder = Történetbiblia
 import-manuskript-characters-group = Szereplők
@@ -923,8 +878,6 @@ import-manuskript-importance-minor = Mellékes
 import-manuskript-importance-secondary = Másodlagos
 import-manuskript-importance-main = Fő
 import-manuskript-progress-title = Manuskript-projekt importálása folyamatban…
-import-manuskript-cancel-import = Mégse
-import-manuskript-cancelled = Az importálás megszakítva
 import-manuskript-done = { $imported ->
     [one] { $imported } elem importálva.
    *[other] { $imported } elem importálva.
@@ -933,18 +886,9 @@ import-manuskript-done = { $imported ->
     [one] { $revisions } korábbi változat is átkerült.
    *[other] { $revisions } korábbi változat is átkerült.
 }
-import-manuskript-open-now = Megnyitás most
-import-manuskript-warnings = { $count ->
-    [one] 1 tudnivaló erről az importálásról
-   *[other] { $count } tudnivaló erről az importálásról
-}
-import-manuskript-details = Részletek
-import-manuskript-warnings-title = Erről az importálásról
-import-manuskript-error-title = Nem sikerült importálni a projektet
 import-manuskript-nested-too-deep = A projekt nem lett importálva: a(z) „{ $part }” fájl több mint { $limit } szint mélységig van egymásba ágyazva. Egyetlen Manuskript-projekt sem közelíti meg ezt, és a beolvasása összeomlaszthatná a Skribistót. Semmi sem lett kiírva.
 import-manuskript-folders-too-deep = A projekt nem lett importálva: az egyik fájlja több mint { $limit } mappa mélyen van. Egyetlen Manuskript-projekt sem közelíti meg ezt, és a beolvasása összeomlaszthatná a Skribistót. Semmi sem lett kiírva.
 import-manuskript-declares-entities = A projekt nem lett importálva: a(z) „{ $part }” fájl XML-entitásokat deklarál, amit egyetlen Manuskript-projekt sem tesz. A kibontásuk több memóriát igényelhet, mint amennyi a számítógépben van, és összeomlaszthatná a Skribistót. Semmi sem lett kiírva.
-import-manuskript-error-details = Részletek
 import-target-open-title = Ez a projekt meg van nyitva
 import-target-open-text = A(z) „{ $name }” meg van nyitva a Skribistóban. Ha fölé importál, az lecserélné azt a projektet, amelyen dolgozik, és a következő mentés azt írná vissza az importált tartalom fölé. Válasszon másik fájlnevet, vagy előbb zárja be a projektet.
 import-warnings-announcement = { $result } { $notice }.

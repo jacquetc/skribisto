@@ -857,10 +857,6 @@ new-work-target-open-title = Projekti on auki
 new-work-target-open-text = ”{ $name }” on auki Skribistossa. Uuden projektin luominen sen tilalle korvaisi projektin, jota työstät, ja seuraava tallennuksesi kirjoittaisi sen takaisin uuden päälle. Valitse toinen nimi tai kansio, tai sulje projekti ensin.
 target-importing-title = Tuonti kirjoittaa tätä projektia
 target-importing-text = Tuonti kirjoittaa vielä projektia ”{ $name }”. Odota, kunnes se on valmis, tai valitse toinen nimi.
-import-plume-busy-title = Toista Plume Creator -projektia tuodaan parhaillaan
-import-plume-busy-text = Plume Creator -projektit tuodaan yksi kerrallaan. Odota, kunnes käynnissä oleva tuonti on päättynyt, tai peruuta se, ja aloita sitten tämä uudelleen.
-import-manuskript-busy-title = Toista Manuskript-projektia tuodaan parhaillaan
-import-manuskript-busy-text = Manuskript-projektit tuodaan yksi kerrallaan. Odota, kunnes käynnissä oleva tuonti on päättynyt, tai peruuta se, ja aloita sitten tämä uudelleen.
 backup-restore-importing-text = Tuonti kirjoittaa vielä projektia ”{ $name }”, jonka päälle tämä varmuuskopio palautettaisiin. Palauta varmuuskopio, kun tuonti on päättynyt.
 
 new-work-manuscript = Käsikirjoitus
@@ -884,32 +880,15 @@ new-work-characters = Henkilöt
 new-work-places = Paikat
 
 import-plume-title = Tuo Plume Creator -projekti
-import-plume-close = Sulje
 import-plume-source = Plume-projekti
 import-plume-source-hint = Valitse .plume- tai .plume_backup-tiedosto (mikä tahansa Plume Creatorin versio).
-import-plume-location = Kohdekansio
-import-plume-name = Tiedostonimi
-import-plume-name-placeholder = Projektin nimi
-import-plume-will-create = Luodaan
 import-plume-trash-warning = ⚠ Roskakoriin siirrettyjä tai poistettuja kohteita ei siirretä.
-import-plume-cancel = Peruuta
-import-plume-import = Tuo
 import-plume-source-required = Valitse Plume-projektitiedosto
 import-plume-source-missing = Tätä tiedostoa ei ole olemassa
 import-plume-source-not-file = Tämä polku ei ole tiedosto
-import-plume-location-required = Valitse kohdekansio
-import-plume-location-missing = Tätä kansiota ei ole olemassa
-import-plume-location-not-folder = Tämä polku ei ole kansio
-import-plume-location-readonly = Tähän kansioon ei voi kirjoittaa
-import-plume-name-required = Anna tiedoston nimi
-import-plume-name-exists = Tämän niminen tiedosto on jo olemassa. Tuonti pyytää vahvistuksen ennen korvaamista
-import-plume-overwrite-title = Korvataanko olemassa oleva tiedosto?
-import-plume-overwrite-text = ”{ $name }” on jo olemassa. Korvataanko se tuodulla projektilla?
 import-plume-manuscript-binder = Käsikirjoitus
 import-plume-story-bible-binder = Tarinan tietopankki
 import-plume-progress-title = Tuodaan Plume-projektia…
-import-plume-cancel-import = Peruuta
-import-plume-cancelled = Tuonti peruttu
 import-plume-done = Tuotiin { $imported ->
        [one] { $imported } kohde.
       *[other] { $imported } kohdetta.
@@ -917,40 +896,16 @@ import-plume-done = Tuotiin { $imported ->
        [one] { $skipped } roskakorissa ollut kohde jätettiin siirtämättä.
       *[other] { $skipped } roskakorissa ollutta kohdetta jätettiin siirtämättä.
    }
-import-plume-open-now = Avaa nyt
-import-plume-warnings = { $count ->
-       [one] 1 asiaa ei voitu tuoda täsmälleen
-      *[other] { $count } asiaa ei voitu tuoda täsmälleen
-   }
-import-plume-details = Yksityiskohdat
-import-plume-warnings-title = Tuontivaroitukset
-import-plume-error-title = Projektia ei voitu tuoda
 import-plume-nested-too-deep = Projektia ei tuotu: sen osa ”{ $part }” on sisäkkäistetty yli { $limit } tason syvyyteen. Mikään Plume Creator -projekti ei ole lähelläkään sitä, ja sen lukeminen voisi kaataa Skribiston. Mitään ei kirjoitettu.
 import-plume-declares-entities = Projektia ei tuotu: sen osa ”{ $part }” määrittelee XML-entiteettejä, mitä yksikään Plume Creator -projekti ei tee. Niiden laajentaminen voisi viedä enemmän muistia kuin tietokoneessa on ja kaataa Skribiston. Mitään ei kirjoitettu.
-import-plume-error-details = Yksityiskohdat
 
 import-manuskript-title = Tuo Manuskript-projekti
-import-manuskript-close = Sulje
 import-manuskript-source = Manuskript-projekti
 import-manuskript-source-hint = Valitse .msk-tiedosto tai projektikansio (mikä tahansa Manuskriptin versio).
 import-manuskript-source-file = Valitse tiedosto…
 import-manuskript-source-folder = Valitse kansio…
-import-manuskript-location = Kohdekansio
-import-manuskript-name = Tiedostonimi
-import-manuskript-name-placeholder = Projektin nimi
-import-manuskript-will-create = Luodaan
-import-manuskript-cancel = Peruuta
-import-manuskript-import = Tuo
 import-manuskript-source-required = Valitse Manuskript-projekti
 import-manuskript-source-missing = Tätä tiedostoa tai kansiota ei ole olemassa
-import-manuskript-location-required = Valitse kohdekansio
-import-manuskript-location-missing = Tätä kansiota ei ole olemassa
-import-manuskript-location-not-folder = Tämä polku ei ole kansio
-import-manuskript-location-readonly = Tähän kansioon ei voi kirjoittaa
-import-manuskript-name-required = Anna tiedoston nimi
-import-manuskript-name-exists = Tämän niminen tiedosto on jo olemassa. Tuonti pyytää vahvistuksen ennen korvaamista
-import-manuskript-overwrite-title = Korvataanko olemassa oleva tiedosto?
-import-manuskript-overwrite-text = ”{ $name }” on jo olemassa. Korvataanko se tuodulla projektilla?
 import-manuskript-manuscript-binder = Käsikirjoitus
 import-manuskript-story-bible-binder = Tarinan tietopankki
 import-manuskript-characters-group = Henkilöt
@@ -962,8 +917,6 @@ import-manuskript-importance-minor = Vähäinen
 import-manuskript-importance-secondary = Sivuhenkilö
 import-manuskript-importance-main = Päähenkilö
 import-manuskript-progress-title = Tuodaan Manuskript-projektia…
-import-manuskript-cancel-import = Peruuta
-import-manuskript-cancelled = Tuonti peruttu
 import-manuskript-done = { $imported ->
        [one] { $imported } kohde tuotiin.
       *[other] { $imported } kohdetta tuotiin.
@@ -972,18 +925,9 @@ import-manuskript-done = { $imported ->
        [one] Sen mukana tuli { $revisions } aiempi versio.
       *[other] Niiden mukana tuli { $revisions } aiempaa versiota.
    }
-import-manuskript-open-now = Avaa nyt
-import-manuskript-warnings = { $count ->
-       [one] 1 huomio tästä tuonnista
-      *[other] { $count } huomiota tästä tuonnista
-   }
-import-manuskript-details = Yksityiskohdat
-import-manuskript-warnings-title = Tietoja tästä tuonnista
-import-manuskript-error-title = Projektia ei voitu tuoda
 import-manuskript-nested-too-deep = Projektia ei tuotu: sen tiedosto ”{ $part }” on sisäkkäistetty yli { $limit } tason syvyyteen. Mikään Manuskript-projekti ei ole lähelläkään sitä, ja sen lukeminen voisi kaataa Skribiston. Mitään ei kirjoitettu.
 import-manuskript-folders-too-deep = Projektia ei tuotu: yksi sen tiedostoista on yli { $limit } kansion syvyydessä. Mikään Manuskript-projekti ei ole lähelläkään sitä, ja sen lukeminen voisi kaataa Skribiston. Mitään ei kirjoitettu.
 import-manuskript-declares-entities = Projektia ei tuotu: sen tiedosto ”{ $part }” määrittelee XML-entiteettejä, mitä yksikään Manuskript-projekti ei tee. Niiden laajentaminen voisi viedä enemmän muistia kuin tietokoneessa on ja kaataa Skribiston. Mitään ei kirjoitettu.
-import-manuskript-error-details = Yksityiskohdat
 
 import-target-open-title = Projekti on auki
 import-target-open-text = ”{ $name }” on auki Skribistossa. Tuonti sen päälle korvaisi projektin, jota työstät, ja seuraava tallennuksesi kirjoittaisi sen takaisin tuonnin päälle. Valitse toinen tiedostonimi, tai sulje projekti ensin.

@@ -987,10 +987,6 @@ new-work-target-open-title = Projektet er åbent
 new-work-target-open-text = »{ $name }« er åbent i Skribisto. Et nyt projekt på samme sted ville erstatte det projekt, du arbejder på, og din næste gemning ville skrive det projekt tilbage over det nye. Vælg et andet navn eller en anden mappe, eller luk projektet først.
 target-importing-title = En import skriver dette projekt
 target-importing-text = En import er stadig ved at skrive »{ $name }«. Vent, til den er færdig, eller vælg et andet navn.
-import-plume-busy-title = Et andet Plume Creator-projekt er ved at blive importeret
-import-plume-busy-text = Plume Creator-projekter importeres ét ad gangen. Vent, til den igangværende import er færdig, eller annullér den, og start så denne igen.
-import-manuskript-busy-title = Et andet Manuskript-projekt er ved at blive importeret
-import-manuskript-busy-text = Manuskript-projekter importeres ét ad gangen. Vent, til den igangværende import er færdig, eller annullér den, og start så denne igen.
 backup-restore-importing-text = En import er stadig ved at skrive »{ $name }«, det projekt, denne sikkerhedskopi ville blive gendannet over. Gendan sikkerhedskopien, når importen er færdig.
 
 ## New-work template labels (passed to the backend, which can't do i18n)
@@ -1016,36 +1012,18 @@ new-work-places = Steder
 
 ## Import Plume Creator dialog
 import-plume-title = Importér Plume Creator-projekt
-import-plume-close = Luk
 import-plume-source = Plume-projekt
 import-plume-source-hint = Vælg en .plume- eller .plume_backup-fil (fra enhver version af Plume Creator).
-import-plume-location = Destinationsmappe
-import-plume-name = Filnavn
-import-plume-name-placeholder = Projektets navn
-import-plume-will-create = Opretter
 import-plume-trash-warning = ⚠ Elementer i papirkurven og slettede elementer overføres ikke.
-import-plume-cancel = Annullér
-import-plume-import = Importér
 # Field validation
 import-plume-source-required = Vælg en Plume-projektfil
 import-plume-source-missing = Filen findes ikke
 import-plume-source-not-file = Stien er ikke en fil
-import-plume-location-required = Vælg en destinationsmappe
-import-plume-location-missing = Mappen findes ikke
-import-plume-location-not-folder = Stien er ikke en mappe
-import-plume-location-readonly = Der kan ikke skrives i mappen
-import-plume-name-required = Angiv et filnavn
-import-plume-name-exists = Der findes allerede en fil med dette navn her. Du bliver bedt om at bekræfte overskrivningen
-# Overwrite confirmation
-import-plume-overwrite-title = Erstat den eksisterende fil?
-import-plume-overwrite-text = »{ $name }« findes allerede. Vil du erstatte den med det importerede projekt?
 # Binder names passed to the backend (which can't do i18n)
 import-plume-manuscript-binder = Manuskript
 import-plume-story-bible-binder = Historiebibel
 # Progress toast (the import runs as a long operation)
 import-plume-progress-title = Importerer Plume-projekt…
-import-plume-cancel-import = Annullér
-import-plume-cancelled = Importen er annulleret
 # Result
 import-plume-done = { $imported ->
     [one] { $imported } element er importeret.
@@ -1054,16 +1032,6 @@ import-plume-done = { $imported ->
     [one] { $skipped } element i papirkurven blev ikke overført.
    *[other] { $skipped } elementer i papirkurven blev ikke overført.
 }
-import-plume-open-now = Åbn nu
-# Shown when the importer could not carry something over verbatim.
-import-plume-warnings = { $count ->
-    [one] 1 ting kunne ikke importeres helt nøjagtigt
-   *[other] { $count } ting kunne ikke importeres helt nøjagtigt
-}
-import-plume-details = Detaljer
-import-plume-warnings-title = Advarsler fra importen
-# Error toast: a short reason in the body, the full technical chain behind Details
-import-plume-error-title = Projektet kunne ikke importeres
 # The project was refused unread because one of its parts nests its XML deeper
 # than the app will read. $part is the part's own name (tree, attendance, info);
 # $limit is the ceiling, a number.
@@ -1072,35 +1040,18 @@ import-plume-nested-too-deep = Projektet blev ikke importeret: dets del »{ $par
 # entities, which could expand into more memory than the computer has. $part
 # is the part's own name (tree, attendance, info).
 import-plume-declares-entities = Projektet blev ikke importeret: dets del »{ $part }« erklærer XML-entiteter, hvad intet Plume Creator-projekt gør. At udfolde dem kunne kræve mere hukommelse, end computeren har, og få Skribisto til at gå ned. Intet blev skrevet.
-import-plume-error-details = Detaljer
 
 ## Import Manuskript project dialog
 import-manuskript-title = Importér Manuskript-projekt
-import-manuskript-close = Luk
 import-manuskript-source = Manuskript-projekt
 # A Manuskript project is a .msk file plus, in its usual mode, a folder of the
 # same name beside it. Either one gets you there, and so does the folder itself.
 import-manuskript-source-hint = Vælg .msk-filen eller projektmappen (fra enhver version af Manuskript).
 import-manuskript-source-file = Vælg fil…
 import-manuskript-source-folder = Vælg mappe…
-import-manuskript-location = Destinationsmappe
-import-manuskript-name = Filnavn
-import-manuskript-name-placeholder = Projektets navn
-import-manuskript-will-create = Opretter
-import-manuskript-cancel = Annullér
-import-manuskript-import = Importér
 # Field validation
 import-manuskript-source-required = Vælg et Manuskript-projekt
 import-manuskript-source-missing = Filen eller mappen findes ikke
-import-manuskript-location-required = Vælg en destinationsmappe
-import-manuskript-location-missing = Mappen findes ikke
-import-manuskript-location-not-folder = Stien er ikke en mappe
-import-manuskript-location-readonly = Der kan ikke skrives i mappen
-import-manuskript-name-required = Angiv et filnavn
-import-manuskript-name-exists = Der findes allerede en fil med dette navn her. Du bliver bedt om at bekræfte overskrivningen
-# Overwrite confirmation
-import-manuskript-overwrite-title = Erstat den eksisterende fil?
-import-manuskript-overwrite-text = »{ $name }« findes allerede. Vil du erstatte den med det importerede projekt?
 # Names passed to the backend (which can't do i18n). Manuskript stores none of
 # these: it has no binders, no story-bible groups, and its importance scale is
 # three numbers whose names live in its own interface.
@@ -1116,8 +1067,6 @@ import-manuskript-importance-secondary = Sekundær
 import-manuskript-importance-main = Hovedperson
 # Progress toast (the import is a long operation)
 import-manuskript-progress-title = Importerer Manuskript-projekt…
-import-manuskript-cancel-import = Annullér
-import-manuskript-cancelled = Importen er annulleret
 # Result
 import-manuskript-done = { $imported ->
     [one] { $imported } element er importeret.
@@ -1127,16 +1076,6 @@ import-manuskript-done = { $imported ->
     [one] { $revisions } tidligere version fulgte med.
    *[other] { $revisions } tidligere versioner fulgte med.
 }
-import-manuskript-open-now = Åbn nu
-# Shown when the importer could not carry everything across as it was.
-import-manuskript-warnings = { $count ->
-    [one] 1 ting, du bør vide om denne import
-   *[other] { $count } ting, du bør vide om denne import
-}
-import-manuskript-details = Detaljer
-import-manuskript-warnings-title = Om denne import
-# Error toast: short reason in the body, full technical chain behind “Details”
-import-manuskript-error-title = Projektet kunne ikke importeres
 # The project was refused unread because one of its files nests its XML deeper
 # than the app will read. $part is that file's name inside the project
 # (world.opml, plots.xml…); $limit is the ceiling, a number.
@@ -1149,7 +1088,6 @@ import-manuskript-folders-too-deep = Projektet blev ikke importeret: en af dets 
 # entities, which could expand into more memory than the computer has. $part
 # is that file's name inside the project (world.opml, plots.xml…).
 import-manuskript-declares-entities = Projektet blev ikke importeret: dets fil »{ $part }« erklærer XML-entiteter, hvad intet Manuskript-projekt gør. At udfolde dem kunne kræve mere hukommelse, end computeren har, og få Skribisto til at gå ned. Intet blev skrevet.
-import-manuskript-error-details = Detaljer
 
 ## Project import, shared by the Plume Creator and Manuskript dialogs
 # The chosen destination is a project open in a window, here or in another

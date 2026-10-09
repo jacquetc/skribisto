@@ -96,7 +96,7 @@ impl ImportManuskriptPanel {
         HStack::new()
             .spacing(7.0)
             .child(
-                TextWidget::new(tr!(import_manuskript_will_create()))
+                TextWidget::new(tr!(project_import_will_create()))
                     .style(TextStyleRole::Small)
                     .color(TextRole::Secondary),
             )
@@ -133,6 +133,8 @@ impl ImportManuskriptPanel {
                         let request = crate::models::dialog_start_in(
                             ctx,
                             crate::models::FolderPurpose::ImportManuskript,
+                            // Resolved at the click, in the language the writer
+                            // is reading the form in.
                             FileDialogRequest::pick_file()
                                 .title(tr!(dialog_manuskript_file_title()).resolve_now())
                                 .add_filter(
@@ -190,19 +192,20 @@ impl ImportManuskriptPanel {
             .full_width(Divider::new())
             // ── Destination folder ────────────────────────────────────────
             .line(
-                Self::field_label(tr!(import_manuskript_location())),
+                Self::field_label(tr!(project_import_location())),
                 FilePickerField::new(vm.location())
                     .kind(FilePickerKind::PickFolder)
+                    .dialog_title(tr!(project_import_location_title()))
                     .validation(vm.location_validation()),
             )
             // ── Output name + "Will create …" preview ─────────────────────
             .line(
-                Self::field_label(tr!(import_manuskript_name())),
+                Self::field_label(tr!(project_import_name())),
                 VStack::new()
                     .spacing(6.0)
                     .child(
                         TextInput::new(vm.name())
-                            .placeholder(tr!(import_manuskript_name_placeholder()))
+                            .placeholder(tr!(project_import_name_placeholder()))
                             .validation(vm.name_validation()),
                     )
                     .child(self.path_preview()),
@@ -256,7 +259,7 @@ impl Widget for ImportManuskriptPanel {
                                             }
                                         }
                                         IconButton::clear() {
-                                            tooltip: tr!(import_manuskript_close())
+                                            tooltip: tr!(project_import_close())
                                             on_activate_fn: |ctx| ctx.dismiss_modal()
                                         }
                                     }
@@ -278,11 +281,11 @@ impl Widget for ImportManuskriptPanel {
                                 HStack {
                                     spacing: 9.0
                                     Spacer
-                                    Button::new(tr!(import_manuskript_cancel())) {
+                                    Button::new(tr!(project_import_cancel())) {
                                         variant: ButtonVariant::Plain
                                         on_activate_fn: |ctx| ctx.dismiss_modal()
                                     }
-                                    Button::new(tr!(import_manuskript_import())) {
+                                    Button::new(tr!(project_import_import())) {
                                         variant: ButtonVariant::Filled
                                         enabled: import_can
                                         on_activate_fn: move |ctx| import_vm.import(ctx)
@@ -309,6 +312,17 @@ impl Widget for ImportManuskriptPanel {
         self.first_field.get()
     }
 
+    /// Announce the form as a named dialog.
+    ///
+    /// `ctx.present_modal` does not wrap a hand-drawn panel in a
+    /// `ModalContainer`, so nothing else would emit a `Role::Dialog` node: a
+    /// screen reader met a panel that had appeared over everything and could not
+    /// say what it was.
+    fn accessibility(&self, builder: &mut teksilo::core::accessibility::AccessNodeBuilder) {
+        builder.set_role(teksilo::core::accesskit::Role::Dialog);
+        builder.set_name(tr!(import_manuskript_title()).resolve_now());
+    }
+
     fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
         self.root_child
             .and_then(|id| ctx.child_size(id, proposal))
@@ -320,6 +334,7 @@ impl Widget for ImportManuskriptPanel {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::shared::project_import::ProjectImportJob;
     use frontend::AppContext;
     use std::rc::Rc;
     use teksilo::core::widget_tree::WidgetTree;
@@ -330,7 +345,7 @@ mod tests {
     /// modal's card size.
     #[test]
     fn panel_builds_and_lays_out() {
-        let vm = ImportManuskriptViewModel::new(Rc::new(AppContext::new()));
+        let vm = ImportManuskriptViewModel::new(ProjectImportJob::new(Rc::new(AppContext::new())));
         let mut tree = WidgetTree::new();
         let id = tree.add_boxed(Box::new(ImportManuskriptPanel::new(vm)));
         tree.layout(SizeProposal::exact(CARD_W, CARD_H));
@@ -351,7 +366,7 @@ mod tests {
 
         let base = tempfile::tempdir().unwrap();
         let source = base.path().join("Tour du monde");
-        let vm = ImportManuskriptViewModel::new(Rc::new(AppContext::new()));
+        let vm = ImportManuskriptViewModel::new(ProjectImportJob::new(Rc::new(AppContext::new())));
         vm.source().set(source.to_string_lossy().into_owned());
         vm.location()
             .set(base.path().to_string_lossy().into_owned());

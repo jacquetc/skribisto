@@ -27,10 +27,11 @@ pub fn parse(xml: &str, names: &crate::SeededNames) -> Result<PlumeAttendance> {
     let root = doc.root_element();
     check_root(&root, &["plume-attendance", "attendance"], "attendance")?;
     if version_newer_than(root.attribute("version"), ATTEND_TERMINAL) {
-        anyhow::bail!(
-            "this Plume project's attendance is version {} — newer than this importer supports ({ATTEND_TERMINAL})",
-            root.attribute("version").unwrap_or("?")
-        );
+        return Err(anyhow::Error::new(crate::diagnostics::Refusal::TooNew {
+            part: "attendance".to_string(),
+            version: root.attribute("version").unwrap_or("?").to_string(),
+            supported: ATTEND_TERMINAL.to_string(),
+        }));
     }
 
     // Root classification catalogs: box_1/2/3 (0.5+) or the legacy names.
@@ -79,6 +80,8 @@ pub fn parse(xml: &str, names: &crate::SeededNames) -> Result<PlumeAttendance> {
     })
 }
 
+/// The groups a project older than 0.4 implies, named in the writer's language: it
+/// kept characters, items and places apart and named none of the three.
 fn legacy_groups(
     root: &roxmltree::Node,
     catalogs: &[Vec<String>; 3],

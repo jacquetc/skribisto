@@ -861,10 +861,6 @@ new-work-target-open-title = הפרויקט הזה פתוח
 new-work-target-open-text = "{ $name }" פתוח ב־Skribisto. יצירת פרויקט חדש במקומו תחליף את הפרויקט שעליו אתם עובדים, והשמירה הבאה תכתוב את הפרויקט ההוא בחזרה מעל החדש. יש לבחור שם או תיקייה אחרים, או לסגור את הפרויקט קודם.
 target-importing-title = ייבוא כותב את הפרויקט הזה
 target-importing-text = ייבוא עדיין כותב את "{ $name }". יש להמתין עד שיסתיים, או לבחור שם אחר.
-import-plume-busy-title = פרויקט Plume Creator אחר נמצא בייבוא
-import-plume-busy-text = פרויקטים של Plume Creator מיובאים אחד בכל פעם. יש להמתין עד שהייבוא הנוכחי יסתיים, או לבטל אותו, ואז להתחיל את הייבוא הזה מחדש.
-import-manuskript-busy-title = פרויקט Manuskript אחר נמצא בייבוא
-import-manuskript-busy-text = פרויקטים של Manuskript מיובאים אחד בכל פעם. יש להמתין עד שהייבוא הנוכחי יסתיים, או לבטל אותו, ואז להתחיל את הייבוא הזה מחדש.
 backup-restore-importing-text = ייבוא עדיין כותב את "{ $name }", הפרויקט שהגיבוי הזה ישוחזר מעליו. יש לשחזר את הגיבוי אחרי שהייבוא יסתיים.
 
 new-work-manuscript = כתב יד
@@ -888,32 +884,15 @@ new-work-characters = דמויות
 new-work-places = מקומות
 
 import-plume-title = ייבוא פרויקט Plume Creator
-import-plume-close = סגירה
 import-plume-source = פרויקט Plume
 import-plume-source-hint = יש לבחור קובץ ‎.plume או ‎.plume_backup (כל גרסה של Plume Creator).
-import-plume-location = תיקיית היעד
-import-plume-name = שם הקובץ
-import-plume-name-placeholder = שם הפרויקט
-import-plume-will-create = ייווצר
 import-plume-trash-warning = ⚠ פריטים שבאשפה או שנמחקו אינם מועברים.
-import-plume-cancel = ביטול
-import-plume-import = ייבוא
 import-plume-source-required = יש לבחור קובץ פרויקט של Plume
 import-plume-source-missing = הקובץ הזה אינו קיים
 import-plume-source-not-file = הנתיב הזה אינו קובץ
-import-plume-location-required = יש לבחור תיקיית יעד
-import-plume-location-missing = התיקייה הזו אינה קיימת
-import-plume-location-not-folder = הנתיב הזה אינו תיקייה
-import-plume-location-readonly = אין הרשאת כתיבה לתיקייה הזו
-import-plume-name-required = יש להזין שם קובץ
-import-plume-name-exists = כבר קיים כאן קובץ בשם הזה. הייבוא יבקש אישור לפני שיחליף אותו
-import-plume-overwrite-title = להחליף את הקובץ הקיים?
-import-plume-overwrite-text = "{ $name }" כבר קיים. להחליף אותו בפרויקט המיובא?
 import-plume-manuscript-binder = כתב יד
 import-plume-story-bible-binder = תיק הסיפור
 import-plume-progress-title = מייבא פרויקט Plume…
-import-plume-cancel-import = ביטול
-import-plume-cancelled = הייבוא בוטל
 import-plume-done = { $imported ->
     [one] יובא פריט אחד.
    *[other] יובאו { $imported } פריטים.
@@ -921,40 +900,16 @@ import-plume-done = { $imported ->
     [one] { $skipped } פריט שהיה באשפה לא הועבר.
    *[other] { $skipped } פריטים שהיו באשפה לא הועברו.
 }
-import-plume-open-now = פתיחה עכשיו
-import-plume-warnings = { $count ->
-    [one] דבר אחד לא ניתן היה לייבא במדויק
-   *[other] { $count } דברים לא ניתן היה לייבא במדויק
-}
-import-plume-details = פרטים
-import-plume-warnings-title = אזהרות ייבוא
-import-plume-error-title = לא ניתן לייבא את הפרויקט
 import-plume-nested-too-deep = הפרויקט לא יובא: החלק "{ $part }" שלו מקונן ליותר מ־{ $limit } רמות. אף פרויקט Plume Creator לא מתקרב לזה, וקריאתו עלולה לגרום לקריסה של Skribisto. שום דבר לא נכתב.
 import-plume-declares-entities = הפרויקט לא יובא: החלק "{ $part }" שלו מצהיר על ישויות XML, דבר שאף פרויקט Plume Creator לא עושה. הרחבתן עלולה לדרוש יותר זיכרון ממה שיש במחשב ולגרום לקריסה של Skribisto. שום דבר לא נכתב.
-import-plume-error-details = פרטים
 
 import-manuskript-title = ייבוא פרויקט Manuskript
-import-manuskript-close = סגירה
 import-manuskript-source = פרויקט Manuskript
 import-manuskript-source-hint = יש לבחור את קובץ ‎.msk או את תיקיית הפרויקט (כל גרסה של Manuskript).
 import-manuskript-source-file = בחירת קובץ…
 import-manuskript-source-folder = בחירת תיקייה…
-import-manuskript-location = תיקיית היעד
-import-manuskript-name = שם הקובץ
-import-manuskript-name-placeholder = שם הפרויקט
-import-manuskript-will-create = ייווצר
-import-manuskript-cancel = ביטול
-import-manuskript-import = ייבוא
 import-manuskript-source-required = יש לבחור פרויקט Manuskript
 import-manuskript-source-missing = הקובץ או התיקייה האלה אינם קיימים
-import-manuskript-location-required = יש לבחור תיקיית יעד
-import-manuskript-location-missing = התיקייה הזו אינה קיימת
-import-manuskript-location-not-folder = הנתיב הזה אינו תיקייה
-import-manuskript-location-readonly = אין הרשאת כתיבה לתיקייה הזו
-import-manuskript-name-required = יש להזין שם קובץ
-import-manuskript-name-exists = כבר קיים כאן קובץ בשם הזה. הייבוא יבקש אישור לפני שיחליף אותו
-import-manuskript-overwrite-title = להחליף את הקובץ הקיים?
-import-manuskript-overwrite-text = "{ $name }" כבר קיים. להחליף אותו בפרויקט המיובא?
 import-manuskript-manuscript-binder = כתב יד
 import-manuskript-story-bible-binder = תיק הסיפור
 import-manuskript-characters-group = דמויות
@@ -966,8 +921,6 @@ import-manuskript-importance-minor = שולית
 import-manuskript-importance-secondary = משנית
 import-manuskript-importance-main = ראשית
 import-manuskript-progress-title = מייבא פרויקט Manuskript…
-import-manuskript-cancel-import = ביטול
-import-manuskript-cancelled = הייבוא בוטל
 import-manuskript-done = { $imported ->
     [one] יובא פריט אחד.
    *[other] יובאו { $imported } פריטים.
@@ -976,18 +929,9 @@ import-manuskript-done = { $imported ->
     [one] גרסה קודמת אחת הגיעה יחד איתם.
    *[other] { $revisions } גרסאות קודמות הגיעו יחד איתם.
 }
-import-manuskript-open-now = פתיחה עכשיו
-import-manuskript-warnings = { $count ->
-    [one] דבר אחד שכדאי לדעת על הייבוא הזה
-   *[other] { $count } דברים שכדאי לדעת על הייבוא הזה
-}
-import-manuskript-details = פרטים
-import-manuskript-warnings-title = על הייבוא הזה
-import-manuskript-error-title = לא ניתן לייבא את הפרויקט
 import-manuskript-nested-too-deep = הפרויקט לא יובא: הקובץ "{ $part }" שלו מקונן ליותר מ־{ $limit } רמות. אף פרויקט Manuskript לא מתקרב לזה, וקריאתו עלולה לגרום לקריסה של Skribisto. שום דבר לא נכתב.
 import-manuskript-folders-too-deep = הפרויקט לא יובא: אחד הקבצים שלו נמצא בעומק של יותר מ־{ $limit } תיקיות. אף פרויקט Manuskript לא מתקרב לזה, וקריאתו עלולה לגרום לקריסה של Skribisto. שום דבר לא נכתב.
 import-manuskript-declares-entities = הפרויקט לא יובא: הקובץ "{ $part }" שלו מצהיר על ישויות XML, דבר שאף פרויקט Manuskript לא עושה. הרחבתן עלולה לדרוש יותר זיכרון ממה שיש במחשב ולגרום לקריסה של Skribisto. שום דבר לא נכתב.
-import-manuskript-error-details = פרטים
 
 import-target-open-title = הפרויקט הזה פתוח
 import-target-open-text = "{ $name }" פתוח ב־Skribisto. ייבוא מעליו יחליף את הפרויקט שעליו אתם עובדים, והשמירה הבאה תכתוב את הפרויקט ההוא בחזרה מעל הייבוא. יש לבחור שם קובץ אחר, או לסגור את הפרויקט קודם.

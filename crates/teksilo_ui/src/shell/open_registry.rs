@@ -658,6 +658,21 @@ pub fn importing(path: &str) -> bool {
             .any(|entry| entry.importing && project_key(&entry.path) == key)
 }
 
+/// Whether an import other than one claim of this process's is writing `path`:
+/// another claim here, or one in another running copy of Skribisto.
+///
+/// What an import asks right after claiming its target. Two copies can each look
+/// for an import, find none, then both claim: looking again once claimed, as a
+/// load does ([`claim_for_load`]), means whichever looks second sees the other
+/// and backs out, rather than both writing the same staged file.
+pub fn importing_besides_one_claim(path: &str) -> bool {
+    let key = project_key(path);
+    IMPORTING.with(|importing| importing.borrow().get(&key).is_some_and(|n| *n > 1))
+        || scan().into_iter().any(|entry| {
+            entry.importing && entry.pid != my_pid() && project_key(&entry.path) == key
+        })
+}
+
 /// [`scan`], without the projects an import is writing: every project open in a
 /// window of some instance.
 pub fn scan_open() -> Vec<OpenEntry> {
@@ -713,6 +728,25 @@ pub fn scan() -> Vec<OpenEntry> {
 fn socket_pid(p: &Path) -> Option<u32> {
     let stem = p.file_stem()?.to_str()?;
     stem.strip_prefix("ipc-")?.parse().ok()
+}
+
+/// Write the lock file another running copy of Skribisto, `pid`, writes while its
+/// import holds `path`, and count `pid` as alive on this thread. For the tests of
+/// the doors outside this module that must see another copy's import.
+#[cfg(test)]
+pub(crate) fn pretend_another_copy_imports(pid: u32, path: &str) {
+    PID_OVERRIDE.with(|m| m.borrow_mut().insert(pid, true));
+    let spelled = canonical(path);
+    let lock = import_lock_path_for(pid, &spelled);
+    let entry = OpenEntry {
+        pid,
+        path: spelled,
+        title: String::new(),
+        importing: true,
+    };
+    if let (Some(lock), Ok(json)) = (lock, serde_json::to_string(&entry)) {
+        let _ = std::fs::write(lock, json);
+    }
 }
 
 /// [`pid_is_alive`], but test-overridable so tests can fake a foreign pid as

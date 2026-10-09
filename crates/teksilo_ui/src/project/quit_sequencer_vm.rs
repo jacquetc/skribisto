@@ -25,6 +25,16 @@
 //! 5. When the queue drains, close every window. teksilo exits once its window map
 //!    is empty (`maybe_exit`), so there is no separate "terminate" step.
 //!
+//! ## A project import still running
+//!
+//! Before any of that, a project import that is still running is asked about:
+//! the process exiting under it would kill the converter mid-write, leaving its
+//! half-written file beside the target. *Stop the import and quit* cancels it and
+//! waits for the import's own end (`ProjectImportJob::stop_then`), by which time
+//! the converter has removed what it wrote; only then are the Works walked.
+//! *Cancel* keeps both the import and every window. The job is Tier 1, so it is
+//! found through `app_state`, the one tier that slot is right for.
+//!
 //! ## Why the prompt names the project
 //!
 //! Each prompt says which project it is about rather than focusing that project's
@@ -62,6 +72,7 @@ use teksilo::widgets::{MessageBox, MessageBoxButton, MessageBoxButtons, Standard
 use crate::app::PendingExit;
 use crate::project::{UnsavedDecision, unsaved_decision};
 use crate::sessions::{WorkRegistry, WorkSession};
+use crate::shared::project_import::ProjectImportJob;
 
 /// What the sequencer does with one Work — the pure half, so the ordering and
 /// cancellation rules are unit-testable without a widget tree.
@@ -141,17 +152,58 @@ impl QuitSequencer {
         self.inner.active.get()
     }
 
-    /// Start quitting. No-op if one is already under way.
+    /// Start quitting. No-op if one is already under way. A project import still
+    /// running is asked about first (see the module doc).
+    pub fn begin(&self, ctx: &mut EventContext) {
+        if self.inner.active.get() {
+            return;
+        }
+        if let Some(job) = ctx.app_state::<ProjectImportJob>().cloned()
+            && job.is_running()
+        {
+            return self.ask_about_the_import(ctx, job);
+        }
+        self.walk(ctx);
+    }
+
+    /// A project import is still running: ask whether to stop it and quit. See
+    /// the module doc.
+    ///
+    /// The quit counts as under way while the question is up, so a second Ctrl+Q
+    /// (from another window) does not ask it twice; Cancel sets it back.
+    fn ask_about_the_import(&self, ctx: &mut EventContext, job: ProjectImportJob) {
+        self.inner.active.set(true);
+        let me = self.clone();
+        let name = job.running_target_name().unwrap_or_default();
+        MessageBox::question(tr!(quit_import_running_title()))
+            .text(tr!(quit_import_running_text(name = name)))
+            .buttons(MessageBoxButtons::Custom(vec![
+                MessageBoxButton::standard(StandardButton::Discard).label(tr!(quit_import_stop())),
+                MessageBoxButton::standard(StandardButton::Cancel),
+            ]))
+            .default_button(StandardButton::Cancel)
+            .escape_button(StandardButton::Cancel)
+            .on_result(move |r, c| match r.button {
+                StandardButton::Discard => {
+                    let me = me.clone();
+                    job.stop_then(c, move |c| me.walk(c));
+                }
+                // Cancel, the escape key and closing the dialog keep the import
+                // running and every window open.
+                _ => me.inner.active.set(false),
+            })
+            .present(ctx);
+    }
+
+    /// Account for every open Work, then close every window (see the module
+    /// doc): the quit itself, once nothing else stands in its way.
     ///
     /// The queue is sorted by `work_id` purely so the order is *deterministic* —
     /// `open_work_ids` reads a `HashMap`, and a quit that prompted for projects
     /// in a different order each time would be impossible to script or to test.
     /// Ascending `work_id` is open order in practice, which is also the least
     /// surprising order to be asked in.
-    pub fn begin(&self, ctx: &mut EventContext) {
-        if self.inner.active.get() {
-            return;
-        }
+    fn walk(&self, ctx: &mut EventContext) {
         let mut ids = self.inner.registry.open_work_ids();
         ids.sort_unstable();
         self.inner.active.set(true);
@@ -434,6 +486,7 @@ impl QuitSequencer {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use frontend::commands::long_operation_commands;
 
     #[test]
     fn a_clean_work_is_skipped() {
@@ -568,5 +621,165 @@ mod tests {
             q.on_long_op_failed(&event, ctx);
         });
         assert!(!q.is_active(), "and must not start one either");
+    }
+
+    /// A tree whose app state holds `job`, as the running app's does, and a Plume
+    /// import of a small project started on it, not yet heard to have ended.
+    fn importing(
+        dir: &std::path::Path,
+    ) -> (
+        teksilo::core::widget_tree::WidgetTree,
+        ProjectImportJob,
+        Rc<AppContext>,
+        String,
+    ) {
+        use std::any::{Any, TypeId};
+        use std::io::Write;
+
+        let source = dir.join("Lonely.plume");
+        let mut zip = zip::ZipWriter::new(std::fs::File::create(&source).unwrap());
+        zip.start_file("tree", zip::write::SimpleFileOptions::default())
+            .unwrap();
+        zip.write_all(
+            br#"<!DOCTYPE plume-tree><plume-tree version="0.5" projectName="Lonely">
+                <book number="1" name="Book"><scene number="2" name="Scene"/></book>
+              </plume-tree>"#,
+        )
+        .unwrap();
+        zip.finish().unwrap();
+
+        let app_ctx = Rc::new(AppContext::new());
+        let job = ProjectImportJob::new(app_ctx.clone());
+        let state: std::collections::HashMap<TypeId, Box<dyn Any>> = [(
+            TypeId::of::<ProjectImportJob>(),
+            Box::new(job.clone()) as Box<dyn Any>,
+        )]
+        .into();
+        let mut tree = crate::test_support::tree_with_app_state(&app_ctx, state);
+        let form = crate::import_plume::ImportPlumeViewModel::new(job.clone());
+        form.source().set(source.to_string_lossy().into_owned());
+        form.location().set(dir.to_string_lossy().into_owned());
+        form.name().set("novel".into());
+        crate::test_support::press(&mut tree, move |c| form.import(c));
+        let op = job.active_operation().expect("the import started");
+        (tree, job, app_ctx, op)
+    }
+
+    /// Click the button labelled `label` in the one question a press raised.
+    fn answer(tree: &mut teksilo::core::widget_tree::WidgetTree, title: &str, label: &str) {
+        use teksilo::core::ModalContent;
+        let request = tree
+            .drain_pending_modal_requests()
+            .pop()
+            .expect("a question is asked")
+            .request;
+        assert_eq!(request.title.as_deref(), Some(title));
+        let ModalContent::Deferred(builder) = request.content else {
+            panic!("a MessageBox presents deferred content");
+        };
+        builder(tree);
+        tree.layout(SizeProposal::exact(900.0, 600.0));
+        let button = tree.find_by_label(label).expect("the question offers it");
+        crate::test_support::click(tree, button);
+    }
+
+    /// Quitting while a project import runs asks first. Stopping it cancels the
+    /// import and waits for its end before any Work is accounted for or any
+    /// window closes, so the process never exits under a converter still writing.
+    #[test]
+    fn quitting_during_an_import_stops_it_first_and_waits_for_its_end() {
+        use frontend::common::event::{LongOperationEvent, Origin};
+        use frontend::common::long_operation::OperationStatus;
+        use std::time::Duration;
+
+        let _registry = crate::test_support::IsolatedOpenRegistry::new();
+        let dir = tempfile::tempdir().unwrap();
+        let (mut tree, job, app_ctx, op) = importing(dir.path());
+        let q = sequencer();
+
+        let quitting = q.clone();
+        crate::test_support::press(&mut tree, move |c| quitting.begin(c));
+        answer(
+            &mut tree,
+            &tr!(quit_import_running_title()).resolve_now(),
+            &tr!(quit_import_stop()).resolve_now(),
+        );
+        assert!(q.is_active(), "the quit is under way");
+        assert!(job.is_running(), "and waits for the import to end");
+
+        // The worker's own end, not `is_operation_finished`: that answers `true`
+        // the moment the cancel is requested, while the converter may still be
+        // writing, and the event built below stands for the one its worker sends.
+        let completion =
+            frontend::common::long_operation::lock_or_recover(&app_ctx.long_operation_manager)
+                .completion_signal();
+        assert!(
+            completion.wait_for(&op, Some(Duration::from_secs(60))),
+            "the import never ended"
+        );
+        let status = long_operation_commands::get_operation_status(&app_ctx, &op);
+        let ended = Event {
+            origin: Origin::LongOperation(match status {
+                Some(OperationStatus::Completed) => LongOperationEvent::Completed,
+                _ => LongOperationEvent::Cancelled,
+            }),
+            ids: Vec::new(),
+            data: Some(format!(r#"{{"id":"{op}"}}"#)),
+        };
+        let ending = job.clone();
+        crate::test_support::press(&mut tree, move |c| match ended.origin {
+            Origin::LongOperation(LongOperationEvent::Completed) => {
+                ending.on_long_op_completed(c, &ended)
+            }
+            _ => ending.on_long_op_cancelled(c, &ended),
+        });
+
+        assert!(!job.is_running());
+        assert!(
+            !q.is_active(),
+            "with the import ended and nothing open, the quit finished"
+        );
+        assert!(
+            !dir.path().join("novel.skrib.importing").exists(),
+            "no half-written file is left"
+        );
+    }
+
+    /// Cancel keeps the import running and every window open, and a later quit
+    /// asks again.
+    #[test]
+    fn cancelling_the_question_keeps_the_import_and_the_app() {
+        let _registry = crate::test_support::IsolatedOpenRegistry::new();
+        let dir = tempfile::tempdir().unwrap();
+        let (mut tree, job, app_ctx, op) = importing(dir.path());
+        let q = sequencer();
+
+        let quitting = q.clone();
+        crate::test_support::press(&mut tree, move |c| quitting.begin(c));
+        answer(
+            &mut tree,
+            &tr!(quit_import_running_title()).resolve_now(),
+            &StandardButton::Cancel.default_label().resolve_now(),
+        );
+        assert!(!q.is_active());
+        assert!(job.is_running(), "the import goes on");
+        assert_ne!(
+            long_operation_commands::get_operation_status(&app_ctx, &op),
+            Some(frontend::common::long_operation::OperationStatus::Cancelled),
+            "and was not cancelled"
+        );
+
+        let quitting = q.clone();
+        crate::test_support::press(&mut tree, move |c| quitting.begin(c));
+        assert_eq!(
+            crate::test_support::drain_dialog_titles(&mut tree),
+            vec![tr!(quit_import_running_title()).resolve_now()],
+            "a later quit asks again"
+        );
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(60);
+        while long_operation_commands::is_operation_finished(&app_ctx, &op) != Some(true) {
+            assert!(std::time::Instant::now() < deadline);
+            std::thread::sleep(std::time::Duration::from_millis(20));
+        }
     }
 }

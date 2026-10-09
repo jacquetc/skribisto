@@ -45,8 +45,10 @@ use std::fs;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
-use anyhow::{Context, Result, anyhow, bail};
+use anyhow::Result;
 use chrono::{DateTime, Utc};
+
+use crate::diagnostics::{Refusal, file_name, unreadable};
 
 use crate::version::{self, FormatVersion};
 use skrib_format::import_notice::{ImportNotice, ProjectContainer};
@@ -147,7 +149,7 @@ impl ManuskriptSource {
             return Ok(src);
         }
         if !p.exists() {
-            bail!("'{path}' does not exist");
+            return Err(anyhow::Error::new(Refusal::Missing { file: file_name(p) }));
         }
         if looks_like_a_zip(p)? {
             return Self::from_zip(p);
@@ -157,30 +159,30 @@ impl ManuskriptSource {
 
     /// A `.msk` that is not a zip is the one-byte stub naming the folder beside it.
     fn from_stub(stub: &Path) -> Result<Self> {
-        let raw = fs::read(stub).with_context(|| format!("reading '{}'", stub.display()))?;
+        let raw = fs::read(stub).map_err(|e| unreadable(stub, &e))?;
+        let not_a_project_file = || {
+            anyhow::Error::new(Refusal::NotAProjectFile {
+                file: file_name(stub),
+            })
+        };
         // The stub holds a bare number. Anything longer is not one, and saying so
         // is more useful than failing later on a missing folder.
         if raw.len() > 32 {
-            bail!(
-                "'{}' is neither a Manuskript archive nor a project file",
-                stub.display()
-            );
+            return Err(not_a_project_file());
         }
+        // A path with no stem or no folder around it (the root, `..`) cannot name
+        // the folder a stub points at.
         let stem = stub
             .file_stem()
             .and_then(|s| s.to_str())
-            .ok_or_else(|| anyhow!("'{}' has no file name", stub.display()))?;
-        let parent = stub
-            .parent()
-            .ok_or_else(|| anyhow!("'{}' has no parent directory", stub.display()))?;
+            .ok_or_else(not_a_project_file)?;
+        let parent = stub.parent().ok_or_else(not_a_project_file)?;
         let folder = parent.join(stem);
         if !folder.is_dir() {
-            bail!(
-                "'{}' is a pointer to the project folder beside it, and '{}' is missing. \
-                 A Manuskript project in folder mode is both, and they have to travel together.",
-                stub.display(),
-                folder.display()
-            );
+            return Err(anyhow::Error::new(Refusal::FolderMissing {
+                stub: file_name(stub),
+                folder: file_name(&folder),
+            }));
         }
         let stub_marker = String::from_utf8_lossy(&raw).trim().to_string();
         let mut src = Self::from_folder(&folder)?;
@@ -198,24 +200,33 @@ impl ManuskriptSource {
         let mut total: u64 = 0;
         read_dir_into(folder, &mut files, &mut notices, &mut newest, &mut total)?;
 
+        // The writer's own name for the project, kept even when the system cannot spell
+        // it as Unicode; no name at all leaves the title to the caller's word for one.
         let project_name = folder
             .file_name()
-            .and_then(|s| s.to_str())
-            .unwrap_or("Manuskript project")
-            .to_string();
+            .map(|s| s.to_string_lossy().into_owned())
+            .unwrap_or_default();
         Self::finish(Container::Folder, project_name, files, notices, newest)
     }
 
     fn from_zip(archive_path: &Path) -> Result<Self> {
-        let file = fs::File::open(archive_path)
-            .with_context(|| format!("opening '{}'", archive_path.display()))?;
+        let file = fs::File::open(archive_path).map_err(|e| unreadable(archive_path, &e))?;
+        // An archive that opens but cannot be read through is damaged, and says so
+        // by name. A size refusal from the guard stays what it is: the typed
+        // `ZipRefused` the interface words itself.
+        let damaged = |reason: String| {
+            anyhow::Error::new(Refusal::Damaged {
+                file: file_name(archive_path),
+                reason,
+            })
+        };
         // A `.msk` is a zip from an untrusted source, so it is read through the shared
         // guard: the entry count, every member's declared size, and every member's
         // real inflation are all bounded, and the ratio catches a bomb the size
         // ceilings alone would not. This replaces the hand-rolled member/total checks
         // that trusted each header's declared size and never weighed the ratio.
         let (mut archive, mut guard) = skrib_format::zip_guard::ZipGuard::open(LIMITS, file)
-            .with_context(|| format!("reading '{}' as an archive", archive_path.display()))?;
+            .map_err(|e| damaged(e.to_string()))?;
 
         let mut files = BTreeMap::new();
         let mut notices = Vec::new();
@@ -223,25 +234,28 @@ impl ManuskriptSource {
         for i in 0..archive.len() {
             let mut entry = archive
                 .by_index(i)
-                .with_context(|| format!("reading entry {i} of '{}'", archive_path.display()))?;
+                .map_err(|e| damaged(format!("entry {i}: {e}")))?;
             if !entry.is_file() {
                 continue;
             }
             let Some(name) = normalise_member(entry.name()) else {
                 continue;
             };
-            let buf = guard
-                .read(&mut entry)
-                .with_context(|| format!("reading '{name}' from '{}'", archive_path.display()))?;
+            let buf = guard.read(&mut entry).map_err(|e| {
+                if skrib_format::zip_guard::refused(&e).is_some() {
+                    e
+                } else {
+                    damaged(format!("{name}: {e:#}"))
+                }
+            })?;
             note_if_not_utf8(&name, &buf, &mut notices);
             files.insert(name, buf);
         }
 
         let project_name = archive_path
             .file_stem()
-            .and_then(|s| s.to_str())
-            .unwrap_or("Manuskript project")
-            .to_string();
+            .map(|s| s.to_string_lossy().into_owned())
+            .unwrap_or_default();
         let newest = modified_at(archive_path);
         Self::finish(Container::Zip, project_name, files, notices, newest)
     }
@@ -265,10 +279,7 @@ impl ManuskriptSource {
         let looks_like_v0 =
             files.contains_key("outline.xml") || files.contains_key("flatModel.xml");
         if !looks_like_v1 && !looks_like_v0 {
-            bail!(
-                "this does not look like a Manuskript project: no MANUSKRIPT marker, no \
-                 outline/ folder and no outline.xml"
-            );
+            return Err(anyhow::Error::new(Refusal::NotAProject));
         }
 
         if files.contains_key(PICKLE_MEMBER) {
@@ -312,7 +323,8 @@ impl ManuskriptSource {
         };
         if zip_at > folder_at {
             self.notices.push(ImportNotice::NewerSingleFileBeside {
-                sibling: sibling.display().to_string(),
+                // Its file name alone, never a path into the writer's home folder.
+                sibling: file_name(&sibling),
                 sibling_day: crate::writer_day(zip_at),
                 folder_day: crate::writer_day(folder_at),
             });
@@ -362,14 +374,14 @@ impl ManuskriptSource {
 /// signature — the same sniff `skrib_format::detect_shape` uses, and the same
 /// question Manuskript answers by trying to open it as an archive.
 fn looks_like_a_zip(path: &Path) -> Result<bool> {
-    let mut file = fs::File::open(path).with_context(|| format!("opening '{}'", path.display()))?;
+    let mut file = fs::File::open(path).map_err(|e| unreadable(path, &e))?;
     let mut magic = [0u8; 4];
     let mut read = 0usize;
     while read < magic.len() {
         match file.read(&mut magic[read..]) {
             Ok(0) => break,
             Ok(n) => read += n,
-            Err(e) => return Err(e).with_context(|| format!("reading '{}'", path.display())),
+            Err(e) => return Err(unreadable(path, &e)),
         }
     }
     if read < 4 {
@@ -440,10 +452,9 @@ fn read_dir_into(
     // path, and a folder lists its entries in no promised order anyway.
     let mut pending: Vec<(PathBuf, usize)> = vec![(root.to_path_buf(), 0)];
     while let Some((dir, depth)) = pending.pop() {
-        let entries = fs::read_dir(&dir).with_context(|| format!("reading '{}'", dir.display()))?;
+        let entries = fs::read_dir(&dir).map_err(|e| unreadable(&dir, &e))?;
         for entry in entries {
-            let entry =
-                entry.with_context(|| format!("reading an entry of '{}'", dir.display()))?;
+            let entry = entry.map_err(|e| unreadable(&dir, &e))?;
             let path = entry.path();
             let name = entry.file_name();
             let name = name.to_string_lossy();
@@ -469,7 +480,9 @@ fn read_dir_into(
                 continue;
             };
             if files.len() >= MAX_MEMBERS {
-                bail!("this project holds more than {MAX_MEMBERS} files");
+                return Err(anyhow::Error::new(Refusal::TooManyFiles {
+                    limit: MAX_MEMBERS as u64,
+                }));
             }
             // A file that cannot be read costs that file and nothing else. A
             // project folder is a directory on someone's disk: it collects broken
@@ -487,10 +500,9 @@ fn read_dir_into(
             };
             *total = total.saturating_add(bytes.len() as u64);
             if *total > MAX_TOTAL_BYTES {
-                bail!(
-                    "this project is larger than the {} MiB this importer will read",
-                    MAX_TOTAL_BYTES / (1 << 20)
-                );
+                return Err(anyhow::Error::new(Refusal::TooLarge {
+                    limit_mib: MAX_TOTAL_BYTES / (1 << 20),
+                }));
             }
             if let Some(at) = modified_at(&path)
                 && newest.map(|n| at > n).unwrap_or(true)
@@ -648,11 +660,16 @@ mod tests {
         fs::write(&stub, "1").expect("stub");
         let err = match ManuskriptSource::open(&stub.to_string_lossy()) {
             Ok(_) => panic!("expected a refusal"),
-            Err(e) => e.to_string(),
+            Err(e) => e,
         };
-        assert!(err.contains("Gone.msk"), "{err}");
-        assert!(err.contains("Gone"), "{err}");
-        assert!(err.contains("travel together"), "{err}");
+        assert_eq!(
+            err.downcast_ref::<Refusal>(),
+            Some(&Refusal::FolderMissing {
+                stub: "Gone.msk".to_string(),
+                folder: "Gone".to_string(),
+            }),
+            "{err:#}"
+        );
     }
 
     #[test]

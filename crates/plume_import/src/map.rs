@@ -73,7 +73,7 @@ pub fn build_bundle(
             .iter()
             .map(|g| 1 + g.objs.len() as u64)
             .sum::<u64>();
-    let mut b = Builder::new(source, total, report, cancel);
+    let mut b = Builder::new(source, seeded, total, report, cancel);
 
     let manuscript_bid = b.ids.take();
     let story_bid = b.ids.take();
@@ -281,6 +281,8 @@ const TAG_PALETTE: [&str; 10] = [
 struct Builder<'a> {
     ids: IdGen,
     source: &'a PlumeSource,
+    /// The words the import writes that Plume never stores, in the writer's language.
+    seeded: &'a crate::SeededNames,
     now: String,
     /// Plume attendance obj `number` → the story-bible note item's file id.
     attend_id_map: HashMap<u32, u64>,
@@ -317,6 +319,7 @@ struct Builder<'a> {
 impl<'a> Builder<'a> {
     fn new(
         source: &'a PlumeSource,
+        seeded: &'a crate::SeededNames,
         total: u64,
         report: &'a dyn Fn(f32, &str),
         cancel: &'a AtomicBool,
@@ -324,6 +327,7 @@ impl<'a> Builder<'a> {
         Self {
             ids: IdGen::new(),
             source,
+            seeded,
             now: chrono::Utc::now().to_rfc3339(),
             attend_id_map: HashMap::new(),
             tags: Vec::new(),
@@ -669,7 +673,7 @@ impl<'a> Builder<'a> {
                 bname,
                 Role::Item,
                 SubRole::Scene,
-                &content_title(&node.name),
+                &self.seeded.content_title(&node.name),
                 indent + 1,
                 true,
                 vec![
@@ -689,7 +693,7 @@ impl<'a> Builder<'a> {
                 bname,
                 Role::Item,
                 SubRole::Note,
-                &notes_title(&node.name),
+                &self.seeded.notes_title(&node.name),
                 indent + 1,
                 false,
                 vec![
@@ -844,7 +848,7 @@ impl<'a> Builder<'a> {
             bname,
             Role::Item,
             SubRole::Note,
-            &notes_title(&node.name),
+            &self.seeded.notes_title(&node.name),
             indent,
             false,
             vec![
@@ -1134,22 +1138,6 @@ fn badges_look_like_a_vocabulary(counts: &HashMap<String, usize>) -> bool {
     }
     let total: usize = counts.values().sum();
     counts.len() * 2 <= total
-}
-
-fn content_title(name: &str) -> String {
-    if name.trim().is_empty() {
-        "(content)".to_string()
-    } else {
-        format!("{name} (content)")
-    }
-}
-
-fn notes_title(name: &str) -> String {
-    if name.trim().is_empty() {
-        "(notes)".to_string()
-    } else {
-        format!("{name} (notes)")
-    }
 }
 
 /// Count the meaningful (non-separator) nodes in a subtree — used for the

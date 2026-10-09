@@ -358,9 +358,15 @@ fn an_existing_target_is_refused_unless_overwrite_was_asked_for() {
         &|_, _| {},
         &AtomicBool::new(false),
     );
-    assert!(
-        refused.is_err(),
-        "an existing target is not overwritten silently"
+    let refused = match refused {
+        Ok(_) => panic!("an existing target is not overwritten silently"),
+        Err(e) => e,
+    };
+    assert_eq!(
+        refused.downcast_ref::<skrib_format::importing::OutputRefused>(),
+        Some(&skrib_format::importing::OutputRefused::TargetExists {
+            file: "taken.skrib".to_string()
+        })
     );
     assert_eq!(std::fs::read(&out).ok(), Some(b"ORIGINAL".to_vec()));
 
@@ -405,6 +411,48 @@ fn cancelling_leaves_the_target_and_the_directory_untouched() {
         .map(|e| e.file_name().to_string_lossy().into_owned())
         .collect();
     assert_eq!(leftovers, ["taken.skrib"], "no temp file was left behind");
+}
+
+/// A cancel that arrives while the new project is being written is honoured
+/// after the write: the whole staged file is removed rather than moved into
+/// place, and a target being replaced is left as it was.
+#[test]
+fn a_cancel_during_the_write_leaves_nothing_behind() {
+    use skrib_format::importing::ImportCancelled;
+    use std::sync::atomic::Ordering;
+
+    let dir = tempfile::tempdir().expect("tempdir");
+    let out = dir.path().join("taken.skrib");
+    std::fs::write(&out, b"ORIGINAL").expect("seed");
+    let cancel = AtomicBool::new(false);
+
+    let cancelled = import_with_progress(
+        &fixture("tour-du-monde").to_string_lossy(),
+        &out.to_string_lossy(),
+        true,
+        &names(),
+        &|_, phase| {
+            if phase == "import.writing" {
+                cancel.store(true, Ordering::Relaxed);
+            }
+        },
+        &cancel,
+    );
+    let cancelled = match cancelled {
+        Ok(_) => panic!("a cancel before the move must stop the import"),
+        Err(e) => e,
+    };
+    assert!(
+        cancelled.downcast_ref::<ImportCancelled>().is_some(),
+        "{cancelled:#}"
+    );
+    assert_eq!(std::fs::read(&out).ok(), Some(b"ORIGINAL".to_vec()));
+    let leftovers: Vec<_> = std::fs::read_dir(dir.path())
+        .expect("read dir")
+        .flatten()
+        .map(|e| e.file_name().to_string_lossy().into_owned())
+        .collect();
+    assert_eq!(leftovers, ["taken.skrib"], "no staged file was left behind");
 }
 
 /// Reading is all this does. The fixture is committed, so a test that wrote to it

@@ -857,10 +857,6 @@ new-work-target-open-title = Dit project is geopend
 new-work-target-open-text = “{ $name }” is geopend in Skribisto. Een nieuw project op die plaats aanmaken zou het project waaraan u werkt vervangen, en bij de volgende opslag zou dat project weer over het nieuwe heen worden geschreven. Kies een andere naam of map, of sluit eerst het project.
 target-importing-title = Een import schrijft dit project
 target-importing-text = Een import is nog bezig “{ $name }” te schrijven. Wacht tot die klaar is, of kies een andere naam.
-import-plume-busy-title = Er wordt al een ander Plume Creator-project geïmporteerd
-import-plume-busy-text = Plume Creator-projecten worden een voor een geïmporteerd. Wacht tot de lopende import klaar is, of annuleer die, en start deze daarna opnieuw.
-import-manuskript-busy-title = Er wordt al een ander Manuskript-project geïmporteerd
-import-manuskript-busy-text = Manuskript-projecten worden een voor een geïmporteerd. Wacht tot de lopende import klaar is, of annuleer die, en start deze daarna opnieuw.
 backup-restore-importing-text = Een import is nog bezig “{ $name }” te schrijven, het project waarover deze reservekopie zou worden hersteld. Herstel de reservekopie zodra de import klaar is.
 
 new-work-manuscript = Manuscript
@@ -884,32 +880,15 @@ new-work-characters = Personages
 new-work-places = Plaatsen
 
 import-plume-title = Plume Creator-project importeren
-import-plume-close = Sluiten
 import-plume-source = Plume-project
 import-plume-source-hint = Kies een .plume- of .plume_backup-bestand (elke versie van Plume Creator).
-import-plume-location = Doelmap
-import-plume-name = Bestandsnaam
-import-plume-name-placeholder = Projectnaam
-import-plume-will-create = Wordt aangemaakt
 import-plume-trash-warning = ⚠ Items in de prullenbak of verwijderde items worden niet overgenomen.
-import-plume-cancel = Annuleren
-import-plume-import = Importeren
 import-plume-source-required = Kies een Plume-projectbestand
 import-plume-source-missing = Dit bestand bestaat niet
 import-plume-source-not-file = Dit pad is geen bestand
-import-plume-location-required = Kies een doelmap
-import-plume-location-missing = Deze map bestaat niet
-import-plume-location-not-folder = Dit pad is geen map
-import-plume-location-readonly = In deze map kan niet worden geschreven
-import-plume-name-required = Voer een bestandsnaam in
-import-plume-name-exists = Hier bestaat al een bestand met deze naam. Bij het importeren wordt gevraagd of het mag worden overschreven
-import-plume-overwrite-title = Bestaand bestand vervangen?
-import-plume-overwrite-text = “{ $name }” bestaat al. Vervangen door het geïmporteerde project?
 import-plume-manuscript-binder = Manuscript
 import-plume-story-bible-binder = Verhaalbijbel
 import-plume-progress-title = Plume-project wordt geïmporteerd…
-import-plume-cancel-import = Annuleren
-import-plume-cancelled = Importeren geannuleerd
 import-plume-done = { $imported ->
         [one] { $imported } item geïmporteerd.
        *[other] { $imported } items geïmporteerd.
@@ -917,40 +896,16 @@ import-plume-done = { $imported ->
         [one] { $skipped } item uit de prullenbak is niet overgenomen.
        *[other] { $skipped } items uit de prullenbak zijn niet overgenomen.
     }
-import-plume-open-now = Nu openen
-import-plume-warnings = { $count ->
-        [one] 1 onderdeel kon niet exact worden geïmporteerd
-       *[other] { $count } onderdelen konden niet exact worden geïmporteerd
-    }
-import-plume-details = Details
-import-plume-warnings-title = Importwaarschuwingen
-import-plume-error-title = Kan het project niet importeren
 import-plume-nested-too-deep = Het project is niet geïmporteerd: het onderdeel “{ $part }” is meer dan { $limit } niveaus diep genest. Geen enkel Plume Creator-project komt daar in de buurt, en het inlezen zou Skribisto kunnen laten vastlopen. Er is niets geschreven.
 import-plume-declares-entities = Het project is niet geïmporteerd: het onderdeel “{ $part }” declareert XML-entiteiten, wat geen enkel Plume Creator-project doet. Het uitvouwen ervan zou meer geheugen kunnen vragen dan de computer heeft en Skribisto laten vastlopen. Er is niets geschreven.
-import-plume-error-details = Details
 
 import-manuskript-title = Manuskript-project importeren
-import-manuskript-close = Sluiten
 import-manuskript-source = Manuskript-project
 import-manuskript-source-hint = Kies het .msk-bestand of de projectmap (elke versie van Manuskript).
 import-manuskript-source-file = Bestand kiezen…
 import-manuskript-source-folder = Map kiezen…
-import-manuskript-location = Doelmap
-import-manuskript-name = Bestandsnaam
-import-manuskript-name-placeholder = Projectnaam
-import-manuskript-will-create = Wordt aangemaakt
-import-manuskript-cancel = Annuleren
-import-manuskript-import = Importeren
 import-manuskript-source-required = Kies een Manuskript-project
 import-manuskript-source-missing = Dit bestand of map bestaat niet
-import-manuskript-location-required = Kies een doelmap
-import-manuskript-location-missing = Deze map bestaat niet
-import-manuskript-location-not-folder = Dit pad is geen map
-import-manuskript-location-readonly = In deze map kan niet worden geschreven
-import-manuskript-name-required = Voer een bestandsnaam in
-import-manuskript-name-exists = Hier bestaat al een bestand met deze naam. Bij het importeren wordt gevraagd of het mag worden overschreven
-import-manuskript-overwrite-title = Bestaand bestand vervangen?
-import-manuskript-overwrite-text = “{ $name }” bestaat al. Vervangen door het geïmporteerde project?
 import-manuskript-manuscript-binder = Manuscript
 import-manuskript-story-bible-binder = Verhaalbijbel
 import-manuskript-characters-group = Personages
@@ -962,8 +917,6 @@ import-manuskript-importance-minor = Bijfiguur
 import-manuskript-importance-secondary = Secundair
 import-manuskript-importance-main = Hoofdpersonage
 import-manuskript-progress-title = Manuskript-project wordt geïmporteerd…
-import-manuskript-cancel-import = Annuleren
-import-manuskript-cancelled = Importeren geannuleerd
 import-manuskript-done = { $imported ->
         [one] { $imported } item geïmporteerd.
        *[other] { $imported } items geïmporteerd.
@@ -972,18 +925,9 @@ import-manuskript-done = { $imported ->
         [one] { $revisions } eerdere versie is meegekomen.
        *[other] { $revisions } eerdere versies zijn meegekomen.
     }
-import-manuskript-open-now = Nu openen
-import-manuskript-warnings = { $count ->
-        [one] 1 punt om te weten over deze import
-       *[other] { $count } punten om te weten over deze import
-    }
-import-manuskript-details = Details
-import-manuskript-warnings-title = Over deze import
-import-manuskript-error-title = Kan het project niet importeren
 import-manuskript-nested-too-deep = Het project is niet geïmporteerd: het bestand “{ $part }” is meer dan { $limit } niveaus diep genest. Geen enkel Manuskript-project komt daar in de buurt, en het inlezen zou Skribisto kunnen laten vastlopen. Er is niets geschreven.
 import-manuskript-folders-too-deep = Het project is niet geïmporteerd: een van de bestanden staat meer dan { $limit } mappen diep. Geen enkel Manuskript-project komt daar in de buurt, en het inlezen zou Skribisto kunnen laten vastlopen. Er is niets geschreven.
 import-manuskript-declares-entities = Het project is niet geïmporteerd: het bestand “{ $part }” declareert XML-entiteiten, wat geen enkel Manuskript-project doet. Het uitvouwen ervan zou meer geheugen kunnen vragen dan de computer heeft en Skribisto laten vastlopen. Er is niets geschreven.
-import-manuskript-error-details = Details
 
 import-target-open-title = Dit project is geopend
 import-target-open-text = “{ $name }” is geopend in Skribisto. Eroverheen importeren zou het project waaraan u werkt vervangen, en bij de volgende opslag zou dat project weer over de import heen worden geschreven. Kies een andere bestandsnaam, of sluit eerst het project.

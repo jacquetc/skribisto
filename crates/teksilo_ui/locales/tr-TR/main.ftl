@@ -856,10 +856,6 @@ new-work-target-open-title = Bu proje açık
 new-work-target-open-text = “{ $name }” Skribisto'da açık. Onun yerine yeni bir proje oluşturmak üzerinde çalıştığınız projeyi değiştirir ve sonraki kaydetme o projeyi yenisinin üzerine geri yazar. Başka bir ad ya da klasör seçin veya önce projeyi kapatın.
 target-importing-title = Bu projeye bir içe aktarma yazıyor
 target-importing-text = Bir içe aktarma hâlâ “{ $name }” projesini yazıyor. Bitene kadar bekleyin ya da başka bir ad seçin.
-import-plume-busy-title = Başka bir Plume Creator projesi içe aktarılıyor
-import-plume-busy-text = Plume Creator projeleri birer birer içe aktarılır. Süren içe aktarmanın bitmesini bekleyin ya da onu iptal edin, sonra bunu yeniden başlatın.
-import-manuskript-busy-title = Başka bir Manuskript projesi içe aktarılıyor
-import-manuskript-busy-text = Manuskript projeleri birer birer içe aktarılır. Süren içe aktarmanın bitmesini bekleyin ya da onu iptal edin, sonra bunu yeniden başlatın.
 backup-restore-importing-text = Bir içe aktarma hâlâ, bu yedeğin üzerine geri yükleneceği “{ $name }” projesini yazıyor. Yedeği içe aktarma bittikten sonra geri yükleyin.
 
 new-work-manuscript = El yazması
@@ -883,32 +879,15 @@ new-work-characters = Kişiler
 new-work-places = Yerler
 
 import-plume-title = Plume Creator projesini içe aktar
-import-plume-close = Kapat
 import-plume-source = Plume projesi
 import-plume-source-hint = Bir .plume ya da .plume_backup dosyası seçin (herhangi bir Plume Creator sürümü).
-import-plume-location = Hedef klasör
-import-plume-name = Dosya adı
-import-plume-name-placeholder = Proje adı
-import-plume-will-create = Oluşturulacak
 import-plume-trash-warning = ⚠ Çöp kutusundaki / silinmiş öğeler aktarılmaz.
-import-plume-cancel = İptal
-import-plume-import = İçe aktar
 import-plume-source-required = Bir Plume proje dosyası seçin
 import-plume-source-missing = Bu dosya yok
 import-plume-source-not-file = Bu yol bir dosya değil
-import-plume-location-required = Bir hedef klasör seçin
-import-plume-location-missing = Bu klasör yok
-import-plume-location-not-folder = Bu yol bir klasör değil
-import-plume-location-readonly = Bu klasöre yazılamıyor
-import-plume-name-required = Bir dosya adı girin
-import-plume-name-exists = Burada bu adda bir dosya zaten var. İçe aktarma, üzerine yazmadan önce onay isteyecek
-import-plume-overwrite-title = Var olan dosya değiştirilsin mi?
-import-plume-overwrite-text = “{ $name }” zaten var. İçe aktarılan projeyle değiştirilsin mi?
 import-plume-manuscript-binder = El yazması
 import-plume-story-bible-binder = Hikâye rehberi
 import-plume-progress-title = Plume projesi içe aktarılıyor…
-import-plume-cancel-import = İptal
-import-plume-cancelled = İçe aktarma iptal edildi
 import-plume-done = { $imported ->
     [one] { $imported } öğe içe aktarıldı.
    *[other] { $imported } öğe içe aktarıldı.
@@ -916,40 +895,16 @@ import-plume-done = { $imported ->
     [one] Çöp kutusundaki { $skipped } öğe aktarılmadı.
    *[other] Çöp kutusundaki { $skipped } öğe aktarılmadı.
 }
-import-plume-open-now = Şimdi aç
-import-plume-warnings = { $count ->
-    [one] 1 şey birebir içe aktarılamadı
-   *[other] { $count } şey birebir içe aktarılamadı
-}
-import-plume-details = Ayrıntılar
-import-plume-warnings-title = İçe aktarma uyarıları
-import-plume-error-title = Proje içe aktarılamadı
 import-plume-nested-too-deep = Proje içe aktarılmadı: “{ $part }” bölümü { $limit } düzeyden daha derin iç içe geçmiş. Hiçbir Plume Creator projesi buna yaklaşmaz ve onu okumak Skribisto'yu çökertebilir. Hiçbir şey yazılmadı.
 import-plume-declares-entities = Proje içe aktarılmadı: “{ $part }” bölümü XML varlıkları tanımlıyor, oysa hiçbir Plume Creator projesi bunu yapmaz. Bunları açmak bilgisayarın belleğinden fazlasını gerektirip Skribisto'yu çökertebilir. Hiçbir şey yazılmadı.
-import-plume-error-details = Ayrıntılar
 
 import-manuskript-title = Manuskript projesini içe aktar
-import-manuskript-close = Kapat
 import-manuskript-source = Manuskript projesi
 import-manuskript-source-hint = .msk dosyasını ya da proje klasörünü seçin (herhangi bir Manuskript sürümü).
 import-manuskript-source-file = Dosya seç…
 import-manuskript-source-folder = Klasör seç…
-import-manuskript-location = Hedef klasör
-import-manuskript-name = Dosya adı
-import-manuskript-name-placeholder = Proje adı
-import-manuskript-will-create = Oluşturulacak
-import-manuskript-cancel = İptal
-import-manuskript-import = İçe aktar
 import-manuskript-source-required = Bir Manuskript projesi seçin
 import-manuskript-source-missing = Bu dosya ya da klasör yok
-import-manuskript-location-required = Bir hedef klasör seçin
-import-manuskript-location-missing = Bu klasör yok
-import-manuskript-location-not-folder = Bu yol bir klasör değil
-import-manuskript-location-readonly = Bu klasöre yazılamıyor
-import-manuskript-name-required = Bir dosya adı girin
-import-manuskript-name-exists = Burada bu adda bir dosya zaten var. İçe aktarma, üzerine yazmadan önce onay isteyecek
-import-manuskript-overwrite-title = Var olan dosya değiştirilsin mi?
-import-manuskript-overwrite-text = “{ $name }” zaten var. İçe aktarılan projeyle değiştirilsin mi?
 import-manuskript-manuscript-binder = El yazması
 import-manuskript-story-bible-binder = Hikâye rehberi
 import-manuskript-characters-group = Kişiler
@@ -961,8 +916,6 @@ import-manuskript-importance-minor = Küçük
 import-manuskript-importance-secondary = İkincil
 import-manuskript-importance-main = Ana
 import-manuskript-progress-title = Manuskript projesi içe aktarılıyor…
-import-manuskript-cancel-import = İptal
-import-manuskript-cancelled = İçe aktarma iptal edildi
 import-manuskript-done = { $imported ->
     [one] { $imported } öğe içe aktarıldı.
    *[other] { $imported } öğe içe aktarıldı.
@@ -971,18 +924,9 @@ import-manuskript-done = { $imported ->
     [one] Onunla birlikte { $revisions } eski sürüm de geldi.
    *[other] Onlarla birlikte { $revisions } eski sürüm de geldi.
 }
-import-manuskript-open-now = Şimdi aç
-import-manuskript-warnings = { $count ->
-    [one] Bu içe aktarma hakkında bilinmesi gereken 1 şey
-   *[other] Bu içe aktarma hakkında bilinmesi gereken { $count } şey
-}
-import-manuskript-details = Ayrıntılar
-import-manuskript-warnings-title = Bu içe aktarma hakkında
-import-manuskript-error-title = Proje içe aktarılamadı
 import-manuskript-nested-too-deep = Proje içe aktarılmadı: “{ $part }” dosyası { $limit } düzeyden daha derin iç içe geçmiş. Hiçbir Manuskript projesi buna yaklaşmaz ve onu okumak Skribisto'yu çökertebilir. Hiçbir şey yazılmadı.
 import-manuskript-folders-too-deep = Proje içe aktarılmadı: dosyalarından biri { $limit } klasörden daha derinde duruyor. Hiçbir Manuskript projesi buna yaklaşmaz ve onu okumak Skribisto'yu çökertebilir. Hiçbir şey yazılmadı.
 import-manuskript-declares-entities = Proje içe aktarılmadı: “{ $part }” dosyası XML varlıkları tanımlıyor, oysa hiçbir Manuskript projesi bunu yapmaz. Bunları açmak bilgisayarın belleğinden fazlasını gerektirip Skribisto'yu çökertebilir. Hiçbir şey yazılmadı.
-import-manuskript-error-details = Ayrıntılar
 
 import-target-open-title = Bu proje açık
 import-target-open-text = “{ $name }” Skribisto'da açık. Üzerine içe aktarmak üzerinde çalıştığınız projeyi değiştirir ve sonraki kaydetme o projeyi içe aktarılanın üzerine geri yazar. Başka bir dosya adı seçin ya da önce projeyi kapatın.

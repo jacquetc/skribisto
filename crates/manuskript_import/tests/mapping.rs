@@ -1009,6 +1009,47 @@ fn a_project_with_no_name_anywhere_still_gets_one() {
     );
 }
 
+/// The titles the import makes up are the caller's words, in the writer's language: a
+/// French interface gets a French note title and a French name for a project that has
+/// none, and nothing English.
+#[test]
+fn the_titles_the_import_makes_up_are_the_callers_words() {
+    let slot = skrib_format::importing::TITLE_SLOT;
+    let names = Names {
+        sections: map::SectionNames {
+            untitled_project: "Projet importé".into(),
+            notes_of: format!("Notes de « {slot} »"),
+            ..map::SectionNames::default()
+        },
+        ..names()
+    };
+    let mut row = scene("1", "Ouverture", "Des mots.");
+    row.notes = "Vérifier la date.".into();
+    let mapped = map::build_bundle(
+        &Project {
+            outline: vec![row],
+            ..Project::default()
+        },
+        &names,
+        &|_, _| {},
+        &AtomicBool::new(false),
+    );
+    assert_eq!(mapped.bundle.manifest.work.title, "Projet importé");
+    let note = find(&mapped, 0, "Notes de « Ouverture »");
+    assert_eq!(note.item.sub_role, SubRole::Note);
+    let titles: Vec<&str> = mapped.bundle.binders[0]
+        .items
+        .iter()
+        .map(|i| i.item.title.as_str())
+        .collect();
+    assert!(
+        !titles
+            .iter()
+            .any(|t| t.contains("(notes)") || t.contains("Imported")),
+        "{titles:?}"
+    );
+}
+
 /// An item's `status` is a 1-based index into the list **as stored**. A blank row
 /// (which a format-0 `status.xml` carries, since its table keeps Manuskript's own
 /// empty entries) must be skipped without consuming its number, or every rung

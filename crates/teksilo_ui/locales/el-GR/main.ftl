@@ -895,10 +895,6 @@ new-work-target-open-title = Αυτό το έργο είναι ανοιχτό
 new-work-target-open-text = Το «{ $name }» είναι ανοιχτό στο Skribisto. Αν δημιουργηθεί ένα νέο έργο στη θέση του, θα αντικατασταθεί το έργο στο οποίο δουλεύετε, και η επόμενη αποθήκευσή σας θα έγραφε εκείνο το έργο ξανά πάνω από το νέο. Επιλέξτε άλλο όνομα ή φάκελο, ή κλείστε πρώτα το έργο.
 target-importing-title = Μια εισαγωγή γράφει αυτό το έργο
 target-importing-text = Μια εισαγωγή γράφει ακόμη το «{ $name }». Περιμένετε να τελειώσει ή επιλέξτε άλλο όνομα.
-import-plume-busy-title = Εισάγεται ένα άλλο έργο Plume Creator
-import-plume-busy-text = Τα έργα Plume Creator εισάγονται ένα κάθε φορά. Περιμένετε να τελειώσει η τρέχουσα εισαγωγή ή ακυρώστε την και ξεκινήστε ξανά αυτή.
-import-manuskript-busy-title = Εισάγεται ένα άλλο έργο Manuskript
-import-manuskript-busy-text = Τα έργα Manuskript εισάγονται ένα κάθε φορά. Περιμένετε να τελειώσει η τρέχουσα εισαγωγή ή ακυρώστε την και ξεκινήστε ξανά αυτή.
 backup-restore-importing-text = Μια εισαγωγή γράφει ακόμη το «{ $name }», το έργο πάνω στο οποίο θα γινόταν η επαναφορά αυτού του αντιγράφου ασφαλείας. Κάντε την επαναφορά όταν τελειώσει η εισαγωγή.
 
 new-work-manuscript = Χειρόγραφο
@@ -922,36 +918,18 @@ new-work-characters = Πρόσωπα
 new-work-places = Τόποι
 
 import-plume-title = Εισαγωγή έργου Plume Creator
-import-plume-close = Κλείσιμο
 import-plume-source = Έργο Plume
 import-plume-source-hint = Επιλέξτε ένα αρχείο .plume ή .plume_backup (οποιαδήποτε έκδοση του Plume Creator).
-import-plume-location = Φάκελος προορισμού
-import-plume-name = Όνομα αρχείου
-import-plume-name-placeholder = Όνομα έργου
-import-plume-will-create = Θα δημιουργηθεί
 import-plume-trash-warning = ⚠ Τα στοιχεία στον κάδο ή διαγραμμένα δεν μεταφέρονται.
-import-plume-cancel = Ακύρωση
-import-plume-import = Εισαγωγή
 
 import-plume-source-required = Επιλέξτε ένα αρχείο έργου Plume
 import-plume-source-missing = Αυτό το αρχείο δεν υπάρχει
 import-plume-source-not-file = Αυτή η διαδρομή δεν είναι αρχείο
-import-plume-location-required = Επιλέξτε φάκελο προορισμού
-import-plume-location-missing = Αυτός ο φάκελος δεν υπάρχει
-import-plume-location-not-folder = Αυτή η διαδρομή δεν είναι φάκελος
-import-plume-location-readonly = Αυτός ο φάκελος δεν είναι εγγράψιμος
-import-plume-name-required = Δώστε ένα όνομα αρχείου
-import-plume-name-exists = Υπάρχει ήδη ένα αρχείο με αυτό το όνομα εδώ. Η εισαγωγή θα ζητήσει επιβεβαίωση για την αντικατάσταση
-
-import-plume-overwrite-title = Αντικατάσταση του υπάρχοντος αρχείου;
-import-plume-overwrite-text = Το «{ $name }» υπάρχει ήδη. Αντικατάσταση με το εισαγόμενο έργο;
 
 import-plume-manuscript-binder = Χειρόγραφο
 import-plume-story-bible-binder = Βίβλος ιστορίας
 
 import-plume-progress-title = Εισαγωγή έργου Plume…
-import-plume-cancel-import = Ακύρωση
-import-plume-cancelled = Η εισαγωγή ακυρώθηκε
 
 import-plume-done = Εισήχθησαν { $imported ->
     [one] { $imported } στοιχείο.
@@ -960,47 +938,20 @@ import-plume-done = Εισήχθησαν { $imported ->
     [one] { $skipped } στοιχείο του κάδου δεν μεταφέρθηκε.
    *[other] { $skipped } στοιχεία του κάδου δεν μεταφέρθηκαν.
 }
-import-plume-open-now = Άνοιγμα τώρα
-
-import-plume-warnings = { $count ->
-    [one] 1 στοιχείο δεν ήταν δυνατό να εισαχθεί ακριβώς
-   *[other] { $count } στοιχεία δεν ήταν δυνατό να εισαχθούν ακριβώς
-}
-import-plume-details = Λεπτομέρειες
-import-plume-warnings-title = Προειδοποιήσεις εισαγωγής
-
-import-plume-error-title = Αδυναμία εισαγωγής του έργου
 
 import-plume-nested-too-deep = Το έργο δεν εισήχθη: το τμήμα του «{ $part }» είναι ένθετο σε βάθος μεγαλύτερο από { $limit } επίπεδα. Κανένα έργο Plume Creator δεν πλησιάζει κάτι τέτοιο, και η ανάγνωσή του θα μπορούσε να προκαλέσει κατάρρευση του Skribisto. Δεν γράφτηκε τίποτα.
 
 import-plume-declares-entities = Το έργο δεν εισήχθη: το τμήμα του «{ $part }» δηλώνει οντότητες XML, κάτι που κανένα έργο Plume Creator δεν κάνει. Η ανάπτυξή τους θα μπορούσε να απαιτήσει περισσότερη μνήμη από όση διαθέτει ο υπολογιστής και να προκαλέσει κατάρρευση του Skribisto. Δεν γράφτηκε τίποτα.
-import-plume-error-details = Λεπτομέρειες
 
 import-manuskript-title = Εισαγωγή έργου Manuskript
-import-manuskript-close = Κλείσιμο
 import-manuskript-source = Έργο Manuskript
 
 import-manuskript-source-hint = Επιλέξτε το αρχείο .msk ή τον φάκελο του έργου (οποιαδήποτε έκδοση του Manuskript).
 import-manuskript-source-file = Επιλογή αρχείου…
 import-manuskript-source-folder = Επιλογή φακέλου…
-import-manuskript-location = Φάκελος προορισμού
-import-manuskript-name = Όνομα αρχείου
-import-manuskript-name-placeholder = Όνομα έργου
-import-manuskript-will-create = Θα δημιουργηθεί
-import-manuskript-cancel = Ακύρωση
-import-manuskript-import = Εισαγωγή
 
 import-manuskript-source-required = Επιλέξτε ένα έργο Manuskript
 import-manuskript-source-missing = Αυτό το αρχείο ή ο φάκελος δεν υπάρχει
-import-manuskript-location-required = Επιλέξτε φάκελο προορισμού
-import-manuskript-location-missing = Αυτός ο φάκελος δεν υπάρχει
-import-manuskript-location-not-folder = Αυτή η διαδρομή δεν είναι φάκελος
-import-manuskript-location-readonly = Αυτός ο φάκελος δεν είναι εγγράψιμος
-import-manuskript-name-required = Δώστε ένα όνομα αρχείου
-import-manuskript-name-exists = Υπάρχει ήδη ένα αρχείο με αυτό το όνομα εδώ. Η εισαγωγή θα ζητήσει επιβεβαίωση για την αντικατάσταση
-
-import-manuskript-overwrite-title = Αντικατάσταση του υπάρχοντος αρχείου;
-import-manuskript-overwrite-text = Το «{ $name }» υπάρχει ήδη. Αντικατάσταση με το εισαγόμενο έργο;
 
 import-manuskript-manuscript-binder = Χειρόγραφο
 import-manuskript-story-bible-binder = Βίβλος ιστορίας
@@ -1014,8 +965,6 @@ import-manuskript-importance-secondary = Δεύτερο πλάνο
 import-manuskript-importance-main = Κεντρικό
 
 import-manuskript-progress-title = Εισαγωγή έργου Manuskript…
-import-manuskript-cancel-import = Ακύρωση
-import-manuskript-cancelled = Η εισαγωγή ακυρώθηκε
 
 import-manuskript-done = { $imported ->
     [one] Εισήχθη { $imported } στοιχείο.
@@ -1025,23 +974,12 @@ import-manuskript-done = { $imported ->
     [one] Μαζί ήρθε { $revisions } προηγούμενη έκδοση.
    *[other] Μαζί ήρθαν { $revisions } προηγούμενες εκδόσεις.
 }
-import-manuskript-open-now = Άνοιγμα τώρα
-
-import-manuskript-warnings = { $count ->
-    [one] 1 σημείο που πρέπει να γνωρίζετε για αυτή την εισαγωγή
-   *[other] { $count } σημεία που πρέπει να γνωρίζετε για αυτή την εισαγωγή
-}
-import-manuskript-details = Λεπτομέρειες
-import-manuskript-warnings-title = Σχετικά με αυτή την εισαγωγή
-
-import-manuskript-error-title = Αδυναμία εισαγωγής του έργου
 
 import-manuskript-nested-too-deep = Το έργο δεν εισήχθη: το αρχείο του «{ $part }» είναι ένθετο σε βάθος μεγαλύτερο από { $limit } επίπεδα. Κανένα έργο Manuskript δεν πλησιάζει κάτι τέτοιο, και η ανάγνωσή του θα μπορούσε να προκαλέσει κατάρρευση του Skribisto. Δεν γράφτηκε τίποτα.
 
 import-manuskript-folders-too-deep = Το έργο δεν εισήχθη: ένα από τα αρχεία του βρίσκεται σε βάθος μεγαλύτερο από { $limit } φακέλους. Κανένα έργο Manuskript δεν πλησιάζει κάτι τέτοιο, και η ανάγνωσή του θα μπορούσε να προκαλέσει κατάρρευση του Skribisto. Δεν γράφτηκε τίποτα.
 
 import-manuskript-declares-entities = Το έργο δεν εισήχθη: το αρχείο του «{ $part }» δηλώνει οντότητες XML, κάτι που κανένα έργο Manuskript δεν κάνει. Η ανάπτυξή τους θα μπορούσε να απαιτήσει περισσότερη μνήμη από όση διαθέτει ο υπολογιστής και να προκαλέσει κατάρρευση του Skribisto. Δεν γράφτηκε τίποτα.
-import-manuskript-error-details = Λεπτομέρειες
 
 import-target-open-title = Αυτό το έργο είναι ανοιχτό
 import-target-open-text = Το «{ $name }» είναι ανοιχτό στο Skribisto. Μια εισαγωγή πάνω του θα αντικαθιστούσε το έργο στο οποίο δουλεύετε, και η επόμενη αποθήκευσή σας θα έγραφε εκείνο το έργο ξανά πάνω από την εισαγωγή. Επιλέξτε άλλο όνομα αρχείου ή κλείστε πρώτα το έργο.

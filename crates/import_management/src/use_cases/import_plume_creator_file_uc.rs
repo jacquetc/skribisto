@@ -77,8 +77,7 @@ impl LongOperation for ImportPlumeCreatorFileUseCase {
         // nothing is left on disk (see `plume::import_with_progress`).
         //
         // Spelled for the `Failed` event by `failure::for_long_operation`: the
-        // whole `{:#}` chain, or a typed refusal (nesting, entities) the UI words
-        // itself.
+        // typed refusal the UI words itself, with the whole `{:#}` chain behind it.
         let summary = plume::import_with_progress(
             &self.dto.source_path,
             &self.dto.output_path,

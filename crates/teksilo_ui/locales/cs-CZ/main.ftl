@@ -877,10 +877,6 @@ new-work-target-open-title = Tento projekt je otevřený
 new-work-target-open-text = „{ $name }“ je otevřen v aplikaci Skribisto. Vytvořením nového projektu na jeho místě byste nahradili projekt, na kterém pracujete, a jeho příští uložení by tento projekt zapsalo zpět přes nový. Zvolte jiný název nebo složku, nebo projekt nejprve zavřete.
 target-importing-title = Do tohoto projektu zapisuje import
 target-importing-text = Do „{ $name }“ ještě zapisuje import. Počkejte, až skončí, nebo zvolte jiný název.
-import-plume-busy-title = Právě se importuje jiný projekt Plume Creator
-import-plume-busy-text = Projekty Plume Creator se importují jeden po druhém. Počkejte, až probíhající import skončí, nebo jej zrušte, a potom tento import spusťte znovu.
-import-manuskript-busy-title = Právě se importuje jiný projekt Manuskript
-import-manuskript-busy-text = Projekty Manuskript se importují jeden po druhém. Počkejte, až probíhající import skončí, nebo jej zrušte, a potom tento import spusťte znovu.
 backup-restore-importing-text = Do „{ $name }“, projektu, přes který by se tato záloha obnovila, ještě zapisuje import. Zálohu obnovte, až import skončí.
 
 new-work-manuscript = Rukopis
@@ -904,32 +900,15 @@ new-work-characters = Postavy
 new-work-places = Místa
 
 import-plume-title = Importovat projekt Plume Creator
-import-plume-close = Zavřít
 import-plume-source = Projekt Plume
 import-plume-source-hint = Vyberte soubor .plume nebo .plume_backup (z libovolné verze Plume Creator).
-import-plume-location = Cílová složka
-import-plume-name = Název souboru
-import-plume-name-placeholder = Název projektu
-import-plume-will-create = Vytvoří se
 import-plume-trash-warning = ⚠ Položky v koši a smazané položky se nepřevádějí.
-import-plume-cancel = Zrušit
-import-plume-import = Importovat
 import-plume-source-required = Vyberte soubor projektu Plume
 import-plume-source-missing = Tento soubor neexistuje
 import-plume-source-not-file = Tato cesta není soubor
-import-plume-location-required = Vyberte cílovou složku
-import-plume-location-missing = Tato složka neexistuje
-import-plume-location-not-folder = Tato cesta není složka
-import-plume-location-readonly = Do této složky nelze zapisovat
-import-plume-name-required = Zadejte název souboru
-import-plume-name-exists = Soubor s tímto názvem zde už existuje. Import si přepsání nechá potvrdit
-import-plume-overwrite-title = Nahradit stávající soubor?
-import-plume-overwrite-text = „{ $name }“ už existuje. Nahradit jej importovaným projektem?
 import-plume-manuscript-binder = Rukopis
 import-plume-story-bible-binder = Bible příběhu
 import-plume-progress-title = Importování projektu Plume…
-import-plume-cancel-import = Zrušit
-import-plume-cancelled = Import byl zrušen
 import-plume-done = { $imported ->
     [one] Importována { $imported } položka.
     [few] Importovány { $imported } položky.
@@ -939,41 +918,16 @@ import-plume-done = { $imported ->
     [few] { $skipped } položky z koše nebyly převedeny.
    *[other] { $skipped } položek z koše nebylo převedeno.
 }
-import-plume-open-now = Otevřít hned
-import-plume-warnings = { $count ->
-    [one] 1 věc nebylo možné importovat přesně
-    [few] { $count } věci nebylo možné importovat přesně
-   *[other] { $count } věcí nebylo možné importovat přesně
-}
-import-plume-details = Podrobnosti
-import-plume-warnings-title = Upozornění k importu
-import-plume-error-title = Projekt nelze importovat
 import-plume-nested-too-deep = Projekt nebyl importován: jeho část „{ $part }“ je vnořená hlouběji než do { $limit } úrovní. Žádný projekt Plume Creator se tomu ani neblíží a jeho čtení by mohlo Skribisto shodit. Nic nebylo zapsáno.
 import-plume-declares-entities = Projekt nebyl importován: jeho část „{ $part }“ deklaruje entity XML, což žádný projekt Plume Creator nedělá. Jejich rozvinutí by mohlo zabrat víc paměti, než počítač má, a Skribisto shodit. Nic nebylo zapsáno.
-import-plume-error-details = Podrobnosti
 
 import-manuskript-title = Importovat projekt Manuskript
-import-manuskript-close = Zavřít
 import-manuskript-source = Projekt Manuskript
 import-manuskript-source-hint = Vyberte soubor .msk nebo složku projektu (z libovolné verze Manuskriptu).
 import-manuskript-source-file = Vybrat soubor…
 import-manuskript-source-folder = Vybrat složku…
-import-manuskript-location = Cílová složka
-import-manuskript-name = Název souboru
-import-manuskript-name-placeholder = Název projektu
-import-manuskript-will-create = Vytvoří se
-import-manuskript-cancel = Zrušit
-import-manuskript-import = Importovat
 import-manuskript-source-required = Vyberte projekt Manuskript
 import-manuskript-source-missing = Tento soubor nebo složka neexistuje
-import-manuskript-location-required = Vyberte cílovou složku
-import-manuskript-location-missing = Tato složka neexistuje
-import-manuskript-location-not-folder = Tato cesta není složka
-import-manuskript-location-readonly = Do této složky nelze zapisovat
-import-manuskript-name-required = Zadejte název souboru
-import-manuskript-name-exists = Soubor s tímto názvem zde už existuje. Import si přepsání nechá potvrdit
-import-manuskript-overwrite-title = Nahradit stávající soubor?
-import-manuskript-overwrite-text = „{ $name }“ už existuje. Nahradit jej importovaným projektem?
 import-manuskript-manuscript-binder = Rukopis
 import-manuskript-story-bible-binder = Bible příběhu
 import-manuskript-characters-group = Postavy
@@ -985,8 +939,6 @@ import-manuskript-importance-minor = Vedlejší
 import-manuskript-importance-secondary = Druhořadá
 import-manuskript-importance-main = Hlavní
 import-manuskript-progress-title = Importování projektu Manuskript…
-import-manuskript-cancel-import = Zrušit
-import-manuskript-cancelled = Import byl zrušen
 import-manuskript-done = { $imported ->
     [one] Importována { $imported } položka.
     [few] Importovány { $imported } položky.
@@ -997,19 +949,9 @@ import-manuskript-done = { $imported ->
     [few] Přenesly se i { $revisions } starší verze.
    *[other] Přeneslo se i { $revisions } starších verzí.
 }
-import-manuskript-open-now = Otevřít hned
-import-manuskript-warnings = { $count ->
-    [one] 1 věc, kterou byste o tomto importu měli vědět
-    [few] { $count } věci, které byste o tomto importu měli vědět
-   *[other] { $count } věcí, které byste o tomto importu měli vědět
-}
-import-manuskript-details = Podrobnosti
-import-manuskript-warnings-title = O tomto importu
-import-manuskript-error-title = Projekt nelze importovat
 import-manuskript-nested-too-deep = Projekt nebyl importován: jeho soubor „{ $part }“ je vnořený hlouběji než do { $limit } úrovní. Žádný projekt Manuskript se tomu ani neblíží a jeho čtení by mohlo Skribisto shodit. Nic nebylo zapsáno.
 import-manuskript-folders-too-deep = Projekt nebyl importován: jeden z jeho souborů leží hlouběji než { $limit } složek. Žádný projekt Manuskript se tomu ani neblíží a jeho čtení by mohlo Skribisto shodit. Nic nebylo zapsáno.
 import-manuskript-declares-entities = Projekt nebyl importován: jeho soubor „{ $part }“ deklaruje entity XML, což žádný projekt Manuskript nedělá. Jejich rozvinutí by mohlo zabrat víc paměti, než počítač má, a Skribisto shodit. Nic nebylo zapsáno.
-import-manuskript-error-details = Podrobnosti
 
 import-target-open-title = Tento projekt je otevřený
 import-target-open-text = „{ $name }“ je otevřen v aplikaci Skribisto. Import přes něj by nahradil projekt, na kterém pracujete, a jeho příští uložení by tento projekt zapsalo zpět přes import. Zvolte jiný název souboru, nebo projekt nejprve zavřete.

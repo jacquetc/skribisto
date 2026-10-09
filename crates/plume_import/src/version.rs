@@ -7,8 +7,10 @@
 //! mismatched), so validation is by **root element tag name + numeric `version`
 //! attribute** only — exactly what Plume itself checks (`Hub::loadTemp`).
 
-use anyhow::{Result, bail};
+use anyhow::Result;
 use skrib_format::xml_depth::{self, Dtd, XmlError};
+
+use crate::diagnostics::Refusal;
 
 /// Parse Plume XML. **Must** allow a DTD: every Plume member starts with a
 /// `<!DOCTYPE …>` declaration, which roxmltree rejects by default.
@@ -22,17 +24,23 @@ use skrib_format::xml_depth::{self, Dtd, XmlError};
 /// DOCTYPE, and a bare DOCTYPE is still read.
 pub fn parse_xml<'a>(part: &str, xml: &'a str) -> Result<roxmltree::Document<'a>> {
     xml_depth::parse(part, xml, Dtd::Allow).map_err(|e| match e {
-        XmlError::Malformed(e) => anyhow::anyhow!("parsing XML: {e}"),
+        XmlError::Malformed(e) => anyhow::Error::new(Refusal::Malformed {
+            part: part.to_string(),
+            reason: e.to_string(),
+        }),
         other => anyhow::Error::new(other),
     })
 }
 
 /// Ensure `root`'s tag name is one of `allowed`; otherwise this isn't a Plume
-/// `what` document at all.
-pub fn check_root(root: &roxmltree::Node, allowed: &[&str], what: &str) -> Result<()> {
+/// `part` document at all.
+pub fn check_root(root: &roxmltree::Node, allowed: &[&str], part: &str) -> Result<()> {
     let tag = root.tag_name().name();
     if !allowed.contains(&tag) {
-        bail!("<{tag}> is not a Plume Creator {what} document");
+        return Err(anyhow::Error::new(Refusal::WrongDocument {
+            part: part.to_string(),
+            tag: tag.to_string(),
+        }));
     }
     Ok(())
 }

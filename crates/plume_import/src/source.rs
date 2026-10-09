@@ -21,7 +21,9 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use anyhow::{Context, Result, anyhow, bail};
+use anyhow::Result;
+
+use crate::diagnostics::{Refusal, file_name, unreadable};
 
 /// All of a `.plume` project's text members, read into memory.
 pub struct PlumeSource {
@@ -83,20 +85,30 @@ impl PlumeSource {
     /// Open the project at `source_path` (a `.plume`/`.plume_backup` zip, or the
     /// loose `.plume` tree file of an old-system project).
     pub fn open(source_path: &str) -> Result<Self> {
-        let bytes = fs::read(source_path)
-            .with_context(|| format!("reading Plume project '{source_path}'"))?;
+        let path = Path::new(source_path);
+        let bytes = fs::read(path).map_err(|e| unreadable(path, &e))?;
 
         // Modern zip? (Plume's own zip-vs-loose discriminator.)
         match skrib_format::zip_guard::ZipGuard::open(LIMITS, std::io::Cursor::new(&bytes[..])) {
-            Ok((archive, guard)) => Self::from_zip(archive, guard),
-            Err(_) => Self::from_old_system(Path::new(source_path), &bytes),
+            Ok((archive, guard)) => Self::from_zip(path, archive, guard),
+            Err(_) => Self::from_old_system(path, &bytes),
         }
     }
 
     fn from_zip(
+        path: &Path,
         mut archive: zip::ZipArchive<std::io::Cursor<&[u8]>>,
         mut guard: skrib_format::zip_guard::ZipGuard,
     ) -> Result<Self> {
+        // An archive that opens but cannot be read through is damaged, and says so
+        // by name. A size refusal from the guard stays what it is: the typed
+        // `ZipRefused` the interface words itself.
+        let damaged = |reason: String| {
+            anyhow::Error::new(Refusal::Damaged {
+                file: file_name(path),
+                reason,
+            })
+        };
         // A `.plume` is a zip from an untrusted source, so every member inflates under
         // the shared guard — a bomb or an over-declared member refused before it fills
         // memory.
@@ -109,12 +121,18 @@ impl PlumeSource {
         let mut html = HashMap::new();
 
         for i in 0..archive.len() {
-            let mut file = archive.by_index(i)?;
+            let mut file = archive.by_index(i).map_err(|e| damaged(e.to_string()))?;
             if !file.is_file() {
                 continue;
             }
             let name = file.name().trim_start_matches('/').to_string();
-            let buf = guard.read(&mut file)?;
+            let buf = guard.read(&mut file).map_err(|e| {
+                if skrib_format::zip_guard::refused(&e).is_some() {
+                    e
+                } else {
+                    damaged(format!("{e:#}"))
+                }
+            })?;
             let text = String::from_utf8_lossy(&buf).into_owned();
             match name.as_str() {
                 "tree" => tree_xml = Some(text),
@@ -128,9 +146,7 @@ impl PlumeSource {
             }
         }
 
-        let tree_xml = tree_xml.ok_or_else(|| {
-            anyhow!("this file is a zip but has no `tree` member — not a Plume Creator project")
-        })?;
+        let tree_xml = tree_xml.ok_or_else(|| anyhow::Error::new(Refusal::NoOutline))?;
         Ok(Self {
             tree_xml,
             attendance_xml,
@@ -141,9 +157,9 @@ impl PlumeSource {
     }
 
     fn from_old_system(tree_file: &Path, tree_bytes: &[u8]) -> Result<Self> {
-        let dir = tree_file
-            .parent()
-            .ok_or_else(|| anyhow!("Plume project path has no parent directory"))?;
+        // A file that was just read always has a folder, if only the current one
+        // (`Path::parent` answers "" for a bare name); `None` is the root itself.
+        let dir = tree_file.parent().unwrap_or(Path::new("."));
         let tree_xml = String::from_utf8_lossy(tree_bytes).into_owned();
 
         // Locate the loose sibling metadata files by extension.
@@ -169,10 +185,8 @@ impl PlumeSource {
             if !subdir.is_dir() {
                 continue;
             }
-            for entry in
-                fs::read_dir(&subdir).with_context(|| format!("reading {}", subdir.display()))?
-            {
-                let path = entry?.path();
+            for entry in fs::read_dir(&subdir).map_err(|e| unreadable(&subdir, &e))? {
+                let path = entry.map_err(|e| unreadable(&subdir, &e))?.path();
                 if path.is_file()
                     && let Some(name) = path.file_name().and_then(|n| n.to_str())
                 {
@@ -182,7 +196,7 @@ impl PlumeSource {
         }
 
         if tree_xml.trim().is_empty() {
-            bail!("the Plume tree file is empty — not a Plume Creator project");
+            return Err(anyhow::Error::new(Refusal::EmptyOutline));
         }
         Ok(Self {
             tree_xml,
@@ -220,7 +234,7 @@ impl PlumeSource {
 }
 
 fn read_lossy(path: &Path) -> Result<String> {
-    let bytes = fs::read(path).with_context(|| format!("reading {}", path.display()))?;
+    let bytes = fs::read(path).map_err(|e| unreadable(path, &e))?;
     Ok(String::from_utf8_lossy(&bytes).into_owned())
 }
 

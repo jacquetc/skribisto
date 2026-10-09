@@ -43,6 +43,9 @@ pub(crate) struct DestinationMessages {
     /// A warning, not an error: the import proceeds after an overwrite
     /// confirmation.
     pub(crate) name_exists: fn() -> LocalizedString,
+    /// An error: a folder (a project kept as a folder, most likely) has the
+    /// name, and the one file an import writes cannot replace a folder.
+    pub(crate) name_is_folder: fn() -> LocalizedString,
 }
 
 /// Build the target `<dir>/<name>.skrib` (empty when the name is blank). A
@@ -75,6 +78,10 @@ pub(crate) fn build_target(dir: &str, name: &str) -> String {
 fn name_state(target: &str, messages: &DestinationMessages) -> ValidationState {
     if target.is_empty() {
         ValidationState::Error((messages.name_required)())
+    } else if Path::new(target).is_dir() {
+        // Offering to replace it would only end, once the whole project had been
+        // converted, in a rename no platform performs.
+        ValidationState::Error((messages.name_is_folder)())
     } else if Path::new(target).exists() {
         ValidationState::Warning((messages.name_exists)())
     } else {
@@ -205,20 +212,29 @@ pub(crate) struct TargetHold(Rc<RefCell<Option<open_registry::ImportClaim>>>);
 impl TargetHold {
     /// Hold `target` for an import about to start, in place of anything held before.
     pub(crate) fn hold(&self, target: &str) {
+        // The previous claim goes first: held alongside the new one on the same
+        // target, it would read as a second import writing it.
+        self.release();
         let claim = open_registry::claim_import(target);
         self.0.replace(Some(claim));
     }
 
-    /// Hold `target` for an import about to start, then look again for a window
-    /// holding it open, or opening it: when one does, let go, say why in the importers'
-    /// words, and return `false`.
+    /// Hold `target` for an import about to start, then look again for another
+    /// import writing it, or a window holding it open or opening it: when there is
+    /// one, let go, say why in the importers' words, and return `false`.
     ///
-    /// The look before (when Import was pressed) cannot see a load another copy of
-    /// Skribisto started since, and a load claims its project before it starts
-    /// (`open_registry::claim_for_load`). Claiming first and looking second, as that
-    /// load does the other way round, is what guarantees one of the two sees the other.
+    /// The look before (when Import was pressed) cannot see a load or an import
+    /// another copy of Skribisto started since, and both claim the project before
+    /// they start (`open_registry::claim_for_load`, and this). Claiming first and
+    /// looking second, as that load does the other way round, is what guarantees
+    /// one of the two sees the other.
     pub(crate) fn hold_unless_open(&self, ctx: &mut EventContext, target: &str) -> bool {
         self.hold(target);
+        if open_registry::importing_besides_one_claim(target) {
+            self.release();
+            present_refusal(ctx, target, &TARGET_IMPORTING);
+            return false;
+        }
         if open_project_at(ctx, target).is_none() {
             return true;
         }
@@ -403,6 +419,7 @@ mod tests {
         },
         name_required: || lit!("name required"),
         name_exists: || lit!("exists"),
+        name_is_folder: || lit!("a folder"),
     };
 
     #[test]
@@ -493,6 +510,22 @@ mod tests {
             .set(full.path().to_string_lossy().into_owned());
         assert!(matches!(verdict.get(), ValidationState::Warning(_)));
         assert!(dest.is_ready().get(), "a warning does not block the import");
+    }
+
+    /// A folder with the name (a project kept as a folder) is refused outright,
+    /// where a file with the name only warns that it will be replaced.
+    #[test]
+    fn a_folder_with_the_name_is_refused_not_offered_for_replacing() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::create_dir(dir.path().join("novel.skrib")).unwrap();
+        let dest = ImportDestination::new(&MESSAGES);
+        dest.location()
+            .set(dir.path().to_string_lossy().into_owned());
+        dest.name().set("novel".into());
+        assert!(
+            matches!(dest.name_validation().get(), ValidationState::Error(m) if m.resolve_now() == "a folder")
+        );
+        assert!(!dest.is_ready().get(), "Import stays off");
     }
 
     /// Reading the verdicts never touches the disk: a file created behind the

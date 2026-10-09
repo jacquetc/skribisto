@@ -857,10 +857,6 @@ new-work-target-open-title = Dette prosjektet er åpent
 new-work-target-open-text = «{ $name }» er åpent i Skribisto. Et nytt prosjekt på samme sted ville erstatte prosjektet du arbeider med, og neste lagring ville skrive det prosjektet tilbake over det nye. Velg et annet navn eller en annen mappe, eller lukk prosjektet først.
 target-importing-title = En import skriver dette prosjektet
 target-importing-text = En import skriver fortsatt «{ $name }». Vent til den er ferdig, eller velg et annet navn.
-import-plume-busy-title = Et annet Plume Creator-prosjekt importeres
-import-plume-busy-text = Plume Creator-prosjekter importeres ett om gangen. Vent til importen som pågår, er ferdig, eller avbryt den, og start deretter denne på nytt.
-import-manuskript-busy-title = Et annet Manuskript-prosjekt importeres
-import-manuskript-busy-text = Manuskript-prosjekter importeres ett om gangen. Vent til importen som pågår, er ferdig, eller avbryt den, og start deretter denne på nytt.
 backup-restore-importing-text = En import skriver fortsatt «{ $name }», prosjektet denne sikkerhetskopien ville bli gjenopprettet over. Gjenopprett sikkerhetskopien når importen er ferdig.
 
 new-work-manuscript = Manus
@@ -884,32 +880,15 @@ new-work-characters = Personer
 new-work-places = Steder
 
 import-plume-title = Importer Plume Creator-prosjekt
-import-plume-close = Lukk
 import-plume-source = Plume-prosjekt
 import-plume-source-hint = Velg en .plume- eller .plume_backup-fil (alle versjoner av Plume Creator).
-import-plume-location = Målmappe
-import-plume-name = Filnavn
-import-plume-name-placeholder = Prosjektnavn
-import-plume-will-create = Vil opprette
 import-plume-trash-warning = ⚠ Elementer i papirkurven eller slettede elementer overføres ikke.
-import-plume-cancel = Avbryt
-import-plume-import = Importer
 import-plume-source-required = Velg en Plume-prosjektfil
 import-plume-source-missing = Denne filen finnes ikke
 import-plume-source-not-file = Denne banen er ikke en fil
-import-plume-location-required = Velg en målmappe
-import-plume-location-missing = Denne mappen finnes ikke
-import-plume-location-not-folder = Denne banen er ikke en mappe
-import-plume-location-readonly = Denne mappen er ikke skrivbar
-import-plume-name-required = Skriv inn et filnavn
-import-plume-name-exists = Det finnes allerede en fil med dette navnet her. Du blir bedt om å bekrefte overskriving ved import
-import-plume-overwrite-title = Vil du erstatte den eksisterende filen?
-import-plume-overwrite-text = «{ $name }» finnes allerede. Vil du erstatte den med det importerte prosjektet?
 import-plume-manuscript-binder = Manus
 import-plume-story-bible-binder = Historiebibel
 import-plume-progress-title = Importerer Plume-prosjekt…
-import-plume-cancel-import = Avbryt
-import-plume-cancelled = Importen ble avbrutt
 import-plume-done = Importerte { $imported ->
     [one] { $imported } element.
    *[other] { $imported } elementer.
@@ -917,40 +896,16 @@ import-plume-done = Importerte { $imported ->
     [one] { $skipped } element fra papirkurven ble ikke overført.
    *[other] { $skipped } elementer fra papirkurven ble ikke overført.
 }
-import-plume-open-now = Åpne nå
-import-plume-warnings = { $count ->
-    [one] 1 ting kunne ikke importeres nøyaktig
-   *[other] { $count } ting kunne ikke importeres nøyaktig
-}
-import-plume-details = Detaljer
-import-plume-warnings-title = Importadvarsler
-import-plume-error-title = Kunne ikke importere prosjektet
 import-plume-nested-too-deep = Prosjektet ble ikke importert: delen «{ $part }» er nestet mer enn { $limit } nivåer dypt. Ingen Plume Creator-prosjekter kommer i nærheten av det, og å lese det kunne få Skribisto til å krasje. Ingenting ble skrevet.
 import-plume-declares-entities = Prosjektet ble ikke importert: delen «{ $part }» deklarerer XML-entiteter, noe ingen Plume Creator-prosjekter gjør. Å utvide dem kunne kreve mer minne enn datamaskinen har, og få Skribisto til å krasje. Ingenting ble skrevet.
-import-plume-error-details = Detaljer
 
 import-manuskript-title = Importer Manuskript-prosjekt
-import-manuskript-close = Lukk
 import-manuskript-source = Manuskript-prosjekt
 import-manuskript-source-hint = Velg .msk-filen eller prosjektmappen (alle versjoner av Manuskript).
 import-manuskript-source-file = Velg fil…
 import-manuskript-source-folder = Velg mappe…
-import-manuskript-location = Målmappe
-import-manuskript-name = Filnavn
-import-manuskript-name-placeholder = Prosjektnavn
-import-manuskript-will-create = Vil opprette
-import-manuskript-cancel = Avbryt
-import-manuskript-import = Importer
 import-manuskript-source-required = Velg et Manuskript-prosjekt
 import-manuskript-source-missing = Denne filen eller mappen finnes ikke
-import-manuskript-location-required = Velg en målmappe
-import-manuskript-location-missing = Denne mappen finnes ikke
-import-manuskript-location-not-folder = Denne banen er ikke en mappe
-import-manuskript-location-readonly = Denne mappen er ikke skrivbar
-import-manuskript-name-required = Skriv inn et filnavn
-import-manuskript-name-exists = Det finnes allerede en fil med dette navnet her. Du blir bedt om å bekrefte overskriving ved import
-import-manuskript-overwrite-title = Vil du erstatte den eksisterende filen?
-import-manuskript-overwrite-text = «{ $name }» finnes allerede. Vil du erstatte den med det importerte prosjektet?
 import-manuskript-manuscript-binder = Manus
 import-manuskript-story-bible-binder = Historiebibel
 import-manuskript-characters-group = Personer
@@ -962,8 +917,6 @@ import-manuskript-importance-minor = Mindre viktig
 import-manuskript-importance-secondary = Sekundær
 import-manuskript-importance-main = Hoved
 import-manuskript-progress-title = Importerer Manuskript-prosjekt…
-import-manuskript-cancel-import = Avbryt
-import-manuskript-cancelled = Importen ble avbrutt
 import-manuskript-done = { $imported ->
     [one] { $imported } element importert.
    *[other] { $imported } elementer importert.
@@ -972,18 +925,9 @@ import-manuskript-done = { $imported ->
     [one] { $revisions } tidligere versjon fulgte med.
    *[other] { $revisions } tidligere versjoner fulgte med.
 }
-import-manuskript-open-now = Åpne nå
-import-manuskript-warnings = { $count ->
-    [one] 1 ting å vite om denne importen
-   *[other] { $count } ting å vite om denne importen
-}
-import-manuskript-details = Detaljer
-import-manuskript-warnings-title = Om denne importen
-import-manuskript-error-title = Kunne ikke importere prosjektet
 import-manuskript-nested-too-deep = Prosjektet ble ikke importert: filen «{ $part }» er nestet mer enn { $limit } nivåer dypt. Ingen Manuskript-prosjekter kommer i nærheten av det, og å lese den kunne få Skribisto til å krasje. Ingenting ble skrevet.
 import-manuskript-folders-too-deep = Prosjektet ble ikke importert: en av filene ligger mer enn { $limit } mapper dypt. Ingen Manuskript-prosjekter kommer i nærheten av det, og å lese den kunne få Skribisto til å krasje. Ingenting ble skrevet.
 import-manuskript-declares-entities = Prosjektet ble ikke importert: filen «{ $part }» deklarerer XML-entiteter, noe ingen Manuskript-prosjekter gjør. Å utvide dem kunne kreve mer minne enn datamaskinen har, og få Skribisto til å krasje. Ingenting ble skrevet.
-import-manuskript-error-details = Detaljer
 
 import-target-open-title = Dette prosjektet er åpent
 import-target-open-text = «{ $name }» er åpent i Skribisto. Å importere over det ville erstatte prosjektet du arbeider med, og neste lagring ville skrive det prosjektet tilbake over importen. Velg et annet filnavn, eller lukk prosjektet først.

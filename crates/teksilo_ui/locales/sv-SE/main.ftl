@@ -820,10 +820,6 @@ new-work-target-open-title = Projektet är öppet
 new-work-target-open-text = ”{ $name }” är öppet i Skribisto. Om ett nytt projekt skapas i dess ställe ersätts projektet du arbetar med, och nästa sparning skulle skriva tillbaka det projektet över det nya. Välj ett annat namn eller en annan mapp, eller stäng projektet först.
 target-importing-title = En import skriver det här projektet
 target-importing-text = En import skriver fortfarande ”{ $name }”. Vänta tills den är klar, eller välj ett annat namn.
-import-plume-busy-title = Ett annat Plume Creator-projekt importeras
-import-plume-busy-text = Plume Creator-projekt importeras ett i taget. Vänta tills den pågående importen är klar, eller avbryt den, och starta sedan den här igen.
-import-manuskript-busy-title = Ett annat Manuskript-projekt importeras
-import-manuskript-busy-text = Manuskript-projekt importeras ett i taget. Vänta tills den pågående importen är klar, eller avbryt den, och starta sedan den här igen.
 backup-restore-importing-text = En import skriver fortfarande ”{ $name }”, projektet som den här säkerhetskopian skulle återställas över. Återställ säkerhetskopian när importen är klar.
 new-work-manuscript = Manus
 new-work-notes = Anteckningar
@@ -845,32 +841,15 @@ new-work-note-templates-hint = Formen som en anteckning i berättelsebibeln bör
 new-work-characters = Personer
 new-work-places = Platser
 import-plume-title = Importera Plume Creator-projekt
-import-plume-close = Stäng
 import-plume-source = Plume-projekt
 import-plume-source-hint = Välj en .plume- eller .plume_backup-fil (valfri version av Plume Creator).
-import-plume-location = Målmapp
-import-plume-name = Filnamn
-import-plume-name-placeholder = Projektnamn
-import-plume-will-create = Skapar
 import-plume-trash-warning = ⚠ Objekt i papperskorgen och borttagna objekt överförs inte.
-import-plume-cancel = Avbryt
-import-plume-import = Importera
 import-plume-source-required = Välj en Plume-projektfil
 import-plume-source-missing = Filen finns inte
 import-plume-source-not-file = Sökvägen är inte en fil
-import-plume-location-required = Välj en målmapp
-import-plume-location-missing = Mappen finns inte
-import-plume-location-not-folder = Sökvägen är inte en mapp
-import-plume-location-readonly = Mappen är inte skrivbar
-import-plume-name-required = Ange ett filnamn
-import-plume-name-exists = Det finns redan en fil med det här namnet här. Importen frågar innan den skrivs över
-import-plume-overwrite-title = Ersätta den befintliga filen?
-import-plume-overwrite-text = ”{ $name }” finns redan. Vill du ersätta den med det importerade projektet?
 import-plume-manuscript-binder = Manus
 import-plume-story-bible-binder = Berättelsebibel
 import-plume-progress-title = Importerar Plume-projekt…
-import-plume-cancel-import = Avbryt
-import-plume-cancelled = Importen avbröts
 import-plume-done = { $imported ->
        [one] { $imported } objekt importerat.
       *[other] { $imported } objekt importerade.
@@ -878,39 +857,15 @@ import-plume-done = { $imported ->
        [one] { $skipped } objekt i papperskorgen överfördes inte.
       *[other] { $skipped } objekt i papperskorgen överfördes inte.
    }
-import-plume-open-now = Öppna nu
-import-plume-warnings = { $count ->
-       [one] 1 sak kunde inte importeras exakt
-      *[other] { $count } saker kunde inte importeras exakt
-   }
-import-plume-details = Detaljer
-import-plume-warnings-title = Importvarningar
-import-plume-error-title = Det gick inte att importera projektet
 import-plume-nested-too-deep = Projektet importerades inte: dess del ”{ $part }” är kapslad i mer än { $limit } nivåer. Inget Plume Creator-projekt kommer i närheten av det, och att läsa det kunde få Skribisto att krascha. Inget skrevs.
 import-plume-declares-entities = Projektet importerades inte: dess del ”{ $part }” deklarerar XML-entiteter, vilket inget Plume Creator-projekt gör. Att expandera dem kunde kräva mer minne än datorn har och få Skribisto att krascha. Inget skrevs.
-import-plume-error-details = Detaljer
 import-manuskript-title = Importera Manuskript-projekt
-import-manuskript-close = Stäng
 import-manuskript-source = Manuskript-projekt
 import-manuskript-source-hint = Välj .msk-filen eller projektmappen (valfri version av Manuskript).
 import-manuskript-source-file = Välj fil…
 import-manuskript-source-folder = Välj mapp…
-import-manuskript-location = Målmapp
-import-manuskript-name = Filnamn
-import-manuskript-name-placeholder = Projektnamn
-import-manuskript-will-create = Skapar
-import-manuskript-cancel = Avbryt
-import-manuskript-import = Importera
 import-manuskript-source-required = Välj ett Manuskript-projekt
 import-manuskript-source-missing = Filen eller mappen finns inte
-import-manuskript-location-required = Välj en målmapp
-import-manuskript-location-missing = Mappen finns inte
-import-manuskript-location-not-folder = Sökvägen är inte en mapp
-import-manuskript-location-readonly = Mappen är inte skrivbar
-import-manuskript-name-required = Ange ett filnamn
-import-manuskript-name-exists = Det finns redan en fil med det här namnet här. Importen frågar innan den skrivs över
-import-manuskript-overwrite-title = Ersätta den befintliga filen?
-import-manuskript-overwrite-text = ”{ $name }” finns redan. Vill du ersätta den med det importerade projektet?
 import-manuskript-manuscript-binder = Manus
 import-manuskript-story-bible-binder = Berättelsebibel
 import-manuskript-characters-group = Personer
@@ -922,8 +877,6 @@ import-manuskript-importance-minor = Mindre viktig
 import-manuskript-importance-secondary = Sekundär
 import-manuskript-importance-main = Huvudperson
 import-manuskript-progress-title = Importerar Manuskript-projekt…
-import-manuskript-cancel-import = Avbryt
-import-manuskript-cancelled = Importen avbröts
 import-manuskript-done = { $imported ->
        [one] { $imported } objekt importerat.
       *[other] { $imported } objekt importerade.
@@ -932,18 +885,9 @@ import-manuskript-done = { $imported ->
        [one] { $revisions } tidigare version följde med.
       *[other] { $revisions } tidigare versioner följde med.
    }
-import-manuskript-open-now = Öppna nu
-import-manuskript-warnings = { $count ->
-       [one] 1 sak att känna till om den här importen
-      *[other] { $count } saker att känna till om den här importen
-   }
-import-manuskript-details = Detaljer
-import-manuskript-warnings-title = Om den här importen
-import-manuskript-error-title = Det gick inte att importera projektet
 import-manuskript-nested-too-deep = Projektet importerades inte: dess fil ”{ $part }” är kapslad i mer än { $limit } nivåer. Inget Manuskript-projekt kommer i närheten av det, och att läsa det kunde få Skribisto att krascha. Inget skrevs.
 import-manuskript-folders-too-deep = Projektet importerades inte: en av dess filer ligger mer än { $limit } mappar ned. Inget Manuskript-projekt kommer i närheten av det, och att läsa det kunde få Skribisto att krascha. Inget skrevs.
 import-manuskript-declares-entities = Projektet importerades inte: dess fil ”{ $part }” deklarerar XML-entiteter, vilket inget Manuskript-projekt gör. Att expandera dem kunde kräva mer minne än datorn har och få Skribisto att krascha. Inget skrevs.
-import-manuskript-error-details = Detaljer
 import-target-open-title = Projektet är öppet
 import-target-open-text = ”{ $name }” är öppet i Skribisto. En import över det skulle ersätta projektet du arbetar med, och nästa sparning skulle skriva tillbaka det projektet över importen. Välj ett annat filnamn, eller stäng projektet först.
 import-warnings-announcement = { $result } { $notice }.

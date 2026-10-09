@@ -96,8 +96,8 @@ pub struct Names {
     pub sections: SectionNames,
 }
 
-/// The section headings an import writes into its notes, and the title a project
-/// with no name of its own is given.
+/// The section headings an import writes into its notes, the title a project with no
+/// name of its own is given, and the title of the note holding a row's own notes.
 ///
 /// Manuskript keeps a character's motivation, a plot's result, a world entry's
 /// passion in separate fields; Skribisto writes each as a headed section of one
@@ -140,13 +140,16 @@ pub struct SectionNames {
     pub full: String,
     /// The title of a project that names itself nowhere.
     pub untitled_project: String,
+    /// The title of a note holding a row's own notes, with
+    /// [`TITLE_SLOT`](skrib_format::importing::TITLE_SLOT) where the row's title goes.
+    pub notes_of: String,
 }
 
 impl SectionNames {
     /// The order the names travel in, as a list. Append, never reorder: a list
     /// built against an older order would put every heading after the change
     /// under the wrong section.
-    pub const ORDER: [&'static str; 23] = [
+    pub const ORDER: [&'static str; 24] = [
         "paragraph_summary",
         "full_summary",
         "motivation",
@@ -170,9 +173,10 @@ impl SectionNames {
         "page",
         "full",
         "untitled_project",
+        "notes_of",
     ];
 
-    fn slots(&mut self) -> [&mut String; 23] {
+    fn slots(&mut self) -> [&mut String; 24] {
         [
             &mut self.paragraph_summary,
             &mut self.full_summary,
@@ -197,6 +201,7 @@ impl SectionNames {
             &mut self.page,
             &mut self.full,
             &mut self.untitled_project,
+            &mut self.notes_of,
         ]
     }
 
@@ -240,6 +245,7 @@ impl Default for SectionNames {
             page: s("Page"),
             full: s("Full"),
             untitled_project: s("Imported Manuskript project"),
+            notes_of: format!("{} (notes)", skrib_format::importing::TITLE_SLOT),
         }
     }
 }
@@ -1141,7 +1147,7 @@ impl Builder<'_> {
         let title = first_non_empty([
             self.project.info.title.as_str(),
             self.project.source_name.as_str(),
-            "Imported Manuskript project",
+            self.names.sections.untitled_project.as_str(),
         ]);
         let subtitle = self.project.info.subtitle.trim().to_string();
         let book_summary = self.book_synopsis();
@@ -1454,7 +1460,7 @@ impl Builder<'_> {
         // line breaks spaces.
         let scanned = self.rewrite_prose(&row.notes, &row.title);
         let note = plain_text_to_djot_verbatim(&scanned.text);
-        let title = format!("{} (notes)", row.title);
+        let title = skrib_format::importing::fill_title(&self.names.sections.notes_of, &row.title);
         let (_, mut item) = self.make_item(
             MANUSCRIPT_INDEX,
             binder,

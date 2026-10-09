@@ -861,10 +861,6 @@ new-work-target-open-title = Цей проєкт відкрито
 new-work-target-open-text = «{ $name }» відкрито в Skribisto. Якщо створити на його місці новий проєкт, він замінить той, над яким ви працюєте, а наступне збереження запише той проєкт поверх нового. Виберіть іншу назву чи теку або спершу закрийте проєкт.
 target-importing-title = У цей проєкт зараз записує імпорт
 target-importing-text = Імпорт ще записує «{ $name }». Зачекайте, доки він завершиться, або виберіть іншу назву.
-import-plume-busy-title = Уже імпортується інший проєкт Plume Creator
-import-plume-busy-text = Проєкти Plume Creator імпортуються по одному. Зачекайте, доки поточний імпорт завершиться, або скасуйте його, а потім почніть цей знову.
-import-manuskript-busy-title = Уже імпортується інший проєкт Manuskript
-import-manuskript-busy-text = Проєкти Manuskript імпортуються по одному. Зачекайте, доки поточний імпорт завершиться, або скасуйте його, а потім почніть цей знову.
 backup-restore-importing-text = Імпорт ще записує «{ $name }», проєкт, поверх якого буде відновлено цю резервну копію. Відновіть резервну копію, коли імпорт завершиться.
 new-work-manuscript = Рукопис
 new-work-notes = Нотатки
@@ -886,32 +882,15 @@ new-work-note-templates-hint = Форма, з якої починається н
 new-work-characters = Персонажі
 new-work-places = Місця
 import-plume-title = Імпорт проєкту Plume Creator
-import-plume-close = Закрити
 import-plume-source = Проєкт Plume
 import-plume-source-hint = Виберіть файл .plume або .plume_backup (будь-якої версії Plume Creator).
-import-plume-location = Тека призначення
-import-plume-name = Назва файлу
-import-plume-name-placeholder = Назва проєкту
-import-plume-will-create = Буде створено
 import-plume-trash-warning = ⚠ Елементи з кошика та видалені елементи не переносяться.
-import-plume-cancel = Скасувати
-import-plume-import = Імпортувати
 import-plume-source-required = Виберіть файл проєкту Plume
 import-plume-source-missing = Цього файлу не існує
 import-plume-source-not-file = Цей шлях не є файлом
-import-plume-location-required = Виберіть теку призначення
-import-plume-location-missing = Цієї теки не існує
-import-plume-location-not-folder = Цей шлях не є текою
-import-plume-location-readonly = До цієї теки не можна записувати
-import-plume-name-required = Введіть назву файлу
-import-plume-name-exists = Файл із такою назвою тут уже існує. Перед перезаписом імпорт запитає підтвердження
-import-plume-overwrite-title = Замінити наявний файл?
-import-plume-overwrite-text = «{ $name }» уже існує. Замінити його імпортованим проєктом?
 import-plume-manuscript-binder = Рукопис
 import-plume-story-bible-binder = Довідник історії
 import-plume-progress-title = Імпорт проєкту Plume…
-import-plume-cancel-import = Скасувати
-import-plume-cancelled = Імпорт скасовано
 import-plume-done = Імпортовано { $imported ->
     [one] { $imported } елемент.
     [few] { $imported } елементи.
@@ -923,41 +902,15 @@ import-plume-done = Імпортовано { $imported ->
     [many] { $skipped } елементів із кошика не перенесено.
    *[other] { $skipped } елемента з кошика не перенесено.
 }
-import-plume-open-now = Відкрити зараз
-import-plume-warnings = { $count ->
-    [one] { $count } річ не вдалося імпортувати точно
-    [few] { $count } речі не вдалося імпортувати точно
-    [many] { $count } речей не вдалося імпортувати точно
-   *[other] { $count } речі не вдалося імпортувати точно
-}
-import-plume-details = Подробиці
-import-plume-warnings-title = Попередження імпорту
-import-plume-error-title = Не вдалося імпортувати проєкт
 import-plume-nested-too-deep = Проєкт не імпортовано: його частину «{ $part }» вкладено глибше ніж на { $limit } рівнів. Жоден проєкт Plume Creator не наближається до цього, а читання такого файлу могло б призвести до аварійного завершення Skribisto. Нічого не записано.
 import-plume-declares-entities = Проєкт не імпортовано: його частина «{ $part }» оголошує сутності XML, чого не робить жоден проєкт Plume Creator. Їх розгортання могло б зайняти більше пам’яті, ніж є в комп’ютері, і призвести до аварійного завершення Skribisto. Нічого не записано.
-import-plume-error-details = Подробиці
 import-manuskript-title = Імпорт проєкту Manuskript
-import-manuskript-close = Закрити
 import-manuskript-source = Проєкт Manuskript
 import-manuskript-source-hint = Виберіть файл .msk або теку проєкту (будь-якої версії Manuskript).
 import-manuskript-source-file = Вибрати файл…
 import-manuskript-source-folder = Вибрати теку…
-import-manuskript-location = Тека призначення
-import-manuskript-name = Назва файлу
-import-manuskript-name-placeholder = Назва проєкту
-import-manuskript-will-create = Буде створено
-import-manuskript-cancel = Скасувати
-import-manuskript-import = Імпортувати
 import-manuskript-source-required = Виберіть проєкт Manuskript
 import-manuskript-source-missing = Цього файлу чи теки не існує
-import-manuskript-location-required = Виберіть теку призначення
-import-manuskript-location-missing = Цієї теки не існує
-import-manuskript-location-not-folder = Цей шлях не є текою
-import-manuskript-location-readonly = До цієї теки не можна записувати
-import-manuskript-name-required = Введіть назву файлу
-import-manuskript-name-exists = Файл із такою назвою тут уже існує. Перед перезаписом імпорт запитає підтвердження
-import-manuskript-overwrite-title = Замінити наявний файл?
-import-manuskript-overwrite-text = «{ $name }» уже існує. Замінити його імпортованим проєктом?
 import-manuskript-manuscript-binder = Рукопис
 import-manuskript-story-bible-binder = Довідник історії
 import-manuskript-characters-group = Персонажі
@@ -969,8 +922,6 @@ import-manuskript-importance-minor = Незначна
 import-manuskript-importance-secondary = Другорядна
 import-manuskript-importance-main = Головна
 import-manuskript-progress-title = Імпорт проєкту Manuskript…
-import-manuskript-cancel-import = Скасувати
-import-manuskript-cancelled = Імпорт скасовано
 import-manuskript-done = { $imported ->
     [one] Імпортовано { $imported } елемент.
     [few] Імпортовано { $imported } елементи.
@@ -983,20 +934,9 @@ import-manuskript-done = { $imported ->
     [many] Разом із ними перенесено { $revisions } попередніх версій.
    *[other] Разом із ними перенесено { $revisions } попередньої версії.
 }
-import-manuskript-open-now = Відкрити зараз
-import-manuskript-warnings = { $count ->
-    [one] { $count } примітка щодо цього імпорту
-    [few] { $count } примітки щодо цього імпорту
-    [many] { $count } приміток щодо цього імпорту
-   *[other] { $count } примітки щодо цього імпорту
-}
-import-manuskript-details = Подробиці
-import-manuskript-warnings-title = Про цей імпорт
-import-manuskript-error-title = Не вдалося імпортувати проєкт
 import-manuskript-nested-too-deep = Проєкт не імпортовано: його файл «{ $part }» вкладено глибше ніж на { $limit } рівнів. Жоден проєкт Manuskript не наближається до цього, а читання такого файлу могло б призвести до аварійного завершення Skribisto. Нічого не записано.
 import-manuskript-folders-too-deep = Проєкт не імпортовано: один із його файлів лежить глибше ніж у { $limit } вкладених теках. Жоден проєкт Manuskript не наближається до цього, а читання такого файлу могло б призвести до аварійного завершення Skribisto. Нічого не записано.
 import-manuskript-declares-entities = Проєкт не імпортовано: його файл «{ $part }» оголошує сутності XML, чого не робить жоден проєкт Manuskript. Їх розгортання могло б зайняти більше пам’яті, ніж є в комп’ютері, і призвести до аварійного завершення Skribisto. Нічого не записано.
-import-manuskript-error-details = Подробиці
 import-target-open-title = Цей проєкт відкрито
 import-target-open-text = «{ $name }» відкрито в Skribisto. Імпорт поверх нього замінив би проєкт, над яким ви працюєте, а наступне збереження записало б той проєкт поверх імпортованого. Виберіть іншу назву файлу або спершу закрийте проєкт.
 import-warnings-announcement = { $result } { $notice }.

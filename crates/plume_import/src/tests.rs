@@ -372,6 +372,58 @@ fn terminal_project_full_structure() {
     assert!(words.contains(&"wibble") && words.contains(&"wobble"));
 }
 
+/// The titles the import makes up are the caller's words, in the writer's language: a
+/// French interface gets French titles for a container's own text and notes, a French name
+/// for a project that names none, and nothing English.
+#[test]
+fn the_titles_the_import_makes_up_are_the_callers_words() {
+    let slot = skrib_format::importing::TITLE_SLOT;
+    // A project naming itself nowhere, and an act (a part, which holds no text) with text
+    // of its own.
+    let info = r#"<!DOCTYPE plume-information><plume-information version="0.3"><prj name="" creationDate="2015-01-02T03:04:05" lastModified="2016-02-03T04:05:06"/></plume-information>"#;
+    let terminal = terminal_members();
+    let tree = terminal[1]
+        .1
+        .replacen(r#"projectName="Sample""#, r#"projectName="""#, 1);
+    let mut members: Vec<(&str, &str)> = vec![("info", info), ("tree", &tree)];
+    members.extend(terminal.iter().skip(2).copied());
+    members.push(("text/T2.html", "<p>Act prose.</p>"));
+    let dir = tempfile::tempdir().unwrap();
+    let src = dir.path().join("project.plume");
+    let out = dir.path().join("out.skrib");
+    write_zip(&src, &members);
+    let seeded = SeededNames {
+        untitled_project: "Projet importé".into(),
+        notes_of: format!("Notes de « {slot} »"),
+        content_of: format!("Texte de « {slot} »"),
+        ..SeededNames::default()
+    };
+    import_with_progress(
+        src.to_str().unwrap(),
+        out.to_str().unwrap(),
+        false,
+        "Manuscrit",
+        "Bible",
+        &[],
+        &seeded,
+        &|_, _| {},
+        &AtomicBool::new(false),
+    )
+    .unwrap();
+    let bundle = read_bundle(out.to_str().unwrap()).unwrap();
+    assert_eq!(bundle.manifest.work.title, "Projet importé");
+    let manuscript = &bundle.binders[0];
+    assert_eq!(manuscript.binder.name, "Manuscrit");
+    assert!(has(manuscript, "Notes de « Scene 1.1 »"));
+    assert!(has(manuscript, "Texte de « Act I »"));
+    let english = manuscript
+        .items
+        .iter()
+        .map(|i| i.item.title.as_str())
+        .find(|t| t.contains("(notes)") || t.contains("(content)") || t.contains("Imported"));
+    assert_eq!(english, None);
+}
+
 /// The importer builds its `ProjectManifest` as a hand-written literal, never through
 /// `from_entities` — exactly the kind of second construction site that gets forgotten
 /// when a new manifest field lands. It does not stamp the read floor itself, and must
@@ -560,16 +612,20 @@ fn rejects_non_plume_and_refuses_overwrite() {
     // A zip with no `tree` member is not a Plume project.
     write_zip(&src, &[("random", "<x/>")]);
     let out = dir.path().join("out.skrib");
-    assert!(
-        import(
-            src.to_str().unwrap(),
-            out.to_str().unwrap(),
-            false,
-            "M",
-            "S",
-            &ladder()
-        )
-        .is_err()
+    let refused = import(
+        src.to_str().unwrap(),
+        out.to_str().unwrap(),
+        false,
+        "M",
+        "S",
+        &ladder(),
+    )
+    .err()
+    .expect("a zip without an outline is refused");
+    assert_eq!(
+        refused.downcast_ref::<Refusal>(),
+        Some(&Refusal::NoOutline),
+        "{refused:#}"
     );
     assert!(!out.exists(), "no output must be written on failure");
 
@@ -578,17 +634,23 @@ fn rejects_non_plume_and_refuses_overwrite() {
     write_zip(&good, &terminal_members());
     let out2 = dir.path().join("exists.skrib");
     std::fs::write(&out2, "sentinel").unwrap();
-    assert!(
-        import(
-            good.to_str().unwrap(),
-            out2.to_str().unwrap(),
-            false,
-            "M",
-            "S",
-            &ladder()
-        )
-        .is_err()
+    let refused = import(
+        good.to_str().unwrap(),
+        out2.to_str().unwrap(),
+        false,
+        "M",
+        "S",
+        &ladder(),
+    )
+    .err()
+    .expect("an existing target is refused");
+    assert_eq!(
+        refused.downcast_ref::<skrib_format::importing::OutputRefused>(),
+        Some(&skrib_format::importing::OutputRefused::TargetExists {
+            file: "exists.skrib".to_string()
+        })
     );
+    assert_eq!(std::fs::read(&out2).unwrap(), b"sentinel");
     // ...but succeeds with overwrite=true.
     assert!(
         import(
@@ -600,5 +662,75 @@ fn rejects_non_plume_and_refuses_overwrite() {
             &ladder()
         )
         .is_ok()
+    );
+}
+
+/// However an import ends before its project is in place, nothing is left
+/// beside the target: here a folder with files in it sits where the project
+/// would go, which no final move can replace, so it is refused before anything
+/// is read or written. (The final move failing is `skrib_format::importing`'s to
+/// test: a folder appearing there while the import runs.)
+#[test]
+fn a_folder_at_the_target_leaves_no_partial_file() {
+    let dir = tempfile::tempdir().unwrap();
+    let src = dir.path().join("p.plume");
+    write_zip(&src, &terminal_members());
+    let out = dir.path().join("o.skrib");
+    std::fs::create_dir(&out).unwrap();
+    std::fs::write(out.join("keep"), b"x").unwrap();
+
+    let refused = import(
+        src.to_str().unwrap(),
+        out.to_str().unwrap(),
+        true,
+        "M",
+        "S",
+        &ladder(),
+    )
+    .err()
+    .expect("a folder at the target is refused");
+    assert!(
+        matches!(
+            refused.downcast_ref::<skrib_format::importing::OutputRefused>(),
+            Some(skrib_format::importing::OutputRefused::TargetIsFolder { .. })
+        ),
+        "{refused:#}"
+    );
+    let tmp = format!("{}.importing", out.to_str().unwrap());
+    assert!(!Path::new(&tmp).exists(), "no partial file is left");
+    assert!(out.join("keep").is_file(), "what was there is untouched");
+}
+
+/// A version newer than the importer knows is refused as that, naming the part
+/// and both versions, so the writer can be told which Plume wrote it.
+#[test]
+fn a_newer_tree_is_refused_as_too_new() {
+    let dir = tempfile::tempdir().unwrap();
+    let src = dir.path().join("p.plume");
+    write_zip(
+        &src,
+        &[(
+            "tree",
+            "<!DOCTYPE plume-tree><plume-tree version=\"0.9\" projectName=\"P\"/>",
+        )],
+    );
+    let out = dir.path().join("o.skrib");
+    let refused = import(
+        src.to_str().unwrap(),
+        out.to_str().unwrap(),
+        false,
+        "M",
+        "S",
+        &ladder(),
+    )
+    .err()
+    .expect("refused");
+    assert_eq!(
+        refused.downcast_ref::<Refusal>(),
+        Some(&Refusal::TooNew {
+            part: "tree".to_string(),
+            version: "0.9".to_string(),
+            supported: "0.5".to_string(),
+        })
     );
 }

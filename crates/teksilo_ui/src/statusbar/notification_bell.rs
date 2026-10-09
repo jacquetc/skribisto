@@ -255,12 +255,12 @@ mod tests {
         tree.click(bell);
         tree.layout(SizeProposal::exact(400.0, 600.0));
         let details = tree
-            .find_by_label(&tr!(import_plume_details()).resolve_now())
+            .find_by_label(&tr!(project_import_details()).resolve_now())
             .expect("the bell's log offers the archived Details as a button");
         click(&mut tree, details);
         assert_eq!(
             drain_dialog_titles(&mut tree),
-            vec![tr!(import_plume_warnings_title()).resolve_now()],
+            vec![tr!(project_import_report_title()).resolve_now()],
             "pressing it reopens the list"
         );
     }

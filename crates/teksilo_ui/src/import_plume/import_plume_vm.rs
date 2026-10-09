@@ -1,80 +1,86 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-//! `ImportPlumeViewModel` — the Import Plume Creator feature's business logic.
+//! `ImportPlumeViewModel` — the Import Plume Creator form's business logic.
 //!
-//! Single-instance live state, created once in `main.rs` and registered as
-//! app-state (so `App::build` can wire the long-operation events to it and the
-//! panel can reach it). It owns the form's `Signal`s (source `.plume`,
-//! destination folder, output name) **and** the in-flight import job. Picking a
-//! source defaults the destination to the *same folder* and *same base name*
-//! (with `.skrib`), still editable.
+//! Single-instance live state, created once in `startup.rs` and registered as
+//! app-state (so the panel can reach it). It owns the form's `Signal`s (source
+//! `.plume`, destination folder, output name). Picking a source defaults the
+//! destination to the *same folder* and *same base name* (with `.skrib`), still
+//! editable.
 //!
-//! Import is a **long operation**: `run_import` starts it (returning immediately),
-//! closes the panel, and shows a *loading* toast with a live percentage and a
-//! **Cancel** button. The backend's `Origin::LongOperation(...)` events — routed
-//! here by `App::build` via `subscribe_event_with_ctx` — update that one toast in
-//! place: progress ticks, then a success toast (with **Open now** → `load_work`),
-//! a cancelled notice, or an error toast with **Details**. What the importer
-//! could not carry across comes as a separate notice that stays until the writer
-//! closes it and can be reopened from the notification log (see
-//! `shared::import_warnings`).
+//! Everything from the moment **Import** is pressed belongs to the shared
+//! `shared::project_import::ProjectImportJob`, which this form drives through
+//! [`PLUME`]: the overwrite question, the refusal of a project that is open, one
+//! import at a time, the progress notice, the result with **Open now**, the
+//! report, and a failure worded in the writer's language. What stays here is what
+//! only Plume has: its source, its request, and its words (`super::messages`).
 //!
 //! The destination is `shared::import_destination`, shared with the Manuskript
-//! form: its checks run when a field changes rather than on every read, and an
-//! import aimed at a project open in a window is refused.
+//! form: its checks run when a field changes rather than on every read.
 
 use std::path::Path;
-use std::rc::Rc;
-use std::time::Duration;
 
 use teksilo::prelude::*; // EventContext, Signal, tr!, lit!, FileDialogResult
-use teksilo::widgets::{
-    MessageBox, MessageBoxButtons, StandardButton, Toast, ToastAction, ToastPriority,
-    ValidationState,
-};
+use teksilo::widgets::ValidationState;
 
 use frontend::AppContext;
-use frontend::commands::{import_management_commands, long_operation_commands};
-use frontend::common::event::{Event, LongOperationEvent, Origin};
+use frontend::commands::import_management_commands;
 use frontend::import_management::ImportPlumeCreatorFileDto;
-use skrib_format::{XmlDeclaresEntities, XmlTooDeep};
+use skrib_format::importing::TITLE_SLOT;
 
-use crate::intents::AppIntent;
+use super::messages;
 use crate::shared::form_checks::{CachedValidation, DiskChecked, FolderMessages};
-use crate::shared::import_destination::{
-    BusyRefusal, DestinationMessages, ImportDestination, TargetHold, refuse_if_busy, refuse_if_open,
+use crate::shared::import_destination::{DestinationMessages, ImportDestination};
+use crate::shared::import_warnings::{PLUME as NOTICE, notice_sentence};
+use crate::shared::project_import::{ImportOutcome, Importer, ProjectImportJob};
+
+/// The Plume Creator importer, as the shared job drives it.
+pub(crate) static PLUME: Importer<ImportPlumeCreatorFileDto> = Importer {
+    toast_id: "import.plume",
+    notice: &NOTICE,
+    progress_title: || tr!(import_plume_progress_title()),
+    own_words: messages::own_failure,
+    target: |request| request.output_path.clone(),
+    allow_overwrite: |request| ImportPlumeCreatorFileDto {
+        overwrite: true,
+        ..request
+    },
+    launch: |app_ctx, request| {
+        import_management_commands::import_plume_creator_file(app_ctx, request)
+    },
+    outcome,
 };
-use crate::shared::import_failure;
-use crate::shared::import_warnings::{LiveNotice, PLUME as WARNINGS};
-use crate::shared::long_op::{event_id, parse_payload, payload_id};
 
-/// Update-in-place key for the single toast the import drives through its
-/// lifecycle (loading → progress → success / cancelled / error).
-const IMPORT_TOAST_ID: &str = "import.plume";
-
-/// The import's own toast, in whichever state it is in: one entry updated in
-/// place under [`IMPORT_TOAST_ID`], broadcast (see [`ImportPlumeViewModel::progress_toast`]),
-/// and admitted at `High` priority. At the default priority a toast reaching a
-/// corner that already holds five is dropped without being logged, and this one
-/// carries the only Cancel, the only Open now and the only report of a failure.
-fn import_toast(toast: Toast) -> Toast {
-    toast
-        .id(IMPORT_TOAST_ID)
-        .priority(ToastPriority::High)
-        .broadcast()
+/// The finished import's result, in the writer's words.
+fn outcome(app_ctx: &AppContext, op_id: &str) -> Option<ImportOutcome> {
+    let result =
+        import_management_commands::get_import_plume_creator_file_result(app_ctx, op_id).ok()??;
+    Some(ImportOutcome {
+        result: tr!(import_plume_done(
+            imported = result.imported_items,
+            skipped = result.skipped_trashed
+        )),
+        report: result
+            .warnings
+            .iter()
+            .map(|raw| notice_sentence(raw))
+            .collect(),
+        output_path: result.output_path,
+    })
 }
 
 /// The destination fields' words.
 static DESTINATION: DestinationMessages = DestinationMessages {
     folder: FolderMessages {
-        required: || tr!(import_plume_location_required()),
-        missing: || tr!(import_plume_location_missing()),
-        not_folder: || tr!(import_plume_location_not_folder()),
-        readonly: || tr!(import_plume_location_readonly()),
+        required: || tr!(project_import_location_required()),
+        missing: || tr!(project_import_location_missing()),
+        not_folder: || tr!(project_import_location_not_folder()),
+        readonly: || tr!(project_import_location_readonly()),
     },
-    name_required: || tr!(import_plume_name_required()),
-    name_exists: || tr!(import_plume_name_exists()),
+    name_required: || tr!(project_import_name_required()),
+    name_exists: || tr!(project_import_name_exists()),
+    name_is_folder: || tr!(project_import_name_is_folder()),
 };
 
 /// Strip a `.plume` / `.plume_backup` extension from a source path's file name,
@@ -113,12 +119,6 @@ fn source_state(source: &str) -> ValidationState {
     ValidationState::None
 }
 
-/// Why a second import is refused while this form's first still runs.
-static BUSY: BusyRefusal = BusyRefusal {
-    title: || tr!(import_plume_busy_title()),
-    text: || tr!(import_plume_busy_text()),
-};
-
 #[derive(Clone)]
 pub struct ImportPlumeViewModel {
     /// The chosen `.plume` / `.plume_backup` source path.
@@ -127,22 +127,12 @@ pub struct ImportPlumeViewModel {
     source_check: CachedValidation,
     /// The destination folder and output name, with their checks.
     destination: ImportDestination,
-    /// The long-operation id of the import running right now, if any — set on
-    /// start, cleared when it completes / is cancelled / fails. Drives event
-    /// filtering (only events for *this* op touch the toast) and the Cancel button.
-    active: Signal<Option<String>>,
-    /// The target the running import is writing, held until it completes, fails or
-    /// is cancelled, so nothing opens or writes it meanwhile.
-    target_hold: TargetHold,
-    /// The warnings notice of the latest import that had any, while it is on
-    /// screen: the next one takes its place rather than piling up beside it.
-    warnings_notice: LiveNotice,
-    app_ctx: Rc<AppContext>,
+    /// The process's one project-import job, shared with every other importer.
+    job: ProjectImportJob,
 }
 
-#[allow(dead_code)]
 impl ImportPlumeViewModel {
-    pub fn new(app_ctx: Rc<AppContext>) -> Self {
+    pub(crate) fn new(job: ProjectImportJob) -> Self {
         let source = Signal::new(String::new());
         let source_check = {
             let picked = source.clone();
@@ -152,15 +142,12 @@ impl ImportPlumeViewModel {
             source,
             source_check,
             destination: ImportDestination::new(&DESTINATION),
-            active: Signal::new(None),
-            target_hold: TargetHold::default(),
-            warnings_notice: LiveNotice::default(),
-            app_ctx,
+            job,
         }
     }
 
     /// Clear the form fields — called when the panel is (re)opened so a previous
-    /// session's paths don't linger. The in-flight job is independent.
+    /// session's paths don't linger. The running import, if any, is the job's.
     pub fn reset_form(&self) {
         self.source.set(String::new());
         self.destination.clear();
@@ -204,6 +191,13 @@ impl ImportPlumeViewModel {
         self.destination.location_validation()
     }
 
+    /// Inline validation for the file-name field: blank → error; a name whose
+    /// target `.skrib` already exists → a *warning* (import still proceeds, after
+    /// an overwrite confirmation). Cached, like the folder's.
+    pub fn name_validation(&self) -> Signal<ValidationState> {
+        self.destination.name_validation()
+    }
+
     /// Whether "Import" may fire: a valid source **and** a valid destination
     /// **and** a non-blank name. Derived from the cached verdicts only.
     pub fn can_import(&self) -> Signal<bool> {
@@ -221,7 +215,7 @@ impl ImportPlumeViewModel {
             // Plume stores a per-node status as an INDEX into its own fixed eight-rung
             // ladder and translates the names at display time, so the `.plume` carries no
             // names at all. Resolve them here, in the writer's locale, and hand them down
-            // — the same treatment the two binder names above get. The Plume preset is
+            // — the same treatment the two binder names below get. The Plume preset is
             // ordered to match Plume's list exactly, which is what makes the index map
             // straight across.
             status_names: crate::statuses::Preset::Plume.resolved_names(),
@@ -231,8 +225,9 @@ impl ImportPlumeViewModel {
             manuscript_binder_name: tr!(import_plume_manuscript_binder()).into(),
             story_bible_binder_name: tr!(import_plume_story_bible_binder()).into(),
             // What the import seeds that Plume never names: an old project's three
-            // story-bible groups and the title of a project with none. In the
-            // importer's order, in the interface's language.
+            // story-bible groups, the title of a project with none, and the titles it
+            // makes up for a container's own notes and text. In the importer's order,
+            // in the interface's language.
             seeded_names: plume_import::SeededNames::ORDER
                 .iter()
                 .map(|key| seeded_name(key))
@@ -240,19 +235,10 @@ impl ImportPlumeViewModel {
         }
     }
 
-    /// Inline validation for the file-name field: blank → error; a name whose
-    /// target `.skrib` already exists → a *warning* (import still proceeds, after
-    /// an overwrite confirmation). Cached, like the folder's.
-    pub fn name_validation(&self) -> Signal<ValidationState> {
-        self.destination.name_validation()
-    }
-
-    /// "Import": check every field against the disk again, refuse a target that
-    /// is a project open in a window, confirm an overwrite, then start.
+    /// "Import": check every field against the disk again, then hand the request
+    /// to the shared job, which refuses a second import and a target that is
+    /// open, confirms an overwrite, then starts.
     pub fn import(&self, ctx: &mut EventContext) {
-        if refuse_if_busy(ctx, &self.active, &BUSY) {
-            return;
-        }
         // The verdicts on screen were worked out when the fields last changed,
         // and the disk may have moved on since. Both checks run, so every field
         // shows its fresh verdict, before either answer is acted on.
@@ -261,294 +247,7 @@ impl ImportPlumeViewModel {
         if !(source_ok && destination_ok) {
             return;
         }
-        // Everything below acts on this one request, taken from the form now.
-        // The form is one view-model every window shares, and the overwrite
-        // question is modal in its own window only: while it waits, another
-        // window can open this importer and fill the form in afresh. OK then
-        // imports the file that was asked about and checked, never the one the
-        // form names by that time.
-        let request = self.dto(false);
-        let target = request.output_path.clone();
-        if refuse_if_open(ctx, &target) {
-            return;
-        }
-        if Path::new(&target).exists() {
-            let vm = self.clone();
-            let fname = Path::new(&target)
-                .file_name()
-                .and_then(|n| n.to_str())
-                .unwrap_or_default()
-                .to_string();
-            MessageBox::warning(tr!(import_plume_overwrite_title()))
-                .text(tr!(import_plume_overwrite_text(name = fname)))
-                .buttons(MessageBoxButtons::OkCancel)
-                .on_result(move |r, c| {
-                    // The confirmation can sit open while the writer opens that
-                    // very project in another window, so the refusal is asked
-                    // again at the last moment.
-                    if r.button == StandardButton::Ok && !refuse_if_open(c, &target) {
-                        vm.run_import(
-                            c,
-                            ImportPlumeCreatorFileDto {
-                                overwrite: true,
-                                ..request.clone()
-                            },
-                        );
-                    }
-                })
-                .present(ctx);
-        } else {
-            self.run_import(ctx, request);
-        }
-    }
-
-    /// Start the conversion of `request` (a long operation). Returns immediately
-    /// with the operation id; the panel closes and a loading toast takes over,
-    /// driven by the `Origin::LongOperation(...)` events routed to
-    /// `on_long_op_*`. Only a failure to *start* is handled inline; the actual
-    /// import errors arrive as a `Failed` event.
-    fn run_import(&self, ctx: &mut EventContext, request: ImportPlumeCreatorFileDto) {
-        // Asked again here: an overwrite question can wait while another window
-        // starts an import from this same form, which this one would take over.
-        if refuse_if_busy(ctx, &self.active, &BUSY) {
-            return;
-        }
-        // Held before the conversion starts, so there is no moment it runs unheld,
-        // and looked at again once held, for a load another copy started meanwhile.
-        if !self.target_hold.hold_unless_open(ctx, &request.output_path) {
-            return;
-        }
-        match import_management_commands::import_plume_creator_file(&self.app_ctx, &request) {
-            Ok(op_id) => {
-                self.active.set(Some(op_id));
-                // Close the import panel. `dismiss_top_overlay` (not
-                // `dismiss_modal`) because on the overwrite path this runs from
-                // the confirmation MessageBox's `on_result` callback, whose
-                // context is anchored at the tree root (no source widget) — so
-                // `dismiss_modal`'s walk to the enclosing modal would no-op. The
-                // import panel is the topmost overlay in both paths.
-                ctx.dismiss_top_overlay();
-                // Show the progress toast right away (before the first event).
-                ctx.show_toast(self.progress_toast(0.0, ""));
-            }
-            Err(e) => {
-                self.target_hold.release();
-                self.show_error(ctx, &format!("{e:#}"));
-            }
-        }
-    }
-
-    /// The loading toast the import lives in: spinner + a `NN% · message` body +
-    /// a **Cancel** button. Re-shown (same id) on every progress tick so the one
-    /// surface updates in place.
-    ///
-    /// Broadcast, like every toast this Tier-1, single-instance view-model
-    /// raises (see the module doc): the import isn't scoped to any open
-    /// Work — it produces a brand-new `.skrib` nobody has opened yet — and
-    /// `ImportPlumeViewModel` is one shared instance every window's
-    /// `App::build` wires the same long-operation events to, so a
-    /// window-scoped default would create one redundant toast entry per
-    /// open window instead of the one shared surface every window should
-    /// show.
-    fn progress_toast(&self, percent: f32, message: &str) -> Toast {
-        let vm = self.clone();
-        let body = crate::shared::progress_text::progress_body(percent, message);
-        import_toast(Toast::loading(tr!(import_plume_progress_title())))
-            .body(body)
-            .action(
-                ToastAction::destructive(tr!(import_plume_cancel_import()), move |c| vm.cancel(c))
-                    .closes_toast(false),
-            )
-    }
-
-    /// Cancel the running import (Cancel button). Sets the operation's cancel
-    /// flag; the backend stops at the next checkpoint and the manager emits a
-    /// `Cancelled` event, which `on_long_op_cancelled` turns into the final toast.
-    pub fn cancel(&self, _ctx: &mut EventContext) {
-        if let Some(op_id) = self.active.get() {
-            long_operation_commands::cancel_operation(&self.app_ctx, &op_id);
-        }
-    }
-
-    // ── Long-operation event handlers (wired in `App::build`) ───────────────
-    // Each event is generic across all long operations, so every handler first
-    // matches the payload's `id` against the in-flight job — events for another
-    // op (or a stale one) are ignored.
-
-    /// Subscribe a widget tree to this import's four long-operation events.
-    ///
-    /// **Called once per window that can start an import**, and there are two:
-    /// `app::wiring::long_ops` for a project window, and `WelcomePanel::build`
-    /// for the Launcher. The Launcher's is not optional — event subscriptions
-    /// are per `WidgetTree`, so an import started from a Launcher with no
-    /// project window open would otherwise sit under a progress toast that
-    /// never ticked, never resolved, and never offered **Open now**.
-    ///
-    /// Subscribing from several windows at once is safe by construction, and
-    /// already is: every handler below filters on the operation id this
-    /// view-model started ([`Self::active`]) and clears it on the first terminal
-    /// event, so whichever subscriber runs second finds nothing to do. Two
-    /// project windows have always relied on exactly that.
-    pub fn wire_long_operation(&self, ctx: &mut BuildContext) {
-        type Handler = fn(&ImportPlumeViewModel, &mut EventContext, &Event);
-        const HANDLERS: &[(LongOperationEvent, Handler)] = &[
-            (LongOperationEvent::Progress, |v, c, e| {
-                v.on_long_op_progress(c, e)
-            }),
-            (LongOperationEvent::Completed, |v, c, e| {
-                v.on_long_op_completed(c, e)
-            }),
-            (LongOperationEvent::Cancelled, |v, c, e| {
-                v.on_long_op_cancelled(c, e)
-            }),
-            (LongOperationEvent::Failed, |v, c, e| {
-                v.on_long_op_failed(c, e)
-            }),
-        ];
-        for (event, handler) in HANDLERS {
-            let vm = self.clone();
-            let handler = *handler;
-            ctx.subscribe_event_with_ctx(
-                Origin::LongOperation(event.clone()),
-                move |e: &Event, c| handler(&vm, c, e),
-            );
-        }
-    }
-
-    /// A progress tick: update the loading toast's percentage + message in place.
-    pub fn on_long_op_progress(&self, ctx: &mut EventContext, event: &Event) {
-        let Some(op_id) = self.active.get() else {
-            return;
-        };
-        let Some(payload) = parse_payload(event) else {
-            return;
-        };
-        if payload_id(&payload) != Some(op_id.as_str()) {
-            return;
-        }
-        let percent = payload
-            .get("percentage")
-            .and_then(|p| p.as_f64())
-            .unwrap_or(0.0) as f32;
-        let message = payload
-            .get("message")
-            .and_then(|m| m.as_str())
-            .unwrap_or("");
-        ctx.show_toast(self.progress_toast(percent, message));
-    }
-
-    /// The operation finished: fetch the result and replace the loading toast
-    /// with a success toast offering **Open now** (loads the produced `.skrib`).
-    pub fn on_long_op_completed(&self, ctx: &mut EventContext, event: &Event) {
-        let Some(op_id) = self.active.get() else {
-            return;
-        };
-        if event_id(event) != Some(op_id.clone()) {
-            return;
-        }
-        self.active.set(None);
-        self.target_hold.release();
-        match import_management_commands::get_import_plume_creator_file_result(
-            &self.app_ctx,
-            &op_id,
-        ) {
-            Ok(Some(res)) => {
-                let output = res.output_path.clone();
-                let done = tr!(import_plume_done(
-                    imported = res.imported_items,
-                    skipped = res.skipped_trashed
-                ));
-                ctx.show_toast(import_toast(Toast::success(done.clone())).action(
-                    ToastAction::primary(tr!(import_plume_open_now()), move |c| {
-                        // Opening the imported project *replaces* the one in this
-                        // window, so this goes through the `work.open_path` intent →
-                        // the unsaved-changes guard, rather than calling `load_work`
-                        // outright and silently discarding this window's unsaved
-                        // edits.
-                        c.send_intent(AppIntent::OpenWorkPath {
-                            path: output.clone(),
-                        });
-                    }),
-                ));
-                // The mapper records what it could not carry over: prose on a
-                // separator, a separator with no scene to attach to, unresolved
-                // cross-links. Read by nobody, that is an import that quietly lost
-                // data, so they get a notice of their own that waits for the
-                // writer and can be reopened from the notification log. Raised
-                // after the result, which it comments on, and which its spoken
-                // name repeats: a screen reader hears the notice over it.
-                WARNINGS.show(ctx, &res.warnings, &done, &self.warnings_notice);
-            }
-            // Completed without a recoverable result (shouldn't happen) — clear
-            // the loading toast with a neutral, self-dismissing notice.
-            Ok(None) | Err(_) => {
-                ctx.show_toast(
-                    import_toast(Toast::info(tr!(import_plume_progress_title())))
-                        .auto_dismiss_after(Duration::from_secs(4)),
-                );
-            }
-        }
-    }
-
-    /// The operation was cancelled: replace the loading toast with a neutral,
-    /// self-dismissing notice.
-    pub fn on_long_op_cancelled(&self, ctx: &mut EventContext, event: &Event) {
-        let Some(op_id) = self.active.get() else {
-            return;
-        };
-        if event_id(event) != Some(op_id.clone()) {
-            return;
-        }
-        self.active.set(None);
-        self.target_hold.release();
-        ctx.show_toast(
-            import_toast(Toast::info(tr!(import_plume_cancelled())))
-                .auto_dismiss_after(Duration::from_secs(4)),
-        );
-    }
-
-    /// The operation failed: replace the loading toast with an error toast whose
-    /// body is the failure reason and whose **Details** button shows the full
-    /// message (the operation's error string is the flattened `{:#}` chain).
-    pub fn on_long_op_failed(&self, ctx: &mut EventContext, event: &Event) {
-        let Some(op_id) = self.active.get() else {
-            return;
-        };
-        let Some(payload) = parse_payload(event) else {
-            return;
-        };
-        if payload_id(&payload) != Some(op_id.as_str()) {
-            return;
-        }
-        self.active.set(None);
-        self.target_hold.release();
-        let error = payload
-            .get("error")
-            .and_then(|e| e.as_str())
-            .unwrap_or_default()
-            .to_string();
-        self.show_error(ctx, &error);
-    }
-
-    /// Replace/raise the error toast: reason in the body, full message behind
-    /// **Details** (persistent — the user dismisses it).
-    fn show_error(&self, ctx: &mut EventContext, message: &str) {
-        let (body, details) =
-            import_failure::failure_text(message, nested_too_deep, declares_entities);
-        ctx.show_toast(
-            import_toast(Toast::error(tr!(import_plume_error_title())))
-                .body(body)
-                .persistent()
-                .action(ToastAction::primary(
-                    tr!(import_plume_error_details()),
-                    move |c| {
-                        MessageBox::warning(tr!(import_plume_error_title()))
-                            .text(lit!(details.clone()))
-                            .buttons(MessageBoxButtons::Ok)
-                            .present(c);
-                    },
-                )),
-        );
+        self.job.import(ctx, &PLUME, self.dto(false));
     }
 }
 
@@ -573,22 +272,6 @@ impl DiskChecked for ImportPlumeViewModel {
     }
 }
 
-/// The error toast's sentence for a project refused because one of its parts
-/// nests its XML past the ceiling (see `shared::import_failure`).
-fn nested_too_deep(refused: &XmlTooDeep) -> LocalizedString {
-    tr!(import_plume_nested_too_deep(
-        part = refused.part.clone(),
-        limit = refused.limit() as i64
-    ))
-}
-
-/// The error toast's sentence for a project refused because one of its parts
-/// declares an XML entity, which no Plume Creator project does (see
-/// `shared::import_failure`).
-fn declares_entities(refused: &XmlDeclaresEntities) -> LocalizedString {
-    tr!(import_plume_declares_entities(part = refused.part.clone()))
-}
-
 /// One name the Plume import seeds, by its key in `SeededNames::ORDER`. A key this
 /// does not know is left blank, which the importer fills with its English.
 fn seeded_name(key: &str) -> String {
@@ -597,6 +280,10 @@ fn seeded_name(key: &str) -> String {
         "items_group" => tr!(import_plume_group_items()),
         "places_group" => tr!(import_plume_group_places()),
         "untitled_project" => tr!(import_plume_untitled_project()),
+        // A pattern's argument is the slot the converter fills with the sheet's or
+        // folder's name.
+        "notes_of" => tr!(import_plume_notes_of(name = TITLE_SLOT.to_string())),
+        "content_of" => tr!(import_plume_content_of(name = TITLE_SLOT.to_string())),
         _ => return String::new(),
     };
     name.into()
@@ -614,23 +301,15 @@ mod tests {
         }
     }
     use std::path::PathBuf;
-    use teksilo::widgets::ValidationState;
+    use std::rc::Rc;
+    use std::time::Duration;
+    use teksilo::widgets::{StandardButton, Toast, ValidationState};
 
-    /// The refusal reaches the writer as a sentence in their language, naming the
-    /// part, in both shipped locales, with every argument filled in.
-    #[test]
-    fn a_nesting_refusal_is_worded_for_the_writer_in_both_locales() {
-        crate::shared::import_failure::assert_worded_in_both_locales("tree", nested_too_deep);
-    }
+    use frontend::commands::long_operation_commands;
 
-    /// A project refused for declaring an entity reaches the writer as a sentence
-    /// in their language, naming the part, in both shipped locales.
-    #[test]
-    fn an_entity_refusal_is_worded_for_the_writer_in_both_locales() {
-        crate::shared::import_failure::assert_entity_refusal_worded_in_both_locales(
-            "tree",
-            declares_entities,
-        );
+    /// A form over a job of its own, as each running copy of Skribisto has one.
+    fn form(app_ctx: &Rc<AppContext>) -> ImportPlumeViewModel {
+        ImportPlumeViewModel::new(ProjectImportJob::new(app_ctx.clone()))
     }
 
     #[test]
@@ -646,7 +325,7 @@ mod tests {
 
     #[test]
     fn picking_a_source_defaults_destination() {
-        let vm = ImportPlumeViewModel::new(Rc::new(AppContext::new()));
+        let vm = form(&Rc::new(AppContext::new()));
         let res = FileDialogResult::File(Some(PathBuf::from("/books/My Novel.plume")));
         vm.apply_source_defaults(&res);
         assert_eq!(vm.location().get(), "/books");
@@ -662,7 +341,7 @@ mod tests {
     #[test]
     fn name_validation_flags_blank_and_existing_target() {
         let dir = tempfile::tempdir().unwrap();
-        let vm = ImportPlumeViewModel::new(Rc::new(AppContext::new()));
+        let vm = form(&Rc::new(AppContext::new()));
         let v = vm.name_validation();
 
         vm.location().set(dir.path().to_string_lossy().into_owned());
@@ -678,9 +357,47 @@ mod tests {
         assert!(matches!(v.get(), ValidationState::Warning(_)));
     }
 
+    /// Every word the import writes into the project is resolved in the interface's
+    /// language, in both shipped locales: never a message id, and each pattern holds the
+    /// slot its name goes into exactly once.
+    #[test]
+    fn the_words_written_into_the_project_are_the_interface_s() {
+        for locale in ["en-US", "fr-FR"] {
+            crate::test_support::with_shipped_messages(locale, || {
+                let dto = form(&Rc::new(AppContext::new())).dto(false);
+                assert_eq!(
+                    dto.seeded_names.len(),
+                    plume_import::SeededNames::ORDER.len()
+                );
+                let seeded = plume_import::SeededNames::ORDER
+                    .iter()
+                    .zip(&dto.seeded_names);
+                let (patterns, names): (Vec<_>, Vec<_>) =
+                    seeded.partition(|(key, _)| matches!(**key, "notes_of" | "content_of"));
+                let words = [&dto.manuscript_binder_name, &dto.story_bible_binder_name]
+                    .into_iter()
+                    .chain(names.into_iter().map(|(_, word)| word));
+                for word in words {
+                    assert!(
+                        !word.trim().is_empty() && !word.starts_with("import-plume-"),
+                        "{locale}: {word:?}"
+                    );
+                }
+                for (key, pattern) in patterns {
+                    assert_eq!(
+                        pattern.matches(TITLE_SLOT).count(),
+                        1,
+                        "{locale} {key}: {pattern:?}"
+                    );
+                    assert!(!pattern.starts_with("import-plume-"), "{locale}");
+                }
+            });
+        }
+    }
+
     #[test]
     fn dto_carries_overwrite_flag_and_target() {
-        let vm = ImportPlumeViewModel::new(Rc::new(AppContext::new()));
+        let vm = form(&Rc::new(AppContext::new()));
         vm.source().set("/x/a.plume".into());
         vm.location().set("/out".into());
         vm.name().set("a".into());
@@ -699,7 +416,7 @@ mod tests {
     fn filled(app_ctx: &Rc<AppContext>, dir: &std::path::Path) -> ImportPlumeViewModel {
         let source = dir.join("Le Visiteur.plume");
         std::fs::write(&source, b"PK").unwrap();
-        let vm = ImportPlumeViewModel::new(app_ctx.clone());
+        let vm = form(app_ctx);
         vm.source().set(source.to_string_lossy().into_owned());
         vm.location().set(dir.to_string_lossy().into_owned());
         vm.name().set("novel".into());
@@ -746,7 +463,7 @@ mod tests {
         let source = sources.path().join("Le Visiteur.plume");
         std::fs::write(&source, b"PK").unwrap();
         let app_ctx = Rc::new(AppContext::new());
-        let vm = ImportPlumeViewModel::new(app_ctx.clone());
+        let vm = form(&app_ctx);
         vm.source().set(source.to_string_lossy().into_owned());
         vm.location()
             .set(destination.path().to_string_lossy().into_owned());
@@ -758,7 +475,7 @@ mod tests {
         std::fs::remove_dir(destination.path()).unwrap();
         let importing = vm.clone();
         press(&mut tree, move |c| importing.import(c));
-        assert!(vm.active.get().is_none(), "nothing may start");
+        assert!(vm.job.active_operation().is_none(), "nothing may start");
         assert!(matches!(
             vm.location_validation().get(),
             ValidationState::Error(_)
@@ -770,7 +487,7 @@ mod tests {
         std::fs::remove_file(&source).unwrap();
         let importing = vm.clone();
         press(&mut tree, move |c| importing.import(c));
-        assert!(vm.active.get().is_none(), "nothing may start");
+        assert!(vm.job.active_operation().is_none(), "nothing may start");
         assert!(matches!(
             vm.source_validation().get(),
             ValidationState::Error(_)
@@ -821,7 +538,7 @@ mod tests {
             vec![tr!(import_target_open_title()).resolve_now()],
             "the refusal, not the overwrite confirmation"
         );
-        assert!(vm.active.get().is_none(), "nothing may start");
+        assert!(vm.job.active_operation().is_none(), "nothing may start");
         assert_eq!(std::fs::read(&target).unwrap(), b"PK");
     }
 
@@ -860,7 +577,7 @@ mod tests {
         .into();
         let mut tree = crate::test_support::tree_with_app_state(&app_ctx, state);
 
-        let vm = ImportPlumeViewModel::new(app_ctx.clone());
+        let vm = form(&app_ctx);
         let fill = |name: &str| {
             vm.source().set(source.to_string_lossy().into_owned());
             vm.location().set(dir.path().to_string_lossy().into_owned());
@@ -876,7 +593,7 @@ mod tests {
             .request;
         assert_eq!(
             request.title,
-            Some(tr!(import_plume_overwrite_title()).resolve_now())
+            Some(tr!(project_import_overwrite_title()).resolve_now())
         );
 
         // Meanwhile, another window opens the importer and fills it in again.
@@ -897,7 +614,10 @@ mod tests {
             "the file asked about is open nowhere"
         );
 
-        let op_id = vm.active.get().expect("the confirmed import started");
+        let op_id = vm
+            .job
+            .active_operation()
+            .expect("the confirmed import started");
         let deadline = Instant::now() + Duration::from_secs(60);
         while long_operation_commands::is_operation_finished(&app_ctx, &op_id) != Some(true) {
             assert!(Instant::now() < deadline, "the import never finished");
@@ -988,7 +708,7 @@ mod tests {
 
         let importing = vm.clone();
         press(tree, move |c| importing.import(c));
-        let op_id = vm.active.get().expect("the import started");
+        let op_id = vm.job.active_operation().expect("the import started");
         let deadline = Instant::now() + Duration::from_secs(60);
         while long_operation_commands::is_operation_finished(app_ctx, &op_id) != Some(true) {
             assert!(Instant::now() < deadline, "the import never finished");
@@ -1000,7 +720,9 @@ mod tests {
             data: Some(format!(r#"{{"id":"{op_id}"}}"#)),
         };
         let finishing = vm.clone();
-        press(tree, move |c| finishing.on_long_op_completed(c, &completed));
+        press(tree, move |c| {
+            finishing.job.on_long_op_completed(c, &completed)
+        });
     }
 
     /// For as long as the conversion runs, its target is held: no window opens it and
@@ -1029,17 +751,17 @@ mod tests {
             vm.location().set(dir.path().to_string_lossy().into_owned());
             vm.name().set("novel".into());
         };
-        let vm = ImportPlumeViewModel::new(app_ctx.clone());
+        let vm = form(&app_ctx);
         filled_for(&vm);
         let (mut tree, _toasts, _archive) = tree_with_archive(&app_ctx);
         assert!(!open_registry::importing(&target));
 
         let importing = vm.clone();
         press(&mut tree, move |c| importing.import(c));
-        let op_id = vm.active.get().expect("the import started");
+        let op_id = vm.job.active_operation().expect("the import started");
         assert!(open_registry::importing(&target), "held while it runs");
 
-        let other = ImportPlumeViewModel::new(app_ctx.clone());
+        let other = form(&app_ctx);
         filled_for(&other);
         let second = other.clone();
         press(&mut tree, move |c| second.import(c));
@@ -1047,7 +769,7 @@ mod tests {
             drain_dialog_titles(&mut tree).contains(&tr!(target_importing_title()).resolve_now()),
             "a second import to the same file is refused"
         );
-        assert!(other.active.get().is_none());
+        assert!(other.job.active_operation().is_none());
 
         let deadline = Instant::now() + Duration::from_secs(60);
         while long_operation_commands::is_operation_finished(&app_ctx, &op_id) != Some(true) {
@@ -1065,7 +787,7 @@ mod tests {
         };
         let finishing = vm.clone();
         press(&mut tree, move |c| {
-            finishing.on_long_op_completed(c, &completed)
+            finishing.job.on_long_op_completed(c, &completed)
         });
         assert!(!open_registry::importing(&target), "let go of once done");
     }
@@ -1093,7 +815,7 @@ mod tests {
         };
         let (first, second) = (target_in("novel"), target_in("second"));
         let app_ctx = Rc::new(AppContext::new());
-        let vm = ImportPlumeViewModel::new(app_ctx.clone());
+        let vm = form(&app_ctx);
         vm.source().set(source.to_string_lossy().into_owned());
         vm.location().set(dir.path().to_string_lossy().into_owned());
         vm.name().set("novel".into());
@@ -1101,8 +823,8 @@ mod tests {
 
         let importing = vm.clone();
         press(&mut tree, move |c| importing.import(c));
-        let op_id = vm.active.get().expect("the first import started");
-        let busy = tr!(import_plume_busy_title()).resolve_now();
+        let op_id = vm.job.active_operation().expect("the first import started");
+        let busy = tr!(project_import_busy_title()).resolve_now();
 
         vm.name().set("second".into());
         let pressing = vm.clone();
@@ -1115,14 +837,14 @@ mod tests {
         assert_eq!(request.output_path, second);
         let confirming = vm.clone();
         press(&mut tree, move |c| {
-            confirming.run_import(c, request.clone())
+            confirming.job.start(c, &PLUME, request.clone())
         });
         assert!(
             drain_dialog_titles(&mut tree).contains(&busy),
             "an overwrite question's OK is refused too"
         );
         assert_eq!(
-            vm.active.get(),
+            vm.job.active_operation(),
             Some(op_id.clone()),
             "the first is still the one"
         );
@@ -1144,7 +866,7 @@ mod tests {
         };
         let finishing = vm.clone();
         press(&mut tree, move |c| {
-            finishing.on_long_op_completed(c, &completed)
+            finishing.job.on_long_op_completed(c, &completed)
         });
         assert!(!open_registry::importing(&first));
         assert!(
@@ -1166,7 +888,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let source = lonely_plume(dir.path());
         let app_ctx = Rc::new(AppContext::new());
-        let vm = ImportPlumeViewModel::new(app_ctx.clone());
+        let vm = form(&app_ctx);
         vm.source().set(source.to_string_lossy().into_owned());
         vm.location().set(dir.path().to_string_lossy().into_owned());
         vm.name().set("novel".into());
@@ -1178,12 +900,14 @@ mod tests {
             panic!("nothing stands in the way of the load");
         };
         let starting = vm.clone();
-        press(&mut tree, move |c| starting.run_import(c, request.clone()));
+        press(&mut tree, move |c| {
+            starting.job.start(c, &PLUME, request.clone())
+        });
         assert_eq!(
             drain_dialog_titles(&mut tree),
             vec![tr!(import_target_open_title()).resolve_now()]
         );
-        assert!(vm.active.get().is_none(), "nothing started");
+        assert!(vm.job.active_operation().is_none(), "nothing started");
         assert!(!open_registry::importing(&target), "the hold was let go of");
         drop(loading);
     }
@@ -1204,7 +928,7 @@ mod tests {
             .to_string_lossy()
             .into_owned();
         let app_ctx = Rc::new(AppContext::new());
-        let vm = ImportPlumeViewModel::new(app_ctx.clone());
+        let vm = form(&app_ctx);
         vm.source().set(source.to_string_lossy().into_owned());
         vm.location().set(dir.path().to_string_lossy().into_owned());
         vm.name().set("novel".into());
@@ -1212,7 +936,7 @@ mod tests {
 
         let importing = vm.clone();
         press(&mut tree, move |c| importing.import(c));
-        let op_id = vm.active.get().expect("the import started");
+        let op_id = vm.job.active_operation().expect("the import started");
         assert!(open_registry::importing(&target));
         let cancelled = Event {
             origin: Origin::LongOperation(LongOperationEvent::Cancelled),
@@ -1221,7 +945,7 @@ mod tests {
         };
         let cancelling = vm.clone();
         press(&mut tree, move |c| {
-            cancelling.on_long_op_cancelled(c, &cancelled)
+            cancelling.job.on_long_op_cancelled(c, &cancelled)
         });
         assert!(!open_registry::importing(&target));
     }
@@ -1238,7 +962,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let source = lonely_plume(dir.path());
         let app_ctx = Rc::new(AppContext::new());
-        let vm = ImportPlumeViewModel::new(app_ctx.clone());
+        let vm = form(&app_ctx);
         vm.source().set(source.to_string_lossy().into_owned());
         vm.location().set(dir.path().to_string_lossy().into_owned());
         vm.name().set("novel".into());
@@ -1251,7 +975,7 @@ mod tests {
             .find(|e| {
                 e.actions
                     .iter()
-                    .any(|a| a.intent_name.as_deref() == Some(WARNINGS.action))
+                    .any(|a| a.intent_name.as_deref() == Some(NOTICE.action))
             })
             .expect("the warnings notice is archived with a replayable Details");
         let body = notice.body.unwrap_or_default();
@@ -1275,7 +999,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let source = lonely_plume(dir.path());
         let app_ctx = Rc::new(AppContext::new());
-        let vm = ImportPlumeViewModel::new(app_ctx.clone());
+        let vm = form(&app_ctx);
         vm.source().set(source.to_string_lossy().into_owned());
         vm.location().set(dir.path().to_string_lossy().into_owned());
         let (mut tree, toasts, archive) = tree_with_archive(&app_ctx);
@@ -1292,7 +1016,7 @@ mod tests {
             .filter(|e| {
                 e.actions
                     .iter()
-                    .any(|a| a.intent_name.as_deref() == Some(WARNINGS.action))
+                    .any(|a| a.intent_name.as_deref() == Some(NOTICE.action))
             })
             .count();
         assert_eq!(notices, 6, "every import's list is in the log");
@@ -1302,7 +1026,7 @@ mod tests {
         let progress = tr!(import_plume_progress_title()).resolve_now();
         let result = rows
             .iter()
-            .find(|e| e.dedup_id.as_deref() == Some(IMPORT_TOAST_ID))
+            .find(|e| e.dedup_id.as_deref() == Some(PLUME.toast_id))
             .expect("the import's own toast is in the log");
         assert_ne!(
             result.title, progress,
@@ -1317,14 +1041,26 @@ mod tests {
 
     /// A failure is the one thing an import must always get in front of the
     /// writer, however many other messages are already up: dropped for want of
-    /// room, it would be reported nowhere, not even in the log.
+    /// room, it would be reported nowhere, not even in the log. It arrives as a
+    /// sentence in the writer's language, never the backend's chain, which stays
+    /// behind Details.
     #[test]
     fn a_failure_reaches_the_writer_however_full_the_corner() {
-        use crate::test_support::press;
-        use teksilo::core::styles::BannerSeverity;
+        use crate::test_support::{IsolatedOpenRegistry, press};
+        use frontend::common::event::{Event, LongOperationEvent, Origin};
+        use frontend::common::long_operation::OperationStatus;
+        use std::time::Instant;
 
+        let _registry = IsolatedOpenRegistry::new();
+        let dir = tempfile::tempdir().unwrap();
+        // An old-style project whose outline file holds nothing.
+        let source = dir.path().join("Empty.plume");
+        std::fs::write(&source, "   ").unwrap();
         let app_ctx = Rc::new(AppContext::new());
-        let vm = ImportPlumeViewModel::new(app_ctx.clone());
+        let vm = form(&app_ctx);
+        vm.source().set(source.to_string_lossy().into_owned());
+        vm.location().set(dir.path().to_string_lossy().into_owned());
+        vm.name().set("novel".into());
         let (mut tree, _toasts, archive) = tree_with_archive(&app_ctx);
         press(&mut tree, |c| {
             for i in 0..5 {
@@ -1336,17 +1072,42 @@ mod tests {
             }
         });
 
+        let importing = vm.clone();
+        press(&mut tree, move |c| importing.import(c));
+        let op_id = vm.job.active_operation().expect("the import started");
+        let deadline = Instant::now() + Duration::from_secs(60);
+        while long_operation_commands::is_operation_finished(&app_ctx, &op_id) != Some(true) {
+            assert!(Instant::now() < deadline, "the import never finished");
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        let Some(OperationStatus::Failed(message)) =
+            long_operation_commands::get_operation_status(&app_ctx, &op_id)
+        else {
+            panic!("an empty outline is refused");
+        };
+        let failed = Event {
+            origin: Origin::LongOperation(LongOperationEvent::Failed),
+            ids: Vec::new(),
+            data: Some(serde_json::json!({"id": op_id, "error": message}).to_string()),
+        };
         let failing = vm.clone();
         press(&mut tree, move |c| {
-            failing.show_error(c, "No space left on device")
+            failing.job.on_long_op_failed(c, &failed)
         });
 
         let error = archived(&archive)
             .into_iter()
-            .find(|e| e.dedup_id.as_deref() == Some(IMPORT_TOAST_ID))
+            .find(|e| e.dedup_id.as_deref() == Some(PLUME.toast_id))
             .expect("the failure was admitted, so it is in the log");
-        assert_eq!(error.severity, BannerSeverity::Error);
-        assert_eq!(error.body.as_deref(), Some("No space left on device"));
+        // The log merges a re-raised id into its first row, the progress notice,
+        // updating its title and body: those are what show the failure arrived.
+        assert_eq!(error.title, tr!(project_import_error_title()).resolve_now());
+        assert_eq!(
+            error.body.as_deref(),
+            Some(tr!(import_plume_empty_outline()).resolve_now().as_str()),
+            "the reason, in the writer's words"
+        );
+        assert!(!vm.job.is_running());
     }
 
     /// The overwrite question can sit open while the writer opens that very
@@ -1376,7 +1137,7 @@ mod tests {
             .request;
         assert_eq!(
             request.title,
-            Some(tr!(import_plume_overwrite_title()).resolve_now())
+            Some(tr!(project_import_overwrite_title()).resolve_now())
         );
 
         // Meanwhile, another window opens the project.
@@ -1398,7 +1159,7 @@ mod tests {
             vec![tr!(import_target_open_title()).resolve_now()],
             "OK is answered with the refusal"
         );
-        assert!(vm.active.get().is_none(), "nothing may start");
+        assert!(vm.job.active_operation().is_none(), "nothing may start");
         assert_eq!(std::fs::read(&target).unwrap(), b"PK");
     }
 }

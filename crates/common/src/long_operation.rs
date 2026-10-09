@@ -612,14 +612,22 @@ impl LongOperationManager {
         operations.get(id).map(|handle| handle.get_progress())
     }
 
-    /// Cancel an operation
+    /// Cancel an operation.
+    ///
+    /// A `Cancelled` event goes out at once, marked `"requested": true`, so a
+    /// caller can show the cancellation straight away. The operation itself may
+    /// still be running until it next looks at its cancel flag, and some stretches
+    /// of work look at none (a whole file being written): when it does stop, its
+    /// worker sends a second `Cancelled`, unmarked. A caller that must know the
+    /// work has really stopped (the files it was writing cleaned up, say) waits
+    /// for that one, or for [`OperationCompletion::is_finished`].
     pub fn cancel_operation(&self, id: &str) -> bool {
         let operations = lock_or_recover(&self.operations);
         if let Some(handle) = operations.get(id) {
             handle.cancel();
             // Emit cancelled event immediately
             if let Some(event_hub) = &self.event_hub {
-                let payload = serde_json::json!({"id": id}).to_string();
+                let payload = serde_json::json!({"id": id, "requested": true}).to_string();
                 event_hub.send_event(Event {
                     origin: Origin::LongOperation(LongOperationEvent::Cancelled),
                     ids: vec![],
@@ -1054,6 +1062,52 @@ mod tests {
         assert!(
             completion.wait_for(&op_id, Some(Duration::from_secs(5))),
             "cancellation must wake a blocked waiter, not strand it"
+        );
+    }
+
+    /// The `Cancelled` a cancel sends at once says it was only requested, and the
+    /// worker's own, sent once it has really stopped, does not. An operation busy
+    /// in a stretch that polls no cancel flag is still running between the two,
+    /// and a caller waiting to know its files are cleaned up needs to tell them
+    /// apart.
+    #[test]
+    fn a_requested_cancel_is_told_from_the_operation_stopping() {
+        let hub = Arc::new(EventHub::new());
+        let sent = hub.subscribe_receiver();
+        let mut manager = LongOperationManager::new();
+        manager.set_event_hub(&hub);
+        let completion = manager.completion_signal();
+        let (gate, operation) = SlowOperation::gated();
+        let op_id = manager.start_operation(operation);
+
+        assert!(manager.cancel_operation(&op_id));
+        let requested: Vec<serde_json::Value> = sent
+            .try_iter()
+            .filter_map(|e| serde_json::from_str(e.data.as_deref()?).ok())
+            .collect();
+        assert_eq!(
+            requested,
+            vec![serde_json::json!({"id": op_id, "requested": true})],
+            "the request is announced at once, and marked as a request"
+        );
+        assert!(
+            !completion.is_finished(&op_id),
+            "the operation is still running"
+        );
+
+        gate.mark_finished("release");
+        assert!(completion.wait_for(&op_id, Some(Duration::from_secs(5))));
+        let stopped: Vec<(Origin, serde_json::Value)> = sent
+            .try_iter()
+            .filter_map(|e| Some((e.origin, serde_json::from_str(e.data.as_deref()?).ok()?)))
+            .collect();
+        assert_eq!(
+            stopped,
+            vec![(
+                Origin::LongOperation(LongOperationEvent::Cancelled),
+                serde_json::json!({"id": op_id})
+            )],
+            "the worker says it has stopped, unmarked"
         );
     }
 

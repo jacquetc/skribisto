@@ -11,7 +11,14 @@
 //!
 //! The source project is only ever **read**. Nothing here writes, moves or deletes
 //! anything in it.
+//!
+//! Nothing it says is a sentence: progress is a phase code or the title of the
+//! entry being mapped, what the writer should know is an [`ImportNotice`], and a
+//! project it cannot import is refused with a [`Refusal`] (or one of the typed
+//! refusals `skrib_format` raises on its behalf). The interface words all three in
+//! the writer's language.
 
+pub mod diagnostics;
 pub mod map;
 pub mod mmd;
 pub mod model;
@@ -40,13 +47,15 @@ pub fn read_project(src: &ManuskriptSource) -> Project {
     }
 }
 
-use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use anyhow::{Context, Result, bail};
+use anyhow::Result;
 use chrono::{DateTime, FixedOffset, Utc};
 use skrib_format::import_notice::ImportNotice;
-use skrib_format::{FoldersTooDeep, SkribShape, XmlDeclaresEntities, XmlTooDeep, write_bundle};
+use skrib_format::importing::{ImportCancelled, StagedOutput};
+use skrib_format::{FoldersTooDeep, XmlDeclaresEntities, XmlTooDeep};
+
+pub use diagnostics::Refusal;
 
 /// Every member either generation parses as XML, with its bytes.
 ///
@@ -127,9 +136,10 @@ pub struct ImportSummary {
 /// `report`'s label is a phase code (`import.opening`, `import.outline`, …) the
 /// UI translates, or the title of the entry being mapped, shown as data.
 ///
-/// The `.skrib` is written to a sibling temp file and renamed into place only
-/// after the last cancel check, so an aborted or failed run leaves an existing
-/// target untouched. The Manuskript project is never written to.
+/// The `.skrib` is staged beside its target and moved into place only after the
+/// last cancel check (see `skrib_format::importing::StagedOutput`), so an aborted
+/// or failed run leaves an existing target untouched and no partial file behind.
+/// The Manuskript project is never written to.
 pub fn import_with_progress(
     source_path: &str,
     output_path: &str,
@@ -138,9 +148,7 @@ pub fn import_with_progress(
     report: &dyn Fn(f32, &str),
     cancel: &AtomicBool,
 ) -> Result<ImportSummary> {
-    if !overwrite && Path::new(output_path).exists() {
-        bail!("'{output_path}' already exists (choose another name or allow overwrite)");
-    }
+    let output = StagedOutput::begin(output_path, overwrite)?;
 
     report(2.0, "import.opening");
     let src = ManuskriptSource::open(source_path)?;
@@ -169,7 +177,7 @@ pub fn import_with_progress(
         Some(map::build_bundle(&project, names, report, cancel))
     })
     .map_err(anyhow::Error::new)?
-    .ok_or_else(|| anyhow::anyhow!("import cancelled"))?;
+    .ok_or_else(|| anyhow::Error::new(ImportCancelled))?;
     bail_if_cancelled(cancel)?;
 
     // Which copy was read, and how recent it is. A project that has been through
@@ -182,16 +190,12 @@ pub fn import_with_progress(
         },
     );
 
+    // Written beside the target, then moved over it once whole and not
+    // cancelled. Every return before `commit` removes what was written.
     report(92.0, "import.writing");
-    let tmp_path = format!("{output_path}.importing");
-    write_bundle(&tmp_path, SkribShape::ZipFile, &mapped.bundle)
-        .with_context(|| format!("writing '{output_path}'"))?;
-    if cancel.load(Ordering::Relaxed) {
-        let _ = std::fs::remove_file(&tmp_path);
-        bail!("import cancelled");
-    }
-    std::fs::rename(&tmp_path, output_path)
-        .with_context(|| format!("finalising '{output_path}'"))?;
+    output.write(&mapped.bundle)?;
+    bail_if_cancelled(cancel)?;
+    output.commit()?;
 
     report(100.0, "import.done");
     Ok(ImportSummary {
@@ -205,7 +209,7 @@ pub fn import_with_progress(
 /// Abort before anything is written if the cancel token has been set.
 fn bail_if_cancelled(cancel: &AtomicBool) -> Result<()> {
     if cancel.load(Ordering::Relaxed) {
-        bail!("import cancelled");
+        return Err(anyhow::Error::new(ImportCancelled));
     }
     Ok(())
 }
@@ -281,6 +285,7 @@ pub(crate) fn override_writer_offset(hours: i32) -> WriterOffsetGuard {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::path::Path;
     use std::time::{Duration, SystemTime};
 
     fn names() -> map::Names {

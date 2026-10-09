@@ -187,12 +187,12 @@ mod tests {
         tree.layout(SizeProposal::exact(crate::settings::fields::PANE_W, 620.0));
 
         let details = tree
-            .find_by_label(&tr!(import_manuskript_details()).resolve_now())
+            .find_by_label(&tr!(project_import_details()).resolve_now())
             .expect("the page's log offers the archived Details as a button");
         click(&mut tree, details);
         assert_eq!(
             drain_dialog_titles(&mut tree),
-            vec![tr!(import_manuskript_warnings_title()).resolve_now()],
+            vec![tr!(project_import_report_title()).resolve_now()],
             "pressing it reopens the list"
         );
     }

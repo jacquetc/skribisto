@@ -29,6 +29,7 @@ use crate::locales;
 use crate::models;
 use crate::models::{BackupSettingsService, TreeExpansionService, WorkspaceLayoutService};
 use crate::sessions::WorkRegistry;
+use crate::shared::project_import::ProjectImportJob;
 use crate::shell::{open_registry, windows};
 use crate::spellcheck;
 
@@ -439,6 +440,7 @@ pub(crate) struct Tier1Services {
     pub dictionaries: spellcheck::DictionariesViewModel,
     pub workspace_layout_service: WorkspaceLayoutService,
     pub tree_expansion_service: TreeExpansionService,
+    pub(crate) project_import: ProjectImportJob,
     pub import_manuskript: ImportManuskriptViewModel,
     pub import_plume: ImportPlumeViewModel,
     pub folder_memory: models::FolderMemoryService,
@@ -548,11 +550,14 @@ pub(crate) fn open_tier1_services(
                 .ok()
         })
         .unwrap_or_else(models::ExchangeService::in_memory_default);
-    // The Import-Plume view-model is a singleton (form + in-flight job + progress
-    // toast). Registered as app-state so `App::build` can route the import's
-    // long-operation events to it and the menu action can reach it to open the panel.
-    let import_manuskript = ImportManuskriptViewModel::new(app_ctx.clone());
-    let import_plume = ImportPlumeViewModel::new(app_ctx.clone());
+    // The one project-import job (Tier 1: one import at a time, whichever importer
+    // and window asked), and the two importers' forms over it. All three are
+    // registered as app-state: each window wires the job's long-operation events,
+    // the menu actions reach the forms to open their panels, and the quit
+    // sequence reaches the job to stop an import before the process exits.
+    let project_import = ProjectImportJob::new(app_ctx.clone());
+    let import_manuskript = ImportManuskriptViewModel::new(project_import.clone());
+    let import_plume = ImportPlumeViewModel::new(project_import.clone());
     // Export styles ("Compile & Export" formats) — the user's editable style presets, opened
     // eagerly here so the Settings pane and the Export panel's picker both read one instance.
     // Where each kind of file dialog last opened. App-global by nature — the folder a
@@ -645,6 +650,7 @@ pub(crate) fn open_tier1_services(
         dictionaries,
         workspace_layout_service,
         tree_expansion_service,
+        project_import,
         import_manuskript,
         import_plume,
         folder_memory,

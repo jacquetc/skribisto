@@ -10,7 +10,8 @@
 //! on [`ImportPlumeViewModel`]; this view is thin — it binds the VM's signals and
 //! forwards the footer buttons to its methods. Picking a source defaults the
 //! destination folder + name (same folder, same base name → `.skrib`); a warning
-//! notes that trashed items are not migrated.
+//! notes that trashed items are not migrated. The words it shares with the
+//! Manuskript form are the shared `project-import-*` keys.
 
 use teksilo::core::styles::PanelVariant;
 use teksilo::i18n::LocalizedString;
@@ -91,7 +92,7 @@ impl ImportPlumePanel {
         HStack::new()
             .spacing(7.0)
             .child(
-                TextWidget::new(tr!(import_plume_will_create()))
+                TextWidget::new(tr!(project_import_will_create()))
                     .style(TextStyleRole::Small)
                     .color(TextRole::Secondary),
             )
@@ -126,6 +127,9 @@ impl ImportPlumePanel {
                         crate::models::FolderPurpose::ImportPlume,
                         FilePickerField::new(vm.source())
                             .kind(FilePickerKind::OpenFile)
+                            .dialog_title(tr!(dialog_plume_file_title()))
+                            // The filter's label is a plain string to the dialog,
+                            // resolved as the form is built.
                             .add_filter(
                                 tr!(dialog_filter_plume()).resolve_now(),
                                 &["plume", "plume_backup"],
@@ -145,19 +149,20 @@ impl ImportPlumePanel {
             .full_width(Divider::new())
             // ── Destination folder ────────────────────────────────────────
             .line(
-                Self::field_label(tr!(import_plume_location())),
+                Self::field_label(tr!(project_import_location())),
                 FilePickerField::new(vm.location())
                     .kind(FilePickerKind::PickFolder)
+                    .dialog_title(tr!(project_import_location_title()))
                     .validation(vm.location_validation()),
             )
             // ── Output name + "Will create …" preview ─────────────────────
             .line(
-                Self::field_label(tr!(import_plume_name())),
+                Self::field_label(tr!(project_import_name())),
                 VStack::new()
                     .spacing(6.0)
                     .child(
                         TextInput::new(vm.name())
-                            .placeholder(tr!(import_plume_name_placeholder()))
+                            .placeholder(tr!(project_import_name_placeholder()))
                             .validation(vm.name_validation()),
                     )
                     .child(self.path_preview()),
@@ -217,7 +222,7 @@ impl Widget for ImportPlumePanel {
                                             }
                                         }
                                         IconButton::clear() {
-                                            tooltip: tr!(import_plume_close())
+                                            tooltip: tr!(project_import_close())
                                             on_activate_fn: |ctx| ctx.dismiss_modal()
                                         }
                                     }
@@ -239,11 +244,11 @@ impl Widget for ImportPlumePanel {
                                 HStack {
                                     spacing: 9.0
                                     Spacer
-                                    Button::new(tr!(import_plume_cancel())) {
+                                    Button::new(tr!(project_import_cancel())) {
                                         variant: ButtonVariant::Plain
                                         on_activate_fn: |ctx| ctx.dismiss_modal()
                                     }
-                                    Button::new(tr!(import_plume_import())) {
+                                    Button::new(tr!(project_import_import())) {
                                         variant: ButtonVariant::Filled
                                         enabled: import_can
                                         on_activate_fn: move |ctx| import_vm.import(ctx)
@@ -270,6 +275,17 @@ impl Widget for ImportPlumePanel {
         self.first_field.get()
     }
 
+    /// Announce the form as a named dialog.
+    ///
+    /// `ctx.present_modal` does not wrap a hand-drawn panel in a
+    /// `ModalContainer`, so nothing else would emit a `Role::Dialog` node: a
+    /// screen reader met a panel that had appeared over everything and could not
+    /// say what it was.
+    fn accessibility(&self, builder: &mut teksilo::core::accessibility::AccessNodeBuilder) {
+        builder.set_role(teksilo::core::accesskit::Role::Dialog);
+        builder.set_name(tr!(import_plume_title()).resolve_now());
+    }
+
     fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
         self.root_child
             .and_then(|id| ctx.child_size(id, proposal))
@@ -281,6 +297,7 @@ impl Widget for ImportPlumePanel {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::shared::project_import::ProjectImportJob;
     use frontend::AppContext;
     use std::rc::Rc;
     use teksilo::core::widget_tree::WidgetTree;
@@ -290,7 +307,7 @@ mod tests {
     /// lay out headlessly without panicking, at the modal's card size.
     #[test]
     fn panel_builds_and_lays_out() {
-        let vm = ImportPlumeViewModel::new(Rc::new(AppContext::new()));
+        let vm = ImportPlumeViewModel::new(ProjectImportJob::new(Rc::new(AppContext::new())));
         let mut tree = WidgetTree::new();
         let id = tree.add_boxed(Box::new(ImportPlumePanel::new(vm)));
         tree.layout(SizeProposal::exact(CARD_W, CARD_H));
@@ -313,7 +330,7 @@ mod tests {
         let source = base.path().join("Le Visiteur.plume");
         std::fs::write(&source, b"PK").unwrap();
         let folder = base.path().join("Books");
-        let vm = ImportPlumeViewModel::new(Rc::new(AppContext::new()));
+        let vm = ImportPlumeViewModel::new(ProjectImportJob::new(Rc::new(AppContext::new())));
         vm.source().set(source.to_string_lossy().into_owned());
         vm.location().set(folder.to_string_lossy().into_owned());
         vm.name().set("novel".into());

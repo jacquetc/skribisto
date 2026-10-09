@@ -45,9 +45,10 @@ pub mod images;
 // The destination folder and file name of the two project importers' forms,
 // and their refusal to write over a project that is open.
 pub(crate) mod import_destination;
-/// What the Plume and Manuskript import toasts say when the import fails:
-/// `pub(crate)` for the same reason as `long_op`, its two callers living in
-/// their own feature directories.
+/// What a project import's error toast says when the import fails: the shared
+/// wording, and the seam each importer's own words plug into. `pub(crate)` for
+/// the same reason as `long_op`, its callers living in their own feature
+/// directories.
 pub(crate) mod import_failure;
 // The two project importers' warnings notice, and its replay from the
 // notification log.
@@ -64,6 +65,9 @@ mod progress_recorder;
 /// translated, everything else shown as data. `pub(crate)` for the same reason
 /// as `long_op`.
 pub(crate) mod progress_text;
+// The one project-import job every whole-project importer drives, and the quit
+// sequence stops: single-flight, progress, completion, report, failure.
+pub(crate) mod project_import;
 pub mod project_links;
 /// Which menu a keyboard shortcut is filed under, for Keymap, the shortcut sheet
 /// and the command palette.

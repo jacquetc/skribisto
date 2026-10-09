@@ -61,6 +61,10 @@ mod hostile_tests;
 /// translates rather than English sentences. Here because both importers and the UI
 /// depend on this crate.
 pub mod import_notice;
+/// What every whole-project importer does the same way: a staged output that leaves
+/// either the finished project or nothing, and the slot a caller's title pattern
+/// holds. `pub` because each converter crate writes its `.skrib` through it.
+pub mod importing;
 mod loaded;
 /// Finding a bundle path on disk whatever Unicode normalisation a sync client or
 /// another filesystem gave its name. Every reader and writer of bundle-supplied

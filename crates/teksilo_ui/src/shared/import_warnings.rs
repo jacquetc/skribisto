@@ -5,8 +5,12 @@
 //! the way back to it once the notice is gone.
 //!
 //! Both project importers (Plume Creator, Manuskript) record everything they had
-//! to drop or guess at. Read by nobody, that is an import that quietly lost data,
-//! so the notice has three properties the first version lacked:
+//! to drop or guess at, as typed notices
+//! (`skrib_format::import_notice::ImportNotice`) the interface words in the
+//! writer's language ([`notice_sentence`]), each importer's outcome once its
+//! import has ended (see `shared::project_import`). Read by nobody, that is an
+//! import that quietly lost data, so the notice has three properties the first
+//! version lacked:
 //!
 //! * **It stays until the writer closes it** (`persistent`). A toast left to its
 //!   default vanishes after ten seconds, which is shorter than the time it takes
@@ -45,6 +49,8 @@
 
 mod notices;
 
+pub(crate) use notices::sentence as notice_sentence;
+
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -55,44 +61,37 @@ use teksilo::widgets::{
     ToastHandle, ToastPriority,
 };
 
-/// One importer's warnings notice: its words, and the name its **Details**
-/// action is archived under.
+/// One importer's warnings notice: the name its **Details** action is archived
+/// under. The words are the same for every importer.
 pub(crate) struct WarningsNotice {
     /// The archived name of the **Details** action, and the prefix of every
     /// notice's own id. Stable: it is persisted in the notification archive, and
     /// a renamed action would leave every archived notice unable to reopen.
     pub(crate) action: &'static str,
-    /// The headline, given the number of warnings.
-    pub(crate) title: fn(i64) -> LocalizedString,
-    /// The label of the action that opens the list.
-    pub(crate) details: fn() -> LocalizedString,
-    /// The title of the dialog that shows the list.
-    pub(crate) dialog_title: fn() -> LocalizedString,
 }
 
 /// The Plume Creator importer's notice.
 pub(crate) static PLUME: WarningsNotice = WarningsNotice {
     action: "import.plume.warnings",
-    title: |count| tr!(import_plume_warnings(count = count)),
-    details: || tr!(import_plume_details()),
-    dialog_title: || tr!(import_plume_warnings_title()),
 };
 
 /// The Manuskript importer's notice.
 pub(crate) static MANUSKRIPT: WarningsNotice = WarningsNotice {
     action: "import.manuskript.warnings",
-    title: |count| tr!(import_manuskript_warnings(count = count)),
-    details: || tr!(import_manuskript_details()),
-    dialog_title: || tr!(import_manuskript_warnings_title()),
 };
+
+/// The headline, given the number of things to know.
+fn title(count: i64) -> LocalizedString {
+    tr!(project_import_report(count = count))
+}
 
 /// Every notice an archived action can name.
 static ALL: [&WarningsNotice; 2] = [&PLUME, &MANUSKRIPT];
 
 impl WarningsNotice {
-    /// The notice for one import's `warnings`, or `None` when there are none.
-    /// `result` is the line the import's own result toast shows, which the
-    /// notice's announcement repeats (see the module doc).
+    /// The notice for one import's `warnings`, already worded, or `None` when
+    /// there are none. `result` is the line the import's own result toast shows,
+    /// which the notice's announcement repeats (see the module doc).
     ///
     /// Broadcast, like the import's own progress toast: the import belongs to no
     /// open Work, and one shared view-model is wired from every window.
@@ -105,16 +104,12 @@ impl WarningsNotice {
             return None;
         }
         let count = warnings.len() as i64;
-        // Worded once, now: the archive keeps the body as text, and that is
-        // what reopening the notice from the log shows.
-        let text = warnings
-            .iter()
-            .map(|raw| notices::sentence(raw).resolve_now())
-            .collect::<Vec<_>>()
-            .join("\n");
+        // Worded already, by the importer's outcome: the archive keeps the body as
+        // text, and that is what reopening the notice from the log shows.
+        let text = warnings.join("\n");
         let details = text.clone();
         Some(
-            Toast::warning((self.title)(count))
+            Toast::warning(title(count))
                 .announcement(self.announcement(count, result.clone()))
                 .id(format!("{}:{}", self.action, uuid::Uuid::new_v4()))
                 .body(lit!(text))
@@ -122,7 +117,7 @@ impl WarningsNotice {
                 .priority(ToastPriority::High)
                 .broadcast()
                 .action(
-                    ToastAction::primary((self.details)(), move |c| {
+                    ToastAction::primary(tr!(project_import_details()), move |c| {
                         self.present_details(c, &details)
                     })
                     // Reading the list is not dismissing it; the close button is.
@@ -136,7 +131,6 @@ impl WarningsNotice {
     /// `result`, then the count. Resolved when it is read, so it follows a change
     /// of language like the title does.
     fn announcement(&self, count: i64, result: LocalizedString) -> LocalizedString {
-        let title = self.title;
         localized(move || {
             tr!(import_warnings_announcement(
                 result = result.resolve_now().trim().to_string(),
@@ -165,7 +159,7 @@ impl WarningsNotice {
 
     /// The dialog holding the whole list.
     fn present_details(&self, ctx: &mut EventContext, text: &str) {
-        MessageBox::warning((self.dialog_title)())
+        MessageBox::warning(tr!(project_import_report_title()))
             .text(lit!(text.to_string()))
             .buttons(MessageBoxButtons::Ok)
             .present(ctx);
@@ -347,7 +341,7 @@ mod tests {
             .unwrap_or_default()
             .to_string();
         let result = result().resolve_now();
-        let count = tr!(import_plume_warnings(count = 2)).resolve_now();
+        let count = tr!(project_import_report(count = 2)).resolve_now();
         assert!(spoken.contains(result.trim()), "the result: {spoken}");
         assert!(spoken.contains(&count), "the count: {spoken}");
         assert!(
@@ -416,7 +410,7 @@ mod tests {
         });
         assert_eq!(
             drain_dialog_titles(&mut tree),
-            vec![tr!(import_manuskript_warnings_title()).resolve_now()],
+            vec![tr!(project_import_report_title()).resolve_now()],
             "the list opens again"
         );
     }
@@ -437,12 +431,12 @@ mod tests {
         log.add(NotificationLog::new(archive).on_action_invoked(replay_archived_action));
         log.layout(SizeProposal::exact(480.0, 360.0));
         let details = log
-            .find_by_label(&tr!(import_plume_details()).resolve_now())
+            .find_by_label(&tr!(project_import_details()).resolve_now())
             .expect("the archived Details is a button, not an inert tag");
         click(&mut log, details);
         assert_eq!(
             drain_dialog_titles(&mut log),
-            vec![tr!(import_plume_warnings_title()).resolve_now()]
+            vec![tr!(project_import_report_title()).resolve_now()]
         );
     }
 

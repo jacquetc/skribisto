@@ -822,10 +822,6 @@ new-work-target-open-title = Ĉi tiu projekto estas malfermita
 new-work-target-open-text = «{ $name }» estas malfermita en Skribisto. Krei novan projekton samloke anstataŭigus vian aktualan projekton, kaj posta konservado superskribus la novan. Elektu alian nomon aŭ dosierujon, aŭ unue fermu la projekton.
 target-importing-title = Importado skribas ĉi tiun projekton
 target-importing-text = Importado ankoraŭ skribas «{ $name }». Atendu ĝis ĝi finiĝos, aŭ elektu alian nomon.
-import-plume-busy-title = Alia projekto de Plume Creator estas importata
-import-plume-busy-text = Projektoj de Plume Creator importiĝas unuope. Atendu la finon de la aktuala importo aŭ nuligu ĝin, poste rekomencu ĉi tiun.
-import-manuskript-busy-title = Alia projekto de Manuskript estas importata
-import-manuskript-busy-text = Projektoj de Manuskript importiĝas unuope. Atendu la finon de la aktuala importo aŭ nuligu ĝin, poste rekomencu ĉi tiun.
 backup-restore-importing-text = Importado ankoraŭ skribas «{ $name }», kiun ĉi tiu sekurkopio anstataŭigus. Restarigu post la fino de la importo.
 new-work-manuscript = Manuskripto
 new-work-notes = Notoj
@@ -847,32 +843,15 @@ new-work-note-templates-hint = Komenca aranĝo por notoj de la rakonta gvidilo. 
 new-work-characters = Roluloj
 new-work-places = Lokoj
 import-plume-title = Importi projekton de Plume Creator
-import-plume-close = Fermi
 import-plume-source = Projekto de Plume
 import-plume-source-hint = Elektu .plume- aŭ .plume_backup-dosieron (el ajna versio de Plume Creator).
-import-plume-location = Cela dosierujo
-import-plume-name = Dosiernomo
-import-plume-name-placeholder = Projektnomo
-import-plume-will-create = Kreota
 import-plume-trash-warning = ⚠ Eroj forigitaj aŭ en la rubujo ne estos importitaj.
-import-plume-cancel = Nuligi
-import-plume-import = Importi
 import-plume-source-required = Elektu projektdosieron de Plume
 import-plume-source-missing = Ĉi tiu dosiero ne ekzistas
 import-plume-source-not-file = Ĉi tiu vojo ne estas dosiero
-import-plume-location-required = Elektu celan dosierujon
-import-plume-location-missing = Ĉi tiu dosierujo ne ekzistas
-import-plume-location-not-folder = Ĉi tiu vojo ne estas dosierujo
-import-plume-location-readonly = Ne eblas skribi en ĉi tiun dosierujon
-import-plume-name-required = Enigu dosiernomon
-import-plume-name-exists = Dosiero kun ĉi tiu nomo jam ekzistas ĉi tie. Importado petos konfirmon antaŭ anstataŭigo
-import-plume-overwrite-title = Ĉu anstataŭigi la ekzistantan dosieron?
-import-plume-overwrite-text = «{ $name }» jam ekzistas. Ĉu anstataŭigi ĝin per la importita projekto?
 import-plume-manuscript-binder = Manuskripto
 import-plume-story-bible-binder = Rakonta gvidilo
 import-plume-progress-title = Importado de Plume-projekto…
-import-plume-cancel-import = Nuligi
-import-plume-cancelled = Importo nuligita
 import-plume-done = { $imported ->
     [one] { $imported } ero importita.
    *[other] { $imported } eroj importitaj.
@@ -880,39 +859,15 @@ import-plume-done = { $imported ->
     [one] { $skipped } ero en la rubujo ne estis importita.
    *[other] { $skipped } eroj en la rubujo ne estis importitaj.
 }
-import-plume-open-now = Malfermi nun
-import-plume-warnings = { $count ->
-    [one] 1 afero ne povis esti precize importita
-   *[other] { $count } aferoj ne povis esti precize importitaj
-}
-import-plume-details = Detaloj
-import-plume-warnings-title = Importaj avertoj
-import-plume-error-title = Ne eblis importi la projekton
 import-plume-nested-too-deep = La projekto ne estis importita: ĝia parto «{ $part }» havas pli ol { $limit } nivelojn de nestado. Ordinara Plume Creator-projekto ne atingas tion, kaj legado povus paneigi Skribiston. Nenio estis skribita.
 import-plume-declares-entities = La projekto ne estis importita: ĝia parto «{ $part }» deklaras XML-entojn, kion ordinaraj Plume Creator-projektoj ne faras. Ilia etendo povus elĉerpi la memoron kaj paneigi Skribiston. Nenio estis skribita.
-import-plume-error-details = Detaloj
 import-manuskript-title = Importi projekton de Manuskript
-import-manuskript-close = Fermi
 import-manuskript-source = Projekto de Manuskript
 import-manuskript-source-hint = Elektu la .msk-dosieron aŭ la projektdosierujon (el ajna versio de Manuskript).
 import-manuskript-source-file = Elekti dosieron…
 import-manuskript-source-folder = Elekti dosierujon…
-import-manuskript-location = Cela dosierujo
-import-manuskript-name = Dosiernomo
-import-manuskript-name-placeholder = Projektnomo
-import-manuskript-will-create = Kreota
-import-manuskript-cancel = Nuligi
-import-manuskript-import = Importi
 import-manuskript-source-required = Elektu projekton de Manuskript
 import-manuskript-source-missing = Ĉi tiu dosiero aŭ dosierujo ne ekzistas
-import-manuskript-location-required = Elektu celan dosierujon
-import-manuskript-location-missing = Ĉi tiu dosierujo ne ekzistas
-import-manuskript-location-not-folder = Ĉi tiu vojo ne estas dosierujo
-import-manuskript-location-readonly = Ne eblas skribi en ĉi tiun dosierujon
-import-manuskript-name-required = Enigu dosiernomon
-import-manuskript-name-exists = Dosiero kun ĉi tiu nomo jam ekzistas ĉi tie. Importado petos konfirmon antaŭ anstataŭigo
-import-manuskript-overwrite-title = Ĉu anstataŭigi la ekzistantan dosieron?
-import-manuskript-overwrite-text = «{ $name }» jam ekzistas. Ĉu anstataŭigi ĝin per la importita projekto?
 import-manuskript-manuscript-binder = Manuskripto
 import-manuskript-story-bible-binder = Rakonta gvidilo
 import-manuskript-characters-group = Roluloj
@@ -924,8 +879,6 @@ import-manuskript-importance-minor = Malĉefa
 import-manuskript-importance-secondary = Duaranga
 import-manuskript-importance-main = Ĉefa
 import-manuskript-progress-title = Importado de Manuskript-projekto…
-import-manuskript-cancel-import = Nuligi
-import-manuskript-cancelled = Importo nuligita
 import-manuskript-done = { $imported ->
     [one] { $imported } ero importita.
    *[other] { $imported } eroj importitaj.
@@ -934,18 +887,9 @@ import-manuskript-done = { $imported ->
     [one] { $revisions } pli frua versio ankaŭ importiĝis.
    *[other] { $revisions } pli fruaj versioj ankaŭ importiĝis.
 }
-import-manuskript-open-now = Malfermi nun
-import-manuskript-warnings = { $count ->
-    [one] 1 rimarko pri ĉi tiu importo
-   *[other] { $count } rimarkoj pri ĉi tiu importo
-}
-import-manuskript-details = Detaloj
-import-manuskript-warnings-title = Pri ĉi tiu importo
-import-manuskript-error-title = Ne eblis importi la projekton
 import-manuskript-nested-too-deep = La projekto ne estis importita: ĝia dosiero «{ $part }» havas pli ol { $limit } nivelojn de nestado. Ordinara Manuskript-projekto ne atingas tion, kaj legado povus paneigi Skribiston. Nenio estis skribita.
 import-manuskript-folders-too-deep = La projekto ne estis importita: unu dosiero troviĝas pli ol { $limit } dosierujojn profunde. Ordinara Manuskript-projekto ne atingas tion, kaj legado povus paneigi Skribiston. Nenio estis skribita.
 import-manuskript-declares-entities = La projekto ne estis importita: ĝia dosiero «{ $part }» deklaras XML-entojn, kion ordinaraj Manuskript-projektoj ne faras. Ilia etendo povus elĉerpi la memoron kaj paneigi Skribiston. Nenio estis skribita.
-import-manuskript-error-details = Detaloj
 import-target-open-title = Ĉi tiu projekto estas malfermita
 import-target-open-text = «{ $name }» estas malfermita en Skribisto. Importi samloke anstataŭigus vian aktualan projekton, kaj posta konservado superskribus la importon. Elektu alian dosiernomon aŭ unue fermu la projekton.
 import-warnings-announcement = { $result } { $notice }.

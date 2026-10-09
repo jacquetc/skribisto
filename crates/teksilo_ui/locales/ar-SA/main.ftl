@@ -901,10 +901,6 @@ new-work-target-open-title = هذا المشروع مفتوح
 new-work-target-open-text = «{ $name }» مفتوح في Skribisto. إنشاء مشروع جديد مكانه سيستبدل المشروع الذي تعمل عليه، وسيكتب الحفظ التالي ذلك المشروع فوق الجديد. اختر اسمًا أو مجلدًا آخر، أو أغلق المشروع أولًا.
 target-importing-title = عملية استيراد تكتب هذا المشروع
 target-importing-text = ما زالت عملية استيراد تكتب «{ $name }». انتظر حتى تنتهي، أو اختر اسمًا آخر.
-import-plume-busy-title = يجري استيراد مشروع Plume Creator آخر
-import-plume-busy-text = تُستورد مشاريع Plume Creator واحدًا تلو الآخر. انتظر حتى ينتهي الاستيراد الجاري أو ألغِه، ثم ابدأ هذا من جديد.
-import-manuskript-busy-title = يجري استيراد مشروع Manuskript آخر
-import-manuskript-busy-text = تُستورد مشاريع Manuskript واحدًا تلو الآخر. انتظر حتى ينتهي الاستيراد الجاري أو ألغِه، ثم ابدأ هذا من جديد.
 backup-restore-importing-text = ما زالت عملية استيراد تكتب «{ $name }»، وهو المشروع الذي ستُستعاد هذه النسخة الاحتياطية فوقه. استعد النسخة الاحتياطية بعد انتهاء الاستيراد.
 new-work-manuscript = المخطوطة
 new-work-notes = الملاحظات
@@ -926,32 +922,15 @@ new-work-note-templates-hint = الشكل الذي تبدأ به ملاحظة م
 new-work-characters = الشخصيات
 new-work-places = الأماكن
 import-plume-title = استيراد مشروع Plume Creator
-import-plume-close = إغلاق
 import-plume-source = مشروع Plume
 import-plume-source-hint = اختر ملف ‎.plume أو ‎.plume_backup (أي إصدار من Plume Creator).
-import-plume-location = مجلد الوجهة
-import-plume-name = اسم الملف
-import-plume-name-placeholder = اسم المشروع
-import-plume-will-create = سيُنشأ
 import-plume-trash-warning = ⚠ لا تُنقل العناصر الموجودة في سلة المهملات أو المحذوفة.
-import-plume-cancel = إلغاء
-import-plume-import = استيراد
 import-plume-source-required = اختر ملف مشروع Plume
 import-plume-source-missing = هذا الملف غير موجود
 import-plume-source-not-file = هذا المسار ليس ملفًا
-import-plume-location-required = اختر مجلد الوجهة
-import-plume-location-missing = هذا المجلد غير موجود
-import-plume-location-not-folder = هذا المسار ليس مجلدًا
-import-plume-location-readonly = لا يمكن الكتابة في هذا المجلد
-import-plume-name-required = أدخل اسم الملف
-import-plume-name-exists = يوجد ملف بهذا الاسم هنا. سيطلب الاستيراد تأكيد الاستبدال
-import-plume-overwrite-title = استبدال الملف الموجود؟
-import-plume-overwrite-text = «{ $name }» موجود. هل تريد استبداله بالمشروع المستورد؟
 import-plume-manuscript-binder = المخطوطة
 import-plume-story-bible-binder = مرجع القصة
 import-plume-progress-title = جارٍ استيراد مشروع Plume…
-import-plume-cancel-import = إلغاء
-import-plume-cancelled = أُلغي الاستيراد
 import-plume-done = { $imported ->
     [zero] لم يُستورد أي عنصر.
     [one] استُورد عنصر واحد.
@@ -967,43 +946,15 @@ import-plume-done = { $imported ->
     [many] لم يُنقل { $skipped } عنصرًا كانت في سلة المهملات.
    *[other] لم يُنقل { $skipped } عنصر كانت في سلة المهملات.
 }
-import-plume-open-now = الفتح الآن
-import-plume-warnings = { $count ->
-    [zero] لا شيء تعذّر استيراده كما هو
-    [one] أمر واحد تعذّر استيراده كما هو بالضبط
-    [two] أمران تعذّر استيرادهما كما هما بالضبط
-    [few] { $count } أمور تعذّر استيرادها كما هي بالضبط
-    [many] { $count } أمرًا تعذّر استيرادها كما هي بالضبط
-   *[other] { $count } أمر تعذّر استيرادها كما هي بالضبط
-}
-import-plume-details = التفاصيل
-import-plume-warnings-title = تحذيرات الاستيراد
-import-plume-error-title = تعذّر استيراد المشروع
 import-plume-nested-too-deep = لم يُستورد المشروع: جزؤه «{ $part }» متداخل بأكثر من { $limit } مستوى. لا يقترب أي مشروع Plume Creator من ذلك، وقد تؤدي قراءته إلى انهيار Skribisto. لم يُكتب شيء.
 import-plume-declares-entities = لم يُستورد المشروع: جزؤه «{ $part }» يعرّف كيانات XML، وهو ما لا يفعله أي مشروع Plume Creator. قد يستهلك توسيعها ذاكرة أكثر مما في الحاسوب ويؤدي إلى انهيار Skribisto. لم يُكتب شيء.
-import-plume-error-details = التفاصيل
 import-manuskript-title = استيراد مشروع Manuskript
-import-manuskript-close = إغلاق
 import-manuskript-source = مشروع Manuskript
 import-manuskript-source-hint = اختر ملف ‎.msk أو مجلد المشروع (أي إصدار من Manuskript).
 import-manuskript-source-file = اختيار ملف…
 import-manuskript-source-folder = اختيار مجلد…
-import-manuskript-location = مجلد الوجهة
-import-manuskript-name = اسم الملف
-import-manuskript-name-placeholder = اسم المشروع
-import-manuskript-will-create = سيُنشأ
-import-manuskript-cancel = إلغاء
-import-manuskript-import = استيراد
 import-manuskript-source-required = اختر مشروع Manuskript
 import-manuskript-source-missing = هذا الملف أو المجلد غير موجود
-import-manuskript-location-required = اختر مجلد الوجهة
-import-manuskript-location-missing = هذا المجلد غير موجود
-import-manuskript-location-not-folder = هذا المسار ليس مجلدًا
-import-manuskript-location-readonly = لا يمكن الكتابة في هذا المجلد
-import-manuskript-name-required = أدخل اسم الملف
-import-manuskript-name-exists = يوجد ملف بهذا الاسم هنا. سيطلب الاستيراد تأكيد الاستبدال
-import-manuskript-overwrite-title = استبدال الملف الموجود؟
-import-manuskript-overwrite-text = «{ $name }» موجود. هل تريد استبداله بالمشروع المستورد؟
 import-manuskript-manuscript-binder = المخطوطة
 import-manuskript-story-bible-binder = مرجع القصة
 import-manuskript-characters-group = الشخصيات
@@ -1015,8 +966,6 @@ import-manuskript-importance-minor = ثانوية جدًا
 import-manuskript-importance-secondary = ثانوية
 import-manuskript-importance-main = رئيسية
 import-manuskript-progress-title = جارٍ استيراد مشروع Manuskript…
-import-manuskript-cancel-import = إلغاء
-import-manuskript-cancelled = أُلغي الاستيراد
 import-manuskript-done = { $imported ->
     [zero] لم يُستورد أي عنصر.
     [one] استُورد عنصر واحد.
@@ -1033,22 +982,9 @@ import-manuskript-done = { $imported ->
     [many] وجاءت معه { $revisions } نسخة سابقة.
    *[other] وجاءت معه { $revisions } نسخة سابقة.
 }
-import-manuskript-open-now = الفتح الآن
-import-manuskript-warnings = { $count ->
-    [zero] لا شيء يستحق التنبيه في هذا الاستيراد
-    [one] أمر واحد ينبغي معرفته عن هذا الاستيراد
-    [two] أمران ينبغي معرفتهما عن هذا الاستيراد
-    [few] { $count } أمور ينبغي معرفتها عن هذا الاستيراد
-    [many] { $count } أمرًا ينبغي معرفتها عن هذا الاستيراد
-   *[other] { $count } أمر ينبغي معرفتها عن هذا الاستيراد
-}
-import-manuskript-details = التفاصيل
-import-manuskript-warnings-title = حول هذا الاستيراد
-import-manuskript-error-title = تعذّر استيراد المشروع
 import-manuskript-nested-too-deep = لم يُستورد المشروع: ملفه «{ $part }» متداخل بأكثر من { $limit } مستوى. لا يقترب أي مشروع Manuskript من ذلك، وقد تؤدي قراءته إلى انهيار Skribisto. لم يُكتب شيء.
 import-manuskript-folders-too-deep = لم يُستورد المشروع: أحد ملفاته يقع على عمق يزيد على { $limit } مجلد. لا يقترب أي مشروع Manuskript من ذلك، وقد تؤدي قراءته إلى انهيار Skribisto. لم يُكتب شيء.
 import-manuskript-declares-entities = لم يُستورد المشروع: ملفه «{ $part }» يعرّف كيانات XML، وهو ما لا يفعله أي مشروع Manuskript. قد يستهلك توسيعها ذاكرة أكثر مما في الحاسوب ويؤدي إلى انهيار Skribisto. لم يُكتب شيء.
-import-manuskript-error-details = التفاصيل
 import-target-open-title = هذا المشروع مفتوح
 import-target-open-text = «{ $name }» مفتوح في Skribisto. الاستيراد فوقه سيستبدل المشروع الذي تعمل عليه، وسيكتب الحفظ التالي ذلك المشروع فوق المستورَد. اختر اسم ملف آخر، أو أغلق المشروع أولًا.
 import-warnings-announcement = { $result } { $notice }.

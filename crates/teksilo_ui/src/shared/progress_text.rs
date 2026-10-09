@@ -53,6 +53,14 @@ fn phase_label(message: &str) -> Option<Option<LocalizedString>> {
     }))
 }
 
+/// The translated name of the phase `message` reports, or `None` when it is data
+/// (the title of the entry being converted) or a code that is deliberately
+/// silent: what a screen reader hears once per phase, never the data that ticks
+/// under it.
+pub(crate) fn phase_name(message: &str) -> Option<LocalizedString> {
+    phase_label(message).flatten()
+}
+
 /// The text a progress row or toast shows for `message`, without the
 /// percentage: a phase code translated, data as it is, nothing for a silent
 /// code.

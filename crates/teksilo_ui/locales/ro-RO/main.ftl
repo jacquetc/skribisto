@@ -1008,10 +1008,6 @@ new-work-target-open-title = Acest proiect este deschis
 new-work-target-open-text = „{ $name }” este deschis în Skribisto. Crearea unui proiect nou în locul lui ar înlocui proiectul la care lucrați, iar următoarea salvare ar scrie acel proiect înapoi peste cel nou. Alegeți alt nume sau alt dosar, ori închideți mai întâi proiectul.
 target-importing-title = Un import scrie acest proiect
 target-importing-text = Un import încă scrie „{ $name }”. Așteptați să se termine sau alegeți alt nume.
-import-plume-busy-title = Se importă deja un alt proiect Plume Creator
-import-plume-busy-text = Proiectele Plume Creator se importă pe rând. Așteptați să se termine importul în curs sau anulați-l, apoi porniți-l din nou pe acesta.
-import-manuskript-busy-title = Se importă deja un alt proiect Manuskript
-import-manuskript-busy-text = Proiectele Manuskript se importă pe rând. Așteptați să se termine importul în curs sau anulați-l, apoi porniți-l din nou pe acesta.
 backup-restore-importing-text = Un import încă scrie „{ $name }”, proiectul peste care ar fi restaurată această copie de siguranță. Restaurați copia după ce importul se încheie.
 
 ## New-work template labels (passed to the backend, which can't do i18n)
@@ -1037,36 +1033,18 @@ new-work-places = Locuri
 
 ## Import Plume Creator dialog
 import-plume-title = Importă un proiect Plume Creator
-import-plume-close = Închide
 import-plume-source = Proiect Plume
 import-plume-source-hint = Alegeți un fișier .plume sau .plume_backup (orice versiune Plume Creator).
-import-plume-location = Dosarul de destinație
-import-plume-name = Numele fișierului
-import-plume-name-placeholder = Numele proiectului
-import-plume-will-create = Se va crea
 import-plume-trash-warning = ⚠ Elementele aruncate la coșul de gunoi sau șterse nu sunt preluate.
-import-plume-cancel = Renunță
-import-plume-import = Importă
 # Field validation
 import-plume-source-required = Alegeți un fișier de proiect Plume
 import-plume-source-missing = Acest fișier nu există
 import-plume-source-not-file = Această cale nu este un fișier
-import-plume-location-required = Alegeți un dosar de destinație
-import-plume-location-missing = Acest dosar nu există
-import-plume-location-not-folder = Această cale nu este un dosar
-import-plume-location-readonly = Nu se poate scrie în acest dosar
-import-plume-name-required = Introduceți un nume de fișier
-import-plume-name-exists = Aici există deja un fișier cu acest nume. Importul va cere confirmarea înlocuirii
-# Overwrite confirmation
-import-plume-overwrite-title = Înlocuiți fișierul existent?
-import-plume-overwrite-text = „{ $name }” există deja. Îl înlocuiți cu proiectul importat?
 # Binder names passed to the backend (which can't do i18n)
 import-plume-manuscript-binder = Manuscris
 import-plume-story-bible-binder = Biblia poveștii
 # Progress toast (the import runs as a long operation)
 import-plume-progress-title = Se importă proiectul Plume…
-import-plume-cancel-import = Renunță
-import-plume-cancelled = Import anulat
 # Result
 import-plume-done = { $imported ->
        [one] A fost importat { $imported } element.
@@ -1077,17 +1055,6 @@ import-plume-done = { $imported ->
        [few] { $skipped } elemente aruncate la coșul de gunoi nu au fost preluate.
       *[other] { $skipped } de elemente aruncate la coșul de gunoi nu au fost preluate.
    }
-import-plume-open-now = Deschide acum
-# Shown when the importer could not carry something over verbatim.
-import-plume-warnings = { $count ->
-       [one] Un lucru nu a putut fi importat exact
-       [few] { $count } lucruri nu au putut fi importate exact
-      *[other] { $count } de lucruri nu au putut fi importate exact
-   }
-import-plume-details = Detalii
-import-plume-warnings-title = Avertismente de import
-# Error toast: a short reason in the body, the full technical chain behind Details
-import-plume-error-title = Proiectul nu a putut fi importat
 # The project was refused unread because one of its parts nests its XML deeper
 # than the app will read. $part is the part's own name (tree, attendance, info);
 # $limit is the ceiling, a number.
@@ -1096,35 +1063,18 @@ import-plume-nested-too-deep = Proiectul nu a fost importat: partea sa „{ $par
 # entities, which could expand into more memory than the computer has. $part
 # is the part's own name (tree, attendance, info).
 import-plume-declares-entities = Proiectul nu a fost importat: partea sa „{ $part }” declară entități XML, lucru pe care niciun proiect Plume Creator nu îl face. Extinderea lor ar putea cere mai multă memorie decât are calculatorul și ar putea bloca Skribisto. Nu s-a scris nimic.
-import-plume-error-details = Detalii
 
 ## Import Manuskript project dialog
 import-manuskript-title = Importă un proiect Manuskript
-import-manuskript-close = Închide
 import-manuskript-source = Proiect Manuskript
 # A Manuskript project is a .msk file plus, in its usual mode, a folder of the
 # same name beside it. Either one gets you there, and so does the folder itself.
 import-manuskript-source-hint = Alegeți fișierul .msk sau dosarul proiectului (orice versiune Manuskript).
 import-manuskript-source-file = Alege fișierul…
 import-manuskript-source-folder = Alege dosarul…
-import-manuskript-location = Dosarul de destinație
-import-manuskript-name = Numele fișierului
-import-manuskript-name-placeholder = Numele proiectului
-import-manuskript-will-create = Se va crea
-import-manuskript-cancel = Renunță
-import-manuskript-import = Importă
 # Field validation
 import-manuskript-source-required = Alegeți un proiect Manuskript
 import-manuskript-source-missing = Acest fișier sau dosar nu există
-import-manuskript-location-required = Alegeți un dosar de destinație
-import-manuskript-location-missing = Acest dosar nu există
-import-manuskript-location-not-folder = Această cale nu este un dosar
-import-manuskript-location-readonly = Nu se poate scrie în acest dosar
-import-manuskript-name-required = Introduceți un nume de fișier
-import-manuskript-name-exists = Aici există deja un fișier cu acest nume. Importul va cere confirmarea înlocuirii
-# Overwrite confirmation
-import-manuskript-overwrite-title = Înlocuiți fișierul existent?
-import-manuskript-overwrite-text = „{ $name }” există deja. Îl înlocuiți cu proiectul importat?
 # Names passed to the backend (which can't do i18n). Manuskript stores none of
 # these: it has no binders, no story-bible groups, and its importance scale is
 # three numbers whose names live in its own interface.
@@ -1140,8 +1090,6 @@ import-manuskript-importance-secondary = Secundar
 import-manuskript-importance-main = Principal
 # Progress toast (the import is a long operation)
 import-manuskript-progress-title = Se importă proiectul Manuskript…
-import-manuskript-cancel-import = Renunță
-import-manuskript-cancelled = Import anulat
 # Result
 import-manuskript-done = { $imported ->
        [one] A fost importat { $imported } element.
@@ -1153,17 +1101,6 @@ import-manuskript-done = { $imported ->
        [few] Au fost preluate și { $revisions } versiuni anterioare.
       *[other] Au fost preluate și { $revisions } de versiuni anterioare.
    }
-import-manuskript-open-now = Deschide acum
-# Shown when the importer could not carry everything across as it was.
-import-manuskript-warnings = { $count ->
-       [one] Un lucru de știut despre acest import
-       [few] { $count } lucruri de știut despre acest import
-      *[other] { $count } de lucruri de știut despre acest import
-   }
-import-manuskript-details = Detalii
-import-manuskript-warnings-title = Despre acest import
-# Error toast: short reason in the body, full technical chain behind “Details”
-import-manuskript-error-title = Proiectul nu a putut fi importat
 # The project was refused unread because one of its files nests its XML deeper
 # than the app will read. $part is that file's name inside the project
 # (world.opml, plots.xml…); $limit is the ceiling, a number.
@@ -1176,7 +1113,6 @@ import-manuskript-folders-too-deep = Proiectul nu a fost importat: unul dintre f
 # entities, which could expand into more memory than the computer has. $part
 # is that file's name inside the project (world.opml, plots.xml…).
 import-manuskript-declares-entities = Proiectul nu a fost importat: fișierul său „{ $part }” declară entități XML, lucru pe care niciun proiect Manuskript nu îl face. Extinderea lor ar putea cere mai multă memorie decât are calculatorul și ar putea bloca Skribisto. Nu s-a scris nimic.
-import-manuskript-error-details = Detalii
 
 ## Project import, shared by the Plume Creator and Manuskript dialogs
 # The chosen destination is a project open in a window, here or in another

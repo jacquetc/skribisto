@@ -859,10 +859,6 @@ new-work-target-open-title = Este projeto está aberto
 new-work-target-open-text = «{ $name }» está aberto no Skribisto. Criar um novo projeto no seu lugar substituiria o projeto em que está a trabalhar, e a próxima gravação escreveria esse projeto de volta por cima do novo. Escolha outro nome ou pasta, ou feche primeiro o projeto.
 target-importing-title = Uma importação está a escrever este projeto
 target-importing-text = Uma importação ainda está a escrever «{ $name }». Aguarde até que termine, ou escolha outro nome.
-import-plume-busy-title = Outro projeto Plume Creator está a ser importado
-import-plume-busy-text = Os projetos Plume Creator são importados um de cada vez. Aguarde até que a importação em curso termine, ou cancele-a, e depois inicie esta novamente.
-import-manuskript-busy-title = Outro projeto Manuskript está a ser importado
-import-manuskript-busy-text = Os projetos Manuskript são importados um de cada vez. Aguarde até que a importação em curso termine, ou cancele-a, e depois inicie esta novamente.
 backup-restore-importing-text = Uma importação ainda está a escrever «{ $name }», o projeto sobre o qual esta cópia de segurança seria restaurada. Restaure a cópia de segurança quando a importação terminar.
 
 new-work-manuscript = Manuscrito
@@ -886,33 +882,16 @@ new-work-characters = Personagens
 new-work-places = Lugares
 
 import-plume-title = Importar um projeto Plume Creator
-import-plume-close = Fechar
 import-plume-source = Projeto Plume
 import-plume-source-hint = Escolha um ficheiro .plume ou .plume_backup (qualquer versão do Plume Creator).
-import-plume-location = Pasta de destino
-import-plume-name = Nome do ficheiro
-import-plume-name-placeholder = Nome do projeto
-import-plume-will-create = Será criado
 import-plume-trash-warning = ⚠ Os itens no lixo ou eliminados não são migrados.
 
-import-plume-cancel = Cancelar
-import-plume-import = Importar
 import-plume-source-required = Escolha um ficheiro de projeto Plume
 import-plume-source-missing = Este ficheiro não existe
 import-plume-source-not-file = Este caminho não é um ficheiro
-import-plume-location-required = Escolha uma pasta de destino
-import-plume-location-missing = Esta pasta não existe
-import-plume-location-not-folder = Este caminho não é uma pasta
-import-plume-location-readonly = Não é possível escrever nesta pasta
-import-plume-name-required = Introduza um nome de ficheiro
-import-plume-name-exists = Já existe aqui um ficheiro com este nome. A importação pedirá confirmação para o substituir
-import-plume-overwrite-title = Substituir o ficheiro existente?
-import-plume-overwrite-text = «{ $name }» já existe. Substituí-lo pelo projeto importado?
 import-plume-manuscript-binder = Manuscrito
 import-plume-story-bible-binder = Bíblia da história
 import-plume-progress-title = A importar o projeto Plume…
-import-plume-cancel-import = Cancelar
-import-plume-cancelled = Importação cancelada
 import-plume-done = { $imported ->
     [one] { $imported } item importado.
    *[other] { $imported } itens importados.
@@ -920,40 +899,16 @@ import-plume-done = { $imported ->
     [one] { $skipped } item no lixo não foi migrado.
    *[other] { $skipped } itens no lixo não foram migrados.
 }
-import-plume-open-now = Abrir agora
-import-plume-warnings = { $count ->
-    [one] 1 elemento não pôde ser importado exatamente
-   *[other] { $count } elementos não puderam ser importados exatamente
-}
-import-plume-details = Detalhes
-import-plume-warnings-title = Avisos de importação
-import-plume-error-title = Não foi possível importar o projeto
 import-plume-nested-too-deep = O projeto não foi importado: a sua parte «{ $part }» tem mais de { $limit } níveis de aninhamento. Nenhum projeto Plume Creator se aproxima disso, e lê-lo poderia fazer o Skribisto falhar. Nada foi escrito.
 import-plume-declares-entities = O projeto não foi importado: a sua parte «{ $part }» declara entidades XML, o que nenhum projeto Plume Creator faz. Expandi-las poderia exigir mais memória do que o computador tem e fazer o Skribisto falhar. Nada foi escrito.
-import-plume-error-details = Detalhes
 
 import-manuskript-title = Importar um projeto Manuskript
-import-manuskript-close = Fechar
 import-manuskript-source = Projeto Manuskript
 import-manuskript-source-hint = Escolha o ficheiro .msk ou a pasta do projeto (qualquer versão do Manuskript).
 import-manuskript-source-file = Escolher ficheiro…
 import-manuskript-source-folder = Escolher pasta…
-import-manuskript-location = Pasta de destino
-import-manuskript-name = Nome do ficheiro
-import-manuskript-name-placeholder = Nome do projeto
-import-manuskript-will-create = Será criado
-import-manuskript-cancel = Cancelar
-import-manuskript-import = Importar
 import-manuskript-source-required = Escolha um projeto Manuskript
 import-manuskript-source-missing = Este ficheiro ou pasta não existe
-import-manuskript-location-required = Escolha uma pasta de destino
-import-manuskript-location-missing = Esta pasta não existe
-import-manuskript-location-not-folder = Este caminho não é uma pasta
-import-manuskript-location-readonly = Não é possível escrever nesta pasta
-import-manuskript-name-required = Introduza um nome de ficheiro
-import-manuskript-name-exists = Já existe aqui um ficheiro com este nome. A importação pedirá confirmação para o substituir
-import-manuskript-overwrite-title = Substituir o ficheiro existente?
-import-manuskript-overwrite-text = «{ $name }» já existe. Substituí-lo pelo projeto importado?
 import-manuskript-manuscript-binder = Manuscrito
 import-manuskript-story-bible-binder = Bíblia da história
 import-manuskript-characters-group = Personagens
@@ -965,8 +920,6 @@ import-manuskript-importance-minor = Menor
 import-manuskript-importance-secondary = Secundária
 import-manuskript-importance-main = Principal
 import-manuskript-progress-title = A importar o projeto Manuskript…
-import-manuskript-cancel-import = Cancelar
-import-manuskript-cancelled = Importação cancelada
 import-manuskript-done = { $imported ->
     [one] { $imported } item importado.
    *[other] { $imported } itens importados.
@@ -975,18 +928,9 @@ import-manuskript-done = { $imported ->
     [one] { $revisions } versão anterior veio com ele.
    *[other] { $revisions } versões anteriores vieram com eles.
 }
-import-manuskript-open-now = Abrir agora
-import-manuskript-warnings = { $count ->
-    [one] 1 coisa a saber sobre esta importação
-   *[other] { $count } coisas a saber sobre esta importação
-}
-import-manuskript-details = Detalhes
-import-manuskript-warnings-title = Sobre esta importação
-import-manuskript-error-title = Não foi possível importar o projeto
 import-manuskript-nested-too-deep = O projeto não foi importado: o seu ficheiro «{ $part }» tem mais de { $limit } níveis de aninhamento. Nenhum projeto Manuskript se aproxima disso, e lê-lo poderia fazer o Skribisto falhar. Nada foi escrito.
 import-manuskript-folders-too-deep = O projeto não foi importado: um dos seus ficheiros está a mais de { $limit } pastas de profundidade. Nenhum projeto Manuskript se aproxima disso, e lê-lo poderia fazer o Skribisto falhar. Nada foi escrito.
 import-manuskript-declares-entities = O projeto não foi importado: o seu ficheiro «{ $part }» declara entidades XML, o que nenhum projeto Manuskript faz. Expandi-las poderia exigir mais memória do que o computador tem e fazer o Skribisto falhar. Nada foi escrito.
-import-manuskript-error-details = Detalhes
 
 import-target-open-title = Este projeto está aberto
 import-target-open-text = «{ $name }» está aberto no Skribisto. Importar por cima dele substituiria o projeto em que está a trabalhar, e a próxima gravação escreveria esse projeto de volta por cima da importação. Escolha outro nome de ficheiro, ou feche primeiro o projeto.
