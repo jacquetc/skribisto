@@ -11,7 +11,9 @@ use common::database::CommandUnitOfWork;
 use common::database::write_guard::WriteTransactionGuard;
 use common::database::{db_context::DbContext, transactions::Transaction};
 #[allow(unused_imports)]
-use common::entities::{Binder, BinderItem, Comment, CommentReply, Content, Footnote, Work};
+use common::entities::{
+    Asset, Binder, BinderItem, Comment, CommentReply, Content, Footnote, Work, WorkInfo,
+};
 use common::event::ImportManagementEvent::ApplyDocumentImport;
 use common::event::{AllEvent, DirectAccessEntity, Event, EventBuffer, EventHub, Origin};
 #[allow(unused_imports)]
@@ -158,6 +160,10 @@ impl CommandUnitOfWork for ApplyDocumentImportUnitOfWork {
 #[macros::uow_action(entity = "Footnote", action = "CreateOrphan")]
 #[macros::uow_action(entity = "Footnote", action = "GetMulti")]
 #[macros::uow_action(entity = "Footnote", action = "SetRelationship")]
+// The pictures: see the identical lines on the trait.
+#[macros::uow_action(entity = "Asset", action = "CreateOrphan")]
+#[macros::uow_action(entity = "Asset", action = "GetMulti")]
+#[macros::uow_action(entity = "WorkInfo", action = "GetAll")]
 impl ApplyDocumentImportUnitOfWorkTrait for ApplyDocumentImportUnitOfWork {
     fn publish_apply_document_import_event(&self, ids: Vec<EntityId>, data: Option<String>) {
         self.event_hub.send_event(Event {

@@ -2201,6 +2201,10 @@ import-document-destination = Destination
 import-document-destination-hint = Choisissez un classeur ou un élément : les nouveaux éléments arrivent dans un dossier, ou après une scène.
 import-document-destination-empty = Aucun classeur pour l’instant. Créez-en un d’abord.
 import-document-plan-empty = Rien à importer pour l’instant.
+import-document-pictures = { $count ->
+    [one] Une image accompagne ces documents.
+   *[other] { $count } images accompagnent ces documents.
+}
 import-document-summary = { $rows ->
     [one] 1 élément
    *[other] { $rows } éléments
@@ -2253,7 +2257,17 @@ import-diagnostic-nested-break-dropped = { $count ->
     [one] Un saut de scène situé dans une citation ou une liste de « { $path } » a été supprimé. Seul un saut placé seul sur sa ligne est conservé.
    *[other] { $count } sauts de scène situés dans des citations ou des listes de « { $path } » ont été supprimés. Seul un saut placé seul sur sa ligne est conservé.
 }
-import-diagnostic-image-not-ingested = « { $path } » fait référence à l’image « { $detail } ». La référence arrive en texte ; l’image elle-même n’est pas copiée.
+import-diagnostic-image-not-ingested-format = Dans « { $path } », l’image « { $detail } » est dans un format que Skribisto ne sait pas afficher : elle n’a pas été importée. Les images PNG, JPEG, WebP, GIF, TIFF et BMP sont importées ; enregistrez-la dans l’un de ces formats et insérez-la à la main.
+import-diagnostic-image-not-ingested-remote = Dans « { $path } », l’image « { $detail } » se trouve sur le Web. Une importation ne télécharge jamais d’image : elle n’a pas été importée.
+import-diagnostic-image-not-ingested-outside = Dans « { $path } », l’image « { $detail } » se trouve hors du document et de son dossier : elle n’a pas été importée. Seules les images enregistrées dans le document, ou dans le dossier du document, sont importées.
+import-diagnostic-image-not-ingested-missing = Dans « { $path } », l’image « { $detail } » est introuvable : elle n’a pas été importée.
+import-diagnostic-image-not-ingested-too-large = Dans « { $path } », l’image « { $detail } » dépasse la taille qu’un projet accepte : elle n’a pas été importée.
+import-diagnostic-image-not-ingested-unreadable = Dans « { $path } », l’image « { $detail } » ne peut pas être lue comme une image : elle n’a pas été importée.
+import-diagnostic-image-not-ingested-heading = Dans « { $path } », l’image « { $detail } » se trouve dans un titre. Un titre devient l’intitulé d’un élément, qui ne contient pas d’image : elle n’a pas été importée.
+import-diagnostic-image-not-ingested-note = Dans « { $path } », l’image « { $detail } » se trouve dans une note de bas de page, une note de fin ou un commentaire. Ceux-ci gardent leurs mots, mais pas d’image : elle n’a pas été importée.
+import-diagnostic-image-not-ingested-html = Dans « { $path } », l’image « { $detail } » est écrite en HTML, qu’une importation laisse de côté : elle n’a pas été importée. Écrivez-la comme une image Markdown pour l’importer.
+import-diagnostic-image-not-ingested-document-full = Dans « { $path } », l’image « { $detail } » n’a pas été importée : les images de ce document dépassent ensemble ce qu’un import fait entrer. Importez le document en plusieurs fois, ou insérez les autres images à la main.
+import-diagnostic-picture-first-frame-only = Dans « { $path } », l’image animée « { $detail } » arrive sous la forme de sa première image. Les images d’un projet ne sont pas animées.
 import-diagnostic-duplicate-title = « { $title } » apparaît { $count } fois. Si vous avez déjà importé ces fichiers, cela les dupliquera.
 import-diagnostic-heading-level-jump = « { $title } » passe du niveau de titre { $from } au niveau { $to } ; il est placé un niveau sous son parent.
 import-diagnostic-illegal-combination = « { $title } » contient du texte, mais un élément de type « { $kind } » ne peut pas en contenir. L’importation est suspendue tant que vous n’avez pas changé son type ou décoché l’élément : sinon rien du tout ne serait importé.

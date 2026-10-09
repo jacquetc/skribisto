@@ -5757,6 +5757,7 @@ dependencies = [
  "chrono",
  "docx-rs",
  "encoding_rs",
+ "image",
  "proptest",
  "pulldown-cmark",
  "quick-xml 0.41.0",
@@ -5765,6 +5766,7 @@ dependencies = [
  "skribisto-model",
  "skribisto-rtf-reader",
  "skribisto-skrib-format",
+ "tempfile",
  "text-document",
  "text2num",
  "uuid",
@@ -5837,6 +5839,7 @@ version = "3.0.5"
 dependencies = [
  "anyhow",
  "chrono",
+ "image",
  "serde",
  "serde_json",
  "skribisto-binder-ordering",

@@ -54,6 +54,9 @@ tempfile = "3"
 # `docx_writer_roundtrip.rs` already use — dev-only so this crate's runtime
 # dependency graph never grows a writer it does not otherwise need.
 text-document = { workspace = true }
+# The picture tests encode the pictures their documents show, rather than committing any.
+# The same package and codec `document_ingest` reads them with.
+image = { version = "0.25", default-features = false, features = ["png"] }
 
 [lints]
 workspace = true

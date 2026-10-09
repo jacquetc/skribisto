@@ -20,5 +20,7 @@
 pub(crate) mod hunk_merge;
 pub(crate) mod import_document_vm;
 pub(crate) mod panel;
+/// Where an import's pictures wait between the analysis and the apply. Not a view-model.
+pub(crate) mod picture_staging;
 
 pub use import_document_vm::ImportDocumentViewModel;

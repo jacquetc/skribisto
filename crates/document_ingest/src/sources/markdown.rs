@@ -38,6 +38,8 @@
 //! `# # #` yields a text event of just `#`, which is indistinguishable from a
 //! genuine one-character heading.
 
+use std::collections::HashMap;
+
 use anyhow::Result;
 use pulldown_cmark::{BrokenLink, Event, Options, Parser, RefDefs, Tag, TagEnd};
 use skribisto_model::scene_break::{self, SceneBreakTier};
@@ -45,6 +47,7 @@ use skribisto_model::scene_break::{self, SceneBreakTier};
 use crate::block::{SourceBlock, SourceDocument};
 use crate::diagnostics::ImportDiagnostic;
 use crate::front_matter;
+use crate::pictures::{DocumentFolder, DocumentPictures, PictureRefusal, Reference};
 use crate::scanner::SourceScanner;
 use crate::sources::MAX_LIST_LEVELS;
 use crate::text;
@@ -66,7 +69,18 @@ impl SourceScanner for MarkdownScanner {
         "markdown"
     }
 
+    /// A document with no folder: every picture it names by path is reported missing.
     fn scan(&self, bytes: &[u8], display_name: &str, origin: &str) -> Result<SourceDocument> {
+        self.scan_in(bytes, display_name, origin, None)
+    }
+
+    fn scan_in(
+        &self,
+        bytes: &[u8],
+        display_name: &str,
+        origin: &str,
+        folder: Option<&DocumentFolder>,
+    ) -> Result<SourceDocument> {
         let decoded = text::decode(bytes, origin);
         let mut doc = SourceDocument::new(display_name, origin);
         doc.diagnostics.extend(decoded.diagnostics);
@@ -83,7 +97,10 @@ impl SourceScanner for MarkdownScanner {
         doc.diagnostics.extend(fm.diagnostics);
         let body = &decoded.text[fm.body_offset..];
 
-        doc.blocks = segment(body, origin, &mut doc.diagnostics)?;
+        let mut pictures = DocumentPictures::new();
+        let brought = bring_in_pictures(body, folder, &mut pictures, origin, &mut doc.diagnostics);
+        doc.blocks = segment(&brought.body, origin, &brought.sizes, &mut doc.diagnostics)?;
+        doc.pictures = pictures.into_pictures();
 
         if !doc
             .blocks
@@ -110,11 +127,392 @@ enum Boundary {
     Prose,
 }
 
+/// The document's text with every picture it shows pointed at the project's copy, and the
+/// size each of those is shown at.
+struct BroughtIn {
+    body: String,
+    /// `assets/<hash>.<ext>` → its width and height as the editor shows it. Markdown states
+    /// no size for a picture, and a reference with none would lay out at whatever the file
+    /// happens to be; the editor writes the natural size on every picture it inserts, and
+    /// these are written the same way (see [`with_picture_sizes`]).
+    sizes: HashMap<String, (u32, u32)>,
+}
+
+/// Bring in every picture `body` shows, before anything else reads it.
+///
+/// Each image is rewritten in the Markdown itself, `![its description](assets/<hash>.<ext>)`,
+/// so the conversion that follows writes the name the picture has in the project and nothing
+/// downstream needs to know a picture was ever anywhere else. The description is kept, as
+/// words: Markdown's own formatting inside it means nothing to a picture's description.
+///
+/// A picture that cannot come is taken out of the text and reported
+/// ([`ImportDiagnostic::ImageNotIngested`]), once however often the document shows it. Left
+/// in, it would show as nothing, and it would carry the document's own path for the picture,
+/// a folder on the writer's disk or an address on the web, into the project.
+///
+/// A picture in a heading is left alone and reported: the heading becomes a title, which
+/// holds its description's words as it always has and no picture. So is a picture written as
+/// HTML, which the conversion drops with the rest of the HTML.
+///
+/// Only the images themselves are rewritten, and each one taken out leaves the blocks around
+/// it as they were ([`removal`]).
+fn bring_in_pictures(
+    body: &str,
+    folder: Option<&DocumentFolder>,
+    pictures: &mut DocumentPictures,
+    origin: &str,
+    diagnostics: &mut Vec<ImportDiagnostic>,
+) -> BroughtIn {
+    struct Found {
+        range: std::ops::Range<usize>,
+        target: String,
+        description: String,
+        in_heading: bool,
+    }
+    let mut found: Vec<Found> = Vec::new();
+    let mut headings = 0usize;
+    let mut open_images = 0usize;
+    // The pictures written as HTML, which the conversion drops with the rest of the HTML. An
+    // HTML block arrives a line at a time, so its lines are gathered before a tag split over
+    // two of them is looked for.
+    let mut html_pictures: Vec<String> = Vec::new();
+    let mut html_block = String::new();
+    for (event, range) in Parser::new_ext(body, options()).into_offset_iter() {
+        match &event {
+            Event::Html(html) => html_block.push_str(html),
+            Event::End(TagEnd::HtmlBlock) => {
+                html_pictures.extend(html_picture_sources(&html_block));
+                html_block.clear();
+            }
+            Event::InlineHtml(html) => html_pictures.extend(html_picture_sources(html)),
+            Event::Start(Tag::Heading { .. }) => headings += 1,
+            Event::End(TagEnd::Heading(_)) => headings = headings.saturating_sub(1),
+            // Only the outermost image of a nest: one inside another's description is part of
+            // that description, and rewriting both would cut into each other's text.
+            Event::Start(Tag::Image { dest_url, .. }) => {
+                if open_images == 0 {
+                    found.push(Found {
+                        range,
+                        target: dest_url.to_string(),
+                        description: String::new(),
+                        in_heading: headings > 0,
+                    });
+                }
+                open_images += 1;
+            }
+            Event::End(TagEnd::Image) => open_images = open_images.saturating_sub(1),
+            Event::Text(text) | Event::Code(text) if open_images > 0 => {
+                if let Some(last) = found.last_mut() {
+                    last.description.push_str(text);
+                }
+            }
+            Event::SoftBreak | Event::HardBreak if open_images > 0 => {
+                if let Some(last) = found.last_mut() {
+                    last.description.push(' ');
+                }
+            }
+            _ => {}
+        }
+    }
+    // Each named once, as a picture written in Markdown is.
+    let mut named: std::collections::HashSet<String> = std::collections::HashSet::new();
+    for target in html_pictures {
+        if named.insert(target.clone()) {
+            diagnostics.push(ImportDiagnostic::ImageNotIngested {
+                path: origin.to_string(),
+                target,
+                reason: PictureRefusal::InHtml,
+            });
+        }
+    }
+    let mut sizes = HashMap::new();
+    if found.is_empty() {
+        return BroughtIn {
+            body: body.to_string(),
+            sizes,
+        };
+    }
+
+    let mut out = String::with_capacity(body.len());
+    let mut at = 0usize;
+    for image in found {
+        if image.in_heading {
+            diagnostics.push(ImportDiagnostic::ImageNotIngested {
+                path: origin.to_string(),
+                target: crate::pictures::reference_label(&image.target),
+                reason: PictureRefusal::InHeading,
+            });
+            continue;
+        }
+        let name = image
+            .target
+            .rsplit('/')
+            .next()
+            .unwrap_or_default()
+            .to_string();
+        let brought = match crate::pictures::classify_reference(&image.target) {
+            Reference::Relative(segments) => {
+                // Keyed by the path as resolved, so `a.png` and `./a.png` are one picture.
+                let source = segments.join("/");
+                let name = segments.last().cloned().unwrap_or_default();
+                pictures.bring(&source, &name, || {
+                    folder.map_or(Err(PictureRefusal::Missing), |folder| {
+                        folder.read(&segments)
+                    })
+                })
+            }
+            Reference::Inline(bytes) => pictures.bring(&image.target, "picture", || bytes),
+            Reference::Remote => {
+                pictures.bring(&image.target, &name, || Err(PictureRefusal::Remote))
+            }
+            Reference::Outside => {
+                pictures.bring(&image.target, &name, || Err(PictureRefusal::Outside))
+            }
+            Reference::Empty => {
+                pictures.bring(&image.target, &name, || Err(PictureRefusal::Missing))
+            }
+        };
+        if brought.first_time {
+            if let Err(reason) = brought.result {
+                diagnostics.push(ImportDiagnostic::ImageNotIngested {
+                    path: origin.to_string(),
+                    target: crate::pictures::reference_label(&image.target),
+                    reason,
+                });
+            }
+            if brought.first_frame_only {
+                diagnostics.push(ImportDiagnostic::PictureFirstFrameOnly {
+                    path: origin.to_string(),
+                    target: crate::pictures::reference_label(&image.target),
+                });
+            }
+        }
+        match brought.result {
+            Ok(placed) => {
+                out.push_str(&body[at..image.range.start]);
+                out.push_str("![");
+                out.push_str(&markdown_escaped(&image.description));
+                out.push_str("](");
+                out.push_str(&placed.src);
+                out.push(')');
+                sizes.insert(placed.src, (placed.width, placed.height));
+                at = image.range.end;
+            }
+            Err(_) => {
+                let removal = removal(body, at, image.range.clone());
+                out.push_str(&body[at..removal.from]);
+                out.push_str(&removal.insert);
+                at = removal.to;
+            }
+        }
+    }
+    out.push_str(&body[at..]);
+    BroughtIn { body: out, sizes }
+}
+
+/// How a picture that cannot come leaves the text: `body[from..to]` is replaced by `insert`.
+struct Removal {
+    from: usize,
+    to: usize,
+    insert: String,
+}
+
+/// Take the picture at `range` out of `body`, leaving the blocks around it as they were.
+///
+/// Taking out the picture alone reshaped the text around it. A picture on a line of its own
+/// inside a paragraph left a blank line there, and the paragraph arrived as two. A picture
+/// opening a line left what followed it opening the line in its place, so a caption such as
+/// `- the harbour` became a list item and `1. Arrival` a numbered list.
+///
+/// So a picture alone on its line goes with the line, and the lines either side stay one
+/// paragraph; and when what follows a picture that opened its line would open a block of
+/// its own, its first mark is escaped and reads as the character it is. `at` is where the
+/// text written so far ends: nothing before it is touched again.
+fn removal(body: &str, at: usize, range: std::ops::Range<usize>) -> Removal {
+    let line_start = body[..range.start]
+        .rfind('\n')
+        .map_or(0, |newline| newline + 1);
+    let line_end = body[range.end..]
+        .find('\n')
+        .map_or(body.len(), |newline| range.end + newline);
+    let opens_line = line_start >= at && body[line_start..range.start].trim().is_empty();
+    let after = &body[range.end..line_end];
+    if opens_line && after.trim().is_empty() {
+        return Removal {
+            from: line_start,
+            to: (line_end + 1).min(body.len()),
+            insert: String::new(),
+        };
+    }
+    if opens_line {
+        let rest = after.trim_start_matches([' ', '\t']);
+        let spaces = after.len() - rest.len();
+        if let Some(kept) = block_mark_at(rest) {
+            return Removal {
+                from: range.start,
+                to: range.end + spaces + kept,
+                insert: format!("{}\\", &rest[..kept]),
+            };
+        }
+        return Removal {
+            from: range.start,
+            to: range.end + spaces,
+            insert: String::new(),
+        };
+    }
+    Removal {
+        from: range.start,
+        to: range.end,
+        insert: String::new(),
+    }
+}
+
+/// When `line` would open a block of its own at the start of a line, how many of its bytes
+/// come before the mark to escape: `0` for a list bullet, a block quote, a heading, a code
+/// fence, a thematic break or a heading's underline, and the length of the number for a
+/// numbered list item, whose `.` or `)` is the mark. `None` for words.
+fn block_mark_at(line: &str) -> Option<usize> {
+    let bytes = line.as_bytes();
+    let first = *bytes.first()?;
+    let ends_mark = |at: usize| bytes.get(at).is_none_or(|b| matches!(b, b' ' | b'\t'));
+    let one_mark_repeated = || {
+        line.trim_end()
+            .bytes()
+            .all(|b| b == first || b == b' ' || b == b'\t')
+    };
+    match first {
+        b'>' => Some(0),
+        b'-' | b'+' | b'*' if ends_mark(1) => Some(0),
+        b'-' | b'*' | b'_' | b'=' if one_mark_repeated() => Some(0),
+        b'#' => {
+            let hashes = bytes.iter().take_while(|b| **b == b'#').count();
+            (hashes <= 6 && ends_mark(hashes)).then_some(0)
+        }
+        b'`' | b'~' if line.starts_with("```") || line.starts_with("~~~") => Some(0),
+        b'0'..=b'9' => {
+            let digits = bytes.iter().take_while(|b| b.is_ascii_digit()).count();
+            (digits <= 9 && matches!(bytes.get(digits), Some(b'.' | b')')) && ends_mark(digits + 1))
+                .then_some(digits)
+        }
+        _ => None,
+    }
+}
+
+/// The `src` of every `<img>` element in `html`, or `picture` for one that names none, each
+/// as the review names it ([`crate::pictures::reference_label`]).
+///
+/// A plain scan rather than an HTML parser: this only has to find the pictures that stay
+/// behind to name them, and a tag it misreads costs a name in the review, never a byte of
+/// the project.
+fn html_picture_sources(html: &str) -> Vec<String> {
+    // Lowered for matching; ASCII case changes no byte offset, so the two index together.
+    let lower = html.to_ascii_lowercase();
+    let mut out = Vec::new();
+    let mut from = 0usize;
+    while let Some(found) = lower[from..].find("<img") {
+        let name_end = from + found + "<img".len();
+        from = name_end;
+        // `<imgx>` is another element.
+        if !lower[name_end..].starts_with(|c: char| c.is_ascii_whitespace() || c == '/' || c == '>')
+        {
+            continue;
+        }
+        let tag_end = lower[name_end..]
+            .find('>')
+            .map_or(lower.len(), |close| name_end + close);
+        let source = html_attribute(&html[name_end..tag_end], &lower[name_end..tag_end], "src");
+        out.push(source.map_or_else(
+            || "picture".to_string(),
+            |src| crate::pictures::reference_label(&src),
+        ));
+        from = tag_end;
+    }
+    out
+}
+
+/// The value of the attribute `name` in the inside of a tag, `tag` as written and `lower`
+/// the same lowered, quoted or not.
+fn html_attribute(tag: &str, lower: &str, name: &str) -> Option<String> {
+    let mut from = 0usize;
+    while let Some(found) = lower[from..].find(name) {
+        let start = from + found;
+        let end = start + name.len();
+        from = end;
+        // A whole attribute name: `data-src` and `srcset` are others.
+        let whole = lower[..start]
+            .chars()
+            .next_back()
+            .is_none_or(|c| c.is_ascii_whitespace());
+        let rest = lower[end..].trim_start();
+        if !whole || !rest.starts_with('=') {
+            continue;
+        }
+        let value_at = tag.len() - rest.len() + 1;
+        let value = tag[value_at..].trim_start();
+        let value = match value.chars().next() {
+            Some(quote @ ('"' | '\'')) => value[1..].split(quote).next().unwrap_or_default(),
+            _ => value
+                .split(|c: char| c.is_ascii_whitespace() || c == '>')
+                .next()
+                .unwrap_or_default(),
+        };
+        return Some(value.trim().to_string());
+    }
+    None
+}
+
+/// `text` as Markdown that reads back as exactly these characters: every ASCII punctuation
+/// mark escaped, which CommonMark allows for all of them, and a line break a space.
+fn markdown_escaped(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    for c in text.chars() {
+        match c {
+            '\n' | '\r' => out.push(' '),
+            c if c.is_ascii_punctuation() => {
+                out.push('\\');
+                out.push(c);
+            }
+            c => out.push(c),
+        }
+    }
+    out
+}
+
+/// Give every picture of the project a size in `djot`, as the editor's own insertion does.
+///
+/// The conversion writes a picture Markdown gave no size as `![…](assets/<hash>.<ext>)`, and
+/// the name is the content's own hash, so the exact text `](assets/<hash>.<ext>)` is that
+/// picture's reference and nothing else's. A reference that already carries attributes is
+/// left as it is.
+fn with_picture_sizes(djot: String, sizes: &HashMap<String, (u32, u32)>) -> String {
+    let mut djot = djot;
+    for (src, (width, height)) in sizes {
+        let reference = format!("]({src})");
+        if !djot.contains(&reference) {
+            continue;
+        }
+        let mut out = String::with_capacity(djot.len() + 32);
+        let mut rest = djot.as_str();
+        while let Some(found) = rest.find(&reference) {
+            let end = found + reference.len();
+            out.push_str(&rest[..end]);
+            rest = &rest[end..];
+            if !rest.starts_with('{') {
+                out.push_str(&format!("{{width={width} height={height}}}"));
+            }
+        }
+        out.push_str(rest);
+        djot = out;
+    }
+    djot
+}
+
 /// Walk the document's top-level blocks, cutting it into headings, scene breaks
 /// and the prose runs between them.
 fn segment(
     body: &str,
     origin: &str,
+    sizes: &HashMap<String, (u32, u32)>,
     diagnostics: &mut Vec<ImportDiagnostic>,
 ) -> Result<Vec<SourceBlock>> {
     let mut blocks = Vec::new();
@@ -126,7 +524,6 @@ fn segment(
     let mut heading_text = String::new();
     let mut html_blocks = 0usize;
     let mut nested_rules = 0usize;
-    let mut images = Vec::new();
     // What the conversions of the prose runs reported, summed.
     let mut counts = RunCounts::default();
     // How many lists are open at the current event, and the most that were open at once
@@ -157,7 +554,7 @@ fn segment(
             counts.lists_held += run.lists_held;
             if !run.djot.trim().is_empty() {
                 blocks.push(SourceBlock::Prose {
-                    djot: run.djot,
+                    djot: with_picture_sizes(run.djot, sizes),
                     text: run.text,
                 });
             }
@@ -177,6 +574,12 @@ fn segment(
         match &event {
             Event::Start(tag) => {
                 if depth == 0 {
+                    // An HTML block opens with a tag of its own, and its lines come inside it
+                    // as `Event::Html`, never at the top level: counted here, or a file whose
+                    // HTML (and the pictures it shows) was dropped said nothing of it.
+                    if matches!(tag, Tag::HtmlBlock) {
+                        html_blocks += 1;
+                    }
                     match classify(&body[range.clone()], tag) {
                         Boundary::SceneBreak(tier) => {
                             flush_prose(&mut prose, &mut blocks, &mut counts, &mut deepest_list)?;
@@ -227,15 +630,7 @@ fn segment(
             Event::Text(t) | Event::Code(t) if pending_heading.is_some() => {
                 heading_text.push_str(t);
             }
-            Event::Html(_) if depth == 0 => {
-                html_blocks += 1;
-                extend(&mut prose, line_start(body, range.start), range.end);
-            }
             _ => {}
-        }
-
-        if let Event::Start(Tag::Image { dest_url, .. }) = &event {
-            images.push(dest_url.to_string());
         }
     }
     flush_prose(&mut prose, &mut blocks, &mut counts, &mut deepest_list)?;
@@ -263,12 +658,6 @@ fn segment(
             path: origin.to_string(),
             count: counts.lists_held,
             limit: MAX_LIST_LEVELS,
-        });
-    }
-    for target in images {
-        diagnostics.push(ImportDiagnostic::ImageNotIngested {
-            path: origin.to_string(),
-            target,
         });
     }
     let footnotes = count_footnote_definitions(body);

@@ -95,8 +95,8 @@ braille display. Please get in touch if you hit a glaring gap.
 - Opens legacy `.skrib` SQLite projects, upgrading them on load
 - Imports whole projects from Manuskript (`.msk`, folder or single file) and Plume
   Creator (`.plume`)
-- Imports documents (Markdown, plain text, ODT and DOCX), showing you every row it would
-  create before anything is
+- Imports documents (Markdown, plain text, ODT and DOCX) with their pictures, showing you
+  every row it would create before anything is
 - Sends a chapter out to an editor as DOCX or ODT and takes it back: their comments arrive as
   real comments, anchored to the words they were about
 - Exports to DOCX, ODT, EPUB, PDF, HTML, Markdown, Djot, LaTeX and plain text

@@ -48,6 +48,24 @@ paragraphe et la justification suivent votre style d’export. Certaines mises e
 les messages de l’étape *Vérifier* et recopiez les textes manquants depuis le fichier d’origine.
 Les symboles de polices comme Wingdings peuvent apparaître sous forme de cases vides.
 
+## Images
+
+Les images arrivent avec vos documents, chacune à l’endroit du texte où elle se trouvait. Depuis
+un fichier Word ou LibreOffice, chaque image enregistrée dans le fichier arrive avec sa
+description. Depuis un fichier Markdown, une image arrive quand son fichier se trouve dans le
+dossier du document ou dans un dossier à l’intérieur. Dans *Vérifier*, une ligne sous
+l’arborescence indique combien d’images arrivent.
+
+Les images PNG, JPEG et WebP arrivent telles quelles ; les images TIFF, GIF et BMP arrivent en
+PNG, et un GIF animé sous la forme de sa première image. Une image que le projet contient déjà
+n’est pas enregistrée une seconde fois, et *Annuler l’import* reprend les images avec le texte.
+
+Certaines images restent en arrière, et les messages nomment chacune avec la raison : un format
+que Skribisto ne sait pas afficher (comme EMF, WMF, SVG ou PDF), une image sur le Web (rien n’est
+téléchargé), une image hors du document et de son dossier, une image introuvable, illisible ou
+trop grande, ou une image placée dans un titre, une note ou un commentaire. Remettez-la ensuite
+avec *Document ▸ Insérer une image…*.
+
 ## Lire les messages avant de terminer
 
 Les messages sous l’aperçu indiquent ce qui a été modifié ou laissé de côté. En particulier :

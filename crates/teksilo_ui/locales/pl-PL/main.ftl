@@ -2026,7 +2026,6 @@ import-diagnostic-nested-break-dropped = { $count ->
         [many] Pominięto { $count } separatorów scen wewnątrz cytatów lub list w „{ $path }”. Zachowywany jest tylko separator w osobnym wierszu.
        *[other] Pominięto { $count } separatora scen wewnątrz cytatów lub list w „{ $path }”. Zachowywany jest tylko separator w osobnym wierszu.
     }
-import-diagnostic-image-not-ingested = „{ $path }” odwołuje się do obrazu „{ $detail }”. Odwołanie trafia do projektu jako tekst; sam obraz nie jest kopiowany.
 import-diagnostic-duplicate-title = „{ $title }” występuje { $count } razy. Jeśli te pliki były już importowane, zostaną zduplikowane.
 import-diagnostic-heading-level-jump = „{ $title }” przeskakuje z poziomu nagłówka { $from } na { $to }; zostaje umieszczony jeden poziom pod elementem nadrzędnym.
 import-diagnostic-illegal-combination = „{ $title }” zawiera prozę, ale typ „{ $kind }” nie może jej przechowywać. Import jest wstrzymany, dopóki nie zmienisz typu lub nie wyłączysz tego elementu. W przeciwnym razie nic nie zostanie zaimportowane.

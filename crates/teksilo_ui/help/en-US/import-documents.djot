@@ -44,6 +44,23 @@ justification follow your export style. Some formatting may be simplified.
 for anything that could not be imported, and copy any missing writing from the original file.
 Symbols from picture fonts such as Wingdings may appear as empty boxes.
 
+## Pictures
+
+Pictures come with your documents, each where it sat in the text. From Word and LibreOffice
+files, every picture stored in the file comes with its description. From a Markdown file, a
+picture comes when its file is in the document's own folder or a folder inside it. On *Review*,
+a line under the tree says how many pictures come.
+
+PNG, JPEG and WebP pictures arrive as they are; TIFF, GIF and BMP pictures arrive as PNG, and an
+animated GIF as its first frame. A picture the project already holds is not stored twice, and
+*Undo* takes the pictures back with the text.
+
+Some pictures stay behind, and the messages name each one with the reason: a format Skribisto
+cannot show (such as EMF, WMF, SVG or PDF), a picture on the web (nothing is downloaded), a
+picture outside the document and its folder, a picture that is missing, unreadable or too large,
+or one in a heading, a note or a comment. Put one back afterwards with *Document ▸ Insert
+image…*.
+
 ## Check messages before finishing
 
 Messages below the preview explain anything changed or left out. In particular:

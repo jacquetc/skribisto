@@ -77,6 +77,7 @@ pub struct AnalyzeDocumentImportDto {
     pub source_paths: Vec<String>,
     pub anchor_item_id: u64,
     pub drop_position: DropPosition,
+    pub picture_dir: String,
 }
 
 #[derive(Serialize, Deserialize, Default, Clone, Debug, PartialEq, Eq)]
@@ -98,6 +99,8 @@ pub struct DocumentImportPlanDto {
     pub footnote: ImportFootnote,
     pub diagnostic: ImportDiagnosticRow,
     pub diagnostics: ImportDiagnosticRows,
+    pub picture: ImportPicture,
+    pub pictures: ImportPictures,
 }
 
 #[derive(Serialize, Deserialize, Default, Clone, Debug, PartialEq, Eq)]
@@ -233,6 +236,27 @@ pub enum ImportDiagnosticRows {
     Empty,
     Reported(Vec<ImportDiagnosticRow>),
 }
+
+#[derive(Serialize, Deserialize, Default, Clone, Debug, PartialEq, Eq)]
+pub enum ImportPicture {
+    #[default]
+    Empty,
+    Found {
+        content_hash: String,
+        file_name: String,
+        mime_type: String,
+        width: i64,
+        height: i64,
+        byte_size: i64,
+    },
+}
+
+#[derive(Serialize, Deserialize, Default, Clone, Debug, PartialEq, Eq)]
+pub enum ImportPictures {
+    #[default]
+    Empty,
+    Found(Vec<ImportPicture>),
+}
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct ApplyDocumentImportDto {
     pub work_id: u64,
@@ -241,6 +265,9 @@ pub struct ApplyDocumentImportDto {
     pub drop_position: DropPosition,
     pub row: ApplyImportRow,
     pub rows: ApplyImportRows,
+    pub pictures: ImportPictures,
+    pub picture_dir: String,
+    pub media_root: String,
 }
 
 #[derive(Serialize, Deserialize, Default, Clone, Debug, PartialEq, Eq)]

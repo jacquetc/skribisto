@@ -1815,7 +1815,6 @@ import-diagnostic-nested-break-dropped = { $count ->
     [one] Unu scena disigilo ene de citaĵo aŭ listo en «{ $path }» estis preterlasita. Nur disigiloj sur aparta linio konserviĝas.
    *[other] { $count } scenaj disigiloj ene de citaĵoj aŭ listoj en «{ $path }» estis preterlasitaj. Nur disigiloj sur aparta linio konserviĝas.
 }
-import-diagnostic-image-not-ingested = «{ $path }» referencas la bildon «{ $detail }». La referenco importiĝas kiel teksto; la bildo mem ne estas kopiita.
 import-diagnostic-duplicate-title = «{ $title }» aperas { $count } fojojn. Se vi jam importis ĉi tiujn dosierojn, tio duplikatos ilin.
 import-diagnostic-heading-level-jump = «{ $title }» saltas de titola nivelo { $from } al { $to }; ĝi estas metita unu nivelon sub la enhavanta ero.
 import-diagnostic-illegal-combination = «{ $title }» enhavas tekston, sed la tipo { $kind } ne povas enhavi ĝin. Ŝanĝu ĝian tipon aŭ ekskludu ĝin antaŭ importi. Alie nenio importiĝos.

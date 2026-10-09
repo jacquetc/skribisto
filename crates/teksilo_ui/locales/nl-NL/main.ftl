@@ -1891,7 +1891,6 @@ import-diagnostic-nested-break-dropped = { $count ->
         [one] Eén scèneovergang binnen een citaat of lijst in “{ $path }” is weggelaten. Alleen een overgang op een eigen regel blijft behouden.
        *[other] { $count } scèneovergangen binnen citaten of lijsten in “{ $path }” zijn weggelaten. Alleen een overgang op een eigen regel blijft behouden.
     }
-import-diagnostic-image-not-ingested = “{ $path }” verwijst naar de afbeelding “{ $detail }”. De verwijzing komt binnen als tekst; de afbeelding zelf wordt niet gekopieerd.
 import-diagnostic-duplicate-title = “{ $title }” komt { $count } keer voor. Als u deze bestanden al eerder hebt geïmporteerd, worden ze nu gedupliceerd.
 import-diagnostic-heading-level-jump = “{ $title }” springt van kopniveau { $from } naar { $to }; het wordt één niveau onder het bovenliggende item geplaatst.
 import-diagnostic-illegal-combination = “{ $title }” bevat proza, maar een { $kind } kan geen proza bevatten. De import wordt aangehouden totdat u het type wijzigt of het item weglaat. Anders wordt er helemaal niets geïmporteerd.

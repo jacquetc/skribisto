@@ -1894,7 +1894,6 @@ import-diagnostic-nested-break-dropped = { $count ->
     [one] Ett sceneskift inne i et sitat eller en liste i «{ $path }» ble forkastet. Bare et skift på en egen linje beholdes.
    *[other] { $count } sceneskift inne i sitater eller lister i «{ $path }» ble forkastet. Bare et skift på en egen linje beholdes.
 }
-import-diagnostic-image-not-ingested = «{ $path }» viser til bildet «{ $detail }». Henvisningen kommer inn som tekst; selve bildet kopieres ikke inn.
 import-diagnostic-duplicate-title = «{ $title }» forekommer { $count } ganger. Hvis du har importert disse filene før, blir de duplisert.
 import-diagnostic-heading-level-jump = «{ $title }» hopper fra overskriftsnivå { $from } til { $to }; elementet plasseres ett nivå under det overordnede.
 import-diagnostic-illegal-combination = «{ $title }» inneholder tekst, men en { $kind } kan ikke inneholde tekst. Importen holdes tilbake til du endrer typen eller utelater elementet. Ellers importeres ingenting i det hele tatt.

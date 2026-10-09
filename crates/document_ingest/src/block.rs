@@ -348,6 +348,15 @@ pub struct SourceDocument {
     /// rather than a first arrival, and the only case where matching onto existing rows is
     /// even a question.
     pub row_marks: Vec<SourceRowMark>,
+    /// Every picture the document brings, each once, as a project keeps it
+    /// ([`crate::pictures`]). The prose already names each one by the path it will have in
+    /// the project, `assets/<hash>.<ext>`, so these are the bytes behind those names.
+    ///
+    /// A document's pictures can be the largest thing in it, so whoever reads the document
+    /// takes these out as soon as they are stored somewhere (see
+    /// `import_management::analyze_document_import`), rather than holding every file's
+    /// pictures in memory until the whole import is planned.
+    pub pictures: Vec<crate::pictures::IngestedPicture>,
     /// Everything the scanner wants the writer to know about this document.
     /// A scanner reports rather than refuses wherever it can: one unreadable
     /// file in sixty must not abort the other fifty-nine.
@@ -371,6 +380,7 @@ impl SourceDocument {
             annotations: Vec::new(),
             footnotes: Vec::new(),
             row_marks: Vec::new(),
+            pictures: Vec::new(),
             diagnostics: Vec::new(),
         }
     }

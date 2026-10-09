@@ -25,6 +25,7 @@ pub mod block;
 pub mod diagnostics;
 pub mod front_matter;
 pub mod order;
+pub mod pictures;
 pub mod plan;
 pub mod scanner;
 pub mod sources;

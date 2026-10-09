@@ -46,12 +46,14 @@ struct Word {
     comment_relationships: String,
     /// `<w:footnote>` elements after Word's two separators, numbered from 1.
     footnotes: Vec<String>,
+    /// `<Relationship>` elements of the footnotes part, `word/_rels/footnotes.xml.rels`.
+    footnote_relationships: String,
     /// `<w:endnote>` elements after Word's two separators, numbered from 1.
     endnotes: Vec<String>,
     /// `<Relationship>` elements of the main part beyond its styles, comments and notes.
     relationships: String,
     /// Other members, such as a picture.
-    media: Vec<(&'static str, &'static [u8])>,
+    media: Vec<(&'static str, Vec<u8>)>,
     /// The smallest package there is: `[Content_Types].xml`, `_rels/.rels` and
     /// `word/document.xml`, nothing else, as many scripts write one.
     minimal: bool,
@@ -133,6 +135,16 @@ impl Word {
                     .into_bytes(),
                 ));
             }
+            if !self.footnote_relationships.is_empty() {
+                parts.push((
+                    "word/_rels/footnotes.xml.rels".into(),
+                    format!(
+                        r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="{RELATIONSHIPS}">{}</Relationships>"#,
+                        self.footnote_relationships
+                    )
+                    .into_bytes(),
+                ));
+            }
             for (part, element, notes) in [
                 ("word/footnotes.xml", "footnote", &self.footnotes),
                 ("word/endnotes.xml", "endnote", &self.endnotes),
@@ -150,7 +162,7 @@ impl Word {
                 parts.push((part.into(), xml.into_bytes()));
             }
             for (name, bytes) in &self.media {
-                parts.push(((*name).into(), bytes.to_vec()));
+                parts.push(((*name).into(), bytes.clone()));
             }
         }
         let mut zip = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
@@ -587,7 +599,7 @@ fn an_endnote_keeps_its_own_text_beside_a_footnote_of_the_same_number() {
 
 /// A picture is one character to the prose, and to the pass that places a note after it.
 /// That pass counted none, so a note after a picture landed a character early, before the
-/// full stop. The picture's source is the part it names, not a relationship id.
+/// full stop. The picture comes with the document, named by its content in the project.
 #[test]
 fn a_note_after_a_picture_lands_where_it_was_cited() {
     const PNG: &[u8] = &[
@@ -612,21 +624,23 @@ fn a_note_after_a_picture_lands_where_it_was_cited() {
     word.footnotes = vec!["Figure source.".into()];
     word.relationships =
         format!(r#"<Relationship Id="rId20" Type="{TYPE}/image" Target="media/image1.png"/>"#);
-    word.media = vec![("word/media/image1.png", PNG)];
+    word.media = vec![("word/media/image1.png", PNG.to_vec())];
 
     let plan = plan_of("figure.docx", &word.bytes());
     let row = only_row(&plan);
     assert_eq!(text_of(row), "See \u{FFFC} the figure.\u{FFFC} Then more.");
+    let hash = blake3::hash(PNG).to_hex().to_string();
     assert!(
-        row.djot.contains("![](word/media/image1.png)"),
-        "the picture names its part: {}",
+        row.djot
+            .contains(&format!("![](assets/{hash}.png){{width=100 height=100}}")),
+        "the picture is named as the project keeps it, at the size it was shown: {}",
         row.djot
     );
     assert!(
-        plan.diagnostics.iter().any(|d| matches!(
-            d,
-            ImportDiagnostic::ImageNotIngested { target, .. } if target == "word/media/image1.png"
-        )),
+        !plan
+            .diagnostics
+            .iter()
+            .any(|d| matches!(d, ImportDiagnostic::ImageNotIngested { .. })),
         "{:?}",
         plan.diagnostics
     );
@@ -1157,5 +1171,331 @@ fn an_odt_heading_numbered_through_a_list_is_still_a_heading() {
         plan.rows[1].djot.contains("- An ordinary item."),
         "{}",
         plan.rows[1].djot
+    );
+}
+
+// ── pictures ────────────────────────────────────────────────────────────────────────
+
+/// A `width` × `height` picture of one colour, encoded as `format` by the `image` crate.
+fn picture_bytes(format: image::ImageFormat, width: u32, height: u32) -> Vec<u8> {
+    let picture = image::DynamicImage::ImageRgba8(image::RgbaImage::from_pixel(
+        width,
+        height,
+        image::Rgba([90, 60, 30, 255]),
+    ));
+    let mut out = std::io::Cursor::new(Vec::new());
+    picture.write_to(&mut out, format).expect("encode");
+    out.into_inner()
+}
+
+/// The first bytes of an enhanced metafile, which is what Word stores for a drawing pasted
+/// from another application.
+fn emf_bytes() -> Vec<u8> {
+    let mut emf = vec![1, 0, 0, 0];
+    emf.resize(40, 0);
+    emf.extend_from_slice(b" EMF");
+    emf.resize(108, 0);
+    emf
+}
+
+/// A picture as Word writes one inline: its shown size, its description, the part it names.
+fn drawing(relationship: &str, description: &str, attribute: &str) -> String {
+    format!(
+        r#"<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="1905000" cy="952500"/><wp:docPr id="1" name="Picture 1" descr="{description}"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="0" name="p"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:{attribute}="{relationship}"/></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="1905000" cy="952500"/></a:xfrm></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>"#
+    )
+}
+
+fn image_relationship(id: &str, target: &str, external: bool) -> String {
+    let mode = if external {
+        r#" TargetMode="External""#
+    } else {
+        ""
+    };
+    format!(r#"<Relationship Id="{id}" Type="{TYPE}/image" Target="{target}"{mode}/>"#)
+}
+
+fn picture_refusals(plan: &ImportPlan) -> Vec<(String, document_ingest::pictures::PictureRefusal)> {
+    plan.diagnostics
+        .iter()
+        .chain(plan.rows.iter().flat_map(|row| row.diagnostics.iter()))
+        .filter_map(|d| match d {
+            ImportDiagnostic::ImageNotIngested { target, reason, .. } => {
+                Some((target.clone(), *reason))
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+/// Every picture of a Word file comes with it, named by its content, at the size it was
+/// shown, with the description Word keeps for it. The one Word stores twice is one picture
+/// in the project, and a TIFF arrives as PNG.
+#[test]
+fn the_pictures_of_a_word_file_come_with_it() {
+    use document_ingest::ScannerRegistry;
+    let png = picture_bytes(image::ImageFormat::Png, 40, 20);
+    let tiff = picture_bytes(image::ImageFormat::Tiff, 8, 4);
+    let mut word = Word::with_body(format!(
+        r#"<w:p><w:r><w:t xml:space="preserve">A map </w:t></w:r>{}<w:r><w:t xml:space="preserve"> and again </w:t></w:r>{}<w:r><w:t xml:space="preserve"> and a scan </w:t></w:r>{}</w:p>"#,
+        drawing("rId20", "The harbour at dawn", "embed"),
+        drawing("rId20", "", "embed"),
+        drawing("rId21", "", "embed"),
+    ));
+    word.relationships = image_relationship("rId20", "media/image1.png", false)
+        + &image_relationship("rId21", "media/image2.tiff", false);
+    word.media = vec![
+        ("word/media/image1.png", png.clone()),
+        ("word/media/image2.tiff", tiff),
+    ];
+    let bytes = word.bytes();
+
+    let doc =
+        ScannerRegistry::with_builtin_scanners().scan_bytes(Path::new("figures.docx"), &bytes);
+    assert_eq!(
+        doc.pictures.len(),
+        2,
+        "one per distinct picture: {:?}",
+        doc.pictures
+    );
+    let map = &doc.pictures[0];
+    assert_eq!(map.bytes, png, "kept as Word stored it");
+    assert_eq!(map.file_name, "image1.png");
+    assert_eq!((map.width, map.height), (40, 20));
+    let scan = &doc.pictures[1];
+    assert_eq!(scan.mime_type, "image/png", "a TIFF arrives as PNG");
+    assert_eq!(scan.file_name, "image2.png");
+
+    let plan = plan_of("figures.docx", &bytes);
+    let row = only_row(&plan);
+    assert_eq!(
+        text_of(row),
+        "A map \u{FFFC} and again \u{FFFC} and a scan \u{FFFC}"
+    );
+    let map_src = format!("assets/{}.png", map.content_hash);
+    assert!(
+        row.djot.contains(&format!(
+            "![The harbour at dawn]({map_src}){{width=200 height=100}}"
+        )),
+        "the description Word keeps, and the size the picture was shown at: {}",
+        row.djot
+    );
+    assert_eq!(row.djot.matches(&map_src).count(), 2, "{}", row.djot);
+    assert!(
+        row.djot
+            .contains(&format!("assets/{}.png", scan.content_hash)),
+        "{}",
+        row.djot
+    );
+    assert!(picture_refusals(&plan).is_empty(), "{:?}", plan.diagnostics);
+}
+
+/// A picture that cannot come is said once and leaves nothing in the text, and a note after
+/// it still lands on the character it was cited at. The pass placing notes counts a picture
+/// only when it comes, as the text does.
+#[test]
+fn a_picture_left_out_leaves_no_mark_and_moves_no_note() {
+    let mut word = Word::with_body(format!(
+        r#"<w:p><w:r><w:t xml:space="preserve">See </w:t></w:r>{}<w:r><w:t xml:space="preserve">the figure.</w:t></w:r>{}<w:r><w:t xml:space="preserve"> Then </w:t></w:r>{}{}{}{}<w:r><w:t>more.</w:t></w:r></w:p>"#,
+        drawing("rId20", "", "embed"),
+        note_reference("footnote", 1),
+        drawing("rId20", "", "embed"),
+        drawing("rId21", "", "link"),
+        drawing("rId22", "", "link"),
+        drawing("rId23", "", "embed"),
+    ));
+    word.footnotes = vec!["Figure source.".into()];
+    word.relationships = image_relationship("rId20", "media/image1.emf", false)
+        + &image_relationship("rId21", "https://example.com/figure.png", true)
+        + &image_relationship("rId22", "file:///C:/Users/writer/Pictures/figure.png", true)
+        + &image_relationship("rId23", "media/gone.png", false);
+    word.media = vec![("word/media/image1.emf", emf_bytes())];
+
+    let plan = plan_of("figure.docx", &word.bytes());
+    let row = only_row(&plan);
+    assert_eq!(text_of(row), "See the figure.\u{FFFC} Then more.");
+    assert!(
+        row.djot.contains("figure.[^"),
+        "the note is still after the full stop: {}",
+        row.djot
+    );
+    assert!(!row.djot.contains("!["), "no picture left: {}", row.djot);
+    assert!(
+        !row.djot.contains("Users"),
+        "no path from the writer's disk reaches the project: {}",
+        row.djot
+    );
+    use document_ingest::pictures::PictureRefusal;
+    assert_eq!(
+        picture_refusals(&plan),
+        vec![
+            (
+                "word/media/image1.emf".to_string(),
+                PictureRefusal::Unsupported { format: "EMF" }
+            ),
+            (
+                "https://example.com/figure.png".to_string(),
+                PictureRefusal::Remote
+            ),
+            (
+                "file:///C:/Users/writer/Pictures/figure.png".to_string(),
+                PictureRefusal::Outside
+            ),
+            ("word/media/gone.png".to_string(), PictureRefusal::Missing),
+        ],
+        "each once, the metafile shown twice included"
+    );
+}
+
+/// A heading becomes a title, which holds no picture: the title keeps its words, and the
+/// picture is named rather than dropped in silence.
+#[test]
+fn a_picture_in_a_heading_is_named_and_the_title_keeps_its_words() {
+    let png = picture_bytes(image::ImageFormat::Png, 4, 4);
+    let mut word = Word::with_body(format!(
+        r#"<w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr><w:r><w:t>The Harbour</w:t></w:r>{}</w:p>{}"#,
+        drawing("rId20", "", "embed"),
+        p("It was early."),
+    ));
+    word.relationships = image_relationship("rId20", "media/crest.png", false);
+    word.media = vec![("word/media/crest.png", png)];
+    let plan = plan_of("chapter.docx", &word.bytes());
+    let row = only_row(&plan);
+    assert_eq!(row.title, "The Harbour");
+    assert!(!row.djot.contains("!["), "{}", row.djot);
+    assert_eq!(
+        picture_refusals(&plan),
+        vec![(
+            "word/media/crest.png".to_string(),
+            document_ingest::pictures::PictureRefusal::InHeading
+        )]
+    );
+}
+
+/// A one-pixel PNG, and a second of another colour, for the picture tests below.
+fn two_pictures() -> (Vec<u8>, Vec<u8>) {
+    let encode = |colour: [u8; 4]| {
+        let mut out = std::io::Cursor::new(Vec::new());
+        image::DynamicImage::ImageRgba8(image::RgbaImage::from_pixel(1, 1, image::Rgba(colour)))
+            .write_to(&mut out, image::ImageFormat::Png)
+            .expect("encode");
+        out.into_inner()
+    };
+    (encode([10, 20, 30, 255]), encode([200, 100, 50, 255]))
+}
+
+/// An inline drawing showing `graphic`, in a run of its own.
+fn inline_drawing(graphic: &str) -> String {
+    format!(
+        concat!(
+            r#"<w:r><w:drawing><wp:inline><wp:extent cx="952500" cy="952500"/>"#,
+            r#"<wp:docPr id="1" name="Picture 1" descr="The harbour"/><a:graphic>"#,
+            r#"<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">"#,
+            r#"{}</a:graphicData></a:graphic></wp:inline></w:drawing></w:r>"#,
+        ),
+        graphic
+    )
+}
+
+/// A `pic:pic` naming its part by the relationship `id`.
+fn picture_of(id: &str) -> String {
+    format!(
+        concat!(
+            r#"<pic:pic><pic:nvPicPr><pic:cNvPr id="0" name="p.png"/><pic:cNvPicPr/></pic:nvPicPr>"#,
+            r#"<pic:blipFill><a:blip r:embed="{}"/></pic:blipFill><pic:spPr><a:xfrm>"#,
+            r#"<a:off x="0" y="0"/><a:ext cx="952500" cy="952500"/></a:xfrm></pic:spPr></pic:pic>"#,
+        ),
+        id
+    )
+}
+
+/// A group holding a picture and, after it, a shape filled with another picture: `docx-rs`
+/// reads the group as the picture, and so must the pass that counts it. That pass took the
+/// drawing's last blip, the shape's fill, so the picture that comes was reported as
+/// unreadable, and the note after it moved a character late, past the full stop.
+#[test]
+fn a_picture_grouped_with_a_filled_shape_comes_and_keeps_its_note_in_place() {
+    let (picture, fill) = two_pictures();
+    let group = format!(
+        concat!(
+            r#"<wpg:wgp xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup">"#,
+            r#"{}<wps:wsp><wps:spPr><a:blipFill><a:blip r:embed="rId21"/></a:blipFill></wps:spPr>"#,
+            r#"</wps:wsp></wpg:wgp>"#,
+        ),
+        picture_of("rId20")
+    );
+    let mut word = Word::with_body(format!(
+        r#"<w:p><w:r><w:t xml:space="preserve">See </w:t></w:r>{}<w:r><w:t xml:space="preserve"> the figure</w:t></w:r>{}<w:r><w:t>.</w:t></w:r></w:p>"#,
+        inline_drawing(&group),
+        note_reference("footnote", 1)
+    ));
+    word.footnotes = vec!["Figure source.".into()];
+    word.relationships = format!(
+        r#"<Relationship Id="rId20" Type="{TYPE}/image" Target="media/image1.png"/><Relationship Id="rId21" Type="{TYPE}/image" Target="media/image2.png"/>"#
+    );
+    word.media = vec![
+        ("word/media/image1.png", picture.clone()),
+        ("word/media/image2.png", fill),
+    ];
+
+    let plan = plan_of("grouped.docx", &word.bytes());
+    let row = only_row(&plan);
+    assert_eq!(text_of(row), "See \u{FFFC} the figure\u{FFFC}.");
+    let hash = blake3::hash(&picture).to_hex().to_string();
+    assert!(
+        row.djot
+            .contains(&format!("![The harbour](assets/{hash}.png)")),
+        "the grouped picture, not the fill: {}",
+        row.djot
+    );
+    assert!(
+        !plan
+            .diagnostics
+            .iter()
+            .any(|d| matches!(d, ImportDiagnostic::ImageNotIngested { .. })),
+        "{:?}",
+        plan.diagnostics
+    );
+}
+
+/// A note and a comment keep their words and no picture. A picture in either vanished from
+/// it without a word; it is named now, once however many show it, by the part it is.
+#[test]
+fn a_picture_in_a_word_note_or_comment_is_named() {
+    let (picture, _) = two_pictures();
+    let shown = inline_drawing(&picture_of("rId30"));
+    let mut word = Word::with_body(format!(
+        r#"<w:p><w:commentRangeStart w:id="0"/><w:r><w:t>See</w:t></w:r><w:commentRangeEnd w:id="0"/><w:r><w:commentReference w:id="0"/></w:r>{}<w:r><w:t xml:space="preserve"> here.</w:t></w:r></w:p>"#,
+        note_reference("footnote", 1)
+    ));
+    // The note's text run is closed around the drawing, and opened again after it.
+    word.footnotes = vec![format!(
+        r#"Figure</w:t></w:r>{shown}<w:r><w:t xml:space="preserve"> source."#
+    )];
+    word.footnote_relationships =
+        format!(r#"<Relationship Id="rId30" Type="{TYPE}/image" Target="media/note.png"/>"#);
+    word.comments = vec![format!(
+        r#"<w:comment w:id="0" w:author="Editor" w:date="2026-03-04T05:06:07Z" w:initials="E"><w:p><w:r><w:t xml:space="preserve">Look </w:t></w:r>{shown}</w:p></w:comment>"#
+    )];
+    word.comment_relationships =
+        format!(r#"<Relationship Id="rId30" Type="{TYPE}/image" Target="media/note.png"/>"#);
+    word.media = vec![("word/media/note.png", picture)];
+
+    let plan = plan_of("notes.docx", &word.bytes());
+    let refused: Vec<(String, document_ingest::pictures::PictureRefusal)> = plan
+        .diagnostics
+        .iter()
+        .filter_map(|d| match d {
+            ImportDiagnostic::ImageNotIngested { target, reason, .. } => {
+                Some((target.clone(), *reason))
+            }
+            _ => None,
+        })
+        .collect();
+    assert_eq!(
+        refused,
+        vec![(
+            "word/media/note.png".to_string(),
+            document_ingest::pictures::PictureRefusal::InNote
+        )]
     );
 }

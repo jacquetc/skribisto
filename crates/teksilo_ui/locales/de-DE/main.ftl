@@ -1812,7 +1812,6 @@ import-diagnostic-nested-break-dropped = { $count ->
     [one] Ein Szenentrenner innerhalb eines Zitats oder einer Liste in „{ $path }“ wurde weggelassen. Nur Trenner in einer eigenen Zeile bleiben erhalten.
    *[other] { $count } Szenentrenner innerhalb von Zitaten oder Listen in „{ $path }“ wurden weggelassen. Nur Trenner in einer eigenen Zeile bleiben erhalten.
 }
-import-diagnostic-image-not-ingested = „{ $path }“ verweist auf das Bild „{ $detail }“. Der Verweis wird als Text übernommen; das Bild selbst wird nicht kopiert.
 import-diagnostic-duplicate-title = „{ $title }“ kommt { $count }-mal vor. Wenn Sie diese Dateien bereits importiert haben, entstehen Duplikate.
 import-diagnostic-heading-level-jump = „{ $title }“ springt von Überschriftenebene { $from } auf { $to }; der Eintrag wird eine Ebene unter seinem übergeordneten Eintrag platziert.
 import-diagnostic-illegal-combination = „{ $title }“ enthält Text, den der Typ „{ $kind }“ nicht aufnehmen kann. Der Import wartet, bis Sie den Typ ändern oder den Eintrag ausschließen. Andernfalls wird gar nichts importiert.

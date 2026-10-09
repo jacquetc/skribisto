@@ -139,6 +139,20 @@ text2num = "~2.8"
 # Skribisto, so this crate holds the one place its model meets the rich one.
 rtf_reader = { workspace = true, optional = true }
 
+# The pictures a document brings (`pictures`): a picture's dimensions read from its header,
+# its EXIF orientation, and a TIFF, GIF or BMP converted to PNG, all under the crate's own
+# decode limits. The version and the six codecs `docx-rs` already builds it with, so this is
+# the same package and nothing new is compiled: the editor paints PNG, JPEG and WebP, and
+# the other three are the ones converted.
+image = { version = "0.25", default-features = false, features = [
+    "png",
+    "jpeg",
+    "gif",
+    "tiff",
+    "bmp",
+    "webp",
+] }
+
 [dev-dependencies]
 # `natural_cmp` must be a total order or `sort_by` is entitled to panic, and totality is a
 # statement about every triple. See `tests/order_properties.rs`.
@@ -153,6 +167,9 @@ text-document = { workspace = true }
 # The crafted archives (bombs, over-declared members) the zip-bomb tests import
 # through the real scanners.
 skrib_format = { workspace = true, features = ["hostile-fixtures"] }
+# A Markdown file's pictures are files beside it: the tests build that folder, links and
+# `..` included, in a scratch directory of their own.
+tempfile = "3"
 
 [lints]
 workspace = true

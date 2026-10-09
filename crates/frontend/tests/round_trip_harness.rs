@@ -265,6 +265,10 @@ fn merge_back() {
             .collect();
 
     // ── what the file brings ────────────────────────────────────────────────
+    // Somewhere for the returning file's pictures while the merge is only printed, made
+    // here as the wizard makes its own: the analysis only writes into it.
+    let picture_dir = std::env::temp_dir().join("skrib-round-trip-pictures");
+    std::fs::create_dir_all(&picture_dir).expect("the picture folder");
     let op_id = import_management_commands::analyze_document_import(
         &ctx,
         &AnalyzeDocumentImportDto {
@@ -273,6 +277,7 @@ fn merge_back() {
             source_paths: vec![back.clone()],
             anchor_item_id: 0,
             drop_position: import_management::DropPosition::After,
+            picture_dir: picture_dir.to_string_lossy().into_owned(),
         },
     )
     .expect("analyze dispatch");

@@ -2246,7 +2246,6 @@ import-diagnostic-nested-break-dropped = { $count ->
        [few] { $count } separatoare de scenă din citate sau liste din „{ $path }” au fost eliminate. Se păstrează doar un separator aflat pe un rând separat.
       *[other] { $count } de separatoare de scenă din citate sau liste din „{ $path }” au fost eliminate. Se păstrează doar un separator aflat pe un rând separat.
    }
-import-diagnostic-image-not-ingested = „{ $path }” face trimitere la imaginea „{ $detail }”. Trimiterea ajunge ca text; imaginea propriu-zisă nu este copiată.
 import-diagnostic-duplicate-title = „{ $title }” apare { $count ->
        [one] o dată
        [few] de { $count } ori

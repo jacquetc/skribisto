@@ -106,6 +106,46 @@
 // writes `before` back — including its relationships, since `Update` itself is
 // scalar-only (see the trait's own doc below) — while redo re-applies `after`.
 //
+// ── Pictures ─────────────────────────────────────────────────────────────────
+//
+// The rows' Djot already names each picture as the project will hold it,
+// `assets/<hash>.<ext>`, and `analyze_document_import` wrote each one's bytes into the
+// caller's `picture_dir` under that same `<hash>.<ext>`. This is where they become the
+// project's:
+//
+//   * **Where the project is now.** The media directory is resolved here, from the
+//     caller's `media_root`, the Work's `unique_id` and the path its `WorkInfo` holds at
+//     this moment (`skrib_format::media::media_dir`), which is exactly what a save
+//     resolves it from. A directory the caller resolved once goes stale when the project
+//     moves: a new folder project's first save turns it from the uid-keyed directory into
+//     the bundle's own `assets/`, and a Save As can do the same. A picture written into
+//     the stale one was dropped by the next save, silently, its prose still naming it.
+//   * **Bytes first, then rows.** Every picture a written row shows is copied from
+//     `picture_dir` into that media directory before anything references it, checked
+//     against its hash on the way, the same order the editor's own insertion keeps. A
+//     picture that cannot be copied refuses the whole import while nothing has been
+//     written: prose naming a picture that never arrived is the loss this avoids. A file
+//     already in the media directory is left alone, since the name is the content.
+//   * **One `Asset` row per picture the project does not already hold**, matched by content
+//     hash against `Work.assets`: importing the same picture twice, or a picture the writer
+//     inserted by hand, reuses the row that is there. Created in this transaction, so in
+//     this undo entry, and appended to `Work.assets`, which is what a save writes.
+//   * **Undo** detaches the rows this import created from `Work.assets`, the way it does
+//     comments, and **redo** attaches them again. Their files stay where they are. That is
+//     not enough on its own for a folder project, whose media directory is the bundle's own
+//     `assets/`: a save while the import is undone prunes the files no row names, and a
+//     redo after it would bring back rows naming files that are gone. So undo reads each
+//     created picture's file into this entry, and redo writes back any that went missing
+//     before it attaches anything, into the media directory resolved again at that moment:
+//     a Save As between the two moves the project, and the files belong where its next
+//     save will look, not where they were first written. The bytes are held only between
+//     the two: a redo lets them go, and so does the entry being dropped when a new edit
+//     clears the redo branch.
+//   * A picture the writer copied from an imported passage into another one before undoing
+//     the import is, like any picture whose row is gone, kept only as long as its file is:
+//     a zip project's media directory is never pruned, a folder project's is at its next
+//     save. The prose keeps naming it either way, so restoring the file restores the picture.
+//
 // The `#[macros::uow_action(...)]` list below is hand-trimmed to what this
 // actually does, and must stay in lockstep with the identical list in
 // ../units_of_work/apply_document_import_uow.rs.
@@ -114,7 +154,7 @@ use crate::ApplyDocumentImportDto;
 use crate::ApplyDocumentImportResultDto;
 use crate::dtos::{
     ApplyImportRow, ApplyImportRows, DropPosition, ImportComment, ImportCommentKind,
-    ImportFootnote, ImportOrphanReason, ImportReply,
+    ImportFootnote, ImportOrphanReason, ImportPicture, ImportPictures, ImportReply,
 };
 use crate::kind_mapping::kind_to_create_type;
 use anyhow::{Result, anyhow};
@@ -126,8 +166,8 @@ use common::direct_access::comment::CommentRelationshipField;
 use common::direct_access::footnote::FootnoteRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::entities::{
-    BinderItem, BinderItemSubRole, Comment, CommentAnchorKind, CommentOrphanReason, CommentReply,
-    Content, ContentRole, Footnote, Work,
+    Asset, BinderItem, BinderItemSubRole, Comment, CommentAnchorKind, CommentOrphanReason,
+    CommentReply, Content, ContentRole, Footnote, Work, WorkInfo,
 };
 use common::snapshot::EntityTreeSnapshot;
 use common::types::EntityId;
@@ -182,6 +222,14 @@ pub trait ApplyDocumentImportUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "Footnote", action = "CreateOrphan")]
 #[macros::uow_action(entity = "Footnote", action = "GetMulti")]
 #[macros::uow_action(entity = "Footnote", action = "SetRelationship")]
+// The pictures the rows show: `GetMulti` reads the ones `Work.assets` already holds, so a
+// picture the project has is reused by its hash, and `CreateOrphan` makes the rest, attached
+// to `Work.assets` through the `SetRelationship` above.
+#[macros::uow_action(entity = "Asset", action = "CreateOrphan")]
+#[macros::uow_action(entity = "Asset", action = "GetMulti")]
+// Where the project is now, which its media directory is resolved from, as a save resolves
+// it: `WorkInfo.file_name`, found by its `work` back-pointer (see the module doc).
+#[macros::uow_action(entity = "WorkInfo", action = "GetAll")]
 pub trait ApplyDocumentImportUnitOfWorkTrait: CommandUnitOfWork {
     fn publish_apply_document_import_event(&self, ids: Vec<EntityId>, data: Option<String>);
 }
@@ -218,6 +266,22 @@ pub struct ApplyDocumentImportUseCase {
     /// has its label reused and its row left exactly as it was
     /// (`FootnoteWriter::resolve`), which is nothing to put back.
     created_footnote_ids: Vec<EntityId>,
+    /// The `Asset` rows this import created, for exactly the reason `created_comment_ids`
+    /// exists: an `Asset` hangs off `Work`, outside the `Binder` snapshot. A picture the
+    /// project already held is not here, and an undo leaves its row alone.
+    created_asset_ids: Vec<EntityId>,
+    /// The name of the file behind each created asset, `<hash>.<ext>`, in whichever media
+    /// directory the project has when it is asked for (see the module doc).
+    created_asset_names: Vec<String>,
+    /// The media directory the import wrote into, where `undo` still looks for a file the
+    /// project's present one lacks.
+    applied_media_dir: std::path::PathBuf,
+    /// The caller's media root, which `undo` and `redo` resolve the project's media directory
+    /// from again, as the import did.
+    media_root: String,
+    /// Those files' bytes by name, read by `undo` and written back by `redo` where a save
+    /// pruned them in between. Empty except while the import is undone: see the module doc.
+    held_pictures: Vec<(String, Vec<u8>)>,
 }
 
 impl ApplyDocumentImportUseCase {
@@ -231,6 +295,11 @@ impl ApplyDocumentImportUseCase {
             updated_comments: Vec::new(),
             updated_replies: Vec::new(),
             created_footnote_ids: Vec::new(),
+            created_asset_ids: Vec::new(),
+            created_asset_names: Vec::new(),
+            applied_media_dir: std::path::PathBuf::new(),
+            media_root: String::new(),
+            held_pictures: Vec::new(),
         }
     }
 
@@ -362,6 +431,10 @@ impl ApplyDocumentImportUseCase {
             Vec::new()
         };
         let mut footnotes = FootnoteWriter::new(&existing_footnotes);
+
+        // The pictures, before any row that shows one: the bytes reach the project's media
+        // directory, then the rows naming them are made. See the module doc.
+        let pictures = bring_pictures_home(uow.as_mut(), dto, &rows, now)?;
 
         // ── Rows the returning file brings home to ones already here ──────────────────
         //
@@ -801,6 +874,10 @@ impl ApplyDocumentImportUseCase {
         self.updated_comments = updated_comments;
         self.updated_replies = updated_replies;
         self.created_footnote_ids = created_footnote_ids;
+        self.created_asset_ids = pictures.created_ids;
+        self.created_asset_names = pictures.created_names;
+        self.applied_media_dir = pictures.media_dir;
+        self.media_root = dto.media_root.clone();
         Ok(ApplyDocumentImportResultDto { created_ids })
     }
 }
@@ -867,6 +944,30 @@ impl ApplyDocumentImportUseCase {
             next.extend_from_slice(&self.created_footnote_ids);
         }
         uow.set_work_relationship(&self.work_id, &WorkRelationshipField::Footnotes, &next)?;
+        Ok(())
+    }
+
+    /// Add or remove this import's pictures from `Work.assets`.
+    ///
+    /// The sibling of [`Self::set_comments_attached`], for the same reason and on the same
+    /// terms: only rows this import created, never one it found already there by its hash.
+    fn set_assets_attached(
+        &self,
+        uow: &mut dyn ApplyDocumentImportUnitOfWorkTrait,
+        attached: bool,
+    ) -> Result<()> {
+        if self.created_asset_ids.is_empty() || self.work_id == 0 {
+            return Ok(());
+        }
+        let current = uow.get_work_relationship(&self.work_id, &WorkRelationshipField::Assets)?;
+        let mut next: Vec<EntityId> = current
+            .into_iter()
+            .filter(|id| !self.created_asset_ids.contains(id))
+            .collect();
+        if attached {
+            next.extend_from_slice(&self.created_asset_ids);
+        }
+        uow.set_work_relationship(&self.work_id, &WorkRelationshipField::Assets, &next)?;
         Ok(())
     }
 
@@ -1775,6 +1876,268 @@ fn resolve_destination(
     )
 }
 
+/// The pictures this import added to the project.
+#[derive(Default)]
+struct BroughtPictures {
+    /// The `Asset` rows it created.
+    created_ids: Vec<EntityId>,
+    /// The name of the file behind each, `<hash>.<ext>`.
+    created_names: Vec<String>,
+    /// The media directory they were written into.
+    media_dir: std::path::PathBuf,
+}
+
+/// The media directory of the Work `work_id` where it is now: resolved from `media_root`,
+/// its `unique_id` and the path its `WorkInfo` holds, the three a save resolves it from
+/// (`skrib_format::media::media_dir`), so the two cannot disagree. A Work with no path yet is
+/// one never saved, whose pictures wait in the uid-keyed directory under `media_root`.
+///
+/// `None` for an empty `media_root`: a caller with no media directory at all.
+fn project_media_dir(
+    uow: &mut dyn ApplyDocumentImportUnitOfWorkTrait,
+    work_id: EntityId,
+    media_root: &str,
+) -> Result<Option<std::path::PathBuf>> {
+    if media_root.trim().is_empty() {
+        return Ok(None);
+    }
+    let work = uow
+        .get_work(&work_id)?
+        .ok_or_else(|| anyhow!("apply_document_import: work {work_id} is not open"))?;
+    let project = uow
+        .get_all_work_info()?
+        .into_iter()
+        .find(|info| info.work == Some(work_id))
+        .and_then(|info| info.file_name)
+        .unwrap_or_default();
+    Ok(Some(skrib_format::media::media_dir(
+        std::path::Path::new(&project),
+        &work.unique_id,
+        std::path::Path::new(media_root),
+        &work.unique_id,
+    )))
+}
+
+/// Every `assets/…` picture the rows will write, each once, in the order they show them.
+///
+/// What is written, not what is carried: an update that keeps the project's prose
+/// (`replace_prose` false) writes none of its text, so none of its pictures are needed.
+fn shown_pictures(rows: &[&ApplyImportRow]) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    let mut add = |djot: &str| {
+        for path in skrib_format::media::referenced_paths(djot) {
+            if !out.contains(&path) {
+                out.push(path);
+            }
+        }
+    };
+    for row in rows {
+        let (djot, epigraph, footnotes) = match row {
+            ApplyImportRow::Create {
+                djot,
+                epigraph,
+                footnotes,
+                ..
+            } => (djot, epigraph, footnotes),
+            ApplyImportRow::Update {
+                replace_prose: true,
+                djot,
+                epigraph,
+                footnotes,
+                ..
+            } => (djot, epigraph, footnotes),
+            ApplyImportRow::Update { .. } | ApplyImportRow::Empty => continue,
+        };
+        add(djot);
+        add(epigraph);
+        for note in footnotes {
+            if let ImportFootnote::Found { body, .. } = note {
+                add(body);
+            }
+        }
+    }
+    out
+}
+
+/// Copy the pictures the rows show into the project's media directory, and make an `Asset`
+/// row for each the project does not already hold. See the module doc.
+fn bring_pictures_home(
+    uow: &mut dyn ApplyDocumentImportUnitOfWorkTrait,
+    dto: &ApplyDocumentImportDto,
+    rows: &[&ApplyImportRow],
+    now: chrono::DateTime<chrono::Utc>,
+) -> Result<BroughtPictures> {
+    let shown = shown_pictures(rows);
+    let ImportPictures::Found(listed) = &dto.pictures else {
+        return Ok(BroughtPictures::default());
+    };
+    if shown.is_empty() || listed.is_empty() {
+        return Ok(BroughtPictures::default());
+    }
+    // The pictures the plan listed, by the name the prose gives them.
+    let by_path: HashMap<String, &ImportPicture> = listed
+        .iter()
+        .filter_map(|picture| match picture {
+            ImportPicture::Found {
+                content_hash,
+                mime_type,
+                ..
+            } => Some((
+                skrib_format::media::asset_relpath(
+                    content_hash,
+                    &skrib_format::media::extension_for(mime_type),
+                ),
+                picture,
+            )),
+            ImportPicture::Empty => None,
+        })
+        .collect();
+    let needed: Vec<&ImportPicture> = shown
+        .iter()
+        .filter_map(|path| by_path.get(path).copied())
+        .collect();
+    if needed.is_empty() {
+        return Ok(BroughtPictures::default());
+    }
+    let Some(media_dir) = project_media_dir(uow, dto.work_id, &dto.media_root)? else {
+        return Err(anyhow!(
+            "apply_document_import: {} picture(s) come with these documents, and the project \
+             has no folder to keep pictures in",
+            needed.len()
+        ));
+    };
+    let media_dir = media_dir.as_path();
+    // Empty is a caller that kept no copies: only pictures already in the project can come.
+    let staged_dir =
+        (!dto.picture_dir.trim().is_empty()).then(|| std::path::Path::new(&dto.picture_dir));
+
+    // The project's own pictures, by content: one it already holds is reused, whoever put it
+    // there. This Work's assets only, never every one in the store — several projects are
+    // open in one store, and another book's picture is not this one's.
+    let asset_ids = uow.get_work_relationship(&dto.work_id, &WorkRelationshipField::Assets)?;
+    let mut held: HashSet<String> = uow
+        .get_asset_multi(&asset_ids)?
+        .into_iter()
+        .flatten()
+        .map(|asset| asset.content_hash)
+        .collect();
+
+    let mut brought = BroughtPictures {
+        media_dir: media_dir.to_path_buf(),
+        ..BroughtPictures::default()
+    };
+    for picture in needed {
+        let ImportPicture::Found {
+            content_hash,
+            file_name,
+            mime_type,
+            width,
+            height,
+            byte_size,
+        } = picture
+        else {
+            continue;
+        };
+        let stored_name = format!(
+            "{content_hash}.{}",
+            skrib_format::media::extension_for(mime_type)
+        );
+        let destination = media_dir.join(&stored_name);
+        copy_picture(
+            staged_dir.map(|dir| dir.join(&stored_name)).as_deref(),
+            &destination,
+            content_hash,
+        )?;
+        if !held.insert(content_hash.clone()) {
+            continue;
+        }
+        let asset = uow.create_orphan_asset(&Asset {
+            created_at: now,
+            updated_at: now,
+            content_hash: content_hash.clone(),
+            file_name: file_name.clone(),
+            mime_type: mime_type.clone(),
+            width: u64::try_from(*width).unwrap_or_default(),
+            height: u64::try_from(*height).unwrap_or_default(),
+            byte_size: u64::try_from(*byte_size).unwrap_or_default(),
+            // The description lives in the prose, where the document put it, as it does for a
+            // picture the editor inserts.
+            alt: String::new(),
+            is_cover: false,
+            ..Default::default()
+        })?;
+        brought.created_ids.push(asset.id);
+        brought.created_names.push(stored_name);
+    }
+
+    if !brought.created_ids.is_empty() {
+        let mut all = uow.get_work_relationship(&dto.work_id, &WorkRelationshipField::Assets)?;
+        all.extend_from_slice(&brought.created_ids);
+        uow.set_work_relationship(&dto.work_id, &WorkRelationshipField::Assets, &all)?;
+    }
+    Ok(brought)
+}
+
+/// Put the picture staged at `from` at `to` in the project, unless it is already there.
+///
+/// Checked against `content_hash` on the way: the name is the content, and the project is
+/// about to trust it. A staged file that is gone or changed refuses the import rather than
+/// storing prose that names a picture the project does not have.
+fn copy_picture(
+    from: Option<&std::path::Path>,
+    to: &std::path::Path,
+    content_hash: &str,
+) -> Result<()> {
+    if to.exists() {
+        return Ok(());
+    }
+    let from = from.ok_or_else(|| {
+        anyhow!(
+            "apply_document_import: the picture {} is not in the project, and no copy of it was \
+             kept since the documents were analysed; analyse them again",
+            to.display()
+        )
+    })?;
+    let bytes = std::fs::read(from).map_err(|e| {
+        anyhow!(
+            "apply_document_import: the picture {} could not be read ({e}); analyse the \
+             documents again",
+            from.display()
+        )
+    })?;
+    if document_ingest::pictures::content_hash(&bytes) != content_hash {
+        return Err(anyhow!(
+            "apply_document_import: the picture {} changed after the documents were analysed; \
+             analyse them again",
+            from.display()
+        ));
+    }
+    if let Some(dir) = to.parent() {
+        std::fs::create_dir_all(dir).map_err(|e| {
+            anyhow!(
+                "apply_document_import: the picture folder {} could not be made ({e})",
+                dir.display()
+            )
+        })?;
+    }
+    write_whole(to, &bytes)
+}
+
+/// Write `bytes` at `path` through a temporary name, so the file under the final name is
+/// always whole.
+fn write_whole(path: &std::path::Path, bytes: &[u8]) -> Result<()> {
+    let partial = path.with_extension("part");
+    std::fs::write(&partial, bytes)
+        .and_then(|()| std::fs::rename(&partial, path))
+        .map_err(|e| {
+            let _ = std::fs::remove_file(&partial);
+            anyhow!(
+                "apply_document_import: the picture {} could not be written ({e})",
+                path.display()
+            )
+        })
+}
+
 use common::undo_redo::UndoRedoCommand;
 use std::any::Any;
 impl UndoRedoCommand for ApplyDocumentImportUseCase {
@@ -1794,8 +2157,36 @@ impl UndoRedoCommand for ApplyDocumentImportUseCase {
         uow.restore_binder(snap)?;
         self.set_comments_attached(uow.as_mut(), false)?;
         self.set_footnotes_attached(uow.as_mut(), false)?;
+        self.set_assets_attached(uow.as_mut(), false)?;
         self.reapply_comment_edits(uow.as_mut(), false)?;
+        // Where the project keeps its pictures now, which a Save As since the import may have
+        // moved. Only a read, and no reason for the undo to fail: without it the files are
+        // looked for where the import wrote them.
+        let current = if self.created_asset_names.is_empty() {
+            None
+        } else {
+            project_media_dir(uow.as_mut(), self.work_id, &self.media_root)
+                .ok()
+                .flatten()
+        };
         uow.commit()?;
+        // Held for a redo, since a save while the import is undone may prune them. A file
+        // that cannot be read is simply not held: nothing a redo does depends on it being
+        // there, and the undo itself has already happened.
+        let places: Vec<std::path::PathBuf> = current
+            .into_iter()
+            .chain(std::iter::once(self.applied_media_dir.clone()))
+            .collect();
+        self.held_pictures = self
+            .created_asset_names
+            .iter()
+            .filter_map(|name| {
+                places
+                    .iter()
+                    .find_map(|dir| std::fs::read(dir.join(name)).ok())
+                    .map(|bytes| (name.clone(), bytes))
+            })
+            .collect();
         Ok(())
     }
 
@@ -1806,11 +2197,43 @@ impl UndoRedoCommand for ApplyDocumentImportUseCase {
             .ok_or_else(|| anyhow!("apply_document_import: nothing to redo"))?;
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
+        // The files back before the rows naming them, as on the way in, and into the media
+        // directory the project has now, which is where its next save looks: not the one the
+        // import wrote into, should a Save As have moved the project since. A redo that
+        // cannot write one fails before it has touched the store, and can be tried again.
+        if !self.held_pictures.is_empty() {
+            let restored = project_media_dir(uow.as_mut(), self.work_id, &self.media_root)
+                .and_then(|current| {
+                    let dir = current.unwrap_or_else(|| self.applied_media_dir.clone());
+                    for (name, bytes) in &self.held_pictures {
+                        let path = dir.join(name);
+                        if !path.exists() {
+                            if let Some(parent) = path.parent() {
+                                std::fs::create_dir_all(parent).map_err(|e| {
+                                    anyhow!(
+                                        "apply_document_import: the picture folder {} could \
+                                         not be made ({e})",
+                                        parent.display()
+                                    )
+                                })?;
+                            }
+                            write_whole(&path, bytes)?;
+                        }
+                    }
+                    Ok(())
+                });
+            if let Err(error) = restored {
+                uow.rollback()?;
+                return Err(error);
+            }
+        }
         uow.restore_binder(snap)?;
         self.set_comments_attached(uow.as_mut(), true)?;
         self.set_footnotes_attached(uow.as_mut(), true)?;
+        self.set_assets_attached(uow.as_mut(), true)?;
         self.reapply_comment_edits(uow.as_mut(), true)?;
         uow.commit()?;
+        self.held_pictures = Vec::new();
         Ok(())
     }
 

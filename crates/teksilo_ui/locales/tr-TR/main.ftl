@@ -1887,7 +1887,6 @@ import-diagnostic-nested-break-dropped = { $count ->
     [one] “{ $path }” içinde bir alıntının ya da listenin içindeki bir sahne arası çıkarıldı. Yalnızca kendi satırındaki bir ara korunur.
    *[other] “{ $path }” içinde alıntıların ya da listelerin içindeki { $count } sahne arası çıkarıldı. Yalnızca kendi satırındaki bir ara korunur.
 }
-import-diagnostic-image-not-ingested = “{ $path }”, “{ $detail }” resmine gönderme yapıyor. Gönderme metin olarak gelir; resmin kendisi kopyalanmaz.
 import-diagnostic-duplicate-title = “{ $title }” { $count } kez geçiyor. Bu dosyaları daha önce içe aktardıysanız bu işlem onları çoğaltacak.
 import-diagnostic-heading-level-jump = “{ $title }” { $from }. başlık düzeyinden { $to }. düzeye atlıyor; üst öğesinin bir düzey altına yerleştirildi.
 import-diagnostic-illegal-combination = “{ $title }” metin içeriyor, ama { $kind } türündeki bir öğe metin barındıramaz. Türünü değiştirene ya da onu dışarıda bırakana kadar içe aktarma bekletilir. Aksi hâlde hiçbir şey içe aktarılmaz.

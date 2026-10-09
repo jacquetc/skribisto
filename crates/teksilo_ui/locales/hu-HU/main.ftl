@@ -1811,7 +1811,6 @@ import-diagnostic-nested-break-dropped = { $count ->
     [one] A(z) „{ $path }” egy idézeten vagy listán belüli jelenettörése kimaradt. Csak a külön sorban álló törés marad meg.
    *[other] A(z) „{ $path }” { $count } idézeten vagy listán belüli jelenettörése kimaradt. Csak a külön sorban álló törés marad meg.
 }
-import-diagnostic-image-not-ingested = A(z) „{ $path }” a(z) „{ $detail }” képre hivatkozik. A hivatkozás szövegként érkezik; magát a képet nem másolja át a program.
 import-diagnostic-duplicate-title = A(z) „{ $title }” { $count } alkalommal szerepel. Ha ezeket a fájlokat korábban már importálta, most megkettőződnek.
 import-diagnostic-heading-level-jump = A(z) „{ $title }” a(z) { $from }. címsorszintről a(z) { $to }. szintre ugrik; a szülője alá egy szinttel lejjebb kerül.
 import-diagnostic-illegal-combination = A(z) „{ $title }” prózát tartalmaz, de egy { $kind } típusú elem nem tárolhat prózát. Az importálás addig várakozik, amíg meg nem változtatja a típusát, vagy ki nem hagyja. Addig semmi sem kerül importálásra.

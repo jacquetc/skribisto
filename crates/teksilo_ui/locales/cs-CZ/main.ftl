@@ -1957,7 +1957,6 @@ import-diagnostic-nested-break-dropped = { $count ->
     [few] { $count } předěly scén uvnitř citací nebo seznamů v „{ $path }“ byly vynechány. Zachová se jen předěl na samostatném řádku.
    *[other] { $count } předělů scén uvnitř citací nebo seznamů v „{ $path }“ bylo vynecháno. Zachová se jen předěl na samostatném řádku.
 }
-import-diagnostic-image-not-ingested = „{ $path }“ odkazuje na obrázek „{ $detail }“. Odkaz se importuje jako text, samotný obrázek se nezkopíruje.
 import-diagnostic-duplicate-title = „{ $title }“ se vyskytuje { $count }×. Pokud jste tyto soubory už dříve importovali, vzniknou duplikáty.
 import-diagnostic-heading-level-jump = „{ $title }“ přeskakuje z úrovně nadpisu { $from } na { $to }; umístí se o jednu úroveň pod nadřazenou položku.
 import-diagnostic-illegal-combination = „{ $title }“ obsahuje prózu, ale položka typu „{ $kind }“ žádnou obsahovat nemůže. Import je pozastaven, dokud nezměníte její typ nebo ji nevynecháte. Jinak se neimportuje vůbec nic.

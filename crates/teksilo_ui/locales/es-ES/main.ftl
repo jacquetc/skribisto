@@ -1896,7 +1896,6 @@ import-diagnostic-nested-break-dropped = { $count ->
     [one] Se ha descartado un separador de escena dentro de una cita o lista de «{ $path }». Solo se conserva un separador en su propia línea.
    *[other] Se han descartado { $count } separadores de escena dentro de citas o listas de «{ $path }». Solo se conserva un separador en su propia línea.
 }
-import-diagnostic-image-not-ingested = «{ $path }» hace referencia a la imagen «{ $detail }». La referencia llega como texto; la imagen en sí no se copia.
 import-diagnostic-duplicate-title = «{ $title }» aparece { $count } veces. Si ya importó estos archivos antes, se duplicarán.
 import-diagnostic-heading-level-jump = «{ $title }» salta del nivel de encabezado { $from } al { $to }; se coloca un nivel por debajo de su padre.
 import-diagnostic-illegal-combination = «{ $title }» contiene prosa, pero un elemento de tipo { $kind } no puede contener ninguna. La importación queda en espera hasta que cambie su tipo o lo deje fuera. Si no, no se importa nada en absoluto.

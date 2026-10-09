@@ -1894,7 +1894,6 @@ import-diagnostic-nested-break-dropped = { $count ->
     [one] Uma quebra de cena dentro de uma citação ou lista em «{ $path }» foi descartada. Só é mantida uma quebra numa linha própria.
    *[other] { $count } quebras de cena dentro de citações ou listas em «{ $path }» foram descartadas. Só é mantida uma quebra numa linha própria.
 }
-import-diagnostic-image-not-ingested = «{ $path }» refere a imagem «{ $detail }». A referência chega como texto; a imagem em si não é copiada.
 import-diagnostic-duplicate-title = «{ $title }» aparece { $count } vezes. Se já importou estes ficheiros antes, isto vai duplicá-los.
 import-diagnostic-heading-level-jump = «{ $title }» salta do nível de título { $from } para { $to }; é colocado um nível abaixo do seu pai.
 import-diagnostic-illegal-combination = «{ $title }» contém prosa, mas o tipo { $kind } não pode conter nenhuma. A importação fica suspensa até mudar o seu tipo ou deixá-lo de fora. Caso contrário, nada é importado.

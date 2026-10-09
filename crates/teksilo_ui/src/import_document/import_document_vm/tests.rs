@@ -3,6 +3,7 @@
 
 use super::*;
 use crate::test_support::with_real_messages;
+use document_ingest::pictures::PictureRefusal;
 use document_ingest::plan::PlannedRow;
 
 /// A container row: a real one carries no prose of its own.
@@ -392,6 +393,7 @@ fn exhaustive_over_every_variant(d: &document_ingest::ImportDiagnostic) {
         | RawHtmlDropped { .. }
         | NestedBreakDropped { .. }
         | ImageNotIngested { .. }
+        | PictureFirstFrameOnly { .. }
         | DuplicateTitle { .. }
         | HeadingLevelJump { .. }
         | IllegalCombination { .. }
@@ -482,9 +484,50 @@ fn every_diagnostic_the_importer_can_raise_has_a_sentence() {
             path: "/tmp/a.md".into(),
             count: 4,
         },
+        // One sentence per reason a picture stays behind, so every reason is walked.
+        D::ImageNotIngested {
+            path: "/tmp/a.docx".into(),
+            target: "word/media/image1.emf".into(),
+            reason: PictureRefusal::Unsupported { format: "EMF" },
+        },
+        D::ImageNotIngested {
+            path: "/tmp/a.md".into(),
+            target: "https://example.com/cover.png".into(),
+            reason: PictureRefusal::Remote,
+        },
+        D::ImageNotIngested {
+            path: "/tmp/a.md".into(),
+            target: "../cover.png".into(),
+            reason: PictureRefusal::Outside,
+        },
         D::ImageNotIngested {
             path: "/tmp/a.md".into(),
             target: "cover.png".into(),
+            reason: PictureRefusal::Missing,
+        },
+        D::ImageNotIngested {
+            path: "/tmp/a.odt".into(),
+            target: "Pictures/huge.png".into(),
+            reason: PictureRefusal::TooLarge,
+        },
+        D::ImageNotIngested {
+            path: "/tmp/a.odt".into(),
+            target: "Pictures/broken.png".into(),
+            reason: PictureRefusal::Unreadable,
+        },
+        D::ImageNotIngested {
+            path: "/tmp/a.md".into(),
+            target: "crest.png".into(),
+            reason: PictureRefusal::InHeading,
+        },
+        D::ImageNotIngested {
+            path: "/tmp/a.docx".into(),
+            target: "word/media/image900.png".into(),
+            reason: PictureRefusal::DocumentFull,
+        },
+        D::PictureFirstFrameOnly {
+            path: "/tmp/a.odt".into(),
+            target: "Pictures/spin.gif".into(),
         },
         D::DuplicateTitle {
             title: "Later".into(),
@@ -1794,4 +1837,380 @@ fn nothing_to_reconcile_when_every_row_is_new() {
     )]);
     assert!(!vm.has_anything_to_reconcile());
     assert_eq!(vm.matched_count(), 0);
+}
+
+// ── pictures ────────────────────────────────────────────────────────────────────────
+
+/// A listed picture named by its hash, as the analysis lists one.
+fn listed(hash: &str) -> ImportPicture {
+    ImportPicture::Found {
+        content_hash: hash.to_string(),
+        file_name: format!("{hash}.png"),
+        mime_type: "image/png".into(),
+        width: 4,
+        height: 4,
+        byte_size: 100,
+    }
+}
+
+fn shown(hash: &str) -> String {
+    format!(" ![](assets/{hash}.png){{width=4 height=4}}")
+}
+
+/// The count under the tree is what the import would bring: the pictures the items being
+/// created show, each once, and only those the analysis brought in.
+#[test]
+fn the_pictures_counted_are_the_ones_the_import_would_bring() {
+    let vm = ImportDocumentViewModel::new(Rc::new(AppContext::new()), AppIds::default());
+    let a = "a".repeat(64);
+    let b = "b".repeat(64);
+    let c = "c".repeat(64);
+    let unlisted = "d".repeat(64);
+    let with = |row: PlannedRow, djot: String| PlannedRow { djot, ..row };
+    let plan = ImportPlan {
+        rows: vec![
+            container(0, "Book", CreateType::Book),
+            with(
+                planned(1, "Chapter One", CreateType::Chapter),
+                format!("One.{}{}", shown(&a), shown(&a)),
+            ),
+            with(
+                planned(1, "Chapter Two", CreateType::Chapter),
+                format!("Two.{}{}", shown(&b), shown(&unlisted)),
+            ),
+            with(
+                planned(1, "Chapter Three", CreateType::Chapter),
+                format!("Three.{}", shown(&c)),
+            ),
+        ],
+        diagnostics: Vec::new(),
+    };
+    *vm.pictures.borrow_mut() = vec![listed(&a), listed(&b), listed(&c)];
+    vm.on_plan_ready(
+        &plan,
+        vec![1, 2, 2, 2],
+        vec![(1, CreateType::Book), (2, CreateType::Chapter)],
+    );
+    vm.refresh_picture_count();
+    assert_eq!(
+        vm.picture_count().get(),
+        3,
+        "a picture shown twice is one, and one the analysis did not bring is none"
+    );
+
+    vm.set_included(PlanRowKey(3), false);
+    assert_eq!(vm.picture_count().get(), 2, "an item left out brings none");
+
+    // Its text stranded on a type that cannot hold it, and dropped: no picture either.
+    vm.retype_row(PlanRowKey(2), CreateType::Part);
+    vm.set_stray_prose(PlanRowKey(2), StrayProse::Discard);
+    assert_eq!(vm.picture_count().get(), 1);
+    vm.set_stray_prose(PlanRowKey(2), StrayProse::AsParatext);
+    assert_eq!(
+        vm.picture_count().get(),
+        2,
+        "kept as a paratext, its pictures come with it"
+    );
+}
+
+/// A one-pixel PNG.
+const DOT_PNG: &[u8] = &[
+    0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+    0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4,
+    0x89, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x44, 0x41, 0x54, 0x78, 0xDA, 0x63, 0x64, 0x60, 0xF8, 0x5F,
+    0x0F, 0x00, 0x02, 0x87, 0x01, 0x80, 0xEB, 0x47, 0xBA, 0x92, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45,
+    0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
+];
+
+/// A new project and a wizard that has analysed a Markdown chapter showing one picture, its
+/// pictures kept below `dir/staging` and its project's in `dir/media`.
+struct Analysed {
+    dir: tempfile::TempDir,
+    app_ctx: Rc<AppContext>,
+    work_id: u64,
+    vm: ImportDocumentViewModel,
+}
+
+fn analysed_with_a_picture() -> Analysed {
+    use frontend::commands::{
+        handling_app_lifecycle_commands, work_commands, work_management_commands,
+    };
+    use frontend::work_management::{NewWorkDto, NewWorkTemplate};
+
+    let dir = tempfile::tempdir().expect("tempdir");
+    std::fs::create_dir(dir.path().join("sources")).unwrap();
+    std::fs::write(dir.path().join("sources").join("dot.png"), DOT_PNG).unwrap();
+    std::fs::write(
+        dir.path().join("sources").join("one.md"),
+        "# One\n\nA dot ![a dot](dot.png) here.\n",
+    )
+    .unwrap();
+
+    let app_ctx = Rc::new(AppContext::new());
+    handling_app_lifecycle_commands::initialize_app(&app_ctx).unwrap();
+    work_management_commands::new_work(
+        &app_ctx,
+        &NewWorkDto {
+            goal_unit: Default::default(),
+            file_name: dir.path().join("p.skrib").to_string_lossy().into_owned(),
+            title: String::new(),
+            is_folder: false,
+            template_kind: NewWorkTemplate::EmptyNovel,
+            labels: vec![],
+            language: vec!["en".to_string()],
+            author_name: String::new(),
+            chapter_scene_mode: false,
+            paratext_front: Vec::new(),
+            paratext_back: Vec::new(),
+        },
+    )
+    .unwrap();
+    let work_id = work_commands::get_all_work(&app_ctx)
+        .unwrap()
+        .first()
+        .map(|w| w.id)
+        .expect("the work the test just created");
+
+    let ids = AppIds::default();
+    ids.work_id.set(Some(work_id));
+    let media_root = dir.path().join("data").to_string_lossy().into_owned();
+    let vm = ImportDocumentViewModel::new(app_ctx.clone(), ids)
+        .with_media_root(move || media_root.clone())
+        .with_picture_staging_root(dir.path().join("staging"));
+    vm.add_files([dir.path().join("sources").join("one.md")]);
+
+    let op = vm.start_analysis().expect("the analysis starts");
+    let deadline = std::time::Instant::now() + Duration::from_secs(20);
+    while frontend::commands::import_management_commands::get_analyze_document_import_result(
+        &app_ctx, &op,
+    )
+    .ok()
+    .flatten()
+    .is_none()
+    {
+        assert!(
+            std::time::Instant::now() < deadline,
+            "analysis never finished"
+        );
+        std::thread::sleep(Duration::from_millis(20));
+    }
+    let mut tree = crate::test_support::tree_with_events(&app_ctx);
+    tree.run_with_event_context(&mut teksilo::core::NoopWindowOps, |ctx| {
+        vm.on_long_op_completed(ctx, &long_op_event(&op));
+    });
+    Analysed {
+        dir,
+        app_ctx,
+        work_id,
+        vm,
+    }
+}
+
+/// The analysis leaves a document's pictures in the wizard's own folder and says how many
+/// are coming, and nothing reaches the project before Import.
+#[test]
+fn an_analysis_leaves_its_pictures_in_the_wizards_folder() {
+    let Analysed {
+        dir,
+        app_ctx,
+        work_id,
+        vm,
+    } = analysed_with_a_picture();
+    assert_eq!(
+        vm.picture_count().get(),
+        1,
+        "the count is on the review step"
+    );
+    let folder = vm.picture_folder().expect("the plan's picture folder");
+    assert!(folder.starts_with(dir.path().join("staging")));
+    let hash = document_ingest::pictures::content_hash(DOT_PNG);
+    assert_eq!(
+        std::fs::read(folder.join(format!("{hash}.png"))).expect("waiting there"),
+        DOT_PNG
+    );
+    assert!(
+        !dir.path().join("data").exists(),
+        "nothing in the project before Import"
+    );
+    let assets = frontend::commands::work_commands::get_work_relationship(
+        &app_ctx,
+        &work_id,
+        &frontend::common::direct_access::work::WorkRelationshipField::Assets,
+    )
+    .unwrap();
+    assert!(assets.is_empty(), "and nothing recorded");
+}
+
+/// Import brings the pictures into the project's media directory with a row each, then lets
+/// the wizard's folder go.
+///
+/// Real backend only: under `mocks` the destination picker lists a fabricated binder tree,
+/// which the real project's binder is not in, so there is nowhere to import to.
+#[cfg(not(feature = "mocks"))]
+#[test]
+fn an_import_brings_its_pictures_into_the_project() {
+    use frontend::commands::{asset_commands, work_commands};
+    use frontend::common::direct_access::work::WorkRelationshipField;
+
+    let Analysed {
+        dir,
+        app_ctx,
+        work_id,
+        vm,
+    } = analysed_with_a_picture();
+    let folder = vm.picture_folder().expect("the plan's picture folder");
+    let binder_id =
+        work_commands::get_work_relationship(&app_ctx, &work_id, &WorkRelationshipField::Binders)
+            .unwrap()
+            .first()
+            .copied()
+            .expect("a binder");
+    let binder_uid = frontend::commands::binder_commands::get_binder(&app_ctx, &binder_id)
+        .unwrap()
+        .expect("binder row")
+        .uid;
+    vm.destination().reload();
+    vm.destination()
+        .preselect(crate::models::BinderTreeKey::Binder(binder_uid));
+    vm.apply().expect("apply");
+
+    let hash = document_ingest::pictures::content_hash(DOT_PNG);
+    let asset_ids =
+        work_commands::get_work_relationship(&app_ctx, &work_id, &WorkRelationshipField::Assets)
+            .unwrap();
+    let assets: Vec<_> = asset_commands::get_asset_multi(&app_ctx, &asset_ids)
+        .unwrap()
+        .into_iter()
+        .flatten()
+        .collect();
+    assert_eq!(assets.len(), 1);
+    assert_eq!(assets[0].content_hash, hash);
+    // The project was never saved, so its pictures wait in its uid's directory under the
+    // media root, where its first save will read them.
+    let uid = work_commands::get_work(&app_ctx, &work_id)
+        .unwrap()
+        .expect("the work")
+        .unique_id;
+    let media_dir = skrib_format::media::media_dir(
+        &dir.path().join("p.skrib"),
+        &uid,
+        &dir.path().join("data"),
+        &uid,
+    );
+    assert_eq!(
+        std::fs::read(media_dir.join(format!("{hash}.png"))).expect("in the project"),
+        DOT_PNG
+    );
+    assert_eq!(vm.picture_folder(), None, "the wizard's copies are let go");
+    assert!(!folder.exists());
+    assert_eq!(vm.picture_count().get(), 0);
+}
+
+/// Pictures read for a plan the writer walks away from go with it.
+#[test]
+fn a_reset_lets_the_plans_pictures_go() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let vm = ImportDocumentViewModel::new(Rc::new(AppContext::new()), AppIds::default())
+        .with_picture_staging_root(dir.path().to_path_buf());
+    *vm.staging.borrow_mut() = Some(PictureStaging::new_in(dir.path()));
+    let folder = vm.picture_folder().expect("a folder");
+    std::fs::create_dir_all(&folder).unwrap();
+    std::fs::write(folder.join("x.png"), b"x").unwrap();
+    *vm.pictures.borrow_mut() = vec![listed(&"a".repeat(64))];
+
+    vm.reset();
+    assert!(!folder.exists());
+    assert!(vm.pictures().is_empty());
+    assert_eq!(vm.picture_folder(), None);
+}
+
+/// The line under the tree, in both shipped locales, one picture and several.
+#[test]
+fn the_pictures_line_reads_in_both_locales() {
+    for (count, locale, expected) in [
+        (1, "en-US", "One picture"),
+        (3, "en-US", "3 pictures"),
+        (1, "fr-FR", "Une image"),
+        (3, "fr-FR", "3 images"),
+    ] {
+        crate::test_support::with_shipped_messages(locale, || {
+            let text = tr!(import_document_pictures(count = count as i64)).resolve_now();
+            assert!(text.contains(expected), "{locale}: {text}");
+        });
+    }
+}
+
+/// A match with no wildcard arm: a reason added to `PictureRefusal` stops this compiling until
+/// the list below, the `message` arms and both `.ftl` files have caught up.
+fn every_reason(reason: PictureRefusal) {
+    match reason {
+        PictureRefusal::Unsupported { .. }
+        | PictureRefusal::Remote
+        | PictureRefusal::Outside
+        | PictureRefusal::Missing
+        | PictureRefusal::TooLarge
+        | PictureRefusal::Unreadable
+        | PictureRefusal::InHeading
+        | PictureRefusal::InNote
+        | PictureRefusal::InHtml
+        | PictureRefusal::DocumentFull => {}
+    }
+}
+
+/// A picture that stayed behind is named with its reason in the writer's own language.
+/// `fr-FR` is not checked at compile time, so every reason is resolved here.
+#[test]
+fn a_picture_left_behind_is_named_in_both_locales() {
+    let reasons = [
+        PictureRefusal::Unsupported { format: "SVG" },
+        PictureRefusal::Remote,
+        PictureRefusal::Outside,
+        PictureRefusal::Missing,
+        PictureRefusal::TooLarge,
+        PictureRefusal::Unreadable,
+        PictureRefusal::InHeading,
+        PictureRefusal::InNote,
+        PictureRefusal::InHtml,
+        PictureRefusal::DocumentFull,
+    ];
+    reasons.iter().copied().for_each(every_reason);
+    for locale in ["en-US", "fr-FR"] {
+        crate::test_support::with_shipped_messages(locale, || {
+            let mut sentences = std::collections::HashSet::new();
+            let raised = reasons
+                .iter()
+                .map(
+                    |reason| document_ingest::ImportDiagnostic::ImageNotIngested {
+                        path: "/tmp/chapter.md".into(),
+                        target: "images/map.svg".into(),
+                        reason: *reason,
+                    },
+                )
+                .chain([document_ingest::ImportDiagnostic::PictureFirstFrameOnly {
+                    path: "/tmp/chapter.md".into(),
+                    target: "images/map.svg".into(),
+                }]);
+            for raised in raised {
+                let dto = frontend::import_management::diagnostic_to_dto(&raised, -1);
+                let (_, _, parsed) = plan_from_dto(
+                    &DocumentImportRows::Empty,
+                    &ImportDiagnosticRows::Reported(vec![dto]),
+                );
+                let d = parsed.first().expect("the DTO round-trips");
+                assert!(d.is_warning(), "{}", raised.key());
+                let text = d.message("", None).resolve_now();
+                assert!(text.contains("chapter.md"), "{locale}: {text}");
+                assert!(text.contains("images/map.svg"), "{locale}: {text}");
+                assert!(!text.contains(raised.key()), "{locale}: {text}");
+                assert!(
+                    !text.contains("{$") && !text.contains("{ $"),
+                    "{locale} left an argument unfilled: {text}"
+                );
+                assert!(
+                    sentences.insert(text),
+                    "{locale}: each reason its own sentence"
+                );
+            }
+        });
+    }
 }

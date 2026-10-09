@@ -1894,7 +1894,6 @@ import-diagnostic-nested-break-dropped = { $count ->
        [one] Yksi lainauksen tai luettelon sisällä ollut kohtauskatko tiedostossa ”{ $path }” jätettiin pois. Vain omalla rivillään oleva katko säilytetään.
       *[other] { $count } lainausten tai luetteloiden sisällä ollutta kohtauskatkoa tiedostossa ”{ $path }” jätettiin pois. Vain omalla rivillään oleva katko säilytetään.
    }
-import-diagnostic-image-not-ingested = Tiedosto ”{ $path }” viittaa kuvaan ”{ $detail }”. Viittaus tuodaan tekstinä; itse kuvaa ei kopioida.
 import-diagnostic-duplicate-title = ”{ $title }” esiintyy { $count } kertaa. Jos olet tuonut nämä tiedostot aiemmin, ne monistuvat.
 import-diagnostic-heading-level-jump = ”{ $title }” hyppää otsikkotasolta { $from } tasolle { $to }; se sijoitetaan yhden tason ylätasonsa alapuolelle.
 import-diagnostic-illegal-combination = ”{ $title }” sisältää tekstiä, mutta tyyppi { $kind } ei voi sisältää tekstiä. Tuonti odottaa, kunnes muutat sen tyyppiä tai jätät sen pois. Muuten mitään ei tuoda.

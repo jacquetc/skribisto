@@ -2447,6 +2447,14 @@ features:
         - Before
         - After
         - Into
+      # Where the pictures the documents bring are written while the writer reviews the
+      # plan: a folder the caller makes, owns and removes, one file per picture named by its
+      # content (`<hash>.<ext>`). The plan names them and never carries their bytes, which
+      # travel back to the UI as JSON. Empty is a caller with nowhere to put them, and an
+      # import that brings a picture then fails rather than losing it; so does one whose
+      # folder is gone, which the analysis never makes again.
+      - name: picture_dir
+        type: string
     dto_out:
       name: DocumentImportPlanDto
       fields:
@@ -2592,6 +2600,22 @@ features:
         enum_values:
         - Empty
         - "Reported(Vec<ImportDiagnosticRow>)"
+      # One picture the documents bring, as its `Asset` row will say: identified by the
+      # blake3 of the bytes the project stores, which is also the name the rows' Djot gives
+      # it (`assets/<content_hash>.<ext>`) and the name of its file in `picture_dir`.
+      # `file_name` is the name the document gave it, reduced to a file name.
+      - name: picture
+        type: enum
+        enum_name: ImportPicture
+        enum_values:
+        - Empty
+        - "Found { content_hash: String, file_name: String, mime_type: String, width: i64, height: i64, byte_size: i64 }"
+      - name: pictures
+        type: enum
+        enum_name: ImportPictures
+        enum_values:
+        - Empty
+        - "Found(Vec<ImportPicture>)"
 
   # Part two: create what the writer accepted, as one undo entry.
   #
@@ -2613,6 +2637,9 @@ features:
     # them in the same undo entry as the rows they annotate.
     - Comment
     - CommentReply
+    # The pictures the accepted rows show, one `Asset` row each, created in the same undo
+    # entry as the rows: undoing the import takes them back with the text.
+    - Asset
     undoable: true
     dto_in:
       name: ApplyDocumentImportDto
@@ -2704,6 +2731,28 @@ features:
         enum_values:
         - Empty
         - "Create(Vec<ApplyImportRow>)"
+      # The pictures the plan brought, handed back as the analysis listed them. Only the ones
+      # the written rows show become `Asset` rows, and only where the project does not
+      # already hold the same bytes.
+      - name: pictures
+        type: enum
+        enum_name: ImportPictures
+        enum_values:
+        - Empty
+        - "Found(Vec<ImportPicture>)"
+      # The folder the analysis wrote the pictures into (`AnalyzeDocumentImportDto`).
+      - name: picture_dir
+        type: string
+      # The app's media root, as `LoadWorkDto`/`SaveWorkDto` carry it: not a project's
+      # media directory but what one is resolved from, with the project's path and its
+      # `unique_id` (`skrib_format::media::media_dir`). The import resolves it from where
+      # the project is at the moment it writes, as a save does, and so does its redo: a
+      # directory resolved once by the caller goes stale when the project moves, a folder
+      # project's first save or a Save As, and the next save reads another one and drops
+      # every picture written there. Empty is a caller with no media directory, and an
+      # import that brings a picture then fails rather than losing it.
+      - name: media_root
+        type: string
     dto_out:
       name: ApplyDocumentImportResultDto
       fields:

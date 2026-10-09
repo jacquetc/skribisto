@@ -3,7 +3,20 @@
 
 // Custom implementation (hand-maintained — do NOT blanket-regenerate): the read
 // half of document import. It reads the chosen files, works out what tree they
-// would make, and returns that plan for the writer to review. It writes nothing.
+// would make, and returns that plan for the writer to review. It writes nothing to
+// the store and nothing into the project.
+//
+// **The one thing it does write is the pictures, and not where the project is.** A
+// document's pictures are the largest thing in it, and the plan travels back to the UI
+// as JSON, where a photograph would arrive as a list of numbers several times its own
+// size. So each picture a row's text shows is written into `picture_dir`, a folder the
+// caller makes and owns, as `<hash>.<ext>`, the name the project will give it; the plan
+// lists them by that hash, and its rows' Djot already names them `assets/<hash>.<ext>`.
+// `apply_document_import` copies the accepted ones into the project's media directory.
+// Nothing reaches the project's own folder before the writer says yes, and a cancelled
+// or abandoned import leaves behind only the caller's folder, which the caller removes.
+// The folder is never made here, for that reason: an analysis the caller has abandoned
+// may still be running when the caller removes it, and would otherwise make it again.
 //
 // This is Qleany's **Scenario 4** (`qleany docs flow`): a read-only long
 // operation crunches and returns a preview, the writer reviews it, and
@@ -32,11 +45,11 @@ use crate::AnalyzeDocumentImportDto;
 use crate::DocumentImportPlanDto;
 use crate::dtos::{
     DocumentImportRow, DocumentImportRows, DropPosition, ImportComment, ImportCommentKind,
-    ImportDiagnosticRow, ImportDiagnosticRows, ImportFootnote, ImportOrphanReason, ImportReply,
-    ImportRowKind,
+    ImportDiagnosticRow, ImportDiagnosticRows, ImportFootnote, ImportOrphanReason, ImportPicture,
+    ImportPictures, ImportReply, ImportRowKind,
 };
 use crate::kind_mapping::create_type_to_kind;
-use anyhow::{Result, anyhow};
+use anyhow::{Context, Result, anyhow};
 use common::database::QueryUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
 use common::entities::{BinderItem, CommentAnchorKind, CommentOrphanReason, Work};
@@ -129,6 +142,7 @@ impl LongOperation for AnalyzeDocumentImportUseCase {
         let registry = ScannerRegistry::with_builtin_scanners();
         let total = self.dto.source_paths.len().max(1);
         let mut docs: Vec<SourceDocument> = Vec::with_capacity(self.dto.source_paths.len());
+        let mut staged = StagedPictures::default();
 
         for (index, path) in self.dto.source_paths.iter().enumerate() {
             if cancel_flag.load(Ordering::Relaxed) {
@@ -141,7 +155,16 @@ impl LongOperation for AnalyzeDocumentImportUseCase {
 
             let path_buf = std::path::PathBuf::from(path);
             match std::fs::read(&path_buf) {
-                Ok(bytes) => docs.push(registry.scan_bytes(&path_buf, &bytes)),
+                Ok(bytes) => {
+                    // `scan_file`, not `scan_bytes`: a Markdown file's pictures are files
+                    // beside it, and only a scan that knows its folder may look for them.
+                    let mut doc = registry.scan_file(&path_buf, &bytes);
+                    // Written out as soon as each document is read, so a folder of
+                    // illustrated chapters never holds every chapter's pictures in memory
+                    // at once.
+                    staged.stage(&mut doc, &self.dto.picture_dir)?;
+                    docs.push(doc);
+                }
                 Err(err) => {
                     let mut doc = SourceDocument::new(
                         document_ingest::scanner::display_name_for(&path_buf),
@@ -175,8 +198,86 @@ impl LongOperation for AnalyzeDocumentImportUseCase {
         // a subscriber actually filters on.
         uow.publish_analyze_document_import_event(vec![self.dto.work_id], None);
 
-        Ok(to_dto(plan))
+        Ok(to_dto(plan, staged.listed))
     }
+}
+
+/// The pictures written into `picture_dir` so far, each once, in the order the documents
+/// first showed them.
+#[derive(Default)]
+struct StagedPictures {
+    listed: Vec<ImportPicture>,
+    hashes: std::collections::HashSet<String>,
+}
+
+impl StagedPictures {
+    /// Write the pictures `doc`'s text shows into `dir` and list them, then let the document
+    /// go of their bytes.
+    ///
+    /// Only the ones its text shows: a picture a scanner brought in and no row names (one in
+    /// a heading, say) has nowhere to appear, and nothing needs its bytes.
+    fn stage(&mut self, doc: &mut SourceDocument, dir: &str) -> Result<()> {
+        let pictures = std::mem::take(&mut doc.pictures);
+        if pictures.is_empty() {
+            return Ok(());
+        }
+        let shown = document_ingest::pictures::referenced_by(doc);
+        for picture in pictures {
+            if !shown.contains(&picture.relative_path())
+                || self.hashes.contains(&picture.content_hash)
+            {
+                continue;
+            }
+            if dir.trim().is_empty() {
+                return Err(anyhow!(
+                    "analyze_document_import: {} brings pictures, and no folder was given to \
+                     hold them until the import is applied",
+                    doc.display_name
+                ));
+            }
+            // The caller's folder, made by the caller: never made here. An analysis still
+            // running after the wizard let its folder go (another analysis started, the
+            // wizard reset, its window closed) would make it again and leave these pictures
+            // in it, where nothing removes them.
+            let dir = std::path::Path::new(dir);
+            if !dir.is_dir() {
+                return Err(anyhow!(
+                    "analyze_document_import: the folder {} that {}'s pictures were to wait \
+                     in is gone; the import it was for has been set aside",
+                    dir.display(),
+                    doc.display_name
+                ));
+            }
+            write_picture(&dir.join(picture.stored_name()), &picture.bytes)?;
+            self.hashes.insert(picture.content_hash.clone());
+            self.listed.push(ImportPicture::Found {
+                content_hash: picture.content_hash.clone(),
+                file_name: picture.file_name.clone(),
+                mime_type: picture.mime_type.to_string(),
+                width: i64::from(picture.width),
+                height: i64::from(picture.height),
+                byte_size: picture.bytes.len() as i64,
+            });
+        }
+        Ok(())
+    }
+}
+
+/// Write `bytes` at `path`, unless the file there already holds them.
+///
+/// Through a temporary name and a rename, so a file under the final name is always whole:
+/// the name is the content's hash, and a reader trusting a name to mean its content has to
+/// be able to.
+fn write_picture(path: &std::path::Path, bytes: &[u8]) -> Result<()> {
+    if std::fs::read(path).is_ok_and(|existing| existing == bytes) {
+        return Ok(());
+    }
+    let partial = path.with_extension("part");
+    std::fs::write(&partial, bytes)
+        .with_context(|| format!("writing the picture {}", partial.display()))?;
+    std::fs::rename(&partial, path)
+        .with_context(|| format!("writing the picture {}", path.display()))?;
+    Ok(())
 }
 
 impl AnalyzeDocumentImportUseCase {
@@ -281,7 +382,7 @@ fn flag_existing_titles(plan: &mut ImportPlan, existing: &[String]) {
 /// Diagnostics travel as a key plus their data, never a rendered sentence: the
 /// UI says them in the writer's own locale, which a pre-built English string
 /// would make impossible.
-fn to_dto(plan: ImportPlan) -> DocumentImportPlanDto {
+fn to_dto(plan: ImportPlan, pictures: Vec<ImportPicture>) -> DocumentImportPlanDto {
     let rows: Vec<DocumentImportRow> = plan.rows.iter().map(row_to_dto).collect();
 
     let mut diagnostics: Vec<ImportDiagnosticRow> = plan
@@ -308,6 +409,8 @@ fn to_dto(plan: ImportPlan) -> DocumentImportPlanDto {
         footnote: ImportFootnote::Empty,
         diagnostic: ImportDiagnosticRow::Empty,
         diagnostics: ImportDiagnosticRows::Reported(diagnostics),
+        picture: ImportPicture::Empty,
+        pictures: ImportPictures::Found(pictures),
     }
 }
 
@@ -429,7 +532,11 @@ pub fn diagnostic_to_dto(d: &ImportDiagnostic, row_index: i64) -> ImportDiagnost
         | FootnoteNotCarried { count, .. }
         | RawHtmlDropped { count, .. }
         | NestedBreakDropped { count, .. } => (String::new(), *count as i64),
-        ImageNotIngested { target, .. } => (target.clone(), 0),
+        // The picture as the document named it. Which of the reasons it was left out for is
+        // in the key, one sentence each.
+        ImageNotIngested { target, .. } | PictureFirstFrameOnly { target, .. } => {
+            (target.clone(), 0)
+        }
         // The one variant whose `detail` is a **list**, and still one string: the
         // UI interpolates it whole and never splits it, so this is not the
         // separator-packed pair the rule above forbids. Empty for a file that

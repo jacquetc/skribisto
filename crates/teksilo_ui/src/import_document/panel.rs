@@ -144,6 +144,14 @@ impl Widget for ImportDocumentPanel {
                 }
             });
         }
+        // The pictures coming follow the plan: a row retyped, added above, or given a
+        // choice for its stranded text. A tick is its checkbox's own write, and is followed
+        // where the checkbox is built (`plan_tree`).
+        {
+            let vm = self.vm.clone();
+            let version = self.vm.plan().version_signal();
+            ctx.effect(&version, move |_| vm.refresh_picture_count());
+        }
 
         // `Step::content` is a factory with no `BuildContext`, so the Browse
         // start directory is resolved once here and captured into the zone.
@@ -430,6 +438,7 @@ fn review_step(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
             .spacing(10.0)
             .child(level_rules(vm))
             .child(Expand::vertical().child(plan_tree(vm)))
+            .child(pictures_line(vm))
             .child(diagnostics_strip(vm)),
     );
 
@@ -438,6 +447,24 @@ fn review_step(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
     Switcher::new(vm.busy().map(|b| usize::from(*b)))
         .child(plan)
         .child(analysing_body(vm))
+}
+
+/// How many pictures come with the items being imported, under the tree.
+///
+/// Shown only when there is one: a line announcing that no picture is coming would be said
+/// of nearly every import, and read by nobody. The pictures that stay behind are the
+/// diagnostics strip's, one line each with the reason.
+fn pictures_line(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
+    let count = vm.picture_count();
+    let text = count.map(|n| tr!(import_document_pictures(count = *n as i64)).resolve_now());
+    Switcher::new(count.map(|n| usize::from(*n > 0)))
+        .child(Spacer::new())
+        .child(
+            TextWidget::new(lit!(""))
+                .text(text)
+                .style(TextStyleRole::Small)
+                .color(TextRole::Secondary),
+        )
 }
 
 /// Step three: where the import lands — the full card, not a footer strip.
@@ -1084,10 +1111,13 @@ fn plan_tree(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
             // Enabled only while every ancestor is coming too, so a ticked row
             // under an unticked chapter reads as held back rather than as a
             // contradiction.
+            let counting_vm = tick_vm.clone();
             Box::new(
                 Checkbox::new(signal)
                     .labelled_externally()
-                    .enabled(tick_vm.ancestors_included(key)),
+                    .enabled(tick_vm.ancestors_included(key))
+                    // An item left out brings no picture, so the count follows the tick.
+                    .on_change(move |_, _| counting_vm.refresh_picture_count()),
             )
         },
     )

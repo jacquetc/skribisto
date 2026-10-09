@@ -33,6 +33,17 @@ const NS: &str = concat!(
 
 /// A `.docx` holding `body` as its document, with `styles` and `comments` as their parts.
 fn docx(body: &str, styles: &str, comments: &str) -> Vec<u8> {
+    docx_with_media(body, styles, comments, "", &[])
+}
+
+/// [`docx`], with more of the main part's relationships and members such as pictures.
+fn docx_with_media(
+    body: &str,
+    styles: &str,
+    comments: &str,
+    relationships: &str,
+    media: &[(&str, &[u8])],
+) -> Vec<u8> {
     let parts = [
         (
             "[Content_Types].xml",
@@ -49,8 +60,8 @@ fn docx(body: &str, styles: &str, comments: &str) -> Vec<u8> {
         (
             "word/_rels/document.xml.rels",
             r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments" Target="comments.xml"/></Relationships>"#
-                .to_string(),
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments" Target="comments.xml"/>{relationships}</Relationships>"#
+                .replace("{relationships}", relationships),
         ),
         (
             "word/document.xml",
@@ -80,6 +91,10 @@ fn docx(body: &str, styles: &str, comments: &str) -> Vec<u8> {
     for (name, content) in parts {
         zip.start_file(name, options).expect("start a part");
         zip.write_all(content.as_bytes()).expect("write a part");
+    }
+    for (name, bytes) in media {
+        zip.start_file(*name, options).expect("start a member");
+        zip.write_all(bytes).expect("write a member");
     }
     zip.finish().expect("finish the container").into_inner()
 }
@@ -442,24 +457,72 @@ fn picture_sizes(djot: &str) -> Vec<(u32, u32)> {
         .collect()
 }
 
-/// A picture is not copied in yet, but the reference it leaves keeps the size it was
-/// shown at: 952,500 by 476,250 English Metric Units, or 1.0417 by 0.5208 inches, is 100 by
-/// 50 pixels at 96 to the inch.
+/// A 40 × 20 PNG, built here.
+fn map_png() -> Vec<u8> {
+    let picture = image::DynamicImage::ImageRgba8(image::RgbaImage::from_pixel(
+        40,
+        20,
+        image::Rgba([20, 90, 160, 255]),
+    ));
+    let mut out = std::io::Cursor::new(Vec::new());
+    picture
+        .write_to(&mut out, image::ImageFormat::Png)
+        .expect("encode");
+    out.into_inner()
+}
+
+/// Standard base64, as an OpenDocument file writes a picture inside itself.
+fn base64(bytes: &[u8]) -> String {
+    const ALPHABET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut out = String::new();
+    for chunk in bytes.chunks(3) {
+        let n = chunk
+            .iter()
+            .enumerate()
+            .fold(0u32, |acc, (i, b)| acc | (u32::from(*b) << (16 - 8 * i)));
+        for i in 0..4 {
+            if i <= chunk.len() {
+                out.push(char::from(ALPHABET[((n >> (18 - 6 * i)) & 63) as usize]));
+            } else {
+                out.push('=');
+            }
+        }
+    }
+    out
+}
+
+/// A picture comes into the project and keeps the size it was shown at, whatever size its
+/// file is: 952,500 by 476,250 English Metric Units, or 1.0417 by 0.5208 inches, is 100 by
+/// 50 pixels at 96 to the inch, where the file itself is 40 by 20.
 #[test]
-fn a_picture_reference_keeps_its_display_size() {
+fn a_picture_keeps_its_display_size() {
+    let png = map_png();
+    let asset = format!("assets/{}.png", blake3::hash(&png).to_hex());
     let body = r#"
 <w:p><w:r><w:t xml:space="preserve">A map: </w:t></w:r><w:r><w:drawing><wp:inline><wp:extent cx="952500" cy="476250"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:blipFill><a:blip r:embed="rId9"/></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="952500" cy="476250"/></a:xfrm></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>"#;
-    let plan = plan_of("chapter.docx", &docx(body, "", ""));
+    let bytes = docx_with_media(
+        body,
+        "",
+        "",
+        r#"<Relationship Id="rId9" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/map.png"/>"#,
+        &[("word/media/map.png", &png)],
+    );
+    let plan = plan_of("chapter.docx", &bytes);
     let (row, text) = only_row(&plan);
     assert_eq!(text, "A map: \u{FFFC}");
     assert_eq!(picture_sizes(&row.djot), vec![(100, 50)], "{}", row.djot);
+    assert!(row.djot.contains(&asset), "{}", row.djot);
 
-    let body = r#"
-      <text:p>A map: <draw:frame svg:width="1.0417in" svg:height="0.5208in"><draw:image xlink:href="Pictures/map.png"/></draw:frame></text:p>"#;
-    let plan = plan_of("chapter.fodt", fodt("", body).as_bytes());
+    let body = format!(
+        r#"
+      <text:p>A map: <draw:frame svg:width="1.0417in" svg:height="0.5208in"><draw:image><office:binary-data>{}</office:binary-data></draw:image></draw:frame></text:p>"#,
+        base64(&png)
+    );
+    let plan = plan_of("chapter.fodt", fodt("", &body).as_bytes());
     let (row, text) = only_row(&plan);
     assert_eq!(text, "A map: \u{FFFC}");
     assert_eq!(picture_sizes(&row.djot), vec![(100, 50)], "{}", row.djot);
+    assert!(row.djot.contains(&asset), "{}", row.djot);
 }
 
 // ── a comment over two paragraphs ───────────────────────────────────────────────────

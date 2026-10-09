@@ -1892,7 +1892,6 @@ import-diagnostic-nested-break-dropped = { $count ->
     [one] מעבר סצנה אחד בתוך ציטוט או רשימה ב־"{ $path }" הושמט. נשמר רק מעבר שעומד בשורה משלו.
    *[other] { $count } מעברי סצנה בתוך ציטוטים או רשימות ב־"{ $path }" הושמטו. נשמר רק מעבר שעומד בשורה משלו.
 }
-import-diagnostic-image-not-ingested = "{ $path }" מפנה לתמונה "{ $detail }". ההפניה מגיעה כטקסט; התמונה עצמה לא מועתקת.
 import-diagnostic-duplicate-title = "{ $title }" מופיע { $count } פעמים. אם ייבאתם את הקבצים האלה בעבר, הם ישוכפלו.
 import-diagnostic-heading-level-jump = "{ $title }" קופץ מרמת כותרת { $from } לרמה { $to }; הוא ממוקם רמה אחת מתחת לפריט האב שלו.
 import-diagnostic-illegal-combination = "{ $title }" מכיל טקסט, אבל { $kind } אינו יכול להכיל טקסט. הייבוא מעוכב עד שתשנו את הסוג שלו או תשמיטו אותו. אחרת לא ייובא דבר.

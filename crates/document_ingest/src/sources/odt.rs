@@ -56,7 +56,7 @@
 //! format that cannot round-trip its own thematic breaks. (Pandoc writes exactly
 //! this for `* * *`, under the style name `Horizontal Line`.)
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use anyhow::{Result, anyhow};
 use roxmltree::{Document, Node};
@@ -64,6 +64,9 @@ use skrib_format::xml_depth::{Dtd, XmlError};
 
 use crate::block::SourceDocument;
 use crate::diagnostics::ImportDiagnostic;
+use crate::pictures::{
+    DocumentPictures, PackagePictures, PictureRefusal, PlacedPicture, Reference,
+};
 use crate::scanner::SourceScanner;
 use crate::sources::rich;
 use crate::sources::rich::{
@@ -220,10 +223,11 @@ fn scan_document(bytes: &[u8], display_name: &str, origin: &str) -> Result<Sourc
     let body = find_descendant(content.root_element(), NS_OFFICE, "text")
         .ok_or_else(|| anyhow!("no <office:text> body"))?;
 
-    let mut walker = Walker::new(&styles, origin);
+    let mut walker = Walker::new(&styles, origin, bytes);
     walker.walk_container(body, element_depth(body));
     let rich = walker.finish();
 
+    doc.pictures = std::mem::take(&mut walker.pictures).into_pictures();
     doc.diagnostics.extend(walker.diagnostics);
     assemble(&rich, &mut doc)?;
 
@@ -745,6 +749,13 @@ struct OpenRange {
 struct Walker<'a> {
     styles: &'a StyleTable,
     origin: String,
+    /// The pictures stored in the container, `Pictures/…`. `None` for a flat `.fodt`, which
+    /// has no container: its pictures are written inside the XML, as base64.
+    package: Option<PackagePictures<'a>>,
+    /// Every picture the prose shows, each once ([`Walker::picture`]).
+    pictures: DocumentPictures,
+    /// The pictures of notes and comments already reported ([`Walker::report_note_pictures`]).
+    note_pictures_reported: HashSet<String>,
     blocks: Vec<RichBlock>,
     annotations: Vec<RichAnnotation>,
     row_marks: Vec<RichRowMark>,
@@ -857,10 +868,15 @@ fn collapse_space(text: &str, after_space: &mut bool) -> String {
 }
 
 impl<'a> Walker<'a> {
-    fn new(styles: &'a StyleTable, origin: &str) -> Self {
+    fn new(styles: &'a StyleTable, origin: &str, bytes: &'a [u8]) -> Self {
         Walker {
             styles,
             origin: origin.to_string(),
+            package: bytes
+                .starts_with(b"PK")
+                .then(|| PackagePictures::open(bytes)),
+            pictures: DocumentPictures::new(),
+            note_pictures_reported: HashSet::new(),
             blocks: Vec::new(),
             annotations: Vec::new(),
             row_marks: Vec::new(),
@@ -1341,41 +1357,182 @@ impl<'a> Walker<'a> {
         }
     }
 
+    /// `<draw:frame>`: a picture, a text box, or an embedded object.
+    ///
+    /// A frame may hold several `draw:image`s, the first preferred and the rest stand-ins for
+    /// it: LibreOffice keeps an SVG drawing with a PNG beside it for readers that cannot draw
+    /// SVG. The first that comes is the frame's picture, and the frame's refusal is reported
+    /// only when none does. A frame holding an embedded object keeps its picture of that
+    /// object beside it; the object is what is counted, and its picture is not one of the
+    /// text's.
     fn frame(&mut self, node: Node<'_, '_>, build: &mut ParaBuild, style: RunStyle) {
+        let _ = style;
+        let holds_object = node.children().any(|c| {
+            c.is_element()
+                && matches!(
+                    c.tag_name().name(),
+                    "object" | "object-ole" | "applet" | "plugin" | "floating-frame"
+                )
+        });
+        let mut shown = false;
+        let mut refused: Option<(String, PictureRefusal)> = None;
         for child in node.children().filter(Node::is_element) {
             match child.tag_name().name() {
-                "image" => {
-                    let src = child.attribute((NS_XLINK, "href")).unwrap_or_default();
-                    let alt = node
-                        .children()
-                        .find(|c| is(c, NS_DRAW, "image") || is(c, NS_SVG, "title"))
-                        .and_then(|c| c.text())
-                        .unwrap_or("")
-                        .to_string();
-                    self.diagnostics.push(ImportDiagnostic::ImageNotIngested {
-                        path: self.origin.clone(),
-                        target: src.to_string(),
-                    });
-                    // The frame, not the image, states how large the picture is shown.
-                    let size = |name: &str| {
-                        node.attribute((NS_SVG, name))
-                            .and_then(length_in_pixels)
-                            .unwrap_or(0)
-                    };
-                    build.len += 1;
-                    build.after_space = false;
-                    build
-                        .runs
-                        .push(Run::sized_image(alt, src, size("width"), size("height")));
-                }
+                "image" if holds_object || shown => {}
+                "image" => match self.picture(child) {
+                    Ok((placed, name)) => {
+                        // The frame, not the image, states how large the picture is shown.
+                        let size = |attribute: &str| {
+                            node.attribute((NS_SVG, attribute))
+                                .and_then(length_in_pixels)
+                                .unwrap_or(0)
+                        };
+                        let (width, height) = match (size("width"), size("height")) {
+                            (0, _) | (_, 0) => (placed.width, placed.height),
+                            shown => shown,
+                        };
+                        build.len += 1;
+                        build.after_space = false;
+                        build.runs.push(Run::picture(
+                            frame_description(node),
+                            placed.src,
+                            name,
+                            width,
+                            height,
+                        ));
+                        shown = true;
+                    }
+                    Err(Some(first)) => {
+                        refused.get_or_insert(first);
+                    }
+                    Err(None) => {}
+                },
                 "text-box" => self.text_boxes += 1,
                 "object" | "object-ole" | "applet" | "plugin" | "floating-frame" => {
                     self.embedded_objects += 1
                 }
-                _ => {
-                    let _ = style;
+                // A group (`draw:g`, which the walk hands here too) holds its frames rather
+                // than images of its own: each is a frame in its own right. Looked for only
+                // among images, the pictures of a group, a photograph grouped with its
+                // caption's shape say, vanished without a word.
+                "frame" | "g" if child.tag_name().namespace() == Some(NS_DRAW) => {
+                    self.frame(child, build, style)
                 }
+                _ => {}
             }
+        }
+        if !shown && let Some((target, reason)) = refused {
+            self.diagnostics.push(ImportDiagnostic::ImageNotIngested {
+                path: self.origin.clone(),
+                target,
+                reason,
+            });
+        }
+    }
+
+    /// Bring in the picture one `<draw:image>` names, and say where it landed and what the
+    /// document called it.
+    ///
+    /// On a refusal, the picture as the document named it and why, the first time the
+    /// document shows it, and `None` after that: a picture shown twice is one finding.
+    #[allow(clippy::type_complexity)]
+    fn picture(
+        &mut self,
+        image: Node<'_, '_>,
+    ) -> Result<(PlacedPicture, String), Option<(String, PictureRefusal)>> {
+        /// Where a picture's bytes come from, once it is known which picture it is.
+        enum Fetch {
+            /// A member of the container, read only the first time the picture is shown.
+            Member(String),
+            Ready(Result<Vec<u8>, PictureRefusal>),
+        }
+        let href = image
+            .attribute((NS_XLINK, "href"))
+            .unwrap_or_default()
+            .trim();
+        let named = |fallback: &str| {
+            if href.is_empty() {
+                fallback.to_string()
+            } else {
+                crate::pictures::reference_label(href)
+            }
+        };
+        // A flat file, or a producer embedding in place, writes the bytes inside the element.
+        // Decoded from the text nodes where they lie, and only once their length says the
+        // picture fits: nothing bounds a flat file's size, so a blob of any length can sit
+        // here, and gathering it into one string and decoding it before asking would hold it
+        // three times over for a picture refused a moment later.
+        let inline = image
+            .children()
+            .find(|c| is(c, NS_OFFICE, "binary-data"))
+            .map(|data| {
+                let parts = data
+                    .descendants()
+                    .filter(Node::is_text)
+                    .filter_map(|n| n.text());
+                (data, crate::pictures::decode_base64_picture(parts))
+            });
+        let (source, target, fetch) = match inline {
+            Some((data, bytes)) => {
+                let source = match &bytes {
+                    Ok(bytes) => format!("binary-data:{}", blake3::hash(bytes).to_hex()),
+                    // Where it sits in the file: two blobs refused are two pictures, each
+                    // reported, where a shared key would report only the first.
+                    Err(_) => format!("binary-data@{}", data.range().start),
+                };
+                (source, named("picture"), Fetch::Ready(bytes))
+            }
+            None => match crate::pictures::classify_reference(href) {
+                // A name inside the container, which is where every picture LibreOffice
+                // stores lives (`Pictures/…`).
+                Reference::Relative(segments) if self.package.is_some() => {
+                    let member = segments.join("/");
+                    (member.clone(), named(""), Fetch::Member(member))
+                }
+                // No container: a relative name in a flat file is a file beside it on the
+                // disk, which is never read.
+                Reference::Relative(_) | Reference::Outside => (
+                    href.to_string(),
+                    named(""),
+                    Fetch::Ready(Err(PictureRefusal::Outside)),
+                ),
+                Reference::Inline(bytes) => (
+                    format!("data:{}", blake3::hash(href.as_bytes()).to_hex()),
+                    "picture".to_string(),
+                    Fetch::Ready(bytes),
+                ),
+                Reference::Remote => (
+                    href.to_string(),
+                    named(""),
+                    Fetch::Ready(Err(PictureRefusal::Remote)),
+                ),
+                Reference::Empty => (
+                    href.to_string(),
+                    named("picture"),
+                    Fetch::Ready(Err(PictureRefusal::Missing)),
+                ),
+            },
+        };
+        let package = &mut self.package;
+        let brought = self.pictures.bring(&source, &target, || match fetch {
+            Fetch::Member(member) => package
+                .as_mut()
+                .map_or(Err(PictureRefusal::Missing), |package| {
+                    package.read(&member)
+                }),
+            Fetch::Ready(bytes) => bytes,
+        });
+        if brought.first_time && brought.first_frame_only {
+            self.diagnostics
+                .push(ImportDiagnostic::PictureFirstFrameOnly {
+                    path: self.origin.clone(),
+                    target: target.clone(),
+                });
+        }
+        match brought.result {
+            Ok(placed) => Ok((placed, target)),
+            Err(reason) if brought.first_time => Err(Some((target, reason))),
+            Err(_) => Err(None),
         }
     }
 
@@ -1452,6 +1609,22 @@ impl<'a> Walker<'a> {
         }
     }
 
+    /// Report the pictures a note or a comment showed ([`AnnotationBody::pictures`]): each
+    /// picture once however many notes show it, and a picture written inside the file each
+    /// time, since nothing names it apart from the others.
+    fn report_note_pictures(&mut self, pictures: Vec<String>) {
+        for target in pictures {
+            if target != "picture" && !self.note_pictures_reported.insert(target.clone()) {
+                continue;
+            }
+            self.diagnostics.push(ImportDiagnostic::ImageNotIngested {
+                path: self.origin.clone(),
+                target,
+                reason: PictureRefusal::InNote,
+            });
+        }
+    }
+
     /// `depth` is the annotation's own nesting, as for [`Self::walk_container`].
     fn open_annotation(&mut self, node: Node<'_, '_>, build: &ParaBuild, depth: usize) {
         let author = node
@@ -1487,6 +1660,7 @@ impl<'a> Walker<'a> {
             body.break_paragraph();
         }
         self.spaces_shortened += body.spaces_shortened;
+        self.report_note_pictures(std::mem::take(&mut body.pictures));
         let paragraphs: Vec<Vec<Run>> = body.finish();
         let resolved = node
             .attribute((NS_LOEXT, "resolved"))
@@ -1585,6 +1759,7 @@ impl<'a> Walker<'a> {
             body.break_paragraph();
         }
         self.spaces_shortened += body.spaces_shortened;
+        self.report_note_pictures(std::mem::take(&mut body.pictures));
         let paragraphs = body.finish();
         if paragraphs.is_empty() {
             // A note with an empty body: the marker would cite nothing.
@@ -1705,6 +1880,12 @@ impl<'a> Walker<'a> {
                 (Some(NS_TEXT), "line-break") => out.break_paragraph(),
                 // Unknown inline element: take its text rather than drop it,
                 // matching `Self::inline`'s own fallback.
+                // A picture, which a note or a comment cannot hold. Taken whole rather than
+                // walked for its text: its description would arrive as words of the note,
+                // and a flat file's picture as its base64, every character of it.
+                (Some(NS_DRAW), "frame") | (Some(NS_DRAW), "g") => {
+                    out.pictures.extend(frame_pictures(child))
+                }
                 _ => self.annotation_inline(child, style, link, out, depth + 1),
             }
         }
@@ -1760,6 +1941,10 @@ struct AnnotationBody {
     /// [`Walker::annotation_inline`] reads the walker without changing it; whoever
     /// finishes the body adds this to the walker's own count.
     spaces_shortened: usize,
+    /// The pictures this body shows, as the document names them: a note or a comment holds
+    /// none, so each is reported by whoever finishes the body, on the same terms as
+    /// [`Self::spaces_shortened`] ([`Walker::report_note_pictures`]).
+    pictures: Vec<String>,
 }
 
 impl Default for AnnotationBody {
@@ -1769,6 +1954,7 @@ impl Default for AnnotationBody {
             current: Vec::new(),
             after_space: true,
             spaces_shortened: 0,
+            pictures: Vec::new(),
         }
     }
 }
@@ -1838,6 +2024,42 @@ fn fnv1a(value: &str) -> u64 {
 }
 
 const NS_SVG: &str = "urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0";
+
+/// The pictures a frame, or a group of frames, shows, as the document names them: each
+/// frame's first `draw:image` link, or `picture` for one written inside the file. A frame
+/// holding only a text box or an object shows none of its own.
+fn frame_pictures(frame: Node<'_, '_>) -> Vec<String> {
+    let mut out = Vec::new();
+    for node in frame.descendants().filter(|n| is(n, NS_DRAW, "frame")) {
+        // Only the first image of a frame is its picture; the rest are stand-ins for it
+        // (see `Walker::frame`).
+        let Some(image) = node.children().find(|c| is(c, NS_DRAW, "image")) else {
+            continue;
+        };
+        let href = image
+            .attribute((NS_XLINK, "href"))
+            .unwrap_or_default()
+            .trim();
+        out.push(if href.is_empty() {
+            "picture".to_string()
+        } else {
+            crate::pictures::reference_label(href)
+        });
+    }
+    out
+}
+
+/// The description a frame gives its picture: its title (`svg:title`, where this workspace's
+/// own writer puts a picture's description, and LibreOffice its *Text Alternative*), or its
+/// longer description (`svg:desc`) when it has no title.
+fn frame_description(frame: Node<'_, '_>) -> String {
+    ["title", "desc"]
+        .into_iter()
+        .filter_map(|name| frame.children().find(|c| is(c, NS_SVG, name)))
+        .map(|node| element_text(node).trim().to_string())
+        .find(|text| !text.is_empty())
+        .unwrap_or_default()
+}
 
 /// An ODF length (`3.5cm`, `2in`, `120pt`) in pixels at 96 to the inch, the unit the
 /// editor measures a picture in. `None` for a unit it does not know, or a length that

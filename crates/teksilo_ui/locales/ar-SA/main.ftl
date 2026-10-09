@@ -2072,7 +2072,6 @@ import-diagnostic-nested-break-dropped = { $count ->
     [many] أُسقط { $count } فاصل مشهد داخل اقتباسات أو قوائم في «{ $path }». لا يُحتفظ إلا بالفاصل الموجود في سطر مستقل.
    *[other] أُسقط { $count } فاصل مشهد داخل اقتباسات أو قوائم في «{ $path }». لا يُحتفظ إلا بالفاصل الموجود في سطر مستقل.
 }
-import-diagnostic-image-not-ingested = يشير «{ $path }» إلى الصورة «{ $detail }». تصل الإشارة كنص؛ أما الصورة نفسها فلا تُنسخ.
 import-diagnostic-duplicate-title = يتكرر «{ $title }» (عدد المرات: { $count }). إن كنت قد استوردت هذه الملفات من قبل، فسيكررها هذا الاستيراد.
 import-diagnostic-heading-level-jump = يقفز «{ $title }» من مستوى العنوان { $from } إلى { $to }؛ يوضع مستوى واحدًا تحت العنصر الأب.
 import-diagnostic-illegal-combination = يحمل «{ $title }» نصًّا، لكن العنصر من نوع { $kind } لا يتسع لأي نص. يتوقف الاستيراد حتى تغيّر نوعه أو تستبعده. وإلا فلن يُستورد شيء على الإطلاق.

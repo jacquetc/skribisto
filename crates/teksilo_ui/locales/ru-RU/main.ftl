@@ -2032,7 +2032,6 @@ import-diagnostic-nested-break-dropped = { $count ->
     [many] { $count } разрывов сцены внутри цитат или списков в «{ $path }» отброшены. Сохраняются только разрывы на отдельной строке.
    *[other] { $count } разрыва сцены внутри цитат или списков в «{ $path }» отброшены. Сохраняются только разрывы на отдельной строке.
 }
-import-diagnostic-image-not-ingested = «{ $path }» ссылается на изображение «{ $detail }». Ссылка импортируется как текст; само изображение не копируется.
 import-diagnostic-duplicate-title = «{ $title }» встречается { $count ->
     [one] { $count } раз
     [few] { $count } раза

@@ -2197,6 +2197,12 @@ import-document-destination = Destination
 import-document-destination-hint = Choose a binder or item: new items land inside a folder, or after a scene.
 import-document-destination-empty = No binders yet. Create one first.
 import-document-plan-empty = Nothing to import yet.
+# How many pictures the items being imported bring into the project, under the
+# review tree. Shown only when there is at least one.
+import-document-pictures = { $count ->
+    [one] One picture comes with these documents.
+   *[other] { $count } pictures come with these documents.
+}
 import-document-summary = { $rows ->
     [one] 1 item
    *[other] { $rows } items
@@ -2258,7 +2264,20 @@ import-diagnostic-nested-break-dropped = { $count ->
     [one] One scene break inside a quote or list in “{ $path }” was dropped. Only a break on its own line is kept.
    *[other] { $count } scene breaks inside quotes or lists in “{ $path }” were dropped. Only a break on its own line is kept.
 }
-import-diagnostic-image-not-ingested = “{ $path }” refers to the image “{ $detail }”. The reference arrives as text; the picture itself is not copied in.
+# A picture the document shows that does not come with it, one sentence per reason.
+# $detail is the picture as the document names it: a file name, a path inside the
+# document, or a web address. Nothing is left in the text where it was.
+import-diagnostic-image-not-ingested-format = In “{ $path }”, the picture “{ $detail }” is in a format Skribisto cannot show, so it was left out. Pictures in PNG, JPEG, WebP, GIF, TIFF or BMP come in; save it as one of those and insert it by hand.
+import-diagnostic-image-not-ingested-remote = In “{ $path }”, the picture “{ $detail }” is on the web. Pictures are never downloaded during an import, so it was left out.
+import-diagnostic-image-not-ingested-outside = In “{ $path }”, the picture “{ $detail }” is outside the document and its folder, so it was left out. Only pictures stored in the document, or in the document's own folder, come in.
+import-diagnostic-image-not-ingested-missing = In “{ $path }”, the picture “{ $detail }” could not be found, so it was left out.
+import-diagnostic-image-not-ingested-too-large = In “{ $path }”, the picture “{ $detail }” is larger than a project accepts, so it was left out.
+import-diagnostic-image-not-ingested-unreadable = In “{ $path }”, the picture “{ $detail }” could not be read as a picture, so it was left out.
+import-diagnostic-image-not-ingested-heading = In “{ $path }”, the picture “{ $detail }” sits in a heading. A heading becomes a title, which holds no picture, so it was left out.
+import-diagnostic-image-not-ingested-note = In “{ $path }”, the picture “{ $detail }” sits in a footnote, an endnote or a comment. Those keep their words and no picture, so it was left out.
+import-diagnostic-image-not-ingested-html = In “{ $path }”, the picture “{ $detail }” is written as HTML, and an import leaves HTML out, so it was left out with it. Write it as a Markdown picture to bring it in.
+import-diagnostic-image-not-ingested-document-full = In “{ $path }”, the picture “{ $detail }” was left out: the pictures of this document together pass what one import brings in. Import the document in parts, or insert the rest by hand.
+import-diagnostic-picture-first-frame-only = In “{ $path }”, the animated picture “{ $detail }” arrives as its first frame. Pictures in a project do not move.
 import-diagnostic-duplicate-title = “{ $title }” appears { $count } times. If you have imported these files before, this will duplicate them.
 import-diagnostic-heading-level-jump = “{ $title }” jumps from heading level { $from } to { $to }; it is placed one level under its parent.
 import-diagnostic-illegal-combination = “{ $title }” carries prose, but a { $kind } cannot hold any. Import is held until you change its type or leave it out. Nothing is imported at all otherwise.

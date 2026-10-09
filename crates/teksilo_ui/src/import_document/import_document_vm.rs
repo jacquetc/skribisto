@@ -40,8 +40,8 @@ use frontend::common::event::Event;
 use frontend::import_management::{
     AnalyzeDocumentImportDto, ApplyDocumentImportDto, ApplyImportRow, ApplyImportRows,
     DocumentImportRow, DocumentImportRows, DropPosition, ImportComment, ImportCommentKind,
-    ImportDiagnosticRow, ImportDiagnosticRows, ImportFootnote, ImportOrphanReason, ImportReply,
-    ImportRowKind,
+    ImportDiagnosticRow, ImportDiagnosticRows, ImportFootnote, ImportOrphanReason, ImportPicture,
+    ImportPictures, ImportReply, ImportRowKind,
 };
 
 use document_ingest::plan::{PlannedComment, PlannedRow};
@@ -50,6 +50,7 @@ use skribisto_model::CreateType;
 use skribisto_model::reconcile::{self, ExistingRow, IncomingRow, RowAction, RowStatus};
 
 use crate::app_ids::AppIds;
+use crate::import_document::picture_staging::PictureStaging;
 use crate::models::import_merge_source::ImportMergeSource;
 use crate::models::import_plan_source::{ImportPlanSource, PlanRowKey, PlanRowView};
 use crate::shared::long_op::{TrackedOp, event_id, parse_payload, payload_id};
@@ -107,6 +108,9 @@ pub const LEVEL_TYPES: &[CreateType] = &[
     CreateType::Chapter,
     CreateType::Scene,
 ];
+
+/// The content hash the mock plan's picture is named by. Sixty-four hex digits, as a real one.
+const MOCK_PICTURE: &str = "6d6f636b6d6f636b6d6f636b6d6f636b6d6f636b6d6f636b6d6f636b6d6f636b";
 
 /// `ImportDiagnostic::IllegalCombination`'s key, as `document_ingest` spells it.
 ///
@@ -188,7 +192,47 @@ impl Diagnostic {
                 path = path,
                 count = count
             )),
-            "image-not-ingested" => tr!(import_diagnostic_image_not_ingested(
+            // One sentence per reason a picture stayed behind; `detail` is the picture as the
+            // document names it.
+            "image-not-ingested-format" => tr!(import_diagnostic_image_not_ingested_format(
+                path = path,
+                detail = detail
+            )),
+            "image-not-ingested-remote" => tr!(import_diagnostic_image_not_ingested_remote(
+                path = path,
+                detail = detail
+            )),
+            "image-not-ingested-outside" => tr!(import_diagnostic_image_not_ingested_outside(
+                path = path,
+                detail = detail
+            )),
+            "image-not-ingested-missing" => tr!(import_diagnostic_image_not_ingested_missing(
+                path = path,
+                detail = detail
+            )),
+            "image-not-ingested-too-large" => tr!(import_diagnostic_image_not_ingested_too_large(
+                path = path,
+                detail = detail
+            )),
+            "image-not-ingested-unreadable" => tr!(
+                import_diagnostic_image_not_ingested_unreadable(path = path, detail = detail)
+            ),
+            "image-not-ingested-heading" => tr!(import_diagnostic_image_not_ingested_heading(
+                path = path,
+                detail = detail
+            )),
+            "image-not-ingested-note" => tr!(import_diagnostic_image_not_ingested_note(
+                path = path,
+                detail = detail
+            )),
+            "image-not-ingested-html" => tr!(import_diagnostic_image_not_ingested_html(
+                path = path,
+                detail = detail
+            )),
+            "image-not-ingested-document-full" => tr!(
+                import_diagnostic_image_not_ingested_document_full(path = path, detail = detail)
+            ),
+            "picture-first-frame-only" => tr!(import_diagnostic_picture_first_frame_only(
                 path = path,
                 detail = detail
             )),
@@ -413,6 +457,24 @@ pub struct ImportDocumentViewModel {
     merge_needs_review: Signal<bool>,
     /// What to do with a row whose prose its own type cannot hold — see [`StrayProse`].
     stray_prose: Rc<RefCell<HashMap<PlanRowKey, StrayProse>>>,
+
+    /// The app's media root, which `apply_document_import` resolves the project's media
+    /// directory from at the moment it writes, with the project's path and uid, exactly as
+    /// a save does: not a directory resolved here, which goes stale once the project moves
+    /// (a new folder project's first save, a Save As) while the save reads the new one.
+    /// Empty until one is given, which refuses an import that brings pictures rather than
+    /// losing them.
+    media_root: Rc<dyn Fn() -> String>,
+    /// Where each analysis's folder for its pictures is made. See [`PictureStaging`].
+    staging_root: PathBuf,
+    /// The folder the current plan's pictures wait in, removed with it: on a reset, when
+    /// another analysis starts, and once the import has landed.
+    staging: Rc<RefCell<Option<PictureStaging>>>,
+    /// The pictures the current plan brings, as the analysis listed them.
+    pictures: Rc<RefCell<Vec<ImportPicture>>>,
+    /// How many of them the items being imported show, for the line under the tree.
+    /// Kept rather than derived: see [`Self::refresh_picture_count`].
+    picture_count: Signal<usize>,
 }
 
 /// What becomes of prose sitting on a row whose type cannot store it.
@@ -521,7 +583,128 @@ impl ImportDocumentViewModel {
             busy: Signal::new(false),
             progress: Signal::new(0.0),
             progress_message: Signal::new(String::new()),
+            media_root: Rc::new(String::new),
+            staging_root: crate::import_document::picture_staging::default_root(),
+            staging: Rc::new(RefCell::new(None)),
+            pictures: Rc::new(RefCell::new(Vec::new())),
+            picture_count: Signal::new(0),
         }
+    }
+
+    /// The app's media root (`crate::media_paths::media_root_string`), asked each time an
+    /// import is applied. See [`Self::media_root`](field@Self::media_root) for why the root and
+    /// not the project's own directory.
+    pub fn with_media_root(mut self, media_root: impl Fn() -> String + 'static) -> Self {
+        self.media_root = Rc::new(media_root);
+        self
+    }
+
+    /// Make each analysis's picture folder below `root` rather than under the app's data
+    /// directory. For a test, which must not write there.
+    pub fn with_picture_staging_root(mut self, root: PathBuf) -> Self {
+        self.staging_root = root;
+        self
+    }
+
+    /// How many pictures the items being imported bring, for the line under the tree.
+    pub fn picture_count(&self) -> Signal<usize> {
+        self.picture_count.clone()
+    }
+
+    /// The folder the current plan's pictures wait in, if there is a plan.
+    pub fn picture_folder(&self) -> Option<PathBuf> {
+        self.staging
+            .borrow()
+            .as_ref()
+            .map(|staging| staging.dir().to_path_buf())
+    }
+
+    /// The pictures the current plan brings, as the analysis listed them.
+    pub fn pictures(&self) -> Vec<ImportPicture> {
+        self.pictures.borrow().clone()
+    }
+
+    /// How many distinct pictures the rows the import would write show.
+    ///
+    /// Counted from exactly what would be written ([`Self::rows_to_create`]), with the rule
+    /// `apply_document_import` brings pictures by: an item left out brings none, nor does
+    /// text dropped from a row that cannot hold it.
+    pub fn pictures_coming(&self) -> usize {
+        let listed = self.pictures.borrow();
+        if listed.is_empty() {
+            return 0;
+        }
+        let names: std::collections::HashSet<String> = listed
+            .iter()
+            .filter_map(|picture| match picture {
+                ImportPicture::Found {
+                    content_hash,
+                    mime_type,
+                    ..
+                } => Some(skrib_format::media::asset_relpath(
+                    content_hash,
+                    &skrib_format::media::extension_for(mime_type),
+                )),
+                ImportPicture::Empty => None,
+            })
+            .collect();
+        let mut shown: std::collections::HashSet<String> = std::collections::HashSet::new();
+        for row in self.rows_to_create() {
+            let (djot, epigraph, footnotes) = match &row {
+                ApplyImportRow::Create {
+                    djot,
+                    epigraph,
+                    footnotes,
+                    ..
+                } => (djot, epigraph, footnotes),
+                ApplyImportRow::Update {
+                    replace_prose: true,
+                    djot,
+                    epigraph,
+                    footnotes,
+                    ..
+                } => (djot, epigraph, footnotes),
+                ApplyImportRow::Update { .. } | ApplyImportRow::Empty => continue,
+            };
+            let bodies = footnotes.iter().filter_map(|note| match note {
+                ImportFootnote::Found { body, .. } => Some(body.as_str()),
+                ImportFootnote::Empty => None,
+            });
+            for text in [djot.as_str(), epigraph.as_str()].into_iter().chain(bodies) {
+                shown.extend(
+                    skrib_format::media::referenced_paths(text)
+                        .into_iter()
+                        .filter(|path| names.contains(path)),
+                );
+            }
+        }
+        shown.len()
+    }
+
+    /// Count the pictures coming again, into [`Self::picture_count`].
+    ///
+    /// A count kept in a signal rather than a derived one: a derived signal is recomputed on
+    /// every read, and this one walks the whole plan's text. The panel calls it whenever the
+    /// plan changes, and so does every write to the plan here.
+    pub fn refresh_picture_count(&self) {
+        let count = self.pictures_coming();
+        if self.picture_count.get() != count {
+            self.picture_count.set(count);
+        }
+    }
+
+    /// Plant the pictures a plan lists without an analysis behind them, for layout tests.
+    #[cfg(test)]
+    pub(crate) fn seed_pictures_for_test(&self, pictures: Vec<ImportPicture>) {
+        *self.pictures.borrow_mut() = pictures;
+        self.refresh_picture_count();
+    }
+
+    /// Let go of the current plan's pictures and the folder they wait in.
+    fn drop_pictures(&self) {
+        self.staging.borrow_mut().take();
+        self.pictures.borrow_mut().clear();
+        self.picture_count.set(0);
     }
 
     // ── what the view binds to ──────────────────────────────────────────────
@@ -626,6 +809,7 @@ impl ImportDocumentViewModel {
         self.busy.set(false);
         self.progress.set(0.0);
         self.progress_message.set(String::new());
+        self.drop_pictures();
     }
 
     // ── step one: the files ─────────────────────────────────────────────────
@@ -757,7 +941,12 @@ impl ImportDocumentViewModel {
                     create_type: CreateType::Scene,
                     title: "Mock Scene".into(),
                     stripped_ordinal: None,
-                    djot: "More prose.".into(),
+                    // A picture, so the line counting what comes with the documents is on
+                    // screen in a mocks build. Named as a real import names one; no file
+                    // stands behind it, and the mock plan is never applied.
+                    djot: format!(
+                        "More prose. ![A map](assets/{MOCK_PICTURE}.png){{width=64 height=48}}"
+                    ),
                     epigraph: String::new(),
                     scene_breaks: 0,
                     word_count: 2,
@@ -774,6 +963,14 @@ impl ImportDocumentViewModel {
             ],
             diagnostics: Vec::new(),
         };
+        *self.pictures.borrow_mut() = vec![ImportPicture::Found {
+            content_hash: MOCK_PICTURE.to_string(),
+            file_name: "map.png".into(),
+            mime_type: "image/png".into(),
+            width: 64,
+            height: 48,
+            byte_size: 2048,
+        }];
         self.install_plan(
             &plan,
             vec![1, 2, 3],
@@ -783,6 +980,7 @@ impl ImportDocumentViewModel {
                 (3, CreateType::Scene),
             ],
         );
+        self.refresh_picture_count();
         // Two of the fourteen things an import can have to admit to. Seeded so the
         // diagnostics strip — a third of the review step, and the reason the
         // feature exists — is actually on screen in a mocks build; without them it
@@ -827,6 +1025,11 @@ impl ImportDocumentViewModel {
         // use case now ask it there; the wizard's job is only to say where the writer
         // pointed.
         let destination = self.destination.selected();
+        // A fresh folder for this analysis's pictures, and the last one's gone with its plan.
+        self.drop_pictures();
+        let staging = PictureStaging::new_in(&self.staging_root);
+        let picture_dir = staging.dir_string();
+        *self.staging.borrow_mut() = Some(staging);
         let dto = AnalyzeDocumentImportDto {
             work_id,
             binder_id: destination.as_ref().map(|d| d.binder_id).unwrap_or(0),
@@ -843,6 +1046,7 @@ impl ImportDocumentViewModel {
                 .as_ref()
                 .map(|d| to_dto_position(d.position.clone()))
                 .unwrap_or(DropPosition::Into),
+            picture_dir,
         };
         let op = frontend::commands::import_management_commands::analyze_document_import(
             &self.app_ctx,
@@ -928,8 +1132,13 @@ impl ImportDocumentViewModel {
             Ok(Some(dto)) => {
                 let (plan, levels, diagnostics) = plan_from_dto(&dto.rows, &dto.diagnostics);
                 let rules = infer_level_rules(&plan, &levels);
+                *self.pictures.borrow_mut() = match dto.pictures {
+                    ImportPictures::Found(pictures) => pictures,
+                    ImportPictures::Empty => Vec::new(),
+                };
                 self.on_plan_ready(&plan, levels, rules);
                 self.set_diagnostics(diagnostics);
+                self.refresh_picture_count();
             }
             // Completed with nothing recoverable, or the result could not be
             // read back. Either way the wizard must not sit on a spinner
@@ -988,6 +1197,8 @@ impl ImportDocumentViewModel {
     /// Stop waiting and put the writer back on their file list, with whatever
     /// they had chosen intact.
     fn abandon_analysis(&self) {
+        // Whatever it had written of its pictures goes with it.
+        self.drop_pictures();
         *self.active.borrow_mut() = None;
         self.busy.set(false);
         self.progress.set(0.0);
@@ -1226,6 +1437,8 @@ impl ImportDocumentViewModel {
         }
         self.diagnostics.set(diagnostics);
         self.refill_diagnostic_rows();
+        // A retype can strand a row's text, and text dropped brings no picture.
+        self.refresh_picture_count();
     }
 
     /// False when this row carries prose that its current type cannot store.
@@ -1468,6 +1681,7 @@ impl ImportDocumentViewModel {
     pub fn set_stray_prose(&self, key: PlanRowKey, choice: StrayProse) {
         self.stray_prose.borrow_mut().insert(key, choice);
         self.plan.touch();
+        self.refresh_picture_count();
     }
 
     // ── inclusion ───────────────────────────────────────────────────────────
@@ -1499,6 +1713,7 @@ impl ImportDocumentViewModel {
     /// [`Self::is_included`] instead.
     pub fn set_included(&self, key: PlanRowKey, included: bool) {
         self.plan.set_ticked(key, included);
+        self.refresh_picture_count();
     }
 
     pub fn included_count(&self) -> usize {
@@ -1557,8 +1772,18 @@ impl ImportDocumentViewModel {
                 drop_position: to_dto_position(destination.position.clone()),
                 row: ApplyImportRow::Empty,
                 rows: ApplyImportRows::Create(rows),
+                pictures: ImportPictures::Found(self.pictures()),
+                picture_dir: self
+                    .picture_folder()
+                    .map(|dir| dir.to_string_lossy().into_owned())
+                    .unwrap_or_default(),
+                media_root: (self.media_root)(),
             },
         )?;
+        // The pictures are the project's now, in its own media directory, and the import's
+        // undo entry keeps what a redo needs. The wizard's copies have nothing left to do.
+        // A refused import keeps them, for the writer to fix the plan and press Import again.
+        self.drop_pictures();
         Ok(result.created_ids)
     }
 

@@ -274,7 +274,8 @@ After the break.
     for expected in [
         "front-matter-not-flat",
         "footnotes-degraded",
-        "image-not-ingested",
+        // A picture beside a document scanned with no folder to find it in.
+        "image-not-ingested-missing",
     ] {
         assert!(keys.contains(&expected), "missing {expected} in {keys:?}");
     }

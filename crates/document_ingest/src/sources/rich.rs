@@ -177,8 +177,12 @@ pub struct Run {
 /// A picture a run shows.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct RunImage {
-    /// Where the picture is inside the container.
+    /// What the prose calls the picture: `assets/<hash>.<ext>` for one a scanner brought in
+    /// ([`crate::pictures`]), which is the name it has in the project.
     pub src: String,
+    /// The picture as the document named it (`word/media/image1.png`, `Pictures/1.png`), for
+    /// a report about it. Never written into the prose.
+    pub name: String,
     /// Its display width in pixels, at 96 to the inch: what the editor's document model
     /// measures a picture in. `0` when the source states none.
     pub width: u32,
@@ -216,10 +220,23 @@ impl Run {
         Self::sized_image(alt, src, 0, 0)
     }
 
-    /// A picture shown at `width` by `height` pixels.
+    /// A picture shown at `width` by `height` pixels, known by `src` alone.
     pub fn sized_image(
         alt: impl Into<String>,
         src: impl Into<String>,
+        width: u32,
+        height: u32,
+    ) -> Self {
+        let src = src.into();
+        Self::picture(alt, src.clone(), src, width, height)
+    }
+
+    /// A picture the document named `name`, which the prose calls `src`, shown at `width` by
+    /// `height` pixels.
+    pub fn picture(
+        alt: impl Into<String>,
+        src: impl Into<String>,
+        name: impl Into<String>,
         width: u32,
         height: u32,
     ) -> Self {
@@ -229,6 +246,7 @@ impl Run {
             link: None,
             image: Some(RunImage {
                 src: src.into(),
+                name: name.into(),
                 width,
                 height,
             }),
@@ -427,11 +445,17 @@ impl RichBlock {
     /// hang off. Left in, the reference's object-replacement character would simply
     /// appear in the title as a stray glyph; the note itself is then cited by no row,
     /// which is what `plan` reports.
+    /// The words of a heading, as a title holds them: a footnote reference and a picture
+    /// are not words, and a title has no place for either (a picture in a heading is
+    /// reported where the heading is read, see [`assemble`]).
     fn title_text(&self) -> String {
         match self {
             RichBlock::Paragraph { runs, .. } => {
                 let mut out = String::new();
-                for run in runs.iter().filter(|r| r.footnote.is_none()) {
+                for run in runs
+                    .iter()
+                    .filter(|r| r.footnote.is_none() && r.image.is_none())
+                {
                     run.plain_push(&mut out);
                 }
                 out
@@ -814,6 +838,17 @@ fn assemble_with(
             }
             Boundary::Heading { level, text } => {
                 assembly.flush(doc, &mut pending, Frame::Blocks, out)?;
+                // A heading becomes a title, which holds words and no picture. The picture
+                // is named rather than dropped in silence.
+                if let RichBlock::Paragraph { runs, .. } = block {
+                    for image in runs.iter().filter_map(|run| run.image.as_ref()) {
+                        out.diagnostics.push(ImportDiagnostic::ImageNotIngested {
+                            path: out.origin.clone(),
+                            target: image.name.clone(),
+                            reason: crate::pictures::PictureRefusal::InHeading,
+                        });
+                    }
+                }
                 // A heading becomes a row's title, which has no prose to point into.
                 // `plan` gives a comment on it a paragraph anchor on the row's first block.
                 assembly.placement[index] = Some(Placement {

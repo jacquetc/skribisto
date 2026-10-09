@@ -1813,7 +1813,6 @@ import-diagnostic-nested-break-dropped = { $count ->
        [one] En scenbrytning inuti ett citat eller en lista i ”{ $path }” utelämnades. Bara en brytning på en egen rad behålls.
       *[other] { $count } scenbrytningar inuti citat eller listor i ”{ $path }” utelämnades. Bara en brytning på en egen rad behålls.
    }
-import-diagnostic-image-not-ingested = ”{ $path }” hänvisar till bilden ”{ $detail }”. Hänvisningen kommer in som text; själva bilden kopieras inte in.
 import-diagnostic-duplicate-title = ”{ $title }” förekommer { $count } gånger. Om du har importerat de här filerna tidigare kommer de att dupliceras.
 import-diagnostic-heading-level-jump = ”{ $title }” hoppar från rubriknivå { $from } till { $to }; den placeras en nivå under sitt överordnade objekt.
 import-diagnostic-illegal-combination = ”{ $title }” innehåller prosa, men typen { $kind } kan inte innehålla någon. Importen väntar tills du ändrar dess typ eller utesluter den. Annars importeras ingenting alls.

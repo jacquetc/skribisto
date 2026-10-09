@@ -382,8 +382,12 @@ impl ProjectWindowFactory {
         // window shows. Built out here rather than inside the modal because it
         // is also what the analysis's long-operation events are routed to (see
         // `app::wiring::long_ops`), and the modal comes and goes.
+        // The media root the load and the save are given: the import resolves the project's
+        // media directory from it, and from where the project is when the import lands, as a
+        // save does, so the imported pictures go where the next save reads them.
         let import_document =
-            crate::import_document::ImportDocumentViewModel::new(app_ctx_root.clone(), ids.clone());
+            crate::import_document::ImportDocumentViewModel::new(app_ctx_root.clone(), ids.clone())
+                .with_media_root(crate::media_paths::media_root_string);
         let registry = self.registry.clone();
         let quit = self.quit.clone();
         // Let this Work's on-close backup hand control back to the quit sequencer

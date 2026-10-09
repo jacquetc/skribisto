@@ -1679,7 +1679,6 @@ import-diagnostic-footnotes-degraded = Markdown からは脚注を読み込ま�
 import-diagnostic-footnote-not-carried = 「{ $path }」の脚注{ $count }件を移行できませんでした。ほかの脚注は移行しました。
 import-diagnostic-raw-html-dropped = 「{ $path }」の生の HTML ブロック{ $count }件を除外しました。
 import-diagnostic-nested-break-dropped = 「{ $path }」の引用やリスト内のシーン区切り{ $count }件を除外しました。独立した行の区切りだけを保持します。
-import-diagnostic-image-not-ingested = 「{ $path }」は画像「{ $detail }」を参照しています。参照はテキストとしてインポートされますが、画像自体はコピーされません。
 import-diagnostic-duplicate-title = 「{ $title }」が{ $count }回出現します。これらのファイルを以前にインポートしたことがある場合、重複して追加されます。
 import-diagnostic-heading-level-jump = 「{ $title }」の見出しがレベル{ $from }から{ $to }へ飛んでいます。親の一段下に配置します。
 import-diagnostic-illegal-combination = 「{ $title }」には本文がありますが、{ $kind } は本文を持てません。種類を変更するか除外するまでインポートは保留され、それまでは何もインポートされません。

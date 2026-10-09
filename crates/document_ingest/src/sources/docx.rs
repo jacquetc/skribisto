@@ -105,6 +105,7 @@ use docx_rs::{
 
 use crate::block::{SourceBlock, SourceDocument};
 use crate::diagnostics::ImportDiagnostic;
+use crate::pictures::{DocumentPictures, PackagePictures, PictureRefusal, PlacedPicture};
 use crate::scanner::SourceScanner;
 use crate::sources::rich;
 use crate::sources::rich::{
@@ -145,8 +146,15 @@ fn scan_document(bytes: &[u8], display_name: &str, origin: &str) -> Result<Sourc
     // Both readers below read the same prepared package, so they count the same text.
     let package = prepared_package(bytes);
     let bytes: &[u8] = &package;
-    let docx =
-        docx_rs::read_docx(bytes).map_err(|e| anyhow!("not a readable Word document: {e:?}"))?;
+    // Without the previews `docx-rs` would otherwise make: those decode every picture in the
+    // file, at whatever size its header claims, and encode it again as PNG, before a word of
+    // the text is read. The pictures are read once, in the raw pass, under
+    // `crate::pictures`' limits.
+    let docx = docx_rs::read_docx_with_options(
+        bytes,
+        docx_rs::ReadDocxOptions::default().with_image_previews(false),
+    )
+    .map_err(|e| anyhow!("not a readable Word document: {e:?}"))?;
 
     // No document title is read. `docx_rs` keeps `CoreProps` private with no
     // accessor, and opening the container a second time to reach
@@ -157,12 +165,15 @@ fn scan_document(bytes: &[u8], display_name: &str, origin: &str) -> Result<Sourc
     let mut doc = SourceDocument::new(display_name, origin);
 
     let styles = StyleTable::new(&docx);
-    let raw = RawScan::read(bytes).unwrap_or_default();
+    let mut raw = RawScan::read(bytes, origin).unwrap_or_default();
+    doc.pictures = std::mem::take(&mut raw.pictures);
+    let picture_diagnostics = std::mem::take(&mut raw.picture_diagnostics);
     let comments = CommentTable::new(&docx, &styles, &raw);
     let mut walker = Walker::new(&styles, &comments, &raw, origin);
     walker.walk(&docx.document.children);
     let rich = walker.finish();
 
+    doc.diagnostics.extend(picture_diagnostics);
     doc.diagnostics.extend(walker.diagnostics);
     assemble(&rich, &mut doc)?;
 
@@ -1574,9 +1585,21 @@ struct RawScan {
     /// part's own (`word/_rels/comments.xml.rels`), a part `docx-rs` never reads.
     comment_links: HashMap<String, String>,
     /// Relationship id → the picture it names: the part inside the file
-    /// (`word/media/image1.png`), or the address of a linked one. What `docx-rs` gives a
-    /// picture is the relationship id alone.
-    images: HashMap<String, String>,
+    /// (`word/media/image1.png`), or the address of a linked one, and whether it is linked
+    /// (`TargetMode="External"`). What `docx-rs` gives a picture is the relationship id
+    /// alone.
+    images: HashMap<String, (String, bool)>,
+    /// Relationship id → what became of the picture it names: where it is in the project,
+    /// or why it is not. Decided here, in the raw pass, because this pass counts a picture
+    /// as a character only when it comes, and the typed walk has to agree ([`RawPictures`]).
+    picture_outcomes: HashMap<String, Result<PlacedPicture, PictureRefusal>>,
+    /// Relationship id → the description the document gives the picture, `wp:docPr/@descr`
+    /// (its title when it has no description). `docx-rs` does not read it.
+    picture_descriptions: HashMap<String, String>,
+    /// The pictures brought in, each once, for the scanned document to carry.
+    pictures: Vec<crate::pictures::IngestedPicture>,
+    /// Pictures that did not come, and animations kept as a first frame, each said once.
+    picture_diagnostics: Vec<ImportDiagnostic>,
     /// How many equations the body holds ([`RawCount::equations`]). `docx-rs` reads each
     /// as a run with no text, which the typed walk cannot tell from any other, so without
     /// this count an equation vanished without a word.
@@ -1727,7 +1750,7 @@ impl RawScan {
     /// as it would have without this pass at all. Every other part is read
     /// best-effort within the same zip open — a document with no comments has no
     /// `word/comments.xml`, and that is not an error either, just an empty map.
-    fn read(bytes: &[u8]) -> Option<RawScan> {
+    fn read(bytes: &[u8], origin: &str) -> Option<RawScan> {
         let mut zip = zip::ZipArchive::new(std::io::Cursor::new(bytes)).ok()?;
         let xml = {
             let mut file = zip.by_name("word/document.xml").ok()?;
@@ -1752,6 +1775,31 @@ impl RawScan {
             .filter_map(|v| v.parse::<usize>().ok())
             .collect();
 
+        // The main part's relationships come first: a picture is counted only when it comes,
+        // and whether it comes is a question about the part its relationship names.
+        let document_relationships = read_relationships(&mut zip, "word/document.xml");
+        let images: HashMap<String, (String, bool)> = document_relationships
+            .iter()
+            .filter(|(_, rel)| rel.kind.ends_with("/image"))
+            .map(|(id, rel)| {
+                let target = if rel.external {
+                    rel.target.clone()
+                } else {
+                    part_target("word/document.xml", &rel.target)
+                };
+                (id.clone(), (target, rel.external))
+            })
+            .collect();
+        let mut pictures = RawPictures {
+            images: &images,
+            package: PackagePictures::open(bytes),
+            pictures: DocumentPictures::new(),
+            outcomes: HashMap::new(),
+            descriptions: HashMap::new(),
+            diagnostics: Vec::new(),
+            origin,
+        };
+
         let mut units = Vec::new();
         collect_blocks(body, &mut units, 0);
         let (mut paragraphs, mut tables) = (0usize, 0usize);
@@ -1763,7 +1811,7 @@ impl RawScan {
                     if is_horizontal_rule(paragraph) {
                         scan.rules.insert(ordinal);
                     }
-                    let mut count = RawCount::new(&ranged, false);
+                    let mut count = RawCount::new(&ranged, &mut pictures, false);
                     count.walk(paragraph, 0);
                     scan.equations += count.equations;
                     if !count.marks.is_empty() {
@@ -1777,7 +1825,7 @@ impl RawScan {
                 RawBlock::Table(table) => {
                     let ordinal = tables;
                     tables += 1;
-                    let mut count = RawCount::new(&ranged, true);
+                    let mut count = RawCount::new(&ranged, &mut pictures, true);
                     let mut first_cell = true;
                     count.table(table, &mut first_cell, 0);
                     scan.equations += count.equations;
@@ -1792,20 +1840,39 @@ impl RawScan {
         scan.footnote_bodies = read_note_bodies(&mut zip, "word/footnotes.xml", "footnote");
         scan.endnote_bodies = read_note_bodies(&mut zip, "word/endnotes.xml", "endnote");
         scan.styles = RawStyles::read(&mut zip).unwrap_or_default();
-        let document_relationships = read_relationships(&mut zip, "word/document.xml");
         scan.links = links_of(&document_relationships);
-        scan.images = document_relationships
-            .iter()
-            .filter(|(_, rel)| rel.kind.ends_with("/image"))
-            .map(|(id, rel)| {
-                let target = if rel.external {
-                    rel.target.clone()
-                } else {
-                    part_target("word/document.xml", &rel.target)
-                };
-                (id.clone(), target)
-            })
-            .collect();
+        let RawPictures {
+            pictures: brought,
+            outcomes,
+            descriptions,
+            diagnostics,
+            ..
+        } = pictures;
+        scan.picture_outcomes = outcomes;
+        scan.picture_descriptions = descriptions;
+        scan.pictures = brought.into_pictures();
+        scan.picture_diagnostics = diagnostics;
+        // The pictures of notes and comments, which keep their words and no picture: each
+        // named once, as a picture of the body that cannot come is.
+        let mut reported: HashSet<String> = HashSet::new();
+        for part in [
+            "word/footnotes.xml",
+            "word/endnotes.xml",
+            "word/comments.xml",
+        ] {
+            for target in part_pictures(&mut zip, part) {
+                let target = crate::pictures::reference_label(&target);
+                if reported.insert(target.clone()) {
+                    scan.picture_diagnostics
+                        .push(ImportDiagnostic::ImageNotIngested {
+                            path: origin.to_string(),
+                            target,
+                            reason: PictureRefusal::InNote,
+                        });
+                }
+            }
+        }
+        scan.images = images;
         scan.comment_links = links_of(&read_relationships(&mut zip, "word/comments.xml"));
         Some(scan)
     }
@@ -2275,8 +2342,11 @@ const MAX_RUN_NESTING: u32 = 64;
 ///   a run only the first counts, since `docx-rs`'s run reader skips `mc:Fallback`; between
 ///   runs both do, since its paragraph reader looks through both and reads the runs of
 ///   each.
-struct RawCount<'r> {
+struct RawCount<'r, 'p> {
     ranged: &'r HashSet<usize>,
+    /// What each picture comes to: one is counted only when it comes, since one that does
+    /// not leaves nothing in the typed walk's text either.
+    pictures: &'r mut RawPictures<'p>,
     /// In a table, where a line break is a space and every mark is in stretch 0.
     in_table: bool,
     stretch: usize,
@@ -2287,10 +2357,11 @@ struct RawCount<'r> {
     equations: usize,
 }
 
-impl<'r> RawCount<'r> {
-    fn new(ranged: &'r HashSet<usize>, in_table: bool) -> Self {
+impl<'r, 'p> RawCount<'r, 'p> {
+    fn new(ranged: &'r HashSet<usize>, pictures: &'r mut RawPictures<'p>, in_table: bool) -> Self {
         RawCount {
             ranged,
+            pictures,
             in_table,
             stretch: 0,
             offset: 0,
@@ -2329,7 +2400,7 @@ impl<'r> RawCount<'r> {
                     }
                 }
                 "drawing" => {
-                    if !removed && holds_picture(child) {
+                    if !removed && holds_picture(child) && self.pictures.comes(child) {
                         self.offset += 1;
                     }
                 }
@@ -2439,21 +2510,193 @@ fn is_math(node: roxmltree::Node<'_, '_>) -> bool {
 /// the box, which the typed walk leaves out. Counting that picture put every note and point
 /// comment after the box one character late.
 fn holds_picture(drawing: roxmltree::Node<'_, '_>) -> bool {
-    fn last_read(node: roxmltree::Node<'_, '_>, last: &mut Option<bool>, depth: u32) {
+    shown_picture(drawing).is_some()
+}
+
+/// The `pic:pic` a `w:drawing` shows, when it shows one ([`holds_picture`]): the last of its
+/// pictures and text boxes, found as `docx-rs` finds it.
+fn shown_picture<'a, 'input>(
+    drawing: roxmltree::Node<'a, 'input>,
+) -> Option<roxmltree::Node<'a, 'input>> {
+    fn last_read<'a, 'input>(
+        node: roxmltree::Node<'a, 'input>,
+        last: &mut Option<Option<roxmltree::Node<'a, 'input>>>,
+        depth: u32,
+    ) {
         if depth >= MAX_RUN_NESTING {
             return;
         }
         for child in node.children().filter(roxmltree::Node::is_element) {
             match child.tag_name().name() {
-                "pic" => *last = Some(true),
-                "txbx" => *last = Some(false),
+                "pic" => *last = Some(Some(child)),
+                "txbx" => *last = Some(None),
                 _ => last_read(child, last, depth + 1),
             }
         }
     }
     let mut last = None;
     last_read(drawing, &mut last, 0);
-    last == Some(true)
+    last.flatten()
+}
+
+/// The relationship naming the picture `pic` shows, and whether the picture is only linked:
+/// its last `a:blip` carrying `r:embed`, as `docx-rs` reads a picture's identity, else its
+/// last carrying only `r:link`.
+///
+/// Read from the `pic:pic` alone. A drawing can hold other blips: the picture filling a
+/// shape grouped beside it, say. Taking the drawing's last blip named that fill, which the
+/// typed walk never asks after, so a picture that comes was reported as unreadable, and the
+/// character it adds was counted in one pass and not the other.
+fn picture_relationship(pic: roxmltree::Node<'_, '_>) -> Option<(String, bool)> {
+    let blips = || {
+        pic.descendants()
+            .filter(|n| n.is_element() && n.tag_name().name() == "blip")
+    };
+    if let Some(embed) = blips()
+        .filter_map(|b| b.attribute((NS_R, "embed")))
+        .next_back()
+    {
+        return Some((embed.to_string(), false));
+    }
+    blips()
+        .filter_map(|b| b.attribute((NS_R, "link")))
+        .next_back()
+        .map(|link| (link.to_string(), true))
+}
+
+/// The pictures shown in `part`, a notes or comments part, as the package names them
+/// (`word/media/image2.png`), or by relationship id when its relationships do not say.
+///
+/// A note and a comment keep words and no picture, so these are reported rather than
+/// brought in; without this they vanished from the note without a word.
+fn part_pictures<R: std::io::Read + std::io::Seek>(
+    zip: &mut zip::ZipArchive<R>,
+    part: &str,
+) -> Vec<String> {
+    let xml = {
+        let Ok(mut file) = zip.by_name(part) else {
+            return Vec::new();
+        };
+        let mut buffer = Vec::new();
+        if std::io::Read::read_to_end(&mut file, &mut buffer).is_err() {
+            return Vec::new();
+        }
+        String::from_utf8_lossy(&buffer).into_owned()
+    };
+    let Ok(document) = parse_part(part, &xml) else {
+        return Vec::new();
+    };
+    let ids: Vec<String> = document
+        .descendants()
+        .filter(|n| n.is_element() && n.tag_name().name() == "drawing")
+        .filter_map(shown_picture)
+        .filter_map(picture_relationship)
+        .map(|(id, _)| id)
+        .collect();
+    if ids.is_empty() {
+        return ids;
+    }
+    let relationships = read_relationships(zip, part);
+    ids.into_iter()
+        .map(|id| match relationships.get(&id) {
+            Some(rel) if rel.external => rel.target.clone(),
+            Some(rel) => part_target(part, &rel.target),
+            None => id,
+        })
+        .collect()
+}
+
+const NS_R: &str = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+
+/// The pictures of the body, decided as the raw pass meets them.
+///
+/// Here rather than in the typed walk because this pass places comments and notes by
+/// counting characters, a picture among them, and a picture that does not come leaves no
+/// character in the stored text. So this pass is where each picture is read and checked, and
+/// the typed walk asks what became of it ([`RawScan::picture_outcomes`]): the two count the
+/// same pictures because the same decision is behind both.
+struct RawPictures<'a> {
+    images: &'a HashMap<String, (String, bool)>,
+    package: PackagePictures<'a>,
+    pictures: DocumentPictures,
+    outcomes: HashMap<String, Result<PlacedPicture, PictureRefusal>>,
+    descriptions: HashMap<String, String>,
+    diagnostics: Vec<ImportDiagnostic>,
+    origin: &'a str,
+}
+
+impl RawPictures<'_> {
+    /// Whether the picture `drawing` shows comes with the document, reading it the first
+    /// time it is met.
+    ///
+    /// The picture is the one `docx-rs` reads for the drawing: its last `pic:pic`
+    /// ([`shown_picture`]) and, in it, the blip naming its part ([`picture_relationship`]).
+    /// A picture stored in the file names its part with `r:embed`; one only linked, with
+    /// `r:link`, is never read from the disk.
+    fn comes(&mut self, drawing: roxmltree::Node<'_, '_>) -> bool {
+        let Some((id, linked_only)) = shown_picture(drawing).and_then(picture_relationship) else {
+            return false;
+        };
+        if let Some(outcome) = self.outcomes.get(&id) {
+            return outcome.is_ok();
+        }
+        if let Some(description) = drawing
+            .descendants()
+            .find(|n| n.is_element() && n.tag_name().name() == "docPr")
+            .and_then(|pr| {
+                [pr.attribute("descr"), pr.attribute("title")]
+                    .into_iter()
+                    .flatten()
+                    .map(str::trim)
+                    .find(|text| !text.is_empty())
+            })
+        {
+            self.descriptions
+                .insert(id.clone(), description.to_string());
+        }
+
+        let (target, external) = self
+            .images
+            .get(&id)
+            .cloned()
+            .unwrap_or_else(|| (id.clone(), false));
+        let refused = if !self.images.contains_key(&id) {
+            Some(PictureRefusal::Missing)
+        } else if external || linked_only {
+            Some(match crate::pictures::classify_reference(&target) {
+                crate::pictures::Reference::Remote => PictureRefusal::Remote,
+                _ => PictureRefusal::Outside,
+            })
+        } else {
+            None
+        };
+        let package = &mut self.package;
+        let brought = self.pictures.bring(&target, &target, || match refused {
+            Some(reason) => Err(reason),
+            None => package.read(&target),
+        });
+        if brought.first_time {
+            if let Err(reason) = brought.result {
+                self.diagnostics.push(ImportDiagnostic::ImageNotIngested {
+                    path: self.origin.to_string(),
+                    target: crate::pictures::reference_label(&target),
+                    reason,
+                });
+            }
+            if brought.first_frame_only {
+                self.diagnostics
+                    .push(ImportDiagnostic::PictureFirstFrameOnly {
+                        path: self.origin.to_string(),
+                        target: crate::pictures::reference_label(&target),
+                    });
+            }
+        }
+        let comes = brought.result.is_ok();
+        // A picture only linked is keyed by its link: the typed walk never sees it (it reads
+        // `r:embed` alone), so this entry only stops it being read and reported twice.
+        self.outcomes.insert(id, brought.result);
+        comes
+    }
 }
 
 /// Parse one part of the raw pass through `skrib_format::xml_depth`, so it is
@@ -2530,6 +2773,8 @@ struct Walker<'a> {
     /// the walk produces starts the page: a paragraph holding only Word's `Ctrl+Enter`
     /// break produces none itself, and the break belongs to what follows it.
     page_break_pending: bool,
+    /// Pictures the raw pass never decided, already reported ([`Walker::picture`]).
+    unplaced_pictures: HashSet<String>,
 }
 
 struct ParaBuild {
@@ -2598,6 +2843,7 @@ impl<'a> Walker<'a> {
             footnotes: Vec::new(),
             unknown_styles: HashSet::new(),
             page_break_pending: false,
+            unplaced_pictures: HashSet::new(),
         }
     }
 
@@ -3446,28 +3692,7 @@ impl<'a> Walker<'a> {
                     self.flush(finished);
                 }
                 RunChild::Drawing(drawing) => match &drawing.data {
-                    Some(DrawingData::Pic(pic)) => {
-                        // The picture's part (`word/media/image1.png`), not the
-                        // relationship id `docx-rs` gives it, which names nothing
-                        // outside this one file's relationships.
-                        let source = self
-                            .raw
-                            .images
-                            .get(&pic.id)
-                            .cloned()
-                            .unwrap_or_else(|| pic.id.clone());
-                        self.diagnostics.push(ImportDiagnostic::ImageNotIngested {
-                            path: self.origin.clone(),
-                            target: source.clone(),
-                        });
-                        build.len += 1;
-                        build.runs.push(Run::sized_image(
-                            "",
-                            source,
-                            emu_to_pixels(pic.size.0),
-                            emu_to_pixels(pic.size.1),
-                        ));
-                    }
+                    Some(DrawingData::Pic(pic)) => self.picture(pic, build),
                     Some(DrawingData::TextBox(_)) => self.text_boxes += 1,
                     None => self.embedded_objects += 1,
                 },
@@ -3512,6 +3737,56 @@ impl<'a> Walker<'a> {
     /// table nested in a cell cannot be one inside a Djot table, so its rows follow the
     /// row holding it, as the ODT scanner reads the same table: its words are kept, and
     /// they used to be dropped without a word.
+    /// A picture of the prose, as the raw pass decided it ([`RawPictures`]).
+    ///
+    /// One that comes is a run naming its file in the project, shown at the size the document
+    /// gives it, and one character of the text, as in the raw pass. One that does not was
+    /// reported there, and leaves nothing here, which is also what the raw pass counted.
+    fn picture(&mut self, pic: &docx_rs::Pic, build: &mut ParaBuild) {
+        match self.raw.picture_outcomes.get(&pic.id) {
+            Some(Ok(placed)) => {
+                let name = self
+                    .raw
+                    .images
+                    .get(&pic.id)
+                    .map_or_else(|| pic.id.clone(), |(target, _)| target.clone());
+                let alt = self
+                    .raw
+                    .picture_descriptions
+                    .get(&pic.id)
+                    .cloned()
+                    .unwrap_or_default();
+                // The size it is shown at in the document, or its own when the document
+                // states none.
+                let (width, height) = match (emu_to_pixels(pic.size.0), emu_to_pixels(pic.size.1)) {
+                    (0, _) | (_, 0) => (placed.width, placed.height),
+                    shown => shown,
+                };
+                build.len += 1;
+                build
+                    .runs
+                    .push(Run::picture(alt, placed.src.clone(), name, width, height));
+            }
+            // Reported where it was decided.
+            Some(Err(_)) => {}
+            // A picture only linked: `docx-rs` reads no identity for it, and the raw pass
+            // reported it under its link.
+            None if pic.id.is_empty() => {}
+            // The raw pass never met it, which happens only when the main part could not be
+            // read that way at all. It is not in the text, so it is not counted anywhere, and
+            // it is said once.
+            None => {
+                if self.unplaced_pictures.insert(pic.id.clone()) {
+                    self.diagnostics.push(ImportDiagnostic::ImageNotIngested {
+                        path: self.origin.clone(),
+                        target: pic.id.clone(),
+                        reason: PictureRefusal::Unreadable,
+                    });
+                }
+            }
+        }
+    }
+
     fn table(&mut self, table: &Table) {
         let mut build = ParaBuild {
             kind: ParagraphKind::Body,

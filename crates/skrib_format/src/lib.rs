@@ -126,12 +126,12 @@ mod zip_io;
 // producer (the Plume importer) can build a bundle directly, exactly the way
 // `from_entities` builds one from store entities.
 pub use bundle::{
-    BinderFile, BinderItemFile, BinderStatusFile, BinderTagFile, BinderWithItems, BundleKind,
-    BundledBinder, BundledItem, CarriedFile, CommentFile, CommentReplyFile, CommentWithReplies,
-    DictWordFile, FORMAT_VERSION, FootnoteFile, FootnoteWithContent, HolidayFile, InlineContent,
-    ItemWithContents, ItemsFile, MilestoneFile, NoteTemplateFile, PaceFile, PaceWithChildren,
-    ProgressSnapshotFile, ProjectManifest, ProseRef, ShapeTag, SmartPunctuationFile,
-    TextReplacementRuleFile, TrashInfoFile, WorkBundle, WorkFile,
+    AssetFile, BinderFile, BinderItemFile, BinderStatusFile, BinderTagFile, BinderWithItems,
+    BundleKind, BundledBinder, BundledItem, CarriedFile, CommentFile, CommentReplyFile,
+    CommentWithReplies, DictWordFile, FORMAT_VERSION, FootnoteFile, FootnoteWithContent,
+    HolidayFile, InlineContent, ItemWithContents, ItemsFile, MilestoneFile, NoteTemplateFile,
+    PaceFile, PaceWithChildren, ProgressSnapshotFile, ProjectManifest, ProseRef, ShapeTag,
+    SmartPunctuationFile, TextReplacementRuleFile, TrashInfoFile, WorkBundle, WorkFile,
 };
 pub use convert::HTML_FOOTNOTE_ATTR;
 pub use convert::{

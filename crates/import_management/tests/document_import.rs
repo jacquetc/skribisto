@@ -37,7 +37,8 @@ use import_management::import_management_controller;
 use import_management::{
     AnalyzeDocumentImportDto, ApplyDocumentImportDto, ApplyDocumentImportResultDto, ApplyImportRow,
     ApplyImportRows, DocumentImportRow, DocumentImportRows, DropPosition, ImportComment,
-    ImportCommentKind, ImportDiagnosticRows, ImportFootnote, ImportOrphanReason, ImportRowKind,
+    ImportCommentKind, ImportDiagnosticRows, ImportFootnote, ImportOrphanReason, ImportPictures,
+    ImportRowKind,
 };
 
 /// A read DTO as the update DTO of the same row, changing nothing.
@@ -83,6 +84,8 @@ struct Ctx {
     work_id: EntityId,
     binder_id: EntityId,
     _dir: tempfile::TempDir,
+    /// The pictures the last analysis listed, handed back by `apply_at` as the wizard does.
+    last_pictures: ImportPictures,
 }
 
 impl Ctx {
@@ -141,7 +144,7 @@ impl Ctx {
         .expect("binder")
         .id;
 
-        Ctx {
+        let ctx = Ctx {
             db,
             hub,
             undo,
@@ -149,7 +152,33 @@ impl Ctx {
             work_id,
             binder_id,
             _dir: tempfile::tempdir().expect("scratch dir"),
-        }
+            last_pictures: ImportPictures::Empty,
+        };
+        // Made by the caller, as the wizard makes its own: the analysis never makes it.
+        std::fs::create_dir_all(ctx.picture_dir()).expect("the picture folder");
+        ctx
+    }
+
+    /// Where the analysis writes the pictures it finds, as the wizard's own folder.
+    fn picture_dir(&self) -> std::path::PathBuf {
+        self._dir.path().join("staged-pictures")
+    }
+
+    /// The app's media root, which a project's media directory is resolved from.
+    fn media_root(&self) -> std::path::PathBuf {
+        self._dir.path().join("data")
+    }
+
+    /// The project's media directory, where its pictures live while it is open: under the
+    /// media root, keyed by the Work's uid, since the fixture has never been saved and holds
+    /// no path.
+    fn media_dir(&self) -> std::path::PathBuf {
+        skrib_format::media::media_dir(
+            std::path::Path::new(""),
+            "document-import-fixture-uid",
+            &self.media_root(),
+            "document-import-fixture-uid",
+        )
     }
 
     fn write(&self, name: &str, body: &str) -> String {
@@ -193,6 +222,7 @@ impl Ctx {
             source_paths: paths,
             anchor_item_id,
             drop_position,
+            picture_dir: self.picture_dir().to_string_lossy().into_owned(),
         };
         let op = import_management_controller::analyze_document_import(
             &self.db,
@@ -223,6 +253,7 @@ impl Ctx {
             std::thread::sleep(std::time::Duration::from_millis(5));
         };
 
+        self.last_pictures = plan.pictures;
         match plan.rows {
             DocumentImportRows::Found(rows) => rows,
             DocumentImportRows::Empty => Vec::new(),
@@ -284,6 +315,8 @@ impl Ctx {
             })
             .collect();
 
+        let picture_dir = self.picture_dir().to_string_lossy().into_owned();
+        let media_root = self.media_root().to_string_lossy().into_owned();
         import_management_controller::apply_document_import(
             &self.db,
             &self.hub,
@@ -296,6 +329,9 @@ impl Ctx {
                 drop_position,
                 row: ApplyImportRow::Empty,
                 rows: ApplyImportRows::Create(create_rows),
+                pictures: self.last_pictures.clone(),
+                picture_dir,
+                media_root,
             },
         )
         .expect("apply")
@@ -612,6 +648,7 @@ fn a_missing_file_is_reported_and_the_rest_still_import() {
         source_paths: vec![good, missing],
         anchor_item_id: 0,
         drop_position: DropPosition::Into,
+        picture_dir: String::new(),
     };
     let op = import_management_controller::analyze_document_import(
         &ctx.db,
@@ -675,6 +712,7 @@ fn prose_on_a_type_that_cannot_hold_it_is_refused_not_swallowed() {
                 source_file_name: String::new(),
                 source_file_digest: String::new(),
             }]),
+            ..Default::default()
         },
     );
     assert!(result.is_err(), "a Book holding prose must be refused");
@@ -735,6 +773,7 @@ fn undoing_an_import_into_a_large_binder_stays_interactive() {
             drop_position: DropPosition::Into,
             row: ApplyImportRow::Empty,
             rows: ApplyImportRows::Create(existing),
+            ..Default::default()
         },
     )
     .expect("seed");
@@ -840,6 +879,7 @@ fn a_batched_import_fires_at_most_one_event_per_row() {
                 drop_position: DropPosition::Into,
                 row: ApplyImportRow::Empty,
                 rows: ApplyImportRows::Create(create),
+                ..Default::default()
             },
         )
         .expect("apply");
@@ -2219,6 +2259,7 @@ impl Ctx {
                 drop_position: DropPosition::Into,
                 row: ApplyImportRow::Empty,
                 rows: ApplyImportRows::Create(rows),
+                ..Default::default()
             },
         )
     }
@@ -4015,4 +4056,447 @@ fn a_docx_margin_that_looks_nested_is_stored_as_words_a_load_accepts() {
         let file = ctx.write_bytes("margins.docx", &bytes);
         assert_margins_stored_within_the_ceiling(shape, ctx, file, &opening_words(&lines));
     }
+}
+
+// ── pictures ────────────────────────────────────────────────────────────────────────
+
+/// A `width` × `height` PNG of one colour.
+fn png(width: u32, height: u32, colour: [u8; 4]) -> Vec<u8> {
+    let picture = image::DynamicImage::ImageRgba8(image::RgbaImage::from_pixel(
+        width,
+        height,
+        image::Rgba(colour),
+    ));
+    let mut out = std::io::Cursor::new(Vec::new());
+    picture
+        .write_to(&mut out, image::ImageFormat::Png)
+        .expect("encode");
+    out.into_inner()
+}
+
+fn hash_of(bytes: &[u8]) -> String {
+    document_ingest::pictures::content_hash(bytes)
+}
+
+impl Ctx {
+    /// Write `bytes` at `relative` under the scratch folder, making its folders.
+    fn put(&self, relative: &str, bytes: &[u8]) {
+        let path = self._dir.path().join(relative);
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent).expect("folders");
+        }
+        std::fs::write(path, bytes).expect("write");
+    }
+
+    /// This Work's pictures, as a save would write them.
+    fn assets(&self) -> Vec<direct_access::asset::dtos::AssetDto> {
+        let ids = work_controller::get_relationship(
+            &self.db,
+            &self.work_id,
+            &common::direct_access::work::WorkRelationshipField::Assets,
+        )
+        .expect("assets");
+        direct_access::asset::asset_controller::get_multi(&self.db, &ids)
+            .expect("asset rows")
+            .into_iter()
+            .flatten()
+            .collect()
+    }
+
+    /// Analyse `paths` and apply the whole plan, as accepting the wizard does.
+    fn import(&mut self, paths: Vec<String>) -> Vec<EntityId> {
+        let rows = self.analyse(paths, ImportRowKind::Book);
+        self.apply(rows, 0)
+    }
+}
+
+/// A picture beside a Markdown chapter arrives as the project keeps one: its bytes in the
+/// media directory under their hash, an `Asset` row of this Work naming them, and prose
+/// pointing at `assets/<hash>.png`. Its file waits in the wizard's own folder until the
+/// import is applied, and nothing of it reaches the project before.
+#[test]
+fn a_picture_comes_into_the_project_with_its_row() {
+    let mut ctx = Ctx::new();
+    let map = png(24, 16, [10, 20, 30, 255]);
+    ctx.put("book/images/map.png", &map);
+    ctx.put(
+        "book/one.md",
+        b"# One\n\nThe map ![Old map](images/map.png) was old.\n",
+    );
+    let hash = hash_of(&map);
+
+    let rows = ctx.analyse(
+        vec![
+            ctx._dir
+                .path()
+                .join("book/one.md")
+                .to_string_lossy()
+                .into_owned(),
+        ],
+        ImportRowKind::Book,
+    );
+    let ImportPictures::Found(listed) = ctx.last_pictures.clone() else {
+        panic!("the plan lists the pictures");
+    };
+    assert_eq!(
+        listed,
+        vec![import_management::ImportPicture::Found {
+            content_hash: hash.clone(),
+            file_name: "map.png".into(),
+            mime_type: "image/png".into(),
+            width: 24,
+            height: 16,
+            byte_size: map.len() as i64,
+        }]
+    );
+    assert_eq!(
+        std::fs::read(ctx.picture_dir().join(format!("{hash}.png"))).expect("staged"),
+        map,
+        "waiting in the wizard's folder"
+    );
+    assert!(
+        !ctx.media_dir().exists(),
+        "nothing in the project before the writer says yes"
+    );
+    assert!(ctx.assets().is_empty());
+
+    let created = ctx.apply(rows, 0);
+    let assets = ctx.assets();
+    assert_eq!(assets.len(), 1);
+    let asset = &assets[0];
+    assert_eq!(asset.content_hash, hash);
+    assert_eq!(asset.mime_type, "image/png");
+    assert_eq!((asset.width, asset.height), (24, 16));
+    assert_eq!(asset.byte_size, map.len() as u64);
+    assert_eq!(asset.file_name, "map.png");
+    assert!(!asset.is_cover);
+    assert_eq!(
+        std::fs::read(ctx.media_dir().join(format!("{hash}.png"))).expect("in the project"),
+        map
+    );
+    let prose = created
+        .iter()
+        .filter_map(|id| ctx.prose_of(*id))
+        .collect::<Vec<_>>()
+        .join("\n");
+    assert!(
+        prose.contains(&format!(
+            "![Old map](assets/{hash}.png){{width=24 height=16}}"
+        )),
+        "{prose}"
+    );
+}
+
+/// The same picture imported twice, or already inserted by hand, is one picture: the project
+/// keeps one row and one file for it.
+#[test]
+fn a_picture_the_project_already_holds_is_not_stored_twice() {
+    let mut ctx = Ctx::new();
+    let seal = png(8, 8, [200, 0, 0, 255]);
+    let crest = png(4, 4, [0, 200, 0, 255]);
+    ctx.put("a/seal.png", &seal);
+    ctx.put("a/one.md", b"# One\n\n![](seal.png)\n");
+    ctx.put("b/seal-copy.png", &seal);
+    ctx.put("b/crest.png", &crest);
+    ctx.put("b/two.md", b"# Two\n\n![](seal-copy.png) ![](crest.png)\n");
+
+    // The crest, inserted by hand before either import.
+    direct_access::asset::asset_controller::create(
+        &ctx.db,
+        &ctx.hub,
+        &mut ctx.undo,
+        None,
+        &direct_access::asset::dtos::CreateAssetDto {
+            created_at: chrono::Utc::now(),
+            updated_at: chrono::Utc::now(),
+            content_hash: hash_of(&crest),
+            file_name: "crest-by-hand.png".into(),
+            mime_type: "image/png".into(),
+            width: 4,
+            height: 4,
+            byte_size: crest.len() as u64,
+            alt: String::new(),
+            is_cover: false,
+        },
+        ctx.work_id,
+        -1,
+    )
+    .expect("an asset inserted by hand");
+
+    let one = ctx
+        ._dir
+        .path()
+        .join("a/one.md")
+        .to_string_lossy()
+        .into_owned();
+    ctx.import(vec![one.clone()]);
+    ctx.import(vec![one]);
+    let two = ctx
+        ._dir
+        .path()
+        .join("b/two.md")
+        .to_string_lossy()
+        .into_owned();
+    ctx.import(vec![two]);
+
+    let mut hashes: Vec<String> = ctx.assets().into_iter().map(|a| a.content_hash).collect();
+    hashes.sort();
+    let mut expected = vec![hash_of(&seal), hash_of(&crest)];
+    expected.sort();
+    assert_eq!(
+        hashes, expected,
+        "one row per picture, whoever brought it first"
+    );
+    assert!(
+        ctx.assets()
+            .iter()
+            .any(|a| a.file_name == "crest-by-hand.png"),
+        "the row inserted by hand is the one kept"
+    );
+    assert!(
+        ctx.media_dir()
+            .join(format!("{}.png", hash_of(&crest)))
+            .exists(),
+        "the file the hand-inserted row names is there"
+    );
+}
+
+/// Undo takes the pictures back with the text, and redo brings both again. The bytes a save
+/// would have pruned while the import was undone, as a folder project's save does, are put
+/// back by the redo before any row names them.
+#[test]
+fn undo_takes_the_pictures_back_and_redo_restores_them() {
+    let mut ctx = Ctx::new();
+    let map = png(6, 6, [1, 2, 3, 255]);
+    ctx.put("book/map.png", &map);
+    ctx.put("book/one.md", b"# One\n\n![](map.png)\n");
+    let file = ctx.media_dir().join(format!("{}.png", hash_of(&map)));
+    ctx.import(vec![
+        ctx._dir
+            .path()
+            .join("book/one.md")
+            .to_string_lossy()
+            .into_owned(),
+    ]);
+    assert_eq!(ctx.assets().len(), 1);
+
+    ctx.undo.undo(None).expect("undo");
+    assert!(ctx.assets().is_empty(), "the picture goes with the text");
+    assert!(ctx.binder_order().is_empty());
+
+    // What a save of a folder project does to a file no row names.
+    std::fs::remove_file(&file).expect("pruned");
+
+    ctx.undo.redo(None).expect("redo");
+    let assets = ctx.assets();
+    assert_eq!(assets.len(), 1, "the picture comes back with the text");
+    assert_eq!(assets[0].content_hash, hash_of(&map));
+    assert_eq!(std::fs::read(&file).expect("its file is back"), map);
+
+    // And the cycle holds a second time.
+    ctx.undo.undo(None).expect("undo again");
+    assert!(ctx.assets().is_empty());
+    ctx.undo.redo(None).expect("redo again");
+    assert_eq!(ctx.assets().len(), 1);
+}
+
+/// Undoing an import never takes away a picture the project held before it.
+#[test]
+fn undo_leaves_a_picture_that_was_already_there() {
+    let mut ctx = Ctx::new();
+    let seal = png(3, 3, [9, 9, 9, 255]);
+    ctx.put("a/seal.png", &seal);
+    ctx.put("a/one.md", b"# One\n\n![](seal.png)\n");
+    ctx.put("b/seal.png", &seal);
+    ctx.put("b/two.md", b"# Two\n\n![](seal.png)\n");
+    ctx.import(vec![
+        ctx._dir
+            .path()
+            .join("a/one.md")
+            .to_string_lossy()
+            .into_owned(),
+    ]);
+    ctx.import(vec![
+        ctx._dir
+            .path()
+            .join("b/two.md")
+            .to_string_lossy()
+            .into_owned(),
+    ]);
+    assert_eq!(ctx.assets().len(), 1);
+
+    ctx.undo.undo(None).expect("undo the second import");
+    assert_eq!(
+        ctx.assets().len(),
+        1,
+        "the first import's picture, which the second only reused, stays"
+    );
+}
+
+/// A picture whose staged file is gone, or no longer the picture that was analysed, refuses
+/// the whole import while nothing has been written: prose naming a picture the project does
+/// not have is the loss this avoids.
+#[test]
+fn a_picture_that_cannot_be_brought_refuses_the_import_whole() {
+    for tamper in ["remove", "change"] {
+        let mut ctx = Ctx::new();
+        let map = png(5, 5, [4, 5, 6, 255]);
+        ctx.put("book/map.png", &map);
+        ctx.put("book/one.md", b"# One\n\n![](map.png)\n\n# Two\n\nMore.\n");
+        let rows = ctx.analyse(
+            vec![
+                ctx._dir
+                    .path()
+                    .join("book/one.md")
+                    .to_string_lossy()
+                    .into_owned(),
+            ],
+            ImportRowKind::Book,
+        );
+        let staged = ctx.picture_dir().join(format!("{}.png", hash_of(&map)));
+        match tamper {
+            "remove" => std::fs::remove_file(&staged).expect("remove"),
+            _ => std::fs::write(&staged, png(5, 5, [7, 7, 7, 255])).expect("change"),
+        }
+        let rows: Vec<ApplyImportRow> = rows
+            .into_iter()
+            .filter_map(|row| match row {
+                DocumentImportRow::Found {
+                    indent,
+                    kind,
+                    title,
+                    djot,
+                    ..
+                } => Some(ApplyImportRow::Create {
+                    indent,
+                    kind,
+                    title,
+                    djot,
+                    epigraph: String::new(),
+                    comments: Vec::new(),
+                    footnotes: Vec::new(),
+                    source_uid_tag: String::new(),
+                    source_file_name: String::new(),
+                    source_file_digest: String::new(),
+                }),
+                DocumentImportRow::Empty => None,
+            })
+            .collect();
+        let picture_dir = ctx.picture_dir().to_string_lossy().into_owned();
+        let media_root = ctx.media_root().to_string_lossy().into_owned();
+        let result = import_management_controller::apply_document_import(
+            &ctx.db,
+            &ctx.hub,
+            &mut ctx.undo,
+            None,
+            &ApplyDocumentImportDto {
+                work_id: ctx.work_id,
+                binder_id: ctx.binder_id,
+                anchor_item_id: 0,
+                drop_position: DropPosition::Into,
+                row: ApplyImportRow::Empty,
+                rows: ApplyImportRows::Create(rows),
+                pictures: ctx.last_pictures.clone(),
+                picture_dir,
+                media_root,
+            },
+        );
+        assert!(result.is_err(), "{tamper}: refused");
+        assert!(ctx.binder_order().is_empty(), "{tamper}: no row written");
+        assert!(ctx.assets().is_empty(), "{tamper}: no picture recorded");
+        assert!(
+            !ctx.media_dir()
+                .join(format!("{}.png", hash_of(&map)))
+                .exists(),
+            "{tamper}: no file under the picture's name"
+        );
+    }
+}
+
+/// An analysis given nowhere to put the pictures it finds fails, rather than planning rows
+/// whose pictures would never arrive.
+#[test]
+fn an_analysis_with_nowhere_for_its_pictures_fails() {
+    let mut ctx = Ctx::new();
+    ctx.put("book/map.png", &png(2, 2, [1, 1, 1, 255]));
+    ctx.put("book/one.md", b"# One\n\n![](map.png)\n");
+    let op = import_management_controller::analyze_document_import(
+        &ctx.db,
+        &ctx.hub,
+        &mut ctx.long_ops,
+        &AnalyzeDocumentImportDto {
+            work_id: ctx.work_id,
+            binder_id: ctx.binder_id,
+            source_paths: vec![
+                ctx._dir
+                    .path()
+                    .join("book/one.md")
+                    .to_string_lossy()
+                    .into_owned(),
+            ],
+            anchor_item_id: 0,
+            drop_position: DropPosition::Into,
+            picture_dir: String::new(),
+        },
+    )
+    .expect("start");
+    assert!(
+        ctx.long_ops
+            .wait_for_operation(&op, Some(std::time::Duration::from_secs(20))),
+        "finishes"
+    );
+    assert!(
+        matches!(
+            ctx.long_ops.get_operation_status(&op),
+            Some(common::long_operation::OperationStatus::Failed(_))
+        ),
+        "{:?}",
+        ctx.long_ops.get_operation_status(&op)
+    );
+}
+
+/// The folder the pictures wait in is the caller's to make and to remove. The wizard removes
+/// it when the writer starts another analysis, resets it or closes its window, and the
+/// analysis it was made for may still be running then: it made the folder again, wrote its
+/// pictures there, and nothing removed them for a week at least. It never makes it now.
+#[test]
+fn an_analysis_never_makes_its_picture_folder_again() {
+    let mut ctx = Ctx::new();
+    ctx.put("book/map.png", &png(2, 2, [1, 1, 1, 255]));
+    ctx.put("book/one.md", b"# One\n\n![](map.png)\n");
+    let gone = ctx._dir.path().join("let-go");
+    let op = import_management_controller::analyze_document_import(
+        &ctx.db,
+        &ctx.hub,
+        &mut ctx.long_ops,
+        &AnalyzeDocumentImportDto {
+            work_id: ctx.work_id,
+            binder_id: ctx.binder_id,
+            source_paths: vec![
+                ctx._dir
+                    .path()
+                    .join("book/one.md")
+                    .to_string_lossy()
+                    .into_owned(),
+            ],
+            anchor_item_id: 0,
+            drop_position: DropPosition::Into,
+            picture_dir: gone.to_string_lossy().into_owned(),
+        },
+    )
+    .expect("start");
+    assert!(
+        ctx.long_ops
+            .wait_for_operation(&op, Some(std::time::Duration::from_secs(20))),
+        "finishes"
+    );
+    assert!(!gone.exists(), "the folder let go of stays gone");
+    assert!(
+        matches!(
+            ctx.long_ops.get_operation_status(&op),
+            Some(common::long_operation::OperationStatus::Failed(_))
+        ),
+        "an analysis with nowhere left for its pictures does not plan them: {:?}",
+        ctx.long_ops.get_operation_status(&op)
+    );
 }

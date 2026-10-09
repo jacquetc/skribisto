@@ -601,3 +601,71 @@ fn an_unchanged_row_offers_no_hunks() {
     );
     assert!(panel.hunks.is_empty());
 }
+
+/// Every `TextWidget` laid out at a real size, as its text.
+fn texts_on_screen(tree: &WidgetTree, root: WidgetId) -> Vec<String> {
+    fn walk(tree: &WidgetTree, id: WidgetId, out: &mut Vec<String>) {
+        if let Some(text) = tree
+            .widget_as_any(id)
+            .and_then(|a| a.downcast_ref::<teksilo::widgets::TextWidget>())
+        {
+            let bounds = tree.bounds(id);
+            if bounds.width > 0.0 && bounds.height > 0.0 {
+                out.push(text.resolved_text());
+            }
+        }
+        for child in tree.children(id) {
+            walk(tree, child, out);
+        }
+    }
+    let mut out = Vec::new();
+    walk(tree, root, &mut out);
+    out
+}
+
+/// The review step says how many pictures come with the documents, under the tree, and
+/// says nothing about pictures when none do.
+#[test]
+fn the_pictures_coming_are_said_under_the_tree() {
+    crate::test_support::with_real_messages(|| {
+        let app_ctx = Rc::new(AppContext::new());
+        let vm = ImportDocumentViewModel::new(app_ctx.clone(), AppIds::default());
+        let hash = "a".repeat(64);
+        vm.on_plan_ready(
+            &ImportPlan {
+                rows: vec![PlannedRow {
+                    djot: format!("Prose. ![](assets/{hash}.png){{width=4 height=4}}"),
+                    ..planned(0, "Scene", CreateType::Scene, 0)
+                }],
+                diagnostics: Vec::new(),
+            },
+            vec![1],
+            vec![(1, CreateType::Scene)],
+        );
+        vm.controller().go_to(STEP_REVIEW);
+        let (tree, id) = mount(vm.clone(), &app_ctx);
+        assert!(
+            !texts_on_screen(&tree, id)
+                .iter()
+                .any(|t| t.contains("picture")),
+            "nothing to say when no picture comes"
+        );
+
+        vm.seed_pictures_for_test(vec![frontend::import_management::ImportPicture::Found {
+            content_hash: hash.clone(),
+            file_name: "map.png".into(),
+            mime_type: "image/png".into(),
+            width: 4,
+            height: 4,
+            byte_size: 70,
+        }]);
+        let (tree, id) = mount(vm, &app_ctx);
+        let texts = texts_on_screen(&tree, id);
+        assert!(
+            texts
+                .iter()
+                .any(|t| t == "One picture comes with these documents."),
+            "{texts:?}"
+        );
+    });
+}

@@ -18,6 +18,7 @@ use anyhow::Result;
 
 use crate::block::SourceDocument;
 use crate::diagnostics::ImportDiagnostic;
+use crate::pictures::DocumentFolder;
 
 /// Turns one file's bytes into a [`SourceDocument`].
 ///
@@ -32,6 +33,24 @@ pub trait SourceScanner {
     fn format_name(&self) -> &'static str;
 
     fn scan(&self, bytes: &[u8], display_name: &str, origin: &str) -> Result<SourceDocument>;
+
+    /// [`Self::scan`], for a document read from `folder`: where a format that names files
+    /// beside it, as Markdown names its pictures, finds them.
+    ///
+    /// `None` is a document with no folder to stand on (bytes from a test, a path that is not
+    /// absolute), whose outside files are then reported missing rather than looked for
+    /// relative to wherever the app was started. A format that keeps its pictures inside the
+    /// file has no use for the folder, and the default ignores it.
+    fn scan_in(
+        &self,
+        bytes: &[u8],
+        display_name: &str,
+        origin: &str,
+        folder: Option<&DocumentFolder>,
+    ) -> Result<SourceDocument> {
+        let _ = folder;
+        self.scan(bytes, display_name, origin)
+    }
 }
 
 /// Extension → scanner. Built once per import and consulted per file.
@@ -92,7 +111,27 @@ impl ScannerRegistry {
     /// An unclaimed extension is a document carrying one `Error` diagnostic
     /// rather than an `Err`, so a folder holding a stray `.pdf` still imports its
     /// sixty `.md` files and says plainly what it skipped.
+    ///
+    /// Nothing beside the file is read: a picture a Markdown document names by path is
+    /// reported missing. [`Self::scan_file`] is the one for a file read from disk.
     pub fn scan_bytes(&self, path: &Path, bytes: &[u8]) -> SourceDocument {
+        self.scan_with(path, bytes, None)
+    }
+
+    /// [`Self::scan_bytes`], for the file at `path` whose bytes were just read: the pictures
+    /// a Markdown document names by path are looked for in its own folder, under the rules
+    /// [`DocumentFolder`] keeps.
+    pub fn scan_file(&self, path: &Path, bytes: &[u8]) -> SourceDocument {
+        let folder = DocumentFolder::of_document(path);
+        self.scan_with(path, bytes, folder.as_ref())
+    }
+
+    fn scan_with(
+        &self,
+        path: &Path,
+        bytes: &[u8],
+        folder: Option<&DocumentFolder>,
+    ) -> SourceDocument {
         let origin = path.to_string_lossy().to_string();
         let display_name = display_name_for(path);
         let extension = path
@@ -120,7 +159,7 @@ impl ScannerRegistry {
             return doc;
         };
 
-        let mut doc = match scanner.scan(bytes, &display_name, &origin) {
+        let mut doc = match scanner.scan_in(bytes, &display_name, &origin, folder) {
             Ok(doc) => doc,
             Err(err) => {
                 let mut doc = SourceDocument::new(display_name, &origin);

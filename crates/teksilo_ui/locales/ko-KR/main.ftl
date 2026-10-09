@@ -1676,7 +1676,6 @@ import-diagnostic-footnotes-degraded = Markdown에서는 각주를 읽지 않으
 import-diagnostic-footnote-not-carried = "{ $path }"의 각주 { $count }개를 가져오지 못했습니다. 나머지는 가져왔습니다.
 import-diagnostic-raw-html-dropped = "{ $path }"의 원시 HTML 블록 { $count }개를 제외했습니다.
 import-diagnostic-nested-break-dropped = "{ $path }"의 인용문이나 목록 안에 있는 장면 구분 { $count }개를 제외했습니다. 독립된 줄의 구분만 유지합니다.
-import-diagnostic-image-not-ingested = "{ $path }"이 이미지 "{ $detail }"을 참조합니다. 참조는 텍스트로 가져오지만 이미지 자체는 복사하지 않습니다.
 import-diagnostic-duplicate-title = "{ $title }"이 { $count }번 나타납니다. 이미 가져온 파일이라면 중복됩니다.
 import-diagnostic-heading-level-jump = "{ $title }"의 제목 수준이 { $from }에서 { $to }(으)로 건너뜁니다. 상위 항목 바로 아래 수준에 배치합니다.
 import-diagnostic-illegal-combination = "{ $title }"에 본문이 있지만 { $kind } 유형은 본문을 담을 수 없습니다. 유형을 바꾸거나 제외할 때까지 가져오기를 보류하며 아무것도 가져오지 않습니다.

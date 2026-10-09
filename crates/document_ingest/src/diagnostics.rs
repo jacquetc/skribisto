@@ -110,9 +110,21 @@ pub enum ImportDiagnostic {
     /// which has no arm for it and drops it outright, the same silent loss the
     /// top-level case exists to prevent.
     NestedBreakDropped { path: String, count: usize },
-    /// An image reference was found. Asset ingestion is not wired from this
-    /// layer, so the reference survives as text but the file is not copied in.
-    ImageNotIngested { path: String, target: String },
+    /// A picture the document shows does not come with it, for `reason`.
+    ///
+    /// Nothing is left in the prose where it was: a reference to a file the project does not
+    /// hold would show as nothing, and would carry the document's own path for it (a folder
+    /// on the writer's disk, an address on the web) into the project. `target` is that path
+    /// as the document wrote it, so the writer can find the picture and insert it by hand;
+    /// it reaches the review and nowhere else.
+    ImageNotIngested {
+        path: String,
+        target: String,
+        reason: crate::pictures::PictureRefusal,
+    },
+    /// An animated picture arrives as its first frame: the editor shows still pictures, and a
+    /// GIF is converted to PNG on the way in (see [`crate::pictures`]).
+    PictureFirstFrameOnly { path: String, target: String },
     /// The document was mid-revision: tracked insertions were accepted and tracked
     /// deletions dropped, which is what "the final text" means — but a writer
     /// handed a file with somebody's unaccepted edits in it should be told, not
@@ -277,6 +289,7 @@ impl ImportDiagnostic {
             | RawHtmlDropped { .. }
             | NestedBreakDropped { .. }
             | ImageNotIngested { .. }
+            | PictureFirstFrameOnly { .. }
             | DuplicateTitle { .. }
             | HeadingLevelJump { .. }
             | IllegalCombination { .. }
@@ -319,6 +332,7 @@ impl ImportDiagnostic {
             | RawHtmlDropped { path, .. }
             | NestedBreakDropped { path, .. }
             | ImageNotIngested { path, .. }
+            | PictureFirstFrameOnly { path, .. }
             | TrackedChangesFlattened { path, .. }
             | TextBoxDropped { path, .. }
             | EmbeddedObjectDropped { path, .. }
@@ -359,7 +373,10 @@ impl ImportDiagnostic {
             FootnoteNotCarried { .. } => "footnote-not-carried",
             RawHtmlDropped { .. } => "raw-html-dropped",
             NestedBreakDropped { .. } => "nested-break-dropped",
-            ImageNotIngested { .. } => "image-not-ingested",
+            // One key per reason, since each is its own sentence: what the writer can do
+            // about a picture on the web is not what they can do about a Windows metafile.
+            ImageNotIngested { reason, .. } => reason.key(),
+            PictureFirstFrameOnly { .. } => "picture-first-frame-only",
             DuplicateTitle { .. } => "duplicate-title",
             HeadingLevelJump { .. } => "heading-level-jump",
             IllegalCombination { .. } => "illegal-combination",
@@ -429,8 +446,22 @@ impl fmt::Display for ImportDiagnostic {
                     "{path}: {count} scene-break-looking line(s) inside a nested block were dropped"
                 )
             }
-            ImageNotIngested { path, target } => {
-                write!(f, "{path}: image '{target}' referenced but not imported")
+            ImageNotIngested {
+                path,
+                target,
+                reason,
+            } => {
+                write!(
+                    f,
+                    "{path}: picture '{target}' not brought in, {}",
+                    reason.describe()
+                )
+            }
+            PictureFirstFrameOnly { path, target } => {
+                write!(
+                    f,
+                    "{path}: animated picture '{target}' kept as its first frame"
+                )
             }
             DuplicateTitle { title, occurrences } => {
                 write!(f, "'{title}' appears {occurrences} times")
