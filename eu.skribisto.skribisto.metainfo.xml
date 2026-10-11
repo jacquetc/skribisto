@@ -53,48 +53,49 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release type="stable" version="3.0.5" date="2026-09-28T00:00:00Z">
+    <release type="development" version="3.1.0" date="2026-09-28T00:00:00Z">
       <description>
         <ul>
-          <li>Dates and times in the Versions dock, the Timeline, the backups list, the Trash, the project switcher, the Welcome window and the restore confirmations are shown in your own time zone. They were shown in UTC while presenting themselves as local time, which could put a version on the wrong day</li>
-          <li>Pace and daily progress credit words to the day you wrote them, on your own calendar. A writer west of UTC used to see evening words counted for the next day</li>
-          <li>The Versions dock lists the earlier versions of front and back matter, such as a preface, as it does for any other text</li>
-          <li>The warnings of a Plume Creator or Manuskript import stay on screen until you close them or the next import of the same kind brings its own, and can be opened again afterwards from the notifications. They used to disappear after ten seconds</li>
-          <li>Choosing where to save a new or imported project no longer writes and deletes a test file in that folder over and over while the dialog is open</li>
-          <li>An import can no longer overwrite a project that is open in a window, in this copy of Skribisto or another one</li>
-          <li>While a Plume Creator or Manuskript import is writing a project, that project cannot be opened, created again with New Work, saved over with Save As, restored from a backup or chosen for a second import, from this copy of Skribisto or another one. On Windows and macOS this holds however its name is capitalised, on macOS however its accented letters are encoded, and on Windows whichever slash separates its folders</li>
-          <li>A Plume Creator or Manuskript project, or a Word or OpenDocument file, whose contents are nested far more deeply than any real file is refused with a message instead of closing Skribisto and every open window</li>
-          <li>The characters you type come back as you typed them after the project is saved and opened again. A time such as 10:30:45 or a name such as std::vector no longer loses its colons and the characters between them, a paragraph that begins with I. or A. stays a paragraph instead of turning into a list item without its letter, a paragraph opened with a tab or spaces keeps them, and straight quotes, -- and ... stay as typed instead of becoming English curly quotes, dashes and an ellipsis. Turning them into typographic marks is left to smart punctuation, which follows your project’s language</li>
-          <li>Characters named in the text of a Manuskript project import as their plain name, without a stray backslash, and an image description or a chapter title keeps its colons and asterisks as typed</li>
-          <li>Comments imported from a Word or OpenDocument file stay on the words they marked after a paragraph holding two spaces in a row or a tab. The comments of every later paragraph used to lose their place and fall back to the whole document</li>
-          <li>An imported Word or OpenDocument file keeps its centred and right-aligned paragraphs, its page breaks, its superscript and subscript, its double spaces, and its straight quotes, dashes and ellipses as they were written</li>
-          <li>Importing a plain-text file keeps every character as written: asterisks, underscores and other marks are no longer read as formatting</li>
-          <li>An imported document, or a Plume Creator or Manuskript project, whose formatting is nested past what a project can hold arrives as its words with a note, instead of producing a project that will not open again</li>
-          <li>A damaged or truncated Word file is reported as unreadable instead of freezing the import for good</li>
-          <li>A project or Markdown file crafted to nest its contents thousands of levels deep can no longer close Skribisto: the project is refused with a message, or the file’s words are kept as plain text</li>
-          <li>A paragraph typed after a long run of spaces no longer makes the project refuse to open the next time</li>
-          <li>An OpenDocument file asking for an enormous run of spaces imports with that run shortened, and the import review says so</li>
-          <li>A compressed document or project built to unpack far larger than it is, a zip bomb, is refused instead of filling the computer’s memory</li>
-          <li>A Plume Creator or Manuskript project built to multiply a few kilobytes into gigabytes of text as it is read is refused with a message, instead of filling the computer’s memory and closing Skribisto</li>
-          <li>A Word or OpenDocument file crafted to keep the import busy for hours or days is reported as unreadable in a moment. Such an import used to ignore Cancel until it ended</li>
-          <li>A list indented dozens of levels deep no longer makes the project refuse to open</li>
-          <li>Typewriter scrolling keeps the line you are typing at its place on the page again. Since 3.0.4 it only followed the caret, as ordinary scrolling does</li>
-          <li>A long scene opens, and an earlier version of it is put back, in a moment. A scene of several thousand paragraphs used to take seconds, and one of 16,000 close to a minute, during which the window did not respond</li>
-          <li>Putting back an earlier version of a text holding footnotes, pressing Backspace in a quotation, or deleting across the edge of a table no longer closes Skribisto. Typing or pressing Enter just before a footnote reference keeps the footnote where it was, and a table pasted in the middle of a text keeps the text after it in place</li>
-          <li>Copying, cutting or dragging text in a quotation takes each paragraph once. A nested quotation used to be copied two or three times over, and a cut then paste wrote it back doubled</li>
-          <li>Putting back an earlier version keeps its quotations and code blocks, which it used to turn into plain paragraphs</li>
-          <li>A passage pasted from a web page as preformatted text arrives as one paragraph per line, and every line stays as it was at the next opening. Its later lines used to come back as lists, headings or quotations, sometimes nested so deep that the project would not open</li>
-          <li>Export keeps every line of a passage holding line breaks, and every link or picture whose address holds a |, a parenthesis or a space. Quotations nested more than 55 levels deep export to Word, and more than 16 to PDF, instead of failing</li>
-          <li>Holding Tab in a quotation or a list stops at 64 quotation levels and 16 list levels. It used to go on for as long as the key repeated, and after about 97 presses the project would not open again</li>
-          <li>Tab and Shift+Tab on a list item in a quotation move it one level, as in the rest of the text. They used to take the item out of its list for good</li>
-          <li>Tab at the end of a list's last item moves the item one level instead of typing a tab, and no longer pushes a quoted paragraph after the list one quotation deeper</li>
-          <li>Splitting a scene keeps every word. The new scene lost one of its last characters for every paragraph after the caret, and a caret in a table put the table in both scenes and lost everything after it</li>
-          <li>Splitting a scene keeps the paragraph at the cut a heading, a list item, a quotation or a code block, leaves no stray space at the start of the new scene, and refuses to make an empty one</li>
-          <li>A comment goes with its words when a scene is split or two scenes are merged. It used to stay behind and report that it had lost its words</li>
-          <li>Jumping to a comment or a footnote near the end of a long scene lands on it. It used to stop a few lines short</li>
-          <li>Importing a Word or OpenDocument table with one row far wider than all the others says that its cells arrive as paragraphs, instead of dropping the grid in silence</li>
-          <li>The check for a new version of Skribisto uses an updated encryption library, which fixes a flaw in how it accepts a secure connection</li>
-          <li>A picture inserted into a folder project after its first save, or into any project after Save As, is kept by the next save. It used to be written where the save does not look, and came back blank at the next opening</li>
+          <li>Import your Scrivener projects with Work ▸ Import from ▸ Scrivener (.scriv)…, whether they come from Scrivener 3, Scrivener 2 on the Mac, Scrivener for Windows or the Linux beta. You see how your binder will look before anything is created, your keywords, targets and deadline come along, and a report tells you what to check once it is done. Your Scrivener project itself is never changed. The new help topic Coming from Scrivener explains the rest</li>
+          <li>Added app interfaces in Arabic (Saudi Arabia), Czech, Danish, Greek, Hebrew, Hungarian, Norwegian Bokmål, Dutch, Romanian, Swedish and Turkish, including menus, dialogs, settings and tooltips. Longer help articles use English</li>
+          <li>Added interfaces in German (Germany), Italian, Spanish, Portuguese (Portugal), Polish, Finnish, Russian, Ukrainian, Korean (South Korea), Japanese and Esperanto, including menus, dialogs, settings and tooltips</li>
+          <li>Added help articles in German, Italian, Spanish, Portuguese (Portugal) and Polish. Finnish, Russian, Ukrainian, Korean, Japanese and Esperanto use English for the longer help articles</li>
+          <li>English and French help now gives clearer steps for starting a project, saving, importing and exporting, with less jargon and fewer technical details</li>
+          <li>Updated the Teksilo interface libraries to 0.16.0</li>
+          <li>A Plume Creator or Manuskript project imported without a name, and the notes and texts the import makes up, are named in the language Skribisto is set to. They used to be named in English</li>
+          <li>A Plume Creator or Manuskript import is shown in the language Skribisto is set to: its progress, its notes about what it could not carry across, and the reason a project cannot be imported. They used to be in English whatever the language</li>
+          <li>Quitting while a project import is running asks first, and stopping the import leaves no half-written file behind</li>
+          <li>Projects are imported one at a time, whichever importer and window starts them: a second import started while one runs says so, and can be started again once the first has finished</li>
+          <li>When there is not enough space left to write an imported project, the message names the folder that is full</li>
+          <li>Cancelling a project import says the import is stopping until it really has, and keeps its destination reserved until then. It used to say the import was cancelled at once, while the import could still be writing its file, and let that file be opened or imported into meanwhile</li>
+          <li>A project kept as a folder under the name chosen for an import is pointed out as soon as the name is typed. The import used to offer to replace it, convert the whole project, then fail</li>
+          <li>Importing a Word, OpenDocument or Markdown file brings its pictures into the project, each where it sat in the text and with its description, and a save keeps them in the project. The review step says how many pictures come, and names each one that stays behind with the reason, such as a drawing in a format Skribisto cannot show or a picture on the web. A picture the project already holds is not stored twice, and undoing the import takes its pictures back with the text</li>
+          <li>Copying, cutting or dragging text that runs out of a table takes the whole table and nothing else, so a cut pasted back gives the text back as it was. Text after the table used to be lost from the copy, or the table came back twice</li>
+          <li>Dragging a passage over a table drops it where you release it, dragging selected table cells no longer leaves an empty grid behind, and selected table cells are shown as selected</li>
+          <li>A numbered list keeps the number it starts at when the project is saved and opened again, and when it is copied</li>
+          <li>Two quotations one after the other stay two quotations when the project is opened again</li>
+          <li>Pasting several paragraphs into an empty scene keeps the format you gave its first line, such as a quotation for an epigraph</li>
+          <li>Tab, Shift+Tab and Enter work in a table inside a quotation</li>
+          <li>Typing with an input method over a selection replaces the selection once, without leaving the first candidate in the text</li>
+          <li>Importing or exporting no longer leaves idle background tasks running until Skribisto is closed</li>
+          <li>The command palette and the keyboard shortcut settings show the group of each command, such as File or Edit, in the language Skribisto is set to, and the palette finds a command when you type its group's name in that language. The General group of the shortcut settings is translated too</li>
+          <li>A window that is minimized or hidden behind other windows stops drawing until it is shown again, which spares the battery. On macOS every window rests the same way while the display sleeps or the screen is locked</li>
+          <li>On macOS, a window opened while the display sleeps or the screen is locked no longer keeps a processor core busy until it appears</li>
+          <li>On Linux under Wayland, Skribisto no longer wakes the processor twice for everything it does, which it did on desktops that support drawing tablets, whether or not a tablet was attached</li>
+          <li>With a screen reader running, each change is drawn once rather than twice, and the screen reader is sent only what has changed</li>
+          <li>A text holding pictures takes less work to scroll and redraw, as its pictures are no longer copied each time the window is drawn</li>
+          <li>When closing a window has a question to ask first, such as what to do with unsaved changes, the question appears at once. It used to wait for the next key press or mouse movement</li>
+          <li>On Windows and on Linux under X11, the Enter that answers a system dialog, such as the file chooser, no longer acts a second time in the window behind it</li>
+          <li>The notifications list shows how an import ended: its entry names what the last notice offered, a failed import is listed as an error, and an import run again comes back to the top of the list with its own date. The entry used to keep the Cancel of the import's progress notice, and a later import was listed under the date of the first</li>
+          <li>In the notifications, a finished import's entry keeps Open now, which opens the imported project in a window of its own. It used to show Open now as a label that did nothing</li>
+          <li>A checkbox beside other controls, such as Preserve case in the replace bar, shows its label, shortened only when the row runs out of room. It used to show an ellipsis in place of the label</li>
+          <li>Alt with the underlined letter of a menu opens that menu when the menu bar is folded into its menu button, and no longer closes a menu it should open. While a dialog is open, it no longer reaches the menu bar behind the dialog</li>
+          <li>After an item is chosen from a submenu, one click on the menu's name opens it again. It used to take two</li>
+          <li>Part of a window that changed while it was scrolled out of view shows its new content when it comes back into view, rather than what it showed before</li>
+          <li>A section opened while its window is in the background, for instance by a screen reader, unfolds at once. It used to stay folded under a header that said it was open</li>
+          <li>A list or a box partly scrolled out of the top of the window no longer lets its contents show past its own lower edge</li>
+          <li>A cancelled import or export no longer leaves the loading spinner turning in its notice after the work has stopped</li>
+          <li>A backup's notice no longer keeps spinning once the backup has ended. When a backup taken on closing fails before reaching any destination, the dialog names the error, and a backup whose outcome cannot be read says so</li>
         </ul>
       </description>
     </release>
