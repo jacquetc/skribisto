@@ -932,11 +932,11 @@ project-import-failed-malformed = プロジェクトをインポートしませ�
 project-import-failed-scrivener-refused = Skribisto はこの Scrivener プロジェクトをインポートできません。何も書き込んでいません。
 # The Scrivener project asks something its review did not answer: a project or a binder
 # file appeared in it since.
-project-import-failed-scrivener-question = Scrivener プロジェクトに、確認の段階で答えていない質問があります。もう一度確認してからインポートしてください。何も書き込んでいません。
+project-import-failed-scrivener-question = Scrivener プロジェクトに、確認の段階で答えていない質問があります。もう一度インポートを始めてその質問に答えてから、インポートしてください。何も書き込んでいません。
 # The Scrivener project raises a question the writer has to accept before it imports.
-project-import-failed-scrivener-not-accepted = Scrivener プロジェクトに、まだ承認していない質問があります。もう一度確認してからインポートしてください。何も書き込んでいません。
+project-import-failed-scrivener-not-accepted = この Scrivener プロジェクトをインポートするには、「プロジェクト」の段階でチェックボックスにチェックを入れる必要がありますが、チェックが入っていませんでした。もう一度インポートを始めてチェックを入れてから、インポートしてください。何も書き込んでいません。
 # The Scrivener project changed after the writer reviewed it.
-project-import-failed-scrivener-changed = 確認した後に Scrivener プロジェクトが変更されました。もう一度確認してからインポートしてください。何も書き込んでいません。
+project-import-failed-scrivener-changed = 確認した後に Scrivener プロジェクトが変更されました。もう一度インポートを始めて確認し直してから、インポートしてください。何も書き込んでいません。
 # An error nothing above accounts for; $detail is its technical description.
 project-import-failed-internal = 予期しないエラーのため、インポートが停止しました：{ $detail }
 
@@ -981,9 +981,9 @@ import-scrivener-empty-hint = プロジェクトを選ぶと、Skribisto がそ�
 import-scrivener-reading = プロジェクトを読み込んでいます…
 import-scrivener-stop-reading = 読み込みを停止
 import-scrivener-read-failed = プロジェクトを読み込めませんでした
-import-scrivener-read-failed-body = 読み込み中に問題が発生しました。再読み込みするか、詳細を確認してください。
+import-scrivener-read-failed-body = 読み込み中に問題が発生しました。もう一度試すには「プロジェクトを再読み込み」を、何が起きたかを見るには「詳細」を選んでください。
 import-scrivener-details = 詳細
-import-scrivener-check-again = 再読み込み
+import-scrivener-check-again = プロジェクトを再読み込み
 # A refusal this version does not know how to word.
 import-scrivener-refusal-unknown-title = このプロジェクトはインポートできません
 import-scrivener-refusal-unknown-body = Skribisto にはこのプロジェクトを移行する方法がわかりません。理由は詳細に記載されています。
@@ -1024,7 +1024,7 @@ import-scrivener-choice-split = { $count ->
    *[other] 「{ $title }」を{ $count }個の見出しの位置で分割
 }
 import-scrivener-root-items = { $count }項目
-import-scrivener-root-items-manuscript = { $count }項目、原稿のような内容
+import-scrivener-root-items-manuscript = { $count }項目。このフォルダーは原稿のような内容です。
 import-scrivener-dest-notes = ノート
 import-scrivener-dest-story-bible = 設定資料集
 import-scrivener-dest-manuscript = 別の本
@@ -1069,7 +1069,7 @@ import-scrivener-done-title = Scrivener プロジェクトをインポートし�
 import-scrivener-done = 新しいプロジェクトには{ $items }項目があります。
 # The same, with how many kinds of thing could not be read or need checking.
 import-scrivener-done-check = 新しいプロジェクトには{ $items }項目があります。確認が必要な点が{ $findings }件あります。
-import-scrivener-review-again = もう一度確認
+import-scrivener-review-again = インポートを再確認
 
 ## The import's report (the dialog See report opens)
 import-scrivener-see-report = レポートを表示
@@ -1098,8 +1098,11 @@ import-scrivener-report-no = いいえ
 import-scrivener-report-research-copied = Skribisto で開けない調査資料ファイルを、新しいプロジェクトの隣の「{ $folder }」にコピーしました。
 import-scrivener-report-research-not-copied = Skribisto で開けない調査資料ファイルはコピーしていません。Scrivener プロジェクト内のファイルの場所は、各ファイルのノートに記載されています。
 import-scrivener-report-research-copied-except = Skribisto で開けない調査資料ファイルを、新しいプロジェクトの隣の「{ $folder }」にコピーしました。ただし{ $count }件は Scrivener プロジェクトに残っています。その場所は各ファイルのノートに記載されています。
-import-scrivener-report-research-none-copied = 調査資料ファイルのコピーを選びましたが、{ $count }件はコピーできませんでした。それらは Scrivener プロジェクトに残っており、その場所は各ファイルのノートに記載されています。
-import-scrivener-report-chose-project = 選んだ場所にある複数のプロジェクトのうち、「{ $project }」をインポートすることを選びました。
+import-scrivener-report-research-none-copied = { $count ->
+    [1] 調査資料ファイルのコピーを選びましたが、対象となる唯一のファイルをコピーできませんでした。そのファイルは Scrivener プロジェクトに残っており、その場所はファイルのノートに記載されています。
+   *[other] 調査資料ファイルのコピーを選びましたが、対象の{ $count }件はどれもコピーできませんでした。それらは Scrivener プロジェクトに残っており、その場所は各ファイルのノートに記載されています。
+}
+import-scrivener-report-chose-project = 選んだフォルダーまたはアーカイブにある複数のプロジェクトのうち、「{ $project }」をインポートすることを選びました。
 import-scrivener-report-chose-manifest = バインダーファイル「{ $file }」を選びました。
 import-scrivener-report-chose-enclosing = 「{ $project }」の中にあるものを選んだため、プロジェクト全体をインポートしました。
 import-scrivener-report-chose-upgraded = Scrivener が更新前に残したコピーではなく、その後も書き続けたプロジェクト「{ $current }」をインポートしました。
@@ -1114,7 +1117,7 @@ import-scrivener-report-author-from-project = プロジェクトの設定にあ�
 import-scrivener-report-language-not-stated = プロジェクトに言語の指定がなかったため、Skribisto の表示言語を提案しました。言語によって、語数の数え方と引用符の書き方が決まります。
 import-scrivener-report-language-from-script = 原稿の文字体系から言語を提案しました（{ $tag }）。
 # A proposal of the Save page the writer replaced with their own.
-import-scrivener-report-you-changed-it = { $hint }この提案は変更されました。
+import-scrivener-report-you-changed-it = { $hint }この提案は別の内容に置き換えました。
 import-scrivener-report-content-salvaged-text = 「{ $item }」の本文がプロジェクトにありませんでした。その文章は Scrivener の検索インデックスから取り出した書式なしのテキストで、古いバージョンのものかもしれません。確認してください。
 import-scrivener-report-content-salvaged-notes = 「{ $item }」のノートがプロジェクトにありませんでした。その文章は Scrivener の検索インデックスから取り出した書式なしのテキストで、古いバージョンのものかもしれません。確認してください。
 import-scrivener-report-content-salvaged-synopsis = 「{ $item }」のあらすじがプロジェクトにありませんでした。その文章は Scrivener の検索インデックスから取り出した書式なしのテキストで、古いバージョンのものかもしれません。確認してください。
@@ -1233,7 +1236,7 @@ import-scrivener-label-value = { $label }：{ $value }
 import-scrivener-replacement-regex = 正規表現
 import-scrivener-replacement-off = 無効
 # Said of a note whose own text lists its custom metadata or bookmarks.
-import-scrivener-in-own-note = このノート自体の本文に記載しています。
+import-scrivener-in-own-note = この文書から作られたノートに記載しています。
 
 
 ## Import a Scrivener project: what the import says about the project, in the writer's words.
@@ -1274,7 +1277,7 @@ import-scrivener-refusal-manifest-too-large-body = 「{ $manifest }」は、Skri
 import-scrivener-refusal-no-item-identifiers-title = バインダーには、Skribisto が見つけられる文書が一つもありません
 import-scrivener-refusal-no-item-identifiers-body = どの項目にも識別子がないため、ファイルを見つけられません。Scrivener でプロジェクトを一度開いてから、もう一度インポートしてください。
 import-scrivener-refusal-incomplete-copy-title = このコピーには文書が欠けています
-import-scrivener-refusal-incomplete-copy-body = Files フォルダーはありますが、その中に文書がありません。同期サービスがプロジェクトのコピーを終えていない可能性があります。完了を待つか、.scriv フォルダー全体をもう一度コピーしてから、再読み込みしてください。
+import-scrivener-refusal-incomplete-copy-body = Files フォルダーはありますが、その中に文書がありません。同期サービスがプロジェクトのコピーを終えていない可能性があります。完了を待つか、.scriv フォルダー全体をもう一度コピーしてから、プロジェクトを再読み込みしてください。
 import-scrivener-refusal-archive-title = このアーカイブは開けません
 import-scrivener-refusal-archive-unreadable-body = 「{ $file }」を読み込めませんでした（{ $reason }）。破損している可能性があります。手動で展開してから、中の .scriv フォルダーを選んでください。
 import-scrivener-refusal-archive-unsafe-name-title = このアーカイブは安全に開けません
@@ -1303,13 +1306,16 @@ import-scrivener-refusal-template-undecodable-too-large-body = 「{ $file }」�
 import-scrivener-refusal-template-undecodable-not-a-template-body = 「{ $file }」には Scrivener プロジェクトが含まれていません。Scrivener が保存したテンプレートファイルか、そこから作成したプロジェクトを選んでください。
 import-scrivener-refusal-template-undecodable-unknown-encoding-body = 「{ $file }」は、Skribisto がデコードできない方法でプロジェクトを保存しています。Scrivener で開いてプロジェクトを作成し、そのプロジェクトをインポートしてください。
 import-scrivener-refusal-cloud-placeholders-title = このプロジェクトのファイル{ $count }件がまだクラウドにあります
-import-scrivener-refusal-cloud-placeholders-body = このコンピューターにまだダウンロードされていません（例：{ $examples }）。同期アプリでプロジェクトをオフラインでも使えるようにしてから、再読み込みしてください。
+import-scrivener-refusal-cloud-placeholders-body = { $count ->
+    [1] 次のファイルは、このコンピューターにまだダウンロードされていません：{ $examples }。同期アプリでプロジェクトをオフラインでも使えるようにしてから、プロジェクトを再読み込みしてください。
+   *[other] これらのファイルは、このコンピューターにまだダウンロードされていません（例：{ $examples }）。同期アプリでプロジェクトをオフラインでも使えるようにしてから、プロジェクトを再読み込みしてください。
+}
 import-scrivener-refusal-unreadable-members-title = このプロジェクトのファイル{ $count }件を読み込めません
-import-scrivener-refusal-unreadable-members-body = 例：{ $examples }。プロジェクト全体を読み込む権限があること、ディスクに問題がないことを確認してから、再読み込みしてください。
+import-scrivener-refusal-unreadable-members-body = 例：{ $examples }。プロジェクト全体を読み込む権限があること、ディスクに問題がないことを確認してから、プロジェクトを再読み込みしてください。
 import-scrivener-refusal-needed-member-is-link-title = このプロジェクトは自身のフォルダーの外を参照しています
 import-scrivener-refusal-needed-member-is-link-body = 「{ $member }」はこのコンピューター上の別の場所へのリンクで、Skribisto はリンクをたどりません。すべてのファイルがプロジェクト内に収まるようにプロジェクトをコピーしてから、もう一度お試しください。
 import-scrivener-refusal-project-changed-during-read-title = 読み込み中にプロジェクトが変更されました
-import-scrivener-refusal-project-changed-during-read-body = Scrivener または同期サービスがまだ書き込んでいます。Scrivener でプロジェクトを閉じ、同期が終わるのを待ってから、再読み込みしてください。
+import-scrivener-refusal-project-changed-during-read-body = Scrivener または同期サービスがまだ書き込んでいます。Scrivener でプロジェクトを閉じ、同期が終わるのを待ってから、プロジェクトを再読み込みしてください。
 import-scrivener-refusal-too-many-members-title = このプロジェクトはファイルが多すぎます
 import-scrivener-refusal-too-many-members-body = ファイルが{ $limit }件を超えており、実際のどのプロジェクトよりも多い数です。Scrivener プロジェクトではないか、破損している可能性があります。
 import-scrivener-refusal-too-large-title = このプロジェクトは大きすぎます
@@ -1357,10 +1363,7 @@ import-scrivener-notice-imported-from-ios-stub-title = このプロジェクト�
 import-scrivener-notice-imported-from-ios-stub-body = コンピューターで一度も開かれていないため、iPhone または iPad が保持しているコピーから読み込みます。
 import-scrivener-notice-stale-mobile-binder-ignored-title = iPhone・iPad の古いバインダーは使用しません
 import-scrivener-notice-stale-mobile-binder-ignored-body = コンピューターの Scrivener がすでにその変更を取り込んでいます。
-import-scrivener-notice-identical-manifest-copies-title = { $count ->
-    [1] バインダーファイルのコピーが1件あります
-   *[other] 同一のバインダーファイルのコピーが{ $count }件あります
-}
+import-scrivener-notice-identical-manifest-copies-title = このプロジェクトには同一のバインダーファイルが{ $count }件あります
 import-scrivener-notice-identical-manifest-copies-body = 内容は同じなので、どれを使っても同じプロジェクトになります。
 import-scrivener-notice-manifest-copies-ignored-title = バインダーファイルの余分なコピーは使用しません
 import-scrivener-notice-manifest-copies-ignored-body = Scrivener が最後に作業したのは「{ $chosen }」です。同期サービスが残したコピー{ $count }件は使用しません。
@@ -1379,7 +1382,7 @@ import-scrivener-notice-unrecognised-writer-title = このプロジェクトは 
 import-scrivener-notice-unrecognised-writer-named = プログラム名は「{ $creator }」です。Scrivener プロジェクトとして読み込みます。
 import-scrivener-notice-unrecognised-writer-body = プログラム名の記載はありません。Scrivener プロジェクトとして読み込みます。
 import-scrivener-notice-invalid-item-identifier-title = バインダーの項目{ $count }件に、無効な識別子が付いています
-import-scrivener-notice-invalid-item-identifier-body = それらの識別子は無視し、項目は残します。
+import-scrivener-notice-invalid-item-identifier-body = このような識別子は無視し、それが付いている項目は残します。
 import-scrivener-notice-items-without-identifier-title = バインダーの項目{ $count }件に識別子がありません
 import-scrivener-notice-items-without-identifier-body = ファイルを見つけられないため、空の状態で移行します。
 import-scrivener-notice-duplicate-item-key-title = バインダーの二つの項目が同じ識別子「{ $item }」を使っています
@@ -1394,29 +1397,41 @@ import-scrivener-notice-archived-while-open-body = その時点より後の変�
 import-scrivener-notice-content-missing-notes = 「{ $item }」のノートがありません
 import-scrivener-notice-content-missing-synopsis = 「{ $item }」のあらすじがありません
 import-scrivener-notice-content-missing-text = 「{ $item }」の本文がありません
-import-scrivener-notice-content-missing-body = ファイルがこのコピーにないため、空の状態で移行します。同期サービスがまだプロジェクトをコピー中の可能性があります。
-import-scrivener-notice-content-missing-salvaged = ファイルはこのコピーにありませんが、Scrivener の検索インデックスにその文章が残っていました。古いバージョンのものかもしれませんが、書式なしのテキストとして保持します。
+import-scrivener-notice-content-missing-body = { $place ->
+    [notes] ノートのファイルがこのコピーにないため、ノートは空の状態で移行します。同期サービスがまだプロジェクトをコピー中の可能性があります。
+    [synopsis] あらすじのファイルがこのコピーにないため、あらすじは空の状態で移行します。同期サービスがまだプロジェクトをコピー中の可能性があります。
+   *[text] 本文のファイルがこのコピーにないため、本文は空の状態で移行します。同期サービスがまだプロジェクトをコピー中の可能性があります。
+}
+import-scrivener-notice-content-missing-salvaged = { $place ->
+    [notes] ノートのファイルはこのコピーにありませんが、Scrivener の検索インデックスにその文章が残っていました。古いバージョンのものかもしれませんが、書式なしのテキストとして保持します。
+    [synopsis] あらすじのファイルはこのコピーにありませんが、Scrivener の検索インデックスにその文章が残っていました。古いバージョンのものかもしれませんが、書式なしのテキストとして保持します。
+   *[text] 本文のファイルはこのコピーにありませんが、Scrivener の検索インデックスにその文章が残っていました。古いバージョンのものかもしれませんが、書式なしのテキストとして保持します。
+}
 import-scrivener-notice-content-truncated-notes = 「{ $item }」のノートがディスク上で空です
 import-scrivener-notice-content-truncated-synopsis = 「{ $item }」のあらすじがディスク上で空です
 import-scrivener-notice-content-truncated-text = 「{ $item }」の本文がディスク上で空です
-import-scrivener-notice-content-truncated-body = Scrivener には文章があると記録されていますが、ファイルは空です。同期が途中で止まった可能性があります。空の状態で移行します。
+import-scrivener-notice-content-truncated-body = { $place ->
+    [notes] Scrivener にはノートが書かれていると記録されていますが、そのファイルは空です。同期が途中で止まった可能性があります。ノートは空の状態で移行します。
+    [synopsis] Scrivener にはあらすじが書かれていると記録されていますが、そのファイルは空です。同期が途中で止まった可能性があります。あらすじは空の状態で移行します。
+   *[text] Scrivener には本文が書かれていると記録されていますが、そのファイルは空です。同期が途中で止まった可能性があります。本文は空の状態で移行します。
+}
 import-scrivener-notice-missing-media-title = 「{ $item }」のファイルがありません
 import-scrivener-notice-missing-media-body = この項目の画像または調査資料ファイルが、このコピーにありません。
 import-scrivener-notice-sync-conflict-copies-title = 文書の同期コピーが{ $count }件見つかりました
 import-scrivener-notice-sync-conflict-copies-body = { $missing ->
-    [0] 回収した本文として専用のフォルダーに移行するので、文書と比較できます。
-   *[other] 回収した本文として専用のフォルダーに移行します。一部は、もうプロジェクトにない文書のコピーです。
+    [0] 同期コピーは、回収した本文として専用のフォルダーに移行するので、文書と比較できます。
+   *[other] 同期コピーは、回収した本文として専用のフォルダーに移行します。そのうち{ $missing }件は、もうプロジェクトにない文書のコピーです。
 }
 import-scrivener-notice-recovered-unreferenced-text-title = どのバインダー項目にも記載されていない文書が{ $count }件見つかりました
 import-scrivener-notice-recovered-unreferenced-text-body = 回収した本文として、専用のフォルダーに移行します。
 import-scrivener-notice-sync-debris-ignored-title = 同期サービスが残した余分なコピー{ $count }件は使用しません
-import-scrivener-notice-sync-debris-ignored-body = Scrivener もそれらは読み込みません。読み込むのはプロジェクト自身のファイルだけです。
+import-scrivener-notice-sync-debris-ignored-body = Scrivener もこのようなコピーは読み込みません。読み込むのはプロジェクト自身のファイルだけです。
 import-scrivener-notice-unrecognised-files-title = Scrivener プロジェクトに属さないファイル{ $count }件は使用しません
 import-scrivener-notice-examples = 例：{ $examples }。
 import-scrivener-notice-symlink-not-followed-title = プロジェクト内のリンク{ $count }件はたどりません
 import-scrivener-notice-unreadable-files-skipped-title = インポートに不要なファイル{ $count }件を読み込めませんでした
 import-scrivener-notice-cloud-placeholders-skipped-title = まだクラウドにあるファイル{ $count }件はスキップします
-import-scrivener-notice-cloud-placeholders-skipped-body = インポートには不要なファイルです。
+import-scrivener-notice-cloud-placeholders-skipped-body = インポートに必要なファイルは、どれもクラウドには残っていません。
 import-scrivener-notice-no-text-found-title = { $count ->
     [1] 文書が1件あり、本文はありません
    *[other] 文書が{ $count }件あり、どれにも本文がありません
@@ -1430,7 +1445,7 @@ import-scrivener-notice-dangling-status-title = 参照{ $count }件が、プロ�
 import-scrivener-notice-dangling-section-type-title = 参照{ $count }件が、プロジェクトで定義されていないセクションタイプを指しています
 import-scrivener-notice-dangling-custom-field-title = 参照{ $count }件が、プロジェクトで定義されていないカスタムメタデータのフィールドを指しています
 import-scrivener-notice-dangling-item-title = 参照{ $count }件が、プロジェクトで定義されていない文書を指しています
-import-scrivener-notice-dangling-references-body = それらは除外します。
+import-scrivener-notice-dangling-references-body = プロジェクトで定義されていないものを指す参照は除外します。
 import-scrivener-notice-snapshots-not-imported-line = スナップショット{ $count }件は Scrivener プロジェクトに残ります。Skribisto はスナップショットを移行しません。
 import-scrivener-notice-writing-history-not-imported-line = Scrivener の日ごとの執筆語数の記録（{ $days }日分）は移行しません。Skribisto は最初の保存から独自に数え始めます。
 import-scrivener-notice-title-placeholder-rejected-hint = プロジェクトの設定にあるタイトルはテンプレートのプレースホルダーのため、代わりにプロジェクト名を提案しています。
@@ -1452,11 +1467,14 @@ import-scrivener-structure-script-mode-draft-line = { $script ->
    *[other] 原稿の文書{ $documents }件のうち{ $script }件がスクリプトモードで書かれています。Skribisto はその言葉を残しますが、脚本のレイアウトは残しません。
 }
 import-scrivener-structure-one-document-manuscript-line = 原稿の文書{ $count }件が、章を見出しとして収めています。
-import-scrivener-structure-title-repeats-number-line = 章や部のタイトル{ $count }件にはタイトル自体にも番号が書かれているため、エクスポートで番号が二重に出力される可能性があります。
-import-scrivener-structure-claim-overruled-line = { $count }項目は、上にある項目がすでにその階層を使っているため、指定された階層より下の階層になります。
+import-scrivener-structure-title-repeats-number-line = 章や部のタイトル{ $count }件には、「第2章」や「第一部」のように番号も含まれているため、エクスポートで番号が二重に出力される可能性があります。
+import-scrivener-structure-claim-overruled-line = { $count ->
+    [1] 1項目は本・部・章のように見えますが、すでに同じ階層にある項目の中にあるため、より下の階層として移行します。
+   *[other] { $count }項目は本・部・章のように見えますが、それぞれすでに同じ階層にある項目の中にあるため、より下の階層として移行します。
+}
 import-scrivener-structure-adopted-by-chapter-line = 章の後に続く文書{ $count }件は、その章の終わりの部分になります。
 import-scrivener-structure-looks-like-manuscript-line = ノートに置かれる最上位のフォルダー{ $count }件は、原稿のような内容です。別の本として原稿に移すこともできます。
-import-scrivener-structure-generic-sheet-title-line = 設定資料集の項目{ $count }件が「主人公」のようなテンプレートのタイトルのままです。本文中の言及を探すときに、このタイトルが検索されます。
+import-scrivener-structure-generic-sheet-title-line = 設定資料集の項目{ $count }件が、「主人公」のようなテンプレートのタイトルのままです。Skribisto は本文中でそのタイトルを探し、出てくる箇所をすべて「本文内」に一覧表示します。その語が本の中でよく使われる場合は、項目の名前を変更してください。
 import-scrivener-structure-placeholder-title-line = 階層の名前だけだったタイトル{ $count }件は空欄にします。バインダーとエクスポートで番号が付きます。
 import-scrivener-structure-untitled-item-line = Scrivener でタイトルのなかった{ $count }項目は、無題のままにします。
 import-scrivener-structure-title-cleaned-line = タイトル{ $count }件に含まれていた改行やタブを削除します。
@@ -1466,7 +1484,7 @@ import-scrivener-structure-empty-folder-plain-line = 空のフォルダー{ $cou
 import-scrivener-structure-book-inside-book-line = 本の中にある本{ $count }件は、部になります。
 import-scrivener-structure-prologue-not-numbered-line = プロローグまたはエピローグ{ $count }件は、章番号から外します。
 import-scrivener-structure-matter-inside-book-line = 原稿の外にある前付けまたは後付けの項目{ $count }件は、パラテクストとして本の中に入れます。含めるように設定するまで、エクスポートからは除外されます。
-import-scrivener-structure-paratext-not-counted-line = 原稿の文書{ $documents }件がパラテクスト（前付けまたは後付け）になります。その{ $words }語は、原稿の分量に含まれなくなります。
+import-scrivener-structure-paratext-not-counted-line = 原稿の文書{ $documents }件がパラテクスト（前付けまたは後付け）になるため、{ $words }語が原稿の分量に含まれなくなります。
 import-scrivener-structure-document-notes-line = 文書{ $count }件のノートは、それぞれの文書の隣のノートになります。
 import-scrivener-structure-draft-content-as-note-line = 原稿フォルダー自体の本文は、原稿の先頭のノートになります。
 import-scrivener-structure-story-bible-folder-line = 登場人物や場所のフォルダー{ $count }件は、設定資料集のタグになります。
@@ -1477,17 +1495,23 @@ import-scrivener-structure-recovered-texts-line = どのバインダー項目に
 import-scrivener-structure-project-notes-line = プロジェクトのノート{ $count }件は、専用のフォルダーに移行します。
 import-scrivener-structure-trash-brought-across-line = { $items ->
     [1] ごみ箱を移行します：1項目。ごみ箱から復元できます。
-   *[other] ごみ箱を移行します：{ $items }項目（うち文章のあるもの{ $writing }項目）。ごみ箱から復元できます。
+   *[other] ごみ箱を移行します：{ $items }項目（{ $writing ->
+        [0] 文章のある項目はなし
+       *[other] うち文章のあるもの{ $writing }項目
+    }）。ごみ箱から復元できます。
 }
 import-scrivener-structure-not-compiled-line = Scrivener でコンパイルから除外されていた{ $count }項目は、エクスポートからも除外します。
 import-scrivener-structure-media-in-draft-line = 原稿内の画像やファイル{ $count }件は、本に収められないためノートになります。
 import-scrivener-structure-left-out-line = 最上位のフォルダー{ $count }件（{ $items }項目）を除外します。
 import-scrivener-structure-trash-left-out-line = { $items ->
     [1] ごみ箱は移行しません：1項目。
-   *[other] ごみ箱は移行しません：{ $items }項目（うち文章のあるもの{ $writing }項目）。
+   *[other] ごみ箱は移行しません：{ $items }項目（{ $writing ->
+        [0] 文章のある項目はなし
+       *[other] うち文章のあるもの{ $writing }項目
+    }）。
 }
 import-scrivener-structure-card-image-left-behind-line = 原稿の項目に付いたインデックスカードの画像{ $count }件は、本に出力されてしまうため移行しません。
-import-scrivener-structure-default-template-not-linked-line = フォルダー{ $count }件に設定された既定の文書テンプレートは、引き継げません。
+import-scrivener-structure-default-template-not-linked-line = フォルダー{ $count }件には、その中の新しい文書に使う既定のテンプレートが設定されていました。Skribisto でテンプレートを持てるのは設定資料集のタグだけなので、この関連付けは引き継ぎません。
 import-scrivener-structure-page-break-not-kept-line = 「前で改ページ」の設定{ $count }件は、Skribisto に設定する場所がないため保持しません。
 import-scrivener-structure-compile-as-is-not-kept-line = 「そのままコンパイル」の設定{ $count }件は、Skribisto に相当する機能がないため保持しません。
 
@@ -1495,8 +1519,11 @@ import-scrivener-structure-compile-as-is-not-kept-line = 「そのままコン�
 import-scrivener-metadata-status-categories-guessed-line = Skribisto が認識できない状態{ $count }件は、一覧内の位置から分類を割り当てます。設定 ▸ プロジェクト ▸ 状態の一覧で確認してください。
 import-scrivener-metadata-dates-unreadable-line = { $count }項目の日付を読み取れませんでした。インポートした日の日付になります。
 import-scrivener-metadata-labels-became-tags-line = ラベルはタグ{ $tags }件になり、{ $rows }項目に付きます。
-import-scrivener-metadata-statuses-became-ladder-line = 状態の一覧は、このプロジェクトの状態{ $rungs }件になり、{ $rows }項目に付きます。
-import-scrivener-metadata-ladder-seeded-line = プロジェクトに状態の一覧がなかったため、Skribisto の既定の状態{ $count }件から始めます。
+import-scrivener-metadata-statuses-became-ladder-line = 状態の一覧は、このプロジェクトの状態の一覧として移行します：状態{ $rungs }件が{ $rows }項目に付いています。
+import-scrivener-metadata-ladder-seeded-line = { $count ->
+    [1] プロジェクトに状態の一覧がなかったため、Skribisto の既定の状態から始めます。
+   *[other] プロジェクトに状態の一覧がなかったため、Skribisto の既定の状態{ $count }件から始めます。
+}
 import-scrivener-metadata-label-renamed-line = Scrivener ではラベルのフィールドが「{ $title }」という名前でした。その名前は各タグの詳細に記載します。
 import-scrivener-metadata-status-renamed-line = Scrivener では状態のフィールドが「{ $title }」という名前でした。その名前は各状態の詳細に記載します。
 import-scrivener-metadata-none-label-collapsed-line = Scrivener 自身の空のラベルと同じ名前で並んでいたラベル「{ $name }」は、{ $count }項目でラベルなしとして扱います。
@@ -1534,11 +1561,11 @@ import-scrivener-metadata-fields-became-tags-line = リストまたはチェッ�
 import-scrivener-metadata-collections-became-tags-line = コレクション{ $tags }件がタグになり、{ $rows }項目に付きます。
 import-scrivener-metadata-collection-order-lost-line = タグには順序がないため、コレクション{ $count }件内の文書の順序は保持しません。
 import-scrivener-metadata-bookmarks-became-links-line = ブックマーク{ $count }件は、ノート同士、またはシーンと設定資料集の項目の間のリンクになります。「リンク」と「キャスト」を参照してください。
-import-scrivener-metadata-goals-kept-line = 文書のターゲット{ $count }件は、目標になります。
+import-scrivener-metadata-goals-kept-line = Scrivener で文書{ $count }件に設定されていたターゲットは、Skribisto ではその文書の目標になります。
 import-scrivener-metadata-draft-target-kept-words-line = { $value }語の草稿のターゲットは、本の目標になります。
 import-scrivener-metadata-draft-target-kept-characters-line = { $value }文字の草稿のターゲットは、本の目標になります。
-import-scrivener-metadata-pace-planned-line = 締め切り（{ $day }）は本の執筆ペースになります。執筆ペースは、インポートした日から、Scrivener で選んだ各執筆日の語数を計画します。
-import-scrivener-metadata-pace-planned-day-off-line = 締め切り（{ $day }）は本の執筆ペースになります。執筆ペースは、インポートした日から、Scrivener で選んだ各執筆日の語数を計画します。Scrivener と同じく、締め切り当日は休暇として扱います。
+import-scrivener-metadata-pace-planned-line = 締め切り（{ $day }）をもとに、本の執筆ペースを設定します。執筆ペースは、インポートした日から、Scrivener で選んだ各執筆日の語数を計画します。
+import-scrivener-metadata-pace-planned-day-off-line = 締め切り（{ $day }）をもとに、本の執筆ペースを設定します。執筆ペースは、インポートした日から、Scrivener で選んだ各執筆日の語数を計画します。Scrivener と同じく、締め切り当日は休暇として扱います。
 import-scrivener-metadata-dictionary-words-line = 自動補完の単語{ $count }件をプロジェクトの個人辞書に追加し、つづり間違いとして指摘されないようにします。
 import-scrivener-metadata-listed-project-line = プロジェクトの詳細{ $count }件は、「{ $folder }」フォルダーのノート「{ $note }」に記載します。
 import-scrivener-metadata-listed-project-bookmarks-line = プロジェクトのブックマーク{ $count }件は、「{ $folder }」フォルダーのノート「{ $note }」に記載します。
@@ -1562,13 +1589,13 @@ import-scrivener-metadata-targets-unreadable-line = ターゲット{ $count }件
 import-scrivener-metadata-draft-target-in-pages-line = { $value }ページの草稿のターゲットは、目標になりません。Skribisto は語数か文字数を数えます。「{ $folder }」フォルダーのノート「{ $note }」に記載します。
 import-scrivener-metadata-draft-target-no-book-words-line = { $value }語の草稿のターゲットは、原稿が複数の本になるか本が一冊もないため、目標になりません。「{ $folder }」フォルダーのノート「{ $note }」に記載します。
 import-scrivener-metadata-draft-target-no-book-characters-line = { $value }文字の草稿のターゲットは、原稿が複数の本になるか本が一冊もないため、目標になりません。「{ $folder }」フォルダーのノート「{ $note }」に記載します。
-import-scrivener-metadata-deadline-passed-line = 締め切り（{ $day }）は過ぎているため、執筆ペースは作成しません。「{ $folder }」フォルダーのノート「{ $note }」に記載します。
-import-scrivener-metadata-deadline-no-writing-day-line = インポートした日から締め切り（{ $day }）までに執筆日が残っていないため、執筆ペースは作成しません。「{ $folder }」フォルダーのノート「{ $note }」に記載します。
-import-scrivener-metadata-deadline-template-line = 締め切り（{ $day }）はテンプレートに保存されていたものなので、執筆ペースは作成しません。「{ $folder }」フォルダーのノート「{ $note }」に記載します。
-import-scrivener-metadata-deadline-no-word-goal-line = 草稿に計画の基準となる語数のターゲットがないため、締め切り（{ $day }）から執筆ペースは作成しません。「{ $folder }」フォルダーのノート「{ $note }」に記載します。
-import-scrivener-metadata-deadline-character-goal-line = 草稿のターゲットは文字数を数え、執筆ペースは語数を数えるため、締め切り（{ $day }）から執筆ペースは作成しません。「{ $folder }」フォルダーのノート「{ $note }」に記載します。
-import-scrivener-metadata-deadline-no-book-line = 原稿が複数の本になるか本が一冊もないため、締め切り（{ $day }）から執筆ペースは作成しません。「{ $folder }」フォルダーのノート「{ $note }」に記載します。
-import-scrivener-metadata-deadline-unreadable-line = 締め切りを読み取れないため、執筆ペースは作成しません。書かれたままの形で、「{ $folder }」フォルダーのノート「{ $note }」に記載します。
+import-scrivener-metadata-deadline-passed-line = 締め切り（{ $day }）は過ぎているため、本の執筆ペースは設定しません。「{ $folder }」フォルダーのノート「{ $note }」に記載します。
+import-scrivener-metadata-deadline-no-writing-day-line = インポートした日から締め切り（{ $day }）までに執筆日が残っていないため、本の執筆ペースは設定しません。「{ $folder }」フォルダーのノート「{ $note }」に記載します。
+import-scrivener-metadata-deadline-template-line = 締め切り（{ $day }）はテンプレートに保存されていたものなので、本の執筆ペースは設定しません。「{ $folder }」フォルダーのノート「{ $note }」に記載します。
+import-scrivener-metadata-deadline-no-word-goal-line = 草稿に計画の基準となる語数のターゲットがないため、締め切り（{ $day }）では本の執筆ペースを設定しません。「{ $folder }」フォルダーのノート「{ $note }」に記載します。
+import-scrivener-metadata-deadline-character-goal-line = 草稿のターゲットは文字数を数え、執筆ペースは語数を数えるため、締め切り（{ $day }）では本の執筆ペースを設定しません。「{ $folder }」フォルダーのノート「{ $note }」に記載します。
+import-scrivener-metadata-deadline-no-book-line = 原稿が複数の本になるか本が一冊もないため、締め切り（{ $day }）ではどの本の執筆ペースも設定しません。「{ $folder }」フォルダーのノート「{ $note }」に記載します。
+import-scrivener-metadata-deadline-unreadable-line = 締め切りを読み取れないため、本の執筆ペースは設定しません。書かれたままの形で、「{ $folder }」フォルダーのノート「{ $note }」に記載します。
 import-scrivener-metadata-session-target-words-line = { $value }語のセッションのターゲットは、インポートしません。Skribisto では、執筆セッションの目標はすべてのプロジェクトに共通する一つの設定です。「{ $folder }」フォルダーのノート「{ $note }」に記載します。
 import-scrivener-metadata-session-target-characters-line = { $value }文字のセッションのターゲットは、インポートしません。Skribisto では、執筆セッションの目標はすべてのプロジェクトに共通する、語数による一つの設定です。「{ $folder }」フォルダーのノート「{ $note }」に記載します。
 import-scrivener-metadata-session-target-pages-line = { $value }ページのセッションのターゲットは、インポートしません。Skribisto では、執筆セッションの目標はすべてのプロジェクトに共通する、語数による一つの設定です。「{ $folder }」フォルダーのノート「{ $note }」に記載します。
@@ -1587,7 +1614,10 @@ import-scrivener-prose-style-unresolved-line = スタイルのマーカー{ $cou
 import-scrivener-prose-styles-lost-in-export-line = { $count }段落は、Scrivener 3 がプロジェクトを古い形式で書き出した際にスタイルを失った見出しである可能性があり、通常の段落として移行します。確認するか、書き出し元のプロジェクトをインポートしてください。
 import-scrivener-prose-comment-anchor-without-entry-line = コメントまたは脚注{ $count }件は、Scrivener の時点で内容が失われていました。それらが付いていた語句は残しますが、コメントや脚注自体は残りません。
 import-scrivener-prose-comment-entry-without-anchor-line = コメント{ $count }件は、本文中に位置が残っていなかったため、最初の段落に付けます。
-import-scrivener-prose-footnote-entry-without-anchor-line = リンク脚注{ $count }件は、本文中に位置が残っていなかったため、本文の末尾で参照します。
+import-scrivener-prose-footnote-entry-without-anchor-line = { $count ->
+    [1] リンク脚注1件は、その本文中に位置が残っていなかったため、その本文の末尾で参照します。
+   *[other] リンク脚注{ $count }件は、本文中に位置が残っていなかったため、それぞれが属する本文の末尾で参照します。
+}
 import-scrivener-prose-range-comment-reading-line = 古い Scrivener のコメント{ $count }件は、位置を別の方法で解釈して配置しました。正しい語句に付いているか確認してください。
 import-scrivener-prose-range-comment-reading-markers-counted-line = 古い Scrivener のコメント{ $count }件は、インライン注記のマーカーを数えて配置しました。正しい語句に付いているか確認してください。
 import-scrivener-prose-range-comment-reading-pictures-not-counted-line = 古い Scrivener のコメント{ $count }件は、画像を数えずに配置しました。正しい語句に付いているか確認してください。
@@ -1626,7 +1656,10 @@ import-scrivener-prose-left-out-list-label-picture-line = 箇条書きの記号�
 import-scrivener-prose-left-out-line = どの本文にも属さないファイルの断片{ $count }件は、除外します。
 import-scrivener-prose-undecodable-characters-line = { $count }文字をデコードできず、元の位置に置換記号（�）が表示されます。
 import-scrivener-prose-inline-notes-merged-line = Scrivener が書式の変わり目で分割していたインライン注記{ $count }件を、一つにつなぎ直します。
-import-scrivener-prose-inline-notes-joined-across-paragraphs-line = 段落ごとに書かれていたインライン注記{ $count }件を、複数の段落からなる一つの注記にまとめます。
+import-scrivener-prose-inline-notes-joined-across-paragraphs-line = { $count ->
+    [1] 段落ごとに書かれていたインライン注記1件を、一つの注記にまとめます。
+   *[other] 段落ごとに書かれていたインライン注記{ $count }件を、それぞれ複数の段落からなる注記にまとめます。
+}
 import-scrivener-prose-blank-notes-dropped-line = 空のインライン注記{ $count }件は、除外します。
 import-scrivener-prose-annotations-became-comments-line = インライン注釈{ $count }件をコメントにしました。
 import-scrivener-prose-annotation-only-document-kept-line = 注釈だけを含んでいた文書{ $count }件は、その文章を本文として残します。
@@ -1663,10 +1696,10 @@ import-scrivener-prose-media-file-not-carried-line = Skribisto で開けない�
 
 ## When the import fails
 import-scrivener-error-refused = { $refusal }何も書き込んでいません。
-import-scrivener-error-question = プロジェクトに、確認の段階で答えていない質問が生じました。もう一度確認してからインポートしてください。何も書き込んでいません。
-import-scrivener-error-not-accepted = プロジェクトに、まだ承認していない質問があります。もう一度確認してからインポートしてください。何も書き込んでいません。
-import-scrivener-error-changed = 確認した後にプロジェクトが変更されました。もう一度確認してからインポートしてください。何も書き込んでいません。
-import-scrivener-error-choice = 確認の段階で選んだ構成が、このプロジェクトに合わなくなりました。もう一度確認してからインポートしてください。何も書き込んでいません。
+import-scrivener-error-question = プロジェクトに、確認の段階で答えていない質問が生じました。「インポートを再確認」を選んでから、インポートしてください。何も書き込んでいません。
+import-scrivener-error-not-accepted = このプロジェクトをインポートするには、「プロジェクト」の段階でチェックボックスにチェックを入れる必要がありますが、チェックが入っていませんでした。「インポートを再確認」を選び、チェックを入れてから、インポートしてください。何も書き込んでいません。
+import-scrivener-error-changed = 確認した後にプロジェクトが変更されました。「インポートを再確認」を選んでから、インポートしてください。何も書き込んでいません。
+import-scrivener-error-choice = 確認の段階で選んだ構成が、このプロジェクトに合わなくなりました。「インポートを再確認」を選んでから、インポートしてください。何も書き込んでいません。
 
 export-title = エクスポート
 export-close = 閉じる
@@ -2500,7 +2533,7 @@ import-diagnostic-image-not-ingested-outside = 「{ $path }」の画像「{ $det
 import-diagnostic-image-not-ingested-missing = 「{ $path }」の画像「{ $detail }」が見つからないため、除外しました。
 import-diagnostic-image-not-ingested-too-large = 「{ $path }」の画像「{ $detail }」はプロジェクトに入れられる大きさを超えているため、除外しました。
 import-diagnostic-image-not-ingested-unreadable = 「{ $path }」の画像「{ $detail }」を画像として読み込めなかったため、除外しました。
-import-diagnostic-image-not-ingested-heading = 「{ $path }」の画像「{ $detail }」は見出しの中にあります。見出しはタイトルになり、タイトルには画像を入れられないため、除外しました。
+import-diagnostic-image-not-ingested-heading = 「{ $path }」の画像「{ $detail }」は見出しの中にあります。見出しはそれぞれバインダーの項目のタイトルになり、タイトルには画像を入れられないため、この画像は除外しました。
 import-diagnostic-image-not-ingested-note = 「{ $path }」の画像「{ $detail }」は脚注、文末脚注、またはコメントの中にあります。これらは文字だけを保持して画像は保持しないため、除外しました。
 import-diagnostic-image-not-ingested-html = 「{ $path }」の画像「{ $detail }」は HTML で書かれています。インポートでは HTML を除外するため、この画像も除外しました。取り込むには Markdown の画像として書いてください。
 import-diagnostic-image-not-ingested-document-full = 「{ $path }」の画像「{ $detail }」は除外しました。この文書の画像の合計が、一回のインポートで取り込める量を超えています。文書を分けてインポートするか、残りを手動で挿入してください。

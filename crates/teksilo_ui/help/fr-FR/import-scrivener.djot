@@ -121,8 +121,8 @@ dossier à côté de lui.
   document où vous ne l’avez pas décochée.
 - Les objectifs des documents de votre manuscrit, en objectifs, et l’objectif du manuscrit, en
   objectif du livre. Une échéance encore à venir, avec un objectif du manuscrit en mots,
-  devient le *Rythme* du livre, qui garde les jours d’écriture choisis dans Scrivener.
-  L’échéance enregistrée dans un modèle de projet ne donne pas de *Rythme*.
+  met en place le *Rythme* du livre, qui garde les jours d’écriture choisis dans Scrivener.
+  L’échéance enregistrée dans un modèle de projet ne met pas en place de *Rythme*.
 - Un signet d’une note vers une autre, ou d’une scène ou d’un dossier de notes vers une fiche
   de la bible narrative, en lien : vous le trouvez sous *Liens* ou *Présence*.
 - Les mots seuls de votre liste d’autocomplétion, dans le dictionnaire personnel du projet,
@@ -144,7 +144,7 @@ que si elle a quelque chose à énumérer :
   l’objectif de session, marqué comme calculé quand Scrivener l’a déduit de votre échéance et
   de vos jours d’écriture, les jours d’écriture quand aucun *Rythme* ne les garde ou que
   Skribisto n’a pas su les lire, un objectif du manuscrit qui n’est pas devenu un objectif, et
-  l’échéance, même quand elle est devenue un *Rythme*.
+  l’échéance, même quand elle a mis en place le *Rythme* du livre.
 - *Signets du projet*.
 - *Remplacements à la compilation*. Skribisto ne les fait pas quand il exporte.
 - *Entrées d’autocomplétion* de plusieurs mots.

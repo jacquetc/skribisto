@@ -513,7 +513,7 @@ fn the_strip_lists_one_line_per_kind_in_group_order() {
             lines,
             [
                 "2 folders have text of their own, which moves to a first document inside them.",
-                "The Trash is left behind: 2 items, 0 of them with writing.",
+                "The Trash is left behind: 2 items, none of them with writing.",
             ]
         );
     });
@@ -1545,7 +1545,7 @@ fn each_import_keeps_the_record_of_its_own_wizard() {
     }
 }
 
-/// **Review again** after an import found the project changed reads it again with what
+/// **Review the import again** after an import found the project changed reads it again with what
 /// the writer answered, accepted and chose, and keeps the Save page as they left it.
 #[test]
 fn review_again_keeps_what_the_writer_chose() {

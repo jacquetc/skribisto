@@ -420,7 +420,7 @@ fn the_titles_the_import_makes_up_are_the_callers_words() {
         .items
         .iter()
         .map(|i| i.item.title.as_str())
-        .find(|t| t.contains("(notes)") || t.contains("(content)") || t.contains("Imported"));
+        .find(|t| t.contains("(notes)") || t.contains("(text)") || t.contains("Imported"));
     assert_eq!(english, None);
 }
 

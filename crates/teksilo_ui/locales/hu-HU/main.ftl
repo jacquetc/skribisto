@@ -854,7 +854,7 @@ import-plume-source-not-file = Ez az útvonal nem fájl
 import-plume-manuscript-binder = Kézirat
 import-plume-story-bible-binder = Történetbiblia
 import-plume-notes-of = { $name } (jegyzetek)
-import-plume-content-of = { $name } (tartalom)
+import-plume-content-of = { $name } (szöveg)
 import-plume-progress-title = Plume-projekt importálása…
 import-plume-done = Importálva: { $imported ->
     [one] { $imported } elem.
@@ -958,7 +958,10 @@ project-import-failed-disk-full = A(z) „{ $folder }” mappában nincs elég s
 project-import-failed-source-missing = A(z) „{ $file }” már nem található. Semmi sem lett kiírva.
 project-import-failed-unreadable = A Skribisto nem tudta beolvasni ezt: „{ $file }” ({ $reason }). Semmi sem lett kiírva.
 project-import-failed-archive-damaged = A(z) „{ $file }” tömörített fájl, amelyet nem sikerült beolvasni, valószínűleg azért, mert sérült ({ $reason }). Semmi sem lett kiírva.
-project-import-failed-archive-entries = A projekt nem lett importálva: az archívuma { $entries } fájlt sorol fel, holott egy projekt legfeljebb { $limit } fájlt tartalmazhat; ennyi fájl csak a memória kimerítésére készített archívumokban fordul elő. Semmi sem lett kiírva.
+project-import-failed-archive-entries = A projekt nem lett importálva: az archívuma { $entries ->
+    [one] { $entries } fájlt
+   *[other] { $entries } fájlt
+} sorol fel, holott egy projekt legfeljebb { $limit } fájlt tartalmazhat; ennyi fájl csak a memória kimerítésére készített archívumokban fordul elő. Semmi sem lett kiírva.
 project-import-failed-archive-member = A projekt nem lett importálva: a(z) „{ $part }” része kibontva több mint { $limit } MB, ami csak a memória kimerítésére készített fájlokra jellemző. Semmi sem lett kiírva.
 project-import-failed-archive-size = A projekt nem lett importálva: kibontva több mint { $limit } MB, ami csak a memória kimerítésére készített fájlokra jellemző. Semmi sem lett kiírva.
 project-import-failed-nested = A projekt nem lett importálva: a(z) „{ $part }” része több mint { $limit } szint mélységig van egymásba ágyazva, és a beolvasása összeomlaszthatná a Skribistót. Semmi sem lett kiírva.
@@ -970,11 +973,11 @@ project-import-failed-malformed = A projekt nem lett importálva: a(z) „{ $par
 project-import-failed-scrivener-refused = A Skribisto nem tudja importálni ezt a Scrivener-projektet. Semmi sem lett kiírva.
 # The Scrivener project asks something its review did not answer: a project or a binder
 # file appeared in it since.
-project-import-failed-scrivener-question = A Scrivener-projekt olyan kérdést vet fel, amelyre az ellenőrzéskor nem született válasz. Ellenőrizze újra, majd importálja. Semmi sem lett kiírva.
+project-import-failed-scrivener-question = A Scrivener-projekt olyan kérdést vet fel, amelyre az ellenőrzéskor nem született válasz. Indítsa újra az importálását, és válaszoljon a kérdésre, majd importálja. Semmi sem lett kiírva.
 # The Scrivener project raises a question the writer has to accept before it imports.
-project-import-failed-scrivener-not-accepted = A Scrivener-projekt olyan kérdést vet fel, amelyet még nem fogadott el. Ellenőrizze újra, majd importálja. Semmi sem lett kiírva.
+project-import-failed-scrivener-not-accepted = Az importálás előtt a Scrivener-projekt azt kéri, hogy jelöljön be egy jelölőnégyzetet a Projekt lépésben, de az nem lett bejelölve. Indítsa újra az importálását, jelölje be a négyzetet, majd importálja. Semmi sem lett kiírva.
 # The Scrivener project changed after the writer reviewed it.
-project-import-failed-scrivener-changed = A Scrivener-projekt megváltozott, miután ellenőrizte. Ellenőrizze újra, majd importálja. Semmi sem lett kiírva.
+project-import-failed-scrivener-changed = A Scrivener-projekt megváltozott, miután ellenőrizte. Indítsa újra az importálását, és ellenőrizze ismét, majd importálja. Semmi sem lett kiírva.
 # An error nothing above accounts for; $detail is its technical description.
 project-import-failed-internal = Az importálás olyan hibán akadt el, amelyre a Skribisto nem számított: { $detail }
 import-target-open-title = Ez a projekt meg van nyitva
@@ -1018,9 +1021,9 @@ import-scrivener-empty-hint = Válasszon egy projektet, és megnézheti, mit tal
 import-scrivener-reading = A projekt beolvasása…
 import-scrivener-stop-reading = Olvasás leállítása
 import-scrivener-read-failed = A projektet nem sikerült beolvasni
-import-scrivener-read-failed-body = Hiba történt a beolvasása közben. Ellenőrizze újra, vagy nézze meg a részleteket.
+import-scrivener-read-failed-body = Hiba történt a beolvasása közben. Válassza a „Projekt újraolvasása” lehetőséget, ha újra szeretné próbálni, vagy a „Részletek” lehetőséget, ha látni szeretné, mi történt.
 import-scrivener-details = Részletek
-import-scrivener-check-again = Újraellenőrzés
+import-scrivener-check-again = Projekt újraolvasása
 # A refusal this version does not know how to word.
 import-scrivener-refusal-unknown-title = Ez a projekt nem importálható
 import-scrivener-refusal-unknown-body = A Skribisto nem tudja, hogyan vihetné át. Az okot a részletek tartalmazzák.
@@ -1051,7 +1054,7 @@ import-scrivener-choice-count = { $count ->
    *[other] { $count } elem
 }
 import-scrivener-choice-count-example = { $count ->
-    [one] 1 elem: „{ $example }”
+    [1] 1 elem: „{ $example }”
    *[other] { $count } elem, például „{ $example }”
 }
 import-scrivener-rung-part = Részek
@@ -1063,7 +1066,7 @@ import-scrivener-choice-books = Könyvek a kéziratban
 import-scrivener-books-one = Egyetlen könyv
 import-scrivener-books-several = Mappánként egy könyv
 import-scrivener-choice-split = { $count ->
-    [one] „{ $title }” felosztása a címsoránál
+    [1] „{ $title }” felosztása a címsoránál
    *[other] „{ $title }” felosztása a(z) { $count } címsoránál
 }
 import-scrivener-root-items = { $count ->
@@ -1071,8 +1074,8 @@ import-scrivener-root-items = { $count ->
    *[other] { $count } elem
 }
 import-scrivener-root-items-manuscript = { $count ->
-    [one] 1 elem, kéziratnak tűnik
-   *[other] { $count } elem, kéziratnak tűnik
+    [one] 1 elem. Ez a mappa kéziratnak tűnik.
+   *[other] { $count } elem. Ez a mappa kéziratnak tűnik.
 }
 import-scrivener-dest-notes = Jegyzetek
 import-scrivener-dest-story-bible = Történetbiblia
@@ -1134,7 +1137,7 @@ import-scrivener-done-check = { $items ->
     [one] 1 dolgot érdemes megnézni.
    *[other] { $findings } dolgot érdemes megnézni.
 }
-import-scrivener-review-again = Újbóli ellenőrzés
+import-scrivener-review-again = Importálás újraellenőrzése
 
 ## The import's report (the dialog See report opens)
 import-scrivener-see-report = Jelentés megtekintése
@@ -1203,10 +1206,10 @@ import-scrivener-report-research-copied-except = { $count ->
    *[other] A kutatási fájlok, amelyeket a Skribisto nem tud megnyitni, az új projekt mellé, a(z) „{ $folder }” mappába lettek másolva, { $count } kivételével, amelyek a Scrivener-projektjében maradnak. A jegyzeteik megmondják, hol vannak.
 }
 import-scrivener-report-research-none-copied = { $count ->
-    [one] Kérte a kutatási fájlok átmásolását, de 1 fájlt nem sikerült átmásolni. A Scrivener-projektjében marad, és a jegyzete megmondja, hol van.
-   *[other] Kérte a kutatási fájlok átmásolását, de { $count } fájlt nem sikerült átmásolni. A Scrivener-projektjében maradnak, és a jegyzeteik megmondják, hol vannak.
+    [1] Kérte a kutatási fájlok átmásolását, de az egyetlen ilyen fájlt nem sikerült átmásolni. A Scrivener-projektjében marad, és a jegyzete megmondja, hol van.
+   *[other] Kérte a kutatási fájlok átmásolását, de a(z) { $count } fájl közül egyet sem sikerült átmásolni. A Scrivener-projektjében maradnak, és a jegyzeteik megmondják, hol vannak.
 }
-import-scrivener-report-chose-project = A kiválasztott helyen talált projektek közül a(z) „{ $project }” importálását választotta.
+import-scrivener-report-chose-project = A kiválasztott mappában vagy archívumban talált több projekt közül a(z) „{ $project }” importálását választotta.
 import-scrivener-report-chose-manifest = A(z) „{ $file }” iratrendezőfájlt választotta.
 import-scrivener-report-chose-enclosing = A(z) „{ $project }” projekten belül választott ki valamit, ezért a teljes projekt importálva lett.
 import-scrivener-report-chose-upgraded = A(z) „{ $current }” projektet importálta, amelyben tovább írt, nem pedig azt a példányt, amelyet a Scrivener egy frissítés előtt megőrzött.
@@ -1221,7 +1224,7 @@ import-scrivener-report-author-from-project = A Skribisto a projekt beállítás
 import-scrivener-report-language-not-stated = A projekt nem adta meg a nyelvét, ezért a Skribisto a saját kezelőfelületének nyelvét javasolta. A nyelvtől függ, hogyan számolja a szavakat, és milyen idézőjeleket használ.
 import-scrivener-report-language-from-script = A Skribisto a kézirat írásrendszere alapján javasolta a nyelvet ({ $tag }).
 # A proposal of the Save page the writer replaced with their own.
-import-scrivener-report-you-changed-it = { $hint } Ön ezt módosította.
+import-scrivener-report-you-changed-it = { $hint } Ön lecserélte ezt a javaslatot.
 import-scrivener-report-content-salvaged-text = A(z) „{ $item }” szövege hiányzott a projektből. A szöveg a Scrivener keresési indexéből származik, egyszerű szövegként, és talán egy régebbi változatból: ellenőrizze.
 import-scrivener-report-content-salvaged-notes = A(z) „{ $item }” jegyzetei hiányoztak a projektből. A szövegük a Scrivener keresési indexéből származik, egyszerű szövegként, és talán egy régebbi változatból: ellenőrizze.
 import-scrivener-report-content-salvaged-synopsis = A(z) „{ $item }” szinopszisa hiányzott a projektből. A szövege a Scrivener keresési indexéből származik, egyszerű szövegként, és talán egy régebbi változatból: ellenőrizze.
@@ -1275,7 +1278,10 @@ import-scrivener-report-copy-failed = A jelentést nem sikerült vágólapra má
 import-scrivener-report-close = Bezárás
 import-scrivener-report-none-title = Nincs importálási jelentés
 import-scrivener-report-none = A Skribisto indítása óta egyetlen Scrivener-importálás sem fejeződött be. A Skribisto a legutóbbi importálások jelentéseit a bezárásáig megőrzi.
-import-scrivener-report-gone = Ennek az importálásnak a jelentése már nincs megőrizve. A Skribisto az utolsó { $count } importálás jelentését őrzi meg a bezárásáig.
+import-scrivener-report-gone = { $count ->
+    [one] Ennek az importálásnak a jelentése már nincs megőrizve. A Skribisto a legutóbbi importálás jelentését őrzi meg a bezárásáig.
+   *[other] Ennek az importálásnak a jelentése már nincs megőrizve. A Skribisto az utolsó { $count } importálás jelentését őrzi meg a bezárásáig.
+}
 
 ## Words the import writes into the new project, in the language Skribisto shows itself in
 import-scrivener-manuscript-binder = Kézirat
@@ -1358,7 +1364,7 @@ import-scrivener-label-value = { $label }: { $value }
 import-scrivener-replacement-regex = reguláris kifejezés
 import-scrivener-replacement-off = kikapcsolva
 # Said of a note whose own text lists its custom metadata or bookmarks.
-import-scrivener-in-own-note = A saját jegyzetében felsorolva.
+import-scrivener-in-own-note = Felsorolva az ebből a dokumentumból lett jegyzetben.
 
 
 ## Import a Scrivener project: what the import says about the project, in the writer's words.
@@ -1380,7 +1386,7 @@ import-scrivener-refusal-search-too-wide-title = Ebben a mappában túl sok mind
 import-scrivener-refusal-search-too-wide-body = Több mint { $limit } mappát kellene átnézni benne. Magát a Scrivener-projektet válassza ki.
 import-scrivener-refusal-scrivener-one-for-mac-title = Ezt a projektet a Scrivener 1 Mac-változata készítette
 import-scrivener-refusal-scrivener-one-for-mac-body = A Skribisto a Scrivener 2-es és későbbi változataival készült projekteket olvassa be. Nyissa meg egyszer a Scrivener 2-ben vagy 3-ban, hogy frissüljön, vagy állítson össze belőle Word-dokumentumot, és azt importálja.
-import-scrivener-refusal-ios-stub-without-mobile-data-title = Ez csak egy helyőrző a Scrivener iPhone- vagy iPad-változatából
+import-scrivener-refusal-ios-stub-without-mobile-data-title = Ez csak egy helyettesítő fájl a Scrivener iPhone- vagy iPad-változatából
 import-scrivener-refusal-ios-stub-without-mobile-data-body = Maga a projekt nincs itt. Szinkronizálja iPhone-járól vagy iPadjéről, vagy ossza meg onnan .zip fájlként, és azt importálja.
 import-scrivener-refusal-newer-title = Ezt a projektet a Scrivener egy újabb változata készítette
 import-scrivener-refusal-unknown-format-version-body = A formátumát ({ $version }) a Skribisto nem ismeri. Nézze meg, van-e frissítés a Skribistóhoz. Addig is állítson össze belőle Word-dokumentumot a Scrivenerben, és azt importálja.
@@ -1390,7 +1396,7 @@ import-scrivener-refusal-version-stamp-unreadable-body = A Files/version.txt fá
 import-scrivener-refusal-damaged-manifest-title = Az iratrendezőfájl nem olvasható
 import-scrivener-refusal-damaged-manifest-body = A(z) „{ $manifest }” sérült. { $spare_copies ->
     [0] Nyissa meg a projektet a Scrivenerben, amely ki tudja javítani, majd importálja újra.
-    [one] A Scrivener a projekten belül tart róla egy tartalék példányt, amelyet a Skribisto nem olvas. Nyissa meg a projektet a Scrivenerben, amely ki tudja javítani, majd importálja újra.
+    [1] A Scrivener a projekten belül tart róla egy tartalék példányt, amelyet a Skribisto nem olvas. Nyissa meg a projektet a Scrivenerben, amely ki tudja javítani, majd importálja újra.
    *[other] A Scrivener a projekten belül { $spare_copies } tartalék példányt tart róla, amelyeket a Skribisto nem olvas. Nyissa meg a projektet a Scrivenerben, amely ki tudja javítani, majd importálja újra.
 }
 # The empty file Scrivener writes for a new project before its first save: not damage.
@@ -1400,7 +1406,7 @@ import-scrivener-refusal-manifest-too-large-body = A(z) „{ $manifest }” mér
 import-scrivener-refusal-no-item-identifiers-title = Az iratrendező egyetlen olyan dokumentumot sem sorol fel, amelyet a Skribisto megtalálna
 import-scrivener-refusal-no-item-identifiers-body = Egyik eleme sem rendelkezik azonosítóval, így a fájljaik nem találhatók. Nyissa meg egyszer a projektet a Scrivenerben, majd importálja újra.
 import-scrivener-refusal-incomplete-copy-title = A dokumentumok hiányoznak ebből a példányból
-import-scrivener-refusal-incomplete-copy-body = A Files mappa itt van, de a benne lévő dokumentumok nincsenek. Lehet, hogy egy szinkronizáló szolgáltatás még nem fejezte be a projekt másolását. Várja meg, amíg befejezi, vagy másolja át újra a teljes .scriv mappát, majd ellenőrizze újra.
+import-scrivener-refusal-incomplete-copy-body = A Files mappa itt van, de a benne lévő dokumentumok nincsenek. Lehet, hogy egy szinkronizáló szolgáltatás még nem fejezte be a projekt másolását. Várja meg, amíg befejezi, vagy másolja át újra a teljes .scriv mappát, majd olvassa újra a projektet.
 import-scrivener-refusal-archive-title = Ez az archívum nem nyitható meg
 import-scrivener-refusal-archive-unreadable-body = A(z) „{ $file }” nem olvasható ({ $reason }). Lehet, hogy sérült. Bontsa ki saját maga, majd válassza ki a benne lévő .scriv mappát.
 import-scrivener-refusal-archive-unsafe-name-title = Ez az archívum nem nyitható meg biztonságosan
@@ -1432,16 +1438,19 @@ import-scrivener-refusal-cloud-placeholders-title = { $count ->
     [one] A projekt 1 fájlja még a felhőben van
    *[other] A projekt { $count } fájlja még a felhőben van
 }
-import-scrivener-refusal-cloud-placeholders-body = Nincsenek letöltve erre a számítógépre, például: { $examples }. A szinkronizáló alkalmazásában tegye a projektet offline is elérhetővé, majd ellenőrizze újra.
+import-scrivener-refusal-cloud-placeholders-body = { $count ->
+    [1] Nincs letöltve erre a számítógépre: { $examples }. A szinkronizáló alkalmazásában tegye a projektet offline is elérhetővé, majd olvassa újra a projektet.
+   *[other] Nincsenek letöltve erre a számítógépre, például: { $examples }. A szinkronizáló alkalmazásában tegye a projektet offline is elérhetővé, majd olvassa újra a projektet.
+}
 import-scrivener-refusal-unreadable-members-title = { $count ->
     [one] A projekt 1 fájlja nem olvasható
    *[other] A projekt { $count } fájlja nem olvasható
 }
-import-scrivener-refusal-unreadable-members-body = Például: { $examples }. Ellenőrizze, hogy jogosult-e a teljes projekt olvasására, és hogy a lemez ép-e, majd ellenőrizze újra.
+import-scrivener-refusal-unreadable-members-body = Például: { $examples }. Ellenőrizze, hogy jogosult-e a teljes projekt olvasására, és hogy a lemez ép-e, majd olvassa újra a projektet.
 import-scrivener-refusal-needed-member-is-link-title = Ez a projekt a saját mappáján kívülre mutat
 import-scrivener-refusal-needed-member-is-link-body = A(z) „{ $member }” egy hivatkozás a számítógép egy másik helyére, a Skribisto pedig nem követi a hivatkozásokat. Másolja le a projektet úgy, hogy minden fájl benne legyen, majd próbálja újra.
 import-scrivener-refusal-project-changed-during-read-title = A projekt megváltozott beolvasás közben
-import-scrivener-refusal-project-changed-during-read-body = A Scrivener vagy egy szinkronizáló szolgáltatás még ír bele. Zárja be a Scrivenerben, várja meg, amíg a szinkronizálás befejeződik, majd ellenőrizze újra.
+import-scrivener-refusal-project-changed-during-read-body = A Scrivener vagy egy szinkronizáló szolgáltatás még ír bele. Zárja be a Scrivenerben, várja meg, amíg a szinkronizálás befejeződik, majd olvassa újra a projektet.
 import-scrivener-refusal-too-many-members-title = Ebben a projektben túl sok fájl van
 import-scrivener-refusal-too-many-members-body = Több mint { $limit } fájlt tartalmaz, többet bármely valódi projektnél. Lehet, hogy nem Scrivener-projekt, vagy sérült.
 import-scrivener-refusal-too-large-title = Ez a projekt túl nagy
@@ -1450,9 +1459,15 @@ import-scrivener-refusal-structure-unmappable-title = A Skribisto nem tudja lek�
 import-scrivener-refusal-structure-unmappable-body = Az iratrendezőt nem lehetett úgy átvinni, hogy semmi se vesszen el, és semmi se kerüljön rossz helyre. Ez a Skribisto hibája, nem a projekté. Jelentse be a hibát a „Részletek” alatt látható adatokkal.
 
 ## When there is a choice to make
-import-scrivener-roots-title = Itt { $count } projekt található. Melyiket importálja?
+import-scrivener-roots-title = { $count ->
+    [one] Itt { $count } projekt található. Melyiket importálja?
+   *[other] Itt { $count } projekt található. Melyiket importálja?
+}
 import-scrivener-roots-hint = Ez a mappa vagy archívum több Scrivener-projektet tartalmaz. Válassza ki, melyiket importálja.
-import-scrivener-manifests-title = Ennek a projektnek { $count } iratrendezőfájlja van
+import-scrivener-manifests-title = { $count ->
+    [one] Ennek a projektnek { $count } iratrendezőfájlja van
+   *[other] Ennek a projektnek { $count } iratrendezőfájlja van
+}
 import-scrivener-manifests-hint = A Scrivener az iratrendezőt, vagyis az összes dokumentum és mappa listáját egy .scrivx fájlban tárolja. A többi példányt valószínűleg egy szinkronizáló szolgáltatás hagyta hátra. Válassza azt, amelyben utoljára dolgozott.
 import-scrivener-manifests-hint-preselected = A Scrivener az iratrendezőt, vagyis az összes dokumentum és mappa listáját egy .scrivx fájlban tárolja. A többi példányt valószínűleg egy szinkronizáló szolgáltatás hagyta hátra. A kijelölt valószínűleg az, amelyben utoljára dolgozott: ellenőrizze, mielőtt továbblép.
 import-scrivener-manifest-row = { $file } · mentve: { $date } · { $documents ->
@@ -1499,8 +1514,8 @@ import-scrivener-notice-imported-from-ios-stub-body = Számítógépen még sose
 import-scrivener-notice-stale-mobile-binder-ignored-title = Egy iPhone-ról vagy iPadről származó régi iratrendező figyelmen kívül marad
 import-scrivener-notice-stale-mobile-binder-ignored-body = A számítógépes Scrivener már átvette a módosításait.
 import-scrivener-notice-identical-manifest-copies-title = { $count ->
-    [one] Az iratrendezőfájl 1 példánya van itt
-   *[other] Az iratrendezőfájl { $count } azonos példánya van itt
+    [one] Ennek a projektnek { $count } azonos iratrendezőfájlja van
+   *[other] Ennek a projektnek { $count } azonos iratrendezőfájlja van
 }
 import-scrivener-notice-identical-manifest-copies-body = Ugyanazt tartalmazzák, így bármelyikből ugyanaz a projekt lesz.
 import-scrivener-notice-manifest-copies-ignored-title = Az iratrendezőfájl további példányai figyelmen kívül maradnak
@@ -1529,12 +1544,12 @@ import-scrivener-notice-invalid-item-identifier-title = { $count ->
     [one] 1 iratrendező-elem érvénytelen azonosítót visel
    *[other] { $count } iratrendező-elem érvénytelen azonosítót visel
 }
-import-scrivener-notice-invalid-item-identifier-body = Ezek az azonosítók figyelmen kívül maradnak. Az elemek megmaradnak.
+import-scrivener-notice-invalid-item-identifier-body = Az ilyen azonosító figyelmen kívül marad, de az azt viselő elem megmarad.
 import-scrivener-notice-items-without-identifier-title = { $count ->
     [one] 1 iratrendező-elemnek nincs azonosítója
    *[other] { $count } iratrendező-elemnek nincs azonosítója
 }
-import-scrivener-notice-items-without-identifier-body = A fájljaik nem találhatók, ezért üresen érkeznek.
+import-scrivener-notice-items-without-identifier-body = Azonosító nélkül egy elem fájljai nem találhatók, ezért az elem üresen érkezik.
 import-scrivener-notice-duplicate-item-key-title = Két iratrendező-elem ugyanazt az azonosítót viseli: „{ $item }”
 import-scrivener-notice-duplicate-item-key-body = Az első kapja a dokumentumokat. A második megtartja a helyét, és üresen érkezik.
 import-scrivener-notice-lock-here-title = Ez a projekt meg van nyitva a Scrivenerben ezen a számítógépen
@@ -1547,12 +1562,24 @@ import-scrivener-notice-archived-while-open-body = Az azt követő módosításo
 import-scrivener-notice-content-missing-notes = A(z) „{ $item }” jegyzetei hiányoznak
 import-scrivener-notice-content-missing-synopsis = A(z) „{ $item }” szinopszisa hiányzik
 import-scrivener-notice-content-missing-text = A(z) „{ $item }” szövege hiányzik
-import-scrivener-notice-content-missing-body = A fájlja nincs benne ebben a példányban, ezért üresen érkezik. Lehet, hogy egy szinkronizáló szolgáltatás még másolja a projektet.
-import-scrivener-notice-content-missing-salvaged = A fájlja nincs benne ebben a példányban, de a Scrivener keresési indexe még tartalmazta a szövegét. Egyszerű szövegként megmarad, talán egy régebbi változatból.
+import-scrivener-notice-content-missing-body = { $place ->
+    [notes] A fájljuk nincs benne ebben a példányban, ezért üresen érkeznek. Lehet, hogy egy szinkronizáló szolgáltatás még másolja a projektet.
+    [synopsis] A fájlja nincs benne ebben a példányban, ezért üresen érkezik. Lehet, hogy egy szinkronizáló szolgáltatás még másolja a projektet.
+   *[text] A fájlja nincs benne ebben a példányban, ezért üresen érkezik. Lehet, hogy egy szinkronizáló szolgáltatás még másolja a projektet.
+}
+import-scrivener-notice-content-missing-salvaged = { $place ->
+    [notes] A fájljuk nincs benne ebben a példányban, de a Scrivener keresési indexe még tartalmazta a szövegüket. Ez egyszerű szövegként megmarad, talán egy régebbi változatból.
+    [synopsis] A fájlja nincs benne ebben a példányban, de a Scrivener keresési indexe még tartalmazta a szövegét. Egyszerű szövegként megmarad, talán egy régebbi változatból.
+   *[text] A fájlja nincs benne ebben a példányban, de a Scrivener keresési indexe még tartalmazta a szövegét. Egyszerű szövegként megmarad, talán egy régebbi változatból.
+}
 import-scrivener-notice-content-truncated-notes = A(z) „{ $item }” jegyzetei üresek a lemezen
 import-scrivener-notice-content-truncated-synopsis = A(z) „{ $item }” szinopszisa üres a lemezen
 import-scrivener-notice-content-truncated-text = A(z) „{ $item }” szövege üres a lemezen
-import-scrivener-notice-content-truncated-body = A Scrivener szöveggel együtt tartotta nyilván, de a fájlja üres: lehet, hogy egy szinkronizálás félúton megszakadt. Üresen érkezik.
+import-scrivener-notice-content-truncated-body = { $place ->
+    [notes] A Scrivener szöveggel együtt tartotta nyilván őket, de a fájljuk üres: lehet, hogy egy szinkronizálás félúton megszakadt. Üresen érkeznek.
+    [synopsis] A Scrivener szöveggel együtt tartotta nyilván, de a fájlja üres: lehet, hogy egy szinkronizálás félúton megszakadt. Üresen érkezik.
+   *[text] A Scrivener szöveggel együtt tartotta nyilván, de a fájlja üres: lehet, hogy egy szinkronizálás félúton megszakadt. Üresen érkezik.
+}
 import-scrivener-notice-missing-media-title = A(z) „{ $item }” fájlja hiányzik
 import-scrivener-notice-missing-media-body = A benne lévő kép vagy kutatási fájl nincs ebben a példányban.
 import-scrivener-notice-sync-conflict-copies-title = { $count ->
@@ -1560,19 +1587,20 @@ import-scrivener-notice-sync-conflict-copies-title = { $count ->
    *[other] { $count } szinkronizálási másolat található dokumentumokról
 }
 import-scrivener-notice-sync-conflict-copies-body = { $missing ->
-    [0] Helyreállított szövegként, külön mappában kerülnek át, így összevetheti őket a dokumentumokkal.
-   *[other] Helyreállított szövegként, külön mappában kerülnek át. Némelyikük olyan dokumentum másolata, amely már nincs a projektben.
+    [0] A szinkronizálási másolatok helyreállított szövegként, külön mappában kerülnek át, így összevetheti őket a dokumentumokkal.
+    [one] A szinkronizálási másolatok helyreállított szövegként, külön mappában kerülnek át. Közülük { $missing } olyan dokumentum másolata, amely már nincs a projektben.
+   *[other] A szinkronizálási másolatok helyreállított szövegként, külön mappában kerülnek át. Közülük { $missing } olyan dokumentum másolata, amely már nincs a projektben.
 }
 import-scrivener-notice-recovered-unreferenced-text-title = { $count ->
     [one] 1 olyan dokumentum található, amelyet egyetlen iratrendező-elem sem sorol fel
    *[other] { $count } olyan dokumentum található, amelyet egyetlen iratrendező-elem sem sorol fel
 }
-import-scrivener-notice-recovered-unreferenced-text-body = Helyreállított szövegként, külön mappában kerülnek át.
+import-scrivener-notice-recovered-unreferenced-text-body = Az ilyen dokumentumok helyreállított szövegként, külön mappában kerülnek át.
 import-scrivener-notice-sync-debris-ignored-title = { $count ->
     [one] Egy szinkronizáló szolgáltatás által hátrahagyott 1 fölösleges példány figyelmen kívül marad
    *[other] Egy szinkronizáló szolgáltatás által hátrahagyott { $count } fölösleges példány figyelmen kívül marad
 }
-import-scrivener-notice-sync-debris-ignored-body = A Scrivener sem olvassa őket. Csak a projekt saját fájljai lesznek beolvasva.
+import-scrivener-notice-sync-debris-ignored-body = A Scrivener sem olvassa az ilyen példányokat. Csak a projekt saját fájljai lesznek beolvasva.
 import-scrivener-notice-unrecognised-files-title = { $count ->
     [one] 1 fájl, amely nem része Scrivener-projektnek, figyelmen kívül marad
    *[other] { $count } fájl, amely nem része Scrivener-projektnek, figyelmen kívül marad
@@ -1590,9 +1618,9 @@ import-scrivener-notice-cloud-placeholders-skipped-title = { $count ->
     [one] 1 még felhőben lévő fájl kimarad
    *[other] { $count } még felhőben lévő fájl kimarad
 }
-import-scrivener-notice-cloud-placeholders-skipped-body = Az importálásnak nincs szüksége rájuk.
+import-scrivener-notice-cloud-placeholders-skipped-body = Ami az importáláshoz kell, abból semmi sincs már a felhőben.
 import-scrivener-notice-no-text-found-title = { $count ->
-    [one] 1 dokumentum, és nincs benne szöveg
+    [1] 1 dokumentum, és nincs benne szöveg
    *[other] { $count } dokumentum, és egyikben sincs szöveg
 }
 import-scrivener-notice-no-text-found-body = Ez a projekt üresnek tűnik. Úgy lesz importálva, ahogy van.
@@ -1622,7 +1650,7 @@ import-scrivener-notice-dangling-item-title = { $count ->
     [one] 1 hivatkozás olyan dokumentumra mutat, amelyet a projekt nem határoz meg
    *[other] { $count } hivatkozás olyan dokumentumokra mutat, amelyeket a projekt nem határoz meg
 }
-import-scrivener-notice-dangling-references-body = Ezek kimaradnak.
+import-scrivener-notice-dangling-references-body = Az a hivatkozás, amely olyasmire mutat, amit a projekt nem határoz meg, kimarad.
 import-scrivener-notice-snapshots-not-imported-line = { $count ->
     [one] 1 pillanatkép a Scrivener-projektjében marad: a Skribisto nem veszi át a pillanatképeket.
    *[other] { $count } pillanatkép a Scrivener-projektjében marad: a Skribisto nem veszi át a pillanatképeket.
@@ -1643,23 +1671,23 @@ import-scrivener-notice-language-from-script-hint = A kézirat írásrendszere a
 
 ## Before you import: what the import does with the binder, or leaves behind
 import-scrivener-structure-script-mode-draft-line = { $script ->
-    [one] { $documents ->
-        [one] A kézirat egyetlen dokumentuma forgatókönyv módban készült. A Skribisto megtartja a szavait, a forgatókönyv-elrendezését nem.
+    [1] { $documents ->
+        [1] A kézirat egyetlen dokumentuma forgatókönyv módban készült. A Skribisto megtartja a szavait, a forgatókönyv-elrendezését nem.
        *[other] A kézirat { $documents } dokumentuma közül { $script } forgatókönyv módban készült. A Skribisto megtartja a szavait, a forgatókönyv-elrendezését nem.
     }
    *[other] A kézirat { $documents } dokumentuma közül { $script } forgatókönyv módban készült. A Skribisto megtartja a szavaikat, a forgatókönyv-elrendezésüket nem.
 }
 import-scrivener-structure-one-document-manuscript-line = { $count ->
-    [one] Egy kéziratdokumentum címsorokként tartalmazza a fejezeteit.
+    [1] Egy kéziratdokumentum címsorokként tartalmazza a fejezeteit.
    *[other] { $count } kéziratdokumentum címsorokként tartalmazza a fejezeteit.
 }
 import-scrivener-structure-title-repeats-number-line = { $count ->
-    [one] 1 fejezet- vagy részcím a sorszámát is tartalmazza, így az exportálás kétszer írhatja ki a számot.
-   *[other] { $count } fejezet- vagy részcím a sorszámát is tartalmazza, így az exportálás kétszer írhatja ki a számot.
+    [one] 1 fejezet- vagy részcím a sorszámát is tartalmazza, például „II. fejezet” vagy „Első rész”, így az exportálás kétszer írhatja ki a számot.
+   *[other] { $count } fejezet- vagy részcím a sorszámát is tartalmazza, például „II. fejezet” vagy „Első rész”, így az exportálás kétszer írhatja ki a számot.
 }
 import-scrivener-structure-claim-overruled-line = { $count ->
-    [one] 1 elem az általa jelzettnél alacsonyabb szintre kerül, mert egy fölötte álló elem már azt a szintet foglalja el.
-   *[other] { $count } elem az általa jelzettnél alacsonyabb szintre kerül, mert egy fölöttük álló elem már azt a szintet foglalja el.
+    [one] 1 elem könyvnek, résznek vagy fejezetnek tűnik, de egy olyan elemen belül van, amely már ezen a szinten áll, ezért alacsonyabb szinten kerül át.
+   *[other] { $count } elem könyvnek, résznek vagy fejezetnek tűnik, de mindegyik egy olyan elemen belül van, amely már ezen a szinten áll, ezért alacsonyabb szinten kerül át.
 }
 import-scrivener-structure-adopted-by-chapter-line = { $count ->
     [one] 1 fejezetet követő dokumentum az előtte álló fejezet végére kerül.
@@ -1670,8 +1698,8 @@ import-scrivener-structure-looks-like-manuscript-line = { $count ->
    *[other] A jegyzetek között tartott { $count } legfelső szintű mappa kéziratnak tűnik. Külön könyvekként átküldheti őket a kéziratba.
 }
 import-scrivener-structure-generic-sheet-title-line = { $count ->
-    [one] 1 történetbiblia-bejegyzés egy sablon címét viseli, például „Hős”, és az említéskeresés ezt fogja keresni a szövegben.
-   *[other] { $count } történetbiblia-bejegyzés egy sablon címét viseli, például „Hős”, és az említéskeresés ezeket fogja keresni a szövegben.
+    [one] 1 történetbiblia-bejegyzés még mindig egy sablon címét viseli, például „Hős”. A Skribisto megkeresi ezt a címet a szövegben, és a bejegyzés A prózában nézetében felsorolja minden előfordulását: nevezze át a bejegyzést, ha ez a szó gyakori a könyvében.
+   *[other] { $count } történetbiblia-bejegyzés még mindig egy sablon címét viseli, például „Hős”. A Skribisto megkeresi ezeket a címeket a szövegben, és a bejegyzések A prózában nézetében felsorolja minden előfordulásukat: nevezze át a bejegyzéseket, ha ezek a szavak gyakoriak a könyvében.
 }
 import-scrivener-structure-placeholder-title-line = { $count ->
     [one] 1 cím csak a szintjét nevezte meg, ezért üresen marad: az iratrendező és az exportálások megszámozzák.
@@ -1710,13 +1738,13 @@ import-scrivener-structure-matter-inside-book-line = { $count ->
    *[other] { $count } kéziraton kívüli elő- vagy utórész paratextusként a könyvbe kerül, és kimarad az exportálásokból, amíg bele nem foglalja őket.
 }
 import-scrivener-structure-paratext-not-counted-line = { $documents ->
-    [one] 1 kéziratdokumentum paratextussá válik (elő- vagy utórész): { $words ->
-        [one] { $words } szava
-       *[other] { $words } szava
+    [one] 1 kéziratdokumentum paratextussá válik (elő- vagy utórész), így { $words ->
+        [one] { $words } szó
+       *[other] { $words } szó
     } többé nem számít bele a kéziratba.
-   *[other] { $documents } kéziratdokumentum paratextussá válik (elő- vagy utórész): { $words ->
-        [one] { $words } szavuk
-       *[other] { $words } szavuk
+   *[other] { $documents } kéziratdokumentum paratextussá válik (elő- vagy utórész), így { $words ->
+        [one] { $words } szó
+       *[other] { $words } szó
     } többé nem számít bele a kéziratba.
 }
 import-scrivener-structure-document-notes-line = { $count ->
@@ -1749,8 +1777,11 @@ import-scrivener-structure-project-notes-line = { $count ->
    *[other] { $count } projektjegyzet külön mappába kerül át.
 }
 import-scrivener-structure-trash-brought-across-line = { $items ->
-    [one] A kuka átkerül: 1 elem, amelyet a kukából visszaállíthat.
-   *[other] A kuka átkerül: { $items } elem, közülük { $writing } szöveget is tartalmaz; ezeket a kukából visszaállíthatja.
+    [1] A kuka átkerül: 1 elem, amelyet a kukából visszaállíthat.
+   *[other] A kuka átkerül: { $items } elem, { $writing ->
+        [0] egyikben sincs szöveg
+       *[other] közülük { $writing } szöveget is tartalmaz
+    }; ezeket a kukából visszaállíthatja.
 }
 import-scrivener-structure-not-compiled-line = { $count ->
     [one] 1 elem, amelyet a Scrivener kihagyott az összeállításból, az exportálásokból is kimarad.
@@ -1771,24 +1802,27 @@ import-scrivener-structure-left-out-line = { $count ->
     }.
 }
 import-scrivener-structure-trash-left-out-line = { $items ->
-    [one] A kuka nem kerül át: 1 elem.
-   *[other] A kuka nem kerül át: { $items } elem, közülük { $writing } szöveget is tartalmaz.
+    [1] A kuka nem kerül át: 1 elem.
+   *[other] A kuka nem kerül át: { $items } elem, { $writing ->
+        [0] egyikben sincs szöveg
+       *[other] közülük { $writing } szöveget is tartalmaz
+    }.
 }
 import-scrivener-structure-card-image-left-behind-line = { $count ->
     [one] Egy kéziratelem kártyájának 1 képe nem kerül át: belekerülne a könyvbe.
    *[other] Kéziratelemek kártyáinak { $count } képe nem kerül át: belekerülnének a könyvbe.
 }
 import-scrivener-structure-default-template-not-linked-line = { $count ->
-    [one] 1 mappa alapértelmezett dokumentumsablonja nem kapcsolható a mappához.
-   *[other] { $count } mappa alapértelmezett dokumentumsablonja nem kapcsolható a mappájához.
+    [one] 1 mappának volt alapértelmezett sablonja a benne létrehozott új dokumentumokhoz. A Skribistóban csak egy történetbiblia-címke hordozhat sablont, ezért ez a kapcsolat nem marad meg.
+   *[other] { $count } mappának volt alapértelmezett sablonja a benne létrehozott új dokumentumokhoz. A Skribistóban csak egy történetbiblia-címke hordozhat sablont, ezért ezek a kapcsolatok nem maradnak meg.
 }
 import-scrivener-structure-page-break-not-kept-line = { $count ->
-    [one] 1 „Page break before” (oldaltörés előtte) beállításnak nincs helye a Skribistóban, ezért nem marad meg.
-   *[other] { $count } „Page break before” (oldaltörés előtte) beállításnak nincs helye a Skribistóban, ezért nem maradnak meg.
+    [one] 1 „Page Break Before” (oldaltörés előtte) beállításnak nincs helye a Skribistóban, ezért nem marad meg.
+   *[other] { $count } „Page Break Before” (oldaltörés előtte) beállításnak nincs helye a Skribistóban, ezért nem maradnak meg.
 }
 import-scrivener-structure-compile-as-is-not-kept-line = { $count ->
-    [one] 1 „Compile as-is” (összeállítás változatlanul) beállításnak nincs megfelelője a Skribistóban, ezért nem marad meg.
-   *[other] { $count } „Compile as-is” (összeállítás változatlanul) beállításnak nincs megfelelője a Skribistóban, ezért nem maradnak meg.
+    [one] 1 „Compile As-Is” (összeállítás változatlanul) beállításnak nincs megfelelője a Skribistóban, ezért nem marad meg.
+   *[other] { $count } „Compile As-Is” (összeállítás változatlanul) beállításnak nincs megfelelője a Skribistóban, ezért nem maradnak meg.
 }
 
 ## What the import did with the labels, the status list and the dates
@@ -1811,17 +1845,17 @@ import-scrivener-metadata-labels-became-tags-line = { $tags ->
     }.
 }
 import-scrivener-metadata-statuses-became-ladder-line = { $rungs ->
-    [one] Az állapotlistából a projekt 1 állapota lesz, { $rows ->
+    [one] Az állapotlistából a projekt állapotlistája lesz: { $rungs } állapot, { $rows ->
         [one] { $rows } elemen
        *[other] { $rows } elemen
     }.
-   *[other] Az állapotlistából a projekt { $rungs } állapota lesz, { $rows ->
+   *[other] Az állapotlistából a projekt állapotlistája lesz: { $rungs } állapot, { $rows ->
         [one] { $rows } elemen
        *[other] { $rows } elemen
     }.
 }
 import-scrivener-metadata-ladder-seeded-line = { $count ->
-    [one] A projektnek nem volt állapotlistája, ezért a Skribisto alapértelmezett állapotával indul.
+    [1] A projektnek nem volt állapotlistája, ezért a Skribisto alapértelmezett állapotával indul.
    *[other] A projektnek nem volt állapotlistája, ezért a Skribisto { $count } alapértelmezett állapotával indul.
 }
 import-scrivener-metadata-label-renamed-line = A Felirat mező neve a Scrivenerben „{ $title }” volt. Ez a név minden címke leírásában szerepel.
@@ -1881,7 +1915,7 @@ import-scrivener-metadata-targets-without-row-line = { $count ->
 ## and `$folder` are the titles the import gives a note and its "From Scrivener" folder;
 ## `$day` is a day as YYYY-MM-DD.
 import-scrivener-metadata-pov-hint-line = { $count ->
-    [one] A(z) { $values } felirat vagy mezőérték egyezik a(z) { $matches } történetbiblia-bejegyzéssel. Ha a nézőpontot nevezi meg, állítsa be a Tulajdonságok panelen: az importálás semmit sem kapcsol össze.
+    [1] A(z) { $values } felirat vagy mezőérték egyezik a(z) { $matches } történetbiblia-bejegyzéssel. Ha a nézőpontot nevezi meg, állítsa be a Tulajdonságok panelen: az importálás semmit sem kapcsol össze.
    *[other] A(z) { $values } feliratok vagy mezőértékek egyeznek a(z) { $matches } történetbiblia-bejegyzésekkel. Ha nézőpontokat neveznek meg, állítsa be őket a Tulajdonságok panelen: az importálás semmit sem kapcsol össze.
 }
 import-scrivener-metadata-checkbox-default-unknown-line = A(z) „{ $field }” jelölőnégyzet-mező alapértékét a Skribisto nem tudja beolvasni, így nem tudja eldönteni, mely dokumentumok vannak alapértelmezés szerint bejelölve. Csak az egyenként bejelölt dokumentumok kapják meg a címkéjét.
@@ -1944,8 +1978,8 @@ import-scrivener-metadata-bookmarks-became-links-line = { $count ->
    *[other] { $count } könyvjelzőből kapcsolat lesz jegyzetek, vagy jelenetek és történetbiblia-bejegyzések között: lásd a Kapcsolódó bejegyzések és a Szereplők részt.
 }
 import-scrivener-metadata-goals-kept-line = { $count ->
-    [one] 1 dokumentum-célértékből cél lesz.
-   *[other] { $count } dokumentum-célértékből cél lesz.
+    [one] A Scrivenerben 1 dokumentumra beállított célértékből a dokumentum célja lesz a Skribistóban.
+   *[other] A Scrivenerben { $count } dokumentumra beállított célértékekből a dokumentumok céljai lesznek a Skribistóban.
 }
 import-scrivener-metadata-draft-target-kept-words-line = { $value ->
     [one] A kézirat 1 szavas célértékéből a könyv célja lesz.
@@ -1955,8 +1989,8 @@ import-scrivener-metadata-draft-target-kept-characters-line = { $value ->
     [one] A kézirat 1 karakteres célértékéből a könyv célja lesz.
    *[other] A kézirat { $value } karakteres célértékéből a könyv célja lesz.
 }
-import-scrivener-metadata-pace-planned-line = A határidőből ({ $day }) a könyv tempóterve lesz, amely az importálás napjától kezdve megtervezi a Scrivenerben kiválasztott minden írási napra jutó szómennyiséget.
-import-scrivener-metadata-pace-planned-day-off-line = A határidőből ({ $day }) a könyv tempóterve lesz, amely az importálás napjától kezdve megtervezi a Scrivenerben kiválasztott minden írási napra jutó szómennyiséget. Ahogy a Scrivenerben, maga a határidő napja is szünnap.
+import-scrivener-metadata-pace-planned-line = A határidő ({ $day }) beállítja a könyv Tempó lapját, amely az importálás napjától kezdve megtervezi a Scrivenerben kiválasztott minden írási napra jutó szómennyiséget.
+import-scrivener-metadata-pace-planned-day-off-line = A határidő ({ $day }) beállítja a könyv Tempó lapját, amely az importálás napjától kezdve megtervezi a Scrivenerben kiválasztott minden írási napra jutó szómennyiséget. Ahogy a Scrivenerben, maga a határidő napja is szünnap.
 import-scrivener-metadata-dictionary-words-line = { $count ->
     [one] 1 automatikus kiegészítési szó a projekt saját szótárába kerül, így nem jelölődik helyesírási hibaként.
    *[other] { $count } automatikus kiegészítési szó a projekt saját szótárába kerül, így nem jelölődnek helyesírási hibaként.
@@ -2049,13 +2083,13 @@ import-scrivener-metadata-draft-target-no-book-characters-line = { $value ->
     [one] A kézirat 1 karakteres célértékéből nem lesz cél, mert a kézirat több könyvből áll, vagy egyből sem. A(z) „{ $folder }” mappa „{ $note }” jegyzetében szerepel.
    *[other] A kézirat { $value } karakteres célértékéből nem lesz cél, mert a kézirat több könyvből áll, vagy egyből sem. A(z) „{ $folder }” mappa „{ $note }” jegyzetében szerepel.
 }
-import-scrivener-metadata-deadline-passed-line = A határidő ({ $day }) már elmúlt, ezért nem lesz belőle tempóterv. A(z) „{ $folder }” mappa „{ $note }” jegyzetében szerepel.
-import-scrivener-metadata-deadline-no-writing-day-line = Az importálás napjától a határidőig ({ $day }) egyetlen írási nap sem marad, ezért nem lesz belőle tempóterv. A(z) „{ $folder }” mappa „{ $note }” jegyzetében szerepel.
-import-scrivener-metadata-deadline-template-line = A határidőt ({ $day }) a sablonba mentették, ezért nem lesz belőle tempóterv. A(z) „{ $folder }” mappa „{ $note }” jegyzetében szerepel.
-import-scrivener-metadata-deadline-no-word-goal-line = A határidőből ({ $day }) nem lesz tempóterv, mert a kéziratnak nincs szavakban megadott célértéke, amelyhez tervezni lehetne. A(z) „{ $folder }” mappa „{ $note }” jegyzetében szerepel.
-import-scrivener-metadata-deadline-character-goal-line = A határidőből ({ $day }) nem lesz tempóterv, mert a kézirat célértéke karaktereket számol, a tempóterv pedig szavakat. A(z) „{ $folder }” mappa „{ $note }” jegyzetében szerepel.
-import-scrivener-metadata-deadline-no-book-line = A határidőből ({ $day }) nem lesz tempóterv, mert a kézirat több könyvből áll, vagy egyből sem. A(z) „{ $folder }” mappa „{ $note }” jegyzetében szerepel.
-import-scrivener-metadata-deadline-unreadable-line = A határidő nem olvasható, ezért nem lesz belőle tempóterv. Úgy szerepel, ahogy a Scrivenerben írták, a(z) „{ $folder }” mappa „{ $note }” jegyzetében.
+import-scrivener-metadata-deadline-passed-line = A határidő ({ $day }) már elmúlt, ezért nem állítja be a könyv Tempó lapját. A(z) „{ $folder }” mappa „{ $note }” jegyzetében szerepel.
+import-scrivener-metadata-deadline-no-writing-day-line = Az importálás napjától a határidőig ({ $day }) egyetlen írási nap sem marad, ezért a határidő nem állítja be a könyv Tempó lapját. A(z) „{ $folder }” mappa „{ $note }” jegyzetében szerepel.
+import-scrivener-metadata-deadline-template-line = A határidő ({ $day }) a sablonba volt mentve, ezért nem állítja be a könyv Tempó lapját. A(z) „{ $folder }” mappa „{ $note }” jegyzetében szerepel.
+import-scrivener-metadata-deadline-no-word-goal-line = A határidő ({ $day }) nem állítja be a könyv Tempó lapját, mert a kéziratnak nincs szavakban megadott célértéke, amelyhez tervezni lehetne. A(z) „{ $folder }” mappa „{ $note }” jegyzetében szerepel.
+import-scrivener-metadata-deadline-character-goal-line = A határidő ({ $day }) nem állítja be a könyv Tempó lapját, mert a kézirat célértéke karaktereket számol, a Tempó lap pedig szavakat. A(z) „{ $folder }” mappa „{ $note }” jegyzetében szerepel.
+import-scrivener-metadata-deadline-no-book-line = A határidő ({ $day }) egyetlen könyv Tempó lapját sem állítja be, mert a kézirat több könyvből áll, vagy egyből sem. A(z) „{ $folder }” mappa „{ $note }” jegyzetében szerepel.
+import-scrivener-metadata-deadline-unreadable-line = A határidő nem olvasható, ezért nem állítja be a könyv Tempó lapját. Úgy szerepel, ahogy a Scrivenerben írták, a(z) „{ $folder }” mappa „{ $note }” jegyzetében.
 import-scrivener-metadata-session-target-words-line = { $value ->
     [one] Az 1 szavas munkamenet-célérték nem kerül át: a Skribistóban az írási munkamenet célja egyetlen, minden projektre érvényes beállítás. A(z) „{ $folder }” mappa „{ $note }” jegyzetében szerepel.
    *[other] A(z) { $value } szavas munkamenet-célérték nem kerül át: a Skribistóban az írási munkamenet célja egyetlen, minden projektre érvényes beállítás. A(z) „{ $folder }” mappa „{ $note }” jegyzetében szerepel.
@@ -2120,8 +2154,8 @@ import-scrivener-prose-comment-entry-without-anchor-line = { $count ->
    *[other] { $count } megjegyzésnek már nem maradt helye a szövegében, ezért az első bekezdéshez kapcsolódnak.
 }
 import-scrivener-prose-footnote-entry-without-anchor-line = { $count ->
-    [one] 1 csatolt lábjegyzetnek már nem maradt helye a szövegében, ezért a szöveg végén szerepel.
-   *[other] { $count } csatolt lábjegyzetnek már nem maradt helye a szövegében, ezért a szöveg végén szerepelnek.
+    [one] 1 csatolt lábjegyzetnek már nem maradt helye a szövegében, ezért annak a szövegnek a végén szerepel.
+   *[other] { $count } csatolt lábjegyzetnek már nem maradt helye a szövegében, ezért mindegyik a saját szövegének a végén szerepel.
 }
 import-scrivener-prose-range-comment-reading-line = { $count ->
     [one] Egy régebbi Scrivenerből származó 1 megjegyzés a helyzetének egy másik értelmezése alapján került a helyére. Ellenőrizze, hogy a megfelelő szavakon áll-e.
@@ -2144,7 +2178,7 @@ import-scrivener-prose-document-link-unresolved-line = { $count ->
    *[other] { $count } hivatkozás olyan dokumentumokra mutat, amelyeket az importálás nem vitt át. A szavaik megmaradnak.
 }
 import-scrivener-prose-linked-picture-not-read-line = { $count ->
-    [one] 1 kép, amely a lemezén lévő fájlra hivatkozik („{ $example }”), nem került át.
+    [1] 1 kép, amely a lemezén lévő fájlra hivatkozik („{ $example }”), nem került át.
    *[other] { $count } kép, amely a lemezén lévő fájlokra hivatkozik, például „{ $example }”, nem került át.
 }
 import-scrivener-prose-heading-repeats-title-line = { $count ->
@@ -2160,11 +2194,11 @@ import-scrivener-prose-citation-keys-as-text-line = { $count ->
    *[other] { $count } bekezdés irodalomjegyzék-kezelő program hivatkozási kulcsait tartalmazza; ezek szövegként maradnak meg.
 }
 import-scrivener-prose-placeholders-in-exported-text-line = { $count ->
-    [one] 1 Scrivener-helyőrző ({ $example }) egyszerű szövegként marad meg abban, amit exportál. Cserélje le kézzel.
+    [1] 1 Scrivener-helyőrző ({ $example }) egyszerű szövegként marad meg abban, amit exportál. Cserélje le kézzel.
    *[other] { $count } Scrivener-helyőrző, például { $example }, egyszerű szövegként marad meg abban, amit exportál. Cserélje le őket kézzel.
 }
 import-scrivener-prose-placeholders-in-other-text-line = { $count ->
-    [one] 1 Scrivener-helyőrző ({ $example }) egyszerű szövegként marad meg egy olyan szövegben, amely nem exportálódik.
+    [1] 1 Scrivener-helyőrző ({ $example }) egyszerű szövegként marad meg egy olyan szövegben, amely nem exportálódik.
    *[other] { $count } Scrivener-helyőrző, például { $example }, egyszerű szövegként marad meg olyan szövegekben, amelyek nem exportálódnak.
 }
 import-scrivener-prose-ornament-lines-kept-line = { $count ->
@@ -2184,11 +2218,11 @@ import-scrivener-prose-struck-text-compiled-away-line = { $count ->
    *[other] { $count } szövegben az áthúzott szöveg megmarad. A Scrivener összeállítása kihagyta a könyvből, de a Skribisto exportálása kiírja.
 }
 import-scrivener-prose-compile-deleted-style-printed-line = { $count ->
-    [one] A(z) „{ $example }” stílusú szöveg, amelyet a Scrivener összeállítása törölt, prózaként megmarad, és a Skribisto exportálása kiírja.
+    [1] A(z) „{ $example }” stílusú szöveg, amelyet a Scrivener összeállítása törölt, prózaként megmarad, és a Skribisto exportálása kiírja.
    *[other] { $count } olyan stílus szövege, amelyet a Scrivener összeállítása törölt (például „{ $example }”), prózaként megmarad, és a Skribisto exportálása kiírja.
 }
 import-scrivener-prose-compile-raw-style-printed-line = { $count ->
-    [one] A(z) „{ $example }” stílusú szöveg, amelyet a Scrivener összeállítása kódként adott tovább egy másik programnak, prózaként megmarad, és a Skribisto exportálása kiírja.
+    [1] A(z) „{ $example }” stílusú szöveg, amelyet a Scrivener összeállítása kódként adott tovább egy másik programnak, prózaként megmarad, és a Skribisto exportálása kiírja.
    *[other] { $count } olyan stílus szövege, amelyet a Scrivener összeállítása kódként adott tovább egy másik programnak (például „{ $example }”), prózaként megmarad, és a Skribisto exportálása kiírja.
 }
 import-scrivener-prose-left-out-after-document-line = { $count ->
@@ -2216,7 +2250,7 @@ import-scrivener-prose-inline-notes-merged-line = { $count ->
    *[other] { $count } szövegközi jegyzet, amelyet a Scrivener a formázás váltásánál kettévágott, újra egyesül.
 }
 import-scrivener-prose-inline-notes-joined-across-paragraphs-line = { $count ->
-    [one] 1 bekezdésenként írt szövegközi jegyzet egyetlen jegyzetté egyesül.
+    [1] 1 bekezdésenként írt szövegközi jegyzet egyetlen jegyzetté egyesül.
    *[other] { $count } bekezdésenként írt szövegközi jegyzet több bekezdésből álló jegyzetekké egyesül.
 }
 import-scrivener-prose-blank-notes-dropped-line = { $count ->
@@ -2240,7 +2274,7 @@ import-scrivener-prose-nested-note-unwrapped-line = { $count ->
    *[other] { $count } megjegyzéseken vagy lábjegyzeteken belüli jegyzet szövegként marad meg, ott, ahol állt.
 }
 import-scrivener-prose-style-not-carried-line = { $count ->
-    [one] A(z) „{ $example }” stílusnak nincs megfelelője a Skribistóban. A hozzá tartozó szöveg szavai megmaradnak.
+    [1] A(z) „{ $example }” stílusnak nincs megfelelője a Skribistóban. A hozzá tartozó szöveg szavai megmaradnak.
    *[other] { $count } stílusnak, például a(z) „{ $example }” stílusnak, nincs megfelelője a Skribistóban. A hozzájuk tartozó szöveg szavai megmaradnak.
 }
 import-scrivener-prose-document-links-dropped-line = { $count ->
@@ -2342,10 +2376,10 @@ import-scrivener-prose-media-file-not-carried-line = { $count ->
 
 ## When the import fails
 import-scrivener-error-refused = { $refusal } Semmi sem lett kiírva.
-import-scrivener-error-question = A projekt most olyan kérdést vet fel, amelyre az ellenőrzéskor nem született válasz. Ellenőrizze újra, majd importálja. Semmi sem lett kiírva.
-import-scrivener-error-not-accepted = A projekt olyan kérdést vet fel, amelyet még nem fogadott el. Ellenőrizze újra, majd importálja. Semmi sem lett kiírva.
-import-scrivener-error-changed = A projekt megváltozott, miután ellenőrizte. Ellenőrizze újra, majd importálja. Semmi sem lett kiírva.
-import-scrivener-error-choice = Az ellenőrzéskor választott szerkezet már nem illik ehhez a projekthez. Ellenőrizze újra, majd importálja. Semmi sem lett kiírva.
+import-scrivener-error-question = A projekt most olyan kérdést vet fel, amelyre az ellenőrzéskor nem született válasz. Válassza az „Importálás újraellenőrzése” lehetőséget, majd importálja. Semmi sem lett kiírva.
+import-scrivener-error-not-accepted = Az importálás előtt a projekt azt kéri, hogy jelöljön be egy jelölőnégyzetet a Projekt lépésben, de az nem lett bejelölve. Válassza az „Importálás újraellenőrzése” lehetőséget, jelölje be a négyzetet, majd importálja. Semmi sem lett kiírva.
+import-scrivener-error-changed = A projekt megváltozott, miután ellenőrizte. Válassza az „Importálás újraellenőrzése” lehetőséget, majd importálja. Semmi sem lett kiírva.
+import-scrivener-error-choice = Az ellenőrzéskor választott szerkezet már nem illik ehhez a projekthez. Válassza az „Importálás újraellenőrzése” lehetőséget, majd importálja. Semmi sem lett kiírva.
 export-title = Exportálás
 export-close = Bezárás
 export-scope-label = Mit
@@ -3219,7 +3253,7 @@ import-document-plan-empty = Még nincs mit importálni.
 # How many pictures the items being imported bring into the project, under the
 # review tree. Shown only when there is at least one.
 import-document-pictures = { $count ->
-    [one] Egy kép érkezik ezekkel a dokumentumokkal.
+    [1] Egy kép érkezik ezekkel a dokumentumokkal.
    *[other] { $count } kép érkezik ezekkel a dokumentumokkal.
 }
 import-document-summary = { $rows ->
@@ -3280,7 +3314,7 @@ import-diagnostic-image-not-ingested-outside = A(z) „{ $path }” fájlban a(z
 import-diagnostic-image-not-ingested-missing = A(z) „{ $path }” fájlban a(z) „{ $detail }” képet nem sikerült megtalálni, ezért kimaradt.
 import-diagnostic-image-not-ingested-too-large = A(z) „{ $path }” fájlban a(z) „{ $detail }” kép nagyobb, mint amekkorát egy projekt elfogad, ezért kimaradt.
 import-diagnostic-image-not-ingested-unreadable = A(z) „{ $path }” fájlban a(z) „{ $detail }” képet nem sikerült képként beolvasni, ezért kimaradt.
-import-diagnostic-image-not-ingested-heading = A(z) „{ $path }” fájlban a(z) „{ $detail }” kép egy címsorban áll. A címsorból cím lesz, amely nem tartalmazhat képet, ezért kimaradt.
+import-diagnostic-image-not-ingested-heading = A(z) „{ $path }” fájlban a(z) „{ $detail }” kép egy címsorban áll. Minden címsorból az iratrendező egy elemének címe lesz, a cím pedig nem tartalmazhat képet, ezért a kép kimaradt.
 import-diagnostic-image-not-ingested-note = A(z) „{ $path }” fájlban a(z) „{ $detail }” kép egy lábjegyzetben, végjegyzetben vagy megjegyzésben áll. Ezek csak a szavaikat őrzik meg, képet nem, ezért kimaradt.
 import-diagnostic-image-not-ingested-html = A(z) „{ $path }” fájlban a(z) „{ $detail }” kép HTML-ként van megadva, az importálás pedig kihagyja a HTML-t, így a kép is kimaradt vele együtt. Ha be szeretné hozni, adja meg Markdown-képként.
 import-diagnostic-image-not-ingested-document-full = A(z) „{ $path }” fájlban a(z) „{ $detail }” kép kimaradt: a dokumentum képei együtt meghaladják azt, amennyit egy importálás behoz. Importálja a dokumentumot részletekben, vagy szúrja be a többit kézzel.

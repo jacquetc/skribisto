@@ -98,7 +98,7 @@ pub enum AppIntent {
     #[name = "work.import_scrivener"]
     ImportScrivener,
     /// Open the Scrivener wizard already reading `path`: what a failed import's
-    /// **Review again** sends, when the project changed after it was reviewed.
+    /// **Review the import again** sends, when the project changed after it was reviewed.
     #[name = "work.import_scrivener_path"]
     ImportScrivenerPath { path: String },
     /// Reopen this window's last Scrivener import report: the one it showed last, else

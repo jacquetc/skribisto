@@ -957,7 +957,9 @@ import-manuskript-too-many-files = Проєкт не імпортовано: ф�
 import-manuskript-too-large = Проєкт не імпортовано: він більший за { $limit } МБ, які Skribisto читає з проєкту Manuskript. Нічого не записано.
 project-import-close = Закрити
 project-import-location = Тека призначення
-# The folder dialog's title.
+# The title of the folder dialog, like the dialog-*-title keys: word it as a window title
+# (in many languages an infinitive or a noun phrase), not as the instruction
+# project-import-location-required gives under the field.
 project-import-location-title = Виберіть теку призначення
 project-import-name = Назва файлу
 project-import-name-placeholder = Назва проєкту
@@ -1024,12 +1026,14 @@ project-import-failed-malformed = Проєкт не імпортовано: йо
 # damaged binder file). Why is the Scrivener importer's own to say; Details holds its key.
 project-import-failed-scrivener-refused = Skribisto не може імпортувати цей проєкт Scrivener. Нічого не записано.
 # The Scrivener project asks something its review did not answer: a project or a binder
-# file appeared in it since.
-project-import-failed-scrivener-question = Проєкт Scrivener ставить питання, на яке його перевірка не дала відповіді. Поверніться до перевірки, а потім імпортуйте. Нічого не записано.
-# The Scrivener project raises a question the writer has to accept before it imports.
-project-import-failed-scrivener-not-accepted = Проєкт Scrivener ставить питання, на яке ви ще не дали згоди. Поверніться до перевірки, а потім імпортуйте. Нічого не записано.
-# The Scrivener project changed after the writer reviewed it.
-project-import-failed-scrivener-changed = Проєкт Scrivener змінився після того, як ви його перевірили. Поверніться до перевірки, а потім імпортуйте. Нічого не записано.
+# file appeared in it since. Shown with no button to press.
+project-import-failed-scrivener-question = Проєкт Scrivener ставить питання, на яке його перевірка не дала відповіді. Запустіть його імпорт знову й дайте відповідь на питання, а потім імпортуйте. Нічого не записано.
+# The Scrivener project needs the writer to tick a box before it imports (to import it
+# without changes made on an iPhone or iPad, or with its documents empty), and the import
+# was started without it. Shown with no button to press.
+project-import-failed-scrivener-not-accepted = Щоб проєкт Scrivener можна було імпортувати, потрібно встановити прапорець на кроці «Проєкт», а його не встановлено. Запустіть його імпорт знову та встановіть прапорець, а потім імпортуйте. Нічого не записано.
+# The Scrivener project changed after the writer reviewed it. Shown with no button to press.
+project-import-failed-scrivener-changed = Проєкт Scrivener змінився після того, як ви його перевірили. Запустіть його імпорт знову й перевірте проєкт ще раз, а потім імпортуйте. Нічого не записано.
 # An error nothing above accounts for; $detail is its technical description.
 project-import-failed-internal = Імпорт зупинився через помилку, якої Skribisto не очікував: { $detail }
 import-target-open-title = Цей проєкт відкрито
@@ -1073,8 +1077,11 @@ import-scrivener-empty-hint = Виберіть проєкт, щоб побачи
 import-scrivener-reading = Читання проєкту…
 import-scrivener-stop-reading = Зупинити читання
 import-scrivener-read-failed = Не вдалося прочитати проєкт
-import-scrivener-read-failed-body = Під час читання щось пішло не так. Натисніть «Перечитати проєкт» або перегляньте подробиці.
+import-scrivener-read-failed-body = Під час читання щось пішло не так. Натисніть «Перечитати проєкт», щоб спробувати ще раз, або «Подробиці», щоб побачити, що сталося.
 import-scrivener-details = Подробиці
+# The wizard's button that reads the Scrivener project from disk again, as it is now:
+# after a refusal whose cause may go away, or a reading that failed. Not the action of
+# import-scrivener-review-again: keep the two labels clearly different.
 import-scrivener-check-again = Перечитати проєкт
 # A refusal this version does not know how to word.
 import-scrivener-refusal-unknown-title = Цей проєкт не можна імпортувати
@@ -1138,10 +1145,10 @@ import-scrivener-root-items = { $count ->
    *[other] { $count } елемента
 }
 import-scrivener-root-items-manuscript = { $count ->
-    [one] { $count } елемент, схоже на рукопис
-    [few] { $count } елементи, схоже на рукопис
-    [many] { $count } елементів, схоже на рукопис
-   *[other] { $count } елемента, схоже на рукопис
+    [one] { $count } елемент. Ця тека схожа на рукопис.
+    [few] { $count } елементи. Ця тека схожа на рукопис.
+    [many] { $count } елементів. Ця тека схожа на рукопис.
+   *[other] { $count } елемента. Ця тека схожа на рукопис.
 }
 import-scrivener-dest-notes = Нотатки
 import-scrivener-dest-story-bible = Довідник історії
@@ -1216,6 +1223,10 @@ import-scrivener-done-check = { $items ->
     [many] Уваги потребують { $findings } пунктів.
    *[other] Уваги потребують { $findings } пункту.
 }
+# The button of the notice a failed import shows: it opens the import wizard again on the
+# same Scrivener project, with what the writer chose for the import that failed. Not the
+# action of import-scrivener-check-again. Keep it short: it shares one line of the notice
+# with “Details”.
 import-scrivener-review-again = Повернутися до перевірки
 ## The import's report (the dialog See report opens)
 import-scrivener-see-report = Переглянути звіт
@@ -1311,13 +1322,13 @@ import-scrivener-report-research-copied-except = { $count ->
    *[other] Файли досліджень, які Skribisto не може відкрити, скопійовано до «{ $folder }» поруч із новим проєктом, крім { $count } файлу, які лишаються у вашому проєкті Scrivener. Їхні нотатки вказують, де вони лежать.
 }
 import-scrivener-report-research-none-copied = { $count ->
-    [1] Ви попросили скопіювати файли досліджень, але один файл скопіювати не вдалося. Він лишається у вашому проєкті Scrivener, а його нотатка вказує, де він лежить.
-    [one] Ви попросили скопіювати файли досліджень, але { $count } файл скопіювати не вдалося. Вони лишаються у вашому проєкті Scrivener, а їхні нотатки вказують, де вони лежать.
-    [few] Ви попросили скопіювати файли досліджень, але { $count } файли скопіювати не вдалося. Вони лишаються у вашому проєкті Scrivener, а їхні нотатки вказують, де вони лежать.
-    [many] Ви попросили скопіювати файли досліджень, але { $count } файлів скопіювати не вдалося. Вони лишаються у вашому проєкті Scrivener, а їхні нотатки вказують, де вони лежать.
-   *[other] Ви попросили скопіювати файли досліджень, але { $count } файлу скопіювати не вдалося. Вони лишаються у вашому проєкті Scrivener, а їхні нотатки вказують, де вони лежать.
+    [1] Ви попросили скопіювати файли досліджень, але єдиний такий файл скопіювати не вдалося. Він лишається у вашому проєкті Scrivener, а його нотатка вказує, де він лежить.
+    [one] Ви попросили скопіювати файли досліджень, але не вдалося скопіювати жодного з { $count } файлу. Вони лишаються у вашому проєкті Scrivener, а їхні нотатки вказують, де вони лежать.
+    [few] Ви попросили скопіювати файли досліджень, але не вдалося скопіювати жодного з { $count } файлів. Вони лишаються у вашому проєкті Scrivener, а їхні нотатки вказують, де вони лежать.
+    [many] Ви попросили скопіювати файли досліджень, але не вдалося скопіювати жодного з { $count } файлів. Вони лишаються у вашому проєкті Scrivener, а їхні нотатки вказують, де вони лежать.
+   *[other] Ви попросили скопіювати файли досліджень, але не вдалося скопіювати жодного з { $count } файлу. Вони лишаються у вашому проєкті Scrivener, а їхні нотатки вказують, де вони лежать.
 }
-import-scrivener-report-chose-project = Ви вирішили імпортувати «{ $project }», один із проєктів у тому, що ви вибрали.
+import-scrivener-report-chose-project = Ви вирішили імпортувати «{ $project }», один із кількох проєктів у вибраній вами теці чи архіві.
 import-scrivener-report-chose-manifest = Ви вибрали файл підшивки «{ $file }».
 import-scrivener-report-chose-enclosing = Ви вибрали щось усередині «{ $project }», тож імпортовано весь проєкт.
 import-scrivener-report-chose-upgraded = Ви імпортували «{ $current }», проєкт, у якому ви продовжили писати, а не копію, яку Scrivener зберіг перед оновленням.
@@ -1331,8 +1342,9 @@ import-scrivener-report-title-from-project-properties = Skribisto запропо
 import-scrivener-report-author-from-project = Skribisto запропонував ім’я автора, указане в налаштуваннях проєкту. Там може лишитися автор шаблону, і тоді його ім’я надрукується на титульній сторінці.
 import-scrivener-report-language-not-stated = Проєкт не вказував своєї мови, тож Skribisto запропонував мову власного інтерфейсу. Від неї залежить, як рахуються слова й пишуться лапки.
 import-scrivener-report-language-from-script = Skribisto запропонував мову за писемністю, якою написано рукопис ({ $tag }).
-# A proposal of the Save page the writer replaced with their own.
-import-scrivener-report-you-changed-it = { $hint } Ви це змінили.
+# A proposal of the Save page the writer replaced with their own. $hint is the sentence
+# saying what Skribisto proposed: a title, an author's name or a language.
+import-scrivener-report-you-changed-it = { $hint } Ви замінили цю пропозицію своєю.
 import-scrivener-report-content-salvaged-text = Тексту «{ $item }» у проєкті не було. Його слова взято з пошукового індексу Scrivener, як простий текст і, можливо, зі старішої версії: перевірте їх.
 import-scrivener-report-content-salvaged-notes = Нотаток «{ $item }» у проєкті не було. Їхні слова взято з пошукового індексу Scrivener, як простий текст і, можливо, зі старішої версії: перевірте їх.
 import-scrivener-report-content-salvaged-synopsis = Синопсису «{ $item }» у проєкті не було. Його слова взято з пошукового індексу Scrivener, як простий текст і, можливо, зі старішої версії: перевірте їх.
@@ -1407,7 +1419,8 @@ import-scrivener-notes-of = { $title } (нотатки)
 import-scrivener-project-notes = Нотатки проєкту
 import-scrivener-recovered = Відновлені тексти
 import-scrivener-untitled-template = Шаблон без назви
-# The folder beside the new project its research files are copied into.
+# The folder beside the new project its research files are copied into. A folder name on
+# disk: keep it free of the characters a file name cannot hold (/ \ : * ? " < > |).
 import-scrivener-research-folder = { $name } (файли досліджень)
 # Between two authors' names.
 import-scrivener-list-separator = {", "}
@@ -1454,7 +1467,10 @@ import-scrivener-weekday-saturday = субота
 import-scrivener-weekday-sunday = неділя
 import-scrivener-draft-target = Норма чернетки
 import-scrivener-deadline = Кінцевий термін
-# A unit after a count, in parentheses: "1000 (words)".
+# The unit of a target, in parentheses after its number in the note that lists the
+# project's targets: “80000 (words)”. A label for the unit, not part of a sentence, and no
+# count reaches it: use the form your language gives a unit standing alone, as in a
+# column heading. The same for the two keys below.
 import-scrivener-unit-words = слів
 import-scrivener-unit-characters = символів
 import-scrivener-unit-pages = сторінок
@@ -1480,8 +1496,9 @@ import-scrivener-search-exact = точна фраза
 import-scrivener-label-value = { $label }: { $value }
 import-scrivener-replacement-regex = регулярний вираз
 import-scrivener-replacement-off = вимкнено
-# Said of a note whose own text lists its custom metadata or bookmarks.
-import-scrivener-in-own-note = Перелічено у власній нотатці.
+# In the notes that list custom metadata and bookmarks, said after the path of a document
+# that became a note: its values or bookmarks are listed in that note's own text.
+import-scrivener-in-own-note = Перелічено в нотатці, якою став цей документ.
 
 
 ## Import a Scrivener project: what the import says about the project, in the writer's words.
@@ -1491,6 +1508,10 @@ import-scrivener-in-own-note = Перелічено у власній нотат
 import-scrivener-paragraph = { $title }. { $body }
 
 ## When the project cannot be imported
+## A body that ends “then read the project again” is shown in the wizard beside the button
+## import-scrivener-check-again, so it uses the same words. A failed import's notice shows
+## the same body beside import-scrivener-review-again, which reads the project again too:
+## the body quotes no button.
 import-scrivener-refusal-missing-title = За цим шляхом нічого немає
 import-scrivener-refusal-missing-body = «{ $file }» більше немає. Виберіть проєкт ще раз.
 import-scrivener-refusal-unreadable-title = Цей проєкт не вдається прочитати
@@ -1526,7 +1547,7 @@ import-scrivener-refusal-manifest-too-large-body = «{ $manifest }» більш�
 import-scrivener-refusal-no-item-identifiers-title = У підшивці немає жодного документа, який Skribisto міг би знайти
 import-scrivener-refusal-no-item-identifiers-body = Жоден її елемент не має ідентифікатора, тож їхні файли неможливо знайти. Відкрийте проєкт один раз у Scrivener, а потім імпортуйте його знову.
 import-scrivener-refusal-incomplete-copy-title = У цій копії бракує документів
-import-scrivener-refusal-incomplete-copy-body = Тека Files є, але документів у ній немає. Можливо, служба синхронізації ще не завершила копіювання проєкту. Зачекайте, доки вона завершить, або скопіюйте всю теку .scriv ще раз, а потім натисніть «Перечитати проєкт».
+import-scrivener-refusal-incomplete-copy-body = Тека Files є, але документів у ній немає. Можливо, служба синхронізації ще не завершила копіювання проєкту. Зачекайте, доки вона завершить, або скопіюйте всю теку .scriv ще раз, а потім перечитайте проєкт.
 import-scrivener-refusal-archive-title = Цей архів не вдається відкрити
 import-scrivener-refusal-archive-unreadable-body = Не вдалося прочитати «{ $file }» ({ $reason }). Можливо, його пошкоджено. Розпакуйте його самостійно, а потім виберіть теку .scriv усередині.
 import-scrivener-refusal-archive-unsafe-name-title = Цей архів неможливо безпечно відкрити
@@ -1560,18 +1581,21 @@ import-scrivener-refusal-cloud-placeholders-title = { $count ->
     [many] { $count } файлів цього проєкту ще в хмарі
    *[other] { $count } файлу цього проєкту ще в хмарі
 }
-import-scrivener-refusal-cloud-placeholders-body = Їх не завантажено на цей комп’ютер, наприклад { $examples }. Зробіть проєкт доступним офлайн у програмі синхронізації, а потім натисніть «Перечитати проєкт».
+import-scrivener-refusal-cloud-placeholders-body = { $count ->
+    [1] Його не завантажено на цей комп’ютер: { $examples }. Зробіть проєкт доступним офлайн у програмі синхронізації, а потім перечитайте проєкт.
+   *[other] Їх не завантажено на цей комп’ютер, наприклад { $examples }. Зробіть проєкт доступним офлайн у програмі синхронізації, а потім перечитайте проєкт.
+}
 import-scrivener-refusal-unreadable-members-title = { $count ->
     [one] { $count } файл цього проєкту не вдається прочитати
     [few] { $count } файли цього проєкту не вдається прочитати
     [many] { $count } файлів цього проєкту не вдається прочитати
    *[other] { $count } файлу цього проєкту не вдається прочитати
 }
-import-scrivener-refusal-unreadable-members-body = Наприклад, { $examples }. Переконайтеся, що маєте право читати весь проєкт і що диск справний, а потім натисніть «Перечитати проєкт».
+import-scrivener-refusal-unreadable-members-body = Наприклад, { $examples }. Переконайтеся, що маєте право читати весь проєкт і що диск справний, а потім перечитайте проєкт.
 import-scrivener-refusal-needed-member-is-link-title = Цей проєкт посилається за межі власної теки
 import-scrivener-refusal-needed-member-is-link-body = «{ $member }» є посиланням на інше місце на цьому комп’ютері, а Skribisto не переходить за посиланнями. Скопіюйте проєкт так, щоб усі файли були всередині нього, а потім спробуйте ще раз.
 import-scrivener-refusal-project-changed-during-read-title = Проєкт змінився під час читання
-import-scrivener-refusal-project-changed-during-read-body = Scrivener або служба синхронізації досі записує в нього. Закрийте його в Scrivener, зачекайте, доки синхронізація завершиться, а потім натисніть «Перечитати проєкт».
+import-scrivener-refusal-project-changed-during-read-body = Scrivener або служба синхронізації досі записує в нього. Закрийте його в Scrivener, зачекайте, доки синхронізація завершиться, а потім перечитайте проєкт.
 import-scrivener-refusal-too-many-members-title = У цьому проєкті забагато файлів
 import-scrivener-refusal-too-many-members-body = Файлів у ньому більше, ніж { $limit }, тобто більше, ніж у будь-якому справжньому проєкті. Можливо, це не проєкт Scrivener або його пошкоджено.
 import-scrivener-refusal-too-large-title = Цей проєкт завеликий
@@ -1645,11 +1669,10 @@ import-scrivener-notice-imported-from-ios-stub-body = Його ще жодног
 import-scrivener-notice-stale-mobile-binder-ignored-title = Стару підшивку з iPhone чи iPad не враховано
 import-scrivener-notice-stale-mobile-binder-ignored-body = Scrivener на комп’ютері вже переніс її зміни.
 import-scrivener-notice-identical-manifest-copies-title = { $count ->
-    [1] Тут є копія файлу підшивки
-    [one] Тут { $count } однакова копія файлу підшивки
-    [few] Тут { $count } однакові копії файлу підшивки
-    [many] Тут { $count } однакових копій файлу підшивки
-   *[other] Тут { $count } однакової копії файлу підшивки
+    [one] У цьому проєкті { $count } однаковий файл підшивки
+    [few] У цьому проєкті { $count } однакові файли підшивки
+    [many] У цьому проєкті { $count } однакових файлів підшивки
+   *[other] У цьому проєкті { $count } однакового файлу підшивки
 }
 import-scrivener-notice-identical-manifest-copies-body = Вони однакові, тож будь-яка з них дає той самий проєкт.
 import-scrivener-notice-manifest-copies-ignored-title = Зайві копії файлу підшивки не враховано
@@ -1684,14 +1707,14 @@ import-scrivener-notice-invalid-item-identifier-title = { $count ->
     [many] { $count } елементів підшивки мають недійсні ідентифікатори
    *[other] { $count } елемента підшивки мають недійсні ідентифікатори
 }
-import-scrivener-notice-invalid-item-identifier-body = Ці ідентифікатори не враховано. Елементи збережено.
+import-scrivener-notice-invalid-item-identifier-body = Такий ідентифікатор не враховано, а елемент, що його має, збережено.
 import-scrivener-notice-items-without-identifier-title = { $count ->
     [one] { $count } елемент підшивки не має ідентифікатора
     [few] { $count } елементи підшивки не мають ідентифікатора
     [many] { $count } елементів підшивки не мають ідентифікатора
    *[other] { $count } елемента підшивки не мають ідентифікатора
 }
-import-scrivener-notice-items-without-identifier-body = Їхні файли неможливо знайти, тож вони надходять порожніми.
+import-scrivener-notice-items-without-identifier-body = Без ідентифікатора файли елемента неможливо знайти, тож він надходить порожнім.
 import-scrivener-notice-duplicate-item-key-title = Два елементи підшивки мають однаковий ідентифікатор: «{ $item }»
 import-scrivener-notice-duplicate-item-key-body = Документи отримує перший. Другий зберігає своє місце й надходить порожнім.
 import-scrivener-notice-lock-here-title = Цей проєкт відкрито в Scrivener на цьому комп’ютері
@@ -1704,12 +1727,24 @@ import-scrivener-notice-archived-while-open-body = Змін, зроблених 
 import-scrivener-notice-content-missing-notes = Нотаток «{ $item }» немає
 import-scrivener-notice-content-missing-synopsis = Синопсису «{ $item }» немає
 import-scrivener-notice-content-missing-text = Тексту «{ $item }» немає
-import-scrivener-notice-content-missing-body = Відповідного файлу немає в цій копії, тож цей вміст надходить порожнім. Можливо, служба синхронізації ще копіює проєкт.
-import-scrivener-notice-content-missing-salvaged = Відповідного файлу немає в цій копії, але пошуковий індекс Scrivener ще зберігав ці слова. Їх збережено як простий текст, можливо, зі старішої версії.
+import-scrivener-notice-content-missing-body = { $place ->
+    [notes] Їхнього файлу немає в цій копії, тож вони надходять порожніми. Можливо, служба синхронізації ще копіює проєкт.
+    [synopsis] Його файлу немає в цій копії, тож він надходить порожнім. Можливо, служба синхронізації ще копіює проєкт.
+   *[text] Його файлу немає в цій копії, тож він надходить порожнім. Можливо, служба синхронізації ще копіює проєкт.
+}
+import-scrivener-notice-content-missing-salvaged = { $place ->
+    [notes] Їхнього файлу немає в цій копії, але пошуковий індекс Scrivener ще зберігав їхні слова. Їх збережено як простий текст, можливо, зі старішої версії.
+    [synopsis] Його файлу немає в цій копії, але пошуковий індекс Scrivener ще зберігав його слова. Їх збережено як простий текст, можливо, зі старішої версії.
+   *[text] Його файлу немає в цій копії, але пошуковий індекс Scrivener ще зберігав його слова. Їх збережено як простий текст, можливо, зі старішої версії.
+}
 import-scrivener-notice-content-truncated-notes = Нотатки «{ $item }» на диску порожні
 import-scrivener-notice-content-truncated-synopsis = Синопсис «{ $item }» на диску порожній
 import-scrivener-notice-content-truncated-text = Текст «{ $item }» на диску порожній
-import-scrivener-notice-content-truncated-body = Scrivener записав, що тут є текст, але файл нічого не містить: можливо, синхронізація зупинилася на півдорозі. Цей вміст надходить порожнім.
+import-scrivener-notice-content-truncated-body = { $place ->
+    [notes] Scrivener записав, що в них є текст, але їхній файл нічого не містить: можливо, синхронізація зупинилася на півдорозі. Вони надходять порожніми.
+    [synopsis] Scrivener записав, що в ньому є текст, але його файл нічого не містить: можливо, синхронізація зупинилася на півдорозі. Він надходить порожнім.
+   *[text] Scrivener записав, що в ньому є текст, але його файл нічого не містить: можливо, синхронізація зупинилася на півдорозі. Він надходить порожнім.
+}
 import-scrivener-notice-missing-media-title = Файлу «{ $item }» немає
 import-scrivener-notice-missing-media-body = Зображення чи файлу досліджень, що міститься в ньому, немає в цій копії.
 import-scrivener-notice-sync-conflict-copies-title = { $count ->
@@ -1719,8 +1754,9 @@ import-scrivener-notice-sync-conflict-copies-title = { $count ->
    *[other] Знайдено { $count } копії документів, створеної синхронізацією
 }
 import-scrivener-notice-sync-conflict-copies-body = { $missing ->
-    [0] Вони переносяться як відновлені тексти, в окремій теці, щоб ви могли порівняти їх із документами.
-   *[other] Вони переносяться як відновлені тексти, в окремій теці. Деякі з них є копіями документів, яких уже немає в проєкті.
+    [0] Копії, створені синхронізацією, переносяться як відновлені тексти, в окремій теці, щоб ви могли порівняти їх із документами.
+    [1] Копії, створені синхронізацією, переносяться як відновлені тексти, в окремій теці. Одна з них є копією документа, якого вже немає в проєкті.
+   *[other] Копії, створені синхронізацією, переносяться як відновлені тексти, в окремій теці. { $missing } з них є копіями документів, яких уже немає в проєкті.
 }
 import-scrivener-notice-recovered-unreferenced-text-title = { $count ->
     [one] Знайдено { $count } документ, не вказаний у жодному елементі підшивки
@@ -1728,14 +1764,14 @@ import-scrivener-notice-recovered-unreferenced-text-title = { $count ->
     [many] Знайдено { $count } документів, не вказаних у жодному елементі підшивки
    *[other] Знайдено { $count } документа, не вказаного в жодному елементі підшивки
 }
-import-scrivener-notice-recovered-unreferenced-text-body = Вони переносяться як відновлені тексти, в окремій теці.
+import-scrivener-notice-recovered-unreferenced-text-body = Такі документи переносяться як відновлені тексти, в окремій теці.
 import-scrivener-notice-sync-debris-ignored-title = { $count ->
     [one] { $count } зайву копію, залишену службою синхронізації, не враховано
     [few] { $count } зайві копії, залишені службою синхронізації, не враховано
     [many] { $count } зайвих копій, залишених службою синхронізації, не враховано
    *[other] { $count } зайвої копії, залишеної службою синхронізації, не враховано
 }
-import-scrivener-notice-sync-debris-ignored-body = Scrivener теж їх не читає. Читаються лише власні файли проєкту.
+import-scrivener-notice-sync-debris-ignored-body = Scrivener такі копії теж не читає. Читаються лише власні файли проєкту.
 import-scrivener-notice-unrecognised-files-title = { $count ->
     [one] { $count } файл, що не належить до проєкту Scrivener, не враховано
     [few] { $count } файли, що не належать до проєкту Scrivener, не враховано
@@ -1761,7 +1797,7 @@ import-scrivener-notice-cloud-placeholders-skipped-title = { $count ->
     [many] { $count } файлів, що ще в хмарі, пропущено
    *[other] { $count } файлу, що ще в хмарі, пропущено
 }
-import-scrivener-notice-cloud-placeholders-skipped-body = Вони не потрібні для імпорту.
+import-scrivener-notice-cloud-placeholders-skipped-body = Нічого з того, що потрібно для імпорту, у хмарі не лишилося.
 import-scrivener-notice-no-text-found-title = { $count ->
     [1] { $count } документ, і в ньому немає тексту
     [one] { $count } документ, і в жодному з них немає тексту
@@ -1808,7 +1844,7 @@ import-scrivener-notice-dangling-item-title = { $count ->
     [many] { $count } посилань вказують на документи, яких проєкт не визначає
    *[other] { $count } посилання вказують на документи, яких проєкт не визначає
 }
-import-scrivener-notice-dangling-references-body = Їх пропущено.
+import-scrivener-notice-dangling-references-body = Посилання на те, чого проєкт не визначає, пропускається.
 import-scrivener-notice-snapshots-not-imported-line = { $count ->
     [one] { $count } знімок лишається у вашому проєкті Scrivener: Skribisto не переносить знімки.
     [few] { $count } знімки лишаються у вашому проєкті Scrivener: Skribisto не переносить знімки.
@@ -1851,16 +1887,17 @@ import-scrivener-structure-one-document-manuscript-line = { $count ->
    *[other] { $count } документа рукопису містять свої розділи як заголовки.
 }
 import-scrivener-structure-title-repeats-number-line = { $count ->
-    [one] { $count } назва розділу чи частини містить і свій номер, тож експорт може надрукувати номер двічі.
-    [few] { $count } назви розділів чи частин містять і свої номери, тож експорт може надрукувати номер двічі.
-    [many] { $count } назв розділів чи частин містять і свої номери, тож експорт може надрукувати номер двічі.
-   *[other] { $count } назви розділів чи частин містять і свої номери, тож експорт може надрукувати номер двічі.
+    [one] { $count } назва розділу чи частини містить і свій номер, наприклад «Розділ II» чи «Частина перша», тож експорт може надрукувати номер двічі.
+    [few] { $count } назви розділів чи частин містять і свої номери, наприклад «Розділ II» чи «Частина перша», тож експорт може надрукувати номер двічі.
+    [many] { $count } назв розділів чи частин містять і свої номери, наприклад «Розділ II» чи «Частина перша», тож експорт може надрукувати номер двічі.
+   *[other] { $count } назви розділів чи частин містять і свої номери, наприклад «Розділ II» чи «Частина перша», тож експорт може надрукувати номер двічі.
 }
 import-scrivener-structure-claim-overruled-line = { $count ->
-    [one] { $count } елемент отримує рівень, нижчий за заявлений, бо елемент вище вже займає цей рівень.
-    [few] { $count } елементи отримують рівень, нижчий за заявлений, бо елемент вище вже займає цей рівень.
-    [many] { $count } елементів отримують рівень, нижчий за заявлений, бо елемент вище вже займає цей рівень.
-   *[other] { $count } елемента отримують рівень, нижчий за заявлений, бо елемент вище вже займає цей рівень.
+    [1] { $count } елемент схожий на книгу, частину чи розділ, але розташований усередині елемента, що вже має цей рівень, тож переноситься на нижчий рівень.
+    [one] { $count } елемент схожий на книги, частини чи розділи, але кожен із них розташований усередині елемента, що вже має цей рівень, тож вони переносяться на нижчий рівень.
+    [few] { $count } елементи схожі на книги, частини чи розділи, але кожен із них розташований усередині елемента, що вже має цей рівень, тож вони переносяться на нижчий рівень.
+    [many] { $count } елементів схожі на книги, частини чи розділи, але кожен із них розташований усередині елемента, що вже має цей рівень, тож вони переносяться на нижчий рівень.
+   *[other] { $count } елемента схожі на книги, частини чи розділи, але кожен із них розташований усередині елемента, що вже має цей рівень, тож вони переносяться на нижчий рівень.
 }
 import-scrivener-structure-adopted-by-chapter-line = { $count ->
     [one] { $count } документ, що йде після розділу, стає кінцем цього розділу.
@@ -1875,10 +1912,11 @@ import-scrivener-structure-looks-like-manuscript-line = { $count ->
    *[other] { $count } теки верхнього рівня, залишеної в нотатках, схожі на рукопис. Їх можна перенести до рукопису як інші книги.
 }
 import-scrivener-structure-generic-sheet-title-line = { $count ->
-    [one] { $count } запис довідника історії має назву з шаблону, наприклад «Герой», і згадки шукатимуть її в тексті.
-    [few] { $count } записи довідника історії мають назви з шаблону, наприклад «Герой», і згадки шукатимуть їх у тексті.
-    [many] { $count } записів довідника історії мають назви з шаблону, наприклад «Герой», і згадки шукатимуть їх у тексті.
-   *[other] { $count } запису довідника історії мають назви з шаблону, наприклад «Герой», і згадки шукатимуть їх у тексті.
+    [1] { $count } запис довідника історії досі має назву з шаблону, наприклад «Герой». Skribisto шукає цю назву у вашому тексті й показує кожне місце, де вона трапляється, на сторінці «У прозі»: перейменуйте запис, якщо це слово часто вживається у вашій книзі.
+    [one] { $count } запис довідника історії досі має назву з шаблону, наприклад «Герой». Skribisto шукає ці назви у вашому тексті й показує кожне місце, де вони трапляються, на сторінці «У прозі»: перейменуйте ці записи, якщо ці слова часто вживаються у вашій книзі.
+    [few] { $count } записи довідника історії досі мають назви з шаблону, наприклад «Герой». Skribisto шукає ці назви у вашому тексті й показує кожне місце, де вони трапляються, на сторінці «У прозі»: перейменуйте ці записи, якщо ці слова часто вживаються у вашій книзі.
+    [many] { $count } записів довідника історії досі мають назви з шаблону, наприклад «Герой». Skribisto шукає ці назви у вашому тексті й показує кожне місце, де вони трапляються, на сторінці «У прозі»: перейменуйте ці записи, якщо ці слова часто вживаються у вашій книзі.
+   *[other] { $count } запису довідника історії досі мають назви з шаблону, наприклад «Герой». Skribisto шукає ці назви у вашому тексті й показує кожне місце, де вони трапляються, на сторінці «У прозі»: перейменуйте ці записи, якщо ці слова часто вживаються у вашій книзі.
 }
 import-scrivener-structure-placeholder-title-line = { $count ->
     [one] { $count } назва лише називала свій рівень і лишається порожньою: підшивка й експорт нумерують її самі.
@@ -1935,25 +1973,25 @@ import-scrivener-structure-matter-inside-book-line = { $count ->
    *[other] { $count } елемента початкових чи кінцевих сторінок з-поза рукопису переходять усередину книги як паратекст і не потрапляють в експорт, доки ви не ввімкнете для них «Включати в експорт».
 }
 import-scrivener-structure-paratext-not-counted-line = { $documents ->
-    [one] { $documents } документ рукопису стає паратекстом (початковими чи кінцевими сторінками): його { $words ->
+    [one] { $documents } документ рукопису стає паратекстом (початковими чи кінцевими сторінками), тож { $words ->
         [one] { $words } слово більше не зараховується
         [few] { $words } слова більше не зараховуються
         [many] { $words } слів більше не зараховуються
        *[other] { $words } слова більше не зараховуються
     } до рукопису.
-    [few] { $documents } документи рукопису стають паратекстом (початковими чи кінцевими сторінками): їхні { $words ->
+    [few] { $documents } документи рукопису стають паратекстом (початковими чи кінцевими сторінками), тож { $words ->
         [one] { $words } слово більше не зараховується
         [few] { $words } слова більше не зараховуються
         [many] { $words } слів більше не зараховуються
        *[other] { $words } слова більше не зараховуються
     } до рукопису.
-    [many] { $documents } документів рукопису стають паратекстом (початковими чи кінцевими сторінками): їхні { $words ->
+    [many] { $documents } документів рукопису стають паратекстом (початковими чи кінцевими сторінками), тож { $words ->
         [one] { $words } слово більше не зараховується
         [few] { $words } слова більше не зараховуються
         [many] { $words } слів більше не зараховуються
        *[other] { $words } слова більше не зараховуються
     } до рукопису.
-   *[other] { $documents } документа рукопису стають паратекстом (початковими чи кінцевими сторінками): їхні { $words ->
+   *[other] { $documents } документа рукопису стають паратекстом (початковими чи кінцевими сторінками), тож { $words ->
         [one] { $words } слово більше не зараховується
         [few] { $words } слова більше не зараховуються
         [many] { $words } слів більше не зараховуються
@@ -2005,10 +2043,22 @@ import-scrivener-structure-project-notes-line = { $count ->
 }
 import-scrivener-structure-trash-brought-across-line = { $items ->
     [1] Кошик переноситься: { $items } елемент, який можна відновити з кошика.
-    [one] Кошик переноситься: { $items } елемент, із них { $writing } з текстом, і їх можна відновити з кошика.
-    [few] Кошик переноситься: { $items } елементи, із них { $writing } з текстом, і їх можна відновити з кошика.
-    [many] Кошик переноситься: { $items } елементів, із них { $writing } з текстом, і їх можна відновити з кошика.
-   *[other] Кошик переноситься: { $items } елемента, із них { $writing } з текстом, і їх можна відновити з кошика.
+    [one] Кошик переноситься: { $items } елемент, { $writing ->
+        [0] у жодному з них немає тексту
+       *[other] у { $writing } з них є текст
+    }, і їх можна відновити з кошика.
+    [few] Кошик переноситься: { $items } елементи, { $writing ->
+        [0] у жодному з них немає тексту
+       *[other] у { $writing } з них є текст
+    }, і їх можна відновити з кошика.
+    [many] Кошик переноситься: { $items } елементів, { $writing ->
+        [0] у жодному з них немає тексту
+       *[other] у { $writing } з них є текст
+    }, і їх можна відновити з кошика.
+   *[other] Кошик переноситься: { $items } елемента, { $writing ->
+        [0] у жодному з них немає тексту
+       *[other] у { $writing } з них є текст
+    }, і їх можна відновити з кошика.
 }
 import-scrivener-structure-not-compiled-line = { $count ->
     [one] { $count } елемент, який Scrivener не включав у компонування, так само не включається в експорт.
@@ -2050,10 +2100,22 @@ import-scrivener-structure-left-out-line = { $count ->
 }
 import-scrivener-structure-trash-left-out-line = { $items ->
     [1] Кошик не перенесено: { $items } елемент.
-    [one] Кошик не перенесено: { $items } елемент, із них { $writing } з текстом.
-    [few] Кошик не перенесено: { $items } елементи, із них { $writing } з текстом.
-    [many] Кошик не перенесено: { $items } елементів, із них { $writing } з текстом.
-   *[other] Кошик не перенесено: { $items } елемента, із них { $writing } з текстом.
+    [one] Кошик не перенесено: { $items } елемент, { $writing ->
+        [0] у жодному з них немає тексту
+       *[other] у { $writing } з них є текст
+    }.
+    [few] Кошик не перенесено: { $items } елементи, { $writing ->
+        [0] у жодному з них немає тексту
+       *[other] у { $writing } з них є текст
+    }.
+    [many] Кошик не перенесено: { $items } елементів, { $writing ->
+        [0] у жодному з них немає тексту
+       *[other] у { $writing } з них є текст
+    }.
+   *[other] Кошик не перенесено: { $items } елемента, { $writing ->
+        [0] у жодному з них немає тексту
+       *[other] у { $writing } з них є текст
+    }.
 }
 import-scrivener-structure-card-image-left-behind-line = { $count ->
     [one] { $count } зображення на картці елемента рукопису не перенесено: воно надрукувалося б у книзі.
@@ -2062,22 +2124,23 @@ import-scrivener-structure-card-image-left-behind-line = { $count ->
    *[other] { $count } зображення на картках елементів рукопису не перенесено: вони надрукувалися б у книзі.
 }
 import-scrivener-structure-default-template-not-linked-line = { $count ->
-    [one] Типовий шаблон документа { $count } теки не може перейти разом із нею.
-    [few] Типові шаблони документів { $count } тек не можуть перейти разом із ними.
-    [many] Типові шаблони документів { $count } тек не можуть перейти разом із ними.
-   *[other] Типові шаблони документів { $count } теки не можуть перейти разом із ними.
+    [1] { $count } тека мала типовий шаблон для нових документів у ній. У Skribisto шаблон може мати лише мітка довідника історії, тож цей зв’язок не збережено.
+    [one] { $count } тека мала типовий шаблон для нових документів у них. У Skribisto шаблон може мати лише мітка довідника історії, тож ці зв’язки не збережено.
+    [few] { $count } теки мали типовий шаблон для нових документів у них. У Skribisto шаблон може мати лише мітка довідника історії, тож ці зв’язки не збережено.
+    [many] { $count } тек мали типовий шаблон для нових документів у них. У Skribisto шаблон може мати лише мітка довідника історії, тож ці зв’язки не збережено.
+   *[other] { $count } теки мали типовий шаблон для нових документів у них. У Skribisto шаблон може мати лише мітка довідника історії, тож ці зв’язки не збережено.
 }
 import-scrivener-structure-page-break-not-kept-line = { $count ->
-    [one] { $count } налаштування «Розрив сторінки перед» не має відповідника в Skribisto, тож його не збережено.
-    [few] { $count } налаштування «Розрив сторінки перед» не мають відповідника в Skribisto, тож їх не збережено.
-    [many] { $count } налаштувань «Розрив сторінки перед» не мають відповідника в Skribisto, тож їх не збережено.
-   *[other] { $count } налаштування «Розрив сторінки перед» не мають відповідника в Skribisto, тож їх не збережено.
+    [one] { $count } налаштування «Page Break Before» (розрив сторінки перед документом) не має відповідника в Skribisto, тож його не збережено.
+    [few] { $count } налаштування «Page Break Before» (розрив сторінки перед документом) не мають відповідника в Skribisto, тож їх не збережено.
+    [many] { $count } налаштувань «Page Break Before» (розрив сторінки перед документом) не мають відповідника в Skribisto, тож їх не збережено.
+   *[other] { $count } налаштування «Page Break Before» (розрив сторінки перед документом) не мають відповідника в Skribisto, тож їх не збережено.
 }
 import-scrivener-structure-compile-as-is-not-kept-line = { $count ->
-    [one] { $count } налаштування «Компонувати як є» не має відповідника в Skribisto, тож його не збережено.
-    [few] { $count } налаштування «Компонувати як є» не мають відповідника в Skribisto, тож їх не збережено.
-    [many] { $count } налаштувань «Компонувати як є» не мають відповідника в Skribisto, тож їх не збережено.
-   *[other] { $count } налаштування «Компонувати як є» не мають відповідника в Skribisto, тож їх не збережено.
+    [one] { $count } налаштування «Compile As-Is» (компонувати як є) не має відповідника в Skribisto, тож його не збережено.
+    [few] { $count } налаштування «Compile As-Is» (компонувати як є) не мають відповідника в Skribisto, тож їх не збережено.
+    [many] { $count } налаштувань «Compile As-Is» (компонувати як є) не мають відповідника в Skribisto, тож їх не збережено.
+   *[other] { $count } налаштування «Compile As-Is» (компонувати як є) не мають відповідника в Skribisto, тож їх не збережено.
 }
 
 ## What the import did with the labels, the status list and the dates
@@ -2120,25 +2183,25 @@ import-scrivener-metadata-labels-became-tags-line = { $tags ->
     }.
 }
 import-scrivener-metadata-statuses-became-ladder-line = { $rungs ->
-    [one] Список станів перетворюється на { $rungs } стан проєкту, застосований до { $rows ->
+    [one] Список станів Scrivener переноситься як список станів проєкту: { $rungs } стан, застосований до { $rows ->
         [one] { $rows } елемента
         [few] { $rows } елементів
         [many] { $rows } елементів
        *[other] { $rows } елемента
     }.
-    [few] Список станів перетворюється на { $rungs } стани проєкту, застосовані до { $rows ->
+    [few] Список станів Scrivener переноситься як список станів проєкту: { $rungs } стани, застосовані до { $rows ->
         [one] { $rows } елемента
         [few] { $rows } елементів
         [many] { $rows } елементів
        *[other] { $rows } елемента
     }.
-    [many] Список станів перетворюється на { $rungs } станів проєкту, застосованих до { $rows ->
+    [many] Список станів Scrivener переноситься як список станів проєкту: { $rungs } станів, застосованих до { $rows ->
         [one] { $rows } елемента
         [few] { $rows } елементів
         [many] { $rows } елементів
        *[other] { $rows } елемента
     }.
-   *[other] Список станів перетворюється на { $rungs } стану проєкту, застосовані до { $rows ->
+   *[other] Список станів Scrivener переноситься як список станів проєкту: { $rungs } стану, застосовані до { $rows ->
         [one] { $rows } елемента
         [few] { $rows } елементів
         [many] { $rows } елементів
@@ -2367,10 +2430,11 @@ import-scrivener-metadata-bookmarks-became-links-line = { $count ->
    *[other] { $count } закладки стають зв’язками між нотатками або між сценами та записами довідника історії: див. «Зв’язки» і «Дійові особи».
 }
 import-scrivener-metadata-goals-kept-line = { $count ->
-    [one] { $count } норма документа стає ціллю.
-    [few] { $count } норми документів стають цілями.
-    [many] { $count } норм документів стають цілями.
-   *[other] { $count } норми документа стають цілями.
+    [1] Норма, яку Scrivener задав для { $count } документа, стає його ціллю в Skribisto.
+    [one] Норми, які Scrivener задав для { $count } документа, стають їхніми цілями в Skribisto.
+    [few] Норми, які Scrivener задав для { $count } документів, стають їхніми цілями в Skribisto.
+    [many] Норми, які Scrivener задав для { $count } документів, стають їхніми цілями в Skribisto.
+   *[other] Норми, які Scrivener задав для { $count } документа, стають їхніми цілями в Skribisto.
 }
 import-scrivener-metadata-draft-target-kept-words-line = { $value ->
     [one] Норма чернетки в { $value } слово стає ціллю книги.
@@ -2384,8 +2448,8 @@ import-scrivener-metadata-draft-target-kept-characters-line = { $value ->
     [many] Норма чернетки в { $value } символів стає ціллю книги.
    *[other] Норма чернетки в { $value } символу стає ціллю книги.
 }
-import-scrivener-metadata-pace-planned-line = Кінцевий термін, { $day }, стає основою «Темпу» книги, який розподіляє слова на кожен день письма, вибраний вами в Scrivener, починаючи з дня імпорту.
-import-scrivener-metadata-pace-planned-day-off-line = Кінцевий термін, { $day }, стає основою «Темпу» книги, який розподіляє слова на кожен день письма, вибраний вами в Scrivener, починаючи з дня імпорту. Як і в Scrivener, сам кінцевий термін є вихідним.
+import-scrivener-metadata-pace-planned-line = Кінцевий термін, { $day }, задає «Темп» книги, який розподіляє слова на кожен день письма, вибраний вами в Scrivener, починаючи з дня імпорту.
+import-scrivener-metadata-pace-planned-day-off-line = Кінцевий термін, { $day }, задає «Темп» книги, який розподіляє слова на кожен день письма, вибраний вами в Scrivener, починаючи з дня імпорту. Як і в Scrivener, сам кінцевий термін є вихідним.
 import-scrivener-metadata-dictionary-words-line = { $count ->
     [one] { $count } слово автодоповнення потрапляє до особистого словника проєкту, тож його не буде позначено як помилку.
     [few] { $count } слова автодоповнення потрапляють до особистого словника проєкту, тож їх не буде позначено як помилки.
@@ -2524,13 +2588,13 @@ import-scrivener-metadata-draft-target-no-book-characters-line = { $value ->
     [many] Норма чернетки в { $value } символів не стає ціллю, бо рукопис утворює кілька книг або жодної. Її перелічено в нотатці «{ $note }» теки «{ $folder }».
    *[other] Норма чернетки в { $value } символу не стає ціллю, бо рукопис утворює кілька книг або жодної. Її перелічено в нотатці «{ $note }» теки «{ $folder }».
 }
-import-scrivener-metadata-deadline-passed-line = Кінцевий термін, { $day }, уже минув, тож «Темп» із нього не створюється. Його перелічено в нотатці «{ $note }» теки «{ $folder }».
-import-scrivener-metadata-deadline-no-writing-day-line = Від дня імпорту до кінцевого терміну, { $day }, не лишається жодного дня письма, тож «Темп» із нього не створюється. Його перелічено в нотатці «{ $note }» теки «{ $folder }».
-import-scrivener-metadata-deadline-template-line = Кінцевий термін, { $day }, було збережено в шаблоні, тож «Темп» із нього не створюється. Його перелічено в нотатці «{ $note }» теки «{ $folder }».
-import-scrivener-metadata-deadline-no-word-goal-line = Із кінцевого терміну, { $day }, не створюється «Темп», бо чернетка не має норми в словах, до якої можна планувати. Його перелічено в нотатці «{ $note }» теки «{ $folder }».
-import-scrivener-metadata-deadline-character-goal-line = Із кінцевого терміну, { $day }, не створюється «Темп», бо норма чернетки рахує символи, а «Темп» рахує слова. Його перелічено в нотатці «{ $note }» теки «{ $folder }».
-import-scrivener-metadata-deadline-no-book-line = Із кінцевого терміну, { $day }, не створюється «Темп», бо рукопис утворює кілька книг або жодної. Його перелічено в нотатці «{ $note }» теки «{ $folder }».
-import-scrivener-metadata-deadline-unreadable-line = Кінцевий термін не вдається прочитати, тож «Темп» із нього не створюється. Його перелічено так, як записано, в нотатці «{ $note }» теки «{ $folder }».
+import-scrivener-metadata-deadline-passed-line = Кінцевий термін, { $day }, уже минув, тож він не задає «Темп» книги. Його перелічено в нотатці «{ $note }» теки «{ $folder }».
+import-scrivener-metadata-deadline-no-writing-day-line = Від дня імпорту до кінцевого терміну, { $day }, не лишається жодного дня письма, тож термін не задає «Темп» книги. Його перелічено в нотатці «{ $note }» теки «{ $folder }».
+import-scrivener-metadata-deadline-template-line = Кінцевий термін, { $day }, було збережено в шаблоні, тож він не задає «Темп» книги. Його перелічено в нотатці «{ $note }» теки «{ $folder }».
+import-scrivener-metadata-deadline-no-word-goal-line = Кінцевий термін, { $day }, не задає «Темп» книги, бо чернетка не має норми в словах, до якої можна планувати. Його перелічено в нотатці «{ $note }» теки «{ $folder }».
+import-scrivener-metadata-deadline-character-goal-line = Кінцевий термін, { $day }, не задає «Темп» книги, бо норма чернетки рахує символи, а «Темп» рахує слова. Його перелічено в нотатці «{ $note }» теки «{ $folder }».
+import-scrivener-metadata-deadline-no-book-line = Кінцевий термін, { $day }, не задає «Темп» жодної книги, бо рукопис утворює кілька книг або жодної. Його перелічено в нотатці «{ $note }» теки «{ $folder }».
+import-scrivener-metadata-deadline-unreadable-line = Кінцевий термін не вдається прочитати, тож він не задає «Темп» книги. Його перелічено так, як записано, в нотатці «{ $note }» теки «{ $folder }».
 import-scrivener-metadata-session-target-words-line = { $value ->
     [one] Норму сеансу в { $value } слово не імпортовано: у Skribisto мета сеансу письма є одним налаштуванням для всіх проєктів. Її перелічено в нотатці «{ $note }» теки «{ $folder }».
     [few] Норму сеансу в { $value } слова не імпортовано: у Skribisto мета сеансу письма є одним налаштуванням для всіх проєктів. Її перелічено в нотатці «{ $note }» теки «{ $folder }».
@@ -2625,10 +2689,11 @@ import-scrivener-prose-comment-entry-without-anchor-line = { $count ->
    *[other] { $count } коментаря втратили своє місце в тексті, тож їх прикріплено до першого абзацу.
 }
 import-scrivener-prose-footnote-entry-without-anchor-line = { $count ->
-    [one] { $count } пов’язана виноска втратила своє місце в тексті, тож посилання на неї поставлено в кінці тексту.
-    [few] { $count } пов’язані виноски втратили своє місце в тексті, тож посилання на них поставлено в кінці тексту.
-    [many] { $count } пов’язаних виносок утратили своє місце в тексті, тож посилання на них поставлено в кінці тексту.
-   *[other] { $count } пов’язаної виноски втратили своє місце в тексті, тож посилання на них поставлено в кінці тексту.
+    [1] { $count } пов’язана виноска втратила місце у своєму тексті, тож посилання на неї поставлено в кінці цього тексту.
+    [one] { $count } пов’язана виноска втратила місце у своїх текстах, тож посилання на кожну з них поставлено в кінці її власного тексту.
+    [few] { $count } пов’язані виноски втратили місце у своїх текстах, тож посилання на кожну з них поставлено в кінці її власного тексту.
+    [many] { $count } пов’язаних виносок утратили місце у своїх текстах, тож посилання на кожну з них поставлено в кінці її власного тексту.
+   *[other] { $count } пов’язаної виноски втратили місце у своїх текстах, тож посилання на кожну з них поставлено в кінці її власного тексту.
 }
 import-scrivener-prose-range-comment-reading-line = { $count ->
     [one] { $count } коментар зі старішого Scrivener розміщено за іншим прочитанням його позиції. Перевірте, чи він стоїть на потрібних словах.
@@ -2799,10 +2864,10 @@ import-scrivener-prose-annotation-only-document-kept-line = { $count ->
    *[other] { $count } документа не містили нічого, крім анотації. Їхні слова збережено як прозу.
 }
 import-scrivener-prose-preserve-formatting-passages-line = { $count ->
-    [one] { $count } фрагмент, позначений «Зберегти форматування», надходить як звичайний текст.
-    [few] { $count } фрагменти, позначені «Зберегти форматування», надходять як звичайний текст.
-    [many] { $count } фрагментів, позначених «Зберегти форматування», надходять як звичайний текст.
-   *[other] { $count } фрагмента, позначеного «Зберегти форматування», надходять як звичайний текст.
+    [one] { $count } фрагмент, позначений «Preserve Formatting» (зберегти форматування), надходить як звичайний текст.
+    [few] { $count } фрагменти, позначені «Preserve Formatting» (зберегти форматування), надходять як звичайний текст.
+    [many] { $count } фрагментів, позначених «Preserve Formatting» (зберегти форматування), надходять як звичайний текст.
+   *[other] { $count } фрагмента, позначеного «Preserve Formatting» (зберегти форматування), надходять як звичайний текст.
 }
 import-scrivener-prose-nested-note-unwrapped-line = { $count ->
     [one] { $count } примітку всередині коментаря чи виноски збережено як текст на її місці.
@@ -2963,11 +3028,13 @@ import-scrivener-prose-media-file-not-carried-line = { $count ->
 }
 
 ## When the import fails
+## Shown in the notice of a failed import, above the button import-scrivener-review-again,
+## which these sentences quote.
 import-scrivener-error-refused = { $refusal } Нічого не записано.
-import-scrivener-error-question = Проєкт тепер ставить питання, на яке його перевірка не дала відповіді. Поверніться до перевірки, а потім імпортуйте. Нічого не записано.
-import-scrivener-error-not-accepted = Проєкт ставить питання, на яке ви ще не дали згоди. Поверніться до перевірки, а потім імпортуйте. Нічого не записано.
-import-scrivener-error-changed = Проєкт змінився після того, як ви його перевірили. Поверніться до перевірки, а потім імпортуйте. Нічого не записано.
-import-scrivener-error-choice = Структура, вибрана під час перевірки, більше не відповідає цьому проєкту. Поверніться до перевірки, а потім імпортуйте. Нічого не записано.
+import-scrivener-error-question = Проєкт тепер ставить питання, на яке його перевірка не дала відповіді. Натисніть «Повернутися до перевірки», а потім імпортуйте. Нічого не записано.
+import-scrivener-error-not-accepted = Щоб проєкт можна було імпортувати, потрібно встановити прапорець на кроці «Проєкт», а його не встановлено. Натисніть «Повернутися до перевірки», встановіть прапорець, а потім імпортуйте. Нічого не записано.
+import-scrivener-error-changed = Проєкт змінився після того, як ви його перевірили. Натисніть «Повернутися до перевірки», а потім імпортуйте. Нічого не записано.
+import-scrivener-error-choice = Структура, вибрана під час перевірки, більше не відповідає цьому проєкту. Натисніть «Повернутися до перевірки», а потім імпортуйте. Нічого не записано.
 export-title = Експорт
 export-close = Закрити
 export-scope-label = Що
@@ -3995,7 +4062,7 @@ import-diagnostic-image-not-ingested-outside = У «{ $path }» зображен
 import-diagnostic-image-not-ingested-missing = У «{ $path }» зображення «{ $detail }» не знайдено, тож його пропущено.
 import-diagnostic-image-not-ingested-too-large = У «{ $path }» зображення «{ $detail }» більше, ніж приймає проєкт, тож його пропущено.
 import-diagnostic-image-not-ingested-unreadable = У «{ $path }» зображення «{ $detail }» не вдалося прочитати як зображення, тож його пропущено.
-import-diagnostic-image-not-ingested-heading = У «{ $path }» зображення «{ $detail }» стоїть у заголовку. Заголовок стає назвою, а назва не містить зображень, тож його пропущено.
+import-diagnostic-image-not-ingested-heading = У «{ $path }» зображення «{ $detail }» стоїть у заголовку. Кожен заголовок стає назвою елемента підшивки, а назва не містить зображень, тож зображення пропущено.
 import-diagnostic-image-not-ingested-note = У «{ $path }» зображення «{ $detail }» стоїть у виносці, кінцевій виносці чи коментарі. Вони зберігають свої слова, але не зображення, тож його пропущено.
 import-diagnostic-image-not-ingested-html = У «{ $path }» зображення «{ $detail }» записано як HTML, а імпорт пропускає HTML, тож зображення пропущено разом із ним. Щоб перенести його, запишіть його як зображення Markdown.
 import-diagnostic-image-not-ingested-document-full = У «{ $path }» зображення «{ $detail }» пропущено: разом зображення цього документа перевищують те, що вміщує один імпорт. Імпортуйте документ частинами або вставте решту вручну.

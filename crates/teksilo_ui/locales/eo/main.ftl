@@ -908,7 +908,7 @@ import-manuskript-too-many-files = La projekto ne estis importita: ĝi enhavas p
 import-manuskript-too-large = La projekto ne estis importita: ĝi superas la { $limit } MB, kiujn Skribisto legas el Manuskript-projekto. Nenio estis skribita.
 project-import-close = Fermi
 project-import-location = Cela dosierujo
-project-import-location-title = Elektu celan dosierujon
+project-import-location-title = Elekti celan dosierujon
 project-import-name = Dosiernomo
 project-import-name-placeholder = Projektnomo
 project-import-will-create = Kreota
@@ -944,7 +944,10 @@ project-import-failed-disk-full = Ne restas sufiĉe da spaco en «{ $folder }» 
 project-import-failed-source-missing = «{ $file }» ne plu estas tie. Nenio estis skribita.
 project-import-failed-unreadable = Skribisto ne povis legi «{ $file }» ({ $reason }). Nenio estis skribita.
 project-import-failed-archive-damaged = «{ $file }» estas kunpremita dosiero, kiu ne legeblis, verŝajne ĉar ĝi estas difektita ({ $reason }). Nenio estis skribita.
-project-import-failed-archive-entries = La projekto ne estis importita: ĝia arkivo listigas { $entries } dosierojn, pli ol la { $limit }, kiujn projekto povas enhavi; tion faras nur dosiero farita por elĉerpi la memoron. Nenio estis skribita.
+project-import-failed-archive-entries = La projekto ne estis importita: ĝia arkivo listigas { $entries ->
+    [one] { $entries } dosieron
+   *[other] { $entries } dosierojn
+}, pli ol la { $limit }, kiujn projekto povas enhavi; tion faras nur dosiero farita por elĉerpi la memoron. Nenio estis skribita.
 project-import-failed-archive-member = La projekto ne estis importita: ĝia parto «{ $part }» malkunpremiĝas al pli ol { $limit } MB; tion faras nur dosiero farita por elĉerpi la memoron. Nenio estis skribita.
 project-import-failed-archive-size = La projekto ne estis importita: ĝi malkunpremiĝas al pli ol { $limit } MB; tion faras nur dosiero farita por elĉerpi la memoron. Nenio estis skribita.
 project-import-failed-nested = La projekto ne estis importita: ĝia parto «{ $part }» havas pli ol { $limit } nivelojn de nestado, kaj legado povus paneigi Skribiston. Nenio estis skribita.
@@ -952,9 +955,9 @@ project-import-failed-entities = La projekto ne estis importita: ĝia parto «{ 
 project-import-failed-folders = La projekto ne estis importita: unu el ĝiaj dosieroj troviĝas pli ol { $limit } dosierujojn profunde, kaj legado povus paneigi Skribiston. Nenio estis skribita.
 project-import-failed-malformed = La projekto ne estis importita: ĝia parto «{ $part }» estas difektita kaj ne legeblas ({ $reason }). Nenio estis skribita.
 project-import-failed-scrivener-refused = Skribisto ne povas importi ĉi tiun Scrivener-projekton. Nenio estis skribita.
-project-import-failed-scrivener-question = La Scrivener-projekto starigas demandon, al kiu ĝia kontrolo ne respondis. Kontrolu ĝin denove, poste importu. Nenio estis skribita.
-project-import-failed-scrivener-not-accepted = La Scrivener-projekto starigas demandon, kiun vi ankoraŭ ne akceptis. Kontrolu ĝin denove, poste importu. Nenio estis skribita.
-project-import-failed-scrivener-changed = La Scrivener-projekto ŝanĝiĝis post via kontrolo. Kontrolu ĝin denove, poste importu. Nenio estis skribita.
+project-import-failed-scrivener-question = La Scrivener-projekto starigas demandon, al kiu ĝia kontrolo ne respondis. Rekomencu ĝian importon kaj respondu la demandon, poste importu. Nenio estis skribita.
+project-import-failed-scrivener-not-accepted = Antaŭ ol ĝi povas esti importita, la Scrivener-projekto bezonas, ke vi marku markobutonon en la paŝo Projekto, kaj ĝi ne estis markita. Rekomencu ĝian importon kaj marku la markobutonon, poste importu. Nenio estis skribita.
+project-import-failed-scrivener-changed = La Scrivener-projekto ŝanĝiĝis post via kontrolo. Rekomencu ĝian importon kaj kontrolu la projekton denove, poste importu. Nenio estis skribita.
 project-import-failed-internal = La importo haltis pro eraro, kiun Skribisto ne atendis: { $detail }
 import-target-open-title = Ĉi tiu projekto estas malfermita
 import-target-open-text = «{ $name }» estas malfermita en Skribisto. Importi samloke anstataŭigus vian aktualan projekton, kaj posta konservado superskribus la importon. Elektu alian dosiernomon aŭ unue fermu la projekton.
@@ -988,9 +991,9 @@ import-scrivener-empty-hint = Elektu projekton por vidi, kion Skribisto trovas e
 import-scrivener-reading = Legado de la projekto…
 import-scrivener-stop-reading = Ĉesigi legadon
 import-scrivener-read-failed = La projekto ne legeblis
-import-scrivener-read-failed-body = Io misiris dum la legado. Kontrolu denove, aŭ vidu la detalojn.
+import-scrivener-read-failed-body = Io misiris dum la legado. Elektu «Relegi la projekton» por provi denove, aŭ «Detaloj» por vidi, kio misiris.
 import-scrivener-details = Detaloj
-import-scrivener-check-again = Kontroli denove
+import-scrivener-check-again = Relegi la projekton
 import-scrivener-refusal-unknown-title = Ĉi tiu projekto ne importeblas
 import-scrivener-refusal-unknown-body = Skribisto ne scias, kiel transpreni ĝin. La detaloj nomas la kialon.
 import-scrivener-made-with-mac = Laste konservita de Scrivener { $version } por macOS
@@ -1016,7 +1019,7 @@ import-scrivener-choice-count = { $count ->
    *[other] { $count } eroj
 }
 import-scrivener-choice-count-example = { $count ->
-    [one] 1 ero: «{ $example }»
+    [1] 1 ero: «{ $example }»
    *[other] { $count } eroj, ekzemple «{ $example }»
 }
 import-scrivener-rung-part = Partoj
@@ -1028,7 +1031,7 @@ import-scrivener-choice-books = Libroj en la manuskripto
 import-scrivener-books-one = Unu libro
 import-scrivener-books-several = Unu libro por ĉiu dosierujo
 import-scrivener-choice-split = { $count ->
-    [one] Dividi «{ $title }» ĉe ĝia titolo
+    [1] Dividi «{ $title }» ĉe ĝia titolo
    *[other] Dividi «{ $title }» ĉe ĝiaj { $count } titoloj
 }
 import-scrivener-root-items = { $count ->
@@ -1036,8 +1039,8 @@ import-scrivener-root-items = { $count ->
    *[other] { $count } eroj
 }
 import-scrivener-root-items-manuscript = { $count ->
-    [one] 1 ero, aspektas kiel manuskripto
-   *[other] { $count } eroj, aspektas kiel manuskripto
+    [one] 1 ero. Ĉi tiu dosierujo aspektas kiel manuskripto.
+   *[other] { $count } eroj. Ĉi tiu dosierujo aspektas kiel manuskripto.
 }
 import-scrivener-dest-notes = Notoj
 import-scrivener-dest-story-bible = Rakonta gvidilo
@@ -1090,7 +1093,7 @@ import-scrivener-done-check = { $items ->
     [one] 1 afero meritas rigardon.
    *[other] { $findings } aferoj meritas rigardon.
 }
-import-scrivener-review-again = Kontroli denove
+import-scrivener-review-again = Rekontroli la importon
 import-scrivener-see-report = Vidi la raporton
 import-scrivener-report-from = Legita el { $path }
 import-scrivener-report-to = Skribita en { $path }
@@ -1157,10 +1160,10 @@ import-scrivener-report-research-copied-except = { $count ->
    *[other] Esploraj dosieroj, kiujn Skribisto ne povas malfermi, estis kopiitaj en «{ $folder }», apud la nova projekto, krom { $count }, kiuj restas en via Scrivener-projekto. Iliaj notoj diras, kie ili troviĝas.
 }
 import-scrivener-report-research-none-copied = { $count ->
-    [one] Vi petis kopii la esplorajn dosierojn, sed 1 ne povis esti kopiita. Ĝi restas en via Scrivener-projekto, kaj ĝia noto diras, kie ĝi troviĝas.
-   *[other] Vi petis kopii la esplorajn dosierojn, sed { $count } ne povis esti kopiitaj. Ili restas en via Scrivener-projekto, kaj iliaj notoj diras, kie ili troviĝas.
+    [1] Vi petis kopii la esplorajn dosierojn, sed la sola koncernata dosiero ne povis esti kopiita. Ĝi restas en via Scrivener-projekto, kaj ĝia noto diras, kie ĝi troviĝas.
+   *[other] Vi petis kopii la esplorajn dosierojn, sed neniu el la { $count } povis esti kopiita. Ili restas en via Scrivener-projekto, kaj iliaj notoj diras, kie ili troviĝas.
 }
-import-scrivener-report-chose-project = Vi elektis importi «{ $project }», unu el la projektoj trovitaj en via elekto.
+import-scrivener-report-chose-project = Vi elektis importi «{ $project }», unu el pluraj projektoj en la dosierujo aŭ arkivo, kiun vi elektis.
 import-scrivener-report-chose-manifest = Vi elektis la kolektujan dosieron «{ $file }».
 import-scrivener-report-chose-enclosing = Vi elektis ion ene de «{ $project }», do la tuta projekto estis importita.
 import-scrivener-report-chose-upgraded = Vi importis «{ $current }», la projekton, en kiu vi plu verkis, anstataŭ la kopion, kiun Scrivener konservis antaŭ ĝisdatigo.
@@ -1174,7 +1177,7 @@ import-scrivener-report-title-from-project-properties = Skribisto proponis la ti
 import-scrivener-report-author-from-project = Skribisto proponis la aŭtornomon, kiun indikas la agordoj de la projekto. La aŭtornomo de ŝablono povas resti tie, kaj ĝi presiĝus sur titolpaĝo.
 import-scrivener-report-language-not-stated = La projekto ne indikis sian lingvon, do Skribisto proponis sian propran interfacan lingvon. La lingvo decidas, kiel vortoj estas kalkulataj kaj citiloj skribataj.
 import-scrivener-report-language-from-script = Skribisto proponis la lingvon laŭ la skribsistemo de la manuskripto ({ $tag }).
-import-scrivener-report-you-changed-it = { $hint } Vi ŝanĝis ĝin.
+import-scrivener-report-you-changed-it = { $hint } Vi anstataŭigis ĉi tiun proponon.
 import-scrivener-report-content-salvaged-text = La teksto de «{ $item }» mankis en la projekto. Ĝiaj vortoj venas el la serĉindekso de Scrivener, kiel simpla teksto kaj eble el pli malnova versio: kontrolu ilin.
 import-scrivener-report-content-salvaged-notes = La notoj de «{ $item }» mankis en la projekto. Iliaj vortoj venas el la serĉindekso de Scrivener, kiel simpla teksto kaj eble el pli malnova versio: kontrolu ilin.
 import-scrivener-report-content-salvaged-synopsis = La resumo de «{ $item }» mankis en la projekto. Ĝiaj vortoj venas el la serĉindekso de Scrivener, kiel simpla teksto kaj eble el pli malnova versio: kontrolu ilin.
@@ -1221,7 +1224,10 @@ import-scrivener-report-copy-failed = La raporto ne povis esti kopiita.
 import-scrivener-report-close = Fermi
 import-scrivener-report-none-title = Neniu importa raporto
 import-scrivener-report-none = Neniu Scrivener-importo finiĝis ekde la lanĉo de Skribisto. Skribisto konservas la raportojn de la lastaj importoj ĝis ĝi fermiĝas.
-import-scrivener-report-gone = La raporto de ĉi tiu importo ne plu estas konservata. Skribisto konservas la raportojn de la lastaj { $count } importoj ĝis ĝi fermiĝas.
+import-scrivener-report-gone = { $count ->
+    [one] La raporto de ĉi tiu importo ne plu estas konservata. Skribisto konservas la raporton de la lasta importo ĝis ĝi fermiĝas.
+   *[other] La raporto de ĉi tiu importo ne plu estas konservata. Skribisto konservas la raportojn de la lastaj { $count } importoj ĝis ĝi fermiĝas.
+}
 import-scrivener-manuscript-binder = Manuskripto
 import-scrivener-notes-binder = Notoj
 import-scrivener-notes-of = { $title } (notoj)
@@ -1232,9 +1238,9 @@ import-scrivener-research-folder = { $name } (esploraj dosieroj)
 import-scrivener-list-separator = {", "}
 import-scrivener-label-details = El la kampo «{ $field }» en Scrivener
 import-scrivener-status-details = El la kampo «{ $field }» en Scrivener
-import-scrivener-unnamed-label = Surskribo { $number }
+import-scrivener-unnamed-label = Kolormarko { $number }
 import-scrivener-unnamed-status = Stato { $number }
-import-scrivener-label-tag = { $name } (surskribo)
+import-scrivener-label-tag = { $name } (kolormarko)
 import-scrivener-untitled-tag = Sentitola
 import-scrivener-keyword-details = La ŝlosilvorto «{ $path }» en Scrivener
 import-scrivener-unnamed-keyword = Ŝlosilvorto { $number }
@@ -1281,7 +1287,7 @@ import-scrivener-search-in-text = teksto
 import-scrivener-search-in-notes = notoj
 import-scrivener-search-in-synopsis = resumoj
 import-scrivener-search-in-keywords = ŝlosilvortoj
-import-scrivener-search-in-label = surskriboj
+import-scrivener-search-in-label = kolormarkoj
 import-scrivener-search-in-status = statoj
 import-scrivener-search-in-section-type = sekciaj tipoj
 import-scrivener-search-in-custom-metadata = propraj metadatenoj
@@ -1291,7 +1297,7 @@ import-scrivener-search-exact = ekzakta esprimo
 import-scrivener-label-value = { $label }: { $value }
 import-scrivener-replacement-regex = regula esprimo
 import-scrivener-replacement-off = malŝaltita
-import-scrivener-in-own-note = Listigita en sia propra noto.
+import-scrivener-in-own-note = Listigita en la noto, kiu fariĝis el ĉi tiu dokumento.
 import-scrivener-paragraph = { $title }. { $body }
 import-scrivener-refusal-missing-title = Nenio troviĝas ĉe ĉi tiu vojo
 import-scrivener-refusal-missing-body = «{ $file }» ne plu estas tie. Elektu la projekton denove.
@@ -1305,7 +1311,7 @@ import-scrivener-refusal-search-too-wide-title = Ĉi tiu dosierujo enhavas tro m
 import-scrivener-refusal-search-too-wide-body = Ĝi havas pli ol { $limit } dosierujojn trarigardendajn. Elektu la Scrivener-projekton mem.
 import-scrivener-refusal-scrivener-one-for-mac-title = Ĉi tiu projekto estis farita de Scrivener 1 por Mac
 import-scrivener-refusal-scrivener-one-for-mac-body = Skribisto legas projektojn de Scrivener 2 kaj postaj versioj. Malfermu ĝin unufoje en Scrivener 2 aŭ 3 por ĝisdatigi ĝin, aŭ kompilu ĝin al Word-dokumento kaj importu tiun.
-import-scrivener-refusal-ios-stub-without-mobile-data-title = Ĉi tio estas nur lokokupa dosiero de Scrivener por iPhone aŭ iPad
+import-scrivener-refusal-ios-stub-without-mobile-data-title = Ĉi tio estas nur anstataŭa dosiero de Scrivener por iPhone aŭ iPad
 import-scrivener-refusal-ios-stub-without-mobile-data-body = La projekto mem ne estas ĉi tie. Sinkronigu ĝin el via iPhone aŭ iPad, aŭ kunhavigu ĝin de tie kiel .zip-dosieron, kaj importu tiun.
 import-scrivener-refusal-newer-title = Ĉi tiu projekto estis farita de pli nova Scrivener
 import-scrivener-refusal-unknown-format-version-body = Ĝian formaton, { $version }, Skribisto ne konas. Serĉu ĝisdatigon de Skribisto. Ĝis tiam, kompilu ĝin al Word-dokumento en Scrivener kaj importu tiun.
@@ -1315,7 +1321,7 @@ import-scrivener-refusal-version-stamp-unreadable-body = Ĝia dosiero Files/vers
 import-scrivener-refusal-damaged-manifest-title = La kolektuja dosiero ne legeblas
 import-scrivener-refusal-damaged-manifest-body = «{ $manifest }» estas difektita. { $spare_copies ->
     [0] Malfermu la projekton en Scrivener, kiu povas ripari ĝin, poste importu ĝin denove.
-    [one] Scrivener tenas rezervan kopion de ĝi ene de la projekto, kiun Skribisto ne legas. Malfermu la projekton en Scrivener, kiu povas ripari ĝin, poste importu ĝin denove.
+    [1] Scrivener tenas rezervan kopion de ĝi ene de la projekto, kiun Skribisto ne legas. Malfermu la projekton en Scrivener, kiu povas ripari ĝin, poste importu ĝin denove.
    *[other] Scrivener tenas { $spare_copies } rezervajn kopiojn de ĝi ene de la projekto, kiujn Skribisto ne legas. Malfermu la projekton en Scrivener, kiu povas ripari ĝin, poste importu ĝin denove.
 }
 import-scrivener-refusal-damaged-manifest-new-project-placeholder-body = «{ $manifest }» estas la malplena dosiero, kiun Scrivener skribas por projekto ankoraŭ ne konservita. Malfermu la projekton en Scrivener kaj lasu ĝin konservi, poste importu ĝin denove.
@@ -1324,7 +1330,7 @@ import-scrivener-refusal-manifest-too-large-body = «{ $manifest }» superas la 
 import-scrivener-refusal-no-item-identifiers-title = La kolektujo listigas neniun dokumenton, kiun Skribisto povas trovi
 import-scrivener-refusal-no-item-identifiers-body = Neniu el ĝiaj eroj havas identigilon, do iliaj dosieroj ne troveblas. Malfermu la projekton unufoje en Scrivener, poste importu ĝin denove.
 import-scrivener-refusal-incomplete-copy-title = La dokumentoj mankas en ĉi tiu kopio
-import-scrivener-refusal-incomplete-copy-body = La dosierujo Files estas ĉi tie, sed ne la dokumentoj en ĝi. Eble sinkroniga servo ne finis kopii la projekton. Atendu ĝis ĝi finos, aŭ kopiu la tutan .scriv-dosierujon denove, poste kontrolu denove.
+import-scrivener-refusal-incomplete-copy-body = La dosierujo Files estas ĉi tie, sed ne la dokumentoj en ĝi. Eble sinkroniga servo ne finis kopii la projekton. Atendu ĝis ĝi finos, aŭ kopiu la tutan .scriv-dosierujon denove, poste relegu la projekton.
 import-scrivener-refusal-archive-title = Ĉi tiu arkivo ne malfermeblas
 import-scrivener-refusal-archive-unreadable-body = «{ $file }» ne legeblis ({ $reason }). Ĝi eble estas difektita. Malkunpremu ĝin mem, poste elektu la .scriv-dosierujon en ĝi.
 import-scrivener-refusal-archive-unsafe-name-title = Ĉi tiu arkivo ne malfermeblas sendanĝere
@@ -1353,25 +1359,34 @@ import-scrivener-refusal-cloud-placeholders-title = { $count ->
     [one] 1 dosiero de ĉi tiu projekto ankoraŭ estas en la nubo
    *[other] { $count } dosieroj de ĉi tiu projekto ankoraŭ estas en la nubo
 }
-import-scrivener-refusal-cloud-placeholders-body = Ili ne estis elŝutitaj al ĉi tiu komputilo, ekzemple { $examples }. Igu la projekton disponebla eksterrete en via sinkroniga aplikaĵo, poste kontrolu denove.
+import-scrivener-refusal-cloud-placeholders-body = { $count ->
+    [1] Ĝi ne estis elŝutita al ĉi tiu komputilo: { $examples }. Igu la projekton disponebla eksterrete en via sinkroniga aplikaĵo, poste relegu la projekton.
+   *[other] Ili ne estis elŝutitaj al ĉi tiu komputilo, ekzemple { $examples }. Igu la projekton disponebla eksterrete en via sinkroniga aplikaĵo, poste relegu la projekton.
+}
 import-scrivener-refusal-unreadable-members-title = { $count ->
     [one] 1 dosiero de ĉi tiu projekto ne legeblas
    *[other] { $count } dosieroj de ĉi tiu projekto ne legeblas
 }
-import-scrivener-refusal-unreadable-members-body = Ekzemple { $examples }. Kontrolu, ke vi rajtas legi la tutan projekton kaj ke la disko estas en bona stato, poste kontrolu denove.
+import-scrivener-refusal-unreadable-members-body = Ekzemple { $examples }. Kontrolu, ke vi rajtas legi la tutan projekton kaj ke la disko estas en bona stato, poste relegu la projekton.
 import-scrivener-refusal-needed-member-is-link-title = Ĉi tiu projekto montras ekster sian propran dosierujon
 import-scrivener-refusal-needed-member-is-link-body = «{ $member }» estas ligilo al alia loko en ĉi tiu komputilo, kaj Skribisto ne sekvas ligilojn. Kopiu la projekton tiel, ke ĉiu dosiero estu ene de ĝi, poste reprovu.
 import-scrivener-refusal-project-changed-during-read-title = La projekto ŝanĝiĝis dum ĝi estis legata
-import-scrivener-refusal-project-changed-during-read-body = Scrivener aŭ sinkroniga servo ankoraŭ skribas en ĝin. Fermu ĝin en Scrivener, atendu la finon de la sinkronigo, poste kontrolu denove.
+import-scrivener-refusal-project-changed-during-read-body = Scrivener aŭ sinkroniga servo ankoraŭ skribas en ĝin. Fermu ĝin en Scrivener, atendu la finon de la sinkronigo, poste relegu la projekton.
 import-scrivener-refusal-too-many-members-title = Ĉi tiu projekto enhavas tro da dosieroj
 import-scrivener-refusal-too-many-members-body = Ĝi havas pli ol { $limit } dosierojn, pli ol iu ajn vera projekto. Eble ĝi ne estas Scrivener-projekto, aŭ eble ĝi estas difektita.
 import-scrivener-refusal-too-large-title = Ĉi tiu projekto estas tro granda
 import-scrivener-refusal-too-large-body = Ĝia teksto superas { $limit } MB, pli ol Skribisto povas importi sendanĝere.
 import-scrivener-refusal-structure-unmappable-title = Skribisto ne povas transpreni ĉi tiun kolektujon
 import-scrivener-refusal-structure-unmappable-body = La kolektujo ne povis esti transprenita sen perdi aŭ mislokigi ion. Tio estas eraro de Skribisto, ne de via projekto. Bonvolu raporti ĝin kun tio, kion montras «Detaloj».
-import-scrivener-roots-title = { $count } projektoj estas ĉi tie. Kiun importi?
+import-scrivener-roots-title = { $count ->
+    [one] { $count } projekto estas ĉi tie. Kiun importi?
+   *[other] { $count } projektoj estas ĉi tie. Kiun importi?
+}
 import-scrivener-roots-hint = Ĉi tiu dosierujo aŭ arkivo enhavas pli ol unu Scrivener-projekton. Elektu tiun, kiun vi volas importi.
-import-scrivener-manifests-title = Ĉi tiu projekto havas { $count } kolektujajn dosierojn
+import-scrivener-manifests-title = { $count ->
+    [one] Ĉi tiu projekto havas { $count } kolektujan dosieron
+   *[other] Ĉi tiu projekto havas { $count } kolektujajn dosierojn
+}
 import-scrivener-manifests-hint = Scrivener tenas la kolektujon, la liston de ĉiuj dokumentoj kaj dosierujoj, en .scrivx-dosiero. La kromaj plej verŝajne restas post sinkroniga servo. Elektu tiun, en kiu vi laste laboris.
 import-scrivener-manifests-hint-preselected = Scrivener tenas la kolektujon, la liston de ĉiuj dokumentoj kaj dosierujoj, en .scrivx-dosiero. La kromaj plej verŝajne restas post sinkroniga servo. La elektita estas tiu, en kiu vi plej verŝajne laste laboris: kontrolu ĝin antaŭ ol daŭrigi.
 import-scrivener-manifest-row = { $file } · konservita je { $date } · { $documents ->
@@ -1414,8 +1429,8 @@ import-scrivener-notice-imported-from-ios-stub-body = Ĝi neniam estis malfermit
 import-scrivener-notice-stale-mobile-binder-ignored-title = Malnova kolektujo el iPhone aŭ iPad estas flankenmetita
 import-scrivener-notice-stale-mobile-binder-ignored-body = Scrivener en komputilo jam enigis ĝiajn ŝanĝojn.
 import-scrivener-notice-identical-manifest-copies-title = { $count ->
-    [one] 1 kopio de la kolektuja dosiero estas ĉi tie
-   *[other] { $count } identaj kopioj de la kolektuja dosiero estas ĉi tie
+    [one] Ĉi tiu projekto havas { $count } identan kolektujan dosieron
+   *[other] Ĉi tiu projekto havas { $count } identajn kolektujajn dosierojn
 }
 import-scrivener-notice-identical-manifest-copies-body = Ili enhavas la samon, do ĉiu el ili donas la saman projekton.
 import-scrivener-notice-manifest-copies-ignored-title = Kromaj kopioj de la kolektuja dosiero estas flankenmetitaj
@@ -1444,12 +1459,12 @@ import-scrivener-notice-invalid-item-identifier-title = { $count ->
     [one] 1 kolektuja ero havas identigilon, kiu ne estas valida
    *[other] { $count } kolektujaj eroj havas identigilon, kiu ne estas valida
 }
-import-scrivener-notice-invalid-item-identifier-body = Tiuj identigiloj estas flankenmetitaj. La eroj estas konservitaj.
+import-scrivener-notice-invalid-item-identifier-body = Tia identigilo estas flankenmetita, kaj la ero, kiu portas ĝin, estas konservita.
 import-scrivener-notice-items-without-identifier-title = { $count ->
     [one] 1 kolektuja ero ne havas identigilon
    *[other] { $count } kolektujaj eroj ne havas identigilon
 }
-import-scrivener-notice-items-without-identifier-body = Iliaj dosieroj ne troveblas, do ili alvenas malplenaj.
+import-scrivener-notice-items-without-identifier-body = Sen identigilo, la dosieroj de ero ne troveblas, do ĝi alvenas malplena.
 import-scrivener-notice-duplicate-item-key-title = Du kolektujaj eroj havas la saman identigilon: «{ $item }»
 import-scrivener-notice-duplicate-item-key-body = La unua konservas la dokumentojn. La dua konservas sian lokon kaj alvenas malplena.
 import-scrivener-notice-lock-here-title = Scrivener havas ĉi tiun projekton malfermita en ĉi tiu komputilo
@@ -1462,12 +1477,24 @@ import-scrivener-notice-archived-while-open-body = Ŝanĝoj faritaj post tiu mom
 import-scrivener-notice-content-missing-notes = La notoj de «{ $item }» mankas
 import-scrivener-notice-content-missing-synopsis = La resumo de «{ $item }» mankas
 import-scrivener-notice-content-missing-text = La teksto de «{ $item }» mankas
-import-scrivener-notice-content-missing-body = Ĝia dosiero ne estas en ĉi tiu kopio, do ĝi alvenas malplena. Eble sinkroniga servo ankoraŭ kopias la projekton.
-import-scrivener-notice-content-missing-salvaged = Ĝia dosiero ne estas en ĉi tiu kopio, sed la serĉindekso de Scrivener ankoraŭ enhavis ĝiajn vortojn. Ili estas konservitaj kiel simpla teksto, eble el pli malnova versio.
+import-scrivener-notice-content-missing-body = { $place ->
+    [notes] Ilia dosiero ne estas en ĉi tiu kopio, do ili alvenas malplenaj. Eble sinkroniga servo ankoraŭ kopias la projekton.
+    [synopsis] Ĝia dosiero ne estas en ĉi tiu kopio, do ĝi alvenas malplena. Eble sinkroniga servo ankoraŭ kopias la projekton.
+   *[text] Ĝia dosiero ne estas en ĉi tiu kopio, do ĝi alvenas malplena. Eble sinkroniga servo ankoraŭ kopias la projekton.
+}
+import-scrivener-notice-content-missing-salvaged = { $place ->
+    [notes] Ilia dosiero ne estas en ĉi tiu kopio, sed la serĉindekso de Scrivener ankoraŭ enhavis iliajn vortojn. Tiuj vortoj estas konservitaj kiel simpla teksto, eble el pli malnova versio.
+    [synopsis] Ĝia dosiero ne estas en ĉi tiu kopio, sed la serĉindekso de Scrivener ankoraŭ enhavis ĝiajn vortojn. Tiuj vortoj estas konservitaj kiel simpla teksto, eble el pli malnova versio.
+   *[text] Ĝia dosiero ne estas en ĉi tiu kopio, sed la serĉindekso de Scrivener ankoraŭ enhavis ĝiajn vortojn. Tiuj vortoj estas konservitaj kiel simpla teksto, eble el pli malnova versio.
+}
 import-scrivener-notice-content-truncated-notes = La notoj de «{ $item }» estas malplenaj sur la disko
 import-scrivener-notice-content-truncated-synopsis = La resumo de «{ $item }» estas malplena sur la disko
 import-scrivener-notice-content-truncated-text = La teksto de «{ $item }» estas malplena sur la disko
-import-scrivener-notice-content-truncated-body = Scrivener registris ĝin kun teksto, sed ĝia dosiero enhavas neniun: eble sinkronigo haltis duonvoje. Ĝi alvenas malplena.
+import-scrivener-notice-content-truncated-body = { $place ->
+    [notes] Scrivener registris ilin kun teksto, sed ilia dosiero enhavas neniun: eble sinkronigo haltis duonvoje. Ili alvenas malplenaj.
+    [synopsis] Scrivener registris ĝin kun teksto, sed ĝia dosiero enhavas neniun: eble sinkronigo haltis duonvoje. Ĝi alvenas malplena.
+   *[text] Scrivener registris ĝin kun teksto, sed ĝia dosiero enhavas neniun: eble sinkronigo haltis duonvoje. Ĝi alvenas malplena.
+}
 import-scrivener-notice-missing-media-title = La dosiero de «{ $item }» mankas
 import-scrivener-notice-missing-media-body = La bildo aŭ esplora dosiero, kiun ĝi enhavas, ne estas en ĉi tiu kopio.
 import-scrivener-notice-sync-conflict-copies-title = { $count ->
@@ -1475,19 +1502,20 @@ import-scrivener-notice-sync-conflict-copies-title = { $count ->
    *[other] { $count } sinkronigaj kopioj de dokumentoj troviĝis
 }
 import-scrivener-notice-sync-conflict-copies-body = { $missing ->
-    [0] Ili transvenas kiel retrovitaj tekstoj, en propra dosierujo, por ke vi povu kompari ilin kun la dokumentoj.
-   *[other] Ili transvenas kiel retrovitaj tekstoj, en propra dosierujo. Kelkaj estas kopioj de dokumentoj, kiuj ne plu estas en la projekto.
+    [0] Sinkronigaj kopioj transvenas kiel retrovitaj tekstoj, en propra dosierujo, por ke vi povu kompari ilin kun la dokumentoj.
+    [one] Sinkronigaj kopioj transvenas kiel retrovitaj tekstoj, en propra dosierujo. { $missing } el ili estas kopio de dokumento, kiu ne plu estas en la projekto.
+   *[other] Sinkronigaj kopioj transvenas kiel retrovitaj tekstoj, en propra dosierujo. { $missing } el ili estas kopioj de dokumentoj, kiuj ne plu estas en la projekto.
 }
 import-scrivener-notice-recovered-unreferenced-text-title = { $count ->
     [one] 1 dokumento, kiun neniu kolektuja ero listigas, troviĝis
    *[other] { $count } dokumentoj, kiujn neniu kolektuja ero listigas, troviĝis
 }
-import-scrivener-notice-recovered-unreferenced-text-body = Ili transvenas kiel retrovitaj tekstoj, en propra dosierujo.
+import-scrivener-notice-recovered-unreferenced-text-body = Tiaj dokumentoj transvenas kiel retrovitaj tekstoj, en propra dosierujo.
 import-scrivener-notice-sync-debris-ignored-title = { $count ->
     [one] 1 krom-kopio lasita de sinkroniga servo estas flankenmetita
    *[other] { $count } krom-kopioj lasitaj de sinkroniga servo estas flankenmetitaj
 }
-import-scrivener-notice-sync-debris-ignored-body = Ankaŭ Scrivener ne legas ilin. Nur la propraj dosieroj de la projekto estas legataj.
+import-scrivener-notice-sync-debris-ignored-body = Ankaŭ Scrivener ne legas tiajn kopiojn. Nur la propraj dosieroj de la projekto estas legataj.
 import-scrivener-notice-unrecognised-files-title = { $count ->
     [one] 1 dosiero, kiu ne apartenas al Scrivener-projekto, estas flankenmetita
    *[other] { $count } dosieroj, kiuj ne apartenas al Scrivener-projekto, estas flankenmetitaj
@@ -1505,9 +1533,9 @@ import-scrivener-notice-cloud-placeholders-skipped-title = { $count ->
     [one] 1 dosiero ankoraŭ en la nubo estas preterlasita
    *[other] { $count } dosieroj ankoraŭ en la nubo estas preterlasitaj
 }
-import-scrivener-notice-cloud-placeholders-skipped-body = La importo ne bezonas ilin.
+import-scrivener-notice-cloud-placeholders-skipped-body = Nenio, kion la importo bezonas, estas ankoraŭ en la nubo.
 import-scrivener-notice-no-text-found-title = { $count ->
-    [one] 1 dokumento, kaj ĝi enhavas neniun tekston
+    [1] 1 dokumento, kaj ĝi enhavas neniun tekston
    *[other] { $count } dokumentoj, kaj neniu enhavas tekston
 }
 import-scrivener-notice-no-text-found-body = Ĉi tiu projekto aspektas malplena. Ĝi estas importata tia, kia ĝi estas.
@@ -1518,8 +1546,8 @@ import-scrivener-notice-dangling-keyword-title = { $count ->
    *[other] { $count } referencoj montras al ŝlosilvortoj, kiujn la projekto ne difinas
 }
 import-scrivener-notice-dangling-label-title = { $count ->
-    [one] 1 referenco montras al surskribo, kiun la projekto ne difinas
-   *[other] { $count } referencoj montras al surskriboj, kiujn la projekto ne difinas
+    [one] 1 referenco montras al kolormarko, kiun la projekto ne difinas
+   *[other] { $count } referencoj montras al kolormarkoj, kiujn la projekto ne difinas
 }
 import-scrivener-notice-dangling-status-title = { $count ->
     [one] 1 referenco montras al stato, kiun la projekto ne difinas
@@ -1537,7 +1565,7 @@ import-scrivener-notice-dangling-item-title = { $count ->
     [one] 1 referenco montras al dokumento, kiun la projekto ne difinas
    *[other] { $count } referencoj montras al dokumentoj, kiujn la projekto ne difinas
 }
-import-scrivener-notice-dangling-references-body = Ili estas preterlasitaj.
+import-scrivener-notice-dangling-references-body = Referenco al io, kion la projekto ne difinas, estas preterlasita.
 import-scrivener-notice-snapshots-not-imported-line = { $count ->
     [one] 1 momentkopio restas en via Scrivener-projekto: Skribisto ne transprenas momentkopiojn.
    *[other] { $count } momentkopioj restas en via Scrivener-projekto: Skribisto ne transprenas momentkopiojn.
@@ -1556,23 +1584,23 @@ import-scrivener-notice-author-from-project-hint = Ĉi tiu nomo estas tiu, kiun 
 import-scrivener-notice-language-not-stated-hint = La projekto ne indikas sian lingvon, do la lingvo, en kiu Skribisto mem montriĝas, estas proponita. Ĝi decidas, kiel vortoj estas kalkulataj kaj citiloj skribataj.
 import-scrivener-notice-language-from-script-hint = Proponita laŭ la skribsistemo de la manuskripto ({ $tag }).
 import-scrivener-structure-script-mode-draft-line = { $script ->
-    [one] { $documents ->
-        [one] La sola dokumento de la manuskripto estas skribita en scenara reĝimo. Skribisto konservas ĝiajn vortojn, ne ĝian scenaran aranĝon.
+    [1] { $documents ->
+        [1] La sola dokumento de la manuskripto estas skribita en scenara reĝimo. Skribisto konservas ĝiajn vortojn, ne ĝian scenaran aranĝon.
        *[other] { $script } el la { $documents } dokumentoj de la manuskripto estas skribita en scenara reĝimo. Skribisto konservas ĝiajn vortojn, ne ĝian scenaran aranĝon.
     }
    *[other] { $script } el la { $documents } dokumentoj de la manuskripto estas skribitaj en scenara reĝimo. Skribisto konservas iliajn vortojn, ne ilian scenaran aranĝon.
 }
 import-scrivener-structure-one-document-manuscript-line = { $count ->
-    [one] Dokumento de la manuskripto enhavas siajn ĉapitrojn kiel titolojn.
+    [1] Dokumento de la manuskripto enhavas siajn ĉapitrojn kiel titolojn.
    *[other] { $count } dokumentoj de la manuskripto enhavas siajn ĉapitrojn kiel titolojn.
 }
 import-scrivener-structure-title-repeats-number-line = { $count ->
-    [one] 1 titolo de ĉapitro aŭ parto ankaŭ skribas sian numeron, do eksporto eble presos la numeron dufoje.
-   *[other] { $count } titoloj de ĉapitroj aŭ partoj ankaŭ skribas sian numeron, do eksporto eble presos la numeron dufoje.
+    [one] 1 titolo de ĉapitro aŭ parto ankaŭ enhavas sian numeron, ekzemple «Ĉapitro II» aŭ «Unua parto», do eksporto eble presos la numeron dufoje.
+   *[other] { $count } titoloj de ĉapitroj aŭ partoj ankaŭ enhavas sian numeron, ekzemple «Ĉapitro II» aŭ «Unua parto», do eksporto eble presos la numeron dufoje.
 }
 import-scrivener-structure-claim-overruled-line = { $count ->
-    [one] 1 ero prenas nivelon sub tiu, kiun ĝi pretendas, ĉar ero super ĝi jam okupas tiun nivelon.
-   *[other] { $count } eroj prenas nivelon sub tiu, kiun ili pretendas, ĉar ero super ili jam okupas tiun nivelon.
+    [one] 1 ero aspektas kiel libro, parto aŭ ĉapitro, sed ĝi troviĝas ene de ero jam je tiu nivelo, do ĝi transvenas je pli malalta nivelo.
+   *[other] { $count } eroj aspektas kiel libroj, partoj aŭ ĉapitroj, sed ĉiu troviĝas ene de ero jam je tiu nivelo, do ili transvenas je pli malalta nivelo.
 }
 import-scrivener-structure-adopted-by-chapter-line = { $count ->
     [one] 1 dokumento, kiu sekvas ĉapitron, fariĝas la fino de tiu ĉapitro.
@@ -1583,8 +1611,8 @@ import-scrivener-structure-looks-like-manuscript-line = { $count ->
    *[other] { $count } supranivelaj dosierujoj konservitaj en la notoj aspektas kiel manuskripto. Vi povas sendi ilin al la manuskripto kiel aliajn librojn.
 }
 import-scrivener-structure-generic-sheet-title-line = { $count ->
-    [one] 1 ero de la rakonta gvidilo havas ŝablonan titolon, ekzemple «Heroo», kiun la mencioj serĉos en la teksto.
-   *[other] { $count } eroj de la rakonta gvidilo havas ŝablonan titolon, ekzemple «Heroo», kiun la mencioj serĉos en la teksto.
+    [one] 1 ero de la rakonta gvidilo ankoraŭ havas ŝablonan titolon, ekzemple «Heroo». Skribisto serĉas tiun titolon en via teksto kaj listigas ĉiun lokon, kie ĝi aperas, sub «En la teksto»: alinomu la eron, se tiu vorto estas ofta en via libro.
+   *[other] { $count } eroj de la rakonta gvidilo ankoraŭ havas ŝablonan titolon, ekzemple «Heroo». Skribisto serĉas tiujn titolojn en via teksto kaj listigas ĉiun lokon, kie ili aperas, sub «En la teksto»: alinomu la erojn, se tiuj vortoj estas oftaj en via libro.
 }
 import-scrivener-structure-placeholder-title-line = { $count ->
     [one] 1 titolo nur nomis sian nivelon kaj restas malplena: la kolektujo kaj la eksportoj numeras ĝin.
@@ -1623,13 +1651,13 @@ import-scrivener-structure-matter-inside-book-line = { $count ->
    *[other] { $count } eroj de antaŭaj aŭ finaj paĝoj de ekster la manuskripto iras en la libron kiel parateksto, ekskluditaj el eksportoj ĝis vi inkluzivas ilin.
 }
 import-scrivener-structure-paratext-not-counted-line = { $documents ->
-    [one] 1 dokumento de la manuskripto fariĝas parateksto (antaŭaj aŭ finaj paĝoj): { $words ->
-        [one] ĝia { $words } vorto ne plu kalkuliĝas
-       *[other] ĝiaj { $words } vortoj ne plu kalkuliĝas
+    [one] 1 dokumento de la manuskripto fariĝas parateksto (antaŭaj aŭ finaj paĝoj), do { $words ->
+        [one] { $words } vorto ne plu kalkuliĝas
+       *[other] { $words } vortoj ne plu kalkuliĝas
     } kiel manuskripto.
-   *[other] { $documents } dokumentoj de la manuskripto fariĝas parateksto (antaŭaj aŭ finaj paĝoj): { $words ->
-        [one] ilia { $words } vorto ne plu kalkuliĝas
-       *[other] iliaj { $words } vortoj ne plu kalkuliĝas
+   *[other] { $documents } dokumentoj de la manuskripto fariĝas parateksto (antaŭaj aŭ finaj paĝoj), do { $words ->
+        [one] { $words } vorto ne plu kalkuliĝas
+       *[other] { $words } vortoj ne plu kalkuliĝas
     } kiel manuskripto.
 }
 import-scrivener-structure-document-notes-line = { $count ->
@@ -1662,8 +1690,11 @@ import-scrivener-structure-project-notes-line = { $count ->
    *[other] { $count } projektaj notoj transvenas en propra dosierujo.
 }
 import-scrivener-structure-trash-brought-across-line = { $items ->
-    [one] La rubujo transvenas: 1 ero, kiun vi povas restarigi el la rubujo.
-   *[other] La rubujo transvenas: { $items } eroj, el kiuj { $writing } kun teksto, kiujn vi povas restarigi el la rubujo.
+    [1] La rubujo transvenas: 1 ero, kiun vi povas restarigi el la rubujo.
+   *[other] La rubujo transvenas: { $items } eroj, { $writing ->
+        [0] el kiuj neniu kun teksto
+       *[other] el kiuj { $writing } kun teksto
+    }, kiujn vi povas restarigi el la rubujo.
 }
 import-scrivener-structure-not-compiled-line = { $count ->
     [one] 1 ero, kiun Scrivener ekskludis el sia kompilado, estas ekskludita ankaŭ el la eksportoj.
@@ -1684,24 +1715,27 @@ import-scrivener-structure-left-out-line = { $count ->
     }.
 }
 import-scrivener-structure-trash-left-out-line = { $items ->
-    [one] La rubujo estas postlasita: 1 ero.
-   *[other] La rubujo estas postlasita: { $items } eroj, el kiuj { $writing } kun teksto.
+    [1] La rubujo estas postlasita: 1 ero.
+   *[other] La rubujo estas postlasita: { $items } eroj, { $writing ->
+        [0] el kiuj neniu kun teksto
+       *[other] el kiuj { $writing } kun teksto
+    }.
 }
 import-scrivener-structure-card-image-left-behind-line = { $count ->
     [one] 1 bildo de indekskarto sur ero de la manuskripto estas postlasita: ĝi presiĝus en la libro.
    *[other] { $count } bildoj de indekskartoj sur eroj de la manuskripto estas postlasitaj: ili presiĝus en la libro.
 }
 import-scrivener-structure-default-template-not-linked-line = { $count ->
-    [one] La defaŭlta dokumentŝablono de 1 dosierujo ne povas sekvi ĝin.
-   *[other] La defaŭltaj dokumentŝablonoj de { $count } dosierujoj ne povas sekvi ilin.
+    [one] 1 dosierujo havis defaŭltan ŝablonon por la novaj dokumentoj en ĝi. En Skribisto, nur etikedo de la rakonta gvidilo povas porti ŝablonon, do tiu ligo ne estas konservita.
+   *[other] { $count } dosierujoj havis defaŭltan ŝablonon por la novaj dokumentoj en ili. En Skribisto, nur etikedo de la rakonta gvidilo povas porti ŝablonon, do tiuj ligoj ne estas konservitaj.
 }
 import-scrivener-structure-page-break-not-kept-line = { $count ->
-    [one] 1 agordo «Paĝsalto antaŭe» ne havas lokon en Skribisto kaj ne estas konservita.
-   *[other] { $count } agordoj «Paĝsalto antaŭe» ne havas lokon en Skribisto kaj ne estas konservitaj.
+    [one] 1 agordo «Page Break Before» (paĝsalto antaŭe) ne havas lokon en Skribisto kaj ne estas konservita.
+   *[other] { $count } agordoj «Page Break Before» (paĝsalto antaŭe) ne havas lokon en Skribisto kaj ne estas konservitaj.
 }
 import-scrivener-structure-compile-as-is-not-kept-line = { $count ->
-    [one] 1 agordo «Kompili senŝanĝe» ne havas ekvivalenton en Skribisto kaj ne estas konservita.
-   *[other] { $count } agordoj «Kompili senŝanĝe» ne havas ekvivalenton en Skribisto kaj ne estas konservitaj.
+    [one] 1 agordo «Compile As-Is» (kompili senŝanĝe) ne havas ekvivalenton en Skribisto kaj ne estas konservita.
+   *[other] { $count } agordoj «Compile As-Is» (kompili senŝanĝe) ne havas ekvivalenton en Skribisto kaj ne estas konservitaj.
 }
 import-scrivener-metadata-status-categories-guessed-line = { $count ->
     [one] 1 stato, kiun Skribisto ne rekonas, ricevas specon laŭ sia loko en la listo. Kontrolu ĝin en Agordoj ▸ Verko ▸ Statoj.
@@ -1712,40 +1746,40 @@ import-scrivener-metadata-dates-unreadable-line = { $count ->
    *[other] La datoj de { $count } eroj ne legeblis: ili portas la daton de la importo.
 }
 import-scrivener-metadata-labels-became-tags-line = { $tags ->
-    [one] La surskriboj fariĝas 1 etikedo, sur { $rows ->
+    [one] La kolormarkoj fariĝas 1 etikedo, sur { $rows ->
         [one] { $rows } ero
        *[other] { $rows } eroj
     }.
-   *[other] La surskriboj fariĝas { $tags } etikedoj, sur { $rows ->
+   *[other] La kolormarkoj fariĝas { $tags } etikedoj, sur { $rows ->
         [one] { $rows } ero
        *[other] { $rows } eroj
     }.
 }
 import-scrivener-metadata-statuses-became-ladder-line = { $rungs ->
-    [one] La statolisto fariĝas la sola stato de la projekto, sur { $rows ->
+    [one] La statolisto de Scrivener transvenas kiel la listo de statoj de la projekto: { $rungs } stato, sur { $rows ->
         [one] { $rows } ero
        *[other] { $rows } eroj
     }.
-   *[other] La statolisto fariĝas la { $rungs } statoj de la projekto, sur { $rows ->
+   *[other] La statolisto de Scrivener transvenas kiel la listo de statoj de la projekto: { $rungs } statoj, sur { $rows ->
         [one] { $rows } ero
        *[other] { $rows } eroj
     }.
 }
 import-scrivener-metadata-ladder-seeded-line = { $count ->
-    [one] La projekto ne havis statoliston, do ĝi komenciĝas per la defaŭlta stato de Skribisto.
+    [1] La projekto ne havis statoliston, do ĝi komenciĝas per la defaŭlta stato de Skribisto.
    *[other] La projekto ne havis statoliston, do ĝi komenciĝas per la { $count } defaŭltaj statoj de Skribisto.
 }
-import-scrivener-metadata-label-renamed-line = La kampo Surskribo nomiĝis «{ $title }» en Scrivener. Tiu nomo troviĝas en la detaloj de ĉiu etikedo.
+import-scrivener-metadata-label-renamed-line = La kampo Kolormarko (Label) nomiĝis «{ $title }» en Scrivener. Tiu nomo troviĝas en la detaloj de ĉiu etikedo.
 import-scrivener-metadata-status-renamed-line = La kampo Stato nomiĝis «{ $title }» en Scrivener. Tiu nomo troviĝas en la detaloj de ĉiu stato.
 import-scrivener-metadata-none-label-collapsed-line = { $count ->
-    [one] La surskribo «{ $name }», tenata apud la propra malplena surskribo de Scrivener sub la sama nomo, estas legata kiel neniu surskribo sur 1 ero.
-   *[other] La surskribo «{ $name }», tenata apud la propra malplena surskribo de Scrivener sub la sama nomo, estas legata kiel neniu surskribo sur { $count } eroj.
+    [one] La kolormarko «{ $name }», tenata apud la propra malplena kolormarko de Scrivener sub la sama nomo, estas legata kiel neniu kolormarko sur 1 ero.
+   *[other] La kolormarko «{ $name }», tenata apud la propra malplena kolormarko de Scrivener sub la sama nomo, estas legata kiel neniu kolormarko sur { $count } eroj.
 }
 import-scrivener-metadata-none-status-collapsed-line = { $count ->
     [one] La stato «{ $name }», tenata apud la propra malplena stato de Scrivener sub la sama nomo, estas legata kiel neniu stato sur 1 ero.
    *[other] La stato «{ $name }», tenata apud la propra malplena stato de Scrivener sub la sama nomo, estas legata kiel neniu stato sur { $count } eroj.
 }
-import-scrivener-metadata-unnamed-label-line = Surskribo sen nomo ricevas la nomon de sia numero, { $id }.
+import-scrivener-metadata-unnamed-label-line = Kolormarko sen nomo ricevas la nomon de sia numero, { $id }.
 import-scrivener-metadata-unnamed-status-line = Stato sen nomo ricevas la nomon de sia numero, { $id }.
 import-scrivener-metadata-tag-name-disambiguated-line = { $count ->
     [one] 1 etikedo ricevas novan nomon, ĉar alia etikedo jam portas ĝian nomon.
@@ -1756,12 +1790,12 @@ import-scrivener-metadata-rung-names-disambiguated-line = { $count ->
    *[other] { $count } statoj havas la saman nomon kiel alia, do ĉiu ricevas numeron post sia nomo. Kontrolu ilin en Agordoj ▸ Verko ▸ Statoj.
 }
 import-scrivener-metadata-unused-labels-skipped-line = { $count ->
-    [one] 1 surskribo, kiun neniu dokumento portas, ne estas importita.
-   *[other] { $count } surskriboj, kiujn neniu dokumento portas, ne estas importitaj.
+    [one] 1 kolormarko, kiun neniu dokumento portas, ne estas importita.
+   *[other] { $count } kolormarkoj, kiujn neniu dokumento portas, ne estas importitaj.
 }
 import-scrivener-metadata-labels-without-row-line = { $count ->
-    [one] La surskribo de 1 ero sen loko en la nova projekto ne transvenas.
-   *[other] La surskriboj de { $count } eroj sen loko en la nova projekto ne transvenas.
+    [one] La kolormarko de 1 ero sen loko en la nova projekto ne transvenas.
+   *[other] La kolormarkoj de { $count } eroj sen loko en la nova projekto ne transvenas.
 }
 import-scrivener-metadata-statuses-without-row-line = { $count ->
     [one] La stato de 1 ero sen loko en la nova projekto ne transvenas.
@@ -1785,8 +1819,8 @@ import-scrivener-metadata-targets-without-row-line = { $count ->
    *[other] La celoj de { $count } eroj sen loko en la nova projekto ne transvenas.
 }
 import-scrivener-metadata-pov-hint-line = { $count ->
-    [one] La surskribo aŭ kampovaloro { $values } kongruas kun la ero de la rakonta gvidilo { $matches }. Se ĝi nomas la vidpunkton, agordu ĝin en la Inspektilo: la importo ligas nenion.
-   *[other] La surskriboj aŭ kampovaloroj { $values } kongruas kun la eroj de la rakonta gvidilo { $matches }. Se ili nomas vidpunktojn, agordu ilin en la Inspektilo: la importo ligas nenion.
+    [1] La kolormarko aŭ kampovaloro { $values } kongruas kun la ero de la rakonta gvidilo { $matches }. Se ĝi nomas la vidpunkton, agordu ĝin en la Inspektilo: la importo ligas nenion.
+   *[other] La kolormarkoj aŭ kampovaloroj { $values } kongruas kun la eroj de la rakonta gvidilo { $matches }. Se ili nomas vidpunktojn, agordu ilin en la Inspektilo: la importo ligas nenion.
 }
 import-scrivener-metadata-checkbox-default-unknown-line = La markobutona kampo «{ $field }» havas defaŭltan valoron, kiun Skribisto ne povas legi, do ĝi ne povas scii, kiuj dokumentoj estas defaŭlte markitaj. Nur la dokumentoj markitaj unuope portas ĝian etikedon.
 import-scrivener-metadata-goals-in-other-unit-line = { $count ->
@@ -1848,8 +1882,8 @@ import-scrivener-metadata-bookmarks-became-links-line = { $count ->
    *[other] { $count } legosignoj fariĝas ligiloj inter notoj, aŭ inter scenoj kaj eroj de la rakonta gvidilo: vidu «Ligiloj» kaj «Rolularo».
 }
 import-scrivener-metadata-goals-kept-line = { $count ->
-    [one] 1 dokumenta celo el Scrivener fariĝas celo en Skribisto.
-   *[other] { $count } dokumentaj celoj el Scrivener fariĝas celoj en Skribisto.
+    [one] La celo, kiun Scrivener fiksis por 1 dokumento, fariĝas ĝia celo en Skribisto.
+   *[other] La celoj, kiujn Scrivener fiksis por { $count } dokumentoj, fariĝas iliaj celoj en Skribisto.
 }
 import-scrivener-metadata-draft-target-kept-words-line = { $value ->
     [one] La celo de la manuskripto, 1 vorto, fariĝas la celo de la libro.
@@ -1859,8 +1893,8 @@ import-scrivener-metadata-draft-target-kept-characters-line = { $value ->
     [one] La celo de la manuskripto, 1 signo, fariĝas la celo de la libro.
    *[other] La celo de la manuskripto, { $value } signoj, fariĝas la celo de la libro.
 }
-import-scrivener-metadata-pace-planned-line = La limdato, { $day }, fariĝas la Ritmo de la libro, kiu planas la vortojn de ĉiu verktago, kiun vi elektis en Scrivener, ekde la tago de la importo.
-import-scrivener-metadata-pace-planned-day-off-line = La limdato, { $day }, fariĝas la Ritmo de la libro, kiu planas la vortojn de ĉiu verktago, kiun vi elektis en Scrivener, ekde la tago de la importo. Kiel en Scrivener, la limdato mem estas libera tago.
+import-scrivener-metadata-pace-planned-line = La limdato, { $day }, starigas la Ritmon de la libro, kiu planas la vortojn de ĉiu verktago, kiun vi elektis en Scrivener, ekde la tago de la importo.
+import-scrivener-metadata-pace-planned-day-off-line = La limdato, { $day }, starigas la Ritmon de la libro, kiu planas la vortojn de ĉiu verktago, kiun vi elektis en Scrivener, ekde la tago de la importo. Kiel en Scrivener, la limdato mem estas libera tago.
 import-scrivener-metadata-dictionary-words-line = { $count ->
     [one] 1 vorto de aŭtomata kompletigo iras en la propran vortaron de la projekto, do ĝi ne estas markita kiel literumeraro.
    *[other] { $count } vortoj de aŭtomata kompletigo iras en la propran vortaron de la projekto, do ili ne estas markitaj kiel literumeraroj.
@@ -1953,13 +1987,13 @@ import-scrivener-metadata-draft-target-no-book-characters-line = { $value ->
     [one] La celo de la manuskripto, 1 signo, ne fariĝas celo, ĉar la manuskripto donas plurajn librojn, aŭ neniun. Ĝi estas listigita en la noto «{ $note }» de la dosierujo «{ $folder }».
    *[other] La celo de la manuskripto, { $value } signoj, ne fariĝas celo, ĉar la manuskripto donas plurajn librojn, aŭ neniun. Ĝi estas listigita en la noto «{ $note }» de la dosierujo «{ $folder }».
 }
-import-scrivener-metadata-deadline-passed-line = La limdato, { $day }, jam pasis, do ĝi donas neniun Ritmon. Ĝi estas listigita en la noto «{ $note }» de la dosierujo «{ $folder }».
-import-scrivener-metadata-deadline-no-writing-day-line = Neniu verktago restas inter la tago de la importo kaj la limdato, { $day }, do ĝi donas neniun Ritmon. Ĝi estas listigita en la noto «{ $note }» de la dosierujo «{ $folder }».
-import-scrivener-metadata-deadline-template-line = La limdato, { $day }, estis konservita en la ŝablono, do ĝi donas neniun Ritmon. Ĝi estas listigita en la noto «{ $note }» de la dosierujo «{ $folder }».
-import-scrivener-metadata-deadline-no-word-goal-line = La limdato, { $day }, donas neniun Ritmon, ĉar la manuskripto ne havas vortcelon, al kiu plani. Ĝi estas listigita en la noto «{ $note }» de la dosierujo «{ $folder }».
-import-scrivener-metadata-deadline-character-goal-line = La limdato, { $day }, donas neniun Ritmon, ĉar la celo de la manuskripto kalkulas signojn kaj Ritmo kalkulas vortojn. Ĝi estas listigita en la noto «{ $note }» de la dosierujo «{ $folder }».
-import-scrivener-metadata-deadline-no-book-line = La limdato, { $day }, donas neniun Ritmon, ĉar la manuskripto donas plurajn librojn, aŭ neniun. Ĝi estas listigita en la noto «{ $note }» de la dosierujo «{ $folder }».
-import-scrivener-metadata-deadline-unreadable-line = La limdato ne legeblas, do ĝi donas neniun Ritmon. Ĝi estas listigita tia, kia ĝi estas skribita, en la noto «{ $note }» de la dosierujo «{ $folder }».
+import-scrivener-metadata-deadline-passed-line = La limdato, { $day }, jam pasis, do ĝi ne starigas la Ritmon de la libro. Ĝi estas listigita en la noto «{ $note }» de la dosierujo «{ $folder }».
+import-scrivener-metadata-deadline-no-writing-day-line = Neniu verktago restas inter la tago de la importo kaj la limdato, { $day }, do ĝi ne starigas la Ritmon de la libro. Ĝi estas listigita en la noto «{ $note }» de la dosierujo «{ $folder }».
+import-scrivener-metadata-deadline-template-line = La limdato, { $day }, estis konservita en la ŝablono, do ĝi ne starigas la Ritmon de la libro. Ĝi estas listigita en la noto «{ $note }» de la dosierujo «{ $folder }».
+import-scrivener-metadata-deadline-no-word-goal-line = La limdato, { $day }, ne starigas la Ritmon de la libro, ĉar la manuskripto ne havas vortcelon, al kiu plani. Ĝi estas listigita en la noto «{ $note }» de la dosierujo «{ $folder }».
+import-scrivener-metadata-deadline-character-goal-line = La limdato, { $day }, ne starigas la Ritmon de la libro, ĉar la celo de la manuskripto kalkulas signojn kaj la Ritmo kalkulas vortojn. Ĝi estas listigita en la noto «{ $note }» de la dosierujo «{ $folder }».
+import-scrivener-metadata-deadline-no-book-line = La limdato, { $day }, starigas la Ritmon de neniu libro, ĉar la manuskripto donas plurajn librojn, aŭ neniun. Ĝi estas listigita en la noto «{ $note }» de la dosierujo «{ $folder }».
+import-scrivener-metadata-deadline-unreadable-line = La limdato ne legeblas, do ĝi ne starigas la Ritmon de la libro. Ĝi estas listigita tia, kia ĝi estas skribita, en la noto «{ $note }» de la dosierujo «{ $folder }».
 import-scrivener-metadata-session-target-words-line = { $value ->
     [one] La seanca celo, 1 vorto, ne estas importita: en Skribisto, la celo de la verkseanco estas unu agordo por ĉiuj projektoj. Ĝi estas listigita en la noto «{ $note }» de la dosierujo «{ $folder }».
    *[other] La seanca celo, { $value } vortoj, ne estas importita: en Skribisto, la celo de la verkseanco estas unu agordo por ĉiuj projektoj. Ĝi estas listigita en la noto «{ $note }» de la dosierujo «{ $folder }».
@@ -2021,8 +2055,8 @@ import-scrivener-prose-comment-entry-without-anchor-line = { $count ->
    *[other] { $count } komentoj ne plu havis lokon en sia teksto kaj estas ligitaj al la unua alineo.
 }
 import-scrivener-prose-footnote-entry-without-anchor-line = { $count ->
-    [one] 1 ligita piednoto ne plu havis lokon en sia teksto kaj estas citita ĉe ĝia fino.
-   *[other] { $count } ligitaj piednotoj ne plu havis lokon en sia teksto kaj estas cititaj ĉe ĝia fino.
+    [one] 1 ligita piednoto ne plu havis lokon en sia teksto, do ĝi estas citita ĉe la fino de tiu teksto.
+   *[other] { $count } ligitaj piednotoj ne plu havis lokon en siaj tekstoj, do ĉiu estas citita ĉe la fino de sia propra teksto.
 }
 import-scrivener-prose-range-comment-reading-line = { $count ->
     [one] 1 komento el pli malnova Scrivener estis lokita per alia legado de sia pozicio. Kontrolu, ke ĝi troviĝas sur la ĝustaj vortoj.
@@ -2045,7 +2079,7 @@ import-scrivener-prose-document-link-unresolved-line = { $count ->
    *[other] { $count } ligiloj montras al dokumentoj, kiujn la importo ne transprenis. Iliaj vortoj restas.
 }
 import-scrivener-prose-linked-picture-not-read-line = { $count ->
-    [one] 1 bildo ligita al dosiero en via disko, «{ $example }», ne estis transprenita.
+    [1] 1 bildo ligita al dosiero en via disko, «{ $example }», ne estis transprenita.
    *[other] { $count } bildoj ligitaj al dosieroj en via disko, ekzemple «{ $example }», ne estis transprenitaj.
 }
 import-scrivener-prose-heading-repeats-title-line = { $count ->
@@ -2061,11 +2095,11 @@ import-scrivener-prose-citation-keys-as-text-line = { $count ->
    *[other] { $count } alineoj enhavas citaĵŝlosilojn por bibliografia programo, konservitajn kiel teksto.
 }
 import-scrivener-prose-placeholders-in-exported-text-line = { $count ->
-    [one] 1 Scrivener-lokokupilo, { $example }, estas konservita kiel simpla teksto en tio, kion vi eksportas. Anstataŭigu ĝin permane.
+    [1] 1 Scrivener-lokokupilo, { $example }, estas konservita kiel simpla teksto en tio, kion vi eksportas. Anstataŭigu ĝin permane.
    *[other] { $count } Scrivener-lokokupiloj, ekzemple { $example }, estas konservitaj kiel simpla teksto en tio, kion vi eksportas. Anstataŭigu ilin permane.
 }
 import-scrivener-prose-placeholders-in-other-text-line = { $count ->
-    [one] 1 Scrivener-lokokupilo, { $example }, estas konservita kiel simpla teksto en teksto, kiu ne estas eksportata.
+    [1] 1 Scrivener-lokokupilo, { $example }, estas konservita kiel simpla teksto en teksto, kiu ne estas eksportata.
    *[other] { $count } Scrivener-lokokupiloj, ekzemple { $example }, estas konservitaj kiel simpla teksto en tekstoj, kiuj ne estas eksportataj.
 }
 import-scrivener-prose-ornament-lines-kept-line = { $count ->
@@ -2085,11 +2119,11 @@ import-scrivener-prose-struck-text-compiled-away-line = { $count ->
    *[other] Trastrekita teksto en { $count } tekstoj estas konservita. La kompilado de Scrivener forlasis ĝin el la libro, sed eksporto el Skribisto presas ĝin.
 }
 import-scrivener-prose-compile-deleted-style-printed-line = { $count ->
-    [one] Teksto en la stilo «{ $example }», kiun la kompilado de Scrivener forigis, estas konservita kiel ordinara teksto, kaj eksporto el Skribisto presas ĝin.
+    [1] Teksto en la stilo «{ $example }», kiun la kompilado de Scrivener forigis, estas konservita kiel ordinara teksto, kaj eksporto el Skribisto presas ĝin.
    *[other] Teksto en { $count } stiloj, kiujn la kompilado de Scrivener forigis, ekzemple «{ $example }», estas konservita kiel ordinara teksto, kaj eksporto el Skribisto presas ĝin.
 }
 import-scrivener-prose-compile-raw-style-printed-line = { $count ->
-    [one] Teksto en la stilo «{ $example }», kiun la kompilado de Scrivener transdonis kiel kodon por alia programo, estas konservita kiel ordinara teksto, kaj eksporto el Skribisto presas ĝin.
+    [1] Teksto en la stilo «{ $example }», kiun la kompilado de Scrivener transdonis kiel kodon por alia programo, estas konservita kiel ordinara teksto, kaj eksporto el Skribisto presas ĝin.
    *[other] Teksto en { $count } stiloj, kiujn la kompilado de Scrivener transdonis kiel kodon por alia programo, ekzemple «{ $example }», estas konservita kiel ordinara teksto, kaj eksporto el Skribisto presas ĝin.
 }
 import-scrivener-prose-left-out-after-document-line = { $count ->
@@ -2117,7 +2151,7 @@ import-scrivener-prose-inline-notes-merged-line = { $count ->
    *[other] { $count } entekstaj notoj, kiujn Scrivener dividis tie, kie ilia formatado ŝanĝiĝis, estas rekunigitaj.
 }
 import-scrivener-prose-inline-notes-joined-across-paragraphs-line = { $count ->
-    [one] 1 enteksta noto skribita po unu alineo estas kunigita en unu solan noton.
+    [1] 1 enteksta noto skribita po unu alineo estas kunigita en unu solan noton.
    *[other] { $count } entekstaj notoj skribitaj po unu alineo estas kunigitaj en notojn de pluraj alineoj.
 }
 import-scrivener-prose-blank-notes-dropped-line = { $count ->
@@ -2133,15 +2167,15 @@ import-scrivener-prose-annotation-only-document-kept-line = { $count ->
    *[other] { $count } dokumentoj enhavis nenion krom prinoto. Iliaj vortoj estas konservitaj kiel ordinara teksto.
 }
 import-scrivener-prose-preserve-formatting-passages-line = { $count ->
-    [one] 1 pasaĵo markita per «Konservi formatadon» alvenas kiel ordinara teksto.
-   *[other] { $count } pasaĵoj markitaj per «Konservi formatadon» alvenas kiel ordinara teksto.
+    [one] 1 pasaĵo markita per «Preserve Formatting» (konservi formatadon) alvenas kiel ordinara teksto.
+   *[other] { $count } pasaĵoj markitaj per «Preserve Formatting» (konservi formatadon) alvenas kiel ordinara teksto.
 }
 import-scrivener-prose-nested-note-unwrapped-line = { $count ->
     [one] 1 noto ene de komento aŭ piednoto estas konservita kiel teksto, tie, kie ĝi estis.
    *[other] { $count } notoj ene de komentoj aŭ piednotoj estas konservitaj kiel teksto, tie, kie ili estis.
 }
 import-scrivener-prose-style-not-carried-line = { $count ->
-    [one] La stilo «{ $example }» ne havas ekvivalenton en Skribisto. Ĝia teksto konservas siajn vortojn.
+    [1] La stilo «{ $example }» ne havas ekvivalenton en Skribisto. Ĝia teksto konservas siajn vortojn.
    *[other] { $count } stiloj, ekzemple «{ $example }», ne havas ekvivalenton en Skribisto. Ilia teksto konservas siajn vortojn.
 }
 import-scrivener-prose-document-links-dropped-line = { $count ->
@@ -2241,10 +2275,10 @@ import-scrivener-prose-media-file-not-carried-line = { $count ->
    *[other] { $count } esploraj dosieroj, kiujn Skribisto ne povas malfermi, restas en via Scrivener-projekto. Iliaj notoj nomas ilin.
 }
 import-scrivener-error-refused = { $refusal } Nenio estis skribita.
-import-scrivener-error-question = La projekto nun starigas demandon, al kiu ĝia kontrolo ne respondis. Kontrolu ĝin denove, poste importu. Nenio estis skribita.
-import-scrivener-error-not-accepted = La projekto starigas demandon, kiun vi ankoraŭ ne akceptis. Kontrolu ĝin denove, poste importu. Nenio estis skribita.
-import-scrivener-error-changed = La projekto ŝanĝiĝis post via kontrolo. Kontrolu ĝin denove, poste importu. Nenio estis skribita.
-import-scrivener-error-choice = La strukturo elektita dum la kontrolo ne plu taŭgas por ĉi tiu projekto. Kontrolu ĝin denove, poste importu. Nenio estis skribita.
+import-scrivener-error-question = La projekto nun starigas demandon, al kiu ĝia kontrolo ne respondis. Elektu «Rekontroli la importon», poste importu. Nenio estis skribita.
+import-scrivener-error-not-accepted = Antaŭ ol ĝi povas esti importita, la projekto bezonas, ke vi marku markobutonon en la paŝo Projekto, kaj ĝi ne estis markita. Elektu «Rekontroli la importon», marku la markobutonon, poste importu. Nenio estis skribita.
+import-scrivener-error-changed = La projekto ŝanĝiĝis post via kontrolo. Elektu «Rekontroli la importon», poste importu. Nenio estis skribita.
+import-scrivener-error-choice = La strukturo elektita dum la kontrolo ne plu taŭgas por ĉi tiu projekto. Elektu «Rekontroli la importon», poste importu. Nenio estis skribita.
 export-title = Eksporti
 export-close = Fermi
 export-scope-label = Kion
@@ -3119,7 +3153,7 @@ import-document-destination-hint = Elektu kolektujon aŭ eron: novaj eroj aldoni
 import-document-destination-empty = Ankoraŭ neniuj kolektujoj. Unue kreu unu.
 import-document-plan-empty = Ankoraŭ nenio importenda.
 import-document-pictures = { $count ->
-    [one] Unu bildo venas kun ĉi tiuj dokumentoj.
+    [1] Unu bildo venas kun ĉi tiuj dokumentoj.
    *[other] { $count } bildoj venas kun ĉi tiuj dokumentoj.
 }
 import-document-summary = { $rows ->
@@ -3177,7 +3211,7 @@ import-diagnostic-image-not-ingested-outside = En «{ $path }», la bildo «{ $d
 import-diagnostic-image-not-ingested-missing = En «{ $path }», la bildo «{ $detail }» ne troveblis, do ĝi estis preterlasita.
 import-diagnostic-image-not-ingested-too-large = En «{ $path }», la bildo «{ $detail }» estas pli granda ol projekto akceptas, do ĝi estis preterlasita.
 import-diagnostic-image-not-ingested-unreadable = En «{ $path }», la bildo «{ $detail }» ne legeblis kiel bildo, do ĝi estis preterlasita.
-import-diagnostic-image-not-ingested-heading = En «{ $path }», la bildo «{ $detail }» troviĝas en titolo. Titolo fariĝas la titolo de ero, kiu enhavas neniun bildon, do ĝi estis preterlasita.
+import-diagnostic-image-not-ingested-heading = En «{ $path }», la bildo «{ $detail }» troviĝas en titola alineo. Ĉiu titola alineo fariĝas la titolo de ero en la kolektujo, kaj titolo enhavas neniun bildon, do la bildo estis preterlasita.
 import-diagnostic-image-not-ingested-note = En «{ $path }», la bildo «{ $detail }» troviĝas en piednoto, finnoto aŭ komento. Tiuj konservas siajn vortojn sed neniun bildon, do ĝi estis preterlasita.
 import-diagnostic-image-not-ingested-html = En «{ $path }», la bildo «{ $detail }» estas skribita en HTML, kaj importo preterlasas HTML, do ankaŭ la bildo estis preterlasita. Skribu ĝin kiel Markdown-bildon por importi ĝin.
 import-diagnostic-image-not-ingested-document-full = En «{ $path }», la bildo «{ $detail }» estis preterlasita: la bildoj de ĉi tiu dokumento kune superas tion, kion unu importo akceptas. Importu la dokumenton en partoj, aŭ enmetu la ceterajn permane.

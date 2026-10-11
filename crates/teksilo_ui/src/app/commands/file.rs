@@ -192,7 +192,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
                 present_import_scrivener(c, opening.clone(), None);
             }),
         );
-        // A failed import's **Review again**: the wizard, already reading the project.
+        // A failed import's **Review the import again**: the wizard, already reading the project.
         ctx.register_action_global(Action::new("work.import_scrivener_path").on_invoke(
             move |i, c| {
                 if let Some(AppIntent::ImportScrivenerPath { path }) = AppIntent::from_intent(i) {

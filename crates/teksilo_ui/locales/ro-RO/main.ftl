@@ -1047,7 +1047,7 @@ import-plume-source-not-file = Această cale nu este un fișier
 import-plume-manuscript-binder = Manuscris
 import-plume-story-bible-binder = Biblia poveștii
 import-plume-notes-of = { $name } (note)
-import-plume-content-of = { $name } (conținut)
+import-plume-content-of = { $name } (text)
 # Progress toast (the import runs as a long operation)
 import-plume-progress-title = Se importă proiectul Plume…
 # Result
@@ -1183,7 +1183,11 @@ project-import-failed-disk-full = Nu mai este destul spațiu în „{ $folder }�
 project-import-failed-source-missing = „{ $file }” nu mai este acolo. Nu s-a scris nimic.
 project-import-failed-unreadable = Skribisto nu a putut citi „{ $file }” ({ $reason }). Nu s-a scris nimic.
 project-import-failed-archive-damaged = „{ $file }” este un fișier comprimat care nu a putut fi citit, probabil pentru că este deteriorat ({ $reason }). Nu s-a scris nimic.
-project-import-failed-archive-entries = Proiectul nu a fost importat: arhiva lui enumeră mai multe fișiere ({ $entries }) decât limita de { $limit } a unui proiect, lucru pe care îl face doar un fișier construit ca să epuizeze memoria. Nu s-a scris nimic.
+project-import-failed-archive-entries = Proiectul nu a fost importat: arhiva lui enumeră { $entries ->
+    [one] un fișier
+    [few] { $entries } fișiere
+   *[other] { $entries } de fișiere
+}, mai multe decât cele { $limit } pe care le poate conține un proiect, lucru pe care îl face doar un fișier construit ca să epuizeze memoria. Nu s-a scris nimic.
 project-import-failed-archive-member = Proiectul nu a fost importat: partea sa „{ $part }” se dezarhivează la peste { $limit } MB, lucru pe care îl face doar un fișier construit ca să epuizeze memoria. Nu s-a scris nimic.
 project-import-failed-archive-size = Proiectul nu a fost importat: se dezarhivează la peste { $limit } MB, lucru pe care îl face doar un fișier construit ca să epuizeze memoria. Nu s-a scris nimic.
 project-import-failed-nested = Proiectul nu a fost importat: partea sa „{ $part }” este imbricată pe mai mult de { $limit } niveluri, iar citirea ei ar putea bloca Skribisto. Nu s-a scris nimic.
@@ -1195,11 +1199,11 @@ project-import-failed-malformed = Proiectul nu a fost importat: partea sa „{ $
 project-import-failed-scrivener-refused = Skribisto nu poate importa acest proiect Scrivener. Nu s-a scris nimic.
 # The Scrivener project asks something its review did not answer: a project or a binder
 # file appeared in it since.
-project-import-failed-scrivener-question = Proiectul Scrivener pune o întrebare la care verificarea lui nu a răspuns. Reluați verificarea, apoi importați. Nu s-a scris nimic.
+project-import-failed-scrivener-question = Proiectul Scrivener pune o întrebare la care verificarea lui nu a răspuns. Reporniți importul lui și răspundeți la întrebare, apoi importați. Nu s-a scris nimic.
 # The Scrivener project raises a question the writer has to accept before it imports.
-project-import-failed-scrivener-not-accepted = Proiectul Scrivener ridică o problemă pe care nu ați acceptat-o încă. Reluați verificarea, apoi importați. Nu s-a scris nimic.
+project-import-failed-scrivener-not-accepted = Înainte de a putea fi importat, proiectul Scrivener vă cere să bifați o casetă la pasul Proiect, iar caseta nu a fost bifată. Reporniți importul lui și bifați-o, apoi importați. Nu s-a scris nimic.
 # The Scrivener project changed after the writer reviewed it.
-project-import-failed-scrivener-changed = Proiectul Scrivener s-a modificat după ce l-ați verificat. Reluați verificarea, apoi importați. Nu s-a scris nimic.
+project-import-failed-scrivener-changed = Proiectul Scrivener s-a modificat după ce l-ați verificat. Reporniți importul lui și verificați-l din nou, apoi importați. Nu s-a scris nimic.
 # An error nothing above accounts for; $detail is its technical description.
 project-import-failed-internal = Importul s-a oprit la o eroare pe care Skribisto nu o aștepta: { $detail }
 
@@ -1251,9 +1255,9 @@ import-scrivener-empty-hint = Alegeți un proiect ca să vedeți ce găsește Sk
 import-scrivener-reading = Se citește proiectul…
 import-scrivener-stop-reading = Oprește citirea
 import-scrivener-read-failed = Proiectul nu a putut fi citit
-import-scrivener-read-failed-body = Ceva nu a mers bine la citirea lui. Verificați din nou sau consultați detaliile.
+import-scrivener-read-failed-body = Ceva nu a mers bine la citirea lui. Alegeți „Recitește proiectul” ca să încercați din nou sau „Detalii” ca să vedeți ce nu a mers.
 import-scrivener-details = Detalii
-import-scrivener-check-again = Verifică din nou
+import-scrivener-check-again = Recitește proiectul
 # A refusal this version does not know how to word.
 import-scrivener-refusal-unknown-title = Acest proiect nu poate fi importat
 import-scrivener-refusal-unknown-body = Skribisto nu știe cum să îl preia. Detaliile indică motivul.
@@ -1286,7 +1290,7 @@ import-scrivener-choice-count = { $count ->
    *[other] { $count } de elemente
 }
 import-scrivener-choice-count-example = { $count ->
-    [one] Un element: „{ $example }”
+    [1] Un element: „{ $example }”
     [few] { $count } elemente, de exemplu „{ $example }”
    *[other] { $count } de elemente, de exemplu „{ $example }”
 }
@@ -1299,7 +1303,7 @@ import-scrivener-choice-books = Cărțile din manuscris
 import-scrivener-books-one = O singură carte
 import-scrivener-books-several = O carte pentru fiecare dosar
 import-scrivener-choice-split = { $count ->
-    [one] Împarte „{ $title }” la titlul său de secțiune
+    [1] Împarte „{ $title }” la titlul său de secțiune
     [few] Împarte „{ $title }” la cele { $count } titluri de secțiune ale sale
    *[other] Împarte „{ $title }” la cele { $count } de titluri de secțiune ale sale
 }
@@ -1309,9 +1313,9 @@ import-scrivener-root-items = { $count ->
    *[other] { $count } de elemente
 }
 import-scrivener-root-items-manuscript = { $count ->
-    [one] Un element, pare să fie manuscris
-    [few] { $count } elemente, par să fie manuscris
-   *[other] { $count } de elemente, par să fie manuscris
+    [one] Un element. Acest dosar pare să fie manuscris.
+    [few] { $count } elemente. Acest dosar pare să fie manuscris.
+   *[other] { $count } de elemente. Acest dosar pare să fie manuscris.
 }
 import-scrivener-dest-notes = Note
 import-scrivener-dest-story-bible = Biblia poveștii
@@ -1379,7 +1383,7 @@ import-scrivener-done-check = { $items ->
     [few] { $findings } lucruri necesită atenție.
    *[other] { $findings } de lucruri necesită atenție.
 }
-import-scrivener-review-again = Reia verificarea
+import-scrivener-review-again = Reverifică importul
 
 ## The import's report (the dialog See report opens)
 import-scrivener-see-report = Vezi raportul
@@ -1461,11 +1465,10 @@ import-scrivener-report-research-copied-except = { $count ->
    *[other] Fișierele de documentare pe care Skribisto nu le poate deschide au fost copiate în „{ $folder }”, lângă noul proiect, cu excepția a { $count } dintre ele, care rămân în proiectul dumneavoastră Scrivener. Notele lor spun unde se află.
 }
 import-scrivener-report-research-none-copied = { $count ->
-    [one] Ați cerut copierea fișierelor de documentare, dar unul dintre ele nu a putut fi copiat. Rămâne în proiectul dumneavoastră Scrivener, iar nota lui spune unde se află.
-    [few] Ați cerut copierea fișierelor de documentare, dar { $count } dintre ele nu au putut fi copiate. Rămân în proiectul dumneavoastră Scrivener, iar notele lor spun unde se află.
-   *[other] Ați cerut copierea fișierelor de documentare, dar { $count } dintre ele nu au putut fi copiate. Rămân în proiectul dumneavoastră Scrivener, iar notele lor spun unde se află.
+    [1] Ați cerut copierea fișierelor de documentare, dar singurul fișier de documentare nu a putut fi copiat. Rămâne în proiectul dumneavoastră Scrivener, iar nota lui spune unde se află.
+   *[other] Ați cerut copierea fișierelor de documentare, dar niciunul dintre cele { $count } nu a putut fi copiat. Rămân în proiectul dumneavoastră Scrivener, iar notele lor spun unde se află.
 }
-import-scrivener-report-chose-project = Ați ales să importați „{ $project }”, unul dintre proiectele din ce ați selectat.
+import-scrivener-report-chose-project = Ați ales să importați „{ $project }”, unul dintre mai multe proiecte aflate în dosarul sau în arhiva pe care ați selectat-o.
 import-scrivener-report-chose-manifest = Ați ales fișierul de clasor „{ $file }”.
 import-scrivener-report-chose-enclosing = Ați ales ceva din interiorul proiectului „{ $project }”, așa că a fost importat întregul proiect.
 import-scrivener-report-chose-upgraded = Ați importat „{ $current }”, proiectul în care ați continuat să scrieți, nu copia păstrată de Scrivener înainte de o actualizare.
@@ -1627,7 +1630,7 @@ import-scrivener-label-value = { $label }: { $value }
 import-scrivener-replacement-regex = expresie regulată
 import-scrivener-replacement-off = dezactivată
 # Said of a note whose own text lists its custom metadata or bookmarks.
-import-scrivener-in-own-note = Enumerate în propria notă.
+import-scrivener-in-own-note = Enumerate în nota în care s-a transformat acest document.
 # A refusal on one line: its title, then what to do.
 import-scrivener-paragraph = { $title }. { $body }
 
@@ -1654,7 +1657,7 @@ import-scrivener-refusal-version-stamp-unreadable-body = Fișierul său Files/ve
 import-scrivener-refusal-damaged-manifest-title = Fișierul clasorului nu poate fi citit
 import-scrivener-refusal-damaged-manifest-body = „{ $manifest }” este deteriorat. { $spare_copies ->
     [0] Deschideți proiectul în Scrivener, care îl poate repara, apoi importați-l din nou.
-    [one] Scrivener păstrează o copie de rezervă a lui în interiorul proiectului, pe care Skribisto nu o citește. Deschideți proiectul în Scrivener, care îl poate repara, apoi importați-l din nou.
+    [1] Scrivener păstrează o copie de rezervă a lui în interiorul proiectului, pe care Skribisto nu o citește. Deschideți proiectul în Scrivener, care îl poate repara, apoi importați-l din nou.
     [few] Scrivener păstrează { $spare_copies } copii de rezervă ale lui în interiorul proiectului, pe care Skribisto nu le citește. Deschideți proiectul în Scrivener, care îl poate repara, apoi importați-l din nou.
    *[other] Scrivener păstrează { $spare_copies } de copii de rezervă ale lui în interiorul proiectului, pe care Skribisto nu le citește. Deschideți proiectul în Scrivener, care îl poate repara, apoi importați-l din nou.
 }
@@ -1665,7 +1668,7 @@ import-scrivener-refusal-manifest-too-large-body = „{ $manifest }” depășe�
 import-scrivener-refusal-no-item-identifiers-title = Clasorul nu enumeră niciun document pe care Skribisto să îl poată găsi
 import-scrivener-refusal-no-item-identifiers-body = Niciunul dintre elementele lui nu are un identificator, așa că fișierele lor nu pot fi găsite. Deschideți o dată proiectul în Scrivener, apoi importați-l din nou.
 import-scrivener-refusal-incomplete-copy-title = Documentele lipsesc din această copie
-import-scrivener-refusal-incomplete-copy-body = Dosarul Files este aici, dar documentele din el nu sunt. Poate că un serviciu de sincronizare nu a terminat de copiat proiectul. Așteptați să termine sau copiați din nou întregul dosar .scriv, apoi verificați din nou.
+import-scrivener-refusal-incomplete-copy-body = Dosarul Files este aici, dar documentele din el nu sunt. Poate că un serviciu de sincronizare nu a terminat de copiat proiectul. Așteptați să termine sau copiați din nou întregul dosar .scriv, apoi recitiți proiectul.
 import-scrivener-refusal-archive-title = Această arhivă nu poate fi deschisă
 import-scrivener-refusal-archive-unreadable-body = „{ $file }” nu a putut fi citit ({ $reason }). Poate fi deteriorat. Dezarhivați manual arhiva, apoi alegeți dosarul .scriv din interior.
 import-scrivener-refusal-archive-unsafe-name-title = Această arhivă nu poate fi deschisă în siguranță
@@ -1698,17 +1701,20 @@ import-scrivener-refusal-cloud-placeholders-title = { $count ->
     [few] { $count } fișiere ale acestui proiect sunt încă în cloud
    *[other] { $count } de fișiere ale acestui proiect sunt încă în cloud
 }
-import-scrivener-refusal-cloud-placeholders-body = Nu au fost descărcate pe acest calculator, de exemplu { $examples }. Faceți proiectul disponibil offline în aplicația de sincronizare, apoi verificați din nou.
+import-scrivener-refusal-cloud-placeholders-body = { $count ->
+    [1] Nu a fost descărcat pe acest calculator: { $examples }. Faceți proiectul disponibil offline în aplicația de sincronizare, apoi recitiți proiectul.
+   *[other] Nu au fost descărcate pe acest calculator, de exemplu { $examples }. Faceți proiectul disponibil offline în aplicația de sincronizare, apoi recitiți proiectul.
+}
 import-scrivener-refusal-unreadable-members-title = { $count ->
     [one] Un fișier al acestui proiect nu poate fi citit
     [few] { $count } fișiere ale acestui proiect nu pot fi citite
    *[other] { $count } de fișiere ale acestui proiect nu pot fi citite
 }
-import-scrivener-refusal-unreadable-members-body = De exemplu { $examples }. Verificați că aveți dreptul să citiți întregul proiect și că discul este în stare bună, apoi verificați din nou.
+import-scrivener-refusal-unreadable-members-body = De exemplu { $examples }. Verificați că aveți dreptul să citiți întregul proiect și că discul este în stare bună, apoi recitiți proiectul.
 import-scrivener-refusal-needed-member-is-link-title = Acest proiect trimite în afara propriului dosar
 import-scrivener-refusal-needed-member-is-link-body = „{ $member }” este o legătură către alt loc de pe acest calculator, iar Skribisto nu urmează legăturile. Copiați proiectul astfel încât fiecare fișier să fie în interiorul lui, apoi încercați din nou.
 import-scrivener-refusal-project-changed-during-read-title = Proiectul s-a modificat în timp ce era citit
-import-scrivener-refusal-project-changed-during-read-body = Scrivener sau un serviciu de sincronizare încă scrie în el. Închideți-l în Scrivener, așteptați să se termine sincronizarea, apoi verificați din nou.
+import-scrivener-refusal-project-changed-during-read-body = Scrivener sau un serviciu de sincronizare încă scrie în el. Închideți-l în Scrivener, așteptați să se termine sincronizarea, apoi recitiți proiectul.
 import-scrivener-refusal-too-many-members-title = Acest proiect conține prea multe fișiere
 import-scrivener-refusal-too-many-members-body = Numărul fișierelor lui depășește { $limit }, mai mult decât are orice proiect real. Poate că nu este un proiect Scrivener sau poate că este deteriorat.
 import-scrivener-refusal-too-large-title = Acest proiect este prea mare
@@ -1777,9 +1783,9 @@ import-scrivener-notice-imported-from-ios-stub-body = Nu a fost deschis niciodat
 import-scrivener-notice-stale-mobile-binder-ignored-title = Un clasor vechi de pe un iPhone sau iPad este lăsat deoparte
 import-scrivener-notice-stale-mobile-binder-ignored-body = Scrivener de pe calculator i-a preluat deja modificările.
 import-scrivener-notice-identical-manifest-copies-title = { $count ->
-    [one] Aici este o copie a fișierului clasorului
-    [few] Aici sunt { $count } copii identice ale fișierului clasorului
-   *[other] Aici sunt { $count } de copii identice ale fișierului clasorului
+    [one] Acest proiect are un fișier de clasor identic
+    [few] Acest proiect are { $count } fișiere de clasor identice
+   *[other] Acest proiect are { $count } de fișiere de clasor identice
 }
 import-scrivener-notice-identical-manifest-copies-body = Conțin același lucru, așa că oricare dintre ele dă același proiect.
 import-scrivener-notice-manifest-copies-ignored-title = Copiile în plus ale fișierului clasorului sunt lăsate deoparte
@@ -1811,13 +1817,13 @@ import-scrivener-notice-invalid-item-identifier-title = { $count ->
     [few] { $count } elemente din clasor au un identificator nevalid
    *[other] { $count } de elemente din clasor au un identificator nevalid
 }
-import-scrivener-notice-invalid-item-identifier-body = Acești identificatori sunt lăsați deoparte. Elementele sunt păstrate.
+import-scrivener-notice-invalid-item-identifier-body = Un astfel de identificator este lăsat deoparte, iar elementul care îl poartă este păstrat.
 import-scrivener-notice-items-without-identifier-title = { $count ->
     [one] Un element din clasor nu are identificator
     [few] { $count } elemente din clasor nu au identificator
    *[other] { $count } de elemente din clasor nu au identificator
 }
-import-scrivener-notice-items-without-identifier-body = Fișierele lor nu pot fi găsite, așa că elementele ajung goale.
+import-scrivener-notice-items-without-identifier-body = Fără identificator, fișierele unui element nu pot fi găsite, așa că elementul ajunge gol.
 import-scrivener-notice-duplicate-item-key-title = Două elemente din clasor au același identificator: „{ $item }”
 import-scrivener-notice-duplicate-item-key-body = Primul păstrează documentele. Al doilea își păstrează locul și ajunge gol.
 import-scrivener-notice-lock-here-title = Scrivener are acest proiect deschis pe acest calculator
@@ -1830,12 +1836,24 @@ import-scrivener-notice-archived-while-open-body = Este posibil ca modificările
 import-scrivener-notice-content-missing-notes = Notele elementului „{ $item }” lipsesc
 import-scrivener-notice-content-missing-synopsis = Sinopsisul elementului „{ $item }” lipsește
 import-scrivener-notice-content-missing-text = Textul elementului „{ $item }” lipsește
-import-scrivener-notice-content-missing-body = Fișierul corespunzător nu se află în această copie, așa că locul lui rămâne gol. Poate că un serviciu de sincronizare încă copiază proiectul.
-import-scrivener-notice-content-missing-salvaged = Fișierul corespunzător nu se află în această copie, dar indexul de căutare al lui Scrivener îi mai păstra cuvintele. Acestea sunt păstrate ca text simplu, poate dintr-o versiune mai veche.
+import-scrivener-notice-content-missing-body = { $place ->
+    [notes] Fișierul corespunzător nu se află în această copie, așa că notele ajung goale. Poate că un serviciu de sincronizare încă copiază proiectul.
+    [synopsis] Fișierul corespunzător nu se află în această copie, așa că sinopsisul ajunge gol. Poate că un serviciu de sincronizare încă copiază proiectul.
+   *[text] Fișierul corespunzător nu se află în această copie, așa că textul ajunge gol. Poate că un serviciu de sincronizare încă copiază proiectul.
+}
+import-scrivener-notice-content-missing-salvaged = { $place ->
+    [notes] Fișierul corespunzător nu se află în această copie, dar indexul de căutare al lui Scrivener le mai păstra cuvintele. Acestea sunt păstrate ca text simplu, poate dintr-o versiune mai veche.
+    [synopsis] Fișierul corespunzător nu se află în această copie, dar indexul de căutare al lui Scrivener îi mai păstra cuvintele. Acestea sunt păstrate ca text simplu, poate dintr-o versiune mai veche.
+   *[text] Fișierul corespunzător nu se află în această copie, dar indexul de căutare al lui Scrivener îi mai păstra cuvintele. Acestea sunt păstrate ca text simplu, poate dintr-o versiune mai veche.
+}
 import-scrivener-notice-content-truncated-notes = Notele elementului „{ $item }” sunt goale pe disc
 import-scrivener-notice-content-truncated-synopsis = Sinopsisul elementului „{ $item }” este gol pe disc
 import-scrivener-notice-content-truncated-text = Textul elementului „{ $item }” este gol pe disc
-import-scrivener-notice-content-truncated-body = Potrivit lui Scrivener, aici există text, dar fișierul corespunzător nu conține nimic: poate că o sincronizare s-a oprit la jumătate. Locul lui rămâne gol.
+import-scrivener-notice-content-truncated-body = { $place ->
+    [notes] Scrivener le-a înregistrat ca având text, dar fișierul lor nu conține nimic: poate că o sincronizare s-a oprit la jumătate. Notele ajung goale.
+    [synopsis] Scrivener l-a înregistrat ca având text, dar fișierul lui nu conține nimic: poate că o sincronizare s-a oprit la jumătate. Sinopsisul ajunge gol.
+   *[text] Scrivener l-a înregistrat ca având text, dar fișierul lui nu conține nimic: poate că o sincronizare s-a oprit la jumătate. Textul ajunge gol.
+}
 import-scrivener-notice-missing-media-title = Fișierul elementului „{ $item }” lipsește
 import-scrivener-notice-missing-media-body = Imaginea sau fișierul de documentare pe care îl conține nu se află în această copie.
 import-scrivener-notice-sync-conflict-copies-title = { $count ->
@@ -1844,21 +1862,22 @@ import-scrivener-notice-sync-conflict-copies-title = { $count ->
    *[other] Au fost găsite { $count } de copii de sincronizare ale unor documente
 }
 import-scrivener-notice-sync-conflict-copies-body = { $missing ->
-    [0] Sunt preluate ca texte recuperate, într-un dosar separat, ca să le puteți compara cu documentele.
-   *[other] Sunt preluate ca texte recuperate, într-un dosar separat. Unele sunt copii ale unor documente care nu mai sunt în proiect.
+    [0] Copiile de sincronizare sunt preluate ca texte recuperate, într-un dosar separat, ca să le puteți compara cu documentele.
+    [one] Copiile de sincronizare sunt preluate ca texte recuperate, într-un dosar separat. Una dintre ele este copia unui document care nu mai este în proiect.
+   *[other] Copiile de sincronizare sunt preluate ca texte recuperate, într-un dosar separat. { $missing } dintre ele sunt copii ale unor documente care nu mai sunt în proiect.
 }
 import-scrivener-notice-recovered-unreferenced-text-title = { $count ->
     [one] A fost găsit un document pe care nu îl enumeră niciun element din clasor
     [few] Au fost găsite { $count } documente pe care nu le enumeră niciun element din clasor
    *[other] Au fost găsite { $count } de documente pe care nu le enumeră niciun element din clasor
 }
-import-scrivener-notice-recovered-unreferenced-text-body = Sunt preluate ca texte recuperate, într-un dosar separat.
+import-scrivener-notice-recovered-unreferenced-text-body = Documentele de acest fel sunt preluate ca texte recuperate, într-un dosar separat.
 import-scrivener-notice-sync-debris-ignored-title = { $count ->
     [one] O copie în plus, rămasă de la un serviciu de sincronizare, este lăsată deoparte
     [few] { $count } copii în plus, rămase de la un serviciu de sincronizare, sunt lăsate deoparte
    *[other] { $count } de copii în plus, rămase de la un serviciu de sincronizare, sunt lăsate deoparte
 }
-import-scrivener-notice-sync-debris-ignored-body = Nici Scrivener nu le citește. Sunt citite doar fișierele proprii ale proiectului.
+import-scrivener-notice-sync-debris-ignored-body = Nici Scrivener nu citește astfel de copii. Sunt citite doar fișierele proprii ale proiectului.
 import-scrivener-notice-unrecognised-files-title = { $count ->
     [one] Un fișier care nu face parte dintr-un proiect Scrivener este lăsat deoparte
     [few] { $count } fișiere care nu fac parte dintr-un proiect Scrivener sunt lăsate deoparte
@@ -1880,9 +1899,9 @@ import-scrivener-notice-cloud-placeholders-skipped-title = { $count ->
     [few] { $count } fișiere aflate încă în cloud sunt omise
    *[other] { $count } de fișiere aflate încă în cloud sunt omise
 }
-import-scrivener-notice-cloud-placeholders-skipped-body = Importul nu are nevoie de ele.
+import-scrivener-notice-cloud-placeholders-skipped-body = Nimic din ce îi trebuie importului nu mai este în cloud.
 import-scrivener-notice-no-text-found-title = { $count ->
-    [one] Un singur document, fără niciun text
+    [1] Un singur document, fără niciun text
     [few] { $count } documente, niciunul cu text
    *[other] { $count } de documente, niciunul cu text
 }
@@ -1919,7 +1938,7 @@ import-scrivener-notice-dangling-item-title = { $count ->
     [few] { $count } trimiteri indică documente pe care proiectul nu le definește
    *[other] { $count } de trimiteri indică documente pe care proiectul nu le definește
 }
-import-scrivener-notice-dangling-references-body = Sunt omise.
+import-scrivener-notice-dangling-references-body = O trimitere la ceva ce proiectul nu definește este omisă.
 import-scrivener-notice-snapshots-not-imported-line = { $count ->
     [one] Un instantaneu (snapshot) rămâne în proiectul dumneavoastră Scrivener: Skribisto nu preia instantaneele.
     [few] { $count } instantanee (snapshots) rămân în proiectul dumneavoastră Scrivener: Skribisto nu preia instantaneele.
@@ -1942,26 +1961,26 @@ import-scrivener-notice-language-from-script-hint = Propusă după sistemul de s
 
 ## Before you import: what the import does with the binder, or leaves behind
 import-scrivener-structure-script-mode-draft-line = { $script ->
-    [one] { $documents ->
-        [one] Singurul document al manuscrisului este scris în modul scenariu. Skribisto îi păstrează cuvintele, nu și aspectul de scenariu.
+    [1] { $documents ->
+        [1] Singurul document al manuscrisului este scris în modul scenariu. Skribisto îi păstrează cuvintele, nu și aspectul de scenariu.
        *[other] Unul dintre documentele manuscrisului (din { $documents } în total) este scris în modul scenariu. Skribisto îi păstrează cuvintele, nu și aspectul de scenariu.
     }
    *[other] { $script } dintre documentele manuscrisului (din { $documents } în total) sunt scrise în modul scenariu. Skribisto le păstrează cuvintele, nu și aspectul de scenariu.
 }
 import-scrivener-structure-one-document-manuscript-line = { $count ->
-    [one] Un document al manuscrisului își conține capitolele sub formă de titluri de secțiune.
+    [1] Un document al manuscrisului își conține capitolele sub formă de titluri de secțiune.
     [few] { $count } documente ale manuscrisului își conțin capitolele sub formă de titluri de secțiune.
    *[other] { $count } de documente ale manuscrisului își conțin capitolele sub formă de titluri de secțiune.
 }
 import-scrivener-structure-title-repeats-number-line = { $count ->
-    [one] Un titlu de capitol sau de parte își conține și numărul, așa că un export ar putea tipări numărul de două ori.
-    [few] { $count } titluri de capitol sau de parte își conțin și numărul, așa că un export ar putea tipări numărul de două ori.
-   *[other] { $count } de titluri de capitol sau de parte își conțin și numărul, așa că un export ar putea tipări numărul de două ori.
+    [one] Un titlu de capitol sau de parte își conține și numărul, de exemplu „Capitolul II” sau „Partea întâi”, așa că un export ar putea tipări numărul de două ori.
+    [few] { $count } titluri de capitol sau de parte își conțin și numărul, de exemplu „Capitolul II” sau „Partea întâi”, așa că un export ar putea tipări numărul de două ori.
+   *[other] { $count } de titluri de capitol sau de parte își conțin și numărul, de exemplu „Capitolul II” sau „Partea întâi”, așa că un export ar putea tipări numărul de două ori.
 }
 import-scrivener-structure-claim-overruled-line = { $count ->
-    [one] Un element primește un nivel inferior celui pe care îl revendică, pentru că un element de deasupra lui ocupă deja acel nivel.
-    [few] { $count } elemente primesc un nivel inferior celui pe care îl revendică, pentru că un element de deasupra lor ocupă deja acel nivel.
-   *[other] { $count } de elemente primesc un nivel inferior celui pe care îl revendică, pentru că un element de deasupra lor ocupă deja acel nivel.
+    [one] Un element pare a fi o carte, o parte sau un capitol, dar se află într-un element care este deja la acel nivel, așa că este preluat la un nivel inferior.
+    [few] { $count } elemente par a fi cărți, părți sau capitole, dar fiecare se află într-un element care este deja la acel nivel, așa că sunt preluate la un nivel inferior.
+   *[other] { $count } de elemente par a fi cărți, părți sau capitole, dar fiecare se află într-un element care este deja la acel nivel, așa că sunt preluate la un nivel inferior.
 }
 import-scrivener-structure-adopted-by-chapter-line = { $count ->
     [one] Un document care urmează după un capitol devine sfârșitul acelui capitol.
@@ -1974,9 +1993,9 @@ import-scrivener-structure-looks-like-manuscript-line = { $count ->
    *[other] { $count } de dosare de pe primul nivel, păstrate la note, par să fie manuscris. Le puteți trimite în manuscris, ca alte cărți.
 }
 import-scrivener-structure-generic-sheet-title-line = { $count ->
-    [one] O intrare din biblia poveștii are titlul unui șablon, de exemplu „Erou”, pe care Skribisto îl va căuta în proză.
-    [few] { $count } intrări din biblia poveștii au titlul unui șablon, de exemplu „Erou”, pe care Skribisto îl va căuta în proză.
-   *[other] { $count } de intrări din biblia poveștii au titlul unui șablon, de exemplu „Erou”, pe care Skribisto îl va căuta în proză.
+    [one] O intrare din biblia poveștii are încă titlul unui șablon, de exemplu „Erou”. Skribisto caută acest titlu în text și enumeră pe pagina „În proză” fiecare loc în care apare: redenumiți intrarea dacă acest cuvânt este frecvent în cartea dumneavoastră.
+    [few] { $count } intrări din biblia poveștii au încă titlul unui șablon, de exemplu „Erou”. Skribisto caută aceste titluri în text și enumeră pe pagina „În proză” fiecare loc în care apar: redenumiți intrările dacă aceste cuvinte sunt frecvente în cartea dumneavoastră.
+   *[other] { $count } de intrări din biblia poveștii au încă titlul unui șablon, de exemplu „Erou”. Skribisto caută aceste titluri în text și enumeră pe pagina „În proză” fiecare loc în care apar: redenumiți intrările dacă aceste cuvinte sunt frecvente în cartea dumneavoastră.
 }
 import-scrivener-structure-placeholder-title-line = { $count ->
     [one] Un titlu care doar își numea nivelul este lăsat gol: clasorul și exporturile îl numerotează.
@@ -2024,20 +2043,20 @@ import-scrivener-structure-matter-inside-book-line = { $count ->
    *[other] { $count } de elemente de tip pagini de început sau de sfârșit, aflate în afara manuscrisului, intră în carte ca paratext, excluse din exporturi până când le includeți.
 }
 import-scrivener-structure-paratext-not-counted-line = { $documents ->
-    [one] Un document al manuscrisului devine paratext (pagini de început sau de sfârșit): { $words ->
-        [one] singurul lui cuvânt nu mai este numărat
-        [few] cele { $words } cuvinte ale lui nu mai sunt numărate
-       *[other] cele { $words } de cuvinte ale lui nu mai sunt numărate
+    [one] Un document al manuscrisului devine paratext (pagini de început sau de sfârșit), așa că { $words ->
+        [one] un cuvânt nu mai este numărat
+        [few] { $words } cuvinte nu mai sunt numărate
+       *[other] { $words } de cuvinte nu mai sunt numărate
     } în manuscris.
-    [few] { $documents } documente ale manuscrisului devin paratext (pagini de început sau de sfârșit): { $words ->
-        [one] singurul lor cuvânt nu mai este numărat
-        [few] cele { $words } cuvinte ale lor nu mai sunt numărate
-       *[other] cele { $words } de cuvinte ale lor nu mai sunt numărate
+    [few] { $documents } documente ale manuscrisului devin paratext (pagini de început sau de sfârșit), așa că { $words ->
+        [one] un cuvânt nu mai este numărat
+        [few] { $words } cuvinte nu mai sunt numărate
+       *[other] { $words } de cuvinte nu mai sunt numărate
     } în manuscris.
-   *[other] { $documents } de documente ale manuscrisului devin paratext (pagini de început sau de sfârșit): { $words ->
-        [one] singurul lor cuvânt nu mai este numărat
-        [few] cele { $words } cuvinte ale lor nu mai sunt numărate
-       *[other] cele { $words } de cuvinte ale lor nu mai sunt numărate
+   *[other] { $documents } de documente ale manuscrisului devin paratext (pagini de început sau de sfârșit), așa că { $words ->
+        [one] un cuvânt nu mai este numărat
+        [few] { $words } cuvinte nu mai sunt numărate
+       *[other] { $words } de cuvinte nu mai sunt numărate
     } în manuscris.
 }
 import-scrivener-structure-document-notes-line = { $count ->
@@ -2077,9 +2096,17 @@ import-scrivener-structure-project-notes-line = { $count ->
    *[other] { $count } de note de proiect sunt preluate într-un dosar separat.
 }
 import-scrivener-structure-trash-brought-across-line = { $items ->
-    [one] Coșul de gunoi este preluat: un element, pe care îl puteți restaura din coșul de gunoi.
-    [few] Coșul de gunoi este preluat: { $items } elemente, dintre care { $writing } cu text, pe care le puteți restaura din coșul de gunoi.
-   *[other] Coșul de gunoi este preluat: { $items } de elemente, dintre care { $writing } cu text, pe care le puteți restaura din coșul de gunoi.
+    [1] Coșul de gunoi este preluat: un element, pe care îl puteți restaura din coșul de gunoi.
+    [few] Coșul de gunoi este preluat: { $items } elemente, { $writing ->
+        [0] niciunul cu text
+        [one] dintre care unul cu text
+       *[other] dintre care { $writing } cu text
+    }, pe care le puteți restaura din coșul de gunoi.
+   *[other] Coșul de gunoi este preluat: { $items } de elemente, { $writing ->
+        [0] niciunul cu text
+        [one] dintre care unul cu text
+       *[other] dintre care { $writing } cu text
+    }, pe care le puteți restaura din coșul de gunoi.
 }
 import-scrivener-structure-not-compiled-line = { $count ->
     [one] Un element pe care Scrivener l-a exclus din compilare este exclus și din exporturi.
@@ -2109,9 +2136,17 @@ import-scrivener-structure-left-out-line = { $count ->
     }.
 }
 import-scrivener-structure-trash-left-out-line = { $items ->
-    [one] Coșul de gunoi nu este preluat: un element.
-    [few] Coșul de gunoi nu este preluat: { $items } elemente, dintre care { $writing } cu text.
-   *[other] Coșul de gunoi nu este preluat: { $items } de elemente, dintre care { $writing } cu text.
+    [1] Coșul de gunoi nu este preluat: un element.
+    [few] Coșul de gunoi nu este preluat: { $items } elemente, { $writing ->
+        [0] niciunul cu text
+        [one] dintre care unul cu text
+       *[other] dintre care { $writing } cu text
+    }.
+   *[other] Coșul de gunoi nu este preluat: { $items } de elemente, { $writing ->
+        [0] niciunul cu text
+        [one] dintre care unul cu text
+       *[other] dintre care { $writing } cu text
+    }.
 }
 import-scrivener-structure-card-image-left-behind-line = { $count ->
     [one] Imaginea de pe fișa unui element al manuscrisului nu este preluată: ar fi tipărită în carte.
@@ -2119,19 +2154,19 @@ import-scrivener-structure-card-image-left-behind-line = { $count ->
    *[other] Imaginile de pe fișele a { $count } de elemente ale manuscrisului nu sunt preluate: ar fi tipărite în carte.
 }
 import-scrivener-structure-default-template-not-linked-line = { $count ->
-    [one] Șablonul de document implicit al unui dosar nu mai este legat de el.
-    [few] Șabloanele de document implicite a { $count } dosare nu mai sunt legate de ele.
-   *[other] Șabloanele de document implicite a { $count } de dosare nu mai sunt legate de ele.
+    [one] Un dosar avea un șablon implicit pentru documentele noi din el. În Skribisto, doar o etichetă a bibliei poveștii poate purta un șablon, așa că această legătură nu este păstrată.
+    [few] { $count } dosare aveau un șablon implicit pentru documentele noi din ele. În Skribisto, doar o etichetă a bibliei poveștii poate purta un șablon, așa că aceste legături nu sunt păstrate.
+   *[other] { $count } de dosare aveau un șablon implicit pentru documentele noi din ele. În Skribisto, doar o etichetă a bibliei poveștii poate purta un șablon, așa că aceste legături nu sunt păstrate.
 }
 import-scrivener-structure-page-break-not-kept-line = { $count ->
-    [one] O setare „Page break before” (salt de pagină înainte) nu are loc în Skribisto și nu este păstrată.
-    [few] { $count } setări „Page break before” (salt de pagină înainte) nu au loc în Skribisto și nu sunt păstrate.
-   *[other] { $count } de setări „Page break before” (salt de pagină înainte) nu au loc în Skribisto și nu sunt păstrate.
+    [one] O setare „Page Break Before” (salt de pagină înainte) nu are loc în Skribisto și nu este păstrată.
+    [few] { $count } setări „Page Break Before” (salt de pagină înainte) nu au loc în Skribisto și nu sunt păstrate.
+   *[other] { $count } de setări „Page Break Before” (salt de pagină înainte) nu au loc în Skribisto și nu sunt păstrate.
 }
 import-scrivener-structure-compile-as-is-not-kept-line = { $count ->
-    [one] O setare „Compile as-is” (compilare ca atare) nu are echivalent în Skribisto și nu este păstrată.
-    [few] { $count } setări „Compile as-is” (compilare ca atare) nu au echivalent în Skribisto și nu sunt păstrate.
-   *[other] { $count } de setări „Compile as-is” (compilare ca atare) nu au echivalent în Skribisto și nu sunt păstrate.
+    [one] O setare „Compile As-Is” (compilare ca atare) nu are echivalent în Skribisto și nu este păstrată.
+    [few] { $count } setări „Compile As-Is” (compilare ca atare) nu au echivalent în Skribisto și nu sunt păstrate.
+   *[other] { $count } de setări „Compile As-Is” (compilare ca atare) nu au echivalent în Skribisto și nu sunt păstrate.
 }
 
 ## What the import did with the labels, the status list and the dates
@@ -2163,24 +2198,24 @@ import-scrivener-metadata-labels-became-tags-line = { $tags ->
     }.
 }
 import-scrivener-metadata-statuses-became-ladder-line = { $rungs ->
-    [one] Lista de stări devine singura stare a proiectului, pusă pe { $rows ->
+    [one] Lista de stări este preluată ca listă de stări a proiectului: o stare, pusă pe { $rows ->
         [one] un element
         [few] { $rows } elemente
        *[other] { $rows } de elemente
     }.
-    [few] Lista de stări devine cele { $rungs } stări ale proiectului, puse pe { $rows ->
+    [few] Lista de stări este preluată ca listă de stări a proiectului: { $rungs } stări, puse pe { $rows ->
         [one] un element
         [few] { $rows } elemente
        *[other] { $rows } de elemente
     }.
-   *[other] Lista de stări devine cele { $rungs } de stări ale proiectului, puse pe { $rows ->
+   *[other] Lista de stări este preluată ca listă de stări a proiectului: { $rungs } de stări, puse pe { $rows ->
         [one] un element
         [few] { $rows } elemente
        *[other] { $rows } de elemente
     }.
 }
 import-scrivener-metadata-ladder-seeded-line = { $count ->
-    [one] Proiectul nu avea o listă de stări, așa că pornește cu starea implicită a lui Skribisto.
+    [1] Proiectul nu avea o listă de stări, așa că pornește cu starea implicită a lui Skribisto.
     [few] Proiectul nu avea o listă de stări, așa că pornește cu cele { $count } stări implicite ale lui Skribisto.
    *[other] Proiectul nu avea o listă de stări, așa că pornește cu cele { $count } de stări implicite ale lui Skribisto.
 }
@@ -2251,7 +2286,7 @@ import-scrivener-metadata-targets-without-row-line = { $count ->
 ## and `$folder` are the titles the import gives a note and its "From Scrivener" folder;
 ## `$day` is a day as YYYY-MM-DD.
 import-scrivener-metadata-pov-hint-line = { $count ->
-    [one] Valoarea Label sau valoarea de câmp { $values } corespunde intrării din biblia poveștii { $matches }. Dacă numește punctul de vedere, setați-l în inspector: importul nu leagă nimic.
+    [1] Valoarea Label sau valoarea de câmp { $values } corespunde intrării din biblia poveștii { $matches }. Dacă numește punctul de vedere, setați-l în inspector: importul nu leagă nimic.
    *[other] Valorile Label sau valorile de câmp { $values } corespund intrărilor din biblia poveștii { $matches }. Dacă numesc puncte de vedere, setați-le în inspector: importul nu leagă nimic.
 }
 import-scrivener-metadata-checkbox-default-unknown-line = Câmpul de tip casetă de bifare „{ $field }” are o valoare implicită pe care Skribisto nu o poate citi, așa că nu poate ști ce documente sunt bifate implicit. Doar documentele bifate unul câte unul poartă eticheta lui.
@@ -2261,7 +2296,7 @@ import-scrivener-metadata-goals-in-other-unit-line = { $count ->
    *[other] { $count } de obiective sunt stabilite în cealaltă unitate de numărare. Sunt păstrate și apar după ce schimbați unitatea de numărare în Setări ▸ Proiect ▸ Alcătuire.
 }
 import-scrivener-metadata-counting-differs-line = Scrivener calcula ținta manuscrisului pe alte documente decât Skribisto. Obiectivul cărții numără scenele incluse în exporturi.
-import-scrivener-metadata-writing-days-not-read-line = Zilele de scris „{ $raw }” nu pot fi citite, așa că planul de ritm al cărții consideră fiecare zi o zi de scris. Modificați-le acolo.
+import-scrivener-metadata-writing-days-not-read-line = Zilele de scris „{ $raw }” nu pot fi citite, așa că Ritmul cărții consideră fiecare zi o zi de scris. Modificați-le acolo.
 import-scrivener-metadata-script-mode-rows-line = { $count ->
     [one] Un element era în modul scenariu în Scrivener. Skribisto îi păstrează cuvintele ca proză, fără aspectul de scenariu.
     [few] { $count } elemente erau în modul scenariu în Scrivener. Skribisto le păstrează cuvintele ca proză, fără aspectul de scenariu.
@@ -2346,9 +2381,9 @@ import-scrivener-metadata-bookmarks-became-links-line = { $count ->
    *[other] { $count } de semne de carte devin legături între note sau între scene și intrări din biblia poveștii: vedeți Legături și Distribuție.
 }
 import-scrivener-metadata-goals-kept-line = { $count ->
-    [one] O țintă de document devine obiectiv.
-    [few] { $count } ținte de document devin obiective.
-   *[other] { $count } de ținte de document devin obiective.
+    [one] Ținta pe care Scrivener o stabilea pentru un document devine obiectivul lui în Skribisto.
+    [few] Țintele pe care Scrivener le stabilea pentru { $count } documente devin obiectivele lor în Skribisto.
+   *[other] Țintele pe care Scrivener le stabilea pentru { $count } de documente devin obiectivele lor în Skribisto.
 }
 import-scrivener-metadata-draft-target-kept-words-line = { $value ->
     [one] Ținta manuscrisului, de un cuvânt, devine obiectivul cărții.
@@ -2360,8 +2395,8 @@ import-scrivener-metadata-draft-target-kept-characters-line = { $value ->
     [few] Ținta manuscrisului, de { $value } caractere, devine obiectivul cărții.
    *[other] Ținta manuscrisului, de { $value } de caractere, devine obiectivul cărții.
 }
-import-scrivener-metadata-pace-planned-line = Termenul-limită, { $day }, devine planul de ritm al cărții, care planifică numărul de cuvinte pentru fiecare zi de scris aleasă în Scrivener, începând din ziua importului.
-import-scrivener-metadata-pace-planned-day-off-line = Termenul-limită, { $day }, devine planul de ritm al cărții, care planifică numărul de cuvinte pentru fiecare zi de scris aleasă în Scrivener, începând din ziua importului. Ca în Scrivener, ziua termenului-limită este o zi liberă.
+import-scrivener-metadata-pace-planned-line = Termenul-limită, { $day }, configurează Ritmul cărții, care planifică numărul de cuvinte pentru fiecare zi de scris aleasă în Scrivener, începând din ziua importului.
+import-scrivener-metadata-pace-planned-day-off-line = Termenul-limită, { $day }, configurează Ritmul cărții, care planifică numărul de cuvinte pentru fiecare zi de scris aleasă în Scrivener, începând din ziua importului. Ca în Scrivener, ziua termenului-limită este o zi liberă.
 import-scrivener-metadata-dictionary-words-line = { $count ->
     [one] Un cuvânt din completarea automată intră în dicționarul personal al proiectului, ca să nu fie marcat ca greșit.
     [few] { $count } cuvinte din completarea automată intră în dicționarul personal al proiectului, ca să nu fie marcate ca greșite.
@@ -2477,13 +2512,13 @@ import-scrivener-metadata-draft-target-no-book-characters-line = { $value ->
     [few] Ținta manuscrisului, de { $value } caractere, nu devine obiectiv, pentru că manuscrisul formează mai multe cărți sau niciuna. Apare în nota „{ $note }” din dosarul „{ $folder }”.
    *[other] Ținta manuscrisului, de { $value } de caractere, nu devine obiectiv, pentru că manuscrisul formează mai multe cărți sau niciuna. Apare în nota „{ $note }” din dosarul „{ $folder }”.
 }
-import-scrivener-metadata-deadline-passed-line = Termenul-limită, { $day }, a trecut, așa că nu creează niciun plan de ritm. Apare în nota „{ $note }” din dosarul „{ $folder }”.
-import-scrivener-metadata-deadline-no-writing-day-line = Între ziua importului și termenul-limită, { $day }, nu mai rămâne nicio zi de scris, așa că termenul nu creează niciun plan de ritm. Apare în nota „{ $note }” din dosarul „{ $folder }”.
-import-scrivener-metadata-deadline-template-line = Termenul-limită, { $day }, era salvat în șablon, așa că nu creează niciun plan de ritm. Apare în nota „{ $note }” din dosarul „{ $folder }”.
-import-scrivener-metadata-deadline-no-word-goal-line = Termenul-limită, { $day }, nu creează niciun plan de ritm, pentru că manuscrisul nu are o țintă de cuvinte după care să se planifice. Apare în nota „{ $note }” din dosarul „{ $folder }”.
-import-scrivener-metadata-deadline-character-goal-line = Termenul-limită, { $day }, nu creează niciun plan de ritm, pentru că ținta manuscrisului numără caractere, iar un plan de ritm numără cuvinte. Apare în nota „{ $note }” din dosarul „{ $folder }”.
-import-scrivener-metadata-deadline-no-book-line = Termenul-limită, { $day }, nu creează niciun plan de ritm, pentru că manuscrisul formează mai multe cărți sau niciuna. Apare în nota „{ $note }” din dosarul „{ $folder }”.
-import-scrivener-metadata-deadline-unreadable-line = Termenul-limită nu poate fi citit, așa că nu creează niciun plan de ritm. Apare, așa cum a fost scris, în nota „{ $note }” din dosarul „{ $folder }”.
+import-scrivener-metadata-deadline-passed-line = Termenul-limită, { $day }, a trecut, așa că nu configurează Ritmul cărții. Apare în nota „{ $note }” din dosarul „{ $folder }”.
+import-scrivener-metadata-deadline-no-writing-day-line = Între ziua importului și termenul-limită, { $day }, nu mai rămâne nicio zi de scris, așa că termenul nu configurează Ritmul cărții. Apare în nota „{ $note }” din dosarul „{ $folder }”.
+import-scrivener-metadata-deadline-template-line = Termenul-limită, { $day }, era salvat în șablon, așa că nu configurează Ritmul cărții. Apare în nota „{ $note }” din dosarul „{ $folder }”.
+import-scrivener-metadata-deadline-no-word-goal-line = Termenul-limită, { $day }, nu configurează Ritmul cărții, pentru că manuscrisul nu are o țintă de cuvinte după care să se planifice. Apare în nota „{ $note }” din dosarul „{ $folder }”.
+import-scrivener-metadata-deadline-character-goal-line = Termenul-limită, { $day }, nu configurează Ritmul cărții, pentru că ținta manuscrisului numără caractere, iar Ritmul numără cuvinte. Apare în nota „{ $note }” din dosarul „{ $folder }”.
+import-scrivener-metadata-deadline-no-book-line = Termenul-limită, { $day }, nu configurează Ritmul niciunei cărți, pentru că manuscrisul formează mai multe cărți sau niciuna. Apare în nota „{ $note }” din dosarul „{ $folder }”.
+import-scrivener-metadata-deadline-unreadable-line = Termenul-limită nu poate fi citit, așa că nu configurează Ritmul cărții. Apare, așa cum a fost scris, în nota „{ $note }” din dosarul „{ $folder }”.
 import-scrivener-metadata-session-target-words-line = { $value ->
     [one] Ținta sesiunii, de un cuvânt, nu este importată: în Skribisto, obiectivul sesiunii de scriere este o singură setare pentru toate proiectele. Apare în nota „{ $note }” din dosarul „{ $folder }”.
     [few] Ținta sesiunii, de { $value } cuvinte, nu este importată: în Skribisto, obiectivul sesiunii de scriere este o singură setare pentru toate proiectele. Apare în nota „{ $note }” din dosarul „{ $folder }”.
@@ -2563,9 +2598,9 @@ import-scrivener-prose-comment-entry-without-anchor-line = { $count ->
    *[other] { $count } de comentarii nu mai aveau un loc în textul lor și sunt atașate primului paragraf.
 }
 import-scrivener-prose-footnote-entry-without-anchor-line = { $count ->
-    [one] O notă de subsol legată nu mai avea un loc în textul ei, așa că trimiterea ei este pusă la sfârșitul textului.
-    [few] { $count } note de subsol legate nu mai aveau un loc în textul lor, așa că trimiterile lor sunt puse la sfârșitul textului.
-   *[other] { $count } de note de subsol legate nu mai aveau un loc în textul lor, așa că trimiterile lor sunt puse la sfârșitul textului.
+    [one] O notă de subsol legată nu mai avea un loc în textul ei, așa că trimiterea ei este pusă la sfârșitul acelui text.
+    [few] { $count } note de subsol legate nu mai aveau un loc în textele lor, așa că trimiterea fiecăreia este pusă la sfârșitul textului din care face parte.
+   *[other] { $count } de note de subsol legate nu mai aveau un loc în textele lor, așa că trimiterea fiecăreia este pusă la sfârșitul textului din care face parte.
 }
 import-scrivener-prose-range-comment-reading-line = { $count ->
     [one] Un comentariu dintr-un Scrivener mai vechi a fost plasat după o altă interpretare a poziției lui. Verificați că se află pe cuvintele potrivite.
@@ -2593,7 +2628,7 @@ import-scrivener-prose-document-link-unresolved-line = { $count ->
    *[other] { $count } de legături indică documente pe care importul nu le-a preluat. Cuvintele lor rămân.
 }
 import-scrivener-prose-linked-picture-not-read-line = { $count ->
-    [one] O imagine legată de un fișier de pe disc, „{ $example }”, nu a fost preluată.
+    [1] O imagine legată de un fișier de pe disc, „{ $example }”, nu a fost preluată.
     [few] { $count } imagini legate de fișiere de pe disc, de exemplu „{ $example }”, nu au fost preluate.
    *[other] { $count } de imagini legate de fișiere de pe disc, de exemplu „{ $example }”, nu au fost preluate.
 }
@@ -2613,12 +2648,12 @@ import-scrivener-prose-citation-keys-as-text-line = { $count ->
    *[other] { $count } de paragrafe conțin chei de citare pentru un program de bibliografie, păstrate ca text.
 }
 import-scrivener-prose-placeholders-in-exported-text-line = { $count ->
-    [one] Un marcaj de înlocuire Scrivener, { $example }, este păstrat ca text simplu în ce exportați. Înlocuiți-l manual.
+    [1] Un marcaj de înlocuire Scrivener, { $example }, este păstrat ca text simplu în ce exportați. Înlocuiți-l manual.
     [few] { $count } marcaje de înlocuire Scrivener, de exemplu { $example }, sunt păstrate ca text simplu în ce exportați. Înlocuiți-le manual.
    *[other] { $count } de marcaje de înlocuire Scrivener, de exemplu { $example }, sunt păstrate ca text simplu în ce exportați. Înlocuiți-le manual.
 }
 import-scrivener-prose-placeholders-in-other-text-line = { $count ->
-    [one] Un marcaj de înlocuire Scrivener, { $example }, este păstrat ca text simplu într-un text care nu este exportat.
+    [1] Un marcaj de înlocuire Scrivener, { $example }, este păstrat ca text simplu într-un text care nu este exportat.
     [few] { $count } marcaje de înlocuire Scrivener, de exemplu { $example }, sunt păstrate ca text simplu în texte care nu sunt exportate.
    *[other] { $count } de marcaje de înlocuire Scrivener, de exemplu { $example }, sunt păstrate ca text simplu în texte care nu sunt exportate.
 }
@@ -2643,12 +2678,12 @@ import-scrivener-prose-struck-text-compiled-away-line = { $count ->
    *[other] Pasajele tăiate din { $count } de texte sunt păstrate. Compilarea Scrivener le excludea din carte, dar un export din Skribisto le tipărește.
 }
 import-scrivener-prose-compile-deleted-style-printed-line = { $count ->
-    [one] Textul cu stilul „{ $example }”, pe care compilarea Scrivener îl ștergea, este păstrat ca proză, iar un export din Skribisto îl tipărește.
+    [1] Textul cu stilul „{ $example }”, pe care compilarea Scrivener îl ștergea, este păstrat ca proză, iar un export din Skribisto îl tipărește.
     [few] Textul formatat cu unul dintre cele { $count } stiluri pe care compilarea Scrivener le ștergea, de exemplu „{ $example }”, este păstrat ca proză, iar un export din Skribisto îl tipărește.
    *[other] Textul formatat cu unul dintre cele { $count } de stiluri pe care compilarea Scrivener le ștergea, de exemplu „{ $example }”, este păstrat ca proză, iar un export din Skribisto îl tipărește.
 }
 import-scrivener-prose-compile-raw-style-printed-line = { $count ->
-    [one] Textul cu stilul „{ $example }”, pe care compilarea Scrivener îl transmitea drept cod pentru un alt program, este păstrat ca proză, iar un export din Skribisto îl tipărește.
+    [1] Textul cu stilul „{ $example }”, pe care compilarea Scrivener îl transmitea drept cod pentru un alt program, este păstrat ca proză, iar un export din Skribisto îl tipărește.
     [few] Textul formatat cu unul dintre cele { $count } stiluri pe care compilarea Scrivener le transmitea drept cod pentru un alt program, de exemplu „{ $example }”, este păstrat ca proză, iar un export din Skribisto îl tipărește.
    *[other] Textul formatat cu unul dintre cele { $count } de stiluri pe care compilarea Scrivener le transmitea drept cod pentru un alt program, de exemplu „{ $example }”, este păstrat ca proză, iar un export din Skribisto îl tipărește.
 }
@@ -2683,7 +2718,7 @@ import-scrivener-prose-inline-notes-merged-line = { $count ->
    *[other] { $count } de note în text pe care Scrivener le împărțise acolo unde li se schimba formatarea sunt reunite.
 }
 import-scrivener-prose-inline-notes-joined-across-paragraphs-line = { $count ->
-    [one] O notă în text scrisă paragraf cu paragraf este reunită într-o singură notă.
+    [1] O notă în text scrisă paragraf cu paragraf este reunită într-o singură notă.
     [few] { $count } note în text scrise paragraf cu paragraf sunt reunite în note de mai multe paragrafe.
    *[other] { $count } de note în text scrise paragraf cu paragraf sunt reunite în note de mai multe paragrafe.
 }
@@ -2713,7 +2748,7 @@ import-scrivener-prose-nested-note-unwrapped-line = { $count ->
    *[other] { $count } de note aflate în comentarii sau în note de subsol sunt păstrate ca text, acolo unde se aflau.
 }
 import-scrivener-prose-style-not-carried-line = { $count ->
-    [one] Stilul „{ $example }” nu are echivalent în Skribisto. Textul lui își păstrează cuvintele.
+    [1] Stilul „{ $example }” nu are echivalent în Skribisto. Textul lui își păstrează cuvintele.
     [few] { $count } stiluri, de exemplu „{ $example }”, nu au echivalent în Skribisto. Textul lor își păstrează cuvintele.
    *[other] { $count } de stiluri, de exemplu „{ $example }”, nu au echivalent în Skribisto. Textul lor își păstrează cuvintele.
 }
@@ -2840,10 +2875,10 @@ import-scrivener-prose-media-file-not-carried-line = { $count ->
 
 ## When the import fails
 import-scrivener-error-refused = { $refusal } Nu s-a scris nimic.
-import-scrivener-error-question = Proiectul pune acum o întrebare la care verificarea nu a răspuns. Reluați verificarea, apoi importați. Nu s-a scris nimic.
-import-scrivener-error-not-accepted = Proiectul ridică o problemă pe care nu ați acceptat-o încă. Reluați verificarea, apoi importați. Nu s-a scris nimic.
-import-scrivener-error-changed = Proiectul s-a modificat după ce l-ați verificat. Reluați verificarea, apoi importați. Nu s-a scris nimic.
-import-scrivener-error-choice = Structura aleasă la verificare nu se mai potrivește acestui proiect. Reluați verificarea, apoi importați. Nu s-a scris nimic.
+import-scrivener-error-question = Proiectul pune acum o întrebare la care verificarea nu a răspuns. Alegeți „Reverifică importul”, apoi importați. Nu s-a scris nimic.
+import-scrivener-error-not-accepted = Înainte de a putea fi importat, proiectul vă cere să bifați o casetă la pasul Proiect, iar caseta nu a fost bifată. Alegeți „Reverifică importul”, bifați-o, apoi importați. Nu s-a scris nimic.
+import-scrivener-error-changed = Proiectul s-a modificat după ce l-ați verificat. Alegeți „Reverifică importul”, apoi importați. Nu s-a scris nimic.
+import-scrivener-error-choice = Structura aleasă la verificare nu se mai potrivește acestui proiect. Alegeți „Reverifică importul”, apoi importați. Nu s-a scris nimic.
 
 ## Export dialog
 export-title = Export
@@ -3900,7 +3935,7 @@ import-document-plan-empty = Încă nu este nimic de importat.
 # How many pictures the items being imported bring into the project, under the
 # review tree. Shown only when there is at least one.
 import-document-pictures = { $count ->
-    [one] Cu aceste documente vine o imagine.
+    [1] Cu aceste documente vine o imagine.
     [few] Cu aceste documente vin { $count } imagini.
    *[other] Cu aceste documente vin { $count } de imagini.
 }
@@ -3982,7 +4017,7 @@ import-diagnostic-image-not-ingested-outside = În „{ $path }”, imaginea „
 import-diagnostic-image-not-ingested-missing = În „{ $path }”, imaginea „{ $detail }” nu a putut fi găsită, așa că a fost omisă.
 import-diagnostic-image-not-ingested-too-large = În „{ $path }”, imaginea „{ $detail }” este mai mare decât acceptă un proiect, așa că a fost omisă.
 import-diagnostic-image-not-ingested-unreadable = În „{ $path }”, imaginea „{ $detail }” nu a putut fi citită ca imagine, așa că a fost omisă.
-import-diagnostic-image-not-ingested-heading = În „{ $path }”, imaginea „{ $detail }” se află într-un titlu de secțiune. Un titlu de secțiune devine titlul unui element, care nu poate conține imagini, așa că a fost omisă.
+import-diagnostic-image-not-ingested-heading = În „{ $path }”, imaginea „{ $detail }” se află într-un titlu de secțiune. Fiecare titlu de secțiune devine titlul unui element din clasor, iar un titlu nu conține imagini, așa că imaginea a fost omisă.
 import-diagnostic-image-not-ingested-note = În „{ $path }”, imaginea „{ $detail }” se află într-o notă de subsol, într-o notă de final sau într-un comentariu. Acestea își păstrează cuvintele, dar nu și imaginile, așa că a fost omisă.
 import-diagnostic-image-not-ingested-html = În „{ $path }”, imaginea „{ $detail }” este scrisă în HTML, iar un import omite HTML-ul, așa că a fost omisă odată cu el. Scrieți-o ca imagine Markdown pentru a o prelua.
 import-diagnostic-image-not-ingested-document-full = În „{ $path }”, imaginea „{ $detail }” a fost omisă: imaginile acestui document depășesc împreună cât poate prelua un singur import. Importați documentul pe bucăți sau inserați restul manual.

@@ -408,6 +408,104 @@ fn a_failure_the_review_answers_offers_the_review_again() {
     );
 }
 
+/// A failed Scrivener import's notice holds **Review the import again** and **Details**
+/// whole and inside the notice, in every interface language the app ships: its label is
+/// the longest a notice of this job carries. Text is measured at 8 px a character, wider
+/// than the app's fonts, so a label that fits here fits on screen. Every language is
+/// measured before the test fails, so one run names all the labels to shorten.
+#[test]
+fn the_review_again_button_fits_its_notice() {
+    use crate::test_support::tree_with_toast_host;
+    use teksilo::core::widget_id::WidgetId;
+
+    static FAILS: Importer<String> = Importer {
+        toast_id: "import.test.fits",
+        notice: &crate::shared::import_warnings::SCRIVENER,
+        progress_title: || lit!("Importing"),
+        own_words: |_| None,
+        target: |request| request.clone(),
+        allow_overwrite: |request| request,
+        launch: |_, _| Err(anyhow::anyhow!("the project moved")),
+        outcome: |_, _| None,
+        source: |_| "/books/Novel.scriv".to_string(),
+        review_again: Some(crate::shared::project_import::ReviewAgain {
+            applies: |_| true,
+            label: || tr!(import_scrivener_review_again()),
+            intent: |path| crate::intents::AppIntent::ImportScrivenerPath { path },
+        }),
+        open_now: |path| crate::intents::AppIntent::OpenWorkPathInNewWindow { path },
+    };
+
+    /// The toast `id` is drawn in: its nearest `ToastSurface`.
+    fn surface_of(tree: &WidgetTree, mut id: WidgetId) -> Option<WidgetId> {
+        loop {
+            if tree
+                .widget_type_name(id)
+                .is_some_and(|n| n.contains("ToastSurface"))
+            {
+                return Some(id);
+            }
+            id = tree.parent(id)?;
+        }
+    }
+
+    let mut misfits = Vec::new();
+    for &locale in crate::startup::SUPPORTED_LOCALES {
+        crate::test_support::with_shipped_messages(locale, || {
+            let _registry = IsolatedOpenRegistry::new();
+            let dir = tempfile::tempdir().unwrap();
+            let target = dir
+                .path()
+                .join("novel.skrib")
+                .to_string_lossy()
+                .into_owned();
+            let app_ctx = Rc::new(AppContext::new());
+            let (tree, toasts) = tree_with_toast_host(&app_ctx);
+            let mut tree = tree.with_text_backend(Rc::new(std::cell::RefCell::new(
+                teksilo::canvas::MockTextBackend::new(),
+            )));
+            let job = ProjectImportJob::new(app_ctx.clone());
+            let starting = job.clone();
+            press(&mut tree, move |c| {
+                starting.start(c, &FAILS, target.clone())
+            });
+            assert_eq!(toasts.live_count(), 1, "{locale}: the failure is up");
+
+            for label in [
+                tr!(import_scrivener_review_again()).resolve_now(),
+                tr!(project_import_details()).resolve_now(),
+            ] {
+                let natural = label.chars().count() as f32 * 8.0;
+                let mut named = Vec::new();
+                let mut stack = tree.roots();
+                while let Some(id) = stack.pop() {
+                    if tree.accessibility_node(id).name() == Some(label.as_str()) {
+                        named.push(id);
+                    }
+                    stack.extend(tree.children(id));
+                }
+                if named.is_empty() {
+                    misfits.push(format!("{locale}: no “{label}” in the notice"));
+                }
+                for id in named {
+                    let Some(surface) = surface_of(&tree, id) else {
+                        misfits.push(format!("{locale}: “{label}” is outside any notice"));
+                        continue;
+                    };
+                    let (b, s) = (tree.bounds(id), tree.bounds(surface));
+                    if b.width + 0.5 < natural {
+                        misfits.push(format!("{locale}: “{label}” is cut to {b:?}"));
+                    }
+                    if b.x < s.x || b.x + b.width > s.x + s.width + 0.5 {
+                        misfits.push(format!("{locale}: “{label}” {b:?} leaves the notice {s:?}"));
+                    }
+                }
+            }
+        });
+    }
+    assert!(misfits.is_empty(), "{}", misfits.join("\n"));
+}
+
 /// Hand `job` every long-operation event the backend has sent so far, in the
 /// order it sent them, as each window's subscription would.
 fn deliver_sent(tree: &mut WidgetTree, job: &ProjectImportJob, sent: Vec<Event>) {

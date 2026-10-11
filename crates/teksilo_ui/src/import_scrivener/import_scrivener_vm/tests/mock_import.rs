@@ -457,7 +457,8 @@ fn a_cancelled_fabricated_import_leaves_nothing() {
 
 /// Each word of the project's path that chooses a failure ends the fabricated run in that
 /// failure: the typed reason reaches the job, the notice says it in the importer's own
-/// words, offers **Review again** where a fresh review answers it, and nothing is written.
+/// words, offers **Review the import again** where a fresh review answers it, and nothing
+/// is written.
 #[test]
 fn every_scrivener_failure_can_be_walked() {
     let _registry = IsolatedOpenRegistry::new();
@@ -522,8 +523,8 @@ fn every_scrivener_failure_can_be_walked() {
     });
 }
 
-/// **Review again** after a failure a fresh review answers leads to an import that writes
-/// the project: the review asks what the import said was missing (a manifest to choose,
+/// **Review the import again** after a failure a fresh review answers leads to an import
+/// that writes the project: the review asks what the import said was missing (a manifest to choose,
 /// edits to accept) and nothing else, the writer answers, and the next import succeeds.
 #[test]
 fn reviewing_again_after_a_fabricated_failure_leads_to_an_import() {

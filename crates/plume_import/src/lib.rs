@@ -120,7 +120,7 @@ impl Default for SeededNames {
             places_group: "Places".to_string(),
             untitled_project: "Imported Plume project".to_string(),
             notes_of: format!("{} (notes)", skrib_format::importing::TITLE_SLOT),
-            content_of: format!("{} (content)", skrib_format::importing::TITLE_SLOT),
+            content_of: format!("{} (text)", skrib_format::importing::TITLE_SLOT),
         }
     }
 }

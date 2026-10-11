@@ -1007,6 +1007,16 @@ fn place_token(finding: &ScrivenerFinding) -> WritingPlace {
     }
 }
 
+/// Which of an item's writings a finding is about, as the token its body selects on: the
+/// notes, the synopsis or the text each take their own pronouns.
+fn place_name(finding: &ScrivenerFinding) -> &'static str {
+    match place_token(finding) {
+        WritingPlace::Notes => "notes",
+        WritingPlace::Synopsis => "synopsis",
+        WritingPlace::Text => "text",
+    }
+}
+
 /// A finding as a banner says it: a title, an optional body, and how it reads.
 #[derive(Clone)]
 pub(crate) struct Worded {
@@ -1015,7 +1025,7 @@ pub(crate) struct Worded {
     /// A warning rather than an information: something on this computer, or text lost.
     pub(crate) warning: bool,
     /// The refusal's cause may go away by itself (a sync finishing, a download): the page
-    /// offers **Check again**.
+    /// offers **Read the project again**.
     pub(crate) retry: bool,
     /// The technical account of a defect, for **Details**.
     pub(crate) details: Option<String>,
@@ -1243,6 +1253,7 @@ pub(crate) fn refusal(finding: &ScrivenerFinding) -> Option<Worded> {
                 count = num(a, "count")
             )),
             tr!(import_scrivener_refusal_cloud_placeholders_body(
+                count = num(a, "count"),
                 examples = examples(a)
             )),
         )
@@ -1594,9 +1605,13 @@ pub(crate) fn notice(finding: &ScrivenerFinding, computers: &ScrivenerComputers)
                     }
                 },
                 if salvaged {
-                    tr!(import_scrivener_notice_content_missing_salvaged())
+                    tr!(import_scrivener_notice_content_missing_salvaged(
+                        place = place_name(finding)
+                    ))
                 } else {
-                    tr!(import_scrivener_notice_content_missing_body())
+                    tr!(import_scrivener_notice_content_missing_body(
+                        place = place_name(finding)
+                    ))
                 },
             )
             .map(|w| w.warning(!salvaged))
@@ -1618,7 +1633,9 @@ pub(crate) fn notice(finding: &ScrivenerFinding, computers: &ScrivenerComputers)
                     }
                 }
             },
-            tr!(import_scrivener_notice_content_truncated_body()),
+            tr!(import_scrivener_notice_content_truncated_body(
+                place = place_name(finding)
+            )),
         )
         .map(|w| w.warning(true)),
         "scrivener-notice-missing-media" => w(
@@ -2978,8 +2995,8 @@ pub(crate) fn own_failure(reason: &FailureReason) -> Option<LocalizedString> {
 /// Whether a failure is one a fresh review answers: the project changed, or now asks
 /// something the review did not, or the review's choices no longer fit it, or it was
 /// refused for a cause that may go away by itself (files still in the cloud, a sync
-/// writing), whose words tell the writer to check again. The failure notice then offers
-/// **Review again**, which is that check.
+/// writing), whose words tell the writer to read the project again. The failure notice then
+/// offers **Review the import again**, which reads it again.
 pub(crate) fn reviewing_again_helps(reason: &FailureReason) -> bool {
     match reason {
         FailureReason::ScrivenerChangedSinceReview

@@ -64,7 +64,7 @@ Quando la tua ricerca contiene file che Skribisto non sa aprire, come PDF o suon
 - I commenti e le note a piè di pagina, compresi quelli scritti all'interno del testo. Un'annotazione in linea diventa un commento.
 - Le diciture, che diventano etichette colorate, e l'elenco degli stati, che diventa quello degli stati del progetto.
 - Le parole chiave, le raccolte e i campi personalizzati di tipo elenco e casella di controllo, che diventano etichette sui documenti che li portano. Il posto di una parola chiave tra le altre si trova nei dettagli della sua etichetta. Una casella selezionata per impostazione predefinita risulta selezionata su ogni documento in cui non l'hai deselezionata.
-- Gli obiettivi dei documenti del manoscritto, che diventano i loro obiettivi, e l'obiettivo della bozza, che diventa l'obiettivo del libro. Una scadenza non ancora passata, con un obiettivo della bozza in parole, diventa il *Ritmo* del libro, che mantiene i giorni di scrittura scelti in Scrivener. La scadenza salvata in un modello di progetto non crea un *Ritmo*.
+- Gli obiettivi dei documenti del manoscritto, che diventano i loro obiettivi, e l'obiettivo della bozza, che diventa l'obiettivo del libro. Una scadenza non ancora passata, con un obiettivo della bozza in parole, imposta il *Ritmo* del libro, che mantiene i giorni di scrittura scelti in Scrivener. La scadenza salvata in un modello di progetto non imposta un *Ritmo*.
 - Un segnalibro da una nota a un'altra, o da una scena o da una cartella di note a una voce della bibbia narrativa, che diventa un collegamento: lo trovi in *Collegamenti* o in *Personaggi presenti*.
 - Le singole parole dell'elenco di completamento automatico, che entrano nel dizionario personale del progetto, così non vengono segnalate come errori di ortografia.
 - La casella di Scrivener che include un elemento nella compilazione, che diventa *Includi nelle esportazioni*.
@@ -75,7 +75,7 @@ Quando la tua ricerca contiene file che Skribisto non sa aprire, come PDF o suon
 
 Ciò che il progetto contiene e che non ha un posto proprio in Skribisto viene trasferito come testo, così puoi comunque leggerlo e copiarlo. Finisce in una cartella di note chiamata *Da Scrivener*, dopo le tue note e prima del cestino, che non viene mai inclusa nelle esportazioni. Ogni nota elenca un tipo di contenuto, e una nota c'è solo se ha qualcosa da elencare:
 
-- *Progetto*: il titolo abbreviato, gli argomenti e la società delle impostazioni di compilazione; l'obiettivo della sessione, segnalato come calcolato quando Scrivener lo ha ricavato dalla scadenza e dai giorni di scrittura; i giorni di scrittura, quando nessun *Ritmo* li mantiene o Skribisto non è riuscito a leggerli; un obiettivo della bozza che non è diventato un obiettivo; e la scadenza, anche quando è diventata un *Ritmo*.
+- *Progetto*: il titolo abbreviato, gli argomenti e la società delle impostazioni di compilazione; l'obiettivo della sessione, segnalato come calcolato quando Scrivener lo ha ricavato dalla scadenza e dai giorni di scrittura; i giorni di scrittura, quando nessun *Ritmo* li mantiene o Skribisto non è riuscito a leggerli; un obiettivo della bozza che non è diventato un obiettivo; e la scadenza, anche quando ha impostato il *Ritmo* del libro.
 - *Segnalibri del progetto*.
 - *Sostituzioni di compilazione*. Skribisto non le applica quando esporta.
 - *Voci di completamento automatico* di più parole.

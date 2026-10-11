@@ -246,7 +246,7 @@ thread_local! {
     /// must find its own record.
     static PENDING_RECORDS: RefCell<HashMap<String, ImportRecord>> = RefCell::new(HashMap::new());
     /// What each import a wizard handed to the job asked for, by the project it read: what
-    /// **Review again** reads the project with, whichever window's wizard it opens.
+    /// **Review the import again** reads the project with, whichever window's wizard it opens.
     static SENT: RefCell<HashMap<String, Sent>> = RefCell::new(HashMap::new());
 }
 
@@ -393,7 +393,7 @@ pub struct QuestionView {
 pub struct RefusalView {
     pub title: LocalizedString,
     pub body: Option<LocalizedString>,
-    /// The cause may go away by itself: **Check again**.
+    /// The cause may go away by itself: **Read the project again**.
     pub retry: bool,
     /// The technical account, for **Details**.
     pub details: Option<String>,
@@ -529,7 +529,7 @@ struct Inner {
     /// inside.
     read_source: Signal<String>,
     /// The structure choices an import asked for, applied again once the project reads:
-    /// **Review again**.
+    /// **Review the import again**.
     carried: RefCell<Option<Vec<ScrivenerChoice>>>,
     /// The folder remembered for new projects, the default destination's second choice.
     remembered_folder: RefCell<Option<PathBuf>>,
@@ -837,7 +837,7 @@ impl ImportScrivenerViewModel {
         self.read();
     }
 
-    /// **Review again** after an import that failed on `source`: read it again with what
+    /// **Review the import again** after an import that failed on `source`: read it again with what
     /// the writer answered, accepted and chose for that import, and keep the Save page as
     /// they left it. The project may have changed: a choice its new plan no longer offers
     /// is dropped, an acceptance it no longer asks for goes. An import this process did
@@ -1386,7 +1386,7 @@ impl ImportScrivenerViewModel {
         self.refresh_gates();
     }
 
-    /// Apply again the choices **Review again** carried, one at a time on the plan the
+    /// Apply again the choices **Review the import again** carried, one at a time on the plan the
     /// project now gives: one its new plan does not offer is left out.
     fn apply_carried_choices(&self) {
         let Some(carried) = self.inner.carried.borrow_mut().take() else {

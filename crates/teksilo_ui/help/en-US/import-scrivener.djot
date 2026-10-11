@@ -108,9 +108,9 @@ research files beside the new project* puts them in a folder next to it.
   documents that wear them. A keyword's place among your keywords is in its tag's details.
   A checkbox ticked by default is ticked on every document where you did not untick it.
 - The targets of your manuscript's documents, as their goals, and the draft target as the
-  book's goal. A deadline that is still ahead, with a draft target in words, becomes the
+  book's goal. A deadline that is still ahead, with a draft target in words, sets up the
   book's *Pace*, which keeps the writing days you chose in Scrivener. The deadline saved in a
-  project template makes no *Pace*.
+  project template does not set up a *Pace*.
 - A bookmark from one note to another, or from a scene or a folder of notes to a story bible
   entry, as a link: you find it under *Links* or *Cast*.
 - The single words of your auto-complete list, in the project's personal dictionary, so they
@@ -129,7 +129,7 @@ Each note lists one kind of thing, and a note is there only when it has somethin
 - *Project*: the abbreviated title, subjects and company of your compile settings, the
   session target, marked as calculated when Scrivener worked it out from your deadline and
   writing days, the writing days when no *Pace* keeps them or Skribisto could not read them,
-  a draft target that did not become a goal, and the deadline, even when it became a *Pace*.
+  a draft target that did not become a goal, and the deadline, even when it set up the book's *Pace*.
 - *Project bookmarks*.
 - *Compile replacements*. Skribisto does not make them when it exports.
 - *Auto-complete entries* of more than one word.

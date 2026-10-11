@@ -305,10 +305,87 @@ fn a_refusal_shows_its_banner() {
         assert!(
             tree.find_by_label(&tr!(import_scrivener_check_again()).resolve_now())
                 .is_some(),
-            "a refusal that may go away offers Check again"
+            "a refusal that may go away offers Read the project again"
         );
         assert_inside_the_card(&tree, id);
     });
+}
+
+/// A refusal the writer may see go away, of two files still in the cloud.
+fn cloud_refusal() -> InspectState {
+    InspectState::Read(std::rc::Rc::new(ScrivenerAnalysisDto {
+        outcome: ScrivenerAnalysisOutcome::Refused,
+        refusal: ScrivenerFinding::Reported {
+            key: "scrivener-refusal-cloud-placeholders".into(),
+            family: ScrivenerFindingFamily::Refusal,
+            group: ScrivenerReportGroup::Unfiled,
+            place: ScrivenerPlace::Project,
+            item: -1,
+            binder_path: Vec::new(),
+            item_uid: None,
+            args: vec![ScrivenerArg::Count {
+                name: "count".into(),
+                value: 2,
+            }],
+        },
+        ..ScrivenerAnalysisDto::default()
+    }))
+}
+
+/// Every widget under `tree`'s roots that a screen reader names `name`.
+fn every_named(tree: &WidgetTree, name: &str) -> Vec<WidgetId> {
+    let mut found = Vec::new();
+    let mut stack = tree.roots();
+    while let Some(id) = stack.pop() {
+        if tree.accessibility_node(id).name() == Some(name) {
+            found.push(id);
+        }
+        stack.extend(tree.children(id));
+    }
+    found
+}
+
+/// **Read the project again** is whole and inside the card in the smallest windows, in
+/// every interface language the app ships: on the banner of a refusal that may go away,
+/// and beside **Details** when the reading failed. Text is measured at 8 px a character,
+/// wider than the app's fonts, so a label that fits here fits on screen. Every language is
+/// measured before the test fails, so one run names all the labels to shorten.
+#[test]
+fn reading_the_project_again_fits_the_smallest_windows() {
+    use crate::shell::launcher_window::{LAUNCHER_H, LAUNCHER_W};
+    let mut misfits = Vec::new();
+    for &locale in crate::startup::SUPPORTED_LOCALES {
+        crate::test_support::with_shipped_messages(locale, || {
+            let label = tr!(import_scrivener_check_again()).resolve_now();
+            let natural = label.chars().count() as f32 * 8.0;
+            for (w, h) in [(LAUNCHER_W as f32, LAUNCHER_H as f32), (800.0, 600.0)] {
+                for state in [cloud_refusal(), InspectState::Failed("boom".into())] {
+                    let (mut tree, id, _vm) = mount(Some(state));
+                    tree.layout(SizeProposal::exact(w, h));
+                    let Some(card) = tree.children(id).first().copied() else {
+                        panic!("the panel has its card");
+                    };
+                    let card = tree.bounds(card);
+                    let named = every_named(&tree, &label);
+                    if named.is_empty() {
+                        misfits.push(format!("{locale} {w}x{h}: no “{label}”"));
+                    }
+                    for button in named {
+                        let b = tree.bounds(button);
+                        if b.width + 0.5 < natural {
+                            misfits.push(format!("{locale} {w}x{h}: “{label}” is cut to {b:?}"));
+                        }
+                        if b.x < card.x || b.x + b.width > card.x + card.width + 0.5 {
+                            misfits.push(format!(
+                                "{locale} {w}x{h}: “{label}” {b:?} leaves the card {card:?}"
+                            ));
+                        }
+                    }
+                }
+            }
+        });
+    }
+    assert!(misfits.is_empty(), "{}", misfits.join("\n"));
 }
 
 /// The wizard announces itself as a named dialog.

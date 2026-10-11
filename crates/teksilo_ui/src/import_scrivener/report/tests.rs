@@ -523,7 +523,7 @@ fn a_metadata_line_lists_the_names_it_is_about() {
         assert_eq!(shown, ["Unused", "Places"]);
         assert!(unused.items.iter().all(|i| i.uid.is_none()));
         assert_eq!(named("3 items had binder icons").items.len(), 1);
-        let goals = named("2 document targets become goals");
+        let goals = named("The targets Scrivener set on 2 documents become");
         assert_eq!(goals.listed, Listed::Items);
         assert!(goals.items.is_empty());
         let copied = report.text();
@@ -739,7 +739,7 @@ fn a_save_page_hint_says_what_was_proposed_and_what_the_writer_did() {
         assert!(
             lines
                 .iter()
-                .filter(|l| l.ends_with("You changed it."))
+                .filter(|l| l.ends_with("You replaced this proposal."))
                 .count()
                 == 2,
             "{lines:#?}"

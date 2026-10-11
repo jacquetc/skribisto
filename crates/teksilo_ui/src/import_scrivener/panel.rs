@@ -76,8 +76,8 @@ const STRIP_HEIGHT: f32 = 104.0;
 
 /// Open the wizard over the window that asked for it, with `vm` (that window's own)
 /// emptied first. With `source`, the wizard opens already reading it, with what the writer
-/// chose for the import that failed on it: **Review again** after an import that found the
-/// project changed.
+/// chose for the import that failed on it: **Review the import again** after an import that
+/// found the project changed.
 pub fn present_import_scrivener(
     ctx: &mut EventContext,
     vm: ImportScrivenerViewModel,
@@ -463,8 +463,8 @@ fn question(vm: &ImportScrivenerViewModel, q: &QuestionView) -> Box<dyn Widget> 
     }
 }
 
-/// Why the project cannot be imported, and what to do: **Check again** when the cause may
-/// go away by itself, **Details** for a fault of the importer's own.
+/// Why the project cannot be imported, and what to do: **Read the project again** when the
+/// cause may go away by itself, **Details** for a fault of the importer's own.
 fn refusal_body(vm: &ImportScrivenerViewModel) -> impl Widget + use<> {
     let refusal_vm = vm.clone();
     teksu!(ScrollArea {

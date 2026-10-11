@@ -115,9 +115,9 @@ w folderze obok niego.
   znajdziesz w opisie jego znacznika. Pole wyboru zaznaczone domyślnie jest zaznaczone
   w każdym dokumencie, w którym go nie odznaczono.
 - Cele dokumentów rękopisu, jako ich cele, a cel rękopisu jako cel książki. Termin, który
-  jeszcze nie minął, wraz z celem rękopisu wyrażonym w słowach, staje się planem tempa
-  książki w segmencie *Tempo*, z dniami pisania wybranymi w programie Scrivener. Termin
-  zapisany w szablonie projektu nie tworzy planu tempa.
+  jeszcze nie minął, wraz z celem rękopisu wyrażonym w słowach, ustawia *Tempo* książki,
+  które zachowuje dni pisania wybrane w programie Scrivener. Termin zapisany w szablonie
+  projektu nie ustawia *Tempa*.
 - Zakładkę z jednej notatki do drugiej albo ze sceny lub folderu notatek do wpisu biblii
   opowieści, jako powiązanie: znajdziesz je w sekcji *Powiązania* lub *Obsada*.
 - Pojedyncze słowa z listy autouzupełniania, w słowniku własnym projektu, aby nie były
@@ -137,8 +137,8 @@ coś do wymienienia:
 
 - *Projekt*: skrócony tytuł, tematy i firma z ustawień kompilacji, cel sesji (oznaczony
   jako obliczony, jeśli Scrivener wyliczył go na podstawie terminu i dni pisania), dni
-  pisania, gdy nie zachowuje ich żaden plan tempa albo nie udało się ich odczytać,
-  cel rękopisu, który nie stał się celem, oraz termin, nawet jeśli powstał z niego plan tempa.
+  pisania, gdy nie zachowuje ich *Tempo* książki albo nie udało się ich odczytać,
+  cel rękopisu, który nie stał się celem, oraz termin, nawet jeśli ustawił *Tempo* książki.
 - *Zakładki projektu*.
 - *Zamiany przy kompilacji*. Skribisto nie wykonuje ich podczas eksportu.
 - *Wpisy autouzupełniania* składające się z więcej niż jednego słowa.

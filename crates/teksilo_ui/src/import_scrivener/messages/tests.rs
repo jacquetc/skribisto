@@ -365,7 +365,7 @@ fn the_lock_names_its_computer_only_on_the_card() {
     });
 }
 
-/// A refusal whose cause may go away by itself offers Check again; a fault of the
+/// A refusal whose cause may go away by itself offers Read the project again; a fault of the
 /// importer's own carries its technical account for Details.
 #[test]
 fn refusals_say_what_can_be_done() {
@@ -670,7 +670,7 @@ fn every_count_takes_its_own_plural() {
                 rows = 1_i64
             ))
             .resolve_now(),
-            "The status list becomes the project’s 4 statuses, on 1 item."
+            "The status list comes across as the project’s list of statuses: 4 statuses, on 1 item."
         );
         assert_eq!(
             tr!(import_scrivener_metadata_fields_became_tags_line(
@@ -694,7 +694,7 @@ fn every_count_takes_its_own_plural() {
             words = 1_i64
         ))
         .resolve_now();
-        assert!(line.contains("its 1 word "), "{line}");
+        assert!(line.contains(", so 1 word no longer counts "), "{line}");
     });
     crate::test_support::with_shipped_messages("fr-FR", || {
         let line = tr!(import_scrivener_metadata_statuses_became_ladder_line(
@@ -708,7 +708,10 @@ fn every_count_takes_its_own_plural() {
             words = 1_i64
         ))
         .resolve_now();
-        assert!(line.contains("ses 1 mot "), "{line}");
+        assert!(
+            line.contains("\u{a0}: 1 mot ne compte donc plus "),
+            "{line}"
+        );
     });
 }
 
@@ -784,8 +787,8 @@ fn front_and_back_matter_is_called_paratext() {
     }
 }
 
-/// A refusal whose cause may go away by itself tells the writer to check again; when an
-/// import fails on one, the failure offers that check: **Review again**.
+/// A refusal whose cause may go away by itself tells the writer to read the project again;
+/// when an import fails on one, the failure offers that reading: **Review the import again**.
 #[test]
 fn a_refused_import_offers_the_check_its_words_name() {
     crate::test_support::with_real_messages(|| {
@@ -1396,4 +1399,159 @@ fn a_finding_lists_the_names_it_is_about() {
     assert_eq!(listed_names(&unknown), ["ghost"]);
     let kept = metadata("scrivener-metadata-goals-kept", vec![arg_count("rows", 2)]);
     assert!(listed_names(&kept).is_empty());
+}
+
+// ── the two "again" buttons, and the sentences that send the writer to one ──────────────
+
+/// Reading the project again and reviewing the import again are two actions: in both
+/// locales neither label is the other or holds it, and every sentence that sends the writer
+/// to one of the buttons quotes it as it is.
+#[test]
+fn the_two_again_buttons_are_told_apart_and_quoted_as_they_read() {
+    for locale in LOCALES {
+        crate::test_support::with_shipped_messages(locale, || {
+            let read = tr!(import_scrivener_check_again()).resolve_now();
+            let review = tr!(import_scrivener_review_again()).resolve_now();
+            assert!(
+                !read.contains(&review) && !review.contains(&read),
+                "{locale}: “{read}” and “{review}” must not read alike"
+            );
+            let failed = tr!(import_scrivener_read_failed_body()).resolve_now();
+            assert!(failed.contains(&read), "{locale}: {failed}");
+            let details = tr!(import_scrivener_details()).resolve_now();
+            assert!(failed.contains(&details), "{locale}: {failed}");
+            // Every failure the notice answers with the review, the refusals aside: those
+            // are the Project page's own sentences, which quote no button.
+            for reason in crate::shared::import_failure::every_reason() {
+                if !reviewing_again_helps(&reason)
+                    || matches!(reason, FailureReason::ScrivenerRefused { .. })
+                {
+                    continue;
+                }
+                let Some(said) = own_failure(&reason) else {
+                    panic!("{locale}: {reason:?} is not the importer's own");
+                };
+                let said = said.resolve_now();
+                assert!(said.contains(&review), "{locale}: {said}");
+                assert!(!said.contains(&read), "{locale}: {said}");
+            }
+        });
+    }
+}
+
+/// A missing or emptied writing is spoken of as what it is: an item's notes, its synopsis
+/// or its text, each with its own pronouns, whether its words were found again or not.
+#[test]
+fn a_missing_writing_is_spoken_of_as_what_it_is() {
+    let body = |key: &str, place: ScrivenerPlace, salvaged: bool| {
+        let mut found = finding(key);
+        if let ScrivenerFinding::Reported {
+            place: at, args, ..
+        } = &mut found
+        {
+            *at = place;
+            args.retain(|a| !matches!(a, ScrivenerArg::Flag { name, .. } if name == "salvaged"));
+            args.push(arg_flag("salvaged", salvaged));
+        }
+        notice(&found, &ScrivenerComputers::Unknown)
+            .and_then(|w| w.body)
+            .map(|b| b.resolve_now())
+            .unwrap_or_default()
+    };
+    let cases = [
+        ("scrivener-notice-content-missing", false),
+        ("scrivener-notice-content-missing", true),
+        ("scrivener-notice-content-truncated", false),
+    ];
+    for locale in LOCALES {
+        crate::test_support::with_shipped_messages(locale, || {
+            for (key, salvaged) in cases {
+                let notes = body(key, ScrivenerPlace::Notes, salvaged);
+                let text = body(key, ScrivenerPlace::Text, salvaged);
+                assert!(!notes.is_empty() && !text.is_empty(), "{locale} {key}");
+                assert_ne!(notes, text, "{locale} {key}: the notes are not the text");
+            }
+        });
+    }
+    crate::test_support::with_real_messages(|| {
+        for (key, salvaged) in cases {
+            let notes = body(key, ScrivenerPlace::Notes, salvaged);
+            assert!(
+                notes.contains("their file") || notes.starts_with("Their file"),
+                "{key}: {notes}"
+            );
+            let synopsis = body(key, ScrivenerPlace::Synopsis, salvaged);
+            assert!(synopsis.contains("its file") || synopsis.starts_with("Its file"));
+        }
+    });
+}
+
+/// A single file still in the cloud is named, not spoken of as several; several are given
+/// as examples.
+#[test]
+fn a_lone_file_in_the_cloud_is_named_not_counted() {
+    let body = |count: i64, examples: &[&str]| {
+        said(&refusal_with(
+            "scrivener-refusal-cloud-placeholders",
+            vec![arg_count("count", count), arg_texts("examples", examples)],
+        ))
+        .1
+    };
+    for locale in LOCALES {
+        crate::test_support::with_shipped_messages(locale, || {
+            let one = body(1, &["Files/Data/A/content.rtf"]);
+            let three = body(3, &["a.rtf", "b.rtf", "c.rtf"]);
+            assert!(one.contains("Files/Data/A/content.rtf"), "{locale}: {one}");
+            assert!(three.contains("a.rtf, b.rtf, c.rtf"), "{locale}: {three}");
+            assert_ne!(
+                one.replace("Files/Data/A/content.rtf", "X"),
+                three.replace("a.rtf, b.rtf, c.rtf", "X")
+            );
+        });
+    }
+    crate::test_support::with_real_messages(|| {
+        assert!(body(1, &["a.rtf"]).starts_with("It has not been downloaded"));
+        assert!(body(2, &["a.rtf", "b.rtf"]).starts_with("They have not been downloaded"));
+    });
+}
+
+/// A Trash with nothing written in it says so in words, not as a count of nothing.
+#[test]
+fn a_trash_with_no_writing_says_none() {
+    let lines = |items: i64, writing: i64| {
+        [
+            tr!(import_scrivener_structure_trash_brought_across_line(
+                items = items,
+                writing = writing
+            ))
+            .resolve_now(),
+            tr!(import_scrivener_structure_trash_left_out_line(
+                items = items,
+                writing = writing
+            ))
+            .resolve_now(),
+        ]
+    };
+    crate::test_support::with_real_messages(|| {
+        for line in lines(5, 0) {
+            assert!(
+                line.contains("5 items, none of them with writing"),
+                "{line}"
+            );
+        }
+        for line in lines(5, 1) {
+            assert!(line.contains("5 items, 1 of them with writing"), "{line}");
+        }
+        for line in lines(1, 1) {
+            assert!(line.contains(": 1 item"), "{line}");
+        }
+    });
+    crate::test_support::with_shipped_messages("fr-FR", || {
+        for line in lines(5, 0) {
+            assert!(line.contains("dont aucun avec du texte"), "{line}");
+        }
+        for line in lines(5, 2) {
+            assert!(line.contains("dont 2 avec du texte"), "{line}");
+        }
+    });
 }

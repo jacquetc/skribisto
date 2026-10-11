@@ -501,9 +501,9 @@ fn the_titles_an_import_makes_up_are_the_interface_s_words() {
     );
     for words in [&titles, &vec![bundle.manifest.work.title.clone()]] {
         assert!(
-            !words.iter().any(|t| t.contains("(notes)")
-                || t.contains("(content)")
-                || t.contains("Imported")),
+            !words
+                .iter()
+                .any(|t| t.contains("(notes)") || t.contains("(text)") || t.contains("Imported")),
             "{words:?}"
         );
     }

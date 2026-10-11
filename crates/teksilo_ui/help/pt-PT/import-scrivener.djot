@@ -113,9 +113,9 @@ dele.
   suas palavras-chave fica nos detalhes da sua etiqueta. Uma caixa de verificação marcada por
   predefinição fica marcada em todos os documentos onde não a desmarcou.
 - Os objetivos dos documentos do seu manuscrito, como as suas metas, e o objetivo do rascunho como
-  a meta do livro. Um prazo ainda por chegar, com um objetivo do rascunho em palavras, torna-se o
+  a meta do livro. Um prazo ainda por chegar, com um objetivo do rascunho em palavras, configura o
   *Ritmo* do livro, que mantém os dias de escrita que escolheu no Scrivener. O prazo guardado num
-  modelo de projeto não cria nenhum *Ritmo*.
+  modelo de projeto não configura nenhum *Ritmo*.
 - Um marcador de uma nota para outra, ou de uma cena ou de uma pasta de notas para uma entrada da
   bíblia da história, como uma ligação: encontra-a em *Ligações* ou em *Elenco*.
 - As palavras soltas da sua lista de preenchimento automático, no dicionário pessoal do projeto,
@@ -134,8 +134,8 @@ de coisa, e uma nota só existe quando tem alguma coisa para listar:
 - *Projeto*: o título abreviado, os assuntos e a empresa das suas definições de compilação, o
   objetivo da sessão, assinalado como calculado quando o Scrivener o deduziu do seu prazo e dos
   seus dias de escrita, os dias de escrita quando nenhum *Ritmo* os mantém ou o Skribisto não os
-  conseguiu ler, um objetivo do rascunho que não se tornou uma meta, e o prazo, mesmo quando se
-  tornou um *Ritmo*.
+  conseguiu ler, um objetivo do rascunho que não se tornou uma meta, e o prazo, mesmo quando
+  configurou o *Ritmo* do livro.
 - *Marcadores do projeto*.
 - *Substituições de compilação*. O Skribisto não as aplica quando exporta.
 - *Entradas de preenchimento automático* com mais de uma palavra.

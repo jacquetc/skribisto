@@ -934,7 +934,7 @@ import-plume-source-not-file = هذا المسار ليس ملفًا
 import-plume-manuscript-binder = المخطوطة
 import-plume-story-bible-binder = مرجع القصة
 import-plume-notes-of = { $name } (ملاحظات)
-import-plume-content-of = { $name } (المحتوى)
+import-plume-content-of = { $name } (النص)
 import-plume-progress-title = جارٍ استيراد مشروع Plume…
 import-plume-done = { $imported ->
     [zero] لم يُستورد أي عنصر.
@@ -1043,7 +1043,13 @@ project-import-failed-disk-full = لا توجد مساحة كافية في «{ $
 project-import-failed-source-missing = لم يعد «{ $file }» موجودًا. لم يُكتب شيء.
 project-import-failed-unreadable = تعذّر على Skribisto قراءة «{ $file }» ({ $reason }). لم يُكتب شيء.
 project-import-failed-archive-damaged = «{ $file }» ملف مضغوط تعذّرت قراءته، على الأرجح لأنه تالف ({ $reason }). لم يُكتب شيء.
-project-import-failed-archive-entries = لم يُستورد المشروع: عدد الملفات التي يسردها ملفه المضغوط { $entries }، وهذا أكثر من الحد الأقصى لما يمكن أن يضمه مشروع ({ $limit })، ولا يفعل ذلك إلا ملف صُنع لاستنفاد الذاكرة. لم يُكتب شيء.
+project-import-failed-archive-entries = لم يُستورد المشروع: يسرد ملفه المضغوط { $entries ->
+    [one] ملفًا واحدًا
+    [two] ملفين
+    [few] { $entries } ملفات
+    [many] { $entries } ملفًا
+   *[other] { $entries } ملف
+}، وهذا أكثر من الحد الأقصى لما يمكن أن يضمه مشروع ({ $limit })، ولا يفعل ذلك إلا ملف صُنع لاستنفاد الذاكرة. لم يُكتب شيء.
 project-import-failed-archive-member = لم يُستورد المشروع: يتجاوز حجم جزئه «{ $part }» بعد فك الضغط { $limit } ميغابايت، ولا يفعل ذلك إلا ملف صُنع لاستنفاد الذاكرة. لم يُكتب شيء.
 project-import-failed-archive-size = لم يُستورد المشروع: يتجاوز حجمه بعد فك الضغط { $limit } ميغابايت، ولا يفعل ذلك إلا ملف صُنع لاستنفاد الذاكرة. لم يُكتب شيء.
 project-import-failed-nested = لم يُستورد المشروع: جزؤه «{ $part }» متداخل بأكثر من { $limit } مستوى، وقد تؤدي قراءته إلى انهيار Skribisto. لم يُكتب شيء.
@@ -1051,9 +1057,9 @@ project-import-failed-entities = لم يُستورد المشروع: جزؤه «
 project-import-failed-folders = لم يُستورد المشروع: أحد ملفاته يقع على عمق يزيد على { $limit } مجلد، وقد تؤدي قراءته إلى انهيار Skribisto. لم يُكتب شيء.
 project-import-failed-malformed = لم يُستورد المشروع: جزؤه «{ $part }» تالف ولا يمكن قراءته ({ $reason }). لم يُكتب شيء.
 project-import-failed-scrivener-refused = لا يستطيع Skribisto استيراد مشروع Scrivener هذا. لم يُكتب شيء.
-project-import-failed-scrivener-question = يطرح مشروع Scrivener سؤالًا لم تُجب عنه مراجعته. راجعه من جديد، ثم استورده. لم يُكتب شيء.
-project-import-failed-scrivener-not-accepted = يطرح مشروع Scrivener مسألة لم توافق عليها بعد. راجعه من جديد، ثم استورده. لم يُكتب شيء.
-project-import-failed-scrivener-changed = تغيّر مشروع Scrivener بعد أن راجعته. راجعه من جديد، ثم استورده. لم يُكتب شيء.
+project-import-failed-scrivener-question = يطرح مشروع Scrivener سؤالًا لم تُجب عنه مراجعته. ابدأ استيراده من جديد وأجب عن السؤال، ثم استورده. لم يُكتب شيء.
+project-import-failed-scrivener-not-accepted = لكي يُستورد مشروع Scrivener، عليك أن تحدّد خانة في خطوة «المشروع»، ولم تُحدَّد. ابدأ استيراده من جديد وحدّد الخانة، ثم استورده. لم يُكتب شيء.
+project-import-failed-scrivener-changed = تغيّر مشروع Scrivener بعد أن راجعته. ابدأ استيراده من جديد وراجعه، ثم استورده. لم يُكتب شيء.
 project-import-failed-internal = توقّف الاستيراد عند خطأ لم يتوقعه Skribisto: { $detail }
 import-target-open-title = هذا المشروع مفتوح
 import-target-open-text = «{ $name }» مفتوح في Skribisto. الاستيراد فوقه سيستبدل المشروع الذي تعمل عليه، وسيكتب الحفظ التالي ذلك المشروع فوق المستورَد. اختر اسم ملف آخر، أو أغلق المشروع أولًا.
@@ -1091,9 +1097,9 @@ import-scrivener-empty-hint = اختر مشروعًا لترى ما يجده Skr
 import-scrivener-reading = جارٍ قراءة المشروع…
 import-scrivener-stop-reading = إيقاف القراءة
 import-scrivener-read-failed = تعذّرت قراءة المشروع
-import-scrivener-read-failed-body = حدث خطأ أثناء قراءته. تحقّق من جديد، أو اطّلع على التفاصيل.
+import-scrivener-read-failed-body = حدث خطأ أثناء قراءته. اختر «قراءة المشروع من جديد» لإعادة المحاولة، أو «التفاصيل» لمعرفة ما حدث.
 import-scrivener-details = التفاصيل
-import-scrivener-check-again = التحقق من جديد
+import-scrivener-check-again = قراءة المشروع من جديد
 import-scrivener-refusal-unknown-title = لا يمكن استيراد هذا المشروع
 import-scrivener-refusal-unknown-body = لا يعرف Skribisto كيف ينقله. تذكر التفاصيل السبب.
 
@@ -1131,8 +1137,8 @@ import-scrivener-choice-count = { $count ->
    *[other] { $count } عنصر
 }
 import-scrivener-choice-count-example = { $count ->
+    [1] عنصر واحد: «{ $example }»
     [zero] لا عناصر
-    [one] عنصر واحد: «{ $example }»
     [two] عنصران، مثل «{ $example }»
     [few] { $count } عناصر، مثل «{ $example }»
     [many] { $count } عنصرًا، مثل «{ $example }»
@@ -1147,8 +1153,8 @@ import-scrivener-choice-books = الكتب في المخطوطة
 import-scrivener-books-one = كتاب واحد
 import-scrivener-books-several = كتاب لكل مجلد
 import-scrivener-choice-split = { $count ->
+    [1] تقسيم «{ $title }» عند عنوانه الداخلي
     [zero] تقسيم «{ $title }» عند عناوينه الداخلية
-    [one] تقسيم «{ $title }» عند عنوانه الداخلي
     [two] تقسيم «{ $title }» عند عنوانيه الداخليين
     [few] تقسيم «{ $title }» عند عناوينه الداخلية، وعددها { $count }
     [many] تقسيم «{ $title }» عند عناوينه الداخلية، وعددها { $count }
@@ -1164,11 +1170,11 @@ import-scrivener-root-items = { $count ->
 }
 import-scrivener-root-items-manuscript = { $count ->
     [zero] لا عناصر
-    [one] عنصر واحد، يبدو كأنه مخطوطة
-    [two] عنصران، يبدوان كأنهما مخطوطة
-    [few] { $count } عناصر، تبدو كأنها مخطوطة
-    [many] { $count } عنصرًا، تبدو كأنها مخطوطة
-   *[other] { $count } عنصر، تبدو كأنها مخطوطة
+    [one] عنصر واحد. يبدو هذا المجلد كأنه مخطوطة.
+    [two] عنصران. يبدو هذا المجلد كأنه مخطوطة.
+    [few] { $count } عناصر. يبدو هذا المجلد كأنه مخطوطة.
+    [many] { $count } عنصرًا. يبدو هذا المجلد كأنه مخطوطة.
+   *[other] { $count } عنصر. يبدو هذا المجلد كأنه مخطوطة.
 }
 import-scrivener-dest-notes = الملاحظات
 import-scrivener-dest-story-bible = مرجع القصة
@@ -1248,7 +1254,7 @@ import-scrivener-done-check = { $items ->
     [many] { $findings } أمرًا تحتاج إلى نظرة منك.
    *[other] { $findings } أمر تحتاج إلى نظرة منك.
 }
-import-scrivener-review-again = المراجعة من جديد
+import-scrivener-review-again = مراجعة الاستيراد
 
 ## The import's report (the dialog See report opens)
 import-scrivener-see-report = عرض التقرير
@@ -1369,14 +1375,11 @@ import-scrivener-report-research-copied-except = { $count ->
    *[other] نُسخت ملفات البحث والتوثيق التي لا يستطيع Skribisto فتحها إلى «{ $folder }»، بجانب المشروع الجديد، إلا { $count } ملف بقيت في مشروعك في Scrivener. تذكر ملاحظاتها أماكنها.
 }
 import-scrivener-report-research-none-copied = { $count ->
-    [zero] طلبت نسخ ملفات البحث والتوثيق، ونُسخت كلها.
-    [one] طلبت نسخ ملفات البحث والتوثيق، لكن تعذّر نسخ ملف واحد. يبقى في مشروعك في Scrivener، وتذكر ملاحظته مكانه.
-    [two] طلبت نسخ ملفات البحث والتوثيق، لكن تعذّر نسخ ملفين. يبقيان في مشروعك في Scrivener، وتذكر ملاحظتاهما مكانهما.
-    [few] طلبت نسخ ملفات البحث والتوثيق، لكن تعذّر نسخ { $count } ملفات. تبقى في مشروعك في Scrivener، وتذكر ملاحظاتها أماكنها.
-    [many] طلبت نسخ ملفات البحث والتوثيق، لكن تعذّر نسخ { $count } ملفًا. تبقى في مشروعك في Scrivener، وتذكر ملاحظاتها أماكنها.
-   *[other] طلبت نسخ ملفات البحث والتوثيق، لكن تعذّر نسخ { $count } ملف. تبقى في مشروعك في Scrivener، وتذكر ملاحظاتها أماكنها.
+    [1] طلبت نسخ ملفات البحث والتوثيق، لكن تعذّر نسخ الملف الوحيد. يبقى في مشروعك في Scrivener، وتذكر ملاحظته مكانه.
+    [two] طلبت نسخ ملفات البحث والتوثيق، لكن تعذّر نسخ أيٍّ من الملفين. يبقيان في مشروعك في Scrivener، وتذكر ملاحظتاهما مكانهما.
+   *[other] طلبت نسخ ملفات البحث والتوثيق، لكن تعذّر نسخ أيٍّ من الملفات الـ{ $count }. تبقى في مشروعك في Scrivener، وتذكر ملاحظاتها أماكنها.
 }
-import-scrivener-report-chose-project = اخترت استيراد «{ $project }»، وهو أحد المشاريع الموجودة فيما اخترته.
+import-scrivener-report-chose-project = اخترت استيراد «{ $project }»، وهو واحد من عدة مشاريع في المجلد أو الملف المضغوط الذي اخترته.
 import-scrivener-report-chose-manifest = اخترت ملف الحافظة «{ $file }».
 import-scrivener-report-chose-enclosing = اخترت شيئًا داخل «{ $project }»، فاستُورد المشروع كله.
 import-scrivener-report-chose-upgraded = استوردت «{ $current }»، المشروع الذي واصلت الكتابة فيه، لا النسخة التي احتفظ بها Scrivener قبل التحديث.
@@ -1390,7 +1393,7 @@ import-scrivener-report-title-from-project-properties = اقترح Skribisto ا�
 import-scrivener-report-author-from-project = اقترح Skribisto اسم المؤلف الذي تذكره إعدادات المشروع. قد يبقى هناك اسم مؤلف القالب، وقد يُطبع على صفحة العنوان.
 import-scrivener-report-language-not-stated = لم يذكر المشروع لغته، فاقترح Skribisto اللغة التي يعرض بها واجهته. تحدد اللغة طريقة عدّ الكلمات وكتابة علامات الاقتباس.
 import-scrivener-report-language-from-script = اقترح Skribisto اللغة بناءً على نظام الكتابة الذي كُتبت به المخطوطة ({ $tag }).
-import-scrivener-report-you-changed-it = { $hint } وقد غيّرته.
+import-scrivener-report-you-changed-it = { $hint } وقد استبدلت هذا الاقتراح.
 import-scrivener-report-content-salvaged-text = كان نص «{ $item }» مفقودًا من المشروع. كلماته مأخوذة من فهرس البحث في Scrivener، كنص عادي وربما من إصدار أقدم: راجعها.
 import-scrivener-report-content-salvaged-notes = كانت ملاحظات «{ $item }» مفقودة من المشروع. كلماتها مأخوذة من فهرس البحث في Scrivener، كنص عادي وربما من إصدار أقدم: راجعها.
 import-scrivener-report-content-salvaged-synopsis = كان ملخص «{ $item }» مفقودًا من المشروع. كلماته مأخوذة من فهرس البحث في Scrivener، كنص عادي وربما من إصدار أقدم: راجعها.
@@ -1461,7 +1464,13 @@ import-scrivener-report-copy-failed = تعذّر نسخ التقرير.
 import-scrivener-report-close = إغلاق
 import-scrivener-report-none-title = لا تقرير استيراد
 import-scrivener-report-none = لم ينتهِ أي استيراد من Scrivener منذ بدء تشغيل Skribisto. يحتفظ Skribisto بتقارير آخر عمليات الاستيراد حتى يُغلق.
-import-scrivener-report-gone = لم يعد تقرير هذا الاستيراد محفوظًا. يحتفظ Skribisto حتى يُغلق بتقارير آخر عمليات الاستيراد، وعددها { $count }.
+import-scrivener-report-gone = { $count ->
+    [one] لم يعد تقرير هذا الاستيراد محفوظًا. يحتفظ Skribisto حتى يُغلق بتقرير آخر عملية استيراد.
+    [two] لم يعد تقرير هذا الاستيراد محفوظًا. يحتفظ Skribisto حتى يُغلق بتقريرَي آخر عمليتَي استيراد.
+    [few] لم يعد تقرير هذا الاستيراد محفوظًا. يحتفظ Skribisto حتى يُغلق بتقارير آخر { $count } عمليات استيراد.
+    [many] لم يعد تقرير هذا الاستيراد محفوظًا. يحتفظ Skribisto حتى يُغلق بتقارير آخر { $count } عمليةَ استيراد.
+   *[other] لم يعد تقرير هذا الاستيراد محفوظًا. يحتفظ Skribisto حتى يُغلق بتقارير آخر { $count } عملية استيراد.
+}
 
 ## Words the import writes into the new project, in the language Skribisto shows itself in
 import-scrivener-manuscript-binder = المخطوطة
@@ -1533,7 +1542,7 @@ import-scrivener-search-exact = العبارة بالضبط
 import-scrivener-label-value = { $label }: { $value }
 import-scrivener-replacement-regex = تعبير نمطي
 import-scrivener-replacement-off = متوقف
-import-scrivener-in-own-note = مذكورة في ملاحظة المستند نفسه.
+import-scrivener-in-own-note = مذكورة في الملاحظة التي صار إليها هذا المستند.
 import-scrivener-paragraph = { $title }. { $body }
 
 ## When the project cannot be imported
@@ -1558,8 +1567,8 @@ import-scrivener-refusal-version-stamp-unreadable-title = تتعذّر قراء�
 import-scrivener-refusal-version-stamp-unreadable-body = لا يحتوي ملفه Files/version.txt على رقم إصدار، فلا يستطيع Skribisto معرفة ما إذا كان يقرأ هذا المشروع. افتح المشروع مرة واحدة في Scrivener، ثم استورده من جديد.
 import-scrivener-refusal-damaged-manifest-title = تتعذّر قراءة ملف الحافظة
 import-scrivener-refusal-damaged-manifest-body = «{ $manifest }» تالف. { $spare_copies ->
+    [1] يحتفظ Scrivener بنسخة إضافية منه داخل المشروع، لا يقرؤها Skribisto. افتح المشروع في Scrivener، فهو قادر على إصلاحه، ثم استورده من جديد.
     [zero] افتح المشروع في Scrivener، فهو قادر على إصلاحه، ثم استورده من جديد.
-    [one] يحتفظ Scrivener بنسخة إضافية منه داخل المشروع، لا يقرؤها Skribisto. افتح المشروع في Scrivener، فهو قادر على إصلاحه، ثم استورده من جديد.
     [two] يحتفظ Scrivener بنسختين إضافيتين منه داخل المشروع، لا يقرؤهما Skribisto. افتح المشروع في Scrivener، فهو قادر على إصلاحه، ثم استورده من جديد.
     [few] يحتفظ Scrivener بـ { $spare_copies } نسخ إضافية منه داخل المشروع، لا يقرؤها Skribisto. افتح المشروع في Scrivener، فهو قادر على إصلاحه، ثم استورده من جديد.
     [many] يحتفظ Scrivener بـ { $spare_copies } نسخةً إضافية منه داخل المشروع، لا يقرؤها Skribisto. افتح المشروع في Scrivener، فهو قادر على إصلاحه، ثم استورده من جديد.
@@ -1571,7 +1580,7 @@ import-scrivener-refusal-manifest-too-large-body = «{ $manifest }» أكبر م
 import-scrivener-refusal-no-item-identifiers-title = لا تسرد الحافظة أي مستند يستطيع Skribisto العثور عليه
 import-scrivener-refusal-no-item-identifiers-body = لا يحمل أي من عناصرها معرّفًا، فلا يمكن العثور على ملفاتها. افتح المشروع مرة واحدة في Scrivener، ثم استورده من جديد.
 import-scrivener-refusal-incomplete-copy-title = المستندات مفقودة من هذه النسخة
-import-scrivener-refusal-incomplete-copy-body = مجلد Files موجود، لكن المستندات التي يُفترض أن تكون فيه غير موجودة. ربما لم تنتهِ خدمة مزامنة من نسخ المشروع. انتظر حتى تنتهي، أو انسخ مجلد ‎.scriv كله من جديد، ثم تحقّق من جديد.
+import-scrivener-refusal-incomplete-copy-body = مجلد Files موجود، لكن المستندات التي يُفترض أن تكون فيه غير موجودة. ربما لم تنتهِ خدمة مزامنة من نسخ المشروع. انتظر حتى تنتهي، أو أعد نسخ مجلد ‎.scriv كله، ثم اقرأ المشروع من جديد.
 import-scrivener-refusal-archive-title = يتعذّر فتح هذا الملف المضغوط
 import-scrivener-refusal-archive-unreadable-body = تعذّرت قراءة «{ $file }» ({ $reason }). ربما يكون تالفًا. فك ضغطه بنفسك، ثم اختر مجلد ‎.scriv الذي بداخله.
 import-scrivener-refusal-archive-unsafe-name-title = يتعذّر فتح هذا الملف المضغوط بأمان
@@ -1604,7 +1613,11 @@ import-scrivener-refusal-cloud-placeholders-title = { $count ->
     [many] { $count } ملفًا من هذا المشروع لا تزال في السحابة
    *[other] { $count } ملف من هذا المشروع لا تزال في السحابة
 }
-import-scrivener-refusal-cloud-placeholders-body = لم تُنزَّل إلى هذا الحاسوب، ومنها مثلًا { $examples }. اجعل المشروع متاحًا دون اتصال في تطبيق المزامنة، ثم تحقّق من جديد.
+import-scrivener-refusal-cloud-placeholders-body = { $count ->
+    [1] لم يُنزَّل إلى هذا الحاسوب: { $examples }. اجعل المشروع متاحًا دون اتصال في تطبيق المزامنة، ثم اقرأ المشروع من جديد.
+    [two] لم يُنزَّلا إلى هذا الحاسوب: { $examples }. اجعل المشروع متاحًا دون اتصال في تطبيق المزامنة، ثم اقرأ المشروع من جديد.
+   *[other] لم تُنزَّل إلى هذا الحاسوب، ومنها مثلًا { $examples }. اجعل المشروع متاحًا دون اتصال في تطبيق المزامنة، ثم اقرأ المشروع من جديد.
+}
 import-scrivener-refusal-unreadable-members-title = { $count ->
     [zero] لا ملفات في هذا المشروع تتعذّر قراءتها
     [one] تتعذّر قراءة ملف واحد من هذا المشروع
@@ -1613,11 +1626,11 @@ import-scrivener-refusal-unreadable-members-title = { $count ->
     [many] تتعذّر قراءة { $count } ملفًا من هذا المشروع
    *[other] تتعذّر قراءة { $count } ملف من هذا المشروع
 }
-import-scrivener-refusal-unreadable-members-body = منها مثلًا { $examples }. تأكد من أن لديك إذنًا بقراءة المشروع كله وأن القرص سليم، ثم تحقّق من جديد.
+import-scrivener-refusal-unreadable-members-body = منها مثلًا { $examples }. تأكد من أن لديك إذنًا بقراءة المشروع كله وأن القرص سليم، ثم اقرأ المشروع من جديد.
 import-scrivener-refusal-needed-member-is-link-title = يشير هذا المشروع إلى خارج مجلده
 import-scrivener-refusal-needed-member-is-link-body = «{ $member }» رابط إلى مكان آخر على هذا الحاسوب، ولا يتبع Skribisto الروابط. انسخ المشروع بحيث يكون كل ملف داخله، ثم أعد المحاولة.
 import-scrivener-refusal-project-changed-during-read-title = تغيّر المشروع أثناء قراءته
-import-scrivener-refusal-project-changed-during-read-body = لا يزال Scrivener أو خدمة مزامنة يكتب فيه. أغلقه في Scrivener، وانتظر حتى تنتهي المزامنة، ثم تحقّق من جديد.
+import-scrivener-refusal-project-changed-during-read-body = لا يزال Scrivener أو خدمة مزامنة يكتب فيه. أغلقه في Scrivener، وانتظر حتى تنتهي المزامنة، ثم اقرأ المشروع من جديد.
 import-scrivener-refusal-too-many-members-title = يضم هذا المشروع ملفات أكثر من اللازم
 import-scrivener-refusal-too-many-members-body = فيه أكثر من { $limit } ملف، وهذا أكثر مما في أي مشروع حقيقي. ربما ليس مشروع Scrivener، أو ربما يكون تالفًا.
 import-scrivener-refusal-too-large-title = هذا المشروع كبير جدًا
@@ -1701,12 +1714,12 @@ import-scrivener-notice-imported-from-ios-stub-body = لم يُفتح قط عل�
 import-scrivener-notice-stale-mobile-binder-ignored-title = تُركت جانبًا حافظة قديمة من جهاز iPhone أو iPad
 import-scrivener-notice-stale-mobile-binder-ignored-body = سبق أن جلب Scrivener على الحاسوب تغييراتها.
 import-scrivener-notice-identical-manifest-copies-title = { $count ->
-    [zero] لا نسخ من ملف الحافظة هنا
-    [one] توجد هنا نسخة واحدة من ملف الحافظة
-    [two] توجد هنا نسختان متطابقتان من ملف الحافظة
-    [few] توجد هنا { $count } نسخ متطابقة من ملف الحافظة
-    [many] توجد هنا { $count } نسخةً متطابقة من ملف الحافظة
-   *[other] توجد هنا { $count } نسخة متطابقة من ملف الحافظة
+    [zero] لا ملفات حافظة متطابقة في هذا المشروع
+    [one] لهذا المشروع ملف حافظة واحد متطابق
+    [two] لهذا المشروع ملفا حافظة متطابقان
+    [few] لهذا المشروع { $count } ملفات حافظة متطابقة
+    [many] لهذا المشروع { $count } ملفًا متطابقًا للحافظة
+   *[other] لهذا المشروع { $count } ملف حافظة متطابق
 }
 import-scrivener-notice-identical-manifest-copies-body = محتواها واحد، فأيٌّ منها يعطي المشروع نفسه.
 import-scrivener-notice-manifest-copies-ignored-title = تُركت جانبًا النسخ الإضافية من ملف الحافظة
@@ -1747,7 +1760,7 @@ import-scrivener-notice-invalid-item-identifier-title = { $count ->
     [many] { $count } عنصرًا في الحافظة تحمل معرّفات غير صالحة
    *[other] { $count } عنصر في الحافظة تحمل معرّفات غير صالحة
 }
-import-scrivener-notice-invalid-item-identifier-body = تُترك هذه المعرّفات جانبًا، ويُحتفظ بالعناصر.
+import-scrivener-notice-invalid-item-identifier-body = يُترك معرّف كهذا جانبًا، ويُحتفظ بالعنصر الذي يحمله.
 import-scrivener-notice-items-without-identifier-title = { $count ->
     [zero] لكل عناصر الحافظة معرّفات
     [one] عنصر واحد في الحافظة بلا معرّف
@@ -1756,7 +1769,7 @@ import-scrivener-notice-items-without-identifier-title = { $count ->
     [many] { $count } عنصرًا في الحافظة بلا معرّف
    *[other] { $count } عنصر في الحافظة بلا معرّف
 }
-import-scrivener-notice-items-without-identifier-body = يتعذّر العثور على ملفاتها، لذا تصل فارغة.
+import-scrivener-notice-items-without-identifier-body = من دون معرّف، يتعذّر العثور على ملفات العنصر، لذا يصل فارغًا.
 import-scrivener-notice-duplicate-item-key-title = عنصران في الحافظة يشتركان في معرّف واحد: «{ $item }»
 import-scrivener-notice-duplicate-item-key-body = يحتفظ الأول بالمستندات. ويحتفظ الثاني بمكانه ويصل فارغًا.
 import-scrivener-notice-lock-here-title = المشروع مفتوح في Scrivener على هذا الحاسوب
@@ -1769,12 +1782,21 @@ import-scrivener-notice-archived-while-open-body = قد تكون التغيير�
 import-scrivener-notice-content-missing-notes = ملاحظات «{ $item }» مفقودة
 import-scrivener-notice-content-missing-synopsis = ملخص «{ $item }» مفقود
 import-scrivener-notice-content-missing-text = نص «{ $item }» مفقود
-import-scrivener-notice-content-missing-body = ملفه ليس في هذه النسخة، لذا يصل فارغًا. ربما لا تزال خدمة مزامنة تنسخ المشروع.
-import-scrivener-notice-content-missing-salvaged = ملفه ليس في هذه النسخة، لكن فهرس البحث في Scrivener لا يزال يحتفظ بكلماته. يُحتفظ بها كنص عادي، ربما من إصدار أقدم.
+import-scrivener-notice-content-missing-body = { $place ->
+    [notes] ملفها ليس في هذه النسخة، لذا تصل فارغة. ربما لا تزال خدمة مزامنة تنسخ المشروع.
+   *[text] ملفه ليس في هذه النسخة، لذا يصل فارغًا. ربما لا تزال خدمة مزامنة تنسخ المشروع.
+}
+import-scrivener-notice-content-missing-salvaged = { $place ->
+    [notes] ملفها ليس في هذه النسخة، لكن فهرس البحث في Scrivener لا يزال يحتفظ بكلماتها. يُحتفظ بها كنص عادي، ربما من إصدار أقدم.
+   *[text] ملفه ليس في هذه النسخة، لكن فهرس البحث في Scrivener لا يزال يحتفظ بكلماته. يُحتفظ بها كنص عادي، ربما من إصدار أقدم.
+}
 import-scrivener-notice-content-truncated-notes = ملاحظات «{ $item }» فارغة على القرص
 import-scrivener-notice-content-truncated-synopsis = ملخص «{ $item }» فارغ على القرص
 import-scrivener-notice-content-truncated-text = نص «{ $item }» فارغ على القرص
-import-scrivener-notice-content-truncated-body = سجّله Scrivener على أن فيه نصًّا، لكن ملفه لا يحتوي على شيء: ربما توقفت مزامنة في منتصفها. يصل فارغًا.
+import-scrivener-notice-content-truncated-body = { $place ->
+    [notes] سجّلها Scrivener على أن فيها نصًّا، لكن ملفها لا يحتوي على شيء: ربما توقفت مزامنة في منتصفها. تصل فارغة.
+   *[text] سجّله Scrivener على أن فيه نصًّا، لكن ملفه لا يحتوي على شيء: ربما توقفت مزامنة في منتصفها. يصل فارغًا.
+}
 import-scrivener-notice-missing-media-title = ملف «{ $item }» مفقود
 import-scrivener-notice-missing-media-body = الصورة أو ملف البحث والتوثيق الذي يحمله ليس في هذه النسخة.
 import-scrivener-notice-sync-conflict-copies-title = { $count ->
@@ -1786,8 +1808,10 @@ import-scrivener-notice-sync-conflict-copies-title = { $count ->
    *[other] عُثر على { $count } نسخة مزامنة من مستندات
 }
 import-scrivener-notice-sync-conflict-copies-body = { $missing ->
-    [zero] تُنقل كنصوص مستعادة، في مجلد خاص بها، لتتمكن من مقارنتها بالمستندات.
-   *[other] تُنقل كنصوص مستعادة، في مجلد خاص بها. بعضها نسخ من مستندات لم تعد في المشروع.
+    [zero] تُنقل نسخ المزامنة كنصوص مستعادة، في مجلد خاص بها، لتتمكن من مقارنتها بالمستندات.
+    [one] تُنقل نسخ المزامنة كنصوص مستعادة، في مجلد خاص بها. واحدة منها نسخة من مستند لم يعد في المشروع.
+    [two] تُنقل نسخ المزامنة كنصوص مستعادة، في مجلد خاص بها. اثنتان منها نسختان من مستندين لم يعودا في المشروع.
+   *[other] تُنقل نسخ المزامنة كنصوص مستعادة، في مجلد خاص بها. { $missing } منها نسخ من مستندات لم تعد في المشروع.
 }
 import-scrivener-notice-recovered-unreferenced-text-title = { $count ->
     [zero] لم يُعثر على أي مستند لا يسرده عنصر في الحافظة
@@ -1797,7 +1821,7 @@ import-scrivener-notice-recovered-unreferenced-text-title = { $count ->
     [many] عُثر على { $count } مستندًا لا يسردها أي عنصر في الحافظة
    *[other] عُثر على { $count } مستند لا يسردها أي عنصر في الحافظة
 }
-import-scrivener-notice-recovered-unreferenced-text-body = تُنقل كنصوص مستعادة، في مجلد خاص بها.
+import-scrivener-notice-recovered-unreferenced-text-body = تُنقل المستندات من هذا النوع كنصوص مستعادة، في مجلد خاص بها.
 import-scrivener-notice-sync-debris-ignored-title = { $count ->
     [zero] لم تُترك جانبًا أي نسخة إضافية خلّفتها خدمة مزامنة
     [one] تُركت جانبًا نسخة إضافية واحدة خلّفتها خدمة مزامنة
@@ -1806,7 +1830,7 @@ import-scrivener-notice-sync-debris-ignored-title = { $count ->
     [many] تُركت جانبًا { $count } نسخةً إضافية خلّفتها خدمة مزامنة
    *[other] تُركت جانبًا { $count } نسخة إضافية خلّفتها خدمة مزامنة
 }
-import-scrivener-notice-sync-debris-ignored-body = لا يقرؤها Scrivener أيضًا. لا تُقرأ إلا ملفات المشروع نفسه.
+import-scrivener-notice-sync-debris-ignored-body = لا يقرأ Scrivener نسخًا كهذه أيضًا. لا تُقرأ إلا ملفات المشروع نفسه.
 import-scrivener-notice-unrecognised-files-title = { $count ->
     [zero] لم يُترك جانبًا أي ملف من خارج مشروع Scrivener
     [one] تُرك جانبًا ملف واحد ليس جزءًا من مشروع Scrivener
@@ -1840,10 +1864,10 @@ import-scrivener-notice-cloud-placeholders-skipped-title = { $count ->
     [many] تُخطّي { $count } ملفًا لا تزال في السحابة
    *[other] تُخطّي { $count } ملف لا تزال في السحابة
 }
-import-scrivener-notice-cloud-placeholders-skipped-body = لا يحتاج إليها الاستيراد.
+import-scrivener-notice-cloud-placeholders-skipped-body = ليس في السحابة شيء مما يحتاج إليه الاستيراد.
 import-scrivener-notice-no-text-found-title = { $count ->
+    [1] مستند واحد، ولا نص فيه
     [zero] لا مستندات، ولا نص
-    [one] مستند واحد، ولا نص فيه
     [two] مستندان، ولا نص في أيٍّ منهما
     [few] { $count } مستندات، ولا نص في أيٍّ منها
     [many] { $count } مستندًا، ولا نص في أيٍّ منها
@@ -1900,7 +1924,7 @@ import-scrivener-notice-dangling-item-title = { $count ->
     [many] { $count } إحالةً تشير إلى مستندات لا يعرّفها المشروع
    *[other] { $count } إحالة تشير إلى مستندات لا يعرّفها المشروع
 }
-import-scrivener-notice-dangling-references-body = تُستبعد.
+import-scrivener-notice-dangling-references-body = تُستبعد كل إحالة إلى شيء لا يعرّفه المشروع.
 import-scrivener-notice-snapshots-not-imported-line = { $count ->
     [zero] لا لقطات في مشروعك في Scrivener.
     [one] تبقى لقطة واحدة في مشروعك في Scrivener: لا ينقل Skribisto اللقطات.
@@ -1929,19 +1953,19 @@ import-scrivener-notice-language-from-script-hint = مقترحة بناءً عل
 
 ## Before you import: what the import does with the binder, or leaves behind
 import-scrivener-structure-script-mode-draft-line = { $script ->
-    [zero] لا مستند من مستندات المخطوطة البالغ عددها { $documents } مكتوب بوضع السيناريو.
-    [one] { $documents ->
-        [one] المستند الوحيد في المخطوطة مكتوب بوضع السيناريو. يحتفظ Skribisto بكلماته، لا بتخطيط السيناريو.
+    [1] { $documents ->
+        [1] المستند الوحيد في المخطوطة مكتوب بوضع السيناريو. يحتفظ Skribisto بكلماته، لا بتخطيط السيناريو.
        *[other] مستند واحد من مستندات المخطوطة البالغ عددها { $documents } مكتوب بوضع السيناريو. يحتفظ Skribisto بكلماته، لا بتخطيط السيناريو.
     }
+    [zero] لا مستند من مستندات المخطوطة البالغ عددها { $documents } مكتوب بوضع السيناريو.
     [two] مستندان من مستندات المخطوطة البالغ عددها { $documents } مكتوبان بوضع السيناريو. يحتفظ Skribisto بكلماتهما، لا بتخطيط السيناريو.
     [few] { $script } مستندات من مستندات المخطوطة البالغ عددها { $documents } مكتوبة بوضع السيناريو. يحتفظ Skribisto بكلماتها، لا بتخطيط السيناريو.
     [many] { $script } مستندًا من مستندات المخطوطة البالغ عددها { $documents } مكتوبة بوضع السيناريو. يحتفظ Skribisto بكلماتها، لا بتخطيط السيناريو.
    *[other] { $script } مستند من مستندات المخطوطة البالغ عددها { $documents } مكتوبة بوضع السيناريو. يحتفظ Skribisto بكلماتها، لا بتخطيط السيناريو.
 }
 import-scrivener-structure-one-document-manuscript-line = { $count ->
+    [1] مستند في المخطوطة يضم فصوله كعناوين داخلية.
     [zero] لا مستند في المخطوطة يضم فصوله كعناوين داخلية.
-    [one] مستند في المخطوطة يضم فصوله كعناوين داخلية.
     [two] مستندان في المخطوطة يضمان فصولهما كعناوين داخلية.
     [few] { $count } مستندات في المخطوطة تضم فصولها كعناوين داخلية.
     [many] { $count } مستندًا في المخطوطة تضم فصولها كعناوين داخلية.
@@ -1949,19 +1973,19 @@ import-scrivener-structure-one-document-manuscript-line = { $count ->
 }
 import-scrivener-structure-title-repeats-number-line = { $count ->
     [zero] لا عنوان لفصل أو جزء يذكر رقمه.
-    [one] عنوان واحد لفصل أو جزء يذكر رقمه أيضًا، لذا قد يطبع التصدير الرقم مرتين.
-    [two] عنوانان لفصول أو أجزاء يذكران رقميهما أيضًا، لذا قد يطبع التصدير الرقم مرتين.
-    [few] { $count } عناوين لفصول أو أجزاء تذكر أرقامها أيضًا، لذا قد يطبع التصدير الرقم مرتين.
-    [many] { $count } عنوانًا لفصول أو أجزاء تذكر أرقامها أيضًا، لذا قد يطبع التصدير الرقم مرتين.
-   *[other] { $count } عنوان لفصول أو أجزاء تذكر أرقامها أيضًا، لذا قد يطبع التصدير الرقم مرتين.
+    [one] عنوان واحد لفصل أو جزء يذكر رقمه أيضًا، مثل «الفصل 2» أو «الجزء الأول»، لذا قد يطبع التصدير الرقم مرتين.
+    [two] عنوانان لفصول أو أجزاء يذكران رقميهما أيضًا، مثل «الفصل 2» أو «الجزء الأول»، لذا قد يطبع التصدير الرقم مرتين.
+    [few] { $count } عناوين لفصول أو أجزاء تذكر أرقامها أيضًا، مثل «الفصل 2» أو «الجزء الأول»، لذا قد يطبع التصدير الرقم مرتين.
+    [many] { $count } عنوانًا لفصول أو أجزاء تذكر أرقامها أيضًا، مثل «الفصل 2» أو «الجزء الأول»، لذا قد يطبع التصدير الرقم مرتين.
+   *[other] { $count } عنوان لفصول أو أجزاء تذكر أرقامها أيضًا، مثل «الفصل 2» أو «الجزء الأول»، لذا قد يطبع التصدير الرقم مرتين.
 }
 import-scrivener-structure-claim-overruled-line = { $count ->
-    [zero] يأخذ كل عنصر المستوى الذي يطالب به.
-    [one] يأخذ عنصر واحد مستوى أدنى من المستوى الذي يطالب به، لأن عنصرًا فوقه يشغل ذلك المستوى بالفعل.
-    [two] يأخذ عنصران مستوى أدنى من المستوى الذي يطالبان به، لأن عنصرًا فوقهما يشغل ذلك المستوى بالفعل.
-    [few] تأخذ { $count } عناصر مستوى أدنى من المستوى الذي تطالب به، لأن عنصرًا فوقها يشغل ذلك المستوى بالفعل.
-    [many] يأخذ { $count } عنصرًا مستوى أدنى من المستوى الذي تطالب به، لأن عنصرًا فوقها يشغل ذلك المستوى بالفعل.
-   *[other] يأخذ { $count } عنصر مستوى أدنى من المستوى الذي تطالب به، لأن عنصرًا فوقها يشغل ذلك المستوى بالفعل.
+    [zero] لا يبدو أي عنصر ككتاب أو جزء أو فصل داخل عنصر من المستوى نفسه.
+    [one] يبدو عنصر واحد ككتاب أو جزء أو فصل، لكنه داخل عنصر من المستوى نفسه، لذا يُنقل إلى مستوى أدنى.
+    [two] يبدو عنصران ككتب أو أجزاء أو فصول، لكن كلًّا منهما داخل عنصر من المستوى نفسه، لذا يُنقلان إلى مستوى أدنى.
+    [few] تبدو { $count } عناصر ككتب أو أجزاء أو فصول، لكن كلًّا منها داخل عنصر من المستوى نفسه، لذا تُنقل إلى مستوى أدنى.
+    [many] يبدو { $count } عنصرًا ككتب أو أجزاء أو فصول، لكن كلًّا منها داخل عنصر من المستوى نفسه، لذا تُنقل إلى مستوى أدنى.
+   *[other] يبدو { $count } عنصر ككتب أو أجزاء أو فصول، لكن كلًّا منها داخل عنصر من المستوى نفسه، لذا تُنقل إلى مستوى أدنى.
 }
 import-scrivener-structure-adopted-by-chapter-line = { $count ->
     [zero] لا مستند يلي فصلًا يصبح نهايته.
@@ -1981,11 +2005,11 @@ import-scrivener-structure-looks-like-manuscript-line = { $count ->
 }
 import-scrivener-structure-generic-sheet-title-line = { $count ->
     [zero] لا مدخل في مرجع القصة يحمل عنوانًا من قالب.
-    [one] مدخل واحد في مرجع القصة يحمل عنوانًا من قالب، مثل «البطل»، وسيبحث عنه Skribisto في النص.
-    [two] مدخلان في مرجع القصة يحملان عنوانين من قالب، مثل «البطل»، وسيبحث عنهما Skribisto في النص.
-    [few] { $count } مدخلات في مرجع القصة تحمل عناوين من قالب، مثل «البطل»، وسيبحث عنها Skribisto في النص.
-    [many] { $count } مدخلًا في مرجع القصة تحمل عناوين من قالب، مثل «البطل»، وسيبحث عنها Skribisto في النص.
-   *[other] { $count } مدخل في مرجع القصة تحمل عناوين من قالب، مثل «البطل»، وسيبحث عنها Skribisto في النص.
+    [one] مدخل واحد في مرجع القصة لا يزال يحمل عنوانًا من قالب، مثل «البطل». يبحث Skribisto عن هذا العنوان في نصك ويسرد تحت «في النص» كل موضع يظهر فيه: أعد تسمية المدخل إن كانت هذه الكلمة شائعة في كتابك.
+    [two] مدخلان في مرجع القصة لا يزالان يحملان عنوانين من قالب، مثل «البطل». يبحث Skribisto عن هذين العنوانين في نصك ويسرد تحت «في النص» كل موضع يظهران فيه: أعد تسمية المدخلين إن كانت هاتان الكلمتان شائعتين في كتابك.
+    [few] { $count } مدخلات في مرجع القصة لا تزال تحمل عناوين من قوالب، مثل «البطل». يبحث Skribisto عن هذه العناوين في نصك ويسرد تحت «في النص» كل موضع تظهر فيه: أعد تسمية المدخلات إن كانت هذه الكلمات شائعة في كتابك.
+    [many] { $count } مدخلًا في مرجع القصة لا تزال تحمل عناوين من قوالب، مثل «البطل». يبحث Skribisto عن هذه العناوين في نصك ويسرد تحت «في النص» كل موضع تظهر فيه: أعد تسمية المدخلات إن كانت هذه الكلمات شائعة في كتابك.
+   *[other] { $count } مدخل في مرجع القصة لا تزال تحمل عناوين من قوالب، مثل «البطل». يبحث Skribisto عن هذه العناوين في نصك ويسرد تحت «في النص» كل موضع تظهر فيه: أعد تسمية المدخلات إن كانت هذه الكلمات شائعة في كتابك.
 }
 import-scrivener-structure-placeholder-title-line = { $count ->
     [zero] لا عنوان يقتصر على ذكر مستواه.
@@ -2061,35 +2085,45 @@ import-scrivener-structure-matter-inside-book-line = { $count ->
 }
 import-scrivener-structure-paratext-not-counted-line = { $documents ->
     [zero] لا يصبح أي مستند من المخطوطة نصًّا موازيًا.
-    [one] يصبح مستند واحد من المخطوطة نصًّا موازيًا (من مقدمات الكتاب أو ملاحقه): { $words ->
+    [one] يصبح مستند واحد من المخطوطة نصًّا موازيًا (من مقدمات الكتاب أو ملاحقه)، لذا { $words ->
         [zero] لم تكن فيه كلمات تُحتسب
-        [one] لم تعد كلمته الوحيدة تُحتسب
-        [two] لم تعد كلمتاه تُحتسبان
-       *[other] لم تعد كلماته الـ{ $words } تُحتسب
+        [one] لم تعد الكلمة الوحيدة فيه تُحتسب
+        [two] لم تعد كلمتان تُحتسبان
+        [few] لم تعد { $words } كلمات تُحتسب
+        [many] لم تعد { $words } كلمةً تُحتسب
+       *[other] لم تعد { $words } كلمة تُحتسب
     } ضمن المخطوطة.
-    [two] يصبح مستندان من المخطوطة نصّين موازيين (من مقدمات الكتاب أو ملاحقه): { $words ->
+    [two] يصبح مستندان من المخطوطة نصّين موازيين (من مقدمات الكتاب أو ملاحقه)، لذا { $words ->
         [zero] لم تكن فيهما كلمات تُحتسب
-        [one] لم تعد كلمتهما الوحيدة تُحتسب
-        [two] لم تعد كلمتاهما تُحتسبان
-       *[other] لم تعد كلماتهما الـ{ $words } تُحتسب
+        [one] لم تعد الكلمة الوحيدة فيهما تُحتسب
+        [two] لم تعد كلمتان تُحتسبان
+        [few] لم تعد { $words } كلمات تُحتسب
+        [many] لم تعد { $words } كلمةً تُحتسب
+       *[other] لم تعد { $words } كلمة تُحتسب
     } ضمن المخطوطة.
-    [few] تصبح { $documents } مستندات من المخطوطة نصوصًا موازية (من مقدمات الكتاب أو ملاحقه): { $words ->
+    [few] تصبح { $documents } مستندات من المخطوطة نصوصًا موازية (من مقدمات الكتاب أو ملاحقه)، لذا { $words ->
         [zero] لم تكن فيها كلمات تُحتسب
-        [one] لم تعد كلمتها الوحيدة تُحتسب
-        [two] لم تعد كلمتاها تُحتسبان
-       *[other] لم تعد كلماتها الـ{ $words } تُحتسب
+        [one] لم تعد الكلمة الوحيدة فيها تُحتسب
+        [two] لم تعد كلمتان تُحتسبان
+        [few] لم تعد { $words } كلمات تُحتسب
+        [many] لم تعد { $words } كلمةً تُحتسب
+       *[other] لم تعد { $words } كلمة تُحتسب
     } ضمن المخطوطة.
-    [many] يصبح { $documents } مستندًا من المخطوطة نصوصًا موازية (من مقدمات الكتاب أو ملاحقه): { $words ->
+    [many] يصبح { $documents } مستندًا من المخطوطة نصوصًا موازية (من مقدمات الكتاب أو ملاحقه)، لذا { $words ->
         [zero] لم تكن فيها كلمات تُحتسب
-        [one] لم تعد كلمتها الوحيدة تُحتسب
-        [two] لم تعد كلمتاها تُحتسبان
-       *[other] لم تعد كلماتها الـ{ $words } تُحتسب
+        [one] لم تعد الكلمة الوحيدة فيها تُحتسب
+        [two] لم تعد كلمتان تُحتسبان
+        [few] لم تعد { $words } كلمات تُحتسب
+        [many] لم تعد { $words } كلمةً تُحتسب
+       *[other] لم تعد { $words } كلمة تُحتسب
     } ضمن المخطوطة.
-   *[other] يصبح { $documents } مستند من المخطوطة نصوصًا موازية (من مقدمات الكتاب أو ملاحقه): { $words ->
+   *[other] يصبح { $documents } مستند من المخطوطة نصوصًا موازية (من مقدمات الكتاب أو ملاحقه)، لذا { $words ->
         [zero] لم تكن فيها كلمات تُحتسب
-        [one] لم تعد كلمتها الوحيدة تُحتسب
-        [two] لم تعد كلمتاها تُحتسبان
-       *[other] لم تعد كلماتها الـ{ $words } تُحتسب
+        [one] لم تعد الكلمة الوحيدة فيها تُحتسب
+        [two] لم تعد كلمتان تُحتسبان
+        [few] لم تعد { $words } كلمات تُحتسب
+        [many] لم تعد { $words } كلمةً تُحتسب
+       *[other] لم تعد { $words } كلمة تُحتسب
     } ضمن المخطوطة.
 }
 import-scrivener-structure-document-notes-line = { $count ->
@@ -2150,12 +2184,31 @@ import-scrivener-structure-project-notes-line = { $count ->
    *[other] تُنقل { $count } ملاحظة مشروع إلى مجلد خاص بها.
 }
 import-scrivener-structure-trash-brought-across-line = { $items ->
+    [1] تُنقل سلة المهملات: عنصر واحد، يمكنك استعادته من سلة المهملات.
     [zero] تُنقل سلة المهملات، وهي فارغة.
-    [one] تُنقل سلة المهملات: عنصر واحد، يمكنك استعادته من سلة المهملات.
-    [two] تُنقل سلة المهملات: عنصران، في { $writing } منهما نص، ويمكنك استعادتهما من سلة المهملات.
-    [few] تُنقل سلة المهملات: { $items } عناصر، في { $writing } منها نص، ويمكنك استعادتها من سلة المهملات.
-    [many] تُنقل سلة المهملات: { $items } عنصرًا، في { $writing } منها نص، ويمكنك استعادتها من سلة المهملات.
-   *[other] تُنقل سلة المهملات: { $items } عنصر، في { $writing } منها نص، ويمكنك استعادتها من سلة المهملات.
+    [two] تُنقل سلة المهملات: عنصران، { $writing ->
+        [0] لا نص في أيٍّ منهما
+        [one] في أحدهما نص
+       *[other] في كليهما نص
+    }، ويمكنك استعادتهما من سلة المهملات.
+    [few] تُنقل سلة المهملات: { $items } عناصر، { $writing ->
+        [0] لا نص في أيٍّ منها
+        [one] في واحد منها نص
+        [two] في اثنين منها نص
+       *[other] في { $writing } منها نص
+    }، ويمكنك استعادتها من سلة المهملات.
+    [many] تُنقل سلة المهملات: { $items } عنصرًا، { $writing ->
+        [0] لا نص في أيٍّ منها
+        [one] في واحد منها نص
+        [two] في اثنين منها نص
+       *[other] في { $writing } منها نص
+    }، ويمكنك استعادتها من سلة المهملات.
+   *[other] تُنقل سلة المهملات: { $items } عنصر، { $writing ->
+        [0] لا نص في أيٍّ منها
+        [one] في واحد منها نص
+        [two] في اثنين منها نص
+       *[other] في { $writing } منها نص
+    }، ويمكنك استعادتها من سلة المهملات.
 }
 import-scrivener-structure-not-compiled-line = { $count ->
     [zero] لم يستبعد Scrivener أي عنصر من التجميع.
@@ -2212,12 +2265,31 @@ import-scrivener-structure-left-out-line = { $count ->
     }.
 }
 import-scrivener-structure-trash-left-out-line = { $items ->
+    [1] لا تُنقل سلة المهملات: عنصر واحد.
     [zero] لا تُنقل سلة المهملات، وهي فارغة.
-    [one] لا تُنقل سلة المهملات: عنصر واحد.
-    [two] لا تُنقل سلة المهملات: عنصران، في { $writing } منهما نص.
-    [few] لا تُنقل سلة المهملات: { $items } عناصر، في { $writing } منها نص.
-    [many] لا تُنقل سلة المهملات: { $items } عنصرًا، في { $writing } منها نص.
-   *[other] لا تُنقل سلة المهملات: { $items } عنصر، في { $writing } منها نص.
+    [two] لا تُنقل سلة المهملات: عنصران، { $writing ->
+        [0] لا نص في أيٍّ منهما
+        [one] في أحدهما نص
+       *[other] في كليهما نص
+    }.
+    [few] لا تُنقل سلة المهملات: { $items } عناصر، { $writing ->
+        [0] لا نص في أيٍّ منها
+        [one] في واحد منها نص
+        [two] في اثنين منها نص
+       *[other] في { $writing } منها نص
+    }.
+    [many] لا تُنقل سلة المهملات: { $items } عنصرًا، { $writing ->
+        [0] لا نص في أيٍّ منها
+        [one] في واحد منها نص
+        [two] في اثنين منها نص
+       *[other] في { $writing } منها نص
+    }.
+   *[other] لا تُنقل سلة المهملات: { $items } عنصر، { $writing ->
+        [0] لا نص في أيٍّ منها
+        [one] في واحد منها نص
+        [two] في اثنين منها نص
+       *[other] في { $writing } منها نص
+    }.
 }
 import-scrivener-structure-card-image-left-behind-line = { $count ->
     [zero] لا صور بطاقات فهرسة على عناصر المخطوطة.
@@ -2229,27 +2301,27 @@ import-scrivener-structure-card-image-left-behind-line = { $count ->
 }
 import-scrivener-structure-default-template-not-linked-line = { $count ->
     [zero] لا مجلد له قالب مستند افتراضي.
-    [one] لا يمكن لقالب المستند الافتراضي لمجلد واحد أن ينتقل معه.
-    [two] لا يمكن لقالبَي المستند الافتراضيين لمجلدين أن ينتقلا معهما.
-    [few] لا يمكن لقوالب المستندات الافتراضية لـ { $count } مجلدات أن تنتقل معها.
-    [many] لا يمكن لقوالب المستندات الافتراضية لـ { $count } مجلدًا أن تنتقل معها.
-   *[other] لا يمكن لقوالب المستندات الافتراضية لـ { $count } مجلد أن تنتقل معها.
+    [one] كان لمجلد واحد قالب افتراضي للمستندات الجديدة فيه. في Skribisto، لا يمكن أن يحمل قالبًا إلا وسم لمرجع القصة، لذا لا يُحتفظ بهذا الربط.
+    [two] كان لكلٍّ من مجلدين قالب افتراضي للمستندات الجديدة فيه. في Skribisto، لا يمكن أن يحمل قالبًا إلا وسم لمرجع القصة، لذا لا يُحتفظ بهذين الربطين.
+    [few] كان لكلٍّ من { $count } مجلدات قالب افتراضي للمستندات الجديدة فيه. في Skribisto، لا يمكن أن يحمل قالبًا إلا وسم لمرجع القصة، لذا لا يُحتفظ بهذه الروابط.
+    [many] كان لكلٍّ من { $count } مجلدًا قالب افتراضي للمستندات الجديدة فيه. في Skribisto، لا يمكن أن يحمل قالبًا إلا وسم لمرجع القصة، لذا لا يُحتفظ بهذه الروابط.
+   *[other] كان لكلٍّ من { $count } مجلد قالب افتراضي للمستندات الجديدة فيه. في Skribisto، لا يمكن أن يحمل قالبًا إلا وسم لمرجع القصة، لذا لا يُحتفظ بهذه الروابط.
 }
 import-scrivener-structure-page-break-not-kept-line = { $count ->
-    [zero] لا إعدادات «فاصل صفحة قبله».
-    [one] إعداد واحد «فاصل صفحة قبله» لا مكان له في Skribisto، ولا يُحتفظ به.
-    [two] إعدادان «فاصل صفحة قبله» لا مكان لهما في Skribisto، ولا يُحتفظ بهما.
-    [few] { $count } إعدادات «فاصل صفحة قبله» لا مكان لها في Skribisto، ولا يُحتفظ بها.
-    [many] { $count } إعدادًا «فاصل صفحة قبله» لا مكان لها في Skribisto، ولا يُحتفظ بها.
-   *[other] { $count } إعداد «فاصل صفحة قبله» لا مكان لها في Skribisto، ولا يُحتفظ بها.
+    [zero] لا إعدادات «Page Break Before» (فاصل صفحة قبله).
+    [one] إعداد واحد «Page Break Before» (فاصل صفحة قبله) لا مكان له في Skribisto، ولا يُحتفظ به.
+    [two] إعدادان «Page Break Before» (فاصل صفحة قبله) لا مكان لهما في Skribisto، ولا يُحتفظ بهما.
+    [few] { $count } إعدادات «Page Break Before» (فاصل صفحة قبله) لا مكان لها في Skribisto، ولا يُحتفظ بها.
+    [many] { $count } إعدادًا «Page Break Before» (فاصل صفحة قبله) لا مكان لها في Skribisto، ولا يُحتفظ بها.
+   *[other] { $count } إعداد «Page Break Before» (فاصل صفحة قبله) لا مكان لها في Skribisto، ولا يُحتفظ بها.
 }
 import-scrivener-structure-compile-as-is-not-kept-line = { $count ->
-    [zero] لا إعدادات «التجميع كما هو».
-    [one] إعداد واحد «التجميع كما هو» لا مقابل له في Skribisto، ولا يُحتفظ به.
-    [two] إعدادان «التجميع كما هو» لا مقابل لهما في Skribisto، ولا يُحتفظ بهما.
-    [few] { $count } إعدادات «التجميع كما هو» لا مقابل لها في Skribisto، ولا يُحتفظ بها.
-    [many] { $count } إعدادًا «التجميع كما هو» لا مقابل لها في Skribisto، ولا يُحتفظ بها.
-   *[other] { $count } إعداد «التجميع كما هو» لا مقابل لها في Skribisto، ولا يُحتفظ بها.
+    [zero] لا إعدادات «Compile As-Is» (التجميع كما هو).
+    [one] إعداد واحد «Compile As-Is» (التجميع كما هو) لا مقابل له في Skribisto، ولا يُحتفظ به.
+    [two] إعدادان «Compile As-Is» (التجميع كما هو) لا مقابل لهما في Skribisto، ولا يُحتفظ بهما.
+    [few] { $count } إعدادات «Compile As-Is» (التجميع كما هو) لا مقابل لها في Skribisto، ولا يُحتفظ بها.
+    [many] { $count } إعدادًا «Compile As-Is» (التجميع كما هو) لا مقابل لها في Skribisto، ولا يُحتفظ بها.
+   *[other] { $count } إعداد «Compile As-Is» (التجميع كما هو) لا مقابل لها في Skribisto، ولا يُحتفظ بها.
 }
 
 ## What the import did with the labels, the status list and the dates
@@ -2308,22 +2380,36 @@ import-scrivener-metadata-labels-became-tags-line = { $tags ->
     }.
 }
 import-scrivener-metadata-statuses-became-ladder-line = { $rungs ->
-    [zero] لا تصبح قائمة الحالات أي حالة.
-    [one] تصبح قائمة الحالات حالةَ المشروع الوحيدة، على { $rows ->
+    [zero] تُنقل قائمة الحالات كقائمة حالات المشروع، وهي فارغة.
+    [one] تُنقل قائمة الحالات كقائمة حالات المشروع: حالة واحدة، على { $rows ->
         [one] عنصر واحد
         [two] عنصرين
         [few] { $rows } عناصر
         [many] { $rows } عنصرًا
        *[other] { $rows } عنصر
     }.
-    [two] تصبح قائمة الحالات حالتَي المشروع، على { $rows ->
+    [two] تُنقل قائمة الحالات كقائمة حالات المشروع: حالتان، على { $rows ->
         [one] عنصر واحد
         [two] عنصرين
         [few] { $rows } عناصر
         [many] { $rows } عنصرًا
        *[other] { $rows } عنصر
     }.
-   *[other] تصبح قائمة الحالات حالاتِ المشروع، وعددها { $rungs }، على { $rows ->
+    [few] تُنقل قائمة الحالات كقائمة حالات المشروع: { $rungs } حالات، على { $rows ->
+        [one] عنصر واحد
+        [two] عنصرين
+        [few] { $rows } عناصر
+        [many] { $rows } عنصرًا
+       *[other] { $rows } عنصر
+    }.
+    [many] تُنقل قائمة الحالات كقائمة حالات المشروع: { $rungs } حالةً، على { $rows ->
+        [one] عنصر واحد
+        [two] عنصرين
+        [few] { $rows } عناصر
+        [many] { $rows } عنصرًا
+       *[other] { $rows } عنصر
+    }.
+   *[other] تُنقل قائمة الحالات كقائمة حالات المشروع: { $rungs } حالة، على { $rows ->
         [one] عنصر واحد
         [two] عنصرين
         [few] { $rows } عناصر
@@ -2332,8 +2418,8 @@ import-scrivener-metadata-statuses-became-ladder-line = { $rungs ->
     }.
 }
 import-scrivener-metadata-ladder-seeded-line = { $count ->
+    [1] لم تكن للمشروع قائمة حالات، فيبدأ بالحالة الافتراضية في Skribisto.
     [zero] لم تكن للمشروع قائمة حالات، فيبدأ بلا حالات.
-    [one] لم تكن للمشروع قائمة حالات، فيبدأ بالحالة الافتراضية في Skribisto.
     [two] لم تكن للمشروع قائمة حالات، فيبدأ بالحالتين الافتراضيتين في Skribisto.
    *[other] لم تكن للمشروع قائمة حالات، فيبدأ بالحالات الافتراضية في Skribisto، وعددها { $count }.
 }
@@ -2437,8 +2523,8 @@ import-scrivener-metadata-targets-without-row-line = { $count ->
 ## and `$folder` are the titles the import gives a note and its "From Scrivener" folder;
 ## `$day` is a day as YYYY-MM-DD.
 import-scrivener-metadata-pov-hint-line = { $count ->
+    [1] قيمة التسمية أو الحقل { $values } تطابق مدخل مرجع القصة { $matches }. إن كانت تسمّي وجهة النظر، فاضبطها في لوحة الخصائص: الاستيراد لا يربط شيئًا.
     [zero] لا تطابق أي تسمية أو قيمة حقل مدخلًا في مرجع القصة.
-    [one] قيمة التسمية أو الحقل { $values } تطابق مدخل مرجع القصة { $matches }. إن كانت تسمّي وجهة النظر، فاضبطها في لوحة الخصائص: الاستيراد لا يربط شيئًا.
     [two] قيمتا التسميات أو الحقول { $values } تطابقان مدخلَي مرجع القصة { $matches }. إن كانتا تسمّيان وجهتَي نظر، فاضبطهما في لوحة الخصائص: الاستيراد لا يربط شيئًا.
    *[other] قيم التسميات أو الحقول { $values } تطابق مدخلات مرجع القصة { $matches }. إن كانت تسمّي وجهات نظر، فاضبطها في لوحة الخصائص: الاستيراد لا يربط شيئًا.
 }
@@ -2631,11 +2717,11 @@ import-scrivener-metadata-bookmarks-became-links-line = { $count ->
 }
 import-scrivener-metadata-goals-kept-line = { $count ->
     [zero] لا يصبح أي هدف مستند هدفًا في Skribisto.
-    [one] يصبح هدف مستند واحد هدفًا في Skribisto.
-    [two] يصبح هدفا مستندين هدفين في Skribisto.
-    [few] تصبح أهداف { $count } مستندات أهدافًا في Skribisto.
-    [many] تصبح أهداف { $count } مستندًا أهدافًا في Skribisto.
-   *[other] تصبح أهداف { $count } مستند أهدافًا في Skribisto.
+    [one] الهدف الذي حدده Scrivener لمستند واحد يصبح هدفه في Skribisto.
+    [two] الهدفان اللذان حددهما Scrivener لمستندين يصبحان هدفيهما في Skribisto.
+    [few] الأهداف التي حددها Scrivener لـ { $count } مستندات تصبح أهدافها في Skribisto.
+    [many] الأهداف التي حددها Scrivener لـ { $count } مستندًا تصبح أهدافها في Skribisto.
+   *[other] الأهداف التي حددها Scrivener لـ { $count } مستند تصبح أهدافها في Skribisto.
 }
 import-scrivener-metadata-draft-target-kept-words-line = { $value ->
     [zero] يصبح هدف المسودة (0 كلمة) هدفَ الكتاب.
@@ -2653,8 +2739,8 @@ import-scrivener-metadata-draft-target-kept-characters-line = { $value ->
     [many] يصبح هدف المسودة ({ $value } محرفًا) هدفَ الكتاب.
    *[other] يصبح هدف المسودة ({ $value } محرف) هدفَ الكتاب.
 }
-import-scrivener-metadata-pace-planned-line = يصبح الموعد النهائي، { $day }، وتيرةَ الكتاب، التي تخطط عدد الكلمات لكل يوم كتابة اخترته في Scrivener، بدءًا من يوم الاستيراد.
-import-scrivener-metadata-pace-planned-day-off-line = يصبح الموعد النهائي، { $day }، وتيرةَ الكتاب، التي تخطط عدد الكلمات لكل يوم كتابة اخترته في Scrivener، بدءًا من يوم الاستيراد. وكما في Scrivener، يوم الموعد النهائي نفسه يوم عطلة.
+import-scrivener-metadata-pace-planned-line = يُهيّئ الموعد النهائي، { $day }، وتيرةَ الكتاب، التي تخطط عدد الكلمات لكل يوم كتابة اخترته في Scrivener، بدءًا من يوم الاستيراد.
+import-scrivener-metadata-pace-planned-day-off-line = يُهيّئ الموعد النهائي، { $day }، وتيرةَ الكتاب، التي تخطط عدد الكلمات لكل يوم كتابة اخترته في Scrivener، بدءًا من يوم الاستيراد. وكما في Scrivener، يوم الموعد النهائي نفسه يوم عطلة.
 import-scrivener-metadata-dictionary-words-line = { $count ->
     [zero] لا تدخل أي كلمة من الإكمال التلقائي القاموس الشخصي للمشروع.
     [one] تدخل كلمة واحدة من الإكمال التلقائي القاموس الشخصي للمشروع، فلا تُعلَّم كخطأ إملائي.
@@ -2839,13 +2925,13 @@ import-scrivener-metadata-draft-target-no-book-characters-line = { $value ->
     [many] هدف المسودة ({ $value } محرفًا) لا يصبح هدفًا، لأن المخطوطة تشكّل عدة كتب، أو لا تشكّل أي كتاب. هو مذكور في الملاحظة «{ $note }» من المجلد «{ $folder }».
    *[other] هدف المسودة ({ $value } محرف) لا يصبح هدفًا، لأن المخطوطة تشكّل عدة كتب، أو لا تشكّل أي كتاب. هو مذكور في الملاحظة «{ $note }» من المجلد «{ $folder }».
 }
-import-scrivener-metadata-deadline-passed-line = مضى الموعد النهائي، { $day }، لذا لا يُنشئ وتيرة. هو مذكور في الملاحظة «{ $note }» من المجلد «{ $folder }».
-import-scrivener-metadata-deadline-no-writing-day-line = لا يبقى أي يوم كتابة من يوم الاستيراد حتى الموعد النهائي، { $day }، لذا لا يُنشئ وتيرة. هو مذكور في الملاحظة «{ $note }» من المجلد «{ $folder }».
-import-scrivener-metadata-deadline-template-line = حُفظ الموعد النهائي، { $day }، في القالب، لذا لا يُنشئ وتيرة. هو مذكور في الملاحظة «{ $note }» من المجلد «{ $folder }».
-import-scrivener-metadata-deadline-no-word-goal-line = لا يُنشئ الموعد النهائي، { $day }، وتيرة، لأن المسودة ليس لها هدف كلمات تُخطَّط الوتيرة نحوه. هو مذكور في الملاحظة «{ $note }» من المجلد «{ $folder }».
-import-scrivener-metadata-deadline-character-goal-line = لا يُنشئ الموعد النهائي، { $day }، وتيرة، لأن هدف المسودة يحسب المحارف والوتيرة تحسب الكلمات. هو مذكور في الملاحظة «{ $note }» من المجلد «{ $folder }».
-import-scrivener-metadata-deadline-no-book-line = لا يُنشئ الموعد النهائي، { $day }، وتيرة، لأن المخطوطة تشكّل عدة كتب، أو لا تشكّل أي كتاب. هو مذكور في الملاحظة «{ $note }» من المجلد «{ $folder }».
-import-scrivener-metadata-deadline-unreadable-line = تتعذّر قراءة الموعد النهائي، لذا لا يُنشئ وتيرة. هو مذكور كما كُتب في الملاحظة «{ $note }» من المجلد «{ $folder }».
+import-scrivener-metadata-deadline-passed-line = مضى الموعد النهائي، { $day }، لذا لا يُهيّئ وتيرة الكتاب. هو مذكور في الملاحظة «{ $note }» من المجلد «{ $folder }».
+import-scrivener-metadata-deadline-no-writing-day-line = لا يبقى أي يوم كتابة من يوم الاستيراد حتى الموعد النهائي، { $day }، لذا لا يُهيّئ وتيرة الكتاب. هو مذكور في الملاحظة «{ $note }» من المجلد «{ $folder }».
+import-scrivener-metadata-deadline-template-line = حُفظ الموعد النهائي، { $day }، في القالب، لذا لا يُهيّئ وتيرة الكتاب. هو مذكور في الملاحظة «{ $note }» من المجلد «{ $folder }».
+import-scrivener-metadata-deadline-no-word-goal-line = لا يُهيّئ الموعد النهائي، { $day }، وتيرة الكتاب، لأن المسودة ليس لها هدف كلمات تُخطَّط الوتيرة نحوه. هو مذكور في الملاحظة «{ $note }» من المجلد «{ $folder }».
+import-scrivener-metadata-deadline-character-goal-line = لا يُهيّئ الموعد النهائي، { $day }، وتيرة الكتاب، لأن هدف المسودة يحسب المحارف والوتيرة تحسب الكلمات. هو مذكور في الملاحظة «{ $note }» من المجلد «{ $folder }».
+import-scrivener-metadata-deadline-no-book-line = لا يُهيّئ الموعد النهائي، { $day }، وتيرة أي كتاب، لأن المخطوطة تشكّل عدة كتب، أو لا تشكّل أي كتاب. هو مذكور في الملاحظة «{ $note }» من المجلد «{ $folder }».
+import-scrivener-metadata-deadline-unreadable-line = تتعذّر قراءة الموعد النهائي، لذا لا يُهيّئ وتيرة الكتاب. هو مذكور كما كُتب في الملاحظة «{ $note }» من المجلد «{ $folder }».
 import-scrivener-metadata-session-target-words-line = { $value ->
     [zero] لا يُستورد هدف الجلسة (0 كلمة): في Skribisto، هدف جلسة الكتابة إعداد واحد لكل المشاريع. هو مذكور في الملاحظة «{ $note }» من المجلد «{ $folder }».
     [one] لا يُستورد هدف الجلسة (كلمة واحدة): في Skribisto، هدف جلسة الكتابة إعداد واحد لكل المشاريع. هو مذكور في الملاحظة «{ $note }» من المجلد «{ $folder }».
@@ -2971,11 +3057,11 @@ import-scrivener-prose-comment-entry-without-anchor-line = { $count ->
 }
 import-scrivener-prose-footnote-entry-without-anchor-line = { $count ->
     [zero] لكل حاشية سفلية مرتبطة مكانها في نصها.
-    [one] حاشية سفلية مرتبطة واحدة لم يبقَ لها مكان في نصها، فأُشير إليها في آخره.
-    [two] حاشيتان سفليتان مرتبطتان لم يبقَ لهما مكان في نصهما، فأُشير إليهما في آخره.
-    [few] { $count } حواشٍ سفلية مرتبطة لم يبقَ لها مكان في نصوصها، فأُشير إليها في آخر كل نص.
-    [many] { $count } حاشيةً سفلية مرتبطة لم يبقَ لها مكان في نصوصها، فأُشير إليها في آخر كل نص.
-   *[other] { $count } حاشية سفلية مرتبطة لم يبقَ لها مكان في نصوصها، فأُشير إليها في آخر كل نص.
+    [one] حاشية سفلية مرتبطة واحدة لم يبقَ لها مكان في نصها، فأُشير إليها في آخر ذلك النص.
+    [two] حاشيتان سفليتان مرتبطتان لم يبقَ لأيٍّ منهما مكان في نصها، فأُشير إلى كلٍّ منهما في آخر نصها.
+    [few] { $count } حواشٍ سفلية مرتبطة لم يبقَ لها مكان في نصوصها، فأُشير إلى كلٍّ منها في آخر نصها.
+    [many] { $count } حاشيةً سفلية مرتبطة لم يبقَ لها مكان في نصوصها، فأُشير إلى كلٍّ منها في آخر نصها.
+   *[other] { $count } حاشية سفلية مرتبطة لم يبقَ لها مكان في نصوصها، فأُشير إلى كلٍّ منها في آخر نصها.
 }
 import-scrivener-prose-range-comment-reading-line = { $count ->
     [zero] لا تعليقات من إصدار أقدم من Scrivener.
@@ -3018,8 +3104,8 @@ import-scrivener-prose-document-link-unresolved-line = { $count ->
    *[other] { $count } رابط تشير إلى مستندات لم ينقلها الاستيراد. تبقى كلماتها.
 }
 import-scrivener-prose-linked-picture-not-read-line = { $count ->
+    [1] لم تُنقل صورة واحدة مرتبطة بملف على قرصك، «{ $example }».
     [zero] لا صور مرتبطة بملفات على قرصك.
-    [one] لم تُنقل صورة واحدة مرتبطة بملف على قرصك، «{ $example }».
     [two] لم تُنقل صورتان مرتبطتان بملفات على قرصك، منهما «{ $example }».
     [few] لم تُنقل { $count } صور مرتبطة بملفات على قرصك، منها مثلًا «{ $example }».
     [many] لم تُنقل { $count } صورةً مرتبطة بملفات على قرصك، منها مثلًا «{ $example }».
@@ -3050,16 +3136,16 @@ import-scrivener-prose-citation-keys-as-text-line = { $count ->
    *[other] { $count } فقرة تحمل مفاتيح استشهاد لبرنامج مراجع، ويُحتفظ بها كنص.
 }
 import-scrivener-prose-placeholders-in-exported-text-line = { $count ->
+    [1] رمز نائب واحد من Scrivener، { $example }، يُحتفظ به كنص عادي فيما تصدّره. استبدله بنفسك.
     [zero] لا رموز نائبة من Scrivener فيما تصدّره.
-    [one] رمز نائب واحد من Scrivener، { $example }، يُحتفظ به كنص عادي فيما تصدّره. استبدله بنفسك.
     [two] رمزان نائبان من Scrivener، منهما { $example }، يُحتفظ بهما كنص عادي فيما تصدّره. استبدلهما بنفسك.
     [few] { $count } رموز نائبة من Scrivener، منها مثلًا { $example }، يُحتفظ بها كنص عادي فيما تصدّره. استبدلها بنفسك.
     [many] { $count } رمزًا نائبًا من Scrivener، منها مثلًا { $example }، يُحتفظ بها كنص عادي فيما تصدّره. استبدلها بنفسك.
    *[other] { $count } رمز نائب من Scrivener، منها مثلًا { $example }، يُحتفظ بها كنص عادي فيما تصدّره. استبدلها بنفسك.
 }
 import-scrivener-prose-placeholders-in-other-text-line = { $count ->
+    [1] رمز نائب واحد من Scrivener، { $example }، يُحتفظ به كنص عادي في نص لا يُصدَّر.
     [zero] لا رموز نائبة من Scrivener في نصوص لا تُصدَّر.
-    [one] رمز نائب واحد من Scrivener، { $example }، يُحتفظ به كنص عادي في نص لا يُصدَّر.
     [two] رمزان نائبان من Scrivener، منهما { $example }، يُحتفظ بهما كنص عادي في نصوص لا تُصدَّر.
     [few] { $count } رموز نائبة من Scrivener، منها مثلًا { $example }، يُحتفظ بها كنص عادي في نصوص لا تُصدَّر.
     [many] { $count } رمزًا نائبًا من Scrivener، منها مثلًا { $example }، يُحتفظ بها كنص عادي في نصوص لا تُصدَّر.
@@ -3098,14 +3184,14 @@ import-scrivener-prose-struck-text-compiled-away-line = { $count ->
    *[other] يُحتفظ بالنص المشطوب في { $count } نص. استبعده تجميع Scrivener من الكتاب، لكن التصدير من Skribisto يطبعه.
 }
 import-scrivener-prose-compile-deleted-style-printed-line = { $count ->
-    [one] يُحتفظ بالنص المكتوب بالنمط «{ $example }»، الذي كان تجميع Scrivener يحذفه، ضمن النص، ويطبعه التصدير من Skribisto.
+    [1] يُحتفظ بالنص المكتوب بالنمط «{ $example }»، الذي كان تجميع Scrivener يحذفه، ضمن النص، ويطبعه التصدير من Skribisto.
     [two] يُحتفظ بالنص المكتوب بنمطين كان تجميع Scrivener يحذفهما، منهما «{ $example }»، ضمن النص، ويطبعه التصدير من Skribisto.
     [few] يُحتفظ بالنص المكتوب بـ { $count } أنماط كان تجميع Scrivener يحذفها، منها مثلًا «{ $example }»، ضمن النص، ويطبعه التصدير من Skribisto.
     [many] يُحتفظ بالنص المكتوب بـ { $count } نمطًا كان تجميع Scrivener يحذفها، منها مثلًا «{ $example }»، ضمن النص، ويطبعه التصدير من Skribisto.
    *[other] يُحتفظ بالنص المكتوب بـ { $count } نمط كان تجميع Scrivener يحذفها، منها مثلًا «{ $example }»، ضمن النص، ويطبعه التصدير من Skribisto.
 }
 import-scrivener-prose-compile-raw-style-printed-line = { $count ->
-    [one] يُحتفظ بالنص المكتوب بالنمط «{ $example }»، الذي كان تجميع Scrivener يمرّره كرموز لبرنامج آخر، ضمن النص، ويطبعه التصدير من Skribisto.
+    [1] يُحتفظ بالنص المكتوب بالنمط «{ $example }»، الذي كان تجميع Scrivener يمرّره كرموز لبرنامج آخر، ضمن النص، ويطبعه التصدير من Skribisto.
     [two] يُحتفظ بالنص المكتوب بنمطين كان تجميع Scrivener يمرّرهما كرموز لبرنامج آخر، منهما «{ $example }»، ضمن النص، ويطبعه التصدير من Skribisto.
     [few] يُحتفظ بالنص المكتوب بـ { $count } أنماط كان تجميع Scrivener يمرّرها كرموز لبرنامج آخر، منها مثلًا «{ $example }»، ضمن النص، ويطبعه التصدير من Skribisto.
     [many] يُحتفظ بالنص المكتوب بـ { $count } نمطًا كان تجميع Scrivener يمرّرها كرموز لبرنامج آخر، منها مثلًا «{ $example }»، ضمن النص، ويطبعه التصدير من Skribisto.
@@ -3160,8 +3246,8 @@ import-scrivener-prose-inline-notes-merged-line = { $count ->
    *[other] أُعيد وصل { $count } ملاحظة مضمّنة كان Scrivener قد قسمها حيث تغيّر تنسيقها.
 }
 import-scrivener-prose-inline-notes-joined-across-paragraphs-line = { $count ->
+    [1] جُمعت ملاحظة مضمّنة واحدة، كُتبت فقرةً فقرة، في ملاحظة واحدة.
     [zero] لا ملاحظات مضمّنة مكتوبة فقرةً فقرة.
-    [one] جُمعت ملاحظة مضمّنة واحدة، كُتبت فقرةً فقرة، في ملاحظة واحدة.
     [two] جُمعت ملاحظتان مضمّنتان، كُتبتا فقرةً فقرة، في ملاحظتين من عدة فقرات.
     [few] جُمعت { $count } ملاحظات مضمّنة، كُتبت فقرةً فقرة، في ملاحظات من عدة فقرات.
     [many] جُمعت { $count } ملاحظةً مضمّنة، كُتبت فقرةً فقرة، في ملاحظات من عدة فقرات.
@@ -3192,12 +3278,12 @@ import-scrivener-prose-annotation-only-document-kept-line = { $count ->
    *[other] { $count } مستند لم يكن فيها سوى شرح. يُحتفظ بكلماتها ضمن النص.
 }
 import-scrivener-prose-preserve-formatting-passages-line = { $count ->
-    [zero] لا مقاطع معلَّمة بـ«الحفاظ على التنسيق».
-    [one] مقطع واحد معلَّم بـ«الحفاظ على التنسيق» يصل كنص اعتيادي.
-    [two] مقطعان معلَّمان بـ«الحفاظ على التنسيق» يصلان كنص اعتيادي.
-    [few] { $count } مقاطع معلَّمة بـ«الحفاظ على التنسيق» تصل كنص اعتيادي.
-    [many] { $count } مقطعًا معلَّمة بـ«الحفاظ على التنسيق» تصل كنص اعتيادي.
-   *[other] { $count } مقطع معلَّمة بـ«الحفاظ على التنسيق» تصل كنص اعتيادي.
+    [zero] لا مقاطع معلَّمة بالتنسيق «Preserve Formatting» (الحفاظ على التنسيق).
+    [one] مقطع واحد معلَّم بالتنسيق «Preserve Formatting» (الحفاظ على التنسيق) يصل كنص اعتيادي.
+    [two] مقطعان معلَّمان بالتنسيق «Preserve Formatting» (الحفاظ على التنسيق) يصلان كنص اعتيادي.
+    [few] { $count } مقاطع معلَّمة بالتنسيق «Preserve Formatting» (الحفاظ على التنسيق) تصل كنص اعتيادي.
+    [many] { $count } مقطعًا معلَّمة بالتنسيق «Preserve Formatting» (الحفاظ على التنسيق) تصل كنص اعتيادي.
+   *[other] { $count } مقطع معلَّمة بالتنسيق «Preserve Formatting» (الحفاظ على التنسيق) تصل كنص اعتيادي.
 }
 import-scrivener-prose-nested-note-unwrapped-line = { $count ->
     [zero] لا ملاحظات داخل التعليقات أو الحواشي السفلية.
@@ -3208,7 +3294,7 @@ import-scrivener-prose-nested-note-unwrapped-line = { $count ->
    *[other] { $count } ملاحظة داخل تعليقات أو حواشٍ سفلية يُحتفظ بها كنص، في مواضعها.
 }
 import-scrivener-prose-style-not-carried-line = { $count ->
-    [one] لا مقابل للنمط «{ $example }» في Skribisto. يحتفظ نصه بكلماته.
+    [1] لا مقابل للنمط «{ $example }» في Skribisto. يحتفظ نصه بكلماته.
     [two] لا مقابل في Skribisto لنمطين، منهما «{ $example }». يحتفظ نصهما بكلماته.
     [few] لا مقابل في Skribisto لـ { $count } أنماط، منها مثلًا «{ $example }». يحتفظ نصها بكلماته.
     [many] لا مقابل في Skribisto لـ { $count } نمطًا، منها مثلًا «{ $example }». يحتفظ نصها بكلماته.
@@ -3409,10 +3495,10 @@ import-scrivener-prose-media-file-not-carried-line = { $count ->
 
 ## When the import fails
 import-scrivener-error-refused = { $refusal } لم يُكتب شيء.
-import-scrivener-error-question = يطرح المشروع الآن سؤالًا لم تُجب عنه مراجعته. راجعه من جديد، ثم استورده. لم يُكتب شيء.
-import-scrivener-error-not-accepted = يطرح المشروع مسألة لم توافق عليها بعد. راجعه من جديد، ثم استورده. لم يُكتب شيء.
-import-scrivener-error-changed = تغيّر المشروع بعد أن راجعته. راجعه من جديد، ثم استورده. لم يُكتب شيء.
-import-scrivener-error-choice = البنية التي اخترتها في المراجعة لم تعد تناسب هذا المشروع. راجعه من جديد، ثم استورده. لم يُكتب شيء.
+import-scrivener-error-question = يطرح المشروع الآن سؤالًا لم تُجب عنه مراجعته. اختر «مراجعة الاستيراد»، ثم استورده. لم يُكتب شيء.
+import-scrivener-error-not-accepted = لكي يُستورد المشروع، عليك أن تحدّد خانة في خطوة «المشروع»، ولم تُحدَّد. اختر «مراجعة الاستيراد»، وحدّد الخانة، ثم استورده. لم يُكتب شيء.
+import-scrivener-error-changed = تغيّر المشروع بعد أن راجعته. اختر «مراجعة الاستيراد»، ثم استورده. لم يُكتب شيء.
+import-scrivener-error-choice = البنية التي اخترتها في المراجعة لم تعد تناسب هذا المشروع. اختر «مراجعة الاستيراد»، ثم استورده. لم يُكتب شيء.
 
 export-title = تصدير
 export-close = إغلاق
@@ -4418,8 +4504,8 @@ import-document-destination-hint = اختر حافظة أو عنصرًا: توض
 import-document-destination-empty = لا حافظات بعد. أنشئ واحدة أولًا.
 import-document-plan-empty = لا شيء للاستيراد بعد.
 import-document-pictures = { $count ->
+    [1] تأتي صورة واحدة مع هذه المستندات.
     [zero] لا تأتي أي صورة مع هذه المستندات.
-    [one] تأتي صورة واحدة مع هذه المستندات.
     [two] تأتي صورتان مع هذه المستندات.
     [few] تأتي { $count } صور مع هذه المستندات.
     [many] تأتي { $count } صورةً مع هذه المستندات.
@@ -4512,7 +4598,7 @@ import-diagnostic-image-not-ingested-outside = في «{ $path }»، الصورة
 import-diagnostic-image-not-ingested-missing = في «{ $path }»، تعذّر العثور على الصورة «{ $detail }»، لذا استُبعدت.
 import-diagnostic-image-not-ingested-too-large = في «{ $path }»، الصورة «{ $detail }» أكبر مما يقبله المشروع، لذا استُبعدت.
 import-diagnostic-image-not-ingested-unreadable = في «{ $path }»، تعذّرت قراءة «{ $detail }» كصورة، لذا استُبعدت.
-import-diagnostic-image-not-ingested-heading = في «{ $path }»، الصورة «{ $detail }» داخل عنوان في النص. يصبح هذا العنوان عنوانَ عنصر، والعنوان لا يحمل صورًا، لذا استُبعدت.
+import-diagnostic-image-not-ingested-heading = في «{ $path }»، الصورة «{ $detail }» داخل عنوان داخلي. يصبح كل عنوان داخلي عنوانَ عنصر في الحافظة، وعنوان العنصر لا يحمل صورًا، لذا استُبعدت الصورة.
 import-diagnostic-image-not-ingested-note = في «{ $path }»، الصورة «{ $detail }» داخل حاشية سفلية أو حاشية ختامية أو تعليق. تحتفظ هذه بكلماتها دون صور، لذا استُبعدت.
 import-diagnostic-image-not-ingested-html = في «{ $path }»، الصورة «{ $detail }» مكتوبة بلغة HTML، والاستيراد يستبعد HTML، فاستُبعدت معها. اكتبها كصورة Markdown لتُستورد.
 import-diagnostic-image-not-ingested-document-full = في «{ $path }»، استُبعدت الصورة «{ $detail }»: صور هذا المستند مجتمعةً تتجاوز ما يستورده استيراد واحد. استورد المستند على أجزاء، أو أدرج الباقي بنفسك.

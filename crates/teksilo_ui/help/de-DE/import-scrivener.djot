@@ -122,9 +122,9 @@ dem neuen Projekt.
   Ein standardmäßig angehaktes Kontrollkästchen ist bei jedem Dokument angehakt, bei dem Sie es
   nicht entfernt haben.
 - Die Ziele der Dokumente Ihres Manuskripts als deren Ziele, und das Manuskriptziel als Ziel
-  des Buchs. Ein noch bevorstehender Abgabetermin mit einem Manuskriptziel in Wörtern wird zum
-  *Schreibtempo* des Buchs, das die in Scrivener gewählten Schreibtage beibehält. Ein in einer
-  Projektvorlage gespeicherter Abgabetermin ergibt kein *Schreibtempo*.
+  des Buchs. Ein noch bevorstehender Abgabetermin mit einem Manuskriptziel in Wörtern richtet
+  das *Schreibtempo* des Buchs ein, das die in Scrivener gewählten Schreibtage beibehält. Ein in
+  einer Projektvorlage gespeicherter Abgabetermin richtet kein *Schreibtempo* ein.
 - Ein Lesezeichen von einer Notiz zu einer anderen, oder von einer Szene oder einem
   Notizordner zu einem Eintrag der Geschichtenbibel, als Verknüpfung: Sie finden sie unter
   *Verknüpfungen* oder *Beteiligte*.
@@ -147,7 +147,7 @@ etwas aufzuführen hat:
   Sitzungsziel, als berechnet gekennzeichnet, wenn Scrivener es aus Ihrem Abgabetermin und Ihren
   Schreibtagen ermittelt hat; die Schreibtage, wenn kein *Schreibtempo* sie übernimmt oder
   Skribisto sie nicht lesen konnte; ein Manuskriptziel, das nicht zum Ziel wurde; und der
-  Abgabetermin, auch wenn er zu einem *Schreibtempo* wurde.
+  Abgabetermin, auch wenn er das *Schreibtempo* des Buchs eingerichtet hat.
 - *Projektlesezeichen*.
 - *Ersetzungen beim Kompilieren*. Skribisto führt sie beim Exportieren nicht aus.
 - *Autovervollständigung*: die Ausdrücke aus mehr als einem Wort.

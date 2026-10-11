@@ -31,7 +31,8 @@
 //!   is chosen by a word in the last component of the project's path, as the inspection's
 //!   tiers are: `changed`, `question`, `unaccepted`, `depth`, `root`, `syncing` and `huge`.
 //!   All but `huge` happen once per project: its next review sees what changed and its next
-//!   import succeeds, so **Review again** leads to a project, as it does in the real build.
+//!   import succeeds, so **Review the import again** leads to a project, as it does in the
+//!   real build.
 //!
 //! **What the mock writes.** The new project, and nothing else: a small `.skrib` holding the
 //! title, author and language the Save page sent, written through `skrib_format` with the
@@ -328,7 +329,7 @@ mod imp {
     /// but [`LASTING`] stands for something that happened between the review and the
     /// import, once: after its import failed, the project's next review sees what happened
     /// (the manifest to choose, the edits to accept, see `models::scrivener_inspection`),
-    /// and its next import does not meet it again, so **Review again** leads somewhere.
+    /// and its next import does not meet it again, so **Review the import again** leads somewhere.
     pub(crate) fn chosen_failure(request: &ImportScrivenerProjectDto) -> Option<FailureReason> {
         let name = Path::new(&request.source_path)
             .file_name()
