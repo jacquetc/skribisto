@@ -8,7 +8,7 @@
 //! message is one of two things, told apart here and nowhere else:
 //!
 //! - a **phase code** the backend emits on purpose (`import.outline`,
-//!   `export.writing`, …), mapped to a translated label by [`phase_label`];
+//!   `export.writing`, …), mapped to a translated label by `phase_label`;
 //! - **data** — the title of the entry being converted, a source path — shown
 //!   as it is, because it is the writer's own text.
 //!

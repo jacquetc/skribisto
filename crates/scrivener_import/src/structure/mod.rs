@@ -31,7 +31,7 @@
 //!
 //! # The invariants
 //!
-//! A plan is returned only after [`check`] passes it:
+//! A plan is returned only after [`check()`] passes it:
 //!
 //! * every row's `(role, sub_role)` is in the writing model's matrix and carries
 //!   only the content that combination allows (`skribisto_model::validate_item`);

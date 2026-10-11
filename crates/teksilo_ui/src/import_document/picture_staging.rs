@@ -10,13 +10,13 @@
 //! own `assets/` before the writer presses *Import*.
 //!
 //! One folder per analysis, made when the analysis starts and removed when the
-//! [`PictureStaging`] holding it is dropped: when the wizard is reset or starts another
-//! analysis, when its window closes, and once an import has landed, the project's copies
-//! being all that is needed from then on. The analysis writes into the folder and never
-//! makes it: one still running after its wizard let the folder go would otherwise make it
-//! again, and leave its pictures there. A folder left behind by a crash is swept the next
-//! time an import starts, once it is a week old, a margin no review still open in another
-//! window comes near.
+//! [`PictureStaging`](crate::import_document::picture_staging::PictureStaging) holding it
+//! is dropped: when the wizard is reset or starts another analysis, when its window closes,
+//! and once an import has landed, the project's copies being all that is needed from then
+//! on. The analysis writes into the folder and never makes it: one still running after its
+//! wizard let the folder go would otherwise make it again, and leave its pictures there. A
+//! folder left behind by a crash is swept the next time an import starts, once it is a week
+//! old, a margin no review still open in another window comes near.
 //!
 //! Under the app's data directory rather than the system's temporary one, which is often
 //! memory: a manuscript's photographs can run to hundreds of megabytes.

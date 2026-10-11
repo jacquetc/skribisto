@@ -663,7 +663,7 @@ impl ProjectImportJob {
     ///
     /// An `Info` notice, so it replaces the loading one rather than updating it:
     /// updated in place it would keep the spinner (see
-    /// [`ProgressToast`](crate::shared::progress_toast::ProgressToast)).
+    /// [`ProgressToast`]).
     fn cancelled(&self, ctx: &mut EventContext, running: &Running) {
         self.inner.progress.end_replacing(
             ctx,

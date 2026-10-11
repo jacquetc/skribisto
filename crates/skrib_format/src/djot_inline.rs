@@ -26,9 +26,9 @@
 //! long operation's thread in a release build, 720 in a debug one. That is no panic but
 //! an abort, and it takes every window of the process with it.
 //!
-//! [`djot_depth::check`](crate::djot_depth::check) finds such text, with the other
+//! [`djot_depth::check`] finds such text, with the other
 //! boundaries the parser cannot cross, and
-//! [`djot_depth::admit`](crate::djot_depth::admit) refuses it as it is read from the
+//! [`djot_depth::admit`] refuses it as it is read from the
 //! bundle, before anything parses it, unless joining a paragraph's lines brings it
 //! within them (see below).
 //!
@@ -66,7 +66,7 @@
 //! # Joining what the parser would read as one line
 //!
 //! A load does not refuse a paragraph for the lines it holds when those lines can be
-//! joined into one: [`djot_depth::admit`](crate::djot_depth::admit) asks the pass for the
+//! joined into one: [`djot_depth::admit`] asks the pass for the
 //! line breaks of each paragraph past the ceiling (`Join`) and writes each as a space,
 //! the next line's markers and indentation with it. Between two words, `jotdown` reads
 //! such a break as a soft break, and `text-document` reads a soft break as a space, so

@@ -3,7 +3,7 @@
 
 //! The nesting `jotdown` 0.10 builds, counted exactly and without recursing.
 //!
-//! [`djot_depth::check`](crate::djot_depth::check) refuses prose on this count, and on
+//! [`djot_depth::check`] refuses prose on this count, and on
 //! nothing else about its nesting. A count of the markers each line opens with, read
 //! line by line, cannot do it: it cannot see a container a line continues without
 //! restating it, since a list item goes on through a paragraph line at any
