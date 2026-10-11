@@ -10,6 +10,7 @@ menu-create-from = יצירה מתוך (&C)
 menu-import-plume = Plume Creator (.plume)… (&P)
 menu-import-document = מסמכים (Markdown, Word, ODT)… (&D)
 menu-import-manuskript = Manuskript (.msk)… (&M)
+menu-import-scrivener = Scrivener (.scriv)… (&S)
 menu-export = ייצוא (&X)
 menu-export-book = ייצוא ספר
 menu-export-part = ייצוא חלק
@@ -713,6 +714,8 @@ backup-no-destination-title = אין מיקום גיבוי זמין
 backup-no-destination-text = אף אחד מיעדי הגיבוי שהוגדרו אינו נגיש (למשל, ייתכן שכונן חיצוני מנותק). אפשר לחבר אותו ולנסות שוב, או לצאת בלי לגבות.
 backup-failed-close-title = לא ניתן היה לשמור את הגיבוי
 backup-failed-close-text = לא ניתן היה לכתוב עותק גיבוי לפני הסגירה. כל היעדים נכשלו (ייתכן שהכונן הוסר, שהוא מלא או מוגן מפני כתיבה). אפשר לתקן את הבעיה ולנסות שוב, או לצאת בלי לגבות.
+backup-failed-close-error-text = לא ניתן היה לכתוב עותק גיבוי לפני הסגירה: { $error }. אפשר לתקן את הבעיה ולנסות שוב, או לצאת בלי לגבות.
+backup-no-result = הגיבוי הסתיים בלי לציין אם נוצר עותק. כדאי לבדוק ברשימת הגיבויים אם נוסף גיבוי חדש.
 
 backup-choice-title = קובץ גיבוי
 backup-choice-heading = פתחתם עותק גיבוי
@@ -892,6 +895,8 @@ import-plume-source-missing = הקובץ הזה אינו קיים
 import-plume-source-not-file = הנתיב הזה אינו קובץ
 import-plume-manuscript-binder = כתב יד
 import-plume-story-bible-binder = תיק הסיפור
+import-plume-notes-of = { $name } (פתקים)
+import-plume-content-of = { $name } (תוכן)
 import-plume-progress-title = מייבא פרויקט Plume…
 import-plume-done = { $imported ->
     [one] יובא פריט אחד.
@@ -902,6 +907,12 @@ import-plume-done = { $imported ->
 }
 import-plume-nested-too-deep = הפרויקט לא יובא: החלק "{ $part }" שלו מקונן ליותר מ־{ $limit } רמות. אף פרויקט Plume Creator לא מתקרב לזה, וקריאתו עלולה לגרום לקריסה של Skribisto. שום דבר לא נכתב.
 import-plume-declares-entities = הפרויקט לא יובא: החלק "{ $part }" שלו מצהיר על ישויות XML, דבר שאף פרויקט Plume Creator לא עושה. הרחבתן עלולה לדרוש יותר זיכרון ממה שיש במחשב ולגרום לקריסה של Skribisto. שום דבר לא נכתב.
+import-plume-no-outline = הקובץ הזה הוא ארכיון דחוס, אבל לא פרויקט של Plume Creator: אין בו מתווה. שום דבר לא נכתב.
+import-plume-empty-outline = קובץ המתווה של פרויקט Plume Creator הזה ריק, ולכן אין מה לייבא. שום דבר לא נכתב.
+# $tag is the name of the document the part turned out to be.
+import-plume-wrong-document = זה אינו פרויקט של Plume Creator: החלק "{ $part }" שלו הוא מסמך מסוג "{ $tag }". שום דבר לא נכתב.
+# $version is the part's own version, $supported the newest this importer reads.
+import-plume-too-new = החלק "{ $part }" של הפרויקט הזה נכתב בגרסה חדשה יותר של Plume Creator (גרסה { $version }) ממה ש־Skribisto יודעת לקרוא (עד { $supported }). שום דבר לא נכתב.
 
 import-manuskript-title = ייבוא פרויקט Manuskript
 import-manuskript-source = פרויקט Manuskript
@@ -920,6 +931,7 @@ import-manuskript-summary-note = תקציר
 import-manuskript-importance-minor = שולית
 import-manuskript-importance-secondary = משנית
 import-manuskript-importance-main = ראשית
+import-manuskript-notes-of = { $title } (פתקים)
 import-manuskript-progress-title = מייבא פרויקט Manuskript…
 import-manuskript-done = { $imported ->
     [one] יובא פריט אחד.
@@ -932,10 +944,1711 @@ import-manuskript-done = { $imported ->
 import-manuskript-nested-too-deep = הפרויקט לא יובא: הקובץ "{ $part }" שלו מקונן ליותר מ־{ $limit } רמות. אף פרויקט Manuskript לא מתקרב לזה, וקריאתו עלולה לגרום לקריסה של Skribisto. שום דבר לא נכתב.
 import-manuskript-folders-too-deep = הפרויקט לא יובא: אחד הקבצים שלו נמצא בעומק של יותר מ־{ $limit } תיקיות. אף פרויקט Manuskript לא מתקרב לזה, וקריאתו עלולה לגרום לקריסה של Skribisto. שום דבר לא נכתב.
 import-manuskript-declares-entities = הפרויקט לא יובא: הקובץ "{ $part }" שלו מצהיר על ישויות XML, דבר שאף פרויקט Manuskript לא עושה. הרחבתן עלולה לדרוש יותר זיכרון ממה שיש במחשב ולגרום לקריסה של Skribisto. שום דבר לא נכתב.
+import-manuskript-not-a-project-file = ‏"{ $file }" אינו ארכיון של פרויקט Manuskript, וגם לא קובץ ה־‎.msk הקטן שמפנה לתיקיית פרויקט. שום דבר לא נכתב.
+import-manuskript-folder-missing = ‏"{ $stub }" מפנה לתיקיית פרויקט בשם "{ $folder }" שלידו, והתיקייה הזו לא נמצאת שם. פרויקט Manuskript במצב תיקייה הוא שניהם יחד, וצריך להעביר אותם יחד. שום דבר לא נכתב.
+import-manuskript-not-a-project = זה לא נראה כמו פרויקט Manuskript: אין בו סימון של Manuskript ואין בו מתווה. שום דבר לא נכתב.
+import-manuskript-format-too-new = הפרויקט הזה בפורמט Manuskript { $version }, חדש יותר ממה ש־Skribisto יודעת לקרוא (עד { $supported }). שום דבר לא נכתב.
+import-manuskript-too-many-files = הפרויקט לא יובא: יש בו יותר מ־{ $limit } קבצים, הרבה יותר מבכל פרויקט Manuskript. שום דבר לא נכתב.
+import-manuskript-too-large = הפרויקט לא יובא: הוא גדול מ־{ $limit } מ״ב, הגודל המרבי ש־Skribisto קוראת מפרויקט Manuskript. שום דבר לא נכתב.
+project-import-close = סגירה
+project-import-location = תיקיית היעד
+# The folder dialog's title.
+project-import-location-title = בחירת תיקיית יעד
+project-import-name = שם הקובץ
+project-import-name-placeholder = שם הפרויקט
+project-import-will-create = ייווצר
+project-import-cancel = ביטול
+project-import-import = ייבוא
+# Field validation
+project-import-location-required = יש לבחור תיקיית יעד
+project-import-location-missing = התיקייה הזו אינה קיימת
+project-import-location-not-folder = הנתיב הזה אינו תיקייה
+project-import-location-readonly = אין הרשאת כתיבה לתיקייה הזו
+project-import-name-required = יש להזין שם קובץ
+project-import-name-exists = כבר קיים כאן קובץ בשם הזה. הייבוא יבקש אישור לפני שיחליף אותו
+project-import-name-is-folder = כבר יש כאן תיקייה בשם הזה, אולי פרויקט שנשמר כתיקייה. ייבוא לא יכול להחליף אותה: יש לבחור שם אחר
+# Overwrite confirmation
+project-import-overwrite-title = להחליף את הקובץ הקיים?
+project-import-overwrite-text = "{ $name }" כבר קיים. להחליף אותו בפרויקט המיובא?
+# Projects are imported one at a time, whichever importer asks.
+project-import-busy-title = פרויקט אחר נמצא בייבוא
+project-import-busy-text = פרויקטים מיובאים אחד בכל פעם. יש להמתין עד שהייבוא הנוכחי יסתיים, או לבטל אותו, ואז להתחיל את הייבוא הזה מחדש.
+# Spoken by a screen reader once per phase, never shown: the toast's title, then
+# the phase's name.
+project-import-progress-announcement = { $title } { $phase }
+# The notice once Cancel is pressed, until the converter has stopped: it may be
+# finishing a file it cannot leave half written.
+project-import-stopping = עוצר את הייבוא…
+project-import-cancelled = הייבוא בוטל
+project-import-open-now = פתיחה עכשיו
+project-import-details = פרטים
+# The import's report: what the writer should know about what came across.
+project-import-report = { $count ->
+    [one] דבר אחד שכדאי לדעת על הייבוא הזה
+    [two] שני דברים שכדאי לדעת על הייבוא הזה
+   *[other] { $count } דברים שכדאי לדעת על הייבוא הזה
+}
+project-import-report-title = על הייבוא הזה
+# Error toast: a short reason in the body, the full technical chain behind Details.
+project-import-error-title = לא ניתן לייבא את הפרויקט
+# Why a project was not imported, whichever importer read it. A $file is a file
+# name, a $folder a full path (it is the folder the writer has to act on), a
+# $reason what the system or a parser said, a $limit a number.
+project-import-failed-cancelled = הייבוא בוטל. שום דבר לא נכתב.
+project-import-failed-target-exists = ‏"{ $file }" כבר קיים, והייבוא לא הורשה להחליף אותו. שום דבר לא נכתב.
+project-import-failed-target-folder = ‏"{ $file }" היא תיקייה, אולי פרויקט שנשמר כתיקייה, וייבוא לא יכול להחליף אותה. יש לבחור שם אחר. שום דבר לא נכתב.
+project-import-failed-not-written = לא ניתן היה לכתוב את "{ $file }" בתוך "{ $folder }" ({ $reason }). שום דבר לא נכתב.
+project-import-failed-disk-full = לא נשאר ב־"{ $folder }" מספיק מקום כדי לכתוב את "{ $file }". יש לפנות שם מקום, ואז לייבא שוב. שום דבר לא נכתב.
+project-import-failed-source-missing = ‏"{ $file }" כבר לא נמצא שם. שום דבר לא נכתב.
+project-import-failed-unreadable = ‏Skribisto לא הצליחה לקרוא את "{ $file }" ({ $reason }). שום דבר לא נכתב.
+project-import-failed-archive-damaged = ‏"{ $file }" הוא קובץ דחוס שלא ניתן היה לקרוא, כנראה מפני שהוא פגום ({ $reason }). שום דבר לא נכתב.
+project-import-failed-archive-entries = הפרויקט לא יובא: הארכיון שלו מונה { $entries } קבצים, יותר מ־{ $limit } הקבצים שפרויקט יכול להכיל, ורק קובץ שנבנה כדי למצות את הזיכרון עושה דבר כזה. שום דבר לא נכתב.
+project-import-failed-archive-member = הפרויקט לא יובא: החלק "{ $part }" שלו נפרס ליותר מ־{ $limit } מ״ב, ורק קובץ שנבנה כדי למצות את הזיכרון עושה דבר כזה. שום דבר לא נכתב.
+project-import-failed-archive-size = הפרויקט לא יובא: הוא נפרס ליותר מ־{ $limit } מ״ב, ורק קובץ שנבנה כדי למצות את הזיכרון עושה דבר כזה. שום דבר לא נכתב.
+project-import-failed-nested = הפרויקט לא יובא: החלק "{ $part }" שלו מקונן ליותר מ־{ $limit } רמות, וקריאתו עלולה לגרום לקריסה של Skribisto. שום דבר לא נכתב.
+project-import-failed-entities = הפרויקט לא יובא: החלק "{ $part }" שלו מצהיר על ישויות XML. הרחבתן עלולה לדרוש יותר זיכרון ממה שיש במחשב ולגרום לקריסה של Skribisto. שום דבר לא נכתב.
+project-import-failed-folders = הפרויקט לא יובא: אחד הקבצים שלו נמצא בעומק של יותר מ־{ $limit } תיקיות, וקריאתו עלולה לגרום לקריסה של Skribisto. שום דבר לא נכתב.
+project-import-failed-malformed = הפרויקט לא יובא: החלק "{ $part }" שלו פגום ואי אפשר לקרוא אותו ({ $reason }). שום דבר לא נכתב.
+# A Scrivener project the importer cannot bring across (a Scrivener 1 for Mac project, a
+# damaged binder file). Why is the Scrivener importer's own to say; Details holds its key.
+project-import-failed-scrivener-refused = ‏Skribisto לא יכולה לייבא את פרויקט Scrivener הזה. שום דבר לא נכתב.
+# The Scrivener project asks something its review did not answer: a project or a binder
+# file appeared in it since.
+project-import-failed-scrivener-question = פרויקט Scrivener מעלה שאלה שהסקירה שלו לא ענתה עליה. יש לסקור אותו מחדש, ואז לייבא. שום דבר לא נכתב.
+# The Scrivener project raises a question the writer has to accept before it imports.
+project-import-failed-scrivener-not-accepted = פרויקט Scrivener מעלה שאלה שעדיין לא אישרתם. יש לסקור אותו מחדש, ואז לייבא. שום דבר לא נכתב.
+# The Scrivener project changed after the writer reviewed it.
+project-import-failed-scrivener-changed = פרויקט Scrivener השתנה אחרי שסקרתם אותו. יש לסקור אותו מחדש, ואז לייבא. שום דבר לא נכתב.
+# An error nothing above accounts for; $detail is its technical description.
+project-import-failed-internal = הייבוא נעצר בגלל שגיאה ש־Skribisto לא ציפתה לה: { $detail }
 
 import-target-open-title = הפרויקט הזה פתוח
 import-target-open-text = "{ $name }" פתוח ב־Skribisto. ייבוא מעליו יחליף את הפרויקט שעליו אתם עובדים, והשמירה הבאה תכתוב את הפרויקט ההוא בחזרה מעל הייבוא. יש לבחור שם קובץ אחר, או לסגור את הפרויקט קודם.
 import-warnings-announcement = { $result } { $notice }.
+# Quitting while an import runs. $name is the file the import is writing.
+quit-import-running-title = ייבוא עדיין מתבצע
+quit-import-running-text = ‏Skribisto עדיין מייבאת את "{ $name }". יציאה עכשיו עוצרת את הייבוא: שום דבר לא ייכתב, והפרויקט שממנו אתם מייבאים נשאר כפי שהיה.
+quit-import-stop = עצירת הייבוא ויציאה
+
+## Import a Scrivener project: the wizard
+import-scrivener-title = ייבוא פרויקט Scrivener
+import-scrivener-step-project = פרויקט
+import-scrivener-step-review = סקירה
+import-scrivener-step-save = שמירה
+import-scrivener-back = הקודם
+import-scrivener-next = הבא
+import-scrivener-import = ייבוא
+import-scrivener-cancel = ביטול
+import-scrivener-help = עזרה
+
+## Project step: choosing the project
+import-scrivener-drop-title = שחררו כאן פרויקט Scrivener
+import-scrivener-drop-hint = פרויקט ‎.scriv, קובץ ה־‎.scrivx שבתוכו, קובץ ‎.zip של גיבוי או קובץ ‎.scrivtemplate
+import-scrivener-source = פרויקט Scrivener
+import-scrivener-source-placeholder = הנתיב לפרויקט
+import-scrivener-choose-file = בחירת קובץ…
+import-scrivener-choose-folder = בחירת תיקייה…
+# Windows and Linux show a .scriv project as an ordinary folder.
+import-scrivener-source-hint = יש לבחור את תיקיית ה־‎.scriv של הפרויקט, או לפתוח אותה ולבחור את קובץ ה־‎.scrivx שבתוכה. גם קובץ ‎.zip של גיבוי מתאים.
+# macOS shows a .scriv project as a single file when Scrivener is installed, as a folder when it is not.
+import-scrivener-source-hint-mac = אם הפרויקט מוצג כקובץ יחיד, יש להשתמש ב"בחירת קובץ…". אם הוא מוצג כתיקייה, יש להשתמש ב"בחירת תיקייה…". גם קובץ ‎.zip של גיבוי מתאים.
+# File-dialog titles and filter label, resolved when the dialog opens.
+import-scrivener-dialog-file-title = בחירת פרויקט Scrivener
+import-scrivener-dialog-folder-title = בחירת תיקיית פרויקט Scrivener
+import-scrivener-dialog-filter = פרויקט Scrivener
+import-scrivener-source-missing = אין כלום בנתיב הזה
+# A path whose name is not Unicode: the field shows it with its unreadable letters replaced.
+import-scrivener-source-unreadable-name = לא ניתן לקרוא את השם הזה. יש לשנות את שם הפרויקט במנהל הקבצים, ואז לבחור אותו שוב.
+import-scrivener-empty-hint = יש לבחור פרויקט כדי לראות מה Skribisto מוצאת בו.
+import-scrivener-reading = קורא את הפרויקט…
+import-scrivener-stop-reading = הפסקת הקריאה
+import-scrivener-read-failed = לא ניתן היה לקרוא את הפרויקט
+import-scrivener-read-failed-body = משהו השתבש בזמן הקריאה. אפשר לבדוק מחדש, או לעיין בפרטים.
+import-scrivener-details = פרטים
+import-scrivener-check-again = בדיקה מחדש
+# A refusal this version does not know how to word.
+import-scrivener-refusal-unknown-title = לא ניתן לייבא את הפרויקט הזה
+import-scrivener-refusal-unknown-body = ‏Skribisto לא יודעת איך להעביר אותו. הפרטים מציינים את הסיבה.
+
+## Project step: the project card
+import-scrivener-made-with-mac = נשמר לאחרונה ב־Scrivener { $version } ל־macOS
+import-scrivener-made-with-windows = נשמר לאחרונה ב־Scrivener { $version } ל־Windows
+import-scrivener-made-with-linux = נשמר לאחרונה ב־Scrivener { $version } ל־Linux
+import-scrivener-made-with-ios = נשמר לאחרונה ב־Scrivener { $version } ל־iPhone ול־iPad
+import-scrivener-made-with-version = נשמר לאחרונה ב־Scrivener { $version }
+import-scrivener-made-with-unknown = פרויקט Scrivener, פורמט { $format }
+import-scrivener-saved-on = נשמר ב־{ $date } במכשיר "{ $device }"
+import-scrivener-saved-on-no-device = נשמר ב־{ $date }
+import-scrivener-card-counts = { $documents ->
+    [one] מסמך אחד
+    [two] שני מסמכים
+   *[other] { $documents } מסמכים
+}, { $manuscript } מהם בכתב היד
+
+## Review step
+import-scrivener-review-hint = כך הקלסר שלכם יועבר. שום דבר לא ייכתב עד שתייבאו, ואת הסוג של פריטים רבים אפשר לשנות אחר כך בקלסר, באמצעות "המרה אל".
+import-scrivener-choices-structure = רמות
+import-scrivener-top-level = תיקיות ברמה העליונה
+import-scrivener-choices-text = טקסט
+import-scrivener-choice-containers = תיקיות ברמה { $depth }
+import-scrivener-choice-texts = מסמכים ברמה { $depth }
+import-scrivener-choice-count = { $count ->
+    [one] פריט אחד
+    [two] שני פריטים
+   *[other] { $count } פריטים
+}
+import-scrivener-choice-count-example = { $count ->
+    [one] פריט אחד: "{ $example }"
+    [two] שני פריטים, כמו "{ $example }"
+   *[other] { $count } פריטים, כמו "{ $example }"
+}
+import-scrivener-rung-part = חלקים
+import-scrivener-rung-chapter = פרקים
+import-scrivener-rung-plain = תיקיות רגילות
+import-scrivener-texts-scenes = סצנות
+import-scrivener-texts-chapters = פרקים
+import-scrivener-choice-books = ספרים בכתב היד
+import-scrivener-books-one = ספר אחד
+import-scrivener-books-several = ספר לכל תיקייה
+import-scrivener-choice-split = { $count ->
+    [one] פיצול "{ $title }" בכותרת שבתוכו
+    [two] פיצול "{ $title }" בשתי הכותרות שבתוכו
+   *[other] פיצול "{ $title }" ב־{ $count } הכותרות שבתוכו
+}
+import-scrivener-root-items = { $count ->
+    [one] פריט אחד
+    [two] שני פריטים
+   *[other] { $count } פריטים
+}
+import-scrivener-root-items-manuscript = { $count ->
+    [one] פריט אחד, נראה ככתב יד
+    [two] שני פריטים, נראים ככתב יד
+   *[other] { $count } פריטים, נראים ככתב יד
+}
+import-scrivener-dest-notes = פתקים
+import-scrivener-dest-story-bible = תיק הסיפור
+import-scrivener-dest-manuscript = ספר נוסף
+import-scrivener-dest-leave-out = השמטה
+import-scrivener-choice-trash = { $count ->
+    [one] ייבוא האשפה (פריט אחד)
+    [two] ייבוא האשפה (שני פריטים)
+   *[other] ייבוא האשפה ({ $count } פריטים)
+}
+import-scrivener-trash-detail = { $count ->
+    [0] אף אחד מהם לא מכיל כתיבה.
+    [one] אחד מהם מכיל כתיבה.
+    [two] שניים מהם מכילים כתיבה.
+   *[other] { $count } מהם מכילים כתיבה.
+}
+import-scrivener-choice-blank-lines = שורות ריקות הופכות למעברי סצנה
+import-scrivener-choice-ornaments = שורות של עיטורים הופכות למעברי סצנה
+import-scrivener-preview-label = המבנה של הפרויקט החדש
+import-scrivener-col-title = כותרת
+import-scrivener-col-becomes = יהיה
+import-scrivener-col-exports = בייצוא
+import-scrivener-in-exports-yes = כן
+import-scrivener-in-exports-no = לא
+# What a row the binder has no creation command for becomes.
+import-scrivener-becomes-item = פריט
+import-scrivener-becomes-trashed = באשפה
+import-scrivener-before-title = לפני הייבוא
+import-scrivener-review-error-unreadable = לא ניתן היה להכין את הסקירה. יש לבחור את הפרויקט שוב.
+import-scrivener-review-error-choice = הבחירה הזו לא מתאימה לפרויקט. יש לבחור את הפרויקט שוב.
+import-scrivener-review-error-unmappable = עם הבחירה הזו, לא ניתן היה להעביר את הקלסר בלי לאבד משהו. אפשר לבחור אחרת, או לדווח על הבעיה.
+
+## Save step
+import-scrivener-save-hint = הייבוא יוצר פרויקט Skribisto חדש. פרויקט ה־Scrivener שלכם רק נקרא, ואף פעם לא משתנה.
+import-scrivener-title-field = כותרת
+import-scrivener-author = מחבר
+import-scrivener-language = שפה
+import-scrivener-location-inside-project = יש לבחור תיקייה מחוץ לפרויקט ה־Scrivener. בתוכו Scrivener שומר רק את הקבצים שלו.
+import-scrivener-copy-research-label = העתקת קובצי המחקר לצד הפרויקט החדש
+import-scrivener-copy-research = { $count ->
+    [one] קובץ מחקר אחד ש־Skribisto לא יכולה לפתוח, כמו PDF או קובץ שמע, מועתק לתיקייה לצד הפרויקט. אם האפשרות לא מסומנת, הפתק שלו מציין היכן הוא נמצא בפרויקט ה־Scrivener שלכם.
+    [two] שני קובצי מחקר ש־Skribisto לא יכולה לפתוח, כמו קובצי PDF או קובצי שמע, מועתקים לתיקייה לצד הפרויקט. אם האפשרות לא מסומנת, הפתקים שלהם מציינים היכן הם נמצאים בפרויקט ה־Scrivener שלכם.
+   *[other] { $count } קובצי מחקר ש־Skribisto לא יכולה לפתוח, כמו קובצי PDF או קובצי שמע, מועתקים לתיקייה לצד הפרויקט. אם האפשרות לא מסומנת, הפתקים שלהם מציינים היכן הם נמצאים בפרויקט ה־Scrivener שלכם.
+}
+# The file name proposed when the project's name holds nothing a file name can.
+import-scrivener-default-name = פרויקט Scrivener
+
+## Progress and result
+import-scrivener-progress-title = מייבא פרויקט Scrivener…
+import-scrivener-done-title = פרויקט Scrivener יובא
+# How many rows the new project holds: the documents and folders that came across, and
+# the rows the import made for them (a document's notes, the project notes).
+import-scrivener-done = { $items ->
+    [one] הפרויקט החדש מכיל פריט אחד.
+    [two] הפרויקט החדש מכיל שני פריטים.
+   *[other] הפרויקט החדש מכיל { $items } פריטים.
+}
+# The same, with how many kinds of thing could not be read or need checking.
+import-scrivener-done-check = { $items ->
+    [one] הפרויקט החדש מכיל פריט אחד.
+    [two] הפרויקט החדש מכיל שני פריטים.
+   *[other] הפרויקט החדש מכיל { $items } פריטים.
+} { $findings ->
+    [one] דבר אחד דורש עיון.
+    [two] שני דברים דורשים עיון.
+   *[other] { $findings } דברים דורשים עיון.
+}
+import-scrivener-review-again = סקירה מחדש
+## The import's report (the dialog See report opens)
+import-scrivener-see-report = הצגת הדוח
+import-scrivener-report-from = נקרא מתוך { $path }
+import-scrivener-report-to = נכתב אל { $path }
+import-scrivener-report-came-across = מה הועבר
+import-scrivener-report-nothing-counted = שום דבר לא נספר.
+import-scrivener-report-items = { $count ->
+    [one] פריט אחד
+    [two] שני פריטים
+   *[other] { $count } פריטים
+}
+import-scrivener-report-words = { $count ->
+    [one] מילה אחת
+    [two] שתי מילים
+   *[other] { $count } מילים
+}
+import-scrivener-report-synopses = { $count ->
+    [one] תקציר אחד
+    [two] שני תקצירים
+   *[other] { $count } תקצירים
+}
+import-scrivener-report-document-notes = { $count ->
+    [one] הפתקים של מסמך אחד
+    [two] הפתקים של שני מסמכים
+   *[other] הפתקים של { $count } מסמכים
+}
+import-scrivener-report-comments = { $count ->
+    [one] הערה אחת
+    [two] שתי הערות
+   *[other] { $count } הערות
+}
+import-scrivener-report-footnotes = { $count ->
+    [one] הערת שוליים אחת
+    [two] שתי הערות שוליים
+   *[other] { $count } הערות שוליים
+}
+import-scrivener-report-pictures = { $count ->
+    [one] תמונה אחת
+    [two] שתי תמונות
+   *[other] { $count } תמונות
+}
+import-scrivener-report-templates = { $count ->
+    [one] תבנית פתק אחת
+    [two] שתי תבניות פתקים
+   *[other] { $count } תבניות פתקים
+}
+import-scrivener-report-tags = { $count ->
+    [one] תג אחד
+    [two] שני תגים
+   *[other] { $count } תגים
+}
+import-scrivener-report-statuses = { $count ->
+    [one] מצב אחד
+    [two] שני מצבים
+   *[other] { $count } מצבים
+}
+import-scrivener-report-trashed = { $count ->
+    [one] פריט אחד באשפה
+    [two] שני פריטים באשפה
+   *[other] { $count } פריטים באשפה
+}
+import-scrivener-report-research-files = { $count ->
+    [one] קובץ מחקר אחד
+    [two] שני קובצי מחקר
+   *[other] { $count } קובצי מחקר
+}
+import-scrivener-report-choices = מה בחרתם
+import-scrivener-report-accepted-mobile = ייבאתם את הפרויקט בלי השינויים שנעשו ב־Scrivener ל־iPhone או ל־iPad ועדיין לא היו בו.
+import-scrivener-report-accepted-no-text = ייבאתם את העותק הזה עם המסמכים שלו ריקים, כי אף חלק מהטקסט שלהם לא היה בו.
+import-scrivener-report-choice = { $subject }: { $answer }
+import-scrivener-report-yes = כן
+import-scrivener-report-no = לא
+import-scrivener-report-research-copied = קובצי מחקר ש־Skribisto לא יכולה לפתוח הועתקו אל "{ $folder }", לצד הפרויקט החדש.
+import-scrivener-report-research-not-copied = קובצי מחקר ש־Skribisto לא יכולה לפתוח לא הועתקו. הפתקים שלהם מציינים היכן הם נמצאים בפרויקט ה־Scrivener שלכם.
+import-scrivener-report-research-copied-except = { $count ->
+    [one] קובצי מחקר ש־Skribisto לא יכולה לפתוח הועתקו אל "{ $folder }", לצד הפרויקט החדש, חוץ מאחד שנשאר בפרויקט ה־Scrivener שלכם. הפתק שלו מציין היכן הוא נמצא.
+    [two] קובצי מחקר ש־Skribisto לא יכולה לפתוח הועתקו אל "{ $folder }", לצד הפרויקט החדש, חוץ משניים שנשארים בפרויקט ה־Scrivener שלכם. הפתקים שלהם מציינים היכן הם נמצאים.
+   *[other] קובצי מחקר ש־Skribisto לא יכולה לפתוח הועתקו אל "{ $folder }", לצד הפרויקט החדש, חוץ מ־{ $count } שנשארים בפרויקט ה־Scrivener שלכם. הפתקים שלהם מציינים היכן הם נמצאים.
+}
+import-scrivener-report-research-none-copied = { $count ->
+    [one] ביקשתם להעתיק את קובצי המחקר, אבל את אחד מהם לא ניתן היה להעתיק. הוא נשאר בפרויקט ה־Scrivener שלכם, והפתק שלו מציין היכן הוא נמצא.
+    [two] ביקשתם להעתיק את קובצי המחקר, אבל את שניים מהם לא ניתן היה להעתיק. הם נשארים בפרויקט ה־Scrivener שלכם, והפתקים שלהם מציינים היכן הם נמצאים.
+   *[other] ביקשתם להעתיק את קובצי המחקר, אבל את { $count } מהם לא ניתן היה להעתיק. הם נשארים בפרויקט ה־Scrivener שלכם, והפתקים שלהם מציינים היכן הם נמצאים.
+}
+import-scrivener-report-chose-project = בחרתם לייבא את "{ $project }", אחד הפרויקטים שנמצאו במה שבחרתם.
+import-scrivener-report-chose-manifest = בחרתם בקובץ הקלסר "{ $file }".
+import-scrivener-report-chose-enclosing = בחרתם משהו שנמצא בתוך "{ $project }", ולכן יובא הפרויקט כולו.
+import-scrivener-report-chose-upgraded = ייבאתם את "{ $current }", הפרויקט שבו המשכתם לכתוב, ולא את העותק ש־Scrivener שמר לפני עדכון.
+import-scrivener-report-chose-backup = ייבאתם את "{ $backup }", העותק הישן ש־Scrivener שמר לפני עדכון.
+import-scrivener-report-title-placeholder-rejected = הכותרת בהגדרות הפרויקט הייתה מציין מיקום של תבנית, ולכן Skribisto הציעה במקומה את שם הפרויקט.
+import-scrivener-report-author-placeholder-rejected = שם המחבר בהגדרות הפרויקט היה מציין מיקום של תבנית, ולכן Skribisto לא הציעה שם.
+import-scrivener-report-title-from-compile-settings = ‏Skribisto הציעה את הכותרת שמופיעה בהגדרות ההידור של הפרויקט: השם שהיה לפרויקט כשנוצר, אלא אם הוגדרה שם כותרת ב־Scrivener.
+import-scrivener-report-title-from-template = ‏Skribisto הציעה את הכותרת של התבנית עצמה.
+import-scrivener-report-title-from-folder-name = ‏Skribisto הציעה את שם הפרויקט ככותרת שלו.
+import-scrivener-report-title-from-project-properties = ‏Skribisto הציעה את הכותרת שמופיעה במאפייני הפרויקט.
+import-scrivener-report-author-from-project = ‏Skribisto הציעה את שם המחבר שמופיע בהגדרות הפרויקט. שם מחבר של תבנית עלול להישאר שם, והוא יודפס בעמוד השער.
+import-scrivener-report-language-not-stated = הפרויקט לא ציין את השפה שלו, ולכן Skribisto הציעה את השפה שבה היא עצמה מוצגת. השפה קובעת איך נספרות מילים ואיך נכתבות מירכאות.
+import-scrivener-report-language-from-script = ‏Skribisto הציעה את השפה לפי מערכת הכתב שבה כתוב כתב היד ({ $tag }).
+# A proposal of the Save page the writer replaced with their own.
+import-scrivener-report-you-changed-it = { $hint } שיניתם את זה.
+import-scrivener-report-content-salvaged-text = הטקסט של "{ $item }" היה חסר בפרויקט. המילים שלו מגיעות מאינדקס החיפוש של Scrivener, כטקסט פשוט ואולי מגרסה ישנה יותר: כדאי לבדוק אותן.
+import-scrivener-report-content-salvaged-notes = הפתקים של "{ $item }" היו חסרים בפרויקט. המילים שלהם מגיעות מאינדקס החיפוש של Scrivener, כטקסט פשוט ואולי מגרסה ישנה יותר: כדאי לבדוק אותן.
+import-scrivener-report-content-salvaged-synopsis = התקציר של "{ $item }" היה חסר בפרויקט. המילים שלו מגיעות מאינדקס החיפוש של Scrivener, כטקסט פשוט ואולי מגרסה ישנה יותר: כדאי לבדוק אותן.
+# A finding of the document importer found in several places: its sentence about the
+# first, then how many more the list under it names.
+import-scrivener-report-document-others = { $others ->
+    [one] { $sentence } אותו דבר קורה במקום אחד נוסף, שמופיע למטה.
+    [two] { $sentence } אותו דבר קורה בשני מקומות נוספים, שמופיעים למטה.
+   *[other] { $sentence } אותו דבר קורה ב־{ $others } מקומות נוספים, שמופיעים למטה.
+}
+# An item of the report, by its path in Scrivener's binder, with which of its writings
+# the line is about when it is not the text.
+import-scrivener-report-item-notes = ‏{ $path } (הפתקים של המסמך)
+import-scrivener-report-item-synopsis = ‏{ $path } (תקציר)
+import-scrivener-report-item-project-note = ‏{ $path } (פתק פרויקט)
+import-scrivener-report-item-recovered = ‏{ $path } (טקסט משוחזר)
+# An item with no name in Scrivener.
+import-scrivener-report-untitled = ללא כותרת
+import-scrivener-report-no-findings = אין לייבוא דבר נוסף לדווח.
+import-scrivener-report-group-unread = לא ניתן היה לקרוא
+import-scrivener-report-group-check = כדאי לבדוק
+import-scrivener-report-group-changed = הועבר בצורה אחרת
+import-scrivener-report-group-left = נשאר מאחור
+import-scrivener-report-group-count = { $group } ({ $count })
+import-scrivener-report-items-toggle = { $count ->
+    [one] פריט אחד
+    [two] שני פריטים
+   *[other] { $count } פריטים
+}
+# The same, as a screen reader names it: with the line whose items it lists.
+import-scrivener-report-items-toggle-named = { $count ->
+    [one] פריט אחד: { $line }
+    [two] שני פריטים: { $line }
+   *[other] { $count } פריטים: { $line }
+}
+import-scrivener-report-names-toggle = { $count ->
+    [one] שם אחד
+    [two] שני שמות
+   *[other] { $count } שמות
+}
+# The same, as a screen reader hears it, naming the line it belongs to.
+import-scrivener-report-names-toggle-named = { $count ->
+    [one] שם אחד: { $line }
+    [two] שני שמות: { $line }
+   *[other] { $count } שמות: { $line }
+}
+import-scrivener-report-more = { $count ->
+    [one] ועוד אחד.
+    [two] ועוד שניים.
+   *[other] ועוד { $count }.
+}
+import-scrivener-report-open-item = פתיחה בעורך
+import-scrivener-report-links-hint = יש לפתוח את הפרויקט החדש, ואז להציג שוב את הדוח הזה מלוח הפקודות: כל פריט שמופיע כאן ייפתח אז בלחיצה.
+import-scrivener-copy-report = העתקת הדוח
+import-scrivener-report-copied = הדוח הועתק
+import-scrivener-report-copy-failed = לא ניתן היה להעתיק את הדוח.
+import-scrivener-report-close = סגירה
+import-scrivener-report-none-title = אין דוח ייבוא
+import-scrivener-report-none = אף ייבוא מ־Scrivener לא הסתיים מאז ש־Skribisto הופעלה. היא שומרת את הדוחות של הייבואים האחרונים עד שהיא נסגרת.
+import-scrivener-report-gone = הדוח של הייבוא הזה כבר לא נשמר. ‏Skribisto שומרת את הדוחות של { $count } הייבואים האחרונים עד שהיא נסגרת.
+
+## Words the import writes into the new project, in the language Skribisto shows itself in
+import-scrivener-manuscript-binder = כתב יד
+import-scrivener-notes-binder = פתקים
+import-scrivener-notes-of = { $title } (פתקים)
+import-scrivener-project-notes = פתקי הפרויקט
+import-scrivener-recovered = טקסטים משוחזרים
+import-scrivener-untitled-template = תבנית ללא כותרת
+# The folder beside the new project its research files are copied into.
+import-scrivener-research-folder = קובצי המחקר של { $name }
+# Between two authors' names.
+import-scrivener-list-separator = {", "}
+import-scrivener-label-details = מהשדה "{ $field }" ב־Scrivener
+import-scrivener-status-details = מהשדה "{ $field }" ב־Scrivener
+import-scrivener-unnamed-label = תווית { $number }
+import-scrivener-unnamed-status = מצב { $number }
+import-scrivener-label-tag = { $name } (תווית)
+import-scrivener-untitled-tag = ללא כותרת
+# The tags, the pace plan and the "From Scrivener" folder the import makes from what a
+# Scrivener project holds beyond its labels and status.
+import-scrivener-keyword-details = מילת המפתח "{ $path }" ב־Scrivener
+import-scrivener-unnamed-keyword = מילת מפתח { $number }
+import-scrivener-keyword-tag = { $name } (מילת מפתח)
+import-scrivener-collection-details = אוסף ב־Scrivener
+import-scrivener-collection-tag = { $name } (אוסף)
+import-scrivener-field-details = מהשדה "{ $field }" ב־Scrivener
+# A tag made from one option of a list field.
+import-scrivener-field-value = { $field }: { $option }
+import-scrivener-field-tag = { $name } (שדה)
+# The day off a pace plan takes on its deadline.
+import-scrivener-deadline-day = תאריך היעד
+import-scrivener-from-scrivener = מ־Scrivener
+import-scrivener-note-project = פרויקט
+import-scrivener-note-project-bookmarks = סימניות הפרויקט
+import-scrivener-note-replacements = החלפות בהידור
+import-scrivener-note-auto-complete = רשומות של השלמה אוטומטית
+import-scrivener-note-saved-searches = חיפושים שמורים
+import-scrivener-note-custom-metadata = מטא־נתונים מותאמים אישית
+import-scrivener-note-targets = מטרות
+import-scrivener-note-bookmarks = סימניות
+import-scrivener-abbreviated-title = כותרת מקוצרת
+import-scrivener-subjects = נושאים
+import-scrivener-company = חברה
+import-scrivener-session-target = מטרת הסשן
+import-scrivener-session-target-calculated = מטרת הסשן, ש־Scrivener חישב מתאריך היעד
+import-scrivener-writing-days = ימי כתיבה
+import-scrivener-weekday-monday = יום שני
+import-scrivener-weekday-tuesday = יום שלישי
+import-scrivener-weekday-wednesday = יום רביעי
+import-scrivener-weekday-thursday = יום חמישי
+import-scrivener-weekday-friday = יום שישי
+import-scrivener-weekday-saturday = שבת
+import-scrivener-weekday-sunday = יום ראשון
+import-scrivener-draft-target = מטרת הטיוטה
+import-scrivener-deadline = תאריך יעד
+# A unit after a count, in parentheses: "1000 (words)".
+import-scrivener-unit-words = מילים
+import-scrivener-unit-characters = תווים
+import-scrivener-unit-pages = עמודים
+import-scrivener-search-query = מונח החיפוש
+import-scrivener-search-in = חיפוש בתוך
+import-scrivener-search-operator = התאמה
+# What a saved search looks in, by the kind Scrivener names.
+import-scrivener-search-in-all = הכול
+import-scrivener-search-in-title = כותרות
+import-scrivener-search-in-text = טקסט
+import-scrivener-search-in-notes = פתקים
+import-scrivener-search-in-synopsis = תקצירים
+import-scrivener-search-in-keywords = מילות מפתח
+import-scrivener-search-in-label = תוויות
+import-scrivener-search-in-status = מצבים
+import-scrivener-search-in-section-type = סוגי מקטעים
+import-scrivener-search-in-custom-metadata = מטא־נתונים מותאמים אישית
+# How a saved search's words combine.
+import-scrivener-search-any = אחת מהמילים
+import-scrivener-search-all = כל המילים
+import-scrivener-search-exact = הביטוי המדויק
+# One line of a listing: a bookmark's place and its note, or a link's words and its address.
+import-scrivener-label-value = { $label }: { $value }
+import-scrivener-replacement-regex = ביטוי רגולרי
+import-scrivener-replacement-off = כבויה
+# Said of a note whose own text lists its custom metadata or bookmarks.
+import-scrivener-in-own-note = מפורט בתוך הפתק עצמו.
+
+
+## Import a Scrivener project: what the import says about the project, in the writer's words.
+## Every key the converter can give has a line here (see `import_scrivener::messages`).
+
+# A refusal on one line: its title, then what to do.
+import-scrivener-paragraph = { $title }. { $body }
+
+## When the project cannot be imported
+import-scrivener-refusal-missing-title = אין כלום בנתיב הזה
+import-scrivener-refusal-missing-body = ‏"{ $file }" כבר לא נמצא שם. יש לבחור את הפרויקט שוב.
+import-scrivener-refusal-unreadable-title = לא ניתן לקרוא את הפרויקט הזה
+import-scrivener-refusal-unreadable-body = ‏Skribisto לא הצליחה לקרוא את "{ $file }" ({ $reason }). יש לוודא שאפשר לפתוח אותו, ואז לנסות שוב.
+import-scrivener-refusal-not-a-scrivener-project-title = אין כאן פרויקט Scrivener
+import-scrivener-refusal-not-a-scrivener-project-body = יש לבחור את תיקיית ה־‎.scriv של הפרויקט, את קובץ ה־‎.scrivx שבתוכה, קובץ ‎.zip של גיבוי או קובץ ‎.scrivtemplate.
+import-scrivener-refusal-manifest-without-files-title = המסמכים אינם בעותק הזה
+import-scrivener-refusal-manifest-without-files-body = ‏"{ $manifest }" נמצא כאן, אבל לא תיקיית Files שמכילה את המסמכים שהוא מונה. ייתכן ששירות סנכרון עוד לא סיים להעתיק את הפרויקט, או שהועתק רק קובץ ה־‎.scrivx. אם בחרתם את קובץ ה־‎.scrivx, יש לבחור במקומו את תיקיית הפרויקט באמצעות "בחירת תיקייה…".
+import-scrivener-refusal-search-too-wide-title = בתיקייה הזו יש יותר מדי דברים לחיפוש
+import-scrivener-refusal-search-too-wide-body = יש בה יותר מ־{ $limit } תיקיות לעבור עליהן. יש לבחור את פרויקט ה־Scrivener עצמו.
+import-scrivener-refusal-scrivener-one-for-mac-title = הפרויקט הזה נוצר ב־Scrivener 1 ל־Mac
+import-scrivener-refusal-scrivener-one-for-mac-body = ‏Skribisto קוראת פרויקטים מ־Scrivener 2 ואילך. אפשר לפתוח אותו פעם אחת ב־Scrivener 2 או 3 כדי לעדכן אותו, או להדר אותו למסמך Word ולייבא את המסמך.
+import-scrivener-refusal-ios-stub-without-mobile-data-title = זהו רק קובץ ממלא מקום של Scrivener ל־iPhone או ל־iPad
+import-scrivener-refusal-ios-stub-without-mobile-data-body = הפרויקט עצמו לא נמצא כאן. יש לסנכרן אותו מה־iPhone או מה־iPad, או לשתף אותו משם כקובץ ‎.zip, ולייבא את הקובץ.
+import-scrivener-refusal-newer-title = הפרויקט הזה נוצר בגרסה חדשה יותר של Scrivener
+import-scrivener-refusal-unknown-format-version-body = הפורמט שלו, { $version }, אינו פורמט ש־Skribisto מכירה. כדאי לבדוק אם יש עדכון של Skribisto. עד אז, אפשר להדר אותו למסמך Word ב־Scrivener ולייבא את המסמך.
+import-scrivener-refusal-newer-format-stamp-body = הקבצים שלו מסומנים כגרסה { $stamp }, ו־Skribisto קוראת עד גרסה { $newest }. כדאי לבדוק אם יש עדכון של Skribisto. עד אז, אפשר להדר אותו למסמך Word ב־Scrivener ולייבא את המסמך.
+import-scrivener-refusal-version-stamp-unreadable-title = לא ניתן לקרוא את הגרסה של הפרויקט
+import-scrivener-refusal-version-stamp-unreadable-body = בקובץ Files/version.txt שלו אין מספר גרסה, ולכן Skribisto לא יכולה לדעת אם היא קוראת את הפרויקט הזה. יש לפתוח את הפרויקט פעם אחת ב־Scrivener, ואז לייבא אותו שוב.
+import-scrivener-refusal-damaged-manifest-title = לא ניתן לקרוא את קובץ הקלסר
+import-scrivener-refusal-damaged-manifest-body = ‏"{ $manifest }" פגום. { $spare_copies ->
+    [0] יש לפתוח את הפרויקט ב־Scrivener, שיכול לתקן אותו, ואז לייבא אותו שוב.
+    [one] בתוך הפרויקט Scrivener שומר עותק רזרבי אחד שלו, ש־Skribisto לא קוראת. יש לפתוח את הפרויקט ב־Scrivener, שיכול לתקן אותו, ואז לייבא אותו שוב.
+    [two] בתוך הפרויקט Scrivener שומר שני עותקים רזרביים שלו, ש־Skribisto לא קוראת. יש לפתוח את הפרויקט ב־Scrivener, שיכול לתקן אותו, ואז לייבא אותו שוב.
+   *[other] בתוך הפרויקט Scrivener שומר { $spare_copies } עותקים רזרביים שלו, ש־Skribisto לא קוראת. יש לפתוח את הפרויקט ב־Scrivener, שיכול לתקן אותו, ואז לייבא אותו שוב.
+}
+# The empty file Scrivener writes for a new project before its first save: not damage.
+import-scrivener-refusal-damaged-manifest-new-project-placeholder-body = ‏"{ $manifest }" הוא הקובץ הריק ש־Scrivener כותב עבור פרויקט שעוד לא שמר. יש לפתוח את הפרויקט ב־Scrivener ולתת לו לשמור, ואז לייבא אותו שוב.
+import-scrivener-refusal-manifest-too-large-title = קובץ הקלסר הזה גדול מדי
+import-scrivener-refusal-manifest-too-large-body = ‏"{ $manifest }" גדול מ־{ $limit } מ״ב, הגודל המרבי ש־Skribisto קוראת. אף פרויקט אמיתי לא מתקרב לזה, ולכן ייתכן שהקובץ פגום.
+import-scrivener-refusal-no-item-identifiers-title = הקלסר לא מונה אף מסמך ש־Skribisto יכולה למצוא
+import-scrivener-refusal-no-item-identifiers-body = לאף אחד מהפריטים שלו אין מזהה, ולכן אי אפשר למצוא את הקבצים שלהם. יש לפתוח את הפרויקט פעם אחת ב־Scrivener, ואז לייבא אותו שוב.
+import-scrivener-refusal-incomplete-copy-title = המסמכים חסרים בעותק הזה
+import-scrivener-refusal-incomplete-copy-body = תיקיית Files נמצאת כאן, אבל המסמכים שבתוכה לא. ייתכן ששירות סנכרון עוד לא סיים להעתיק את הפרויקט. יש להמתין עד שיסיים, או להעתיק שוב את כל תיקיית ה־‎.scriv, ואז לבדוק מחדש.
+import-scrivener-refusal-archive-title = לא ניתן לפתוח את הארכיון הזה
+import-scrivener-refusal-archive-unreadable-body = לא ניתן היה לקרוא את "{ $file }" ({ $reason }). ייתכן שהוא פגום. יש לחלץ אותו בעצמכם, ואז לבחור את תיקיית ה־‎.scriv שבתוכו.
+import-scrivener-refusal-archive-unsafe-name-title = לא ניתן לפתוח את הארכיון הזה בבטחה
+# A name with `..` in it, or an absolute one.
+import-scrivener-refusal-archive-unsafe-name-body = ב־"{ $file }" יש קובץ בשם "{ $member }", שהיה נוחת מחוץ לארכיון, ולכן Skribisto לא פותחת אותו.
+import-scrivener-refusal-archive-unsafe-name-empty-body = ב־"{ $file }" יש קובץ בלי שם, ולכן Skribisto לא פותחת אותו.
+import-scrivener-refusal-archive-unsafe-name-control-character-body = ב־"{ $file }" יש קובץ שהשם שלו מכיל תו בקרה, ולכן Skribisto לא פותחת אותו.
+import-scrivener-refusal-archive-too-large-title = הארכיון הזה גדול מכדי לפתוח אותו בבטחה
+import-scrivener-refusal-archive-too-many-members-body = יש בו יותר מ־{ $limit } קבצים. יש לחלץ אותו בעצמכם, ואז לבחור את תיקיית ה־‎.scriv שבתוכו.
+import-scrivener-refusal-archive-member-too-large-body = ‏"{ $member }" נפרס ליותר מ־{ $limit } מ״ב. יש לחלץ את הארכיון בעצמכם, ואז לבחור את תיקיית ה־‎.scriv שבתוכו.
+import-scrivener-refusal-archive-too-large-body = הוא נפרס ליותר מ־{ $limit } מ״ב. יש לחלץ אותו בעצמכם, ואז לבחור את תיקיית ה־‎.scriv שבתוכו.
+import-scrivener-refusal-archive-encrypted-title = הארכיון הזה מוגן בסיסמה
+import-scrivener-refusal-archive-encrypted-body = יש לחלץ את "{ $file }" בעצמכם, ואז לבחור את תיקיית ה־‎.scriv שבתוכו.
+import-scrivener-refusal-archive-unsupported-compression-title = הארכיון הזה ארוז בדרך ש־Skribisto לא יכולה לקרוא
+import-scrivener-refusal-archive-unsupported-compression-body = ‏"{ $member }" דחוס בשיטה { $method }. יש לחלץ את הארכיון בעצמכם, ואז לבחור את תיקיית ה־‎.scriv שבתוכו.
+import-scrivener-refusal-duplicate-archive-members-title = הארכיון הזה מונה כמה קבצים פעמיים
+import-scrivener-refusal-duplicate-archive-members-body = ב־"{ $file }" יש יותר מקובץ אחד באותו שם, ולכן Skribisto לא יכולה לדעת איזה מהם שייך לפרויקט. יש לחלץ אותו בעצמכם, ואז לבחור את תיקיית ה־‎.scriv שבתוכו.
+# What a file cut short looks like; a file too large, one that is not a template and one
+# encoded another way have their own words.
+import-scrivener-refusal-template-undecodable-title = קובץ התבנית הזה אינו שלם
+import-scrivener-refusal-template-undecodable-too-large-title = קובץ התבנית הזה גדול מכדי לפתוח אותו
+import-scrivener-refusal-template-undecodable-not-a-template-title = הקובץ הזה אינו תבנית של Scrivener
+import-scrivener-refusal-template-undecodable-unknown-encoding-title = קובץ התבנית הזה שמור בצורה ש־Skribisto לא מכירה
+import-scrivener-refusal-template-undecodable-body = לא ניתן לפענח את "{ $file }": ייתכן שהוא נגמר לפני שהפרויקט שבתוכו נגמר. אפשר להוריד אותו שוב, או לפתוח אותו ב־Scrivener וליצור ממנו פרויקט.
+import-scrivener-refusal-template-undecodable-too-large-body = ‏"{ $file }" גדול מ־{ $limit } מ״ב. יש לפתוח אותו ב־Scrivener, ליצור ממנו פרויקט, ואז לייבא את הפרויקט הזה.
+import-scrivener-refusal-template-undecodable-not-a-template-body = ‏"{ $file }" לא מכיל פרויקט Scrivener. יש לבחור את קובץ התבנית ש־Scrivener שמר, או פרויקט שנוצר ממנו.
+import-scrivener-refusal-template-undecodable-unknown-encoding-body = ‏"{ $file }" שומר את הפרויקט שבתוכו בדרך ש־Skribisto לא יכולה לפענח. יש לפתוח אותו ב־Scrivener, ליצור ממנו פרויקט, ואז לייבא את הפרויקט הזה.
+import-scrivener-refusal-cloud-placeholders-title = { $count ->
+    [one] קובץ אחד של הפרויקט הזה עדיין בענן
+    [two] שני קבצים של הפרויקט הזה עדיין בענן
+   *[other] { $count } קבצים של הפרויקט הזה עדיין בענן
+}
+import-scrivener-refusal-cloud-placeholders-body = הם לא הורדו למחשב הזה, למשל { $examples }. יש להגדיר את הפרויקט כזמין במצב לא מקוון באפליקציית הסנכרון, ואז לבדוק מחדש.
+import-scrivener-refusal-unreadable-members-title = { $count ->
+    [one] לא ניתן לקרוא קובץ אחד של הפרויקט הזה
+    [two] לא ניתן לקרוא שני קבצים של הפרויקט הזה
+   *[other] לא ניתן לקרוא { $count } קבצים של הפרויקט הזה
+}
+import-scrivener-refusal-unreadable-members-body = למשל { $examples }. יש לוודא שיש לכם הרשאה לקרוא את הפרויקט כולו ושהדיסק תקין, ואז לבדוק מחדש.
+import-scrivener-refusal-needed-member-is-link-title = הפרויקט הזה מפנה אל מחוץ לתיקייה שלו
+import-scrivener-refusal-needed-member-is-link-body = ‏"{ $member }" הוא קישור למקום אחר במחשב הזה, ו־Skribisto לא עוקבת אחרי קישורים. יש להעתיק את הפרויקט כך שכל קובץ יהיה בתוכו, ואז לנסות שוב.
+import-scrivener-refusal-project-changed-during-read-title = הפרויקט השתנה בזמן שנקרא
+import-scrivener-refusal-project-changed-during-read-body = ‏Scrivener או שירות סנכרון עדיין כותבים אליו. יש לסגור אותו ב־Scrivener, להמתין עד שהסנכרון יסתיים, ואז לבדוק מחדש.
+import-scrivener-refusal-too-many-members-title = יש בפרויקט הזה יותר מדי קבצים
+import-scrivener-refusal-too-many-members-body = יש בו יותר מ־{ $limit } קבצים, יותר מבכל פרויקט אמיתי. ייתכן שזה לא פרויקט Scrivener, או שהוא פגום.
+import-scrivener-refusal-too-large-title = הפרויקט הזה גדול מדי
+import-scrivener-refusal-too-large-body = הכתיבה שבו מגיעה ליותר מ־{ $limit } מ״ב, יותר ממה ש־Skribisto יכולה לייבא בבטחה.
+import-scrivener-refusal-structure-unmappable-title = ‏Skribisto לא יכולה למפות את הקלסר הזה
+import-scrivener-refusal-structure-unmappable-body = לא ניתן היה להעביר את הקלסר בלי לאבד משהו או למקם משהו במקום הלא נכון. זו תקלה ב־Skribisto, לא בפרויקט שלכם. נא לדווח עליה יחד עם מה שמוצג תחת "פרטים".
+
+## When there is a choice to make
+import-scrivener-roots-title = יש כאן { $count } פרויקטים. איזה מהם?
+import-scrivener-roots-hint = בתיקייה או בארכיון הזה יש יותר מפרויקט Scrivener אחד. יש לבחור את הפרויקט לייבוא.
+import-scrivener-manifests-title = לפרויקט הזה יש { $count } קובצי קלסר
+import-scrivener-manifests-hint = ‏Scrivener שומר את הקלסר, הרשימה של כל מסמך ותיקייה, בקובץ ‎.scrivx. הקבצים הנוספים נשארו כנראה משירות סנכרון. יש לבחור את הקובץ שבו עבדתם לאחרונה.
+import-scrivener-manifests-hint-preselected = ‏Scrivener שומר את הקלסר, הרשימה של כל מסמך ותיקייה, בקובץ ‎.scrivx. הקבצים הנוספים נשארו כנראה משירות סנכרון. הקובץ שנבחר הוא כנראה זה שבו עבדתם לאחרונה: כדאי לבדוק אותו לפני שממשיכים.
+import-scrivener-manifest-row = ‏{ $file } · נשמר ב־{ $date } · { $documents ->
+    [one] פריט אחד
+    [two] שני פריטים
+   *[other] { $documents } פריטים
+}
+import-scrivener-manifest-row-undated = ‏{ $file } · { $documents ->
+    [one] פריט אחד
+    [two] שני פריטים
+   *[other] { $documents } פריטים
+}
+import-scrivener-manifest-row-unread = ‏{ $file } · לא ניתן לקרוא
+import-scrivener-enclosing-title = זה חלק מפרויקט ה־Scrivener "{ $project }"
+import-scrivener-enclosing-body = בחרתם קובץ או תיקייה בתוך פרויקט. ‏Skribisto מייבאת את הפרויקט כולו.
+import-scrivener-enclosing-use = ייבוא "{ $project }"
+import-scrivener-upgrade-title = זה העותק ש־Scrivener שמר לפני עדכון
+import-scrivener-upgrade-body = כש־Scrivener מעדכן פרויקט לגרסה חדשה יותר, הוא שומר את הישן בשם "{ $backup }". הפרויקט שבו המשכתם לכתוב הוא "{ $current }", שנמצא לידו.
+import-scrivener-upgrade-body-unclear = כש־Scrivener מעדכן פרויקט לגרסה חדשה יותר, הוא שומר את הישן בשם "{ $backup }". את הפרויקט שלידו, "{ $current }", לא ניתן היה לקרוא כראוי, ולכן יש לבחור איזה מהם לייבא.
+import-scrivener-upgrade-use-current = ייבוא "{ $current }", הפרויקט שבו המשכתם לכתוב
+import-scrivener-upgrade-keep-backup = ייבוא העותק הישן הזה, "{ $backup }"
+
+## What must be accepted before going on
+import-scrivener-ios-pending-title = שינויים שנעשו ב־Scrivener ל־iPhone או ל־iPad עדיין אינם בעותק הזה
+import-scrivener-ios-pending-body = ‏Scrivener במחשב מכניס את השינויים האלה בפעם הבאה שהוא פותח את הפרויקט. יש לפתוח את הפרויקט פעם אחת ב־Scrivener במחשב שלכם, ואז לייבא אותו שוב.
+import-scrivener-ios-pending-accept = ייבוא בלי השינויים האלה
+import-scrivener-no-text-title = { $count ->
+    [one] מסמך אחד, ואף לא מילה אחת של טקסט בעותק הזה
+    [two] שני מסמכים, ואף לא מילה אחת של טקסט בעותק הזה
+   *[other] { $count } מסמכים, ואף לא מילה אחת של טקסט בעותק הזה
+}
+import-scrivener-no-text-body = ייתכן ששירות סנכרון עדיין מעתיק את הפרויקט, או שהעותק איבד את המסמכים שלו. אם ייובא עכשיו, כל מסמך יגיע ריק.
+import-scrivener-no-text-accept = ייבוא המסמכים ריקים
+
+## Things to know, nothing to decide
+import-scrivener-notice-project-found-below-pick-title = הפרויקט נמצא בתוך התיקייה שבחרתם
+import-scrivener-notice-project-found-below-pick-body = הוא נמצא ב־"{ $path }".
+import-scrivener-notice-source-is-template-title = זו תבנית של Scrivener
+import-scrivener-notice-source-is-template-named = זו תבנית ה־Scrivener "{ $title }"
+import-scrivener-notice-source-is-template-body = ייבוא שלה יוצר פרויקט חדש ממה שהתבנית מכילה, כולל ההוראות שלה.
+import-scrivener-notice-source-is-backup-title = זה נראה כמו גיבוי ש־Scrivener יצר
+import-scrivener-notice-source-is-backup-body = הוא מכיל את הפרויקט כפי שהיה כשהגיבוי נוצר. אם המשכתם לכתוב אחרי כן, יש לבחור את הפרויקט עצמו.
+import-scrivener-notice-importing-pre-upgrade-copy-title = אתם מייבאים את העותק ש־Scrivener שמר לפני עדכון
+import-scrivener-notice-importing-pre-upgrade-copy-body = הפרויקט שבו המשכתם לכתוב נמצא לידו, ומכיל את כל מה שנכתב מאז.
+import-scrivener-notice-imported-from-ios-stub-title = הפרויקט הזה נוצר ב־Scrivener ל־iPhone או ל־iPad
+import-scrivener-notice-imported-from-ios-stub-body = הוא אף פעם לא נפתח במחשב, ולכן הוא נקרא מהעותק שה־iPhone או ה־iPad שומר.
+import-scrivener-notice-stale-mobile-binder-ignored-title = קלסר ישן מ־iPhone או מ־iPad מונח בצד
+import-scrivener-notice-stale-mobile-binder-ignored-body = ‏Scrivener במחשב כבר הכניס את השינויים שלו.
+import-scrivener-notice-identical-manifest-copies-title = { $count ->
+    [one] יש כאן עותק אחד של קובץ הקלסר
+    [two] יש כאן שני עותקים זהים של קובץ הקלסר
+   *[other] יש כאן { $count } עותקים זהים של קובץ הקלסר
+}
+import-scrivener-notice-identical-manifest-copies-body = כולם מכילים את אותו הדבר, ולכן כל אחד מהם נותן את אותו פרויקט.
+import-scrivener-notice-manifest-copies-ignored-title = עותקים נוספים של קובץ הקלסר מונחים בצד
+import-scrivener-notice-manifest-copies-ignored-body = ‏"{ $chosen }" הוא הקובץ שבו Scrivener עבד לאחרונה. { $count ->
+    [one] עותק אחד ששירות סנכרון השאיר מונח בצד.
+    [two] שני עותקים ששירות סנכרון השאיר מונחים בצד.
+   *[other] { $count } עותקים ששירות סנכרון השאיר מונחים בצד.
+}
+import-scrivener-notice-pinned-manifest-looks-like-a-copy-title = קובץ הקלסר שבחרתם נראה כמו עותק של סנכרון
+import-scrivener-notice-pinned-manifest-looks-like-a-copy-body = השם "{ $name }" נראה כמו שם של עותק של "{ $original }", שנמצא לידו. אם הייבוא נראה ישן, יש לבחור במקומו את "{ $original }".
+import-scrivener-notice-pinned-manifest-has-siblings-title = { $count ->
+    [one] קובץ קלסר נוסף אחד נמצא ליד הקובץ שבחרתם
+    [two] שני קובצי קלסר נוספים נמצאים ליד הקובץ שבחרתם
+   *[other] { $count } קובצי קלסר נוספים נמצאים ליד הקובץ שבחרתם
+}
+import-scrivener-notice-pinned-manifest-has-siblings-body = רק הקובץ שבחרתם נקרא.
+import-scrivener-notice-legacy-v1-files-beside-title = קבצים מגרסה ישנה יותר של Scrivener מונחים בצד
+import-scrivener-notice-legacy-v1-files-beside-body = הם נשארו מאחור כשהפרויקט עודכן. רק הקבצים של הגרסה הנוכחית נקראים.
+import-scrivener-notice-mixed-payload-trees-title = בפרויקט הזה יש קבצים של שתי גרסאות של Scrivener
+import-scrivener-notice-mixed-payload-trees-body = המסמכים נקראים מהמקום שבו קובץ הקלסר אומר שהם נמצאים.
+import-scrivener-notice-version-disagreement-title = הקבצים של הפרויקט הזה לא מסכימים כולם על הגרסה שלו
+import-scrivener-notice-id-scheme-mismatch-body = קובץ הקלסר מציין גרסה { $version }, אבל נותן למסמכים שלו שמות כמו שגרסה אחרת עושה. הם נקראים מהמקום שאליו הוא מפנה. אם הייבוא נראה שגוי, יש לפתוח את הפרויקט פעם אחת ב־Scrivener ולייבא אותו שוב.
+import-scrivener-notice-version-stamp-mismatch-body = הוא נקרא כפי שקובץ הקלסר שלו מתאר אותו. אם הייבוא נראה שגוי, יש לפתוח את הפרויקט פעם אחת ב־Scrivener ולייבא אותו שוב.
+import-scrivener-notice-unrecognised-writer-title = הפרויקט הזה נשמר בתוכנה ש־Skribisto לא מזהה
+import-scrivener-notice-unrecognised-writer-named = התוכנה מציגה את עצמה בשם "{ $creator }". הפרויקט נקרא כפרויקט Scrivener.
+import-scrivener-notice-unrecognised-writer-body = התוכנה לא מציגה את עצמה בשם. הפרויקט נקרא כפרויקט Scrivener.
+import-scrivener-notice-invalid-item-identifier-title = { $count ->
+    [one] פריט אחד בקלסר נושא מזהה שאינו מזהה תקין
+    [two] שני פריטים בקלסר נושאים מזהה שאינו מזהה תקין
+   *[other] { $count } פריטים בקלסר נושאים מזהה שאינו מזהה תקין
+}
+import-scrivener-notice-invalid-item-identifier-body = המזהים האלה מונחים בצד. הפריטים נשמרים.
+import-scrivener-notice-items-without-identifier-title = { $count ->
+    [one] לפריט אחד בקלסר אין מזהה
+    [two] לשני פריטים בקלסר אין מזהה
+   *[other] ל־{ $count } פריטים בקלסר אין מזהה
+}
+import-scrivener-notice-items-without-identifier-body = אי אפשר למצוא את הקבצים שלהם, ולכן הם מגיעים ריקים.
+import-scrivener-notice-duplicate-item-key-title = שני פריטים בקלסר חולקים מזהה אחד: "{ $item }"
+import-scrivener-notice-duplicate-item-key-body = הראשון שומר את המסמכים. השני שומר את מקומו ומגיע ריק.
+import-scrivener-notice-lock-here-title = הפרויקט הזה פתוח ב־Scrivener במחשב הזה
+import-scrivener-notice-lock-here-body = יש לסגור אותו קודם ב־Scrivener, כדי שכל שינוי יישמר.
+import-scrivener-notice-lock-title = הפרויקט הזה היה פתוח ב־Scrivener במחשב "{ $host }"
+import-scrivener-notice-lock-elsewhere-title = הפרויקט הזה היה פתוח ב־Scrivener במחשב אחר
+import-scrivener-notice-lock-body = אם הוא עדיין פתוח שם, יש לסגור אותו קודם: ייתכן שהקבצים עדיין לא מכילים את השינויים האחרונים. אם Scrivener נסגר מזמן, אפשר לייבא אותו כפי שהוא.
+import-scrivener-notice-archived-while-open-title = הארכיון הזה נוצר בזמן שהפרויקט היה פתוח ב־Scrivener
+import-scrivener-notice-archived-while-open-body = ייתכן ששינויים שנעשו אחרי הרגע הזה חסרים בו.
+import-scrivener-notice-content-missing-notes = הפתקים של "{ $item }" חסרים
+import-scrivener-notice-content-missing-synopsis = התקציר של "{ $item }" חסר
+import-scrivener-notice-content-missing-text = הטקסט של "{ $item }" חסר
+import-scrivener-notice-content-missing-body = הקובץ אינו נמצא בעותק הזה, ולכן התוכן מגיע ריק. ייתכן ששירות סנכרון עדיין מעתיק את הפרויקט.
+import-scrivener-notice-content-missing-salvaged = הקובץ אינו נמצא בעותק הזה, אבל אינדקס החיפוש של Scrivener עדיין הכיל את המילים. הן נשמרות כטקסט פשוט, אולי מגרסה ישנה יותר.
+import-scrivener-notice-content-truncated-notes = הפתקים של "{ $item }" ריקים בדיסק
+import-scrivener-notice-content-truncated-synopsis = התקציר של "{ $item }" ריק בדיסק
+import-scrivener-notice-content-truncated-text = הטקסט של "{ $item }" ריק בדיסק
+import-scrivener-notice-content-truncated-body = לפי Scrivener יש כאן טקסט, אבל הקובץ ריק: ייתכן שסנכרון נעצר באמצע. התוכן מגיע ריק.
+import-scrivener-notice-missing-media-title = הקובץ של "{ $item }" חסר
+import-scrivener-notice-missing-media-body = התמונה או קובץ המחקר שהוא מכיל אינם בעותק הזה.
+import-scrivener-notice-sync-conflict-copies-title = { $count ->
+    [one] נמצא עותק סנכרון אחד של מסמך
+    [two] נמצאו שני עותקי סנכרון של מסמכים
+   *[other] נמצאו { $count } עותקי סנכרון של מסמכים
+}
+import-scrivener-notice-sync-conflict-copies-body = { $missing ->
+    [0] הם מועברים כטקסטים משוחזרים, בתיקייה משלהם, כדי שתוכלו להשוות אותם למסמכים.
+   *[other] הם מועברים כטקסטים משוחזרים, בתיקייה משלהם. חלקם עותקים של מסמכים שכבר אינם בפרויקט.
+}
+import-scrivener-notice-recovered-unreferenced-text-title = { $count ->
+    [one] נמצא מסמך אחד שאף פריט בקלסר לא מונה
+    [two] נמצאו שני מסמכים שאף פריט בקלסר לא מונה
+   *[other] נמצאו { $count } מסמכים שאף פריט בקלסר לא מונה
+}
+import-scrivener-notice-recovered-unreferenced-text-body = הם מועברים כטקסטים משוחזרים, בתיקייה משלהם.
+import-scrivener-notice-sync-debris-ignored-title = { $count ->
+    [one] עותק נוסף אחד ששירות סנכרון השאיר מונח בצד
+    [two] שני עותקים נוספים ששירות סנכרון השאיר מונחים בצד
+   *[other] { $count } עותקים נוספים ששירות סנכרון השאיר מונחים בצד
+}
+import-scrivener-notice-sync-debris-ignored-body = גם Scrivener לא קורא אותם. רק הקבצים של הפרויקט עצמו נקראים.
+import-scrivener-notice-unrecognised-files-title = { $count ->
+    [one] קובץ אחד שאינו חלק מפרויקט Scrivener מונח בצד
+    [two] שני קבצים שאינם חלק מפרויקט Scrivener מונחים בצד
+   *[other] { $count } קבצים שאינם חלק מפרויקט Scrivener מונחים בצד
+}
+import-scrivener-notice-examples = למשל { $examples }.
+import-scrivener-notice-symlink-not-followed-title = { $count ->
+    [one] ‏Skribisto לא עוקבת אחרי קישור אחד בתוך הפרויקט
+    [two] ‏Skribisto לא עוקבת אחרי שני קישורים בתוך הפרויקט
+   *[other] ‏Skribisto לא עוקבת אחרי { $count } קישורים בתוך הפרויקט
+}
+import-scrivener-notice-unreadable-files-skipped-title = { $count ->
+    [one] לא ניתן היה לקרוא קובץ אחד שהייבוא לא צריך
+    [two] לא ניתן היה לקרוא שני קבצים שהייבוא לא צריך
+   *[other] לא ניתן היה לקרוא { $count } קבצים שהייבוא לא צריך
+}
+import-scrivener-notice-cloud-placeholders-skipped-title = { $count ->
+    [one] הייבוא מדלג על קובץ אחד שעדיין בענן
+    [two] הייבוא מדלג על שני קבצים שעדיין בענן
+   *[other] הייבוא מדלג על { $count } קבצים שעדיין בענן
+}
+import-scrivener-notice-cloud-placeholders-skipped-body = הייבוא לא צריך אותם.
+import-scrivener-notice-no-text-found-title = { $count ->
+    [one] מסמך אחד, ואין בו טקסט
+    [two] שני מסמכים, ואין באף אחד מהם טקסט
+   *[other] { $count } מסמכים, ואין באף אחד מהם טקסט
+}
+import-scrivener-notice-no-text-found-body = הפרויקט הזה נראה ריק. הוא מיובא כפי שהוא.
+import-scrivener-notice-metadata-unreadable-title = לא ניתן היה לקרוא את "{ $member }"
+import-scrivener-notice-metadata-unreadable-body = מה ש־Scrivener שמר בו לא מועבר.
+import-scrivener-notice-dangling-keyword-title = { $count ->
+    [one] הפניה אחת מפנה למילת מפתח שהפרויקט לא מגדיר
+    [two] שתי הפניות מפנות למילות מפתח שהפרויקט לא מגדיר
+   *[other] { $count } הפניות מפנות למילות מפתח שהפרויקט לא מגדיר
+}
+import-scrivener-notice-dangling-label-title = { $count ->
+    [one] הפניה אחת מפנה לתווית שהפרויקט לא מגדיר
+    [two] שתי הפניות מפנות לתוויות שהפרויקט לא מגדיר
+   *[other] { $count } הפניות מפנות לתוויות שהפרויקט לא מגדיר
+}
+import-scrivener-notice-dangling-status-title = { $count ->
+    [one] הפניה אחת מפנה למצב שהפרויקט לא מגדיר
+    [two] שתי הפניות מפנות למצבים שהפרויקט לא מגדיר
+   *[other] { $count } הפניות מפנות למצבים שהפרויקט לא מגדיר
+}
+import-scrivener-notice-dangling-section-type-title = { $count ->
+    [one] הפניה אחת מפנה לסוג מקטע שהפרויקט לא מגדיר
+    [two] שתי הפניות מפנות לסוגי מקטעים שהפרויקט לא מגדיר
+   *[other] { $count } הפניות מפנות לסוגי מקטעים שהפרויקט לא מגדיר
+}
+import-scrivener-notice-dangling-custom-field-title = { $count ->
+    [one] הפניה אחת מפנה לשדה מטא־נתונים מותאם אישית שהפרויקט לא מגדיר
+    [two] שתי הפניות מפנות לשדות מטא־נתונים מותאמים אישית שהפרויקט לא מגדיר
+   *[other] { $count } הפניות מפנות לשדות מטא־נתונים מותאמים אישית שהפרויקט לא מגדיר
+}
+import-scrivener-notice-dangling-item-title = { $count ->
+    [one] הפניה אחת מפנה למסמך שהפרויקט לא מגדיר
+    [two] שתי הפניות מפנות למסמכים שהפרויקט לא מגדיר
+   *[other] { $count } הפניות מפנות למסמכים שהפרויקט לא מגדיר
+}
+import-scrivener-notice-dangling-references-body = הן מושמטות.
+import-scrivener-notice-snapshots-not-imported-line = { $count ->
+    [one] תמונת מצב אחת נשארת בפרויקט ה־Scrivener שלכם: Skribisto לא מעבירה תמונות מצב.
+    [two] שתי תמונות מצב נשארות בפרויקט ה־Scrivener שלכם: Skribisto לא מעבירה תמונות מצב.
+   *[other] { $count } תמונות מצב נשארות בפרויקט ה־Scrivener שלכם: Skribisto לא מעבירה תמונות מצב.
+}
+import-scrivener-notice-writing-history-not-imported-line = { $days ->
+    [one] הרישום של Scrivener למילים שנכתבו בכל יום, של יום אחד, לא מועבר. ‏Skribisto מתחילה ספירה משלה מהשמירה הראשונה.
+    [two] הרישום של Scrivener למילים שנכתבו בכל יום, של יומיים, לא מועבר. ‏Skribisto מתחילה ספירה משלה מהשמירה הראשונה.
+   *[other] הרישום של Scrivener למילים שנכתבו בכל יום, של { $days } ימים, לא מועבר. ‏Skribisto מתחילה ספירה משלה מהשמירה הראשונה.
+}
+import-scrivener-notice-title-placeholder-rejected-hint = הכותרת בהגדרות הפרויקט היא מציין מיקום של תבנית, ולכן מוצע במקומה שם הפרויקט.
+import-scrivener-notice-author-placeholder-rejected-hint = שם המחבר בהגדרות הפרויקט הוא מציין מיקום של תבנית, ולכן לא מוצע שם.
+import-scrivener-notice-title-from-project-hint-compile-settings = הכותרת הזו היא זו שמופיעה בהגדרות ההידור של הפרויקט. עד שמגדירים שם כותרת, Scrivener שומר את השם שהיה לפרויקט כשנוצר.
+import-scrivener-notice-title-from-project-hint-template = הכותרת הזו היא הכותרת של התבנית עצמה.
+import-scrivener-notice-title-from-project-hint-folder-name = הכותרת הזו היא שם הפרויקט.
+import-scrivener-notice-title-from-project-hint-project-properties = הכותרת הזו היא זו שמופיעה במאפייני הפרויקט.
+import-scrivener-notice-author-from-project-hint = השם הזה הוא זה שמופיע בהגדרות הפרויקט. שם מחבר של תבנית עלול להישאר שם, והוא יודפס בעמוד השער.
+import-scrivener-notice-language-not-stated-hint = הפרויקט לא מציין את השפה שלו, ולכן מוצעת השפה שבה Skribisto עצמה מוצגת. השפה קובעת איך נספרות מילים ואיך נכתבות מירכאות.
+import-scrivener-notice-language-from-script-hint = הוצעה לפי מערכת הכתב שבה כתוב כתב היד ({ $tag }).
+
+## Before you import: what the import does with the binder, or leaves behind
+import-scrivener-structure-script-mode-draft-line = { $script ->
+    [one] { $documents ->
+        [one] המסמך היחיד של כתב היד כתוב במצב תסריט. ‏Skribisto שומרת את המילים שלו, לא את פריסת התסריט שלו.
+       *[other] מסמך אחד מתוך { $documents } מסמכי כתב היד כתוב במצב תסריט. ‏Skribisto שומרת את המילים שלו, לא את פריסת התסריט שלו.
+    }
+   *[other] { $script } מתוך { $documents } מסמכי כתב היד כתובים במצב תסריט. ‏Skribisto שומרת את המילים שלהם, לא את פריסת התסריט שלהם.
+}
+import-scrivener-structure-one-document-manuscript-line = { $count ->
+    [one] מסמך אחד של כתב היד מכיל את הפרקים שלו ככותרות.
+    [two] שני מסמכים של כתב היד מכילים את הפרקים שלהם ככותרות.
+   *[other] { $count } מסמכים של כתב היד מכילים את הפרקים שלהם ככותרות.
+}
+import-scrivener-structure-title-repeats-number-line = { $count ->
+    [one] כותרת אחת של פרק או חלק כוללת גם את המספר שלו, ולכן ייצוא עלול להדפיס את המספר פעמיים.
+    [two] שתי כותרות של פרקים או חלקים כוללות גם את המספר שלהם, ולכן ייצוא עלול להדפיס את המספר פעמיים.
+   *[other] { $count } כותרות של פרקים או חלקים כוללות גם את המספר שלהם, ולכן ייצוא עלול להדפיס את המספר פעמיים.
+}
+import-scrivener-structure-claim-overruled-line = { $count ->
+    [one] פריט אחד מקבל רמה מתחת לרמה שהוא מבקש, כי פריט שמעליו כבר תופס את הרמה הזו.
+    [two] שני פריטים מקבלים רמה מתחת לרמה שהם מבקשים, כי פריט שמעליהם כבר תופס את הרמה הזו.
+   *[other] { $count } פריטים מקבלים רמה מתחת לרמה שהם מבקשים, כי פריט שמעליהם כבר תופס את הרמה הזו.
+}
+import-scrivener-structure-adopted-by-chapter-line = { $count ->
+    [one] מסמך אחד שבא אחרי פרק הופך לסוף של אותו פרק.
+    [two] שני מסמכים שבאים אחרי פרק הופכים לסוף של אותו פרק.
+   *[other] { $count } מסמכים שבאים אחרי פרק הופכים לסוף של אותו פרק.
+}
+import-scrivener-structure-looks-like-manuscript-line = { $count ->
+    [one] תיקייה אחת ברמה העליונה שנשמרת בפתקים נראית ככתב יד. אפשר לשלוח אותה לכתב היד כספר נוסף.
+    [two] שתי תיקיות ברמה העליונה שנשמרות בפתקים נראות ככתב יד. אפשר לשלוח אותן לכתב היד כספרים נוספים.
+   *[other] { $count } תיקיות ברמה העליונה שנשמרות בפתקים נראות ככתב יד. אפשר לשלוח אותן לכתב היד כספרים נוספים.
+}
+import-scrivener-structure-generic-sheet-title-line = { $count ->
+    [one] לרשומה אחת בתיק הסיפור יש כותרת של תבנית, כמו "גיבור", ו־Skribisto תחפש אותה בטקסט כאזכור.
+    [two] לשתי רשומות בתיק הסיפור יש כותרת של תבנית, כמו "גיבור", ו־Skribisto תחפש אותה בטקסט כאזכור.
+   *[other] ל־{ $count } רשומות בתיק הסיפור יש כותרת של תבנית, כמו "גיבור", ו־Skribisto תחפש אותה בטקסט כאזכור.
+}
+import-scrivener-structure-placeholder-title-line = { $count ->
+    [one] כותרת אחת רק ציינה את הרמה שלה, והיא נשארת ריקה: הקלסר והייצוא ממספרים את הפריט.
+    [two] שתי כותרות רק ציינו את הרמה שלהן, והן נשארות ריקות: הקלסר והייצוא ממספרים את הפריטים.
+   *[other] { $count } כותרות רק ציינו את הרמה שלהן, והן נשארות ריקות: הקלסר והייצוא ממספרים את הפריטים.
+}
+import-scrivener-structure-untitled-item-line = { $count ->
+    [one] לפריט אחד לא הייתה כותרת ב־Scrivener, והוא נשאר ללא כותרת.
+    [two] לשני פריטים לא הייתה כותרת ב־Scrivener, והם נשארים ללא כותרת.
+   *[other] ל־{ $count } פריטים לא הייתה כותרת ב־Scrivener, והם נשארים ללא כותרת.
+}
+import-scrivener-structure-title-cleaned-line = { $count ->
+    [one] כותרת אחת הכילה מעברי שורה או תווי טאב, והם מוסרים.
+    [two] שתי כותרות הכילו מעברי שורה או תווי טאב, והם מוסרים.
+   *[other] { $count } כותרות הכילו מעברי שורה או תווי טאב, והם מוסרים.
+}
+import-scrivener-structure-own-text-moved-line = { $count ->
+    [one] לתיקייה אחת יש טקסט משלה, והוא עובר למסמך ראשון בתוכה.
+    [two] לשתי תיקיות יש טקסט משלהן, והוא עובר למסמך ראשון בתוכן.
+   *[other] ל־{ $count } תיקיות יש טקסט משלהן, והוא עובר למסמך ראשון בתוכן.
+}
+import-scrivener-structure-text-with-children-line = { $count ->
+    [one] מסמך אחד שיש בתוכו מסמכים הופך לתיקייה.
+    [two] שני מסמכים שיש בתוכם מסמכים הופכים לתיקיות.
+   *[other] { $count } מסמכים שיש בתוכם מסמכים הופכים לתיקיות.
+}
+import-scrivener-structure-empty-folder-plain-line = { $count ->
+    [one] תיקייה ריקה אחת נשארת תיקייה רגילה, כדי שאף ייצוא לא ידפיס כותרת ש־Scrivener אף פעם לא הדפיס.
+    [two] שתי תיקיות ריקות נשארות תיקיות רגילות, כדי שאף ייצוא לא ידפיס כותרת ש־Scrivener אף פעם לא הדפיס.
+   *[other] { $count } תיקיות ריקות נשארות תיקיות רגילות, כדי שאף ייצוא לא ידפיס כותרת ש־Scrivener אף פעם לא הדפיס.
+}
+import-scrivener-structure-book-inside-book-line = { $count ->
+    [one] ספר אחד שנמצא בתוך ספר הופך לחלק.
+    [two] שני ספרים שנמצאים בתוך ספר הופכים לחלקים.
+   *[other] { $count } ספרים שנמצאים בתוך ספר הופכים לחלקים.
+}
+import-scrivener-structure-prologue-not-numbered-line = { $count ->
+    [one] פרולוג או אפילוג אחד מושמט ממספור הפרקים.
+    [two] שני פרולוגים או אפילוגים מושמטים ממספור הפרקים.
+   *[other] { $count } פרולוגים או אפילוגים מושמטים ממספור הפרקים.
+}
+import-scrivener-structure-matter-inside-book-line = { $count ->
+    [one] פריט אחד של עמודי פתיחה או סיום, שנמצא מחוץ לכתב היד, נכנס לתוך הספר כטקסט נלווה, ומושמט מהייצוא עד שתכללו אותו.
+    [two] שני פריטים של עמודי פתיחה או סיום, שנמצאים מחוץ לכתב היד, נכנסים לתוך הספר כטקסט נלווה, ומושמטים מהייצוא עד שתכללו אותם.
+   *[other] { $count } פריטים של עמודי פתיחה או סיום, שנמצאים מחוץ לכתב היד, נכנסים לתוך הספר כטקסט נלווה, ומושמטים מהייצוא עד שתכללו אותם.
+}
+import-scrivener-structure-paratext-not-counted-line = { $documents ->
+    [one] מסמך אחד של כתב היד הופך לטקסט נלווה (עמודי פתיחה או סיום): { $words ->
+        [one] המילה האחת שלו כבר לא נספרת
+        [two] שתי המילים שלו כבר לא נספרות
+       *[other] { $words } המילים שלו כבר לא נספרות
+    } ככתב יד.
+    [two] שני מסמכים של כתב היד הופכים לטקסט נלווה (עמודי פתיחה או סיום): { $words ->
+        [one] המילה האחת שלהם כבר לא נספרת
+        [two] שתי המילים שלהם כבר לא נספרות
+       *[other] { $words } המילים שלהם כבר לא נספרות
+    } ככתב יד.
+   *[other] { $documents } מסמכים של כתב היד הופכים לטקסט נלווה (עמודי פתיחה או סיום): { $words ->
+        [one] המילה האחת שלהם כבר לא נספרת
+        [two] שתי המילים שלהם כבר לא נספרות
+       *[other] { $words } המילים שלהם כבר לא נספרות
+    } ככתב יד.
+}
+import-scrivener-structure-document-notes-line = { $count ->
+    [one] הפתקים של מסמך אחד הופכים לפתק לצדו.
+    [two] הפתקים של שני מסמכים הופכים לפתקים לצדם.
+   *[other] הפתקים של { $count } מסמכים הופכים לפתקים לצדם.
+}
+import-scrivener-structure-draft-content-as-note-line = הטקסט של תיקיית כתב היד עצמה הופך לפתק בראש כתב היד.
+import-scrivener-structure-story-bible-folder-line = { $count ->
+    [one] תיקיית דמויות או מקומות אחת הופכת לתג של תיק הסיפור.
+    [two] שתי תיקיות דמויות או מקומות הופכות לתגים של תיק הסיפור.
+   *[other] { $count } תיקיות דמויות או מקומות הופכות לתגים של תיק הסיפור.
+}
+import-scrivener-structure-templates-created-line = { $count ->
+    [one] תבנית מסמך אחת הופכת לתבנית פתק.
+    [two] שתי תבניות מסמכים הופכות לתבניות פתקים.
+   *[other] { $count } תבניות מסמכים הופכות לתבניות פתקים.
+}
+import-scrivener-structure-template-nesting-flattened-line = { $count ->
+    [one] תיקיית תבניות אחת שנמצאת בתוך תיקייה אחרת משוטחת: כל טקסט שבה הופך לתבנית.
+    [two] שתי תיקיות תבניות שנמצאות בתוך תיקיות אחרות משוטחות: כל טקסט שבהן הופך לתבנית.
+   *[other] { $count } תיקיות תבניות שנמצאות בתוך תיקיות אחרות משוטחות: כל טקסט שבהן הופך לתבנית.
+}
+import-scrivener-structure-template-kept-as-note-line = { $count ->
+    [one] תבנית אחת מכילה משהו שתבנית פתק לא יכולה להכיל, ולכן היא נשמרת כפתק.
+    [two] שתי תבניות מכילות משהו שתבנית פתק לא יכולה להכיל, ולכן הן נשמרות כפתקים.
+   *[other] { $count } תבניות מכילות משהו שתבנית פתק לא יכולה להכיל, ולכן הן נשמרות כפתקים.
+}
+import-scrivener-structure-recovered-texts-line = { $count ->
+    [one] טקסט אחד שאף פריט בקלסר לא מנה מועבר לתיקייה משלו.
+    [two] שני טקסטים שאף פריט בקלסר לא מנה מועברים לתיקייה משלהם.
+   *[other] { $count } טקסטים שאף פריט בקלסר לא מנה מועברים לתיקייה משלהם.
+}
+import-scrivener-structure-project-notes-line = { $count ->
+    [one] פתק פרויקט אחד מועבר לתיקייה משלו.
+    [two] שני פתקי פרויקט מועברים לתיקייה משלהם.
+   *[other] { $count } פתקי פרויקט מועברים לתיקייה משלהם.
+}
+import-scrivener-structure-trash-brought-across-line = { $items ->
+    [one] האשפה מועברת: פריט אחד, שאפשר לשחזר מהאשפה.
+    [two] האשפה מועברת: שני פריטים, { $writing } מהם עם כתיבה, שאפשר לשחזר מהאשפה.
+   *[other] האשפה מועברת: { $items } פריטים, { $writing } מהם עם כתיבה, שאפשר לשחזר מהאשפה.
+}
+import-scrivener-structure-not-compiled-line = { $count ->
+    [one] פריט אחד ש־Scrivener השמיט מההידור שלו מושמט גם מהייצוא.
+    [two] שני פריטים ש־Scrivener השמיט מההידור שלו מושמטים גם מהייצוא.
+   *[other] { $count } פריטים ש־Scrivener השמיט מההידור שלו מושמטים גם מהייצוא.
+}
+import-scrivener-structure-media-in-draft-line = { $count ->
+    [one] פריט אחד בכתב היד שהוא תמונה או קובץ הופך לפתק, כי ספר לא יכול להכיל אותו.
+    [two] שני פריטים בכתב היד שהם תמונות או קבצים הופכים לפתקים, כי ספר לא יכול להכיל אותם.
+   *[other] { $count } פריטים בכתב היד שהם תמונות או קבצים הופכים לפתקים, כי ספר לא יכול להכיל אותם.
+}
+import-scrivener-structure-left-out-line = { $count ->
+    [one] תיקייה אחת ברמה העליונה מושמטת, עם { $items ->
+        [one] פריט אחד
+        [two] שני פריטים
+       *[other] { $items } פריטים
+    }.
+    [two] שתי תיקיות ברמה העליונה מושמטות, עם { $items ->
+        [one] פריט אחד
+        [two] שני פריטים
+       *[other] { $items } פריטים
+    }.
+   *[other] { $count } תיקיות ברמה העליונה מושמטות, עם { $items ->
+        [one] פריט אחד
+        [two] שני פריטים
+       *[other] { $items } פריטים
+    }.
+}
+import-scrivener-structure-trash-left-out-line = { $items ->
+    [one] האשפה נשארת מאחור: פריט אחד.
+    [two] האשפה נשארת מאחור: שני פריטים, { $writing } מהם עם כתיבה.
+   *[other] האשפה נשארת מאחור: { $items } פריטים, { $writing } מהם עם כתיבה.
+}
+import-scrivener-structure-card-image-left-behind-line = { $count ->
+    [one] תמונת כרטיס אחת של פריט בכתב היד נשארת מאחור: היא הייתה מודפסת בספר.
+    [two] שתי תמונות כרטיס של פריטים בכתב היד נשארות מאחור: הן היו מודפסות בספר.
+   *[other] { $count } תמונות כרטיס של פריטים בכתב היד נשארות מאחור: הן היו מודפסות בספר.
+}
+import-scrivener-structure-default-template-not-linked-line = { $count ->
+    [one] תבנית המסמך שתיקייה אחת מגדירה כברירת מחדל לא יכולה לעבור איתה.
+    [two] תבניות המסמך ששתי תיקיות מגדירות כברירת מחדל לא יכולות לעבור איתן.
+   *[other] תבניות המסמך ש־{ $count } תיקיות מגדירות כברירת מחדל לא יכולות לעבור איתן.
+}
+import-scrivener-structure-page-break-not-kept-line = { $count ->
+    [one] להגדרה אחת של "Page break before" (מעבר עמוד לפני) אין מקום ב־Skribisto, והיא לא נשמרת.
+    [two] לשתי הגדרות של "Page break before" (מעבר עמוד לפני) אין מקום ב־Skribisto, והן לא נשמרות.
+   *[other] ל־{ $count } הגדרות של "Page break before" (מעבר עמוד לפני) אין מקום ב־Skribisto, והן לא נשמרות.
+}
+import-scrivener-structure-compile-as-is-not-kept-line = { $count ->
+    [one] להגדרה אחת של "Compile as-is" (הידור כמו שהוא) אין מקבילה ב־Skribisto, והיא לא נשמרת.
+    [two] לשתי הגדרות של "Compile as-is" (הידור כמו שהוא) אין מקבילה ב־Skribisto, והן לא נשמרות.
+   *[other] ל־{ $count } הגדרות של "Compile as-is" (הידור כמו שהוא) אין מקבילה ב־Skribisto, והן לא נשמרות.
+}
+
+## What the import did with the labels, the status list and the dates
+import-scrivener-metadata-status-categories-guessed-line = { $count ->
+    [one] מצב אחד ש־Skribisto לא מזהה מקבל סוג לפי המקום שלו ברשימה. כדאי לבדוק אותו בהגדרות ▸ פרויקט ▸ מצבים.
+    [two] שני מצבים ש־Skribisto לא מזהה מקבלים סוג לפי המקום שלהם ברשימה. כדאי לבדוק אותם בהגדרות ▸ פרויקט ▸ מצבים.
+   *[other] { $count } מצבים ש־Skribisto לא מזהה מקבלים סוג לפי המקום שלהם ברשימה. כדאי לבדוק אותם בהגדרות ▸ פרויקט ▸ מצבים.
+}
+import-scrivener-metadata-dates-unreadable-line = { $count ->
+    [one] לא ניתן היה לקרוא את התאריכים של פריט אחד: הוא נושא את תאריך הייבוא.
+    [two] לא ניתן היה לקרוא את התאריכים של שני פריטים: הם נושאים את תאריך הייבוא.
+   *[other] לא ניתן היה לקרוא את התאריכים של { $count } פריטים: הם נושאים את תאריך הייבוא.
+}
+import-scrivener-metadata-labels-became-tags-line = { $tags ->
+    [one] התוויות הופכות לתג אחד, שמסמן { $rows ->
+        [one] פריט אחד
+        [two] שני פריטים
+       *[other] { $rows } פריטים
+    }.
+    [two] התוויות הופכות לשני תגים, שמסמנים { $rows ->
+        [one] פריט אחד
+        [two] שני פריטים
+       *[other] { $rows } פריטים
+    }.
+   *[other] התוויות הופכות ל־{ $tags } תגים, שמסמנים { $rows ->
+        [one] פריט אחד
+        [two] שני פריטים
+       *[other] { $rows } פריטים
+    }.
+}
+import-scrivener-metadata-statuses-became-ladder-line = { $rungs ->
+    [one] רשימת המצבים הופכת למצב היחיד של הפרויקט, שמסמן { $rows ->
+        [one] פריט אחד
+        [two] שני פריטים
+       *[other] { $rows } פריטים
+    }.
+    [two] רשימת המצבים הופכת לשני המצבים של הפרויקט, שמסמנים { $rows ->
+        [one] פריט אחד
+        [two] שני פריטים
+       *[other] { $rows } פריטים
+    }.
+   *[other] רשימת המצבים הופכת ל־{ $rungs } המצבים של הפרויקט, שמסמנים { $rows ->
+        [one] פריט אחד
+        [two] שני פריטים
+       *[other] { $rows } פריטים
+    }.
+}
+import-scrivener-metadata-ladder-seeded-line = { $count ->
+    [one] לפרויקט לא הייתה רשימת מצבים, ולכן הוא מתחיל עם מצב ברירת המחדל של Skribisto.
+    [two] לפרויקט לא הייתה רשימת מצבים, ולכן הוא מתחיל עם שני מצבי ברירת המחדל של Skribisto.
+   *[other] לפרויקט לא הייתה רשימת מצבים, ולכן הוא מתחיל עם { $count } מצבי ברירת המחדל של Skribisto.
+}
+import-scrivener-metadata-label-renamed-line = שדה התוויות נקרא ב־Scrivener "{ $title }". השם הזה מופיע בפרטים של כל תג.
+import-scrivener-metadata-status-renamed-line = שדה המצב נקרא ב־Scrivener "{ $title }". השם הזה מופיע בפרטים של כל מצב.
+import-scrivener-metadata-none-label-collapsed-line = { $count ->
+    [one] התווית "{ $name }", שנשמרה לצד התווית הריקה של Scrivener עצמו ובאותו שם, נקראת כ"ללא תווית" בפריט אחד.
+    [two] התווית "{ $name }", שנשמרה לצד התווית הריקה של Scrivener עצמו ובאותו שם, נקראת כ"ללא תווית" בשני פריטים.
+   *[other] התווית "{ $name }", שנשמרה לצד התווית הריקה של Scrivener עצמו ובאותו שם, נקראת כ"ללא תווית" ב־{ $count } פריטים.
+}
+import-scrivener-metadata-none-status-collapsed-line = { $count ->
+    [one] המצב "{ $name }", שנשמר לצד המצב הריק של Scrivener עצמו ובאותו שם, נקרא כ"ללא מצב" בפריט אחד.
+    [two] המצב "{ $name }", שנשמר לצד המצב הריק של Scrivener עצמו ובאותו שם, נקרא כ"ללא מצב" בשני פריטים.
+   *[other] המצב "{ $name }", שנשמר לצד המצב הריק של Scrivener עצמו ובאותו שם, נקרא כ"ללא מצב" ב־{ $count } פריטים.
+}
+import-scrivener-metadata-unnamed-label-line = תווית בלי שם מקבלת שם לפי המספר שלה, { $id }.
+import-scrivener-metadata-unnamed-status-line = מצב בלי שם מקבל שם לפי המספר שלו, { $id }.
+import-scrivener-metadata-tag-name-disambiguated-line = { $count ->
+    [one] תג אחד מקבל שם חדש, כי תג אחר כבר נושא את השם שלו.
+    [two] שני תגים מקבלים שם חדש, כי תגים אחרים כבר נושאים את השמות שלהם.
+   *[other] { $count } תגים מקבלים שם חדש, כי תגים אחרים כבר נושאים את השמות שלהם.
+}
+import-scrivener-metadata-rung-names-disambiguated-line = { $count ->
+    [one] למצב אחד יש אותו שם כמו למצב אחר, ולכן הוא מקבל מספר אחרי השם שלו. כדאי לבדוק אותו בהגדרות ▸ פרויקט ▸ מצבים.
+    [two] לשני מצבים יש אותו שם כמו למצב אחר, ולכן כל אחד מהם מקבל מספר אחרי השם שלו. כדאי לבדוק אותם בהגדרות ▸ פרויקט ▸ מצבים.
+   *[other] ל־{ $count } מצבים יש אותו שם כמו למצב אחר, ולכן כל אחד מהם מקבל מספר אחרי השם שלו. כדאי לבדוק אותם בהגדרות ▸ פרויקט ▸ מצבים.
+}
+import-scrivener-metadata-unused-labels-skipped-line = { $count ->
+    [one] תווית אחת שאף מסמך לא נושא לא מיובאת.
+    [two] שתי תוויות שאף מסמך לא נושא לא מיובאות.
+   *[other] { $count } תוויות שאף מסמך לא נושא לא מיובאות.
+}
+import-scrivener-metadata-labels-without-row-line = { $count ->
+    [one] התווית של פריט אחד שאין לו מקום בפרויקט החדש לא מועברת.
+    [two] התוויות של שני פריטים שאין להם מקום בפרויקט החדש לא מועברות.
+   *[other] התוויות של { $count } פריטים שאין להם מקום בפרויקט החדש לא מועברות.
+}
+import-scrivener-metadata-statuses-without-row-line = { $count ->
+    [one] המצב של פריט אחד שאין לו מקום בפרויקט החדש לא מועבר.
+    [two] המצבים של שני פריטים שאין להם מקום בפרויקט החדש לא מועברים.
+   *[other] המצבים של { $count } פריטים שאין להם מקום בפרויקט החדש לא מועברים.
+}
+
+import-scrivener-metadata-unnamed-keyword-line = מילת מפתח בלי שם מקבלת שם לפי המספר שלה, { $id }.
+import-scrivener-metadata-keywords-without-row-line = { $count ->
+    [one] מילות המפתח של פריט אחד שאין לו מקום בפרויקט החדש לא מועברות.
+    [two] מילות המפתח של שני פריטים שאין להם מקום בפרויקט החדש לא מועברות.
+   *[other] מילות המפתח של { $count } פריטים שאין להם מקום בפרויקט החדש לא מועברות.
+}
+import-scrivener-metadata-custom-values-without-row-line = { $count ->
+    [one] המטא־נתונים המותאמים אישית של פריט אחד שאין לו מקום בפרויקט החדש לא מועברים.
+    [two] המטא־נתונים המותאמים אישית של שני פריטים שאין להם מקום בפרויקט החדש לא מועברים.
+   *[other] המטא־נתונים המותאמים אישית של { $count } פריטים שאין להם מקום בפרויקט החדש לא מועברים.
+}
+import-scrivener-metadata-bookmarks-without-row-line = { $count ->
+    [one] הסימניות של פריט אחד שאין לו מקום בפרויקט החדש לא מועברות.
+    [two] הסימניות של שני פריטים שאין להם מקום בפרויקט החדש לא מועברות.
+   *[other] הסימניות של { $count } פריטים שאין להם מקום בפרויקט החדש לא מועברות.
+}
+import-scrivener-metadata-targets-without-row-line = { $count ->
+    [one] המטרה של פריט אחד שאין לו מקום בפרויקט החדש לא מועברת.
+    [two] המטרות של שני פריטים שאין להם מקום בפרויקט החדש לא מועברות.
+   *[other] המטרות של { $count } פריטים שאין להם מקום בפרויקט החדש לא מועברות.
+}
+
+## What the import does with the keywords, custom metadata, collections, bookmarks, targets,
+## the deadline, the auto-complete list and the icons. Each line is said twice: on the Review
+## page before the import, then in its report, so it reads the same at both times. `$note`
+## and `$folder` are the titles the import gives a note and its "From Scrivener" folder;
+## `$day` is a day as YYYY-MM-DD.
+import-scrivener-metadata-pov-hint-line = { $count ->
+    [one] התווית או ערך השדה { $values } תואמים לרשומה { $matches } בתיק הסיפור. אם הם מציינים את נקודת המבט, יש להגדיר אותה בחלונית המאפיינים: הייבוא לא מקשר דבר.
+   *[other] התוויות או ערכי השדות { $values } תואמים לרשומות { $matches } בתיק הסיפור. אם הם מציינים נקודות מבט, יש להגדיר אותן בחלונית המאפיינים: הייבוא לא מקשר דבר.
+}
+import-scrivener-metadata-checkbox-default-unknown-line = לשדה תיבת הסימון "{ $field }" יש ערך ברירת מחדל ש־Skribisto לא יכולה לקרוא, ולכן היא לא יכולה לדעת אילו מסמכים מסומנים כברירת מחדל. רק המסמכים שסומנו אחד אחד נושאים את התג שלו.
+import-scrivener-metadata-goals-in-other-unit-line = { $count ->
+    [one] יעד אחד מוגדר ביחידת הספירה האחרת. הוא נשמר, ומוצג אחרי שמחליפים את יחידת הספירה בהגדרות ▸ פרויקט ▸ מבנה.
+    [two] שני יעדים מוגדרים ביחידת הספירה האחרת. הם נשמרים, ומוצגים אחרי שמחליפים את יחידת הספירה בהגדרות ▸ פרויקט ▸ מבנה.
+   *[other] { $count } יעדים מוגדרים ביחידת הספירה האחרת. הם נשמרים, ומוצגים אחרי שמחליפים את יחידת הספירה בהגדרות ▸ פרויקט ▸ מבנה.
+}
+import-scrivener-metadata-counting-differs-line = ‏Scrivener ספר את מטרת הטיוטה על פני מסמכים אחרים מאלה ש־Skribisto סופרת. היעד של הספר סופר את הסצנות שנכללות בייצוא.
+import-scrivener-metadata-writing-days-not-read-line = לא ניתן לקרוא את ימי הכתיבה "{ $raw }", ולכן תוכנית הקצב של הספר סופרת כל יום כיום כתיבה. אפשר לשנות אותם שם.
+import-scrivener-metadata-script-mode-rows-line = { $count ->
+    [one] פריט אחד היה במצב תסריט ב־Scrivener. ‏Skribisto שומרת את המילים שלו כטקסט רגיל, בלי פריסת התסריט.
+    [two] שני פריטים היו במצב תסריט ב־Scrivener. ‏Skribisto שומרת את המילים שלהם כטקסט רגיל, בלי פריסת התסריט.
+   *[other] { $count } פריטים היו במצב תסריט ב־Scrivener. ‏Skribisto שומרת את המילים שלהם כטקסט רגיל, בלי פריסת התסריט.
+}
+import-scrivener-metadata-keywords-became-tags-line = { $tags ->
+    [one] מילת מפתח אחת הופכת לתג, שמסמן { $rows ->
+        [one] פריט אחד
+        [two] שני פריטים
+       *[other] { $rows } פריטים
+    }.
+    [two] שתי מילות מפתח הופכות לתגים, שמסמנים { $rows ->
+        [one] פריט אחד
+        [two] שני פריטים
+       *[other] { $rows } פריטים
+    }.
+   *[other] { $tags } מילות מפתח הופכות לתגים, שמסמנים { $rows ->
+        [one] פריט אחד
+        [two] שני פריטים
+       *[other] { $rows } פריטים
+    }.
+}
+import-scrivener-metadata-keyword-hierarchy-flattened-line = { $count ->
+    [one] מילת מפתח אחת הייתה בתוך מילת מפתח אחרת ב־Scrivener. תגים הם שטוחים: הפרטים של התג שלה מציינים היכן היא הייתה.
+    [two] שתי מילות מפתח היו בתוך מילות מפתח אחרות ב־Scrivener. תגים הם שטוחים: הפרטים של כל תג מציינים היכן הייתה מילת המפתח שלו.
+   *[other] { $count } מילות מפתח היו בתוך מילות מפתח אחרות ב־Scrivener. תגים הם שטוחים: הפרטים של כל תג מציינים היכן הייתה מילת המפתח שלו.
+}
+import-scrivener-metadata-fields-became-tags-line = { $fields ->
+    [one] שדה רשימה או תיבת סימון אחד הופך { $tags ->
+        [one] לתג אחד
+        [two] לשני תגים
+       *[other] ל־{ $tags } תגים
+    }, על { $rows ->
+        [one] פריט אחד
+        [two] שני פריטים
+       *[other] { $rows } פריטים
+    }.
+    [two] שני שדות רשימה ותיבות סימון הופכים { $tags ->
+        [one] לתג אחד
+        [two] לשני תגים
+       *[other] ל־{ $tags } תגים
+    }, על { $rows ->
+        [one] פריט אחד
+        [two] שני פריטים
+       *[other] { $rows } פריטים
+    }.
+   *[other] { $fields } שדות רשימה ותיבות סימון הופכים { $tags ->
+        [one] לתג אחד
+        [two] לשני תגים
+       *[other] ל־{ $tags } תגים
+    }, על { $rows ->
+        [one] פריט אחד
+        [two] שני פריטים
+       *[other] { $rows } פריטים
+    }.
+}
+import-scrivener-metadata-collections-became-tags-line = { $tags ->
+    [one] אוסף אחד הופך לתג, שמסמן { $rows ->
+        [one] פריט אחד
+        [two] שני פריטים
+       *[other] { $rows } פריטים
+    }.
+    [two] שני אוספים הופכים לתגים, שמסמנים { $rows ->
+        [one] פריט אחד
+        [two] שני פריטים
+       *[other] { $rows } פריטים
+    }.
+   *[other] { $tags } אוספים הופכים לתגים, שמסמנים { $rows ->
+        [one] פריט אחד
+        [two] שני פריטים
+       *[other] { $rows } פריטים
+    }.
+}
+import-scrivener-metadata-collection-order-lost-line = { $count ->
+    [one] תג לא שומר סדר, ולכן הסדר של המסמכים באוסף אחד לא נשמר.
+    [two] תג לא שומר סדר, ולכן הסדר של המסמכים בשני אוספים לא נשמר.
+   *[other] תג לא שומר סדר, ולכן הסדר של המסמכים ב־{ $count } אוספים לא נשמר.
+}
+import-scrivener-metadata-bookmarks-became-links-line = { $count ->
+    [one] סימנייה אחת הופכת לקישור בין שני פתקים, או בין סצנה לרשומה בתיק הסיפור: היא מופיעה תחת "קישורים" ו"צוות הדמויות".
+    [two] שתי סימניות הופכות לקישורים בין פתקים, או בין סצנות לרשומות בתיק הסיפור: הן מופיעות תחת "קישורים" ו"צוות הדמויות".
+   *[other] { $count } סימניות הופכות לקישורים בין פתקים, או בין סצנות לרשומות בתיק הסיפור: הן מופיעות תחת "קישורים" ו"צוות הדמויות".
+}
+import-scrivener-metadata-goals-kept-line = { $count ->
+    [one] מטרת מסמך אחת הופכת ליעד.
+    [two] שתי מטרות מסמך הופכות ליעדים.
+   *[other] { $count } מטרות מסמך הופכות ליעדים.
+}
+import-scrivener-metadata-draft-target-kept-words-line = { $value ->
+    [one] מטרת הטיוטה, מילה אחת, הופכת ליעד של הספר.
+    [two] מטרת הטיוטה, שתי מילים, הופכת ליעד של הספר.
+   *[other] מטרת הטיוטה, { $value } מילים, הופכת ליעד של הספר.
+}
+import-scrivener-metadata-draft-target-kept-characters-line = { $value ->
+    [one] מטרת הטיוטה, תו אחד, הופכת ליעד של הספר.
+    [two] מטרת הטיוטה, שני תווים, הופכת ליעד של הספר.
+   *[other] מטרת הטיוטה, { $value } תווים, הופכת ליעד של הספר.
+}
+import-scrivener-metadata-pace-planned-line = תאריך היעד, { $day }, הופך לתוכנית הקצב של הספר, שמתכננת את המילים לכל יום כתיבה שבחרתם ב־Scrivener, החל מיום הייבוא.
+import-scrivener-metadata-pace-planned-day-off-line = תאריך היעד, { $day }, הופך לתוכנית הקצב של הספר, שמתכננת את המילים לכל יום כתיבה שבחרתם ב־Scrivener, החל מיום הייבוא. כמו ב־Scrivener, תאריך היעד עצמו הוא יום חופש.
+import-scrivener-metadata-dictionary-words-line = { $count ->
+    [one] מילה אחת מההשלמה האוטומטית נכנסת למילון האישי של הפרויקט, כך שהיא לא מסומנת כשגיאת כתיב.
+    [two] שתי מילים מההשלמה האוטומטית נכנסות למילון האישי של הפרויקט, כך שהן לא מסומנות כשגיאות כתיב.
+   *[other] { $count } מילים מההשלמה האוטומטית נכנסות למילון האישי של הפרויקט, כך שהן לא מסומנות כשגיאות כתיב.
+}
+import-scrivener-metadata-listed-project-line = { $count ->
+    [one] פרט אחד של הפרויקט מופיע בפתק "{ $note }" שבתיקייה "{ $folder }".
+    [two] שני פרטים של הפרויקט מופיעים בפתק "{ $note }" שבתיקייה "{ $folder }".
+   *[other] { $count } פרטים של הפרויקט מופיעים בפתק "{ $note }" שבתיקייה "{ $folder }".
+}
+import-scrivener-metadata-listed-project-bookmarks-line = { $count ->
+    [one] סימנייה אחת של הפרויקט מופיעה בפתק "{ $note }" שבתיקייה "{ $folder }".
+    [two] שתי סימניות של הפרויקט מופיעות בפתק "{ $note }" שבתיקייה "{ $folder }".
+   *[other] { $count } סימניות של הפרויקט מופיעות בפתק "{ $note }" שבתיקייה "{ $folder }".
+}
+import-scrivener-metadata-listed-replacements-line = { $count ->
+    [one] החלפה אחת בהידור מופיעה בפתק "{ $note }" שבתיקייה "{ $folder }". ‏Skribisto לא מבצעת אותה.
+    [two] שתי החלפות בהידור מופיעות בפתק "{ $note }" שבתיקייה "{ $folder }". ‏Skribisto לא מבצעת אותן.
+   *[other] { $count } החלפות בהידור מופיעות בפתק "{ $note }" שבתיקייה "{ $folder }". ‏Skribisto לא מבצעת אותן.
+}
+import-scrivener-metadata-listed-auto-complete-line = { $count ->
+    [one] רשומה אחת של השלמה אוטומטית שיש בה כמה מילים מופיעה בפתק "{ $note }" שבתיקייה "{ $folder }".
+    [two] שתי רשומות של השלמה אוטומטית שיש בהן כמה מילים מופיעות בפתק "{ $note }" שבתיקייה "{ $folder }".
+   *[other] { $count } רשומות של השלמה אוטומטית שיש בהן כמה מילים מופיעות בפתק "{ $note }" שבתיקייה "{ $folder }".
+}
+import-scrivener-metadata-listed-saved-searches-line = { $count ->
+    [one] חיפוש שמור אחד מופיע בפתק "{ $note }" שבתיקייה "{ $folder }".
+    [two] שני חיפושים שמורים מופיעים בפתק "{ $note }" שבתיקייה "{ $folder }".
+   *[other] { $count } חיפושים שמורים מופיעים בפתק "{ $note }" שבתיקייה "{ $folder }".
+}
+import-scrivener-metadata-listed-custom-metadata-line = { $count ->
+    [one] ערך אחד של מטא־נתונים מותאמים אישית, שתג לא יכול להכיל, מופיע בפתק "{ $note }" שבתיקייה "{ $folder }".
+    [two] שני ערכים של מטא־נתונים מותאמים אישית, שתג לא יכול להכיל, מופיעים בפתק "{ $note }" שבתיקייה "{ $folder }".
+   *[other] { $count } ערכים של מטא־נתונים מותאמים אישית, שתג לא יכול להכיל, מופיעים בפתק "{ $note }" שבתיקייה "{ $folder }".
+}
+import-scrivener-metadata-listed-targets-line = { $count ->
+    [one] מטרת מסמך אחת מופיעה בפתק "{ $note }" שבתיקייה "{ $folder }".
+    [two] שתי מטרות מסמך מופיעות בפתק "{ $note }" שבתיקייה "{ $folder }".
+   *[other] { $count } מטרות מסמך מופיעות בפתק "{ $note }" שבתיקייה "{ $folder }".
+}
+import-scrivener-metadata-listed-bookmarks-line = { $count ->
+    [one] סימנייה אחת, שאף קישור של Skribisto לא מציג, מופיעה בפתק "{ $note }" שבתיקייה "{ $folder }".
+    [two] שתי סימניות, שאף קישור של Skribisto לא מציג, מופיעות בפתק "{ $note }" שבתיקייה "{ $folder }".
+   *[other] { $count } סימניות, שאף קישור של Skribisto לא מציג, מופיעות בפתק "{ $note }" שבתיקייה "{ $folder }".
+}
+import-scrivener-metadata-targets-on-notes-line = { $count ->
+    [one] מטרת מסמך אחת נמצאת על פתק, שאת הכתיבה שבו אף יעד לא סופר, ולכן היא לא הופכת ליעד.
+    [two] שתי מטרות מסמך נמצאות על פתקים, שאת הכתיבה שבהם אף יעד לא סופר, ולכן הן לא הופכות ליעדים.
+   *[other] { $count } מטרות מסמך נמצאות על פתקים, שאת הכתיבה שבהם אף יעד לא סופר, ולכן הן לא הופכות ליעדים.
+}
+import-scrivener-metadata-targets-on-split-documents-line = { $count ->
+    [one] מטרת מסמך אחת נמצאת על מסמך שמפוצל לפי הכותרות שבו, ואף יעד אחד לא סופר את הפרקים שלו יחד, ולכן היא לא הופכת ליעד.
+    [two] שתי מטרות מסמך נמצאות על מסמכים שמפוצלים לפי הכותרות שבהם, ואף יעד אחד לא סופר את הפרקים שלהם יחד, ולכן הן לא הופכות ליעדים.
+   *[other] { $count } מטרות מסמך נמצאות על מסמכים שמפוצלים לפי הכותרות שבהם, ואף יעד אחד לא סופר את הפרקים שלהם יחד, ולכן הן לא הופכות ליעדים.
+}
+import-scrivener-metadata-bookmark-ends-without-row-line = { $count ->
+    [one] סימנייה אחת מובילה למסמך שאין לו מקום בפרויקט החדש, כמו תבנית מסמך. היא מופיעה לפי המקום שבו המסמך היה ב־Scrivener.
+    [two] שתי סימניות מובילות למסמכים שאין להם מקום בפרויקט החדש, כמו תבניות מסמכים. הן מופיעות לפי המקום שבו המסמכים היו ב־Scrivener.
+   *[other] { $count } סימניות מובילות למסמכים שאין להם מקום בפרויקט החדש, כמו תבניות מסמכים. הן מופיעות לפי המקום שבו המסמכים היו ב־Scrivener.
+}
+import-scrivener-metadata-unused-keywords-skipped-line = { $count ->
+    [one] מילת מפתח אחת שאף מסמך לא נושא לא מיובאת.
+    [two] שתי מילות מפתח שאף מסמך לא נושא לא מיובאות.
+   *[other] { $count } מילות מפתח שאף מסמך לא נושא לא מיובאות.
+}
+import-scrivener-metadata-list-value-invalid-line = { $count ->
+    [one] ערך אחד של שדה הרשימה "{ $field }" לא מציין אף אחת מהאפשרויות שלו, והוא לא מיובא.
+    [two] שני ערכים של שדה הרשימה "{ $field }" לא מציינים אף אחת מהאפשרויות שלו, והם לא מיובאים.
+   *[other] { $count } ערכים של שדה הרשימה "{ $field }" לא מציינים אף אחת מהאפשרויות שלו, והם לא מיובאים.
+}
+import-scrivener-metadata-undefined-custom-field-line = { $count ->
+    [one] ערך אחד שייך לשדה מותאם אישית שהפרויקט כבר לא מגדיר, ו־Scrivener גם לא מציג אותו. הוא לא מיובא.
+    [two] שני ערכים שייכים לשדות מותאמים אישית שהפרויקט כבר לא מגדיר, ו־Scrivener גם לא מציג אותם. הם לא מיובאים.
+   *[other] { $count } ערכים שייכים לשדות מותאמים אישית שהפרויקט כבר לא מגדיר, ו־Scrivener גם לא מציג אותם. הם לא מיובאים.
+}
+import-scrivener-metadata-collection-members-missing-line = { $count ->
+    [one] למסמך אחד של האוסף "{ $name }" אין מקום בפרויקט החדש, או שהוא כבר לא נמצא בפרויקט ה־Scrivener.
+    [two] לשני מסמכים של האוסף "{ $name }" אין מקום בפרויקט החדש, או שהם כבר לא נמצאים בפרויקט ה־Scrivener.
+   *[other] ל־{ $count } מסמכים של האוסף "{ $name }" אין מקום בפרויקט החדש, או שהם כבר לא נמצאים בפרויקט ה־Scrivener.
+}
+import-scrivener-metadata-empty-collections-skipped-line = { $count ->
+    [one] אוסף אחד שאינו מכיל אף מסמך לא מיובא.
+    [two] שני אוספים שאינם מכילים אף מסמך לא מיובאים.
+   *[other] { $count } אוספים שאינם מכילים אף מסמך לא מיובאים.
+}
+import-scrivener-metadata-bookmarks-unresolved-line = { $count ->
+    [one] סימנייה אחת מובילה למסמך שכבר לא נמצא בפרויקט ה־Scrivener, והיא לא מיובאת.
+    [two] שתי סימניות מובילות למסמכים שכבר לא נמצאים בפרויקט ה־Scrivener, והן לא מיובאות.
+   *[other] { $count } סימניות מובילות למסמכים שכבר לא נמצאים בפרויקט ה־Scrivener, והן לא מיובאות.
+}
+import-scrivener-metadata-targets-in-pages-line = { $count ->
+    [one] מטרת מסמך אחת סופרת עמודים, ש־Skribisto לא סופרת, ולכן היא לא הופכת ליעד.
+    [two] שתי מטרות מסמך סופרות עמודים, ש־Skribisto לא סופרת, ולכן הן לא הופכות ליעדים.
+   *[other] { $count } מטרות מסמך סופרות עמודים, ש־Skribisto לא סופרת, ולכן הן לא הופכות ליעדים.
+}
+import-scrivener-metadata-targets-unreadable-line = { $count ->
+    [one] מטרה אחת לא מיובאת: הערך שלה אינו מספר, קטן מאפס, או גדול ממה שיעד יכול להכיל.
+    [two] שתי מטרות לא מיובאות: הערכים שלהן אינם מספרים, קטנים מאפס, או גדולים ממה שיעד יכול להכיל.
+   *[other] { $count } מטרות לא מיובאות: הערכים שלהן אינם מספרים, קטנים מאפס, או גדולים ממה שיעד יכול להכיל.
+}
+import-scrivener-metadata-draft-target-in-pages-line = { $value ->
+    [one] מטרת הטיוטה, עמוד אחד, לא הופכת ליעד: Skribisto סופרת מילים או תווים. היא מופיעה בפתק "{ $note }" שבתיקייה "{ $folder }".
+    [two] מטרת הטיוטה, שני עמודים, לא הופכת ליעד: Skribisto סופרת מילים או תווים. היא מופיעה בפתק "{ $note }" שבתיקייה "{ $folder }".
+   *[other] מטרת הטיוטה, { $value } עמודים, לא הופכת ליעד: Skribisto סופרת מילים או תווים. היא מופיעה בפתק "{ $note }" שבתיקייה "{ $folder }".
+}
+import-scrivener-metadata-draft-target-no-book-words-line = { $value ->
+    [one] מטרת הטיוטה, מילה אחת, לא הופכת ליעד, כי כתב היד יוצר כמה ספרים, או אף לא ספר אחד. היא מופיעה בפתק "{ $note }" שבתיקייה "{ $folder }".
+    [two] מטרת הטיוטה, שתי מילים, לא הופכת ליעד, כי כתב היד יוצר כמה ספרים, או אף לא ספר אחד. היא מופיעה בפתק "{ $note }" שבתיקייה "{ $folder }".
+   *[other] מטרת הטיוטה, { $value } מילים, לא הופכת ליעד, כי כתב היד יוצר כמה ספרים, או אף לא ספר אחד. היא מופיעה בפתק "{ $note }" שבתיקייה "{ $folder }".
+}
+import-scrivener-metadata-draft-target-no-book-characters-line = { $value ->
+    [one] מטרת הטיוטה, תו אחד, לא הופכת ליעד, כי כתב היד יוצר כמה ספרים, או אף לא ספר אחד. היא מופיעה בפתק "{ $note }" שבתיקייה "{ $folder }".
+    [two] מטרת הטיוטה, שני תווים, לא הופכת ליעד, כי כתב היד יוצר כמה ספרים, או אף לא ספר אחד. היא מופיעה בפתק "{ $note }" שבתיקייה "{ $folder }".
+   *[other] מטרת הטיוטה, { $value } תווים, לא הופכת ליעד, כי כתב היד יוצר כמה ספרים, או אף לא ספר אחד. היא מופיעה בפתק "{ $note }" שבתיקייה "{ $folder }".
+}
+import-scrivener-metadata-deadline-passed-line = תאריך היעד, { $day }, כבר עבר, ולכן הוא לא יוצר תוכנית קצב. הוא מופיע בפתק "{ $note }" שבתיקייה "{ $folder }".
+import-scrivener-metadata-deadline-no-writing-day-line = לא נשאר אף יום כתיבה מיום הייבוא ועד תאריך היעד, { $day }, ולכן הוא לא יוצר תוכנית קצב. הוא מופיע בפתק "{ $note }" שבתיקייה "{ $folder }".
+import-scrivener-metadata-deadline-template-line = תאריך היעד, { $day }, נשמר בתבנית, ולכן הוא לא יוצר תוכנית קצב. הוא מופיע בפתק "{ $note }" שבתיקייה "{ $folder }".
+import-scrivener-metadata-deadline-no-word-goal-line = תאריך היעד, { $day }, לא יוצר תוכנית קצב, כי לטיוטה אין מטרת מילים שאפשר לתכנן לקראתה. הוא מופיע בפתק "{ $note }" שבתיקייה "{ $folder }".
+import-scrivener-metadata-deadline-character-goal-line = תאריך היעד, { $day }, לא יוצר תוכנית קצב, כי מטרת הטיוטה סופרת תווים ותוכנית קצב סופרת מילים. הוא מופיע בפתק "{ $note }" שבתיקייה "{ $folder }".
+import-scrivener-metadata-deadline-no-book-line = תאריך היעד, { $day }, לא יוצר תוכנית קצב, כי כתב היד יוצר כמה ספרים, או אף לא ספר אחד. הוא מופיע בפתק "{ $note }" שבתיקייה "{ $folder }".
+import-scrivener-metadata-deadline-unreadable-line = לא ניתן לקרוא את תאריך היעד, ולכן הוא לא יוצר תוכנית קצב. הוא מופיע כפי שנכתב בפתק "{ $note }" שבתיקייה "{ $folder }".
+import-scrivener-metadata-session-target-words-line = { $value ->
+    [one] מטרת הסשן, מילה אחת, לא מיובאת: ב־Skribisto, היעד של סשן הכתיבה הוא הגדרה אחת לכל הפרויקטים. היא מופיעה בפתק "{ $note }" שבתיקייה "{ $folder }".
+    [two] מטרת הסשן, שתי מילים, לא מיובאת: ב־Skribisto, היעד של סשן הכתיבה הוא הגדרה אחת לכל הפרויקטים. היא מופיעה בפתק "{ $note }" שבתיקייה "{ $folder }".
+   *[other] מטרת הסשן, { $value } מילים, לא מיובאת: ב־Skribisto, היעד של סשן הכתיבה הוא הגדרה אחת לכל הפרויקטים. היא מופיעה בפתק "{ $note }" שבתיקייה "{ $folder }".
+}
+import-scrivener-metadata-session-target-characters-line = { $value ->
+    [one] מטרת הסשן, תו אחד, לא מיובאת: ב־Skribisto, היעד של סשן הכתיבה הוא הגדרה אחת לכל הפרויקטים, במילים. היא מופיעה בפתק "{ $note }" שבתיקייה "{ $folder }".
+    [two] מטרת הסשן, שני תווים, לא מיובאת: ב־Skribisto, היעד של סשן הכתיבה הוא הגדרה אחת לכל הפרויקטים, במילים. היא מופיעה בפתק "{ $note }" שבתיקייה "{ $folder }".
+   *[other] מטרת הסשן, { $value } תווים, לא מיובאת: ב־Skribisto, היעד של סשן הכתיבה הוא הגדרה אחת לכל הפרויקטים, במילים. היא מופיעה בפתק "{ $note }" שבתיקייה "{ $folder }".
+}
+import-scrivener-metadata-session-target-pages-line = { $value ->
+    [one] מטרת הסשן, עמוד אחד, לא מיובאת: ב־Skribisto, היעד של סשן הכתיבה הוא הגדרה אחת לכל הפרויקטים, במילים. היא מופיעה בפתק "{ $note }" שבתיקייה "{ $folder }".
+    [two] מטרת הסשן, שני עמודים, לא מיובאת: ב־Skribisto, היעד של סשן הכתיבה הוא הגדרה אחת לכל הפרויקטים, במילים. היא מופיעה בפתק "{ $note }" שבתיקייה "{ $folder }".
+   *[other] מטרת הסשן, { $value } עמודים, לא מיובאת: ב־Skribisto, היעד של סשן הכתיבה הוא הגדרה אחת לכל הפרויקטים, במילים. היא מופיעה בפתק "{ $note }" שבתיקייה "{ $folder }".
+}
+import-scrivener-metadata-session-target-calculated-words-line = { $value ->
+    [one] מטרת הסשן, מילה אחת, ש־Scrivener חישב מתאריך היעד ומימי הכתיבה, לא מיובאת: ב־Skribisto, היעד של סשן הכתיבה הוא הגדרה אחת לכל הפרויקטים. היא מופיעה בפתק "{ $note }" שבתיקייה "{ $folder }".
+    [two] מטרת הסשן, שתי מילים, ש־Scrivener חישב מתאריך היעד ומימי הכתיבה, לא מיובאת: ב־Skribisto, היעד של סשן הכתיבה הוא הגדרה אחת לכל הפרויקטים. היא מופיעה בפתק "{ $note }" שבתיקייה "{ $folder }".
+   *[other] מטרת הסשן, { $value } מילים, ש־Scrivener חישב מתאריך היעד ומימי הכתיבה, לא מיובאת: ב־Skribisto, היעד של סשן הכתיבה הוא הגדרה אחת לכל הפרויקטים. היא מופיעה בפתק "{ $note }" שבתיקייה "{ $folder }".
+}
+import-scrivener-metadata-session-target-calculated-characters-line = { $value ->
+    [one] מטרת הסשן, תו אחד, ש־Scrivener חישב מתאריך היעד ומימי הכתיבה, לא מיובאת: ב־Skribisto, היעד של סשן הכתיבה הוא הגדרה אחת לכל הפרויקטים, במילים. היא מופיעה בפתק "{ $note }" שבתיקייה "{ $folder }".
+    [two] מטרת הסשן, שני תווים, ש־Scrivener חישב מתאריך היעד ומימי הכתיבה, לא מיובאת: ב־Skribisto, היעד של סשן הכתיבה הוא הגדרה אחת לכל הפרויקטים, במילים. היא מופיעה בפתק "{ $note }" שבתיקייה "{ $folder }".
+   *[other] מטרת הסשן, { $value } תווים, ש־Scrivener חישב מתאריך היעד ומימי הכתיבה, לא מיובאת: ב־Skribisto, היעד של סשן הכתיבה הוא הגדרה אחת לכל הפרויקטים, במילים. היא מופיעה בפתק "{ $note }" שבתיקייה "{ $folder }".
+}
+import-scrivener-metadata-session-target-calculated-pages-line = { $value ->
+    [one] מטרת הסשן, עמוד אחד, ש־Scrivener חישב מתאריך היעד ומימי הכתיבה, לא מיובאת: ב־Skribisto, היעד של סשן הכתיבה הוא הגדרה אחת לכל הפרויקטים, במילים. היא מופיעה בפתק "{ $note }" שבתיקייה "{ $folder }".
+    [two] מטרת הסשן, שני עמודים, ש־Scrivener חישב מתאריך היעד ומימי הכתיבה, לא מיובאת: ב־Skribisto, היעד של סשן הכתיבה הוא הגדרה אחת לכל הפרויקטים, במילים. היא מופיעה בפתק "{ $note }" שבתיקייה "{ $folder }".
+   *[other] מטרת הסשן, { $value } עמודים, ש־Scrivener חישב מתאריך היעד ומימי הכתיבה, לא מיובאת: ב־Skribisto, היעד של סשן הכתיבה הוא הגדרה אחת לכל הפרויקטים, במילים. היא מופיעה בפתק "{ $note }" שבתיקייה "{ $folder }".
+}
+import-scrivener-metadata-icons-dropped-line = { $count ->
+    [one] לפריט אחד היה סמל בקלסר, שלא מועבר: Skribisto מציגה לכל פריט את הסמל של הסוג שלו.
+    [two] לשני פריטים היו סמלים בקלסר, שלא מועברים: Skribisto מציגה לכל פריט את הסמל של הסוג שלו.
+   *[other] ל־{ $count } פריטים היו סמלים בקלסר, שלא מועברים: Skribisto מציגה לכל פריט את הסמל של הסוג שלו.
+}
+
+## What converting the prose did, as the import's report says it. `$count` is how many texts,
+## or how many of a thing, as each line says; `$example` quotes the project.
+import-scrivener-prose-unreadable-line = { $count ->
+    [one] לא ניתן היה לקרוא טקסט אחד. הוא מגיע ריק.
+    [two] לא ניתן היה לקרוא שני טקסטים. הם מגיעים ריקים.
+   *[other] לא ניתן היה לקרוא { $count } טקסטים. הם מגיעים ריקים.
+}
+import-scrivener-prose-comments-unreadable-line = { $count ->
+    [one] לא ניתן היה לקרוא את ההערות ואת הערות השוליים המקושרות של טקסט אחד. המילים שהן סימנו נשמרות.
+    [two] לא ניתן היה לקרוא את ההערות ואת הערות השוליים המקושרות של שני טקסטים. המילים שהן סימנו נשמרות.
+   *[other] לא ניתן היה לקרוא את ההערות ואת הערות השוליים המקושרות של { $count } טקסטים. המילים שהן סימנו נשמרות.
+}
+import-scrivener-prose-read-as-plain-text-line = { $count ->
+    [one] טקסט אחד נשמר כטקסט פשוט ולא כטקסט מעוצב, והוא נקרא ככזה.
+    [two] שני טקסטים נשמרו כטקסט פשוט ולא כטקסט מעוצב, והם נקראים ככאלה.
+   *[other] { $count } טקסטים נשמרו כטקסט פשוט ולא כטקסט מעוצב, והם נקראים ככאלה.
+}
+import-scrivener-prose-inline-note-unmatched-line = { $count ->
+    [one] סימן אחד של הערה מוטבעת לא מתחבר לסימן תואם, והוא נשמר כטקסט.
+    [two] שני סימנים של הערות מוטבעות לא מתחברים לסימן תואם, והם נשמרים כטקסט.
+   *[other] { $count } סימנים של הערות מוטבעות לא מתחברים לסימן תואם, והם נשמרים כטקסט.
+}
+import-scrivener-prose-style-unresolved-line = { $count ->
+    [one] סימן סגנון אחד מציין סגנון שהפרויקט לא מגדיר. הוא מוסר, והטקסט שומר על העיצוב שלו.
+    [two] שני סימני סגנון מציינים סגנון שהפרויקט לא מגדיר. הם מוסרים, והטקסט שומר על העיצוב שלו.
+   *[other] { $count } סימני סגנון מציינים סגנון שהפרויקט לא מגדיר. הם מוסרים, והטקסט שומר על העיצוב שלו.
+}
+import-scrivener-prose-styles-lost-in-export-line = { $count ->
+    [one] פסקה אחת עשויה להיות כותרת שאיבדה את הסגנון שלה כש־Scrivener 3 ייצא את הפרויקט לפורמט הישן שלו, והיא מועברת כפסקה רגילה. כדאי לבדוק אותה, או לייבא את הפרויקט שממנו היא יוצאה.
+    [two] שתי פסקאות עשויות להיות כותרות שאיבדו את הסגנון שלהן כש־Scrivener 3 ייצא את הפרויקט לפורמט הישן שלו, והן מועברות כפסקאות רגילות. כדאי לבדוק אותן, או לייבא את הפרויקט שממנו הן יוצאו.
+   *[other] { $count } פסקאות עשויות להיות כותרות שאיבדו את הסגנון שלהן כש־Scrivener 3 ייצא את הפרויקט לפורמט הישן שלו, והן מועברות כפסקאות רגילות. כדאי לבדוק אותן, או לייבא את הפרויקט שממנו הן יוצאו.
+}
+import-scrivener-prose-comment-anchor-without-entry-line = { $count ->
+    [one] הערה או הערת שוליים אחת איבדה את התוכן שלה ב־Scrivener. המילים שהיא סימנה נשמרות, בלעדיה.
+    [two] שתי הערות או הערות שוליים איבדו את התוכן שלהן ב־Scrivener. המילים שהן סימנו נשמרות, בלעדיהן.
+   *[other] { $count } הערות או הערות שוליים איבדו את התוכן שלהן ב־Scrivener. המילים שהן סימנו נשמרות, בלעדיהן.
+}
+import-scrivener-prose-comment-entry-without-anchor-line = { $count ->
+    [one] להערה אחת לא נשאר מקום בטקסט שלה, והיא מצורפת לפסקה הראשונה.
+    [two] לשתי הערות לא נשאר מקום בטקסט שלהן, והן מצורפות לפסקה הראשונה.
+   *[other] ל־{ $count } הערות לא נשאר מקום בטקסט שלהן, והן מצורפות לפסקה הראשונה.
+}
+import-scrivener-prose-footnote-entry-without-anchor-line = { $count ->
+    [one] להערת שוליים מקושרת אחת לא נשאר מקום בטקסט שלה, וההפניה אליה מוצבת בסוף הטקסט.
+    [two] לשתי הערות שוליים מקושרות לא נשאר מקום בטקסט שלהן, וההפניות אליהן מוצבות בסוף הטקסט.
+   *[other] ל־{ $count } הערות שוליים מקושרות לא נשאר מקום בטקסט שלהן, וההפניות אליהן מוצבות בסוף הטקסט.
+}
+import-scrivener-prose-range-comment-reading-line = { $count ->
+    [one] הערה אחת מגרסה ישנה של Scrivener מוקמה לפי קריאה אחרת של המיקום שלה. כדאי לוודא שהיא נמצאת על המילים הנכונות.
+    [two] שתי הערות מגרסה ישנה של Scrivener מוקמו לפי קריאה אחרת של המיקום שלהן. כדאי לוודא שהן נמצאות על המילים הנכונות.
+   *[other] { $count } הערות מגרסה ישנה של Scrivener מוקמו לפי קריאה אחרת של המיקום שלהן. כדאי לוודא שהן נמצאות על המילים הנכונות.
+}
+import-scrivener-prose-range-comment-reading-markers-counted-line = { $count ->
+    [one] הערה אחת מגרסה ישנה של Scrivener מוקמה בספירת הסימנים של ההערות המוטבעות שלה. כדאי לוודא שהיא נמצאת על המילים הנכונות.
+    [two] שתי הערות מגרסה ישנה של Scrivener מוקמו בספירת הסימנים של ההערות המוטבעות שלהן. כדאי לוודא שהן נמצאות על המילים הנכונות.
+   *[other] { $count } הערות מגרסה ישנה של Scrivener מוקמו בספירת הסימנים של ההערות המוטבעות שלהן. כדאי לוודא שהן נמצאות על המילים הנכונות.
+}
+import-scrivener-prose-range-comment-reading-pictures-not-counted-line = { $count ->
+    [one] הערה אחת מגרסה ישנה של Scrivener מוקמה בלי לספור את התמונות שלה. כדאי לוודא שהיא נמצאת על המילים הנכונות.
+    [two] שתי הערות מגרסה ישנה של Scrivener מוקמו בלי לספור את התמונות שלהן. כדאי לוודא שהן נמצאות על המילים הנכונות.
+   *[other] { $count } הערות מגרסה ישנה של Scrivener מוקמו בלי לספור את התמונות שלהן. כדאי לוודא שהן נמצאות על המילים הנכונות.
+}
+import-scrivener-prose-range-comment-approximate-line = { $count ->
+    [one] הערה אחת מגרסה ישנה של Scrivener לא מתאימה בדיוק לאף קריאה של המיקום שלה, וייתכן שהיא זזה בכמה תווים.
+    [two] שתי הערות מגרסה ישנה של Scrivener לא מתאימות בדיוק לאף קריאה של המיקום שלהן, וייתכן שהן זזו בכמה תווים.
+   *[other] { $count } הערות מגרסה ישנה של Scrivener לא מתאימות בדיוק לאף קריאה של המיקום שלהן, וייתכן שהן זזו בכמה תווים.
+}
+import-scrivener-prose-document-link-unresolved-line = { $count ->
+    [one] קישור אחד מפנה למסמך שהייבוא לא העביר. המילים שלו נשארות.
+    [two] שני קישורים מפנים למסמכים שהייבוא לא העביר. המילים שלהם נשארות.
+   *[other] { $count } קישורים מפנים למסמכים שהייבוא לא העביר. המילים שלהם נשארות.
+}
+import-scrivener-prose-linked-picture-not-read-line = { $count ->
+    [one] תמונה אחת שמקושרת לקובץ בדיסק שלכם, "{ $example }", לא הועברה.
+    [two] שתי תמונות שמקושרות לקבצים בדיסק שלכם, כמו "{ $example }", לא הועברו.
+   *[other] { $count } תמונות שמקושרות לקבצים בדיסק שלכם, כמו "{ $example }", לא הועברו.
+}
+import-scrivener-prose-heading-repeats-title-line = { $count ->
+    [one] טקסט אחד נפתח בכותרת שחוזרת על הכותרת שלו, ולכן ייצוא עלול להדפיס את הכותרת פעמיים.
+    [two] שני טקסטים נפתחים בכותרת שחוזרת על הכותרת שלהם, ולכן ייצוא עלול להדפיס את הכותרת פעמיים.
+   *[other] { $count } טקסטים נפתחים בכותרת שחוזרת על הכותרת שלהם, ולכן ייצוא עלול להדפיס את הכותרת פעמיים.
+}
+import-scrivener-prose-markdown-as-text-line = { $count ->
+    [one] פסקה אחת שנכתבה ב־Markdown נשמרת כטקסט, כפי שהיא.
+    [two] שתי פסקאות שנכתבו ב־Markdown נשמרות כטקסט, כפי שהן.
+   *[other] { $count } פסקאות שנכתבו ב־Markdown נשמרות כטקסט, כפי שהן.
+}
+import-scrivener-prose-citation-keys-as-text-line = { $count ->
+    [one] פסקה אחת מכילה מפתחות ציטוט של תוכנת ביבליוגרפיה, והם נשמרים כטקסט.
+    [two] שתי פסקאות מכילות מפתחות ציטוט של תוכנת ביבליוגרפיה, והם נשמרים כטקסט.
+   *[other] { $count } פסקאות מכילות מפתחות ציטוט של תוכנת ביבליוגרפיה, והם נשמרים כטקסט.
+}
+import-scrivener-prose-placeholders-in-exported-text-line = { $count ->
+    [one] מציין מיקום אחד של Scrivener, { $example }, נשמר כטקסט פשוט במה שאתם מייצאים. יש להחליף אותו ידנית.
+    [two] שני מצייני מיקום של Scrivener, כמו { $example }, נשמרים כטקסט פשוט במה שאתם מייצאים. יש להחליף אותם ידנית.
+   *[other] { $count } מצייני מיקום של Scrivener, כמו { $example }, נשמרים כטקסט פשוט במה שאתם מייצאים. יש להחליף אותם ידנית.
+}
+import-scrivener-prose-placeholders-in-other-text-line = { $count ->
+    [one] מציין מיקום אחד של Scrivener, { $example }, נשמר כטקסט פשוט בטקסט שאינו מיוצא.
+    [two] שני מצייני מיקום של Scrivener, כמו { $example }, נשמרים כטקסט פשוט בטקסטים שאינם מיוצאים.
+   *[other] { $count } מצייני מיקום של Scrivener, כמו { $example }, נשמרים כטקסט פשוט בטקסטים שאינם מיוצאים.
+}
+import-scrivener-prose-ornament-lines-kept-line = { $count ->
+    [one] שורה ממורכזת אחת של עיטורים עשויה לסמן מעבר סצנה, והיא נשמרת כפי שנכתבה.
+    [two] שתי שורות ממורכזות של עיטורים עשויות לסמן מעברי סצנה, והן נשמרות כפי שנכתבו.
+   *[other] { $count } שורות ממורכזות של עיטורים עשויות לסמן מעברי סצנה, והן נשמרות כפי שנכתבו.
+}
+import-scrivener-prose-long-document-line = { $count ->
+    [one] טקסט אחד ארוך מאוד, וייתכן שייפתח לאט.
+    [two] שני טקסטים ארוכים מאוד, וייתכן שייפתחו לאט.
+   *[other] { $count } טקסטים ארוכים מאוד, וייתכן שייפתחו לאט.
+}
+import-scrivener-prose-pictures-without-description-line = { $count ->
+    [one] לתמונה אחת אין תיאור לקוראים שאינם יכולים לראות אותה. אפשר להוסיף תיאור בעורך.
+    [two] לשתי תמונות אין תיאור לקוראים שאינם יכולים לראות אותן. אפשר להוסיף תיאור בעורך.
+   *[other] ל־{ $count } תמונות אין תיאור לקוראים שאינם יכולים לראות אותן. אפשר להוסיף תיאור בעורך.
+}
+import-scrivener-prose-struck-text-compiled-away-line = { $count ->
+    [one] טקסט עם קו חוצה בטקסט אחד נשמר. ההידור של Scrivener השמיט אותו מהספר, אבל ייצוא מ־Skribisto מדפיס אותו.
+    [two] טקסט עם קו חוצה בשני טקסטים נשמר. ההידור של Scrivener השמיט אותו מהספר, אבל ייצוא מ־Skribisto מדפיס אותו.
+   *[other] טקסט עם קו חוצה ב־{ $count } טקסטים נשמר. ההידור של Scrivener השמיט אותו מהספר, אבל ייצוא מ־Skribisto מדפיס אותו.
+}
+import-scrivener-prose-compile-deleted-style-printed-line = { $count ->
+    [one] טקסט בסגנון "{ $example }", שההידור של Scrivener מחק, נשמר כטקסט רגיל, וייצוא מ־Skribisto מדפיס אותו.
+    [two] טקסט בשני סגנונות שההידור של Scrivener מחק, כמו "{ $example }", נשמר כטקסט רגיל, וייצוא מ־Skribisto מדפיס אותו.
+   *[other] טקסט ב־{ $count } סגנונות שההידור של Scrivener מחק, כמו "{ $example }", נשמר כטקסט רגיל, וייצוא מ־Skribisto מדפיס אותו.
+}
+import-scrivener-prose-compile-raw-style-printed-line = { $count ->
+    [one] טקסט בסגנון "{ $example }", שההידור של Scrivener העביר כקוד לתוכנה אחרת, נשמר כטקסט רגיל, וייצוא מ־Skribisto מדפיס אותו.
+    [two] טקסט בשני סגנונות שההידור של Scrivener העביר כקוד לתוכנה אחרת, כמו "{ $example }", נשמר כטקסט רגיל, וייצוא מ־Skribisto מדפיס אותו.
+   *[other] טקסט ב־{ $count } סגנונות שההידור של Scrivener העביר כקוד לתוכנה אחרת, כמו "{ $example }", נשמר כטקסט רגיל, וייצוא מ־Skribisto מדפיס אותו.
+}
+import-scrivener-prose-left-out-after-document-line = { $count ->
+    [one] קטע אחד של קובץ פגום, שנמצא אחרי סוף הקובץ, מושמט.
+    [two] שני קטעים של קבצים פגומים, שנמצאים אחרי סוף הקבצים, מושמטים.
+   *[other] { $count } קטעים של קבצים פגומים, שנמצאים אחרי סוף הקבצים, מושמטים.
+}
+import-scrivener-prose-left-out-header-or-footer-line = { $count ->
+    [one] כותרת עליונה או תחתונה אחת מושמטת: היא אינה חלק מהטקסט.
+    [two] שתי כותרות עליונות ותחתונות מושמטות: הן אינן חלק מהטקסט.
+   *[other] { $count } כותרות עליונות ותחתונות מושמטות: הן אינן חלק מהטקסט.
+}
+import-scrivener-prose-left-out-list-label-picture-line = { $count ->
+    [one] תמונה אחת שמשמשת כתבליט ברשימה מושמטת.
+    [two] שתי תמונות שמשמשות כתבליטים ברשימה מושמטות.
+   *[other] { $count } תמונות שמשמשות כתבליטים ברשימה מושמטות.
+}
+import-scrivener-prose-left-out-line = { $count ->
+    [one] קטע אחד של קובץ, שאינו שייך לאף טקסט, מושמט.
+    [two] שני קטעים של קבצים, שאינם שייכים לאף טקסט, מושמטים.
+   *[other] { $count } קטעים של קבצים, שאינם שייכים לאף טקסט, מושמטים.
+}
+import-scrivener-prose-undecodable-characters-line = { $count ->
+    [one] לא ניתן היה לפענח תו אחד, והוא מוצג כסימן חלופי (�) במקום שבו עמד.
+    [two] לא ניתן היה לפענח שני תווים, והם מוצגים כסימנים חלופיים (�) במקום שבו עמדו.
+   *[other] לא ניתן היה לפענח { $count } תווים, והם מוצגים כסימנים חלופיים (�) במקום שבו עמדו.
+}
+import-scrivener-prose-inline-notes-merged-line = { $count ->
+    [one] הערה מוטבעת אחת ש־Scrivener פיצל במקום שבו העיצוב שלה השתנה מחוברת בחזרה.
+    [two] שתי הערות מוטבעות ש־Scrivener פיצל במקום שבו העיצוב שלהן השתנה מחוברות בחזרה.
+   *[other] { $count } הערות מוטבעות ש־Scrivener פיצל במקום שבו העיצוב שלהן השתנה מחוברות בחזרה.
+}
+import-scrivener-prose-inline-notes-joined-across-paragraphs-line = { $count ->
+    [one] הערה מוטבעת אחת שנכתבה פסקה אחר פסקה מחוברת להערה אחת.
+    [two] שתי הערות מוטבעות שנכתבו פסקה אחר פסקה מחוברות להערות של כמה פסקאות.
+   *[other] { $count } הערות מוטבעות שנכתבו פסקה אחר פסקה מחוברות להערות של כמה פסקאות.
+}
+import-scrivener-prose-blank-notes-dropped-line = { $count ->
+    [one] הערה מוטבעת ריקה אחת מושמטת.
+    [two] שתי הערות מוטבעות ריקות מושמטות.
+   *[other] { $count } הערות מוטבעות ריקות מושמטות.
+}
+import-scrivener-prose-annotations-became-comments-line = { $count ->
+    [one] ביאור מוטבע אחד הפך להערה.
+    [two] שני ביאורים מוטבעים הפכו להערות.
+   *[other] { $count } ביאורים מוטבעים הפכו להערות.
+}
+import-scrivener-prose-annotation-only-document-kept-line = { $count ->
+    [one] מסמך אחד לא הכיל דבר מלבד ביאור. המילים שלו נשמרות כטקסט רגיל.
+    [two] שני מסמכים לא הכילו דבר מלבד ביאור. המילים שלהם נשמרות כטקסט רגיל.
+   *[other] { $count } מסמכים לא הכילו דבר מלבד ביאור. המילים שלהם נשמרות כטקסט רגיל.
+}
+import-scrivener-prose-preserve-formatting-passages-line = { $count ->
+    [one] קטע אחד שסומן ב־"Preserve Formatting" (שמירת העיצוב) מגיע כטקסט רגיל.
+    [two] שני קטעים שסומנו ב־"Preserve Formatting" (שמירת העיצוב) מגיעים כטקסט רגיל.
+   *[other] { $count } קטעים שסומנו ב־"Preserve Formatting" (שמירת העיצוב) מגיעים כטקסט רגיל.
+}
+import-scrivener-prose-nested-note-unwrapped-line = { $count ->
+    [one] הערה מוטבעת אחת שבתוך הערה או הערת שוליים נשמרת כטקסט, במקום שבו עמדה.
+    [two] שתי הערות מוטבעות שבתוך הערות או הערות שוליים נשמרות כטקסט, במקום שבו עמדו.
+   *[other] { $count } הערות מוטבעות שבתוך הערות או הערות שוליים נשמרות כטקסט, במקום שבו עמדו.
+}
+import-scrivener-prose-style-not-carried-line = { $count ->
+    [one] לסגנון "{ $example }" אין מקבילה ב־Skribisto. הטקסט שבו שומר על המילים שלו.
+    [two] לשני סגנונות, כמו "{ $example }", אין מקבילה ב־Skribisto. הטקסט שבהם שומר על המילים שלו.
+   *[other] ל־{ $count } סגנונות, כמו "{ $example }", אין מקבילה ב־Skribisto. הטקסט שבהם שומר על המילים שלו.
+}
+import-scrivener-prose-document-links-dropped-line = { $count ->
+    [one] לקישור אחד למסמך אחר אין מקום ב־Skribisto. המילים שלו נשארות.
+    [two] לשני קישורים למסמכים אחרים אין מקום ב־Skribisto. המילים שלהם נשארות.
+   *[other] ל־{ $count } קישורים למסמכים אחרים אין מקום ב־Skribisto. המילים שלהם נשארות.
+}
+import-scrivener-prose-document-links-kept-line = { $count ->
+    [one] קישור אחד למסמך אחר נשמר כהפניה.
+    [two] שני קישורים למסמכים אחרים נשמרים כהפניות.
+   *[other] { $count } קישורים למסמכים אחרים נשמרים כהפניות.
+}
+import-scrivener-prose-other-links-kept-as-text-line = { $count ->
+    [one] קישור אחד לפרויקט אחר או לקובץ נשמר כטקסט.
+    [two] שני קישורים לפרויקטים אחרים או לקבצים נשמרים כטקסט.
+   *[other] { $count } קישורים לפרויקטים אחרים או לקבצים נשמרים כטקסט.
+}
+import-scrivener-prose-soft-breaks-split-line = { $count ->
+    [one] מעבר שורה אחד בתוך פסקה פותח עכשיו פסקה משלו.
+    [two] שני מעברי שורה בתוך פסקאות פותחים עכשיו פסקאות משלהם.
+   *[other] { $count } מעברי שורה בתוך פסקאות פותחים עכשיו פסקאות משלהם.
+}
+import-scrivener-prose-typed-indents-removed-line = { $count ->
+    [one] הזחה אחת שהוקלדה בתחילת פסקה מוסרת.
+    [two] שתי הזחות שהוקלדו בתחילת פסקאות מוסרות.
+   *[other] { $count } הזחות שהוקלדו בתחילת פסקאות מוסרות.
+}
+import-scrivener-prose-left-indents-not-kept-line = { $count ->
+    [one] פסקה אחת שהוזחה מהשוליים מאבדת את ההזחה שלה.
+    [two] שתי פסקאות שהוזחו מהשוליים מאבדות את ההזחה שלהן.
+   *[other] { $count } פסקאות שהוזחו מהשוליים מאבדות את ההזחה שלהן.
+}
+import-scrivener-prose-blank-lines-removed-line = { $count ->
+    [one] פסקה ריקה אחת בין שתי פסקאות אחרות מוסרת.
+    [two] שתי פסקאות ריקות בין פסקאות אחרות מוסרות.
+   *[other] { $count } פסקאות ריקות בין פסקאות אחרות מוסרות.
+}
+import-scrivener-prose-verse-stanza-gaps-lost-line = { $count ->
+    [one] שורה ריקה אחת בין בתים של שיר מוסרת, ולכן הבתים מתחברים.
+    [two] שתי שורות ריקות בין בתים של שיר מוסרות, ולכן הבתים מתחברים.
+   *[other] { $count } שורות ריקות בין בתים של שיר מוסרות, ולכן הבתים מתחברים.
+}
+import-scrivener-prose-blank-lines-became-scene-breaks-line = { $count ->
+    [one] שורה ריקה אחת בין פסקאות הפכה למעבר סצנה.
+    [two] שתי שורות ריקות בין פסקאות הפכו למעברי סצנה.
+   *[other] { $count } שורות ריקות בין פסקאות הפכו למעברי סצנה.
+}
+import-scrivener-prose-ornaments-became-scene-breaks-line = { $count ->
+    [one] שורה אחת של עיטורים הפכה למעבר סצנה.
+    [two] שתי שורות של עיטורים הפכו למעברי סצנה.
+   *[other] { $count } שורות של עיטורים הפכו למעברי סצנה.
+}
+import-scrivener-prose-table-first-row-header-line = { $count ->
+    [one] טבלה אחת נפתחת עכשיו בשורת כותרת.
+    [two] שתי טבלאות נפתחות עכשיו בשורת כותרת.
+   *[other] { $count } טבלאות נפתחות עכשיו בשורת כותרת.
+}
+import-scrivener-prose-table-cells-joined-line = { $count ->
+    [one] תא טבלה אחד הכיל כמה פסקאות, שחוברו עכשיו לפסקה אחת.
+    [two] שני תאי טבלה הכילו כמה פסקאות, שחוברו עכשיו לפסקה אחת.
+   *[other] { $count } תאי טבלה הכילו כמה פסקאות, שחוברו עכשיו לפסקה אחת.
+}
+import-scrivener-prose-formatting-lost-colour-line = { $count ->
+    [one] צבע הטקסט מוסר בטקסט אחד.
+    [two] צבע הטקסט מוסר בשני טקסטים.
+   *[other] צבע הטקסט מוסר ב־{ $count } טקסטים.
+}
+import-scrivener-prose-formatting-lost-highlight-line = { $count ->
+    [one] הסימון בצבע מוסר בטקסט אחד.
+    [two] הסימון בצבע מוסר בשני טקסטים.
+   *[other] הסימון בצבע מוסר ב־{ $count } טקסטים.
+}
+import-scrivener-prose-formatting-lost-small-caps-line = { $count ->
+    [one] אותיות רישיות קטנות מוצגות כאותיות רגילות בטקסט אחד.
+    [two] אותיות רישיות קטנות מוצגות כאותיות רגילות בשני טקסטים.
+   *[other] אותיות רישיות קטנות מוצגות כאותיות רגילות ב־{ $count } טקסטים.
+}
+import-scrivener-prose-formatting-lost-all-caps-line = { $count ->
+    [one] טקסט שהוצג באותיות רישיות מוצג כפי שהוקלד בטקסט אחד.
+    [two] טקסט שהוצג באותיות רישיות מוצג כפי שהוקלד בשני טקסטים.
+   *[other] טקסט שהוצג באותיות רישיות מוצג כפי שהוקלד ב־{ $count } טקסטים.
+}
+import-scrivener-prose-formatting-lost-hidden-line = { $count ->
+    [one] טקסט מוסתר מושמט בטקסט אחד.
+    [two] טקסט מוסתר מושמט בשני טקסטים.
+   *[other] טקסט מוסתר מושמט ב־{ $count } טקסטים.
+}
+import-scrivener-prose-formatting-lost-line = { $count ->
+    [one] עיצוב שאין לו מקום ב־Skribisto מוסר בטקסט אחד.
+    [two] עיצוב שאין לו מקום ב־Skribisto מוסר בשני טקסטים.
+   *[other] עיצוב שאין לו מקום ב־Skribisto מוסר ב־{ $count } טקסטים.
+}
+import-scrivener-prose-justified-text-not-kept-line = { $count ->
+    [one] פסקה אחת שיושרה לשני הצדדים פועלת במקום זאת לפי הסגנון של הייצוא.
+    [two] שתי פסקאות שיושרו לשני הצדדים פועלות במקום זאת לפי הסגנון של הייצוא.
+   *[other] { $count } פסקאות שיושרו לשני הצדדים פועלות במקום זאת לפי הסגנון של הייצוא.
+}
+import-scrivener-prose-comment-colours-lost-line = { $count ->
+    [one] הערה אחת מאבדת את הצבע שלה.
+    [two] שתי הערות מאבדות את הצבע שלהן.
+   *[other] { $count } הערות מאבדות את הצבע שלהן.
+}
+import-scrivener-prose-control-characters-removed-line = { $count ->
+    [one] תו בקרה בלתי נראה אחד מוסר.
+    [two] שני תווי בקרה בלתי נראים מוסרים.
+   *[other] { $count } תווי בקרה בלתי נראים מוסרים.
+}
+import-scrivener-prose-note-on-heading-lost-line = { $count ->
+    [one] הערת שוליים או הערה אחת שהייתה על כותרת של פרק לא יכלה להישאר שם: הערה עוברת לפסקה הראשונה של הפרק, והערת שוליים מושמטת.
+    [two] שתי הערות שוליים או הערות שהיו על כותרות של פרקים לא יכלו להישאר שם: הערה עוברת לפסקה הראשונה של הפרק, והערת שוליים מושמטת.
+   *[other] { $count } הערות שוליים או הערות שהיו על כותרות של פרקים לא יכלו להישאר שם: הערה עוברת לפסקה הראשונה של הפרק, והערת שוליים מושמטת.
+}
+import-scrivener-prose-media-file-copied-line = { $count ->
+    [one] קובץ מחקר אחד ש־Skribisto לא יכולה לפתוח הועתק לצד הפרויקט החדש. הפתק שלו מציין לאן.
+    [two] שני קובצי מחקר ש־Skribisto לא יכולה לפתוח הועתקו לצד הפרויקט החדש. הפתקים שלהם מציינים לאן.
+   *[other] { $count } קובצי מחקר ש־Skribisto לא יכולה לפתוח הועתקו לצד הפרויקט החדש. הפתקים שלהם מציינים לאן.
+}
+import-scrivener-prose-media-file-not-carried-line = { $count ->
+    [one] קובץ מחקר אחד ש־Skribisto לא יכולה לפתוח נשאר בפרויקט ה־Scrivener שלכם. הפתק שלו מציין את שמו.
+    [two] שני קובצי מחקר ש־Skribisto לא יכולה לפתוח נשארים בפרויקט ה־Scrivener שלכם. הפתקים שלהם מציינים את שמותיהם.
+   *[other] { $count } קובצי מחקר ש־Skribisto לא יכולה לפתוח נשארים בפרויקט ה־Scrivener שלכם. הפתקים שלהם מציינים את שמותיהם.
+}
+
+## When the import fails
+import-scrivener-error-refused = { $refusal } שום דבר לא נכתב.
+import-scrivener-error-question = הפרויקט מעלה עכשיו שאלה שהסקירה שלו לא ענתה עליה. יש לסקור אותו מחדש, ואז לייבא. שום דבר לא נכתב.
+import-scrivener-error-not-accepted = הפרויקט מעלה שאלה שעדיין לא אישרתם. יש לסקור אותו מחדש, ואז לייבא. שום דבר לא נכתב.
+import-scrivener-error-changed = הפרויקט השתנה אחרי שסקרתם אותו. יש לסקור אותו מחדש, ואז לייבא. שום דבר לא נכתב.
+import-scrivener-error-choice = המבנה שנבחר בסקירה כבר לא מתאים לפרויקט הזה. יש לסקור אותו מחדש, ואז לייבא. שום דבר לא נכתב.
 
 export-title = ייצוא
 export-close = סגירה
@@ -1843,6 +3556,13 @@ import-document-destination = מיקום היעד
 import-document-destination-hint = יש לבחור קלסר או פריט: פריטים חדשים נכנסים לתוך תיקייה, או אחרי סצנה.
 import-document-destination-empty = אין עדיין קלסרים. יש ליצור אחד קודם.
 import-document-plan-empty = אין עדיין מה לייבא.
+# How many pictures the items being imported bring into the project, under the
+# review tree. Shown only when there is at least one.
+import-document-pictures = { $count ->
+    [one] תמונה אחת מגיעה עם המסמכים האלה.
+    [two] שתי תמונות מגיעות עם המסמכים האלה.
+   *[other] { $count } תמונות מגיעות עם המסמכים האלה.
+}
 import-document-summary = { $rows ->
     [one] פריט אחד
    *[other] { $rows } פריטים
@@ -1892,6 +3612,20 @@ import-diagnostic-nested-break-dropped = { $count ->
     [one] מעבר סצנה אחד בתוך ציטוט או רשימה ב־"{ $path }" הושמט. נשמר רק מעבר שעומד בשורה משלו.
    *[other] { $count } מעברי סצנה בתוך ציטוטים או רשימות ב־"{ $path }" הושמטו. נשמר רק מעבר שעומד בשורה משלו.
 }
+# A picture the document shows that does not come with it, one sentence per reason.
+# $detail is the picture as the document names it: a file name, a path inside the
+# document, or a web address. Nothing is left in the text where it was.
+import-diagnostic-image-not-ingested-format = ב־"{ $path }", התמונה "{ $detail }" שמורה בפורמט ש־Skribisto לא יכולה להציג, ולכן היא הושמטה. תמונות בפורמט PNG, ‏JPEG, ‏WebP, ‏GIF, ‏TIFF או BMP מיובאות; אפשר לשמור אותה באחד מהם ולהוסיף אותה ידנית.
+import-diagnostic-image-not-ingested-remote = ב־"{ $path }", התמונה "{ $detail }" נמצאת ברשת. תמונות אף פעם לא מורדות במהלך ייבוא, ולכן היא הושמטה.
+import-diagnostic-image-not-ingested-outside = ב־"{ $path }", התמונה "{ $detail }" נמצאת מחוץ למסמך ולתיקייה שלו, ולכן היא הושמטה. מיובאות רק תמונות ששמורות בתוך המסמך, או בתיקייה של המסמך עצמו.
+import-diagnostic-image-not-ingested-missing = ב־"{ $path }", התמונה "{ $detail }" לא נמצאה, ולכן היא הושמטה.
+import-diagnostic-image-not-ingested-too-large = ב־"{ $path }", התמונה "{ $detail }" גדולה ממה שפרויקט מקבל, ולכן היא הושמטה.
+import-diagnostic-image-not-ingested-unreadable = ב־"{ $path }", לא ניתן היה לקרוא את "{ $detail }" כתמונה, ולכן היא הושמטה.
+import-diagnostic-image-not-ingested-heading = ב־"{ $path }", התמונה "{ $detail }" נמצאת בתוך כותרת. כותרת במסמך הופכת לכותרת של פריט, שאין בה מקום לתמונה, ולכן התמונה הושמטה.
+import-diagnostic-image-not-ingested-note = ב־"{ $path }", התמונה "{ $detail }" נמצאת בהערת שוליים, בהערת סיום או בהערה. אלה שומרות את המילים שלהן ולא תמונות, ולכן היא הושמטה.
+import-diagnostic-image-not-ingested-html = ב־"{ $path }", התמונה "{ $detail }" כתובה כ־HTML, וייבוא משמיט HTML, ולכן היא הושמטה יחד איתו. כדי לייבא אותה, יש לכתוב אותה כתמונה של Markdown.
+import-diagnostic-image-not-ingested-document-full = ב־"{ $path }", התמונה "{ $detail }" הושמטה: כל התמונות של המסמך הזה יחד חורגות ממה שייבוא אחד מכניס. אפשר לייבא את המסמך בחלקים, או להוסיף את השאר ידנית.
+import-diagnostic-picture-first-frame-only = ב־"{ $path }", התמונה המונפשת "{ $detail }" מגיעה כפריים הראשון שלה. תמונות בפרויקט אינן זזות.
 import-diagnostic-duplicate-title = "{ $title }" מופיע { $count } פעמים. אם ייבאתם את הקבצים האלה בעבר, הם ישוכפלו.
 import-diagnostic-heading-level-jump = "{ $title }" קופץ מרמת כותרת { $from } לרמה { $to }; הוא ממוקם רמה אחת מתחת לפריט האב שלו.
 import-diagnostic-illegal-combination = "{ $title }" מכיל טקסט, אבל { $kind } אינו יכול להכיל טקסט. הייבוא מעוכב עד שתשנו את הסוג שלו או תשמיטו אותו. אחרת לא ייובא דבר.
@@ -2231,6 +3965,7 @@ help-topic-round-trip = שליחת הספר לקורא
 help-topic-export = ייצוא
 help-topic-import-documents = ייבוא מסמכים
 help-topic-import-projects = העברת פרויקט שלם
+help-topic-import-scrivener = מעבר מ־Scrivener
 help-topic-backups-and-versions = גיבויים וגרסאות
 
 help-shortcuts-title = קיצורי מקלדת
@@ -2253,6 +3988,8 @@ shortcut-name-work-new = פרויקט חדש
 shortcut-name-work-open = פתיחת פרויקט
 shortcut-name-window-new = חלון חדש
 shortcut-name-work-close = סגירת הפרויקט
+shortcut-name-work-import-scrivener = ייבוא פרויקט Scrivener…
+shortcut-name-work-import-scrivener-report = הצגת דוח הייבוא מ־Scrivener
 shortcut-name-app-settings = הגדרות
 shortcut-name-app-quit = יציאה
 shortcut-name-editor-insert-footnote = הוספת הערת שוליים
@@ -2555,6 +4292,7 @@ dialog-save-as-file-title = שמירה כקובץ ‎.skrib יחיד
 dialog-save-as-folder-title = בחירת תיקיית אב לפרויקט
 dialog-manuskript-file-title = בחירת פרויקט Manuskript
 dialog-manuskript-folder-title = בחירת תיקיית פרויקט Manuskript
+dialog-plume-file-title = בחירת פרויקט Plume Creator
 dialog-filter-skrib = פרויקט Skribisto
 dialog-filter-manuskript = פרויקט Manuskript
 dialog-filter-plume = פרויקט Plume Creator

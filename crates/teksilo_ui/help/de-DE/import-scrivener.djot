@@ -1,0 +1,238 @@
+Ein Import übernimmt ein ganzes Scrivener-Projekt: die Projektmappe, den Text, die
+Zusammenfassungen und Notizen, die Kommentare und Fußnoten, die Labels und die Statusliste, die
+Schlüsselwörter, benutzerdefinierten Metadaten, Sammlungen, Lesezeichen und Ziele. Er erstellt ein
+**neues** Skribisto-Projekt. Ihr Scrivener-Projekt wird nur gelesen, nie verändert, sodass Sie
+jederzeit dorthin zurückkehren können.
+
+Für ein Projekt aus Manuskript oder Plume Creator siehe
+[Ein ganzes Projekt übernehmen](:help-import-projects).
+
+## Einen Import starten
+
+Wählen Sie bei geöffnetem Projekt *Projekt ▸ Importieren aus ▸ Scrivener (.scriv)…*. Auf der
+Startseite finden Sie denselben Import unter *Erstellen aus…*. Sie können auch in der
+Befehlspalette (*Hilfe ▸ Befehlspalette…*) *Scrivener-Projekt importieren…* eingeben.
+
+Der Import hat drei Seiten: *Projekt*, *Prüfen* und *Speichern*. Erst wenn Sie auf der letzten
+Seite *Importieren* wählen, wird etwas geschrieben.
+
+## Das Projekt auswählen
+
+Ein Scrivener-Projekt sieht je nach System unterschiedlich aus:
+
+- **Unter Windows und Linux** ist ein Projekt ein Ordner, dessen Name auf `.scriv` endet. Wählen
+  Sie ihn mit *Ordner auswählen…*, oder öffnen Sie ihn und wählen Sie die `.scrivx`-Datei darin
+  mit *Datei auswählen…*.
+- **Auf einem Mac** erscheint ein Projekt als einzelne Datei, wenn Scrivener installiert ist.
+  Wählen Sie es mit *Datei auswählen…*. Erscheint es als Ordner, verwenden Sie
+  *Ordner auswählen…*.
+
+Sie können das Projekt auch auf der Seite *Projekt* ablegen oder seinen Pfad eingeben oder
+einfügen.
+
+Eine von Scrivener erstellte Sicherung funktioniert ohne Entpacken: Wählen Sie die `.zip`-Datei.
+Auch eine `.scrivtemplate`-Datei funktioniert und erstellt aus der Vorlage ein neues Projekt.
+Wählen Sie einen Ordner mit mehreren Projekten, fragt die Seite, welches importiert werden soll,
+und bietet auch die Sicherungen und Vorlagen daneben an.
+
+Importieren lassen sich Projekte aus Scrivener 3 und Scrivener 2 für Mac, aus Scrivener für
+Windows, aus der Beta von Scrivener für Linux sowie Projekte, die auf einem iPhone oder iPad
+erstellt wurden. Ein Projekt aus Scrivener 1 für Mac muss zuerst einmal in Scrivener 2 oder 3
+geöffnet werden.
+
+## Was der Import zuerst prüft
+
+Sobald Sie ein Projekt wählen, zeigt die Seite *Projekt*, mit welcher Scrivener-Version es
+zuletzt gespeichert wurde, wann, und wie viele Dokumente es enthält. Außerdem weist sie auf
+alles hin, was Ihre Aufmerksamkeit braucht:
+
+- **Mehrere Projektmappendateien.** Scrivener speichert die Liste Ihrer Dokumente in einer
+  `.scrivx`-Datei, und ein Synchronisierungsdienst hinterlässt manchmal zusätzliche Kopien davon.
+  Wählen Sie die, in der Sie zuletzt gearbeitet haben. Kann die Seite erkennen, welche das ist,
+  ist sie bereits ausgewählt.
+- **Die Kopie vor einer Aktualisierung.** Wenn Scrivener ein Projekt auf eine neuere Version
+  umstellt, behält es das alte daneben, mit „Backup“ im Namen. Die Seite bietet das Projekt an,
+  in dem Sie weitergeschrieben haben.
+- **Änderungen von einem iPhone oder iPad.** Hat Scrivener auf einem iPhone oder iPad das
+  Projekt geändert, seit es zuletzt auf einem Computer geöffnet wurde, sind diese Änderungen
+  noch nicht in den Dateien. Öffnen Sie das Projekt zuerst einmal in Scrivener auf Ihrem
+  Computer, oder setzen Sie das Häkchen bei *Ohne diese Änderungen importieren*.
+- **Eine Kopie ohne jeden Text.** Hat ein Synchronisierungsdienst das Projekt noch nicht
+  vollständig kopiert, kämen seine Dokumente leer an. Warten Sie, bis die Kopie fertig ist, oder
+  setzen Sie das Häkchen bei *Dokumente leer importieren*.
+- **Ein Projekt, das noch in Scrivener geöffnet ist.** Schließen Sie es dort zuerst, damit jede
+  Änderung gespeichert ist.
+
+Kopien Ihrer Dokumente, die ein Synchronisierungsdienst hinterlassen hat, werden in einem
+eigenen Ordner übernommen, damit Sie sie mit den Dokumenten vergleichen können. Zusätzliche
+Kopien der Einstellungsdateien von Scrivener bleiben unberücksichtigt, wie bei Scrivener selbst.
+
+## Vor dem Import prüfen
+
+*Prüfen* zeigt die Projektmappe des neuen Projekts, bevor irgendetwas davon existiert. *Wird zu*
+gibt an, was aus jedem Eintrag wird, und *In Exporten*, ob er beim Exportieren des Buchs
+eingeschlossen ist.
+
+Neben dem Baum legen die Auswahlmöglichkeiten fest, wie die Projektmappe übernommen wird:
+
+- *Ebenen* legt fest, was aus den Ordnern und Dokumenten jeder Ebene wird, etwa *Teile*,
+  *Kapitel* oder *Szenen*.
+- *Ordner der obersten Ebene* legt fest, wohin jeder Ordner neben Ihrem Manuskript kommt:
+  *Notizen*, *Geschichtenbibel*, *Ein weiteres Buch* oder *Auslassen* für einen Ordner, den Sie
+  nicht übernehmen möchten.
+- *Papierkorb übernehmen* übernimmt die Einträge aus dem Papierkorb von Scrivener in den
+  Papierkorb von Skribisto.
+- *Leerzeilen werden zu Szenentrennern* und *Zeilen aus Zierzeichen werden zu Szenentrennern*
+  bestimmen, was in Ihrem Text zu einem Szenentrenner wird.
+
+Unter dem Baum führt *Vor dem Import* auf, was der Import mit Ihrer Projektmappe und mit Ihren
+Schlüsselwörtern, benutzerdefinierten Metadaten, Sammlungen, Lesezeichen und Zielen macht und
+was er zurücklässt, damit Sie es vor dem Import wissen.
+
+Jeder Eintrag lässt sich danach in der Projektmappe in einen anderen Typ umwandeln. Was die
+Typen bedeuten, erklärt [Wie ein Buch aufgebaut ist](:help-writing-model).
+
+## Das neue Projekt speichern
+
+*Speichern* fragt nach *Zielordner* und *Dateiname*, standardmäßig neben Ihrem
+Scrivener-Projekt. Die Seite zeigt außerdem *Titel*, *Autor* und *Sprache*, die Ihr Projekt
+angibt. Ändern Sie davon, was Sie möchten, bevor Sie importieren.
+
+Scrivener 3 speichert Titel und Autor nur in seinen Kompilierungseinstellungen. Solange Sie sie
+dort nicht festlegen, behält es den Namen, den das Projekt bei seiner Erstellung hatte, und
+keinen Autor: Die Seite schlägt dann diesen Namen vor und lässt *Autor* leer. Eine Vorlage
+schlägt ihren eigenen Titel vor.
+
+Enthält Ihre Recherche Dateien, die Skribisto nicht öffnen kann, etwa PDF-Dateien oder
+Tondateien, legt *Recherchedateien neben das neue Projekt kopieren* sie in einen Ordner neben
+dem neuen Projekt.
+
+## Was aus Scrivener übernommen wird
+
+- Ihr Text, in der Reihenfolge der Projektmappe, mit Fettdruck, Kursivschrift, Listen, Tabellen
+  und Bildern.
+- Die Zusammenfassung jedes Dokuments, als seine Zusammenfassung in Skribisto.
+- Die Notizen jedes Dokuments, als Notiz daneben.
+- Ihre Kommentare und Fußnoten, einschließlich der im Text geschriebenen. Eine Inline-Anmerkung
+  wird zu einem Kommentar.
+- Ihre Labels als farbige Schlagwörter und Ihre Statusliste als Statusstufen des Projekts.
+- Ihre Schlüsselwörter, Ihre Sammlungen sowie Ihre benutzerdefinierten Listen- und
+  Kontrollkästchenfelder, als Schlagwörter an den Dokumenten, die sie tragen. Wo ein
+  Schlüsselwort unter Ihren Schlüsselwörtern stand, steht in den Details seines Schlagworts.
+  Ein standardmäßig angehaktes Kontrollkästchen ist bei jedem Dokument angehakt, bei dem Sie es
+  nicht entfernt haben.
+- Die Ziele der Dokumente Ihres Manuskripts als deren Ziele, und das Manuskriptziel als Ziel
+  des Buchs. Ein noch bevorstehender Abgabetermin mit einem Manuskriptziel in Wörtern wird zum
+  *Schreibtempo* des Buchs, das die in Scrivener gewählten Schreibtage beibehält. Ein in einer
+  Projektvorlage gespeicherter Abgabetermin ergibt kein *Schreibtempo*.
+- Ein Lesezeichen von einer Notiz zu einer anderen, oder von einer Szene oder einem
+  Notizordner zu einem Eintrag der Geschichtenbibel, als Verknüpfung: Sie finden sie unter
+  *Verknüpfungen* oder *Beteiligte*.
+- Die einzelnen Wörter Ihrer Autovervollständigungsliste, im persönlichen Wörterbuch des
+  Projekts, damit sie nicht als Rechtschreibfehler markiert werden.
+- Das Kästchen, mit dem Scrivener ein Dokument in die Kompilierung einbezieht; es wird zu
+  *In Exporte einschließen*.
+- Ihre Dokumentvorlagen, als Notizvorlagen.
+- Die Bilder in Ihrer Recherche, jedes in einer eigenen Notiz.
+
+## Der Ordner „Aus Scrivener“
+
+Was Ihr Projekt enthält und in Skribisto keinen eigenen Platz hat, wird als Text übernommen,
+damit Sie es weiterhin lesen und daraus kopieren können. Es kommt in einen Notizordner namens
+*Aus Scrivener*, nach Ihren eigenen Notizen und vor dem Papierkorb, und wird nie in Exporte
+eingeschlossen. Jede Notiz führt eine Art von Angaben auf, und eine Notiz gibt es nur, wenn sie
+etwas aufzuführen hat:
+
+- *Projekt*: Kurztitel, Themen und Firma aus Ihren Kompilierungseinstellungen; das
+  Sitzungsziel, als berechnet gekennzeichnet, wenn Scrivener es aus Ihrem Abgabetermin und Ihren
+  Schreibtagen ermittelt hat; die Schreibtage, wenn kein *Schreibtempo* sie übernimmt oder
+  Skribisto sie nicht lesen konnte; ein Manuskriptziel, das nicht zum Ziel wurde; und der
+  Abgabetermin, auch wenn er zu einem *Schreibtempo* wurde.
+- *Projektlesezeichen*.
+- *Ersetzungen beim Kompilieren*. Skribisto führt sie beim Exportieren nicht aus.
+- *Autovervollständigung*: die Ausdrücke aus mehr als einem Wort.
+- *Gespeicherte Suchen*, jeweils mit dem, wonach gesucht wurde.
+- *Benutzerdefinierte Metadaten*: Ihre Text- und Datumsfelder, Dokument für Dokument.
+- *Ziele*, die auf Notizen gesetzt sind, deren Text kein Ziel zählt, und auf Dokumenten, die an
+  ihren Überschriften geteilt werden und deren Kapitel kein einzelnes Ziel gemeinsam zählt.
+- *Lesezeichen*, die keine Verknüpfung in Skribisto darstellen kann, etwa eines von einer Szene
+  zu einer anderen Szene oder zu einer Webseite.
+
+Die benutzerdefinierten Metadaten und Lesezeichen einer eigenständigen Notiz, etwa eines
+Figurenbogens, werden stattdessen am Ende dieser Notiz angefügt.
+
+## Was hier kein Gegenstück hat
+
+- **Schnappschüsse.** Ihre früheren Fassungen bleiben in Ihrem Scrivener-Projekt.
+- **Symbole in der Projektmappe und der Skriptmodus.** Das Symbol jedes Eintrags ergibt sich
+  aus seinem Typ, und ein Drehbuch behält seine Wörter als Fließtext.
+- **Die Erzählperspektive.** Wenn Ihre Labels oder ein Feld Figuren aus Ihrer Geschichtenbibel
+  nennen, weist der Bericht darauf hin: Legen Sie die Erzählperspektive im Inspektor fest.
+- **Die Reihenfolge einer Sammlung**, da ein Schlagwort keine Reihenfolge kennt, und **Ziele,
+  die Seiten zählen**.
+- **Textfarbe, Hervorhebungen und Schriftarten.** Skribisto bestimmt das Aussehen des Texts
+  selbst.
+- **Recherchedateien, die keine Bilder sind**, etwa PDF-Dateien, Tondateien oder Webseiten.
+  Jede wird zu einer Notiz, die die Datei nennt. Die Datei selbst bleibt in Ihrem
+  Scrivener-Projekt, sofern Sie sie nicht neben das neue Projekt kopieren.
+- **Platzhalter** wie `<$wc>` oder `<$title>`. Sie bleiben als reiner Text erhalten: Ersetzen
+  Sie sie von Hand.
+- **Kompilierungseinstellungen und die Aufzeichnung der täglich geschriebenen Wörter.**
+  Richten Sie Ihren Export in Skribisto ein. Siehe [Exportieren](:help-export).
+
+## Nach dem Import
+
+Eine Meldung nennt die Anzahl der Einträge im neuen Projekt und bietet *Jetzt öffnen* an, das
+das neue Projekt in einem eigenen Fenster öffnet. Hat der Import mehr zu berichten, bleibt die
+Meldung stehen, bis Sie sie schließen.
+
+*Bericht anzeigen* öffnet einen Bericht über den Import. Er nennt, was übernommen wurde und was
+Sie gewählt haben, und führt den Rest in vier Teilen auf:
+
+- *Nicht lesbar*: Text, Kommentare, Bilder oder Dateien, die der Import nicht lesen konnte oder
+  die in der Kopie fehlen.
+- *Bitte prüfen*: was Sie sich im neuen Projekt ansehen sollten.
+- *Anders übernommen*: was sich unterwegs verändert hat oder entfallen ist, weil Skribisto
+  keinen Platz dafür hat.
+- *Zurückgelassen*: was in Ihrem Scrivener-Projekt bleibt.
+
+Jede Zeile nennt die betroffenen Dokumente so, wie sie in Ihrer Scrivener-Projektmappe heißen,
+oder die Schlüsselwörter, Sammlungen oder Symbole, um die es geht. *Bericht kopieren* kopiert
+den ganzen Bericht, um ihn aufzubewahren oder weiterzugeben.
+
+Skribisto bewahrt die Berichte Ihrer letzten Importe auf, bis es beendet wird. Um einen davon
+erneut zu öffnen, wählen Sie *Bericht anzeigen* in der Meldung oder in ihrem Eintrag unter der
+Glocke in der Statusleiste und unter *Einstellungen ▸ Erscheinungsbild und Verhalten ▸
+Benachrichtigungen*, oder wählen Sie *Scrivener-Importbericht anzeigen* in der Befehlspalette
+eines Projektfensters. Der Eintrag bietet außerdem weiterhin *Jetzt öffnen* an, das das neue
+Projekt in einem eigenen Fenster öffnet. Im Fenster des neuen Projekts öffnet sich jedes im
+Bericht genannte Dokument per Klick.
+
+Das neue Projekt ist eine einzelne `.skrib`-Datei. Wenn Sie lieber einen Ordner verwenden,
+wählen Sie danach *Projekt ▸ Als Ordner speichern…*.
+
+## Wenn der Import Ihr Projekt nicht lesen kann
+
+Die Seite *Projekt* nennt den Grund und was zu tun ist. Meist genügt es, das Projekt einmal in
+Scrivener zu öffnen, das es repariert und aktualisiert, und es dann erneut zu importieren.
+
+Ist das nicht möglich, führt der Weg über ein Word-Dokument. Wählen Sie in Scrivener
+„Datei ▸ Kompilieren…“ und kompilieren Sie für Word. Weisen Sie im Kompilierungsformat den
+Kapiteltiteln die erste Überschriftenformatvorlage zu („Heading 1“ oder „Überschrift 1“, je
+nach Sprache von Scrivener) und den Abschnittstiteln die zweite, und behalten Sie Kommentare als
+Randkommentare bei. Wählen Sie dann in Skribisto *Projekt ▸ Importieren aus ▸ Dokumente
+(Markdown, Word, ODT)…* und stellen Sie auf dessen Seite *Prüfen* die *Überschriftenebenen* so
+ein, dass die erste Ebene zu einem Kapitel und die zweite zu einer Szene wird. Siehe
+[Dokumente importieren](:help-import-documents).
+
+Benannte Formatvorlagen wie „Heading 1“ gibt es nur in Scrivener 3. Exportieren Sie aus einer
+älteren Scrivener-Version stattdessen eine Datei pro Dokument, als Word- (.docx) oder
+OpenDocument-Dateien (.odt), und importieren Sie diese zusammen. Behalten Sie nicht Rich Text
+(.rtf), das Format, das Scrivener zuerst anbietet: Skribisto importiert es nicht.
+
+Ein kompiliertes Dokument enthält Ihren Text mit seinen Bildern, Ihre Kommentare und Ihre
+Fußnoten, aber nicht Ihre Zusammenfassungen, Notizen, Labels, Schnappschüsse oder die Dateien
+in Ihrem Rechercheordner.
+
+Scrivener ist eine Marke von Literature and Latte Ltd. Skribisto steht in keiner Verbindung zu
+Literature and Latte.

@@ -1,6 +1,7 @@
 Una importación de proyecto trae un proyecto completo desde Manuskript o desde Plume
 Creator: sus capítulos, su reparto, sus notas. Si lo que tiene es una carpeta de documentos,
-consulte [importar documentos](:help-import-documents).
+consulte [importar documentos](:help-import-documents). Para un proyecto de Scrivener,
+consulte [llegar desde Scrivener](:help-import-scrivener).
 
 Una importación crea un proyecto de Skribisto **nuevo**.
 
@@ -19,6 +20,12 @@ No se escribe nada hasta que pulse *Importar*. La importación muestra su progre
 *Cancelar* no deja nada detrás.
 
 Si el destino es un proyecto que ya está abierto en Skribisto, elija otro nombre de archivo.
+Mientras una importación está en curso, su archivo queda reservado para ella: nada más lo abre
+ni escribe un proyecto en ese lugar hasta que la importación termina.
+
+Los proyectos se importan de uno en uno: si inicia otra importación mientras una está en
+curso, se le avisa. Si sale de Skribisto durante una importación, se le pregunta antes, y
+detener la importación tampoco deja nada detrás.
 
 ## Indicar un proyecto de Manuskript
 
@@ -97,10 +104,16 @@ en *Configuración ▸ Proyecto: <proyecto> ▸ Autor*.
 
 ## Después de la importación
 
-Un mensaje ofrece *Abrir ahora*, que abre el proyecto nuevo.
+Un mensaje ofrece *Abrir ahora*, que abre el proyecto nuevo. Su entrada bajo la campana de la
+barra de estado conserva *Abrir ahora* cuando el mensaje ya no está, y abre el proyecto en una
+ventana propia.
 
 Si la importación indica algo que no pudo transferir, haga clic en *Detalles* para leer la
-lista. Puede volver a encontrar ese informe bajo la campana de la barra de estado.
+lista, escrita en el idioma configurado en Skribisto. Puede volver a encontrar ese informe bajo
+la campana de la barra de estado.
+
+Si un proyecto no se puede importar, el mensaje indica por qué, y sus *Detalles* contienen la
+descripción técnica que puede transmitir si informa del problema.
 
 El proyecto nuevo es un único archivo `.skrib`. Si guardaba el anterior como carpeta para el
 control de versiones, use después *Proyecto ▸ Guardar como carpeta…*. Consulte

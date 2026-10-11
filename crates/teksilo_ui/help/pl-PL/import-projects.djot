@@ -1,6 +1,7 @@
 Import projektu przenosi cały projekt z programu Manuskript lub Plume Creator: rozdziały,
 postacie, notatki. Jeśli masz raczej folder dokumentów, zobacz
-[importowanie dokumentów](:help-import-documents).
+[importowanie dokumentów](:help-import-documents). Projekt Scrivener opisuje temat
+[przejście z programu Scrivener](:help-import-scrivener).
 
 Import tworzy **nowy** projekt Skribisto.
 
@@ -18,7 +19,13 @@ Okno prosi o:
 Nic nie zostaje zapisane, dopóki nie klikniesz *Importuj*. Import pokazuje postęp, a *Anuluj*
 nie pozostawia po sobie niczego.
 
-Jeśli miejscem docelowym jest projekt już otwarty w Skribisto, wybierz inną nazwę pliku.
+Jeśli miejscem docelowym jest projekt już otwarty w Skribisto, wybierz inną nazwę pliku. Podczas
+importu jego plik jest dla niego zarezerwowany: nic innego go nie otwiera ani nie zapisuje tam
+projektu, dopóki import się nie zakończy.
+
+Projekty są importowane pojedynczo: jeśli podczas trwającego importu uruchomisz kolejny, pojawi
+się o tym informacja. Jeśli zakończysz pracę ze Skribisto w trakcie importu, najpierw pojawi się
+pytanie, a zatrzymanie importu również nie pozostawia po sobie niczego.
 
 ## Wskazanie projektu Manuskript
 
@@ -94,10 +101,16 @@ importem. Plume nie przechowuje nazwiska autora, więc ustaw je w *Ustawienia �
 
 ## Po imporcie
 
-Komunikat oferuje przycisk *Otwórz teraz*, który otwiera nowy projekt.
+Komunikat oferuje przycisk *Otwórz teraz*, który otwiera nowy projekt. Wpis tego komunikatu
+pod ikoną dzwonka na pasku stanu zachowuje przycisk *Otwórz teraz* także po jego zniknięciu
+i otwiera projekt w osobnym oknie.
 
 Jeśli import zgłosi coś, czego nie udało się przenieść, kliknij *Szczegóły*, aby przeczytać
-listę. Ten raport znajdziesz też pod ikoną dzwonka na pasku stanu.
+listę, napisaną w języku ustawionym w Skribisto. Ten raport znajdziesz też pod ikoną dzwonka
+na pasku stanu.
+
+Jeśli projektu nie da się zaimportować, komunikat podaje przyczynę, a jego *Szczegóły*
+zawierają opis techniczny, który możesz przekazać, zgłaszając problem.
 
 Nowy projekt to pojedynczy plik `.skrib`. Jeśli stary projekt trzymałeś jako folder na potrzeby
 kontroli wersji, użyj potem polecenia *Projekt ▸ Zapisz jako folder…*. Zobacz

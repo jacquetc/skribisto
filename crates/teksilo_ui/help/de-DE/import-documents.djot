@@ -1,7 +1,9 @@
 Importieren Sie Word-, LibreOffice-, Markdown- oder einfache Textdateien in Ihr Projekt.
 Für Manuskripte, die von Lesern zurückkommen, siehe
 [Änderungen und Kommentare zurückbringen](:help-round-trip).
-Für Manuskript oder Plume Creator siehe [Projekte importieren](:help-import-projects).
+Für Manuskript oder Plume Creator siehe [Projekte importieren](:help-import-projects), für
+Scrivener [Von Scrivener wechseln](:help-import-scrivener). Ein Word-Dokument, das aus einem nicht
+importierbaren Scrivener-Projekt kompiliert wurde, importieren Sie hier.
 
 ## Ihre Dateien importieren
 
@@ -47,6 +49,24 @@ folgen Ihrem Exportstil. Manche Formatierungen werden möglicherweise vereinfach
 *Textfelder, Formeln und eingebettete Objekte werden weggelassen.* Prüfen Sie die Meldungen
 unter *Prüfen* auf nicht übernommene Inhalte und kopieren Sie fehlende Texte aus der Originaldatei.
 Zeichen aus Symbolschriften wie Wingdings können als leere Kästchen erscheinen.
+
+## Bilder
+
+Bilder kommen mit Ihren Dokumenten, jedes an seiner Stelle im Text. Aus Word- und
+LibreOffice-Dateien wird jedes in der Datei gespeicherte Bild samt seiner Beschreibung
+übernommen. Aus einer Markdown-Datei wird ein Bild übernommen, wenn seine Datei im eigenen Ordner
+des Dokuments oder in einem Ordner darin liegt. Unter *Prüfen* nennt eine Zeile unter dem Baum,
+wie viele Bilder übernommen werden.
+
+PNG-, JPEG- und WebP-Bilder kommen unverändert an; TIFF-, GIF- und BMP-Bilder kommen als PNG an,
+ein animiertes GIF als sein erstes Einzelbild. Ein Bild, das das Projekt bereits enthält, wird
+nicht doppelt gespeichert, und *Rückgängig* nimmt die Bilder zusammen mit dem Text zurück.
+
+Manche Bilder bleiben zurück, und die Meldungen nennen jedes mit seinem Grund: ein Format, das
+Skribisto nicht anzeigen kann (etwa EMF, WMF, SVG oder PDF), ein Bild im Web (es wird nichts
+heruntergeladen), ein Bild außerhalb des Dokuments und seines Ordners, ein fehlendes, nicht
+lesbares oder zu großes Bild oder eines in einer Überschrift, einer Notiz oder einem Kommentar.
+Fügen Sie ein solches Bild danach mit *Dokument ▸ Bild einfügen…* wieder ein.
 
 ## Meldungen vor dem Abschluss prüfen
 

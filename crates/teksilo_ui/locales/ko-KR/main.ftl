@@ -10,6 +10,7 @@ menu-create-from = 다음에서 만들기 (&C)
 menu-import-plume = Plume Creator (.plume)… (&P)
 menu-import-document = 문서 (Markdown, Word, ODT)… (&D)
 menu-import-manuskript = Manuskript (.msk)… (&M)
+menu-import-scrivener = Scrivener (.scriv)… (&S)
 menu-export = 내보내기 (&X)
 menu-export-book = 책 내보내기
 menu-export-part = 부 내보내기
@@ -651,6 +652,8 @@ backup-no-destination-title = 사용 가능한 백업 위치가 없습니다
 backup-no-destination-text = 설정한 백업 위치에 모두 접근할 수 없습니다. 외장 드라이브 연결 등을 확인한 뒤 다시 시도하거나, 백업하지 않고 종료하세요.
 backup-failed-close-title = 백업을 저장할 수 없습니다
 backup-failed-close-text = 닫기 전에 백업을 저장하지 못했습니다. 모든 저장 위치에서 실패했습니다. 드라이브 연결, 빈 공간, 쓰기 권한을 확인하고 다시 시도하거나 백업하지 않고 종료하세요.
+backup-failed-close-error-text = 닫기 전에 백업을 저장하지 못했습니다: { $error }. 문제를 해결하고 다시 시도하거나 백업하지 않고 종료하세요.
+backup-no-result = 백업이 사본을 만들었는지 알리지 않고 끝났습니다. 백업 목록에서 새 백업이 있는지 확인하세요.
 
 backup-choice-title = 백업 파일
 backup-choice-heading = 백업 사본을 열었습니다
@@ -824,10 +827,16 @@ import-plume-source-missing = 파일이 존재하지 않습니다
 import-plume-source-not-file = 이 경로는 파일이 아닙니다
 import-plume-manuscript-binder = 원고
 import-plume-story-bible-binder = 설정집
+import-plume-notes-of = { $name } (노트)
+import-plume-content-of = { $name } (내용)
 import-plume-progress-title = Plume 프로젝트 가져오는 중…
 import-plume-done = 항목 { $imported }개를 가져왔습니다. 휴지통의 항목 { $skipped }개는 옮기지 않았습니다.
 import-plume-nested-too-deep = 가져오지 않았습니다. "{ $part }" 부분의 중첩이 { $limit }단계를 넘습니다. 정상적인 Plume Creator 프로젝트보다 훨씬 깊어 앱이 중단될 수 있습니다. 기록된 내용은 없습니다.
 import-plume-declares-entities = 가져오지 않았습니다. "{ $part }" 부분에 일반 Plume Creator 프로젝트에는 없는 XML 엔터티 선언이 있습니다. 확장하면 메모리 부족으로 앱이 중단될 수 있습니다. 기록된 내용은 없습니다.
+import-plume-no-outline = 이 파일은 압축 파일이지만 Plume Creator 프로젝트가 아닙니다. 구조 정보가 없습니다. 기록된 내용은 없습니다.
+import-plume-empty-outline = 이 Plume Creator 프로젝트의 구조 파일이 비어 있어 가져올 내용이 없습니다. 기록된 내용은 없습니다.
+import-plume-wrong-document = Plume Creator 프로젝트가 아닙니다. "{ $part }" 부분이 "{ $tag }" 문서입니다. 기록된 내용은 없습니다.
+import-plume-too-new = 이 프로젝트의 "{ $part }" 부분은 Skribisto가 읽을 수 있는 버전({ $supported }까지)보다 새로운 Plume Creator(버전 { $version })로 작성되었습니다. 기록된 내용은 없습니다.
 
 import-manuskript-title = Manuskript 프로젝트 가져오기
 import-manuskript-source = Manuskript 프로젝트
@@ -846,15 +855,741 @@ import-manuskript-summary-note = 요약
 import-manuskript-importance-minor = 단역
 import-manuskript-importance-secondary = 조연
 import-manuskript-importance-main = 주요 인물
+import-manuskript-notes-of = { $title } (노트)
 import-manuskript-progress-title = Manuskript 프로젝트 가져오는 중…
 import-manuskript-done = 항목 { $imported }개와 이전 버전 { $revisions }개를 가져왔습니다.
 import-manuskript-nested-too-deep = 가져오지 않았습니다. "{ $part }" 파일의 중첩이 { $limit }단계를 넘습니다. 정상적인 Manuskript 프로젝트보다 훨씬 깊어 앱이 중단될 수 있습니다. 기록된 내용은 없습니다.
 import-manuskript-folders-too-deep = 가져오지 않았습니다. 파일의 폴더 깊이가 { $limit }단계를 넘습니다. 정상적인 Manuskript 프로젝트보다 훨씬 깊어 앱이 중단될 수 있습니다. 기록된 내용은 없습니다.
 import-manuskript-declares-entities = 가져오지 않았습니다. "{ $part }" 파일에 일반 Manuskript 프로젝트에는 없는 XML 엔터티 선언이 있습니다. 확장하면 메모리 부족으로 앱이 중단될 수 있습니다. 기록된 내용은 없습니다.
+import-manuskript-not-a-project-file = "{ $file }" 파일은 Manuskript 프로젝트 압축 파일도, 프로젝트 폴더를 가리키는 작은 .msk 파일도 아닙니다. 기록된 내용은 없습니다.
+import-manuskript-folder-missing = "{ $stub }" 파일은 옆에 있는 "{ $folder }" 프로젝트 폴더를 가리키지만 그 폴더가 없습니다. 폴더 모드의 Manuskript 프로젝트는 이 파일과 폴더로 이루어지므로 둘을 함께 옮겨야 합니다. 기록된 내용은 없습니다.
+import-manuskript-not-a-project = Manuskript 프로젝트가 아닌 것 같습니다. Manuskript 표식도 구조 정보도 없습니다. 기록된 내용은 없습니다.
+import-manuskript-format-too-new = 이 프로젝트는 Manuskript 형식 { $version }(으)로, Skribisto가 읽을 수 있는 형식({ $supported }까지)보다 새롭습니다. 기록된 내용은 없습니다.
+import-manuskript-too-many-files = 가져오지 않았습니다. 파일이 { $limit }개를 넘어 일반적인 Manuskript 프로젝트보다 훨씬 많습니다. 기록된 내용은 없습니다.
+import-manuskript-too-large = 가져오지 않았습니다. 프로젝트 크기가 Skribisto가 Manuskript 프로젝트에서 읽는 한도인 { $limit } MB를 넘습니다. 기록된 내용은 없습니다.
+
+## Project import, shared by every project importer (Plume Creator, Manuskript, Scrivener)
+project-import-close = 닫기
+project-import-location = 대상 폴더
+project-import-location-title = 대상 폴더 선택
+project-import-name = 파일 이름
+project-import-name-placeholder = 프로젝트 이름
+project-import-will-create = 만들 위치
+project-import-cancel = 취소
+project-import-import = 가져오기
+project-import-location-required = 대상 폴더 선택
+project-import-location-missing = 폴더가 존재하지 않습니다
+project-import-location-not-folder = 이 경로는 폴더가 아닙니다
+project-import-location-readonly = 이 폴더에 쓸 수 없습니다
+project-import-name-required = 파일 이름 입력
+project-import-name-exists = 같은 이름의 파일이 있습니다. 가져올 때 덮어쓰기를 확인합니다
+project-import-name-is-folder = 같은 이름의 폴더가 이미 있습니다. 폴더로 보관한 프로젝트일 수 있습니다. 가져오기로는 바꿀 수 없으니 다른 이름을 선택하세요
+project-import-overwrite-title = 기존 파일을 바꿀까요?
+project-import-overwrite-text = "{ $name }" 파일이 이미 있습니다. 가져온 프로젝트로 바꿀까요?
+project-import-busy-title = 다른 프로젝트를 가져오는 중입니다
+project-import-busy-text = 프로젝트는 한 번에 하나씩 가져옵니다. 진행 중인 가져오기가 끝날 때까지 기다리거나 취소한 뒤 다시 시작하세요.
+project-import-progress-announcement = { $title } { $phase }
+project-import-stopping = 가져오기를 중지하는 중…
+project-import-cancelled = 가져오기가 취소되었습니다
+project-import-open-now = 지금 열기
+project-import-details = 세부 정보
+project-import-report = 이 가져오기에 관한 알림 { $count }개
+project-import-report-title = 이 가져오기에 관하여
+project-import-error-title = 프로젝트를 가져올 수 없습니다
+project-import-failed-cancelled = 가져오기가 취소되었습니다. 기록된 내용은 없습니다.
+project-import-failed-target-exists = "{ $file }" 파일이 이미 있으며, 가져오기에서 이 파일을 바꾸도록 허용되지 않았습니다. 기록된 내용은 없습니다.
+project-import-failed-target-folder = "{ $file }"은(는) 폴더이며 폴더로 보관한 프로젝트일 수 있습니다. 가져오기로는 바꿀 수 없으니 다른 이름을 선택하세요. 기록된 내용은 없습니다.
+project-import-failed-not-written = "{ $folder }"에 "{ $file }" 파일을 쓸 수 없습니다({ $reason }). 기록된 내용은 없습니다.
+project-import-failed-disk-full = "{ $folder }"에 "{ $file }" 파일을 쓸 공간이 부족합니다. 그곳의 공간을 확보한 뒤 다시 가져오세요. 기록된 내용은 없습니다.
+project-import-failed-source-missing = "{ $file }" 파일이 더 이상 없습니다. 기록된 내용은 없습니다.
+project-import-failed-unreadable = Skribisto가 "{ $file }" 파일을 읽을 수 없습니다({ $reason }). 기록된 내용은 없습니다.
+project-import-failed-archive-damaged = "{ $file }" 압축 파일을 읽을 수 없습니다. 손상되었을 수 있습니다({ $reason }). 기록된 내용은 없습니다.
+project-import-failed-archive-entries = 가져오지 않았습니다. 압축 파일에 파일 { $entries }개가 들어 있어 프로젝트에 담을 수 있는 { $limit }개를 넘습니다. 메모리를 고갈시키려고 만든 파일이 아니면 이런 일은 없습니다. 기록된 내용은 없습니다.
+project-import-failed-archive-member = 가져오지 않았습니다. "{ $part }" 부분의 압축을 풀면 { $limit } MB를 넘습니다. 메모리를 고갈시키려고 만든 파일이 아니면 이런 일은 없습니다. 기록된 내용은 없습니다.
+project-import-failed-archive-size = 가져오지 않았습니다. 압축을 풀면 { $limit } MB를 넘습니다. 메모리를 고갈시키려고 만든 파일이 아니면 이런 일은 없습니다. 기록된 내용은 없습니다.
+project-import-failed-nested = 가져오지 않았습니다. "{ $part }" 부분의 중첩이 { $limit }단계를 넘어 읽으면 Skribisto가 중단될 수 있습니다. 기록된 내용은 없습니다.
+project-import-failed-entities = 가져오지 않았습니다. "{ $part }" 부분에 XML 엔터티 선언이 있습니다. 확장하면 컴퓨터의 메모리를 넘어 Skribisto가 중단될 수 있습니다. 기록된 내용은 없습니다.
+project-import-failed-folders = 가져오지 않았습니다. 파일 하나가 폴더 { $limit }단계보다 깊은 곳에 있어 읽으면 Skribisto가 중단될 수 있습니다. 기록된 내용은 없습니다.
+project-import-failed-malformed = 가져오지 않았습니다. "{ $part }" 부분이 손상되어 읽을 수 없습니다({ $reason }). 기록된 내용은 없습니다.
+project-import-failed-scrivener-refused = Skribisto는 이 Scrivener 프로젝트를 가져올 수 없습니다. 기록된 내용은 없습니다.
+project-import-failed-scrivener-question = Scrivener 프로젝트에 검토에서 답하지 않은 질문이 있습니다. 다시 검토한 뒤 가져오세요. 기록된 내용은 없습니다.
+project-import-failed-scrivener-not-accepted = Scrivener 프로젝트에 아직 수락하지 않은 질문이 있습니다. 다시 검토한 뒤 가져오세요. 기록된 내용은 없습니다.
+project-import-failed-scrivener-changed = 검토한 뒤 Scrivener 프로젝트가 바뀌었습니다. 다시 검토한 뒤 가져오세요. 기록된 내용은 없습니다.
+project-import-failed-internal = Skribisto가 예상하지 못한 오류로 가져오기가 중단되었습니다: { $detail }
 
 import-target-open-title = 이 프로젝트가 열려 있습니다
 import-target-open-text = "{ $name }"이 열려 있습니다. 덮어쓰면 작업 중인 프로젝트를 대체하고 다음 저장 때 가져온 내용을 다시 덮어씁니다. 다른 파일 이름을 선택하거나 먼저 프로젝트를 닫으세요.
 import-warnings-announcement = { $result } { $notice }.
+quit-import-running-title = 아직 가져오는 중입니다
+quit-import-running-text = Skribisto가 아직 "{ $name }" 파일로 가져오는 중입니다. 지금 종료하면 가져오기가 중지됩니다. 기록된 내용은 없으며 가져오던 원본 프로젝트도 그대로 남습니다.
+quit-import-stop = 가져오기를 중지하고 종료
+
+## Import a Scrivener project: the wizard
+import-scrivener-title = Scrivener 프로젝트 가져오기
+import-scrivener-step-project = 프로젝트
+import-scrivener-step-review = 검토
+import-scrivener-step-save = 저장
+import-scrivener-back = 뒤로
+import-scrivener-next = 다음
+import-scrivener-import = 가져오기
+import-scrivener-cancel = 취소
+import-scrivener-help = 도움말
+
+## Project step: choosing the project
+import-scrivener-drop-title = Scrivener 프로젝트를 여기에 놓으세요
+import-scrivener-drop-hint = .scriv 프로젝트, 그 안의 .scrivx 파일, 백업 .zip 또는 .scrivtemplate
+import-scrivener-source = Scrivener 프로젝트
+import-scrivener-source-placeholder = 프로젝트 경로
+import-scrivener-choose-file = 파일 선택…
+import-scrivener-choose-folder = 폴더 선택…
+import-scrivener-source-hint = 프로젝트의 .scriv 폴더를 선택하거나, 폴더를 열고 그 안의 .scrivx 파일을 선택하세요. 백업 .zip도 사용할 수 있습니다.
+import-scrivener-source-hint-mac = 프로젝트가 하나의 파일로 보이면 ‘파일 선택…’을, 폴더로 보이면 ‘폴더 선택…’을 사용하세요. 백업 .zip도 사용할 수 있습니다.
+import-scrivener-dialog-file-title = Scrivener 프로젝트 선택
+import-scrivener-dialog-folder-title = Scrivener 프로젝트 폴더 선택
+import-scrivener-dialog-filter = Scrivener 프로젝트
+import-scrivener-source-missing = 이 경로에 아무것도 없습니다
+import-scrivener-source-unreadable-name = 이 이름을 읽을 수 없습니다. 파일 관리자에서 프로젝트 이름을 바꾼 뒤 다시 선택하세요.
+import-scrivener-empty-hint = 프로젝트를 선택하면 Skribisto가 그 안에서 찾은 내용을 보여줍니다.
+import-scrivener-reading = 프로젝트를 읽는 중…
+import-scrivener-stop-reading = 읽기 중지
+import-scrivener-read-failed = 프로젝트를 읽을 수 없습니다
+import-scrivener-read-failed-body = 읽는 동안 문제가 생겼습니다. 다시 확인하거나 세부 정보를 보세요.
+import-scrivener-details = 세부 정보
+import-scrivener-check-again = 다시 확인
+import-scrivener-refusal-unknown-title = 이 프로젝트는 가져올 수 없습니다
+import-scrivener-refusal-unknown-body = Skribisto가 이 프로젝트를 옮겨 올 방법을 모릅니다. 이유는 세부 정보에 있습니다.
+
+## Project step: the project card
+import-scrivener-made-with-mac = macOS용 Scrivener { $version }에서 마지막으로 저장함
+import-scrivener-made-with-windows = Windows용 Scrivener { $version }에서 마지막으로 저장함
+import-scrivener-made-with-linux = Linux용 Scrivener { $version }에서 마지막으로 저장함
+import-scrivener-made-with-ios = iPhone 및 iPad용 Scrivener { $version }에서 마지막으로 저장함
+import-scrivener-made-with-version = Scrivener { $version }에서 마지막으로 저장함
+import-scrivener-made-with-unknown = Scrivener 프로젝트, 형식 { $format }
+import-scrivener-saved-on = { $date }에 "{ $device }"에서 저장함
+import-scrivener-saved-on-no-device = { $date }에 저장함
+import-scrivener-card-counts = 문서 { $documents }개, 그중 원고 { $manuscript }개
+
+## Review step
+import-scrivener-review-hint = 문서 트리를 이렇게 가져옵니다. 가져오기 전에는 아무것도 기록하지 않으며, 많은 항목은 나중에 문서 트리에서 ‘유형 변경’으로 종류를 바꿀 수 있습니다.
+import-scrivener-choices-structure = 수준
+import-scrivener-top-level = 최상위 폴더
+import-scrivener-choices-text = 본문
+import-scrivener-choice-containers = { $depth }번째 수준의 폴더
+import-scrivener-choice-texts = { $depth }번째 수준의 문서
+import-scrivener-choice-count = 항목 { $count }개
+import-scrivener-choice-count-example = { $count ->
+    [1] 항목 1개: "{ $example }"
+   *[other] 항목 { $count }개 (예: "{ $example }")
+}
+import-scrivener-rung-part = 부
+import-scrivener-rung-chapter = 장
+import-scrivener-rung-plain = 일반 폴더
+import-scrivener-texts-scenes = 장면
+import-scrivener-texts-chapters = 장
+import-scrivener-choice-books = 원고의 책 구성
+import-scrivener-books-one = 책 한 권
+import-scrivener-books-several = 폴더마다 책 한 권
+import-scrivener-choice-split = "{ $title }"을(를) 제목 { $count }개 위치에서 나누기
+import-scrivener-root-items = 항목 { $count }개
+import-scrivener-root-items-manuscript = 항목 { $count }개, 원고로 보임
+import-scrivener-dest-notes = 노트
+import-scrivener-dest-story-bible = 설정집
+import-scrivener-dest-manuscript = 다른 책
+import-scrivener-dest-leave-out = 제외
+import-scrivener-choice-trash = 휴지통도 가져오기 (항목 { $count }개)
+import-scrivener-trash-detail = { $count ->
+    [0] 글이 있는 항목은 없습니다.
+   *[other] 그중 { $count }개에 글이 있습니다.
+}
+import-scrivener-choice-blank-lines = 빈 줄을 장면 구분으로 바꾸기
+import-scrivener-choice-ornaments = 장식 기호 줄을 장면 구분으로 바꾸기
+import-scrivener-preview-label = 새 프로젝트의 구조
+import-scrivener-col-title = 제목
+import-scrivener-col-becomes = 변환 결과
+import-scrivener-col-exports = 내보내기 포함
+import-scrivener-in-exports-yes = 예
+import-scrivener-in-exports-no = 아니요
+import-scrivener-becomes-item = 항목
+import-scrivener-becomes-trashed = 휴지통에 있음
+import-scrivener-before-title = 가져오기 전에
+import-scrivener-review-error-unreadable = 검토를 준비할 수 없습니다. 프로젝트를 다시 선택하세요.
+import-scrivener-review-error-choice = 이 선택은 프로젝트에 맞지 않습니다. 프로젝트를 다시 선택하세요.
+import-scrivener-review-error-unmappable = 이 선택으로는 아무것도 잃지 않고 문서 트리를 가져올 수 없습니다. 다르게 선택하거나 문제를 신고하세요.
+
+## Save step
+import-scrivener-save-hint = 가져오기는 새 Skribisto 프로젝트를 만듭니다. Scrivener 프로젝트는 읽기만 하며 바꾸지 않습니다.
+import-scrivener-title-field = 제목
+import-scrivener-author = 저자
+import-scrivener-language = 언어
+import-scrivener-location-inside-project = Scrivener 프로젝트 밖의 폴더를 선택하세요. 프로젝트 폴더 안에는 Scrivener 자체 파일만 둡니다.
+import-scrivener-copy-research-label = 새 프로젝트 옆에 조사 자료 파일 복사
+import-scrivener-copy-research = Skribisto에서 열 수 없는 조사 자료 파일 { $count }개(PDF, 소리 파일 등)를 프로젝트 옆 폴더에 복사합니다. 선택을 해제하면 각 파일의 노트에 Scrivener 프로젝트 안의 위치를 적습니다.
+import-scrivener-default-name = Scrivener 프로젝트
+
+## Progress and result
+import-scrivener-progress-title = Scrivener 프로젝트 가져오는 중…
+import-scrivener-done-title = Scrivener 프로젝트를 가져왔습니다
+import-scrivener-done = 새 프로젝트에 항목 { $items }개가 있습니다.
+import-scrivener-done-check = 새 프로젝트에 항목 { $items }개가 있습니다. 확인할 사항이 { $findings }개 있습니다.
+import-scrivener-review-again = 다시 검토
+
+## The import's report (the dialog See report opens)
+import-scrivener-see-report = 보고서 보기
+import-scrivener-report-from = 읽은 위치: { $path }
+import-scrivener-report-to = 기록한 위치: { $path }
+import-scrivener-report-came-across = 가져온 내용
+import-scrivener-report-nothing-counted = 집계된 내용이 없습니다.
+import-scrivener-report-items = 항목 { $count }개
+import-scrivener-report-words = { $count }단어
+import-scrivener-report-synopses = 줄거리 요약 { $count }개
+import-scrivener-report-document-notes = 문서 { $count }개의 노트
+import-scrivener-report-comments = 댓글 { $count }개
+import-scrivener-report-footnotes = 각주 { $count }개
+import-scrivener-report-pictures = 이미지 { $count }개
+import-scrivener-report-templates = 노트 템플릿 { $count }개
+import-scrivener-report-tags = 태그 { $count }개
+import-scrivener-report-statuses = 상태 { $count }개
+import-scrivener-report-trashed = 휴지통 항목 { $count }개
+import-scrivener-report-research-files = 조사 자료 파일 { $count }개
+import-scrivener-report-choices = 선택한 사항
+import-scrivener-report-accepted-mobile = iPhone이나 iPad용 Scrivener에서 한 변경 중 아직 프로젝트에 반영되지 않은 내용은 제외하고 가져왔습니다.
+import-scrivener-report-accepted-no-text = 이 사본에는 문서의 글이 하나도 없었으므로, 문서를 빈 상태로 가져오기로 했습니다.
+import-scrivener-report-choice = { $subject }: { $answer }
+import-scrivener-report-yes = 예
+import-scrivener-report-no = 아니요
+import-scrivener-report-research-copied = Skribisto에서 열 수 없는 조사 자료 파일을 새 프로젝트 옆 "{ $folder }" 폴더에 복사했습니다.
+import-scrivener-report-research-not-copied = Skribisto에서 열 수 없는 조사 자료 파일은 복사하지 않았습니다. 각 파일의 노트에 Scrivener 프로젝트 안의 위치가 적혀 있습니다.
+import-scrivener-report-research-copied-except = Skribisto에서 열 수 없는 조사 자료 파일을 새 프로젝트 옆 "{ $folder }" 폴더에 복사했습니다. 단, { $count }개는 Scrivener 프로젝트에 남아 있으며 노트에 그 위치가 적혀 있습니다.
+import-scrivener-report-research-none-copied = 조사 자료 파일 복사를 선택했지만 { $count }개를 복사하지 못했습니다. 이 파일은 Scrivener 프로젝트에 남아 있으며 노트에 그 위치가 적혀 있습니다.
+import-scrivener-report-chose-project = 선택한 위치에 있는 프로젝트 중 "{ $project }" 프로젝트를 가져오기로 선택했습니다.
+import-scrivener-report-chose-manifest = 문서 트리 파일 "{ $file }"을(를) 선택했습니다.
+import-scrivener-report-chose-enclosing = "{ $project }" 프로젝트 안의 항목을 선택했으므로 프로젝트 전체를 가져왔습니다.
+import-scrivener-report-chose-upgraded = Scrivener가 업데이트 전에 보관한 사본이 아니라, 계속 작업한 프로젝트인 "{ $current }"을(를) 가져왔습니다.
+import-scrivener-report-chose-backup = Scrivener가 업데이트 전에 보관한 이전 사본인 "{ $backup }"을(를) 가져왔습니다.
+import-scrivener-report-title-placeholder-rejected = 프로젝트 설정의 제목이 템플릿의 자리 표시자였으므로 Skribisto가 대신 프로젝트 이름을 제안했습니다.
+import-scrivener-report-author-placeholder-rejected = 프로젝트 설정의 저자 이름이 템플릿의 자리 표시자였으므로 Skribisto가 저자 이름을 제안하지 않았습니다.
+import-scrivener-report-title-from-compile-settings = Skribisto가 프로젝트의 컴파일 설정에 있는 제목을 제안했습니다. Scrivener에서 그곳에 제목을 정하지 않았다면 프로젝트를 만들 때의 이름입니다.
+import-scrivener-report-title-from-template = Skribisto가 템플릿 자체의 제목을 제안했습니다.
+import-scrivener-report-title-from-folder-name = Skribisto가 프로젝트 이름을 제목으로 제안했습니다.
+import-scrivener-report-title-from-project-properties = Skribisto가 프로젝트 속성에 있는 제목을 제안했습니다.
+import-scrivener-report-author-from-project = Skribisto가 프로젝트 설정에 있는 저자 이름을 제안했습니다. 템플릿 작성자의 이름이 남아 있을 수 있으며, 그대로 두면 속표지에 인쇄됩니다.
+import-scrivener-report-language-not-stated = 프로젝트에 언어가 지정되어 있지 않아 Skribisto의 인터페이스 언어를 제안했습니다. 언어에 따라 단어를 세는 방식과 따옴표 표기가 정해집니다.
+import-scrivener-report-language-from-script = Skribisto가 원고에 쓰인 문자({ $tag })를 바탕으로 언어를 제안했습니다.
+import-scrivener-report-you-changed-it = { $hint } 직접 변경했습니다.
+import-scrivener-report-content-salvaged-text = "{ $item }" 항목의 본문이 프로젝트에 없었습니다. 이 글은 Scrivener 검색 색인에서 가져온 서식 없는 텍스트이며 이전 버전일 수 있으니 확인하세요.
+import-scrivener-report-content-salvaged-notes = "{ $item }" 항목의 노트가 프로젝트에 없었습니다. 이 글은 Scrivener 검색 색인에서 가져온 서식 없는 텍스트이며 이전 버전일 수 있으니 확인하세요.
+import-scrivener-report-content-salvaged-synopsis = "{ $item }" 항목의 줄거리 요약이 프로젝트에 없었습니다. 이 글은 Scrivener 검색 색인에서 가져온 서식 없는 텍스트이며 이전 버전일 수 있으니 확인하세요.
+import-scrivener-report-document-others = { $sentence } 아래에 나열한 다른 { $others }곳에서도 같은 일이 있습니다.
+import-scrivener-report-item-notes = { $path } (문서 노트)
+import-scrivener-report-item-synopsis = { $path } (줄거리 요약)
+import-scrivener-report-item-project-note = { $path } (프로젝트 노트)
+import-scrivener-report-item-recovered = { $path } (복구한 글)
+import-scrivener-report-untitled = 제목 없음
+import-scrivener-report-no-findings = 더 보고할 내용이 없습니다.
+import-scrivener-report-group-unread = 읽을 수 없음
+import-scrivener-report-group-check = 확인 필요
+import-scrivener-report-group-changed = 다르게 가져옴
+import-scrivener-report-group-left = 가져오지 않음
+import-scrivener-report-group-count = { $group } ({ $count })
+import-scrivener-report-items-toggle = 항목 { $count }개
+import-scrivener-report-items-toggle-named = 항목 { $count }개: { $line }
+import-scrivener-report-names-toggle = 이름 { $count }개
+import-scrivener-report-names-toggle-named = 이름 { $count }개: { $line }
+import-scrivener-report-more = 그 밖에 { $count }개가 더 있습니다.
+import-scrivener-report-open-item = 편집기에서 열기
+import-scrivener-report-links-hint = 새 프로젝트를 연 뒤 명령 팔레트에서 이 보고서를 다시 표시하면 여기에 나열된 각 항목을 클릭해 열 수 있습니다.
+import-scrivener-copy-report = 보고서 복사
+import-scrivener-report-copied = 보고서를 복사했습니다
+import-scrivener-report-copy-failed = 보고서를 복사할 수 없습니다.
+import-scrivener-report-close = 닫기
+import-scrivener-report-none-title = 가져오기 보고서 없음
+import-scrivener-report-none = Skribisto를 시작한 뒤 끝난 Scrivener 가져오기가 없습니다. Skribisto는 종료할 때까지 최근 가져오기의 보고서를 보관합니다.
+import-scrivener-report-gone = 이 가져오기의 보고서는 더 이상 보관되어 있지 않습니다. Skribisto는 종료할 때까지 최근 가져오기 { $count }건의 보고서를 보관합니다.
+
+## Words the import writes into the new project, in the language Skribisto shows itself in
+import-scrivener-manuscript-binder = 원고
+import-scrivener-notes-binder = 노트
+import-scrivener-notes-of = { $title } (노트)
+import-scrivener-project-notes = 프로젝트 노트
+import-scrivener-recovered = 복구한 글
+import-scrivener-untitled-template = 제목 없는 템플릿
+import-scrivener-research-folder = { $name } 조사 자료 파일
+import-scrivener-list-separator = {", "}
+import-scrivener-label-details = Scrivener의 "{ $field }" 필드에서 가져옴
+import-scrivener-status-details = Scrivener의 "{ $field }" 필드에서 가져옴
+import-scrivener-unnamed-label = 레이블 { $number }
+import-scrivener-unnamed-status = 상태 { $number }
+import-scrivener-label-tag = { $name } (레이블)
+import-scrivener-untitled-tag = 제목 없음
+import-scrivener-keyword-details = Scrivener의 키워드 "{ $path }"
+import-scrivener-unnamed-keyword = 키워드 { $number }
+import-scrivener-keyword-tag = { $name } (키워드)
+import-scrivener-collection-details = Scrivener의 컬렉션
+import-scrivener-collection-tag = { $name } (컬렉션)
+import-scrivener-field-details = Scrivener의 "{ $field }" 필드에서 가져옴
+import-scrivener-field-value = { $field }: { $option }
+import-scrivener-field-tag = { $name } (필드)
+import-scrivener-deadline-day = 마감일
+import-scrivener-from-scrivener = Scrivener에서 가져옴
+import-scrivener-note-project = 프로젝트
+import-scrivener-note-project-bookmarks = 프로젝트 북마크
+import-scrivener-note-replacements = 컴파일 치환
+import-scrivener-note-auto-complete = 자동 완성 항목
+import-scrivener-note-saved-searches = 저장된 검색
+import-scrivener-note-custom-metadata = 사용자 지정 메타데이터
+import-scrivener-note-targets = 목표
+import-scrivener-note-bookmarks = 북마크
+import-scrivener-abbreviated-title = 약식 제목
+import-scrivener-subjects = 주제
+import-scrivener-company = 회사
+import-scrivener-session-target = 세션 목표
+import-scrivener-session-target-calculated = 세션 목표 (Scrivener가 마감일로 계산)
+import-scrivener-writing-days = 집필 요일
+import-scrivener-weekday-monday = 월요일
+import-scrivener-weekday-tuesday = 화요일
+import-scrivener-weekday-wednesday = 수요일
+import-scrivener-weekday-thursday = 목요일
+import-scrivener-weekday-friday = 금요일
+import-scrivener-weekday-saturday = 토요일
+import-scrivener-weekday-sunday = 일요일
+import-scrivener-draft-target = 원고 목표
+import-scrivener-deadline = 마감일
+import-scrivener-unit-words = 단어
+import-scrivener-unit-characters = 글자
+import-scrivener-unit-pages = 페이지
+import-scrivener-search-query = 검색어
+import-scrivener-search-in = 검색 범위
+import-scrivener-search-operator = 일치 방식
+import-scrivener-search-in-all = 전체
+import-scrivener-search-in-title = 제목
+import-scrivener-search-in-text = 본문
+import-scrivener-search-in-notes = 노트
+import-scrivener-search-in-synopsis = 줄거리 요약
+import-scrivener-search-in-keywords = 키워드
+import-scrivener-search-in-label = 레이블
+import-scrivener-search-in-status = 상태
+import-scrivener-search-in-section-type = 섹션 유형
+import-scrivener-search-in-custom-metadata = 사용자 지정 메타데이터
+import-scrivener-search-any = 아무 단어나
+import-scrivener-search-all = 모든 단어
+import-scrivener-search-exact = 정확한 구문
+import-scrivener-label-value = { $label }: { $value }
+import-scrivener-replacement-regex = 정규식
+import-scrivener-replacement-off = 꺼짐
+import-scrivener-in-own-note = 자체 노트에 나열되어 있습니다.
+
+## Import a Scrivener project: what the import says about the project, in the writer's words.
+import-scrivener-paragraph = { $title }. { $body }
+
+## When the project cannot be imported
+import-scrivener-refusal-missing-title = 이 경로에 아무것도 없습니다
+import-scrivener-refusal-missing-body = "{ $file }" 항목이 더 이상 없습니다. 프로젝트를 다시 선택하세요.
+import-scrivener-refusal-unreadable-title = 이 프로젝트를 읽을 수 없습니다
+import-scrivener-refusal-unreadable-body = Skribisto가 "{ $file }"을(를) 읽을 수 없습니다({ $reason }). 열 수 있는지 확인한 뒤 다시 시도하세요.
+import-scrivener-refusal-not-a-scrivener-project-title = 여기에 Scrivener 프로젝트가 없습니다
+import-scrivener-refusal-not-a-scrivener-project-body = 프로젝트의 .scriv 폴더, 그 안의 .scrivx 파일, 백업 .zip 또는 .scrivtemplate을 선택하세요.
+import-scrivener-refusal-manifest-without-files-title = 이 사본에는 문서가 없습니다
+import-scrivener-refusal-manifest-without-files-body = "{ $manifest }" 파일은 있지만 이 파일에 나열된 문서를 담은 Files 폴더가 없습니다. 동기화 서비스가 아직 프로젝트를 다 복사하지 않았거나 .scrivx 파일만 복사되었을 수 있습니다. .scrivx 파일을 선택했다면 ‘폴더 선택…’으로 프로젝트 폴더를 선택하세요.
+import-scrivener-refusal-search-too-wide-title = 이 폴더는 내용이 너무 많아 검색할 수 없습니다
+import-scrivener-refusal-search-too-wide-body = 살펴볼 폴더가 { $limit }개를 넘습니다. Scrivener 프로젝트 자체를 선택하세요.
+import-scrivener-refusal-scrivener-one-for-mac-title = Mac용 Scrivener 1로 만든 프로젝트입니다
+import-scrivener-refusal-scrivener-one-for-mac-body = Skribisto는 Scrivener 2 이후 버전의 프로젝트를 읽습니다. Scrivener 2나 3에서 한 번 열어 업데이트하거나, Word 문서로 컴파일한 뒤 그 문서를 가져오세요.
+import-scrivener-refusal-ios-stub-without-mobile-data-title = iPhone 또는 iPad용 Scrivener의 자리 표시 파일일 뿐입니다
+import-scrivener-refusal-ios-stub-without-mobile-data-body = 프로젝트 자체는 여기에 없습니다. iPhone이나 iPad에서 동기화하거나 그곳에서 .zip으로 공유한 뒤 그 파일을 가져오세요.
+import-scrivener-refusal-newer-title = 더 새로운 Scrivener로 만든 프로젝트입니다
+import-scrivener-refusal-unknown-format-version-body = 이 프로젝트의 형식 { $version }은(는) Skribisto가 알지 못하는 형식입니다. Skribisto 업데이트를 확인하세요. 그때까지는 Scrivener에서 Word 문서로 컴파일한 뒤 그 문서를 가져오세요.
+import-scrivener-refusal-newer-format-stamp-body = 파일에는 버전 { $stamp }(으)로 표시되어 있지만 Skribisto는 버전 { $newest }까지 읽습니다. Skribisto 업데이트를 확인하세요. 그때까지는 Scrivener에서 Word 문서로 컴파일한 뒤 그 문서를 가져오세요.
+import-scrivener-refusal-version-stamp-unreadable-title = 프로젝트 버전을 읽을 수 없습니다
+import-scrivener-refusal-version-stamp-unreadable-body = Files/version.txt 파일에 버전 번호가 없어 Skribisto가 이 프로젝트를 읽을 수 있는지 알 수 없습니다. Scrivener에서 프로젝트를 한 번 연 뒤 다시 가져오세요.
+import-scrivener-refusal-damaged-manifest-title = 문서 트리 파일을 읽을 수 없습니다
+import-scrivener-refusal-damaged-manifest-body = "{ $manifest }" 파일이 손상되었습니다. { $spare_copies ->
+    [0] Scrivener에서 프로젝트를 열면 복구할 수 있습니다. 그런 다음 다시 가져오세요.
+   *[other] Scrivener는 프로젝트 안에 이 파일의 예비 사본 { $spare_copies }개를 보관하지만 Skribisto는 이를 읽지 않습니다. Scrivener에서 프로젝트를 열면 복구할 수 있습니다. 그런 다음 다시 가져오세요.
+}
+import-scrivener-refusal-damaged-manifest-new-project-placeholder-body = "{ $manifest }" 파일은 Scrivener가 아직 저장하지 않은 프로젝트를 위해 만드는 빈 파일입니다. Scrivener에서 프로젝트를 열어 저장한 뒤 다시 가져오세요.
+import-scrivener-refusal-manifest-too-large-title = 이 문서 트리 파일은 너무 큽니다
+import-scrivener-refusal-manifest-too-large-body = "{ $manifest }" 파일이 Skribisto가 읽는 한도인 { $limit } MB보다 큽니다. 실제 프로젝트는 이 크기에 이르지 않으므로 파일이 손상되었을 수 있습니다.
+import-scrivener-refusal-no-item-identifiers-title = 문서 트리에 Skribisto가 찾을 수 있는 문서가 없습니다
+import-scrivener-refusal-no-item-identifiers-body = 어떤 항목에도 식별자가 없어 파일을 찾을 수 없습니다. Scrivener에서 프로젝트를 한 번 연 뒤 다시 가져오세요.
+import-scrivener-refusal-incomplete-copy-title = 이 사본에 문서가 빠져 있습니다
+import-scrivener-refusal-incomplete-copy-body = Files 폴더는 있지만 그 안에 문서가 없습니다. 동기화 서비스가 아직 프로젝트를 다 복사하지 않았을 수 있습니다. 복사가 끝날 때까지 기다리거나 .scriv 폴더 전체를 다시 복사한 뒤 다시 확인하세요.
+import-scrivener-refusal-archive-title = 이 압축 파일을 열 수 없습니다
+import-scrivener-refusal-archive-unreadable-body = "{ $file }" 파일을 읽을 수 없습니다({ $reason }). 손상되었을 수 있습니다. 직접 압축을 푼 뒤 그 안의 .scriv 폴더를 선택하세요.
+import-scrivener-refusal-archive-unsafe-name-title = 이 압축 파일은 안전하게 열 수 없습니다
+import-scrivener-refusal-archive-unsafe-name-body = "{ $file }"에 압축 파일 밖에 놓이게 되는 "{ $member }"(이)라는 이름의 파일이 있어 Skribisto는 이 압축 파일을 열지 않습니다.
+import-scrivener-refusal-archive-unsafe-name-empty-body = "{ $file }"에 이름 없는 파일이 있어 Skribisto는 이 압축 파일을 열지 않습니다.
+import-scrivener-refusal-archive-unsafe-name-control-character-body = "{ $file }"에 이름에 제어 문자가 들어 있는 파일이 있어 Skribisto는 이 압축 파일을 열지 않습니다.
+import-scrivener-refusal-archive-too-large-title = 이 압축 파일은 너무 커서 안전하게 열 수 없습니다
+import-scrivener-refusal-archive-too-many-members-body = 파일이 { $limit }개를 넘습니다. 직접 압축을 푼 뒤 그 안의 .scriv 폴더를 선택하세요.
+import-scrivener-refusal-archive-member-too-large-body = "{ $member }" 파일의 압축을 풀면 { $limit } MB를 넘습니다. 압축 파일을 직접 푼 뒤 그 안의 .scriv 폴더를 선택하세요.
+import-scrivener-refusal-archive-too-large-body = 압축을 풀면 { $limit } MB를 넘습니다. 직접 압축을 푼 뒤 그 안의 .scriv 폴더를 선택하세요.
+import-scrivener-refusal-archive-encrypted-title = 이 압축 파일은 암호로 보호되어 있습니다
+import-scrivener-refusal-archive-encrypted-body = "{ $file }" 파일의 압축을 직접 푼 뒤 그 안의 .scriv 폴더를 선택하세요.
+import-scrivener-refusal-archive-unsupported-compression-title = 이 압축 파일은 Skribisto가 읽을 수 없는 방식으로 압축되어 있습니다
+import-scrivener-refusal-archive-unsupported-compression-body = "{ $member }" 파일은 { $method } 방식으로 압축되어 있습니다. 압축 파일을 직접 푼 뒤 그 안의 .scriv 폴더를 선택하세요.
+import-scrivener-refusal-duplicate-archive-members-title = 이 압축 파일에 일부 파일이 두 번 들어 있습니다
+import-scrivener-refusal-duplicate-archive-members-body = "{ $file }"에 같은 이름의 파일이 여러 개 있어 Skribisto가 어느 파일이 프로젝트에 속하는지 알 수 없습니다. 직접 압축을 푼 뒤 그 안의 .scriv 폴더를 선택하세요.
+import-scrivener-refusal-template-undecodable-title = 이 템플릿 파일이 불완전합니다
+import-scrivener-refusal-template-undecodable-too-large-title = 이 템플릿 파일은 너무 커서 열 수 없습니다
+import-scrivener-refusal-template-undecodable-not-a-template-title = Scrivener 템플릿 파일이 아닙니다
+import-scrivener-refusal-template-undecodable-unknown-encoding-title = 이 템플릿 파일은 Skribisto가 알지 못하는 방식으로 저장되어 있습니다
+import-scrivener-refusal-template-undecodable-body = "{ $file }" 파일을 해독할 수 없습니다. 파일 안의 프로젝트가 끝나기 전에 파일이 끝났을 수 있습니다. 다시 내려받거나, Scrivener에서 열어 이 템플릿으로 프로젝트를 만드세요.
+import-scrivener-refusal-template-undecodable-too-large-body = "{ $file }" 파일이 { $limit } MB보다 큽니다. Scrivener에서 열어 이 템플릿으로 프로젝트를 만든 뒤 그 프로젝트를 가져오세요.
+import-scrivener-refusal-template-undecodable-not-a-template-body = "{ $file }" 파일에 Scrivener 프로젝트가 없습니다. Scrivener가 저장한 템플릿 파일이나 그 템플릿으로 만든 프로젝트를 선택하세요.
+import-scrivener-refusal-template-undecodable-unknown-encoding-body = "{ $file }" 파일은 Skribisto가 해독할 수 없는 방식으로 프로젝트를 담고 있습니다. Scrivener에서 열어 이 템플릿으로 프로젝트를 만든 뒤 그 프로젝트를 가져오세요.
+import-scrivener-refusal-cloud-placeholders-title = 이 프로젝트의 파일 { $count }개가 아직 클라우드에 있습니다
+import-scrivener-refusal-cloud-placeholders-body = 이 컴퓨터에 내려받지 않은 파일입니다(예: { $examples }). 동기화 앱에서 프로젝트를 오프라인으로 사용할 수 있게 설정한 뒤 다시 확인하세요.
+import-scrivener-refusal-unreadable-members-title = 이 프로젝트의 파일 { $count }개를 읽을 수 없습니다
+import-scrivener-refusal-unreadable-members-body = 예: { $examples }. 프로젝트 전체를 읽을 권한이 있는지, 디스크에 이상이 없는지 점검한 뒤 다시 확인하세요.
+import-scrivener-refusal-needed-member-is-link-title = 이 프로젝트가 자체 폴더 밖을 가리킵니다
+import-scrivener-refusal-needed-member-is-link-body = "{ $member }"은(는) 이 컴퓨터의 다른 위치를 가리키는 링크이며, Skribisto는 링크를 따라가지 않습니다. 모든 파일이 프로젝트 안에 있도록 프로젝트를 복사한 뒤 다시 시도하세요.
+import-scrivener-refusal-project-changed-during-read-title = 읽는 동안 프로젝트가 바뀌었습니다
+import-scrivener-refusal-project-changed-during-read-body = Scrivener나 동기화 서비스가 아직 프로젝트에 쓰고 있습니다. Scrivener에서 프로젝트를 닫고 동기화가 끝날 때까지 기다린 뒤 다시 확인하세요.
+import-scrivener-refusal-too-many-members-title = 이 프로젝트에는 파일이 너무 많습니다
+import-scrivener-refusal-too-many-members-body = 파일이 { $limit }개를 넘어 실제 프로젝트보다 많습니다. Scrivener 프로젝트가 아니거나 손상되었을 수 있습니다.
+import-scrivener-refusal-too-large-title = 이 프로젝트는 너무 큽니다
+import-scrivener-refusal-too-large-body = 글의 크기가 { $limit } MB를 넘어 Skribisto가 안전하게 가져올 수 있는 양보다 많습니다.
+import-scrivener-refusal-structure-unmappable-title = Skribisto가 이 문서 트리를 변환할 수 없습니다
+import-scrivener-refusal-structure-unmappable-body = 무언가를 잃거나 엉뚱한 곳에 두지 않고는 문서 트리를 가져올 수 없습니다. 프로젝트가 아니라 Skribisto의 결함입니다. ‘세부 정보’에 표시된 내용과 함께 신고해 주세요.
+
+## When there is a choice to make
+import-scrivener-roots-title = 여기에 프로젝트가 { $count }개 있습니다. 어느 것을 가져올까요?
+import-scrivener-roots-hint = 이 폴더나 압축 파일에 Scrivener 프로젝트가 여러 개 있습니다. 가져올 프로젝트를 선택하세요.
+import-scrivener-manifests-title = 이 프로젝트에는 문서 트리 파일이 { $count }개 있습니다
+import-scrivener-manifests-hint = Scrivener는 모든 문서와 폴더의 목록인 문서 트리를 .scrivx 파일에 보관합니다. 나머지 파일은 대개 동기화 서비스가 남긴 것입니다. 마지막으로 작업한 파일을 선택하세요.
+import-scrivener-manifests-hint-preselected = Scrivener는 모든 문서와 폴더의 목록인 문서 트리를 .scrivx 파일에 보관합니다. 나머지 파일은 대개 동기화 서비스가 남긴 것입니다. 선택된 파일이 마지막으로 작업했을 가능성이 가장 높은 파일이니 계속하기 전에 확인하세요.
+import-scrivener-manifest-row = { $file } · { $date }에 저장 · 항목 { $documents }개
+import-scrivener-manifest-row-undated = { $file } · 항목 { $documents }개
+import-scrivener-manifest-row-unread = { $file } · 읽을 수 없음
+import-scrivener-enclosing-title = Scrivener 프로젝트 "{ $project }"의 일부입니다
+import-scrivener-enclosing-body = 프로젝트 안의 파일이나 폴더를 선택했습니다. Skribisto는 프로젝트 전체를 가져옵니다.
+import-scrivener-enclosing-use = "{ $project }" 가져오기
+import-scrivener-upgrade-title = Scrivener가 업데이트 전에 보관한 사본입니다
+import-scrivener-upgrade-body = Scrivener는 프로젝트를 새 버전으로 업데이트할 때 이전 프로젝트를 "{ $backup }"(으)로 보관합니다. 계속 작업한 프로젝트는 그 옆의 "{ $current }"입니다.
+import-scrivener-upgrade-body-unclear = Scrivener는 프로젝트를 새 버전으로 업데이트할 때 이전 프로젝트를 "{ $backup }"(으)로 보관합니다. 옆에 있는 "{ $current }" 프로젝트를 제대로 읽을 수 없으니 가져올 프로젝트를 선택하세요.
+import-scrivener-upgrade-use-current = 계속 작업한 프로젝트 "{ $current }" 가져오기
+import-scrivener-upgrade-keep-backup = 이 이전 사본 "{ $backup }" 가져오기
+
+## What must be accepted before going on
+import-scrivener-ios-pending-title = iPhone 또는 iPad용 Scrivener에서 한 변경이 아직 이 사본에 없습니다
+import-scrivener-ios-pending-body = 컴퓨터의 Scrivener는 다음에 프로젝트를 열 때 이 변경을 반영합니다. 컴퓨터의 Scrivener에서 프로젝트를 한 번 연 뒤 다시 가져오세요.
+import-scrivener-ios-pending-accept = 이 변경 없이 가져오기
+import-scrivener-no-text-title = 문서 { $count }개가 있지만 이 사본에는 글이 한 단어도 없습니다
+import-scrivener-no-text-body = 동기화 서비스가 아직 프로젝트를 복사하고 있거나 사본에서 문서가 사라졌을 수 있습니다. 지금 가져오면 모든 문서가 빈 상태로 들어옵니다.
+import-scrivener-no-text-accept = 문서를 빈 상태로 가져오기
+
+## Things to know, nothing to decide
+import-scrivener-notice-project-found-below-pick-title = 선택한 폴더 안에서 프로젝트를 찾았습니다
+import-scrivener-notice-project-found-below-pick-body = 프로젝트는 "{ $path }"에 있습니다.
+import-scrivener-notice-source-is-template-title = Scrivener 템플릿입니다
+import-scrivener-notice-source-is-template-named = Scrivener 템플릿 "{ $title }"입니다
+import-scrivener-notice-source-is-template-body = 가져오면 템플릿에 담긴 내용으로 새 프로젝트를 만들며, 템플릿의 안내문도 포함됩니다.
+import-scrivener-notice-source-is-backup-title = Scrivener가 만든 백업으로 보입니다
+import-scrivener-notice-source-is-backup-body = 백업을 만든 시점의 프로젝트가 들어 있습니다. 그 뒤에도 계속 작업했다면 프로젝트 자체를 선택하세요.
+import-scrivener-notice-importing-pre-upgrade-copy-title = Scrivener가 업데이트 전에 보관한 사본을 가져오고 있습니다
+import-scrivener-notice-importing-pre-upgrade-copy-body = 계속 작업한 프로젝트가 그 옆에 있으며, 그 뒤에 쓴 내용은 모두 그 프로젝트에 있습니다.
+import-scrivener-notice-imported-from-ios-stub-title = iPhone 또는 iPad용 Scrivener에서 만든 프로젝트입니다
+import-scrivener-notice-imported-from-ios-stub-body = 컴퓨터에서 한 번도 열지 않았으므로 iPhone이나 iPad가 보관하는 사본에서 읽습니다.
+import-scrivener-notice-stale-mobile-binder-ignored-title = iPhone 또는 iPad의 이전 문서 트리를 제외합니다
+import-scrivener-notice-stale-mobile-binder-ignored-body = 컴퓨터의 Scrivener가 이미 그 변경을 반영했습니다.
+import-scrivener-notice-identical-manifest-copies-title = { $count ->
+    [1] 문서 트리 파일 사본 1개가 있습니다
+   *[other] 똑같은 문서 트리 파일 사본 { $count }개가 있습니다
+}
+import-scrivener-notice-identical-manifest-copies-body = 내용이 같으므로 어느 것을 사용해도 같은 프로젝트가 됩니다.
+import-scrivener-notice-manifest-copies-ignored-title = 문서 트리 파일의 추가 사본을 제외합니다
+import-scrivener-notice-manifest-copies-ignored-body = Scrivener가 마지막으로 작업한 파일은 "{ $chosen }"입니다. 동기화 서비스가 남긴 사본 { $count }개는 제외합니다.
+import-scrivener-notice-pinned-manifest-looks-like-a-copy-title = 선택한 문서 트리 파일이 동기화 사본으로 보입니다
+import-scrivener-notice-pinned-manifest-looks-like-a-copy-body = "{ $name }"은(는) 옆에 있는 "{ $original }"의 사본 같은 이름입니다. 가져온 내용이 오래되어 보이면 대신 "{ $original }"을(를) 선택하세요.
+import-scrivener-notice-pinned-manifest-has-siblings-title = 선택한 파일 옆에 다른 문서 트리 파일이 { $count }개 있습니다
+import-scrivener-notice-pinned-manifest-has-siblings-body = 선택한 파일만 읽습니다.
+import-scrivener-notice-legacy-v1-files-beside-title = 이전 Scrivener의 파일을 제외합니다
+import-scrivener-notice-legacy-v1-files-beside-body = 프로젝트를 업데이트할 때 남은 파일입니다. 현재 버전의 파일만 읽습니다.
+import-scrivener-notice-mixed-payload-trees-title = 이 프로젝트에 두 Scrivener 버전의 파일이 섞여 있습니다
+import-scrivener-notice-mixed-payload-trees-body = 문서 트리 파일이 가리키는 위치에서 문서를 읽습니다.
+import-scrivener-notice-version-disagreement-title = 이 프로젝트의 파일들이 버전을 서로 다르게 표시합니다
+import-scrivener-notice-id-scheme-mismatch-body = 문서 트리 파일은 버전 { $version }(이)라고 표시하지만 문서 이름은 다른 버전 방식으로 붙어 있습니다. 문서 트리 파일이 가리키는 위치에서 문서를 읽습니다. 가져온 결과가 이상하면 Scrivener에서 프로젝트를 한 번 연 뒤 다시 가져오세요.
+import-scrivener-notice-version-stamp-mismatch-body = 문서 트리 파일에 설명된 방식대로 읽습니다. 가져온 결과가 이상하면 Scrivener에서 프로젝트를 한 번 연 뒤 다시 가져오세요.
+import-scrivener-notice-unrecognised-writer-title = Skribisto가 알지 못하는 프로그램으로 저장된 프로젝트입니다
+import-scrivener-notice-unrecognised-writer-named = 프로그램 이름은 "{ $creator }"입니다. Scrivener 프로젝트로 읽습니다.
+import-scrivener-notice-unrecognised-writer-body = 프로그램 이름이 없습니다. Scrivener 프로젝트로 읽습니다.
+import-scrivener-notice-invalid-item-identifier-title = 문서 트리 항목 { $count }개의 식별자가 올바르지 않습니다
+import-scrivener-notice-invalid-item-identifier-body = 해당 식별자는 무시하고 항목은 유지합니다.
+import-scrivener-notice-items-without-identifier-title = 문서 트리 항목 { $count }개에 식별자가 없습니다
+import-scrivener-notice-items-without-identifier-body = 파일을 찾을 수 없어 빈 상태로 들어옵니다.
+import-scrivener-notice-duplicate-item-key-title = 문서 트리 항목 두 개가 같은 식별자 "{ $item }"을(를) 사용합니다
+import-scrivener-notice-duplicate-item-key-body = 첫 번째 항목이 문서를 가져가고, 두 번째 항목은 자리를 유지한 채 빈 상태로 들어옵니다.
+import-scrivener-notice-lock-here-title = 이 컴퓨터의 Scrivener에서 이 프로젝트가 열려 있습니다
+import-scrivener-notice-lock-here-body = 모든 변경이 저장되도록 먼저 Scrivener에서 닫으세요.
+import-scrivener-notice-lock-title = "{ $host }"의 Scrivener에서 이 프로젝트가 열려 있었습니다
+import-scrivener-notice-lock-elsewhere-title = 다른 컴퓨터의 Scrivener에서 이 프로젝트가 열려 있었습니다
+import-scrivener-notice-lock-body = 아직 그곳에서 열려 있다면 먼저 닫으세요. 파일에 최신 변경이 아직 없을 수 있습니다. Scrivener를 닫은 지 오래되었다면 그대로 가져와도 됩니다.
+import-scrivener-notice-archived-while-open-title = Scrivener에서 프로젝트가 열려 있는 동안 만든 압축 파일입니다
+import-scrivener-notice-archived-while-open-body = 그 이후의 변경은 빠져 있을 수 있습니다.
+import-scrivener-notice-content-missing-notes = "{ $item }" 항목의 노트가 없습니다
+import-scrivener-notice-content-missing-synopsis = "{ $item }" 항목의 줄거리 요약이 없습니다
+import-scrivener-notice-content-missing-text = "{ $item }" 항목의 본문이 없습니다
+import-scrivener-notice-content-missing-body = 해당 파일이 이 사본에 없어 빈 상태로 들어옵니다. 동기화 서비스가 아직 프로젝트를 복사하고 있을 수 있습니다.
+import-scrivener-notice-content-missing-salvaged = 해당 파일이 이 사본에 없지만 Scrivener 검색 색인에 글이 남아 있었습니다. 서식 없는 텍스트로 보존하며 이전 버전일 수 있습니다.
+import-scrivener-notice-content-truncated-notes = "{ $item }" 항목의 노트가 디스크에서 비어 있습니다
+import-scrivener-notice-content-truncated-synopsis = "{ $item }" 항목의 줄거리 요약이 디스크에서 비어 있습니다
+import-scrivener-notice-content-truncated-text = "{ $item }" 항목의 본문이 디스크에서 비어 있습니다
+import-scrivener-notice-content-truncated-body = Scrivener에는 글이 있는 것으로 기록되어 있지만 파일에는 아무것도 없습니다. 동기화가 중간에 멈췄을 수 있습니다. 빈 상태로 들어옵니다.
+import-scrivener-notice-missing-media-title = "{ $item }" 항목의 파일이 없습니다
+import-scrivener-notice-missing-media-body = 이 항목에 담긴 이미지나 조사 자료 파일이 이 사본에 없습니다.
+import-scrivener-notice-sync-conflict-copies-title = 문서의 동기화 사본 { $count }개를 찾았습니다
+import-scrivener-notice-sync-conflict-copies-body = { $missing ->
+    [0] 별도 폴더에 복구한 글로 가져오므로 문서와 비교할 수 있습니다.
+   *[other] 별도 폴더에 복구한 글로 가져옵니다. 일부는 더 이상 프로젝트에 없는 문서의 사본입니다.
+}
+import-scrivener-notice-recovered-unreferenced-text-title = 어떤 문서 트리 항목에도 나열되지 않은 문서 { $count }개를 찾았습니다
+import-scrivener-notice-recovered-unreferenced-text-body = 별도 폴더에 복구한 글로 가져옵니다.
+import-scrivener-notice-sync-debris-ignored-title = 동기화 서비스가 남긴 추가 사본 { $count }개를 제외합니다
+import-scrivener-notice-sync-debris-ignored-body = Scrivener도 이 사본을 읽지 않습니다. 프로젝트 자체의 파일만 읽습니다.
+import-scrivener-notice-unrecognised-files-title = Scrivener 프로젝트에 속하지 않는 파일 { $count }개를 제외합니다
+import-scrivener-notice-examples = 예: { $examples }.
+import-scrivener-notice-symlink-not-followed-title = 프로젝트 안의 링크 { $count }개를 따라가지 않습니다
+import-scrivener-notice-unreadable-files-skipped-title = 가져오기에 필요하지 않은 파일 { $count }개를 읽을 수 없습니다
+import-scrivener-notice-cloud-placeholders-skipped-title = 아직 클라우드에 있는 파일 { $count }개를 건너뜁니다
+import-scrivener-notice-cloud-placeholders-skipped-body = 가져오기에 필요하지 않은 파일입니다.
+import-scrivener-notice-no-text-found-title = 문서 { $count }개가 있지만 글이 하나도 없습니다
+import-scrivener-notice-no-text-found-body = 이 프로젝트는 비어 있는 것 같습니다. 있는 그대로 가져옵니다.
+import-scrivener-notice-metadata-unreadable-title = "{ $member }" 파일을 읽을 수 없습니다
+import-scrivener-notice-metadata-unreadable-body = Scrivener가 이 파일에 보관한 내용은 가져오지 않습니다.
+import-scrivener-notice-dangling-keyword-title = 참조 { $count }개가 프로젝트에 정의되지 않은 키워드를 가리킵니다
+import-scrivener-notice-dangling-label-title = 참조 { $count }개가 프로젝트에 정의되지 않은 레이블을 가리킵니다
+import-scrivener-notice-dangling-status-title = 참조 { $count }개가 프로젝트에 정의되지 않은 상태를 가리킵니다
+import-scrivener-notice-dangling-section-type-title = 참조 { $count }개가 프로젝트에 정의되지 않은 섹션 유형을 가리킵니다
+import-scrivener-notice-dangling-custom-field-title = 참조 { $count }개가 프로젝트에 정의되지 않은 사용자 지정 메타데이터 필드를 가리킵니다
+import-scrivener-notice-dangling-item-title = 참조 { $count }개가 프로젝트에 정의되지 않은 문서를 가리킵니다
+import-scrivener-notice-dangling-references-body = 이 참조는 제외합니다.
+import-scrivener-notice-snapshots-not-imported-line = 스냅숏 { $count }개는 Scrivener 프로젝트에 남습니다. Skribisto는 스냅숏을 가져오지 않습니다.
+import-scrivener-notice-writing-history-not-imported-line = 날마다 쓴 단어 수에 대한 Scrivener의 기록({ $days }일분)은 가져오지 않습니다. Skribisto는 첫 저장부터 자체 기록을 시작합니다.
+import-scrivener-notice-title-placeholder-rejected-hint = 프로젝트 설정의 제목이 템플릿의 자리 표시자이므로 대신 프로젝트 이름을 제안합니다.
+import-scrivener-notice-author-placeholder-rejected-hint = 프로젝트 설정의 저자 이름이 템플릿의 자리 표시자이므로 저자 이름을 제안하지 않습니다.
+import-scrivener-notice-title-from-project-hint-compile-settings = 프로젝트의 컴파일 설정에 있는 제목입니다. 그곳에 제목을 정하기 전까지 Scrivener는 프로젝트를 만들 때의 이름을 유지합니다.
+import-scrivener-notice-title-from-project-hint-template = 템플릿 자체의 제목입니다.
+import-scrivener-notice-title-from-project-hint-folder-name = 프로젝트 이름입니다.
+import-scrivener-notice-title-from-project-hint-project-properties = 프로젝트 속성에 있는 제목입니다.
+import-scrivener-notice-author-from-project-hint = 프로젝트 설정에 있는 이름입니다. 템플릿 작성자의 이름이 남아 있을 수 있으며, 그대로 두면 속표지에 인쇄됩니다.
+import-scrivener-notice-language-not-stated-hint = 프로젝트에 언어가 지정되어 있지 않아 Skribisto의 인터페이스 언어를 제안합니다. 언어에 따라 단어를 세는 방식과 따옴표 표기가 정해집니다.
+import-scrivener-notice-language-from-script-hint = 원고에 쓰인 문자({ $tag })를 바탕으로 제안한 언어입니다.
+
+## Before you import: what the import does with the binder, or leaves behind
+import-scrivener-structure-script-mode-draft-line = { $documents ->
+    [1] 원고의 유일한 문서가 스크립트 모드로 작성되어 있습니다. Skribisto는 글은 유지하지만 시나리오 서식은 유지하지 않습니다.
+   *[other] 원고 문서 { $documents }개 중 { $script }개가 스크립트 모드로 작성되어 있습니다. Skribisto는 글은 유지하지만 시나리오 서식은 유지하지 않습니다.
+}
+import-scrivener-structure-one-document-manuscript-line = 원고 문서 { $count }개에 장이 제목 형태로 들어 있습니다.
+import-scrivener-structure-title-repeats-number-line = 장이나 부의 제목 { $count }개에 번호도 적혀 있어, 내보낼 때 번호가 두 번 인쇄될 수 있습니다.
+import-scrivener-structure-claim-overruled-line = 항목 { $count }개는 본래 수준을 위쪽 항목이 이미 차지하고 있어 한 수준 아래에 놓입니다.
+import-scrivener-structure-adopted-by-chapter-line = 장 뒤에 오는 문서 { $count }개가 그 장의 끝부분이 됩니다.
+import-scrivener-structure-looks-like-manuscript-line = 노트에 보관하는 최상위 폴더 { $count }개가 원고처럼 보입니다. 다른 책으로 원고에 보낼 수 있습니다.
+import-scrivener-structure-generic-sheet-title-line = 설정집 항목 { $count }개의 제목이 "주인공"처럼 템플릿의 제목이며, 언급 기능이 본문에서 이 제목을 찾게 됩니다.
+import-scrivener-structure-placeholder-title-line = ‘장’처럼 수준 이름만 적혀 있던 제목 { $count }개를 비워 둡니다. 번호는 문서 트리와 내보내기에서 매깁니다.
+import-scrivener-structure-untitled-item-line = 항목 { $count }개는 Scrivener에서 제목이 없었으며 제목 없이 유지됩니다.
+import-scrivener-structure-title-cleaned-line = 제목 { $count }개에 있던 줄바꿈이나 탭을 제거합니다.
+import-scrivener-structure-own-text-moved-line = 폴더 { $count }개에 자체 글이 있어, 이 글을 폴더 안 첫 문서로 옮깁니다.
+import-scrivener-structure-text-with-children-line = 안에 문서가 있는 문서 { $count }개가 폴더가 됩니다.
+import-scrivener-structure-empty-folder-plain-line = 빈 폴더 { $count }개는 일반 폴더로 남겨, Scrivener가 인쇄하지 않던 제목을 내보내기에서도 인쇄하지 않게 합니다.
+import-scrivener-structure-book-inside-book-line = 책 안에 있는 책 { $count }개가 부가 됩니다.
+import-scrivener-structure-prologue-not-numbered-line = 프롤로그나 에필로그 { $count }개는 장 번호 매기기에서 제외합니다.
+import-scrivener-structure-matter-inside-book-line = 원고 밖에 있던 앞부분 또는 뒷부분 부속 글 항목 { $count }개가 본문 외 글로 책 안에 들어갑니다. 직접 포함하기 전까지는 내보내기에서 제외됩니다.
+import-scrivener-structure-paratext-not-counted-line = 원고 문서 { $documents }개가 본문 외 글(앞부분 또는 뒷부분 부속 글)이 됩니다. 그 { $words }단어는 더 이상 원고 분량에 포함되지 않습니다.
+import-scrivener-structure-document-notes-line = 문서 { $count }개의 노트가 각 문서 옆의 노트가 됩니다.
+import-scrivener-structure-draft-content-as-note-line = 원고 폴더 자체의 글은 원고 맨 위의 노트가 됩니다.
+import-scrivener-structure-story-bible-folder-line = 인물이나 장소 폴더 { $count }개가 설정집 태그가 됩니다.
+import-scrivener-structure-templates-created-line = 문서 템플릿 { $count }개가 노트 템플릿이 됩니다.
+import-scrivener-structure-template-nesting-flattened-line = 다른 템플릿 폴더 안에 있는 템플릿 폴더 { $count }개를 한 단계로 풉니다. 그 안의 각 글이 템플릿이 됩니다.
+import-scrivener-structure-template-kept-as-note-line = 템플릿 { $count }개에 노트 템플릿이 담을 수 없는 내용이 있어 노트로 보존합니다.
+import-scrivener-structure-recovered-texts-line = 어떤 문서 트리 항목에도 나열되지 않은 글 { $count }개를 별도 폴더로 가져옵니다.
+import-scrivener-structure-project-notes-line = 프로젝트 노트 { $count }개를 별도 폴더로 가져옵니다.
+import-scrivener-structure-trash-brought-across-line = { $items ->
+    [1] 휴지통도 가져옵니다. 항목 1개이며 휴지통에서 복원할 수 있습니다.
+   *[other] 휴지통도 가져옵니다. 항목 { $items }개 중 { $writing }개에 글이 있으며, 휴지통에서 복원할 수 있습니다.
+}
+import-scrivener-structure-not-compiled-line = Scrivener가 컴파일에서 제외한 항목 { $count }개는 내보내기에서도 제외합니다.
+import-scrivener-structure-media-in-draft-line = 원고 안의 이미지나 파일 { $count }개는 책에 담을 수 없어 노트가 됩니다.
+import-scrivener-structure-left-out-line = 최상위 폴더 { $count }개를 그 안의 항목 { $items }개와 함께 제외합니다.
+import-scrivener-structure-trash-left-out-line = { $items ->
+    [1] 휴지통은 가져오지 않습니다. 항목 1개입니다.
+   *[other] 휴지통은 가져오지 않습니다. 항목 { $items }개 중 { $writing }개에 글이 있습니다.
+}
+import-scrivener-structure-card-image-left-behind-line = 원고 항목의 인덱스 카드 이미지 { $count }개는 책에 인쇄될 수 있어 가져오지 않습니다.
+import-scrivener-structure-default-template-not-linked-line = 폴더 { $count }개에 지정된 기본 문서 템플릿 설정은 가져올 수 없습니다.
+import-scrivener-structure-page-break-not-kept-line = ‘Page break before’(앞에서 페이지 나누기) 설정 { $count }개는 Skribisto에 둘 자리가 없어 유지하지 않습니다.
+import-scrivener-structure-compile-as-is-not-kept-line = ‘Compile as-is’(있는 그대로 컴파일) 설정 { $count }개는 Skribisto에 대응하는 기능이 없어 유지하지 않습니다.
+
+## What the import did with the labels, the status list and the dates
+import-scrivener-metadata-status-categories-guessed-line = Skribisto가 알아보지 못하는 상태 { $count }개는 목록 안의 위치에 따라 종류를 정합니다. 설정 ▸ 프로젝트 ▸ 상태 목록에서 확인하세요.
+import-scrivener-metadata-dates-unreadable-line = 항목 { $count }개의 날짜를 읽을 수 없어 가져온 날짜를 사용합니다.
+import-scrivener-metadata-labels-became-tags-line = 레이블이 태그 { $tags }개가 되어 항목 { $rows }개에 붙습니다.
+import-scrivener-metadata-statuses-became-ladder-line = 상태 목록이 프로젝트의 상태 { $rungs }개가 되어 항목 { $rows }개에 지정됩니다.
+import-scrivener-metadata-ladder-seeded-line = 프로젝트에 상태 목록이 없어 Skribisto의 기본 상태 { $count }개로 시작합니다.
+import-scrivener-metadata-label-renamed-line = Scrivener에서 레이블 필드의 이름은 "{ $title }"이었습니다. 이 이름은 각 태그의 설명에 있습니다.
+import-scrivener-metadata-status-renamed-line = Scrivener에서 상태 필드의 이름은 "{ $title }"이었습니다. 이 이름은 각 상태의 설명에 있습니다.
+import-scrivener-metadata-none-label-collapsed-line = Scrivener 자체의 빈 레이블과 같은 이름으로 함께 있던 레이블 "{ $name }"은(는) 항목 { $count }개에서 레이블 없음으로 읽습니다.
+import-scrivener-metadata-none-status-collapsed-line = Scrivener 자체의 빈 상태와 같은 이름으로 함께 있던 상태 "{ $name }"은(는) 항목 { $count }개에서 상태 없음으로 읽습니다.
+import-scrivener-metadata-unnamed-label-line = 이름 없는 레이블에는 번호 { $id }에 따라 이름을 붙입니다.
+import-scrivener-metadata-unnamed-status-line = 이름 없는 상태에는 번호 { $id }에 따라 이름을 붙입니다.
+import-scrivener-metadata-tag-name-disambiguated-line = 태그 { $count }개는 같은 이름의 다른 태그가 이미 있어 새 이름을 받습니다.
+import-scrivener-metadata-rung-names-disambiguated-line = 상태 { $count }개가 다른 상태와 이름이 같아 이름 뒤에 번호를 붙입니다. 설정 ▸ 프로젝트 ▸ 상태 목록에서 확인하세요.
+import-scrivener-metadata-unused-labels-skipped-line = 어떤 문서에도 쓰이지 않은 레이블 { $count }개는 가져오지 않습니다.
+import-scrivener-metadata-labels-without-row-line = 새 프로젝트에 자리가 없는 항목 { $count }개의 레이블은 가져오지 않습니다.
+import-scrivener-metadata-statuses-without-row-line = 새 프로젝트에 자리가 없는 항목 { $count }개의 상태는 가져오지 않습니다.
+
+## What the import does with the keywords, custom metadata, collections, bookmarks, targets,
+## the deadline, the auto-complete list and the icons
+import-scrivener-metadata-unnamed-keyword-line = 이름 없는 키워드에는 번호 { $id }에 따라 이름을 붙입니다.
+import-scrivener-metadata-keywords-without-row-line = 새 프로젝트에 자리가 없는 항목 { $count }개의 키워드는 가져오지 않습니다.
+import-scrivener-metadata-custom-values-without-row-line = 새 프로젝트에 자리가 없는 항목 { $count }개의 사용자 지정 메타데이터는 가져오지 않습니다.
+import-scrivener-metadata-bookmarks-without-row-line = 새 프로젝트에 자리가 없는 항목 { $count }개의 북마크는 가져오지 않습니다.
+import-scrivener-metadata-targets-without-row-line = 새 프로젝트에 자리가 없는 항목 { $count }개의 목표는 가져오지 않습니다.
+import-scrivener-metadata-pov-hint-line = 레이블 또는 필드 값 { $count }개({ $values })가 설정집 항목 { $matches }과(와) 이름이 같습니다. 시점을 나타낸다면 속성 패널에서 직접 지정하세요. 가져오기에서는 아무것도 연결하지 않습니다.
+import-scrivener-metadata-checkbox-default-unknown-line = 체크박스 필드 "{ $field }"의 기본값을 Skribisto가 읽을 수 없어, 기본으로 체크된 문서를 알 수 없습니다. 하나씩 체크한 문서에만 이 필드의 태그가 붙습니다.
+import-scrivener-metadata-goals-in-other-unit-line = 목표 { $count }개가 다른 계산 단위로 설정되어 있습니다. 이 목표는 유지되며, 설정 ▸ 프로젝트 ▸ 구조에서 계산 단위를 바꾸면 표시됩니다.
+import-scrivener-metadata-counting-differs-line = Scrivener는 Skribisto와 다른 문서들을 기준으로 원고 목표를 셌습니다. 책의 목표는 내보내기에 포함되는 장면을 셉니다.
+import-scrivener-metadata-writing-days-not-read-line = 집필 요일 "{ $raw }"을(를) 읽을 수 없어 책의 집필 계획에서 모든 요일을 집필일로 셉니다. 집필 계획에서 바꾸세요.
+import-scrivener-metadata-script-mode-rows-line = Scrivener에서 스크립트 모드였던 항목 { $count }개는 시나리오 서식 없이 글만 산문으로 유지합니다.
+import-scrivener-metadata-keywords-became-tags-line = 키워드 { $tags }개가 태그가 되어 항목 { $rows }개에 붙습니다.
+import-scrivener-metadata-keyword-hierarchy-flattened-line = 키워드 { $count }개는 Scrivener에서 다른 키워드 안에 있었습니다. 태그에는 계층이 없으므로 각 태그의 설명에 키워드가 있던 위치를 적습니다.
+import-scrivener-metadata-fields-became-tags-line = 목록 및 체크박스 필드 { $fields }개가 태그 { $tags }개가 되어 항목 { $rows }개에 붙습니다.
+import-scrivener-metadata-collections-became-tags-line = 컬렉션 { $tags }개가 태그가 되어 항목 { $rows }개에 붙습니다.
+import-scrivener-metadata-collection-order-lost-line = 태그에는 순서가 없으므로 컬렉션 { $count }개 안의 문서 순서는 유지하지 않습니다.
+import-scrivener-metadata-bookmarks-became-links-line = 북마크 { $count }개가 노트 사이 또는 장면과 설정집 항목 사이의 연결이 됩니다. ‘연결’과 ‘등장인물’에서 확인하세요.
+import-scrivener-metadata-goals-kept-line = 문서 목표 { $count }개가 목표가 됩니다.
+import-scrivener-metadata-draft-target-kept-words-line = { $value }단어의 원고 목표가 책의 목표가 됩니다.
+import-scrivener-metadata-draft-target-kept-characters-line = { $value }자의 원고 목표가 책의 목표가 됩니다.
+import-scrivener-metadata-pace-planned-line = 마감일({ $day })이 책의 집필 계획이 됩니다. 가져온 날부터 Scrivener에서 고른 집필 요일마다 쓸 단어 수를 계획합니다.
+import-scrivener-metadata-pace-planned-day-off-line = 마감일({ $day })이 책의 집필 계획이 됩니다. 가져온 날부터 Scrivener에서 고른 집필 요일마다 쓸 단어 수를 계획합니다. Scrivener와 마찬가지로 마감일 당일은 휴일로 둡니다.
+import-scrivener-metadata-dictionary-words-line = 자동 완성 단어 { $count }개를 프로젝트의 개인 사전에 넣어 맞춤법 오류로 표시하지 않습니다.
+import-scrivener-metadata-listed-project-line = 프로젝트 정보 { $count }개를 "{ $folder }" 폴더의 "{ $note }" 노트에 나열합니다.
+import-scrivener-metadata-listed-project-bookmarks-line = 프로젝트 북마크 { $count }개를 "{ $folder }" 폴더의 "{ $note }" 노트에 나열합니다.
+import-scrivener-metadata-listed-replacements-line = 컴파일 치환 { $count }개를 "{ $folder }" 폴더의 "{ $note }" 노트에 나열합니다. Skribisto는 이 치환을 적용하지 않습니다.
+import-scrivener-metadata-listed-auto-complete-line = 여러 단어로 된 자동 완성 항목 { $count }개를 "{ $folder }" 폴더의 "{ $note }" 노트에 나열합니다.
+import-scrivener-metadata-listed-saved-searches-line = 저장된 검색 { $count }개를 "{ $folder }" 폴더의 "{ $note }" 노트에 나열합니다.
+import-scrivener-metadata-listed-custom-metadata-line = 태그에 담을 수 없는 사용자 지정 메타데이터 값 { $count }개를 "{ $folder }" 폴더의 "{ $note }" 노트에 나열합니다.
+import-scrivener-metadata-listed-targets-line = 문서 목표 { $count }개를 "{ $folder }" 폴더의 "{ $note }" 노트에 나열합니다.
+import-scrivener-metadata-listed-bookmarks-line = Skribisto의 연결로 표시할 수 없는 북마크 { $count }개를 "{ $folder }" 폴더의 "{ $note }" 노트에 나열합니다.
+import-scrivener-metadata-targets-on-notes-line = 문서 목표 { $count }개는 노트에 설정되어 있어 목표가 되지 않습니다. 노트의 글은 어떤 목표에도 집계되지 않습니다.
+import-scrivener-metadata-targets-on-split-documents-line = 문서 목표 { $count }개는 제목 위치에서 나누는 문서에 설정되어 있어 목표가 되지 않습니다. 나뉜 장들을 하나의 목표로 함께 셀 수 없기 때문입니다.
+import-scrivener-metadata-bookmark-ends-without-row-line = 북마크 { $count }개가 문서 템플릿처럼 새 프로젝트에 자리가 없는 문서로 이어집니다. Scrivener에서 문서가 있던 위치로 나열합니다.
+import-scrivener-metadata-unused-keywords-skipped-line = 어떤 문서에도 쓰이지 않은 키워드 { $count }개는 가져오지 않습니다.
+import-scrivener-metadata-list-value-invalid-line = 목록 필드 "{ $field }"의 값 { $count }개가 어떤 옵션과도 맞지 않아 가져오지 않습니다.
+import-scrivener-metadata-undefined-custom-field-line = 값 { $count }개가 프로젝트에 더 이상 정의되지 않은 사용자 지정 필드에 속합니다. Scrivener에서도 표시되지 않으며 가져오지 않습니다.
+import-scrivener-metadata-collection-members-missing-line = 컬렉션 "{ $name }"의 문서 { $count }개는 새 프로젝트에 자리가 없거나 Scrivener 프로젝트에서 사라졌습니다.
+import-scrivener-metadata-empty-collections-skipped-line = 문서가 없는 컬렉션 { $count }개는 가져오지 않습니다.
+import-scrivener-metadata-bookmarks-unresolved-line = 북마크 { $count }개가 Scrivener 프로젝트에 더 이상 없는 문서로 이어져 가져오지 않습니다.
+import-scrivener-metadata-targets-in-pages-line = 문서 목표 { $count }개는 페이지 수를 세는데 Skribisto는 페이지를 세지 않으므로 목표가 되지 않습니다.
+import-scrivener-metadata-targets-unreadable-line = 목표 { $count }개를 가져오지 않습니다. 수치가 숫자가 아니거나, 0보다 작거나, 목표에 담을 수 있는 값보다 큽니다.
+import-scrivener-metadata-draft-target-in-pages-line = { $value }페이지의 원고 목표는 목표가 되지 않습니다. Skribisto는 단어나 글자를 셉니다. "{ $folder }" 폴더의 "{ $note }" 노트에 나열합니다.
+import-scrivener-metadata-draft-target-no-book-words-line = { $value }단어의 원고 목표는 원고가 여러 권의 책으로 이루어지거나 책이 없어 목표가 되지 않습니다. "{ $folder }" 폴더의 "{ $note }" 노트에 나열합니다.
+import-scrivener-metadata-draft-target-no-book-characters-line = { $value }자의 원고 목표는 원고가 여러 권의 책으로 이루어지거나 책이 없어 목표가 되지 않습니다. "{ $folder }" 폴더의 "{ $note }" 노트에 나열합니다.
+import-scrivener-metadata-deadline-passed-line = 마감일({ $day })이 지나 집필 계획을 만들지 않습니다. "{ $folder }" 폴더의 "{ $note }" 노트에 나열합니다.
+import-scrivener-metadata-deadline-no-writing-day-line = 가져온 날부터 마감일({ $day })까지 남은 집필일이 없어 집필 계획을 만들지 않습니다. "{ $folder }" 폴더의 "{ $note }" 노트에 나열합니다.
+import-scrivener-metadata-deadline-template-line = 마감일({ $day })은 템플릿에 저장된 값이므로 집필 계획을 만들지 않습니다. "{ $folder }" 폴더의 "{ $note }" 노트에 나열합니다.
+import-scrivener-metadata-deadline-no-word-goal-line = 원고에 계획의 기준이 될 단어 수 목표가 없어 마감일({ $day })로 집필 계획을 만들지 않습니다. "{ $folder }" 폴더의 "{ $note }" 노트에 나열합니다.
+import-scrivener-metadata-deadline-character-goal-line = 원고 목표는 글자 수를 세고 집필 계획은 단어 수를 세므로 마감일({ $day })로 집필 계획을 만들지 않습니다. "{ $folder }" 폴더의 "{ $note }" 노트에 나열합니다.
+import-scrivener-metadata-deadline-no-book-line = 원고가 여러 권의 책으로 이루어지거나 책이 없어 마감일({ $day })로 집필 계획을 만들지 않습니다. "{ $folder }" 폴더의 "{ $note }" 노트에 나열합니다.
+import-scrivener-metadata-deadline-unreadable-line = 마감일을 읽을 수 없어 집필 계획을 만들지 않습니다. "{ $folder }" 폴더의 "{ $note }" 노트에 적힌 그대로 나열합니다.
+import-scrivener-metadata-session-target-words-line = { $value }단어의 세션 목표는 가져오지 않습니다. Skribisto에서 집필 세션의 목표는 모든 프로젝트에 공통인 하나의 설정입니다. "{ $folder }" 폴더의 "{ $note }" 노트에 나열합니다.
+import-scrivener-metadata-session-target-characters-line = { $value }자의 세션 목표는 가져오지 않습니다. Skribisto에서 집필 세션의 목표는 모든 프로젝트에 공통인 하나의 설정이며 단어 수로 정합니다. "{ $folder }" 폴더의 "{ $note }" 노트에 나열합니다.
+import-scrivener-metadata-session-target-pages-line = { $value }페이지의 세션 목표는 가져오지 않습니다. Skribisto에서 집필 세션의 목표는 모든 프로젝트에 공통인 하나의 설정이며 단어 수로 정합니다. "{ $folder }" 폴더의 "{ $note }" 노트에 나열합니다.
+import-scrivener-metadata-session-target-calculated-words-line = Scrivener가 마감일과 집필 요일로 계산한 { $value }단어의 세션 목표는 가져오지 않습니다. Skribisto에서 집필 세션의 목표는 모든 프로젝트에 공통인 하나의 설정입니다. "{ $folder }" 폴더의 "{ $note }" 노트에 나열합니다.
+import-scrivener-metadata-session-target-calculated-characters-line = Scrivener가 마감일과 집필 요일로 계산한 { $value }자의 세션 목표는 가져오지 않습니다. Skribisto에서 집필 세션의 목표는 모든 프로젝트에 공통인 하나의 설정이며 단어 수로 정합니다. "{ $folder }" 폴더의 "{ $note }" 노트에 나열합니다.
+import-scrivener-metadata-session-target-calculated-pages-line = Scrivener가 마감일과 집필 요일로 계산한 { $value }페이지의 세션 목표는 가져오지 않습니다. Skribisto에서 집필 세션의 목표는 모든 프로젝트에 공통인 하나의 설정이며 단어 수로 정합니다. "{ $folder }" 폴더의 "{ $note }" 노트에 나열합니다.
+import-scrivener-metadata-icons-dropped-line = 항목 { $count }개에 문서 트리 아이콘이 있었지만 가져오지 않습니다. Skribisto는 항목 유형에 따라 아이콘을 표시합니다.
+
+## What converting the prose did, as the import's report says it
+import-scrivener-prose-unreadable-line = 글 { $count }개를 읽을 수 없어 빈 상태로 들어옵니다.
+import-scrivener-prose-comments-unreadable-line = 글 { $count }개의 댓글과 연결된 각주를 읽을 수 없습니다. 댓글과 각주가 표시하던 글은 유지합니다.
+import-scrivener-prose-read-as-plain-text-line = 글 { $count }개가 서식 있는 텍스트가 아니라 일반 텍스트로 저장되어 있어 일반 텍스트로 읽습니다.
+import-scrivener-prose-inline-note-unmatched-line = 짝이 맞지 않는 인라인 주석 표식 { $count }개를 텍스트로 유지합니다.
+import-scrivener-prose-style-unresolved-line = 스타일 표식 { $count }개가 프로젝트에 정의되지 않은 스타일을 가리킵니다. 표식은 제거하고 글의 서식은 유지합니다.
+import-scrivener-prose-styles-lost-in-export-line = 문단 { $count }개는 Scrivener 3에서 프로젝트를 이전 형식으로 내보낼 때 스타일을 잃은 제목일 수 있으며, 일반 문단으로 들어옵니다. 확인하거나, 내보내기 전의 원래 프로젝트를 가져오세요.
+import-scrivener-prose-comment-anchor-without-entry-line = 댓글이나 각주 { $count }개는 Scrivener에서 이미 내용을 잃었습니다. 표시되어 있던 글은 유지하고 댓글이나 각주는 제외합니다.
+import-scrivener-prose-comment-entry-without-anchor-line = 댓글 { $count }개는 글 안에 남은 위치가 없어 첫 문단에 붙입니다.
+import-scrivener-prose-footnote-entry-without-anchor-line = 연결된 각주 { $count }개는 글 안에 남은 위치가 없어 글 끝에 각주 참조를 넣습니다.
+import-scrivener-prose-range-comment-reading-line = 이전 Scrivener의 댓글 { $count }개는 위치를 다른 방식으로 해석해 배치했습니다. 올바른 글에 붙어 있는지 확인하세요.
+import-scrivener-prose-range-comment-reading-markers-counted-line = 이전 Scrivener의 댓글 { $count }개는 인라인 주석의 표식을 세어 배치했습니다. 올바른 글에 붙어 있는지 확인하세요.
+import-scrivener-prose-range-comment-reading-pictures-not-counted-line = 이전 Scrivener의 댓글 { $count }개는 이미지를 빼고 위치를 세어 배치했습니다. 올바른 글에 붙어 있는지 확인하세요.
+import-scrivener-prose-range-comment-approximate-line = 이전 Scrivener의 댓글 { $count }개는 어떤 위치 해석과도 정확히 맞지 않아 몇 글자 어긋나 있을 수 있습니다.
+import-scrivener-prose-document-link-unresolved-line = 링크 { $count }개가 가져오지 않은 문서를 가리킵니다. 링크의 글은 유지합니다.
+import-scrivener-prose-linked-picture-not-read-line = { $count ->
+    [1] 디스크의 파일에 연결된 이미지 "{ $example }"을(를) 가져오지 않았습니다.
+   *[other] "{ $example }" 등 디스크의 파일에 연결된 이미지 { $count }개를 가져오지 않았습니다.
+}
+import-scrivener-prose-heading-repeats-title-line = 글 { $count }개가 항목 제목을 되풀이하는 제목 줄로 시작해, 내보낼 때 제목이 두 번 인쇄될 수 있습니다.
+import-scrivener-prose-markdown-as-text-line = Markdown으로 작성한 문단 { $count }개를 쓰인 그대로 텍스트로 유지합니다.
+import-scrivener-prose-citation-keys-as-text-line = 참고 문헌 프로그램용 인용 키가 있는 문단 { $count }개를 텍스트로 유지합니다.
+import-scrivener-prose-placeholders-in-exported-text-line = { $count ->
+    [1] Scrivener 자리 표시자 { $example }을(를) 내보내는 글에 일반 텍스트로 유지합니다. 직접 바꾸세요.
+   *[other] { $example } 등 Scrivener 자리 표시자 { $count }개를 내보내는 글에 일반 텍스트로 유지합니다. 직접 바꾸세요.
+}
+import-scrivener-prose-placeholders-in-other-text-line = { $count ->
+    [1] Scrivener 자리 표시자 { $example }을(를) 내보내지 않는 글에 일반 텍스트로 유지합니다.
+   *[other] { $example } 등 Scrivener 자리 표시자 { $count }개를 내보내지 않는 글에 일반 텍스트로 유지합니다.
+}
+import-scrivener-prose-ornament-lines-kept-line = 가운데 정렬된 장식 기호 줄 { $count }개는 장면 구분일 수 있으며 쓰인 그대로 유지합니다.
+import-scrivener-prose-long-document-line = 글 { $count }개가 매우 길어 여는 데 시간이 걸릴 수 있습니다.
+import-scrivener-prose-pictures-without-description-line = 이미지 { $count }개에 이미지를 볼 수 없는 독자를 위한 설명이 없습니다. 편집기에서 추가할 수 있습니다.
+import-scrivener-prose-struck-text-compiled-away-line = 글 { $count }개의 취소선 텍스트를 유지합니다. Scrivener의 컴파일에서는 책에서 빠졌지만 Skribisto에서 내보내면 인쇄됩니다.
+import-scrivener-prose-compile-deleted-style-printed-line = { $count ->
+    [1] Scrivener의 컴파일에서 삭제되던 "{ $example }" 스타일의 텍스트를 본문으로 유지하며, Skribisto에서 내보내면 인쇄됩니다.
+   *[other] "{ $example }" 등 Scrivener의 컴파일에서 삭제되던 스타일 { $count }개의 텍스트를 본문으로 유지하며, Skribisto에서 내보내면 인쇄됩니다.
+}
+import-scrivener-prose-compile-raw-style-printed-line = { $count ->
+    [1] Scrivener의 컴파일에서 다른 프로그램용 코드로 전달되던 "{ $example }" 스타일의 텍스트를 본문으로 유지하며, Skribisto에서 내보내면 인쇄됩니다.
+   *[other] "{ $example }" 등 Scrivener의 컴파일에서 다른 프로그램용 코드로 전달되던 스타일 { $count }개의 텍스트를 본문으로 유지하며, Skribisto에서 내보내면 인쇄됩니다.
+}
+import-scrivener-prose-left-out-after-document-line = 손상된 파일의 끝 뒤에 있는 조각 { $count }개를 제외합니다.
+import-scrivener-prose-left-out-header-or-footer-line = 머리글이나 바닥글 { $count }개는 본문이 아니므로 제외합니다.
+import-scrivener-prose-left-out-list-label-picture-line = 목록 글머리 기호로 쓰인 이미지 { $count }개를 제외합니다.
+import-scrivener-prose-left-out-line = 어떤 글에도 속하지 않는 파일 조각 { $count }개를 제외합니다.
+import-scrivener-prose-undecodable-characters-line = 문자 { $count }개를 해독할 수 없어 원래 자리에 대체 문자(�)로 표시합니다.
+import-scrivener-prose-inline-notes-merged-line = Scrivener가 서식이 바뀌는 곳에서 나눴던 인라인 주석 { $count }개를 다시 합칩니다.
+import-scrivener-prose-inline-notes-joined-across-paragraphs-line = 한 문단씩 나뉘어 쓰인 인라인 주석 { $count }개를 각각 여러 문단으로 된 하나의 주석으로 합칩니다.
+import-scrivener-prose-blank-notes-dropped-line = 빈 인라인 주석 { $count }개를 제외합니다.
+import-scrivener-prose-annotations-became-comments-line = 인라인 주석 { $count }개가 댓글이 되었습니다.
+import-scrivener-prose-annotation-only-document-kept-line = 주석만 담고 있던 문서 { $count }개의 글을 본문으로 유지합니다.
+import-scrivener-prose-preserve-formatting-passages-line = ‘Preserve Formatting’(서식 유지)으로 표시된 구절 { $count }개를 일반 텍스트로 가져옵니다.
+import-scrivener-prose-nested-note-unwrapped-line = 댓글이나 각주 안에 있는 주석 { $count }개를 원래 자리에 텍스트로 유지합니다.
+import-scrivener-prose-style-not-carried-line = { $count ->
+    [1] "{ $example }" 스타일은 Skribisto에 대응하는 스타일이 없습니다. 해당 텍스트는 글만 유지합니다.
+   *[other] "{ $example }" 등 스타일 { $count }개는 Skribisto에 대응하는 스타일이 없습니다. 해당 텍스트는 글만 유지합니다.
+}
+import-scrivener-prose-document-links-dropped-line = 다른 문서로 가는 링크 { $count }개는 Skribisto에 둘 자리가 없습니다. 링크의 글은 유지합니다.
+import-scrivener-prose-document-links-kept-line = 다른 문서로 가는 링크 { $count }개를 참조로 유지합니다.
+import-scrivener-prose-other-links-kept-as-text-line = 다른 프로젝트나 파일로 가는 링크 { $count }개를 텍스트로 유지합니다.
+import-scrivener-prose-soft-breaks-split-line = 문단 안의 줄바꿈 { $count }개가 이제 각각 새 문단을 시작합니다.
+import-scrivener-prose-typed-indents-removed-line = 문단 시작에 입력된 들여쓰기 { $count }개를 제거합니다.
+import-scrivener-prose-left-indents-not-kept-line = 여백에서 들여 쓴 문단 { $count }개의 들여쓰기가 없어집니다.
+import-scrivener-prose-blank-lines-removed-line = 문단 사이의 빈 문단 { $count }개를 제거합니다.
+import-scrivener-prose-verse-stanza-gaps-lost-line = 시의 연 사이에 있는 빈 줄 { $count }개를 제거하므로 연이 이어집니다.
+import-scrivener-prose-blank-lines-became-scene-breaks-line = 문단 사이의 빈 줄 { $count }개가 장면 구분이 되었습니다.
+import-scrivener-prose-ornaments-became-scene-breaks-line = 장식 기호 줄 { $count }개가 장면 구분이 되었습니다.
+import-scrivener-prose-table-first-row-header-line = 표 { $count }개가 이제 머리글 행으로 시작합니다.
+import-scrivener-prose-table-cells-joined-line = 여러 문단이 있던 표 셀 { $count }개의 문단을 하나로 합쳤습니다.
+import-scrivener-prose-formatting-lost-colour-line = 글 { $count }개에서 글자 색을 제거합니다.
+import-scrivener-prose-formatting-lost-highlight-line = 글 { $count }개에서 형광펜 강조를 제거합니다.
+import-scrivener-prose-formatting-lost-small-caps-line = 글 { $count }개에서 작은 대문자를 일반 글자로 표시합니다.
+import-scrivener-prose-formatting-lost-all-caps-line = 글 { $count }개에서 대문자로 표시되던 텍스트를 입력한 그대로 표시합니다.
+import-scrivener-prose-formatting-lost-hidden-line = 글 { $count }개에서 숨겨진 텍스트를 제외합니다.
+import-scrivener-prose-formatting-lost-line = 글 { $count }개에서 Skribisto에 담을 자리가 없는 서식을 제거합니다.
+import-scrivener-prose-justified-text-not-kept-line = 양쪽 정렬된 문단 { $count }개는 대신 내보내기 스타일을 따릅니다.
+import-scrivener-prose-comment-colours-lost-line = 댓글 { $count }개의 색이 없어집니다.
+import-scrivener-prose-control-characters-removed-line = 보이지 않는 제어 문자 { $count }개를 제거합니다.
+import-scrivener-prose-note-on-heading-lost-line = 장 제목에 달린 각주나 댓글 { $count }개는 그 자리에 둘 수 없습니다. 댓글은 장의 첫 문단으로 옮기고 각주는 제외합니다.
+import-scrivener-prose-media-file-copied-line = Skribisto에서 열 수 없는 조사 자료 파일 { $count }개를 새 프로젝트 옆에 복사했습니다. 각 노트에 위치가 적혀 있습니다.
+import-scrivener-prose-media-file-not-carried-line = Skribisto에서 열 수 없는 조사 자료 파일 { $count }개는 Scrivener 프로젝트에 남습니다. 각 노트에 파일 이름이 적혀 있습니다.
+
+## When the import fails
+import-scrivener-error-refused = { $refusal } 기록된 내용은 없습니다.
+import-scrivener-error-question = 프로젝트에 이제 검토에서 답하지 않은 질문이 있습니다. 다시 검토한 뒤 가져오세요. 기록된 내용은 없습니다.
+import-scrivener-error-not-accepted = 프로젝트에 아직 수락하지 않은 질문이 있습니다. 다시 검토한 뒤 가져오세요. 기록된 내용은 없습니다.
+import-scrivener-error-changed = 검토한 뒤 프로젝트가 바뀌었습니다. 다시 검토한 뒤 가져오세요. 기록된 내용은 없습니다.
+import-scrivener-error-choice = 검토에서 선택한 구조가 더 이상 이 프로젝트에 맞지 않습니다. 다시 검토한 뒤 가져오세요. 기록된 내용은 없습니다.
 
 export-title = 내보내기
 export-close = 닫기
@@ -1651,6 +2386,7 @@ import-document-destination = 대상 위치
 import-document-destination-hint = 문서 트리나 항목을 선택하세요. 새 항목은 폴더 안이나 장면 뒤에 배치됩니다.
 import-document-destination-empty = 문서 트리가 없습니다. 먼저 만드세요.
 import-document-plan-empty = 아직 가져올 내용이 없습니다.
+import-document-pictures = 이 문서들과 함께 이미지 { $count }개를 가져옵니다.
 import-document-summary = 항목 { $rows }개 · 장면 구분 { $breaks }개
 import-document-back = 뒤로
 import-document-cancel = 취소
@@ -1676,6 +2412,17 @@ import-diagnostic-footnotes-degraded = Markdown에서는 각주를 읽지 않으
 import-diagnostic-footnote-not-carried = "{ $path }"의 각주 { $count }개를 가져오지 못했습니다. 나머지는 가져왔습니다.
 import-diagnostic-raw-html-dropped = "{ $path }"의 원시 HTML 블록 { $count }개를 제외했습니다.
 import-diagnostic-nested-break-dropped = "{ $path }"의 인용문이나 목록 안에 있는 장면 구분 { $count }개를 제외했습니다. 독립된 줄의 구분만 유지합니다.
+import-diagnostic-image-not-ingested-format = "{ $path }"의 이미지 "{ $detail }"은(는) Skribisto에서 표시할 수 없는 형식이라 제외했습니다. PNG, JPEG, WebP, GIF, TIFF, BMP 이미지는 가져옵니다. 이 중 한 형식으로 저장한 뒤 직접 삽입하세요.
+import-diagnostic-image-not-ingested-remote = "{ $path }"의 이미지 "{ $detail }"은(는) 웹에 있습니다. 가져오는 동안에는 이미지를 내려받지 않으므로 제외했습니다.
+import-diagnostic-image-not-ingested-outside = "{ $path }"의 이미지 "{ $detail }"은(는) 문서와 문서 폴더 밖에 있어 제외했습니다. 문서 안이나 문서가 있는 폴더에 저장된 이미지만 가져옵니다.
+import-diagnostic-image-not-ingested-missing = "{ $path }"의 이미지 "{ $detail }"을(를) 찾을 수 없어 제외했습니다.
+import-diagnostic-image-not-ingested-too-large = "{ $path }"의 이미지 "{ $detail }"은(는) 프로젝트에 넣을 수 있는 크기보다 커서 제외했습니다.
+import-diagnostic-image-not-ingested-unreadable = "{ $path }"의 이미지 "{ $detail }"을(를) 이미지로 읽을 수 없어 제외했습니다.
+import-diagnostic-image-not-ingested-heading = "{ $path }"의 이미지 "{ $detail }"은(는) 제목 안에 있습니다. 제목은 이미지를 담을 수 없는 항목 제목이 되므로 제외했습니다.
+import-diagnostic-image-not-ingested-note = "{ $path }"의 이미지 "{ $detail }"은(는) 각주, 미주 또는 댓글 안에 있습니다. 이들은 글만 유지하고 이미지는 담지 않으므로 제외했습니다.
+import-diagnostic-image-not-ingested-html = "{ $path }"의 이미지 "{ $detail }"은(는) HTML로 작성되어 있습니다. 가져오기에서는 HTML을 제외하므로 이 이미지도 함께 제외했습니다. 가져오려면 Markdown 이미지로 작성하세요.
+import-diagnostic-image-not-ingested-document-full = "{ $path }"의 이미지 "{ $detail }"을(를) 제외했습니다. 이 문서의 이미지를 모두 합하면 한 번에 가져올 수 있는 양을 넘습니다. 문서를 나눠 가져오거나 나머지는 직접 삽입하세요.
+import-diagnostic-picture-first-frame-only = "{ $path }"의 움직이는 이미지 "{ $detail }"은(는) 첫 프레임만 가져옵니다. 프로젝트의 이미지는 움직이지 않습니다.
 import-diagnostic-duplicate-title = "{ $title }"이 { $count }번 나타납니다. 이미 가져온 파일이라면 중복됩니다.
 import-diagnostic-heading-level-jump = "{ $title }"의 제목 수준이 { $from }에서 { $to }(으)로 건너뜁니다. 상위 항목 바로 아래 수준에 배치합니다.
 import-diagnostic-illegal-combination = "{ $title }"에 본문이 있지만 { $kind } 유형은 본문을 담을 수 없습니다. 유형을 바꾸거나 제외할 때까지 가져오기를 보류하며 아무것도 가져오지 않습니다.
@@ -1928,6 +2675,7 @@ help-topic-round-trip = 독자에게 책 보내기
 help-topic-export = 내보내기
 help-topic-import-documents = 문서 가져오기
 help-topic-import-projects = 프로젝트 전체 가져오기
+help-topic-import-scrivener = Scrivener에서 옮겨 오기
 help-topic-backups-and-versions = 백업 및 버전
 
 help-shortcuts-title = 키보드 단축키
@@ -1950,6 +2698,8 @@ shortcut-name-work-new = 새 프로젝트
 shortcut-name-work-open = 프로젝트 열기
 shortcut-name-window-new = 새 창
 shortcut-name-work-close = 프로젝트 닫기
+shortcut-name-work-import-scrivener = Scrivener 프로젝트 가져오기…
+shortcut-name-work-import-scrivener-report = Scrivener 가져오기 보고서 표시
 shortcut-name-app-settings = 설정
 shortcut-name-app-quit = 종료
 shortcut-name-editor-insert-footnote = 각주 삽입
@@ -2196,6 +2946,7 @@ dialog-save-as-file-title = 단일 .skrib 파일로 저장
 dialog-save-as-folder-title = 프로젝트를 둘 상위 폴더 선택
 dialog-manuskript-file-title = Manuskript 프로젝트 선택
 dialog-manuskript-folder-title = Manuskript 프로젝트 폴더 선택
+dialog-plume-file-title = Plume Creator 프로젝트 선택
 dialog-filter-skrib = Skribisto 프로젝트
 dialog-filter-manuskript = Manuskript 프로젝트
 dialog-filter-plume = Plume Creator 프로젝트

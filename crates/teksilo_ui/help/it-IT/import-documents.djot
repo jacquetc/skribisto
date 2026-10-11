@@ -1,4 +1,4 @@
-Importa file Word, LibreOffice, Markdown o di testo semplice nel progetto. Per un manoscritto restituito da un lettore, consulta [reimportare modifiche e commenti](:help-round-trip). Per Manuskript o Plume Creator, consulta [importare progetti](:help-import-projects).
+Importa file Word, LibreOffice, Markdown o di testo semplice nel progetto. Per un manoscritto restituito da un lettore, consulta [reimportare modifiche e commenti](:help-round-trip). Per Manuskript o Plume Creator, consulta [importare progetti](:help-import-projects), e per Scrivener, [passare da Scrivener](:help-import-scrivener). Un documento Word compilato da un progetto Scrivener che non è possibile importare si importa da qui.
 
 ## Importa i file
 
@@ -25,6 +25,14 @@ I file Word e LibreOffice importano formattazione comune, collegamenti, allineam
 Il testo importato può apparire diverso dall'originale. Rientri e giustificazione seguono lo stile di esportazione. Alcune formattazioni possono essere semplificate.
 
 *Caselle di testo, equazioni e oggetti incorporati vengono esclusi.* Controlla i messaggi in *Verifica* e copia dall'originale eventuali testi mancanti. I simboli di caratteri grafici come Wingdings possono apparire come quadratini vuoti.
+
+## Immagini
+
+Le immagini arrivano con i documenti, ognuna nel punto del testo in cui si trovava. Dai file Word e LibreOffice arriva ogni immagine contenuta nel file, con la sua descrizione. Da un file Markdown un'immagine arriva quando il suo file si trova nella cartella del documento stesso o in una cartella al suo interno. In *Verifica*, una riga sotto l'albero indica quante immagini arrivano.
+
+Le immagini PNG, JPEG e WebP arrivano così come sono; le immagini TIFF, GIF e BMP arrivano come PNG, e una GIF animata come il suo primo fotogramma. Un'immagine già presente nel progetto non viene salvata due volte, e *Annulla* toglie le immagini insieme al testo.
+
+Alcune immagini restano indietro, e i messaggi le indicano una per una con il motivo: un formato che Skribisto non sa mostrare (come EMF, WMF, SVG o PDF), un'immagine sul web (non viene scaricato nulla), un'immagine fuori dal documento e dalla sua cartella, un'immagine mancante, illeggibile o troppo grande, oppure un'immagine in un'intestazione, in una nota o in un commento. Puoi reinserirla in seguito con *Documento ▸ Inserisci immagine…*.
 
 ## Controlla i messaggi prima di terminare
 

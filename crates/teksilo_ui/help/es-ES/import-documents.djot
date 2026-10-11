@@ -1,7 +1,9 @@
 Importe archivos de Word, de LibreOffice, de Markdown o de texto sin formato en su proyecto.
 Para un manuscrito que le devuelve un lector, consulte
 [traer de vuelta cambios y comentarios](:help-round-trip). Para Manuskript o Plume Creator,
-consulte [importar proyectos](:help-import-projects).
+consulte [importar proyectos](:help-import-projects), y para Scrivener,
+[llegar desde Scrivener](:help-import-scrivener). Un documento de Word compilado a partir de un
+proyecto de Scrivener que no se puede importar entra por aquí.
 
 ## Importar sus archivos
 
@@ -53,6 +55,24 @@ simplificarse.
 mensajes del paso *Revisión* por si algo no se pudo importar, y copie del archivo original
 cualquier texto que falte. Los símbolos de fuentes de imágenes como Wingdings pueden
 aparecer como cuadros vacíos.
+
+## Imágenes
+
+Las imágenes llegan con sus documentos, cada una donde estaba en el texto. De los archivos de
+Word y de LibreOffice llegan todas las imágenes guardadas en el archivo, con su descripción.
+De un archivo Markdown, una imagen llega cuando su archivo está en la propia carpeta del
+documento o en una carpeta dentro de ella. En *Revisión*, una línea bajo el árbol indica
+cuántas imágenes llegan.
+
+Las imágenes PNG, JPEG y WebP llegan tal cual; las TIFF, GIF y BMP llegan como PNG, y un GIF
+animado, como su primer fotograma. Una imagen que el proyecto ya contiene no se guarda dos
+veces, y *Deshacer* retira las imágenes junto con el texto.
+
+Algunas imágenes se quedan fuera, y los mensajes nombran cada una con el motivo: un formato
+que Skribisto no puede mostrar (como EMF, WMF, SVG o PDF), una imagen en la web (no se
+descarga nada), una imagen fuera del documento y de su carpeta, una imagen que falta, que no
+se puede leer o que es demasiado grande, o una que está en un encabezado, una nota o un
+comentario. Después puede volver a ponerla con *Documento ▸ Insertar imagen…*.
 
 ## Revisar los mensajes antes de terminar
 

@@ -17,6 +17,7 @@ menu-create-from = &Opret fra
 menu-import-plume = &Plume Creator (.plume)…
 menu-import-document = &Dokumenter (Markdown, Word, ODT)…
 menu-import-manuskript = &Manuskript (.msk)…
+menu-import-scrivener = &Scrivener (.scriv)…
 menu-export = &Eksportér
 menu-export-book = Eksportér bog
 menu-export-part = Eksportér del
@@ -829,6 +830,8 @@ backup-no-destination-title = Intet sted til sikkerhedskopier er tilgængeligt
 backup-no-destination-text = Ingen af de konfigurerede destinationer for sikkerhedskopier kan nås (et eksternt drev er måske frakoblet). Tilslut det, og prøv igen, eller afslut uden at sikkerhedskopiere.
 backup-failed-close-title = Sikkerhedskopien kunne ikke gemmes
 backup-failed-close-text = Der kunne ikke skrives en sikkerhedskopi før lukning. Alle destinationer mislykkedes (drevet er måske fjernet, fuldt eller skrivebeskyttet). Ret fejlen, og prøv igen, eller afslut uden at sikkerhedskopiere.
+backup-failed-close-error-text = Der kunne ikke skrives en sikkerhedskopi før lukning: { $error }. Ret fejlen, og prøv igen, eller afslut uden at sikkerhedskopiere.
+backup-no-result = Sikkerhedskopieringen er afsluttet uden at oplyse, om den lavede en kopi. Se på listen over sikkerhedskopier, om der er kommet en ny.
 
 ## Open-a-backup (choice modal + permanent banner + restore)
 backup-choice-title = Sikkerhedskopifil
@@ -1022,6 +1025,8 @@ import-plume-source-not-file = Stien er ikke en fil
 # Binder names passed to the backend (which can't do i18n)
 import-plume-manuscript-binder = Manuskript
 import-plume-story-bible-binder = Historiebibel
+import-plume-notes-of = { $name } (noter)
+import-plume-content-of = { $name } (indhold)
 # Progress toast (the import runs as a long operation)
 import-plume-progress-title = Importerer Plume-projekt…
 # Result
@@ -1040,6 +1045,12 @@ import-plume-nested-too-deep = Projektet blev ikke importeret: dets del »{ $par
 # entities, which could expand into more memory than the computer has. $part
 # is the part's own name (tree, attendance, info).
 import-plume-declares-entities = Projektet blev ikke importeret: dets del »{ $part }« erklærer XML-entiteter, hvad intet Plume Creator-projekt gør. At udfolde dem kunne kræve mere hukommelse, end computeren har, og få Skribisto til at gå ned. Intet blev skrevet.
+import-plume-no-outline = Filen er et komprimeret arkiv, men ikke et Plume Creator-projekt: den har ingen disposition. Intet blev skrevet.
+import-plume-empty-outline = Dispositionsfilen i dette Plume Creator-projekt er tom, så der er intet at importere. Intet blev skrevet.
+# $tag is the name of the document the part turned out to be.
+import-plume-wrong-document = Dette er ikke et Plume Creator-projekt: dets del »{ $part }« er et »{ $tag }«-dokument. Intet blev skrevet.
+# $version is the part's own version, $supported the newest this importer reads.
+import-plume-too-new = Delen »{ $part }« i dette projekt er skrevet af en nyere version af Plume Creator (version { $version }), end Skribisto kan læse (op til { $supported }). Intet blev skrevet.
 
 ## Import Manuskript project dialog
 import-manuskript-title = Importér Manuskript-projekt
@@ -1065,6 +1076,7 @@ import-manuskript-summary-note = Resumé
 import-manuskript-importance-minor = Mindre
 import-manuskript-importance-secondary = Sekundær
 import-manuskript-importance-main = Hovedperson
+import-manuskript-notes-of = { $title } (noter)
 # Progress toast (the import is a long operation)
 import-manuskript-progress-title = Importerer Manuskript-projekt…
 # Result
@@ -1088,6 +1100,82 @@ import-manuskript-folders-too-deep = Projektet blev ikke importeret: en af dets 
 # entities, which could expand into more memory than the computer has. $part
 # is that file's name inside the project (world.opml, plots.xml…).
 import-manuskript-declares-entities = Projektet blev ikke importeret: dets fil »{ $part }« erklærer XML-entiteter, hvad intet Manuskript-projekt gør. At udfolde dem kunne kræve mere hukommelse, end computeren har, og få Skribisto til at gå ned. Intet blev skrevet.
+import-manuskript-not-a-project-file = »{ $file }« er hverken et Manuskript-projektarkiv eller den lille .msk-fil, der peger på en projektmappe. Intet blev skrevet.
+import-manuskript-folder-missing = »{ $stub }« peger på en projektmappe ved navn »{ $folder }« ved siden af sig, og den mappe er der ikke. Et Manuskript-projekt i mappetilstand består af begge dele, og de skal flyttes sammen. Intet blev skrevet.
+import-manuskript-not-a-project = Dette ligner ikke et Manuskript-projekt: det har hverken en Manuskript-markør eller en disposition. Intet blev skrevet.
+import-manuskript-format-too-new = Projektet er i Manuskript-format { $version }, som er nyere, end Skribisto kan læse (op til { $supported }). Intet blev skrevet.
+import-manuskript-too-many-files = Projektet blev ikke importeret: det indeholder mere end { $limit } filer, langt flere end noget Manuskript-projekt. Intet blev skrevet.
+import-manuskript-too-large = Projektet blev ikke importeret: det er større end de { $limit } MB, Skribisto læser fra et Manuskript-projekt. Intet blev skrevet.
+project-import-close = Luk
+project-import-location = Destinationsmappe
+# The folder dialog's title.
+project-import-location-title = Vælg en destinationsmappe
+project-import-name = Filnavn
+project-import-name-placeholder = Projektets navn
+project-import-will-create = Opretter
+project-import-cancel = Annullér
+project-import-import = Importér
+# Field validation
+project-import-location-required = Vælg en destinationsmappe
+project-import-location-missing = Mappen findes ikke
+project-import-location-not-folder = Stien er ikke en mappe
+project-import-location-readonly = Der kan ikke skrives i mappen
+project-import-name-required = Angiv et filnavn
+project-import-name-exists = Der findes allerede en fil med dette navn her. Du bliver bedt om at bekræfte overskrivningen
+project-import-name-is-folder = Der findes allerede en mappe med dette navn her, måske et projekt, der er gemt som mappe. En import kan ikke erstatte den: vælg et andet navn
+# Overwrite confirmation
+project-import-overwrite-title = Erstat den eksisterende fil?
+project-import-overwrite-text = »{ $name }« findes allerede. Vil du erstatte den med det importerede projekt?
+# Projects are imported one at a time, whichever importer asks.
+project-import-busy-title = Et andet projekt er ved at blive importeret
+project-import-busy-text = Projekter importeres ét ad gangen. Vent, til den igangværende import er færdig, eller annullér den, og start så denne igen.
+# Spoken by a screen reader once per phase, never shown: the toast's title, then
+# the phase's name.
+project-import-progress-announcement = { $title } { $phase }
+# The notice once Cancel is pressed, until the converter has stopped: it may be
+# finishing a file it cannot leave half written.
+project-import-stopping = Standser importen…
+project-import-cancelled = Importen er annulleret
+project-import-open-now = Åbn nu
+project-import-details = Detaljer
+# The import's report: what the writer should know about what came across.
+project-import-report = { $count ->
+    [one] 1 ting, du bør vide om denne import
+   *[other] { $count } ting, du bør vide om denne import
+}
+project-import-report-title = Om denne import
+# Error toast: a short reason in the body, the full technical chain behind Details.
+project-import-error-title = Projektet kunne ikke importeres
+# Why a project was not imported, whichever importer read it. A $file is a file
+# name, a $folder a full path (it is the folder the writer has to act on), a
+# $reason what the system or a parser said, a $limit a number.
+project-import-failed-cancelled = Importen blev annulleret. Intet blev skrevet.
+project-import-failed-target-exists = »{ $file }« findes allerede, og importen fik ikke lov til at erstatte den. Intet blev skrevet.
+project-import-failed-target-folder = »{ $file }« er en mappe, måske et projekt, der er gemt som mappe, og en import kan ikke erstatte den. Vælg et andet navn. Intet blev skrevet.
+project-import-failed-not-written = »{ $file }« kunne ikke skrives i »{ $folder }« ({ $reason }). Intet blev skrevet.
+project-import-failed-disk-full = Der er ikke plads nok tilbage i »{ $folder }« til at skrive »{ $file }«. Frigør noget plads der, og importér så igen. Intet blev skrevet.
+project-import-failed-source-missing = »{ $file }« er der ikke længere. Intet blev skrevet.
+project-import-failed-unreadable = Skribisto kunne ikke læse »{ $file }« ({ $reason }). Intet blev skrevet.
+project-import-failed-archive-damaged = »{ $file }« er en komprimeret fil, der ikke kunne læses, sandsynligvis fordi den er beskadiget ({ $reason }). Intet blev skrevet.
+project-import-failed-archive-entries = Projektet blev ikke importeret: dets arkiv angiver { $entries } filer, flere end de { $limit }, et projekt må indeholde. Det gør kun en fil, der er bygget til at opbruge hukommelsen. Intet blev skrevet.
+project-import-failed-archive-member = Projektet blev ikke importeret: dets del »{ $part }« fylder mere end { $limit } MB udpakket. Det gør kun en fil, der er bygget til at opbruge hukommelsen. Intet blev skrevet.
+project-import-failed-archive-size = Projektet blev ikke importeret: det fylder mere end { $limit } MB udpakket. Det gør kun en fil, der er bygget til at opbruge hukommelsen. Intet blev skrevet.
+project-import-failed-nested = Projektet blev ikke importeret: dets del »{ $part }« er indlejret mere end { $limit } niveauer dybt, og at læse den kunne få Skribisto til at gå ned. Intet blev skrevet.
+project-import-failed-entities = Projektet blev ikke importeret: dets del »{ $part }« erklærer XML-entiteter. At udfolde dem kunne kræve mere hukommelse, end computeren har, og få Skribisto til at gå ned. Intet blev skrevet.
+project-import-failed-folders = Projektet blev ikke importeret: en af dets filer ligger mere end { $limit } mapper dybt, og at læse den kunne få Skribisto til at gå ned. Intet blev skrevet.
+project-import-failed-malformed = Projektet blev ikke importeret: dets del »{ $part }« er beskadiget og kan ikke læses ({ $reason }). Intet blev skrevet.
+# A Scrivener project the importer cannot bring across (a Scrivener 1 for Mac project, a
+# damaged binder file). Why is the Scrivener importer's own to say; Details holds its key.
+project-import-failed-scrivener-refused = Skribisto kan ikke importere dette Scrivener-projekt. Intet blev skrevet.
+# The Scrivener project asks something its review did not answer: a project or a binder
+# file appeared in it since.
+project-import-failed-scrivener-question = Scrivener-projektet stiller et spørgsmål, som gennemgangen ikke besvarede. Gennemgå det igen, og importér så. Intet blev skrevet.
+# The Scrivener project raises a question the writer has to accept before it imports.
+project-import-failed-scrivener-not-accepted = Scrivener-projektet rejser et spørgsmål, du endnu ikke har accepteret. Gennemgå det igen, og importér så. Intet blev skrevet.
+# The Scrivener project changed after the writer reviewed it.
+project-import-failed-scrivener-changed = Scrivener-projektet er blevet ændret, efter du gennemgik det. Gennemgå det igen, og importér så. Intet blev skrevet.
+# An error nothing above accounts for; $detail is its technical description.
+project-import-failed-internal = Importen stoppede ved en fejl, som Skribisto ikke havde forventet: { $detail }
 
 ## Project import, shared by the Plume Creator and Manuskript dialogs
 # The chosen destination is a project open in a window, here or in another
@@ -1099,6 +1187,1371 @@ import-target-open-text = »{ $name }« er åbent i Skribisto. En import over de
 # notice's title ("2 things could not be imported exactly"). The notice is read out
 # over the result, so it says both.
 import-warnings-announcement = { $result } { $notice }.
+# Quitting while an import runs. $name is the file the import is writing.
+quit-import-running-title = En import kører stadig
+quit-import-running-text = Skribisto er stadig ved at importere »{ $name }«. Afslutter du nu, standser importen: intet bliver skrevet, og det projekt, du importerer fra, forbliver, som det var.
+quit-import-stop = Stop importen og afslut
+
+## Import a Scrivener project: the wizard
+import-scrivener-title = Importér et Scrivener-projekt
+import-scrivener-step-project = Projekt
+import-scrivener-step-review = Gennemgang
+import-scrivener-step-save = Gem
+import-scrivener-back = Tilbage
+import-scrivener-next = Næste
+import-scrivener-import = Importér
+import-scrivener-cancel = Annullér
+import-scrivener-help = Hjælp
+
+## Project step: choosing the project
+import-scrivener-drop-title = Slip et Scrivener-projekt her
+import-scrivener-drop-hint = Et .scriv-projekt, .scrivx-filen i det, en .zip-sikkerhedskopi eller en .scrivtemplate
+import-scrivener-source = Scrivener-projekt
+import-scrivener-source-placeholder = Sti til projektet
+import-scrivener-choose-file = Vælg fil…
+import-scrivener-choose-folder = Vælg mappe…
+# Windows and Linux show a .scriv project as an ordinary folder.
+import-scrivener-source-hint = Vælg projektets .scriv-mappe, eller åbn den, og vælg .scrivx-filen i den. En .zip-sikkerhedskopi virker også.
+# macOS shows a .scriv project as a single file when Scrivener is installed, as a folder when it is not.
+import-scrivener-source-hint-mac = Vises projektet som én fil, så brug »Vælg fil…«. Vises det som en mappe, så brug »Vælg mappe…«. En .zip-sikkerhedskopi virker også.
+# File-dialog titles and filter label, resolved when the dialog opens.
+import-scrivener-dialog-file-title = Vælg et Scrivener-projekt
+import-scrivener-dialog-folder-title = Vælg en Scrivener-projektmappe
+import-scrivener-dialog-filter = Scrivener-projekt
+import-scrivener-source-missing = Der er intet på denne sti
+# A path whose name is not Unicode: the field shows it with its unreadable letters replaced.
+import-scrivener-source-unreadable-name = Navnet kan ikke læses. Omdøb projektet i din filhåndtering, og vælg det så igen.
+import-scrivener-empty-hint = Vælg et projekt for at se, hvad Skribisto finder i det.
+import-scrivener-reading = Læser projektet…
+import-scrivener-stop-reading = Stop læsningen
+import-scrivener-read-failed = Projektet kunne ikke læses
+import-scrivener-read-failed-body = Noget gik galt under læsningen. Kontrollér igen, eller se detaljerne.
+import-scrivener-details = Detaljer
+import-scrivener-check-again = Kontrollér igen
+# A refusal this version does not know how to word.
+import-scrivener-refusal-unknown-title = Dette projekt kan ikke importeres
+import-scrivener-refusal-unknown-body = Skribisto ved ikke, hvordan det skal overføres. Detaljerne nævner årsagen.
+
+## Project step: the project card
+import-scrivener-made-with-mac = Senest gemt af Scrivener { $version } til macOS
+import-scrivener-made-with-windows = Senest gemt af Scrivener { $version } til Windows
+import-scrivener-made-with-linux = Senest gemt af Scrivener { $version } til Linux
+import-scrivener-made-with-ios = Senest gemt af Scrivener { $version } til iPhone og iPad
+import-scrivener-made-with-version = Senest gemt af Scrivener { $version }
+import-scrivener-made-with-unknown = Scrivener-projekt, format { $format }
+import-scrivener-saved-on = Gemt { $date } på »{ $device }«
+import-scrivener-saved-on-no-device = Gemt { $date }
+import-scrivener-card-counts = { $documents ->
+    [one] 1 dokument
+   *[other] { $documents } dokumenter
+}, { $manuscript } i manuskriptet
+
+## Review step
+import-scrivener-review-hint = Sådan overføres dit ringbind. Intet skrives, før du importerer, og mange elementer kan bagefter skifte type i ringbindet med Konvertér til.
+import-scrivener-choices-structure = Niveauer
+import-scrivener-top-level = Mapper på øverste niveau
+import-scrivener-choices-text = Tekst
+import-scrivener-choice-containers = Mapper på niveau { $depth }
+import-scrivener-choice-texts = Dokumenter på niveau { $depth }
+import-scrivener-choice-count = { $count ->
+    [one] 1 element
+   *[other] { $count } elementer
+}
+import-scrivener-choice-count-example = { $count ->
+    [one] 1 element: »{ $example }«
+   *[other] { $count } elementer, f.eks. »{ $example }«
+}
+import-scrivener-rung-part = Dele
+import-scrivener-rung-chapter = Kapitler
+import-scrivener-rung-plain = Almindelige mapper
+import-scrivener-texts-scenes = Scener
+import-scrivener-texts-chapters = Kapitler
+import-scrivener-choice-books = Bøger i manuskriptet
+import-scrivener-books-one = Én bog
+import-scrivener-books-several = Én bog pr. mappe
+import-scrivener-choice-split = { $count ->
+    [one] Opdel »{ $title }« ved overskriften
+   *[other] Opdel »{ $title }« ved de { $count } overskrifter
+}
+import-scrivener-root-items = { $count ->
+    [one] 1 element
+   *[other] { $count } elementer
+}
+import-scrivener-root-items-manuscript = { $count ->
+    [one] 1 element, ligner manuskript
+   *[other] { $count } elementer, ligner manuskript
+}
+import-scrivener-dest-notes = Noter
+import-scrivener-dest-story-bible = Historiebibel
+import-scrivener-dest-manuscript = Endnu en bog
+import-scrivener-dest-leave-out = Udelad
+import-scrivener-choice-trash = { $count ->
+    [one] Tag papirkurven med (1 element)
+   *[other] Tag papirkurven med ({ $count } elementer)
+}
+import-scrivener-trash-detail = { $count ->
+    [0] Ingen af dem indeholder tekst.
+    [one] 1 af dem indeholder tekst.
+   *[other] { $count } af dem indeholder tekst.
+}
+import-scrivener-choice-blank-lines = Tomme linjer bliver til sceneskift
+import-scrivener-choice-ornaments = Linjer med ornamenter bliver til sceneskift
+import-scrivener-preview-label = Det nye projekts struktur
+import-scrivener-col-title = Titel
+import-scrivener-col-becomes = Bliver til
+import-scrivener-col-exports = I eksporter
+import-scrivener-in-exports-yes = Ja
+import-scrivener-in-exports-no = Nej
+# What a row the binder has no creation command for becomes.
+import-scrivener-becomes-item = Element
+import-scrivener-becomes-trashed = I papirkurven
+import-scrivener-before-title = Før du importerer
+import-scrivener-review-error-unreadable = Gennemgangen kunne ikke forberedes. Vælg projektet igen.
+import-scrivener-review-error-choice = Dette valg passer ikke til projektet. Vælg projektet igen.
+import-scrivener-review-error-unmappable = Med dette valg kunne ringbindet ikke overføres, uden at noget gik tabt. Vælg anderledes, eller rapportér problemet.
+
+## Save step
+import-scrivener-save-hint = Importen laver et nyt Skribisto-projekt. Dit Scrivener-projekt bliver kun læst, aldrig ændret.
+import-scrivener-title-field = Titel
+import-scrivener-author = Forfatter
+import-scrivener-language = Sprog
+import-scrivener-location-inside-project = Vælg en mappe uden for Scrivener-projektet. Derinde må der kun ligge Scriveners egne filer.
+import-scrivener-copy-research-label = Kopiér researchfiler ved siden af det nye projekt
+import-scrivener-copy-research = { $count ->
+    [one] 1 researchfil, som Skribisto ikke kan åbne, f.eks. en PDF eller en lydfil, lægges i en mappe ved siden af projektet. Fjerner du fluebenet, fortæller dens note, hvor den ligger i dit Scrivener-projekt.
+   *[other] { $count } researchfiler, som Skribisto ikke kan åbne, f.eks. PDF'er eller lydfiler, lægges i en mappe ved siden af projektet. Fjerner du fluebenet, fortæller deres noter, hvor de ligger i dit Scrivener-projekt.
+}
+# The file name proposed when the project's name holds nothing a file name can.
+import-scrivener-default-name = Scrivener-projekt
+
+## Progress and result
+import-scrivener-progress-title = Importerer Scrivener-projekt…
+import-scrivener-done-title = Scrivener-projektet er importeret
+# How many rows the new project holds: the documents and folders that came across, and
+# the rows the import made for them (a document's notes, the project notes).
+import-scrivener-done = { $items ->
+    [one] Det nye projekt indeholder 1 element.
+   *[other] Det nye projekt indeholder { $items } elementer.
+}
+# The same, with how many kinds of thing could not be read or need checking.
+import-scrivener-done-check = { $items ->
+    [one] Det nye projekt indeholder 1 element.
+   *[other] Det nye projekt indeholder { $items } elementer.
+} { $findings ->
+    [one] 1 ting kræver din opmærksomhed.
+   *[other] { $findings } ting kræver din opmærksomhed.
+}
+import-scrivener-review-again = Gennemgå igen
+## The import's report (the dialog See report opens)
+import-scrivener-see-report = Se rapport
+import-scrivener-report-from = Læst fra { $path }
+import-scrivener-report-to = Skrevet til { $path }
+import-scrivener-report-came-across = Hvad der blev overført
+import-scrivener-report-nothing-counted = Intet blev talt.
+import-scrivener-report-items = { $count ->
+    [one] 1 element
+   *[other] { $count } elementer
+}
+import-scrivener-report-words = { $count ->
+    [one] 1 ord
+   *[other] { $count } ord
+}
+import-scrivener-report-synopses = { $count ->
+    [one] 1 synopsis
+   *[other] { $count } synopser
+}
+import-scrivener-report-document-notes = { $count ->
+    [one] 1 dokuments noter
+   *[other] { $count } dokumenters noter
+}
+import-scrivener-report-comments = { $count ->
+    [one] 1 kommentar
+   *[other] { $count } kommentarer
+}
+import-scrivener-report-footnotes = { $count ->
+    [one] 1 fodnote
+   *[other] { $count } fodnoter
+}
+import-scrivener-report-pictures = { $count ->
+    [one] 1 billede
+   *[other] { $count } billeder
+}
+import-scrivener-report-templates = { $count ->
+    [one] 1 noteskabelon
+   *[other] { $count } noteskabeloner
+}
+import-scrivener-report-tags = { $count ->
+    [one] 1 mærke
+   *[other] { $count } mærker
+}
+import-scrivener-report-statuses = { $count ->
+    [one] 1 status
+   *[other] { $count } statusser
+}
+import-scrivener-report-trashed = { $count ->
+    [one] 1 element i papirkurven
+   *[other] { $count } elementer i papirkurven
+}
+import-scrivener-report-research-files = { $count ->
+    [one] 1 researchfil
+   *[other] { $count } researchfiler
+}
+import-scrivener-report-choices = Hvad du valgte
+import-scrivener-report-accepted-mobile = Du importerede projektet uden de ændringer fra Scrivener til iPhone eller iPad, som endnu ikke var kommet med i det.
+import-scrivener-report-accepted-no-text = Du importerede denne kopi med tomme dokumenter, da ingen af deres tekst var i den.
+import-scrivener-report-choice = { $subject }: { $answer }
+import-scrivener-report-yes = ja
+import-scrivener-report-no = nej
+import-scrivener-report-research-copied = Researchfiler, som Skribisto ikke kan åbne, blev kopieret til »{ $folder }« ved siden af det nye projekt.
+import-scrivener-report-research-not-copied = Researchfiler, som Skribisto ikke kan åbne, blev ikke kopieret. Deres noter fortæller, hvor de ligger i dit Scrivener-projekt.
+import-scrivener-report-research-copied-except = { $count ->
+    [one] Researchfiler, som Skribisto ikke kan åbne, blev kopieret til »{ $folder }« ved siden af det nye projekt, undtagen 1, der bliver i dit Scrivener-projekt. Dens note fortæller, hvor den ligger.
+   *[other] Researchfiler, som Skribisto ikke kan åbne, blev kopieret til »{ $folder }« ved siden af det nye projekt, undtagen { $count }, der bliver i dit Scrivener-projekt. Deres noter fortæller, hvor de ligger.
+}
+import-scrivener-report-research-none-copied = { $count ->
+    [one] Du bad om at få researchfiler kopieret, men 1 kunne ikke kopieres. Den bliver i dit Scrivener-projekt, og dens note fortæller, hvor den ligger.
+   *[other] Du bad om at få researchfiler kopieret, men { $count } kunne ikke kopieres. De bliver i dit Scrivener-projekt, og deres noter fortæller, hvor de ligger.
+}
+import-scrivener-report-chose-project = Du valgte at importere »{ $project }«, et af projekterne i det, du havde valgt.
+import-scrivener-report-chose-manifest = Du valgte ringbindsfilen »{ $file }«.
+import-scrivener-report-chose-enclosing = Du valgte noget inde i »{ $project }«, så hele projektet blev importeret.
+import-scrivener-report-chose-upgraded = Du importerede »{ $current }«, det projekt, du fortsatte med at skrive i, og ikke den kopi, Scrivener gemte før en opdatering.
+import-scrivener-report-chose-backup = Du importerede »{ $backup }«, den ældre kopi, Scrivener gemte før en opdatering.
+import-scrivener-report-title-placeholder-rejected = Titlen i projektets indstillinger var en pladsholder fra en skabelon, så Skribisto foreslog i stedet projektets navn.
+import-scrivener-report-author-placeholder-rejected = Forfatternavnet i projektets indstillinger var en pladsholder fra en skabelon, så Skribisto foreslog intet navn.
+import-scrivener-report-title-from-compile-settings = Skribisto foreslog den titel, projektets kompileringsindstillinger angiver: det navn, projektet havde, da det blev oprettet, medmindre der er angivet en titel der i Scrivener.
+import-scrivener-report-title-from-template = Skribisto foreslog skabelonens egen titel.
+import-scrivener-report-title-from-folder-name = Skribisto foreslog projektets navn som titel.
+import-scrivener-report-title-from-project-properties = Skribisto foreslog den titel, projektets egenskaber angiver.
+import-scrivener-report-author-from-project = Skribisto foreslog det forfatternavn, projektets indstillinger angiver. En skabelons forfatter kan hænge ved der, og den ville blive trykt på en titelside.
+import-scrivener-report-language-not-stated = Projektet angav ikke sit sprog, så Skribisto foreslog det sprog, programmet selv vises på. Det afgør, hvordan ord tælles, og hvordan citationstegn skrives.
+import-scrivener-report-language-from-script = Skribisto foreslog sproget ud fra den skrift, manuskriptet er skrevet med ({ $tag }).
+# A proposal of the Save page the writer replaced with their own.
+import-scrivener-report-you-changed-it = { $hint } Du ændrede det.
+import-scrivener-report-content-salvaged-text = Teksten til »{ $item }« manglede i projektet. Ordene kommer fra Scriveners søgeindeks, som ren tekst og måske fra en ældre version: kontrollér dem.
+import-scrivener-report-content-salvaged-notes = Noterne til »{ $item }« manglede i projektet. Ordene kommer fra Scriveners søgeindeks, som ren tekst og måske fra en ældre version: kontrollér dem.
+import-scrivener-report-content-salvaged-synopsis = Synopsen til »{ $item }« manglede i projektet. Ordene kommer fra Scriveners søgeindeks, som ren tekst og måske fra en ældre version: kontrollér dem.
+# A finding of the document importer found in several places: its sentence about the
+# first, then how many more the list under it names.
+import-scrivener-report-document-others = { $others ->
+    [one] { $sentence } Det samme sker 1 sted mere, som er angivet nedenfor.
+   *[other] { $sentence } Det samme sker { $others } steder mere, som er angivet nedenfor.
+}
+# An item of the report, by its path in Scrivener's binder, with which of its writings
+# the line is about when it is not the text.
+import-scrivener-report-item-notes = { $path } (dokumentnoter)
+import-scrivener-report-item-synopsis = { $path } (synopsis)
+import-scrivener-report-item-project-note = { $path } (projektnote)
+import-scrivener-report-item-recovered = { $path } (gendannet tekst)
+# An item with no name in Scrivener.
+import-scrivener-report-untitled = Uden titel
+import-scrivener-report-no-findings = Importen har ikke mere at rapportere.
+import-scrivener-report-group-unread = Kunne ikke læses
+import-scrivener-report-group-check = Kontrollér disse
+import-scrivener-report-group-changed = Overført på en anden måde
+import-scrivener-report-group-left = Efterladt
+import-scrivener-report-group-count = { $group } ({ $count })
+import-scrivener-report-items-toggle = { $count ->
+    [one] 1 element
+   *[other] { $count } elementer
+}
+# The same, as a screen reader names it: with the line whose items it lists.
+import-scrivener-report-items-toggle-named = { $count ->
+    [one] 1 element: { $line }
+   *[other] { $count } elementer: { $line }
+}
+import-scrivener-report-names-toggle = { $count ->
+    [one] 1 navn
+   *[other] { $count } navne
+}
+# The same, as a screen reader hears it, naming the line it belongs to.
+import-scrivener-report-names-toggle-named = { $count ->
+    [one] 1 navn: { $line }
+   *[other] { $count } navne: { $line }
+}
+import-scrivener-report-more = { $count ->
+    [one] Og 1 mere.
+   *[other] Og { $count } mere.
+}
+import-scrivener-report-open-item = Åbn i editoren
+import-scrivener-report-links-hint = Åbn det nye projekt, og vis så denne rapport igen fra kommandopaletten: så åbnes hvert element, der er nævnt her, med et klik.
+import-scrivener-copy-report = Kopiér rapport
+import-scrivener-report-copied = Rapporten er kopieret
+import-scrivener-report-copy-failed = Rapporten kunne ikke kopieres.
+import-scrivener-report-close = Luk
+import-scrivener-report-none-title = Ingen importrapport
+import-scrivener-report-none = Ingen Scrivener-import er afsluttet, siden Skribisto startede. Skribisto gemmer rapporterne fra de seneste importer, indtil programmet lukkes.
+import-scrivener-report-gone = Rapporten fra denne import gemmes ikke længere. Skribisto gemmer rapporterne fra de sidste { $count } importer, indtil programmet lukkes.
+
+## Words the import writes into the new project, in the language Skribisto shows itself in
+import-scrivener-manuscript-binder = Manuskript
+import-scrivener-notes-binder = Noter
+import-scrivener-notes-of = { $title } (noter)
+import-scrivener-project-notes = Projektnoter
+import-scrivener-recovered = Gendannede tekster
+import-scrivener-untitled-template = Skabelon uden titel
+# The folder beside the new project its research files are copied into.
+import-scrivener-research-folder = Researchfiler til { $name }
+# Between two authors' names.
+import-scrivener-list-separator = {", "}
+import-scrivener-label-details = Fra feltet »{ $field }« i Scrivener
+import-scrivener-status-details = Fra feltet »{ $field }« i Scrivener
+import-scrivener-unnamed-label = Etiket { $number }
+import-scrivener-unnamed-status = Status { $number }
+import-scrivener-label-tag = { $name } (etiket)
+import-scrivener-untitled-tag = Uden titel
+# The tags, the pace plan and the "From Scrivener" folder the import makes from what a
+# Scrivener project holds beyond its labels and status.
+import-scrivener-keyword-details = Nøgleordet »{ $path }« i Scrivener
+import-scrivener-unnamed-keyword = Nøgleord { $number }
+import-scrivener-keyword-tag = { $name } (nøgleord)
+import-scrivener-collection-details = En samling i Scrivener
+import-scrivener-collection-tag = { $name } (samling)
+import-scrivener-field-details = Fra feltet »{ $field }« i Scrivener
+# A tag made from one option of a list field.
+import-scrivener-field-value = { $field }: { $option }
+import-scrivener-field-tag = { $name } (felt)
+# The day off a pace plan takes on its deadline.
+import-scrivener-deadline-day = Deadline
+import-scrivener-from-scrivener = Fra Scrivener
+import-scrivener-note-project = Projekt
+import-scrivener-note-project-bookmarks = Projektbogmærker
+import-scrivener-note-replacements = Kompileringserstatninger
+import-scrivener-note-auto-complete = Poster til autofuldførelse
+import-scrivener-note-saved-searches = Gemte søgninger
+import-scrivener-note-custom-metadata = Brugerdefinerede metadata
+import-scrivener-note-targets = Mål
+import-scrivener-note-bookmarks = Bogmærker
+import-scrivener-abbreviated-title = Forkortet titel
+import-scrivener-subjects = Emner
+import-scrivener-company = Firma
+import-scrivener-session-target = Sessionsmål
+import-scrivener-session-target-calculated = Sessionsmål, beregnet af Scrivener ud fra deadlinen
+import-scrivener-writing-days = Skrivedage
+import-scrivener-weekday-monday = mandag
+import-scrivener-weekday-tuesday = tirsdag
+import-scrivener-weekday-wednesday = onsdag
+import-scrivener-weekday-thursday = torsdag
+import-scrivener-weekday-friday = fredag
+import-scrivener-weekday-saturday = lørdag
+import-scrivener-weekday-sunday = søndag
+import-scrivener-draft-target = Udkastmål
+import-scrivener-deadline = Deadline
+# A unit after a count, in parentheses: "1000 (words)".
+import-scrivener-unit-words = ord
+import-scrivener-unit-characters = tegn
+import-scrivener-unit-pages = sider
+import-scrivener-search-query = Søgte efter
+import-scrivener-search-in = Søgte i
+import-scrivener-search-operator = Matchning
+# What a saved search looks in, by the kind Scrivener names.
+import-scrivener-search-in-all = alt
+import-scrivener-search-in-title = titler
+import-scrivener-search-in-text = tekst
+import-scrivener-search-in-notes = noter
+import-scrivener-search-in-synopsis = synopser
+import-scrivener-search-in-keywords = nøgleord
+import-scrivener-search-in-label = etiketter
+import-scrivener-search-in-status = statusser
+import-scrivener-search-in-section-type = sektionstyper
+import-scrivener-search-in-custom-metadata = brugerdefinerede metadata
+# How a saved search's words combine.
+import-scrivener-search-any = et af ordene
+import-scrivener-search-all = alle ordene
+import-scrivener-search-exact = den nøjagtige frase
+# One line of a listing: a bookmark's place and its note, or a link's words and its address.
+import-scrivener-label-value = { $label }: { $value }
+import-scrivener-replacement-regex = regulært udtryk
+import-scrivener-replacement-off = slået fra
+# Said of a note whose own text lists its custom metadata or bookmarks.
+import-scrivener-in-own-note = Angivet i sin egen note.
+
+
+## Import a Scrivener project: what the import says about the project, in the writer's words.
+## Every key the converter can give has a line here (see `import_scrivener::messages`).
+
+# A refusal on one line: its title, then what to do.
+import-scrivener-paragraph = { $title }. { $body }
+
+## When the project cannot be imported
+import-scrivener-refusal-missing-title = Der er intet på denne sti
+import-scrivener-refusal-missing-body = »{ $file }« er der ikke længere. Vælg projektet igen.
+import-scrivener-refusal-unreadable-title = Dette projekt kan ikke læses
+import-scrivener-refusal-unreadable-body = Skribisto kunne ikke læse »{ $file }« ({ $reason }). Kontrollér, at du kan åbne den, og prøv så igen.
+import-scrivener-refusal-not-a-scrivener-project-title = Intet Scrivener-projekt her
+import-scrivener-refusal-not-a-scrivener-project-body = Vælg projektets .scriv-mappe, .scrivx-filen i den, en .zip-sikkerhedskopi eller en .scrivtemplate.
+import-scrivener-refusal-manifest-without-files-title = Dokumenterne er ikke i denne kopi
+import-scrivener-refusal-manifest-without-files-body = »{ $manifest }« er her, men ikke mappen Files med de dokumenter, den angiver. En synkroniseringstjeneste er måske ikke færdig med at kopiere projektet, eller kun .scrivx-filen blev kopieret. Valgte du .scrivx-filen, så vælg i stedet projektets mappe med »Vælg mappe…«.
+import-scrivener-refusal-search-too-wide-title = Mappen indeholder for meget til at blive gennemsøgt
+import-scrivener-refusal-search-too-wide-body = Den har mere end { $limit } mapper at gennemse. Vælg selve Scrivener-projektet.
+import-scrivener-refusal-scrivener-one-for-mac-title = Dette projekt er lavet med Scrivener 1 til Mac
+import-scrivener-refusal-scrivener-one-for-mac-body = Skribisto læser projekter fra Scrivener 2 og nyere. Åbn det én gang i Scrivener 2 eller 3 for at opdatere det, eller kompilér det til et Word-dokument, og importér det.
+import-scrivener-refusal-ios-stub-without-mobile-data-title = Dette er kun en pladsholder fra Scrivener til iPhone eller iPad
+import-scrivener-refusal-ios-stub-without-mobile-data-body = Selve projektet er her ikke. Synkronisér det fra din iPhone eller iPad, eller del det derfra som en .zip, og importér den.
+import-scrivener-refusal-newer-title = Dette projekt er lavet med en nyere version af Scrivener
+import-scrivener-refusal-unknown-format-version-body = Formatet, { $version }, er ikke et, Skribisto kender. Se efter en opdatering af Skribisto. Indtil da kan du kompilere projektet til et Word-dokument i Scrivener og importere det.
+import-scrivener-refusal-newer-format-stamp-body = Filerne er mærket som version { $stamp }, og Skribisto læser op til version { $newest }. Se efter en opdatering af Skribisto. Indtil da kan du kompilere projektet til et Word-dokument i Scrivener og importere det.
+import-scrivener-refusal-version-stamp-unreadable-title = Projektets version kan ikke læses
+import-scrivener-refusal-version-stamp-unreadable-body = Filen Files/version.txt indeholder intet versionsnummer, så Skribisto kan ikke afgøre, om programmet kan læse projektet. Åbn projektet én gang i Scrivener, og importér det så igen.
+import-scrivener-refusal-damaged-manifest-title = Ringbindsfilen kan ikke læses
+import-scrivener-refusal-damaged-manifest-body = »{ $manifest }« er beskadiget. { $spare_copies ->
+    [0] Åbn projektet i Scrivener, som kan reparere filen, og importér det så igen.
+    [one] Scrivener gemmer en reservekopi af den inde i projektet, som Skribisto ikke læser. Åbn projektet i Scrivener, som kan reparere filen, og importér det så igen.
+   *[other] Scrivener gemmer { $spare_copies } reservekopier af den inde i projektet, som Skribisto ikke læser. Åbn projektet i Scrivener, som kan reparere filen, og importér det så igen.
+}
+# The empty file Scrivener writes for a new project before its first save: not damage.
+import-scrivener-refusal-damaged-manifest-new-project-placeholder-body = »{ $manifest }« er den tomme fil, Scrivener skriver for et projekt, programmet endnu ikke har gemt. Åbn projektet i Scrivener, lad Scrivener gemme det, og importér det så igen.
+import-scrivener-refusal-manifest-too-large-title = Denne ringbindsfil er for stor
+import-scrivener-refusal-manifest-too-large-body = »{ $manifest }« er større end de { $limit } MB, Skribisto læser. Intet rigtigt projekt kommer i nærheden af det, så filen er måske beskadiget.
+import-scrivener-refusal-no-item-identifiers-title = Ringbindet angiver intet dokument, Skribisto kan finde
+import-scrivener-refusal-no-item-identifiers-body = Ingen af dets elementer har en identifikator, så deres filer kan ikke findes. Åbn projektet én gang i Scrivener, og importér det så igen.
+import-scrivener-refusal-incomplete-copy-title = Dokumenterne mangler i denne kopi
+import-scrivener-refusal-incomplete-copy-body = Mappen Files er her, men dokumenterne i den er ikke. En synkroniseringstjeneste er måske ikke færdig med at kopiere projektet. Vent, til den er færdig, eller kopiér hele .scriv-mappen igen, og kontrollér så igen.
+import-scrivener-refusal-archive-title = Arkivet kan ikke åbnes
+import-scrivener-refusal-archive-unreadable-body = »{ $file }« kunne ikke læses ({ $reason }). Det er måske beskadiget. Pak det selv ud, og vælg så .scriv-mappen i det.
+import-scrivener-refusal-archive-unsafe-name-title = Arkivet kan ikke åbnes sikkert
+# A name with `..` in it, or an absolute one.
+import-scrivener-refusal-archive-unsafe-name-body = »{ $file }« indeholder en fil ved navn »{ $member }«, som ville havne uden for arkivet, så Skribisto åbner det ikke.
+import-scrivener-refusal-archive-unsafe-name-empty-body = »{ $file }« indeholder en fil uden navn, så Skribisto åbner det ikke.
+import-scrivener-refusal-archive-unsafe-name-control-character-body = »{ $file }« indeholder en fil, hvis navn indeholder et kontroltegn, så Skribisto åbner det ikke.
+import-scrivener-refusal-archive-too-large-title = Arkivet er for stort til at blive åbnet sikkert
+import-scrivener-refusal-archive-too-many-members-body = Det indeholder mere end { $limit } filer. Pak det selv ud, og vælg så .scriv-mappen i det.
+import-scrivener-refusal-archive-member-too-large-body = »{ $member }« fylder mere end { $limit } MB udpakket. Pak arkivet selv ud, og vælg så .scriv-mappen i det.
+import-scrivener-refusal-archive-too-large-body = Det fylder mere end { $limit } MB udpakket. Pak det selv ud, og vælg så .scriv-mappen i det.
+import-scrivener-refusal-archive-encrypted-title = Arkivet er beskyttet med en adgangskode
+import-scrivener-refusal-archive-encrypted-body = Pak »{ $file }« selv ud, og vælg så .scriv-mappen i det.
+import-scrivener-refusal-archive-unsupported-compression-title = Arkivet er pakket på en måde, Skribisto ikke kan læse
+import-scrivener-refusal-archive-unsupported-compression-body = »{ $member }« er komprimeret med { $method }. Pak arkivet selv ud, og vælg så .scriv-mappen i det.
+import-scrivener-refusal-duplicate-archive-members-title = Arkivet angiver nogle filer to gange
+import-scrivener-refusal-duplicate-archive-members-body = »{ $file }« indeholder mere end én fil under samme navn, så Skribisto kan ikke afgøre, hvilken der hører til projektet. Pak det selv ud, og vælg så .scriv-mappen i det.
+# What a file cut short looks like; a file too large, one that is not a template and one
+# encoded another way have their own words.
+import-scrivener-refusal-template-undecodable-title = Skabelonfilen er ufuldstændig
+import-scrivener-refusal-template-undecodable-too-large-title = Skabelonfilen er for stor til at blive åbnet
+import-scrivener-refusal-template-undecodable-not-a-template-title = Filen er ikke en Scrivener-skabelon
+import-scrivener-refusal-template-undecodable-unknown-encoding-title = Skabelonfilen er gemt i en form, Skribisto ikke kender
+import-scrivener-refusal-template-undecodable-body = »{ $file }« kan ikke afkodes: den slutter måske, før projektet i den gør. Hent den igen, eller åbn den i Scrivener, og lav et projekt ud fra den.
+import-scrivener-refusal-template-undecodable-too-large-body = »{ $file }« er større end { $limit } MB. Åbn den i Scrivener, lav et projekt ud fra den, og importér så det projekt.
+import-scrivener-refusal-template-undecodable-not-a-template-body = »{ $file }« indeholder intet Scrivener-projekt. Vælg den skabelonfil, Scrivener gemte, eller et projekt, der er lavet ud fra den.
+import-scrivener-refusal-template-undecodable-unknown-encoding-body = »{ $file }« gemmer sit projekt på en måde, Skribisto ikke kan afkode. Åbn den i Scrivener, lav et projekt ud fra den, og importér så det projekt.
+import-scrivener-refusal-cloud-placeholders-title = { $count ->
+    [one] 1 fil i dette projekt ligger stadig i skyen
+   *[other] { $count } filer i dette projekt ligger stadig i skyen
+}
+import-scrivener-refusal-cloud-placeholders-body = De er ikke hentet ned til denne computer, f.eks. { $examples }. Gør projektet tilgængeligt offline i din synkroniseringsapp, og kontrollér så igen.
+import-scrivener-refusal-unreadable-members-title = { $count ->
+    [one] 1 fil i dette projekt kan ikke læses
+   *[other] { $count } filer i dette projekt kan ikke læses
+}
+import-scrivener-refusal-unreadable-members-body = For eksempel { $examples }. Sørg for, at du har adgang til at læse hele projektet, og at disken er i orden, og kontrollér så igen.
+import-scrivener-refusal-needed-member-is-link-title = Projektet peger uden for sin egen mappe
+import-scrivener-refusal-needed-member-is-link-body = »{ $member }« er et link til et andet sted på denne computer, og Skribisto følger ikke links. Kopiér projektet, så alle filer ligger inde i det, og prøv så igen.
+import-scrivener-refusal-project-changed-during-read-title = Projektet blev ændret, mens det blev læst
+import-scrivener-refusal-project-changed-during-read-body = Scrivener eller en synkroniseringstjeneste skriver stadig til det. Luk det i Scrivener, vent, til synkroniseringen er færdig, og kontrollér så igen.
+import-scrivener-refusal-too-many-members-title = Projektet indeholder for mange filer
+import-scrivener-refusal-too-many-members-body = Det har mere end { $limit } filer, flere end noget rigtigt projekt. Det er måske ikke et Scrivener-projekt, eller det er måske beskadiget.
+import-scrivener-refusal-too-large-title = Projektet er for stort
+import-scrivener-refusal-too-large-body = Dets tekst fylder mere end { $limit } MB, mere end Skribisto kan importere sikkert.
+import-scrivener-refusal-structure-unmappable-title = Skribisto kan ikke omsætte dette ringbind
+import-scrivener-refusal-structure-unmappable-body = Ringbindet kunne ikke overføres, uden at noget gik tabt eller havnede forkert. Det er en fejl i Skribisto, ikke i dit projekt. Rapportér den gerne sammen med det, der står under »Detaljer«.
+
+## When there is a choice to make
+import-scrivener-roots-title = Her ligger { $count } projekter. Hvilket af dem?
+import-scrivener-roots-hint = Denne mappe eller dette arkiv indeholder mere end ét Scrivener-projekt. Vælg det, der skal importeres.
+import-scrivener-manifests-title = Projektet har { $count } ringbindsfiler
+import-scrivener-manifests-hint = Scrivener gemmer ringbindet, listen over alle dokumenter og mapper, i en .scrivx-fil. De ekstra filer er sandsynligvis efterladt af en synkroniseringstjeneste. Vælg den, du sidst arbejdede i.
+import-scrivener-manifests-hint-preselected = Scrivener gemmer ringbindet, listen over alle dokumenter og mapper, i en .scrivx-fil. De ekstra filer er sandsynligvis efterladt af en synkroniseringstjeneste. Den valgte er den, du sandsynligvis sidst arbejdede i: kontrollér den, før du går videre.
+import-scrivener-manifest-row = { $file } · gemt { $date } · { $documents ->
+    [one] 1 element
+   *[other] { $documents } elementer
+}
+import-scrivener-manifest-row-undated = { $file } · { $documents ->
+    [one] 1 element
+   *[other] { $documents } elementer
+}
+import-scrivener-manifest-row-unread = { $file } · kan ikke læses
+import-scrivener-enclosing-title = Dette er en del af Scrivener-projektet »{ $project }«
+import-scrivener-enclosing-body = Du valgte en fil eller mappe inde i et projekt. Skribisto importerer hele projektet.
+import-scrivener-enclosing-use = Importér »{ $project }«
+import-scrivener-upgrade-title = Dette er den kopi, Scrivener gemte før en opdatering
+import-scrivener-upgrade-body = Når Scrivener opdaterer et projekt til en nyere version, gemmer programmet det gamle som »{ $backup }«. Det projekt, du fortsatte med at skrive i, er »{ $current }« ved siden af.
+import-scrivener-upgrade-body-unclear = Når Scrivener opdaterer et projekt til en nyere version, gemmer programmet det gamle som »{ $backup }«. Projektet ved siden af, »{ $current }«, kunne ikke læses fejlfrit, så vælg, hvilket der skal importeres.
+import-scrivener-upgrade-use-current = Importér »{ $current }«, det projekt, du fortsatte med at skrive i
+import-scrivener-upgrade-keep-backup = Importér denne ældre kopi, »{ $backup }«
+
+## What must be accepted before going on
+import-scrivener-ios-pending-title = Ændringer fra Scrivener til iPhone eller iPad er endnu ikke i denne kopi
+import-scrivener-ios-pending-body = Scrivener på en computer henter de ændringer ind, næste gang programmet åbner projektet. Åbn projektet én gang i Scrivener på din computer, og importér det så igen.
+import-scrivener-ios-pending-accept = Importér det uden de ændringer
+import-scrivener-no-text-title = { $count ->
+    [one] 1 dokument og ikke ét ord tekst i denne kopi
+   *[other] { $count } dokumenter og ikke ét ord tekst i denne kopi
+}
+import-scrivener-no-text-body = En synkroniseringstjeneste kopierer måske stadig projektet, eller kopien har mistet sine dokumenter. Importeres den nu, kommer alle dokumenter tomme ind.
+import-scrivener-no-text-accept = Importér dokumenterne tomme
+
+## Things to know, nothing to decide
+import-scrivener-notice-project-found-below-pick-title = Projektet blev fundet inde i den mappe, du valgte
+import-scrivener-notice-project-found-below-pick-body = Det ligger i »{ $path }«.
+import-scrivener-notice-source-is-template-title = Dette er en Scrivener-skabelon
+import-scrivener-notice-source-is-template-named = Dette er Scrivener-skabelonen »{ $title }«
+import-scrivener-notice-source-is-template-body = Importerer du den, laves et nyt projekt ud fra det, skabelonen indeholder, inklusive dens vejledning.
+import-scrivener-notice-source-is-backup-title = Dette ligner en sikkerhedskopi, Scrivener har lavet
+import-scrivener-notice-source-is-backup-body = Den indeholder projektet, som det var, da sikkerhedskopien blev lavet. Skrev du videre efter det, så vælg selve projektet.
+import-scrivener-notice-importing-pre-upgrade-copy-title = Du importerer den kopi, Scrivener gemte før en opdatering
+import-scrivener-notice-importing-pre-upgrade-copy-body = Det projekt, du fortsatte med at skrive i, ligger ved siden af og indeholder alt, hvad der er skrevet siden.
+import-scrivener-notice-imported-from-ios-stub-title = Dette projekt er lavet i Scrivener til iPhone eller iPad
+import-scrivener-notice-imported-from-ios-stub-body = Det er aldrig blevet åbnet på en computer, så det læses fra den kopi, din iPhone eller iPad gemmer.
+import-scrivener-notice-stale-mobile-binder-ignored-title = Et gammelt ringbind fra en iPhone eller iPad lægges til side
+import-scrivener-notice-stale-mobile-binder-ignored-body = Scrivener på en computer har allerede hentet dets ændringer ind.
+import-scrivener-notice-identical-manifest-copies-title = { $count ->
+    [one] Her ligger 1 kopi af ringbindsfilen
+   *[other] Her ligger { $count } identiske kopier af ringbindsfilen
+}
+import-scrivener-notice-identical-manifest-copies-body = De indeholder det samme, så hvilken som helst af dem giver det samme projekt.
+import-scrivener-notice-manifest-copies-ignored-title = Ekstra kopier af ringbindsfilen lægges til side
+import-scrivener-notice-manifest-copies-ignored-body = »{ $chosen }« er den, Scrivener sidst arbejdede i. { $count ->
+    [one] 1 kopi efterladt af en synkroniseringstjeneste lægges til side.
+   *[other] { $count } kopier efterladt af en synkroniseringstjeneste lægges til side.
+}
+import-scrivener-notice-pinned-manifest-looks-like-a-copy-title = Den ringbindsfil, du valgte, ligner en synkroniseringskopi
+import-scrivener-notice-pinned-manifest-looks-like-a-copy-body = »{ $name }« er navngivet som en kopi af »{ $original }«, der ligger ved siden af. Ser importen gammel ud, så vælg i stedet »{ $original }«.
+import-scrivener-notice-pinned-manifest-has-siblings-title = { $count ->
+    [one] Der ligger 1 anden ringbindsfil ved siden af den, du valgte
+   *[other] Der ligger { $count } andre ringbindsfiler ved siden af den, du valgte
+}
+import-scrivener-notice-pinned-manifest-has-siblings-body = Kun den, du valgte, læses.
+import-scrivener-notice-legacy-v1-files-beside-title = Filer fra en ældre version af Scrivener lægges til side
+import-scrivener-notice-legacy-v1-files-beside-body = De blev efterladt, da projektet blev opdateret. Kun filerne fra den nuværende version læses.
+import-scrivener-notice-mixed-payload-trees-title = Projektet indeholder filer fra to versioner af Scrivener
+import-scrivener-notice-mixed-payload-trees-body = Dokumenterne læses der, hvor ringbindsfilen siger, at de ligger.
+import-scrivener-notice-version-disagreement-title = Projektets filer er ikke enige om dets version
+import-scrivener-notice-id-scheme-mismatch-body = Ringbindsfilen siger version { $version }, men navngiver sine dokumenter, som en anden version gør. De læses der, hvor den peger. Ser importen forkert ud, så åbn projektet én gang i Scrivener, og importér det igen.
+import-scrivener-notice-version-stamp-mismatch-body = Projektet læses, som ringbindsfilen beskriver det. Ser importen forkert ud, så åbn projektet én gang i Scrivener, og importér det igen.
+import-scrivener-notice-unrecognised-writer-title = Projektet blev gemt af et program, Skribisto ikke genkender
+import-scrivener-notice-unrecognised-writer-named = Programmet kalder sig »{ $creator }«. Projektet læses som et Scrivener-projekt.
+import-scrivener-notice-unrecognised-writer-body = Programmet angiver ikke sit navn. Projektet læses som et Scrivener-projekt.
+import-scrivener-notice-invalid-item-identifier-title = { $count ->
+    [one] 1 element i ringbindet har en identifikator, der ikke er gyldig
+   *[other] { $count } elementer i ringbindet har en identifikator, der ikke er gyldig
+}
+import-scrivener-notice-invalid-item-identifier-body = Disse identifikatorer lægges til side. Elementerne bevares.
+import-scrivener-notice-items-without-identifier-title = { $count ->
+    [one] 1 element i ringbindet har ingen identifikator
+   *[other] { $count } elementer i ringbindet har ingen identifikator
+}
+import-scrivener-notice-items-without-identifier-body = Deres filer kan ikke findes, så de kommer tomme ind.
+import-scrivener-notice-duplicate-item-key-title = To elementer i ringbindet deler én identifikator: »{ $item }«
+import-scrivener-notice-duplicate-item-key-body = Det første beholder dokumenterne. Det andet beholder sin plads og kommer tomt ind.
+import-scrivener-notice-lock-here-title = Scrivener har dette projekt åbent på denne computer
+import-scrivener-notice-lock-here-body = Luk det først i Scrivener, så alle ændringer bliver gemt.
+import-scrivener-notice-lock-title = Scrivener havde dette projekt åbent på »{ $host }«
+import-scrivener-notice-lock-elsewhere-title = Scrivener havde dette projekt åbent på en anden computer
+import-scrivener-notice-lock-body = Er det stadig åbent der, så luk det først: filerne indeholder måske endnu ikke de seneste ændringer. Blev Scrivener lukket for længe siden, kan du importere projektet, som det er.
+import-scrivener-notice-archived-while-open-title = Arkivet blev lavet, mens Scrivener havde projektet åbent
+import-scrivener-notice-archived-while-open-body = Ændringer, der blev lavet efter det tidspunkt, mangler måske i det.
+import-scrivener-notice-content-missing-notes = Noterne til »{ $item }« mangler
+import-scrivener-notice-content-missing-synopsis = Synopsen til »{ $item }« mangler
+import-scrivener-notice-content-missing-text = Teksten til »{ $item }« mangler
+import-scrivener-notice-content-missing-body = Filen er ikke i denne kopi, så indholdet kommer tomt ind. En synkroniseringstjeneste kopierer måske stadig projektet.
+import-scrivener-notice-content-missing-salvaged = Filen er ikke i denne kopi, men Scriveners søgeindeks indeholdt stadig ordene. De bevares som ren tekst, måske fra en ældre version.
+import-scrivener-notice-content-truncated-notes = Noterne til »{ $item }« er tomme på disken
+import-scrivener-notice-content-truncated-synopsis = Synopsen til »{ $item }« er tom på disken
+import-scrivener-notice-content-truncated-text = Teksten til »{ $item }« er tom på disken
+import-scrivener-notice-content-truncated-body = Scrivener registrerede indholdet med tekst, men filen indeholder ingen: en synkronisering er måske stoppet halvvejs. Indholdet kommer tomt ind.
+import-scrivener-notice-missing-media-title = Filen til »{ $item }« mangler
+import-scrivener-notice-missing-media-body = Det billede eller den researchfil, elementet indeholder, er ikke i denne kopi.
+import-scrivener-notice-sync-conflict-copies-title = { $count ->
+    [one] Der blev fundet 1 synkroniseringskopi af et dokument
+   *[other] Der blev fundet { $count } synkroniseringskopier af dokumenter
+}
+import-scrivener-notice-sync-conflict-copies-body = { $missing ->
+    [0] De overføres som gendannede tekster i deres egen mappe, så du kan sammenligne dem med dokumenterne.
+   *[other] De overføres som gendannede tekster i deres egen mappe. Nogle er kopier af dokumenter, der ikke længere er i projektet.
+}
+import-scrivener-notice-recovered-unreferenced-text-title = { $count ->
+    [one] Der blev fundet 1 dokument, som intet element i ringbindet angiver
+   *[other] Der blev fundet { $count } dokumenter, som intet element i ringbindet angiver
+}
+import-scrivener-notice-recovered-unreferenced-text-body = De overføres som gendannede tekster i deres egen mappe.
+import-scrivener-notice-sync-debris-ignored-title = { $count ->
+    [one] 1 ekstra kopi efterladt af en synkroniseringstjeneste lægges til side
+   *[other] { $count } ekstra kopier efterladt af en synkroniseringstjeneste lægges til side
+}
+import-scrivener-notice-sync-debris-ignored-body = Scrivener læser dem heller ikke. Kun projektets egne filer læses.
+import-scrivener-notice-unrecognised-files-title = { $count ->
+    [one] 1 fil, der ikke hører til et Scrivener-projekt, lægges til side
+   *[other] { $count } filer, der ikke hører til et Scrivener-projekt, lægges til side
+}
+import-scrivener-notice-examples = For eksempel { $examples }.
+import-scrivener-notice-symlink-not-followed-title = { $count ->
+    [one] 1 link inde i projektet følges ikke
+   *[other] { $count } links inde i projektet følges ikke
+}
+import-scrivener-notice-unreadable-files-skipped-title = { $count ->
+    [one] 1 fil, som importen ikke har brug for, kunne ikke læses
+   *[other] { $count } filer, som importen ikke har brug for, kunne ikke læses
+}
+import-scrivener-notice-cloud-placeholders-skipped-title = { $count ->
+    [one] 1 fil, der stadig ligger i skyen, springes over
+   *[other] { $count } filer, der stadig ligger i skyen, springes over
+}
+import-scrivener-notice-cloud-placeholders-skipped-body = Importen har ikke brug for dem.
+import-scrivener-notice-no-text-found-title = { $count ->
+    [one] 1 dokument, og det indeholder ingen tekst
+   *[other] { $count } dokumenter, og ingen af dem indeholder tekst
+}
+import-scrivener-notice-no-text-found-body = Projektet ser tomt ud. Det importeres, som det er.
+import-scrivener-notice-metadata-unreadable-title = »{ $member }« kunne ikke læses
+import-scrivener-notice-metadata-unreadable-body = Det, Scrivener gemte i filen, overføres ikke.
+import-scrivener-notice-dangling-keyword-title = { $count ->
+    [one] 1 henvisning peger på et nøgleord, projektet ikke definerer
+   *[other] { $count } henvisninger peger på nøgleord, projektet ikke definerer
+}
+import-scrivener-notice-dangling-label-title = { $count ->
+    [one] 1 henvisning peger på en etiket, projektet ikke definerer
+   *[other] { $count } henvisninger peger på etiketter, projektet ikke definerer
+}
+import-scrivener-notice-dangling-status-title = { $count ->
+    [one] 1 henvisning peger på en status, projektet ikke definerer
+   *[other] { $count } henvisninger peger på statusser, projektet ikke definerer
+}
+import-scrivener-notice-dangling-section-type-title = { $count ->
+    [one] 1 henvisning peger på en sektionstype, projektet ikke definerer
+   *[other] { $count } henvisninger peger på sektionstyper, projektet ikke definerer
+}
+import-scrivener-notice-dangling-custom-field-title = { $count ->
+    [one] 1 henvisning peger på et brugerdefineret metadatafelt, projektet ikke definerer
+   *[other] { $count } henvisninger peger på brugerdefinerede metadatafelter, projektet ikke definerer
+}
+import-scrivener-notice-dangling-item-title = { $count ->
+    [one] 1 henvisning peger på et dokument, projektet ikke definerer
+   *[other] { $count } henvisninger peger på dokumenter, projektet ikke definerer
+}
+import-scrivener-notice-dangling-references-body = De udelades.
+import-scrivener-notice-snapshots-not-imported-line = { $count ->
+    [one] 1 øjebliksbillede bliver i dit Scrivener-projekt: Skribisto overfører ikke øjebliksbilleder.
+   *[other] { $count } øjebliksbilleder bliver i dit Scrivener-projekt: Skribisto overfører ikke øjebliksbilleder.
+}
+import-scrivener-notice-writing-history-not-imported-line = { $days ->
+    [one] Scriveners oversigt over, hvor mange ord der er skrevet hver dag (1 dag), overføres ikke. Skribisto begynder sin egen optælling fra den første gemning.
+   *[other] Scriveners oversigt over, hvor mange ord der er skrevet hver dag ({ $days } dage), overføres ikke. Skribisto begynder sin egen optælling fra den første gemning.
+}
+import-scrivener-notice-title-placeholder-rejected-hint = Titlen i projektets indstillinger er en pladsholder fra en skabelon, så projektets navn foreslås i stedet.
+import-scrivener-notice-author-placeholder-rejected-hint = Forfatternavnet i projektets indstillinger er en pladsholder fra en skabelon, så der foreslås intet navn.
+import-scrivener-notice-title-from-project-hint-compile-settings = Denne titel er den, projektets kompileringsindstillinger angiver. Indtil der angives en titel der, beholder Scrivener det navn, projektet havde, da det blev oprettet.
+import-scrivener-notice-title-from-project-hint-template = Denne titel er skabelonens egen.
+import-scrivener-notice-title-from-project-hint-folder-name = Denne titel er projektets navn.
+import-scrivener-notice-title-from-project-hint-project-properties = Denne titel er den, projektets egenskaber angiver.
+import-scrivener-notice-author-from-project-hint = Dette navn er det, projektets indstillinger angiver. En skabelons forfatter kan hænge ved der, og den ville blive trykt på en titelside.
+import-scrivener-notice-language-not-stated-hint = Projektet angiver ikke sit sprog, så det sprog, Skribisto selv vises på, foreslås. Det afgør, hvordan ord tælles, og hvordan citationstegn skrives.
+import-scrivener-notice-language-from-script-hint = Foreslået ud fra den skrift, manuskriptet er skrevet med ({ $tag }).
+
+## Before you import: what the import does with the binder, or leaves behind
+import-scrivener-structure-script-mode-draft-line = { $script ->
+    [one] { $documents ->
+        [one] Manuskriptets eneste dokument er skrevet i drejebogstilstand. Skribisto beholder ordene, ikke drejebogsopsætningen.
+       *[other] { $script } af de { $documents } manuskriptdokumenter er skrevet i drejebogstilstand. Skribisto beholder ordene, ikke drejebogsopsætningen.
+    }
+   *[other] { $script } af de { $documents } manuskriptdokumenter er skrevet i drejebogstilstand. Skribisto beholder ordene, ikke drejebogsopsætningen.
+}
+import-scrivener-structure-one-document-manuscript-line = { $count ->
+    [one] Ét manuskriptdokument indeholder sine kapitler som overskrifter.
+   *[other] { $count } manuskriptdokumenter indeholder deres kapitler som overskrifter.
+}
+import-scrivener-structure-title-repeats-number-line = { $count ->
+    [one] 1 kapitel- eller deltitel indeholder også sit nummer, så en eksport udskriver måske nummeret to gange.
+   *[other] { $count } kapitel- eller deltitler indeholder også deres nummer, så en eksport udskriver måske nummeret to gange.
+}
+import-scrivener-structure-claim-overruled-line = { $count ->
+    [one] 1 element får et niveau under det, det gør krav på, fordi et element over det allerede har det niveau.
+   *[other] { $count } elementer får et niveau under det, de gør krav på, fordi et element over dem allerede har det niveau.
+}
+import-scrivener-structure-adopted-by-chapter-line = { $count ->
+    [one] 1 dokument, der følger efter et kapitel, bliver til slutningen af det kapitel.
+   *[other] { $count } dokumenter, der følger efter et kapitel, bliver til slutningen af det kapitel.
+}
+import-scrivener-structure-looks-like-manuscript-line = { $count ->
+    [one] 1 mappe på øverste niveau, der placeres i noterne, ligner manuskript. Du kan sende den til manuskriptet som endnu en bog.
+   *[other] { $count } mapper på øverste niveau, der placeres i noterne, ligner manuskript. Du kan sende dem til manuskriptet som flere bøger.
+}
+import-scrivener-structure-generic-sheet-title-line = { $count ->
+    [one] 1 opslag i historiebiblen har en skabelons titel, f.eks. »Helt«, som søgningen efter omtaler vil lede efter i teksten.
+   *[other] { $count } opslag i historiebiblen har en skabelons titel, f.eks. »Helt«, som søgningen efter omtaler vil lede efter i teksten.
+}
+import-scrivener-structure-placeholder-title-line = { $count ->
+    [one] 1 titel navngav kun sit niveau og efterlades tom: ringbindet og eksporterne nummererer den.
+   *[other] { $count } titler navngav kun deres niveau og efterlades tomme: ringbindet og eksporterne nummererer dem.
+}
+import-scrivener-structure-untitled-item-line = { $count ->
+    [one] 1 element havde ingen titel i Scrivener og forbliver uden titel.
+   *[other] { $count } elementer havde ingen titel i Scrivener og forbliver uden titel.
+}
+import-scrivener-structure-title-cleaned-line = { $count ->
+    [one] 1 titel indeholdt linjeskift eller tabulatorer, som fjernes.
+   *[other] { $count } titler indeholdt linjeskift eller tabulatorer, som fjernes.
+}
+import-scrivener-structure-own-text-moved-line = { $count ->
+    [one] 1 mappe har sin egen tekst, som flyttes til et første dokument inde i den.
+   *[other] { $count } mapper har deres egen tekst, som flyttes til et første dokument inde i dem.
+}
+import-scrivener-structure-text-with-children-line = { $count ->
+    [one] 1 dokument med dokumenter inde i sig bliver til en mappe.
+   *[other] { $count } dokumenter med dokumenter inde i sig bliver til mapper.
+}
+import-scrivener-structure-empty-folder-plain-line = { $count ->
+    [one] 1 tom mappe forbliver en almindelig mappe, så ingen eksport udskriver en overskrift, som Scrivener aldrig udskrev.
+   *[other] { $count } tomme mapper forbliver almindelige mapper, så ingen eksport udskriver en overskrift, som Scrivener aldrig udskrev.
+}
+import-scrivener-structure-book-inside-book-line = { $count ->
+    [one] 1 bog inde i en bog bliver til en del.
+   *[other] { $count } bøger inde i en bog bliver til dele.
+}
+import-scrivener-structure-prologue-not-numbered-line = { $count ->
+    [one] 1 prolog eller epilog holdes uden for kapitelnummereringen.
+   *[other] { $count } prologer eller epiloger holdes uden for kapitelnummereringen.
+}
+import-scrivener-structure-matter-inside-book-line = { $count ->
+    [one] 1 element med for- eller efterstof uden for manuskriptet placeres inde i bogen som paratekst og udelades af eksporter, indtil du medtager det.
+   *[other] { $count } elementer med for- eller efterstof uden for manuskriptet placeres inde i bogen som paratekst og udelades af eksporter, indtil du medtager dem.
+}
+import-scrivener-structure-paratext-not-counted-line = { $documents ->
+    [one] 1 manuskriptdokument bliver til paratekst (for- eller efterstof): dets { $words ->
+        [one] { $words } ord tæller
+       *[other] { $words } ord tæller
+    } ikke længere som manuskript.
+   *[other] { $documents } manuskriptdokumenter bliver til paratekst (for- eller efterstof): deres { $words ->
+        [one] { $words } ord tæller
+       *[other] { $words } ord tæller
+    } ikke længere som manuskript.
+}
+import-scrivener-structure-document-notes-line = { $count ->
+    [one] Noterne til 1 dokument bliver til en note ved siden af det.
+   *[other] Noterne til { $count } dokumenter bliver til noter ved siden af dem.
+}
+import-scrivener-structure-draft-content-as-note-line = Manuskriptmappens egen tekst bliver til en note øverst i manuskriptet.
+import-scrivener-structure-story-bible-folder-line = { $count ->
+    [one] 1 person- eller stedmappe bliver til et historiebibel-mærke.
+   *[other] { $count } person- eller stedmapper bliver til historiebibel-mærker.
+}
+import-scrivener-structure-templates-created-line = { $count ->
+    [one] 1 dokumentskabelon bliver til en noteskabelon.
+   *[other] { $count } dokumentskabeloner bliver til noteskabeloner.
+}
+import-scrivener-structure-template-nesting-flattened-line = { $count ->
+    [one] 1 skabelonmappe inde i en anden gøres flad: hver tekst i den bliver til en skabelon.
+   *[other] { $count } skabelonmapper inde i andre gøres flade: hver tekst i dem bliver til en skabelon.
+}
+import-scrivener-structure-template-kept-as-note-line = { $count ->
+    [one] 1 skabelon indeholder noget, en noteskabelon ikke kan rumme, og bevares som en note.
+   *[other] { $count } skabeloner indeholder noget, en noteskabelon ikke kan rumme, og bevares som noter.
+}
+import-scrivener-structure-recovered-texts-line = { $count ->
+    [one] 1 tekst, som intet element i ringbindet angav, overføres i sin egen mappe.
+   *[other] { $count } tekster, som intet element i ringbindet angav, overføres i deres egen mappe.
+}
+import-scrivener-structure-project-notes-line = { $count ->
+    [one] 1 projektnote overføres i sin egen mappe.
+   *[other] { $count } projektnoter overføres i deres egen mappe.
+}
+import-scrivener-structure-trash-brought-across-line = { $items ->
+    [one] Papirkurven overføres: 1 element, som du kan gendanne fra papirkurven.
+   *[other] Papirkurven overføres: { $items } elementer, heraf { $writing } med tekst, som du kan gendanne fra papirkurven.
+}
+import-scrivener-structure-not-compiled-line = { $count ->
+    [one] 1 element, som Scrivener udelod af sin kompilering, udelades også af eksporter.
+   *[other] { $count } elementer, som Scrivener udelod af sin kompilering, udelades også af eksporter.
+}
+import-scrivener-structure-media-in-draft-line = { $count ->
+    [one] 1 billede eller en fil i manuskriptet bliver til en note, da en bog ikke kan rumme den slags.
+   *[other] { $count } billeder eller filer i manuskriptet bliver til noter, da en bog ikke kan rumme dem.
+}
+import-scrivener-structure-left-out-line = { $count ->
+    [one] 1 mappe på øverste niveau udelades sammen med { $items ->
+        [one] 1 element
+       *[other] { $items } elementer
+    }.
+   *[other] { $count } mapper på øverste niveau udelades sammen med { $items ->
+        [one] 1 element
+       *[other] { $items } elementer
+    }.
+}
+import-scrivener-structure-trash-left-out-line = { $items ->
+    [one] Papirkurven efterlades: 1 element.
+   *[other] Papirkurven efterlades: { $items } elementer, heraf { $writing } med tekst.
+}
+import-scrivener-structure-card-image-left-behind-line = { $count ->
+    [one] 1 billede på et kartotekskort til et manuskriptelement efterlades: det ville blive trykt i bogen.
+   *[other] { $count } billeder på kartotekskort til manuskriptelementer efterlades: de ville blive trykt i bogen.
+}
+import-scrivener-structure-default-template-not-linked-line = { $count ->
+    [one] 1 mappes standardskabelon for dokumenter kan ikke følge med den.
+   *[other] { $count } mappers standardskabeloner for dokumenter kan ikke følge med dem.
+}
+import-scrivener-structure-page-break-not-kept-line = { $count ->
+    [one] 1 indstilling »Sideskift før« har ingen plads i Skribisto og bevares ikke.
+   *[other] { $count } indstillinger »Sideskift før« har ingen plads i Skribisto og bevares ikke.
+}
+import-scrivener-structure-compile-as-is-not-kept-line = { $count ->
+    [one] 1 indstilling »Kompilér uændret« har intet modstykke i Skribisto og bevares ikke.
+   *[other] { $count } indstillinger »Kompilér uændret« har intet modstykke i Skribisto og bevares ikke.
+}
+
+## What the import did with the labels, the status list and the dates
+import-scrivener-metadata-status-categories-guessed-line = { $count ->
+    [one] 1 status, som Skribisto ikke genkender, får en kategori ud fra sin plads på listen. Kontrollér den under Indstillinger ▸ Projekt ▸ Statusser.
+   *[other] { $count } statusser, som Skribisto ikke genkender, får en kategori ud fra deres plads på listen. Kontrollér dem under Indstillinger ▸ Projekt ▸ Statusser.
+}
+import-scrivener-metadata-dates-unreadable-line = { $count ->
+    [one] Datoerne for 1 element kunne ikke læses: det får importens dato.
+   *[other] Datoerne for { $count } elementer kunne ikke læses: de får importens dato.
+}
+import-scrivener-metadata-labels-became-tags-line = { $tags ->
+    [one] Etiketterne bliver til 1 mærke, anvendt på { $rows ->
+        [one] { $rows } element
+       *[other] { $rows } elementer
+    }.
+   *[other] Etiketterne bliver til { $tags } mærker, anvendt på { $rows ->
+        [one] { $rows } element
+       *[other] { $rows } elementer
+    }.
+}
+import-scrivener-metadata-statuses-became-ladder-line = { $rungs ->
+    [one] Statuslisten bliver til projektets statusstige med 1 status, anvendt på { $rows ->
+        [one] { $rows } element
+       *[other] { $rows } elementer
+    }.
+   *[other] Statuslisten bliver til projektets statusstige med { $rungs } statusser, anvendt på { $rows ->
+        [one] { $rows } element
+       *[other] { $rows } elementer
+    }.
+}
+import-scrivener-metadata-ladder-seeded-line = { $count ->
+    [one] Projektet havde ingen statusliste, så det starter med Skribistos standardstatus.
+   *[other] Projektet havde ingen statusliste, så det starter med Skribistos { $count } standardstatusser.
+}
+import-scrivener-metadata-label-renamed-line = Feltet Etiket hed »{ $title }« i Scrivener. Det navn står i hvert mærkes detaljer.
+import-scrivener-metadata-status-renamed-line = Feltet Status hed »{ $title }« i Scrivener. Det navn står i detaljerne for hver status.
+import-scrivener-metadata-none-label-collapsed-line = { $count ->
+    [one] Etiketten »{ $name }«, som findes under samme navn ved siden af Scriveners egen tomme etiket, læses som ingen etiket på 1 element.
+   *[other] Etiketten »{ $name }«, som findes under samme navn ved siden af Scriveners egen tomme etiket, læses som ingen etiket på { $count } elementer.
+}
+import-scrivener-metadata-none-status-collapsed-line = { $count ->
+    [one] Statussen »{ $name }«, som findes under samme navn ved siden af Scriveners egen tomme status, læses som ingen status på 1 element.
+   *[other] Statussen »{ $name }«, som findes under samme navn ved siden af Scriveners egen tomme status, læses som ingen status på { $count } elementer.
+}
+import-scrivener-metadata-unnamed-label-line = En etiket uden navn opkaldes efter sit nummer, { $id }.
+import-scrivener-metadata-unnamed-status-line = En status uden navn opkaldes efter sit nummer, { $id }.
+import-scrivener-metadata-tag-name-disambiguated-line = { $count ->
+    [one] 1 mærke får et nyt navn, fordi et andet mærke allerede har dets navn.
+   *[other] { $count } mærker får et nyt navn, fordi andre mærker allerede har deres navne.
+}
+import-scrivener-metadata-rung-names-disambiguated-line = { $count ->
+    [one] 1 status har samme navn som en anden, så den får et nummer efter sit navn. Kontrollér den under Indstillinger ▸ Projekt ▸ Statusser.
+   *[other] { $count } statusser har samme navn som en anden, så hver af dem får et nummer efter sit navn. Kontrollér dem under Indstillinger ▸ Projekt ▸ Statusser.
+}
+import-scrivener-metadata-unused-labels-skipped-line = { $count ->
+    [one] 1 etiket, som intet dokument bærer, importeres ikke.
+   *[other] { $count } etiketter, som intet dokument bærer, importeres ikke.
+}
+import-scrivener-metadata-labels-without-row-line = { $count ->
+    [one] Etiketten på 1 element uden plads i det nye projekt overføres ikke.
+   *[other] Etiketterne på { $count } elementer uden plads i det nye projekt overføres ikke.
+}
+import-scrivener-metadata-statuses-without-row-line = { $count ->
+    [one] Statussen på 1 element uden plads i det nye projekt overføres ikke.
+   *[other] Statusserne på { $count } elementer uden plads i det nye projekt overføres ikke.
+}
+
+import-scrivener-metadata-unnamed-keyword-line = Et nøgleord uden navn opkaldes efter sit nummer, { $id }.
+import-scrivener-metadata-keywords-without-row-line = { $count ->
+    [one] Nøgleordene på 1 element uden plads i det nye projekt overføres ikke.
+   *[other] Nøgleordene på { $count } elementer uden plads i det nye projekt overføres ikke.
+}
+import-scrivener-metadata-custom-values-without-row-line = { $count ->
+    [one] De brugerdefinerede metadata på 1 element uden plads i det nye projekt overføres ikke.
+   *[other] De brugerdefinerede metadata på { $count } elementer uden plads i det nye projekt overføres ikke.
+}
+import-scrivener-metadata-bookmarks-without-row-line = { $count ->
+    [one] Bogmærkerne på 1 element uden plads i det nye projekt overføres ikke.
+   *[other] Bogmærkerne på { $count } elementer uden plads i det nye projekt overføres ikke.
+}
+import-scrivener-metadata-targets-without-row-line = { $count ->
+    [one] Målet for 1 element uden plads i det nye projekt overføres ikke.
+   *[other] Målene for { $count } elementer uden plads i det nye projekt overføres ikke.
+}
+
+## What the import does with the keywords, custom metadata, collections, bookmarks, targets,
+## the deadline, the auto-complete list and the icons. Each line is said twice: on the Review
+## page before the import, then in its report, so it reads the same at both times. `$note`
+## and `$folder` are the titles the import gives a note and its "From Scrivener" folder;
+## `$day` is a day as YYYY-MM-DD.
+import-scrivener-metadata-pov-hint-line = { $count ->
+    [one] Etiketten eller feltværdien { $values } matcher opslaget { $matches } i historiebiblen. Angiver den synsvinklen, så sæt den i Inspektøren: importen linker intet.
+   *[other] Etiketterne eller feltværdierne { $values } matcher opslagene { $matches } i historiebiblen. Angiver de synsvinkler, så sæt dem i Inspektøren: importen linker intet.
+}
+import-scrivener-metadata-checkbox-default-unknown-line = Afkrydsningsfeltet »{ $field }« har en standardværdi, Skribisto ikke kan læse, så programmet kan ikke afgøre, hvilke dokumenter der er markeret som standard. Kun de dokumenter, der er markeret enkeltvis, får feltets mærke.
+import-scrivener-metadata-goals-in-other-unit-line = { $count ->
+    [one] 1 mål er sat i den anden tælleenhed. Det bevares og vises, når du skifter tælleenhed under Indstillinger ▸ Projekt ▸ Struktur.
+   *[other] { $count } mål er sat i den anden tælleenhed. De bevares og vises, når du skifter tælleenhed under Indstillinger ▸ Projekt ▸ Struktur.
+}
+import-scrivener-metadata-counting-differs-line = Scrivener talte udkastmålet ud fra andre dokumenter, end Skribisto gør. Bogens mål tæller de scener, der medtages i eksporter.
+import-scrivener-metadata-writing-days-not-read-line = Skrivedagene »{ $raw }« kan ikke læses, så bogens tempoplan tæller hver dag som en skrivedag. Ret dem der.
+import-scrivener-metadata-script-mode-rows-line = { $count ->
+    [one] 1 element var i drejebogstilstand i Scrivener. Skribisto beholder ordene som almindelig tekst uden drejebogsopsætningen.
+   *[other] { $count } elementer var i drejebogstilstand i Scrivener. Skribisto beholder ordene som almindelig tekst uden drejebogsopsætningen.
+}
+import-scrivener-metadata-keywords-became-tags-line = { $tags ->
+    [one] 1 nøgleord bliver til et mærke, anvendt på { $rows ->
+        [one] { $rows } element
+       *[other] { $rows } elementer
+    }.
+   *[other] { $tags } nøgleord bliver til mærker, anvendt på { $rows ->
+        [one] { $rows } element
+       *[other] { $rows } elementer
+    }.
+}
+import-scrivener-metadata-keyword-hierarchy-flattened-line = { $count ->
+    [one] 1 nøgleord lå inde i et andet i Scrivener. Mærker er flade: mærkets detaljer fortæller, hvor det lå.
+   *[other] { $count } nøgleord lå inde i andre i Scrivener. Mærker er flade: hvert mærkes detaljer fortæller, hvor dets nøgleord lå.
+}
+import-scrivener-metadata-fields-became-tags-line = { $fields ->
+    [one] 1 liste- eller afkrydsningsfelt bliver til { $tags ->
+        [one] { $tags } mærke
+       *[other] { $tags } mærker
+    }, anvendt på { $rows ->
+        [one] { $rows } element
+       *[other] { $rows } elementer
+    }.
+   *[other] { $fields } liste- og afkrydsningsfelter bliver til { $tags ->
+        [one] { $tags } mærke
+       *[other] { $tags } mærker
+    }, anvendt på { $rows ->
+        [one] { $rows } element
+       *[other] { $rows } elementer
+    }.
+}
+import-scrivener-metadata-collections-became-tags-line = { $tags ->
+    [one] 1 samling bliver til et mærke, anvendt på { $rows ->
+        [one] { $rows } element
+       *[other] { $rows } elementer
+    }.
+   *[other] { $tags } samlinger bliver til mærker, anvendt på { $rows ->
+        [one] { $rows } element
+       *[other] { $rows } elementer
+    }.
+}
+import-scrivener-metadata-collection-order-lost-line = { $count ->
+    [one] Et mærke har ingen rækkefølge, så rækkefølgen af dokumenterne i 1 samling bevares ikke.
+   *[other] Et mærke har ingen rækkefølge, så rækkefølgen af dokumenterne i { $count } samlinger bevares ikke.
+}
+import-scrivener-metadata-bookmarks-became-links-line = { $count ->
+    [one] 1 bogmærke bliver til et link mellem to noter eller mellem en scene og et opslag i historiebiblen: se Links og Persongalleri.
+   *[other] { $count } bogmærker bliver til links mellem noter eller mellem scener og opslag i historiebiblen: se Links og Persongalleri.
+}
+import-scrivener-metadata-goals-kept-line = { $count ->
+    [one] 1 dokumentmål overføres som mål.
+   *[other] { $count } dokumentmål overføres som mål.
+}
+import-scrivener-metadata-draft-target-kept-words-line = { $value ->
+    [one] Udkastmålet på 1 ord bliver til bogens mål.
+   *[other] Udkastmålet på { $value } ord bliver til bogens mål.
+}
+import-scrivener-metadata-draft-target-kept-characters-line = { $value ->
+    [one] Udkastmålet på 1 tegn bliver til bogens mål.
+   *[other] Udkastmålet på { $value } tegn bliver til bogens mål.
+}
+import-scrivener-metadata-pace-planned-line = Deadlinen, { $day }, bliver til bogens tempoplan, som fra importdagen planlægger ordene for hver af de skrivedage, du valgte i Scrivener.
+import-scrivener-metadata-pace-planned-day-off-line = Deadlinen, { $day }, bliver til bogens tempoplan, som fra importdagen planlægger ordene for hver af de skrivedage, du valgte i Scrivener. Som i Scrivener er selve deadlinedagen en fridag.
+import-scrivener-metadata-dictionary-words-line = { $count ->
+    [one] 1 ord fra autofuldførelseslisten kommer i projektets personlige ordbog, så det ikke markeres som stavefejl.
+   *[other] { $count } ord fra autofuldførelseslisten kommer i projektets personlige ordbog, så de ikke markeres som stavefejl.
+}
+import-scrivener-metadata-listed-project-line = { $count ->
+    [one] 1 oplysning om projektet er angivet i noten »{ $note }« i mappen »{ $folder }«.
+   *[other] { $count } oplysninger om projektet er angivet i noten »{ $note }« i mappen »{ $folder }«.
+}
+import-scrivener-metadata-listed-project-bookmarks-line = { $count ->
+    [one] 1 projektbogmærke er angivet i noten »{ $note }« i mappen »{ $folder }«.
+   *[other] { $count } projektbogmærker er angivet i noten »{ $note }« i mappen »{ $folder }«.
+}
+import-scrivener-metadata-listed-replacements-line = { $count ->
+    [one] 1 kompileringserstatning er angivet i noten »{ $note }« i mappen »{ $folder }«. Skribisto foretager den ikke.
+   *[other] { $count } kompileringserstatninger er angivet i noten »{ $note }« i mappen »{ $folder }«. Skribisto foretager dem ikke.
+}
+import-scrivener-metadata-listed-auto-complete-line = { $count ->
+    [one] 1 post til autofuldførelse på flere ord er angivet i noten »{ $note }« i mappen »{ $folder }«.
+   *[other] { $count } poster til autofuldførelse på flere ord er angivet i noten »{ $note }« i mappen »{ $folder }«.
+}
+import-scrivener-metadata-listed-saved-searches-line = { $count ->
+    [one] 1 gemt søgning er angivet i noten »{ $note }« i mappen »{ $folder }«.
+   *[other] { $count } gemte søgninger er angivet i noten »{ $note }« i mappen »{ $folder }«.
+}
+import-scrivener-metadata-listed-custom-metadata-line = { $count ->
+    [one] 1 brugerdefineret metadataværdi, som et mærke ikke kan rumme, er angivet i noten »{ $note }« i mappen »{ $folder }«.
+   *[other] { $count } brugerdefinerede metadataværdier, som et mærke ikke kan rumme, er angivet i noten »{ $note }« i mappen »{ $folder }«.
+}
+import-scrivener-metadata-listed-targets-line = { $count ->
+    [one] 1 dokumentmål er angivet i noten »{ $note }« i mappen »{ $folder }«.
+   *[other] { $count } dokumentmål er angivet i noten »{ $note }« i mappen »{ $folder }«.
+}
+import-scrivener-metadata-listed-bookmarks-line = { $count ->
+    [one] 1 bogmærke, som intet link i Skribisto viser, er angivet i noten »{ $note }« i mappen »{ $folder }«.
+   *[other] { $count } bogmærker, som intet link i Skribisto viser, er angivet i noten »{ $note }« i mappen »{ $folder }«.
+}
+import-scrivener-metadata-targets-on-notes-line = { $count ->
+    [one] 1 dokumentmål sidder på en note, hvis tekst intet mål tæller, så det bliver ikke til et mål.
+   *[other] { $count } dokumentmål sidder på noter, hvis tekst intet mål tæller, så de bliver ikke til mål.
+}
+import-scrivener-metadata-targets-on-split-documents-line = { $count ->
+    [one] 1 dokumentmål sidder på et dokument, der er opdelt ved sine overskrifter, og hvis kapitler intet enkelt mål tæller sammen, så det bliver ikke til et mål.
+   *[other] { $count } dokumentmål sidder på dokumenter, der er opdelt ved deres overskrifter, og hvis kapitler intet enkelt mål tæller sammen, så de bliver ikke til mål.
+}
+import-scrivener-metadata-bookmark-ends-without-row-line = { $count ->
+    [one] 1 bogmærke fører til et dokument uden plads i det nye projekt, f.eks. en dokumentskabelon. Det er angivet ud fra, hvor dokumentet lå i Scrivener.
+   *[other] { $count } bogmærker fører til dokumenter uden plads i det nye projekt, f.eks. dokumentskabeloner. De er angivet ud fra, hvor dokumenterne lå i Scrivener.
+}
+import-scrivener-metadata-unused-keywords-skipped-line = { $count ->
+    [one] 1 nøgleord, som intet dokument bærer, importeres ikke.
+   *[other] { $count } nøgleord, som intet dokument bærer, importeres ikke.
+}
+import-scrivener-metadata-list-value-invalid-line = { $count ->
+    [one] 1 værdi i listefeltet »{ $field }« svarer ikke til nogen af feltets valgmuligheder og importeres ikke.
+   *[other] { $count } værdier i listefeltet »{ $field }« svarer ikke til nogen af feltets valgmuligheder og importeres ikke.
+}
+import-scrivener-metadata-undefined-custom-field-line = { $count ->
+    [one] 1 værdi hører til et brugerdefineret felt, som projektet ikke længere definerer, og som Scrivener heller ikke viser. Den importeres ikke.
+   *[other] { $count } værdier hører til brugerdefinerede felter, som projektet ikke længere definerer, og som Scrivener heller ikke viser. De importeres ikke.
+}
+import-scrivener-metadata-collection-members-missing-line = { $count ->
+    [one] 1 dokument i samlingen »{ $name }« har ingen plads i det nye projekt eller er forsvundet fra Scrivener-projektet.
+   *[other] { $count } dokumenter i samlingen »{ $name }« har ingen plads i det nye projekt eller er forsvundet fra Scrivener-projektet.
+}
+import-scrivener-metadata-empty-collections-skipped-line = { $count ->
+    [one] 1 samling, der ikke indeholder noget dokument, importeres ikke.
+   *[other] { $count } samlinger, der ikke indeholder noget dokument, importeres ikke.
+}
+import-scrivener-metadata-bookmarks-unresolved-line = { $count ->
+    [one] 1 bogmærke fører til et dokument, som Scrivener-projektet ikke længere indeholder, og importeres ikke.
+   *[other] { $count } bogmærker fører til dokumenter, som Scrivener-projektet ikke længere indeholder, og importeres ikke.
+}
+import-scrivener-metadata-targets-in-pages-line = { $count ->
+    [one] 1 dokumentmål tæller sider, som Skribisto ikke tæller, så det bliver ikke til et mål.
+   *[other] { $count } dokumentmål tæller sider, som Skribisto ikke tæller, så de bliver ikke til mål.
+}
+import-scrivener-metadata-targets-unreadable-line = { $count ->
+    [one] 1 mål importeres ikke: dets antal er ikke et tal, er under nul eller er større, end et mål kan rumme.
+   *[other] { $count } mål importeres ikke: deres antal er ikke tal, er under nul eller er større, end et mål kan rumme.
+}
+import-scrivener-metadata-draft-target-in-pages-line = { $value ->
+    [one] Udkastmålet på 1 side bliver ikke til et mål: Skribisto tæller ord eller tegn. Det er angivet i noten »{ $note }« i mappen »{ $folder }«.
+   *[other] Udkastmålet på { $value } sider bliver ikke til et mål: Skribisto tæller ord eller tegn. Det er angivet i noten »{ $note }« i mappen »{ $folder }«.
+}
+import-scrivener-metadata-draft-target-no-book-words-line = { $value ->
+    [one] Udkastmålet på 1 ord bliver ikke til et mål, fordi manuskriptet udgør flere bøger eller ingen. Det er angivet i noten »{ $note }« i mappen »{ $folder }«.
+   *[other] Udkastmålet på { $value } ord bliver ikke til et mål, fordi manuskriptet udgør flere bøger eller ingen. Det er angivet i noten »{ $note }« i mappen »{ $folder }«.
+}
+import-scrivener-metadata-draft-target-no-book-characters-line = { $value ->
+    [one] Udkastmålet på 1 tegn bliver ikke til et mål, fordi manuskriptet udgør flere bøger eller ingen. Det er angivet i noten »{ $note }« i mappen »{ $folder }«.
+   *[other] Udkastmålet på { $value } tegn bliver ikke til et mål, fordi manuskriptet udgør flere bøger eller ingen. Det er angivet i noten »{ $note }« i mappen »{ $folder }«.
+}
+import-scrivener-metadata-deadline-passed-line = Deadlinen, { $day }, er overskredet, så den giver ingen tempoplan. Den er angivet i noten »{ $note }« i mappen »{ $folder }«.
+import-scrivener-metadata-deadline-no-writing-day-line = Der er ingen skrivedag tilbage fra importdagen til deadlinen, { $day }, så den giver ingen tempoplan. Den er angivet i noten »{ $note }« i mappen »{ $folder }«.
+import-scrivener-metadata-deadline-template-line = Deadlinen, { $day }, blev gemt i skabelonen, så den giver ingen tempoplan. Den er angivet i noten »{ $note }« i mappen »{ $folder }«.
+import-scrivener-metadata-deadline-no-word-goal-line = Deadlinen, { $day }, giver ingen tempoplan, fordi udkastet ikke har noget ordmål at planlægge efter. Den er angivet i noten »{ $note }« i mappen »{ $folder }«.
+import-scrivener-metadata-deadline-character-goal-line = Deadlinen, { $day }, giver ingen tempoplan, fordi udkastmålet tæller tegn, og en tempoplan tæller ord. Den er angivet i noten »{ $note }« i mappen »{ $folder }«.
+import-scrivener-metadata-deadline-no-book-line = Deadlinen, { $day }, giver ingen tempoplan, fordi manuskriptet udgør flere bøger eller ingen. Den er angivet i noten »{ $note }« i mappen »{ $folder }«.
+import-scrivener-metadata-deadline-unreadable-line = Deadlinen kan ikke læses, så den giver ingen tempoplan. Den er angivet, som den er skrevet, i noten »{ $note }« i mappen »{ $folder }«.
+import-scrivener-metadata-session-target-words-line = { $value ->
+    [one] Sessionsmålet på 1 ord importeres ikke: i Skribisto er skrivesessionens mål én indstilling for alle projekter. Det er angivet i noten »{ $note }« i mappen »{ $folder }«.
+   *[other] Sessionsmålet på { $value } ord importeres ikke: i Skribisto er skrivesessionens mål én indstilling for alle projekter. Det er angivet i noten »{ $note }« i mappen »{ $folder }«.
+}
+import-scrivener-metadata-session-target-characters-line = { $value ->
+    [one] Sessionsmålet på 1 tegn importeres ikke: i Skribisto er skrivesessionens mål én indstilling for alle projekter, målt i ord. Det er angivet i noten »{ $note }« i mappen »{ $folder }«.
+   *[other] Sessionsmålet på { $value } tegn importeres ikke: i Skribisto er skrivesessionens mål én indstilling for alle projekter, målt i ord. Det er angivet i noten »{ $note }« i mappen »{ $folder }«.
+}
+import-scrivener-metadata-session-target-pages-line = { $value ->
+    [one] Sessionsmålet på 1 side importeres ikke: i Skribisto er skrivesessionens mål én indstilling for alle projekter, målt i ord. Det er angivet i noten »{ $note }« i mappen »{ $folder }«.
+   *[other] Sessionsmålet på { $value } sider importeres ikke: i Skribisto er skrivesessionens mål én indstilling for alle projekter, målt i ord. Det er angivet i noten »{ $note }« i mappen »{ $folder }«.
+}
+import-scrivener-metadata-session-target-calculated-words-line = { $value ->
+    [one] Sessionsmålet på 1 ord, som Scrivener beregnede ud fra deadlinen og skrivedagene, importeres ikke: i Skribisto er skrivesessionens mål én indstilling for alle projekter. Det er angivet i noten »{ $note }« i mappen »{ $folder }«.
+   *[other] Sessionsmålet på { $value } ord, som Scrivener beregnede ud fra deadlinen og skrivedagene, importeres ikke: i Skribisto er skrivesessionens mål én indstilling for alle projekter. Det er angivet i noten »{ $note }« i mappen »{ $folder }«.
+}
+import-scrivener-metadata-session-target-calculated-characters-line = { $value ->
+    [one] Sessionsmålet på 1 tegn, som Scrivener beregnede ud fra deadlinen og skrivedagene, importeres ikke: i Skribisto er skrivesessionens mål én indstilling for alle projekter, målt i ord. Det er angivet i noten »{ $note }« i mappen »{ $folder }«.
+   *[other] Sessionsmålet på { $value } tegn, som Scrivener beregnede ud fra deadlinen og skrivedagene, importeres ikke: i Skribisto er skrivesessionens mål én indstilling for alle projekter, målt i ord. Det er angivet i noten »{ $note }« i mappen »{ $folder }«.
+}
+import-scrivener-metadata-session-target-calculated-pages-line = { $value ->
+    [one] Sessionsmålet på 1 side, som Scrivener beregnede ud fra deadlinen og skrivedagene, importeres ikke: i Skribisto er skrivesessionens mål én indstilling for alle projekter, målt i ord. Det er angivet i noten »{ $note }« i mappen »{ $folder }«.
+   *[other] Sessionsmålet på { $value } sider, som Scrivener beregnede ud fra deadlinen og skrivedagene, importeres ikke: i Skribisto er skrivesessionens mål én indstilling for alle projekter, målt i ord. Det er angivet i noten »{ $note }« i mappen »{ $folder }«.
+}
+import-scrivener-metadata-icons-dropped-line = { $count ->
+    [one] 1 element havde et ikon i ringbindet, som ikke overføres: Skribisto viser hvert elements ikon ud fra dets type.
+   *[other] { $count } elementer havde ikoner i ringbindet, som ikke overføres: Skribisto viser hvert elements ikon ud fra dets type.
+}
+
+## What converting the prose did, as the import's report says it. `$count` is how many texts,
+## or how many of a thing, as each line says; `$example` quotes the project.
+import-scrivener-prose-unreadable-line = { $count ->
+    [one] 1 tekst kunne ikke læses. Den kommer tom ind.
+   *[other] { $count } tekster kunne ikke læses. De kommer tomme ind.
+}
+import-scrivener-prose-comments-unreadable-line = { $count ->
+    [one] Kommentarerne og de linkede fodnoter i 1 tekst kunne ikke læses. De ord, de markerede, bevares.
+   *[other] Kommentarerne og de linkede fodnoter i { $count } tekster kunne ikke læses. De ord, de markerede, bevares.
+}
+import-scrivener-prose-read-as-plain-text-line = { $count ->
+    [one] 1 tekst var gemt som ren tekst i stedet for formateret tekst og læses som sådan.
+   *[other] { $count } tekster var gemt som ren tekst i stedet for formateret tekst og læses som sådan.
+}
+import-scrivener-prose-inline-note-unmatched-line = { $count ->
+    [one] 1 markør for en indlejret note danner ikke par med en anden og bevares som tekst.
+   *[other] { $count } markører for indlejrede noter danner ikke par med en anden og bevares som tekst.
+}
+import-scrivener-prose-style-unresolved-line = { $count ->
+    [one] 1 typografimarkør nævner en typografi, projektet ikke definerer. Den fjernes, og teksten beholder sin formatering.
+   *[other] { $count } typografimarkører nævner typografier, projektet ikke definerer. De fjernes, og teksten beholder sin formatering.
+}
+import-scrivener-prose-styles-lost-in-export-line = { $count ->
+    [one] 1 afsnit er måske en overskrift, der mistede sin typografi, da Scrivener 3 eksporterede projektet til sit ældre format, og det overføres som et almindeligt afsnit. Kontrollér det, eller importér det projekt, det blev eksporteret fra.
+   *[other] { $count } afsnit er måske overskrifter, der mistede deres typografi, da Scrivener 3 eksporterede projektet til sit ældre format, og de overføres som almindelige afsnit. Kontrollér dem, eller importér det projekt, de blev eksporteret fra.
+}
+import-scrivener-prose-comment-anchor-without-entry-line = { $count ->
+    [one] 1 kommentar eller fodnote havde mistet sit indhold i Scrivener. De ord, den markerede, bevares uden den.
+   *[other] { $count } kommentarer eller fodnoter havde mistet deres indhold i Scrivener. De ord, de markerede, bevares uden dem.
+}
+import-scrivener-prose-comment-entry-without-anchor-line = { $count ->
+    [one] 1 kommentar havde ikke længere nogen plads i sin tekst og knyttes til det første afsnit.
+   *[other] { $count } kommentarer havde ikke længere nogen plads i deres tekst og knyttes til det første afsnit.
+}
+import-scrivener-prose-footnote-entry-without-anchor-line = { $count ->
+    [one] 1 linket fodnote havde ikke længere nogen plads i sin tekst og får sin henvisning i slutningen af teksten.
+   *[other] { $count } linkede fodnoter havde ikke længere nogen plads i deres tekst og får deres henvisning i slutningen af teksten.
+}
+import-scrivener-prose-range-comment-reading-line = { $count ->
+    [one] 1 kommentar fra en ældre version af Scrivener blev placeret ud fra en anden tolkning af dens position. Kontrollér, at den sidder på de rigtige ord.
+   *[other] { $count } kommentarer fra en ældre version af Scrivener blev placeret ud fra en anden tolkning af deres position. Kontrollér, at de sidder på de rigtige ord.
+}
+import-scrivener-prose-range-comment-reading-markers-counted-line = { $count ->
+    [one] 1 kommentar fra en ældre version af Scrivener blev placeret ved at tælle markørerne for dens indlejrede noter med. Kontrollér, at den sidder på de rigtige ord.
+   *[other] { $count } kommentarer fra en ældre version af Scrivener blev placeret ved at tælle markørerne for deres indlejrede noter med. Kontrollér, at de sidder på de rigtige ord.
+}
+import-scrivener-prose-range-comment-reading-pictures-not-counted-line = { $count ->
+    [one] 1 kommentar fra en ældre version af Scrivener blev placeret ved at se bort fra dens billeder. Kontrollér, at den sidder på de rigtige ord.
+   *[other] { $count } kommentarer fra en ældre version af Scrivener blev placeret ved at se bort fra deres billeder. Kontrollér, at de sidder på de rigtige ord.
+}
+import-scrivener-prose-range-comment-approximate-line = { $count ->
+    [one] 1 kommentar fra en ældre version af Scrivener passer ikke præcist med nogen tolkning af dens position og sidder måske et par tegn forkert.
+   *[other] { $count } kommentarer fra en ældre version af Scrivener passer ikke præcist med nogen tolkning af deres position og sidder måske et par tegn forkert.
+}
+import-scrivener-prose-document-link-unresolved-line = { $count ->
+    [one] 1 link peger på et dokument, importen ikke overførte. Linkets tekst bliver stående.
+   *[other] { $count } links peger på dokumenter, importen ikke overførte. Linkenes tekst bliver stående.
+}
+import-scrivener-prose-linked-picture-not-read-line = { $count ->
+    [one] 1 billede, der var linket til en fil på din disk, »{ $example }«, blev ikke overført.
+   *[other] { $count } billeder, der var linket til filer på din disk, f.eks. »{ $example }«, blev ikke overført.
+}
+import-scrivener-prose-heading-repeats-title-line = { $count ->
+    [one] 1 tekst begynder med en overskrift, der gentager dens titel, så en eksport udskriver måske titlen to gange.
+   *[other] { $count } tekster begynder med en overskrift, der gentager deres titel, så en eksport udskriver måske titlen to gange.
+}
+import-scrivener-prose-markdown-as-text-line = { $count ->
+    [one] 1 afsnit skrevet i Markdown bevares som den tekst, det er.
+   *[other] { $count } afsnit skrevet i Markdown bevares som den tekst, de er.
+}
+import-scrivener-prose-citation-keys-as-text-line = { $count ->
+    [one] 1 afsnit indeholder citatnøgler til et litteraturhåndteringsprogram og bevares som tekst.
+   *[other] { $count } afsnit indeholder citatnøgler til et litteraturhåndteringsprogram og bevares som tekst.
+}
+import-scrivener-prose-placeholders-in-exported-text-line = { $count ->
+    [one] 1 Scrivener-pladsholder, { $example }, bevares som ren tekst i det, du eksporterer. Erstat den manuelt.
+   *[other] { $count } Scrivener-pladsholdere, f.eks. { $example }, bevares som ren tekst i det, du eksporterer. Erstat dem manuelt.
+}
+import-scrivener-prose-placeholders-in-other-text-line = { $count ->
+    [one] 1 Scrivener-pladsholder, { $example }, bevares som ren tekst i en tekst, der ikke eksporteres.
+   *[other] { $count } Scrivener-pladsholdere, f.eks. { $example }, bevares som ren tekst i tekster, der ikke eksporteres.
+}
+import-scrivener-prose-ornament-lines-kept-line = { $count ->
+    [one] 1 centreret linje med ornamenter markerer måske et sceneskift og bevares, som den er skrevet.
+   *[other] { $count } centrerede linjer med ornamenter markerer måske sceneskift og bevares, som de er skrevet.
+}
+import-scrivener-prose-long-document-line = { $count ->
+    [one] 1 tekst er meget lang og kan være langsom at åbne.
+   *[other] { $count } tekster er meget lange og kan være langsomme at åbne.
+}
+import-scrivener-prose-pictures-without-description-line = { $count ->
+    [one] 1 billede har ingen beskrivelse til læsere, der ikke kan se det. Du kan tilføje en i editoren.
+   *[other] { $count } billeder har ingen beskrivelse til læsere, der ikke kan se dem. Du kan tilføje en i editoren.
+}
+import-scrivener-prose-struck-text-compiled-away-line = { $count ->
+    [one] Gennemstreget tekst i 1 tekst bevares. Scriveners kompilering udelod den af bogen, men en eksport fra Skribisto udskriver den.
+   *[other] Gennemstreget tekst i { $count } tekster bevares. Scriveners kompilering udelod den af bogen, men en eksport fra Skribisto udskriver den.
+}
+import-scrivener-prose-compile-deleted-style-printed-line = { $count ->
+    [one] Tekst i typografien »{ $example }«, som Scriveners kompilering slettede, bevares som almindelig tekst, og en eksport fra Skribisto udskriver den.
+   *[other] Tekst i { $count } typografier, som Scriveners kompilering slettede, f.eks. »{ $example }«, bevares som almindelig tekst, og en eksport fra Skribisto udskriver den.
+}
+import-scrivener-prose-compile-raw-style-printed-line = { $count ->
+    [one] Tekst i typografien »{ $example }«, som Scriveners kompilering sendte videre som kode til et andet program, bevares som almindelig tekst, og en eksport fra Skribisto udskriver den.
+   *[other] Tekst i { $count } typografier, som Scriveners kompilering sendte videre som kode til et andet program, f.eks. »{ $example }«, bevares som almindelig tekst, og en eksport fra Skribisto udskriver den.
+}
+import-scrivener-prose-left-out-after-document-line = { $count ->
+    [one] 1 stykke efter slutningen af en beskadiget fil udelades.
+   *[other] { $count } stykker efter slutningen af beskadigede filer udelades.
+}
+import-scrivener-prose-left-out-header-or-footer-line = { $count ->
+    [one] 1 sidehoved eller sidefod udelades: det er ikke en del af teksten.
+   *[other] { $count } sidehoveder og sidefødder udelades: de er ikke en del af teksten.
+}
+import-scrivener-prose-left-out-list-label-picture-line = { $count ->
+    [one] 1 billede, der bruges som punkttegn i en liste, udelades.
+   *[other] { $count } billeder, der bruges som punkttegn i lister, udelades.
+}
+import-scrivener-prose-left-out-line = { $count ->
+    [one] 1 stykke af en fil, som ikke hører til nogen tekst, udelades.
+   *[other] { $count } stykker af filer, som ikke hører til nogen tekst, udelades.
+}
+import-scrivener-prose-undecodable-characters-line = { $count ->
+    [one] 1 tegn kunne ikke afkodes og vises som et erstatningstegn (�), hvor det stod.
+   *[other] { $count } tegn kunne ikke afkodes og vises som erstatningstegn (�), hvor de stod.
+}
+import-scrivener-prose-inline-notes-merged-line = { $count ->
+    [one] 1 indlejret note, som Scrivener havde delt, hvor dens formatering skiftede, sættes sammen igen.
+   *[other] { $count } indlejrede noter, som Scrivener havde delt, hvor deres formatering skiftede, sættes sammen igen.
+}
+import-scrivener-prose-inline-notes-joined-across-paragraphs-line = { $count ->
+    [one] 1 indlejret note, der var skrevet ét afsnit ad gangen, samles til én note.
+   *[other] { $count } indlejrede noter, der var skrevet ét afsnit ad gangen, samles til noter på flere afsnit.
+}
+import-scrivener-prose-blank-notes-dropped-line = { $count ->
+    [one] 1 tom indlejret note udelades.
+   *[other] { $count } tomme indlejrede noter udelades.
+}
+import-scrivener-prose-annotations-became-comments-line = { $count ->
+    [one] 1 indlejret annotation blev til en kommentar.
+   *[other] { $count } indlejrede annotationer blev til kommentarer.
+}
+import-scrivener-prose-annotation-only-document-kept-line = { $count ->
+    [one] 1 dokument indeholdt kun en annotation. Ordene bevares som almindelig tekst.
+   *[other] { $count } dokumenter indeholdt kun en annotation. Ordene bevares som almindelig tekst.
+}
+import-scrivener-prose-preserve-formatting-passages-line = { $count ->
+    [one] 1 passage markeret med »Bevar formatering« kommer ind som almindelig tekst.
+   *[other] { $count } passager markeret med »Bevar formatering« kommer ind som almindelig tekst.
+}
+import-scrivener-prose-nested-note-unwrapped-line = { $count ->
+    [one] 1 note inde i en kommentar eller en fodnote bevares som tekst, hvor den stod.
+   *[other] { $count } noter inde i kommentarer eller fodnoter bevares som tekst, hvor de stod.
+}
+import-scrivener-prose-style-not-carried-line = { $count ->
+    [one] Typografien »{ $example }« har intet modstykke i Skribisto. Dens tekst beholder sine ord.
+   *[other] { $count } typografier, f.eks. »{ $example }«, har intet modstykke i Skribisto. Deres tekst beholder sine ord.
+}
+import-scrivener-prose-document-links-dropped-line = { $count ->
+    [one] 1 link til et andet dokument har ingen plads i Skribisto. Linkets tekst bliver stående.
+   *[other] { $count } links til andre dokumenter har ingen plads i Skribisto. Linkenes tekst bliver stående.
+}
+import-scrivener-prose-document-links-kept-line = { $count ->
+    [one] 1 link til et andet dokument bevares som en henvisning.
+   *[other] { $count } links til andre dokumenter bevares som henvisninger.
+}
+import-scrivener-prose-other-links-kept-as-text-line = { $count ->
+    [one] 1 link til et andet projekt eller til en fil bevares som tekst.
+   *[other] { $count } links til andre projekter eller til filer bevares som tekst.
+}
+import-scrivener-prose-soft-breaks-split-line = { $count ->
+    [one] 1 linjeskift inde i et afsnit starter nu sit eget afsnit.
+   *[other] { $count } linjeskift inde i afsnit starter nu deres egne afsnit.
+}
+import-scrivener-prose-typed-indents-removed-line = { $count ->
+    [one] 1 indrykning, der var tastet i starten af et afsnit, fjernes.
+   *[other] { $count } indrykninger, der var tastet i starten af afsnit, fjernes.
+}
+import-scrivener-prose-left-indents-not-kept-line = { $count ->
+    [one] 1 afsnit, der var indrykket fra margenen, mister sin indrykning.
+   *[other] { $count } afsnit, der var indrykket fra margenen, mister deres indrykning.
+}
+import-scrivener-prose-blank-lines-removed-line = { $count ->
+    [one] 1 tomt afsnit mellem to andre fjernes.
+   *[other] { $count } tomme afsnit mellem andre fjernes.
+}
+import-scrivener-prose-verse-stanza-gaps-lost-line = { $count ->
+    [one] 1 tom linje mellem et digts strofer fjernes, så stroferne løber sammen.
+   *[other] { $count } tomme linjer mellem et digts strofer fjernes, så stroferne løber sammen.
+}
+import-scrivener-prose-blank-lines-became-scene-breaks-line = { $count ->
+    [one] 1 tom linje mellem afsnit blev til et sceneskift.
+   *[other] { $count } tomme linjer mellem afsnit blev til sceneskift.
+}
+import-scrivener-prose-ornaments-became-scene-breaks-line = { $count ->
+    [one] 1 linje med ornamenter blev til et sceneskift.
+   *[other] { $count } linjer med ornamenter blev til sceneskift.
+}
+import-scrivener-prose-table-first-row-header-line = { $count ->
+    [one] 1 tabel begynder nu med en overskriftsrække.
+   *[other] { $count } tabeller begynder nu med en overskriftsrække.
+}
+import-scrivener-prose-table-cells-joined-line = { $count ->
+    [one] 1 tabelcelle indeholdt flere afsnit, som nu er samlet til ét.
+   *[other] { $count } tabelceller indeholdt flere afsnit, som nu er samlet til ét.
+}
+import-scrivener-prose-formatting-lost-colour-line = { $count ->
+    [one] Tekstfarve fjernes i 1 tekst.
+   *[other] Tekstfarve fjernes i { $count } tekster.
+}
+import-scrivener-prose-formatting-lost-highlight-line = { $count ->
+    [one] Fremhævning fjernes i 1 tekst.
+   *[other] Fremhævning fjernes i { $count } tekster.
+}
+import-scrivener-prose-formatting-lost-small-caps-line = { $count ->
+    [one] Kapitæler vises som almindelige bogstaver i 1 tekst.
+   *[other] Kapitæler vises som almindelige bogstaver i { $count } tekster.
+}
+import-scrivener-prose-formatting-lost-all-caps-line = { $count ->
+    [one] Tekst, der blev vist med store bogstaver, vises, som den blev skrevet, i 1 tekst.
+   *[other] Tekst, der blev vist med store bogstaver, vises, som den blev skrevet, i { $count } tekster.
+}
+import-scrivener-prose-formatting-lost-hidden-line = { $count ->
+    [one] Skjult tekst udelades i 1 tekst.
+   *[other] Skjult tekst udelades i { $count } tekster.
+}
+import-scrivener-prose-formatting-lost-line = { $count ->
+    [one] Formatering, som Skribisto ikke har plads til, fjernes i 1 tekst.
+   *[other] Formatering, som Skribisto ikke har plads til, fjernes i { $count } tekster.
+}
+import-scrivener-prose-justified-text-not-kept-line = { $count ->
+    [one] 1 blokjusteret afsnit følger i stedet eksporttypografien.
+   *[other] { $count } blokjusterede afsnit følger i stedet eksporttypografien.
+}
+import-scrivener-prose-comment-colours-lost-line = { $count ->
+    [one] 1 kommentar mister sin farve.
+   *[other] { $count } kommentarer mister deres farve.
+}
+import-scrivener-prose-control-characters-removed-line = { $count ->
+    [one] 1 usynligt kontroltegn fjernes.
+   *[other] { $count } usynlige kontroltegn fjernes.
+}
+import-scrivener-prose-note-on-heading-lost-line = { $count ->
+    [one] 1 fodnote eller kommentar på en kapiteloverskrift kunne ikke blive der: en kommentar flyttes til kapitlets første afsnit, en fodnote udelades.
+   *[other] { $count } fodnoter eller kommentarer på kapiteloverskrifter kunne ikke blive der: en kommentar flyttes til kapitlets første afsnit, en fodnote udelades.
+}
+import-scrivener-prose-media-file-copied-line = { $count ->
+    [one] 1 researchfil, som Skribisto ikke kan åbne, blev kopieret ved siden af det nye projekt. Dens note fortæller hvor.
+   *[other] { $count } researchfiler, som Skribisto ikke kan åbne, blev kopieret ved siden af det nye projekt. Deres noter fortæller hvor.
+}
+import-scrivener-prose-media-file-not-carried-line = { $count ->
+    [one] 1 researchfil, som Skribisto ikke kan åbne, bliver i dit Scrivener-projekt. Dens note nævner den.
+   *[other] { $count } researchfiler, som Skribisto ikke kan åbne, bliver i dit Scrivener-projekt. Deres noter nævner dem.
+}
+
+## When the import fails
+import-scrivener-error-refused = { $refusal } Intet blev skrevet.
+import-scrivener-error-question = Projektet stiller nu et spørgsmål, som gennemgangen ikke besvarede. Gennemgå det igen, og importér så. Intet blev skrevet.
+import-scrivener-error-not-accepted = Projektet rejser et spørgsmål, du endnu ikke har accepteret. Gennemgå det igen, og importér så. Intet blev skrevet.
+import-scrivener-error-changed = Projektet er blevet ændret, efter du gennemgik det. Gennemgå det igen, og importér så. Intet blev skrevet.
+import-scrivener-error-choice = Den struktur, der blev valgt i gennemgangen, passer ikke længere til projektet. Gennemgå det igen, og importér så. Intet blev skrevet.
 
 ## Export dialog
 export-title = Eksport
@@ -2122,6 +3575,12 @@ import-document-destination = Destination
 import-document-destination-hint = Vælg et ringbind eller et element: nye elementer havner inde i en mappe eller efter en scene.
 import-document-destination-empty = Ingen ringbind endnu. Opret et først.
 import-document-plan-empty = Intet at importere endnu.
+# How many pictures the items being imported bring into the project, under the
+# review tree. Shown only when there is at least one.
+import-document-pictures = { $count ->
+    [one] Ét billede følger med disse dokumenter.
+   *[other] { $count } billeder følger med disse dokumenter.
+}
 import-document-summary = { $rows ->
     [one] 1 element
    *[other] { $rows } elementer
@@ -2183,6 +3642,20 @@ import-diagnostic-nested-break-dropped = { $count ->
     [one] Ét sceneskift inde i et citat eller en liste i »{ $path }« blev udeladt. Kun et sceneskift på sin egen linje bevares.
    *[other] { $count } sceneskift inde i citater eller lister i »{ $path }« blev udeladt. Kun et sceneskift på sin egen linje bevares.
 }
+# A picture the document shows that does not come with it, one sentence per reason.
+# $detail is the picture as the document names it: a file name, a path inside the
+# document, or a web address. Nothing is left in the text where it was.
+import-diagnostic-image-not-ingested-format = I »{ $path }« er billedet »{ $detail }« i et format, Skribisto ikke kan vise, så det blev udeladt. Billeder i PNG, JPEG, WebP, GIF, TIFF eller BMP kommer med; gem det i et af de formater, og indsæt det manuelt.
+import-diagnostic-image-not-ingested-remote = I »{ $path }« ligger billedet »{ $detail }« på nettet. Billeder hentes aldrig ned under en import, så det blev udeladt.
+import-diagnostic-image-not-ingested-outside = I »{ $path }« ligger billedet »{ $detail }« uden for dokumentet og dets mappe, så det blev udeladt. Kun billeder, der er gemt i dokumentet eller i dokumentets egen mappe, kommer med.
+import-diagnostic-image-not-ingested-missing = I »{ $path }« kunne billedet »{ $detail }« ikke findes, så det blev udeladt.
+import-diagnostic-image-not-ingested-too-large = I »{ $path }« er billedet »{ $detail }« større, end et projekt kan rumme, så det blev udeladt.
+import-diagnostic-image-not-ingested-unreadable = I »{ $path }« kunne billedet »{ $detail }« ikke læses som et billede, så det blev udeladt.
+import-diagnostic-image-not-ingested-heading = I »{ $path }« står billedet »{ $detail }« i en overskrift. En overskrift bliver til en titel, som ikke kan rumme billeder, så det blev udeladt.
+import-diagnostic-image-not-ingested-note = I »{ $path }« står billedet »{ $detail }« i en fodnote, en slutnote eller en kommentar. De beholder deres ord, men ingen billeder, så det blev udeladt.
+import-diagnostic-image-not-ingested-html = I »{ $path }« er billedet »{ $detail }« skrevet som HTML, og en import udelader HTML, så billedet blev udeladt sammen med den. Skriv det som et Markdown-billede for at få det med.
+import-diagnostic-image-not-ingested-document-full = I »{ $path }« blev billedet »{ $detail }« udeladt: dokumentets billeder overstiger tilsammen, hvad én import tager med. Importér dokumentet i dele, eller indsæt resten manuelt.
+import-diagnostic-picture-first-frame-only = I »{ $path }« kommer det animerede billede »{ $detail }« kun med som sit første enkeltbillede. Billeder i et projekt bevæger sig ikke.
 import-diagnostic-duplicate-title = »{ $title }« forekommer { $count } gange. Har du importeret disse filer før, vil de blive duplikeret.
 import-diagnostic-heading-level-jump = »{ $title }« springer fra overskriftsniveau { $from } til { $to }; det placeres ét niveau under sit overordnede element.
 import-diagnostic-illegal-combination = »{ $title }« indeholder tekst, men en { $kind } kan ikke rumme tekst. Importen holdes tilbage, indtil du ændrer typen eller udelader elementet. Ellers importeres der slet intet.
@@ -2576,6 +4049,7 @@ help-topic-round-trip = Send din bog til en læser
 help-topic-export = Eksport
 help-topic-import-documents = Import af dokumenter
 help-topic-import-projects = Overfør et helt projekt
+help-topic-import-scrivener = Skift fra Scrivener
 help-topic-backups-and-versions = Sikkerhedskopier og versioner
 
 help-shortcuts-title = Tastaturgenveje
@@ -2606,6 +4080,8 @@ shortcut-name-work-new = Nyt projekt
 shortcut-name-work-open = Åbn projekt
 shortcut-name-window-new = Nyt vindue
 shortcut-name-work-close = Luk projekt
+shortcut-name-work-import-scrivener = Importér Scrivener-projekt…
+shortcut-name-work-import-scrivener-report = Vis rapporten fra Scrivener-importen
 shortcut-name-app-settings = Indstillinger
 shortcut-name-app-quit = Afslut
 shortcut-name-editor-insert-footnote = Indsæt fodnote
@@ -2911,6 +4387,7 @@ dialog-save-as-file-title = Gem som en enkelt .skrib-fil
 dialog-save-as-folder-title = Vælg en overordnet mappe til projektet
 dialog-manuskript-file-title = Vælg et Manuskript-projekt
 dialog-manuskript-folder-title = Vælg en Manuskript-projektmappe
+dialog-plume-file-title = Vælg et Plume Creator-projekt
 dialog-filter-skrib = Skribisto-projekt
 dialog-filter-manuskript = Manuskript-projekt
 dialog-filter-plume = Plume Creator-projekt

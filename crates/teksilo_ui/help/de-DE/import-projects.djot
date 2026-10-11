@@ -1,6 +1,7 @@
 Ein Projektimport übernimmt ein ganzes Projekt aus Manuskript oder Plume Creator: Kapitel,
 Figuren und Notizen. Haben Sie stattdessen einen Ordner mit Dokumenten, siehe
-[Dokumente importieren](:help-import-documents).
+[Dokumente importieren](:help-import-documents). Für ein Scrivener-Projekt siehe
+[Von Scrivener wechseln](:help-import-scrivener).
 
 Ein Import erstellt ein **neues** Skribisto-Projekt.
 
@@ -20,6 +21,12 @@ Erst nach *Importieren* wird etwas geschrieben. Der Import zeigt seinen Fortschr
 *Abbrechen* hinterlässt nichts.
 
 Ist die Zieldatei ein bereits in Skribisto geöffnetes Projekt, wählen Sie einen anderen Dateinamen.
+Während ein Import läuft, ist seine Datei für ihn reserviert: Bis zum Abschluss des Imports
+kann nichts anderes sie öffnen oder ein Projekt dorthin schreiben.
+
+Projekte werden einzeln importiert: Starten Sie einen Import, während ein anderer läuft, weist
+Skribisto darauf hin. Beenden Sie Skribisto während eines Imports, fragt es zuerst nach, und auch
+das Abbrechen des Imports hinterlässt nichts.
 
 ## Ein Manuskript-Projekt auswählen
 
@@ -94,10 +101,16 @@ vor dem Import in Plume wieder her. Plume enthält keinen Autorennamen; tragen S
 
 ## Nach dem Import
 
-Eine Meldung bietet *Jetzt öffnen* an, um das neue Projekt zu öffnen.
+Eine Meldung bietet *Jetzt öffnen* an, um das neue Projekt zu öffnen. Der zugehörige Eintrag unter
+der Glocke in der Statusleiste behält *Jetzt öffnen*, auch wenn die Meldung verschwunden ist, und
+öffnet das Projekt in einem eigenen Fenster.
 
-Meldet der Import nicht übertragbare Inhalte, klicken Sie auf *Details*. Den Bericht finden
-Sie später auch unter der Glocke in der Statusleiste.
+Meldet der Import nicht übertragbare Inhalte, klicken Sie auf *Details*, um die Liste zu lesen,
+verfasst in der Sprache, auf die Skribisto eingestellt ist. Den Bericht finden Sie später auch
+unter der Glocke in der Statusleiste.
+
+Kann ein Projekt nicht importiert werden, nennt die Meldung den Grund, und ihre *Details*
+enthalten die technische Beschreibung, die Sie weitergeben können, wenn Sie das Problem melden.
 
 Das neue Projekt ist eine einzelne `.skrib`-Datei. Wenn Sie bisher einen Ordner für die
 Versionsverwaltung verwendet haben, wählen Sie danach *Projekt ▸ Als Ordner speichern…*.

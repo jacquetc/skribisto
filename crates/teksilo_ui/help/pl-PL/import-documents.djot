@@ -1,6 +1,8 @@
 Zaimportuj do projektu pliki Word, LibreOffice, Markdown lub zwykły tekst. Rękopis zwrócony
-przez czytelnika opisuje temat [wysyłanie książki do czytelnika](:help-round-trip), a projekty
-Manuskript i Plume Creator temat [przenoszenie całego projektu](:help-import-projects).
+przez czytelnika opisuje temat [wysyłanie książki do czytelnika](:help-round-trip), projekty
+Manuskript i Plume Creator temat [przenoszenie całego projektu](:help-import-projects), a projekty
+Scrivener temat [przejście z programu Scrivener](:help-import-scrivener). Tutaj importuje się też
+dokument Word skompilowany z projektu Scrivener, którego nie da się zaimportować.
 
 ## Zaimportuj pliki
 
@@ -46,6 +48,24 @@ i justowanie zależą od stylu eksportu. Część formatowania może zostać upr
 *Sprawdzenie*, aby zobaczyć, czego nie dało się zaimportować, i skopiuj brakujący tekst
 z oryginalnego pliku. Symbole z czcionek obrazkowych, takich jak Wingdings, mogą pojawić się
 jako puste prostokąty.
+
+## Obrazy
+
+Obrazy trafiają do projektu razem z dokumentami, każdy w miejscu, w którym był w tekście.
+Z plików Word i LibreOffice przenoszony jest każdy obraz zapisany w pliku, wraz z jego opisem.
+Z pliku Markdown obraz zostaje przeniesiony, jeśli jego plik leży we własnym folderze dokumentu
+lub w folderze w jego wnętrzu. W kroku *Sprawdzenie* wiersz pod drzewem podaje, ile obrazów
+trafi do projektu.
+
+Obrazy PNG, JPEG i WebP trafiają do projektu bez zmian; obrazy TIFF, GIF i BMP są zamieniane na
+PNG, a animowany GIF na swoją pierwszą klatkę. Obraz, który projekt już zawiera, nie jest
+zapisywany drugi raz, a *Cofnij* usuwa obrazy razem z tekstem.
+
+Niektóre obrazy zostają pominięte, a komunikaty wymieniają każdy z nich wraz z przyczyną:
+format, którego Skribisto nie potrafi wyświetlić (np. EMF, WMF, SVG lub PDF), obraz
+w internecie (nic nie jest pobierane), obraz poza dokumentem i jego folderem, obraz, którego
+brakuje, którego nie da się odczytać lub który jest za duży, albo obraz w nagłówku, przypisie
+lub komentarzu. Taki obraz możesz potem wstawić ponownie poleceniem *Dokument ▸ Wstaw obraz…*.
 
 ## Przejrzyj komunikaty przed zakończeniem
 

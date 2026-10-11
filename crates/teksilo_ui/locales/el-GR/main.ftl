@@ -11,6 +11,7 @@ menu-create-from = Δη&μιουργία από
 menu-import-plume = &Plume Creator (.plume)…
 menu-import-document = Έ&γγραφα (Markdown, Word, ODT)…
 menu-import-manuskript = &Manuskript (.msk)…
+menu-import-scrivener = &Scrivener (.scriv)…
 menu-export = Ε&ξαγωγή
 menu-export-book = Εξαγωγή βιβλίου
 menu-export-part = Εξαγωγή μέρους
@@ -741,6 +742,8 @@ backup-no-destination-title = Δεν υπάρχει διαθέσιμη θέση 
 backup-no-destination-text = Κανένας από τους ρυθμισμένους προορισμούς αντιγράφων ασφαλείας δεν είναι προσβάσιμος (για παράδειγμα, ένας εξωτερικός δίσκος μπορεί να είναι αποσυνδεδεμένος). Συνδέστε τον και δοκιμάστε ξανά, ή κάντε έξοδο χωρίς αντίγραφο ασφαλείας.
 backup-failed-close-title = Το αντίγραφο ασφαλείας δεν ήταν δυνατό να αποθηκευτεί
 backup-failed-close-text = Δεν ήταν δυνατό να γραφτεί αντίγραφο ασφαλείας πριν από το κλείσιμο. Όλοι οι προορισμοί απέτυχαν (ο δίσκος μπορεί να αφαιρέθηκε, να είναι γεμάτος ή να έχει προστασία εγγραφής). Διορθώστε το και δοκιμάστε ξανά, ή κάντε έξοδο χωρίς αντίγραφο ασφαλείας.
+backup-failed-close-error-text = Δεν ήταν δυνατό να γραφτεί αντίγραφο ασφαλείας πριν από το κλείσιμο: { $error }. Διορθώστε το και δοκιμάστε ξανά, ή κάντε έξοδο χωρίς αντίγραφο ασφαλείας.
+backup-no-result = Η δημιουργία αντιγράφου ασφαλείας τελείωσε χωρίς να αναφέρει αν δημιουργήθηκε αντίγραφο. Ελέγξτε τη λίστα των αντιγράφων ασφαλείας για να δείτε αν υπάρχει νέο.
 
 backup-choice-title = Αρχείο αντιγράφου ασφαλείας
 backup-choice-heading = Ανοίξατε ένα αντίγραφο ασφαλείας
@@ -928,6 +931,8 @@ import-plume-source-not-file = Αυτή η διαδρομή δεν είναι α
 
 import-plume-manuscript-binder = Χειρόγραφο
 import-plume-story-bible-binder = Βίβλος ιστορίας
+import-plume-notes-of = { $name } (σημειώσεις)
+import-plume-content-of = { $name } (περιεχόμενο)
 
 import-plume-progress-title = Εισαγωγή έργου Plume…
 
@@ -942,6 +947,10 @@ import-plume-done = Εισήχθησαν { $imported ->
 import-plume-nested-too-deep = Το έργο δεν εισήχθη: το τμήμα του «{ $part }» είναι ένθετο σε βάθος μεγαλύτερο από { $limit } επίπεδα. Κανένα έργο Plume Creator δεν πλησιάζει κάτι τέτοιο, και η ανάγνωσή του θα μπορούσε να προκαλέσει κατάρρευση του Skribisto. Δεν γράφτηκε τίποτα.
 
 import-plume-declares-entities = Το έργο δεν εισήχθη: το τμήμα του «{ $part }» δηλώνει οντότητες XML, κάτι που κανένα έργο Plume Creator δεν κάνει. Η ανάπτυξή τους θα μπορούσε να απαιτήσει περισσότερη μνήμη από όση διαθέτει ο υπολογιστής και να προκαλέσει κατάρρευση του Skribisto. Δεν γράφτηκε τίποτα.
+import-plume-no-outline = Αυτό είναι ένα συμπιεσμένο αρχείο, αλλά όχι έργο Plume Creator: δεν έχει διάρθρωση. Δεν γράφτηκε τίποτα.
+import-plume-empty-outline = Το αρχείο διάρθρωσης αυτού του έργου Plume Creator είναι κενό, οπότε δεν υπάρχει τίποτα για εισαγωγή. Δεν γράφτηκε τίποτα.
+import-plume-wrong-document = Αυτό δεν είναι έργο Plume Creator: το τμήμα του «{ $part }» είναι έγγραφο «{ $tag }». Δεν γράφτηκε τίποτα.
+import-plume-too-new = Το τμήμα «{ $part }» αυτού του έργου γράφτηκε από νεότερο Plume Creator (έκδοση { $version }) από όσο μπορεί να διαβάσει το Skribisto (έως την { $supported }). Δεν γράφτηκε τίποτα.
 
 import-manuskript-title = Εισαγωγή έργου Manuskript
 import-manuskript-source = Έργο Manuskript
@@ -963,6 +972,7 @@ import-manuskript-summary-note = Περίληψη
 import-manuskript-importance-minor = Δευτερεύον
 import-manuskript-importance-secondary = Δεύτερο πλάνο
 import-manuskript-importance-main = Κεντρικό
+import-manuskript-notes-of = { $title } (σημειώσεις)
 
 import-manuskript-progress-title = Εισαγωγή έργου Manuskript…
 
@@ -980,11 +990,1404 @@ import-manuskript-nested-too-deep = Το έργο δεν εισήχθη: το α
 import-manuskript-folders-too-deep = Το έργο δεν εισήχθη: ένα από τα αρχεία του βρίσκεται σε βάθος μεγαλύτερο από { $limit } φακέλους. Κανένα έργο Manuskript δεν πλησιάζει κάτι τέτοιο, και η ανάγνωσή του θα μπορούσε να προκαλέσει κατάρρευση του Skribisto. Δεν γράφτηκε τίποτα.
 
 import-manuskript-declares-entities = Το έργο δεν εισήχθη: το αρχείο του «{ $part }» δηλώνει οντότητες XML, κάτι που κανένα έργο Manuskript δεν κάνει. Η ανάπτυξή τους θα μπορούσε να απαιτήσει περισσότερη μνήμη από όση διαθέτει ο υπολογιστής και να προκαλέσει κατάρρευση του Skribisto. Δεν γράφτηκε τίποτα.
+import-manuskript-not-a-project-file = Το «{ $file }» δεν είναι ούτε συμπιεσμένο αρχείο έργου Manuskript ούτε το μικρό αρχείο .msk που δείχνει σε έναν φάκελο έργου. Δεν γράφτηκε τίποτα.
+import-manuskript-folder-missing = Το «{ $stub }» δείχνει σε έναν φάκελο έργου με το όνομα «{ $folder }» δίπλα του, αλλά αυτός ο φάκελος δεν υπάρχει εκεί. Ένα έργο Manuskript σε λειτουργία φακέλου αποτελείται και από τα δύο, και πρέπει να μεταφέρονται μαζί. Δεν γράφτηκε τίποτα.
+import-manuskript-not-a-project = Αυτό δεν μοιάζει με έργο Manuskript: δεν έχει ούτε σήμανση Manuskript ούτε διάρθρωση. Δεν γράφτηκε τίποτα.
+import-manuskript-format-too-new = Αυτό το έργο είναι στη μορφή { $version } του Manuskript, νεότερη από όσο μπορεί να διαβάσει το Skribisto (έως την { $supported }). Δεν γράφτηκε τίποτα.
+import-manuskript-too-many-files = Το έργο δεν εισήχθη: περιέχει περισσότερα από { $limit } αρχεία, πολύ περισσότερα από οποιοδήποτε έργο Manuskript. Δεν γράφτηκε τίποτα.
+import-manuskript-too-large = Το έργο δεν εισήχθη: είναι μεγαλύτερο από τα { $limit } MB που διαβάζει το Skribisto από ένα έργο Manuskript. Δεν γράφτηκε τίποτα.
+project-import-close = Κλείσιμο
+project-import-location = Φάκελος προορισμού
+project-import-location-title = Επιλέξτε φάκελο προορισμού
+project-import-name = Όνομα αρχείου
+project-import-name-placeholder = Όνομα έργου
+project-import-will-create = Θα δημιουργηθεί
+project-import-cancel = Ακύρωση
+project-import-import = Εισαγωγή
+project-import-location-required = Επιλέξτε φάκελο προορισμού
+project-import-location-missing = Αυτός ο φάκελος δεν υπάρχει
+project-import-location-not-folder = Αυτή η διαδρομή δεν είναι φάκελος
+project-import-location-readonly = Αυτός ο φάκελος δεν είναι εγγράψιμος
+project-import-name-required = Δώστε ένα όνομα αρχείου
+project-import-name-exists = Υπάρχει ήδη ένα αρχείο με αυτό το όνομα εδώ. Η εισαγωγή θα ζητήσει επιβεβαίωση για την αντικατάσταση
+project-import-name-is-folder = Ένας φάκελος με αυτό το όνομα βρίσκεται ήδη εδώ, ίσως ένα έργο αποθηκευμένο ως φάκελος. Μια εισαγωγή δεν μπορεί να τον αντικαταστήσει: επιλέξτε άλλο όνομα
+project-import-overwrite-title = Αντικατάσταση του υπάρχοντος αρχείου;
+project-import-overwrite-text = Το «{ $name }» υπάρχει ήδη. Αντικατάσταση με το εισαγόμενο έργο;
+project-import-busy-title = Εισάγεται ένα άλλο έργο
+project-import-busy-text = Τα έργα εισάγονται ένα κάθε φορά. Περιμένετε να τελειώσει η τρέχουσα εισαγωγή ή ακυρώστε την, και μετά ξεκινήστε ξανά αυτή.
+project-import-progress-announcement = { $title } { $phase }
+project-import-stopping = Διακοπή της εισαγωγής…
+project-import-cancelled = Η εισαγωγή ακυρώθηκε
+project-import-open-now = Άνοιγμα τώρα
+project-import-details = Λεπτομέρειες
+project-import-report = { $count ->
+    [one] 1 σημείο που πρέπει να γνωρίζετε για αυτή την εισαγωγή
+   *[other] { $count } σημεία που πρέπει να γνωρίζετε για αυτή την εισαγωγή
+}
+project-import-report-title = Σχετικά με αυτή την εισαγωγή
+project-import-error-title = Αδυναμία εισαγωγής του έργου
+project-import-failed-cancelled = Η εισαγωγή ακυρώθηκε. Δεν γράφτηκε τίποτα.
+project-import-failed-target-exists = Το «{ $file }» υπάρχει ήδη, και η εισαγωγή δεν είχε άδεια να το αντικαταστήσει. Δεν γράφτηκε τίποτα.
+project-import-failed-target-folder = Το «{ $file }» είναι φάκελος, ίσως ένα έργο αποθηκευμένο ως φάκελος, και μια εισαγωγή δεν μπορεί να τον αντικαταστήσει. Επιλέξτε άλλο όνομα. Δεν γράφτηκε τίποτα.
+project-import-failed-not-written = Δεν ήταν δυνατή η εγγραφή του «{ $file }» στο «{ $folder }» ({ $reason }). Δεν γράφτηκε τίποτα.
+project-import-failed-disk-full = Δεν υπάρχει αρκετός ελεύθερος χώρος στο «{ $folder }» για την εγγραφή του «{ $file }». Ελευθερώστε χώρο εκεί και κάντε ξανά την εισαγωγή. Δεν γράφτηκε τίποτα.
+project-import-failed-source-missing = Το «{ $file }» δεν βρίσκεται πια εκεί. Δεν γράφτηκε τίποτα.
+project-import-failed-unreadable = Το Skribisto δεν μπόρεσε να διαβάσει το «{ $file }» ({ $reason }). Δεν γράφτηκε τίποτα.
+project-import-failed-archive-damaged = Το «{ $file }» είναι συμπιεσμένο αρχείο που δεν μπόρεσε να διαβαστεί, πιθανότατα επειδή είναι κατεστραμμένο ({ $reason }). Δεν γράφτηκε τίποτα.
+project-import-failed-archive-entries = Το έργο δεν εισήχθη: το συμπιεσμένο αρχείο του απαριθμεί { $entries } αρχεία, περισσότερα από τα { $limit } που μπορεί να περιέχει ένα έργο, κάτι που κάνει μόνο ένα αρχείο φτιαγμένο για να εξαντλήσει τη μνήμη. Δεν γράφτηκε τίποτα.
+project-import-failed-archive-member = Το έργο δεν εισήχθη: το τμήμα του «{ $part }» αποσυμπιέζεται σε περισσότερα από { $limit } MB, κάτι που κάνει μόνο ένα αρχείο φτιαγμένο για να εξαντλήσει τη μνήμη. Δεν γράφτηκε τίποτα.
+project-import-failed-archive-size = Το έργο δεν εισήχθη: αποσυμπιέζεται σε περισσότερα από { $limit } MB, κάτι που κάνει μόνο ένα αρχείο φτιαγμένο για να εξαντλήσει τη μνήμη. Δεν γράφτηκε τίποτα.
+project-import-failed-nested = Το έργο δεν εισήχθη: το τμήμα του «{ $part }» είναι ένθετο σε βάθος μεγαλύτερο από { $limit } επίπεδα, και η ανάγνωσή του θα μπορούσε να προκαλέσει κατάρρευση του Skribisto. Δεν γράφτηκε τίποτα.
+project-import-failed-entities = Το έργο δεν εισήχθη: το τμήμα του «{ $part }» δηλώνει οντότητες XML. Η ανάπτυξή τους θα μπορούσε να απαιτήσει περισσότερη μνήμη από όση διαθέτει ο υπολογιστής και να προκαλέσει κατάρρευση του Skribisto. Δεν γράφτηκε τίποτα.
+project-import-failed-folders = Το έργο δεν εισήχθη: ένα από τα αρχεία του βρίσκεται σε βάθος μεγαλύτερο από { $limit } φακέλους, και η ανάγνωσή του θα μπορούσε να προκαλέσει κατάρρευση του Skribisto. Δεν γράφτηκε τίποτα.
+project-import-failed-malformed = Το έργο δεν εισήχθη: το τμήμα του «{ $part }» είναι κατεστραμμένο και δεν μπορεί να διαβαστεί ({ $reason }). Δεν γράφτηκε τίποτα.
+project-import-failed-scrivener-refused = Το Skribisto δεν μπορεί να εισαγάγει αυτό το έργο Scrivener. Δεν γράφτηκε τίποτα.
+project-import-failed-scrivener-question = Το έργο Scrivener θέτει ένα ερώτημα στο οποίο δεν απάντησε ο έλεγχός του. Κάντε νέο έλεγχο και μετά την εισαγωγή. Δεν γράφτηκε τίποτα.
+project-import-failed-scrivener-not-accepted = Το έργο Scrivener θέτει ένα ερώτημα που δεν έχετε αποδεχτεί ακόμη. Κάντε νέο έλεγχο και μετά την εισαγωγή. Δεν γράφτηκε τίποτα.
+project-import-failed-scrivener-changed = Το έργο Scrivener άλλαξε αφού το ελέγξατε. Κάντε νέο έλεγχο και μετά την εισαγωγή. Δεν γράφτηκε τίποτα.
+project-import-failed-internal = Η εισαγωγή σταμάτησε σε ένα σφάλμα που το Skribisto δεν περίμενε: { $detail }
 
 import-target-open-title = Αυτό το έργο είναι ανοιχτό
 import-target-open-text = Το «{ $name }» είναι ανοιχτό στο Skribisto. Μια εισαγωγή πάνω του θα αντικαθιστούσε το έργο στο οποίο δουλεύετε, και η επόμενη αποθήκευσή σας θα έγραφε εκείνο το έργο ξανά πάνω από την εισαγωγή. Επιλέξτε άλλο όνομα αρχείου ή κλείστε πρώτα το έργο.
 
 import-warnings-announcement = { $result } { $notice }.
+quit-import-running-title = Μια εισαγωγή βρίσκεται ακόμη σε εξέλιξη
+quit-import-running-text = Το Skribisto εισάγει ακόμη το «{ $name }». Αν κάνετε έξοδο τώρα, η εισαγωγή σταματά: δεν γράφεται τίποτα, και το έργο από το οποίο κάνετε την εισαγωγή μένει όπως ήταν.
+quit-import-stop = Διακοπή της εισαγωγής και έξοδος
+
+## Import a Scrivener project: the wizard
+import-scrivener-title = Εισαγωγή έργου Scrivener
+import-scrivener-step-project = Έργο
+import-scrivener-step-review = Έλεγχος
+import-scrivener-step-save = Αποθήκευση
+import-scrivener-back = Πίσω
+import-scrivener-next = Επόμενο
+import-scrivener-import = Εισαγωγή
+import-scrivener-cancel = Ακύρωση
+import-scrivener-help = Βοήθεια
+
+## Project step: choosing the project
+import-scrivener-drop-title = Αφήστε εδώ ένα έργο Scrivener
+import-scrivener-drop-hint = Ένα έργο .scriv, το αρχείο .scrivx μέσα σε αυτό, ένα αντίγραφο ασφαλείας .zip ή ένα .scrivtemplate
+import-scrivener-source = Έργο Scrivener
+import-scrivener-source-placeholder = Διαδρομή του έργου
+import-scrivener-choose-file = Επιλογή αρχείου…
+import-scrivener-choose-folder = Επιλογή φακέλου…
+import-scrivener-source-hint = Επιλέξτε τον φάκελο .scriv του έργου, ή ανοίξτε τον και επιλέξτε το αρχείο .scrivx που περιέχει. Λειτουργεί και ένα αντίγραφο ασφαλείας .zip.
+import-scrivener-source-hint-mac = Αν το έργο εμφανίζεται ως ένα αρχείο, χρησιμοποιήστε την «Επιλογή αρχείου…». Αν εμφανίζεται ως φάκελος, χρησιμοποιήστε την «Επιλογή φακέλου…». Λειτουργεί και ένα αντίγραφο ασφαλείας .zip.
+import-scrivener-dialog-file-title = Επιλέξτε ένα έργο Scrivener
+import-scrivener-dialog-folder-title = Επιλέξτε τον φάκελο ενός έργου Scrivener
+import-scrivener-dialog-filter = Έργο Scrivener
+import-scrivener-source-missing = Δεν υπάρχει τίποτα σε αυτή τη διαδρομή
+import-scrivener-source-unreadable-name = Αυτό το όνομα δεν μπορεί να διαβαστεί. Μετονομάστε το έργο στη διαχείριση αρχείων σας και μετά επιλέξτε το ξανά.
+import-scrivener-empty-hint = Επιλέξτε ένα έργο για να δείτε τι βρίσκει μέσα του το Skribisto.
+import-scrivener-reading = Ανάγνωση του έργου…
+import-scrivener-stop-reading = Διακοπή ανάγνωσης
+import-scrivener-read-failed = Το έργο δεν μπόρεσε να διαβαστεί
+import-scrivener-read-failed-body = Κάτι πήγε στραβά κατά την ανάγνωσή του. Δοκιμάστε μια νέα ανάγνωση ή δείτε τις λεπτομέρειες.
+import-scrivener-details = Λεπτομέρειες
+import-scrivener-check-again = Νέα ανάγνωση
+import-scrivener-refusal-unknown-title = Αυτό το έργο δεν μπορεί να εισαχθεί
+import-scrivener-refusal-unknown-body = Το Skribisto δεν ξέρει πώς να το μεταφέρει. Οι λεπτομέρειες αναφέρουν τον λόγο.
+
+## Project step: the project card
+import-scrivener-made-with-mac = Αποθηκεύτηκε τελευταία φορά από το Scrivener { $version } για macOS
+import-scrivener-made-with-windows = Αποθηκεύτηκε τελευταία φορά από το Scrivener { $version } για Windows
+import-scrivener-made-with-linux = Αποθηκεύτηκε τελευταία φορά από το Scrivener { $version } για Linux
+import-scrivener-made-with-ios = Αποθηκεύτηκε τελευταία φορά από το Scrivener { $version } για iPhone και iPad
+import-scrivener-made-with-version = Αποθηκεύτηκε τελευταία φορά από το Scrivener { $version }
+import-scrivener-made-with-unknown = Έργο Scrivener, μορφή { $format }
+import-scrivener-saved-on = Αποθηκεύτηκε στις { $date } στη συσκευή «{ $device }»
+import-scrivener-saved-on-no-device = Αποθηκεύτηκε στις { $date }
+import-scrivener-card-counts = { $documents ->
+    [one] 1 έγγραφο
+   *[other] { $documents } έγγραφα
+}, { $manuscript } στο χειρόγραφο
+
+## Review step
+import-scrivener-review-hint = Έτσι θα μεταφερθεί το ντοσιέ σας. Τίποτα δεν γράφεται μέχρι να κάνετε την εισαγωγή, και πολλά στοιχεία μπορούν αργότερα να αλλάξουν είδος στο ντοσιέ, με τη «Μετατροπή σε».
+import-scrivener-choices-structure = Επίπεδα
+import-scrivener-top-level = Φάκελοι ανώτερου επιπέδου
+import-scrivener-choices-text = Κείμενο
+import-scrivener-choice-containers = Φάκελοι στο επίπεδο { $depth }
+import-scrivener-choice-texts = Έγγραφα στο επίπεδο { $depth }
+import-scrivener-choice-count = { $count ->
+    [one] 1 στοιχείο
+   *[other] { $count } στοιχεία
+}
+import-scrivener-choice-count-example = { $count ->
+    [one] 1 στοιχείο: «{ $example }»
+   *[other] { $count } στοιχεία, όπως το «{ $example }»
+}
+import-scrivener-rung-part = Μέρη
+import-scrivener-rung-chapter = Κεφάλαια
+import-scrivener-rung-plain = Απλοί φάκελοι
+import-scrivener-texts-scenes = Σκηνές
+import-scrivener-texts-chapters = Κεφάλαια
+import-scrivener-choice-books = Βιβλία στο χειρόγραφο
+import-scrivener-books-one = Ένα βιβλίο
+import-scrivener-books-several = Ένα βιβλίο ανά φάκελο
+import-scrivener-choice-split = { $count ->
+    [one] Διαίρεση του «{ $title }» στην επικεφαλίδα του
+   *[other] Διαίρεση του «{ $title }» στις { $count } επικεφαλίδες του
+}
+import-scrivener-root-items = { $count ->
+    [one] 1 στοιχείο
+   *[other] { $count } στοιχεία
+}
+import-scrivener-root-items-manuscript = { $count ->
+    [one] 1 στοιχείο, μοιάζει με χειρόγραφο
+   *[other] { $count } στοιχεία, μοιάζουν με χειρόγραφο
+}
+import-scrivener-dest-notes = Σημειώσεις
+import-scrivener-dest-story-bible = Βίβλος ιστορίας
+import-scrivener-dest-manuscript = Άλλο βιβλίο
+import-scrivener-dest-leave-out = Παράλειψη
+import-scrivener-choice-trash = { $count ->
+    [one] Μεταφορά του κάδου (1 στοιχείο)
+   *[other] Μεταφορά του κάδου ({ $count } στοιχεία)
+}
+import-scrivener-trash-detail = { $count ->
+    [0] Κανένα δεν περιέχει κείμενο.
+    [one] 1 από αυτά περιέχει κείμενο.
+   *[other] { $count } από αυτά περιέχουν κείμενο.
+}
+import-scrivener-choice-blank-lines = Οι κενές γραμμές γίνονται διαχωριστικά σκηνών
+import-scrivener-choice-ornaments = Οι γραμμές με διακοσμητικά γίνονται διαχωριστικά σκηνών
+import-scrivener-preview-label = Δομή του νέου έργου
+import-scrivener-col-title = Τίτλος
+import-scrivener-col-becomes = Γίνεται
+import-scrivener-col-exports = Στις εξαγωγές
+import-scrivener-in-exports-yes = Ναι
+import-scrivener-in-exports-no = Όχι
+import-scrivener-becomes-item = Στοιχείο
+import-scrivener-becomes-trashed = Στον κάδο
+import-scrivener-before-title = Πριν από την εισαγωγή
+import-scrivener-review-error-unreadable = Ο έλεγχος δεν μπόρεσε να προετοιμαστεί. Επιλέξτε ξανά το έργο.
+import-scrivener-review-error-choice = Αυτή η επιλογή δεν ταιριάζει στο έργο. Επιλέξτε ξανά το έργο.
+import-scrivener-review-error-unmappable = Με αυτή την επιλογή, το ντοσιέ δεν μπορεί να μεταφερθεί χωρίς να χαθεί κάτι. Κάντε διαφορετική επιλογή ή αναφέρετε το πρόβλημα.
+
+## Save step
+import-scrivener-save-hint = Η εισαγωγή δημιουργεί ένα νέο έργο Skribisto. Το έργο σας στο Scrivener μόνο διαβάζεται, δεν αλλάζει ποτέ.
+import-scrivener-title-field = Τίτλος
+import-scrivener-author = Συγγραφέας
+import-scrivener-language = Γλώσσα
+import-scrivener-location-inside-project = Επιλέξτε έναν φάκελο έξω από το έργο Scrivener. Το Scrivener κρατά εκεί μέσα μόνο τα δικά του αρχεία.
+import-scrivener-copy-research-label = Αντιγραφή των αρχείων έρευνας δίπλα στο νέο έργο
+import-scrivener-copy-research = { $count ->
+    [one] 1 αρχείο έρευνας που το Skribisto δεν μπορεί να ανοίξει, όπως ένα PDF ή ένας ήχος, μπαίνει σε έναν φάκελο δίπλα στο έργο. Αν δεν το επιλέξετε, η σημείωσή του λέει πού βρίσκεται στο έργο σας στο Scrivener.
+   *[other] { $count } αρχεία έρευνας που το Skribisto δεν μπορεί να ανοίξει, όπως PDF ή ήχοι, μπαίνουν σε έναν φάκελο δίπλα στο έργο. Αν δεν το επιλέξετε, οι σημειώσεις τους λένε πού βρίσκονται στο έργο σας στο Scrivener.
+}
+import-scrivener-default-name = Έργο Scrivener
+
+## Progress and result
+import-scrivener-progress-title = Εισαγωγή έργου Scrivener…
+import-scrivener-done-title = Το έργο Scrivener εισήχθη
+import-scrivener-done = { $items ->
+    [one] Το νέο έργο περιέχει 1 στοιχείο.
+   *[other] Το νέο έργο περιέχει { $items } στοιχεία.
+}
+import-scrivener-done-check = { $items ->
+    [one] Το νέο έργο περιέχει 1 στοιχείο.
+   *[other] Το νέο έργο περιέχει { $items } στοιχεία.
+} { $findings ->
+    [one] 1 σημείο χρειάζεται μια ματιά.
+   *[other] { $findings } σημεία χρειάζονται μια ματιά.
+}
+import-scrivener-review-again = Νέος έλεγχος
+
+## The import's report (the dialog See report opens)
+import-scrivener-see-report = Προβολή αναφοράς
+import-scrivener-report-from = Διαβάστηκε από: { $path }
+import-scrivener-report-to = Γράφτηκε σε: { $path }
+import-scrivener-report-came-across = Τι μεταφέρθηκε
+import-scrivener-report-nothing-counted = Δεν μετρήθηκε τίποτα.
+import-scrivener-report-items = { $count ->
+    [one] 1 στοιχείο
+   *[other] { $count } στοιχεία
+}
+import-scrivener-report-words = { $count ->
+    [one] 1 λέξη
+   *[other] { $count } λέξεις
+}
+import-scrivener-report-synopses = { $count ->
+    [one] 1 σύνοψη
+   *[other] { $count } συνόψεις
+}
+import-scrivener-report-document-notes = { $count ->
+    [one] οι σημειώσεις 1 εγγράφου
+   *[other] οι σημειώσεις { $count } εγγράφων
+}
+import-scrivener-report-comments = { $count ->
+    [one] 1 σχόλιο
+   *[other] { $count } σχόλια
+}
+import-scrivener-report-footnotes = { $count ->
+    [one] 1 υποσημείωση
+   *[other] { $count } υποσημειώσεις
+}
+import-scrivener-report-pictures = { $count ->
+    [one] 1 εικόνα
+   *[other] { $count } εικόνες
+}
+import-scrivener-report-templates = { $count ->
+    [one] 1 πρότυπο σημείωσης
+   *[other] { $count } πρότυπα σημειώσεων
+}
+import-scrivener-report-tags = { $count ->
+    [one] 1 ετικέτα
+   *[other] { $count } ετικέτες
+}
+import-scrivener-report-statuses = { $count ->
+    [one] 1 κατάσταση
+   *[other] { $count } καταστάσεις
+}
+import-scrivener-report-trashed = { $count ->
+    [one] 1 στοιχείο στον κάδο
+   *[other] { $count } στοιχεία στον κάδο
+}
+import-scrivener-report-research-files = { $count ->
+    [one] 1 αρχείο έρευνας
+   *[other] { $count } αρχεία έρευνας
+}
+import-scrivener-report-choices = Τι επιλέξατε
+import-scrivener-report-accepted-mobile = Εισαγάγατε το έργο χωρίς τις αλλαγές που έγιναν στο Scrivener για iPhone ή iPad και δεν είχαν περάσει ακόμη σε αυτό.
+import-scrivener-report-accepted-no-text = Εισαγάγατε αυτό το αντίγραφο με τα έγγραφά του κενά, αφού κανένα από τα κείμενά τους δεν βρισκόταν σε αυτό.
+import-scrivener-report-choice = { $subject }: { $answer }
+import-scrivener-report-yes = ναι
+import-scrivener-report-no = όχι
+import-scrivener-report-research-copied = Τα αρχεία έρευνας που το Skribisto δεν μπορεί να ανοίξει αντιγράφηκαν στο «{ $folder }», δίπλα στο νέο έργο.
+import-scrivener-report-research-not-copied = Τα αρχεία έρευνας που το Skribisto δεν μπορεί να ανοίξει δεν αντιγράφηκαν. Οι σημειώσεις τους λένε πού βρίσκονται στο έργο σας στο Scrivener.
+import-scrivener-report-research-copied-except = { $count ->
+    [one] Τα αρχεία έρευνας που το Skribisto δεν μπορεί να ανοίξει αντιγράφηκαν στο «{ $folder }», δίπλα στο νέο έργο, εκτός από 1 που μένει στο έργο σας στο Scrivener. Η σημείωσή του λέει πού βρίσκεται.
+   *[other] Τα αρχεία έρευνας που το Skribisto δεν μπορεί να ανοίξει αντιγράφηκαν στο «{ $folder }», δίπλα στο νέο έργο, εκτός από { $count } που μένουν στο έργο σας στο Scrivener. Οι σημειώσεις τους λένε πού βρίσκονται.
+}
+import-scrivener-report-research-none-copied = { $count ->
+    [one] Ζητήσατε να αντιγραφούν τα αρχεία έρευνας, αλλά 1 δεν μπόρεσε να αντιγραφεί. Μένει στο έργο σας στο Scrivener, και η σημείωσή του λέει πού βρίσκεται.
+   *[other] Ζητήσατε να αντιγραφούν τα αρχεία έρευνας, αλλά { $count } δεν μπόρεσαν να αντιγραφούν. Μένουν στο έργο σας στο Scrivener, και οι σημειώσεις τους λένε πού βρίσκονται.
+}
+import-scrivener-report-chose-project = Επιλέξατε να εισαγάγετε το «{ $project }», ένα από τα έργα που περιείχε η επιλογή σας.
+import-scrivener-report-chose-manifest = Επιλέξατε το αρχείο ντοσιέ «{ $file }».
+import-scrivener-report-chose-enclosing = Επιλέξατε κάτι μέσα στο «{ $project }», οπότε εισήχθη ολόκληρο το έργο.
+import-scrivener-report-chose-upgraded = Εισαγάγατε το «{ $current }», το έργο στο οποίο συνεχίσατε να γράφετε, και όχι το αντίγραφο που κράτησε το Scrivener πριν από μια ενημέρωση.
+import-scrivener-report-chose-backup = Εισαγάγατε το «{ $backup }», το παλαιότερο αντίγραφο που κράτησε το Scrivener πριν από μια ενημέρωση.
+import-scrivener-report-title-placeholder-rejected = Ο τίτλος στις ρυθμίσεις του έργου ήταν σύμβολο κράτησης θέσης ενός προτύπου, οπότε το Skribisto πρότεινε στη θέση του το όνομα του έργου.
+import-scrivener-report-author-placeholder-rejected = Το όνομα του συγγραφέα στις ρυθμίσεις του έργου ήταν σύμβολο κράτησης θέσης ενός προτύπου, οπότε το Skribisto δεν πρότεινε κανένα.
+import-scrivener-report-title-from-compile-settings = Το Skribisto πρότεινε τον τίτλο που δηλώνουν οι ρυθμίσεις μεταγλώττισης του έργου: το όνομα που είχε το έργο όταν δημιουργήθηκε, εκτός αν ορίστηκε εκεί τίτλος στο Scrivener.
+import-scrivener-report-title-from-template = Το Skribisto πρότεινε τον τίτλο του ίδιου του προτύπου.
+import-scrivener-report-title-from-folder-name = Το Skribisto πρότεινε ως τίτλο το όνομα του έργου.
+import-scrivener-report-title-from-project-properties = Το Skribisto πρότεινε τον τίτλο που δηλώνουν οι ιδιότητες του έργου.
+import-scrivener-report-author-from-project = Το Skribisto πρότεινε το όνομα συγγραφέα που δηλώνουν οι ρυθμίσεις του έργου. Εκεί μπορεί να έχει μείνει ο συγγραφέας ενός προτύπου, και θα τυπωνόταν σε μια σελίδα τίτλου.
+import-scrivener-report-language-not-stated = Το έργο δεν δήλωνε τη γλώσσα του, οπότε το Skribisto πρότεινε εκείνη στην οποία εμφανίζεται το ίδιο. Η γλώσσα καθορίζει πώς μετριούνται οι λέξεις και πώς γράφονται τα εισαγωγικά.
+import-scrivener-report-language-from-script = Το Skribisto πρότεινε τη γλώσσα με βάση το σύστημα γραφής του χειρογράφου ({ $tag }).
+import-scrivener-report-you-changed-it = { $hint } Αντικαταστήσατε αυτή την πρόταση με τη δική σας.
+import-scrivener-report-content-salvaged-text = Το κείμενο του «{ $item }» έλειπε από το έργο. Οι λέξεις του προέρχονται από το ευρετήριο αναζήτησης του Scrivener, ως απλό κείμενο και ίσως από παλαιότερη έκδοση: ελέγξτε τις.
+import-scrivener-report-content-salvaged-notes = Οι σημειώσεις του «{ $item }» έλειπαν από το έργο. Οι λέξεις τους προέρχονται από το ευρετήριο αναζήτησης του Scrivener, ως απλό κείμενο και ίσως από παλαιότερη έκδοση: ελέγξτε τις.
+import-scrivener-report-content-salvaged-synopsis = Η σύνοψη του «{ $item }» έλειπε από το έργο. Οι λέξεις της προέρχονται από το ευρετήριο αναζήτησης του Scrivener, ως απλό κείμενο και ίσως από παλαιότερη έκδοση: ελέγξτε τις.
+import-scrivener-report-document-others = { $others ->
+    [one] { $sentence } Το ίδιο συμβαίνει και σε 1 ακόμη σημείο, που αναφέρεται παρακάτω.
+   *[other] { $sentence } Το ίδιο συμβαίνει και σε { $others } ακόμη σημεία, που αναφέρονται παρακάτω.
+}
+import-scrivener-report-item-notes = { $path } (σημειώσεις εγγράφου)
+import-scrivener-report-item-synopsis = { $path } (σύνοψη)
+import-scrivener-report-item-project-note = { $path } (σημείωση έργου)
+import-scrivener-report-item-recovered = { $path } (ανακτημένο κείμενο)
+import-scrivener-report-untitled = Χωρίς τίτλο
+import-scrivener-report-no-findings = Η εισαγωγή δεν έχει τίποτε άλλο να αναφέρει.
+import-scrivener-report-group-unread = Δεν μπόρεσαν να διαβαστούν
+import-scrivener-report-group-check = Ελέγξτε αυτά
+import-scrivener-report-group-changed = Μεταφέρθηκαν διαφορετικά
+import-scrivener-report-group-left = Έμειναν πίσω
+import-scrivener-report-group-count = { $group } ({ $count })
+import-scrivener-report-items-toggle = { $count ->
+    [one] 1 στοιχείο
+   *[other] { $count } στοιχεία
+}
+import-scrivener-report-items-toggle-named = { $count ->
+    [one] 1 στοιχείο: { $line }
+   *[other] { $count } στοιχεία: { $line }
+}
+import-scrivener-report-names-toggle = { $count ->
+    [one] 1 όνομα
+   *[other] { $count } ονόματα
+}
+import-scrivener-report-names-toggle-named = { $count ->
+    [one] 1 όνομα: { $line }
+   *[other] { $count } ονόματα: { $line }
+}
+import-scrivener-report-more = { $count ->
+    [one] Και 1 ακόμη.
+   *[other] Και { $count } ακόμη.
+}
+import-scrivener-report-open-item = Άνοιγμα στον επεξεργαστή
+import-scrivener-report-links-hint = Ανοίξτε το νέο έργο και μετά εμφανίστε ξανά αυτή την αναφορά από την παλέτα εντολών: κάθε στοιχείο που αναφέρεται εδώ θα ανοίγει τότε με ένα κλικ.
+import-scrivener-copy-report = Αντιγραφή αναφοράς
+import-scrivener-report-copied = Η αναφορά αντιγράφηκε
+import-scrivener-report-copy-failed = Η αναφορά δεν μπόρεσε να αντιγραφεί.
+import-scrivener-report-close = Κλείσιμο
+import-scrivener-report-none-title = Καμία αναφορά εισαγωγής
+import-scrivener-report-none = Καμία εισαγωγή από το Scrivener δεν έχει ολοκληρωθεί από τότε που ξεκίνησε το Skribisto. Το Skribisto κρατά τις αναφορές των πιο πρόσφατων εισαγωγών μέχρι να κλείσει.
+import-scrivener-report-gone = Η αναφορά αυτής της εισαγωγής δεν διατηρείται πια. Το Skribisto κρατά { $count ->
+    [one] την αναφορά της τελευταίας εισαγωγής
+   *[other] τις αναφορές των { $count } τελευταίων εισαγωγών
+} μέχρι να κλείσει.
+
+## Words the import writes into the new project, in the language Skribisto shows itself in
+import-scrivener-manuscript-binder = Χειρόγραφο
+import-scrivener-notes-binder = Σημειώσεις
+import-scrivener-notes-of = { $title } (σημειώσεις)
+import-scrivener-project-notes = Σημειώσεις έργου
+import-scrivener-recovered = Ανακτημένα κείμενα
+import-scrivener-untitled-template = Πρότυπο χωρίς τίτλο
+import-scrivener-research-folder = { $name } – αρχεία έρευνας
+import-scrivener-list-separator = {", "}
+import-scrivener-label-details = Από το πεδίο «{ $field }» του Scrivener
+import-scrivener-status-details = Από το πεδίο «{ $field }» του Scrivener
+import-scrivener-unnamed-label = Λεζάντα { $number }
+import-scrivener-unnamed-status = Κατάσταση { $number }
+import-scrivener-label-tag = { $name } (λεζάντα)
+import-scrivener-untitled-tag = Χωρίς τίτλο
+import-scrivener-keyword-details = Η λέξη-κλειδί «{ $path }» στο Scrivener
+import-scrivener-unnamed-keyword = Λέξη-κλειδί { $number }
+import-scrivener-keyword-tag = { $name } (λέξη-κλειδί)
+import-scrivener-collection-details = Μια συλλογή στο Scrivener
+import-scrivener-collection-tag = { $name } (συλλογή)
+import-scrivener-field-details = Από το πεδίο «{ $field }» του Scrivener
+import-scrivener-field-value = { $field }: { $option }
+import-scrivener-field-tag = { $name } (πεδίο)
+import-scrivener-deadline-day = Προθεσμία
+import-scrivener-from-scrivener = Από το Scrivener
+import-scrivener-note-project = Έργο
+import-scrivener-note-project-bookmarks = Σελιδοδείκτες έργου
+import-scrivener-note-replacements = Αντικαταστάσεις μεταγλώττισης
+import-scrivener-note-auto-complete = Καταχωρίσεις αυτόματης συμπλήρωσης
+import-scrivener-note-saved-searches = Αποθηκευμένες αναζητήσεις
+import-scrivener-note-custom-metadata = Προσαρμοσμένα μεταδεδομένα
+import-scrivener-note-targets = Στόχοι
+import-scrivener-note-bookmarks = Σελιδοδείκτες
+import-scrivener-abbreviated-title = Συντομευμένος τίτλος
+import-scrivener-subjects = Θέματα
+import-scrivener-company = Εταιρεία
+import-scrivener-session-target = Στόχος συνεδρίας
+import-scrivener-session-target-calculated = Στόχος συνεδρίας, υπολογισμένος από το Scrivener με βάση την προθεσμία
+import-scrivener-writing-days = Ημέρες γραφής
+import-scrivener-weekday-monday = Δευτέρα
+import-scrivener-weekday-tuesday = Τρίτη
+import-scrivener-weekday-wednesday = Τετάρτη
+import-scrivener-weekday-thursday = Πέμπτη
+import-scrivener-weekday-friday = Παρασκευή
+import-scrivener-weekday-saturday = Σάββατο
+import-scrivener-weekday-sunday = Κυριακή
+import-scrivener-draft-target = Στόχος χειρογράφου
+import-scrivener-deadline = Προθεσμία
+import-scrivener-unit-words = λέξεις
+import-scrivener-unit-characters = χαρακτήρες
+import-scrivener-unit-pages = σελίδες
+import-scrivener-search-query = Αναζήτηση για
+import-scrivener-search-in = Αναζήτηση σε
+import-scrivener-search-operator = Αντιστοίχιση
+import-scrivener-search-in-all = όλα
+import-scrivener-search-in-title = τίτλοι
+import-scrivener-search-in-text = κείμενο
+import-scrivener-search-in-notes = σημειώσεις
+import-scrivener-search-in-synopsis = συνόψεις
+import-scrivener-search-in-keywords = λέξεις-κλειδιά
+import-scrivener-search-in-label = λεζάντες
+import-scrivener-search-in-status = καταστάσεις
+import-scrivener-search-in-section-type = τύποι ενοτήτων
+import-scrivener-search-in-custom-metadata = προσαρμοσμένα μεταδεδομένα
+import-scrivener-search-any = οποιαδήποτε λέξη
+import-scrivener-search-all = όλες οι λέξεις
+import-scrivener-search-exact = ακριβής φράση
+import-scrivener-label-value = { $label }: { $value }
+import-scrivener-replacement-regex = κανονική έκφραση
+import-scrivener-replacement-off = απενεργοποιημένη
+import-scrivener-in-own-note = Παρατίθενται μέσα στην ίδια τη σημείωση.
+
+## Import a Scrivener project: what the import says about the project, in the writer's words.
+## Every key the converter can give has a line here (see `import_scrivener::messages`).
+import-scrivener-paragraph = { $title }. { $body }
+
+## When the project cannot be imported
+import-scrivener-refusal-missing-title = Δεν υπάρχει τίποτα σε αυτή τη διαδρομή
+import-scrivener-refusal-missing-body = Το «{ $file }» δεν βρίσκεται πια εκεί. Επιλέξτε ξανά το έργο.
+import-scrivener-refusal-unreadable-title = Αυτό το έργο δεν μπορεί να διαβαστεί
+import-scrivener-refusal-unreadable-body = Το Skribisto δεν μπόρεσε να διαβάσει το «{ $file }» ({ $reason }). Βεβαιωθείτε ότι μπορείτε να το ανοίξετε και δοκιμάστε ξανά.
+import-scrivener-refusal-not-a-scrivener-project-title = Δεν υπάρχει έργο Scrivener εδώ
+import-scrivener-refusal-not-a-scrivener-project-body = Επιλέξτε τον φάκελο .scriv του έργου, το αρχείο .scrivx μέσα σε αυτόν, ένα αντίγραφο ασφαλείας .zip ή ένα .scrivtemplate.
+import-scrivener-refusal-manifest-without-files-title = Τα έγγραφα δεν υπάρχουν σε αυτό το αντίγραφο
+import-scrivener-refusal-manifest-without-files-body = Το «{ $manifest }» είναι εδώ, αλλά όχι ο φάκελος Files που περιέχει τα έγγραφα που απαριθμεί. Μια υπηρεσία συγχρονισμού ίσως δεν έχει τελειώσει την αντιγραφή του έργου, ή αντιγράφηκε μόνο το αρχείο .scrivx. Αν επιλέξατε το αρχείο .scrivx, επιλέξτε στη θέση του τον φάκελο του έργου με την «Επιλογή φακέλου…».
+import-scrivener-refusal-search-too-wide-title = Αυτός ο φάκελος περιέχει πάρα πολλά για αναζήτηση
+import-scrivener-refusal-search-too-wide-body = Έχει περισσότερους από { $limit } φακέλους για εξέταση. Επιλέξτε το ίδιο το έργο Scrivener.
+import-scrivener-refusal-scrivener-one-for-mac-title = Αυτό το έργο δημιουργήθηκε από το Scrivener 1 για Mac
+import-scrivener-refusal-scrivener-one-for-mac-body = Το Skribisto διαβάζει έργα από το Scrivener 2 και μεταγενέστερες εκδόσεις. Ανοίξτε το μία φορά στο Scrivener 2 ή 3 για να ενημερωθεί, ή μεταγλωττίστε το σε έγγραφο Word και εισαγάγετε εκείνο.
+import-scrivener-refusal-ios-stub-without-mobile-data-title = Αυτό είναι μόνο ένα αρχείο κράτησης θέσης από το Scrivener για iPhone ή iPad
+import-scrivener-refusal-ios-stub-without-mobile-data-body = Το ίδιο το έργο δεν είναι εδώ. Συγχρονίστε το από το iPhone ή το iPad σας, ή μοιραστείτε το από εκεί ως .zip, και εισαγάγετε εκείνο.
+import-scrivener-refusal-newer-title = Αυτό το έργο δημιουργήθηκε από νεότερο Scrivener
+import-scrivener-refusal-unknown-format-version-body = Η μορφή του, { $version }, δεν είναι κάποια που γνωρίζει το Skribisto. Ελέγξτε αν υπάρχει ενημέρωση του Skribisto. Μέχρι τότε, μεταγλωττίστε το σε έγγραφο Word στο Scrivener και εισαγάγετε εκείνο.
+import-scrivener-refusal-newer-format-stamp-body = Τα αρχεία του έχουν σήμανση έκδοσης { $stamp }, και το Skribisto διαβάζει έως την έκδοση { $newest }. Ελέγξτε αν υπάρχει ενημέρωση του Skribisto. Μέχρι τότε, μεταγλωττίστε το σε έγγραφο Word στο Scrivener και εισαγάγετε εκείνο.
+import-scrivener-refusal-version-stamp-unreadable-title = Η έκδοση του έργου δεν μπορεί να διαβαστεί
+import-scrivener-refusal-version-stamp-unreadable-body = Το αρχείο Files/version.txt του έργου δεν περιέχει αριθμό έκδοσης, οπότε το Skribisto δεν μπορεί να ξέρει αν διαβάζει αυτό το έργο. Ανοίξτε το έργο μία φορά στο Scrivener και μετά εισαγάγετέ το ξανά.
+import-scrivener-refusal-damaged-manifest-title = Το αρχείο ντοσιέ δεν μπορεί να διαβαστεί
+import-scrivener-refusal-damaged-manifest-body = Το «{ $manifest }» είναι κατεστραμμένο. { $spare_copies ->
+    [0] Ανοίξτε το έργο στο Scrivener, που μπορεί να το επιδιορθώσει, και μετά εισαγάγετέ το ξανά.
+    [one] Το Scrivener κρατά ένα εφεδρικό αντίγραφό του μέσα στο έργο, το οποίο το Skribisto δεν διαβάζει. Ανοίξτε το έργο στο Scrivener, που μπορεί να το επιδιορθώσει, και μετά εισαγάγετέ το ξανά.
+   *[other] Το Scrivener κρατά { $spare_copies } εφεδρικά αντίγραφά του μέσα στο έργο, τα οποία το Skribisto δεν διαβάζει. Ανοίξτε το έργο στο Scrivener, που μπορεί να το επιδιορθώσει, και μετά εισαγάγετέ το ξανά.
+}
+import-scrivener-refusal-damaged-manifest-new-project-placeholder-body = Το «{ $manifest }» είναι το κενό αρχείο που γράφει το Scrivener για ένα έργο που δεν έχει αποθηκεύσει ακόμη. Ανοίξτε το έργο στο Scrivener και αφήστε το να το αποθηκεύσει, και μετά εισαγάγετέ το ξανά.
+import-scrivener-refusal-manifest-too-large-title = Αυτό το αρχείο ντοσιέ είναι πολύ μεγάλο
+import-scrivener-refusal-manifest-too-large-body = Το «{ $manifest }» είναι μεγαλύτερο από τα { $limit } MB που διαβάζει το Skribisto. Κανένα πραγματικό έργο δεν πλησιάζει κάτι τέτοιο, οπότε το αρχείο ίσως είναι κατεστραμμένο.
+import-scrivener-refusal-no-item-identifiers-title = Το ντοσιέ δεν απαριθμεί κανένα έγγραφο που μπορεί να βρει το Skribisto
+import-scrivener-refusal-no-item-identifiers-body = Κανένα από τα στοιχεία του δεν φέρει αναγνωριστικό, οπότε τα αρχεία τους δεν μπορούν να βρεθούν. Ανοίξτε το έργο μία φορά στο Scrivener και μετά εισαγάγετέ το ξανά.
+import-scrivener-refusal-incomplete-copy-title = Τα έγγραφα λείπουν από αυτό το αντίγραφο
+import-scrivener-refusal-incomplete-copy-body = Ο φάκελος Files είναι εδώ, αλλά τα έγγραφα μέσα του όχι. Μια υπηρεσία συγχρονισμού ίσως δεν έχει τελειώσει την αντιγραφή του έργου. Περιμένετε να τελειώσει, ή αντιγράψτε ξανά ολόκληρο τον φάκελο .scriv, και μετά κάντε νέα ανάγνωση.
+import-scrivener-refusal-archive-title = Αυτό το συμπιεσμένο αρχείο δεν μπορεί να ανοιχτεί
+import-scrivener-refusal-archive-unreadable-body = Το «{ $file }» δεν μπόρεσε να διαβαστεί ({ $reason }). Ίσως είναι κατεστραμμένο. Αποσυμπιέστε το μόνοι σας και μετά επιλέξτε τον φάκελο .scriv που περιέχει.
+import-scrivener-refusal-archive-unsafe-name-title = Αυτό το συμπιεσμένο αρχείο δεν μπορεί να ανοιχτεί με ασφάλεια
+import-scrivener-refusal-archive-unsafe-name-body = Το «{ $file }» περιέχει ένα αρχείο με το όνομα «{ $member }», που θα κατέληγε έξω από το συμπιεσμένο αρχείο, γι' αυτό το Skribisto δεν το ανοίγει.
+import-scrivener-refusal-archive-unsafe-name-empty-body = Το «{ $file }» περιέχει ένα αρχείο χωρίς όνομα, γι' αυτό το Skribisto δεν το ανοίγει.
+import-scrivener-refusal-archive-unsafe-name-control-character-body = Το «{ $file }» περιέχει ένα αρχείο με χαρακτήρα ελέγχου στο όνομά του, γι' αυτό το Skribisto δεν το ανοίγει.
+import-scrivener-refusal-archive-too-large-title = Αυτό το συμπιεσμένο αρχείο είναι πολύ μεγάλο για να ανοιχτεί με ασφάλεια
+import-scrivener-refusal-archive-too-many-members-body = Περιέχει περισσότερα από { $limit } αρχεία. Αποσυμπιέστε το μόνοι σας και μετά επιλέξτε τον φάκελο .scriv που περιέχει.
+import-scrivener-refusal-archive-member-too-large-body = Το «{ $member }» αποσυμπιέζεται σε περισσότερα από { $limit } MB. Αποσυμπιέστε το συμπιεσμένο αρχείο μόνοι σας και μετά επιλέξτε τον φάκελο .scriv που περιέχει.
+import-scrivener-refusal-archive-too-large-body = Αποσυμπιέζεται σε περισσότερα από { $limit } MB. Αποσυμπιέστε το μόνοι σας και μετά επιλέξτε τον φάκελο .scriv που περιέχει.
+import-scrivener-refusal-archive-encrypted-title = Αυτό το συμπιεσμένο αρχείο προστατεύεται με κωδικό πρόσβασης
+import-scrivener-refusal-archive-encrypted-body = Αποσυμπιέστε το «{ $file }» μόνοι σας και μετά επιλέξτε τον φάκελο .scriv που περιέχει.
+import-scrivener-refusal-archive-unsupported-compression-title = Αυτό το συμπιεσμένο αρχείο χρησιμοποιεί συμπίεση που το Skribisto δεν μπορεί να διαβάσει
+import-scrivener-refusal-archive-unsupported-compression-body = Το «{ $member }» είναι συμπιεσμένο με { $method }. Αποσυμπιέστε το συμπιεσμένο αρχείο μόνοι σας και μετά επιλέξτε τον φάκελο .scriv που περιέχει.
+import-scrivener-refusal-duplicate-archive-members-title = Αυτό το συμπιεσμένο αρχείο απαριθμεί ορισμένα αρχεία δύο φορές
+import-scrivener-refusal-duplicate-archive-members-body = Το «{ $file }» περιέχει περισσότερα από ένα αρχεία με το ίδιο όνομα, οπότε το Skribisto δεν μπορεί να ξέρει ποιο ανήκει στο έργο. Αποσυμπιέστε το μόνοι σας και μετά επιλέξτε τον φάκελο .scriv που περιέχει.
+import-scrivener-refusal-template-undecodable-title = Αυτό το αρχείο προτύπου είναι ελλιπές
+import-scrivener-refusal-template-undecodable-too-large-title = Αυτό το αρχείο προτύπου είναι πολύ μεγάλο για να ανοιχτεί
+import-scrivener-refusal-template-undecodable-not-a-template-title = Αυτό το αρχείο δεν είναι πρότυπο Scrivener
+import-scrivener-refusal-template-undecodable-unknown-encoding-title = Αυτό το αρχείο προτύπου είναι αποθηκευμένο σε μορφή που δεν γνωρίζει το Skribisto
+import-scrivener-refusal-template-undecodable-body = Το «{ $file }» δεν μπορεί να αποκωδικοποιηθεί: ίσως τελειώνει πριν τελειώσει το έργο που περιέχει. Κατεβάστε το ξανά, ή ανοίξτε το στο Scrivener και δημιουργήστε από αυτό ένα έργο.
+import-scrivener-refusal-template-undecodable-too-large-body = Το «{ $file }» είναι μεγαλύτερο από { $limit } MB. Ανοίξτε το στο Scrivener, δημιουργήστε από αυτό ένα έργο και μετά εισαγάγετε εκείνο το έργο.
+import-scrivener-refusal-template-undecodable-not-a-template-body = Το «{ $file }» δεν περιέχει έργο Scrivener. Επιλέξτε το αρχείο προτύπου που αποθήκευσε το Scrivener, ή ένα έργο που δημιουργήθηκε από αυτό.
+import-scrivener-refusal-template-undecodable-unknown-encoding-body = Το «{ $file }» αποθηκεύει το έργο του με τρόπο που το Skribisto δεν μπορεί να αποκωδικοποιήσει. Ανοίξτε το στο Scrivener, δημιουργήστε από αυτό ένα έργο και μετά εισαγάγετε εκείνο το έργο.
+import-scrivener-refusal-cloud-placeholders-title = { $count ->
+    [one] 1 αρχείο αυτού του έργου βρίσκεται ακόμη στο cloud
+   *[other] { $count } αρχεία αυτού του έργου βρίσκονται ακόμη στο cloud
+}
+import-scrivener-refusal-cloud-placeholders-body = Δεν έχουν κατέβει σε αυτόν τον υπολογιστή, για παράδειγμα { $examples }. Κάντε το έργο διαθέσιμο εκτός σύνδεσης στην εφαρμογή συγχρονισμού σας και μετά κάντε νέα ανάγνωση.
+import-scrivener-refusal-unreadable-members-title = { $count ->
+    [one] 1 αρχείο αυτού του έργου δεν μπορεί να διαβαστεί
+   *[other] { $count } αρχεία αυτού του έργου δεν μπορούν να διαβαστούν
+}
+import-scrivener-refusal-unreadable-members-body = Για παράδειγμα { $examples }. Βεβαιωθείτε ότι έχετε δικαίωμα ανάγνωσης σε ολόκληρο το έργο και ότι ο δίσκος είναι σε καλή κατάσταση, και μετά κάντε νέα ανάγνωση.
+import-scrivener-refusal-needed-member-is-link-title = Αυτό το έργο δείχνει έξω από τον δικό του φάκελο
+import-scrivener-refusal-needed-member-is-link-body = Το «{ $member }» είναι σύνδεσμος προς μια θέση αλλού σε αυτόν τον υπολογιστή, και το Skribisto δεν ακολουθεί συνδέσμους. Αντιγράψτε το έργο έτσι ώστε κάθε αρχείο να βρίσκεται μέσα σε αυτό και δοκιμάστε ξανά.
+import-scrivener-refusal-project-changed-during-read-title = Το έργο άλλαξε ενώ διαβαζόταν
+import-scrivener-refusal-project-changed-during-read-body = Το Scrivener ή μια υπηρεσία συγχρονισμού γράφει ακόμη σε αυτό. Κλείστε το στο Scrivener, περιμένετε να τελειώσει ο συγχρονισμός και μετά κάντε νέα ανάγνωση.
+import-scrivener-refusal-too-many-members-title = Αυτό το έργο περιέχει πάρα πολλά αρχεία
+import-scrivener-refusal-too-many-members-body = Έχει περισσότερα από { $limit } αρχεία, περισσότερα από οποιοδήποτε πραγματικό έργο. Ίσως δεν είναι έργο Scrivener, ή ίσως είναι κατεστραμμένο.
+import-scrivener-refusal-too-large-title = Αυτό το έργο είναι πολύ μεγάλο
+import-scrivener-refusal-too-large-body = Τα κείμενά του ξεπερνούν τα { $limit } MB, περισσότερα από όσα μπορεί να εισαγάγει με ασφάλεια το Skribisto.
+import-scrivener-refusal-structure-unmappable-title = Το Skribisto δεν μπορεί να αντιστοιχίσει αυτό το ντοσιέ
+import-scrivener-refusal-structure-unmappable-body = Το ντοσιέ δεν μπόρεσε να μεταφερθεί χωρίς να χαθεί κάτι ή να μπει σε λάθος θέση. Πρόκειται για σφάλμα του Skribisto, όχι του έργου σας. Αναφέρετέ το μαζί με όσα δείχνουν οι «Λεπτομέρειες».
+
+## When there is a choice to make
+import-scrivener-roots-title = { $count ->
+    [one] Εδώ υπάρχει 1 έργο. Ποιο;
+   *[other] Εδώ υπάρχουν { $count } έργα. Ποιο από αυτά;
+}
+import-scrivener-roots-hint = Αυτός ο φάκελος ή το συμπιεσμένο αρχείο περιέχει περισσότερα από ένα έργα Scrivener. Επιλέξτε αυτό που θα εισαχθεί.
+import-scrivener-manifests-title = { $count ->
+    [one] Αυτό το έργο έχει 1 αρχείο ντοσιέ
+   *[other] Αυτό το έργο έχει { $count } αρχεία ντοσιέ
+}
+import-scrivener-manifests-hint = Το Scrivener κρατά το ντοσιέ, τη λίστα κάθε εγγράφου και φακέλου, σε ένα αρχείο .scrivx. Τα επιπλέον πιθανότατα τα άφησε μια υπηρεσία συγχρονισμού. Επιλέξτε εκείνο στο οποίο δουλέψατε τελευταία.
+import-scrivener-manifests-hint-preselected = Το Scrivener κρατά το ντοσιέ, τη λίστα κάθε εγγράφου και φακέλου, σε ένα αρχείο .scrivx. Τα επιπλέον πιθανότατα τα άφησε μια υπηρεσία συγχρονισμού. Το επιλεγμένο είναι κατά πάσα πιθανότητα εκείνο στο οποίο δουλέψατε τελευταία: ελέγξτε το πριν συνεχίσετε.
+import-scrivener-manifest-row = { $file } · αποθηκεύτηκε στις { $date } · { $documents ->
+    [one] 1 στοιχείο
+   *[other] { $documents } στοιχεία
+}
+import-scrivener-manifest-row-undated = { $file } · { $documents ->
+    [one] 1 στοιχείο
+   *[other] { $documents } στοιχεία
+}
+import-scrivener-manifest-row-unread = { $file } · δεν μπορεί να διαβαστεί
+import-scrivener-enclosing-title = Αυτό ανήκει στο έργο Scrivener «{ $project }»
+import-scrivener-enclosing-body = Επιλέξατε ένα αρχείο ή φάκελο μέσα σε ένα έργο. Το Skribisto εισάγει ολόκληρο το έργο.
+import-scrivener-enclosing-use = Εισαγωγή του «{ $project }»
+import-scrivener-upgrade-title = Αυτό είναι το αντίγραφο που κράτησε το Scrivener πριν από μια ενημέρωση
+import-scrivener-upgrade-body = Όταν το Scrivener ενημερώνει ένα έργο σε νεότερη έκδοση, κρατά το παλιό ως «{ $backup }». Το έργο στο οποίο συνεχίσατε να γράφετε είναι το «{ $current }», δίπλα του.
+import-scrivener-upgrade-body-unclear = Όταν το Scrivener ενημερώνει ένα έργο σε νεότερη έκδοση, κρατά το παλιό ως «{ $backup }». Το έργο δίπλα του, το «{ $current }», δεν μπόρεσε να διαβαστεί σωστά, οπότε επιλέξτε ποιο θα εισαχθεί.
+import-scrivener-upgrade-use-current = Εισαγωγή του «{ $current }», του έργου στο οποίο συνεχίσατε να γράφετε
+import-scrivener-upgrade-keep-backup = Εισαγωγή αυτού του παλαιότερου αντιγράφου, του «{ $backup }»
+
+## What must be accepted before going on
+import-scrivener-ios-pending-title = Οι αλλαγές που έγιναν στο Scrivener για iPhone ή iPad δεν υπάρχουν ακόμη σε αυτό το αντίγραφο
+import-scrivener-ios-pending-body = Το Scrivener σε υπολογιστή ενσωματώνει αυτές τις αλλαγές την επόμενη φορά που ανοίγει το έργο. Ανοίξτε το έργο μία φορά στο Scrivener στον υπολογιστή σας και μετά εισαγάγετέ το ξανά.
+import-scrivener-ios-pending-accept = Εισαγωγή χωρίς αυτές τις αλλαγές
+import-scrivener-no-text-title = { $count ->
+    [one] 1 έγγραφο, και ούτε μία λέξη κειμένου σε αυτό το αντίγραφο
+   *[other] { $count } έγγραφα, και ούτε μία λέξη κειμένου σε αυτό το αντίγραφο
+}
+import-scrivener-no-text-body = Μια υπηρεσία συγχρονισμού ίσως αντιγράφει ακόμη το έργο, ή το αντίγραφο έχασε τα έγγραφά του. Αν εισαχθεί τώρα, κάθε έγγραφο θα φτάσει κενό.
+import-scrivener-no-text-accept = Εισαγωγή των εγγράφων χωρίς κείμενο
+
+## Things to know, nothing to decide
+import-scrivener-notice-project-found-below-pick-title = Το έργο βρέθηκε μέσα στον φάκελο που επιλέξατε
+import-scrivener-notice-project-found-below-pick-body = Βρίσκεται στο «{ $path }».
+import-scrivener-notice-source-is-template-title = Αυτό είναι πρότυπο Scrivener
+import-scrivener-notice-source-is-template-named = Αυτό είναι το πρότυπο Scrivener «{ $title }»
+import-scrivener-notice-source-is-template-body = Η εισαγωγή του δημιουργεί ένα νέο έργο από όσα περιέχει το πρότυπο, μαζί με τις οδηγίες του.
+import-scrivener-notice-source-is-backup-title = Αυτό μοιάζει με αντίγραφο ασφαλείας που δημιούργησε το Scrivener
+import-scrivener-notice-source-is-backup-body = Περιέχει το έργο όπως ήταν όταν δημιουργήθηκε το αντίγραφο ασφαλείας. Αν συνεχίσατε να γράφετε μετά από αυτό, επιλέξτε το ίδιο το έργο.
+import-scrivener-notice-importing-pre-upgrade-copy-title = Εισάγετε το αντίγραφο που κράτησε το Scrivener πριν από μια ενημέρωση
+import-scrivener-notice-importing-pre-upgrade-copy-body = Το έργο στο οποίο συνεχίσατε να γράφετε βρίσκεται δίπλα του και περιέχει ό,τι γράφτηκε από τότε.
+import-scrivener-notice-imported-from-ios-stub-title = Αυτό το έργο δημιουργήθηκε στο Scrivener για iPhone ή iPad
+import-scrivener-notice-imported-from-ios-stub-body = Δεν έχει ανοίξει ποτέ σε υπολογιστή, οπότε διαβάζεται από το αντίγραφο που κρατά το iPhone ή το iPad.
+import-scrivener-notice-stale-mobile-binder-ignored-title = Ένα παλιό ντοσιέ από iPhone ή iPad παραμερίζεται
+import-scrivener-notice-stale-mobile-binder-ignored-body = Το Scrivener σε υπολογιστή έχει ήδη ενσωματώσει τις αλλαγές του.
+import-scrivener-notice-identical-manifest-copies-title = { $count ->
+    [one] Εδώ υπάρχει 1 αντίγραφο του αρχείου ντοσιέ
+   *[other] Εδώ υπάρχουν { $count } πανομοιότυπα αντίγραφα του αρχείου ντοσιέ
+}
+import-scrivener-notice-identical-manifest-copies-body = Περιέχουν το ίδιο πράγμα, οπότε οποιοδήποτε από αυτά δίνει το ίδιο έργο.
+import-scrivener-notice-manifest-copies-ignored-title = Τα επιπλέον αντίγραφα του αρχείου ντοσιέ παραμερίζονται
+import-scrivener-notice-manifest-copies-ignored-body = Το «{ $chosen }» είναι εκείνο στο οποίο δούλεψε τελευταία το Scrivener. { $count ->
+    [one] 1 αντίγραφο που άφησε μια υπηρεσία συγχρονισμού παραμερίζεται.
+   *[other] { $count } αντίγραφα που άφησε μια υπηρεσία συγχρονισμού παραμερίζονται.
+}
+import-scrivener-notice-pinned-manifest-looks-like-a-copy-title = Το αρχείο ντοσιέ που επιλέξατε μοιάζει με αντίγραφο συγχρονισμού
+import-scrivener-notice-pinned-manifest-looks-like-a-copy-body = Το «{ $name }» έχει όνομα σαν αντίγραφο του «{ $original }», που βρίσκεται δίπλα του. Αν η εισαγωγή φαίνεται παλιά, επιλέξτε στη θέση του το «{ $original }».
+import-scrivener-notice-pinned-manifest-has-siblings-title = { $count ->
+    [one] 1 άλλο αρχείο ντοσιέ βρίσκεται δίπλα σε εκείνο που επιλέξατε
+   *[other] { $count } άλλα αρχεία ντοσιέ βρίσκονται δίπλα σε εκείνο που επιλέξατε
+}
+import-scrivener-notice-pinned-manifest-has-siblings-body = Διαβάζεται μόνο εκείνο που επιλέξατε.
+import-scrivener-notice-legacy-v1-files-beside-title = Τα αρχεία από ένα παλαιότερο Scrivener παραμερίζονται
+import-scrivener-notice-legacy-v1-files-beside-body = Έμειναν πίσω όταν ενημερώθηκε το έργο. Διαβάζονται μόνο τα αρχεία της τρέχουσας έκδοσης.
+import-scrivener-notice-mixed-payload-trees-title = Σε αυτό το έργο υπάρχουν αρχεία δύο εκδόσεων του Scrivener
+import-scrivener-notice-mixed-payload-trees-body = Τα έγγραφα διαβάζονται εκεί όπου λέει το αρχείο ντοσιέ ότι βρίσκονται.
+import-scrivener-notice-version-disagreement-title = Τα αρχεία αυτού του έργου δεν συμφωνούν όλα για την έκδοσή του
+import-scrivener-notice-id-scheme-mismatch-body = Το αρχείο ντοσιέ αναφέρει την έκδοση { $version }, αλλά ονομάζει τα έγγραφά του όπως μια άλλη έκδοση. Διαβάζονται εκεί όπου δείχνει το αρχείο ντοσιέ. Αν η εισαγωγή φαίνεται λανθασμένη, ανοίξτε το έργο μία φορά στο Scrivener και εισαγάγετέ το ξανά.
+import-scrivener-notice-version-stamp-mismatch-body = Διαβάζεται όπως το περιγράφει το αρχείο ντοσιέ του. Αν η εισαγωγή φαίνεται λανθασμένη, ανοίξτε το έργο μία φορά στο Scrivener και εισαγάγετέ το ξανά.
+import-scrivener-notice-unrecognised-writer-title = Αυτό το έργο αποθηκεύτηκε από ένα πρόγραμμα που δεν αναγνωρίζει το Skribisto
+import-scrivener-notice-unrecognised-writer-named = Αυτοαποκαλείται «{ $creator }». Διαβάζεται ως έργο Scrivener.
+import-scrivener-notice-unrecognised-writer-body = Δεν δηλώνει το όνομά του. Διαβάζεται ως έργο Scrivener.
+import-scrivener-notice-invalid-item-identifier-title = { $count ->
+    [one] 1 στοιχείο του ντοσιέ φέρει μη έγκυρο αναγνωριστικό
+   *[other] { $count } στοιχεία του ντοσιέ φέρουν μη έγκυρο αναγνωριστικό
+}
+import-scrivener-notice-invalid-item-identifier-body = Αυτά τα αναγνωριστικά παραμερίζονται. Τα στοιχεία διατηρούνται.
+import-scrivener-notice-items-without-identifier-title = { $count ->
+    [one] 1 στοιχείο του ντοσιέ δεν έχει αναγνωριστικό
+   *[other] { $count } στοιχεία του ντοσιέ δεν έχουν αναγνωριστικό
+}
+import-scrivener-notice-items-without-identifier-body = Τα αρχεία τους δεν μπορούν να βρεθούν, οπότε φτάνουν κενά.
+import-scrivener-notice-duplicate-item-key-title = Δύο στοιχεία του ντοσιέ μοιράζονται ένα αναγνωριστικό: «{ $item }»
+import-scrivener-notice-duplicate-item-key-body = Το πρώτο κρατά τα έγγραφα. Το δεύτερο κρατά τη θέση του και φτάνει κενό.
+import-scrivener-notice-lock-here-title = Το Scrivener έχει ανοιχτό αυτό το έργο σε αυτόν τον υπολογιστή
+import-scrivener-notice-lock-here-body = Κλείστε το πρώτα στο Scrivener, ώστε να αποθηκευτεί κάθε αλλαγή.
+import-scrivener-notice-lock-title = Το Scrivener είχε ανοιχτό αυτό το έργο στον υπολογιστή «{ $host }»
+import-scrivener-notice-lock-elsewhere-title = Το Scrivener είχε ανοιχτό αυτό το έργο σε άλλον υπολογιστή
+import-scrivener-notice-lock-body = Αν είναι ακόμη ανοιχτό εκεί, κλείστε το πρώτα: τα αρχεία ίσως δεν περιέχουν ακόμη τις τελευταίες αλλαγές. Αν το Scrivener έκλεισε εδώ και καιρό, μπορείτε να το εισαγάγετε όπως είναι.
+import-scrivener-notice-archived-while-open-title = Αυτό το συμπιεσμένο αρχείο δημιουργήθηκε ενώ το Scrivener είχε ανοιχτό το έργο
+import-scrivener-notice-archived-while-open-body = Ίσως λείπουν από αυτό αλλαγές που έγιναν μετά από εκείνη τη στιγμή.
+import-scrivener-notice-content-missing-notes = Οι σημειώσεις του «{ $item }» λείπουν
+import-scrivener-notice-content-missing-synopsis = Η σύνοψη του «{ $item }» λείπει
+import-scrivener-notice-content-missing-text = Το κείμενο του «{ $item }» λείπει
+import-scrivener-notice-content-missing-body = Το αρχείο δεν υπάρχει σε αυτό το αντίγραφο, οπότε εισάγεται χωρίς περιεχόμενο. Μια υπηρεσία συγχρονισμού ίσως αντιγράφει ακόμη το έργο.
+import-scrivener-notice-content-missing-salvaged = Το αρχείο δεν υπάρχει σε αυτό το αντίγραφο, αλλά το ευρετήριο αναζήτησης του Scrivener κρατούσε ακόμη τις λέξεις. Διατηρούνται ως απλό κείμενο, ίσως από παλαιότερη έκδοση.
+import-scrivener-notice-content-truncated-notes = Οι σημειώσεις του «{ $item }» είναι κενές στον δίσκο
+import-scrivener-notice-content-truncated-synopsis = Η σύνοψη του «{ $item }» είναι κενή στον δίσκο
+import-scrivener-notice-content-truncated-text = Το κείμενο του «{ $item }» είναι κενό στον δίσκο
+import-scrivener-notice-content-truncated-body = Το Scrivener το είχε καταγράψει με κείμενο, αλλά το αρχείο δεν περιέχει τίποτα: ίσως ένας συγχρονισμός σταμάτησε στη μέση. Εισάγεται χωρίς περιεχόμενο.
+import-scrivener-notice-missing-media-title = Το αρχείο του «{ $item }» λείπει
+import-scrivener-notice-missing-media-body = Η εικόνα ή το αρχείο έρευνας που περιέχει δεν υπάρχει σε αυτό το αντίγραφο.
+import-scrivener-notice-sync-conflict-copies-title = { $count ->
+    [one] Βρέθηκε 1 αντίγραφο συγχρονισμού ενός εγγράφου
+   *[other] Βρέθηκαν { $count } αντίγραφα συγχρονισμού εγγράφων
+}
+import-scrivener-notice-sync-conflict-copies-body = { $missing ->
+    [0] Μεταφέρονται ως ανακτημένα κείμενα, σε δικό τους φάκελο, ώστε να μπορείτε να τα συγκρίνετε με τα έγγραφα.
+   *[other] Μεταφέρονται ως ανακτημένα κείμενα, σε δικό τους φάκελο. Ορισμένα είναι αντίγραφα εγγράφων που δεν υπάρχουν πια στο έργο.
+}
+import-scrivener-notice-recovered-unreferenced-text-title = { $count ->
+    [one] Βρέθηκε 1 έγγραφο που δεν το απαριθμεί κανένα στοιχείο του ντοσιέ
+   *[other] Βρέθηκαν { $count } έγγραφα που δεν τα απαριθμεί κανένα στοιχείο του ντοσιέ
+}
+import-scrivener-notice-recovered-unreferenced-text-body = Μεταφέρονται ως ανακτημένα κείμενα, σε δικό τους φάκελο.
+import-scrivener-notice-sync-debris-ignored-title = { $count ->
+    [one] 1 επιπλέον αντίγραφο που άφησε μια υπηρεσία συγχρονισμού παραμερίζεται
+   *[other] { $count } επιπλέον αντίγραφα που άφησε μια υπηρεσία συγχρονισμού παραμερίζονται
+}
+import-scrivener-notice-sync-debris-ignored-body = Ούτε το Scrivener τα διαβάζει. Διαβάζονται μόνο τα αρχεία του ίδιου του έργου.
+import-scrivener-notice-unrecognised-files-title = { $count ->
+    [one] 1 αρχείο που δεν ανήκει σε έργο Scrivener παραμερίζεται
+   *[other] { $count } αρχεία που δεν ανήκουν σε έργο Scrivener παραμερίζονται
+}
+import-scrivener-notice-examples = Για παράδειγμα { $examples }.
+import-scrivener-notice-symlink-not-followed-title = { $count ->
+    [one] 1 σύνδεσμος μέσα στο έργο δεν ακολουθείται
+   *[other] { $count } σύνδεσμοι μέσα στο έργο δεν ακολουθούνται
+}
+import-scrivener-notice-unreadable-files-skipped-title = { $count ->
+    [one] 1 αρχείο που δεν χρειάζεται η εισαγωγή δεν μπόρεσε να διαβαστεί
+   *[other] { $count } αρχεία που δεν χρειάζεται η εισαγωγή δεν μπόρεσαν να διαβαστούν
+}
+import-scrivener-notice-cloud-placeholders-skipped-title = { $count ->
+    [one] 1 αρχείο που βρίσκεται ακόμη στο cloud παραλείπεται
+   *[other] { $count } αρχεία που βρίσκονται ακόμη στο cloud παραλείπονται
+}
+import-scrivener-notice-cloud-placeholders-skipped-body = Η εισαγωγή δεν τα χρειάζεται.
+import-scrivener-notice-no-text-found-title = { $count ->
+    [one] 1 έγγραφο, χωρίς καθόλου κείμενο
+   *[other] { $count } έγγραφα, και κανένα δεν περιέχει κείμενο
+}
+import-scrivener-notice-no-text-found-body = Αυτό το έργο μοιάζει κενό. Εισάγεται όπως είναι.
+import-scrivener-notice-metadata-unreadable-title = Το «{ $member }» δεν μπόρεσε να διαβαστεί
+import-scrivener-notice-metadata-unreadable-body = Όσα κρατούσε σε αυτό το Scrivener δεν μεταφέρονται.
+import-scrivener-notice-dangling-keyword-title = { $count ->
+    [one] 1 παραπομπή δείχνει σε λέξη-κλειδί που δεν ορίζει το έργο
+   *[other] { $count } παραπομπές δείχνουν σε λέξεις-κλειδιά που δεν ορίζει το έργο
+}
+import-scrivener-notice-dangling-label-title = { $count ->
+    [one] 1 παραπομπή δείχνει σε λεζάντα που δεν ορίζει το έργο
+   *[other] { $count } παραπομπές δείχνουν σε λεζάντες που δεν ορίζει το έργο
+}
+import-scrivener-notice-dangling-status-title = { $count ->
+    [one] 1 παραπομπή δείχνει σε κατάσταση που δεν ορίζει το έργο
+   *[other] { $count } παραπομπές δείχνουν σε καταστάσεις που δεν ορίζει το έργο
+}
+import-scrivener-notice-dangling-section-type-title = { $count ->
+    [one] 1 παραπομπή δείχνει σε τύπο ενότητας που δεν ορίζει το έργο
+   *[other] { $count } παραπομπές δείχνουν σε τύπους ενοτήτων που δεν ορίζει το έργο
+}
+import-scrivener-notice-dangling-custom-field-title = { $count ->
+    [one] 1 παραπομπή δείχνει σε πεδίο προσαρμοσμένων μεταδεδομένων που δεν ορίζει το έργο
+   *[other] { $count } παραπομπές δείχνουν σε πεδία προσαρμοσμένων μεταδεδομένων που δεν ορίζει το έργο
+}
+import-scrivener-notice-dangling-item-title = { $count ->
+    [one] 1 παραπομπή δείχνει σε έγγραφο που δεν ορίζει το έργο
+   *[other] { $count } παραπομπές δείχνουν σε έγγραφα που δεν ορίζει το έργο
+}
+import-scrivener-notice-dangling-references-body = Παραλείπονται.
+import-scrivener-notice-snapshots-not-imported-line = { $count ->
+    [one] 1 στιγμιότυπο μένει στο έργο σας στο Scrivener: το Skribisto δεν μεταφέρει στιγμιότυπα.
+   *[other] { $count } στιγμιότυπα μένουν στο έργο σας στο Scrivener: το Skribisto δεν μεταφέρει στιγμιότυπα.
+}
+import-scrivener-notice-writing-history-not-imported-line = { $days ->
+    [one] Το ημερολόγιο του Scrivener με τις λέξεις που γράφτηκαν κάθε μέρα (1 ημέρα) δεν μεταφέρεται. Το Skribisto ξεκινά τη δική του καταμέτρηση από την πρώτη αποθήκευση.
+   *[other] Το ημερολόγιο του Scrivener με τις λέξεις που γράφτηκαν κάθε μέρα ({ $days } ημέρες) δεν μεταφέρεται. Το Skribisto ξεκινά τη δική του καταμέτρηση από την πρώτη αποθήκευση.
+}
+import-scrivener-notice-title-placeholder-rejected-hint = Ο τίτλος στις ρυθμίσεις του έργου είναι σύμβολο κράτησης θέσης ενός προτύπου, οπότε προτείνεται στη θέση του το όνομα του έργου.
+import-scrivener-notice-author-placeholder-rejected-hint = Το όνομα του συγγραφέα στις ρυθμίσεις του έργου είναι σύμβολο κράτησης θέσης ενός προτύπου, οπότε δεν προτείνεται κανένα.
+import-scrivener-notice-title-from-project-hint-compile-settings = Αυτός ο τίτλος είναι εκείνος που δηλώνουν οι ρυθμίσεις μεταγλώττισης του έργου. Μέχρι να οριστεί εκεί τίτλος, το Scrivener κρατά το όνομα που είχε το έργο όταν δημιουργήθηκε.
+import-scrivener-notice-title-from-project-hint-template = Αυτός είναι ο τίτλος του ίδιου του προτύπου.
+import-scrivener-notice-title-from-project-hint-folder-name = Αυτός ο τίτλος είναι το όνομα του έργου.
+import-scrivener-notice-title-from-project-hint-project-properties = Αυτός ο τίτλος είναι εκείνος που δηλώνουν οι ιδιότητες του έργου.
+import-scrivener-notice-author-from-project-hint = Αυτό το όνομα είναι εκείνο που δηλώνουν οι ρυθμίσεις του έργου. Εκεί μπορεί να έχει μείνει ο συγγραφέας ενός προτύπου, και θα τυπωνόταν σε μια σελίδα τίτλου.
+import-scrivener-notice-language-not-stated-hint = Το έργο δεν δηλώνει τη γλώσσα του, οπότε προτείνεται η γλώσσα στην οποία εμφανίζεται το Skribisto. Η γλώσσα καθορίζει πώς μετριούνται οι λέξεις και πώς γράφονται τα εισαγωγικά.
+import-scrivener-notice-language-from-script-hint = Προτείνεται με βάση το σύστημα γραφής του χειρογράφου ({ $tag }).
+
+## Before you import: what the import does with the binder, or leaves behind
+import-scrivener-structure-script-mode-draft-line = { $script ->
+    [one] { $documents ->
+        [one] Το μοναδικό έγγραφο του χειρογράφου είναι γραμμένο σε λειτουργία σεναρίου. Το Skribisto κρατά τις λέξεις του, όχι τη διάταξη σεναρίου.
+       *[other] { $script } από τα { $documents } έγγραφα του χειρογράφου είναι γραμμένο σε λειτουργία σεναρίου. Το Skribisto κρατά τις λέξεις του, όχι τη διάταξη σεναρίου.
+    }
+   *[other] { $script } από τα { $documents } έγγραφα του χειρογράφου είναι γραμμένα σε λειτουργία σεναρίου. Το Skribisto κρατά τις λέξεις τους, όχι τη διάταξη σεναρίου.
+}
+import-scrivener-structure-one-document-manuscript-line = { $count ->
+    [one] Ένα έγγραφο του χειρογράφου περιέχει τα κεφάλαιά του ως επικεφαλίδες.
+   *[other] { $count } έγγραφα του χειρογράφου περιέχουν τα κεφάλαιά τους ως επικεφαλίδες.
+}
+import-scrivener-structure-title-repeats-number-line = { $count ->
+    [one] 1 τίτλος κεφαλαίου ή μέρους περιέχει και τον αριθμό του, οπότε μια εξαγωγή μπορεί να τυπώσει τον αριθμό δύο φορές.
+   *[other] { $count } τίτλοι κεφαλαίων ή μερών περιέχουν και τον αριθμό τους, οπότε μια εξαγωγή μπορεί να τυπώσει τον αριθμό δύο φορές.
+}
+import-scrivener-structure-claim-overruled-line = { $count ->
+    [one] 1 στοιχείο παίρνει ένα επίπεδο κάτω από εκείνο που διεκδικεί, επειδή ένα στοιχείο πάνω από αυτό κατέχει ήδη εκείνο το επίπεδο.
+   *[other] { $count } στοιχεία παίρνουν ένα επίπεδο κάτω από εκείνο που διεκδικούν, επειδή ένα στοιχείο πάνω από αυτά κατέχει ήδη εκείνο το επίπεδο.
+}
+import-scrivener-structure-adopted-by-chapter-line = { $count ->
+    [one] 1 έγγραφο που ακολουθεί ένα κεφάλαιο γίνεται το τέλος αυτού του κεφαλαίου.
+   *[other] { $count } έγγραφα που ακολουθούν ένα κεφάλαιο γίνονται το τέλος αυτού του κεφαλαίου.
+}
+import-scrivener-structure-looks-like-manuscript-line = { $count ->
+    [one] 1 φάκελος ανώτερου επιπέδου που μένει στις σημειώσεις μοιάζει με χειρόγραφο. Μπορείτε να τον στείλετε στο χειρόγραφο ως άλλο βιβλίο.
+   *[other] { $count } φάκελοι ανώτερου επιπέδου που μένουν στις σημειώσεις μοιάζουν με χειρόγραφο. Μπορείτε να τους στείλετε στο χειρόγραφο ως άλλα βιβλία.
+}
+import-scrivener-structure-generic-sheet-title-line = { $count ->
+    [one] 1 καταχώριση της βίβλου ιστορίας έχει τον τίτλο ενός προτύπου, όπως «Ήρωας», και η ανίχνευση αναφορών θα αναζητά αυτόν τον τίτλο στο κείμενο.
+   *[other] { $count } καταχωρίσεις της βίβλου ιστορίας έχουν τον τίτλο ενός προτύπου, όπως «Ήρωας», και η ανίχνευση αναφορών θα αναζητά αυτούς τους τίτλους στο κείμενο.
+}
+import-scrivener-structure-placeholder-title-line = { $count ->
+    [one] 1 τίτλος απλώς ονόμαζε το επίπεδό του και μένει κενός: το ντοσιέ και οι εξαγωγές τον αριθμούν.
+   *[other] { $count } τίτλοι απλώς ονόμαζαν το επίπεδό τους και μένουν κενοί: το ντοσιέ και οι εξαγωγές τους αριθμούν.
+}
+import-scrivener-structure-untitled-item-line = { $count ->
+    [one] 1 στοιχείο δεν είχε τίτλο στο Scrivener και μένει χωρίς τίτλο.
+   *[other] { $count } στοιχεία δεν είχαν τίτλο στο Scrivener και μένουν χωρίς τίτλο.
+}
+import-scrivener-structure-title-cleaned-line = { $count ->
+    [one] 1 τίτλος περιείχε αλλαγές γραμμής ή στηλοθέτες, που αφαιρούνται.
+   *[other] { $count } τίτλοι περιείχαν αλλαγές γραμμής ή στηλοθέτες, που αφαιρούνται.
+}
+import-scrivener-structure-own-text-moved-line = { $count ->
+    [one] 1 φάκελος έχει δικό του κείμενο, που μετακινείται σε ένα πρώτο έγγραφο μέσα του.
+   *[other] { $count } φάκελοι έχουν δικό τους κείμενο, που μετακινείται σε ένα πρώτο έγγραφο μέσα τους.
+}
+import-scrivener-structure-text-with-children-line = { $count ->
+    [one] 1 έγγραφο που περιέχει άλλα έγγραφα γίνεται φάκελος.
+   *[other] { $count } έγγραφα που περιέχουν άλλα έγγραφα γίνονται φάκελοι.
+}
+import-scrivener-structure-empty-folder-plain-line = { $count ->
+    [one] 1 κενός φάκελος μένει απλός φάκελος, ώστε καμία εξαγωγή να μην τυπώσει μια επικεφαλίδα που το Scrivener δεν τύπωσε ποτέ.
+   *[other] { $count } κενοί φάκελοι μένουν απλοί φάκελοι, ώστε καμία εξαγωγή να μην τυπώσει μια επικεφαλίδα που το Scrivener δεν τύπωσε ποτέ.
+}
+import-scrivener-structure-book-inside-book-line = { $count ->
+    [one] 1 βιβλίο μέσα σε βιβλίο γίνεται μέρος.
+   *[other] { $count } βιβλία μέσα σε βιβλίο γίνονται μέρη.
+}
+import-scrivener-structure-prologue-not-numbered-line = { $count ->
+    [one] 1 πρόλογος ή επίλογος μένει έξω από την αρίθμηση των κεφαλαίων.
+   *[other] { $count } πρόλογοι ή επίλογοι μένουν έξω από την αρίθμηση των κεφαλαίων.
+}
+import-scrivener-structure-matter-inside-book-line = { $count ->
+    [one] 1 στοιχείο εισαγωγικών ή τελικών μερών από έξω από το χειρόγραφο μπαίνει μέσα στο βιβλίο ως παρακείμενο, εκτός εξαγωγών μέχρι να το συμπεριλάβετε.
+   *[other] { $count } στοιχεία εισαγωγικών ή τελικών μερών από έξω από το χειρόγραφο μπαίνουν μέσα στο βιβλίο ως παρακείμενα, εκτός εξαγωγών μέχρι να τα συμπεριλάβετε.
+}
+import-scrivener-structure-paratext-not-counted-line = { $documents ->
+    [one] 1 έγγραφο του χειρογράφου γίνεται παρακείμενο (εισαγωγικά ή τελικά μέρη): { $words ->
+        [one] η { $words } λέξη του δεν μετράει πια
+       *[other] οι { $words } λέξεις του δεν μετράνε πια
+    } ως χειρόγραφο.
+   *[other] { $documents } έγγραφα του χειρογράφου γίνονται παρακείμενα (εισαγωγικά ή τελικά μέρη): { $words ->
+        [one] η { $words } λέξη τους δεν μετράει πια
+       *[other] οι { $words } λέξεις τους δεν μετράνε πια
+    } ως χειρόγραφο.
+}
+import-scrivener-structure-document-notes-line = { $count ->
+    [one] Οι σημειώσεις 1 εγγράφου γίνονται σημείωση δίπλα του.
+   *[other] Οι σημειώσεις { $count } εγγράφων γίνονται σημειώσεις δίπλα τους.
+}
+import-scrivener-structure-draft-content-as-note-line = Το δικό κείμενο του φακέλου του χειρογράφου γίνεται σημείωση στην κορυφή του χειρογράφου.
+import-scrivener-structure-story-bible-folder-line = { $count ->
+    [one] 1 φάκελος προσώπων ή τόπων γίνεται ετικέτα της βίβλου ιστορίας.
+   *[other] { $count } φάκελοι προσώπων ή τόπων γίνονται ετικέτες της βίβλου ιστορίας.
+}
+import-scrivener-structure-templates-created-line = { $count ->
+    [one] 1 πρότυπο εγγράφου γίνεται πρότυπο σημείωσης.
+   *[other] { $count } πρότυπα εγγράφων γίνονται πρότυπα σημειώσεων.
+}
+import-scrivener-structure-template-nesting-flattened-line = { $count ->
+    [one] 1 φάκελος προτύπων μέσα σε άλλον ισοπεδώνεται: κάθε κείμενο μέσα του γίνεται πρότυπο.
+   *[other] { $count } φάκελοι προτύπων μέσα σε άλλους ισοπεδώνονται: κάθε κείμενο μέσα τους γίνεται πρότυπο.
+}
+import-scrivener-structure-template-kept-as-note-line = { $count ->
+    [one] 1 πρότυπο περιέχει κάτι που δεν μπορεί να περιέχει ένα πρότυπο σημείωσης, και διατηρείται ως σημείωση.
+   *[other] { $count } πρότυπα περιέχουν κάτι που δεν μπορεί να περιέχει ένα πρότυπο σημείωσης, και διατηρούνται ως σημειώσεις.
+}
+import-scrivener-structure-recovered-texts-line = { $count ->
+    [one] 1 κείμενο που δεν απαριθμούσε κανένα στοιχείο του ντοσιέ μεταφέρεται σε δικό του φάκελο.
+   *[other] { $count } κείμενα που δεν απαριθμούσε κανένα στοιχείο του ντοσιέ μεταφέρονται σε δικό τους φάκελο.
+}
+import-scrivener-structure-project-notes-line = { $count ->
+    [one] 1 σημείωση έργου μεταφέρεται σε δικό της φάκελο.
+   *[other] { $count } σημειώσεις έργου μεταφέρονται σε δικό τους φάκελο.
+}
+import-scrivener-structure-trash-brought-across-line = { $items ->
+    [one] Ο κάδος μεταφέρεται: 1 στοιχείο, που μπορείτε να επαναφέρετε από τον κάδο.
+   *[other] Ο κάδος μεταφέρεται: { $items } στοιχεία, { $writing } από αυτά με κείμενο, που μπορείτε να επαναφέρετε από τον κάδο.
+}
+import-scrivener-structure-not-compiled-line = { $count ->
+    [one] 1 στοιχείο που το Scrivener άφηνε έξω από τη μεταγλώττισή του μένει έξω και από τις εξαγωγές.
+   *[other] { $count } στοιχεία που το Scrivener άφηνε έξω από τη μεταγλώττισή του μένουν έξω και από τις εξαγωγές.
+}
+import-scrivener-structure-media-in-draft-line = { $count ->
+    [one] 1 εικόνα ή αρχείο στο χειρόγραφο γίνεται σημείωση, αφού ένα βιβλίο δεν μπορεί να το περιέχει.
+   *[other] { $count } εικόνες ή αρχεία στο χειρόγραφο γίνονται σημειώσεις, αφού ένα βιβλίο δεν μπορεί να τα περιέχει.
+}
+import-scrivener-structure-left-out-line = { $count ->
+    [one] 1 φάκελος ανώτερου επιπέδου παραλείπεται, μαζί με { $items ->
+        [one] 1 στοιχείο
+       *[other] { $items } στοιχεία
+    }.
+   *[other] { $count } φάκελοι ανώτερου επιπέδου παραλείπονται, μαζί με { $items ->
+        [one] 1 στοιχείο
+       *[other] { $items } στοιχεία
+    }.
+}
+import-scrivener-structure-trash-left-out-line = { $items ->
+    [one] Ο κάδος μένει πίσω: 1 στοιχείο.
+   *[other] Ο κάδος μένει πίσω: { $items } στοιχεία, { $writing } από αυτά με κείμενο.
+}
+import-scrivener-structure-card-image-left-behind-line = { $count ->
+    [one] 1 εικόνα κάρτας ευρετηρίου σε στοιχείο του χειρογράφου μένει πίσω: θα τυπωνόταν στο βιβλίο.
+   *[other] { $count } εικόνες καρτών ευρετηρίου σε στοιχεία του χειρογράφου μένουν πίσω: θα τυπώνονταν στο βιβλίο.
+}
+import-scrivener-structure-default-template-not-linked-line = { $count ->
+    [one] Το προεπιλεγμένο πρότυπο εγγράφου 1 φακέλου δεν μπορεί να τον ακολουθήσει.
+   *[other] Τα προεπιλεγμένα πρότυπα εγγράφων { $count } φακέλων δεν μπορούν να τους ακολουθήσουν.
+}
+import-scrivener-structure-page-break-not-kept-line = { $count ->
+    [one] 1 ρύθμιση «Αλλαγή σελίδας πριν» (Page break before) δεν έχει θέση στο Skribisto και δεν διατηρείται.
+   *[other] { $count } ρυθμίσεις «Αλλαγή σελίδας πριν» (Page break before) δεν έχουν θέση στο Skribisto και δεν διατηρούνται.
+}
+import-scrivener-structure-compile-as-is-not-kept-line = { $count ->
+    [one] 1 ρύθμιση «Μεταγλώττιση ως έχει» (Compile as-is) δεν έχει αντίστοιχη στο Skribisto και δεν διατηρείται.
+   *[other] { $count } ρυθμίσεις «Μεταγλώττιση ως έχει» (Compile as-is) δεν έχουν αντίστοιχη στο Skribisto και δεν διατηρούνται.
+}
+
+## What the import did with the labels, the status list and the dates
+import-scrivener-metadata-status-categories-guessed-line = { $count ->
+    [one] Σε 1 κατάσταση που δεν αναγνωρίζει το Skribisto δίνεται είδος ανάλογα με τη θέση της στη λίστα. Ελέγξτε τη στις Ρυθμίσεις ▸ Έργο ▸ Καταστάσεις.
+   *[other] Σε { $count } καταστάσεις που δεν αναγνωρίζει το Skribisto δίνεται είδος ανάλογα με τη θέση τους στη λίστα. Ελέγξτε τις στις Ρυθμίσεις ▸ Έργο ▸ Καταστάσεις.
+}
+import-scrivener-metadata-dates-unreadable-line = { $count ->
+    [one] Οι ημερομηνίες 1 στοιχείου δεν μπόρεσαν να διαβαστούν: φέρει την ημερομηνία της εισαγωγής.
+   *[other] Οι ημερομηνίες { $count } στοιχείων δεν μπόρεσαν να διαβαστούν: φέρουν την ημερομηνία της εισαγωγής.
+}
+import-scrivener-metadata-labels-became-tags-line = { $tags ->
+    [one] Οι λεζάντες γίνονται 1 ετικέτα, σε { $rows ->
+        [one] { $rows } στοιχείο
+       *[other] { $rows } στοιχεία
+    }.
+   *[other] Οι λεζάντες γίνονται { $tags } ετικέτες, σε { $rows ->
+        [one] { $rows } στοιχείο
+       *[other] { $rows } στοιχεία
+    }.
+}
+import-scrivener-metadata-statuses-became-ladder-line = { $rungs ->
+    [one] Η λίστα καταστάσεων δίνει την 1 κατάσταση του έργου, σε { $rows ->
+        [one] { $rows } στοιχείο
+       *[other] { $rows } στοιχεία
+    }.
+   *[other] Η λίστα καταστάσεων δίνει τις { $rungs } καταστάσεις του έργου, σε { $rows ->
+        [one] { $rows } στοιχείο
+       *[other] { $rows } στοιχεία
+    }.
+}
+import-scrivener-metadata-ladder-seeded-line = { $count ->
+    [one] Το έργο δεν είχε λίστα καταστάσεων, οπότε ξεκινά με την προεπιλεγμένη κατάσταση του Skribisto.
+   *[other] Το έργο δεν είχε λίστα καταστάσεων, οπότε ξεκινά με τις { $count } προεπιλεγμένες καταστάσεις του Skribisto.
+}
+import-scrivener-metadata-label-renamed-line = Το πεδίο της λεζάντας λεγόταν «{ $title }» στο Scrivener. Αυτό το όνομα υπάρχει στις λεπτομέρειες κάθε ετικέτας.
+import-scrivener-metadata-status-renamed-line = Το πεδίο της κατάστασης λεγόταν «{ $title }» στο Scrivener. Αυτό το όνομα υπάρχει στις λεπτομέρειες κάθε κατάστασης.
+import-scrivener-metadata-none-label-collapsed-line = { $count ->
+    [one] Η λεζάντα «{ $name }», που υπήρχε δίπλα στην κενή λεζάντα του ίδιου του Scrivener με το ίδιο όνομα, διαβάζεται ως απουσία λεζάντας σε 1 στοιχείο.
+   *[other] Η λεζάντα «{ $name }», που υπήρχε δίπλα στην κενή λεζάντα του ίδιου του Scrivener με το ίδιο όνομα, διαβάζεται ως απουσία λεζάντας σε { $count } στοιχεία.
+}
+import-scrivener-metadata-none-status-collapsed-line = { $count ->
+    [one] Η κατάσταση «{ $name }», που υπήρχε δίπλα στην κενή κατάσταση του ίδιου του Scrivener με το ίδιο όνομα, διαβάζεται ως απουσία κατάστασης σε 1 στοιχείο.
+   *[other] Η κατάσταση «{ $name }», που υπήρχε δίπλα στην κενή κατάσταση του ίδιου του Scrivener με το ίδιο όνομα, διαβάζεται ως απουσία κατάστασης σε { $count } στοιχεία.
+}
+import-scrivener-metadata-unnamed-label-line = Μια λεζάντα χωρίς όνομα παίρνει το όνομα του αριθμού της, { $id }.
+import-scrivener-metadata-unnamed-status-line = Μια κατάσταση χωρίς όνομα παίρνει το όνομα του αριθμού της, { $id }.
+import-scrivener-metadata-tag-name-disambiguated-line = { $count ->
+    [one] 1 ετικέτα παίρνει νέο όνομα, επειδή μια άλλη ετικέτα έχει ήδη το όνομά της.
+   *[other] { $count } ετικέτες παίρνουν νέο όνομα, επειδή άλλες ετικέτες έχουν ήδη τα ονόματά τους.
+}
+import-scrivener-metadata-rung-names-disambiguated-line = { $count ->
+    [one] 1 κατάσταση έχει το ίδιο όνομα με μια άλλη, οπότε παίρνει έναν αριθμό μετά το όνομά της. Ελέγξτε τη στις Ρυθμίσεις ▸ Έργο ▸ Καταστάσεις.
+   *[other] { $count } καταστάσεις έχουν το ίδιο όνομα με κάποια άλλη, οπότε η καθεμία παίρνει έναν αριθμό μετά το όνομά της. Ελέγξτε τις στις Ρυθμίσεις ▸ Έργο ▸ Καταστάσεις.
+}
+import-scrivener-metadata-unused-labels-skipped-line = { $count ->
+    [one] 1 λεζάντα που δεν φέρει κανένα έγγραφο δεν εισάγεται.
+   *[other] { $count } λεζάντες που δεν φέρει κανένα έγγραφο δεν εισάγονται.
+}
+import-scrivener-metadata-labels-without-row-line = { $count ->
+    [one] Η λεζάντα 1 στοιχείου χωρίς θέση στο νέο έργο δεν μεταφέρεται.
+   *[other] Οι λεζάντες { $count } στοιχείων χωρίς θέση στο νέο έργο δεν μεταφέρονται.
+}
+import-scrivener-metadata-statuses-without-row-line = { $count ->
+    [one] Η κατάσταση 1 στοιχείου χωρίς θέση στο νέο έργο δεν μεταφέρεται.
+   *[other] Οι καταστάσεις { $count } στοιχείων χωρίς θέση στο νέο έργο δεν μεταφέρονται.
+}
+import-scrivener-metadata-unnamed-keyword-line = Μια λέξη-κλειδί χωρίς όνομα παίρνει το όνομα του αριθμού της, { $id }.
+import-scrivener-metadata-keywords-without-row-line = { $count ->
+    [one] Οι λέξεις-κλειδιά 1 στοιχείου χωρίς θέση στο νέο έργο δεν μεταφέρονται.
+   *[other] Οι λέξεις-κλειδιά { $count } στοιχείων χωρίς θέση στο νέο έργο δεν μεταφέρονται.
+}
+import-scrivener-metadata-custom-values-without-row-line = { $count ->
+    [one] Τα προσαρμοσμένα μεταδεδομένα 1 στοιχείου χωρίς θέση στο νέο έργο δεν μεταφέρονται.
+   *[other] Τα προσαρμοσμένα μεταδεδομένα { $count } στοιχείων χωρίς θέση στο νέο έργο δεν μεταφέρονται.
+}
+import-scrivener-metadata-bookmarks-without-row-line = { $count ->
+    [one] Οι σελιδοδείκτες 1 στοιχείου χωρίς θέση στο νέο έργο δεν μεταφέρονται.
+   *[other] Οι σελιδοδείκτες { $count } στοιχείων χωρίς θέση στο νέο έργο δεν μεταφέρονται.
+}
+import-scrivener-metadata-targets-without-row-line = { $count ->
+    [one] Ο στόχος 1 στοιχείου χωρίς θέση στο νέο έργο δεν μεταφέρεται.
+   *[other] Οι στόχοι { $count } στοιχείων χωρίς θέση στο νέο έργο δεν μεταφέρονται.
+}
+
+## What the import does with the keywords, custom metadata, collections, bookmarks, targets,
+## the deadline, the auto-complete list and the icons. Each line is said twice: on the Review
+## page before the import, then in its report, so it reads the same at both times. `$note`
+## and `$folder` are the titles the import gives a note and its "From Scrivener" folder;
+## `$day` is a day as YYYY-MM-DD.
+import-scrivener-metadata-pov-hint-line = { $count ->
+    [one] Η λεζάντα ή η τιμή πεδίου { $values } αντιστοιχεί στην καταχώριση της βίβλου ιστορίας { $matches }. Αν δηλώνει την οπτική γωνία, ορίστε την στον επιθεωρητή: η εισαγωγή δεν συνδέει τίποτα.
+   *[other] Οι λεζάντες ή οι τιμές πεδίων { $values } αντιστοιχούν στις καταχωρίσεις της βίβλου ιστορίας { $matches }. Αν δηλώνουν οπτικές γωνίες, ορίστε τις στον επιθεωρητή: η εισαγωγή δεν συνδέει τίποτα.
+}
+import-scrivener-metadata-checkbox-default-unknown-line = Το πεδίο πλαισίου ελέγχου «{ $field }» έχει μια προεπιλογή που το Skribisto δεν μπορεί να διαβάσει, οπότε δεν μπορεί να ξέρει ποια έγγραφα είναι επιλεγμένα από προεπιλογή. Μόνο τα έγγραφα που επιλέχθηκαν ένα ένα φέρουν την ετικέτα του.
+import-scrivener-metadata-goals-in-other-unit-line = { $count ->
+    [one] 1 στόχος έχει οριστεί στην άλλη μονάδα μέτρησης. Διατηρείται, και εμφανίζεται μόλις αλλάξετε τη μονάδα μέτρησης στις Ρυθμίσεις ▸ Έργο ▸ Δομή.
+   *[other] { $count } στόχοι έχουν οριστεί στην άλλη μονάδα μέτρησης. Διατηρούνται, και εμφανίζονται μόλις αλλάξετε τη μονάδα μέτρησης στις Ρυθμίσεις ▸ Έργο ▸ Δομή.
+}
+import-scrivener-metadata-counting-differs-line = Το Scrivener μετρούσε τον στόχο χειρογράφου σε άλλα έγγραφα από εκείνα που μετρά το Skribisto. Ο στόχος του βιβλίου μετρά τις σκηνές που περιλαμβάνονται στις εξαγωγές.
+import-scrivener-metadata-writing-days-not-read-line = Οι ημέρες γραφής «{ $raw }» δεν μπορούν να διαβαστούν, οπότε ο «Ρυθμός» του βιβλίου μετρά κάθε ημέρα ως ημέρα γραφής. Αλλάξτε τις εκεί.
+import-scrivener-metadata-script-mode-rows-line = { $count ->
+    [one] 1 στοιχείο ήταν σε λειτουργία σεναρίου στο Scrivener. Το Skribisto κρατά τις λέξεις του ως πρόζα, χωρίς τη διάταξη σεναρίου.
+   *[other] { $count } στοιχεία ήταν σε λειτουργία σεναρίου στο Scrivener. Το Skribisto κρατά τις λέξεις τους ως πρόζα, χωρίς τη διάταξη σεναρίου.
+}
+import-scrivener-metadata-keywords-became-tags-line = { $tags ->
+    [one] 1 λέξη-κλειδί γίνεται ετικέτα, σε { $rows ->
+        [one] { $rows } στοιχείο
+       *[other] { $rows } στοιχεία
+    }.
+   *[other] { $tags } λέξεις-κλειδιά γίνονται ετικέτες, σε { $rows ->
+        [one] { $rows } στοιχείο
+       *[other] { $rows } στοιχεία
+    }.
+}
+import-scrivener-metadata-keyword-hierarchy-flattened-line = { $count ->
+    [one] 1 λέξη-κλειδί βρισκόταν μέσα σε άλλη στο Scrivener. Οι ετικέτες δεν έχουν ιεραρχία: οι λεπτομέρειες της ετικέτας της λένε πού βρισκόταν.
+   *[other] { $count } λέξεις-κλειδιά βρίσκονταν μέσα σε άλλες στο Scrivener. Οι ετικέτες δεν έχουν ιεραρχία: οι λεπτομέρειες κάθε ετικέτας λένε πού βρισκόταν η λέξη-κλειδί της.
+}
+import-scrivener-metadata-fields-became-tags-line = { $fields ->
+    [one] 1 πεδίο λίστας ή πλαισίου ελέγχου γίνεται { $tags ->
+        [one] { $tags } ετικέτα
+       *[other] { $tags } ετικέτες
+    }, σε { $rows ->
+        [one] { $rows } στοιχείο
+       *[other] { $rows } στοιχεία
+    }.
+   *[other] { $fields } πεδία λίστας και πλαισίου ελέγχου γίνονται { $tags ->
+        [one] { $tags } ετικέτα
+       *[other] { $tags } ετικέτες
+    }, σε { $rows ->
+        [one] { $rows } στοιχείο
+       *[other] { $rows } στοιχεία
+    }.
+}
+import-scrivener-metadata-collections-became-tags-line = { $tags ->
+    [one] 1 συλλογή γίνεται ετικέτα, σε { $rows ->
+        [one] { $rows } στοιχείο
+       *[other] { $rows } στοιχεία
+    }.
+   *[other] { $tags } συλλογές γίνονται ετικέτες, σε { $rows ->
+        [one] { $rows } στοιχείο
+       *[other] { $rows } στοιχεία
+    }.
+}
+import-scrivener-metadata-collection-order-lost-line = { $count ->
+    [one] Μια ετικέτα δεν κρατά σειρά, οπότε η σειρά των εγγράφων σε 1 συλλογή δεν διατηρείται.
+   *[other] Μια ετικέτα δεν κρατά σειρά, οπότε η σειρά των εγγράφων σε { $count } συλλογές δεν διατηρείται.
+}
+import-scrivener-metadata-bookmarks-became-links-line = { $count ->
+    [one] 1 σελιδοδείκτης γίνεται σύνδεσμος ανάμεσα σε δύο σημειώσεις, ή ανάμεσα σε μια σκηνή και μια καταχώριση της βίβλου ιστορίας: δείτε τους «Συνδέσμους» και τα «Πρόσωπα».
+   *[other] { $count } σελιδοδείκτες γίνονται σύνδεσμοι ανάμεσα σε σημειώσεις, ή ανάμεσα σε σκηνές και καταχωρίσεις της βίβλου ιστορίας: δείτε τους «Συνδέσμους» και τα «Πρόσωπα».
+}
+import-scrivener-metadata-goals-kept-line = { $count ->
+    [one] 1 στόχος εγγράφου του Scrivener γίνεται στόχος στο Skribisto.
+   *[other] { $count } στόχοι εγγράφων του Scrivener γίνονται στόχοι στο Skribisto.
+}
+import-scrivener-metadata-draft-target-kept-words-line = { $value ->
+    [one] Ο στόχος χειρογράφου της 1 λέξης γίνεται ο στόχος του βιβλίου.
+   *[other] Ο στόχος χειρογράφου των { $value } λέξεων γίνεται ο στόχος του βιβλίου.
+}
+import-scrivener-metadata-draft-target-kept-characters-line = { $value ->
+    [one] Ο στόχος χειρογράφου του 1 χαρακτήρα γίνεται ο στόχος του βιβλίου.
+   *[other] Ο στόχος χειρογράφου των { $value } χαρακτήρων γίνεται ο στόχος του βιβλίου.
+}
+import-scrivener-metadata-pace-planned-line = Η προθεσμία, { $day }, γίνεται ο «Ρυθμός» του βιβλίου, που σχεδιάζει τις λέξεις κάθε ημέρας γραφής που επιλέξατε στο Scrivener, από την ημέρα της εισαγωγής.
+import-scrivener-metadata-pace-planned-day-off-line = Η προθεσμία, { $day }, γίνεται ο «Ρυθμός» του βιβλίου, που σχεδιάζει τις λέξεις κάθε ημέρας γραφής που επιλέξατε στο Scrivener, από την ημέρα της εισαγωγής. Όπως και στο Scrivener, η ίδια η ημέρα της προθεσμίας είναι ημέρα ανάπαυσης.
+import-scrivener-metadata-dictionary-words-line = { $count ->
+    [one] 1 λέξη αυτόματης συμπλήρωσης μπαίνει στο προσωπικό λεξικό του έργου, ώστε να μη σημειώνεται ως ορθογραφικό λάθος.
+   *[other] { $count } λέξεις αυτόματης συμπλήρωσης μπαίνουν στο προσωπικό λεξικό του έργου, ώστε να μη σημειώνονται ως ορθογραφικά λάθη.
+}
+import-scrivener-metadata-listed-project-line = { $count ->
+    [one] 1 πληροφορία του έργου παρατίθεται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+   *[other] { $count } πληροφορίες του έργου παρατίθενται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+}
+import-scrivener-metadata-listed-project-bookmarks-line = { $count ->
+    [one] 1 σελιδοδείκτης έργου παρατίθεται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+   *[other] { $count } σελιδοδείκτες έργου παρατίθενται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+}
+import-scrivener-metadata-listed-replacements-line = { $count ->
+    [one] 1 αντικατάσταση μεταγλώττισης παρατίθεται στη σημείωση «{ $note }» του φακέλου «{ $folder }». Το Skribisto δεν την εκτελεί.
+   *[other] { $count } αντικαταστάσεις μεταγλώττισης παρατίθενται στη σημείωση «{ $note }» του φακέλου «{ $folder }». Το Skribisto δεν τις εκτελεί.
+}
+import-scrivener-metadata-listed-auto-complete-line = { $count ->
+    [one] 1 καταχώριση αυτόματης συμπλήρωσης με πολλές λέξεις παρατίθεται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+   *[other] { $count } καταχωρίσεις αυτόματης συμπλήρωσης με πολλές λέξεις παρατίθενται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+}
+import-scrivener-metadata-listed-saved-searches-line = { $count ->
+    [one] 1 αποθηκευμένη αναζήτηση παρατίθεται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+   *[other] { $count } αποθηκευμένες αναζητήσεις παρατίθενται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+}
+import-scrivener-metadata-listed-custom-metadata-line = { $count ->
+    [one] 1 τιμή προσαρμοσμένων μεταδεδομένων που δεν μπορεί να κρατήσει μια ετικέτα παρατίθεται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+   *[other] { $count } τιμές προσαρμοσμένων μεταδεδομένων που δεν μπορεί να κρατήσει μια ετικέτα παρατίθενται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+}
+import-scrivener-metadata-listed-targets-line = { $count ->
+    [one] 1 στόχος εγγράφου παρατίθεται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+   *[other] { $count } στόχοι εγγράφων παρατίθενται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+}
+import-scrivener-metadata-listed-bookmarks-line = { $count ->
+    [one] 1 σελιδοδείκτης που δεν μπορεί να δείξει κανένας σύνδεσμος του Skribisto παρατίθεται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+   *[other] { $count } σελιδοδείκτες που δεν μπορεί να δείξει κανένας σύνδεσμος του Skribisto παρατίθενται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+}
+import-scrivener-metadata-targets-on-notes-line = { $count ->
+    [one] 1 στόχος εγγράφου βρίσκεται σε σημείωση, το κείμενο της οποίας δεν το μετρά κανένας στόχος, οπότε δεν γίνεται στόχος στο Skribisto.
+   *[other] { $count } στόχοι εγγράφων βρίσκονται σε σημειώσεις, το κείμενο των οποίων δεν το μετρά κανένας στόχος, οπότε δεν γίνονται στόχοι στο Skribisto.
+}
+import-scrivener-metadata-targets-on-split-documents-line = { $count ->
+    [one] 1 στόχος εγγράφου βρίσκεται σε έγγραφο που διαιρείται στις επικεφαλίδες του, τα κεφάλαια του οποίου δεν τα μετρά μαζί κανένας στόχος, οπότε δεν γίνεται στόχος στο Skribisto.
+   *[other] { $count } στόχοι εγγράφων βρίσκονται σε έγγραφα που διαιρούνται στις επικεφαλίδες τους, τα κεφάλαια των οποίων δεν τα μετρά μαζί κανένας στόχος, οπότε δεν γίνονται στόχοι στο Skribisto.
+}
+import-scrivener-metadata-bookmark-ends-without-row-line = { $count ->
+    [one] 1 σελιδοδείκτης οδηγεί σε έγγραφο χωρίς θέση στο νέο έργο, όπως ένα πρότυπο εγγράφου. Παρατίθεται με βάση το πού βρισκόταν το έγγραφο στο Scrivener.
+   *[other] { $count } σελιδοδείκτες οδηγούν σε έγγραφα χωρίς θέση στο νέο έργο, όπως πρότυπα εγγράφων. Παρατίθενται με βάση το πού βρίσκονταν τα έγγραφα στο Scrivener.
+}
+import-scrivener-metadata-unused-keywords-skipped-line = { $count ->
+    [one] 1 λέξη-κλειδί που δεν φέρει κανένα έγγραφο δεν εισάγεται.
+   *[other] { $count } λέξεις-κλειδιά που δεν φέρει κανένα έγγραφο δεν εισάγονται.
+}
+import-scrivener-metadata-list-value-invalid-line = { $count ->
+    [one] 1 τιμή του πεδίου λίστας «{ $field }» δεν αντιστοιχεί σε καμία από τις επιλογές του και δεν εισάγεται.
+   *[other] { $count } τιμές του πεδίου λίστας «{ $field }» δεν αντιστοιχούν σε καμία από τις επιλογές του και δεν εισάγονται.
+}
+import-scrivener-metadata-undefined-custom-field-line = { $count ->
+    [one] 1 τιμή ανήκει σε προσαρμοσμένο πεδίο που το έργο δεν ορίζει πια, και που δεν το εμφανίζει ούτε το Scrivener. Δεν εισάγεται.
+   *[other] { $count } τιμές ανήκουν σε προσαρμοσμένα πεδία που το έργο δεν ορίζει πια, και που δεν τα εμφανίζει ούτε το Scrivener. Δεν εισάγονται.
+}
+import-scrivener-metadata-collection-members-missing-line = { $count ->
+    [one] 1 έγγραφο της συλλογής «{ $name }» δεν έχει θέση στο νέο έργο ή δεν υπάρχει πια στο έργο Scrivener.
+   *[other] { $count } έγγραφα της συλλογής «{ $name }» δεν έχουν θέση στο νέο έργο ή δεν υπάρχουν πια στο έργο Scrivener.
+}
+import-scrivener-metadata-empty-collections-skipped-line = { $count ->
+    [one] 1 συλλογή που δεν περιέχει κανένα έγγραφο δεν εισάγεται.
+   *[other] { $count } συλλογές που δεν περιέχουν κανένα έγγραφο δεν εισάγονται.
+}
+import-scrivener-metadata-bookmarks-unresolved-line = { $count ->
+    [one] 1 σελιδοδείκτης οδηγεί σε έγγραφο που δεν υπάρχει πια στο έργο Scrivener και δεν εισάγεται.
+   *[other] { $count } σελιδοδείκτες οδηγούν σε έγγραφα που δεν υπάρχουν πια στο έργο Scrivener και δεν εισάγονται.
+}
+import-scrivener-metadata-targets-in-pages-line = { $count ->
+    [one] 1 στόχος εγγράφου μετρά σελίδες, που το Skribisto δεν μετρά, οπότε δεν γίνεται στόχος στο Skribisto.
+   *[other] { $count } στόχοι εγγράφων μετρούν σελίδες, που το Skribisto δεν μετρά, οπότε δεν γίνονται στόχοι στο Skribisto.
+}
+import-scrivener-metadata-targets-unreadable-line = { $count ->
+    [one] 1 στόχος δεν εισάγεται: η τιμή του δεν είναι αριθμός, είναι κάτω από το μηδέν ή ξεπερνά όσο μπορεί να χωρέσει ένας στόχος.
+   *[other] { $count } στόχοι δεν εισάγονται: οι τιμές τους δεν είναι αριθμοί, είναι κάτω από το μηδέν ή ξεπερνούν όσο μπορεί να χωρέσει ένας στόχος.
+}
+import-scrivener-metadata-draft-target-in-pages-line = { $value ->
+    [one] Ο στόχος χειρογράφου της 1 σελίδας δεν γίνεται στόχος στο Skribisto: το Skribisto μετρά λέξεις ή χαρακτήρες. Παρατίθεται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+   *[other] Ο στόχος χειρογράφου των { $value } σελίδων δεν γίνεται στόχος στο Skribisto: το Skribisto μετρά λέξεις ή χαρακτήρες. Παρατίθεται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+}
+import-scrivener-metadata-draft-target-no-book-words-line = { $value ->
+    [one] Ο στόχος χειρογράφου της 1 λέξης δεν γίνεται στόχος στο Skribisto, επειδή το χειρόγραφο σχηματίζει πολλά βιβλία ή κανένα. Παρατίθεται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+   *[other] Ο στόχος χειρογράφου των { $value } λέξεων δεν γίνεται στόχος στο Skribisto, επειδή το χειρόγραφο σχηματίζει πολλά βιβλία ή κανένα. Παρατίθεται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+}
+import-scrivener-metadata-draft-target-no-book-characters-line = { $value ->
+    [one] Ο στόχος χειρογράφου του 1 χαρακτήρα δεν γίνεται στόχος στο Skribisto, επειδή το χειρόγραφο σχηματίζει πολλά βιβλία ή κανένα. Παρατίθεται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+   *[other] Ο στόχος χειρογράφου των { $value } χαρακτήρων δεν γίνεται στόχος στο Skribisto, επειδή το χειρόγραφο σχηματίζει πολλά βιβλία ή κανένα. Παρατίθεται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+}
+import-scrivener-metadata-deadline-passed-line = Η προθεσμία, { $day }, έχει περάσει, οπότε δεν δημιουργεί «Ρυθμό». Παρατίθεται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+import-scrivener-metadata-deadline-no-writing-day-line = Δεν απομένει καμία ημέρα γραφής από την ημέρα της εισαγωγής έως την προθεσμία, { $day }, οπότε δεν δημιουργείται «Ρυθμός». Η προθεσμία παρατίθεται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+import-scrivener-metadata-deadline-template-line = Η προθεσμία, { $day }, ήταν αποθηκευμένη στο πρότυπο, οπότε δεν δημιουργεί «Ρυθμό». Παρατίθεται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+import-scrivener-metadata-deadline-no-word-goal-line = Η προθεσμία, { $day }, δεν δημιουργεί «Ρυθμό», επειδή το χειρόγραφο δεν έχει στόχο λέξεων με βάση τον οποίο να γίνει ο σχεδιασμός. Παρατίθεται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+import-scrivener-metadata-deadline-character-goal-line = Η προθεσμία, { $day }, δεν δημιουργεί «Ρυθμό», επειδή ο στόχος χειρογράφου μετρά χαρακτήρες ενώ ο «Ρυθμός» μετρά λέξεις. Παρατίθεται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+import-scrivener-metadata-deadline-no-book-line = Η προθεσμία, { $day }, δεν δημιουργεί «Ρυθμό», επειδή το χειρόγραφο σχηματίζει πολλά βιβλία ή κανένα. Παρατίθεται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+import-scrivener-metadata-deadline-unreadable-line = Η προθεσμία δεν μπορεί να διαβαστεί, οπότε δεν δημιουργεί «Ρυθμό». Παρατίθεται όπως είναι γραμμένη στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+import-scrivener-metadata-session-target-words-line = { $value ->
+    [one] Ο στόχος συνεδρίας της 1 λέξης δεν εισάγεται: στο Skribisto, ο στόχος της συνεδρίας γραφής είναι μία ρύθμιση για όλα τα έργα. Παρατίθεται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+   *[other] Ο στόχος συνεδρίας των { $value } λέξεων δεν εισάγεται: στο Skribisto, ο στόχος της συνεδρίας γραφής είναι μία ρύθμιση για όλα τα έργα. Παρατίθεται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+}
+import-scrivener-metadata-session-target-characters-line = { $value ->
+    [one] Ο στόχος συνεδρίας του 1 χαρακτήρα δεν εισάγεται: στο Skribisto, ο στόχος της συνεδρίας γραφής είναι μία ρύθμιση για όλα τα έργα, σε λέξεις. Παρατίθεται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+   *[other] Ο στόχος συνεδρίας των { $value } χαρακτήρων δεν εισάγεται: στο Skribisto, ο στόχος της συνεδρίας γραφής είναι μία ρύθμιση για όλα τα έργα, σε λέξεις. Παρατίθεται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+}
+import-scrivener-metadata-session-target-pages-line = { $value ->
+    [one] Ο στόχος συνεδρίας της 1 σελίδας δεν εισάγεται: στο Skribisto, ο στόχος της συνεδρίας γραφής είναι μία ρύθμιση για όλα τα έργα, σε λέξεις. Παρατίθεται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+   *[other] Ο στόχος συνεδρίας των { $value } σελίδων δεν εισάγεται: στο Skribisto, ο στόχος της συνεδρίας γραφής είναι μία ρύθμιση για όλα τα έργα, σε λέξεις. Παρατίθεται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+}
+import-scrivener-metadata-session-target-calculated-words-line = { $value ->
+    [one] Ο στόχος συνεδρίας της 1 λέξης, που το Scrivener υπολόγισε από την προθεσμία και τις ημέρες γραφής, δεν εισάγεται: στο Skribisto, ο στόχος της συνεδρίας γραφής είναι μία ρύθμιση για όλα τα έργα. Παρατίθεται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+   *[other] Ο στόχος συνεδρίας των { $value } λέξεων, που το Scrivener υπολόγισε από την προθεσμία και τις ημέρες γραφής, δεν εισάγεται: στο Skribisto, ο στόχος της συνεδρίας γραφής είναι μία ρύθμιση για όλα τα έργα. Παρατίθεται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+}
+import-scrivener-metadata-session-target-calculated-characters-line = { $value ->
+    [one] Ο στόχος συνεδρίας του 1 χαρακτήρα, που το Scrivener υπολόγισε από την προθεσμία και τις ημέρες γραφής, δεν εισάγεται: στο Skribisto, ο στόχος της συνεδρίας γραφής είναι μία ρύθμιση για όλα τα έργα, σε λέξεις. Παρατίθεται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+   *[other] Ο στόχος συνεδρίας των { $value } χαρακτήρων, που το Scrivener υπολόγισε από την προθεσμία και τις ημέρες γραφής, δεν εισάγεται: στο Skribisto, ο στόχος της συνεδρίας γραφής είναι μία ρύθμιση για όλα τα έργα, σε λέξεις. Παρατίθεται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+}
+import-scrivener-metadata-session-target-calculated-pages-line = { $value ->
+    [one] Ο στόχος συνεδρίας της 1 σελίδας, που το Scrivener υπολόγισε από την προθεσμία και τις ημέρες γραφής, δεν εισάγεται: στο Skribisto, ο στόχος της συνεδρίας γραφής είναι μία ρύθμιση για όλα τα έργα, σε λέξεις. Παρατίθεται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+   *[other] Ο στόχος συνεδρίας των { $value } σελίδων, που το Scrivener υπολόγισε από την προθεσμία και τις ημέρες γραφής, δεν εισάγεται: στο Skribisto, ο στόχος της συνεδρίας γραφής είναι μία ρύθμιση για όλα τα έργα, σε λέξεις. Παρατίθεται στη σημείωση «{ $note }» του φακέλου «{ $folder }».
+}
+import-scrivener-metadata-icons-dropped-line = { $count ->
+    [one] 1 στοιχείο είχε δικό του εικονίδιο στο ντοσιέ, που δεν μεταφέρεται: το Skribisto δείχνει το εικονίδιο κάθε στοιχείου με βάση τον τύπο του.
+   *[other] { $count } στοιχεία είχαν δικά τους εικονίδια στο ντοσιέ, που δεν μεταφέρονται: το Skribisto δείχνει το εικονίδιο κάθε στοιχείου με βάση τον τύπο του.
+}
+
+## What converting the prose did, as the import's report says it. `$count` is how many texts,
+## or how many of a thing, as each line says; `$example` quotes the project.
+import-scrivener-prose-unreadable-line = { $count ->
+    [one] 1 κείμενο δεν μπόρεσε να διαβαστεί. Εισάγεται κενό.
+   *[other] { $count } κείμενα δεν μπόρεσαν να διαβαστούν. Εισάγονται κενά.
+}
+import-scrivener-prose-comments-unreadable-line = { $count ->
+    [one] Τα σχόλια και οι συνδεδεμένες υποσημειώσεις 1 κειμένου δεν μπόρεσαν να διαβαστούν. Οι λέξεις που σημείωναν διατηρούνται.
+   *[other] Τα σχόλια και οι συνδεδεμένες υποσημειώσεις { $count } κειμένων δεν μπόρεσαν να διαβαστούν. Οι λέξεις που σημείωναν διατηρούνται.
+}
+import-scrivener-prose-read-as-plain-text-line = { $count ->
+    [one] 1 κείμενο ήταν αποθηκευμένο ως απλό και όχι ως μορφοποιημένο κείμενο, και διαβάζεται ως τέτοιο.
+   *[other] { $count } κείμενα ήταν αποθηκευμένα ως απλό και όχι ως μορφοποιημένο κείμενο, και διαβάζονται ως τέτοια.
+}
+import-scrivener-prose-inline-note-unmatched-line = { $count ->
+    [one] 1 σημάδι ενσωματωμένης σημείωσης δεν ζευγαρώνει με άλλο και διατηρείται ως κείμενο.
+   *[other] { $count } σημάδια ενσωματωμένων σημειώσεων δεν ζευγαρώνουν με άλλο και διατηρούνται ως κείμενο.
+}
+import-scrivener-prose-style-unresolved-line = { $count ->
+    [one] 1 σημάδι στιλ ονομάζει ένα στιλ που δεν ορίζει το έργο. Αφαιρείται, και το κείμενο κρατά τη μορφοποίησή του.
+   *[other] { $count } σημάδια στιλ ονομάζουν στιλ που δεν ορίζει το έργο. Αφαιρούνται, και το κείμενο κρατά τη μορφοποίησή του.
+}
+import-scrivener-prose-styles-lost-in-export-line = { $count ->
+    [one] 1 παράγραφος ίσως είναι επικεφαλίδα που έχασε το στιλ της όταν το Scrivener 3 εξήγαγε το έργο στην παλαιότερη μορφή του, και μεταφέρεται ως κανονική παράγραφος. Ελέγξτε την, ή εισαγάγετε το έργο από το οποίο εξήχθη.
+   *[other] { $count } παράγραφοι ίσως είναι επικεφαλίδες που έχασαν το στιλ τους όταν το Scrivener 3 εξήγαγε το έργο στην παλαιότερη μορφή του, και μεταφέρονται ως κανονικές παράγραφοι. Ελέγξτε τις, ή εισαγάγετε το έργο από το οποίο εξήχθησαν.
+}
+import-scrivener-prose-comment-anchor-without-entry-line = { $count ->
+    [one] 1 σχόλιο ή υποσημείωση είχε χάσει το περιεχόμενό του στο Scrivener. Οι λέξεις που σημείωνε διατηρούνται, χωρίς αυτό.
+   *[other] { $count } σχόλια ή υποσημειώσεις είχαν χάσει το περιεχόμενό τους στο Scrivener. Οι λέξεις που σημείωναν διατηρούνται, χωρίς αυτά.
+}
+import-scrivener-prose-comment-entry-without-anchor-line = { $count ->
+    [one] 1 σχόλιο δεν είχε πια θέση στο κείμενό του και προσαρτάται στην πρώτη παράγραφο.
+   *[other] { $count } σχόλια δεν είχαν πια θέση στο κείμενό τους και προσαρτώνται στην πρώτη παράγραφο.
+}
+import-scrivener-prose-footnote-entry-without-anchor-line = { $count ->
+    [one] 1 συνδεδεμένη υποσημείωση δεν είχε πια θέση στο κείμενό της και παρατίθεται στο τέλος του.
+   *[other] { $count } συνδεδεμένες υποσημειώσεις δεν είχαν πια θέση στο κείμενό τους και παρατίθενται στο τέλος του.
+}
+import-scrivener-prose-range-comment-reading-line = { $count ->
+    [one] 1 σχόλιο από παλαιότερο Scrivener τοποθετήθηκε με μια άλλη ερμηνεία της θέσης του. Ελέγξτε ότι βρίσκεται στις σωστές λέξεις.
+   *[other] { $count } σχόλια από παλαιότερο Scrivener τοποθετήθηκαν με μια άλλη ερμηνεία της θέσης τους. Ελέγξτε ότι βρίσκονται στις σωστές λέξεις.
+}
+import-scrivener-prose-range-comment-reading-markers-counted-line = { $count ->
+    [one] 1 σχόλιο από παλαιότερο Scrivener τοποθετήθηκε μετρώντας τα σημάδια των ενσωματωμένων σημειώσεών του. Ελέγξτε ότι βρίσκεται στις σωστές λέξεις.
+   *[other] { $count } σχόλια από παλαιότερο Scrivener τοποθετήθηκαν μετρώντας τα σημάδια των ενσωματωμένων σημειώσεών τους. Ελέγξτε ότι βρίσκονται στις σωστές λέξεις.
+}
+import-scrivener-prose-range-comment-reading-pictures-not-counted-line = { $count ->
+    [one] 1 σχόλιο από παλαιότερο Scrivener τοποθετήθηκε χωρίς να μετρηθούν οι εικόνες του. Ελέγξτε ότι βρίσκεται στις σωστές λέξεις.
+   *[other] { $count } σχόλια από παλαιότερο Scrivener τοποθετήθηκαν χωρίς να μετρηθούν οι εικόνες τους. Ελέγξτε ότι βρίσκονται στις σωστές λέξεις.
+}
+import-scrivener-prose-range-comment-approximate-line = { $count ->
+    [one] 1 σχόλιο από παλαιότερο Scrivener δεν ταιριάζει ακριβώς με καμία ερμηνεία της θέσης του, και ίσως απέχει λίγους χαρακτήρες.
+   *[other] { $count } σχόλια από παλαιότερο Scrivener δεν ταιριάζουν ακριβώς με καμία ερμηνεία της θέσης τους, και ίσως απέχουν λίγους χαρακτήρες.
+}
+import-scrivener-prose-document-link-unresolved-line = { $count ->
+    [one] 1 σύνδεσμος δείχνει σε έγγραφο που η εισαγωγή δεν μετέφερε. Οι λέξεις του μένουν.
+   *[other] { $count } σύνδεσμοι δείχνουν σε έγγραφα που η εισαγωγή δεν μετέφερε. Οι λέξεις τους μένουν.
+}
+import-scrivener-prose-linked-picture-not-read-line = { $count ->
+    [one] 1 εικόνα συνδεδεμένη με αρχείο στον δίσκο σας, η «{ $example }», δεν μεταφέρθηκε.
+   *[other] { $count } εικόνες συνδεδεμένες με αρχεία στον δίσκο σας, όπως η «{ $example }», δεν μεταφέρθηκαν.
+}
+import-scrivener-prose-heading-repeats-title-line = { $count ->
+    [one] 1 κείμενο ξεκινά με επικεφαλίδα που επαναλαμβάνει τον τίτλο του, οπότε μια εξαγωγή μπορεί να τυπώσει τον τίτλο δύο φορές.
+   *[other] { $count } κείμενα ξεκινούν με επικεφαλίδα που επαναλαμβάνει τον τίτλο τους, οπότε μια εξαγωγή μπορεί να τυπώσει τον τίτλο δύο φορές.
+}
+import-scrivener-prose-markdown-as-text-line = { $count ->
+    [one] 1 παράγραφος γραμμένη σε Markdown διατηρείται ως κείμενο, όπως είναι.
+   *[other] { $count } παράγραφοι γραμμένες σε Markdown διατηρούνται ως κείμενο, όπως είναι.
+}
+import-scrivener-prose-citation-keys-as-text-line = { $count ->
+    [one] 1 παράγραφος περιέχει κλειδιά παραπομπών για πρόγραμμα βιβλιογραφίας, που διατηρούνται ως κείμενο.
+   *[other] { $count } παράγραφοι περιέχουν κλειδιά παραπομπών για πρόγραμμα βιβλιογραφίας, που διατηρούνται ως κείμενο.
+}
+import-scrivener-prose-placeholders-in-exported-text-line = { $count ->
+    [one] 1 σύμβολο κράτησης θέσης του Scrivener, το { $example }, διατηρείται ως απλό κείμενο σε ό,τι εξάγετε. Αντικαταστήστε το με το χέρι.
+   *[other] { $count } σύμβολα κράτησης θέσης του Scrivener, όπως το { $example }, διατηρούνται ως απλό κείμενο σε ό,τι εξάγετε. Αντικαταστήστε τα με το χέρι.
+}
+import-scrivener-prose-placeholders-in-other-text-line = { $count ->
+    [one] 1 σύμβολο κράτησης θέσης του Scrivener, το { $example }, διατηρείται ως απλό κείμενο σε ένα κείμενο που δεν εξάγεται.
+   *[other] { $count } σύμβολα κράτησης θέσης του Scrivener, όπως το { $example }, διατηρούνται ως απλό κείμενο σε κείμενα που δεν εξάγονται.
+}
+import-scrivener-prose-ornament-lines-kept-line = { $count ->
+    [one] 1 κεντραρισμένη γραμμή με διακοσμητικά ίσως σημαδεύει διαχωριστικό σκηνής και διατηρείται όπως γράφτηκε.
+   *[other] { $count } κεντραρισμένες γραμμές με διακοσμητικά ίσως σημαδεύουν διαχωριστικά σκηνών και διατηρούνται όπως γράφτηκαν.
+}
+import-scrivener-prose-long-document-line = { $count ->
+    [one] 1 κείμενο είναι πολύ μεγάλο και ίσως αργεί να ανοίξει.
+   *[other] { $count } κείμενα είναι πολύ μεγάλα και ίσως αργούν να ανοίξουν.
+}
+import-scrivener-prose-pictures-without-description-line = { $count ->
+    [one] 1 εικόνα δεν έχει περιγραφή για αναγνώστες που δεν μπορούν να τη δουν. Μπορείτε να προσθέσετε μία στον επεξεργαστή.
+   *[other] { $count } εικόνες δεν έχουν περιγραφή για αναγνώστες που δεν μπορούν να τις δουν. Μπορείτε να προσθέσετε περιγραφή στον επεξεργαστή.
+}
+import-scrivener-prose-struck-text-compiled-away-line = { $count ->
+    [one] Το κείμενο με διακριτή διαγραφή σε 1 κείμενο διατηρείται. Η μεταγλώττιση του Scrivener το άφηνε έξω από το βιβλίο, αλλά μια εξαγωγή από το Skribisto το τυπώνει.
+   *[other] Το κείμενο με διακριτή διαγραφή σε { $count } κείμενα διατηρείται. Η μεταγλώττιση του Scrivener το άφηνε έξω από το βιβλίο, αλλά μια εξαγωγή από το Skribisto το τυπώνει.
+}
+import-scrivener-prose-compile-deleted-style-printed-line = { $count ->
+    [one] Το κείμενο με το στιλ «{ $example }», που διέγραφε η μεταγλώττιση του Scrivener, διατηρείται ως πρόζα, και μια εξαγωγή από το Skribisto το τυπώνει.
+   *[other] Το κείμενο σε { $count } στιλ που διέγραφε η μεταγλώττιση του Scrivener, όπως το «{ $example }», διατηρείται ως πρόζα, και μια εξαγωγή από το Skribisto το τυπώνει.
+}
+import-scrivener-prose-compile-raw-style-printed-line = { $count ->
+    [one] Το κείμενο με το στιλ «{ $example }», που η μεταγλώττιση του Scrivener περνούσε ως κώδικα για άλλο πρόγραμμα, διατηρείται ως πρόζα, και μια εξαγωγή από το Skribisto το τυπώνει.
+   *[other] Το κείμενο σε { $count } στιλ που η μεταγλώττιση του Scrivener περνούσε ως κώδικα για άλλο πρόγραμμα, όπως το «{ $example }», διατηρείται ως πρόζα, και μια εξαγωγή από το Skribisto το τυπώνει.
+}
+import-scrivener-prose-left-out-after-document-line = { $count ->
+    [one] 1 κομμάτι ενός κατεστραμμένου αρχείου, μετά το τέλος του, παραλείπεται.
+   *[other] { $count } κομμάτια κατεστραμμένων αρχείων, μετά το τέλος τους, παραλείπονται.
+}
+import-scrivener-prose-left-out-header-or-footer-line = { $count ->
+    [one] 1 κεφαλίδα ή υποσέλιδο παραλείπεται: δεν αποτελεί μέρος του κειμένου.
+   *[other] { $count } κεφαλίδες και υποσέλιδα παραλείπονται: δεν αποτελούν μέρος του κειμένου.
+}
+import-scrivener-prose-left-out-list-label-picture-line = { $count ->
+    [one] 1 εικόνα που χρησιμοποιείται ως κουκκίδα λίστας παραλείπεται.
+   *[other] { $count } εικόνες που χρησιμοποιούνται ως κουκκίδες λίστας παραλείπονται.
+}
+import-scrivener-prose-left-out-line = { $count ->
+    [one] 1 κομμάτι αρχείου που δεν ανήκει σε κανένα κείμενο παραλείπεται.
+   *[other] { $count } κομμάτια αρχείων που δεν ανήκουν σε κανένα κείμενο παραλείπονται.
+}
+import-scrivener-prose-undecodable-characters-line = { $count ->
+    [one] 1 χαρακτήρας δεν μπόρεσε να αποκωδικοποιηθεί και εμφανίζεται ως σύμβολο αντικατάστασης (�) στη θέση του.
+   *[other] { $count } χαρακτήρες δεν μπόρεσαν να αποκωδικοποιηθούν και εμφανίζονται ως σύμβολα αντικατάστασης (�) στη θέση τους.
+}
+import-scrivener-prose-inline-notes-merged-line = { $count ->
+    [one] 1 ενσωματωμένη σημείωση που το Scrivener είχε χωρίσει εκεί όπου άλλαζε η μορφοποίησή της ενώνεται ξανά.
+   *[other] { $count } ενσωματωμένες σημειώσεις που το Scrivener είχε χωρίσει εκεί όπου άλλαζε η μορφοποίησή τους ενώνονται ξανά.
+}
+import-scrivener-prose-inline-notes-joined-across-paragraphs-line = { $count ->
+    [one] 1 ενσωματωμένη σημείωση γραμμένη παράγραφο προς παράγραφο ενώνεται σε μία μόνο σημείωση.
+   *[other] { $count } ενσωματωμένες σημειώσεις γραμμένες παράγραφο προς παράγραφο ενώνονται σε σημειώσεις πολλών παραγράφων.
+}
+import-scrivener-prose-blank-notes-dropped-line = { $count ->
+    [one] 1 κενή ενσωματωμένη σημείωση παραλείπεται.
+   *[other] { $count } κενές ενσωματωμένες σημειώσεις παραλείπονται.
+}
+import-scrivener-prose-annotations-became-comments-line = { $count ->
+    [one] 1 ενσωματωμένη επισήμανση έγινε σχόλιο.
+   *[other] { $count } ενσωματωμένες επισημάνσεις έγιναν σχόλια.
+}
+import-scrivener-prose-annotation-only-document-kept-line = { $count ->
+    [one] 1 έγγραφο δεν περιείχε τίποτα άλλο εκτός από μια επισήμανση. Οι λέξεις του διατηρούνται ως πρόζα.
+   *[other] { $count } έγγραφα δεν περιείχαν τίποτα άλλο εκτός από μια επισήμανση. Οι λέξεις τους διατηρούνται ως πρόζα.
+}
+import-scrivener-prose-preserve-formatting-passages-line = { $count ->
+    [one] 1 απόσπασμα με τη σήμανση «Διατήρηση μορφοποίησης» (Preserve Formatting) φτάνει ως κανονικό κείμενο.
+   *[other] { $count } αποσπάσματα με τη σήμανση «Διατήρηση μορφοποίησης» (Preserve Formatting) φτάνουν ως κανονικό κείμενο.
+}
+import-scrivener-prose-nested-note-unwrapped-line = { $count ->
+    [one] 1 σημείωση μέσα σε σχόλιο ή υποσημείωση διατηρείται ως κείμενο, στη θέση της.
+   *[other] { $count } σημειώσεις μέσα σε σχόλια ή υποσημειώσεις διατηρούνται ως κείμενο, στη θέση τους.
+}
+import-scrivener-prose-style-not-carried-line = { $count ->
+    [one] Το στιλ «{ $example }» δεν έχει αντίστοιχο στο Skribisto. Το κείμενό του κρατά τις λέξεις του.
+   *[other] { $count } στιλ, όπως το «{ $example }», δεν έχουν αντίστοιχο στο Skribisto. Το κείμενό τους κρατά τις λέξεις του.
+}
+import-scrivener-prose-document-links-dropped-line = { $count ->
+    [one] 1 σύνδεσμος προς άλλο έγγραφο δεν έχει θέση στο Skribisto. Οι λέξεις του μένουν.
+   *[other] { $count } σύνδεσμοι προς άλλα έγγραφα δεν έχουν θέση στο Skribisto. Οι λέξεις τους μένουν.
+}
+import-scrivener-prose-document-links-kept-line = { $count ->
+    [one] 1 σύνδεσμος προς άλλο έγγραφο διατηρείται ως παραπομπή.
+   *[other] { $count } σύνδεσμοι προς άλλα έγγραφα διατηρούνται ως παραπομπές.
+}
+import-scrivener-prose-other-links-kept-as-text-line = { $count ->
+    [one] 1 σύνδεσμος προς άλλο έργο ή προς αρχείο διατηρείται ως κείμενο.
+   *[other] { $count } σύνδεσμοι προς άλλα έργα ή προς αρχεία διατηρούνται ως κείμενο.
+}
+import-scrivener-prose-soft-breaks-split-line = { $count ->
+    [one] 1 αλλαγή γραμμής μέσα σε παράγραφο ξεκινά τώρα δική της παράγραφο.
+   *[other] { $count } αλλαγές γραμμής μέσα σε παραγράφους ξεκινούν τώρα δικές τους παραγράφους.
+}
+import-scrivener-prose-typed-indents-removed-line = { $count ->
+    [one] 1 εσοχή πληκτρολογημένη στην αρχή παραγράφου αφαιρείται.
+   *[other] { $count } εσοχές πληκτρολογημένες στην αρχή παραγράφων αφαιρούνται.
+}
+import-scrivener-prose-left-indents-not-kept-line = { $count ->
+    [one] 1 παράγραφος με εσοχή από το περιθώριο χάνει την εσοχή της.
+   *[other] { $count } παράγραφοι με εσοχή από το περιθώριο χάνουν την εσοχή τους.
+}
+import-scrivener-prose-blank-lines-removed-line = { $count ->
+    [one] 1 κενή παράγραφος ανάμεσα σε δύο άλλες αφαιρείται.
+   *[other] { $count } κενές παράγραφοι ανάμεσα σε άλλες αφαιρούνται.
+}
+import-scrivener-prose-verse-stanza-gaps-lost-line = { $count ->
+    [one] 1 κενή γραμμή ανάμεσα στις στροφές ενός ποιήματος αφαιρείται, οπότε οι στροφές συνεχίζουν η μία μετά την άλλη.
+   *[other] { $count } κενές γραμμές ανάμεσα στις στροφές ενός ποιήματος αφαιρούνται, οπότε οι στροφές συνεχίζουν η μία μετά την άλλη.
+}
+import-scrivener-prose-blank-lines-became-scene-breaks-line = { $count ->
+    [one] 1 κενή γραμμή ανάμεσα σε παραγράφους έγινε διαχωριστικό σκηνής.
+   *[other] { $count } κενές γραμμές ανάμεσα σε παραγράφους έγιναν διαχωριστικά σκηνών.
+}
+import-scrivener-prose-ornaments-became-scene-breaks-line = { $count ->
+    [one] 1 γραμμή με διακοσμητικά έγινε διαχωριστικό σκηνής.
+   *[other] { $count } γραμμές με διακοσμητικά έγιναν διαχωριστικά σκηνών.
+}
+import-scrivener-prose-table-first-row-header-line = { $count ->
+    [one] 1 πίνακας ξεκινά τώρα με γραμμή κεφαλίδας.
+   *[other] { $count } πίνακες ξεκινούν τώρα με γραμμή κεφαλίδας.
+}
+import-scrivener-prose-table-cells-joined-line = { $count ->
+    [one] 1 κελί πίνακα περιείχε πολλές παραγράφους, που ενώνονται τώρα σε μία.
+   *[other] { $count } κελιά πινάκων περιείχαν πολλές παραγράφους, που ενώνονται τώρα σε μία.
+}
+import-scrivener-prose-formatting-lost-colour-line = { $count ->
+    [one] Το χρώμα του κειμένου αφαιρείται σε 1 κείμενο.
+   *[other] Το χρώμα του κειμένου αφαιρείται σε { $count } κείμενα.
+}
+import-scrivener-prose-formatting-lost-highlight-line = { $count ->
+    [one] Η χρωματική επισήμανση αφαιρείται σε 1 κείμενο.
+   *[other] Η χρωματική επισήμανση αφαιρείται σε { $count } κείμενα.
+}
+import-scrivener-prose-formatting-lost-small-caps-line = { $count ->
+    [one] Τα μικρά κεφαλαία εμφανίζονται ως κανονικά γράμματα σε 1 κείμενο.
+   *[other] Τα μικρά κεφαλαία εμφανίζονται ως κανονικά γράμματα σε { $count } κείμενα.
+}
+import-scrivener-prose-formatting-lost-all-caps-line = { $count ->
+    [one] Το κείμενο που εμφανιζόταν με κεφαλαία εμφανίζεται όπως πληκτρολογήθηκε σε 1 κείμενο.
+   *[other] Το κείμενο που εμφανιζόταν με κεφαλαία εμφανίζεται όπως πληκτρολογήθηκε σε { $count } κείμενα.
+}
+import-scrivener-prose-formatting-lost-hidden-line = { $count ->
+    [one] Το κρυφό κείμενο παραλείπεται σε 1 κείμενο.
+   *[other] Το κρυφό κείμενο παραλείπεται σε { $count } κείμενα.
+}
+import-scrivener-prose-formatting-lost-line = { $count ->
+    [one] Η μορφοποίηση για την οποία το Skribisto δεν έχει θέση αφαιρείται σε 1 κείμενο.
+   *[other] Η μορφοποίηση για την οποία το Skribisto δεν έχει θέση αφαιρείται σε { $count } κείμενα.
+}
+import-scrivener-prose-justified-text-not-kept-line = { $count ->
+    [one] 1 πλήρως στοιχισμένη παράγραφος ακολουθεί αντί γι' αυτό το στιλ της εξαγωγής.
+   *[other] { $count } πλήρως στοιχισμένες παράγραφοι ακολουθούν αντί γι' αυτό το στιλ της εξαγωγής.
+}
+import-scrivener-prose-comment-colours-lost-line = { $count ->
+    [one] 1 σχόλιο χάνει το χρώμα του.
+   *[other] { $count } σχόλια χάνουν το χρώμα τους.
+}
+import-scrivener-prose-control-characters-removed-line = { $count ->
+    [one] 1 αόρατος χαρακτήρας ελέγχου αφαιρείται.
+   *[other] { $count } αόρατοι χαρακτήρες ελέγχου αφαιρούνται.
+}
+import-scrivener-prose-note-on-heading-lost-line = { $count ->
+    [one] 1 υποσημείωση ή σχόλιο σε επικεφαλίδα κεφαλαίου δεν μπόρεσε να μείνει εκεί: ένα σχόλιο μετακινείται στην πρώτη παράγραφο του κεφαλαίου, μια υποσημείωση παραλείπεται.
+   *[other] { $count } υποσημειώσεις ή σχόλια σε επικεφαλίδες κεφαλαίων δεν μπόρεσαν να μείνουν εκεί: ένα σχόλιο μετακινείται στην πρώτη παράγραφο του κεφαλαίου, μια υποσημείωση παραλείπεται.
+}
+import-scrivener-prose-media-file-copied-line = { $count ->
+    [one] 1 αρχείο έρευνας που το Skribisto δεν μπορεί να ανοίξει αντιγράφηκε δίπλα στο νέο έργο. Η σημείωσή του λέει πού.
+   *[other] { $count } αρχεία έρευνας που το Skribisto δεν μπορεί να ανοίξει αντιγράφηκαν δίπλα στο νέο έργο. Οι σημειώσεις τους λένε πού.
+}
+import-scrivener-prose-media-file-not-carried-line = { $count ->
+    [one] 1 αρχείο έρευνας που το Skribisto δεν μπορεί να ανοίξει μένει στο έργο σας στο Scrivener. Η σημείωσή του το κατονομάζει.
+   *[other] { $count } αρχεία έρευνας που το Skribisto δεν μπορεί να ανοίξει μένουν στο έργο σας στο Scrivener. Οι σημειώσεις τους τα κατονομάζουν.
+}
+
+## When the import fails
+import-scrivener-error-refused = { $refusal } Δεν γράφτηκε τίποτα.
+import-scrivener-error-question = Το έργο θέτει τώρα ένα ερώτημα στο οποίο δεν απάντησε ο έλεγχός του. Κάντε νέο έλεγχο και μετά την εισαγωγή. Δεν γράφτηκε τίποτα.
+import-scrivener-error-not-accepted = Το έργο θέτει ένα ερώτημα που δεν έχετε αποδεχτεί ακόμη. Κάντε νέο έλεγχο και μετά την εισαγωγή. Δεν γράφτηκε τίποτα.
+import-scrivener-error-changed = Το έργο άλλαξε αφού το ελέγξατε. Κάντε νέο έλεγχο και μετά την εισαγωγή. Δεν γράφτηκε τίποτα.
+import-scrivener-error-choice = Η δομή που επιλέχθηκε στον έλεγχο δεν ταιριάζει πια σε αυτό το έργο. Κάντε νέο έλεγχο και μετά την εισαγωγή. Δεν γράφτηκε τίποτα.
 
 export-title = Εξαγωγή
 export-close = Κλείσιμο
@@ -1907,6 +3310,10 @@ import-document-destination = Προορισμός
 import-document-destination-hint = Επιλέξτε ένα ντοσιέ ή ένα στοιχείο: τα νέα στοιχεία τοποθετούνται μέσα σε έναν φάκελο ή μετά από μια σκηνή.
 import-document-destination-empty = Δεν υπάρχει ακόμη κανένα ντοσιέ. Δημιουργήστε πρώτα ένα.
 import-document-plan-empty = Δεν υπάρχει ακόμη τίποτα για εισαγωγή.
+import-document-pictures = { $count ->
+    [one] Μία εικόνα συνοδεύει αυτά τα έγγραφα.
+   *[other] { $count } εικόνες συνοδεύουν αυτά τα έγγραφα.
+}
 import-document-summary = { $rows ->
     [one] 1 στοιχείο
    *[other] { $rows } στοιχεία
@@ -1959,6 +3366,17 @@ import-diagnostic-nested-break-dropped = { $count ->
     [one] Ένα διαχωριστικό σκηνής μέσα σε παράθεση ή λίστα στο «{ $path }» απορρίφθηκε. Διατηρείται μόνο ένα διαχωριστικό σε δική του γραμμή.
    *[other] { $count } διαχωριστικά σκηνής μέσα σε παραθέσεις ή λίστες στο «{ $path }» απορρίφθηκαν. Διατηρείται μόνο ένα διαχωριστικό σε δική του γραμμή.
 }
+import-diagnostic-image-not-ingested-format = Στο «{ $path }», η εικόνα «{ $detail }» είναι σε μορφή που το Skribisto δεν μπορεί να εμφανίσει, γι' αυτό παραλείφθηκε. Οι εικόνες PNG, JPEG, WebP, GIF, TIFF ή BMP εισάγονται· αποθηκεύστε την σε μία από αυτές τις μορφές και παρεμβάλετέ τη με το χέρι.
+import-diagnostic-image-not-ingested-remote = Στο «{ $path }», η εικόνα «{ $detail }» βρίσκεται στο διαδίκτυο. Μια εισαγωγή δεν κατεβάζει ποτέ εικόνες, γι' αυτό παραλείφθηκε.
+import-diagnostic-image-not-ingested-outside = Στο «{ $path }», η εικόνα «{ $detail }» βρίσκεται έξω από το έγγραφο και τον φάκελό του, γι' αυτό παραλείφθηκε. Εισάγονται μόνο οι εικόνες που είναι αποθηκευμένες μέσα στο έγγραφο ή στον φάκελο του ίδιου του εγγράφου.
+import-diagnostic-image-not-ingested-missing = Στο «{ $path }», η εικόνα «{ $detail }» δεν βρέθηκε, γι' αυτό παραλείφθηκε.
+import-diagnostic-image-not-ingested-too-large = Στο «{ $path }», η εικόνα «{ $detail }» είναι μεγαλύτερη από όσο δέχεται ένα έργο, γι' αυτό παραλείφθηκε.
+import-diagnostic-image-not-ingested-unreadable = Στο «{ $path }», η εικόνα «{ $detail }» δεν μπόρεσε να διαβαστεί ως εικόνα, γι' αυτό παραλείφθηκε.
+import-diagnostic-image-not-ingested-heading = Στο «{ $path }», η εικόνα «{ $detail }» βρίσκεται σε μια επικεφαλίδα. Μια επικεφαλίδα γίνεται τίτλος, που δεν περιέχει εικόνες, γι' αυτό παραλείφθηκε.
+import-diagnostic-image-not-ingested-note = Στο «{ $path }», η εικόνα «{ $detail }» βρίσκεται σε υποσημείωση, σημείωση τέλους ή σχόλιο. Αυτά κρατούν τις λέξεις τους αλλά όχι εικόνες, γι' αυτό παραλείφθηκε.
+import-diagnostic-image-not-ingested-html = Στο «{ $path }», η εικόνα «{ $detail }» είναι γραμμένη σε HTML, και μια εισαγωγή αφήνει έξω την HTML, οπότε παραλείφθηκε μαζί της. Γράψτε την ως εικόνα Markdown για να εισαχθεί.
+import-diagnostic-image-not-ingested-document-full = Στο «{ $path }», η εικόνα «{ $detail }» παραλείφθηκε: όλες μαζί οι εικόνες αυτού του εγγράφου ξεπερνούν όσα φέρνει μία εισαγωγή. Εισαγάγετε το έγγραφο σε τμήματα ή παρεμβάλετε τις υπόλοιπες με το χέρι.
+import-diagnostic-picture-first-frame-only = Στο «{ $path }», η κινούμενη εικόνα «{ $detail }» φτάνει ως το πρώτο της καρέ. Οι εικόνες ενός έργου δεν κινούνται.
 import-diagnostic-duplicate-title = Το «{ $title }» εμφανίζεται { $count } φορές. Αν έχετε εισαγάγει αυτά τα αρχεία στο παρελθόν, θα δημιουργηθούν διπλότυπα.
 import-diagnostic-heading-level-jump = Το «{ $title }» πηδά από επικεφαλίδα επιπέδου { $from } σε επίπεδο { $to }· τοποθετείται ένα επίπεδο κάτω από το γονικό του.
 import-diagnostic-illegal-combination = Το «{ $title }» περιέχει πρόζα, αλλά ένα στοιχείο τύπου «{ $kind }» δεν μπορεί να περιέχει. Η εισαγωγή αναστέλλεται μέχρι να αλλάξετε τον τύπο του ή να το εξαιρέσετε. Αλλιώς δεν εισάγεται απολύτως τίποτα.
@@ -2308,6 +3726,7 @@ help-topic-round-trip = Αποστολή του βιβλίου σας σε αν�
 help-topic-export = Εξαγωγή
 help-topic-import-documents = Εισαγωγή εγγράφων
 help-topic-import-projects = Μεταφορά ολόκληρου έργου
+help-topic-import-scrivener = Μετάβαση από το Scrivener
 help-topic-backups-and-versions = Αντίγραφα ασφαλείας και εκδόσεις
 help-shortcuts-title = Συντομεύσεις πληκτρολογίου
 help-shortcuts-filter = Φιλτράρισμα συντομεύσεων
@@ -2328,6 +3747,8 @@ shortcut-name-work-new = Νέο έργο
 shortcut-name-work-open = Άνοιγμα έργου
 shortcut-name-window-new = Νέο παράθυρο
 shortcut-name-work-close = Κλείσιμο έργου
+shortcut-name-work-import-scrivener = Εισαγωγή έργου Scrivener…
+shortcut-name-work-import-scrivener-report = Εμφάνιση αναφοράς εισαγωγής Scrivener
 shortcut-name-app-settings = Ρυθμίσεις
 shortcut-name-app-quit = Έξοδος
 shortcut-name-editor-insert-footnote = Παρεμβολή υποσημείωσης
@@ -2621,6 +4042,7 @@ dialog-save-as-file-title = Αποθήκευση ως ένα αρχείο .skrib
 dialog-save-as-folder-title = Επιλέξτε γονικό φάκελο για το έργο
 dialog-manuskript-file-title = Επιλέξτε ένα έργο Manuskript
 dialog-manuskript-folder-title = Επιλέξτε τον φάκελο ενός έργου Manuskript
+dialog-plume-file-title = Επιλέξτε ένα έργο Plume Creator
 dialog-filter-skrib = Έργο Skribisto
 dialog-filter-manuskript = Έργο Manuskript
 dialog-filter-plume = Έργο Plume Creator

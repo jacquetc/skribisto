@@ -1,6 +1,7 @@
 Uma importação de projeto traz um projeto inteiro do Manuskript ou do Plume Creator: os seus
 capítulos, o seu elenco, as suas notas. Se o que tem é antes uma pasta de documentos, consulte
-[importar documentos](:help-import-documents).
+[importar documentos](:help-import-documents). Para um projeto Scrivener, consulte
+[vindo do Scrivener](:help-import-scrivener).
 
 Uma importação cria um **novo** projeto Skribisto.
 
@@ -18,7 +19,13 @@ O painel pede:
 Nada é escrito até premir *Importar*. A importação mostra o seu progresso, e *Cancelar* não
 deixa nada para trás.
 
-Se o destino for um projeto já aberto no Skribisto, escolha outro nome de ficheiro.
+Se o destino for um projeto já aberto no Skribisto, escolha outro nome de ficheiro. Enquanto uma
+importação decorre, o seu ficheiro fica reservado para ela: nada mais o abre nem escreve lá um
+projeto até que a importação termine.
+
+Os projetos são importados um de cada vez: enquanto uma importação decorre, iniciar outra avisa-o
+disso. Se sair do Skribisto durante uma importação, é-lhe pedida confirmação primeiro, e parar a
+importação também não deixa nada para trás.
 
 ## Indicar um projeto Manuskript
 
@@ -95,10 +102,15 @@ manter antes de importar. O Plume não guarda o nome do autor, por isso defina o
 
 ## Depois da importação
 
-Uma mensagem oferece *Abrir agora*, que abre o novo projeto.
+Uma mensagem oferece *Abrir agora*, que abre o novo projeto. A sua entrada no sino da barra de
+estado mantém *Abrir agora* depois de a mensagem desaparecer, e abre o projeto numa janela própria.
 
-Se a importação indicar algo que não conseguiu transferir, clique em *Detalhes* para ler a
-lista. Pode voltar a encontrar esse relatório no sino da barra de estado.
+Se a importação indicar algo que não conseguiu transferir, clique em *Detalhes* para ler a lista,
+escrita no idioma em que o Skribisto está configurado. Pode voltar a encontrar esse relatório no
+sino da barra de estado.
+
+Se um projeto não puder ser importado, a mensagem indica porquê, e os seus *Detalhes* contêm a
+descrição técnica a transmitir se comunicar o problema.
 
 O novo projeto é um único ficheiro `.skrib`. Se mantinha o antigo como pasta para controlo de
 versões, use depois *Projeto ▸ Guardar como pasta…*. Consulte

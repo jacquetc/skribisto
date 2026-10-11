@@ -10,6 +10,7 @@ menu-create-from = Lu&o lähteestä
 menu-import-plume = &Plume Creator (.plume)…
 menu-import-document = &Asiakirjat (Markdown, Word, ODT)…
 menu-import-manuskript = &Manuskript (.msk)…
+menu-import-scrivener = &Scrivener (.scriv)…
 menu-export = &Vie
 menu-export-book = Vie kirja
 menu-export-part = Vie osa
@@ -709,6 +710,8 @@ backup-no-destination-title = Varmuuskopioiden sijaintia ei ole käytettävissä
 backup-no-destination-text = Yhteenkään määritetyistä varmuuskopioiden sijainneista ei saada yhteyttä (esimerkiksi ulkoinen asema voi olla irrotettu). Kytke se ja yritä uudelleen, tai lopeta varmuuskopioimatta.
 backup-failed-close-title = Varmuuskopiota ei voitu tallentaa
 backup-failed-close-text = Varmuuskopiota ei voitu kirjoittaa ennen sulkemista. Kaikki sijainnit epäonnistuivat (asema on ehkä irrotettu, tai se voi olla täynnä tai kirjoitussuojattu). Korjaa tilanne ja yritä uudelleen, tai lopeta varmuuskopioimatta.
+backup-failed-close-error-text = Varmuuskopiota ei voitu kirjoittaa ennen sulkemista: { $error }. Korjaa tilanne ja yritä uudelleen, tai lopeta varmuuskopioimatta.
+backup-no-result = Varmuuskopiointi päättyi kertomatta, tekikö se kopion. Katso varmuuskopioluettelosta, onko siellä uusi kopio.
 
 backup-choice-title = Varmuuskopiotiedosto
 backup-choice-heading = Olet avannut varmuuskopion
@@ -888,6 +891,8 @@ import-plume-source-missing = Tätä tiedostoa ei ole olemassa
 import-plume-source-not-file = Tämä polku ei ole tiedosto
 import-plume-manuscript-binder = Käsikirjoitus
 import-plume-story-bible-binder = Tarinan tietopankki
+import-plume-notes-of = { $name } (muistiinpanot)
+import-plume-content-of = { $name } (sisältö)
 import-plume-progress-title = Tuodaan Plume-projektia…
 import-plume-done = Tuotiin { $imported ->
        [one] { $imported } kohde.
@@ -898,6 +903,10 @@ import-plume-done = Tuotiin { $imported ->
    }
 import-plume-nested-too-deep = Projektia ei tuotu: sen osa ”{ $part }” on sisäkkäistetty yli { $limit } tason syvyyteen. Mikään Plume Creator -projekti ei ole lähelläkään sitä, ja sen lukeminen voisi kaataa Skribiston. Mitään ei kirjoitettu.
 import-plume-declares-entities = Projektia ei tuotu: sen osa ”{ $part }” määrittelee XML-entiteettejä, mitä yksikään Plume Creator -projekti ei tee. Niiden laajentaminen voisi viedä enemmän muistia kuin tietokoneessa on ja kaataa Skribiston. Mitään ei kirjoitettu.
+import-plume-no-outline = Tämä tiedosto on pakattu arkisto mutta ei Plume Creator -projekti: siinä ei ole jäsennystä. Mitään ei kirjoitettu.
+import-plume-empty-outline = Tämän Plume Creator -projektin jäsennystiedosto on tyhjä, joten tuotavaa ei ole. Mitään ei kirjoitettu.
+import-plume-wrong-document = Tämä ei ole Plume Creator -projekti: sen osa ”{ $part }” on ”{ $tag }”-asiakirja. Mitään ei kirjoitettu.
+import-plume-too-new = Tämän projektin osan ”{ $part }” on kirjoittanut uudempi Plume Creator (versio { $version }) kuin Skribisto osaa lukea (enintään { $supported }). Mitään ei kirjoitettu.
 
 import-manuskript-title = Tuo Manuskript-projekti
 import-manuskript-source = Manuskript-projekti
@@ -916,6 +925,7 @@ import-manuskript-summary-note = Yhteenveto
 import-manuskript-importance-minor = Vähäinen
 import-manuskript-importance-secondary = Sivuhenkilö
 import-manuskript-importance-main = Päähenkilö
+import-manuskript-notes-of = { $title } (muistiinpanot)
 import-manuskript-progress-title = Tuodaan Manuskript-projektia…
 import-manuskript-done = { $imported ->
        [one] { $imported } kohde tuotiin.
@@ -928,10 +938,1451 @@ import-manuskript-done = { $imported ->
 import-manuskript-nested-too-deep = Projektia ei tuotu: sen tiedosto ”{ $part }” on sisäkkäistetty yli { $limit } tason syvyyteen. Mikään Manuskript-projekti ei ole lähelläkään sitä, ja sen lukeminen voisi kaataa Skribiston. Mitään ei kirjoitettu.
 import-manuskript-folders-too-deep = Projektia ei tuotu: yksi sen tiedostoista on yli { $limit } kansion syvyydessä. Mikään Manuskript-projekti ei ole lähelläkään sitä, ja sen lukeminen voisi kaataa Skribiston. Mitään ei kirjoitettu.
 import-manuskript-declares-entities = Projektia ei tuotu: sen tiedosto ”{ $part }” määrittelee XML-entiteettejä, mitä yksikään Manuskript-projekti ei tee. Niiden laajentaminen voisi viedä enemmän muistia kuin tietokoneessa on ja kaataa Skribiston. Mitään ei kirjoitettu.
+import-manuskript-not-a-project-file = ”{ $file }” ei ole Manuskript-projektin arkisto eikä myöskään pieni .msk-tiedosto, joka osoittaa projektikansioon. Mitään ei kirjoitettu.
+import-manuskript-folder-missing = ”{ $stub }” osoittaa viereiseen projektikansioon nimeltä ”{ $folder }”, mutta kansiota ei ole siellä. Kansiotilassa oleva Manuskript-projekti koostuu molemmista, ja niiden on kuljettava yhdessä. Mitään ei kirjoitettu.
+import-manuskript-not-a-project = Tämä ei näytä Manuskript-projektilta: siinä ei ole Manuskriptin merkkitiedostoa eikä jäsennystä. Mitään ei kirjoitettu.
+import-manuskript-format-too-new = Tämä projekti on Manuskript-muodossa { $version }, joka on uudempi kuin Skribisto osaa lukea (enintään { $supported }). Mitään ei kirjoitettu.
+import-manuskript-too-many-files = Projektia ei tuotu: siinä on yli { $limit } tiedostoa, paljon enemmän kuin missään Manuskript-projektissa. Mitään ei kirjoitettu.
+import-manuskript-too-large = Projektia ei tuotu: se on suurempi kuin enimmäiskoko, jonka Skribisto lukee Manuskript-projektista ({ $limit } Mt). Mitään ei kirjoitettu.
+project-import-close = Sulje
+project-import-location = Kohdekansio
+# The folder dialog's title.
+project-import-location-title = Valitse kohdekansio
+project-import-name = Tiedostonimi
+project-import-name-placeholder = Projektin nimi
+project-import-will-create = Luodaan
+project-import-cancel = Peruuta
+project-import-import = Tuo
+# Field validation
+project-import-location-required = Valitse kohdekansio
+project-import-location-missing = Tätä kansiota ei ole olemassa
+project-import-location-not-folder = Tämä polku ei ole kansio
+project-import-location-readonly = Tähän kansioon ei voi kirjoittaa
+project-import-name-required = Anna tiedoston nimi
+project-import-name-exists = Tämän niminen tiedosto on jo olemassa. Tuonti pyytää vahvistuksen ennen korvaamista
+project-import-name-is-folder = Tämän niminen kansio on jo tässä paikassa, ehkä kansioksi tallennettu projekti. Tuonti ei voi korvata sitä: valitse toinen nimi
+# Overwrite confirmation
+project-import-overwrite-title = Korvataanko olemassa oleva tiedosto?
+project-import-overwrite-text = ”{ $name }” on jo olemassa. Korvataanko se tuodulla projektilla?
+# Projects are imported one at a time, whichever importer asks.
+project-import-busy-title = Toista projektia tuodaan parhaillaan
+project-import-busy-text = Projektit tuodaan yksi kerrallaan. Odota, kunnes käynnissä oleva tuonti on päättynyt, tai peruuta se, ja aloita sitten tämä uudelleen.
+# Spoken by a screen reader once per phase, never shown: the toast's title, then
+# the phase's name.
+project-import-progress-announcement = { $title } { $phase }
+# The notice once Cancel is pressed, until the converter has stopped: it may be
+# finishing a file it cannot leave half written.
+project-import-stopping = Pysäytetään tuontia…
+project-import-cancelled = Tuonti peruttu
+project-import-open-now = Avaa nyt
+project-import-details = Yksityiskohdat
+# The import's report: what the writer should know about what came across.
+project-import-report = { $count ->
+    [one] 1 huomio tästä tuonnista
+   *[other] { $count } huomiota tästä tuonnista
+}
+project-import-report-title = Tietoja tästä tuonnista
+# Error toast: a short reason in the body, the full technical chain behind Details.
+project-import-error-title = Projektia ei voitu tuoda
+# Why a project was not imported, whichever importer read it. A $file is a file
+# name, a $folder a full path (it is the folder the writer has to act on), a
+# $reason what the system or a parser said, a $limit a number.
+project-import-failed-cancelled = Tuonti peruttiin. Mitään ei kirjoitettu.
+project-import-failed-target-exists = ”{ $file }” on jo olemassa, eikä tuonti saanut korvata sitä. Mitään ei kirjoitettu.
+project-import-failed-target-folder = ”{ $file }” on kansio, ehkä kansioksi tallennettu projekti, eikä tuonti voi korvata sitä. Valitse toinen nimi. Mitään ei kirjoitettu.
+project-import-failed-not-written = Tiedostoa ”{ $file }” ei voitu kirjoittaa kansioon ”{ $folder }” ({ $reason }). Mitään ei kirjoitettu.
+project-import-failed-disk-full = Kansiossa ”{ $folder }” ei ole tarpeeksi tilaa tiedoston ”{ $file }” kirjoittamiseen. Vapauta sieltä tilaa ja tuo sitten uudelleen. Mitään ei kirjoitettu.
+project-import-failed-source-missing = ”{ $file }” ei ole enää paikallaan. Mitään ei kirjoitettu.
+project-import-failed-unreadable = Skribisto ei voinut lukea tiedostoa ”{ $file }” ({ $reason }). Mitään ei kirjoitettu.
+project-import-failed-archive-damaged = ”{ $file }” on pakattu tiedosto, jota ei voitu lukea, luultavasti koska se on vahingoittunut ({ $reason }). Mitään ei kirjoitettu.
+project-import-failed-archive-entries = Projektia ei tuotu: sen arkisto luettelee { $entries } tiedostoa, enemmän kuin projektissa sallitut { $limit }. Niin tekee vain tiedosto, joka on tehty kuluttamaan muisti loppuun. Mitään ei kirjoitettu.
+project-import-failed-archive-member = Projektia ei tuotu: sen osa ”{ $part }” purkautuu yli { $limit } Mt:n kokoiseksi, mitä tekee vain muistin loppuun kuluttamaan tehty tiedosto. Mitään ei kirjoitettu.
+project-import-failed-archive-size = Projektia ei tuotu: se purkautuu yli { $limit } Mt:n kokoiseksi, mitä tekee vain muistin loppuun kuluttamaan tehty tiedosto. Mitään ei kirjoitettu.
+project-import-failed-nested = Projektia ei tuotu: sen osa ”{ $part }” on sisäkkäistetty yli { $limit } tason syvyyteen, ja sen lukeminen voisi kaataa Skribiston. Mitään ei kirjoitettu.
+project-import-failed-entities = Projektia ei tuotu: sen osa ”{ $part }” määrittelee XML-entiteettejä. Niiden laajentaminen voisi viedä enemmän muistia kuin tietokoneessa on ja kaataa Skribiston. Mitään ei kirjoitettu.
+project-import-failed-folders = Projektia ei tuotu: yksi sen tiedostoista on yli { $limit } kansion syvyydessä, ja sen lukeminen voisi kaataa Skribiston. Mitään ei kirjoitettu.
+project-import-failed-malformed = Projektia ei tuotu: sen osa ”{ $part }” on vahingoittunut eikä sitä voi lukea ({ $reason }). Mitään ei kirjoitettu.
+# A Scrivener project the importer cannot bring across (a Scrivener 1 for Mac project, a
+# damaged binder file). Why is the Scrivener importer's own to say; Details holds its key.
+project-import-failed-scrivener-refused = Skribisto ei voi tuoda tätä Scrivener-projektia. Mitään ei kirjoitettu.
+# The Scrivener project asks something its review did not answer: a project or a binder
+# file appeared in it since.
+project-import-failed-scrivener-question = Scrivener-projekti esittää kysymyksen, johon sen tarkistuksessa ei vastattu. Tarkista se uudelleen ja tuo sitten. Mitään ei kirjoitettu.
+# The Scrivener project raises a question the writer has to accept before it imports.
+project-import-failed-scrivener-not-accepted = Scrivener-projektissa on asia, jota et ole vielä hyväksynyt. Tarkista se uudelleen ja tuo sitten. Mitään ei kirjoitettu.
+# The Scrivener project changed after the writer reviewed it.
+project-import-failed-scrivener-changed = Scrivener-projekti muuttui tarkistuksesi jälkeen. Tarkista se uudelleen ja tuo sitten. Mitään ei kirjoitettu.
+# An error nothing above accounts for; $detail is its technical description.
+project-import-failed-internal = Tuonti pysähtyi virheeseen, jota Skribisto ei odottanut: { $detail }
 
 import-target-open-title = Projekti on auki
 import-target-open-text = ”{ $name }” on auki Skribistossa. Tuonti sen päälle korvaisi projektin, jota työstät, ja seuraava tallennuksesi kirjoittaisi sen takaisin tuonnin päälle. Valitse toinen tiedostonimi, tai sulje projekti ensin.
 import-warnings-announcement = { $result } { $notice }.
+# Quitting while an import runs. $name is the file the import is writing.
+quit-import-running-title = Tuonti on vielä käynnissä
+quit-import-running-text = Tuonti tiedostoon ”{ $name }” on vielä kesken. Jos lopetat nyt, tuonti pysähtyy: mitään ei kirjoiteta, ja projekti, josta tuot, jää ennalleen.
+quit-import-stop = Pysäytä tuonti ja lopeta
+
+## Import a Scrivener project: the wizard
+import-scrivener-title = Tuo Scrivener-projekti
+import-scrivener-step-project = Projekti
+import-scrivener-step-review = Tarkistus
+import-scrivener-step-save = Tallennus
+import-scrivener-back = Takaisin
+import-scrivener-next = Seuraava
+import-scrivener-import = Tuo
+import-scrivener-cancel = Peruuta
+import-scrivener-help = Ohje
+
+## Project step: choosing the project
+import-scrivener-drop-title = Pudota Scrivener-projekti tähän
+import-scrivener-drop-hint = .scriv-projekti, sen sisällä oleva .scrivx-tiedosto, .zip-varmuuskopio tai .scrivtemplate-tiedosto
+import-scrivener-source = Scrivener-projekti
+import-scrivener-source-placeholder = Projektin polku
+import-scrivener-choose-file = Valitse tiedosto…
+import-scrivener-choose-folder = Valitse kansio…
+# Windows and Linux show a .scriv project as an ordinary folder.
+import-scrivener-source-hint = Valitse projektin .scriv-kansio, tai avaa se ja valitse sen sisällä oleva .scrivx-tiedosto. Myös .zip-varmuuskopio käy.
+# macOS shows a .scriv project as a single file when Scrivener is installed, as a folder when it is not.
+import-scrivener-source-hint-mac = Jos projekti näkyy yhtenä tiedostona, käytä painiketta ”Valitse tiedosto…”. Jos se näkyy kansiona, käytä painiketta ”Valitse kansio…”. Myös .zip-varmuuskopio käy.
+# File-dialog titles and filter label, resolved when the dialog opens.
+import-scrivener-dialog-file-title = Valitse Scrivener-projekti
+import-scrivener-dialog-folder-title = Valitse Scrivener-projektin kansio
+import-scrivener-dialog-filter = Scrivener-projekti
+import-scrivener-source-missing = Tässä polussa ei ole mitään
+# A path whose name is not Unicode: the field shows it with its unreadable letters replaced.
+import-scrivener-source-unreadable-name = Tätä nimeä ei voi lukea. Nimeä projekti uudelleen tiedostonhallinnassa ja valitse se sitten uudelleen.
+import-scrivener-empty-hint = Valitse projekti nähdäksesi, mitä Skribisto löytää siitä.
+import-scrivener-reading = Luetaan projektia…
+import-scrivener-stop-reading = Lopeta lukeminen
+import-scrivener-read-failed = Projektia ei voitu lukea
+import-scrivener-read-failed-body = Lukemisessa meni jotain vikaan. Lue projekti uudelleen tai katso yksityiskohdat.
+import-scrivener-details = Yksityiskohdat
+import-scrivener-check-again = Lue uudelleen
+# A refusal this version does not know how to word.
+import-scrivener-refusal-unknown-title = Tätä projektia ei voi tuoda
+import-scrivener-refusal-unknown-body = Skribisto ei osaa tuoda sitä. Syy kerrotaan yksityiskohdissa.
+
+## Project step: the project card
+import-scrivener-made-with-mac = Tallennettu viimeksi Scrivenerin versiolla { $version } (macOS)
+import-scrivener-made-with-windows = Tallennettu viimeksi Scrivenerin versiolla { $version } (Windows)
+import-scrivener-made-with-linux = Tallennettu viimeksi Scrivenerin versiolla { $version } (Linux)
+import-scrivener-made-with-ios = Tallennettu viimeksi Scrivenerin versiolla { $version } (iPhone ja iPad)
+import-scrivener-made-with-version = Tallennettu viimeksi Scrivenerin versiolla { $version }
+import-scrivener-made-with-unknown = Scrivener-projekti, muoto { $format }
+import-scrivener-saved-on = Tallennettu { $date } laitteella ”{ $device }”
+import-scrivener-saved-on-no-device = Tallennettu { $date }
+import-scrivener-card-counts = { $documents ->
+    [one] 1 asiakirja
+   *[other] { $documents } asiakirjaa
+}, käsikirjoituksessa { $manuscript }
+
+## Review step
+import-scrivener-review-hint = Näin mappisi siirtyy. Mitään ei kirjoiteta ennen kuin tuot, ja monen kohteen tyyppiä voi muuttaa jälkeenpäin mapissa toiminnolla Muunna tyypiksi.
+import-scrivener-choices-structure = Tasot
+import-scrivener-top-level = Ylimmän tason kansiot
+import-scrivener-choices-text = Teksti
+import-scrivener-choice-containers = Kansiot tasolla { $depth }
+import-scrivener-choice-texts = Asiakirjat tasolla { $depth }
+import-scrivener-choice-count = { $count ->
+    [one] 1 kohde
+   *[other] { $count } kohdetta
+}
+import-scrivener-choice-count-example = { $count ->
+    [one] 1 kohde: ”{ $example }”
+   *[other] { $count } kohdetta, esimerkiksi ”{ $example }”
+}
+import-scrivener-rung-part = Osat
+import-scrivener-rung-chapter = Luvut
+import-scrivener-rung-plain = Tavalliset kansiot
+import-scrivener-texts-scenes = Kohtaukset
+import-scrivener-texts-chapters = Luvut
+import-scrivener-choice-books = Kirjat käsikirjoituksessa
+import-scrivener-books-one = Yksi kirja
+import-scrivener-books-several = Yksi kirja kansiota kohden
+import-scrivener-choice-split = { $count ->
+    [one] Jaa ”{ $title }” sen otsikon kohdalta
+   *[other] Jaa ”{ $title }” sen { $count } otsikon kohdalta
+}
+import-scrivener-root-items = { $count ->
+    [one] 1 kohde
+   *[other] { $count } kohdetta
+}
+import-scrivener-root-items-manuscript = { $count ->
+    [one] 1 kohde, vaikuttaa käsikirjoitukselta
+   *[other] { $count } kohdetta, vaikuttaa käsikirjoitukselta
+}
+import-scrivener-dest-notes = Muistiinpanot
+import-scrivener-dest-story-bible = Tarinan tietopankki
+import-scrivener-dest-manuscript = Toinen kirja
+import-scrivener-dest-leave-out = Jätä pois
+import-scrivener-choice-trash = { $count ->
+    [one] Tuo myös roskakori (1 kohde)
+   *[other] Tuo myös roskakori ({ $count } kohdetta)
+}
+import-scrivener-trash-detail = { $count ->
+    [0] Yhdessäkään niistä ei ole tekstiä.
+    [one] Niistä 1 sisältää tekstiä.
+   *[other] Niistä { $count } sisältää tekstiä.
+}
+import-scrivener-choice-blank-lines = Tyhjistä riveistä tulee kohtauskatkoja
+import-scrivener-choice-ornaments = Koristemerkkiriveistä tulee kohtauskatkoja
+import-scrivener-preview-label = Uuden projektin rakenne
+import-scrivener-col-title = Otsikko
+import-scrivener-col-becomes = Siitä tulee
+import-scrivener-col-exports = Viennissä
+import-scrivener-in-exports-yes = Kyllä
+import-scrivener-in-exports-no = Ei
+# What a row the binder has no creation command for becomes.
+import-scrivener-becomes-item = Kohde
+import-scrivener-becomes-trashed = Roskakorissa
+import-scrivener-before-title = Ennen tuontia
+import-scrivener-review-error-unreadable = Tarkistusta ei voitu valmistella. Valitse projekti uudelleen.
+import-scrivener-review-error-choice = Tämä valinta ei sovi projektiin. Valitse projekti uudelleen.
+import-scrivener-review-error-unmappable = Tällä valinnalla mappia ei voitu siirtää menettämättä jotain. Valitse toisin, tai ilmoita ongelmasta.
+
+## Save step
+import-scrivener-save-hint = Tuonti luo uuden Skribisto-projektin. Scrivener-projektiasi vain luetaan, sitä ei koskaan muuteta.
+import-scrivener-title-field = Otsikko
+import-scrivener-author = Tekijä
+import-scrivener-language = Kieli
+import-scrivener-location-inside-project = Valitse Scrivener-projektin ulkopuolinen kansio. Scrivener säilyttää siellä vain omia tiedostojaan.
+import-scrivener-copy-research-label = Kopioi tutkimustiedostot uuden projektin viereen
+import-scrivener-copy-research = { $count ->
+    [one] 1 tutkimustiedosto, jota Skribisto ei voi avata, kuten PDF tai äänitiedosto, kopioidaan kansioon projektin viereen. Jos valinta ei ole päällä, sen muistiinpano kertoo, missä se on Scrivener-projektissasi.
+   *[other] { $count } tutkimustiedostoa, joita Skribisto ei voi avata, kuten PDF- tai äänitiedostot, kopioidaan kansioon projektin viereen. Jos valinta ei ole päällä, niiden muistiinpanot kertovat, missä ne ovat Scrivener-projektissasi.
+}
+# The file name proposed when the project's name holds nothing a file name can.
+import-scrivener-default-name = Scrivener-projekti
+
+## Progress and result
+import-scrivener-progress-title = Tuodaan Scrivener-projektia…
+import-scrivener-done-title = Scrivener-projekti tuotu
+# How many rows the new project holds: the documents and folders that came across, and
+# the rows the import made for them (a document's notes, the project notes).
+import-scrivener-done = { $items ->
+    [one] Uudessa projektissa on 1 kohde.
+   *[other] Uudessa projektissa on { $items } kohdetta.
+}
+# The same, with how many kinds of thing could not be read or need checking.
+import-scrivener-done-check = { $items ->
+    [one] Uudessa projektissa on 1 kohde.
+   *[other] Uudessa projektissa on { $items } kohdetta.
+} { $findings ->
+    [one] 1 asia kaipaa huomiotasi.
+   *[other] { $findings } asiaa kaipaa huomiotasi.
+}
+import-scrivener-review-again = Tarkista uudelleen
+## The import's report (the dialog See report opens)
+import-scrivener-see-report = Näytä raportti
+import-scrivener-report-from = Luettu: { $path }
+import-scrivener-report-to = Kirjoitettu: { $path }
+import-scrivener-report-came-across = Mitä siirtyi
+import-scrivener-report-nothing-counted = Mitään ei laskettu.
+import-scrivener-report-items = { $count ->
+    [one] 1 kohde
+   *[other] { $count } kohdetta
+}
+import-scrivener-report-words = { $count ->
+    [one] 1 sana
+   *[other] { $count } sanaa
+}
+import-scrivener-report-synopses = { $count ->
+    [one] 1 tiivistelmä
+   *[other] { $count } tiivistelmää
+}
+import-scrivener-report-document-notes = { $count ->
+    [one] 1 asiakirjan muistiinpanot
+   *[other] { $count } asiakirjan muistiinpanot
+}
+import-scrivener-report-comments = { $count ->
+    [one] 1 kommentti
+   *[other] { $count } kommenttia
+}
+import-scrivener-report-footnotes = { $count ->
+    [one] 1 alaviite
+   *[other] { $count } alaviitettä
+}
+import-scrivener-report-pictures = { $count ->
+    [one] 1 kuva
+   *[other] { $count } kuvaa
+}
+import-scrivener-report-templates = { $count ->
+    [one] 1 muistiinpanomalli
+   *[other] { $count } muistiinpanomallia
+}
+import-scrivener-report-tags = { $count ->
+    [one] 1 tunniste
+   *[other] { $count } tunnistetta
+}
+import-scrivener-report-statuses = { $count ->
+    [one] 1 tila
+   *[other] { $count } tilaa
+}
+import-scrivener-report-trashed = { $count ->
+    [one] 1 kohde roskakorissa
+   *[other] { $count } kohdetta roskakorissa
+}
+import-scrivener-report-research-files = { $count ->
+    [one] 1 tutkimustiedosto
+   *[other] { $count } tutkimustiedostoa
+}
+import-scrivener-report-choices = Mitä valitsit
+import-scrivener-report-accepted-mobile = Toit projektin ilman niitä iPhonen tai iPadin Scrivenerissä tehtyjä muutoksia, jotka eivät vielä olleet siinä.
+import-scrivener-report-accepted-no-text = Toit tämän kopion asiakirjat tyhjinä, koska niiden tekstiä ei ollut siinä lainkaan.
+import-scrivener-report-choice = { $subject }: { $answer }
+import-scrivener-report-yes = kyllä
+import-scrivener-report-no = ei
+import-scrivener-report-research-copied = Tutkimustiedostot, joita Skribisto ei voi avata, kopioitiin kansioon ”{ $folder }” uuden projektin viereen.
+import-scrivener-report-research-not-copied = Tutkimustiedostoja, joita Skribisto ei voi avata, ei kopioitu. Niiden muistiinpanot kertovat, missä ne ovat Scrivener-projektissasi.
+import-scrivener-report-research-copied-except = { $count ->
+    [one] Tutkimustiedostot, joita Skribisto ei voi avata, kopioitiin kansioon ”{ $folder }” uuden projektin viereen, paitsi 1, joka jää Scrivener-projektiisi. Sen muistiinpano kertoo, missä se on.
+   *[other] Tutkimustiedostot, joita Skribisto ei voi avata, kopioitiin kansioon ”{ $folder }” uuden projektin viereen, paitsi { $count }, jotka jäävät Scrivener-projektiisi. Niiden muistiinpanot kertovat, missä ne ovat.
+}
+import-scrivener-report-research-none-copied = { $count ->
+    [one] Pyysit kopioimaan tutkimustiedostot, mutta 1 tiedostoa ei voitu kopioida. Se jää Scrivener-projektiisi, ja sen muistiinpano kertoo, missä se on.
+   *[other] Pyysit kopioimaan tutkimustiedostot, mutta { $count } tiedostoa ei voitu kopioida. Ne jäävät Scrivener-projektiisi, ja niiden muistiinpanot kertovat, missä ne ovat.
+}
+import-scrivener-report-chose-project = Valitsit tuotavaksi projektin ”{ $project }”, yhden valitsemassasi kohteessa olleista projekteista.
+import-scrivener-report-chose-manifest = Valitsit mappitiedoston ”{ $file }”.
+import-scrivener-report-chose-enclosing = Valitsit jotain projektin ”{ $project }” sisältä, joten koko projekti tuotiin.
+import-scrivener-report-chose-upgraded = Toit projektin ”{ $current }”, jossa jatkoit kirjoittamista, etkä kopiota, jonka Scrivener säilytti ennen päivitystä.
+import-scrivener-report-chose-backup = Toit vanhemman kopion ”{ $backup }”, jonka Scrivener säilytti ennen päivitystä.
+import-scrivener-report-title-placeholder-rejected = Projektin asetuksissa ollut otsikko oli mallin paikkamerkki, joten Skribisto ehdotti sen sijaan projektin nimeä.
+import-scrivener-report-author-placeholder-rejected = Projektin asetuksissa ollut tekijän nimi oli mallin paikkamerkki, joten Skribisto ei ehdottanut nimeä.
+import-scrivener-report-title-from-compile-settings = Skribisto ehdotti otsikkoa, joka on projektin koostamisasetuksissa: nimeä, joka projektilla oli luotaessa, ellei otsikkoa ole asetettu sinne Scrivenerissä.
+import-scrivener-report-title-from-template = Skribisto ehdotti mallin omaa otsikkoa.
+import-scrivener-report-title-from-folder-name = Skribisto ehdotti otsikoksi projektin nimeä.
+import-scrivener-report-title-from-project-properties = Skribisto ehdotti otsikkoa, joka on projektin ominaisuuksissa.
+import-scrivener-report-author-from-project = Skribisto ehdotti tekijän nimeä, joka on projektin asetuksissa. Mallin tekijä voi jäädä sinne, ja se tulostuisi nimiösivulle.
+import-scrivener-report-language-not-stated = Projekti ei ilmoittanut kieltään, joten Skribisto ehdotti omaa käyttöliittymänsä kieltä. Kieli määrää, miten sanat lasketaan ja lainausmerkit kirjoitetaan.
+import-scrivener-report-language-from-script = Skribisto ehdotti kieltä käsikirjoituksen kirjoitusjärjestelmän perusteella ({ $tag }).
+# A proposal of the Save page the writer replaced with their own.
+import-scrivener-report-you-changed-it = { $hint } Muutit sen.
+import-scrivener-report-content-salvaged-text = Kohteen ”{ $item }” teksti puuttui projektista. Sen sanat ovat peräisin Scrivenerin hakuhakemistosta, pelkkänä tekstinä ja ehkä vanhemmasta versiosta: tarkista ne.
+import-scrivener-report-content-salvaged-notes = Kohteen ”{ $item }” muistiinpanot puuttuivat projektista. Niiden sanat ovat peräisin Scrivenerin hakuhakemistosta, pelkkänä tekstinä ja ehkä vanhemmasta versiosta: tarkista ne.
+import-scrivener-report-content-salvaged-synopsis = Kohteen ”{ $item }” tiivistelmä puuttui projektista. Sen sanat ovat peräisin Scrivenerin hakuhakemistosta, pelkkänä tekstinä ja ehkä vanhemmasta versiosta: tarkista ne.
+# A finding of the document importer found in several places: its sentence about the
+# first, then how many more the list under it names.
+import-scrivener-report-document-others = { $others ->
+    [one] { $sentence } Sama tapahtuu vielä yhdessä kohdassa, joka luetellaan alla.
+   *[other] { $sentence } Sama tapahtuu vielä { $others } kohdassa, jotka luetellaan alla.
+}
+# An item of the report, by its path in Scrivener's binder, with which of its writings
+# the line is about when it is not the text.
+import-scrivener-report-item-notes = { $path } (asiakirjan muistiinpanot)
+import-scrivener-report-item-synopsis = { $path } (tiivistelmä)
+import-scrivener-report-item-project-note = { $path } (projektin muistiinpano)
+import-scrivener-report-item-recovered = { $path } (palautettu teksti)
+# An item with no name in Scrivener.
+import-scrivener-report-untitled = Nimetön
+import-scrivener-report-no-findings = Tuonnilla ei ole muuta raportoitavaa.
+import-scrivener-report-group-unread = Ei voitu lukea
+import-scrivener-report-group-check = Tarkista nämä
+import-scrivener-report-group-changed = Siirtyi eri muodossa
+import-scrivener-report-group-left = Jäi siirtämättä
+import-scrivener-report-group-count = { $group } ({ $count })
+import-scrivener-report-items-toggle = { $count ->
+    [one] 1 kohde
+   *[other] { $count } kohdetta
+}
+# The same, as a screen reader names it: with the line whose items it lists.
+import-scrivener-report-items-toggle-named = { $count ->
+    [one] 1 kohde: { $line }
+   *[other] { $count } kohdetta: { $line }
+}
+import-scrivener-report-names-toggle = { $count ->
+    [one] 1 nimi
+   *[other] { $count } nimeä
+}
+# The same, as a screen reader hears it, naming the line it belongs to.
+import-scrivener-report-names-toggle-named = { $count ->
+    [one] 1 nimi: { $line }
+   *[other] { $count } nimeä: { $line }
+}
+import-scrivener-report-more = { $count ->
+    [one] Ja 1 muu.
+   *[other] Ja { $count } muuta.
+}
+import-scrivener-report-open-item = Avaa muokkaimessa
+import-scrivener-report-links-hint = Avaa uusi projekti ja näytä tämä raportti sitten uudelleen komentopaletista: silloin jokainen tässä lueteltu kohde avautuu napsauttamalla.
+import-scrivener-copy-report = Kopioi raportti
+import-scrivener-report-copied = Raportti kopioitu
+import-scrivener-report-copy-failed = Raporttia ei voitu kopioida.
+import-scrivener-report-close = Sulje
+import-scrivener-report-none-title = Ei tuontiraporttia
+import-scrivener-report-none = Yksikään Scrivener-tuonti ei ole päättynyt Skribiston käynnistymisen jälkeen. Skribisto säilyttää viimeisimpien tuontien raportit, kunnes se suljetaan.
+import-scrivener-report-gone = Tämän tuonnin raporttia ei enää säilytetä. Skribisto säilyttää { $count } viimeisimmän tuonnin raportit, kunnes se suljetaan.
+
+## Words the import writes into the new project, in the language Skribisto shows itself in
+import-scrivener-manuscript-binder = Käsikirjoitus
+import-scrivener-notes-binder = Muistiinpanot
+import-scrivener-notes-of = { $title } (muistiinpanot)
+import-scrivener-project-notes = Projektin muistiinpanot
+import-scrivener-recovered = Palautetut tekstit
+import-scrivener-untitled-template = Nimetön malli
+# The folder beside the new project its research files are copied into.
+import-scrivener-research-folder = { $name } (tutkimustiedostot)
+# Between two authors' names.
+import-scrivener-list-separator = {", "}
+import-scrivener-label-details = Scrivenerin kentästä ”{ $field }”
+import-scrivener-status-details = Scrivenerin kentästä ”{ $field }”
+import-scrivener-unnamed-label = Nimiö { $number }
+import-scrivener-unnamed-status = Tila { $number }
+import-scrivener-label-tag = { $name } (nimiö)
+import-scrivener-untitled-tag = Nimetön
+# The tags, the pace plan and the "From Scrivener" folder the import makes from what a
+# Scrivener project holds beyond its labels and status.
+import-scrivener-keyword-details = Avainsana ”{ $path }” Scrivenerissä
+import-scrivener-unnamed-keyword = Avainsana { $number }
+import-scrivener-keyword-tag = { $name } (avainsana)
+import-scrivener-collection-details = Kokoelma Scrivenerissä
+import-scrivener-collection-tag = { $name } (kokoelma)
+import-scrivener-field-details = Scrivenerin kentästä ”{ $field }”
+# A tag made from one option of a list field.
+import-scrivener-field-value = { $field }: { $option }
+import-scrivener-field-tag = { $name } (kenttä)
+# The day off a pace plan takes on its deadline.
+import-scrivener-deadline-day = Määräaika
+import-scrivener-from-scrivener = Scriveneristä
+import-scrivener-note-project = Projekti
+import-scrivener-note-project-bookmarks = Projektin kirjanmerkit
+import-scrivener-note-replacements = Koostamisen korvaukset
+import-scrivener-note-auto-complete = Automaattisen täydennyksen ilmaukset
+import-scrivener-note-saved-searches = Tallennetut haut
+import-scrivener-note-custom-metadata = Mukautetut metatiedot
+import-scrivener-note-targets = Tavoitemäärät
+import-scrivener-note-bookmarks = Kirjanmerkit
+import-scrivener-abbreviated-title = Lyhennetty otsikko
+import-scrivener-subjects = Aiheet
+import-scrivener-company = Yritys
+import-scrivener-session-target = Istunnon tavoitemäärä
+import-scrivener-session-target-calculated = Istunnon tavoitemäärä, jonka Scrivener laski määräajasta
+import-scrivener-writing-days = Kirjoituspäivät
+import-scrivener-weekday-monday = maanantai
+import-scrivener-weekday-tuesday = tiistai
+import-scrivener-weekday-wednesday = keskiviikko
+import-scrivener-weekday-thursday = torstai
+import-scrivener-weekday-friday = perjantai
+import-scrivener-weekday-saturday = lauantai
+import-scrivener-weekday-sunday = sunnuntai
+import-scrivener-draft-target = Käsikirjoituksen tavoitemäärä
+import-scrivener-deadline = Määräaika
+# A unit after a count, in parentheses: "1000 (words)".
+import-scrivener-unit-words = sanaa
+import-scrivener-unit-characters = merkkiä
+import-scrivener-unit-pages = sivua
+import-scrivener-search-query = Hakuteksti
+import-scrivener-search-in = Hakualue
+import-scrivener-search-operator = Täsmäys
+# What a saved search looks in, by the kind Scrivener names.
+import-scrivener-search-in-all = kaikki
+import-scrivener-search-in-title = otsikot
+import-scrivener-search-in-text = teksti
+import-scrivener-search-in-notes = muistiinpanot
+import-scrivener-search-in-synopsis = tiivistelmät
+import-scrivener-search-in-keywords = avainsanat
+import-scrivener-search-in-label = nimiöt
+import-scrivener-search-in-status = tilat
+import-scrivener-search-in-section-type = osiotyypit
+import-scrivener-search-in-custom-metadata = mukautetut metatiedot
+# How a saved search's words combine.
+import-scrivener-search-any = mikä tahansa sana
+import-scrivener-search-all = kaikki sanat
+import-scrivener-search-exact = tarkka ilmaus
+# One line of a listing: a bookmark's place and its note, or a link's words and its address.
+import-scrivener-label-value = { $label }: { $value }
+import-scrivener-replacement-regex = säännöllinen lauseke
+import-scrivener-replacement-off = pois käytöstä
+# Said of a note whose own text lists its custom metadata or bookmarks.
+import-scrivener-in-own-note = Lueteltu sen omassa muistiinpanossa.
+
+
+## Import a Scrivener project: what the import says about the project, in the writer's words.
+## Every key the converter can give has a line here (see `import_scrivener::messages`).
+
+# A refusal on one line: its title, then what to do.
+import-scrivener-paragraph = { $title }. { $body }
+
+## When the project cannot be imported
+import-scrivener-refusal-missing-title = Tässä polussa ei ole mitään
+import-scrivener-refusal-missing-body = ”{ $file }” ei ole enää paikallaan. Valitse projekti uudelleen.
+import-scrivener-refusal-unreadable-title = Tätä projektia ei voi lukea
+import-scrivener-refusal-unreadable-body = ”{ $file }” ei ollut Skribiston luettavissa ({ $reason }). Varmista, että voit avata sen, ja yritä sitten uudelleen.
+import-scrivener-refusal-not-a-scrivener-project-title = Tässä ei ole Scrivener-projektia
+import-scrivener-refusal-not-a-scrivener-project-body = Valitse projektin .scriv-kansio, sen sisällä oleva .scrivx-tiedosto, .zip-varmuuskopio tai .scrivtemplate-tiedosto.
+import-scrivener-refusal-manifest-without-files-title = Asiakirjat eivät ole tässä kopiossa
+import-scrivener-refusal-manifest-without-files-body = ”{ $manifest }” on tässä, mutta Files-kansio, joka sisältää sen luettelemat asiakirjat, puuttuu. Synkronointipalvelu ei ehkä ole vielä kopioinut projektia loppuun, tai vain .scrivx-tiedosto kopioitiin. Jos valitsit .scrivx-tiedoston, valitse sen sijaan projektin kansio painikkeella ”Valitse kansio…”.
+import-scrivener-refusal-search-too-wide-title = Tässä kansiossa on liikaa läpikäytävää
+import-scrivener-refusal-search-too-wide-body = Siinä on yli { $limit } kansiota läpikäytäväksi. Valitse itse Scrivener-projekti.
+import-scrivener-refusal-scrivener-one-for-mac-title = Tämä projekti on tehty Macin Scrivener 1:llä
+import-scrivener-refusal-scrivener-one-for-mac-body = Skribisto lukee Scrivener 2:n ja uudempien versioiden projekteja. Avaa projekti kerran Scrivener 2:ssa tai 3:ssa päivittääksesi sen, tai koosta se Word-asiakirjaksi ja tuo se.
+import-scrivener-refusal-ios-stub-without-mobile-data-title = Tämä on vain iPhonen tai iPadin Scrivenerin paikanvaraaja
+import-scrivener-refusal-ios-stub-without-mobile-data-body = Itse projekti ei ole tässä. Synkronoi se iPhonesta tai iPadista, tai jaa se sieltä .zip-tiedostona, ja tuo se.
+import-scrivener-refusal-newer-title = Tämä projekti on tehty uudemmalla Scrivenerillä
+import-scrivener-refusal-unknown-format-version-body = Sen muoto, { $version }, ei ole Skribistolle tuttu. Tarkista, onko Skribistoon saatavilla päivitystä. Sitä odottaessa koosta projekti Scrivenerissä Word-asiakirjaksi ja tuo se.
+import-scrivener-refusal-newer-format-stamp-body = Sen tiedostot on merkitty versioksi { $stamp }, ja Skribisto lukee enintään version { $newest }. Tarkista, onko Skribistoon saatavilla päivitystä. Sitä odottaessa koosta projekti Scrivenerissä Word-asiakirjaksi ja tuo se.
+import-scrivener-refusal-version-stamp-unreadable-title = Projektin versiota ei voi lukea
+import-scrivener-refusal-version-stamp-unreadable-body = Sen Files/version.txt-tiedostossa ei ole versionumeroa, joten Skribisto ei voi päätellä, osaako se lukea tämän projektin. Avaa projekti kerran Scrivenerissä ja tuo se sitten uudelleen.
+import-scrivener-refusal-damaged-manifest-title = Mappitiedostoa ei voi lukea
+import-scrivener-refusal-damaged-manifest-body = ”{ $manifest }” on vahingoittunut. { $spare_copies ->
+    [0] Avaa projekti Scrivenerissä, joka osaa korjata sen, ja tuo se sitten uudelleen.
+    [one] Scrivener säilyttää siitä varakopion projektin sisällä, mutta Skribisto ei lue sitä. Avaa projekti Scrivenerissä, joka osaa korjata sen, ja tuo se sitten uudelleen.
+   *[other] Scrivener säilyttää siitä { $spare_copies } varakopiota projektin sisällä, mutta Skribisto ei lue niitä. Avaa projekti Scrivenerissä, joka osaa korjata sen, ja tuo se sitten uudelleen.
+}
+# The empty file Scrivener writes for a new project before its first save: not damage.
+import-scrivener-refusal-damaged-manifest-new-project-placeholder-body = ”{ $manifest }” on tyhjä tiedosto, jonka Scrivener kirjoittaa projektille, jota se ei ole vielä tallentanut. Avaa projekti Scrivenerissä, anna sen tallentaa projekti, ja tuo se sitten uudelleen.
+import-scrivener-refusal-manifest-too-large-title = Tämä mappitiedosto on liian suuri
+import-scrivener-refusal-manifest-too-large-body = ”{ $manifest }” on suurempi kuin Skribiston lukema enimmäiskoko, { $limit } Mt. Mikään todellinen projekti ei ole lähelläkään sitä, joten tiedosto voi olla vahingoittunut.
+import-scrivener-refusal-no-item-identifiers-title = Mappi ei luettele yhtään asiakirjaa, jonka Skribisto löytäisi
+import-scrivener-refusal-no-item-identifiers-body = Yhdelläkään sen kohteella ei ole tunnusta, joten niiden tiedostoja ei löydy. Avaa projekti kerran Scrivenerissä ja tuo se sitten uudelleen.
+import-scrivener-refusal-incomplete-copy-title = Asiakirjat puuttuvat tästä kopiosta
+import-scrivener-refusal-incomplete-copy-body = Files-kansio on tässä, mutta sen asiakirjat eivät. Synkronointipalvelu ei ehkä ole vielä kopioinut projektia loppuun. Odota, että se valmistuu, tai kopioi koko .scriv-kansio uudelleen, ja lue projekti sitten uudelleen.
+import-scrivener-refusal-archive-title = Tätä arkistoa ei voi avata
+import-scrivener-refusal-archive-unreadable-body = Tiedostoa ”{ $file }” ei voitu lukea ({ $reason }). Se voi olla vahingoittunut. Pura se itse ja valitse sitten sen sisällä oleva .scriv-kansio.
+import-scrivener-refusal-archive-unsafe-name-title = Tätä arkistoa ei voi avata turvallisesti
+# A name with `..` in it, or an absolute one.
+import-scrivener-refusal-archive-unsafe-name-body = Arkistossa ”{ $file }” on tiedosto nimeltä ”{ $member }”, joka päätyisi arkiston ulkopuolelle, joten Skribisto ei avaa sitä.
+import-scrivener-refusal-archive-unsafe-name-empty-body = Arkistossa ”{ $file }” on nimetön tiedosto, joten Skribisto ei avaa sitä.
+import-scrivener-refusal-archive-unsafe-name-control-character-body = Arkistossa ”{ $file }” on tiedosto, jonka nimessä on ohjausmerkki, joten Skribisto ei avaa sitä.
+import-scrivener-refusal-archive-too-large-title = Tämä arkisto on liian suuri avattavaksi turvallisesti
+import-scrivener-refusal-archive-too-many-members-body = Siinä on yli { $limit } tiedostoa. Pura se itse ja valitse sitten sen sisällä oleva .scriv-kansio.
+import-scrivener-refusal-archive-member-too-large-body = ”{ $member }” purkautuu yli { $limit } Mt:n kokoiseksi. Pura arkisto itse ja valitse sitten sen sisällä oleva .scriv-kansio.
+import-scrivener-refusal-archive-too-large-body = Se purkautuu yli { $limit } Mt:n kokoiseksi. Pura se itse ja valitse sitten sen sisällä oleva .scriv-kansio.
+import-scrivener-refusal-archive-encrypted-title = Tämä arkisto on suojattu salasanalla
+import-scrivener-refusal-archive-encrypted-body = Pura ”{ $file }” itse ja valitse sitten sen sisällä oleva .scriv-kansio.
+import-scrivener-refusal-archive-unsupported-compression-title = Tämä arkisto on pakattu tavalla, jota Skribisto ei osaa lukea
+import-scrivener-refusal-archive-unsupported-compression-body = ”{ $member }” on pakattu menetelmällä { $method }. Pura arkisto itse ja valitse sitten sen sisällä oleva .scriv-kansio.
+import-scrivener-refusal-duplicate-archive-members-title = Tämä arkisto luettelee joitakin tiedostoja kahdesti
+import-scrivener-refusal-duplicate-archive-members-body = Arkistossa ”{ $file }” on useampi tiedosto samalla nimellä, joten Skribisto ei voi päätellä, mikä niistä kuuluu projektiin. Pura se itse ja valitse sitten sen sisällä oleva .scriv-kansio.
+# What a file cut short looks like; a file too large, one that is not a template and one
+# encoded another way have their own words.
+import-scrivener-refusal-template-undecodable-title = Tämä mallitiedosto on vajaa
+import-scrivener-refusal-template-undecodable-too-large-title = Tämä mallitiedosto on liian suuri avattavaksi
+import-scrivener-refusal-template-undecodable-not-a-template-title = Tämä tiedosto ei ole Scrivener-malli
+import-scrivener-refusal-template-undecodable-unknown-encoding-title = Tämä mallitiedosto on tallennettu muodossa, jota Skribisto ei tunne
+import-scrivener-refusal-template-undecodable-body = Tiedostoa ”{ $file }” ei voi tulkita: se saattaa päättyä ennen kuin sen sisältämä projekti päättyy. Lataa se uudelleen, tai avaa se Scrivenerissä ja tee siitä projekti.
+import-scrivener-refusal-template-undecodable-too-large-body = ”{ $file }” on suurempi kuin { $limit } Mt. Avaa se Scrivenerissä, tee siitä projekti ja tuo sitten se projekti.
+import-scrivener-refusal-template-undecodable-not-a-template-body = Tiedostossa ”{ $file }” ei ole Scrivener-projektia. Valitse Scrivenerin tallentama mallitiedosto tai siitä tehty projekti.
+import-scrivener-refusal-template-undecodable-unknown-encoding-body = ”{ $file }” tallentaa projektinsa tavalla, jota Skribisto ei osaa tulkita. Avaa se Scrivenerissä, tee siitä projekti ja tuo sitten se projekti.
+import-scrivener-refusal-cloud-placeholders-title = { $count ->
+    [one] 1 tämän projektin tiedosto on vielä pilvessä
+   *[other] { $count } tämän projektin tiedostoa on vielä pilvessä
+}
+import-scrivener-refusal-cloud-placeholders-body = Niitä ei ole ladattu tähän tietokoneeseen, esimerkiksi { $examples }. Aseta projekti synkronointisovelluksessasi saataville myös ilman verkkoyhteyttä, ja lue projekti sitten uudelleen.
+import-scrivener-refusal-unreadable-members-title = { $count ->
+    [one] 1 tämän projektin tiedostoa ei voi lukea
+   *[other] { $count } tämän projektin tiedostoa ei voi lukea
+}
+import-scrivener-refusal-unreadable-members-body = Esimerkiksi { $examples }. Varmista, että sinulla on oikeus lukea koko projekti ja että levy on kunnossa, ja lue projekti sitten uudelleen.
+import-scrivener-refusal-needed-member-is-link-title = Tämä projekti osoittaa oman kansionsa ulkopuolelle
+import-scrivener-refusal-needed-member-is-link-body = ”{ $member }” on linkki toiseen paikkaan tällä tietokoneella, eikä Skribisto seuraa linkkejä. Kopioi projekti niin, että jokainen tiedosto on sen sisällä, ja yritä sitten uudelleen.
+import-scrivener-refusal-project-changed-during-read-title = Projekti muuttui sitä luettaessa
+import-scrivener-refusal-project-changed-during-read-body = Scrivener tai synkronointipalvelu kirjoittaa siihen yhä. Sulje se Scrivenerissä, odota synkronoinnin valmistumista ja lue projekti sitten uudelleen.
+import-scrivener-refusal-too-many-members-title = Tässä projektissa on liikaa tiedostoja
+import-scrivener-refusal-too-many-members-body = Siinä on yli { $limit } tiedostoa, enemmän kuin missään todellisessa projektissa. Se ei ehkä ole Scrivener-projekti, tai se voi olla vahingoittunut.
+import-scrivener-refusal-too-large-title = Tämä projekti on liian suuri
+import-scrivener-refusal-too-large-body = Sen teksti on yhteensä yli { $limit } Mt, enemmän kuin Skribisto voi tuoda turvallisesti.
+import-scrivener-refusal-structure-unmappable-title = Skribisto ei pysty siirtämään tätä mappia
+import-scrivener-refusal-structure-unmappable-body = Mappia ei voitu siirtää menettämättä tai sijoittamatta jotain väärin. Vika on Skribistossa, ei projektissasi. Ilmoita siitä ja liitä mukaan, mitä ”Yksityiskohdat” näyttää.
+
+## When there is a choice to make
+import-scrivener-roots-title = Tässä on { $count } projektia. Mikä niistä?
+import-scrivener-roots-hint = Tässä kansiossa tai arkistossa on useampi kuin yksi Scrivener-projekti. Valitse tuotava projekti.
+import-scrivener-manifests-title = Tässä projektissa on { $count } mappitiedostoa
+import-scrivener-manifests-hint = Scrivener säilyttää mapin, eli luettelon jokaisesta asiakirjasta ja kansiosta, .scrivx-tiedostossa. Ylimääräiset jäivät todennäköisesti synkronointipalvelulta. Valitse se, jossa työskentelit viimeksi.
+import-scrivener-manifests-hint-preselected = Scrivener säilyttää mapin, eli luettelon jokaisesta asiakirjasta ja kansiosta, .scrivx-tiedostossa. Ylimääräiset jäivät todennäköisesti synkronointipalvelulta. Valittuna on se, jossa todennäköisimmin työskentelit viimeksi: tarkista se ennen kuin jatkat.
+import-scrivener-manifest-row = { $file } · tallennettu { $date } · { $documents ->
+    [one] 1 kohde
+   *[other] { $documents } kohdetta
+}
+import-scrivener-manifest-row-undated = { $file } · { $documents ->
+    [one] 1 kohde
+   *[other] { $documents } kohdetta
+}
+import-scrivener-manifest-row-unread = { $file } · ei voi lukea
+import-scrivener-enclosing-title = Tämä on osa Scrivener-projektia ”{ $project }”
+import-scrivener-enclosing-body = Valitsit tiedoston tai kansion projektin sisältä. Skribisto tuo koko projektin.
+import-scrivener-enclosing-use = Tuo ”{ $project }”
+import-scrivener-upgrade-title = Tämä on kopio, jonka Scrivener säilytti ennen päivitystä
+import-scrivener-upgrade-body = Kun Scrivener päivittää projektin uudempaan versioon, se säilyttää vanhan nimellä ”{ $backup }”. Projekti, jossa jatkoit kirjoittamista, on sen vieressä: ”{ $current }”.
+import-scrivener-upgrade-body-unclear = Kun Scrivener päivittää projektin uudempaan versioon, se säilyttää vanhan nimellä ”{ $backup }”. Sen vieressä olevaa projektia ”{ $current }” ei voitu lukea moitteetta, joten valitse, kumpi tuodaan.
+import-scrivener-upgrade-use-current = Tuo ”{ $current }”, projekti, jossa jatkoit kirjoittamista
+import-scrivener-upgrade-keep-backup = Tuo tämä vanhempi kopio, ”{ $backup }”
+
+## What must be accepted before going on
+import-scrivener-ios-pending-title = iPhonen tai iPadin Scrivenerissä tehdyt muutokset eivät ole vielä tässä kopiossa
+import-scrivener-ios-pending-body = Tietokoneen Scrivener tuo nämä muutokset, kun se seuraavan kerran avaa projektin. Avaa projekti kerran tietokoneesi Scrivenerissä ja tuo se sitten uudelleen.
+import-scrivener-ios-pending-accept = Tuo se ilman näitä muutoksia
+import-scrivener-no-text-title = { $count ->
+    [one] 1 asiakirja, eikä tässä kopiossa ole sanaakaan tekstiä
+   *[other] { $count } asiakirjaa, eikä tässä kopiossa ole sanaakaan tekstiä
+}
+import-scrivener-no-text-body = Synkronointipalvelu saattaa vielä kopioida projektia, tai kopio on menettänyt asiakirjansa. Jos tuot sen nyt, jokainen asiakirja tulee tyhjänä.
+import-scrivener-no-text-accept = Tuo asiakirjat tyhjinä
+
+## Things to know, nothing to decide
+import-scrivener-notice-project-found-below-pick-title = Projekti löytyi valitsemasi kansion sisältä
+import-scrivener-notice-project-found-below-pick-body = Sen sijainti on ”{ $path }”.
+import-scrivener-notice-source-is-template-title = Tämä on Scrivener-malli
+import-scrivener-notice-source-is-template-named = Tämä on Scrivener-malli ”{ $title }”
+import-scrivener-notice-source-is-template-body = Sen tuominen luo uuden projektin mallin sisällöstä, myös sen ohjeista.
+import-scrivener-notice-source-is-backup-title = Tämä näyttää Scrivenerin tekemältä varmuuskopiolta
+import-scrivener-notice-source-is-backup-body = Siinä on projekti sellaisena kuin se oli varmuuskopiota tehtäessä. Jos jatkoit kirjoittamista sen jälkeen, valitse itse projekti.
+import-scrivener-notice-importing-pre-upgrade-copy-title = Olet tuomassa kopiota, jonka Scrivener säilytti ennen päivitystä
+import-scrivener-notice-importing-pre-upgrade-copy-body = Projekti, jossa jatkoit kirjoittamista, on sen vieressä, ja siinä on kaikki sen jälkeen kirjoitettu.
+import-scrivener-notice-imported-from-ios-stub-title = Tämä projekti on tehty iPhonen tai iPadin Scrivenerillä
+import-scrivener-notice-imported-from-ios-stub-body = Sitä ei ole koskaan avattu tietokoneella, joten se luetaan iPhonen tai iPadin säilyttämästä kopiosta.
+import-scrivener-notice-stale-mobile-binder-ignored-title = iPhonen tai iPadin vanha mappi jätetään sivuun
+import-scrivener-notice-stale-mobile-binder-ignored-body = Tietokoneen Scrivener on jo tuonut sen muutokset.
+import-scrivener-notice-identical-manifest-copies-title = { $count ->
+    [one] Tässä on 1 kopio mappitiedostosta
+   *[other] Tässä on { $count } identtistä kopiota mappitiedostosta
+}
+import-scrivener-notice-identical-manifest-copies-body = Niiden sisältö on sama, joten mikä tahansa niistä antaa saman projektin.
+import-scrivener-notice-manifest-copies-ignored-title = Mappitiedoston ylimääräiset kopiot jätetään sivuun
+import-scrivener-notice-manifest-copies-ignored-body = ”{ $chosen }” on se, jossa Scrivener työskenteli viimeksi. { $count ->
+    [one] 1 synkronointipalvelun jättämä kopio jätetään sivuun.
+   *[other] { $count } synkronointipalvelun jättämää kopiota jätetään sivuun.
+}
+import-scrivener-notice-pinned-manifest-looks-like-a-copy-title = Valitsemasi mappitiedosto näyttää synkronointikopiolta
+import-scrivener-notice-pinned-manifest-looks-like-a-copy-body = ”{ $name }” on nimetty kuin kopio tiedostosta ”{ $original }”, joka on sen vieressä. Jos tuonti näyttää vanhalta, valitse sen sijaan ”{ $original }”.
+import-scrivener-notice-pinned-manifest-has-siblings-title = { $count ->
+    [one] Valitsemasi mappitiedoston vieressä on 1 toinen mappitiedosto
+   *[other] Valitsemasi mappitiedoston vieressä on { $count } muuta mappitiedostoa
+}
+import-scrivener-notice-pinned-manifest-has-siblings-body = Vain valitsemasi tiedosto luetaan.
+import-scrivener-notice-legacy-v1-files-beside-title = Vanhemman Scrivenerin tiedostot jätetään sivuun
+import-scrivener-notice-legacy-v1-files-beside-body = Ne jäivät jäljelle, kun projekti päivitettiin. Vain nykyisen version tiedostot luetaan.
+import-scrivener-notice-mixed-payload-trees-title = Tässä projektissa on kahden Scrivener-version tiedostoja
+import-scrivener-notice-mixed-payload-trees-body = Asiakirjat luetaan sieltä, missä mappitiedosto sanoo niiden olevan.
+import-scrivener-notice-version-disagreement-title = Tämän projektin tiedostot eivät ole yksimielisiä sen versiosta
+import-scrivener-notice-id-scheme-mismatch-body = Mappitiedosto ilmoittaa version { $version }, mutta nimeää asiakirjansa toisen version tapaan. Ne luetaan sieltä, mihin se osoittaa. Jos tuonti näyttää väärältä, avaa projekti kerran Scrivenerissä ja tuo se uudelleen.
+import-scrivener-notice-version-stamp-mismatch-body = Projekti luetaan niin kuin sen mappitiedosto sen kuvaa. Jos tuonti näyttää väärältä, avaa projekti kerran Scrivenerissä ja tuo se uudelleen.
+import-scrivener-notice-unrecognised-writer-title = Tämän projektin on tallentanut ohjelma, jota Skribisto ei tunnista
+import-scrivener-notice-unrecognised-writer-named = Ohjelma kutsuu itseään nimellä ”{ $creator }”. Projekti luetaan Scrivener-projektina.
+import-scrivener-notice-unrecognised-writer-body = Ohjelma ei kerro nimeään. Projekti luetaan Scrivener-projektina.
+import-scrivener-notice-invalid-item-identifier-title = { $count ->
+    [one] 1 mapin kohteella on virheellinen tunnus
+   *[other] { $count } mapin kohteella on virheellinen tunnus
+}
+import-scrivener-notice-invalid-item-identifier-body = Nämä tunnukset jätetään sivuun. Kohteet säilytetään.
+import-scrivener-notice-items-without-identifier-title = { $count ->
+    [one] 1 mapin kohteella ei ole tunnusta
+   *[other] { $count } mapin kohteella ei ole tunnusta
+}
+import-scrivener-notice-items-without-identifier-body = Niiden tiedostoja ei löydy, joten ne tulevat tyhjinä.
+import-scrivener-notice-duplicate-item-key-title = Kahdella mapin kohteella on sama tunnus: ”{ $item }”
+import-scrivener-notice-duplicate-item-key-body = Ensimmäinen saa asiakirjat. Toinen säilyttää paikkansa ja tulee tyhjänä.
+import-scrivener-notice-lock-here-title = Scrivener pitää tätä projektia auki tällä tietokoneella
+import-scrivener-notice-lock-here-body = Sulje se ensin Scrivenerissä, jotta jokainen muutos tallentuu.
+import-scrivener-notice-lock-title = Scrivener piti tätä projektia auki laitteella ”{ $host }”
+import-scrivener-notice-lock-elsewhere-title = Scrivener piti tätä projektia auki toisella tietokoneella
+import-scrivener-notice-lock-body = Jos se on yhä auki siellä, sulje se ensin: tiedostoissa ei ehkä ole vielä uusimpia muutoksia. Jos Scrivener suljettiin kauan sitten, voit tuoda projektin sellaisenaan.
+import-scrivener-notice-archived-while-open-title = Tämä arkisto tehtiin, kun projekti oli auki Scrivenerissä
+import-scrivener-notice-archived-while-open-body = Siitä voi puuttua sen hetken jälkeen tehtyjä muutoksia.
+import-scrivener-notice-content-missing-notes = Kohteen ”{ $item }” muistiinpanot puuttuvat
+import-scrivener-notice-content-missing-synopsis = Kohteen ”{ $item }” tiivistelmä puuttuu
+import-scrivener-notice-content-missing-text = Kohteen ”{ $item }” teksti puuttuu
+import-scrivener-notice-content-missing-body = Sen tiedosto ei ole tässä kopiossa, joten se tulee tyhjänä. Synkronointipalvelu saattaa vielä kopioida projektia.
+import-scrivener-notice-content-missing-salvaged = Sen tiedosto ei ole tässä kopiossa, mutta Scrivenerin hakuhakemistossa olivat yhä sen sanat. Ne säilytetään pelkkänä tekstinä, ehkä vanhemmasta versiosta.
+import-scrivener-notice-content-truncated-notes = Kohteen ”{ $item }” muistiinpanot ovat levyllä tyhjät
+import-scrivener-notice-content-truncated-synopsis = Kohteen ”{ $item }” tiivistelmä on levyllä tyhjä
+import-scrivener-notice-content-truncated-text = Kohteen ”{ $item }” teksti on levyllä tyhjä
+import-scrivener-notice-content-truncated-body = Scrivener kirjasi sen tekstillisenä, mutta sen tiedostossa ei ole mitään: synkronointi on ehkä pysähtynyt puolivälissä. Se tulee tyhjänä.
+import-scrivener-notice-missing-media-title = Kohteen ”{ $item }” tiedosto puuttuu
+import-scrivener-notice-missing-media-body = Sen sisältämä kuva tai tutkimustiedosto ei ole tässä kopiossa.
+import-scrivener-notice-sync-conflict-copies-title = { $count ->
+    [one] Löytyi 1 asiakirjan synkronointikopio
+   *[other] Löytyi { $count } asiakirjojen synkronointikopiota
+}
+import-scrivener-notice-sync-conflict-copies-body = { $missing ->
+    [0] Ne siirtyvät palautettuina teksteinä omaan kansioonsa, jotta voit verrata niitä asiakirjoihin.
+   *[other] Ne siirtyvät palautettuina teksteinä omaan kansioonsa. Osa on kopioita asiakirjoista, joita ei enää ole projektissa.
+}
+import-scrivener-notice-recovered-unreferenced-text-title = { $count ->
+    [one] Löytyi 1 asiakirja, jota mikään mapin kohde ei luettele
+   *[other] Löytyi { $count } asiakirjaa, joita mikään mapin kohde ei luettele
+}
+import-scrivener-notice-recovered-unreferenced-text-body = Ne siirtyvät palautettuina teksteinä omaan kansioonsa.
+import-scrivener-notice-sync-debris-ignored-title = { $count ->
+    [one] 1 synkronointipalvelun jättämä ylimääräinen kopio jätetään sivuun
+   *[other] { $count } synkronointipalvelun jättämää ylimääräistä kopiota jätetään sivuun
+}
+import-scrivener-notice-sync-debris-ignored-body = Scrivenerkään ei lue niitä. Vain projektin omat tiedostot luetaan.
+import-scrivener-notice-unrecognised-files-title = { $count ->
+    [one] 1 tiedosto, joka ei kuulu Scrivener-projektiin, jätetään sivuun
+   *[other] { $count } tiedostoa, jotka eivät kuulu Scrivener-projektiin, jätetään sivuun
+}
+import-scrivener-notice-examples = Esimerkiksi { $examples }.
+import-scrivener-notice-symlink-not-followed-title = { $count ->
+    [one] 1 projektin sisäistä linkkiä ei seurata
+   *[other] { $count } projektin sisäistä linkkiä ei seurata
+}
+import-scrivener-notice-unreadable-files-skipped-title = { $count ->
+    [one] 1 tiedostoa, jota tuonti ei tarvitse, ei voitu lukea
+   *[other] { $count } tiedostoa, joita tuonti ei tarvitse, ei voitu lukea
+}
+import-scrivener-notice-cloud-placeholders-skipped-title = { $count ->
+    [one] 1 vielä pilvessä oleva tiedosto ohitetaan
+   *[other] { $count } vielä pilvessä olevaa tiedostoa ohitetaan
+}
+import-scrivener-notice-cloud-placeholders-skipped-body = Tuonti ei tarvitse niitä.
+import-scrivener-notice-no-text-found-title = { $count ->
+    [one] 1 asiakirja, eikä siinä ole tekstiä
+   *[other] { $count } asiakirjaa, eikä yhdessäkään ole tekstiä
+}
+import-scrivener-notice-no-text-found-body = Tämä projekti näyttää tyhjältä. Se tuodaan sellaisenaan.
+import-scrivener-notice-metadata-unreadable-title = Tiedostoa ”{ $member }” ei voitu lukea
+import-scrivener-notice-metadata-unreadable-body = Se, mitä Scrivener säilytti siinä, ei siirry.
+import-scrivener-notice-dangling-keyword-title = { $count ->
+    [one] 1 viittaus osoittaa avainsanaan, jota projekti ei määrittele
+   *[other] { $count } viittausta osoittaa avainsanoihin, joita projekti ei määrittele
+}
+import-scrivener-notice-dangling-label-title = { $count ->
+    [one] 1 viittaus osoittaa nimiöön, jota projekti ei määrittele
+   *[other] { $count } viittausta osoittaa nimiöihin, joita projekti ei määrittele
+}
+import-scrivener-notice-dangling-status-title = { $count ->
+    [one] 1 viittaus osoittaa tilaan, jota projekti ei määrittele
+   *[other] { $count } viittausta osoittaa tiloihin, joita projekti ei määrittele
+}
+import-scrivener-notice-dangling-section-type-title = { $count ->
+    [one] 1 viittaus osoittaa osiotyyppiin, jota projekti ei määrittele
+   *[other] { $count } viittausta osoittaa osiotyyppeihin, joita projekti ei määrittele
+}
+import-scrivener-notice-dangling-custom-field-title = { $count ->
+    [one] 1 viittaus osoittaa mukautettuun metatietokenttään, jota projekti ei määrittele
+   *[other] { $count } viittausta osoittaa mukautettuihin metatietokenttiin, joita projekti ei määrittele
+}
+import-scrivener-notice-dangling-item-title = { $count ->
+    [one] 1 viittaus osoittaa asiakirjaan, jota projekti ei määrittele
+   *[other] { $count } viittausta osoittaa asiakirjoihin, joita projekti ei määrittele
+}
+import-scrivener-notice-dangling-references-body = Ne jätetään pois.
+import-scrivener-notice-snapshots-not-imported-line = { $count ->
+    [one] 1 tilannevedos jää Scrivener-projektiisi: Skribisto ei siirrä tilannevedoksia.
+   *[other] { $count } tilannevedosta jää Scrivener-projektiisi: Skribisto ei siirrä tilannevedoksia.
+}
+import-scrivener-notice-writing-history-not-imported-line = { $days ->
+    [one] Scrivenerin tilastoa päivittäin kirjoitetuista sanoista ei siirretä (1 päivä). Skribisto aloittaa oman laskentansa ensimmäisestä tallennuksesta.
+   *[other] Scrivenerin tilastoa päivittäin kirjoitetuista sanoista ei siirretä ({ $days } päivää). Skribisto aloittaa oman laskentansa ensimmäisestä tallennuksesta.
+}
+import-scrivener-notice-title-placeholder-rejected-hint = Projektin asetuksissa oleva otsikko on mallin paikkamerkki, joten sen sijaan ehdotetaan projektin nimeä.
+import-scrivener-notice-author-placeholder-rejected-hint = Projektin asetuksissa oleva tekijän nimi on mallin paikkamerkki, joten nimeä ei ehdoteta.
+import-scrivener-notice-title-from-project-hint-compile-settings = Tämä otsikko on se, joka on projektin koostamisasetuksissa. Kunnes otsikko asetetaan sinne, Scrivener säilyttää siellä nimen, joka projektilla oli luotaessa.
+import-scrivener-notice-title-from-project-hint-template = Tämä otsikko on mallin oma.
+import-scrivener-notice-title-from-project-hint-folder-name = Tämä otsikko on projektin nimi.
+import-scrivener-notice-title-from-project-hint-project-properties = Tämä otsikko on se, joka on projektin ominaisuuksissa.
+import-scrivener-notice-author-from-project-hint = Tämä nimi on se, joka on projektin asetuksissa. Mallin tekijä voi jäädä sinne, ja se tulostuisi nimiösivulle.
+import-scrivener-notice-language-not-stated-hint = Projekti ei ilmoita kieltään, joten ehdotetaan Skribiston käyttöliittymän kieltä. Kieli määrää, miten sanat lasketaan ja lainausmerkit kirjoitetaan.
+import-scrivener-notice-language-from-script-hint = Ehdotettu käsikirjoituksen kirjoitusjärjestelmän perusteella ({ $tag }).
+
+## Before you import: what the import does with the binder, or leaves behind
+import-scrivener-structure-script-mode-draft-line = { $script ->
+    [one] { $documents ->
+        [one] Käsikirjoituksen ainoa asiakirja on kirjoitettu skriptitilassa. Skribisto säilyttää sen sanat mutta ei elokuvakäsikirjoituksen asettelua.
+       *[other] Käsikirjoituksen { $documents } asiakirjasta { $script } on kirjoitettu skriptitilassa. Skribisto säilyttää sen sanat mutta ei elokuvakäsikirjoituksen asettelua.
+    }
+   *[other] Käsikirjoituksen { $documents } asiakirjasta { $script } on kirjoitettu skriptitilassa. Skribisto säilyttää niiden sanat mutta ei elokuvakäsikirjoituksen asettelua.
+}
+import-scrivener-structure-one-document-manuscript-line = { $count ->
+    [one] Yksi käsikirjoituksen asiakirja sisältää lukunsa otsikkoina.
+   *[other] { $count } käsikirjoituksen asiakirjaa sisältää lukunsa otsikkoina.
+}
+import-scrivener-structure-title-repeats-number-line = { $count ->
+    [one] 1 luvun tai osan otsikko sisältää myös numeronsa kirjoitettuna, joten vienti voi tulostaa numeron kahdesti.
+   *[other] { $count } luvun tai osan otsikkoa sisältää myös numeronsa kirjoitettuna, joten vienti voi tulostaa numeron kahdesti.
+}
+import-scrivener-structure-claim-overruled-line = { $count ->
+    [one] 1 kohde sijoitetaan tasoa alemmas kuin se ilmoittaa, koska sen yläpuolella oleva kohde on jo sillä tasolla.
+   *[other] { $count } kohdetta sijoitetaan tasoa alemmas kuin ne ilmoittavat, koska niiden yläpuolella oleva kohde on jo sillä tasolla.
+}
+import-scrivener-structure-adopted-by-chapter-line = { $count ->
+    [one] 1 asiakirja, joka seuraa lukua, liitetään sen luvun loppuun.
+   *[other] { $count } asiakirjaa, jotka seuraavat lukua, liitetään sen luvun loppuun.
+}
+import-scrivener-structure-looks-like-manuscript-line = { $count ->
+    [one] 1 muistiinpanoihin sijoitettu ylimmän tason kansio vaikuttaa käsikirjoitukselta. Voit siirtää sen käsikirjoitukseen toisena kirjana.
+   *[other] { $count } muistiinpanoihin sijoitettua ylimmän tason kansiota vaikuttaa käsikirjoitukselta. Voit siirtää ne käsikirjoitukseen muina kirjoina.
+}
+import-scrivener-structure-generic-sheet-title-line = { $count ->
+    [one] 1 tietopankin merkinnällä on mallin otsikko, kuten ”Sankari”, jota esiintymien haku etsii tekstistä.
+   *[other] { $count } tietopankin merkinnällä on mallin otsikko, kuten ”Sankari”, jota esiintymien haku etsii tekstistä.
+}
+import-scrivener-structure-placeholder-title-line = { $count ->
+    [one] 1 otsikko oli pelkkä tason nimi, ja se jätetään tyhjäksi: mappi ja viennit numeroivat sen.
+   *[other] { $count } otsikkoa oli pelkkiä tason nimiä, ja ne jätetään tyhjiksi: mappi ja viennit numeroivat ne.
+}
+import-scrivener-structure-untitled-item-line = { $count ->
+    [one] 1 kohteella ei ollut Scrivenerissä otsikkoa, ja se jää nimettömäksi.
+   *[other] { $count } kohteella ei ollut Scrivenerissä otsikkoa, ja ne jäävät nimettömiksi.
+}
+import-scrivener-structure-title-cleaned-line = { $count ->
+    [one] 1 otsikossa oli rivinvaihtoja tai sarkaimia, ja ne poistetaan.
+   *[other] { $count } otsikossa oli rivinvaihtoja tai sarkaimia, ja ne poistetaan.
+}
+import-scrivener-structure-own-text-moved-line = { $count ->
+    [one] 1 kansiolla on omaa tekstiä, joka siirretään sen sisälle ensimmäiseksi asiakirjaksi.
+   *[other] { $count } kansiolla on omaa tekstiä, joka siirretään niiden sisälle ensimmäiseksi asiakirjaksi.
+}
+import-scrivener-structure-text-with-children-line = { $count ->
+    [one] 1 asiakirjasta, jonka sisällä on asiakirjoja, tulee kansio.
+   *[other] { $count } asiakirjasta, joiden sisällä on asiakirjoja, tulee kansioita.
+}
+import-scrivener-structure-empty-folder-plain-line = { $count ->
+    [one] 1 tyhjä kansio pysyy tavallisena kansiona, joten mikään vienti ei tulosta otsikkoa, jota Scrivener ei koskaan tulostanut.
+   *[other] { $count } tyhjää kansiota pysyy tavallisina kansioina, joten mikään vienti ei tulosta otsikkoa, jota Scrivener ei koskaan tulostanut.
+}
+import-scrivener-structure-book-inside-book-line = { $count ->
+    [one] 1 kirjan sisällä olevasta kirjasta tulee osa.
+   *[other] { $count } kirjan sisällä olevasta kirjasta tulee osia.
+}
+import-scrivener-structure-prologue-not-numbered-line = { $count ->
+    [one] 1 prologi tai epilogi jätetään lukujen numeroinnin ulkopuolelle.
+   *[other] { $count } prologia tai epilogia jätetään lukujen numeroinnin ulkopuolelle.
+}
+import-scrivener-structure-matter-inside-book-line = { $count ->
+    [one] 1 käsikirjoituksen ulkopuolelta tuleva alku- tai loppusivu sijoitetaan kirjan sisälle paratekstiksi, ja se jätetään pois vienneistä, kunnes sisällytät sen.
+   *[other] { $count } käsikirjoituksen ulkopuolelta tulevaa alku- tai loppusivua sijoitetaan kirjan sisälle parateksteiksi, ja ne jätetään pois vienneistä, kunnes sisällytät ne.
+}
+import-scrivener-structure-paratext-not-counted-line = { $documents ->
+    [one] 1 käsikirjoituksen asiakirjasta tulee parateksti (alku- tai loppusivu): sen { $words ->
+        [one] { $words } sana ei enää kuulu
+       *[other] { $words } sanaa ei enää kuulu
+    } käsikirjoituksen sanamäärään.
+   *[other] { $documents } käsikirjoituksen asiakirjasta tulee paratekstejä (alku- tai loppusivuja): niiden { $words ->
+        [one] { $words } sana ei enää kuulu
+       *[other] { $words } sanaa ei enää kuulu
+    } käsikirjoituksen sanamäärään.
+}
+import-scrivener-structure-document-notes-line = { $count ->
+    [one] 1 asiakirjan muistiinpanoista tulee muistiinpano sen viereen.
+   *[other] { $count } asiakirjan muistiinpanoista tulee muistiinpanoja niiden viereen.
+}
+import-scrivener-structure-draft-content-as-note-line = Käsikirjoituskansion oma teksti muuttuu muistiinpanoksi käsikirjoituksen alkuun.
+import-scrivener-structure-story-bible-folder-line = { $count ->
+    [one] 1 henkilö- tai paikkakansiosta tulee tietopankin tunniste.
+   *[other] { $count } henkilö- tai paikkakansiosta tulee tietopankin tunnisteita.
+}
+import-scrivener-structure-templates-created-line = { $count ->
+    [one] 1 asiakirjamallista tulee muistiinpanomalli.
+   *[other] { $count } asiakirjamallista tulee muistiinpanomalleja.
+}
+import-scrivener-structure-template-nesting-flattened-line = { $count ->
+    [one] 1 toisen sisällä oleva mallikansio puretaan: jokaisesta sen tekstistä tulee malli.
+   *[other] { $count } toisten sisällä olevaa mallikansiota puretaan: jokaisesta niiden tekstistä tulee malli.
+}
+import-scrivener-structure-template-kept-as-note-line = { $count ->
+    [one] 1 malli sisältää jotain, mitä muistiinpanomalli ei voi sisältää, ja se säilytetään muistiinpanona.
+   *[other] { $count } mallia sisältää jotain, mitä muistiinpanomalli ei voi sisältää, ja ne säilytetään muistiinpanoina.
+}
+import-scrivener-structure-recovered-texts-line = { $count ->
+    [one] 1 teksti, jota mikään mapin kohde ei luetellut, siirtyy omaan kansioonsa.
+   *[other] { $count } tekstiä, joita mikään mapin kohde ei luetellut, siirtyy omaan kansioonsa.
+}
+import-scrivener-structure-project-notes-line = { $count ->
+    [one] 1 projektin muistiinpano siirtyy omaan kansioonsa.
+   *[other] { $count } projektin muistiinpanoa siirtyy omaan kansioonsa.
+}
+import-scrivener-structure-trash-brought-across-line = { $items ->
+    [one] Roskakori siirtyy mukana: 1 kohde, jonka voit palauttaa roskakorista.
+   *[other] Roskakori siirtyy mukana: { $items } kohdetta, joista { $writing } sisältää tekstiä. Voit palauttaa ne roskakorista.
+}
+import-scrivener-structure-not-compiled-line = { $count ->
+    [one] 1 kohde, jonka Scrivener jätti pois koostamisesta, jätetään pois myös vienneistä.
+   *[other] { $count } kohdetta, jotka Scrivener jätti pois koostamisesta, jätetään pois myös vienneistä.
+}
+import-scrivener-structure-media-in-draft-line = { $count ->
+    [one] 1 käsikirjoituksessa oleva kuva tai tiedosto muuttuu muistiinpanoksi, koska kirja ei voi sisältää sitä.
+   *[other] { $count } käsikirjoituksessa olevaa kuvaa tai tiedostoa muuttuu muistiinpanoiksi, koska kirja ei voi sisältää niitä.
+}
+import-scrivener-structure-left-out-line = { $count ->
+    [one] 1 ylimmän tason kansio jätetään pois, ja sen mukana { $items ->
+        [one] 1 kohde
+       *[other] { $items } kohdetta
+    }.
+   *[other] { $count } ylimmän tason kansiota jätetään pois, ja niiden mukana { $items ->
+        [one] 1 kohde
+       *[other] { $items } kohdetta
+    }.
+}
+import-scrivener-structure-trash-left-out-line = { $items ->
+    [one] Roskakori jää siirtämättä: 1 kohde.
+   *[other] Roskakori jää siirtämättä: { $items } kohdetta, joista { $writing } sisältää tekstiä.
+}
+import-scrivener-structure-card-image-left-behind-line = { $count ->
+    [one] 1 käsikirjoituksen kohteen korttikuva jää siirtämättä: se tulostuisi kirjaan.
+   *[other] { $count } käsikirjoituksen kohteiden korttikuvaa jää siirtämättä: ne tulostuisivat kirjaan.
+}
+import-scrivener-structure-default-template-not-linked-line = { $count ->
+    [one] 1 kansion oletusmalli uusille asiakirjoille ei siirry sen mukana.
+   *[other] { $count } kansion oletusmallit uusille asiakirjoille eivät siirry niiden mukana.
+}
+import-scrivener-structure-page-break-not-kept-line = { $count ->
+    [one] 1 asetukselle ”Sivunvaihto ennen” (Page break before) ei ole paikkaa Skribistossa, eikä sitä säilytetä.
+   *[other] { $count } asetukselle ”Sivunvaihto ennen” (Page break before) ei ole paikkaa Skribistossa, eikä niitä säilytetä.
+}
+import-scrivener-structure-compile-as-is-not-kept-line = { $count ->
+    [one] 1 asetuksella ”Koosta sellaisenaan” (Compile as-is) ei ole vastinetta Skribistossa, eikä sitä säilytetä.
+   *[other] { $count } asetuksella ”Koosta sellaisenaan” (Compile as-is) ei ole vastinetta Skribistossa, eikä niitä säilytetä.
+}
+
+## What the import did with the labels, the status list and the dates
+import-scrivener-metadata-status-categories-guessed-line = { $count ->
+    [one] 1 tilalle, jota Skribisto ei tunnista, annetaan luokka sen paikan mukaan luettelossa. Tarkista se kohdassa Asetukset ▸ Projekti ▸ Tilat.
+   *[other] { $count } tilalle, joita Skribisto ei tunnista, annetaan luokka niiden paikan mukaan luettelossa. Tarkista ne kohdassa Asetukset ▸ Projekti ▸ Tilat.
+}
+import-scrivener-metadata-dates-unreadable-line = { $count ->
+    [one] 1 kohteen päivämääriä ei voitu lukea: sillä on tuonnin päivämäärä.
+   *[other] { $count } kohteen päivämääriä ei voitu lukea: niillä on tuonnin päivämäärä.
+}
+import-scrivener-metadata-labels-became-tags-line = { $tags ->
+    [one] Nimiöistä tulee 1 tunniste, { $rows ->
+        [one] { $rows } kohteessa
+       *[other] { $rows } kohteessa
+    }.
+   *[other] Nimiöistä tulee { $tags } tunnistetta, { $rows ->
+        [one] { $rows } kohteessa
+       *[other] { $rows } kohteessa
+    }.
+}
+import-scrivener-metadata-statuses-became-ladder-line = { $rungs ->
+    [one] Tilaluettelosta tulee projektin tilasarja: 1 tila, { $rows ->
+        [one] { $rows } kohteessa
+       *[other] { $rows } kohteessa
+    }.
+   *[other] Tilaluettelosta tulee projektin tilasarja: { $rungs } tilaa, { $rows ->
+        [one] { $rows } kohteessa
+       *[other] { $rows } kohteessa
+    }.
+}
+import-scrivener-metadata-ladder-seeded-line = { $count ->
+    [one] Projektilla ei ollut tilaluetteloa, joten se aloittaa Skribiston oletustilalla.
+   *[other] Projektilla ei ollut tilaluetteloa, joten se aloittaa Skribiston { $count } oletustilalla.
+}
+import-scrivener-metadata-label-renamed-line = Nimiö-kentän nimi oli Scrivenerissä ”{ $title }”. Tämä nimi on kunkin tunnisteen kuvauksessa.
+import-scrivener-metadata-status-renamed-line = Tila-kentän nimi oli Scrivenerissä ”{ $title }”. Tämä nimi on kunkin tilan kuvauksessa.
+import-scrivener-metadata-none-label-collapsed-line = { $count ->
+    [one] Nimiö ”{ $name }”, joka on Scrivenerin oman tyhjän nimiön rinnalla samalla nimellä, tulkitaan nimiön puuttumiseksi 1 kohteessa.
+   *[other] Nimiö ”{ $name }”, joka on Scrivenerin oman tyhjän nimiön rinnalla samalla nimellä, tulkitaan nimiön puuttumiseksi { $count } kohteessa.
+}
+import-scrivener-metadata-none-status-collapsed-line = { $count ->
+    [one] Tila ”{ $name }”, joka on Scrivenerin oman tyhjän tilan rinnalla samalla nimellä, tulkitaan tilan puuttumiseksi 1 kohteessa.
+   *[other] Tila ”{ $name }”, joka on Scrivenerin oman tyhjän tilan rinnalla samalla nimellä, tulkitaan tilan puuttumiseksi { $count } kohteessa.
+}
+import-scrivener-metadata-unnamed-label-line = Nimetön nimiö nimetään numeronsa mukaan: { $id }.
+import-scrivener-metadata-unnamed-status-line = Nimetön tila nimetään numeronsa mukaan: { $id }.
+import-scrivener-metadata-tag-name-disambiguated-line = { $count ->
+    [one] 1 tunniste saa uuden nimen, koska toisella tunnisteella on jo sen nimi.
+   *[other] { $count } tunnistetta saa uuden nimen, koska muilla tunnisteilla on jo niiden nimet.
+}
+import-scrivener-metadata-rung-names-disambiguated-line = { $count ->
+    [one] 1 tilalla on sama nimi kuin toisella, joten sen nimen perään lisätään numero. Tarkista se kohdassa Asetukset ▸ Projekti ▸ Tilat.
+   *[other] { $count } tilalla on sama nimi kuin toisella, joten kunkin nimen perään lisätään numero. Tarkista ne kohdassa Asetukset ▸ Projekti ▸ Tilat.
+}
+import-scrivener-metadata-unused-labels-skipped-line = { $count ->
+    [one] 1 nimiötä, jota mikään asiakirja ei käytä, ei tuoda.
+   *[other] { $count } nimiötä, joita mikään asiakirja ei käytä, ei tuoda.
+}
+import-scrivener-metadata-labels-without-row-line = { $count ->
+    [one] Nimiö ei siirry 1 kohteelta, jolla ei ole paikkaa uudessa projektissa.
+   *[other] Nimiöt eivät siirry { $count } kohteelta, joilla ei ole paikkaa uudessa projektissa.
+}
+import-scrivener-metadata-statuses-without-row-line = { $count ->
+    [one] Tila ei siirry 1 kohteelta, jolla ei ole paikkaa uudessa projektissa.
+   *[other] Tilat eivät siirry { $count } kohteelta, joilla ei ole paikkaa uudessa projektissa.
+}
+
+import-scrivener-metadata-unnamed-keyword-line = Nimetön avainsana nimetään numeronsa mukaan: { $id }.
+import-scrivener-metadata-keywords-without-row-line = { $count ->
+    [one] Avainsanat eivät siirry 1 kohteelta, jolla ei ole paikkaa uudessa projektissa.
+   *[other] Avainsanat eivät siirry { $count } kohteelta, joilla ei ole paikkaa uudessa projektissa.
+}
+import-scrivener-metadata-custom-values-without-row-line = { $count ->
+    [one] Mukautetut metatiedot eivät siirry 1 kohteelta, jolla ei ole paikkaa uudessa projektissa.
+   *[other] Mukautetut metatiedot eivät siirry { $count } kohteelta, joilla ei ole paikkaa uudessa projektissa.
+}
+import-scrivener-metadata-bookmarks-without-row-line = { $count ->
+    [one] Kirjanmerkit eivät siirry 1 kohteelta, jolla ei ole paikkaa uudessa projektissa.
+   *[other] Kirjanmerkit eivät siirry { $count } kohteelta, joilla ei ole paikkaa uudessa projektissa.
+}
+import-scrivener-metadata-targets-without-row-line = { $count ->
+    [one] Tavoitemäärä ei siirry 1 kohteelta, jolla ei ole paikkaa uudessa projektissa.
+   *[other] Tavoitemäärät eivät siirry { $count } kohteelta, joilla ei ole paikkaa uudessa projektissa.
+}
+
+## What the import does with the keywords, custom metadata, collections, bookmarks, targets,
+## the deadline, the auto-complete list and the icons. Each line is said twice: on the Review
+## page before the import, then in its report, so it reads the same at both times. `$note`
+## and `$folder` are the titles the import gives a note and its "From Scrivener" folder;
+## `$day` is a day as YYYY-MM-DD.
+import-scrivener-metadata-pov-hint-line = { $count ->
+    [one] Nimiö tai kentän arvo { $values } vastaa tietopankin merkintää { $matches }. Jos se nimeää näkökulman, aseta se Ominaisuudet-paneelissa: tuonti ei linkitä mitään.
+   *[other] Nimiöt tai kenttien arvot { $values } vastaavat tietopankin merkintöjä { $matches }. Jos ne nimeävät näkökulmia, aseta ne Ominaisuudet-paneelissa: tuonti ei linkitä mitään.
+}
+import-scrivener-metadata-checkbox-default-unknown-line = Valintaruutukentällä ”{ $field }” on oletusarvo, jota Skribisto ei osaa lukea, joten se ei tiedä, mitkä asiakirjat on valittu oletuksena. Vain yksitellen valitut asiakirjat saavat sen tunnisteen.
+import-scrivener-metadata-goals-in-other-unit-line = { $count ->
+    [one] 1 tavoite on asetettu toisessa laskentayksikössä. Se säilytetään, ja se näkyy, kun vaihdat laskentayksikön kohdassa Asetukset ▸ Projekti ▸ Rakenne.
+   *[other] { $count } tavoitetta on asetettu toisessa laskentayksikössä. Ne säilytetään, ja ne näkyvät, kun vaihdat laskentayksikön kohdassa Asetukset ▸ Projekti ▸ Rakenne.
+}
+import-scrivener-metadata-counting-differs-line = Scrivener laski käsikirjoituksen tavoitemäärän eri asiakirjoista kuin Skribisto. Kirjan tavoite laskee vientiin sisällytetyt kohtaukset.
+import-scrivener-metadata-writing-days-not-read-line = Kirjoituspäiviä ”{ $raw }” ei voi lukea, joten kirjan tahtisuunnitelma laskee jokaisen päivän kirjoituspäiväksi. Muuta niitä tahtisuunnitelmassa.
+import-scrivener-metadata-script-mode-rows-line = { $count ->
+    [one] 1 kohde oli Scrivenerissä skriptitilassa. Skribisto säilyttää sen sanat tavallisena tekstinä ilman elokuvakäsikirjoituksen asettelua.
+   *[other] { $count } kohdetta oli Scrivenerissä skriptitilassa. Skribisto säilyttää niiden sanat tavallisena tekstinä ilman elokuvakäsikirjoituksen asettelua.
+}
+import-scrivener-metadata-keywords-became-tags-line = { $tags ->
+    [one] 1 avainsanasta tulee tunniste, { $rows ->
+        [one] { $rows } kohteessa
+       *[other] { $rows } kohteessa
+    }.
+   *[other] { $tags } avainsanasta tulee tunnisteita, { $rows ->
+        [one] { $rows } kohteessa
+       *[other] { $rows } kohteessa
+    }.
+}
+import-scrivener-metadata-keyword-hierarchy-flattened-line = { $count ->
+    [one] 1 avainsana oli Scrivenerissä toisen sisällä. Tunnisteet ovat kaikki samalla tasolla: sen tunnisteen kuvauksessa kerrotaan, missä se oli.
+   *[other] { $count } avainsanaa oli Scrivenerissä toisten sisällä. Tunnisteet ovat kaikki samalla tasolla: kunkin tunnisteen kuvauksessa kerrotaan, missä sen avainsana oli.
+}
+import-scrivener-metadata-fields-became-tags-line = { $fields ->
+    [one] 1 luettelo- tai valintaruutukentästä tulee { $tags ->
+        [one] { $tags } tunniste
+       *[other] { $tags } tunnistetta
+    }, { $rows ->
+        [one] { $rows } kohteessa
+       *[other] { $rows } kohteessa
+    }.
+   *[other] { $fields } luettelo- ja valintaruutukentästä tulee { $tags ->
+        [one] { $tags } tunniste
+       *[other] { $tags } tunnistetta
+    }, { $rows ->
+        [one] { $rows } kohteessa
+       *[other] { $rows } kohteessa
+    }.
+}
+import-scrivener-metadata-collections-became-tags-line = { $tags ->
+    [one] 1 kokoelmasta tulee tunniste, { $rows ->
+        [one] { $rows } kohteessa
+       *[other] { $rows } kohteessa
+    }.
+   *[other] { $tags } kokoelmasta tulee tunnisteita, { $rows ->
+        [one] { $rows } kohteessa
+       *[other] { $rows } kohteessa
+    }.
+}
+import-scrivener-metadata-collection-order-lost-line = { $count ->
+    [one] Tunnisteella ei ole järjestystä, joten 1 kokoelman asiakirjojen järjestystä ei säilytetä.
+   *[other] Tunnisteella ei ole järjestystä, joten { $count } kokoelman asiakirjojen järjestystä ei säilytetä.
+}
+import-scrivener-metadata-bookmarks-became-links-line = { $count ->
+    [one] 1 kirjanmerkistä tulee linkki kahden muistiinpanon välille tai kohtauksen ja tietopankin merkinnän välille: katso Linkit ja Esiintyjät.
+   *[other] { $count } kirjanmerkistä tulee linkkejä muistiinpanojen välille tai kohtausten ja tietopankin merkintöjen välille: katso Linkit ja Esiintyjät.
+}
+import-scrivener-metadata-goals-kept-line = { $count ->
+    [one] 1 asiakirjan tavoitemäärästä tulee tavoite.
+   *[other] { $count } asiakirjan tavoitemäärästä tulee tavoitteita.
+}
+import-scrivener-metadata-draft-target-kept-words-line = { $value ->
+    [one] Käsikirjoituksen tavoitemäärästä, 1 sanasta, tulee kirjan tavoite.
+   *[other] Käsikirjoituksen tavoitemäärästä, { $value } sanasta, tulee kirjan tavoite.
+}
+import-scrivener-metadata-draft-target-kept-characters-line = { $value ->
+    [one] Käsikirjoituksen tavoitemäärästä, 1 merkistä, tulee kirjan tavoite.
+   *[other] Käsikirjoituksen tavoitemäärästä, { $value } merkistä, tulee kirjan tavoite.
+}
+import-scrivener-metadata-pace-planned-line = Määräajasta { $day } tulee kirjan tahtisuunnitelma, joka jakaa sanat Scrivenerissä valitsemillesi kirjoituspäiville tuontipäivästä alkaen.
+import-scrivener-metadata-pace-planned-day-off-line = Määräajasta { $day } tulee kirjan tahtisuunnitelma, joka jakaa sanat Scrivenerissä valitsemillesi kirjoituspäiville tuontipäivästä alkaen. Kuten Scrivenerissä, itse määräajan päivä on vapaapäivä.
+import-scrivener-metadata-dictionary-words-line = { $count ->
+    [one] 1 automaattisen täydennyksen sana lisätään projektin omaan sanakirjaan, joten sitä ei merkitä virheeksi.
+   *[other] { $count } automaattisen täydennyksen sanaa lisätään projektin omaan sanakirjaan, joten niitä ei merkitä virheiksi.
+}
+import-scrivener-metadata-listed-project-line = { $count ->
+    [one] 1 projektin tieto luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+   *[other] { $count } projektin tietoa luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+}
+import-scrivener-metadata-listed-project-bookmarks-line = { $count ->
+    [one] 1 projektin kirjanmerkki luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+   *[other] { $count } projektin kirjanmerkkiä luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+}
+import-scrivener-metadata-listed-replacements-line = { $count ->
+    [one] 1 koostamisen korvaus luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”. Skribisto ei tee sitä.
+   *[other] { $count } koostamisen korvausta luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”. Skribisto ei tee niitä.
+}
+import-scrivener-metadata-listed-auto-complete-line = { $count ->
+    [one] 1 useamman sanan automaattisen täydennyksen ilmaus luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+   *[other] { $count } useamman sanan automaattisen täydennyksen ilmausta luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+}
+import-scrivener-metadata-listed-saved-searches-line = { $count ->
+    [one] 1 tallennettu haku luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+   *[other] { $count } tallennettua hakua luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+}
+import-scrivener-metadata-listed-custom-metadata-line = { $count ->
+    [one] 1 mukautetun metatiedon arvo, jota tunniste ei voi sisältää, luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+   *[other] { $count } mukautetun metatiedon arvoa, joita tunniste ei voi sisältää, luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+}
+import-scrivener-metadata-listed-targets-line = { $count ->
+    [one] 1 asiakirjan tavoitemäärä luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+   *[other] { $count } asiakirjan tavoitemäärää luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+}
+import-scrivener-metadata-listed-bookmarks-line = { $count ->
+    [one] 1 kirjanmerkki, jota mikään Skribiston linkki ei näytä, luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+   *[other] { $count } kirjanmerkkiä, joita mikään Skribiston linkki ei näytä, luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+}
+import-scrivener-metadata-targets-on-notes-line = { $count ->
+    [one] 1 asiakirjan tavoitemäärä on muistiinpanossa, jonka tekstiä mikään tavoite ei laske, joten siitä ei tule tavoitetta.
+   *[other] { $count } asiakirjan tavoitemäärää on muistiinpanoissa, joiden tekstiä mikään tavoite ei laske, joten niistä ei tule tavoitteita.
+}
+import-scrivener-metadata-targets-on-split-documents-line = { $count ->
+    [one] 1 asiakirjan tavoitemäärä on otsikoidensa kohdalta jaetussa asiakirjassa, jonka lukuja mikään yksittäinen tavoite ei laske yhteen, joten siitä ei tule tavoitetta.
+   *[other] { $count } asiakirjan tavoitemäärää on otsikoidensa kohdalta jaetuissa asiakirjoissa, joiden lukuja mikään yksittäinen tavoite ei laske yhteen, joten niistä ei tule tavoitteita.
+}
+import-scrivener-metadata-bookmark-ends-without-row-line = { $count ->
+    [one] 1 kirjanmerkki johtaa asiakirjaan, jolla ei ole paikkaa uudessa projektissa, kuten asiakirjamalliin. Se luetellaan sen mukaan, missä asiakirja oli Scrivenerissä.
+   *[other] { $count } kirjanmerkkiä johtaa asiakirjoihin, joilla ei ole paikkaa uudessa projektissa, kuten asiakirjamalleihin. Ne luetellaan sen mukaan, missä asiakirjat olivat Scrivenerissä.
+}
+import-scrivener-metadata-unused-keywords-skipped-line = { $count ->
+    [one] 1 avainsanaa, jota mikään asiakirja ei käytä, ei tuoda.
+   *[other] { $count } avainsanaa, joita mikään asiakirja ei käytä, ei tuoda.
+}
+import-scrivener-metadata-list-value-invalid-line = { $count ->
+    [one] Luettelokentän ”{ $field }” 1 arvo ei vastaa yhtäkään sen vaihtoehtoa, eikä sitä tuoda.
+   *[other] Luettelokentän ”{ $field }” { $count } arvoa ei vastaa yhtäkään sen vaihtoehtoa, eikä niitä tuoda.
+}
+import-scrivener-metadata-undefined-custom-field-line = { $count ->
+    [one] 1 arvo kuuluu mukautettuun kenttään, jota projekti ei enää määrittele ja jota Scrivenerkään ei näytä. Sitä ei tuoda.
+   *[other] { $count } arvoa kuuluu mukautettuihin kenttiin, joita projekti ei enää määrittele ja joita Scrivenerkään ei näytä. Niitä ei tuoda.
+}
+import-scrivener-metadata-collection-members-missing-line = { $count ->
+    [one] Kokoelman ”{ $name }” 1 asiakirjalla ei ole paikkaa uudessa projektissa, tai se on poistunut Scrivener-projektista.
+   *[other] Kokoelman ”{ $name }” { $count } asiakirjalla ei ole paikkaa uudessa projektissa, tai ne ovat poistuneet Scrivener-projektista.
+}
+import-scrivener-metadata-empty-collections-skipped-line = { $count ->
+    [one] 1 kokoelmaa, jossa ei ole yhtään asiakirjaa, ei tuoda.
+   *[other] { $count } kokoelmaa, joissa ei ole yhtään asiakirjaa, ei tuoda.
+}
+import-scrivener-metadata-bookmarks-unresolved-line = { $count ->
+    [one] 1 kirjanmerkki johtaa asiakirjaan, jota Scrivener-projektissa ei enää ole, eikä sitä tuoda.
+   *[other] { $count } kirjanmerkkiä johtaa asiakirjoihin, joita Scrivener-projektissa ei enää ole, eikä niitä tuoda.
+}
+import-scrivener-metadata-targets-in-pages-line = { $count ->
+    [one] 1 asiakirjan tavoitemäärä laskee sivuja, joita Skribisto ei laske, joten siitä ei tule tavoitetta.
+   *[other] { $count } asiakirjan tavoitemäärää laskee sivuja, joita Skribisto ei laske, joten niistä ei tule tavoitteita.
+}
+import-scrivener-metadata-targets-unreadable-line = { $count ->
+    [one] 1 tavoitemäärää ei tuoda: sen luku ei ole numero, on alle nollan tai on suurempi kuin tavoite voi olla.
+   *[other] { $count } tavoitemäärää ei tuoda: niiden luvut eivät ole numeroita, ovat alle nollan tai ovat suurempia kuin tavoite voi olla.
+}
+import-scrivener-metadata-draft-target-in-pages-line = { $value ->
+    [one] Käsikirjoituksen tavoitemäärästä, 1 sivusta, ei tule tavoitetta: Skribisto laskee sanoja tai merkkejä. Se luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+   *[other] Käsikirjoituksen tavoitemäärästä, { $value } sivusta, ei tule tavoitetta: Skribisto laskee sanoja tai merkkejä. Se luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+}
+import-scrivener-metadata-draft-target-no-book-words-line = { $value ->
+    [one] Käsikirjoituksen tavoitemäärästä, 1 sanasta, ei tule tavoitetta, koska käsikirjoituksesta tulee useampi kirja tai ei yhtään. Se luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+   *[other] Käsikirjoituksen tavoitemäärästä, { $value } sanasta, ei tule tavoitetta, koska käsikirjoituksesta tulee useampi kirja tai ei yhtään. Se luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+}
+import-scrivener-metadata-draft-target-no-book-characters-line = { $value ->
+    [one] Käsikirjoituksen tavoitemäärästä, 1 merkistä, ei tule tavoitetta, koska käsikirjoituksesta tulee useampi kirja tai ei yhtään. Se luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+   *[other] Käsikirjoituksen tavoitemäärästä, { $value } merkistä, ei tule tavoitetta, koska käsikirjoituksesta tulee useampi kirja tai ei yhtään. Se luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+}
+import-scrivener-metadata-deadline-passed-line = Määräaika { $day } on mennyt, joten siitä ei tehdä tahtisuunnitelmaa. Se luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+import-scrivener-metadata-deadline-no-writing-day-line = Tuontipäivän ja määräajan { $day } välillä ei ole jäljellä yhtään kirjoituspäivää, joten siitä ei tehdä tahtisuunnitelmaa. Se luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+import-scrivener-metadata-deadline-template-line = Määräaika { $day } tallennettiin malliin, joten siitä ei tehdä tahtisuunnitelmaa. Se luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+import-scrivener-metadata-deadline-no-word-goal-line = Määräajasta { $day } ei tehdä tahtisuunnitelmaa, koska käsikirjoituksella ei ole sanoina laskettua tavoitemäärää, jota kohti suunnitella. Se luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+import-scrivener-metadata-deadline-character-goal-line = Määräajasta { $day } ei tehdä tahtisuunnitelmaa, koska käsikirjoituksen tavoitemäärä laskee merkkejä ja tahtisuunnitelma laskee sanoja. Se luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+import-scrivener-metadata-deadline-no-book-line = Määräajasta { $day } ei tehdä tahtisuunnitelmaa, koska käsikirjoituksesta tulee useampi kirja tai ei yhtään. Se luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+import-scrivener-metadata-deadline-unreadable-line = Määräaikaa ei voi lukea, joten siitä ei tehdä tahtisuunnitelmaa. Se luetellaan sellaisena kuin se on kirjoitettu kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+import-scrivener-metadata-session-target-words-line = { $value ->
+    [one] Istunnon tavoitemäärää, 1 sanaa, ei tuoda: Skribistossa kirjoitusistunnon tavoite on yksi kaikkia projekteja koskeva asetus. Se luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+   *[other] Istunnon tavoitemäärää, { $value } sanaa, ei tuoda: Skribistossa kirjoitusistunnon tavoite on yksi kaikkia projekteja koskeva asetus. Se luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+}
+import-scrivener-metadata-session-target-characters-line = { $value ->
+    [one] Istunnon tavoitemäärää, 1 merkkiä, ei tuoda: Skribistossa kirjoitusistunnon tavoite on yksi kaikkia projekteja koskeva asetus, ja se lasketaan sanoina. Se luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+   *[other] Istunnon tavoitemäärää, { $value } merkkiä, ei tuoda: Skribistossa kirjoitusistunnon tavoite on yksi kaikkia projekteja koskeva asetus, ja se lasketaan sanoina. Se luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+}
+import-scrivener-metadata-session-target-pages-line = { $value ->
+    [one] Istunnon tavoitemäärää, 1 sivua, ei tuoda: Skribistossa kirjoitusistunnon tavoite on yksi kaikkia projekteja koskeva asetus, ja se lasketaan sanoina. Se luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+   *[other] Istunnon tavoitemäärää, { $value } sivua, ei tuoda: Skribistossa kirjoitusistunnon tavoite on yksi kaikkia projekteja koskeva asetus, ja se lasketaan sanoina. Se luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+}
+import-scrivener-metadata-session-target-calculated-words-line = { $value ->
+    [one] Istunnon tavoitemäärää, 1 sanaa, jonka Scrivener laski määräajasta ja kirjoituspäivistä, ei tuoda: Skribistossa kirjoitusistunnon tavoite on yksi kaikkia projekteja koskeva asetus. Se luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+   *[other] Istunnon tavoitemäärää, { $value } sanaa, jonka Scrivener laski määräajasta ja kirjoituspäivistä, ei tuoda: Skribistossa kirjoitusistunnon tavoite on yksi kaikkia projekteja koskeva asetus. Se luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+}
+import-scrivener-metadata-session-target-calculated-characters-line = { $value ->
+    [one] Istunnon tavoitemäärää, 1 merkkiä, jonka Scrivener laski määräajasta ja kirjoituspäivistä, ei tuoda: Skribistossa kirjoitusistunnon tavoite on yksi kaikkia projekteja koskeva asetus, ja se lasketaan sanoina. Se luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+   *[other] Istunnon tavoitemäärää, { $value } merkkiä, jonka Scrivener laski määräajasta ja kirjoituspäivistä, ei tuoda: Skribistossa kirjoitusistunnon tavoite on yksi kaikkia projekteja koskeva asetus, ja se lasketaan sanoina. Se luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+}
+import-scrivener-metadata-session-target-calculated-pages-line = { $value ->
+    [one] Istunnon tavoitemäärää, 1 sivua, jonka Scrivener laski määräajasta ja kirjoituspäivistä, ei tuoda: Skribistossa kirjoitusistunnon tavoite on yksi kaikkia projekteja koskeva asetus, ja se lasketaan sanoina. Se luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+   *[other] Istunnon tavoitemäärää, { $value } sivua, jonka Scrivener laski määräajasta ja kirjoituspäivistä, ei tuoda: Skribistossa kirjoitusistunnon tavoite on yksi kaikkia projekteja koskeva asetus, ja se lasketaan sanoina. Se luetellaan kansion ”{ $folder }” muistiinpanossa ”{ $note }”.
+}
+import-scrivener-metadata-icons-dropped-line = { $count ->
+    [one] 1 kohteella oli oma mapin kuvake, joka ei siirry: Skribisto näyttää kunkin kohteen kuvakkeen sen tyypin mukaan.
+   *[other] { $count } kohteella oli oma mapin kuvake, eivätkä kuvakkeet siirry: Skribisto näyttää kunkin kohteen kuvakkeen sen tyypin mukaan.
+}
+
+## What converting the prose did, as the import's report says it. `$count` is how many texts,
+## or how many of a thing, as each line says; `$example` quotes the project.
+import-scrivener-prose-unreadable-line = { $count ->
+    [one] 1 tekstiä ei voitu lukea. Se tulee tyhjänä.
+   *[other] { $count } tekstiä ei voitu lukea. Ne tulevat tyhjinä.
+}
+import-scrivener-prose-comments-unreadable-line = { $count ->
+    [one] 1 tekstin kommentteja ja linkitettyjä alaviitteitä ei voitu lukea. Sanat, joihin ne liittyivät, säilytetään.
+   *[other] { $count } tekstin kommentteja ja linkitettyjä alaviitteitä ei voitu lukea. Sanat, joihin ne liittyivät, säilytetään.
+}
+import-scrivener-prose-read-as-plain-text-line = { $count ->
+    [one] 1 teksti oli tallennettu pelkkänä tekstinä eikä muotoiltuna, ja se luetaan sellaisena.
+   *[other] { $count } tekstiä oli tallennettu pelkkänä tekstinä eikä muotoiltuna, ja ne luetaan sellaisina.
+}
+import-scrivener-prose-inline-note-unmatched-line = { $count ->
+    [one] 1 tekstinsisäisen merkinnän merkki jää ilman pariaan, ja se säilytetään tekstinä.
+   *[other] { $count } tekstinsisäisen merkinnän merkkiä jää ilman pariaan, ja ne säilytetään tekstinä.
+}
+import-scrivener-prose-style-unresolved-line = { $count ->
+    [one] 1 tyylimerkki viittaa tyyliin, jota projekti ei määrittele. Merkki poistetaan, ja teksti säilyttää muotoilunsa.
+   *[other] { $count } tyylimerkkiä viittaa tyyleihin, joita projekti ei määrittele. Merkit poistetaan, ja teksti säilyttää muotoilunsa.
+}
+import-scrivener-prose-styles-lost-in-export-line = { $count ->
+    [one] 1 kappale saattaa olla otsikko, joka menetti tyylinsä, kun Scrivener 3 vei projektin vanhempaan muotoonsa, ja se siirtyy tavallisena kappaleena. Tarkista se, tai tuo projekti, josta se vietiin.
+   *[other] { $count } kappaletta saattaa olla otsikoita, jotka menettivät tyylinsä, kun Scrivener 3 vei projektin vanhempaan muotoonsa, ja ne siirtyvät tavallisina kappaleina. Tarkista ne, tai tuo projekti, josta ne vietiin.
+}
+import-scrivener-prose-comment-anchor-without-entry-line = { $count ->
+    [one] 1 kommentti tai alaviite oli menettänyt sisältönsä Scrivenerissä. Sanat, joihin se liittyi, säilytetään ilman sitä.
+   *[other] { $count } kommenttia tai alaviitettä oli menettänyt sisältönsä Scrivenerissä. Sanat, joihin ne liittyivät, säilytetään ilman niitä.
+}
+import-scrivener-prose-comment-entry-without-anchor-line = { $count ->
+    [one] 1 kommentilla ei ollut enää paikkaa tekstissään, ja se liitetään ensimmäiseen kappaleeseen.
+   *[other] { $count } kommentilla ei ollut enää paikkaa tekstissään, ja ne liitetään ensimmäiseen kappaleeseen.
+}
+import-scrivener-prose-footnote-entry-without-anchor-line = { $count ->
+    [one] 1 linkitetyllä alaviitteellä ei ollut enää paikkaa tekstissään, ja siihen viitataan tekstin lopussa.
+   *[other] { $count } linkitetyllä alaviitteellä ei ollut enää paikkaa tekstissään, ja niihin viitataan tekstin lopussa.
+}
+import-scrivener-prose-range-comment-reading-line = { $count ->
+    [one] 1 vanhemman Scrivenerin kommentti sijoitettiin tulkitsemalla sen sijainti toisella tavalla. Tarkista, että se on oikeiden sanojen kohdalla.
+   *[other] { $count } vanhemman Scrivenerin kommenttia sijoitettiin tulkitsemalla niiden sijainti toisella tavalla. Tarkista, että ne ovat oikeiden sanojen kohdalla.
+}
+import-scrivener-prose-range-comment-reading-markers-counted-line = { $count ->
+    [one] 1 vanhemman Scrivenerin kommentti sijoitettiin laskemalla mukaan sen tekstinsisäisten merkintöjen merkit. Tarkista, että se on oikeiden sanojen kohdalla.
+   *[other] { $count } vanhemman Scrivenerin kommenttia sijoitettiin laskemalla mukaan niiden tekstinsisäisten merkintöjen merkit. Tarkista, että ne ovat oikeiden sanojen kohdalla.
+}
+import-scrivener-prose-range-comment-reading-pictures-not-counted-line = { $count ->
+    [one] 1 vanhemman Scrivenerin kommentti sijoitettiin jättämällä sen kuvat laskematta. Tarkista, että se on oikeiden sanojen kohdalla.
+   *[other] { $count } vanhemman Scrivenerin kommenttia sijoitettiin jättämällä niiden kuvat laskematta. Tarkista, että ne ovat oikeiden sanojen kohdalla.
+}
+import-scrivener-prose-range-comment-approximate-line = { $count ->
+    [one] 1 vanhemman Scrivenerin kommentti ei vastaa täsmälleen mitään sen sijainnin tulkintaa, ja se voi olla muutaman merkin verran sivussa.
+   *[other] { $count } vanhemman Scrivenerin kommenttia ei vastaa täsmälleen mitään niiden sijainnin tulkintaa, ja ne voivat olla muutaman merkin verran sivussa.
+}
+import-scrivener-prose-document-link-unresolved-line = { $count ->
+    [one] 1 linkki osoittaa asiakirjaan, jota tuonti ei siirtänyt. Sen sanat säilyvät.
+   *[other] { $count } linkkiä osoittaa asiakirjoihin, joita tuonti ei siirtänyt. Niiden sanat säilyvät.
+}
+import-scrivener-prose-linked-picture-not-read-line = { $count ->
+    [one] 1 levylläsi olevaan tiedostoon linkitetty kuva, ”{ $example }”, jäi siirtämättä.
+   *[other] { $count } levylläsi oleviin tiedostoihin linkitettyä kuvaa, esimerkiksi ”{ $example }”, jäi siirtämättä.
+}
+import-scrivener-prose-heading-repeats-title-line = { $count ->
+    [one] 1 teksti alkaa otsikkorivillä, joka toistaa sen otsikon, joten vienti voi tulostaa otsikon kahdesti.
+   *[other] { $count } tekstiä alkaa otsikkorivillä, joka toistaa niiden otsikon, joten vienti voi tulostaa otsikon kahdesti.
+}
+import-scrivener-prose-markdown-as-text-line = { $count ->
+    [one] 1 Markdownilla kirjoitettu kappale säilytetään tekstinä sellaisenaan.
+   *[other] { $count } Markdownilla kirjoitettua kappaletta säilytetään tekstinä sellaisenaan.
+}
+import-scrivener-prose-citation-keys-as-text-line = { $count ->
+    [one] 1 kappale sisältää lähdeviiteohjelman viiteavaimia, jotka säilytetään tekstinä.
+   *[other] { $count } kappaletta sisältää lähdeviiteohjelman viiteavaimia, jotka säilytetään tekstinä.
+}
+import-scrivener-prose-placeholders-in-exported-text-line = { $count ->
+    [one] 1 Scrivenerin paikkamerkki, { $example }, säilytetään pelkkänä tekstinä vietävässä tekstissä. Korvaa se käsin.
+   *[other] { $count } Scrivenerin paikkamerkkiä, esimerkiksi { $example }, säilytetään pelkkänä tekstinä vietävässä tekstissä. Korvaa ne käsin.
+}
+import-scrivener-prose-placeholders-in-other-text-line = { $count ->
+    [one] 1 Scrivenerin paikkamerkki, { $example }, säilytetään pelkkänä tekstinä tekstissä, jota ei viedä.
+   *[other] { $count } Scrivenerin paikkamerkkiä, esimerkiksi { $example }, säilytetään pelkkänä tekstinä teksteissä, joita ei viedä.
+}
+import-scrivener-prose-ornament-lines-kept-line = { $count ->
+    [one] 1 keskitetty koristemerkkirivi saattaa merkitä kohtauskatkoa, ja se säilytetään sellaisena kuin se on kirjoitettu.
+   *[other] { $count } keskitettyä koristemerkkiriviä saattaa merkitä kohtauskatkoja, ja ne säilytetään sellaisina kuin ne on kirjoitettu.
+}
+import-scrivener-prose-long-document-line = { $count ->
+    [one] 1 teksti on hyvin pitkä, ja sen avaaminen voi olla hidasta.
+   *[other] { $count } tekstiä on hyvin pitkiä, ja niiden avaaminen voi olla hidasta.
+}
+import-scrivener-prose-pictures-without-description-line = { $count ->
+    [one] 1 kuvalla ei ole kuvausta lukijoille, jotka eivät näe sitä. Voit lisätä kuvauksen muokkaimessa.
+   *[other] { $count } kuvalla ei ole kuvausta lukijoille, jotka eivät näe niitä. Voit lisätä kuvauksen muokkaimessa.
+}
+import-scrivener-prose-struck-text-compiled-away-line = { $count ->
+    [one] Yliviivattu teksti säilytetään 1 tekstissä. Scrivenerin koostaminen jätti sen pois kirjasta, mutta Skribiston vienti tulostaa sen.
+   *[other] Yliviivattu teksti säilytetään { $count } tekstissä. Scrivenerin koostaminen jätti sen pois kirjasta, mutta Skribiston vienti tulostaa sen.
+}
+import-scrivener-prose-compile-deleted-style-printed-line = { $count ->
+    [one] Tyylin ”{ $example }” teksti, jonka Scrivenerin koostaminen poisti, säilytetään tavallisena tekstinä, ja Skribiston vienti tulostaa sen.
+   *[other] Teksti { $count } tyylissä, jotka Scrivenerin koostaminen poisti, esimerkiksi ”{ $example }”, säilytetään tavallisena tekstinä, ja Skribiston vienti tulostaa sen.
+}
+import-scrivener-prose-compile-raw-style-printed-line = { $count ->
+    [one] Tyylin ”{ $example }” teksti, jonka Scrivenerin koostaminen välitti toisen ohjelman koodina, säilytetään tavallisena tekstinä, ja Skribiston vienti tulostaa sen.
+   *[other] Teksti { $count } tyylissä, jotka Scrivenerin koostaminen välitti toisen ohjelman koodina, esimerkiksi ”{ $example }”, säilytetään tavallisena tekstinä, ja Skribiston vienti tulostaa sen.
+}
+import-scrivener-prose-left-out-after-document-line = { $count ->
+    [one] 1 vahingoittuneen tiedoston osa, joka oli tiedoston lopun jälkeen, jätetään pois.
+   *[other] { $count } vahingoittuneiden tiedostojen osaa, jotka olivat tiedoston lopun jälkeen, jätetään pois.
+}
+import-scrivener-prose-left-out-header-or-footer-line = { $count ->
+    [one] 1 ylä- tai alatunniste jätetään pois: se ei ole osa tekstiä.
+   *[other] { $count } ylä- ja alatunnistetta jätetään pois: ne eivät ole osa tekstiä.
+}
+import-scrivener-prose-left-out-list-label-picture-line = { $count ->
+    [one] 1 luettelomerkkinä käytetty kuva jätetään pois.
+   *[other] { $count } luettelomerkkeinä käytettyä kuvaa jätetään pois.
+}
+import-scrivener-prose-left-out-line = { $count ->
+    [one] 1 tiedoston osa, joka ei kuulu mihinkään tekstiin, jätetään pois.
+   *[other] { $count } tiedostojen osaa, jotka eivät kuulu mihinkään tekstiin, jätetään pois.
+}
+import-scrivener-prose-undecodable-characters-line = { $count ->
+    [one] 1 merkkiä ei voitu tulkita, ja sen paikalla näkyy korvausmerkki (�).
+   *[other] { $count } merkkiä ei voitu tulkita, ja niiden paikalla näkyy korvausmerkki (�).
+}
+import-scrivener-prose-inline-notes-merged-line = { $count ->
+    [one] 1 tekstinsisäinen merkintä, jonka Scrivener oli jakanut muotoilun vaihtuessa, yhdistetään takaisin.
+   *[other] { $count } tekstinsisäistä merkintää, jotka Scrivener oli jakanut muotoilun vaihtuessa, yhdistetään takaisin.
+}
+import-scrivener-prose-inline-notes-joined-across-paragraphs-line = { $count ->
+    [one] 1 kappale kerrallaan kirjoitettu tekstinsisäinen merkintä yhdistetään yhdeksi merkinnäksi.
+   *[other] { $count } kappale kerrallaan kirjoitettua tekstinsisäistä merkintää yhdistetään useamman kappaleen merkinnöiksi.
+}
+import-scrivener-prose-blank-notes-dropped-line = { $count ->
+    [one] 1 tyhjä tekstinsisäinen merkintä jätetään pois.
+   *[other] { $count } tyhjää tekstinsisäistä merkintää jätetään pois.
+}
+import-scrivener-prose-annotations-became-comments-line = { $count ->
+    [one] 1 tekstinsisäisestä huomautuksesta tuli kommentti.
+   *[other] { $count } tekstinsisäisestä huomautuksesta tuli kommentteja.
+}
+import-scrivener-prose-annotation-only-document-kept-line = { $count ->
+    [one] 1 asiakirja sisälsi pelkän huomautuksen. Sen sanat säilytetään tavallisena tekstinä.
+   *[other] { $count } asiakirjaa sisälsi pelkän huomautuksen. Niiden sanat säilytetään tavallisena tekstinä.
+}
+import-scrivener-prose-preserve-formatting-passages-line = { $count ->
+    [one] 1 kohta, joka oli merkitty säilyttämään muotoilunsa (Preserve Formatting), tulee tavallisena tekstinä.
+   *[other] { $count } kohtaa, jotka oli merkitty säilyttämään muotoilunsa (Preserve Formatting), tulee tavallisena tekstinä.
+}
+import-scrivener-prose-nested-note-unwrapped-line = { $count ->
+    [one] 1 kommentin tai alaviitteen sisällä ollut merkintä säilytetään tekstinä paikallaan.
+   *[other] { $count } kommenttien tai alaviitteiden sisällä ollutta merkintää säilytetään tekstinä paikallaan.
+}
+import-scrivener-prose-style-not-carried-line = { $count ->
+    [one] Tyylillä ”{ $example }” ei ole vastinetta Skribistossa. Sen teksti säilyttää sanansa.
+   *[other] { $count } tyylillä, esimerkiksi ”{ $example }”, ei ole vastinetta Skribistossa. Niiden teksti säilyttää sanansa.
+}
+import-scrivener-prose-document-links-dropped-line = { $count ->
+    [one] 1 linkillä toiseen asiakirjaan ei ole paikkaa Skribistossa. Sen sanat säilyvät.
+   *[other] { $count } linkillä muihin asiakirjoihin ei ole paikkaa Skribistossa. Niiden sanat säilyvät.
+}
+import-scrivener-prose-document-links-kept-line = { $count ->
+    [one] 1 linkki toiseen asiakirjaan säilytetään viittauksena.
+   *[other] { $count } linkkiä muihin asiakirjoihin säilytetään viittauksina.
+}
+import-scrivener-prose-other-links-kept-as-text-line = { $count ->
+    [one] 1 linkki toiseen projektiin tai tiedostoon säilytetään tekstinä.
+   *[other] { $count } linkkiä muihin projekteihin tai tiedostoihin säilytetään tekstinä.
+}
+import-scrivener-prose-soft-breaks-split-line = { $count ->
+    [one] 1 kappaleen sisäinen rivinvaihto aloittaa nyt oman kappaleensa.
+   *[other] { $count } kappaleiden sisäistä rivinvaihtoa aloittaa nyt kukin oman kappaleensa.
+}
+import-scrivener-prose-typed-indents-removed-line = { $count ->
+    [one] 1 kappaleen alkuun kirjoitettu sisennys poistetaan.
+   *[other] { $count } kappaleiden alkuun kirjoitettua sisennystä poistetaan.
+}
+import-scrivener-prose-left-indents-not-kept-line = { $count ->
+    [one] 1 marginaalista sisennetty kappale menettää sisennyksensä.
+   *[other] { $count } marginaalista sisennettyä kappaletta menettää sisennyksensä.
+}
+import-scrivener-prose-blank-lines-removed-line = { $count ->
+    [one] 1 kahden kappaleen välissä ollut tyhjä kappale poistetaan.
+   *[other] { $count } muiden kappaleiden välissä ollutta tyhjää kappaletta poistetaan.
+}
+import-scrivener-prose-verse-stanza-gaps-lost-line = { $count ->
+    [one] 1 runon säkeistöjen välinen tyhjä rivi poistetaan, joten säkeistöt jatkuvat yhtenä.
+   *[other] { $count } runon säkeistöjen välistä tyhjää riviä poistetaan, joten säkeistöt jatkuvat yhtenä.
+}
+import-scrivener-prose-blank-lines-became-scene-breaks-line = { $count ->
+    [one] 1 kappaleiden välisestä tyhjästä rivistä tuli kohtauskatko.
+   *[other] { $count } kappaleiden välisestä tyhjästä rivistä tuli kohtauskatkoja.
+}
+import-scrivener-prose-ornaments-became-scene-breaks-line = { $count ->
+    [one] 1 koristemerkkirivistä tuli kohtauskatko.
+   *[other] { $count } koristemerkkirivistä tuli kohtauskatkoja.
+}
+import-scrivener-prose-table-first-row-header-line = { $count ->
+    [one] 1 taulukko alkaa nyt otsikkorivillä.
+   *[other] { $count } taulukkoa alkaa nyt otsikkorivillä.
+}
+import-scrivener-prose-table-cells-joined-line = { $count ->
+    [one] 1 taulukon solussa oli useita kappaleita, jotka on nyt yhdistetty yhdeksi.
+   *[other] { $count } taulukon solussa oli useita kappaleita, jotka on nyt yhdistetty yhdeksi.
+}
+import-scrivener-prose-formatting-lost-colour-line = { $count ->
+    [one] Tekstin väri poistetaan 1 tekstistä.
+   *[other] Tekstin väri poistetaan { $count } tekstistä.
+}
+import-scrivener-prose-formatting-lost-highlight-line = { $count ->
+    [one] Korostus poistetaan 1 tekstistä.
+   *[other] Korostus poistetaan { $count } tekstistä.
+}
+import-scrivener-prose-formatting-lost-small-caps-line = { $count ->
+    [one] Kapiteelit näkyvät tavallisina kirjaimina 1 tekstissä.
+   *[other] Kapiteelit näkyvät tavallisina kirjaimina { $count } tekstissä.
+}
+import-scrivener-prose-formatting-lost-all-caps-line = { $count ->
+    [one] Isoin kirjaimin näytetty teksti näkyy sellaisena kuin se kirjoitettiin 1 tekstissä.
+   *[other] Isoin kirjaimin näytetty teksti näkyy sellaisena kuin se kirjoitettiin { $count } tekstissä.
+}
+import-scrivener-prose-formatting-lost-hidden-line = { $count ->
+    [one] Piilotettu teksti jätetään pois 1 tekstistä.
+   *[other] Piilotettu teksti jätetään pois { $count } tekstistä.
+}
+import-scrivener-prose-formatting-lost-line = { $count ->
+    [one] Muotoilu, jolle Skribistossa ei ole paikkaa, poistetaan 1 tekstistä.
+   *[other] Muotoilu, jolle Skribistossa ei ole paikkaa, poistetaan { $count } tekstistä.
+}
+import-scrivener-prose-justified-text-not-kept-line = { $count ->
+    [one] 1 molemmista reunoista tasattu kappale noudattaa sen sijaan viennin tyyliä.
+   *[other] { $count } molemmista reunoista tasattua kappaletta noudattaa sen sijaan viennin tyyliä.
+}
+import-scrivener-prose-comment-colours-lost-line = { $count ->
+    [one] 1 kommentti menettää värinsä.
+   *[other] { $count } kommenttia menettää värinsä.
+}
+import-scrivener-prose-control-characters-removed-line = { $count ->
+    [one] 1 näkymätön ohjausmerkki poistetaan.
+   *[other] { $count } näkymätöntä ohjausmerkkiä poistetaan.
+}
+import-scrivener-prose-note-on-heading-lost-line = { $count ->
+    [one] 1 luvun otsikossa ollut alaviite tai kommentti ei voinut jäädä sinne: kommentti siirtyy luvun ensimmäiseen kappaleeseen, alaviite jätetään pois.
+   *[other] { $count } lukujen otsikoissa ollutta alaviitettä tai kommenttia ei voinut jäädä sinne: kommentti siirtyy luvun ensimmäiseen kappaleeseen, alaviite jätetään pois.
+}
+import-scrivener-prose-media-file-copied-line = { $count ->
+    [one] 1 tutkimustiedosto, jota Skribisto ei voi avata, kopioitiin uuden projektin viereen. Sen muistiinpano kertoo, minne.
+   *[other] { $count } tutkimustiedostoa, joita Skribisto ei voi avata, kopioitiin uuden projektin viereen. Niiden muistiinpanot kertovat, minne.
+}
+import-scrivener-prose-media-file-not-carried-line = { $count ->
+    [one] 1 tutkimustiedosto, jota Skribisto ei voi avata, jää Scrivener-projektiisi. Sen muistiinpano kertoo tiedoston nimen.
+   *[other] { $count } tutkimustiedostoa, joita Skribisto ei voi avata, jää Scrivener-projektiisi. Niiden muistiinpanot kertovat tiedostojen nimet.
+}
+
+## When the import fails
+import-scrivener-error-refused = { $refusal } Mitään ei kirjoitettu.
+import-scrivener-error-question = Projekti esittää nyt kysymyksen, johon sen tarkistuksessa ei vastattu. Tarkista se uudelleen ja tuo sitten. Mitään ei kirjoitettu.
+import-scrivener-error-not-accepted = Projektissa on asia, jota et ole vielä hyväksynyt. Tarkista se uudelleen ja tuo sitten. Mitään ei kirjoitettu.
+import-scrivener-error-changed = Projekti muuttui tarkistuksesi jälkeen. Tarkista se uudelleen ja tuo sitten. Mitään ei kirjoitettu.
+import-scrivener-error-choice = Tarkistuksessa valittu rakenne ei enää sovi tähän projektiin. Tarkista se uudelleen ja tuo sitten. Mitään ei kirjoitettu.
 
 export-title = Vie
 export-close = Sulje
@@ -1845,6 +3296,10 @@ import-document-destination = Määränpää
 import-document-destination-hint = Valitse mappi tai kohde: uudet kohteet sijoitetaan kansion sisään tai kohtauksen perään.
 import-document-destination-empty = Mappeja ei ole vielä. Luo ensin mappi.
 import-document-plan-empty = Ei ole vielä mitään tuotavaa.
+import-document-pictures = { $count ->
+    [one] Näiden asiakirjojen mukana tulee yksi kuva.
+   *[other] Näiden asiakirjojen mukana tulee { $count } kuvaa.
+}
 import-document-summary = { $rows ->
        [one] 1 kohde
       *[other] { $rows } kohdetta
@@ -1894,6 +3349,20 @@ import-diagnostic-nested-break-dropped = { $count ->
        [one] Yksi lainauksen tai luettelon sisällä ollut kohtauskatko tiedostossa ”{ $path }” jätettiin pois. Vain omalla rivillään oleva katko säilytetään.
       *[other] { $count } lainausten tai luetteloiden sisällä ollutta kohtauskatkoa tiedostossa ”{ $path }” jätettiin pois. Vain omalla rivillään oleva katko säilytetään.
    }
+# A picture the document shows that does not come with it, one sentence per reason.
+# $detail is the picture as the document names it: a file name, a path inside the
+# document, or a web address. Nothing is left in the text where it was.
+import-diagnostic-image-not-ingested-format = Tiedostossa ”{ $path }” kuva ”{ $detail }” on muodossa, jota Skribisto ei voi näyttää, joten se jätettiin pois. PNG-, JPEG-, WebP-, GIF-, TIFF- ja BMP-kuvat tuodaan; tallenna kuva jossakin näistä muodoista ja lisää se käsin.
+import-diagnostic-image-not-ingested-remote = Tiedostossa ”{ $path }” kuva ”{ $detail }” on verkossa. Kuvia ei koskaan ladata tuonnin aikana, joten se jätettiin pois.
+import-diagnostic-image-not-ingested-outside = Tiedostossa ”{ $path }” kuva ”{ $detail }” on asiakirjan ja sen kansion ulkopuolella, joten se jätettiin pois. Vain asiakirjaan tai asiakirjan omaan kansioon tallennetut kuvat tuodaan.
+import-diagnostic-image-not-ingested-missing = Tiedostossa ”{ $path }” kuvaa ”{ $detail }” ei löytynyt, joten se jätettiin pois.
+import-diagnostic-image-not-ingested-too-large = Tiedostossa ”{ $path }” kuva ”{ $detail }” on suurempi kuin projekti hyväksyy, joten se jätettiin pois.
+import-diagnostic-image-not-ingested-unreadable = Tiedostossa ”{ $path }” kuvaa ”{ $detail }” ei voitu lukea kuvana, joten se jätettiin pois.
+import-diagnostic-image-not-ingested-heading = Tiedostossa ”{ $path }” kuva ”{ $detail }” on otsikossa. Otsikosta tulee kohteen otsikko, joka ei voi sisältää kuvaa, joten kuva jätettiin pois.
+import-diagnostic-image-not-ingested-note = Tiedostossa ”{ $path }” kuva ”{ $detail }” on alaviitteessä, loppuviitteessä tai kommentissa. Niissä säilytetään sanat mutta ei kuvia, joten kuva jätettiin pois.
+import-diagnostic-image-not-ingested-html = Tiedostossa ”{ $path }” kuva ”{ $detail }” on kirjoitettu HTML:nä, ja tuonti jättää HTML:n pois, joten kuvakin jätettiin pois. Kirjoita se Markdown-kuvana, niin se tuodaan.
+import-diagnostic-image-not-ingested-document-full = Tiedostossa ”{ $path }” kuva ”{ $detail }” jätettiin pois: tämän asiakirjan kuvat ylittävät yhteensä sen, minkä yksi tuonti tuo. Tuo asiakirja osissa, tai lisää loput kuvat käsin.
+import-diagnostic-picture-first-frame-only = Tiedostossa ”{ $path }” animoitu kuva ”{ $detail }” tulee ensimmäisenä ruutunaan. Projektin kuvat eivät liiku.
 import-diagnostic-duplicate-title = ”{ $title }” esiintyy { $count } kertaa. Jos olet tuonut nämä tiedostot aiemmin, ne monistuvat.
 import-diagnostic-heading-level-jump = ”{ $title }” hyppää otsikkotasolta { $from } tasolle { $to }; se sijoitetaan yhden tason ylätasonsa alapuolelle.
 import-diagnostic-illegal-combination = ”{ $title }” sisältää tekstiä, mutta tyyppi { $kind } ei voi sisältää tekstiä. Tuonti odottaa, kunnes muutat sen tyyppiä tai jätät sen pois. Muuten mitään ei tuoda.
@@ -2235,6 +3704,7 @@ help-topic-round-trip = Kirjan lähettäminen lukijalle
 help-topic-export = Vienti
 help-topic-import-documents = Asiakirjojen tuonti
 help-topic-import-projects = Koko projektin tuominen
+help-topic-import-scrivener = Siirtyminen Scriveneristä
 help-topic-backups-and-versions = Varmuuskopiot ja versiot
 
 help-shortcuts-title = Pikanäppäimet
@@ -2257,6 +3727,8 @@ shortcut-name-work-new = Uusi projekti
 shortcut-name-work-open = Avaa projekti
 shortcut-name-window-new = Uusi ikkuna
 shortcut-name-work-close = Sulje projekti
+shortcut-name-work-import-scrivener = Tuo Scrivener-projekti…
+shortcut-name-work-import-scrivener-report = Näytä Scrivener-tuonnin raportti
 shortcut-name-app-settings = Asetukset
 shortcut-name-app-quit = Lopeta
 shortcut-name-editor-insert-footnote = Lisää alaviite
@@ -2536,6 +4008,7 @@ dialog-save-as-file-title = Tallenna yhtenä .skrib-tiedostona
 dialog-save-as-folder-title = Valitse projektille yläkansio
 dialog-manuskript-file-title = Valitse Manuskript-projekti
 dialog-manuskript-folder-title = Valitse Manuskript-projektin kansio
+dialog-plume-file-title = Valitse Plume Creator -projekti
 dialog-filter-skrib = Skribisto-projekti
 dialog-filter-manuskript = Manuskript-projekti
 dialog-filter-plume = Plume Creator -projekti

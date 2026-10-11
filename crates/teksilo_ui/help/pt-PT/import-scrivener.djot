@@ -1,0 +1,222 @@
+Uma importação traz um projeto Scrivener inteiro: o seu arquivador, o seu texto, as suas sinopses e
+notas, os seus comentários e notas de rodapé, os seus rótulos e a sua lista de estados, as suas
+palavras-chave, metadados personalizados, coleções, marcadores e objetivos. Cria um **novo** projeto
+Skribisto. O seu projeto Scrivener é apenas lido, nunca alterado, por isso pode voltar a ele a
+qualquer momento.
+
+Para um projeto criado no Manuskript ou no Plume Creator, consulte
+[trazer um projeto inteiro](:help-import-projects).
+
+## Iniciar uma importação
+
+Com um projeto aberto, escolha *Projeto ▸ Importar de ▸ Scrivener (.scriv)…*. Na janela inicial, a
+mesma importação está em *Criar a partir de…*. Também pode escrever *Importar projeto Scrivener…*
+na paleta de comandos (*Ajuda ▸ Paleta de comandos…*).
+
+A importação tem três páginas: *Projeto*, *Revisão* e *Guardar*. Nada é escrito até premir
+*Importar* na última.
+
+## Escolher o projeto
+
+Um projeto Scrivener tem um aspeto diferente consoante o sistema em que trabalha:
+
+- **No Windows e no Linux**, um projeto é uma pasta cujo nome termina em `.scriv`. Escolha-a com
+  *Escolher uma pasta…*, ou abra-a e escolha o ficheiro `.scrivx` que ela contém com *Escolher um
+  ficheiro…*.
+- **Num Mac**, um projeto aparece como um único ficheiro quando o Scrivener está instalado.
+  Escolha-o com *Escolher um ficheiro…*. Se aparecer como uma pasta, use *Escolher uma pasta…*.
+
+Também pode largar o projeto na página *Projeto*, ou escrever ou colar o seu caminho.
+
+Uma cópia de segurança feita pelo Scrivener serve tal como está, sem a descomprimir: escolha o
+`.zip`. Um ficheiro `.scrivtemplate` também serve, e cria um novo projeto a partir do modelo. Quando
+escolhe uma pasta que contém vários projetos, a página pergunta qual deles importar, e propõe
+também as cópias de segurança e os modelos que estão ao lado.
+
+Podem ser importados projetos do Scrivener 3 e do Scrivener 2 no Mac, do Scrivener no Windows, da
+versão beta do Scrivener para Linux, e projetos criados num iPhone ou iPad. Um projeto do
+Scrivener 1 no Mac tem primeiro de ser aberto uma vez no Scrivener 2 ou 3.
+
+## O que a importação verifica primeiro
+
+Assim que escolhe um projeto, a página *Projeto* indica que Scrivener o guardou por último,
+quando, e quantos documentos contém. Também o avisa de tudo o que precisa da sua atenção:
+
+- **Vários ficheiros do arquivador.** O Scrivener guarda a lista dos seus documentos num ficheiro
+  `.scrivx`, e um serviço de sincronização deixa por vezes cópias a mais dele. Escolha aquele em
+  que trabalhou por último. Quando a página consegue saber qual é, já está selecionado.
+- **A cópia guardada antes de uma atualização.** Quando o Scrivener passa um projeto para uma
+  versão mais recente, guarda o antigo ao lado dele, com «Backup» acrescentado ao nome. A página
+  propõe o projeto em que continuou a escrever.
+- **Alterações de um iPhone ou iPad.** Se o Scrivener num iPhone ou iPad alterou o projeto desde
+  a última vez que foi aberto num computador, essas alterações ainda não estão nos ficheiros. Abra
+  primeiro o projeto uma vez no Scrivener no seu computador, ou marque *Importá-lo sem essas
+  alterações*.
+- **Uma cópia sem nenhum texto.** Se um serviço de sincronização ainda não acabou de copiar o
+  projeto, os seus documentos chegariam vazios. Aguarde que a cópia termine, ou marque *Importar
+  os documentos vazios*.
+- **Um projeto ainda aberto no Scrivener.** Feche-o lá primeiro, para que todas as alterações
+  fiquem guardadas.
+
+As cópias dos seus documentos deixadas por um serviço de sincronização são trazidas numa pasta
+própria, para que as possa comparar com os documentos. As cópias a mais dos ficheiros de
+definições do próprio Scrivener são postas de lado, como faz o próprio Scrivener.
+
+## Rever antes de importar
+
+A página *Revisão* mostra o arquivador do novo projeto antes de qualquer parte dele existir.
+*Torna-se* indica o que cada item vai ser, e *Nas exportações* se é incluído quando exporta o
+livro.
+
+Ao lado da árvore, as escolhas mudam a forma como o arquivador é trazido:
+
+- *Níveis* indica aquilo em que se tornam as pastas e os documentos de cada nível, como *Partes*,
+  *Capítulos* ou *Cenas*.
+- *Pastas de nível superior* indica para onde vai cada pasta ao lado do seu manuscrito: *Notas*,
+  *Bíblia da história*, *Outro livro*, ou *Deixar de fora* para uma que não queira trazer.
+- *Trazer o lixo* traz os itens do lixo do Scrivener para o lixo do Skribisto.
+- *As linhas em branco tornam-se quebras de cena* e *As linhas de ornamentos tornam-se quebras de
+  cena* decidem o que se torna uma quebra de cena no seu texto.
+
+Por baixo da árvore, *Antes de importar* lista o que a importação faz com o seu arquivador e com as
+suas palavras-chave, metadados personalizados, coleções, marcadores e objetivos, e o que deixa para
+trás, para que o saiba antes de importar.
+
+Qualquer item pode mudar de tipo depois, a partir do arquivador. Consulte
+[o modelo de escrita](:help-writing-model) para saber o que é cada tipo.
+
+## Guardar o novo projeto
+
+A página *Guardar* pede uma *Pasta de destino* e um *Nome do ficheiro*, por predefinição ao lado
+do seu projeto Scrivener. Mostra também o *Título*, o *Autor* e o *Idioma* que o seu projeto
+indica. Altere qualquer um deles antes de importar.
+
+O Scrivener 3 só guarda um título e um autor nas suas definições de compilação. Enquanto não os
+definir lá, mantém o nome que o projeto tinha quando o criou, e nenhum autor: a página propõe
+então esse nome e deixa o *Autor* vazio. Um modelo propõe o seu próprio título.
+
+Quando a sua pesquisa contém ficheiros que o Skribisto não consegue abrir, como ficheiros PDF ou
+sons, *Copiar os ficheiros de pesquisa para junto do novo projeto* coloca-os numa pasta ao lado
+dele.
+
+## O que o Scrivener traz consigo
+
+- O seu texto, pela ordem do arquivador, com o negrito, o itálico, as listas, as tabelas e as
+  imagens.
+- A sinopse de cada documento, como a sua sinopse no Skribisto.
+- As notas de cada documento, como uma nota ao lado dele.
+- Os seus comentários e notas de rodapé, incluindo os que foram escritos dentro do texto. Uma
+  anotação em linha torna-se um comentário.
+- Os seus rótulos como etiquetas coloridas, e a sua lista de estados como os estados do projeto.
+- As suas palavras-chave, as suas coleções e os seus campos personalizados de lista e de caixa de
+  verificação, como etiquetas nos documentos que os têm. O lugar de uma palavra-chave entre as
+  suas palavras-chave fica nos detalhes da sua etiqueta. Uma caixa de verificação marcada por
+  predefinição fica marcada em todos os documentos onde não a desmarcou.
+- Os objetivos dos documentos do seu manuscrito, como as suas metas, e o objetivo do rascunho como
+  a meta do livro. Um prazo ainda por chegar, com um objetivo do rascunho em palavras, torna-se o
+  *Ritmo* do livro, que mantém os dias de escrita que escolheu no Scrivener. O prazo guardado num
+  modelo de projeto não cria nenhum *Ritmo*.
+- Um marcador de uma nota para outra, ou de uma cena ou de uma pasta de notas para uma entrada da
+  bíblia da história, como uma ligação: encontra-a em *Ligações* ou em *Elenco*.
+- As palavras soltas da sua lista de preenchimento automático, no dicionário pessoal do projeto,
+  para não serem assinaladas como erros ortográficos.
+- A caixa «Include in Compile», que se torna *Incluir nas exportações*.
+- Os seus modelos de documento, como modelos de notas.
+- As imagens da sua pesquisa, cada uma numa nota própria.
+
+## A pasta «Do Scrivener»
+
+O que o seu projeto contém e não tem lugar próprio no Skribisto é trazido como texto, para que o
+possa continuar a ler e a copiar. Vai para uma pasta de notas chamada *Do Scrivener*, que nunca é
+incluída nas exportações, depois das suas próprias notas e antes do lixo. Cada nota lista um tipo
+de coisa, e uma nota só existe quando tem alguma coisa para listar:
+
+- *Projeto*: o título abreviado, os assuntos e a empresa das suas definições de compilação, o
+  objetivo da sessão, assinalado como calculado quando o Scrivener o deduziu do seu prazo e dos
+  seus dias de escrita, os dias de escrita quando nenhum *Ritmo* os mantém ou o Skribisto não os
+  conseguiu ler, um objetivo do rascunho que não se tornou uma meta, e o prazo, mesmo quando se
+  tornou um *Ritmo*.
+- *Marcadores do projeto*.
+- *Substituições de compilação*. O Skribisto não as aplica quando exporta.
+- *Entradas de preenchimento automático* com mais de uma palavra.
+- *Pesquisas guardadas*, com aquilo que cada uma procurava.
+- *Metadados personalizados*: os seus campos de texto e de data, documento a documento.
+- *Objetivos* definidos em notas, cuja escrita nenhuma meta conta, e em documentos divididos nos
+  seus títulos internos, cujos capítulos nenhuma meta conta em conjunto.
+- *Marcadores* que nenhuma ligação do Skribisto consegue mostrar, como um de uma cena para outra
+  cena ou para uma página web.
+
+Os metadados personalizados e os marcadores de um documento que se torna uma nota própria, como uma
+ficha de personagem, são antes acrescentados no fim dessa nota.
+
+## O que não tem lugar aqui
+
+- **Os instantâneos.** As suas versões anteriores ficam no seu projeto Scrivener.
+- **Os ícones do arquivador e o modo de guião.** O ícone de cada item vem do seu tipo, e um guião
+  mantém as suas palavras como prosa.
+- **O ponto de vista.** Quando os seus rótulos ou um campo nomeiam personagens da sua bíblia da
+  história, o relatório indica-o: defina o ponto de vista no Inspetor.
+- **A ordem de uma coleção**, já que uma etiqueta não guarda nenhuma ordem, e **os objetivos que
+  contam páginas**.
+- **A cor do texto, o realce e os tipos de letra.** É o Skribisto que define o aspeto do texto.
+- **Os ficheiros de pesquisa que não são imagens**, como ficheiros PDF, sons ou páginas web. Cada
+  um torna-se uma nota que nomeia o ficheiro, que fica no seu projeto Scrivener, salvo se o copiar
+  para junto do novo.
+- **Os marcadores de posição** como `<$wc>` ou `<$title>`. São mantidos como texto simples:
+  substitua-os à mão.
+- **As definições de compilação e o registo das palavras escritas em cada dia.** Configure a sua
+  exportação no Skribisto. Consulte [exportar](:help-export).
+
+## Depois da importação
+
+Uma mensagem indica quantos itens o novo projeto contém e oferece *Abrir agora*, que abre o novo
+projeto numa janela própria. Quando a importação tem mais coisas a reportar, a mensagem fica até
+a fechar.
+
+*Ver relatório* abre um relatório da importação. Indica o que foi trazido e o que escolheu, e
+depois lista o resto em quatro partes:
+
+- *Não foi possível ler*: texto, comentários, imagens ou ficheiros que a importação não conseguiu
+  ler, ou que faltam na cópia.
+- *A verificar*: o que deve rever no novo projeto.
+- *Trazido de outra forma*: o que mudou de forma pelo caminho, ou foi descartado porque o
+  Skribisto não tem lugar para isso.
+- *Deixado para trás*: o que fica no seu projeto Scrivener.
+
+Cada linha nomeia os documentos em causa, tal como se chamam no seu arquivador do Scrivener, ou as
+palavras-chave, coleções ou ícones a que se refere. *Copiar relatório* copia o relatório inteiro,
+para o guardar ou enviar.
+
+O Skribisto guarda os relatórios das suas últimas importações até ser fechado. Para voltar a abrir
+um, prima *Ver relatório* na mensagem, ou na sua entrada no sino da barra de estado e em
+*Definições ▸ Aparência e comportamento ▸ Notificações*, ou escolha *Mostrar o relatório de
+importação do Scrivener* na paleta de comandos da janela de um projeto. A entrada mantém também
+*Abrir agora*, que abre o novo projeto numa janela própria. Na janela do novo projeto, cada
+documento que o relatório nomeia abre-se com um clique.
+
+O novo projeto é um único ficheiro `.skrib`. Se preferir uma pasta, use depois *Projeto ▸ Guardar
+como pasta…*.
+
+## Se a importação não conseguir ler o seu projeto
+
+A página *Projeto* indica porquê e o que fazer. Na maior parte das vezes, basta abrir o projeto
+uma vez no Scrivener, que o repara e atualiza, e depois importá-lo novamente.
+
+Se isso não for possível, um documento Word é o caminho. No Scrivener, escolha «File ▸ Compile…»
+e compile para Word. No formato de compilação, dê aos títulos dos capítulos o estilo «Heading 1» e
+aos títulos das secções o estilo «Heading 2», e mantenha os comentários como comentários na
+margem. Depois, no Skribisto, escolha *Projeto ▸ Importar de ▸ Documentos (Markdown, Word, ODT)…*
+e, na sua página *Revisão*, defina os *Níveis de título* de forma que o primeiro nível se torne um
+capítulo e o segundo uma cena. Consulte [importar documentos](:help-import-documents).
+
+Os estilos com nome como «Heading 1» só existem no Scrivener 3. A partir de um Scrivener mais
+antigo, exporte antes um ficheiro por documento, como ficheiros Word (.docx) ou OpenDocument
+(.odt), e importe-os em conjunto. Não escolha o Rich Text (.rtf), o formato que o Scrivener propõe
+primeiro: o Skribisto não o importa.
+
+Um documento compilado traz o seu texto, com as suas imagens, os seus comentários e as suas notas
+de rodapé, mas não as suas sinopses, notas, rótulos, instantâneos nem os ficheiros da sua pasta de
+pesquisa.
+
+Scrivener é uma marca comercial da Literature and Latte Ltd. O Skribisto não está associado à
+Literature and Latte.

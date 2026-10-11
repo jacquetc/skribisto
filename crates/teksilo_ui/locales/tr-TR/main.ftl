@@ -10,6 +10,7 @@ menu-create-from = &Kaynaktan oluştur
 menu-import-plume = &Plume Creator (.plume)…
 menu-import-document = &Belgeler (Markdown, Word, ODT)…
 menu-import-manuskript = &Manuskript (.msk)…
+menu-import-scrivener = &Scrivener (.scriv)…
 menu-export = &Dışa aktar
 menu-export-book = Kitabı dışa aktar
 menu-export-part = Kısmı dışa aktar
@@ -708,6 +709,8 @@ backup-no-destination-title = Kullanılabilir yedekleme konumu yok
 backup-no-destination-text = Yapılandırılmış yedekleme konumlarının hiçbirine ulaşılamıyor (örneğin harici bir sürücü takılı olmayabilir). Sürücüyü takıp yeniden deneyin ya da yedeklemeden çıkın.
 backup-failed-close-title = Yedek kaydedilemedi
 backup-failed-close-text = Kapatmadan önce hiçbir yedek kopya yazılamadı. Tüm konumlar başarısız oldu (sürücü çıkarılmış, dolu ya da yazmaya karşı korumalı olabilir). Sorunu giderip yeniden deneyin ya da yedeklemeden çıkın.
+backup-failed-close-error-text = Kapatmadan önce hiçbir yedek kopya yazılamadı: { $error }. Sorunu giderip yeniden deneyin ya da yedeklemeden çıkın.
+backup-no-result = Yedekleme, bir kopya alıp almadığını söylemeden sona erdi. Yeni bir yedek olup olmadığını görmek için yedekler listesine bakın.
 
 backup-choice-title = Yedek dosyası
 backup-choice-heading = Bir yedek kopya açtınız
@@ -887,6 +890,8 @@ import-plume-source-missing = Bu dosya yok
 import-plume-source-not-file = Bu yol bir dosya değil
 import-plume-manuscript-binder = El yazması
 import-plume-story-bible-binder = Hikâye rehberi
+import-plume-notes-of = { $name } (notlar)
+import-plume-content-of = { $name } (metin)
 import-plume-progress-title = Plume projesi içe aktarılıyor…
 import-plume-done = { $imported ->
     [one] { $imported } öğe içe aktarıldı.
@@ -897,6 +902,10 @@ import-plume-done = { $imported ->
 }
 import-plume-nested-too-deep = Proje içe aktarılmadı: “{ $part }” bölümü { $limit } düzeyden daha derin iç içe geçmiş. Hiçbir Plume Creator projesi buna yaklaşmaz ve onu okumak Skribisto'yu çökertebilir. Hiçbir şey yazılmadı.
 import-plume-declares-entities = Proje içe aktarılmadı: “{ $part }” bölümü XML varlıkları tanımlıyor, oysa hiçbir Plume Creator projesi bunu yapmaz. Bunları açmak bilgisayarın belleğinden fazlasını gerektirip Skribisto'yu çökertebilir. Hiçbir şey yazılmadı.
+import-plume-no-outline = Bu dosya sıkıştırılmış bir arşiv, ama bir Plume Creator projesi değil: ana hattı yok. Hiçbir şey yazılmadı.
+import-plume-empty-outline = Bu Plume Creator projesinin ana hat dosyası boş, bu yüzden içe aktarılacak bir şey yok. Hiçbir şey yazılmadı.
+import-plume-wrong-document = Bu bir Plume Creator projesi değil: “{ $part }” bölümü bir “{ $tag }” belgesi. Hiçbir şey yazılmadı.
+import-plume-too-new = Bu projenin “{ $part }” bölümü, Skribisto'nun okuyabildiğinden (en fazla { $supported }) daha yeni bir Plume Creator sürümüyle ({ $version }) yazılmış. Hiçbir şey yazılmadı.
 
 import-manuskript-title = Manuskript projesini içe aktar
 import-manuskript-source = Manuskript projesi
@@ -915,6 +924,7 @@ import-manuskript-summary-note = Özet
 import-manuskript-importance-minor = Küçük
 import-manuskript-importance-secondary = İkincil
 import-manuskript-importance-main = Ana
+import-manuskript-notes-of = { $title } (notlar)
 import-manuskript-progress-title = Manuskript projesi içe aktarılıyor…
 import-manuskript-done = { $imported ->
     [one] { $imported } öğe içe aktarıldı.
@@ -927,10 +937,1356 @@ import-manuskript-done = { $imported ->
 import-manuskript-nested-too-deep = Proje içe aktarılmadı: “{ $part }” dosyası { $limit } düzeyden daha derin iç içe geçmiş. Hiçbir Manuskript projesi buna yaklaşmaz ve onu okumak Skribisto'yu çökertebilir. Hiçbir şey yazılmadı.
 import-manuskript-folders-too-deep = Proje içe aktarılmadı: dosyalarından biri { $limit } klasörden daha derinde duruyor. Hiçbir Manuskript projesi buna yaklaşmaz ve onu okumak Skribisto'yu çökertebilir. Hiçbir şey yazılmadı.
 import-manuskript-declares-entities = Proje içe aktarılmadı: “{ $part }” dosyası XML varlıkları tanımlıyor, oysa hiçbir Manuskript projesi bunu yapmaz. Bunları açmak bilgisayarın belleğinden fazlasını gerektirip Skribisto'yu çökertebilir. Hiçbir şey yazılmadı.
+import-manuskript-not-a-project-file = “{ $file }” ne bir Manuskript proje arşivi ne de bir proje klasörünü gösteren küçük .msk dosyası. Hiçbir şey yazılmadı.
+import-manuskript-folder-missing = “{ $stub }”, yanında duran “{ $folder }” adlı bir proje klasörünü gösteriyor, ama o klasör orada değil. Klasör kipindeki bir Manuskript projesi bu ikisinden oluşur ve ikisi birlikte taşınmalıdır. Hiçbir şey yazılmadı.
+import-manuskript-not-a-project = Bu bir Manuskript projesine benzemiyor: ne Manuskript işareti ne de ana hattı var. Hiçbir şey yazılmadı.
+import-manuskript-format-too-new = Bu proje Manuskript { $version } biçiminde; bu biçim Skribisto'nun okuyabildiğinden (en fazla { $supported }) daha yeni. Hiçbir şey yazılmadı.
+import-manuskript-too-many-files = Proje içe aktarılmadı: { $limit } dosyadan fazlasını barındırıyor, yani herhangi bir Manuskript projesinden çok daha fazlasını. Hiçbir şey yazılmadı.
+import-manuskript-too-large = Proje içe aktarılmadı: Skribisto'nun bir Manuskript projesinden okuduğu { $limit } MB sınırından büyük. Hiçbir şey yazılmadı.
+
+## Project import, shared by every importer: the destination, the progress notice, the report and why a project was not imported.
+project-import-close = Kapat
+project-import-location = Hedef klasör
+project-import-location-title = Bir hedef klasör seçin
+project-import-name = Dosya adı
+project-import-name-placeholder = Proje adı
+project-import-will-create = Oluşturulacak
+project-import-cancel = İptal
+project-import-import = İçe aktar
+project-import-location-required = Bir hedef klasör seçin
+project-import-location-missing = Bu klasör yok
+project-import-location-not-folder = Bu yol bir klasör değil
+project-import-location-readonly = Bu klasöre yazılamıyor
+project-import-name-required = Bir dosya adı girin
+project-import-name-exists = Burada bu adda bir dosya zaten var. İçe aktarma, üzerine yazmadan önce onay isteyecek
+project-import-name-is-folder = Burada bu adda bir klasör zaten var; belki klasör olarak tutulan bir proje. Bir içe aktarma onu değiştiremez: başka bir ad seçin
+project-import-overwrite-title = Var olan dosya değiştirilsin mi?
+project-import-overwrite-text = “{ $name }” zaten var. İçe aktarılan projeyle değiştirilsin mi?
+project-import-busy-title = Başka bir proje içe aktarılıyor
+project-import-busy-text = Projeler birer birer içe aktarılır. Süren içe aktarmanın bitmesini bekleyin ya da onu iptal edin, sonra bunu yeniden başlatın.
+project-import-progress-announcement = { $title } { $phase }
+project-import-stopping = İçe aktarma durduruluyor…
+project-import-cancelled = İçe aktarma iptal edildi
+project-import-open-now = Şimdi aç
+project-import-details = Ayrıntılar
+project-import-report = { $count ->
+    [one] Bu içe aktarma hakkında bilinmesi gereken 1 şey
+   *[other] Bu içe aktarma hakkında bilinmesi gereken { $count } şey
+}
+project-import-report-title = Bu içe aktarma hakkında
+project-import-error-title = Proje içe aktarılamadı
+project-import-failed-cancelled = İçe aktarma iptal edildi. Hiçbir şey yazılmadı.
+project-import-failed-target-exists = “{ $file }” zaten var ve içe aktarmanın onu değiştirmesine izin verilmedi. Hiçbir şey yazılmadı.
+project-import-failed-target-folder = “{ $file }” bir klasör (belki klasör olarak tutulan bir proje) ve bir içe aktarma onu değiştiremez. Başka bir ad seçin. Hiçbir şey yazılmadı.
+project-import-failed-not-written = “{ $file }”, “{ $folder }” klasörüne yazılamadı ({ $reason }). Hiçbir şey yazılmadı.
+project-import-failed-disk-full = “{ $folder }” konumunda “{ $file }” dosyasını yazacak kadar boş yer kalmadı. Orada biraz yer açın, sonra yeniden içe aktarın. Hiçbir şey yazılmadı.
+project-import-failed-source-missing = “{ $file }” artık orada değil. Hiçbir şey yazılmadı.
+project-import-failed-unreadable = Skribisto “{ $file }” dosyasını okuyamadı ({ $reason }). Hiçbir şey yazılmadı.
+project-import-failed-archive-damaged = “{ $file }” okunamayan sıkıştırılmış bir dosya; büyük olasılıkla bozuk ({ $reason }). Hiçbir şey yazılmadı.
+project-import-failed-archive-entries = Proje içe aktarılmadı: arşivi { $entries } dosya listeliyor. Bu, bir projenin barındırabileceği { $limit } dosyadan fazla ve bunu yalnızca belleği tüketmek için hazırlanmış bir dosya yapar. Hiçbir şey yazılmadı.
+project-import-failed-archive-member = Proje içe aktarılmadı: “{ $part }” parçası açıldığında { $limit } MB sınırını aşıyor; bunu yalnızca belleği tüketmek için hazırlanmış bir dosya yapar. Hiçbir şey yazılmadı.
+project-import-failed-archive-size = Proje içe aktarılmadı: açıldığında { $limit } MB sınırını aşıyor; bunu yalnızca belleği tüketmek için hazırlanmış bir dosya yapar. Hiçbir şey yazılmadı.
+project-import-failed-nested = Proje içe aktarılmadı: “{ $part }” parçası { $limit } düzeyden daha derin iç içe geçmiş ve onu okumak Skribisto'yu çökertebilir. Hiçbir şey yazılmadı.
+project-import-failed-entities = Proje içe aktarılmadı: “{ $part }” parçası XML varlıkları tanımlıyor. Bunları açmak bilgisayarın belleğinden fazlasını gerektirip Skribisto'yu çökertebilir. Hiçbir şey yazılmadı.
+project-import-failed-folders = Proje içe aktarılmadı: dosyalarından biri { $limit } klasörden daha derinde duruyor ve onu okumak Skribisto'yu çökertebilir. Hiçbir şey yazılmadı.
+project-import-failed-malformed = Proje içe aktarılmadı: “{ $part }” parçası bozuk ve okunamıyor ({ $reason }). Hiçbir şey yazılmadı.
+project-import-failed-scrivener-refused = Skribisto bu Scrivener projesini içe aktaramıyor. Hiçbir şey yazılmadı.
+project-import-failed-scrivener-question = Scrivener projesi, gözden geçirmenin yanıtlamadığı bir soru soruyor. Yeniden gözden geçirin, sonra içe aktarın. Hiçbir şey yazılmadı.
+project-import-failed-scrivener-not-accepted = Scrivener projesi, henüz kabul etmediğiniz bir soru ortaya koyuyor. Yeniden gözden geçirin, sonra içe aktarın. Hiçbir şey yazılmadı.
+project-import-failed-scrivener-changed = Scrivener projesi, siz gözden geçirdikten sonra değişti. Yeniden gözden geçirin, sonra içe aktarın. Hiçbir şey yazılmadı.
+project-import-failed-internal = İçe aktarma, Skribisto'nun beklemediği bir hatada durdu: { $detail }
 
 import-target-open-title = Bu proje açık
 import-target-open-text = “{ $name }” Skribisto'da açık. Üzerine içe aktarmak üzerinde çalıştığınız projeyi değiştirir ve sonraki kaydetme o projeyi içe aktarılanın üzerine geri yazar. Başka bir dosya adı seçin ya da önce projeyi kapatın.
 import-warnings-announcement = { $result } { $notice }.
+quit-import-running-title = Bir içe aktarma hâlâ sürüyor
+quit-import-running-text = Skribisto hâlâ “{ $name }” projesini içe aktarıyor. Şimdi çıkmak içe aktarmayı durdurur: hiçbir şey yazılmaz ve içe aktardığınız proje olduğu gibi kalır.
+quit-import-stop = İçe aktarmayı durdur ve çık
+
+## Import a Scrivener project: the wizard, its review, the report and the help topic.
+import-scrivener-title = Bir Scrivener projesini içe aktar
+import-scrivener-step-project = Proje
+import-scrivener-step-review = Gözden geçir
+import-scrivener-step-save = Kaydet
+import-scrivener-back = Geri
+import-scrivener-next = İleri
+import-scrivener-import = İçe aktar
+import-scrivener-cancel = İptal
+import-scrivener-help = Yardım
+import-scrivener-drop-title = Bir Scrivener projesini buraya bırakın
+import-scrivener-drop-hint = Bir .scriv projesi, içindeki .scrivx dosyası, bir yedek .zip dosyası ya da bir .scrivtemplate dosyası
+import-scrivener-source = Scrivener projesi
+import-scrivener-source-placeholder = Projenin yolu
+import-scrivener-choose-file = Dosya seç…
+import-scrivener-choose-folder = Klasör seç…
+import-scrivener-source-hint = Projenin .scriv klasörünü seçin ya da klasörü açıp içindeki .scrivx dosyasını seçin. Bir yedek .zip dosyası da olur.
+import-scrivener-source-hint-mac = Proje tek bir dosya olarak görünüyorsa “Dosya seç…” düğmesini, klasör olarak görünüyorsa “Klasör seç…” düğmesini kullanın. Bir yedek .zip dosyası da olur.
+import-scrivener-dialog-file-title = Bir Scrivener projesi seçin
+import-scrivener-dialog-folder-title = Bir Scrivener proje klasörü seçin
+import-scrivener-dialog-filter = Scrivener projesi
+import-scrivener-source-missing = Bu yolda hiçbir şey yok
+import-scrivener-source-unreadable-name = Bu ad okunamıyor. Projeyi dosya yöneticinizde yeniden adlandırın, sonra yeniden seçin.
+import-scrivener-empty-hint = Skribisto'nun içinde ne bulduğunu görmek için bir proje seçin.
+import-scrivener-reading = Proje okunuyor…
+import-scrivener-stop-reading = Okumayı durdur
+import-scrivener-read-failed = Proje okunamadı
+import-scrivener-read-failed-body = Okunurken bir sorun çıktı. Yeniden denetleyin ya da ayrıntılara bakın.
+import-scrivener-details = Ayrıntılar
+import-scrivener-check-again = Yeniden denetle
+import-scrivener-refusal-unknown-title = Bu proje içe aktarılamıyor
+import-scrivener-refusal-unknown-body = Skribisto onu nasıl aktaracağını bilmiyor. Nedeni ayrıntılarda yazıyor.
+import-scrivener-made-with-mac = En son macOS için Scrivener { $version } ile kaydedildi
+import-scrivener-made-with-windows = En son Windows için Scrivener { $version } ile kaydedildi
+import-scrivener-made-with-linux = En son Linux için Scrivener { $version } ile kaydedildi
+import-scrivener-made-with-ios = En son iPhone ve iPad için Scrivener { $version } ile kaydedildi
+import-scrivener-made-with-version = En son Scrivener { $version } ile kaydedildi
+import-scrivener-made-with-unknown = Scrivener projesi, biçim { $format }
+import-scrivener-saved-on = { $date } tarihinde “{ $device }” cihazında kaydedildi
+import-scrivener-saved-on-no-device = { $date } tarihinde kaydedildi
+import-scrivener-card-counts = { $documents ->
+    [one] 1 belge
+   *[other] { $documents } belge
+}, { $manuscript } tanesi el yazmasında
+import-scrivener-review-hint = Dizininiz böyle aktarılacak. Siz içe aktarana kadar hiçbir şey yazılmaz ve birçok öğenin türünü daha sonra dizinde Dönüştür ile değiştirebilirsiniz.
+import-scrivener-choices-structure = Düzeyler
+import-scrivener-top-level = En üst düzey klasörler
+import-scrivener-choices-text = Metin
+import-scrivener-choice-containers = { $depth }. düzeydeki klasörler
+import-scrivener-choice-texts = { $depth }. düzeydeki belgeler
+import-scrivener-choice-count = { $count ->
+    [one] 1 öğe
+   *[other] { $count } öğe
+}
+import-scrivener-choice-count-example = { $count ->
+    [one] 1 öğe: “{ $example }”
+   *[other] { $count } öğe, örneğin “{ $example }”
+}
+import-scrivener-rung-part = Kısımlar
+import-scrivener-rung-chapter = Bölümler
+import-scrivener-rung-plain = Sıradan klasörler
+import-scrivener-texts-scenes = Sahneler
+import-scrivener-texts-chapters = Bölümler
+import-scrivener-choice-books = El yazmasındaki kitaplar
+import-scrivener-books-one = Tek kitap
+import-scrivener-books-several = Her klasör için bir kitap
+import-scrivener-choice-split = { $count ->
+    [one] “{ $title }” öğesini başlık paragrafından böl
+   *[other] “{ $title }” öğesini { $count } başlık paragrafından böl
+}
+import-scrivener-root-items = { $count ->
+    [one] 1 öğe
+   *[other] { $count } öğe
+}
+import-scrivener-root-items-manuscript = { $count ->
+    [one] 1 öğe, el yazmasına benziyor
+   *[other] { $count } öğe, el yazmasına benziyor
+}
+import-scrivener-dest-notes = Notlar
+import-scrivener-dest-story-bible = Hikâye rehberi
+import-scrivener-dest-manuscript = Başka bir kitap
+import-scrivener-dest-leave-out = Dışarıda bırak
+import-scrivener-choice-trash = { $count ->
+    [one] Çöp kutusunu da aktar (1 öğe)
+   *[other] Çöp kutusunu da aktar ({ $count } öğe)
+}
+import-scrivener-trash-detail = { $count ->
+    [0] Hiçbirinde yazı yok.
+    [one] 1 tanesinde yazı var.
+   *[other] { $count } tanesinde yazı var.
+}
+import-scrivener-choice-blank-lines = Boş satırlar sahne arasına dönüşsün
+import-scrivener-choice-ornaments = Süs işaretlerinden oluşan satırlar sahne arasına dönüşsün
+import-scrivener-preview-label = Yeni projenin yapısı
+import-scrivener-col-title = Başlık
+import-scrivener-col-becomes = Skribisto'da
+import-scrivener-col-exports = Dışa aktarılır
+import-scrivener-in-exports-yes = Evet
+import-scrivener-in-exports-no = Hayır
+import-scrivener-becomes-item = Öğe
+import-scrivener-becomes-trashed = Çöp kutusunda
+import-scrivener-before-title = İçe aktarmadan önce
+import-scrivener-review-error-unreadable = Gözden geçirme hazırlanamadı. Projeyi yeniden seçin.
+import-scrivener-review-error-choice = Bu seçim projeye uymuyor. Projeyi yeniden seçin.
+import-scrivener-review-error-unmappable = Bu seçimle dizin hiçbir şey kaybetmeden aktarılamadı. Başka bir seçim yapın ya da sorunu bildirin.
+import-scrivener-save-hint = İçe aktarma yeni bir Skribisto projesi oluşturur. Scrivener projeniz yalnızca okunur, asla değiştirilmez.
+import-scrivener-title-field = Başlık
+import-scrivener-author = Yazar
+import-scrivener-language = Dil
+import-scrivener-location-inside-project = Scrivener projesinin dışında bir klasör seçin. Scrivener o klasörde yalnızca kendi dosyalarını tutar.
+import-scrivener-copy-research-label = Araştırma dosyalarını yeni projenin yanına kopyala
+import-scrivener-copy-research = { $count ->
+    [one] Skribisto'nun açamadığı 1 araştırma dosyası, örneğin bir PDF ya da bir ses kaydı, projenin yanındaki bir klasöre gider. İşaret kaldırılırsa dosyanın notu, onun Scrivener projenizde nerede olduğunu söyler.
+   *[other] Skribisto'nun açamadığı { $count } araştırma dosyası, örneğin PDF'ler ya da ses kayıtları, projenin yanındaki bir klasöre gider. İşaret kaldırılırsa dosyaların notları, onların Scrivener projenizde nerede olduğunu söyler.
+}
+import-scrivener-default-name = Scrivener projesi
+import-scrivener-progress-title = Scrivener projesi içe aktarılıyor…
+import-scrivener-done-title = Scrivener projesi içe aktarıldı
+import-scrivener-done = { $items ->
+    [one] Yeni projede 1 öğe var.
+   *[other] Yeni projede { $items } öğe var.
+}
+import-scrivener-done-check = { $items ->
+    [one] Yeni projede 1 öğe var.
+   *[other] Yeni projede { $items } öğe var.
+} { $findings ->
+    [one] Göz atılması gereken 1 şey var.
+   *[other] Göz atılması gereken { $findings } şey var.
+}
+import-scrivener-review-again = Yeniden gözden geçir
+import-scrivener-see-report = Raporu gör
+import-scrivener-report-from = Şuradan okundu: { $path }
+import-scrivener-report-to = Şuraya yazıldı: { $path }
+import-scrivener-report-came-across = Aktarılanlar
+import-scrivener-report-nothing-counted = Hiçbir şey sayılmadı.
+import-scrivener-report-items = { $count ->
+    [one] 1 öğe
+   *[other] { $count } öğe
+}
+import-scrivener-report-words = { $count ->
+    [one] 1 sözcük
+   *[other] { $count } sözcük
+}
+import-scrivener-report-synopses = { $count ->
+    [one] 1 özet
+   *[other] { $count } özet
+}
+import-scrivener-report-document-notes = { $count ->
+    [one] 1 belgenin notları
+   *[other] { $count } belgenin notları
+}
+import-scrivener-report-comments = { $count ->
+    [one] 1 yorum
+   *[other] { $count } yorum
+}
+import-scrivener-report-footnotes = { $count ->
+    [one] 1 dipnot
+   *[other] { $count } dipnot
+}
+import-scrivener-report-pictures = { $count ->
+    [one] 1 resim
+   *[other] { $count } resim
+}
+import-scrivener-report-templates = { $count ->
+    [one] 1 not şablonu
+   *[other] { $count } not şablonu
+}
+import-scrivener-report-tags = { $count ->
+    [one] 1 etiket
+   *[other] { $count } etiket
+}
+import-scrivener-report-statuses = { $count ->
+    [one] 1 durum
+   *[other] { $count } durum
+}
+import-scrivener-report-trashed = { $count ->
+    [one] Çöp kutusunda 1 öğe
+   *[other] Çöp kutusunda { $count } öğe
+}
+import-scrivener-report-research-files = { $count ->
+    [one] 1 araştırma dosyası
+   *[other] { $count } araştırma dosyası
+}
+import-scrivener-report-choices = Seçimleriniz
+import-scrivener-report-accepted-mobile = Projeyi, iPhone ya da iPad için Scrivener'da yapılmış ama henüz projeye geçmemiş değişiklikler olmadan içe aktardınız.
+import-scrivener-report-accepted-no-text = Bu kopyayı belgeleri boş hâlde içe aktardınız, çünkü hiçbir belgenin metni kopyada yoktu.
+import-scrivener-report-choice = { $subject }: { $answer }
+import-scrivener-report-yes = evet
+import-scrivener-report-no = hayır
+import-scrivener-report-research-copied = Skribisto'nun açamadığı araştırma dosyaları, yeni projenin yanındaki “{ $folder }” klasörüne kopyalandı.
+import-scrivener-report-research-not-copied = Skribisto'nun açamadığı araştırma dosyaları kopyalanmadı. Notları, Scrivener projenizde nerede olduklarını söyler.
+import-scrivener-report-research-copied-except = { $count ->
+    [one] Skribisto'nun açamadığı araştırma dosyaları, yeni projenin yanındaki “{ $folder }” klasörüne kopyalandı; yalnızca 1 tanesi Scrivener projenizde kaldı. Notu, nerede olduğunu söyler.
+   *[other] Skribisto'nun açamadığı araştırma dosyaları, yeni projenin yanındaki “{ $folder }” klasörüne kopyalandı; yalnızca { $count } tanesi Scrivener projenizde kaldı. Notları, nerede olduklarını söyler.
+}
+import-scrivener-report-research-none-copied = { $count ->
+    [one] Araştırma dosyalarının kopyalanmasını istediniz, ama 1 dosya kopyalanamadı. Scrivener projenizde kalıyor ve notu nerede olduğunu söylüyor.
+   *[other] Araştırma dosyalarının kopyalanmasını istediniz, ama { $count } dosya kopyalanamadı. Scrivener projenizde kalıyorlar ve notları nerede olduklarını söylüyor.
+}
+import-scrivener-report-chose-project = Seçtiğiniz yerdeki projelerden biri olan “{ $project }” projesini içe aktarmayı seçtiniz.
+import-scrivener-report-chose-manifest = “{ $file }” dizin dosyasını seçtiniz.
+import-scrivener-report-chose-enclosing = “{ $project }” projesinin içindeki bir şeyi seçtiniz, bu yüzden projenin tamamı içe aktarıldı.
+import-scrivener-report-chose-upgraded = Scrivener'ın bir güncellemeden önce tuttuğu kopyayı değil, yazmayı sürdürdüğünüz proje olan “{ $current }” projesini içe aktardınız.
+import-scrivener-report-chose-backup = Scrivener'ın bir güncellemeden önce tuttuğu eski kopya olan “{ $backup }” projesini içe aktardınız.
+import-scrivener-report-title-placeholder-rejected = Projenin ayarlarındaki başlık bir şablon yer tutucusuydu, bu yüzden Skribisto bunun yerine projenin adını önerdi.
+import-scrivener-report-author-placeholder-rejected = Projenin ayarlarındaki yazar adı bir şablon yer tutucusuydu, bu yüzden Skribisto hiçbir ad önermedi.
+import-scrivener-report-title-from-compile-settings = Skribisto, projenin derleme ayarlarında yazan başlığı önerdi: Scrivener'da orada bir başlık belirlenmediyse bu, projenin oluşturulduğu sıradaki adıdır.
+import-scrivener-report-title-from-template = Skribisto, şablonun kendi başlığını önerdi.
+import-scrivener-report-title-from-folder-name = Skribisto, başlık olarak projenin adını önerdi.
+import-scrivener-report-title-from-project-properties = Skribisto, projenin özelliklerinde yazan başlığı önerdi.
+import-scrivener-report-author-from-project = Skribisto, projenin ayarlarında yazan yazar adını önerdi. Orada bir şablonun yazarı kalmış olabilir ve bu ad bir başlık sayfasına basılır.
+import-scrivener-report-language-not-stated = Proje dilini belirtmiyordu, bu yüzden Skribisto kendi arayüzünün dilini önerdi. Dil, sözcüklerin nasıl sayılacağını ve tırnakların nasıl yazılacağını belirler.
+import-scrivener-report-language-from-script = Skribisto dili, el yazmasının yazıldığı yazı sisteminden önerdi ({ $tag }).
+import-scrivener-report-you-changed-it = { $hint } Siz bunu değiştirdiniz.
+import-scrivener-report-content-salvaged-text = “{ $item }” öğesinin metni projede yoktu. Sözcükleri Scrivener'ın arama indeksinden geliyor; düz metin olarak ve belki daha eski bir sürümden: denetleyin.
+import-scrivener-report-content-salvaged-notes = “{ $item }” öğesinin notları projede yoktu. Sözcükleri Scrivener'ın arama indeksinden geliyor; düz metin olarak ve belki daha eski bir sürümden: denetleyin.
+import-scrivener-report-content-salvaged-synopsis = “{ $item }” öğesinin özeti projede yoktu. Sözcükleri Scrivener'ın arama indeksinden geliyor; düz metin olarak ve belki daha eski bir sürümden: denetleyin.
+import-scrivener-report-document-others = { $others ->
+    [one] { $sentence } Aynı durum, aşağıda listelenen 1 yerde daha var.
+   *[other] { $sentence } Aynı durum, aşağıda listelenen { $others } yerde daha var.
+}
+import-scrivener-report-item-notes = { $path } (belge notları)
+import-scrivener-report-item-synopsis = { $path } (özet)
+import-scrivener-report-item-project-note = { $path } (proje notu)
+import-scrivener-report-item-recovered = { $path } (kurtarılan metin)
+import-scrivener-report-untitled = Adsız
+import-scrivener-report-no-findings = İçe aktarmanın bildirecek başka bir şeyi yok.
+import-scrivener-report-group-unread = Okunamadı
+import-scrivener-report-group-check = Bunları denetleyin
+import-scrivener-report-group-changed = Farklı biçimde aktarıldı
+import-scrivener-report-group-left = Geride bırakıldı
+import-scrivener-report-group-count = { $group } ({ $count })
+import-scrivener-report-items-toggle = { $count ->
+    [one] 1 öğe
+   *[other] { $count } öğe
+}
+import-scrivener-report-items-toggle-named = { $count ->
+    [one] 1 öğe: { $line }
+   *[other] { $count } öğe: { $line }
+}
+import-scrivener-report-names-toggle = { $count ->
+    [one] 1 ad
+   *[other] { $count } ad
+}
+import-scrivener-report-names-toggle-named = { $count ->
+    [one] 1 ad: { $line }
+   *[other] { $count } ad: { $line }
+}
+import-scrivener-report-more = { $count ->
+    [one] Ve 1 tane daha.
+   *[other] Ve { $count } tane daha.
+}
+import-scrivener-report-open-item = Düzenleyicide aç
+import-scrivener-report-links-hint = Yeni projeyi açın, sonra bu raporu komut paletinden yeniden gösterin: burada listelenen her öğe o zaman tek tıklamayla açılır.
+import-scrivener-copy-report = Raporu kopyala
+import-scrivener-report-copied = Rapor kopyalandı
+import-scrivener-report-copy-failed = Rapor kopyalanamadı.
+import-scrivener-report-close = Kapat
+import-scrivener-report-none-title = İçe aktarma raporu yok
+import-scrivener-report-none = Skribisto açıldığından beri hiçbir Scrivener içe aktarması tamamlanmadı. Skribisto, son içe aktarmaların raporlarını kapanana kadar tutar.
+import-scrivener-report-gone = Bu içe aktarmanın raporu artık tutulmuyor. Skribisto, son { $count } içe aktarmanın raporlarını kapanana kadar tutar.
+import-scrivener-manuscript-binder = El yazması
+import-scrivener-notes-binder = Notlar
+import-scrivener-notes-of = { $title } (notlar)
+import-scrivener-project-notes = Proje notları
+import-scrivener-recovered = Kurtarılan metinler
+import-scrivener-untitled-template = Adsız şablon
+import-scrivener-research-folder = { $name } araştırma dosyaları
+import-scrivener-list-separator = {", "}
+import-scrivener-label-details = Scrivener'daki “{ $field }” alanından
+import-scrivener-status-details = Scrivener'daki “{ $field }” alanından
+import-scrivener-unnamed-label = Renk etiketi { $number }
+import-scrivener-unnamed-status = Durum { $number }
+import-scrivener-label-tag = { $name } (renk etiketi)
+import-scrivener-untitled-tag = Adsız
+import-scrivener-keyword-details = Scrivener'daki “{ $path }” anahtar sözcüğü
+import-scrivener-unnamed-keyword = Anahtar sözcük { $number }
+import-scrivener-keyword-tag = { $name } (anahtar sözcük)
+import-scrivener-collection-details = Scrivener'daki bir koleksiyon
+import-scrivener-collection-tag = { $name } (koleksiyon)
+import-scrivener-field-details = Scrivener'daki “{ $field }” alanından
+import-scrivener-field-value = { $field }: { $option }
+import-scrivener-field-tag = { $name } (alan)
+import-scrivener-deadline-day = Son tarih
+import-scrivener-from-scrivener = Scrivener'dan
+import-scrivener-note-project = Proje
+import-scrivener-note-project-bookmarks = Proje yer imleri
+import-scrivener-note-replacements = Derleme değiştirmeleri
+import-scrivener-note-auto-complete = Otomatik tamamlama girdileri
+import-scrivener-note-saved-searches = Kayıtlı aramalar
+import-scrivener-note-custom-metadata = Özel üst veri
+import-scrivener-note-targets = Hedefler
+import-scrivener-note-bookmarks = Yer imleri
+import-scrivener-abbreviated-title = Kısaltılmış başlık
+import-scrivener-subjects = Konular
+import-scrivener-company = Şirket
+import-scrivener-session-target = Oturum hedefi
+import-scrivener-session-target-calculated = Scrivener'ın son tarihten hesapladığı oturum hedefi
+import-scrivener-writing-days = Yazma günleri
+import-scrivener-weekday-monday = Pazartesi
+import-scrivener-weekday-tuesday = Salı
+import-scrivener-weekday-wednesday = Çarşamba
+import-scrivener-weekday-thursday = Perşembe
+import-scrivener-weekday-friday = Cuma
+import-scrivener-weekday-saturday = Cumartesi
+import-scrivener-weekday-sunday = Pazar
+import-scrivener-draft-target = El yazması hedefi
+import-scrivener-deadline = Son tarih
+import-scrivener-unit-words = sözcük
+import-scrivener-unit-characters = karakter
+import-scrivener-unit-pages = sayfa
+import-scrivener-search-query = Aranan
+import-scrivener-search-in = Aranan yer
+import-scrivener-search-operator = Eşleştirme
+import-scrivener-search-in-all = her şey
+import-scrivener-search-in-title = başlıklar
+import-scrivener-search-in-text = metin
+import-scrivener-search-in-notes = notlar
+import-scrivener-search-in-synopsis = özetler
+import-scrivener-search-in-keywords = anahtar sözcükler
+import-scrivener-search-in-label = renk etiketleri
+import-scrivener-search-in-status = durumlar
+import-scrivener-search-in-section-type = kesim türleri
+import-scrivener-search-in-custom-metadata = özel üst veri
+import-scrivener-search-any = sözcüklerden herhangi biri
+import-scrivener-search-all = tüm sözcükler
+import-scrivener-search-exact = tam ifade
+import-scrivener-label-value = { $label }: { $value }
+import-scrivener-replacement-regex = düzenli ifade
+import-scrivener-replacement-off = kapalı
+import-scrivener-in-own-note = Kendi notunda listelenir.
+import-scrivener-paragraph = { $title }. { $body }
+import-scrivener-refusal-missing-title = Bu yolda hiçbir şey yok
+import-scrivener-refusal-missing-body = “{ $file }” artık orada değil. Projeyi yeniden seçin.
+import-scrivener-refusal-unreadable-title = Bu proje okunamıyor
+import-scrivener-refusal-unreadable-body = “{ $file }” okunamadı ({ $reason }). Onu açabildiğinizi denetleyin, sonra yeniden deneyin.
+import-scrivener-refusal-not-a-scrivener-project-title = Burada Scrivener projesi yok
+import-scrivener-refusal-not-a-scrivener-project-body = Projenin .scriv klasörünü, içindeki .scrivx dosyasını, bir yedek .zip dosyasını ya da bir .scrivtemplate dosyasını seçin.
+import-scrivener-refusal-manifest-without-files-title = Belgeler bu kopyada değil
+import-scrivener-refusal-manifest-without-files-body = “{ $manifest }” burada, ama listelediği belgeleri barındıran Files klasörü yok. Bir eşitleme hizmeti projeyi kopyalamayı bitirmemiş olabilir ya da yalnızca .scrivx dosyası kopyalanmış olabilir. .scrivx dosyasını seçtiyseniz bunun yerine “Klasör seç…” ile projenin klasörünü seçin.
+import-scrivener-refusal-search-too-wide-title = Bu klasörde aranacak çok fazla şey var
+import-scrivener-refusal-search-too-wide-body = İçinde bakılacak { $limit } klasörden fazlası var. Scrivener projesinin kendisini seçin.
+import-scrivener-refusal-scrivener-one-for-mac-title = Bu proje Mac için Scrivener 1 ile oluşturulmuş
+import-scrivener-refusal-scrivener-one-for-mac-body = Skribisto, Scrivener 2 ve sonraki sürümlerin projelerini okur. Projeyi güncellemek için onu bir kez Scrivener 2 ya da 3 ile açın veya bir Word belgesine derleyip o belgeyi içe aktarın.
+import-scrivener-refusal-ios-stub-without-mobile-data-title = Bu, iPhone ya da iPad için Scrivener'ın bıraktığı bir yer tutucudan ibaret
+import-scrivener-refusal-ios-stub-without-mobile-data-body = Projenin kendisi burada değil. Onu iPhone ya da iPad'inizden eşitleyin veya oradan .zip olarak paylaşın, sonra o dosyayı içe aktarın.
+import-scrivener-refusal-newer-title = Bu proje daha yeni bir Scrivener ile oluşturulmuş
+import-scrivener-refusal-unknown-format-version-body = Biçimi ({ $version }) Skribisto'nun tanıdığı bir biçim değil. Skribisto için bir güncelleme olup olmadığını denetleyin. O zamana kadar projeyi Scrivener'da bir Word belgesine derleyip o belgeyi içe aktarın.
+import-scrivener-refusal-newer-format-stamp-body = Dosyaları { $stamp } sürümü olarak işaretlenmiş; Skribisto ise en fazla { $newest } sürümünü okuyabiliyor. Skribisto için bir güncelleme olup olmadığını denetleyin. O zamana kadar projeyi Scrivener'da bir Word belgesine derleyip o belgeyi içe aktarın.
+import-scrivener-refusal-version-stamp-unreadable-title = Projenin sürümü okunamıyor
+import-scrivener-refusal-version-stamp-unreadable-body = Files/version.txt dosyasında sürüm numarası yok, bu yüzden Skribisto bu projeyi okuyup okuyamayacağını bilemiyor. Projeyi bir kez Scrivener'da açın, sonra yeniden içe aktarın.
+import-scrivener-refusal-damaged-manifest-title = Dizin dosyası okunamıyor
+import-scrivener-refusal-damaged-manifest-body = “{ $manifest }” bozuk. { $spare_copies ->
+    [0] Projeyi, onu onarabilen Scrivener'da açın, sonra yeniden içe aktarın.
+    [one] Scrivener proje içinde onun yedek bir kopyasını tutar, ama Skribisto bu kopyayı okumaz. Projeyi, onu onarabilen Scrivener'da açın, sonra yeniden içe aktarın.
+   *[other] Scrivener proje içinde onun { $spare_copies } yedek kopyasını tutar, ama Skribisto bu kopyaları okumaz. Projeyi, onu onarabilen Scrivener'da açın, sonra yeniden içe aktarın.
+}
+import-scrivener-refusal-damaged-manifest-new-project-placeholder-body = “{ $manifest }”, Scrivener'ın henüz kaydetmediği bir proje için yazdığı boş dosya. Projeyi Scrivener'da açıp kaydetmesini bekleyin, sonra yeniden içe aktarın.
+import-scrivener-refusal-manifest-too-large-title = Bu dizin dosyası çok büyük
+import-scrivener-refusal-manifest-too-large-body = “{ $manifest }”, Skribisto'nun okuduğu { $limit } MB sınırından büyük. Hiçbir gerçek proje buna yaklaşmaz, bu yüzden dosya bozuk olabilir.
+import-scrivener-refusal-no-item-identifiers-title = Dizin, Skribisto'nun bulabileceği hiçbir belgeyi listelemiyor
+import-scrivener-refusal-no-item-identifiers-body = Öğelerinin hiçbiri bir tanımlayıcı taşımıyor, bu yüzden dosyaları bulunamıyor. Projeyi bir kez Scrivener'da açın, sonra yeniden içe aktarın.
+import-scrivener-refusal-incomplete-copy-title = Belgeler bu kopyada eksik
+import-scrivener-refusal-incomplete-copy-body = Files klasörü burada, ama içindeki belgeler yok. Bir eşitleme hizmeti projeyi kopyalamayı bitirmemiş olabilir. Bitmesini bekleyin ya da .scriv klasörünün tamamını yeniden kopyalayın, sonra yeniden denetleyin.
+import-scrivener-refusal-archive-title = Bu arşiv açılamıyor
+import-scrivener-refusal-archive-unreadable-body = “{ $file }” okunamadı ({ $reason }). Bozuk olabilir. Arşivi kendiniz açın, sonra içindeki .scriv klasörünü seçin.
+import-scrivener-refusal-archive-unsafe-name-title = Bu arşiv güvenle açılamıyor
+import-scrivener-refusal-archive-unsafe-name-body = “{ $file }” içinde “{ $member }” adlı bir dosya var. Bu dosya arşivin dışına düşerdi, bu yüzden Skribisto arşivi açmıyor.
+import-scrivener-refusal-archive-unsafe-name-empty-body = “{ $file }” içinde adı olmayan bir dosya var, bu yüzden Skribisto arşivi açmıyor.
+import-scrivener-refusal-archive-unsafe-name-control-character-body = “{ $file }” içinde adında bir denetim karakteri bulunan bir dosya var, bu yüzden Skribisto arşivi açmıyor.
+import-scrivener-refusal-archive-too-large-title = Bu arşiv güvenle açılamayacak kadar büyük
+import-scrivener-refusal-archive-too-many-members-body = İçinde { $limit } dosyadan fazlası var. Arşivi kendiniz açın, sonra içindeki .scriv klasörünü seçin.
+import-scrivener-refusal-archive-member-too-large-body = “{ $member }” açıldığında { $limit } MB sınırını aşıyor. Arşivi kendiniz açın, sonra içindeki .scriv klasörünü seçin.
+import-scrivener-refusal-archive-too-large-body = Açıldığında { $limit } MB sınırını aşıyor. Arşivi kendiniz açın, sonra içindeki .scriv klasörünü seçin.
+import-scrivener-refusal-archive-encrypted-title = Bu arşiv parolayla korunuyor
+import-scrivener-refusal-archive-encrypted-body = “{ $file }” arşivini kendiniz açın, sonra içindeki .scriv klasörünü seçin.
+import-scrivener-refusal-archive-unsupported-compression-title = Bu arşiv, Skribisto'nun okuyamadığı bir yöntemle paketlenmiş
+import-scrivener-refusal-archive-unsupported-compression-body = “{ $member }”, { $method } yöntemiyle sıkıştırılmış. Arşivi kendiniz açın, sonra içindeki .scriv klasörünü seçin.
+import-scrivener-refusal-duplicate-archive-members-title = Bu arşiv bazı dosyaları iki kez listeliyor
+import-scrivener-refusal-duplicate-archive-members-body = “{ $file }” aynı ad altında birden fazla dosya barındırıyor, bu yüzden Skribisto hangisinin projeye ait olduğunu bilemiyor. Arşivi kendiniz açın, sonra içindeki .scriv klasörünü seçin.
+import-scrivener-refusal-template-undecodable-title = Bu şablon dosyası eksik
+import-scrivener-refusal-template-undecodable-too-large-title = Bu şablon dosyası açılamayacak kadar büyük
+import-scrivener-refusal-template-undecodable-not-a-template-title = Bu dosya bir Scrivener şablonu değil
+import-scrivener-refusal-template-undecodable-unknown-encoding-title = Bu şablon dosyası, Skribisto'nun bilmediği bir biçimde saklanmış
+import-scrivener-refusal-template-undecodable-body = “{ $file }” çözülemiyor: içindeki proje bitmeden dosya sona eriyor olabilir. Dosyayı yeniden indirin ya da Scrivener'da açıp ondan bir proje oluşturun.
+import-scrivener-refusal-template-undecodable-too-large-body = “{ $file }”, { $limit } MB sınırından büyük. Onu Scrivener'da açın, ondan bir proje oluşturun, sonra o projeyi içe aktarın.
+import-scrivener-refusal-template-undecodable-not-a-template-body = “{ $file }” bir Scrivener projesi barındırmıyor. Scrivener'ın kaydettiği şablon dosyasını ya da ondan oluşturulmuş bir projeyi seçin.
+import-scrivener-refusal-template-undecodable-unknown-encoding-body = “{ $file }”, içindeki projeyi Skribisto'nun çözemediği bir biçimde saklıyor. Onu Scrivener'da açın, ondan bir proje oluşturun, sonra o projeyi içe aktarın.
+import-scrivener-refusal-cloud-placeholders-title = { $count ->
+    [one] Bu projenin 1 dosyası hâlâ bulutta
+   *[other] Bu projenin { $count } dosyası hâlâ bulutta
+}
+import-scrivener-refusal-cloud-placeholders-body = Bunlar bu bilgisayara indirilmedi; örneğin { $examples }. Eşitleme uygulamanızda projeyi çevrimdışı kullanılabilir yapın, sonra yeniden denetleyin.
+import-scrivener-refusal-unreadable-members-title = { $count ->
+    [one] Bu projenin 1 dosyası okunamıyor
+   *[other] Bu projenin { $count } dosyası okunamıyor
+}
+import-scrivener-refusal-unreadable-members-body = Örneğin { $examples }. Projenin tamamını okuma izniniz olduğundan ve diskin sağlam olduğundan emin olun, sonra yeniden denetleyin.
+import-scrivener-refusal-needed-member-is-link-title = Bu proje kendi klasörünün dışını gösteriyor
+import-scrivener-refusal-needed-member-is-link-body = “{ $member }”, bu bilgisayarda başka bir yere giden bir bağlantı ve Skribisto bağlantıları izlemez. Projeyi, her dosyası içinde olacak biçimde kopyalayın, sonra yeniden deneyin.
+import-scrivener-refusal-project-changed-during-read-title = Proje okunurken değişti
+import-scrivener-refusal-project-changed-during-read-body = Scrivener ya da bir eşitleme hizmeti hâlâ projeye yazıyor. Projeyi Scrivener'da kapatın, eşitlemenin bitmesini bekleyin, sonra yeniden denetleyin.
+import-scrivener-refusal-too-many-members-title = Bu projede çok fazla dosya var
+import-scrivener-refusal-too-many-members-body = İçinde { $limit } dosyadan fazlası var; hiçbir gerçek projede bu kadar dosya olmaz. Bir Scrivener projesi olmayabilir ya da bozuk olabilir.
+import-scrivener-refusal-too-large-title = Bu proje çok büyük
+import-scrivener-refusal-too-large-body = Yazıları { $limit } MB sınırını aşıyor; bu, Skribisto'nun güvenle içe aktarabileceğinden fazla.
+import-scrivener-refusal-structure-unmappable-title = Skribisto bu dizini aktaramıyor
+import-scrivener-refusal-structure-unmappable-body = Dizin, bir şeyi kaybetmeden ya da yanlış yere koymadan aktarılamadı. Bu, projenizdeki değil Skribisto'daki bir hata. Lütfen “Ayrıntılar” altında görünenle birlikte bildirin.
+import-scrivener-roots-title = Burada { $count } proje var. Hangisi?
+import-scrivener-roots-hint = Bu klasör ya da arşiv birden fazla Scrivener projesi barındırıyor. İçe aktarılacak olanı seçin.
+import-scrivener-manifests-title = Bu projenin { $count } dizin dosyası var
+import-scrivener-manifests-hint = Scrivener dizini, yani her belgenin ve klasörün listesini, bir .scrivx dosyasında tutar. Fazladan olanları büyük olasılıkla bir eşitleme hizmeti bıraktı. En son üzerinde çalıştığınızı seçin.
+import-scrivener-manifests-hint-preselected = Scrivener dizini, yani her belgenin ve klasörün listesini, bir .scrivx dosyasında tutar. Fazladan olanları büyük olasılıkla bir eşitleme hizmeti bıraktı. Seçili olan, büyük olasılıkla en son üzerinde çalıştığınız dosyadır: devam etmeden önce denetleyin.
+import-scrivener-manifest-row = { $file } · { $date } tarihinde kaydedildi · { $documents ->
+    [one] 1 öğe
+   *[other] { $documents } öğe
+}
+import-scrivener-manifest-row-undated = { $file } · { $documents ->
+    [one] 1 öğe
+   *[other] { $documents } öğe
+}
+import-scrivener-manifest-row-unread = { $file } · okunamıyor
+import-scrivener-enclosing-title = Bu, “{ $project }” Scrivener projesinin bir parçası
+import-scrivener-enclosing-body = Bir projenin içindeki bir dosyayı ya da klasörü seçtiniz. Skribisto projenin tamamını içe aktarır.
+import-scrivener-enclosing-use = “{ $project }” projesini içe aktar
+import-scrivener-upgrade-title = Bu, Scrivener'ın bir güncellemeden önce tuttuğu kopya
+import-scrivener-upgrade-body = Scrivener bir projeyi daha yeni bir sürüme güncellediğinde eskisini “{ $backup }” olarak saklar. Yazmayı sürdürdüğünüz proje, onun yanındaki “{ $current }”.
+import-scrivener-upgrade-body-unclear = Scrivener bir projeyi daha yeni bir sürüme güncellediğinde eskisini “{ $backup }” olarak saklar. Yanındaki proje, “{ $current }”, düzgün okunamadı; bu yüzden hangisinin içe aktarılacağını seçin.
+import-scrivener-upgrade-use-current = Yazmayı sürdürdüğünüz proje olan “{ $current }” projesini içe aktar
+import-scrivener-upgrade-keep-backup = Bu eski kopyayı içe aktar: “{ $backup }”
+import-scrivener-ios-pending-title = iPhone ya da iPad için Scrivener'da yapılan değişiklikler henüz bu kopyada değil
+import-scrivener-ios-pending-body = Bilgisayardaki Scrivener bu değişiklikleri projeyi bir sonraki açışında içeri alır. Projeyi bir kez bilgisayarınızdaki Scrivener'da açın, sonra yeniden içe aktarın.
+import-scrivener-ios-pending-accept = Bu değişiklikler olmadan içe aktar
+import-scrivener-no-text-title = { $count ->
+    [one] 1 belge var, ama bu kopyada tek bir sözcük metin yok
+   *[other] { $count } belge var, ama bu kopyada tek bir sözcük metin yok
+}
+import-scrivener-no-text-body = Bir eşitleme hizmeti projeyi hâlâ kopyalıyor olabilir ya da kopya belgelerini yitirmiş olabilir. Şimdi içe aktarılırsa her belge boş gelir.
+import-scrivener-no-text-accept = Belgeleri boş olarak içe aktar
+import-scrivener-notice-project-found-below-pick-title = Proje, seçtiğiniz klasörün içinde bulundu
+import-scrivener-notice-project-found-below-pick-body = Şurada duruyor: “{ $path }”.
+import-scrivener-notice-source-is-template-title = Bu bir Scrivener şablonu
+import-scrivener-notice-source-is-template-named = Bu, “{ $title }” adlı Scrivener şablonu
+import-scrivener-notice-source-is-template-body = İçe aktarmak, şablonun içerdiği her şeyden, yönergeleri de dahil olmak üzere, yeni bir proje oluşturur.
+import-scrivener-notice-source-is-backup-title = Bu, Scrivener'ın aldığı bir yedeğe benziyor
+import-scrivener-notice-source-is-backup-body = Projeyi, yedeğin alındığı andaki hâliyle barındırır. Ondan sonra yazmayı sürdürdüyseniz projenin kendisini seçin.
+import-scrivener-notice-importing-pre-upgrade-copy-title = Scrivener'ın bir güncellemeden önce tuttuğu kopyayı içe aktarıyorsunuz
+import-scrivener-notice-importing-pre-upgrade-copy-body = Yazmayı sürdürdüğünüz proje onun yanında duruyor ve o zamandan beri yazılan her şeyi barındırıyor.
+import-scrivener-notice-imported-from-ios-stub-title = Bu proje iPhone ya da iPad için Scrivener'da oluşturulmuş
+import-scrivener-notice-imported-from-ios-stub-body = Hiçbir bilgisayarda açılmamış, bu yüzden iPhone ya da iPad'in tuttuğu kopyadan okunuyor.
+import-scrivener-notice-stale-mobile-binder-ignored-title = iPhone ya da iPad'den kalma eski bir dizin bir kenara bırakıldı
+import-scrivener-notice-stale-mobile-binder-ignored-body = Bilgisayardaki Scrivener onun değişikliklerini zaten içeri aldı.
+import-scrivener-notice-identical-manifest-copies-title = { $count ->
+    [one] Burada dizin dosyasının 1 kopyası var
+   *[other] Burada dizin dosyasının birbirinin aynısı { $count } kopyası var
+}
+import-scrivener-notice-identical-manifest-copies-body = Hepsi aynı şeyi içeriyor, bu yüzden hangisinden okunursa okunsun aynı proje çıkar.
+import-scrivener-notice-manifest-copies-ignored-title = Dizin dosyasının fazladan kopyaları bir kenara bırakıldı
+import-scrivener-notice-manifest-copies-ignored-body = “{ $chosen }”, Scrivener'ın en son üzerinde çalıştığı dosya. { $count ->
+    [one] Bir eşitleme hizmetinin bıraktığı 1 kopya bir kenara bırakıldı.
+   *[other] Bir eşitleme hizmetinin bıraktığı { $count } kopya bir kenara bırakıldı.
+}
+import-scrivener-notice-pinned-manifest-looks-like-a-copy-title = Seçtiğiniz dizin dosyası bir eşitleme kopyasına benziyor
+import-scrivener-notice-pinned-manifest-looks-like-a-copy-body = “{ $name }”, yanında duran “{ $original }” dosyasının bir kopyası gibi adlandırılmış. İçe aktarılan proje eski görünüyorsa bunun yerine “{ $original }” dosyasını seçin.
+import-scrivener-notice-pinned-manifest-has-siblings-title = { $count ->
+    [one] Seçtiğiniz dosyanın yanında 1 dizin dosyası daha var
+   *[other] Seçtiğiniz dosyanın yanında { $count } dizin dosyası daha var
+}
+import-scrivener-notice-pinned-manifest-has-siblings-body = Yalnızca seçtiğiniz dosya okunur.
+import-scrivener-notice-legacy-v1-files-beside-title = Daha eski bir Scrivener'dan kalma dosyalar bir kenara bırakıldı
+import-scrivener-notice-legacy-v1-files-beside-body = Proje güncellendiğinde geride kalmışlar. Yalnızca şu anki sürümün dosyaları okunur.
+import-scrivener-notice-mixed-payload-trees-title = Bu projede iki Scrivener sürümünün dosyaları var
+import-scrivener-notice-mixed-payload-trees-body = Belgeler, dizin dosyasının gösterdiği yerden okunur.
+import-scrivener-notice-version-disagreement-title = Bu projenin dosyaları, projenin sürümü konusunda hemfikir değil
+import-scrivener-notice-id-scheme-mismatch-body = Dizin dosyası { $version } sürümünü belirtiyor, ama belgelerini başka bir sürüm gibi adlandırıyor. Belgeler, dosyanın gösterdiği yerden okunur. İçe aktarılan proje yanlış görünüyorsa projeyi bir kez Scrivener'da açıp yeniden içe aktarın.
+import-scrivener-notice-version-stamp-mismatch-body = Proje, dizin dosyasının tarif ettiği biçimde okunur. İçe aktarılan proje yanlış görünüyorsa projeyi bir kez Scrivener'da açıp yeniden içe aktarın.
+import-scrivener-notice-unrecognised-writer-title = Bu proje, Skribisto'nun tanımadığı bir programla kaydedilmiş
+import-scrivener-notice-unrecognised-writer-named = Program kendini “{ $creator }” olarak adlandırıyor. Proje bir Scrivener projesi olarak okunur.
+import-scrivener-notice-unrecognised-writer-body = Program kendini adlandırmıyor. Proje bir Scrivener projesi olarak okunur.
+import-scrivener-notice-invalid-item-identifier-title = { $count ->
+    [one] 1 dizin öğesi geçerli olmayan bir tanımlayıcı taşıyor
+   *[other] { $count } dizin öğesi geçerli olmayan tanımlayıcılar taşıyor
+}
+import-scrivener-notice-invalid-item-identifier-body = Bu tanımlayıcılar bir kenara bırakıldı. Öğeler korunuyor.
+import-scrivener-notice-items-without-identifier-title = { $count ->
+    [one] 1 dizin öğesinin tanımlayıcısı yok
+   *[other] { $count } dizin öğesinin tanımlayıcısı yok
+}
+import-scrivener-notice-items-without-identifier-body = Dosyaları bulunamıyor, bu yüzden boş gelirler.
+import-scrivener-notice-duplicate-item-key-title = İki dizin öğesi tek bir tanımlayıcıyı paylaşıyor: “{ $item }”
+import-scrivener-notice-duplicate-item-key-body = Belgeler ilk öğede kalır. İkincisi yerini korur ve boş gelir.
+import-scrivener-notice-lock-here-title = Bu proje bu bilgisayarda Scrivener'da açık
+import-scrivener-notice-lock-here-body = Her değişikliğin kaydedilmesi için önce projeyi Scrivener'da kapatın.
+import-scrivener-notice-lock-title = Bu proje Scrivener'da “{ $host }” bilgisayarında açıktı
+import-scrivener-notice-lock-elsewhere-title = Bu proje Scrivener'da başka bir bilgisayarda açıktı
+import-scrivener-notice-lock-body = Orada hâlâ açıksa önce kapatın: dosyalarda en son değişiklikler henüz bulunmayabilir. Scrivener uzun zaman önce kapatıldıysa projeyi olduğu gibi içe aktarabilirsiniz.
+import-scrivener-notice-archived-while-open-title = Bu arşiv, proje Scrivener'da açıkken oluşturulmuş
+import-scrivener-notice-archived-while-open-body = O andan sonra yapılan değişiklikler arşivde eksik olabilir.
+import-scrivener-notice-content-missing-notes = “{ $item }” öğesinin notları eksik
+import-scrivener-notice-content-missing-synopsis = “{ $item }” öğesinin özeti eksik
+import-scrivener-notice-content-missing-text = “{ $item }” öğesinin metni eksik
+import-scrivener-notice-content-missing-body = Dosyası bu kopyada değil, bu yüzden boş gelir. Bir eşitleme hizmeti projeyi hâlâ kopyalıyor olabilir.
+import-scrivener-notice-content-missing-salvaged = Dosyası bu kopyada değil, ama Scrivener'ın arama indeksi sözcüklerini hâlâ tutuyordu. Bu sözcükler düz metin olarak, belki daha eski bir sürümden korunur.
+import-scrivener-notice-content-truncated-notes = “{ $item }” öğesinin notları diskte boş
+import-scrivener-notice-content-truncated-synopsis = “{ $item }” öğesinin özeti diskte boş
+import-scrivener-notice-content-truncated-text = “{ $item }” öğesinin metni diskte boş
+import-scrivener-notice-content-truncated-body = Scrivener onu metniyle birlikte kaydetmiş, ama dosyasında hiç metin yok: bir eşitleme yarıda kalmış olabilir. Boş gelir.
+import-scrivener-notice-missing-media-title = “{ $item }” öğesinin dosyası eksik
+import-scrivener-notice-missing-media-body = Barındırdığı resim ya da araştırma dosyası bu kopyada değil.
+import-scrivener-notice-sync-conflict-copies-title = { $count ->
+    [one] Bir belgenin 1 eşitleme kopyası bulundu
+   *[other] Belgelerin { $count } eşitleme kopyası bulundu
+}
+import-scrivener-notice-sync-conflict-copies-body = { $missing ->
+    [0] Ayrı bir klasörde, kurtarılan metinler olarak aktarılırlar; böylece onları belgelerle karşılaştırabilirsiniz.
+   *[other] Ayrı bir klasörde, kurtarılan metinler olarak aktarılırlar. Bazıları artık projede olmayan belgelerin kopyaları.
+}
+import-scrivener-notice-recovered-unreferenced-text-title = { $count ->
+    [one] Hiçbir dizin öğesinin listelemediği 1 belge bulundu
+   *[other] Hiçbir dizin öğesinin listelemediği { $count } belge bulundu
+}
+import-scrivener-notice-recovered-unreferenced-text-body = Ayrı bir klasörde, kurtarılan metinler olarak aktarılırlar.
+import-scrivener-notice-sync-debris-ignored-title = { $count ->
+    [one] Bir eşitleme hizmetinin bıraktığı 1 fazladan kopya bir kenara bırakıldı
+   *[other] Bir eşitleme hizmetinin bıraktığı { $count } fazladan kopya bir kenara bırakıldı
+}
+import-scrivener-notice-sync-debris-ignored-body = Scrivener da bunları okumaz. Yalnızca projenin kendi dosyaları okunur.
+import-scrivener-notice-unrecognised-files-title = { $count ->
+    [one] Bir Scrivener projesinin parçası olmayan 1 dosya bir kenara bırakıldı
+   *[other] Bir Scrivener projesinin parçası olmayan { $count } dosya bir kenara bırakıldı
+}
+import-scrivener-notice-examples = Örneğin { $examples }.
+import-scrivener-notice-symlink-not-followed-title = { $count ->
+    [one] Projenin içindeki 1 bağlantı izlenmiyor
+   *[other] Projenin içindeki { $count } bağlantı izlenmiyor
+}
+import-scrivener-notice-unreadable-files-skipped-title = { $count ->
+    [one] İçe aktarmanın ihtiyaç duymadığı 1 dosya okunamadı
+   *[other] İçe aktarmanın ihtiyaç duymadığı { $count } dosya okunamadı
+}
+import-scrivener-notice-cloud-placeholders-skipped-title = { $count ->
+    [one] Hâlâ bulutta olan 1 dosya atlandı
+   *[other] Hâlâ bulutta olan { $count } dosya atlandı
+}
+import-scrivener-notice-cloud-placeholders-skipped-body = İçe aktarmanın bunlara ihtiyacı yok.
+import-scrivener-notice-no-text-found-title = { $count ->
+    [one] 1 belge var ve hiç metin içermiyor
+   *[other] { $count } belge var ve hiçbiri metin içermiyor
+}
+import-scrivener-notice-no-text-found-body = Bu proje boş görünüyor. Olduğu gibi içe aktarılır.
+import-scrivener-notice-metadata-unreadable-title = “{ $member }” okunamadı
+import-scrivener-notice-metadata-unreadable-body = Scrivener'ın bu dosyada tuttukları aktarılmaz.
+import-scrivener-notice-dangling-keyword-title = { $count ->
+    [one] 1 gönderme, projenin tanımlamadığı bir anahtar sözcüğü gösteriyor
+   *[other] { $count } gönderme, projenin tanımlamadığı anahtar sözcükleri gösteriyor
+}
+import-scrivener-notice-dangling-label-title = { $count ->
+    [one] 1 gönderme, projenin tanımlamadığı bir renk etiketini gösteriyor
+   *[other] { $count } gönderme, projenin tanımlamadığı renk etiketlerini gösteriyor
+}
+import-scrivener-notice-dangling-status-title = { $count ->
+    [one] 1 gönderme, projenin tanımlamadığı bir durumu gösteriyor
+   *[other] { $count } gönderme, projenin tanımlamadığı durumları gösteriyor
+}
+import-scrivener-notice-dangling-section-type-title = { $count ->
+    [one] 1 gönderme, projenin tanımlamadığı bir kesim türünü gösteriyor
+   *[other] { $count } gönderme, projenin tanımlamadığı kesim türlerini gösteriyor
+}
+import-scrivener-notice-dangling-custom-field-title = { $count ->
+    [one] 1 gönderme, projenin tanımlamadığı bir özel üst veri alanını gösteriyor
+   *[other] { $count } gönderme, projenin tanımlamadığı özel üst veri alanlarını gösteriyor
+}
+import-scrivener-notice-dangling-item-title = { $count ->
+    [one] 1 gönderme, projenin tanımlamadığı bir belgeyi gösteriyor
+   *[other] { $count } gönderme, projenin tanımlamadığı belgeleri gösteriyor
+}
+import-scrivener-notice-dangling-references-body = Bunlar dışarıda bırakıldı.
+import-scrivener-notice-snapshots-not-imported-line = { $count ->
+    [one] 1 anlık görüntü Scrivener projenizde kalıyor: Skribisto anlık görüntüleri aktarmaz.
+   *[other] { $count } anlık görüntü Scrivener projenizde kalıyor: Skribisto anlık görüntüleri aktarmaz.
+}
+import-scrivener-notice-writing-history-not-imported-line = { $days ->
+    [one] Scrivener'ın her gün yazılan sözcükleri tuttuğu kayıt (1 gün) aktarılmaz. Skribisto kendi sayımını ilk kaydetmeden başlatır.
+   *[other] Scrivener'ın her gün yazılan sözcükleri tuttuğu kayıt ({ $days } gün) aktarılmaz. Skribisto kendi sayımını ilk kaydetmeden başlatır.
+}
+import-scrivener-notice-title-placeholder-rejected-hint = Projenin ayarlarındaki başlık bir şablon yer tutucusu, bu yüzden bunun yerine projenin adı öneriliyor.
+import-scrivener-notice-author-placeholder-rejected-hint = Projenin ayarlarındaki yazar adı bir şablon yer tutucusu, bu yüzden hiçbir ad önerilmiyor.
+import-scrivener-notice-title-from-project-hint-compile-settings = Bu başlık, projenin derleme ayarlarında yazan başlık. Orada bir başlık belirlenene kadar Scrivener, projenin oluşturulduğu sıradaki adını tutar.
+import-scrivener-notice-title-from-project-hint-template = Bu başlık, şablonun kendi başlığı.
+import-scrivener-notice-title-from-project-hint-folder-name = Bu başlık, projenin adı.
+import-scrivener-notice-title-from-project-hint-project-properties = Bu başlık, projenin özelliklerinde yazan başlık.
+import-scrivener-notice-author-from-project-hint = Bu ad, projenin ayarlarında yazan ad. Orada bir şablonun yazarı kalmış olabilir ve bu ad bir başlık sayfasına basılır.
+import-scrivener-notice-language-not-stated-hint = Proje dilini belirtmiyor, bu yüzden Skribisto'nun arayüz dili öneriliyor. Dil, sözcüklerin nasıl sayılacağını ve tırnakların nasıl yazılacağını belirler.
+import-scrivener-notice-language-from-script-hint = El yazmasının yazıldığı yazı sisteminden önerildi ({ $tag }).
+import-scrivener-structure-script-mode-draft-line = { $script ->
+    [one] { $documents ->
+        [one] El yazmasının tek belgesi senaryo kipinde yazılmış. Skribisto onun sözcüklerini korur, senaryo düzenini değil.
+       *[other] El yazmasındaki { $documents } belgeden { $script } tanesi senaryo kipinde yazılmış. Skribisto onun sözcüklerini korur, senaryo düzenini değil.
+    }
+   *[other] El yazmasındaki { $documents } belgeden { $script } tanesi senaryo kipinde yazılmış. Skribisto onların sözcüklerini korur, senaryo düzenlerini değil.
+}
+import-scrivener-structure-one-document-manuscript-line = { $count ->
+    [one] El yazmasındaki bir belge, bölümlerini başlık olarak barındırıyor.
+   *[other] El yazmasındaki { $count } belge, bölümlerini başlık olarak barındırıyor.
+}
+import-scrivener-structure-title-repeats-number-line = { $count ->
+    [one] 1 bölüm ya da kısım başlığı numarasını da yazıyor, bu yüzden bir dışa aktarma numarayı iki kez basabilir.
+   *[other] { $count } bölüm ya da kısım başlığı numaralarını da yazıyor, bu yüzden bir dışa aktarma numarayı iki kez basabilir.
+}
+import-scrivener-structure-claim-overruled-line = { $count ->
+    [one] 1 öğe, üstündeki bir öğe o düzeyi zaten tuttuğu için istediği düzeyin bir altına yerleşir.
+   *[other] { $count } öğe, üstlerindeki bir öğe o düzeyi zaten tuttuğu için istedikleri düzeyin bir altına yerleşir.
+}
+import-scrivener-structure-adopted-by-chapter-line = { $count ->
+    [one] Bir bölümün ardından gelen 1 belge o bölümün sonu olur.
+   *[other] Bir bölümün ardından gelen { $count } belge o bölümün sonu olur.
+}
+import-scrivener-structure-looks-like-manuscript-line = { $count ->
+    [one] Notlarda tutulan 1 en üst düzey klasör el yazmasına benziyor. Onu başka bir kitap olarak el yazmasına gönderebilirsiniz.
+   *[other] Notlarda tutulan { $count } en üst düzey klasör el yazmasına benziyor. Onları başka kitaplar olarak el yazmasına gönderebilirsiniz.
+}
+import-scrivener-structure-generic-sheet-title-line = { $count ->
+    [one] 1 hikâye rehberi kaydı “Kahraman” gibi bir şablon başlığı taşıyor; anılmalar bu başlığı metinde arayacak.
+   *[other] { $count } hikâye rehberi kaydı “Kahraman” gibi bir şablon başlığı taşıyor; anılmalar bu başlıkları metinde arayacak.
+}
+import-scrivener-structure-placeholder-title-line = { $count ->
+    [one] 1 başlık yalnızca kendi düzeyini adlandırıyordu ve boş bırakıldı: dizin ve dışa aktarmalar onu numaralandırır.
+   *[other] { $count } başlık yalnızca kendi düzeyini adlandırıyordu ve boş bırakıldı: dizin ve dışa aktarmalar onları numaralandırır.
+}
+import-scrivener-structure-untitled-item-line = { $count ->
+    [one] 1 öğenin Scrivener'da başlığı yoktu ve adsız kalır.
+   *[other] { $count } öğenin Scrivener'da başlığı yoktu ve adsız kalırlar.
+}
+import-scrivener-structure-title-cleaned-line = { $count ->
+    [one] 1 başlık satır sonları ya da sekmeler içeriyordu; bunlar kaldırıldı.
+   *[other] { $count } başlık satır sonları ya da sekmeler içeriyordu; bunlar kaldırıldı.
+}
+import-scrivener-structure-own-text-moved-line = { $count ->
+    [one] 1 klasörün kendi metni var; bu metin klasörün içindeki ilk belgeye taşınır.
+   *[other] { $count } klasörün kendi metni var; bu metin her klasörün içindeki ilk belgeye taşınır.
+}
+import-scrivener-structure-text-with-children-line = { $count ->
+    [one] İçinde belgeler olan 1 belge klasöre dönüşür.
+   *[other] İçinde belgeler olan { $count } belge klasöre dönüşür.
+}
+import-scrivener-structure-empty-folder-plain-line = { $count ->
+    [one] 1 boş klasör sıradan klasör olarak kalır; böylece hiçbir dışa aktarma Scrivener'ın hiç basmadığı bir başlığı basmaz.
+   *[other] { $count } boş klasör sıradan klasör olarak kalır; böylece hiçbir dışa aktarma Scrivener'ın hiç basmadığı bir başlığı basmaz.
+}
+import-scrivener-structure-book-inside-book-line = { $count ->
+    [one] Bir kitabın içindeki 1 kitap kısma dönüşür.
+   *[other] Bir kitabın içindeki { $count } kitap kısma dönüşür.
+}
+import-scrivener-structure-prologue-not-numbered-line = { $count ->
+    [one] 1 önsöz ya da sonsöz bölüm numaralandırmasının dışında bırakılır.
+   *[other] { $count } önsöz ya da sonsöz bölüm numaralandırmasının dışında bırakılır.
+}
+import-scrivener-structure-matter-inside-book-line = { $count ->
+    [one] El yazmasının dışından gelen 1 ön ya da arka kısım öğesi kitabın içine yan metin olarak girer ve siz onu dahil edene kadar dışa aktarmaların dışında kalır.
+   *[other] El yazmasının dışından gelen { $count } ön ya da arka kısım öğesi kitabın içine yan metin olarak girer ve siz onları dahil edene kadar dışa aktarmaların dışında kalır.
+}
+import-scrivener-structure-paratext-not-counted-line = { $documents ->
+    [one] El yazmasındaki 1 belge yan metne (ön ya da arka kısım) dönüşür: { $words ->
+        [one] { $words } sözcüğü
+       *[other] { $words } sözcüğü
+    } artık el yazmasına sayılmaz.
+   *[other] El yazmasındaki { $documents } belge yan metne (ön ya da arka kısım) dönüşür: { $words ->
+        [one] { $words } sözcükleri
+       *[other] { $words } sözcükleri
+    } artık el yazmasına sayılmaz.
+}
+import-scrivener-structure-document-notes-line = { $count ->
+    [one] 1 belgenin notları, belgenin yanında bir nota dönüşür.
+   *[other] { $count } belgenin notları, her belgenin yanında bir nota dönüşür.
+}
+import-scrivener-structure-draft-content-as-note-line = El yazması klasörünün kendi metni, el yazmasının en üstünde bir nota dönüşür.
+import-scrivener-structure-story-bible-folder-line = { $count ->
+    [one] 1 kişi ya da yer klasörü bir hikâye rehberi etiketine dönüşür.
+   *[other] { $count } kişi ya da yer klasörü hikâye rehberi etiketlerine dönüşür.
+}
+import-scrivener-structure-templates-created-line = { $count ->
+    [one] 1 belge şablonu bir not şablonuna dönüşür.
+   *[other] { $count } belge şablonu not şablonlarına dönüşür.
+}
+import-scrivener-structure-template-nesting-flattened-line = { $count ->
+    [one] Başka bir şablon klasörünün içindeki 1 şablon klasörü düzleştirilir: içindeki her metin bir şablona dönüşür.
+   *[other] Başka şablon klasörlerinin içindeki { $count } şablon klasörü düzleştirilir: içlerindeki her metin bir şablona dönüşür.
+}
+import-scrivener-structure-template-kept-as-note-line = { $count ->
+    [one] 1 şablon, bir not şablonunun barındıramayacağı şeyler içeriyor ve not olarak tutulur.
+   *[other] { $count } şablon, bir not şablonunun barındıramayacağı şeyler içeriyor ve not olarak tutulur.
+}
+import-scrivener-structure-recovered-texts-line = { $count ->
+    [one] Hiçbir dizin öğesinin listelemediği 1 metin ayrı bir klasörde aktarılır.
+   *[other] Hiçbir dizin öğesinin listelemediği { $count } metin ayrı bir klasörde aktarılır.
+}
+import-scrivener-structure-project-notes-line = { $count ->
+    [one] 1 proje notu ayrı bir klasörde aktarılır.
+   *[other] { $count } proje notu ayrı bir klasörde aktarılır.
+}
+import-scrivener-structure-trash-brought-across-line = { $items ->
+    [one] Çöp kutusu aktarılır: Çöp kutusundan geri yükleyebileceğiniz 1 öğe.
+   *[other] Çöp kutusu aktarılır: { $items } öğe, { $writing } tanesinde yazı var. Bunları Çöp kutusundan geri yükleyebilirsiniz.
+}
+import-scrivener-structure-not-compiled-line = { $count ->
+    [one] Scrivener'ın derlemesinin dışında bıraktığı 1 öğe, dışa aktarmaların da dışında bırakılır.
+   *[other] Scrivener'ın derlemesinin dışında bıraktığı { $count } öğe, dışa aktarmaların da dışında bırakılır.
+}
+import-scrivener-structure-media-in-draft-line = { $count ->
+    [one] El yazmasındaki 1 resim ya da dosya, bir kitap onu barındıramayacağı için nota dönüşür.
+   *[other] El yazmasındaki { $count } resim ya da dosya, bir kitap bunları barındıramayacağı için nota dönüşür.
+}
+import-scrivener-structure-left-out-line = { $count ->
+    [one] 1 en üst düzey klasör, içindeki { $items ->
+        [one] 1 öğeyle
+       *[other] { $items } öğeyle
+    } birlikte dışarıda bırakılır.
+   *[other] { $count } en üst düzey klasör, içlerindeki { $items ->
+        [one] 1 öğeyle
+       *[other] { $items } öğeyle
+    } birlikte dışarıda bırakılır.
+}
+import-scrivener-structure-trash-left-out-line = { $items ->
+    [one] Çöp kutusu geride bırakılır: 1 öğe.
+   *[other] Çöp kutusu geride bırakılır: { $items } öğe, { $writing } tanesinde yazı var.
+}
+import-scrivener-structure-card-image-left-behind-line = { $count ->
+    [one] El yazmasındaki bir öğenin kartındaki 1 resim geride bırakılır: kitapta basılırdı.
+   *[other] El yazmasındaki öğelerin kartlarındaki { $count } resim geride bırakılır: kitapta basılırlardı.
+}
+import-scrivener-structure-default-template-not-linked-line = { $count ->
+    [one] 1 klasörün varsayılan belge şablonu klasöre bağlı kalamaz.
+   *[other] { $count } klasörün varsayılan belge şablonları klasörlerine bağlı kalamaz.
+}
+import-scrivener-structure-page-break-not-kept-line = { $count ->
+    [one] 1 “Öncesinde sayfa sonu” ayarının Skribisto'da yeri yok ve korunmaz.
+   *[other] { $count } “Öncesinde sayfa sonu” ayarının Skribisto'da yeri yok ve korunmazlar.
+}
+import-scrivener-structure-compile-as-is-not-kept-line = { $count ->
+    [one] 1 “Olduğu gibi derle” ayarının Skribisto'da karşılığı yok ve korunmaz.
+   *[other] { $count } “Olduğu gibi derle” ayarının Skribisto'da karşılığı yok ve korunmazlar.
+}
+import-scrivener-metadata-status-categories-guessed-line = { $count ->
+    [one] Skribisto'nun tanımadığı 1 duruma, listedeki yerine göre bir tür verilir. Ayarlar ▸ Proje ▸ Durumlar bölümünden denetleyin.
+   *[other] Skribisto'nun tanımadığı { $count } duruma, listedeki yerlerine göre bir tür verilir. Ayarlar ▸ Proje ▸ Durumlar bölümünden denetleyin.
+}
+import-scrivener-metadata-dates-unreadable-line = { $count ->
+    [one] 1 öğenin tarihleri okunamadı: içe aktarma tarihini taşıyor.
+   *[other] { $count } öğenin tarihleri okunamadı: içe aktarma tarihini taşıyorlar.
+}
+import-scrivener-metadata-labels-became-tags-line = { $tags ->
+    [one] Renk etiketleri 1 etikete dönüşür ve { $rows ->
+        [one] { $rows } öğeyi
+       *[other] { $rows } öğeyi
+    } etiketler.
+   *[other] Renk etiketleri { $tags } etikete dönüşür ve { $rows ->
+        [one] { $rows } öğeyi
+       *[other] { $rows } öğeyi
+    } etiketler.
+}
+import-scrivener-metadata-statuses-became-ladder-line = { $rungs ->
+    [one] Durum listesi projenin tek durumuna dönüşür ve { $rows ->
+        [one] { $rows } öğede
+       *[other] { $rows } öğede
+    } kullanılır.
+   *[other] Durum listesi projenin { $rungs } durumuna dönüşür ve { $rows ->
+        [one] { $rows } öğede
+       *[other] { $rows } öğede
+    } kullanılır.
+}
+import-scrivener-metadata-ladder-seeded-line = { $count ->
+    [one] Projenin durum listesi yoktu, bu yüzden Skribisto'nun varsayılan durumuyla başlar.
+   *[other] Projenin durum listesi yoktu, bu yüzden Skribisto'nun varsayılan { $count } durumuyla başlar.
+}
+import-scrivener-metadata-label-renamed-line = Renk etiketi alanının Scrivener'daki adı “{ $title }” idi. Bu ad her etiketin ayrıntılarında yer alır.
+import-scrivener-metadata-status-renamed-line = Durum alanının Scrivener'daki adı “{ $title }” idi. Bu ad her durumun ayrıntılarında yer alır.
+import-scrivener-metadata-none-label-collapsed-line = { $count ->
+    [one] Scrivener'ın kendi boş renk etiketinin yanında aynı adla tutulan “{ $name }” renk etiketi, 1 öğede renk etiketi yokmuş gibi okunur.
+   *[other] Scrivener'ın kendi boş renk etiketinin yanında aynı adla tutulan “{ $name }” renk etiketi, { $count } öğede renk etiketi yokmuş gibi okunur.
+}
+import-scrivener-metadata-none-status-collapsed-line = { $count ->
+    [one] Scrivener'ın kendi boş durumunun yanında aynı adla tutulan “{ $name }” durumu, 1 öğede durum yokmuş gibi okunur.
+   *[other] Scrivener'ın kendi boş durumunun yanında aynı adla tutulan “{ $name }” durumu, { $count } öğede durum yokmuş gibi okunur.
+}
+import-scrivener-metadata-unnamed-label-line = Adı olmayan bir renk etiketine numarası ad olarak verilir: { $id }.
+import-scrivener-metadata-unnamed-status-line = Adı olmayan bir duruma numarası ad olarak verilir: { $id }.
+import-scrivener-metadata-tag-name-disambiguated-line = { $count ->
+    [one] 1 etiket yeni bir ad alır, çünkü kendi adını başka bir etiket zaten taşıyor.
+   *[other] { $count } etiket yeni bir ad alır, çünkü kendi adlarını başka etiketler zaten taşıyor.
+}
+import-scrivener-metadata-rung-names-disambiguated-line = { $count ->
+    [one] 1 durum başka bir durumla aynı adı taşıyor, bu yüzden adının ardına bir numara alır. Ayarlar ▸ Proje ▸ Durumlar bölümünden denetleyin.
+   *[other] { $count } durum başka bir durumla aynı adı taşıyor, bu yüzden her biri adının ardına bir numara alır. Ayarlar ▸ Proje ▸ Durumlar bölümünden denetleyin.
+}
+import-scrivener-metadata-unused-labels-skipped-line = { $count ->
+    [one] Hiçbir belgenin taşımadığı 1 renk etiketi içe aktarılmaz.
+   *[other] Hiçbir belgenin taşımadığı { $count } renk etiketi içe aktarılmaz.
+}
+import-scrivener-metadata-labels-without-row-line = { $count ->
+    [one] Yeni projede yeri olmayan 1 öğenin renk etiketi aktarılmaz.
+   *[other] Yeni projede yeri olmayan { $count } öğenin renk etiketleri aktarılmaz.
+}
+import-scrivener-metadata-statuses-without-row-line = { $count ->
+    [one] Yeni projede yeri olmayan 1 öğenin durumu aktarılmaz.
+   *[other] Yeni projede yeri olmayan { $count } öğenin durumları aktarılmaz.
+}
+import-scrivener-metadata-unnamed-keyword-line = Adı olmayan bir anahtar sözcüğe numarası ad olarak verilir: { $id }.
+import-scrivener-metadata-keywords-without-row-line = { $count ->
+    [one] Yeni projede yeri olmayan 1 öğenin anahtar sözcükleri aktarılmaz.
+   *[other] Yeni projede yeri olmayan { $count } öğenin anahtar sözcükleri aktarılmaz.
+}
+import-scrivener-metadata-custom-values-without-row-line = { $count ->
+    [one] Yeni projede yeri olmayan 1 öğenin özel üst verisi aktarılmaz.
+   *[other] Yeni projede yeri olmayan { $count } öğenin özel üst verisi aktarılmaz.
+}
+import-scrivener-metadata-bookmarks-without-row-line = { $count ->
+    [one] Yeni projede yeri olmayan 1 öğenin yer imleri aktarılmaz.
+   *[other] Yeni projede yeri olmayan { $count } öğenin yer imleri aktarılmaz.
+}
+import-scrivener-metadata-targets-without-row-line = { $count ->
+    [one] Yeni projede yeri olmayan 1 öğenin hedefi aktarılmaz.
+   *[other] Yeni projede yeri olmayan { $count } öğenin hedefleri aktarılmaz.
+}
+import-scrivener-metadata-pov-hint-line = { $count ->
+    [one] Renk etiketi ya da alan değeri { $values }, hikâye rehberindeki { $matches } kaydıyla eşleşiyor. Bakış açısını belirtiyorsa onu Denetçi'de belirleyin: içe aktarma hiçbir şeyi bağlamaz.
+   *[other] Renk etiketi ya da alan değerleri { $values }, hikâye rehberindeki { $matches } kayıtlarıyla eşleşiyor. Bakış açılarını belirtiyorlarsa onları Denetçi'de belirleyin: içe aktarma hiçbir şeyi bağlamaz.
+}
+import-scrivener-metadata-checkbox-default-unknown-line = “{ $field }” onay kutusu alanının Skribisto'nun okuyamadığı bir varsayılanı var, bu yüzden hangi belgelerin varsayılan olarak işaretli olduğu anlaşılamıyor. Bu alanın etiketini yalnızca tek tek işaretlenmiş belgeler taşır.
+import-scrivener-metadata-goals-in-other-unit-line = { $count ->
+    [one] 1 hedef diğer sayım biriminde belirlenmiş. Korunur ve Ayarlar ▸ Proje ▸ Yapı bölümünde sayım birimini değiştirdiğinizde görünür.
+   *[other] { $count } hedef diğer sayım biriminde belirlenmiş. Korunurlar ve Ayarlar ▸ Proje ▸ Yapı bölümünde sayım birimini değiştirdiğinizde görünürler.
+}
+import-scrivener-metadata-counting-differs-line = Scrivener, el yazması hedefini Skribisto'nun saydığından farklı belgeler üzerinden saydı. Kitabın hedefi, dışa aktarmalara dahil edilen sahneleri sayar.
+import-scrivener-metadata-writing-days-not-read-line = “{ $raw }” yazma günleri okunamıyor, bu yüzden kitabın Tempo planı her günü yazma günü sayar. Bunları orada değiştirin.
+import-scrivener-metadata-script-mode-rows-line = { $count ->
+    [one] 1 öğe Scrivener'da senaryo kipindeydi. Skribisto onun sözcüklerini senaryo düzeni olmadan, sıradan metin olarak korur.
+   *[other] { $count } öğe Scrivener'da senaryo kipindeydi. Skribisto onların sözcüklerini senaryo düzeni olmadan, sıradan metin olarak korur.
+}
+import-scrivener-metadata-keywords-became-tags-line = { $tags ->
+    [one] 1 anahtar sözcük bir etikete dönüşür ve { $rows ->
+        [one] { $rows } öğeyi
+       *[other] { $rows } öğeyi
+    } etiketler.
+   *[other] { $tags } anahtar sözcük etiketlere dönüşür ve { $rows ->
+        [one] { $rows } öğeyi
+       *[other] { $rows } öğeyi
+    } etiketler.
+}
+import-scrivener-metadata-keyword-hierarchy-flattened-line = { $count ->
+    [one] 1 anahtar sözcük Scrivener'da başka bir anahtar sözcüğün içindeydi. Etiketler iç içe olmaz: etiketin ayrıntıları onun nerede durduğunu söyler.
+   *[other] { $count } anahtar sözcük Scrivener'da başka anahtar sözcüklerin içindeydi. Etiketler iç içe olmaz: her etiketin ayrıntıları, anahtar sözcüğünün nerede durduğunu söyler.
+}
+import-scrivener-metadata-fields-became-tags-line = { $fields ->
+    [one] 1 liste ya da onay kutusu alanı { $tags ->
+        [one] { $tags } etikete
+       *[other] { $tags } etikete
+    } dönüşür ve { $rows ->
+        [one] { $rows } öğeyi
+       *[other] { $rows } öğeyi
+    } etiketler.
+   *[other] { $fields } liste ve onay kutusu alanı { $tags ->
+        [one] { $tags } etikete
+       *[other] { $tags } etikete
+    } dönüşür ve { $rows ->
+        [one] { $rows } öğeyi
+       *[other] { $rows } öğeyi
+    } etiketler.
+}
+import-scrivener-metadata-collections-became-tags-line = { $tags ->
+    [one] 1 koleksiyon bir etikete dönüşür ve { $rows ->
+        [one] { $rows } öğeyi
+       *[other] { $rows } öğeyi
+    } etiketler.
+   *[other] { $tags } koleksiyon etiketlere dönüşür ve { $rows ->
+        [one] { $rows } öğeyi
+       *[other] { $rows } öğeyi
+    } etiketler.
+}
+import-scrivener-metadata-collection-order-lost-line = { $count ->
+    [one] Bir etiket sıra tutmaz, bu yüzden 1 koleksiyondaki belgelerin sırası korunmaz.
+   *[other] Bir etiket sıra tutmaz, bu yüzden { $count } koleksiyondaki belgelerin sırası korunmaz.
+}
+import-scrivener-metadata-bookmarks-became-links-line = { $count ->
+    [one] 1 yer imi, iki not arasında ya da bir sahne ile bir hikâye rehberi kaydı arasında bir bağlantıya dönüşür: Bağlantılar ve Kadro bölümlerine bakın.
+   *[other] { $count } yer imi, notlar arasında ya da sahnelerle hikâye rehberi kayıtları arasında bağlantılara dönüşür: Bağlantılar ve Kadro bölümlerine bakın.
+}
+import-scrivener-metadata-goals-kept-line = { $count ->
+    [one] 1 belge hedefi Skribisto'da bir hedef olur.
+   *[other] { $count } belge hedefi Skribisto'da hedef olur.
+}
+import-scrivener-metadata-draft-target-kept-words-line = { $value ->
+    [one] 1 sözcüklük el yazması hedefi kitabın hedefi olur.
+   *[other] { $value } sözcüklük el yazması hedefi kitabın hedefi olur.
+}
+import-scrivener-metadata-draft-target-kept-characters-line = { $value ->
+    [one] 1 karakterlik el yazması hedefi kitabın hedefi olur.
+   *[other] { $value } karakterlik el yazması hedefi kitabın hedefi olur.
+}
+import-scrivener-metadata-pace-planned-line = { $day } son tarihi kitabın Tempo planına dönüşür: plan, içe aktarma gününden başlayarak Scrivener'da seçtiğiniz her yazma günü için yazılacak sözcükleri belirler.
+import-scrivener-metadata-pace-planned-day-off-line = { $day } son tarihi kitabın Tempo planına dönüşür: plan, içe aktarma gününden başlayarak Scrivener'da seçtiğiniz her yazma günü için yazılacak sözcükleri belirler. Scrivener'da olduğu gibi son tarihin kendisi tatil günüdür.
+import-scrivener-metadata-dictionary-words-line = { $count ->
+    [one] 1 otomatik tamamlama sözcüğü projenin kişisel sözlüğüne girer, böylece yanlış yazılmış olarak işaretlenmez.
+   *[other] { $count } otomatik tamamlama sözcüğü projenin kişisel sözlüğüne girer, böylece yanlış yazılmış olarak işaretlenmezler.
+}
+import-scrivener-metadata-listed-project-line = { $count ->
+    [one] Projenin 1 ayrıntısı, “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+   *[other] Projenin { $count } ayrıntısı, “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+}
+import-scrivener-metadata-listed-project-bookmarks-line = { $count ->
+    [one] 1 proje yer imi, “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+   *[other] { $count } proje yer imi, “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+}
+import-scrivener-metadata-listed-replacements-line = { $count ->
+    [one] 1 derleme değiştirmesi, “{ $folder }” klasöründeki “{ $note }” notunda listelenir. Skribisto bu değiştirmeyi yapmaz.
+   *[other] { $count } derleme değiştirmesi, “{ $folder }” klasöründeki “{ $note }” notunda listelenir. Skribisto bu değiştirmeleri yapmaz.
+}
+import-scrivener-metadata-listed-auto-complete-line = { $count ->
+    [one] Birkaç sözcükten oluşan 1 otomatik tamamlama girdisi, “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+   *[other] Birkaç sözcükten oluşan { $count } otomatik tamamlama girdisi, “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+}
+import-scrivener-metadata-listed-saved-searches-line = { $count ->
+    [one] 1 kayıtlı arama, “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+   *[other] { $count } kayıtlı arama, “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+}
+import-scrivener-metadata-listed-custom-metadata-line = { $count ->
+    [one] Bir etiketin tutamadığı 1 özel üst veri değeri, “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+   *[other] Bir etiketin tutamadığı { $count } özel üst veri değeri, “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+}
+import-scrivener-metadata-listed-targets-line = { $count ->
+    [one] 1 belge hedefi, “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+   *[other] { $count } belge hedefi, “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+}
+import-scrivener-metadata-listed-bookmarks-line = { $count ->
+    [one] Skribisto'nun hiçbir bağlantısının göstermediği 1 yer imi, “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+   *[other] Skribisto'nun hiçbir bağlantısının göstermediği { $count } yer imi, “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+}
+import-scrivener-metadata-targets-on-notes-line = { $count ->
+    [one] 1 belge hedefi bir notun üzerinde. Notların yazısını hiçbir hedef saymadığı için Skribisto hedefine dönüştürülmez.
+   *[other] { $count } belge hedefi notların üzerinde. Notların yazısını hiçbir hedef saymadığı için Skribisto hedeflerine dönüştürülmezler.
+}
+import-scrivener-metadata-targets-on-split-documents-line = { $count ->
+    [one] 1 belge hedefi, başlık paragraflarından bölünen bir belgenin üzerinde. O belgenin bölümlerini tek bir hedef birlikte saymadığı için Skribisto hedefine dönüştürülmez.
+   *[other] { $count } belge hedefi, başlık paragraflarından bölünen belgelerin üzerinde. Bu belgelerin bölümlerini tek bir hedef birlikte saymadığı için Skribisto hedeflerine dönüştürülmezler.
+}
+import-scrivener-metadata-bookmark-ends-without-row-line = { $count ->
+    [one] 1 yer imi, yeni projede yeri olmayan bir belgeye, örneğin bir belge şablonuna gidiyor. Belgenin Scrivener'da bulunduğu yerle listelenir.
+   *[other] { $count } yer imi, yeni projede yeri olmayan belgelere, örneğin belge şablonlarına gidiyor. Belgelerin Scrivener'da bulunduğu yerle listelenirler.
+}
+import-scrivener-metadata-unused-keywords-skipped-line = { $count ->
+    [one] Hiçbir belgenin taşımadığı 1 anahtar sözcük içe aktarılmaz.
+   *[other] Hiçbir belgenin taşımadığı { $count } anahtar sözcük içe aktarılmaz.
+}
+import-scrivener-metadata-list-value-invalid-line = { $count ->
+    [one] “{ $field }” liste alanının 1 değeri, alanın seçeneklerinden hiçbirine karşılık gelmiyor ve içe aktarılmaz.
+   *[other] “{ $field }” liste alanının { $count } değeri, alanın seçeneklerinden hiçbirine karşılık gelmiyor ve içe aktarılmazlar.
+}
+import-scrivener-metadata-undefined-custom-field-line = { $count ->
+    [one] 1 değer, projenin artık tanımlamadığı ve Scrivener'ın da göstermediği bir özel alana ait. İçe aktarılmaz.
+   *[other] { $count } değer, projenin artık tanımlamadığı ve Scrivener'ın da göstermediği özel alanlara ait. İçe aktarılmazlar.
+}
+import-scrivener-metadata-collection-members-missing-line = { $count ->
+    [one] “{ $name }” koleksiyonundaki 1 belgenin yeni projede yeri yok ya da belge Scrivener projesinden çıkmış.
+   *[other] “{ $name }” koleksiyonundaki { $count } belgenin yeni projede yeri yok ya da bu belgeler Scrivener projesinden çıkmış.
+}
+import-scrivener-metadata-empty-collections-skipped-line = { $count ->
+    [one] Hiçbir belge barındırmayan 1 koleksiyon içe aktarılmaz.
+   *[other] Hiçbir belge barındırmayan { $count } koleksiyon içe aktarılmaz.
+}
+import-scrivener-metadata-bookmarks-unresolved-line = { $count ->
+    [one] 1 yer imi, Scrivener projesinin artık barındırmadığı bir belgeye gidiyor ve içe aktarılmaz.
+   *[other] { $count } yer imi, Scrivener projesinin artık barındırmadığı belgelere gidiyor ve içe aktarılmazlar.
+}
+import-scrivener-metadata-targets-in-pages-line = { $count ->
+    [one] 1 belge hedefi, Skribisto'nun saymadığı sayfaları sayıyor, bu yüzden Skribisto hedefine dönüştürülmez.
+   *[other] { $count } belge hedefi, Skribisto'nun saymadığı sayfaları sayıyor, bu yüzden Skribisto hedeflerine dönüştürülmezler.
+}
+import-scrivener-metadata-targets-unreadable-line = { $count ->
+    [one] 1 hedef içe aktarılmaz: sayısı bir sayı değil, sıfırdan küçük ya da bir hedefin tutabileceğinden büyük.
+   *[other] { $count } hedef içe aktarılmaz: sayıları bir sayı değil, sıfırdan küçük ya da bir hedefin tutabileceğinden büyük.
+}
+import-scrivener-metadata-draft-target-in-pages-line = { $value ->
+    [one] 1 sayfalık el yazması hedefi Skribisto hedefine dönüştürülmez: Skribisto sözcük ya da karakter sayar. Hedef, “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+   *[other] { $value } sayfalık el yazması hedefi Skribisto hedefine dönüştürülmez: Skribisto sözcük ya da karakter sayar. Hedef, “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+}
+import-scrivener-metadata-draft-target-no-book-words-line = { $value ->
+    [one] 1 sözcüklük el yazması hedefi Skribisto hedefine dönüştürülmez, çünkü el yazması birkaç kitaptan oluşuyor ya da hiç kitap içermiyor. Hedef, “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+   *[other] { $value } sözcüklük el yazması hedefi Skribisto hedefine dönüştürülmez, çünkü el yazması birkaç kitaptan oluşuyor ya da hiç kitap içermiyor. Hedef, “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+}
+import-scrivener-metadata-draft-target-no-book-characters-line = { $value ->
+    [one] 1 karakterlik el yazması hedefi Skribisto hedefine dönüştürülmez, çünkü el yazması birkaç kitaptan oluşuyor ya da hiç kitap içermiyor. Hedef, “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+   *[other] { $value } karakterlik el yazması hedefi Skribisto hedefine dönüştürülmez, çünkü el yazması birkaç kitaptan oluşuyor ya da hiç kitap içermiyor. Hedef, “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+}
+import-scrivener-metadata-deadline-passed-line = { $day } son tarihi geçti, bu yüzden Tempo planı oluşturmaz. Son tarih, “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+import-scrivener-metadata-deadline-no-writing-day-line = İçe aktarma gününden { $day } son tarihine kadar hiç yazma günü kalmıyor, bu yüzden son tarih Tempo planı oluşturmaz. “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+import-scrivener-metadata-deadline-template-line = { $day } son tarihi şablonda kaydedilmişti, bu yüzden Tempo planı oluşturmaz. Son tarih, “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+import-scrivener-metadata-deadline-no-word-goal-line = { $day } son tarihi Tempo planı oluşturmaz, çünkü el yazmasının planlanacak bir sözcük hedefi yok. Son tarih, “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+import-scrivener-metadata-deadline-character-goal-line = { $day } son tarihi Tempo planı oluşturmaz, çünkü el yazması hedefi karakter sayıyor, Tempo planı ise sözcük sayar. Son tarih, “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+import-scrivener-metadata-deadline-no-book-line = { $day } son tarihi Tempo planı oluşturmaz, çünkü el yazması birkaç kitaptan oluşuyor ya da hiç kitap içermiyor. Son tarih, “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+import-scrivener-metadata-deadline-unreadable-line = Son tarih okunamıyor, bu yüzden Tempo planı oluşturmaz. Yazıldığı biçimiyle “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+import-scrivener-metadata-session-target-words-line = { $value ->
+    [one] 1 sözcüklük oturum hedefi içe aktarılmaz: Skribisto'da yazma oturumunun hedefi, tüm projeler için tek bir ayardır. Hedef, “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+   *[other] { $value } sözcüklük oturum hedefi içe aktarılmaz: Skribisto'da yazma oturumunun hedefi, tüm projeler için tek bir ayardır. Hedef, “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+}
+import-scrivener-metadata-session-target-characters-line = { $value ->
+    [one] 1 karakterlik oturum hedefi içe aktarılmaz: Skribisto'da yazma oturumunun hedefi, tüm projeler için sözcük cinsinden tek bir ayardır. Hedef, “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+   *[other] { $value } karakterlik oturum hedefi içe aktarılmaz: Skribisto'da yazma oturumunun hedefi, tüm projeler için sözcük cinsinden tek bir ayardır. Hedef, “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+}
+import-scrivener-metadata-session-target-pages-line = { $value ->
+    [one] 1 sayfalık oturum hedefi içe aktarılmaz: Skribisto'da yazma oturumunun hedefi, tüm projeler için sözcük cinsinden tek bir ayardır. Hedef, “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+   *[other] { $value } sayfalık oturum hedefi içe aktarılmaz: Skribisto'da yazma oturumunun hedefi, tüm projeler için sözcük cinsinden tek bir ayardır. Hedef, “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+}
+import-scrivener-metadata-session-target-calculated-words-line = { $value ->
+    [one] Scrivener'ın son tarihten ve yazma günlerinden hesapladığı 1 sözcüklük oturum hedefi içe aktarılmaz: Skribisto'da yazma oturumunun hedefi, tüm projeler için tek bir ayardır. Hedef, “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+   *[other] Scrivener'ın son tarihten ve yazma günlerinden hesapladığı { $value } sözcüklük oturum hedefi içe aktarılmaz: Skribisto'da yazma oturumunun hedefi, tüm projeler için tek bir ayardır. Hedef, “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+}
+import-scrivener-metadata-session-target-calculated-characters-line = { $value ->
+    [one] Scrivener'ın son tarihten ve yazma günlerinden hesapladığı 1 karakterlik oturum hedefi içe aktarılmaz: Skribisto'da yazma oturumunun hedefi, tüm projeler için sözcük cinsinden tek bir ayardır. Hedef, “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+   *[other] Scrivener'ın son tarihten ve yazma günlerinden hesapladığı { $value } karakterlik oturum hedefi içe aktarılmaz: Skribisto'da yazma oturumunun hedefi, tüm projeler için sözcük cinsinden tek bir ayardır. Hedef, “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+}
+import-scrivener-metadata-session-target-calculated-pages-line = { $value ->
+    [one] Scrivener'ın son tarihten ve yazma günlerinden hesapladığı 1 sayfalık oturum hedefi içe aktarılmaz: Skribisto'da yazma oturumunun hedefi, tüm projeler için sözcük cinsinden tek bir ayardır. Hedef, “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+   *[other] Scrivener'ın son tarihten ve yazma günlerinden hesapladığı { $value } sayfalık oturum hedefi içe aktarılmaz: Skribisto'da yazma oturumunun hedefi, tüm projeler için sözcük cinsinden tek bir ayardır. Hedef, “{ $folder }” klasöründeki “{ $note }” notunda listelenir.
+}
+import-scrivener-metadata-icons-dropped-line = { $count ->
+    [one] 1 öğenin bir dizin simgesi vardı ve bu simge aktarılmaz: Skribisto her öğenin simgesini türüne göre gösterir.
+   *[other] { $count } öğenin dizin simgesi vardı ve bu simgeler aktarılmaz: Skribisto her öğenin simgesini türüne göre gösterir.
+}
+import-scrivener-prose-unreadable-line = { $count ->
+    [one] 1 metin okunamadı. Boş gelir.
+   *[other] { $count } metin okunamadı. Boş gelirler.
+}
+import-scrivener-prose-comments-unreadable-line = { $count ->
+    [one] 1 metnin yorumları ve bağlı dipnotları okunamadı. İşaretledikleri sözcükler korunur.
+   *[other] { $count } metnin yorumları ve bağlı dipnotları okunamadı. İşaretledikleri sözcükler korunur.
+}
+import-scrivener-prose-read-as-plain-text-line = { $count ->
+    [one] 1 metin biçimlendirilmiş metin yerine düz metin olarak saklanmıştı ve öyle okunur.
+   *[other] { $count } metin biçimlendirilmiş metin yerine düz metin olarak saklanmıştı ve öyle okunur.
+}
+import-scrivener-prose-inline-note-unmatched-line = { $count ->
+    [one] 1 satır içi not işareti bir başkasıyla eşleşmiyor ve metin olarak korunur.
+   *[other] { $count } satır içi not işareti bir başkasıyla eşleşmiyor ve metin olarak korunur.
+}
+import-scrivener-prose-style-unresolved-line = { $count ->
+    [one] 1 biçem işareti, projenin tanımlamadığı bir biçemi adlandırıyor. İşaret kaldırılır ve metin biçimlendirmesini korur.
+   *[other] { $count } biçem işareti, projenin tanımlamadığı biçemleri adlandırıyor. İşaretler kaldırılır ve metin biçimlendirmesini korur.
+}
+import-scrivener-prose-styles-lost-in-export-line = { $count ->
+    [one] 1 paragraf, Scrivener 3 projeyi eski biçimine dışa aktarırken biçemini yitirmiş bir başlık olabilir ve sıradan bir paragraf olarak gelir. Onu denetleyin ya da projenin dışa aktarıldığı asıl projeyi içe aktarın.
+   *[other] { $count } paragraf, Scrivener 3 projeyi eski biçimine dışa aktarırken biçemini yitirmiş başlıklar olabilir ve sıradan paragraflar olarak gelir. Onları denetleyin ya da projenin dışa aktarıldığı asıl projeyi içe aktarın.
+}
+import-scrivener-prose-comment-anchor-without-entry-line = { $count ->
+    [one] 1 yorum ya da dipnot Scrivener'da içeriğini yitirmişti. İşaretlediği sözcükler, yorum ya da dipnot olmadan korunur.
+   *[other] { $count } yorum ya da dipnot Scrivener'da içeriğini yitirmişti. İşaretledikleri sözcükler, yorumlar ya da dipnotlar olmadan korunur.
+}
+import-scrivener-prose-comment-entry-without-anchor-line = { $count ->
+    [one] 1 yorumun metninde kalacak yeri kalmamıştı ve ilk paragrafa bağlanır.
+   *[other] { $count } yorumun metinlerinde kalacak yeri kalmamıştı ve ilk paragrafa bağlanırlar.
+}
+import-scrivener-prose-footnote-entry-without-anchor-line = { $count ->
+    [one] 1 bağlı dipnotun metninde kalacak yeri kalmamıştı; göndermesi metnin sonuna konur.
+   *[other] { $count } bağlı dipnotun metinlerinde kalacak yeri kalmamıştı; göndermeleri ait oldukları metnin sonuna konur.
+}
+import-scrivener-prose-range-comment-reading-line = { $count ->
+    [one] Daha eski bir Scrivener'dan gelen 1 yorum, konumunun başka bir okunuşuyla yerleştirildi. Doğru sözcüklerin üzerinde durduğunu denetleyin.
+   *[other] Daha eski bir Scrivener'dan gelen { $count } yorum, konumlarının başka bir okunuşuyla yerleştirildi. Doğru sözcüklerin üzerinde durduklarını denetleyin.
+}
+import-scrivener-prose-range-comment-reading-markers-counted-line = { $count ->
+    [one] Daha eski bir Scrivener'dan gelen 1 yorum, satır içi notlarının işaretleri sayılarak yerleştirildi. Doğru sözcüklerin üzerinde durduğunu denetleyin.
+   *[other] Daha eski bir Scrivener'dan gelen { $count } yorum, satır içi notlarının işaretleri sayılarak yerleştirildi. Doğru sözcüklerin üzerinde durduklarını denetleyin.
+}
+import-scrivener-prose-range-comment-reading-pictures-not-counted-line = { $count ->
+    [one] Daha eski bir Scrivener'dan gelen 1 yorum, resimleri hesaba katılmadan yerleştirildi. Doğru sözcüklerin üzerinde durduğunu denetleyin.
+   *[other] Daha eski bir Scrivener'dan gelen { $count } yorum, resimleri hesaba katılmadan yerleştirildi. Doğru sözcüklerin üzerinde durduklarını denetleyin.
+}
+import-scrivener-prose-range-comment-approximate-line = { $count ->
+    [one] Daha eski bir Scrivener'dan gelen 1 yorum, konumunun hiçbir okunuşuna tam olarak uymuyor ve birkaç karakter kaymış olabilir.
+   *[other] Daha eski bir Scrivener'dan gelen { $count } yorum, konumlarının hiçbir okunuşuna tam olarak uymuyor ve birkaç karakter kaymış olabilir.
+}
+import-scrivener-prose-document-link-unresolved-line = { $count ->
+    [one] 1 bağlantı, içe aktarmanın aktarmadığı bir belgeyi gösteriyor. Sözcükleri yerinde kalır.
+   *[other] { $count } bağlantı, içe aktarmanın aktarmadığı belgeleri gösteriyor. Sözcükleri yerinde kalır.
+}
+import-scrivener-prose-linked-picture-not-read-line = { $count ->
+    [one] Diskinizdeki bir dosyaya bağlı 1 resim, “{ $example }”, aktarılmadı.
+   *[other] Diskinizdeki dosyalara bağlı { $count } resim, örneğin “{ $example }”, aktarılmadı.
+}
+import-scrivener-prose-heading-repeats-title-line = { $count ->
+    [one] 1 metin, öğenin başlığını tekrarlayan bir başlık paragrafıyla açılıyor, bu yüzden bir dışa aktarma başlığı iki kez basabilir.
+   *[other] { $count } metin, öğenin başlığını tekrarlayan bir başlık paragrafıyla açılıyor, bu yüzden bir dışa aktarma başlığı iki kez basabilir.
+}
+import-scrivener-prose-markdown-as-text-line = { $count ->
+    [one] Markdown ile yazılmış 1 paragraf, yazıldığı gibi metin olarak korunur.
+   *[other] Markdown ile yazılmış { $count } paragraf, yazıldıkları gibi metin olarak korunur.
+}
+import-scrivener-prose-citation-keys-as-text-line = { $count ->
+    [one] 1 paragraf bir kaynakça programı için atıf anahtarları içeriyor; bunlar metin olarak korunur.
+   *[other] { $count } paragraf bir kaynakça programı için atıf anahtarları içeriyor; bunlar metin olarak korunur.
+}
+import-scrivener-prose-placeholders-in-exported-text-line = { $count ->
+    [one] 1 Scrivener yer tutucusu, { $example }, dışa aktardığınız metinde düz metin olarak korunur. Onu elle değiştirin.
+   *[other] { $count } Scrivener yer tutucusu, örneğin { $example }, dışa aktardığınız metinde düz metin olarak korunur. Bunları elle değiştirin.
+}
+import-scrivener-prose-placeholders-in-other-text-line = { $count ->
+    [one] 1 Scrivener yer tutucusu, { $example }, dışa aktarılmayan bir metinde düz metin olarak korunur.
+   *[other] { $count } Scrivener yer tutucusu, örneğin { $example }, dışa aktarılmayan metinlerde düz metin olarak korunur.
+}
+import-scrivener-prose-ornament-lines-kept-line = { $count ->
+    [one] Ortalanmış 1 süs işareti satırı bir sahne arasını gösteriyor olabilir ve yazıldığı gibi korunur.
+   *[other] Ortalanmış { $count } süs işareti satırı sahne aralarını gösteriyor olabilir ve yazıldıkları gibi korunur.
+}
+import-scrivener-prose-long-document-line = { $count ->
+    [one] 1 metin çok uzun ve yavaş açılabilir.
+   *[other] { $count } metin çok uzun ve yavaş açılabilir.
+}
+import-scrivener-prose-pictures-without-description-line = { $count ->
+    [one] 1 resmin, onu göremeyen okurlar için bir tanımı yok. Düzenleyicide bir tanım ekleyebilirsiniz.
+   *[other] { $count } resmin, onları göremeyen okurlar için bir tanımı yok. Düzenleyicide tanım ekleyebilirsiniz.
+}
+import-scrivener-prose-struck-text-compiled-away-line = { $count ->
+    [one] 1 metindeki üstü çizili yazı korunur. Scrivener'ın derlemesi onu kitabın dışında bırakıyordu, ama Skribisto'dan yapılan bir dışa aktarma onu basar.
+   *[other] { $count } metindeki üstü çizili yazı korunur. Scrivener'ın derlemesi onu kitabın dışında bırakıyordu, ama Skribisto'dan yapılan bir dışa aktarma onu basar.
+}
+import-scrivener-prose-compile-deleted-style-printed-line = { $count ->
+    [one] Scrivener'ın derlemesinin sildiği “{ $example }” biçemindeki yazı, sıradan metin olarak korunur ve Skribisto'dan yapılan bir dışa aktarma onu basar.
+   *[other] Scrivener'ın derlemesinin sildiği { $count } biçemdeki yazı (örneğin “{ $example }”) sıradan metin olarak korunur ve Skribisto'dan yapılan bir dışa aktarma onu basar.
+}
+import-scrivener-prose-compile-raw-style-printed-line = { $count ->
+    [one] Scrivener'ın derlemesinin başka bir program için kod olarak aktardığı “{ $example }” biçemindeki yazı, sıradan metin olarak korunur ve Skribisto'dan yapılan bir dışa aktarma onu basar.
+   *[other] Scrivener'ın derlemesinin başka bir program için kod olarak aktardığı { $count } biçemdeki yazı (örneğin “{ $example }”) sıradan metin olarak korunur ve Skribisto'dan yapılan bir dışa aktarma onu basar.
+}
+import-scrivener-prose-left-out-after-document-line = { $count ->
+    [one] Bozuk bir dosyanın sonundan sonra gelen 1 parça dışarıda bırakılır.
+   *[other] Bozuk dosyaların sonundan sonra gelen { $count } parça dışarıda bırakılır.
+}
+import-scrivener-prose-left-out-header-or-footer-line = { $count ->
+    [one] 1 üst bilgi ya da alt bilgi dışarıda bırakılır: metnin parçası değil.
+   *[other] { $count } üst bilgi ve alt bilgi dışarıda bırakılır: metnin parçası değiller.
+}
+import-scrivener-prose-left-out-list-label-picture-line = { $count ->
+    [one] Madde işareti olarak kullanılan 1 resim dışarıda bırakılır.
+   *[other] Madde işareti olarak kullanılan { $count } resim dışarıda bırakılır.
+}
+import-scrivener-prose-left-out-line = { $count ->
+    [one] Bir dosyanın hiçbir metne ait olmayan 1 parçası dışarıda bırakılır.
+   *[other] Dosyaların hiçbir metne ait olmayan { $count } parçası dışarıda bırakılır.
+}
+import-scrivener-prose-undecodable-characters-line = { $count ->
+    [one] 1 karakter çözülemedi ve bulunduğu yerde bir yerine koyma işareti (�) olarak görünür.
+   *[other] { $count } karakter çözülemedi ve bulundukları yerde yerine koyma işareti (�) olarak görünür.
+}
+import-scrivener-prose-inline-notes-merged-line = { $count ->
+    [one] Scrivener'ın, biçimlendirmesinin değiştiği yerden böldüğü 1 satır içi not yeniden birleştirilir.
+   *[other] Scrivener'ın, biçimlendirmelerinin değiştiği yerden böldüğü { $count } satır içi not yeniden birleştirilir.
+}
+import-scrivener-prose-inline-notes-joined-across-paragraphs-line = { $count ->
+    [one] Paragraf paragraf yazılmış 1 satır içi not tek bir notta birleştirilir.
+   *[other] Paragraf paragraf yazılmış { $count } satır içi not, birkaç paragraflık notlarda birleştirilir.
+}
+import-scrivener-prose-blank-notes-dropped-line = { $count ->
+    [one] 1 boş satır içi not dışarıda bırakılır.
+   *[other] { $count } boş satır içi not dışarıda bırakılır.
+}
+import-scrivener-prose-annotations-became-comments-line = { $count ->
+    [one] 1 satır içi ek not yoruma dönüştü.
+   *[other] { $count } satır içi ek not yoruma dönüştü.
+}
+import-scrivener-prose-annotation-only-document-kept-line = { $count ->
+    [one] 1 belge bir ek nottan başka bir şey içermiyordu. Sözcükleri metin olarak korunur.
+   *[other] { $count } belge bir ek nottan başka bir şey içermiyordu. Sözcükleri metin olarak korunur.
+}
+import-scrivener-prose-preserve-formatting-passages-line = { $count ->
+    [one] “Biçimlendirmeyi koru” ile işaretlenmiş 1 metin parçası sıradan metin olarak gelir.
+   *[other] “Biçimlendirmeyi koru” ile işaretlenmiş { $count } metin parçası sıradan metin olarak gelir.
+}
+import-scrivener-prose-nested-note-unwrapped-line = { $count ->
+    [one] Bir yorumun ya da dipnotun içindeki 1 not, bulunduğu yerde metin olarak korunur.
+   *[other] Yorumların ya da dipnotların içindeki { $count } not, bulundukları yerde metin olarak korunur.
+}
+import-scrivener-prose-style-not-carried-line = { $count ->
+    [one] “{ $example }” biçeminin Skribisto'da karşılığı yok. Metni sözcüklerini korur.
+   *[other] { $count } biçemin (örneğin “{ $example }”) Skribisto'da karşılığı yok. Metinleri sözcüklerini korur.
+}
+import-scrivener-prose-document-links-dropped-line = { $count ->
+    [one] Başka bir belgeye giden 1 bağlantının Skribisto'da yeri yok. Sözcükleri yerinde kalır.
+   *[other] Başka belgelere giden { $count } bağlantının Skribisto'da yeri yok. Sözcükleri yerinde kalır.
+}
+import-scrivener-prose-document-links-kept-line = { $count ->
+    [one] Başka bir belgeye giden 1 bağlantı bir gönderme olarak korunur.
+   *[other] Başka belgelere giden { $count } bağlantı gönderme olarak korunur.
+}
+import-scrivener-prose-other-links-kept-as-text-line = { $count ->
+    [one] Başka bir projeye ya da bir dosyaya giden 1 bağlantı metin olarak korunur.
+   *[other] Başka projelere ya da dosyalara giden { $count } bağlantı metin olarak korunur.
+}
+import-scrivener-prose-soft-breaks-split-line = { $count ->
+    [one] Bir paragrafın içindeki 1 satır sonu artık kendi paragrafını başlatıyor.
+   *[other] Paragrafların içindeki { $count } satır sonu artık kendi paragraflarını başlatıyor.
+}
+import-scrivener-prose-typed-indents-removed-line = { $count ->
+    [one] Bir paragrafın başına yazılmış 1 girinti kaldırılır.
+   *[other] Paragrafların başına yazılmış { $count } girinti kaldırılır.
+}
+import-scrivener-prose-left-indents-not-kept-line = { $count ->
+    [one] Kenar boşluğundan içeri girintili 1 paragraf girintisini yitirir.
+   *[other] Kenar boşluğundan içeri girintili { $count } paragraf girintilerini yitirir.
+}
+import-scrivener-prose-blank-lines-removed-line = { $count ->
+    [one] İki paragraf arasındaki 1 boş paragraf kaldırılır.
+   *[other] Paragraflar arasındaki { $count } boş paragraf kaldırılır.
+}
+import-scrivener-prose-verse-stanza-gaps-lost-line = { $count ->
+    [one] Bir şiirin kıtaları arasındaki 1 boş satır kaldırılır, böylece kıtalar birbirine bitişir.
+   *[other] Bir şiirin kıtaları arasındaki { $count } boş satır kaldırılır, böylece kıtalar birbirine bitişir.
+}
+import-scrivener-prose-blank-lines-became-scene-breaks-line = { $count ->
+    [one] Paragraflar arasındaki 1 boş satır sahne arasına dönüştü.
+   *[other] Paragraflar arasındaki { $count } boş satır sahne arasına dönüştü.
+}
+import-scrivener-prose-ornaments-became-scene-breaks-line = { $count ->
+    [one] 1 süs işareti satırı sahne arasına dönüştü.
+   *[other] { $count } süs işareti satırı sahne arasına dönüştü.
+}
+import-scrivener-prose-table-first-row-header-line = { $count ->
+    [one] 1 tablo artık bir başlık satırıyla açılıyor.
+   *[other] { $count } tablo artık bir başlık satırıyla açılıyor.
+}
+import-scrivener-prose-table-cells-joined-line = { $count ->
+    [one] 1 tablo hücresi birkaç paragraf içeriyordu; bunlar artık tek paragrafta birleşti.
+   *[other] { $count } tablo hücresi birkaç paragraf içeriyordu; her hücrenin paragrafları artık tek paragrafta birleşti.
+}
+import-scrivener-prose-formatting-lost-colour-line = { $count ->
+    [one] 1 metinde yazı rengi kaldırılır.
+   *[other] { $count } metinde yazı rengi kaldırılır.
+}
+import-scrivener-prose-formatting-lost-highlight-line = { $count ->
+    [one] 1 metinde vurgulama kaldırılır.
+   *[other] { $count } metinde vurgulama kaldırılır.
+}
+import-scrivener-prose-formatting-lost-small-caps-line = { $count ->
+    [one] 1 metinde küçük büyük harfler sıradan harfler olarak görünür.
+   *[other] { $count } metinde küçük büyük harfler sıradan harfler olarak görünür.
+}
+import-scrivener-prose-formatting-lost-all-caps-line = { $count ->
+    [one] 1 metinde büyük harflerle gösterilen yazı, yazıldığı gibi görünür.
+   *[other] { $count } metinde büyük harflerle gösterilen yazı, yazıldığı gibi görünür.
+}
+import-scrivener-prose-formatting-lost-hidden-line = { $count ->
+    [one] 1 metinde gizli yazı dışarıda bırakılır.
+   *[other] { $count } metinde gizli yazı dışarıda bırakılır.
+}
+import-scrivener-prose-formatting-lost-line = { $count ->
+    [one] 1 metinde Skribisto'nun yer vermediği biçimlendirme kaldırılır.
+   *[other] { $count } metinde Skribisto'nun yer vermediği biçimlendirme kaldırılır.
+}
+import-scrivener-prose-justified-text-not-kept-line = { $count ->
+    [one] İki yana yaslanmış 1 paragraf bunun yerine dışa aktarmanın biçemini izler.
+   *[other] İki yana yaslanmış { $count } paragraf bunun yerine dışa aktarmanın biçemini izler.
+}
+import-scrivener-prose-comment-colours-lost-line = { $count ->
+    [one] 1 yorum rengini yitirir.
+   *[other] { $count } yorum renklerini yitirir.
+}
+import-scrivener-prose-control-characters-removed-line = { $count ->
+    [one] Görünmeyen 1 denetim karakteri kaldırılır.
+   *[other] Görünmeyen { $count } denetim karakteri kaldırılır.
+}
+import-scrivener-prose-note-on-heading-lost-line = { $count ->
+    [one] Bir bölüm başlığındaki 1 dipnot ya da yorum orada kalamadı: yorum bölümün ilk paragrafına taşınır, dipnot dışarıda bırakılır.
+   *[other] Bölüm başlıklarındaki { $count } dipnot ya da yorum orada kalamadı: yorumlar bölümün ilk paragrafına taşınır, dipnotlar dışarıda bırakılır.
+}
+import-scrivener-prose-media-file-copied-line = { $count ->
+    [one] Skribisto'nun açamadığı 1 araştırma dosyası yeni projenin yanına kopyalandı. Notu, nereye kopyalandığını söyler.
+   *[other] Skribisto'nun açamadığı { $count } araştırma dosyası yeni projenin yanına kopyalandı. Notları, nereye kopyalandıklarını söyler.
+}
+import-scrivener-prose-media-file-not-carried-line = { $count ->
+    [one] Skribisto'nun açamadığı 1 araştırma dosyası Scrivener projenizde kalıyor. Notu, dosyanın adını verir.
+   *[other] Skribisto'nun açamadığı { $count } araştırma dosyası Scrivener projenizde kalıyor. Notları, dosyaların adını verir.
+}
+import-scrivener-error-refused = { $refusal } Hiçbir şey yazılmadı.
+import-scrivener-error-question = Proje artık, gözden geçirmenin yanıtlamadığı bir soru soruyor. Yeniden gözden geçirin, sonra içe aktarın. Hiçbir şey yazılmadı.
+import-scrivener-error-not-accepted = Proje, henüz kabul etmediğiniz bir soru ortaya koyuyor. Yeniden gözden geçirin, sonra içe aktarın. Hiçbir şey yazılmadı.
+import-scrivener-error-changed = Proje, siz gözden geçirdikten sonra değişti. Yeniden gözden geçirin, sonra içe aktarın. Hiçbir şey yazılmadı.
+import-scrivener-error-choice = Gözden geçirmede seçilen yapı artık bu projeye uymuyor. Yeniden gözden geçirin, sonra içe aktarın. Hiçbir şey yazılmadı.
 
 export-title = Dışa aktar
 export-close = Kapat
@@ -1838,6 +3194,10 @@ import-document-destination = Varış yeri
 import-document-destination-hint = Bir dizin ya da öğe seçin: yeni öğeler bir klasörün içine ya da bir sahnenin sonrasına yerleşir.
 import-document-destination-empty = Henüz dizin yok. Önce bir tane oluşturun.
 import-document-plan-empty = Henüz içe aktarılacak bir şey yok.
+import-document-pictures = { $count ->
+    [one] Bu belgelerle birlikte bir resim gelir.
+   *[other] Bu belgelerle birlikte { $count } resim gelir.
+}
 import-document-summary = { $rows ->
     [one] 1 öğe
    *[other] { $rows } öğe
@@ -1887,6 +3247,17 @@ import-diagnostic-nested-break-dropped = { $count ->
     [one] “{ $path }” içinde bir alıntının ya da listenin içindeki bir sahne arası çıkarıldı. Yalnızca kendi satırındaki bir ara korunur.
    *[other] “{ $path }” içinde alıntıların ya da listelerin içindeki { $count } sahne arası çıkarıldı. Yalnızca kendi satırındaki bir ara korunur.
 }
+import-diagnostic-image-not-ingested-format = “{ $path }” içindeki “{ $detail }” resmi, Skribisto'nun gösteremediği bir biçimde, bu yüzden dışarıda bırakıldı. PNG, JPEG, WebP, GIF, TIFF ya da BMP biçimindeki resimler aktarılır; resmi bunlardan biri olarak kaydedip elle ekleyin.
+import-diagnostic-image-not-ingested-remote = “{ $path }” içindeki “{ $detail }” resmi web'de duruyor. İçe aktarma sırasında resimler asla indirilmez, bu yüzden dışarıda bırakıldı.
+import-diagnostic-image-not-ingested-outside = “{ $path }” içindeki “{ $detail }” resmi belgenin ve klasörünün dışında, bu yüzden dışarıda bırakıldı. Yalnızca belgenin içinde ya da belgenin kendi klasöründe saklanan resimler aktarılır.
+import-diagnostic-image-not-ingested-missing = “{ $path }” içindeki “{ $detail }” resmi bulunamadı, bu yüzden dışarıda bırakıldı.
+import-diagnostic-image-not-ingested-too-large = “{ $path }” içindeki “{ $detail }” resmi bir projenin kabul ettiğinden büyük, bu yüzden dışarıda bırakıldı.
+import-diagnostic-image-not-ingested-unreadable = “{ $path }” içindeki “{ $detail }” resim olarak okunamadı, bu yüzden dışarıda bırakıldı.
+import-diagnostic-image-not-ingested-heading = “{ $path }” içindeki “{ $detail }” resmi bir başlık paragrafında duruyor. Başlık paragrafı bir öğe başlığına dönüşür ve öğe başlığı resim barındırmaz, bu yüzden dışarıda bırakıldı.
+import-diagnostic-image-not-ingested-note = “{ $path }” içindeki “{ $detail }” resmi bir dipnotta, bir son notta ya da bir yorumda duruyor. Bunlar sözcüklerini korur ama resim barındırmaz, bu yüzden dışarıda bırakıldı.
+import-diagnostic-image-not-ingested-html = “{ $path }” içindeki “{ $detail }” resmi HTML olarak yazılmış. İçe aktarma HTML'yi dışarıda bırakır, bu yüzden resim de onunla birlikte dışarıda bırakıldı. Aktarmak için onu bir Markdown resmi olarak yazın.
+import-diagnostic-image-not-ingested-document-full = “{ $path }” içindeki “{ $detail }” resmi dışarıda bırakıldı: bu belgenin resimleri toplamda tek bir içe aktarmanın aldığı sınırı aşıyor. Belgeyi parça parça içe aktarın ya da kalan resimleri elle ekleyin.
+import-diagnostic-picture-first-frame-only = “{ $path }” içindeki hareketli “{ $detail }” resmi ilk karesiyle gelir. Bir projedeki resimler hareket etmez.
 import-diagnostic-duplicate-title = “{ $title }” { $count } kez geçiyor. Bu dosyaları daha önce içe aktardıysanız bu işlem onları çoğaltacak.
 import-diagnostic-heading-level-jump = “{ $title }” { $from }. başlık düzeyinden { $to }. düzeye atlıyor; üst öğesinin bir düzey altına yerleştirildi.
 import-diagnostic-illegal-combination = “{ $title }” metin içeriyor, ama { $kind } türündeki bir öğe metin barındıramaz. Türünü değiştirene ya da onu dışarıda bırakana kadar içe aktarma bekletilir. Aksi hâlde hiçbir şey içe aktarılmaz.
@@ -2228,6 +3599,7 @@ help-topic-round-trip = Kitabınızı bir okura göndermek
 help-topic-export = Dışa aktarma
 help-topic-import-documents = Belgeleri içe aktarma
 help-topic-import-projects = Bütün bir projeyi aktarmak
+help-topic-import-scrivener = Scrivener'dan geçiş
 help-topic-backups-and-versions = Yedekler ve sürümler
 
 help-shortcuts-title = Klavye kısayolları
@@ -2250,6 +3622,8 @@ shortcut-name-work-new = Yeni proje
 shortcut-name-work-open = Proje aç
 shortcut-name-window-new = Yeni pencere
 shortcut-name-work-close = Projeyi kapat
+shortcut-name-work-import-scrivener = Scrivener projesini içe aktar…
+shortcut-name-work-import-scrivener-report = Scrivener içe aktarma raporunu göster
 shortcut-name-app-settings = Ayarlar
 shortcut-name-app-quit = Çık
 shortcut-name-editor-insert-footnote = Dipnot ekle
@@ -2531,6 +3905,7 @@ dialog-save-as-file-title = Tek bir .skrib dosyası olarak kaydet
 dialog-save-as-folder-title = Proje için bir üst klasör seçin
 dialog-manuskript-file-title = Bir Manuskript projesi seçin
 dialog-manuskript-folder-title = Bir Manuskript proje klasörü seçin
+dialog-plume-file-title = Bir Plume Creator projesi seçin
 dialog-filter-skrib = Skribisto projesi
 dialog-filter-manuskript = Manuskript projesi
 dialog-filter-plume = Plume Creator projesi

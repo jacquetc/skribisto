@@ -1,6 +1,8 @@
 Importe ficheiros Word, LibreOffice, Markdown ou de texto simples para o seu projeto. Para um
 manuscrito devolvido por um leitor, consulte [trazer de volta edições e comentários](:help-round-trip).
-Para Manuskript ou Plume Creator, consulte [importar projetos](:help-import-projects).
+Para Manuskript ou Plume Creator, consulte [importar projetos](:help-import-projects), e para o
+Scrivener, [vindo do Scrivener](:help-import-scrivener). Um documento Word compilado a partir de um
+projeto Scrivener que não pode ser importado entra por aqui.
 
 ## Importar os seus ficheiros
 
@@ -48,6 +50,23 @@ dos parágrafos seguem o seu estilo de exportação. Alguma formatação pode se
 mensagens em *Revisão* para ver o que não pôde ser importado, e copie do ficheiro original
 qualquer texto em falta. Os símbolos de tipos de letra de imagens, como o Wingdings, podem
 aparecer como caixas vazias.
+
+## Imagens
+
+As imagens vêm com os seus documentos, cada uma no lugar onde estava no texto. Dos ficheiros Word e
+LibreOffice, todas as imagens guardadas no ficheiro vêm com a sua descrição. De um ficheiro
+Markdown, uma imagem vem quando o seu ficheiro está na própria pasta do documento ou numa pasta
+dentro dela. Em *Revisão*, uma linha por baixo da árvore indica quantas imagens vêm.
+
+As imagens PNG, JPEG e WebP chegam tal como estão; as imagens TIFF, GIF e BMP chegam como PNG, e um
+GIF animado como o seu primeiro fotograma. Uma imagem que o projeto já contém não é guardada duas
+vezes, e *Anular* retira as imagens juntamente com o texto.
+
+Algumas imagens ficam para trás, e as mensagens nomeiam cada uma com o motivo: um formato que o
+Skribisto não consegue mostrar (como EMF, WMF, SVG ou PDF), uma imagem na web (nada é transferido),
+uma imagem fora do documento e da sua pasta, uma imagem em falta, ilegível ou demasiado grande, ou
+uma imagem num título, numa nota ou num comentário. Pode voltar a colocar uma depois com
+*Documento ▸ Inserir imagem…*.
 
 ## Verificar as mensagens antes de terminar
 

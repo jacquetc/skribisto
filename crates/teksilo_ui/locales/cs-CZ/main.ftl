@@ -10,6 +10,7 @@ menu-create-from = &Vytvořit z
 menu-import-plume = &Plume Creator (.plume)…
 menu-import-document = &Dokumenty (Markdown, Word, ODT)…
 menu-import-manuskript = &Manuskript (.msk)…
+menu-import-scrivener = &Scrivener (.scriv)…
 menu-export = &Exportovat
 menu-export-book = Exportovat knihu
 menu-export-part = Exportovat část
@@ -727,6 +728,8 @@ backup-no-destination-title = Není dostupné žádné umístění záloh
 backup-no-destination-text = Žádné z nastavených umístění záloh není dostupné (například může být odpojen externí disk). Připojte jej a zkuste to znovu, nebo skončete bez zálohování.
 backup-failed-close-title = Zálohu nelze uložit
 backup-failed-close-text = Před zavřením se nepodařilo zapsat žádnou záložní kopii. Selhala všechna umístění (disk mohl být odpojen, nebo je plný či chráněný proti zápisu). Opravte to a zkuste to znovu, nebo skončete bez zálohování.
+backup-failed-close-error-text = Před zavřením se nepodařilo zapsat žádnou záložní kopii: { $error }. Opravte to a zkuste to znovu, nebo skončete bez zálohování.
+backup-no-result = Zálohování skončilo, aniž by oznámilo, zda kopii vytvořilo. Podívejte se do seznamu záloh, zda v něm je nová.
 
 backup-choice-title = Soubor zálohy
 backup-choice-heading = Otevřeli jste záložní kopii
@@ -908,6 +911,8 @@ import-plume-source-missing = Tento soubor neexistuje
 import-plume-source-not-file = Tato cesta není soubor
 import-plume-manuscript-binder = Rukopis
 import-plume-story-bible-binder = Bible příběhu
+import-plume-notes-of = { $name } (poznámky)
+import-plume-content-of = { $name } (text)
 import-plume-progress-title = Importování projektu Plume…
 import-plume-done = { $imported ->
     [one] Importována { $imported } položka.
@@ -920,6 +925,12 @@ import-plume-done = { $imported ->
 }
 import-plume-nested-too-deep = Projekt nebyl importován: jeho část „{ $part }“ je vnořená hlouběji než do { $limit } úrovní. Žádný projekt Plume Creator se tomu ani neblíží a jeho čtení by mohlo Skribisto shodit. Nic nebylo zapsáno.
 import-plume-declares-entities = Projekt nebyl importován: jeho část „{ $part }“ deklaruje entity XML, což žádný projekt Plume Creator nedělá. Jejich rozvinutí by mohlo zabrat víc paměti, než počítač má, a Skribisto shodit. Nic nebylo zapsáno.
+import-plume-no-outline = Tento soubor je komprimovaný archiv, ale ne projekt Plume Creator: nemá osnovu. Nic nebylo zapsáno.
+import-plume-empty-outline = Soubor osnovy tohoto projektu Plume Creator je prázdný, takže není co importovat. Nic nebylo zapsáno.
+# $tag is the name of the document the part turned out to be.
+import-plume-wrong-document = Toto není projekt Plume Creator: jeho část „{ $part }“ je dokument typu „{ $tag }“. Nic nebylo zapsáno.
+# $version is the part's own version, $supported the newest this importer reads.
+import-plume-too-new = Část „{ $part }“ tohoto projektu zapsala novější verze Plume Creator ({ $version }), než jakou Skribisto umí přečíst (nejvýše { $supported }). Nic nebylo zapsáno.
 
 import-manuskript-title = Importovat projekt Manuskript
 import-manuskript-source = Projekt Manuskript
@@ -938,6 +949,7 @@ import-manuskript-summary-note = Shrnutí
 import-manuskript-importance-minor = Vedlejší
 import-manuskript-importance-secondary = Druhořadá
 import-manuskript-importance-main = Hlavní
+import-manuskript-notes-of = { $title } (poznámky)
 import-manuskript-progress-title = Importování projektu Manuskript…
 import-manuskript-done = { $imported ->
     [one] Importována { $imported } položka.
@@ -953,9 +965,1664 @@ import-manuskript-nested-too-deep = Projekt nebyl importován: jeho soubor „{ 
 import-manuskript-folders-too-deep = Projekt nebyl importován: jeden z jeho souborů leží hlouběji než { $limit } složek. Žádný projekt Manuskript se tomu ani neblíží a jeho čtení by mohlo Skribisto shodit. Nic nebylo zapsáno.
 import-manuskript-declares-entities = Projekt nebyl importován: jeho soubor „{ $part }“ deklaruje entity XML, což žádný projekt Manuskript nedělá. Jejich rozvinutí by mohlo zabrat víc paměti, než počítač má, a Skribisto shodit. Nic nebylo zapsáno.
 
+import-manuskript-not-a-project-file = „{ $file }“ není archiv projektu Manuskript ani malý soubor .msk, který odkazuje na složku projektu. Nic nebylo zapsáno.
+import-manuskript-folder-missing = „{ $stub }“ odkazuje na složku projektu „{ $folder }“, která má ležet vedle něj, ale tato složka tam není. Projekt Manuskript ve složkovém režimu tvoří obojí a obojí se musí přenášet společně. Nic nebylo zapsáno.
+import-manuskript-not-a-project = Toto nevypadá jako projekt Manuskript: nemá značku Manuskriptu ani osnovu. Nic nebylo zapsáno.
+import-manuskript-format-too-new = Tento projekt je ve formátu Manuskript { $version }, novějším, než jaký Skribisto umí přečíst (nejvýše { $supported }). Nic nebylo zapsáno.
+import-manuskript-too-many-files = Projekt nebyl importován: obsahuje více než { $limit } souborů, mnohem víc než kterýkoli projekt Manuskript. Nic nebylo zapsáno.
+import-manuskript-too-large = Projekt nebyl importován: je větší než { $limit } MB, které Skribisto z projektu Manuskript přečte. Nic nebylo zapsáno.
+project-import-close = Zavřít
+project-import-location = Cílová složka
+# The folder dialog's title.
+project-import-location-title = Vyberte cílovou složku
+project-import-name = Název souboru
+project-import-name-placeholder = Název projektu
+project-import-will-create = Vytvoří se
+project-import-cancel = Zrušit
+project-import-import = Importovat
+# Field validation
+project-import-location-required = Vyberte cílovou složku
+project-import-location-missing = Tato složka neexistuje
+project-import-location-not-folder = Tato cesta není složka
+project-import-location-readonly = Do této složky nelze zapisovat
+project-import-name-required = Zadejte název souboru
+project-import-name-exists = Soubor s tímto názvem zde už existuje. Import si přepsání nechá potvrdit
+project-import-name-is-folder = Složka s tímto názvem tu už je, možná projekt uložený jako složka. Import ji nemůže nahradit: zvolte jiný název
+# Overwrite confirmation
+project-import-overwrite-title = Nahradit stávající soubor?
+project-import-overwrite-text = „{ $name }“ už existuje. Nahradit jej importovaným projektem?
+# Projects are imported one at a time, whichever importer asks.
+project-import-busy-title = Právě se importuje jiný projekt
+project-import-busy-text = Projekty se importují jeden po druhém. Počkejte, až probíhající import skončí, nebo jej zrušte, a potom tento import spusťte znovu.
+# Spoken by a screen reader once per phase, never shown: the toast's title, then
+# the phase's name.
+project-import-progress-announcement = { $title } { $phase }
+# The notice once Cancel is pressed, until the converter has stopped: it may be
+# finishing a file it cannot leave half written.
+project-import-stopping = Zastavování importu…
+project-import-cancelled = Import byl zrušen
+project-import-open-now = Otevřít hned
+project-import-details = Podrobnosti
+# The import's report: what the writer should know about what came across.
+project-import-report = { $count ->
+    [one] 1 věc, kterou byste o tomto importu měli vědět
+    [few] { $count } věci, které byste o tomto importu měli vědět
+   *[other] { $count } věcí, které byste o tomto importu měli vědět
+}
+project-import-report-title = O tomto importu
+# Error toast: a short reason in the body, the full technical chain behind Details.
+project-import-error-title = Projekt nelze importovat
+# Why a project was not imported, whichever importer read it. A $file is a file
+# name, a $folder a full path (it is the folder the writer has to act on), a
+# $reason what the system or a parser said, a $limit a number.
+project-import-failed-cancelled = Import byl zrušen. Nic nebylo zapsáno.
+project-import-failed-target-exists = „{ $file }“ už existuje a import jej neměl povoleno nahradit. Nic nebylo zapsáno.
+project-import-failed-target-folder = „{ $file }“ je složka, možná projekt uložený jako složka, a import ji nemůže nahradit. Zvolte jiný název. Nic nebylo zapsáno.
+project-import-failed-not-written = „{ $file }“ nebylo možné zapsat do složky „{ $folder }“ ({ $reason }). Nic nebylo zapsáno.
+project-import-failed-disk-full = Ve složce „{ $folder }“ nezbývá dost místa na zápis „{ $file }“. Uvolněte tam místo a potom import spusťte znovu. Nic nebylo zapsáno.
+project-import-failed-source-missing = „{ $file }“ už tam není. Nic nebylo zapsáno.
+project-import-failed-unreadable = „{ $file }“ se nepodařilo přečíst ({ $reason }). Nic nebylo zapsáno.
+project-import-failed-archive-damaged = „{ $file }“ je komprimovaný soubor, který nebylo možné přečíst, nejspíš proto, že je poškozený ({ $reason }). Nic nebylo zapsáno.
+project-import-failed-archive-entries = Projekt nebyl importován: jeho archiv uvádí { $entries } souborů, víc než { $limit }, které smí projekt obsahovat. Tolik jich má jen soubor sestavený k vyčerpání paměti. Nic nebylo zapsáno.
+project-import-failed-archive-member = Projekt nebyl importován: jeho část „{ $part }“ se rozbalí na více než { $limit } MB, což dělá jen soubor sestavený k vyčerpání paměti. Nic nebylo zapsáno.
+project-import-failed-archive-size = Projekt nebyl importován: rozbalí se na více než { $limit } MB, což dělá jen soubor sestavený k vyčerpání paměti. Nic nebylo zapsáno.
+project-import-failed-nested = Projekt nebyl importován: jeho část „{ $part }“ je vnořená hlouběji než do { $limit } úrovní a její čtení by mohlo Skribisto shodit. Nic nebylo zapsáno.
+project-import-failed-entities = Projekt nebyl importován: jeho část „{ $part }“ deklaruje entity XML. Jejich rozvinutí by mohlo zabrat víc paměti, než počítač má, a Skribisto shodit. Nic nebylo zapsáno.
+project-import-failed-folders = Projekt nebyl importován: jeden z jeho souborů leží hlouběji než { $limit } složek a jeho čtení by mohlo Skribisto shodit. Nic nebylo zapsáno.
+project-import-failed-malformed = Projekt nebyl importován: jeho část „{ $part }“ je poškozená a nelze ji přečíst ({ $reason }). Nic nebylo zapsáno.
+# A Scrivener project the importer cannot bring across (a Scrivener 1 for Mac project, a
+# damaged binder file). Why is the Scrivener importer's own to say; Details holds its key.
+project-import-failed-scrivener-refused = Skribisto tento projekt Scrivener importovat nedokáže. Nic nebylo zapsáno.
+# The Scrivener project asks something its review did not answer: a project or a binder
+# file appeared in it since.
+project-import-failed-scrivener-question = Projekt Scrivener klade otázku, na kterou jeho kontrola neodpověděla. Zkontrolujte jej znovu a potom importujte. Nic nebylo zapsáno.
+# The Scrivener project raises a question the writer has to accept before it imports.
+project-import-failed-scrivener-not-accepted = Projekt Scrivener klade otázku, kterou jste ještě nepřijali. Zkontrolujte jej znovu a potom importujte. Nic nebylo zapsáno.
+# The Scrivener project changed after the writer reviewed it.
+project-import-failed-scrivener-changed = Projekt Scrivener se od vaší kontroly změnil. Zkontrolujte jej znovu a potom importujte. Nic nebylo zapsáno.
+# An error nothing above accounts for; $detail is its technical description.
+project-import-failed-internal = Import se zastavil na chybě, se kterou Skribisto nepočítá: { $detail }
+
 import-target-open-title = Tento projekt je otevřený
 import-target-open-text = „{ $name }“ je otevřen v aplikaci Skribisto. Import přes něj by nahradil projekt, na kterém pracujete, a jeho příští uložení by tento projekt zapsalo zpět přes import. Zvolte jiný název souboru, nebo projekt nejprve zavřete.
 import-warnings-announcement = { $result } { $notice }.
+
+# Quitting while an import runs. $name is the file the import is writing.
+quit-import-running-title = Import ještě probíhá
+quit-import-running-text = Skribisto ještě importuje „{ $name }“. Ukončením aplikace teď import zastavíte: nic se nezapíše a projekt, ze kterého importujete, zůstane, jak byl.
+quit-import-stop = Zastavit import a ukončit
+## Import a Scrivener project: the wizard
+import-scrivener-title = Importovat projekt Scrivener
+import-scrivener-step-project = Projekt
+import-scrivener-step-review = Kontrola
+import-scrivener-step-save = Uložení
+import-scrivener-back = Zpět
+import-scrivener-next = Další
+import-scrivener-import = Importovat
+import-scrivener-cancel = Zrušit
+import-scrivener-help = Nápověda
+## Project step: choosing the project
+import-scrivener-drop-title = Přetáhněte projekt Scrivener sem
+import-scrivener-drop-hint = Projekt .scriv, soubor .scrivx v něm, záložní .zip nebo .scrivtemplate
+import-scrivener-source = Projekt Scrivener
+import-scrivener-source-placeholder = Cesta k projektu
+import-scrivener-choose-file = Vybrat soubor…
+import-scrivener-choose-folder = Vybrat složku…
+# Windows and Linux show a .scriv project as an ordinary folder.
+import-scrivener-source-hint = Vyberte složku projektu .scriv, nebo ji otevřete a vyberte soubor .scrivx uvnitř. Poslouží i záložní .zip.
+# macOS shows a .scriv project as a single file when Scrivener is installed, as a folder when it is not.
+import-scrivener-source-hint-mac = Pokud se projekt zobrazuje jako jeden soubor, použijte „Vybrat soubor…“. Pokud se zobrazuje jako složka, použijte „Vybrat složku…“. Poslouží i záložní .zip.
+# File-dialog titles and filter label, resolved when the dialog opens.
+import-scrivener-dialog-file-title = Vyberte projekt Scrivener
+import-scrivener-dialog-folder-title = Vyberte složku projektu Scrivener
+import-scrivener-dialog-filter = Projekt Scrivener
+import-scrivener-source-missing = Na této cestě nic není
+# A path whose name is not Unicode: the field shows it with its unreadable letters replaced.
+import-scrivener-source-unreadable-name = Tento název nelze přečíst. Přejmenujte projekt ve správci souborů a potom jej vyberte znovu.
+import-scrivener-empty-hint = Vyberte projekt a uvidíte, co v něm Skribisto najde.
+import-scrivener-reading = Čtení projektu…
+import-scrivener-stop-reading = Přestat číst
+import-scrivener-read-failed = Projekt nebylo možné přečíst
+import-scrivener-read-failed-body = Při čtení se něco pokazilo. Načtěte jej znovu, nebo si prohlédněte podrobnosti.
+import-scrivener-details = Podrobnosti
+import-scrivener-check-again = Načíst znovu
+# A refusal this version does not know how to word.
+import-scrivener-refusal-unknown-title = Tento projekt nelze importovat
+import-scrivener-refusal-unknown-body = Skribisto neví, jak jej převést. Důvod uvádějí podrobnosti.
+## Project step: the project card
+import-scrivener-made-with-mac = Naposledy uloženo aplikací Scrivener { $version } pro macOS
+import-scrivener-made-with-windows = Naposledy uloženo aplikací Scrivener { $version } pro Windows
+import-scrivener-made-with-linux = Naposledy uloženo aplikací Scrivener { $version } pro Linux
+import-scrivener-made-with-ios = Naposledy uloženo aplikací Scrivener { $version } pro iPhone a iPad
+import-scrivener-made-with-version = Naposledy uloženo aplikací Scrivener { $version }
+import-scrivener-made-with-unknown = Projekt Scrivener, formát { $format }
+import-scrivener-saved-on = Uloženo { $date } na zařízení „{ $device }“
+import-scrivener-saved-on-no-device = Uloženo { $date }
+import-scrivener-card-counts = { $documents ->
+    [one] 1 dokument
+    [few] { $documents } dokumenty
+   *[other] { $documents } dokumentů
+}, z toho { $manuscript } v rukopisu
+## Review step
+import-scrivener-review-hint = Takto se váš pořadač převede. Dokud neimportujete, nic se nezapíše, a u mnoha položek můžete typ později změnit v pořadači příkazem Převést na.
+import-scrivener-choices-structure = Úrovně
+import-scrivener-top-level = Složky nejvyšší úrovně
+import-scrivener-choices-text = Text
+import-scrivener-choice-containers = Složky na úrovni { $depth }
+import-scrivener-choice-texts = Dokumenty na úrovni { $depth }
+import-scrivener-choice-count = { $count ->
+    [one] 1 položka
+    [few] { $count } položky
+   *[other] { $count } položek
+}
+import-scrivener-choice-count-example = { $count ->
+    [one] 1 položka: „{ $example }“
+    [few] { $count } položky, například „{ $example }“
+   *[other] { $count } položek, například „{ $example }“
+}
+import-scrivener-rung-part = Části
+import-scrivener-rung-chapter = Kapitoly
+import-scrivener-rung-plain = Obyčejné složky
+import-scrivener-texts-scenes = Scény
+import-scrivener-texts-chapters = Kapitoly
+import-scrivener-choice-books = Knihy v rukopisu
+import-scrivener-books-one = Jedna kniha
+import-scrivener-books-several = Jedna kniha na každou složku
+import-scrivener-choice-split = { $count ->
+    [one] Rozdělit „{ $title }“ podle jeho nadpisu
+    [few] Rozdělit „{ $title }“ podle jeho { $count } nadpisů
+   *[other] Rozdělit „{ $title }“ podle jeho { $count } nadpisů
+}
+import-scrivener-root-items = { $count ->
+    [one] 1 položka
+    [few] { $count } položky
+   *[other] { $count } položek
+}
+import-scrivener-root-items-manuscript = { $count ->
+    [one] 1 položka, vypadá jako rukopis
+    [few] { $count } položky, vypadá jako rukopis
+   *[other] { $count } položek, vypadá jako rukopis
+}
+import-scrivener-dest-notes = Poznámky
+import-scrivener-dest-story-bible = Bible příběhu
+import-scrivener-dest-manuscript = Další kniha
+import-scrivener-dest-leave-out = Vynechat
+import-scrivener-choice-trash = { $count ->
+    [one] Přenést i koš (1 položka)
+    [few] Přenést i koš ({ $count } položky)
+   *[other] Přenést i koš ({ $count } položek)
+}
+import-scrivener-trash-detail = { $count ->
+    [0] Žádná z nich neobsahuje text.
+    [one] 1 z nich obsahuje text.
+    [few] { $count } z nich obsahují text.
+   *[other] { $count } z nich obsahuje text.
+}
+import-scrivener-choice-blank-lines = Prázdné řádky se stanou předěly scén
+import-scrivener-choice-ornaments = Řádky z ozdobných znaků se stanou předěly scén
+import-scrivener-preview-label = Struktura nového projektu
+import-scrivener-col-title = Název
+import-scrivener-col-becomes = Stane se
+import-scrivener-col-exports = V exportech
+import-scrivener-in-exports-yes = Ano
+import-scrivener-in-exports-no = Ne
+# What a row the binder has no creation command for becomes.
+import-scrivener-becomes-item = Položka
+import-scrivener-becomes-trashed = V koši
+import-scrivener-before-title = Před importem
+import-scrivener-review-error-unreadable = Kontrolu nebylo možné připravit. Vyberte projekt znovu.
+import-scrivener-review-error-choice = Tato volba k projektu nesedí. Vyberte projekt znovu.
+import-scrivener-review-error-unmappable = S touto volbou nelze pořadač převést, aniž by se něco ztratilo. Zvolte jinak, nebo problém nahlaste.
+## Save step
+import-scrivener-save-hint = Import vytvoří nový projekt Skribisto. Váš projekt Scrivener se jen čte, nikdy se nemění.
+import-scrivener-title-field = Název
+import-scrivener-author = Autor
+import-scrivener-language = Jazyk
+import-scrivener-location-inside-project = Vyberte složku mimo projekt Scrivener. Scrivener v ní uchovává jen své vlastní soubory.
+import-scrivener-copy-research-label = Zkopírovat soubory z rešerší vedle nového projektu
+import-scrivener-copy-research = { $count ->
+    [one] 1 soubor z rešerší, který Skribisto neumí otevřít, například PDF nebo zvuk, se uloží do složky vedle projektu. Pokud volbu nezaškrtnete, jeho poznámka uvede, kde ve vašem projektu Scrivener leží.
+    [few] { $count } soubory z rešerší, které Skribisto neumí otevřít, například PDF nebo zvuky, se uloží do složky vedle projektu. Pokud volbu nezaškrtnete, jejich poznámky uvedou, kde ve vašem projektu Scrivener leží.
+   *[other] { $count } souborů z rešerší, které Skribisto neumí otevřít, například PDF nebo zvuky, se uloží do složky vedle projektu. Pokud volbu nezaškrtnete, jejich poznámky uvedou, kde ve vašem projektu Scrivener leží.
+}
+# The file name proposed when the project's name holds nothing a file name can.
+import-scrivener-default-name = Projekt Scrivener
+## Progress and result
+import-scrivener-progress-title = Importování projektu Scrivener…
+import-scrivener-done-title = Projekt Scrivener byl importován
+# How many rows the new project holds: the documents and folders that came across, and
+# the rows the import made for them (a document's notes, the project notes).
+import-scrivener-done = { $items ->
+    [one] Nový projekt obsahuje 1 položku.
+    [few] Nový projekt obsahuje { $items } položky.
+   *[other] Nový projekt obsahuje { $items } položek.
+}
+# The same, with how many kinds of thing could not be read or need checking.
+import-scrivener-done-check = { $items ->
+    [one] Nový projekt obsahuje 1 položku.
+    [few] Nový projekt obsahuje { $items } položky.
+   *[other] Nový projekt obsahuje { $items } položek.
+} { $findings ->
+    [one] 1 věc vyžaduje vaši pozornost.
+    [few] { $findings } věci vyžadují vaši pozornost.
+   *[other] { $findings } věcí vyžaduje vaši pozornost.
+}
+import-scrivener-review-again = Znovu zkontrolovat
+## The import's report (the dialog See report opens)
+import-scrivener-see-report = Zobrazit zprávu
+import-scrivener-report-from = Přečteno z { $path }
+import-scrivener-report-to = Zapsáno do { $path }
+import-scrivener-report-came-across = Co se přeneslo
+import-scrivener-report-nothing-counted = Nic nebylo započítáno.
+import-scrivener-report-items = { $count ->
+    [one] 1 položka
+    [few] { $count } položky
+   *[other] { $count } položek
+}
+import-scrivener-report-words = { $count ->
+    [one] 1 slovo
+    [few] { $count } slova
+   *[other] { $count } slov
+}
+import-scrivener-report-synopses = { $count ->
+    [one] 1 synopse
+    [few] { $count } synopse
+   *[other] { $count } synopsí
+}
+import-scrivener-report-document-notes = { $count ->
+    [one] poznámky 1 dokumentu
+    [few] poznámky { $count } dokumentů
+   *[other] poznámky { $count } dokumentů
+}
+import-scrivener-report-comments = { $count ->
+    [one] 1 komentář
+    [few] { $count } komentáře
+   *[other] { $count } komentářů
+}
+import-scrivener-report-footnotes = { $count ->
+    [one] 1 poznámka pod čarou
+    [few] { $count } poznámky pod čarou
+   *[other] { $count } poznámek pod čarou
+}
+import-scrivener-report-pictures = { $count ->
+    [one] 1 obrázek
+    [few] { $count } obrázky
+   *[other] { $count } obrázků
+}
+import-scrivener-report-templates = { $count ->
+    [one] 1 šablona poznámky
+    [few] { $count } šablony poznámek
+   *[other] { $count } šablon poznámek
+}
+import-scrivener-report-tags = { $count ->
+    [one] 1 štítek
+    [few] { $count } štítky
+   *[other] { $count } štítků
+}
+import-scrivener-report-statuses = { $count ->
+    [one] 1 stav
+    [few] { $count } stavy
+   *[other] { $count } stavů
+}
+import-scrivener-report-trashed = { $count ->
+    [one] 1 položka v koši
+    [few] { $count } položky v koši
+   *[other] { $count } položek v koši
+}
+import-scrivener-report-research-files = { $count ->
+    [one] 1 soubor z rešerší
+    [few] { $count } soubory z rešerší
+   *[other] { $count } souborů z rešerší
+}
+import-scrivener-report-choices = Co jste zvolili
+import-scrivener-report-accepted-mobile = Projekt jste importovali bez změn provedených v aplikaci Scrivener pro iPhone nebo iPad, které v něm ještě nebyly.
+import-scrivener-report-accepted-no-text = Tuto kopii jste importovali s prázdnými dokumenty, protože žádný jejich text v ní nebyl.
+import-scrivener-report-choice = { $subject }: { $answer }
+import-scrivener-report-yes = ano
+import-scrivener-report-no = ne
+import-scrivener-report-research-copied = Soubory z rešerší, které Skribisto neumí otevřít, byly zkopírovány do složky „{ $folder }“ vedle nového projektu.
+import-scrivener-report-research-not-copied = Soubory z rešerší, které Skribisto neumí otevřít, nebyly zkopírovány. Jejich poznámky uvádějí, kde ve vašem projektu Scrivener leží.
+import-scrivener-report-research-copied-except = { $count ->
+    [one] Soubory z rešerší, které Skribisto neumí otevřít, byly zkopírovány do složky „{ $folder }“ vedle nového projektu, kromě 1 souboru, který zůstává ve vašem projektu Scrivener. Jeho poznámka uvádí, kde leží.
+    [few] Soubory z rešerší, které Skribisto neumí otevřít, byly zkopírovány do složky „{ $folder }“ vedle nového projektu, kromě { $count } souborů, které zůstávají ve vašem projektu Scrivener. Jejich poznámky uvádějí, kde leží.
+   *[other] Soubory z rešerší, které Skribisto neumí otevřít, byly zkopírovány do složky „{ $folder }“ vedle nového projektu, kromě { $count } souborů, které zůstávají ve vašem projektu Scrivener. Jejich poznámky uvádějí, kde leží.
+}
+import-scrivener-report-research-none-copied = { $count ->
+    [one] Požádali jste o zkopírování souborů z rešerší, ale 1 soubor se zkopírovat nepodařilo. Zůstává ve vašem projektu Scrivener a jeho poznámka uvádí, kde leží.
+    [few] Požádali jste o zkopírování souborů z rešerší, ale { $count } soubory se zkopírovat nepodařilo. Zůstávají ve vašem projektu Scrivener a jejich poznámky uvádějí, kde leží.
+   *[other] Požádali jste o zkopírování souborů z rešerší, ale { $count } souborů se zkopírovat nepodařilo. Zůstávají ve vašem projektu Scrivener a jejich poznámky uvádějí, kde leží.
+}
+import-scrivener-report-chose-project = Zvolili jste import projektu „{ $project }“, jednoho z projektů v tom, co jste vybrali.
+import-scrivener-report-chose-manifest = Zvolili jste soubor pořadače „{ $file }“.
+import-scrivener-report-chose-enclosing = Vybrali jste něco uvnitř projektu „{ $project }“, proto byl importován celý projekt.
+import-scrivener-report-chose-upgraded = Importovali jste „{ $current }“, projekt, ve kterém jste dál psali, nikoli kopii, kterou Scrivener uchoval před aktualizací.
+import-scrivener-report-chose-backup = Importovali jste „{ $backup }“, starší kopii, kterou Scrivener uchoval před aktualizací.
+import-scrivener-report-title-placeholder-rejected = Název v nastavení projektu byl zástupným textem šablony, proto bylo místo něj navrženo jméno projektu.
+import-scrivener-report-author-placeholder-rejected = Jméno autora v nastavení projektu bylo zástupným textem šablony, proto nebylo navrženo žádné.
+import-scrivener-report-title-from-compile-settings = Navržen byl název, který uvádí nastavení kompilace projektu: jméno, které projekt dostal při vytvoření, pokud tam v aplikaci Scrivener nebyl nastaven jiný název.
+import-scrivener-report-title-from-template = Navržen byl vlastní název šablony.
+import-scrivener-report-title-from-folder-name = Jako název bylo navrženo jméno projektu.
+import-scrivener-report-title-from-project-properties = Navržen byl název, který uvádějí vlastnosti projektu.
+import-scrivener-report-author-from-project = Navrženo bylo jméno autora, které uvádí nastavení projektu. Může tam zůstat autor šablony a ten by se vytiskl na titulní stránku.
+import-scrivener-report-language-not-stated = Projekt neuváděl svůj jazyk, proto byl navržen jazyk, ve kterém se zobrazuje Skribisto. Jazyk určuje, jak se počítají slova a jak se píší uvozovky.
+import-scrivener-report-language-from-script = Jazyk byl navržen podle písma, kterým je rukopis napsán ({ $tag }).
+# A proposal of the Save page the writer replaced with their own.
+import-scrivener-report-you-changed-it = { $hint } Tento návrh jste změnili.
+import-scrivener-report-content-salvaged-text = Text položky „{ $item }“ v projektu chyběl. Jeho slova pocházejí z vyhledávacího indexu aplikace Scrivener, jako prostý text a možná ze starší verze: zkontrolujte je.
+import-scrivener-report-content-salvaged-notes = Poznámky položky „{ $item }“ v projektu chyběly. Jejich slova pocházejí z vyhledávacího indexu aplikace Scrivener, jako prostý text a možná ze starší verze: zkontrolujte je.
+import-scrivener-report-content-salvaged-synopsis = Synopse položky „{ $item }“ v projektu chyběla. Její slova pocházejí z vyhledávacího indexu aplikace Scrivener, jako prostý text a možná ze starší verze: zkontrolujte je.
+# A finding of the document importer found in several places: its sentence about the
+# first, then how many more the list under it names.
+import-scrivener-report-document-others = { $others ->
+    [one] { $sentence } Totéž platí ještě pro 1 další místo, uvedené níže.
+    [few] { $sentence } Totéž platí ještě pro { $others } další místa, uvedená níže.
+   *[other] { $sentence } Totéž platí ještě pro { $others } dalších míst, uvedených níže.
+}
+# An item of the report, by its path in Scrivener's binder, with which of its writings
+# the line is about when it is not the text.
+import-scrivener-report-item-notes = { $path } (poznámky dokumentu)
+import-scrivener-report-item-synopsis = { $path } (synopse)
+import-scrivener-report-item-project-note = { $path } (poznámka k projektu)
+import-scrivener-report-item-recovered = { $path } (obnovený text)
+# An item with no name in Scrivener.
+import-scrivener-report-untitled = Bez názvu
+import-scrivener-report-no-findings = Import nemá nic dalšího k hlášení.
+import-scrivener-report-group-unread = Nelze přečíst
+import-scrivener-report-group-check = Zkontrolujte
+import-scrivener-report-group-changed = Převedeno jinak
+import-scrivener-report-group-left = Zůstalo stranou
+import-scrivener-report-group-count = { $group } ({ $count })
+import-scrivener-report-items-toggle = { $count ->
+    [one] 1 položka
+    [few] { $count } položky
+   *[other] { $count } položek
+}
+# The same, as a screen reader names it: with the line whose items it lists.
+import-scrivener-report-items-toggle-named = { $count ->
+    [one] 1 položka: { $line }
+    [few] { $count } položky: { $line }
+   *[other] { $count } položek: { $line }
+}
+import-scrivener-report-names-toggle = { $count ->
+    [one] 1 název
+    [few] { $count } názvy
+   *[other] { $count } názvů
+}
+# The same, as a screen reader hears it, naming the line it belongs to.
+import-scrivener-report-names-toggle-named = { $count ->
+    [one] 1 název: { $line }
+    [few] { $count } názvy: { $line }
+   *[other] { $count } názvů: { $line }
+}
+import-scrivener-report-more = { $count ->
+    [one] A ještě 1 další.
+    [few] A ještě { $count } další.
+   *[other] A ještě { $count } dalších.
+}
+import-scrivener-report-open-item = Otevřít v editoru
+import-scrivener-report-links-hint = Otevřete nový projekt a potom tuto zprávu zobrazte znovu z palety příkazů: každá zde uvedená položka se pak otevře kliknutím.
+import-scrivener-copy-report = Kopírovat zprávu
+import-scrivener-report-copied = Zpráva byla zkopírována
+import-scrivener-report-copy-failed = Zprávu nebylo možné zkopírovat.
+import-scrivener-report-close = Zavřít
+import-scrivener-report-none-title = Žádná zpráva o importu
+import-scrivener-report-none = Od spuštění aplikace Skribisto neskončil žádný import z aplikace Scrivener. Skribisto uchovává zprávy o posledních importech, dokud se nezavře.
+import-scrivener-report-gone = Zpráva o tomto importu už není uchována. Skribisto uchovává zprávy o posledních { $count } importech, dokud se nezavře.
+## Words the import writes into the new project, in the language Skribisto shows itself in
+import-scrivener-manuscript-binder = Rukopis
+import-scrivener-notes-binder = Poznámky
+import-scrivener-notes-of = { $title } (poznámky)
+import-scrivener-project-notes = Poznámky k projektu
+import-scrivener-recovered = Obnovené texty
+import-scrivener-untitled-template = Šablona bez názvu
+# The folder beside the new project its research files are copied into.
+import-scrivener-research-folder = { $name } (soubory z rešerší)
+# Between two authors' names.
+import-scrivener-list-separator = {", "}
+import-scrivener-label-details = Z pole „{ $field }“ v aplikaci Scrivener
+import-scrivener-status-details = Z pole „{ $field }“ v aplikaci Scrivener
+import-scrivener-unnamed-label = Popisek { $number }
+import-scrivener-unnamed-status = Stav { $number }
+import-scrivener-label-tag = { $name } (popisek)
+import-scrivener-untitled-tag = Bez názvu
+# The tags, the pace plan and the "From Scrivener" folder the import makes from what a
+# Scrivener project holds beyond its labels and status.
+import-scrivener-keyword-details = Klíčové slovo „{ $path }“ v aplikaci Scrivener
+import-scrivener-unnamed-keyword = Klíčové slovo { $number }
+import-scrivener-keyword-tag = { $name } (klíčové slovo)
+import-scrivener-collection-details = Kolekce v aplikaci Scrivener
+import-scrivener-collection-tag = { $name } (kolekce)
+import-scrivener-field-details = Z pole „{ $field }“ v aplikaci Scrivener
+# A tag made from one option of a list field.
+import-scrivener-field-value = { $field }: { $option }
+import-scrivener-field-tag = { $name } (pole)
+# The day off a pace plan takes on its deadline.
+import-scrivener-deadline-day = Termín
+import-scrivener-from-scrivener = Z aplikace Scrivener
+import-scrivener-note-project = Projekt
+import-scrivener-note-project-bookmarks = Záložky projektu
+import-scrivener-note-replacements = Náhrady při kompilaci
+import-scrivener-note-auto-complete = Položky automatického doplňování
+import-scrivener-note-saved-searches = Uložená hledání
+import-scrivener-note-custom-metadata = Vlastní metadata
+import-scrivener-note-targets = Cíle
+import-scrivener-note-bookmarks = Záložky
+import-scrivener-abbreviated-title = Zkrácený název
+import-scrivener-subjects = Témata
+import-scrivener-company = Společnost
+import-scrivener-session-target = Cíl sezení
+import-scrivener-session-target-calculated = Cíl sezení, vypočtený aplikací Scrivener z termínu
+import-scrivener-writing-days = Psací dny
+import-scrivener-weekday-monday = pondělí
+import-scrivener-weekday-tuesday = úterý
+import-scrivener-weekday-wednesday = středa
+import-scrivener-weekday-thursday = čtvrtek
+import-scrivener-weekday-friday = pátek
+import-scrivener-weekday-saturday = sobota
+import-scrivener-weekday-sunday = neděle
+import-scrivener-draft-target = Cíl rukopisu
+import-scrivener-deadline = Termín
+# A unit after a count, in parentheses: "1000 (words)".
+import-scrivener-unit-words = slov
+import-scrivener-unit-characters = znaků
+import-scrivener-unit-pages = stran
+import-scrivener-search-query = Hledaný text
+import-scrivener-search-in = Oblast hledání
+import-scrivener-search-operator = Způsob shody
+# What a saved search looks in, by the kind Scrivener names.
+import-scrivener-search-in-all = vše
+import-scrivener-search-in-title = názvy
+import-scrivener-search-in-text = text
+import-scrivener-search-in-notes = poznámky
+import-scrivener-search-in-synopsis = synopse
+import-scrivener-search-in-keywords = klíčová slova
+import-scrivener-search-in-label = popisky
+import-scrivener-search-in-status = stavy
+import-scrivener-search-in-section-type = typy oddílů
+import-scrivener-search-in-custom-metadata = vlastní metadata
+# How a saved search's words combine.
+import-scrivener-search-any = kterékoli slovo
+import-scrivener-search-all = všechna slova
+import-scrivener-search-exact = přesná fráze
+# One line of a listing: a bookmark's place and its note, or a link's words and its address.
+import-scrivener-label-value = { $label }: { $value }
+import-scrivener-replacement-regex = regulární výraz
+import-scrivener-replacement-off = vypnuto
+# Said of a note whose own text lists its custom metadata or bookmarks.
+import-scrivener-in-own-note = Uvedeno ve vlastní poznámce.
+# A refusal on one line: its title, then what to do.
+import-scrivener-paragraph = { $title }. { $body }
+## When the project cannot be imported
+import-scrivener-refusal-missing-title = Na této cestě nic není
+import-scrivener-refusal-missing-body = „{ $file }“ už tam není. Vyberte projekt znovu.
+import-scrivener-refusal-unreadable-title = Tento projekt nelze přečíst
+import-scrivener-refusal-unreadable-body = „{ $file }“ se nepodařilo přečíst ({ $reason }). Ověřte, že jej můžete otevřít, a zkuste to znovu.
+import-scrivener-refusal-not-a-scrivener-project-title = Žádný projekt Scrivener tu není
+import-scrivener-refusal-not-a-scrivener-project-body = Vyberte složku projektu .scriv, soubor .scrivx v ní, záložní .zip nebo .scrivtemplate.
+import-scrivener-refusal-manifest-without-files-title = Dokumenty v této kopii nejsou
+import-scrivener-refusal-manifest-without-files-body = „{ $manifest }“ tu je, ale chybí složka Files s dokumenty, které uvádí. Synchronizační služba možná ještě nedokončila kopírování projektu, nebo se zkopíroval jen soubor .scrivx. Pokud jste vybrali soubor .scrivx, vyberte místo něj složku projektu pomocí „Vybrat složku…“.
+import-scrivener-refusal-search-too-wide-title = V této složce je toho na prohledání příliš mnoho
+import-scrivener-refusal-search-too-wide-body = Obsahuje více než { $limit } složek k prohledání. Vyberte přímo projekt Scrivener.
+import-scrivener-refusal-scrivener-one-for-mac-title = Tento projekt vytvořila aplikace Scrivener 1 pro Mac
+import-scrivener-refusal-scrivener-one-for-mac-body = Skribisto čte projekty z aplikace Scrivener 2 a novějších. Otevřete jej jednou v aplikaci Scrivener 2 nebo 3, aby se aktualizoval, nebo jej zkompilujte do dokumentu Word a importujte ten.
+import-scrivener-refusal-ios-stub-without-mobile-data-title = Toto je jen zástupný soubor z aplikace Scrivener pro iPhone nebo iPad
+import-scrivener-refusal-ios-stub-without-mobile-data-body = Samotný projekt tu není. Synchronizujte jej ze svého iPhonu nebo iPadu, nebo jej odtamtud sdílejte jako .zip a importujte ten.
+import-scrivener-refusal-newer-title = Tento projekt vytvořila novější verze aplikace Scrivener
+import-scrivener-refusal-unknown-format-version-body = Jeho formát, { $version }, Skribisto nezná. Zkontrolujte, zda není k dispozici aktualizace aplikace Skribisto. Do té doby jej v aplikaci Scrivener zkompilujte do dokumentu Word a importujte ten.
+import-scrivener-refusal-newer-format-stamp-body = Jeho soubory jsou označeny jako verze { $stamp } a Skribisto čte nejvýše verzi { $newest }. Zkontrolujte, zda není k dispozici aktualizace aplikace Skribisto. Do té doby jej v aplikaci Scrivener zkompilujte do dokumentu Word a importujte ten.
+import-scrivener-refusal-version-stamp-unreadable-title = Verzi projektu nelze přečíst
+import-scrivener-refusal-version-stamp-unreadable-body = Jeho soubor Files/version.txt neobsahuje číslo verze, takže Skribisto nemůže určit, zda tento projekt umí číst. Otevřete projekt jednou v aplikaci Scrivener a potom jej importujte znovu.
+import-scrivener-refusal-damaged-manifest-title = Soubor pořadače nelze přečíst
+import-scrivener-refusal-damaged-manifest-body = „{ $manifest }“ je poškozený. { $spare_copies ->
+    [0] Otevřete projekt v aplikaci Scrivener, která jej umí opravit, a potom jej importujte znovu.
+    [one] Scrivener si uvnitř projektu uchovává jeho záložní kopii, kterou Skribisto nečte. Otevřete projekt v aplikaci Scrivener, která jej umí opravit, a potom jej importujte znovu.
+    [few] Scrivener si uvnitř projektu uchovává { $spare_copies } jeho záložní kopie, které Skribisto nečte. Otevřete projekt v aplikaci Scrivener, která jej umí opravit, a potom jej importujte znovu.
+   *[other] Scrivener si uvnitř projektu uchovává { $spare_copies } jeho záložních kopií, které Skribisto nečte. Otevřete projekt v aplikaci Scrivener, která jej umí opravit, a potom jej importujte znovu.
+}
+# The empty file Scrivener writes for a new project before its first save: not damage.
+import-scrivener-refusal-damaged-manifest-new-project-placeholder-body = „{ $manifest }“ je prázdný soubor, který Scrivener zapisuje pro projekt, jenž ještě neuložil. Otevřete projekt v aplikaci Scrivener, nechte jej uložit a potom jej importujte znovu.
+import-scrivener-refusal-manifest-too-large-title = Tento soubor pořadače je příliš velký
+import-scrivener-refusal-manifest-too-large-body = „{ $manifest }“ je větší než { $limit } MB, které Skribisto přečte. Žádný skutečný projekt se tomu ani neblíží, takže soubor může být poškozený.
+import-scrivener-refusal-no-item-identifiers-title = Pořadač neuvádí žádný dokument, který by šlo najít
+import-scrivener-refusal-no-item-identifiers-body = Žádná z jeho položek nemá identifikátor, takže jejich soubory nelze najít. Otevřete projekt jednou v aplikaci Scrivener a potom jej importujte znovu.
+import-scrivener-refusal-incomplete-copy-title = V této kopii chybějí dokumenty
+import-scrivener-refusal-incomplete-copy-body = Složka Files tu je, ale dokumenty v ní ne. Synchronizační služba možná ještě nedokončila kopírování projektu. Počkejte, až skončí, nebo znovu zkopírujte celou složku .scriv, a potom projekt načtěte znovu.
+import-scrivener-refusal-archive-title = Tento archiv nelze otevřít
+import-scrivener-refusal-archive-unreadable-body = „{ $file }“ se nepodařilo přečíst ({ $reason }). Možná je poškozený. Rozbalte jej sami a potom vyberte složku .scriv, kterou obsahuje.
+import-scrivener-refusal-archive-unsafe-name-title = Tento archiv nelze bezpečně otevřít
+# A name with `..` in it, or an absolute one.
+import-scrivener-refusal-archive-unsafe-name-body = „{ $file }“ obsahuje soubor s názvem „{ $member }“, který by se ocitl mimo archiv, proto jej Skribisto neotevře.
+import-scrivener-refusal-archive-unsafe-name-empty-body = „{ $file }“ obsahuje soubor bez názvu, proto jej Skribisto neotevře.
+import-scrivener-refusal-archive-unsafe-name-control-character-body = „{ $file }“ obsahuje soubor, v jehož názvu je řídicí znak, proto jej Skribisto neotevře.
+import-scrivener-refusal-archive-too-large-title = Tento archiv je příliš velký, než aby šel bezpečně otevřít
+import-scrivener-refusal-archive-too-many-members-body = Obsahuje více než { $limit } souborů. Rozbalte jej sami a potom vyberte složku .scriv, kterou obsahuje.
+import-scrivener-refusal-archive-member-too-large-body = „{ $member }“ se rozbalí na více než { $limit } MB. Rozbalte archiv sami a potom vyberte složku .scriv, kterou obsahuje.
+import-scrivener-refusal-archive-too-large-body = Rozbalí se na více než { $limit } MB. Rozbalte jej sami a potom vyberte složku .scriv, kterou obsahuje.
+import-scrivener-refusal-archive-encrypted-title = Tento archiv je chráněn heslem
+import-scrivener-refusal-archive-encrypted-body = Rozbalte „{ $file }“ sami a potom vyberte složku .scriv, kterou obsahuje.
+import-scrivener-refusal-archive-unsupported-compression-title = Tento archiv je zabalen způsobem, který Skribisto neumí přečíst
+import-scrivener-refusal-archive-unsupported-compression-body = „{ $member }“ je komprimován metodou { $method }. Rozbalte archiv sami a potom vyberte složku .scriv, kterou obsahuje.
+import-scrivener-refusal-duplicate-archive-members-title = Tento archiv uvádí některé soubory dvakrát
+import-scrivener-refusal-duplicate-archive-members-body = „{ $file }“ obsahuje více souborů se stejným názvem, takže Skribisto nemůže určit, který z nich patří k projektu. Rozbalte jej sami a potom vyberte složku .scriv, kterou obsahuje.
+# What a file cut short looks like; a file too large, one that is not a template and one
+# encoded another way have their own words.
+import-scrivener-refusal-template-undecodable-title = Tento soubor šablony je neúplný
+import-scrivener-refusal-template-undecodable-too-large-title = Tento soubor šablony je příliš velký na to, aby šel otevřít
+import-scrivener-refusal-template-undecodable-not-a-template-title = Tento soubor není šablona aplikace Scrivener
+import-scrivener-refusal-template-undecodable-unknown-encoding-title = Tento soubor šablony je uložen v podobě, kterou Skribisto nezná
+import-scrivener-refusal-template-undecodable-body = „{ $file }“ nelze dekódovat: možná končí dřív než projekt, který obsahuje. Stáhněte jej znovu, nebo jej otevřete v aplikaci Scrivener a vytvořte z něj projekt.
+import-scrivener-refusal-template-undecodable-too-large-body = „{ $file }“ je větší než { $limit } MB. Otevřete jej v aplikaci Scrivener, vytvořte z něj projekt a potom importujte ten projekt.
+import-scrivener-refusal-template-undecodable-not-a-template-body = „{ $file }“ neobsahuje projekt Scrivener. Vyberte soubor šablony, který uložil Scrivener, nebo projekt z něj vytvořený.
+import-scrivener-refusal-template-undecodable-unknown-encoding-body = „{ $file }“ ukládá svůj projekt způsobem, který Skribisto neumí dekódovat. Otevřete jej v aplikaci Scrivener, vytvořte z něj projekt a potom importujte ten projekt.
+import-scrivener-refusal-cloud-placeholders-title = { $count ->
+    [one] 1 soubor tohoto projektu je stále v cloudu
+    [few] { $count } soubory tohoto projektu jsou stále v cloudu
+   *[other] { $count } souborů tohoto projektu je stále v cloudu
+}
+import-scrivener-refusal-cloud-placeholders-body = Nebyly staženy do tohoto počítače, například { $examples }. Ve své synchronizační aplikaci zpřístupněte projekt offline a potom jej načtěte znovu.
+import-scrivener-refusal-unreadable-members-title = { $count ->
+    [one] 1 soubor tohoto projektu nelze přečíst
+    [few] { $count } soubory tohoto projektu nelze přečíst
+   *[other] { $count } souborů tohoto projektu nelze přečíst
+}
+import-scrivener-refusal-unreadable-members-body = Například { $examples }. Ověřte, že máte oprávnění číst celý projekt a že je disk v pořádku, a potom projekt načtěte znovu.
+import-scrivener-refusal-needed-member-is-link-title = Tento projekt odkazuje mimo svou vlastní složku
+import-scrivener-refusal-needed-member-is-link-body = „{ $member }“ je odkaz na jiné místo v tomto počítači a Skribisto odkazy nesleduje. Zkopírujte projekt tak, aby byly všechny soubory uvnitř, a zkuste to znovu.
+import-scrivener-refusal-project-changed-during-read-title = Projekt se během čtení změnil
+import-scrivener-refusal-project-changed-during-read-body = Scrivener nebo synchronizační služba do něj stále zapisuje. Zavřete jej v aplikaci Scrivener, počkejte na dokončení synchronizace a potom jej načtěte znovu.
+import-scrivener-refusal-too-many-members-title = Tento projekt obsahuje příliš mnoho souborů
+import-scrivener-refusal-too-many-members-body = Má více než { $limit } souborů, víc než kterýkoli skutečný projekt. Možná to není projekt Scrivener, nebo je poškozený.
+import-scrivener-refusal-too-large-title = Tento projekt je příliš velký
+import-scrivener-refusal-too-large-body = Jeho text má více než { $limit } MB, víc, než Skribisto dokáže bezpečně importovat.
+import-scrivener-refusal-structure-unmappable-title = Skribisto tento pořadač neumí převést
+import-scrivener-refusal-structure-unmappable-body = Pořadač nebylo možné převést, aniž by se něco ztratilo nebo ocitlo na špatném místě. Jde o chybu v aplikaci Skribisto, ne ve vašem projektu. Nahlaste ji prosím spolu s tím, co ukazují „Podrobnosti“.
+## When there is a choice to make
+import-scrivener-roots-title = { $count ->
+    [one] Je tu { $count } projekt. Který z nich?
+    [few] Jsou tu { $count } projekty. Který z nich?
+   *[other] Je tu { $count } projektů. Který z nich?
+}
+import-scrivener-roots-hint = Tato složka nebo archiv obsahuje více projektů Scrivener. Vyberte ten, který chcete importovat.
+import-scrivener-manifests-title = { $count ->
+    [one] Tento projekt má { $count } soubor pořadače
+    [few] Tento projekt má { $count } soubory pořadače
+   *[other] Tento projekt má { $count } souborů pořadače
+}
+import-scrivener-manifests-hint = Scrivener uchovává pořadač, tedy seznam všech dokumentů a složek, v souboru .scrivx. Ty navíc nejspíš zanechala synchronizační služba. Vyberte ten, ve kterém jste naposledy pracovali.
+import-scrivener-manifests-hint-preselected = Scrivener uchovává pořadač, tedy seznam všech dokumentů a složek, v souboru .scrivx. Ty navíc nejspíš zanechala synchronizační služba. Vybraný je ten, ve kterém jste nejspíš pracovali naposledy: než budete pokračovat, ověřte to.
+import-scrivener-manifest-row = { $file } · uloženo { $date } · { $documents ->
+    [one] 1 položka
+    [few] { $documents } položky
+   *[other] { $documents } položek
+}
+import-scrivener-manifest-row-undated = { $file } · { $documents ->
+    [one] 1 položka
+    [few] { $documents } položky
+   *[other] { $documents } položek
+}
+import-scrivener-manifest-row-unread = { $file } · nelze přečíst
+import-scrivener-enclosing-title = Toto je součást projektu Scrivener „{ $project }“
+import-scrivener-enclosing-body = Vybrali jste soubor nebo složku uvnitř projektu. Skribisto importuje celý projekt.
+import-scrivener-enclosing-use = Importovat „{ $project }“
+import-scrivener-upgrade-title = Toto je kopie, kterou Scrivener uchoval před aktualizací
+import-scrivener-upgrade-body = Když Scrivener aktualizuje projekt na novější verzi, uchová ten starý jako „{ $backup }“. Projekt, ve kterém jste dál psali, je „{ $current }“ vedle něj.
+import-scrivener-upgrade-body-unclear = Když Scrivener aktualizuje projekt na novější verzi, uchová ten starý jako „{ $backup }“. Projekt vedle něj, „{ $current }“, nebylo možné bez potíží přečíst, proto vyberte, který z nich importovat.
+import-scrivener-upgrade-use-current = Importovat „{ $current }“, projekt, ve kterém jste dál psali
+import-scrivener-upgrade-keep-backup = Importovat tuto starší kopii, „{ $backup }“
+## What must be accepted before going on
+import-scrivener-ios-pending-title = Změny provedené v aplikaci Scrivener pro iPhone nebo iPad v této kopii ještě nejsou
+import-scrivener-ios-pending-body = Scrivener v počítači tyto změny převezme, až projekt příště otevře. Otevřete projekt jednou v aplikaci Scrivener ve svém počítači a potom jej importujte znovu.
+import-scrivener-ios-pending-accept = Importovat jej bez těchto změn
+import-scrivener-no-text-title = { $count ->
+    [one] 1 dokument, a v této kopii ani slovo textu
+    [few] { $count } dokumenty, a v této kopii ani slovo textu
+   *[other] { $count } dokumentů, a v této kopii ani slovo textu
+}
+import-scrivener-no-text-body = Synchronizační služba možná projekt ještě kopíruje, nebo kopie přišla o své dokumenty. Pokud ji importujete teď, všechny dokumenty budou prázdné.
+import-scrivener-no-text-accept = Importovat dokumenty prázdné
+## Things to know, nothing to decide
+import-scrivener-notice-project-found-below-pick-title = Projekt byl nalezen uvnitř složky, kterou jste vybrali
+import-scrivener-notice-project-found-below-pick-body = Je v „{ $path }“.
+import-scrivener-notice-source-is-template-title = Toto je šablona aplikace Scrivener
+import-scrivener-notice-source-is-template-named = Toto je šablona aplikace Scrivener „{ $title }“
+import-scrivener-notice-source-is-template-body = Import z ní vytvoří nový projekt z toho, co šablona obsahuje, včetně jejích pokynů.
+import-scrivener-notice-source-is-backup-title = Vypadá to jako záloha, kterou vytvořil Scrivener
+import-scrivener-notice-source-is-backup-body = Obsahuje projekt tak, jak byl v okamžiku zálohování. Pokud jste potom dál psali, vyberte samotný projekt.
+import-scrivener-notice-importing-pre-upgrade-copy-title = Importujete kopii, kterou Scrivener uchoval před aktualizací
+import-scrivener-notice-importing-pre-upgrade-copy-body = Projekt, ve kterém jste dál psali, leží vedle ní a obsahuje vše, co jste od té doby napsali.
+import-scrivener-notice-imported-from-ios-stub-title = Tento projekt vznikl v aplikaci Scrivener pro iPhone nebo iPad
+import-scrivener-notice-imported-from-ios-stub-body = Nikdy nebyl otevřen v počítači, proto se čte z kopie, kterou uchovává iPhone nebo iPad.
+import-scrivener-notice-stale-mobile-binder-ignored-title = Starý pořadač z iPhonu nebo iPadu zůstává stranou
+import-scrivener-notice-stale-mobile-binder-ignored-body = Scrivener v počítači už jeho změny převzal.
+import-scrivener-notice-identical-manifest-copies-title = { $count ->
+    [one] Je tu 1 kopie souboru pořadače
+    [few] Jsou tu { $count } shodné kopie souboru pořadače
+   *[other] Je tu { $count } shodných kopií souboru pořadače
+}
+import-scrivener-notice-identical-manifest-copies-body = Obsahují totéž, takže kterákoli z nich dá stejný projekt.
+import-scrivener-notice-manifest-copies-ignored-title = Nadbytečné kopie souboru pořadače zůstávají stranou
+import-scrivener-notice-manifest-copies-ignored-body = „{ $chosen }“ je ten, ve kterém Scrivener pracoval naposledy. { $count ->
+    [one] 1 kopie, kterou zanechala synchronizační služba, zůstává stranou.
+    [few] { $count } kopie, které zanechala synchronizační služba, zůstávají stranou.
+   *[other] { $count } kopií, které zanechala synchronizační služba, zůstává stranou.
+}
+import-scrivener-notice-pinned-manifest-looks-like-a-copy-title = Vybraný soubor pořadače vypadá jako kopie ze synchronizace
+import-scrivener-notice-pinned-manifest-looks-like-a-copy-body = „{ $name }“ je pojmenován jako kopie souboru „{ $original }“, který leží vedle něj. Pokud bude import vypadat zastarale, vyberte místo něj „{ $original }“.
+import-scrivener-notice-pinned-manifest-has-siblings-title = { $count ->
+    [one] Vedle vybraného souboru pořadače leží 1 další
+    [few] Vedle vybraného souboru pořadače leží { $count } další
+   *[other] Vedle vybraného souboru pořadače leží { $count } dalších
+}
+import-scrivener-notice-pinned-manifest-has-siblings-body = Čte se jen ten, který jste vybrali.
+import-scrivener-notice-legacy-v1-files-beside-title = Soubory ze starší verze aplikace Scrivener zůstávají stranou
+import-scrivener-notice-legacy-v1-files-beside-body = Zůstaly tu po aktualizaci projektu. Čtou se jen soubory aktuální verze.
+import-scrivener-notice-mixed-payload-trees-title = V tomto projektu jsou soubory dvou verzí aplikace Scrivener
+import-scrivener-notice-mixed-payload-trees-body = Dokumenty se čtou z míst, která uvádí soubor pořadače.
+import-scrivener-notice-version-disagreement-title = Soubory tohoto projektu se neshodují na jeho verzi
+import-scrivener-notice-id-scheme-mismatch-body = Soubor pořadače uvádí verzi { $version }, ale své dokumenty pojmenovává jako jiná verze. Čtou se z míst, na která odkazuje. Pokud bude import vypadat špatně, otevřete projekt jednou v aplikaci Scrivener a importujte jej znovu.
+import-scrivener-notice-version-stamp-mismatch-body = Čte se tak, jak jej popisuje jeho soubor pořadače. Pokud bude import vypadat špatně, otevřete projekt jednou v aplikaci Scrivener a importujte jej znovu.
+import-scrivener-notice-unrecognised-writer-title = Tento projekt uložil program, který Skribisto nezná
+import-scrivener-notice-unrecognised-writer-named = Sám se označuje jako „{ $creator }“. Čte se jako projekt Scrivener.
+import-scrivener-notice-unrecognised-writer-body = Své jméno neuvádí. Čte se jako projekt Scrivener.
+import-scrivener-notice-invalid-item-identifier-title = { $count ->
+    [one] 1 položka pořadače má neplatný identifikátor
+    [few] { $count } položky pořadače mají neplatný identifikátor
+   *[other] { $count } položek pořadače má neplatný identifikátor
+}
+import-scrivener-notice-invalid-item-identifier-body = Tyto identifikátory zůstávají stranou. Položky se zachovají.
+import-scrivener-notice-items-without-identifier-title = { $count ->
+    [one] 1 položka pořadače nemá identifikátor
+    [few] { $count } položky pořadače nemají identifikátor
+   *[other] { $count } položek pořadače nemá identifikátor
+}
+import-scrivener-notice-items-without-identifier-body = Jejich soubory nelze najít, proto budou prázdné.
+import-scrivener-notice-duplicate-item-key-title = Dvě položky pořadače sdílejí jeden identifikátor: „{ $item }“
+import-scrivener-notice-duplicate-item-key-body = První si ponechá dokumenty. Druhá si ponechá své místo a bude prázdná.
+import-scrivener-notice-lock-here-title = Scrivener má tento projekt otevřený v tomto počítači
+import-scrivener-notice-lock-here-body = Nejprve jej v aplikaci Scrivener zavřete, aby se uložily všechny změny.
+import-scrivener-notice-lock-title = Scrivener měl tento projekt otevřený v počítači „{ $host }“
+import-scrivener-notice-lock-elsewhere-title = Scrivener měl tento projekt otevřený v jiném počítači
+import-scrivener-notice-lock-body = Pokud je tam stále otevřený, nejprve jej zavřete: soubory možná ještě neobsahují nejnovější změny. Pokud byl Scrivener zavřen už dávno, můžete projekt importovat tak, jak je.
+import-scrivener-notice-archived-while-open-title = Tento archiv vznikl, když měl Scrivener projekt otevřený
+import-scrivener-notice-archived-while-open-body = Změny provedené po tomto okamžiku v něm možná chybějí.
+import-scrivener-notice-content-missing-notes = Chybějí poznámky položky „{ $item }“
+import-scrivener-notice-content-missing-synopsis = Chybí synopse položky „{ $item }“
+import-scrivener-notice-content-missing-text = Chybí text položky „{ $item }“
+import-scrivener-notice-content-missing-body = Příslušný soubor v této kopii není, proto bude obsah prázdný. Synchronizační služba možná projekt ještě kopíruje.
+import-scrivener-notice-content-missing-salvaged = Příslušný soubor v této kopii není, ale vyhledávací index aplikace Scrivener ještě uchovával jeho slova. Zachovají se jako prostý text, možná ze starší verze.
+import-scrivener-notice-content-truncated-notes = Poznámky položky „{ $item }“ jsou na disku prázdné
+import-scrivener-notice-content-truncated-synopsis = Synopse položky „{ $item }“ je na disku prázdná
+import-scrivener-notice-content-truncated-text = Text položky „{ $item }“ je na disku prázdný
+import-scrivener-notice-content-truncated-body = Podle aplikace Scrivener obsahuje text, ale příslušný soubor je prázdný: synchronizace se možná zastavila v polovině. Obsah bude prázdný.
+import-scrivener-notice-missing-media-title = Chybí soubor položky „{ $item }“
+import-scrivener-notice-missing-media-body = Obrázek nebo soubor z rešerší, který položka obsahuje, v této kopii není.
+import-scrivener-notice-sync-conflict-copies-title = { $count ->
+    [one] Byla nalezena 1 synchronizační kopie dokumentu
+    [few] Byly nalezeny { $count } synchronizační kopie dokumentů
+   *[other] Bylo nalezeno { $count } synchronizačních kopií dokumentů
+}
+import-scrivener-notice-sync-conflict-copies-body = { $missing ->
+    [0] Přenesou se jako obnovené texty do vlastní složky, abyste je mohli porovnat s dokumenty.
+   *[other] Přenesou se jako obnovené texty do vlastní složky. Některé z nich jsou kopiemi dokumentů, které už v projektu nejsou.
+}
+import-scrivener-notice-recovered-unreferenced-text-title = { $count ->
+    [one] Byl nalezen 1 dokument, který neuvádí žádná položka pořadače
+    [few] Byly nalezeny { $count } dokumenty, které neuvádí žádná položka pořadače
+   *[other] Bylo nalezeno { $count } dokumentů, které neuvádí žádná položka pořadače
+}
+import-scrivener-notice-recovered-unreferenced-text-body = Přenesou se jako obnovené texty do vlastní složky.
+import-scrivener-notice-sync-debris-ignored-title = { $count ->
+    [one] 1 nadbytečná kopie, kterou zanechala synchronizační služba, zůstává stranou
+    [few] { $count } nadbytečné kopie, které zanechala synchronizační služba, zůstávají stranou
+   *[other] { $count } nadbytečných kopií, které zanechala synchronizační služba, zůstává stranou
+}
+import-scrivener-notice-sync-debris-ignored-body = Scrivener je také nečte. Čtou se jen vlastní soubory projektu.
+import-scrivener-notice-unrecognised-files-title = { $count ->
+    [one] 1 soubor, který není součástí projektu Scrivener, zůstává stranou
+    [few] { $count } soubory, které nejsou součástí projektu Scrivener, zůstávají stranou
+   *[other] { $count } souborů, které nejsou součástí projektu Scrivener, zůstává stranou
+}
+import-scrivener-notice-examples = Například { $examples }.
+import-scrivener-notice-symlink-not-followed-title = { $count ->
+    [one] 1 odkaz uvnitř projektu se nesleduje
+    [few] { $count } odkazy uvnitř projektu se nesledují
+   *[other] { $count } odkazů uvnitř projektu se nesleduje
+}
+import-scrivener-notice-unreadable-files-skipped-title = { $count ->
+    [one] 1 soubor, který import nepotřebuje, nebylo možné přečíst
+    [few] { $count } soubory, které import nepotřebuje, nebylo možné přečíst
+   *[other] { $count } souborů, které import nepotřebuje, nebylo možné přečíst
+}
+import-scrivener-notice-cloud-placeholders-skipped-title = { $count ->
+    [one] 1 soubor, který je stále v cloudu, se přeskakuje
+    [few] { $count } soubory, které jsou stále v cloudu, se přeskakují
+   *[other] { $count } souborů, které jsou stále v cloudu, se přeskakuje
+}
+import-scrivener-notice-cloud-placeholders-skipped-body = Import je nepotřebuje.
+import-scrivener-notice-no-text-found-title = { $count ->
+    [one] 1 dokument, a ten neobsahuje žádný text
+    [few] { $count } dokumenty, a žádný z nich neobsahuje text
+   *[other] { $count } dokumentů, a žádný z nich neobsahuje text
+}
+import-scrivener-notice-no-text-found-body = Tento projekt vypadá prázdný. Importuje se tak, jak je.
+import-scrivener-notice-metadata-unreadable-title = „{ $member }“ se nepodařilo přečíst
+import-scrivener-notice-metadata-unreadable-body = To, co v něm Scrivener uchovával, se nepřenese.
+import-scrivener-notice-dangling-keyword-title = { $count ->
+    [one] 1 odkaz vede na klíčové slovo, které projekt nedefinuje
+    [few] { $count } odkazy vedou na klíčová slova, která projekt nedefinuje
+   *[other] { $count } odkazů vede na klíčová slova, která projekt nedefinuje
+}
+import-scrivener-notice-dangling-label-title = { $count ->
+    [one] 1 odkaz vede na popisek, který projekt nedefinuje
+    [few] { $count } odkazy vedou na popisky, které projekt nedefinuje
+   *[other] { $count } odkazů vede na popisky, které projekt nedefinuje
+}
+import-scrivener-notice-dangling-status-title = { $count ->
+    [one] 1 odkaz vede na stav, který projekt nedefinuje
+    [few] { $count } odkazy vedou na stavy, které projekt nedefinuje
+   *[other] { $count } odkazů vede na stavy, které projekt nedefinuje
+}
+import-scrivener-notice-dangling-section-type-title = { $count ->
+    [one] 1 odkaz vede na typ oddílu, který projekt nedefinuje
+    [few] { $count } odkazy vedou na typy oddílů, které projekt nedefinuje
+   *[other] { $count } odkazů vede na typy oddílů, které projekt nedefinuje
+}
+import-scrivener-notice-dangling-custom-field-title = { $count ->
+    [one] 1 odkaz vede na vlastní pole metadat, které projekt nedefinuje
+    [few] { $count } odkazy vedou na vlastní pole metadat, která projekt nedefinuje
+   *[other] { $count } odkazů vede na vlastní pole metadat, která projekt nedefinuje
+}
+import-scrivener-notice-dangling-item-title = { $count ->
+    [one] 1 odkaz vede na dokument, který projekt nedefinuje
+    [few] { $count } odkazy vedou na dokumenty, které projekt nedefinuje
+   *[other] { $count } odkazů vede na dokumenty, které projekt nedefinuje
+}
+import-scrivener-notice-dangling-references-body = Vynechávají se.
+import-scrivener-notice-snapshots-not-imported-line = { $count ->
+    [one] 1 snímek zůstává ve vašem projektu Scrivener: Skribisto snímky nepřenáší.
+    [few] { $count } snímky zůstávají ve vašem projektu Scrivener: Skribisto snímky nepřenáší.
+   *[other] { $count } snímků zůstává ve vašem projektu Scrivener: Skribisto snímky nepřenáší.
+}
+import-scrivener-notice-writing-history-not-imported-line = { $days ->
+    [one] Záznam aplikace Scrivener o slovech napsaných v jednotlivých dnech (1 den) se nepřenáší. Skribisto začne vlastní počítání od prvního uložení.
+    [few] Záznam aplikace Scrivener o slovech napsaných v jednotlivých dnech ({ $days } dny) se nepřenáší. Skribisto začne vlastní počítání od prvního uložení.
+   *[other] Záznam aplikace Scrivener o slovech napsaných v jednotlivých dnech ({ $days } dní) se nepřenáší. Skribisto začne vlastní počítání od prvního uložení.
+}
+import-scrivener-notice-title-placeholder-rejected-hint = Název v nastavení projektu je zástupným textem šablony, proto se místo něj navrhuje jméno projektu.
+import-scrivener-notice-author-placeholder-rejected-hint = Jméno autora v nastavení projektu je zástupným textem šablony, proto se žádné nenavrhuje.
+import-scrivener-notice-title-from-project-hint-compile-settings = Tento název uvádí nastavení kompilace projektu. Dokud tam není nastaven název, Scrivener v něm uchovává jméno, které projekt dostal při vytvoření.
+import-scrivener-notice-title-from-project-hint-template = Toto je vlastní název šablony.
+import-scrivener-notice-title-from-project-hint-folder-name = Tento název je jméno projektu.
+import-scrivener-notice-title-from-project-hint-project-properties = Tento název uvádějí vlastnosti projektu.
+import-scrivener-notice-author-from-project-hint = Toto jméno uvádí nastavení projektu. Může tam zůstat autor šablony a ten by se vytiskl na titulní stránku.
+import-scrivener-notice-language-not-stated-hint = Projekt neuvádí svůj jazyk, proto se navrhuje jazyk, ve kterém se zobrazuje Skribisto. Jazyk určuje, jak se počítají slova a jak se píší uvozovky.
+import-scrivener-notice-language-from-script-hint = Navrženo podle písma, kterým je rukopis napsán ({ $tag }).
+## Before you import: what the import does with the binder, or leaves behind
+import-scrivener-structure-script-mode-draft-line = { $script ->
+    [one] { $documents ->
+        [one] Jediný dokument rukopisu je napsán v režimu scénáře. Skribisto zachová jeho slova, ne jeho scenáristickou úpravu.
+       *[other] { $script } z { $documents } dokumentů rukopisu je napsán v režimu scénáře. Skribisto zachová jeho slova, ne jeho scenáristickou úpravu.
+    }
+    [few] { $script } z { $documents } dokumentů rukopisu jsou napsány v režimu scénáře. Skribisto zachová jejich slova, ne jejich scenáristickou úpravu.
+   *[other] { $script } z { $documents } dokumentů rukopisu je napsáno v režimu scénáře. Skribisto zachová jejich slova, ne jejich scenáristickou úpravu.
+}
+import-scrivener-structure-one-document-manuscript-line = { $count ->
+    [one] Jeden dokument rukopisu obsahuje své kapitoly jako nadpisy.
+    [few] { $count } dokumenty rukopisu obsahují své kapitoly jako nadpisy.
+   *[other] { $count } dokumentů rukopisu obsahuje své kapitoly jako nadpisy.
+}
+import-scrivener-structure-title-repeats-number-line = { $count ->
+    [one] 1 název kapitoly nebo části obsahuje i své číslo, takže export může číslo vytisknout dvakrát.
+    [few] { $count } názvy kapitol nebo částí obsahují i své číslo, takže export může číslo vytisknout dvakrát.
+   *[other] { $count } názvů kapitol nebo částí obsahuje i své číslo, takže export může číslo vytisknout dvakrát.
+}
+import-scrivener-structure-claim-overruled-line = { $count ->
+    [one] 1 položka dostane úroveň pod tou, kterou si nárokuje, protože tuto úroveň už má položka nad ní.
+    [few] { $count } položky dostanou úroveň pod tou, kterou si nárokují, protože tuto úroveň už má položka nad nimi.
+   *[other] { $count } položek dostane úroveň pod tou, kterou si nárokují, protože tuto úroveň už má položka nad nimi.
+}
+import-scrivener-structure-adopted-by-chapter-line = { $count ->
+    [one] 1 dokument, který následuje za kapitolou, se stane koncem této kapitoly.
+    [few] { $count } dokumenty, které následují za kapitolou, se stanou jejím koncem.
+   *[other] { $count } dokumentů, které následují za kapitolou, se stane jejím koncem.
+}
+import-scrivener-structure-looks-like-manuscript-line = { $count ->
+    [one] 1 složka nejvyšší úrovně ponechaná v poznámkách vypadá jako rukopis. Můžete ji poslat do rukopisu jako další knihu.
+    [few] { $count } složky nejvyšší úrovně ponechané v poznámkách vypadají jako rukopis. Můžete je poslat do rukopisu jako další knihy.
+   *[other] { $count } složek nejvyšší úrovně ponechaných v poznámkách vypadá jako rukopis. Můžete je poslat do rukopisu jako další knihy.
+}
+import-scrivener-structure-generic-sheet-title-line = { $count ->
+    [one] 1 záznam bible příběhu má název převzatý ze šablony, například „Hrdina“, a zmínky jej budou hledat v textu.
+    [few] { $count } záznamy bible příběhu mají název převzatý ze šablony, například „Hrdina“, a zmínky jej budou hledat v textu.
+   *[other] { $count } záznamů bible příběhu má název převzatý ze šablony, například „Hrdina“, a zmínky jej budou hledat v textu.
+}
+import-scrivener-structure-placeholder-title-line = { $count ->
+    [one] 1 název jen pojmenovával svou úroveň a zůstane prázdný: očíslují jej pořadač a exporty.
+    [few] { $count } názvy jen pojmenovávaly svou úroveň a zůstanou prázdné: očíslují je pořadač a exporty.
+   *[other] { $count } názvů jen pojmenovávalo svou úroveň a zůstane prázdných: očíslují je pořadač a exporty.
+}
+import-scrivener-structure-untitled-item-line = { $count ->
+    [one] 1 položka neměla v aplikaci Scrivener název a zůstane bez názvu.
+    [few] { $count } položky neměly v aplikaci Scrivener název a zůstanou bez názvu.
+   *[other] { $count } položek nemělo v aplikaci Scrivener název a zůstane bez názvu.
+}
+import-scrivener-structure-title-cleaned-line = { $count ->
+    [one] 1 název obsahoval zalomení řádků nebo tabulátory, které se odstraní.
+    [few] { $count } názvy obsahovaly zalomení řádků nebo tabulátory, které se odstraní.
+   *[other] { $count } názvů obsahovalo zalomení řádků nebo tabulátory, které se odstraní.
+}
+import-scrivener-structure-own-text-moved-line = { $count ->
+    [one] 1 složka má vlastní text, který se přesune do prvního dokumentu uvnitř ní.
+    [few] { $count } složky mají vlastní text, který se přesune do prvního dokumentu uvnitř nich.
+   *[other] { $count } složek má vlastní text, který se přesune do prvního dokumentu uvnitř nich.
+}
+import-scrivener-structure-text-with-children-line = { $count ->
+    [one] 1 dokument, který obsahuje další dokumenty, se stane složkou.
+    [few] { $count } dokumenty, které obsahují další dokumenty, se stanou složkami.
+   *[other] { $count } dokumentů, které obsahují další dokumenty, se stane složkami.
+}
+import-scrivener-structure-empty-folder-plain-line = { $count ->
+    [one] 1 prázdná složka zůstane obyčejnou složkou, aby žádný export nevytiskl nadpis, který Scrivener nikdy netiskl.
+    [few] { $count } prázdné složky zůstanou obyčejnými složkami, aby žádný export nevytiskl nadpis, který Scrivener nikdy netiskl.
+   *[other] { $count } prázdných složek zůstane obyčejnými složkami, aby žádný export nevytiskl nadpis, který Scrivener nikdy netiskl.
+}
+import-scrivener-structure-book-inside-book-line = { $count ->
+    [one] 1 kniha uvnitř knihy se stane částí.
+    [few] { $count } knihy uvnitř knihy se stanou částmi.
+   *[other] { $count } knih uvnitř knihy se stane částmi.
+}
+import-scrivener-structure-prologue-not-numbered-line = { $count ->
+    [one] 1 prolog nebo epilog se vynechá z číslování kapitol.
+    [few] { $count } prology nebo epilogy se vynechají z číslování kapitol.
+   *[other] { $count } prologů nebo epilogů se vynechá z číslování kapitol.
+}
+import-scrivener-structure-matter-inside-book-line = { $count ->
+    [one] 1 položka úvodní nebo závěrečné části, která byla mimo rukopis, přejde do knihy jako paratext a do exportů se nedostane, dokud ji nezahrnete.
+    [few] { $count } položky úvodní nebo závěrečné části, které byly mimo rukopis, přejdou do knihy jako paratext a do exportů se nedostanou, dokud je nezahrnete.
+   *[other] { $count } položek úvodní nebo závěrečné části, které byly mimo rukopis, přejde do knihy jako paratext a do exportů se nedostane, dokud je nezahrnete.
+}
+import-scrivener-structure-paratext-not-counted-line = { $documents ->
+    [one] 1 dokument rukopisu se stane paratextem (úvodní nebo závěrečnou částí): jeho { $words ->
+        [one] { $words } slovo se už nepočítá
+        [few] { $words } slova se už nepočítají
+       *[other] { $words } slov se už nepočítá
+    } do rukopisu.
+    [few] { $documents } dokumenty rukopisu se stanou paratextem (úvodní nebo závěrečnou částí): jejich { $words ->
+        [one] { $words } slovo se už nepočítá
+        [few] { $words } slova se už nepočítají
+       *[other] { $words } slov se už nepočítá
+    } do rukopisu.
+   *[other] { $documents } dokumentů rukopisu se stane paratextem (úvodní nebo závěrečnou částí): jejich { $words ->
+        [one] { $words } slovo se už nepočítá
+        [few] { $words } slova se už nepočítají
+       *[other] { $words } slov se už nepočítá
+    } do rukopisu.
+}
+import-scrivener-structure-document-notes-line = { $count ->
+    [one] Poznámky 1 dokumentu se stanou poznámkou vedle něj.
+    [few] Poznámky { $count } dokumentů se stanou poznámkami vedle nich.
+   *[other] Poznámky { $count } dokumentů se stanou poznámkami vedle nich.
+}
+import-scrivener-structure-draft-content-as-note-line = Vlastní text složky rukopisu se stane poznámkou na začátku rukopisu.
+import-scrivener-structure-story-bible-folder-line = { $count ->
+    [one] 1 složka postav nebo míst se stane štítkem bible příběhu.
+    [few] { $count } složky postav nebo míst se stanou štítky bible příběhu.
+   *[other] { $count } složek postav nebo míst se stane štítky bible příběhu.
+}
+import-scrivener-structure-templates-created-line = { $count ->
+    [one] 1 šablona dokumentu se stane šablonou poznámky.
+    [few] { $count } šablony dokumentů se stanou šablonami poznámek.
+   *[other] { $count } šablon dokumentů se stane šablonami poznámek.
+}
+import-scrivener-structure-template-nesting-flattened-line = { $count ->
+    [one] 1 složka šablon vnořená do jiné se zploští: každý text v ní se stane šablonou.
+    [few] { $count } složky šablon vnořené do jiných se zploští: každý text v nich se stane šablonou.
+   *[other] { $count } složek šablon vnořených do jiných se zploští: každý text v nich se stane šablonou.
+}
+import-scrivener-structure-template-kept-as-note-line = { $count ->
+    [one] 1 šablona obsahuje to, co šablona poznámky pojmout nemůže, a zachová se jako poznámka.
+    [few] { $count } šablony obsahují to, co šablona poznámky pojmout nemůže, a zachovají se jako poznámky.
+   *[other] { $count } šablon obsahuje to, co šablona poznámky pojmout nemůže, a zachová se jako poznámky.
+}
+import-scrivener-structure-recovered-texts-line = { $count ->
+    [one] 1 text, který neuváděla žádná položka pořadače, se přenese do vlastní složky.
+    [few] { $count } texty, které neuváděla žádná položka pořadače, se přenesou do vlastní složky.
+   *[other] { $count } textů, které neuváděla žádná položka pořadače, se přenese do vlastní složky.
+}
+import-scrivener-structure-project-notes-line = { $count ->
+    [one] 1 poznámka k projektu se přenese do vlastní složky.
+    [few] { $count } poznámky k projektu se přenesou do vlastní složky.
+   *[other] { $count } poznámek k projektu se přenese do vlastní složky.
+}
+import-scrivener-structure-trash-brought-across-line = { $items ->
+    [one] Koš se přenese: 1 položka, kterou můžete z koše obnovit.
+    [few] Koš se přenese: { $items } položky, z toho { $writing } s textem, které můžete z koše obnovit.
+   *[other] Koš se přenese: { $items } položek, z toho { $writing } s textem, které můžete z koše obnovit.
+}
+import-scrivener-structure-not-compiled-line = { $count ->
+    [one] 1 položka, kterou Scrivener vynechával z kompilace, bude vynechána i z exportů.
+    [few] { $count } položky, které Scrivener vynechával z kompilace, budou vynechány i z exportů.
+   *[other] { $count } položek, které Scrivener vynechával z kompilace, bude vynecháno i z exportů.
+}
+import-scrivener-structure-media-in-draft-line = { $count ->
+    [one] 1 obrázek nebo soubor v rukopisu se stane poznámkou, protože kniha jej obsahovat nemůže.
+    [few] { $count } obrázky nebo soubory v rukopisu se stanou poznámkami, protože kniha je obsahovat nemůže.
+   *[other] { $count } obrázků nebo souborů v rukopisu se stane poznámkami, protože kniha je obsahovat nemůže.
+}
+import-scrivener-structure-left-out-line = { $count ->
+    [one] 1 složka nejvyšší úrovně se vynechá, s { $items ->
+        [one] 1 položkou
+       *[other] { $items } položkami
+    }.
+    [few] { $count } složky nejvyšší úrovně se vynechají, s { $items ->
+        [one] 1 položkou
+       *[other] { $items } položkami
+    }.
+   *[other] { $count } složek nejvyšší úrovně se vynechá, s { $items ->
+        [one] 1 položkou
+       *[other] { $items } položkami
+    }.
+}
+import-scrivener-structure-trash-left-out-line = { $items ->
+    [one] Koš zůstane stranou: 1 položka.
+    [few] Koš zůstane stranou: { $items } položky, z toho { $writing } s textem.
+   *[other] Koš zůstane stranou: { $items } položek, z toho { $writing } s textem.
+}
+import-scrivener-structure-card-image-left-behind-line = { $count ->
+    [one] 1 obrázek kartičky u položky rukopisu zůstane stranou: vytiskl by se v knize.
+    [few] { $count } obrázky kartiček u položek rukopisu zůstanou stranou: vytiskly by se v knize.
+   *[other] { $count } obrázků kartiček u položek rukopisu zůstane stranou: vytiskly by se v knize.
+}
+import-scrivener-structure-default-template-not-linked-line = { $count ->
+    [one] Výchozí šablona dokumentu u 1 složky se se složkou nepřenese.
+    [few] Výchozí šablony dokumentů u { $count } složek se se složkami nepřenesou.
+   *[other] Výchozí šablony dokumentů u { $count } složek se se složkami nepřenesou.
+}
+import-scrivener-structure-page-break-not-kept-line = { $count ->
+    [one] 1 nastavení „Page break before“ (zalomení stránky před) nemá v aplikaci Skribisto své místo a nezachová se.
+    [few] { $count } nastavení „Page break before“ (zalomení stránky před) nemají v aplikaci Skribisto své místo a nezachovají se.
+   *[other] { $count } nastavení „Page break before“ (zalomení stránky před) nemá v aplikaci Skribisto své místo a nezachová se.
+}
+import-scrivener-structure-compile-as-is-not-kept-line = { $count ->
+    [one] 1 nastavení „Compile as-is“ (kompilovat tak, jak je) nemá v aplikaci Skribisto obdobu a nezachová se.
+    [few] { $count } nastavení „Compile as-is“ (kompilovat tak, jak je) nemají v aplikaci Skribisto obdobu a nezachovají se.
+   *[other] { $count } nastavení „Compile as-is“ (kompilovat tak, jak je) nemá v aplikaci Skribisto obdobu a nezachová se.
+}
+## What the import did with the labels, the status list and the dates
+import-scrivener-metadata-status-categories-guessed-line = { $count ->
+    [one] 1 stav, který Skribisto nezná, dostane druh podle svého místa v seznamu. Zkontrolujte jej v Nastavení ▸ Projekt ▸ Stavy.
+    [few] { $count } stavy, které Skribisto nezná, dostanou druh podle svého místa v seznamu. Zkontrolujte je v Nastavení ▸ Projekt ▸ Stavy.
+   *[other] { $count } stavů, které Skribisto nezná, dostane druh podle svého místa v seznamu. Zkontrolujte je v Nastavení ▸ Projekt ▸ Stavy.
+}
+import-scrivener-metadata-dates-unreadable-line = { $count ->
+    [one] Data 1 položky nebylo možné přečíst: nese datum importu.
+    [few] Data { $count } položek nebylo možné přečíst: nesou datum importu.
+   *[other] Data { $count } položek nebylo možné přečíst: nesou datum importu.
+}
+import-scrivener-metadata-labels-became-tags-line = { $tags ->
+    [one] Z popisků se stane 1 štítek, u { $rows ->
+        [one] 1 položky
+       *[other] { $rows } položek
+    }.
+    [few] Z popisků se stanou { $tags } štítky, u { $rows ->
+        [one] 1 položky
+       *[other] { $rows } položek
+    }.
+   *[other] Z popisků se stane { $tags } štítků, u { $rows ->
+        [one] 1 položky
+       *[other] { $rows } položek
+    }.
+}
+import-scrivener-metadata-statuses-became-ladder-line = { $rungs ->
+    [one] Ze seznamu stavů se stane 1 stav projektu, u { $rows ->
+        [one] 1 položky
+       *[other] { $rows } položek
+    }.
+    [few] Ze seznamu stavů se stanou { $rungs } stavy projektu, u { $rows ->
+        [one] 1 položky
+       *[other] { $rows } položek
+    }.
+   *[other] Ze seznamu stavů se stane { $rungs } stavů projektu, u { $rows ->
+        [one] 1 položky
+       *[other] { $rows } položek
+    }.
+}
+import-scrivener-metadata-ladder-seeded-line = { $count ->
+    [one] Projekt neměl seznam stavů, proto začíná s výchozím stavem aplikace Skribisto.
+    [few] Projekt neměl seznam stavů, proto začíná s { $count } výchozími stavy aplikace Skribisto.
+   *[other] Projekt neměl seznam stavů, proto začíná s { $count } výchozími stavy aplikace Skribisto.
+}
+import-scrivener-metadata-label-renamed-line = Pole Label (popisek) se v aplikaci Scrivener jmenovalo „{ $title }“. Tento název je uveden v podrobnostech každého štítku.
+import-scrivener-metadata-status-renamed-line = Pole Status (stav) se v aplikaci Scrivener jmenovalo „{ $title }“. Tento název je uveden v podrobnostech každého stavu.
+import-scrivener-metadata-none-label-collapsed-line = { $count ->
+    [one] Popisek „{ $name }“, uchovaný pod stejným názvem vedle prázdného popisku aplikace Scrivener, se u 1 položky čte jako žádný popisek.
+   *[other] Popisek „{ $name }“, uchovaný pod stejným názvem vedle prázdného popisku aplikace Scrivener, se u { $count } položek čte jako žádný popisek.
+}
+import-scrivener-metadata-none-status-collapsed-line = { $count ->
+    [one] Stav „{ $name }“, uchovaný pod stejným názvem vedle prázdného stavu aplikace Scrivener, se u 1 položky čte jako žádný stav.
+   *[other] Stav „{ $name }“, uchovaný pod stejným názvem vedle prázdného stavu aplikace Scrivener, se u { $count } položek čte jako žádný stav.
+}
+import-scrivener-metadata-unnamed-label-line = Popisek bez názvu dostane název podle svého čísla, { $id }.
+import-scrivener-metadata-unnamed-status-line = Stav bez názvu dostane název podle svého čísla, { $id }.
+import-scrivener-metadata-tag-name-disambiguated-line = { $count ->
+    [one] 1 štítek dostane nový název, protože jeho původní název už nese jiný štítek.
+    [few] { $count } štítky dostanou nový název, protože jejich původní názvy už nesou jiné štítky.
+   *[other] { $count } štítků dostane nový název, protože jejich původní názvy už nesou jiné štítky.
+}
+import-scrivener-metadata-rung-names-disambiguated-line = { $count ->
+    [one] 1 stav má stejný název jako jiný, proto dostane za název číslo. Zkontrolujte jej v Nastavení ▸ Projekt ▸ Stavy.
+    [few] { $count } stavy mají stejný název jako jiné, proto každý dostane za název číslo. Zkontrolujte je v Nastavení ▸ Projekt ▸ Stavy.
+   *[other] { $count } stavů má stejný název jako jiné, proto každý dostane za název číslo. Zkontrolujte je v Nastavení ▸ Projekt ▸ Stavy.
+}
+import-scrivener-metadata-unused-labels-skipped-line = { $count ->
+    [one] 1 popisek, který není přiřazen žádnému dokumentu, se neimportuje.
+    [few] { $count } popisky, které nejsou přiřazeny žádnému dokumentu, se neimportují.
+   *[other] { $count } popisků, které nejsou přiřazeny žádnému dokumentu, se neimportuje.
+}
+import-scrivener-metadata-labels-without-row-line = { $count ->
+    [one] Popisek 1 položky, která v novém projektu nemá místo, se nepřenese.
+    [few] Popisky { $count } položek, které v novém projektu nemají místo, se nepřenesou.
+   *[other] Popisky { $count } položek, které v novém projektu nemají místo, se nepřenesou.
+}
+import-scrivener-metadata-statuses-without-row-line = { $count ->
+    [one] Stav 1 položky, která v novém projektu nemá místo, se nepřenese.
+    [few] Stavy { $count } položek, které v novém projektu nemají místo, se nepřenesou.
+   *[other] Stavy { $count } položek, které v novém projektu nemají místo, se nepřenesou.
+}
+import-scrivener-metadata-unnamed-keyword-line = Klíčové slovo bez názvu dostane název podle svého čísla, { $id }.
+import-scrivener-metadata-keywords-without-row-line = { $count ->
+    [one] Klíčová slova 1 položky, která v novém projektu nemá místo, se nepřenesou.
+   *[other] Klíčová slova { $count } položek, které v novém projektu nemají místo, se nepřenesou.
+}
+import-scrivener-metadata-custom-values-without-row-line = { $count ->
+    [one] Vlastní metadata 1 položky, která v novém projektu nemá místo, se nepřenesou.
+   *[other] Vlastní metadata { $count } položek, které v novém projektu nemají místo, se nepřenesou.
+}
+import-scrivener-metadata-bookmarks-without-row-line = { $count ->
+    [one] Záložky 1 položky, která v novém projektu nemá místo, se nepřenesou.
+   *[other] Záložky { $count } položek, které v novém projektu nemají místo, se nepřenesou.
+}
+import-scrivener-metadata-targets-without-row-line = { $count ->
+    [one] Cíl 1 položky, která v novém projektu nemá místo, se nepřenese.
+   *[other] Cíle { $count } položek, které v novém projektu nemají místo, se nepřenesou.
+}
+## What the import does with the keywords, custom metadata, collections, bookmarks, targets,
+## the deadline, the auto-complete list and the icons. Each line is said twice: on the Review
+## page before the import, then in its report, so it reads the same at both times. `$note`
+## and `$folder` are the titles the import gives a note and its "From Scrivener" folder;
+## `$day` is a day as YYYY-MM-DD.
+import-scrivener-metadata-pov-hint-line = { $count ->
+    [one] Popisek nebo hodnota pole { $values } odpovídá záznamu bible příběhu { $matches }. Pokud označuje úhel pohledu, nastavte jej v Inspektoru: import nic nepropojuje.
+   *[other] Popisky nebo hodnoty polí { $values } odpovídají záznamům bible příběhu { $matches }. Pokud označují úhly pohledu, nastavte je v Inspektoru: import nic nepropojuje.
+}
+import-scrivener-metadata-checkbox-default-unknown-line = Pole se zaškrtávacím políčkem „{ $field }“ má výchozí hodnotu, kterou Skribisto neumí přečíst, takže nelze určit, které dokumenty jsou ve výchozím stavu zaškrtnuté. Jeho štítek nesou jen dokumenty zaškrtnuté jednotlivě.
+import-scrivener-metadata-goals-in-other-unit-line = { $count ->
+    [one] 1 cíl je nastaven v jiné jednotce počítání. Zachová se a zobrazí se, jakmile jednotku počítání přepnete v Nastavení ▸ Projekt ▸ Struktura.
+    [few] { $count } cíle jsou nastaveny v jiné jednotce počítání. Zachovají se a zobrazí se, jakmile jednotku počítání přepnete v Nastavení ▸ Projekt ▸ Struktura.
+   *[other] { $count } cílů je nastaveno v jiné jednotce počítání. Zachovají se a zobrazí se, jakmile jednotku počítání přepnete v Nastavení ▸ Projekt ▸ Struktura.
+}
+import-scrivener-metadata-counting-differs-line = Scrivener počítal cíl rukopisu z jiných dokumentů než Skribisto. Cíl knihy počítá scény zahrnuté do exportů.
+import-scrivener-metadata-writing-days-not-read-line = Psací dny „{ $raw }“ nelze přečíst, proto Tempo knihy počítá každý den jako psací. Změňte je tam.
+import-scrivener-metadata-script-mode-rows-line = { $count ->
+    [one] 1 položka byla v aplikaci Scrivener v režimu scénáře. Skribisto zachová její slova jako prózu, bez scenáristické úpravy.
+    [few] { $count } položky byly v aplikaci Scrivener v režimu scénáře. Skribisto zachová jejich slova jako prózu, bez scenáristické úpravy.
+   *[other] { $count } položek bylo v aplikaci Scrivener v režimu scénáře. Skribisto zachová jejich slova jako prózu, bez scenáristické úpravy.
+}
+import-scrivener-metadata-keywords-became-tags-line = { $tags ->
+    [one] 1 klíčové slovo se stane štítkem, u { $rows ->
+        [one] 1 položky
+       *[other] { $rows } položek
+    }.
+    [few] { $tags } klíčová slova se stanou štítky, u { $rows ->
+        [one] 1 položky
+       *[other] { $rows } položek
+    }.
+   *[other] { $tags } klíčových slov se stane štítky, u { $rows ->
+        [one] 1 položky
+       *[other] { $rows } položek
+    }.
+}
+import-scrivener-metadata-keyword-hierarchy-flattened-line = { $count ->
+    [one] 1 klíčové slovo bylo v aplikaci Scrivener vnořeno do jiného. Štítky jsou ploché: podrobnosti jeho štítku uvádějí, kde leželo.
+    [few] { $count } klíčová slova byla v aplikaci Scrivener vnořena do jiných. Štítky jsou ploché: podrobnosti každého štítku uvádějí, kde leželo jeho klíčové slovo.
+   *[other] { $count } klíčových slov bylo v aplikaci Scrivener vnořeno do jiných. Štítky jsou ploché: podrobnosti každého štítku uvádějí, kde leželo jeho klíčové slovo.
+}
+import-scrivener-metadata-fields-became-tags-line = { $fields ->
+    [one] 1 pole se seznamem nebo zaškrtávacím políčkem se převede na { $tags ->
+        [one] 1 štítek
+        [few] { $tags } štítky
+       *[other] { $tags } štítků
+    }, u { $rows ->
+        [one] 1 položky
+       *[other] { $rows } položek
+    }.
+    [few] { $fields } pole se seznamem nebo zaškrtávacím políčkem se převedou na { $tags ->
+        [one] 1 štítek
+        [few] { $tags } štítky
+       *[other] { $tags } štítků
+    }, u { $rows ->
+        [one] 1 položky
+       *[other] { $rows } položek
+    }.
+   *[other] { $fields } polí se seznamem nebo zaškrtávacím políčkem se převede na { $tags ->
+        [one] 1 štítek
+        [few] { $tags } štítky
+       *[other] { $tags } štítků
+    }, u { $rows ->
+        [one] 1 položky
+       *[other] { $rows } položek
+    }.
+}
+import-scrivener-metadata-collections-became-tags-line = { $tags ->
+    [one] 1 kolekce se stane štítkem, u { $rows ->
+        [one] 1 položky
+       *[other] { $rows } položek
+    }.
+    [few] { $tags } kolekce se stanou štítky, u { $rows ->
+        [one] 1 položky
+       *[other] { $rows } položek
+    }.
+   *[other] { $tags } kolekcí se stane štítky, u { $rows ->
+        [one] 1 položky
+       *[other] { $rows } položek
+    }.
+}
+import-scrivener-metadata-collection-order-lost-line = { $count ->
+    [one] Štítek nemá žádné pořadí, proto se pořadí dokumentů 1 kolekce nezachová.
+   *[other] Štítek nemá žádné pořadí, proto se pořadí dokumentů { $count } kolekcí nezachová.
+}
+import-scrivener-metadata-bookmarks-became-links-line = { $count ->
+    [one] 1 záložka se stane odkazem mezi dvěma poznámkami nebo mezi scénou a záznamem bible příběhu: viz Odkazy a Postavy.
+    [few] { $count } záložky se stanou odkazy mezi poznámkami nebo mezi scénami a záznamy bible příběhu: viz Odkazy a Postavy.
+   *[other] { $count } záložek se stane odkazy mezi poznámkami nebo mezi scénami a záznamy bible příběhu: viz Odkazy a Postavy.
+}
+import-scrivener-metadata-goals-kept-line = { $count ->
+    [one] 1 cíl dokumentu se převezme jako cíl.
+    [few] { $count } cíle dokumentů se převezmou jako cíle.
+   *[other] { $count } cílů dokumentů se převezme jako cíle.
+}
+import-scrivener-metadata-draft-target-kept-words-line = { $value ->
+    [one] Cíl rukopisu (1 slovo) se stane cílem knihy.
+    [few] Cíl rukopisu ({ $value } slova) se stane cílem knihy.
+   *[other] Cíl rukopisu ({ $value } slov) se stane cílem knihy.
+}
+import-scrivener-metadata-draft-target-kept-characters-line = { $value ->
+    [one] Cíl rukopisu (1 znak) se stane cílem knihy.
+    [few] Cíl rukopisu ({ $value } znaky) se stane cílem knihy.
+   *[other] Cíl rukopisu ({ $value } znaků) se stane cílem knihy.
+}
+import-scrivener-metadata-pace-planned-line = Z termínu { $day } vznikne Tempo knihy, které ode dne importu rozvrhne slova na každý psací den, který jste zvolili v aplikaci Scrivener.
+import-scrivener-metadata-pace-planned-day-off-line = Z termínu { $day } vznikne Tempo knihy, které ode dne importu rozvrhne slova na každý psací den, který jste zvolili v aplikaci Scrivener. Stejně jako v aplikaci Scrivener je samotný den termínu volným dnem.
+import-scrivener-metadata-dictionary-words-line = { $count ->
+    [one] 1 slovo pro automatické doplňování přejde do osobního slovníku projektu, takže nebude označeno jako chybné.
+    [few] { $count } slova pro automatické doplňování přejdou do osobního slovníku projektu, takže nebudou označena jako chybná.
+   *[other] { $count } slov pro automatické doplňování přejde do osobního slovníku projektu, takže nebudou označena jako chybná.
+}
+import-scrivener-metadata-listed-project-line = { $count ->
+    [one] 1 údaj o projektu je uveden v poznámce „{ $note }“ ve složce „{ $folder }“.
+    [few] { $count } údaje o projektu jsou uvedeny v poznámce „{ $note }“ ve složce „{ $folder }“.
+   *[other] { $count } údajů o projektu je uvedeno v poznámce „{ $note }“ ve složce „{ $folder }“.
+}
+import-scrivener-metadata-listed-project-bookmarks-line = { $count ->
+    [one] 1 záložka projektu je uvedena v poznámce „{ $note }“ ve složce „{ $folder }“.
+    [few] { $count } záložky projektu jsou uvedeny v poznámce „{ $note }“ ve složce „{ $folder }“.
+   *[other] { $count } záložek projektu je uvedeno v poznámce „{ $note }“ ve složce „{ $folder }“.
+}
+import-scrivener-metadata-listed-replacements-line = { $count ->
+    [one] 1 náhrada při kompilaci je uvedena v poznámce „{ $note }“ ve složce „{ $folder }“. Skribisto ji neprovádí.
+    [few] { $count } náhrady při kompilaci jsou uvedeny v poznámce „{ $note }“ ve složce „{ $folder }“. Skribisto je neprovádí.
+   *[other] { $count } náhrad při kompilaci je uvedeno v poznámce „{ $note }“ ve složce „{ $folder }“. Skribisto je neprovádí.
+}
+import-scrivener-metadata-listed-auto-complete-line = { $count ->
+    [one] 1 víceslovná položka automatického doplňování je uvedena v poznámce „{ $note }“ ve složce „{ $folder }“.
+    [few] { $count } víceslovné položky automatického doplňování jsou uvedeny v poznámce „{ $note }“ ve složce „{ $folder }“.
+   *[other] { $count } víceslovných položek automatického doplňování je uvedeno v poznámce „{ $note }“ ve složce „{ $folder }“.
+}
+import-scrivener-metadata-listed-saved-searches-line = { $count ->
+    [one] 1 uložené hledání je uvedeno v poznámce „{ $note }“ ve složce „{ $folder }“.
+    [few] { $count } uložená hledání jsou uvedena v poznámce „{ $note }“ ve složce „{ $folder }“.
+   *[other] { $count } uložených hledání je uvedeno v poznámce „{ $note }“ ve složce „{ $folder }“.
+}
+import-scrivener-metadata-listed-custom-metadata-line = { $count ->
+    [one] 1 hodnota vlastních metadat, kterou štítek nedokáže pojmout, je uvedena v poznámce „{ $note }“ ve složce „{ $folder }“.
+    [few] { $count } hodnoty vlastních metadat, které štítek nedokáže pojmout, jsou uvedeny v poznámce „{ $note }“ ve složce „{ $folder }“.
+   *[other] { $count } hodnot vlastních metadat, které štítek nedokáže pojmout, je uvedeno v poznámce „{ $note }“ ve složce „{ $folder }“.
+}
+import-scrivener-metadata-listed-targets-line = { $count ->
+    [one] 1 cíl dokumentu je uveden v poznámce „{ $note }“ ve složce „{ $folder }“.
+    [few] { $count } cíle dokumentů jsou uvedeny v poznámce „{ $note }“ ve složce „{ $folder }“.
+   *[other] { $count } cílů dokumentů je uvedeno v poznámce „{ $note }“ ve složce „{ $folder }“.
+}
+import-scrivener-metadata-listed-bookmarks-line = { $count ->
+    [one] 1 záložka, kterou žádný odkaz v aplikaci Skribisto nezobrazí, je uvedena v poznámce „{ $note }“ ve složce „{ $folder }“.
+    [few] { $count } záložky, které žádný odkaz v aplikaci Skribisto nezobrazí, jsou uvedeny v poznámce „{ $note }“ ve složce „{ $folder }“.
+   *[other] { $count } záložek, které žádný odkaz v aplikaci Skribisto nezobrazí, je uvedeno v poznámce „{ $note }“ ve složce „{ $folder }“.
+}
+import-scrivener-metadata-targets-on-notes-line = { $count ->
+    [one] 1 cíl dokumentu patří k poznámce, jejíž text žádný cíl nepočítá, takže se nepřevezme.
+    [few] { $count } cíle dokumentů patří k poznámkám, jejichž text žádný cíl nepočítá, takže se nepřevezmou.
+   *[other] { $count } cílů dokumentů patří k poznámkám, jejichž text žádný cíl nepočítá, takže se nepřevezme.
+}
+import-scrivener-metadata-targets-on-split-documents-line = { $count ->
+    [one] 1 cíl dokumentu patří k dokumentu rozdělenému podle nadpisů, jehož kapitoly dohromady nepočítá žádný jednotlivý cíl, takže se nepřevezme.
+    [few] { $count } cíle dokumentů patří k dokumentům rozděleným podle nadpisů, jejichž kapitoly dohromady nepočítá žádný jednotlivý cíl, takže se nepřevezmou.
+   *[other] { $count } cílů dokumentů patří k dokumentům rozděleným podle nadpisů, jejichž kapitoly dohromady nepočítá žádný jednotlivý cíl, takže se nepřevezme.
+}
+import-scrivener-metadata-bookmark-ends-without-row-line = { $count ->
+    [one] 1 záložka vede na dokument, který v novém projektu nemá místo, například na šablonu dokumentu. Je uvedena podle toho, kde dokument v aplikaci Scrivener ležel.
+    [few] { $count } záložky vedou na dokumenty, které v novém projektu nemají místo, například na šablony dokumentů. Jsou uvedeny podle toho, kde dokumenty v aplikaci Scrivener ležely.
+   *[other] { $count } záložek vede na dokumenty, které v novém projektu nemají místo, například na šablony dokumentů. Jsou uvedeny podle toho, kde dokumenty v aplikaci Scrivener ležely.
+}
+import-scrivener-metadata-unused-keywords-skipped-line = { $count ->
+    [one] 1 klíčové slovo, které není přiřazeno žádnému dokumentu, se neimportuje.
+    [few] { $count } klíčová slova, která nejsou přiřazena žádnému dokumentu, se neimportují.
+   *[other] { $count } klíčových slov, která nejsou přiřazena žádnému dokumentu, se neimportuje.
+}
+import-scrivener-metadata-list-value-invalid-line = { $count ->
+    [one] 1 hodnota pole se seznamem „{ $field }“ neodpovídá žádné z jeho možností a neimportuje se.
+    [few] { $count } hodnoty pole se seznamem „{ $field }“ neodpovídají žádné z jeho možností a neimportují se.
+   *[other] { $count } hodnot pole se seznamem „{ $field }“ neodpovídá žádné z jeho možností a neimportuje se.
+}
+import-scrivener-metadata-undefined-custom-field-line = { $count ->
+    [one] 1 hodnota patří k vlastnímu poli, které projekt už nedefinuje a které nezobrazuje ani Scrivener. Neimportuje se.
+    [few] { $count } hodnoty patří k vlastním polím, která projekt už nedefinuje a která nezobrazuje ani Scrivener. Neimportují se.
+   *[other] { $count } hodnot patří k vlastním polím, která projekt už nedefinuje a která nezobrazuje ani Scrivener. Neimportují se.
+}
+import-scrivener-metadata-collection-members-missing-line = { $count ->
+    [one] 1 dokument kolekce „{ $name }“ nemá v novém projektu místo, nebo už v projektu Scrivener není.
+    [few] { $count } dokumenty kolekce „{ $name }“ nemají v novém projektu místo, nebo už v projektu Scrivener nejsou.
+   *[other] { $count } dokumentů kolekce „{ $name }“ nemá v novém projektu místo, nebo už v projektu Scrivener nejsou.
+}
+import-scrivener-metadata-empty-collections-skipped-line = { $count ->
+    [one] 1 kolekce, která neobsahuje žádný dokument, se neimportuje.
+    [few] { $count } kolekce, které neobsahují žádný dokument, se neimportují.
+   *[other] { $count } kolekcí, které neobsahují žádný dokument, se neimportuje.
+}
+import-scrivener-metadata-bookmarks-unresolved-line = { $count ->
+    [one] 1 záložka vede na dokument, který projekt Scrivener už neobsahuje, a neimportuje se.
+    [few] { $count } záložky vedou na dokumenty, které projekt Scrivener už neobsahuje, a neimportují se.
+   *[other] { $count } záložek vede na dokumenty, které projekt Scrivener už neobsahuje, a neimportuje se.
+}
+import-scrivener-metadata-targets-in-pages-line = { $count ->
+    [one] 1 cíl dokumentu počítá stránky, které Skribisto nepočítá, takže se nepřevezme.
+    [few] { $count } cíle dokumentů počítají stránky, které Skribisto nepočítá, takže se nepřevezmou.
+   *[other] { $count } cílů dokumentů počítá stránky, které Skribisto nepočítá, takže se nepřevezme.
+}
+import-scrivener-metadata-targets-unreadable-line = { $count ->
+    [one] 1 cíl se neimportuje: jeho hodnota není číslo, je záporná, nebo je větší, než cíl dokáže pojmout.
+    [few] { $count } cíle se neimportují: jejich hodnoty nejsou čísla, jsou záporné, nebo jsou větší, než cíl dokáže pojmout.
+   *[other] { $count } cílů se neimportuje: jejich hodnoty nejsou čísla, jsou záporné, nebo jsou větší, než cíl dokáže pojmout.
+}
+import-scrivener-metadata-draft-target-in-pages-line = { $value ->
+    [one] Cíl rukopisu (1 strana) se nepřevezme: Skribisto počítá slova nebo znaky. Je uveden v poznámce „{ $note }“ ve složce „{ $folder }“.
+    [few] Cíl rukopisu ({ $value } strany) se nepřevezme: Skribisto počítá slova nebo znaky. Je uveden v poznámce „{ $note }“ ve složce „{ $folder }“.
+   *[other] Cíl rukopisu ({ $value } stran) se nepřevezme: Skribisto počítá slova nebo znaky. Je uveden v poznámce „{ $note }“ ve složce „{ $folder }“.
+}
+import-scrivener-metadata-draft-target-no-book-words-line = { $value ->
+    [one] Cíl rukopisu (1 slovo) se nepřevezme, protože rukopis tvoří několik knih, nebo žádnou. Je uveden v poznámce „{ $note }“ ve složce „{ $folder }“.
+    [few] Cíl rukopisu ({ $value } slova) se nepřevezme, protože rukopis tvoří několik knih, nebo žádnou. Je uveden v poznámce „{ $note }“ ve složce „{ $folder }“.
+   *[other] Cíl rukopisu ({ $value } slov) se nepřevezme, protože rukopis tvoří několik knih, nebo žádnou. Je uveden v poznámce „{ $note }“ ve složce „{ $folder }“.
+}
+import-scrivener-metadata-draft-target-no-book-characters-line = { $value ->
+    [one] Cíl rukopisu (1 znak) se nepřevezme, protože rukopis tvoří několik knih, nebo žádnou. Je uveden v poznámce „{ $note }“ ve složce „{ $folder }“.
+    [few] Cíl rukopisu ({ $value } znaky) se nepřevezme, protože rukopis tvoří několik knih, nebo žádnou. Je uveden v poznámce „{ $note }“ ve složce „{ $folder }“.
+   *[other] Cíl rukopisu ({ $value } znaků) se nepřevezme, protože rukopis tvoří několik knih, nebo žádnou. Je uveden v poznámce „{ $note }“ ve složce „{ $folder }“.
+}
+import-scrivener-metadata-deadline-passed-line = Termín { $day } už uplynul, takže z něj žádné Tempo nevznikne. Je uveden v poznámce „{ $note }“ ve složce „{ $folder }“.
+import-scrivener-metadata-deadline-no-writing-day-line = Ode dne importu do termínu { $day } nezbývá žádný psací den, takže z něj žádné Tempo nevznikne. Je uveden v poznámce „{ $note }“ ve složce „{ $folder }“.
+import-scrivener-metadata-deadline-template-line = Termín { $day } byl uložen v šabloně, takže z něj žádné Tempo nevznikne. Je uveden v poznámce „{ $note }“ ve složce „{ $folder }“.
+import-scrivener-metadata-deadline-no-word-goal-line = Z termínu { $day } žádné Tempo nevznikne, protože rukopis nemá cílový počet slov, ke kterému by se dalo plánovat. Je uveden v poznámce „{ $note }“ ve složce „{ $folder }“.
+import-scrivener-metadata-deadline-character-goal-line = Z termínu { $day } žádné Tempo nevznikne, protože cíl rukopisu počítá znaky, zatímco Tempo počítá slova. Je uveden v poznámce „{ $note }“ ve složce „{ $folder }“.
+import-scrivener-metadata-deadline-no-book-line = Z termínu { $day } žádné Tempo nevznikne, protože rukopis tvoří několik knih, nebo žádnou. Je uveden v poznámce „{ $note }“ ve složce „{ $folder }“.
+import-scrivener-metadata-deadline-unreadable-line = Termín nelze přečíst, takže z něj žádné Tempo nevznikne. Je uveden tak, jak byl zapsán, v poznámce „{ $note }“ ve složce „{ $folder }“.
+import-scrivener-metadata-session-target-words-line = { $value ->
+    [one] Cíl sezení (1 slovo) se neimportuje: v aplikaci Skribisto je cíl psacího sezení jedno nastavení pro všechny projekty. Je uveden v poznámce „{ $note }“ ve složce „{ $folder }“.
+    [few] Cíl sezení ({ $value } slova) se neimportuje: v aplikaci Skribisto je cíl psacího sezení jedno nastavení pro všechny projekty. Je uveden v poznámce „{ $note }“ ve složce „{ $folder }“.
+   *[other] Cíl sezení ({ $value } slov) se neimportuje: v aplikaci Skribisto je cíl psacího sezení jedno nastavení pro všechny projekty. Je uveden v poznámce „{ $note }“ ve složce „{ $folder }“.
+}
+import-scrivener-metadata-session-target-characters-line = { $value ->
+    [one] Cíl sezení (1 znak) se neimportuje: v aplikaci Skribisto je cíl psacího sezení jedno nastavení pro všechny projekty, ve slovech. Je uveden v poznámce „{ $note }“ ve složce „{ $folder }“.
+    [few] Cíl sezení ({ $value } znaky) se neimportuje: v aplikaci Skribisto je cíl psacího sezení jedno nastavení pro všechny projekty, ve slovech. Je uveden v poznámce „{ $note }“ ve složce „{ $folder }“.
+   *[other] Cíl sezení ({ $value } znaků) se neimportuje: v aplikaci Skribisto je cíl psacího sezení jedno nastavení pro všechny projekty, ve slovech. Je uveden v poznámce „{ $note }“ ve složce „{ $folder }“.
+}
+import-scrivener-metadata-session-target-pages-line = { $value ->
+    [one] Cíl sezení (1 strana) se neimportuje: v aplikaci Skribisto je cíl psacího sezení jedno nastavení pro všechny projekty, ve slovech. Je uveden v poznámce „{ $note }“ ve složce „{ $folder }“.
+    [few] Cíl sezení ({ $value } strany) se neimportuje: v aplikaci Skribisto je cíl psacího sezení jedno nastavení pro všechny projekty, ve slovech. Je uveden v poznámce „{ $note }“ ve složce „{ $folder }“.
+   *[other] Cíl sezení ({ $value } stran) se neimportuje: v aplikaci Skribisto je cíl psacího sezení jedno nastavení pro všechny projekty, ve slovech. Je uveden v poznámce „{ $note }“ ve složce „{ $folder }“.
+}
+import-scrivener-metadata-session-target-calculated-words-line = { $value ->
+    [one] Cíl sezení (1 slovo), který Scrivener vypočítal z termínu a psacích dnů, se neimportuje: v aplikaci Skribisto je cíl psacího sezení jedno nastavení pro všechny projekty. Je uveden v poznámce „{ $note }“ ve složce „{ $folder }“.
+    [few] Cíl sezení ({ $value } slova), který Scrivener vypočítal z termínu a psacích dnů, se neimportuje: v aplikaci Skribisto je cíl psacího sezení jedno nastavení pro všechny projekty. Je uveden v poznámce „{ $note }“ ve složce „{ $folder }“.
+   *[other] Cíl sezení ({ $value } slov), který Scrivener vypočítal z termínu a psacích dnů, se neimportuje: v aplikaci Skribisto je cíl psacího sezení jedno nastavení pro všechny projekty. Je uveden v poznámce „{ $note }“ ve složce „{ $folder }“.
+}
+import-scrivener-metadata-session-target-calculated-characters-line = { $value ->
+    [one] Cíl sezení (1 znak), který Scrivener vypočítal z termínu a psacích dnů, se neimportuje: v aplikaci Skribisto je cíl psacího sezení jedno nastavení pro všechny projekty, ve slovech. Je uveden v poznámce „{ $note }“ ve složce „{ $folder }“.
+    [few] Cíl sezení ({ $value } znaky), který Scrivener vypočítal z termínu a psacích dnů, se neimportuje: v aplikaci Skribisto je cíl psacího sezení jedno nastavení pro všechny projekty, ve slovech. Je uveden v poznámce „{ $note }“ ve složce „{ $folder }“.
+   *[other] Cíl sezení ({ $value } znaků), který Scrivener vypočítal z termínu a psacích dnů, se neimportuje: v aplikaci Skribisto je cíl psacího sezení jedno nastavení pro všechny projekty, ve slovech. Je uveden v poznámce „{ $note }“ ve složce „{ $folder }“.
+}
+import-scrivener-metadata-session-target-calculated-pages-line = { $value ->
+    [one] Cíl sezení (1 strana), který Scrivener vypočítal z termínu a psacích dnů, se neimportuje: v aplikaci Skribisto je cíl psacího sezení jedno nastavení pro všechny projekty, ve slovech. Je uveden v poznámce „{ $note }“ ve složce „{ $folder }“.
+    [few] Cíl sezení ({ $value } strany), který Scrivener vypočítal z termínu a psacích dnů, se neimportuje: v aplikaci Skribisto je cíl psacího sezení jedno nastavení pro všechny projekty, ve slovech. Je uveden v poznámce „{ $note }“ ve složce „{ $folder }“.
+   *[other] Cíl sezení ({ $value } stran), který Scrivener vypočítal z termínu a psacích dnů, se neimportuje: v aplikaci Skribisto je cíl psacího sezení jedno nastavení pro všechny projekty, ve slovech. Je uveden v poznámce „{ $note }“ ve složce „{ $folder }“.
+}
+import-scrivener-metadata-icons-dropped-line = { $count ->
+    [one] 1 položka měla v pořadači ikonu, která se nepřenese: Skribisto zobrazuje ikonu každé položky podle jejího typu.
+    [few] { $count } položky měly v pořadači ikony, které se nepřenesou: Skribisto zobrazuje ikonu každé položky podle jejího typu.
+   *[other] { $count } položek mělo v pořadači ikony, které se nepřenesou: Skribisto zobrazuje ikonu každé položky podle jejího typu.
+}
+## What converting the prose did, as the import's report says it. `$count` is how many texts,
+## or how many of a thing, as each line says; `$example` quotes the project.
+import-scrivener-prose-unreadable-line = { $count ->
+    [one] 1 text nebylo možné přečíst. Bude prázdný.
+    [few] { $count } texty nebylo možné přečíst. Budou prázdné.
+   *[other] { $count } textů nebylo možné přečíst. Budou prázdné.
+}
+import-scrivener-prose-comments-unreadable-line = { $count ->
+    [one] Komentáře a propojené poznámky pod čarou 1 textu nebylo možné přečíst. Slova, která označovaly, se zachovají.
+   *[other] Komentáře a propojené poznámky pod čarou { $count } textů nebylo možné přečíst. Slova, která označovaly, se zachovají.
+}
+import-scrivener-prose-read-as-plain-text-line = { $count ->
+    [one] 1 text byl uložen jako prostý text, nikoli jako formátovaný, a tak se i čte.
+    [few] { $count } texty byly uloženy jako prostý text, nikoli jako formátovaný, a tak se i čtou.
+   *[other] { $count } textů bylo uloženo jako prostý text, nikoli jako formátovaný, a tak se i čte.
+}
+import-scrivener-prose-inline-note-unmatched-line = { $count ->
+    [one] 1 značka vložené poznámky nemá svůj protějšek a zachová se jako text.
+    [few] { $count } značky vložených poznámek nemají svůj protějšek a zachovají se jako text.
+   *[other] { $count } značek vložených poznámek nemá svůj protějšek a zachová se jako text.
+}
+import-scrivener-prose-style-unresolved-line = { $count ->
+    [one] 1 značka stylu odkazuje na styl, který projekt nedefinuje. Odstraní se a text si ponechá své formátování.
+    [few] { $count } značky stylu odkazují na styl, který projekt nedefinuje. Odstraní se a text si ponechá své formátování.
+   *[other] { $count } značek stylu odkazuje na styl, který projekt nedefinuje. Odstraní se a text si ponechá své formátování.
+}
+import-scrivener-prose-styles-lost-in-export-line = { $count ->
+    [one] 1 odstavec může být nadpis, který ztratil svůj styl, když Scrivener 3 exportoval projekt do svého staršího formátu, a přenese se jako běžný odstavec. Zkontrolujte jej, nebo importujte projekt, ze kterého byl export pořízen.
+    [few] { $count } odstavce mohou být nadpisy, které ztratily svůj styl, když Scrivener 3 exportoval projekt do svého staršího formátu, a přenesou se jako běžné odstavce. Zkontrolujte je, nebo importujte projekt, ze kterého byl export pořízen.
+   *[other] { $count } odstavců může být nadpisy, které ztratily svůj styl, když Scrivener 3 exportoval projekt do svého staršího formátu, a přenese se jako běžné odstavce. Zkontrolujte je, nebo importujte projekt, ze kterého byl export pořízen.
+}
+import-scrivener-prose-comment-anchor-without-entry-line = { $count ->
+    [one] U 1 komentáře nebo poznámky pod čarou se v aplikaci Scrivener ztratil obsah. Označená slova se zachovají, ale bez něj.
+   *[other] U { $count } komentářů nebo poznámek pod čarou se v aplikaci Scrivener ztratil obsah. Označená slova se zachovají, ale bez nich.
+}
+import-scrivener-prose-comment-entry-without-anchor-line = { $count ->
+    [one] 1 komentář už ve svém textu neměl místo a připojí se k prvnímu odstavci.
+    [few] { $count } komentáře už ve svém textu neměly místo a připojí se k prvnímu odstavci.
+   *[other] { $count } komentářů už ve svém textu nemělo místo a připojí se k prvnímu odstavci.
+}
+import-scrivener-prose-footnote-entry-without-anchor-line = { $count ->
+    [one] 1 propojená poznámka pod čarou už ve svém textu neměla místo a uvede se na jeho konci.
+    [few] { $count } propojené poznámky pod čarou už ve svém textu neměly místo a uvedou se na jeho konci.
+   *[other] { $count } propojených poznámek pod čarou už ve svém textu nemělo místo a uvede se na jeho konci.
+}
+import-scrivener-prose-range-comment-reading-line = { $count ->
+    [one] 1 komentář ze starší verze aplikace Scrivener byl umístěn podle jiného výkladu své pozice. Ověřte, že je u správných slov.
+    [few] { $count } komentáře ze starší verze aplikace Scrivener byly umístěny podle jiného výkladu své pozice. Ověřte, že jsou u správných slov.
+   *[other] { $count } komentářů ze starší verze aplikace Scrivener bylo umístěno podle jiného výkladu své pozice. Ověřte, že jsou u správných slov.
+}
+import-scrivener-prose-range-comment-reading-markers-counted-line = { $count ->
+    [one] 1 komentář ze starší verze aplikace Scrivener byl umístěn podle počtu značek svých vložených poznámek. Ověřte, že je u správných slov.
+    [few] { $count } komentáře ze starší verze aplikace Scrivener byly umístěny podle počtu značek svých vložených poznámek. Ověřte, že jsou u správných slov.
+   *[other] { $count } komentářů ze starší verze aplikace Scrivener bylo umístěno podle počtu značek svých vložených poznámek. Ověřte, že jsou u správných slov.
+}
+import-scrivener-prose-range-comment-reading-pictures-not-counted-line = { $count ->
+    [one] 1 komentář ze starší verze aplikace Scrivener byl umístěn bez započítání svých obrázků. Ověřte, že je u správných slov.
+    [few] { $count } komentáře ze starší verze aplikace Scrivener byly umístěny bez započítání svých obrázků. Ověřte, že jsou u správných slov.
+   *[other] { $count } komentářů ze starší verze aplikace Scrivener bylo umístěno bez započítání svých obrázků. Ověřte, že jsou u správných slov.
+}
+import-scrivener-prose-range-comment-approximate-line = { $count ->
+    [one] 1 komentář ze starší verze aplikace Scrivener neodpovídá přesně žádnému výkladu své pozice a může být o několik znaků posunutý.
+    [few] { $count } komentáře ze starší verze aplikace Scrivener neodpovídají přesně žádnému výkladu své pozice a mohou být o několik znaků posunuté.
+   *[other] { $count } komentářů ze starší verze aplikace Scrivener neodpovídá přesně žádnému výkladu své pozice a může být o několik znaků posunuto.
+}
+import-scrivener-prose-document-link-unresolved-line = { $count ->
+    [one] 1 odkaz vede na dokument, který import nepřenesl. Jeho slova zůstávají.
+    [few] { $count } odkazy vedou na dokumenty, které import nepřenesl. Jejich slova zůstávají.
+   *[other] { $count } odkazů vede na dokumenty, které import nepřenesl. Jejich slova zůstávají.
+}
+import-scrivener-prose-linked-picture-not-read-line = { $count ->
+    [one] 1 obrázek propojený se souborem na vašem disku, „{ $example }“, nebyl přenesen.
+    [few] { $count } obrázky propojené se soubory na vašem disku, například „{ $example }“, nebyly přeneseny.
+   *[other] { $count } obrázků propojených se soubory na vašem disku, například „{ $example }“, nebylo přeneseno.
+}
+import-scrivener-prose-heading-repeats-title-line = { $count ->
+    [one] 1 text začíná nadpisem, který opakuje jeho název, takže export může název vytisknout dvakrát.
+    [few] { $count } texty začínají nadpisem, který opakuje jejich název, takže export může název vytisknout dvakrát.
+   *[other] { $count } textů začíná nadpisem, který opakuje jejich název, takže export může název vytisknout dvakrát.
+}
+import-scrivener-prose-markdown-as-text-line = { $count ->
+    [one] 1 odstavec napsaný v Markdownu se zachová beze změny jako text.
+    [few] { $count } odstavce napsané v Markdownu se zachovají beze změny jako text.
+   *[other] { $count } odstavců napsaných v Markdownu se zachová beze změny jako text.
+}
+import-scrivener-prose-citation-keys-as-text-line = { $count ->
+    [one] 1 odstavec obsahuje citační klíče pro bibliografický program, zachované jako text.
+    [few] { $count } odstavce obsahují citační klíče pro bibliografický program, zachované jako text.
+   *[other] { $count } odstavců obsahuje citační klíče pro bibliografický program, zachované jako text.
+}
+import-scrivener-prose-placeholders-in-exported-text-line = { $count ->
+    [one] 1 zástupná značka aplikace Scrivener, { $example }, zůstane v tom, co exportujete, jako prostý text. Nahraďte ji ručně.
+    [few] { $count } zástupné značky aplikace Scrivener, například { $example }, zůstanou v tom, co exportujete, jako prostý text. Nahraďte je ručně.
+   *[other] { $count } zástupných značek aplikace Scrivener, například { $example }, zůstane v tom, co exportujete, jako prostý text. Nahraďte je ručně.
+}
+import-scrivener-prose-placeholders-in-other-text-line = { $count ->
+    [one] 1 zástupná značka aplikace Scrivener, { $example }, zůstane jako prostý text v textu, který se neexportuje.
+    [few] { $count } zástupné značky aplikace Scrivener, například { $example }, zůstanou jako prostý text v textech, které se neexportují.
+   *[other] { $count } zástupných značek aplikace Scrivener, například { $example }, zůstane jako prostý text v textech, které se neexportují.
+}
+import-scrivener-prose-ornament-lines-kept-line = { $count ->
+    [one] 1 řádek z ozdobných znaků zarovnaný na střed může označovat předěl scény a zachová se tak, jak je napsán.
+    [few] { $count } řádky z ozdobných znaků zarovnané na střed mohou označovat předěly scén a zachovají se tak, jak jsou napsány.
+   *[other] { $count } řádků z ozdobných znaků zarovnaných na střed může označovat předěly scén a zachová se tak, jak jsou napsány.
+}
+import-scrivener-prose-long-document-line = { $count ->
+    [one] 1 text je velmi dlouhý a může se otevírat pomalu.
+    [few] { $count } texty jsou velmi dlouhé a mohou se otevírat pomalu.
+   *[other] { $count } textů je velmi dlouhých a může se otevírat pomalu.
+}
+import-scrivener-prose-pictures-without-description-line = { $count ->
+    [one] 1 obrázek nemá popis pro čtenáře, kteří jej nevidí. Popis můžete přidat v editoru.
+    [few] { $count } obrázky nemají popis pro čtenáře, kteří je nevidí. Popis můžete přidat v editoru.
+   *[other] { $count } obrázků nemá popis pro čtenáře, kteří je nevidí. Popis můžete přidat v editoru.
+}
+import-scrivener-prose-struck-text-compiled-away-line = { $count ->
+    [one] 1 text obsahuje přeškrtnutý text, který se zachová. Kompilace aplikace Scrivener jej z knihy vynechávala, ale export z aplikace Skribisto jej vytiskne.
+    [few] { $count } texty obsahují přeškrtnutý text, který se zachová. Kompilace aplikace Scrivener jej z knihy vynechávala, ale export z aplikace Skribisto jej vytiskne.
+   *[other] { $count } textů obsahuje přeškrtnutý text, který se zachová. Kompilace aplikace Scrivener jej z knihy vynechávala, ale export z aplikace Skribisto jej vytiskne.
+}
+import-scrivener-prose-compile-deleted-style-printed-line = { $count ->
+    [one] Text ve stylu „{ $example }“, který kompilace aplikace Scrivener mazala, se zachová jako próza a export z aplikace Skribisto jej vytiskne.
+   *[other] Text { $count } stylů, které kompilace aplikace Scrivener mazala, například „{ $example }“, se zachová jako próza a export z aplikace Skribisto jej vytiskne.
+}
+import-scrivener-prose-compile-raw-style-printed-line = { $count ->
+    [one] Text ve stylu „{ $example }“, který kompilace aplikace Scrivener předávala jako kód pro jiný program, se zachová jako próza a export z aplikace Skribisto jej vytiskne.
+   *[other] Text { $count } stylů, které kompilace aplikace Scrivener předávala jako kód pro jiný program, například „{ $example }“, se zachová jako próza a export z aplikace Skribisto jej vytiskne.
+}
+import-scrivener-prose-left-out-after-document-line = { $count ->
+    [one] 1 část poškozeného souboru za jeho koncem se vynechá.
+    [few] { $count } části poškozených souborů za jejich koncem se vynechají.
+   *[other] { $count } částí poškozených souborů za jejich koncem se vynechá.
+}
+import-scrivener-prose-left-out-header-or-footer-line = { $count ->
+    [one] 1 záhlaví nebo zápatí se vynechá: není součástí textu.
+    [few] { $count } záhlaví a zápatí se vynechají: nejsou součástí textu.
+   *[other] { $count } záhlaví a zápatí se vynechá: nejsou součástí textu.
+}
+import-scrivener-prose-left-out-list-label-picture-line = { $count ->
+    [one] 1 obrázek použitý jako odrážka seznamu se vynechá.
+    [few] { $count } obrázky použité jako odrážky seznamu se vynechají.
+   *[other] { $count } obrázků použitých jako odrážky seznamu se vynechá.
+}
+import-scrivener-prose-left-out-line = { $count ->
+    [one] 1 část souboru, kterou neobsahuje žádný text, se vynechá.
+    [few] { $count } části souborů, které neobsahuje žádný text, se vynechají.
+   *[other] { $count } částí souborů, které neobsahuje žádný text, se vynechá.
+}
+import-scrivener-prose-undecodable-characters-line = { $count ->
+    [one] 1 znak nebylo možné dekódovat a na jeho místě se zobrazuje náhradní znak (�).
+    [few] { $count } znaky nebylo možné dekódovat a na jejich místě se zobrazují náhradní znaky (�).
+   *[other] { $count } znaků nebylo možné dekódovat a na jejich místě se zobrazují náhradní znaky (�).
+}
+import-scrivener-prose-inline-notes-merged-line = { $count ->
+    [one] 1 vložená poznámka, kterou Scrivener rozdělil v místě, kde se měnilo formátování, se znovu spojí.
+    [few] { $count } vložené poznámky, které Scrivener rozdělil v místě, kde se měnilo formátování, se znovu spojí.
+   *[other] { $count } vložených poznámek, které Scrivener rozdělil v místě, kde se měnilo formátování, se znovu spojí.
+}
+import-scrivener-prose-inline-notes-joined-across-paragraphs-line = { $count ->
+    [one] 1 vložená poznámka psaná po jednotlivých odstavcích se spojí do jediné poznámky.
+    [few] { $count } vložené poznámky psané po jednotlivých odstavcích se spojí do poznámek o více odstavcích.
+   *[other] { $count } vložených poznámek psaných po jednotlivých odstavcích se spojí do poznámek o více odstavcích.
+}
+import-scrivener-prose-blank-notes-dropped-line = { $count ->
+    [one] 1 prázdná vložená poznámka se vynechá.
+    [few] { $count } prázdné vložené poznámky se vynechají.
+   *[other] { $count } prázdných vložených poznámek se vynechá.
+}
+import-scrivener-prose-annotations-became-comments-line = { $count ->
+    [one] 1 vložená anotace se stala komentářem.
+    [few] { $count } vložené anotace se staly komentáři.
+   *[other] { $count } vložených anotací se stalo komentáři.
+}
+import-scrivener-prose-annotation-only-document-kept-line = { $count ->
+    [one] 1 dokument neobsahoval nic než anotaci. Jeho slova se zachovají jako próza.
+    [few] { $count } dokumenty neobsahovaly nic než anotaci. Jejich slova se zachovají jako próza.
+   *[other] { $count } dokumentů neobsahovalo nic než anotaci. Jejich slova se zachovají jako próza.
+}
+import-scrivener-prose-preserve-formatting-passages-line = { $count ->
+    [one] 1 pasáž označená jako „Preserve Formatting“ (zachovat formátování) přejde jako běžný text.
+    [few] { $count } pasáže označené jako „Preserve Formatting“ (zachovat formátování) přejdou jako běžný text.
+   *[other] { $count } pasáží označených jako „Preserve Formatting“ (zachovat formátování) přejde jako běžný text.
+}
+import-scrivener-prose-nested-note-unwrapped-line = { $count ->
+    [one] 1 poznámka uvnitř komentáře nebo poznámky pod čarou se zachová jako text na svém místě.
+    [few] { $count } poznámky uvnitř komentářů nebo poznámek pod čarou se zachovají jako text na svém místě.
+   *[other] { $count } poznámek uvnitř komentářů nebo poznámek pod čarou se zachová jako text na svém místě.
+}
+import-scrivener-prose-style-not-carried-line = { $count ->
+    [one] Styl „{ $example }“ nemá v aplikaci Skribisto obdobu. Jeho text si ponechá svá slova.
+    [few] { $count } styly, například „{ $example }“, nemají v aplikaci Skribisto obdobu. Jejich text si ponechá svá slova.
+   *[other] { $count } stylů, například „{ $example }“, nemá v aplikaci Skribisto obdobu. Jejich text si ponechá svá slova.
+}
+import-scrivener-prose-document-links-dropped-line = { $count ->
+    [one] 1 odkaz na jiný dokument nemá v aplikaci Skribisto své místo. Jeho slova zůstávají.
+    [few] { $count } odkazy na jiné dokumenty nemají v aplikaci Skribisto své místo. Jejich slova zůstávají.
+   *[other] { $count } odkazů na jiné dokumenty nemá v aplikaci Skribisto své místo. Jejich slova zůstávají.
+}
+import-scrivener-prose-document-links-kept-line = { $count ->
+    [one] 1 odkaz na jiný dokument se zachová jako odkaz mezi položkami.
+    [few] { $count } odkazy na jiné dokumenty se zachovají jako odkazy mezi položkami.
+   *[other] { $count } odkazů na jiné dokumenty se zachová jako odkazy mezi položkami.
+}
+import-scrivener-prose-other-links-kept-as-text-line = { $count ->
+    [one] 1 odkaz na jiný projekt nebo na soubor se zachová jako text.
+    [few] { $count } odkazy na jiné projekty nebo na soubory se zachovají jako text.
+   *[other] { $count } odkazů na jiné projekty nebo na soubory se zachová jako text.
+}
+import-scrivener-prose-soft-breaks-split-line = { $count ->
+    [one] 1 zalomení řádku uvnitř odstavce teď začíná samostatný odstavec.
+    [few] { $count } zalomení řádků uvnitř odstavců teď začínají samostatné odstavce.
+   *[other] { $count } zalomení řádků uvnitř odstavců teď začíná samostatné odstavce.
+}
+import-scrivener-prose-typed-indents-removed-line = { $count ->
+    [one] 1 odsazení napsané na začátku odstavce se odstraní.
+    [few] { $count } odsazení napsaná na začátku odstavců se odstraní.
+   *[other] { $count } odsazení napsaných na začátku odstavců se odstraní.
+}
+import-scrivener-prose-left-indents-not-kept-line = { $count ->
+    [one] 1 odstavec odsazený od okraje přijde o své odsazení.
+    [few] { $count } odstavce odsazené od okraje přijdou o své odsazení.
+   *[other] { $count } odstavců odsazených od okraje přijde o své odsazení.
+}
+import-scrivener-prose-blank-lines-removed-line = { $count ->
+    [one] 1 prázdný odstavec mezi dvěma jinými se odstraní.
+    [few] { $count } prázdné odstavce mezi jinými se odstraní.
+   *[other] { $count } prázdných odstavců mezi jinými se odstraní.
+}
+import-scrivener-prose-verse-stanza-gaps-lost-line = { $count ->
+    [one] 1 prázdný řádek mezi slokami básně se odstraní, takže sloky na sebe navazují.
+    [few] { $count } prázdné řádky mezi slokami básně se odstraní, takže sloky na sebe navazují.
+   *[other] { $count } prázdných řádků mezi slokami básně se odstraní, takže sloky na sebe navazují.
+}
+import-scrivener-prose-blank-lines-became-scene-breaks-line = { $count ->
+    [one] 1 prázdný řádek mezi odstavci se stal předělem scény.
+    [few] { $count } prázdné řádky mezi odstavci se staly předěly scén.
+   *[other] { $count } prázdných řádků mezi odstavci se stalo předěly scén.
+}
+import-scrivener-prose-ornaments-became-scene-breaks-line = { $count ->
+    [one] 1 řádek z ozdobných znaků se stal předělem scény.
+    [few] { $count } řádky z ozdobných znaků se staly předěly scén.
+   *[other] { $count } řádků z ozdobných znaků se stalo předěly scén.
+}
+import-scrivener-prose-table-first-row-header-line = { $count ->
+    [one] 1 tabulka teď začíná řádkem záhlaví.
+    [few] { $count } tabulky teď začínají řádkem záhlaví.
+   *[other] { $count } tabulek teď začíná řádkem záhlaví.
+}
+import-scrivener-prose-table-cells-joined-line = { $count ->
+    [one] 1 buňka tabulky obsahovala více odstavců, které jsou teď spojeny do jednoho.
+    [few] { $count } buňky tabulek obsahovaly více odstavců, které jsou teď spojeny do jednoho.
+   *[other] { $count } buněk tabulek obsahovalo více odstavců, které jsou teď spojeny do jednoho.
+}
+import-scrivener-prose-formatting-lost-colour-line = { $count ->
+    [one] U 1 textu se odstraní barva písma.
+   *[other] U { $count } textů se odstraní barva písma.
+}
+import-scrivener-prose-formatting-lost-highlight-line = { $count ->
+    [one] U 1 textu se odstraní zvýraznění.
+   *[other] U { $count } textů se odstraní zvýraznění.
+}
+import-scrivener-prose-formatting-lost-small-caps-line = { $count ->
+    [one] U 1 textu se kapitálky zobrazí jako běžná písmena.
+   *[other] U { $count } textů se kapitálky zobrazí jako běžná písmena.
+}
+import-scrivener-prose-formatting-lost-all-caps-line = { $count ->
+    [one] U 1 textu se text zobrazený velkými písmeny zobrazí tak, jak byl napsán.
+   *[other] U { $count } textů se text zobrazený velkými písmeny zobrazí tak, jak byl napsán.
+}
+import-scrivener-prose-formatting-lost-hidden-line = { $count ->
+    [one] U 1 textu se vynechá skrytý text.
+   *[other] U { $count } textů se vynechá skrytý text.
+}
+import-scrivener-prose-formatting-lost-line = { $count ->
+    [one] U 1 textu se odstraní formátování, pro které Skribisto nemá místo.
+   *[other] U { $count } textů se odstraní formátování, pro které Skribisto nemá místo.
+}
+import-scrivener-prose-justified-text-not-kept-line = { $count ->
+    [one] 1 odstavec zarovnaný do bloku se místo toho řídí stylem exportu.
+    [few] { $count } odstavce zarovnané do bloku se místo toho řídí stylem exportu.
+   *[other] { $count } odstavců zarovnaných do bloku se místo toho řídí stylem exportu.
+}
+import-scrivener-prose-comment-colours-lost-line = { $count ->
+    [one] 1 komentář přijde o svou barvu.
+    [few] { $count } komentáře přijdou o svou barvu.
+   *[other] { $count } komentářů přijde o svou barvu.
+}
+import-scrivener-prose-control-characters-removed-line = { $count ->
+    [one] 1 neviditelný řídicí znak se odstraní.
+    [few] { $count } neviditelné řídicí znaky se odstraní.
+   *[other] { $count } neviditelných řídicích znaků se odstraní.
+}
+import-scrivener-prose-note-on-heading-lost-line = { $count ->
+    [one] 1 poznámku pod čarou nebo komentář u nadpisu kapitoly nebylo možné ponechat na místě: komentář se přesune do prvního odstavce kapitoly, poznámka pod čarou se vynechá.
+    [few] { $count } poznámky pod čarou nebo komentáře u nadpisů kapitol nebylo možné ponechat na místě: komentář se přesune do prvního odstavce kapitoly, poznámka pod čarou se vynechá.
+   *[other] { $count } poznámek pod čarou nebo komentářů u nadpisů kapitol nebylo možné ponechat na místě: komentář se přesune do prvního odstavce kapitoly, poznámka pod čarou se vynechá.
+}
+import-scrivener-prose-media-file-copied-line = { $count ->
+    [one] 1 soubor z rešerší, který Skribisto neumí otevřít, byl zkopírován vedle nového projektu. Jeho poznámka uvádí kam.
+    [few] { $count } soubory z rešerší, které Skribisto neumí otevřít, byly zkopírovány vedle nového projektu. Jejich poznámky uvádějí kam.
+   *[other] { $count } souborů z rešerší, které Skribisto neumí otevřít, bylo zkopírováno vedle nového projektu. Jejich poznámky uvádějí kam.
+}
+import-scrivener-prose-media-file-not-carried-line = { $count ->
+    [one] 1 soubor z rešerší, který Skribisto neumí otevřít, zůstává ve vašem projektu Scrivener. Jeho poznámka uvádí jeho název.
+    [few] { $count } soubory z rešerší, které Skribisto neumí otevřít, zůstávají ve vašem projektu Scrivener. Jejich poznámky uvádějí jejich názvy.
+   *[other] { $count } souborů z rešerší, které Skribisto neumí otevřít, zůstává ve vašem projektu Scrivener. Jejich poznámky uvádějí jejich názvy.
+}
+## When the import fails
+import-scrivener-error-refused = { $refusal } Nic nebylo zapsáno.
+import-scrivener-error-question = Projekt teď klade otázku, na kterou jeho kontrola neodpověděla. Zkontrolujte jej znovu a potom importujte. Nic nebylo zapsáno.
+import-scrivener-error-not-accepted = Projekt klade otázku, kterou jste ještě nepřijali. Zkontrolujte jej znovu a potom importujte. Nic nebylo zapsáno.
+import-scrivener-error-changed = Projekt se od vaší kontroly změnil. Zkontrolujte jej znovu a potom importujte. Nic nebylo zapsáno.
+import-scrivener-error-choice = Struktura zvolená při kontrole už k tomuto projektu nesedí. Zkontrolujte jej znovu a potom importujte. Nic nebylo zapsáno.
 
 export-title = Export
 export-close = Zavřít
@@ -1900,6 +3567,13 @@ import-document-destination = Umístění
 import-document-destination-hint = Vyberte pořadač nebo položku: nové položky se umístí dovnitř složky, nebo za scénu.
 import-document-destination-empty = Zatím žádné pořadače. Nejprve nějaký vytvořte.
 import-document-plan-empty = Zatím není co importovat.
+# How many pictures the items being imported bring into the project, under the
+# review tree. Shown only when there is at least one.
+import-document-pictures = { $count ->
+    [one] S těmito dokumenty přichází jeden obrázek.
+    [few] S těmito dokumenty přicházejí { $count } obrázky.
+   *[other] S těmito dokumenty přichází { $count } obrázků.
+}
 import-document-summary = { $rows ->
     [one] 1 položka
     [few] { $rows } položky
@@ -1957,6 +3631,22 @@ import-diagnostic-nested-break-dropped = { $count ->
     [few] { $count } předěly scén uvnitř citací nebo seznamů v „{ $path }“ byly vynechány. Zachová se jen předěl na samostatném řádku.
    *[other] { $count } předělů scén uvnitř citací nebo seznamů v „{ $path }“ bylo vynecháno. Zachová se jen předěl na samostatném řádku.
 }
+
+# A picture the document shows that does not come with it, one sentence per reason.
+# $detail is the picture as the document names it: a file name, a path inside the
+# document, or a web address. Nothing is left in the text where it was.
+import-diagnostic-image-not-ingested-format = V „{ $path }“ je obrázek „{ $detail }“ ve formátu, který Skribisto neumí zobrazit, proto byl vynechán. Importují se obrázky ve formátech PNG, JPEG, WebP, GIF, TIFF a BMP; uložte jej v jednom z nich a vložte jej ručně.
+import-diagnostic-image-not-ingested-remote = V „{ $path }“ je obrázek „{ $detail }“ umístěný na webu. Import nikdy nic nestahuje, proto byl vynechán.
+import-diagnostic-image-not-ingested-outside = V „{ $path }“ leží obrázek „{ $detail }“ mimo dokument i jeho složku, proto byl vynechán. Importují se jen obrázky uložené v dokumentu nebo ve vlastní složce dokumentu.
+import-diagnostic-image-not-ingested-missing = V „{ $path }“ se obrázek „{ $detail }“ nepodařilo najít, proto byl vynechán.
+import-diagnostic-image-not-ingested-too-large = V „{ $path }“ je obrázek „{ $detail }“ větší, než projekt přijme, proto byl vynechán.
+import-diagnostic-image-not-ingested-unreadable = V „{ $path }“ se obrázek „{ $detail }“ nepodařilo přečíst jako obrázek, proto byl vynechán.
+import-diagnostic-image-not-ingested-heading = V „{ $path }“ je obrázek „{ $detail }“ v nadpisu. Z nadpisu se stane název, který žádný obrázek neobsahuje, proto byl vynechán.
+import-diagnostic-image-not-ingested-note = V „{ $path }“ je obrázek „{ $detail }“ v poznámce pod čarou, vysvětlivce nebo komentáři. Ty si ponechají svá slova, ale žádný obrázek, proto byl vynechán.
+import-diagnostic-image-not-ingested-html = V „{ $path }“ je obrázek „{ $detail }“ zapsaný jako HTML a import HTML vynechává, proto byl vynechán i obrázek. Chcete-li jej importovat, zapište jej jako obrázek v Markdownu.
+import-diagnostic-image-not-ingested-document-full = V „{ $path }“ byl obrázek „{ $detail }“ vynechán: obrázky tohoto dokumentu dohromady přesahují to, co jeden import přenese. Importujte dokument po částech, nebo zbývající obrázky vložte ručně.
+import-diagnostic-picture-first-frame-only = V „{ $path }“ přichází animovaný obrázek „{ $detail }“ jako svůj první snímek. Obrázky v projektu se nehýbou.
+
 import-diagnostic-duplicate-title = „{ $title }“ se vyskytuje { $count }×. Pokud jste tyto soubory už dříve importovali, vzniknou duplikáty.
 import-diagnostic-heading-level-jump = „{ $title }“ přeskakuje z úrovně nadpisu { $from } na { $to }; umístí se o jednu úroveň pod nadřazenou položku.
 import-diagnostic-illegal-combination = „{ $title }“ obsahuje prózu, ale položka typu „{ $kind }“ žádnou obsahovat nemůže. Import je pozastaven, dokud nezměníte její typ nebo ji nevynecháte. Jinak se neimportuje vůbec nic.
@@ -2327,6 +4017,7 @@ help-topic-round-trip = Odeslání knihy čtenáři
 help-topic-export = Export
 help-topic-import-documents = Import dokumentů
 help-topic-import-projects = Převzetí celého projektu
+help-topic-import-scrivener = Přechod z aplikace Scrivener
 help-topic-backups-and-versions = Zálohy a verze
 
 help-shortcuts-title = Klávesové zkratky
@@ -2349,6 +4040,8 @@ shortcut-name-work-new = Nový projekt
 shortcut-name-work-open = Otevřít projekt
 shortcut-name-window-new = Nové okno
 shortcut-name-work-close = Zavřít projekt
+shortcut-name-work-import-scrivener = Importovat projekt Scrivener…
+shortcut-name-work-import-scrivener-report = Zobrazit zprávu o importu z aplikace Scrivener
 shortcut-name-app-settings = Nastavení
 shortcut-name-app-quit = Ukončit
 shortcut-name-editor-insert-footnote = Vložit poznámku pod čarou
@@ -2654,6 +4347,7 @@ dialog-save-as-file-title = Uložit jako jeden soubor .skrib
 dialog-save-as-folder-title = Vyberte nadřazenou složku pro projekt
 dialog-manuskript-file-title = Vyberte projekt Manuskript
 dialog-manuskript-folder-title = Vyberte složku projektu Manuskript
+dialog-plume-file-title = Vyberte projekt Plume Creator
 dialog-filter-skrib = Projekt Skribisto
 dialog-filter-manuskript = Projekt Manuskript
 dialog-filter-plume = Projekt Plume Creator

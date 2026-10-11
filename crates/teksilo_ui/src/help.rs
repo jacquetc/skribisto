@@ -348,33 +348,7 @@ macro_rules! djot_topic {
             ),
         ])
     };
-    // A topic written so far in English and French only. Every other locale falls back
-    // to English behind the page's banner, and the topic is listed in
-    // `AWAITING_TRANSLATION`, which the parity test reads: a missing locale is a decision
-    // there, never an oversight.
-    ($file:literal, english_and_french) => {
-        HelpBody::Djot(&[
-            (
-                "en-US",
-                include_str!(concat!("../help/en-US/", $file, ".djot")),
-            ),
-            (
-                "fr-FR",
-                include_str!(concat!("../help/fr-FR/", $file, ".djot")),
-            ),
-        ])
-    };
 }
-
-/// The built-in topics written so far in fewer locales than the help set ships, and the
-/// locales each still lacks: those fall back to English behind the page's banner. A
-/// topic's translations remove it from here, and the help tests fail until they do, as
-/// they fail for a locale missing from a topic not listed.
-#[cfg(test)]
-pub(crate) const AWAITING_TRANSLATION: &[(&str, &[&str])] = &[(
-    "help-import-scrivener",
-    &["de-DE", "es-ES", "it-IT", "pl-PL", "pt-PT"],
-)];
 
 /// The concepts the rich-tooltip registry already teaches, as browsable topics.
 ///
@@ -596,7 +570,7 @@ pub fn builtin_topics() -> Vec<HelpTopicSpec> {
             key: "help-import-scrivener",
             section: HelpSection::Exchanging,
             title: Rc::new(|| tr!(help_topic_import_scrivener())),
-            body: djot_topic!("import-scrivener", english_and_french),
+            body: djot_topic!("import-scrivener"),
         },
         HelpTopicSpec {
             key: "help-backups-and-versions",

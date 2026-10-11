@@ -1,4 +1,4 @@
-L'importazione di un progetto trasferisce un intero progetto Manuskript o Plume Creator: capitoli, personaggi e note. Per una cartella di documenti, consulta [importare documenti](:help-import-documents).
+L'importazione di un progetto trasferisce un intero progetto Manuskript o Plume Creator: capitoli, personaggi e note. Per una cartella di documenti, consulta [importare documenti](:help-import-documents). Per un progetto Scrivener, consulta [passare da Scrivener](:help-import-scrivener).
 
 L'importazione crea un **nuovo** progetto Skribisto.
 
@@ -14,7 +14,9 @@ Il pannello richiede:
 
 Non viene scritto nulla prima di premere *Importa*. L'avanzamento è visibile e *Annulla* non lascia file residui.
 
-Se la destinazione è un progetto già aperto in Skribisto, scegli un altro nome.
+Se la destinazione è un progetto già aperto in Skribisto, scegli un altro nome. Mentre un'importazione è in corso, il suo file le è riservato: nient'altro lo apre né vi scrive un progetto finché l'importazione non è terminata.
+
+I progetti vengono importati uno alla volta: se un'importazione è in corso e ne avvii un'altra, Skribisto te lo segnala. Se esci da Skribisto durante un'importazione, ti viene chiesta prima conferma, e anche interrompere l'importazione non lascia nulla dietro di sé.
 
 ## Scegli un progetto Manuskript
 
@@ -72,8 +74,10 @@ Gli elementi nel cestino di Plume **non** vengono importati. Ripristina in Plume
 
 ## Dopo l'importazione
 
-Un messaggio offre *Apri ora* per aprire il nuovo progetto.
+Un messaggio offre *Apri ora* per aprire il nuovo progetto. La sua voce sotto la campanella nella barra di stato mantiene *Apri ora* anche dopo che il messaggio è scomparso, e apre il progetto in una finestra propria.
 
-Se viene segnalato qualcosa non trasferibile, fai clic su *Dettagli* per leggere l'elenco. Il rapporto rimane disponibile sotto la campanella nella barra di stato.
+Se viene segnalato qualcosa non trasferibile, fai clic su *Dettagli* per leggere l'elenco, scritto nella lingua impostata in Skribisto. Il rapporto rimane disponibile sotto la campanella nella barra di stato.
+
+Se un progetto non può essere importato, il messaggio ne indica il motivo, e i suoi *Dettagli* contengono la descrizione tecnica da riportare se segnali il problema.
 
 Il nuovo progetto è un file `.skrib` singolo. Se usavi una cartella per il controllo di versione, scegli poi *Progetto ▸ Salva come cartella…*. Consulta [backup e versioni](:help-backups-and-versions).
