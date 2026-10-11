@@ -19,7 +19,7 @@ settings-templates-description = Des morceaux de texte réutilisables à insére
 settings-templates-filter = Filtrer les modèles
 settings-templates-count = { $n ->
     [0] Aucun modèle
-    [one] 1 modèle
+    [one] { $n } modèle
    *[other] { $n } modèles
 }
 settings-templates-empty = Ce projet ne contient encore aucun modèle.
@@ -37,20 +37,20 @@ settings-templates-name-placeholder = Nom du modèle
 settings-templates-body-placeholder = Le texte que ce modèle insère
 settings-templates-duplicate-name = Un autre modèle s’appelle déjà « { $name } »
 settings-templates-words = { $n ->
-    [one] 1 mot
+    [one] { $n } mot
    *[other] { $n } mots
 }
 
 ## Retour d'import / export
 templates-imported = { $added ->
-    [one] 1 modèle importé
+    [one] { $added } modèle importé
    *[other] { $added } modèles importés
 }
 templates-imported-renamed = Renommage pour éviter un doublon : { $names }
 templates-imported-skipped = Illisibles : { $names }
 templates-import-filter = Modèles (.md, .djot)
 templates-exported = { $n ->
-    [one] 1 modèle exporté
+    [one] { $n } modèle exporté
    *[other] { $n } modèles exportés
 }
 templates-preset-applied = « { $name } » ajouté

@@ -243,6 +243,59 @@ class TestChecks(unittest.TestCase):
             "plural", [check for check, _ in run_checks(BASE, translation)]
         )
 
+    ONE_BASE = BASE + """\
+trash-count = { $count ->
+    [one] One item
+   *[other] { $count } items
+}
+"""
+
+    def test_one_variant_that_drops_its_number_in_french(self):
+        """French puts 0 in `one`: "Un élément" would read for an empty trash."""
+        translation = TRANSLATION + """\
+trash-count = { $count ->
+    [one] Un élément
+   *[other] { $count } éléments
+}
+"""
+        self.assertIn(("one-literal", "trash-count"),
+                      run_checks(self.ONE_BASE, translation))
+
+    def test_exact_one_variant_is_quiet(self):
+        """`[1]` is exact, and English keeps `one` for 1 alone, so neither the
+        French `[1]` nor the base's own "One item" is reported."""
+        translation = TRANSLATION + """\
+trash-count = { $count ->
+    [1] Un élément
+    [one] { $count } élément
+   *[other] { $count } éléments
+}
+"""
+        self.assertNotIn(
+            "one-literal",
+            [check for check, _ in run_checks(self.ONE_BASE, translation)],
+        )
+
+    def test_formatted_copy_of_the_number_is_quiet(self):
+        """A selector on a raw number whose variants all print a formatted
+        copy (`$n` selects, `$count` shows) does print the number."""
+        base = BASE + """\
+goal = { $n ->
+    [one] { $count } word
+   *[other] { $count } words
+}
+"""
+        translation = TRANSLATION + """\
+goal = { $n ->
+    [one] { $count } mot
+   *[other] { $count } mots
+}
+"""
+        self.assertNotIn(
+            "one-literal",
+            [check for check, _ in run_checks(base, translation)],
+        )
+
     def test_untranslated_is_opt_in(self):
         base = BASE + "stub = This sentence was never translated.\n"
         translation = TRANSLATION + "stub = This sentence was never translated.\n"

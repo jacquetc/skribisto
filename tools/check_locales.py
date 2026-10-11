@@ -27,6 +27,12 @@ under `--strict`.
     duplicate      key defined twice within one locale
     placeholder    the set of `{ $vars }` differs from the base entry
     selector       a `{ $x -> }` selector with no `*[default]` variant
+    one-literal    a `[one]` variant that never prints the number its
+                   siblings print, in a language whose `one` also holds other
+                   integers (French 0, Russian and Ukrainian 21, 31…): a
+                   counter prints its number there ("{ $n } mot", since French
+                   says "0 mot"), and text true of exactly one belongs in an
+                   exact `[1]` variant
     empty          key whose value is empty
     reference      `{ other-key }` / `{ -term }` pointing at a key that does
                    not exist in that locale
@@ -141,6 +147,19 @@ CLDR_CATEGORIES = {
 
 ALL_PLURAL_CATEGORIES = set().union(*CLDR_CATEGORIES.values())
 
+# Languages whose CLDR `one` category holds integers other than 1: French
+# counts 0 as `one`, Russian and Ukrainian count 21, 31, 101 and so on. In
+# them a `[one]` variant that never prints its number ("1 étiquette", "Un
+# commentaire…") is wrong for those counts. A counter prints the number there
+# instead ("{ $n } étiquette": French puts 0 in the singular too), and text true
+# of exactly one belongs in an exact `[1]` variant. Portuguese is absent on
+# purpose: pt-PT, the variant shipped, keeps `one` for 1 alone.
+ONE_COVERS_MORE = {
+    "fr": "0 and 1",
+    "ru": "1, 21, 31 and so on",
+    "uk": "1, 21, 31 and so on",
+}
+
 # A value identical to the base one is usually fine, not a stub: French shares
 # "Note", "Format", "Synopsis", "Destination", "Structure" with English, and
 # "PDF", "GitHub", "LaTeX" are nobody's to translate. Word count is what
@@ -177,6 +196,7 @@ ERROR_CHECKS = {
     "duplicate",
     "placeholder",
     "selector",
+    "one-literal",
     "empty",
     "reference",
     "tooltip-link",
@@ -443,6 +463,48 @@ def selector_spans(text: str) -> list[str]:
     return spans
 
 
+def selector_variants(text: str) -> list[tuple[str, dict[str, str]]]:
+    """Return, for every `{ $var -> … }` selector in `text`, its variable and
+    the body of each of its own variants (nested selectors stay inside the
+    body of the variant that holds them)."""
+    found: list[tuple[str, dict[str, str]]] = []
+    for match in re.finditer(r"\{\s*\$([A-Za-z0-9_-]+)\s*->", text):
+        variable = match.group(1)
+        bodies: dict[str, str] = {}
+        key: str | None = None
+        depth = 0
+        i = match.end()
+        while i < len(text):
+            ch = text[i]
+            if ch == "{":
+                depth += 1
+            elif ch == "}":
+                if depth == 0:
+                    break
+                depth -= 1
+            elif depth == 0:
+                variant = re.match(r"\n\s*\*?\[([^\]\s]+)\]", text[i:])
+                if variant:
+                    key = variant.group(1)
+                    bodies[key] = ""
+                    i += variant.end()
+                    continue
+            if key is not None:
+                bodies[key] += ch
+            i += 1
+        found.append((variable, bodies))
+    return found
+
+
+def prints_variable(body: str, variable: str) -> bool:
+    """Whether `body` shows `$variable` (as a placeable or through a function
+    such as NUMBER), as opposed to selecting on it."""
+    pattern = (
+        r"\{\s*(?:[A-Z][A-Z_]*\(\s*)?\$" + re.escape(variable) + r"\b(?!\s*->)"
+    )
+    return re.search(pattern, body) is not None
+
+
 def check_entry_pair(
     locale: str,
     base_locale: str,
@@ -596,6 +658,32 @@ def check_locale_internals(
                             entry.line,
                         )
                     )
+
+        if language in ONE_COVERS_MORE:
+            for variable, bodies in selector_variants(entry.full_text):
+                one = bodies.get("one")
+                if one is None or prints_variable(one, variable):
+                    continue
+                # A selector whose variants all show a formatted copy of the
+                # number instead (`{ $n -> [one] { $count } word … }`) prints
+                # it after all; only a `[one]` that drops a number its
+                # siblings print is the literal "1" mistake.
+                siblings = [b for k, b in bodies.items() if k != "one"]
+                if not any(prints_variable(b, variable) for b in siblings):
+                    continue
+                problems.append(
+                    Problem(
+                        parsed.locale,
+                        "one-literal",
+                        entry.name,
+                        f"[one] never prints ${variable}, but '{language}' "
+                        f"puts {ONE_COVERS_MORE[language]} in `one`; print "
+                        f"${variable} there, or move text true of exactly one "
+                        f"to an exact [1] variant",
+                        entry.file,
+                        entry.line,
+                    )
+                )
 
         for ref in entry.references():
             if ref not in parsed.entries:

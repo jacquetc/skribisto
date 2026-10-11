@@ -81,7 +81,7 @@ settings-tags-added = « { $name } » ajoutée
 settings-tags-duplicate = « { $name } » existe déjà
 settings-tags-filter = Filtrer les étiquettes
 settings-tags-count = { $n ->
-    [one] 1 étiquette
+    [one] { $n } étiquette
    *[other] { $n } étiquettes
 }
 settings-tags-details-placeholder = Ce que signifie cette étiquette
@@ -114,13 +114,13 @@ settings-tags-imported = { $added ->
    *[other] { $skipped } ignorées
 }
 settings-tags-exported = { $n ->
-    [one] 1 étiquette exportée
+    [one] { $n } étiquette exportée
    *[other] { $n } étiquettes exportées
 }
 
 ## La rangée de pastilles affichée dans le flux, le tableau et le sous-titre de l’éditeur
 tags-chip-more = { $n ->
-    [one] 1 étiquette de plus
+    [one] { $n } étiquette de plus
    *[other] { $n } étiquettes de plus
 }
 
@@ -144,7 +144,7 @@ cast-unresolved = Ne fait plus partie de la bible narrative
 # n’y a pas de « ce n’est pas elle » à enregistrer.
 mentions-confirm = Ajouter à la présence de { $name }
 mentions-hit-count = { $n ->
-    [one] une fois
+    [1] une fois
    *[other] { $n } fois
 }
 # Le badge sur une ligne dont la cible est le point de vue déclaré du propriétaire (voir
@@ -207,7 +207,7 @@ note-details-untitled-document = Sans titre
 ## Le compteur de la lecture « Dans le texte » : combien de fois cette entrée est
 ## nommée dans les rangées affichées, et à laquelle la lectrice s'est déplacée.
 note-in-prose-mentions = { $n ->
-    [one] 1 mention
+    [one] { $n } mention
    *[other] { $n } mentions
 }
 note-in-prose-mention-at = { $current } sur { $total }

@@ -419,7 +419,7 @@ settings-group-chapters = Chapitres
 tidy-titles-title = Nettoyer les titres de chapitre
 tidy-titles-none = Aucun titre de chapitre ou de partie ne se contente de répéter son propre numéro.
 tidy-titles-lead = { $count ->
-        [one] Un chapitre ou une partie n’a pour titre que son propre numéro.
+        [1] Un chapitre ou une partie n’a pour titre que son propre numéro.
        *[other] { $count } chapitres et parties n’ont pour titre que leur propre numéro.
     }
 tidy-titles-explain = Effacer ces titres laisse chacun désigné par le numéro que le livre connaît déjà, celui-là même qu’imprime l’export. Rien d’autre ne change, et une seule annulation les rétablit tous.
@@ -1502,7 +1502,7 @@ import-scrivener-report-none-title = Aucun compte rendu d’import
 import-scrivener-report-none = Aucun import Scrivener ne s’est terminé depuis le lancement de Skribisto. Skribisto garde les comptes rendus des derniers imports jusqu’à sa fermeture.
 # $count est le nombre de comptes rendus d’import que Skribisto garde (16 actuellement).
 import-scrivener-report-gone = { $count ->
-    [one] Le compte rendu de cet import n’est plus gardé. Skribisto garde le compte rendu du dernier import jusqu’à sa fermeture.
+    [1] Le compte rendu de cet import n’est plus gardé. Skribisto garde le compte rendu du dernier import jusqu’à sa fermeture.
    *[other] Le compte rendu de cet import n’est plus gardé. Skribisto garde les comptes rendus des { $count } derniers imports jusqu’à sa fermeture.
 }
 
@@ -2833,10 +2833,10 @@ search-replace-failed-title = Échec du remplacement
 search-replace-skipped-title = Rien n’a été remplacé
 search-replace-skipped-body =
     { $fields ->
-        [one] Ce texte a changé
+        [1] Ce texte a changé
        *[other] { $fields } de ces textes ont changé
     } depuis la recherche, { $fields ->
-        [one] il n’a donc pas été modifié
+        [1] il n’a donc pas été modifié
        *[other] ils n’ont donc pas été modifiés
     }. Relancez la recherche pour voir où sont les mots.
 search-replace-undo-failed-title = Échec de l’annulation
@@ -3056,7 +3056,7 @@ undo-target-typing = la saisie
 undo-target-project = la dernière modification du projet
 prose-history-reset-title = Historique de saisie réinitialisé
 prose-history-reset-body = { $count ->
-    [one] Une scène ouverte a été restaurée depuis un état antérieur : son historique de saisie ne s’applique plus.
+    [1] Une scène ouverte a été restaurée depuis un état antérieur : son historique de saisie ne s’applique plus.
    *[other] { $count } scènes ouvertes ont été restaurées depuis un état antérieur : leur historique de saisie ne s’applique plus.
 }
 undo-target-trash = la mise à la corbeille
@@ -3123,7 +3123,7 @@ trash-restore-no-project = Aucun projet n’est ouvert, il n’y a donc rien à 
 trash-delete-no-project = Aucun projet n’est ouvert, il n’y a donc rien à supprimer.
 trash-empty-confirm-title = Vider la corbeille ?
 trash-empty-confirm-text = { $count ->
-    [one] L’élément de la corbeille sera définitivement supprimé.
+    [1] L’élément de la corbeille sera définitivement supprimé.
    *[other] Les { $count } éléments de la corbeille seront définitivement supprimés.
 } Ils quittent définitivement la corbeille. Annuler peut encore les rétablir, tant que vous n’avez rien fait d’autre.
 trash-emptied-title = Corbeille vidée
@@ -3504,7 +3504,7 @@ analysis-footnote-words-pending = Comptage des notes de bas de page…
 
 analysis-ignore-empty = Ignorer les textes encore vides
 analysis-empty-hidden = { $count } { $count ->
-        [one] texte vide masqué
+        [1] texte vide masqué
        *[other] textes vides masqués
     }.
 analysis-all-texts-empty = Tous les textes de ce livre sont encore vides.
@@ -3580,12 +3580,12 @@ card-aliases = Autres noms
 export-orphan-footnotes-title = Notes sans appel
 export-comments-dropped =
     { $count ->
-        [one] Un commentaire n’a pas pu être placé dans le texte exporté et a été omis.
+        [1] Un commentaire n’a pas pu être placé dans le texte exporté et a été omis.
        *[other] { $count } commentaires n’ont pas pu être placés dans le texte exporté et ont été omis.
     }
 export-orphan-footnotes =
     { $count ->
-        [one] Une note de bas de page n’est plus appelée nulle part dans le manuscrit. Son texte n’apparaîtra pas dans le livre exporté.
+        [1] Une note de bas de page n’est plus appelée nulle part dans le manuscrit. Son texte n’apparaîtra pas dans le livre exporté.
        *[other] { $count } notes de bas de page ne sont plus appelées dans le manuscrit. Leur texte n’apparaîtra pas dans le livre exporté.
     }
 
@@ -3706,7 +3706,7 @@ import-diagnostic-file-unreadable = « { $path } » n’a pas pu être lu : {
 import-diagnostic-nested-too-deep = « { $path } » n’a pas été lu : son contenu est imbriqué sur plus de { $limit } niveaux. Aucun document réel n’en approche, et le lire pourrait provoquer l’arrêt brutal de Skribisto ; il est donc écarté. Les autres fichiers sont importés quand même.
 import-diagnostic-archive-too-large = « { $path } » n’a pas été lu : c’est un fichier compressé conçu pour se décompresser bien au-delà de sa taille, ce qui pourrait saturer la mémoire et provoquer l’arrêt brutal de Skribisto ; il est donc écarté. Les autres fichiers sont importés quand même.
 import-diagnostic-lossy-decode = { $count ->
-    [one] Un caractère de « { $path } » n’a pas pu être décodé. Enregistrez le fichier en UTF-8 pour le conserver.
+    [1] Un caractère de « { $path } » n’a pas pu être décodé. Enregistrez le fichier en UTF-8 pour le conserver.
    *[other] { $count } caractères de « { $path } » n’ont pas pu être décodés. Enregistrez le fichier en UTF-8 pour les conserver.
 }
 import-diagnostic-decoded-from-bom = « { $path } » a été décodé en { $detail }, pas en UTF-8.
@@ -3715,19 +3715,19 @@ import-diagnostic-no-headings = « { $path } » ne contient aucun titre : il 
 import-diagnostic-unsupported-format = Aucun lecteur ne prend en charge les fichiers « .{ $detail } » : « { $path } » a été ignoré.
 import-diagnostic-front-matter-not-flat = En-tête de « { $path } » : « { $detail } » n’est pas une valeur simple et a été ignoré.
 import-diagnostic-footnotes-degraded = { $count ->
-    [one] Une note de bas de page de « { $path } » arrive en texte brut : les notes ne sont pas lues depuis Markdown.
+    [1] Une note de bas de page de « { $path } » arrive en texte brut : les notes ne sont pas lues depuis Markdown.
    *[other] { $count } notes de bas de page de « { $path } » arrivent en texte brut : les notes ne sont pas lues depuis Markdown.
 }
 import-diagnostic-footnote-not-carried = { $count ->
-    [one] Une note de bas de page de « { $path } » n’a pas pu être reprise. Les autres l’ont été.
+    [1] Une note de bas de page de « { $path } » n’a pas pu être reprise. Les autres l’ont été.
    *[other] { $count } notes de bas de page de « { $path } » n’ont pas pu être reprises. Les autres l’ont été.
 }
 import-diagnostic-raw-html-dropped = { $count ->
-    [one] Un bloc HTML brut de « { $path } » a été supprimé.
+    [1] Un bloc HTML brut de « { $path } » a été supprimé.
    *[other] { $count } blocs HTML bruts de « { $path } » ont été supprimés.
 }
 import-diagnostic-nested-break-dropped = { $count ->
-    [one] Un saut de scène situé dans une citation ou une liste de « { $path } » a été supprimé. Seul un saut placé seul sur sa ligne est conservé.
+    [1] Un saut de scène situé dans une citation ou une liste de « { $path } » a été supprimé. Seul un saut placé seul sur sa ligne est conservé.
    *[other] { $count } sauts de scène situés dans des citations ou des listes de « { $path } » ont été supprimés. Seul un saut placé seul sur sa ligne est conservé.
 }
 import-diagnostic-image-not-ingested-format = Dans « { $path } », l’image « { $detail } » est dans un format que Skribisto ne sait pas afficher : elle n’a pas été importée. Les images PNG, JPEG, WebP, GIF, TIFF et BMP sont importées ; enregistrez-la dans l’un de ces formats et insérez-la à la main.
@@ -3890,7 +3890,7 @@ versions-recreate-confirm-text = Il sera ajouté dans { $destination }, avec le 
 versions-recreate-confirm-undo-note = « Annuler », sur le message qui suit, le retire aussitôt.
 versions-recreated-toast = « { $item } » est de retour dans votre projet
 versions-recreated-partial-toast = { $count ->
-    [one] « { $item } » est de retour, mais l’un de ses textes n’a pas pu être lu
+    [1] « { $item } » est de retour, mais l’un de ses textes n’a pas pu être lu
    *[other] « { $item } » est de retour, mais { $count } de ses textes n’ont pas pu être lus
 }
 versions-recreate-already-here = Cet élément est déjà dans votre projet
@@ -4368,11 +4368,11 @@ settings-sec-work-titled = Œuvre : { $title }
 ## they are. $container is "single-file" or "folder"; $kind is "scene", "note",
 ## "synopsis" or "title".
 import-notice-flattened-rich-texts = { $count ->
-    [one] Un texte était imbriqué plus profondément qu’un projet Skribisto ne le permet ; ses mots ont été conservés en texte brut, sans leur mise en forme.
+    [1] Un texte était imbriqué plus profondément qu’un projet Skribisto ne le permet ; ses mots ont été conservés en texte brut, sans leur mise en forme.
    *[other] { $count } textes étaient imbriqués plus profondément qu’un projet Skribisto ne le permet ; leurs mots ont été conservés en texte brut, sans leur mise en forme.
 }
 import-notice-free-text-badges = { $count ->
-    [one] Une pastille de scène ressemble à du texte libre plutôt qu’à une liste de statuts ; elle a donc été conservée comme libellé de l’élément au lieu de devenir une étiquette.
+    [1] Une pastille de scène ressemble à du texte libre plutôt qu’à une liste de statuts ; elle a donc été conservée comme libellé de l’élément au lieu de devenir une étiquette.
    *[other] { $count } pastilles de scène différentes ressemblent à du texte libre plutôt qu’à une liste de statuts ; elles ont donc été conservées comme libellés des éléments au lieu de devenir des étiquettes.
 }
 import-notice-separator-text-dropped = Le séparateur « { $name } » contenait du texte, qui n’a pas sa place dans un projet Skribisto ; ce texte n’a pas été importé.
@@ -4399,17 +4399,17 @@ import-notice-outline-unreadable = « { $file } » n’a pas pu être lu ({ $e
 import-notice-named-none-row = « { $file } » commence par une ligne nommée (« { $name } ») là où Manuskript place son entrée vide « none ». Elle a été laissée de côté, pour que les lignes suivantes gardent les numéros qu’utilise le manuscrit.
 import-notice-unknown-field = « { $file } » contient un champ que cet importateur ne connaît pas, « { $field } ». Il n’a pas été importé.
 import-notice-colorless-labels = { $count ->
-    [one] « { $file } » contient une ligne sans couleur. Elle a été importée sans couleur ; Manuskript, lui, cesse de charger le projet sur une telle ligne.
+    [1] « { $file } » contient une ligne sans couleur. Elle a été importée sans couleur ; Manuskript, lui, cesse de charger le projet sur une telle ligne.
    *[other] « { $file } » contient { $count } lignes sans couleur. Elles ont été importées sans couleur ; Manuskript, lui, cesse de charger le projet sur une telle ligne.
 }
 import-notice-settings-unreadable = « { $file } » n’a pas pu être lu ({ $error }) ; la langue du projet n’a pas été importée.
 import-notice-revisions-unreadable = « { $file } » n’a pas pu être lu ({ $error }) ; l’historique du projet n’a pas été importé, mais rien d’autre n’a été touché.
 import-notice-foreign-files = { $count ->
-    [one] Ce projet contient un fichier qui ne fait pas partie du format Manuskript et n’a pas été importé : { $files }.
+    [1] Ce projet contient un fichier qui ne fait pas partie du format Manuskript et n’a pas été importé : { $files }.
    *[other] Ce projet contient { $count } fichiers qui ne font pas partie du format Manuskript et n’ont pas été importés : { $files }.
 }
 import-notice-foreign-files-more = Ce projet contient { $count } fichiers qui ne font pas partie du format Manuskript et n’ont pas été importés : { $files }, et { $more ->
-    [one] un autre
+    [1] un autre
    *[other] { $more } autres
 }.
 import-notice-not-a-character-file = « { $file } » n’est pas un fichier de personnage Manuskript et a été laissé de côté.
@@ -4417,7 +4417,7 @@ import-notice-not-a-text-item = « { $file } » n’est pas un élément de te
 import-notice-missing-blank-line = « { $file } » n’a pas de ligne vide après son en-tête. Son dernier champ a été conservé, alors que Manuskript le perd.
 import-notice-folder-without-metadata = « { $folder } » n’a pas de { $file } ; il a donc été importé comme simple dossier portant le nom du répertoire. Manuskript ignore un tel répertoire et tout ce qu’il contient.
 import-notice-rows-given-ids = { $count ->
-    [one] Un élément du plan n’avait pas d’identifiant propre et en a reçu un. Manuskript abandonne un tel élément, ou cesse de charger le projet si c’est un dossier.
+    [1] Un élément du plan n’avait pas d’identifiant propre et en a reçu un. Manuskript abandonne un tel élément, ou cesse de charger le projet si c’est un dossier.
    *[other] { $count } éléments du plan n’avaient pas d’identifiant propre et en ont reçu un. Manuskript abandonne un tel élément, ou cesse de charger le projet si c’est un dossier.
 }
 import-notice-plots-unreadable = « { $file } » n’a pas pu être lu ({ $error }) ; les intrigues n’ont pas été importées.
@@ -4436,22 +4436,22 @@ import-notice-unknown-status = « { $title } » porte le statut { $index }, ab
 import-notice-unknown-point-of-view = « { $title } » est raconté par un personnage qui ne figure pas parmi les personnages de ce projet. Son point de vue n’a pas été défini.
 import-notice-unresolved-references = Les références du texte de « { $title } » n’ont pas pu être résolues ({ $error }) ; le texte a été conservé tel qu’il a été converti, marqueurs de référence compris.
 import-notice-custom-icons = { $count ->
-    [one] Un élément avait une icône personnalisée. Skribisto donne à chaque élément l’icône de son type ; l’icône n’a donc pas été importée, et rien d’autre n’a changé pour cet élément.
+    [1] Un élément avait une icône personnalisée. Skribisto donne à chaque élément l’icône de son type ; l’icône n’a donc pas été importée, et rien d’autre n’a changé pour cet élément.
    *[other] { $count } éléments avaient une icône personnalisée. Skribisto donne à chaque élément l’icône de son type ; ces icônes n’ont donc pas été importées, et rien d’autre n’a changé pour ces éléments.
 }
 import-notice-character-colors = { $count ->
-    [one] Un personnage avait une couleur à côté de son nom. Skribisto colore les étiquettes plutôt que les éléments ; la couleur n’a donc pas été importée, mais le personnage, lui, l’a été.
+    [1] Un personnage avait une couleur à côté de son nom. Skribisto colore les étiquettes plutôt que les éléments ; la couleur n’a donc pas été importée, mais le personnage, lui, l’a été.
    *[other] { $count } personnages avaient une couleur à côté de leur nom. Skribisto colore les étiquettes plutôt que les éléments ; les couleurs n’ont donc pas été importées, mais les personnages, eux, l’ont tous été.
 }
 import-notice-versions-kept = { $found ->
-    [one] Ce projet avait enregistré une version antérieure
+    [1] Ce projet avait enregistré une version antérieure
    *[other] Ce projet avait enregistré { $found } versions antérieures
 } ; { $kept ->
     [one] { $kept } a été conservée
    *[other] { $kept } ont été conservées
 }, espacées comme Skribisto espace son propre historique. Voir le panneau Versions.
 import-notice-versions-unplaced = { $count ->
-    [one] Une version antérieure appartient à un élément qui ne figure plus dans le projet et n’a pas pu être placée.
+    [1] Une version antérieure appartient à un élément qui ne figure plus dans le projet et n’a pas pu être placée.
    *[other] { $count } versions antérieures appartiennent à un élément qui ne figure plus dans le projet et n’ont pas pu être placées.
 }
 
