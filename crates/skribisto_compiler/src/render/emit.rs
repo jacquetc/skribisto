@@ -327,7 +327,7 @@ pub(super) fn push_scene_break(
             // Centred, as a dinkus is set in print — and carrying the row's own
             // direction, so the glyph line does not fall back to LTR inside an
             // otherwise right-to-left manuscript.
-            let mut attrs = vec!["alignment=center".to_string()];
+            let mut attrs = vec!["alignment=center".to_string(), "text_indent=0".to_string()];
             attrs.extend(dir_pair(rtl).map(str::to_string));
             out.push('{');
             out.push_str(&attrs.join(" "));
@@ -379,6 +379,7 @@ pub(super) fn render_title_page(
     if preset.title_page_word_count && words > 0 {
         let mut attrs = std::mem::take(&mut first);
         attrs.push("alignment=right".to_string());
+        attrs.push("text_indent=0".to_string());
         push_para(
             &mut page,
             &escape_block_leading(&headings::word_count_note(&lang, words, preset.digit_style)),
@@ -402,6 +403,7 @@ pub(super) fn render_title_page(
     if !w.author_name.trim().is_empty() {
         let mut attrs = std::mem::take(&mut first);
         attrs.push("alignment=center".to_string());
+        attrs.push("text_indent=0".to_string());
         let byline = headings::byline(&lang, w.author_name.trim());
         push_para(
             &mut page,

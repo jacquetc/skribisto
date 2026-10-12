@@ -1030,6 +1030,70 @@ fn the_book_heading_is_centred_when_there_is_no_title_page() {
     );
 }
 
+/// Furniture the compiler sets centred or right must not inherit the body's first-line
+/// indent: the writers apply it to every paragraph that does not set its own.
+#[test]
+fn centred_and_right_furniture_carries_no_first_line_indent() {
+    let g = flat_book();
+    let p = preset("manuscript-shunn");
+    let dj = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::Djot)).unwrap();
+    let attrs_above = |needle: &str| -> String {
+        let lines: Vec<&str> = dj.lines().collect();
+        let at = lines
+            .iter()
+            .position(|l| l.contains(needle))
+            .unwrap_or_else(|| panic!("{needle} missing: {dj}"));
+        lines[at - 1].to_string()
+    };
+    for needle in ["about 100 words", "by A. Writer"] {
+        let attrs = attrs_above(needle);
+        assert!(attrs.contains("text_indent=0"), "{needle}: {attrs:?}\n{dj}");
+    }
+}
+
+#[test]
+fn the_cover_paragraph_carries_no_first_line_indent() {
+    let (media, g) = book_with_images(&["aaa", "ccc"], Some("ccc"));
+    let out = tempfile::tempdir().unwrap();
+    let path = out.path().join("book.dj");
+    let p = preset("neutral");
+    render_to_file(
+        &req_with_media(&g, &[100, 101], &p, ExportFormat::Djot, media.path()),
+        &path,
+        &|_| {},
+        &AtomicBool::new(false),
+    )
+    .unwrap();
+    let text = std::fs::read_to_string(&path).unwrap();
+    let first = text.lines().next().unwrap_or("");
+    assert!(
+        first.contains("alignment=center") && first.contains("text_indent=0"),
+        "{text}"
+    );
+}
+
+#[test]
+fn a_glyph_scene_break_line_carries_no_first_line_indent() {
+    let mut p = preset("neutral");
+    p.scene_break = SceneBreak::Glyph("###".to_string());
+    let dj = render_to_string(&req(
+        &book_with_marker("\\* \\* \\*"),
+        &[100, 101, 102],
+        &p,
+        ExportFormat::Djot,
+    ))
+    .unwrap();
+    let lines: Vec<&str> = dj.lines().collect();
+    let at = lines
+        .iter()
+        .position(|l| *l == "\\###")
+        .unwrap_or_else(|| panic!("{dj}"));
+    assert!(
+        lines[at - 1].contains("alignment=center") && lines[at - 1].contains("text_indent=0"),
+        "{dj}"
+    );
+}
+
 // ── the author on the compiled title page ──
 
 /// A book exported with a title-page preset carries the writer's name.

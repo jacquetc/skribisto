@@ -602,7 +602,9 @@ fn assemble(req: &RenderRequest, progress: &dyn Fn(f32), cancel: &AtomicBool) ->
             &mut block,
             &format!("![{alt}]({relpath})"),
             work_rtl,
-            &["alignment=center".to_string()],
+            // The cover is furniture, not a body paragraph: without this the preset's
+            // first-line indent pushes the picture off centre.
+            &["alignment=center".to_string(), "text_indent=0".to_string()],
         );
         out.insert_str(0, &block);
     }
