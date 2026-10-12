@@ -459,7 +459,13 @@ fn assemble(req: &RenderRequest, progress: &dyn Fn(f32), cancel: &AtomicBool) ->
                     .position(|&d| d == depth(level))
                     .map(|p| (p + 1).min(6))
                     .unwrap_or(1) as u8;
-                let extra = take_break(&mut pending_break, &mut anything_above);
+                let mut extra = take_break(&mut pending_break, &mut anything_above);
+                // The book's title is the one heading set centred, as on the generated title
+                // page it stands in for here. Merged into the same attribute set as the
+                // break: a block takes exactly one.
+                if level == Level::Book {
+                    extra.push("alignment=center".to_string());
+                }
                 push_heading(&mut out, lvl, &text, heading_rtl, &extra);
                 contributed = true;
             }

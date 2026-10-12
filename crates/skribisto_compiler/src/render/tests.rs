@@ -1007,6 +1007,29 @@ fn the_byline_is_localized_and_the_name_is_not() {
     assert!(txt.contains("par A. Writer"), "{txt}");
 }
 
+/// With no title page the book's own heading stands in for it, and a title is centred.
+/// Parts and chapters keep the body's alignment.
+#[test]
+fn the_book_heading_is_centred_when_there_is_no_title_page() {
+    let g = flat_book();
+    let p = preset("neutral");
+    assert!(!p.book_title_page, "fixture preset must have no title page");
+    let dj = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::Djot)).unwrap();
+    let lines: Vec<&str> = dj.lines().collect();
+    let at = |needle: &str| lines.iter().position(|l| l.contains(needle)).expect(needle);
+    let book = at("My Novel");
+    assert!(
+        lines[book - 1].contains("alignment=center"),
+        "attrs were {:?}\n{dj}",
+        lines[book - 1]
+    );
+    let chapter = at("Storms");
+    assert!(
+        !lines[chapter - 1].contains("alignment"),
+        "a chapter heading must not be centred: {dj}"
+    );
+}
+
 // ── the author on the compiled title page ──
 
 /// A book exported with a title-page preset carries the writer's name.
