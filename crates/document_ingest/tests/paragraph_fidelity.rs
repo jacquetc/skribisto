@@ -333,20 +333,44 @@ fn page_breaks(djot: &str, openings: &[&str]) -> Vec<Option<bool>> {
         .collect()
 }
 
-/// A section break closes a page: the paragraph after it starts the next one, unless the
-/// section is `continuous`. This is how a cover and a title page are set apart from the
-/// body in a DOCX `text-document` writes, with no `w:pageBreakBefore` beside it.
+/// A section break starts a page when the section *after* it says so: OOXML stores how a
+/// section starts on that section's own `w:sectPr`, the next paragraph-level one or the
+/// body's final one, and Word and LibreOffice render it that way. A type written on the
+/// closing `w:sectPr` belongs to the section it closes and decides nothing here. This is how
+/// a cover and a title page are set apart from the body in a DOCX `text-document` writes,
+/// with no `w:pageBreakBefore` beside it.
 #[test]
-fn docx_a_section_break_starts_the_next_paragraphs_page() {
-    let body = r#"
-<w:p><w:r><w:t>On the title page.</w:t></w:r></w:p>
-<w:p><w:pPr><w:sectPr><w:pgSz w:w="11906" w:h="16838"/></w:sectPr></w:pPr><w:r><w:t>Its last line.</w:t></w:r></w:p>
-<w:p><w:r><w:t>The body opens a page.</w:t></w:r></w:p>
-<w:p><w:pPr><w:sectPr><w:type w:val="oddPage"/></w:sectPr></w:pPr><w:r><w:t>Before an odd page.</w:t></w:r></w:p>
-<w:p><w:r><w:t>On the odd page.</w:t></w:r></w:p>
-<w:p><w:pPr><w:sectPr><w:type w:val="continuous"/></w:sectPr></w:pPr><w:r><w:t>Before a continuous one.</w:t></w:r></w:p>
-<w:p><w:r><w:t>Flowing on.</w:t></w:r></w:p>"#;
-    let plan = plan_of("book.docx", &docx(body, "", ""));
+fn docx_a_section_break_starts_the_page_its_next_section_asks_for() {
+    let section = |kind: &str| match kind {
+        "" => "<w:sectPr><w:pgSz w:w=\"11906\" w:h=\"16838\"/></w:sectPr>".to_string(),
+        kind => format!(
+            "<w:sectPr><w:type w:val=\"{kind}\"/><w:pgSz w:w=\"11906\" w:h=\"16838\"/></w:sectPr>"
+        ),
+    };
+    let closing = |text: &str, kind: &str| {
+        format!(
+            "<w:p><w:pPr>{}</w:pPr><w:r><w:t>{text}</w:t></w:r></w:p>",
+            section(kind)
+        )
+    };
+    let para = |text: &str| format!("<w:p><w:r><w:t>{text}</w:t></w:r></w:p>");
+
+    // Four sections. The first closes with a `continuous` type of its own, which is its own
+    // start and so says nothing about the second; the second states `nextPage`, the third
+    // `continuous`, and the last, in the body's final `w:sectPr`, `oddPage`.
+    let body = [
+        para("On the title page."),
+        closing("Its last line.", "continuous"),
+        para("The body opens a page."),
+        closing("End of section two.", "nextPage"),
+        para("Flowing on after a continuous break."),
+        closing("End of section three.", "continuous"),
+        para("On an odd page."),
+        para("Still on it."),
+        section("oddPage"),
+    ]
+    .concat();
+    let plan = plan_of("book.docx", &docx(&body, "", ""));
     let (row, _) = only_row(&plan);
     assert_eq!(
         page_breaks(
@@ -355,14 +379,43 @@ fn docx_a_section_break_starts_the_next_paragraphs_page() {
                 "On the title page",
                 "Its last line",
                 "The body opens",
-                "On the odd page",
+                "End of section two",
                 "Flowing on",
+                "End of section three",
+                "On an odd page",
+                "Still on it",
             ]
         ),
-        vec![None, None, Some(true), Some(true), None],
+        vec![None, None, Some(true), None, None, None, Some(true), None],
         "{}",
         row.djot
     );
+
+    // Two sections each way round. A section with no type starts a page; a final section
+    // stating `continuous` does not, whatever the closing one says.
+    for (closing_kind, final_kind, expected) in [
+        ("", "", Some(true)),
+        ("continuous", "", Some(true)),
+        ("", "continuous", None),
+        ("nextPage", "continuous", None),
+        ("continuous", "nextPage", Some(true)),
+        ("", "evenPage", Some(true)),
+    ] {
+        let body = [
+            closing("Before the break.", closing_kind),
+            para("After the break."),
+            section(final_kind),
+        ]
+        .concat();
+        let plan = plan_of("book.docx", &docx(&body, "", ""));
+        let (row, _) = only_row(&plan);
+        assert_eq!(
+            page_breaks(&row.djot, &["Before the break", "After the break"]),
+            vec![None, expected],
+            "closing {closing_kind:?}, final {final_kind:?}: {}",
+            row.djot
+        );
+    }
 }
 
 /// A master-page switch starts a page, as `fo:break-before` does, and inherits like it: this

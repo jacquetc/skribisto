@@ -1642,10 +1642,17 @@ struct Relationship {
 struct RawParagraphProps {
     bidi: Option<bool>,
     page_break_before: Option<bool>,
-    /// The paragraph ends a section that the next one starts on a new page: a `w:sectPr`
-    /// in its `w:pPr` whose `w:type` is `nextPage` (the default when it says none),
-    /// `evenPage` or `oddPage`. The break belongs to what follows, exactly like Word's
-    /// `Ctrl+Enter` break. A section `continuous` or `nextColumn` starts no page.
+    /// The paragraph ends a section, and the section after it starts on a new page: a
+    /// `w:sectPr` in its `w:pPr`, followed by a section whose `w:type` is `nextPage` (the
+    /// default when it says none), `evenPage` or `oddPage`. The break belongs to what
+    /// follows, exactly like Word's `Ctrl+Enter` break. A section `continuous` or
+    /// `nextColumn` starts no page.
+    ///
+    /// The type is the *next* section's: OOXML stores how a section starts on that section's
+    /// own `w:sectPr`, which for the section after a paragraph-level one is the next
+    /// paragraph-level `w:sectPr` in the body, or the body's final one. Word and LibreOffice
+    /// both render it that way. Set by the raw pass once every section of the body is known,
+    /// not by [`RawParagraphProps::read`], which sees one paragraph.
     ///
     /// Read here because `docx-rs` keeps the section property but the typed walk has no
     /// use for anything else in it. A cover and a title page set apart from the body this
@@ -1665,23 +1672,29 @@ impl RawParagraphProps {
         RawParagraphProps {
             bidi: raw_toggle_value(ppr, "bidi"),
             page_break_before: raw_toggle_value(ppr, "pageBreakBefore"),
-            ends_page: section_starts_next_page(ppr),
+            ends_page: false,
         }
     }
 }
 
-/// Whether `ppr` closes a section whose successor starts on a new page. See
-/// [`RawParagraphProps::ends_page`].
-fn section_starts_next_page(ppr: roxmltree::Node<'_, '_>) -> bool {
-    let Some(section) = ppr
+/// The `w:sectPr` a paragraph's `w:pPr` holds, if it closes a section there.
+fn paragraph_section<'a, 'input>(
+    paragraph: roxmltree::Node<'a, 'input>,
+) -> Option<roxmltree::Node<'a, 'input>> {
+    paragraph
+        .children()
+        .find(|n| n.is_element() && n.tag_name().name() == "pPr")?
         .children()
         .find(|n| n.is_element() && n.tag_name().name() == "sectPr")
-    else {
-        return false;
+}
+
+/// Whether the section whose properties are `section` starts on a new page: its own
+/// `w:type`, `nextPage` when it states none. `None` is a section the body gives no
+/// properties at all (a file with no final `w:sectPr`), which defaults the same way.
+fn section_starts_a_page(section: Option<roxmltree::Node<'_, '_>>) -> bool {
+    let Some(section) = section else {
+        return true;
     };
-    // ECMA-376 places the type on the section it starts, which is the next one; Word writes
-    // it on the closing `w:sectPr` all the same, and so does every writer that splits
-    // sections, so that is where it is read.
     let kind = section
         .children()
         .find(|n| n.is_element() && n.tag_name().name() == "type")
@@ -1833,11 +1846,17 @@ impl RawScan {
         let mut units = Vec::new();
         collect_blocks(body, &mut units, 0);
         let (mut paragraphs, mut tables) = (0usize, 0usize);
+        // Every paragraph that closes a section, with that section's properties, in document
+        // order: what decides whether a page starts after one is the section after it.
+        let mut section_closers: Vec<(usize, roxmltree::Node<'_, '_>)> = Vec::new();
         for unit in units {
             match unit {
                 RawBlock::Paragraph(paragraph) => {
                     let ordinal = paragraphs;
                     paragraphs += 1;
+                    if let Some(section) = paragraph_section(paragraph) {
+                        section_closers.push((ordinal, section));
+                    }
                     if is_horizontal_rule(paragraph) {
                         scan.rules.insert(ordinal);
                     }
@@ -1863,6 +1882,22 @@ impl RawScan {
                         scan.table_marks.insert(ordinal, count.marks);
                     }
                 }
+            }
+        }
+
+        // A section starts the way its own `w:sectPr` says, so the paragraph closing one
+        // section takes the type of the next: the next paragraph-level one, or the body's
+        // final `w:sectPr`, which holds the last section's properties.
+        let final_section = body
+            .children()
+            .find(|n| n.is_element() && n.tag_name().name() == "sectPr");
+        for (i, &(ordinal, _)) in section_closers.iter().enumerate() {
+            let next = match section_closers.get(i + 1) {
+                Some(&(_, section)) => Some(section),
+                None => final_section,
+            };
+            if section_starts_a_page(next) {
+                scan.paragraph_props.entry(ordinal).or_default().ends_page = true;
             }
         }
 
