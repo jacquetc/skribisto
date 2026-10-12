@@ -531,6 +531,13 @@ pub(super) fn odt_options(
         page_numbers: true,
         running_header: manuscript_header(work_title, work_author),
         heading_styles: Vec::new(),
+        // The preset's glyph is what the reader must see: Shunn's `#` is the standard, and a
+        // horizontal rule in its place is a different manuscript. DOCX always kept the glyph,
+        // and the round trip survives it: `document_ingest` classifies a paragraph by its text
+        // alone (`rich::classify`, `skribisto_model::scene_break::tier_of_plain_line`), so a
+        // glyph line reads back as a break of the right tier, where the rule always read back
+        // as a minor one.
+        keep_scene_break_glyphs: true,
         // As in `docx_options`: the comment payload is filled by the export use case, the
         // only layer that has resolved an anchor against the compiled document.
         ..Default::default()

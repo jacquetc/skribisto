@@ -1051,6 +1051,130 @@ fn centred_and_right_furniture_carries_no_first_line_indent() {
     }
 }
 
+/// The cover and every block of the title page are front matter, and the body is not: the
+/// paginated writers give the front matter no running header and number the body from 1,
+/// which only works if the mark covers the whole leading run and stops where the body starts.
+#[test]
+fn the_cover_and_the_title_page_are_marked_as_front_matter() {
+    let (media, g) = book_with_images(&["aaa", "ccc"], Some("ccc"));
+    let out = tempfile::tempdir().unwrap();
+    let path = out.path().join("book.dj");
+    let p = preset("manuscript-shunn");
+    assert!(p.book_title_page && p.title_page_word_count && p.book_cover);
+    render_to_file(
+        &req_with_media(&g, &[100, 101], &p, ExportFormat::Djot, media.path()),
+        &path,
+        &|_| {},
+        &AtomicBool::new(false),
+    )
+    .unwrap();
+    let dj = std::fs::read_to_string(&path).unwrap();
+    let lines: Vec<&str> = dj.lines().collect();
+    let attrs_above = |needle: &str| -> &str {
+        let at = lines
+            .iter()
+            .position(|l| l.contains(needle))
+            .unwrap_or_else(|| panic!("{needle} missing: {dj}"));
+        lines[at - 1]
+    };
+    for needle in ["assets/ccc.png", "words", "# My Novel", "by A. Writer"] {
+        assert!(
+            attrs_above(needle).contains("front_matter=true"),
+            "{needle} is front matter: {dj}"
+        );
+    }
+    assert_eq!(
+        dj.matches("front_matter=true").count(),
+        4,
+        "the body carries no mark: {dj}"
+    );
+}
+
+/// The mark means something only to a paginated writer. The flowing formats print nothing
+/// for it, the same way they print nothing for a page break the style did not ask for.
+#[test]
+fn the_front_matter_mark_stays_out_of_the_flowing_formats() {
+    let g = flat_book();
+    let p = preset("manuscript-shunn");
+    for f in [
+        ExportFormat::PlainText,
+        ExportFormat::Markdown,
+        ExportFormat::Html,
+        ExportFormat::Latex,
+    ] {
+        let text = render_to_string(&req(&g, &[100, 101, 102], &p, f)).unwrap();
+        assert!(text.contains("My Novel"), "{f:?}: {text}");
+        assert!(
+            !text.contains("front_matter"),
+            "{f:?} printed the mark: {text}"
+        );
+    }
+}
+
+/// A real export puts the title page in pages of its own: a DOCX section break with no
+/// header before the body, an ODT master page without one.
+#[test]
+fn a_real_export_gives_the_title_page_no_running_header() {
+    let g = flat_book();
+    let p = preset("manuscript-shunn");
+    for (fmt, ext, part, needle) in [
+        (
+            ExportFormat::Docx,
+            "docx",
+            "word/document.xml",
+            "<w:pgNumType w:start=\"1\"",
+        ),
+        (
+            ExportFormat::Odt,
+            "odt",
+            "content.xml",
+            "style:master-page-name=\"Front_Matter\"",
+        ),
+    ] {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join(format!("book.{ext}"));
+        render_to_file(
+            &req(&g, &[100, 101, 102], &p, fmt),
+            &path,
+            &|_| {},
+            &AtomicBool::new(false),
+        )
+        .unwrap_or_else(|e| panic!("{fmt:?} export failed: {e:#}"));
+        let bytes = std::fs::read(&path).unwrap();
+        let mut zip = zip::ZipArchive::new(std::io::Cursor::new(bytes)).unwrap();
+        let mut xml = String::new();
+        std::io::Read::read_to_string(&mut zip.by_name(part).unwrap(), &mut xml).unwrap();
+        assert!(xml.contains(needle), "{fmt:?}: {xml}");
+    }
+}
+
+/// ODT writes the preset's scene-break glyph as text, as DOCX always has, rather than
+/// replacing it with a horizontal rule: Shunn's `#` is the mark an editor expects to see.
+#[test]
+fn an_odt_export_keeps_the_presets_scene_break_glyph() {
+    let g = book_with_marker("\\* \\* \\*");
+    let p = preset("manuscript-shunn");
+    assert_eq!(p.scene_break, SceneBreak::Glyph("#".to_string()));
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("book.odt");
+    render_to_file(
+        &req(&g, &[100, 101, 102], &p, ExportFormat::Odt),
+        &path,
+        &|_| {},
+        &AtomicBool::new(false),
+    )
+    .unwrap();
+    let bytes = std::fs::read(&path).unwrap();
+    let mut zip = zip::ZipArchive::new(std::io::Cursor::new(bytes)).unwrap();
+    let mut xml = String::new();
+    std::io::Read::read_to_string(&mut zip.by_name("content.xml").unwrap(), &mut xml).unwrap();
+    assert!(xml.contains(">#</text:p>"), "the glyph is written: {xml}");
+    assert!(
+        !xml.contains("text:style-name=\"Rule\""),
+        "no rule in its place: {xml}"
+    );
+}
+
 #[test]
 fn the_cover_paragraph_carries_no_first_line_indent() {
     let (media, g) = book_with_images(&["aaa", "ccc"], Some("ccc"));

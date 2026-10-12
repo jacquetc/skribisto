@@ -174,6 +174,16 @@ pub(super) fn escape_title(s: &str) -> String {
     out
 }
 
+/// The block attribute that marks the cover and the title page as front matter.
+///
+/// `text-document`'s paginated writers give the leading run of such blocks pages of their
+/// own: no running header and no page number on the cover or the title page, and the body
+/// after them numbered from 1 (a DOCX section break, an ODT master-page switch). Every
+/// block of that run has to carry it, since the first unmarked block is where the body
+/// starts. The flowing formats print nothing for it; a Djot export keeps it on the attribute
+/// line beside `page_break_before`, which is what lets a re-read Djot paginate the same way.
+pub(super) const FRONT_MATTER: &str = "front_matter=true";
+
 pub(super) fn push_para(out: &mut String, text: &str, rtl: bool, extra: &[String]) {
     out.push_str(&attr_line(rtl, extra));
     out.push_str(text.trim());
@@ -435,6 +445,7 @@ pub(super) fn render_title_page(
         let mut attrs = std::mem::take(&mut first);
         attrs.push("alignment=right".to_string());
         attrs.push("text_indent=0".to_string());
+        attrs.push(FRONT_MATTER.to_string());
         push_para(
             &mut page,
             &escape_block_leading(&headings::word_count_note(&lang, words, preset.digit_style)),
@@ -447,6 +458,7 @@ pub(super) fn render_title_page(
         let mut attrs = std::mem::take(&mut first);
         attrs.push("alignment=center".to_string());
         attrs.push(format!("top_margin={}", title_drop_px(preset)));
+        attrs.push(FRONT_MATTER.to_string());
         push_heading(&mut page, 1, title.trim(), rtl, &attrs);
     }
 
@@ -459,6 +471,7 @@ pub(super) fn render_title_page(
         let mut attrs = std::mem::take(&mut first);
         attrs.push("alignment=center".to_string());
         attrs.push("text_indent=0".to_string());
+        attrs.push(FRONT_MATTER.to_string());
         let byline = headings::byline(&lang, w.author_name.trim());
         push_para(
             &mut page,

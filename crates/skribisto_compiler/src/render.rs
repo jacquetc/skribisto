@@ -610,6 +610,7 @@ fn assemble(req: &RenderRequest, progress: &dyn Fn(f32), cancel: &AtomicBool) ->
                 "alignment=center".to_string(),
                 "text_indent=0".to_string(),
                 "line_height=1000".to_string(),
+                FRONT_MATTER.to_string(),
             ],
         );
         out.insert_str(0, &block);
