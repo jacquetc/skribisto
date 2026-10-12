@@ -1072,6 +1072,29 @@ fn the_cover_paragraph_carries_no_first_line_indent() {
     );
 }
 
+/// The cover paragraph is single-spaced whatever the body is set at; the writers read
+/// `line_height` (thousandths) per paragraph and let it win over the document default.
+#[test]
+fn the_cover_paragraph_is_single_spaced_in_a_double_spaced_manuscript() {
+    let (media, g) = book_with_images(&["aaa", "ccc"], Some("ccc"));
+    let out = tempfile::tempdir().unwrap();
+    let path = out.path().join("book.dj");
+    let p = Preset {
+        line_spacing: LineSpacing::Double,
+        ..preset("neutral")
+    };
+    render_to_file(
+        &req_with_media(&g, &[100, 101], &p, ExportFormat::Djot, media.path()),
+        &path,
+        &|_| {},
+        &AtomicBool::new(false),
+    )
+    .unwrap();
+    let text = std::fs::read_to_string(&path).unwrap();
+    let first = text.lines().next().unwrap_or("");
+    assert!(first.contains("line_height=1000"), "{text}");
+}
+
 #[test]
 fn a_glyph_scene_break_line_carries_no_first_line_indent() {
     let mut p = preset("neutral");

@@ -603,8 +603,14 @@ fn assemble(req: &RenderRequest, progress: &dyn Fn(f32), cancel: &AtomicBool) ->
             &format!("![{alt}]({relpath})"),
             work_rtl,
             // The cover is furniture, not a body paragraph: without this the preset's
-            // first-line indent pushes the picture off centre.
-            &["alignment=center".to_string(), "text_indent=0".to_string()],
+            // first-line indent pushes the picture off centre. `line_height` is in
+            // thousandths (1000 = single), so a double-spaced manuscript does not double
+            // the line box around the picture either.
+            &[
+                "alignment=center".to_string(),
+                "text_indent=0".to_string(),
+                "line_height=1000".to_string(),
+            ],
         );
         out.insert_str(0, &block);
     }
