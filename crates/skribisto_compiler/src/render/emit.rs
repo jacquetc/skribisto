@@ -43,6 +43,60 @@ pub(super) fn flatten<'a>(req: &'a RenderRequest) -> Vec<Row<'a>> {
     rows
 }
 
+/// The title this export carries: on the title page, in the running header, as the cover's
+/// alt text and in the EPUB and PDF metadata. **The one place that decision is made.**
+///
+/// It is the Book's title when every included row that sits inside a Book sits inside the
+/// *same* one: a whole-work export of a single-book project, "Export Book", or a chapter
+/// out of that book. The Work's own title is the project's name (often a file name), not the
+/// book's, so printing it would head every page of a novel with the wrong words. With
+/// several Books in play, no Book at all, or a Book whose title is blank, there is no single
+/// book to name and the Work's title stands, as it always did.
+///
+/// The Book a row belongs to is found the way the stream finds it, by walking back through
+/// its binder to the nearest opener ([`SubRoleExt::opens_book`]); a closer
+/// ([`SubRoleExt::closes_book`]) ends the walk with no Book. Rows outside every Book (notes,
+/// research) neither vote nor veto, so a whole-work export of a one-book project still names
+/// its book. The walk reads the whole binder, not just the included ids, which is what lets a
+/// scope that omits the opener still find it.
+pub(super) fn export_title(req: &RenderRequest) -> String {
+    let want: std::collections::HashSet<u64> = req.include.iter().copied().collect();
+    let mut book: Option<&skrib_format::ItemWithContents> = None;
+    for bwi in &req.gathered.binders {
+        for (i, iwc) in bwi.items.iter().enumerate() {
+            if !(want.contains(&iwc.item.id) && iwc.item.activated) {
+                continue;
+            }
+            let head = if iwc.item.sub_role.opens_book() {
+                Some(iwc)
+            } else {
+                bwi.items[..i]
+                    .iter()
+                    .rev()
+                    .find(|p| p.item.sub_role.opens_book() || p.item.sub_role.closes_book())
+                    .filter(|p| p.item.sub_role.opens_book())
+            };
+            let Some(head) = head else { continue };
+            match book {
+                None => book = Some(head),
+                Some(seen) if seen.item.id == head.item.id => {}
+                // A second Book: the export has no single title of its own.
+                Some(_) => return req.gathered.work.title.clone(),
+            }
+        }
+    }
+    let work_title = || req.gathered.work.title.clone();
+    let Some(book) = book else {
+        return work_title();
+    };
+    let row = Row {
+        item: &book.item,
+        contents: &book.contents,
+        lang: String::new(),
+    };
+    title_of(&row).map_or_else(work_title, str::to_string)
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Djot builders
 // ─────────────────────────────────────────────────────────────────────────────
@@ -360,6 +414,7 @@ pub(super) fn render_title_page(
     break_above: bool,
 ) -> String {
     let w = &req.gathered.work;
+    let title = export_title(req);
     let lang = match &preset.heading_language {
         HeadingLanguage::Fixed(l) => l.clone(),
         HeadingLanguage::Auto => req.work_lang.to_string(),
@@ -388,11 +443,11 @@ pub(super) fn render_title_page(
         );
     }
 
-    if !w.title.trim().is_empty() {
+    if !title.trim().is_empty() {
         let mut attrs = std::mem::take(&mut first);
         attrs.push("alignment=center".to_string());
         attrs.push(format!("top_margin={}", title_drop_px(preset)));
-        push_heading(&mut page, 1, w.title.trim(), rtl, &attrs);
+        push_heading(&mut page, 1, title.trim(), rtl, &attrs);
     }
 
     // The author's name is *data*, never markup: escaped like a title, then guarded so a

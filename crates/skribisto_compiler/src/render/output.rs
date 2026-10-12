@@ -47,7 +47,7 @@ pub fn render_to_file(
             let out = path.to_string_lossy().into_owned();
             let mut opts = docx_options(
                 req.preset,
-                &req.gathered.work.title,
+                &export_title(req),
                 &req.gathered.work.author_name,
                 collect_images(req.gathered, req.media_dir, Some(&built.image_refs)),
             );
@@ -61,7 +61,7 @@ pub fn render_to_file(
             let out = path.to_string_lossy().into_owned();
             let mut opts = odt_options(
                 req.preset,
-                &req.gathered.work.title,
+                &export_title(req),
                 &req.gathered.work.author_name,
                 collect_images(req.gathered, req.media_dir, Some(&built.image_refs)),
             );
@@ -84,7 +84,7 @@ pub fn render_to_file(
                 primary.to_string()
             };
             let opts = EpubExportOptions {
-                title: w.title.clone(),
+                title: export_title(req),
                 author: w.author_name.clone(),
                 rtl: is_rtl_row(req.preset, &lang),
                 language: lang,
@@ -138,7 +138,7 @@ pub fn render_to_file(
                 justify: req.preset.justify,
                 base_rtl: is_rtl_row(req.preset, &lang),
                 lang: Some(lang),
-                title: (!w.title.trim().is_empty()).then(|| w.title.clone()),
+                title: Some(export_title(req)).filter(|t| !t.trim().is_empty()),
                 author: (!w.author_name.trim().is_empty()).then(|| w.author_name.clone()),
                 include_preamble: true,
             };

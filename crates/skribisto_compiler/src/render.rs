@@ -596,7 +596,7 @@ fn assemble(req: &RenderRequest, progress: &dyn Fn(f32), cancel: &AtomicBool) ->
     // tells someone reading with a screen reader nothing they do not already
     // know from the file they opened.
     if let Some(relpath) = &cover {
-        let alt = escape_djot_alt(req.gathered.work.title.trim());
+        let alt = escape_djot_alt(export_title(req).trim());
         let mut block = String::new();
         push_para(
             &mut block,

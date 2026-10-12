@@ -1117,6 +1117,126 @@ fn a_glyph_scene_break_line_carries_no_first_line_indent() {
     );
 }
 
+// ── the title the export carries ──
+
+/// A project named for its file, holding a book titled for the reader.
+fn project_named_elise(mut g: Gathered) -> Gathered {
+    g.work.title = "elise".into();
+    g
+}
+
+#[test]
+fn a_single_book_export_is_titled_with_the_book_not_the_project() {
+    let g = project_named_elise(flat_book());
+    let p = preset("manuscript-shunn");
+    let r = req(&g, &[100, 101, 102], &p, ExportFormat::Djot);
+    assert_eq!(export_title(&r), "My Novel");
+    let dj = render_to_string(&r).unwrap();
+    assert!(!dj.contains("elise"), "the project name leaked: {dj}");
+    // The running header is built from the same value.
+    assert_eq!(
+        manuscript_header(&export_title(&r), "A. Writer").as_deref(),
+        Some("A. Writer / MY NOVEL")
+    );
+}
+
+#[test]
+fn a_chapter_inside_a_book_still_takes_the_books_title() {
+    let g = project_named_elise(flat_book());
+    let p = preset("neutral");
+    assert_eq!(
+        export_title(&req(&g, &[101, 102], &p, ExportFormat::Djot)),
+        "My Novel"
+    );
+    assert_eq!(
+        export_title(&req(&g, &[102], &p, ExportFormat::Djot)),
+        "My Novel"
+    );
+}
+
+#[test]
+fn the_cover_alt_text_is_the_books_title() {
+    let (media, mut g) = book_with_images(&["aaa", "ccc"], Some("ccc"));
+    g.work.title = "elise".into();
+    let out = tempfile::tempdir().unwrap();
+    let path = out.path().join("book.md");
+    let p = preset("neutral");
+    render_to_file(
+        &req_with_media(&g, &[100, 101], &p, ExportFormat::Markdown, media.path()),
+        &path,
+        &|_| {},
+        &AtomicBool::new(false),
+    )
+    .unwrap();
+    let text = std::fs::read_to_string(&path).unwrap();
+    assert!(text.contains("![My Novel](assets/ccc.png)"), "{text}");
+}
+
+fn two_book_work() -> Gathered {
+    let mut g = project_named_elise(flat_book());
+    g.binders[0].items.extend([
+        iwc(103, SR::BookEnd, "en", vec![]),
+        iwc(
+            104,
+            SR::BookBegin,
+            "en",
+            vec![c(6, ContentRole::BookTitle, "Second Book")],
+        ),
+        iwc(
+            105,
+            SR::Scene,
+            "en",
+            vec![c(7, ContentRole::SceneText, "Another tale.")],
+        ),
+    ]);
+    g
+}
+
+#[test]
+fn several_books_fall_back_to_the_works_title() {
+    let g = two_book_work();
+    let p = preset("neutral");
+    assert_eq!(
+        export_title(&req(&g, &[100, 101, 102, 104, 105], &p, ExportFormat::Djot)),
+        "elise"
+    );
+    // Scoped to either book, that book names the export.
+    assert_eq!(
+        export_title(&req(&g, &[104, 105], &p, ExportFormat::Djot)),
+        "Second Book"
+    );
+    assert_eq!(
+        export_title(&req(&g, &[100, 101, 102], &p, ExportFormat::Djot)),
+        "My Novel"
+    );
+}
+
+#[test]
+fn no_book_or_a_blank_book_title_falls_back_to_the_works_title() {
+    let p = preset("neutral");
+    let mut g = project_named_elise(flat_book());
+    g.binders[0].items[0].contents.clear();
+    g.binders[0].items[0].item.title = "   ".into();
+    assert_eq!(
+        export_title(&req(&g, &[100, 101, 102], &p, ExportFormat::Djot)),
+        "elise"
+    );
+    // A scene export from a binder with no Book opener at all.
+    let loose = project_named_elise(gathered(
+        vec![iwc(
+            1,
+            SR::Scene,
+            "en",
+            vec![c(1, ContentRole::SceneText, "Loose.")],
+        )],
+        "en",
+    ));
+    assert_eq!(
+        export_title(&req(&loose, &[1], &p, ExportFormat::Djot)),
+        "elise"
+    );
+}
+
 // ── the author on the compiled title page ──
 
 /// A book exported with a title-page preset carries the writer's name.
@@ -4111,7 +4231,7 @@ fn a_typed_title_reaches_every_format_with_all_its_characters() {
                 100,
                 SR::BookBegin,
                 "en",
-                vec![c(1, ContentRole::BookTitle, "My Novel")],
+                vec![c(1, ContentRole::BookTitle, "The *Real* a::b")],
             ),
             iwc(
                 101,
@@ -4138,7 +4258,6 @@ fn a_typed_title_reaches_every_format_with_all_its_characters() {
         ],
         "en",
     );
-    g.work.title = "The *Real* a::b".into();
     g.work.author_name = "Anna O'Neil".into();
     let p = Preset {
         include_scene_titles: true,
