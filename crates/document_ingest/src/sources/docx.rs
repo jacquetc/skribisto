@@ -1642,6 +1642,16 @@ struct Relationship {
 struct RawParagraphProps {
     bidi: Option<bool>,
     page_break_before: Option<bool>,
+    /// The paragraph ends a section that the next one starts on a new page: a `w:sectPr`
+    /// in its `w:pPr` whose `w:type` is `nextPage` (the default when it says none),
+    /// `evenPage` or `oddPage`. The break belongs to what follows, exactly like Word's
+    /// `Ctrl+Enter` break. A section `continuous` or `nextColumn` starts no page.
+    ///
+    /// Read here because `docx-rs` keeps the section property but the typed walk has no
+    /// use for anything else in it. A cover and a title page set apart from the body this
+    /// way, as `text-document` writes them, would otherwise lose the page break before the
+    /// body's first block on the way back in.
+    ends_page: bool,
 }
 
 impl RawParagraphProps {
@@ -1655,8 +1665,28 @@ impl RawParagraphProps {
         RawParagraphProps {
             bidi: raw_toggle_value(ppr, "bidi"),
             page_break_before: raw_toggle_value(ppr, "pageBreakBefore"),
+            ends_page: section_starts_next_page(ppr),
         }
     }
+}
+
+/// Whether `ppr` closes a section whose successor starts on a new page. See
+/// [`RawParagraphProps::ends_page`].
+fn section_starts_next_page(ppr: roxmltree::Node<'_, '_>) -> bool {
+    let Some(section) = ppr
+        .children()
+        .find(|n| n.is_element() && n.tag_name().name() == "sectPr")
+    else {
+        return false;
+    };
+    // ECMA-376 places the type on the section it starts, which is the next one; Word writes
+    // it on the closing `w:sectPr` all the same, and so does every writer that splits
+    // sections, so that is where it is read.
+    let kind = section
+        .children()
+        .find(|n| n.is_element() && n.tag_name().name() == "type")
+        .and_then(|t| t.attribute((NS_W, "val")));
+    !matches!(kind, Some("continuous" | "nextColumn"))
 }
 
 /// The paragraph styles of `word/styles.xml`, reduced to what [`RawParagraphProps`] holds.
@@ -3038,6 +3068,19 @@ impl<'a> Walker<'a> {
         }
     }
 
+    /// After the paragraph `ordinal`: when it closes a section the next one starts on a new
+    /// page, that page starts with whatever block comes next ([`RawParagraphProps::ends_page`]).
+    fn end_section(&mut self, ordinal: usize) {
+        if self
+            .raw
+            .paragraph_props
+            .get(&ordinal)
+            .is_some_and(|props| props.ends_page)
+        {
+            self.page_break_pending = true;
+        }
+    }
+
     /// A paragraph of the body, and so one the supplementary pass keys on by `ordinal`.
     fn top_level_paragraph(&mut self, paragraph: &Paragraph, ordinal: usize) {
         if self.raw.rules.contains(&ordinal) {
@@ -3071,6 +3114,7 @@ impl<'a> Walker<'a> {
                     }
                 }
             }
+            self.end_section(ordinal);
             return;
         }
         self.stretches.clear();
@@ -3110,6 +3154,7 @@ impl<'a> Walker<'a> {
         self.splice_notes(marks, |walker, mark| {
             walker.line_position(&stretches, mark.stretch, mark.offset)
         });
+        self.end_section(ordinal);
     }
 
     /// The comment ranges and bookmarks of a paragraph read as a horizontal rule, opened and

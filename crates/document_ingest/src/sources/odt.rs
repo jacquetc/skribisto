@@ -398,6 +398,10 @@ struct RawParaStyle {
     /// no span of its own inherits them.
     text: RawTextStyle,
     paragraph: RawParagraphProps,
+    /// `style:master-page-name`: the master page a paragraph in this style starts. An
+    /// attribute of the style element itself, not of its paragraph properties. Empty is
+    /// ODF's way of saying "none", which a style uses to cancel its parent's.
+    master_page: Option<String>,
 }
 
 #[derive(Default)]
@@ -469,6 +473,9 @@ impl StyleTable {
                         text,
                         outline_level,
                         paragraph,
+                        master_page: node
+                            .attribute((NS_STYLE, "master-page-name"))
+                            .map(str::to_string),
                     },
                 );
             }
@@ -602,6 +609,32 @@ impl StyleTable {
                 .paragraph_value(name, |p| p.break_before.as_ref())
                 .is_some_and(|b| b == "page"),
         }
+    }
+
+    /// Whether the paragraph style `name` starts a page on a master page of its own, its
+    /// inheritance resolved: the nearest style that names one, or names none with an empty
+    /// value, decides.
+    ///
+    /// A master-page switch always starts a new page, which is how a writer sets a cover or a
+    /// title page apart from the body (`text-document` does exactly that, with no
+    /// `fo:break-before` beside it). So it counts as a page break before the paragraph.
+    fn starts_master_page(&self, name: Option<&str>) -> bool {
+        let mut current = name.map(str::to_string);
+        let mut guard = 0;
+        while let Some(n) = current {
+            let Some(raw) = self.para.get(&n) else {
+                return false;
+            };
+            if let Some(master) = &raw.master_page {
+                return !master.is_empty();
+            }
+            current = raw.parent.clone();
+            guard += 1;
+            if guard > 32 {
+                return false;
+            }
+        }
+        false
     }
 
     /// Whether the paragraph style `name` ends its page after the paragraph.
@@ -1182,11 +1215,14 @@ impl<'a> Walker<'a> {
         let base = style_name
             .map(|s| self.styles.text_style(s))
             .unwrap_or_default();
-        let mut build = ParaBuild::new(
-            kind,
-            self.styles.paragraph_props(style_name),
-            self.annotations.len(),
-        );
+        let mut props = self.styles.paragraph_props(style_name);
+        // A master-page switch starts a page, but not on the document's first block: there is
+        // no page above it, and LibreOffice names the master page on its first paragraph in
+        // nearly every file it saves.
+        if !self.blocks.is_empty() && self.styles.starts_master_page(style_name) {
+            props.page_break_before = true;
+        }
+        let mut build = ParaBuild::new(kind, props, self.annotations.len());
         // Kept aside rather than cleared, should a paragraph ever be read inside another.
         let outer_lines = std::mem::take(&mut self.lines);
         let outer_empty = std::mem::take(&mut self.empty_lines);

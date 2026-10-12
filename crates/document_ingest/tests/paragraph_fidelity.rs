@@ -316,6 +316,91 @@ fn odt_paragraph_formatting_reaches_the_editor() {
     check_formatting(&row.djot);
 }
 
+/// The page break each paragraph of `djot` carries, by its opening words.
+fn page_breaks(djot: &str, openings: &[&str]) -> Vec<Option<bool>> {
+    let doc = open(djot);
+    let blocks = doc.blocks();
+    openings
+        .iter()
+        .map(|opening| {
+            blocks
+                .iter()
+                .find(|b| b.text().starts_with(opening))
+                .unwrap_or_else(|| panic!("no paragraph opens {opening:?} in {djot:?}"))
+                .block_format()
+                .page_break_before
+        })
+        .collect()
+}
+
+/// A section break closes a page: the paragraph after it starts the next one, unless the
+/// section is `continuous`. This is how a cover and a title page are set apart from the
+/// body in a DOCX `text-document` writes, with no `w:pageBreakBefore` beside it.
+#[test]
+fn docx_a_section_break_starts_the_next_paragraphs_page() {
+    let body = r#"
+<w:p><w:r><w:t>On the title page.</w:t></w:r></w:p>
+<w:p><w:pPr><w:sectPr><w:pgSz w:w="11906" w:h="16838"/></w:sectPr></w:pPr><w:r><w:t>Its last line.</w:t></w:r></w:p>
+<w:p><w:r><w:t>The body opens a page.</w:t></w:r></w:p>
+<w:p><w:pPr><w:sectPr><w:type w:val="oddPage"/></w:sectPr></w:pPr><w:r><w:t>Before an odd page.</w:t></w:r></w:p>
+<w:p><w:r><w:t>On the odd page.</w:t></w:r></w:p>
+<w:p><w:pPr><w:sectPr><w:type w:val="continuous"/></w:sectPr></w:pPr><w:r><w:t>Before a continuous one.</w:t></w:r></w:p>
+<w:p><w:r><w:t>Flowing on.</w:t></w:r></w:p>"#;
+    let plan = plan_of("book.docx", &docx(body, "", ""));
+    let (row, _) = only_row(&plan);
+    assert_eq!(
+        page_breaks(
+            &row.djot,
+            &[
+                "On the title page",
+                "Its last line",
+                "The body opens",
+                "On the odd page",
+                "Flowing on",
+            ]
+        ),
+        vec![None, None, Some(true), Some(true), None],
+        "{}",
+        row.djot
+    );
+}
+
+/// A master-page switch starts a page, as `fo:break-before` does, and inherits like it: this
+/// is how a title page is set apart from the body in an ODT `text-document` writes. Not on
+/// the document's first paragraph, which LibreOffice gives a master page in nearly every
+/// file, and not when a style cancels its parent's with an empty name.
+#[test]
+fn odt_a_master_page_switch_starts_a_page() {
+    let automatic = r#"
+    <style:style style:name="P1" style:family="paragraph" style:master-page-name="Front_Matter"/>
+    <style:style style:name="P2" style:family="paragraph" style:master-page-name="Standard"><style:paragraph-properties style:page-number="1"/></style:style>
+    <style:style style:name="P3" style:family="paragraph" style:parent-style-name="P2"/>
+    <style:style style:name="P4" style:family="paragraph" style:parent-style-name="P2" style:master-page-name=""/>"#;
+    let body = r#"
+      <text:p text:style-name="P1">On the title page.</text:p>
+      <text:p text:style-name="P2">The body opens a page.</text:p>
+      <text:p>Running on.</text:p>
+      <text:p text:style-name="P3">Its child style opens one too.</text:p>
+      <text:p text:style-name="P4">A style naming no master page.</text:p>"#;
+    let plan = plan_of("book.fodt", fodt(automatic, body).as_bytes());
+    let (row, _) = only_row(&plan);
+    assert_eq!(
+        page_breaks(
+            &row.djot,
+            &[
+                "On the title page",
+                "The body opens",
+                "Running on",
+                "Its child style",
+                "A style naming",
+            ]
+        ),
+        vec![None, Some(true), None, Some(true), None],
+        "{}",
+        row.djot
+    );
+}
+
 /// What both formatting fixtures must read as in the editor, found by each paragraph's
 /// opening words.
 fn check_formatting(djot: &str) {
