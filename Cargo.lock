@@ -5724,6 +5724,7 @@ dependencies = [
  "serde",
  "serde_json",
  "skribisto-common",
+ "skribisto-document-ingest",
  "skribisto-fonts",
  "skribisto-model",
  "skribisto-skrib-format",
