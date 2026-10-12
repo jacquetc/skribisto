@@ -4604,3 +4604,101 @@ fn prose_that_closes_what_it_opens_goes_in_as_it_was() {
     let djot = render_to_string(&req(&g, &include, &p, ExportFormat::Djot)).unwrap();
     assert_eq!(djot.matches("The end.").count(), 2);
 }
+
+// ── the editorial round trip ──
+
+/// A book with a minor and a major break inside one chapter, as a writer types them.
+fn book_with_both_breaks() -> Gathered {
+    gathered(
+        vec![
+            iwc(
+                100,
+                SR::BookBegin,
+                "en",
+                vec![c(1, ContentRole::BookTitle, "My Novel")],
+            ),
+            iwc(
+                101,
+                SR::ChapterScene,
+                "en",
+                vec![c(
+                    3,
+                    ContentRole::SceneText,
+                    "The wind rose over the hills.\n\n\\* \\* \\*\n\nShe walked on into the dark.\n\n\\# # #\n\nMorning came late.",
+                )],
+            ),
+        ],
+        "en",
+    )
+}
+
+/// Export, edit elsewhere, import: a Shunn manuscript compiled to DOCX and to ODT and read
+/// back by the importer's own scanners keeps both break tiers, and its body still starts a
+/// page although the writers moved that break onto a section break (DOCX) or a master-page
+/// switch (ODT) to keep the title page free of the running header.
+///
+/// The chapter has no heading here so that its first block is prose: a heading's page
+/// break is structure on the way back in and is not carried as an attribute, so only a
+/// prose block shows whether the hint survived.
+#[test]
+fn a_shunn_manuscript_comes_back_with_its_breaks_and_its_first_page() {
+    use document_ingest::{ScannerRegistry, SourceBlock};
+
+    let g = book_with_both_breaks();
+    let p = Preset {
+        chapter_heading: HeadingScheme::None,
+        ..preset("manuscript-shunn")
+    };
+    assert!(p.book_title_page);
+    assert_eq!(p.scene_break, SceneBreak::Glyph("#".to_string()));
+    assert_eq!(p.major_scene_break, SceneBreak::Glyph("# # #".to_string()));
+
+    for (fmt, ext) in [(ExportFormat::Docx, "docx"), (ExportFormat::Odt, "odt")] {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join(format!("book.{ext}"));
+        render_to_file(
+            &req(&g, &[100, 101], &p, fmt),
+            &path,
+            &|_| {},
+            &AtomicBool::new(false),
+        )
+        .unwrap_or_else(|e| panic!("{fmt:?} export failed: {e:#}"));
+        let bytes = std::fs::read(&path).unwrap();
+        let scanned = ScannerRegistry::with_builtin_scanners().scan_bytes(&path, &bytes);
+
+        let tiers: Vec<SceneBreakTier> = scanned
+            .blocks
+            .iter()
+            .filter_map(|b| match b {
+                SourceBlock::SceneBreak { tier } => Some(*tier),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(
+            tiers,
+            vec![SceneBreakTier::Minor, SceneBreakTier::Major],
+            "{fmt:?}: {:#?}",
+            scanned.blocks
+        );
+
+        let djot = scanned
+            .blocks
+            .iter()
+            .find_map(|b| match b {
+                SourceBlock::Prose { djot, .. } if djot.contains("The wind rose") => {
+                    Some(djot.as_str())
+                }
+                _ => None,
+            })
+            .unwrap_or_else(|| panic!("{fmt:?}: no body prose in {:#?}", scanned.blocks));
+        let lines: Vec<&str> = djot.lines().collect();
+        let at = lines
+            .iter()
+            .position(|l| l.contains("The wind rose"))
+            .expect("the line");
+        assert!(
+            at > 0 && lines[at - 1].contains("page_break_before=true"),
+            "{fmt:?}: the body's first block lost its page: {djot}"
+        );
+    }
+}
