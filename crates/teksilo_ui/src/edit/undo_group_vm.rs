@@ -26,9 +26,10 @@
 //!    exact moment they reach for it.
 //! 2. **A modal.** Here the latch is *wrong*: Ctrl+Z inside Settings must not
 //!    reach the manuscript. A modal holds an [`UndoSuspend`], and while one is
-//!    alive the group reports nothing to undo — which makes the global shortcut
-//!    fall through to the focused widget, so an editor inside the modal still
-//!    undoes itself.
+//!    alive the group reports nothing to undo, so the application's `edit.undo`
+//!    action declines and Ctrl+Z over a Settings checkbox reaches nobody. An
+//!    editor inside the modal answers the chord itself before the intent ever
+//!    climbs to the group.
 //! 3. **"Always forward".** A frozen prose domain **blocks** the route rather
 //!    than falling through to the entity one; otherwise the writing game would
 //!    quietly redirect Ctrl+Z into the binder's history instead of refusing it.
@@ -265,7 +266,15 @@ impl UndoGroupViewModel {
 
     /// Point the group at this window's registry of text-editing widgets.
     /// Called once from `App::build`; idempotent.
+    ///
+    /// Also tells every text widget of the window to pass Undo on when it has
+    /// nothing to undo (and Redo when it has nothing to redo). The focused
+    /// widget answers `Ctrl+Z` before the application's action does, so
+    /// without this the fall-through in [`route`](Self::route) would be
+    /// reachable from the Edit menu only: the menu row would read "Undo
+    /// trashing «Chapter 3»" while the same chord in the scene did nothing.
     pub(crate) fn attach_surfaces(&self, surfaces: teksilo::core::text_surface::TextSurfaces) {
+        surfaces.set_empty_history_passes_on(true);
         *self.inner.surfaces.borrow_mut() = Some(surfaces);
     }
 
@@ -280,7 +289,8 @@ impl UndoGroupViewModel {
 
     /// Suspend routing for as long as the returned guard lives — for a modal.
     ///
-    /// Load-bearing, because the chords *are* registered globally: without a
+    /// Load-bearing, because the application's actions answer the chords
+    /// wherever no text widget does: without a
     /// suspension, Ctrl+Z over a Settings checkbox would fall back to whatever
     /// the writer was last doing in the project behind the modal. Held by
     /// `SettingsPanel` for the panel's life; exercised by `edit::tests`.
@@ -449,10 +459,11 @@ impl UndoGroupViewModel {
     /// undo. Driving that quarter from events would leave the tick in place for
     /// the other five and buy back a few hundred nanoseconds of a 16.7 ms frame.
     ///
-    /// It would also cost something. These signals gate the **global**
-    /// `Ctrl+Z`, `Ctrl+X` and `Ctrl+C`, not merely menu rows, and a disabled
-    /// shortcut falls through to the focused widget — so a briefly stale value
-    /// does not just look wrong, it changes what a keystroke does. A cache fed
+    /// It would also cost something. These signals gate the application's
+    /// `edit.*` **actions**, not merely menu rows, and those actions are what
+    /// `Ctrl+Z` reaches whenever no text widget answered it first — so a
+    /// briefly stale value does not just look wrong, it changes what a
+    /// keystroke does. A cache fed
     /// by events is stale across exactly the window between a command landing
     /// and its event being delivered back to the UI thread, which is where a
     /// keystroke lands.

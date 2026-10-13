@@ -14,7 +14,7 @@
 //! groups read Work, Edit, View… as the bar does, never alphabetically in
 //! whichever language is showing. Nobody sees a key.
 
-use teksilo::core::shortcut::ShortcutBuilder;
+use teksilo::core::shortcut::{Shortcut, ShortcutBuilder};
 use teksilo::prelude::*;
 
 /// A menu of the project window's menu bar, as a shortcut group.
@@ -69,6 +69,16 @@ pub(crate) trait ShortcutGroupExt {
 impl ShortcutGroupExt for ShortcutBuilder {
     fn group(self, group: ShortcutGroup) -> Self {
         self.category(group.key()).category_label(group.label())
+    }
+}
+
+/// The same for a shortcut someone else built — teksilo's standard edit
+/// commands, re-filed under the menu that holds them.
+impl ShortcutGroupExt for Shortcut {
+    fn group(mut self, group: ShortcutGroup) -> Self {
+        self.category = Some(group.key());
+        self.category_label = Some(group.label().into());
+        self
     }
 }
 

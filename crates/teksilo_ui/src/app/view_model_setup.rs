@@ -253,10 +253,11 @@ impl App {
         {
             let group = self.undo_group.clone();
             group.attach_editors(editors.clone());
-            // The framework's own registry of text-editing widgets. This is what
-            // lets the Edit commands take Ctrl+Z, Ctrl+C and friends globally
-            // without breaking every text widget the application did not
-            // personally build a handle for.
+            // The framework's own registry of text-editing widgets: what lets
+            // the Edit menu act on whichever widget holds the caret, including
+            // the ones the application did not build a handle for, and what
+            // makes a text widget with nothing to undo pass Ctrl+Z on to the
+            // project's history.
             group.attach_surfaces(ctx.text_surfaces());
             let tick = ctx.frame_tick();
             ctx.effect(&tick, move |_| group.refresh());

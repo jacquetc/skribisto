@@ -7,7 +7,7 @@
 //! button binds, so the two cannot disagree about whether the selection is bold.
 
 use teksilo::prelude::*;
-use teksilo::widgets::{MenuEntry, MenuItems};
+use teksilo::widgets::{FormatShortcut, MenuEntry, MenuItems};
 
 use super::{ProjectMenuParts, command, mark};
 use crate::format::{ALIGN_CENTER, ALIGN_LEFT, DIR_AUTO, DIR_LTR, DIR_RTL, FormatViewModel};
@@ -39,32 +39,42 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
     let f = menu_format_vm.clone();
 
     let on = f.has_target();
-    // Bold/Italic/Underline are handled inside
-    // `RichTextEditor`'s own key dispatch, not the
-    // shortcut registry, so there is no id to bind —
-    // the chord travels in the label instead.
+    // Bold/Italic/Underline are teksilo's own editor
+    // shortcuts (`FormatShortcut`), declared by every
+    // editable `RichTextEditor` and run by the focused one.
+    // Naming the id renders the writer's current binding,
+    // so a chord rebound in Settings ▸ Keymap shows here.
     let mut m = m
-        .item(mark(
-            &f,
-            tr!(menu_format_marks_bold()),
-            on.clone(),
-            f.bold(),
-            FormatViewModel::toggle_bold,
-        ))
-        .item(mark(
-            &f,
-            tr!(menu_format_marks_italic()),
-            on.clone(),
-            f.italic(),
-            FormatViewModel::toggle_italic,
-        ))
-        .item(mark(
-            &f,
-            tr!(menu_format_marks_underline()),
-            on.clone(),
-            f.underline(),
-            FormatViewModel::toggle_underline,
-        ))
+        .item(
+            mark(
+                &f,
+                tr!(menu_format_marks_bold()),
+                on.clone(),
+                f.bold(),
+                FormatViewModel::toggle_bold,
+            )
+            .shortcut(FormatShortcut::Bold.id()),
+        )
+        .item(
+            mark(
+                &f,
+                tr!(menu_format_marks_italic()),
+                on.clone(),
+                f.italic(),
+                FormatViewModel::toggle_italic,
+            )
+            .shortcut(FormatShortcut::Italic.id()),
+        )
+        .item(
+            mark(
+                &f,
+                tr!(menu_format_marks_underline()),
+                on.clone(),
+                f.underline(),
+                FormatViewModel::toggle_underline,
+            )
+            .shortcut(FormatShortcut::Underline.id()),
+        )
         .item(mark(
             &f,
             tr!(menu_format_marks_strike()),
