@@ -3,7 +3,15 @@ Date: 2026-10-13
 Type: development
 Description:
 - "Each book now has its own cover. Open the book and choose its cover on the book's own page, where you can also see it, change it or remove it. When you export one book, its cover opens the file, and when you export several books together, each one starts with its own cover. An EPUB carries the cover only when the export style asks for it and the export holds one whole book. Covers chosen in an earlier version are not carried over, so choose them again; the pictures are still in your project"
-
+- "In a Word or OpenDocument export, the cover and every other picture fit within the page margins. A large picture used to be printed at its own size and run off the page"
+- "The cover and the title page of a Word or OpenDocument export carry no page header and no page number, and the page numbers start at 1 on the first page of the text"
+- "An export titles the book with the book's own title: on the title page, in the page header and in the file's details. It used to use the name of the project file. A project holding several books still uses the project's title when you export them together"
+- "When the export style has no title page, the book's title is centred at the start of the book. It used to sit on the left like an ordinary heading"
+- "The cover, the author line, the word count and the scene break marks of an export are no longer indented like the first line of a paragraph"
+- "An OpenDocument export keeps the scene break mark your export style chooses, such as # in the standard manuscript style. It used to replace it with a horizontal line. Imported back into Skribisto, a stronger scene break also stays a stronger one"
+- "In a Word export, a paragraph keeps its own line spacing when it also has space above or below it"
+- "Importing a Word or OpenDocument file starts a new page where the file starts a new page with a new section, and no longer where a section continues on the same page"
+---
 Version: 3.1.0
 Date: 2026-09-28
 Type: stable
