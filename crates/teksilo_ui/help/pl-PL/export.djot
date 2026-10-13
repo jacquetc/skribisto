@@ -36,6 +36,17 @@ Następnie wybierz *Edytuj* na kopii.
 
 Dostępne są też formaty HTML, Markdown, Djot, Tekst i LaTeX.
 
+## Dodaj książce okładkę
+
+Każda książka ma własną okładkę. Otwórz książkę i zostań na jej stronie *Książka*: pod tytułem
+kliknij *Wybierz…* i wskaż obraz w formacie PNG, JPEG lub WebP. *Zmień…* podmienia okładkę, a
+*Usuń* ją zdejmuje. W obu przypadkach obraz pozostaje w Twoim projekcie.
+
+Gdy eksportujesz jedną książkę, jej okładka otwiera plik. Gdy eksportujesz kilka książek razem,
+każda zaczyna się od własnej okładki. EPUB przechowuje okładkę w samym e-booku, dzięki czemu
+czytniki pokazują ją w swojej bibliotece. Aby pominąć okładki, wyłącz opcję *Zacznij od
+okładki* w stylu eksportu.
+
 ## Wyślij rękopis do recenzji
 
 Pliki Word (`.docx`) i LibreOffice (`.odt`) mogą zawierać komentarze. W stylu eksportu włącz

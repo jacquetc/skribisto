@@ -428,6 +428,7 @@ impl<'a> AssetRepository<'a> {
         //    junction key is in-scope (owned exclusively by this trunk).
 
         // 4. External weak referrers of these ids: reconcile surgically (membership only).
+        self.reconcile_backref_binder_item_cover(event_buffer, snap, &ids)?;
 
         // 5. Events: precise per-id (Created/Updated/Removed), not a whole-store storm.
         if !to_create.is_empty() {
@@ -507,6 +508,68 @@ impl<'a> AssetRepository<'a> {
                 write_or_recover(&store.jn_asset_from_work_assets).insert(left, reconciled);
                 event_buffer.push(Event {
                     origin: Origin::DirectAccess(DirectAccessEntity::Work(EntityEvent::Updated)),
+                    ids: vec![left],
+                    data: None,
+                });
+            }
+        }
+        Ok(())
+    }
+
+    /// Surgically reconcile one external referrer junction (out-of-scope key -> in-scope values):
+    /// `binder_item.cover`.
+    fn reconcile_backref_binder_item_cover(
+        &self,
+        event_buffer: &mut EventBuffer,
+        snap: &HashMapStoreSnapshot,
+        scope_ids: &[EntityId],
+    ) -> Result<(), RepositoryError> {
+        let scope: std::collections::HashSet<EntityId> = scope_ids.iter().copied().collect();
+        if scope.is_empty() {
+            return Ok(());
+        }
+        let store = self.transaction.get_store();
+
+        // External left keys whose ordered list references any scope id, in snapshot or live.
+        let mut left_keys: std::collections::HashSet<EntityId> = std::collections::HashSet::new();
+        for (left, rights) in snap.jn_asset_from_binder_item_cover.iter() {
+            if rights.iter().any(|rid| scope.contains(rid)) {
+                left_keys.insert(*left);
+            }
+        }
+        {
+            let live_jn = read_or_recover(&store.jn_asset_from_binder_item_cover);
+            for (left, rights) in live_jn.iter() {
+                if rights.iter().any(|rid| scope.contains(rid)) {
+                    left_keys.insert(*left);
+                }
+            }
+        }
+
+        for left in left_keys {
+            let snap_list: Vec<EntityId> = snap
+                .jn_asset_from_binder_item_cover
+                .get(&left)
+                .cloned()
+                .unwrap_or_default();
+            let new_list = {
+                let live_jn = read_or_recover(&store.jn_asset_from_binder_item_cover);
+                let live_list: Vec<EntityId> = live_jn.get(&left).cloned().unwrap_or_default();
+                let reconciled = crate::database::hashmap_store::reconcile_backref_list(
+                    &live_list, &snap_list, &scope,
+                );
+                if reconciled == live_list {
+                    None
+                } else {
+                    Some(reconciled)
+                }
+            };
+            if let Some(reconciled) = new_list {
+                write_or_recover(&store.jn_asset_from_binder_item_cover).insert(left, reconciled);
+                event_buffer.push(Event {
+                    origin: Origin::DirectAccess(DirectAccessEntity::BinderItem(
+                        EntityEvent::Updated,
+                    )),
                     ids: vec![left],
                     data: None,
                 });

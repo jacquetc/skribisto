@@ -1,3 +1,9 @@
+Version: 3.2.0
+Date: 2026-10-13
+Type: development
+Description:
+- "Each book now has its own cover. Open the book and choose its cover on the book's own page, where you can also see it, change it or remove it. When you export one book, its cover opens the file, and when you export several books together, each one starts with its own cover. An EPUB carries the cover only when the export style asks for it and the export holds one whole book. Covers chosen in an earlier version are not carried over, so choose them again; the pictures are still in your project"
+
 Version: 3.1.0
 Date: 2026-09-28
 Type: stable

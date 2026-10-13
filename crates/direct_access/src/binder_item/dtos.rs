@@ -35,6 +35,7 @@ pub struct BinderItemDto {
     pub point_of_view: Vec<EntityId>,
     pub books: Vec<EntityId>,
     pub status: Option<EntityId>,
+    pub cover: Option<EntityId>,
     pub tags: Vec<EntityId>,
 }
 
@@ -64,6 +65,7 @@ impl From<BinderItemDto> for BinderItem {
             point_of_view: dto.point_of_view,
             books: dto.books,
             status: dto.status,
+            cover: dto.cover,
             tags: dto.tags,
         }
     }
@@ -95,6 +97,7 @@ impl From<&BinderItemDto> for BinderItem {
             point_of_view: dto.point_of_view.clone(),
             books: dto.books.clone(),
             status: dto.status.clone(),
+            cover: dto.cover.clone(),
             tags: dto.tags.clone(),
         }
     }
@@ -126,6 +129,7 @@ impl From<BinderItem> for BinderItemDto {
             point_of_view: entity.point_of_view,
             books: entity.books,
             status: entity.status,
+            cover: entity.cover,
             tags: entity.tags,
         }
     }
@@ -155,6 +159,7 @@ pub struct CreateBinderItemDto {
     pub point_of_view: Vec<EntityId>,
     pub books: Vec<EntityId>,
     pub status: Option<EntityId>,
+    pub cover: Option<EntityId>,
     pub tags: Vec<EntityId>,
 }
 
@@ -184,6 +189,7 @@ impl From<CreateBinderItemDto> for BinderItem {
             point_of_view: dto.point_of_view,
             books: dto.books,
             status: dto.status,
+            cover: dto.cover,
             tags: dto.tags,
         }
     }
@@ -215,6 +221,7 @@ impl From<&CreateBinderItemDto> for BinderItem {
             point_of_view: dto.point_of_view.clone(),
             books: dto.books.clone(),
             status: dto.status.clone(),
+            cover: dto.cover.clone(),
             tags: dto.tags.clone(),
         }
     }
@@ -245,6 +252,7 @@ impl From<BinderItem> for CreateBinderItemDto {
             point_of_view: entity.point_of_view,
             books: entity.books,
             status: entity.status,
+            cover: entity.cover,
             tags: entity.tags,
         }
     }
@@ -297,6 +305,7 @@ impl From<UpdateBinderItemDto> for BinderItem {
             point_of_view: Default::default(),
             books: Default::default(),
             status: Default::default(),
+            cover: Default::default(),
             tags: Default::default(),
         }
     }
@@ -328,6 +337,7 @@ impl From<&UpdateBinderItemDto> for BinderItem {
             point_of_view: Default::default(),
             books: Default::default(),
             status: Default::default(),
+            cover: Default::default(),
             tags: Default::default(),
         }
     }

@@ -733,6 +733,7 @@ fn manuscript_of(scenes: usize) -> AppContext {
     let items: Vec<CreateBinderItemDto> = (0..scenes)
         .map(|i| CreateBinderItemDto {
             status: None,
+            cover: None,
             uid: common::uid::fixture_uid(i as u64),
             created_at: now,
             updated_at: now,
@@ -917,6 +918,7 @@ fn one_scene(tag: &str, text: &str) -> (AppContext, u64) {
         None,
         &[CreateBinderItemDto {
             status: None,
+            cover: None,
             uid: common::uid::fixture_uid(1),
             created_at: now,
             updated_at: now,

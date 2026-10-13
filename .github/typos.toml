@@ -133,6 +133,10 @@ ist = "ist"
 tru = "tru"
 paeth = "paeth"
 
+# ── File-format names. `.opf` is the EPUB package document, the file that names an
+#    ebook's cover; the export tests read it back out of the archive.
+opf = "opf"
+
 # ── RTF control words, which `rtf_reader` dispatches on by the names the RTF
 #    specification gives them: `\pard` (paragraph defaults), `\rin` (right
 #    indent), `\pich` (picture height), `\headerr` (right-page header), `\falt`

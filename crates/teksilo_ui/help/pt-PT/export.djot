@@ -35,6 +35,17 @@ Para alterar um estilo integrado, faça primeiro uma cópia: abra
 
 Os outros formatos disponíveis são HTML, Markdown, Djot, Texto e LaTeX.
 
+## Dar uma capa a um livro
+
+Cada livro tem a sua própria capa. Abra o livro e fique na respetiva página *Livro*: por baixo
+do título, clique em *Escolher…* e selecione uma imagem PNG, JPEG ou WebP. *Alterar…*
+substitui-a e *Remover* retira-a. Em ambos os casos, a imagem continua no seu projeto.
+
+Quando exporta um só livro, a capa abre o ficheiro. Quando exporta vários livros em conjunto,
+cada um começa com a sua própria capa. Um EPUB guarda a capa no próprio livro eletrónico, por
+isso os leitores mostram-na na biblioteca. Para deixar as capas de fora, desative *Abrir com a
+capa* no estilo de exportação.
+
 ## Enviar um manuscrito para receber opiniões
 
 O Word (`.docx`) e o LibreOffice (`.odt`) podem incluir comentários. No estilo de exportação,

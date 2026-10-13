@@ -136,6 +136,7 @@ impl CommandUnitOfWork for PromoteUnitOfWork {
 #[macros::uow_action(entity = "BinderItem", action = "GetMulti")]
 #[macros::uow_action(entity = "BinderItem", action = "Update")]
 #[macros::uow_action(entity = "BinderItem", action = "GetRelationship")]
+#[macros::uow_action(entity = "BinderItem", action = "SetRelationship")]
 #[macros::uow_action(entity = "BinderItem", action = "Snapshot")]
 #[macros::uow_action(entity = "BinderItem", action = "Restore")]
 #[macros::uow_action(entity = "Content", action = "GetMulti")]

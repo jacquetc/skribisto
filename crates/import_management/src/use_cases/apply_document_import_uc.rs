@@ -2063,7 +2063,6 @@ fn bring_pictures_home(
             // The description lives in the prose, where the document put it, as it does for a
             // picture the editor inserts.
             alt: String::new(),
-            is_cover: false,
             ..Default::default()
         })?;
         brought.created_ids.push(asset.id);

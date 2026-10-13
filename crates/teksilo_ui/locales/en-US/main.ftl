@@ -3590,9 +3590,14 @@ image-menu-describe = &Describe the image…
 image-menu-resize = &Resize the image…
 image-menu-reset-size = Original si&ze
 
-# The book's cover, chosen from the book, not typed into a scene.
-cover-choose = Book co&ver…
-cover-clear = &Remove the cover
+# A Book's cover, set on the Book's own page. Each Book has its own: a project
+# holding a trilogy holds three covers.
+cover-heading = Cover
+cover-pick = Choose…
+cover-change = Change…
+cover-remove = Remove
+cover-none = No cover yet
+cover-missing = The picture file is missing from the project
 cover-choose-title = Choose a cover
 cover-set = The cover is set.
 cover-cleared = The cover has been removed. The picture is still in the project.

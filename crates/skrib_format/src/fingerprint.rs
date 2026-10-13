@@ -313,7 +313,6 @@ mod tests {
             height: 100,
             byte_size: 1234,
             alt: String::new(),
-            is_cover: false,
             path: "assets/abc123.png".into(),
         }
     }
@@ -324,6 +323,7 @@ mod tests {
         BundledItem {
             item: BinderItemFile {
                 status_id: None,
+                cover_id: None,
                 file_id: 10,
                 uid: uuid::Uuid::nil(),
                 created_at: "2020-01-01T00:00:00Z".into(),

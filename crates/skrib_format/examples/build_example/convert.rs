@@ -436,6 +436,7 @@ fn split_footnote(paragraph: &str) -> Option<(String, &str)> {
 fn blank(file_id: u64, uid: uuid::Uuid, now: &str) -> BinderItemFile {
     BinderItemFile {
         status_id: None,
+        cover_id: None,
         file_id,
         uid,
         created_at: now.to_string(),

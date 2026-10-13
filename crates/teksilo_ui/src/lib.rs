@@ -136,6 +136,7 @@ pub mod app_wiring;
 pub mod backup;
 pub mod backup_paths;
 pub mod binder;
+pub mod book_cover;
 pub mod cli;
 pub mod commands_ext;
 pub mod comments;

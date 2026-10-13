@@ -948,6 +948,7 @@ impl<'a> Builder<'a> {
                     sub_role,
                     label: label.to_string(),
                     status_id,
+                    cover_id: None,
                     activated: true,
                     is_favorite: false,
                     is_exportable,

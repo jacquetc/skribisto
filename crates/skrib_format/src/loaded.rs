@@ -83,6 +83,10 @@ pub struct LoadedItem {
     /// materialise time — the same treatment `tag_ids` gets. `None` is "no status";
     /// so is a file id that no longer names a live status, since the reference is weak.
     pub status_id: Option<u64>,
+    /// This Book's cover, as an asset **file id**, remapped to the store id at
+    /// materialise time like `status_id`. A file id naming no live asset reads as
+    /// no cover.
+    pub cover_id: Option<u64>,
 }
 
 pub struct LoadedTrash {

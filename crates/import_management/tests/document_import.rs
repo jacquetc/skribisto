@@ -4169,7 +4169,6 @@ fn a_picture_comes_into_the_project_with_its_row() {
     assert_eq!((asset.width, asset.height), (24, 16));
     assert_eq!(asset.byte_size, map.len() as u64);
     assert_eq!(asset.file_name, "map.png");
-    assert!(!asset.is_cover);
     assert_eq!(
         std::fs::read(ctx.media_dir().join(format!("{hash}.png"))).expect("in the project"),
         map
@@ -4216,7 +4215,6 @@ fn a_picture_the_project_already_holds_is_not_stored_twice() {
             height: 4,
             byte_size: crest.len() as u64,
             alt: String::new(),
-            is_cover: false,
         },
         ctx.work_id,
         -1,

@@ -85,6 +85,7 @@ pub struct HashMapStore {
     pub jn_binder_item_from_binder_binder_items: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_binder_item_from_binder_item_books: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_content_from_binder_item_contents: RwLock<HashMap<EntityId, Vec<EntityId>>>,
+    pub jn_asset_from_binder_item_cover: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_binder_item_from_binder_item_point_of_view: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_binder_item_from_binder_item_references: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_binder_status_from_binder_item_status: RwLock<HashMap<EntityId, Vec<EntityId>>>,
@@ -234,6 +235,8 @@ impl HashMapStore {
                 &self.jn_content_from_binder_item_contents,
             )
             .clone(),
+            jn_asset_from_binder_item_cover: read_or_recover(&self.jn_asset_from_binder_item_cover)
+                .clone(),
             jn_binder_item_from_binder_item_point_of_view: read_or_recover(
                 &self.jn_binder_item_from_binder_item_point_of_view,
             )
@@ -371,6 +374,8 @@ impl HashMapStore {
             read_or_recover(&self.jn_binder_item_from_binder_item_books);
         let g_jn_content_from_binder_item_contents =
             read_or_recover(&self.jn_content_from_binder_item_contents);
+        let g_jn_asset_from_binder_item_cover =
+            read_or_recover(&self.jn_asset_from_binder_item_cover);
         let g_jn_binder_item_from_binder_item_point_of_view =
             read_or_recover(&self.jn_binder_item_from_binder_item_point_of_view);
         let g_jn_binder_item_from_binder_item_references =
@@ -483,6 +488,7 @@ impl HashMapStore {
             jn_content_from_binder_item_contents: RwLock::new(
                 g_jn_content_from_binder_item_contents.clone(),
             ),
+            jn_asset_from_binder_item_cover: RwLock::new(g_jn_asset_from_binder_item_cover.clone()),
             jn_binder_item_from_binder_item_point_of_view: RwLock::new(
                 g_jn_binder_item_from_binder_item_point_of_view.clone(),
             ),
@@ -599,6 +605,8 @@ impl HashMapStore {
             snap.jn_binder_item_from_binder_item_books.clone();
         *write_or_recover(&self.jn_content_from_binder_item_contents) =
             snap.jn_content_from_binder_item_contents.clone();
+        *write_or_recover(&self.jn_asset_from_binder_item_cover) =
+            snap.jn_asset_from_binder_item_cover.clone();
         *write_or_recover(&self.jn_binder_item_from_binder_item_point_of_view) =
             snap.jn_binder_item_from_binder_item_point_of_view.clone();
         *write_or_recover(&self.jn_binder_item_from_binder_item_references) =
@@ -758,6 +766,8 @@ impl HashMapStore {
             snap.jn_binder_item_from_binder_item_books.clone();
         *write_or_recover(&self.jn_content_from_binder_item_contents) =
             snap.jn_content_from_binder_item_contents.clone();
+        *write_or_recover(&self.jn_asset_from_binder_item_cover) =
+            snap.jn_asset_from_binder_item_cover.clone();
         *write_or_recover(&self.jn_binder_item_from_binder_item_point_of_view) =
             snap.jn_binder_item_from_binder_item_point_of_view.clone();
         *write_or_recover(&self.jn_binder_item_from_binder_item_references) =
@@ -853,6 +863,7 @@ pub struct HashMapStoreSnapshot {
     pub(crate) jn_binder_item_from_binder_binder_items: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_binder_item_from_binder_item_books: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_content_from_binder_item_contents: HashMap<EntityId, Vec<EntityId>>,
+    pub(crate) jn_asset_from_binder_item_cover: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_binder_item_from_binder_item_point_of_view: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_binder_item_from_binder_item_references: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_binder_status_from_binder_item_status: HashMap<EntityId, Vec<EntityId>>,

@@ -38,6 +38,17 @@ elija *Duplicar*. Después elija *Editar* en la copia.
 
 Los demás formatos disponibles son HTML, Markdown, Djot, Texto y LaTeX.
 
+## Dar una cubierta a un libro
+
+Cada libro tiene su propia cubierta. Abra el libro y permanezca en su página *Libro*: bajo el
+título, haga clic en *Elegir…* y seleccione una imagen PNG, JPEG o WebP. *Cambiar…* la
+sustituye y *Quitar* la retira. En ambos casos, la imagen sigue en su proyecto.
+
+Cuando exporta un solo libro, su cubierta abre el archivo. Cuando exporta varios libros juntos,
+cada uno empieza con su propia cubierta. Un EPUB guarda la cubierta en el propio libro
+electrónico, de modo que los lectores la muestran en su biblioteca. Para dejar las cubiertas
+fuera, desactive *Empezar con la cubierta* en el estilo de exportación.
+
 ## Enviar un manuscrito para recibir observaciones
 
 Word (`.docx`) y LibreOffice (`.odt`) pueden incluir comentarios. En el estilo de

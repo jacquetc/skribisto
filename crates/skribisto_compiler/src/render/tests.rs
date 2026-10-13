@@ -99,7 +99,7 @@ fn png() -> Vec<u8> {
     buf
 }
 
-fn asset(id: u64, hash: &str, is_cover: bool) -> common::entities::Asset {
+fn asset(id: u64, hash: &str) -> common::entities::Asset {
     common::entities::Asset {
         id,
         content_hash: hash.into(),
@@ -109,12 +109,12 @@ fn asset(id: u64, hash: &str, is_cover: bool) -> common::entities::Asset {
         height: 2,
         byte_size: png().len() as u64,
         alt: String::new(),
-        is_cover,
         ..Default::default()
     }
 }
 
-/// A media directory holding `hashes`, plus a Gathered whose assets name them.
+/// A media directory holding `hashes`, plus a Gathered whose assets name them. `cover`
+/// names the picture the Book (row 100) carries as its cover.
 fn book_with_images(hashes: &[&str], cover: Option<&str>) -> (tempfile::TempDir, Gathered) {
     let dir = tempfile::tempdir().unwrap();
     let mut g = gathered(
@@ -140,7 +140,10 @@ fn book_with_images(hashes: &[&str], cover: Option<&str>) -> (tempfile::TempDir,
     );
     for (i, h) in hashes.iter().enumerate() {
         std::fs::write(dir.path().join(format!("{h}.png")), png()).unwrap();
-        g.assets.push(asset(200 + i as u64, h, Some(*h) == cover));
+        g.assets.push(asset(200 + i as u64, h));
+        if Some(*h) == cover {
+            g.binders[0].items[0].item.cover = Some(200 + i as u64);
+        }
     }
     (dir, g)
 }
@@ -1862,7 +1865,7 @@ fn book_with_three_kinds_of_picture(svg: &str) -> (tempfile::TempDir, Gathered) 
     std::fs::write(dir.path().join("aaa.png"), png()).unwrap();
     std::fs::write(dir.path().join("bbb.svg"), svg).unwrap();
     std::fs::write(dir.path().join("ccc.bin"), svg).unwrap();
-    g.assets.push(asset(200, "aaa", false));
+    g.assets.push(asset(200, "aaa"));
     for (id, hash, mime_type) in [
         (201, "bbb", "image/svg+xml"),
         (202, "ccc", "application/octet-stream"),
@@ -4701,4 +4704,198 @@ fn a_shunn_manuscript_comes_back_with_its_breaks_and_its_first_page() {
             "{fmt:?}: the body's first block lost its page: {djot}"
         );
     }
+}
+
+// ── a cover per Book ──
+
+/// `two_book_work`, with a picture for each Book on disk and each Book carrying its own
+/// as its cover: "one" on My Novel (100), "two" on Second Book (104).
+fn two_books_with_covers() -> (tempfile::TempDir, Gathered) {
+    let dir = tempfile::tempdir().unwrap();
+    let mut g = two_book_work();
+    for (id, hash, book) in [(201, "one", 100), (202, "two", 104)] {
+        std::fs::write(dir.path().join(format!("{hash}.png")), png()).unwrap();
+        g.assets.push(asset(id, hash));
+        let row = g.binders[0]
+            .items
+            .iter_mut()
+            .find(|r| r.item.id == book)
+            .unwrap();
+        row.item.cover = Some(id);
+    }
+    (dir, g)
+}
+
+fn front_cover_of(r: &RenderRequest) -> Option<u64> {
+    assemble(r, &|_| {}, &AtomicBool::new(false))
+        .unwrap()
+        .front_cover
+}
+
+/// The bug this feature was rebuilt for: the second Book of a project, exported alone,
+/// opens with its own cover and never the first Book's.
+#[test]
+fn the_second_book_exported_alone_carries_its_own_cover() {
+    let (media, g) = two_books_with_covers();
+    let p = preset("neutral");
+    let r = req_with_media(&g, &[104, 105], &p, ExportFormat::Djot, media.path());
+    let dj = render_to_string(&r).unwrap();
+    assert!(dj.contains("![Second Book](assets/two.png)"), "{dj}");
+    assert!(
+        !dj.contains("assets/one.png"),
+        "the first Book's cover leaked: {dj}"
+    );
+    assert_eq!(front_cover_of(&r), Some(202));
+}
+
+/// An omnibus opens with no cover of its own: each Book's cover stands on a page of its
+/// own just in front of that Book, and neither is front matter, since only the leading
+/// run of the file is.
+#[test]
+fn an_omnibus_puts_each_books_cover_in_front_of_that_book() {
+    let (media, g) = two_books_with_covers();
+    let p = preset("neutral");
+    let r = req_with_media(
+        &g,
+        &[100, 101, 102, 103, 104, 105],
+        &p,
+        ExportFormat::Djot,
+        media.path(),
+    );
+    let dj = render_to_string(&r).unwrap();
+    let one = dj.find("assets/one.png").expect("first cover");
+    let novel = dj.find("# My Novel").expect("first Book's heading");
+    let tale = dj.find("The wind rose").expect("first Book's prose");
+    let two = dj.find("assets/two.png").expect("second cover");
+    let second = dj.find("# Second Book").expect("second Book's heading");
+    assert!(
+        one < novel && novel < tale && tale < two && two < second,
+        "{dj}"
+    );
+    assert!(
+        !dj.contains("front_matter"),
+        "an omnibus cover is not front matter: {dj}"
+    );
+    // The second cover breaks away from the first Book's last page, and the Book it
+    // fronts starts on the page after it.
+    let cover_line = dj[..two]
+        .rfind('{')
+        .map(|at| &dj[at..two])
+        .unwrap_or_default();
+    assert!(cover_line.contains("page_break_before=true"), "{dj}");
+    let after = &dj[two..second];
+    assert!(after.contains("page_break_before=true"), "{dj}");
+    assert_eq!(front_cover_of(&r), None, "an omnibus has no single cover");
+}
+
+/// Under a title page the omnibus opens with the Work's title page, then the first Book's
+/// cover: the cover belongs to the Book, not to the file.
+#[test]
+fn an_omnibus_title_page_comes_before_the_first_books_cover() {
+    let (media, g) = two_books_with_covers();
+    let p = preset("manuscript-shunn");
+    assert!(p.book_title_page);
+    let dj = render_to_string(&req_with_media(
+        &g,
+        &[100, 101, 102, 103, 104, 105],
+        &p,
+        ExportFormat::Djot,
+        media.path(),
+    ))
+    .unwrap();
+    let title = dj.find("elise").expect("the Work's title page");
+    let one = dj.find("assets/one.png").expect("first cover");
+    assert!(title < one, "{dj}");
+}
+
+/// A cover link whose picture is not among the export's assets is no cover, never a
+/// broken image reference.
+#[test]
+fn a_cover_naming_a_missing_picture_is_no_cover() {
+    let (media, mut g) = two_books_with_covers();
+    g.assets.retain(|a| a.id != 202);
+    let p = preset("neutral");
+    let r = req_with_media(&g, &[104, 105], &p, ExportFormat::Djot, media.path());
+    let dj = render_to_string(&r).unwrap();
+    assert!(!dj.contains("assets/"), "{dj}");
+    assert_eq!(front_cover_of(&r), None);
+}
+
+/// EPUB's cover slot follows exactly the rules the inline cover does, where it used to
+/// take the project's cover whatever the setting and the scope said.
+#[test]
+fn the_epub_cover_slot_follows_the_book_the_setting_and_the_scope() {
+    let (media, g) = two_books_with_covers();
+    let on = preset("neutral");
+    let mut off = preset("neutral");
+    off.book_cover = false;
+    let epub = |include: &[u64], p: &Preset| {
+        front_cover_of(&req_with_media(
+            &g,
+            include,
+            p,
+            ExportFormat::Epub,
+            media.path(),
+        ))
+    };
+    assert_eq!(
+        epub(&[100, 101, 102], &on),
+        Some(201),
+        "one Book: its own cover"
+    );
+    assert_eq!(epub(&[104, 105], &on), Some(202), "the other Book: its own");
+    assert_eq!(
+        epub(&[100, 101, 102], &off),
+        None,
+        "the setting is honoured"
+    );
+    assert_eq!(epub(&[101], &on), None, "a chapter alone opens no Book");
+    assert_eq!(
+        epub(&[100, 101, 102, 103, 104, 105], &on),
+        None,
+        "an omnibus has no single cover"
+    );
+}
+
+/// The slot reaches the package, and nothing is printed inline beside it: EPUB never
+/// shows a cover twice, nor an omnibus's per-Book covers at the end of a chapter file.
+#[test]
+fn an_epub_carries_its_books_cover_in_the_package_and_not_inline() {
+    let (media, g) = two_books_with_covers();
+    let p = preset("neutral");
+    let read = |include: &[u64]| {
+        let out = tempfile::tempdir().unwrap();
+        let path = out.path().join("book.epub");
+        render_to_file(
+            &req_with_media(&g, include, &p, ExportFormat::Epub, media.path()),
+            &path,
+            &|_| {},
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+        let mut zip = zip::ZipArchive::new(std::fs::File::open(&path).unwrap()).unwrap();
+        let mut all = String::new();
+        for i in 0..zip.len() {
+            let mut f = zip.by_index(i).unwrap();
+            let name = f.name().to_string();
+            if name.ends_with(".opf") || name.ends_with(".xhtml") {
+                let mut s = String::new();
+                std::io::Read::read_to_string(&mut f, &mut s).unwrap();
+                all.push_str(&s);
+            }
+        }
+        all
+    };
+    let single = read(&[104, 105]);
+    assert!(single.contains("cover-image"), "{single}");
+    assert!(
+        !single.contains("two.png"),
+        "printed inline as well: {single}"
+    );
+    let omnibus = read(&[100, 101, 102, 103, 104, 105]);
+    assert!(!omnibus.contains("cover-image"), "{omnibus}");
+    assert!(
+        !omnibus.contains("one.png") && !omnibus.contains("two.png"),
+        "{omnibus}"
+    );
 }

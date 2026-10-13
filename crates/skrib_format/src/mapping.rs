@@ -12,7 +12,7 @@ use common::entities::{
     Work,
 };
 use skribisto_model::content_allowed;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use super::bundle::*;
 use super::loaded::*;
@@ -106,6 +106,13 @@ pub fn from_entities(
     // target was purged) has no sidecar to live in and is collected separately into
     // the bundle-root orphanage — dropping it here would destroy the note.
     let mut comments_by_content: BTreeMap<u64, Vec<CommentFile>> = BTreeMap::new();
+    // The assets that will actually be written (see the `assets` field below): a Book's
+    // cover is kept only when its picture is among them.
+    let written_assets: BTreeSet<u64> = assets
+        .iter()
+        .filter(|a| asset_bytes.contains_key(&a.content_hash))
+        .map(|a| a.id)
+        .collect();
     let mut orphan_comments: Vec<CommentFile> = Vec::new();
     for cwr in comments {
         let file = comment_to_file(cwr);
@@ -230,6 +237,7 @@ pub fn from_entities(
                     dict_language: item.dict_language.clone(),
                     aliases: item.aliases.clone(),
                     status_id: item.status,
+                    cover_id: item.cover.filter(|id| written_assets.contains(id)),
                     inline_contents,
                     prose_refs,
                     reference_ids: item.references.clone(),
@@ -402,7 +410,6 @@ pub fn from_entities(
                 height: a.height as u32,
                 byte_size: a.byte_size,
                 alt: a.alt.clone(),
-                is_cover: a.is_cover,
                 path: asset_relpath(&a.content_hash, &extension_for(&a.mime_type)),
             })
             .collect(),
@@ -710,7 +717,6 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
                 height: u64::from(a.height),
                 byte_size: a.byte_size,
                 alt: a.alt.clone(),
-                is_cover: a.is_cover,
             })
         })
         .collect::<Result<Vec<_>>>()?;
@@ -823,10 +829,13 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
                     // still a *file* id here and only becomes a store id once every status
                     // row exists.
                     status: None,
+                    // Same: a file id until every asset row exists.
+                    cover: None,
                 },
                 contents,
                 tag_ids: f.tag_ids.clone(),
                 status_id: f.status_id,
+                cover_id: f.cover_id,
             });
         }
 

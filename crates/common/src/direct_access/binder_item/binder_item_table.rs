@@ -48,6 +48,7 @@ impl<'a> BinderItemHashMapTable<'a> {
             BinderItemRelationshipField::Status => {
                 &self.store.jn_binder_status_from_binder_item_status
             }
+            BinderItemRelationshipField::Cover => &self.store.jn_asset_from_binder_item_cover,
             BinderItemRelationshipField::Tags => &self.store.jn_binder_tag_from_binder_item_tags,
         }
     }
@@ -73,6 +74,9 @@ impl<'a> BinderItemHashMapTable<'a> {
         )
         .into_iter()
         .next();
+        entity.cover = junction_get(&self.store.jn_asset_from_binder_item_cover, &entity.id)
+            .into_iter()
+            .next();
         entity.tags = junction_get(&self.store.jn_binder_tag_from_binder_item_tags, &entity.id);
     }
 }
@@ -143,6 +147,11 @@ impl<'a> BinderItemTable for BinderItemHashMapTable<'a> {
                 &self.store.jn_binder_status_from_binder_item_status,
                 new_entity.id,
                 new_entity.status.into_iter().collect::<Vec<EntityId>>(),
+            );
+            junction_set(
+                &self.store.jn_asset_from_binder_item_cover,
+                new_entity.id,
+                new_entity.cover.into_iter().collect::<Vec<EntityId>>(),
             );
             junction_set(
                 &self.store.jn_binder_tag_from_binder_item_tags,
@@ -270,6 +279,11 @@ impl<'a> BinderItemTable for BinderItemHashMapTable<'a> {
                 entity.status.into_iter().collect::<Vec<EntityId>>(),
             );
             junction_set(
+                &self.store.jn_asset_from_binder_item_cover,
+                entity.id,
+                entity.cover.into_iter().collect::<Vec<EntityId>>(),
+            );
+            junction_set(
                 &self.store.jn_binder_tag_from_binder_item_tags,
                 entity.id,
                 entity.tags.clone(),
@@ -300,6 +314,7 @@ impl<'a> BinderItemTable for BinderItemHashMapTable<'a> {
             );
             junction_remove(&self.store.jn_binder_item_from_binder_item_books, id);
             junction_remove(&self.store.jn_binder_status_from_binder_item_status, id);
+            junction_remove(&self.store.jn_asset_from_binder_item_cover, id);
             junction_remove(&self.store.jn_binder_tag_from_binder_item_tags, id);
 
             // Clean up backward references (uses the owning entity's forward junction)
@@ -366,6 +381,7 @@ impl<'a> BinderItemHashMapTableRO<'a> {
             BinderItemRelationshipField::Status => {
                 &self.store.jn_binder_status_from_binder_item_status
             }
+            BinderItemRelationshipField::Cover => &self.store.jn_asset_from_binder_item_cover,
             BinderItemRelationshipField::Tags => &self.store.jn_binder_tag_from_binder_item_tags,
         }
     }
@@ -391,6 +407,9 @@ impl<'a> BinderItemHashMapTableRO<'a> {
         )
         .into_iter()
         .next();
+        entity.cover = junction_get(&self.store.jn_asset_from_binder_item_cover, &entity.id)
+            .into_iter()
+            .next();
         entity.tags = junction_get(&self.store.jn_binder_tag_from_binder_item_tags, &entity.id);
     }
 }

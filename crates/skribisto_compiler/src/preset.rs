@@ -400,13 +400,14 @@ pub struct Preset {
     pub heading_separator: String,
     #[serde(default)]
     pub book_title_page: bool,
-    /// Open the book with its cover picture, when the export includes the book's
-    /// opening and the Work has one.
+    /// Open each Book with its own cover picture, when the export includes that Book's
+    /// opening and the Book has one. An export of one Book opens with its cover; an
+    /// export of several puts each Book's cover in front of that Book.
     ///
     /// `default = "yes"`, for the reason its pagination neighbours give below: a
     /// preset saved before the field existed has no such key, and nobody *chose*
-    /// a coverless book — there was no cover to choose. EPUB ignores this; it has
-    /// a real cover slot in the package and fills it either way.
+    /// a coverless book — there was no cover to choose. EPUB honours it too, through
+    /// its package's cover slot rather than inline, and only for an export of one Book.
     #[serde(default = "yes")]
     pub book_cover: bool,
     /// Print the rounded word count on the title page — the manuscript-submission

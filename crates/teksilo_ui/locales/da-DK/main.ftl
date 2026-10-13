@@ -3489,8 +3489,12 @@ image-menu-resize = &Skift billedets størrelse…
 image-menu-reset-size = &Oprindelig størrelse
 
 # The book's cover, chosen from the book, not typed into a scene.
-cover-choose = Bogens &omslag…
-cover-clear = Fjern omslage&t
+cover-heading = Omslag
+cover-pick = Vælg…
+cover-change = Skift…
+cover-remove = Fjern
+cover-none = Intet omslag endnu
+cover-missing = Billedfilen mangler i projektet
 cover-choose-title = Vælg et omslag
 cover-set = Omslaget er valgt.
 cover-cleared = Omslaget er fjernet. Billedet findes stadig i projektet.

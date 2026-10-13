@@ -3505,8 +3505,12 @@ image-menu-describe = תיאור התמונה… (&D)
 image-menu-resize = שינוי גודל התמונה… (&R)
 image-menu-reset-size = גודל מקורי (&Z)
 
-cover-choose = כריכת הספר… (&V)
-cover-clear = הסרת הכריכה (&R)
+cover-heading = כריכה
+cover-pick = בחירה…
+cover-change = החלפה…
+cover-remove = הסרה
+cover-none = עדיין אין כריכה
+cover-missing = קובץ התמונה חסר בפרויקט
 cover-choose-title = בחירת כריכה
 cover-set = הכריכה הוגדרה.
 cover-cleared = הכריכה הוסרה. התמונה עדיין נמצאת בפרויקט.

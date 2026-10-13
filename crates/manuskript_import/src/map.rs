@@ -698,6 +698,7 @@ impl<'a> Builder<'a> {
                     dict_language: Vec::new(),
                     aliases: Vec::new(),
                     status_id: None,
+                    cover_id: None,
                     inline_contents,
                     prose_refs,
                     reference_ids: Vec::new(),

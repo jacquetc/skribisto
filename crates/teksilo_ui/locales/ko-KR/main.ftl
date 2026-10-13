@@ -2317,8 +2317,12 @@ image-menu-describe = 이미지 설명… (&D)
 image-menu-resize = 이미지 크기 조절… (&R)
 image-menu-reset-size = 원본 크기 (&Z)
 
-cover-choose = 책 표지… (&V)
-cover-clear = 표지 제거 (&R)
+cover-heading = 표지
+cover-pick = 선택…
+cover-change = 변경…
+cover-remove = 제거
+cover-none = 아직 표지가 없습니다
+cover-missing = 이미지 파일이 프로젝트에 없습니다
 cover-choose-title = 표지 선택
 cover-set = 표지를 설정했습니다.
 cover-cleared = 표지를 제거했습니다. 이미지는 프로젝트에 남아 있습니다.

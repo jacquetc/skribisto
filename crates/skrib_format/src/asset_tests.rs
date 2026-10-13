@@ -33,7 +33,6 @@ pub(crate) fn bundle_with_assets() -> WorkBundle {
             height: 480,
             byte_size: png.len() as u64,
             alt: "the cover".into(),
-            is_cover: false,
             path: asset_relpath("hash-cover", &extension_for("image/png")),
         },
         AssetFile {
@@ -47,7 +46,6 @@ pub(crate) fn bundle_with_assets() -> WorkBundle {
             height: 600,
             byte_size: jpg.len() as u64,
             alt: String::new(),
-            is_cover: false,
             path: asset_relpath("hash-map", &extension_for("image/jpeg")),
         },
     ];
@@ -201,4 +199,105 @@ fn an_asset_with_no_bytes_fails_the_write_rather_than_writing_a_dangling_row() {
         format!("{err:#}").contains("cover.png"),
         "the error should name the asset: {err:#}"
     );
+}
+
+// ── a cover per Book ──
+
+/// The sample project with its Book carrying picture 50 as its cover. `bytes` says
+/// whether the picture's bytes reach the writer.
+fn bundle_with_a_book_cover(shape: ShapeTag, bytes: bool) -> (WorkBundle, u64) {
+    let mut book_id = 0;
+    let asset_bytes = if bytes {
+        BTreeMap::from([("hash-of-cover".to_string(), vec![0x89, b'P', b'N', b'G'])])
+    } else {
+        BTreeMap::new()
+    };
+    let bundle = super::tests::build_bundle_with_bytes(shape, asset_bytes, |s| {
+        let book = s
+            .binders
+            .iter_mut()
+            .flat_map(|b| b.items.iter_mut())
+            .find(|i| i.item.sub_role == common::entities::BinderItemSubRole::Book)
+            .expect("the sample project has a Book");
+        book.item.cover = Some(50);
+        book_id = book.item.id;
+    });
+    (bundle, book_id)
+}
+
+fn cover_of(bundle: &WorkBundle, item_id: u64) -> Option<u64> {
+    bundle
+        .binders
+        .iter()
+        .flat_map(|b| b.items.iter())
+        .find(|i| i.item.file_id == item_id)
+        .expect("item")
+        .item
+        .cover_id
+}
+
+/// A Book's cover is written, read back in both shapes, and reaches the loaded project as
+/// a link to the right picture. Deliberately a non-default value end to end: a fixture
+/// leaving it `None` would pass whether or not the field round-tripped.
+#[test]
+fn a_books_cover_survives_a_round_trip_in_both_shapes() {
+    for (tag, shape) in [
+        (ShapeTag::Zip, super::SkribShape::ZipFile),
+        (ShapeTag::Folder, super::SkribShape::ExplodedFolder),
+    ] {
+        let (bundle, book) = bundle_with_a_book_cover(tag, true);
+        assert_eq!(cover_of(&bundle, book), Some(50));
+
+        let dir = tempfile::tempdir().expect("tmp");
+        let path = dir
+            .path()
+            .join("Novel.skrib")
+            .to_string_lossy()
+            .into_owned();
+        super::write_bundle(&path, shape, &bundle).expect("write");
+        let back = super::read_bundle(&path).expect("read");
+        assert_eq!(cover_of(&back, book), Some(50), "{shape:?}");
+
+        let loaded = super::bundle_to_loaded(back, &path).expect("load");
+        let item = loaded
+            .binders
+            .iter()
+            .flat_map(|b| b.items.iter())
+            .find(|i| i.item.id == book)
+            .expect("loaded book");
+        assert_eq!(item.cover_id, Some(50), "{shape:?}");
+        assert!(loaded.assets.iter().any(|a| a.id == 50), "{shape:?}");
+    }
+}
+
+/// A picture whose bytes could not be read is dropped from the bundle; its Book is saved
+/// without a cover rather than pointing at a file id nothing in the bundle carries.
+#[test]
+fn a_cover_whose_picture_is_not_written_is_not_saved() {
+    let (bundle, book) = bundle_with_a_book_cover(ShapeTag::Zip, false);
+    assert!(bundle.assets.is_empty());
+    assert_eq!(cover_of(&bundle, book), None);
+}
+
+/// A v14 asset still carries `is_cover`. It reads, and the flag is simply not kept: no
+/// migration, by decision (see `FORMAT_VERSION`).
+#[test]
+fn a_v14_cover_flag_reads_and_is_dropped() {
+    let v14 = r#"AssetFile(
+        file_id: 7,
+        created_at: "2026-01-01T00:00:00Z",
+        updated_at: "2026-01-01T00:00:00Z",
+        content_hash: "abc",
+        file_name: "front.png",
+        mime_type: "image/png",
+        width: 2,
+        height: 2,
+        byte_size: 4,
+        alt: "",
+        is_cover: true,
+        path: "assets/abc.png",
+    )"#;
+    let a: AssetFile = ron::from_str(v14).expect("a v14 asset still parses");
+    assert_eq!(a.file_id, 7);
+    assert_eq!(a.content_hash, "abc");
 }

@@ -74,7 +74,7 @@ braille display. Please get in touch if you hit a glaring gap.
 - Note templates: built-in presets (character sheet, location, object, beat sheet, faction,
   research note) or save your own
 - Images in the prose, a map or a character reference or a photograph of a street, carried
-  inside the project and through every export, with a book cover
+  inside the project and through every export, with a cover for each book
 - Colour tags per project, with curated genre presets, and point-of-view marking on scenes
 - Replace-while-typing: a custom lexicon plus locale-aware smart punctuation (curly quotes,
   dashes, ellipsis, French spacing…)

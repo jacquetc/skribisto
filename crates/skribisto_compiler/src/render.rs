@@ -16,7 +16,7 @@ use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use anyhow::{Result, anyhow};
-use common::entities::{BinderItem, BinderItemSubRole, Content, ContentRole};
+use common::entities::{Asset, BinderItem, BinderItemSubRole, Content, ContentRole};
 use skrib_format::Gathered;
 use skribisto_model::SubRoleExt;
 use skribisto_model::footnote_numbering::{self, FootnoteRestart};
@@ -130,6 +130,10 @@ struct Assembled {
     /// rendered output instead would mean re-finding each `src` through the
     /// escaping rules of six different formats.
     image_refs: Vec<String>,
+    /// The asset id of the cover that opens this export, when it is a single Book's
+    /// export that carries one. Decided once here, for every format: the inline formats
+    /// print it above the title page, EPUB puts it in its cover slot instead.
+    front_cover: Option<u64>,
     /// Every `Content` whose prose reached the compiled document, in emission order.
     ///
     /// The record a comment needs to be rebased (see [`comment_rebase`]). It cannot be
@@ -317,17 +321,31 @@ fn assemble(req: &RenderRequest, progress: &dyn Fn(f32), cancel: &AtomicBool) ->
     // above it.
     let title_page = preset.book_title_page && rows.iter().any(|r| r.item.sub_role.opens_book());
 
-    // The cover, on the same terms: it opens the *book*, so an export that does
-    // not include the book's opening has no business carrying it. EPUB is the
-    // exception — it has a real cover slot in the package, filled by the format
-    // arm, and putting the picture inline as well would show it twice.
-    let cover = preset
-        .book_cover
-        .then(|| cover_relpath(req))
-        .flatten()
-        .filter(|_| {
-            req.format != ExportFormat::Epub && rows.iter().any(|r| r.item.sub_role.opens_book())
-        });
+    // Covers belong to Books, and a Book's cover opens *that* Book, so an export that
+    // does not include the Book's opening row has no business carrying it.
+    //
+    // One Book (the common case): its cover is the first thing in the file, above the
+    // title page. Several (an omnibus): the title page is the Work's, and each Book's
+    // cover sits on a page of its own in front of that Book, emitted in the row loop.
+    let books = export_books(req);
+    let omnibus = books.len() > 1;
+    let front_cover: Option<&Asset> = match books.as_slice() {
+        [book]
+            if preset.book_cover
+                && rows
+                    .iter()
+                    .any(|r| r.item.id == book.item.id && r.item.sub_role.opens_book()) =>
+        {
+            book_cover(req, &book.item)
+        }
+        _ => None,
+    };
+    // EPUB has a real cover slot in the package, filled by the format arm from
+    // `front_cover`; putting the picture inline as well would show it twice. Nor does it
+    // take an omnibus's per-Book covers: its files split at headings, not page breaks, so
+    // a picture placed before a Book would end the previous Book's last chapter.
+    let inline_covers = preset.book_cover && req.format != ExportFormat::Epub;
+    let cover = front_cover.filter(|_| inline_covers).map(cover_relpath);
 
     // A page break queued for the next block emitted, whatever that turns out to be: a
     // structural heading, or the row's own prose when the preset suppresses the heading.
@@ -414,6 +432,23 @@ fn assemble(req: &RenderRequest, progress: &dyn Fn(f32), cancel: &AtomicBool) ->
             } {
                 pending_break = true;
             }
+        }
+
+        // 1. An omnibus's per-Book cover, on a page of its own in front of the Book. The
+        //    break is forced either side whatever `book_starts_page` says: a cover sharing
+        //    a page with the end of the previous Book, or with this one's opening, is not
+        //    a cover.
+        if omnibus
+            && inline_covers
+            && row.item.sub_role.opens_book()
+            && let Some(asset) = book_cover(req, row.item)
+        {
+            pending_break = true;
+            let brk = take_break(&mut pending_break, &mut anything_above);
+            let alt = escape_djot_alt(book_title_of_row(req, row).trim());
+            push_cover(&mut out, &cover_relpath(asset), &alt, work_rtl, brk, false);
+            pending_break = true;
+            contributed = true;
         }
 
         // The epigraph, prepared once and emitted on whichever side of the heading the
@@ -598,21 +633,7 @@ fn assemble(req: &RenderRequest, progress: &dyn Fn(f32), cancel: &AtomicBool) ->
     if let Some(relpath) = &cover {
         let alt = escape_djot_alt(export_title(req).trim());
         let mut block = String::new();
-        push_para(
-            &mut block,
-            &format!("![{alt}]({relpath})"),
-            work_rtl,
-            // The cover is furniture, not a body paragraph: without this the preset's
-            // first-line indent pushes the picture off centre. `line_height` is in
-            // thousandths (1000 = single), so a double-spaced manuscript does not double
-            // the line box around the picture either.
-            &[
-                "alignment=center".to_string(),
-                "text_indent=0".to_string(),
-                "line_height=1000".to_string(),
-                FRONT_MATTER.to_string(),
-            ],
-        );
+        push_cover(&mut block, relpath, &alt, work_rtl, Vec::new(), true);
         out.insert_str(0, &block);
     }
 
@@ -661,6 +682,7 @@ fn assemble(req: &RenderRequest, progress: &dyn Fn(f32), cancel: &AtomicBool) ->
         },
         langs,
         image_refs: skrib_format::media::referenced_paths(&out),
+        front_cover: front_cover.map(|a| a.id),
         emitted: emitted_contents,
     })
 }

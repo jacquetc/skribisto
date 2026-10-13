@@ -159,7 +159,22 @@ use std::collections::BTreeMap;
 /// `BinderItemFile.status_id` on its own would have needed nothing: it is additive with a
 /// `#[serde(default)]` and an unset value was never invalid. It is the manifest that costs
 /// the bump.
-pub const FORMAT_VERSION: u32 = 14;
+///
+/// # v14 → v15: a cover per Book
+///
+/// `BinderItemFile.cover_id`: the Book's cover, as the `file_id` of one of the project's
+/// pictures. It replaces `AssetFile.is_cover`, a single flag that made the cover belong
+/// to the whole project, so a Work with three Books had one cover for all of them.
+///
+/// **No migration, deliberately.** A v14 `is_cover` is not read: serde ignores the
+/// unknown field, and the project opens with no Book carrying a cover. The picture itself
+/// is untouched; only the mark is gone.
+///
+/// **No floor arm** — the v10/v11/v13 call. `cover_id` is additive with a
+/// `#[serde(default)]`, exactly as `status_id` was judged on its own at v14. An older build
+/// that resaves a v15 bundle drops the link and keeps the picture: a choice re-made in one
+/// click on the Book's page, not authored content an older save would delete.
+pub const FORMAT_VERSION: u32 = 15;
 
 /// Read `dict_language` as a list, accepting the pre-v4 space-separated string.
 ///
@@ -505,11 +520,6 @@ pub struct AssetFile {
     /// Default description, seeding the alt text of a fresh insertion.
     #[serde(default)]
     pub alt: String,
-    /// This picture is the book's cover. `#[serde(default)]` so a bundle written
-    /// before covers existed still loads — as a book with none, which is what it
-    /// was.
-    #[serde(default)]
-    pub is_cover: bool,
     /// Path to this asset's bytes, relative to the bundle root.
     pub path: String,
 }
@@ -849,6 +859,15 @@ pub struct BinderItemFile {
     /// the vocabulary leaves the scenes that wore it intact and statusless.
     #[serde(default)]
     pub status_id: Option<u64>,
+    /// This Book's cover, as the `file_id` of an `AssetFile` in the same bundle. Only a
+    /// row that opens a book carries one (`skribisto_model::cover_capable`).
+    ///
+    /// `None` is "no cover". Written only when the picture itself is written: an asset
+    /// whose bytes could not be read is dropped from the bundle, and its Book is saved
+    /// without a cover rather than pointing at nothing. A `file_id` that still fails to
+    /// resolve at load reads as `None` too, since the relationship is weak.
+    #[serde(default)]
+    pub cover_id: Option<u64>,
     pub inline_contents: Vec<InlineContent>,
     pub prose_refs: Vec<ProseRef>,
     /// M2M self-references (cross-links), as `file_id`s.

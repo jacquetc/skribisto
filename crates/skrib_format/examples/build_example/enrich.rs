@@ -588,6 +588,7 @@ fn max_content_id(bundle: &WorkBundle) -> u64 {
 fn blank(file_id: u64, uid: uuid::Uuid, now: &str) -> BinderItemFile {
     BinderItemFile {
         status_id: None,
+        cover_id: None,
         file_id,
         uid,
         created_at: now.to_string(),

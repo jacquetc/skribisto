@@ -473,6 +473,7 @@ pub struct BinderItem {
     pub point_of_view: Vec<EntityId>,
     pub books: Vec<EntityId>,
     pub status: Option<EntityId>,
+    pub cover: Option<EntityId>,
     pub tags: Vec<EntityId>,
 }
 
@@ -651,7 +652,6 @@ pub struct Asset {
     pub height: u64,
     pub byte_size: u64,
     pub alt: String,
-    pub is_cover: bool,
 }
 
 impl HasId for Asset {

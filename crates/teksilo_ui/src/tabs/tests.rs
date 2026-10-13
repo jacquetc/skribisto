@@ -94,7 +94,7 @@ fn every_combination_builds_and_lays_out() {
                 "{role:?}/{sub_role:?} non-prose has no kind"
             );
         }
-        let mut tree = WidgetTree::new();
+        let mut tree = crate::test_support::tree_with_events(&ctx);
         let id = tree.add_boxed(tab_pane(&tab));
         tree.layout(teksilo::prelude::SizeProposal::exact(1000.0, 700.0));
         assert!(
@@ -153,7 +153,7 @@ fn only_the_headed_combinations_offer_an_epigraph() {
             "{role:?}/{sub_role:?} disagrees with the matrix about the epigraph"
         );
 
-        let mut tree = WidgetTree::new();
+        let mut tree = crate::test_support::tree_with_events(&ctx);
         let id = tree.add_boxed(tab_pane(&tab));
         tree.layout(teksilo::prelude::SizeProposal::exact(1000.0, 700.0));
         assert_eq!(
@@ -281,7 +281,7 @@ fn segmented_containers_lay_out_their_bar() {
             crate::settings::EditorViewMemory::detached(false),
             &AppIds::new(),
         );
-        let mut tree = WidgetTree::new();
+        let mut tree = crate::test_support::tree_with_events(&ctx);
         let id = tree.add_boxed(tab_pane(&tab));
         tree.layout(teksilo::prelude::SizeProposal::exact(1000.0, 700.0));
         let bar = first_of_type(&tree, id, "SegmentedControl")
@@ -760,7 +760,7 @@ fn only_a_book_has_the_extra_book_only_segments() {
             crate::settings::EditorViewMemory::detached(false),
             &AppIds::new(),
         );
-        let mut tree = WidgetTree::new();
+        let mut tree = crate::test_support::tree_with_events(&ctx);
         let id = tree.add_boxed(tab_pane(&tab));
         tree.layout(teksilo::prelude::SizeProposal::exact(1000.0, 700.0));
         let bar = first_of_type(&tree, id, "SegmentedControl").expect("a bar");
@@ -1956,9 +1956,10 @@ fn a_window_narrower_than_the_column_does_not_overflow() {
         // path. The no-backend 8px/char fallback returns a rigid size, so
         // the bar's labels would spill exactly as they never do in the live
         // app (which always has a backend).
-        let mut tree = WidgetTree::new().with_text_backend(std::rc::Rc::new(
-            std::cell::RefCell::new(teksilo::canvas::MockTextBackend::new()),
-        ));
+        let mut tree =
+            crate::test_support::tree_with_events(&ctx).with_text_backend(std::rc::Rc::new(
+                std::cell::RefCell::new(teksilo::canvas::MockTextBackend::new()),
+            ));
         let id = tree.add_boxed(tab_pane(&tab));
         tree.layout(teksilo::prelude::SizeProposal::exact(BOX_W, 700.0));
 
@@ -3322,7 +3323,7 @@ fn a_heading_tabs_editor_port_is_its_synopsis() {
             scroll: 0.0,
         });
 
-        let mut tree = WidgetTree::new();
+        let mut tree = crate::test_support::tree_with_events(&ctx);
         tree.add_boxed(tab_pane(&tab));
         tree.layout(teksilo::prelude::SizeProposal::exact(900.0, 600.0));
 
@@ -5349,4 +5350,43 @@ fn deep_prose_the_editor_writes_reopens_in_a_tab_as_its_structure() {
         listed_djot,
         "and saving the tab again writes the list back as it was"
     );
+}
+
+/// A Book's own page carries the cover block, in both encodings of a Book, and no other
+/// container's page does: Parts and chapter folders share the same panes and have no
+/// front to show.
+#[test]
+fn only_a_books_own_page_carries_the_cover_block() {
+    use BinderItemRole::*;
+    use BinderItemSubRole::*;
+    let ctx = Rc::new(AppContext::new());
+    for (role, sub_role, expected) in [
+        (Folder, Book, true),
+        (Item, BookBegin, true),
+        (Folder, Part, false),
+        (Folder, ChapterScene, false),
+        (Item, Part, false),
+        (Folder, None, false),
+    ] {
+        let tab = tab_for(
+            &ctx,
+            1,
+            &role,
+            &sub_role,
+            &[],
+            Signal::new(700.0),
+            Signal::new(true),
+            test_typography(),
+            crate::settings::EditorViewMemory::detached(false),
+            &AppIds::new(),
+        );
+        let mut tree = crate::test_support::tree_with_events(&ctx);
+        let id = tree.add_boxed(tab_pane(&tab));
+        tree.layout(teksilo::prelude::SizeProposal::exact(1000.0, 700.0));
+        assert_eq!(
+            first_of_type(&tree, id, "CoverBlock").is_some(),
+            expected,
+            "{role:?}/{sub_role:?}"
+        );
+    }
 }

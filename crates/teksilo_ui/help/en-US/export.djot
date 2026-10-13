@@ -34,6 +34,17 @@ Then choose *Edit* on the copy.
 
 Other available formats are HTML, Markdown, Djot, Text and LaTeX.
 
+## Give a book its cover
+
+Each book has its own cover. Open the book and stay on its *Book* page: under the title,
+click *Choose…* and pick a PNG, JPEG or WebP picture. *Change…* replaces it and *Remove*
+takes it off. The picture stays in your project either way.
+
+When you export one book, its cover opens the file. When you export several books together,
+each one starts with its own cover. An EPUB keeps the cover in the ebook itself, so readers
+show it in their library. To leave covers out, turn off *Open with the cover* in the export
+style.
+
 ## Send a manuscript for feedback
 
 Word (`.docx`) and LibreOffice (`.odt`) can include comments. In the export style, turn on

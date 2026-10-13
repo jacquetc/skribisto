@@ -22,6 +22,7 @@
 //! on each `LoadWork`; their event subscriptions are installed once from a
 //! long-lived widget's `build` via `wire(ctx)` (see `App::build`).
 
+mod single_asset;
 mod single_binder;
 mod single_binder_item;
 mod single_content;
@@ -32,6 +33,7 @@ mod single_smart_punctuation;
 mod single_work;
 mod single_work_info;
 
+pub use single_asset::SingleAsset;
 pub use single_binder::SingleBinder;
 pub use single_binder_item::SingleBinderItem;
 pub use single_content::SingleContent;

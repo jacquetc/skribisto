@@ -20,7 +20,6 @@ pub struct AssetDto {
     pub height: u64,
     pub byte_size: u64,
     pub alt: String,
-    pub is_cover: bool,
 }
 
 impl From<AssetDto> for Asset {
@@ -36,7 +35,6 @@ impl From<AssetDto> for Asset {
             height: dto.height,
             byte_size: dto.byte_size,
             alt: dto.alt,
-            is_cover: dto.is_cover,
         }
     }
 }
@@ -54,7 +52,6 @@ impl From<&AssetDto> for Asset {
             height: dto.height.clone(),
             byte_size: dto.byte_size.clone(),
             alt: dto.alt.clone(),
-            is_cover: dto.is_cover.clone(),
         }
     }
 }
@@ -72,7 +69,6 @@ impl From<Asset> for AssetDto {
             height: entity.height,
             byte_size: entity.byte_size,
             alt: entity.alt,
-            is_cover: entity.is_cover,
         }
     }
 }
@@ -88,7 +84,6 @@ pub struct CreateAssetDto {
     pub height: u64,
     pub byte_size: u64,
     pub alt: String,
-    pub is_cover: bool,
 }
 
 impl From<CreateAssetDto> for Asset {
@@ -104,7 +99,6 @@ impl From<CreateAssetDto> for Asset {
             height: dto.height,
             byte_size: dto.byte_size,
             alt: dto.alt,
-            is_cover: dto.is_cover,
         }
     }
 }
@@ -122,7 +116,6 @@ impl From<&CreateAssetDto> for Asset {
             height: dto.height.clone(),
             byte_size: dto.byte_size.clone(),
             alt: dto.alt.clone(),
-            is_cover: dto.is_cover.clone(),
         }
     }
 }
@@ -139,7 +132,6 @@ impl From<Asset> for CreateAssetDto {
             height: entity.height,
             byte_size: entity.byte_size,
             alt: entity.alt,
-            is_cover: entity.is_cover,
         }
     }
 }
@@ -155,7 +147,6 @@ pub struct UpdateAssetDto {
     pub height: u64,
     pub byte_size: u64,
     pub alt: String,
-    pub is_cover: bool,
 }
 
 impl From<UpdateAssetDto> for Asset {
@@ -171,7 +162,6 @@ impl From<UpdateAssetDto> for Asset {
             height: dto.height,
             byte_size: dto.byte_size,
             alt: dto.alt,
-            is_cover: dto.is_cover,
         }
     }
 }
@@ -189,7 +179,6 @@ impl From<&UpdateAssetDto> for Asset {
             height: dto.height.clone(),
             byte_size: dto.byte_size.clone(),
             alt: dto.alt.clone(),
-            is_cover: dto.is_cover.clone(),
         }
     }
 }
@@ -207,7 +196,6 @@ impl From<Asset> for UpdateAssetDto {
             height: entity.height,
             byte_size: entity.byte_size,
             alt: entity.alt,
-            is_cover: entity.is_cover,
         }
     }
 }
@@ -225,7 +213,6 @@ impl From<AssetDto> for UpdateAssetDto {
             height: dto.height,
             byte_size: dto.byte_size,
             alt: dto.alt,
-            is_cover: dto.is_cover,
         }
     }
 }

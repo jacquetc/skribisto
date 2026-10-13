@@ -1351,6 +1351,7 @@ impl<'c, 't, 'i, 'd, 'r> Converter<'c, 't, 'i, 'd, 'r> {
             dict_language: Vec::new(),
             aliases: Vec::new(),
             status_id: worn.status,
+            cover_id: None,
             inline_contents,
             prose_refs,
             reference_ids: Vec::new(),

@@ -89,7 +89,12 @@ pub fn render_to_file(
                 rtl: is_rtl_row(req.preset, &lang),
                 language: lang,
                 images: collect_images(req.gathered, req.media_dir, Some(&built.image_refs)),
-                cover: cover_image(req),
+                // The one Book's cover, decided by `assemble` under the same rules as
+                // the inline cover every other format prints.
+                cover: built
+                    .front_cover
+                    .and_then(|id| req.gathered.assets.iter().find(|a| a.id == id))
+                    .and_then(|asset| cover_image(req, asset)),
             };
             doc.to_epub_with_options(&out, opts)?
                 .wait()
@@ -611,30 +616,38 @@ pub(super) fn manuscript_header(title: &str, author: &str) -> Option<String> {
     }
 }
 
-/// The `assets/…` path of the book's cover, if it has one.
+/// A Book's cover picture, if the Book row names one this export can see.
 ///
-/// Only the path — the *inline* cover (every format but EPUB) rides the ordinary
-/// image pipeline from here on, so its bytes are collected exactly like any
-/// other picture the compiled book names.
-pub(super) fn cover_relpath(req: &RenderRequest) -> Option<String> {
-    let asset = req.gathered.assets.iter().find(|a| a.is_cover)?;
-    Some(skrib_format::media::asset_relpath(
-        &asset.content_hash,
-        &skrib_format::media::extension_for(&asset.mime_type),
-    ))
+/// Weak, like everything a Book row points at: a cover whose asset is not among the
+/// gathered ones (its bytes could not be read at save time) is simply no cover.
+pub(super) fn book_cover<'a>(req: &RenderRequest<'a>, book: &BinderItem) -> Option<&'a Asset> {
+    let id = book.cover?;
+    req.gathered.assets.iter().find(|a| a.id == id)
 }
 
-/// The book's cover, if it has one and its file is still there.
+/// The `assets/…` path of a cover picture.
 ///
-/// Read outside [`collect_images`] because a cover is not inline content: no
-/// prose references it, so a scope-restricted image set would never contain it —
-/// and a cover belongs to the *book*, not to whichever chapters this export
-/// happens to include.
-pub(super) fn cover_image(req: &RenderRequest) -> Option<text_document::ExportImage> {
+/// Only the path: the *inline* cover (every format but EPUB) rides the ordinary image
+/// pipeline from here on, so its bytes are collected exactly like any other picture the
+/// compiled book names.
+pub(super) fn cover_relpath(asset: &Asset) -> String {
+    skrib_format::media::asset_relpath(
+        &asset.content_hash,
+        &skrib_format::media::extension_for(&asset.mime_type),
+    )
+}
+
+/// A cover picture's bytes, for EPUB's cover slot, if its file is still there.
+///
+/// Read outside [`collect_images`] because a cover is not inline content: no prose
+/// references it, so a scope-restricted image set would never contain it.
+pub(super) fn cover_image(
+    req: &RenderRequest,
+    asset: &Asset,
+) -> Option<text_document::ExportImage> {
     if req.media_dir.as_os_str().is_empty() {
         return None;
     }
-    let asset = req.gathered.assets.iter().find(|a| a.is_cover)?;
     let ext = skrib_format::media::extension_for(&asset.mime_type);
     let bytes = std::fs::read(req.media_dir.join(format!("{}.{ext}", asset.content_hash))).ok()?;
     Some(text_document::ExportImage::new(

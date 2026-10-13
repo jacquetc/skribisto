@@ -60,8 +60,22 @@ pub(super) fn flatten<'a>(req: &'a RenderRequest) -> Vec<Row<'a>> {
 /// its book. The walk reads the whole binder, not just the included ids, which is what lets a
 /// scope that omits the opener still find it.
 pub(super) fn export_title(req: &RenderRequest) -> String {
+    match export_books(req).as_slice() {
+        [book] => book_title(req, book),
+        // None, or several: the export has no single title of its own.
+        _ => req.gathered.work.title.clone(),
+    }
+}
+
+/// The Books this export belongs to, each once, in reading order.
+///
+/// A row's Book is found by walking back through its binder to the nearest opener, as
+/// [`export_title`] describes; rows outside every Book are skipped. One entry is the common
+/// case, a whole Book or one chapter of it. Several is an omnibus, which has no single
+/// title and no single cover.
+pub(super) fn export_books<'a>(req: &RenderRequest<'a>) -> Vec<&'a skrib_format::ItemWithContents> {
     let want: std::collections::HashSet<u64> = req.include.iter().copied().collect();
-    let mut book: Option<&skrib_format::ItemWithContents> = None;
+    let mut books: Vec<&skrib_format::ItemWithContents> = Vec::new();
     for bwi in &req.gathered.binders {
         for (i, iwc) in bwi.items.iter().enumerate() {
             if !(want.contains(&iwc.item.id) && iwc.item.activated) {
@@ -76,25 +90,62 @@ pub(super) fn export_title(req: &RenderRequest) -> String {
                     .find(|p| p.item.sub_role.opens_book() || p.item.sub_role.closes_book())
                     .filter(|p| p.item.sub_role.opens_book())
             };
-            let Some(head) = head else { continue };
-            match book {
-                None => book = Some(head),
-                Some(seen) if seen.item.id == head.item.id => {}
-                // A second Book: the export has no single title of its own.
-                Some(_) => return req.gathered.work.title.clone(),
+            if let Some(head) = head
+                && !books.iter().any(|b| b.item.id == head.item.id)
+            {
+                books.push(head);
             }
         }
     }
-    let work_title = || req.gathered.work.title.clone();
-    let Some(book) = book else {
-        return work_title();
-    };
-    let row = Row {
-        item: &book.item,
-        contents: &book.contents,
-        lang: String::new(),
-    };
-    title_of(&row).map_or_else(work_title, str::to_string)
+    books
+}
+
+/// A Book's own title, falling back to the Work's when the Book row has none.
+pub(super) fn book_title(req: &RenderRequest, book: &skrib_format::ItemWithContents) -> String {
+    book_title_of_row(
+        req,
+        &Row {
+            item: &book.item,
+            contents: &book.contents,
+            lang: String::new(),
+        },
+    )
+}
+
+/// [`book_title`] for a row already flattened for emission.
+pub(super) fn book_title_of_row(req: &RenderRequest, row: &Row) -> String {
+    title_of(row).map_or_else(|| req.gathered.work.title.clone(), str::to_string)
+}
+
+/// One cover picture, as its own centred paragraph.
+///
+/// The alt text is the Book's title. A cover is not decorative, and "Cover" tells someone
+/// reading with a screen reader nothing they do not already know from the file they
+/// opened. `brk` is the page break [`take_break`] handed back, if any, and `front_matter`
+/// marks the cover that opens the file; both are merged here because a block takes
+/// exactly one attribute set.
+pub(super) fn push_cover(
+    out: &mut String,
+    relpath: &str,
+    alt: &str,
+    rtl: bool,
+    brk: Vec<String>,
+    front_matter: bool,
+) {
+    // The cover is furniture, not a body paragraph: without these the preset's
+    // first-line indent pushes the picture off centre. `line_height` is in thousandths
+    // (1000 = single), so a double-spaced manuscript does not double the line box around
+    // the picture either.
+    let mut attrs = brk;
+    attrs.extend([
+        "alignment=center".to_string(),
+        "text_indent=0".to_string(),
+        "line_height=1000".to_string(),
+    ]);
+    if front_matter {
+        attrs.push(FRONT_MATTER.to_string());
+    }
+    push_para(out, &format!("![{alt}]({relpath})"), rtl, &attrs);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

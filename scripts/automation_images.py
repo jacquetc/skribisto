@@ -13,8 +13,9 @@ decide whether each is offered:
   be present *and greyed* — that gate is the whole reason they can be offered
   from a menu at all, since clicking a picture deliberately does not move the
   caret and nothing else can say which image is meant.
-* **Work menu** — `Book cover…` / `Remove the cover`, hidden with no project
-  open because there is no book to give a cover to.
+* **A Book's own page** — the Cover block (a cover belongs to one Book, so it
+  is chosen there and nowhere else): `No cover yet` and `Choose…` on a Book
+  without one. The Work menu no longer offers a cover at all.
 * **Settings ▸ Compile & Export ▸ Export Formats** — that the pane still opens.
   Its `Images` and `Open with the cover` rows are asserted headlessly instead;
   see the section's own comment for why clicking to them would be unsafe.
@@ -350,13 +351,40 @@ check(not open_menu("image"), "no Image menu while no picture is selected")
 esc()
 
 # ----------------------------------------------------------------- Work menu
+# A cover belongs to a Book, and a project can hold several, so the Work menu
+# has no cover command left to offer: it could not say which Book it meant.
 print("== Work menu ==")
 check(open_menu("work"), "Work menu opens (no duplicate-mnemonic panic)")
 cover = rows_of(["Book cover\u2026", "Remove the cover"])
 for lab, n in cover.items():
-    check(n is not None, f"Work menu offers {lab!r} with a project open")
+    check(n is None, f"Work menu no longer offers {lab!r}")
 s.shot("/tmp/images-work-menu.png")
 esc()
+
+# ----------------------------------------------------- a Book's own page
+# The Book's tab opens on its own page, which carries the Cover block between
+# the goal line and the synopsis. The example's Book has no cover.
+print("== The Book's own page ==")
+# The project switcher in the title bar carries the same name, so the Book's
+# row is the "Starforgers" below the title bar, in the binder column.
+book = None
+for n in s.nodes():
+    b = n.get("bounds") or {}
+    if ((n.get("label") or "").strip().lower() == "starforgers"
+            and isinstance(b, dict) and b.get("x", 9999) < 400 and b.get("y", 0) > 130):
+        book = n
+        break
+check(book is not None, "the example's Book is in the binder")
+if book:
+    s.click_node(book)
+    time.sleep(2.0)
+    # Plain text reaches the AT tree as a Label's `value`, not its `label`.
+    texts = {(n.get("value") or "").strip() for n in s.nodes() if n.get("role") == "Label"}
+    check("Cover" in texts, "the Book's page has a Cover section")
+    check("No cover yet" in texts, "the Book's page says it has no cover yet")
+    check(s.match(["choose\u2026"], exact=True) is not None, "and offers Choose\u2026")
+    check(s.match(["remove"], exact=True) is None, "but no Remove while there is nothing to remove")
+    s.shot("/tmp/images-book-cover.png")
 
 # ------------------------------------------------- Settings: export styles
 # The style is what decides whether an exported Markdown gets its pictures

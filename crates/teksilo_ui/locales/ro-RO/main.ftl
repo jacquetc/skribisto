@@ -3809,8 +3809,12 @@ image-menu-resize = &Redimensionează imaginea…
 image-menu-reset-size = &Mărimea originală
 
 # The book's cover, chosen from the book, not typed into a scene.
-cover-choose = Copert&a cărții…
-cover-clear = E&limină coperta
+cover-heading = Copertă
+cover-pick = Alege…
+cover-change = Schimbă…
+cover-remove = Elimină
+cover-none = Încă nicio copertă
+cover-missing = Fișierul imaginii lipsește din proiect
 cover-choose-title = Alegeți o copertă
 cover-set = Coperta a fost setată.
 cover-cleared = Coperta a fost eliminată. Imaginea se află în continuare în proiect.

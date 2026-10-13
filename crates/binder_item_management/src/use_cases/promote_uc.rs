@@ -41,6 +41,7 @@ pub trait PromoteUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "BinderItem", action = "GetMulti")]
 #[macros::uow_action(entity = "BinderItem", action = "Update")]
 #[macros::uow_action(entity = "BinderItem", action = "GetRelationship")]
+#[macros::uow_action(entity = "BinderItem", action = "SetRelationship")]
 #[macros::uow_action(entity = "BinderItem", action = "Snapshot")]
 #[macros::uow_action(entity = "BinderItem", action = "Restore")]
 #[macros::uow_action(entity = "Content", action = "GetMulti")]
@@ -150,6 +151,14 @@ impl PromoteUseCase {
             updated.is_exportable = !becomes_note;
         }
         uow.update_binder_item(&updated)?;
+
+        // A cover is the front of a book. A Book converted into anything else stops being
+        // one, and a Chapter still holding the picture would print it the day it became a
+        // Book again, a choice nobody made for it. `update` above leaves relationships
+        // alone, so the link is cleared here, in the same undo step as the conversion.
+        if item.cover.is_some() && !skribisto_model::cover_capable(&target_role, &target_sub_role) {
+            uow.set_binder_item_relationship(&item_id, &BinderItemRelationshipField::Cover, &[])?;
+        }
 
         // 2. Remap the content roles into the target's vocabulary so the text survives.
         //    Anything with no home here is empty (the guard above proved it), so it is

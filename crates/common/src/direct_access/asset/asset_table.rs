@@ -21,5 +21,6 @@ crate::impl_leaf_entity_table!(
     backward_junctions: [
 
         (jn_asset_from_work_assets),
+        (jn_asset_from_binder_item_cover),
     ],
 );

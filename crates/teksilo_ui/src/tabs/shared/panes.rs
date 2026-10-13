@@ -500,6 +500,13 @@ pub fn folder_own_pane(tab: &ContentTab) -> Box<dyn Widget> {
         crate::tabs::shared::goal_header::container_goal_header(tab),
         &tab.column_width,
     ));
+    // A Book's cover: the front of this Book, and of no other. Only a Book gets it; a
+    // Part or a chapter folder shares this pane and has no front to show.
+    if let Some(cover) = crate::book_cover::cover_block_for(tab) {
+        col = col
+            .child(vspace(4.0))
+            .child(centered(cover, &tab.column_width));
+    }
     // After the title, before the body — where CMOS §13.36 puts a chapter epigraph, and
     // where the compiler emits it, so the page reads in the order the export writes.
     if let Some(epi) = epigraph_section(tab) {
@@ -727,6 +734,12 @@ pub fn heading(tab: &ContentTab) -> Box<dyn Widget> {
         ));
     }
     col = col.child(centered(subtitle_tag_dots(tab), &tab.column_width));
+    // The flat Book marker carries its cover here, where the folder Book's page does.
+    if let Some(cover) = crate::book_cover::cover_block_for(tab) {
+        col = col
+            .child(vspace(4.0))
+            .child(centered(cover, &tab.column_width));
+    }
     // The flat encodings of the same two containers `folder_own_pane` covers, so the
     // epigraph sits in the same place on both — a Part written flat and a Part written as
     // a folder are the same Part.

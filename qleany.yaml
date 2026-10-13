@@ -914,6 +914,18 @@ entities:
     entity: BinderStatus
     relationship: many_to_one
     optional: true
+  # The Book's cover: one of the Work's pictures. Only a row that opens a book
+  # carries one (`skribisto_model::cover_capable`); a Work with three Books has
+  # three covers, and a Book exported alone takes its own.
+  #
+  # Weak, optional, single-valued many_to_one, the same shape as `status`: the
+  # picture is the Work's (`Work.assets`), the Book only points at it. Removing
+  # the picture leaves the Book without a cover, never with a dangling one.
+  - name: cover
+    type: entity
+    entity: Asset
+    relationship: many_to_one
+    optional: true
   - name: tags
     type: entity
     entity: BinderTag
@@ -1151,13 +1163,6 @@ entities:
     type: uinteger
   - name: alt
     type: string
-  # This picture is the book's cover. A role a picture plays, not a second place
-  # it is stored — which is why it lives here rather than as an id or a hash on
-  # Work. Deleting the asset removes the cover with it, and there is no way to
-  # end up pointing at something that is gone. At most one asset per Work carries
-  # it; the command that sets it clears the others.
-  - name: is_cover
-    type: boolean
   undoable: true
 features:
 - name: work_management

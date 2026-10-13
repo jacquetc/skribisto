@@ -404,6 +404,8 @@ pub(crate) fn materialize(
     // project's media directory as the bundle was read, and the prose refers to
     // them by content hash.
     let mut asset_ids: Vec<EntityId> = Vec::new();
+    // Keyed by file id, so a Book's `cover_id` can be remapped once its item exists.
+    let mut asset_map: HashMap<u64, EntityId> = HashMap::new();
     for a in &loaded.assets {
         let created = uow.create_orphan_asset(&Asset {
             created_at: a.created_at,
@@ -415,9 +417,9 @@ pub(crate) fn materialize(
             height: a.height,
             byte_size: a.byte_size,
             alt: a.alt.clone(),
-            is_cover: a.is_cover,
             id: 0,
         })?;
+        asset_map.insert(a.id, created.id);
         asset_ids.push(created.id);
     }
 
@@ -432,6 +434,8 @@ pub(crate) fn materialize(
     let mut item_tag_links: Vec<(EntityId, Vec<u64>)> = Vec::new();
     // (store item id, status **file** id) — remapped once every rung exists.
     let mut item_status_links: Vec<(EntityId, u64)> = Vec::new();
+    // (store item id, asset **file** id): each Book's cover.
+    let mut item_cover_links: Vec<(EntityId, u64)> = Vec::new();
 
     for lb in &loaded.binders {
         let created_binder = uow.create_orphan_binder(&Binder {
@@ -499,6 +503,7 @@ pub(crate) fn materialize(
                 // Wired below with the others, once every rung exists and the file ids
                 // have been remapped.
                 status: None,
+                cover: None,
             })?;
 
             if !content_ids.is_empty() {
@@ -514,6 +519,14 @@ pub(crate) fn materialize(
             }
             if let Some(sid) = li.status_id {
                 item_status_links.push((created_item.id, sid));
+            }
+            // Only a row that opens a book carries a cover. A `cover_id` on anything else
+            // (a hand-edited file, or a Book since demoted by a build that did not clear
+            // it) is dropped rather than wired to a chapter no surface would show it on.
+            if let Some(aid) = li.cover_id
+                && skribisto_model::cover_capable(&li.item.role, &li.item.sub_role)
+            {
+                item_cover_links.push((created_item.id, aid));
             }
             item_ids.push(created_item.id);
         }
@@ -552,6 +565,19 @@ pub(crate) fn materialize(
             uow.set_binder_item_relationship(
                 item_id,
                 &BinderItemRelationshipField::Status,
+                &[resolved],
+            )?;
+        }
+    }
+
+    // Each Book's cover (remap asset file id -> store id). Weak, like the status above: a
+    // file id naming no asset (its bytes could not be read, so the picture was dropped)
+    // leaves the Book without a cover rather than failing the load.
+    for (item_id, file_asset_id) in &item_cover_links {
+        if let Some(&resolved) = asset_map.get(file_asset_id) {
+            uow.set_binder_item_relationship(
+                item_id,
+                &BinderItemRelationshipField::Cover,
                 &[resolved],
             )?;
         }
@@ -1275,6 +1301,7 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
                     books: Vec::new(),
                     tags: Vec::new(),
                     status: None,
+                    cover: None,
                 },
                 contents,
                 tag_ids,
@@ -1282,6 +1309,7 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
                 // carries only `section_type`, `label` and the two count goals, and no
                 // version of the old app ever wrote a workflow state. Nothing to migrate.
                 status_id: None,
+                cover_id: None,
             });
         }
 

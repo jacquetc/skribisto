@@ -380,7 +380,6 @@ fn work_with_planning(ctx: &AppContext) -> Planning {
             height: 1,
             byte_size: 1,
             alt: String::new(),
-            is_cover: true,
         },
         work,
         -1,
@@ -446,4 +445,63 @@ fn a_sibling_works_planning_and_settings_events_do_not_belong_to_mine() {
         SmartPunctuation(EntityEvent::Updated),
         &[theirs.smart_punctuation]
     ));
+}
+
+/// Choosing a Book's cover is a change the project must save: every event it publishes is
+/// one the autosave listens for, and the Book's `Updated` is credited to its own Work. A
+/// cover is a link on the Book row, so this is the guard that would notice the link being
+/// written by a path that never says so.
+#[test]
+fn setting_a_books_cover_is_an_unsaved_change_of_its_work() {
+    use frontend::common::entities::BinderItemSubRole;
+    let p = crate::test_support::RealProject::empty_novel();
+    let book = crate::models::binder_stream::ordered_binder_items(&p.app_ctx, p.work_id)
+        .into_iter()
+        .find(|row| {
+            frontend::commands::binder_item_commands::get_binder_item(&p.app_ctx, &row.id)
+                .ok()
+                .flatten()
+                .is_some_and(|i| i.sub_role == BinderItemSubRole::Book)
+        })
+        .expect("the novel has a Book")
+        .id;
+    let media = tempfile::tempdir().expect("media dir");
+    let docs = crate::models::OpenDocsStore::new(p.app_ctx.clone());
+    docs.set_media_dir(media.path().to_path_buf());
+    let vm =
+        crate::book_cover::BookCoverViewModel::new(p.app_ctx.clone(), p.ids.clone(), docs, book);
+    let image = crate::shared::images::examine_bytes(
+        {
+            let mut buf = Vec::new();
+            let mut enc = png::Encoder::new(&mut buf, 1, 1);
+            enc.set_color(png::ColorType::Rgba);
+            enc.set_depth(png::BitDepth::Eight);
+            enc.write_header()
+                .unwrap()
+                .write_image_data(&[1, 2, 3, 255])
+                .unwrap();
+            buf
+        },
+        "front.png".into(),
+    )
+    .expect("decodes");
+
+    let rx = p.app_ctx.event_hub.subscribe_receiver();
+    vm.set_cover(&image).expect("set the cover");
+    let watched = mutation_origins();
+    let mut saw_book = false;
+    while let Ok(ev) = rx.try_recv() {
+        if let Origin::DirectAccess(entity @ DirectAccessEntity::BinderItem(EntityEvent::Updated)) =
+            ev.origin.clone()
+            && ev.ids.contains(&book)
+        {
+            assert!(watched.contains(&ev.origin), "the autosave does not listen");
+            assert!(
+                mutation_ids_belong_to_work(&p.app_ctx, p.work_id, entity, &ev.ids),
+                "credited to another Work"
+            );
+            saw_book = true;
+        }
+    }
+    assert!(saw_book, "setting the cover said nothing about the Book");
 }

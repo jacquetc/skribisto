@@ -286,6 +286,18 @@ pub fn status_capable(role: &Role, sub_role: &SubRole) -> bool {
     !allowed_content(role, sub_role).is_empty()
 }
 
+/// Whether this `(role, sub_role)` may carry a **cover** picture.
+///
+/// A cover is the front of one book, so exactly the rows that open a book carry one:
+/// `Folder/Book`, and the legacy flat `Item/BookBegin` marker. Derived from
+/// [`SubRoleExt::opens_book`] rather than listed, for the reason [`status_capable`]
+/// is derived: the export walks the same predicate to find where a Book starts, and a
+/// second list would let the two disagree about which rows are Books. A Work holding
+/// several Books therefore holds several covers, one on each.
+pub fn cover_capable(role: &Role, sub_role: &SubRole) -> bool {
+    is_valid_combination(role, sub_role) && sub_role.opens_book()
+}
+
 /// Whether this `(role, sub_role)` gets an **Overview** table — the dense, sortable
 /// outliner of everything under a container.
 ///
@@ -1024,6 +1036,37 @@ mod create_type_inverse_tests {
     fn a_pair_outside_the_create_vocabulary_has_no_create_type() {
         assert_eq!(CreateType::of(&Role::Item, &SubRole::Text), None);
         assert_eq!(CreateType::of(&Role::Item, &SubRole::BookBegin), None);
+    }
+}
+
+#[cfg(test)]
+mod cover_capability_tests {
+    use super::*;
+
+    /// Pins the whole answer over the matrix, so a combination added later has to be
+    /// placed on one side of it on purpose.
+    #[test]
+    fn only_the_two_book_openers_may_carry_a_cover() {
+        let with: Vec<(Role, SubRole)> = COMBINATIONS
+            .iter()
+            .filter(|c| cover_capable(&c.role, &c.sub_role))
+            .map(|c| (c.role.clone(), c.sub_role.clone()))
+            .collect();
+        assert_eq!(
+            with,
+            vec![
+                (Role::Item, SubRole::BookBegin),
+                (Role::Folder, SubRole::Book)
+            ],
+        );
+    }
+
+    /// A pairing outside the matrix never qualifies, even with a book-opening sub-role.
+    #[test]
+    fn an_invalid_combination_never_carries_a_cover() {
+        assert!(!cover_capable(&Role::Item, &SubRole::Book));
+        assert!(!cover_capable(&Role::Folder, &SubRole::BookBegin));
+        assert!(!cover_capable(&Role::Item, &SubRole::BookEnd));
     }
 }
 

@@ -185,6 +185,10 @@ impl DuplicateUseCase {
                     // which is also what Scrivener does for every item created *from*
                     // another (duplicate, split, import), rather than starting it fresh.
                     status: src.status,
+                    // Same: a duplicated Book is a copy of that Book, cover included. The
+                    // picture is the Work's, so both copies point at the one asset; the
+                    // writer gives the copy its own on its page.
+                    cover: src.cover,
                     ..Default::default()
                 })?;
 

@@ -998,6 +998,7 @@ mod tests {
             activated: true,
             is_favorite: true,
             status: None,
+            cover: None,
             is_exportable: false,
             exclude_from_numbering: false,
             indent: 3,

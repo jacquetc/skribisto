@@ -70,6 +70,7 @@ fn item(
             // *reference* survives and not merely the vocabulary. `302` is the item the
             // trash fixture below also names, which keeps the fixture small.
             status: (id == 302).then_some(91),
+            cover: None,
             uid: common::uid::fixture_uid(3),
             id,
             created_at: ts(),
@@ -4135,4 +4136,84 @@ fn a_folder_project_opened_by_its_manifest_is_recorded_under_its_folder() {
             .any(|r| r.absolute_path == folder_path),
         "and so does the recents entry"
     );
+}
+
+/// `sample_bundle`, with one picture in it and the Book (item 300) carrying `cover` as its
+/// cover's file id.
+fn bundle_with_book_cover(cover: u64) -> WorkBundle {
+    const T: &str = "2020-01-01T00:00:00+00:00";
+    let png = vec![0x89, b'P', b'N', b'G', 7, 7];
+    let mut bundle = sample_bundle();
+    bundle.assets = vec![skrib::AssetFile {
+        file_id: 700,
+        created_at: T.into(),
+        updated_at: T.into(),
+        content_hash: "front".into(),
+        file_name: "front.png".into(),
+        mime_type: "image/png".into(),
+        width: 2,
+        height: 2,
+        byte_size: png.len() as u64,
+        alt: String::new(),
+        path: skrib::media::asset_relpath("front", "png"),
+    }];
+    bundle.asset_bytes = std::collections::BTreeMap::from([("front".to_string(), png)]);
+    let book = bundle
+        .binders
+        .iter_mut()
+        .flat_map(|b| b.items.iter_mut())
+        .find(|i| i.item.file_id == 300)
+        .expect("the sample Book");
+    book.item.cover_id = Some(cover);
+    bundle
+}
+
+/// The Book of the saved project, with the picture its cover names, if any.
+fn saved_book_cover(out: &WorkBundle) -> Option<String> {
+    let book = out
+        .binders
+        .iter()
+        .flat_map(|b| b.items.iter())
+        .find(|i| i.item.title == "The Lighthouse")
+        .expect("the Book survives");
+    let id = book.item.cover_id?;
+    out.assets
+        .iter()
+        .find(|a| a.file_id == id)
+        .map(|a| a.content_hash.clone())
+}
+
+fn load_and_resave(bundle: &WorkBundle) -> WorkBundle {
+    let dir = tempfile::tempdir().unwrap();
+    let src = dir.path().join("WithCover");
+    skrib::write_bundle(src.to_str().unwrap(), SkribShape::ExplodedFolder, bundle).unwrap();
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+    work_management_controller::load_work(
+        &db,
+        &hub,
+        &LoadWorkDto {
+            media_root: String::new(),
+            file_name: src.to_str().unwrap().to_string(),
+        },
+    )
+    .expect("load");
+    // Saved back in place, as a save does: a folder project's pictures live in its own
+    // `assets/`, so a save aimed anywhere else finds no bytes and drops them.
+    store_to_bundle(&db, &hub, &src)
+}
+
+/// A Book's cover goes through the whole chain (bundle, store with its ids re-minted,
+/// bundle again) and still names the same picture.
+#[test]
+fn a_books_cover_survives_a_save_load_round_trip() {
+    let out = load_and_resave(&bundle_with_book_cover(700));
+    assert_eq!(saved_book_cover(&out).as_deref(), Some("front"));
+}
+
+/// A cover naming no picture in the project loads as no cover, without failing the load.
+#[test]
+fn a_cover_naming_no_picture_loads_as_no_cover() {
+    let out = load_and_resave(&bundle_with_book_cover(999));
+    assert_eq!(saved_book_cover(&out), None);
 }

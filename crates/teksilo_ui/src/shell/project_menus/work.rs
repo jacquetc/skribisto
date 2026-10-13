@@ -104,22 +104,6 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
             .shortcut("window.new"),
     )
     .separator()
-    // The book's cover. It sits in the Work menu rather than with
-    // Insert image…, because it belongs to the book and not to
-    // whichever scene happens to have the caret — nothing in the prose
-    // ever refers to it. Hidden with no project open, like the group
-    // above: there is no book to give a cover to.
-    .item(
-        MenuEntry::new(tr!(cover_choose()))
-            .visible(show_open.clone())
-            .intent("work.set_cover"),
-    )
-    .item(
-        MenuEntry::new(tr!(cover_clear()))
-            .visible(show_open.clone())
-            .intent("work.clear_cover"),
-    )
-    .separator()
     // ── 2. Persist / ship out ────────────────────────
     // Flush editors to the store + write to disk (also Ctrl+S).
     .item(

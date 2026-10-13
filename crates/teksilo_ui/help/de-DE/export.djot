@@ -36,6 +36,18 @@ Um einen vorinstallierten Stil zu ändern, erstellen Sie zuerst eine Kopie: Öff
 
 Weitere Formate sind HTML, Markdown, Djot, Text und LaTeX.
 
+## Einem Buch einen Umschlag geben
+
+Jedes Buch hat seinen eigenen Umschlag. Öffnen Sie das Buch und bleiben Sie auf seiner Seite
+*Buch*: Klicken Sie unter dem Titel auf *Auswählen…* und wählen Sie ein Bild im Format PNG,
+JPEG oder WebP. *Ändern…* ersetzt es, *Entfernen* nimmt es weg. In beiden Fällen bleibt das
+Bild in Ihrem Projekt.
+
+Wenn Sie ein einzelnes Buch exportieren, steht sein Umschlag am Anfang der Datei. Wenn Sie
+mehrere Bücher gemeinsam exportieren, beginnt jedes mit seinem eigenen Umschlag. Ein EPUB
+bewahrt den Umschlag im E-Book selbst, sodass Lese-Apps ihn in der Bibliothek anzeigen. Um die
+Umschläge wegzulassen, deaktivieren Sie *Mit dem Umschlag beginnen* im Exportstil.
+
 ## Ein Manuskript zur Rückmeldung senden
 
 Word (`.docx`) und LibreOffice (`.odt`) können Kommentare einschließen. Aktivieren Sie im

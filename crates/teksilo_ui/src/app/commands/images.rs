@@ -46,100 +46,6 @@ fn policy_signal(ctx: &EventContext) -> Signal<String> {
     )
 }
 
-/// `work.set_cover` and `work.clear_cover` — the book's front.
-///
-/// A cover is not inline content: nothing in the prose refers to it, so it is
-/// chosen from the book rather than typed into a scene. It rides the same
-/// storage path as an inserted picture (content-addressed file in the media
-/// directory, `Asset` row) and differs only in carrying `is_cover`.
-fn register_cover(ctx: &mut BuildContext, deps: &CommandDeps) {
-    let docs = deps.session.open_docs.clone();
-    let ids = deps.ids.clone();
-    let app_ctx = deps.app_ctx.clone();
-
-    let (d, i, a) = (docs.clone(), ids.clone(), app_ctx.clone());
-    ctx.register_action_global(Action::new("work.set_cover").on_invoke(
-        move |_intent, c: &mut EventContext| {
-            let media_dir = d.media_dir();
-            if media_dir.as_os_str().is_empty() {
-                c.show_toast(
-                    Toast::warning(tr!(image_no_project()))
-                        .scoped_id("images.no_project", i.work_id.get()),
-                );
-                return;
-            }
-            let (d, i, a) = (d.clone(), i.clone(), a.clone());
-            let req = crate::models::dialog_start_in(
-                c,
-                crate::models::FolderPurpose::InsertImage,
-                FileDialogRequest::pick_file()
-                    .title(tr!(cover_choose_title()))
-                    .add_filter(
-                        tr!(image_filter_label()).resolve_now(),
-                        &["png", "jpg", "jpeg", "webp"],
-                    ),
-            );
-            let _ = c.pick_file(req, move |res, c| {
-                let FileDialogResult::File(Some(path)) = res else {
-                    return;
-                };
-                crate::models::remember_dialog_file(
-                    c,
-                    crate::models::FolderPurpose::InsertImage,
-                    &path,
-                );
-                // A cover is stored as the writer's file, never downscaled: it is
-                // the one picture in the project whose resolution is the whole
-                // point, and an ereader renders it full-screen.
-                let image = match images::examine(&path) {
-                    Ok(p) => p,
-                    Err(e) => {
-                        c.show_toast(
-                            Toast::error(lit!(e.to_string()))
-                                .scoped_id("images.failed", i.work_id.get()),
-                        );
-                        return;
-                    }
-                };
-                if let Err(e) = images::store(&image, &d.media_dir()) {
-                    c.show_toast(
-                        Toast::error(lit!(e.to_string()))
-                            .scoped_id("images.failed", i.work_id.get()),
-                    );
-                    return;
-                }
-                match images::set_cover(&a, i.stack_id.get(), i.work_id.get(), Some(&image)) {
-                    Ok(()) => c.show_toast(
-                        Toast::success(tr!(cover_set())).scoped_id("images.cover", i.work_id.get()),
-                    ),
-                    Err(_) => c.show_toast(
-                        Toast::error(tr!(image_not_recorded()))
-                            .scoped_id("images.failed", i.work_id.get()),
-                    ),
-                };
-            });
-        },
-    ));
-
-    let (i, a) = (ids.clone(), app_ctx.clone());
-    ctx.register_action_global(Action::new("work.clear_cover").on_invoke(
-        move |_intent, c: &mut EventContext| {
-            // The bytes stay. Clearing the cover un-marks a picture; it does not
-            // delete one, for the same reason undoing an insert does not — see
-            // `store`'s doc on why reclamation is always explicit.
-            match images::set_cover(&a, i.stack_id.get(), i.work_id.get(), None) {
-                Ok(()) => c.show_toast(
-                    Toast::success(tr!(cover_cleared())).scoped_id("images.cover", i.work_id.get()),
-                ),
-                Err(_) => c.show_toast(
-                    Toast::error(tr!(image_not_recorded()))
-                        .scoped_id("images.failed", i.work_id.get()),
-                ),
-            };
-        },
-    ));
-}
-
 /// `editor.insert_dropped_images` — files dropped straight onto the prose.
 ///
 /// The same pipeline `Insert image…` runs, minus the file dialog: the writer has
@@ -210,7 +116,6 @@ fn register_drop(ctx: &mut BuildContext, deps: &CommandDeps) {
 }
 
 pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
-    register_cover(ctx, deps);
     register_editing(ctx, deps);
     register_drop(ctx, deps);
     let format = deps.format.clone();
@@ -391,7 +296,6 @@ fn finish(deps: &InsertDeps, ctx: &mut EventContext, pending: PendingImage, poli
             alt: String::new(),
             // Inserting a picture into the prose never makes it the cover; that
             // is a separate, deliberate choice made from the image itself.
-            is_cover: false,
         },
         work_id,
         -1,

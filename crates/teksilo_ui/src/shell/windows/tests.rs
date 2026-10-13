@@ -782,7 +782,6 @@ fn added_locales_additional_menu_entries_have_unique_mnemonics() {
     assert_eq!(covered, shipped, "every shipped locale must be checked");
     let additions: &[(&str, &[&str])] = &[
         ("menu bar", &["menu-edit", "menu-document", "menu-image"]),
-        ("Work", &["cover-choose", "cover-clear"]),
         (
             "View",
             &[

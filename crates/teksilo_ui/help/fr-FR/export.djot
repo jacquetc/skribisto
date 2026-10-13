@@ -36,6 +36,18 @@ Pour modifier un style intégré, faites-en d’abord une copie : ouvrez
 
 Les autres formats disponibles sont HTML, Markdown, Djot, Texte et LaTeX.
 
+## Donner une couverture à un livre
+
+Chaque livre a sa propre couverture. Ouvrez le livre et restez sur sa page *Livre* : sous le
+titre, cliquez sur *Choisir…* et choisissez une image PNG, JPEG ou WebP. *Changer…* la
+remplace et *Retirer* l’enlève. Dans les deux cas, l’image reste dans votre projet.
+
+Quand vous exportez un seul livre, sa couverture ouvre le fichier. Quand vous exportez
+plusieurs livres ensemble, chacun commence par sa propre couverture. Un EPUB garde la
+couverture dans le livre numérique lui-même, et les liseuses l’affichent dans leur
+bibliothèque. Pour ne pas inclure les couvertures, désactivez *Ouvrir sur la couverture*
+dans le style d’export.
+
 ## Envoyer un manuscrit pour relecture
 
 Word (`.docx`) et LibreOffice (`.odt`) peuvent inclure les commentaires. Dans le style d’export,

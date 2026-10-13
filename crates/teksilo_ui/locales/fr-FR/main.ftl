@@ -3555,8 +3555,12 @@ image-menu-resize = &Redimensionner l’image…
 image-menu-reset-size = Taille d’&origine
 
 # La couverture du livre, choisie depuis le livre, non insérée dans une scène.
-cover-choose = &Couverture du livre…
-cover-clear = &Retirer la couverture
+cover-heading = Couverture
+cover-pick = Choisir…
+cover-change = Changer…
+cover-remove = Retirer
+cover-none = Pas encore de couverture
+cover-missing = Le fichier de l’image manque dans le projet
 cover-choose-title = Choisir une couverture
 cover-set = La couverture est définie.
 cover-cleared = La couverture a été retirée. L’image est toujours dans le projet.

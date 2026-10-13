@@ -240,7 +240,6 @@ impl IngestedPicture {
             height: self.height,
             byte_size: self.bytes.len() as u64,
             alt: String::new(),
-            is_cover: false,
             path: self.relative_path(),
         }
     }

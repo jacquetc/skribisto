@@ -25,6 +25,17 @@ Per cambiare uno stile integrato, prima copialo: apri *Impostazioni ▸ Compilaz
 
 Sono disponibili anche HTML, Markdown, Djot, Testo e LaTeX.
 
+## Dai una copertina a un libro
+
+Ogni libro ha la sua copertina. Apri il libro e resta sulla sua pagina *Libro*: sotto il
+titolo, fai clic su *Scegli…* e seleziona un'immagine PNG, JPEG o WebP. *Cambia…* la
+sostituisce e *Rimuovi* la toglie. In entrambi i casi l'immagine resta nel tuo progetto.
+
+Quando esporti un solo libro, la sua copertina apre il file. Quando esporti più libri insieme,
+ognuno comincia con la propria copertina. Un EPUB conserva la copertina nell'ebook stesso, così
+i lettori la mostrano nella loro libreria. Per lasciare fuori le copertine, disattiva *Inizia
+con la copertina* nello stile di esportazione.
+
 ## Invia un manoscritto per la revisione
 
 Word (`.docx`) e LibreOffice (`.odt`) possono includere commenti. Nello stile di esportazione attiva *Includi commenti* e lascia attivo *Includi marcatori di reimportazione*, così Skribisto può associare i capitoli restituiti al progetto.

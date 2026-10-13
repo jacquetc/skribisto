@@ -11,8 +11,8 @@
 
 use frontend::AppContext;
 use frontend::commands::{
-    binder_commands, binder_item_commands, binder_item_management_commands, binder_tag_commands,
-    content_commands, root_commands, system_commands, trash_info_commands,
+    asset_commands, binder_commands, binder_item_commands, binder_item_management_commands,
+    binder_tag_commands, content_commands, root_commands, system_commands, trash_info_commands,
     trash_management_commands, undo_redo_commands, work_commands,
 };
 use frontend::common::direct_access::binder::BinderRelationshipField;
@@ -21,9 +21,9 @@ use frontend::common::direct_access::work::WorkRelationshipField;
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
 use frontend::common::types::EntityId;
 use frontend::direct_access::{
-    BinderItemRelationshipDto, BinderRelationshipDto, CreateBinderDto, CreateBinderItemDto,
-    CreateBinderTagDto, CreateContentDto, CreateRootDto, CreateSystemDto, CreateWorkDto,
-    WorkRelationshipDto,
+    BinderItemRelationshipDto, BinderRelationshipDto, CreateAssetDto, CreateBinderDto,
+    CreateBinderItemDto, CreateBinderTagDto, CreateContentDto, CreateRootDto, CreateSystemDto,
+    CreateWorkDto, WorkRelationshipDto,
 };
 
 use binder_item_management::{
@@ -2921,4 +2921,125 @@ fn promote_outside_the_note_pair_leaves_the_export_flag_alone() {
     .expect("promote the part to a book");
     assert_eq!(item(&fx.ctx, f).sub_role, BinderItemSubRole::Book);
     assert!(!item(&fx.ctx, f).is_exportable, "and survives Part -> Book");
+}
+
+// ───────────────────────────── book covers ─────────────────────────────
+
+/// A picture, and a Book carrying it as its cover.
+fn book_with_cover(fx: &Fixture) -> (EntityId, EntityId) {
+    let book = mk_item_sub_role(
+        &fx.ctx,
+        fx.setup,
+        "Book",
+        0,
+        BinderItemRole::Folder,
+        BinderItemSubRole::Book,
+    );
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[book]);
+    let picture = asset_commands::create_orphan_asset(
+        &fx.ctx,
+        Some(fx.setup),
+        &CreateAssetDto {
+            content_hash: "cafe".into(),
+            file_name: "front.png".into(),
+            mime_type: "image/png".into(),
+            ..Default::default()
+        },
+    )
+    .expect("create asset")
+    .id;
+    binder_item_commands::set_binder_item_relationship(
+        &fx.ctx,
+        Some(fx.setup),
+        &BinderItemRelationshipDto {
+            id: book,
+            field: BinderItemRelationshipField::Cover,
+            right_ids: vec![picture],
+        },
+    )
+    .expect("set cover");
+    assert_eq!(item(&fx.ctx, book).cover, Some(picture));
+    (book, picture)
+}
+
+/// A Book converted into a Part stops being a book, so it stops holding a cover; undo
+/// brings the Book back with its cover, and converting it back to a Book later does not
+/// resurrect the old one.
+#[test]
+fn promoting_a_book_away_clears_its_cover_and_undo_restores_it() {
+    let fx = make_fixture();
+    let (book, picture) = book_with_cover(&fx);
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    binder_item_management_commands::promote(
+        &fx.ctx,
+        Some(stack),
+        &PromoteDto {
+            item_id: book,
+            target: PromoteTarget::PartFolder.code(),
+        },
+    )
+    .expect("book -> part");
+    assert_eq!(item(&fx.ctx, book).sub_role, BinderItemSubRole::Part);
+    assert_eq!(item(&fx.ctx, book).cover, None, "a part holds no cover");
+    assert!(
+        asset_commands::get_asset(&fx.ctx, &picture)
+            .unwrap()
+            .is_some(),
+        "the picture itself stays in the project"
+    );
+
+    undo_redo_commands::undo(&fx.ctx, Some(stack)).expect("undo");
+    assert_eq!(item(&fx.ctx, book).sub_role, BinderItemSubRole::Book);
+    assert_eq!(
+        item(&fx.ctx, book).cover,
+        Some(picture),
+        "undo restores the cover"
+    );
+
+    undo_redo_commands::redo(&fx.ctx, Some(stack)).expect("redo");
+    assert_eq!(item(&fx.ctx, book).cover, None);
+
+    binder_item_management_commands::promote(
+        &fx.ctx,
+        Some(stack),
+        &PromoteDto {
+            item_id: book,
+            target: PromoteTarget::BookFolder.code(),
+        },
+    )
+    .expect("part -> book");
+    assert_eq!(
+        item(&fx.ctx, book).cover,
+        None,
+        "a new Book starts without one"
+    );
+}
+
+/// A duplicated Book is a copy of the Book, cover included; both point at the one
+/// picture the Work holds.
+#[test]
+fn duplicating_a_book_carries_its_cover() {
+    let fx = make_fixture();
+    let (book, picture) = book_with_cover(&fx);
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    let ret = binder_item_management_commands::duplicate(
+        &fx.ctx,
+        Some(stack),
+        &DuplicateDto {
+            item_ids: vec![book],
+        },
+    )
+    .expect("duplicate");
+    assert_eq!(item(&fx.ctx, ret.new_item_ids[0]).cover, Some(picture));
+}
+
+/// Removing the picture leaves its Book with no cover, never a dangling link.
+#[test]
+fn removing_the_picture_leaves_the_book_without_a_cover() {
+    let fx = make_fixture();
+    let (book, picture) = book_with_cover(&fx);
+    asset_commands::remove_asset(&fx.ctx, Some(fx.setup), &picture).expect("remove asset");
+    assert_eq!(item(&fx.ctx, book).cover, None);
 }

@@ -268,6 +268,7 @@ fn sample_inputs() -> SampleInputs {
             uid: common::uid::fixture_uid(item_id),
             // No status by default, for the same reason the ladder above is empty.
             status: None,
+            cover: None,
             id: item_id,
             created_at: now,
             updated_at: now,
@@ -361,7 +362,6 @@ fn sample_inputs() -> SampleInputs {
             height: 480,
             byte_size: 12,
             alt: "the cover".into(),
-            is_cover: false,
         },
         Asset {
             id: 51,
@@ -374,7 +374,6 @@ fn sample_inputs() -> SampleInputs {
             height: 600,
             byte_size: 9,
             alt: String::new(),
-            is_cover: false,
         },
     ];
 
@@ -604,6 +603,17 @@ pub(crate) fn build_bundle_with(
     shape: ShapeTag,
     tweak: impl FnOnce(&mut SampleInputs),
 ) -> WorkBundle {
+    build_bundle_with_bytes(shape, Default::default(), tweak)
+}
+
+/// [`build_bundle_with`], handing `from_entities` the picture bytes a save would read out
+/// of the media directory, keyed by content hash. An asset whose bytes are absent is the
+/// one the writer drops.
+pub(crate) fn build_bundle_with_bytes(
+    shape: ShapeTag,
+    asset_bytes: BTreeMap<String, Vec<u8>>,
+    tweak: impl FnOnce(&mut SampleInputs),
+) -> WorkBundle {
     let mut s = sample_inputs();
     tweak(&mut s);
     let comments = sample_comments(&s.binders);
@@ -615,7 +625,7 @@ pub(crate) fn build_bundle_with(
         &s.note_templates,
         &s.statuses,
         &s.assets,
-        Default::default(),
+        asset_bytes,
         Some(&s.smart_punctuation),
         &s.trash,
         &[],
