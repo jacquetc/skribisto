@@ -5,7 +5,8 @@ name: Release
 
 # Cuts a GitHub Release on a version tag and attaches, for four platforms'
 # worth of one application: the Linux Flatpak bundle, a standalone Linux tarball,
-# the macOS universal .dmg, and the Windows installer + portable zip.
+# Debian/Ubuntu packages for x86-64 and ARM64, the macOS universal .dmg, and the
+# Windows installer + portable zip.
 #
 # The .dmg is UNSIGNED until an Apple Developer Program enrolment exists, so its
 # users need one documented extra step (System Settings -> Privacy & Security ->
@@ -207,6 +208,120 @@ jobs:
           path: dist/*.tar.gz
           if-no-files-found: error
 
+  # -------- Linux: Debian/Ubuntu packages (.deb), x86-64 and ARM64 --------
+  #
+  # What the package installs, and what it depends on, is declared in
+  # crates/teksilo_ui/Cargo.toml under [package.metadata.deb]; this job only
+  # builds it, names it and proves it installs.
+  #
+  # Pinned to 24.04, deliberately not `ubuntu-latest` or a newer image. The
+  # package depends on the build machine's glibc or newer, and dpkg refuses it
+  # anywhere older, so the build distribution IS the oldest one the .deb reaches.
+  # 24.04 puts that floor at glibc 2.39: Ubuntu 24.04 and 26.04, Debian 13, and
+  # everything built on them. A newer runner would quietly drop 24.04 LTS, and
+  # `ubuntu-latest` would do it on the day GitHub moves the label.
+  #
+  # ARM64 builds natively on GitHub's arm runner instead of through
+  # package/linux-aarch64's Docker cross-build: same distribution as x86-64, so
+  # the same glibc floor, and nothing to cross-compile.
+  deb:
+    name: Linux .deb (${{ matrix.arch }})
+    needs: validate
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 75
+    env:
+      SKRIBISTO_GIT_DESCRIBE: ${{ github.ref_name }}
+      # No repository backs an upstream .deb, so nothing updates it: the
+      # application is its reader's only signal, exactly as for the tarball. A
+      # distribution building its own package stamps `distro` instead.
+      SKRIBISTO_CHANNEL: tarball
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/install-linux-deps
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: deb-${{ matrix.arch }}
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-deb@3.8.0
+
+      # The version is the tag, not Cargo's (see the header). A pre-release
+      # takes a `~` in the package version, because dpkg sorts `~` before
+      # anything, so 3.2.0~rc1 < 3.2.0 as in semver; with a `-` it would read
+      # `rc1` as the Debian revision and rank the candidate ABOVE the release.
+      #
+      # The FILE name follows Debian's <name>_<version>_<arch>.deb, except that
+      # a pre-release keeps the tag's `-` there: dpkg reads the version from the
+      # control file, never the name, and GitHub may rewrite a `~` in a release
+      # asset's name. For a final release the two spellings are identical.
+      - name: Build the .deb
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          deb_version="$(printf '%s' "$version" | sed 's/-/~/')-1"
+          mkdir -p dist
+          out="dist/skribisto_${version}-1_${{ matrix.arch }}.deb"
+          cargo deb -p teksilo_ui --locked --deb-version "$deb_version" -o "$out"
+          echo "DEB=$out" >> "$GITHUB_ENV"
+          echo "DEB_VERSION=$deb_version" >> "$GITHUB_ENV"
+
+      # cargo-deb names the architecture after the build target, so a runner
+      # that is not what the matrix says would produce a mislabelled package
+      # rather than a failure.
+      - name: Check the control fields
+        run: |
+          set -euo pipefail
+          dpkg-deb --info "$DEB"
+          arch="$(dpkg-deb --field "$DEB" Architecture)"
+          ver="$(dpkg-deb --field "$DEB" Version)"
+          [ "$arch" = "${{ matrix.arch }}" ] \
+            || { echo "::error::$DEB is $arch, expected ${{ matrix.arch }}"; exit 1; }
+          [ "$ver" = "$DEB_VERSION" ] \
+            || { echo "::error::$DEB is version $ver, expected $DEB_VERSION"; exit 1; }
+          dpkg-deb --contents "$DEB"
+
+      # Installed through apt on clean images, so every Depends has to resolve
+      # by name: a library renamed in a newer release fails here, not on a
+      # reader's machine. 24.04 is the floor, 26.04 and Debian 13 the newest
+      # targets. The binary then has to reject an unknown --style, which fails
+      # in the argument parser before any window: a binary that runs, not a
+      # file that exists.
+      - name: Install on Ubuntu 24.04, Ubuntu 26.04 and Debian 13
+        run: |
+          set -euo pipefail
+          for image in ubuntu:24.04 ubuntu:26.04 debian:13; do
+            echo "::group::$image"
+            docker run --rm -v "$PWD/dist:/deb:ro" -e DEB="/deb/$(basename "$DEB")" "$image" sh -c '
+              set -eu
+              export DEBIAN_FRONTEND=noninteractive
+              apt-get update -qq
+              apt-get install -y -qq --no-install-recommends "$DEB"
+              out="$(skribisto --style bogus 2>&1 || true)"
+              echo "$out"
+              case "$out" in
+                *"unknown style"*) ;;
+                *) echo "the installed binary did not run"; exit 1 ;;
+              esac
+            '
+            echo "::endgroup::"
+          done
+
+      - name: Upload the .deb
+        uses: actions/upload-artifact@v7
+        with:
+          name: skribisto-deb-${{ matrix.arch }}
+          path: dist/*.deb
+          if-no-files-found: error
+
   # -------- macOS: universal .dmg (unsigned until enrolled) --------
   macos:
     name: macOS package
@@ -387,7 +502,7 @@ jobs:
   # -------- Assemble the GitHub Release --------
   release:
     name: Create Release
-    needs: [flatpak, linux, macos, windows]
+    needs: [flatpak, linux, deb, macos, windows]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: release
@@ -402,14 +517,14 @@ jobs:
       # Collected by ARTIFACT NAME, not by a filename glob over everything that
       # was downloaded. The glob could not tell a shipping file from a staging
       # one: `windows-unsigned` holds the same binaries before signing, and a
-      # `*.zip` pattern swept it in regardless. Naming the four artifacts that
+      # `*.zip` pattern swept it in regardless. Naming the artifacts that
       # ship makes "what goes in the release" a decision rather than a side
       # effect of a pattern.
       - name: Collect release files
         run: |
           set -euo pipefail
           mkdir -p release
-          for artifact in skribisto-flatpak skribisto-linux skribisto-macos-universal skribisto-windows; do
+          for artifact in skribisto-flatpak skribisto-linux skribisto-deb-amd64 skribisto-deb-arm64 skribisto-macos-universal skribisto-windows; do
             if [ ! -d "artifacts/$artifact" ]; then
               echo "::error::expected artifact '$artifact' is missing from this run"
               exit 1
