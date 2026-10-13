@@ -1,6 +1,6 @@
 Version: 3.1.0
 Date: 2026-09-28
-Type: development
+Type: stable
 Description:
 - "Import your Scrivener projects with Work ▸ Import from ▸ Scrivener (.scriv)…, whether they come from Scrivener 3, Scrivener 2 on the Mac, Scrivener for Windows or the Linux beta. You see how your binder will look before anything is created, your keywords, targets and deadline come along, and a report tells you what to check once it is done. Your Scrivener project itself is never changed. The new help topic Coming from Scrivener explains the rest"
 - "Added app interfaces in Arabic (Saudi Arabia), Czech, Danish, Greek, Hebrew, Hungarian, Norwegian Bokmål, Dutch, Romanian, Swedish and Turkish, including menus, dialogs, settings and tooltips. Longer help articles use English"

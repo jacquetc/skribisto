@@ -86,6 +86,19 @@ jobs:
             echo "::error::the metainfo's newest release is ${NEWEST}, but this tag is ${VERSION}."
             exit 1
           fi
+          # Match the GitHub Release's prerelease policy below. Regeneration
+          # alone cannot catch a stable tag whose NEWS block says development.
+          python3 - <<'PY'
+          import os
+          import xml.etree.ElementTree as ET
+
+          tag = os.environ["GITHUB_REF_NAME"]
+          expected = "development" if "-" in tag else "stable"
+          release = ET.parse("eu.skribisto.skribisto.metainfo.xml").find("releases/release")
+          actual = release.get("type", "stable")
+          if actual != expected:
+              raise SystemExit(f"::error::Release {tag} has type {actual}; expected {expected}. Fix NEWS.yml and regenerate the metainfo before tagging.")
+          PY
           echo "NEWS.yml and the metainfo both name ${VERSION}."
 
   # -------- Linux: single .flatpak bundle --------
