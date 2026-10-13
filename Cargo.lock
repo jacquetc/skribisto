@@ -6863,9 +6863,9 @@ dependencies = [
 
 [[package]]
 name = "text-document"
-version = "1.12.5"
+version = "1.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f2dcb9bd3ec0c9dca5be8013c8f575291f6acfccc08d597847f1cf8fbe1415bf"
+checksum = "a9fd52983ef327c112db6b316e108369aab47e6246dcefa89c2e3ce435d3eb52"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -6880,9 +6880,9 @@ dependencies = [
 
 [[package]]
 name = "text-document-common"
-version = "1.12.5"
+version = "1.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf3fcb5da972fe46330e824d613d9d744afdc981423a50d79ac44eefe6675497"
+checksum = "ebcaeab8a323b7b8d74d76284af9cb217707cdbe73945ed1e9a05c66c80d1fd3"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -6905,9 +6905,9 @@ dependencies = [
 
 [[package]]
 name = "text-document-direct-access"
-version = "1.12.5"
+version = "1.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9819ff9af31017a1e744293a7917c1d0ec806e3d47d7bb7005af91832020b710"
+checksum = "1ba27c2d068e3ae11ee4b6e4993dba6cf8c426d040a52b4a4ed898261f3b6241"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6920,9 +6920,9 @@ dependencies = [
 
 [[package]]
 name = "text-document-editing"
-version = "1.12.5"
+version = "1.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "05ad630339278ca67499cff73d0761ef442ba81ff64cdead30e6d477659bfd0d"
+checksum = "3aaa801b2cb362d5039aadb250ce0f406b515a921211cc5b1914a1027bb6ee90"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6935,9 +6935,9 @@ dependencies = [
 
 [[package]]
 name = "text-document-formatting"
-version = "1.12.5"
+version = "1.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6cb42cb2d8f652a8e5914a12b3bd3806a83d7fcb4efd3969c7827a78e8b8cf1b"
+checksum = "014ce552f4c8f1cd9bb90672e7f522b2ddc79697b8faadc853a2f30d14406d95"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6950,9 +6950,9 @@ dependencies = [
 
 [[package]]
 name = "text-document-frontend"
-version = "1.12.5"
+version = "1.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ace6683e7bbaed75c73814e29f686a2a9d41b7d227335136daa806c360522e2f"
+checksum = "bc2ce7249dfe7a64529a0b1449d499165b0622faa7c7340f1305f008d84d85e9"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6970,9 +6970,9 @@ dependencies = [
 
 [[package]]
 name = "text-document-inspection"
-version = "1.12.5"
+version = "1.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b38a1da0a713eef2eaab3b6da43af986b1018f9a67bbcf866f5a4a85e4811e7d"
+checksum = "9ddd36f1b9baad065bce04300f54e935bb7a7978c65d914e6500d2eff5ecf4dc"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6985,9 +6985,9 @@ dependencies = [
 
 [[package]]
 name = "text-document-io"
-version = "1.12.5"
+version = "1.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "22ee6a152cc90169a14393319506fa44ba7ffaebf33b5faa54eba66e994ceee5"
+checksum = "625d603c23d3379bcfa8bd4c32f40f4e02f429effe427ad9d7c23fe17f06c57a"
 dependencies = [
  "anyhow",
  "chrono",
@@ -7011,9 +7011,9 @@ dependencies = [
 
 [[package]]
 name = "text-document-macros"
-version = "1.12.5"
+version = "1.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c4b2c0c4cd124b5528790e4680bb4384021170c7622340af4f31bff27f1c8468"
+checksum = "4fced3c615108edefa549fad0be1b5f9dbb991058dc716116602199db215b4e7"
 dependencies = [
  "heck",
  "proc-macro2",
@@ -7023,9 +7023,9 @@ dependencies = [
 
 [[package]]
 name = "text-document-search"
-version = "1.12.5"
+version = "1.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d8bc904973b2fc0760c66664aedad3d9b2cacddb4e1f9d75f64a913c7f8afd47"
+checksum = "040bcbeeebd1effd486316fc7f137a251fe733623456c348d97a2aee5b7c38bb"
 dependencies = [
  "anyhow",
  "caseless",
