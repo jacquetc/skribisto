@@ -3,7 +3,7 @@
 
 [package]
 name = "teksilo_ui"
-description = "Teksilo desktop UI for Skribisto"
+description = "Software for writing"
 authors.workspace = true
 version.workspace = true
 edition.workspace = true
@@ -59,6 +59,63 @@ info-plist-path = "../../package/macos/Info.plist"
 window-size = { width = 660, height = 400 }
 app-position = { x = 180, y = 170 }
 application-folder-position = { x = 480, y = 170 }
+
+# Debian/Ubuntu packaging via cargo-deb: `SKRIBISTO_CHANNEL=tarball cargo deb -p teksilo_ui`
+# writes target/debian/skribisto_<version>-1_<arch>.deb.
+#
+# The channel stamp is `tarball` because nothing updates an upstream .deb either:
+# no repository backs it, so the application's own notice is the reader's only
+# signal. A distribution building its own package stamps `distro` instead.
+#
+# The installed files are the ones the Flatpak manifest and the tarball install,
+# under /usr: icons renamed to the app id, and the MIME document icon named
+# `eu.skribisto.skribisto.project`, as the MIME entry expects. No maintainer
+# scripts: shared-mime-info, hicolor-icon-theme and desktop-file-utils refresh
+# their caches through dpkg triggers on their own.
+#
+# `depends` names what winit dlopens at run time, which dpkg-shlibdeps cannot see
+# from the binary's NEEDED entries: without them the window never opens.
+[package.metadata.deb]
+name = "skribisto"
+section = "editors"
+priority = "optional"
+features = ["pdf"]
+license-file = ["../../COPYING", "0"]
+copyright = "2026 Cyril Jacquet"
+depends = "$auto, libxkbcommon0, libwayland-client0, libwayland-cursor0, libx11-6, libx11-xcb1, libxcursor1, libxi6, libxrandr2, libxkbcommon-x11-0"
+recommends = "shared-mime-info, hicolor-icon-theme, desktop-file-utils"
+extended-description = """\
+Skribisto helps you write anything, from a novel to course notes, without \
+fighting formatting along the way. Organise a project in a binder tree of \
+folders and items; the book's structure (Part, Chapter, Scene, Note) comes from \
+the role you give each row, not from where it sits in the tree. Every writing \
+row keeps its prose and its synopsis side by side. A project exports to DOCX, \
+ODT, EPUB, PDF, HTML, Markdown, Djot, LaTeX or plain text."""
+assets = [
+    ["target/release/skribisto", "usr/bin/", "755"],
+    ["../../README.md", "usr/share/doc/skribisto/README.md", "644"],
+    ["../../eu.skribisto.skribisto.metainfo.xml", "usr/share/metainfo/", "644"],
+    ["../../resources/unix/applications/eu.skribisto.skribisto.desktop", "usr/share/applications/", "644"],
+    ["../../resources/unix/mime/eu.skribisto.skribisto.xml", "usr/share/mime/packages/", "644"],
+    ["../../resources/unix/icons/icons/hicolor/scalable/apps/skribisto.svg", "usr/share/icons/hicolor/scalable/apps/eu.skribisto.skribisto.svg", "644"],
+    ["../../resources/unix/icons/icons/hicolor/16x16/apps/skribisto.png", "usr/share/icons/hicolor/16x16/apps/eu.skribisto.skribisto.png", "644"],
+    ["../../resources/unix/icons/icons/hicolor/32x32/apps/skribisto.png", "usr/share/icons/hicolor/32x32/apps/eu.skribisto.skribisto.png", "644"],
+    ["../../resources/unix/icons/icons/hicolor/64x64/apps/skribisto.png", "usr/share/icons/hicolor/64x64/apps/eu.skribisto.skribisto.png", "644"],
+    ["../../resources/unix/icons/icons/hicolor/72x72/apps/skribisto.png", "usr/share/icons/hicolor/72x72/apps/eu.skribisto.skribisto.png", "644"],
+    ["../../resources/unix/icons/icons/hicolor/96x96/apps/skribisto.png", "usr/share/icons/hicolor/96x96/apps/eu.skribisto.skribisto.png", "644"],
+    ["../../resources/unix/icons/icons/hicolor/192x192/apps/skribisto.png", "usr/share/icons/hicolor/192x192/apps/eu.skribisto.skribisto.png", "644"],
+    ["../../resources/unix/icons/icons/hicolor/256x256/apps/skribisto.png", "usr/share/icons/hicolor/256x256/apps/eu.skribisto.skribisto.png", "644"],
+    ["../../resources/unix/icons/icons/hicolor/512x512/apps/skribisto.png", "usr/share/icons/hicolor/512x512/apps/eu.skribisto.skribisto.png", "644"],
+    ["../../resources/unix/icons/icons/hicolor/scalable/apps/skribisto.svg", "usr/share/icons/hicolor/scalable/mimetypes/eu.skribisto.skribisto.project.svg", "644"],
+    ["../../resources/unix/icons/icons/hicolor/16x16/apps/skribisto.png", "usr/share/icons/hicolor/16x16/mimetypes/eu.skribisto.skribisto.project.png", "644"],
+    ["../../resources/unix/icons/icons/hicolor/32x32/apps/skribisto.png", "usr/share/icons/hicolor/32x32/mimetypes/eu.skribisto.skribisto.project.png", "644"],
+    ["../../resources/unix/icons/icons/hicolor/64x64/apps/skribisto.png", "usr/share/icons/hicolor/64x64/mimetypes/eu.skribisto.skribisto.project.png", "644"],
+    ["../../resources/unix/icons/icons/hicolor/72x72/apps/skribisto.png", "usr/share/icons/hicolor/72x72/mimetypes/eu.skribisto.skribisto.project.png", "644"],
+    ["../../resources/unix/icons/icons/hicolor/96x96/apps/skribisto.png", "usr/share/icons/hicolor/96x96/mimetypes/eu.skribisto.skribisto.project.png", "644"],
+    ["../../resources/unix/icons/icons/hicolor/192x192/apps/skribisto.png", "usr/share/icons/hicolor/192x192/mimetypes/eu.skribisto.skribisto.project.png", "644"],
+    ["../../resources/unix/icons/icons/hicolor/256x256/apps/skribisto.png", "usr/share/icons/hicolor/256x256/mimetypes/eu.skribisto.skribisto.project.png", "644"],
+    ["../../resources/unix/icons/icons/hicolor/512x512/apps/skribisto.png", "usr/share/icons/hicolor/512x512/mimetypes/eu.skribisto.skribisto.project.png", "644"],
+]
 
 [dependencies]
 anyhow = { workspace = true }
