@@ -132,8 +132,11 @@ assets = [
 # cut before (see the script). On this package and not in the workspace
 # release.toml, because a hook there runs once for every crate released.
 # The script finds the workspace through cargo-release's WORKSPACE_ROOT, and a
-# dry run checks NEWS.yml and prints the diff without writing.
-pre-release-hook = ["../../scripts/news-to-metainfo.sh"]
+# dry run checks NEWS.yml and prints the diff without writing. release-hook.sh
+# first runs release-preflight.sh, which refuses the release while a
+# [patch.crates-io] overlay is active or Cargo.lock does not resolve from
+# crates.io alone: cargo-release rewrites the lockfile before any hook runs.
+pre-release-hook = ["../../scripts/release-hook.sh"]
 
 [dependencies]
 anyhow = { workspace = true }
