@@ -283,7 +283,9 @@ mod tests {
             .expect("the field holds the caret");
         assert!(!surface.has_selection(), "the premise: nothing selected");
 
-        tree.press_key(Key::A, Modifiers::CTRL);
+        // `COMMAND`, not `CTRL`: a declared Ctrl chord is registered as ⌘ on macOS,
+        // where a literal Ctrl+A would match no shortcut at all.
+        tree.press_key(Key::A, Modifiers::COMMAND);
         assert!(
             surface.has_selection(),
             "Ctrl+A must still reach the field's own select-all"
@@ -300,7 +302,7 @@ mod tests {
         let _claim = group.claim_entity(Signal::new(true));
         group.refresh();
 
-        tree.press_key(Key::Z, Modifiers::CTRL);
+        tree.press_key(Key::Z, Modifiers::COMMAND);
         assert_eq!(entity.undone.get(), 1);
     }
 
@@ -317,14 +319,14 @@ mod tests {
         tree.focus(field);
         group.refresh();
 
-        tree.press_key(Key::Z, Modifiers::CTRL);
+        tree.press_key(Key::Z, Modifiers::COMMAND);
         assert_eq!(entity.undone.get(), 1, "the field had nothing to undo");
 
         tree.press_key(Key::End, Modifiers::NONE);
         tree.type_text(field, "!");
         tree.layout(SizeProposal::exact(300.0, 40.0));
         group.refresh();
-        tree.press_key(Key::Z, Modifiers::CTRL);
+        tree.press_key(Key::Z, Modifiers::COMMAND);
         assert_eq!(
             entity.undone.get(),
             1,
