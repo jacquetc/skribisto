@@ -2040,6 +2040,309 @@ fn a_reply_inserted_mid_conversation_does_not_duplicate_the_replies_after_it() {
     assert_eq!(replies[2].body, "Second reply.");
 }
 
+/// A reply copied and pasted in the editor comes back twice with the same uid. The second
+/// copy must not be linked onto the first's row (a duplicate relationship target refuses the
+/// whole import); it is created as a new reply, so its text is kept.
+#[test]
+fn two_replies_sharing_one_uid_import_as_two_replies() {
+    let mut ctx = Ctx::new();
+    let first = build_docx(MANUSCRIPT, |doc| {
+        let range = find_range(doc, "needs review");
+        let mut root = DocumentComment {
+            start: range.0,
+            end: range.1,
+            uid: String::new(),
+            author: "Editor".to_string(),
+            author_initials: "ED".to_string(),
+            date: "2026-01-01T00:00:00Z".to_string(),
+            resolved: false,
+            body: "Please look at this.".to_string(),
+            replies: Vec::new(),
+        };
+        root.replies.push(TdCommentReply {
+            uid: String::new(),
+            author: "Writer".to_string(),
+            author_initials: "WR".to_string(),
+            date: "2026-01-01T01:00:00Z".to_string(),
+            body: "First reply.".to_string(),
+        });
+        let mut comments = DocumentComments::new();
+        comments.insert(root);
+        comments
+    });
+    let path = ctx.write_bytes("returned-1.docx", &first);
+    let rows = ctx.analyse(vec![path], ImportRowKind::Book);
+    ctx.apply(rows, 0);
+    let seed = ctx.comments();
+    let comment_uid = seed[0].0.uid;
+    let (r1_id, r1_uid) = (seed[0].1[0].id, seed[0].1[0].uid);
+
+    let second = build_docx(MANUSCRIPT, |doc| {
+        let range = find_range(doc, "needs review");
+        let mut root = DocumentComment {
+            start: range.0,
+            end: range.1,
+            uid: comment_uid.to_string(),
+            author: "Editor".to_string(),
+            author_initials: "ED".to_string(),
+            date: "2026-01-01T00:00:00Z".to_string(),
+            resolved: false,
+            body: "Please look at this.".to_string(),
+            replies: Vec::new(),
+        };
+        for (date, body) in [
+            ("2026-01-01T01:00:00Z", "First reply."),
+            ("2026-01-01T03:00:00Z", "Pasted copy, then edited."),
+        ] {
+            root.replies.push(TdCommentReply {
+                uid: r1_uid.to_string(),
+                author: "Writer".to_string(),
+                author_initials: "WR".to_string(),
+                date: date.to_string(),
+                body: body.to_string(),
+            });
+        }
+        let mut comments = DocumentComments::new();
+        comments.insert(root);
+        comments
+    });
+    let path = ctx.write_bytes("returned-2.docx", &second);
+    let rows = ctx.analyse(vec![path], ImportRowKind::Book);
+    ctx.apply(rows, 0);
+
+    let after = ctx.comments();
+    assert_eq!(after.len(), 1, "still one thread: {after:#?}");
+    let replies = &after[0].1;
+    assert_eq!(replies.len(), 2, "{replies:#?}");
+    assert_eq!(replies[0].id, r1_id, "the first copy keeps the row");
+    assert_eq!(replies[0].body, "First reply.");
+    assert_eq!(replies[1].body, "Pasted copy, then edited.");
+    assert_ne!(replies[1].id, r1_id);
+    assert_ne!(replies[1].uid, r1_uid, "the copy gets its own identity");
+}
+
+/// A new thread whose reply carries a uid this Work never had keeps that uid, so the
+/// next round trip recognises the reply; a pasted copy of it in the same thread gets
+/// one of its own rather than a second row wearing the same identity.
+#[test]
+fn a_new_replys_own_uid_is_kept_and_its_copy_gets_another() {
+    let mut ctx = Ctx::new();
+    let foreign = uuid::Uuid::new_v4();
+    let bytes = build_docx(MANUSCRIPT, |doc| {
+        let range = find_range(doc, "needs review");
+        let mut root = DocumentComment {
+            start: range.0,
+            end: range.1,
+            uid: String::new(),
+            author: "Editor".to_string(),
+            author_initials: "ED".to_string(),
+            date: "2026-01-01T00:00:00Z".to_string(),
+            resolved: false,
+            body: "Please look at this.".to_string(),
+            replies: Vec::new(),
+        };
+        for (date, body) in [
+            ("2026-01-01T01:00:00Z", "First reply."),
+            ("2026-01-01T03:00:00Z", "Pasted copy, then edited."),
+        ] {
+            root.replies.push(TdCommentReply {
+                uid: foreign.to_string(),
+                author: "Writer".to_string(),
+                author_initials: "WR".to_string(),
+                date: date.to_string(),
+                body: body.to_string(),
+            });
+        }
+        let mut comments = DocumentComments::new();
+        comments.insert(root);
+        comments
+    });
+    let path = ctx.write_bytes("returned.docx", &bytes);
+    let rows = ctx.analyse(vec![path], ImportRowKind::Book);
+    ctx.apply(rows, 0);
+
+    let after = ctx.comments();
+    assert_eq!(after.len(), 1, "{after:#?}");
+    let replies = &after[0].1;
+    assert_eq!(replies.len(), 2, "{replies:#?}");
+    assert_eq!(replies[0].body, "First reply.");
+    assert_eq!(replies[0].uid, foreign, "the file's own uid is kept");
+    assert_eq!(replies[1].body, "Pasted copy, then edited.");
+    assert_ne!(replies[1].uid, foreign, "the copy gets its own identity");
+}
+
+/// One comment of a returning file, with its replies as `(uid, date, body)`.
+fn returning_comment(
+    doc: &TextDocument,
+    needle: &str,
+    uid: String,
+    body: &str,
+    replies: &[(String, &str, &str)],
+) -> DocumentComment {
+    let range = find_range(doc, needle);
+    let mut root = DocumentComment {
+        start: range.0,
+        end: range.1,
+        uid,
+        author: "Editor".to_string(),
+        author_initials: "ED".to_string(),
+        date: "2026-01-01T00:00:00Z".to_string(),
+        resolved: false,
+        body: body.to_string(),
+        replies: Vec::new(),
+    };
+    for (uid, date, body) in replies {
+        root.replies.push(TdCommentReply {
+            uid: uid.clone(),
+            author: "Writer".to_string(),
+            author_initials: "WR".to_string(),
+            date: date.to_string(),
+            body: body.to_string(),
+        });
+    }
+    root
+}
+
+/// A reply copied from one thread into another comes back carrying the first thread's
+/// reply uid. The copy is a new row of the second thread with an identity of its own; the
+/// original keeps its row and its uid, so the next round trip still recognises it.
+#[test]
+fn a_reply_copied_into_another_thread_gets_its_own_uid() {
+    let mut ctx = Ctx::new();
+    // Distinct uids from the start: `DocumentComments` is keyed by uid, so two comments
+    // without one would collapse into a single entry before the file is even written.
+    let first = build_docx(MANUSCRIPT, |doc| {
+        let mut comments = DocumentComments::new();
+        comments.insert(returning_comment(
+            doc,
+            "needs review",
+            uuid::Uuid::new_v4().to_string(),
+            "Please look at this.",
+            &[(String::new(), "2026-01-01T01:00:00Z", "First reply.")],
+        ));
+        comments.insert(returning_comment(
+            doc,
+            "unrelated paragraph",
+            uuid::Uuid::new_v4().to_string(),
+            "And this one.",
+            &[],
+        ));
+        comments
+    });
+    let path = ctx.write_bytes("returned-1.docx", &first);
+    let rows = ctx.analyse(vec![path], ImportRowKind::Book);
+    ctx.apply(rows, 0);
+    let seed = ctx.comments();
+    let a = seed
+        .iter()
+        .find(|(c, _)| c.body == "Please look at this.")
+        .unwrap();
+    let b = seed
+        .iter()
+        .find(|(c, _)| c.body == "And this one.")
+        .unwrap();
+    let (a_uid, b_uid) = (a.0.uid, b.0.uid);
+    let (r_id, r_uid) = (a.1[0].id, a.1[0].uid);
+
+    let second = build_docx(MANUSCRIPT, |doc| {
+        let mut comments = DocumentComments::new();
+        comments.insert(returning_comment(
+            doc,
+            "needs review",
+            a_uid.to_string(),
+            "Please look at this.",
+            &[(r_uid.to_string(), "2026-01-01T01:00:00Z", "First reply.")],
+        ));
+        comments.insert(returning_comment(
+            doc,
+            "unrelated paragraph",
+            b_uid.to_string(),
+            "And this one.",
+            &[(r_uid.to_string(), "2026-01-01T05:00:00Z", "Copied here.")],
+        ));
+        comments
+    });
+    let path = ctx.write_bytes("returned-2.docx", &second);
+    let rows = ctx.analyse(vec![path], ImportRowKind::Book);
+    ctx.apply(rows, 0);
+
+    let after = ctx.comments();
+    assert_eq!(after.len(), 2, "{after:#?}");
+    let a = after.iter().find(|(c, _)| c.uid == a_uid).unwrap();
+    let b = after.iter().find(|(c, _)| c.uid == b_uid).unwrap();
+    assert_eq!(a.1.len(), 1, "{a:#?}");
+    assert_eq!(
+        (a.1[0].id, a.1[0].uid),
+        (r_id, r_uid),
+        "the original keeps its row"
+    );
+    assert_eq!(b.1.len(), 1, "{b:#?}");
+    assert_eq!(b.1[0].body, "Copied here.");
+    assert_ne!(b.1[0].id, r_id);
+    assert_ne!(b.1[0].uid, r_uid, "the copy gets its own identity");
+}
+
+/// Two new comments of one file carrying the same foreign uids, for the comment and for
+/// its reply (a whole thread copied and pasted in the editor), become rows with distinct
+/// identities: the first keeps the file's uids, the copy gets its own.
+#[test]
+fn a_copied_new_thread_does_not_share_uids_with_its_original() {
+    let mut ctx = Ctx::new();
+    let (thread, reply) = (uuid::Uuid::new_v4(), uuid::Uuid::new_v4());
+    let (copy_thread, copy_reply) = (uuid::Uuid::new_v4(), uuid::Uuid::new_v4());
+    let bytes = build_docx(MANUSCRIPT, |doc| {
+        let mut comments = DocumentComments::new();
+        for (needle, t, r) in [
+            ("needs review", thread, reply),
+            ("unrelated paragraph", copy_thread, copy_reply),
+        ] {
+            comments.insert(returning_comment(
+                doc,
+                needle,
+                t.to_string(),
+                "Please look at this.",
+                &[(r.to_string(), "2026-01-01T01:00:00Z", "First reply.")],
+            ));
+        }
+        comments
+    });
+    let path = ctx.write_bytes("returned.docx", &bytes);
+    let rows = ctx.analyse(vec![path], ImportRowKind::Book);
+    // The writer above cannot put one uid on two comments (`DocumentComments` is keyed by
+    // it), so the copy is given the original's uids after reading, which is what a reader
+    // handing over a pasted thread produces.
+    let rows: Vec<DocumentImportRow> = rows
+        .into_iter()
+        .map(|row| {
+            let json = serde_json::to_string(&row)
+                .unwrap()
+                .replace(&copy_thread.to_string(), &thread.to_string())
+                .replace(&copy_reply.to_string(), &reply.to_string());
+            serde_json::from_str(&json).unwrap()
+        })
+        .collect();
+    ctx.apply(rows, 0);
+
+    let after = ctx.comments();
+    assert_eq!(after.len(), 2, "{after:#?}");
+    let comment_uids: Vec<_> = after.iter().map(|(c, _)| c.uid).collect();
+    assert!(
+        comment_uids.contains(&thread),
+        "the first keeps the file's uid"
+    );
+    assert_ne!(comment_uids[0], comment_uids[1], "{comment_uids:?}");
+    let reply_uids: Vec<_> = after
+        .iter()
+        .flat_map(|(_, r)| r.iter().map(|r| r.uid))
+        .collect();
+    assert_eq!(reply_uids.len(), 2, "{after:#?}");
+    assert!(
+        reply_uids.contains(&reply),
+        "the first keeps the file's uid"
+    );
+    assert_ne!(reply_uids[0], reply_uids[1], "{reply_uids:?}");
+}
+
 // ── The carrier that actually survives an editor ────────────────────────────
 //
 // Everything in the M-S7 section above recognises a returning comment by its

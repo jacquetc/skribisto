@@ -413,8 +413,7 @@ impl ApplyDocumentImportUseCase {
         // import recognised and updated in place — see the module doc's "Undo
         // has to put an updated row's PREVIOUS state back" for why these are
         // tracked separately from `created_comment_ids`.
-        let mut updated_comments: Vec<(Comment, Comment)> = Vec::new();
-        let mut updated_replies: Vec<(CommentReply, CommentReply)> = Vec::new();
+        let mut ledger = ImportLedger::default();
 
         // Every footnote the project already holds, read once. Two questions need it:
         // which labels are taken (a label must be free across the whole project, not
@@ -603,8 +602,7 @@ impl ApplyDocumentImportUseCase {
                         reply_owner: &reply_owner_by_uid,
                         by_tag: &existing_comments_by_tag,
                     },
-                    &mut updated_comments,
-                    &mut updated_replies,
+                    &mut ledger,
                 )?;
                 if outcome.newly_created {
                     created_comment_ids.push(outcome.id);
@@ -789,8 +787,7 @@ impl ApplyDocumentImportUseCase {
                             reply_owner: &reply_owner_by_uid,
                             by_tag: &existing_comments_by_tag,
                         },
-                        &mut updated_comments,
-                        &mut updated_replies,
+                        &mut ledger,
                     )?;
                     if outcome.newly_created {
                         created_comment_ids.push(outcome.id);
@@ -871,8 +868,8 @@ impl ApplyDocumentImportUseCase {
         self.snap_after = Some(snap_after);
         self.work_id = dto.work_id;
         self.created_comment_ids = created_comment_ids;
-        self.updated_comments = updated_comments;
-        self.updated_replies = updated_replies;
+        self.updated_comments = ledger.comments;
+        self.updated_replies = ledger.replies;
         self.created_footnote_ids = created_footnote_ids;
         self.created_asset_ids = pictures.created_ids;
         self.created_asset_names = pictures.created_names;
@@ -1056,14 +1053,29 @@ struct ExistingComments<'a> {
     by_tag: &'a HashMap<String, uuid::Uuid>,
 }
 
+/// What this import has written so far, across every comment it handles.
+#[derive(Default)]
+struct ImportLedger {
+    /// `(before, after)` for every comment recognised and updated in place.
+    comments: Vec<(Comment, Comment)>,
+    /// `(before, after)` for every reply recognised and updated in place.
+    replies: Vec<(CommentReply, CommentReply)>,
+    /// Uids this import gave to comments it created. A new comment keeps the file's uid
+    /// only when neither the Work nor an earlier comment of this import already wears it:
+    /// a comment copied and pasted in the editor comes back twice with one uid, and two
+    /// rows wearing it would leave the next round trip unable to tell them apart.
+    new_comment_uids: HashSet<uuid::Uuid>,
+    /// The same, for replies, whichever thread they were created in.
+    new_reply_uids: HashSet<uuid::Uuid>,
+}
+
 fn create_or_update_comment(
     uow: &mut dyn ApplyDocumentImportUnitOfWorkTrait,
     comment: &ImportComment,
     content_id: EntityId,
     now: chrono::DateTime<chrono::Utc>,
     existing: &ExistingComments<'_>,
-    updated_comments: &mut Vec<(Comment, Comment)>,
-    updated_replies: &mut Vec<(CommentReply, CommentReply)>,
+    ledger: &mut ImportLedger,
 ) -> Result<CommentOutcome> {
     let ExistingComments {
         comments: existing_comments,
@@ -1154,7 +1166,7 @@ fn create_or_update_comment(
         // `None` while creating a brand-new one, where no incoming reply can legitimately
         // already have an owner.
         let recognised = reply_uid
-            .filter(|u| reply_owner.get(u).copied() == existing_id)
+            .filter(|u| reply_owner.get(u).copied() == existing_id && !claimed.contains(u))
             .or_else(|| {
                 // **A reply carries no mark of its own.** Both formats anchor a reply to the
                 // same range as the thread it answers, so there is no span for a bookmark to
@@ -1197,7 +1209,7 @@ fn create_or_update_comment(
                     body: body.clone(),
                 };
                 uow.update_comment_reply(&updated)?;
-                updated_replies.push((existing.clone(), updated));
+                ledger.replies.push((existing.clone(), updated));
                 existing.id
             }
             None => {
@@ -1208,7 +1220,13 @@ fn create_or_update_comment(
                     // never had — e.g. the local row it once matched was
                     // deleted), so it can itself be recognised on the *next*
                     // round trip.
-                    uid: reply_uid.unwrap_or_else(common::uid::new_uid),
+                    // Not when a reply of the Work, in any thread, or one this import
+                    // already created wears it: see `ImportLedger::new_comment_uids`.
+                    uid: reply_uid
+                        .filter(|u| {
+                            !existing_replies.contains_key(u) && !ledger.new_reply_uids.contains(u)
+                        })
+                        .unwrap_or_else(common::uid::new_uid),
                     created_at: at,
                     updated_at: at,
                     author_name: author_name.clone(),
@@ -1216,6 +1234,7 @@ fn create_or_update_comment(
                     body: body.clone(),
                     ..Default::default()
                 })?;
+                ledger.new_reply_uids.insert(created.uid);
                 created.id
             }
         };
@@ -1310,7 +1329,7 @@ fn create_or_update_comment(
                 &CommentRelationshipField::Replies,
                 &reply_ids,
             )?;
-            updated_comments.push((existing.clone(), updated));
+            ledger.comments.push((existing.clone(), updated));
             (existing.id, false)
         }
         None => {
@@ -1322,8 +1341,11 @@ fn create_or_update_comment(
                 // fresh row: reuse the file's own uid when it offered one —
                 // preserving that identity is strictly better than discarding it
                 // — and mint a new one otherwise, exactly as the pre-M-S7 path
-                // always did.
-                uid: uid.unwrap_or_else(common::uid::new_uid),
+                // always did. Not when an earlier comment of this import already
+                // took it: see `ImportLedger::new_comment_uids`.
+                uid: uid
+                    .filter(|u| !ledger.new_comment_uids.contains(u))
+                    .unwrap_or_else(common::uid::new_uid),
                 created_at: written,
                 updated_at: written,
                 kind: anchor_kind(kind),
@@ -1342,6 +1364,7 @@ fn create_or_update_comment(
                 block_ordinal_hint: (*block_ordinal_hint).max(0) as u64,
                 ..Default::default()
             })?;
+            ledger.new_comment_uids.insert(created.uid);
 
             uow.set_comment_relationship(
                 &created.id,
