@@ -37,9 +37,9 @@ impl From<&CommentReplyDto> for CommentReply {
     fn from(dto: &CommentReplyDto) -> Self {
         CommentReply {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
-            uid: dto.uid.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            uid: dto.uid,
             author_name: dto.author_name.clone(),
             author_initials: dto.author_initials.clone(),
             body: dto.body.clone(),
@@ -89,9 +89,9 @@ impl From<&CreateCommentReplyDto> for CommentReply {
     fn from(dto: &CreateCommentReplyDto) -> Self {
         CommentReply {
             id: 0,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
-            uid: dto.uid.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            uid: dto.uid,
             author_name: dto.author_name.clone(),
             author_initials: dto.author_initials.clone(),
             body: dto.body.clone(),
@@ -140,9 +140,9 @@ impl From<&UpdateCommentReplyDto> for CommentReply {
     fn from(dto: &UpdateCommentReplyDto) -> Self {
         CommentReply {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
-            uid: dto.uid.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            uid: dto.uid,
             author_name: dto.author_name.clone(),
             author_initials: dto.author_initials.clone(),
             body: dto.body.clone(),

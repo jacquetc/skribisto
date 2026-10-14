@@ -303,7 +303,7 @@ impl<'a> WorkInfoRepository<'a> {
         };
         // get all strong forward relationship fields
 
-        let search = entity.search.clone();
+        let search = entity.search;
         let progress_snapshots = entity.progress_snapshots.clone();
 
         // remove all strong relationships, initiating a cascade remove

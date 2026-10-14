@@ -13,7 +13,7 @@ use crate::entities::CommentReply;
 crate::impl_leaf_entity_table!(
     entity: CommentReply,
     entity_name: "comment_reply",
-    store_field: comment_replys,
+    store_field: comment_replies,
     table_trait: CommentReplyTable,
     table_ro_trait: CommentReplyTableRO,
     table_struct: CommentReplyHashMapTable,

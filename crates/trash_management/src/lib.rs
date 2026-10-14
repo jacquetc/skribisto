@@ -11,5 +11,4 @@ pub mod trash_management_controller;
 pub(crate) mod trash_ops;
 mod units_of_work;
 pub(crate) mod use_cases;
-
 pub use dtos::*;

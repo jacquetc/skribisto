@@ -6,5 +6,4 @@ pub mod analysis_management_controller;
 pub mod dtos;
 mod units_of_work;
 pub(crate) mod use_cases;
-
 pub use dtos::*;

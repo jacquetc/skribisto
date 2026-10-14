@@ -39,11 +39,11 @@ impl From<&ProgressSnapshotDto> for ProgressSnapshot {
     fn from(dto: &ProgressSnapshotDto) -> Self {
         ProgressSnapshot {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
-            day: dto.day.clone(),
-            total_word_count: dto.total_word_count.clone(),
-            total_char_count: dto.total_char_count.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            day: dto.day,
+            total_word_count: dto.total_word_count,
+            total_char_count: dto.total_char_count,
             book_item_ids: dto.book_item_ids.clone(),
             book_word_counts: dto.book_word_counts.clone(),
         }
@@ -95,11 +95,11 @@ impl From<&CreateProgressSnapshotDto> for ProgressSnapshot {
     fn from(dto: &CreateProgressSnapshotDto) -> Self {
         ProgressSnapshot {
             id: 0,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
-            day: dto.day.clone(),
-            total_word_count: dto.total_word_count.clone(),
-            total_char_count: dto.total_char_count.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            day: dto.day,
+            total_word_count: dto.total_word_count,
+            total_char_count: dto.total_char_count,
             book_item_ids: dto.book_item_ids.clone(),
             book_word_counts: dto.book_word_counts.clone(),
         }
@@ -150,11 +150,11 @@ impl From<&UpdateProgressSnapshotDto> for ProgressSnapshot {
     fn from(dto: &UpdateProgressSnapshotDto) -> Self {
         ProgressSnapshot {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
-            day: dto.day.clone(),
-            total_word_count: dto.total_word_count.clone(),
-            total_char_count: dto.total_char_count.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            day: dto.day,
+            total_word_count: dto.total_word_count,
+            total_char_count: dto.total_char_count,
             book_item_ids: dto.book_item_ids.clone(),
             book_word_counts: dto.book_word_counts.clone(),
         }

@@ -13,7 +13,7 @@ use crate::entities::BinderStatus;
 crate::impl_leaf_entity_table!(
     entity: BinderStatus,
     entity_name: "binder_status",
-    store_field: binder_statuss,
+    store_field: binder_statuses,
     table_trait: BinderStatusTable,
     table_ro_trait: BinderStatusTableRO,
     table_struct: BinderStatusHashMapTable,

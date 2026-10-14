@@ -35,11 +35,11 @@ impl From<&HolidayDto> for Holiday {
     fn from(dto: &HolidayDto) -> Self {
         Holiday {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
             label: dto.label.clone(),
-            start_date: dto.start_date.clone(),
-            end_date: dto.end_date.clone(),
+            start_date: dto.start_date,
+            end_date: dto.end_date,
         }
     }
 }
@@ -83,11 +83,11 @@ impl From<&CreateHolidayDto> for Holiday {
     fn from(dto: &CreateHolidayDto) -> Self {
         Holiday {
             id: 0,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
             label: dto.label.clone(),
-            start_date: dto.start_date.clone(),
-            end_date: dto.end_date.clone(),
+            start_date: dto.start_date,
+            end_date: dto.end_date,
         }
     }
 }
@@ -130,11 +130,11 @@ impl From<&UpdateHolidayDto> for Holiday {
     fn from(dto: &UpdateHolidayDto) -> Self {
         Holiday {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
             label: dto.label.clone(),
-            start_date: dto.start_date.clone(),
-            end_date: dto.end_date.clone(),
+            start_date: dto.start_date,
+            end_date: dto.end_date,
         }
     }
 }

@@ -33,8 +33,8 @@ impl From<&SystemDto> for System {
     fn from(dto: &SystemDto) -> Self {
         System {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
             recent_works: dto.recent_works.clone(),
             work_infos: dto.work_infos.clone(),
         }
@@ -77,8 +77,8 @@ impl From<&CreateSystemDto> for System {
     fn from(dto: &CreateSystemDto) -> Self {
         System {
             id: 0,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
             recent_works: dto.recent_works.clone(),
             work_infos: dto.work_infos.clone(),
         }
@@ -118,8 +118,8 @@ impl From<&UpdateSystemDto> for System {
     fn from(dto: &UpdateSystemDto) -> Self {
         System {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
             recent_works: Default::default(),
             work_infos: Default::default(),
         }

@@ -43,15 +43,15 @@ impl From<&BinderTagDto> for BinderTag {
     fn from(dto: &BinderTagDto) -> Self {
         BinderTag {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
-            uid: dto.uid.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            uid: dto.uid,
             name: dto.name.clone(),
             color: dto.color.clone(),
             details: dto.details.clone(),
-            discoverable: dto.discoverable.clone(),
-            creates_in: dto.creates_in.clone(),
-            note_template: dto.note_template.clone(),
+            discoverable: dto.discoverable,
+            creates_in: dto.creates_in,
+            note_template: dto.note_template,
         }
     }
 }
@@ -107,15 +107,15 @@ impl From<&CreateBinderTagDto> for BinderTag {
     fn from(dto: &CreateBinderTagDto) -> Self {
         BinderTag {
             id: 0,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
-            uid: dto.uid.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            uid: dto.uid,
             name: dto.name.clone(),
             color: dto.color.clone(),
             details: dto.details.clone(),
-            discoverable: dto.discoverable.clone(),
-            creates_in: dto.creates_in.clone(),
-            note_template: dto.note_template.clone(),
+            discoverable: dto.discoverable,
+            creates_in: dto.creates_in,
+            note_template: dto.note_template,
         }
     }
 }
@@ -168,13 +168,13 @@ impl From<&UpdateBinderTagDto> for BinderTag {
     fn from(dto: &UpdateBinderTagDto) -> Self {
         BinderTag {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
-            uid: dto.uid.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            uid: dto.uid,
             name: dto.name.clone(),
             color: dto.color.clone(),
             details: dto.details.clone(),
-            discoverable: dto.discoverable.clone(),
+            discoverable: dto.discoverable,
             creates_in: Default::default(),
             note_template: Default::default(),
         }

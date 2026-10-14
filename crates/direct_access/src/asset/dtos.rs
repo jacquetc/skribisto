@@ -43,14 +43,14 @@ impl From<&AssetDto> for Asset {
     fn from(dto: &AssetDto) -> Self {
         Asset {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
             content_hash: dto.content_hash.clone(),
             file_name: dto.file_name.clone(),
             mime_type: dto.mime_type.clone(),
-            width: dto.width.clone(),
-            height: dto.height.clone(),
-            byte_size: dto.byte_size.clone(),
+            width: dto.width,
+            height: dto.height,
+            byte_size: dto.byte_size,
             alt: dto.alt.clone(),
         }
     }
@@ -107,14 +107,14 @@ impl From<&CreateAssetDto> for Asset {
     fn from(dto: &CreateAssetDto) -> Self {
         Asset {
             id: 0,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
             content_hash: dto.content_hash.clone(),
             file_name: dto.file_name.clone(),
             mime_type: dto.mime_type.clone(),
-            width: dto.width.clone(),
-            height: dto.height.clone(),
-            byte_size: dto.byte_size.clone(),
+            width: dto.width,
+            height: dto.height,
+            byte_size: dto.byte_size,
             alt: dto.alt.clone(),
         }
     }
@@ -170,14 +170,14 @@ impl From<&UpdateAssetDto> for Asset {
     fn from(dto: &UpdateAssetDto) -> Self {
         Asset {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
             content_hash: dto.content_hash.clone(),
             file_name: dto.file_name.clone(),
             mime_type: dto.mime_type.clone(),
-            width: dto.width.clone(),
-            height: dto.height.clone(),
-            byte_size: dto.byte_size.clone(),
+            width: dto.width,
+            height: dto.height,
+            byte_size: dto.byte_size,
             alt: dto.alt.clone(),
         }
     }

@@ -603,7 +603,9 @@ fn remember_folder(deps: &CaptureDeps, tag_id: Option<u64>, folder: u64) -> bool
 mod tests {
     use super::*;
     use common::entities::{BinderItemRole, BinderItemSubRole};
-    use frontend::direct_access::{CreateBinderDto, CreateBinderItemDto, CreateWorkDto};
+    use frontend::direct_access::{
+        CreateBinderDto, CreateBinderItemDto, CreateBinderTagDto, CreateWorkDto,
+    };
 
     /// A Work with two binders, because "which binder holds this item" is only a real
     /// question when there is more than one, and a story bible most naturally lives in
@@ -867,13 +869,30 @@ mod tests {
     fn a_capture_lands_exactly_one_row_inside_the_chosen_folder() {
         let (ctx, work, _manuscript, research) = seed();
         let people = add(&ctx, research, "People", BinderItemRole::Folder, 0);
+        let now = chrono::Utc::now();
+        let character = frontend::commands::binder_tag_commands::create_binder_tag(
+            &ctx,
+            None,
+            &CreateBinderTagDto {
+                created_at: now,
+                updated_at: now,
+                name: "Character".into(),
+                color: "#2e7d32".into(),
+                discoverable: true,
+                ..Default::default()
+            },
+            work,
+            -1,
+        )
+        .expect("create tag")
+        .id;
         let draft = draft_for(
             &modal::Prefill {
                 name: "Elizabeth Bennet".into(),
                 aliases: vec!["Lizzy".into()],
                 ..modal::Prefill::default()
             },
-            Some(3),
+            Some(character),
             String::new(),
         );
         let landed = file_note(&ctx, None, work, &draft, people).expect("the note is filed");
@@ -890,6 +909,11 @@ mod tests {
             .expect("exists");
         assert_eq!(created.title, "Elizabeth Bennet");
         assert_eq!(created.aliases, vec!["Lizzy".to_string()]);
+        assert_eq!(
+            created.tags,
+            vec![character],
+            "the one tag the menu answered"
+        );
         assert_eq!(created.indent, 1, "inside the folder, not beside it");
     }
 

@@ -7,14 +7,13 @@
 // Entity WITH forward relationships — explicit struct implementation
 // ═══════════════════════════════════════════════════════════════════════
 use crate::database::hashmap_store::{
-    HashMapStore, delete_from_backward_junction, junction_get, junction_remove, junction_set,
-    read_or_recover, write_or_recover,
+    HashMapJunction, HashMapStore, delete_from_backward_junction, junction_get, junction_remove,
+    junction_set, read_or_recover, write_or_recover,
 };
 use crate::entities::Milestone;
 use crate::error::RepositoryError;
 use crate::types::EntityId;
 use crate::{impl_relationship_methods, impl_write_relationship_methods};
-use im::HashMap;
 use std::sync::RwLock;
 
 use super::milestone_repository::MilestoneRelationshipField;
@@ -30,15 +29,56 @@ impl<'a> MilestoneHashMapTable<'a> {
         Self { store }
     }
 
-    fn resolve_junction(
-        &self,
-        field: &MilestoneRelationshipField,
-    ) -> &RwLock<HashMap<EntityId, Vec<EntityId>>> {
+    fn resolve_junction(&self, field: &MilestoneRelationshipField) -> &RwLock<HashMapJunction> {
         match field {
             MilestoneRelationshipField::TargetItem => {
                 &self.store.jn_binder_item_from_milestone_target_item
             }
         }
+    }
+
+    fn relationship_source_exists(&self, id: &EntityId) -> bool {
+        read_or_recover(&self.store.milestones).contains_key(id)
+    }
+
+    fn relationship_is_ordered(&self, field: &MilestoneRelationshipField) -> bool {
+        match field {
+            MilestoneRelationshipField::TargetItem => false,
+        }
+    }
+
+    /// Validate a batch of row replacements for one relationship before any is
+    /// written. Costs O(targets in `rows`): exclusivity is checked against the
+    /// junction's reverse index, never by walking the relationship's other rows.
+    fn validate_relationship_updates(
+        &self,
+        field: &MilestoneRelationshipField,
+        rows: &[(EntityId, Vec<EntityId>)],
+        _creating_ids: &[EntityId],
+    ) -> Result<(), RepositoryError> {
+        let scalar = match field {
+            MilestoneRelationshipField::TargetItem => {
+                let targets = read_or_recover(&self.store.binder_items);
+                let missing: Vec<_> = rows
+                    .iter()
+                    .flat_map(|(_, ids)| ids)
+                    .copied()
+                    .filter(|id| !targets.contains_key(id))
+                    .collect();
+                if !missing.is_empty() {
+                    return Err(RepositoryError::MissingRelationshipTarget {
+                        operation: "relationship update",
+                        ids: missing,
+                    });
+                }
+                true
+            }
+        };
+        crate::database::hashmap_store::validate_junction_updates(
+            self.resolve_junction(field),
+            rows,
+            scalar,
+        )
     }
 
     fn hydrate(&self, entity: &mut Milestone) {
@@ -68,10 +108,23 @@ impl<'a> MilestoneTable for MilestoneHashMapTable<'a> {
     }
 
     fn create_multi(&mut self, entities: &[Milestone]) -> Result<Vec<Milestone>, RepositoryError> {
+        // Assign identities first, then validate the whole batch without holding
+        // the source table lock (self-referential relationships read that table).
+        let entities: Vec<_> = entities
+            .iter()
+            .map(|entity| {
+                let mut entity = entity.clone();
+                if entity.id == EntityId::default() {
+                    entity.id = self.store.next_id("milestone");
+                }
+                entity
+            })
+            .collect();
+
         let mut created = Vec::with_capacity(entities.len());
         let mut milestone_map = write_or_recover(&self.store.milestones);
 
-        for entity in entities {
+        for entity in &entities {
             let new_entity = if entity.id == EntityId::default() {
                 let id = self.store.next_id("milestone");
                 Milestone {
@@ -234,10 +287,7 @@ impl<'a> MilestoneHashMapTableRO<'a> {
         Self { store }
     }
 
-    fn resolve_junction(
-        &self,
-        field: &MilestoneRelationshipField,
-    ) -> &RwLock<HashMap<EntityId, Vec<EntityId>>> {
+    fn resolve_junction(&self, field: &MilestoneRelationshipField) -> &RwLock<HashMapJunction> {
         match field {
             MilestoneRelationshipField::TargetItem => {
                 &self.store.jn_binder_item_from_milestone_target_item

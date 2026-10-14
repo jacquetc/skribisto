@@ -52,19 +52,19 @@ impl From<&SearchResultDto> for SearchResult {
     fn from(dto: &SearchResultDto) -> Self {
         SearchResult {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
-            binder_item_id: dto.binder_item_id.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            binder_item_id: dto.binder_item_id,
             item_title: dto.item_title.clone(),
             match_field: dto.match_field.clone(),
-            comment_id: dto.comment_id.clone(),
-            reply_id: dto.reply_id.clone(),
-            footnote_id: dto.footnote_id.clone(),
-            occurrence_count: dto.occurrence_count.clone(),
+            comment_id: dto.comment_id,
+            reply_id: dto.reply_id,
+            footnote_id: dto.footnote_id,
+            occurrence_count: dto.occurrence_count,
             snippet_before: dto.snippet_before.clone(),
             snippet_match: dto.snippet_match.clone(),
             snippet_after: dto.snippet_after.clone(),
-            trashed: dto.trashed.clone(),
+            trashed: dto.trashed,
         }
     }
 }
@@ -132,19 +132,19 @@ impl From<&CreateSearchResultDto> for SearchResult {
     fn from(dto: &CreateSearchResultDto) -> Self {
         SearchResult {
             id: 0,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
-            binder_item_id: dto.binder_item_id.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            binder_item_id: dto.binder_item_id,
             item_title: dto.item_title.clone(),
             match_field: dto.match_field.clone(),
-            comment_id: dto.comment_id.clone(),
-            reply_id: dto.reply_id.clone(),
-            footnote_id: dto.footnote_id.clone(),
-            occurrence_count: dto.occurrence_count.clone(),
+            comment_id: dto.comment_id,
+            reply_id: dto.reply_id,
+            footnote_id: dto.footnote_id,
+            occurrence_count: dto.occurrence_count,
             snippet_before: dto.snippet_before.clone(),
             snippet_match: dto.snippet_match.clone(),
             snippet_after: dto.snippet_after.clone(),
-            trashed: dto.trashed.clone(),
+            trashed: dto.trashed,
         }
     }
 }
@@ -211,19 +211,19 @@ impl From<&UpdateSearchResultDto> for SearchResult {
     fn from(dto: &UpdateSearchResultDto) -> Self {
         SearchResult {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
-            binder_item_id: dto.binder_item_id.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            binder_item_id: dto.binder_item_id,
             item_title: dto.item_title.clone(),
             match_field: dto.match_field.clone(),
-            comment_id: dto.comment_id.clone(),
-            reply_id: dto.reply_id.clone(),
-            footnote_id: dto.footnote_id.clone(),
-            occurrence_count: dto.occurrence_count.clone(),
+            comment_id: dto.comment_id,
+            reply_id: dto.reply_id,
+            footnote_id: dto.footnote_id,
+            occurrence_count: dto.occurrence_count,
             snippet_before: dto.snippet_before.clone(),
             snippet_match: dto.snippet_match.clone(),
             snippet_after: dto.snippet_after.clone(),
-            trashed: dto.trashed.clone(),
+            trashed: dto.trashed,
         }
     }
 }

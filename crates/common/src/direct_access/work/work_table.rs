@@ -7,14 +7,13 @@
 // Entity WITH forward relationships — explicit struct implementation
 // ═══════════════════════════════════════════════════════════════════════
 use crate::database::hashmap_store::{
-    HashMapStore, delete_from_backward_junction, junction_get, junction_remove, junction_set,
-    read_or_recover, write_or_recover,
+    HashMapJunction, HashMapStore, delete_from_backward_junction, junction_get, junction_remove,
+    junction_set, read_or_recover, write_or_recover,
 };
 use crate::entities::Work;
 use crate::error::RepositoryError;
 use crate::types::EntityId;
 use crate::{impl_relationship_methods, impl_write_relationship_methods};
-use im::HashMap;
 use std::sync::RwLock;
 
 use super::work_repository::WorkRelationshipField;
@@ -30,10 +29,7 @@ impl<'a> WorkHashMapTable<'a> {
         Self { store }
     }
 
-    fn resolve_junction(
-        &self,
-        field: &WorkRelationshipField,
-    ) -> &RwLock<HashMap<EntityId, Vec<EntityId>>> {
+    fn resolve_junction(&self, field: &WorkRelationshipField) -> &RwLock<HashMapJunction> {
         match field {
             WorkRelationshipField::Assets => &self.store.jn_asset_from_work_assets,
             WorkRelationshipField::Binders => &self.store.jn_binder_from_work_binders,
@@ -56,6 +52,237 @@ impl<'a> WorkHashMapTable<'a> {
             }
             WorkRelationshipField::TrashInfos => &self.store.jn_trash_info_from_work_trash_infos,
         }
+    }
+
+    fn relationship_source_exists(&self, id: &EntityId) -> bool {
+        read_or_recover(&self.store.works).contains_key(id)
+    }
+
+    fn relationship_is_ordered(&self, field: &WorkRelationshipField) -> bool {
+        match field {
+            WorkRelationshipField::Assets => false,
+            WorkRelationshipField::Binders => true,
+            WorkRelationshipField::Comments => false,
+            WorkRelationshipField::DictWords => false,
+            WorkRelationshipField::Footnotes => false,
+            WorkRelationshipField::NoteTemplates => true,
+            WorkRelationshipField::Paces => true,
+            WorkRelationshipField::SmartPunctuation => false,
+            WorkRelationshipField::Statuses => true,
+            WorkRelationshipField::Tags => false,
+            WorkRelationshipField::TextReplacementRules => false,
+            WorkRelationshipField::TrashInfos => false,
+        }
+    }
+
+    /// Validate a batch of row replacements for one relationship before any is
+    /// written. Costs O(targets in `rows`): exclusivity is checked against the
+    /// junction's reverse index, never by walking the relationship's other rows.
+    fn validate_relationship_updates(
+        &self,
+        field: &WorkRelationshipField,
+        rows: &[(EntityId, Vec<EntityId>)],
+        _creating_ids: &[EntityId],
+    ) -> Result<(), RepositoryError> {
+        let scalar = match field {
+            WorkRelationshipField::Assets => {
+                let targets = read_or_recover(&self.store.assets);
+                let missing: Vec<_> = rows
+                    .iter()
+                    .flat_map(|(_, ids)| ids)
+                    .copied()
+                    .filter(|id| !targets.contains_key(id))
+                    .collect();
+                if !missing.is_empty() {
+                    return Err(RepositoryError::MissingRelationshipTarget {
+                        operation: "relationship update",
+                        ids: missing,
+                    });
+                }
+                false
+            }
+            WorkRelationshipField::Binders => {
+                let targets = read_or_recover(&self.store.binders);
+                let missing: Vec<_> = rows
+                    .iter()
+                    .flat_map(|(_, ids)| ids)
+                    .copied()
+                    .filter(|id| !targets.contains_key(id))
+                    .collect();
+                if !missing.is_empty() {
+                    return Err(RepositoryError::MissingRelationshipTarget {
+                        operation: "relationship update",
+                        ids: missing,
+                    });
+                }
+                false
+            }
+            WorkRelationshipField::Comments => {
+                let targets = read_or_recover(&self.store.comments);
+                let missing: Vec<_> = rows
+                    .iter()
+                    .flat_map(|(_, ids)| ids)
+                    .copied()
+                    .filter(|id| !targets.contains_key(id))
+                    .collect();
+                if !missing.is_empty() {
+                    return Err(RepositoryError::MissingRelationshipTarget {
+                        operation: "relationship update",
+                        ids: missing,
+                    });
+                }
+                false
+            }
+            WorkRelationshipField::DictWords => {
+                let targets = read_or_recover(&self.store.dict_words);
+                let missing: Vec<_> = rows
+                    .iter()
+                    .flat_map(|(_, ids)| ids)
+                    .copied()
+                    .filter(|id| !targets.contains_key(id))
+                    .collect();
+                if !missing.is_empty() {
+                    return Err(RepositoryError::MissingRelationshipTarget {
+                        operation: "relationship update",
+                        ids: missing,
+                    });
+                }
+                false
+            }
+            WorkRelationshipField::Footnotes => {
+                let targets = read_or_recover(&self.store.footnotes);
+                let missing: Vec<_> = rows
+                    .iter()
+                    .flat_map(|(_, ids)| ids)
+                    .copied()
+                    .filter(|id| !targets.contains_key(id))
+                    .collect();
+                if !missing.is_empty() {
+                    return Err(RepositoryError::MissingRelationshipTarget {
+                        operation: "relationship update",
+                        ids: missing,
+                    });
+                }
+                false
+            }
+            WorkRelationshipField::NoteTemplates => {
+                let targets = read_or_recover(&self.store.note_templates);
+                let missing: Vec<_> = rows
+                    .iter()
+                    .flat_map(|(_, ids)| ids)
+                    .copied()
+                    .filter(|id| !targets.contains_key(id))
+                    .collect();
+                if !missing.is_empty() {
+                    return Err(RepositoryError::MissingRelationshipTarget {
+                        operation: "relationship update",
+                        ids: missing,
+                    });
+                }
+                false
+            }
+            WorkRelationshipField::Paces => {
+                let targets = read_or_recover(&self.store.paces);
+                let missing: Vec<_> = rows
+                    .iter()
+                    .flat_map(|(_, ids)| ids)
+                    .copied()
+                    .filter(|id| !targets.contains_key(id))
+                    .collect();
+                if !missing.is_empty() {
+                    return Err(RepositoryError::MissingRelationshipTarget {
+                        operation: "relationship update",
+                        ids: missing,
+                    });
+                }
+                false
+            }
+            WorkRelationshipField::SmartPunctuation => {
+                let targets = read_or_recover(&self.store.smart_punctuations);
+                let missing: Vec<_> = rows
+                    .iter()
+                    .flat_map(|(_, ids)| ids)
+                    .copied()
+                    .filter(|id| !targets.contains_key(id))
+                    .collect();
+                if !missing.is_empty() {
+                    return Err(RepositoryError::MissingRelationshipTarget {
+                        operation: "relationship update",
+                        ids: missing,
+                    });
+                }
+                true
+            }
+            WorkRelationshipField::Statuses => {
+                let targets = read_or_recover(&self.store.binder_statuses);
+                let missing: Vec<_> = rows
+                    .iter()
+                    .flat_map(|(_, ids)| ids)
+                    .copied()
+                    .filter(|id| !targets.contains_key(id))
+                    .collect();
+                if !missing.is_empty() {
+                    return Err(RepositoryError::MissingRelationshipTarget {
+                        operation: "relationship update",
+                        ids: missing,
+                    });
+                }
+                false
+            }
+            WorkRelationshipField::Tags => {
+                let targets = read_or_recover(&self.store.binder_tags);
+                let missing: Vec<_> = rows
+                    .iter()
+                    .flat_map(|(_, ids)| ids)
+                    .copied()
+                    .filter(|id| !targets.contains_key(id))
+                    .collect();
+                if !missing.is_empty() {
+                    return Err(RepositoryError::MissingRelationshipTarget {
+                        operation: "relationship update",
+                        ids: missing,
+                    });
+                }
+                false
+            }
+            WorkRelationshipField::TextReplacementRules => {
+                let targets = read_or_recover(&self.store.text_replacement_rules);
+                let missing: Vec<_> = rows
+                    .iter()
+                    .flat_map(|(_, ids)| ids)
+                    .copied()
+                    .filter(|id| !targets.contains_key(id))
+                    .collect();
+                if !missing.is_empty() {
+                    return Err(RepositoryError::MissingRelationshipTarget {
+                        operation: "relationship update",
+                        ids: missing,
+                    });
+                }
+                false
+            }
+            WorkRelationshipField::TrashInfos => {
+                let targets = read_or_recover(&self.store.trash_infos);
+                let missing: Vec<_> = rows
+                    .iter()
+                    .flat_map(|(_, ids)| ids)
+                    .copied()
+                    .filter(|id| !targets.contains_key(id))
+                    .collect();
+                if !missing.is_empty() {
+                    return Err(RepositoryError::MissingRelationshipTarget {
+                        operation: "relationship update",
+                        ids: missing,
+                    });
+                }
+                false
+            }
+        };
+        crate::database::hashmap_store::validate_junction_updates(
+            self.resolve_junction(field),
+            rows,
+            scalar,
+        )
     }
 
     fn hydrate(&self, entity: &mut Work) {
@@ -108,10 +335,111 @@ impl<'a> WorkTable for WorkHashMapTable<'a> {
     }
 
     fn create_multi(&mut self, entities: &[Work]) -> Result<Vec<Work>, RepositoryError> {
+        // Assign identities first, then validate the whole batch without holding
+        // the source table lock (self-referential relationships read that table).
+        let entities: Vec<_> = entities
+            .iter()
+            .map(|entity| {
+                let mut entity = entity.clone();
+                if entity.id == EntityId::default() {
+                    entity.id = self.store.next_id("work");
+                }
+                entity
+            })
+            .collect();
+
+        self.validate_relationship_updates(
+            &WorkRelationshipField::Binders,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.binders.clone()))
+                .collect::<Vec<_>>(),
+            &entities.iter().map(|e| e.id).collect::<Vec<_>>(),
+        )?;
+        self.validate_relationship_updates(
+            &WorkRelationshipField::Tags,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.tags.clone()))
+                .collect::<Vec<_>>(),
+            &entities.iter().map(|e| e.id).collect::<Vec<_>>(),
+        )?;
+        self.validate_relationship_updates(
+            &WorkRelationshipField::DictWords,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.dict_words.clone()))
+                .collect::<Vec<_>>(),
+            &entities.iter().map(|e| e.id).collect::<Vec<_>>(),
+        )?;
+        self.validate_relationship_updates(
+            &WorkRelationshipField::TextReplacementRules,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.text_replacement_rules.clone()))
+                .collect::<Vec<_>>(),
+            &entities.iter().map(|e| e.id).collect::<Vec<_>>(),
+        )?;
+        self.validate_relationship_updates(
+            &WorkRelationshipField::NoteTemplates,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.note_templates.clone()))
+                .collect::<Vec<_>>(),
+            &entities.iter().map(|e| e.id).collect::<Vec<_>>(),
+        )?;
+        self.validate_relationship_updates(
+            &WorkRelationshipField::Statuses,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.statuses.clone()))
+                .collect::<Vec<_>>(),
+            &entities.iter().map(|e| e.id).collect::<Vec<_>>(),
+        )?;
+        self.validate_relationship_updates(
+            &WorkRelationshipField::Assets,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.assets.clone()))
+                .collect::<Vec<_>>(),
+            &entities.iter().map(|e| e.id).collect::<Vec<_>>(),
+        )?;
+        self.validate_relationship_updates(
+            &WorkRelationshipField::TrashInfos,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.trash_infos.clone()))
+                .collect::<Vec<_>>(),
+            &entities.iter().map(|e| e.id).collect::<Vec<_>>(),
+        )?;
+        self.validate_relationship_updates(
+            &WorkRelationshipField::Paces,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.paces.clone()))
+                .collect::<Vec<_>>(),
+            &entities.iter().map(|e| e.id).collect::<Vec<_>>(),
+        )?;
+        self.validate_relationship_updates(
+            &WorkRelationshipField::Comments,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.comments.clone()))
+                .collect::<Vec<_>>(),
+            &entities.iter().map(|e| e.id).collect::<Vec<_>>(),
+        )?;
+        self.validate_relationship_updates(
+            &WorkRelationshipField::Footnotes,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.footnotes.clone()))
+                .collect::<Vec<_>>(),
+            &entities.iter().map(|e| e.id).collect::<Vec<_>>(),
+        )?;
         let mut created = Vec::with_capacity(entities.len());
         let mut work_map = write_or_recover(&self.store.works);
 
-        for entity in entities {
+        for entity in &entities {
             let new_entity = if entity.id == EntityId::default() {
                 let id = self.store.next_id("work");
                 Work {
@@ -130,18 +458,19 @@ impl<'a> WorkTable for WorkHashMapTable<'a> {
             };
 
             // one-to-one constraint check: ensure smart_punctuation is not already referenced by another work
+            // (the junction's reverse index answers in one lookup, never by walking its rows)
             {
                 let jn =
                     read_or_recover(&self.store.jn_smart_punctuation_from_work_smart_punctuation);
-                for (&existing_id, right_ids) in jn.iter() {
-                    if existing_id != new_entity.id
-                        && right_ids.contains(&new_entity.smart_punctuation)
-                    {
-                        return Err(RepositoryError::ConstraintViolation(format!(
-                            "One-to-one constraint violation: SmartPunctuation {} is already referenced by Work {}",
-                            new_entity.smart_punctuation, existing_id
-                        )));
-                    }
+                if let Some(existing_id) = jn
+                    .sources_of(&new_entity.smart_punctuation)
+                    .into_iter()
+                    .find(|source| *source != new_entity.id)
+                {
+                    return Err(RepositoryError::ConstraintViolation(format!(
+                        "One-to-one constraint violation: SmartPunctuation {} is already referenced by Work {}",
+                        new_entity.smart_punctuation, existing_id
+                    )));
                 }
             }
 
@@ -294,19 +623,110 @@ impl<'a> WorkTable for WorkHashMapTable<'a> {
         &mut self,
         entities: &[Work],
     ) -> Result<Vec<Work>, RepositoryError> {
+        self.validate_relationship_updates(
+            &WorkRelationshipField::Binders,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.binders.clone()))
+                .collect::<Vec<_>>(),
+            &[],
+        )?;
+        self.validate_relationship_updates(
+            &WorkRelationshipField::Tags,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.tags.clone()))
+                .collect::<Vec<_>>(),
+            &[],
+        )?;
+        self.validate_relationship_updates(
+            &WorkRelationshipField::DictWords,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.dict_words.clone()))
+                .collect::<Vec<_>>(),
+            &[],
+        )?;
+        self.validate_relationship_updates(
+            &WorkRelationshipField::TextReplacementRules,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.text_replacement_rules.clone()))
+                .collect::<Vec<_>>(),
+            &[],
+        )?;
+        self.validate_relationship_updates(
+            &WorkRelationshipField::NoteTemplates,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.note_templates.clone()))
+                .collect::<Vec<_>>(),
+            &[],
+        )?;
+        self.validate_relationship_updates(
+            &WorkRelationshipField::Statuses,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.statuses.clone()))
+                .collect::<Vec<_>>(),
+            &[],
+        )?;
+        self.validate_relationship_updates(
+            &WorkRelationshipField::Assets,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.assets.clone()))
+                .collect::<Vec<_>>(),
+            &[],
+        )?;
+        self.validate_relationship_updates(
+            &WorkRelationshipField::TrashInfos,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.trash_infos.clone()))
+                .collect::<Vec<_>>(),
+            &[],
+        )?;
+        self.validate_relationship_updates(
+            &WorkRelationshipField::Paces,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.paces.clone()))
+                .collect::<Vec<_>>(),
+            &[],
+        )?;
+        self.validate_relationship_updates(
+            &WorkRelationshipField::Comments,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.comments.clone()))
+                .collect::<Vec<_>>(),
+            &[],
+        )?;
+        self.validate_relationship_updates(
+            &WorkRelationshipField::Footnotes,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.footnotes.clone()))
+                .collect::<Vec<_>>(),
+            &[],
+        )?;
         let mut work_map = write_or_recover(&self.store.works);
         for entity in entities {
             // one-to-one constraint check: ensure smart_punctuation is not already referenced by another work
+            // (the junction's reverse index answers in one lookup, never by walking its rows)
             {
                 let jn =
                     read_or_recover(&self.store.jn_smart_punctuation_from_work_smart_punctuation);
-                for (&existing_id, right_ids) in jn.iter() {
-                    if existing_id != entity.id && right_ids.contains(&entity.smart_punctuation) {
-                        return Err(RepositoryError::ConstraintViolation(format!(
-                            "One-to-one constraint violation: SmartPunctuation {} is already referenced by Work {}",
-                            entity.smart_punctuation, existing_id
-                        )));
-                    }
+                if let Some(existing_id) = jn
+                    .sources_of(&entity.smart_punctuation)
+                    .into_iter()
+                    .find(|source| *source != entity.id)
+                {
+                    return Err(RepositoryError::ConstraintViolation(format!(
+                        "One-to-one constraint violation: SmartPunctuation {} is already referenced by Work {}",
+                        entity.smart_punctuation, existing_id
+                    )));
                 }
             }
             work_map.insert(entity.id, entity.clone());
@@ -432,10 +852,7 @@ impl<'a> WorkHashMapTableRO<'a> {
         Self { store }
     }
 
-    fn resolve_junction(
-        &self,
-        field: &WorkRelationshipField,
-    ) -> &RwLock<HashMap<EntityId, Vec<EntityId>>> {
+    fn resolve_junction(&self, field: &WorkRelationshipField) -> &RwLock<HashMapJunction> {
         match field {
             WorkRelationshipField::Assets => &self.store.jn_asset_from_work_assets,
             WorkRelationshipField::Binders => &self.store.jn_binder_from_work_binders,

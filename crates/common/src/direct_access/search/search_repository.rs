@@ -659,9 +659,9 @@ impl<'a> SearchRepository<'a> {
         let mut to_update: Vec<EntityId> = Vec::new(); // in both                    -> revert
         let mut to_delete: Vec<EntityId> = Vec::new(); // live only (created after)  -> delete
         {
-            let live = read_or_recover(&store.searchs);
+            let live = read_or_recover(&store.searches);
             for id in &ids {
-                match (snap.searchs.contains_key(id), live.contains_key(id)) {
+                match (snap.searches.contains_key(id), live.contains_key(id)) {
                     (true, false) => to_create.push(*id),
                     (true, true) => to_update.push(*id),
                     (false, true) => to_delete.push(*id),
@@ -697,9 +697,9 @@ impl<'a> SearchRepository<'a> {
 
         // 2. Entity rows: revert/re-add from snapshot, delete the ones created after it.
         {
-            let mut live = write_or_recover(&store.searchs);
+            let mut live = write_or_recover(&store.searches);
             for id in to_create.iter().chain(to_update.iter()) {
-                if let Some(row) = snap.searchs.get(id) {
+                if let Some(row) = snap.searches.get(id) {
                     live.insert(*id, row.clone());
                 }
             }

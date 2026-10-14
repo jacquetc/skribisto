@@ -7,14 +7,13 @@
 // Entity WITH forward relationships — explicit struct implementation
 // ═══════════════════════════════════════════════════════════════════════
 use crate::database::hashmap_store::{
-    HashMapStore, delete_from_backward_junction, junction_get, junction_remove, junction_set,
-    read_or_recover, write_or_recover,
+    HashMapJunction, HashMapStore, delete_from_backward_junction, junction_get, junction_remove,
+    junction_set, read_or_recover, write_or_recover,
 };
 use crate::entities::Pace;
 use crate::error::RepositoryError;
 use crate::types::EntityId;
 use crate::{impl_relationship_methods, impl_write_relationship_methods};
-use im::HashMap;
 use std::sync::RwLock;
 
 use super::pace_repository::PaceRelationshipField;
@@ -30,15 +29,90 @@ impl<'a> PaceHashMapTable<'a> {
         Self { store }
     }
 
-    fn resolve_junction(
-        &self,
-        field: &PaceRelationshipField,
-    ) -> &RwLock<HashMap<EntityId, Vec<EntityId>>> {
+    fn resolve_junction(&self, field: &PaceRelationshipField) -> &RwLock<HashMapJunction> {
         match field {
             PaceRelationshipField::BookItem => &self.store.jn_binder_item_from_pace_book_item,
             PaceRelationshipField::Holidays => &self.store.jn_holiday_from_pace_holidays,
             PaceRelationshipField::Milestones => &self.store.jn_milestone_from_pace_milestones,
         }
+    }
+
+    fn relationship_source_exists(&self, id: &EntityId) -> bool {
+        read_or_recover(&self.store.paces).contains_key(id)
+    }
+
+    fn relationship_is_ordered(&self, field: &PaceRelationshipField) -> bool {
+        match field {
+            PaceRelationshipField::BookItem => false,
+            PaceRelationshipField::Holidays => true,
+            PaceRelationshipField::Milestones => true,
+        }
+    }
+
+    /// Validate a batch of row replacements for one relationship before any is
+    /// written. Costs O(targets in `rows`): exclusivity is checked against the
+    /// junction's reverse index, never by walking the relationship's other rows.
+    fn validate_relationship_updates(
+        &self,
+        field: &PaceRelationshipField,
+        rows: &[(EntityId, Vec<EntityId>)],
+        _creating_ids: &[EntityId],
+    ) -> Result<(), RepositoryError> {
+        let scalar = match field {
+            PaceRelationshipField::BookItem => {
+                let targets = read_or_recover(&self.store.binder_items);
+                let missing: Vec<_> = rows
+                    .iter()
+                    .flat_map(|(_, ids)| ids)
+                    .copied()
+                    .filter(|id| !targets.contains_key(id))
+                    .collect();
+                if !missing.is_empty() {
+                    return Err(RepositoryError::MissingRelationshipTarget {
+                        operation: "relationship update",
+                        ids: missing,
+                    });
+                }
+                true
+            }
+            PaceRelationshipField::Holidays => {
+                let targets = read_or_recover(&self.store.holidays);
+                let missing: Vec<_> = rows
+                    .iter()
+                    .flat_map(|(_, ids)| ids)
+                    .copied()
+                    .filter(|id| !targets.contains_key(id))
+                    .collect();
+                if !missing.is_empty() {
+                    return Err(RepositoryError::MissingRelationshipTarget {
+                        operation: "relationship update",
+                        ids: missing,
+                    });
+                }
+                false
+            }
+            PaceRelationshipField::Milestones => {
+                let targets = read_or_recover(&self.store.milestones);
+                let missing: Vec<_> = rows
+                    .iter()
+                    .flat_map(|(_, ids)| ids)
+                    .copied()
+                    .filter(|id| !targets.contains_key(id))
+                    .collect();
+                if !missing.is_empty() {
+                    return Err(RepositoryError::MissingRelationshipTarget {
+                        operation: "relationship update",
+                        ids: missing,
+                    });
+                }
+                false
+            }
+        };
+        crate::database::hashmap_store::validate_junction_updates(
+            self.resolve_junction(field),
+            rows,
+            scalar,
+        )
     }
 
     fn hydrate(&self, entity: &mut Pace) {
@@ -67,10 +141,39 @@ impl<'a> PaceTable for PaceHashMapTable<'a> {
     }
 
     fn create_multi(&mut self, entities: &[Pace]) -> Result<Vec<Pace>, RepositoryError> {
+        // Assign identities first, then validate the whole batch without holding
+        // the source table lock (self-referential relationships read that table).
+        let entities: Vec<_> = entities
+            .iter()
+            .map(|entity| {
+                let mut entity = entity.clone();
+                if entity.id == EntityId::default() {
+                    entity.id = self.store.next_id("pace");
+                }
+                entity
+            })
+            .collect();
+
+        self.validate_relationship_updates(
+            &PaceRelationshipField::Holidays,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.holidays.clone()))
+                .collect::<Vec<_>>(),
+            &entities.iter().map(|e| e.id).collect::<Vec<_>>(),
+        )?;
+        self.validate_relationship_updates(
+            &PaceRelationshipField::Milestones,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.milestones.clone()))
+                .collect::<Vec<_>>(),
+            &entities.iter().map(|e| e.id).collect::<Vec<_>>(),
+        )?;
         let mut created = Vec::with_capacity(entities.len());
         let mut pace_map = write_or_recover(&self.store.paces);
 
-        for entity in entities {
+        for entity in &entities {
             let new_entity = if entity.id == EntityId::default() {
                 let id = self.store.next_id("pace");
                 Pace {
@@ -189,6 +292,22 @@ impl<'a> PaceTable for PaceHashMapTable<'a> {
         &mut self,
         entities: &[Pace],
     ) -> Result<Vec<Pace>, RepositoryError> {
+        self.validate_relationship_updates(
+            &PaceRelationshipField::Holidays,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.holidays.clone()))
+                .collect::<Vec<_>>(),
+            &[],
+        )?;
+        self.validate_relationship_updates(
+            &PaceRelationshipField::Milestones,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.milestones.clone()))
+                .collect::<Vec<_>>(),
+            &[],
+        )?;
         let mut pace_map = write_or_recover(&self.store.paces);
         for entity in entities {
             pace_map.insert(entity.id, entity.clone());
@@ -249,10 +368,7 @@ impl<'a> PaceHashMapTableRO<'a> {
         Self { store }
     }
 
-    fn resolve_junction(
-        &self,
-        field: &PaceRelationshipField,
-    ) -> &RwLock<HashMap<EntityId, Vec<EntityId>>> {
+    fn resolve_junction(&self, field: &PaceRelationshipField) -> &RwLock<HashMapJunction> {
         match field {
             PaceRelationshipField::BookItem => &self.store.jn_binder_item_from_pace_book_item,
             PaceRelationshipField::Holidays => &self.store.jn_holiday_from_pace_holidays,

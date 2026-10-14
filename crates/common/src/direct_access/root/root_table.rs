@@ -7,13 +7,13 @@
 // Entity WITH forward relationships — explicit struct implementation
 // ═══════════════════════════════════════════════════════════════════════
 use crate::database::hashmap_store::{
-    HashMapStore, junction_get, junction_remove, junction_set, read_or_recover, write_or_recover,
+    HashMapJunction, HashMapStore, junction_get, junction_remove, junction_set, read_or_recover,
+    write_or_recover,
 };
 use crate::entities::Root;
 use crate::error::RepositoryError;
 use crate::types::EntityId;
 use crate::{impl_relationship_methods, impl_write_relationship_methods};
-use im::HashMap;
 use std::sync::RwLock;
 
 use super::root_repository::RootRelationshipField;
@@ -29,14 +29,72 @@ impl<'a> RootHashMapTable<'a> {
         Self { store }
     }
 
-    fn resolve_junction(
-        &self,
-        field: &RootRelationshipField,
-    ) -> &RwLock<HashMap<EntityId, Vec<EntityId>>> {
+    fn resolve_junction(&self, field: &RootRelationshipField) -> &RwLock<HashMapJunction> {
         match field {
             RootRelationshipField::System => &self.store.jn_system_from_root_system,
             RootRelationshipField::Works => &self.store.jn_work_from_root_works,
         }
+    }
+
+    fn relationship_source_exists(&self, id: &EntityId) -> bool {
+        read_or_recover(&self.store.roots).contains_key(id)
+    }
+
+    fn relationship_is_ordered(&self, field: &RootRelationshipField) -> bool {
+        match field {
+            RootRelationshipField::System => false,
+            RootRelationshipField::Works => false,
+        }
+    }
+
+    /// Validate a batch of row replacements for one relationship before any is
+    /// written. Costs O(targets in `rows`): exclusivity is checked against the
+    /// junction's reverse index, never by walking the relationship's other rows.
+    fn validate_relationship_updates(
+        &self,
+        field: &RootRelationshipField,
+        rows: &[(EntityId, Vec<EntityId>)],
+        _creating_ids: &[EntityId],
+    ) -> Result<(), RepositoryError> {
+        let scalar = match field {
+            RootRelationshipField::System => {
+                let targets = read_or_recover(&self.store.systems);
+                let missing: Vec<_> = rows
+                    .iter()
+                    .flat_map(|(_, ids)| ids)
+                    .copied()
+                    .filter(|id| !targets.contains_key(id))
+                    .collect();
+                if !missing.is_empty() {
+                    return Err(RepositoryError::MissingRelationshipTarget {
+                        operation: "relationship update",
+                        ids: missing,
+                    });
+                }
+                true
+            }
+            RootRelationshipField::Works => {
+                let targets = read_or_recover(&self.store.works);
+                let missing: Vec<_> = rows
+                    .iter()
+                    .flat_map(|(_, ids)| ids)
+                    .copied()
+                    .filter(|id| !targets.contains_key(id))
+                    .collect();
+                if !missing.is_empty() {
+                    return Err(RepositoryError::MissingRelationshipTarget {
+                        operation: "relationship update",
+                        ids: missing,
+                    });
+                }
+                false
+            }
+        };
+        crate::database::hashmap_store::validate_junction_updates(
+            self.resolve_junction(field),
+            rows,
+            scalar,
+        )
     }
 
     fn hydrate(&self, entity: &mut Root) {
@@ -67,10 +125,31 @@ impl<'a> RootTable for RootHashMapTable<'a> {
     }
 
     fn create_multi(&mut self, entities: &[Root]) -> Result<Vec<Root>, RepositoryError> {
+        // Assign identities first, then validate the whole batch without holding
+        // the source table lock (self-referential relationships read that table).
+        let entities: Vec<_> = entities
+            .iter()
+            .map(|entity| {
+                let mut entity = entity.clone();
+                if entity.id == EntityId::default() {
+                    entity.id = self.store.next_id("root");
+                }
+                entity
+            })
+            .collect();
+
+        self.validate_relationship_updates(
+            &RootRelationshipField::Works,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.works.clone()))
+                .collect::<Vec<_>>(),
+            &entities.iter().map(|e| e.id).collect::<Vec<_>>(),
+        )?;
         let mut created = Vec::with_capacity(entities.len());
         let mut root_map = write_or_recover(&self.store.roots);
 
-        for entity in entities {
+        for entity in &entities {
             let new_entity = if entity.id == EntityId::default() {
                 let id = self.store.next_id("root");
                 Root {
@@ -88,15 +167,18 @@ impl<'a> RootTable for RootHashMapTable<'a> {
             };
 
             // one-to-one constraint check: ensure system is not already referenced by another root
+            // (the junction's reverse index answers in one lookup, never by walking its rows)
             {
                 let jn = read_or_recover(&self.store.jn_system_from_root_system);
-                for (&existing_id, right_ids) in jn.iter() {
-                    if existing_id != new_entity.id && right_ids.contains(&new_entity.system) {
-                        return Err(RepositoryError::ConstraintViolation(format!(
-                            "One-to-one constraint violation: System {} is already referenced by Root {}",
-                            new_entity.system, existing_id
-                        )));
-                    }
+                if let Some(existing_id) = jn
+                    .sources_of(&new_entity.system)
+                    .into_iter()
+                    .find(|source| *source != new_entity.id)
+                {
+                    return Err(RepositoryError::ConstraintViolation(format!(
+                        "One-to-one constraint violation: System {} is already referenced by Root {}",
+                        new_entity.system, existing_id
+                    )));
                 }
             }
 
@@ -197,18 +279,29 @@ impl<'a> RootTable for RootHashMapTable<'a> {
         &mut self,
         entities: &[Root],
     ) -> Result<Vec<Root>, RepositoryError> {
+        self.validate_relationship_updates(
+            &RootRelationshipField::Works,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.works.clone()))
+                .collect::<Vec<_>>(),
+            &[],
+        )?;
         let mut root_map = write_or_recover(&self.store.roots);
         for entity in entities {
             // one-to-one constraint check: ensure system is not already referenced by another root
+            // (the junction's reverse index answers in one lookup, never by walking its rows)
             {
                 let jn = read_or_recover(&self.store.jn_system_from_root_system);
-                for (&existing_id, right_ids) in jn.iter() {
-                    if existing_id != entity.id && right_ids.contains(&entity.system) {
-                        return Err(RepositoryError::ConstraintViolation(format!(
-                            "One-to-one constraint violation: System {} is already referenced by Root {}",
-                            entity.system, existing_id
-                        )));
-                    }
+                if let Some(existing_id) = jn
+                    .sources_of(&entity.system)
+                    .into_iter()
+                    .find(|source| *source != entity.id)
+                {
+                    return Err(RepositoryError::ConstraintViolation(format!(
+                        "One-to-one constraint violation: System {} is already referenced by Root {}",
+                        entity.system, existing_id
+                    )));
                 }
             }
             root_map.insert(entity.id, entity.clone());
@@ -261,10 +354,7 @@ impl<'a> RootHashMapTableRO<'a> {
         Self { store }
     }
 
-    fn resolve_junction(
-        &self,
-        field: &RootRelationshipField,
-    ) -> &RwLock<HashMap<EntityId, Vec<EntityId>>> {
+    fn resolve_junction(&self, field: &RootRelationshipField) -> &RwLock<HashMapJunction> {
         match field {
             RootRelationshipField::System => &self.store.jn_system_from_root_system,
             RootRelationshipField::Works => &self.store.jn_work_from_root_works,

@@ -7,14 +7,13 @@
 // Entity WITH forward relationships — explicit struct implementation
 // ═══════════════════════════════════════════════════════════════════════
 use crate::database::hashmap_store::{
-    HashMapStore, delete_from_backward_junction, junction_get, junction_remove, junction_set,
-    read_or_recover, write_or_recover,
+    HashMapJunction, HashMapStore, delete_from_backward_junction, junction_get, junction_remove,
+    junction_set, read_or_recover, write_or_recover,
 };
 use crate::entities::BinderItem;
 use crate::error::RepositoryError;
 use crate::types::EntityId;
 use crate::{impl_relationship_methods, impl_write_relationship_methods};
-use im::HashMap;
 use std::sync::RwLock;
 
 use super::binder_item_repository::BinderItemRelationshipField;
@@ -30,10 +29,7 @@ impl<'a> BinderItemHashMapTable<'a> {
         Self { store }
     }
 
-    fn resolve_junction(
-        &self,
-        field: &BinderItemRelationshipField,
-    ) -> &RwLock<HashMap<EntityId, Vec<EntityId>>> {
+    fn resolve_junction(&self, field: &BinderItemRelationshipField) -> &RwLock<HashMapJunction> {
         match field {
             BinderItemRelationshipField::Books => &self.store.jn_binder_item_from_binder_item_books,
             BinderItemRelationshipField::Contents => {
@@ -51,6 +47,173 @@ impl<'a> BinderItemHashMapTable<'a> {
             BinderItemRelationshipField::Cover => &self.store.jn_asset_from_binder_item_cover,
             BinderItemRelationshipField::Tags => &self.store.jn_binder_tag_from_binder_item_tags,
         }
+    }
+
+    fn relationship_source_exists(&self, id: &EntityId) -> bool {
+        read_or_recover(&self.store.binder_items).contains_key(id)
+    }
+
+    fn relationship_is_ordered(&self, field: &BinderItemRelationshipField) -> bool {
+        match field {
+            BinderItemRelationshipField::Books => false,
+            BinderItemRelationshipField::Contents => false,
+            BinderItemRelationshipField::Cover => false,
+            BinderItemRelationshipField::PointOfView => false,
+            BinderItemRelationshipField::References => false,
+            BinderItemRelationshipField::Status => false,
+            BinderItemRelationshipField::Tags => false,
+        }
+    }
+
+    /// Validate a batch of row replacements for one relationship before any is
+    /// written. Costs O(targets in `rows`): exclusivity is checked against the
+    /// junction's reverse index, never by walking the relationship's other rows.
+    fn validate_relationship_updates(
+        &self,
+        field: &BinderItemRelationshipField,
+        rows: &[(EntityId, Vec<EntityId>)],
+        _creating_ids: &[EntityId],
+    ) -> Result<(), RepositoryError> {
+        let scalar = match field {
+            BinderItemRelationshipField::Books => {
+                let targets = read_or_recover(&self.store.binder_items);
+                let mut missing: Vec<_> = rows
+                    .iter()
+                    .flat_map(|(_, ids)| ids)
+                    .copied()
+                    .filter(|id| !targets.contains_key(id))
+                    .collect();
+                if !missing.is_empty() {
+                    // Self-referential: a row of this very batch may point at
+                    // another row being created alongside it.
+                    let creating: std::collections::HashSet<EntityId> =
+                        _creating_ids.iter().copied().collect();
+                    missing.retain(|id| !creating.contains(id));
+                }
+                if !missing.is_empty() {
+                    return Err(RepositoryError::MissingRelationshipTarget {
+                        operation: "relationship update",
+                        ids: missing,
+                    });
+                }
+                false
+            }
+            BinderItemRelationshipField::Contents => {
+                let targets = read_or_recover(&self.store.contents);
+                let missing: Vec<_> = rows
+                    .iter()
+                    .flat_map(|(_, ids)| ids)
+                    .copied()
+                    .filter(|id| !targets.contains_key(id))
+                    .collect();
+                if !missing.is_empty() {
+                    return Err(RepositoryError::MissingRelationshipTarget {
+                        operation: "relationship update",
+                        ids: missing,
+                    });
+                }
+                false
+            }
+            BinderItemRelationshipField::Cover => {
+                let targets = read_or_recover(&self.store.assets);
+                let missing: Vec<_> = rows
+                    .iter()
+                    .flat_map(|(_, ids)| ids)
+                    .copied()
+                    .filter(|id| !targets.contains_key(id))
+                    .collect();
+                if !missing.is_empty() {
+                    return Err(RepositoryError::MissingRelationshipTarget {
+                        operation: "relationship update",
+                        ids: missing,
+                    });
+                }
+                true
+            }
+            BinderItemRelationshipField::PointOfView => {
+                let targets = read_or_recover(&self.store.binder_items);
+                let mut missing: Vec<_> = rows
+                    .iter()
+                    .flat_map(|(_, ids)| ids)
+                    .copied()
+                    .filter(|id| !targets.contains_key(id))
+                    .collect();
+                if !missing.is_empty() {
+                    // Self-referential: a row of this very batch may point at
+                    // another row being created alongside it.
+                    let creating: std::collections::HashSet<EntityId> =
+                        _creating_ids.iter().copied().collect();
+                    missing.retain(|id| !creating.contains(id));
+                }
+                if !missing.is_empty() {
+                    return Err(RepositoryError::MissingRelationshipTarget {
+                        operation: "relationship update",
+                        ids: missing,
+                    });
+                }
+                false
+            }
+            BinderItemRelationshipField::References => {
+                let targets = read_or_recover(&self.store.binder_items);
+                let mut missing: Vec<_> = rows
+                    .iter()
+                    .flat_map(|(_, ids)| ids)
+                    .copied()
+                    .filter(|id| !targets.contains_key(id))
+                    .collect();
+                if !missing.is_empty() {
+                    // Self-referential: a row of this very batch may point at
+                    // another row being created alongside it.
+                    let creating: std::collections::HashSet<EntityId> =
+                        _creating_ids.iter().copied().collect();
+                    missing.retain(|id| !creating.contains(id));
+                }
+                if !missing.is_empty() {
+                    return Err(RepositoryError::MissingRelationshipTarget {
+                        operation: "relationship update",
+                        ids: missing,
+                    });
+                }
+                false
+            }
+            BinderItemRelationshipField::Status => {
+                let targets = read_or_recover(&self.store.binder_statuses);
+                let missing: Vec<_> = rows
+                    .iter()
+                    .flat_map(|(_, ids)| ids)
+                    .copied()
+                    .filter(|id| !targets.contains_key(id))
+                    .collect();
+                if !missing.is_empty() {
+                    return Err(RepositoryError::MissingRelationshipTarget {
+                        operation: "relationship update",
+                        ids: missing,
+                    });
+                }
+                true
+            }
+            BinderItemRelationshipField::Tags => {
+                let targets = read_or_recover(&self.store.binder_tags);
+                let missing: Vec<_> = rows
+                    .iter()
+                    .flat_map(|(_, ids)| ids)
+                    .copied()
+                    .filter(|id| !targets.contains_key(id))
+                    .collect();
+                if !missing.is_empty() {
+                    return Err(RepositoryError::MissingRelationshipTarget {
+                        operation: "relationship update",
+                        ids: missing,
+                    });
+                }
+                false
+            }
+        };
+        crate::database::hashmap_store::validate_junction_updates(
+            self.resolve_junction(field),
+            rows,
+            scalar,
+        )
     }
 
     fn hydrate(&self, entity: &mut BinderItem) {
@@ -101,10 +264,63 @@ impl<'a> BinderItemTable for BinderItemHashMapTable<'a> {
         &mut self,
         entities: &[BinderItem],
     ) -> Result<Vec<BinderItem>, RepositoryError> {
+        // Assign identities first, then validate the whole batch without holding
+        // the source table lock (self-referential relationships read that table).
+        let entities: Vec<_> = entities
+            .iter()
+            .map(|entity| {
+                let mut entity = entity.clone();
+                if entity.id == EntityId::default() {
+                    entity.id = self.store.next_id("binder_item");
+                }
+                entity
+            })
+            .collect();
+
+        self.validate_relationship_updates(
+            &BinderItemRelationshipField::Contents,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.contents.clone()))
+                .collect::<Vec<_>>(),
+            &entities.iter().map(|e| e.id).collect::<Vec<_>>(),
+        )?;
+        self.validate_relationship_updates(
+            &BinderItemRelationshipField::References,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.references.clone()))
+                .collect::<Vec<_>>(),
+            &entities.iter().map(|e| e.id).collect::<Vec<_>>(),
+        )?;
+        self.validate_relationship_updates(
+            &BinderItemRelationshipField::PointOfView,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.point_of_view.clone()))
+                .collect::<Vec<_>>(),
+            &entities.iter().map(|e| e.id).collect::<Vec<_>>(),
+        )?;
+        self.validate_relationship_updates(
+            &BinderItemRelationshipField::Books,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.books.clone()))
+                .collect::<Vec<_>>(),
+            &entities.iter().map(|e| e.id).collect::<Vec<_>>(),
+        )?;
+        self.validate_relationship_updates(
+            &BinderItemRelationshipField::Tags,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.tags.clone()))
+                .collect::<Vec<_>>(),
+            &entities.iter().map(|e| e.id).collect::<Vec<_>>(),
+        )?;
         let mut created = Vec::with_capacity(entities.len());
         let mut binder_item_map = write_or_recover(&self.store.binder_items);
 
-        for entity in entities {
+        for entity in &entities {
             let new_entity = if entity.id == EntityId::default() {
                 let id = self.store.next_id("binder_item");
                 BinderItem {
@@ -249,6 +465,46 @@ impl<'a> BinderItemTable for BinderItemHashMapTable<'a> {
         &mut self,
         entities: &[BinderItem],
     ) -> Result<Vec<BinderItem>, RepositoryError> {
+        self.validate_relationship_updates(
+            &BinderItemRelationshipField::Contents,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.contents.clone()))
+                .collect::<Vec<_>>(),
+            &[],
+        )?;
+        self.validate_relationship_updates(
+            &BinderItemRelationshipField::References,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.references.clone()))
+                .collect::<Vec<_>>(),
+            &[],
+        )?;
+        self.validate_relationship_updates(
+            &BinderItemRelationshipField::PointOfView,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.point_of_view.clone()))
+                .collect::<Vec<_>>(),
+            &[],
+        )?;
+        self.validate_relationship_updates(
+            &BinderItemRelationshipField::Books,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.books.clone()))
+                .collect::<Vec<_>>(),
+            &[],
+        )?;
+        self.validate_relationship_updates(
+            &BinderItemRelationshipField::Tags,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.tags.clone()))
+                .collect::<Vec<_>>(),
+            &[],
+        )?;
         let mut binder_item_map = write_or_recover(&self.store.binder_items);
         for entity in entities {
             binder_item_map.insert(entity.id, entity.clone());
@@ -363,10 +619,7 @@ impl<'a> BinderItemHashMapTableRO<'a> {
         Self { store }
     }
 
-    fn resolve_junction(
-        &self,
-        field: &BinderItemRelationshipField,
-    ) -> &RwLock<HashMap<EntityId, Vec<EntityId>>> {
+    fn resolve_junction(&self, field: &BinderItemRelationshipField) -> &RwLock<HashMapJunction> {
         match field {
             BinderItemRelationshipField::Books => &self.store.jn_binder_item_from_binder_item_books,
             BinderItemRelationshipField::Contents => {

@@ -7,14 +7,13 @@
 // Entity WITH forward relationships — explicit struct implementation
 // ═══════════════════════════════════════════════════════════════════════
 use crate::database::hashmap_store::{
-    HashMapStore, delete_from_backward_junction, junction_get, junction_remove, junction_set,
-    read_or_recover, write_or_recover,
+    HashMapJunction, HashMapStore, delete_from_backward_junction, junction_get, junction_remove,
+    junction_set, read_or_recover, write_or_recover,
 };
 use crate::entities::TrashInfo;
 use crate::error::RepositoryError;
 use crate::types::EntityId;
 use crate::{impl_relationship_methods, impl_write_relationship_methods};
-use im::HashMap;
 use std::sync::RwLock;
 
 use super::trash_info_repository::TrashInfoRelationshipField;
@@ -30,10 +29,7 @@ impl<'a> TrashInfoHashMapTable<'a> {
         Self { store }
     }
 
-    fn resolve_junction(
-        &self,
-        field: &TrashInfoRelationshipField,
-    ) -> &RwLock<HashMap<EntityId, Vec<EntityId>>> {
+    fn resolve_junction(&self, field: &TrashInfoRelationshipField) -> &RwLock<HashMapJunction> {
         match field {
             TrashInfoRelationshipField::TrashedBinder => {
                 &self.store.jn_binder_from_trash_info_trashed_binder
@@ -44,6 +40,67 @@ impl<'a> TrashInfoHashMapTable<'a> {
                     .jn_binder_item_from_trash_info_trashed_binder_item
             }
         }
+    }
+
+    fn relationship_source_exists(&self, id: &EntityId) -> bool {
+        read_or_recover(&self.store.trash_infos).contains_key(id)
+    }
+
+    fn relationship_is_ordered(&self, field: &TrashInfoRelationshipField) -> bool {
+        match field {
+            TrashInfoRelationshipField::TrashedBinder => false,
+            TrashInfoRelationshipField::TrashedBinderItem => false,
+        }
+    }
+
+    /// Validate a batch of row replacements for one relationship before any is
+    /// written. Costs O(targets in `rows`): exclusivity is checked against the
+    /// junction's reverse index, never by walking the relationship's other rows.
+    fn validate_relationship_updates(
+        &self,
+        field: &TrashInfoRelationshipField,
+        rows: &[(EntityId, Vec<EntityId>)],
+        _creating_ids: &[EntityId],
+    ) -> Result<(), RepositoryError> {
+        let scalar = match field {
+            TrashInfoRelationshipField::TrashedBinder => {
+                let targets = read_or_recover(&self.store.binders);
+                let missing: Vec<_> = rows
+                    .iter()
+                    .flat_map(|(_, ids)| ids)
+                    .copied()
+                    .filter(|id| !targets.contains_key(id))
+                    .collect();
+                if !missing.is_empty() {
+                    return Err(RepositoryError::MissingRelationshipTarget {
+                        operation: "relationship update",
+                        ids: missing,
+                    });
+                }
+                true
+            }
+            TrashInfoRelationshipField::TrashedBinderItem => {
+                let targets = read_or_recover(&self.store.binder_items);
+                let missing: Vec<_> = rows
+                    .iter()
+                    .flat_map(|(_, ids)| ids)
+                    .copied()
+                    .filter(|id| !targets.contains_key(id))
+                    .collect();
+                if !missing.is_empty() {
+                    return Err(RepositoryError::MissingRelationshipTarget {
+                        operation: "relationship update",
+                        ids: missing,
+                    });
+                }
+                true
+            }
+        };
+        crate::database::hashmap_store::validate_junction_updates(
+            self.resolve_junction(field),
+            rows,
+            scalar,
+        )
     }
 
     fn hydrate(&self, entity: &mut TrashInfo) {
@@ -81,10 +138,23 @@ impl<'a> TrashInfoTable for TrashInfoHashMapTable<'a> {
     }
 
     fn create_multi(&mut self, entities: &[TrashInfo]) -> Result<Vec<TrashInfo>, RepositoryError> {
+        // Assign identities first, then validate the whole batch without holding
+        // the source table lock (self-referential relationships read that table).
+        let entities: Vec<_> = entities
+            .iter()
+            .map(|entity| {
+                let mut entity = entity.clone();
+                if entity.id == EntityId::default() {
+                    entity.id = self.store.next_id("trash_info");
+                }
+                entity
+            })
+            .collect();
+
         let mut created = Vec::with_capacity(entities.len());
         let mut trash_info_map = write_or_recover(&self.store.trash_infos);
 
-        for entity in entities {
+        for entity in &entities {
             let new_entity = if entity.id == EntityId::default() {
                 let id = self.store.next_id("trash_info");
                 TrashInfo {
@@ -273,10 +343,7 @@ impl<'a> TrashInfoHashMapTableRO<'a> {
         Self { store }
     }
 
-    fn resolve_junction(
-        &self,
-        field: &TrashInfoRelationshipField,
-    ) -> &RwLock<HashMap<EntityId, Vec<EntityId>>> {
+    fn resolve_junction(&self, field: &TrashInfoRelationshipField) -> &RwLock<HashMapJunction> {
         match field {
             TrashInfoRelationshipField::TrashedBinder => {
                 &self.store.jn_binder_from_trash_info_trashed_binder

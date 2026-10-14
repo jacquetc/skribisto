@@ -44,15 +44,15 @@ impl From<&SmartPunctuationDto> for SmartPunctuation {
     fn from(dto: &SmartPunctuationDto) -> Self {
         SmartPunctuation {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
-            override_app_default: dto.override_app_default.clone(),
-            dashes: dto.dashes.clone(),
-            ellipsis: dto.ellipsis.clone(),
-            quotes: dto.quotes.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            override_app_default: dto.override_app_default,
+            dashes: dto.dashes,
+            ellipsis: dto.ellipsis,
+            quotes: dto.quotes,
             quote_style: dto.quote_style.clone(),
-            pre_punctuation_spacing: dto.pre_punctuation_spacing.clone(),
-            dialogue_marker: dto.dialogue_marker.clone(),
+            pre_punctuation_spacing: dto.pre_punctuation_spacing,
+            dialogue_marker: dto.dialogue_marker,
         }
     }
 }
@@ -108,15 +108,15 @@ impl From<&CreateSmartPunctuationDto> for SmartPunctuation {
     fn from(dto: &CreateSmartPunctuationDto) -> Self {
         SmartPunctuation {
             id: 0,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
-            override_app_default: dto.override_app_default.clone(),
-            dashes: dto.dashes.clone(),
-            ellipsis: dto.ellipsis.clone(),
-            quotes: dto.quotes.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            override_app_default: dto.override_app_default,
+            dashes: dto.dashes,
+            ellipsis: dto.ellipsis,
+            quotes: dto.quotes,
             quote_style: dto.quote_style.clone(),
-            pre_punctuation_spacing: dto.pre_punctuation_spacing.clone(),
-            dialogue_marker: dto.dialogue_marker.clone(),
+            pre_punctuation_spacing: dto.pre_punctuation_spacing,
+            dialogue_marker: dto.dialogue_marker,
         }
     }
 }
@@ -171,15 +171,15 @@ impl From<&UpdateSmartPunctuationDto> for SmartPunctuation {
     fn from(dto: &UpdateSmartPunctuationDto) -> Self {
         SmartPunctuation {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
-            override_app_default: dto.override_app_default.clone(),
-            dashes: dto.dashes.clone(),
-            ellipsis: dto.ellipsis.clone(),
-            quotes: dto.quotes.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            override_app_default: dto.override_app_default,
+            dashes: dto.dashes,
+            ellipsis: dto.ellipsis,
+            quotes: dto.quotes,
             quote_style: dto.quote_style.clone(),
-            pre_punctuation_spacing: dto.pre_punctuation_spacing.clone(),
-            dialogue_marker: dto.dialogue_marker.clone(),
+            pre_punctuation_spacing: dto.pre_punctuation_spacing,
+            dialogue_marker: dto.dialogue_marker,
         }
     }
 }

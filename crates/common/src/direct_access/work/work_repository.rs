@@ -318,7 +318,7 @@ impl<'a> WorkRepository<'a> {
         let note_templates = entity.note_templates.clone();
         let statuses = entity.statuses.clone();
         let assets = entity.assets.clone();
-        let smart_punctuation = entity.smart_punctuation.clone();
+        let smart_punctuation = entity.smart_punctuation;
         let trash_infos = entity.trash_infos.clone();
         let paces = entity.paces.clone();
         let comments = entity.comments.clone();

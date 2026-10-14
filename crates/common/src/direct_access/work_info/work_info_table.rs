@@ -7,14 +7,13 @@
 // Entity WITH forward relationships — explicit struct implementation
 // ═══════════════════════════════════════════════════════════════════════
 use crate::database::hashmap_store::{
-    HashMapStore, delete_from_backward_junction, junction_get, junction_remove, junction_set,
-    read_or_recover, write_or_recover,
+    HashMapJunction, HashMapStore, delete_from_backward_junction, junction_get, junction_remove,
+    junction_set, read_or_recover, write_or_recover,
 };
 use crate::entities::WorkInfo;
 use crate::error::RepositoryError;
 use crate::types::EntityId;
 use crate::{impl_relationship_methods, impl_write_relationship_methods};
-use im::HashMap;
 use std::sync::RwLock;
 
 use super::work_info_repository::WorkInfoRelationshipField;
@@ -30,10 +29,7 @@ impl<'a> WorkInfoHashMapTable<'a> {
         Self { store }
     }
 
-    fn resolve_junction(
-        &self,
-        field: &WorkInfoRelationshipField,
-    ) -> &RwLock<HashMap<EntityId, Vec<EntityId>>> {
+    fn resolve_junction(&self, field: &WorkInfoRelationshipField) -> &RwLock<HashMapJunction> {
         match field {
             WorkInfoRelationshipField::ProgressSnapshots => {
                 &self
@@ -43,6 +39,84 @@ impl<'a> WorkInfoHashMapTable<'a> {
             WorkInfoRelationshipField::Search => &self.store.jn_search_from_work_info_search,
             WorkInfoRelationshipField::Work => &self.store.jn_work_from_work_info_work,
         }
+    }
+
+    fn relationship_source_exists(&self, id: &EntityId) -> bool {
+        read_or_recover(&self.store.work_infos).contains_key(id)
+    }
+
+    fn relationship_is_ordered(&self, field: &WorkInfoRelationshipField) -> bool {
+        match field {
+            WorkInfoRelationshipField::ProgressSnapshots => true,
+            WorkInfoRelationshipField::Search => false,
+            WorkInfoRelationshipField::Work => false,
+        }
+    }
+
+    /// Validate a batch of row replacements for one relationship before any is
+    /// written. Costs O(targets in `rows`): exclusivity is checked against the
+    /// junction's reverse index, never by walking the relationship's other rows.
+    fn validate_relationship_updates(
+        &self,
+        field: &WorkInfoRelationshipField,
+        rows: &[(EntityId, Vec<EntityId>)],
+        _creating_ids: &[EntityId],
+    ) -> Result<(), RepositoryError> {
+        let scalar = match field {
+            WorkInfoRelationshipField::ProgressSnapshots => {
+                let targets = read_or_recover(&self.store.progress_snapshots);
+                let missing: Vec<_> = rows
+                    .iter()
+                    .flat_map(|(_, ids)| ids)
+                    .copied()
+                    .filter(|id| !targets.contains_key(id))
+                    .collect();
+                if !missing.is_empty() {
+                    return Err(RepositoryError::MissingRelationshipTarget {
+                        operation: "relationship update",
+                        ids: missing,
+                    });
+                }
+                false
+            }
+            WorkInfoRelationshipField::Search => {
+                let targets = read_or_recover(&self.store.searches);
+                let missing: Vec<_> = rows
+                    .iter()
+                    .flat_map(|(_, ids)| ids)
+                    .copied()
+                    .filter(|id| !targets.contains_key(id))
+                    .collect();
+                if !missing.is_empty() {
+                    return Err(RepositoryError::MissingRelationshipTarget {
+                        operation: "relationship update",
+                        ids: missing,
+                    });
+                }
+                true
+            }
+            WorkInfoRelationshipField::Work => {
+                let targets = read_or_recover(&self.store.works);
+                let missing: Vec<_> = rows
+                    .iter()
+                    .flat_map(|(_, ids)| ids)
+                    .copied()
+                    .filter(|id| !targets.contains_key(id))
+                    .collect();
+                if !missing.is_empty() {
+                    return Err(RepositoryError::MissingRelationshipTarget {
+                        operation: "relationship update",
+                        ids: missing,
+                    });
+                }
+                true
+            }
+        };
+        crate::database::hashmap_store::validate_junction_updates(
+            self.resolve_junction(field),
+            rows,
+            scalar,
+        )
     }
 
     fn hydrate(&self, entity: &mut WorkInfo) {
@@ -81,10 +155,31 @@ impl<'a> WorkInfoTable for WorkInfoHashMapTable<'a> {
     }
 
     fn create_multi(&mut self, entities: &[WorkInfo]) -> Result<Vec<WorkInfo>, RepositoryError> {
+        // Assign identities first, then validate the whole batch without holding
+        // the source table lock (self-referential relationships read that table).
+        let entities: Vec<_> = entities
+            .iter()
+            .map(|entity| {
+                let mut entity = entity.clone();
+                if entity.id == EntityId::default() {
+                    entity.id = self.store.next_id("work_info");
+                }
+                entity
+            })
+            .collect();
+
+        self.validate_relationship_updates(
+            &WorkInfoRelationshipField::ProgressSnapshots,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.progress_snapshots.clone()))
+                .collect::<Vec<_>>(),
+            &entities.iter().map(|e| e.id).collect::<Vec<_>>(),
+        )?;
         let mut created = Vec::with_capacity(entities.len());
         let mut work_info_map = write_or_recover(&self.store.work_infos);
 
-        for entity in entities {
+        for entity in &entities {
             let new_entity = if entity.id == EntityId::default() {
                 let id = self.store.next_id("work_info");
                 WorkInfo {
@@ -102,15 +197,18 @@ impl<'a> WorkInfoTable for WorkInfoHashMapTable<'a> {
             };
 
             // one-to-one constraint check: ensure search is not already referenced by another work_info
+            // (the junction's reverse index answers in one lookup, never by walking its rows)
             {
                 let jn = read_or_recover(&self.store.jn_search_from_work_info_search);
-                for (&existing_id, right_ids) in jn.iter() {
-                    if existing_id != new_entity.id && right_ids.contains(&new_entity.search) {
-                        return Err(RepositoryError::ConstraintViolation(format!(
-                            "One-to-one constraint violation: Search {} is already referenced by WorkInfo {}",
-                            new_entity.search, existing_id
-                        )));
-                    }
+                if let Some(existing_id) = jn
+                    .sources_of(&new_entity.search)
+                    .into_iter()
+                    .find(|source| *source != new_entity.id)
+                {
+                    return Err(RepositoryError::ConstraintViolation(format!(
+                        "One-to-one constraint violation: Search {} is already referenced by WorkInfo {}",
+                        new_entity.search, existing_id
+                    )));
                 }
             }
 
@@ -221,18 +319,29 @@ impl<'a> WorkInfoTable for WorkInfoHashMapTable<'a> {
         &mut self,
         entities: &[WorkInfo],
     ) -> Result<Vec<WorkInfo>, RepositoryError> {
+        self.validate_relationship_updates(
+            &WorkInfoRelationshipField::ProgressSnapshots,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.progress_snapshots.clone()))
+                .collect::<Vec<_>>(),
+            &[],
+        )?;
         let mut work_info_map = write_or_recover(&self.store.work_infos);
         for entity in entities {
             // one-to-one constraint check: ensure search is not already referenced by another work_info
+            // (the junction's reverse index answers in one lookup, never by walking its rows)
             {
                 let jn = read_or_recover(&self.store.jn_search_from_work_info_search);
-                for (&existing_id, right_ids) in jn.iter() {
-                    if existing_id != entity.id && right_ids.contains(&entity.search) {
-                        return Err(RepositoryError::ConstraintViolation(format!(
-                            "One-to-one constraint violation: Search {} is already referenced by WorkInfo {}",
-                            entity.search, existing_id
-                        )));
-                    }
+                if let Some(existing_id) = jn
+                    .sources_of(&entity.search)
+                    .into_iter()
+                    .find(|source| *source != entity.id)
+                {
+                    return Err(RepositoryError::ConstraintViolation(format!(
+                        "One-to-one constraint violation: Search {} is already referenced by WorkInfo {}",
+                        entity.search, existing_id
+                    )));
                 }
             }
             work_info_map.insert(entity.id, entity.clone());
@@ -300,10 +409,7 @@ impl<'a> WorkInfoHashMapTableRO<'a> {
         Self { store }
     }
 
-    fn resolve_junction(
-        &self,
-        field: &WorkInfoRelationshipField,
-    ) -> &RwLock<HashMap<EntityId, Vec<EntityId>>> {
+    fn resolve_junction(&self, field: &WorkInfoRelationshipField) -> &RwLock<HashMapJunction> {
         match field {
             WorkInfoRelationshipField::ProgressSnapshots => {
                 &self

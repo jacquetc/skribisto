@@ -39,12 +39,12 @@ impl From<&MilestoneDto> for Milestone {
     fn from(dto: &MilestoneDto) -> Self {
         Milestone {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
             label: dto.label.clone(),
-            target_item: dto.target_item.clone(),
-            target_date: dto.target_date.clone(),
-            target_word_count: dto.target_word_count.clone(),
+            target_item: dto.target_item,
+            target_date: dto.target_date,
+            target_word_count: dto.target_word_count,
             kind: dto.kind.clone(),
         }
     }
@@ -95,12 +95,12 @@ impl From<&CreateMilestoneDto> for Milestone {
     fn from(dto: &CreateMilestoneDto) -> Self {
         Milestone {
             id: 0,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
             label: dto.label.clone(),
-            target_item: dto.target_item.clone(),
-            target_date: dto.target_date.clone(),
-            target_word_count: dto.target_word_count.clone(),
+            target_item: dto.target_item,
+            target_date: dto.target_date,
+            target_word_count: dto.target_word_count,
             kind: dto.kind.clone(),
         }
     }
@@ -149,11 +149,11 @@ impl From<&UpdateMilestoneDto> for Milestone {
     fn from(dto: &UpdateMilestoneDto) -> Self {
         Milestone {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
             label: dto.label.clone(),
-            target_date: dto.target_date.clone(),
-            target_word_count: dto.target_word_count.clone(),
+            target_date: dto.target_date,
+            target_word_count: dto.target_word_count,
             kind: dto.kind.clone(),
             target_item: Default::default(),
         }

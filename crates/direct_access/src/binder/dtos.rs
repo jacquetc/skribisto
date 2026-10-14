@@ -37,11 +37,11 @@ impl From<&BinderDto> for Binder {
     fn from(dto: &BinderDto) -> Self {
         Binder {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
-            uid: dto.uid.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            uid: dto.uid,
             name: dto.name.clone(),
-            activated: dto.activated.clone(),
+            activated: dto.activated,
             binder_items: dto.binder_items.clone(),
         }
     }
@@ -89,11 +89,11 @@ impl From<&CreateBinderDto> for Binder {
     fn from(dto: &CreateBinderDto) -> Self {
         Binder {
             id: 0,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
-            uid: dto.uid.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            uid: dto.uid,
             name: dto.name.clone(),
-            activated: dto.activated.clone(),
+            activated: dto.activated,
             binder_items: dto.binder_items.clone(),
         }
     }
@@ -139,11 +139,11 @@ impl From<&UpdateBinderDto> for Binder {
     fn from(dto: &UpdateBinderDto) -> Self {
         Binder {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
-            uid: dto.uid.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            uid: dto.uid,
             name: dto.name.clone(),
-            activated: dto.activated.clone(),
+            activated: dto.activated,
             binder_items: Default::default(),
         }
     }

@@ -64,9 +64,9 @@ pub fn move_items(
 ) -> Result<()> {
     let uow_context = MoveItemsUnitOfWorkFactory::new(db_context, event_hub);
     let mut uc = MoveItemsUseCase::new(Box::new(uow_context));
-    let return_dto = uc.execute(dto)?;
+    uc.execute(dto)?;
     undo_redo_manager.add_command_to_stack(Box::new(uc), stack_id)?;
-    Ok(return_dto)
+    Ok(())
 }
 
 pub fn merge_two_scenes(
@@ -78,9 +78,9 @@ pub fn merge_two_scenes(
 ) -> Result<()> {
     let uow_context = MergeTwoScenesUnitOfWorkFactory::new(db_context, event_hub);
     let mut uc = MergeTwoScenesUseCase::new(Box::new(uow_context));
-    let return_dto = uc.execute(dto)?;
+    uc.execute(dto)?;
     undo_redo_manager.add_command_to_stack(Box::new(uc), stack_id)?;
-    Ok(return_dto)
+    Ok(())
 }
 
 pub fn split_scene(
@@ -92,9 +92,9 @@ pub fn split_scene(
 ) -> Result<()> {
     let uow_context = SplitSceneUnitOfWorkFactory::new(db_context, event_hub);
     let mut uc = SplitSceneUseCase::new(Box::new(uow_context));
-    let return_dto = uc.execute(dto)?;
+    uc.execute(dto)?;
     undo_redo_manager.add_command_to_stack(Box::new(uc), stack_id)?;
-    Ok(return_dto)
+    Ok(())
 }
 
 pub fn promote(
@@ -106,9 +106,9 @@ pub fn promote(
 ) -> Result<()> {
     let uow_context = PromoteUnitOfWorkFactory::new(db_context, event_hub);
     let mut uc = PromoteUseCase::new(Box::new(uow_context));
-    let return_dto = uc.execute(dto)?;
+    uc.execute(dto)?;
     undo_redo_manager.add_command_to_stack(Box::new(uc), stack_id)?;
-    Ok(return_dto)
+    Ok(())
 }
 
 pub fn set_descendants_exportable(

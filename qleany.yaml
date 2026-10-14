@@ -1,6 +1,6 @@
 ---
 schema:
-  version: 5
+  version: 6
 global:
   language: rust
   application_name: Skribisto

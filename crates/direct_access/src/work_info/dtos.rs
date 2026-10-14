@@ -40,12 +40,12 @@ impl From<&WorkInfoDto> for WorkInfo {
     fn from(dto: &WorkInfoDto) -> Self {
         WorkInfo {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
             file_name: dto.file_name.clone(),
             shape: dto.shape.clone(),
-            work: dto.work.clone(),
-            search: dto.search.clone(),
+            work: dto.work,
+            search: dto.search,
             progress_snapshots: dto.progress_snapshots.clone(),
         }
     }
@@ -96,12 +96,12 @@ impl From<&CreateWorkInfoDto> for WorkInfo {
     fn from(dto: &CreateWorkInfoDto) -> Self {
         WorkInfo {
             id: 0,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
             file_name: dto.file_name.clone(),
             shape: dto.shape.clone(),
-            work: dto.work.clone(),
-            search: dto.search.clone(),
+            work: dto.work,
+            search: dto.search,
             progress_snapshots: dto.progress_snapshots.clone(),
         }
     }
@@ -148,8 +148,8 @@ impl From<&UpdateWorkInfoDto> for WorkInfo {
     fn from(dto: &UpdateWorkInfoDto) -> Self {
         WorkInfo {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
             file_name: dto.file_name.clone(),
             shape: dto.shape.clone(),
             work: Default::default(),

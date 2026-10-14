@@ -9,7 +9,14 @@
 // leaves this crate at zero panic paths outside tests — this lint keeps it there,
 // including across regeneration, which is why it lives in the template and not in
 // the consuming project's `Cargo.toml`.
-#![warn(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+//
+// `not(test)`, because "outside tests" is meant literally: the generated
+// controller tests unwrap freely, as test code should, and a crate-wide warn
+// flagged every one of them under `--all-targets`.
+#![cfg_attr(
+    not(test),
+    warn(clippy::unwrap_used, clippy::expect_used, clippy::panic)
+)]
 
 // This file defines the direct_access crate public API.
 

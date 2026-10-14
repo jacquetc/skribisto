@@ -37,8 +37,8 @@ pub fn load_work(
 ) -> Result<()> {
     let uow_context = LoadWorkUnitOfWorkFactory::new(db_context, event_hub);
     let mut uc = LoadWorkUseCase::new(Box::new(uow_context));
-    let return_dto = uc.execute(dto)?;
-    Ok(return_dto)
+    uc.execute(dto)?;
+    Ok(())
 }
 
 pub fn save_work(
@@ -156,13 +156,13 @@ pub fn close_work(
 ) -> Result<()> {
     let uow_context = CloseWorkUnitOfWorkFactory::new(db_context, event_hub);
     let mut uc = CloseWorkUseCase::new(Box::new(uow_context));
-    let return_dto = uc.execute(dto)?;
-    Ok(return_dto)
+    uc.execute(dto)?;
+    Ok(())
 }
 
 pub fn new_work(db_context: &DbContext, event_hub: &Arc<EventHub>, dto: &NewWorkDto) -> Result<()> {
     let uow_context = NewWorkUnitOfWorkFactory::new(db_context, event_hub);
     let mut uc = NewWorkUseCase::new(Box::new(uow_context));
-    let return_dto = uc.execute(dto)?;
-    Ok(return_dto)
+    uc.execute(dto)?;
+    Ok(())
 }

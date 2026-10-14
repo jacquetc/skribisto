@@ -20,14 +20,14 @@ use std::sync::RwLock;
 // The Store
 // ─────────────────────────────────────────────────────────────────────────────
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct HashMapStore {
     // ── Entity tables ──────────────────────────────────────────────────
     pub roots: RwLock<HashMap<EntityId, Root>>,
     pub systems: RwLock<HashMap<EntityId, System>>,
     pub work_infos: RwLock<HashMap<EntityId, WorkInfo>>,
     pub progress_snapshots: RwLock<HashMap<EntityId, ProgressSnapshot>>,
-    pub searchs: RwLock<HashMap<EntityId, Search>>,
+    pub searches: RwLock<HashMap<EntityId, Search>>,
     pub search_results: RwLock<HashMap<EntityId, SearchResult>>,
     pub recent_works: RwLock<HashMap<EntityId, RecentWork>>,
     pub works: RwLock<HashMap<EntityId, Work>>,
@@ -38,11 +38,11 @@ pub struct HashMapStore {
     pub milestones: RwLock<HashMap<EntityId, Milestone>>,
     pub comments: RwLock<HashMap<EntityId, Comment>>,
     pub footnotes: RwLock<HashMap<EntityId, Footnote>>,
-    pub comment_replys: RwLock<HashMap<EntityId, CommentReply>>,
+    pub comment_replies: RwLock<HashMap<EntityId, CommentReply>>,
     pub binders: RwLock<HashMap<EntityId, Binder>>,
     pub binder_items: RwLock<HashMap<EntityId, BinderItem>>,
     pub binder_tags: RwLock<HashMap<EntityId, BinderTag>>,
-    pub binder_statuss: RwLock<HashMap<EntityId, BinderStatus>>,
+    pub binder_statuses: RwLock<HashMap<EntityId, BinderStatus>>,
     pub contents: RwLock<HashMap<EntityId, Content>>,
     pub dict_words: RwLock<HashMap<EntityId, DictWord>>,
     pub text_replacement_rules: RwLock<HashMap<EntityId, TextReplacementRule>>,
@@ -50,48 +50,45 @@ pub struct HashMapStore {
     pub assets: RwLock<HashMap<EntityId, Asset>>,
 
     // ── Junction tables (one per forward relationship, shared for backward cleanup) ─
-    pub jn_system_from_root_system: RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_work_from_root_works: RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_recent_work_from_system_recent_works: RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_work_info_from_system_work_infos: RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_progress_snapshot_from_work_info_progress_snapshots:
-        RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_search_from_work_info_search: RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_work_from_work_info_work: RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_search_result_from_search_results: RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_asset_from_work_assets: RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_binder_from_work_binders: RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_comment_from_work_comments: RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_dict_word_from_work_dict_words: RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_footnote_from_work_footnotes: RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_note_template_from_work_note_templates: RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_pace_from_work_paces: RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_smart_punctuation_from_work_smart_punctuation: RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_binder_status_from_work_statuses: RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_binder_tag_from_work_tags: RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_text_replacement_rule_from_work_text_replacement_rules:
-        RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_trash_info_from_work_trash_infos: RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_binder_from_trash_info_trashed_binder: RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_binder_item_from_trash_info_trashed_binder_item:
-        RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_binder_item_from_pace_book_item: RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_holiday_from_pace_holidays: RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_milestone_from_pace_milestones: RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_binder_item_from_milestone_target_item: RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_content_from_comment_content: RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_comment_reply_from_comment_replies: RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_content_from_footnote_content: RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_binder_item_from_binder_binder_items: RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_binder_item_from_binder_item_books: RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_content_from_binder_item_contents: RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_asset_from_binder_item_cover: RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_binder_item_from_binder_item_point_of_view: RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_binder_item_from_binder_item_references: RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_binder_status_from_binder_item_status: RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_binder_tag_from_binder_item_tags: RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_binder_item_from_binder_tag_creates_in: RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    pub jn_note_template_from_binder_tag_note_template: RwLock<HashMap<EntityId, Vec<EntityId>>>,
+    pub jn_system_from_root_system: RwLock<HashMapJunction>,
+    pub jn_work_from_root_works: RwLock<HashMapJunction>,
+    pub jn_recent_work_from_system_recent_works: RwLock<HashMapJunction>,
+    pub jn_work_info_from_system_work_infos: RwLock<HashMapJunction>,
+    pub jn_progress_snapshot_from_work_info_progress_snapshots: RwLock<HashMapJunction>,
+    pub jn_search_from_work_info_search: RwLock<HashMapJunction>,
+    pub jn_work_from_work_info_work: RwLock<HashMapJunction>,
+    pub jn_search_result_from_search_results: RwLock<HashMapJunction>,
+    pub jn_asset_from_work_assets: RwLock<HashMapJunction>,
+    pub jn_binder_from_work_binders: RwLock<HashMapJunction>,
+    pub jn_comment_from_work_comments: RwLock<HashMapJunction>,
+    pub jn_dict_word_from_work_dict_words: RwLock<HashMapJunction>,
+    pub jn_footnote_from_work_footnotes: RwLock<HashMapJunction>,
+    pub jn_note_template_from_work_note_templates: RwLock<HashMapJunction>,
+    pub jn_pace_from_work_paces: RwLock<HashMapJunction>,
+    pub jn_smart_punctuation_from_work_smart_punctuation: RwLock<HashMapJunction>,
+    pub jn_binder_status_from_work_statuses: RwLock<HashMapJunction>,
+    pub jn_binder_tag_from_work_tags: RwLock<HashMapJunction>,
+    pub jn_text_replacement_rule_from_work_text_replacement_rules: RwLock<HashMapJunction>,
+    pub jn_trash_info_from_work_trash_infos: RwLock<HashMapJunction>,
+    pub jn_binder_from_trash_info_trashed_binder: RwLock<HashMapJunction>,
+    pub jn_binder_item_from_trash_info_trashed_binder_item: RwLock<HashMapJunction>,
+    pub jn_binder_item_from_pace_book_item: RwLock<HashMapJunction>,
+    pub jn_holiday_from_pace_holidays: RwLock<HashMapJunction>,
+    pub jn_milestone_from_pace_milestones: RwLock<HashMapJunction>,
+    pub jn_binder_item_from_milestone_target_item: RwLock<HashMapJunction>,
+    pub jn_content_from_comment_content: RwLock<HashMapJunction>,
+    pub jn_comment_reply_from_comment_replies: RwLock<HashMapJunction>,
+    pub jn_content_from_footnote_content: RwLock<HashMapJunction>,
+    pub jn_binder_item_from_binder_binder_items: RwLock<HashMapJunction>,
+    pub jn_binder_item_from_binder_item_books: RwLock<HashMapJunction>,
+    pub jn_content_from_binder_item_contents: RwLock<HashMapJunction>,
+    pub jn_asset_from_binder_item_cover: RwLock<HashMapJunction>,
+    pub jn_binder_item_from_binder_item_point_of_view: RwLock<HashMapJunction>,
+    pub jn_binder_item_from_binder_item_references: RwLock<HashMapJunction>,
+    pub jn_binder_status_from_binder_item_status: RwLock<HashMapJunction>,
+    pub jn_binder_tag_from_binder_item_tags: RwLock<HashMapJunction>,
+    pub jn_binder_item_from_binder_tag_creates_in: RwLock<HashMapJunction>,
+    pub jn_note_template_from_binder_tag_note_template: RwLock<HashMapJunction>,
 
     // ── ID counters (one per entity type) ──────────────────────────
     pub counters: RwLock<std::collections::HashMap<String, EntityId>>,
@@ -99,6 +96,87 @@ pub struct HashMapStore {
     // ── Savepoints ──────────────────────────────────────────────────
     savepoints: RwLock<std::collections::HashMap<u64, HashMapStoreSnapshot>>,
     next_savepoint_id: RwLock<u64>,
+}
+impl Default for HashMapStore {
+    fn default() -> Self {
+        Self {
+            roots: RwLock::default(),
+            systems: RwLock::default(),
+            work_infos: RwLock::default(),
+            progress_snapshots: RwLock::default(),
+            searches: RwLock::default(),
+            search_results: RwLock::default(),
+            recent_works: RwLock::default(),
+            works: RwLock::default(),
+            smart_punctuations: RwLock::default(),
+            trash_infos: RwLock::default(),
+            paces: RwLock::default(),
+            holidays: RwLock::default(),
+            milestones: RwLock::default(),
+            comments: RwLock::default(),
+            footnotes: RwLock::default(),
+            comment_replies: RwLock::default(),
+            binders: RwLock::default(),
+            binder_items: RwLock::default(),
+            binder_tags: RwLock::default(),
+            binder_statuses: RwLock::default(),
+            contents: RwLock::default(),
+            dict_words: RwLock::default(),
+            text_replacement_rules: RwLock::default(),
+            note_templates: RwLock::default(),
+            assets: RwLock::default(),
+            jn_system_from_root_system: RwLock::new(HashMapJunction::exclusive()),
+            jn_work_from_root_works: RwLock::new(HashMapJunction::exclusive()),
+            jn_recent_work_from_system_recent_works: RwLock::new(HashMapJunction::exclusive()),
+            jn_work_info_from_system_work_infos: RwLock::new(HashMapJunction::exclusive()),
+            jn_progress_snapshot_from_work_info_progress_snapshots: RwLock::new(
+                HashMapJunction::exclusive(),
+            ),
+            jn_search_from_work_info_search: RwLock::new(HashMapJunction::exclusive()),
+            jn_work_from_work_info_work: RwLock::new(HashMapJunction::shared()),
+            jn_search_result_from_search_results: RwLock::new(HashMapJunction::exclusive()),
+            jn_asset_from_work_assets: RwLock::new(HashMapJunction::exclusive()),
+            jn_binder_from_work_binders: RwLock::new(HashMapJunction::exclusive()),
+            jn_comment_from_work_comments: RwLock::new(HashMapJunction::exclusive()),
+            jn_dict_word_from_work_dict_words: RwLock::new(HashMapJunction::exclusive()),
+            jn_footnote_from_work_footnotes: RwLock::new(HashMapJunction::exclusive()),
+            jn_note_template_from_work_note_templates: RwLock::new(HashMapJunction::exclusive()),
+            jn_pace_from_work_paces: RwLock::new(HashMapJunction::exclusive()),
+            jn_smart_punctuation_from_work_smart_punctuation: RwLock::new(
+                HashMapJunction::exclusive(),
+            ),
+            jn_binder_status_from_work_statuses: RwLock::new(HashMapJunction::exclusive()),
+            jn_binder_tag_from_work_tags: RwLock::new(HashMapJunction::exclusive()),
+            jn_text_replacement_rule_from_work_text_replacement_rules: RwLock::new(
+                HashMapJunction::exclusive(),
+            ),
+            jn_trash_info_from_work_trash_infos: RwLock::new(HashMapJunction::exclusive()),
+            jn_binder_from_trash_info_trashed_binder: RwLock::new(HashMapJunction::shared()),
+            jn_binder_item_from_trash_info_trashed_binder_item: RwLock::new(
+                HashMapJunction::shared(),
+            ),
+            jn_binder_item_from_pace_book_item: RwLock::new(HashMapJunction::shared()),
+            jn_holiday_from_pace_holidays: RwLock::new(HashMapJunction::exclusive()),
+            jn_milestone_from_pace_milestones: RwLock::new(HashMapJunction::exclusive()),
+            jn_binder_item_from_milestone_target_item: RwLock::new(HashMapJunction::shared()),
+            jn_content_from_comment_content: RwLock::new(HashMapJunction::shared()),
+            jn_comment_reply_from_comment_replies: RwLock::new(HashMapJunction::exclusive()),
+            jn_content_from_footnote_content: RwLock::new(HashMapJunction::shared()),
+            jn_binder_item_from_binder_binder_items: RwLock::new(HashMapJunction::exclusive()),
+            jn_binder_item_from_binder_item_books: RwLock::new(HashMapJunction::shared()),
+            jn_content_from_binder_item_contents: RwLock::new(HashMapJunction::exclusive()),
+            jn_asset_from_binder_item_cover: RwLock::new(HashMapJunction::shared()),
+            jn_binder_item_from_binder_item_point_of_view: RwLock::new(HashMapJunction::shared()),
+            jn_binder_item_from_binder_item_references: RwLock::new(HashMapJunction::shared()),
+            jn_binder_status_from_binder_item_status: RwLock::new(HashMapJunction::shared()),
+            jn_binder_tag_from_binder_item_tags: RwLock::new(HashMapJunction::shared()),
+            jn_binder_item_from_binder_tag_creates_in: RwLock::new(HashMapJunction::shared()),
+            jn_note_template_from_binder_tag_note_template: RwLock::new(HashMapJunction::shared()),
+            counters: RwLock::default(),
+            savepoints: RwLock::default(),
+            next_savepoint_id: RwLock::default(),
+        }
+    }
 }
 
 impl HashMapStore {
@@ -116,7 +194,7 @@ impl HashMapStore {
             systems: read_or_recover(&self.systems).clone(),
             work_infos: read_or_recover(&self.work_infos).clone(),
             progress_snapshots: read_or_recover(&self.progress_snapshots).clone(),
-            searchs: read_or_recover(&self.searchs).clone(),
+            searches: read_or_recover(&self.searches).clone(),
             search_results: read_or_recover(&self.search_results).clone(),
             recent_works: read_or_recover(&self.recent_works).clone(),
             works: read_or_recover(&self.works).clone(),
@@ -127,11 +205,11 @@ impl HashMapStore {
             milestones: read_or_recover(&self.milestones).clone(),
             comments: read_or_recover(&self.comments).clone(),
             footnotes: read_or_recover(&self.footnotes).clone(),
-            comment_replys: read_or_recover(&self.comment_replys).clone(),
+            comment_replies: read_or_recover(&self.comment_replies).clone(),
             binders: read_or_recover(&self.binders).clone(),
             binder_items: read_or_recover(&self.binder_items).clone(),
             binder_tags: read_or_recover(&self.binder_tags).clone(),
-            binder_statuss: read_or_recover(&self.binder_statuss).clone(),
+            binder_statuses: read_or_recover(&self.binder_statuses).clone(),
             contents: read_or_recover(&self.contents).clone(),
             dict_words: read_or_recover(&self.dict_words).clone(),
             text_replacement_rules: read_or_recover(&self.text_replacement_rules).clone(),
@@ -298,7 +376,7 @@ impl HashMapStore {
         let g_systems = read_or_recover(&self.systems);
         let g_work_infos = read_or_recover(&self.work_infos);
         let g_progress_snapshots = read_or_recover(&self.progress_snapshots);
-        let g_searchs = read_or_recover(&self.searchs);
+        let g_searches = read_or_recover(&self.searches);
         let g_search_results = read_or_recover(&self.search_results);
         let g_recent_works = read_or_recover(&self.recent_works);
         let g_works = read_or_recover(&self.works);
@@ -309,11 +387,11 @@ impl HashMapStore {
         let g_milestones = read_or_recover(&self.milestones);
         let g_comments = read_or_recover(&self.comments);
         let g_footnotes = read_or_recover(&self.footnotes);
-        let g_comment_replys = read_or_recover(&self.comment_replys);
+        let g_comment_replies = read_or_recover(&self.comment_replies);
         let g_binders = read_or_recover(&self.binders);
         let g_binder_items = read_or_recover(&self.binder_items);
         let g_binder_tags = read_or_recover(&self.binder_tags);
-        let g_binder_statuss = read_or_recover(&self.binder_statuss);
+        let g_binder_statuses = read_or_recover(&self.binder_statuses);
         let g_contents = read_or_recover(&self.contents);
         let g_dict_words = read_or_recover(&self.dict_words);
         let g_text_replacement_rules = read_or_recover(&self.text_replacement_rules);
@@ -395,7 +473,7 @@ impl HashMapStore {
             systems: RwLock::new(g_systems.clone()),
             work_infos: RwLock::new(g_work_infos.clone()),
             progress_snapshots: RwLock::new(g_progress_snapshots.clone()),
-            searchs: RwLock::new(g_searchs.clone()),
+            searches: RwLock::new(g_searches.clone()),
             search_results: RwLock::new(g_search_results.clone()),
             recent_works: RwLock::new(g_recent_works.clone()),
             works: RwLock::new(g_works.clone()),
@@ -406,11 +484,11 @@ impl HashMapStore {
             milestones: RwLock::new(g_milestones.clone()),
             comments: RwLock::new(g_comments.clone()),
             footnotes: RwLock::new(g_footnotes.clone()),
-            comment_replys: RwLock::new(g_comment_replys.clone()),
+            comment_replies: RwLock::new(g_comment_replies.clone()),
             binders: RwLock::new(g_binders.clone()),
             binder_items: RwLock::new(g_binder_items.clone()),
             binder_tags: RwLock::new(g_binder_tags.clone()),
-            binder_statuss: RwLock::new(g_binder_statuss.clone()),
+            binder_statuses: RwLock::new(g_binder_statuses.clone()),
             contents: RwLock::new(g_contents.clone()),
             dict_words: RwLock::new(g_dict_words.clone()),
             text_replacement_rules: RwLock::new(g_text_replacement_rules.clone()),
@@ -519,7 +597,7 @@ impl HashMapStore {
         *write_or_recover(&self.systems) = snap.systems.clone();
         *write_or_recover(&self.work_infos) = snap.work_infos.clone();
         *write_or_recover(&self.progress_snapshots) = snap.progress_snapshots.clone();
-        *write_or_recover(&self.searchs) = snap.searchs.clone();
+        *write_or_recover(&self.searches) = snap.searches.clone();
         *write_or_recover(&self.search_results) = snap.search_results.clone();
         *write_or_recover(&self.recent_works) = snap.recent_works.clone();
         *write_or_recover(&self.works) = snap.works.clone();
@@ -530,11 +608,11 @@ impl HashMapStore {
         *write_or_recover(&self.milestones) = snap.milestones.clone();
         *write_or_recover(&self.comments) = snap.comments.clone();
         *write_or_recover(&self.footnotes) = snap.footnotes.clone();
-        *write_or_recover(&self.comment_replys) = snap.comment_replys.clone();
+        *write_or_recover(&self.comment_replies) = snap.comment_replies.clone();
         *write_or_recover(&self.binders) = snap.binders.clone();
         *write_or_recover(&self.binder_items) = snap.binder_items.clone();
         *write_or_recover(&self.binder_tags) = snap.binder_tags.clone();
-        *write_or_recover(&self.binder_statuss) = snap.binder_statuss.clone();
+        *write_or_recover(&self.binder_statuses) = snap.binder_statuses.clone();
         *write_or_recover(&self.contents) = snap.contents.clone();
         *write_or_recover(&self.dict_words) = snap.dict_words.clone();
         *write_or_recover(&self.text_replacement_rules) = snap.text_replacement_rules.clone();
@@ -680,7 +758,7 @@ impl HashMapStore {
         *write_or_recover(&self.systems) = snap.systems.clone();
         *write_or_recover(&self.work_infos) = snap.work_infos.clone();
         *write_or_recover(&self.progress_snapshots) = snap.progress_snapshots.clone();
-        *write_or_recover(&self.searchs) = snap.searchs.clone();
+        *write_or_recover(&self.searches) = snap.searches.clone();
         *write_or_recover(&self.search_results) = snap.search_results.clone();
         *write_or_recover(&self.recent_works) = snap.recent_works.clone();
         *write_or_recover(&self.works) = snap.works.clone();
@@ -691,11 +769,11 @@ impl HashMapStore {
         *write_or_recover(&self.milestones) = snap.milestones.clone();
         *write_or_recover(&self.comments) = snap.comments.clone();
         *write_or_recover(&self.footnotes) = snap.footnotes.clone();
-        *write_or_recover(&self.comment_replys) = snap.comment_replys.clone();
+        *write_or_recover(&self.comment_replies) = snap.comment_replies.clone();
         *write_or_recover(&self.binders) = snap.binders.clone();
         *write_or_recover(&self.binder_items) = snap.binder_items.clone();
         *write_or_recover(&self.binder_tags) = snap.binder_tags.clone();
-        *write_or_recover(&self.binder_statuss) = snap.binder_statuss.clone();
+        *write_or_recover(&self.binder_statuses) = snap.binder_statuses.clone();
         *write_or_recover(&self.contents) = snap.contents.clone();
         *write_or_recover(&self.dict_words) = snap.dict_words.clone();
         *write_or_recover(&self.text_replacement_rules) = snap.text_replacement_rules.clone();
@@ -795,6 +873,369 @@ impl HashMapStore {
             .expect("StoreSnapshot must contain HashMapStoreSnapshot");
         self.restore_without_counters(s);
     }
+
+    /// Check every junction's reverse index against a rebuild from its rows,
+    /// and that each junction is exclusive exactly when its relationship is.
+    ///
+    /// A diagnostic for tests: it walks every junction, so it costs O(store).
+    /// Nothing calls it on a write path. Returns the first discrepancy found.
+    pub fn check_junction_indexes(&self) -> Result<(), String> {
+        {
+            let jn = read_or_recover(&self.jn_system_from_root_system);
+            if !jn.is_exclusive() {
+                return Err(
+                    "jn_system_from_root_system: exclusivity does not match the relationship"
+                        .into(),
+                );
+            }
+            jn.check_index()
+                .map_err(|e| format!("jn_system_from_root_system: {e}"))?;
+        }
+        {
+            let jn = read_or_recover(&self.jn_work_from_root_works);
+            if !jn.is_exclusive() {
+                return Err(
+                    "jn_work_from_root_works: exclusivity does not match the relationship".into(),
+                );
+            }
+            jn.check_index()
+                .map_err(|e| format!("jn_work_from_root_works: {e}"))?;
+        }
+        {
+            let jn = read_or_recover(&self.jn_recent_work_from_system_recent_works);
+            if !jn.is_exclusive() {
+                return Err("jn_recent_work_from_system_recent_works: exclusivity does not match the relationship".into());
+            }
+            jn.check_index()
+                .map_err(|e| format!("jn_recent_work_from_system_recent_works: {e}"))?;
+        }
+        {
+            let jn = read_or_recover(&self.jn_work_info_from_system_work_infos);
+            if !jn.is_exclusive() {
+                return Err("jn_work_info_from_system_work_infos: exclusivity does not match the relationship".into());
+            }
+            jn.check_index()
+                .map_err(|e| format!("jn_work_info_from_system_work_infos: {e}"))?;
+        }
+        {
+            let jn = read_or_recover(&self.jn_progress_snapshot_from_work_info_progress_snapshots);
+            if !jn.is_exclusive() {
+                return Err("jn_progress_snapshot_from_work_info_progress_snapshots: exclusivity does not match the relationship".into());
+            }
+            jn.check_index().map_err(|e| {
+                format!("jn_progress_snapshot_from_work_info_progress_snapshots: {e}")
+            })?;
+        }
+        {
+            let jn = read_or_recover(&self.jn_search_from_work_info_search);
+            if !jn.is_exclusive() {
+                return Err(
+                    "jn_search_from_work_info_search: exclusivity does not match the relationship"
+                        .into(),
+                );
+            }
+            jn.check_index()
+                .map_err(|e| format!("jn_search_from_work_info_search: {e}"))?;
+        }
+        {
+            let jn = read_or_recover(&self.jn_work_from_work_info_work);
+            if jn.is_exclusive() {
+                return Err(
+                    "jn_work_from_work_info_work: exclusivity does not match the relationship"
+                        .into(),
+                );
+            }
+            jn.check_index()
+                .map_err(|e| format!("jn_work_from_work_info_work: {e}"))?;
+        }
+        {
+            let jn = read_or_recover(&self.jn_search_result_from_search_results);
+            if !jn.is_exclusive() {
+                return Err("jn_search_result_from_search_results: exclusivity does not match the relationship".into());
+            }
+            jn.check_index()
+                .map_err(|e| format!("jn_search_result_from_search_results: {e}"))?;
+        }
+        {
+            let jn = read_or_recover(&self.jn_asset_from_work_assets);
+            if !jn.is_exclusive() {
+                return Err(
+                    "jn_asset_from_work_assets: exclusivity does not match the relationship".into(),
+                );
+            }
+            jn.check_index()
+                .map_err(|e| format!("jn_asset_from_work_assets: {e}"))?;
+        }
+        {
+            let jn = read_or_recover(&self.jn_binder_from_work_binders);
+            if !jn.is_exclusive() {
+                return Err(
+                    "jn_binder_from_work_binders: exclusivity does not match the relationship"
+                        .into(),
+                );
+            }
+            jn.check_index()
+                .map_err(|e| format!("jn_binder_from_work_binders: {e}"))?;
+        }
+        {
+            let jn = read_or_recover(&self.jn_comment_from_work_comments);
+            if !jn.is_exclusive() {
+                return Err(
+                    "jn_comment_from_work_comments: exclusivity does not match the relationship"
+                        .into(),
+                );
+            }
+            jn.check_index()
+                .map_err(|e| format!("jn_comment_from_work_comments: {e}"))?;
+        }
+        {
+            let jn = read_or_recover(&self.jn_dict_word_from_work_dict_words);
+            if !jn.is_exclusive() {
+                return Err("jn_dict_word_from_work_dict_words: exclusivity does not match the relationship".into());
+            }
+            jn.check_index()
+                .map_err(|e| format!("jn_dict_word_from_work_dict_words: {e}"))?;
+        }
+        {
+            let jn = read_or_recover(&self.jn_footnote_from_work_footnotes);
+            if !jn.is_exclusive() {
+                return Err(
+                    "jn_footnote_from_work_footnotes: exclusivity does not match the relationship"
+                        .into(),
+                );
+            }
+            jn.check_index()
+                .map_err(|e| format!("jn_footnote_from_work_footnotes: {e}"))?;
+        }
+        {
+            let jn = read_or_recover(&self.jn_note_template_from_work_note_templates);
+            if !jn.is_exclusive() {
+                return Err("jn_note_template_from_work_note_templates: exclusivity does not match the relationship".into());
+            }
+            jn.check_index()
+                .map_err(|e| format!("jn_note_template_from_work_note_templates: {e}"))?;
+        }
+        {
+            let jn = read_or_recover(&self.jn_pace_from_work_paces);
+            if !jn.is_exclusive() {
+                return Err(
+                    "jn_pace_from_work_paces: exclusivity does not match the relationship".into(),
+                );
+            }
+            jn.check_index()
+                .map_err(|e| format!("jn_pace_from_work_paces: {e}"))?;
+        }
+        {
+            let jn = read_or_recover(&self.jn_smart_punctuation_from_work_smart_punctuation);
+            if !jn.is_exclusive() {
+                return Err("jn_smart_punctuation_from_work_smart_punctuation: exclusivity does not match the relationship".into());
+            }
+            jn.check_index()
+                .map_err(|e| format!("jn_smart_punctuation_from_work_smart_punctuation: {e}"))?;
+        }
+        {
+            let jn = read_or_recover(&self.jn_binder_status_from_work_statuses);
+            if !jn.is_exclusive() {
+                return Err("jn_binder_status_from_work_statuses: exclusivity does not match the relationship".into());
+            }
+            jn.check_index()
+                .map_err(|e| format!("jn_binder_status_from_work_statuses: {e}"))?;
+        }
+        {
+            let jn = read_or_recover(&self.jn_binder_tag_from_work_tags);
+            if !jn.is_exclusive() {
+                return Err(
+                    "jn_binder_tag_from_work_tags: exclusivity does not match the relationship"
+                        .into(),
+                );
+            }
+            jn.check_index()
+                .map_err(|e| format!("jn_binder_tag_from_work_tags: {e}"))?;
+        }
+        {
+            let jn =
+                read_or_recover(&self.jn_text_replacement_rule_from_work_text_replacement_rules);
+            if !jn.is_exclusive() {
+                return Err("jn_text_replacement_rule_from_work_text_replacement_rules: exclusivity does not match the relationship".into());
+            }
+            jn.check_index().map_err(|e| {
+                format!("jn_text_replacement_rule_from_work_text_replacement_rules: {e}")
+            })?;
+        }
+        {
+            let jn = read_or_recover(&self.jn_trash_info_from_work_trash_infos);
+            if !jn.is_exclusive() {
+                return Err("jn_trash_info_from_work_trash_infos: exclusivity does not match the relationship".into());
+            }
+            jn.check_index()
+                .map_err(|e| format!("jn_trash_info_from_work_trash_infos: {e}"))?;
+        }
+        {
+            let jn = read_or_recover(&self.jn_binder_from_trash_info_trashed_binder);
+            if jn.is_exclusive() {
+                return Err("jn_binder_from_trash_info_trashed_binder: exclusivity does not match the relationship".into());
+            }
+            jn.check_index()
+                .map_err(|e| format!("jn_binder_from_trash_info_trashed_binder: {e}"))?;
+        }
+        {
+            let jn = read_or_recover(&self.jn_binder_item_from_trash_info_trashed_binder_item);
+            if jn.is_exclusive() {
+                return Err("jn_binder_item_from_trash_info_trashed_binder_item: exclusivity does not match the relationship".into());
+            }
+            jn.check_index()
+                .map_err(|e| format!("jn_binder_item_from_trash_info_trashed_binder_item: {e}"))?;
+        }
+        {
+            let jn = read_or_recover(&self.jn_binder_item_from_pace_book_item);
+            if jn.is_exclusive() {
+                return Err("jn_binder_item_from_pace_book_item: exclusivity does not match the relationship".into());
+            }
+            jn.check_index()
+                .map_err(|e| format!("jn_binder_item_from_pace_book_item: {e}"))?;
+        }
+        {
+            let jn = read_or_recover(&self.jn_holiday_from_pace_holidays);
+            if !jn.is_exclusive() {
+                return Err(
+                    "jn_holiday_from_pace_holidays: exclusivity does not match the relationship"
+                        .into(),
+                );
+            }
+            jn.check_index()
+                .map_err(|e| format!("jn_holiday_from_pace_holidays: {e}"))?;
+        }
+        {
+            let jn = read_or_recover(&self.jn_milestone_from_pace_milestones);
+            if !jn.is_exclusive() {
+                return Err("jn_milestone_from_pace_milestones: exclusivity does not match the relationship".into());
+            }
+            jn.check_index()
+                .map_err(|e| format!("jn_milestone_from_pace_milestones: {e}"))?;
+        }
+        {
+            let jn = read_or_recover(&self.jn_binder_item_from_milestone_target_item);
+            if jn.is_exclusive() {
+                return Err("jn_binder_item_from_milestone_target_item: exclusivity does not match the relationship".into());
+            }
+            jn.check_index()
+                .map_err(|e| format!("jn_binder_item_from_milestone_target_item: {e}"))?;
+        }
+        {
+            let jn = read_or_recover(&self.jn_content_from_comment_content);
+            if jn.is_exclusive() {
+                return Err(
+                    "jn_content_from_comment_content: exclusivity does not match the relationship"
+                        .into(),
+                );
+            }
+            jn.check_index()
+                .map_err(|e| format!("jn_content_from_comment_content: {e}"))?;
+        }
+        {
+            let jn = read_or_recover(&self.jn_comment_reply_from_comment_replies);
+            if !jn.is_exclusive() {
+                return Err("jn_comment_reply_from_comment_replies: exclusivity does not match the relationship".into());
+            }
+            jn.check_index()
+                .map_err(|e| format!("jn_comment_reply_from_comment_replies: {e}"))?;
+        }
+        {
+            let jn = read_or_recover(&self.jn_content_from_footnote_content);
+            if jn.is_exclusive() {
+                return Err(
+                    "jn_content_from_footnote_content: exclusivity does not match the relationship"
+                        .into(),
+                );
+            }
+            jn.check_index()
+                .map_err(|e| format!("jn_content_from_footnote_content: {e}"))?;
+        }
+        {
+            let jn = read_or_recover(&self.jn_binder_item_from_binder_binder_items);
+            if !jn.is_exclusive() {
+                return Err("jn_binder_item_from_binder_binder_items: exclusivity does not match the relationship".into());
+            }
+            jn.check_index()
+                .map_err(|e| format!("jn_binder_item_from_binder_binder_items: {e}"))?;
+        }
+        {
+            let jn = read_or_recover(&self.jn_binder_item_from_binder_item_books);
+            if jn.is_exclusive() {
+                return Err("jn_binder_item_from_binder_item_books: exclusivity does not match the relationship".into());
+            }
+            jn.check_index()
+                .map_err(|e| format!("jn_binder_item_from_binder_item_books: {e}"))?;
+        }
+        {
+            let jn = read_or_recover(&self.jn_content_from_binder_item_contents);
+            if !jn.is_exclusive() {
+                return Err("jn_content_from_binder_item_contents: exclusivity does not match the relationship".into());
+            }
+            jn.check_index()
+                .map_err(|e| format!("jn_content_from_binder_item_contents: {e}"))?;
+        }
+        {
+            let jn = read_or_recover(&self.jn_asset_from_binder_item_cover);
+            if jn.is_exclusive() {
+                return Err(
+                    "jn_asset_from_binder_item_cover: exclusivity does not match the relationship"
+                        .into(),
+                );
+            }
+            jn.check_index()
+                .map_err(|e| format!("jn_asset_from_binder_item_cover: {e}"))?;
+        }
+        {
+            let jn = read_or_recover(&self.jn_binder_item_from_binder_item_point_of_view);
+            if jn.is_exclusive() {
+                return Err("jn_binder_item_from_binder_item_point_of_view: exclusivity does not match the relationship".into());
+            }
+            jn.check_index()
+                .map_err(|e| format!("jn_binder_item_from_binder_item_point_of_view: {e}"))?;
+        }
+        {
+            let jn = read_or_recover(&self.jn_binder_item_from_binder_item_references);
+            if jn.is_exclusive() {
+                return Err("jn_binder_item_from_binder_item_references: exclusivity does not match the relationship".into());
+            }
+            jn.check_index()
+                .map_err(|e| format!("jn_binder_item_from_binder_item_references: {e}"))?;
+        }
+        {
+            let jn = read_or_recover(&self.jn_binder_status_from_binder_item_status);
+            if jn.is_exclusive() {
+                return Err("jn_binder_status_from_binder_item_status: exclusivity does not match the relationship".into());
+            }
+            jn.check_index()
+                .map_err(|e| format!("jn_binder_status_from_binder_item_status: {e}"))?;
+        }
+        {
+            let jn = read_or_recover(&self.jn_binder_tag_from_binder_item_tags);
+            if jn.is_exclusive() {
+                return Err("jn_binder_tag_from_binder_item_tags: exclusivity does not match the relationship".into());
+            }
+            jn.check_index()
+                .map_err(|e| format!("jn_binder_tag_from_binder_item_tags: {e}"))?;
+        }
+        {
+            let jn = read_or_recover(&self.jn_binder_item_from_binder_tag_creates_in);
+            if jn.is_exclusive() {
+                return Err("jn_binder_item_from_binder_tag_creates_in: exclusivity does not match the relationship".into());
+            }
+            jn.check_index()
+                .map_err(|e| format!("jn_binder_item_from_binder_tag_creates_in: {e}"))?;
+        }
+        {
+            let jn = read_or_recover(&self.jn_note_template_from_binder_tag_note_template);
+            if jn.is_exclusive() {
+                return Err("jn_note_template_from_binder_tag_note_template: exclusivity does not match the relationship".into());
+            }
+            jn.check_index()
+                .map_err(|e| format!("jn_note_template_from_binder_tag_note_template: {e}"))?;
+        }
+        Ok(())
+    }
 }
 
 /// Snapshot of the entire store. O(1) to create thanks to im::HashMap structural sharing.
@@ -808,7 +1249,7 @@ pub struct HashMapStoreSnapshot {
     pub(crate) systems: HashMap<EntityId, System>,
     pub(crate) work_infos: HashMap<EntityId, WorkInfo>,
     pub(crate) progress_snapshots: HashMap<EntityId, ProgressSnapshot>,
-    pub(crate) searchs: HashMap<EntityId, Search>,
+    pub(crate) searches: HashMap<EntityId, Search>,
     pub(crate) search_results: HashMap<EntityId, SearchResult>,
     pub(crate) recent_works: HashMap<EntityId, RecentWork>,
     pub(crate) works: HashMap<EntityId, Work>,
@@ -819,57 +1260,55 @@ pub struct HashMapStoreSnapshot {
     pub(crate) milestones: HashMap<EntityId, Milestone>,
     pub(crate) comments: HashMap<EntityId, Comment>,
     pub(crate) footnotes: HashMap<EntityId, Footnote>,
-    pub(crate) comment_replys: HashMap<EntityId, CommentReply>,
+    pub(crate) comment_replies: HashMap<EntityId, CommentReply>,
     pub(crate) binders: HashMap<EntityId, Binder>,
     pub(crate) binder_items: HashMap<EntityId, BinderItem>,
     pub(crate) binder_tags: HashMap<EntityId, BinderTag>,
-    pub(crate) binder_statuss: HashMap<EntityId, BinderStatus>,
+    pub(crate) binder_statuses: HashMap<EntityId, BinderStatus>,
     pub(crate) contents: HashMap<EntityId, Content>,
     pub(crate) dict_words: HashMap<EntityId, DictWord>,
     pub(crate) text_replacement_rules: HashMap<EntityId, TextReplacementRule>,
     pub(crate) note_templates: HashMap<EntityId, NoteTemplate>,
     pub(crate) assets: HashMap<EntityId, Asset>,
-    pub(crate) jn_system_from_root_system: HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_work_from_root_works: HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_recent_work_from_system_recent_works: HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_work_info_from_system_work_infos: HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_progress_snapshot_from_work_info_progress_snapshots:
-        HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_search_from_work_info_search: HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_work_from_work_info_work: HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_search_result_from_search_results: HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_asset_from_work_assets: HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_binder_from_work_binders: HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_comment_from_work_comments: HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_dict_word_from_work_dict_words: HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_footnote_from_work_footnotes: HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_note_template_from_work_note_templates: HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_pace_from_work_paces: HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_smart_punctuation_from_work_smart_punctuation: HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_binder_status_from_work_statuses: HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_binder_tag_from_work_tags: HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_text_replacement_rule_from_work_text_replacement_rules:
-        HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_trash_info_from_work_trash_infos: HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_binder_from_trash_info_trashed_binder: HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_binder_item_from_trash_info_trashed_binder_item: HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_binder_item_from_pace_book_item: HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_holiday_from_pace_holidays: HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_milestone_from_pace_milestones: HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_binder_item_from_milestone_target_item: HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_content_from_comment_content: HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_comment_reply_from_comment_replies: HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_content_from_footnote_content: HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_binder_item_from_binder_binder_items: HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_binder_item_from_binder_item_books: HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_content_from_binder_item_contents: HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_asset_from_binder_item_cover: HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_binder_item_from_binder_item_point_of_view: HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_binder_item_from_binder_item_references: HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_binder_status_from_binder_item_status: HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_binder_tag_from_binder_item_tags: HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_binder_item_from_binder_tag_creates_in: HashMap<EntityId, Vec<EntityId>>,
-    pub(crate) jn_note_template_from_binder_tag_note_template: HashMap<EntityId, Vec<EntityId>>,
+    pub(crate) jn_system_from_root_system: HashMapJunction,
+    pub(crate) jn_work_from_root_works: HashMapJunction,
+    pub(crate) jn_recent_work_from_system_recent_works: HashMapJunction,
+    pub(crate) jn_work_info_from_system_work_infos: HashMapJunction,
+    pub(crate) jn_progress_snapshot_from_work_info_progress_snapshots: HashMapJunction,
+    pub(crate) jn_search_from_work_info_search: HashMapJunction,
+    pub(crate) jn_work_from_work_info_work: HashMapJunction,
+    pub(crate) jn_search_result_from_search_results: HashMapJunction,
+    pub(crate) jn_asset_from_work_assets: HashMapJunction,
+    pub(crate) jn_binder_from_work_binders: HashMapJunction,
+    pub(crate) jn_comment_from_work_comments: HashMapJunction,
+    pub(crate) jn_dict_word_from_work_dict_words: HashMapJunction,
+    pub(crate) jn_footnote_from_work_footnotes: HashMapJunction,
+    pub(crate) jn_note_template_from_work_note_templates: HashMapJunction,
+    pub(crate) jn_pace_from_work_paces: HashMapJunction,
+    pub(crate) jn_smart_punctuation_from_work_smart_punctuation: HashMapJunction,
+    pub(crate) jn_binder_status_from_work_statuses: HashMapJunction,
+    pub(crate) jn_binder_tag_from_work_tags: HashMapJunction,
+    pub(crate) jn_text_replacement_rule_from_work_text_replacement_rules: HashMapJunction,
+    pub(crate) jn_trash_info_from_work_trash_infos: HashMapJunction,
+    pub(crate) jn_binder_from_trash_info_trashed_binder: HashMapJunction,
+    pub(crate) jn_binder_item_from_trash_info_trashed_binder_item: HashMapJunction,
+    pub(crate) jn_binder_item_from_pace_book_item: HashMapJunction,
+    pub(crate) jn_holiday_from_pace_holidays: HashMapJunction,
+    pub(crate) jn_milestone_from_pace_milestones: HashMapJunction,
+    pub(crate) jn_binder_item_from_milestone_target_item: HashMapJunction,
+    pub(crate) jn_content_from_comment_content: HashMapJunction,
+    pub(crate) jn_comment_reply_from_comment_replies: HashMapJunction,
+    pub(crate) jn_content_from_footnote_content: HashMapJunction,
+    pub(crate) jn_binder_item_from_binder_binder_items: HashMapJunction,
+    pub(crate) jn_binder_item_from_binder_item_books: HashMapJunction,
+    pub(crate) jn_content_from_binder_item_contents: HashMapJunction,
+    pub(crate) jn_asset_from_binder_item_cover: HashMapJunction,
+    pub(crate) jn_binder_item_from_binder_item_point_of_view: HashMapJunction,
+    pub(crate) jn_binder_item_from_binder_item_references: HashMapJunction,
+    pub(crate) jn_binder_status_from_binder_item_status: HashMapJunction,
+    pub(crate) jn_binder_tag_from_binder_item_tags: HashMapJunction,
+    pub(crate) jn_binder_item_from_binder_tag_creates_in: HashMapJunction,
+    pub(crate) jn_note_template_from_binder_tag_note_template: HashMapJunction,
     counters: std::collections::HashMap<String, EntityId>,
 }
 
@@ -880,6 +1319,278 @@ impl StoreSnapshotTrait for HashMapStoreSnapshot {
 
     fn as_any(&self) -> &dyn std::any::Any {
         self
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Junctions
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// One relationship's junction: each source id mapped to its ordered target ids.
+///
+/// The junction of an *exclusive* relationship (one-to-one, one-to-many,
+/// ordered one-to-many) also keeps a reverse index, target to the sources
+/// holding it, so that "this target already belongs to another source" costs
+/// one lookup per target of a write instead of a walk over every row of the
+/// relationship. Without it, creating N rows that each own a child is O(N²).
+///
+/// The rows are private, so nothing can change them behind the index: every
+/// mutation goes through [`Self::insert`], [`Self::remove`] or
+/// [`Self::remove_target`], which update both in the same call, and a
+/// whole-junction clone (snapshot, savepoint, [`HashMapStore::freeze`],
+/// restore) carries both together. Both are `im::HashMap`s, so that clone
+/// stays O(1).
+///
+/// The read methods mirror the map it wraps (`get`, `iter`, `contains_key`, …),
+/// so code that only reads a junction reads it as before.
+#[derive(Debug, Clone, Default)]
+pub struct HashMapJunction {
+    rows: HashMap<EntityId, Vec<EntityId>>,
+    /// `None` for a shared relationship (many-to-one, many-to-many), which has
+    /// no ownership rule to check. For an exclusive one, every source whose row
+    /// holds the target, once per occurrence. A consistent store has exactly
+    /// one; keeping a list makes the index exact even when a write that is not
+    /// validated (a scoped undo restoring rows from its snapshot) leaves one
+    /// target in two rows, so every check still answers exactly as a walk over
+    /// the rows would.
+    owners: Option<HashMap<EntityId, Vec<EntityId>>>,
+}
+
+impl HashMapJunction {
+    /// An empty junction for an exclusive relationship, with its reverse index.
+    pub fn exclusive() -> Self {
+        Self {
+            rows: HashMap::new(),
+            owners: Some(HashMap::new()),
+        }
+    }
+
+    /// An empty junction for a shared relationship, without a reverse index.
+    pub fn shared() -> Self {
+        Self::default()
+    }
+
+    /// Whether this junction belongs to an exclusive relationship.
+    pub fn is_exclusive(&self) -> bool {
+        self.owners.is_some()
+    }
+
+    /// The ordered targets of `source`, if it has a row.
+    pub fn get(&self, source: &EntityId) -> Option<&Vec<EntityId>> {
+        self.rows.get(source)
+    }
+
+    /// Whether `source` has a row (possibly empty).
+    pub fn contains_key(&self, source: &EntityId) -> bool {
+        self.rows.contains_key(source)
+    }
+
+    /// Every row, as `(source, targets)`, in no particular order.
+    pub fn iter(&self) -> impl Iterator<Item = (&EntityId, &Vec<EntityId>)> {
+        self.rows.iter()
+    }
+
+    /// Every source that has a row, in no particular order.
+    pub fn keys(&self) -> impl Iterator<Item = &EntityId> {
+        self.rows.keys()
+    }
+
+    /// Every row's targets, in no particular order.
+    pub fn values(&self) -> impl Iterator<Item = &Vec<EntityId>> {
+        self.rows.values()
+    }
+
+    /// The number of rows.
+    pub fn len(&self) -> usize {
+        self.rows.len()
+    }
+
+    /// Whether the junction has no row at all.
+    pub fn is_empty(&self) -> bool {
+        self.rows.is_empty()
+    }
+
+    /// Every source whose row holds `target`, once per occurrence: none or one
+    /// in a consistent exclusive junction. One lookup on an exclusive junction;
+    /// a walk over every row on a shared one, which has no index.
+    pub fn sources_of(&self, target: &EntityId) -> Vec<EntityId> {
+        match &self.owners {
+            Some(owners) => owners.get(target).cloned().unwrap_or_default(),
+            None => self
+                .rows
+                .iter()
+                .flat_map(|(source, targets)| {
+                    targets
+                        .iter()
+                        .filter(|t| *t == target)
+                        .map(move |_| *source)
+                })
+                .collect(),
+        }
+    }
+
+    /// Replace the row of `source` with `targets`, returning the previous row.
+    pub fn insert(&mut self, source: EntityId, targets: Vec<EntityId>) -> Option<Vec<EntityId>> {
+        if let Some(owners) = self.owners.as_mut() {
+            let previous = self
+                .rows
+                .get(&source)
+                .map(Vec::as_slice)
+                .unwrap_or_default();
+            reindex(owners, source, previous, &targets);
+        }
+        self.rows.insert(source, targets)
+    }
+
+    /// Remove the row of `source`, returning it.
+    pub fn remove(&mut self, source: &EntityId) -> Option<Vec<EntityId>> {
+        let removed = self.rows.remove(source)?;
+        if let Some(owners) = self.owners.as_mut() {
+            reindex(owners, *source, &removed, &[]);
+        }
+        Some(removed)
+    }
+
+    /// Remove `target` from every row holding it, as when the target entity is
+    /// deleted. Visits only those rows on an exclusive junction, every row on a
+    /// shared one.
+    pub fn remove_target(&mut self, target: &EntityId) {
+        let sources: Vec<EntityId> = match self.owners.as_mut() {
+            Some(owners) => {
+                let mut sources = owners.remove(target).unwrap_or_default();
+                sources.sort_unstable();
+                sources.dedup();
+                sources
+            }
+            None => self
+                .rows
+                .iter()
+                .filter(|(_, targets)| targets.contains(target))
+                .map(|(source, _)| *source)
+                .collect(),
+        };
+        for source in sources {
+            if let Some(targets) = self.rows.get_mut(&source) {
+                targets.retain(|t| t != target);
+            }
+        }
+    }
+
+    /// Compare the reverse index with one rebuilt from the rows.
+    ///
+    /// A diagnostic for tests, O(junction): see
+    /// [`HashMapStore::check_junction_indexes`]. A shared junction has no index
+    /// and always passes.
+    pub fn check_index(&self) -> Result<(), String> {
+        let Some(owners) = &self.owners else {
+            return Ok(());
+        };
+        let mut expected: std::collections::HashMap<EntityId, Vec<EntityId>> =
+            std::collections::HashMap::new();
+        for (source, targets) in self.rows.iter() {
+            for target in targets {
+                expected.entry(*target).or_default().push(*source);
+            }
+        }
+        if expected.len() != owners.len() {
+            return Err(format!(
+                "the reverse index lists {} targets but the rows hold {}",
+                owners.len(),
+                expected.len()
+            ));
+        }
+        for (target, mut holders) in expected {
+            let mut indexed = owners.get(&target).cloned().unwrap_or_default();
+            holders.sort_unstable();
+            indexed.sort_unstable();
+            if holders != indexed {
+                return Err(format!(
+                    "target {target} is held by {holders:?} but indexed under {indexed:?}"
+                ));
+            }
+        }
+        Ok(())
+    }
+}
+
+/// Move `source`'s entries in a reverse index from its `previous` targets to
+/// its `next` ones. Only the difference is written, counted per occurrence, so
+/// re-saving a long ordered list with one target appended (how a child is
+/// added to its owner) updates one index entry, not one per child.
+fn reindex(
+    owners: &mut HashMap<EntityId, Vec<EntityId>>,
+    source: EntityId,
+    previous: &[EntityId],
+    next: &[EntityId],
+) {
+    // A new row and a removed one need no difference: the common cases of
+    // creating and deleting a source skip the scratch map below.
+    if previous.is_empty() {
+        for target in next {
+            link(owners, source, *target, 1);
+        }
+        return;
+    }
+    if next.is_empty() {
+        for target in previous {
+            unlink(owners, source, *target, 1);
+        }
+        return;
+    }
+    if previous == next {
+        return;
+    }
+    let mut delta: std::collections::HashMap<EntityId, isize> =
+        std::collections::HashMap::with_capacity(previous.len() + next.len());
+    for target in previous {
+        *delta.entry(*target).or_default() -= 1;
+    }
+    for target in next {
+        *delta.entry(*target).or_default() += 1;
+    }
+    for (target, change) in delta {
+        if change > 0 {
+            link(owners, source, target, change.unsigned_abs());
+        } else if change < 0 {
+            unlink(owners, source, target, change.unsigned_abs());
+        }
+    }
+}
+
+/// Record `count` more occurrences of `target` in the row of `source`.
+fn link(
+    owners: &mut HashMap<EntityId, Vec<EntityId>>,
+    source: EntityId,
+    target: EntityId,
+    count: usize,
+) {
+    owners
+        .entry(target)
+        .or_default()
+        .extend(std::iter::repeat_n(source, count));
+}
+
+/// Forget `count` occurrences of `target` in the row of `source`, dropping the
+/// index entry once no row holds the target any more.
+fn unlink(
+    owners: &mut HashMap<EntityId, Vec<EntityId>>,
+    source: EntityId,
+    target: EntityId,
+    count: usize,
+) {
+    let emptied = match owners.get_mut(&target) {
+        Some(holders) => {
+            for _ in 0..count {
+                if let Some(at) = holders.iter().position(|h| *h == source) {
+                    holders.swap_remove(at);
+                }
+            }
+            holders.is_empty()
+        }
+        None => false,
+    };
+    if emptied {
+        owners.remove(&target);
     }
 }
 
@@ -917,50 +1628,88 @@ pub(crate) fn write_or_recover<T>(lock: &RwLock<T>) -> std::sync::RwLockWriteGua
     }
 }
 
-pub(crate) fn delete_from_backward_junction(
-    junction: &RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    id: &EntityId,
-) {
-    let mut jn = write_or_recover(junction);
-    let keys: Vec<EntityId> = jn.keys().copied().collect();
-    for k in keys {
-        // A let-chain rather than nested ifs: clippy's `collapsible_if` rejects
-        // the nested form under `-D warnings`, and the generated crates are
-        // edition 2024, so the chain is available.
-        if let Some(right_ids) = jn.get(&k)
-            && right_ids.contains(id)
-        {
-            let filtered: Vec<EntityId> =
-                right_ids.iter().copied().filter(|eid| eid != id).collect();
-            jn.insert(k, filtered);
-        }
-    }
+/// Remove `id` from every row of a junction that points at it (the entity `id`
+/// is being deleted). See [`HashMapJunction::remove_target`].
+pub(crate) fn delete_from_backward_junction(junction: &RwLock<HashMapJunction>, id: &EntityId) {
+    write_or_recover(junction).remove_target(id);
 }
 
-pub(crate) fn junction_get(
-    junction: &RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    id: &EntityId,
-) -> Vec<EntityId> {
+pub(crate) fn junction_get(junction: &RwLock<HashMapJunction>, id: &EntityId) -> Vec<EntityId> {
     read_or_recover(junction)
         .get(id)
         .cloned()
         .unwrap_or_default()
 }
 
-pub(crate) fn junction_set(
-    junction: &RwLock<HashMap<EntityId, Vec<EntityId>>>,
-    id: EntityId,
-    ids: Vec<EntityId>,
-) {
+pub(crate) fn junction_set(junction: &RwLock<HashMapJunction>, id: EntityId, ids: Vec<EntityId>) {
     write_or_recover(junction).insert(id, ids);
 }
 
-pub(crate) fn junction_remove(junction: &RwLock<HashMap<EntityId, Vec<EntityId>>>, id: &EntityId) {
+/// Validate a complete replacement batch before changing any junction rows.
+/// Ownership exclusivity is per relationship, independently of cascade strength,
+/// and belongs to the junction itself (see [`HashMapJunction::exclusive`]).
+///
+/// The cost follows the batch, never the junction: an exclusive target is
+/// looked up in the reverse index, so a batch of k targets costs O(k) however
+/// many rows the relationship holds, and a batch carrying no target at all
+/// does not even take the junction's lock.
+pub(crate) fn validate_junction_updates(
+    junction: &RwLock<HashMapJunction>,
+    replacements: &[(EntityId, Vec<EntityId>)],
+    scalar: bool,
+) -> Result<(), crate::error::RepositoryError> {
+    use crate::error::RepositoryError::ConstraintViolation;
+    use std::collections::HashSet;
+    let mut owners = HashSet::new();
+    for (owner, targets) in replacements {
+        if !owners.insert(*owner) {
+            return Err(ConstraintViolation(
+                "duplicate source in relationship batch".into(),
+            ));
+        }
+        if scalar && targets.len() > 1 {
+            return Err(ConstraintViolation(
+                "to-one relationship accepts at most one target".into(),
+            ));
+        }
+        let mut unique = HashSet::new();
+        if targets.iter().any(|id| !unique.insert(*id)) {
+            return Err(ConstraintViolation("duplicate relationship target".into()));
+        }
+    }
+    if replacements.iter().all(|(_, targets)| targets.is_empty()) {
+        return Ok(());
+    }
+    let current = read_or_recover(junction);
+    let Some(index) = current.owners.as_ref() else {
+        // A shared relationship: any number of sources may hold a target.
+        return Ok(());
+    };
+    // A target is taken when a source outside this batch holds it, or when two
+    // rows of the batch both claim it. Sources in the batch are being replaced,
+    // so moving a target between two of them within one batch is valid.
+    let mut claimed = HashSet::new();
+    for (_, targets) in replacements {
+        for id in targets {
+            let held_outside = index
+                .get(id)
+                .is_some_and(|holders| holders.iter().any(|holder| !owners.contains(holder)));
+            if held_outside || !claimed.insert(*id) {
+                return Err(ConstraintViolation(
+                    "relationship target already belongs to another source".into(),
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
+pub(crate) fn junction_remove(junction: &RwLock<HashMapJunction>, id: &EntityId) {
     write_or_recover(junction).remove(id);
 }
 
 pub(crate) fn junction_get_relationships_from_right_ids(
-    junction: &RwLock<HashMap<EntityId, Vec<EntityId>>>,
+    junction: &RwLock<HashMapJunction>,
     right_ids: &[EntityId],
 ) -> Vec<(EntityId, Vec<EntityId>)> {
     let jn = read_or_recover(junction);
@@ -971,7 +1720,7 @@ pub(crate) fn junction_get_relationships_from_right_ids(
 }
 
 pub(crate) fn junction_move_ids(
-    junction: &RwLock<HashMap<EntityId, Vec<EntityId>>>,
+    junction: &RwLock<HashMapJunction>,
     id: &EntityId,
     ids_to_move: &[EntityId],
     new_index: i32,
@@ -1132,6 +1881,14 @@ macro_rules! impl_write_relationship_methods {
             field: &$field_enum,
             relationships: Vec<($crate::types::EntityId, Vec<$crate::types::EntityId>)>,
         ) -> Result<(), $crate::error::RepositoryError> {
+            for (id, _) in &relationships {
+                if !self.relationship_source_exists(id) {
+                    return Err($crate::error::RepositoryError::ConstraintViolation(
+                        "relationship source does not exist".into(),
+                    ));
+                }
+            }
+            self.validate_relationship_updates(field, &relationships, &[])?;
             let jn = self.resolve_junction(field);
             for (left_id, entities) in relationships {
                 $crate::database::hashmap_store::junction_set(jn, left_id, entities);
@@ -1145,12 +1902,7 @@ macro_rules! impl_write_relationship_methods {
             field: &$field_enum,
             right_ids: &[$crate::types::EntityId],
         ) -> Result<(), $crate::error::RepositoryError> {
-            $crate::database::hashmap_store::junction_set(
-                self.resolve_junction(field),
-                *id,
-                right_ids.to_vec(),
-            );
-            Ok(())
+            self.set_relationship_multi(field, vec![(*id, right_ids.to_vec())])
         }
 
         fn move_relationship_ids(
@@ -1160,6 +1912,28 @@ macro_rules! impl_write_relationship_methods {
             ids_to_move: &[$crate::types::EntityId],
             new_index: i32,
         ) -> Result<Vec<$crate::types::EntityId>, $crate::error::RepositoryError> {
+            if !self.relationship_is_ordered(field) {
+                return Err($crate::error::RepositoryError::ConstraintViolation(
+                    "only ordered relationships can be moved".into(),
+                ));
+            }
+            let current =
+                $crate::database::hashmap_store::junction_get(self.resolve_junction(field), id);
+            let mut seen = std::collections::HashSet::new();
+            if ids_to_move
+                .iter()
+                .any(|target| !seen.insert(*target) || !current.contains(target))
+            {
+                return Err($crate::error::RepositoryError::ConstraintViolation(
+                    "move requires distinct existing relationship members".into(),
+                ));
+            }
+            self.validate_relationship_updates(field, &[(*id, current)], &[])?;
+            if !self.relationship_source_exists(id) {
+                return Err($crate::error::RepositoryError::ConstraintViolation(
+                    "relationship source does not exist".into(),
+                ));
+            }
             Ok($crate::database::hashmap_store::junction_move_ids(
                 self.resolve_junction(field),
                 id,
@@ -1318,4 +2092,149 @@ macro_rules! impl_leaf_entity_table {
             }
         }
     };
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Junction index tests (entity-independent, so generated into every project)
+// ═════════════════════════════════════════════════════════════════════════════
+
+#[cfg(test)]
+mod junction_tests {
+    use super::*;
+    use crate::error::RepositoryError;
+
+    /// The 2.0.0 check, kept verbatim as the reference: it walks every row of
+    /// the junction that is not being replaced. The indexed check must give
+    /// the same answer for every junction and every batch.
+    fn validate_by_walking(
+        junction: &HashMapJunction,
+        replacements: &[(EntityId, Vec<EntityId>)],
+        scalar: bool,
+    ) -> Result<(), RepositoryError> {
+        use RepositoryError::ConstraintViolation;
+        use std::collections::HashSet;
+        let mut owners = HashSet::new();
+        for (owner, targets) in replacements {
+            if !owners.insert(*owner) {
+                return Err(ConstraintViolation(
+                    "duplicate source in relationship batch".into(),
+                ));
+            }
+            if scalar && targets.len() > 1 {
+                return Err(ConstraintViolation(
+                    "to-one relationship accepts at most one target".into(),
+                ));
+            }
+            let mut unique = HashSet::new();
+            if targets.iter().any(|id| !unique.insert(*id)) {
+                return Err(ConstraintViolation("duplicate relationship target".into()));
+            }
+        }
+        if junction.is_exclusive() {
+            let mut used = HashSet::new();
+            for (_, targets) in junction.iter().filter(|(id, _)| !owners.contains(id)) {
+                used.extend(targets.iter().copied());
+            }
+            for (_, targets) in replacements {
+                if targets.iter().any(|id| !used.insert(*id)) {
+                    return Err(ConstraintViolation(
+                        "relationship target already belongs to another source".into(),
+                    ));
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// xorshift64: deterministic, so a failure replays exactly.
+    struct Rng(u64);
+
+    impl Rng {
+        fn below(&mut self, bound: u64) -> u64 {
+            self.0 ^= self.0 << 13;
+            self.0 ^= self.0 >> 7;
+            self.0 ^= self.0 << 17;
+            self.0 % bound
+        }
+
+        fn ids(&mut self, max_len: u64, bound: u64) -> Vec<EntityId> {
+            (0..self.below(max_len + 1))
+                .map(|_| self.below(bound))
+                .collect()
+        }
+    }
+
+    /// Drive every writer at random, including the unvalidated ones a scoped
+    /// undo uses, so rows may share a target or repeat one. After each step the
+    /// index must equal a rebuild from the rows, and the indexed check must
+    /// answer a random batch exactly as the walk does.
+    #[test]
+    fn the_index_stays_exact_and_the_check_matches_the_walk() {
+        for exclusive in [true, false] {
+            let mut rng = Rng(0x9E37_79B9_7F4A_7C15 + u64::from(exclusive));
+            let junction = RwLock::new(if exclusive {
+                HashMapJunction::exclusive()
+            } else {
+                HashMapJunction::shared()
+            });
+            for step in 0..3000 {
+                {
+                    let mut jn = write_or_recover(&junction);
+                    match rng.below(6) {
+                        0..=2 => {
+                            let (source, targets) = (rng.below(12), rng.ids(4, 16));
+                            jn.insert(source, targets);
+                        }
+                        3 => {
+                            jn.remove(&rng.below(12));
+                        }
+                        4 => jn.remove_target(&rng.below(16)),
+                        // What snapshot, savepoint and restore do: swap in a clone.
+                        _ => {
+                            let copy = jn.clone();
+                            *jn = copy;
+                        }
+                    }
+                    if let Err(problem) = jn.check_index() {
+                        panic!("exclusive={exclusive}, step {step}: {problem}");
+                    }
+                }
+                let batch: Vec<(EntityId, Vec<EntityId>)> = (0..=rng.below(3))
+                    .map(|_| (rng.below(12), rng.ids(2, 16)))
+                    .collect();
+                for scalar in [false, true] {
+                    let walked = validate_by_walking(&read_or_recover(&junction), &batch, scalar);
+                    let indexed = validate_junction_updates(&junction, &batch, scalar);
+                    assert_eq!(
+                        format!("{indexed:?}"),
+                        format!("{walked:?}"),
+                        "exclusive={exclusive}, step {step}, scalar={scalar}, batch {batch:?}"
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn a_transfer_within_one_batch_is_valid_but_not_from_outside_it() {
+        let junction = RwLock::new(HashMapJunction::exclusive());
+        junction_set(&junction, 1, vec![10, 11]);
+        junction_set(&junction, 2, vec![20]);
+        let check = |batch: &[(EntityId, Vec<EntityId>)]| {
+            validate_junction_updates(&junction, batch, false)
+        };
+        assert!(check(&[(1, vec![11]), (2, vec![20, 10])]).is_ok());
+        assert!(check(&[(2, vec![20, 10])]).is_err());
+        assert!(check(&[(3, vec![10])]).is_err());
+        assert!(check(&[(1, vec![]), (2, vec![10]), (3, vec![10])]).is_err());
+        // Nothing to place: valid however full the junction is.
+        assert!(check(&[(3, vec![]), (4, vec![])]).is_ok());
+        // Deleting the owner, or the target, frees the target.
+        junction_remove(&junction, &1);
+        assert!(check(&[(3, vec![10])]).is_ok());
+        delete_from_backward_junction(&junction, &20);
+        assert!(check(&[(3, vec![20])]).is_ok());
+        assert_eq!(junction_get(&junction, &2), Vec::<EntityId>::new());
+        assert!(read_or_recover(&junction).check_index().is_ok());
+    }
 }

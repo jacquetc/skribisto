@@ -7,14 +7,13 @@
 // Entity WITH forward relationships — explicit struct implementation
 // ═══════════════════════════════════════════════════════════════════════
 use crate::database::hashmap_store::{
-    HashMapStore, delete_from_backward_junction, junction_get, junction_remove, junction_set,
-    read_or_recover, write_or_recover,
+    HashMapJunction, HashMapStore, delete_from_backward_junction, junction_get, junction_remove,
+    junction_set, read_or_recover, write_or_recover,
 };
 use crate::entities::Footnote;
 use crate::error::RepositoryError;
 use crate::types::EntityId;
 use crate::{impl_relationship_methods, impl_write_relationship_methods};
-use im::HashMap;
 use std::sync::RwLock;
 
 use super::footnote_repository::FootnoteRelationshipField;
@@ -30,13 +29,54 @@ impl<'a> FootnoteHashMapTable<'a> {
         Self { store }
     }
 
-    fn resolve_junction(
-        &self,
-        field: &FootnoteRelationshipField,
-    ) -> &RwLock<HashMap<EntityId, Vec<EntityId>>> {
+    fn resolve_junction(&self, field: &FootnoteRelationshipField) -> &RwLock<HashMapJunction> {
         match field {
             FootnoteRelationshipField::Content => &self.store.jn_content_from_footnote_content,
         }
+    }
+
+    fn relationship_source_exists(&self, id: &EntityId) -> bool {
+        read_or_recover(&self.store.footnotes).contains_key(id)
+    }
+
+    fn relationship_is_ordered(&self, field: &FootnoteRelationshipField) -> bool {
+        match field {
+            FootnoteRelationshipField::Content => false,
+        }
+    }
+
+    /// Validate a batch of row replacements for one relationship before any is
+    /// written. Costs O(targets in `rows`): exclusivity is checked against the
+    /// junction's reverse index, never by walking the relationship's other rows.
+    fn validate_relationship_updates(
+        &self,
+        field: &FootnoteRelationshipField,
+        rows: &[(EntityId, Vec<EntityId>)],
+        _creating_ids: &[EntityId],
+    ) -> Result<(), RepositoryError> {
+        let scalar = match field {
+            FootnoteRelationshipField::Content => {
+                let targets = read_or_recover(&self.store.contents);
+                let missing: Vec<_> = rows
+                    .iter()
+                    .flat_map(|(_, ids)| ids)
+                    .copied()
+                    .filter(|id| !targets.contains_key(id))
+                    .collect();
+                if !missing.is_empty() {
+                    return Err(RepositoryError::MissingRelationshipTarget {
+                        operation: "relationship update",
+                        ids: missing,
+                    });
+                }
+                true
+            }
+        };
+        crate::database::hashmap_store::validate_junction_updates(
+            self.resolve_junction(field),
+            rows,
+            scalar,
+        )
     }
 
     fn hydrate(&self, entity: &mut Footnote) {
@@ -63,10 +103,23 @@ impl<'a> FootnoteTable for FootnoteHashMapTable<'a> {
     }
 
     fn create_multi(&mut self, entities: &[Footnote]) -> Result<Vec<Footnote>, RepositoryError> {
+        // Assign identities first, then validate the whole batch without holding
+        // the source table lock (self-referential relationships read that table).
+        let entities: Vec<_> = entities
+            .iter()
+            .map(|entity| {
+                let mut entity = entity.clone();
+                if entity.id == EntityId::default() {
+                    entity.id = self.store.next_id("footnote");
+                }
+                entity
+            })
+            .collect();
+
         let mut created = Vec::with_capacity(entities.len());
         let mut footnote_map = write_or_recover(&self.store.footnotes);
 
-        for entity in entities {
+        for entity in &entities {
             let new_entity = if entity.id == EntityId::default() {
                 let id = self.store.next_id("footnote");
                 Footnote {
@@ -226,10 +279,7 @@ impl<'a> FootnoteHashMapTableRO<'a> {
         Self { store }
     }
 
-    fn resolve_junction(
-        &self,
-        field: &FootnoteRelationshipField,
-    ) -> &RwLock<HashMap<EntityId, Vec<EntityId>>> {
+    fn resolve_junction(&self, field: &FootnoteRelationshipField) -> &RwLock<HashMapJunction> {
         match field {
             FootnoteRelationshipField::Content => &self.store.jn_content_from_footnote_content,
         }

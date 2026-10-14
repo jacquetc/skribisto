@@ -37,12 +37,12 @@ impl From<&NoteTemplateDto> for NoteTemplate {
     fn from(dto: &NoteTemplateDto) -> Self {
         NoteTemplate {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
-            uid: dto.uid.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            uid: dto.uid,
             name: dto.name.clone(),
             body: dto.body.clone(),
-            starred: dto.starred.clone(),
+            starred: dto.starred,
         }
     }
 }
@@ -89,12 +89,12 @@ impl From<&CreateNoteTemplateDto> for NoteTemplate {
     fn from(dto: &CreateNoteTemplateDto) -> Self {
         NoteTemplate {
             id: 0,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
-            uid: dto.uid.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            uid: dto.uid,
             name: dto.name.clone(),
             body: dto.body.clone(),
-            starred: dto.starred.clone(),
+            starred: dto.starred,
         }
     }
 }
@@ -140,12 +140,12 @@ impl From<&UpdateNoteTemplateDto> for NoteTemplate {
     fn from(dto: &UpdateNoteTemplateDto) -> Self {
         NoteTemplate {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
-            uid: dto.uid.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            uid: dto.uid,
             name: dto.name.clone(),
             body: dto.body.clone(),
-            starred: dto.starred.clone(),
+            starred: dto.starred,
         }
     }
 }

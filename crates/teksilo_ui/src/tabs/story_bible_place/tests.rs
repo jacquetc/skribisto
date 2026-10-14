@@ -22,9 +22,13 @@
 use std::rc::Rc;
 
 use frontend::AppContext;
-use frontend::commands::{binder_commands, binder_item_commands, work_commands};
+use frontend::commands::{
+    binder_commands, binder_item_commands, binder_tag_commands, work_commands,
+};
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
-use frontend::direct_access::{CreateBinderDto, CreateBinderItemDto, CreateWorkDto};
+use frontend::direct_access::{
+    CreateBinderDto, CreateBinderItemDto, CreateBinderTagDto, CreateWorkDto,
+};
 use teksilo::core::widget_tree::WidgetTree;
 
 use crate::app_ids::AppIds;
@@ -180,6 +184,29 @@ fn create_book(f: &Fixture, index: i32, title: &str) -> u64 {
     .id
 }
 
+fn create_tag(f: &Fixture, name: &str, discoverable: bool) -> u64 {
+    let now = chrono::Utc::now();
+    binder_tag_commands::create_binder_tag(
+        &f.app_ctx,
+        None,
+        &CreateBinderTagDto {
+            uid: Default::default(),
+            created_at: now,
+            updated_at: now,
+            name: name.to_string(),
+            color: "#2e7d32".to_string(),
+            details: String::new(),
+            discoverable,
+            creates_in: None,
+            note_template: None,
+        },
+        f.ids.work_id.get().expect("a Work must be open"),
+        -1,
+    )
+    .expect("create tag")
+    .id
+}
+
 /// Trash a row the way the outline does: `activated` is the trashed flag inverted, and
 /// `docks::inspector::live_books` only ever answers with activated rows.
 fn trash(f: &Fixture, item_id: u64) {
@@ -214,16 +241,17 @@ fn subtree_notes_reads_the_containers_own_note_children_only() {
     let f = seed();
     // `f.notes_folder` itself already occupies index 0 in `notes_binder` (`seed`),
     // so every note created here starts at 1.
+    let book = create_book(&f, 0, "Book One");
+    let character = create_tag(&f, "Character", true);
     let elizabeth = create_note(
         &f,
         1,
         "Elizabeth Bennet",
-        vec![7],
+        vec![character],
         vec!["Lizzy".into(), "Liz".into()],
-        vec![42],
+        vec![book],
     );
     let _locke_manor = create_note(&f, 2, "Locke Manor", vec![], vec![], vec![]);
-    let _book = create_book(&f, 0, "Book One");
 
     let entries = subtree_notes(&f.app_ctx, f.ids.work_id.get().unwrap(), f.notes_folder);
     assert_eq!(entries.len(), 2, "both notes, and only the notes");
@@ -233,9 +261,9 @@ fn subtree_notes_reads_the_containers_own_note_children_only() {
         .find(|e| e.item_id == elizabeth)
         .expect("Elizabeth must be in the subtree");
     assert_eq!(e.title, "Elizabeth Bennet");
-    assert_eq!(e.tags, vec![7]);
+    assert_eq!(e.tags, vec![character]);
     assert_eq!(e.alias_count, 2, "two aliases");
-    assert_eq!(e.book_ids, vec![42]);
+    assert_eq!(e.book_ids, vec![book]);
 }
 
 /// A row outside the subtree (here, a second notes folder at the same depth as
@@ -726,31 +754,6 @@ fn trashing_the_filtered_book_clears_the_filter_instead_of_emptying_the_grid() {
 #[cfg(not(feature = "mocks"))]
 mod real_backend_only {
     use super::*;
-    use frontend::commands::binder_tag_commands;
-    use frontend::direct_access::CreateBinderTagDto;
-
-    fn create_tag(f: &Fixture, name: &str, discoverable: bool) -> u64 {
-        let now = chrono::Utc::now();
-        binder_tag_commands::create_binder_tag(
-            &f.app_ctx,
-            None,
-            &CreateBinderTagDto {
-                uid: Default::default(),
-                created_at: now,
-                updated_at: now,
-                name: name.to_string(),
-                color: "#2e7d32".to_string(),
-                details: String::new(),
-                discoverable,
-                creates_in: None,
-                note_template: None,
-            },
-            f.ids.work_id.get().expect("a Work must be open"),
-            -1,
-        )
-        .expect("create tag")
-        .id
-    }
 
     /// **The one true end-to-end proof: the pane actually renders on a real
     /// `Folder/Note` tab and groups a real entry under a real discoverable

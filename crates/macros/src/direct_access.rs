@@ -8,7 +8,108 @@ use proc_macro2::Span;
 use quote::{format_ident, quote};
 use syn::{Error, ItemImpl, ItemTrait, parse_macro_input};
 
-/// Pluralizes a single English word (no underscores).
+// --- BEGIN canonical pluralizer ---
+//
+// This block is mirrored VERBATIM between `crates/naming/src/lib.rs` (the
+// source of truth) and `macros_direct_access.tera`, because every generated
+// project ships its own copy inside a standalone proc-macro crate that cannot
+// depend on `qleany-naming`. `crates/naming/tests/template_parity.rs` compares
+// the two character by character and fails if they drift.
+//
+// Editing rules: change `crates/naming/src/lib.rs` first, then copy the whole
+// block across. Keep it dependency-free (no `use`), and free of the three
+// sequences Tera would interpret when rendering the template: a doubled brace,
+// a brace-percent, and a brace-hash.
+
+/// Words that are already plural, so pluralizing them again produces nonsense
+/// (`settings` -> `settingses`).
+///
+/// Three kinds qualify: *pluralia tantum* that have no singular form in
+/// practice (`settings`, `news`), mass nouns (`metadata`), and the plural half
+/// of `IRREGULAR` -- an entity named `Children` must not become `childrens`.
+const ALREADY_PLURAL: &[&str] = &[
+    // pluralia tantum and mass nouns
+    "settings",
+    "preferences",
+    "credentials",
+    "permissions",
+    "statistics",
+    "analytics",
+    "metadata",
+    "news",
+    // the plural half of IRREGULAR
+    "children",
+    "people",
+    "men",
+    "women",
+    "mice",
+    "geese",
+    "feet",
+    "teeth",
+    "oxen",
+    "data",
+    "indices",
+    "matrices",
+    "vertices",
+    "appendices",
+    "criteria",
+    "phenomena",
+    "media",
+    "curricula",
+    "dice",
+];
+
+/// Nouns whose plural is not formed by suffixing.
+const IRREGULAR: &[(&str, &str)] = &[
+    ("child", "children"),
+    ("person", "people"),
+    ("man", "men"),
+    ("woman", "women"),
+    ("mouse", "mice"),
+    ("goose", "geese"),
+    ("foot", "feet"),
+    ("tooth", "teeth"),
+    ("ox", "oxen"),
+    ("datum", "data"),
+    ("index", "indices"),
+    ("matrix", "matrices"),
+    ("vertex", "vertices"),
+    ("appendix", "appendices"),
+    ("criterion", "criteria"),
+    ("phenomenon", "phenomena"),
+    ("medium", "media"),
+    ("curriculum", "curricula"),
+    ("die", "dice"),
+];
+
+/// Nouns whose plural is spelled the same as their singular.
+const UNCOUNTABLE: &[&str] = &[
+    "sheep",
+    "fish",
+    "deer",
+    "species",
+    "series",
+    "aircraft",
+    "offspring",
+    "moose",
+];
+
+const FE_TO_VES: &[&str] = &["knife", "life", "wife", "midwife"];
+
+const F_TO_VES: &[&str] = &[
+    "leaf", "half", "wolf", "shelf", "self", "calf", "loaf", "thief", "sheaf", "elf", "scarf",
+];
+
+const US_TO_I: &[&str] = &[
+    "focus", "radius", "fungus", "cactus", "stimulus", "syllabus", "nucleus", "alumnus",
+];
+
+const O_TO_OES: &[&str] = &[
+    "hero", "potato", "tomato", "echo", "torpedo", "veto", "embargo", "volcano", "mosquito",
+    "cargo",
+];
+
+/// Pluralizes a single English word carrying no word boundary of its own.
 fn pluralize_single(word: &str) -> String {
     if word.is_empty() {
         return String::new();
@@ -16,35 +117,12 @@ fn pluralize_single(word: &str) -> String {
 
     let lower = word.to_lowercase();
 
-    // Irregular plurals
-    let irregular: &[(&str, &str)] = &[
-        ("child", "children"),
-        ("person", "people"),
-        ("man", "men"),
-        ("woman", "women"),
-        ("mouse", "mice"),
-        ("goose", "geese"),
-        ("foot", "feet"),
-        ("tooth", "teeth"),
-        ("ox", "oxen"),
-        ("datum", "data"),
-        ("index", "indices"),
-        ("matrix", "matrices"),
-        ("vertex", "vertices"),
-        ("appendix", "appendices"),
-        ("criterion", "criteria"),
-        ("phenomenon", "phenomena"),
-        ("medium", "media"),
-        ("curriculum", "curricula"),
-        ("die", "dice"),
-    ];
-
-    for &(singular, plural) in irregular {
+    for &(singular, plural) in IRREGULAR {
         if lower == singular {
             if word.chars().next().is_some_and(char::is_uppercase) {
                 let mut chars = plural.chars();
                 // Every `plural` above is a non-empty literal, so this branch
-                // cannot be taken with an empty iterator — but expressing that
+                // cannot be taken with an empty iterator -- but expressing that
                 // as a `match` costs nothing and keeps the helper panic-free by
                 // construction rather than by reading the table above.
                 match chars.next() {
@@ -58,65 +136,42 @@ fn pluralize_single(word: &str) -> String {
         }
     }
 
-    // Uncountable / already-plural words
-    let uncountable = [
-        "sheep",
-        "fish",
-        "deer",
-        "species",
-        "series",
-        "aircraft",
-        "offspring",
-        "moose",
-    ];
-    if uncountable.contains(&lower.as_str()) {
+    if UNCOUNTABLE.contains(&lower.as_str()) || ALREADY_PLURAL.contains(&lower.as_str()) {
         return word.to_string();
     }
 
-    // Words ending in -fe → -ves
-    let fe_to_ves = ["knife", "life", "wife", "midwife"];
-    if fe_to_ves.contains(&lower.as_str()) {
+    // Words ending in -fe -> -ves
+    if FE_TO_VES.contains(&lower.as_str()) {
         let stem = &word[..word.len() - 2];
         return format!("{}ves", stem);
     }
 
-    // Words ending in -f → -ves (common cases)
-    let f_to_ves = [
-        "leaf", "half", "wolf", "shelf", "self", "calf", "loaf", "thief", "sheaf", "elf", "scarf",
-    ];
-    if f_to_ves.contains(&lower.as_str()) {
+    // Words ending in -f -> -ves (common cases)
+    if F_TO_VES.contains(&lower.as_str()) {
         let stem = &word[..word.len() - 1];
         return format!("{}ves", stem);
     }
 
-    // Words ending in -sis or -xis → -ses / -xes (Latin/Greek)
+    // Words ending in -sis or -xis -> -ses / -xes (Latin/Greek).
+    // The final three bytes are ASCII, so `len - 2` is a char boundary.
     if lower.ends_with("sis") || lower.ends_with("xis") {
         return format!("{}es", &word[..word.len() - 2]);
     }
 
-    // Words ending in -us → -i (Latin, common cases)
-    let us_to_i = [
-        "focus", "radius", "fungus", "cactus", "stimulus", "syllabus", "nucleus", "alumnus",
-    ];
-    if us_to_i.contains(&lower.as_str()) {
+    // Words ending in -us -> -i (Latin, common cases)
+    if US_TO_I.contains(&lower.as_str()) {
         return format!("{}i", &word[..word.len() - 2]);
     }
 
-    // Words ending in -o preceded by a consonant → -oes (common cases)
-    let o_to_oes = [
-        "hero", "potato", "tomato", "echo", "torpedo", "veto", "embargo", "volcano", "mosquito",
-        "cargo",
-    ];
-    if o_to_oes.contains(&lower.as_str()) {
+    // Words ending in -o preceded by a consonant -> -oes (common cases)
+    if O_TO_OES.contains(&lower.as_str()) {
         return format!("{}es", word);
     }
 
-    // Words ending in 'y' preceded by a consonant: change 'y' to 'ies'
-    // `word.len()` is BYTES while `chars().nth()` counts CHARS, so the old
-    // `chars().nth(word.len() - 2)` indexed past the end for any word with a
-    // multi-byte character and panicked on the `unwrap` — and `&word[..len-1]`
-    // could split a UTF-8 boundary and panic too. Walking backwards over
-    // `chars` is both correct and shorter.
+    // Words ending in 'y' preceded by a consonant: change 'y' to 'ies'.
+    // `word.len()` is BYTES while `chars().nth()` counts CHARS, so indexing by
+    // byte length would run past the end for any word with a multi-byte
+    // character. Walking backwards over `chars` is both correct and shorter.
     if word.ends_with('y') {
         let mut chars = word.chars().rev();
         chars.next(); // the trailing 'y'
@@ -142,21 +197,50 @@ fn pluralize_single(word: &str) -> String {
     format!("{}s", word)
 }
 
-/// Transforms an English word (possibly snake_case) to its plural form.
-/// For snake_case words like "deleted_tag", only the last segment is pluralized → "deleted_tags".
-fn to_plural(word: &str) -> String {
+/// Byte index at which the final word of `word` starts.
+///
+/// Only the final word is pluralized, so `deleted_tag` -> `deleted_tags` rather
+/// than `deleteds_tags`. Both naming conventions Qleany generates must be
+/// recognised: the Rust generator passes snake_case (`project_settings`) while
+/// the C++ generator passes PascalCase (`ProjectSettings`). Splitting on `_`
+/// alone would leave every PascalCase compound unsegmented, so `ProjectSettings`
+/// would be looked up whole, miss `ALREADY_PLURAL`, and come back as
+/// `ProjectSettingses`.
+fn last_word_start(word: &str) -> usize {
+    // An underscore is unambiguous, so snake_case wins when it is present.
+    if let Some(pos) = word.rfind('_') {
+        return pos + 1;
+    }
+
+    // Otherwise take the last lowercase-or-digit followed by an uppercase.
+    // Requiring the *previous* character to be lowercase keeps acronyms whole:
+    // `HTTPRequest` has no such boundary and stays one word.
+    let mut start = 0;
+    let mut previous: Option<char> = None;
+    for (index, character) in word.char_indices() {
+        if let Some(p) = previous
+            && character.is_uppercase()
+            && (p.is_lowercase() || p.is_numeric())
+        {
+            start = index;
+        }
+        previous = Some(character);
+    }
+    start
+}
+
+/// Transforms an English word to its plural form, pluralizing only its final
+/// word so that both `deleted_tag` -> `deleted_tags` and
+/// `ProjectSettings` -> `ProjectSettings` come out right.
+pub fn to_plural(word: &str) -> String {
     if word.is_empty() {
         return String::new();
     }
 
-    if let Some(pos) = word.rfind('_') {
-        let prefix = &word[..pos];
-        let last = &word[pos + 1..];
-        format!("{}_{}", prefix, pluralize_single(last))
-    } else {
-        pluralize_single(word)
-    }
+    let (prefix, last) = word.split_at(last_word_start(word));
+    format!("{}{}", prefix, pluralize_single(last))
 }
+// --- END canonical pluralizer ---
 
 pub fn uow_action_impl(args: TokenStream, input: TokenStream) -> TokenStream {
     enum ItemType {

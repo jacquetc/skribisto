@@ -59,6 +59,6 @@ pub fn record_progress_snapshot(
 ) -> Result<()> {
     let uow_context = RecordProgressSnapshotUnitOfWorkFactory::new(db_context, event_hub);
     let mut uc = RecordProgressSnapshotUseCase::new(Box::new(uow_context));
-    let return_dto = uc.execute(dto)?;
-    Ok(return_dto)
+    uc.execute(dto)?;
+    Ok(())
 }

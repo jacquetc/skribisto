@@ -7,14 +7,13 @@
 // Entity WITH forward relationships — explicit struct implementation
 // ═══════════════════════════════════════════════════════════════════════
 use crate::database::hashmap_store::{
-    HashMapStore, delete_from_backward_junction, junction_get, junction_remove, junction_set,
-    read_or_recover, write_or_recover,
+    HashMapJunction, HashMapStore, delete_from_backward_junction, junction_get, junction_remove,
+    junction_set, read_or_recover, write_or_recover,
 };
 use crate::entities::Binder;
 use crate::error::RepositoryError;
 use crate::types::EntityId;
 use crate::{impl_relationship_methods, impl_write_relationship_methods};
-use im::HashMap;
 use std::sync::RwLock;
 
 use super::binder_repository::BinderRelationshipField;
@@ -30,15 +29,56 @@ impl<'a> BinderHashMapTable<'a> {
         Self { store }
     }
 
-    fn resolve_junction(
-        &self,
-        field: &BinderRelationshipField,
-    ) -> &RwLock<HashMap<EntityId, Vec<EntityId>>> {
+    fn resolve_junction(&self, field: &BinderRelationshipField) -> &RwLock<HashMapJunction> {
         match field {
             BinderRelationshipField::BinderItems => {
                 &self.store.jn_binder_item_from_binder_binder_items
             }
         }
+    }
+
+    fn relationship_source_exists(&self, id: &EntityId) -> bool {
+        read_or_recover(&self.store.binders).contains_key(id)
+    }
+
+    fn relationship_is_ordered(&self, field: &BinderRelationshipField) -> bool {
+        match field {
+            BinderRelationshipField::BinderItems => true,
+        }
+    }
+
+    /// Validate a batch of row replacements for one relationship before any is
+    /// written. Costs O(targets in `rows`): exclusivity is checked against the
+    /// junction's reverse index, never by walking the relationship's other rows.
+    fn validate_relationship_updates(
+        &self,
+        field: &BinderRelationshipField,
+        rows: &[(EntityId, Vec<EntityId>)],
+        _creating_ids: &[EntityId],
+    ) -> Result<(), RepositoryError> {
+        let scalar = match field {
+            BinderRelationshipField::BinderItems => {
+                let targets = read_or_recover(&self.store.binder_items);
+                let missing: Vec<_> = rows
+                    .iter()
+                    .flat_map(|(_, ids)| ids)
+                    .copied()
+                    .filter(|id| !targets.contains_key(id))
+                    .collect();
+                if !missing.is_empty() {
+                    return Err(RepositoryError::MissingRelationshipTarget {
+                        operation: "relationship update",
+                        ids: missing,
+                    });
+                }
+                false
+            }
+        };
+        crate::database::hashmap_store::validate_junction_updates(
+            self.resolve_junction(field),
+            rows,
+            scalar,
+        )
     }
 
     fn hydrate(&self, entity: &mut Binder) {
@@ -66,10 +106,31 @@ impl<'a> BinderTable for BinderHashMapTable<'a> {
     }
 
     fn create_multi(&mut self, entities: &[Binder]) -> Result<Vec<Binder>, RepositoryError> {
+        // Assign identities first, then validate the whole batch without holding
+        // the source table lock (self-referential relationships read that table).
+        let entities: Vec<_> = entities
+            .iter()
+            .map(|entity| {
+                let mut entity = entity.clone();
+                if entity.id == EntityId::default() {
+                    entity.id = self.store.next_id("binder");
+                }
+                entity
+            })
+            .collect();
+
+        self.validate_relationship_updates(
+            &BinderRelationshipField::BinderItems,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.binder_items.clone()))
+                .collect::<Vec<_>>(),
+            &entities.iter().map(|e| e.id).collect::<Vec<_>>(),
+        )?;
         let mut created = Vec::with_capacity(entities.len());
         let mut binder_map = write_or_recover(&self.store.binders);
 
-        for entity in entities {
+        for entity in &entities {
             let new_entity = if entity.id == EntityId::default() {
                 let id = self.store.next_id("binder");
                 Binder {
@@ -178,6 +239,14 @@ impl<'a> BinderTable for BinderHashMapTable<'a> {
         &mut self,
         entities: &[Binder],
     ) -> Result<Vec<Binder>, RepositoryError> {
+        self.validate_relationship_updates(
+            &BinderRelationshipField::BinderItems,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.binder_items.clone()))
+                .collect::<Vec<_>>(),
+            &[],
+        )?;
         let mut binder_map = write_or_recover(&self.store.binders);
         for entity in entities {
             binder_map.insert(entity.id, entity.clone());
@@ -227,10 +296,7 @@ impl<'a> BinderHashMapTableRO<'a> {
         Self { store }
     }
 
-    fn resolve_junction(
-        &self,
-        field: &BinderRelationshipField,
-    ) -> &RwLock<HashMap<EntityId, Vec<EntityId>>> {
+    fn resolve_junction(&self, field: &BinderRelationshipField) -> &RwLock<HashMapJunction> {
         match field {
             BinderRelationshipField::BinderItems => {
                 &self.store.jn_binder_item_from_binder_binder_items

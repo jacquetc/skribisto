@@ -6,5 +6,4 @@ pub mod dtos;
 pub mod note_template_management_controller;
 mod units_of_work;
 pub(crate) mod use_cases;
-
 pub use dtos::*;

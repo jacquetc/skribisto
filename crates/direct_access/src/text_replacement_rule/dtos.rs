@@ -35,11 +35,11 @@ impl From<&TextReplacementRuleDto> for TextReplacementRule {
     fn from(dto: &TextReplacementRuleDto) -> Self {
         TextReplacementRule {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
             trigger: dto.trigger.clone(),
             replacement: dto.replacement.clone(),
-            enabled: dto.enabled.clone(),
+            enabled: dto.enabled,
         }
     }
 }
@@ -83,11 +83,11 @@ impl From<&CreateTextReplacementRuleDto> for TextReplacementRule {
     fn from(dto: &CreateTextReplacementRuleDto) -> Self {
         TextReplacementRule {
             id: 0,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
             trigger: dto.trigger.clone(),
             replacement: dto.replacement.clone(),
-            enabled: dto.enabled.clone(),
+            enabled: dto.enabled,
         }
     }
 }
@@ -130,11 +130,11 @@ impl From<&UpdateTextReplacementRuleDto> for TextReplacementRule {
     fn from(dto: &UpdateTextReplacementRuleDto) -> Self {
         TextReplacementRule {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
             trigger: dto.trigger.clone(),
             replacement: dto.replacement.clone(),
-            enabled: dto.enabled.clone(),
+            enabled: dto.enabled,
         }
     }
 }

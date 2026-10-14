@@ -38,9 +38,9 @@ impl From<&BinderStatusDto> for BinderStatus {
     fn from(dto: &BinderStatusDto) -> Self {
         BinderStatus {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
-            uid: dto.uid.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            uid: dto.uid,
             name: dto.name.clone(),
             category: dto.category.clone(),
             details: dto.details.clone(),
@@ -90,9 +90,9 @@ impl From<&CreateBinderStatusDto> for BinderStatus {
     fn from(dto: &CreateBinderStatusDto) -> Self {
         BinderStatus {
             id: 0,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
-            uid: dto.uid.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            uid: dto.uid,
             name: dto.name.clone(),
             category: dto.category.clone(),
             details: dto.details.clone(),
@@ -141,9 +141,9 @@ impl From<&UpdateBinderStatusDto> for BinderStatus {
     fn from(dto: &UpdateBinderStatusDto) -> Self {
         BinderStatus {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
-            uid: dto.uid.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            uid: dto.uid,
             name: dto.name.clone(),
             category: dto.category.clone(),
             details: dto.details.clone(),

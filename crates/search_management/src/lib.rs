@@ -23,5 +23,4 @@ pub mod dtos;
 pub mod search_management_controller;
 mod units_of_work;
 pub(crate) mod use_cases;
-
 pub use dtos::*;

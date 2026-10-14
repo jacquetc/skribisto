@@ -37,10 +37,10 @@ impl From<&FootnoteDto> for Footnote {
     fn from(dto: &FootnoteDto) -> Self {
         Footnote {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
-            uid: dto.uid.clone(),
-            content: dto.content.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            uid: dto.uid,
+            content: dto.content,
             label: dto.label.clone(),
             body: dto.body.clone(),
         }
@@ -89,10 +89,10 @@ impl From<&CreateFootnoteDto> for Footnote {
     fn from(dto: &CreateFootnoteDto) -> Self {
         Footnote {
             id: 0,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
-            uid: dto.uid.clone(),
-            content: dto.content.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            uid: dto.uid,
+            content: dto.content,
             label: dto.label.clone(),
             body: dto.body.clone(),
         }
@@ -139,9 +139,9 @@ impl From<&UpdateFootnoteDto> for Footnote {
     fn from(dto: &UpdateFootnoteDto) -> Self {
         Footnote {
             id: dto.id,
-            created_at: dto.created_at.clone(),
-            updated_at: dto.updated_at.clone(),
-            uid: dto.uid.clone(),
+            created_at: dto.created_at,
+            updated_at: dto.updated_at,
+            uid: dto.uid,
             label: dto.label.clone(),
             body: dto.body.clone(),
             content: Default::default(),
