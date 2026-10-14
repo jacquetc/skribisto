@@ -3350,6 +3350,8 @@ settings-punctuation-sample = Votre langue donne
 settings-punctuation-app-hint = Ce que fait chaque projet, sauf s’il adopte ses propres règles dans Projet ▸ Ponctuation.
 settings-punctuation-dialogue = Ouvrir un paragraphe saisi "- " par un tiret de dialogue
 settings-punctuation-dialogue-hint = Pour les langues qui marquent le dialogue par un tiret plutôt que par des guillemets : français, espagnol, russe et d’autres. Ne se déclenche qu’en tout début de paragraphe.
+settings-punctuation-auto-lists = Commencer une liste par un paragraphe saisi "- ", "* " ou "1. "
+settings-punctuation-auto-lists-hint = Le paragraphe devient une liste à puces ou numérotée. Si le tiret de dialogue est activé et que la langue en a un, "- " ouvre plutôt une réplique. Un retour arrière juste après rend ce que vous avez saisi.
 
 ## Aller à (rejoindre n'importe quel élément)
 statusbar-go-to = Aller à…

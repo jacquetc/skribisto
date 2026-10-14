@@ -449,6 +449,8 @@ entities:
     type: boolean
   - name: dialogue_marker
     type: boolean
+  - name: auto_lists
+    type: boolean
   undoable: true
 - name: TrashInfo
   inherits_from: EntityBase

@@ -371,17 +371,19 @@ fn controls(vm: &FormatViewModel) -> Padding {
         g.lists.clone(),
         tr!(format_group_lists()),
         row()
-            .child(command_button(
+            .child(toggle_button(
                 glyph::list_bullet(),
                 tr!(format_list_bullet()),
+                vm.bullet_list(),
                 vm.clone(),
-                |vm| vm.insert_bullet_list(),
+                |vm| vm.toggle_bullet_list(),
             ))
-            .child(command_button(
+            .child(toggle_button(
                 glyph::list_numbered(),
                 tr!(format_list_numbered()),
+                vm.numbered_list(),
                 vm.clone(),
-                |vm| vm.insert_numbered_list(),
+                |vm| vm.toggle_numbered_list(),
             ))
             .child(command_button(
                 glyph::indent(),

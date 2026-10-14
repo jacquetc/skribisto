@@ -2166,6 +2166,8 @@ settings-punctuation-sample = 선택한 언어의 표기
 settings-punctuation-app-hint = 프로젝트 ▸ 문장 부호에서 별도로 정하지 않은 모든 프로젝트에 적용합니다.
 settings-punctuation-dialogue = 문단 첫머리에 "- "를 입력하면 대화 줄표로 변환
 settings-punctuation-dialogue-hint = 프랑스어, 스페인어, 러시아어처럼 따옴표 대신 줄표로 대화를 표시하는 언어에 사용합니다. 문단 맨 앞에서만 작동합니다.
+settings-punctuation-auto-lists = 문단 첫머리에 "- ", "* ", "1. "를 입력하면 목록 시작
+settings-punctuation-auto-lists-hint = 그 문단이 글머리 기호 목록이나 번호 목록이 됩니다. 대화 줄표가 켜져 있고 해당 언어에 대화 줄표가 있으면 "- "는 대신 대사를 엽니다. 바로 뒤에 Backspace를 누르면 입력한 내용으로 돌아갑니다.
 
 statusbar-go-to = 이동…
 go-to-placeholder = 문서 트리 검색

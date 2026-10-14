@@ -220,17 +220,19 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
             let f = f.clone();
             let on = on.clone();
             move |s| {
-                s.item(command(
+                s.item(mark(
                     &f,
                     tr!(menu_format_list_bullet()),
                     on.clone(),
-                    FormatViewModel::insert_bullet_list,
+                    f.bullet_list(),
+                    FormatViewModel::toggle_bullet_list,
                 ))
-                .item(command(
+                .item(mark(
                     &f,
                     tr!(menu_format_list_numbered()),
                     on.clone(),
-                    FormatViewModel::insert_numbered_list,
+                    f.numbered_list(),
+                    FormatViewModel::toggle_numbered_list,
                 ))
                 .separator()
                 .item(command(

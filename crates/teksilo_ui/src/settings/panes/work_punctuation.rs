@@ -162,6 +162,10 @@ pub(in crate::settings) fn work_punctuation_pane(
         let vm = vm.clone();
         move |v| vm.set_dialogue_marker(v)
     });
+    let auto_lists = bridge(ctx, vm.auto_lists(), {
+        let vm = vm.clone();
+        move |v| vm.set_auto_lists(v)
+    });
 
     // The quote-style control, bridged the same way but over an index.
     let style_entity = vm.quote_style();
@@ -256,6 +260,15 @@ pub(in crate::settings) fn work_punctuation_pane(
                 .rich_tooltip_content(TooltipContent::new(
                     "settings.punct_dialogue_work",
                     tr!(settings_punctuation_dialogue_hint()),
+                )),
+        )
+        .full_width(
+            Toggle::new(auto_lists)
+                .label(tr!(settings_punctuation_auto_lists()))
+                .enabled(over.clone())
+                .rich_tooltip_content(TooltipContent::new(
+                    "settings.punct_auto_lists_work",
+                    tr!(settings_punctuation_auto_lists_hint()),
                 )),
         );
 

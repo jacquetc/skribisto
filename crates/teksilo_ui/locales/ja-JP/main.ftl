@@ -2240,6 +2240,8 @@ settings-punctuation-sample = 選択した言語での表記
 settings-punctuation-app-hint = プロジェクト ▸ 句読点で独自に設定していない全プロジェクトに適用します。
 settings-punctuation-dialogue = 段落の先頭に "- " と入力すると会話用ダッシュに変換
 settings-punctuation-dialogue-hint = フランス語、スペイン語、ロシア語など、引用符の代わりにダッシュで会話を示す言語向けです。段落の先頭でのみ動作します。
+settings-punctuation-auto-lists = 段落の先頭に "- "、"* "、"1. " と入力するとリストを開始
+settings-punctuation-auto-lists-hint = その段落が箇条書きまたは番号付きリストになります。会話用ダッシュが有効で、その言語に会話用ダッシュがある場合は、"- " は代わりに台詞を始めます。直後に Backspace を押すと、入力した文字に戻ります。
 
 statusbar-go-to = 項目へ移動…
 go-to-placeholder = バインダーを検索

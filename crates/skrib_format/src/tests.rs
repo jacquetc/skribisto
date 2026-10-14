@@ -200,6 +200,9 @@ fn sample_inputs() -> SampleInputs {
         quote_style: common::entities::QuoteStyle::Guillemets,
         pre_punctuation_spacing: true,
         dialogue_marker: true,
+        // Off, the non-default value: the file stores it inverted, so only a
+        // `false` here proves both halves of the mapping flip it back.
+        auto_lists: false,
     };
     let tags = vec![
         // Non-default `details`/`discoverable` on purpose: the folder and zip
@@ -2083,6 +2086,37 @@ fn an_unrecognised_quote_style_falls_back_instead_of_failing() {
     // discard the settings around it.
     assert!(sp.override_app_default);
     assert!(sp.dashes);
+}
+
+/// A punctuation row written before v16 has no `auto_lists_off`, and reads as the rule
+/// being on: what every older project meant, since the rule did not exist to be off.
+#[test]
+fn a_punctuation_row_from_before_auto_lists_reads_them_as_on() {
+    let v15 = r#"WorkFile(
+        file_id: 1,
+        created_at: "2023-11-14T22:13:20Z",
+        updated_at: "2023-11-14T22:13:20Z",
+        title: "Older",
+        author_name: "Jane",
+        dict_language: ["fr-FR"],
+        tag_ids: [],
+        dict_word_ids: [],
+        unique_id: "abc",
+        smart_punctuation: Some(SmartPunctuationFile(
+            created_at: "2023-11-14T22:13:20Z",
+            updated_at: "2023-11-14T22:13:20Z",
+            override_app_default: true,
+            dashes: true,
+            ellipsis: true,
+            quotes: true,
+            quote_style: "guillemets",
+            pre_punctuation_spacing: true,
+            dialogue_marker: true,
+        )),
+    )"#;
+    let w: WorkFile = ron::from_str(v15).expect("a v15 punctuation row must still parse");
+    let sp = w.smart_punctuation.expect("the row is present");
+    assert!(!sp.auto_lists_off, "absent means the rule is on");
 }
 
 /// A bundle written before `details`/`discoverable`/`aliases` existed must still parse.

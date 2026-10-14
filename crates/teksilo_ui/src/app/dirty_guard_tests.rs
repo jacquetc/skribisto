@@ -35,6 +35,7 @@ fn work_with_annotations(ctx: &AppContext) -> (u64, u64, u64, u64, u64) {
             quote_style: QuoteStyle::LocaleDefault,
             pre_punctuation_spacing: false,
             dialogue_marker: false,
+            auto_lists: true,
         },
     )
     .expect("create smart_punctuation")
@@ -283,6 +284,7 @@ fn work_with_planning(ctx: &AppContext) -> Planning {
             quote_style: QuoteStyle::LocaleDefault,
             pre_punctuation_spacing: false,
             dialogue_marker: false,
+            auto_lists: true,
         },
     )
     .expect("create smart_punctuation")

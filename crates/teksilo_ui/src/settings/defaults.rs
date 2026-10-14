@@ -467,6 +467,11 @@ pub(crate) fn reset_targets(vm: &SettingsViewModel) -> Vec<ResetTarget> {
             vm.punct_dialogue(),
             crate::PUNCT_DIALOGUE_DEFAULT,
         ),
+        flag(
+            crate::PUNCT_AUTO_LISTS_KEY,
+            vm.punct_auto_lists(),
+            crate::PUNCT_AUTO_LISTS_DEFAULT,
+        ),
         // ── Goals & word count ──
         choice(
             crate::GOALS_COUNTING_METHOD_KEY,
@@ -678,13 +683,14 @@ mod tests {
         for key in [
             // Spelling — F7 alone was enough to strand the button.
             crate::SPELLCHECK_ENABLED_KEY,
-            // Punctuation, all six.
+            // Punctuation, all seven.
             crate::PUNCT_DASHES_KEY,
             crate::PUNCT_ELLIPSIS_KEY,
             crate::PUNCT_QUOTES_KEY,
             crate::PUNCT_QUOTE_STYLE_KEY,
             crate::PUNCT_SPACING_KEY,
             crate::PUNCT_DIALOGUE_KEY,
+            crate::PUNCT_AUTO_LISTS_KEY,
             // Corkboard, all eleven.
             crate::CORKBOARD_NESTED_KEY,
             crate::CORKBOARD_CARD_SIZE_KEY,

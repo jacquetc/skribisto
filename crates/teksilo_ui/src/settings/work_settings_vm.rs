@@ -211,6 +211,9 @@ impl WorkSettingsViewModel {
     pub fn dialogue_marker(&self) -> Signal<bool> {
         self.punctuation.dialogue_marker()
     }
+    pub fn auto_lists(&self) -> Signal<bool> {
+        self.punctuation.auto_lists()
+    }
 
     /// Write one punctuation switch and persist.
     ///
@@ -265,6 +268,13 @@ impl WorkSettingsViewModel {
             return;
         }
         self.punctuation.set_dialogue_marker(on);
+        self.punctuation.save(self.stack.get());
+    }
+    pub fn set_auto_lists(&self, on: bool) {
+        if self.punctuation.auto_lists().get() == on {
+            return;
+        }
+        self.punctuation.set_auto_lists(on);
         self.punctuation.save(self.stack.get());
     }
 }

@@ -3035,6 +3035,8 @@ settings-punctuation-sample = Su idioma le da
 settings-punctuation-app-hint = Lo que hace cada proyecto salvo que tenga sus propias reglas en Proyecto ▸ Puntuación.
 settings-punctuation-dialogue = Abrir con una raya de diálogo un párrafo que empieza por «- »
 settings-punctuation-dialogue-hint = Para los idiomas que marcan el diálogo con una raya en lugar de comillas: francés, español, ruso y otros. Solo actúa al principio mismo de un párrafo.
+settings-punctuation-auto-lists = Empezar una lista con un párrafo que empieza por "- ", "* " o "1. "
+settings-punctuation-auto-lists-hint = El párrafo se convierte en una lista con viñetas o numerada. Donde la raya de diálogo está activada y el idioma tiene una, "- " abre en su lugar una réplica. Pulse Retroceso justo después para recuperar lo que escribió.
 
 statusbar-go-to = Ir a…
 go-to-placeholder = Buscar en el archivador

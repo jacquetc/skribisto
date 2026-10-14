@@ -476,6 +476,10 @@ pub const PUNCT_DIALOGUE_KEY: &str = "editor.punctuation.dialogue_marker";
 /// glyph inside it, and it is wrong outright in the languages that quote their
 /// dialogue instead of dashing it.
 pub const PUNCT_DIALOGUE_DEFAULT: bool = false;
+pub const PUNCT_AUTO_LISTS_KEY: &str = "editor.punctuation.auto_lists";
+/// On: a paragraph typed as `- `, `* ` or `1. ` means a list in every language,
+/// and where `- ` means a line of dialogue instead the dialogue dash takes it.
+pub const PUNCT_AUTO_LISTS_DEFAULT: bool = true;
 /// How much text around the caret gets an ambient band — none, the sentence, or the whole
 /// paragraph. See [`crate::shared::HighlightScope`].
 ///
@@ -936,6 +940,13 @@ pub static SETTINGS: &[SettingSpec] = &[
         default: || val(crate::PUNCT_DIALOGUE_DEFAULT),
         check: check::<bool>,
         doc: "Rewrite a line-opening hyphen as a dialogue em dash.",
+    },
+    SettingSpec {
+        key: crate::PUNCT_AUTO_LISTS_KEY,
+        ty: "bool",
+        default: || val(crate::PUNCT_AUTO_LISTS_DEFAULT),
+        check: check::<bool>,
+        doc: "Make a list of a paragraph typed as \"- \", \"* \" or \"1. \" (a hyphen gives way to the dialogue dash).",
     },
     // ── Editor typography: Scene ──────────────────────────────────────────────
     SettingSpec {

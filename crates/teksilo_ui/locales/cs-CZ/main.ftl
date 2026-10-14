@@ -3296,6 +3296,8 @@ settings-punctuation-sample = Váš jazyk dává
 settings-punctuation-app-hint = Co dělá každý projekt, pokud si v Projekt ▸ Interpunkce nenastaví vlastní pravidla.
 settings-punctuation-dialogue = Odstavec začínající „- “ otevřít dialogovou pomlčkou
 settings-punctuation-dialogue-hint = Pro jazyky, které přímou řeč označují pomlčkou místo uvozovek: francouzštinu, španělštinu, ruštinu a další. Uplatní se jen na úplném začátku odstavce.
+settings-punctuation-auto-lists = Začít seznam odstavcem napsaným jako "- ", "* " nebo "1. "
+settings-punctuation-auto-lists-hint = Z odstavce se stane odrážkový nebo číslovaný seznam. Kde je zapnutá dialogová pomlčka a jazyk ji má, otevře "- " místo toho repliku. Klávesou Backspace hned poté vrátíte, co jste napsali.
 
 statusbar-go-to = Přejít na…
 go-to-placeholder = Hledat v pořadači

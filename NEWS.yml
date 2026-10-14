@@ -4,6 +4,8 @@ Type: stable
 Description:
 - "Typing in the command palette keeps every character you type. Only the last character used to stay, because each key replaced the whole search"
 - "On a new installation, the margin marks now show the dialogue texture from the start: one bar per paragraph, showing how long it is and how much of it is spoken. If you already use Skribisto, nothing changes for you: turn it on or off in Settings ▸ Editor ▸ Margin marks"
+- "A paragraph you start by typing a hyphen, an asterisk or 1. followed by a space becomes a bulleted or numbered list. Press Backspace right after to keep what you typed as text, or turn it off in Settings ▸ Editor ▸ Punctuation defaults. Where the dialogue dash is on, a hyphen still opens a line of dialogue"
+- "The bulleted and numbered list buttons, in the Format panel and the Format menu, now show when the cursor is in a list, and pressing one again takes the paragraph out of the list. In a list of the other kind, the button turns the whole list into bullets or numbers"
 ---
 Version: 3.2.0
 Date: 2026-10-14

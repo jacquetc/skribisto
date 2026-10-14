@@ -41,6 +41,7 @@ mod imp {
         quote_style: Signal<QuoteStyle>,
         pre_punctuation_spacing: Signal<bool>,
         dialogue_marker: Signal<bool>,
+        auto_lists: Signal<bool>,
         loading_status: Signal<LoadingStatus>,
         error_message: Signal<String>,
         dirty: Signal<bool>,
@@ -66,6 +67,7 @@ mod imp {
                     quote_style: Signal::new(QuoteStyle::default()),
                     pre_punctuation_spacing: Signal::new(false),
                     dialogue_marker: Signal::new(false),
+                    auto_lists: Signal::new(true),
                     loading_status: Signal::new(LoadingStatus::Unloaded),
                     error_message: Signal::new(String::new()),
                     dirty: Signal::new(false),
@@ -137,6 +139,9 @@ mod imp {
         pub fn dialogue_marker(&self) -> Signal<bool> {
             self.inner.dialogue_marker.clone()
         }
+        pub fn auto_lists(&self) -> Signal<bool> {
+            self.inner.auto_lists.clone()
+        }
         pub fn loading_status(&self) -> Signal<LoadingStatus> {
             self.inner.loading_status.clone()
         }
@@ -176,6 +181,10 @@ mod imp {
             self.mark_dirty();
             self.inner.dialogue_marker.set(v);
         }
+        pub fn set_auto_lists(&self, v: bool) {
+            self.mark_dirty();
+            self.inner.auto_lists.set(v);
+        }
 
         fn mark_dirty(&self) {
             if !self.inner.is_refreshing.get() {
@@ -213,6 +222,7 @@ mod imp {
                 quote_style: self.inner.quote_style.get(),
                 pre_punctuation_spacing: self.inner.pre_punctuation_spacing.get(),
                 dialogue_marker: self.inner.dialogue_marker.get(),
+                auto_lists: self.inner.auto_lists.get(),
             };
             match cmd::update_smart_punctuation(ctx, stack_id, &dto) {
                 Ok(_) => {
@@ -240,6 +250,7 @@ mod imp {
                         .pre_punctuation_spacing
                         .set(sp.pre_punctuation_spacing);
                     self.inner.dialogue_marker.set(sp.dialogue_marker);
+                    self.inner.auto_lists.set(sp.auto_lists);
                     self.inner.is_refreshing.set(false);
                     self.inner.dirty.set(false);
                     self.inner.error_message.set(String::new());
@@ -259,6 +270,7 @@ mod imp {
             self.inner.quote_style.set(QuoteStyle::default());
             self.inner.pre_punctuation_spacing.set(false);
             self.inner.dialogue_marker.set(false);
+            self.inner.auto_lists.set(true);
             self.inner.is_refreshing.set(false);
             self.inner.dirty.set(false);
             self.inner.error_message.set(String::new());
@@ -293,6 +305,7 @@ mod imp {
         quote_style: Signal<QuoteStyle>,
         pre_punctuation_spacing: Signal<bool>,
         dialogue_marker: Signal<bool>,
+        auto_lists: Signal<bool>,
         loading_status: Signal<LoadingStatus>,
         error_message: Signal<String>,
         dirty: Signal<bool>,
@@ -324,6 +337,7 @@ mod imp {
                     // Off, so at least one sub-switch differs from the rest.
                     pre_punctuation_spacing: Signal::new(false),
                     dialogue_marker: Signal::new(false),
+                    auto_lists: Signal::new(true),
                     loading_status: Signal::new(LoadingStatus::Loaded),
                     error_message: Signal::new(String::new()),
                     dirty: Signal::new(false),
@@ -360,6 +374,9 @@ mod imp {
         }
         pub fn dialogue_marker(&self) -> Signal<bool> {
             self.inner.dialogue_marker.clone()
+        }
+        pub fn auto_lists(&self) -> Signal<bool> {
+            self.inner.auto_lists.clone()
         }
         pub fn loading_status(&self) -> Signal<LoadingStatus> {
             self.inner.loading_status.clone()
@@ -398,6 +415,10 @@ mod imp {
         pub fn set_dialogue_marker(&self, v: bool) {
             self.mark_dirty();
             self.inner.dialogue_marker.set(v);
+        }
+        pub fn set_auto_lists(&self, v: bool) {
+            self.mark_dirty();
+            self.inner.auto_lists.set(v);
         }
 
         fn mark_dirty(&self) {

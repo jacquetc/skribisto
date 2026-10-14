@@ -157,6 +157,10 @@ impl NewWorkUseCase {
             quote_style: common::entities::QuoteStyle::LocaleDefault,
             pre_punctuation_spacing: false,
             dialogue_marker: false,
+            // On, unlike the punctuation rules above: starting a list from `- `
+            // or `1. ` is on by default, and a v15 bundle's row reads the same
+            // way, so turning on a house style must not quietly switch it off.
+            auto_lists: true,
             ..Default::default()
         })?;
 

@@ -3327,6 +3327,8 @@ settings-punctuation-sample = בשפה שלכם יתקבל
 settings-punctuation-app-hint = מה שכל פרויקט עושה, אלא אם הגדיר כללים משלו בפרויקט ▸ פיסוק.
 settings-punctuation-dialogue = פתיחת פסקה שהוקלדה כ־"- " בקו דיאלוג
 settings-punctuation-dialogue-hint = לשפות שמסמנות דיבור בקו במקום במירכאות: צרפתית, ספרדית, רוסית ואחרות. פועל רק בתחילתה של פסקה.
+settings-punctuation-auto-lists = התחלת רשימה מפסקה שהוקלדה כ־"- ", "* " או "1. "
+settings-punctuation-auto-lists-hint = הפסקה הופכת לרשימת תבליטים או לרשימה ממוספרת. כשקו הדיאלוג מופעל ולשפה יש כזה, "- " פותח במקום זאת שורת דיאלוג. לחצו על Backspace מיד אחר כך כדי לקבל בחזרה את מה שהקלדתם.
 
 statusbar-go-to = מעבר אל…
 go-to-placeholder = חיפוש בקלסר

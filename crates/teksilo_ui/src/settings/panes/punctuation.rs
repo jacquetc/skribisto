@@ -131,6 +131,15 @@ pub(in crate::settings) fn punctuation_pane(
                     "settings.punct_dialogue",
                     tr!(settings_punctuation_dialogue_hint()),
                 )),
+        )
+        .line(
+            field_label(tr!(settings_punctuation_auto_lists())),
+            Toggle::new(vm.punct_auto_lists())
+                .labelled_externally()
+                .rich_tooltip_content(TooltipContent::new(
+                    "settings.punct_auto_lists",
+                    tr!(settings_punctuation_auto_lists_hint()),
+                )),
         );
 
     pane_frame(crumbs.of(Pane::Punctuation), form)

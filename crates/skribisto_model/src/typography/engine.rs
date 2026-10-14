@@ -67,6 +67,14 @@ pub struct SmartPunctuationFlags {
     /// start of a paragraph, so it needs to know where that is. See
     /// [`TypographyEngine::check_paragraph`].
     pub dialogue_marker: bool,
+    /// Make a list of a paragraph typed as `- ` or `* ` (bullets) or `1. `
+    /// (numbers).
+    ///
+    /// A paragraph rule like [`dialogue_marker`](Self::dialogue_marker), and the
+    /// one that gives way: where the dialogue dash fires on `- `, that paragraph
+    /// is a line of dialogue, not a list item. See
+    /// [`TypographyEngine::check_list_start`].
+    pub auto_lists: bool,
 }
 
 impl SmartPunctuationFlags {
@@ -81,6 +89,7 @@ impl SmartPunctuationFlags {
             quote_style: QuoteStyle::LocaleDefault,
             pre_punctuation_spacing: false,
             dialogue_marker: false,
+            auto_lists: false,
         }
     }
 }
@@ -103,8 +112,23 @@ impl Default for SmartPunctuationFlags {
             // the *shape* of a line rather than one glyph inside it, and it is
             // wrong outright in the languages that quote their dialogue.
             dialogue_marker: false,
+            // On: a writer who types `- ` or `1. ` at the start of a paragraph
+            // means a list in every language, and the one place `- ` means
+            // something else, a dialogue dash, takes it first.
+            auto_lists: true,
         }
     }
+}
+
+/// A paragraph that asks to become a list: what
+/// [`TypographyEngine::check_list_start`] answers.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ListStart {
+    /// Numbers (`1. `) rather than bullets (`- `, `* `).
+    pub ordered: bool,
+    /// Exactly the characters the writer typed, which the list replaces and a
+    /// revert puts back.
+    pub typed: String,
 }
 
 /// A fired substitution: how much of the tail to replace, and with what.
@@ -465,6 +489,41 @@ impl TypographyEngine {
         }
 
         None
+    }
+
+    /// Whether the paragraph typed so far asks to become a list.
+    ///
+    /// `block_before` is the paragraph up to the caret, as for
+    /// [`check_paragraph`](Self::check_paragraph). Only the whole paragraph
+    /// counts: `- `, `* ` or `1. ` and nothing before it, so a hyphen or a number
+    /// further along a line is left alone.
+    ///
+    /// `- ` gives way to the dialogue dash: where
+    /// [`check_paragraph`](Self::check_paragraph) would open the paragraph with
+    /// one, this answers `None`. `* ` makes bullets either way.
+    ///
+    /// Only `1. ` makes numbers. A list cannot start at another number, so
+    /// `3. ` stays text rather than becoming a list that reads "1.".
+    pub fn check_list_start(&self, block_before: &str) -> Option<ListStart> {
+        if !self.flags.auto_lists {
+            return None;
+        }
+        let ordered = match block_before {
+            "1. " => true,
+            "* " => false,
+            "- " if !self.dialogue_dash_fires() => false,
+            _ => return None,
+        };
+        Some(ListStart {
+            ordered,
+            typed: block_before.to_string(),
+        })
+    }
+
+    /// Whether `- ` at the start of a paragraph becomes a dialogue dash: the
+    /// writer asked for it and the language has one.
+    fn dialogue_dash_fires(&self) -> bool {
+        self.flags.dialogue_marker && self.ruleset.dialogue_dash.is_some()
     }
 
     /// A quote glyph as a string, wrapping a guillemet in its French inner
@@ -1035,12 +1094,15 @@ mod tests {
             quote_style: QuoteStyle::LocaleDefault,
             pre_punctuation_spacing: false,
             dialogue_marker: false,
+            auto_lists: false,
         };
         let e = TypographyEngine::new("fr-FR", off);
         assert!(e.check("wait...").is_none());
         assert!(e.check("a--").is_none());
         assert!(e.check("il dit \"").is_none());
         assert!(e.check("Quoi ?").is_none());
+        assert!(e.check_list_start("- ").is_none());
+        assert!(e.check_list_start("1. ").is_none());
     }
 
     /// Turning off the dash rule must not take the ellipsis with it.
@@ -1071,6 +1133,7 @@ mod tests {
                 quote_style: QuoteStyle::LocaleDefault,
                 pre_punctuation_spacing: false,
                 dialogue_marker: false,
+                auto_lists: false,
             },
         );
         assert_eq!(ar.check("كيف?").expect("still fires").replacement, "؟");
@@ -1083,6 +1146,112 @@ mod tests {
         let e = en();
         for text in ["hello", "a", "word ", "1234", "naïve", "日本語", "", "x."] {
             assert!(e.check(text).is_none(), "{text:?} must not fire");
+        }
+    }
+
+    // ── Lists ────────────────────────────────────────────────────────────────
+
+    fn list(ordered: bool, typed: &str) -> Option<ListStart> {
+        Some(ListStart {
+            ordered,
+            typed: typed.to_string(),
+        })
+    }
+
+    #[test]
+    fn a_hyphen_or_an_asterisk_starts_bullets() {
+        let e = en();
+        assert_eq!(e.check_list_start("- "), list(false, "- "));
+        assert_eq!(e.check_list_start("* "), list(false, "* "));
+    }
+
+    #[test]
+    fn one_and_a_full_stop_starts_numbers() {
+        assert_eq!(en().check_list_start("1. "), list(true, "1. "));
+    }
+
+    /// A list cannot start at another number, so `3. ` is left as text rather
+    /// than becoming a list whose first item reads "1.".
+    #[test]
+    fn another_number_is_left_as_text() {
+        let e = en();
+        for text in ["2. ", "3. ", "10. ", "1) ", "a. "] {
+            assert!(e.check_list_start(text).is_none(), "{text:?}");
+        }
+    }
+
+    /// Only the whole paragraph counts: a hyphen or a number later in a line is
+    /// prose.
+    #[test]
+    fn only_the_start_of_a_paragraph_counts() {
+        let e = en();
+        for text in [
+            "well - ",
+            "x - ",
+            "chapter 1. ",
+            "-",
+            "- a",
+            "1.",
+            " - ",
+            "-- ",
+        ] {
+            assert!(e.check_list_start(text).is_none(), "{text:?}");
+        }
+    }
+
+    fn dialogue(locale: &str) -> TypographyEngine {
+        TypographyEngine::new(
+            locale,
+            SmartPunctuationFlags {
+                dialogue_marker: true,
+                ..SmartPunctuationFlags::default()
+            },
+        )
+    }
+
+    /// Where the dialogue dash fires, `- ` opens a line of dialogue and the
+    /// list rule gives way; the dash still fires from `check_paragraph`.
+    #[test]
+    fn a_hyphen_gives_way_to_the_dialogue_dash() {
+        let fr = dialogue("fr-FR");
+        assert!(fr.check_list_start("- ").is_none());
+        assert!(fr.check_paragraph("- ").is_some(), "the dash still fires");
+        assert_eq!(fr.check_list_start("* "), list(false, "* "));
+        assert_eq!(fr.check_list_start("1. "), list(true, "1. "));
+    }
+
+    /// The dialogue dash only takes `- ` where it would fire: in a language with
+    /// no dialogue dash, the setting being on changes nothing.
+    #[test]
+    fn a_language_without_a_dialogue_dash_keeps_hyphen_bullets() {
+        let en = dialogue("en-US");
+        assert!(en.check_paragraph("- ").is_none());
+        assert_eq!(en.check_list_start("- "), list(false, "- "));
+    }
+
+    #[test]
+    fn with_the_dialogue_dash_off_a_hyphen_starts_bullets_in_french() {
+        let fr = TypographyEngine::new("fr-FR", SmartPunctuationFlags::default());
+        assert_eq!(fr.check_list_start("- "), list(false, "- "));
+    }
+
+    #[test]
+    fn lists_are_on_by_default_and_off_with_everything_else() {
+        assert!(SmartPunctuationFlags::default().auto_lists);
+        assert!(!SmartPunctuationFlags::all_off().auto_lists);
+    }
+
+    #[test]
+    fn switching_lists_off_stops_every_trigger() {
+        let e = TypographyEngine::new(
+            "en-US",
+            SmartPunctuationFlags {
+                auto_lists: false,
+                ..SmartPunctuationFlags::default()
+            },
+        );
+        for text in ["- ", "* ", "1. "] {
+            assert!(e.check_list_start(text).is_none(), "{text:?}");
         }
     }
 }

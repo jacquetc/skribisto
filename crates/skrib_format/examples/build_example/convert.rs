@@ -328,6 +328,7 @@ fn build(spec: &Spec, chapters: &[RawChapter]) -> Result<WorkBundle> {
                     quote_style: "locale_default".to_string(),
                     pre_punctuation_spacing: false,
                     dialogue_marker: false,
+                    auto_lists_off: false,
                 }),
                 number_chapters: spec.book.number_chapters,
                 part_resets_chapter: false,

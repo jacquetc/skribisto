@@ -2981,6 +2981,8 @@ settings-punctuation-sample = Uw taal geeft
 settings-punctuation-app-hint = Wat elk project doet, tenzij het eigen regels krijgt in Project ▸ Interpunctie.
 settings-punctuation-dialogue = Een alinea die begint met "- " openen met een dialoogstreepje
 settings-punctuation-dialogue-hint = Voor talen die gesproken tekst met een streepje aangeven in plaats van met aanhalingstekens: Frans, Spaans, Russisch en andere. Werkt alleen helemaal aan het begin van een alinea.
+settings-punctuation-auto-lists = Een lijst beginnen met een alinea die begint met "- ", "* " of "1. "
+settings-punctuation-auto-lists-hint = De alinea wordt een opsomming of een genummerde lijst. Waar het dialoogstreepje aan staat en de taal er een heeft, opent "- " in plaats daarvan een dialoogregel. Druk direct daarna op Backspace om terug te krijgen wat u typte.
 
 statusbar-go-to = Ga naar…
 go-to-placeholder = De ordner doorzoeken

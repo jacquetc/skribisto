@@ -2953,6 +2953,8 @@ settings-punctuation-sample = Språket ditt gir
 settings-punctuation-app-hint = Det alle prosjekter gjør, med mindre de har egne regler under Prosjekt ▸ Tegnsetting.
 settings-punctuation-dialogue = Begynn et avsnitt som skrives som «- » med en replikkstrek
 settings-punctuation-dialogue-hint = For språk som markerer replikker med strek i stedet for anførselstegn: fransk, spansk, russisk og andre. Den slår bare inn helt i begynnelsen av et avsnitt.
+settings-punctuation-auto-lists = Start en liste fra et avsnitt som skrives som "- ", "* " eller "1. "
+settings-punctuation-auto-lists-hint = Avsnittet blir en punktliste eller en nummerert liste. Der replikkstreken er slått på og språket har en, innleder "- " i stedet en replikk. Trykk på Backspace rett etterpå for å få tilbake det du skrev.
 
 statusbar-go-to = Gå til…
 go-to-placeholder = Søk i permen

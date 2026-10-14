@@ -242,6 +242,7 @@ pub(crate) fn materialize(
                 quote_style: sp.quote_style.clone(),
                 pre_punctuation_spacing: sp.pre_punctuation_spacing,
                 dialogue_marker: sp.dialogue_marker,
+                auto_lists: sp.auto_lists,
             },
             None => SmartPunctuation {
                 id: 0,
@@ -258,6 +259,8 @@ pub(crate) fn materialize(
                 quote_style: common::entities::QuoteStyle::LocaleDefault,
                 pre_punctuation_spacing: false,
                 dialogue_marker: false,
+                // On: the rule's default, as on a new project (see `new_work`).
+                auto_lists: true,
             },
         })?;
 

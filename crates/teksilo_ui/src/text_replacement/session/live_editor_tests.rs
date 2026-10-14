@@ -4,6 +4,7 @@
 use frontend::AppContext;
 use teksilo::core::widget_tree::WidgetTree;
 use teksilo::prelude::SizeProposal;
+use teksilo::text_document::ListStyle;
 use teksilo::text_document::TextDocument;
 use teksilo::widgets::rich_text::{EditorHandle, RichTextEditor};
 
@@ -642,7 +643,11 @@ fn a_hyphen_mid_paragraph_is_left_alone() {
 fn the_dialogue_dash_is_off_unless_asked_for() {
     let (doc, handle, session, _tree) = editor("");
     session.set_locale("fr-FR");
-    session.set_punctuation(Some(SmartPunctuationFlags::default()));
+    // Lists off, or the `- ` this checks would become a bullet instead.
+    session.set_punctuation(Some(SmartPunctuationFlags {
+        auto_lists: false,
+        ..SmartPunctuationFlags::default()
+    }));
     type_text(&handle, &doc, &session, "- ");
     assert_eq!(plain(&doc), "- ", "default is off");
 }
@@ -654,6 +659,7 @@ fn a_language_without_a_dialogue_dash_gets_none() {
     session.set_locale("en-US");
     session.set_punctuation(Some(SmartPunctuationFlags {
         dialogue_marker: true,
+        auto_lists: false,
         ..SmartPunctuationFlags::default()
     }));
     type_text(&handle, &doc, &session, "- ");
@@ -755,4 +761,194 @@ fn the_master_switch_off_disables_every_rule() {
     type_text(&handle, &doc, &session, "I saw btw ");
     assert_eq!(plain(&doc), "I saw btw ");
     drop(tree);
+}
+
+// ── Lists ────────────────────────────────────────────────────────────────
+
+/// Let the editor drain its document events, as a frame does: that is when
+/// `format_version` moves, which the list revert waits on.
+fn settle(tree: &mut WidgetTree) {
+    tree.request_frame();
+    tree.tick_animations(std::time::Duration::from_millis(16));
+    tree.layout(SizeProposal::exact(600.0, 400.0));
+}
+
+fn lists_on(session: &TextReplacementSession, locale: &str) {
+    session.set_locale(locale);
+    session.set_punctuation(Some(SmartPunctuationFlags::default()));
+}
+
+#[test]
+fn a_hyphen_and_a_space_start_a_bullet_list() {
+    let (doc, handle, session, _tree) = editor("");
+    lists_on(&session, "en-US");
+    type_text(&handle, &doc, &session, "- ");
+    assert_eq!(plain(&doc), "", "the typed characters go");
+    assert_eq!(handle.current_list_style(), Some(ListStyle::Disc));
+}
+
+#[test]
+fn an_asterisk_and_a_space_start_a_bullet_list() {
+    let (doc, handle, session, _tree) = editor("");
+    lists_on(&session, "en-US");
+    type_text(&handle, &doc, &session, "* ");
+    assert_eq!(handle.current_list_style(), Some(ListStyle::Disc));
+}
+
+#[test]
+fn one_and_a_full_stop_start_a_numbered_list() {
+    let (doc, handle, session, _tree) = editor("");
+    lists_on(&session, "en-US");
+    type_text(&handle, &doc, &session, "1. ");
+    assert_eq!(plain(&doc), "");
+    assert_eq!(handle.current_list_style(), Some(ListStyle::Decimal));
+}
+
+/// The writer goes on typing into the new item, and the text lands in it.
+#[test]
+fn the_text_typed_next_is_the_first_item() {
+    let (doc, handle, session, _tree) = editor("");
+    lists_on(&session, "en-US");
+    type_text(&handle, &doc, &session, "- Milk");
+    assert_eq!(plain(&doc), "Milk");
+    assert_eq!(handle.current_list_style(), Some(ListStyle::Disc));
+}
+
+/// Only the start of a paragraph: a hyphen mid-line stays a hyphen.
+#[test]
+fn a_hyphen_mid_line_makes_no_list() {
+    let (doc, handle, session, _tree) = editor("");
+    lists_on(&session, "en-US");
+    type_text(&handle, &doc, &session, "well - ");
+    assert_eq!(plain(&doc), "well - ");
+    assert_eq!(handle.current_list_style(), None);
+}
+
+/// The start of the second paragraph counts as much as the first's.
+#[test]
+fn a_later_paragraph_can_start_a_list() {
+    let (doc, handle, session, _tree) = editor("Shopping:");
+    lists_on(&session, "en-US");
+    let end = plain(&doc).chars().count();
+    handle.select_range(end, end);
+    handle.insert_block();
+    type_text(&handle, &doc, &session, "- Eggs");
+    assert_eq!(plain(&doc), "Shopping:\nEggs");
+    assert_eq!(handle.current_list_style(), Some(ListStyle::Disc));
+}
+
+/// Where the dialogue dash fires, `- ` opens a line of dialogue, not a list.
+#[test]
+fn the_dialogue_dash_takes_the_hyphen_first() {
+    let (doc, handle, session, _tree) = editor("");
+    session.set_locale("fr-FR");
+    session.set_punctuation(Some(SmartPunctuationFlags {
+        dialogue_marker: true,
+        ..SmartPunctuationFlags::default()
+    }));
+    type_text(&handle, &doc, &session, "- ");
+    assert_eq!(plain(&doc), "\u{2014}\u{00A0}");
+    assert_eq!(handle.current_list_style(), None);
+}
+
+/// …and `* ` still makes bullets there.
+#[test]
+fn an_asterisk_makes_bullets_beside_the_dialogue_dash() {
+    let (doc, handle, session, _tree) = editor("");
+    session.set_locale("fr-FR");
+    session.set_punctuation(Some(SmartPunctuationFlags {
+        dialogue_marker: true,
+        ..SmartPunctuationFlags::default()
+    }));
+    type_text(&handle, &doc, &session, "* ");
+    assert_eq!(handle.current_list_style(), Some(ListStyle::Disc));
+}
+
+#[test]
+fn lists_off_leaves_the_characters_as_text() {
+    let (doc, handle, session, _tree) = editor("");
+    session.set_locale("en-US");
+    session.set_punctuation(Some(SmartPunctuationFlags {
+        auto_lists: false,
+        ..SmartPunctuationFlags::default()
+    }));
+    type_text(&handle, &doc, &session, "- ");
+    assert_eq!(plain(&doc), "- ");
+    assert_eq!(handle.current_list_style(), None);
+}
+
+/// Nothing is made into a list before the project's settings resolve.
+#[test]
+fn no_list_before_the_settings_resolve() {
+    let (doc, handle, session, _tree) = editor("");
+    session.set_locale("en-US");
+    type_text(&handle, &doc, &session, "- ");
+    assert_eq!(plain(&doc), "- ");
+}
+
+/// Inside a list, `- ` is text the writer meant.
+#[test]
+fn a_hyphen_inside_a_list_item_stays_text() {
+    let (doc, handle, session, _tree) = editor("Item");
+    lists_on(&session, "en-US");
+    handle.select_range(0, 0);
+    handle.insert_list(false);
+    type_text(&handle, &doc, &session, "- ");
+    assert_eq!(plain(&doc), "- Item");
+}
+
+/// One Ctrl+Z puts the typed characters back as text, and the list does not
+/// come straight back.
+#[test]
+fn undo_puts_the_typed_characters_back() {
+    let (doc, handle, session, mut tree) = editor("");
+    lists_on(&session, "en-US");
+    type_text(&handle, &doc, &session, "- ");
+    settle(&mut tree);
+    session.tick(&handle, &doc);
+    handle.undo();
+    settle(&mut tree);
+    session.tick(&handle, &doc);
+    assert_eq!(plain(&doc), "- ");
+    assert_eq!(handle.current_list_style(), None);
+}
+
+/// A Backspace right after takes the paragraph out of the list, as the editor
+/// always does at the start of an item, and the typed characters come back.
+#[test]
+fn backspace_right_after_puts_the_typed_characters_back() {
+    let (doc, handle, session, mut tree) = editor("");
+    lists_on(&session, "en-US");
+    type_text(&handle, &doc, &session, "1. ");
+    settle(&mut tree);
+    session.tick(&handle, &doc);
+    assert_eq!(handle.current_list_style(), Some(ListStyle::Decimal));
+
+    // The editor's Backspace at the start of a top-level item.
+    handle.remove_from_list();
+    settle(&mut tree);
+    session.tick(&handle, &doc);
+    assert_eq!(plain(&doc), "1. ");
+    assert_eq!(handle.current_list_style(), None);
+    assert_eq!(
+        handle.cursor_position(),
+        3,
+        "the caret after what came back"
+    );
+}
+
+/// Once the writer has typed into the item, leaving the list later is just
+/// leaving the list.
+#[test]
+fn leaving_the_list_after_typing_keeps_the_text() {
+    let (doc, handle, session, mut tree) = editor("");
+    lists_on(&session, "en-US");
+    type_text(&handle, &doc, &session, "- Milk");
+    settle(&mut tree);
+    session.tick(&handle, &doc);
+    handle.select_range(0, 0);
+    handle.remove_from_list();
+    settle(&mut tree);
+    session.tick(&handle, &doc);
+    assert_eq!(plain(&doc), "Milk");
 }

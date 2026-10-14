@@ -312,6 +312,7 @@ pub fn from_entities(
                     quote_style: quote_style_name(&sp.quote_style).to_string(),
                     pre_punctuation_spacing: sp.pre_punctuation_spacing,
                     dialogue_marker: sp.dialogue_marker,
+                    auto_lists_off: !sp.auto_lists,
                 }),
             },
             binder_order: binders.iter().map(|b| b.binder.id).collect(),
@@ -942,6 +943,7 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
                 quote_style: quote_style_from_name(&sp.quote_style),
                 pre_punctuation_spacing: sp.pre_punctuation_spacing,
                 dialogue_marker: sp.dialogue_marker,
+                auto_lists: !sp.auto_lists_off,
             })
         })
         .transpose()?;

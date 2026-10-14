@@ -234,6 +234,7 @@ pub struct SmartPunctuation {
     pub quote_style: QuoteStyle,
     pub pre_punctuation_spacing: bool,
     pub dialogue_marker: bool,
+    pub auto_lists: bool,
 }
 
 impl HasId for SmartPunctuation {

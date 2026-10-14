@@ -14,9 +14,8 @@ fn vm_over(text: &str) -> (FormatViewModel, RichTextEditor) {
     (vm, editor)
 }
 
-/// The document as well, for the assertions `EditorHandle` cannot express —
-/// list membership has no `is_in_list()` query, so it has to be read off
-/// the block itself.
+/// The document as well, for the assertions about a paragraph other than the
+/// caret's, which have to be read off the block itself.
 fn vm_over_doc(text: &str) -> (FormatViewModel, RichTextEditor, TextDocument) {
     let doc = TextDocument::new();
     doc.set_markdown(text)
@@ -583,8 +582,8 @@ fn commands_are_inert_when_no_editor_is_focused() {
     vm.set_heading(3);
     vm.set_alignment(ALIGN_CENTER);
     vm.toggle_blockquote();
-    vm.insert_bullet_list();
-    vm.insert_numbered_list();
+    vm.toggle_bullet_list();
+    vm.toggle_numbered_list();
     vm.indent();
     vm.outdent();
     vm.insert_table(3, 3);
@@ -752,6 +751,86 @@ fn clear_formatting_takes_the_block_out_of_a_list() {
     assert!(
         doc.block_at_position(0).expect("block").list().is_none(),
         "clearing formatting must leave a plain paragraph"
+    );
+}
+
+#[test]
+fn the_bullets_button_makes_and_takes_away_a_list() {
+    let (vm, editor, doc) = vm_over_doc("item");
+    vm.sync_now();
+    assert!(!vm.bullet_list().get() && !vm.numbered_list().get());
+
+    vm.toggle_bullet_list();
+    assert!(vm.bullet_list().get(), "the mirror follows the editor");
+    assert!(!vm.numbered_list().get());
+    assert!(doc.block_at_position(0).expect("block").list().is_some());
+
+    vm.toggle_bullet_list();
+    assert!(!vm.bullet_list().get());
+    assert!(
+        doc.block_at_position(0).expect("block").list().is_none(),
+        "pressed again, the button takes the list away"
+    );
+    drop(editor);
+}
+
+#[test]
+fn numbering_in_a_bullet_list_switches_its_kind() {
+    let (vm, editor) = vm_over("item");
+    vm.toggle_bullet_list();
+    vm.toggle_numbered_list();
+    assert!(vm.numbered_list().get());
+    assert!(!vm.bullet_list().get(), "never both at once");
+    assert_eq!(
+        editor.handle().current_list_style(),
+        Some(teksilo::text_document::ListStyle::Decimal)
+    );
+}
+
+/// The buttons follow the caret: in a list item one is pressed, in a plain
+/// paragraph neither is.
+#[test]
+fn the_list_buttons_follow_the_caret() {
+    let (vm, editor, doc) = vm_over_doc("- First\n\nPlain\n");
+    let handle = editor.handle();
+    handle.select_range(1, 1);
+    vm.sync_now();
+    assert!(vm.bullet_list().get(), "the caret is in the list");
+
+    let text = doc.to_plain_text().expect("text");
+    let plain = text[..text.find("Plain").expect("needle")].chars().count() + 1;
+    handle.select_range(plain, plain);
+    vm.sync_now();
+    assert!(!vm.bullet_list().get() && !vm.numbered_list().get());
+}
+
+/// A circle bullet is a bullet and a roman numeral a number: the buttons stand
+/// for the kind of list, not one style of it.
+#[test]
+fn the_buttons_stand_for_the_kind_of_list() {
+    use teksilo::text_document::ListStyle;
+    let (vm, editor) = vm_over("item");
+    let handle = editor.handle();
+    handle.create_list(ListStyle::Circle);
+    vm.sync_now();
+    assert!(vm.bullet_list().get());
+    handle.set_list_style(ListStyle::UpperRoman);
+    vm.sync_now();
+    assert!(vm.numbered_list().get() && !vm.bullet_list().get());
+}
+
+/// Clearing a paragraph that is in no list leaves no undo entry behind: list
+/// membership is read before it is cleared, like everything else.
+#[test]
+fn clear_formatting_on_plain_text_pushes_no_undo_entry() {
+    let (vm, editor) = vm_over("Hello world");
+    let handle = editor.handle();
+    vm.sync_now();
+    assert!(!handle.can_undo().get(), "precondition: fresh history");
+    vm.clear_formatting();
+    assert!(
+        !handle.can_undo().get(),
+        "nothing to clear, nothing to undo"
     );
 }
 

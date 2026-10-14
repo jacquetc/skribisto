@@ -340,6 +340,7 @@ pub(crate) fn sample_bundle() -> WorkBundle {
             quote_style: common::entities::QuoteStyle::Guillemets,
             pre_punctuation_spacing: true,
             dialogue_marker: true,
+            auto_lists: false,
         }),
         &trash,
         &[],
@@ -1082,6 +1083,8 @@ fn the_punctuation_house_style_survives_a_save_load_round_trip() {
         quote_style: "guillemets".into(),
         pre_punctuation_spacing: true,
         dialogue_marker: true,
+        // The non-default value, so the round trip has something to keep.
+        auto_lists_off: true,
     });
 
     let dir = tempfile::tempdir().unwrap();
@@ -1116,6 +1119,10 @@ fn the_punctuation_house_style_survives_a_save_load_round_trip() {
     );
     assert!(sp.pre_punctuation_spacing);
     assert!(sp.dialogue_marker);
+    assert!(
+        sp.auto_lists_off,
+        "a writer who turned lists off keeps them off"
+    );
 }
 
 /// A project saved before the punctuation setting existed must load, and must come
@@ -1537,6 +1544,10 @@ fn new_work_mints_a_punctuation_house_style() {
             && !sp.pre_punctuation_spacing
             && !sp.dialogue_marker,
         "every rule starts off on a new project"
+    );
+    assert!(
+        !sp.auto_lists_off,
+        "starting a list as you type is on by default, house style or not"
     );
 }
 

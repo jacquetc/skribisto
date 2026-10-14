@@ -39,6 +39,7 @@ pub(in crate::app) fn punctuation_flags(
             quote_style: sp.quote_style().get(),
             pre_punctuation_spacing: sp.pre_punctuation_spacing().get(),
             dialogue_marker: sp.dialogue_marker().get(),
+            auto_lists: sp.auto_lists().get(),
         };
     }
     SmartPunctuationFlags {
@@ -48,6 +49,7 @@ pub(in crate::app) fn punctuation_flags(
         quote_style: app.punct_quote_style().get(),
         pre_punctuation_spacing: app.punct_spacing().get(),
         dialogue_marker: app.punct_dialogue().get(),
+        auto_lists: app.punct_auto_lists().get(),
     }
 }
 
@@ -118,11 +120,13 @@ pub(in crate::app) fn install(
             smart_punctuation.quotes(),
             smart_punctuation.pre_punctuation_spacing(),
             smart_punctuation.dialogue_marker(),
+            smart_punctuation.auto_lists(),
             settings.punct_dashes(),
             settings.punct_ellipsis(),
             settings.punct_quotes(),
             settings.punct_spacing(),
             settings.punct_dialogue(),
+            settings.punct_auto_lists(),
         ] {
             let push = push.clone();
             ctx.effect(&signal, move |_| push());

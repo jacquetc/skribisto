@@ -21,6 +21,7 @@ pub struct SmartPunctuationDto {
     pub quote_style: QuoteStyle,
     pub pre_punctuation_spacing: bool,
     pub dialogue_marker: bool,
+    pub auto_lists: bool,
 }
 
 impl From<SmartPunctuationDto> for SmartPunctuation {
@@ -36,6 +37,7 @@ impl From<SmartPunctuationDto> for SmartPunctuation {
             quote_style: dto.quote_style,
             pre_punctuation_spacing: dto.pre_punctuation_spacing,
             dialogue_marker: dto.dialogue_marker,
+            auto_lists: dto.auto_lists,
         }
     }
 }
@@ -53,6 +55,7 @@ impl From<&SmartPunctuationDto> for SmartPunctuation {
             quote_style: dto.quote_style.clone(),
             pre_punctuation_spacing: dto.pre_punctuation_spacing,
             dialogue_marker: dto.dialogue_marker,
+            auto_lists: dto.auto_lists,
         }
     }
 }
@@ -70,6 +73,7 @@ impl From<SmartPunctuation> for SmartPunctuationDto {
             quote_style: entity.quote_style,
             pre_punctuation_spacing: entity.pre_punctuation_spacing,
             dialogue_marker: entity.dialogue_marker,
+            auto_lists: entity.auto_lists,
         }
     }
 }
@@ -85,6 +89,7 @@ pub struct CreateSmartPunctuationDto {
     pub quote_style: QuoteStyle,
     pub pre_punctuation_spacing: bool,
     pub dialogue_marker: bool,
+    pub auto_lists: bool,
 }
 
 impl From<CreateSmartPunctuationDto> for SmartPunctuation {
@@ -100,6 +105,7 @@ impl From<CreateSmartPunctuationDto> for SmartPunctuation {
             quote_style: dto.quote_style,
             pre_punctuation_spacing: dto.pre_punctuation_spacing,
             dialogue_marker: dto.dialogue_marker,
+            auto_lists: dto.auto_lists,
         }
     }
 }
@@ -117,6 +123,7 @@ impl From<&CreateSmartPunctuationDto> for SmartPunctuation {
             quote_style: dto.quote_style.clone(),
             pre_punctuation_spacing: dto.pre_punctuation_spacing,
             dialogue_marker: dto.dialogue_marker,
+            auto_lists: dto.auto_lists,
         }
     }
 }
@@ -133,6 +140,7 @@ impl From<SmartPunctuation> for CreateSmartPunctuationDto {
             quote_style: entity.quote_style,
             pre_punctuation_spacing: entity.pre_punctuation_spacing,
             dialogue_marker: entity.dialogue_marker,
+            auto_lists: entity.auto_lists,
         }
     }
 }
@@ -148,6 +156,7 @@ pub struct UpdateSmartPunctuationDto {
     pub quote_style: QuoteStyle,
     pub pre_punctuation_spacing: bool,
     pub dialogue_marker: bool,
+    pub auto_lists: bool,
 }
 
 impl From<UpdateSmartPunctuationDto> for SmartPunctuation {
@@ -163,6 +172,7 @@ impl From<UpdateSmartPunctuationDto> for SmartPunctuation {
             quote_style: dto.quote_style,
             pre_punctuation_spacing: dto.pre_punctuation_spacing,
             dialogue_marker: dto.dialogue_marker,
+            auto_lists: dto.auto_lists,
         }
     }
 }
@@ -180,6 +190,7 @@ impl From<&UpdateSmartPunctuationDto> for SmartPunctuation {
             quote_style: dto.quote_style.clone(),
             pre_punctuation_spacing: dto.pre_punctuation_spacing,
             dialogue_marker: dto.dialogue_marker,
+            auto_lists: dto.auto_lists,
         }
     }
 }
@@ -197,6 +208,7 @@ impl From<SmartPunctuation> for UpdateSmartPunctuationDto {
             quote_style: entity.quote_style,
             pre_punctuation_spacing: entity.pre_punctuation_spacing,
             dialogue_marker: entity.dialogue_marker,
+            auto_lists: entity.auto_lists,
         }
     }
 }
@@ -214,6 +226,7 @@ impl From<SmartPunctuationDto> for UpdateSmartPunctuationDto {
             quote_style: dto.quote_style,
             pre_punctuation_spacing: dto.pre_punctuation_spacing,
             dialogue_marker: dto.dialogue_marker,
+            auto_lists: dto.auto_lists,
         }
     }
 }

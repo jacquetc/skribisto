@@ -2935,6 +2935,8 @@ settings-punctuation-sample = Dilinizdeki sonuç
 settings-punctuation-app-hint = Proje ▸ Noktalama bölümünde kendi kurallarını belirlemedikçe her projenin yaptığı.
 settings-punctuation-dialogue = "- " ile başlayan paragrafı konuşma çizgisiyle aç
 settings-punctuation-dialogue-hint = Konuşmayı tırnak yerine çizgiyle gösteren diller için: Fransızca, İspanyolca, Rusça ve diğerleri. Yalnızca paragrafın en başında devreye girer.
+settings-punctuation-auto-lists = "- ", "* " veya "1. " ile başlayan paragraftan liste başlat
+settings-punctuation-auto-lists-hint = Paragraf madde işaretli veya numaralı bir listeye dönüşür. Konuşma çizgisinin açık olduğu ve dilin böyle bir çizgisi olduğu yerde "- " bunun yerine bir konuşma satırı açar. Yazdığınızı geri almak için hemen ardından Geri silme tuşuna basın.
 
 statusbar-go-to = Git…
 go-to-placeholder = Dizinde ara

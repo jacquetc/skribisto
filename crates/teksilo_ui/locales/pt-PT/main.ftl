@@ -2983,6 +2983,8 @@ settings-punctuation-sample = O seu idioma dá
 settings-punctuation-app-hint = O que todos os projetos fazem, salvo se tiverem regras próprias em Projeto ▸ Pontuação.
 settings-punctuation-dialogue = Abrir com um travessão de diálogo um parágrafo escrito como "- "
 settings-punctuation-dialogue-hint = Para línguas que marcam a fala com um travessão em vez de aspas: francês, espanhol, russo e outras. Só atua no início de um parágrafo.
+settings-punctuation-auto-lists = Começar uma lista a partir de um parágrafo escrito como "- ", "* " ou "1. "
+settings-punctuation-auto-lists-hint = O parágrafo torna-se uma lista com marcas ou numerada. Onde o travessão de diálogo está ativado e a língua tem um, "- " abre antes uma fala. Prima Backspace logo a seguir para recuperar o que escreveu.
 
 statusbar-go-to = Ir para…
 go-to-placeholder = Pesquisar no arquivador

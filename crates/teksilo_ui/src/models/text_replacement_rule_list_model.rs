@@ -642,6 +642,7 @@ mod store_tests {
                 quote_style: QuoteStyle::LocaleDefault,
                 pre_punctuation_spacing: false,
                 dialogue_marker: false,
+                auto_lists: true,
             },
         )
         .expect("create smart_punctuation")

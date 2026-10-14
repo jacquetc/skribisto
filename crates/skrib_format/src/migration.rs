@@ -79,6 +79,7 @@ pub fn migrate_bundle(bundle: &mut WorkBundle) -> Result<()> {
             12 => step_v12_to_v13(bundle),
             13 => step_v13_to_v14(bundle),
             14 => step_v14_to_v15(bundle),
+            15 => step_v15_to_v16(bundle),
             other => anyhow::bail!("no migration step from .skrib format_version {other}"),
         }
         bundle.manifest.format_version += 1;
@@ -322,6 +323,11 @@ fn step_v13_to_v14(_bundle: &mut WorkBundle) {}
 /// (`BinderItemFile.cover_id`). Nothing to heal, by decision: a v14 cover is not carried
 /// over, and a v14 bundle reads back with no Book holding one. See `FORMAT_VERSION`.
 fn step_v14_to_v15(_bundle: &mut WorkBundle) {}
+
+/// v15 → v16 added `SmartPunctuationFile.auto_lists_off`. Nothing to heal: its
+/// `#[serde(default)]` already reads a v15 bundle as "on", which is what it meant.
+/// See `FORMAT_VERSION`.
+fn step_v15_to_v16(_bundle: &mut WorkBundle) {}
 
 /// v7 → v8 added binary assets. Nothing to heal: a v7 bundle has no `assets.ron`
 /// and no `assets/` tree, and `#[serde(default)]` already reads that as an empty

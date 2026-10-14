@@ -115,6 +115,7 @@ fn seed_second_work(ctx: &AppContext, title: &str) -> SecondWork {
             quote_style: QuoteStyle::LocaleDefault,
             pre_punctuation_spacing: false,
             dialogue_marker: false,
+            auto_lists: true,
         },
     )
     .unwrap_or_else(|e| panic!("create smart_punctuation for {title}: {e}"));

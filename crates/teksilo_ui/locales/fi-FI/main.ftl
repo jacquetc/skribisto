@@ -3045,6 +3045,8 @@ settings-punctuation-sample = Kielesi tuottaa
 settings-punctuation-app-hint = Mitä jokainen projekti tekee, ellei sillä ole omia sääntöjä kohdassa Projekti ▸ Välimerkit.
 settings-punctuation-dialogue = Aloita kappale, joka kirjoitetaan muodossa ”- ”, repliikkiviivalla
 settings-punctuation-dialogue-hint = Kielille, jotka merkitsevät puheen viivalla eivätkä lainausmerkeillä: ranska, espanja, venäjä ja muut. Toimii vain aivan kappaleen alussa.
+settings-punctuation-auto-lists = Aloita luettelo kappaleesta, joka kirjoitetaan muodossa "- ", "* " tai "1. "
+settings-punctuation-auto-lists-hint = Kappaleesta tulee luettelomerkitty tai numeroitu luettelo. Jos repliikkiviiva on käytössä ja kielellä on sellainen, "- " aloittaa sen sijaan repliikin. Paina askelpalautinta heti perään, niin saat kirjoittamasi takaisin.
 
 statusbar-go-to = Siirry kohteeseen…
 go-to-placeholder = Hae mapista

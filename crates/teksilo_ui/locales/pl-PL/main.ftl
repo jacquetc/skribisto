@@ -3635,6 +3635,8 @@ settings-punctuation-sample = Twój język daje
 settings-punctuation-app-hint = To, co robi każdy projekt, chyba że ma własne zasady w Projekt ▸ Interpunkcja.
 settings-punctuation-dialogue = Zaczynaj akapit wpisany jako „- ” od myślnika dialogowego
 settings-punctuation-dialogue-hint = Dla języków, które oznaczają wypowiedzi myślnikiem zamiast cudzysłowu: francuskiego, hiszpańskiego, rosyjskiego i innych. Działa tylko na samym początku akapitu.
+settings-punctuation-auto-lists = Zaczynaj listę od akapitu wpisanego jako "- ", "* " lub "1. "
+settings-punctuation-auto-lists-hint = Akapit staje się listą punktowaną lub numerowaną. Tam, gdzie myślnik dialogowy jest włączony, a język go ma, "- " otwiera zamiast tego kwestię dialogową. Naciśnij Backspace zaraz potem, aby odzyskać to, co wpisano.
 
 statusbar-go-to = Przejdź do…
 go-to-placeholder = Przeszukaj segregator

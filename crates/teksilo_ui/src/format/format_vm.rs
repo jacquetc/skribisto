@@ -59,7 +59,7 @@ use std::rc::Rc;
 use common::types::EntityId;
 use teksilo::prelude::{Signal, WidgetId};
 use teksilo::text_document::{Alignment, TextDirection};
-use teksilo::widgets::rich_text::EditorHandle;
+use teksilo::widgets::rich_text::{EditorHandle, list_style_is_ordered};
 
 /// Index of "align left" in the alignment radio group.
 pub const ALIGN_LEFT: usize = 0;
@@ -475,6 +475,11 @@ pub struct FormatViewModel {
     /// from the editor after each command, never flipped optimistically.
     link: Signal<bool>,
     blockquote: Signal<bool>,
+    /// The caret's paragraph is in a bulleted list (disc, circle or square).
+    bullet_list: Signal<bool>,
+    /// The caret's paragraph is in a numbered list (numbers, letters or roman
+    /// numerals). Never true together with [`bullet_list`](Self::bullet_list).
+    numbered_list: Signal<bool>,
     /// The caret sits inside a table, so the row/column commands are meaningful.
     in_table: Signal<bool>,
     /// `0` = normal paragraph, `1..=6` = H1..H6. Doubles as the radio index.
@@ -592,6 +597,8 @@ impl FormatViewModel {
             subscript: Signal::new(false),
             link: Signal::new(false),
             blockquote: Signal::new(false),
+            bullet_list: Signal::new(false),
+            numbered_list: Signal::new(false),
             in_table: Signal::new(false),
             heading: Signal::new(0),
             alignment: Signal::new(ALIGN_LEFT),
@@ -983,6 +990,12 @@ impl FormatViewModel {
     pub fn blockquote(&self) -> Signal<bool> {
         self.blockquote.clone()
     }
+    pub fn bullet_list(&self) -> Signal<bool> {
+        self.bullet_list.clone()
+    }
+    pub fn numbered_list(&self) -> Signal<bool> {
+        self.numbered_list.clone()
+    }
     pub fn in_table(&self) -> Signal<bool> {
         self.in_table.clone()
     }
@@ -1157,6 +1170,10 @@ impl FormatViewModel {
         set_if_changed(&self.subscript, handle.is_subscript());
         set_if_changed(&self.link, handle.is_link());
         set_if_changed(&self.blockquote, handle.is_in_blockquote());
+        let list = handle.current_list_style();
+        let ordered = list.as_ref().map(list_style_is_ordered);
+        set_if_changed(&self.bullet_list, ordered == Some(false));
+        set_if_changed(&self.numbered_list, ordered == Some(true));
         set_if_changed(&self.in_table, handle.is_in_table());
         set_if_changed(&self.heading, handle.get_heading_level() as usize);
         let alignment = alignment_index(&handle.get_alignment());
@@ -1188,6 +1205,8 @@ impl FormatViewModel {
         set_if_changed(&self.subscript, false);
         set_if_changed(&self.link, false);
         set_if_changed(&self.blockquote, false);
+        set_if_changed(&self.bullet_list, false);
+        set_if_changed(&self.numbered_list, false);
         set_if_changed(&self.in_table, false);
         set_if_changed(&self.heading, 0);
         set_if_changed(&self.alignment, ALIGN_LEFT);
@@ -1335,12 +1354,9 @@ impl FormatViewModel {
     /// so this degrades to the block half, which is still worth having with the
     /// caret parked in a centred H2.
     ///
-    /// Every property is read before it is written, so clearing already-clean
-    /// text neither pushes undo entries nor marks the document modified — with
-    /// one exception: list membership, which `EditorHandle` offers no query for
-    /// (`is_in_list` does not exist, unlike `is_in_blockquote`). That one call
-    /// is therefore unconditional, and clearing an already-plain paragraph may
-    /// cost one no-op entry. Guard it as soon as a query exists.
+    /// Every property is read before it is written, list membership included
+    /// (`current_list_style`), so clearing already-clean text neither pushes
+    /// undo entries nor marks the document modified.
     ///
     /// The whole sweep is **one undo entry**. A writer who clears a heading
     /// that was also bold and centred means one action, and should not have to
@@ -1399,7 +1415,9 @@ impl FormatViewModel {
             if handle.get_direction().is_some() {
                 handle.clear_direction();
             }
-            handle.remove_from_list();
+            if handle.current_list_style().is_some() {
+                handle.remove_from_list();
+            }
             // Depth is not queryable, so unwrap one level at a time, bounded by the
             // deepest the document holds: every level comes off, and a command that
             // cannot make progress still terminates.
@@ -1502,11 +1520,15 @@ impl FormatViewModel {
         self.with_editor(|h| h.insert_text(text));
     }
 
-    pub fn insert_bullet_list(&self) {
-        self.with_editor(|h| h.insert_list(false));
+    /// The Bullets button: make a bulleted list, take the paragraph out of
+    /// one, or turn a numbered list into bullets (see
+    /// [`EditorHandle::toggle_list`]).
+    pub fn toggle_bullet_list(&self) {
+        self.with_editor(|h| h.toggle_list(false));
     }
-    pub fn insert_numbered_list(&self) {
-        self.with_editor(|h| h.insert_list(true));
+    /// The Numbering button, the same toggle for numbered lists.
+    pub fn toggle_numbered_list(&self) {
+        self.with_editor(|h| h.toggle_list(true));
     }
     pub fn indent(&self) {
         self.with_editor(|h| h.indent());

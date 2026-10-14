@@ -3366,6 +3366,8 @@ settings-punctuation-sample = Your language gives
 settings-punctuation-app-hint = What every project does unless it takes rules of its own in Work ▸ Punctuation.
 settings-punctuation-dialogue = Open a paragraph typed as "- " with a dialogue dash
 settings-punctuation-dialogue-hint = For languages that mark speech with a dash rather than quotation marks: French, Spanish, Russian and others. It only fires at the very start of a paragraph.
+settings-punctuation-auto-lists = Start a list from a paragraph typed as "- ", "* " or "1. "
+settings-punctuation-auto-lists-hint = The paragraph becomes a bulleted or numbered list. Where the dialogue dash is on and the language has one, "- " opens a line of dialogue instead. Press Backspace right after to get back what you typed.
 
 ## Go to (jump to any item)
 statusbar-go-to = Go to…

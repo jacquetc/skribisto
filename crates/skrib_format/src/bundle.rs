@@ -174,7 +174,17 @@ use std::collections::BTreeMap;
 /// `#[serde(default)]`, exactly as `status_id` was judged on its own at v14. An older build
 /// that resaves a v15 bundle drops the link and keeps the picture: a choice re-made in one
 /// click on the Book's page, not authored content an older save would delete.
-pub const FORMAT_VERSION: u32 = 15;
+///
+/// # v15 → v16: starting a list as you type
+///
+/// `SmartPunctuationFile.auto_lists_off`: whether the writer turned off the rule that
+/// makes a paragraph typed as `- ` or `1. ` into a list. Stored inverted so the bare
+/// `#[serde(default)]` reads every older bundle as "on", which is what it meant.
+///
+/// **No floor arm**, the v15 call: additive with a default. An older build that resaves
+/// a v16 bundle drops the field, and the project reads back with the rule on: a
+/// preference re-set in one click, not authored content.
+pub const FORMAT_VERSION: u32 = 16;
 
 /// Read `dict_language` as a list, accepting the pre-v4 space-separated string.
 ///
@@ -416,6 +426,15 @@ pub struct SmartPunctuationFile {
     pub pre_punctuation_spacing: bool,
     #[serde(default)]
     pub dialogue_marker: bool,
+    /// The writer turned **off** starting a list from a paragraph typed as `- `
+    /// or `1. ` (the `SmartPunctuation.auto_lists` flag, stored inverted).
+    ///
+    /// Spelled as the exception for the reason [`WorkFile::number_chapters`]
+    /// explains: the rule is on by default, and every bundle written before this
+    /// field existed means "on", so the bare `#[serde(default)]` (`false`, not
+    /// turned off) is the right legacy reading without a second `default_true`.
+    #[serde(default)]
+    pub auto_lists_off: bool,
 }
 
 /// `tags.ron`

@@ -47,6 +47,16 @@
 //! deliberately narrow: only the very next content change is eligible, and only
 //! if the document is in exactly the state the fire left it in minus the
 //! delimiter. See [`PendingRevert`].
+//!
+//! ## Lists
+//!
+//! A paragraph typed as `- `, `* ` or `1. ` becomes a list: the typed characters
+//! go and the paragraph joins a bulleted or numbered list, as one undo entry, so
+//! Ctrl+Z puts the characters back as text. A Backspace right after does the same
+//! thing, the way it takes back a lexicon expansion. It needs a check of its own
+//! ([`PendingList`]): the editor answers a Backspace at the start of a list item
+//! by taking the paragraph out of the list, which changes formatting and no text,
+//! so the document revision every other check reads does not move.
 
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
@@ -87,6 +97,28 @@ struct PendingRevert {
     /// to the one `typed` glyph. Without this, one Backspace removes only the
     /// visible mark and strands the invisible no-break space.
     collapse: bool,
+}
+
+/// A list just made from `- `, `* ` or `1. `, so a Backspace right after can
+/// put the typed characters back.
+///
+/// Live only until the document's text changes: typing into the new item is
+/// accepting the list. While it lives, the session looks at the caret's list
+/// whenever the editor's formatting moves ([`EditorHandle::format_version`]),
+/// and once the paragraph has left the list with nothing typed into it, the
+/// writer pressed Backspace (or took the list off by hand straight away) and
+/// the characters go back.
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct PendingList {
+    /// Where the typed characters stood, which is where the empty item starts.
+    span_start: usize,
+    /// The characters the list replaced.
+    typed: String,
+    /// `TextDocument::content_revision` right after the list was made.
+    revision: u64,
+    /// The editor's format version last looked at, so the list is looked up
+    /// once per formatting change rather than on every frame.
+    format_seen: u64,
 }
 
 /// A trigger that must not fire again at this exact spot.
@@ -145,6 +177,7 @@ pub struct TextReplacementSession {
     /// punctuation row had not yet loaded when its language was set.
     compiled_punctuation: RefCell<Option<(Option<SmartPunctuationFlags>, String)>>,
     pending: RefCell<Option<PendingRevert>>,
+    pending_list: RefCell<Option<PendingList>>,
     suppressed: RefCell<Option<Suppressed>>,
     /// Caret position at the previous tick; `None` until the first one.
     last_caret: Cell<Option<usize>>,
@@ -185,6 +218,7 @@ impl TextReplacementSession {
             punctuation: RefCell::new(None),
             compiled_punctuation: RefCell::new(None),
             pending: RefCell::new(None),
+            pending_list: RefCell::new(None),
             suppressed: RefCell::new(None),
             last_caret: Cell::new(None),
             last_revision: Cell::new(None),
@@ -201,6 +235,10 @@ impl TextReplacementSession {
     pub fn tick(&self, handle: &EditorHandle, doc: &TextDocument) {
         // Our own edit, coming back around. Nothing to decide.
         if self.applying.get() {
+            return;
+        }
+        // Before the early-out: the Backspace this waits for changes no text.
+        if self.try_revert_list(handle, doc) {
             return;
         }
         // The early-out: nothing has been typed since the last frame.
@@ -243,6 +281,11 @@ impl TextReplacementSession {
         // convention; and only one fires because each leaves a pending revert
         // behind, and two in one tick would make Backspace undo the wrong half.
         if self.try_fire(handle, doc, caret) {
+            return;
+        }
+        // Before the other paragraph rules, though the two never compete: the
+        // engine leaves `- ` to the dialogue dash wherever that one fires.
+        if self.try_list_start(handle, doc, caret) {
             return;
         }
         // Paragraph rules before the stateless ones. They know strictly more —
@@ -487,6 +530,91 @@ impl TextReplacementSession {
             typed: fired.typed,
             revision: doc.content_revision(),
             collapse: false,
+        });
+        self.last_caret.set(Some(handle.cursor_position()));
+        self.last_revision.set(Some(doc.content_revision()));
+        true
+    }
+
+    /// Make a list of a paragraph typed as `- `, `* ` or `1. `. Returns whether it
+    /// did.
+    ///
+    /// The typed characters are deleted and the paragraph joins a new list in one
+    /// edit block, so one Ctrl+Z restores them as text. A paragraph already in a
+    /// list, or a heading, is left alone: `- ` in a list item is text the writer
+    /// meant, and a heading does not become a list item by accident.
+    fn try_list_start(&self, handle: &EditorHandle, doc: &TextDocument, caret: usize) -> bool {
+        // The three triggers are two or three characters and the whole
+        // paragraph, so anything longer is answered without reading it.
+        let in_block = doc.cursor_at(caret).position_in_block();
+        if !(2..=3).contains(&in_block) {
+            return false;
+        }
+        let Some(block_before) = text_before(doc, caret, in_block) else {
+            return false;
+        };
+        let Some(start) = self.typography.borrow().check_list_start(&block_before) else {
+            return false;
+        };
+        if handle.current_list_style().is_some() || handle.get_heading_level() != 0 {
+            return false;
+        }
+        let Some(span_start) = caret.checked_sub(start.typed.chars().count()) else {
+            return false;
+        };
+        self.apply(|| {
+            handle.edit_block(|| {
+                handle.select_range(span_start, caret);
+                handle.delete_selection();
+                handle.insert_list(start.ordered);
+            })
+        });
+        // A pending lexicon or quote revert is about text that has just gone.
+        self.pending.borrow_mut().take();
+        *self.pending_list.borrow_mut() = Some(PendingList {
+            span_start,
+            typed: start.typed,
+            revision: doc.content_revision(),
+            format_seen: handle.format_version().get(),
+        });
+        self.last_caret.set(Some(handle.cursor_position()));
+        self.last_revision.set(Some(doc.content_revision()));
+        true
+    }
+
+    /// Put `- `, `* ` or `1. ` back if the list made from it has just been taken
+    /// away with nothing typed. Returns whether it did. See [`PendingList`].
+    fn try_revert_list(&self, handle: &EditorHandle, doc: &TextDocument) -> bool {
+        let Some(pending) = self.pending_list.borrow().clone() else {
+            return false;
+        };
+        // Text typed, pasted or deleted since: the list was kept.
+        if doc.content_revision() != pending.revision {
+            self.pending_list.borrow_mut().take();
+            return false;
+        }
+        let format = handle.format_version().get();
+        if format == pending.format_seen {
+            return false;
+        }
+        if let Some(p) = self.pending_list.borrow_mut().as_mut() {
+            p.format_seen = format;
+        }
+        if handle.current_list_style().is_some()
+            || handle.cursor_position() != pending.span_start
+            || handle.has_selection().get()
+        {
+            return false;
+        }
+        self.pending_list.borrow_mut().take();
+        // `Keyboard`: the writer's own characters going back, as in `try_revert`.
+        self.apply(|| {
+            handle.replace_range_from(
+                pending.span_start,
+                pending.span_start,
+                &pending.typed,
+                EditSource::Keyboard,
+            )
         });
         self.last_caret.set(Some(handle.cursor_position()));
         self.last_revision.set(Some(doc.content_revision()));

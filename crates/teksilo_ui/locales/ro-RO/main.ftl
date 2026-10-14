@@ -3576,6 +3576,8 @@ settings-punctuation-sample = Limba dumneavoastră dă
 settings-punctuation-app-hint = Ce face fiecare proiect, dacă nu are reguli proprii în Proiect ▸ Punctuație.
 settings-punctuation-dialogue = Începe cu o linie de dialog un paragraf tastat ca „- ”
 settings-punctuation-dialogue-hint = Pentru limbile care marchează vorbirea cu o linie în loc de ghilimele: franceza, spaniola, rusa și altele. Se aplică doar chiar la începutul unui paragraf.
+settings-punctuation-auto-lists = Începe o listă dintr-un paragraf tastat ca "- ", "* " sau "1. "
+settings-punctuation-auto-lists-hint = Paragraful devine o listă cu marcatori sau numerotată. Acolo unde linia de dialog este activată și limba are una, "- " deschide în schimb o replică. Apăsați Backspace imediat după pentru a recupera ce ați tastat.
 
 ## Go to (jump to any item)
 statusbar-go-to = Salt la…

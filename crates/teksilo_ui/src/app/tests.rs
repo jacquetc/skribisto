@@ -139,6 +139,7 @@ fn a_project_without_an_override_follows_the_application_preference() {
     // The app tier says dashes on, spacing off.
     app.punct_dashes().set(true);
     app.punct_spacing().set(false);
+    app.punct_auto_lists().set(true);
     app.punct_quote_style()
         .set(frontend::common::entities::QuoteStyle::Guillemets);
 
@@ -147,11 +148,13 @@ fn a_project_without_an_override_follows_the_application_preference() {
     sp.set_override_app_default(false);
     sp.set_dashes(false);
     sp.set_pre_punctuation_spacing(true);
+    sp.set_auto_lists(false);
     sp.set_quote_style(frontend::common::entities::QuoteStyle::LowHigh);
 
     let f = punctuation_flags(&sp, &app);
     assert!(f.dashes, "the app tier decides");
     assert!(!f.pre_punctuation_spacing);
+    assert!(f.auto_lists, "lists follow the app tier too");
     assert_eq!(
         f.quote_style,
         frontend::common::entities::QuoteStyle::Guillemets
@@ -169,10 +172,12 @@ fn an_overriding_project_wins_outright() {
 
     app.punct_dashes().set(true);
     app.punct_ellipsis().set(true);
+    app.punct_auto_lists().set(true);
 
     sp.set_override_app_default(true);
     sp.set_dashes(false);
     sp.set_ellipsis(false);
+    sp.set_auto_lists(false);
 
     let f = punctuation_flags(&sp, &app);
     assert!(!f.dashes, "the project decides, even to switch a rule OFF");
@@ -180,6 +185,7 @@ fn an_overriding_project_wins_outright() {
         !f.ellipsis,
         "an app-level rule is not inherited through an override"
     );
+    assert!(!f.auto_lists, "nor is starting a list as you type");
 }
 
 /// A throwaway store, so these read the real signal plumbing rather than a
