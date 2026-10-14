@@ -996,11 +996,15 @@ impl Builder<'_> {
         }
         // A plot names the characters it is about. They are already emitted, so
         // this resolves now rather than waiting for the second pass.
-        item.item.reference_ids = plot
+        let mut reference_ids: Vec<_> = plot
             .characters
             .iter()
             .filter_map(|c| self.character_item.get(c).copied())
             .collect();
+        // A plot may name one character twice; a relationship holds each target once.
+        reference_ids.sort_unstable();
+        reference_ids.dedup();
+        item.item.reference_ids = reference_ids;
         out.push(item);
         if let Some(key) = plot.id.clone() {
             self.plot_item.insert(key, id);

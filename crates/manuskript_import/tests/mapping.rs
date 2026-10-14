@@ -651,6 +651,26 @@ fn a_plot_links_to_its_characters_and_keeps_its_beats_as_children() {
     assert!(step.item.indent > plot.item.indent);
 }
 
+#[test]
+fn a_plot_naming_one_character_twice_references_it_once() {
+    let mut project = peopled();
+    project.plots[0].characters = vec!["0".into(), "0".into(), "1".into(), "0".into()];
+    let mapped = build(&project);
+    let plot = find(&mapped, 1, "The rift");
+    let peter = find(&mapped, 1, "Peter").item.file_id;
+    let paul = find(&mapped, 1, "Paul").item.file_id;
+    assert_eq!(
+        plot.item
+            .reference_ids
+            .iter()
+            .filter(|i| **i == peter)
+            .count(),
+        1
+    );
+    assert_eq!(plot.item.reference_ids.len(), 2);
+    assert!(plot.item.reference_ids.contains(&paul));
+}
+
 // ── Links and point of view ─────────────────────────────────────────────────
 
 #[test]
