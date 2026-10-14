@@ -570,6 +570,72 @@ fn save_load_round_trip_through_store() {
     assert_eq!(resaved.manifest.work.unique_id, "the-lighthouse-uid");
 }
 
+/// A list naming the same row twice still opens, and keeps that row once.
+///
+/// Each id list on an item is a set the file spells as a list, and nothing stops a hand
+/// edit, another writer or a legacy database from repeating an id in one. The store
+/// refuses a repeated target in a relationship write, so `load_work` has to collapse
+/// the repeat: refusing it would refuse to open a project that used to open, over a
+/// redundancy that loses nothing.
+#[test]
+fn a_list_naming_a_row_twice_opens_and_keeps_it_once() {
+    let dir = tempfile::tempdir().unwrap();
+    let src = dir.path().join("Repeated");
+    let dst = dir.path().join("Resaved");
+
+    let mut bundle = sample_bundle();
+    let tag = bundle.tags[0].file_id;
+    // 300 is the Book the fixture already files an item under.
+    let book = 300;
+    // By title, not uid: the fixture gives every row the same uid.
+    let rows: Vec<(u64, String)> = bundle.binders[0]
+        .items
+        .iter()
+        .map(|bi| (bi.item.file_id, bi.item.title.clone()))
+        .filter(|(id, _)| *id != book)
+        .collect();
+    let (source, source_title) = rows[0].clone();
+    let target = rows[1].0;
+    let row = bundle.binders[0]
+        .items
+        .iter_mut()
+        .find(|bi| bi.item.file_id == source)
+        .unwrap();
+    row.item.tag_ids = vec![tag, tag];
+    row.item.reference_ids = vec![target, target];
+    row.item.point_of_view_ids = vec![target, target];
+    row.item.book_ids = vec![book, book];
+    skrib::write_bundle(src.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+    work_management_controller::load_work(
+        &db,
+        &hub,
+        &LoadWorkDto {
+            media_root: String::new(),
+            file_name: src.to_str().unwrap().to_string(),
+        },
+    )
+    .expect("a repeated id must not refuse the project");
+
+    let resaved = store_to_bundle(&db, &hub, &dst);
+    let row = resaved
+        .binders
+        .iter()
+        .flat_map(|b| &b.items)
+        .find(|bi| bi.item.title == source_title)
+        .expect("the row survives");
+    assert_eq!(row.item.tag_ids.len(), 1, "the tag, once");
+    assert_eq!(row.item.reference_ids.len(), 1, "the reference, once");
+    assert_eq!(
+        row.item.point_of_view_ids.len(),
+        1,
+        "the point of view, once"
+    );
+    assert_eq!(row.item.book_ids.len(), 1, "the Book, once");
+}
+
 /// The end-to-end proof for comments: disk → store → disk, through the real
 /// `load_work` materialiser and the real `save_work` gather.
 ///

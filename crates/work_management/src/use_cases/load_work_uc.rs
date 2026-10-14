@@ -540,11 +540,15 @@ pub(crate) fn materialize(
     }
 
     // M2M item tags (remap file tag ids -> store ids).
+    //
+    // This list and the three below are sets the file spells as lists, and nothing on
+    // the way here guarantees each id appears once: a hand edit, another writer, or a
+    // legacy database with no UNIQUE constraint on its link tables can repeat one. The
+    // store refuses a repeated target in a relationship write, and refusing the write
+    // would refuse to open the whole project over a redundancy that loses nothing, so
+    // each list keeps the first occurrence of every id instead.
     for (item_id, file_tag_ids) in &item_tag_links {
-        let resolved: Vec<EntityId> = file_tag_ids
-            .iter()
-            .filter_map(|t| tag_map.get(t).copied())
-            .collect();
+        let resolved = distinct(file_tag_ids.iter().filter_map(|t| tag_map.get(t).copied()));
         if !resolved.is_empty() {
             uow.set_binder_item_relationship(
                 item_id,
@@ -584,13 +588,7 @@ pub(crate) fn materialize(
     }
 
     // M2M self-references (cross-links), grouped by source.
-    let mut refs_by_source: HashMap<EntityId, Vec<EntityId>> = HashMap::new();
-    for (src, dst) in &loaded.references {
-        if let (Some(&s), Some(&d)) = (item_map.get(src), item_map.get(dst)) {
-            refs_by_source.entry(s).or_default().push(d);
-        }
-    }
-    for (s, dsts) in &refs_by_source {
+    for (s, dsts) in &by_source(&loaded.references, &item_map) {
         uow.set_binder_item_relationship(s, &BinderItemRelationshipField::References, dsts)?;
     }
 
@@ -598,26 +596,14 @@ pub(crate) fn materialize(
     // freshly minted store ids. Kept separate from References rather than folded into it
     // because the two answer different questions — who appears here, versus whose eyes this
     // is told through — and a scene routinely has one without the other.
-    let mut pov_by_source: HashMap<EntityId, Vec<EntityId>> = HashMap::new();
-    for (src, dst) in &loaded.point_of_view {
-        if let (Some(&s), Some(&d)) = (item_map.get(src), item_map.get(dst)) {
-            pov_by_source.entry(s).or_default().push(d);
-        }
-    }
-    for (s, dsts) in &pov_by_source {
+    for (s, dsts) in &by_source(&loaded.point_of_view, &item_map) {
         uow.set_binder_item_relationship(s, &BinderItemRelationshipField::PointOfView, dsts)?;
     }
 
     // Book filing, the same shape again: (item, Book) pairs remapped onto the freshly
     // minted store ids. A declaration the writer made, not derived from anything else
     // loaded here, so it travels exactly the same road as the two relationships above.
-    let mut books_by_source: HashMap<EntityId, Vec<EntityId>> = HashMap::new();
-    for (src, dst) in &loaded.books {
-        if let (Some(&s), Some(&d)) = (item_map.get(src), item_map.get(dst)) {
-            books_by_source.entry(s).or_default().push(d);
-        }
-    }
-    for (s, dsts) in &books_by_source {
+    for (s, dsts) in &by_source(&loaded.books, &item_map) {
         uow.set_binder_item_relationship(s, &BinderItemRelationshipField::Books, dsts)?;
     }
 
@@ -930,6 +916,35 @@ pub(crate) fn materialize(
         work_id: work.id,
         progress_snapshot_ids,
     })
+}
+
+/// `(item, item)` file-id pairs remapped onto store ids and grouped by their first item,
+/// each group [`distinct`]. A pair naming an item this bundle did not load is dropped.
+fn by_source(
+    pairs: &[(u64, u64)],
+    item_map: &HashMap<u64, EntityId>,
+) -> HashMap<EntityId, Vec<EntityId>> {
+    let mut grouped: HashMap<EntityId, Vec<EntityId>> = HashMap::new();
+    for (src, dst) in pairs {
+        if let (Some(&s), Some(&d)) = (item_map.get(src), item_map.get(dst)) {
+            grouped.entry(s).or_default().push(d);
+        }
+    }
+    grouped
+        .into_iter()
+        .map(|(s, dsts)| (s, distinct(dsts)))
+        .collect()
+}
+
+/// `ids` in their first-seen order, each once.
+fn distinct(ids: impl IntoIterator<Item = EntityId>) -> Vec<EntityId> {
+    let mut out: Vec<EntityId> = Vec::new();
+    for id in ids {
+        if !out.contains(&id) {
+            out.push(id);
+        }
+    }
+    out
 }
 
 /// Build the non-undoable trunk: System + RecentWork + WorkInfo (records the
