@@ -262,21 +262,28 @@ jobs:
           tool: cargo-deb@3.8.0
 
       # What the arm runner has to build with, printed before the build so a run
-      # that loses its runner still shows it. Swap is added only when the disk can
-      # spare it: if disk is what runs out, a swap file would make it worse.
+      # that loses its runner still shows it. On v3.2.0 it had 4 CPUs, 16 GB of
+      # memory, 3 GB of swap already active at /swapfile and 108 GB free on /, so
+      # the extra swap goes in a file of its own: re-creating /swapfile fails
+      # with "Text file busy". It is added only when the disk can spare it.
+      #
+      # continue-on-error: a diagnostic must never be what fails the build, as
+      # this one did on its first run.
       - name: Report the runner's headroom (arm64)
         if: matrix.arch == 'arm64'
+        continue-on-error: true
         run: |
           set -euo pipefail
           nproc
           free -m
+          swapon --show
           df -h /
           avail_gb=$(df --output=avail -BG / | tail -1 | tr -dc '0-9')
           if [ "$avail_gb" -ge 30 ]; then
-            sudo fallocate -l 8G /swapfile
-            sudo chmod 600 /swapfile
-            sudo mkswap /swapfile
-            sudo swapon /swapfile
+            sudo fallocate -l 8G /swapfile-build
+            sudo chmod 600 /swapfile-build
+            sudo mkswap /swapfile-build
+            sudo swapon /swapfile-build
             free -m
           else
             echo "::warning::only ${avail_gb} GB free on /, so no swap file was added"
