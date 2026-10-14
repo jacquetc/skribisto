@@ -1431,7 +1431,7 @@ fn a_writing_page_carries_a_margin_lane_without_narrowing_the_prose() {
     let lane = first_of_type(&tree, root, "MarginLane").expect("the page carries a lane");
     let lane_bounds = tree.bounds(lane);
     assert!(
-        (lane_bounds.width - crate::widgets::DEFAULT_LANE_WIDTH).abs() < 0.01,
+        (lane_bounds.width - crate::margin_lane::shown_width_by_default()).abs() < 0.01,
         "the lane took {} px, not its declared width",
         lane_bounds.width
     );

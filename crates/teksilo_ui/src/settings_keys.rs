@@ -428,10 +428,16 @@ pub const TYPEWRITER_ANCHOR_KEY: &str = "editor.typewriter_anchor";
 // `margin_lane::LaneProviderSpec::settings_key`.
 pub const MARGIN_LANE_ENABLED_KEY: &str = "editor.margin_lane.enabled";
 pub const MARGIN_LANE_ENABLED_DEFAULT: bool = true;
-/// The texture column, off by default — it costs 28 dp and not every writer
-/// wants it. On is the *recommended* state, not the assumed one.
+/// The texture column, on by default. It costs 28 dp, and a writer who does not
+/// want it turns it off in Settings ▸ Editor ▸ Margin marks.
+///
+/// ⚠ This default reaches **new installs only**. `SettingsStore::signal` writes a
+/// missing key's default to disk on first read, and this key has been read since
+/// 3.0.0, so every older install already stores `false`, whether or not the writer
+/// ever touched the switch. The file cannot tell a deliberate "off" from a seeded
+/// one, which is why no migration flips it.
 pub const MARGIN_LANE_TEXTURE_KEY: &str = "editor.margin_lane.texture";
-pub const MARGIN_LANE_TEXTURE_DEFAULT: bool = false;
+pub const MARGIN_LANE_TEXTURE_DEFAULT: bool = true;
 
 /// The settings key gating the lane on one surface.
 ///

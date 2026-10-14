@@ -3,6 +3,7 @@ Date: 2026-10-15
 Type: stable
 Description:
 - "Typing in the command palette keeps every character you type. Only the last character used to stay, because each key replaced the whole search"
+- "On a new installation, the margin marks now show the dialogue texture from the start: one bar per paragraph, showing how long it is and how much of it is spoken. If you already use Skribisto, nothing changes for you: turn it on or off in Settings ▸ Editor ▸ Margin marks"
 ---
 Version: 3.2.0
 Date: 2026-10-14

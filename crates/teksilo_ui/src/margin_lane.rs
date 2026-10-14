@@ -694,6 +694,13 @@ fn width_of(shown: bool, texture: bool) -> f32 {
     }
 }
 
+/// The width a shown lane takes under the shipped defaults, for a layout test
+/// that asserts the lane spent exactly its declared width and no more.
+#[cfg(test)]
+pub(crate) fn shown_width_by_default() -> f32 {
+    width_of(true, crate::MARGIN_LANE_TEXTURE_DEFAULT)
+}
+
 /// The namespace that registered `id`, if any. For diagnostics and tests.
 pub fn namespace_of(id: &str) -> Option<String> {
     PROVIDERS.with(|reg| {

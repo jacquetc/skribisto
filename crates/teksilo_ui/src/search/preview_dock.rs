@@ -775,7 +775,7 @@ mod tests {
         let lane = find(&tree, root, "MarginLane").expect("the band carries a lane");
         let lane_width = tree.bounds(lane).width;
         assert!(
-            (lane_width - crate::widgets::DEFAULT_LANE_WIDTH).abs() < 0.01,
+            (lane_width - crate::margin_lane::shown_width_by_default()).abs() < 0.01,
             "the lane took {lane_width:.1} px, not its declared width"
         );
         assert!(
