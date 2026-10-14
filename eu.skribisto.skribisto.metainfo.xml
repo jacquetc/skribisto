@@ -53,7 +53,7 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release type="development" version="3.2.0" date="2026-10-13T00:00:00Z">
+    <release type="stable" version="3.2.0" date="2026-10-14T00:00:00Z">
       <description>
         <ul>
           <li>Each book now has its own cover. Open the book and choose its cover on the book's own page, where you can also see it, change it or remove it. When you export one book, its cover opens the file, and when you export several books together, each one starts with its own cover. An EPUB carries the cover only when the export style asks for it and the export holds one whole book. Covers chosen in an earlier version are not carried over, so choose them again; the pictures are still in your project</li>
