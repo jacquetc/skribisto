@@ -7,8 +7,8 @@
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-only</project_license>
   <description>
-    <p>Skribisto is a writing app for novels.</p>
-    <p xml:lang="fr">Skribisto est un logiciel d'écriture pour les romans.</p>
+    <p>Skribisto is a writing app for novels, from the first idea to the finished manuscript.</p>
+    <p xml:lang="fr">Skribisto est un logiciel d'écriture pour les romans, de la première idée au manuscrit terminé.</p>
     <ul>
       <li>Split panes and tabs, and a whole chapter, part or book readable as one text</li>
       <li xml:lang="fr">Écran partagé et onglets, et un chapitre, une partie ou le livre entier à lire comme un seul texte</li>
