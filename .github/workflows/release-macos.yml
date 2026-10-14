@@ -40,8 +40,15 @@ name: Release (macOS)
 # a whole second compile of an 831-crate tree (Typst included, via `pdf`) inside
 # one timeout, so each architecture effectively had 30 minutes, cold.
 #
-# The two builds share nothing but the source, so they are a matrix now: each
-# leg gets the full hour, and the wall-clock is one build rather than two.
+# The two builds share nothing but the source, so they are a matrix now, and the
+# wall-clock is one build rather than two.
+#
+# Each leg gets 90 minutes, not 60. An hour fits a warm build (37 to 40 minutes
+# for v3.0.5 and v3.1.0) but not a cold Intel one: Intel is cross-compiled on this
+# Apple Silicon runner, and v3.2.0, whose teksilo bump changed the lockfile and so
+# started without a cache, was still compiling Intel when the hour ran out while
+# Apple Silicon finished cold in 40 minutes. A release that bumps a dependency
+# starts cold by construction, so the budget has to be a cold build's.
 #
 # ⚠ The cache cannot be relied on to keep this under any ceiling. `rust-cache`
 # keys on the lockfile hash, so the release that bumps a dependency — which is
@@ -75,7 +82,7 @@ jobs:
   build:
     name: Build ${{ matrix.arch }}
     runs-on: macos-14 # Apple Silicon; cross-links x86_64 via Xcode CLT
-    timeout-minutes: 60
+    timeout-minutes: 90
     strategy:
       # Never fail-fast. One architecture failing while the other is mid-compile
       # would throw away a 30-minute build that was going to succeed, and the log
