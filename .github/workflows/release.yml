@@ -46,61 +46,29 @@ jobs:
         run: cargo test --workspace
 
       # The release notes a Linux software centre shows come from the AppStream
-      # metainfo, NOT from the GitHub Release. That file is regenerated from
-      # NEWS.yml by generate-release-in-appdata.yml, which triggers on a push to
-      # master and commits the result BACK to master — so a tag cut at or before
-      # that commit cannot contain it, and the artifact ships the previous
-      # release's notes. v3.0.1 shipped exactly that way: the tag was v3.0.1
-      # while the metainfo still said 3.0.0, so every GNOME Software and KDE
-      # Discover user was shown 3.0.0's "what's new" for a 3.0.1 install.
+      # metainfo, NOT from the GitHub Release, and Flathub reads it from the tag.
+      # `cargo release` writes it from NEWS.yml in the release commit itself
+      # (scripts/news-to-metainfo.sh, the pre-release hook of teksilo_ui). It
+      # used to be a bot commit pushed after NEWS.yml reached master, which a tag
+      # could be cut before: v3.0.1 shipped 3.0.0's notes, and v3.1.0 reached
+      # Flathub as a development release.
       #
-      # This is the gate that ordering problem needs. It is deliberately in
-      # `validate`, before a single artifact is built: a stale metainfo cannot be
-      # repaired after the fact, because Flathub builds from the tag.
+      # This gate is for a tag made without cargo-release, or after editing the
+      # metainfo by hand. It is deliberately in `validate`, before a single
+      # artifact is built: a stale metainfo cannot be repaired after the fact.
+      # The script fails unless NEWS.yml's newest block is this version, with
+      # the type matching the GitHub Release's prerelease flag below, and the
+      # committed metainfo is exactly what that block regenerates to.
       #
-      # To fix a failure: add the version's block to NEWS.yml, run
-      #   appstreamcli news-to-metainfo --limit=1 ./NEWS.yml ./eu.skribisto.skribisto.metainfo.xml
+      # To fix a failure: correct NEWS.yml, run
+      #   VERSION=x.y.z scripts/news-to-metainfo.sh
       # commit both, then move the tag.
       - name: The tag's release notes are in NEWS.yml and in the metainfo
         run: |
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends appstream
-          VERSION="${GITHUB_REF_NAME#v}"
-
-          if ! grep -qE "^Version: *\"?${VERSION}\"?[[:space:]]*$" NEWS.yml; then
-            echo "::error::NEWS.yml has no block for ${VERSION}. The GitHub Release would fall back to a bare \"Release ${GITHUB_REF_NAME}.\" and the software centres would show the previous release's notes."
-            exit 1
-          fi
-
-          # `news-to-metainfo` rewrites in place, so work on a copy and diff.
-          cp eu.skribisto.skribisto.metainfo.xml /tmp/committed.xml
-          cp eu.skribisto.skribisto.metainfo.xml /tmp/regenerated.xml
-          appstreamcli news-to-metainfo --limit=1 ./NEWS.yml /tmp/regenerated.xml
-          if ! diff -u /tmp/committed.xml /tmp/regenerated.xml; then
-            echo "::error::eu.skribisto.skribisto.metainfo.xml is not what NEWS.yml regenerates to. Commit the regenerated file, then move the tag."
-            exit 1
-          fi
-
-          NEWEST=$(sed -n 's/.*<release[^>]*version="\([^"]*\)".*/\1/p' eu.skribisto.skribisto.metainfo.xml | head -1)
-          if [ "$NEWEST" != "$VERSION" ]; then
-            echo "::error::the metainfo's newest release is ${NEWEST}, but this tag is ${VERSION}."
-            exit 1
-          fi
-          # Match the GitHub Release's prerelease policy below. Regeneration
-          # alone cannot catch a stable tag whose NEWS block says development.
-          python3 - <<'PY'
-          import os
-          import xml.etree.ElementTree as ET
-
-          tag = os.environ["GITHUB_REF_NAME"]
-          expected = "development" if "-" in tag else "stable"
-          release = ET.parse("eu.skribisto.skribisto.metainfo.xml").find("releases/release")
-          actual = release.get("type", "stable")
-          if actual != expected:
-              raise SystemExit(f"::error::Release {tag} has type {actual}; expected {expected}. Fix NEWS.yml and regenerate the metainfo before tagging.")
-          PY
-          echo "NEWS.yml and the metainfo both name ${VERSION}."
+          VERSION="${GITHUB_REF_NAME#v}" scripts/news-to-metainfo.sh --check
 
   # -------- Linux: single .flatpak bundle --------
   flatpak:

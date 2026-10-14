@@ -125,6 +125,16 @@ assets = [
     ["../../resources/unix/icons/icons/hicolor/512x512/apps/skribisto.png", "usr/share/icons/hicolor/512x512/mimetypes/eu.skribisto.skribisto.project.png", "644"],
 ]
 
+[package.metadata.release]
+# The AppStream metainfo's <releases> block is written from NEWS.yml here, so
+# it goes into the release commit and every tag carries its own notes. It used
+# to be a bot commit pushed after NEWS.yml reached master, which a tag could be
+# cut before (see the script). On this package and not in the workspace
+# release.toml, because a hook there runs once for every crate released.
+# The script finds the workspace through cargo-release's WORKSPACE_ROOT, and a
+# dry run checks NEWS.yml and prints the diff without writing.
+pre-release-hook = ["../../scripts/news-to-metainfo.sh"]
+
 [dependencies]
 anyhow = { workspace = true }
 chrono = { workspace = true }
