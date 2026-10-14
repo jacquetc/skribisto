@@ -1,3 +1,9 @@
+Version: 3.2.1
+Date: 2026-10-15
+Type: stable
+Description:
+- "Typing in the command palette keeps every character you type. Only the last character used to stay, because each key replaced the whole search"
+---
 Version: 3.2.0
 Date: 2026-10-14
 Type: stable
