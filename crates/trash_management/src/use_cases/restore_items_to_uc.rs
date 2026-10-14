@@ -29,6 +29,7 @@ use common::direct_access::work::WorkRelationshipField;
 use common::entities::{Binder, BinderItem, BinderItemRole, Work};
 use common::snapshot::EntityTreeSnapshot;
 use common::types::EntityId;
+use std::collections::hash_map::Entry;
 use std::collections::{HashMap, HashSet};
 
 /// Map the feature-local `DropPosition` DTO enum onto the shared
@@ -74,9 +75,36 @@ pub struct RestoreItemsToUseCase {
 /// dangling orphan linked to no binder), the reactivatable trashed subtree, and
 /// the root's current indent (for the reindent delta).
 struct Plan {
+    root: EntityId,
     src_binder: Option<EntityId>,
     subtree: Vec<EntityId>,
     root_old_indent: i64,
+}
+
+/// One source binder's order with each row's indent and trash state, as read
+/// before any mutation.
+struct BinderRows {
+    order: Vec<EntityId>,
+    indent: HashMap<EntityId, i64>,
+    activated: HashMap<EntityId, bool>,
+}
+
+impl BinderRows {
+    fn read(uow: &dyn RestoreItemsToUnitOfWorkTrait, binder_id: EntityId) -> Result<Self> {
+        let order =
+            uow.get_binder_relationship(&binder_id, &BinderRelationshipField::BinderItems)?;
+        let mut indent: HashMap<EntityId, i64> = HashMap::new();
+        let mut activated: HashMap<EntityId, bool> = HashMap::new();
+        for it in uow.get_binder_item_multi(&order)?.into_iter().flatten() {
+            indent.insert(it.id, it.indent);
+            activated.insert(it.id, it.activated);
+        }
+        Ok(BinderRows {
+            order,
+            indent,
+            activated,
+        })
+    }
 }
 
 impl RestoreItemsToUseCase {
@@ -125,14 +153,24 @@ impl RestoreItemsToUseCase {
         }
 
         // --- per-input resolution: gather each item's currently-trashed subtree.
-        // A descendant already covered by an earlier peel in this batch is skipped.
+        //
+        // The outcome must not depend on the order of `binder_item_ids`, nor on an
+        // id being listed twice. A requested id that sits inside another requested
+        // id's trashed subtree is covered by that root and gets no plan of its own,
+        // whichever of the two came first. Skipping only the ids an *earlier* root
+        // had already claimed planned a child listed before its parent twice: once
+        // alone, once inside the parent's subtree, so the destination order held
+        // the child twice and its indent was shifted twice.
         let mut orphaned = false;
-        let mut plan: Vec<Plan> = Vec::new();
-        let mut all_moving: HashSet<EntityId> = HashSet::new();
+        let mut seen: HashSet<EntityId> = HashSet::new();
+        let mut candidates: Vec<Plan> = Vec::new();
+        // Each source binder's rows, read once. Nothing is written before the
+        // plan is complete, so the cache cannot go stale.
+        let mut source_rows: HashMap<EntityId, BinderRows> = HashMap::new();
 
         for &item_id in &dto.binder_item_ids {
-            if all_moving.contains(&item_id) {
-                continue;
+            if !seen.insert(item_id) {
+                continue; // the same id twice: the first mention already planned it
             }
             let item = match uow.get_binder_item(&item_id)? {
                 Some(it) => it,
@@ -142,7 +180,7 @@ impl RestoreItemsToUseCase {
                 }
             };
             if item.activated {
-                orphaned = true; // already active — nothing to restore
+                orphaned = true; // already active: nothing to restore
                 continue;
             }
             let src_binder = uow
@@ -155,31 +193,26 @@ impl RestoreItemsToUseCase {
                 .map(|(b, _)| b);
             match src_binder {
                 Some(src) => {
-                    let order =
-                        uow.get_binder_relationship(&src, &BinderRelationshipField::BinderItems)?;
-                    let mut indent: HashMap<EntityId, i64> = HashMap::new();
-                    let mut activated: HashMap<EntityId, bool> = HashMap::new();
-                    for it in uow.get_binder_item_multi(&order)?.into_iter().flatten() {
-                        indent.insert(it.id, it.indent);
-                        activated.insert(it.id, it.activated);
-                    }
-                    let subtree = trashed_subtree_of(&order, &indent, &activated, item_id);
-                    let root_old_indent = *indent.get(&item_id).unwrap_or(&0);
-                    for &id in &subtree {
-                        all_moving.insert(id);
-                    }
-                    plan.push(Plan {
+                    let rows = match source_rows.entry(src) {
+                        Entry::Occupied(e) => e.into_mut(),
+                        Entry::Vacant(e) => e.insert(BinderRows::read(uow.as_ref(), src)?),
+                    };
+                    let subtree =
+                        trashed_subtree_of(&rows.order, &rows.indent, &rows.activated, item_id);
+                    let root_old_indent = *rows.indent.get(&item_id).unwrap_or(&0);
+                    candidates.push(Plan {
+                        root: item_id,
                         src_binder: Some(src),
                         subtree,
                         root_old_indent,
                     });
                 }
                 None => {
-                    // exists, deactivated, linked to no binder → recoverable as a
-                    // singleton (its descendants, if any, are unrecoverable — the
-                    // order that defined them is gone).
-                    all_moving.insert(item_id);
-                    plan.push(Plan {
+                    // exists, deactivated, linked to no binder: recoverable as a
+                    // singleton (its descendants, if any, are unrecoverable, since
+                    // the order that defined them is gone).
+                    candidates.push(Plan {
+                        root: item_id,
                         src_binder: None,
                         subtree: vec![item_id],
                         root_old_indent: item.indent,
@@ -187,6 +220,22 @@ impl RestoreItemsToUseCase {
                 }
             }
         }
+
+        // Two trashed subtrees of one binder either nest or are disjoint, so
+        // dropping every candidate found below another candidate's root leaves
+        // disjoint subtrees, kept in the order their roots were first requested.
+        let covered: HashSet<EntityId> = candidates
+            .iter()
+            .flat_map(|p| p.subtree.iter().copied().filter(move |&id| id != p.root))
+            .collect();
+        let plan: Vec<Plan> = candidates
+            .into_iter()
+            .filter(|p| !covered.contains(&p.root))
+            .collect();
+        let all_moving: HashSet<EntityId> = plan
+            .iter()
+            .flat_map(|p| p.subtree.iter().copied())
+            .collect();
 
         if let Some(anchor) = dto.anchor_item_id
             && all_moving.contains(&anchor)

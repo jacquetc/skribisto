@@ -67,7 +67,15 @@ impl RestoreItemsUseCase {
                 orphaned: false,
             });
         }
-        let info_ids: Vec<EntityId> = dto.trash_info_ids.iter().map(|&x| x as EntityId).collect();
+        // An entry listed twice is restored once. Counted twice, it would report two
+        // restores for one subtree, and reactivate that subtree a second time.
+        let mut seen: HashSet<EntityId> = HashSet::new();
+        let info_ids: Vec<EntityId> = dto
+            .trash_info_ids
+            .iter()
+            .map(|&x| x as EntityId)
+            .filter(|id| seen.insert(*id))
+            .collect();
 
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;

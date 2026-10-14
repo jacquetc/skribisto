@@ -984,6 +984,49 @@ fn restore_items_round_trip() {
     assert!(indexed.is_empty());
 }
 
+/// The same trash entry listed twice is one restore, not two: the toast reads the count.
+#[test]
+fn restore_items_the_same_entry_twice_restores_it_once() {
+    let fx = make_fixture();
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::trash_binder_items(
+        &fx.ctx,
+        Some(s1),
+        &TrashBinderItemsDto {
+            work_id: fx.work,
+            binder_item_ids: vec![fx.a as i64],
+            origin_binder_id: fx.binder1 as i64,
+        },
+    )
+    .expect("trash");
+    let info = trash_info_commands::get_all_trash_info(&fx.ctx).unwrap()[0].id;
+
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let res = trash_management_commands::restore_items(
+        &fx.ctx,
+        Some(s2),
+        &RestoreItemsDto {
+            work_id: fx.work,
+            trash_info_ids: vec![info as i64, info as i64],
+        },
+    )
+    .expect("restore");
+    assert_eq!(res.restored_count, 1);
+    assert!(!res.orphaned);
+    for id in [fx.a, fx.a1, fx.a2] {
+        assert!(activated(&fx.ctx, id), "row {id} is back");
+    }
+    let indexed =
+        work_commands::get_work_relationship(&fx.ctx, &fx.work, &WorkRelationshipField::TrashInfos)
+            .unwrap_or_default();
+    assert!(indexed.is_empty());
+
+    undo_redo_commands::undo(&fx.ctx, Some(s2)).expect("undo");
+    for id in [fx.a, fx.a1, fx.a2] {
+        assert!(!activated(&fx.ctx, id), "row {id} is back in the trash");
+    }
+}
+
 #[test]
 fn restore_reports_orphaned_when_binder_lost_the_item() {
     let fx = make_fixture();
@@ -2280,6 +2323,119 @@ fn restore_items_to_undo_redo() {
     undo_redo_commands::redo(&fx.ctx, Some(s2)).expect("redo");
     assert!(activated(&fx.ctx, fx.c));
     assert_eq!(order(&fx.ctx, fx.binder2), vec![fx.c]);
+}
+
+/// What one `restore_items_to` call left behind: binder1's order, each row's
+/// indent and trash state in that order, the live trash index and the
+/// reported count. Everything a caller could observe, so two runs comparing
+/// equal really did the same thing.
+#[derive(Debug, PartialEq)]
+struct RestoreOutcome {
+    order: Vec<EntityId>,
+    indents: Vec<i64>,
+    activated: Vec<bool>,
+    trash_index_len: usize,
+    restored_count: i64,
+}
+
+/// Trash `a`'s subtree (a, a1, a2), then restore it with `ids` into folder
+/// `b`, inside the same binder, so every restored row is re-indented by one.
+/// Returns the outcome and the fixture, for the undo checks.
+fn restore_a_into_b(ids: impl Fn(&Fixture) -> Vec<EntityId>) -> (RestoreOutcome, Fixture, u64) {
+    let fx = make_fixture();
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_item(&fx, s1, fx.a);
+
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let res = trash_management_commands::restore_items_to(
+        &fx.ctx,
+        Some(s2),
+        &RestoreItemsToDto {
+            work_id: fx.work,
+            binder_item_ids: ids(&fx),
+            destination_binder_id: fx.binder1,
+            anchor_item_id: Some(fx.b),
+            drop_position: DropPosition::Into,
+        },
+    )
+    .expect("restore_to");
+    let order = order(&fx.ctx, fx.binder1);
+    let outcome = RestoreOutcome {
+        indents: order.iter().map(|&id| indent(&fx.ctx, id)).collect(),
+        activated: order.iter().map(|&id| activated(&fx.ctx, id)).collect(),
+        order,
+        trash_index_len: indexed_trash(&fx).len(),
+        restored_count: res.restored_count,
+    };
+    (outcome, fx, s2)
+}
+
+/// The block `a`'s subtree must produce once restored into `b`: one copy of
+/// each row, nested one level deeper than before, nothing left in the trash.
+fn assert_a_restored_once_into_b(outcome: &RestoreOutcome, fx: &Fixture) {
+    assert_eq!(
+        outcome.order,
+        vec![fx.b, fx.b1, fx.a, fx.a1, fx.a2, fx.c],
+        "each restored row must appear exactly once, inside b"
+    );
+    assert_eq!(outcome.indents, vec![0, 1, 1, 2, 2, 0]);
+    assert_eq!(outcome.activated, vec![true; 6]);
+    assert_eq!(outcome.trash_index_len, 0);
+    assert_eq!(
+        outcome.restored_count, 1,
+        "a1 is covered by a, not a second restore"
+    );
+}
+
+/// A child listed *before* its trashed parent is covered by the parent's
+/// subtree, rather than planned twice. Under qleany 2.0 the doubled block was a
+/// "duplicate relationship target" error; before it, a1 was stored twice in the
+/// binder order and re-indented twice.
+#[test]
+fn restore_items_to_child_listed_before_its_parent_restores_it_once() {
+    let (outcome, fx, s2) = restore_a_into_b(|fx| vec![fx.a1, fx.a]);
+    assert_a_restored_once_into_b(&outcome, &fx);
+
+    // Undo puts the trashed subtree back exactly where it was.
+    undo_redo_commands::undo(&fx.ctx, Some(s2)).expect("undo");
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.a, fx.a1, fx.a2, fx.b, fx.b1, fx.c]
+    );
+    assert_eq!(indent(&fx.ctx, fx.a), 0);
+    assert_eq!(indent(&fx.ctx, fx.a1), 1);
+    assert!(!activated(&fx.ctx, fx.a));
+    assert!(!activated(&fx.ctx, fx.a1));
+    assert!(!activated(&fx.ctx, fx.a2));
+    assert_eq!(indexed_trash(&fx).len(), 1);
+
+    undo_redo_commands::redo(&fx.ctx, Some(s2)).expect("redo");
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.b, fx.b1, fx.a, fx.a1, fx.a2, fx.c]
+    );
+    assert_eq!(indent(&fx.ctx, fx.a1), 2);
+}
+
+/// The other order gives the identical result: the order of the request does
+/// not decide what is restored.
+#[test]
+fn restore_items_to_parent_listed_before_its_child_matches_the_reverse_order() {
+    let (parent_first, fx, _) = restore_a_into_b(|fx| vec![fx.a, fx.a1]);
+    assert_a_restored_once_into_b(&parent_first, &fx);
+
+    let (child_first, _, _) = restore_a_into_b(|fx| vec![fx.a1, fx.a]);
+    assert_eq!(parent_first, child_first);
+}
+
+/// An id listed twice is restored once.
+#[test]
+fn restore_items_to_the_same_id_twice_restores_it_once() {
+    let (twice, fx, _) = restore_a_into_b(|fx| vec![fx.a, fx.a]);
+    assert_a_restored_once_into_b(&twice, &fx);
+
+    let (once, _, _) = restore_a_into_b(|fx| vec![fx.a]);
+    assert_eq!(twice, once);
 }
 
 #[test]
