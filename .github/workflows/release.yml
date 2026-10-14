@@ -237,6 +237,13 @@ jobs:
             runner: ubuntu-24.04-arm
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 75
+    # The arm64 leg does not hold the release back. On v3.2.0, its first two
+    # runs, GitHub's arm runner was lost about 20 minutes into the cold build,
+    # once with "the runner has received a shutdown signal" and once with no log
+    # at all, while amd64 built the same command in 17 to 24 minutes. Until the
+    # cause is known, Create Release ships arm64 when it built and goes without
+    # it otherwise; amd64 stays required (see "Collect release files").
+    continue-on-error: ${{ matrix.arch == 'arm64' }}
     env:
       SKRIBISTO_GIT_DESCRIBE: ${{ github.ref_name }}
       # No repository backs an upstream .deb, so nothing updates it: the
@@ -254,6 +261,27 @@ jobs:
         with:
           tool: cargo-deb@3.8.0
 
+      # What the arm runner has to build with, printed before the build so a run
+      # that loses its runner still shows it. Swap is added only when the disk can
+      # spare it: if disk is what runs out, a swap file would make it worse.
+      - name: Report the runner's headroom (arm64)
+        if: matrix.arch == 'arm64'
+        run: |
+          set -euo pipefail
+          nproc
+          free -m
+          df -h /
+          avail_gb=$(df --output=avail -BG / | tail -1 | tr -dc '0-9')
+          if [ "$avail_gb" -ge 30 ]; then
+            sudo fallocate -l 8G /swapfile
+            sudo chmod 600 /swapfile
+            sudo mkswap /swapfile
+            sudo swapon /swapfile
+            free -m
+          else
+            echo "::warning::only ${avail_gb} GB free on /, so no swap file was added"
+          fi
+
       # The version is the tag, not Cargo's (see the header). A pre-release
       # takes a `~` in the package version, because dpkg sorts `~` before
       # anything, so 3.2.0~rc1 < 3.2.0 as in semver; with a `-` it would read
@@ -270,6 +298,13 @@ jobs:
           deb_version="$(printf '%s' "$version" | sed 's/-/~/')-1"
           mkdir -p dist
           out="dist/skribisto_${version}-1_${{ matrix.arch }}.deb"
+          # Memory and disk once a minute, so a runner lost mid-build leaves a
+          # trail up to its last minute (when its log survives at all).
+          ( while sleep 60; do
+              echo "[headroom] $(date +%T) mem: $(free -m | awk '/^Mem:/ {print $7 " MB available"}') swap used: $(free -m | awk '/^Swap:/ {print $3 " MB"}') disk: $(df -h --output=avail / | tail -1 | tr -d ' ') free"
+            done ) &
+          monitor=$!
+          trap 'kill "$monitor" 2>/dev/null || true' EXIT
           cargo deb -p teksilo_ui --locked --deb-version "$deb_version" -o "$out"
           echo "DEB=$out" >> "$GITHUB_ENV"
           echo "DEB_VERSION=$deb_version" >> "$GITHUB_ENV"
@@ -503,6 +538,17 @@ jobs:
   release:
     name: Create Release
     needs: [flatpak, linux, deb, macos, windows]
+    # `deb` is a matrix, so its result cannot tell the amd64 leg from the
+    # non-blocking arm64 one, and a lost runner or a timeout may not honour
+    # continue-on-error. This job therefore waits for `deb` to finish whatever
+    # its result; the amd64 package is then required by name in "Collect release
+    # files".
+    if: >-
+      ${{ !cancelled()
+          && needs.flatpak.result == 'success'
+          && needs.linux.result == 'success'
+          && needs.macos.result == 'success'
+          && needs.windows.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: release
@@ -524,13 +570,19 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p release
-          for artifact in skribisto-flatpak skribisto-linux skribisto-deb-amd64 skribisto-deb-arm64 skribisto-macos-universal skribisto-windows; do
+          for artifact in skribisto-flatpak skribisto-linux skribisto-deb-amd64 skribisto-macos-universal skribisto-windows; do
             if [ ! -d "artifacts/$artifact" ]; then
               echo "::error::expected artifact '$artifact' is missing from this run"
               exit 1
             fi
             find "artifacts/$artifact" -type f -exec cp {} release/ \;
           done
+          # Optional while the arm runner is unreliable (see the deb job).
+          if [ -d artifacts/skribisto-deb-arm64 ]; then
+            find artifacts/skribisto-deb-arm64 -type f -exec cp {} release/ \;
+          else
+            echo "::warning::the arm64 .deb did not build; this release ships without it"
+          fi
           ls -la release/
 
       - name: Generate checksums
@@ -619,7 +671,12 @@ jobs:
     timeout-minutes: 15
     # Flathub stable takes final releases only. A pre-release tag carries a
     # hyphen, the same test the Release itself uses to set `prerelease:`.
-    if: ${{ !contains(github.ref_name, '-') }}
+    #
+    # `needs.release.result` is spelled out: an `if:` without a status function
+    # gets an implicit success(), which also looks past `release` at the jobs it
+    # needs, so a failed non-blocking arm64 leg would skip this job even though
+    # the release itself was created.
+    if: ${{ !cancelled() && needs.release.result == 'success' && !contains(github.ref_name, '-') }}
     # FLATHUB_FORK_TOKEN is an ENVIRONMENT secret, not a repository one, so this
     # job has to name the environment to see it. Without this line
     # `secrets.FLATHUB_FORK_TOKEN` resolves to the empty string and the job
