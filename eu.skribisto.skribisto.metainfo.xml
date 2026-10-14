@@ -2,20 +2,32 @@
 <component type="desktop-application">
   <id>eu.skribisto.skribisto</id>
   <name>Skribisto</name>
-  <summary>Software for writing</summary>
-  <summary xml:lang="fr">Logiciel d'écriture</summary>
+  <summary>Plan, write, manage your novels</summary>
+  <summary xml:lang="fr">Planifiez, écrivez, gérez vos romans</summary>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-only</project_license>
   <description>
-    <p>Skribisto helps you write anything, from a novel to course notes, without fighting formatting along the way. Organise a project in a binder tree of folders and items; the book's structure — Part, Chapter, Scene, Note — comes from the role you give each row, not from where it sits in the tree. Every writing row keeps its prose and its synopsis side by side.</p>
-    <p>Skribisto is not a word processor: a project exports to DOCX, ODT, EPUB, PDF, HTML, Markdown, Djot, LaTeX or plain text, so the final formatting happens in whichever program you prefer.</p>
+    <p>Skribisto is a writing app for novels.</p>
+    <p xml:lang="fr">Skribisto est un logiciel d'écriture pour les romans.</p>
     <ul>
-      <li>Dual editor pane (prose and synopsis), with split panes and tabs</li>
-      <li>Read a whole chapter, part or book as one continuous document, or every synopsis at once</li>
-      <li>Corkboard, writing sessions, pace tracking and manuscript analysis</li>
-      <li>Search and replace across the project, trash with restore and undo, autosave and backups</li>
-      <li>Spell checking with downloadable dictionaries, light and dark themes, per-editor typography</li>
-      <li>Open several projects at once, each in its own window</li>
+      <li>Split panes and tabs, and a whole chapter, part or book readable as one text</li>
+      <li xml:lang="fr">Écran partagé et onglets, et un chapitre, une partie ou le livre entier à lire comme un seul texte</li>
+      <li>Corkboard, story bible, margin comments and footnotes</li>
+      <li xml:lang="fr">Tableau de liège, bible narrative, commentaires dans la marge et notes de bas de page</li>
+      <li>Word goals, writing sessions, pace planning and manuscript analysis</li>
+      <li xml:lang="fr">Objectifs de mots, sessions d'écriture, planification du rythme et analyse du manuscrit</li>
+      <li>Statuses you name yourself, from first draft to final</li>
+      <li xml:lang="fr">Des statuts que vous nommez vous-même, du premier jet à la version finale</li>
+      <li>Import from Scrivener, Manuskript, Plume Creator, Word, OpenDocument or Markdown, comments included, with a report of anything left behind</li>
+      <li xml:lang="fr">Import depuis Scrivener, Manuskript, Plume Creator, Word, OpenDocument ou Markdown, commentaires compris, avec un rapport de ce qui n'a pas pu être repris</li>
+      <li>Export to DOCX, ODT, EPUB, PDF and more, and finish the page layout in the program you prefer</li>
+      <li xml:lang="fr">Export en DOCX, ODT, EPUB, PDF et d'autres formats, pour finir la mise en page dans le logiciel de votre choix</li>
+      <li>Search and replace, autosave, backups and version history</li>
+      <li xml:lang="fr">Rechercher et remplacer, enregistrement automatique, sauvegardes et historique des versions</li>
+      <li>Spell checking, smart punctuation and 24 interface languages</li>
+      <li xml:lang="fr">Correcteur orthographique, ponctuation intelligente et interface en 24 langues</li>
+      <li>Built for accessibility: screen readers, braille displays and keyboard shortcuts</li>
+      <li xml:lang="fr">Pensé pour l'accessibilité : lecteurs d'écran, plages braille et raccourcis clavier</li>
     </ul>
   </description>
   <developer id="eu.skribisto">

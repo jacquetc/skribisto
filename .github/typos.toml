@@ -62,6 +62,14 @@ extend-exclude = [
     "resources/examples/le_tour_du_monde_en_80_jours/*.toml",
 ]
 
+[default]
+# Translated text inside the AppStream metainfo: any element carrying an
+# `xml:lang` attribute (`<summary xml:lang="fr">`, `<li xml:lang="fr">`). The
+# file itself stays checked, so the English description and the release notes,
+# which are most of it, still are; only the text of a translated element is
+# skipped, for the same reason the non-English `.ftl` files are excluded above.
+extend-ignore-re = ['xml:lang="[^"]+">[^<]*']
+
 [default.extend-words]
 # ── Deliberate misspellings: the fixtures the spell-checker and the
 #    replace-while-typing engine exist to correct. Wrong on purpose, and a test
