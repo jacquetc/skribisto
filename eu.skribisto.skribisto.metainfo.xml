@@ -53,49 +53,18 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release type="stable" version="3.1.0" date="2026-09-28T00:00:00Z">
+    <release type="development" version="3.2.0" date="2026-10-13T00:00:00Z">
       <description>
         <ul>
-          <li>Import your Scrivener projects with Work ▸ Import from ▸ Scrivener (.scriv)…, whether they come from Scrivener 3, Scrivener 2 on the Mac, Scrivener for Windows or the Linux beta. You see how your binder will look before anything is created, your keywords, targets and deadline come along, and a report tells you what to check once it is done. Your Scrivener project itself is never changed. The new help topic Coming from Scrivener explains the rest</li>
-          <li>Added app interfaces in Arabic (Saudi Arabia), Czech, Danish, Greek, Hebrew, Hungarian, Norwegian Bokmål, Dutch, Romanian, Swedish and Turkish, including menus, dialogs, settings and tooltips. Longer help articles use English</li>
-          <li>Added interfaces in German (Germany), Italian, Spanish, Portuguese (Portugal), Polish, Finnish, Russian, Ukrainian, Korean (South Korea), Japanese and Esperanto, including menus, dialogs, settings and tooltips</li>
-          <li>Added help articles in German, Italian, Spanish, Portuguese (Portugal) and Polish. Finnish, Russian, Ukrainian, Korean, Japanese and Esperanto use English for the longer help articles</li>
-          <li>English and French help now gives clearer steps for starting a project, saving, importing and exporting, with less jargon and fewer technical details</li>
-          <li>Updated the Teksilo interface libraries to 0.16.0</li>
-          <li>A Plume Creator or Manuskript project imported without a name, and the notes and texts the import makes up, are named in the language Skribisto is set to. They used to be named in English</li>
-          <li>A Plume Creator or Manuskript import is shown in the language Skribisto is set to: its progress, its notes about what it could not carry across, and the reason a project cannot be imported. They used to be in English whatever the language</li>
-          <li>Quitting while a project import is running asks first, and stopping the import leaves no half-written file behind</li>
-          <li>Projects are imported one at a time, whichever importer and window starts them: a second import started while one runs says so, and can be started again once the first has finished</li>
-          <li>When there is not enough space left to write an imported project, the message names the folder that is full</li>
-          <li>Cancelling a project import says the import is stopping until it really has, and keeps its destination reserved until then. It used to say the import was cancelled at once, while the import could still be writing its file, and let that file be opened or imported into meanwhile</li>
-          <li>A project kept as a folder under the name chosen for an import is pointed out as soon as the name is typed. The import used to offer to replace it, convert the whole project, then fail</li>
-          <li>Importing a Word, OpenDocument or Markdown file brings its pictures into the project, each where it sat in the text and with its description, and a save keeps them in the project. The review step says how many pictures come, and names each one that stays behind with the reason, such as a drawing in a format Skribisto cannot show or a picture on the web. A picture the project already holds is not stored twice, and undoing the import takes its pictures back with the text</li>
-          <li>Copying, cutting or dragging text that runs out of a table takes the whole table and nothing else, so a cut pasted back gives the text back as it was. Text after the table used to be lost from the copy, or the table came back twice</li>
-          <li>Dragging a passage over a table drops it where you release it, dragging selected table cells no longer leaves an empty grid behind, and selected table cells are shown as selected</li>
-          <li>A numbered list keeps the number it starts at when the project is saved and opened again, and when it is copied</li>
-          <li>Two quotations one after the other stay two quotations when the project is opened again</li>
-          <li>Pasting several paragraphs into an empty scene keeps the format you gave its first line, such as a quotation for an epigraph</li>
-          <li>Tab, Shift+Tab and Enter work in a table inside a quotation</li>
-          <li>Typing with an input method over a selection replaces the selection once, without leaving the first candidate in the text</li>
-          <li>Importing or exporting no longer leaves idle background tasks running until Skribisto is closed</li>
-          <li>The command palette and the keyboard shortcut settings show the group of each command, such as File or Edit, in the language Skribisto is set to, and the palette finds a command when you type its group's name in that language. The General group of the shortcut settings is translated too</li>
-          <li>A window that is minimized or hidden behind other windows stops drawing until it is shown again, which spares the battery. On macOS every window rests the same way while the display sleeps or the screen is locked</li>
-          <li>On macOS, a window opened while the display sleeps or the screen is locked no longer keeps a processor core busy until it appears</li>
-          <li>On Linux under Wayland, Skribisto no longer wakes the processor twice for everything it does, which it did on desktops that support drawing tablets, whether or not a tablet was attached</li>
-          <li>With a screen reader running, each change is drawn once rather than twice, and the screen reader is sent only what has changed</li>
-          <li>A text holding pictures takes less work to scroll and redraw, as its pictures are no longer copied each time the window is drawn</li>
-          <li>When closing a window has a question to ask first, such as what to do with unsaved changes, the question appears at once. It used to wait for the next key press or mouse movement</li>
-          <li>On Windows and on Linux under X11, the Enter that answers a system dialog, such as the file chooser, no longer acts a second time in the window behind it</li>
-          <li>The notifications list shows how an import ended: its entry names what the last notice offered, a failed import is listed as an error, and an import run again comes back to the top of the list with its own date. The entry used to keep the Cancel of the import's progress notice, and a later import was listed under the date of the first</li>
-          <li>In the notifications, a finished import's entry keeps Open now, which opens the imported project in a window of its own. It used to show Open now as a label that did nothing</li>
-          <li>A checkbox beside other controls, such as Preserve case in the replace bar, shows its label, shortened only when the row runs out of room. It used to show an ellipsis in place of the label</li>
-          <li>Alt with the underlined letter of a menu opens that menu when the menu bar is folded into its menu button, and no longer closes a menu it should open. While a dialog is open, it no longer reaches the menu bar behind the dialog</li>
-          <li>After an item is chosen from a submenu, one click on the menu's name opens it again. It used to take two</li>
-          <li>Part of a window that changed while it was scrolled out of view shows its new content when it comes back into view, rather than what it showed before</li>
-          <li>A section opened while its window is in the background, for instance by a screen reader, unfolds at once. It used to stay folded under a header that said it was open</li>
-          <li>A list or a box partly scrolled out of the top of the window no longer lets its contents show past its own lower edge</li>
-          <li>A cancelled import or export no longer leaves the loading spinner turning in its notice after the work has stopped</li>
-          <li>A backup's notice no longer keeps spinning once the backup has ended. When a backup taken on closing fails before reaching any destination, the dialog names the error, and a backup whose outcome cannot be read says so</li>
+          <li>Each book now has its own cover. Open the book and choose its cover on the book's own page, where you can also see it, change it or remove it. When you export one book, its cover opens the file, and when you export several books together, each one starts with its own cover. An EPUB carries the cover only when the export style asks for it and the export holds one whole book. Covers chosen in an earlier version are not carried over, so choose them again; the pictures are still in your project</li>
+          <li>In a Word or OpenDocument export, the cover and every other picture fit within the page margins. A large picture used to be printed at its own size and run off the page</li>
+          <li>The cover and the title page of a Word or OpenDocument export carry no page header and no page number, and the page numbers start at 1 on the first page of the text</li>
+          <li>An export titles the book with the book's own title: on the title page, in the page header and in the file's details. It used to use the name of the project file. A project holding several books still uses the project's title when you export them together</li>
+          <li>When the export style has no title page, the book's title is centred at the start of the book. It used to sit on the left like an ordinary heading</li>
+          <li>The cover, the author line, the word count and the scene break marks of an export are no longer indented like the first line of a paragraph</li>
+          <li>An OpenDocument export keeps the scene break mark your export style chooses, such as # in the standard manuscript style. It used to replace it with a horizontal line. Imported back into Skribisto, a stronger scene break also stays a stronger one</li>
+          <li>In a Word export, a paragraph keeps its own line spacing when it also has space above or below it</li>
+          <li>Importing a Word or OpenDocument file starts a new page where the file starts a new page with a new section, and no longer where a section continues on the same page</li>
         </ul>
       </description>
     </release>
