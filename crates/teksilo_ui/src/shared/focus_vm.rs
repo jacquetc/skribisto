@@ -12,8 +12,8 @@
 //! distraction-free toggle never answers with — or clobbers — a sibling
 //! window's chrome/placement memory.
 //!
-//! **Independent of `FullscreenViewModel`.** Shift+F11 (this mode) and plain
-//! F11 (Increment 1) are two separate per-window toggles that both end up
+//! **Independent of `FullscreenViewModel`.** F11 (this mode) and plain
+//! fullscreen on Shift+F11 (Increment 1) are two separate per-window toggles that both end up
 //! writing the same window's `WindowPlacement` — deliberately not sharing one
 //! "remembered placement" signal, so pressing one never corrupts the other's
 //! restore target. Each toggle only ever restores what *it itself* last
@@ -31,7 +31,7 @@
 //! `ctx.subscribe_event`, which hands back only the `Event`, never an
 //! `EventContext`/`WindowState` to act on; forgetting the mode's own
 //! bookkeeping is enough to stop it leaking into the next project, and the
-//! window's real OS placement is left for the user's own next F11/Escape.
+//! window's real OS placement is left for the user's own next Shift+F11/Escape.
 
 use teksilo::prelude::{Signal, WindowPlacement, WindowState};
 
@@ -42,7 +42,7 @@ use teksilo::prelude::{Signal, WindowPlacement, WindowState};
 /// from its last entry, decide the placement to *apply* (`None` = leave the
 /// window's placement alone) and the memory to keep for the next toggle.
 ///
-/// Entering while **already** fullscreen (e.g. the plain F11 toggle got
+/// Entering while **already** fullscreen (e.g. the plain fullscreen toggle, Shift+F11, got
 /// there first) remembers `None` rather than the current `Fullscreen` value:
 /// leaving distraction-free mode later must not un-fullscreen a window this
 /// mode never itself fullscreened — that fullscreen belongs to the other
@@ -186,7 +186,7 @@ mod tests {
 
     #[test]
     fn entering_while_already_fullscreen_leaves_placement_alone_and_remembers_nothing() {
-        // The plain F11 toggle (Increment 1) got here first. Distraction-free
+        // The plain fullscreen toggle (Increment 1) got here first. Distraction-free
         // must not treat "already fullscreen" as something *it* needs to undo
         // later.
         let (placement, remembered) = next_focus_placement(true, WindowPlacement::Fullscreen, None);

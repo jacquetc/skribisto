@@ -229,7 +229,7 @@ fn column_caps(tree: &WidgetTree) -> Vec<f32> {
 /// still a built widget, so a surface that opened the focused document
 /// eagerly would pin a refcount — and rob that document of its
 /// flush-on-evict — for every session in which the writer never once pressed
-/// Shift+F11.
+/// F11.
 #[test]
 fn the_surface_holds_no_document_while_the_mode_is_off() {
     let fx = fixture();
@@ -442,7 +442,7 @@ fn dropping_the_surface_releases_what_it_still_holds() {
     assert_eq!(fx.docs.refs_for_test(1), Some(before));
 }
 
-/// **The handoff.** A writer who presses Shift+F11 mid-sentence must carry
+/// **The handoff.** A writer who presses F11 mid-sentence must carry
 /// on mid-sentence, and come back out of the mode where the surface left
 /// them — not at the top of the scene either way.
 ///

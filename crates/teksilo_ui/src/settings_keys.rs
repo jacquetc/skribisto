@@ -349,7 +349,7 @@ pub const NOTES_PARA_SPACING_AFTER_DEFAULT: f32 = 8.0;
 /// Distraction-free mode's own typography (Settings ▸ Editor ▸ Typography ▸
 /// Distraction-free) — a fifth bundle alongside Scene / Synopsis / Notes /
 /// Corkboard, selected at render time by `ContentTab::main_typography` whenever
-/// the tab's window is in distraction-free mode (Shift+F11), in place of the
+/// the tab's window is in distraction-free mode (F11), in place of the
 /// normal Scene/Notes bundle. Independent compile-time constants like every
 /// other bundle here — deliberately **not** seeded from Scene at runtime, so
 /// there is no ordering-fragile "copy on first entry" machinery. A touch larger

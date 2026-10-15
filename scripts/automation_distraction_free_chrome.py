@@ -12,8 +12,8 @@ disappears while the Exit button stays.
 
 Flow: load a scratch copy of an example →
   1. open a scene → an editor tab strip (Role::TabList) exists
-  2. Shift+F11    → the tab strip is GONE and the strip's Exit button is present
-  3. Shift+F11    → the tab strip is BACK
+  2. F11    → the tab strip is GONE and the strip's Exit button is present
+  3. F11    → the tab strip is BACK
 
 Reuses the launch + bridge-wait + connect scaffolding from
 `automation_fixture` — see that module for why the app now launches with
@@ -242,8 +242,8 @@ print("  title-bar slots populated (Export control present)")
 s.shot("/tmp/df-chrome-before.png")
 
 # ── 2. Enter distraction-free → the tab strip goes, Exit stays ───────────────
-print("== Shift+F11 enters distraction-free ==")
-s.call("inject_key", {"key": "F11", "shift": True})
+print("== F11 enters distraction-free ==")
+s.call("inject_key", {"key": "F11"})
 if not wait_for(lambda: len(tab_lists(s)) == 0, timeout=10):
     s.shot("/tmp/df-chrome-still-there.png")
     fail(f"the editor tab strip survived entering the mode "
@@ -258,7 +258,7 @@ print("  Exit button present")
 
 # The title bar goes with the rest of the chrome: minimize/maximize/close are
 # meaningless over a window with no frame, and every desktop convention hides
-# them in fullscreen. The strip's Exit button, Shift+F11 and Escape are the
+# them in fullscreen. The strip's Exit button, F11 and Escape are the
 # replacement way out — the first of which the check above just confirmed.
 if not wait_for(lambda: len(window_control_buttons(s)) == 0, timeout=10):
     s.shot("/tmp/df-chrome-controls-left.png")
@@ -299,8 +299,8 @@ if len(tab_lists(s)) != 0:
 print("  dock commands are no-ops inside the mode")
 
 # ── 3. Leave the mode → the tab strip comes back ────────────────────────────
-print("== Shift+F11 leaves distraction-free ==")
-s.call("inject_key", {"key": "F11", "shift": True})
+print("== F11 leaves distraction-free ==")
+s.call("inject_key", {"key": "F11"})
 if not wait_for(lambda: len(tab_lists(s)) == before, timeout=10):
     s.shot("/tmp/df-chrome-not-restored.png")
     fail(f"the tab strip did not come back on leaving the mode "

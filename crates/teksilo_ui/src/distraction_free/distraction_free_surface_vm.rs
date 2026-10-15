@@ -181,7 +181,7 @@ impl DistractionFreeSurfaceViewModel {
     /// `AppIds::clear()` has usually already zeroed the live one.
     ///
     /// The tab is seeded with the caret and scroll the writer left in the pane
-    /// underneath, so pressing Shift+F11 mid-sentence carries on mid-sentence
+    /// underneath, so pressing F11 mid-sentence carries on mid-sentence
     /// rather than jumping to the top of the scene.
     pub fn open_tab(&self, item_id: u64) -> Option<(ContentTab, Option<u64>)> {
         let deps = self.deps.borrow();

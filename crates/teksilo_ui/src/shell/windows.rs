@@ -455,7 +455,7 @@ impl ProjectWindowFactory {
         // Increment 1 of distraction-free (plain fullscreen). Per WINDOW,
         // same rationale as `scene_focused` just above: this remembers
         // *this* window's own pre-fullscreen placement, so a second
-        // simultaneously-open project window's F11 never restores (or
+        // simultaneously-open project window's Shift+F11 never restores (or
         // clobbers) the wrong window's memory. See `FullscreenViewModel`'s
         // module doc.
         let fullscreen = crate::shared::FullscreenViewModel::new();
@@ -739,15 +739,15 @@ impl ProjectWindowFactory {
                         //
                         // The exit guarantee the collapsed bar used to owe:
                         //   * distraction-free → the strip's Exit button (always
-                        //     present), Shift+F11, and Escape;
+                        //     present), F11, and Escape;
                         //   * plain fullscreen → the menu bar is still on screen, so
-                        //     View ▸ Fullscreen and F11;
+                        //     View ▸ Fullscreen and Shift+F11;
                         //   * either → Ctrl+W, Ctrl+Q, and the compositor's own
                         //     unfullscreen/close.
                         //
                         // Read from the WINDOW's own placement, not from
                         // `FullscreenViewModel`/`FocusViewModel`: those are two
-                        // independent memories (F11 and Shift+F11 each keep their own),
+                        // independent memories (Shift+F11 and F11 each keep their own),
                         // and an OS-initiated fullscreen goes through neither. The
                         // placement is the single fact all three agree on.
                         let controls_visible = state.placement().map(|p| !p.is_fullscreen());
@@ -816,7 +816,7 @@ impl ProjectWindowFactory {
                                 center: Expand::horizontal {
                                     child: center_content
                                 }
-                                // Hidden whenever this window is fullscreen — plain F11
+                                // Hidden whenever this window is fullscreen — plain fullscreen
                                 // as well as distraction-free. See the exit guarantee
                                 // noted above.
                                 controls_visible: controls_visible

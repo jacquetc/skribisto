@@ -19,7 +19,7 @@
 //! the Settings ▸ Editor ▸ Distraction-free checkboxes). Exit is not a setting
 //! and must not become one: it is this strip's documented way out, and the
 //! mode's other exits are a keystroke the focused editor may legitimately
-//! swallow (Escape) and one the writer has to remember (Shift+F11).
+//! swallow (Escape) and one the writer has to remember (F11).
 //!
 //! **Go reuse, not reimplementation** — the Previous/Next icon buttons fire the
 //! same `go.prev`/`go.next` named actions the Go menu and the Alt+Up/Alt+Down
@@ -342,7 +342,7 @@ impl Widget for FocusStrip {
         // makes "Exit always stays" a property of the layout rather than only a
         // consequence of no setting gating it.
         //
-        // Fires the same named intent Shift+F11 and the View menu use — and this
+        // Fires the same named intent F11 and the View menu use — and this
         // button only ever exists while the mode is active, so the toggle is
         // always a clean exit here, never a re-entry.
         //
@@ -469,7 +469,7 @@ mod tests {
     /// The invariant the whole strip rests on: **Exit survives every
     /// combination of the settings**. Distraction-free mode's other two exits
     /// are a keystroke the focused editor may legitimately swallow (Escape)
-    /// and one the writer has to remember (Shift+F11), so a settings choice
+    /// and one the writer has to remember (F11), so a settings choice
     /// that could take this button away would be a way to get stranded in
     /// fullscreen with no visible way out — the exact failure other writing
     /// tools have filed bugs for.

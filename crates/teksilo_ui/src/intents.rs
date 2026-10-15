@@ -42,7 +42,7 @@ pub enum AppIntent {
 
     /// Toggle THIS window between fullscreen and whatever placement it had
     /// before (Maximized/Floating) — Increment 1 of distraction-free (plain
-    /// fullscreen; not distraction-free mode itself). Fired by F11 and the
+    /// fullscreen; not distraction-free mode itself). Fired by Shift+F11 and the
     /// View ▸ Fullscreen menu entry. Consumed by the global `view.fullscreen`
     /// action in `App::build`, which resolves the firing window from the
     /// `EventContext` rather than any captured handle — correct with several
@@ -55,7 +55,7 @@ pub enum AppIntent {
     /// bar, the binder/inspector/preview docks), the editor fills the window,
     /// and the window goes fullscreen, all together. Independent of
     /// [`Self::ToggleFullscreen`] — see `FocusViewModel`'s module doc for why
-    /// the two keep separate placement memory. Fired by Shift+F11, the
+    /// the two keep separate placement memory. Fired by F11, the
     /// View ▸ Distraction-free Mode menu entry, and the mode's own strip
     /// Exit button. Consumed by the global `view.focus_mode` action in
     /// `App::build`, which resolves the firing window from the

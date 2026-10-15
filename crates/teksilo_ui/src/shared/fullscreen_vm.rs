@@ -3,7 +3,7 @@
 
 //! Plain fullscreen for the project window (Increment 1 of distraction-free —
 //! **not** distraction-free mode itself, which collapses chrome; this is only
-//! "go fullscreen and come back", by shortcut (F11) and View menu.
+//! "go fullscreen and come back", by shortcut (Shift+F11) and View menu.
 //!
 //! Per the house rules the decision is a pure function (unit-tested, no
 //! `Signal`/`WindowState`); the view-model below is the thin reactive shell

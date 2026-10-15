@@ -63,7 +63,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
 
     // Ctrl+Shift+M, not a function key: the lane is a writing-surface toggle
     // rather than a window-chrome one, and the free function keys are spoken
-    // for (F9 outline, F10 preview, F11 fullscreen). M for "marks"; Ctrl+M
+    // for (F9 outline, F10 preview, F11 distraction-free). M for "marks"; Ctrl+M
     // alone is a plain Return in several editors, so the Shift is not
     // decorative.
     ctx.register_shortcut_global(
@@ -87,14 +87,15 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
         }));
     }
 
-    // F11, the platform convention — free (no other command claims it; see
-    // this increment's ground-truth sweep). A Global shortcut so it fires
+    // Shift+F11. Plain F11 is the platform convention for fullscreen, but here it
+    // belongs to distraction-free mode below: the writer reaches for that one far
+    // more often, so it gets the single key. A Global shortcut so it fires
     // regardless of which widget has focus, same rationale as F9/F10 above.
     ctx.register_shortcut_global(
         Shortcut::new("view.fullscreen")
             .group(ShortcutGroup::View)
             .name(tr!(shortcut_name_view_fullscreen()))
-            .primary(KeyStroke::new(Key::F11, Modifiers::NONE))
+            .primary(KeyStroke::new(Key::F11, Modifiers::SHIFT))
             .build(),
     );
     {
@@ -110,16 +111,16 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
         }));
     }
 
-    // Shift+F11 — Increment 2 of distraction-free: chrome collapse + docks
+    // F11 — Increment 2 of distraction-free: chrome collapse + docks
     // disabled + fullscreen, together, as one per-window mode independent of
-    // the plain F11 toggle above (see `FocusViewModel`'s module doc for why
+    // the Shift+F11 fullscreen toggle above (see `FocusViewModel`'s module doc for why
     // the two never share placement memory). Global for the same reason as
-    // F11/F9/F10.
+    // Shift+F11/F9/F10.
     ctx.register_shortcut_global(
         Shortcut::new("view.focus_mode")
             .group(ShortcutGroup::View)
             .name(tr!(shortcut_name_view_focus_mode()))
-            .primary(KeyStroke::new(Key::F11, Modifiers::SHIFT))
+            .primary(KeyStroke::new(Key::F11, Modifiers::NONE))
             .build(),
     );
     {

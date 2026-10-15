@@ -1,3 +1,9 @@
+Version: 3.2.2
+Date: 2026-10-15
+Type: development
+Description:
+- "F11 now opens and closes distraction-free mode, and Shift+F11 makes the window fullscreen. They used to be the other way round"
+---
 Version: 3.2.1
 Date: 2026-10-15
 Type: stable

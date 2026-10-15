@@ -268,7 +268,7 @@ print("  popup closed")
 # ── 4. In distraction-free, Escape must close the popup WITHOUT also leaving
 #      the mode — two things from one keystroke is the surprise to avoid.
 print("== in distraction-free, Escape closes only the popup ==")
-s.call("inject_key", {"key": "F11", "shift": True})
+s.call("inject_key", {"key": "F11"})
 if not wait_for(lambda: has(s, "exit distraction-free"), timeout=10):
     fail("could not enter distraction-free", s.app, s.mcp, s.log)
 s.call("inject_key", {"key": "g", "ctrl": True})

@@ -90,7 +90,7 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
     .separator()
     // Increment 1 of distraction-free: plain fullscreen,
     // not the collapsed-chrome mode itself (that is a
-    // later increment). F11, the platform convention.
+    // later increment). Shift+F11: plain F11 is distraction-free's.
     .item(
         MenuEntry::new(tr!(menu_fullscreen()))
             .checked(is_fullscreen)
@@ -99,7 +99,7 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
     )
     // Increment 2 of distraction-free: chrome
     // collapse + docks disabled + fullscreen,
-    // together, as one per-window mode. Shift+F11.
+    // together, as one per-window mode. F11.
     .item(
         MenuEntry::new(tr!(menu_focus_mode()))
             .checked(is_focus_mode)
