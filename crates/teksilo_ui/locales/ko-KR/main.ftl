@@ -151,6 +151,7 @@ session-readout = { $words }단어 · { $time }
 session-readout-timed = { $words }단어 · { $time } 남음
 statusbar-focus-exit = 집중 모드 종료
 statusbar-focus-synopsis = 줄거리 요약
+statusbar-focus-comments = 댓글
 statusbar-focus-go-prev = 이전 항목 (Alt+Up)
 statusbar-focus-go-next = 다음 항목 (Alt+Down)
 

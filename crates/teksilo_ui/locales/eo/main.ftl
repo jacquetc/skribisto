@@ -158,6 +158,7 @@ session-readout-timed = { $words ->
 } · restas { $time }
 statusbar-focus-exit = Eliri la sendistran reĝimon
 statusbar-focus-synopsis = Resumo
+statusbar-focus-comments = Komentoj
 statusbar-focus-go-prev = Antaŭa ero (Alt+Supren)
 statusbar-focus-go-next = Sekva ero (Alt+Malsupren)
 rail-settings = Agordoj

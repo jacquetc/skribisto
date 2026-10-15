@@ -151,6 +151,7 @@ session-readout = { $words }語 · { $time }
 session-readout-timed = { $words }語 · 残り { $time }
 statusbar-focus-exit = 集中モードを終了
 statusbar-focus-synopsis = あらすじ
+statusbar-focus-comments = コメント
 statusbar-focus-go-prev = 前の項目 (Alt+Up)
 statusbar-focus-go-next = 次の項目 (Alt+Down)
 

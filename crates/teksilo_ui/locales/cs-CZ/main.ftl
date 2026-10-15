@@ -175,6 +175,7 @@ session-readout-timed = { $words ->
 } · zbývá { $time }
 statusbar-focus-exit = Ukončit režim bez rozptylování
 statusbar-focus-synopsis = Synopse
+statusbar-focus-comments = Komentáře
 statusbar-focus-go-prev = Předchozí položka (Alt+šipka nahoru)
 statusbar-focus-go-next = Další položka (Alt+šipka dolů)
 

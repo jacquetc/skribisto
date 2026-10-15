@@ -168,6 +168,7 @@ session-readout-timed = { $words ->
 } · { $time } kaldı
 statusbar-focus-exit = Dikkat dağıtmayan moddan çık
 statusbar-focus-synopsis = Özet
+statusbar-focus-comments = Yorumlar
 statusbar-focus-go-prev = Önceki öğe (Alt+Yukarı)
 statusbar-focus-go-next = Sonraki öğe (Alt+Aşağı)
 

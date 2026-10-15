@@ -225,6 +225,7 @@ statusbar-focus-exit = Ieși din modul fără distrageri
 # The strip's Next/Previous buttons (Increment 4) fire the same go.next/go.prev
 # actions as the shortcut and the Go menu's generic pair.
 statusbar-focus-synopsis = Sinopsis
+statusbar-focus-comments = Comentarii
 statusbar-focus-go-prev = Elementul precedent (Alt+Sus)
 statusbar-focus-go-next = Elementul următor (Alt+Jos)
 

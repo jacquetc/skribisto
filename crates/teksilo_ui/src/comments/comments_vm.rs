@@ -190,6 +190,12 @@ pub struct CommentsViewModel {
     /// Held together in one place so they cannot drift apart, which is exactly what
     /// happened when the session and the margin each carried their own default.
     palette: Signal<CommentPalette>,
+    /// The palette for the app theme's page, kept apart from
+    /// [`Self::page_override`] so the one never overwrites the other.
+    app_palette: Rc<Cell<CommentPalette>>,
+    /// The palette for a surface painting its own page (distraction-free) while
+    /// it is up. Wins over [`Self::app_palette`] when set.
+    page_override: Rc<Cell<Option<CommentPalette>>>,
 }
 
 /// The comment feature's fixed palette.
@@ -298,6 +304,50 @@ impl CommentPalette {
             meta: meta_on(card),
         }
     }
+
+    /// The palette for a page of colour `page` carrying prose of colour `ink`.
+    ///
+    /// The page, not an app-wide light/dark flag, decides which variant: the
+    /// distraction-free surface paints its own page and ink through a token
+    /// override, so a Night theme in a light app is a dark page all the same, and
+    /// a light-mode card and wash on it are exactly the glare
+    /// [`for_theme`](Self::for_theme) exists to prevent. Its prose went the other
+    /// way: light ink over the light wash, unreadable.
+    ///
+    /// Then two guarantees the variant alone cannot give, because a
+    /// distraction-free theme is the writer's own five colours. The wash sits
+    /// behind the prose and the card behind each turn's body, and both bodies are
+    /// painted in `ink`, so each is pulled toward the page until `ink` clears
+    /// AA on it. On the app's own themes nothing moves.
+    pub fn for_surface(page: Color, ink: Color) -> Self {
+        let dark = page.best_contrast_text() == Color::WHITE;
+        let base = Self::for_theme(dark);
+        let card = legible_under(base.card, page, ink);
+        Self {
+            wash: legible_under(base.wash, page, ink),
+            ink: base.ink,
+            card,
+            meta: meta_on(card),
+        }
+    }
+}
+
+/// `fill` moved toward `page` only as far as needed for `ink` to read on it at
+/// WCAG AA, stopping at the page itself.
+///
+/// The page is where it stops rather than any further: past it the fill would no
+/// longer read as part of the page, and a theme whose ink fails on its own page is
+/// one the theme editor already warns about (`DistractionFreeTheme::meets_contrast`).
+fn legible_under(fill: Color, page: Color, ink: Color) -> Color {
+    let mut t = 0.0;
+    while t < 1.0 {
+        let candidate = fill.mix(page, t);
+        if ink.contrast_ratio(candidate) >= META_MIN_CONTRAST {
+            return candidate;
+        }
+        t += 0.02;
+    }
+    page
 }
 
 impl CommentsViewModel {
@@ -322,6 +372,8 @@ impl CommentsViewModel {
             editing: Signal::new(None),
             visible: Signal::new(true),
             palette: Signal::new(CommentPalette::default()),
+            app_palette: Rc::new(Cell::new(CommentPalette::default())),
+            page_override: Rc::new(Cell::new(None)),
         }
     }
 
@@ -355,9 +407,36 @@ impl CommentsViewModel {
         self.palette.clone()
     }
 
-    /// Re-resolve the palette for the current theme. Called by `App` on theme change.
-    pub fn set_dark(&self, dark: bool) {
-        self.palette.set(CommentPalette::for_theme(dark));
+    /// Re-resolve the palette for the app theme's page and prose. Called by `App`
+    /// on every build, which is when a theme change lands.
+    pub fn set_page(&self, page: Color, ink: Color) {
+        self.app_palette.set(CommentPalette::for_surface(page, ink));
+        self.publish_palette();
+    }
+
+    /// Paint on another page while it is up, or go back to the app's with `None`.
+    ///
+    /// For the distraction-free surface, which rewrites the page and prose tokens
+    /// for its own subtree. The app's palette is kept underneath rather than
+    /// overwritten, so an app theme change landing while the surface is up is not
+    /// lost when it goes.
+    ///
+    /// One palette per window, not per margin: the wash is a layer on the shared
+    /// document, so the dormant pane under the surface and the surface's own tab
+    /// cannot paint it differently anyway. The margins bind the palette at
+    /// `Rebuild`, so the pane underneath catches up when it wakes.
+    pub fn set_page_override(&self, page: Option<(Color, Color)>) {
+        self.page_override
+            .set(page.map(|(page, ink)| CommentPalette::for_surface(page, ink)));
+        self.publish_palette();
+    }
+
+    /// Write the palette in force, only when it moved: every margin rebuilds on it.
+    fn publish_palette(&self) {
+        let next = self.page_override.get().unwrap_or(self.app_palette.get());
+        if self.palette.get() != next {
+            self.palette.set(next);
+        }
     }
 
     /// The live document behind one turn's body, created on first use and seeded
@@ -1071,6 +1150,86 @@ mod palette_tests {
                         ratio >= META_MIN_CONTRAST,
                         "card #{r:02x}{g:02x}{b:02x} got {ratio:.2}:1"
                     );
+                }
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod surface_palette_tests {
+    use super::*;
+
+    /// On the app's own pages nothing changes: `for_surface` picks the same variant
+    /// `for_theme` did and its legibility pull has nothing to do.
+    #[test]
+    fn the_app_pages_get_the_palettes_they_always_had() {
+        for dark in [false, true] {
+            let c = crate::style::theme(dark).colors;
+            assert_eq!(
+                CommentPalette::for_surface(c.surface_content, c.text_primary),
+                CommentPalette::for_theme(dark),
+                "dark={dark}"
+            );
+        }
+    }
+
+    /// The variant follows the page it is painted on, not an app-wide flag: the
+    /// distraction-free surface puts a dark page in a light app and the reverse.
+    #[test]
+    fn the_variant_follows_the_page() {
+        let night =
+            CommentPalette::for_surface(Color::from_hex("#1e2126"), Color::from_hex("#dfe3e8"));
+        assert_eq!(night.card, CommentPalette::for_theme(true).card);
+        let paper =
+            CommentPalette::for_surface(Color::from_hex("#fdfdfb"), Color::from_hex("#1f1f1d"));
+        assert_eq!(paper.card, CommentPalette::for_theme(false).card);
+    }
+
+    /// **What was unreadable.** The prose is painted over the wash and each turn's
+    /// body over the card, both in the page's ink. On every shipped
+    /// distraction-free theme that pairing clears AA.
+    #[test]
+    fn the_prose_reads_on_the_wash_and_the_card_on_every_shipped_theme() {
+        for t in crate::distraction_free::theme::builtin_themes() {
+            let ink = Color::from_hex(&t.editor_text);
+            let p = CommentPalette::for_surface(Color::from_hex(&t.editor_background), ink);
+            for (what, fill) in [("wash", p.wash), ("card", p.card)] {
+                let ratio = ink.contrast_ratio(fill);
+                assert!(
+                    ratio >= META_MIN_CONTRAST,
+                    "{}: prose on the {what} is {ratio:.2}:1",
+                    t.id
+                );
+            }
+            assert!(
+                p.meta.contrast_ratio(p.card) >= META_MIN_CONTRAST,
+                "{}",
+                t.id
+            );
+        }
+    }
+
+    /// A writer's own theme can be any two colours. Whenever its ink reads on its
+    /// page, it reads on the wash and the card too; when it does not, they fall
+    /// back to the page itself rather than to something worse.
+    #[test]
+    fn any_page_and_ink_keep_the_prose_as_legible_as_the_page_allows() {
+        let steps: Vec<u8> = (0..=255).step_by(51).collect();
+        for &r in &steps {
+            for &g in &steps {
+                for &b in &steps {
+                    let page = Color::from_hex(&format!("#{r:02x}{g:02x}{b:02x}"));
+                    let ink = page.best_contrast_text();
+                    let p = CommentPalette::for_surface(page, ink);
+                    let floor = ink.contrast_ratio(page).min(META_MIN_CONTRAST);
+                    for fill in [p.wash, p.card] {
+                        assert!(
+                            ink.contrast_ratio(fill) + 1e-3 >= floor,
+                            "page {page:?}: {:.2}:1 under {floor:.2}:1",
+                            ink.contrast_ratio(fill)
+                        );
+                    }
                 }
             }
         }

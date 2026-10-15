@@ -803,6 +803,7 @@ impl App {
                     .expect("main registers the distraction-free theme library"),
                 theme_id: settings.distraction_free_theme(),
                 settings: settings.clone(),
+                comments: comments.clone(),
             });
 
         // Escape-to-leave-the-mode lives on the surface itself

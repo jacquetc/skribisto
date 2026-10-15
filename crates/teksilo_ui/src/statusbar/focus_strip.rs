@@ -268,6 +268,26 @@ impl Widget for FocusStrip {
                 .tooltip(tr!(statusbar_focus_synopsis())),
         ));
 
+        // Show or hide the comments: the marks, the wash and the margin. Pinned
+        // beside the synopsis for the same reason: Tools ▸ Comments sits in a
+        // menu bar this mode parks, and there is no shortcut to reach for
+        // instead, so without it a writer could not get comments off the page
+        // (or back) without leaving.
+        //
+        // The **same setting** Tools ▸ Comments flips, not a flag of the mode's
+        // own: the margin, the wash and the docks all hang off that one switch,
+        // and a second one would leave the writer coming out of the mode to a
+        // page that disagrees with what they last chose. Absent in the widget
+        // tests, which build a strip with no settings around it.
+        if let Some((settings, _)) = &self.quick {
+            bar = bar.item(ToolbarItem::custom(
+                IconButton::new(crate::icons::activity::comments_icon())
+                    .size(IconButtonSize::Compact)
+                    .toggle(settings.comments_visible())
+                    .tooltip(tr!(statusbar_focus_comments())),
+            ));
+        }
+
         if self.chrome.go.get() {
             // Plain actions: an icon button inline, a real menu row when
             // collapsed. Both fire the same named commands the Go menu and

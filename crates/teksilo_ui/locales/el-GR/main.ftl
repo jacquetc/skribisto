@@ -181,6 +181,7 @@ session-readout-timed = { $words ->
 statusbar-focus-exit = Έξοδος από τη λειτουργία χωρίς περισπασμούς
 
 statusbar-focus-synopsis = Σύνοψη
+statusbar-focus-comments = Σχόλια
 statusbar-focus-go-prev = Προηγούμενο στοιχείο (Alt+Πάνω)
 statusbar-focus-go-next = Επόμενο στοιχείο (Alt+Κάτω)
 

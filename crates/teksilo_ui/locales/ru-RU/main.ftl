@@ -183,6 +183,7 @@ session-readout-timed = { $words ->
 } · осталось { $time }
 statusbar-focus-exit = Выйти из режима без отвлечений
 statusbar-focus-synopsis = Синопсис
+statusbar-focus-comments = Комментарии
 statusbar-focus-go-prev = Предыдущий элемент (Alt+Вверх)
 statusbar-focus-go-next = Следующий элемент (Alt+Вниз)
 

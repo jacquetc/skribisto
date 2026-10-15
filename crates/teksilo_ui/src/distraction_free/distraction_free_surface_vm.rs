@@ -36,6 +36,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use teksilo::prelude::{Signal, WindowState};
+use teksilo::tokens::Color;
 
 use crate::app_ids::AppIds;
 use crate::distraction_free::DistractionFreeThemesViewModel;
@@ -72,6 +73,9 @@ pub struct SurfaceDeps {
     /// For the strip's quick-settings popover, which shows the mode's own
     /// settings rows.
     pub settings: crate::settings::SettingsViewModel,
+    /// This window's comments, so the margin and the wash are painted for the
+    /// theme's page rather than the app's. See [`DistractionFreeSurfaceViewModel::sync_page`].
+    pub comments: crate::comments::CommentsViewModel,
 }
 
 #[derive(Clone)]
@@ -230,12 +234,45 @@ impl DistractionFreeSurfaceViewModel {
     pub fn wire(&self, ctx: &mut teksilo::prelude::BuildContext) {
         self.item.wire(ctx);
         self.sync_band_color();
+        self.sync_page();
         if let Some((theme_id, library)) = self.theme_signals() {
             let me = self.clone();
-            ctx.effect(&theme_id, move |_| me.sync_band_color());
+            ctx.effect(&theme_id, move |_| {
+                me.sync_band_color();
+                me.sync_page();
+            });
             let me = self.clone();
-            ctx.effect(&library, move |_| me.sync_band_color());
+            ctx.effect(&library, move |_| {
+                me.sync_band_color();
+                me.sync_page();
+            });
         }
+    }
+
+    /// Tell this window's comments which page they are painted on: the theme's
+    /// while the mode is up, the app's otherwise.
+    ///
+    /// The margin's cards and the wash under commented prose are literal colours
+    /// picked for a page (`CommentPalette`), and the token override that repaints
+    /// everything else here never reaches them. Left to the app theme they put a
+    /// light-mode card and wash on a Night page, where the light prose under the
+    /// wash could not be read, and a dark-mode pair on Paper, the same failure
+    /// in reverse.
+    ///
+    /// Called from `wire`, which the surface's `build` runs first, so the palette
+    /// is in place before a tab is opened on entering, and cleared on the build
+    /// that leaves, which is what hands the pane underneath its own page back.
+    fn sync_page(&self) {
+        let deps = self.deps.borrow();
+        let Some(d) = deps.as_ref() else { return };
+        let page = self.focus.active_signal().get().then(|| {
+            let theme = d.themes.resolve(&d.theme_id.get());
+            (
+                Color::from_hex(&theme.editor_background),
+                Color::from_hex(&theme.editor_text),
+            )
+        });
+        d.comments.set_page_override(page);
     }
 
     /// Re-resolve [`Self::band_color`] from the theme in force. A no-op before

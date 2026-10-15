@@ -209,6 +209,7 @@ statusbar-focus-exit = Quitter le mode sans distraction
 # Les boutons Suivant/Précédent de la bande (étape 4) déclenchent les mêmes
 # actions go.next/go.prev que le raccourci et la paire générique du menu Aller à.
 statusbar-focus-synopsis = Synopsis
+statusbar-focus-comments = Commentaires
 statusbar-focus-go-prev = Élément précédent (Alt+Haut)
 statusbar-focus-go-next = Élément suivant (Alt+Bas)
 

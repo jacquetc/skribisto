@@ -157,6 +157,7 @@ session-readout-timed = { $words ->
    } · { $time } kvar
 statusbar-focus-exit = Lämna distraktionsfritt läge
 statusbar-focus-synopsis = Synopsis
+statusbar-focus-comments = Kommentarer
 statusbar-focus-go-prev = Föregående objekt (Alt+Uppil)
 statusbar-focus-go-next = Nästa objekt (Alt+Nedpil)
 rail-settings = Inställningar

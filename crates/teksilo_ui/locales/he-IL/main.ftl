@@ -173,6 +173,7 @@ session-readout-timed = { $words ->
 }
 statusbar-focus-exit = יציאה ממצב ללא הסחות דעת
 statusbar-focus-synopsis = תקציר
+statusbar-focus-comments = הערות
 statusbar-focus-go-prev = הפריט הקודם (Alt+חץ למעלה)
 statusbar-focus-go-next = הפריט הבא (Alt+חץ למטה)
 

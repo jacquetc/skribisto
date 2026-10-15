@@ -219,6 +219,7 @@ statusbar-focus-exit = Exit distraction-free mode
 # The strip's Next/Previous buttons (Increment 4) fire the same go.next/go.prev
 # actions as the shortcut and the Go menu's generic pair.
 statusbar-focus-synopsis = Synopsis
+statusbar-focus-comments = Comments
 statusbar-focus-go-prev = Previous item (Alt+Up)
 statusbar-focus-go-next = Next item (Alt+Down)
 

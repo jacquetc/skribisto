@@ -182,6 +182,7 @@ session-readout-timed = { $words ->
 } · المتبقي { $time }
 statusbar-focus-exit = الخروج من وضع بلا تشتيت
 statusbar-focus-synopsis = الملخص
+statusbar-focus-comments = التعليقات
 statusbar-focus-go-prev = العنصر السابق (Alt+Up)
 statusbar-focus-go-next = العنصر التالي (Alt+Down)
 rail-settings = الإعدادات

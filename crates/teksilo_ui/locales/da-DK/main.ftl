@@ -219,6 +219,7 @@ statusbar-focus-exit = Afslut distraktionsfri tilstand
 # The strip's Next/Previous buttons (Increment 4) fire the same go.next/go.prev
 # actions as the shortcut and the Go menu's generic pair.
 statusbar-focus-synopsis = Synopsis
+statusbar-focus-comments = Kommentarer
 statusbar-focus-go-prev = Forrige element (Alt+Op)
 statusbar-focus-go-next = Næste element (Alt+Ned)
 

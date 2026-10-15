@@ -169,6 +169,7 @@ session-readout-timed = { $words ->
 } · nog { $time }
 statusbar-focus-exit = Afleidingsvrije modus verlaten
 statusbar-focus-synopsis = Synopsis
+statusbar-focus-comments = Opmerkingen
 statusbar-focus-go-prev = Vorig item (Alt+Omhoog)
 statusbar-focus-go-next = Volgend item (Alt+Omlaag)
 

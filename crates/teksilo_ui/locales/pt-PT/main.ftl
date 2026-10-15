@@ -169,6 +169,7 @@ session-readout-timed = { $words ->
 } · faltam { $time }
 statusbar-focus-exit = Sair do modo sem distrações
 statusbar-focus-synopsis = Sinopse
+statusbar-focus-comments = Comentários
 statusbar-focus-go-prev = Item anterior (Alt+Cima)
 statusbar-focus-go-next = Item seguinte (Alt+Baixo)
 

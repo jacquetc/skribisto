@@ -1618,8 +1618,13 @@ impl Widget for App {
         session.open_docs.set_comments(comments.clone());
         // The comment palette follows the theme: its light-page values are a glare
         // on a dark one. Re-resolved on every build, which is when a theme change
-        // lands (the same cadence the spell squiggle's colour uses).
-        comments.set_dark(ctx.theme().is_dark());
+        // lands (the same cadence the spell squiggle's colour uses). From the page
+        // and prose roles rather than `is_dark()`, because the wash and the card
+        // are both read in the prose colour.
+        {
+            let colors = &ctx.theme().colors;
+            comments.set_page(colors.surface_content, colors.text_primary);
+        }
 
         // Live cross-process reload for `search.toml` — register this window's
         // service into the shared `SettingsRegistry` once (same story as

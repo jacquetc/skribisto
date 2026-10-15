@@ -169,6 +169,7 @@ session-readout-timed = { $words ->
 } · { $time } jäljellä
 statusbar-focus-exit = Poistu häiriöttömästä tilasta
 statusbar-focus-synopsis = Tiivistelmä
+statusbar-focus-comments = Kommentit
 statusbar-focus-go-prev = Edellinen kohde (Alt+Ylänuoli)
 statusbar-focus-go-next = Seuraava kohde (Alt+Alanuoli)
 

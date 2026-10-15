@@ -159,6 +159,7 @@ session-readout-timed = { $words ->
     } · noch { $time }
 statusbar-focus-exit = Ablenkungsfreien Modus verlassen
 statusbar-focus-synopsis = Zusammenfassung
+statusbar-focus-comments = Kommentare
 statusbar-focus-go-prev = Vorheriger Eintrag (Alt+Pfeil nach oben)
 statusbar-focus-go-next = Nächster Eintrag (Alt+Pfeil nach unten)
 rail-settings = Einstellungen

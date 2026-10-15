@@ -313,6 +313,14 @@ impl Widget for CommentMargin {
         // nothing in the prose to point at.
         vm.visible_signal()
             .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
+        // The palette, at `Rebuild` too: each card takes it by value at build, and
+        // the wash is pushed onto the document by `refresh_wash` below. It moves on
+        // a theme change and when distraction-free puts its own page up or takes it
+        // down. Both are rare, and without this binding a margin kept the old page's
+        // colours until the next comment came along. A dormant margin (the pane
+        // under that surface) keeps the rebuild pending and runs it on waking.
+        self.palette
+            .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
 
         // Re-derive the anchors *before* reading them below, so the wash, the marks
         // and the cards are all built from one snapshot of the comment set.

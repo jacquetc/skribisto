@@ -158,6 +158,7 @@ session-readout-timed = { $words ->
 } · { $time } van hátra
 statusbar-focus-exit = Kilépés a zavarmentes módból
 statusbar-focus-synopsis = Szinopszis
+statusbar-focus-comments = Megjegyzések
 statusbar-focus-go-prev = Előző elem (Alt+Fel)
 statusbar-focus-go-next = Következő elem (Alt+Le)
 rail-settings = Beállítások

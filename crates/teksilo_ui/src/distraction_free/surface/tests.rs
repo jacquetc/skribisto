@@ -61,6 +61,8 @@ struct Fixture {
     /// **shared** caret-band scope the way Settings does — the mode reads
     /// that one preference rather than owning a scope of its own.
     settings: crate::settings::SettingsViewModel,
+    /// The window's comments, whose palette the surface points at its page.
+    comments: crate::comments::CommentsViewModel,
 }
 
 /// A surface view-model with its dependencies attached and one Scene
@@ -122,6 +124,11 @@ fn fixture() -> Fixture {
     docs.insert_for_test(doc);
 
     let focus = FocusViewModel::new();
+    let comments = crate::comments::CommentsViewModel::new(
+        crate::models::CommentsListModel::new(app_ctx.clone(), ids.clone()),
+        app_ctx.clone(),
+        Signal::new(None),
+    );
     let vm = DistractionFreeSurfaceViewModel::new(
         app_ctx.clone(),
         focus.clone(),
@@ -149,6 +156,7 @@ fn fixture() -> Fixture {
         ),
         theme_id: Signal::new("paper".to_string()),
         settings: settings.clone(),
+        comments: comments.clone(),
     });
     Fixture {
         vm,
@@ -156,6 +164,7 @@ fn fixture() -> Fixture {
         editors,
         docs,
         settings,
+        comments,
     }
 }
 
@@ -951,4 +960,142 @@ fn the_strip_is_present_with_nothing_open() {
         names.contains(&exit),
         "no way out of the mode with nothing open. Labels seen: {names:?}"
     );
+}
+
+/// The comment palette for a page: what the surface should hand the comments.
+fn palette_for(
+    theme: &crate::distraction_free::theme::DistractionFreeTheme,
+) -> crate::comments::CommentPalette {
+    crate::comments::CommentPalette::for_surface(
+        teksilo::tokens::Color::from_hex(&theme.editor_background),
+        teksilo::tokens::Color::from_hex(&theme.editor_text),
+    )
+}
+
+/// **The bug this pins.** The comment card and the wash under commented prose
+/// are literal colours, chosen for a page, and the token override that repaints
+/// the rest of the surface never reaches them. They followed the *app* theme, so
+/// a Night page in a light app got the light-mode card and wash, and its light
+/// prose under that wash could not be read.
+#[test]
+fn the_comments_are_painted_for_the_themes_page_while_the_mode_is_up() {
+    let fx = fixture();
+    fx.vm
+        .theme_signals()
+        .expect("attached")
+        .0
+        .set("night".to_string());
+    let app = crate::comments::CommentPalette::for_theme(false);
+    fx.comments.set_page(
+        teksilo::tokens::Color::from_hex("#ffffff"),
+        teksilo::tokens::Color::from_hex("#1f1f1f"),
+    );
+    assert_eq!(fx.comments.palette_signal().get(), app);
+
+    fx.editors.active_item().set(Some(1));
+    fx.focus.active_signal().set(true);
+    let mut tree = mount(&fx);
+    let night = palette_for(&fx.vm.theme().expect("attached"));
+    assert_eq!(
+        fx.comments.palette_signal().get(),
+        night,
+        "the comments kept the app's page inside the mode"
+    );
+    assert_ne!(
+        night, app,
+        "a Night page must not get the light-mode palette"
+    );
+
+    fx.focus.active_signal().set(false);
+    tree.layout(SizeProposal::exact(1200.0, 800.0));
+    assert_eq!(
+        fx.comments.palette_signal().get(),
+        app,
+        "leaving the mode did not hand the pane underneath its own page back"
+    );
+}
+
+/// Picking another theme from inside the mode moves the comments with it, the
+/// way it moves the caret band: the surface only repaints on a theme change, so
+/// nothing would rebuild the palette otherwise.
+#[test]
+fn changing_the_theme_inside_the_mode_moves_the_comment_palette() {
+    let fx = fixture();
+    fx.editors.active_item().set(Some(1));
+    fx.focus.active_signal().set(true);
+    let _tree = mount(&fx);
+    let paper = fx.comments.palette_signal().get();
+
+    fx.vm
+        .theme_signals()
+        .expect("attached")
+        .0
+        .set("midnight".to_string());
+    let midnight = palette_for(&fx.vm.theme().expect("attached"));
+    assert_eq!(fx.comments.palette_signal().get(), midnight);
+    assert_ne!(midnight, paper);
+}
+
+/// An app theme change landing while the mode is up is kept underneath, not
+/// lost: leaving puts back the app's *new* page.
+#[test]
+fn an_app_theme_change_inside_the_mode_survives_leaving_it() {
+    let fx = fixture();
+    fx.editors.active_item().set(Some(1));
+    fx.focus.active_signal().set(true);
+    let mut tree = mount(&fx);
+
+    let dark_page = (
+        teksilo::tokens::Color::from_hex("#1e1f22"),
+        teksilo::tokens::Color::from_hex("#dfe1e5"),
+    );
+    fx.comments.set_page(dark_page.0, dark_page.1);
+    assert_eq!(
+        fx.comments.palette_signal().get(),
+        palette_for(&fx.vm.theme().expect("attached")),
+        "the mode's page must keep winning while it is up"
+    );
+
+    fx.focus.active_signal().set(false);
+    tree.layout(SizeProposal::exact(1200.0, 800.0));
+    assert_eq!(
+        fx.comments.palette_signal().get(),
+        crate::comments::CommentPalette::for_surface(dark_page.0, dark_page.1),
+    );
+}
+
+/// The strip's comments toggle, as the accessibility layer sees it: its pressed
+/// state, or `None` when the strip carries no such control.
+fn comments_toggle_state(tree: &mut WidgetTree) -> Option<bool> {
+    let name = tr!(statusbar_focus_comments()).resolve_now();
+    tree.sync_accessibility()
+        .nodes
+        .iter()
+        .find(|(_, n)| n.label() == Some(name.as_str()))
+        .map(|(_, n)| n.toggled() == Some(teksilo::core::accesskit::Toggled::True))
+}
+
+/// **Comments can be shown and hidden from inside the mode.** Tools ▸ Comments is
+/// in a menu bar the mode parks and has no shortcut, so before the strip carried
+/// this toggle a writer had no way to get comments off the page, or back, without
+/// leaving. It is the one shared setting, so the page they come back to agrees.
+#[test]
+fn the_strip_shows_and_hides_comments_through_the_shared_setting() {
+    let fx = fixture();
+    fx.editors.active_item().set(Some(1));
+    fx.focus.active_signal().set(true);
+    let mut tree = mount(&fx);
+
+    let visible = fx.settings.comments_visible();
+    visible.set(true);
+    tree.layout(SizeProposal::exact(1200.0, 800.0));
+    assert_eq!(
+        comments_toggle_state(&mut tree),
+        Some(true),
+        "no comments toggle on the strip, or it does not read the shared setting"
+    );
+
+    visible.set(false);
+    tree.layout(SizeProposal::exact(1200.0, 800.0));
+    assert_eq!(comments_toggle_state(&mut tree), Some(false));
 }
