@@ -36,7 +36,8 @@ Skribisto also makes [backups](:help-backups-and-versions), which let you recove
 ## Bring in existing writing
 
 In the Launcher, *Create from…* starts a project from
-[documents](:help-import-documents) or a [Manuskript or Plume Creator project](:help-import-projects).
+[documents](:help-import-documents), a [Scrivener project](:help-import-scrivener), or a
+[Manuskript or Plume Creator project](:help-import-projects).
 To explore a sample project, open *Examples* in the sidebar.
 
 ## Adjust your workspace
