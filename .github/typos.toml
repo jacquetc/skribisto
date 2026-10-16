@@ -68,7 +68,11 @@ extend-exclude = [
 # file itself stays checked, so the English description and the release notes,
 # which are most of it, still are; only the text of a translated element is
 # skipped, for the same reason the non-English `.ftl` files are excluded above.
-extend-ignore-re = ['xml:lang="[^"]+">[^<]*']
+#
+# The desktop entry's localized keys (`Keywords[de]=`, `Comment[fr]=`) are the
+# same thing in the other file format: the untranslated key on the line above
+# each stays checked.
+extend-ignore-re = ['xml:lang="[^"]+">[^<]*', '(?m)^[A-Za-z]+\[[^\]]+\]=.*$']
 
 [default.extend-words]
 # ── Deliberate misspellings: the fixtures the spell-checker and the
