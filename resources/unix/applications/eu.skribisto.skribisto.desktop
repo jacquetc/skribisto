@@ -4,6 +4,7 @@ GenericName=Writing software
 GenericName[fr]=Logiciel d'écriture
 Comment=Manage your writing projects
 Comment[fr]=Organisez vos projets d'écriture
+Keywords=novel;book;writing;writer;author;fiction;manuscript;story;
 Icon=eu.skribisto.skribisto
 Exec=skribisto %f
 Terminal=false

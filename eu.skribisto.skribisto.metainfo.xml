@@ -41,7 +41,23 @@
   <url type="contact">https://github.com/jacquetc/skribisto#to-contact-me</url>
   <categories>
     <category>Office</category>
+    <category>WordProcessor</category>
   </categories>
+  <!-- Untranslated on purpose. A software centre searches the summary and
+       description in the reader's language, so in French "novel" matches
+       nothing; untranslated keywords apply in every language. A keyword list
+       with xml:lang would REPLACE these in that language rather than add to
+       them, and bring the gap back. -->
+  <keywords>
+    <keyword>novel</keyword>
+    <keyword>book</keyword>
+    <keyword>writing</keyword>
+    <keyword>writer</keyword>
+    <keyword>author</keyword>
+    <keyword>fiction</keyword>
+    <keyword>manuscript</keyword>
+    <keyword>story</keyword>
+  </keywords>
   <provides>
     <mediatype>application/vnd.skribisto.project+zip</mediatype>
     <mediatype>application/x-skribisto</mediatype>
