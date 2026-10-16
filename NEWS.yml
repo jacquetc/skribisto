@@ -1,6 +1,6 @@
 Version: 3.2.2
-Date: 2026-10-15
-Type: development
+Date: 2026-10-16
+Type: stable
 Description:
 - "F11 now opens and closes distraction-free mode, and Shift+F11 makes the window fullscreen. They used to be the other way round"
 - "In distraction-free mode, comments now take the colours of the page you write on. With a dark theme in a light window, or the other way round, the text under a comment could not be read"
