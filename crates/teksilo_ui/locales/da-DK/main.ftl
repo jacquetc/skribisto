@@ -3018,6 +3018,7 @@ shortcut-name-edit-select-all = Markér alt
 ## Spell-check: the master switch (title bar / View menu / F7 / Settings ▸ Spelling)
 titlebar-spellcheck-on = Stavekontrol er slået til. Klik for at stoppe kontrollen (F7)
 titlebar-spellcheck-off = Stavekontrol er slået fra. Klik for at kontrollere igen (F7)
+titlebar-distraction-free = Skift til distraktionsfri tilstand (F11)
 menu-spellcheck = &Kontrollér stavning
 menu-comments = Ko&mmentarer
 settings-page-spellcheck = Stavekontrol

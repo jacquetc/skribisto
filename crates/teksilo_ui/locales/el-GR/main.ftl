@@ -2817,6 +2817,7 @@ shortcut-name-edit-select-all = Επιλογή όλων
 
 titlebar-spellcheck-on = Ο ορθογραφικός έλεγχος είναι ενεργός. Κάντε κλικ για να σταματήσει ο έλεγχος (F7)
 titlebar-spellcheck-off = Ο ορθογραφικός έλεγχος είναι ανενεργός. Κάντε κλικ για να ξαναρχίσει ο έλεγχος (F7)
+titlebar-distraction-free = Μετάβαση στη λειτουργία χωρίς περισπασμούς (F11)
 menu-spellcheck = Έλεγχος &ορθογραφίας
 menu-comments = Σ&χόλια
 settings-page-spellcheck = Ορθογραφικός έλεγχος

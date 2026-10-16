@@ -2025,6 +2025,7 @@ shortcut-name-edit-select-all = すべて選択
 
 titlebar-spellcheck-on = スペルチェックは有効です。クリックして停止 (F7)
 titlebar-spellcheck-off = スペルチェックは無効です。クリックして再開 (F7)
+titlebar-distraction-free = 集中モードに切り替え (F11)
 menu-spellcheck = スペルチェック(&C)
 menu-comments = コメント(&M)
 settings-page-spellcheck = スペルチェック

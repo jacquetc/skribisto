@@ -22,6 +22,7 @@
 
 mod distraction_free_surface_vm;
 mod distraction_free_themes_vm;
+pub mod enter_button;
 pub mod quick_settings;
 pub mod surface;
 pub mod theme;

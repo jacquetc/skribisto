@@ -3462,6 +3462,7 @@ shortcut-name-edit-paste-plain = Вставити без форматуванн�
 shortcut-name-edit-select-all = Виділити все
 titlebar-spellcheck-on = Перевірку правопису ввімкнено. Клацніть, щоб припинити перевірку (F7)
 titlebar-spellcheck-off = Перевірку правопису вимкнено. Клацніть, щоб знову перевіряти (F7)
+titlebar-distraction-free = Перейти в режим без відволікань (F11)
 menu-spellcheck = &Перевіряти правопис
 menu-comments = &Коментарі
 settings-page-spellcheck = Перевірка правопису

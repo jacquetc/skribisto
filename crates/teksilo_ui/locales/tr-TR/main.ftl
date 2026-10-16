@@ -2715,6 +2715,7 @@ shortcut-name-edit-select-all = Tümünü seç
 
 titlebar-spellcheck-on = Yazım denetimi açık. Denetimi durdurmak için tıklayın (F7)
 titlebar-spellcheck-off = Yazım denetimi kapalı. Yeniden denetlemek için tıklayın (F7)
+titlebar-distraction-free = Dikkat dağıtmayan moda geç (F11)
 menu-spellcheck = &Yazımı denetle
 menu-comments = Yoru&mlar
 settings-page-spellcheck = Yazım denetimi

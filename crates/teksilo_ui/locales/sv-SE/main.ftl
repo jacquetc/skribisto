@@ -2677,6 +2677,7 @@ shortcut-name-edit-paste-plain = Klistra in utan formatering
 shortcut-name-edit-select-all = Markera allt
 titlebar-spellcheck-on = Stavningskontrollen är på. Klicka för att sluta kontrollera (F7)
 titlebar-spellcheck-off = Stavningskontrollen är av. Klicka för att kontrollera igen (F7)
+titlebar-distraction-free = Gå till distraktionsfritt läge (F11)
 menu-spellcheck = &Kontrollera stavning
 menu-comments = Ko&mmentarer
 settings-page-spellcheck = Stavningskontroll

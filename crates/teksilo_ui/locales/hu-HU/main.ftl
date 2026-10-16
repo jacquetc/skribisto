@@ -2766,6 +2766,7 @@ shortcut-name-edit-paste-plain = Beillesztés formázás nélkül
 shortcut-name-edit-select-all = Összes kijelölése
 titlebar-spellcheck-on = A helyesírás-ellenőrzés be van kapcsolva. Kattintson a kikapcsoláshoz (F7)
 titlebar-spellcheck-off = A helyesírás-ellenőrzés ki van kapcsolva. Kattintson a bekapcsoláshoz (F7)
+titlebar-distraction-free = Váltás zavarmentes módra (F11)
 menu-spellcheck = &Helyesírás-ellenőrzés
 menu-comments = &Megjegyzések
 settings-page-spellcheck = Helyesírás-ellenőrzés

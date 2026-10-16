@@ -2871,6 +2871,7 @@ shortcut-name-edit-paste-plain = Ohne Formatierung einfügen
 shortcut-name-edit-select-all = Alles auswählen
 titlebar-spellcheck-on = Rechtschreibprüfung ist aktiv. Zum Ausschalten klicken (F7)
 titlebar-spellcheck-off = Rechtschreibprüfung ist aus. Zum Einschalten klicken (F7)
+titlebar-distraction-free = Ablenkungsfreien Modus aufrufen (F11)
 menu-spellcheck = &Rechtschreibung prüfen
 menu-comments = Ko&mmentare
 settings-page-spellcheck = Rechtschreibprüfung

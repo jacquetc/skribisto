@@ -2824,6 +2824,7 @@ shortcut-name-edit-select-all = Valitse kaikki
 
 titlebar-spellcheck-on = Oikoluku on päällä. Lopeta tarkistus napsauttamalla (F7)
 titlebar-spellcheck-off = Oikoluku on pois päältä. Ota tarkistus käyttöön napsauttamalla (F7)
+titlebar-distraction-free = Siirry häiriöttömään tilaan (F11)
 menu-spellcheck = &Oikolue
 menu-comments = &Kommentit
 settings-page-spellcheck = Oikoluku

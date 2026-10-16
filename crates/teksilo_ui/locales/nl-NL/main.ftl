@@ -2760,6 +2760,7 @@ shortcut-name-edit-select-all = Alles selecteren
 
 titlebar-spellcheck-on = Spellingscontrole is ingeschakeld. Klik om te stoppen met controleren (F7)
 titlebar-spellcheck-off = Spellingscontrole is uit. Klik om opnieuw te controleren (F7)
+titlebar-distraction-free = Afleidingsvrije modus openen (F11)
 menu-spellcheck = &Spelling controleren
 menu-comments = Op&merkingen
 settings-page-spellcheck = Spellingscontrole

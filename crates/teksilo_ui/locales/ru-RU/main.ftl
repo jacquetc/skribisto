@@ -3544,6 +3544,7 @@ shortcut-name-edit-select-all = Выделить всё
 
 titlebar-spellcheck-on = Проверка орфографии включена. Щёлкните, чтобы выключить (F7)
 titlebar-spellcheck-off = Проверка орфографии выключена. Щёлкните, чтобы включить (F7)
+titlebar-distraction-free = Перейти в режим без отвлечений (F11)
 menu-spellcheck = Проверять &орфографию
 menu-comments = &Комментарии
 settings-page-spellcheck = Проверка орфографии

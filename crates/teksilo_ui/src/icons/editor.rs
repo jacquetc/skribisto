@@ -50,6 +50,12 @@ pub fn spellcheck_off() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/editor/spellcheck-off.svg")).icon_size(ICON_SIZE)
 }
 
+/// Distraction-free — lines of prose inside full-screen corners; the title bar's
+/// way into the mode.
+pub fn distraction_free() -> IconWidget {
+    IconWidget::from_svg_icon(res!("assets/icons/editor/distraction-free.svg")).icon_size(ICON_SIZE)
+}
+
 /// "Synopsis beside the manuscript" — the distraction-free strip's toggle for the
 /// Side synopsis column.
 pub fn synopsis_side() -> IconWidget {

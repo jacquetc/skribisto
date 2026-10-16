@@ -3073,6 +3073,7 @@ shortcut-name-edit-select-all = Vybrat vše
 
 titlebar-spellcheck-on = Kontrola pravopisu je zapnutá. Kliknutím ji vypnete (F7)
 titlebar-spellcheck-off = Kontrola pravopisu je vypnutá. Kliknutím ji znovu zapnete (F7)
+titlebar-distraction-free = Přejít do režimu bez rozptylování (F11)
 menu-spellcheck = &Kontrolovat pravopis
 menu-comments = Ko&mentáře
 settings-page-spellcheck = Kontrola pravopisu

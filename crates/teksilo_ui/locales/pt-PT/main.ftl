@@ -2762,6 +2762,7 @@ shortcut-name-edit-select-all = Selecionar tudo
 
 titlebar-spellcheck-on = A verificação ortográfica está ativa. Clique para parar a verificação (F7)
 titlebar-spellcheck-off = A verificação ortográfica está desativada. Clique para voltar a verificar (F7)
+titlebar-distraction-free = Entrar no modo sem distrações (F11)
 menu-spellcheck = &Verificar ortografia
 menu-comments = &Comentários
 settings-page-spellcheck = Verificação ortográfica

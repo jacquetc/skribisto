@@ -3107,6 +3107,7 @@ shortcut-name-edit-select-all = בחירת הכול
 
 titlebar-spellcheck-on = בדיקת האיות פועלת. לחיצה להפסקת הבדיקה (F7)
 titlebar-spellcheck-off = בדיקת האיות כבויה. לחיצה לחידוש הבדיקה (F7)
+titlebar-distraction-free = מעבר למצב ללא הסחות דעת (F11)
 menu-spellcheck = בדיקת איות (&C)
 menu-comments = הערות (&M)
 settings-page-spellcheck = בדיקת איות

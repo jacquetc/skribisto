@@ -2668,6 +2668,7 @@ shortcut-name-edit-paste-plain = Alglui sen formatado
 shortcut-name-edit-select-all = Elekti ĉion
 titlebar-spellcheck-on = Literumkontrolo ŝaltita. Alklaku por malŝalti (F7)
 titlebar-spellcheck-off = Literumkontrolo malŝaltita. Alklaku por ŝalti (F7)
+titlebar-distraction-free = Eniri la sendistran reĝimon (F11)
 menu-spellcheck = &Kontroli literumadon
 menu-comments = Ko&mentoj
 settings-page-spellcheck = Literumkontrolo

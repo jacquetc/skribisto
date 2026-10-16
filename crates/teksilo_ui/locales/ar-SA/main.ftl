@@ -3967,6 +3967,7 @@ shortcut-name-edit-paste-plain = لصق بلا تنسيق
 shortcut-name-edit-select-all = تحديد الكل
 titlebar-spellcheck-on = التدقيق الإملائي مفعّل. انقر لإيقافه (F7)
 titlebar-spellcheck-off = التدقيق الإملائي متوقف. انقر لتشغيله مجددًا (F7)
+titlebar-distraction-free = الدخول إلى وضع بلا تشتيت (F11)
 menu-spellcheck = التدقيق الإملائي (&C)
 menu-comments = التعليقات (&M)
 settings-page-spellcheck = التدقيق الإملائي

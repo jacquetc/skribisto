@@ -3099,6 +3099,7 @@ shortcut-name-edit-select-all = Tout sélectionner
 ## Orthographe: l'interrupteur principal (barre de titre / menu Affichage / F7 / Paramètres ▸ Orthographe)
 titlebar-spellcheck-on = La vérification orthographique est active. Cliquez pour l’arrêter (F7)
 titlebar-spellcheck-off = La vérification orthographique est désactivée. Cliquez pour la réactiver (F7)
+titlebar-distraction-free = Passer en mode sans distraction (F11)
 menu-spellcheck = &Vérifier l’orthographe
 menu-comments = &Commentaires
 settings-page-spellcheck = Vérification orthographique

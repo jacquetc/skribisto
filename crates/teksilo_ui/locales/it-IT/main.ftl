@@ -2731,6 +2731,7 @@ shortcut-name-edit-paste-plain = Incolla senza formattazione
 shortcut-name-edit-select-all = Seleziona tutto
 titlebar-spellcheck-on = Controllo ortografico attivo. Fai clic per disattivarlo (F7)
 titlebar-spellcheck-off = Controllo ortografico disattivato. Fai clic per riattivarlo (F7)
+titlebar-distraction-free = Entra nella modalità senza distrazioni (F11)
 menu-spellcheck = C&ontrolla ortografia
 menu-comments = Co&mmenti
 settings-page-spellcheck = Controllo ortografico

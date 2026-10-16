@@ -771,6 +771,7 @@ impl ProjectWindowFactory {
                                 spacing: 5.0
                                 alignment: teksilo::tokens::VAlignment::Center
                                 SpellcheckToggleButton::new(spellcheck_menu.clone())
+                                crate::distraction_free::enter_button::enter_button()
                                 ExportSplitButton::new(export.clone())
                             }
                         );
@@ -810,8 +811,9 @@ impl ProjectWindowFactory {
                                 background: SurfaceRole::Main
                                 leading: leading
                                 // Left of the window buttons: the master spell-check switch,
-                                // then the focus-adaptive Export control. The `trailing` slot
-                                // takes one widget, so they share an HStack.
+                                // the way into distraction-free, then the focus-adaptive
+                                // Export control. The `trailing` slot takes one widget, so
+                                // they share an HStack.
                                 trailing: trailing_controls
                                 center: Expand::horizontal {
                                     child: center_content

@@ -1951,6 +1951,7 @@ shortcut-name-edit-select-all = 모두 선택
 
 titlebar-spellcheck-on = 맞춤법 검사 켜짐. 클릭하여 끄기 (F7)
 titlebar-spellcheck-off = 맞춤법 검사 꺼짐. 클릭하여 켜기 (F7)
+titlebar-distraction-free = 집중 모드로 전환 (F11)
 menu-spellcheck = 맞춤법 검사 (&C)
 menu-comments = 댓글 (&M)
 settings-page-spellcheck = 맞춤법 검사

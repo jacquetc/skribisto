@@ -2732,6 +2732,7 @@ shortcut-name-edit-select-all = Merk alt
 
 titlebar-spellcheck-on = Stavekontroll er på. Klikk for å slå den av (F7)
 titlebar-spellcheck-off = Stavekontroll er av. Klikk for å slå den på igjen (F7)
+titlebar-distraction-free = Gå til distraksjonsfri modus (F11)
 menu-spellcheck = &Kontroller stavemåte
 menu-comments = Ko&mmentarer
 settings-page-spellcheck = Stavekontroll

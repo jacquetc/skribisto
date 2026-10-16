@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Distraction-free — a few lines of prose framed by the four corners of a
+       full screen: the text, and nothing else, filling the window. -->
+  <path d="M2 5V3.2Q2 2 3.2 2H5"/>
+  <path d="M11 2h1.8Q14 2 14 3.2V5"/>
+  <path d="M14 11v1.8Q14 14 12.8 14H11"/>
+  <path d="M5 14H3.2Q2 14 2 12.8V11"/>
+  <path d="M5 6h6M5 8h6M5 10h4"/>
+</svg>

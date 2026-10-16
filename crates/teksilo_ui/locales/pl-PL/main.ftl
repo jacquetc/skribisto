@@ -3410,6 +3410,7 @@ shortcut-name-edit-select-all = Zaznacz wszystko
 
 titlebar-spellcheck-on = Sprawdzanie pisowni jest włączone. Kliknij, aby przestać sprawdzać (F7)
 titlebar-spellcheck-off = Sprawdzanie pisowni jest wyłączone. Kliknij, aby sprawdzić ponownie (F7)
+titlebar-distraction-free = Przejdź do trybu bez rozpraszania (F11)
 menu-spellcheck = &Sprawdź pisownię
 menu-comments = &Komentarze
 settings-page-spellcheck = Sprawdzanie pisowni

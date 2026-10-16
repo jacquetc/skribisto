@@ -3329,6 +3329,7 @@ shortcut-name-edit-select-all = Selectează tot
 ## Spell-check: the master switch (title bar / View menu / F7 / Settings ▸ Spelling)
 titlebar-spellcheck-on = Verificarea ortografică este activă. Clic pentru a o opri (F7)
 titlebar-spellcheck-off = Verificarea ortografică este oprită. Clic pentru a o reporni (F7)
+titlebar-distraction-free = Intră în modul fără distrageri (F11)
 menu-spellcheck = Verificare &ortografică
 menu-comments = Co&mentarii
 settings-page-spellcheck = Verificare ortografică

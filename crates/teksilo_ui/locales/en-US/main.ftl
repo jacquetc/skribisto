@@ -3121,6 +3121,7 @@ shortcut-name-edit-select-all = Select all
 ## Spell-check: the master switch (title bar / View menu / F7 / Settings ▸ Spelling)
 titlebar-spellcheck-on = Spell-checking is on. Click to stop checking (F7)
 titlebar-spellcheck-off = Spell-checking is off. Click to check again (F7)
+titlebar-distraction-free = Enter distraction-free mode (F11)
 menu-spellcheck = &Check spelling
 menu-comments = Co&mments
 settings-page-spellcheck = Spell-checking
