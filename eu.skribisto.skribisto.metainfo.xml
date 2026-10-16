@@ -65,13 +65,12 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release type="stable" version="3.2.1" date="2026-10-15T00:00:00Z">
+    <release type="stable" version="3.2.2" date="2026-10-16T00:00:00Z">
       <description>
         <ul>
-          <li>Typing in the command palette keeps every character you type. Only the last character used to stay, because each key replaced the whole search</li>
-          <li>On a new installation, the margin marks now show the dialogue texture from the start: one bar per paragraph, showing how long it is and how much of it is spoken. If you already use Skribisto, nothing changes for you: turn it on or off in Settings ▸ Editor ▸ Margin marks</li>
-          <li>A paragraph you start by typing a hyphen, an asterisk or 1. followed by a space becomes a bulleted or numbered list. Press Backspace right after to keep what you typed as text, or turn it off in Settings ▸ Editor ▸ Punctuation defaults. Where the dialogue dash is on, a hyphen still opens a line of dialogue</li>
-          <li>The bulleted and numbered list buttons, in the Format panel and the Format menu, now show when the cursor is in a list, and pressing one again takes the paragraph out of the list. In a list of the other kind, the button turns the whole list into bullets or numbers</li>
+          <li>F11 now opens and closes distraction-free mode, and Shift+F11 makes the window fullscreen. They used to be the other way round</li>
+          <li>In distraction-free mode, comments now take the colours of the page you write on. With a dark theme in a light window, or the other way round, the text under a comment could not be read</li>
+          <li>The bar at the bottom of distraction-free mode has a Comments button, to show or hide comments without leaving the mode</li>
         </ul>
       </description>
     </release>
