@@ -202,3 +202,14 @@ let_unit_value = "allow"
 # the sibling qleany repo). Putting it in an otherwise pure-generated `lib.rs`
 # looks identical and works right up until the next `qleany generate` silently
 # deletes it — a ratchet that quietly unlatches is worse than no ratchet.
+
+# TEST BUILD ONLY, never merge. AccessKit PR #835 (issue #823): on a Mac with a
+# Touch Bar, dropping the macOS SubclassingAdapter when a window closes resets the
+# view's class under AppKit's KVO observers, and the next display cycle aborts in
+# `_NSTouchBarFinderObservation invalidate`. The three crates come from one commit
+# so that only one `accesskit` 0.25.1 exists in the graph; `accesskit` and
+# `accesskit_consumer` are unchanged there since the 0.27.1 tag.
+[patch.crates-io]
+accesskit = { git = "https://github.com/AccessKit/accesskit", rev = "64e9a47ddaac64c9082214f472fa6fcafbc86430" }
+accesskit_consumer = { git = "https://github.com/AccessKit/accesskit", rev = "64e9a47ddaac64c9082214f472fa6fcafbc86430" }
+accesskit_macos = { git = "https://github.com/AccessKit/accesskit", rev = "64e9a47ddaac64c9082214f472fa6fcafbc86430" }

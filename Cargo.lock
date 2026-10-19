@@ -21,8 +21,7 @@ checksum = "366ffbaa4442f4684d91e2cd7c5ea7c4ed8add41959a31447066e279e432b618"
 [[package]]
 name = "accesskit"
 version = "0.25.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad442f58ee04714aaa0ba0a2768c1ea1935b29507bb22ddece8cbbc76db02932"
+source = "git+https://github.com/AccessKit/accesskit?rev=64e9a47ddaac64c9082214f472fa6fcafbc86430#64e9a47ddaac64c9082214f472fa6fcafbc86430"
 dependencies = [
  "uuid",
 ]
@@ -44,8 +43,7 @@ dependencies = [
 [[package]]
 name = "accesskit_consumer"
 version = "0.39.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8a45e2bb300bea6d5f33a82c3e051c3ddc6f41c209750f68a0acbe991a284344"
+source = "git+https://github.com/AccessKit/accesskit?rev=64e9a47ddaac64c9082214f472fa6fcafbc86430#64e9a47ddaac64c9082214f472fa6fcafbc86430"
 dependencies = [
  "accesskit",
  "hashbrown 0.17.1",
@@ -68,8 +66,7 @@ dependencies = [
 [[package]]
 name = "accesskit_macos"
 version = "0.27.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5701624bf6a11efb6d4c8e922bf44126ed96250e5faa9a7a0468c979635839a4"
+source = "git+https://github.com/AccessKit/accesskit?rev=64e9a47ddaac64c9082214f472fa6fcafbc86430#64e9a47ddaac64c9082214f472fa6fcafbc86430"
 dependencies = [
  "accesskit",
  "accesskit_consumer",
@@ -6188,8 +6185,8 @@ version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0d204abcbdf8e88729306a8d0ca01a79d8a49969fe1f84696909d6dbc4321c1a"
 dependencies = [
- "foldhash 0.2.0",
- "hashbrown 0.17.1",
+ "foldhash 0.1.5",
+ "hashbrown 0.15.5",
 ]
 
 [[package]]
@@ -6846,7 +6843,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
 dependencies = [
  "fastrand",
- "getrandom 0.4.3",
+ "getrandom 0.3.4",
  "once_cell",
  "rustix 1.1.4",
  "windows-sys 0.61.2",
