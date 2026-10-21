@@ -7,3 +7,8 @@ consolidate-commits = true
 publish = false
 tag-name = "v{{version}}"
 pre-release-commit-message = "chore: release v{{version}}"
+# cargo-release tags with `git tag -a`, and an explicit `-a` overrides git's
+# `tag.forceSignAnnotated`: without `sign-tag`, every tag up to v3.2.3 went out
+# unsigned. `sign-commit` states what `commit.gpgsign` only happened to supply.
+sign-commit = true
+sign-tag = true
