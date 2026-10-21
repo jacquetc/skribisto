@@ -1,3 +1,10 @@
+Version: 3.2.3
+Date: 2026-10-21
+Type: stable
+Description:
+- "A button in the title bar, beside Export, opens distraction-free mode. F11 and View ▸ Distraction-free Mode still work"
+- "Software centres such as Discover and GNOME Software now find Skribisto when you search for words like novel, book, writer or manuscript, in English and in each of the 24 interface languages. With the French interface, searching for novel used to find nothing"
+---
 Version: 3.2.2
 Date: 2026-10-16
 Type: stable
