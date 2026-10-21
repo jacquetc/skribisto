@@ -16,6 +16,7 @@ use frontend::commands::handling_app_lifecycle_commands;
 
 use teksilo::core::Theme;
 use teksilo::i18n::{I18nConfig, I18nManager, compile_in_locales};
+use teksilo::prelude::{NativeThemeRequest, ThemeMode};
 use teksilo::settings::{AppPaths, WindowStateService};
 use teksilo::widgets::framework_locales;
 
@@ -289,6 +290,9 @@ pub(crate) fn app_locales() -> &'static [(&'static str, &'static [&'static str])
 /// the app builder needs before its first window exists.
 pub(crate) struct UiConfig {
     pub theme: Theme,
+    /// How teksilo resolves the theme from the first window on — see
+    /// [`launch_theme_mode`].
+    pub theme_mode: ThemeMode,
     pub i18n: I18nConfig,
     pub autosave_init: bool,
     pub spellcheck_init: bool,
@@ -298,10 +302,10 @@ pub(crate) struct UiConfig {
 /// Whether the desktop is asking for a dark interface, with `fallback` used when
 /// it has no preference to report (or cannot be asked).
 ///
-/// Teksilo's own query, not a second implementation of it: the same call
-/// `WindowManager::apply_os_theme` makes when the app is following the system,
-/// so the theme this seeds at launch and the theme teksilo would resolve a
-/// moment later cannot disagree.
+/// Teksilo's own query, not a second implementation of it. Under *System* it
+/// only decides the seed the builder holds before any window exists: the first
+/// window is built in the theme teksilo resolves from the desktop through
+/// [`desktop_theme`] (see [`launch_theme_mode`]).
 fn os_prefers_dark(fallback: bool) -> bool {
     match teksilo::platform::os_theme::query_color_scheme() {
         teksilo::tokens::ColorSchemePreference::Dark => true,
@@ -344,6 +348,42 @@ pub(crate) fn theme_for(mode: Option<&str>, dark_key: bool, system_dark: bool) -
     }
 }
 
+/// How teksilo resolves the theme once the app runs, given the writer's
+/// recorded choice: `Native` for *System*, `Manual` for everything else.
+///
+/// ⚠ The builder's `.theme(..)` alone puts teksilo in `ThemeMode::Manual`,
+/// which ignores the desktop. That is how *System* used to launch: in the right
+/// light or dark, then deaf to the desktop until the writer picked *System* again
+/// in Settings, the only place that called `follow_system_theme`.
+///
+/// `Native` rather than `FollowSystem` because only `Native` asks the app for its
+/// theme ([`desktop_theme`]); `FollowSystem` resolves to teksilo's IntUI presets
+/// and would build the first window, chrome included, outside `--style`.
+/// Picking *System* at runtime still goes through `follow_system_theme` and
+/// retints within the chrome already built, so both routes keep the style's
+/// shapes; only a run under another `--style` differs, in colours alone, until
+/// the next launch.
+pub(crate) fn launch_theme_mode(mode: Option<&str>) -> ThemeMode {
+    match mode {
+        Some(crate::THEME_MODE_SYSTEM) => ThemeMode::Native,
+        _ => ThemeMode::Manual,
+    }
+}
+
+/// The app's answer whenever teksilo's `ThemeMode::Native` needs a theme (a
+/// window opening, the desktop turning light or dark): the active style's own
+/// light or dark theme.
+///
+/// The desktop decides only *which* of the two. Its colours, accent and fonts
+/// are left out on purpose: *System* has always meant "light or dark as the
+/// desktop says", and a writer on Plasma would otherwise find the editor
+/// repainted in their desktop scheme on the first launch after an upgrade.
+/// Teksilo stamps the result with [`crate::SYSTEM_THEME_ID`] and the window's
+/// density itself.
+pub(crate) fn desktop_theme(request: &NativeThemeRequest<'_>) -> Option<Theme> {
+    Some(crate::style::theme(request.dark))
+}
+
 /// Build the launch-time UI configuration.
 ///
 /// `translation_dev` is the (usually empty) set of `.ftl` directories
@@ -370,9 +410,11 @@ pub(crate) fn build_ui_config(
     //
     // Which of the two, and whether the desktop gets a say, is
     // `ui.theme_mode`'s to answer — see [`theme_for`]. `ui.dark` is the
-    // fallback for an install written before that key existed, and the
-    // tie-break when the desktop reports no preference at all.
+    // fallback for an install written before that key existed. Under *System*
+    // the windows are then built in [`desktop_theme`]'s answer, from the same
+    // style, and keep following the desktop ([`launch_theme_mode`]).
     let theme = theme_for(theme_mode.as_deref(), dark, os_prefers_dark(dark));
+    let theme_mode = launch_theme_mode(theme_mode.as_deref());
 
     let i18n = I18nConfig::new()
         .source_locale("en-US".parse().unwrap())
@@ -423,6 +465,7 @@ pub(crate) fn build_ui_config(
 
     UiConfig {
         theme,
+        theme_mode,
         i18n,
         autosave_init,
         spellcheck_init,
@@ -1214,6 +1257,47 @@ mod tests {
             let styled = crate::style::theme(system_dark);
             assert_eq!(seeded.colors.surface_main, styled.colors.surface_main);
             assert_eq!(seeded.is_dark(), system_dark);
+        }
+    }
+
+    /// System hands the running app to the desktop; the two manual answers and
+    /// an install from before the key keep it deaf to it. `.theme(..)` alone
+    /// meant Manual for all four, which is the bug: *System* launched in the
+    /// right shade and then ignored the desktop until picked again in Settings.
+    #[test]
+    fn only_system_launches_following_the_desktop() {
+        assert_eq!(
+            launch_theme_mode(Some(crate::THEME_MODE_SYSTEM)),
+            ThemeMode::Native
+        );
+        for mode in [
+            Some(crate::THEME_MODE_LIGHT),
+            Some(crate::THEME_MODE_DARK),
+            Some("System"),
+            None,
+        ] {
+            assert_eq!(launch_theme_mode(mode), ThemeMode::Manual, "{mode:?}");
+        }
+    }
+
+    /// The desktop decides light or dark and nothing else: the answer is the
+    /// active style's own theme, whatever the desktop reports. Teksilo's default
+    /// for Native mode is IntUI in the desktop's colours, which would leave
+    /// `--style` and repaint the editor in the Plasma scheme.
+    #[test]
+    fn the_desktop_theme_is_the_active_styles_light_or_dark() {
+        use teksilo::platform::os_theme::NativeDesktop;
+        use teksilo::tokens::{ColorSchemePreference, OsThemeColors, TargetDensity};
+
+        for (scheme, dark) in [
+            (ColorSchemePreference::Dark, true),
+            (ColorSchemePreference::Light, false),
+        ] {
+            let desktop = NativeDesktop::new(OsThemeColors::new(scheme));
+            let request = NativeThemeRequest::new(&desktop, dark, TargetDensity::default());
+            let theme = desktop_theme(&request).expect("the app always answers");
+            assert_eq!(theme, crate::style::theme(dark));
+            assert_eq!(theme.is_dark(), dark);
         }
     }
 

@@ -430,6 +430,7 @@ pub fn run() {
 
     let UiConfig {
         theme,
+        theme_mode,
         i18n,
         autosave_init,
         spellcheck_init,
@@ -658,6 +659,11 @@ pub fn run() {
 
     TeksiloAppBuilder::new()
         .theme(theme)
+        // After `.theme`, which resets the mode to Manual. Under *System* the
+        // desktop decides light or dark for every window, now and as it
+        // changes, and `desktop_theme` keeps the answer inside `--style`.
+        .native_theme(startup::desktop_theme)
+        .theme_mode(theme_mode)
         .application("eu", "skribisto", "Skribisto")
         .settings(SettingsBundle::new().with_window_state(true))
         // Ship the writing serifs so the manuscript defaults render everywhere

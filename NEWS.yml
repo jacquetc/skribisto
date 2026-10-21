@@ -4,6 +4,7 @@ Type: stable
 Description:
 - "A button in the title bar, beside Export, opens distraction-free mode. F11 and View ▸ Distraction-free Mode still work"
 - "Software centres such as Discover and GNOME Software now find Skribisto when you search for words like novel, book, writer or manuscript, in English and in each of the 24 interface languages. With the French interface, searching for novel used to find nothing"
+- "With the System theme, Skribisto now turns light or dark with your desktop while it is open. After a restart, it used to keep the shade it opened in until you chose System again in Settings"
 - "On Linux, the System theme now reads your desktop's light or dark setting without the busctl tool, and a desktop that does not answer delays startup by a second at most"
 ---
 Version: 3.2.2

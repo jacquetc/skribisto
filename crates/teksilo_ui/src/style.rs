@@ -32,11 +32,13 @@
 //! picking Light under `--style fluent` gives Fluent Light rather than dropping
 //! the run back to IntUI.
 //!
-//! ⚠ The one entry that does leave the style is **System**, and deliberately so:
-//! `EventContext::follow_system_theme` adopts the desktop's own colours (or
-//! falls back to the IntUI presets off a colour-reporting desktop). It is the
-//! framework's contract, it is what the entry has always meant, and a writer who
-//! asks to follow the OS is asking for exactly that.
+//! ⚠ The one entry that leaves the style is **System** picked at runtime:
+//! `EventContext::follow_system_theme` retints with teksilo's IntUI light or
+//! dark preset, as the desktop asks, inside the chrome already built. It is the
+//! framework's contract, and there is no runtime door to anything else. A launch
+//! with System recorded does stay inside the style: it runs in teksilo's
+//! `ThemeMode::Native` with [`crate::startup::desktop_theme`] answering, so the
+//! desktop picks light or dark and this module picks the theme.
 //!
 //! ## Reading it
 //!
