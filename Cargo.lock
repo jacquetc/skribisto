@@ -6411,9 +6411,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo"
-version = "0.19.0"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e1c5e0aad2dd00a535be0059a5dfc4cffc770d620f38dbb907eb3764d4942723"
+checksum = "0add00fef00c62920f79df720302704373567e399a71e60605065dd65e67a029"
 dependencies = [
  "teksilo-app",
  "teksilo-async",
@@ -6439,9 +6439,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-app"
-version = "0.19.0"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ede48329e97de0bb420bb5a93cd58d04c8acafe62c7e13b0336e6f349a0669cc"
+checksum = "23a7473d99897cf8af932c10a163adbfd6b37128fb9a284eb941a389df5956cc"
 dependencies = [
  "base64 0.23.1",
  "png",
@@ -6463,9 +6463,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-async"
-version = "0.19.0"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "960db570facf53026912cba6442784c14e472080917121f3a908cce0c15fb322"
+checksum = "3963b70506035f648e4c49fa4253c1914bf2f24a19ef537b16ccbe3db6325ec8"
 dependencies = [
  "async-channel 2.5.0",
  "teksilo-app",
@@ -6475,9 +6475,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-async-std"
-version = "0.19.0"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d4598d80b9f924e448347b32d8df6e6bee0b709b8b4dfd78e0dd210c8654726c"
+checksum = "032f11491a94c3a6a552707f99b48a7e2515319b4e8e83f24609b930dd200aa6"
 dependencies = [
  "async-std",
  "teksilo-app",
@@ -6487,9 +6487,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-automation"
-version = "0.19.0"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c3544d2a53a84a8ff8277726370cb0d84e0e6bb3578712d09bddb04c0e45772b"
+checksum = "6290a4e6e60e512c0d619df92894720af1971108da6b48376f6a2596746c9cd1"
 dependencies = [
  "serde",
  "serde_json",
@@ -6500,9 +6500,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-canvas"
-version = "0.19.0"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a310c9f6f9ad89b90a8b06eb1cc2aa90f5b70db24697b79c9a99a67a03e0afbe"
+checksum = "e99b33056fcc85cbda4dd704128ec08ab91365b5cb0426f70ac17e8b2ddd872c"
 dependencies = [
  "bytemuck",
  "image-webp",
@@ -6519,9 +6519,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-charts"
-version = "0.19.0"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "86a2a133fb08e529326ebf7d37df4f0dd3b3672367a9586c93cd8b22ab1d4c95"
+checksum = "5ec39493291d13e56a55317c9a3cb8d8b4f84110a6bbcbf77e77b0b68f58c5c4"
 dependencies = [
  "teksilo-canvas",
  "teksilo-core",
@@ -6532,9 +6532,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-core"
-version = "0.19.0"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5cbade0f0a48da19babc3b6dbf716bd44aac35d64f9606c05cefcd4807c4c5ae"
+checksum = "1c0dbeadf1871cf3072a3268dba7cf86485c68c3321e7a246f0f38663cad2c50"
 dependencies = [
  "accesskit",
  "accesskit_consumer",
@@ -6549,9 +6549,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-data"
-version = "0.19.0"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3a88d2868ddfcf3283ef2f8b3a7768584b4ebe09d2c01ca4af509f1670149cd1"
+checksum = "a380717660f99c8186fd180d14891c9f77f5271ca47988feb72677c819f9ca38"
 dependencies = [
  "slotmap",
  "teksilo-core",
@@ -6559,9 +6559,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-i18n"
-version = "0.19.0"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8b300d95718972c5cb32c5b134384c4b2db507746fe3f0bc2828cab98fedf910"
+checksum = "3b49e38d79053d868e91bf0766fcb28fc0b4d982aebb64d2a6efe1b42e7233e9"
 dependencies = [
  "fixed_decimal",
  "fluent-bundle",
@@ -6584,9 +6584,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-i18n-macros"
-version = "0.19.0"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "02b9ac85258cc10c33f4dc5272146092b464fa9f15c2a32edbc6238f0e9afcf4"
+checksum = "c3d47aca1f3262a3d2d3d2f000a17f3727ae9be3131b05882466bc447cb1c627"
 dependencies = [
  "fluent-syntax",
  "proc-macro2",
@@ -6596,9 +6596,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-inspector"
-version = "0.19.0"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a9bb21652f29d763eb95732893eb0c9fbda4e4d9082649147ff417be8c7bbdd2"
+checksum = "328a6a2607ebff026006aca4444b72d5c41644236352d0befe103bb4a9031bb6"
 dependencies = [
  "serde_json",
  "teksilo-app",
@@ -6613,10 +6613,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "teksilo-macros"
-version = "0.19.0"
+name = "teksilo-kde-scheme"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bfafb75574b1b48b57d1b5088da58885fe73c777283af01e9790c79419dd8400"
+checksum = "d19b777d5bd1daa4f33dc6104d4b8e8f2d1daccd38deecc2b7c25d1f7102415d"
+dependencies = [
+ "teksilo-tokens",
+ "thiserror 2.0.20",
+]
+
+[[package]]
+name = "teksilo-macros"
+version = "0.20.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ea24ddb27348933528800612ac526648e7c0df58a228369b194b8b07070da341"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -6626,9 +6636,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-parse"
-version = "0.19.0"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8c3beeb1e051708fe77551d8b72fecd84a5bd33ac2fabc518fcf1b8cd416716c"
+checksum = "deb00581ee65797a5e128d1b2ac546a1ab94e410e61077bdb0964062b0d09926"
 dependencies = [
  "proc-macro2",
  "syn 3.0.4",
@@ -6636,13 +6646,14 @@ dependencies = [
 
 [[package]]
 name = "teksilo-platform"
-version = "0.19.0"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3fc767d00e29dafb6c6a8518dcbdb1c7558bdaab207d5b6c55367a79c6465262"
+checksum = "1a504ac4baba9220366c196dfcfc18195c66c51c6f72d440c8e741ea27eb8ec2"
 dependencies = [
  "accesskit",
  "accesskit_winit",
  "arboard",
+ "async-io",
  "async-std",
  "dispatch2",
  "libc",
@@ -6657,6 +6668,7 @@ dependencies = [
  "teksilo-automation",
  "teksilo-canvas",
  "teksilo-core",
+ "teksilo-kde-scheme",
  "teksilo-render",
  "teksilo-tokens",
  "thiserror 2.0.20",
@@ -6673,9 +6685,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-render"
-version = "0.19.0"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c162c5df98368e854baff47df3acb6b34605f7fd47e58984badaf29e6ba8d031"
+checksum = "0a5d7054b7f42ea27892c773934f4baa8b7b25608bcbdd4f637c80a33a09e5fa"
 dependencies = [
  "bytemuck",
  "pollster 1.0.1",
@@ -6687,9 +6699,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-resources"
-version = "0.19.0"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "60ffa3efc059a44375644fdd6dffc5f599b576b1146c216247aba1fe89ddda88"
+checksum = "64c7591df8713ca566f77c156ec1455f7780541a1acabf3b67176c7d5b4e37eb"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -6699,9 +6711,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-settings"
-version = "0.19.0"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5b5aa55a71c9216d01b252fc8e376e7f5c978f2327364cc79a1e23919de0601e"
+checksum = "3a355feed8327cf49523ab4690a581558c74008df35a09482dd003e4f8e3f377"
 dependencies = [
  "etcetera",
  "fs2",
@@ -6716,9 +6728,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-text"
-version = "0.19.0"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "559a82c4acc41ab0bfeeb951813603484c50edc954c4f9fb4058d1d5c64eac33"
+checksum = "0e09a0bd486c3c7dbca0552515508b98bdf33321b2fa9196fc25d44b9c13b24e"
 dependencies = [
  "teksilo-canvas",
  "teksilo-tokens",
@@ -6728,9 +6740,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-theme-fluent"
-version = "0.19.0"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "732cef560f4ae80d556056ba3386a65e74d1c216d15aea4f1c878a5403274616"
+checksum = "b05204a46ed2908a307fe402f17e5668a17463463535187f0f3753c54c4c5c0c"
 dependencies = [
  "teksilo-canvas",
  "teksilo-core",
@@ -6740,9 +6752,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-theme-macos"
-version = "0.19.0"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "28c1bffc0bc3e07e6f2761045a38751b3a22e3a81f14f45f7b35b5b5e445d73b"
+checksum = "3ad4184344b4bce7e781bdcd29f13d4e4fa3b9991bf657a3934cc9c437c57690"
 dependencies = [
  "teksilo-canvas",
  "teksilo-core",
@@ -6752,9 +6764,9 @@ dependencies = [
 
 [[package]]
 name = "teksilo-theme-material3"
-version = "0.19.0"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7a93855c591e2ebe23b84d763d90e5fd5da29b6b9e684e7295e6f11a2570133c"
+checksum = "32cb57c7f9b9fac3010098369889e8fae5366e36aaad10965431cec71e0ffc2b"
 dependencies = [
  "teksilo-canvas",
  "teksilo-core",
@@ -6764,18 +6776,18 @@ dependencies = [
 
 [[package]]
 name = "teksilo-tokens"
-version = "0.19.0"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "80862be219614de35defb5c7172cb7f6a54e33791d00fb118f9359c8289c5a58"
+checksum = "bc3322326205094b89413d5094d0b1711236c2f90557af3eeae9ea401db97f11"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "teksilo-widgets"
-version = "0.19.0"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "28722049cc77fe46ab2f8a1610c13a7b2b5e1e9c609d931e6d95711440304d65"
+checksum = "3ce9d836eddeab7a47308044c170e13eca5e24af1b43cb50a2c6ea54475dd999"
 dependencies = [
  "jiff",
  "open",
