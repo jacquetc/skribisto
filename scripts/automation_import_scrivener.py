@@ -587,7 +587,7 @@ def review_page_checks(s, w):
 def save_and_import(s, w, folder, name):
     fields = [n for n in s.nodes() if "set_value" in (n.get("actions") or [])
               and n.get("role") in ("TextInput",)]
-    location = next((n for n in fields if str(n.get("value") or "").startswith("/")
+    location = next((n for n in fields if os.path.isabs(str(n.get("value") or ""))
                      and not str(n.get("value") or "").endswith((".scriv", ".scrivx"))), None)
     if location is None:
         fail("no destination folder field on the Save page", s)
@@ -902,11 +902,11 @@ def english(fx):
             for phrase in TRIGGERS:
                 check(s.says(phrase), f"[en] as imported, the scene says {phrase!r}")
             s.call("focus_node", {"node": editor["id"]})
-            s.key("End", ctrl=True)
+            s.key("End", command=True)
             s.call("type_text", {"node": editor["id"], "text": " Tide."})
             time.sleep(0.6)
             before = target.stat().st_mtime
-            s.key("s", ctrl=True)
+            s.key("s", command=True)
             end = time.time() + 60
             while time.time() < end and target.stat().st_mtime == before:
                 time.sleep(0.5)

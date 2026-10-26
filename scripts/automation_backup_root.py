@@ -34,6 +34,8 @@ import json, os, select, shutil, subprocess, sys, tempfile, time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture
 
+fixture.require_linux("an xdg-open shim on PATH")
+
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SKRIBISTO = fixture.skribisto_binary()
 MCP = fixture.mcp_binary()
@@ -178,7 +180,7 @@ env = fixture.isolated_config(locale="en-US", label="backup-root", show_welcome=
 env["XDG_DATA_HOME"] = os.path.join(SANDBOX, "data")
 env["PATH"] = os.path.join(SANDBOX, "shim") + os.pathsep + env["PATH"]
 
-EXPECTED_ROOT = os.path.join(SANDBOX, "data", "skribisto", "backups")
+EXPECTED_ROOT = os.path.join(fixture.app_data_dir(env), "backups")
 print(f"expected backup root: {EXPECTED_ROOT}")
 
 print("== launch with the bundled example ==")

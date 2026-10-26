@@ -43,7 +43,7 @@ import automation_fixture as fixture  # noqa: E402
 
 SKRIBISTO = fixture.skribisto_binary()
 MCP = fixture.mcp_binary()
-OUT = os.environ.get("SHOT_DIR", "/tmp")
+OUT = os.environ.get("SHOT_DIR", fixture.SCRATCH)
 PANE_X = 300
 
 project = os.path.abspath(sys.argv[1]) if len(sys.argv) > 1 else None
@@ -60,7 +60,9 @@ def die(msg, *procs):
     sys.exit(1)
 
 
-subprocess.run(["pkill", "-x", "skribisto"], check=False)
+# This checkout's debug build only: `pkill -x skribisto` also ended an
+# installed Skribisto, with whatever the writer had open in it.
+fixture.stop_strays()
 time.sleep(0.4)
 env = fixture.isolated_config(locale="en-US", label="footnotes", show_welcome=False)
 pins = fixture.config_pins_file(
@@ -207,8 +209,11 @@ def shot(name):
 if project is None:
     row = find("Mock Project", timeout=10)
     if not row:
-        die("no 'Mock Project' recent row — this no-args mode needs a `--features "
-            "mocks` build", app, mcp)
+        for p in (mcp, app):
+            if p and p.poll() is None:
+                p.terminate()
+        fixture.skip("no project argument, and this is not a `--features mocks` build "
+                     "(run bare, this probe opens the mocks' Mock Project)")
     b = row.get("bounds") or {}
     if "x" not in b:
         die("'Mock Project' row has no bounds to click", app, mcp)
@@ -373,7 +378,7 @@ before = row_count()
 pt = editor_point()
 call("inject_pointer", {"x": pt[0], "y": pt[1], "action": "click"})
 settle()
-call("inject_key", {"key": "F", "ctrl": True, "alt": True})
+call("inject_key", {"key": "F", "command": True, "alt": True})
 settle()
 time.sleep(1.0)
 after = row_count()

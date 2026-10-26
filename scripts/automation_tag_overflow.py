@@ -420,7 +420,7 @@ def select_segment(name):
     # whatever segment a previous run remembered, and measuring that pane's
     # dot row would misreport a wrong-pane failure as a cap regression.
     s.dump(f"segment {name!r} would not select")
-    s.shot("/tmp/overflow-segment-fail.png")
+    s.shot(os.path.join(fixture.SCRATCH, "overflow-segment-fail.png"))
     fail(f"could not select the {name[0]!r} segment after 3 attempts; segment "
          f"states now: {segment_states()}", s)
 
@@ -639,7 +639,7 @@ def assert_cell_count(surface, row, expected):
     got = round(w / HIT)
     print(f"  {surface}: row is {w:.0f} dp wide -> {got} cell(s) (expecting {expected})")
     if got != expected:
-        s.shot(f"/tmp/overflow-{surface.lower()}-width-fail.png")
+        s.shot(os.path.join(fixture.SCRATCH, f"overflow-{surface.lower()}-width-fail.png"))
         fail(f"{surface}: expected exactly {expected} hit-cells "
              f"({expected * HIT:.0f} dp), got {got} ({w:.0f} dp) — the row is "
              f"{FULL_LABEL!r}", s)
@@ -672,7 +672,7 @@ def assert_overflow(surface, row, n, hidden_names, shot_prefix):
         found = [(c.get("value") or "").strip() for c in cells] or "none"
         rb = row.get("bounds") or {}
         s.dump(f"{surface}: no {expect!r} cell")
-        s.shot(f"/tmp/overflow-{shot_prefix}-no-cell.png")
+        s.shot(os.path.join(fixture.SCRATCH, f"overflow-{shot_prefix}-no-cell.png"))
         fail(f"{surface}: expected a {expect!r} overflow cell inside the row's "
              f"own box ({rb.get('width', 0):.0f}x{rb.get('height', 0):.0f} dp at "
              f"x={rb.get('x')},y={rb.get('y')}) — found instead: {found}", s)
@@ -685,7 +685,7 @@ def assert_overflow(surface, row, n, hidden_names, shot_prefix):
             and (nd.get("label") or "").strip().lower() in (v.lower() for v in variants)
             for nd in s.nodes())):
         s.dump(f"{surface}: overflow tooltip never opened")
-        s.shot(f"/tmp/overflow-{shot_prefix}-tooltip-fail.png")
+        s.shot(os.path.join(fixture.SCRATCH, f"overflow-{shot_prefix}-tooltip-fail.png"))
         fail(f"{surface}: hovering the {expect!r} cell showed no tooltip "
              f"(looked for {variants})", s)
     print(f"  {surface}: hovering {expect!r} announces '{variants[0]}'")
@@ -701,12 +701,12 @@ def assert_overflow(surface, row, n, hidden_names, shot_prefix):
         candidates = [(nd.get("value") or "").strip() for nd in s.nodes()
                       if nd.get("role") == "Label"
                       and any(h in (nd.get("value") or "") for h in hidden_names)]
-        s.shot(f"/tmp/overflow-{shot_prefix}-body-fail.png")
+        s.shot(os.path.join(fixture.SCRATCH, f"overflow-{shot_prefix}-body-fail.png"))
         fail(f"{surface}: the overflow tooltip does not name exactly "
              f"{hidden_names} (expected value {expected_body!r}; Label nodes "
              f"mentioning a hidden name held: {candidates})", s)
     print(f"  {surface}: tooltip names exactly {hidden_names}")
-    s.shot(f"/tmp/overflow-{shot_prefix}.png")
+    s.shot(os.path.join(fixture.SCRATCH, f"overflow-{shot_prefix}.png"))
 
     # Move away and dismiss: a dwelled composite tooltip is promoted to a
     # sticky `Dialog` that can take focus, which can swallow the next typed
@@ -738,7 +738,7 @@ print(f"  expecting exactly 3 tags, the set {sorted(BASE_TAGS)}")
 before = tag_pill_names()
 if before is None:
     s.dump("no Tags List")
-    s.shot("/tmp/overflow-no-tags-list.png")
+    s.shot(os.path.join(fixture.SCRATCH, "overflow-no-tags-list.png"))
     fail(f"no Tags List found in the Inspector for {ITEM!r} (looked for "
          f"{TAGS_PILL_LIST})", s)
 if len(before) != 3:
@@ -804,7 +804,7 @@ print(f"  expecting exactly 6 tags now, the full set {ALL_TAGS_SORTED}")
 after = tag_pill_names()
 if after is None or len(after) != 6:
     s.dump("tag count after creation")
-    s.shot("/tmp/overflow-create-fail.png")
+    s.shot(os.path.join(fixture.SCRATCH, "overflow-create-fail.png"))
     fail(f"expected exactly 6 tags on {ITEM!r} after creating 3, got "
          f"{after}", s)
 after_set = {t.lower() for t in after}
@@ -812,25 +812,25 @@ expected_set = {t.lower() for t in ALL_TAGS_SORTED}
 if after_set != expected_set:
     fail(f"expected the tag set {sorted(expected_set)}, got {sorted(after_set)}", s)
 print(f"  Zeus now carries all 6: {after}")
-s.shot("/tmp/overflow-6-tags.png")
+s.shot(os.path.join(fixture.SCRATCH, "overflow-6-tags.png"))
 
 # ── 4. The editor (cap 8): all 6 dots, no overflow ───────────────────────────
 print("\n== surface 1: the editor (cap 8, no overflow) ==")
 if not wait_for(lambda: dot_row() is not None):
     s.dump("no dot row in the editor")
-    s.shot("/tmp/overflow-editor-fail.png")
+    s.shot(os.path.join(fixture.SCRATCH, "overflow-editor-fail.png"))
     fail(f"the editor shows no dot row for {ITEM!r} carrying {TAG_MARKER!r}", s)
 row = dot_row()
 assert_cell_count("editor", row, 6)
 assert_row_label("editor", row, FULL_LABEL)
 leftover = overflow_cells_in_box(row)
 if leftover:
-    s.shot("/tmp/overflow-editor-unexpected.png")
+    s.shot(os.path.join(fixture.SCRATCH, "overflow-editor-unexpected.png"))
     fail(f"editor: found an overflow cell {[c.get('value') for c in leftover]} "
          f"inside the row's box, but the editor's cap (8) is over the item's "
          f"6 tags — there should be no overflow cell at all", s)
 print("  editor: no overflow cell — all 6 dots shown, as expected under cap 8")
-s.shot("/tmp/overflow-editor.png")
+s.shot(os.path.join(fixture.SCRATCH, "overflow-editor.png"))
 
 # ── 5. Navigate to the container that has Stream/Corkboard segments ──────────
 print("\n== open the container (Chapter 1) ==")
@@ -855,7 +855,7 @@ pane = content_pane()
 row = scroll_for_dot_row(pane)
 if not row:
     s.dump("no dot row on the corkboard")
-    s.shot("/tmp/overflow-corkboard-fail.png")
+    s.shot(os.path.join(fixture.SCRATCH, "overflow-corkboard-fail.png"))
     fail(f"no corkboard card shows a dot row for {ITEM!r} carrying "
          f"{TAG_MARKER!r}", s)
 assert_cell_count("corkboard", row, 5)  # 4 dots + 1 overflow cell
@@ -869,7 +869,7 @@ pane = content_pane()
 row = scroll_for_dot_row(pane)
 if not row:
     s.dump("no dot row in the stream")
-    s.shot("/tmp/overflow-stream-fail.png")
+    s.shot(os.path.join(fixture.SCRATCH, "overflow-stream-fail.png"))
     fail(f"the manuscript stream's row header for {ITEM!r} shows no dot row "
          f"carrying {TAG_MARKER!r}", s)
 assert_cell_count("stream", row, 6)  # 5 dots + 1 overflow cell

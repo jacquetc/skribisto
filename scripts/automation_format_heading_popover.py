@@ -34,7 +34,7 @@ import automation_fixture as fixture  # noqa: E402
 
 SKRIBISTO = fixture.skribisto_binary()
 MCP = fixture.mcp_binary()
-OUT = "/tmp/format-heading-popover"
+OUT = os.path.join(fixture.SCRATCH, "format-heading-popover")
 os.makedirs(OUT, exist_ok=True)
 
 # Both halves of the isolation matter here. A private `XDG_CONFIG_HOME` keeps
@@ -196,7 +196,11 @@ def shot(name):
 # ── reach a scene with the caret in its prose ────────────────────────────────
 if project is None:
     if not click("Mock Project", "(needs a --features mocks build)"):
-        die("no 'Mock Project' recent row and no project argument")
+        for p in (mcp, app):
+            if p and p.poll() is None:
+                p.terminate()
+        fixture.skip("no project argument, and this is not a `--features mocks` build "
+                     "(run bare, this probe opens the mocks' Mock Project)")
 # `load_work` is SLOW in a debug build (~20 s for the bundled example) — without
 # this wait every check below runs against the empty shell.
 end = time.time() + 120

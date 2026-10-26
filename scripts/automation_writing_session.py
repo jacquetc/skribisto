@@ -214,7 +214,7 @@ for _ in range(15):
         break
     time.sleep(0.3)
 if not play:
-    s.shot("/tmp/session-noplay.png")
+    s.shot(os.path.join(fixture.SCRATCH, "session-noplay.png"))
     fail("no writing-session play button in the status bar", s.app, s.mcp, s.log)
 print(f"  play button: {play.get('label')!r}")
 click(s, play)
@@ -231,13 +231,13 @@ for _ in range(10):
     if found:
         break
     time.sleep(0.4)
-s.shot("/tmp/session-running.png")
+s.shot(os.path.join(fixture.SCRATCH, "session-running.png"))
 if not found:
     pass  # readout renders visually; AT tree omits static text
 print(f"  running readout: {found!r}")
 
 s.call("type_text", {"node": main["id"], "text": "alpha beta gamma delta "})
 time.sleep(1.2)
-s.shot("/tmp/session-typed.png")
+s.shot(os.path.join(fixture.SCRATCH, "session-typed.png"))
 print("\nPASS: writing session starts, shows a live readout, and runs.")
 s.close()

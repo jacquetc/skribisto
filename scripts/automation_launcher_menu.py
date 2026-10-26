@@ -302,7 +302,12 @@ if not s.activate(work):
 time.sleep(1.0)
 rows = [r for r in menu_labels(s) if r != "Work"]
 print("  Work ▸", rows)
-for want in ("New Work", "Open Work…", "Create from", "Settings", "Quit"):
+# On macOS Settings and Quit live in the App menu (the system bar), never in Work:
+# `project_menus::NOT_ON_MACOS`, the same rule the app applies.
+wanted = ("New Work", "Open Work…", "Create from")
+if not fixture.IS_MACOS:
+    wanted += ("Settings", "Quit")
+for want in wanted:
     if not any(want.lower() in (r or "").lower() for r in rows):
         s.dump("Work menu")
         fail(f"the Work menu is missing a {want!r} row (saw {rows!r})", s.app, s.mcp, s.log)
@@ -368,7 +373,7 @@ if not dismiss_modal(s):
 
 # ── 5. Ctrl+N reaches New Work from the Launcher ─────────────────────────────
 time.sleep(0.6)
-s.key("n", ctrl=True)
+s.key("n", command=True)
 time.sleep(1.6)
 if not next(iter(s.roles("Form")), None):
     s.dump("after Ctrl+N")
@@ -469,7 +474,7 @@ if not close_settings(s):
 # Ctrl+, — the same command by its chord, registered on this window's own
 # shortcut registry.
 time.sleep(0.6)
-s.key(",", ctrl=True)
+s.key(",", command=True)
 open_settings(s, "Ctrl+,")
 print("Ctrl+, opens Settings from the Launcher.")
 s.shot("09-settings-ctrl-comma.png")

@@ -223,11 +223,14 @@ if not wait_for(lambda: len(tab_lists(s)) > 0):
          "script would pass vacuously", s.app, s.mcp, s.log)
 before = len(tab_lists(s))
 print(f"  {before} tab strip(s) present outside the mode")
+# macOS draws its window buttons natively (the traffic lights), outside the
+# accessibility tree, so there is nothing of the window frame here to count.
+CHECK_CONTROLS = not fixture.IS_MACOS
 controls_before = len(window_control_buttons(s))
-if controls_before == 0:
+if CHECK_CONTROLS and controls_before == 0:
     fail("no window-control buttons outside the mode — the fullscreen check "
          "below would pass vacuously", s.app, s.mcp, s.log)
-print(f"  {controls_before} window-control button(s) present outside the mode")
+print(f"  {controls_before} window-control button(s) present outside the mode" if CHECK_CONTROLS else "  window controls: native on macOS, not checked")
 
 # The title bar's own slots, not just its control cluster. Gating the controls
 # once cost the bar its menu, title and tools while leaving the cluster in
@@ -235,23 +238,23 @@ print(f"  {controls_before} window-control button(s) present outside the mode")
 # the slots. `TitleBar::build` consumes them, so anything that rebuilds the bar
 # empties it; this is the check that notices.
 if not has_label(s, "export"):
-    s.shot("/tmp/df-chrome-empty-title-bar.png")
+    s.shot(os.path.join(fixture.SCRATCH, "df-chrome-empty-title-bar.png"))
     fail("the title bar has no Export control outside the mode — its leading/"
          "center/trailing slots are missing", s.app, s.mcp, s.log)
 print("  title-bar slots populated (Export control present)")
-s.shot("/tmp/df-chrome-before.png")
+s.shot(os.path.join(fixture.SCRATCH, "df-chrome-before.png"))
 
 # ── 2. Enter distraction-free → the tab strip goes, Exit stays ───────────────
 print("== F11 enters distraction-free ==")
 s.call("inject_key", {"key": "F11"})
 if not wait_for(lambda: len(tab_lists(s)) == 0, timeout=10):
-    s.shot("/tmp/df-chrome-still-there.png")
+    s.shot(os.path.join(fixture.SCRATCH, "df-chrome-still-there.png"))
     fail(f"the editor tab strip survived entering the mode "
          f"({len(tab_lists(s))} TabList node(s) remain)", s.app, s.mcp, s.log)
 print("  tab strip hidden")
 
 if not wait_for(lambda: has_label(s, "exit"), timeout=10):
-    s.shot("/tmp/df-chrome-no-exit.png")
+    s.shot(os.path.join(fixture.SCRATCH, "df-chrome-no-exit.png"))
     fail("no Exit button in the distraction-free strip — the one control that "
          "must never be absent", s.app, s.mcp, s.log)
 print("  Exit button present")
@@ -260,19 +263,19 @@ print("  Exit button present")
 # meaningless over a window with no frame, and every desktop convention hides
 # them in fullscreen. The strip's Exit button, F11 and Escape are the
 # replacement way out — the first of which the check above just confirmed.
-if not wait_for(lambda: len(window_control_buttons(s)) == 0, timeout=10):
-    s.shot("/tmp/df-chrome-controls-left.png")
+if CHECK_CONTROLS and not wait_for(lambda: len(window_control_buttons(s)) == 0, timeout=10):
+    s.shot(os.path.join(fixture.SCRATCH, "df-chrome-controls-left.png"))
     left = [n.get("label") for n in window_control_buttons(s)]
     fail(f"window controls survived entering the mode: {left}", s.app, s.mcp, s.log)
-print("  window controls hidden")
-s.shot("/tmp/df-chrome-during.png")
+print("  window controls hidden" if CHECK_CONTROLS else "  window controls: native on macOS, not checked")
+s.shot(os.path.join(fixture.SCRATCH, "df-chrome-during.png"))
 
 # The item's name is in the strip. With the tab strip and the title bar both
 # gone, and a plain Scene carrying no title field in its own pane, this is the
 # only thing on screen that says which document the writer is in — and Alt+Up /
 # Alt+Down move them between documents without it.
 if not wait_for(lambda: has_label(s, "prologue"), timeout=10):
-    s.shot("/tmp/df-chrome-no-title.png")
+    s.shot(os.path.join(fixture.SCRATCH, "df-chrome-no-title.png"))
     fail("the strip does not name the open item — nothing on screen says what "
          "is being written", s.app, s.mcp, s.log)
 print("  the strip names the open item")
@@ -281,7 +284,7 @@ print("  the strip names the open item")
 # parked dormant behind the surface, so the gear in the strip is the only route
 # that does not put the whole Settings modal over the manuscript.
 if not has_label(s, "distraction-free settings"):
-    s.shot("/tmp/df-chrome-no-gear.png")
+    s.shot(os.path.join(fixture.SCRATCH, "df-chrome-no-gear.png"))
     fail("no quick-settings control in the strip — the mode's own settings are "
          "unreachable from inside it", s.app, s.mcp, s.log)
 print("  quick-settings control present")
@@ -290,11 +293,11 @@ print("  quick-settings control present")
 # never disabled its *commands*: `reveal_dock` sets visible and picks a tab
 # regardless, so before the guard Ctrl+Shift+F did nothing you could see here
 # and then the leading rail came back showing Search instead of the binder.
-for key, mods in (("F9", {}), ("F10", {}), ("F", {"ctrl": True, "shift": True})):
+for key, mods in (("F9", {}), ("F10", {}), ("F", {"command": True, "shift": True})):
     s.call("inject_key", {"key": key, **mods})
 time.sleep(0.5)
 if len(tab_lists(s)) != 0:
-    s.shot("/tmp/df-chrome-dock-command-leaked.png")
+    s.shot(os.path.join(fixture.SCRATCH, "df-chrome-dock-command-leaked.png"))
     fail("a dock command changed the desk from inside the mode", s.app, s.mcp, s.log)
 print("  dock commands are no-ops inside the mode")
 
@@ -302,22 +305,23 @@ print("  dock commands are no-ops inside the mode")
 print("== F11 leaves distraction-free ==")
 s.call("inject_key", {"key": "F11"})
 if not wait_for(lambda: len(tab_lists(s)) == before, timeout=10):
-    s.shot("/tmp/df-chrome-not-restored.png")
+    s.shot(os.path.join(fixture.SCRATCH, "df-chrome-not-restored.png"))
     fail(f"the tab strip did not come back on leaving the mode "
          f"(want {before}, got {len(tab_lists(s))})", s.app, s.mcp, s.log)
 print("  tab strip restored")
-if not wait_for(lambda: len(window_control_buttons(s)) == controls_before, timeout=10):
-    s.shot("/tmp/df-chrome-controls-not-restored.png")
+if CHECK_CONTROLS and not wait_for(lambda: len(window_control_buttons(s)) == controls_before,
+                                   timeout=10):
+    s.shot(os.path.join(fixture.SCRATCH, "df-chrome-controls-not-restored.png"))
     fail(f"the window controls did not come back on leaving the mode "
          f"(want {controls_before}, got {len(window_control_buttons(s))})",
          s.app, s.mcp, s.log)
-print("  window controls restored")
+print("  window controls restored" if CHECK_CONTROLS else "  window controls: native on macOS, not checked")
 if not wait_for(lambda: has_label(s, "export"), timeout=10):
-    s.shot("/tmp/df-chrome-slots-not-restored.png")
+    s.shot(os.path.join(fixture.SCRATCH, "df-chrome-slots-not-restored.png"))
     fail("the title bar came back empty — its slots did not survive the mode",
          s.app, s.mcp, s.log)
 print("  title-bar slots restored")
-s.shot("/tmp/df-chrome-after.png")
+s.shot(os.path.join(fixture.SCRATCH, "df-chrome-after.png"))
 
 # ── 4. The settings surface exists and is on the right page ─────────────────
 # These checkboxes are the only way a writer changes any of this, so a pane that
@@ -335,7 +339,7 @@ def settings_open():
 
 
 opened = None
-for args in ({"key": ",", "ctrl": True}, {"key": "Comma", "ctrl": True}):
+for args in ({"key": ",", "command": True}, {"key": "Comma", "command": True}):
     res, _ = s.call("inject_key", args)
     if not (isinstance(res, dict) and res.get("isError")):
         time.sleep(0.8)
@@ -360,7 +364,7 @@ time.sleep(0.8)
 WANT = ["keep the item's name", "keep the word count",
         "keep the writing session", "keep the previous and next buttons"]
 missing = [w for w in WANT if not has_label(s, w)]
-s.shot("/tmp/df-chrome-settings.png")
+s.shot(os.path.join(fixture.SCRATCH, "df-chrome-settings.png"))
 if missing:
     fail(f"the Distraction-free pane is missing {missing}", s.app, s.mcp, s.log)
 print("  all four checkboxes present")

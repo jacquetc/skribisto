@@ -64,11 +64,10 @@ MARKER = "SHARED-BY-BOTH-WINDOWS"
 
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
 sandbox = tempfile.mkdtemp(prefix="skribisto_new_window_")
-SANDBOX_ENV = {
-    "XDG_CONFIG_HOME": os.path.join(sandbox, "config"),
+SANDBOX_ENV = fixture.sandbox_env(os.path.join(sandbox, "config"), base={}, extra={
     "XDG_DATA_HOME": os.path.join(sandbox, "data"),
     "HOME": sandbox,
-}
+})
 # Every label this probe matches is written in English, so the language has to be
 # SET rather than inherited: an unset `ui.locale` is not "English", it is the
 # operator's OS language (`startup.rs`'s `auto_detect_os_locale`). Without this
@@ -441,6 +440,15 @@ print(f"both windows' save indicators followed the shared edit: "
 # backend `close_work`, no Launcher. Before the sibling-aware branch in
 # `shell::windows`'s `on_close_requested`, this path ran the full exit guard and
 # tore the project out from under the surviving window.
+if fixture.IS_MACOS:
+    # The second window's close button is the native red traffic light, outside
+    # the accessibility tree, and the bridge has no close-window op; ⌘W is Close
+    # Work, a different gesture. Steps 5 on need step 4's single window.
+    for p in (s.mcp, s.app):
+        if p and p.poll() is None:
+            p.terminate()
+    fixture.skip("steps 1 to 3 passed; step 4 needs the title bar's own Close button, "
+                 "which macOS draws natively")
 close_btn = s.find_exact("Close", role="Button", window_id=second_key)
 if not close_btn:
     fail("no title-bar Close button in the second window", s.app, s.mcp, s.log)

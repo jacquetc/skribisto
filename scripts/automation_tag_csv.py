@@ -305,9 +305,9 @@ def settings_open(s):
 
 
 def open_settings(s):
-    for args in ({"key": ",", "ctrl": True},
-                 {"key": ",", "modifiers": ["ctrl"]},
-                 {"key": "Comma", "modifiers": ["ctrl"]}):
+    for args in ({"key": ",", "command": True},
+                 {"key": ",", "command": True},
+                 {"key": "Comma", "command": True}):
         s.call("inject_key", args)
         for _ in range(10):
             time.sleep(0.4)
@@ -436,7 +436,7 @@ print(f"  Tags row located at y={(tags_row.get('bounds') or {}).get('y')}")
 print("\n== select the Tags page ==")
 crumb = select_page(s, PAGE_TAGS, anchor_node=work)
 if not crumb:
-    s.shot("/tmp/tagcsv-nav-fail.png")
+    s.shot(os.path.join(fixture.SCRATCH, "tagcsv-nav-fail.png"))
     fail("could not select the Tags page", s)
 print(f"  breadcrumb: {crumb}")
 
@@ -451,7 +451,7 @@ texts = exact_texts(s)
 missing_names = [t for t in FIXTURE_TAGS if t not in texts]
 if missing_names:
     print("  exact texts seen:", sorted(texts)[:40])
-    s.shot("/tmp/tagcsv-palette-fail.png")
+    s.shot(os.path.join(fixture.SCRATCH, "tagcsv-palette-fail.png"))
     fail(f"fixture tags missing from the palette: {missing_names} -- an export "
          f"built from this palette would have been short, so it must never be "
          f"reported as containing all three", s)
@@ -467,7 +467,7 @@ if not has_any(s, COUNT_3):
          f"disagrees with 3, and this exact pill is what a live probe would "
          f"have re-checked after import to catch a fourth copy of a duplicate", s)
 print(f"  count pill agrees: {COUNT_3}")
-s.shot("/tmp/tagcsv-baseline.png")
+s.shot(os.path.join(fixture.SCRATCH, "tagcsv-baseline.png"))
 
 # ── 3. Import…/Export… buttons: present, unique, enabled, unclipped ─────────
 # This is as far into the plan's assertions as a live probe can honestly go:
@@ -475,11 +475,11 @@ s.shot("/tmp/tagcsv-baseline.png")
 print("\n== Import…/Export… button wiring (stops short of clicking) ==")
 import_btn = pane_button(s, IMPORT_LABEL)
 if not import_btn:
-    s.shot("/tmp/tagcsv-buttons-fail.png")
+    s.shot(os.path.join(fixture.SCRATCH, "tagcsv-buttons-fail.png"))
     fail(f"no unique Import button in the pane (looked for {IMPORT_LABEL})", s)
 export_btn = pane_button(s, EXPORT_LABEL)
 if not export_btn:
-    s.shot("/tmp/tagcsv-buttons-fail.png")
+    s.shot(os.path.join(fixture.SCRATCH, "tagcsv-buttons-fail.png"))
     fail(f"no unique Export button in the pane (looked for {EXPORT_LABEL})", s)
 print(f"  found exactly one Import button: {import_btn.get('label')!r}")
 print(f"  found exactly one Export button: {export_btn.get('label')!r}")
@@ -508,10 +508,10 @@ for name, btn in (("Import", import_btn), ("Export", export_btn)):
     b = btn.get("bounds") or {}
     right = b.get("x", 0) + b.get("width", 0)
     if right > pane_right + 2:
-        s.shot("/tmp/tagcsv-clip-fail.png")
+        s.shot(os.path.join(fixture.SCRATCH, "tagcsv-clip-fail.png"))
         fail(f"{name}… overflows the pane (right={right:.0f} > {pane_right:.0f})", s)
 print(f"  neither button is clipped (pane right edge ~{pane_right:.0f}px)")
-s.shot("/tmp/tagcsv-buttons.png")
+s.shot(os.path.join(fixture.SCRATCH, "tagcsv-buttons.png"))
 
 # ── 4. What this probe deliberately does NOT do, and why ────────────────────
 # Spelled out per assertion so a reader of the transcript (not just the

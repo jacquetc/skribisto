@@ -198,12 +198,11 @@ fixture.assert_no_running_instance(SKRIBISTO)
 # A sandboxed config, so a desk arrangement left by an earlier run cannot decide
 # whether this one's docks open. Never `XDG_RUNTIME_DIR` — that holds the
 # Wayland socket.
-env = dict(os.environ)
 sandbox = os.path.join(root, "xdg")
+env = fixture.sandbox_env(os.path.join(sandbox, "config"), extra={
+    "XDG_DATA_HOME": os.path.join(sandbox, "data")})
 os.makedirs(os.path.join(sandbox, "config"), exist_ok=True)
-os.makedirs(os.path.join(sandbox, "data", "skribisto"), exist_ok=True)
-env["XDG_CONFIG_HOME"] = os.path.join(sandbox, "config")
-env["XDG_DATA_HOME"] = os.path.join(sandbox, "data")
+os.makedirs(fixture.app_data_dir(env), exist_ok=True)
 # …and pinned to English, because the segments and rows this probe clicks are
 # matched by their labels. An unset `ui.locale` is not "English", it is the
 # operator's OS language (`startup.rs`'s `auto_detect_os_locale`), so leaving it

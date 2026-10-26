@@ -7,8 +7,8 @@ use std::rc::Rc;
 
 use teksilo::prelude::*;
 use teksilo::widgets::{
-    Center, CollapsePolicy, Expand, HStack, IconButtonSize, MenuBar, NativeMenuMode, Padding,
-    TextWidget, TitleBar, VStack, WindowFrame,
+    Center, CollapsePolicy, Expand, HStack, IconButtonSize, MenuBar, Padding, TextWidget, TitleBar,
+    VStack, WindowFrame,
 };
 
 use frontend::AppContext;
@@ -125,9 +125,11 @@ pub fn launcher_window_config(app_ctx: Rc<AppContext>) -> WindowConfig {
                     // `MenuModel` is mirrored into the global bar at the top of
                     // the screen (`install_native_menu` in `lib.rs`) and a second
                     // copy in-window, where no Mac user looks, is all `Coexist`
-                    // would buy. The flag is inert off macOS.
+                    // would buy. The flag is inert off macOS. (A debug build can
+                    // keep both, for the automation probes: see
+                    // `project_menus::native_menu_mode`.)
                     let menubar = MenuBar::from_model(super::launcher_menu::build_launcher_menu())
-                        .native_on_macos(NativeMenuMode::Suppress)
+                        .native_on_macos(super::project_menus::native_menu_mode())
                         .collapse_policy(CollapsePolicy::Always)
                         .hamburger_size(IconButtonSize::Toolbar);
                     // The menu bar goes in `leading`, never in `center`: the

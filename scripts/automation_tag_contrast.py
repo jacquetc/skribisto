@@ -342,9 +342,9 @@ def settings_open(s):
 
 
 def open_settings(s):
-    for args in ({"key": ",", "ctrl": True},
-                 {"key": ",", "modifiers": ["ctrl"]},
-                 {"key": "Comma", "modifiers": ["ctrl"]}):
+    for args in ({"key": ",", "command": True},
+                 {"key": ",", "command": True},
+                 {"key": "Comma", "command": True}):
         s.call("inject_key", args)
         for _ in range(10):
             time.sleep(0.4)
@@ -835,9 +835,9 @@ try:
     if settings_open(s):
         fail_restoring("Settings window did not close after Done (Light)")
     clear_hover(s)
-    s.shot("/tmp/tagcontrast-light-full.png")
+    s.shot(os.path.join(fixture.SCRATCH, "tagcontrast-light-full.png"))
     row = find_dot_row(s, "LIGHT", fail_restoring)
-    light_png = s.shot("/tmp/tagcontrast-light-dots.png", node=row["id"])
+    light_png = s.shot(os.path.join(fixture.SCRATCH, "tagcontrast-light-dots.png"), node=row["id"])
     if not light_png:
         fail_restoring("the node-cropped screenshot of the LIGHT dot row returned no image data")
 
@@ -853,9 +853,9 @@ try:
     if settings_open(s):
         fail_restoring("Settings window did not close after Done (Dark)")
     clear_hover(s)
-    s.shot("/tmp/tagcontrast-dark-full.png")
+    s.shot(os.path.join(fixture.SCRATCH, "tagcontrast-dark-full.png"))
     row = find_dot_row(s, "DARK", fail_restoring)
-    dark_png = s.shot("/tmp/tagcontrast-dark-dots.png", node=row["id"])
+    dark_png = s.shot(os.path.join(fixture.SCRATCH, "tagcontrast-dark-dots.png"), node=row["id"])
     if not dark_png:
         fail_restoring("the node-cropped screenshot of the DARK dot row returned no image data")
 
@@ -901,8 +901,8 @@ try:
               "This run proves nothing about SC 1.4.11 visibility and must not be read as a pass.")
         sys.exit(2)
 
-    pil_cross_check("/tmp/tagcontrast-light-dots.png", lw, lh, lpixels)
-    pil_cross_check("/tmp/tagcontrast-dark-dots.png", dw, dh, dpixels)
+    pil_cross_check(os.path.join(fixture.SCRATCH, "tagcontrast-light-dots.png"), lw, lh, lpixels)
+    pil_cross_check(os.path.join(fixture.SCRATCH, "tagcontrast-dark-dots.png"), dw, dh, dpixels)
 
     # ── Assertion 4: ARMED DETECTOR — the theme genuinely re-rendered ───────
     print("\n== assertion 4: the DARK screenshot is actually dark ==")

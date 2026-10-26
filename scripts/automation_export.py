@@ -29,7 +29,7 @@ import automation_fixture as fixture  # noqa: E402
 
 SKRIBISTO = fixture.skribisto_binary()
 MCP = fixture.mcp_binary()
-OUT = os.environ.get("SHOT_DIR", "/tmp")
+OUT = os.environ.get("SHOT_DIR", fixture.SCRATCH)
 
 _here = os.path.dirname(os.path.abspath(__file__))
 _default_fixture = os.path.join(_here, "..", "resources", "test", "skribisto_test_project.skrib")
@@ -265,7 +265,7 @@ if adaptive:
 # ── 5. Choose… (Custom scope) via Ctrl+Shift+E: the checkbox tree. ───────────────
 call("inject_key", {"key": "Escape"})  # dismiss the quick-scope panel
 settle()
-call("inject_key", {"key": "e", "ctrl": True, "shift": True})
+call("inject_key", {"key": "e", "command": True, "shift": True})
 settle()
 time.sleep(0.6)
 lb = labels()

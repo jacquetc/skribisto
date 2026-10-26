@@ -133,7 +133,7 @@ check(err.count("unknown setting") + err.count("expects") == 4,
 
 # A refused launch must not leave the pins behind: the run exited before applying
 # anything, so the sandbox's settings must be exactly as isolated_config left them.
-general_b = os.path.join(env_b["XDG_CONFIG_HOME"], "skribisto", "general.toml")
+general_b = os.path.join(fixture.app_config_dir(env_b), "general.toml")
 with open(general_b, "rb") as fh:
     after = flatten(tomllib.load(fh))
 check(after.get("ui.locale") == "en-US",
@@ -266,7 +266,7 @@ check(ENGLISH not in joined,
       joined[:400])
 
 # And the pins are on disk in the sandbox afterwards, where a follow-up run sees them.
-general_c = os.path.join(env_c["XDG_CONFIG_HOME"], "skribisto", "general.toml")
+general_c = os.path.join(fixture.app_config_dir(env_c), "general.toml")
 with open(general_c, "rb") as fh:
     live = flatten(tomllib.load(fh))
 check(live.get("ui.locale") == "fr-FR",

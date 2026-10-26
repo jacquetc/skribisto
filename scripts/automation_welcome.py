@@ -42,11 +42,10 @@ mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
 # example's fixed temp path) — the label-based lookup would then match either
 # the Examples-tab row or a stale Recent-Works row.
 _sandbox = tempfile.mkdtemp(prefix="skribisto_welcome_test_")
-SANDBOX_ENV = {
-    "XDG_CONFIG_HOME": os.path.join(_sandbox, "config"),
+SANDBOX_ENV = fixture.sandbox_env(os.path.join(_sandbox, "config"), base={}, extra={
     "XDG_DATA_HOME": os.path.join(_sandbox, "data"),
     "HOME": _sandbox,
-}
+})
 # Every label this probe matches is written in English, so the language has to be
 # SET rather than inherited: an unset `ui.locale` is not "English", it is the
 # operator's OS language (`startup.rs`'s `auto_detect_os_locale`), so the probe
@@ -250,7 +249,7 @@ if not s.wait_label("starforgers", timeout=5):
     fail("Examples pane did not reveal the bundled example (Starforgers) after invoke_action click",
          s.app, s.mcp, s.log)
 print("PASS: Examples tab switched the pane to the bundled example (Starforgers)")
-s.shot("/tmp/sk-welcome-shot.png")
+s.shot(os.path.join(fixture.SCRATCH, "sk-welcome-shot.png"))
 
 # ── Open the example: the Launcher must open a project window BEFORE closing
 #    itself (the critical ordering rule — reversed, this would quit the app) —
@@ -306,7 +305,7 @@ if not s.wait_label("starforgers", timeout=10):
     fail("the project window never shows the opened work's content", s.app, s.mcp, s.log)
 print("PASS: opening Starforgers from the Launcher opened the project window, "
       "then closed the Launcher — one window remains, process still running")
-s.shot("/tmp/sk-welcome-project-shot.png")
+s.shot(os.path.join(fixture.SCRATCH, "sk-welcome-project-shot.png"))
 s.close()
 
 # ── Phase 2: a project path → the Launcher never appears, one window only ───
@@ -321,7 +320,7 @@ win2 = s2.list_windows()
 if len(win2) != 1:
     fail(f"expected exactly one window when launched with a path, got {win2}", s2.app, s2.mcp, s2.log)
 loaded = s2.wait_label("starforgers", timeout=12)
-s2.shot("/tmp/sk-welcome-gate-shot.png")
+s2.shot(os.path.join(fixture.SCRATCH, "sk-welcome-gate-shot.png"))
 s2.close()
 if not loaded:
     fail("project did not appear loaded in Phase 2 (real backend)", None, None, None)

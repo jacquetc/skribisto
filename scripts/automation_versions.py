@@ -54,6 +54,10 @@ SKRIBISTO = fixture.skribisto_binary()
 MCP = fixture.mcp_binary()
 
 project = os.path.abspath(sys.argv[1]) if len(sys.argv) > 1 else None
+if project is None:
+    # Run bare (as `run_automation.py` runs every probe) there is no recorded
+    # past to look at, and nothing this probe checks could be shown.
+    fixture.skip("needs a real project with backups: pass a .skrib path")
 log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
 print(f"app log: {log}")
 
@@ -88,14 +92,14 @@ pins_file = None
 if xdg:
     os.makedirs(os.path.join(xdg, "config"), exist_ok=True)
     os.makedirs(os.path.join(xdg, "data"), exist_ok=True)
-    env["XDG_CONFIG_HOME"] = os.path.join(xdg, "config")
-    env["XDG_DATA_HOME"] = os.path.join(xdg, "data")
+    env = fixture.sandbox_env(os.path.join(xdg, "config"), extra={
+        "XDG_DATA_HOME": os.path.join(xdg, "data")})
     # Start from the default desk. A layout persisted by an earlier run can have
     # the trailing panel dragged to zero width, and a dock with no width is
     # indistinguishable from a dock that failed to open.
     for stale in ("workspace.toml",):
         try:
-            os.remove(os.path.join(xdg, "config", "skribisto", stale))
+            os.remove(os.path.join(fixture.app_config_dir(env), stale))
         except FileNotFoundError:
             pass
     pins_file = fixture.config_pins_file(

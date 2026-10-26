@@ -364,7 +364,7 @@ def main_editor(s, timeout=10):
 
 
 def save(s):
-    s.call("inject_key", {"key": "s", "ctrl": True})
+    s.call("inject_key", {"key": "s", "command": True})
     s.settle()
     time.sleep(2.0)
 
@@ -404,8 +404,8 @@ def settings_open(s):
 
 
 def open_settings(s):
-    for args in ({"key": ",", "ctrl": True}, {"key": ",", "modifiers": ["ctrl"]},
-                 {"key": "Comma", "modifiers": ["ctrl"]}):
+    for args in ({"key": ",", "command": True}, {"key": ",", "command": True},
+                 {"key": "Comma", "command": True}):
         s.call("inject_key", args)
         for _ in range(10):
             time.sleep(0.4)
@@ -895,7 +895,7 @@ if not wait_for(roster_ready, tries=25, delay=0.4):
         print(f"  roster heading found: {heading is not None}; "
               f"rows in band: {[text_of(n) for n in rows]}")
         diag(s, ITEM_NOTE1)
-        s.shot("/tmp/mentions-roster-fail.png")
+        s.shot(os.path.join(fixture.SCRATCH, "mentions-roster-fail.png"))
         fail(f"{ITEM_ZEUS!r}'s roster never grew a row for {ITEM_NOTE1!r} after typing "
              f"the alias, count expected exactly 1", s)
 
@@ -914,7 +914,7 @@ if not pin_btn:
     fail(f"the roster row for {ITEM_NOTE1!r} carries no pin control — it should be a "
          "SUGGESTION, not a confirmed reference, until pinned", s)
 print(f"  {ITEM_ZEUS!r}'s roster names {ITEM_NOTE1!r} as a suggestion (pin present)")
-s.shot("/tmp/mentions-roster.png")
+s.shot(os.path.join(fixture.SCRATCH, "mentions-roster.png"))
 
 
 # ═════════════════════════════════════════════════════════════════════════
@@ -935,7 +935,7 @@ for _ in range(20):
         break
 if not tip:
     diag(s, ITEM_NOTE1)
-    s.shot("/tmp/mentions-tooltip-fail.png")
+    s.shot(os.path.join(fixture.SCRATCH, "mentions-tooltip-fail.png"))
     fail(f"hovering the {ITEM_NOTE1!r} roster row opened no tooltip labelled "
          f"{ITEM_NOTE1!r}", s)
 print(f"  tooltip opened, labelled {ITEM_NOTE1!r}")
@@ -947,12 +947,12 @@ print(f"  tooltip opened, labelled {ITEM_NOTE1!r}")
 # unrelated chrome text is implausible.
 node, where = find_evidence(s, ["vesparil", "lanternfish"])
 if not node:
-    s.shot("/tmp/mentions-evidence-fail.png")
+    s.shot(os.path.join(fixture.SCRATCH, "mentions-evidence-fail.png"))
     fail("the evidence tooltip opened, but no node in either the accessibility "
          "tree or the full layout tree carries both 'Vesparil' and 'lanternfish' "
          "— the tooltip container rendered with an empty or wrong body", s)
 print(f"  evidence sentence found ({where})")
-s.shot("/tmp/mentions-evidence.png")
+s.shot(os.path.join(fixture.SCRATCH, "mentions-evidence.png"))
 
 
 # ═════════════════════════════════════════════════════════════════════════
@@ -997,12 +997,12 @@ def pin_settled():
 if not wait_for(pin_settled, tries=25, delay=0.4):
     _, band = inspector_section(s, MENTIONS_ROSTER)
     print(f"  rows now: {[text_of(n) for n in band]}")
-    s.shot("/tmp/mentions-pin-fail.png")
+    s.shot(os.path.join(fixture.SCRATCH, "mentions-pin-fail.png"))
     fail(f"after pinning, the roster row for {ITEM_NOTE1!r} and its pin control did "
          "not settle into 'row present, pin gone' — a no-op pin would leave the "
          "button; a pin that also deleted the row would still fail this jointly", s)
 print(f"  {ITEM_NOTE1!r} is now confirmed on {ITEM_ZEUS!r}'s roster (pin gone, row kept)")
-s.shot("/tmp/mentions-pinned.png")
+s.shot(os.path.join(fixture.SCRATCH, "mentions-pinned.png"))
 
 
 # ═════════════════════════════════════════════════════════════════════════
@@ -1021,7 +1021,7 @@ def backlink_ready():
 if not wait_for(backlink_ready, tries=25, delay=0.4):
     diag(s, "mentioned in")
     diag(s, "mentionné dans")
-    s.shot("/tmp/mentions-backlink-fail.png")
+    s.shot(os.path.join(fixture.SCRATCH, "mentions-backlink-fail.png"))
     fail(f"{ITEM_NOTE1!r} shows no '{MENTIONS_BACKLINKS[0]}' section even after "
          f"pinning from {ITEM_ZEUS!r}", s)
 
@@ -1039,7 +1039,7 @@ if len(back_rows) != 1:
 print(f"  backlink present: 1 row, reading {text_of(back_rows[0])!r} "
       f"(row identifies the mentioning scene only by position/count, a known "
       f"limitation — see MentionHit::Found's single `title` field)")
-s.shot("/tmp/mentions-backlink.png")
+s.shot(os.path.join(fixture.SCRATCH, "mentions-backlink.png"))
 
 
 # ═════════════════════════════════════════════════════════════════════════
@@ -1115,7 +1115,7 @@ def backlink_ready_after_reload():
 if not wait_for(backlink_ready_after_reload, tries=30, delay=0.5):
     diag(s, "mentioned in")
     diag(s, "mentionné dans")
-    s.shot("/tmp/mentions-reload-fail.png")
+    s.shot(os.path.join(fixture.SCRATCH, "mentions-reload-fail.png"))
     fail(f"{ITEM_NOTE1!r}'s backlink did not reappear after relaunch — either the "
          "persisted data did not survive save+reload, or the automatic on-load "
          "scan never completed; either way there is nothing here to prove the "
@@ -1130,7 +1130,7 @@ if not wait_indicator_state(s, "saved", timeout=10):
          "completed — a read-only scan (undoable: false, read_only: true, "
          "QueryUnitOfWork per scan_mentions_uc.rs) has dirtied the project", s)
 print("  the indicator STILL reads saved — the scan did not dirty the project")
-s.shot("/tmp/mentions-final-clean.png")
+s.shot(os.path.join(fixture.SCRATCH, "mentions-final-clean.png"))
 
 s.stop()
 print("\nOK — the story-bible roster, its evidence, pinning, backlinks, and the "

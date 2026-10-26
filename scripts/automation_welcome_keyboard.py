@@ -20,7 +20,7 @@ What this asserts, per list (Recent Works, then Examples):
   3. the rendered pixels change between "focused, no arrow" and "arrowed down
      twice" (visual truth — a sighted keyboard user must see the cursor move).
 
-(2) and (3) are what regress. Screenshots are written to /tmp/sk-kbd-*.png so
+(2) and (3) are what regress. Screenshots are written to `fixture.SCRATCH`/sk-kbd-*.png so
 the difference (or lack of it) can be eyeballed.
 
 Recents are seeded on disk (a sandbox `recents.toml` pointing at 3 real .skrib
@@ -31,6 +31,8 @@ import base64, glob, json, os, select, shutil, subprocess, sys, tempfile, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
+
+fixture.require_linux("open-registry lock files under XDG_RUNTIME_DIR")
 
 SKRIBISTO = fixture.skribisto_binary()
 MCP = fixture.mcp_binary()
@@ -43,11 +45,10 @@ mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
 _sandbox = tempfile.mkdtemp(prefix="skribisto_kbd_test_")
 CONFIG = os.path.join(_sandbox, "config")
 RUNTIME = os.environ.get("XDG_RUNTIME_DIR", "/tmp")
-SANDBOX_ENV = {
-    "XDG_CONFIG_HOME": CONFIG,
+SANDBOX_ENV = fixture.sandbox_env(CONFIG, base={}, extra={
     "XDG_DATA_HOME": os.path.join(_sandbox, "data"),
     "HOME": _sandbox,
-}
+})
 # Every label this probe matches is written in English, so the language has to be
 # SET rather than inherited: an unset `ui.locale` is not "English", it is the
 # operator's OS language (`startup.rs`'s `auto_detect_os_locale`), so the probe
@@ -74,8 +75,8 @@ for name in ("Alpha", "Beta", "Gamma"):
     shutil.copyfile(EXAMPLE, dst)
     PROJECTS.append((name, dst))
 
-os.makedirs(os.path.join(CONFIG, "skribisto"), exist_ok=True)
-with open(os.path.join(CONFIG, "skribisto", "recents.toml"), "w") as fh:
+os.makedirs(fixture.app_config_dir(SANDBOX_ENV), exist_ok=True)
+with open(os.path.join(fixture.app_config_dir(SANDBOX_ENV), "recents.toml"), "w") as fh:
     fh.write("version = 1\n")
     for i, (name, path) in enumerate(PROJECTS):
         fh.write("\n[[items]]\n")
@@ -302,7 +303,7 @@ opened_at_launch = s0.wait_label("binder", timeout=15)
 opened = wait_claim() if opened_at_launch else []
 loaded_alpha = any(p.endswith("Alpha.skrib") for p in opened)
 print(f"  opened: {opened}")
-s0.shot("/tmp/sk-kbd-enter-at-launch.png")
+s0.shot(os.path.join(fixture.SCRATCH, "sk-kbd-enter-at-launch.png"))
 if not opened_at_launch:
     failures.append("FOCUS: pressing Enter right after the Launcher opens did nothing — the "
                     "recents list does not hold keyboard focus, so the highlighted project "
@@ -341,11 +342,11 @@ print(f"AT `focused` on the recents ListBox at open: {listbox.get('focused')}")
 
 s.call("focus_node", {"node": listbox["id"]})
 time.sleep(0.4)
-s.shot("/tmp/sk-kbd-recents-focused.png")
+s.shot(os.path.join(fixture.SCRATCH, "sk-kbd-recents-focused.png"))
 print(f"selected row index after focus, before any arrow: {selected_index(s)}")
 
 s.key("Down")
-one_png = s.shot("/tmp/sk-kbd-recents-down1.png")
+one_png = s.shot(os.path.join(fixture.SCRATCH, "sk-kbd-recents-down1.png"))
 after_one = selected_index(s)
 print(f"selected row index after 1x Down: {after_one}")
 # The cursor steps from the *preselected* row 0 to row 1. It must NOT jump to
@@ -355,7 +356,7 @@ if after_one != 1:
     failures.append(f"RECENTS: the first ArrowDown landed on row {after_one}, expected row 1 "
                     "(step from the preselected top row, skipping nothing)")
 s.key("Down")
-two_png = s.shot("/tmp/sk-kbd-recents-down2.png")
+two_png = s.shot(os.path.join(fixture.SCRATCH, "sk-kbd-recents-down2.png"))
 after_two = selected_index(s)
 print(f"selected row index after 2x Down: {after_two}")
 
@@ -372,7 +373,7 @@ elif after_two != 2:
 if one_png == two_png:
     failures.append("RECENTS: the window pixels are IDENTICAL between ArrowDown #1 and #2 "
                     "— the cursor row does not move on screen "
-                    "(/tmp/sk-kbd-recents-down1.png vs /tmp/sk-kbd-recents-down2.png)")
+                    f"(sk-kbd-recents-down1.png vs sk-kbd-recents-down2.png in {fixture.SCRATCH})")
 else:
     print("recents: pixels changed between the two arrow steps (a cursor is visible)")
 
@@ -409,7 +410,7 @@ if lb2:
     # the first example (and with one bundled example, select nothing at all).
     s2.key("Down")
     idx2 = selected_index(s2)
-    s2.shot("/tmp/sk-kbd-examples-down.png")
+    s2.shot(os.path.join(fixture.SCRATCH, "sk-kbd-examples-down.png"))
     print(f"examples selected row index after Down: {idx2}")
     if idx2 is None:
         failures.append("EXAMPLES: after ArrowDown no row is reported `selected` in the AT tree")

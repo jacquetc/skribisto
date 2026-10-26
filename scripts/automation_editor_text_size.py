@@ -298,7 +298,7 @@ if not any(n.get("focused") for n in nodes()):
     fail("clicking the prose did not focus anything")
 
 # ── 2. Ctrl+= raises the manuscript size, and names the right surface ───────
-call("inject_key", {"key": "=", "ctrl": True})
+call("inject_key", {"key": "=", "command": True})
 settle(3)
 time.sleep(0.4)
 t = readouts()
@@ -312,7 +312,7 @@ print("OK  Ctrl+= raised the manuscript size ->", t[0])
 
 # ── 3. Repeating must update one toast, never stack a queue of them ─────────
 for _ in range(4):
-    call("inject_key", {"key": "=", "ctrl": True})
+    call("inject_key", {"key": "=", "command": True})
     call("settle", {})
 time.sleep(0.4)
 t = readouts()
@@ -324,7 +324,7 @@ print("OK  a burst of five keeps exactly one readout ->", t[0])
 
 # ── 4. Ctrl+- comes back down ───────────────────────────────────────────────
 for _ in range(3):
-    call("inject_key", {"key": "-", "ctrl": True})
+    call("inject_key", {"key": "-", "command": True})
     call("settle", {})
 time.sleep(0.4)
 t = readouts()
@@ -333,7 +333,7 @@ if not t or "110%" not in t[0]:
 print("OK  Ctrl+- lowered it ->", t[0])
 
 # ── 5. Ctrl+0 restores this bundle's own default ────────────────────────────
-call("inject_key", {"key": "0", "ctrl": True})
+call("inject_key", {"key": "0", "command": True})
 settle(3)
 time.sleep(0.4)
 t = readouts()
@@ -383,7 +383,7 @@ print("OK  Ctrl+Wheel down shrank it ->", t[0])
 
 # `screenshot` hands back base64 PNG — it has no `path` argument, and passing
 # one was refused outright (silently, until `call` started reading errors).
-shot = "/tmp/skribisto-text-size.png"
+shot = os.path.join(fixture.SCRATCH, "skribisto-text-size.png")
 res, _ = call("screenshot")
 for c in res.get("content", []):
     if c.get("type") == "image" and c.get("data"):

@@ -46,6 +46,8 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
 
+fixture.require_linux("RSS and thread counts read from /proc")
+
 #: Everything left of this x is the binder dock; the editor pane is to its right.
 PANE_X = 300
 #: How long to let the process settle before sampling a step. Two sampler ticks
@@ -562,7 +564,7 @@ for cycle in range(1, args.cycles + 1):
         # Ctrl+F4 is `editor.tab.close`. Ctrl+W is `work.close` and resolves
         # globally before any tab sees it, which is why the tab command is not
         # the obvious chord.
-        call("inject_key", {"key": "F4", "ctrl": True})
+        call("inject_key", {"key": "F4", "command": True})
         settle()
         mark(f"c{cycle}-tab-closed")
         mark(f"c{cycle}-tab-closed", trim=True)
@@ -570,7 +572,7 @@ for cycle in range(1, args.cycles + 1):
     if not args.skip_tab and args.sites:
         mark(f"c{cycle}-tab-closed", sites=True)
 
-    call("inject_key", {"key": "w", "ctrl": True})
+    call("inject_key", {"key": "w", "command": True})
     e = time.time() + 120
     while time.time() < e:
         if select_project_window() is None:
@@ -623,7 +625,7 @@ if not args.keep:
     # build writes its report *from* a Drop at the end of `run`. Quitting for
     # real is also the only way to see what the process still held at the end.
     try:
-        call("inject_key", {"key": "q", "ctrl": True})
+        call("inject_key", {"key": "q", "command": True})
     except SystemExit:
         raise
     except Exception:

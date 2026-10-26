@@ -199,10 +199,10 @@ main = max(editors, key=lambda n: (n.get("bounds") or {}).get("height", 0))
 
 count, node = word_count(s)
 if count is None:
-    s.shot("/tmp/wordcount-missing.png")
+    s.shot(os.path.join(fixture.SCRATCH, "wordcount-missing.png"))
     fail("no word count in the status bar after opening a scene", s.app, s.mcp, s.log)
 print(f"  word count: {node.get('label')!r}  (= {count})")
-s.shot("/tmp/wordcount-initial.png")
+s.shot(os.path.join(fixture.SCRATCH, "wordcount-initial.png"))
 
 # ── 2. Typing raises the count ───────────────────────────────────────────────
 print("== typing raises the count ==")
@@ -213,7 +213,7 @@ count2, node2 = word_count(s)
 if count2 is None:
     fail("the word count vanished after typing", s.app, s.mcp, s.log)
 print(f"  word count after typing: {node2.get('label')!r}  (= {count2})")
-s.shot("/tmp/wordcount-typed.png")
+s.shot(os.path.join(fixture.SCRATCH, "wordcount-typed.png"))
 if count2 <= count:
     fail(f"the count did not rise after typing 10 words ({count} -> {count2}) — it is "
          "not tracking the live document", s.app, s.mcp, s.log)

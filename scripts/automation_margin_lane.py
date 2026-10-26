@@ -381,7 +381,7 @@ def text_inputs(ns):
 
 
 fields_before = len(text_inputs(ns))
-call("inject_key", {"key": "f", "ctrl": True})
+call("inject_key", {"key": "f", "command": True})
 time.sleep(0.4)
 # Pump frames: the banner's entrance is animated, and an idle app leaves it queued
 # but never scheduled — the same reason `automation_find_banner_probe` does this.

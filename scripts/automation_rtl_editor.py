@@ -21,7 +21,10 @@ import automation_fixture as fixture  # noqa: E402
 
 SKRIBISTO = fixture.skribisto_binary()
 MCP = fixture.mcp_binary()
-PROJECT = os.path.expanduser("~/test_ar.skrib")
+PROJECT = os.path.abspath(sys.argv[1]) if len(sys.argv) > 1 else os.path.expanduser("~/test_ar.skrib")
+if not os.path.exists(PROJECT):
+    # An Arabic-language project is the input; none ships with the repository.
+    fixture.skip(f"needs an Arabic-language project: pass a .skrib path (looked for {PROJECT})")
 
 # "كتب الرجل رسالة طويلة" — "the man wrote a long letter".
 # Three paragraphs, typed into a fresh scene:
@@ -44,8 +47,8 @@ def die(msg, log=None):
 
 fixture.assert_no_running_instance(SKRIBISTO)
 sandbox = tempfile.mkdtemp(prefix="skribisto_rtl_")
-env = {**os.environ, "XDG_CONFIG_HOME": os.path.join(sandbox, "config"),
-       "XDG_DATA_HOME": os.path.join(sandbox, "data"), "HOME": sandbox}
+env = fixture.sandbox_env(os.path.join(sandbox, "config"), extra={
+    "XDG_DATA_HOME": os.path.join(sandbox, "data"), "HOME": sandbox})
 # Pinned to English: "Chapter 1" below is an English label literal, and an
 # unset `ui.locale` is not "English", it is the operator's OS language
 # (`startup.rs`'s `auto_detect_os_locale`).
@@ -153,7 +156,7 @@ while time.time() < end:
         break
     time.sleep(0.5)
 if not eds:
-    shot("/tmp/ar-fail.png")
+    shot(os.path.join(fixture.SCRATCH, "ar-fail.png"))
     die(f"no editor opened; roles: {sorted({n.get('role') for n in nodes()})}", log)
 
 print(f"editors: {len(eds)}")
@@ -180,7 +183,7 @@ for i, para in enumerate(PARAS):
         call("inject_key", {"key": "Return"})
         time.sleep(0.5)
 time.sleep(1.5)
-shot("/tmp/ar-typed.png")
+shot(os.path.join(fixture.SCRATCH, "ar-typed.png"))
 
 after = {n.get("id"): n for n in nodes()}
 tgt = after.get(target.get("id"), {})
@@ -228,15 +231,15 @@ print("screenshot keys:", list(res.keys())[:8])
 for key in ("data", "image", "png", "base64", "content"):
     v = res.get(key)
     if isinstance(v, str) and len(v) > 500:
-        open("/tmp/ar-typed.png", "wb").write(base64.b64decode(v))
-        print("wrote /tmp/ar-typed.png")
+        open(os.path.join(fixture.SCRATCH, "ar-typed.png"), "wb").write(base64.b64decode(v))
+        print("wrote " + os.path.join(fixture.SCRATCH, "ar-typed.png"))
         break
 
 json.dump({"editor_bounds": tbounds, "verdict": verdict,
            "blocks": [{"bounds": n.get("bounds"),
                        "text": str(n.get("value") or n.get("name") or n.get("label"))}
                       for n in inner]},
-          open("/tmp/ar-probe.json", "w"), ensure_ascii=False, indent=2)
+          open(os.path.join(fixture.SCRATCH, "ar-probe.json"), "w"), ensure_ascii=False, indent=2)
 
 print("\nleaving the app running for a screenshot; pid", app.pid)
 if mcp.poll() is None:

@@ -288,6 +288,30 @@ pub(crate) const NOT_ON_MACOS: bool = !cfg!(target_os = "macos");
 /// own Ctrl+Q shortcut cannot cover for that, because the keystroke never
 /// reaches the widget tree to begin with. Routing it hands ⌘Q to the same
 /// guarded `app.quit` action Work ▸ Quit fires, which owns the exit from there.
+/// Debug builds only: set to `1` to keep a window's in-window menu on macOS too.
+/// See [`native_menu_mode`].
+pub(crate) const IN_WINDOW_MENU_ENV: &str = "SKRIBISTO_IN_WINDOW_MENU";
+
+/// How a window's menu shows on macOS: in the system menu bar only
+/// (`Suppress`, the Mac convention), or there **and** in the window (`Coexist`).
+///
+/// `Suppress`, except in a debug build started with
+/// `SKRIBISTO_IN_WINDOW_MENU=1`. The automation probes reach a menu through the
+/// window's accessibility tree, and the bridge cannot open the system menu bar,
+/// so on a Mac every probe that chooses a command from a menu had nothing to
+/// click; the variable lets them run there unchanged. Both copies show the same
+/// `MenuModel`, and what only the system bar does is checked by hand. Inert off
+/// macOS, where the menu is always in the window.
+pub(crate) fn native_menu_mode() -> teksilo::widgets::NativeMenuMode {
+    let keep_in_window = cfg!(debug_assertions)
+        && std::env::var_os(IN_WINDOW_MENU_ENV).is_some_and(|value| value == "1");
+    if keep_in_window {
+        teksilo::widgets::NativeMenuMode::Coexist
+    } else {
+        teksilo::widgets::NativeMenuMode::Suppress
+    }
+}
+
 pub(crate) fn app_standard_menu_base() -> teksilo::widgets::StandardMenu {
     let app = crate::identity::display_name();
     teksilo::widgets::StandardMenu::app()

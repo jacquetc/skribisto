@@ -425,7 +425,7 @@ def new_work_command():
 buttons = new_work_command()
 labels = [lbl for lbl, _ in buttons]
 print(f"  message-box buttons: {labels}")
-s.shot("/tmp/guard-ctrl-n-prompt.png")
+s.shot(os.path.join(fixture.SCRATCH, "guard-ctrl-n-prompt.png"))
 if not buttons:
     if new_work_form_present():
         fail("REGRESSION: Ctrl+N opened the New Work form directly on a dirty project — "
@@ -451,19 +451,19 @@ if dialog_buttons():
 if new_work_form_present():
     fail("cancelling the guard still opened the New Work form", s.app, s.mcp, s.log)
 if not s.wait_label("starforgers", timeout=5):
-    s.shot("/tmp/guard-after-cancel.png")
+    s.shot(os.path.join(fixture.SCRATCH, "guard-after-cancel.png"))
     fail("the project was closed even though the guard was cancelled", s.app, s.mcp, s.log)
 # Patient: dismissing the message box rebuilds the tree, and a snapshot taken
 # mid-rebuild briefly reports no editor — which is a stale read, not a lost tab.
 if not writing_editors(timeout=25):
-    s.shot("/tmp/guard-editor-gone.png")
+    s.shot(os.path.join(fixture.SCRATCH, "guard-editor-gone.png"))
     fail("the editor is gone after cancelling the guard", s.app, s.mcp, s.log)
 
 # Cancel neither saves nor discards: the work must still be *dirty*. If Save had
 # gone grey the edits would have been written (or thrown away) behind the user's
 # back — the very thing this guard exists to prevent.
 if save_item_disabled():
-    s.shot("/tmp/guard-after-cancel.png")
+    s.shot(os.path.join(fixture.SCRATCH, "guard-after-cancel.png"))
     fail("Save went grey after cancelling the guard — the unsaved edits are gone",
          s.app, s.mcp, s.log)
 print("  project still open, editor still there, work still dirty (Save still live)")
@@ -487,10 +487,10 @@ if dialog_buttons():
     fail(f"the guard is still up after Discard: {[l for l, _ in dialog_buttons()]}",
          s.app, s.mcp, s.log)
 if not new_work_form_present():
-    s.shot("/tmp/guard-after-discard.png")
+    s.shot(os.path.join(fixture.SCRATCH, "guard-after-discard.png"))
     fail("Discard dismissed the guard but the New Work form never opened — "
          "the switch was dropped instead of performed", s.app, s.mcp, s.log)
-s.shot("/tmp/guard-new-work-after-discard.png")
+s.shot(os.path.join(fixture.SCRATCH, "guard-new-work-after-discard.png"))
 print("  the New Work form opened after Discard")
 
 print("\nPASS: replacing the project is guarded — Ctrl+N prompts on a dirty work, "

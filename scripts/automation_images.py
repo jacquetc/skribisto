@@ -292,7 +292,7 @@ for lab in (DESCRIBE, RESIZE, RESET):
     check(found.get(lab) is None,
           f"{lab!r} has left the Document menu for the Image menu")
 
-s.shot("/tmp/images-document-menu.png")
+s.shot(os.path.join(fixture.SCRATCH, "images-document-menu.png"))
 esc()
 
 # ...and live once there is one. Clicking into the prose is what sets the latch;
@@ -339,7 +339,7 @@ if open_menu("document"):
     ins2 = rows_of([INSERT]).get(INSERT)
     check(ins2 is not None and ins2.get("disabled") is not True,
           "Insert image goes live once the caret is in the prose")
-    s.shot("/tmp/images-document-menu-caret.png")
+    s.shot(os.path.join(fixture.SCRATCH, "images-document-menu-caret.png"))
     esc()
 
 # ---------------------------------------------------------------- Image menu
@@ -358,7 +358,7 @@ check(open_menu("work"), "Work menu opens (no duplicate-mnemonic panic)")
 cover = rows_of(["Book cover\u2026", "Remove the cover"])
 for lab, n in cover.items():
     check(n is None, f"Work menu no longer offers {lab!r}")
-s.shot("/tmp/images-work-menu.png")
+s.shot(os.path.join(fixture.SCRATCH, "images-work-menu.png"))
 esc()
 
 # ----------------------------------------------------- a Book's own page
@@ -384,7 +384,7 @@ if book:
     check("No cover yet" in texts, "the Book's page says it has no cover yet")
     check(s.match(["choose\u2026"], exact=True) is not None, "and offers Choose\u2026")
     check(s.match(["remove"], exact=True) is None, "but no Remove while there is nothing to remove")
-    s.shot("/tmp/images-book-cover.png")
+    s.shot(os.path.join(fixture.SCRATCH, "images-book-cover.png"))
 
 # ------------------------------------------------- Settings: export styles
 # The style is what decides whether an exported Markdown gets its pictures
@@ -402,7 +402,7 @@ print("== Settings: the export-styles pane ==")
 # buttons this pane exposes to the AT tree at its top level are `Reset to
 # defaults` and `Import…`. A script that clicked its way there would be one
 # layout change away from pressing Reset on the writer's own styles.
-for args in ({"key": ",", "ctrl": True}, {"key": ",", "modifiers": ["ctrl"]}):
+for args in ({"key": ",", "command": True}, {"key": ",", "command": True}):
     s.call("inject_key", args)
     time.sleep(2.5)
     if has_any("reset to defaults", "r\u00e9initialiser"):
@@ -437,7 +437,7 @@ crumb = [n.get("label") for n in s.nodes()
          if n.get("role") == "Link" and (n.get("label") or "").strip()]
 check(any("Export" in (c or "") for c in crumb),
       f"the pane rendered (breadcrumb: {crumb})")
-s.shot("/tmp/images-export-styles.png")
+s.shot(os.path.join(fixture.SCRATCH, "images-export-styles.png"))
 esc(4)
 
 # ---------------------------------------------------------------- report

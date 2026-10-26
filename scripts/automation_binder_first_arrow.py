@@ -26,8 +26,8 @@ EXAMPLE = fixture.repo_path("resources/examples/starforgers/Starforgers.skrib")
 
 sandbox = tempfile.mkdtemp(prefix="skribisto_binder_kbd_")
 cfg_home = os.path.join(sandbox, "config")
-env = {**os.environ, "XDG_CONFIG_HOME": cfg_home,
-       "XDG_DATA_HOME": os.path.join(sandbox, "data"), "HOME": sandbox}
+env = fixture.sandbox_env(cfg_home, extra={
+    "XDG_DATA_HOME": os.path.join(sandbox, "data"), "HOME": sandbox})
 work = os.path.join(sandbox, "Starforgers.skrib")
 shutil.copyfile(EXAMPLE, work)
 

@@ -199,12 +199,12 @@ if not editors(s):
 #      shortcut is nowhere near the button, and before the framework gained
 #      that mechanism a popover could only be opened by clicking its trigger.
 print("== Ctrl+G opens the popup ==")
-s.call("inject_key", {"key": "g", "ctrl": True})
+s.call("inject_key", {"key": "g", "command": True})
 if not wait_for(lambda: popup_open(s), timeout=10):
-    s.shot("/tmp/goto-not-open.png")
+    s.shot(os.path.join(fixture.SCRATCH, "goto-not-open.png"))
     fail("Ctrl+G did not open the Go to popup", s.app, s.mcp, s.log)
 print("  popup open (search field present)")
-s.shot("/tmp/goto-open.png")
+s.shot(os.path.join(fixture.SCRATCH, "goto-open.png"))
 
 # ── 2. Typing narrows the tree, keeping ancestors.
 print("== typing filters the binder ==")
@@ -221,7 +221,7 @@ print("== typing filters the binder ==")
 fields = [n for n in s.nodes()
           if n.get("role") == "TextInput" and n.get("focused")]
 if len(fields) != 1:
-    s.shot("/tmp/goto-field-ambiguous.png")
+    s.shot(os.path.join(fixture.SCRATCH, "goto-field-ambiguous.png"))
     fail(f"expected the popover's search field to hold focus, found {len(fields)} "
          f"focused text inputs", s.app, s.mcp, s.log)
 field = fields[0]
@@ -229,7 +229,7 @@ before = len([n for n in s.nodes() if n.get("role") == "TreeItem"])
 s.call("type_text", {"node": field["id"], "text": "epi"})  # matches Epilogue only
 time.sleep(1.2)
 after = len([n for n in s.nodes() if n.get("role") == "TreeItem"])
-s.shot("/tmp/goto-filtered.png")
+s.shot(os.path.join(fixture.SCRATCH, "goto-filtered.png"))
 if not (0 < after < before):
     fail(f"the query did not narrow the tree (before={before}, after={after})",
          s.app, s.mcp, s.log)
@@ -245,16 +245,16 @@ s.call("inject_key", {"key": "ArrowDown"})
 time.sleep(0.5)
 s.call("inject_key", {"key": "Enter"})
 if not wait_for(lambda: not popup_open(s), timeout=10):
-    s.shot("/tmp/goto-enter-did-nothing.png")
+    s.shot(os.path.join(fixture.SCRATCH, "goto-enter-did-nothing.png"))
     fail("Enter did not act on the highlighted row", s.app, s.mcp, s.log)
 if not wait_for(lambda: has(s, "epilogue"), timeout=10):
-    s.shot("/tmp/goto-enter-wrong-target.png")
+    s.shot(os.path.join(fixture.SCRATCH, "goto-enter-wrong-target.png"))
     fail("Enter closed the popup without opening the match", s.app, s.mcp, s.log)
 print("  jumped to Epilogue and closed")
-s.shot("/tmp/goto-jumped.png")
+s.shot(os.path.join(fixture.SCRATCH, "goto-jumped.png"))
 
 # Reopen for the Escape checks below.
-s.call("inject_key", {"key": "g", "ctrl": True})
+s.call("inject_key", {"key": "g", "command": True})
 if not wait_for(lambda: popup_open(s), timeout=10):
     fail("could not reopen the popup", s.app, s.mcp, s.log)
 
@@ -271,21 +271,21 @@ print("== in distraction-free, Escape closes only the popup ==")
 s.call("inject_key", {"key": "F11"})
 if not wait_for(lambda: has(s, "exit distraction-free"), timeout=10):
     fail("could not enter distraction-free", s.app, s.mcp, s.log)
-s.call("inject_key", {"key": "g", "ctrl": True})
+s.call("inject_key", {"key": "g", "command": True})
 if not wait_for(lambda: popup_open(s), timeout=10):
-    s.shot("/tmp/goto-df-not-open.png")
+    s.shot(os.path.join(fixture.SCRATCH, "goto-df-not-open.png"))
     fail("Ctrl+G did not open the popup inside distraction-free", s.app, s.mcp, s.log)
-s.shot("/tmp/goto-df-open.png")
+s.shot(os.path.join(fixture.SCRATCH, "goto-df-open.png"))
 s.call("inject_key", {"key": "Escape"})
 if not wait_for(lambda: not popup_open(s), timeout=10):
     fail("Escape did not close the popup in distraction-free", s.app, s.mcp, s.log)
 time.sleep(0.6)
 if not has(s, "exit distraction-free"):
-    s.shot("/tmp/goto-df-escaped-out.png")
+    s.shot(os.path.join(fixture.SCRATCH, "goto-df-escaped-out.png"))
     fail("Escape closed the popup AND left distraction-free — one keystroke "
          "must not do two things", s.app, s.mcp, s.log)
 print("  popup closed, still in distraction-free")
-s.shot("/tmp/goto-df-after-escape.png")
+s.shot(os.path.join(fixture.SCRATCH, "goto-df-after-escape.png"))
 
 print("\nPASS: Go to opens by shortcut, filters the binder, and its Escape is "
       "scoped to the popup even inside distraction-free.")

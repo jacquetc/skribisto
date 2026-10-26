@@ -202,8 +202,8 @@ if not s.wait_label("starforgers", timeout=15):
     fail("example did not load", s.app, s.mcp, s.log)
 print("example loaded.")
 
-for args in ({"key": ",", "ctrl": True}, {"key": ",", "modifiers": ["ctrl"]},
-             {"key": "Comma", "modifiers": ["ctrl"]}):
+for args in ({"key": ",", "command": True}, {"key": ",", "command": True},
+             {"key": "Comma", "command": True}):
     s.call("inject_key", args)
     time.sleep(0.8)
     if settings_open():
@@ -236,8 +236,8 @@ print("punctuation leaf clicked.")
 # verifies the tree registration and leaves the body to the screenshot.
 print("tree registration verified; capturing the pane.")
 
-s.shot("/tmp/skribisto-punctuation.png")
-print("screenshot written to /tmp/skribisto-punctuation.png")
+s.shot(os.path.join(fixture.SCRATCH, "skribisto-punctuation.png"))
+print(f"screenshot written to {os.path.join(fixture.SCRATCH, 'skribisto-punctuation.png')}")
 
 s.call("inject_key", {"key": "Escape"})
 time.sleep(0.5)

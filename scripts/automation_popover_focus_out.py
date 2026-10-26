@@ -280,7 +280,7 @@ def main():
         key(sess, "Escape")
         time.sleep(0.3)
 
-    sess.shot("/tmp/popover-after-tab.png")
+    sess.shot(os.path.join(fixture.SCRATCH, "popover-after-tab.png"))
     checked = [r for r in results if r[1] != "skip"]
     bad = [r for r in checked if r[1] != "ok"]
     print(f"\n  {len(checked)} popover(s) actually exercised, {len(bad)} bad")

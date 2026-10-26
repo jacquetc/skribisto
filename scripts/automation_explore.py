@@ -194,8 +194,8 @@ try:
     res, _ = call("screenshot")
     for c in res.get("content", []):
         if c.get("type") == "image" and c.get("data"):
-            open("/tmp/sk-explore-shot.png", "wb").write(base64.b64decode(c["data"]))
-            print("screenshot -> /tmp/sk-explore-shot.png")
+            open(os.path.join(fixture.SCRATCH, "sk-explore-shot.png"), "wb").write(base64.b64decode(c["data"]))
+            print("screenshot -> " + os.path.join(fixture.SCRATCH, "sk-explore-shot.png"))
 except Exception as e:
     print("screenshot failed:", e)
 

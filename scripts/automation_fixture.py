@@ -77,7 +77,7 @@ def assert_no_running_instance(binary=None, strict=False):
     """
     binary = binary or os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "target", "debug", "skribisto",
+        "target", "debug", "skribisto" + EXE,
     )
     try:
         out = subprocess.run(["pgrep", "-af", binary], capture_output=True, text=True).stdout
@@ -101,6 +101,211 @@ def assert_no_running_instance(binary=None, strict=False):
         )
     print(f"note      : {len(live)} other instance(s) of {binary} are running; "
           "launching with --new-instance in a private config, so they are ignored")
+
+
+# ---------------------------------------------------------------------------
+# Platforms
+# ---------------------------------------------------------------------------
+#
+# The probes were written on Linux and sandbox the app with `XDG_CONFIG_HOME`.
+# teksilo resolves the app's directories with etcetera's *app* strategy
+# (`AppPaths::new` calls `choose_app_strategy`), which is XDG on Linux and on
+# macOS alike (`~/.config`, `~/.local/share`, not `~/Library`; measured on the Mac
+# 2026-10-26, whatever teksilo's own doc comment says) and `%APPDATA%` on Windows:
+# there, a probe that set only `XDG_CONFIG_HOME` ran against the machine's real
+# settings, and wrote into them. So every sandbox is built by [`sandbox_env`],
+# and every path into one comes from [`app_config_dir`] or [`app_data_dir`]. The
+# same probe then isolates itself on all three platforms, and reads back the
+# files the app really wrote.
+
+#: `identity::AppIdentity::community()`'s triple, from which `AppPaths::new`
+#: derives the app's directory names on every platform.
+APP_QUALIFIER, APP_ORGANIZATION, APP_NAME = "eu", "skribisto", "Skribisto"
+
+IS_WINDOWS = sys.platform == "win32"
+IS_MACOS = sys.platform == "darwin"
+IS_LINUX = sys.platform.startswith("linux")
+
+#: The suffix cargo gives an executable on this platform.
+EXE = ".exe" if IS_WINDOWS else ""
+
+#: The exit status of a probe that does not apply on this machine (the automake
+#: convention). `run_automation.py` reports it as SKIP, never as a pass.
+SKIP_EXIT = 77
+
+
+if IS_WINDOWS:
+    # Every probe waits for the MCP client's next line with
+    # `select.select([mcp.stdout], [], [], timeout)`. Windows' `select` takes
+    # sockets only and raises on a pipe, so on Windows that call is answered here
+    # instead: a pipe is ready when `PeekNamedPipe` reports bytes waiting in it
+    # (or the pipe has closed, so that `readline` returns ""), which is what
+    # `select` reports for a pipe on Linux. Installed on the module, not handed
+    # to the probes, because they call `select.select` through the module at
+    # call time; anything that is not a pipe goes to the real `select`.
+    import ctypes
+    import msvcrt
+    import select as _select
+    from ctypes import wintypes
+
+    _peek_named_pipe = ctypes.WinDLL("kernel32", use_last_error=True).PeekNamedPipe
+    _peek_named_pipe.argtypes = [wintypes.HANDLE, ctypes.c_void_p, wintypes.DWORD,
+                                 ctypes.c_void_p, ctypes.POINTER(wintypes.DWORD),
+                                 ctypes.c_void_p]
+    _peek_named_pipe.restype = wintypes.BOOL
+    _socket_select = _select.select
+
+    def _pipe_handle(stream):
+        try:
+            return msvcrt.get_osfhandle(stream.fileno())
+        except (AttributeError, OSError, ValueError):
+            return None
+
+    def _pipe_ready(handle):
+        waiting = wintypes.DWORD(0)
+        if not _peek_named_pipe(handle, None, 0, None, ctypes.byref(waiting), None):
+            return True  # closed: readable, and the read reports the end
+        return waiting.value > 0
+
+    def _select_with_pipes(rlist, wlist, xlist, timeout=None):
+        handles = [(stream, _pipe_handle(stream)) for stream in rlist]
+        if wlist or xlist or any(handle is None for _, handle in handles):
+            return _socket_select(rlist, wlist, xlist, timeout)
+        deadline = None if timeout is None else time.monotonic() + timeout
+        while True:
+            ready = [stream for stream, handle in handles if _pipe_ready(handle)]
+            if ready or (deadline is not None and time.monotonic() >= deadline):
+                return ready, [], []
+            time.sleep(0.01)
+
+    _select.select = _select_with_pipes
+
+
+def skip(reason):
+    """End the probe as skipped, saying why. Never use it for a failure."""
+    print(f"SKIP: {reason}", flush=True)
+    sys.exit(SKIP_EXIT)
+
+
+def require_linux(reason):
+    """Skip unless on Linux, for a probe that drives something only Linux has
+    (KWin, a `kdeglobals`, `XDG_RUNTIME_DIR`, `/proc`). `reason` names it."""
+    if not IS_LINUX:
+        skip(f"Linux only: {reason}")
+
+
+def sandbox_env(config_home, extra=None, base=None):
+    """The environment of a run whose settings all live under `config_home`.
+
+    `config_home` is the `XDG_CONFIG_HOME` on Linux and macOS, and on Windows
+    it holds `%APPDATA%` and `%LOCALAPPDATA%`. `extra` is merged in first, so a
+    probe's own variables (`XDG_DATA_HOME`, a `HOME`) survive.
+
+    macOS adds one thing: the app's sockets live in its data directory, and
+    Darwin's `sun_path` holds 104 bytes, which a data directory deep in a
+    scratch folder overflows (the bind then fails without a word). So there the
+    data directory is reached through a short link in `/tmp` (see
+    [`_short_link`]): the probe's own `XDG_DATA_HOME` when it set one, else a
+    `data` folder beside `config_home`. Never the machine's real
+    `~/.local/share`, which a probe that set no data directory used to share.
+
+    `base` defaults to this process's environment.
+    """
+    env = dict(os.environ if base is None else base)
+    env.update(extra or {})
+    env["XDG_CONFIG_HOME"] = config_home
+    if IS_MACOS:
+        data_home = (extra or {}).get("XDG_DATA_HOME") or os.path.join(config_home, "data")
+        env["XDG_DATA_HOME"] = _short_link(data_home)
+    elif IS_WINDOWS:
+        env["APPDATA"] = os.path.join(config_home, "AppData", "Roaming")
+        env["LOCALAPPDATA"] = os.path.join(config_home, "AppData", "Local")
+    return env
+
+
+def _short_link(path):
+    """A short path in `/tmp` to the directory `path` (macOS, for sockets).
+
+    The app binds its sockets in `<data dir>/skribisto/run/`, and Darwin's
+    `sun_path` holds 104 bytes with the NUL. A symlink named after a hash of
+    `path` keeps that well inside the limit: the same directory always gets the
+    same link, and every file still lands in `path`.
+    """
+    import hashlib
+
+    path = os.path.abspath(path)
+    os.makedirs(path, exist_ok=True)
+    link = "/tmp/sk-" + hashlib.sha1(path.encode("utf-8")).hexdigest()[:10]
+    if os.path.islink(link) and os.readlink(link) != path:
+        os.remove(link)
+    if not os.path.lexists(link):
+        os.symlink(path, link)
+    return link
+
+
+def looks_like_path(text):
+    """Does a field's text read as a file system path, on this platform too?
+    (`C:\\Users\\...` has no `/` in it.)"""
+    text = str(text or "")
+    return os.path.isabs(text) or "/" in text or "\\" in text
+
+
+
+def app_config_dir(env):
+    """Where the app launched with `env` keeps its settings (`general.toml`,
+    `workspace.toml`, ...), as `AppPaths::config_dir` resolves it."""
+    if IS_WINDOWS:
+        return os.path.join(env["APPDATA"], APP_ORGANIZATION, APP_NAME, "config")
+    root = env.get("XDG_CONFIG_HOME") or os.path.join(env["HOME"], ".config")
+    return os.path.join(root, APP_NAME.lower())
+
+
+def app_data_dir(env):
+    """Where the app launched with `env` keeps its data, as
+    `AppPaths::data_dir` resolves it."""
+    if IS_WINDOWS:
+        return os.path.join(env["APPDATA"], APP_ORGANIZATION, APP_NAME, "data")
+    root = env.get("XDG_DATA_HOME") or os.path.join(env["HOME"], ".local", "share")
+    return os.path.join(root, APP_NAME.lower())
+
+
+def stop_strays(binary=None):
+    """Kill every process running `binary` (this checkout's debug build by
+    default), and only those: an installed Skribisto, or one started from
+    another checkout, is left alone. Returns how many were asked to stop.
+
+    For a runner between two probes, and for the probes that start by clearing
+    the way (they used `pkill -x skribisto`, which also ended an installed
+    Skribisto and whatever was open in it).
+    """
+    binary = os.path.abspath(binary or skribisto_binary())
+    if IS_WINDOWS:
+        script = (
+            "$n = 0; Get-Process | Where-Object { $_.Path -eq $args[0] } | "
+            "ForEach-Object { Stop-Process -Id $_.Id -Force; $n++ }; $n"
+        )
+        try:
+            out = subprocess.run(
+                ["powershell", "-NoProfile", "-Command", script, binary],
+                capture_output=True, text=True, timeout=60).stdout
+            return int(out.strip() or 0)
+        except (OSError, subprocess.SubprocessError, ValueError):
+            return 0
+    try:
+        # POSIX ERE, which pgrep reads: escape its specials only (Python's
+        # `re.escape` also escapes `-`, which ERE leaves undefined).
+        pattern = "^" + re.sub(r"([.^$*+?()\[\]{}|\\])", r"\\\1", binary) + "( |$)"
+        out = subprocess.run(["pgrep", "-f", pattern],
+                             capture_output=True, text=True).stdout
+    except (OSError, subprocess.SubprocessError):
+        return 0
+    pids = [int(p) for p in out.split() if p.isdigit() and int(p) != os.getpid()]
+    for pid in pids:
+        try:
+            os.kill(pid, 9)
+        except OSError:
+            pass
+    return len(pids)
 
 
 def toml_scalar(value):
@@ -134,7 +339,8 @@ def toml_pins(pins):
     return "".join(f"{key} = {toml_scalar(value)}\n" for key, value in sorted(pins.items()))
 
 
-def write_settings(config_home, locale="en-US", dark=False, show_welcome=True, pins=None):
+def write_settings(config_home, locale="en-US", dark=False, show_welcome=True, pins=None,
+                   pace_summary=False):
     """Write `general.toml` into a sandbox **you** already built. Returns its path.
 
     The other half of [`isolated_config`], for the probes that roll their own
@@ -153,19 +359,27 @@ def write_settings(config_home, locale="en-US", dark=False, show_welcome=True, p
     label literals in these scripts are written in; pass `locale=` to assert on
     a translation deliberately.
 
-    `config_home` is the directory the probe puts in `XDG_CONFIG_HOME`;
-    `AppPaths::new("eu", "skribisto", "Skribisto")` resolves to `skribisto`
-    under it and `config_file("general")` appends `.toml` — hence the layout
-    written here. Nothing validates the keys — see `isolated_config`'s note on
-    pairing this with `config_pins_file` where that matters.
+    `config_home` is the directory the probe hands [`sandbox_env`] (on Linux,
+    the one it puts in `XDG_CONFIG_HOME`); the file goes where the app launched
+    with that sandbox reads it, [`app_config_dir`], on every platform. Nothing
+    validates the keys — see `isolated_config`'s note on pairing this with
+    `config_pins_file` where that matters.
+
+    `pace_summary` is the "Where the book stands" card a project with a pace plan
+    shows as it opens (`pace.summary_on_open`), off unless a probe asks for it.
+    It is an in-window modal that takes the focus, and since teksilo 0.21 the
+    page's shortcuts do not reach past one and the click that dismisses it does
+    not reach the page either: a probe that did not dismiss it first lost its
+    first click and its first chord, and failed on something else entirely.
     """
     settings = {
         "ui.dark": bool(dark),
         "ui.locale": locale,
         "ui.show_welcome": bool(show_welcome),
+        "pace.summary_on_open": bool(pace_summary),
     }
     settings.update(pins or {})
-    cfg = os.path.join(config_home, "skribisto")
+    cfg = app_config_dir(sandbox_env(config_home, base={}))
     os.makedirs(cfg, exist_ok=True)
     path = os.path.join(cfg, "general.toml")
     with open(path, "w", encoding="utf-8") as fh:
@@ -173,8 +387,12 @@ def write_settings(config_home, locale="en-US", dark=False, show_welcome=True, p
     return path
 
 
-def isolated_config(locale="fr-FR", label="cfg", dark=False, show_welcome=True, pins=None):
-    """A private `XDG_CONFIG_HOME` with the app's settings pinned. Returns an env dict.
+def isolated_config(locale="fr-FR", label="cfg", dark=False, show_welcome=True, pins=None,
+                    pace_summary=False):
+    """A private settings sandbox with the app's settings pinned. Returns an env dict.
+
+    The sandbox is built by [`sandbox_env`]: a private `XDG_CONFIG_HOME` on
+    Linux, `$HOME` on macOS, `%APPDATA%` on Windows.
 
     A probe that asserts on translated text must SET the language, never inherit
     it, and this writes `ui.locale` on every call for exactly that reason. Two
@@ -213,10 +431,9 @@ def isolated_config(locale="fr-FR", label="cfg", dark=False, show_welcome=True, 
     """
     base = SCRATCH if os.path.isdir(SCRATCH) else tempfile.gettempdir()
     root = os.path.join(base, f"probe-config-{label}-{os.getpid()}")
-    write_settings(root, locale=locale, dark=dark, show_welcome=show_welcome, pins=pins)
-    env = dict(os.environ)
-    env["XDG_CONFIG_HOME"] = root
-    return env
+    write_settings(root, locale=locale, dark=dark, show_welcome=show_welcome, pins=pins,
+                   pace_summary=pace_summary)
+    return sandbox_env(root)
 
 
 def config_pins_file(pins, label="pins"):
@@ -461,7 +678,7 @@ def skribisto_binary():
     root = repo_root()
     return _resolve(
         SKRIBISTO_BIN_ENV, "skribisto",
-        [os.path.join(t, "debug", "skribisto") for t in _target_dirs(root)],
+        [os.path.join(t, "debug", "skribisto" + EXE) for t in _target_dirs(root)],
         f"cargo build -p teksilo_ui   # in {root}",
     )
 
@@ -575,7 +792,7 @@ def mcp_binary():
     if not found:
         tek = teksilo_root()
         for target in (_target_dirs(tek) if tek else []):
-            candidate = os.path.join(target, "debug", "teksilo-automation-mcp")
+            candidate = os.path.join(target, "debug", "teksilo-automation-mcp" + EXE)
             if os.path.exists(candidate):
                 found = candidate
                 break
@@ -777,8 +994,129 @@ def mcp_argv(bridge, mcp=None):
     exposure 0.9.3 tightened the socket mode and the descriptor mode to close.
     Falls back to `--connect` when the pid is unknown (a bridge discovered from
     a log rather than a process this probe launched).
+
+    Always `--connect` on Windows. There the app publishes its descriptor under
+    `%LOCALAPPDATA%\\Teksilo\\teksilo-automation\\`, and [`sandbox_env`] moves the
+    app's `%LOCALAPPDATA%` into the sandbox while the client runs in the probe's
+    own environment: `--attach-pid` looked in the real one and found nothing, for
+    every probe. The token on the command line is readable by the same user only.
     """
     mcp = mcp or mcp_binary()
-    if bridge.pid is not None:
+    if bridge.pid is not None and not IS_WINDOWS:
         return [mcp, "--attach-pid", str(bridge.pid)]
     return [mcp, "--connect", bridge.endpoint, "--token", bridge.token]
+
+
+class McpError(RuntimeError):
+    """A bridge call that was refused, reported an error, or got no answer."""
+
+
+class McpSession:
+    """The MCP client attached to one app's bridge, for a probe to call.
+
+        session = fixture.McpSession(bridge, "my-probe")
+        payload = session.call("snapshot_tree")
+        session.close()
+
+    Portable where the open-coded clients in older probes are not: the client's
+    output is read on a thread into a queue, so a call waits with a deadline
+    without `select` on a pipe (which Windows does not have). A refused op is an
+    exception, never a quiet no-op: the bridge answers an argument outside its
+    vocabulary with a JSON-RPC error having performed nothing, and a probe that
+    carried on would fail far from the cause.
+    """
+
+    def __init__(self, bridge, name, mcp=None, timeout=30.0):
+        import queue
+        import threading
+
+        self._lines = queue.Queue()
+        self._next_id = 0
+        self._errors = tempfile.TemporaryFile(mode="w+")
+        self.proc = subprocess.Popen(
+            mcp_argv(bridge, mcp), stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+            stderr=self._errors, text=True, encoding="utf-8", bufsize=1)
+
+        def pump(stream, lines):
+            for line in stream:
+                if line.strip():
+                    lines.put(line)
+            lines.put(None)
+
+        threading.Thread(target=pump, args=(self.proc.stdout, self._lines),
+                         daemon=True).start()
+        self.request("initialize", {
+            "protocolVersion": "2024-11-05",
+            "capabilities": {},
+            "clientInfo": {"name": name, "version": "1"},
+        }, timeout=timeout)
+
+    def request(self, method, params=None, timeout=30.0):
+        """Send one JSON-RPC request and return its `result`."""
+        import json
+        import queue
+
+        self._next_id += 1
+        message = {"jsonrpc": "2.0", "id": self._next_id, "method": method}
+        if params is not None:
+            message["params"] = params
+        try:
+            self.proc.stdin.write(json.dumps(message) + "\n")
+            self.proc.stdin.flush()
+        except OSError as e:
+            raise McpError(f"{method}: the MCP client is gone ({e}){self._stderr_tail()}")
+        deadline = time.monotonic() + timeout
+        while True:
+            remaining = deadline - time.monotonic()
+            try:
+                line = self._lines.get(timeout=max(0.0, remaining))
+            except queue.Empty:
+                raise McpError(f"{method}: no answer within {timeout:g}s{self._stderr_tail()}")
+            if line is None:
+                raise McpError(f"{method}: the MCP client exited{self._stderr_tail()}")
+            reply = json.loads(line)
+            if reply.get("id") != self._next_id:
+                continue  # a notification, or the answer to an abandoned call
+            if (error := reply.get("error")) is not None:
+                raise McpError(f"{method} {params or {}} was refused: "
+                               f"{error.get('message', error)}")
+            return reply.get("result", {})
+
+    def call(self, tool, args=None, timeout=30.0):
+        """Call a bridge tool; return its structured payload (a dict)."""
+        import json
+
+        result = self.request("tools/call", {"name": tool, "arguments": args or {}},
+                              timeout=timeout)
+        text = "".join(c.get("text", "") for c in result.get("content", [])
+                       if c.get("type") == "text")
+        if result.get("isError"):
+            raise McpError(f"{tool} {args or {}} reported an error: {text or result}")
+        payload = result.get("structuredContent")
+        if payload is None:
+            payload = json.loads(text) if text.strip().startswith("{") else {}
+        return payload
+
+    def nodes(self):
+        """The accessibility tree, as a flat list of nodes."""
+        return self.call("snapshot_tree").get("nodes", [])
+
+    def settle(self, times=3):
+        for _ in range(times):
+            self.call("settle")
+
+    def close(self):
+        if self.proc.poll() is None:
+            self.proc.terminate()
+            try:
+                self.proc.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                self.proc.kill()
+
+    def _stderr_tail(self):
+        try:
+            self._errors.seek(0)
+            tail = "\n".join(self._errors.read().splitlines()[-10:])
+        except (OSError, ValueError):
+            return ""
+        return f"\n--- MCP client stderr ---\n{tail}" if tail else ""

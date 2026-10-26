@@ -234,7 +234,7 @@ def block_count(node_id):
 
 # ── 1. Freshly loaded ⇒ clean ⇒ Save must be disabled ─────────────────────────
 print("== clean project: Work ▸ Save must be greyed out ==")
-disabled = save_item_disabled(shot="/tmp/save-item-clean.png")
+disabled = save_item_disabled(shot=os.path.join(fixture.SCRATCH, "save-item-clean.png"))
 print(f"  Save item: disabled={disabled}")
 if not disabled:
     fail("Save is enabled on a freshly loaded (clean) project", s.app, s.mcp, s.log)
@@ -262,7 +262,7 @@ if isinstance(res, dict) and res.get("isError"):
 time.sleep(1.2)
 
 print("== dirty project: Work ▸ Save must be enabled ==")
-disabled = save_item_disabled(shot="/tmp/save-item-dirty.png")
+disabled = save_item_disabled(shot=os.path.join(fixture.SCRATCH, "save-item-dirty.png"))
 print(f"  Save item: disabled={disabled}")
 if disabled:
     fail("Save is still greyed out after an edit — the dirty signal never reached the menu",
@@ -270,7 +270,7 @@ if disabled:
 
 # ── 3. Ctrl+S ⇒ written to disk ⇒ back to disabled ────────────────────────────
 print("== Ctrl+S, then Save must fall back to disabled ==")
-s.call("inject_key", {"key": "s", "ctrl": True})
+s.call("inject_key", {"key": "s", "command": True})
 time.sleep(2.5)  # save_work is a long operation
 disabled = save_item_disabled()
 print(f"  Save item: disabled={disabled}")

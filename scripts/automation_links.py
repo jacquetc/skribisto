@@ -37,7 +37,7 @@ import automation_fixture as fixture  # noqa: E402
 
 SKRIBISTO = fixture.skribisto_binary()
 MCP = fixture.mcp_binary()
-OUT = "/tmp/links-probe"
+OUT = os.path.join(fixture.SCRATCH, "links-probe")
 os.makedirs(OUT, exist_ok=True)
 
 URL = "https://example.com/logs"
@@ -230,7 +230,11 @@ def editor_text(node_id, ns=None):
 # ── reach a scene with the caret in its prose ────────────────────────────────
 if project is None:
     if not click("Mock Project", "(needs a --features mocks build)"):
-        die("no 'Mock Project' recent row and no project argument")
+        for p in (mcp, app):
+            if p and p.poll() is None:
+                p.terminate()
+        fixture.skip("no project argument, and this is not a `--features mocks` build "
+                     "(run bare, this probe opens the mocks' Mock Project)")
 # `load_work` is SLOW in a debug build (~20 s for the bundled example) — without
 # this wait every check below runs against the empty shell.
 end = time.time() + 120
@@ -373,7 +377,7 @@ print("STEP 3 OK: the link's words are in the prose")
 # Reached through Ctrl+K rather than the dock button, so the probe also covers
 # the shortcut door — all three doors share one action, and this is the cheapest
 # place to notice if that ever stops being true.
-call("inject_key", {"key": "K", "ctrl": True})
+call("inject_key", {"key": "K", "command": True})
 settle()
 time.sleep(0.5)
 shot("dialog-edit")

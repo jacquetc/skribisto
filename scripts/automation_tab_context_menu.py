@@ -54,8 +54,8 @@ DOCS = ["Chapter 1", "Chapter 2", "Chapter 3"]
 
 fixture.assert_no_running_instance(SKRIBISTO)
 sandbox = tempfile.mkdtemp(prefix="skribisto_tab_menu_")
-env = {**os.environ, "XDG_CONFIG_HOME": os.path.join(sandbox, "config"),
-       "XDG_DATA_HOME": os.path.join(sandbox, "data"), "HOME": sandbox}
+env = fixture.sandbox_env(os.path.join(sandbox, "config"), extra={
+    "XDG_DATA_HOME": os.path.join(sandbox, "data"), "HOME": sandbox})
 # Written directly (not `isolated_config`) because this probe needs its own
 # `XDG_DATA_HOME`/`HOME` too, and read a second time verbatim on the restart in
 # STEP 6 — the whole point there is that it is the SAME sandbox, so the pin's
@@ -289,7 +289,7 @@ if not right_click_tab("Chapter 2"):
     die("could not right-click the 'Chapter 2' tab — the menu is the only route "
         "to close others / pin / move a tab", log)
 labels = menu_labels()
-shot("/tmp/tab-menu.png")
+shot(os.path.join(fixture.SCRATCH, "tab-menu.png"))
 
 EXPECTED = ["Close", "Close others", "Close all", "Open to the Side",
             "Move to the side", "Move into a new window", "Pin this tab"]
@@ -333,7 +333,7 @@ pinned_node = tabs[0]
 # glyphs, the exact failure `MIN_EDITOR_TAB_WIDTH` exists to prevent.
 if (pinned_node.get("label") or "").strip() != "Chapter 3":
     die("a pinned tab lost its title — it must stay readable in the strip", log)
-shot("/tmp/tab-pinned.png")
+shot(os.path.join(fixture.SCRATCH, "tab-pinned.png"))
 # The pin's accident protection, asserted the way the writer meets it: teksilo
 # builds the middle-click close from the same `on_close` as the cross, so a
 # `closable(false)` tab has neither. If this closes the tab, the pin is
@@ -405,7 +405,7 @@ if editor is None:
     die("no editor to type into — cannot dirty the project for a save", log)
 call("type_text", {"node": editor["id"], "text": "x"})
 time.sleep(1.0)
-call("inject_key", {"key": "s", "ctrl": True})
+call("inject_key", {"key": "s", "command": True})
 time.sleep(4.0)
 
 for p in (mcp, app):
@@ -455,7 +455,7 @@ else:
     ns = nodes()
     tabs_seen = [(n.get("label") or "").strip() for n in ns
                  if (n.get("role") or "") == "Tab"]
-    cfg = os.path.join(env["XDG_CONFIG_HOME"], "skribisto", "workspace.toml")
+    cfg = os.path.join(fixture.app_config_dir(env), "workspace.toml")
     saved = open(cfg).read() if os.path.exists(cfg) else "<no workspace.toml>"
     die(f"the desk did not restore its tabs; editor tabs {restored}, all Tab "
         f"nodes {tabs_seen}\n--- workspace.toml ---\n{saved[:1500]}", log)

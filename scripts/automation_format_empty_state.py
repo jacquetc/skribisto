@@ -33,7 +33,7 @@ import automation_fixture as fixture  # noqa: E402
 
 SKRIBISTO = fixture.skribisto_binary()
 MCP = fixture.mcp_binary()
-OUT = "/tmp/format-empty-state"
+OUT = os.path.join(fixture.SCRATCH, "format-empty-state")
 os.makedirs(OUT, exist_ok=True)
 
 # A private config dir keeps `workspace.toml` out of the operator's own: the desk
@@ -191,7 +191,11 @@ def shot(name):
 # ── load the project ─────────────────────────────────────────────────────────
 if project is None:
     if not click("Mock Project", "(needs a --features mocks build)"):
-        die("no 'Mock Project' recent row and no project argument")
+        for p in (mcp, app):
+            if p and p.poll() is None:
+                p.terminate()
+        fixture.skip("no project argument, and this is not a `--features mocks` build "
+                     "(run bare, this probe opens the mocks' Mock Project)")
 # `load_work` is SLOW in a debug build (~20 s for the bundled example).
 end = time.time() + 120
 while time.time() < end:

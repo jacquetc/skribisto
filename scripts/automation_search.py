@@ -16,7 +16,7 @@ Launches the real backend on a real project, reveals the leading search dock
   3. activating a result reveals the bottom preview band with an editable
      RichTextEditor over that item's document (the shared OpenDoc, editable).
 
-Screenshots land in /tmp for a human to eyeball the two docks + the leading
+Screenshots land in `fixture.SCRATCH` for a human to eyeball the two docks + the leading
 bottom corner (binder full-height, preview starting to its right).
 """
 import base64, json, os, select, subprocess, sys, tempfile, time
@@ -26,7 +26,11 @@ import automation_fixture as fixture  # noqa: E402
 
 SKRIBISTO = fixture.skribisto_binary()
 MCP = fixture.mcp_binary()
-PROJECT = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else "/tmp/p02/Starforgers.skrib")
+# A working copy, never the file itself: autosave and Ctrl+S are real.
+PROJECT = fixture.working_copy(
+    os.path.abspath(sys.argv[1]) if len(sys.argv) > 1
+    else fixture.repo_path("resources", "examples", "starforgers", "Starforgers.skrib"),
+    label="search")
 QUERY = sys.argv[2] if len(sys.argv) > 2 else "the"
 
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
@@ -150,10 +154,10 @@ while time.time() < end:
 print(f"project loaded ({len(ns)} a11y nodes)")
 
 # ── STEP 1: reveal the search dock and find its query field ───────────────────
-call("inject_key", {"key": "f", "ctrl": True, "shift": True})
+call("inject_key", {"key": "f", "command": True, "shift": True})
 time.sleep(1.0)
 ns = nodes()
-shot("/tmp/search-dock.png")
+shot(os.path.join(fixture.SCRATCH, "search-dock.png"))
 # The query SearchField advertises "Search…" as placeholder/name; the facet
 # chips carry their tooltips (Books/Parts/…). Assert on locale-independent-ish
 # anchors: an input plus at least one facet chip name.
@@ -176,7 +180,7 @@ if isinstance(res, dict) and res.get("isError"):
     fail("STEP 2: type_text into the query field errored", app, mcp, log)
 time.sleep(1.5)  # > 300ms debounce + the scan
 ns = nodes()
-shot("/tmp/search-results.png")
+shot(os.path.join(fixture.SCRATCH, "search-results.png"))
 def result_rows(ns):
     """The tree's rows, in the dock's lower region."""
     return [n for n in ns if n.get("role") == "TreeItem"
@@ -227,7 +231,7 @@ else:
     call("inject_key", {"key": "Right"})
 time.sleep(1.2)
 ns = nodes()
-shot("/tmp/search-expanded.png")
+shot(os.path.join(fixture.SCRATCH, "search-expanded.png"))
 rows = result_rows(ns)
 after_names = {row_text(n) for n in rows}
 revealed = after_names - before_names
@@ -266,7 +270,7 @@ else:
                             "action": "click"})
 time.sleep(1.2)
 ns = nodes()
-shot("/tmp/search-preview.png")
+shot(os.path.join(fixture.SCRATCH, "search-preview.png"))
 editors = [n for n in ns if n.get("role") == "MultilineTextInput"
            and "set_value" in (n.get("actions") or [])]
 # The preview editor is the wide one near the bottom of the window.
@@ -367,7 +371,7 @@ if isinstance(res, dict) and res.get("isError"):
          "or dismiss a row", app, mcp, log)
 time.sleep(0.8)
 ns = nodes()
-shot("/tmp/search-rowmenu.png")
+shot(os.path.join(fixture.SCRATCH, "search-rowmenu.png"))
 items = [n for n in ns if n.get("role") in ("MenuItem", "MenuListOption")]
 replace_here = [n for n in items
                 if "Replace" in str(n.get("label") or n.get("name") or "")]
@@ -378,7 +382,7 @@ if not replace_here:
 call("invoke_action", {"node": replace_here[0]["id"], "action": "click"})
 time.sleep(1.6)
 ns = nodes()
-shot("/tmp/search-replaced.png")
+shot(os.path.join(fixture.SCRATCH, "search-replaced.png"))
 
 row = by_label(ns, item_name)
 if row is None:
@@ -397,9 +401,9 @@ if not row.get("expanded"):
 print(f"STEP 5 OK: one occurrence replaced ({before_badge} → {after_badge}), "
       "its row is gone, and the item stayed open")
 
-print("\nDONE — see /tmp/search-dock.png, /tmp/search-results.png, "
-      "/tmp/search-expanded.png, /tmp/search-preview.png, /tmp/search-rowmenu.png, "
-      "/tmp/search-replaced.png")
+print(f"\nDONE — see {fixture.SCRATCH} for search-dock.png, search-results.png, "
+      "search-expanded.png, search-preview.png, search-rowmenu.png, "
+      "search-replaced.png")
 for p in (app, mcp):
     if p.poll() is None:
         p.terminate()

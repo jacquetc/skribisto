@@ -41,7 +41,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
 
 MCP = fixture.mcp_binary()
-OUT = os.environ.get("SHOT_DIR", "/tmp")
+OUT = os.environ.get("SHOT_DIR", fixture.SCRATCH)
 PANE_X = 300
 
 project = os.path.abspath(sys.argv[1]) if len(sys.argv) > 1 else None
@@ -206,8 +206,11 @@ def shot(name):
 if project is None:
     row = find("Mock Project", timeout=10)
     if not row:
-        die("no 'Mock Project' recent row — this no-args mode needs a `--features "
-            "mocks` build", app, mcp)
+        for p in (mcp, app):
+            if p and p.poll() is None:
+                p.terminate()
+        fixture.skip("no project argument, and this is not a `--features mocks` build "
+                     "(run bare, this probe opens the mocks' Mock Project)")
     b = row.get("bounds") or {}
     if "x" not in b:
         die("'Mock Project' row has no bounds to click", app, mcp)
@@ -380,7 +383,7 @@ else:
     before = turn_count()
     call("inject_pointer", {"x": pt[0], "y": pt[1], "action": "click"})
     settle()
-    call("inject_key", {"key": "M", "ctrl": True, "alt": True, "shift": True})
+    call("inject_key", {"key": "M", "command": True, "alt": True, "shift": True})
     settle()
     time.sleep(0.8)
     after = turn_count()

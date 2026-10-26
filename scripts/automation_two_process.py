@@ -45,8 +45,8 @@ assertion below would be trivially true for the wrong reason.
       entries) rather than by driving a visible resize, exactly as the task
       brief allows for this specific kind of gap.
 
-Saves screenshots of both settled windows to /tmp/sk-two-proc-a.png and
-/tmp/sk-two-proc-b.png.
+Saves screenshots of both settled windows to sk-two-proc-a.png and
+sk-two-proc-b.png in `fixture.SCRATCH`.
 """
 import base64, json, os, select, shutil, subprocess, sys, tempfile, time, tomllib
 
@@ -224,9 +224,9 @@ class Session:
         # (unlike a specific page/section name, which the panel has since
         # been restructured around — there is no "Manuscript & Fonts" page
         # any more).
-        for args in ({"key": ",", "ctrl": True},
-                     {"key": ",", "modifiers": ["ctrl"]},
-                     {"key": "Comma", "modifiers": ["ctrl"]}):
+        for args in ({"key": ",", "command": True},
+                     {"key": ",", "command": True},
+                     {"key": "Comma", "command": True}):
             res, _ = self.call("inject_key", args)
             if not (isinstance(res, dict) and res.get("isError")):
                 time.sleep(0.8)
@@ -344,11 +344,10 @@ config_dir = os.path.join(sandbox, "config")
 data_dir = os.path.join(sandbox, "data")
 os.makedirs(config_dir, exist_ok=True)
 os.makedirs(data_dir, exist_ok=True)
-SHARED_ENV = {
-    "XDG_CONFIG_HOME": config_dir,
+SHARED_ENV = fixture.sandbox_env(config_dir, base={}, extra={
     "XDG_DATA_HOME": data_dir,
     "HOME": sandbox,  # defensive: anything falling back to $HOME stays sandboxed too
-}
+})
 # A sandbox with no `general.toml` is not the neutral choice it looks like: with
 # `startup.rs`'s `auto_detect_os_locale` on, an unset `ui.locale` is not English,
 # it is *the operator's OS language*. This probe asserts mostly on the project's
@@ -362,9 +361,10 @@ fixture.write_settings(config_dir, locale="en-US", show_welcome=False)
 # etcetera's XDG strategy) nests everything one level further, under an
 # app-named subdirectory of each XDG root (confirmed empirically: files land
 # at `$XDG_CONFIG_HOME/skribisto/*.toml` / `$XDG_DATA_HOME/skribisto/*.toml`,
-# not directly in the XDG root) — every path below accounts for that.
-app_config_dir = os.path.join(config_dir, "skribisto")
-app_data_dir = os.path.join(data_dir, "skribisto")
+# not directly in the XDG root). `fixture.app_config_dir` / `app_data_dir`
+# account for that, and for the macOS and Windows layouts.
+app_config_dir = fixture.app_config_dir(SHARED_ENV)
+app_data_dir = fixture.app_data_dir(SHARED_ENV)
 print(f"sandbox: config={app_config_dir} data={app_data_dir}")
 
 proj_a = os.path.join(sandbox, "Project A.skrib")
@@ -392,8 +392,8 @@ if not b.wait_loaded(timeout=20):
     b._fail("Project B did not load")
 print("B loaded.")
 
-a.shot("/tmp/sk-two-proc-a.png")
-b.shot("/tmp/sk-two-proc-b.png")
+a.shot(os.path.join(fixture.SCRATCH, "sk-two-proc-a.png"))
+b.shot(os.path.join(fixture.SCRATCH, "sk-two-proc-b.png"))
 
 # ── (a) both projects show up in the shared recents.toml ──────────────────
 recents_path = os.path.join(app_config_dir, "recents.toml")

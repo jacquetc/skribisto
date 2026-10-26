@@ -66,7 +66,7 @@ import automation_fixture as fixture  # noqa: E402
 SKRIBISTO = fixture.skribisto_binary()
 MCP = fixture.mcp_binary()
 EXAMPLE = fixture.repo_path("resources/examples/starforgers/Starforgers.skrib")
-OUT = os.environ.get("SHOT_DIR", "/tmp")
+OUT = os.environ.get("SHOT_DIR", fixture.SCRATCH)
 
 # The tab bar / tab content sits to the right of the binder dock; used to tell
 # a tab header or a segment button apart from a same-labelled binder row.
@@ -451,11 +451,10 @@ class Session:
 def fresh_env(cfg_root):
     """A sandboxed env pinned at `cfg_root`, reused across BOTH launches so
     `workspace.toml` under it is what the second launch reads back."""
-    env = dict(os.environ)
-    env["XDG_CONFIG_HOME"] = cfg_root
-    env["XDG_DATA_HOME"] = os.path.join(os.path.dirname(cfg_root), "data")
-    env["HOME"] = os.path.dirname(cfg_root)
-    return env
+    return fixture.sandbox_env(cfg_root, extra={
+        "XDG_DATA_HOME": os.path.join(os.path.dirname(cfg_root), "data"),
+        "HOME": os.path.dirname(cfg_root),
+    })
 
 
 def close_current_work(s):
@@ -577,7 +576,7 @@ def main():
 
     # Jump to the true end of the document: caret deep in it, and (given a
     # ~4000-word chapter) the page scrolled well away from the top.
-    a.call("inject_key", {"key": "End", "ctrl": True})
+    a.call("inject_key", {"key": "End", "command": True})
     a.settle(3, 0.3)
     time.sleep(0.5)
 

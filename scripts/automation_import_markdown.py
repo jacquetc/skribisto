@@ -270,7 +270,7 @@ print("example loaded.")
 
 print("\n== Work menu ==")
 check(s.open_menu("work"), "Work menu opens (no duplicate-mnemonic panic)")
-s.shot("/tmp/import-md-work-menu.png")
+s.shot(os.path.join(fixture.SCRATCH, "import-md-work-menu.png"))
 
 # The submenu row itself. Hovering opens `Import from`; its children only appear
 # once it does.
@@ -292,7 +292,7 @@ opened = s.wait_label("import documents", timeout=10)
 check(opened, "the Import documents wizard opens (the global action is registered)")
 if not opened:
     s.dump("wizard did not open")
-s.shot("/tmp/import-md-wizard.png")
+s.shot(os.path.join(fixture.SCRATCH, "import-md-wizard.png"))
 
 # The dialog node itself. `ctx.present_modal` does not wrap a hand-drawn panel in
 # a `ModalContainer`, so without `ImportDocumentPanel::accessibility` there is no
@@ -344,7 +344,7 @@ s = Session(pins=pins, env=env)
 launcher = s.wait_label("recent works", timeout=30) or s.wait_label("new work", timeout=10)
 check(launcher, "the Launcher opens with no project")
 if launcher:
-    s.shot("/tmp/import-md-launcher.png")
+    s.shot(os.path.join(fixture.SCRATCH, "import-md-launcher.png"))
     check("from documents" in s.joined(),
           "the Launcher offers 'From documents…' beside Open / New Work")
 else:
@@ -381,7 +381,7 @@ if s.open_menu("œuvre"):
     check("parcourir" in joined, "…its French Browse")
     check("suivant" in joined, "…its French Next")
     check("annuler" in joined, "…its French Cancel")
-    s.shot("/tmp/import-md-wizard-fr.png")
+    s.shot(os.path.join(fixture.SCRATCH, "import-md-wizard-fr.png"))
     if "importer des documents" not in joined:
         s.dump("fr wizard")
 else:

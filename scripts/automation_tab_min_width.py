@@ -36,8 +36,8 @@ MAIN_DOCS = ["Prologue", "Chapter 1", "Chapter 2", "Chapter 3", "Chapter 4"]
 SIDE_DOCS = ["Chapter 10", "Chapter 11", "Chapter 12"]
 
 sandbox = tempfile.mkdtemp(prefix="skribisto_tab_width_")
-env = {**os.environ, "XDG_CONFIG_HOME": os.path.join(sandbox, "config"),
-       "XDG_DATA_HOME": os.path.join(sandbox, "data"), "HOME": sandbox}
+env = fixture.sandbox_env(os.path.join(sandbox, "config"), extra={
+    "XDG_DATA_HOME": os.path.join(sandbox, "data"), "HOME": sandbox})
 # This probe rolls its own sandbox (it isolates HOME/XDG_DATA_HOME too, not
 # just XDG_CONFIG_HOME), so `write_settings` — not `isolated_config`, which
 # would build its own separate directory — writes the settings into it. The
@@ -154,7 +154,7 @@ for title in SIDE_DOCS:
     if not select_row(title):
         die(f"no binder row named {title!r}", log)
     time.sleep(0.4)
-    call("inject_key", {"key": "Enter", "ctrl": True})
+    call("inject_key", {"key": "Enter", "command": True})
     time.sleep(0.8)
 time.sleep(1.5)
 

@@ -187,9 +187,9 @@ def main():
     # Settings is a centered modal — that is the whole point of this probe.
     def open_settings():
         """Ctrl+, in whichever spelling the bridge accepts, or None."""
-        for args in ({"key": ",", "ctrl": True},
-                     {"key": ",", "modifiers": ["ctrl"]},
-                     {"key": "Comma", "modifiers": ["ctrl"]}):
+        for args in ({"key": ",", "command": True},
+                     {"key": ",", "command": True},
+                     {"key": "Comma", "command": True}):
             res, _ = sess.call("inject_key", args)
             if isinstance(res, dict) and res.get("isError"):
                 continue
@@ -200,7 +200,7 @@ def main():
 
     opened_via = open_settings()
     if not opened_via:
-        sess.shot("/tmp/combo-in-modal-noopen.png")
+        sess.shot(os.path.join(fixture.SCRATCH, "combo-in-modal-noopen.png"))
         die("could not open the Settings window", sess)
     print(f"  Settings open (via {opened_via})")
 
@@ -380,7 +380,7 @@ def main():
             f"each of them carries at least one", sess)
     bad = [r for r in results if r[0] != "ok"]
     print(f"\n  {len(results)} combo(s) exercised, {len(bad)} bad")
-    sess.shot("/tmp/combo-in-modal-after-tab.png")
+    sess.shot(os.path.join(fixture.SCRATCH, "combo-in-modal-after-tab.png"))
     if bad:
         die("dropdowns that did not follow focus out: "
             + "; ".join(d for _, d in bad), sess)

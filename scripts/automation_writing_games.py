@@ -320,7 +320,7 @@ call(
 )
 settle(6)
 time.sleep(0.5)
-shot("/tmp/games-dock.png")
+shot(os.path.join(fixture.SCRATCH, "games-dock.png"))
 
 toggles = [n for n in nodes() if n.get("role") in ("CheckBox", "Switch", "ToggleButton")]
 forward = [n for n in toggles if "forward" in text_of(n).lower()]
@@ -370,7 +370,7 @@ click_toggle()
 if not playing():
     fail("clicking the toggle did not start the game — the dock still reads 'Not playing'")
 print("3. OK — the game is on, and the dock says so")
-shot("/tmp/games-playing.png")
+shot(os.path.join(fixture.SCRATCH, "games-playing.png"))
 
 ed, _ = prose_editor()
 click_into(ed)
@@ -417,7 +417,7 @@ if released_after == released_before:
         f"  text={released_after[-80:]!r}"
     )
 print("7. OK — deleting works again the moment the game ends")
-shot("/tmp/games-after.png")
+shot(os.path.join(fixture.SCRATCH, "games-after.png"))
 
 print("\nPASS — the invariant holds on the live app, and nothing else was taken away.")
 for p in (app, mcp):

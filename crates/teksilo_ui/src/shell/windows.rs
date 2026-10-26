@@ -41,8 +41,8 @@ use teksilo::core::menu_item_id::MenuItemId;
 use teksilo::prelude::*;
 use teksilo::widgets::MenuModel;
 use teksilo::widgets::{
-    Center, CollapsePolicy, DeadZone, Expand, HStack, IconButtonSize, MenuBar, NativeMenuMode,
-    Padding, Slide, SlideEdge, TextWidget, TitleBar, VStack, WindowFrame, ZStack,
+    Center, CollapsePolicy, DeadZone, Expand, HStack, IconButtonSize, MenuBar, Padding, Slide,
+    SlideEdge, TextWidget, TitleBar, VStack, WindowFrame, ZStack,
 };
 
 use frontend::AppContext;
@@ -755,9 +755,10 @@ impl ProjectWindowFactory {
                         // — one of them where no Mac user looks — is what `Coexist`
                         // would buy. The flag is inert off macOS: the hamburger and
                         // its dropdowns render exactly as before, which is why this
-                        // is one line and not a `cfg`.
+                        // is one line and not a `cfg`. (A debug build can keep both,
+                        // for the automation probes: see `native_menu_mode`.)
                         let menubar = MenuBar::from_model(menu)
-                            .native_on_macos(NativeMenuMode::Suppress)
+                            .native_on_macos(super::project_menus::native_menu_mode())
                             .collapse_policy(CollapsePolicy::Always)
                             .hamburger_size(IconButtonSize::Toolbar);
 

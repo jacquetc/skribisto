@@ -256,7 +256,7 @@ if not hit:
     types = collections.Counter((n.get("type") or "?") for n in widgets())
     print("  widget types on screen:", ", ".join(f"{t}x{c}" for t, c in types.most_common(40)))
     print("  a11y labels:", " | ".join((n.get("label") or "") for n in nodes())[:500])
-    shoot("/tmp/tw-debug.png")
+    shoot(os.path.join(fixture.SCRATCH, "tw-debug.png"))
     fail("no writing editor on screen after opening a scene", app, mcp, log)
 _, eb = hit
 print(f"editor bounds: y={eb['y']:.0f} h={eb['height']:.0f} w={eb['width']:.0f}")
@@ -281,10 +281,10 @@ print(f"pin (middle) should be y≈{mid:.0f}; viewport bottom is y={bot:.0f}")
 call("inject_pointer", {"x": eb["x"] + eb["width"] / 2,
                         "y": max(vp["y"] + 30.0, eb["y"] + 30.0)})
 settle(2)
-call("inject_key", {"key": "end", "ctrl": True})
+call("inject_key", {"key": "end", "command": True})
 settle(4)
 time.sleep(0.8)
-shoot("/tmp/tw-end-of-doc.png")
+shoot(os.path.join(fixture.SCRATCH, "tw-end-of-doc.png"))
 
 # `editor.y` is the page's scroll made visible: the editor is laid out at its
 # full document height, so the only way its top edge moves is the page scrolling
@@ -294,7 +294,7 @@ def page_scroll():
     return None if not hit else hit[1].get("y")
 
 
-call("inject_key", {"key": "home", "ctrl": True})
+call("inject_key", {"key": "home", "command": True})
 settle(4)
 top = page_scroll()
 print(f"\ncaret at document start: editor.y={top:.0f} (page unscrolled)")
@@ -306,7 +306,7 @@ check(abs(top - eb["y"]) < 2.0,
 
 # --- 2: the end of the document reaches the pin ------------------------------
 print("\n[2] the last line reaches the pin, not the bottom edge")
-call("inject_key", {"key": "end", "ctrl": True})
+call("inject_key", {"key": "end", "command": True})
 settle(5)
 at_end = page_scroll()
 doc_bottom_on_screen = at_end + eb["height"]
@@ -318,7 +318,7 @@ check(doc_bottom_on_screen < bot - 40.0,
 check(abs(doc_bottom_on_screen - mid) < vp["height"] * 0.25,
       f"the last line sits at the middle pin "
       f"(ends {doc_bottom_on_screen:.0f}, pin {mid:.0f})")
-shoot("/tmp/tw-end-of-doc.png")
+shoot(os.path.join(fixture.SCRATCH, "tw-end-of-doc.png"))
 
 # --- 3: a click never re-centres --------------------------------------------
 print("\n[3] a click places the caret without re-centring the page")
@@ -337,7 +337,7 @@ resumed = page_scroll()
 print(f"   editor.y after one Down={resumed:.0f}")
 check(abs(resumed - after) > 2.0,
       f"the keyboard resumed pinning (page moved {abs(resumed - after):.1f}px)")
-shoot("/tmp/tw-after-click.png")
+shoot(os.path.join(fixture.SCRATCH, "tw-after-click.png"))
 
 print("\n" + "=" * 62)
 if FAILURES:
@@ -347,7 +347,7 @@ if FAILURES:
 else:
     print("PASS: typewriter scrolling pins the written line, engages at the pin,")
     print("      reaches the end of the document, and stands down for the mouse.")
-print("screenshots: /tmp/tw-pinned.png /tmp/tw-end-of-doc.png /tmp/tw-after-click.png")
+print(f"screenshots in {fixture.SCRATCH}: tw-pinned.png tw-end-of-doc.png tw-after-click.png")
 
 mcp.terminate()
 app.terminate()

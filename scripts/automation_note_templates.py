@@ -268,7 +268,7 @@ for n in s.nodes():
         rows[lab] = n
 for lab, n in rows.items():
     check(n is not None, f"Document menu offers {lab!r}")
-s.shot("/tmp/templates-document-menu.png")
+s.shot(os.path.join(fixture.SCRATCH, "templates-document-menu.png"))
 
 # With no binder selection and a chapter open, the item rows are greyed and the
 # template rows are greyed for a different reason: a chapter is not a note.
@@ -299,7 +299,7 @@ if open_menu("document"):
     # is live all the same. This check is the inverse of the one it replaced.
     check(state.get("Save as template\u2026") is not True,
           "Save as template is enabled over a chapter — no longer note-only")
-    s.shot("/tmp/templates-document-menu-selected.png")
+    s.shot(os.path.join(fixture.SCRATCH, "templates-document-menu-selected.png"))
     s.call("inject_key", {"key": "Escape"})
     time.sleep(0.5)
 
@@ -308,7 +308,7 @@ if open_menu("document"):
 # discriminant, and the Templates pane was first inserted next to Tags (where it reads
 # naturally) rather than at its own discriminant. Opening Settings panicked.
 print("== Settings ==")
-for args in ({"key": ",", "ctrl": True}, {"key": ",", "modifiers": ["ctrl"]}):
+for args in ({"key": ",", "command": True}, {"key": ",", "command": True}):
     s.call("inject_key", args)
     time.sleep(2.5)
     if has_any("reset to defaults", "r\u00e9initialiser"):
@@ -317,7 +317,7 @@ check(has_any("reset to defaults", "r\u00e9initialiser"),
       "Settings opens (no Switcher discriminant panic)")
 check(s.match(["templates", "mod\u00e8les"], exact=True) is not None,
       "a Templates page is present in the settings tree")
-s.shot("/tmp/templates-settings-tree.png")
+s.shot(os.path.join(fixture.SCRATCH, "templates-settings-tree.png"))
 
 print()
 if failures:

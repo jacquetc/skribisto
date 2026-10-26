@@ -28,8 +28,8 @@ MCP = fixture.mcp_binary()
 EXAMPLE = fixture.repo_path("resources/examples/starforgers/Starforgers.skrib")
 
 sandbox = tempfile.mkdtemp(prefix="skribisto_switcher_focus_")
-env = {**os.environ, "XDG_CONFIG_HOME": os.path.join(sandbox, "config"),
-       "XDG_DATA_HOME": os.path.join(sandbox, "data"), "HOME": sandbox}
+env = fixture.sandbox_env(os.path.join(sandbox, "config"), extra={
+    "XDG_DATA_HOME": os.path.join(sandbox, "data"), "HOME": sandbox})
 work = os.path.join(sandbox, "Starforgers.skrib")
 shutil.copyfile(EXAMPLE, work)
 # This sandbox used to write no settings at all, which is not the neutral
@@ -169,7 +169,7 @@ print(f"overlays after click: {overlay_count()}")
 foc = focused_node()
 print(f"focused after opening the popover: {foc and (foc.get('role'), foc.get('label'))}")
 
-shot("/tmp/skribisto-switcher-popover.png")
+shot(os.path.join(fixture.SCRATCH, "skribisto-switcher-popover.png"))
 
 # ...and the popup must actually be keyboard-live: Down must keep focus inside it.
 call("inject_key", {"key": "Down"})

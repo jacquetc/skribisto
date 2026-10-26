@@ -40,7 +40,11 @@ import automation_fixture as fixture  # noqa: E402
 
 SKRIBISTO = fixture.skribisto_binary()
 MCP = fixture.mcp_binary()
-PROJECT = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else "/tmp/p02/Starforgers.skrib")
+# A working copy, never the file itself: autosave and Ctrl+S are real.
+PROJECT = fixture.working_copy(
+    os.path.abspath(sys.argv[1]) if len(sys.argv) > 1
+    else fixture.repo_path("resources", "examples", "starforgers", "Starforgers.skrib"),
+    label="note-in-prose-mentions")
 ENTRY = sys.argv[2] if len(sys.argv) > 2 else "Elise"
 
 log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
@@ -204,7 +208,7 @@ start = counter(ns)
 nxt, prv = chevron(ns, "next"), chevron(ns, "prev")
 print("counter:", start)
 if not start:
-    shot("/tmp/in_prose_no_counter.png")
+    shot(os.path.join(fixture.SCRATCH, "in_prose_no_counter.png"))
     fail("no mention counter on the page — the entry is named nowhere the reading shows")
 if not (nxt and prv):
     fail("the counter has no chevrons")
@@ -233,7 +237,7 @@ for i in range(1, 6):
     print(f"  next #{i} → {now}")
     seen.append(now[0] if now else "")
     if not at_is(now, i, total):
-        shot("/tmp/in_prose_lagging.png")
+        shot(os.path.join(fixture.SCRATCH, "in_prose_lagging.png"))
         fail(f"after {i} press(es) the counter reads {now}, expected {i} of {total} — "
              "the label is a frame behind the walk")
 
@@ -274,7 +278,7 @@ if before is None or after is None:
     viewport_note = " (viewport-follow check skipped: no reading node found to measure)"
     print("SKIP: could not locate a reading node to measure the scroll against")
 elif abs(before[1] - after[1]) < 20.0 and before[0] == after[0]:
-    shot("/tmp/in_prose_no_scroll.png")
+    shot(os.path.join(fixture.SCRATCH, "in_prose_no_scroll.png"))
     fail(f"the viewport did not follow: 35 mentions on and the reading still starts at "
          f"{after} — a reveal that reaches no scroll container, or reaches a dormant editor")
 else:
@@ -287,7 +291,7 @@ print("  prev  →", back)
 if not at_is(back, 34, total):
     fail(f"stepping back reads {back}, expected 34 of {total}")
 
-shot("/tmp/in_prose_mentions.png")
+shot(os.path.join(fixture.SCRATCH, "in_prose_mentions.png"))
 print(f"PASS: {total} mentions, stepped 1..35{viewport_note} and back to 34")
 for p in (mcp, app):
     if p and p.poll() is None:

@@ -381,13 +381,13 @@ time.sleep(0.6)
 print("\n== surface 1: the editor ==")
 if not wait_for(lambda: dot_row() is not None):
     s.dump("no dot row in the editor")
-    s.shot("/tmp/chips-editor-fail.png")
+    s.shot(os.path.join(fixture.SCRATCH, "chips-editor-fail.png"))
     fail("the editor shows no dot row for the tagged scene", s.app, s.mcp, s.log)
 row = dot_row()
 b = row.get("bounds") or {}
 print(f"  dot row {b.get('width', 0):.0f}x{b.get('height', 0):.0f} dp, announces "
       f"{(row.get('value') or '')!r}")
-s.shot("/tmp/chips-editor.png")
+s.shot(os.path.join(fixture.SCRATCH, "chips-editor.png"))
 
 # Per-dot hover.
 print("\n== per-dot tooltip ==")
@@ -396,7 +396,7 @@ if wait_for(lambda: any((n.get("role") or "") in ("Tooltip", "Dialog")
                         and TAG in (n.get("label") or "")
                         for n in s.nodes())):
     print("  hovering the dot shows its own tooltip")
-    s.shot("/tmp/chips-tooltip.png")
+    s.shot(os.path.join(fixture.SCRATCH, "chips-tooltip.png"))
 else:
     print("  (no tooltip within the poll window)")
 
@@ -406,7 +406,7 @@ click({"x": b.get("x", 0), "y": b.get("y", 0), "width": 8.0, "height": b.get("he
 s.settle()
 if not wait_for(lambda: any(n.get("role") == "ListBoxOption" for n in s.nodes())):
     s.dump("picker did not open")
-    s.shot("/tmp/chips-click-fail.png")
+    s.shot(os.path.join(fixture.SCRATCH, "chips-click-fail.png"))
     fail("clicking a dot did not open the picker — a dot is swallowing the row's tap "
          "(did one grow an on_tap?)", s.app, s.mcp, s.log)
 opts = [n for n in s.nodes() if n.get("role") == "ListBoxOption"]
@@ -461,24 +461,24 @@ pane = content_pane()
 row = scroll_for_dot_row(pane) if pane else dot_row()
 if not row:
     s.dump("no dot row in the stream")
-    s.shot("/tmp/chips-stream-fail.png")
+    s.shot(os.path.join(fixture.SCRATCH, "chips-stream-fail.png"))
     fail("the manuscript stream's row header shows no dot row", s.app, s.mcp, s.log)
 b = row.get("bounds") or {}
 print(f"  stream row header: {(row.get('value') or '')!r} "
       f"({b.get('width', 0):.0f}x{b.get('height', 0):.0f} dp)")
-s.shot("/tmp/chips-stream.png")
+s.shot(os.path.join(fixture.SCRATCH, "chips-stream.png"))
 
 select_segment(("corkboard", "tableau d'affichage"))
 pane = content_pane()
 row = scroll_for_dot_row(pane) if pane else dot_row()
 if not row:
     s.dump("no dots on any card")
-    s.shot("/tmp/chips-corkboard-fail.png")
+    s.shot(os.path.join(fixture.SCRATCH, "chips-corkboard-fail.png"))
     fail("the corkboard card shows no dot row", s.app, s.mcp, s.log)
 b = row.get("bounds") or {}
 print(f"  corkboard card: {(row.get('value') or '')!r} "
       f"({b.get('width', 0):.0f}x{b.get('height', 0):.0f} dp)")
-s.shot("/tmp/chips-corkboard.png")
+s.shot(os.path.join(fixture.SCRATCH, "chips-corkboard.png"))
 
 print("\nOK — tag dots verified on the editor, the stream and the corkboard.")
 s.close()

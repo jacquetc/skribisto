@@ -29,7 +29,11 @@ import automation_fixture as fixture  # noqa: E402
 
 SKRIBISTO = fixture.skribisto_binary()
 MCP = fixture.mcp_binary()
-PROJECT = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else "/tmp/p02/Starforgers.skrib")
+# A working copy, never the file itself: autosave and Ctrl+S are real.
+PROJECT = fixture.working_copy(
+    os.path.abspath(sys.argv[1]) if len(sys.argv) > 1
+    else fixture.repo_path("resources", "examples", "starforgers", "Starforgers.skrib"),
+    label="dock-editor-probe")
 
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
 
@@ -198,7 +202,7 @@ if isinstance(res, dict) and res.get("isError"):
 time.sleep(1.5)
 after = editor_text(ed["id"])
 print(f"  text after:   {after[:120]!r}")
-shot(("/tmp/dock-probe-typed.png"))
+shot((os.path.join(fixture.SCRATCH, "dock-probe-typed.png")))
 if "PROBE-ONE" not in after:
     fail("STEP 2: typing into the docked editor did not change its a11y text", app, mcp, log)
 print("STEP 2 OK: the docked editor takes focus and edits")
@@ -239,7 +243,7 @@ if "PROBE-TWO" not in final:
     fail("STEP 3: after a relayout the editor no longer edits", app, mcp, log)
 print("STEP 3 OK: the editor survives the bottom band's park/unpark, keeps its text, still edits")
 
-shot("/tmp/dock-editor-probe.png")
+shot(os.path.join(fixture.SCRATCH, "dock-editor-probe.png"))
 
 print(f"\nfinal text: {final[:160]!r}")
 print("\nPASS — an editable RichTextEditor works inside a dock.")

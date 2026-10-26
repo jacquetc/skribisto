@@ -207,7 +207,7 @@ check(row is not None, "found a row to duplicate")
 if row:
     s.click_node(row)
     time.sleep(1.0)
-    s.call("inject_key", {"key": "d", "modifiers": ["ctrl"]})
+    s.call("inject_key", {"key": "d", "command": True})
 
     # Poll rather than sleep-and-hope: the whole question is *whether* the
     # reload arrives, so a fixed sleep that happened to be long enough would
@@ -222,7 +222,7 @@ if row:
 
     check(grew, "the duplicate reached the binder tree "
                 f"({len(before)} -> {len(s.tree_items())} rows)")
-    s.shot("/tmp/tree-refresh-after-duplicate.png")
+    s.shot(os.path.join(fixture.SCRATCH, "tree-refresh-after-duplicate.png"))
 
 # The trash tree is the second model this changed, and Empty Trash is its own
 # worst-case burst (one event per trashed item). Trashing exercises both trees at
@@ -276,7 +276,7 @@ if row:
             time.sleep(2.0)
             check("Prologue" in s.tree_items(),
                   "the trashed row arrived in the Trash panel")
-            s.shot("/tmp/tree-refresh-trash-panel.png")
+            s.shot(os.path.join(fixture.SCRATCH, "tree-refresh-trash-panel.png"))
 
 check(s.app.poll() is None, "the app is still running")
 s.close()

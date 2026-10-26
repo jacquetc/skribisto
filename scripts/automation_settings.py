@@ -531,9 +531,9 @@ def settings_open():
 
 
 def open_settings():
-    for args in ({"key": ",", "ctrl": True},
-                 {"key": ",", "modifiers": ["ctrl"]},
-                 {"key": "Comma", "modifiers": ["ctrl"]}):
+    for args in ({"key": ",", "command": True},
+                 {"key": ",", "command": True},
+                 {"key": "Comma", "command": True}):
         res, _ = s.call("inject_key", args)
         if not (isinstance(res, dict) and res.get("isError")):
             time.sleep(0.8)
@@ -548,7 +548,7 @@ if not how:
     fail("could not open the Settings window", s.app, s.mcp, s.log)
 print(f"Settings opened via {how}.")
 s.dump("Settings window (default pane)")
-s.shot("/tmp/sk-settings-default.png")
+s.shot(os.path.join(fixture.SCRATCH, "sk-settings-default.png"))
 
 # ── 1. The category tree holds every section + page ───────────────────────────
 require_all(SECTIONS, "the category tree")
@@ -605,7 +605,7 @@ if not (appearance_row and appearance_row.get("selected")):
          "pane disagree about where the window landed", s.app, s.mcp, s.log)
 print("PASS: the window opens on Appearance & Behavior ▸ Appearance "
       "(language switcher, theme picker and interface text size)")
-s.shot("/tmp/sk-settings-appearance.png")
+s.shot(os.path.join(fixture.SCRATCH, "sk-settings-appearance.png"))
 
 # ── 3. …and the rail it opens with shows the `Work:` section, unscrolled ─────
 # The point of the landing page moving off Editor ▸ Typography ▸ Scene. Scene is
@@ -751,7 +751,7 @@ if len(sliders) < SCENE_MIN_SLIDERS:
     fail(f"expected >= {SCENE_MIN_SLIDERS} sliders on the Scene typography pane "
          f"(size, line height, first-line indent, paragraph spacing before/after), "
          f"got {len(sliders)}", s.app, s.mcp, s.log)
-s.shot("/tmp/sk-settings-scene.png")
+s.shot(os.path.join(fixture.SCRATCH, "sk-settings-scene.png"))
 print("PASS: Editor and its Typography group start collapsed, both expand, and "
       "Scene shows its typography controls (font ComboBox + typography sliders)")
 
@@ -761,7 +761,7 @@ print("PASS: Editor and its Typography group start collapsed, both expand, and "
 # under the step. (It used to have to run before any expansion, and its centre
 # still landed within a pixel of the viewport's bottom edge.)
 select_page(KEYMAP_PAGE, "Keymap")
-s.shot("/tmp/sk-settings-keymap.png")
+s.shot(os.path.join(fixture.SCRATCH, "sk-settings-keymap.png"))
 # Keymap carries neither the Appearance pane's controls nor Scene's typography
 # form (it is a filter field and the framework's shortcut list), so both must be
 # gone — a robust "the pane actually switched" signal that does not depend on
@@ -782,7 +782,7 @@ if has_any(EMPTY_BIT):
     print("PASS: the placeholder pane is showing")
 else:
     print("PASS: Keymap switched in without the previous panes' controls "
-          "(see /tmp/sk-settings-keymap.png)")
+          f"(see {os.path.join(fixture.SCRATCH, 'sk-settings-keymap.png')})")
 
 # ── 7. Expand Backup & Sync, then select Autosave ────────────────────────────
 # Driven through the section's own `expand` action. This step used to be a soft
@@ -827,7 +827,7 @@ if search:
     if not (isinstance(res, dict) and res.get("isError")):
         time.sleep(0.5)
         print("PASS: SearchField accepted a query")
-        s.shot("/tmp/sk-settings-search.png")
+        s.shot(os.path.join(fixture.SCRATCH, "sk-settings-search.png"))
     else:
         print("NOTE: set_value on the SearchField was rejected (non-fatal)")
 else:

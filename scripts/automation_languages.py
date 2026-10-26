@@ -288,7 +288,7 @@ def add_language(s, code):
 
 
 def save(s):
-    s.call("inject_key", {"key": "s", "ctrl": True})
+    s.call("inject_key", {"key": "s", "command": True})
     s.settle()
     time.sleep(2.0)
 
@@ -306,10 +306,10 @@ print(f"  opened {ITEM!r}")
 
 before = language_pills(s)
 if before is None:
-    s.shot("/tmp/langs-no-section.png")
+    s.shot(os.path.join(fixture.SCRATCH, "langs-no-section.png"))
     fail(f"no Language section in the Inspector (looked for {LANG_SECTION})", s)
 print(f"  languages on the item: {before}")
-s.shot("/tmp/langs-initial.png")
+s.shot(os.path.join(fixture.SCRATCH, "langs-initial.png"))
 
 # ── 2. Add a second language: BOTH must remain ──────────────────────────────
 print("\n== add a second language ==")
@@ -320,7 +320,7 @@ if any("fr-fr" in p.lower() for p in before):
 else:
     NEW, NEW_LABEL = "fr-FR", "Français"
 if not add_language(s, NEW_LABEL):
-    s.shot("/tmp/langs-add-fail.png")
+    s.shot(os.path.join(fixture.SCRATCH, "langs-add-fail.png"))
     fail(f"could not pick {NEW_LABEL!r} from the add-language popover", s)
 
 after = language_pills(s)
@@ -329,7 +329,7 @@ if not any(NEW.lower() in p.lower() for p in after):
     fail(f"{NEW} was not added (field shows {after})", s)
 # The point of the whole stage. A string-shaped bug replaces rather than appends.
 if len(after) <= len(before):
-    s.shot("/tmp/langs-replaced.png")
+    s.shot(os.path.join(fixture.SCRATCH, "langs-replaced.png"))
     fail(f"adding {NEW} did not grow the list ({before} -> {after}) — a list must "
          f"append, and this is exactly what a string-shaped write looks like", s)
 print(f"  both kept: {len(before)} -> {len(after)} pills")
@@ -347,7 +347,7 @@ print(f"  after reload: {reloaded}")
 if sorted(x.lower() for x in reloaded) != sorted(x.lower() for x in after):
     fail(f"the language list did not survive save+reload: {after} -> {reloaded}", s)
 print("  the list round-tripped through RON unchanged")
-s.shot("/tmp/langs-reloaded.png")
+s.shot(os.path.join(fixture.SCRATCH, "langs-reloaded.png"))
 
 # ── 4. Remove one: the other stays ──────────────────────────────────────────
 print("\n== remove the added language ==")
@@ -388,11 +388,11 @@ if sorted(x.lower() for x in final) != sorted(x.lower() for x in before):
 # blank must not count as "has a language" — this is where that is observable.
 blanks = [p for p in final if not p.strip()]
 if blanks:
-    s.shot("/tmp/langs-blank.png")
+    s.shot(os.path.join(fixture.SCRATCH, "langs-blank.png"))
     fail(f"the field holds {len(blanks)} blank entr(y/ies) — a removed language must "
          f"leave no empty string behind, or the item stops inheriting the work's", s)
 print("  no blank entry left behind")
-s.shot("/tmp/langs-final.png")
+s.shot(os.path.join(fixture.SCRATCH, "langs-final.png"))
 
 s.stop()
 print("\nOK — the language list adds, removes, and round-trips through save+reload.")

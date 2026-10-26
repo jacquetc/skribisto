@@ -355,9 +355,9 @@ def settings_open():
 
 
 def open_settings():
-    for args in ({"key": ",", "ctrl": True},
-                 {"key": ",", "modifiers": ["ctrl"]},
-                 {"key": "Comma", "modifiers": ["ctrl"]}):
+    for args in ({"key": ",", "command": True},
+                 {"key": ",", "command": True},
+                 {"key": "Comma", "command": True}):
         s.call("inject_key", args)
         for _ in range(10):
             time.sleep(0.4)
@@ -479,7 +479,7 @@ print("\n== select the Tags page ==")
 crumb = select_page(PAGE_TAGS, anchor_node=work)
 if not crumb:
     s.dump("Tags page never selected")
-    s.shot("/tmp/tags-pane-fail.png")
+    s.shot(os.path.join(fixture.SCRATCH, "tags-pane-fail.png"))
     fail("could not select the Tags page", s.app, s.mcp, s.log)
 print(f"  breadcrumb: {crumb}")
 
@@ -499,7 +499,7 @@ PANE_BITS = {
 missing = [k for k, v in PANE_BITS.items() if not has_any(v)]
 if missing:
     print("  text:", joined()[:900])
-    s.shot("/tmp/tags-pane-fail.png")
+    s.shot(os.path.join(fixture.SCRATCH, "tags-pane-fail.png"))
     fail(f"missing from the Tags pane: {missing}", s.app, s.mcp, s.log)
 print("  controls: all present ->", ", ".join(PANE_BITS))
 
@@ -507,7 +507,7 @@ texts = exact_texts()
 absent = [t for t in LEGACY_TAGS if t not in texts]
 if absent:
     print("  exact texts:", sorted(texts)[:40])
-    s.shot("/tmp/tags-pane-fail.png")
+    s.shot(os.path.join(fixture.SCRATCH, "tags-pane-fail.png"))
     fail(f"legacy tags missing from the palette: {absent}", s.app, s.mcp, s.log)
 print(f"  legacy tags listed: {', '.join(LEGACY_TAGS)}  <- the hostage data, freed")
 
@@ -544,7 +544,7 @@ for n in s.nodes():
         checked += 1
         right = b.get("x", 0) + b.get("width", 0)
         if right > pane_right + 2:
-            s.shot("/tmp/tags-clip-fail.png")
+            s.shot(os.path.join(fixture.SCRATCH, "tags-clip-fail.png"))
             fail(f"{lab!r} overflows the pane (right={right:.0f} > {pane_right:.0f})",
                  s.app, s.mcp, s.log)
 # Without this the check passes loudest when it matches nothing at all — a
@@ -554,7 +554,7 @@ if checked < 3:
          f"so this clipping check was about to prove nothing", s.app, s.mcp, s.log)
 print(f"  toolbar fits: {checked} pane buttons, none clipped at the right edge")
 
-s.shot("/tmp/tags-settings-pane.png")
+s.shot(os.path.join(fixture.SCRATCH, "tags-settings-pane.png"))
 
 # ── The "Story bible" switch explains itself on hover ────────────────────────
 print("\n== story-bible rich tooltip ==")
@@ -587,10 +587,10 @@ for _ in range(15):
         break
 if not tip:
     print("  text:", joined()[:900])
-    s.shot("/tmp/tags-tooltip-fail.png")
+    s.shot(os.path.join(fixture.SCRATCH, "tags-tooltip-fail.png"))
     fail("hovering the Story bible switch showed no explanation", s.app, s.mcp, s.log)
 print("  hovering the switch explains what turning it on does")
-s.shot("/tmp/tags-story-bible-tooltip.png")
+s.shot(os.path.join(fixture.SCRATCH, "tags-story-bible-tooltip.png"))
 
 # ── 3. The duplicate-name warning (case-insensitive, non-blocking) ───────────
 print("\n== duplicate-name warning ==")
@@ -651,10 +651,10 @@ if not has_any(("already exists", "existe déjà")):
     print(f"  add field now holds {(now or {}).get('value')!r} "
           f"(typed 'a'; a warning is expected because tag 'A' exists)")
     print("  labels:", joined()[:900])
-    s.shot("/tmp/tags-dup-fail.png")
+    s.shot(os.path.join(fixture.SCRATCH, "tags-dup-fail.png"))
     fail("typing an existing name (different case) raised no warning", s.app, s.mcp, s.log)
 print("  typing 'a' with tag 'A' present -> warned, and still accepted (duplicates are legal)")
-s.shot("/tmp/tags-duplicate-warning.png")
+s.shot(os.path.join(fixture.SCRATCH, "tags-duplicate-warning.png"))
 
 # ── 4. The Inspector carries the same tags ───────────────────────────────────
 print("\n== close Settings and check the Inspector ==")
@@ -748,7 +748,7 @@ for n in binder_rows:
     # every later assertion would otherwise be measuring the Welcome screen.
     if (has_any(("works", "examples", "\u0153uvres", "exemples"))
             and not has_any(("binder", "classeur"))):
-        s.shot("/tmp/tags-inspector-fail.png")
+        s.shot(os.path.join(fixture.SCRATCH, "tags-inspector-fail.png"))
         fail(f"clicking {(n.get('label') or '')!r} closed the project", s.app, s.mcp, s.log)
     if LEGACY_TAGS_SET <= inspector_texts():
         found_on = (n.get("label") or "").strip()
@@ -756,7 +756,7 @@ for n in binder_rows:
 
 if not found_on:
     s.dump("no binder item showed the tags")
-    s.shot("/tmp/tags-inspector-fail.png")
+    s.shot(os.path.join(fixture.SCRATCH, "tags-inspector-fail.png"))
     fail("no binder item shows its three tags in the Inspector", s.app, s.mcp, s.log)
 # The fixture attaches all three tags to exactly one item. Naming it here means a
 # future fixture edit that moves them fails loudly instead of quietly passing on
@@ -766,7 +766,7 @@ if found_on.lower() != "1.1 zeus":
          f"either the fixture changed or the Inspector is showing another item's tags",
          s.app, s.mcp, s.log)
 print(f"  Inspector shows all three tags on {found_on!r}")
-s.shot("/tmp/tags-inspector.png")
+s.shot(os.path.join(fixture.SCRATCH, "tags-inspector.png"))
 
 # ── A tag pill's composite tooltip renders on the tooltip surface ────────────
 print("\n== tag pill tooltip ==")
@@ -808,7 +808,7 @@ for _ in range(15):
         break
 if shown:
     print("  the tag's composite tooltip opens")
-    s.shot("/tmp/tags-pill-tooltip.png")
+    s.shot(os.path.join(fixture.SCRATCH, "tags-pill-tooltip.png"))
 else:
     # Not fatal: the tooltip's own surface colours are asserted by unit tests, and
     # hover timing here is the least reliable thing in the harness.
@@ -830,13 +830,13 @@ for n in s.nodes():
         break
 if not dot_row:
     s.dump("no dot row found")
-    s.shot("/tmp/tags-dots-fail.png")
+    s.shot(os.path.join(fixture.SCRATCH, "tags-dots-fail.png"))
     fail("no tag dot row announcing all three tags", s.app, s.mcp, s.log)
 print(f"  dot row announces: {node_text(dot_row)!r}")
 
 b = dot_row.get("bounds") or {}
 print(f"  dot row is {b.get('width', 0):.0f}x{b.get('height', 0):.0f} dp")
-s.shot("/tmp/tags-dots-row.png")
+s.shot(os.path.join(fixture.SCRATCH, "tags-dots-row.png"))
 
 # Hovering one dot must show that dot's tooltip, not the row's. The row spans
 # every dot, so aim at the first cell rather than the row's centre.
@@ -852,10 +852,10 @@ if wait_for(lambda: any(
                if (n.get("role") or "") in ("Tooltip", "Dialog")
                and (n.get("label") or "").strip().lower() in LEGACY_TAGS_SET)
     print(f"  hovering the first dot shows {tip.get('label')!r} alone")
-    s.shot("/tmp/tags-dot-tooltip.png")
+    s.shot(os.path.join(fixture.SCRATCH, "tags-dot-tooltip.png"))
 else:
     print("  (no per-dot tooltip within the poll window)")
-    s.shot("/tmp/tags-dot-tooltip-miss.png")
+    s.shot(os.path.join(fixture.SCRATCH, "tags-dot-tooltip-miss.png"))
 
 # Clicking anywhere on the row — including on a dot — opens the picker. This is
 # the assertion that the dots' lack of an on_tap actually lets the press bubble
@@ -875,7 +875,7 @@ def picker_open():
 
 if not wait_for(picker_open):
     s.dump("picker did not open")
-    s.shot("/tmp/tags-picker-fail.png")
+    s.shot(os.path.join(fixture.SCRATCH, "tags-picker-fail.png"))
     fail("clicking a dot did not open the tag picker — the dots are swallowing "
          "the row's tap (did one grow an on_tap?)", s.app, s.mcp, s.log)
 
@@ -884,10 +884,10 @@ ticked = [n for n in opts if n.get("selected")]
 print(f"  picker lists {len(opts)} tags, {len(ticked)} ticked")
 if len(ticked) < len(LEGACY_TAGS):
     print("  options:", [(n.get("label"), n.get("selected")) for n in opts])
-    s.shot("/tmp/tags-picker-fail.png")
+    s.shot(os.path.join(fixture.SCRATCH, "tags-picker-fail.png"))
     fail("the item's three tags should all be ticked", s.app, s.mcp, s.log)
 print("  every tag on the item is ticked")
-s.shot("/tmp/tags-picker.png")
+s.shot(os.path.join(fixture.SCRATCH, "tags-picker.png"))
 
 # Untick one. The assertion is on the dot row, not on the tick: the row is what
 # the writer actually sees, and it is the end of the whole chain (picker tap ->
@@ -913,7 +913,7 @@ pointer_click(target.get("bounds") or {})
 s.settle()
 
 if not wait_for(lambda: "B," not in node_text(dots_row())):
-    s.shot("/tmp/tags-untick-fail.png")
+    s.shot(os.path.join(fixture.SCRATCH, "tags-untick-fail.png"))
     fail("unticking 'B' did not drop it from the dot row", s.app, s.mcp, s.log)
 
 after = dots_row()
@@ -925,11 +925,11 @@ if after_w >= before_w:
 # The picker must survive the toggle. It used to die: the row owned the popover
 # AND rebuilt on every tag change, so each tick tore down its own picker.
 if not any(n.get("role") == "ListBoxOption" for n in s.nodes()):
-    s.shot("/tmp/tags-picker-closed.png")
+    s.shot(os.path.join(fixture.SCRATCH, "tags-picker-closed.png"))
     fail("the picker closed on the first tick — unticking several tags would mean "
          "reopening it each time", s.app, s.mcp, s.log)
 print("  the picker stayed open, so several tags can be toggled in one visit")
-s.shot("/tmp/tags-unticked.png")
+s.shot(os.path.join(fixture.SCRATCH, "tags-unticked.png"))
 
 # Put it back, so the fixture is left as found.
 back = next((n for n in s.nodes()

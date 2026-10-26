@@ -432,7 +432,7 @@ def settings_open(s):
 
 
 def open_settings(s):
-    for args in ({"key": ",", "ctrl": True}, {"key": "Comma", "ctrl": True}):
+    for args in ({"key": ",", "command": True}, {"key": "Comma", "command": True}):
         s.call("inject_key", args)
         for _ in range(10):
             time.sleep(0.4)
@@ -708,7 +708,7 @@ time.sleep(0.2)
 # behind the modal, from being mistaken for it.
 text_fields = [n for n in s.nodes() if n.get("role") in ("TextInput", "TextField")]
 location_field = next((n for n in text_fields
-                       if "/" in val(n) and n.get("id") != name_field["id"]), None)
+                       if fixture.looks_like_path(val(n)) and n.get("id") != name_field["id"]), None)
 if location_field is None:
     fail("could not identify the Location field (no other TextInput holds a path)", s)
 print(f"  name field id={name_field['id']}; default location={val(location_field)!r}")
@@ -728,7 +728,7 @@ time.sleep(0.2)
 # Ctrl+A selection has been dispatched and applied would delete one
 # character instead of the whole field (`automation_welcome_search.py`'s
 # proven Ctrl+A/Backspace idiom settles after each key for the same reason).
-s.call("inject_key", {"key": "a", "ctrl": True})
+s.call("inject_key", {"key": "a", "command": True})
 s.settle()
 time.sleep(0.2)
 s.call("inject_key", {"key": "Backspace"})
@@ -768,7 +768,7 @@ if not node_enabled(s, create_btn["id"]):
     fail("Create Work should be ENABLED with a valid name and an existing, "
          "writable location", s)
 print("  Create Work is enabled.")
-s.shot("/tmp/tag-presets-new-work.png")
+s.shot(os.path.join(fixture.SCRATCH, "tag-presets-new-work.png"))
 
 res, _ = s.call("invoke_action", {"node": create_btn["id"], "action": "click"})
 if isinstance(res, dict) and res.get("isError"):
@@ -808,7 +808,7 @@ if len(windows) != 1:
     fail(f"expected exactly one window once the Launcher closes, got {windows}", s)
 print(f"  project window is up ({len(binder_tree_rows(s))} binder row(s)); "
       f"windows settled to {len(windows)}")
-s.shot("/tmp/tag-presets-project.png")
+s.shot(os.path.join(fixture.SCRATCH, "tag-presets-project.png"))
 
 # ── Settings ▸ Work ▸ Tags ───────────────────────────────────────────────────
 print("\n== open Settings ▸ Work ▸ Tags ==")
@@ -835,7 +835,7 @@ if not tags_row:
 crumb = select_page(s, PAGE_TAGS, anchor_node=work)
 if not crumb:
     dump(s, "Tags page never selected")
-    s.shot("/tmp/tag-presets-select-fail.png")
+    s.shot(os.path.join(fixture.SCRATCH, "tag-presets-select-fail.png"))
     fail("could not select the Tags page", s)
 print(f"  Tags page open (breadcrumb: {crumb})")
 
@@ -848,7 +848,7 @@ rows0 = read_all_tag_rows(s)
 if rows0:
     fail(f"a brand-new project should have 0 tags, found {len(rows0)}: {rows0}", s)
 print(f"  confirmed: {TAGS_EMPTY[1]!r} shown, and independently, 0 rows read")
-s.shot("/tmp/tag-presets-empty.png")
+s.shot(os.path.join(fixture.SCRATCH, "tag-presets-empty.png"))
 
 # ── 2. Applying "Basique" adds its 6 tags, in FRENCH ─────────────────────────
 print("\n== 2. applying 'Basique' adds its 6 tags, in FRENCH ==")
@@ -864,7 +864,7 @@ if got_set != EXPECTED_BASIC_SET:
 if not has_any(s, TAGS_COUNT_BASIC):
     fail(f"toolbar count did not update to 6 (looked for {TAGS_COUNT_BASIC})", s)
 print(f"  all 6 French names present: {sorted(got_set)}")
-s.shot("/tmp/tag-presets-basic.png")
+s.shot(os.path.join(fixture.SCRATCH, "tag-presets-basic.png"))
 
 # ── 3. Basic's rows come back in sort_rows' exact order ─────────────────────
 #
@@ -903,7 +903,7 @@ if rows_scifi != EXPECTED_SCIFI_ORDER:
 if not has_any(s, TAGS_COUNT_SCIFI):
     fail(f"toolbar count did not update to 9 (looked for {TAGS_COUNT_SCIFI})", s)
 print(f"  exactly the 3 extras were added: {sorted(SCIFI_EXTRA)}; Basic's 10 untouched")
-s.shot("/tmp/tag-presets-scifi.png")
+s.shot(os.path.join(fixture.SCRATCH, "tag-presets-scifi.png"))
 
 # ── 5. Ctrl+Z — KNOWN GAP, see the module docstring ──────────────────────────
 print("\n== 5. ONE Ctrl+Z reverting the preset apply — KNOWN GAP ==")
@@ -930,7 +930,7 @@ if count_lbl:
     s.settle()
     time.sleep(0.3)
 before_ctrl_z = read_all_tag_rows(s)
-s.call("inject_key", {"key": "z", "ctrl": True})
+s.call("inject_key", {"key": "z", "command": True})
 s.settle()
 time.sleep(1.0)
 after_ctrl_z = read_all_tag_rows(s)

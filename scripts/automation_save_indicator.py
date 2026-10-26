@@ -185,7 +185,7 @@ print(f"  indicator: {ind.get('label')!r}")
 if state(ind) != "saved":
     fail(f"a just-loaded project must read as saved, got {ind.get('label')!r}",
          s.app, s.mcp, s.log)
-s.shot("/tmp/indicator-clean.png")
+s.shot(os.path.join(fixture.SCRATCH, "indicator-clean.png"))
 
 # ── 2. Typing flips it to unsaved ────────────────────────────────────────────
 print("== typing flips it to unsaved ==")
@@ -214,7 +214,7 @@ print(f"  indicator: {ind.get('label')!r}")
 if state(ind) != "unsaved":
     fail("the indicator still reads as saved after typing — it is not tracking the "
          "dirty state", s.app, s.mcp, s.log)
-s.shot("/tmp/indicator-dirty.png")
+s.shot(os.path.join(fixture.SCRATCH, "indicator-dirty.png"))
 
 # ── 3. Clicking it saves ─────────────────────────────────────────────────────
 # Not just "the icon changed": the click must actually reach `request_save`, so the
@@ -230,11 +230,11 @@ while time.time() < end:
         break
     time.sleep(0.5)
 if not settled:
-    s.shot("/tmp/indicator-stuck.png")
+    s.shot(os.path.join(fixture.SCRATCH, "indicator-stuck.png"))
     fail("the indicator never went back to saved after clicking it — the click did "
          "not reach the save, or the save never landed", s.app, s.mcp, s.log)
 print(f"  indicator: {ind.get('label')!r}")
-s.shot("/tmp/indicator-after-save.png")
+s.shot(os.path.join(fixture.SCRATCH, "indicator-after-save.png"))
 
 print("\nPASS: the save indicator tracks the work — saved on load, unsaved on the "
       "first keystroke, saved again once a click writes it.")

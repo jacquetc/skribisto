@@ -24,7 +24,11 @@ import automation_fixture as fixture  # noqa: E402
 
 SKRIBISTO = fixture.skribisto_binary()
 MCP = fixture.mcp_binary()
-PROJECT = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else "/tmp/p02/Starforgers.skrib")
+# A working copy, never the file itself: autosave and Ctrl+S are real.
+PROJECT = fixture.working_copy(
+    os.path.abspath(sys.argv[1]) if len(sys.argv) > 1
+    else fixture.repo_path("resources", "examples", "starforgers", "Starforgers.skrib"),
+    label="find-banner-probe")
 
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
 
@@ -198,10 +202,10 @@ before = dict(vp["bounds"])
 n_before = len(tab_text_inputs(ns))
 print(f"tab viewport before: y={before['y']:.0f} h={before['height']:.0f} "
       f"({n_before} TextInput(s) in the tab)")
-shot("/tmp/banner-before.png")
+shot(os.path.join(fixture.SCRATCH, "banner-before.png"))
 
 # ── Open the banner (Ctrl+F) — the prose must shift DOWN by the banner height ──
-call("inject_key", {"key": "f", "ctrl": True})
+call("inject_key", {"key": "f", "command": True})
 time.sleep(0.4)
 # Pump frames: if the banner only opens once something else forces a redraw, the
 # animation is queued but never scheduled — an idle app would leave it stuck.
@@ -216,7 +220,7 @@ if not prose_editor(ns):
     fail("the prose editor vanished when the banner opened", app, mcp, log)
 after = dict(viewport(ns)["bounds"])
 n_after = len(tab_text_inputs(ns))
-shot("/tmp/banner-open.png")
+shot(os.path.join(fixture.SCRATCH, "banner-open.png"))
 
 if n_after != n_before + 1:
     fail(f"Ctrl+F did not mount the find banner (TextInputs {n_before} -> {n_after}, "
@@ -235,7 +239,7 @@ if shift <= 0:
          "(it would be covering the text)", app, mcp, log)
 
 # ── Close it again: the prose must come back to exactly where it was ──────────
-call("inject_key", {"key": "f", "ctrl": True})
+call("inject_key", {"key": "f", "command": True})
 time.sleep(1.2)
 ns = nodes()
 back = dict(viewport(ns)["bounds"])

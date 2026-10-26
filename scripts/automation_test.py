@@ -14,7 +14,7 @@ automation bridge), waits for the bridge announce on its stderr, attaches
 the AccessKit tree until the loaded work's content appears (the launch-load is
 driven by a backend event that takes a few UI-thread ticks to reflect — a single
 early snapshot is stale).
-Saves a screenshot of the settled state to $SHOT_DIR (default /tmp).
+Saves a screenshot of the settled state to $SHOT_DIR (default `fixture.SCRATCH`).
 
 **What "loaded" means here.** The markers are read out of the project's own
 manifest before launching — its work title, its binder names, its item titles —
@@ -33,7 +33,7 @@ import automation_fixture as fixture  # noqa: E402
 
 SKRIBISTO = fixture.skribisto_binary()
 MCP = fixture.mcp_binary()
-OUT = os.environ.get("SHOT_DIR", "/tmp")
+OUT = os.environ.get("SHOT_DIR", fixture.SCRATCH)
 # Resolve to an absolute path — the launched app resolves a relative path against
 # its own working directory, which is not this script's.
 SOURCE = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else

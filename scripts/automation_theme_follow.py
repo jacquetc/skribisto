@@ -39,6 +39,8 @@ import io, json, os, select, shutil, subprocess, sys, tempfile, time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
 
+fixture.require_linux("a sandboxed KDE kdeglobals and gdbus")
+
 try:
     from PIL import Image, ImageStat
 except ImportError:

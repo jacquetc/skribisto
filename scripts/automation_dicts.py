@@ -183,8 +183,8 @@ if not s.wait_label("starforgers", timeout=15):
 print("example loaded.")
 
 # open Settings (try key variants until the always-present footer appears)
-for args in ({"key": ",", "ctrl": True}, {"key": ",", "modifiers": ["ctrl"]},
-             {"key": "Comma", "modifiers": ["ctrl"]}):
+for args in ({"key": ",", "command": True}, {"key": ",", "command": True},
+             {"key": "Comma", "command": True}):
     s.call("inject_key", args)
     time.sleep(0.8)
     if settings_open():
@@ -204,7 +204,7 @@ leaked = [n for n in s.nodes()
 print(f"=== LEAK CHECK (inactive Work-Language pane): {len(leaked)} leaked pill node(s) at top-left ===")
 for n in leaked:
     print(f"  LEAK [{n.get('role')}] {n.get('label')!r} bounds={n.get('bounds')}")
-s.shot("/tmp/settings-default-noleaK.png")
+s.shot(os.path.join(fixture.SCRATCH, "settings-default-noleaK.png"))
 
 # Navigate to Work ▸ Language robustly (invoke_action on the leaf node), then tab to focus a
 # pill to verify the focus ring.
@@ -212,7 +212,7 @@ lang = s.match(["language", "langue"], rail_only=True, exact=True)
 if lang:
     s.click_node(lang)  # inject_pointer — reliably drives the tree selection → pane switch
     time.sleep(0.9)
-    s.shot("/tmp/work-language-active.png")
+    s.shot(os.path.join(fixture.SCRATCH, "work-language-active.png"))
     # KEYBOARD focus the pill (Tab) so the `:focus-visible` ring shows, and capture each step
     # so we can see when the pill takes focus.
     for i in range(8):
@@ -222,7 +222,7 @@ if lang:
         if foc:
             print(f"  tab {i}: focused = {[n.get('label') for n in foc]}")
         if any("turn spell" in (n.get("label") or "").lower() for n in foc):
-            s.shot("/tmp/work-language-focused.png")
+            s.shot(os.path.join(fixture.SCRATCH, "work-language-focused.png"))
             print("  -> pill focused, ring screenshot taken")
             break
     print("captured work-language active + focused")
@@ -230,7 +230,7 @@ if lang:
 # Spelling ▸ Dictionaries
 expand_and_click(["spelling", "orthographe"], ["dictionaries", "dictionnaires"])
 s.dump("Dictionaries pane")
-s.shot("/tmp/dicts-pane.png")
+s.shot(os.path.join(fixture.SCRATCH, "dicts-pane.png"))
 joined = " | ".join(s.labels()).lower()
 print("=== Dictionaries checks ===")
 for needle in ("installed", "get more", "installés", "english", "français", "download", "télécharger"):
@@ -241,7 +241,7 @@ gm = s.match(["get more", "en obtenir"])
 if gm:
     s.click_node(gm)
     time.sleep(0.8)
-    s.shot("/tmp/dicts-getmore.png")
+    s.shot(os.path.join(fixture.SCRATCH, "dicts-getmore.png"))
     j = " | ".join(s.labels()).lower()
     print("=== Get more checks ===")
     for needle in ("download", "télécharger", "view licence", "voir la licence", "français", "italiano"):
@@ -256,7 +256,7 @@ if expand_and_click(["work:", "œuvre :", "oeuvre"], ["language", "langue"]):
         if lab and n.get("role") in ("List", "ListItem", "Button") and (
             "language" in lab.lower() or "spell" in lab.lower() or "add" in lab.lower()):
             print(f"  [{n.get('role')}] {lab!r} bounds={n.get('bounds')}")
-    s.shot("/tmp/work-language-pane.png")
+    s.shot(os.path.join(fixture.SCRATCH, "work-language-pane.png"))
 
 # close settings via Done, open a chapter (single-click opens it → the Inspector shows its
 # language pill field), screenshot, then type a misspelling to check squiggles.
@@ -275,10 +275,10 @@ if ch:
                     or "spell" in lab.lower()):
             b = n.get("bounds") or {}
             print(f"  [{n.get('role')}] {lab!r} bounds={b}")
-    s.shot("/tmp/inspector-pill.png")
+    s.shot(os.path.join(fixture.SCRATCH, "inspector-pill.png"))
     s.call("inject_text", {"text": " thiss worrd missspelled "})
     time.sleep(1.2)
-    s.shot("/tmp/editor-squiggles.png")
+    s.shot(os.path.join(fixture.SCRATCH, "editor-squiggles.png"))
     print("screenshots taken")
 
 s.close()

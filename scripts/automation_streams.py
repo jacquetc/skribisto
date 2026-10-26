@@ -28,7 +28,7 @@ import automation_fixture as fixture  # noqa: E402
 
 SKRIBISTO = fixture.skribisto_binary()
 MCP = fixture.mcp_binary()
-OUT = os.environ.get("SHOT_DIR", "/tmp")
+OUT = os.environ.get("SHOT_DIR", fixture.SCRATCH)
 # Everything left of this x is the binder dock; the editor pane is to its right.
 PANE_X = 300
 
@@ -199,9 +199,11 @@ def shot(name):
 if project is None:
     row = find("Mock Project", timeout=10)
     if not row:
-        die("no 'Mock Project' recent row in the Launcher — this script's no-args "
-            "mode needs a `--features mocks` build (see the module docstring)",
-            app, mcp)
+        for p in (mcp, app):
+            if p and p.poll() is None:
+                p.terminate()
+        fixture.skip("no project argument, and this is not a `--features mocks` build "
+                     "(run bare, this probe opens the mocks' Mock Project)")
     b = row.get("bounds") or {}
     if "x" in b:
         call("inject_pointer", {"x": b["x"] + b.get("width", 0) / 2,

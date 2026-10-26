@@ -207,9 +207,9 @@ def settings_open():
 
 
 def open_settings():
-    for args in ({"key": ",", "ctrl": True},
-                 {"key": ",", "modifiers": ["ctrl"]},
-                 {"key": "Comma", "modifiers": ["ctrl"]}):
+    for args in ({"key": ",", "command": True},
+                 {"key": ",", "command": True},
+                 {"key": "Comma", "command": True}):
         res, _ = s.call("inject_key", args)
         if not (isinstance(res, dict) and res.get("isError")):
             time.sleep(0.8)
@@ -368,7 +368,7 @@ if "Scene" in link_labels():
 # The title is on the page itself, not only in the breadcrumb above it.
 if joined().count("editor") < 2:
     fail("the Editor page does not show its own title", s.app, s.mcp, s.log)
-shots.append(s.shot("/tmp/settings-parent-editor.png"))
+shots.append(s.shot(os.path.join(fixture.SCRATCH, "settings-parent-editor.png")))
 
 # 2 ── a nested group is a page too, reached from its section's page ──────────
 print("== 2. the Typography group's own page, followed from the section's ==")
@@ -379,7 +379,7 @@ require_links(
 )
 if not row_is_selected("Typography"):
     fail("following the link left the tree highlighting the section", s.app, s.mcp, s.log)
-shots.append(s.shot("/tmp/settings-parent-typography.png"))
+shots.append(s.shot(os.path.join(fixture.SCRATCH, "settings-parent-typography.png")))
 
 # 3 ── a leaf link opens the real page AND moves the highlight ────────────────
 print("== 3. following a leaf link ==")
@@ -417,7 +417,7 @@ require_links(
 if joined().count(work_label.lower()) < 2:
     fail("the Work page does not carry the project's name in its own title",
          s.app, s.mcp, s.log)
-shots.append(s.shot("/tmp/settings-parent-work.png"))
+shots.append(s.shot(os.path.join(fixture.SCRATCH, "settings-parent-work.png")))
 
 # 5 ── every remaining section, including the collapsed ones ─────────────────
 # The four sections that start collapsed are the ones a writer is most likely to

@@ -71,20 +71,22 @@ def die(msg, *procs):
     sys.exit(1)
 
 
-subprocess.run(["pkill", "-x", "skribisto"], check=False)
+# This checkout's debug build only: `pkill -x skribisto` also ended an
+# installed Skribisto, with whatever the writer had open in it.
+fixture.stop_strays()
 time.sleep(0.4)
 env = dict(os.environ)
 xdg = os.environ.get("PROBE_XDG")
 if xdg:
     os.makedirs(os.path.join(xdg, "config"), exist_ok=True)
     os.makedirs(os.path.join(xdg, "data"), exist_ok=True)
-    env["XDG_CONFIG_HOME"] = os.path.join(xdg, "config")
-    env["XDG_DATA_HOME"] = os.path.join(xdg, "data")
+    env = fixture.sandbox_env(os.path.join(xdg, "config"), extra={
+        "XDG_DATA_HOME": os.path.join(xdg, "data")})
     # A layout persisted by an earlier run can have the bottom side dragged to
     # zero height, and a dock with no height is indistinguishable from one that
     # failed to open.
     try:
-        os.remove(os.path.join(xdg, "config", "skribisto", "workspace.toml"))
+        os.remove(os.path.join(fixture.app_config_dir(env), "workspace.toml"))
     except FileNotFoundError:
         pass
     print(f"isolated XDG root: {xdg}")
@@ -93,9 +95,9 @@ if xdg:
 # there is no View menu at all, and the first check failed as "could not reach
 # View ▸ Go back in time" — a sentence about a menu, for a missing argument.
 if project is None:
-    sys.exit(f"usage: {os.path.basename(__file__)} PROJECT.skrib\n"
-             "This probe needs a project with recorded versions — backups beside "
-             "the file or in the backup root, or an in-project history log.")
+    fixture.skip(f"usage: {os.path.basename(__file__)} PROJECT.skrib. This probe needs "
+                 "a project with recorded versions: backups beside the file or in the "
+                 "backup root, or an in-project history log.")
 
 # Every check below matches an English literal ("versions recorded, going back
 # to...", "Struck through", ...), so the interface language is pinned rather
@@ -103,7 +105,10 @@ if project is None:
 # when unset) happens to carry — see `isolated_config`'s docstring for what
 # inheriting it costs on a non-English desktop. Mirrored into a `--config`
 # pins file so an unknown/mistyped key is a startup error, not a silent no-op.
-pins = fixture.config_pins_file({"ui.locale": "en-US"}, label="timeline")
+# Only inside the sandbox: `--config` merges into whatever settings directory the
+# app resolves, and without `PROBE_XDG` that is the operator's real one (the trap
+# `automation_versions.py` documents).
+pins = fixture.config_pins_file({"ui.locale": "en-US"}, label="timeline") if xdg else None
 
 app = subprocess.Popen(fixture.launch_argv(project, pins=pins),
                        stdout=open(log, "w"), stderr=subprocess.STDOUT, env=env)

@@ -37,7 +37,7 @@ import automation_fixture as fixture  # noqa: E402
 SKRIBISTO = fixture.skribisto_binary()
 MCP = fixture.mcp_binary()
 EXAMPLE = str(_ROOT / "resources/examples/starforgers/Starforgers.skrib")
-SHOT_DIR = pathlib.Path("/tmp/skribisto-import-layout")
+SHOT_DIR = pathlib.Path(os.path.join(fixture.SCRATCH, "skribisto-import-layout"))
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
 
 CARD_W = 920.0

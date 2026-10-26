@@ -215,7 +215,7 @@ def sandbox(seeded, label):
     pins = fixture.config_pins_file(
         {"ui.locale": "en-US", "ui.dark": False, "ui.show_welcome": True},
         label=label)
-    cfg = os.path.join(env["XDG_CONFIG_HOME"], "skribisto")
+    cfg = fixture.app_config_dir(env)
     os.makedirs(cfg, exist_ok=True)
     if seeded:
         with open(os.path.join(cfg, "updates.toml"), "w", encoding="utf-8") as f:
@@ -264,7 +264,9 @@ def step_2_to_4_seeded():
         # reader actually uses, and it is registered by `WelcomePanel::build` on
         # this window's own tree because the Launcher never builds an `App`.
         settings_row = None
-        for _ in range(4):
+        # On macOS the row is in the App menu, which is the system menu bar and out
+        # of the bridge's reach, so the chord opens Settings there instead.
+        for _ in range(0 if fixture.IS_MACOS else 4):
             ham = s.find_exact("Menu", role="Button")
             if ham:
                 s.activate(ham)
@@ -278,9 +280,12 @@ def step_2_to_4_seeded():
                 break
             s.key("Escape")
             time.sleep(0.4)
-        if settings_row is None:
+        if fixture.IS_MACOS:
+            s.key(",", command=True)
+        elif settings_row is None:
             fail("no Settings row in the Launcher's Work menu", s.app, s.mcp, s.log)
-        s.activate(settings_row)
+        else:
+            s.activate(settings_row)
         if s.dialog("Settings") is None:
             fail("the Settings row opened no window", s.app, s.mcp, s.log)
 

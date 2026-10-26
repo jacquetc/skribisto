@@ -346,7 +346,7 @@ if node_enabled(next_btn["id"]):
 if not statuses:
     fail("expected an inline validation message while the name is empty", s.app, s.mcp, s.log)
 print("PASS: empty name → Next disabled + inline validation shown")
-s.shot("/tmp/sk-new-work-invalid.png")
+s.shot(os.path.join(fixture.SCRATCH, "sk-new-work-invalid.png"))
 
 
 # ── The modal must open with the Work name field focused ─────────────────────
@@ -376,7 +376,7 @@ print("PASS: the modal opens with the Work name field focused")
 # Location is the field carrying a path; exclude the focused name field so the
 # Launcher's search box behind the modal can never be mistaken for either.
 location_field = next((n for n in text_fields
-                       if "/" in val(n) and n.get("id") != name_field.get("id")), None)
+                       if fixture.looks_like_path(val(n)) and n.get("id") != name_field.get("id")), None)
 if location_field is None:
     fail("could not identify the Location field", s.app, s.mcp, s.log)
 loc = val(location_field)
@@ -403,7 +403,7 @@ def filled_preview(timeout=6):
     end = time.time() + timeout
     while time.time() < end:
         for n in s.nodes():
-            if n.get("id") in empty_labels_before and "/" in val(n):
+            if n.get("id") in empty_labels_before and fixture.looks_like_path(val(n)):
                 return n
         time.sleep(0.3)
     return None
@@ -450,11 +450,13 @@ if not bundle_preview() or bundle_preview().lower().endswith(".skrib"):
 
 bpath = bundle_preview()
 print(f"bundle path preview: {bpath!r}")
-if not bpath or bpath.lower().endswith(".skrib") or not bpath.lower().endswith("/tidewrack"):
+# The folder's own name, whichever separator the platform writes (Windows: `\`).
+if (not bpath or bpath.lower().endswith(".skrib")
+        or not bpath.lower().replace("\\", "/").endswith("/tidewrack")):
     fail(f"bundle preview should be a bare folder '…/tidewrack', got {bpath!r}",
          s.app, s.mcp, s.log)
 print("PASS: switching to Bundle drops the extension (…/tidewrack)")
-s.shot("/tmp/sk-new-work-shot.png")
+s.shot(os.path.join(fixture.SCRATCH, "sk-new-work-shot.png"))
 
 
 # ── Step 2 (Language & structure) ─────────────────────────────────────────────
@@ -491,7 +493,7 @@ if len(radios) != 2:
     fail(f"expected the two-choice goal-unit control on step 2, got {len(radios)} "
          f"radio buttons: {[r.get('label') for r in radios]}", s.app, s.mcp, s.log)
 print("PASS: step 2 shows language, book structure and the goal unit")
-s.shot("/tmp/sk-new-work-step2.png")
+s.shot(os.path.join(fixture.SCRATCH, "sk-new-work-step2.png"))
 
 
 # ── Step 3 (Template) ─────────────────────────────────────────────────────────
@@ -518,7 +520,7 @@ if not node_enabled(create_btn["id"]):
     fail("Create Work should be ENABLED on the last step (name + location are valid)",
          s.app, s.mcp, s.log)
 print("PASS: step 3 shows the templates + flat-chapters toggle, Create enabled")
-s.shot("/tmp/sk-new-work-step3.png")
+s.shot(os.path.join(fixture.SCRATCH, "sk-new-work-step3.png"))
 
 s.close()
 time.sleep(1.0)
@@ -584,7 +586,7 @@ if not s.find_label_contains("from documents", timeout=3):
     fail("the wizard does not title itself as the from-documents flow",
          s.app, s.mcp, s.log)
 print("PASS: 'From documents…' opens the wizard directly, titled for the flow")
-s.shot("/tmp/sk-new-work-docs-step1.png")
+s.shot(os.path.join(fixture.SCRATCH, "sk-new-work-docs-step1.png"))
 
 # Fill step one and walk.
 raw, _ = s.call("snapshot_tree")
@@ -596,7 +598,7 @@ if name_field is None or name_field.get("role") != "TextInput":
 s.call("type_text", {"node": name_field["id"], "text": "Imported Book"})
 time.sleep(0.5)
 location_field = next((n for n in s.by_role("TextInput", "TextField")
-                       if "/" in val(n) and n["id"] != name_field["id"]), None)
+                       if fixture.looks_like_path(val(n)) and n["id"] != name_field["id"]), None)
 if location_field is None:
     fail("could not identify the Location field", s.app, s.mcp, s.log)
 s.call("set_value", {"node": location_field["id"], "value": target})
@@ -629,7 +631,7 @@ if not create_btn or not node_enabled(create_btn["id"]):
     s.dump("from-documents step 3")
     fail("expected an enabled 'Create & import…' on the last step", s.app, s.mcp, s.log)
 print(f"PASS: step 3 explains what comes next; finish is {create_btn.get('label')!r}")
-s.shot("/tmp/sk-new-work-docs-step3.png")
+s.shot(os.path.join(fixture.SCRATCH, "sk-new-work-docs-step3.png"))
 
 # Finish → the project window, with the import wizard already over it.
 s.call("invoke_action", {"node": create_btn["id"], "action": "click"})
@@ -648,7 +650,7 @@ if not opened:
 if "imported-book.skrib" not in created:
     fail(f"the project was not created at {target}: {created}", s.app, s.mcp, s.log)
 print("PASS: Create & import → project on disk + the import wizard over it")
-s.shot("/tmp/sk-new-work-docs-after.png")
+s.shot(os.path.join(fixture.SCRATCH, "sk-new-work-docs-after.png"))
 s.close()
 # The project this phase created is a test artefact, not a fixture: take it with
 # us, or every run leaves another one in the scratch directory.

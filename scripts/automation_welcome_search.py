@@ -37,6 +37,8 @@ import base64, glob, json, os, select, shutil, subprocess, sys, tempfile, time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
 
+fixture.require_linux("open-registry lock files under XDG_RUNTIME_DIR")
+
 SKRIBISTO = fixture.skribisto_binary()
 MCP = fixture.mcp_binary()
 EXAMPLE = fixture.repo_path("resources/examples/starforgers/Starforgers.skrib")
@@ -53,11 +55,10 @@ mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
 _sandbox = tempfile.mkdtemp(prefix="skribisto_search_test_")
 CONFIG = os.path.join(_sandbox, "config")
 RUNTIME = os.environ.get("XDG_RUNTIME_DIR", "/tmp")
-SANDBOX_ENV = {
-    "XDG_CONFIG_HOME": CONFIG,
+SANDBOX_ENV = fixture.sandbox_env(CONFIG, base={}, extra={
     "XDG_DATA_HOME": os.path.join(_sandbox, "data"),
     "HOME": _sandbox,
-}
+})
 # Every label this probe matches is written in English, so the language has to be
 # SET rather than inherited: an unset `ui.locale` is not "English", it is the
 # operator's OS language (`startup.rs`'s `auto_detect_os_locale`), so the probe
@@ -81,8 +82,8 @@ for name in ("Alpha", "Beta", "Gamma"):
     shutil.copyfile(EXAMPLE, dst)
     PROJECTS.append((name, dst))
 
-os.makedirs(os.path.join(CONFIG, "skribisto"), exist_ok=True)
-with open(os.path.join(CONFIG, "skribisto", "recents.toml"), "w") as fh:
+os.makedirs(fixture.app_config_dir(SANDBOX_ENV), exist_ok=True)
+with open(os.path.join(fixture.app_config_dir(SANDBOX_ENV), "recents.toml"), "w") as fh:
     fh.write("version = 1\n")
     for i, (name, path) in enumerate(PROJECTS):
         fh.write("\n[[items]]\n")
@@ -385,10 +386,10 @@ if s.has_text("No recent works yet"):
     failures.append("2. shows 'No recent works yet' for a failed search — "
                     "that says the recents are gone, and they are not")
 print(f"2. 'zzz' → rows {after}, note shown = {s.has_text('No recent work matches')}")
-s.shot("/tmp/sk-search-nomatch.png")
+s.shot(os.path.join(fixture.SCRATCH, "sk-search-nomatch.png"))
 
 # ── 3. Clearing the field brings every row back ─────────────────────────────
-s.key("A", ctrl=True)
+s.key("A", command=True)
 s.key("Backspace")
 restored = titles(s)
 if sorted(restored) != ["Alpha", "Beta", "Gamma"]:
@@ -403,7 +404,7 @@ if one != ["Beta"]:
 if s.has_text("No recent work matches your search"):
     failures.append("4. the 'nothing matched' note is showing over a live match")
 print(f"4. 'beta' → rows {one}")
-s.shot("/tmp/sk-search-beta.png")
+s.shot(os.path.join(fixture.SCRATCH, "sk-search-beta.png"))
 
 # ── 5. Clicking the one visible row opens BETA, not the top recent ──────────
 # Beta is visible row 0 but MRU row 1. An index resolved against the unfiltered
@@ -422,7 +423,7 @@ elif not all(p.endswith("Beta.skrib") for p in opened):
                     "activated index was resolved against the unfiltered MRU "
                     "(Alpha is its row 0), not the filtered list the user clicked")
 print(f"5. clicked the single 'beta' match → opened {opened}")
-s.shot("/tmp/sk-search-opened.png")
+s.shot(os.path.join(fixture.SCRATCH, "sk-search-opened.png"))
 
 s.close()
 shutil.rmtree(_sandbox, ignore_errors=True)
