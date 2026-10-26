@@ -18,9 +18,10 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
     let menu_format_vm = parts.format.clone();
 
     // Enabled on the *sticky* target, not on live focus:
-    // opening this menu moves focus to the menu overlay,
-    // so an enablement keyed on focus would grey every
-    // row out at the instant the user reached for one.
+    // opening this menu from the keyboard (F10, Alt) moves
+    // focus to the menu bar, so an enablement keyed on
+    // focus would grey every row out at the instant the
+    // user reached for one.
     // Scene breaks keep their own narrower gate — the
     // same predicate the compiler uses, so the menu can
     // never offer a mark the exporter would ignore.
@@ -123,6 +124,11 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
 
     // Seven levels, one exclusive choice — a radio
     // group over the index the caret already reports.
+    // `reflect_radio`, like every mark in this menu: the
+    // index is the caret's state, mirrored by the view-model,
+    // and the row asks the editor for the change rather than
+    // writing the mirror itself (a two-way `radio` would,
+    // from the macOS menu bar too).
     m = m.submenu(tr!(menu_format_heading()), {
         let f = f.clone();
         let on = on.clone();
@@ -141,7 +147,7 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
                 s = s.item(
                     MenuEntry::new(label)
                         .enabled(on.clone())
-                        .radio(level, f.heading())
+                        .reflect_radio(level, f.heading())
                         .on_activate(move |c| {
                             f.set_heading(level);
                             c.request_frame();
@@ -166,7 +172,7 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
                 s = s.item(
                     MenuEntry::new(label)
                         .enabled(on.clone())
-                        .radio(idx, f.alignment())
+                        .reflect_radio(idx, f.alignment())
                         .on_activate(move |c| {
                             f.set_alignment(idx);
                             c.request_frame();
@@ -196,7 +202,7 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
                 s = s.item(
                     MenuEntry::new(label)
                         .enabled(on.clone())
-                        .radio(idx, f.direction())
+                        .reflect_radio(idx, f.direction())
                         .on_activate(move |c| {
                             f.set_direction(idx);
                             c.request_frame();
@@ -351,9 +357,10 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
                             .on_activate(move |c| {
                                 f.insert_mark(text);
                                 c.request_frame();
-                                // Invoked from the menubar, focus sits on the menu
-                                // overlay: the edit lands but nothing schedules the
-                                // repaint, exactly as `insert_scene_break` documents.
+                                // Invoked from a menu opened from the keyboard,
+                                // focus sits on the menu bar: the edit lands but
+                                // nothing schedules the repaint, exactly as
+                                // `insert_scene_break` documents.
                                 f.refocus(c);
                             });
                     if let Some(sc) = mk.shortcut {

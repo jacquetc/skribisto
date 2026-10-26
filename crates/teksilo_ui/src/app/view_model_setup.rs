@@ -190,9 +190,10 @@ impl App {
                 // strictnesses.
                 //
                 // The *target* is sticky: it stays the tab's editor whether or
-                // not it holds focus this instant. Opening the Format menu moves
-                // focus to the menu overlay, so a target gated on live focus
-                // would vanish exactly when the user reached for a command.
+                // not it holds focus this instant. Opening the Format menu from
+                // the keyboard (F10, Alt) moves focus to the menu bar, so a
+                // target gated on live focus would vanish exactly when the user
+                // reached for a command.
                 //
                 // The *surface* is live: click into the binder and there is
                 // genuinely nothing to format, so the dock drops to its empty

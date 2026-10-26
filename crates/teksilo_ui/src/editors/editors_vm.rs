@@ -541,10 +541,11 @@ impl EditorsViewModel {
             // leaving the caret where the writer left it is the honest failure.
             return;
         }
-        // Invoked from the menubar, focus is on the menu overlay, so the edit
-        // lands but nothing schedules the repaint that would show it — the mark
-        // only appeared once the writer clicked back into the prose. Focusing
-        // after the edit fixes that, and leaves the caret where writing resumes.
+        // An edit made while the editor is not focused (the command reached from
+        // a menu opened from the keyboard, or before teksilo 0.21 from any menu)
+        // lands but schedules no repaint: the mark only appeared once the writer
+        // clicked back into the prose. Focusing after the edit fixes that, and
+        // leaves the caret where writing resumes.
         handle.focus(ctx);
     }
 
@@ -649,10 +650,9 @@ impl EditorsViewModel {
     /// The focus flag is reported rather than used as a filter, because the two
     /// surfaces need different answers from one walk. The dock wants *live*
     /// focus — click into the binder and there is nothing to format, so it says
-    /// so. The Format menu cannot: opening it moves focus to the menu overlay,
-    /// so a menu that resolved its target the dock's way would disable every
-    /// item at the instant the user reached for one, and its commands would
-    /// find nothing to act on. The menu therefore keeps acting on the tab's
+    /// so. The Format menu cannot: opened from the keyboard (F10, Alt), it moves
+    /// focus to the menu bar, so a menu that resolved its target the dock's way
+    /// would disable every item at the instant the user reached for one. The menu therefore keeps acting on the tab's
     /// editor whether or not it holds focus this instant.
     ///
     /// Prefers the tab's prose editor, falling back to its synopsis. `None` for

@@ -316,8 +316,8 @@ fn finish(deps: &InsertDeps, ctx: &mut EventContext, pending: PendingImage, poli
     handle.add_image_resource(&image.relative_path(), &image.mime_type, &image.bytes);
     handle.insert_djot(&image.djot("", image.width, image.height));
 
-    // The menu overlay took focus when it opened; without this the writer is
-    // left with no caret, exactly as the template-insert command documents.
+    // Puts the caret back in the prose, exactly as the template-insert command
+    // documents.
     deps.format.refocus(ctx);
 }
 

@@ -45,10 +45,10 @@
 //! **Every surface must call `ctx.request_frame()` after invoking a command.**
 //! The commands here deliberately take no `EventContext` (threading one through
 //! would cost the headless testability above). But an edit made while the
-//! pointer is on a dock button or a menu overlay leaves the editor unfocused,
-//! and under teksilo's draw-when-needed contract nothing then schedules the
-//! frame that drains the document's events and repaints — the formatting
-//! simply does not appear. So each surface funnels its buttons through one
+//! pointer is on a dock button or a menu overlay is an edit to a document the
+//! user is not typing in, and under teksilo's draw-when-needed contract nothing
+//! then schedules the frame that drains the document's events and repaints, so
+//! the formatting simply does not appear. So each surface funnels its buttons through one
 //! local constructor that runs the command and requests the frame together,
 //! rather than repeating the pair at every call site where one can be
 //! forgotten.
@@ -405,7 +405,8 @@ pub struct FormatViewModel {
     /// See [`RegisteredEditor`].
     registry: Rc<RefCell<Vec<RegisteredEditor>>>,
     /// The last registered editor to hold focus, kept so the **menu** still has
-    /// a target after opening it moved focus to the overlay.
+    /// a target when opening it from the keyboard (F10, Alt) moved focus to the
+    /// menu bar, and the dock when one of its buttons took it.
     ///
     /// Written by [`Self::target`], which [`Self::refresh`] calls on every
     /// pumped frame — so it is current by the time focus moves anywhere, a
@@ -524,8 +525,9 @@ pub struct FormatViewModel {
     /// regression commit 2d4890b0 fixed), while a tab the writer has opened and
     /// never typed in still reads false.
     ///
-    /// It cannot distinguish "the menu took focus" from "the binder took focus"
-    /// — both look like *nothing* focused from here — so it stays true once the
+    /// It cannot distinguish "the menu bar took focus" (a menu opened from the
+    /// keyboard) from "the binder took focus": both look like *nothing*
+    /// focused from here, so it stays true once the
     /// writer has been in the editor. That is the same limit `has_target` and
     /// the note gate live with, and for the same reason.
     has_caret_target: Signal<bool>,
@@ -702,7 +704,8 @@ impl FormatViewModel {
             return (Some(handle), self.classify(kind, fallback.1));
         }
         // Nothing focused: keep the latched *target*, so a card or a stream row
-        // survives the trip through the menu bar — but take the resolver's
+        // survives a trip through the menu bar from the keyboard, but take the
+        // resolver's
         // *surface* verbatim. It reports `None` the moment focus leaves the
         // editors, and that liveness is what empties the dock. Sticky target,
         // live surface: the same split `App`'s resolver already makes, extended
@@ -730,10 +733,12 @@ impl FormatViewModel {
 
     /// Return keyboard focus to the editor a command just acted on.
     ///
-    /// The Format **menu** needs this and the dock does not: reaching a menu
-    /// item moves focus to the menu overlay, so without this the writer is left
-    /// with no caret and has to click back into the prose before typing. Same
-    /// reason — and same fix — as `EditorsViewModel::insert_scene_break`.
+    /// Belt and braces for the Format **menu**: since teksilo 0.21 a menu hands
+    /// focus back to the editor before its command runs, and a pointer never
+    /// takes it away, so this is a no-op from there. It is what still puts the
+    /// caret back after a dialog the command opened (the link panel, Save as
+    /// template), where the writer would otherwise have to click back into the
+    /// prose before typing. Same fix as `EditorsViewModel::insert_scene_break`.
     pub fn refocus(&self, ctx: &mut teksilo::prelude::EventContext) {
         if let Some(handle) = self.handle() {
             handle.focus(ctx);
@@ -889,9 +894,9 @@ impl FormatViewModel {
     }
 
     /// The typography bundle Ctrl+= / Ctrl+− / Ctrl+0 should resize: the one
-    /// dressing the focused editor, or — reaching the command through the View
-    /// menu, which takes focus away before the action runs — the last editor that
-    /// had it.
+    /// dressing the focused editor, or the last editor that had it when the
+    /// command comes through a View menu opened from the keyboard, with focus on
+    /// the menu bar.
     ///
     /// Built on [`resolved_registration`](Self::resolved_registration) rather
     /// than a second latch of its own, so the size commands and the mark commands
@@ -1021,7 +1026,8 @@ impl FormatViewModel {
     ///
     /// Deliberately the live answer, not [`has_caret_target`](Self::has_caret_target)'s
     /// latched one. The latch exists so a *command* still knows what to act on
-    /// after opening a menu blurs the editor; deciding which undo domain is
+    /// after a menu opened from the keyboard blurs the editor; deciding which
+    /// undo domain is
     /// active is the opposite question, and a latch there would keep routing
     /// Ctrl+Z to prose after the writer has clicked into the binder.
     pub fn editor_focused(&self) -> bool {
@@ -1049,8 +1055,8 @@ impl FormatViewModel {
     /// gate — the dock hides groups instead, so it does not read this.
     ///
     /// Sticky by construction (see [`Self::target`]): it must not drop to false
-    /// when opening the menu blurs the editor, or every row would grey out at
-    /// the instant the writer reached for one.
+    /// when opening the menu from the keyboard (F10, Alt) blurs the editor, or
+    /// every row would grey out at the instant the writer reached for one.
     ///
     /// This gate once disabled the *entire* Format menu, and the reason is worth
     /// keeping: before the editor registry, the target came only from the

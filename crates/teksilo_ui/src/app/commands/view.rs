@@ -148,8 +148,8 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // Text size: the keyboard half of Ctrl+Wheel. The wheel is already standing
     // on the editor it means; these have to be told, so they resolve through the
     // format registry's focused/sticky editor — which is what makes them work
-    // from the View menu too, where opening the menu has already taken focus off
-    // the editor.
+    // from the View menu too, where a menu opened from the keyboard has taken
+    // focus off the editor.
     //
     // Global for the same reason as every chord above: resolved before the
     // focused widget sees the key, so `RichTextEditor` cannot eat them.

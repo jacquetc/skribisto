@@ -58,10 +58,10 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
                     }
                 }
                 handle.insert_djot(&row.body);
-                // The menu overlay took focus when it opened; without this the writer is
-                // left with no caret and has to click back into the prose before typing.
-                // The dock never needed it — its buttons are `focusable(false)` — but the
-                // menu is now the only surface these commands have.
+                // Puts the caret back in the prose. A menu hands focus back to the editor
+                // before its command runs (since teksilo 0.21, a pointer never takes it
+                // away), so this is a no-op from there; it is what keeps a command that
+                // arrives any other way from leaving the writer with no caret.
                 format.refocus(c);
                 c.show_toast(
                     Toast::info(tr!(template_inserted(name = row.name.clone())))
@@ -136,7 +136,7 @@ fn present_save_as_template(
             }
         })
         .on_result(move |result, c| {
-            // Focus went to the menu overlay, then to the dialog. Put it back in the note
+            // Focus went to the dialog. Put it back in the note
             // either way — including on Cancel, which is the case where the writer most
             // clearly meant to carry on where they were. Same fix, same reason, as the
             // insert command's own `refocus`.

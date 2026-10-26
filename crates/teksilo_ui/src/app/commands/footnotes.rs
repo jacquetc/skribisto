@@ -55,9 +55,9 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
                 c.show_toast(Toast::error(tr!(footnotes_not_created())));
                 return;
             }
-            // The menu overlay took focus when it opened; without this the writer
-            // is left with no caret, exactly as the template and image commands
-            // document.
+            // Puts the caret back in the prose wherever the command came from, so
+            // the writer types into the note's anchor at once, exactly as the
+            // template and image commands document.
             handle.focus(c);
         },
     ));

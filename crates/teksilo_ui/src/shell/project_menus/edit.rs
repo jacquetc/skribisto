@@ -35,33 +35,37 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
             .shortcut("edit.redo"),
     )
     .separator()
+    // No `.enabled` on the five clipboard rows. teksilo answers for each the way
+    // the chord is answered: from the widget focused before the menu opened, it
+    // asks the action the row's intent would stop at, so Copy greys out with
+    // nothing selected and Paste stays offered in an editor. The group's own
+    // clipboard signals are live, and while the in-window menu is open the focus
+    // is in the menu: gated on them, Cut, Copy, Paste, Paste without formatting
+    // and Select all were all greyed out, in an editor, every time the menu was
+    // opened. Undo and Redo keep their gate, which latches through the menu (see
+    // `UndoGroupViewModel`'s module doc).
     .item(
         MenuEntry::new(tr!(menu_edit_cut()))
-            .enabled(group.can_cut())
             .intent("edit.cut")
             .shortcut("edit.cut"),
     )
     .item(
         MenuEntry::new(tr!(menu_edit_copy()))
-            .enabled(group.can_copy())
             .intent("edit.copy")
             .shortcut("edit.copy"),
     )
     .item(
         MenuEntry::new(tr!(menu_edit_paste()))
-            .enabled(group.can_paste())
             .intent("edit.paste")
             .shortcut("edit.paste"),
     )
     .item(
         MenuEntry::new(tr!(menu_edit_paste_plain()))
-            .enabled(group.can_paste())
             .intent("edit.paste_plain")
             .shortcut("edit.paste_plain"),
     )
     .item(
         MenuEntry::new(tr!(menu_edit_select_all()))
-            .enabled(group.can_select_all())
             .intent("edit.select_all")
             .shortcut("edit.select_all"),
     )

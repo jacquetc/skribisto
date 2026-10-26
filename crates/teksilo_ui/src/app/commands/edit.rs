@@ -15,9 +15,11 @@
 //! actions here are what the walk reaches **when no widget took the intent** —
 //! the focus is in the binder, a writing game refused the editor's Undo, or
 //! the caret's own history is empty (`attach_surfaces` turns on teksilo's
-//! `set_empty_history_passes_on` for exactly that fall-through) — and
-//! what a menu row reaches, since a row's intent starts in the menu overlay and
-//! never passes through the editor. Both go through
+//! `set_empty_history_passes_on` for exactly that fall-through). Edit ▸ Undo
+//! and the other rows take the same walk as the chord: since teksilo 0.21 a
+//! menu row sends its intent from the focused widget, and greys out when the
+//! action it would stop at has nothing to act on (Copy with nothing selected).
+//! What reaches these actions goes through
 //! [`crate::edit::UndoGroupViewModel`], which asks teksilo's `TextSurfaces`
 //! registry which widget holds the caret rather than keeping a list of its own.
 //!
@@ -97,13 +99,20 @@ fn register_with(ctx: &mut BuildContext, group: &crate::edit::UndoGroupViewModel
 
     // ── Clipboard ─────────────────────────────────────────────────────────
     //
-    // The same split: the focused widget answers the chord, these answer the
-    // menu rows. Each gate is deliberately live rather than latched:
-    // `UndoGroupViewModel` answers "is there a text surface to act on" from the
-    // focused surface (or a rich editor that actually holds the caret), never
-    // from the Format dock's sticky target — otherwise Edit ▸ Paste would stay
-    // enabled for the rest of the session after one click in a scene, and paste
-    // into a scene the writer is not looking at.
+    // The same split: the focused widget answers the chord and the menu row
+    // (both send from it), and these answer when no widget took the intent.
+    // Each gate is deliberately live rather than latched: `UndoGroupViewModel`
+    // answers "is there a text surface to act on" from the focused surface (or
+    // a rich editor that actually holds the caret), never from the Format
+    // dock's sticky target. Otherwise Edit ▸ Paste would stay enabled for the
+    // rest of the session after one click in a scene, and paste into a scene
+    // the writer is not looking at.
+    //
+    // The Edit menu's clipboard rows carry no gate of their own, and must not:
+    // teksilo greys an intent-only row by asking the action its intent would
+    // stop at, from the widget focused before the menu opened. A row gated on
+    // these live signals read the open menu's focus instead, and was greyed out
+    // whenever the menu was open (see `shell::project_menus::edit`).
     let clip = [
         (
             StandardEdit::Cut,

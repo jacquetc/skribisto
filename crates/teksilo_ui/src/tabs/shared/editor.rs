@@ -1071,10 +1071,10 @@ pub fn format_row(handle: &EditorHandle, marks: &[CharacterMark]) -> Padding {
             .on_activate_fn(move |ctx| {
                 apply(&handle);
                 state.set(read(&handle));
-                // The edit lands, but the pointer is on the menu overlay and
-                // the editor is not focused, so nothing schedules the frame
-                // that would drain the document's events and repaint it — the
-                // formatting only appeared once the menu was dismissed.
+                // The edit lands, but with the pointer on the menu overlay
+                // nothing schedules the frame that would drain the document's
+                // events and repaint it, so the formatting only appeared once
+                // the menu was dismissed.
                 ctx.request_frame();
                 // Close the menu, exactly like every other item in it. The
                 // strip was first written to stay open so bold and italic could

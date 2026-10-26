@@ -20,10 +20,12 @@
 //!
 //! # The three states this has to survive
 //!
-//! 1. **Opening the Edit menu blurs the editor.** Focus moves to the menu
-//!    overlay, which is inside no claim. The [`latch`](Inner::latch) answers
-//!    instead, so the row does not change meaning under the writer's hand at the
-//!    exact moment they reach for it.
+//! 1. **Opening the Edit menu from the keyboard blurs the editor.** After F10
+//!    or Alt, focus is on the menu bar, which is inside no claim. The
+//!    [`latch`](Inner::latch) answers instead, so the row does not change
+//!    meaning under the writer's hand at the exact moment they reach for it.
+//!    (Opened with the pointer, the menu leaves focus where it was, since
+//!    teksilo 0.21.)
 //! 2. **A modal.** Here the latch is *wrong*: Ctrl+Z inside Settings must not
 //!    reach the manuscript. A modal holds an [`UndoSuspend`], and while one is
 //!    alive the group reports nothing to undo, so the application's `edit.undo`
@@ -554,14 +556,20 @@ impl UndoGroupViewModel {
     //
     // Not undo, but the same question: *which* text surface does this act on?
     // Answering it twice, in two places, is how the Edit menu and the keyboard
-    // would come to disagree. The order is the same — a focused field first,
+    // would come to disagree. The order is the same: a focused field first,
     // because a rename box lives inside a panel and the caret decides.
+    //
+    // These answer the application's fallback actions, reached when no text
+    // widget took the intent. The Edit menu's clipboard rows do not read them:
+    // they are live, and an open menu holds the focus, so a row gated on them
+    // greyed out as soon as its menu opened. teksilo answers the rows instead,
+    // from the widget focused before the menu.
 
     /// The rich editor to act on, and **only while it holds the caret**.
     ///
     /// `FormatViewModel`'s resolver is deliberately *sticky*: it keeps its last
-    /// target so a Format command survives the trip through the menu bar, which
-    /// blurs the editor. That latch is exactly wrong here. These chords are
+    /// target so a Format command survives a trip through the menu bar from the
+    /// keyboard, which blurs the editor. That latch is exactly wrong here. These chords are
     /// registered globally, so a gate built on the latch stays true for the rest
     /// of the session once any editor has been focused — and `Ctrl+V` pressed
     /// with the caret in the outline would then paste into a scene the writer is

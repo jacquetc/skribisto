@@ -183,9 +183,10 @@ fn heading_picker(vm: &FormatViewModel) -> PopoverIconButton {
         list = list.item(
             // The levels are mutually exclusive, and `heading` is already
             // mirrored as the index the caret sits at — so the picker shows
-            // where you are, not just where you can go.
+            // where you are, not just where you can go. Reflect-only: the
+            // mirror follows the editor, and the row asks the editor.
             MenuItem::new(label)
-                .radio(level, vm.heading())
+                .reflect_radio(level, vm.heading())
                 .on_activate_fn(move |ctx| {
                     vm2.set_heading(level);
                     ctx.request_frame();

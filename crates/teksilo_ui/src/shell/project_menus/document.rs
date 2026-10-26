@@ -28,7 +28,7 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
     // Any editor will do. Templates started out note-only; that restriction is
     // gone, so the gate is simply "is there somewhere to type" — which
     // `has_target` already answers, and answers *stickily*, surviving the focus
-    // loss that opening this very menu causes.
+    // loss that opening this very menu from the keyboard causes.
     let on_editor = menu_format_vm.has_target();
     // Inserting happens *at the caret*, so this row needs more than
     // "a document tab is open" (which is all `on_editor` above means —
