@@ -3220,6 +3220,9 @@ about-close = Luk
 # as an argument: same rule as the window titles below.
 native-menu-about = Om { $app }
 native-menu-hide = Skjul { $app }
+native-menu-hide-others = Skjul andre
+native-menu-show-all = Vis alle
+native-menu-services = Tjenester
 native-menu-quit = Afslut { $app }
 native-menu-settings = Indstillinger…
 native-menu-window = Vindue

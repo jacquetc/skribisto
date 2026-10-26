@@ -3289,6 +3289,9 @@ about-close = סגירה
 
 native-menu-about = אודות { $app }
 native-menu-hide = הסתרת { $app }
+native-menu-hide-others = הסתרת האחרים
+native-menu-show-all = הצגת הכול
+native-menu-services = שירותים
 native-menu-quit = יציאה מ־{ $app }
 native-menu-settings = הגדרות…
 native-menu-window = חלון

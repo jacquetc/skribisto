@@ -2128,6 +2128,9 @@ about-close = 닫기
 
 native-menu-about = { $app } 정보
 native-menu-hide = { $app } 숨기기
+native-menu-hide-others = 기타 숨기기
+native-menu-show-all = 모두 보기
+native-menu-services = 서비스
 native-menu-quit = { $app } 종료
 native-menu-settings = 설정…
 native-menu-window = 창

@@ -2945,6 +2945,9 @@ about-close = Fechar
 
 native-menu-about = Acerca de { $app }
 native-menu-hide = Ocultar { $app }
+native-menu-hide-others = Ocultar outros
+native-menu-show-all = Mostrar tudo
+native-menu-services = Serviços
 native-menu-quit = Sair de { $app }
 native-menu-settings = Definições…
 native-menu-window = Janela

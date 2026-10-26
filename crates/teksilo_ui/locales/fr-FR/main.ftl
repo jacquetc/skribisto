@@ -3307,6 +3307,9 @@ about-close = Fermer
 # d'exécution) : il arrive en argument, comme pour les titres de fenêtre.
 native-menu-about = À propos de { $app }
 native-menu-hide = Masquer { $app }
+native-menu-hide-others = Masquer les autres
+native-menu-show-all = Tout afficher
+native-menu-services = Services
 native-menu-quit = Quitter { $app }
 native-menu-settings = Paramètres…
 native-menu-window = Fenêtre

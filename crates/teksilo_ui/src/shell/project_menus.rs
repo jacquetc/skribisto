@@ -293,7 +293,12 @@ pub(crate) fn app_standard_menu_base() -> teksilo::widgets::StandardMenu {
     teksilo::widgets::StandardMenu::app()
         .title(lit!(app.clone()))
         .about(tr!(native_menu_about(app = app.clone())))
+        // AppKit's own rows, in AppKit's order around these; teksilo names them
+        // in English unless told otherwise.
+        .services(tr!(native_menu_services()))
         .hide(tr!(native_menu_hide(app = app.clone())))
+        .hide_others(tr!(native_menu_hide_others()))
+        .show_all(tr!(native_menu_show_all()))
         .quit(tr!(native_menu_quit(app = app)))
         .quit_intent("app.quit")
         // The chord comes from the registry, not from AppKit's convention, so

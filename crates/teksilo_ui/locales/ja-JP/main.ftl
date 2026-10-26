@@ -2202,6 +2202,9 @@ about-close = 閉じる
 
 native-menu-about = { $app } について
 native-menu-hide = { $app } を隠す
+native-menu-hide-others = ほかを隠す
+native-menu-show-all = すべてを表示
+native-menu-services = サービス
 native-menu-quit = { $app } を終了
 native-menu-settings = 設定…
 native-menu-window = ウィンドウ

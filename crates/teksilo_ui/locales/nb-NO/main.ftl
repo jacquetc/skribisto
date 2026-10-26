@@ -2915,6 +2915,9 @@ about-close = Lukk
 
 native-menu-about = Om { $app }
 native-menu-hide = Skjul { $app }
+native-menu-hide-others = Skjul andre
+native-menu-show-all = Vis alle
+native-menu-services = Tjenester
 native-menu-quit = Avslutt { $app }
 native-menu-settings = Innstillinger…
 native-menu-window = Vindu

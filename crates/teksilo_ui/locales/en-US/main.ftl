@@ -3323,6 +3323,9 @@ about-close = Close
 # as an argument: same rule as the window titles below.
 native-menu-about = About { $app }
 native-menu-hide = Hide { $app }
+native-menu-hide-others = Hide others
+native-menu-show-all = Show all
+native-menu-services = Services
 native-menu-quit = Quit { $app }
 native-menu-settings = Settings…
 native-menu-window = Window

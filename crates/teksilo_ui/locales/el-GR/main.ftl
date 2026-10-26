@@ -3001,6 +3001,9 @@ about-close = Κλείσιμο
 
 native-menu-about = Σχετικά με το { $app }
 native-menu-hide = Απόκρυψη του { $app }
+native-menu-hide-others = Απόκρυψη των άλλων
+native-menu-show-all = Εμφάνιση όλων
+native-menu-services = Υπηρεσίες
 native-menu-quit = Έξοδος από το { $app }
 native-menu-settings = Ρυθμίσεις…
 native-menu-window = Παράθυρο

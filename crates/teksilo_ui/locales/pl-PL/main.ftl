@@ -3597,6 +3597,9 @@ about-close = Zamknij
 
 native-menu-about = O { $app }
 native-menu-hide = Ukryj { $app }
+native-menu-hide-others = Ukryj pozostałe
+native-menu-show-all = Pokaż wszystkie
+native-menu-services = Usługi
 native-menu-quit = Zakończ { $app }
 native-menu-settings = Ustawienia…
 native-menu-window = Okno

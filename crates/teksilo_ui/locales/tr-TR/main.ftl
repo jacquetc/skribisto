@@ -2897,6 +2897,9 @@ about-close = Kapat
 
 native-menu-about = { $app } hakkında
 native-menu-hide = { $app } uygulamasını gizle
+native-menu-hide-others = Diğerlerini gizle
+native-menu-show-all = Tümünü göster
+native-menu-services = Servisler
 native-menu-quit = { $app } uygulamasından çık
 native-menu-settings = Ayarlar…
 native-menu-window = Pencere

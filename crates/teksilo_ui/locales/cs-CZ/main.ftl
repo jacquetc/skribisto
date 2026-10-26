@@ -3258,6 +3258,9 @@ about-close = Zavřít
 
 native-menu-about = O aplikaci { $app }
 native-menu-hide = Skrýt { $app }
+native-menu-hide-others = Skrýt ostatní
+native-menu-show-all = Zobrazit vše
+native-menu-services = Služby
 native-menu-quit = Ukončit { $app }
 native-menu-settings = Nastavení…
 native-menu-window = Okno

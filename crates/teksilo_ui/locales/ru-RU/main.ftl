@@ -3731,6 +3731,9 @@ about-close = Закрыть
 
 native-menu-about = О программе { $app }
 native-menu-hide = Скрыть { $app }
+native-menu-hide-others = Скрыть остальные
+native-menu-show-all = Показать все
+native-menu-services = Службы
 native-menu-quit = Завершить { $app }
 native-menu-settings = Настройки…
 native-menu-window = Окно

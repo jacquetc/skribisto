@@ -2943,6 +2943,9 @@ about-close = Sluiten
 
 native-menu-about = Over { $app }
 native-menu-hide = { $app } verbergen
+native-menu-hide-others = Andere verbergen
+native-menu-show-all = Alles tonen
+native-menu-services = Voorzieningen
 native-menu-quit = { $app } afsluiten
 native-menu-settings = Instellingen…
 native-menu-window = Venster

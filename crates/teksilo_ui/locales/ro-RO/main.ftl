@@ -3533,6 +3533,9 @@ about-close = Închide
 # as an argument: same rule as the window titles below.
 native-menu-about = Despre { $app }
 native-menu-hide = Ascunde { $app }
+native-menu-hide-others = Ascunde celelalte
+native-menu-show-all = Afișează toate
+native-menu-services = Servicii
 native-menu-quit = Ieși din { $app }
 native-menu-settings = Setări…
 native-menu-window = Fereastră

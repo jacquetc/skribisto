@@ -3007,6 +3007,9 @@ about-close = Sulje
 
 native-menu-about = Tietoja: { $app }
 native-menu-hide = Kätke { $app }
+native-menu-hide-others = Kätke muut
+native-menu-show-all = Näytä kaikki
+native-menu-services = Palvelut
 native-menu-quit = Lopeta { $app }
 native-menu-settings = Asetukset…
 native-menu-window = Ikkuna
