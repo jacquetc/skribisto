@@ -3,6 +3,7 @@ Date: 2026-10-26
 Type: stable
 Description:
 - "On a Mac with a Touch Bar, Skribisto no longer crashes when you close one of its windows, such as Settings or Help"
+- "When a menu you opened with the mouse closes, the caret is back in your text and you can go on typing. It used to stay on the menu button, and you had to click back into the text"
 ---
 Version: 3.2.3
 Date: 2026-10-21
