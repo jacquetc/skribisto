@@ -1,3 +1,9 @@
+Version: 3.2.4
+Date: 2026-10-26
+Type: stable
+Description:
+- "On a Mac with a Touch Bar, Skribisto no longer crashes when you close one of its windows, such as Settings or Help"
+---
 Version: 3.2.3
 Date: 2026-10-21
 Type: stable
