@@ -368,8 +368,9 @@ impl Widget for InlineTitle {
         );
         let editing = self.vm.editing_item().get() == Some(self.item_id);
         let id = if editing {
-            // A live buffer seeded with the current title. Enter / blur commit it;
-            // Esc restores the original so the following blur-commit is a no-op.
+            // A live buffer seeded with the current title. Enter, or finishing with the
+            // field (`on_commit_fn`), commits it; Esc restores the original so the commit
+            // that follows as focus goes back to the grid is a no-op.
             let buffer = Signal::new(self.title.clone());
             let original = self.title.clone();
             let field = TextInput::new(buffer.clone())
@@ -383,7 +384,7 @@ impl Widget for InlineTitle {
                     let item_id = self.item_id;
                     move |ctx| vm.rename(ctx, item_id, &buffer.get())
                 })
-                .on_blur_fn({
+                .on_commit_fn({
                     let vm = self.vm.clone();
                     let buffer = buffer.clone();
                     let item_id = self.item_id;

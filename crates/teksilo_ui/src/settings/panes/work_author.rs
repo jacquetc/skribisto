@@ -18,9 +18,10 @@ use super::super::*;
 /// every keystroke straight into the entity — bypassing
 /// [`WorkSettingsViewModel::set_author_name`], and with it the `save()` that puts
 /// the change on disk and the guard that keeps an unedited pass through the field
-/// from queuing an empty undo step. Committing on Enter *and* on blur, like the tag
-/// fields, because nothing about a bare inline field announces that it needs
-/// confirming — typing a name and clicking away must not discard it.
+/// from queuing an empty undo step. Committing on Enter *and* when editing
+/// finishes, like the tag fields, because nothing about a bare inline field
+/// announces that it needs confirming: typing a name and clicking away must not
+/// discard it.
 pub(in crate::settings) fn work_author_pane(
     ctx: &mut BuildContext,
     vm: &WorkSettingsViewModel,
@@ -42,11 +43,11 @@ pub(in crate::settings) fn work_author_pane(
     let field = {
         let vm = vm.clone();
         let sig = typed.clone();
-        // `set_author_name` trims and compares before writing, so a blur that
+        // `set_author_name` trims and compares before writing, so a commit that
         // changed nothing costs nothing. Blank IS meaningful here — it clears the
         // name — which is why there is no non-empty guard.
         let commit = move || vm.set_author_name(sig.get());
-        let on_blur = commit.clone();
+        let on_commit = commit.clone();
         TextInput::new(typed.clone())
             .placeholder(tr!(settings_field_author_placeholder()))
             .rich_tooltip_content(TooltipContent::new(
@@ -54,7 +55,7 @@ pub(in crate::settings) fn work_author_pane(
                 tr!(settings_field_author_hint()),
             ))
             .on_submit_fn(move |_c| commit())
-            .on_blur_fn(move |_c| on_blur())
+            .on_commit_fn(move |_c| on_commit())
     };
 
     let form = FormLayout::new()

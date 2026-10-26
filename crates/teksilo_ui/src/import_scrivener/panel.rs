@@ -255,7 +255,7 @@ impl Widget for ImportScrivenerPanel {
 fn project_step(vm: &ImportScrivenerViewModel, path_field: &PathFieldSlot) -> impl Widget + use<> {
     let drop_vm = vm.clone();
     let submit_vm = vm.clone();
-    let blur_vm = vm.clone();
+    let commit_vm = vm.clone();
     let file_vm = vm.clone();
     let folder_vm = vm.clone();
     let input = TextInput::new(vm.source_text())
@@ -263,8 +263,9 @@ fn project_step(vm: &ImportScrivenerViewModel, path_field: &PathFieldSlot) -> im
         .placeholder(tr!(import_scrivener_source_placeholder()))
         .validation(vm.source_validation())
         .on_submit_fn(move |_| submit_vm.submit_source())
-        // Leaving the field reads what was typed; the same project is not read twice.
-        .on_blur_fn(move |_| blur_vm.submit_source());
+        // Finishing with the field (leaving it, or a click on a control that takes no
+        // focus) reads what was typed; the same project is not read twice.
+        .on_commit_fn(move |_| commit_vm.submit_source());
     *path_field.borrow_mut() = Some(input.field_id());
 
     teksu!(Padding::symmetric(16.0, 18.0) {

@@ -538,14 +538,16 @@ impl Widget for TagRowView {
                 });
             });
         }
-        // Both fields commit on Enter **and on blur**. Enter alone is not enough: nothing
-        // about a bare inline field says it must be confirmed, so typing a description and
-        // clicking away — or just closing Settings — silently threw the text away.
+        // Both fields commit on Enter **and when editing finishes** (`on_commit_fn`: the
+        // field losing focus, or a click on a control that takes none, before that
+        // control's command runs). Enter alone is not enough: nothing about a bare inline
+        // field says it must be confirmed, so typing a description and clicking away (or
+        // just closing Settings) silently threw the text away.
         //
-        // Each commit compares against the model first. Blur fires whenever focus moves,
-        // including when nothing was typed, and an unguarded write would push an identical
-        // value through the command stack (an undo step that changes nothing) on every pass
-        // through the field.
+        // Each commit compares against the model first. A blur commits whenever focus
+        // moves, including when nothing was typed, and an unguarded write would push an
+        // identical value through the command stack (an undo step that changes nothing) on
+        // every pass through the field.
         let name_field = {
             let vm = self.vm.clone();
             let sig = name.clone();
@@ -557,12 +559,12 @@ impl Widget for TagRowView {
                     vm.rename(id, &typed);
                 }
             };
-            let on_blur = commit.clone();
+            let on_commit = commit.clone();
             TextInput::new(name.clone())
                 .variant(TextInputVariant::Bare)
                 .validation(validation)
                 .on_submit_fn(move |_c| commit())
-                .on_blur_fn(move |_c| on_blur())
+                .on_commit_fn(move |_c| on_commit())
         };
 
         let details = Signal::new(self.row.details.clone());
@@ -581,12 +583,12 @@ impl Widget for TagRowView {
                     vm.set_details(id, &typed);
                 }
             };
-            let on_blur = commit.clone();
+            let on_commit = commit.clone();
             TextInput::new(details.clone())
                 .variant(TextInputVariant::Bare)
                 .placeholder(tr!(settings_tags_details_placeholder()))
                 .on_submit_fn(move |_c| commit())
-                .on_blur_fn(move |_c| on_blur())
+                .on_commit_fn(move |_c| on_commit())
         };
 
         // The toggle writes only to its signal, so the write-back rides an effect. It

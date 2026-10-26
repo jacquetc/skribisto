@@ -406,7 +406,7 @@ impl Widget for RuleRowView {
                 });
             });
         }
-        // Both fields commit on Enter **and on blur** — the same reasoning as
+        // Both fields commit on Enter **and when editing finishes**, for the same reason as
         // `TagRowView`'s name field: nothing about a bare inline field says it must be
         // confirmed, so tabbing away or closing Settings must not silently discard it.
         // Each commit compares against the model first so an unmodified pass through the
@@ -435,12 +435,12 @@ impl Widget for RuleRowView {
                     sig.set(stored);
                 }
             };
-            let on_blur = commit.clone();
+            let on_commit = commit.clone();
             TextInput::new(trigger.clone())
                 .variant(TextInputVariant::Bare)
                 .validation(validation)
                 .on_submit_fn(move |_c| commit())
-                .on_blur_fn(move |_c| on_blur())
+                .on_commit_fn(move |_c| on_commit())
         };
 
         let replacement = Signal::new(self.row.replacement.clone());
@@ -459,11 +459,11 @@ impl Widget for RuleRowView {
                     vm.set_replacement(id, &typed);
                 }
             };
-            let on_blur = commit.clone();
+            let on_commit = commit.clone();
             TextInput::new(replacement.clone())
                 .variant(TextInputVariant::Bare)
                 .on_submit_fn(move |_c| commit())
-                .on_blur_fn(move |_c| on_blur())
+                .on_commit_fn(move |_c| on_commit())
         };
 
         // The toggle writes only to its signal, so the write-back rides an effect, guarded

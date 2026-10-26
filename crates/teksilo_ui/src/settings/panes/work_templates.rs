@@ -380,9 +380,10 @@ impl Widget for TemplateRowView {
         let name_field = {
             let vm = self.vm.clone();
             let sig = name.clone();
-            // Commit on Enter **and on blur**, comparing against the model first — an
-            // unguarded blur write would push an identical value through the command stack
-            // on every pass through the field. Same shape, same reasons, as the tag pane.
+            // Commit on Enter **and when editing finishes**, comparing against the model
+            // first: an unguarded commit would push an identical value through the command
+            // stack on every pass through the field. Same shape, same reasons, as the tag
+            // pane.
             let commit = move || {
                 let typed = sig.get();
                 let current = vm.rows().into_iter().find(|r| r.id == id).map(|r| r.name);
@@ -390,13 +391,13 @@ impl Widget for TemplateRowView {
                     vm.rename(id, &typed);
                 }
             };
-            let on_blur = commit.clone();
+            let on_commit = commit.clone();
             TextInput::new(name.clone())
                 .variant(TextInputVariant::Bare)
                 .placeholder(tr!(settings_templates_name_placeholder()))
                 .validation(validation)
                 .on_submit_fn(move |_c| commit())
-                .on_blur_fn(move |_c| on_blur())
+                .on_commit_fn(move |_c| on_commit())
         };
 
         let words = TextWidget::new(tr!(settings_templates_words(

@@ -389,11 +389,13 @@ impl Widget for RungRowView {
             });
         }
 
-        // Commits on Enter **and on blur**, guarded against a no-op write. Both halves
-        // matter: nothing about a bare inline field says it must be confirmed, so a rename
-        // followed by closing Settings would otherwise be thrown away — and an unguarded
-        // blur would push an identical value through the command stack (an undo step that
-        // changes nothing) every time focus merely passed through.
+        // Commits on Enter **and when editing finishes** (`on_commit_fn`: the field
+        // losing focus, or a click on a control that takes none), guarded against a no-op
+        // write. Both halves matter: nothing about a bare inline field says it must be
+        // confirmed, so a rename followed by closing Settings would otherwise be thrown
+        // away, and an unguarded commit would push an identical value through the
+        // command stack (an undo step that changes nothing) every time focus merely
+        // passed through.
         let name_field = {
             let vm = self.vm.clone();
             let sig = name.clone();
@@ -405,12 +407,12 @@ impl Widget for RungRowView {
                     vm.rename(id, &typed);
                 }
             };
-            let on_blur = commit.clone();
+            let on_commit = commit.clone();
             TextInput::new(name.clone())
                 .variant(TextInputVariant::Bare)
                 .validation(validation)
                 .on_submit_fn(move |_c| commit())
-                .on_blur_fn(move |_c| on_blur())
+                .on_commit_fn(move |_c| on_commit())
         };
 
         let category = {
@@ -492,12 +494,12 @@ impl Widget for RungRowView {
                     vm.set_details(id, &typed);
                 }
             };
-            let on_blur = commit.clone();
+            let on_commit = commit.clone();
             TextInput::new(details.clone())
                 .variant(TextInputVariant::Bare)
                 .placeholder(tr!(settings_statuses_details_placeholder()))
                 .on_submit_fn(move |_c| commit())
-                .on_blur_fn(move |_c| on_blur())
+                .on_commit_fn(move |_c| on_commit())
         };
 
         let body = Padding::symmetric(6.0, 10.0).child(

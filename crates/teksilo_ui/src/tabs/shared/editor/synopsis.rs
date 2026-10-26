@@ -362,14 +362,15 @@ pub fn title_input(
     on_change: impl Fn() + 'static,
     on_commit: impl Fn() + 'static,
 ) -> impl Widget {
-    // `on_commit` fires on blur and on Enter — a name is also an identifier (the tree,
-    // the tab and the Inspector all show it), so it must not wait for the autosave
-    // debounce the way prose can.
+    // `on_commit` fires when editing finishes (the field losing focus, or a click on a
+    // control that takes none, before that control's command runs) and on Enter. A name
+    // is also an identifier (the tree, the tab and the Inspector all show it), so it must
+    // not wait for the autosave debounce the way prose can.
     let commit = Rc::new(on_commit);
-    let (blur, submit) = (commit.clone(), commit);
+    let (finished, submit) = (commit.clone(), commit);
     let input = TextInput::new(field.value.clone())
         .placeholder(placeholder)
-        .on_blur_fn(move |_ctx| blur())
+        .on_commit_fn(move |_ctx| finished())
         .on_submit_fn(move |_ctx| submit());
     DirtyOnEdit {
         input: Some(input),
