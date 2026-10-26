@@ -795,8 +795,13 @@ pub fn run() {
         .initial_window(initial_window_config)
         .run();
 
-    // The last window can close with an import still running (the Launcher has no
-    // close guard), and the process must not end under a converter mid-write.
+    // Reached whenever the event loop ends by itself, which is every quit but one:
+    // on macOS, a quit AppKit asked for (the Dock's Quit, a logout) ends the process
+    // once teksilo reports it complete, and `run` never returns. Nothing below is
+    // lost then; see `QuitSequencer`'s module doc for why.
+    //
+    // The last window can close with an import still running (closing the Launcher
+    // is not guarded), and the process must not end under a converter mid-write.
     if !project_import.stop_at_exit(shared::project_import::EXIT_PATIENCE) {
         eprintln!("an import was still writing when Skribisto closed; it did not stop in time");
     }

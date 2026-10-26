@@ -171,6 +171,13 @@ impl SaveQueue {
     pub(crate) fn is_running(&self) -> bool {
         self.running.is_some()
     }
+
+    /// The long-operation id of the `save_work` in flight, if one is. Read by a
+    /// save at exit, which has to wait for it by polling: the completion event
+    /// that would otherwise clear it is never going to be delivered.
+    pub(crate) fn running_op(&self) -> Option<String> {
+        self.running.as_ref().map(|r| r.op_id.clone())
+    }
 }
 
 /// What a landed save means for whatever was parked behind it.

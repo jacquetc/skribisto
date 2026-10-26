@@ -3,6 +3,8 @@ Date: 2026-10-26
 Type: stable
 Description:
 - "On a Mac with a Touch Bar, Skribisto no longer crashes when you close one of its windows, such as Settings or Help"
+- "On a Mac, quitting from the Dock now asks about unsaved changes, as Work ▸ Quit does, and Cancel keeps everything open. Skribisto used to close at once"
+- "When the system closes Skribisto (you log out, restart or shut down, or another program stops it), your open projects are now saved first, without a question. Skribisto used to close with the last changes unsaved"
 - "When a menu you opened with the mouse closes, the caret is back in your text and you can go on typing. It used to stay on the menu button, and you had to click back into the text"
 ---
 Version: 3.2.3

@@ -58,10 +58,39 @@
 //! `SaveStateViewModel::on_save_completed` — documented idempotent, and already
 //! called once per window showing that Work — precisely so it does not depend on
 //! whether some other window's subscriber happened to run first.
+//!
+//! ## A quit someone else asks for
+//!
+//! teksilo also quits on requests that come from outside the app's own Quit
+//! command, and asks every window's close guard as it goes, naming the source
+//! (`EventContext::quit_source`). Two kinds reach a guard:
+//!
+//! * **A quit that can be answered**: the macOS Dock menu's Quit, AppleScript's
+//!   `quit`, any other `terminate:`, a Windows `taskkill` reaching the app while
+//!   windows are open. The guard hands it to this sequence
+//!   ([`QuitSequencer::defer_close_to_quit`]), so the writer gets the same
+//!   questions as for Work ▸ Quit, and holds its window's close on a
+//!   `CloseDecision` until the sequence ends: [`finish`](QuitSequencer::finish)
+//!   proceeds it, a Cancel anywhere cancels it, and teksilo tells the system how
+//!   the quit went (a cancelled one stays cancelled, on macOS with AppKit told
+//!   so).
+//! * **A quit nobody can answer**: `SIGTERM` or `SIGHUP`, the session ending
+//!   (log out, restart, shut down). teksilo closes the window whatever the guard
+//!   says, so a question would never be seen. The guard saves instead
+//!   ([`QuitSequencer::close_without_asking`]) and lets the window close.
+//!
+//! On macOS, AppKit ends the process itself once such a quit completes, so the
+//! teardown `run` does after the event loop does not happen then. Nothing in it
+//! is lost: teksilo writes every settings file on the way out, the open-registry
+//! locks and the IPC sockets are reaped by the next launch, the backend's
+//! `clean_up_before_exit` only empties a store that dies with the process, and a
+//! running import has been stopped already, by this sequence's question or by
+//! the guard that saved without asking.
 
 use std::cell::{Cell, RefCell};
 use std::collections::VecDeque;
 use std::rc::Rc;
+use std::time::Duration;
 
 use frontend::commands::work_management_commands;
 use frontend::work_management::CloseWorkDto;
@@ -120,10 +149,23 @@ struct Inner {
     /// How many extra saves the Work being waited on has already been asked for
     /// because typing went on during the previous one.
     resaves: Cell<u8>,
+    /// The closes held for this sequence: windows a quit teksilo runs (the macOS
+    /// Dock's Quit, a `terminate:`) asked while it was under way. Proceeded when
+    /// the sequence finishes, cancelled when it is abandoned, so the system hears
+    /// how the quit ended. See the module doc.
+    deferred: RefCell<Vec<CloseDecision>>,
 }
 
 /// How many extra saves one Work may be asked for during a quit.
 const MAX_RESAVES: u8 = 3;
+
+/// How long a quit nobody can answer may spend writing one Work to disk.
+///
+/// A service manager allows 90 seconds by default between `SIGTERM` and
+/// `SIGKILL`; Windows lets a session end within a few seconds and asks no
+/// application's permission. An interrupted save loses nothing (every save
+/// replaces the file atomically), so this only bounds a save that hangs.
+const EXIT_SAVE_BUDGET: Duration = Duration::from_secs(30);
 
 /// App-global (Tier 1): one quit at a time, over every open Work.
 #[derive(Clone)]
@@ -142,6 +184,7 @@ impl QuitSequencer {
                 active: Cell::new(false),
                 waiting: RefCell::new(None),
                 resaves: Cell::new(0),
+                deferred: RefCell::new(Vec::new()),
             }),
         }
     }
@@ -164,6 +207,83 @@ impl QuitSequencer {
             return self.ask_about_the_import(ctx, job);
         }
         self.walk(ctx);
+    }
+
+    /// A quit teksilo runs, one that can be answered (`QuitSource::Application`
+    /// or `UserQuit`: the macOS Dock's Quit, AppleScript, a `terminate:`), has
+    /// reached a window's close guard. Answer it the way Work ▸ Quit is answered:
+    /// start this sequence (or join the one under way) and hold the window's close
+    /// until it ends. The guard returns what this returns.
+    ///
+    /// The sequence closes every window itself when it finishes, so the decision
+    /// it proceeds then only tells teksilo the quit went through; cancelling it is
+    /// what keeps the quit, and every window, from going on.
+    pub fn defer_close_to_quit(&self, ctx: &mut EventContext) -> CloseResponse {
+        let decision = CloseDecision::new();
+        self.inner.deferred.borrow_mut().push(decision.clone());
+        // Nothing to do when a sequence is already under way: its end answers
+        // this decision too.
+        self.begin(ctx);
+        CloseResponse::Defer(decision)
+    }
+
+    /// A quit nobody can answer (`QuitSource::Signal`, `SessionEnd`, or a source
+    /// teksilo adds later) is closing a window, the one showing `session`'s Work
+    /// or the Launcher: keep what the writer did, without a question, and let the
+    /// window go. The guard returns what this returns.
+    ///
+    /// Saves the Work unless it holds nothing unsaved, or is a backup open
+    /// read-only (there is no file to write it to, and no one to ask for one; its
+    /// edits go, as a Discard would). Called for every window teksilo closes, so a
+    /// Work with two windows is written once: the second finds it saved. The
+    /// desk (open tabs and docks) is captured for every Work, as
+    /// [`finish`](Self::finish) captures it.
+    ///
+    /// Saving here does not wait for the autosave setting: with autosave off the
+    /// writer would have been asked, and a session that ends leaves nobody to
+    /// ask. Keeping the edits is the answer that can still be undone.
+    ///
+    /// A project import still running is stopped and waited for, as `run`'s
+    /// teardown would: on macOS a logout ends the process before that teardown
+    /// runs, and the converter would die mid-write.
+    pub fn close_without_asking(
+        &self,
+        ctx: &EventContext,
+        session: Option<&WorkSession>,
+    ) -> CloseResponse {
+        if let Some(session) = session {
+            session.workspace_layout.capture();
+            session.workspace_layout.capture_tree_expansion();
+            if session.save_state.is_unsaved() && !session.backup_mode.get() {
+                // A buffer that cannot be flushed is reported by the flush
+                // itself; what the store holds is still written.
+                session.backup_scheduler.flush_all_windows();
+                if !session.save_state.save_before_exit(EXIT_SAVE_BUDGET) {
+                    eprintln!(
+                        "{}: quitting without a chance to ask, and the project could not be saved",
+                        session.single_work.title().get()
+                    );
+                }
+            }
+        }
+        if let Some(job) = ctx.app_state::<ProjectImportJob>()
+            && !job.stop_at_exit(crate::shared::project_import::EXIT_PATIENCE)
+        {
+            eprintln!("an import was still writing when Skribisto closed; it did not stop in time");
+        }
+        CloseResponse::Close
+    }
+
+    /// Answer every close held by [`Self::defer_close_to_quit`]: `proceed` once
+    /// the sequence has finished, cancel when it was abandoned.
+    fn settle_deferred(&self, proceed: bool) {
+        for decision in self.inner.deferred.borrow_mut().drain(..) {
+            if proceed {
+                decision.proceed();
+            } else {
+                decision.cancel();
+            }
+        }
     }
 
     /// A project import is still running: ask whether to stop it and quit. See
@@ -190,7 +310,10 @@ impl QuitSequencer {
                 }
                 // Cancel, the escape key and closing the dialog keep the import
                 // running and every window open.
-                _ => me.inner.active.set(false),
+                _ => {
+                    me.inner.active.set(false);
+                    me.settle_deferred(false);
+                }
             })
             .present(ctx);
     }
@@ -434,6 +557,7 @@ impl QuitSequencer {
         self.inner.waiting.borrow_mut().take();
         self.inner.resaves.set(0);
         self.inner.active.set(false);
+        self.settle_deferred(false);
     }
 
     /// Every Work is accounted for: close each Work's backend subtree, then every
@@ -480,6 +604,7 @@ impl QuitSequencer {
         // dispatch; this is the only reliable way to close it.
         ctx.close_window_forced();
         self.inner.active.set(false);
+        self.settle_deferred(true);
     }
 }
 
@@ -621,6 +746,195 @@ mod tests {
             q.on_long_op_failed(&event, ctx);
         });
         assert!(!q.is_active(), "and must not start one either");
+    }
+
+    /// Run `f` with a live `EventContext` over `tree`, as a close guard runs, and
+    /// hand back what it returned.
+    fn in_guard<T>(
+        tree: &mut teksilo::core::widget_tree::WidgetTree,
+        f: impl FnOnce(&mut EventContext) -> T,
+    ) -> T {
+        let mut f = Some(f);
+        let mut out = None;
+        tree.run_with_event_context(&mut teksilo::core::NoopWindowOps, |ctx| {
+            if let Some(f) = f.take() {
+                out = Some(f(ctx));
+            }
+        });
+        out.expect("the guard ran")
+    }
+
+    /// The answer a held close got, if any.
+    fn answer_of(response: &CloseResponse) -> Option<teksilo::core::window::CloseAnswer> {
+        match response {
+            CloseResponse::Defer(decision) => decision.receipt().answer(),
+            _ => panic!("a quit the system runs is held, not answered on the spot"),
+        }
+    }
+
+    /// A quit teksilo runs (the macOS Dock's Quit) and that can be answered goes
+    /// through this sequence: the window's close is held, and released once the
+    /// sequence is done. Nothing is open here, so it is done at once.
+    #[test]
+    fn a_quit_the_system_asks_for_is_held_until_the_sequence_finishes() {
+        let q = sequencer();
+        let mut tree = teksilo::core::widget_tree::WidgetTree::new();
+        let response = in_guard(&mut tree, |ctx| q.defer_close_to_quit(ctx));
+        assert_eq!(
+            answer_of(&response),
+            Some(teksilo::core::window::CloseAnswer::Proceed),
+            "with nothing to account for, the quit goes through"
+        );
+        assert!(!q.is_active());
+    }
+
+    /// Cancel in the sequence cancels the quit the system asked for, so it stops
+    /// there (on macOS, AppKit is told the quit was refused) instead of closing
+    /// the windows anyway. A second request joining the first is answered with it.
+    #[test]
+    fn cancelling_the_sequence_cancels_the_held_quit() {
+        let _registry = crate::test_support::IsolatedOpenRegistry::new();
+        let dir = tempfile::tempdir().unwrap();
+        let (mut tree, job, app_ctx, op) = importing(dir.path());
+        let q = sequencer();
+
+        let first = Rc::new(RefCell::new(None));
+        let second = Rc::new(RefCell::new(None));
+        let (quitting, slot) = (q.clone(), first.clone());
+        crate::test_support::press(&mut tree, move |c| {
+            *slot.borrow_mut() = Some(quitting.defer_close_to_quit(c));
+        });
+        let (quitting, slot) = (q.clone(), second.clone());
+        crate::test_support::press(&mut tree, move |c| {
+            *slot.borrow_mut() = Some(quitting.defer_close_to_quit(c));
+        });
+        for held in [&first, &second] {
+            let held = held.borrow();
+            assert_eq!(
+                answer_of(held.as_ref().expect("the guard answered")),
+                None,
+                "both closes wait while the import question is up"
+            );
+        }
+        answer(
+            &mut tree,
+            &tr!(quit_import_running_title()).resolve_now(),
+            &StandardButton::Cancel.default_label().resolve_now(),
+        );
+        for held in [&first, &second] {
+            assert_eq!(
+                answer_of(held.borrow().as_ref().expect("the guard answered")),
+                Some(teksilo::core::window::CloseAnswer::Cancel)
+            );
+        }
+        assert!(!q.is_active());
+        assert!(job.is_running(), "the import goes on, as for Work ▸ Quit");
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(60);
+        while long_operation_commands::is_operation_finished(&app_ctx, &op) != Some(true) {
+            assert!(std::time::Instant::now() < deadline);
+            std::thread::sleep(std::time::Duration::from_millis(20));
+        }
+    }
+
+    /// A quit nobody can answer stops a project import still writing and waits
+    /// for its end before the window goes: on macOS the process ends right after,
+    /// and the converter would otherwise die mid-write.
+    #[test]
+    fn a_quit_nobody_can_answer_stops_a_running_import() {
+        let _registry = crate::test_support::IsolatedOpenRegistry::new();
+        let dir = tempfile::tempdir().unwrap();
+        let (mut tree, _job, app_ctx, op) = importing(dir.path());
+        let q = sequencer();
+        let response = in_guard(&mut tree, |ctx| q.close_without_asking(ctx, None));
+        assert!(matches!(response, CloseResponse::Close));
+        assert_eq!(
+            long_operation_commands::is_operation_finished(&app_ctx, &op),
+            Some(true),
+            "the import has ended by the time the window may close"
+        );
+        assert!(
+            !dir.path().join("novel.skrib.importing").exists(),
+            "no half-written file is left"
+        );
+    }
+
+    /// A session over a real project, the way a project window holds one.
+    #[cfg(not(feature = "mocks"))]
+    fn session_over(project: &crate::test_support::RealProject) -> WorkSession {
+        WorkSession::new(
+            project.app_ctx.clone(),
+            project.ids.clone(),
+            crate::spellcheck::SpellcheckService::new(),
+            teksilo::widgets::DockingModel::new(),
+            crate::backup::BackupSettingsViewModel::new(
+                crate::models::BackupSettingsService::in_memory_default(),
+            ),
+            crate::models::WorkspaceLayoutService::in_memory_default(),
+            crate::models::TreeExpansionService::in_memory_default(),
+        )
+    }
+
+    /// The titles of the project saved at `project.path`, read back the way
+    /// reopening it does.
+    #[cfg(not(feature = "mocks"))]
+    fn saved_titles(project: &crate::test_support::RealProject) -> Vec<String> {
+        let reopened = project.reopened();
+        let work_id = frontend::commands::work_commands::get_all_work(&reopened)
+            .expect("get_all_work")
+            .pop()
+            .expect("the file holds a Work")
+            .id;
+        crate::models::binder_stream::ordered_binder_items(&reopened, work_id)
+            .into_iter()
+            .map(|row| row.title)
+            .collect()
+    }
+
+    /// A quit nobody can answer writes what the writer did, with autosave off
+    /// (which would have meant a question), and is on disk by the time the
+    /// window may close.
+    #[cfg(not(feature = "mocks"))]
+    #[test]
+    fn a_quit_nobody_can_answer_saves_the_project_first() {
+        let project = crate::test_support::RealProject::empty_novel();
+        project.save();
+        let session = session_over(&project);
+        let (first, _) = project.scenes()[0];
+        project.add_scene_after(first, "Written at the last moment");
+        session.save_state.bump_dirty();
+        assert!(session.save_state.is_unsaved());
+
+        let q = sequencer();
+        let mut tree = teksilo::core::widget_tree::WidgetTree::new();
+        let response = in_guard(&mut tree, |ctx| q.close_without_asking(ctx, Some(&session)));
+        assert!(matches!(response, CloseResponse::Close));
+        assert!(!session.save_state.is_unsaved(), "the save is credited");
+        assert!(
+            saved_titles(&project).contains(&"Written at the last moment".to_string()),
+            "the scene added last is in the file"
+        );
+    }
+
+    /// A backup open read-only has no file to be written to, so a quit nobody
+    /// can answer leaves the file as it was, as Discard would.
+    #[cfg(not(feature = "mocks"))]
+    #[test]
+    fn a_quit_nobody_can_answer_never_writes_over_a_backup() {
+        let project = crate::test_support::RealProject::empty_novel();
+        project.save();
+        let session = session_over(&project);
+        session.backup_mode.set(true);
+        let (first, _) = project.scenes()[0];
+        project.add_scene_after(first, "Typed into a backup");
+        session.save_state.bump_dirty();
+
+        let q = sequencer();
+        let mut tree = teksilo::core::widget_tree::WidgetTree::new();
+        in_guard(&mut tree, |ctx| q.close_without_asking(ctx, Some(&session)));
+        assert!(
+            !saved_titles(&project).contains(&"Typed into a backup".to_string()),
+            "the file is untouched"
+        );
     }
 
     /// A tree whose app state holds `job`, as the running app's does, and a Plume

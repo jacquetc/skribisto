@@ -592,6 +592,12 @@ impl ProjectWindowFactory {
             // rest: this window's `OpenDoc` refs and flush hook released, the
             // Work's refcount dropped by one, its undo stack left alone because
             // `WorkRegistry` reports this was not the last window on it.
+            //
+            // **And except during a quit teksilo runs** (`ctx.quit_source()`:
+            // the macOS Dock's Quit, a termination signal, the session ending).
+            // That close is the application's, so it goes to the
+            // `QuitSequencer`, or, when nobody can be asked, saves without
+            // asking. See the sequencer's module doc.
             .on_close_requested({
                 // The Work's own answer, not the pair's — see the `work.close`
                 // action in `app.rs` for why.
@@ -604,7 +610,31 @@ impl ProjectWindowFactory {
                 let ids = session.ids.clone();
                 let registry_guard = registry.clone();
                 let layout_guard = session.workspace_layout.clone();
+                let quit_guard = self.quit.clone();
                 move |ctx| {
+                    // A quit teksilo runs asks every window in turn, and this
+                    // window's close is then the app's, not the project's. Read
+                    // first, before the sibling shortcut below: a quit closes the
+                    // siblings too, and only the sequence may decide when.
+                    match ctx.quit_source() {
+                        None => {}
+                        // The writer can be asked (the macOS Dock's Quit, a
+                        // `terminate:`): the same questions as Work ▸ Quit.
+                        Some(QuitSource::Application | QuitSource::UserQuit) => {
+                            return quit_guard.defer_close_to_quit(ctx);
+                        }
+                        // Nobody can be asked (`SIGTERM`, `SIGHUP`, the session
+                        // ending), and this window closes whatever the answer:
+                        // save, then let it go. A source teksilo adds later is
+                        // treated the same way, the answer that loses nothing.
+                        Some(_) => {
+                            let session = ids
+                                .work_id
+                                .get()
+                                .and_then(|work_id| registry_guard.session_for(work_id));
+                            return quit_guard.close_without_asking(ctx, session.as_ref());
+                        }
+                    }
                     let shared_with_a_sibling = ids
                         .work_id
                         .get()

@@ -77,6 +77,30 @@ pub fn launcher_window_config(app_ctx: Rc<AppContext>) -> WindowConfig {
         // another instance's "open in new window") so a bare launch comes up
         // focused on Wayland — same rationale as the project window.
         .activate_from_env(true)
+        // Closing the Launcher is never guarded; quitting the app is. A quit
+        // teksilo runs (the macOS Dock's Quit, a `terminate:`) asks this window
+        // too, possibly first, and it answers as Work ▸ Quit does here: through
+        // the one `QuitSequencer`, which asks about a running import and every
+        // open project before anything closes. Without it the Launcher would
+        // close at once and a Cancel later in the sequence would keep the
+        // projects open with the Launcher gone. A quit nobody can answer
+        // (`SIGTERM`, the session ending) has no project to save here, only an
+        // import that may still be writing.
+        .on_close_requested(|ctx| {
+            let Some(quit) = ctx
+                .app_state::<crate::shell::windows::ProjectWindowFactory>()
+                .map(|factory| factory.quit())
+            else {
+                return CloseResponse::Close;
+            };
+            match ctx.quit_source() {
+                None => CloseResponse::Close,
+                Some(QuitSource::Application | QuitSource::UserQuit) => {
+                    quit.defer_close_to_quit(ctx)
+                }
+                Some(_) => quit.close_without_asking(ctx, None),
+            }
+        })
         .root(move |tree, _state| {
             let theme = tree.theme().clone();
             // Leaner title bar: brand icon + hamburger in the leading slot, the

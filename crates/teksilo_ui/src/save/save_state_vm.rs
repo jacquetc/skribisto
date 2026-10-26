@@ -42,13 +42,14 @@
 
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use teksilo::prelude::Signal;
 
 use frontend::AppContext;
-use frontend::commands::work_management_commands;
+use frontend::commands::{long_operation_commands, work_management_commands};
 use frontend::common::event::Event;
+use frontend::common::long_operation::{OperationStatus, lock_or_recover};
 use frontend::work_management::SaveWorkDto;
 
 use crate::app_ids::AppIds;
@@ -376,6 +377,65 @@ impl SaveStateViewModel {
         }
     }
 
+    /// Write this Work to disk **now** and wait until it is written, for a quit
+    /// that nobody is there to answer: a termination signal, the session ending.
+    /// `true` once a save covering everything the store holds has landed.
+    ///
+    /// The caller flushes its editors into the store first, exactly as before
+    /// [`Self::request_save`].
+    ///
+    /// Blocks the UI thread, and has to: such a quit closes the window as soon as
+    /// its close guard returns, and no later turn will ever deliver the save's
+    /// completion event. A save already in flight is waited for first (its
+    /// snapshot may predate the flush, and two saves of one project must never
+    /// run at once, see [`SaveQueue`]), then one more is issued and waited for.
+    ///
+    /// `false` when the write failed or did not end within `budget`. The `.skrib`
+    /// on disk is then the one the last finished save wrote, never a torn one:
+    /// every save replaces the file atomically.
+    pub fn save_before_exit(&self, budget: Duration) -> bool {
+        let deadline = Instant::now() + budget;
+        let in_flight = self.inner.queue.borrow().running_op();
+        if let Some(op_id) = in_flight
+            && wait_for_operation(&self.inner.app_ctx, &op_id, deadline).is_none()
+        {
+            return false;
+        }
+        // Whatever was running has ended, and its completion will never be routed.
+        self.inner.queue.borrow_mut().reset();
+        let covers = self.inner.dirty_seq.get();
+        if !self.start_save(covers) {
+            return false;
+        }
+        let Some(op_id) = self.inner.queue.borrow().running_op() else {
+            return false;
+        };
+        let landed = matches!(
+            wait_for_operation(&self.inner.app_ctx, &op_id, deadline),
+            Some(OperationStatus::Completed)
+        );
+        if landed {
+            // Credited the way `on_save_completed` credits a landed save, so a
+            // second window on this Work, asked after this one, finds nothing
+            // left to write.
+            let done = self.inner.queue.borrow_mut().completed(&op_id);
+            if let Some(done) = done {
+                let saved_seq = self.inner.saved_seq.get().max(done.covers);
+                self.inner.saved_seq.set(saved_seq);
+            }
+            self.inner.external_saved.set(
+                self.inner
+                    .external_saved
+                    .get()
+                    .max(self.inner.external_in_flight.get()),
+            );
+        } else {
+            self.inner.queue.borrow_mut().reset();
+        }
+        self.inner.saving.set(false);
+        landed
+    }
+
     /// Route a `LongOperation::Completed`. `None` if it wasn't **our** save — a
     /// backup's, an import's or a Save As's completion is left to their own
     /// view-models.
@@ -622,12 +682,46 @@ impl WorkHandle {
     }
 }
 
+/// Wait for the long operation `op_id` to end, until `deadline`: its final
+/// status, or `None` when it is still running at the deadline or no longer known
+/// to the manager.
+///
+/// Waits on the manager's completion signal, taken out of the manager first so
+/// its lock is not held for the length of the wait (see `completion_signal`).
+fn wait_for_operation(
+    app_ctx: &AppContext,
+    op_id: &str,
+    deadline: Instant,
+) -> Option<OperationStatus> {
+    let completion = lock_or_recover(&app_ctx.long_operation_manager).completion_signal();
+    let patience = deadline.saturating_duration_since(Instant::now());
+    if !completion.wait_for(op_id, Some(patience)) {
+        return None;
+    }
+    long_operation_commands::get_operation_status(app_ctx, op_id)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     fn vm() -> SaveStateViewModel {
         SaveStateViewModel::new(Rc::new(AppContext::new()), AppIds::new())
+    }
+
+    /// A save at exit that cannot write says so, credits nothing, and leaves the
+    /// queue idle rather than waiting on an operation that already ended.
+    #[test]
+    fn a_save_at_exit_that_cannot_write_reports_it() {
+        let vm = vm();
+        vm.bump_dirty();
+        assert!(!vm.save_before_exit(Duration::from_secs(10)));
+        assert!(
+            vm.is_unsaved(),
+            "nothing was written, so nothing is credited"
+        );
+        assert!(!vm.saving().get());
+        assert!(vm.inner.queue.borrow().running_op().is_none());
     }
 
     fn completed_event(op_id: &str) -> Event {
