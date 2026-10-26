@@ -33,6 +33,32 @@ fn main() {
 
     stamp_channel();
     embed_windows_resources();
+    reserve_windows_main_stack();
+}
+
+/// Gives the Windows executable's main thread the 8 MiB stack it has on Linux.
+///
+/// Windows reserves 1 MiB for the main thread unless the executable says
+/// otherwise, and a debug build needs more than that while it builds a project
+/// window: `run`, `App::build`, `App::build_shell` and teksilo's window creation
+/// are large frames unoptimised (about 900 KB for those five together, measured
+/// 2026-10-26), so the app died with a stack overflow, exit `0xC00000FD`, before
+/// any project opened. Not recursion: the same 80 frames, measured at a 1.4 MiB
+/// peak once the reserve was raised. The reserve is address space, not memory,
+/// so a release build pays nothing for it either. Linux and macOS give the main
+/// thread 8 MiB already.
+fn reserve_windows_main_stack() {
+    if std::env::var("CARGO_CFG_TARGET_OS").as_deref() != Ok("windows") {
+        return;
+    }
+    // The snippet teksilo's app guide gives ("Adding Teksilo"), so the two do not
+    // drift: every binary of the package, MSVC's linker flag or the GNU one.
+    const STACK: u32 = 8 * 1024 * 1024;
+    if std::env::var("CARGO_CFG_TARGET_ENV").as_deref() == Ok("msvc") {
+        println!("cargo:rustc-link-arg-bins=/STACK:{STACK}");
+    } else {
+        println!("cargo:rustc-link-arg-bins=-Wl,--stack,{STACK}");
+    }
 }
 
 /// Stamps how this binary was distributed into `SKRIBISTO_CHANNEL`, which
