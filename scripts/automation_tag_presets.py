@@ -109,7 +109,7 @@ mcp_err = tempfile.NamedTemporaryFile(suffix=".mcp.log", delete=False).name
 # spellings, with a comment naming the ftl key it came from
 # (crates/teksilo_ui/locales/{en-US,fr-FR}/{main,tags}.ftl) — all read in
 # full, not guessed.
-WELCOME_NAV = "welcome sections"  # welcome/panel.rs: access_label_literal("Welcome sections") — not tr!, same in both locales
+WELCOME_NAV = ("welcome sections", "sections de l’accueil")  # welcome-sections-a11y
 NEW_WORK_BTN = ("new work", "nouvelle œuvre", "nouvelle oeuvre")  # welcome-new-work
 SEC_WORK = ("work", "œuvre", "oeuvre")  # settings-sec-work
 PAGE_TAGS = ("tags", "étiquettes")  # settings-page-tags
@@ -117,13 +117,12 @@ TAGS_EMPTY = ("no tags yet", "aucune étiquette pour le moment")  # settings-tag
 APPLY_PRESET_BTN = ("apply a preset", "appliquer un préréglage")  # settings-tags-apply-preset (without the trailing ellipsis, to dodge glyph encoding)
 BASIC_LABEL = ("basic", "basique")  # tags-preset-basic
 SCIFI_LABEL = ("science fiction", "science-fiction")  # tags-preset-scifi — fr has a hyphen, en does not
-# settings-tags-preset-applied is a flat interpolation, not a plural-select,
-# so it is safe to match exactly for a specific (added, skipped) pair.
 # Wording taken from settings-tags-preset-applied in both .ftl files — a Fluent
 # plural selector, so the French arms differ by number and the "(s)" spelling an
-# earlier version of this file guessed at never existed.
+# earlier version of this file guessed at never existed. French puts 0 in the
+# `one` category (CLDR), so "0 déjà présente ignorée" is singular.
 BASIC_TOAST = ("added 6, skipped 0 already present",
-               "6 ajoutées, 0 déjà présentes ignorées")
+               "6 ajoutées, 0 déjà présente ignorée")
 SCIFI_TOAST = ("added 3, skipped 6 already present",
                "3 ajoutées, 6 déjà présentes ignorées")
 TAGS_COUNT_BASIC = ("6 tags", "6 étiquettes")  # settings-tags-count [other]
@@ -442,13 +441,21 @@ def open_settings(s):
 
 
 def page_reached(s, target):
-    names = (target,) if isinstance(target, str) else tuple(target)
-    crumb = breadcrumb(s)
-    if crumb and any(c and c.strip().lower() in names for c in crumb):
-        return crumb
-    row = rail_node(s, names, exact=True)
+    """The breadcrumb if the panel is showing `target`, else None.
+
+    `target` is a tuple of accepted names (one per locale); a bare string is
+    accepted too. Read off the rail, where the open page's row is the selected
+    `TreeItem`. Not off the pane's links: a section's own page links to every
+    page under it, so on "Work: test" a link named "Tags" is there while Tags
+    is not open, and matching it stopped the walk one row short.
+    """
+    names = tuple(v.lower() for v in ((target,) if isinstance(target, str) else target))
+    row = next((n for n in s.nodes()
+                if n.get("role") == "TreeItem"
+                and (n.get("label") or "").strip().lower() in names
+                and (n.get("bounds") or {}).get("x", 9999) < 280), None)
     if row and row.get("selected"):
-        return crumb or list(names[:1])
+        return breadcrumb(s) or list(names[:1])
     return None
 
 
@@ -671,7 +678,7 @@ def find_value_contains(s, substr, timeout=6):
 # ── 0. Launch bare, create a NEW project through the Launcher ───────────────
 print("== launch (bare, to reach the Launcher) ==")
 s = Session([])
-if not s.wait_label(WELCOME_NAV):
+if not any(s.wait_label(v, timeout=20 if i == 0 else 1) for i, v in enumerate(WELCOME_NAV)):
     fail(f"the Launcher window did not appear at startup (looked for {WELCOME_NAV!r})", s)
 print("Launcher window is up.")
 
@@ -753,17 +760,35 @@ if preview is None or not val(preview).lower().endswith(f"{WORK_SLUG}.skrib"):
          f"{val(preview) if preview else None!r}", s)
 print(f"  path preview: {val(preview)!r}")
 
-create_btn = None
-for n in s.nodes():
-    lab = (n.get("label") or "").lower()
-    if any(w in lab for w in ("create work", "créer", "creer")) and not any(
-            w in lab for w in ("cancel", "annuler")):
-        create_btn = n
-        break
+def wizard_button(names):
+    """A footer button of the New Work wizard, by its exact label.
+
+    Exact, not a substring: the Launcher behind the dialog has "Créer depuis…",
+    which a search for "créer" took for Create Work and clicked instead.
+    """
+    return next((n for n in s.nodes()
+                 if n.get("role") == "Button"
+                 and (n.get("label") or "").strip().lower() in names), None)
+
+
+NEXT_BTN = ("next", "suivant")                                  # new-work-next
+CREATE_BTN = ("create work", "créer l’œuvre", "créer l'œuvre")  # new-work-create
+
+# The wizard's three steps: name and place, then language and structure, then
+# the template. Create Work is on the last one.
+for step in (2, 3):
+    next_btn = wizard_button(NEXT_BTN)
+    if not next_btn:
+        dump(s, f"no Next button before step {step}")
+        fail(f"the New Work wizard has no 'Next' button to reach step {step}", s)
+    s.call("invoke_action", {"node": next_btn["id"], "action": "click"})
+    s.settle()
+    time.sleep(0.8)
+
+create_btn = wizard_button(CREATE_BTN)
 if not create_btn:
-    fail("no 'Create Work' button", s)
-# Non-vacuity: if Create is disabled the click below is a silent no-op and
-# every assertion downstream would be measuring nothing.
+    dump(s, "no Create Work button on the last step")
+    fail("no 'Create Work' button on the wizard's last step", s)
 if not node_enabled(s, create_btn["id"]):
     fail("Create Work should be ENABLED with a valid name and an existing, "
          "writable location", s)
@@ -789,7 +814,7 @@ while time.time() < end:
         fail("the app process exited while creating the work from the "
              "Launcher (a wrong open/close window ordering quits it)", s)
     joined_now = " | ".join(l for l in s.labels()).lower()
-    if WELCOME_NAV not in joined_now and binder_tree_rows(s):
+    if not any(v in joined_now for v in WELCOME_NAV) and binder_tree_rows(s):
         transitioned = True
         break
     time.sleep(0.4)

@@ -29,8 +29,9 @@ Built end to end, through the UI, exactly as a writer would:
      open. A hover that shows nothing is indistinguishable from a feature that
      silently stopped rendering its explanation — the one thing this feature
      has to get right, since the matcher is knowingly wrong about "don't".
-  5. Pin it: the suggestion is replaced by a confirmed backlink on Note 1's own
-     Inspector — the same rows, read from the other end.
+  5. Pin it: the suggestion becomes a confirmed backlink on Note 1's own
+     Details page ("Appears in the manuscript"): the same rows, read from the
+     other end. Before the pin the page offers to confirm it; after, it does not.
   6. THE LOAD-BEARING CHECK: a scan must never dirty the project. Reading the
      whole binder and re-deriving a hundred rows sounds exactly like the kind
      of background work that leaves a stray write behind, and the UI's only
@@ -93,13 +94,15 @@ SEC_WORK = ("work", "œuvre", "oeuvre")                       # settings-sec-wor
 PAGE_TAGS = ("tags", "étiquettes")                            # settings-page-tags
 DONE = ("done", "terminé")                                    # settings-done
 ADD_TAG_BTN = ("add tag", "ajouter")                           # settings-tags-add
-SW_STORY_BIBLE = ("story bible", "bible narrative")            # settings-tags-discoverable
+SW_STORY_BIBLE = ("find in prose", "repérer dans le texte")            # settings-tags-discoverable
 TAGS_PILL_ADD = ("add a tag", "ajouter une étiquette")          # tags-pill-add
 TAGS_ALIAS_ADD = ("add another name", "ajouter un autre nom")   # tags-alias-add
 INSPECTOR_TAGS = ("tags", "étiquettes")                         # inspector-tags
 INSPECTOR_ALIASES = ("also known as", "aussi appelé")           # inspector-aliases / tags-alias-list
 MENTIONS_ROSTER = ("cast", "présence", "presence")              # cast-section (EN Cast / FR Présence)
-MENTIONS_BACKLINKS = ("appears in", "apparaît dans", "apparait dans")  # mentions-backlinks
+DETAILS_SEGMENT = ("details", "détails")                        # segment-note-details
+BACKLINKS_HEAD = ("appears in the manuscript", "apparaît dans le manuscrit")  # note-details-backlinks
+CONFIRM_IN = ("add to the cast of", "ajouter à la présence de")  # mentions-confirm (dynamic $name, match the prefix)
 MENTIONS_PIN_VERB = ("add", "ajouter")                          # cast-pin (dynamic $name, match the verb)
 CAST_ADD = ("add to cast", "ajouter à la présence", "ajouter a la presence")  # cast-add
 CAST_UNPIN_VERB = ("remove", "retirer")                         # cast-unpin
@@ -114,7 +117,7 @@ SAVE_AUTOSAVE = ("autosave is on", "l'enregistrement automatique est activé")  
 # actually care about (see `inspector_section`). Incomplete would just mean a
 # band runs a little long; it does not need to be exhaustive to be safe.
 ALL_INSPECTOR_HEADS = [
-    INSPECTOR_TAGS, INSPECTOR_ALIASES, MENTIONS_ROSTER, MENTIONS_BACKLINKS,
+    INSPECTOR_TAGS, INSPECTOR_ALIASES, MENTIONS_ROSTER,
     INSPECTOR_LANGUAGE, INSPECTOR_EXPORT,
 ]
 
@@ -415,13 +418,21 @@ def open_settings(s):
 
 
 def page_reached(s, target):
-    names = tuple(v.lower() for v in target)
-    crumb = breadcrumb(s)
-    if crumb and any(c and c.strip().lower() in names for c in crumb):
-        return crumb
-    row = rail_node(s, target, exact=True)
+    """The breadcrumb if the panel is showing `target`, else None.
+
+    `target` is a tuple of accepted names (one per locale); a bare string is
+    accepted too. Read off the rail, where the open page's row is the selected
+    `TreeItem`. Not off the pane's links: a section's own page links to every
+    page under it, so on "Work: test" a link named "Tags" is there while Tags
+    is not open, and matching it stopped the walk one row short.
+    """
+    names = tuple(v.lower() for v in ((target,) if isinstance(target, str) else target))
+    row = next((n for n in s.nodes()
+                if n.get("role") == "TreeItem"
+                and (n.get("label") or "").strip().lower() in names
+                and (n.get("bounds") or {}).get("x", 9999) < 280), None)
     if row and row.get("selected"):
-        return crumb or list(names[:1])
+        return breadcrumb(s) or list(names[:1])
     return None
 
 
@@ -485,7 +496,9 @@ def inspector_section(s, heading_variants, x_min=560.0):
     found = []
     for n in s.nodes():
         b = n.get("bounds") or {}
-        if b.get("x", -1) < x_min:
+        # A label's text is also a `TextRun` node at the same place: one
+        # heading, not two, or the band would end at its own copy.
+        if b.get("x", -1) < x_min or n.get("role") == "TextRun":
             continue
         t = text_of(n).strip().lower()
         for variants in ALL_INSPECTOR_HEADS:
@@ -497,7 +510,8 @@ def inspector_section(s, heading_variants, x_min=560.0):
     if idx is None:
         return None, []
     top = found[idx][0]
-    bottom = found[idx + 1][0] if idx + 1 < len(found) else top + 400.0
+    below = [h[0] for h in found[idx + 1:] if h[0] > top]
+    bottom = below[0] if below else top + 400.0
     left = (found[idx][2].get("bounds") or {}).get("x", x_min) - 20
     rows = [n for n in s.nodes()
             if (n.get("bounds") or {}).get("x", -1) >= left
@@ -519,6 +533,52 @@ def pin_for(rows, title):
         if t in low and any(v in low for v in MENTIONS_PIN_VERB):
             return n
     return None
+
+
+def details_backlinks(s):
+    """The open entry's Details page: `(heading, rows, confirm controls)`.
+
+    An entry's backlinks are on its own Details page, under "Appears in the
+    manuscript": the Inspector's "Appears in" list was removed. A row the scan
+    only guessed at carries a confirm control ("Add to the cast of 1.1 Zeus");
+    a confirmed one does not. Selects the Details segment first when the tab is
+    on another. `(None, [], [])` while the page has no such section.
+    """
+    seg = next((n for n in s.nodes()
+                if text_of(n).strip().lower() in DETAILS_SEGMENT
+                and n.get("role") != "TextRun"
+                and 330 <= (n.get("bounds") or {}).get("x", -1) < 850
+                and (n.get("bounds") or {}).get("y", 9999) < 160), None)
+    if seg and not seg.get("selected"):
+        act(s, seg)
+        s.settle()
+        time.sleep(0.6)
+    nodes = s.nodes()
+    head = next((n for n in nodes
+                 if n.get("role") != "TextRun"
+                 and text_of(n).strip().lower() in BACKLINKS_HEAD), None)
+    if head is None:
+        return None, [], []
+    hb = head.get("bounds") or {}
+    left, top = hb.get("x", 0) - 20, hb.get("y", 0)
+    rows = [n for n in nodes
+            if n.get("role") == "ListItem"
+            and left <= (n.get("bounds") or {}).get("x", -1) < left + 420
+            and (n.get("bounds") or {}).get("y", -1) > top]
+    confirms = [n for n in nodes
+                if n.get("role") != "TextRun"
+                and any(text_of(n).strip().lower().startswith(v) for v in CONFIRM_IN)]
+    return head, rows, confirms
+
+
+def backlink_state(s, owner):
+    """`"absent"`, `"suggested"` (a row for `owner` with its confirm control) or
+    `"confirmed"` (the row, no confirm control) on the open entry's Details page."""
+    _, rows, confirms = details_backlinks(s)
+    if not any(text_of(n).strip() == owner for n in rows):
+        return "absent"
+    named = [n for n in confirms if owner.lower() in text_of(n).lower()]
+    return "suggested" if named else "confirmed"
 
 
 # ── The save indicator, from automation_save_indicator.py's proven idiom ───
@@ -956,19 +1016,25 @@ s.shot(os.path.join(fixture.SCRATCH, "mentions-evidence.png"))
 
 
 # ═════════════════════════════════════════════════════════════════════════
-# 8. Note 1's backlinks are absent before pinning — the "before" half of the
-#    confirmed-backlink check.
+# 8. Before the pin, Note 1's Details page has its "Appears in the manuscript"
+#    section and no confirmed row for 1.1 Zeus: the "before" half of the
+#    confirmed-backlink check. The section itself is the first thing to prove:
+#    Note 1 became story-bible material after its tab opened, and a page that
+#    still read it as untagged showed no section at all. The row may be absent
+#    or a suggestion: the index scans Zeus's new words on its own schedule.
 # ═════════════════════════════════════════════════════════════════════════
-print(f"\n== {ITEM_NOTE1} has no backlinks before the suggestion is pinned ==")
+print(f"\n== {ITEM_NOTE1}'s backlink is not confirmed before the pin ==")
 if not open_item(s, ITEM_NOTE1):
     fail(f"could not select {ITEM_NOTE1!r}", s)
-heading, _ = inspector_section(s, MENTIONS_BACKLINKS)
-if heading is not None:
-    diag(s, "mentioned in")
-    diag(s, "mentionné dans")
-    fail(f"{ITEM_NOTE1!r} already shows a '{MENTIONS_BACKLINKS[0]}' section before "
-         "anything was pinned — the after-pin check below would be meaningless", s)
-print(f"  confirmed: no '{MENTIONS_BACKLINKS[0]}' section yet")
+if not wait_for(lambda: details_backlinks(s)[0] is not None, tries=25, delay=0.4):
+    s.shot(os.path.join(fixture.SCRATCH, "mentions-backlink-before-fail.png"))
+    fail(f"{ITEM_NOTE1!r}'s Details page shows no '{BACKLINKS_HEAD[0]}' section although "
+         "it carries a find-in-prose tag", s)
+before = backlink_state(s, ITEM_ZEUS)
+if before == "confirmed":
+    fail(f"{ITEM_NOTE1!r}'s Details page already lists {ITEM_ZEUS!r} as confirmed before "
+         "anything was pinned, so the after-pin check below would be meaningless", s)
+print(f"  confirmed: the section is there, and {ITEM_ZEUS!r} is {before}, not confirmed")
 
 
 # ═════════════════════════════════════════════════════════════════════════
@@ -1006,39 +1072,25 @@ s.shot(os.path.join(fixture.SCRATCH, "mentions-pinned.png"))
 
 
 # ═════════════════════════════════════════════════════════════════════════
-# 10. Note 1's own Inspector now shows the backlink.
+# 10. Note 1's own Details page now lists the backlink as confirmed.
 # ═════════════════════════════════════════════════════════════════════════
-print(f"\n== {ITEM_NOTE1}'s Inspector shows the backlink ==")
+print(f"\n== {ITEM_NOTE1}'s Details page shows the backlink ==")
 if not open_item(s, ITEM_NOTE1):
     fail(f"could not reselect {ITEM_NOTE1!r}", s)
 
 
-def backlink_ready():
-    heading, band = inspector_section(s, MENTIONS_BACKLINKS)
-    return heading is not None and len([n for n in band if n.get("role") == "ListItem"]) >= 1
-
-
-if not wait_for(backlink_ready, tries=25, delay=0.4):
-    diag(s, "mentioned in")
-    diag(s, "mentionné dans")
+if not wait_for(lambda: backlink_state(s, ITEM_ZEUS) == "confirmed", tries=25, delay=0.4):
+    diag(s, ITEM_ZEUS)
+    diag(s, CONFIRM_IN[0])
     s.shot(os.path.join(fixture.SCRATCH, "mentions-backlink-fail.png"))
-    fail(f"{ITEM_NOTE1!r} shows no '{MENTIONS_BACKLINKS[0]}' section even after "
-         f"pinning from {ITEM_ZEUS!r}", s)
+    fail(f"after pinning from {ITEM_ZEUS!r}, {ITEM_NOTE1!r}'s Details page does not "
+         f"list it as confirmed (state: {backlink_state(s, ITEM_ZEUS)})", s)
 
-heading, band = inspector_section(s, MENTIONS_BACKLINKS)
-back_rows = [n for n in band if n.get("role") == "ListItem"]
+_, back_rows, _ = details_backlinks(s)
 if len(back_rows) != 1:
-    fail(f"expected exactly 1 backlink row on {ITEM_NOTE1!r}, found {len(back_rows)}", s)
-# NOTE: not asserting the row's text equals `1.1 Zeus`. `MentionHit::Found`
-# sets `title` unconditionally to the TARGET's name (skribisto_model /
-# scan_mentions_uc.rs) — correct for the roster direction, but for backlinks
-# every row's target IS the item being viewed, so `row.title` reads
-# `ITEM_NOTE1` on every backlink row regardless of who mentions it. With one
-# mentioning scene this happens to not look wrong; asserting the literal text
-# here would be asserting behaviour the shipped code does not implement.
-print(f"  backlink present: 1 row, reading {text_of(back_rows[0])!r} "
-      f"(row identifies the mentioning scene only by position/count, a known "
-      f"limitation — see MentionHit::Found's single `title` field)")
+    fail(f"expected exactly 1 backlink row on {ITEM_NOTE1!r}, found "
+         f"{[text_of(n) for n in back_rows]}", s)
+print(f"  backlink confirmed: one row, {text_of(back_rows[0])!r}, no confirm control")
 s.shot(os.path.join(fixture.SCRATCH, "mentions-backlink.png"))
 
 
@@ -1107,14 +1159,8 @@ if not open_item(s, ITEM_NOTE1):
     fail(f"could not select {ITEM_NOTE1!r} after relaunch", s)
 
 
-def backlink_ready_after_reload():
-    heading, band = inspector_section(s, MENTIONS_BACKLINKS)
-    return heading is not None and len([n for n in band if n.get("role") == "ListItem"]) >= 1
-
-
-if not wait_for(backlink_ready_after_reload, tries=30, delay=0.5):
-    diag(s, "mentioned in")
-    diag(s, "mentionné dans")
+if not wait_for(lambda: backlink_state(s, ITEM_ZEUS) == "confirmed", tries=30, delay=0.5):
+    diag(s, ITEM_ZEUS)
     s.shot(os.path.join(fixture.SCRATCH, "mentions-reload-fail.png"))
     fail(f"{ITEM_NOTE1!r}'s backlink did not reappear after relaunch — either the "
          "persisted data did not survive save+reload, or the automatic on-load "

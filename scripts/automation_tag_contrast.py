@@ -790,6 +790,10 @@ print("project loaded.")
 if not open_item(s, ITEM):
     fail(f"could not select {ITEM!r} in the binder", s)
 print(f"  opened {ITEM!r}")
+# Off the binder row: resting on it raises the row's hover card, which carries
+# the same dot row and would be a second match.
+clear_hover(s)
+time.sleep(0.5)
 
 # ── Assertion 1: the dot row announces exactly these 3 tags, in this order ──
 print("\n== the dot row (before touching the theme) ==")

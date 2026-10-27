@@ -401,7 +401,9 @@ def select_segment(name):
     harmless to re-click, but skipping the click on a wrong guess is not.
     """
     for attempt in range(3):
-        seg = find(s, name)
+        # The segment itself: the bar's group is also named after the segment
+        # it shows, and a click at its centre lands on whichever one is there.
+        seg = find(s, name, role="RadioButton") or find(s, name)
         if not seg:
             s.dump(f"no {name!r} segment")
             fail(f"the container offers no {name!r} segment "
@@ -441,14 +443,14 @@ def segment_states():
 def segment_selected(name):
     """True when the segment named `name` reports itself selected.
 
-    A `SegmentedControl` marks the active segment with the AT `selected` flag;
-    some roles use `toggled` instead, so accept either rather than pinning one
-    and silently never matching.
+    A `SegmentedControl`'s segments are `RadioButton`s whose `toggled` the
+    bridge reports as the string "true"; accept a boolean and `selected` too,
+    rather than pinning one spelling and silently never matching.
     """
     for n in s.nodes():
         low = text_of(n).strip().lower()
         if any(v in low for v in name):
-            if n.get("selected") is True or n.get("toggled") is True:
+            if n.get("selected") is True or n.get("toggled") in (True, "true"):
                 return True
     return False
 
@@ -547,8 +549,10 @@ def create_tag(name):
     s.settle()
     time.sleep(0.8)
 
-    create = (find(s, (f'create "{name}"', f'créer « {name} »'))
-              or find(s, ("create", "créer")))
+    # The Button, not the first node with the words: the create section also
+    # carries a label reading the same as the button, beside its colour well.
+    create = (find(s, (f'create "{name}"', f'créer « {name} »'), role="Button")
+              or find(s, ("create", "créer"), role="Button"))
     if not create:
         # Distinguish "the text never landed" from "the row is named something
         # else" -- these need opposite fixes. Re-LOCATE the field rather than

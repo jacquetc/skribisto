@@ -34,8 +34,9 @@ Asserts:
 
 Navigation notes, learned the hard way and worth keeping:
 
-  * Settings tree rows have role "Unknown" and expose **no** AccessKit actions,
-    so `invoke_action` has nothing to invoke — every row is reached by pointer.
+  * Settings tree rows are `TreeItem`s that report `selected`, which is how a
+    page is known to be open. A section's own page links to each page under
+    it, so a link named "Tags" says nothing about which page is showing.
   * The `Work: <name>` section starts **collapsed**, so the Tags row does not
     exist in the tree until its chevron is tapped.
   * Once expanded, Tags is the 5th child and lands *below the rail's visible
@@ -84,7 +85,7 @@ PINS = fixture.config_pins_file(
 # locales, and the matchers below take these tuples.
 SEC_WORK = ("work", "\u0153uvre", "oeuvre")     # settings-sec-work
 PAGE_TAGS = ("tags", "\u00e9tiquettes")          # settings-page-tags
-SW_BIBLE = ("story bible", "bible narrative")   # settings-tags-discoverable
+SW_BIBLE = ("find in prose", "repérer dans le texte")   # settings-tags-discoverable
 
 
 def fail(msg, app=None, mcp=None, log=None):
@@ -370,25 +371,18 @@ def page_reached(target):
     """The breadcrumb if the panel is showing `target`, else None.
 
     `target` is a tuple of accepted names (one per locale); a bare string is
-    accepted too. Taking a tuple matters — an earlier version compared a string
-    against the tuple the caller passed, which is silently never equal, so the
-    walk arrived and the check said it had not.
-
-    Deliberately not `breadcrumb()[-1] in target`. The breadcrumb is "every node
-    with role Link", so any link *inside the pane* — an explainer, a "learn
-    more" — becomes the last element and the check fails on a page that is
-    plainly open. Matching any crumb is safe here because a page name never
-    collides with its own parent section (`Œuvre: test` ▸ `Étiquettes`).
+    accepted too. Read off the rail, where the open page's row is the selected
+    `TreeItem`. Not off the pane's links: a section's own page links to every
+    page under it, so on "Work: test" a link named "Tags" is there while Tags
+    is not open, and matching it stopped the walk one row short.
     """
-    names = (target,) if isinstance(target, str) else tuple(target)
-    crumb = breadcrumb()
-    if crumb and any(c and c.strip().lower() in names for c in crumb):
-        return crumb
-    # Second, independent signal: the rail row itself, when the tree reports
-    # selection. Costs nothing and covers a breadcrumb that has not repainted.
-    row = rail_node(names, exact=True)
+    names = tuple(v.lower() for v in ((target,) if isinstance(target, str) else target))
+    row = next((n for n in s.nodes()
+                if n.get("role") == "TreeItem"
+                and (n.get("label") or "").strip().lower() in names
+                and (n.get("bounds") or {}).get("x", 9999) < 280), None)
     if row and row.get("selected"):
-        return crumb or list(names[:1])
+        return breadcrumb() or list(names[:1])
     return None
 
 
@@ -494,7 +488,7 @@ PANE_BITS = {
     "import":       ("import", "importer"),
     "export":       ("export", "exporter"),
     "count":        ("3 tags", "3 étiquettes"),
-    "story bible":  ("story bible", "bible"),
+    "find in prose": SW_BIBLE,
 }
 missing = [k for k, v in PANE_BITS.items() if not has_any(v)]
 if missing:
@@ -530,12 +524,9 @@ print("  legacy colours intact: #FFFAFA, #FF0000, #000000")
 PANE_BUTTONS = ("import…", "importer…", "export…", "exporter…",
                 "apply a preset…", "appliquer un préréglage…",
                 "add tag", "ajouter")
-pane_right = max((n.get("bounds") or {}).get("x", 0) + (n.get("bounds") or {}).get("width", 0)
-                 for n in s.nodes()
-                 if (n.get("bounds") or {}).get("x", 0) > 280
-                 and n.get("role") == "Label")
 checked = 0
-for n in s.nodes():
+nodes = s.nodes()
+for n in nodes:
     b = n.get("bounds") or {}
     lab = (n.get("label") or "").strip().lower()
     if n.get("role") != "Button" or b.get("x", 0) <= 280:
@@ -543,6 +534,10 @@ for n in s.nodes():
     if lab in PANE_BUTTONS:
         checked += 1
         right = b.get("x", 0) + b.get("width", 0)
+        pane_right = fixture.column_right(nodes, n)
+        if pane_right is None:
+            fail(f"{lab!r} is in no scroll column, so there is no edge to measure it "
+                 f"against", s.app, s.mcp, s.log)
         if right > pane_right + 2:
             s.shot(os.path.join(fixture.SCRATCH, "tags-clip-fail.png"))
             fail(f"{lab!r} overflows the pane (right={right:.0f} > {pane_right:.0f})",
@@ -596,13 +591,19 @@ s.shot(os.path.join(fixture.SCRATCH, "tags-story-bible-tooltip.png"))
 print("\n== duplicate-name warning ==")
 # Reset what the previous check deliberately left behind. It dwelled a tooltip
 # into its *sticky* state, and a sticky tooltip is a Dialog that takes focus —
-# so typing here would go to it, not to the add field. Move the pointer away and
-# press Escape before touching anything.
+# so typing here would go to it, not to the add field. Move the pointer away,
+# and press Escape only while the tooltip is still up: once it has closed on its
+# own, Escape belongs to Settings and closes the whole window.
 s.call("inject_pointer", {"x": 40, "y": 400, "action": "move"})
 time.sleep(0.3)
-s.call("inject_key", {"key": "Escape"})
 s.settle()
+if has_any(("looks for this item", "recherche cet élément")):
+    s.call("inject_key", {"key": "Escape"})
+    s.settle()
 time.sleep(0.6)
+if not settings_open():
+    fail("Settings closed while the switch's tooltip was being put away",
+         s.app, s.mcp, s.log)
 # The add field carries no placeholder or value in the AT tree, so it has to be
 # found by position — but "topmost TextInput below the breadcrumb" is not a sound
 # handle and was picking the wrong widget entirely: a stray TextInput at x=384

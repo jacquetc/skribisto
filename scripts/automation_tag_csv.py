@@ -317,14 +317,21 @@ def open_settings(s):
 
 
 def page_reached(s, target):
-    """The breadcrumb if the panel is showing `target`, else None."""
-    names = (target,) if isinstance(target, str) else tuple(target)
-    crumb = breadcrumb(s)
-    if crumb and any(c and c.strip().lower() in names for c in crumb):
-        return crumb
-    row = rail_node(s, names, exact=True)
+    """The breadcrumb if the panel is showing `target`, else None.
+
+    `target` is a tuple of accepted names (one per locale); a bare string is
+    accepted too. Read off the rail, where the open page's row is the selected
+    `TreeItem`. Not off the pane's links: a section's own page links to every
+    page under it, so on "Work: test" a link named "Tags" is there while Tags
+    is not open, and matching it stopped the walk one row short.
+    """
+    names = tuple(v.lower() for v in ((target,) if isinstance(target, str) else target))
+    row = next((n for n in s.nodes()
+                if n.get("role") == "TreeItem"
+                and (n.get("label") or "").strip().lower() in names
+                and (n.get("bounds") or {}).get("x", 9999) < 280), None)
     if row and row.get("selected"):
-        return crumb or list(names[:1])
+        return breadcrumb(s) or list(names[:1])
     return None
 
 
@@ -490,23 +497,16 @@ for name, btn in (("Import", import_btn), ("Export", export_btn)):
              f"a writer with tags to export could never reach the dialog", s)
 print("  both buttons enabled")
 
-# Neither button may overflow the pane's right edge. `pane_right` is the
-# rightmost edge of any Label-role node inside the pane; there is always at
-# least one (the section description text), so an empty max() would itself
-# be a sign the pane never rendered.
-pane_labels_right = [
-    (n.get("bounds") or {}).get("x", 0) + (n.get("bounds") or {}).get("width", 0)
-    for n in s.nodes()
-    if n.get("role") == "Label" and (n.get("bounds") or {}).get("x", 0) > 280
-]
-if not pane_labels_right:
-    fail("no Label-role content found inside the pane at all -- the pane "
-         "region this clipping check relies on is empty, which means the "
-         "check above would prove nothing", s)
-pane_right = max(pane_labels_right)
+# Neither button may overflow the pane's right edge: the scroll column each
+# sits in (`fixture.column_right`).
+nodes = s.nodes()
 for name, btn in (("Import", import_btn), ("Export", export_btn)):
     b = btn.get("bounds") or {}
     right = b.get("x", 0) + b.get("width", 0)
+    pane_right = fixture.column_right(nodes, btn)
+    if pane_right is None:
+        fail(f"{name}… is in no scroll column, so there is no edge to measure it "
+             f"against", s)
     if right > pane_right + 2:
         s.shot(os.path.join(fixture.SCRATCH, "tagcsv-clip-fail.png"))
         fail(f"{name}… overflows the pane (right={right:.0f} > {pane_right:.0f})", s)

@@ -122,7 +122,7 @@ SEC_WORK = ("work", "œuvre", "oeuvre")            # settings-sec-work
 PAGE_TAGS = ("tags", "étiquettes")                # settings-page-tags
 TAGS_LIST_A11Y = ("tags", "étiquettes")           # tags-pill-list — disambiguate via role=="List", see §ScopedList
 TAGS_ADD = ("add a tag", "ajouter une étiquette")  # tags-pill-add
-SW_BIBLE = ("story bible", "bible narrative")     # settings-tags-discoverable
+SW_BIBLE = ("find in prose", "repérer dans le texte")     # settings-tags-discoverable
 DELETE_PREFIX = ("delete", "supprimer")           # settings-tags-delete = "Delete { $name }" / "Supprimer { $name }"
 
 
@@ -467,16 +467,21 @@ def rail_node(s, variants, exact=False):
 
 
 def page_reached(s, target):
-    names = (target,) if isinstance(target, str) else tuple(target)
-    crumb = breadcrumb(s)
-    if crumb and any(c and c.strip().lower() in names for c in crumb):
-        return crumb
-    # Fallback only — see the module docstring: this is the same `selected`
-    # read that never actually needs to fire in automation_tags.py either,
-    # because the breadcrumb above wins first. Left in for parity/cheapness.
-    row = rail_node(s, names, exact=True)
+    """The breadcrumb if the panel is showing `target`, else None.
+
+    `target` is a tuple of accepted names (one per locale); a bare string is
+    accepted too. Read off the rail, where the open page's row is the selected
+    `TreeItem`. Not off the pane's links: a section's own page links to every
+    page under it, so on "Work: test" a link named "Tags" is there while Tags
+    is not open, and matching it stopped the walk one row short.
+    """
+    names = tuple(v.lower() for v in ((target,) if isinstance(target, str) else target))
+    row = next((n for n in s.nodes()
+                if n.get("role") == "TreeItem"
+                and (n.get("label") or "").strip().lower() in names
+                and (n.get("bounds") or {}).get("x", 9999) < 280), None)
     if row and row.get("selected"):
-        return crumb or list(names[:1])
+        return breadcrumb(s) or list(names[:1])
     return None
 
 
@@ -562,6 +567,22 @@ try:
     # ═════════════════════════════════════════════════════════════════════
     print("\n== Phase 1b: Inspector — Tab onto the 3 pills, then the '+' button ==")
     box_bounds = tags_box.get("bounds") or {}
+    # Opening the item put the caret in its prose, where Tab is text, not a move.
+    # Start from the Inspector's last control above the Tags box instead, so the
+    # walk below begins where a writer arriving in the Inspector would.
+    above = [n for n in nodes
+             if n.get("role") == "Button"
+             and (n.get("bounds") or {}).get("x", 0) >= box_bounds.get("x", 0) - 20
+             and (n.get("bounds") or {}).get("y", 0) < box_bounds.get("y", 0)]
+    if not above:
+        fail("no Inspector control above the Tags box to start the Tab walk from", s)
+    start = max(above, key=lambda n: (n.get("bounds") or {}).get("y", 0))
+    s.call("focus_node", {"node": start["id"]})
+    time.sleep(0.3)
+    if not (focused_node(s) or {}).get("label") == start.get("label"):
+        fail(f"could not put the focus on the Inspector's {start.get('label')!r} to start "
+             f"the walk from (focus is on {(focused_node(s) or {}).get('label')!r})", s)
+    print(f"  walk starts on the Inspector's {start.get('label')!r}")
     in_box_stops = []
     entered = False
     after_box = None
@@ -758,71 +779,91 @@ try:
     # ═════════════════════════════════════════════════════════════════════
     # Phase 2a — reach Settings from the hamburger, using only Tab/Arrow/Enter
     # ═════════════════════════════════════════════════════════════════════
-    print("\n== Phase 2a: hamburger -> File -> Settings, entirely by keyboard ==")
-    # Exact match, not substring: "menu" is short enough to collide with an
-    # unrelated tooltip/label ("Context menu", "File menu…") elsewhere in the
-    # 80-step walk, and the hamburger's real accessible name is exactly
-    # "Menu"/"Menu" (a11y-builtin-menu, identical both locales).
-    hamburger, ham_steps = tab_until(
-        s, lambda n: n.get("role") == "Button" and text_of(n).strip().lower() in MENU_BTN,
-        max_steps=80)
-    if not hamburger:
-        fail("Tab never reached the hamburger menu button within 80 presses", s)
-    print(f"  reached the hamburger after {ham_steps} Tab presses")
+    if fixture.IS_MACOS:
+        # On a Mac, Settings is in the App menu (⌘,), which the in-window bar the
+        # probes drive does not have: Work leaves it out on purpose. So open it
+        # with its chord, which is keyboard-only too.
+        print("\n== Phase 2a: ⌘, opens Settings (macOS keeps it in the App menu) ==")
+        s.call("inject_key", {"key": ",", "command": True})
+        time.sleep(0.8)
+        if not settings_open(s):
+            fail("⌘, did not open Settings", s)
+        print("  Settings opened via keyboard (⌘,)")
+    else:
+        print("\n== Phase 2a: hamburger -> File -> Settings, entirely by keyboard ==")
+        # Exact match, not substring: "menu" is short enough to collide with an
+        # unrelated tooltip/label ("Context menu", "File menu…") elsewhere in the
+        # 80-step walk, and the hamburger's real accessible name is exactly
+        # "Menu"/"Menu" (a11y-builtin-menu, identical both locales).
+        hamburger, ham_steps = tab_until(
+            s, lambda n: n.get("role") == "Button" and text_of(n).strip().lower() in MENU_BTN,
+            max_steps=80)
+        if not hamburger:
+            fail("Tab never reached the hamburger menu button within 80 presses", s)
+        print(f"  reached the hamburger after {ham_steps} Tab presses")
 
-    # Enter reveals the bar AND auto-focuses the first trigger ("File") —
-    # menu_bar.rs:1157-1159, `ctx.request_focus(trigger)` inside the reveal
-    # callback. No extra Tab needed.
-    key(s, "Enter", settle=0.4)
-    cur = focused_node(s)
-    if not (cur and cur.get("role") == "MenuItem"
-            and any(v in text_of(cur).strip().lower() for v in MENU_WORK)):
-        fail(f"opening the hamburger did not land focus on the File trigger; focus is "
-             f"now role={cur.get('role') if cur else None} text={text_of(cur)!r}", s)
-    print(f"  bar revealed, 'File' trigger auto-focused: {text_of(cur)!r}")
+        # Enter reveals the bar AND auto-focuses the first trigger ("File") —
+        # menu_bar.rs:1157-1159, `ctx.request_focus(trigger)` inside the reveal
+        # callback. No extra Tab needed.
+        key(s, "Enter", settle=0.4)
+        cur = focused_node(s)
+        if not (cur and cur.get("role") == "MenuItem"
+                and any(v in text_of(cur).strip().lower() for v in MENU_WORK)):
+            fail(f"opening the hamburger did not land focus on the File trigger; focus is "
+                 f"now role={cur.get('role') if cur else None} text={text_of(cur)!r}", s)
+        print(f"  bar revealed, 'File' trigger auto-focused: {text_of(cur)!r}")
 
-    # Enter/Space/ArrowDown all open the trigger's dropdown (menu_bar.rs:677)
-    # and move REAL focus onto the Role::Menu container (menu_context.rs's
-    # open_at -> ctx.request_focus(focus_id)).
-    key(s, "Enter", settle=0.4)
-    menu_container = focused_node(s)
-    if not (menu_container and menu_container.get("role") == "Menu"):
-        fail(f"opening File did not move keyboard focus onto its Role::Menu dropdown; "
-             f"focus is now role={menu_container.get('role') if menu_container else None}", s)
-    print("  File dropdown open, real focus on its Role::Menu container")
+        # Enter/Space/ArrowDown all open the trigger's dropdown (menu_bar.rs:677)
+        # and move REAL focus onto the Role::Menu container (menu_context.rs's
+        # open_at -> ctx.request_focus(focus_id)).
+        key(s, "Enter", settle=0.4)
+        menu_container = focused_node(s)
+        if not (menu_container and menu_container.get("role") == "Menu"):
+            fail(f"opening File did not move keyboard focus onto its Role::Menu dropdown; "
+                 f"focus is now role={menu_container.get('role') if menu_container else None}", s)
+        print("  File dropdown open, real focus on its Role::Menu container")
 
-    # MenuItem never exposes which row is keyboard-highlighted (see the module
-    # docstring) — so "where is Settings" is answered from the always-present
-    # row LABELS, not from a per-step selection read.
-    nodes = s.nodes()
-    items = sorted((n for n in nodes if n.get("role")
-                     in ("MenuItem", "MenuItemCheckBox", "MenuItemRadio")),
-                   key=lambda n: ((n.get("bounds") or {}).get("y", 0),
-                                  (n.get("bounds") or {}).get("x", 0)))
-    labels = [text_of(n).strip() for n in items]
-    print(f"  File menu has {len(items)} items: {labels}")
-    # Fixed, always-visible items for an open project: New Work, Open Work,
-    # Import, Export, one of {Save as file/folder}, Back up now, View
-    # backups, Close work, Welcome, Settings, Quit = 11; "Save" itself is the
-    # only conditionally-hidden one (autosave). 8 is a conservative floor.
-    if len(items) < 8:
-        fail(f"only {len(items)} File-menu items found (expected >= 8; a fully-open "
-             f"project's fixed items alone are ~11) — labels: {labels}", s)
-    settings_idx = next((i for i, l in enumerate(labels) if l.lower() in MENU_SETTINGS), None)
-    if settings_idx is None:
-        fail(f"'Settings'/'Paramètres' not found among the {len(items)} File items: "
-             f"{labels}", s)
+        # MenuItem never exposes which row is keyboard-highlighted (see the module
+        # docstring) — so "where is Settings" is answered from the always-present
+        # row LABELS, not from a per-step selection read.
+        nodes = s.nodes()
+        # Only the rows inside the open dropdown: the bar's own titles (Work, Edit, …)
+        # are menu items too, and counting them put Settings eight rows too far down.
+        menu = (focused_node(s) or {}).get("bounds") or {}
 
-    for _ in range(settings_idx + 1):
-        key(s, "Down", settle=0.15)
-    key(s, "Enter", settle=0.3)
+        def in_menu(n):
+            b = n.get("bounds") or {}
+            return (menu.get("x", 0) <= b.get("x", -1) < menu.get("x", 0) + menu.get("width", 0)
+                    and menu.get("y", 0) <= b.get("y", -1) < menu.get("y", 0) + menu.get("height", 0))
 
-    if not settings_open(s):
-        fail(f"pressing Enter after {settings_idx + 1} ArrowDown presses did not open "
-             f"Settings — either the computed index into {labels} was wrong, or "
-             f"activation itself failed", s)
-    print(f"  Settings opened via keyboard (item #{settings_idx} of {len(labels)}: "
-          f"{labels[settings_idx]!r})")
+        items = sorted((n for n in nodes if n.get("role")
+                         in ("MenuItem", "MenuItemCheckBox", "MenuItemRadio") and in_menu(n)),
+                       key=lambda n: ((n.get("bounds") or {}).get("y", 0),
+                                      (n.get("bounds") or {}).get("x", 0)))
+        labels = [text_of(n).strip() for n in items]
+        print(f"  File menu has {len(items)} items: {labels}")
+        # Fixed, always-visible items for an open project: New Work, Open Work,
+        # Import, Export, one of {Save as file/folder}, Back up now, View
+        # backups, Close work, Welcome, Settings, Quit = 11; "Save" itself is the
+        # only conditionally-hidden one (autosave). 8 is a conservative floor.
+        if len(items) < 8:
+            fail(f"only {len(items)} File-menu items found (expected >= 8; a fully-open "
+                 f"project's fixed items alone are ~11) — labels: {labels}", s)
+        settings_idx = next((i for i, l in enumerate(labels) if l.lower() in MENU_SETTINGS), None)
+        if settings_idx is None:
+            fail(f"'Settings'/'Paramètres' not found among the {len(items)} File items: "
+                 f"{labels}", s)
+
+        for _ in range(settings_idx + 1):
+            key(s, "Down", settle=0.15)
+        key(s, "Enter", settle=0.3)
+
+        if not settings_open(s):
+            fail(f"pressing Enter after {settings_idx + 1} ArrowDown presses did not open "
+                 f"Settings — either the computed index into {labels} was wrong, or "
+                 f"activation itself failed", s)
+        print(f"  Settings opened via keyboard (item #{settings_idx} of {len(labels)}: "
+              f"{labels[settings_idx]!r})")
 
     # ═════════════════════════════════════════════════════════════════════
     # Phase 2b — Settings rail: reach Work > Tags via Tab + arrows

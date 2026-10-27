@@ -739,6 +739,42 @@ def inside(node, box):
             and d["y"] <= b["y"] and b["y"] + b.get("height", 0) <= d["y"] + d.get("height", 0))
 
 
+def wait_text_anywhere(s, *wanted, timeout=10):
+    """The first of `wanted` any window shows, and that window's id.
+
+    A `MessageBox` is a window of its own on macOS and Windows, and a dialog inside
+    the window that asked on Linux, so a question is looked for in every window.
+    `(None, None)` when none shows one in time.
+    """
+    end = time.time() + timeout
+    while time.time() < end:
+        for win in s.windows():
+            t = s.text(win.get("id"))
+            for phrase in wanted:
+                if phrase.lower() in t:
+                    return phrase, win.get("id")
+        time.sleep(0.4)
+    return None, None
+
+
+def descendants(nodes, root):
+    """The ids of every node under `root` in the accessibility tree.
+
+    What "in the dialog" means for a control. Bounds alone are not: a toast drawn
+    over the dialog's rectangle (the import's own, with its "See report" link)
+    lies inside them without being part of it.
+    """
+    by_id = {n.get("id"): n for n in nodes}
+    out, todo = set(), list(root.get("children") or [])
+    while todo:
+        nid = todo.pop()
+        if nid in out:
+            continue
+        out.add(nid)
+        todo.extend((by_id.get(nid) or {}).get("children") or [])
+    return out
+
+
 def dialog_button(s, w, label):
     """The report's own button `label`: one inside the dialog."""
     dialog = s.find(w["report"], role="Dialog")
@@ -862,7 +898,9 @@ def english(fx):
             # Animations run on the bridge's clock: let the disclosure open.
             s.call("settle")
         dialog = s.find(w["report"], role="Dialog")
-        links = [n for n in s.role("Link") if dialog is not None and inside(n, dialog)]
+        nodes = s.nodes()
+        under = descendants(nodes, dialog) if dialog is not None else set()
+        links = [n for n in nodes if n.get("role") == "Link" and n.get("id") in under]
         s.shot("08-report-linked.png")
         if check(bool(links), "[en] there, the report's items are links"):
             label = links[0].get("label") or ""
@@ -881,12 +919,15 @@ def english(fx):
         go_next(s, w)
         go_next(s, w)
         if save_and_import(s, w, dest, "Lighthouse"):
-            got = s.wait_text("this project is open", "replace existing file", timeout=10)
+            got, where = wait_text_anywhere(s, "this project is open", "replace existing file")
             check(got == "this project is open",
                   "[en] importing onto the project open in a window is refused")
+            # Answered where it is shown: on macOS and Windows, a window of its own.
+            saved, s.window = s.window, where or s.window
             ok = s.button("OK") or s.button("Cancel")
             if ok:
                 s.activate(ok)
+            s.window = saved
         check(close_wizard(s, w), "[en] the wizard closes on Cancel")
 
     # 11. Edit and reopen: the trigger phrases survive an edit and a save.
@@ -975,20 +1016,26 @@ def overwrite_and_cancel(fx, target):
         go_next(s, w)
         go_next(s, w)
         if save_and_import(s, w, target.parent, "Lighthouse"):
-            check(s.wait_text("replace existing file", timeout=10) is not None,
+            asked, where = wait_text_anywhere(s, "replace existing file")
+            check(asked is not None,
                   "[en] importing again to the same name asks before replacing it")
-            # The question's own Cancel, not the wizard's under it.
-            question = next((n for n in s.nodes()
+            # The question's own Cancel, not the wizard's under it, answered where the
+            # question is shown: on macOS and Windows, a window of its own.
+            saved, s.window = s.window, where or s.window
+            nodes = s.nodes()
+            question = next((n for n in nodes
                              if "replace existing file" in (n.get("label") or "").lower()
                              and n.get("role") in ("Dialog", "AlertDialog")), None)
-            cancels = [n for n in s.role("Button") if (n.get("label") or "") == "Cancel"
-                       and question is not None and inside(n, question)]
+            under = descendants(nodes, question) if question is not None else set()
+            cancels = [n for n in nodes if n.get("role") == "Button"
+                       and (n.get("label") or "") == "Cancel" and n.get("id") in under]
             if cancels:
                 s.activate(cancels[0])
             else:
                 s.dump("the overwrite question")
                 s.key("Escape")
-            check(s.wait_text("replace existing file", timeout=1) is None,
+            s.window = saved
+            check(wait_text_anywhere(s, "replace existing file", timeout=1)[0] is None,
                   "[en] Cancel answers the question")
         check(close_wizard(s, w), "[en] the wizard closes on Cancel")
 

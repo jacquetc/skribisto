@@ -479,6 +479,26 @@ def _make_writable(path):
                 w(os.path.join(root, n))
 
 
+def column_right(nodes, inner):
+    """Right edge of the innermost `ScrollView` holding `inner`'s top-left corner.
+
+    What a clipping check measures a control against: the column it sits in.
+    The rightmost label in that column is not its edge, it moves whenever the
+    labels get shorter, and a control ending on the column's padding then reads
+    as overflowing. None when no scroll column holds `inner`.
+    """
+    b = inner.get("bounds") or {}
+    x, y = b.get("x", 0), b.get("y", 0)
+    columns = [n.get("bounds") or {} for n in nodes if n.get("role") == "ScrollView"]
+    holding = [c for c in columns
+               if c.get("x", 0) <= x < c.get("x", 0) + c.get("width", 0)
+               and c.get("y", 0) <= y < c.get("y", 0) + c.get("height", 0)]
+    if not holding:
+        return None
+    inner_most = min(holding, key=lambda c: c.get("width", 0) * c.get("height", 0))
+    return inner_most.get("x", 0) + inner_most.get("width", 0)
+
+
 def working_copy(src, label="fixture"):
     """Copy `src` into the scratchpad and return the copy's path.
 
