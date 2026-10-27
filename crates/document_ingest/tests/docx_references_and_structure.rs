@@ -223,6 +223,7 @@ fn fodt(body: &str) -> String {
   xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
   xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"
   xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"
+  xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"
   xmlns:dc="http://purl.org/dc/elements/1.1/"
   office:mimetype="application/vnd.oasis.opendocument.text">
   <office:styles>
@@ -484,6 +485,95 @@ fn a_point_comment_after_a_line_break_stays_in_its_paragraph() {
     assert_eq!(text_of(row), "Line A\u{2028}Line B");
     assert_eq!(anchored_words(row, 0), "Line A\u{2028}Line B");
     assert_eq!(unanchored_in(row), 0);
+}
+
+/// Every kind of break Word writes, read the same by the typed walk and by the scan that
+/// places comments and notes. A `w:br` with no type, a text-wrapping one, a `w:cr`, and a
+/// page break whose `w:clear` comes first (`docx-rs` reads a break's kind from its first
+/// attribute, so that one is a line break too) each stay in the paragraph as one line
+/// separator. A column or a page break ends the paragraph. A comment and a note after them
+/// land on the words they were made on.
+#[test]
+fn every_kind_of_word_break_is_read_the_same_by_both_passes() {
+    let mut word = Word::with_body(format!(
+        concat!(
+            r#"<w:p><w:r><w:t>A</w:t><w:br/><w:t>B</w:t><w:br w:type="textWrapping"/>"#,
+            r#"<w:t>C</w:t><w:cr/><w:t>D</w:t><w:br w:clear="all" w:type="page"/></w:r>"#,
+            r#"<w:commentRangeStart w:id="1"/><w:r><w:t>E</w:t></w:r><w:commentRangeEnd w:id="1"/>"#,
+            r#"<w:r><w:commentReference w:id="1"/></w:r>"#,
+            r#"<w:r><w:br w:type="column"/><w:t>F</w:t></w:r>{}"#,
+            r#"<w:r><w:br w:type="page"/></w:r><w:commentRangeStart w:id="2"/>"#,
+            r#"<w:r><w:t>G</w:t></w:r><w:commentRangeEnd w:id="2"/>"#,
+            r#"<w:r><w:commentReference w:id="2"/></w:r></w:p>"#,
+        ),
+        note_reference("footnote", 1),
+    ));
+    word.comments = vec![comment(1, "On E."), comment(2, "On G.")];
+    word.footnotes = vec!["After F.".into()];
+
+    let plan = plan_of("breaks.docx", &word.bytes());
+    let row = only_row(&plan);
+    assert_eq!(
+        text_of(row),
+        "A\u{2028}B\u{2028}C\u{2028}D\u{2028}E\nF\u{FFFC}\nG"
+    );
+    let placed: Vec<(String, String)> = (0..row.comments.len())
+        .map(|i| (row.comments[i].body.clone(), anchored_words(row, i)))
+        .collect();
+    assert_eq!(
+        placed,
+        vec![
+            ("On E.".to_string(), "E".to_string()),
+            ("On G.".to_string(), "G".to_string()),
+        ]
+    );
+    let notes: Vec<&str> = row.footnotes.iter().map(|f| f.body.as_str()).collect();
+    assert_eq!(notes, vec!["After F."]);
+    assert_eq!(unanchored_in(row), 0, "{:?}", row.diagnostics);
+}
+
+/// A table cell is one line, in Word and in OpenDocument: every break in it, a page break
+/// too, is a space, and a comment after one lands on its words.
+#[test]
+fn a_break_in_a_table_cell_is_a_space() {
+    let mut word = Word::with_body(
+        p("Before.")
+            + &table(&[cell(concat!(
+                r#"<w:p><w:r><w:t>roses</w:t><w:br/><w:t>violets</w:t><w:cr/><w:t>red</w:t>"#,
+                r#"<w:br w:type="page"/><w:t xml:space="preserve">blue </w:t></w:r>"#,
+                r#"<w:commentRangeStart w:id="1"/><w:r><w:t>sky</w:t></w:r>"#,
+                r#"<w:commentRangeEnd w:id="1"/><w:r><w:commentReference w:id="1"/></w:r></w:p>"#,
+            ))])
+            + &p("After."),
+    );
+    word.comments = vec![comment(1, "On the sky.")];
+    let plan = plan_of("cell-breaks.docx", &word.bytes());
+    let row = only_row(&plan);
+    assert!(
+        row.djot.contains("roses violets red blue sky"),
+        "{}",
+        row.djot
+    );
+    assert!(!row.djot.contains('\u{2028}'), "{}", row.djot);
+    assert_eq!(anchored_words(row, 0), "sky");
+    assert_eq!(unanchored_in(row), 0, "{:?}", row.diagnostics);
+
+    let odt = fodt(concat!(
+        "<text:p>Before.</text:p>",
+        r#"<table:table table:name="T"><table:table-column/><table:table-row>"#,
+        r#"<table:table-cell office:value-type="string"><text:p>roses<text:line-break/>violets "#,
+        r#"<office:annotation office:name="c1"><dc:creator>Editor</dc:creator>"#,
+        r#"<text:p>On the sky.</text:p></office:annotation>sky"#,
+        r#"<office:annotation-end office:name="c1"/></text:p></table:table-cell>"#,
+        "</table:table-row></table:table>",
+        "<text:p>After.</text:p>",
+    ));
+    let plan = plan_of("cell-breaks.fodt", odt.as_bytes());
+    let row = only_row(&plan);
+    assert!(row.djot.contains("roses violets sky"), "{}", row.djot);
+    assert!(!row.djot.contains('\u{2028}'), "{}", row.djot);
+    assert_eq!(anchored_words(row, 0), "sky");
+    assert_eq!(unanchored_in(row), 0, "{:?}", row.diagnostics);
 }
 
 /// A comment on an empty line of a paragraph that has words on another stays in that

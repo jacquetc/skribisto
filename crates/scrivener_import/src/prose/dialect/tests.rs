@@ -884,21 +884,24 @@ fn a_whole_paragraph_annotation_closed_after_its_mark_goes_to_the_next_paragraph
     assert_eq!(comment(&out.doc, 0), ["Move this later."]);
 }
 
-/// A poem keeps its stanzas: the blank paragraph between two is removed like any other,
-/// and each stanza stays a paragraph of its own, its soft line breaks inside it. Typed in
-/// one paragraph, the empty line between its stanzas stays inside it too. Nothing of the
-/// poem is lost, so nothing is reported.
+/// A poem keeps its stanzas: the blank paragraph between two is removed and reported like
+/// any other, and each stanza stays a paragraph of its own, its soft line breaks inside it.
+/// Typed in one paragraph, the empty line between its stanzas stays inside it too, and
+/// nothing is removed.
 #[test]
 fn a_poem_keeps_its_stanzas() {
     let out = run(
         r"{\rtf1 The tide came in,\line the lamp was lit,\par\par the keeper slept,\line the gulls did not.\par\par Morning.\par}",
     );
     assert_eq!(texts(&out.doc).len(), 3);
+    assert_eq!(out.found.blank_lines_removed, 2);
+    assert_eq!(out.found.blank_lines_breaks, 0);
 
     let one = run(
         r"{\rtf1 The tide came in,\line the lamp was lit,\line\line the keeper slept,\line the gulls did not.\par}",
     );
     assert_eq!(texts(&one.doc).len(), 1);
+    assert_eq!(one.found.blank_lines_removed, 0);
     // Every line break is still there, the two between the stanzas included.
     let breaks = one
         .doc

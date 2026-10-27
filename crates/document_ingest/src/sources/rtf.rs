@@ -256,9 +256,7 @@ struct Piece {
 
 impl Piece {
     fn is_blank(&self) -> bool {
-        self.runs
-            .iter()
-            .all(|run| run.image.is_none() && run.footnote.is_none() && run.text.trim().is_empty())
+        is_blank_line(&self.runs)
     }
 }
 
@@ -684,8 +682,13 @@ impl<'d, 'o> Mapper<'d, 'o> {
         })
     }
 
-    /// A note's or a comment's own text: one paragraph per piece, a table's paragraphs cell
-    /// by cell. Blank pieces are left out.
+    /// A note's or a comment's own text: one paragraph per line of each piece, a table's
+    /// paragraphs cell by cell. Blank lines are left out.
+    ///
+    /// A line break starts a new paragraph of the note, as it does in a Word note
+    /// (`docx::CommentBodyBuilder`) and an OpenDocument one (`odt.rs`'s annotation walker):
+    /// the same two-line note comes in as the same two paragraphs whichever program wrote it.
+    /// Manuscript prose keeps its line breaks ([`Self::pieces_of`]).
     fn inner_paragraphs(&mut self, blocks: &[Block]) -> Vec<Vec<Run>> {
         let mut out = Vec::new();
         for paragraph in paragraphs(blocks) {
@@ -693,8 +696,8 @@ impl<'d, 'o> Mapper<'d, 'o> {
             out.extend(
                 pieces
                     .into_iter()
-                    .filter(|piece| !piece.is_blank())
-                    .map(|piece| piece.runs),
+                    .flat_map(|piece| lines_of(piece.runs))
+                    .filter(|line| !is_blank_line(line)),
             );
         }
         out
@@ -1119,6 +1122,41 @@ fn push_line_break(pieces: &mut [Piece]) {
             image: None,
         });
     }
+}
+
+/// `runs` cut at every line separator, a run holding one split across the lines it spans;
+/// the separators themselves are dropped.
+fn lines_of(runs: Vec<Run>) -> Vec<Vec<Run>> {
+    let mut lines = vec![Vec::new()];
+    for run in runs {
+        if !run.text.contains(rich::LINE_SEPARATOR) {
+            if let Some(line) = lines.last_mut() {
+                line.push(run);
+            }
+            continue;
+        }
+        for (index, part) in run.text.split(rich::LINE_SEPARATOR).enumerate() {
+            if index > 0 {
+                lines.push(Vec::new());
+            }
+            if part.is_empty() {
+                continue;
+            }
+            if let Some(line) = lines.last_mut() {
+                line.push(Run {
+                    text: part.to_string(),
+                    ..run.clone()
+                });
+            }
+        }
+    }
+    lines
+}
+
+/// Whether a line of a note holds nothing a reader would see, as a blank piece does.
+fn is_blank_line(runs: &[Run]) -> bool {
+    runs.iter()
+        .all(|run| run.image.is_none() && run.footnote.is_none() && run.text.trim().is_empty())
 }
 
 /// A picture or a note's reference: one character of plain text.

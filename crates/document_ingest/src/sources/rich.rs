@@ -726,13 +726,14 @@ pub fn reaches_words(annotation: &mut RichAnnotation) {
 
 /// An empty line of a paragraph, and the comments opened on it.
 ///
-/// A line break ends one block and starts the next, so a paragraph is read as lines, the
-/// stretches between its breaks, and a line holding nothing produces no block. A scanner
-/// records each such line as it finishes it, and hands them all to [`settle_empty_lines`]
-/// once the paragraph is read.
+/// A break that ends a block and starts the next (a Word page or column break; a line
+/// break stays inside its paragraph) makes a paragraph read as lines, the stretches
+/// between such breaks, and a line holding nothing produces no block. A scanner records
+/// each such line as it finishes it, and hands them all to [`settle_empty_lines`] once the
+/// paragraph is read. A scanner whose breaks never end a block has one line a paragraph.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EmptyLine {
-    /// Which line of the paragraph: how many line breaks come before it.
+    /// Which line of the paragraph: how many block-ending breaks come before it.
     pub line: usize,
     /// The annotations opened on it, as indices into the scanner's annotations.
     pub annotations: std::ops::Range<usize>,

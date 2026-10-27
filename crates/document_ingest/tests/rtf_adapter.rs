@@ -311,6 +311,38 @@ fn footnotes_and_endnotes_become_footnotes() {
     );
 }
 
+/// A line break inside a note or a comment starts a new paragraph of it, as it does in a
+/// Word or an OpenDocument one: the same two-line note comes in as the same two paragraphs
+/// whichever program wrote it. Manuscript prose keeps its line breaks.
+#[test]
+fn a_line_break_in_a_note_or_a_comment_starts_a_paragraph_of_it() {
+    let conversion = convert(
+        r"{\rtf1 Verse\line on two lines.{\footnote First line.\line {\b Bold @uc0@u8232 next} line.\line\line}{\*\annotation{\*\atnref 1}Which\line one?}\par}",
+    );
+    let document = &conversion.document;
+    assert_eq!(texts(document), ["Verse\u{2028}on two lines.\u{FFFC}"]);
+    let lines = |paragraphs: &[Vec<Run>]| -> Vec<String> {
+        paragraphs
+            .iter()
+            .map(|p| p.iter().map(|r| r.text.as_str()).collect())
+            .collect()
+    };
+    assert_eq!(document.footnotes.len(), 1);
+    let body = &document.footnotes[0].paragraphs;
+    assert_eq!(lines(body), ["First line.", "Bold ", "next line."]);
+    assert!(
+        body[1][0].style.bold,
+        "the run cut by the break keeps its style"
+    );
+    assert!(body[2][0].style.bold);
+    assert!(!body[2][1].style.bold);
+    assert_eq!(document.annotations.len(), 1);
+    assert_eq!(
+        lines(&document.annotations[0].paragraphs),
+        ["Which", "one?"]
+    );
+}
+
 #[test]
 fn comments_keep_their_range_their_author_and_their_replies() {
     let conversion = convert(

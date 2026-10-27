@@ -1612,9 +1612,9 @@ struct RawScan {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct RawMark {
     kind: RawMarkKind,
-    /// Which stretch of the paragraph it sits in: how many line breaks come before it.
-    /// The typed walk makes a block of each stretch that holds anything
-    /// ([`Walker::stretches`]). Always 0 in a table, where a line break is a space.
+    /// Which stretch of the paragraph it sits in: how many page or column breaks come
+    /// before it. The typed walk makes a block of each stretch that holds anything
+    /// ([`Walker::stretches`]). Always 0 in a table, where every break is a space.
     stretch: usize,
     /// Characters into that stretch, counted as the typed walk counts them.
     offset: usize,
@@ -2395,9 +2395,10 @@ const MAX_RUN_NESTING: u32 = 64;
 ///   ([`RawCount::equations`]) to be reported as an object left out, as a formula from an
 ///   OpenDocument file is. Counted as text, it put every note and point comment after it
 ///   that many characters late, most often past the end of the paragraph;
-/// * a line break or a carriage return ends one stretch of the paragraph and starts the
-///   next, since the typed walk makes a block of each ([`Walker::stretches`]); in a table
-///   cell it is one character, a space;
+/// * a page or a column break ([`ends_paragraph`]) ends one stretch of the paragraph and
+///   starts the next, since the typed walk makes a block of each ([`Walker::stretches`]);
+///   any other break, and a carriage return, is one character, a line separator; in a
+///   table cell every break is one character, a space;
 /// * nothing inside a tracked deletion (`w:del`, `w:moveFrom`) counts, since that text is
 ///   dropped; a comment reference there still names where its comment was, but a note
 ///   whose reference was deleted is not cited;
@@ -2810,9 +2811,9 @@ struct Walker<'a> {
     paragraph_ordinal: usize,
     /// The same for the body's tables.
     table_ordinal: usize,
-    /// The paragraph being walked, one entry per stretch between its line breaks: the
-    /// block that stretch produced, or `None` for one that produced nothing. What a raw
-    /// mark's `stretch` is looked up in.
+    /// The paragraph being walked, one entry per stretch between its page and column
+    /// breaks (a line break stays inside its stretch): the block that stretch produced, or
+    /// `None` for one that produced nothing. What a raw mark's `stretch` is looked up in.
     stretches: Vec<Option<usize>>,
     /// The paragraph being walked: its empty stretches and the comments opened on each,
     /// placed once the paragraph is read ([`rich::settle_empty_lines`]).
@@ -3197,7 +3198,7 @@ impl<'a> Walker<'a> {
         // After the comments, and safely so: a note's reference carries no text, and
         // `shift_offsets` moves every offset already placed after it. Doing it here
         // rather than inside the build is what lets the reference find its block across
-        // a `<w:br>`, which ends one block and starts the next.
+        // a page or a column break, which ends one block and starts the next.
         self.splice_notes(marks, |walker, mark| {
             walker.line_position(&stretches, mark.stretch, mark.offset)
         });
@@ -4003,10 +4004,10 @@ impl<'a> Walker<'a> {
         }
     }
 
-    /// Finish one stretch of a paragraph: the whole of it, or what came before a line
-    /// break. A stretch that holds nothing produces no block, and where the comments opened
-    /// in it go is decided once the whole paragraph is read, since that depends on whether
-    /// any other line of it holds words ([`rich::settle_empty_lines`]).
+    /// Finish one stretch of a paragraph: the whole of it, or what came before a page or a
+    /// column break. A stretch that holds nothing produces no block, and where the comments
+    /// opened in it go is decided once the whole paragraph is read, since that depends on
+    /// whether any other stretch of it holds words ([`rich::settle_empty_lines`]).
     fn flush(&mut self, build: ParaBuild) {
         if rich::holds_nothing(&build.runs) {
             self.empty_lines.push(rich::EmptyLine {
