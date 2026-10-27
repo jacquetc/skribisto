@@ -286,20 +286,31 @@ impl Widget for FindBanner {
 
         // Enter (in a field) navigates / replaces via `on_submit`, and Shift+Enter in
         // either field steps back (`shift_enter_steps_back`); the row handles the
-        // rest: Escape closes, Alt+A replaces all (find-bar conventions).
+        // rest: Alt+A replaces all, Escape closes (find-bar conventions).
+        //
+        // Alt+A is claimed in the row's *preview*, ahead of the focused field: a key
+        // reaches the row's bubbling handler only after the field has had it, and a
+        // field types the letter an Alt+A carries. It matches `Key::A`, which is how
+        // a letter arrives (it never matched as `Key::Character('a')`, so the chord
+        // did nothing), and not with Ctrl, which is AltGr on Windows: AltGr+A types a
+        // letter on several layouts (ą in Polish). On macOS, Option+A composes a
+        // character (å) and arrives as that, so the chord is Windows' and Linux's.
         let keyed = VStack::new()
             .spacing(4.0)
             .child(find_row)
             .child(VisibleWhen::new(replace_open, replace_row))
-            .on_key(move |ev, ctx| match ev {
+            .on_key_preview(move |ev, ctx| match ev {
                 WidgetEvent::KeyDown {
-                    key: Key::Character('a' | 'A'),
+                    key: Key::A,
                     modifiers,
                     ..
-                } if modifiers.alt() && alt_a.replace_mode_signal().get() => {
+                } if modifiers.alt() && !modifiers.ctrl() && alt_a.replace_mode_signal().get() => {
                     alt_a.replace_all(ctx);
                     EventResponse::Handled
                 }
+                _ => EventResponse::Ignored,
+            })
+            .on_key(move |ev, ctx| match ev {
                 WidgetEvent::KeyDown {
                     key: Key::Escape, ..
                 } => {

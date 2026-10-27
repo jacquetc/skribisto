@@ -4877,6 +4877,74 @@ fn shift_enter_in_the_find_bar_goes_to_the_previous_match() {
     find.close();
 }
 
+/// **Alt+A in the find bar replaces every match.**
+///
+/// It did nothing. The banner listened for `Key::Character('a')`, and a letter arrives
+/// as `Key::A`; and it listened on the row's bubbling handler, which hears a key only
+/// after the focused field has typed it. The row now claims `Key::A` with Alt in its
+/// preview, while the replace row is open.
+#[test]
+fn alt_a_in_the_find_bar_replaces_every_match() {
+    use teksilo::core::event::{Key, Modifiers};
+    use teksilo::text_document::HighlightFormat;
+
+    let ctx = Rc::new(AppContext::new());
+    let tab = tab_for(
+        &ctx,
+        1,
+        &BinderItemRole::Item,
+        &BinderItemSubRole::Scene,
+        &[],
+        Signal::new(700.0),
+        Signal::new(true),
+        test_typography(),
+        crate::settings::EditorViewMemory::detached(false),
+        &AppIds::new(),
+    );
+    let prose = "one two one two one";
+    let doc = tab.main().expect("a scene carries prose").doc.clone();
+    doc.set_plain_text(prose).unwrap();
+    let find = tab
+        .active_find()
+        .cloned()
+        .expect("a scene's prose is searchable");
+
+    let mut tree = crate::test_support::tree_with_events(&ctx);
+    let root = tree.add_boxed(tab_pane(&tab));
+    find.ensure_session(HighlightFormat::default(), HighlightFormat::default());
+    find.open();
+    find.query_signal().set("one".into());
+    find.refresh_query();
+    find.replacement_signal().set("ONE".into());
+    tree.layout(teksilo::prelude::SizeProposal::exact(1000.0, 700.0));
+    let banner = first_of_type(&tree, root, "FindBanner").expect("the open banner is mounted");
+    let field = first_of_type(&tree, banner, "TextInputField").expect("the query field");
+    tree.focus(field);
+
+    tree.press_key(Key::A, Modifiers::ALT);
+    assert_eq!(
+        doc.to_plain_text().unwrap(),
+        prose,
+        "with the replace row closed, Alt+A replaces nothing"
+    );
+
+    find.replace_mode_signal().set(true);
+    tree.layout(teksilo::prelude::SizeProposal::exact(1000.0, 700.0));
+    tree.focus(field);
+    tree.press_key(Key::A, Modifiers::ALT);
+    assert_eq!(
+        doc.to_plain_text().unwrap(),
+        "ONE two ONE two ONE",
+        "with it open, Alt+A replaces every match"
+    );
+    assert_eq!(
+        find.query_signal().get(),
+        "one",
+        "and the field never typed the letter"
+    );
+    find.close();
+}
+
 /// **An open cell editor holds the keyboard, so Escape cancels and Enter commits.**
 ///
 /// `TreeTableView` never moved focus into the editor a cell delegate swapped in
