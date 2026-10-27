@@ -375,8 +375,9 @@ mod tests {
     ///
     /// The rich editor's own Cut declines under the game, and the chord comes on to
     /// the Edit route's action. That action is enabled from the last refresh, so a
-    /// game started this frame still finds it lit: `cut` itself has to ask, and the
-    /// text surface it called cut without asking the editor's filter.
+    /// game started this frame still finds it lit: `cut` itself has to ask. (Before
+    /// teksilo 0.23 the text surface it calls cut without asking the editor's
+    /// filter too; now both refuse.)
     #[test]
     fn ctrl_x_under_always_forward_takes_nothing_away() {
         use teksilo::text_document::TextDocument;

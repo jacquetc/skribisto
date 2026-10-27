@@ -40,6 +40,7 @@ use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use frontend::common::undo_redo::UndoLabel;
+use teksilo::core::shortcut::StandardEdit;
 use teksilo::prelude::*;
 use teksilo::widgets::rich_text::EditCommandKind;
 
@@ -632,26 +633,31 @@ impl UndoGroupViewModel {
         self.live_editor().is_some()
     }
 
-    /// May the focused text surface take `kind`, a clipboard command that writes?
+    /// May the focused text surface take `command`, a clipboard command that writes?
     ///
-    /// A read-only surface may not. Nor may a rich editor whose own filter refuses
-    /// it: teksilo's text surface for a rich editor cuts and pastes through
-    /// `EditorHandle`, which asks no filter, and reports itself read-only only when
-    /// it refuses everything. Under "Always forward" the editor's own Ctrl+X
-    /// declined, the command came on to this route, and the surface took the
-    /// selected words away. The rich editor holding the caret is `live_editor`,
-    /// and when there is one it *is* the focused surface; so its filter answers,
-    /// and only a surface that is not a rich editor answers for itself.
-    fn may_write(&self, kind: EditCommandKind) -> bool {
-        if let Some(h) = self.live_editor() {
-            return h.command_filter().accepts(kind);
+    /// The surface answers by its own keys' rule (`TextSurface::accepts`): a
+    /// read-only field refuses both, and a rich editor under "Always forward" takes
+    /// a paste and refuses a cut, which `is_read_only` cannot say. Before teksilo
+    /// 0.23 a rich editor's surface cut through its filter, and under the game
+    /// Ctrl+X took the selected words away. With no surface focused, the live rich
+    /// editor's own filter answers: this route then writes through its handle,
+    /// which asks no filter.
+    fn may_write(&self, command: StandardEdit) -> bool {
+        if let Some(surface) = self.focused_surface() {
+            return surface.accepts(command);
         }
-        self.focused_surface().is_some_and(|s| !s.is_read_only())
+        let kind = match command {
+            StandardEdit::Cut => EditCommandKind::Cut,
+            StandardEdit::PastePlain => EditCommandKind::PasteUnformatted,
+            _ => EditCommandKind::Paste,
+        };
+        self.live_editor()
+            .is_some_and(|h| h.command_filter().accepts(kind))
     }
 
     /// May the focused surface accept a paste? See [`Self::may_write`].
     pub(crate) fn accepts_paste(&self) -> bool {
-        self.may_write(EditCommandKind::Paste)
+        self.may_write(StandardEdit::Paste)
     }
 
     /// May the focused surface give up its selection to a cut?
@@ -659,14 +665,14 @@ impl UndoGroupViewModel {
     /// Asked apart from [`Self::accepts_paste`] because "Always forward" takes a
     /// paste and refuses a cut: a cut takes the selected words away.
     pub(crate) fn accepts_cut(&self) -> bool {
-        self.may_write(EditCommandKind::Cut)
+        self.may_write(StandardEdit::Cut)
     }
 
     /// Cut, when [`Self::may_write`] says so. Asked here as well as by the row:
-    /// Ctrl+X reaches this whatever the row says, and neither the surface nor the
-    /// handle asks.
+    /// Ctrl+X reaches this whatever the row says, and the handle this falls back on
+    /// asks nothing.
     pub(crate) fn cut(&self, ctx: &EventContext) {
-        if !self.may_write(EditCommandKind::Cut) {
+        if !self.may_write(StandardEdit::Cut) {
             return;
         }
         if let Some(surface) = self.focused_surface() {
@@ -686,7 +692,7 @@ impl UndoGroupViewModel {
 
     /// Paste, when [`Self::may_write`] says so; see [`Self::cut`] for why here.
     pub(crate) fn paste(&self, ctx: &EventContext) {
-        if !self.may_write(EditCommandKind::Paste) {
+        if !self.may_write(StandardEdit::Paste) {
             return;
         }
         if let Some(surface) = self.focused_surface() {
@@ -698,7 +704,7 @@ impl UndoGroupViewModel {
 
     /// See [`Self::paste`].
     pub(crate) fn paste_plain(&self, ctx: &EventContext) {
-        if !self.may_write(EditCommandKind::PasteUnformatted) {
+        if !self.may_write(StandardEdit::PastePlain) {
             return;
         }
         if let Some(surface) = self.focused_surface() {

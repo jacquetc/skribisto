@@ -1013,6 +1013,25 @@ fn insert_line_break_starts_a_line_in_the_same_paragraph() {
     let detached = vm_detached();
     detached.sync_now();
     assert!(!detached.can_break_line().get());
+
+    // Nor in a code block, which the editor refuses a line break: the row used to
+    // stay lit there over a call that did nothing.
+    let (vm, editor, doc) = vm_over_doc("```\nlet x = 1;\n```");
+    let handle = editor.handle();
+    handle.select_range(2, 2);
+    vm.sync_now();
+    assert!(
+        !vm.can_break_line().get(),
+        "a code block takes no line break"
+    );
+    let before = handle.to_djot();
+    vm.insert_line_break();
+    assert_eq!(
+        handle.to_djot(),
+        before,
+        "and the call writes nothing there"
+    );
+    assert_eq!(doc.block_count(), 1);
 }
 
 /// A trashed item's text is a read-only editor, where Shift+Enter writes nothing; the

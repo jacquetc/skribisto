@@ -9,6 +9,7 @@ Description:
 - "With “Always forward” on, nothing takes your words away any more. Ctrl+X, a spelling correction, renaming a link and deleting a table row, column or table used to, and a formatting mark, a picture or a scene break inserted over a selection used to replace it"
 - "In a scene from the Trash, or with “Always forward” on, the find bar's Replace and Replace All are greyed. They used to look available and do nothing"
 - "The search preview shows a scene from the Trash read-only, as its own tab does. A synopsis shown there follows “Always forward” only when the game covers synopses, as it does in the scene"
+- "With a screen reader, the text you write is read paragraph by paragraph, a list is announced as a list with its markers and its depth, and a picture or a footnote is read where it stands. Paragraphs used to run together, and lists were read as plain text"
 - "Text pasted from a web page or from LibreOffice keeps its line breaks. The words either side of a line break used to run together"
 - "Importing a Word, OpenDocument or RTF document, or a Scrivener, Plume Creator or older Skribisto project, keeps the line breaks inside its paragraphs. Each line used to become a paragraph of its own"
 - "A long paragraph in Arabic or Hebrew now shows its lines in reading order. Its first line used to show its last words"

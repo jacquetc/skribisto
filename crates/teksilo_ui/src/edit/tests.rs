@@ -422,14 +422,12 @@ fn one_refresh_asks_the_entity_history_at_most_four_times() {
     assert_eq!(r.entity.queries.get(), 4);
 }
 
-/// **Cut and Paste ask the rich editor's own filter.**
+/// **With no text surface focused, Cut and Paste ask the rich editor's own filter.**
 ///
-/// `EditorHandle::cut` and `paste`, and teksilo's text surface over them, write
-/// whatever the editor's filter says, and the surface calls itself read-only only
-/// when the filter refuses everything. So under "Always forward", once the
-/// editor's own Ctrl+X had declined, this route cut the selected words away. With
-/// a rich editor holding the caret, its filter now answers for every clipboard
-/// command that writes, a read-only one's included.
+/// The Edit route then falls back on the live editor's handle, whose `cut` and
+/// `paste` write whatever the filter says. So the route asks the filter itself,
+/// for every clipboard command that writes: "Always forward" takes a paste and
+/// refuses a cut, a read-only editor refuses both.
 #[test]
 fn the_clipboard_fallback_asks_the_editors_filter() {
     use teksilo::text_document::TextDocument;

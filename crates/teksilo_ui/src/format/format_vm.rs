@@ -139,12 +139,13 @@ fn history_allowed(handle: &EditorHandle) -> bool {
 
 /// May Format ▸ Insert line break write into this editor?
 ///
-/// Not in a table cell, which a save keeps on one line, and not where the editor's own
-/// Shift+Enter is refused: a trashed item's text is a read-only editor, and
-/// `EditorHandle::insert_line_break` does not consult the filter, so without this the
-/// menu would write where the key cannot.
+/// Where the call would insert at all, the editor's own answer
+/// (`EditorHandle::can_insert_line_break`): not into a table cell, which a save keeps on
+/// one line, nor into a code block. And not where the editor's own Shift+Enter is
+/// refused: a trashed item's text is a read-only editor, and neither the call nor that
+/// answer consults the filter, so without it the menu would write where the key cannot.
 fn line_break_allowed(handle: &EditorHandle) -> bool {
-    !handle.is_in_table()
+    handle.can_insert_line_break()
         && handle
             .command_filter()
             .accepts(teksilo::widgets::rich_text::EditCommandKind::InsertLineBreak)
@@ -500,8 +501,9 @@ pub struct FormatViewModel {
     numbered_list: Signal<bool>,
     /// The caret sits inside a table, so the row/column commands are meaningful.
     in_table: Signal<bool>,
-    /// A line break can go at the caret: an editor answers and the caret is not in a
-    /// table cell, which is one line once saved (a Djot table row holds no line break).
+    /// A line break can go at the caret: see `line_break_allowed` (not in a table cell,
+    /// which is one line once saved, nor in a code block, nor where the editor's filter
+    /// refuses one).
     line_break: Signal<bool>,
     /// `0` = normal paragraph, `1..=6` = H1..H6. Doubles as the radio index.
     heading: Signal<usize>,
@@ -1686,8 +1688,7 @@ impl FormatViewModel {
     /// a save writes as Djot's hard break and every export as its own line break.
     ///
     /// Through the editor's call rather than `insert_text`, so the row does what the key
-    /// does: under "Always forward" it goes in after a selection instead of replacing it,
-    /// and in a code block, which the row does not know about, the editor refuses it.
+    /// does: under "Always forward" it goes in after a selection instead of replacing it.
     /// Checked against [`line_break_allowed`] here as well as in the row's enablement,
     /// as [`undo_editor`](Self::undo_editor) checks its filter: the enablement is a mirror
     /// refreshed once a frame, not a guard.
