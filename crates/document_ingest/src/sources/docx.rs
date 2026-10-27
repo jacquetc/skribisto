@@ -1446,9 +1446,10 @@ impl<'a> CommentBodyBuilder<'a> {
                     image: None,
                     footnote: None,
                 }),
-                // A line break starts a new paragraph, as `Walker::run` does for
-                // manuscript prose: Djot has no line break inside a paragraph that the
-                // editor keeps.
+                // A line break starts a new paragraph of the comment, as it does in an
+                // OpenDocument one (`odt.rs`'s annotation walker): a remark of two lines
+                // comes in as the same two short paragraphs whichever program wrote it.
+                // Manuscript prose keeps its line breaks instead (`Walker::run`).
                 RunChild::Break(_) | RunChild::CarriageReturn(_) => {
                     self.paragraphs.push(std::mem::take(&mut self.current));
                 }

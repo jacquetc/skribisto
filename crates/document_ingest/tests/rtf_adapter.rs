@@ -346,6 +346,22 @@ fn comments_keep_their_range_their_author_and_their_replies() {
 // ── tables ───────────────────────────────────────────────────────────────────
 
 #[test]
+fn a_line_break_in_a_table_cell_is_a_space() {
+    let conversion = convert(
+        r"{\rtf1 Before.\par\trowd\cellx3000\pard\intbl roses\line violets\cell\row\trowd\pard\intbl red@uc0@u8232 blue\cell\row\pard After.}",
+    );
+    let document = &conversion.document;
+    let RichBlock::Table { rows } = &document.blocks[1] else {
+        panic!("expected a table, got {:?}", document.blocks[1]);
+    };
+    let cells: Vec<String> = rows
+        .iter()
+        .map(|row| row[0].iter().map(|r| r.text.as_str()).collect())
+        .collect();
+    assert_eq!(cells, ["roses violets", "red blue"]);
+}
+
+#[test]
 fn tables_join_a_cells_paragraphs_and_flatten_a_nested_table() {
     let conversion = convert(
         r"{\rtf1 Before.\par\trowd\cellx3000\cellx6000\pard\intbl Name\cell\pard\intbl First line\par\pard\intbl second line\cell\row\trowd\pard\intbl Inner:\par\pard\intbl\itap2 deep\nestcell{\*\nesttableprops\nestrow}\pard\intbl\cell\pard\intbl last\cell\row\pard After.}",

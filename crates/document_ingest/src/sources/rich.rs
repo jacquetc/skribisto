@@ -523,6 +523,10 @@ impl RichBlock {
                 {
                     run.plain_push(&mut out);
                 }
+                // A title is one line, in the binder and in a book's heading.
+                if out.contains(LINE_SEPARATOR) {
+                    out = out.replace(LINE_SEPARATOR, " ");
+                }
                 out
             }
             RichBlock::Table { .. } => self.plain_text(),

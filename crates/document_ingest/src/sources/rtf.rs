@@ -728,7 +728,8 @@ impl<'d, 'o> Mapper<'d, 'o> {
         self.blocks.push(RichBlock::Table { rows });
     }
 
-    /// A cell's paragraphs as one run list, joined by spaces, and the comment places in it.
+    /// A cell's paragraphs as one run list, joined by spaces, its line breaks spaces too, and
+    /// the comment places in it.
     fn cell(&mut self, cell: &rtf_reader::Cell) -> (Vec<Run>, usize, Vec<(MarkerKind, usize)>) {
         self.not_carried.nested_tables += nested_tables(&cell.blocks);
         let mut runs = Vec::new();
@@ -751,7 +752,15 @@ impl<'d, 'o> Mapper<'d, 'o> {
                 kept += 1;
                 starts.push(len);
                 len += piece.len;
-                runs.extend(piece.runs);
+                // A cell is one line of its table, so a line break inside it is a space, as
+                // the Word and OpenDocument scanners make it: kept, the first save of the
+                // table wrote it as one anyway, and the text changed under the writer.
+                runs.extend(piece.runs.into_iter().map(|mut run| {
+                    if run.text.contains(rich::LINE_SEPARATOR) {
+                        run.text = run.text.replace(rich::LINE_SEPARATOR, " ");
+                    }
+                    run
+                }));
             }
             for marker in found {
                 let place = match (starts.get(marker.piece), blank.get(marker.piece)) {

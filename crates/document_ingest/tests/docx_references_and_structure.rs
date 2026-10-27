@@ -457,6 +457,19 @@ fn a_point_comment_in_a_table_cell_or_a_content_control_keeps_its_words() {
     assert!(row(&plan, "Chapter Two").comments.is_empty());
 }
 
+/// A heading's title is one line, in the binder and in the book: a line break in the
+/// heading's paragraph is a space there.
+#[test]
+fn a_line_break_in_a_heading_is_a_space_in_its_title() {
+    let word = Word::with_body(
+        r#"<w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr><w:r><w:t>Chapter</w:t><w:br/><w:t>One</w:t></w:r></w:p>"#
+            .to_string()
+            + &p("The text."),
+    );
+    let plan = plan_of("heading.docx", &word.bytes());
+    assert_eq!(only_row(&plan).title, "Chapter One");
+}
+
 /// A point comment after a line break stays in its paragraph, which keeps the line break
 /// between its two lines, and is placed on the paragraph.
 #[test]

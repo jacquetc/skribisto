@@ -1902,9 +1902,9 @@ impl<'a> Walker<'a> {
                         footnote: None,
                     });
                 }
-                // A deliberate line break starts a new paragraph, exactly as it does for
-                // manuscript prose in [`Self::inline`] and for a `.docx` comment in
-                // `docx::CommentBodyBuilder`. An editor who writes a two-line note with
+                // A deliberate line break starts a new paragraph of the note, as it does
+                // for a `.docx` comment in `docx::CommentBodyBuilder` (manuscript prose in
+                // [`Self::inline`] keeps it as a line break). An editor who writes a two-line note with
                 // Shift+Enter meant two lines; collapsing them to a space silently
                 // reflows their remark into one run-on sentence, and — worse — makes the
                 // same note import differently depending on whether it was written in

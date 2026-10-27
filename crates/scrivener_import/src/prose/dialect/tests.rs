@@ -899,6 +899,19 @@ fn a_poem_keeps_its_stanzas() {
         r"{\rtf1 The tide came in,\line the lamp was lit,\line\line the keeper slept,\line the gulls did not.\par}",
     );
     assert_eq!(texts(&one.doc).len(), 1);
+    // Every line break is still there, the two between the stanzas included.
+    let breaks = one
+        .doc
+        .body
+        .iter()
+        .filter_map(|b| match b {
+            Block::Paragraph(p) => Some(p),
+            Block::Table(_) => None,
+        })
+        .flat_map(|p| &p.inlines)
+        .filter(|i| matches!(i, Inline::Break(BreakKind::Line)))
+        .count();
+    assert_eq!(breaks, 4);
 }
 
 /// A blank line between stanzas never becomes a scene break, whatever the prose around.
