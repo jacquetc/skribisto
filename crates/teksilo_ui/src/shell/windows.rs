@@ -738,7 +738,7 @@ impl ProjectWindowFactory {
                             &menu,
                             templates_submenu_id,
                             &session.note_templates,
-                            &format.has_target(),
+                            &format.can_edit(),
                         );
 
                         templates_menu = Some((menu.clone(), templates_submenu_id));

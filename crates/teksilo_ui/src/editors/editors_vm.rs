@@ -531,6 +531,11 @@ impl EditorsViewModel {
         if !handle.focused_signal().get() {
             return;
         }
+        // A trashed scene's text refuses every key, but its handle would still take
+        // this paragraph: the shortcut reaches here whatever the menu row says.
+        if !crate::shared::editor_writes::accepts_writes(&handle) {
+            return;
+        }
         // One atomic call rather than `insert_block` + `insert_text` +
         // `insert_block`: three separate entries into the widget give the
         // application three change notifications to react to mid-edit, and a

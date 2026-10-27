@@ -31,6 +31,10 @@ pub(crate) mod binder_ops;
 
 mod caret_highlight;
 pub mod editor_size;
+/// Whether a command may write into an editor's text: the one question every
+/// command that writes through an `EditorHandle` asks, so a trashed item's text
+/// stays read-only for the menus and docks as well as for the keyboard.
+pub(crate) mod editor_writes;
 pub mod external_link;
 mod focus_vm;
 /// Numbers with a unit, written the interface language's way: file sizes,

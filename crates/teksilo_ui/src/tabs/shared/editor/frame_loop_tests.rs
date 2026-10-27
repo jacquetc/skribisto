@@ -174,6 +174,14 @@ fn the_gate_stops_typing_and_not_the_programmatic_api() {
 fn prose_column_playing(
     games: &crate::writing_session::WritingGamesViewModel,
 ) -> (EditorHandle, WidgetTree) {
+    prose_column_playing_with(games, false)
+}
+
+/// [`prose_column_playing`], read-only when asked, as a trashed item's tab builds it.
+fn prose_column_playing_with(
+    games: &crate::writing_session::WritingGamesViewModel,
+    read_only: bool,
+) -> (EditorHandle, WidgetTree) {
     let doc = TextDocument::new();
     let find = crate::search::FindViewModel::new(doc.clone());
     let col = writing_column(
@@ -196,7 +204,7 @@ fn prose_column_playing(
         None,
         // No project around this tree to tally typing against.
         None,
-        false,
+        read_only,
         // No project around this tree, so no item to name.
         None,
         false,
@@ -223,6 +231,38 @@ fn a_prose_editor_is_frozen_while_always_forward_is_played() {
         handle.command_filter(),
         CommandFilter::ForwardOnly,
         "an editor built while the game is on must be frozen from its first keystroke"
+    );
+}
+
+/// **A trashed item's text keeps its read-only filter, game or no game.**
+///
+/// The game's filter was pushed onto every editor, a read-only one included, and
+/// its answer while the game is off is `All`: in the app, the trashed text took
+/// Backspace, Ctrl+X, Ctrl+V and Ctrl+B, while every test of the read-only gate
+/// above passed, because none of them built the column with a game. A read-only
+/// editor is now never handed the game's filter.
+#[test]
+fn a_trashed_items_editor_stays_read_only_under_the_writing_games() {
+    let games = crate::writing_session::WritingGamesViewModel::detached();
+    let (handle, mut tree) = prose_column_playing_with(&games, true);
+    assert_eq!(
+        handle.command_filter(),
+        CommandFilter::ReadOnly,
+        "built with the game off"
+    );
+    games.set_always_forward(true);
+    frame(&mut tree);
+    assert_eq!(
+        handle.command_filter(),
+        CommandFilter::ReadOnly,
+        "the game switched on"
+    );
+    games.set_always_forward(false);
+    frame(&mut tree);
+    assert_eq!(
+        handle.command_filter(),
+        CommandFilter::ReadOnly,
+        "and off again"
     );
 }
 

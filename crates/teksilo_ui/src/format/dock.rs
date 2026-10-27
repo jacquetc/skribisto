@@ -504,19 +504,90 @@ fn controls(vm: &FormatViewModel) -> Padding {
         ),
     );
 
-    teksu!(
-        Padding::uniform(DOCK_PADDING) {
+    // The groups answer to whether the editor takes writes: over a trashed item's
+    // text, a read-only editor whose handle would still write when asked, they stay
+    // in view and greyed, as the Format menu's rows do, rather than formatting text
+    // that refuses every key. The hint stays out of it: there is nothing to grey.
+    let groups = EnabledWhen::new(
+        vm.can_edit(),
+        teksu!(
             VStack {
                 spacing: 0.0
-                child: empty
                 child: marks
                 child: block
                 child: lists
                 child: tables
                 child: breaks
             }
+        ),
+    );
+
+    teksu!(
+        Padding::uniform(DOCK_PADDING) {
+            VStack {
+                spacing: 0.0
+                child: empty
+                child: groups
+            }
         }
     )
+}
+
+/// Lays `child` out as itself, and enables it, subtree and all, only while
+/// `enabled`: the framework's own gate (`BuildContext::enabled_when`), which dims a
+/// disabled subtree, keeps it out of the Tab order and marks it disabled for
+/// assistive technology. A widget because the gate needs the child's id, and
+/// [`controls`] has no build context to add it with.
+#[derive(Debug)]
+struct EnabledWhen {
+    enabled: Signal<bool>,
+    child_id: Option<WidgetId>,
+    pending: Option<Box<dyn Widget>>,
+}
+
+impl EnabledWhen {
+    fn new(enabled: Signal<bool>, child: impl Widget + 'static) -> Self {
+        Self {
+            enabled,
+            child_id: None,
+            pending: Some(Box::new(child)),
+        }
+    }
+}
+
+impl Widget for EnabledWhen {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        if let Some(w) = self.pending.take() {
+            let id = ctx.add_boxed(w);
+            ctx.enabled_when(id, self.enabled.clone());
+            self.child_id = Some(id);
+        }
+        self.child_id.into_iter().collect()
+    }
+
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        self.child_id
+            .and_then(|id| ctx.child_size(id, proposal))
+            .unwrap_or(Size::new(0.0, 0.0))
+            .into()
+    }
+
+    fn place_children(
+        &self,
+        bounds: Rect,
+        _proposal: SizeProposal,
+        children: &mut [WidgetPlacement],
+        _ctx: &LayoutContext,
+    ) {
+        for child in children.iter_mut() {
+            child.origin = Point::new(bounds.x, bounds.y);
+            child.size = bounds.size();
+        }
+    }
+
+    fn children(&self) -> Vec<WidgetId> {
+        self.child_id.into_iter().collect()
+    }
 }
 
 impl Widget for FormatDock {
@@ -572,6 +643,50 @@ mod tests {
     /// dock reads groups and signals, never the editor directly.
     fn vm() -> FormatViewModel {
         FormatViewModel::new(Rc::new(|| (None, FormatSurface::None)))
+    }
+
+    /// **Over text that takes no writes, the groups stay in view and greyed.**
+    ///
+    /// A trashed item's text is a read-only editor, and the dock's buttons wrote
+    /// into it through the handle all the same. The groups now answer to
+    /// `FormatViewModel::can_edit`; an ordinary editor is the control.
+    #[test]
+    fn the_groups_are_disabled_over_text_that_takes_no_writes() {
+        use teksilo::text_document::TextDocument;
+        use teksilo::widgets::rich_text::RichTextEditor;
+
+        fn first_button_enabled(read_only: bool) -> bool {
+            let doc = TextDocument::new();
+            doc.set_plain_text("Roses are red").unwrap();
+            let editor = if read_only {
+                RichTextEditor::read_only(doc)
+            } else {
+                RichTextEditor::editor(doc)
+            };
+            let target = editor.handle();
+            let vm = FormatViewModel::new(Rc::new(move || {
+                (Some(target.clone()), FormatSurface::Scene)
+            }));
+            vm.refresh();
+            let mut tree = WidgetTree::new();
+            let id = tree.add(controls(&vm));
+            tree.layout(SizeProposal {
+                width: Some(300.0),
+                height: None,
+            });
+            let bold = crate::test_support::first_of_type(&tree, id, "IconButton")
+                .expect("the marks group shows over a scene");
+            tree.is_enabled(bold)
+        }
+
+        assert!(
+            !first_button_enabled(true),
+            "Bold is greyed over read-only text"
+        );
+        assert!(
+            first_button_enabled(false),
+            "positive control: Bold works over an ordinary editor"
+        );
     }
 
     /// The dock builds and lays out at the trailing side's real width.

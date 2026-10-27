@@ -1037,6 +1037,106 @@ fn insert_line_break_leaves_a_read_only_editor_alone() {
     assert_eq!(doc.to_plain_text().unwrap(), "Roses are red,");
 }
 
+/// **No Format command writes into a trashed item's text.**
+///
+/// It is a read-only editor, which refuses every key, and its handle still writes
+/// when asked: the Format menu and the dock used to bold it, list it, table it and
+/// link it. Every command now refuses it, every enablement says so, and a toggle's
+/// optimistic flip is taken back. The same commands over an ordinary editor are the
+/// control: they do change the text.
+#[test]
+fn a_read_only_editor_takes_no_format_command() {
+    fn run_every_command(vm: &FormatViewModel) {
+        vm.toggle_bold();
+        vm.toggle_italic();
+        vm.toggle_strikethrough();
+        vm.set_heading(1);
+        vm.set_alignment(ALIGN_CENTER);
+        vm.toggle_blockquote();
+        vm.toggle_bullet_list();
+        vm.insert_mark("\u{a0}");
+        vm.apply_link("Roses", "https://example.org");
+        vm.insert_table(2, 2);
+    }
+    fn over(read_only: bool) -> (FormatViewModel, RichTextEditor, TextDocument) {
+        let doc = TextDocument::new();
+        doc.set_markdown("Roses are red")
+            .and_then(crate::test_support::finish)
+            .expect("import");
+        let editor = if read_only {
+            RichTextEditor::read_only(doc.clone())
+        } else {
+            RichTextEditor::editor(doc.clone())
+        };
+        editor.handle().select_range(0, 5);
+        let target = editor.handle();
+        let vm = FormatViewModel::new(Rc::new(move || {
+            (Some(target.clone()), FormatSurface::Scene)
+        }));
+        vm.note_scene_focused(true);
+        vm.refresh();
+        (vm, editor, doc)
+    }
+
+    let (vm, editor, doc) = over(true);
+    assert!(vm.has_target().get(), "there is an editor to read");
+    assert!(!vm.can_edit().get(), "and none to write into");
+    assert!(!vm.can_break_scene().get());
+    assert!(!vm.can_break_line().get());
+    assert!(!vm.can_edit_at_caret().get());
+    assert!(vm.link_request().is_none(), "the Link dialog does not open");
+    assert!(
+        vm.writable_handle().is_none(),
+        "nor do images and templates"
+    );
+    let before = editor.handle().to_djot();
+    run_every_command(&vm);
+    vm.clear_formatting();
+    assert_eq!(editor.handle().to_djot(), before, "the text is as it was");
+    assert_eq!(doc.block_count(), 1, "no table, no new paragraph");
+    assert!(!vm.bold().get(), "the Bold toggle's flip was taken back");
+
+    let (vm, editor, _doc) = over(false);
+    assert!(vm.can_edit().get() && vm.can_break_scene().get());
+    let before = editor.handle().to_djot();
+    run_every_command(&vm);
+    assert_ne!(
+        editor.handle().to_djot(),
+        before,
+        "positive control: the same commands write into an ordinary editor"
+    );
+}
+
+/// **The write mirrors follow the editor's filter, not only its text.**
+///
+/// They used to be re-read only past `refresh`'s gate, which moves with the text,
+/// the caret and whether Undo is allowed. "Always forward" and read-only both refuse
+/// Undo, so going from one to the other under a still caret passed nothing through,
+/// and the rows kept offering a write the editor no longer took.
+#[test]
+fn the_write_mirrors_follow_the_filter_without_an_edit() {
+    use teksilo::widgets::rich_text::CommandFilter;
+
+    let (vm, editor, _doc) = vm_over_doc("Roses are red");
+    let handle = editor.handle();
+    vm.note_scene_focused(true);
+    handle.set_command_filter(CommandFilter::ForwardOnly);
+    vm.refresh();
+    assert!(
+        vm.can_edit().get() && vm.can_break_line().get() && vm.can_break_scene().get(),
+        "Always forward takes writes"
+    );
+
+    handle.set_command_filter(CommandFilter::ReadOnly);
+    vm.refresh();
+    assert!(
+        !vm.can_edit().get(),
+        "read-only now, with nothing else moved"
+    );
+    assert!(!vm.can_break_line().get());
+    assert!(!vm.can_break_scene().get());
+}
+
 /// Under "Always forward" the row takes nothing away: over a selection, the line break
 /// goes in after it, as Shift+Enter does, rather than replacing the selected words.
 #[test]

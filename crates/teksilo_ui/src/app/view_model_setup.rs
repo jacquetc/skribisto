@@ -235,8 +235,15 @@ impl App {
         // any borrow, and `refresh` short-circuits when nothing has moved.
         {
             let format = format.clone();
+            // Folded into the scene-break rows' enablement with the editor's
+            // writability, so a trashed scene offers no scene break. See
+            // `FormatViewModel::note_scene_focused`.
+            let scene_focused = self.scene_focused.clone();
             let tick = ctx.frame_tick();
-            ctx.effect(&tick, move |_| format.refresh());
+            ctx.effect(&tick, move |_| {
+                format.note_scene_focused(scene_focused.get());
+                format.refresh();
+            });
         }
 
         // The Edit menu's Undo/Redo, on the same tick and for the same reasons:

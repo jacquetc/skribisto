@@ -33,8 +33,9 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
     // Inserting happens *at the caret*, so this row needs more than
     // "a document tab is open" (which is all `on_editor` above means —
     // see `has_target`'s doc). Its siblings act on a whole document and
-    // are right to use the broader gate.
-    let on_caret = menu_format_vm.has_caret_target();
+    // are right to use the broader gate. And it writes, so it waits for an
+    // editor that takes writes: a trashed item's text does not.
+    let on_caret = menu_format_vm.can_edit_at_caret();
 
     let m = m
         .item(

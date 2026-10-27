@@ -190,7 +190,15 @@ const IMAGE_MENU_INDEX: usize = 6;
 /// the menu is already in the state asked for. That matters — each real mutation
 /// bumps the model's version, which re-installs the native menu bar, and doing
 /// that on every click would make the bar flicker.
-pub(crate) fn sync_image_menu(model: &MenuModel, id: MenuItemId, image_selected: bool) {
+///
+/// The rows are enabled on `can_edit`: each one rewrites the picture's reference
+/// in the prose, which a trashed item's text, a read-only editor, does not take.
+pub(crate) fn sync_image_menu(
+    model: &MenuModel,
+    id: MenuItemId,
+    image_selected: bool,
+    can_edit: &Signal<bool>,
+) {
     let present = model.contains(id);
     if image_selected == present {
         return;
@@ -205,9 +213,21 @@ pub(crate) fn sync_image_menu(model: &MenuModel, id: MenuItemId, image_selected:
     // Between Format and Go: the writer reached for a picture, and the menus
     // either side are the ones that act on what is selected.
     model.insert_menu_at(IMAGE_MENU_INDEX, id, tr!(menu_image()), |m| {
-        m.item(MenuEntry::new(tr!(image_menu_describe())).intent("image.describe"))
-            .item(MenuEntry::new(tr!(image_menu_resize())).intent("image.resize"))
-            .item(MenuEntry::new(tr!(image_menu_reset_size())).intent("image.reset_size"))
+        m.item(
+            MenuEntry::new(tr!(image_menu_describe()))
+                .enabled(can_edit.clone())
+                .intent("image.describe"),
+        )
+        .item(
+            MenuEntry::new(tr!(image_menu_resize()))
+                .enabled(can_edit.clone())
+                .intent("image.resize"),
+        )
+        .item(
+            MenuEntry::new(tr!(image_menu_reset_size()))
+                .enabled(can_edit.clone())
+                .intent("image.reset_size"),
+        )
     });
 }
 
@@ -911,7 +931,7 @@ mod tests {
     fn the_image_menu_lands_between_format_and_go() {
         let model = build_project_menu(empty_parts());
         let image = MenuItemId::next();
-        sync_image_menu(&model, image, true);
+        sync_image_menu(&model, image, true, &Signal::new(true));
         model.modify(|nodes| {
             let title_at = |nodes: &[MenuNode], i: usize| match &nodes[i] {
                 MenuNode::Submenu { title, .. } => title.resolve_now(),
@@ -945,9 +965,9 @@ mod tests {
         let model = build_project_menu(empty_parts());
         let image = MenuItemId::next();
         assert!(!model.contains(image));
-        sync_image_menu(&model, image, true);
+        sync_image_menu(&model, image, true, &Signal::new(true));
         assert!(model.contains(image), "selecting a picture adds the menu");
-        sync_image_menu(&model, image, false);
+        sync_image_menu(&model, image, false, &Signal::new(true));
         assert!(!model.contains(image), "deselecting takes it away again");
     }
 }

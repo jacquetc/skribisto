@@ -53,6 +53,7 @@ use crate::format::{EditorKind, FormatViewModel};
 use crate::intents::AppIntent;
 use crate::search::FindViewModel;
 use crate::settings::EditorTypography;
+use crate::shared::editor_writes::accepts_writes;
 use crate::spellcheck::SpellSession;
 use crate::tabs::TitleField;
 use crate::text_replacement::TextReplacementSession;
@@ -479,6 +480,10 @@ pub fn writing_column(
             let Some(handle) = handle.upgrade() else {
                 return;
             };
+            // A trashed item's picture is the writer's to look at, not to resize.
+            if !accepts_writes(&handle) {
+                return;
+            }
             let Some(image) = crate::shared::images::image_at(
                 &handle.to_plain_text(),
                 resize.offset,
@@ -587,6 +592,7 @@ fn selected_image(handle: &EditorHandle) -> Option<crate::shared::images::ImageR
 /// Insert image here: this menu only exists because an image is already
 /// selected.
 fn image_context_menu(handle: EditorHandle) -> MenuList {
+    let writable = accepts_writes(&handle);
     let cut = handle.clone();
     let copy = handle.clone();
     let paste = handle;
@@ -596,8 +602,13 @@ fn image_context_menu(handle: EditorHandle) -> MenuList {
     if cut.command_filter().accepts(EditCommandKind::Cut) {
         menu = menu.item(MenuItem::new(tr!(menu_cut())).on_activate_fn(move |ctx| cut.cut(ctx)));
     }
-    menu.item(MenuItem::new(tr!(menu_copy())).on_activate_fn(move |ctx| copy.copy(ctx)))
-        .item(MenuItem::new(tr!(menu_paste())).on_activate_fn(move |ctx| paste.paste(ctx)))
+    menu = menu.item(MenuItem::new(tr!(menu_copy())).on_activate_fn(move |ctx| copy.copy(ctx)));
+    // Everything below writes into the prose, and a trashed item's text takes no
+    // writes: what is left is the copy (see `crate::shared::editor_writes`).
+    if !writable {
+        return menu;
+    }
+    menu.item(MenuItem::new(tr!(menu_paste())).on_activate_fn(move |ctx| paste.paste(ctx)))
         .separator()
         .item(
             MenuItem::new(tr!(image_menu_describe()))
@@ -838,15 +849,26 @@ fn editor_context_menu(
 
     let spelling = super::dictionary_menu::resolve_spelling(&doc, &handle, spell.as_deref());
 
-    let mut list = MenuList::new()
-        .item(format_row(&handle, &CharacterMark::ALL))
-        .separator();
+    // A trashed item's text is a read-only editor whose handle would still write
+    // when asked (see `crate::shared::editor_writes`). So every row below that
+    // writes into it is left out, by the "omitted, not greyed out" rule the
+    // spelling group follows: the formatting strip, the corrections, Paste and
+    // Split scene. Add to dictionary, the comment rows and Add as note stay, since
+    // none of them changes the text.
+    let writable = accepts_writes(&handle);
+
+    let mut list = MenuList::new();
+    if writable {
+        list = list
+            .item(format_row(&handle, &CharacterMark::ALL))
+            .separator();
+    }
 
     // The spelling group, present only when there is something to say about
     // spelling here — ordinary prose gets a menu that starts at Cut, rather than a
     // greyed item nailed to the top of every right-click.
     if !spelling.words.is_empty() {
-        if let Some(c) = &spelling.correction {
+        if let Some(c) = spelling.correction.as_ref().filter(|_| writable) {
             if c.suggestions.is_empty() {
                 // Flagged but uncorrectable: say so, rather than leave a gap that
                 // reads as "we forgot to look".
@@ -946,18 +968,19 @@ fn editor_context_menu(
     if cut.command_filter().accepts(EditCommandKind::Cut) {
         list = list.item(MenuItem::new(tr!(menu_cut())).on_activate_fn(move |ctx| cut.cut(ctx)));
     }
-    list = list
-        .item(MenuItem::new(tr!(menu_copy())).on_activate_fn(move |ctx| copy.copy(ctx)))
-        .item(MenuItem::new(tr!(menu_paste())).on_activate_fn(move |ctx| paste.paste(ctx)))
-        .item(
-            MenuItem::new(tr!(menu_paste_unformatted()))
-                .on_activate_fn(move |ctx| paste_plain.paste_unformatted(ctx)),
-        )
-        .separator()
-        .item(
-            MenuItem::new(tr!(menu_select_all())).on_activate_fn(move |_ctx| select.select_all()),
-        );
-    if let Some(split) = split {
+    list = list.item(MenuItem::new(tr!(menu_copy())).on_activate_fn(move |ctx| copy.copy(ctx)));
+    if writable {
+        list = list
+            .item(MenuItem::new(tr!(menu_paste())).on_activate_fn(move |ctx| paste.paste(ctx)))
+            .item(
+                MenuItem::new(tr!(menu_paste_unformatted()))
+                    .on_activate_fn(move |ctx| paste_plain.paste_unformatted(ctx)),
+            );
+    }
+    list = list.separator().item(
+        MenuItem::new(tr!(menu_select_all())).on_activate_fn(move |_ctx| select.select_all()),
+    );
+    if let Some(split) = split.filter(|_| writable) {
         list = list.separator().item(
             MenuItem::new(tr!(split_scene())).on_activate_fn(move |ctx| split(ctx, cursor.get())),
         );

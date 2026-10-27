@@ -470,7 +470,16 @@ impl Widget for TypographyBoundEditor {
         // hands the answer to teksilo, which owns the far harder half — which of
         // its commands take text away, including a same-editor drag-move and a
         // context-menu Cut that no application-level key handler would catch.
-        if let Some(games) = self.games.clone() {
+        //
+        // Never onto a read-only editor (a trashed item's text, its prose or its
+        // synopsis). Its `ReadOnly` filter is what keeps the trash read-only, and the
+        // game's answer while it is off is `All`: pushed here, it handed the trashed
+        // text every command, so Backspace, Ctrl+X, Ctrl+V and Ctrl+B all wrote into
+        // it. Read off the filter rather than passed in, so every caller is covered;
+        // it stays `ReadOnly` across a rebuild because nothing else replaces it.
+        let read_only =
+            handle.command_filter() == teksilo::widgets::rich_text::CommandFilter::ReadOnly;
+        if let Some(games) = self.games.clone().filter(|_| !read_only) {
             let kind = self.kind;
             let push = {
                 let (h, g) = (handle.clone(), games.clone());

@@ -39,7 +39,10 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
     let on_scene = menu_scene_focused.clone();
     let f = menu_format_vm.clone();
 
-    let on = f.has_target();
+    // On the sticky target *that takes writes*: a trashed item's text is a
+    // read-only editor whose handle would still write when asked, so every
+    // row here stays off over it (see `crate::shared::editor_writes`).
+    let on = f.can_edit();
     // Bold/Italic/Underline are teksilo's own editor
     // shortcuts (`FormatShortcut`), declared by every
     // editable `RichTextEditor` and run by the focused one.
@@ -288,8 +291,8 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
                 // The row/column commands are gated
                 // on the caret actually being in a
                 // table — the dock hides them, a menu
-                // greys them.
-                let in_table = f.in_table();
+                // greys them — whose text takes writes.
+                let in_table = f.can_edit_table();
                 sizes
                     .separator()
                     .item(command(
@@ -394,13 +397,13 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
     })
     .item(
         MenuEntry::new(tr!(menu_scene_break()))
-            .enabled(on_scene.clone())
+            .enabled(f.can_break_scene())
             .intent("format.scene_break")
             .shortcut("format.scene_break"),
     )
     .item(
         MenuEntry::new(tr!(menu_major_scene_break()))
-            .enabled(on_scene.clone())
+            .enabled(f.can_break_scene())
             .intent("format.major_scene_break")
             .shortcut("format.major_scene_break"),
     )
@@ -408,6 +411,9 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
     // Gated by `.enabled()`, never `.visible()`, for the
     // same reason the scene-break rows above are: a row
     // that vanishes teaches nobody the shortcut exists.
+    // On `on_scene` alone, not on writability: a comment
+    // sits beside the text and changes none of it, so a
+    // trashed scene still takes one.
     .item(
         MenuEntry::new(tr!(comments_menu_add()))
             .enabled(on_scene.clone())

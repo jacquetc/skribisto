@@ -38,7 +38,9 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
                 let Some(row) = templates.rows().into_iter().find(|r| r.id == *template_id) else {
                     return; // deleted between the menu being built and clicked
                 };
-                let Some(handle) = format.handle_for_commands() else {
+                // Not into a trashed item's text, which takes no writes; the rows are
+                // off there too, but a template also arrives by intent.
+                let Some(handle) = format.writable_handle() else {
                     return;
                 };
                 // Insert puts the body at the caret, **replacing the selection if

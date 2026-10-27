@@ -61,6 +61,8 @@ use teksilo::prelude::{Signal, WidgetId};
 use teksilo::text_document::{Alignment, TextDirection};
 use teksilo::widgets::rich_text::{EditorHandle, list_style_is_ordered};
 
+use crate::shared::editor_writes::accepts_writes;
+
 /// Index of "align left" in the alignment radio group.
 pub const ALIGN_LEFT: usize = 0;
 /// Index of "align centre".
@@ -547,6 +549,27 @@ pub struct FormatViewModel {
     /// writer has been in the editor. That is the same limit `has_target` and
     /// the note gate live with, and for the same reason.
     has_caret_target: Signal<bool>,
+    /// [`Self::has_target`], and that editor takes writes: the enablement of every
+    /// Format command, and of the other commands that write into the editor's text
+    /// (Insert template).
+    ///
+    /// False over a trashed item's text, a read-only editor whose handle would
+    /// still write when asked (see [`crate::shared::editor_writes`]). Kept apart
+    /// from `has_target` because Save as template only *reads* the text, and stays
+    /// on there.
+    can_edit: Signal<bool>,
+    /// [`Self::has_caret_target`], and that editor takes writes: the enablement of
+    /// the commands that insert at the caret (Insert footnote, Insert image).
+    can_edit_at_caret: Signal<bool>,
+    /// The focused tab holds a scene's own prose and its editor takes writes: the
+    /// scene-break rows. The first half is `App`'s per-window answer, handed over
+    /// each frame through [`Self::note_scene_focused`]; see there.
+    can_break_scene: Signal<bool>,
+    scene_focused: Rc<Cell<bool>>,
+    /// The caret is in a table and its editor takes writes: the Format menu's row
+    /// and column commands. [`Self::in_table`] is only *where* the caret is, and
+    /// also decides whether the dock shows its table group at all.
+    can_edit_table: Signal<bool>,
 
     /// Per-group visibility, pushed by [`Self::set_surface`].
     ///
@@ -629,6 +652,11 @@ impl FormatViewModel {
             can_redo: Signal::new(false),
             has_target: Signal::new(false),
             has_caret_target: Signal::new(false),
+            can_edit: Signal::new(false),
+            can_edit_at_caret: Signal::new(false),
+            can_break_scene: Signal::new(false),
+            scene_focused: Rc::new(Cell::new(false)),
+            can_edit_table: Signal::new(false),
             group_visible: GroupVisibility::new(FormatSurface::None),
             last_seen: Rc::new(Cell::new(NEVER_SEEN)),
         }
@@ -945,10 +973,12 @@ impl FormatViewModel {
     /// editor" is momentarily nothing at all.
     ///
     /// `None` for a **synopsis**: it is planning text, and a note attached there
-    /// prints into a synopsis export and nowhere in the book.
+    /// prints into a synopsis export and nowhere in the book. `None` too for an
+    /// editor that takes no writes, a trashed item's text: inserting the marker
+    /// is a write (see [`crate::shared::editor_writes`]).
     pub fn footnote_target(&self) -> Option<(EditorHandle, crate::footnotes::FootnoteBinding)> {
         let (id, handle, kind) = self.resolved_registration()?;
-        if kind == EditorKind::Synopsis {
+        if kind == EditorKind::Synopsis || !accepts_writes(&handle) {
             return None;
         }
         let binding = self
@@ -981,6 +1011,14 @@ impl FormatViewModel {
     /// because templates are Work-scoped *data* rather than formatting state.
     pub fn handle_for_commands(&self) -> Option<EditorHandle> {
         self.handle()
+    }
+
+    /// [`Self::handle_for_commands`], for a command that **writes**: `None` when that
+    /// editor takes no writes, as a trashed item's text does (see
+    /// [`crate::shared::editor_writes`]). Inserting an image or a template goes
+    /// through this; saving the text as a template, which only reads it, does not.
+    pub fn writable_handle(&self) -> Option<EditorHandle> {
+        self.handle().filter(accepts_writes)
     }
 
     // ── Signals the views bind to ─────────────────────────────────────────
@@ -1095,6 +1133,40 @@ impl FormatViewModel {
         self.has_caret_target.clone()
     }
 
+    /// Whether there is an editor to act on and it takes writes — see
+    /// [`Self::can_edit`].
+    pub fn can_edit(&self) -> Signal<bool> {
+        self.can_edit.clone()
+    }
+
+    /// Whether a caret is in an editor that takes writes — see
+    /// [`Self::can_edit_at_caret`].
+    pub fn can_edit_at_caret(&self) -> Signal<bool> {
+        self.can_edit_at_caret.clone()
+    }
+
+    /// Whether the caret's table may be edited — see [`Self::can_edit_table`].
+    pub fn can_edit_table(&self) -> Signal<bool> {
+        self.can_edit_table.clone()
+    }
+
+    /// Whether a scene break may go in — see [`Self::can_break_scene`].
+    pub fn can_break_scene(&self) -> Signal<bool> {
+        self.can_break_scene.clone()
+    }
+
+    /// Tell the view-model whether the focused tab holds a scene's own prose.
+    ///
+    /// `App` answers that per window (`EditorsViewModel::focused_carries_scene`,
+    /// mirrored into the window's `scene_focused` signal) and calls this before
+    /// each [`Self::refresh`], which folds it with the editor's writability into
+    /// [`Self::can_break_scene`]. A stored mirror rather than a `zip` of the two
+    /// signals, because a menu row observes its enablement, and observing a
+    /// derived signal panics.
+    pub fn note_scene_focused(&self, focused: bool) {
+        self.scene_focused.set(focused);
+    }
+
     /// The current surface. `App` is the only writer — it knows which pane and
     /// which tab the focus landed in; this view-model deliberately does not.
     pub fn set_surface(&self, surface: FormatSurface) {
@@ -1152,6 +1224,7 @@ impl FormatViewModel {
         // is only ever written by a genuinely focused registered editor, so its
         // presence means the writer has put a caret in one.
         set_if_changed(&self.has_caret_target, self.sticky.borrow().is_some());
+        self.sync_write_mirrors(handle.as_ref());
 
         let Some(handle) = handle else {
             self.clear_mirrors();
@@ -1166,6 +1239,29 @@ impl FormatViewModel {
         }
         self.last_seen.set((version, caret, history));
         self.sync_from(&handle);
+    }
+
+    /// The mirrors that follow what the editor *takes* rather than what its text
+    /// holds: whether a command may write there at all, and the rows that need that
+    /// as well as a place (the caret, a scene, a table, a line).
+    ///
+    /// Read on every [`Self::refresh`], ahead of its version gate, and after every
+    /// command: a writing game, or an item trashed under an open tab, changes what
+    /// the editor takes without moving its document or its caret, and a gated
+    /// mirror would keep offering a write the editor no longer takes.
+    fn sync_write_mirrors(&self, handle: Option<&EditorHandle>) {
+        let writable = handle.is_some_and(accepts_writes);
+        set_if_changed(&self.can_edit, writable);
+        set_if_changed(
+            &self.can_edit_at_caret,
+            writable && self.has_caret_target.get(),
+        );
+        set_if_changed(&self.can_break_scene, writable && self.scene_focused.get());
+        set_if_changed(
+            &self.can_edit_table,
+            writable && handle.is_some_and(EditorHandle::is_in_table),
+        );
+        set_if_changed(&self.line_break, handle.is_some_and(line_break_allowed));
     }
 
     /// Re-read every mirror from `handle`, unconditionally.
@@ -1202,7 +1298,7 @@ impl FormatViewModel {
         set_if_changed(&self.bullet_list, ordered == Some(false));
         set_if_changed(&self.numbered_list, ordered == Some(true));
         set_if_changed(&self.in_table, handle.is_in_table());
-        set_if_changed(&self.line_break, line_break_allowed(handle));
+        self.sync_write_mirrors(Some(handle));
         set_if_changed(&self.heading, handle.get_heading_level() as usize);
         let alignment = alignment_index(&handle.get_alignment());
         set_if_changed(&self.alignment, alignment);
@@ -1236,7 +1332,7 @@ impl FormatViewModel {
         set_if_changed(&self.bullet_list, false);
         set_if_changed(&self.numbered_list, false);
         set_if_changed(&self.in_table, false);
-        set_if_changed(&self.line_break, false);
+        self.sync_write_mirrors(None);
         set_if_changed(&self.heading, 0);
         set_if_changed(&self.alignment, ALIGN_LEFT);
         set_if_changed(&self.align_left, true);
@@ -1292,9 +1388,10 @@ impl FormatViewModel {
     /// that, pre-filling the name), or neither (insert a fresh link).
     ///
     /// `None` when there is no editor to act on at all — a menu can outlive
-    /// the editor it was opened over.
+    /// the editor it was opened over — or when that editor takes no writes, so
+    /// the dialog does not open over a trashed item's text.
     pub fn link_request(&self) -> Option<LinkRequest> {
-        let handle = self.handle()?;
+        let handle = self.handle().filter(accepts_writes)?;
         if let Some(extent) = handle.link_at_caret() {
             return Some(LinkRequest {
                 name: extent.text,
@@ -1324,6 +1421,9 @@ impl FormatViewModel {
             self.clear_mirrors();
             return;
         };
+        if !accepts_writes(&handle) {
+            return;
+        }
 
         // Where the link goes: over the link already there, else over the
         // selection, else at the bare caret.
@@ -1366,6 +1466,9 @@ impl FormatViewModel {
             self.clear_mirrors();
             return;
         };
+        if !accepts_writes(&handle) {
+            return;
+        }
         let Some(extent) = handle.link_at_caret() else {
             return;
         };
@@ -1403,6 +1506,9 @@ impl FormatViewModel {
             self.clear_mirrors();
             return;
         };
+        if !accepts_writes(&handle) {
+            return;
+        }
 
         handle.edit_block(|| {
             if handle.is_bold() {
@@ -1666,7 +1772,13 @@ impl FormatViewModel {
             self.clear_mirrors();
             return;
         };
-        command(&handle);
+        // Every command here writes, and a read-only editor's handle would still
+        // write when asked: a trashed item's text, a read-only editor, took
+        // Bold, a list or a table from the dock and the menu. The mirrors are
+        // re-read either way, for the same stranded toggle as above.
+        if accepts_writes(&handle) {
+            command(&handle);
+        }
         self.sync_now();
     }
 }

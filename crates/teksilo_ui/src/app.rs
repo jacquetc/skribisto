@@ -2110,7 +2110,7 @@ impl Widget for App {
                 image_menu_id: self.image_menu_id,
                 active_image: self.format.active_image(),
                 note_templates: session.note_templates.clone(),
-                has_target: self.format.has_target(),
+                can_edit: self.format.can_edit(),
                 save_as_vm: save_as_vm.clone(),
                 backup_scheduler: backup_scheduler.clone(),
                 restore_vm: restore_vm.clone(),

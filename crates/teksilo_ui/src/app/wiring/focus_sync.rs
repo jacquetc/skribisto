@@ -38,7 +38,9 @@ pub(in crate::app) struct FocusSyncDeps {
     pub image_menu_id: teksilo::core::menu_item_id::MenuItemId,
     pub active_image: Signal<Option<(usize, String)>>,
     pub note_templates: NoteTemplatesViewModel,
-    pub has_target: Signal<bool>,
+    /// `FormatViewModel::can_edit`: whether the Insert template rows and the Image
+    /// menu's rows may run, all of which write into the editor's text.
+    pub can_edit: Signal<bool>,
     pub save_as_vm: SaveAsViewModel,
     pub backup_scheduler: BackupSchedulerViewModel,
     pub restore_vm: BackupRestoreViewModel,
@@ -62,14 +64,20 @@ pub(in crate::app) fn install(
     if let Some((menu, _)) = deps.templates_menu.clone() {
         let image_menu_id = deps.image_menu_id;
         let active = deps.active_image.clone();
+        let can_edit = deps.can_edit.clone();
         ctx.effect(&active, move |image| {
-            crate::shell::project_menus::sync_image_menu(&menu, image_menu_id, image.is_some());
+            crate::shell::project_menus::sync_image_menu(
+                &menu,
+                image_menu_id,
+                image.is_some(),
+                &can_edit,
+            );
         });
     }
 
     if let Some((menu, submenu_id)) = deps.templates_menu.clone() {
         let templates = deps.note_templates.clone();
-        let has_editor = deps.has_target.clone();
+        let has_editor = deps.can_edit.clone();
         ctx.effect(&templates.changed_signal(), move |_| {
             crate::shell::project_menus::sync_insert_template_submenu(
                 &menu,

@@ -67,7 +67,7 @@ fn register_drop(ctx: &mut BuildContext, deps: &CommandDeps) {
         move |_intent, c: &mut EventContext| {
             let paths = format.dropped_files().get();
             format.dropped_files().set(Vec::new());
-            if paths.is_empty() || format.handle_for_commands().is_none() {
+            if paths.is_empty() || format.writable_handle().is_none() {
                 return;
             }
             if docs.media_dir().as_os_str().is_empty() {
@@ -126,8 +126,9 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     ctx.register_action_global(Action::new("editor.insert_image").on_invoke(
         move |_intent, c: &mut EventContext| {
             // Nothing to insert into: the command is reachable from the menu
-            // whatever has focus, so this is the ordinary case, not an error.
-            if format.handle_for_commands().is_none() {
+            // whatever has focus, so this is the ordinary case, not an error. Nor
+            // into a trashed item's text, which takes no writes.
+            if format.writable_handle().is_none() {
                 return;
             }
             let media_dir = docs.media_dir();
@@ -308,7 +309,7 @@ fn finish(deps: &InsertDeps, ctx: &mut EventContext, pending: PendingImage, poli
         return;
     }
 
-    let Some(handle) = deps.format.handle_for_commands() else {
+    let Some(handle) = deps.format.writable_handle() else {
         return;
     };
     // Register before inserting: the insertion triggers a relayout, and a paint
@@ -419,15 +420,15 @@ fn image_offset(format: &crate::format::FormatViewModel) -> Option<usize> {
 
 /// The editor holding the clicked image, and the image as the prose stores it.
 ///
-/// `None` when nothing is in hand, when the editor has gone, or when the
-/// recorded offset no longer holds an image — the prose may have been edited
+/// `None` when nothing is in hand, when the editor has gone or takes no writes
+/// (a trashed item's text), or when the recorded offset no longer holds an image — the prose may have been edited
 /// since the click, and rewriting whatever is there now would be worse than
 /// doing nothing.
 fn resolve_active(
     format: &crate::format::FormatViewModel,
 ) -> Option<(teksilo::widgets::rich_text::EditorHandle, images::ImageRef)> {
     let (offset, _src) = format.active_image().get()?;
-    let handle = format.handle_for_commands()?;
+    let handle = format.writable_handle()?;
     let image = images::image_at(&handle.to_plain_text(), offset, &handle.to_djot())?;
     Some((handle, image))
 }
