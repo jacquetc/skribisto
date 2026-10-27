@@ -442,13 +442,30 @@
     <keyword xml:lang="uk">story</keyword>
   </keywords>
   <releases>
-    <release type="stable" version="3.2.3" date="2026-10-21T00:00:00Z">
+    <release type="stable" version="3.3.0" date="2026-10-27T00:00:00Z">
       <description>
         <ul>
-          <li>A button in the title bar, beside Export, opens distraction-free mode. F11 and View ▸ Distraction-free Mode still work</li>
-          <li>Software centres such as Discover and GNOME Software now find Skribisto when you search for words like novel, book, writer or manuscript, in English and in each of the 24 interface languages. With the French interface, searching for novel used to find nothing</li>
-          <li>With the System theme, Skribisto now turns light or dark with your desktop while it is open. After a restart, it used to keep the shade it opened in until you chose System again in Settings</li>
-          <li>On Linux, the System theme now reads your desktop's light or dark setting without the busctl tool, and a desktop that does not answer delays startup by a second at most</li>
+          <li>Shift+Enter, or Format ▸ Insert line break, starts a new line in the same paragraph, for the lines of a poem, a song or a letter. Every export keeps the lines. In an older version of Skribisto, the project still opens, each line then a paragraph of its own</li>
+          <li>In the find bar, Shift+Enter goes to the previous match, as its button says. It used to go to the next one</li>
+          <li>In the find bar's replace row, Alt+A replaces every match, on Windows and Linux. It used to do nothing</li>
+          <li>A scene opened from the Trash can be read, selected and copied, and nothing else: typing, Cut, Paste, the Format menu and panel, the right-click menu, and inserting an image, a footnote or a template all leave it as it is. It used to take them</li>
+          <li>With “Always forward” on, nothing takes your words away any more. Ctrl+X, a spelling correction, renaming a link and deleting a table row, column or table used to, and a formatting mark, a picture or a scene break inserted over a selection used to replace it</li>
+          <li>In a scene from the Trash, or with “Always forward” on, the find bar's Replace and Replace All are greyed. They used to look available and do nothing</li>
+          <li>The search preview shows a scene from the Trash read-only, as its own tab does. A synopsis shown there follows “Always forward” only when the game covers synopses, as it does in the scene</li>
+          <li>With a screen reader, the text you write is read paragraph by paragraph, a list is announced as a list with its markers and its depth, and a picture or a footnote is read where it stands. Paragraphs used to run together, and lists were read as plain text</li>
+          <li>Text pasted from a web page or from LibreOffice keeps its line breaks. The words either side of a line break used to run together</li>
+          <li>Importing a Word, OpenDocument or RTF document, or a Scrivener, Plume Creator or older Skribisto project, keeps the line breaks inside its paragraphs. Each line used to become a paragraph of its own</li>
+          <li>A long paragraph in Arabic or Hebrew now shows its lines in reading order. Its first line used to show its last words</li>
+          <li>On a Mac with a Touch Bar, Skribisto no longer crashes when you close one of its windows, such as Settings or Help</li>
+          <li>On a Mac, quitting from the Dock now asks about unsaved changes, as Work ▸ Quit does, and Cancel keeps everything open. Skribisto used to close at once</li>
+          <li>When the system closes Skribisto (you log out, restart or shut down, or another program stops it), your open projects are now saved first, without a question. Skribisto used to close with the last changes unsaved</li>
+          <li>When a menu you opened with the mouse closes, the caret is back in your text and you can go on typing. It used to stay on the menu button, and you had to click back into the text</li>
+          <li>In the title bar's menu, Edit ▸ Paste, Paste without formatting and Select all now work while you write. They were greyed out whenever the menu was open</li>
+          <li>The Mac application menu now has Services, Hide others and Show all, in the language of the interface</li>
+          <li>On a Mac, the help pages name keyboard shortcuts with the Mac's own keys, such as ⌘S. They used to say Ctrl+S</li>
+          <li>Ctrl+W, or ⌘W on a Mac, now closes Settings and the Help window. It used to do nothing in either</li>
+          <li>A note's Details page now shows Appears in the manuscript when you first open it after giving the note a Find in prose tag in the Inspector. It used to wait until you closed the note's tab and opened it again</li>
+          <li>On a Mac and on Windows, choosing Discard when New Work asks about unsaved changes now opens the New Work form. The question closed and nothing else happened</li>
         </ul>
       </description>
     </release>
