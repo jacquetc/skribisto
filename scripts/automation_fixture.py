@@ -108,15 +108,17 @@ def assert_no_running_instance(binary=None, strict=False):
 # ---------------------------------------------------------------------------
 #
 # The probes were written on Linux and sandbox the app with `XDG_CONFIG_HOME`.
-# teksilo resolves the app's directories with etcetera's *app* strategy
-# (`AppPaths::new` calls `choose_app_strategy`), which is XDG on Linux and on
-# macOS alike (`~/.config`, `~/.local/share`, not `~/Library`; measured on the Mac
-# 2026-10-26, whatever teksilo's own doc comment says) and `%APPDATA%` on Windows:
-# there, a probe that set only `XDG_CONFIG_HOME` ran against the machine's real
-# settings, and wrote into them. So every sandbox is built by [`sandbox_env`],
-# and every path into one comes from [`app_config_dir`] or [`app_data_dir`]. The
-# same probe then isolates itself on all three platforms, and reads back the
-# files the app really wrote.
+# teksilo's `AppPaths` puts the app's directories in the XDG layout on Linux and
+# under `%APPDATA%` on Windows. On macOS teksilo 0.21.0 used the XDG layout too
+# (`~/.config`, `~/.local/share`); later versions use Apple's,
+# `~/Library/Application Support/<bundle id>/{config,data}`, and on first start
+# move the XDG folders there. A probe that set only `XDG_CONFIG_HOME` ran against
+# the machine's real settings on Windows, and on such a Mac it would create the
+# real Application Support folder, after which the user's own settings are never
+# moved. So every sandbox is built by [`sandbox_env`] (which sandboxes `HOME` too
+# on macOS), and every path into one comes from [`app_config_dir`] or
+# [`app_data_dir`]. The same probe then isolates itself on all three platforms,
+# and reads back the files the app really wrote.
 
 #: `identity::AppIdentity::community()`'s triple, from which `AppPaths::new`
 #: derives the app's directory names on every platform.
@@ -201,13 +203,17 @@ def sandbox_env(config_home, extra=None, base=None):
     it holds `%APPDATA%` and `%LOCALAPPDATA%`. `extra` is merged in first, so a
     probe's own variables (`XDG_DATA_HOME`, a `HOME`) survive.
 
-    macOS adds one thing: the app's sockets live in its data directory, and
+    macOS adds two things. The app's sockets live in its data directory, and
     Darwin's `sun_path` holds 104 bytes, which a data directory deep in a
     scratch folder overflows (the bind then fails without a word). So there the
     data directory is reached through a short link in `/tmp` (see
     [`_short_link`]): the probe's own `XDG_DATA_HOME` when it set one, else a
     `data` folder beside `config_home`. Never the machine's real
     `~/.local/share`, which a probe that set no data directory used to share.
+    And `HOME` is a sandbox too, also through a short link (the probe's own
+    `HOME` when it set one, else a `home` folder beside `config_home`): a
+    teksilo that puts a Mac application's files in `~/Library/Application
+    Support` reads `HOME` and nothing else.
 
     `base` defaults to this process's environment.
     """
@@ -217,6 +223,8 @@ def sandbox_env(config_home, extra=None, base=None):
     if IS_MACOS:
         data_home = (extra or {}).get("XDG_DATA_HOME") or os.path.join(config_home, "data")
         env["XDG_DATA_HOME"] = _short_link(data_home)
+        home = (extra or {}).get("HOME") or os.path.join(config_home, "home")
+        env["HOME"] = _short_link(home)
     elif IS_WINDOWS:
         env["APPDATA"] = os.path.join(config_home, "AppData", "Roaming")
         env["LOCALAPPDATA"] = os.path.join(config_home, "AppData", "Local")
@@ -226,10 +234,12 @@ def sandbox_env(config_home, extra=None, base=None):
 def _short_link(path):
     """A short path in `/tmp` to the directory `path` (macOS, for sockets).
 
-    The app binds its sockets in `<data dir>/skribisto/run/`, and Darwin's
-    `sun_path` holds 104 bytes with the NUL. A symlink named after a hash of
-    `path` keeps that well inside the limit: the same directory always gets the
-    same link, and every file still lands in `path`.
+    Built against teksilo 0.21.0, the app binds its sockets in
+    `<data dir>/skribisto/run/`, and Darwin's `sun_path` holds 104 bytes with
+    the NUL. A symlink named after a hash of `path` keeps that well inside the
+    limit: the same directory always gets the same link, and every file still
+    lands in `path`. (A later teksilo gives the app a runtime directory under
+    `/var/folders/` for its sockets, short whatever `HOME` is.)
     """
     import hashlib
 
@@ -256,6 +266,8 @@ def app_config_dir(env):
     `workspace.toml`, ...), as `AppPaths::config_dir` resolves it."""
     if IS_WINDOWS:
         return os.path.join(env["APPDATA"], APP_ORGANIZATION, APP_NAME, "config")
+    if IS_MACOS and _apple_layout(env):
+        return os.path.join(_bundle_dir(env), "config")
     root = env.get("XDG_CONFIG_HOME") or os.path.join(env["HOME"], ".config")
     return os.path.join(root, APP_NAME.lower())
 
@@ -265,8 +277,48 @@ def app_data_dir(env):
     `AppPaths::data_dir` resolves it."""
     if IS_WINDOWS:
         return os.path.join(env["APPDATA"], APP_ORGANIZATION, APP_NAME, "data")
+    if IS_MACOS and _apple_layout(env):
+        return os.path.join(_bundle_dir(env), "data")
     root = env.get("XDG_DATA_HOME") or os.path.join(env["HOME"], ".local", "share")
     return os.path.join(root, APP_NAME.lower())
+
+
+def _bundle_dir(env):
+    """`~/Library/Application Support/<bundle id>` under `env`'s `HOME`."""
+    bundle = f"{APP_QUALIFIER}.{APP_ORGANIZATION.lower()}.{APP_NAME}"
+    return os.path.join(env["HOME"], "Library", "Application Support", bundle)
+
+
+_LAYOUTS = {}
+
+
+def _apple_layout(env):
+    """Whether the binary under test keeps a Mac's files in Application Support.
+
+    Asked of the binary itself, since that depends on the teksilo it was built
+    against and no version number says which: `--config` with nothing in it
+    reports the settings file it would write, and `--dump-config` stops before
+    any window. Only ever under a sandboxed `HOME` ([`sandbox_env`]): run with the
+    real one, it would create the real Application Support folder.
+    """
+    home = env.get("HOME") or ""
+    if not home.startswith("/tmp/sk-"):
+        raise RuntimeError(f"refusing to ask the app where it keeps its files under "
+                           f"HOME={home!r}: build the environment with sandbox_env")
+    binary = skribisto_binary()
+    key = (binary, home, env.get("XDG_CONFIG_HOME"))
+    if key not in _LAYOUTS:
+        empty = os.path.join(home, "empty-pins.toml")
+        with open(empty, "w", encoding="utf-8"):
+            pass
+        done = subprocess.run([binary, "--config", empty, "--dump-config"], env=env,
+                              capture_output=True, text=True, timeout=60)
+        said = re.search(r"pinned \d+ settings? from .* into (.*)$", done.stderr, re.M)
+        if not said:
+            raise RuntimeError(f"the app did not say where it keeps its settings:\n"
+                               f"{done.stderr[-2000:]}")
+        _LAYOUTS[key] = "/Library/Application Support/" in said.group(1)
+    return _LAYOUTS[key]
 
 
 def stop_strays(binary=None):
