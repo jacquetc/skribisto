@@ -125,7 +125,11 @@ impl PlumeSource {
             if !file.is_file() {
                 continue;
             }
-            let name = file.name().trim_start_matches('/').to_string();
+            let name = file
+                .name()
+                .map_err(|e| damaged(format!("entry {i}: {e}")))?
+                .trim_start_matches('/')
+                .to_string();
             let buf = guard.read(&mut file).map_err(|e| {
                 if skrib_format::zip_guard::refused(&e).is_some() {
                     e

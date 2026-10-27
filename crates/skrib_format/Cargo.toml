@@ -37,7 +37,7 @@ uuid = { workspace = true }
 blake3 = "1"
 text-document = { workspace = true }
 ron = "0.12.2"
-zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
+zip = { version = "9.1.2", default-features = false, features = ["deflate"] }
 tempfile = "3"
 walkdir = "2"
 unicode-normalization = "0.1"

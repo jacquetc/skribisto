@@ -21,7 +21,7 @@ name = "scrivener_fixtures"
 
 [dependencies]
 # Writing the zip containers (backups, iOS exports, a template's project).
-zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
+zip = { version = "9.1.2", default-features = false, features = ["deflate"] }
 # A Scrivener 3 .scrivtemplate's project zip.
 base64 = "0.22"
 

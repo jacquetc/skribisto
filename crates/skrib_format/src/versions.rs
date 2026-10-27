@@ -514,10 +514,12 @@ fn zip_rows(path: &Path) -> Result<Vec<VersionRow>> {
 
     // Collect first: `file_names` borrows the archive immutably and `by_name`
     // needs it mutably, so the two cannot overlap.
+    // A name zip cannot decode is no `items.ron`: it could not be read by name either.
     let mut items_entries: Vec<String> = archive
         .file_names()
+        .filter_map(Result::ok)
         .filter(|n| n.starts_with("binders/") && n.ends_with("/items.ron"))
-        .map(str::to_string)
+        .map(std::borrow::Cow::into_owned)
         .collect();
     items_entries.sort();
 

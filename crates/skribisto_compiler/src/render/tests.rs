@@ -4394,7 +4394,7 @@ fn typed_punctuation_reaches_every_format_as_typed() {
         let mut text = String::new();
         for i in 0..zip.len() {
             let mut member = zip.by_index(i).unwrap();
-            let name = member.name().to_string();
+            let name = member.name().expect("member name").into_owned();
             if name.ends_with(".xml") || name.ends_with(".xhtml") {
                 std::io::Read::read_to_string(&mut member, &mut text).unwrap();
             }
@@ -4529,7 +4529,7 @@ fn a_typed_title_reaches_every_format_with_all_its_characters() {
         let mut text = String::new();
         for i in 0..zip.len() {
             let mut member = zip.by_index(i).unwrap();
-            let name = member.name().to_string();
+            let name = member.name().expect("member name").into_owned();
             if name.ends_with(".xml") || name.ends_with(".xhtml") {
                 std::io::Read::read_to_string(&mut member, &mut text).unwrap();
             }
@@ -4935,7 +4935,7 @@ fn an_epub_carries_its_books_cover_in_the_package_and_not_inline() {
         let mut all = String::new();
         for i in 0..zip.len() {
             let mut f = zip.by_index(i).unwrap();
-            let name = f.name().to_string();
+            let name = f.name().expect("member name").into_owned();
             if name.ends_with(".opf") || name.ends_with(".xhtml") {
                 let mut s = String::new();
                 std::io::Read::read_to_string(&mut f, &mut s).unwrap();

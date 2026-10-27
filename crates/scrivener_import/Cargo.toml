@@ -27,7 +27,7 @@ skrib_format = { workspace = true }
 # other importers use, always behind `xml_depth`'s ceiling.
 roxmltree = "0.21.1"
 # Scrivener backups, iOS exports and the zip inside a .scrivtemplate.
-zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
+zip = { version = "9.1.2", default-features = false, features = ["deflate"] }
 # The model crosses a long operation's boundary as JSON.
 serde = { workspace = true }
 uuid = { workspace = true }

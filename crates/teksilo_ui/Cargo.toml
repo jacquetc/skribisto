@@ -211,7 +211,7 @@ ureq = "3"
 # Extract the three French variants from grammalecte.net's single shared zip
 # (the `ZipMember` registry source). Locked at 0.6.6 already (transitive), so no
 # new version enters the tree.
-zip = "8.6.0"
+zip = "9.1.2"
 # The spell-checker itself — a pure-Rust, Hunspell-compatible engine (no C++
 # toolchain, no system library, MPL-2.0). Fed the same `.aff`/`.dic` a hunspell
 # dictionary ships.

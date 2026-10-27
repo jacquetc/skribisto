@@ -261,6 +261,19 @@ pub fn refused(error: &anyhow::Error) -> Option<&ZipRefused> {
     })
 }
 
+/// A member's name as a message shows it: as zip decoded it, or its bytes read leniently
+/// when zip could not.
+///
+/// zip reports a name that is neither UTF-8 nor CP437 as an error. Every byte string is one
+/// or the other, so the second branch never runs in practice, but a message naming a member
+/// must not be the thing that fails.
+pub fn shown_name(name: zip::result::ZipResult<std::borrow::Cow<'_, str>>, raw: &[u8]) -> String {
+    match name {
+        Ok(name) => name.into_owned(),
+        Err(_) => String::from_utf8_lossy(raw).into_owned(),
+    }
+}
+
 /// A running account of what one archive has unpacked, against its [`ZipLimits`].
 ///
 /// One per archive opened: the ratio and the ceiling for the whole archive are
@@ -326,18 +339,17 @@ impl ZipGuard {
         archive: &mut ZipArchive<R>,
         mut wanted: impl FnMut(&str) -> bool,
     ) -> Result<(), ZipRefused> {
-        if archive.len() > self.limits.max_entries {
-            return Err(ZipRefused::TooManyEntries {
-                entries: archive.len(),
-                limit: self.limits.max_entries,
-            });
-        }
+        self.check_entry_count(archive.len())?;
         let mut declared_total: u64 = 0;
         for index in 0..archive.len() {
-            let Some(name) = archive.name_for_index(index) else {
-                continue;
+            // A name zip cannot decode is weighed, not skipped: no reader asks for it by
+            // name, but one that walks every member would still inflate it.
+            let asked = match archive.name_for_index(index) {
+                Some(Ok(name)) => wanted(&name),
+                Some(Err(_)) => true,
+                None => continue,
             };
-            if !wanted(name) {
+            if !asked {
                 continue;
             }
             // A member whose header cannot be read cannot be inflated either, by this
@@ -348,21 +360,55 @@ impl ZipGuard {
             if entry.is_dir() {
                 continue;
             }
-            let declared = entry.size();
-            let budget = self.member_budget(entry.compressed_size());
-            if declared > budget {
-                return Err(ZipRefused::MemberTooLarge {
-                    part: entry.name().to_string(),
-                    limit: budget,
-                    declared: Some(declared),
-                });
-            }
-            declared_total = declared_total.saturating_add(declared);
-            if declared_total > self.limits.max_total_bytes {
-                return Err(ZipRefused::ArchiveTooLarge {
-                    limit: self.limits.max_total_bytes,
-                });
-            }
+            self.check_declared(
+                || shown_name(entry.name(), entry.name_raw()),
+                entry.size(),
+                entry.compressed_size(),
+                &mut declared_total,
+            )?;
+        }
+        Ok(())
+    }
+
+    /// Refuse an archive that lists more than `entries` members may.
+    ///
+    /// This and the two below are what the archive-wide checks ask of each archive and
+    /// each member, by its sizes alone, for a reader whose archive comes from another
+    /// version of the zip crate: the DOCX reader, which reads the members `docx-rs`
+    /// reads, through `docx-rs`'s own zip.
+    pub fn check_entry_count(&self, entries: usize) -> Result<(), ZipRefused> {
+        if entries > self.limits.max_entries {
+            return Err(ZipRefused::TooManyEntries {
+                entries,
+                limit: self.limits.max_entries,
+            });
+        }
+        Ok(())
+    }
+
+    /// Refuse a member that declares more than its own budget, or that takes the
+    /// declared total of the members weighed so far (`declared_total`, which the caller
+    /// keeps across them) past the archive's. `part` names it, asked only to refuse it.
+    pub fn check_declared(
+        &self,
+        part: impl FnOnce() -> String,
+        declared: u64,
+        compressed: u64,
+        declared_total: &mut u64,
+    ) -> Result<(), ZipRefused> {
+        let budget = self.member_budget(compressed);
+        if declared > budget {
+            return Err(ZipRefused::MemberTooLarge {
+                part: part(),
+                limit: budget,
+                declared: Some(declared),
+            });
+        }
+        *declared_total = declared_total.saturating_add(declared);
+        if *declared_total > self.limits.max_total_bytes {
+            return Err(ZipRefused::ArchiveTooLarge {
+                limit: self.limits.max_total_bytes,
+            });
         }
         Ok(())
     }
@@ -381,13 +427,28 @@ impl ZipGuard {
         entry: &mut ZipFile<'_, R>,
         out: &mut W,
     ) -> anyhow::Result<u64> {
-        let part = entry.name().to_string();
-        let own = self.member_budget(entry.compressed_size());
+        let part = shown_name(entry.name(), entry.name_raw());
+        let (declared, compressed) = (entry.size(), entry.compressed_size());
+        self.copy_member(&part, declared, compressed, entry, out)
+    }
+
+    /// [`ZipGuard::copy`] for a member read through another version of the zip crate:
+    /// `part` names it, `declared` and `compressed` are its header's sizes, and
+    /// `member` reads its inflated bytes.
+    pub fn copy_member<W: Write>(
+        &mut self,
+        part: &str,
+        declared: u64,
+        compressed: u64,
+        member: &mut impl Read,
+        out: &mut W,
+    ) -> anyhow::Result<u64> {
+        let own = self.member_budget(compressed);
         let left = self.limits.max_total_bytes.saturating_sub(self.written);
         let too_large = |declared| {
             if own <= left {
                 ZipRefused::MemberTooLarge {
-                    part: part.clone(),
+                    part: part.to_string(),
                     limit: own,
                     declared,
                 }
@@ -398,10 +459,10 @@ impl ZipGuard {
             }
         };
         let budget = own.min(left);
-        if entry.size() > budget {
-            return Err(anyhow::Error::new(too_large(Some(entry.size()))));
+        if declared > budget {
+            return Err(anyhow::Error::new(too_large(Some(declared))));
         }
-        let copied = std::io::copy(&mut (&mut *entry).take(budget.saturating_add(1)), out)
+        let copied = std::io::copy(&mut member.take(budget.saturating_add(1)), out)
             .with_context(|| format!("{part} could not be read"))?;
         if copied > budget {
             return Err(anyhow::Error::new(too_large(None)));
@@ -410,7 +471,7 @@ impl ZipGuard {
         self.written = self.written.saturating_add(copied);
         self.compressed = self
             .compressed
-            .saturating_add(entry.compressed_size())
+            .saturating_add(compressed)
             .min(self.archive_len);
         let ratio_limit =
             RATIO_FLOOR_BYTES.max(self.compressed.saturating_mul(self.limits.max_ratio));
@@ -453,11 +514,14 @@ impl ZipGuard {
     /// archive as soon as one goes past its budget or fails to read.
     ///
     /// For an archive handed whole to a reader that does its own reading, and
-    /// reserves what the headers declare (`docx-rs`): once this has passed, every
-    /// member that reader can open unpacks to no more than its budget, and all of
-    /// them together to no more than the archive's. A member that cannot be opened
-    /// at all (encrypted, or in a method this build does not read) is passed over,
-    /// since that reader cannot open it either.
+    /// reserves what the headers declare: once this has passed, every member that
+    /// reader can open unpacks to no more than its budget, and all of them together
+    /// to no more than the archive's. A member that cannot be opened at all
+    /// (encrypted, or in a method this build does not read) is passed over, since
+    /// that reader cannot open it either, **provided it reads with this same version
+    /// of the zip crate**. A reader on another one (`docx-rs`) is weighed member by
+    /// member through its own, with [`ZipGuard::check_declared`] and
+    /// [`ZipGuard::copy_member`].
     pub fn verify_all<R: Read + Seek>(
         &mut self,
         archive: &mut ZipArchive<R>,

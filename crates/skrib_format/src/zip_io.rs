@@ -130,7 +130,10 @@ fn extract_guarded<R: std::io::Read + std::io::Seek>(
         // tree on Windows and Unix; a colon it allows, see its module docs).
         // Requiring both is deliberate: they disagree only on names no writer
         // here produces.
-        let raw = entry.name().to_string();
+        let raw = entry
+            .name()
+            .with_context(|| format!("reading the name of entry {i}"))?
+            .into_owned();
         let is_dir = entry.is_dir();
         let name = raw.strip_suffix('/').unwrap_or(&raw);
 

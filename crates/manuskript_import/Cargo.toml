@@ -32,7 +32,7 @@ skrib_format = { workspace = true }
 chrono = { workspace = true }
 uuid = { workspace = true }
 # Reading zipped `.msk` containers.
-zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
+zip = { version = "9.1.2", default-features = false, features = ["deflate"] }
 # `world.opml`, `plots.xml`, `revisions.xml`, and every format-0 member.
 roxmltree = "0.21.1"
 # `settings.txt` is JSON. (`settings.pickle`, the format-0 sibling, is never

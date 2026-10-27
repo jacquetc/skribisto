@@ -117,8 +117,12 @@ fn expand(name: String, bytes: Vec<u8>, out: &mut Vec<(String, Vec<u8>)>) {
                 Ok(member) => member,
                 Err(e) => panic!("{name} member {i}: {e}"),
             };
-            let inner = format!("{name}!{}", member.name());
-            out.push((format!("{inner} (name)"), member.name().as_bytes().to_vec()));
+            let member_name = match member.name() {
+                Ok(member_name) => member_name.into_owned(),
+                Err(e) => panic!("{name} member {i}: {e}"),
+            };
+            let inner = format!("{name}!{member_name}");
+            out.push((format!("{inner} (name)"), member_name.into_bytes()));
             let mut data = Vec::new();
             if let Err(e) = member.read_to_end(&mut data) {
                 panic!("{inner}: {e}");

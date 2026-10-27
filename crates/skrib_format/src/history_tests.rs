@@ -250,7 +250,7 @@ fn rewrite_zip_member(path: &str, member: &str, contents: &[u8]) {
     let mut writer = zip::ZipWriter::new(file);
     for index in 0..archive.len() {
         let mut entry = archive.by_index(index).expect("entry");
-        let name = entry.name().to_string();
+        let name = entry.name().expect("entry name").into_owned();
         let mut data = Vec::new();
         entry.read_to_end(&mut data).expect("entry bytes");
         writer

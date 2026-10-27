@@ -76,7 +76,10 @@ fn all_xml(container: &str) -> String {
     });
     let mut zip = zip::ZipArchive::new(std::io::Cursor::new(bytes))
         .unwrap_or_else(|e| panic!("{container} is not a zip: {e}"));
-    let names: Vec<String> = zip.file_names().map(str::to_string).collect();
+    let names: Vec<String> = zip
+        .file_names()
+        .map(|name| name.expect("member name").into_owned())
+        .collect();
     let mut out = String::new();
     for name in names {
         if !name.ends_with(".xml") {

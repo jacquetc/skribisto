@@ -238,7 +238,11 @@ impl ManuskriptSource {
             if !entry.is_file() {
                 continue;
             }
-            let Some(name) = normalise_member(entry.name()) else {
+            let Some(name) = normalise_member(
+                &entry
+                    .name()
+                    .map_err(|e| damaged(format!("entry {i}: {e}")))?,
+            ) else {
                 continue;
             };
             let buf = guard.read(&mut entry).map_err(|e| {

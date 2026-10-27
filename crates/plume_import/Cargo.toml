@@ -30,7 +30,7 @@ skribisto_model = { workspace = true }
 skrib_format = { workspace = true }
 chrono = { workspace = true }
 # Reading .plume containers (single-file zip) and their XML.
-zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
+zip = { version = "9.1.2", default-features = false, features = ["deflate"] }
 roxmltree = "0.21.1"
 
 [dev-dependencies]

@@ -330,7 +330,10 @@ impl<'d> Index<'d> {
             let entry = archive
                 .by_index_raw(i)
                 .map_err(|e| unreadable(e.to_string()))?;
-            let raw = entry.name().replace('\\', "/");
+            let raw = entry
+                .name()
+                .map_err(|e| unreadable(format!("entry {i}: {e}")))?
+                .replace('\\', "/");
             if entry.encrypted() {
                 return Err(Refusal::ArchiveEncrypted {
                     file: label.clone(),

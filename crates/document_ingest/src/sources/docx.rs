@@ -387,7 +387,7 @@ impl std::error::Error for UnfinishedPart {}
 /// short preamble was enough to hide any nesting behind it from the check and
 /// hand the whole of it to `docx-rs`.
 fn refuse_unreadable_parts(bytes: &[u8]) -> Result<()> {
-    let Ok(mut archive) = zip::ZipArchive::new(std::io::Cursor::new(bytes)) else {
+    let Ok(mut archive) = zip_docx::ZipArchive::new(std::io::Cursor::new(bytes)) else {
         // Not a zip at all: `read_docx` says so, and parses nothing.
         return Ok(());
     };
@@ -415,18 +415,58 @@ fn refuse_unreadable_parts(bytes: &[u8]) -> Result<()> {
 /// ceiling without keeping it — so once this passes, every part `docx-rs` opens
 /// reserves and reads no more than its budget.
 ///
+/// The guard reads through `docx-rs`'s own zip (`zip_docx`), not through
+/// [`ZipGuard::check_directory`](skrib_format::zip_guard::ZipGuard::check_directory) and
+/// [`ZipGuard::verify_all`](skrib_format::zip_guard::ZipGuard::verify_all), which take
+/// the workspace's. A member is passed over when it cannot be opened, which is safe only
+/// if `docx-rs` cannot open it either: another version of the zip crate, stricter about a
+/// malformed header, would pass over the very member `docx-rs` then inflates unguarded.
+///
 /// Not a zip at all is `Ok`: `read_docx` says so, and parses nothing.
 fn refuse_oversized_parts(bytes: &[u8]) -> Result<()> {
-    let Ok((mut archive, mut guard)) = skrib_format::zip_guard::ZipGuard::open(
-        crate::sources::DOCUMENT_ZIP_LIMITS,
-        std::io::Cursor::new(bytes),
-    ) else {
+    let Ok(mut archive) = zip_docx::ZipArchive::new(std::io::Cursor::new(bytes)) else {
         return Ok(());
     };
+    let mut guard = skrib_format::zip_guard::ZipGuard::new(
+        crate::sources::DOCUMENT_ZIP_LIMITS,
+        u64::try_from(bytes.len()).unwrap_or(u64::MAX),
+    );
     // Every member, because `docx-rs` follows the document's relationships to parts
-    // this check cannot predict, and reads every image besides.
-    guard.check_directory(&mut archive, |_| true)?;
-    guard.verify_all(&mut archive)?;
+    // this check cannot predict, and reads every image besides. Each one's declared
+    // size first, before a byte is inflated, then each one inflated.
+    guard.check_entry_count(archive.len())?;
+    let mut declared_total = 0;
+    for index in 0..archive.len() {
+        let Ok(member) = archive.by_index_raw(index) else {
+            continue;
+        };
+        if member.is_dir() {
+            continue;
+        }
+        guard.check_declared(
+            || member.name().to_string(),
+            member.size(),
+            member.compressed_size(),
+            &mut declared_total,
+        )?;
+    }
+    for index in 0..archive.len() {
+        let Ok(mut member) = archive.by_index(index) else {
+            continue;
+        };
+        if member.is_dir() {
+            continue;
+        }
+        let part = member.name().to_string();
+        let (declared, compressed) = (member.size(), member.compressed_size());
+        guard.copy_member(
+            &part,
+            declared,
+            compressed,
+            &mut member,
+            &mut std::io::sink(),
+        )?;
+    }
     Ok(())
 }
 
@@ -463,7 +503,7 @@ const EMPTY_RELATIONSHIPS: &str = "<?xml version=\"1.0\" encoding=\"UTF-8\" stan
 fn prepared_package(bytes: &[u8]) -> std::borrow::Cow<'_, [u8]> {
     use std::borrow::Cow;
 
-    let Ok(mut archive) = zip::ZipArchive::new(std::io::Cursor::new(bytes)) else {
+    let Ok(mut archive) = zip_docx::ZipArchive::new(std::io::Cursor::new(bytes)) else {
         return Cow::Borrowed(bytes);
     };
     let main = main_part(&mut archive);
@@ -508,7 +548,7 @@ fn prepared_package(bytes: &[u8]) -> std::borrow::Cow<'_, [u8]> {
 
 /// The main document part, found as `docx-rs` finds it: through `_rels/.rels`, and
 /// `word/document.xml` when the package names none.
-fn main_part(archive: &mut zip::ZipArchive<std::io::Cursor<&[u8]>>) -> String {
+fn main_part(archive: &mut zip_docx::ZipArchive<std::io::Cursor<&[u8]>>) -> String {
     use docx_rs::FromXML;
 
     docx_rs::read_zip(archive, "_rels/.rels")
@@ -522,14 +562,14 @@ fn main_part(archive: &mut zip::ZipArchive<std::io::Cursor<&[u8]>>) -> String {
 /// added where the archive has no such member. Every other member is copied as it is
 /// stored, without being inflated again.
 fn rebuilt(
-    archive: &mut zip::ZipArchive<std::io::Cursor<&[u8]>>,
+    archive: &mut zip_docx::ZipArchive<std::io::Cursor<&[u8]>>,
     replaced: &BTreeMap<String, Vec<u8>>,
-) -> zip::result::ZipResult<Vec<u8>> {
+) -> zip_docx::result::ZipResult<Vec<u8>> {
     use std::io::Write;
 
-    let mut writer = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
-    let options = zip::write::SimpleFileOptions::default()
-        .compression_method(zip::CompressionMethod::Deflated);
+    let mut writer = zip_docx::ZipWriter::new(std::io::Cursor::new(Vec::new()));
+    let options = zip_docx::write::SimpleFileOptions::default()
+        .compression_method(zip_docx::CompressionMethod::Deflated);
     let mut written: HashSet<String> = HashSet::new();
     for index in 0..archive.len() {
         let member = archive.by_index_raw(index)?;
@@ -755,7 +795,7 @@ fn symbol_font_character(code: u8) -> Option<char> {
 /// The bytes of the member `name`, or `None` when there is no such member or it
 /// cannot be read, in which case `docx-rs` has nothing to parse either.
 fn read_member(
-    archive: &mut zip::ZipArchive<std::io::Cursor<&[u8]>>,
+    archive: &mut zip_docx::ZipArchive<std::io::Cursor<&[u8]>>,
     name: &str,
 ) -> Option<Vec<u8>> {
     let mut member = archive.by_name(name).ok()?;
@@ -944,7 +984,7 @@ fn want(parts: &mut BTreeMap<String, Demand>, name: &str, demand: Demand) {
 /// or holding anything else would stop this very check, as it would stop
 /// `read_docx`. Those are refused here instead.
 fn xml_parts(
-    archive: &mut zip::ZipArchive<std::io::Cursor<&[u8]>>,
+    archive: &mut zip_docx::ZipArchive<std::io::Cursor<&[u8]>>,
 ) -> Result<BTreeMap<String, Demand>> {
     use docx_rs::FromXML;
 
@@ -1716,7 +1756,7 @@ struct RawStyles {
 }
 
 impl RawStyles {
-    fn read<R: std::io::Read + std::io::Seek>(zip: &mut zip::ZipArchive<R>) -> Option<Self> {
+    fn read<R: std::io::Read + std::io::Seek>(zip: &mut zip_docx::ZipArchive<R>) -> Option<Self> {
         let xml = {
             let mut file = zip.by_name("word/styles.xml").ok()?;
             let mut buffer = Vec::new();
@@ -1796,7 +1836,7 @@ impl RawScan {
     /// best-effort within the same zip open — a document with no comments has no
     /// `word/comments.xml`, and that is not an error either, just an empty map.
     fn read(bytes: &[u8], origin: &str) -> Option<RawScan> {
-        let mut zip = zip::ZipArchive::new(std::io::Cursor::new(bytes)).ok()?;
+        let mut zip = zip_docx::ZipArchive::new(std::io::Cursor::new(bytes)).ok()?;
         let xml = {
             let mut file = zip.by_name("word/document.xml").ok()?;
             let mut buffer = Vec::new();
@@ -1998,7 +2038,7 @@ fn children_named<'a, 'input>(
 /// The relationships of `part`, by id, from the relationships part beside it. Empty when
 /// it has none or they cannot be read: a document without links has nothing to find.
 fn read_relationships<R: std::io::Read + std::io::Seek>(
-    zip: &mut zip::ZipArchive<R>,
+    zip: &mut zip_docx::ZipArchive<R>,
     part: &str,
 ) -> HashMap<String, Relationship> {
     let Some(name) = rels_part_for(std::path::Path::new(part)) else {
@@ -2072,7 +2112,7 @@ fn part_target(part: &str, target: &str) -> String {
 /// not well-formed; either way the caller falls back to an empty map, which is
 /// exactly what a plain Word/LibreOffice `.docx` already looks like from here.
 fn read_comment_attrs<R: std::io::Read + std::io::Seek>(
-    zip: &mut zip::ZipArchive<R>,
+    zip: &mut zip_docx::ZipArchive<R>,
 ) -> Option<HashMap<usize, CommentAttrs>> {
     let xml = {
         let mut file = zip.by_name("word/comments.xml").ok()?;
@@ -2121,7 +2161,7 @@ fn read_comment_attrs<R: std::io::Read + std::io::Seek>(
 /// here: a note is prose the writer wrote, and the four marks
 /// [`rich::RunStyle`] carries are the four they could have applied to it.
 fn read_note_bodies<R: std::io::Read + std::io::Seek>(
-    zip: &mut zip::ZipArchive<R>,
+    zip: &mut zip_docx::ZipArchive<R>,
     part: &str,
     element: &str,
 ) -> HashMap<usize, Vec<Vec<Run>>> {
@@ -2648,7 +2688,7 @@ fn picture_relationship(pic: roxmltree::Node<'_, '_>) -> Option<(String, bool)> 
 /// A note and a comment keep words and no picture, so these are reported rather than
 /// brought in; without this they vanished from the note without a word.
 fn part_pictures<R: std::io::Read + std::io::Seek>(
-    zip: &mut zip::ZipArchive<R>,
+    zip: &mut zip_docx::ZipArchive<R>,
     part: &str,
 ) -> Vec<String> {
     let xml = {
@@ -4381,8 +4421,8 @@ mod tests {
             let rels_name = rels_part_for(std::path::Path::new(main)).expect("a name");
             let mut out = std::io::Cursor::new(Vec::new());
             {
-                let mut writer = zip::ZipWriter::new(&mut out);
-                let options = zip::write::SimpleFileOptions::default();
+                let mut writer = zip_docx::ZipWriter::new(&mut out);
+                let options = zip_docx::write::SimpleFileOptions::default();
                 writer
                     .start_file(rels_name.as_str(), options)
                     .expect("member");
@@ -4398,7 +4438,8 @@ mod tests {
                 writer.finish().expect("finish");
             }
             let bytes = out.into_inner();
-            let mut archive = zip::ZipArchive::new(std::io::Cursor::new(&bytes[..])).expect("zip");
+            let mut archive =
+                zip_docx::ZipArchive::new(std::io::Cursor::new(&bytes[..])).expect("zip");
             let rels = docx_rs::read_document_rels(&mut archive, main)
                 .unwrap_or_else(|e| panic!("{main}: docx-rs reads {rels_name}: {e:?}"));
             assert!(

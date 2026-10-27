@@ -180,9 +180,10 @@ fn load_zip(path: &std::path::Path) -> BTreeMap<String, CarriedFile> {
     // a refusal at read time into a failed save later, on a file the writer
     // never asked for. Silently dropping is right for exactly this set, because
     // by construction this build does not model it and nothing downstream reads
-    // it.
+    // it. A name zip cannot decode is in it too: it cannot be read back by name.
     let unmodelled: Vec<String> = archive
         .file_names()
+        .filter_map(Result::ok)
         .filter(|n| !n.ends_with('/') && !is_modelled(n) && !is_stray_bundle(n))
         .filter(|n| match crate::safe_path::bundle_relative(n) {
             Ok(_) => true,
@@ -191,7 +192,7 @@ fn load_zip(path: &std::path::Path) -> BTreeMap<String, CarriedFile> {
                 false
             }
         })
-        .map(str::to_string)
+        .map(std::borrow::Cow::into_owned)
         .collect();
 
     let mut out = BTreeMap::new();
