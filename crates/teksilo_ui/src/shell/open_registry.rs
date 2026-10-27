@@ -162,25 +162,31 @@ pub fn namespace() -> Option<String> {
     crate::identity::family_paths().map(|p| namespace_for(p.config_dir()))
 }
 
-/// The shared directory holding every instance's lock + socket files. Prefers an
-/// ephemeral runtime dir (`XDG_RUNTIME_DIR`); falls back to the app data dir on
-/// platforms without one (macOS/Windows). That fallback is persistent, so unlike
-/// the tmpfs case a reboot does not clear it — stale lock files are still reaped
-/// by pid on every [`scan`], but see the module doc for why sockets needed an
-/// explicit reap too.
+/// The shared directory holding every instance's lock + socket files: an
+/// ephemeral per-user runtime directory where there is one, else the app data dir.
 ///
-/// **Only the `XDG_RUNTIME_DIR` branch carries the namespace suffix**, because it
-/// is the only one that needs it: that directory is per-login-session and shared
-/// by every installation and sandbox on the machine. The fallback is already
-/// rooted inside *this* installation's own data dir, so it is per-installation for
-/// free.
+/// - **`XDG_RUNTIME_DIR`** (Linux): `$XDG_RUNTIME_DIR/skribisto-<namespace>`, the
+///   path this has always used, so an instance started before an upgrade and one
+///   started after it still find each other.
+/// - **macOS**: teksilo's [`AppPaths::create_runtime_dir`](teksilo::settings::AppPaths::create_runtime_dir),
+///   the per-user temporary directory under `/var/folders/` joined with the bundle
+///   id, then [`MAC_NAMESPACE_LEN`] characters of the namespace.
+/// - **Otherwise** (Windows, or a runtime directory that could not be made): the
+///   data directory's `run/`. Persistent, so unlike the other two a reboot does
+///   not clear it: stale lock files are still reaped by pid on every [`scan`], but
+///   see the module doc for why sockets needed an explicit reap too.
 ///
-/// Namespacing the fallback too breaks macOS outright: there is no
-/// `XDG_RUNTIME_DIR` there, so the path is
-/// `~/Library/Application Support/eu.skribisto.Skribisto/run/…`, and a Unix
-/// domain socket's `sun_path` holds only **104 bytes** on Darwin — the 17-byte
-/// `-{16 hex}` suffix pushes every username over the cap and `bind()` fails
-/// with `ENAMETOOLONG`. `the_macos_socket_path_fits_in_sun_path` pins the budget.
+/// **The two runtime directories carry the namespace**, because both are shared by
+/// every installation and sandbox of the user: nothing that sandboxes Skribisto
+/// moves them. The data directory is already this installation's own.
+///
+/// **Why not the data directory on macOS.** A Unix domain socket's `sun_path`
+/// holds only **104 bytes** on Darwin, and over the cap `bind()` fails with
+/// `ENAMETOOLONG`, silently. The data directory is
+/// `~/Library/Application Support/eu.skribisto.Skribisto/data` since teksilo gives
+/// a Mac application Apple's layout, which left room for user names of 16
+/// characters at most; the runtime directory is about 49 bytes whoever the user
+/// is. `the_macos_socket_path_fits_in_sun_path` pins the budget.
 pub fn dir() -> Option<PathBuf> {
     if let Some(over) = DIR_OVERRIDE.with(|d| d.borrow().clone()) {
         std::fs::create_dir_all(&over).ok()?;
@@ -205,12 +211,40 @@ pub fn dir() -> Option<PathBuf> {
             Some(ns) => format!("skribisto-{ns}"),
             None => "skribisto".to_string(),
         }),
-        // Already inside this installation's own data dir. Every byte spent here
-        // comes out of the macOS `sun_path` budget, so spend none.
-        None => crate::identity::family_paths()?.data_dir().join("run"),
+        None => {
+            let paths = crate::identity::family_paths()?;
+            match (paths.create_runtime_dir(), namespace()) {
+                // Shared by every sandbox of this user: namespaced, shortly.
+                (Ok(Some(runtime)), Some(ns)) => {
+                    let d = runtime.join(&ns[..MAC_NAMESPACE_LEN.min(ns.len())]);
+                    create_private_dir(&d).ok()?;
+                    return Some(d);
+                }
+                // This installation's own data dir: no namespace needed.
+                _ => paths.data_dir().join("run"),
+            }
+        }
     };
     std::fs::create_dir_all(&d).ok()?;
     Some(d)
+}
+
+/// How much of the namespace the macOS runtime directory's folder takes. The full
+/// sixteen would push the longest socket path to 108 bytes, past Darwin's 104; ten
+/// hex digits (40 bits) still tell this user's sandboxes apart.
+/// `the_macos_socket_path_fits_in_sun_path` holds the arithmetic.
+pub(crate) const MAC_NAMESPACE_LEN: usize = 10;
+
+/// Make `dir` readable by its owner only, as the runtime directory it goes in is.
+fn create_private_dir(dir: &Path) -> std::io::Result<()> {
+    let mut builder = std::fs::DirBuilder::new();
+    builder.recursive(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::DirBuilderExt;
+        builder.mode(0o700);
+    }
+    builder.create(dir)
 }
 
 /// Point [`dir`] at a temp directory for the duration of a test (this thread
@@ -1134,16 +1168,16 @@ mod tests {
     }
 
     /// **The macOS budget.** There is no `XDG_RUNTIME_DIR` on macOS, so the
-    /// socket lives under `~/Library/Application Support/…`, and a Unix domain
-    /// socket's `sun_path` holds only **104 bytes** on Darwin. An earlier
-    /// revision namespaced that branch too, for the tidiness of one naming rule,
-    /// and every username went over — `bind()` failed with `ENAMETOOLONG` and
-    /// single-instance silently never engaged on macOS at all.
+    /// socket lives in the data directory's `run/`, and a Unix domain socket's
+    /// `sun_path` holds only **104 bytes** on Darwin. Over it, `bind()` fails
+    /// with `ENAMETOOLONG` and single-instance silently never engages.
     ///
-    /// Computed rather than measured: this suite does not run on Darwin, and the
-    /// failure it guards is a silent degradation to `Standalone`, not a crash
-    /// anyone would notice. `etcetera`'s Apple strategy puts the data dir at
-    /// `~/Library/Application Support/{tld}.{author}.{app}`.
+    /// The directory is teksilo's runtime directory (see [`dir`]): the per-user
+    /// temporary directory, `/var/folders/<2>/<30>/T/`, always 49 bytes, then the
+    /// bundle id and [`MAC_NAMESPACE_LEN`] characters of the namespace. The user's
+    /// name is not in it, which is why this one directory is checked: the data
+    /// directory it replaced, under Application Support, fit user names of 16
+    /// characters at most.
     #[test]
     fn the_macos_socket_path_fits_in_sun_path() {
         // `SocketId::leaf` reads the process-wide identity static; see
@@ -1151,14 +1185,14 @@ mod tests {
         // not only the ones that register a different one, needs this lock.
         let _serial = crate::identity::lock_for_test();
         const DARWIN_SUN_PATH: usize = 104;
-        // Generous: longer than almost any real macOS short name.
-        let long_user = "jean-baptiste-de-la";
         // The directory is the **family** one whatever edition runs (see
         // `namespace`), so an edition with a longer application name does not
-        // lengthen this path — only its socket leaf.
-        for user in ["bo", "cyril", long_user] {
-            let dir =
-                format!("/Users/{user}/Library/Application Support/eu.skribisto.Skribisto/run");
+        // lengthen this path, only its socket leaf.
+        let dirs = [format!(
+            "/var/folders/hh/n792hd1n5ks708vc1_l4b9dr0000gn/T/eu.skribisto.Skribisto/{}",
+            "f".repeat(MAC_NAMESPACE_LEN)
+        )];
+        for dir in dirs {
             for leaf in [
                 SocketId::Primary.leaf(),
                 SocketId::Pid(4_294_967_295).leaf(),

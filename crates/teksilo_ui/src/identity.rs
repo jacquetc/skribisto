@@ -217,10 +217,11 @@ impl AppIdentity {
     /// A short, filesystem-safe discriminator for this identity.
     ///
     /// **Six hex characters, and the length is load-bearing.** This lands in the
-    /// primary socket's file name, which on macOS lives under
-    /// `~/Library/Application Support/eu.skribisto.Skribisto/run/` — and a Unix
-    /// domain socket's `sun_path` holds only 104 bytes on Darwin. A readable
-    /// suffix (`primary-skribisto-pro`) pushes a realistic path to 108 and
+    /// primary socket's file name, which on macOS lives under the per-user
+    /// runtime directory, `/var/folders/<2>/<30>/T/eu.skribisto.Skribisto/<namespace>/`
+    /// (see `open_registry::dir`), and a Unix domain socket's `sun_path` holds only
+    /// 104 bytes on Darwin. A readable suffix (`primary-skribisto-pro`) pushes that
+    /// path to 109 and
     /// `bind()` fails with `ENAMETOOLONG`, which does not crash: it degrades
     /// silently to `Standalone`, so single instance simply never engages and
     /// nobody finds out. `open_registry::tests::the_macos_socket_path_fits_in_sun_path`
