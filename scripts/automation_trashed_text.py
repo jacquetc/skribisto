@@ -22,7 +22,14 @@ prove they do:
   4. the right-click menu offers Copy, and no Cut, Paste, Bold strip or Split scene;
   5. Format ▸ Bold and Insert line break, and Document ▸ Insert footnote and
      Insert image, are disabled;
-  6. after all of it, the text reads exactly as it did.
+  6. after all of it, the text reads exactly as it did, and after a save the
+     scene's Djot in the project file is byte for byte what a save wrote before the
+     probe's first step: the text the screen reader sees carries no formatting,
+     so a bold applied without a word changing would pass every check above.
+
+The routes are these and only these. A version restored from the Versions dock
+deliberately still writes into a trashed item (bringing back the old text of a
+scene the writer has thrown away), and is not driven here.
 
 Run: `python3 scripts/automation_trashed_text.py`
 """
@@ -35,6 +42,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import zipfile
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture  # noqa: E402
@@ -300,6 +308,17 @@ def close_menus(s):
     time.sleep(0.5)
 
 
+def scene_djot(project, marker):
+    """The Djot of the scene whose text holds `marker`, read from the project file."""
+    with zipfile.ZipFile(project) as z:
+        for name in z.namelist():
+            if name.endswith(".djot"):
+                text = z.read(name).decode("utf-8")
+                if marker in text:
+                    return text
+    return None
+
+
 def unchanged(s, before, what):
     after = s.prose_text()
     if after != before:
@@ -317,7 +336,25 @@ def unchanged(s, before, what):
 print("== A trashed item's text stays as it was ==")
 env = fixture.isolated_config(locale="en-US", label="trashed-text", show_welcome=False)
 project = fixture.working_copy(EXAMPLE, "trashed-text")
+MARKER = "In the first millennium of galactic exploration"
 s = Session(fixture.launch_argv(project), env)
+
+
+def save_and_read(s, since, wait):
+    """Ctrl+S, then the scene's Djot once the project file is newer than `since`,
+    or after `wait` seconds when nothing was there to save."""
+    s.key("s", command=True)
+    end = time.time() + wait
+    while time.time() < end:
+        try:
+            if os.path.getmtime(project) > since:
+                text = scene_djot(project, MARKER)
+                if text is not None:
+                    return text
+        except (OSError, zipfile.BadZipFile):
+            pass
+        time.sleep(1.0)
+    return scene_djot(project, MARKER)
 
 try:
     # ── 1. The control, over an ordinary scene ───────────────────────────────
@@ -376,6 +413,14 @@ try:
     before = s.prose_text()
     if not before:
         fail("the trashed scene shows no text", s)
+    # The baseline for step 6, saved before any probe step and after the trash
+    # itself, which is a change: so it is written now, and a save's own way of
+    # writing Djot is on both sides of the comparison.
+    started = os.path.getmtime(project)
+    baseline_djot = save_and_read(s, started, 30)
+    if baseline_djot is None or os.path.getmtime(project) <= started:
+        fail("the project was not saved after the trash", s)
+    baseline_time = os.path.getmtime(project)
     s.shot("trashed-open.png")
     print("2. Trashed and reopened from the Trash dock, read-only, under its banner.")
 
@@ -437,7 +482,20 @@ try:
 
     # ── 6. Nothing moved ─────────────────────────────────────────────────────
     unchanged(s, before, "the whole run")
-    print("6. The trashed text reads exactly as it did.")
-    print("\nPASS: a trashed item's text took no write from any route.")
+    # With nothing written there is nothing to save and the file stays as it was;
+    # a write would have made the project dirty, and this save lands it.
+    saved = save_and_read(s, baseline_time, 15)
+    if saved != baseline_djot:
+        saved = saved or ""
+        at = next((i for i, (a, b) in enumerate(zip(baseline_djot, saved)) if a != b),
+                  min(len(baseline_djot), len(saved)))
+        fail(
+            "the saved scene differs from the one saved before the probe's steps\n"
+            f"  before=...{baseline_djot[max(0, at - 40):at + 40]!r}\n"
+            f"  after =...{saved[max(0, at - 40):at + 40]!r}",
+            s,
+        )
+    print("6. The trashed text reads exactly as it did, and saves as the same Djot.")
+    print("\nPASS: a trashed item's text took no write from any of these routes.")
 finally:
     s.close()

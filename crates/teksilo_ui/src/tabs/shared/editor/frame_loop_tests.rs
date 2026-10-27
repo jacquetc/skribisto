@@ -418,6 +418,21 @@ fn a_lexicon_rule_fires_from_the_frame_tick() {
     assert_eq!(plain(&doc), "I saw by the way ");
 }
 
+/// Not on a trashed item's text. Nobody types into its read-only editor, so the
+/// only thing that could set the session off is another write through the handle,
+/// a version restored into the trash, and the session would then rewrite the
+/// trashed text through a handle that asks no filter. Driven exactly as the rule
+/// above fires, over the read-only column.
+#[test]
+fn no_replacement_runs_over_a_trashed_items_text() {
+    let (doc, handle, _session, mut tree) = column_with(true);
+    for c in "I saw btw ".chars() {
+        handle.insert_text(&c.to_string());
+        frame(&mut tree);
+    }
+    assert_eq!(plain(&doc), "I saw btw ", "the trigger stays as written");
+}
+
 /// And so does a punctuation rule.
 #[test]
 fn a_punctuation_rule_fires_from_the_frame_tick() {

@@ -502,7 +502,15 @@ impl Widget for TypographyBoundEditor {
         }
         // Replace-while-typing, on the same footing and for the same reason: the
         // work needs the handle, so it cannot run from `on_change`.
-        if let Some((doc, replacement)) = self.replacement.clone() {
+        //
+        // Not on a read-only editor: nobody types into one, so the only thing that
+        // could set it off is another write (a version restored into a trashed item
+        // ending in a trigger), and the handle it writes through asks no filter.
+        // Under "Always forward" it stays on: it rewrites what is being typed, as it
+        // is typed, by the writer's own rules (a straight quote into a curly one, a
+        // lexicon trigger into its expansion), which is not taking a committed word
+        // back.
+        if let Some((doc, replacement)) = self.replacement.clone().filter(|_| !read_only) {
             wire_replacements(ctx, &handle, &doc, &replacement);
         }
         // The outward half of the footnote link: tell the dock which note the

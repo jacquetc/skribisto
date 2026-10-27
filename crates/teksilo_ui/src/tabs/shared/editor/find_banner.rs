@@ -297,7 +297,8 @@ impl Widget for FindBanner {
         // field types the letter an Alt+A carries. It matches `Key::A`, which is how
         // a letter arrives (it never matched as `Key::Character('a')`, so the chord
         // did nothing), and not with Ctrl, which is AltGr on Windows: AltGr+A types a
-        // letter on several layouts (ą in Polish). On macOS, Option+A composes a
+        // letter on several layouts (ą in Polish). Nor with Shift: Alt+Shift is
+        // Windows' layout switch, and a writer holding it is not asking for this. On macOS, Option+A composes a
         // character (å) and arrives as that, so the chord is Windows' and Linux's.
         // Where replacing is refused the key is left alone, not swallowed.
         let keyed = VStack::new()
@@ -311,6 +312,7 @@ impl Widget for FindBanner {
                     ..
                 } if modifiers.alt()
                     && !modifiers.ctrl()
+                    && !modifiers.shift()
                     && alt_a.replace_mode_signal().get()
                     && alt_a.may_replace() =>
                 {
