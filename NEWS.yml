@@ -9,6 +9,7 @@ Description:
 - "In the title bar's menu, Edit ▸ Paste, Paste without formatting and Select all now work while you write. They were greyed out whenever the menu was open"
 - "The Mac application menu now has Services, Hide others and Show all, in the language of the interface"
 - "On a Mac, the help pages name keyboard shortcuts with the Mac's own keys, such as ⌘S. They used to say Ctrl+S"
+- "Ctrl+W, or ⌘W on a Mac, now closes Settings and the Help window. It used to do nothing in either"
 ---
 Version: 3.2.3
 Date: 2026-10-21

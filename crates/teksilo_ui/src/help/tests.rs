@@ -845,3 +845,21 @@ fn added_tooltip_translations_preserve_clickable_cascade_links() {
         );
     }
 }
+
+/// Ctrl+W (⌘W on macOS) closes the Help window, with focus in the reading pane or
+/// nowhere at all. It did nothing before: the project window's Ctrl+W is in another
+/// window's registry, and this window's held none.
+#[test]
+fn ctrl_w_closes_the_help_window() {
+    let vm = help_vm::HelpViewModel::new();
+    let mut tree = WidgetTree::new();
+    tree.add(panel::HelpPanel::new(vm));
+    tree.layout(SizeProposal::exact(940.0, 680.0));
+    assert!(
+        !tree.take_close_window_request(),
+        "the premise: nothing asked yet"
+    );
+
+    tree.press_key(Key::W, Modifiers::COMMAND);
+    assert!(tree.take_close_window_request(), "Ctrl+W left Help open");
+}

@@ -37,6 +37,7 @@ use teksilo::widgets::{
 
 use super::help_vm::HelpViewModel;
 use super::{HelpBody, HelpTopicSpec};
+use crate::shared::shortcut_group::{ShortcutGroup, ShortcutGroupExt};
 
 /// A flat backdrop of `role` behind `child`.
 ///
@@ -52,6 +53,9 @@ fn ground(role: SurfaceRole, child: WidgetId) -> impl Widget + 'static {
         .padding(0.0)
         .child(child)
 }
+
+/// The shortcut and the action that close the Help window with Ctrl+W (⌘W on macOS).
+pub(super) const CLOSE_SHORTCUT: &str = "help.close";
 
 /// Width of the table of contents. Wide enough for the longest topic title in both
 /// shipped locales without wrapping.
@@ -97,6 +101,19 @@ impl Widget for HelpPanel {
         // merely re-resolve labels — and it has to re-resolve the filter's own
         // placeholder too, which no child of it can do on its behalf.
         ctx.locale_signal().bind_to(sid, reg, BindingLevel::Rebuild);
+
+        // Ctrl+W (⌘W on macOS) closes the Help window, as it closes every other one.
+        // Registered here because this panel is that window's whole body (see
+        // `window::help_window_config`) and its tree is its own: the project window's
+        // Ctrl+W lives in another registry and never reaches this one.
+        ctx.register_shortcut_global(
+            Shortcut::new(CLOSE_SHORTCUT)
+                .group(ShortcutGroup::Help)
+                .name(tr!(shortcut_name_help_close()))
+                .primary(KeyStroke::ctrl(Key::W))
+                .build(),
+        );
+        ctx.register_action_global(Action::new(CLOSE_SHORTCUT).on_invoke(|_i, c| c.close_window()));
 
         let nav_widget = self.build_nav();
         let nav = ctx.add_boxed(Box::new(nav_widget));

@@ -1070,3 +1070,72 @@ fn the_card_fits_the_launchers_fixed_window() {
         card_h - HEADER_H - FOOTER_H
     );
 }
+
+/// A page with its own Ctrl+W, as the project window has (`work.close`).
+#[derive(Debug)]
+struct PageWithCloseWork {
+    closes: Rc<std::cell::Cell<u32>>,
+}
+
+impl Widget for PageWithCloseWork {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        ctx.register_shortcut_global(
+            Shortcut::new("work.close")
+                .group(ShortcutGroup::Work)
+                .primary(KeyStroke::ctrl(Key::W))
+                .build(),
+        );
+        let closes = self.closes.clone();
+        ctx.register_action_global(
+            Action::new("work.close").on_invoke(move |_i, _c| closes.set(closes.get() + 1)),
+        );
+        Vec::new()
+    }
+
+    fn layout_response(&self, proposal: SizeProposal, _ctx: &LayoutContext) -> LayoutResponse {
+        proposal.resolve(0.0, 0.0).into()
+    }
+}
+
+/// Ctrl+W (⌘W) closes Settings, and once it is closed the chord is the page's
+/// again.
+///
+/// Two halves, each of which has been wrong. The page's Ctrl+W cannot reach into
+/// an in-window dialog, so before the panel had its own a Mac writer pressed ⌘W
+/// in Settings and nothing happened. And a dismissed modal is parked, not
+/// destroyed, so an ungated binding would outlive the dialog and take Ctrl+W
+/// from Close Work for the rest of the session: `settings.close` sorts before
+/// `work.close` in the same group.
+#[test]
+fn ctrl_w_closes_settings_and_then_belongs_to_the_page_again() {
+    use teksilo::core::overlay::{DismissBehavior, OverlayPlacement, OverlayRequest};
+
+    let app_ctx = std::rc::Rc::new(frontend::AppContext::new());
+    let mut tree = crate::test_support::tree_with_settings(&app_ctx);
+    let closes = Rc::new(std::cell::Cell::new(0));
+    let page = tree.add(PageWithCloseWork {
+        closes: closes.clone(),
+    });
+    tree.layout(SizeProposal::exact(1200.0, 800.0));
+    let panel = tree.add(SettingsPanel::without_project());
+    tree.show_overlay(OverlayRequest::new(
+        panel,
+        page,
+        OverlayPlacement::Centered,
+        DismissBehavior::Manual,
+    ));
+    tree.layout(SizeProposal::exact(1200.0, 800.0));
+    assert!(tree.has_modal_overlay(), "the premise: Settings is up");
+
+    tree.press_key(Key::W, Modifiers::COMMAND);
+    assert!(!tree.has_modal_overlay(), "Ctrl+W left Settings open");
+    assert_eq!(closes.get(), 0, "Ctrl+W in Settings closed the project");
+
+    tree.layout(SizeProposal::exact(1200.0, 800.0));
+    tree.press_key(Key::W, Modifiers::COMMAND);
+    assert_eq!(
+        closes.get(),
+        1,
+        "a closed Settings kept Ctrl+W from the project window"
+    );
+}

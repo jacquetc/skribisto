@@ -32,14 +32,16 @@
 //! from the factory defaults, and guarded by a confirmation since there is no undo)
 //! and *Done* (right — closes the window). The header ✕ closes it too.
 //!
-//! ## Three ways out, all kept, and why
+//! ## Four ways out, all kept, and why
 //!
-//! Escape (the modal's [`ModalCloseBehavior::EscapeKey`]), the header ✕ and the
-//! footer's *Done* all do the identical thing — `ctx.dismiss_modal()` — and that
-//! is not a redundancy to trim. Instant-apply is what makes them safe: there is
-//! nothing staged to discard, so "close" carries no decision and no keystroke
-//! can lose work. Each serves a different reader: **Escape** is what a keyboard
-//! user reaches for and what this window owed and did not have; the **✕** is the
+//! Escape (the modal's [`ModalCloseBehavior::EscapeKey`]), Ctrl+W (⌘W on macOS),
+//! the header ✕ and the footer's *Done* all do the identical thing, which is
+//! `ctx.dismiss_modal()`, and that is not a redundancy to trim. Instant-apply is
+//! what makes them safe: there is nothing staged to discard, so "close" carries
+//! no decision and no keystroke can lose work. Each serves a different reader:
+//! **Escape** is what a keyboard user reaches for and what this window owed and
+//! did not have; **Ctrl+W** is what closes every other window, and the habit a
+//! Mac writer brings from every other application's Settings; the **✕** is the
 //! chrome every other panel in the app carries in the same corner; **Done** is
 //! the affordance a mouse user looks for at the end of a dialog, and it is a
 //! button rather than a 16 px glyph in the far corner. Deleting either of the
@@ -97,6 +99,7 @@ pub use tree_expansion_vm::TreeExpansionViewModel;
 pub use work_settings_vm::WorkSettingsViewModel;
 
 use crate::sessions::WorkSession;
+use crate::shared::shortcut_group::{ShortcutGroup, ShortcutGroupExt};
 use crate::shared::{HighlightScope, TypewriterAnchor};
 use skribisto_model::ChapterMode;
 
@@ -123,6 +126,9 @@ const TREE_W: f32 = 262.0;
 const RULE_W: f32 = 1.0;
 /// The default text-scale factor (framework `TEXT_SCALE_KEY` baseline).
 const TEXT_SCALE_DEFAULT: f32 = 1.0;
+/// The shortcut and the action that close the window with Ctrl+W (⌘W on macOS).
+/// See [`SettingsPanel::register_close_shortcut`].
+const CLOSE_SHORTCUT: &str = "settings.close";
 
 /// The pane column's width for a card `card_w` wide — everything the rail and the
 /// rule between them leave.
@@ -326,6 +332,32 @@ impl SettingsPanel {
     /// [`Widget::layout_response`] always reports the full [`CARD_W`]×[`CARD_H`]
     /// aspiration, so the slot handed back is `min(preferred, viewport)` on every
     /// pass rather than a size that shrinks by a margin each time round.
+    /// Ctrl+W (⌘W on macOS) closes Settings, as it closes a window: the fourth
+    /// way out (see the module doc).
+    ///
+    /// Registered here, inside the modal, because the page's own Ctrl+W
+    /// (`work.close`) cannot fire while the modal is up: a key pressed in an
+    /// in-window dialog reaches only the shortcuts its own widgets registered.
+    /// Gated on this panel being active, because dismissing the modal parks
+    /// it dormant rather than destroying it, and a parked panel's Ctrl+W would
+    /// still compete with `work.close` for the same chord on the page.
+    fn register_close_shortcut(&self, ctx: &mut BuildContext) {
+        let open = ctx.activation_signal(ctx.self_id());
+        ctx.register_shortcut_global(
+            Shortcut::new(CLOSE_SHORTCUT)
+                .group(ShortcutGroup::Work)
+                .name(tr!(shortcut_name_settings_close()))
+                .primary(KeyStroke::ctrl(Key::W))
+                .enabled_when(open.clone())
+                .build(),
+        );
+        ctx.register_action_global(
+            Action::new(CLOSE_SHORTCUT)
+                .enabled_when(open)
+                .on_invoke(|_i, c| c.dismiss_modal()),
+        );
+    }
+
     fn card_size(slot_w: f32, slot_h: f32) -> (f32, f32) {
         fn fit(slot: f32, preferred: f32, floor: f32) -> f32 {
             if slot >= preferred {
@@ -466,6 +498,8 @@ impl Widget for SettingsPanel {
         // The body columns claim the height the header leaves rather than a
         // `BODY_H` constant derived from `CARD_H` — that constant is what
         // clipped the footer, since it stayed 575 however short the card got.
+        self.register_close_shortcut(ctx);
+
         let root = teksu!(ctx => Panel {
                 variant: PanelVariant::Raised
                 corner_radius: 10.0
