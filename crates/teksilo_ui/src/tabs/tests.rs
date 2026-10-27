@@ -4768,6 +4768,77 @@ fn the_replace_row_fits_the_pane_and_names_preserve_case_where_it_fits() {
     find.close();
 }
 
+/// **Shift+Enter in the find field goes to the previous match**, as the chevron's
+/// tooltip says.
+///
+/// It went to the *next* one. A `TextInput` submits on Enter whatever the modifiers,
+/// and the banner listened for Shift+Enter on the row around the field, which hears a
+/// key only after the field has had it: by then the field had already stepped forward.
+/// The key is now claimed in a preview on the field's wrapper, before the field sees it.
+#[test]
+fn shift_enter_in_the_find_field_goes_to_the_previous_match() {
+    use teksilo::core::event::{Key, Modifiers};
+    use teksilo::text_document::HighlightFormat;
+
+    let ctx = Rc::new(AppContext::new());
+    let tab = tab_for(
+        &ctx,
+        1,
+        &BinderItemRole::Item,
+        &BinderItemSubRole::Scene,
+        &[],
+        Signal::new(700.0),
+        Signal::new(true),
+        test_typography(),
+        crate::settings::EditorViewMemory::detached(false),
+        &AppIds::new(),
+    );
+    let prose = "one two one two one two one";
+    let doc = tab.main().expect("a scene carries prose").doc.clone();
+    doc.set_plain_text(prose).unwrap();
+    let find = tab
+        .active_find()
+        .cloned()
+        .expect("a scene's prose is searchable");
+
+    let mut tree = crate::test_support::tree_with_events(&ctx);
+    let root = tree.add_boxed(tab_pane(&tab));
+    find.ensure_session(HighlightFormat::default(), HighlightFormat::default());
+    find.open();
+    find.query_signal().set("one".into());
+    find.refresh_query();
+    tree.layout(teksilo::prelude::SizeProposal::exact(1000.0, 700.0));
+    let banner = first_of_type(&tree, root, "FindBanner").expect("the open banner is mounted");
+    let field = first_of_type(&tree, banner, "TextInputField").expect("the query field");
+    tree.focus(field);
+
+    tree.press_key(Key::Enter, Modifiers::NONE);
+    tree.press_key(Key::Enter, Modifiers::NONE);
+    assert_eq!(find.count_signal().get(), 4);
+    let ahead = find.current_signal().get();
+    assert!(ahead >= 2, "two Enters went forward, to match {ahead}");
+
+    tree.press_key(Key::Enter, Modifiers::SHIFT);
+    assert_eq!(
+        find.current_signal().get(),
+        ahead - 1,
+        "Shift+Enter steps back one match"
+    );
+    tree.press_key(Key::Enter, Modifiers::NONE);
+    assert_eq!(
+        find.current_signal().get(),
+        ahead,
+        "and Enter still steps forward"
+    );
+    assert_eq!(
+        find.query_signal().get(),
+        "one",
+        "nothing was typed into the field"
+    );
+    assert_eq!(doc.to_plain_text().unwrap(), prose, "nor into the prose");
+    find.close();
+}
+
 /// **An open cell editor holds the keyboard, so Escape cancels and Enter commits.**
 ///
 /// `TreeTableView` never moved focus into the editor a cell delegate swapped in

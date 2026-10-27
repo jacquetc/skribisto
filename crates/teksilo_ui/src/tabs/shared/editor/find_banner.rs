@@ -143,12 +143,29 @@ impl Widget for FindBanner {
         // The query field is built as a standalone widget so we can hold its id
         // and steer the on-open autofocus straight at it — the replace-mode toggle
         // sits to its left and would otherwise win `first_focusable_descendant`.
+        //
+        // Enter goes to the next match through `on_submit`, Shift+Enter to the
+        // previous one through a *preview* on the field's wrapper. A field submits
+        // on Enter whatever the modifiers, so a handler further up only ever saw
+        // Shift+Enter after the field had already stepped forward with it.
         let query_id = ctx.add(
-            MaxSize::width(FIND_FIELD_MAX_WIDTH).child(
-                TextInput::new(self.find.query_signal())
-                    .placeholder(tr!(find_placeholder()))
-                    .on_submit_fn(move |ctx| submit.submit(ctx)),
-            ),
+            MaxSize::width(FIND_FIELD_MAX_WIDTH)
+                .child(
+                    TextInput::new(self.find.query_signal())
+                        .placeholder(tr!(find_placeholder()))
+                        .on_submit_fn(move |ctx| submit.submit(ctx)),
+                )
+                .on_key_preview(move |ev, ctx| match ev {
+                    WidgetEvent::KeyDown {
+                        key: Key::Enter,
+                        modifiers,
+                        ..
+                    } if modifiers.shift() => {
+                        sprev.prev(ctx);
+                        EventResponse::Handled
+                    }
+                    _ => EventResponse::Ignored,
+                }),
         );
 
         // Whether the replace half is on offer at all. It is not over a **page** of
@@ -258,22 +275,14 @@ impl Widget for FindBanner {
             ))
             .child(Expand::horizontal().child(FixedSize::new().height(1.0)));
 
-        // Enter (in the field) navigates / replaces via `on_submit`; the row handles
-        // the modified chords: Shift+Enter steps back, Escape closes, Alt+A replaces
-        // all (find-bar conventions).
+        // Enter (in a field) navigates / replaces via `on_submit`, and Shift+Enter in
+        // the query field steps back (see `query_id`); the row handles the rest:
+        // Escape closes, Alt+A replaces all (find-bar conventions).
         let keyed = VStack::new()
             .spacing(4.0)
             .child(find_row)
             .child(VisibleWhen::new(replace_open, replace_row))
             .on_key(move |ev, ctx| match ev {
-                WidgetEvent::KeyDown {
-                    key: Key::Enter,
-                    modifiers,
-                    ..
-                } if modifiers.shift() => {
-                    sprev.prev(ctx);
-                    EventResponse::Handled
-                }
                 WidgetEvent::KeyDown {
                     key: Key::Character('a' | 'A'),
                     modifiers,

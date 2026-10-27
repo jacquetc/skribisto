@@ -3,6 +3,7 @@ Date: 2026-10-26
 Type: stable
 Description:
 - "Shift+Enter, or Format ▸ Insert line break, starts a new line in the same paragraph, for the lines of a poem, a song or a letter. Every export keeps the lines. In an older version of Skribisto, the project still opens, each line then a paragraph of its own"
+- "In the find bar, Shift+Enter goes to the previous match, as its button says. It used to go to the next one"
 - "Text pasted from a web page or from LibreOffice keeps its line breaks. The words either side of a line break used to run together"
 - "Importing a Word, OpenDocument or RTF document, or a Scrivener, Plume Creator or older Skribisto project, keeps the line breaks inside its paragraphs. Each line used to become a paragraph of its own"
 - "A long paragraph in Arabic or Hebrew now shows its lines in reading order. Its first line used to show its last words"
