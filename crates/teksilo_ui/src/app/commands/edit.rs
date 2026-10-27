@@ -375,11 +375,13 @@ mod tests {
     ///
     /// The rich editor's own Cut declines under the game, and the chord comes on to
     /// the Edit route's action. That action is enabled from the last refresh, so a
-    /// game started this frame still finds it lit: `cut` itself has to ask. (Before
-    /// teksilo 0.23 the text surface it calls cut without asking the editor's
-    /// filter too; now both refuse.)
-    #[test]
-    fn ctrl_x_under_always_forward_takes_nothing_away() {
+    /// game started this frame still finds it lit. Run two ways:
+    ///
+    /// - through the focused text surface, which since teksilo 0.23 refuses a cut its
+    ///   filter refuses (it cut regardless before);
+    /// - through the handle the route falls back on with no surface focused, whose
+    ///   `cut` asks no filter: only `UndoGroupViewModel::cut`'s own check stands there.
+    fn ctrl_x_under_always_forward(through_surface: bool) {
         use teksilo::text_document::TextDocument;
         use teksilo::widgets::rich_text::{CommandFilter, RichTextEditor};
 
@@ -398,7 +400,9 @@ mod tests {
             field: None,
             editor: Some(editor),
         });
-        group.attach_surfaces(tree.text_surfaces());
+        if through_surface {
+            group.attach_surfaces(tree.text_surfaces());
+        }
         tree.layout(SizeProposal::exact(300.0, 40.0));
         let mounted = tree
             .children(host)
@@ -420,6 +424,14 @@ mod tests {
             "Roses are red",
             "Ctrl+X took words away under Always forward"
         );
+        // And the rows say so once refreshed: Cut off, Paste still on, since the
+        // game takes a paste.
+        group.refresh();
+        assert!(!group.can_cut().get(), "Cut is greyed under Always forward");
+        assert!(
+            group.can_paste().get(),
+            "Paste stays on under Always forward"
+        );
 
         // Positive control: with the game off, the same chord cuts.
         handle.set_command_filter(CommandFilter::All);
@@ -427,5 +439,15 @@ mod tests {
         group.refresh();
         tree.press_key(Key::X, Modifiers::COMMAND);
         assert_eq!(doc.to_plain_text().unwrap(), "are red");
+    }
+
+    #[test]
+    fn ctrl_x_under_always_forward_takes_nothing_away_through_the_surface() {
+        ctrl_x_under_always_forward(true);
+    }
+
+    #[test]
+    fn ctrl_x_under_always_forward_takes_nothing_away_through_the_handle() {
+        ctrl_x_under_always_forward(false);
     }
 }

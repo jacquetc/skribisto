@@ -648,8 +648,11 @@ impl UndoGroupViewModel {
         }
         let kind = match command {
             StandardEdit::Cut => EditCommandKind::Cut,
+            StandardEdit::Paste => EditCommandKind::Paste,
             StandardEdit::PastePlain => EditCommandKind::PasteUnformatted,
-            _ => EditCommandKind::Paste,
+            // Only the three clipboard writes are asked here. Anything else is
+            // refused rather than answered as one of them.
+            _ => return false,
         };
         self.live_editor()
             .is_some_and(|h| h.command_filter().accepts(kind))
