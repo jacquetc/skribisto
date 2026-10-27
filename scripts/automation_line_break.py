@@ -14,10 +14,12 @@ the editor's. So this drives the app, in English, and proves six things:
   1. Shift+Enter in a scene starts a new line in the same paragraph, and Home,
      Up and End move along the lines of that paragraph (End stops before the
      break, or the words typed there would start the next line);
-  2. Format ▸ Insert line break does the same from the menu;
-  3. in the find bar, Shift+Enter still goes to the previous match and writes
-     nothing into the prose;
-  4. under "Always forward", Shift+Enter still makes a line break;
+  2. Format ▸ Insert line break does the same from the menu, and gives the
+     keyboard back to the editor;
+  3. in the find bar, Shift+Enter goes to the previous match and writes nothing
+     into the prose;
+  4. under "Always forward", Shift+Enter still makes a line break, and the menu
+     row goes in after a selection instead of replacing it;
   5. a save writes each of those paragraphs as one Djot paragraph holding a hard
      break (`\\` and a newline), read back from the saved bundle itself;
   6. reopened, each paragraph is still one paragraph with its two lines.
@@ -49,7 +51,10 @@ mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
 STANZA = ("Roses are red, oh", "And violets are blue.")
 FROM_MENU = ("Line typed before the menu", "line typed after it")
 IN_GAME = ("Written in the game", "and its next line")
-PARAGRAPHS = (STANZA, FROM_MENU, IN_GAME)
+# Under the game, with "stay" selected when the menu row runs: the row goes in after
+# the selection, as the key does, and takes no word away.
+IN_GAME_MENU = ("Selected words stay", "after the break")
+PARAGRAPHS = (STANZA, FROM_MENU, IN_GAME, IN_GAME_MENU)
 
 
 def fail(msg, s=None):
@@ -324,12 +329,19 @@ def open_scene(s, title="Prologue"):
 
 def write_two_lines(s, lines, between):
     """Type the first line, run `between` (which must make the line break), type
-    the second."""
+    the second.
+
+    The second line's first character is a key to *whatever holds focus*, not to
+    the editor by name: `type_text` focuses the node it is given, so a `between`
+    that left focus on a menu would pass unnoticed if everything were typed with it.
+    """
     ed = s.new_paragraph_at_end()
     s.type(ed["id"], lines[0])
     between()
+    first = lines[1][0]
+    s.key(first, text=first)
     ed = s.prose_editor()
-    s.type(ed["id"], lines[1])
+    s.type(ed["id"], lines[1][1:])
 
 
 def saved_djot(project):
@@ -358,12 +370,12 @@ def editor_lines(s):
 
 def check_line_break(s, lines, what):
     """Fail unless `lines` read as two lines of one paragraph: the first ends in a
-    line separator and the next line begins the second. Two paragraphs would end
-    the first line with no separator."""
+    line separator, and the second follows it. Two paragraphs would end the first
+    line with no separator. The line nodes are joined first, so a soft wrap that
+    splits a line across two nodes changes nothing."""
     got = editor_lines(s)
-    for a, b in zip(got, got[1:]):
-        if a.endswith(lines[0] + "\u2028") and b.startswith(lines[1]):
-            return
+    if lines[0] + "\u2028" + lines[1] in "".join(got):
+        return
     near = [line for line in got if lines[0] in line or lines[1] in line]
     s.shot("line-break-wrong.png")
     fail(f"{what}: {lines!r} are not two lines of one paragraph; the editor reads {near!r}", s)
@@ -525,6 +537,14 @@ try:
         fail("the game did not start", s)
     write_two_lines(s, IN_GAME, shift_enter)
     check_line_break(s, IN_GAME, "Shift+Enter under Always forward")
+
+    def select_last_word_then_menu():
+        for _ in IN_GAME_MENU[0].split()[-1]:
+            s.key("Left", shift=True)
+        from_menu()
+
+    write_two_lines(s, IN_GAME_MENU, select_last_word_then_menu)
+    check_line_break(s, IN_GAME_MENU, "the menu row over a selection under Always forward")
     toggle_game()
     if playing():
         fail("the game did not stop", s)
@@ -534,7 +554,10 @@ try:
     binder_tab = next((n for n in tabs if text_of(n).strip() == "Binder"), None)
     if binder_tab is None or not s.click(binder_tab):
         fail(f"no 'Binder' rail tab; saw {[text_of(n) for n in tabs]}", s)
-    print("4. Under Always forward, Shift+Enter still made a second line.")
+    print(
+        "4. Under Always forward, Shift+Enter made a second line, and the menu row"
+        " went in after a selection."
+    )
 
     # ── 5. The save ──────────────────────────────────────────────────────────
     s.click_into_prose()

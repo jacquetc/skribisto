@@ -1015,6 +1015,28 @@ fn insert_line_break_starts_a_line_in_the_same_paragraph() {
     assert!(!detached.can_break_line().get());
 }
 
+/// A trashed item's text is a read-only editor, where Shift+Enter writes nothing; the
+/// row is off there, and the call writes nothing either.
+#[test]
+fn insert_line_break_leaves_a_read_only_editor_alone() {
+    let doc = TextDocument::new();
+    doc.set_markdown("Roses are red,")
+        .and_then(crate::test_support::finish)
+        .expect("import");
+    let editor = RichTextEditor::read_only(doc.clone());
+    let handle = editor.handle();
+    let end = doc.character_count();
+    handle.select_range(end, end);
+    let target = handle.clone();
+    let vm = FormatViewModel::new(Rc::new(move || {
+        (Some(target.clone()), FormatSurface::Scene)
+    }));
+    vm.sync_now();
+    assert!(!vm.can_break_line().get(), "the row is off");
+    vm.insert_line_break();
+    assert_eq!(doc.to_plain_text().unwrap(), "Roses are red,");
+}
+
 /// Under "Always forward" the row takes nothing away: over a selection, the line break
 /// goes in after it, as Shift+Enter does, rather than replacing the selected words.
 #[test]

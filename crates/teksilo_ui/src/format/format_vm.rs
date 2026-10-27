@@ -133,6 +133,19 @@ fn history_allowed(handle: &EditorHandle) -> bool {
         .accepts(teksilo::widgets::rich_text::EditCommandKind::Undo)
 }
 
+/// May Format ▸ Insert line break write into this editor?
+///
+/// Not in a table cell, which a save keeps on one line, and not where the editor's own
+/// Shift+Enter is refused: a trashed item's text is a read-only editor, and
+/// `EditorHandle::insert_line_break` does not consult the filter, so without this the
+/// menu would write where the key cannot.
+fn line_break_allowed(handle: &EditorHandle) -> bool {
+    !handle.is_in_table()
+        && handle
+            .command_filter()
+            .accepts(teksilo::widgets::rich_text::EditCommandKind::InsertLineBreak)
+}
+
 /// What the caret is sitting in, and therefore which control groups make sense.
 ///
 /// This is about the *kind* of text, not about which widget holds focus: the
@@ -1189,7 +1202,7 @@ impl FormatViewModel {
         set_if_changed(&self.bullet_list, ordered == Some(false));
         set_if_changed(&self.numbered_list, ordered == Some(true));
         set_if_changed(&self.in_table, handle.is_in_table());
-        set_if_changed(&self.line_break, !handle.is_in_table());
+        set_if_changed(&self.line_break, line_break_allowed(handle));
         set_if_changed(&self.heading, handle.get_heading_level() as usize);
         let alignment = alignment_index(&handle.get_alignment());
         set_if_changed(&self.alignment, alignment);
@@ -1543,9 +1556,14 @@ impl FormatViewModel {
     /// Through the editor's call rather than `insert_text`, so the row does what the key
     /// does: under "Always forward" it goes in after a selection instead of replacing it,
     /// and in a code block, which the row does not know about, the editor refuses it.
+    /// Checked against [`line_break_allowed`] here as well as in the row's enablement,
+    /// as [`undo_editor`](Self::undo_editor) checks its filter: the enablement is a mirror
+    /// refreshed once a frame, not a guard.
     pub fn insert_line_break(&self) {
         self.with_editor(|h| {
-            h.insert_line_break();
+            if line_break_allowed(h) {
+                h.insert_line_break();
+            }
         });
     }
 

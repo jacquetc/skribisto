@@ -4768,15 +4768,15 @@ fn the_replace_row_fits_the_pane_and_names_preserve_case_where_it_fits() {
     find.close();
 }
 
-/// **Shift+Enter in the find field goes to the previous match**, as the chevron's
-/// tooltip says.
+/// **Shift+Enter in the find bar goes to the previous match**, as the chevron's
+/// tooltip says, from the query field and from the replace field alike.
 ///
-/// It went to the *next* one. A `TextInput` submits on Enter whatever the modifiers,
-/// and the banner listened for Shift+Enter on the row around the field, which hears a
-/// key only after the field has had it: by then the field had already stepped forward.
-/// The key is now claimed in a preview on the field's wrapper, before the field sees it.
+/// It went to the *next* one, and in the replace field it replaced. A `TextInput`
+/// submits on Enter whatever the modifiers, and the banner listened for Shift+Enter on
+/// the row around the fields, which hears a key only after the focused field has had
+/// it. The row now claims the key in its preview, before either field sees it.
 #[test]
-fn shift_enter_in_the_find_field_goes_to_the_previous_match() {
+fn shift_enter_in_the_find_bar_goes_to_the_previous_match() {
     use teksilo::core::event::{Key, Modifiers};
     use teksilo::text_document::HighlightFormat;
 
@@ -4836,6 +4836,28 @@ fn shift_enter_in_the_find_field_goes_to_the_previous_match() {
         "nothing was typed into the field"
     );
     assert_eq!(doc.to_plain_text().unwrap(), prose, "nor into the prose");
+
+    // The replace field: Shift+Enter steps back there too, and replaces nothing.
+    find.replacement_signal().set("ONE".into());
+    find.replace_mode_signal().set(true);
+    tree.layout(teksilo::prelude::SizeProposal::exact(1000.0, 700.0));
+    let banner = first_of_type(&tree, root, "FindBanner").expect("the open banner is mounted");
+    let mut fields = Vec::new();
+    all_of_type(&tree, banner, "TextInputField", &mut fields);
+    assert_eq!(fields.len(), 2, "the query field and the replace field");
+    tree.focus(fields[1]);
+    tree.press_key(Key::Enter, Modifiers::SHIFT);
+    assert_eq!(
+        find.current_signal().get(),
+        ahead - 1,
+        "Shift+Enter in the replace field steps back one match"
+    );
+    assert_eq!(doc.to_plain_text().unwrap(), prose, "and replaces nothing");
+    tree.press_key(Key::Enter, Modifiers::NONE);
+    assert!(
+        doc.to_plain_text().unwrap().contains("ONE"),
+        "positive control: Enter in the replace field still replaces"
+    );
     find.close();
 }
 
