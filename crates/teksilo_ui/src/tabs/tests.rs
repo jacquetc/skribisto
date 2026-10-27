@@ -5390,3 +5390,98 @@ fn only_a_books_own_page_carries_the_cover_block() {
         );
     }
 }
+
+/// A Details page first shown after its entry was tagged elsewhere reads the entry as
+/// it is then, not as it was when the tab was made.
+///
+/// Details is a segment of a note tab, built the first time the writer opens it, and
+/// nothing on it listens for the item's changes before that. Its probe used to load
+/// the item with the tab, so a note tagged "Find in prose" in the Inspector meanwhile
+/// still read as untagged on its Details page, which then never offered "Appears in
+/// the manuscript". Compared by section count against a page made after the tagging,
+/// and against one shown before it, so the test needs no wording.
+#[cfg(not(feature = "mocks"))]
+#[test]
+fn the_details_page_reads_the_entry_as_it_is_when_first_shown() {
+    use frontend::commands::{binder_commands, binder_item_commands, work_commands};
+    use frontend::direct_access::{CreateBinderDto, CreateBinderItemDto, CreateWorkDto};
+
+    let ctx = Rc::new(AppContext::new());
+    let work = work_commands::create_orphan_work(&ctx, None, &CreateWorkDto::default()).unwrap();
+    let binder = binder_commands::create_binder(
+        &ctx,
+        None,
+        &CreateBinderDto {
+            name: "B".into(),
+            activated: true,
+            ..Default::default()
+        },
+        work.id,
+        0,
+    )
+    .unwrap();
+    let item = binder_item_commands::create_binder_item(
+        &ctx,
+        None,
+        &CreateBinderItemDto {
+            status: None,
+            title: "Mira".into(),
+            role: BinderItemRole::Item,
+            sub_role: BinderItemSubRole::Note,
+            activated: true,
+            is_exportable: true,
+            ..Default::default()
+        },
+        binder.id,
+        -1,
+    )
+    .unwrap();
+    let ids = AppIds::new();
+    ids.work_id.set(Some(work.id));
+    let tab = tab_for(
+        &ctx,
+        item.id,
+        &BinderItemRole::Item,
+        &BinderItemSubRole::Note,
+        &[],
+        Signal::new(700.0),
+        Signal::new(true),
+        test_typography(),
+        crate::settings::EditorViewMemory::detached(false),
+        &ids,
+    );
+    let sections = |pane: Box<dyn Widget>| {
+        let mut tree = crate::test_support::tree_with_events(&ctx);
+        let root = tree.add_boxed(pane);
+        tree.layout(teksilo::prelude::SizeProposal::exact(900.0, 900.0));
+        let mut n = 0;
+        count_containing(&tree, root, "GroupHeader", &mut n);
+        n
+    };
+
+    let untagged = sections(note_details::note_details_pane(&tab));
+    // Made with the tab, shown only after the entry is tagged in the Inspector.
+    let made_before = note_details::note_details_pane(&tab);
+    let cast = tab
+        .tags()
+        .create("Cast", "#607d8b", "", true)
+        .expect("a tag on the tab's own Work");
+    // No event reaches a headless palette, so it reads the new tag on request.
+    tab.tags().refresh();
+    let inspector = crate::singles::SingleBinderItem::new(ctx.clone());
+    inspector.set_id(Some(item.id));
+    inspector.set_tags(&[cast], None).expect("the tag lands");
+    let made_after = sections(note_details::note_details_pane(&tab));
+
+    assert!(
+        made_after > untagged,
+        "the premise: a tagged entry's page has a section an untagged one has not \
+         ({made_after} against {untagged})"
+    );
+    assert_eq!(
+        sections(made_before),
+        made_after,
+        "a page made before the tagging and first shown after it still reads the entry \
+         as untagged"
+    );
+}

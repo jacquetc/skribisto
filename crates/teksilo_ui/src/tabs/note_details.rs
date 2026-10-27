@@ -129,8 +129,8 @@ use super::{ContentTab, TitlePart, shared, title_field};
 /// `SEG_NOTE_IN_PROSE`.
 pub(crate) fn note_details_pane(tab: &ContentTab) -> Box<dyn Widget> {
     let app_ctx = tab.app_ctx();
+    // Not pointed at the item yet: see the first lines of `NoteDetailsPane::build`.
     let probe = SingleBinderItem::new(app_ctx.clone());
-    probe.set_id(Some(tab.item_id()));
     Box::new(NoteDetailsPane {
         ids: tab.ids().clone(),
         item_id: tab.item_id(),
@@ -181,9 +181,9 @@ struct NoteDetailsPane {
     /// The name field. See its construction site's own comment for why this
     /// lives here rather than being rebuilt inside `build()`.
     name: Rc<crate::tabs::TitleField>,
-    /// Fixed to `item_id` once, at construction, and never re-pointed: see the
+    /// Fixed to `item_id` once, on the first build, and never re-pointed: see the
     /// module doc's "what the dock's plumbing does not need to be built twice
-    /// here" section.
+    /// here" section, and the first lines of `build` for why not at construction.
     probe: SingleBinderItem,
     root: Option<WidgetId>,
 }
@@ -196,6 +196,16 @@ impl std::fmt::Debug for NoteDetailsPane {
 
 impl Widget for NoteDetailsPane {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        // Loaded on the first build, not when the tab is made. Details is a segment the
+        // writer may not open for a long while, and nothing listens for the item's
+        // changes until `wire` below runs, so a probe loaded with the tab described the
+        // item as it was then: tagged in the Inspector meanwhile, the entry still read as
+        // untagged here, and the page never showed "Appears in the manuscript". Before
+        // the binding below, so this read is not itself taken for a change.
+        if self.probe.id().is_none() {
+            self.probe.set_id(Some(self.item_id));
+        }
+
         // The one rebuild trigger this pane needs: every write below goes through
         // this same probe, and every one of `SingleBinderItem`'s setters already
         // refreshes its own `dto_signal` synchronously on success; see the module
