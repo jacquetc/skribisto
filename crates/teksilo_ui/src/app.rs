@@ -1894,6 +1894,12 @@ impl Widget for App {
                     );
                 }
             }));
+            // Discard in the unsaved-changes question hands the switch on to here;
+            // see `ProjectSwitchViewModel::after_discard`.
+            ctx.register_action_global(Action::new(crate::project::PERFORM_DISCARDED).on_invoke({
+                let project_switch = project_switch.clone();
+                move |_i, c| project_switch.perform_discarded(c)
+            }));
         }
         // Keep the outline tree reactive to *all* structural mutations (incl. the
         // manuscript streams' rename/merge/split/add), not just the outline's own.

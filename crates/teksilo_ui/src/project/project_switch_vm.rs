@@ -75,6 +75,10 @@ use crate::toast_scope::ToastWorkExt;
 
 use crate::shared::long_op::CapturedWork;
 
+/// The window action that performs a switch the writer chose Discard for. See
+/// [`ProjectSwitchViewModel::after_discard`].
+pub const PERFORM_DISCARDED: &str = "project.switch.discarded";
+
 /// A project switch, either performed at once or parked until the save lands.
 #[derive(Clone, PartialEq, Eq, Debug, Default)]
 pub enum PendingSwitch {
@@ -133,6 +137,9 @@ type SaveHook = Rc<dyn Fn() -> Option<u64>>;
 /// Put the New Work form on screen.
 type NewWorkFormHook = Rc<dyn Fn(&mut EventContext)>;
 
+/// A switch the writer chose Discard for, and the Work it replaces.
+type DiscardedSwitch = Option<(PendingSwitch, Option<u64>)>;
+
 #[derive(Clone)]
 pub struct ProjectSwitchViewModel {
     app_ctx: Rc<AppContext>,
@@ -175,6 +182,9 @@ pub struct ProjectSwitchViewModel {
     /// concern, injected — this view-model owns *when* the form may appear, not
     /// what it looks like.
     new_work_form_hook: Rc<RefCell<NewWorkFormHook>>,
+    /// The switch the writer chose Discard for, waiting for [`Self::perform_discarded`].
+    /// See [`Self::after_discard`].
+    discarded: Rc<RefCell<DiscardedSwitch>>,
 }
 
 impl ProjectSwitchViewModel {
@@ -199,6 +209,7 @@ impl ProjectSwitchViewModel {
             new_work_form_hook: Rc::new(RefCell::new(
                 Rc::new(|_: &mut EventContext| {}) as Rc<dyn Fn(&mut EventContext)>
             )),
+            discarded: Rc::new(RefCell::new(None)),
         }
     }
 
@@ -276,7 +287,7 @@ impl ProjectSwitchViewModel {
                         .escape_button(StandardButton::Cancel)
                         .on_result(move |r, ctx| {
                             if r.button == StandardButton::Discard {
-                                me.perform(ctx, switch.clone(), outgoing_work_id);
+                                me.after_discard(ctx, switch.clone(), outgoing_work_id);
                             }
                         }),
                 );
@@ -298,13 +309,42 @@ impl ProjectSwitchViewModel {
                             // Discard: the edits stay in the store, unsaved — and
                             // the switch below wipes it. That is what was asked for.
                             StandardButton::Discard => {
-                                me.perform(ctx, switch.clone(), outgoing_work_id)
+                                me.after_discard(ctx, switch.clone(), outgoing_work_id)
                             }
                             _ => {}
                         }),
                 );
             }
         }
+    }
+
+    /// Discard was chosen: hand the switch on to this window's own action
+    /// ([`PERFORM_DISCARDED`], which calls [`Self::perform_discarded`]) rather than
+    /// performing it here.
+    ///
+    /// `ctx` is the question's, and on macOS and Windows the question is a dialog
+    /// window of its own, closing as this returns: the New Work form presented from
+    /// it opened inside that dialog and closed with it, so Discard put nothing on
+    /// screen. An intent sent as a dialog closes goes on to the window it blocked,
+    /// and from a dialog in the window it runs once that has closed, so either way
+    /// the switch is performed in the project window.
+    fn after_discard(
+        &self,
+        ctx: &mut EventContext,
+        switch: PendingSwitch,
+        outgoing_work_id: Option<u64>,
+    ) {
+        *self.discarded.borrow_mut() = Some((switch, outgoing_work_id));
+        ctx.send_intent(Intent::new(PERFORM_DISCARDED));
+    }
+
+    /// Perform the switch [`Self::after_discard`] handed on. Nothing when there is
+    /// none, so a stray intent does nothing.
+    pub fn perform_discarded(&self, ctx: &mut EventContext) {
+        let Some((switch, outgoing_work_id)) = self.discarded.borrow_mut().take() else {
+            return;
+        };
+        self.perform(ctx, switch, outgoing_work_id);
     }
 
     /// Park the switch and ask for a save. [`Self::on_saved`] performs it once the
@@ -755,5 +795,77 @@ mod tests {
             !vm.should_resave(),
             "the switch it asked for happens after a few"
         );
+    }
+
+    /// The window that registered [`PERFORM_DISCARDED`], as `App::build` does.
+    struct Window {
+        vm: ProjectSwitchViewModel,
+    }
+
+    impl std::fmt::Debug for Window {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_struct("Window").finish_non_exhaustive()
+        }
+    }
+
+    impl Widget for Window {
+        fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+            let vm = self.vm.clone();
+            ctx.register_action_global(
+                Action::new(PERFORM_DISCARDED).on_invoke(move |_i, c| vm.perform_discarded(c)),
+            );
+            Vec::new()
+        }
+
+        fn layout_response(
+            &self,
+            proposal: SizeProposal,
+            _ctx: &LayoutContext,
+        ) -> teksilo::core::widget::LayoutResponse {
+            proposal.resolve(0.0, 0.0).into()
+        }
+    }
+
+    /// Discard in the unsaved-changes question opens the New Work form from the
+    /// window's own action, never from the question's context.
+    ///
+    /// On macOS and Windows the question is a dialog window of its own, and the form
+    /// presented from its context opened inside that dialog, which closed at once:
+    /// Discard put nothing on screen. Handed on through an intent, the form is
+    /// presented by the project window, once, and a second intent finds nothing left
+    /// to perform.
+    #[test]
+    fn discard_opens_the_new_work_form_from_the_window_not_from_the_question() {
+        let vm = test_vm(true, false, false);
+        let forms = Rc::new(Cell::new(0u32));
+        {
+            let forms = forms.clone();
+            vm.set_new_work_form_hook(Rc::new(move |_c: &mut EventContext| {
+                forms.set(forms.get() + 1)
+            }));
+        }
+        let mut tree = teksilo::core::widget_tree::WidgetTree::new();
+        tree.add(Window { vm: vm.clone() });
+        tree.layout(SizeProposal::exact(400.0, 300.0));
+
+        let from_the_question = forms.clone();
+        tree.run_with_event_context(&mut teksilo::core::NoopWindowOps, |ctx| {
+            vm.after_discard(ctx, PendingSwitch::NewWork, Some(7));
+            assert_eq!(
+                from_the_question.get(),
+                0,
+                "the form was presented from the question's own context"
+            );
+        });
+        assert_eq!(
+            forms.get(),
+            1,
+            "the window's action presented the form once"
+        );
+
+        tree.run_with_event_context(&mut teksilo::core::NoopWindowOps, |ctx| {
+            ctx.send_intent(Intent::new(PERFORM_DISCARDED));
+        });
+        assert_eq!(forms.get(), 1, "a stray intent performed the switch again");
     }
 }

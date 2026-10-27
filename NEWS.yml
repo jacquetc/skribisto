@@ -10,6 +10,7 @@ Description:
 - "The Mac application menu now has Services, Hide others and Show all, in the language of the interface"
 - "On a Mac, the help pages name keyboard shortcuts with the Mac's own keys, such as ⌘S. They used to say Ctrl+S"
 - "Ctrl+W, or ⌘W on a Mac, now closes Settings and the Help window. It used to do nothing in either"
+- "On a Mac and on Windows, choosing Discard when New Work asks about unsaved changes now opens the New Work form. The question closed and nothing else happened"
 ---
 Version: 3.2.3
 Date: 2026-10-21
