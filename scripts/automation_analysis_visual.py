@@ -29,6 +29,9 @@ MCP = fixture.mcp_binary()
 PROJECT = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else fixture.repo_path(
     "resources/examples/le_tour_du_monde_en_80_jours/"
     "le-tour-du-monde-en-quatre-vingts-jours.skrib"))
+# A working copy, never the checked-in file: autosave and saves are real,
+# and a save interrupted half-way leaves its temporary file in the repository.
+PROJECT = fixture.working_copy(PROJECT, label="analysis-visual")
 OUT = os.environ.get("ANALYSIS_SHOT_DIR", tempfile.mkdtemp(prefix="analysis-vis-"))
 #: Everything left of this is the binder; the container bar and the report are
 #: right of it. Same constant, same reason, as `automation_corkboard`.

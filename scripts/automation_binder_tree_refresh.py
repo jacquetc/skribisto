@@ -44,6 +44,9 @@ import automation_fixture as fixture  # noqa: E402
 SKRIBISTO = fixture.skribisto_binary()
 MCP = fixture.mcp_binary()
 EXAMPLE = str(_ROOT / "resources/examples/starforgers/Starforgers.skrib")
+# A working copy, never the checked-in file: autosave and saves are real,
+# and a save interrupted half-way leaves its temporary file in the repository.
+EXAMPLE = fixture.working_copy(EXAMPLE, label="binder-tree-refresh")
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
 
 

@@ -18,6 +18,9 @@ SKRIBISTO = fixture.skribisto_binary()
 MCP = fixture.mcp_binary()
 PROJECT = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else
     fixture.repo_path("resources/examples/starforgers/Starforgers.skrib"))
+# A working copy, never the checked-in file: autosave and saves are real,
+# and a save interrupted half-way leaves its temporary file in the repository.
+PROJECT = fixture.working_copy(PROJECT, label="explore")
 TARGET = "Prologue"   # binder item to open
 
 
