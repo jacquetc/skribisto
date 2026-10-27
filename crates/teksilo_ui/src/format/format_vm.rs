@@ -58,7 +58,6 @@ use std::rc::Rc;
 
 use common::types::EntityId;
 use teksilo::prelude::{Signal, WidgetId};
-use teksilo::text_document::LINE_SEPARATOR;
 use teksilo::text_document::{Alignment, TextDirection};
 use teksilo::widgets::rich_text::{EditorHandle, list_style_is_ordered};
 
@@ -1537,13 +1536,17 @@ impl FormatViewModel {
         self.with_editor(|h| h.insert_text(text));
     }
 
-    /// Format ▸ Insert line break: a new line in the same paragraph, as Shift+Enter makes
-    /// one in the editor, in one undo step. The paragraph holds it as one line separator,
-    /// which a save writes as Djot's hard break and every export as its own line break.
+    /// Format ▸ Insert line break: a new line in the same paragraph, the editor's own
+    /// Shift+Enter, in one undo step. The paragraph holds it as one line separator, which
+    /// a save writes as Djot's hard break and every export as its own line break.
+    ///
+    /// Through the editor's call rather than `insert_text`, so the row does what the key
+    /// does: under "Always forward" it goes in after a selection instead of replacing it,
+    /// and in a code block, which the row does not know about, the editor refuses it.
     pub fn insert_line_break(&self) {
-        let mut buffer = [0; 4];
-        let text: &str = LINE_SEPARATOR.encode_utf8(&mut buffer);
-        self.with_editor(|h| h.insert_text(text));
+        self.with_editor(|h| {
+            h.insert_line_break();
+        });
     }
 
     /// The Bullets button: make a bulleted list, take the paragraph out of

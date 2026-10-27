@@ -1015,6 +1015,32 @@ fn insert_line_break_starts_a_line_in_the_same_paragraph() {
     assert!(!detached.can_break_line().get());
 }
 
+/// Under "Always forward" the row takes nothing away: over a selection, the line break
+/// goes in after it, as Shift+Enter does, rather than replacing the selected words.
+#[test]
+fn insert_line_break_keeps_a_selection_under_always_forward() {
+    use teksilo::widgets::rich_text::CommandFilter;
+
+    let (vm, editor, doc) = vm_over_doc("Roses are red");
+    let handle = editor.handle();
+    handle.set_command_filter(CommandFilter::ForwardOnly);
+    handle.select_range(6, 9);
+    vm.sync_now();
+    assert!(vm.can_break_line().get());
+    vm.insert_line_break();
+    assert_eq!(doc.block_count(), 1);
+    assert_eq!(doc.to_plain_text().unwrap(), "Roses are\u{2028} red");
+
+    let (vm, editor, doc) = vm_over_doc("Roses are red");
+    editor.handle().select_range(6, 9);
+    vm.insert_line_break();
+    assert_eq!(
+        doc.to_plain_text().unwrap(),
+        "Roses \u{2028} red",
+        "positive control: with the game off, the line break replaces the selection"
+    );
+}
+
 /// A synopsis is a real formatting target, not a second-class one: the
 /// commands must reach it, and the surface must say what it is so the dock
 /// drops the one group a synopsis has no use for.
