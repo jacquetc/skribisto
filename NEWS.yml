@@ -1,5 +1,5 @@
-Version: 3.2.4
-Date: 2026-10-26
+Version: 3.3.0
+Date: 2026-10-27
 Type: stable
 Description:
 - "Shift+Enter, or Format ▸ Insert line break, starts a new line in the same paragraph, for the lines of a poem, a song or a letter. Every export keeps the lines. In an older version of Skribisto, the project still opens, each line then a paragraph of its own"
