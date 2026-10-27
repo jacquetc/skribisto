@@ -408,7 +408,9 @@ impl HelpReadingPane {
                 // A malformed source is a bug in shipped content, and the drift test
                 // parses every one of them, so this cannot be reached by a built-in
                 // topic. A contributed topic gets an empty page rather than a panic.
-                if let Err(err) = doc.set_djot_sync(source) {
+                // Chords as this platform writes them (`⌘S` on macOS): see `chords`.
+                let source = super::chords::platform_chords(source);
+                if let Err(err) = doc.set_djot_sync(&source) {
                     eprintln!(
                         "skribisto: help topic '{}' failed to parse: {err}",
                         spec.key

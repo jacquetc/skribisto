@@ -43,6 +43,7 @@ use teksilo::prelude::*;
 
 use crate::docks::LabelFn;
 
+mod chords;
 pub mod help_vm;
 pub mod panel;
 pub mod shortcuts;
