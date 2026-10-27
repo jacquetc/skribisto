@@ -19,7 +19,7 @@
 //! reference, say) to be handled correctly in one and forgotten in the other
 //! two.
 
-use teksilo::text_document::{DjotImportOptions, djot_to_plain_text};
+use teksilo::text_document::{DjotImportOptions, LINE_SEPARATOR, djot_to_plain_text};
 
 /// The plain-text rendering of `body`, collapsed to one line.
 ///
@@ -42,7 +42,7 @@ pub fn plain_preview(body: &str) -> String {
         return String::new();
     }
     djot_to_plain_text(body, &DjotImportOptions::default())
-        .replace('\n', " ")
+        .replace(['\n', LINE_SEPARATOR], " ")
         .trim()
         .to_string()
 }

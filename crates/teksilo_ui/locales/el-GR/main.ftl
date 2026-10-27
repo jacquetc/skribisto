@@ -41,6 +41,7 @@ menu-focus-mode = Λειτουργία χωρίς περι&σπασμούς
 menu-format = &Μορφή
 menu-scene-break = Παρεμβολή διαχωριστικού &σκηνής
 menu-major-scene-break = Παρεμβολή μεί&ζονος διαχωριστικού σκηνής
+menu-line-break = Ε&ισαγωγή αλλαγής γραμμής
 
 menu-go = Με&τάβαση
 menu-go-next-scene = Επόμενη &σκηνή
@@ -2325,10 +2326,6 @@ import-scrivener-prose-other-links-kept-as-text-line = { $count ->
     [one] 1 σύνδεσμος προς άλλο έργο ή προς αρχείο διατηρείται ως κείμενο.
    *[other] { $count } σύνδεσμοι προς άλλα έργα ή προς αρχεία διατηρούνται ως κείμενο.
 }
-import-scrivener-prose-soft-breaks-split-line = { $count ->
-    [one] 1 αλλαγή γραμμής μέσα σε παράγραφο ξεκινά τώρα δική της παράγραφο.
-   *[other] { $count } αλλαγές γραμμής μέσα σε παραγράφους ξεκινούν τώρα δικές τους παραγράφους.
-}
 import-scrivener-prose-typed-indents-removed-line = { $count ->
     [one] 1 εσοχή πληκτρολογημένη στην αρχή παραγράφου αφαιρείται.
    *[other] { $count } εσοχές πληκτρολογημένες στην αρχή παραγράφων αφαιρούνται.
@@ -2340,10 +2337,6 @@ import-scrivener-prose-left-indents-not-kept-line = { $count ->
 import-scrivener-prose-blank-lines-removed-line = { $count ->
     [one] 1 κενή παράγραφος ανάμεσα σε δύο άλλες αφαιρείται.
    *[other] { $count } κενές παράγραφοι ανάμεσα σε άλλες αφαιρούνται.
-}
-import-scrivener-prose-verse-stanza-gaps-lost-line = { $count ->
-    [one] 1 κενή γραμμή ανάμεσα στις στροφές ενός ποιήματος αφαιρείται, οπότε οι στροφές συνεχίζουν η μία μετά την άλλη.
-   *[other] { $count } κενές γραμμές ανάμεσα στις στροφές ενός ποιήματος αφαιρούνται, οπότε οι στροφές συνεχίζουν η μία μετά την άλλη.
 }
 import-scrivener-prose-blank-lines-became-scene-breaks-line = { $count ->
     [one] 1 κενή γραμμή ανάμεσα σε παραγράφους έγινε διαχωριστικό σκηνής.

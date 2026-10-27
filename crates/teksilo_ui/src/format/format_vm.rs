@@ -58,6 +58,7 @@ use std::rc::Rc;
 
 use common::types::EntityId;
 use teksilo::prelude::{Signal, WidgetId};
+use teksilo::text_document::LINE_SEPARATOR;
 use teksilo::text_document::{Alignment, TextDirection};
 use teksilo::widgets::rich_text::{EditorHandle, list_style_is_ordered};
 
@@ -483,6 +484,9 @@ pub struct FormatViewModel {
     numbered_list: Signal<bool>,
     /// The caret sits inside a table, so the row/column commands are meaningful.
     in_table: Signal<bool>,
+    /// A line break can go at the caret: an editor answers and the caret is not in a
+    /// table cell, which is one line once saved (a Djot table row holds no line break).
+    line_break: Signal<bool>,
     /// `0` = normal paragraph, `1..=6` = H1..H6. Doubles as the radio index.
     heading: Signal<usize>,
     /// [`ALIGN_LEFT`], [`ALIGN_CENTER`] or [`ALIGN_OTHER`]. The menu's radio
@@ -602,6 +606,7 @@ impl FormatViewModel {
             bullet_list: Signal::new(false),
             numbered_list: Signal::new(false),
             in_table: Signal::new(false),
+            line_break: Signal::new(false),
             heading: Signal::new(0),
             alignment: Signal::new(ALIGN_LEFT),
             align_left: Signal::new(true),
@@ -1004,6 +1009,10 @@ impl FormatViewModel {
     pub fn in_table(&self) -> Signal<bool> {
         self.in_table.clone()
     }
+    /// Whether Format ▸ Insert line break applies (see [`Self::insert_line_break`]).
+    pub fn can_break_line(&self) -> Signal<bool> {
+        self.line_break.clone()
+    }
     pub fn heading(&self) -> Signal<usize> {
         self.heading.clone()
     }
@@ -1181,6 +1190,7 @@ impl FormatViewModel {
         set_if_changed(&self.bullet_list, ordered == Some(false));
         set_if_changed(&self.numbered_list, ordered == Some(true));
         set_if_changed(&self.in_table, handle.is_in_table());
+        set_if_changed(&self.line_break, !handle.is_in_table());
         set_if_changed(&self.heading, handle.get_heading_level() as usize);
         let alignment = alignment_index(&handle.get_alignment());
         set_if_changed(&self.alignment, alignment);
@@ -1214,6 +1224,7 @@ impl FormatViewModel {
         set_if_changed(&self.bullet_list, false);
         set_if_changed(&self.numbered_list, false);
         set_if_changed(&self.in_table, false);
+        set_if_changed(&self.line_break, false);
         set_if_changed(&self.heading, 0);
         set_if_changed(&self.alignment, ALIGN_LEFT);
         set_if_changed(&self.align_left, true);
@@ -1523,6 +1534,15 @@ impl FormatViewModel {
     /// the editor's own undo history as one step, which is what a writer who
     /// inserted the wrong one expects of Ctrl+Z.
     pub fn insert_mark(&self, text: &str) {
+        self.with_editor(|h| h.insert_text(text));
+    }
+
+    /// Format ▸ Insert line break: a new line in the same paragraph, as Shift+Enter makes
+    /// one in the editor, in one undo step. The paragraph holds it as one line separator,
+    /// which a save writes as Djot's hard break and every export as its own line break.
+    pub fn insert_line_break(&self) {
+        let mut buffer = [0; 4];
+        let text: &str = LINE_SEPARATOR.encode_utf8(&mut buffer);
         self.with_editor(|h| h.insert_text(text));
     }
 

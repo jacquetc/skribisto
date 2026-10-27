@@ -14,6 +14,8 @@
 //! reason against its own copy of a different chain -- "two copies of that chain
 //! would drift, and a writer would meet the difference".
 
+use text_document::LINE_SEPARATOR;
+
 /// How much text either side of a match a snippet carries, in **chars**.
 const SNIPPET_CONTEXT: usize = 60;
 
@@ -28,8 +30,9 @@ const LEAD_WORDS: usize = 2;
 
 /// Where the sentence containing `at` begins, in chars.
 ///
-/// A sentence ends at `.`, `?`, `!`, `…` or a line break, and the next one begins
-/// after the spaces that follow. Deliberately naive about abbreviations: mistaking
+/// A sentence ends at `.`, `?`, `!`, `…` or a line break (a paragraph's, or one
+/// inside it, as a line of verse ends), and the next one begins after the spaces
+/// that follow. Deliberately naive about abbreviations: mistaking
 /// "Mr. Ardel" for two sentences costs an excerpt two words of run-up, where
 /// carrying a per-language abbreviation list would cost a resource this crate has
 /// no business owning -- the same reasoning that keeps a stopword list out of the
@@ -42,7 +45,7 @@ fn sentence_start(text: &str, at: usize) -> usize {
             break;
         }
         match ch {
-            '.' | '?' | '!' | '…' | '\n' | '\r' => pending = Some(i + 1),
+            '.' | '?' | '!' | '…' | '\n' | '\r' | LINE_SEPARATOR => pending = Some(i + 1),
             // The sentence begins at the first thing that is not the space after
             // the stop -- and a closing quote or bracket belongs to the sentence
             // that ended, not the one starting.
@@ -138,16 +141,31 @@ pub fn cut(text: &str, char_start: usize, char_len: usize) -> (String, String, S
     } else {
         text[b_from..b_start].to_string()
     };
+    // The row is one line: a line break inside a paragraph is a space there, where
+    // the text widget would show it as nothing and run the words together.
+    let one_line = |piece: &str| piece.replace(LINE_SEPARATOR, " ");
     (
-        before,
-        text[b_start..b_end].to_string(),
-        text[b_end..b_to].to_string(),
+        one_line(&before),
+        one_line(&text[b_start..b_end]),
+        one_line(&text[b_end..b_to]),
     )
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A line of verse is a sentence of its own for the excerpt, and the line break
+    /// shows as a space in the one-line row.
+    #[test]
+    fn a_line_break_starts_a_sentence_and_reads_as_a_space() {
+        let text = format!("Roses are red{LINE_SEPARATOR}violets are blue{LINE_SEPARATOR}sugar");
+        let (start, len) = at(&text, "blue");
+        let (before, matched, after) = cut(&text, start, len);
+        assert_eq!(before, "violets are ");
+        assert_eq!(matched, "blue");
+        assert_eq!(after, " sugar");
+    }
 
     /// Where a hit sits, given a marker in the text.
     fn at(text: &str, needle: &str) -> (usize, usize) {

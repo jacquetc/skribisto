@@ -39,6 +39,7 @@ menu-focus-mode = Sen&distra reĝimo
 menu-format = &Formato
 menu-scene-break = &Enmeti scenan disigilon
 menu-major-scene-break = E&nmeti gravan scenan disigilon
+menu-line-break = Enmeti no&van linion
 menu-go = &Iri
 menu-go-next-scene = &Sekva sceno
 menu-go-prev-scene = &Antaŭa sceno
@@ -2191,10 +2192,6 @@ import-scrivener-prose-other-links-kept-as-text-line = { $count ->
     [one] 1 ligilo al alia projekto aŭ al dosiero estas konservita kiel teksto.
    *[other] { $count } ligiloj al aliaj projektoj aŭ al dosieroj estas konservitaj kiel teksto.
 }
-import-scrivener-prose-soft-breaks-split-line = { $count ->
-    [one] 1 linifino ene de alineo nun komencas propran alineon.
-   *[other] { $count } linifinoj ene de alineoj nun komencas proprajn alineojn.
-}
 import-scrivener-prose-typed-indents-removed-line = { $count ->
     [one] 1 deŝovo tajpita ĉe la komenco de alineo estas forigita.
    *[other] { $count } deŝovoj tajpitaj ĉe la komenco de alineoj estas forigitaj.
@@ -2206,10 +2203,6 @@ import-scrivener-prose-left-indents-not-kept-line = { $count ->
 import-scrivener-prose-blank-lines-removed-line = { $count ->
     [one] 1 malplena alineo inter du aliaj estas forigita.
    *[other] { $count } malplenaj alineoj inter aliaj estas forigitaj.
-}
-import-scrivener-prose-verse-stanza-gaps-lost-line = { $count ->
-    [one] 1 malplena linio inter la strofoj de poemo estas forigita, do la strofoj sekvas unu la alian senpaŭze.
-   *[other] { $count } malplenaj linioj inter la strofoj de poemo estas forigitaj, do la strofoj sekvas unu la alian senpaŭze.
 }
 import-scrivener-prose-blank-lines-became-scene-breaks-line = { $count ->
     [one] 1 malplena linio inter alineoj fariĝis scena disigilo.

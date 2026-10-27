@@ -45,6 +45,7 @@ menu-focus-mode = Mode sans &distraction
 menu-format = Fo&rmat
 menu-scene-break = Insérer un &saut de scène
 menu-major-scene-break = Insérer un saut de scène &majeur
+menu-line-break = Insérer un saut de lig&ne
 
 ## Barre de menus: Aller
 menu-go = A&ller
@@ -2556,10 +2557,6 @@ import-scrivener-prose-other-links-kept-as-text-line = { $count ->
     [one] { $count } lien vers un autre projet ou vers un fichier est gardé comme texte.
    *[other] { $count } liens vers d’autres projets ou vers des fichiers sont gardés comme texte.
 }
-import-scrivener-prose-soft-breaks-split-line = { $count ->
-    [one] { $count } retour à la ligne dans un paragraphe commence désormais un paragraphe à part.
-   *[other] { $count } retours à la ligne dans des paragraphes commencent désormais des paragraphes à part.
-}
 import-scrivener-prose-typed-indents-removed-line = { $count ->
     [one] { $count } retrait tapé au début d’un paragraphe est retiré.
    *[other] { $count } retraits tapés au début des paragraphes sont retirés.
@@ -2571,10 +2568,6 @@ import-scrivener-prose-left-indents-not-kept-line = { $count ->
 import-scrivener-prose-blank-lines-removed-line = { $count ->
     [one] { $count } paragraphe vide entre deux autres est retiré.
    *[other] { $count } paragraphes vides entre d’autres sont retirés.
-}
-import-scrivener-prose-verse-stanza-gaps-lost-line = { $count ->
-    [one] { $count } ligne vide entre les strophes d’un poème est retirée, si bien que les strophes se suivent.
-   *[other] { $count } lignes vides entre les strophes d’un poème sont retirées, si bien que les strophes se suivent.
 }
 import-scrivener-prose-blank-lines-became-scene-breaks-line = { $count ->
     [one] { $count } ligne vide entre des paragraphes est devenue un séparateur de scènes.

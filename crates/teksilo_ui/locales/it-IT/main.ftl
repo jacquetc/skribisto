@@ -40,6 +40,7 @@ menu-focus-mode = Mo&dalità senza distrazioni
 menu-format = F&ormato
 menu-scene-break = In&serisci separatore di scena
 menu-major-scene-break = Inserisci separatore di scena &maggiore
+menu-line-break = Inserisci interr&uzione di riga
 menu-go = V&ai
 menu-go-next-scene = &Scena successiva
 menu-go-prev-scene = Scena &precedente
@@ -2243,10 +2244,6 @@ import-scrivener-prose-other-links-kept-as-text-line = { $count ->
     [one] 1 collegamento a un altro progetto o a un file viene conservato come testo.
    *[other] { $count } collegamenti ad altri progetti o a file vengono conservati come testo.
 }
-import-scrivener-prose-soft-breaks-split-line = { $count ->
-    [one] 1 interruzione di riga all'interno di un paragrafo ora inizia un paragrafo a sé.
-   *[other] { $count } interruzioni di riga all'interno di paragrafi ora iniziano paragrafi a sé.
-}
 import-scrivener-prose-typed-indents-removed-line = { $count ->
     [one] 1 rientro digitato all'inizio di un paragrafo viene rimosso.
    *[other] { $count } rientri digitati all'inizio dei paragrafi vengono rimossi.
@@ -2258,10 +2255,6 @@ import-scrivener-prose-left-indents-not-kept-line = { $count ->
 import-scrivener-prose-blank-lines-removed-line = { $count ->
     [one] 1 paragrafo vuoto tra altri due viene rimosso.
    *[other] { $count } paragrafi vuoti tra altri paragrafi vengono rimossi.
-}
-import-scrivener-prose-verse-stanza-gaps-lost-line = { $count ->
-    [one] 1 riga vuota tra le strofe di una poesia viene rimossa, quindi le strofe si susseguono senza stacco.
-   *[other] { $count } righe vuote tra le strofe di una poesia vengono rimosse, quindi le strofe si susseguono senza stacco.
 }
 import-scrivener-prose-blank-lines-became-scene-breaks-line = { $count ->
     [one] 1 riga vuota tra paragrafi è diventata un separatore di scena.

@@ -156,7 +156,6 @@ pub(crate) struct Found {
     pub(crate) range_readings: BTreeMap<RangeReadingKey, u32>,
     pub(crate) ranges_approximate: u32,
     pub(crate) comment_colours: u32,
-    pub(crate) soft_breaks: u32,
     pub(crate) typed_indents: u32,
     pub(crate) left_indents: u32,
     pub(crate) blank_lines_removed: u32,
@@ -172,8 +171,6 @@ pub(crate) struct Found {
     /// Pictures linked to a file on disk, by file name.
     pub(crate) linked_on_disk: Vec<String>,
     pub(crate) heading_repeats_title: bool,
-    /// Blank lines between a poem's stanzas, removed.
-    pub(crate) stanza_gaps: u32,
 }
 
 /// [`RangeReading`] as a map key.
@@ -2058,19 +2055,6 @@ impl Pass<'_, '_> {
             if p.props.alignment == Some(Alignment::Justify) {
                 self.found.justified += 1;
             }
-            self.found.soft_breaks += p
-                .inlines
-                .iter()
-                .map(|i| match i {
-                    Inline::Break(BreakKind::Line) => 1,
-                    Inline::Text(run) => run
-                        .text
-                        .chars()
-                        .filter(|c| matches!(c, '\u{2028}' | '\u{2029}'))
-                        .count() as u32,
-                    _ => 0,
-                })
-                .sum::<u32>();
             if reads_as_markdown(text) {
                 self.found.markdown += 1;
             }
@@ -2142,26 +2126,6 @@ impl Pass<'_, '_> {
         }
         // A double gap became one break: its second line is removed with the rest.
         to_remove += blank_total.saturating_sub(to_break.len() as u32);
-        // The space between two stanzas of verse typed with soft line breaks (I3 A14): an
-        // empty line inside the paragraph, or a blank paragraph between two such. The
-        // mapping cuts a paragraph at its soft breaks and drops what is empty, so the
-        // stanzas run on; said so apart from the blank lines. Short lines each a paragraph
-        // of their own are not counted: a character sheet or a list has exactly that shape,
-        // and the report would claim a poem it cannot show.
-        let written: Vec<usize> = (0..kinds.len())
-            .filter(|i| kinds[*i] != LineKind::Blank)
-            .collect();
-        self.found.stanza_gaps += written
-            .windows(2)
-            .filter(|w| {
-                w[1] > w[0] + 1 && kinds[w[0]] == LineKind::Verse && kinds[w[1]] == LineKind::Verse
-            })
-            .count() as u32;
-        for (block, kind) in blocks.iter().zip(&kinds) {
-            if let (Block::Paragraph(p), LineKind::Verse) = (block, kind) {
-                self.found.stanza_gaps += gaps_between_lines(&soft_lines(p));
-            }
-        }
         self.found.blank_lines_breaks += to_break.len() as u32;
         self.found.blank_lines_removed += to_remove;
         for (i, kind) in kinds.iter().enumerate() {
@@ -2721,26 +2685,6 @@ fn is_verse(lines: &[String]) -> bool {
             .filter(|l| l.chars().any(char::is_alphabetic))
             .count()
             > 1
-}
-
-/// The empty lines between two written ones: where a poem typed with soft line breaks
-/// leaves the space between its stanzas. Each run of them counts once.
-fn gaps_between_lines(lines: &[String]) -> u32 {
-    let mut gaps = 0;
-    let mut written_before = false;
-    let mut pending = false;
-    for line in lines {
-        if line.is_empty() {
-            pending |= written_before;
-        } else {
-            if pending {
-                gaps += 1;
-                pending = false;
-            }
-            written_before = true;
-        }
-    }
-    gaps
 }
 
 /// A paragraph's lines, cut at its soft line breaks, each trimmed.

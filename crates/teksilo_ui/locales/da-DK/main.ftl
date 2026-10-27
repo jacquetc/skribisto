@@ -48,6 +48,7 @@ menu-focus-mode = Dis&traktionsfri tilstand
 menu-format = F&ormat
 menu-scene-break = Indsæt s&ceneskift
 menu-major-scene-break = Indsæt &stort sceneskift
+menu-line-break = In&dsæt linjeskift
 
 ## Menu bar: Go
 menu-go = &Gå
@@ -2496,10 +2497,6 @@ import-scrivener-prose-other-links-kept-as-text-line = { $count ->
     [one] 1 link til et andet projekt eller til en fil bevares som tekst.
    *[other] { $count } links til andre projekter eller til filer bevares som tekst.
 }
-import-scrivener-prose-soft-breaks-split-line = { $count ->
-    [one] 1 linjeskift inde i et afsnit starter nu sit eget afsnit.
-   *[other] { $count } linjeskift inde i afsnit starter nu deres egne afsnit.
-}
 import-scrivener-prose-typed-indents-removed-line = { $count ->
     [one] 1 indrykning, der var tastet i starten af et afsnit, fjernes.
    *[other] { $count } indrykninger, der var tastet i starten af afsnit, fjernes.
@@ -2511,10 +2508,6 @@ import-scrivener-prose-left-indents-not-kept-line = { $count ->
 import-scrivener-prose-blank-lines-removed-line = { $count ->
     [one] 1 tomt afsnit mellem to andre fjernes.
    *[other] { $count } tomme afsnit mellem andre fjernes.
-}
-import-scrivener-prose-verse-stanza-gaps-lost-line = { $count ->
-    [one] 1 tom linje mellem et digts strofer fjernes, så stroferne løber sammen.
-   *[other] { $count } tomme linjer mellem et digts strofer fjernes, så stroferne løber sammen.
 }
 import-scrivener-prose-blank-lines-became-scene-breaks-line = { $count ->
     [one] 1 tom linje mellem afsnit blev til et sceneskift.

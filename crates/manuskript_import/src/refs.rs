@@ -161,8 +161,9 @@ fn parse_marker(s: &str) -> Option<(Reference, usize)> {
     let close = s.find('}')?;
     let inner = &s[1..close];
     // Manuskript's `.*?` does not cross a line, and neither does a marker here: in
-    // converted prose a line break is a paragraph boundary.
-    if inner.contains('\n') {
+    // converted prose a `\n` is a paragraph boundary, and a line separator (U+2028) a line
+    // break inside a paragraph.
+    if inner.contains(['\n', '\u{2028}']) {
         return None;
     }
     let mut parts = inner.splitn(3, ':');
@@ -290,6 +291,10 @@ mod tests {
     fn a_marker_never_spans_a_line() {
         let out = rewrite("{C:0:Pe\nter}", named("Peter"));
         assert_eq!(out.text, "{C:0:Pe\nter}");
+        assert!(out.references.is_empty());
+        // Nor a line break inside a paragraph.
+        let out = rewrite("{C:0:Pe\u{2028}ter}", named("Peter"));
+        assert_eq!(out.text, "{C:0:Pe\u{2028}ter}");
         assert!(out.references.is_empty());
     }
 

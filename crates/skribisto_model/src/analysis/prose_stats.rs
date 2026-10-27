@@ -19,7 +19,7 @@
 //! rather than "not measurable in this language".
 
 use common::entities::QuoteStyle;
-use text_document::sentences;
+use text_document::{LINE_SEPARATOR, sentences};
 
 use super::stats;
 use super::tokens::tokenize;
@@ -183,10 +183,24 @@ pub fn measure_paragraph(para: &str, markers: DialogueMarkers) -> ParagraphStats
     if words == 0 || !markers.is_measurable() {
         return ParagraphStats { words, spoken: 0 };
     }
-    let spoken = if markers.dashes.iter().any(|&d| para.starts_with(d)) {
-        // The dash convention is per *paragraph*: there is no closing dash to look
-        // for, so an opening one makes the whole paragraph speech.
-        words
+    let opens_with_dash = |line: &str| markers.dashes.iter().any(|&d| line.starts_with(d));
+    // The dash convention is per *line*: there is no closing dash to look for, so an
+    // opening one makes the whole line speech. A line is the paragraph, or one of the
+    // lines a line break sets apart inside it (`Il dit :`, then `— Viens.`). The other
+    // lines are measured by their quotation marks; without a dash anywhere, the whole
+    // paragraph is, so a quotation may run from one line to the next.
+    let lines: Vec<&str> = para.split(LINE_SEPARATOR).map(str::trim).collect();
+    let spoken = if lines.iter().any(|line| opens_with_dash(line)) {
+        lines
+            .iter()
+            .map(|line| {
+                if opens_with_dash(line) {
+                    tokenize(line).len()
+                } else {
+                    quoted_words(line, markers)
+                }
+            })
+            .sum()
     } else {
         quoted_words(para, markers)
     };
@@ -518,6 +532,27 @@ mod tests {
     /// A hyphen opens a Djot bullet, and it is also the shorthand the editor
     /// *converts into* a dialogue dash rather than a mark in its own right. Reading
     /// one as speech would report a list of scene notes as a conversation.
+    /// A reply set apart by a line break inside the paragraph is speech from its
+    /// dash, and the narration on the line before it is not.
+    #[test]
+    fn a_dash_after_a_line_break_opens_speech_for_its_line() {
+        let s = measure(
+            &format!("Il dit :{LINE_SEPARATOR}— Viens.{LINE_SEPARATOR}— Non."),
+            Some("fr"),
+            FR,
+        );
+        assert_eq!(s.words, 4);
+        assert_eq!(s.dialogue, Some(2.0 / 4.0));
+        // A stanza is one paragraph, and a quotation runs across its lines.
+        let s = measure(
+            &format!("« Un vers,{LINE_SEPARATOR}un autre. » Fin."),
+            Some("fr"),
+            FR,
+        );
+        assert_eq!(s.paragraph_words.len(), 1);
+        assert_eq!(s.dialogue, Some(4.0 / 5.0));
+    }
+
     #[test]
     fn a_hyphen_is_not_a_dialogue_dash() {
         let s = measure("- du pain\n\n- du vin", Some("fr"), FR);

@@ -583,10 +583,6 @@ fn found_notices(at: Place, found: &dialect::Found) -> Vec<ProseNotice> {
     count(found.nested_unwrapped, &|count| {
         ProseNotice::NestedNoteUnwrapped { at, count }
     });
-    count(found.soft_breaks, &|count| ProseNotice::SoftBreaksSplit {
-        at,
-        count,
-    });
     count(found.typed_indents, &|count| {
         ProseNotice::TypedIndentsRemoved { at, count }
     });
@@ -595,9 +591,6 @@ fn found_notices(at: Place, found: &dialect::Found) -> Vec<ProseNotice> {
     });
     count(found.blank_lines_removed, &|count| {
         ProseNotice::BlankLinesRemoved { at, count }
-    });
-    count(found.stanza_gaps, &|count| {
-        ProseNotice::VerseStanzaGapsLost { at, count }
     });
     count(found.blank_lines_breaks, &|count| {
         ProseNotice::BlankLinesBecameSceneBreaks { at, count }

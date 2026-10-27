@@ -38,6 +38,7 @@ menu-focus-mode = Dis&traktionsfritt läge
 menu-format = F&ormat
 menu-scene-break = Infoga &scenbrytning
 menu-major-scene-break = Infoga st&örre scenbrytning
+menu-line-break = Infog&a radbrytning
 menu-go = &Gå
 menu-go-next-scene = Nästa &scen
 menu-go-prev-scene = Föregående s&cen
@@ -2199,10 +2200,6 @@ import-scrivener-prose-other-links-kept-as-text-line = { $count ->
        [one] 1 länk till ett annat projekt eller till en fil behålls som text.
       *[other] { $count } länkar till andra projekt eller till filer behålls som text.
    }
-import-scrivener-prose-soft-breaks-split-line = { $count ->
-       [one] 1 radbrytning inuti ett stycke inleder nu ett eget stycke.
-      *[other] { $count } radbrytningar inuti stycken inleder nu egna stycken.
-   }
 import-scrivener-prose-typed-indents-removed-line = { $count ->
        [one] 1 indrag som skrevs in i början av ett stycke tas bort.
       *[other] { $count } indrag som skrevs in i början av stycken tas bort.
@@ -2214,10 +2211,6 @@ import-scrivener-prose-left-indents-not-kept-line = { $count ->
 import-scrivener-prose-blank-lines-removed-line = { $count ->
        [one] 1 tomt stycke mellan två andra tas bort.
       *[other] { $count } tomma stycken mellan andra tas bort.
-   }
-import-scrivener-prose-verse-stanza-gaps-lost-line = { $count ->
-       [one] 1 tom rad mellan stroferna i en dikt tas bort, så stroferna går ihop.
-      *[other] { $count } tomma rader mellan stroferna i en dikt tas bort, så stroferna går ihop.
    }
 import-scrivener-prose-blank-lines-became-scene-breaks-line = { $count ->
        [one] 1 tom rad mellan stycken blev en scenbrytning.

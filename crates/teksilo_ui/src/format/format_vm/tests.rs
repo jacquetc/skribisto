@@ -986,6 +986,35 @@ fn a_degenerate_table_is_refused() {
     assert!(vm.in_table().get(), "and the table group unlocks");
 }
 
+/// Format ▸ Insert line break puts one line separator at the caret, in the caret's
+/// paragraph, and it can be taken back in one step. In a table cell, which a save keeps
+/// on one line, the row is off.
+#[test]
+fn insert_line_break_starts_a_line_in_the_same_paragraph() {
+    let (vm, editor, doc) = vm_over_doc("Roses are red,");
+    let handle = editor.handle();
+    let end = doc.character_count();
+    handle.select_range(end, end);
+    vm.sync_now();
+    assert!(vm.can_break_line().get());
+    vm.insert_line_break();
+    assert_eq!(doc.block_count(), 1);
+    assert_eq!(doc.to_plain_text().unwrap(), "Roses are red,\u{2028}");
+    handle.undo();
+    assert_eq!(doc.to_plain_text().unwrap(), "Roses are red,");
+
+    let (vm, _editor) = vm_over("Hello");
+    vm.insert_table(2, 2);
+    assert!(vm.in_table().get());
+    assert!(
+        !vm.can_break_line().get(),
+        "a table cell is one line once saved"
+    );
+    let detached = vm_detached();
+    detached.sync_now();
+    assert!(!detached.can_break_line().get());
+}
+
 /// A synopsis is a real formatting target, not a second-class one: the
 /// commands must reach it, and the surface must say what it is so the dock
 /// drops the one group a synopsis has no use for.

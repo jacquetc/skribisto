@@ -69,6 +69,7 @@ use crate::pictures::{
 };
 use crate::scanner::SourceScanner;
 use crate::sources::rich;
+use crate::sources::rich::LINE_SEPARATOR;
 use crate::sources::rich::{
     Alignment, AnnotationEnd, BlockProps, CommentMark, Direction, OpenMark, ParagraphKind,
     RichAnnotation, RichBlock, RichDocument, RichReply, RichRowMark, Run, RunStyle, assemble,
@@ -822,8 +823,9 @@ struct Walker<'a> {
     /// A page ended after the last block (`fo:break-after="page"`), so the next block the
     /// walk produces starts a new one.
     page_break_pending: bool,
-    /// The paragraph being walked, one entry per line between its line breaks: the block
-    /// that line produced, or `None` for one that produced nothing.
+    /// The paragraph being walked, as [`rich::settle_empty_lines`] reads it: the block it
+    /// produced, or `None` when it produced nothing. One entry, since a line break stays
+    /// inside the paragraph.
     lines: Vec<Option<usize>>,
     /// Its empty lines and the comments opened on each, placed once the paragraph is read
     /// ([`rich::settle_empty_lines`]).
@@ -859,20 +861,6 @@ impl ParaBuild {
             in_cell: false,
             first_annotation,
         }
-    }
-
-    /// The rest of the same paragraph after a line break: same kind, same alignment and
-    /// direction, and not the start of a page. `first_annotation` is the walk's count at
-    /// the break.
-    fn continuation(&self, first_annotation: usize) -> ParaBuild {
-        ParaBuild::new(
-            self.kind,
-            BlockProps {
-                page_break_before: false,
-                ..self.props
-            },
-            first_annotation,
-        )
     }
 }
 
@@ -1242,17 +1230,15 @@ impl<'a> Walker<'a> {
         }
     }
 
-    /// Finish the paragraph under construction. Also what a deliberate line break does,
-    /// the rest of the line starting a paragraph of its own: Djot has no line break inside
-    /// a paragraph that the editor keeps.
+    /// Finish the paragraph under construction. A line break inside it stays in it (see
+    /// the `text:line-break` arm of [`Self::inline`]), so this ends the whole paragraph.
     ///
-    /// A line that holds nothing produces no block. Where the comments opened on it go is
-    /// decided once the whole paragraph is read ([`rich::settle_empty_lines`]): on another
-    /// line of the same paragraph when one holds words, and otherwise they were made
-    /// between blocks. Without saying so, each would land on the paragraph after it,
-    /// silently, although it most often belongs to the one before.
+    /// A paragraph that holds nothing produces no block. Where the comments opened on it
+    /// go is decided once it is read ([`rich::settle_empty_lines`]): they were made between
+    /// blocks. Without saying so, each would land on the paragraph after it, silently,
+    /// although it most often belongs to the one before.
     fn flush_paragraph(&mut self, build: ParaBuild) {
-        if build.runs.is_empty() {
+        if rich::holds_nothing(&build.runs) {
             self.empty_lines.push(rich::EmptyLine {
                 line: self.lines.len(),
                 annotations: build.first_annotation..self.annotations.len(),
@@ -1357,10 +1343,20 @@ impl<'a> Walker<'a> {
                         footnote: None,
                     });
                 }
+                // A line break inside the paragraph, LibreOffice's Shift+Enter: one line
+                // separator, and the spaces opening the next line collapse as at the
+                // paragraph's start. Read as the end of the paragraph, it turned a poem's
+                // stanza into a paragraph a line.
                 (Some(NS_TEXT), "line-break") => {
-                    let next = build.continuation(self.annotations.len());
-                    let finished = std::mem::replace(build, next);
-                    self.flush_paragraph(finished);
+                    build.len += 1;
+                    build.after_space = true;
+                    build.runs.push(Run {
+                        text: LINE_SEPARATOR.to_string(),
+                        style,
+                        link: link.map(str::to_string),
+                        image: None,
+                        footnote: None,
+                    });
                 }
                 (Some(NS_OFFICE), "annotation") => self.open_annotation(child, build, depth + 1),
                 (Some(NS_OFFICE), "annotation-end") => {

@@ -40,6 +40,7 @@ menu-focus-mode = &Dikkat dağıtmayan mod
 menu-format = &Biçim
 menu-scene-break = Sahne a&rası ekle
 menu-major-scene-break = Bü&yük sahne arası ekle
+menu-line-break = Satır son&u ekle
 
 menu-go = Gi&t
 menu-go-next-scene = Sonraki &sahne
@@ -2233,10 +2234,6 @@ import-scrivener-prose-other-links-kept-as-text-line = { $count ->
     [one] Başka bir projeye ya da bir dosyaya giden 1 bağlantı metin olarak korunur.
    *[other] Başka projelere ya da dosyalara giden { $count } bağlantı metin olarak korunur.
 }
-import-scrivener-prose-soft-breaks-split-line = { $count ->
-    [one] Bir paragrafın içindeki 1 satır sonu artık kendi paragrafını başlatıyor.
-   *[other] Paragrafların içindeki { $count } satır sonu artık kendi paragraflarını başlatıyor.
-}
 import-scrivener-prose-typed-indents-removed-line = { $count ->
     [one] Bir paragrafın başına yazılmış 1 girinti kaldırılır.
    *[other] Paragrafların başına yazılmış { $count } girinti kaldırılır.
@@ -2248,10 +2245,6 @@ import-scrivener-prose-left-indents-not-kept-line = { $count ->
 import-scrivener-prose-blank-lines-removed-line = { $count ->
     [one] İki paragraf arasındaki 1 boş paragraf kaldırılır.
    *[other] Paragraflar arasındaki { $count } boş paragraf kaldırılır.
-}
-import-scrivener-prose-verse-stanza-gaps-lost-line = { $count ->
-    [one] Bir şiirin kıtaları arasındaki 1 boş satır kaldırılır, böylece kıtalar birbirine bitişir.
-   *[other] Bir şiirin kıtaları arasındaki { $count } boş satır kaldırılır, böylece kıtalar birbirine bitişir.
 }
 import-scrivener-prose-blank-lines-became-scene-breaks-line = { $count ->
     [one] Paragraflar arasındaki 1 boş satır sahne arasına dönüştü.

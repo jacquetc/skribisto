@@ -241,6 +241,16 @@ pub(super) fn push_para(out: &mut String, text: &str, rtl: bool, extra: &[String
     out.push_str("\n\n");
 }
 
+/// The words of a row's Djot, for the title page's word-count note: its tokens between
+/// whitespace, less the two a line break inside a paragraph is written with and no reader
+/// sees, the `\` of an empty line and the `{}` of a last one. A stanza with a gap in it
+/// counted one word too many per gap.
+fn djot_words(djot: &str) -> usize {
+    djot.split_whitespace()
+        .filter(|token| !matches!(*token, "\\" | "{}"))
+        .count()
+}
+
 /// Append a row's prose, block by block. The prose itself is already Djot and
 /// goes in verbatim — the exporter generates furniture, it never rewrites what
 /// the author wrote.
@@ -302,7 +312,7 @@ fn push_prose_blocks(
     if !rtl && pending.is_empty() && lead.is_empty() && !could_hold_marker {
         out.push_str(trimmed);
         out.push_str("\n\n");
-        return (trimmed.split_whitespace().count(), true);
+        return (djot_words(trimmed), true);
     }
     let mut words = 0usize;
     let mut emitted_prose = false;
@@ -366,7 +376,7 @@ fn push_prose_blocks(
             } else {
                 run_start.get_or_insert(offsets[i].0);
             }
-            words += block.split_whitespace().count();
+            words += djot_words(block);
             continue;
         };
         if flush(

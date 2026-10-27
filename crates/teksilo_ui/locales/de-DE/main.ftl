@@ -40,6 +40,7 @@ menu-focus-mode = Ablenkungs&freier Modus
 menu-format = F&ormat
 menu-scene-break = &Szenentrenner einfügen
 menu-major-scene-break = &Großen Szenentrenner einfügen
+menu-line-break = Zeilenumbru&ch einfügen
 menu-go = &Navigation
 menu-go-next-scene = Nächste &Szene
 menu-go-prev-scene = &Vorherige Szene
@@ -2391,10 +2392,6 @@ import-scrivener-prose-other-links-kept-as-text-line = { $count ->
     [one] 1 Link zu einem anderen Projekt oder zu einer Datei bleibt als Text erhalten.
    *[other] { $count } Links zu anderen Projekten oder zu Dateien bleiben als Text erhalten.
 }
-import-scrivener-prose-soft-breaks-split-line = { $count ->
-    [one] 1 Zeilenumbruch innerhalb eines Absatzes beginnt nun einen eigenen Absatz.
-   *[other] { $count } Zeilenumbrüche innerhalb von Absätzen beginnen nun eigene Absätze.
-}
 import-scrivener-prose-typed-indents-removed-line = { $count ->
     [one] 1 am Absatzanfang getippter Einzug wird entfernt.
    *[other] { $count } am Absatzanfang getippte Einzüge werden entfernt.
@@ -2406,10 +2403,6 @@ import-scrivener-prose-left-indents-not-kept-line = { $count ->
 import-scrivener-prose-blank-lines-removed-line = { $count ->
     [one] 1 leerer Absatz zwischen zwei anderen wird entfernt.
    *[other] { $count } leere Absätze zwischen anderen werden entfernt.
-}
-import-scrivener-prose-verse-stanza-gaps-lost-line = { $count ->
-    [one] 1 Leerzeile zwischen den Strophen eines Gedichts wird entfernt, sodass die Strophen ineinander übergehen.
-   *[other] { $count } Leerzeilen zwischen den Strophen eines Gedichts werden entfernt, sodass die Strophen ineinander übergehen.
 }
 import-scrivener-prose-blank-lines-became-scene-breaks-line = { $count ->
     [one] 1 Leerzeile zwischen Absätzen wurde zu einem Szenentrenner.

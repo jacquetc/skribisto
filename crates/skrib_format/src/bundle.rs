@@ -184,6 +184,15 @@ use std::collections::BTreeMap;
 /// **No floor arm**, the v15 call: additive with a default. An older build that resaves
 /// a v16 bundle drops the field, and the project reads back with the rule on: a
 /// preference re-set in one click, not authored content.
+///
+/// # Not a version step: a line break inside a paragraph
+///
+/// A line break inside a paragraph (Shift+Enter, for verse or a letter) is saved in the
+/// prose as Djot's own hard break, `\` at the end of a line, and needs neither a bump nor
+/// a floor arm. Prose is not a manifest, and an older build reads every word of it: its
+/// reader takes each hard break for the end of a paragraph, so the lines come back as
+/// paragraphs, and only a row it then edits (see `is_stale` in the editor) is saved that
+/// way. The words survive; their layout is re-made in a keystroke a line.
 pub const FORMAT_VERSION: u32 = 16;
 
 /// Read `dict_language` as a list, accepting the pre-v4 space-separated string.

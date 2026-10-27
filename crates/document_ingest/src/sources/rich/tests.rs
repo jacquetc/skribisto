@@ -3,6 +3,11 @@
 
 use super::*;
 
+#[test]
+fn the_line_separator_is_the_editors() {
+    assert_eq!(LINE_SEPARATOR, text_document::LINE_SEPARATOR);
+}
+
 fn bold() -> RunStyle {
     RunStyle {
         bold: true,

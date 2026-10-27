@@ -34,9 +34,10 @@
 //! * Tables, a cell's paragraphs joined by spaces. Pictures, brought in as a Word document's
 //!   are ([`crate::pictures`]) and shown at the size the file shows them; see
 //!   [`RtfOptions::picture_source`].
-//! * Tabs and every other character, kept as the file has them. A line break
-//!   (`\line`, `\column`, U+2028) ends a paragraph and the rest starts a new one of the same
-//!   kind, as the DOCX scanner does, since Djot keeps no line break inside a paragraph.
+//! * Tabs and every other character, kept as the file has them. A line break (`\line`,
+//!   U+2028) stays in its paragraph as a line separator, as the DOCX scanner keeps Word's;
+//!   a column break or a paragraph separator (`\column`, U+2029) ends the paragraph and the
+//!   rest starts a new one of the same kind.
 //!
 //! ## What is reported
 //!
@@ -477,8 +478,9 @@ impl<'d, 'o> Mapper<'d, 'o> {
         })
     }
 
-    /// A paragraph's inline items as pieces between line breaks, and the comment places in
-    /// them.
+    /// A paragraph's inline items as pieces between the breaks that end one (a page or a
+    /// column break, a paragraph separator), and the comment places in them. A line break
+    /// stays inside its piece.
     fn pieces_of(&mut self, paragraph: &Paragraph, context: Context) -> (Vec<Piece>, Vec<Marker>) {
         let mut pieces = vec![Piece::default()];
         let mut markers = Vec::new();
@@ -489,9 +491,8 @@ impl<'d, 'o> Mapper<'d, 'o> {
                     page_break_before: true,
                     ..Piece::default()
                 }),
-                Inline::Break(BreakKind::Line | BreakKind::Column) => {
-                    pieces.push(Piece::default());
-                }
+                Inline::Break(BreakKind::Line) => push_line_break(&mut pieces),
+                Inline::Break(BreakKind::Column) => pieces.push(Piece::default()),
                 Inline::Picture(id) => {
                     if let Some(run) = self.picture(*id, context) {
                         push_object(&mut pieces, run);
@@ -555,7 +556,7 @@ impl<'d, 'o> Mapper<'d, 'o> {
         let mut stretch = String::new();
         for c in run.text.chars() {
             match c {
-                '\u{2028}' | '\u{2029}' => {
+                '\u{2029}' => {
                     push_text(pieces, &mut stretch, style, &link);
                     pieces.push(Piece::default());
                 }
@@ -1084,6 +1085,27 @@ fn push_text(pieces: &mut [Piece], stretch: &mut String, style: RunStyle, link: 
             text,
             style,
             link: link.clone(),
+            footnote: None,
+            image: None,
+        });
+    }
+}
+
+/// A line break inside the paragraph (`\line`): one line separator, in the style of the
+/// text before it on the line, so a bold passage broken over two lines stays one run.
+fn push_line_break(pieces: &mut [Piece]) {
+    if let Some(piece) = pieces.last_mut() {
+        let style = piece
+            .runs
+            .iter()
+            .rev()
+            .find(|run| run.image.is_none() && run.footnote.is_none())
+            .map_or_else(RunStyle::default, |run| run.style);
+        piece.len += 1;
+        piece.runs.push(Run {
+            text: rich::LINE_SEPARATOR.to_string(),
+            style,
+            link: None,
             footnote: None,
             image: None,
         });

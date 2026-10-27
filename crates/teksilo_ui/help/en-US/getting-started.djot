@@ -17,6 +17,10 @@ The *Binder* panel on the left lists your chapters, scenes and notes. Click a sc
 it and start writing. To add one, select a chapter and use the create button at the top of
 *Binder*. Its menu lets you choose *Scene* or another kind of item.
 
+Press `Enter` to start a new paragraph. To start a new line in the same paragraph, for the
+lines of a poem, a song or a letter, press `Shift+Enter`, or choose *Format ▸ Insert line
+break*.
+
 Beside the main text is the *Synopsis*: a short summary you can use to plan the scene.
 You can hide it in *Settings ▸ Editor ▸ Editor Behavior*.
 

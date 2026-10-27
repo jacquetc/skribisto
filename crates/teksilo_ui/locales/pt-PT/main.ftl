@@ -40,6 +40,7 @@ menu-focus-mode = M&odo sem distrações
 menu-format = &Formato
 menu-scene-break = Inserir &quebra de cena
 menu-major-scene-break = Inserir quebra &de cena principal
+menu-line-break = Inserir quebra de lin&ha
 
 menu-go = &Ir
 menu-go-next-scene = &Cena seguinte
@@ -2278,10 +2279,6 @@ import-scrivener-prose-other-links-kept-as-text-line = { $count ->
     [one] 1 ligação para outro projeto ou para um ficheiro é mantida como texto.
    *[other] { $count } ligações para outros projetos ou para ficheiros são mantidas como texto.
 }
-import-scrivener-prose-soft-breaks-split-line = { $count ->
-    [one] 1 quebra de linha dentro de um parágrafo inicia agora um parágrafo próprio.
-   *[other] { $count } quebras de linha dentro de parágrafos iniciam agora parágrafos próprios.
-}
 import-scrivener-prose-typed-indents-removed-line = { $count ->
     [one] 1 avanço escrito no início de um parágrafo é removido.
    *[other] { $count } avanços escritos no início de parágrafos são removidos.
@@ -2293,10 +2290,6 @@ import-scrivener-prose-left-indents-not-kept-line = { $count ->
 import-scrivener-prose-blank-lines-removed-line = { $count ->
     [one] 1 parágrafo vazio entre dois outros é removido.
    *[other] { $count } parágrafos vazios entre outros são removidos.
-}
-import-scrivener-prose-verse-stanza-gaps-lost-line = { $count ->
-    [one] 1 linha em branco entre as estrofes de um poema é removida, por isso as estrofes ficam seguidas.
-   *[other] { $count } linhas em branco entre as estrofes de um poema são removidas, por isso as estrofes ficam seguidas.
 }
 import-scrivener-prose-blank-lines-became-scene-breaks-line = { $count ->
     [one] 1 linha em branco entre parágrafos tornou-se uma quebra de cena.

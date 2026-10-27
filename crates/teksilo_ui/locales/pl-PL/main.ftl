@@ -40,6 +40,7 @@ menu-focus-mode = &Tryb bez rozpraszania
 menu-format = &Format
 menu-scene-break = Wst&aw separator sceny
 menu-major-scene-break = Wstaw &większy separator sceny
+menu-line-break = W&staw podział wiersza
 
 menu-go = Pr&zejdź
 menu-go-next-scene = &Następna scena
@@ -2841,12 +2842,6 @@ import-scrivener-prose-other-links-kept-as-text-line = { $count ->
         [many] { $count } odnośników do innych projektów lub plików zostaje zachowanych jako tekst.
        *[other] { $count } odnośnika do innych projektów lub plików zostaje zachowanych jako tekst.
     }
-import-scrivener-prose-soft-breaks-split-line = { $count ->
-        [one] { $count } podział wiersza wewnątrz akapitu rozpoczyna teraz osobny akapit.
-        [few] { $count } podziały wierszy wewnątrz akapitów rozpoczynają teraz osobne akapity.
-        [many] { $count } podziałów wierszy wewnątrz akapitów rozpoczyna teraz osobne akapity.
-       *[other] { $count } podziału wierszy wewnątrz akapitów rozpoczyna teraz osobne akapity.
-    }
 import-scrivener-prose-typed-indents-removed-line = { $count ->
         [one] { $count } wcięcie wpisane na początku akapitu zostaje usunięte.
         [few] { $count } wcięcia wpisane na początku akapitów zostają usunięte.
@@ -2864,12 +2859,6 @@ import-scrivener-prose-blank-lines-removed-line = { $count ->
         [few] { $count } puste akapity między innymi zostają usunięte.
         [many] { $count } pustych akapitów między innymi zostaje usuniętych.
        *[other] { $count } pustego akapitu między innymi zostaje usuniętych.
-    }
-import-scrivener-prose-verse-stanza-gaps-lost-line = { $count ->
-        [one] { $count } pusty wiersz między strofami zostaje usunięty, więc strofy łączą się ze sobą.
-        [few] { $count } puste wiersze między strofami zostają usunięte, więc strofy łączą się ze sobą.
-        [many] { $count } pustych wierszy między strofami zostaje usuniętych, więc strofy łączą się ze sobą.
-       *[other] { $count } pustego wiersza między strofami zostaje usuniętych, więc strofy łączą się ze sobą.
     }
 import-scrivener-prose-blank-lines-became-scene-breaks-line = { $count ->
         [one] { $count } pusty wiersz między akapitami stał się separatorem sceny.

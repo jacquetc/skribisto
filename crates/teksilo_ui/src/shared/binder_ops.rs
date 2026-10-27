@@ -27,7 +27,7 @@
 //! `binder_ordering` crate (backend-side) — neither of which may touch a unit of work, which
 //! is precisely why these backend-touching helpers could not live there.
 
-use teksilo::text_document::{MoveMode, MoveOperation, TextDocument};
+use teksilo::text_document::{LINE_SEPARATOR, MoveMode, MoveOperation, TextDocument};
 
 use frontend::AppContext;
 use frontend::binder_item_management::{MergeTwoScenesDto, MoveDto, MovePlace, SplitSceneDto};
@@ -738,11 +738,12 @@ fn end_of(doc: &TextDocument) -> usize {
     c.position()
 }
 
-/// Whether `text` holds nothing a scene would show: spaces, tabs and paragraph breaks
-/// alone. A picture, a note reference or a table stands in the text as a character of its
-/// own, and counts.
+/// Whether `text` holds nothing a scene would show: spaces, tabs, paragraph breaks and line
+/// breaks alone. A picture, a note reference or a table stands in the text as a character
+/// of its own, and counts.
 fn is_blank(text: &str) -> bool {
-    text.chars().all(|c| matches!(c, ' ' | '\t' | '\n'))
+    text.chars()
+        .all(|c| matches!(c, ' ' | '\t' | '\n' | LINE_SEPARATOR))
 }
 
 /// `doc`'s main text from `from` to `to`, as the Djot of a document of its own.
@@ -877,8 +878,10 @@ impl Cut {
 
 /// Where a split at `caret` falls ([`Cut`]).
 ///
-/// Only the caret's paragraph is looked at, and only spaces, tabs and the line breaks of a
-/// code block count as blanks: they are what the writer puts between words and lines. A caret with nothing but blanks before it in its
+/// Only the caret's paragraph is looked at, and only spaces, tabs, line breaks inside the
+/// paragraph and the line breaks of a code block count as blanks: they are what the writer
+/// puts between words and lines. A split at a line break takes it away, as one at a
+/// paragraph's edge takes the spaces there. A caret with nothing but blanks before it in its
 /// paragraph and words after it (at the paragraph's very start, or inside its indentation)
 /// cuts in front of the whole paragraph, so the indentation the writer typed opens the new
 /// scene with it. A paragraph of blanks alone goes with neither half. A caret in a table
@@ -895,8 +898,9 @@ fn cut_at(doc: &TextDocument, caret: usize) -> anyhow::Result<Cut> {
     }
     let text: Vec<char> = doc.text_at(block.start, block.length)?.chars().collect();
     let at = caret.saturating_sub(block.start).min(text.len());
-    // A line break stands inside a paragraph only in a code block, where it ends a line.
-    let is_blank = |c: &&char| matches!(**c, ' ' | '\t' | '\n');
+    // A line break stands inside a paragraph as a line separator, or as a `\n` in a code
+    // block, where it ends a line.
+    let is_blank = |c: &&char| matches!(**c, ' ' | '\t' | '\n' | LINE_SEPARATOR);
     let blanks_before = text[..at].iter().rev().take_while(is_blank).count();
     let blanks_after = text[at..].iter().take_while(is_blank).count();
     let block_end = block.start + text.len();
@@ -1159,6 +1163,19 @@ mod tests {
             let (before, after) = split_djot(&doc, caret).expect("split");
             assert_eq!(shown(&before), "Hello", "caret {caret}");
             assert_eq!(shown(&after), "\tWorld", "caret {caret}");
+        }
+    }
+
+    /// A split at a line break inside a paragraph takes the break away: the old scene
+    /// ends on the line before it, and the new one opens on the line after it, not on an
+    /// empty line.
+    #[test]
+    fn split_djot_at_a_line_break_leaves_it_out_of_both_halves() {
+        let doc = typed("Roses are red,\u{2028}violets are blue.");
+        for caret in [14, 15] {
+            let (before, after) = split_djot(&doc, caret).expect("split");
+            assert_eq!(shown(&before), "Roses are red,", "caret {caret}");
+            assert_eq!(shown(&after), "violets are blue.", "caret {caret}");
         }
     }
 

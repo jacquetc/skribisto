@@ -877,6 +877,64 @@ fn every_quotation_is_marked_but_only_the_first_takes_the_extras() {
     assert_eq!(out.matches("page_break_before").count(), 1, "{out}");
 }
 
+/// An epigraph whose quotation holds a line break is still one quotation: the writer
+/// prefixes every line of it with `>`, so it is marked once, and every format sets the
+/// break as its own.
+#[test]
+fn an_epigraph_holding_a_line_break_is_marked_once() {
+    let (out, marked) = mark_epigraph(
+        "> Salt is the only\\\n> honest preservative.\n>\n> {alignment=right}\n> — M. Ferrand",
+        &[],
+    );
+    assert!(marked);
+    assert_eq!(out.matches("semantic_role=epigraph").count(), 1, "{out}");
+
+    let g = flat_book_with_epigraph("> Salt is the only\\\n> honest preservative.");
+    let p = preset("neutral");
+    let html = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::Html)).unwrap();
+    assert!(
+        html.contains("Salt is the only<br/>honest preservative."),
+        "{html}"
+    );
+    let txt = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
+    // Each line of the quotation is indented as the quotation is.
+    assert!(
+        txt.contains("    Salt is the only\n    honest preservative."),
+        "{txt}"
+    );
+}
+
+/// The empty line and the last line a line break leaves are written `\` and `{}`, which
+/// no reader sees: they are not words of the manuscript.
+#[test]
+fn a_line_break_adds_no_words_to_the_count() {
+    let p = preset("neutral");
+    let words_of = |prose: &str| {
+        let mut g = flat_book();
+        for it in &mut g.binders[0].items {
+            if it.item.id == 102 {
+                for content in &mut it.contents {
+                    if content.role == ContentRole::SceneText {
+                        content.data = prose.to_string();
+                    }
+                }
+            }
+        }
+        assemble(
+            &req(&g, &[100, 101, 102], &p, ExportFormat::PlainText),
+            &|_| {},
+            &AtomicBool::new(false),
+        )
+        .unwrap()
+        .stats
+        .words
+    };
+    assert_eq!(
+        words_of("Salt is\\\n\\\nthe only one\\\n{}"),
+        words_of("Salt is the only one")
+    );
+}
+
 /// An epigraph with no `>` at all reports that it took nothing, so the caller knows to
 /// place the break itself.
 #[test]

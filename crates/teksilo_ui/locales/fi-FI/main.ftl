@@ -40,6 +40,7 @@ menu-focus-mode = Häiriötön &tila
 menu-format = M&uotoilu
 menu-scene-break = Lisää koh&tauskatko
 menu-major-scene-break = Lisää suu&ri kohtauskatko
+menu-line-break = Lisää ri&vinvaihto
 
 menu-go = &Siirry
 menu-go-next-scene = Seuraava &kohtaus
@@ -2337,10 +2338,6 @@ import-scrivener-prose-other-links-kept-as-text-line = { $count ->
     [one] 1 linkki toiseen projektiin tai tiedostoon säilytetään tekstinä.
    *[other] { $count } linkkiä muihin projekteihin tai tiedostoihin säilytetään tekstinä.
 }
-import-scrivener-prose-soft-breaks-split-line = { $count ->
-    [one] 1 kappaleen sisäinen rivinvaihto aloittaa nyt oman kappaleensa.
-   *[other] { $count } kappaleiden sisäistä rivinvaihtoa aloittaa nyt kukin oman kappaleensa.
-}
 import-scrivener-prose-typed-indents-removed-line = { $count ->
     [one] 1 kappaleen alkuun kirjoitettu sisennys poistetaan.
    *[other] { $count } kappaleiden alkuun kirjoitettua sisennystä poistetaan.
@@ -2352,10 +2349,6 @@ import-scrivener-prose-left-indents-not-kept-line = { $count ->
 import-scrivener-prose-blank-lines-removed-line = { $count ->
     [one] 1 kahden kappaleen välissä ollut tyhjä kappale poistetaan.
    *[other] { $count } muiden kappaleiden välissä ollutta tyhjää kappaletta poistetaan.
-}
-import-scrivener-prose-verse-stanza-gaps-lost-line = { $count ->
-    [one] 1 runon säkeistöjen välinen tyhjä rivi poistetaan, joten säkeistöt jatkuvat yhtenä.
-   *[other] { $count } runon säkeistöjen välistä tyhjää riviä poistetaan, joten säkeistöt jatkuvat yhtenä.
 }
 import-scrivener-prose-blank-lines-became-scene-breaks-line = { $count ->
     [one] 1 kappaleiden välisestä tyhjästä rivistä tuli kohtauskatko.

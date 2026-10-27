@@ -40,6 +40,7 @@ menu-focus-mode = M&odo sin distracciones
 menu-format = &Formato
 menu-scene-break = In&sertar separador de escena
 menu-major-scene-break = Insertar separador de escena &mayor
+menu-line-break = Insertar salto de l&ínea
 
 menu-go = &Ir
 menu-go-next-scene = &Siguiente escena
@@ -2327,10 +2328,6 @@ import-scrivener-prose-other-links-kept-as-text-line = { $count ->
     [one] 1 enlace a otro proyecto o a un archivo se conserva como texto.
    *[other] { $count } enlaces a otros proyectos o a archivos se conservan como texto.
 }
-import-scrivener-prose-soft-breaks-split-line = { $count ->
-    [one] 1 salto de línea dentro de un párrafo inicia ahora un párrafo propio.
-   *[other] { $count } saltos de línea dentro de párrafos inician ahora párrafos propios.
-}
 import-scrivener-prose-typed-indents-removed-line = { $count ->
     [one] Se elimina 1 sangría tecleada al principio de un párrafo.
    *[other] Se eliminan { $count } sangrías tecleadas al principio de párrafos.
@@ -2342,10 +2339,6 @@ import-scrivener-prose-left-indents-not-kept-line = { $count ->
 import-scrivener-prose-blank-lines-removed-line = { $count ->
     [one] Se elimina 1 párrafo vacío entre otros dos.
    *[other] Se eliminan { $count } párrafos vacíos entre otros.
-}
-import-scrivener-prose-verse-stanza-gaps-lost-line = { $count ->
-    [one] Se elimina 1 línea en blanco entre las estrofas de un poema, así que las estrofas quedan seguidas.
-   *[other] Se eliminan { $count } líneas en blanco entre las estrofas de un poema, así que las estrofas quedan seguidas.
 }
 import-scrivener-prose-blank-lines-became-scene-breaks-line = { $count ->
     [one] 1 línea en blanco entre párrafos se ha convertido en separador de escena.

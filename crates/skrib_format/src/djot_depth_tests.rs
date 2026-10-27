@@ -752,7 +752,8 @@ proptest! {
 
 /// One piece of what a writer can type: a word, a run of spaces or tabs of any length,
 /// any character a Djot marker is made of, alone or as a marker, or repeated in a long
-/// run, and the break between two paragraphs.
+/// run, the break between two paragraphs, and a line break inside one (Shift+Enter),
+/// alone or many in a row.
 fn typed_piece() -> impl Strategy<Value = String> {
     let blank = prop::sample::select(vec![" ", "\t", " \t", "\t ", "\r", "\u{A0}", "\u{3000}"]);
     let marker = prop::sample::select(vec![
@@ -769,6 +770,7 @@ fn typed_piece() -> impl Strategy<Value = String> {
         1 => (blank, 1usize..300, "[a-z]{1,6}")
             .prop_map(|(blank, n, word)| format!("{}{word}", blank.repeat(n))),
         1 => Just("\n".to_string()),
+        1 => (1usize..40).prop_map(|n| "\u{2028}".repeat(n)),
     ]
 }
 
@@ -812,8 +814,8 @@ fn edit() -> impl Strategy<Value = Edit> {
 
 /// Type `text` at the caret as the editor takes it in, from the keyboard or a paste:
 /// every line break, `\r\n`, `\r` or `\n`, a new paragraph (`teksilo`'s
-/// `insert_multiline_plain`, and Enter), and the rest inserted as it stands. The editor
-/// never puts a line break inside a paragraph.
+/// `insert_multiline_plain`, and Enter), and the rest inserted as it stands, a line
+/// break inside a paragraph (U+2028, which Shift+Enter inserts) included.
 fn type_at(cursor: &text_document::TextCursor, text: &str) {
     let text = text.replace("\r\n", "\n").replace('\r', "\n");
     for (index, line) in text.split('\n').enumerate() {
@@ -934,6 +936,28 @@ proptest! {
         a_load_accepts(edited_djot(&edits))?;
         a_load_accepts(edited_djot(&remark))?;
     }
+}
+
+/// A stanza of 600 lines in italics, past the 512 lines the load lets a mark stay open
+/// over: the editor writes each line with its own marks, so the load accepts it, and it
+/// reads back as the one paragraph it was.
+#[test]
+fn a_long_italic_stanza_the_editor_stores_loads_again() {
+    let doc = TextDocument::new();
+    doc.set_djot_sync("_line 0_").expect("the first line");
+    let rest: String = (1..600).map(|i| format!("\u{2028}line {i}")).collect();
+    doc.cursor_at("line 0".len())
+        .insert_text(&rest)
+        .expect("the other lines");
+    assert_eq!(doc.block_count(), 1);
+    let typed = doc.to_plain_text().expect("plain text");
+    let djot = doc
+        .to_djot()
+        .expect("the editor writes its document as Djot");
+    assert!(djot.starts_with("_line 0_\\\n_line 1_\\\n"), "{:.80}", djot);
+    assert_eq!(check(&djot), Ok(()));
+    assert_eq!(admit(djot.clone()).as_deref(), Ok(djot.as_str()));
+    assert_eq!(parse_on_a_long_operation_stack(djot), Ok(typed));
 }
 
 // ── Deep nesting the editor writes loads at its real depth ───────────────────────────

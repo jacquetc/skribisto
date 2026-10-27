@@ -39,6 +39,7 @@ menu-focus-mode = &Режим без відволікань
 menu-format = &Формат
 menu-scene-break = &Вставити розрив сцени
 menu-major-scene-break = Вставити &головний розрив сцени
+menu-line-break = В&ставити розрив рядка
 menu-go = П&ерехід
 menu-go-next-scene = Н&аступна сцена
 menu-go-prev-scene = &Попередня сцена
@@ -2901,12 +2902,6 @@ import-scrivener-prose-other-links-kept-as-text-line = { $count ->
     [many] { $count } посилань на інші проєкти чи файли збережено як текст.
    *[other] { $count } посилання на інші проєкти чи файли збережено як текст.
 }
-import-scrivener-prose-soft-breaks-split-line = { $count ->
-    [one] { $count } розрив рядка всередині абзацу тепер починає окремий абзац.
-    [few] { $count } розриви рядків усередині абзаців тепер починають окремі абзаци.
-    [many] { $count } розривів рядків усередині абзаців тепер починають окремі абзаци.
-   *[other] { $count } розриву рядка всередині абзаців тепер починають окремі абзаци.
-}
 import-scrivener-prose-typed-indents-removed-line = { $count ->
     [one] { $count } відступ, набраний на початку абзацу, вилучено.
     [few] { $count } відступи, набрані на початку абзаців, вилучено.
@@ -2924,12 +2919,6 @@ import-scrivener-prose-blank-lines-removed-line = { $count ->
     [few] { $count } порожні абзаци між іншими вилучено.
     [many] { $count } порожніх абзаців між іншими вилучено.
    *[other] { $count } порожнього абзацу між іншими вилучено.
-}
-import-scrivener-prose-verse-stanza-gaps-lost-line = { $count ->
-    [one] { $count } порожній рядок між строфами вірша вилучено, тож строфи йдуть одна за одною.
-    [few] { $count } порожні рядки між строфами вірша вилучено, тож строфи йдуть одна за одною.
-    [many] { $count } порожніх рядків між строфами вірша вилучено, тож строфи йдуть одна за одною.
-   *[other] { $count } порожнього рядка між строфами вірша вилучено, тож строфи йдуть одна за одною.
 }
 import-scrivener-prose-blank-lines-became-scene-breaks-line = { $count ->
     [one] { $count } порожній рядок між абзацами став розривом сцени.

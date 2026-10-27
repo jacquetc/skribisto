@@ -40,6 +40,7 @@ menu-focus-mode = Režim &bez rozptylování
 menu-format = &Formát
 menu-scene-break = Vložit předěl &scény
 menu-major-scene-break = Vložit hlavní předěl scén&y
+menu-line-break = V&ložit zalomení řádku
 
 menu-go = Pře&jít
 menu-go-next-scene = Další &scéna
@@ -2554,11 +2555,6 @@ import-scrivener-prose-other-links-kept-as-text-line = { $count ->
     [few] { $count } odkazy na jiné projekty nebo na soubory se zachovají jako text.
    *[other] { $count } odkazů na jiné projekty nebo na soubory se zachová jako text.
 }
-import-scrivener-prose-soft-breaks-split-line = { $count ->
-    [one] 1 zalomení řádku uvnitř odstavce teď začíná samostatný odstavec.
-    [few] { $count } zalomení řádků uvnitř odstavců teď začínají samostatné odstavce.
-   *[other] { $count } zalomení řádků uvnitř odstavců teď začíná samostatné odstavce.
-}
 import-scrivener-prose-typed-indents-removed-line = { $count ->
     [one] 1 odsazení napsané na začátku odstavce se odstraní.
     [few] { $count } odsazení napsaná na začátku odstavců se odstraní.
@@ -2573,11 +2569,6 @@ import-scrivener-prose-blank-lines-removed-line = { $count ->
     [one] 1 prázdný odstavec mezi dvěma jinými se odstraní.
     [few] { $count } prázdné odstavce mezi jinými se odstraní.
    *[other] { $count } prázdných odstavců mezi jinými se odstraní.
-}
-import-scrivener-prose-verse-stanza-gaps-lost-line = { $count ->
-    [one] 1 prázdný řádek mezi slokami básně se odstraní, takže sloky na sebe navazují.
-    [few] { $count } prázdné řádky mezi slokami básně se odstraní, takže sloky na sebe navazují.
-   *[other] { $count } prázdných řádků mezi slokami básně se odstraní, takže sloky na sebe navazují.
 }
 import-scrivener-prose-blank-lines-became-scene-breaks-line = { $count ->
     [one] 1 prázdný řádek mezi odstavci se stal předělem scény.

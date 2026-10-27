@@ -117,20 +117,27 @@ fn a_page_break_at_the_end_of_a_paragraph_starts_the_next_page() {
     );
 }
 
+/// A line break (`\line`, or a line separator in the text) stays in its paragraph, as a
+/// line separator. A column break and a paragraph separator end the paragraph, and the
+/// rest keeps its kind.
 #[test]
-fn a_line_break_ends_the_paragraph_and_the_rest_keeps_its_kind() {
-    let conversion =
-        convert(r"{\rtf1\pard\qc First line\line second line\par Soft @uc0@u8232 return.\par}");
+fn a_line_break_stays_in_its_paragraph() {
+    let conversion = convert(
+        r"{\rtf1\pard\qc First line\line second line\par Soft @uc0@u8232 return.\par Column\column next.\par Hard@uc0@u8233 stop.\par}",
+    );
     let got = paragraphs(&conversion.document);
     assert_eq!(
         got.iter().map(|(_, t, _)| t.as_str()).collect::<Vec<_>>(),
-        ["First line", "second line", "Soft ", "return."]
+        [
+            "First line\u{2028}second line",
+            "Soft \u{2028}return.",
+            "Column",
+            "next.",
+            "Hard",
+            "stop."
+        ]
     );
-    assert!(
-        got[..2]
-            .iter()
-            .all(|(_, _, p)| p.alignment == Some(Alignment::Center))
-    );
+    assert_eq!(got[0].2.alignment, Some(Alignment::Center));
 }
 
 #[test]

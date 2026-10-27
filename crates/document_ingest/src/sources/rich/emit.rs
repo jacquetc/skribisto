@@ -375,13 +375,15 @@ impl Item {
 }
 
 /// A container's runs as items: adjacent text with the same style and link merged, and
-/// every line break turned into a space.
+/// every stray `\n` or `\r` turned into a space.
 ///
 /// Word splits one styled word across several identically formatted runs, and ODF does the
 /// same across span boundaries; merging them writes `{*bold*}` once rather than three
-/// times. A line break a container meant is split into a paragraph of its own by the
-/// scanner, so one still inside a run is stray, and Djot would read it as a space anyway.
-/// Replacing it character for character keeps every offset measured in the run's text.
+/// times. A line break a container meant inside its paragraph reaches a run as a
+/// [`LINE_SEPARATOR`](super::LINE_SEPARATOR), which is kept: the parser reads it as a
+/// character, and the editor as the line break it is. A `\n` or `\r` still inside a run
+/// is stray, and Djot would read it as a space anyway. Replacing it character for character
+/// keeps every offset measured in the run's text.
 fn items_of(runs: &[Run]) -> Vec<Item> {
     let mut out: Vec<Item> = Vec::with_capacity(runs.len());
     for run in runs {

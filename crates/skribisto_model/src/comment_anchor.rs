@@ -32,6 +32,7 @@
 //! corrupts an anchor on any paragraph containing a non-ASCII character.
 
 use common::entities::CommentOrphanReason;
+use text_document::LINE_SEPARATOR;
 
 /// How many characters of context to capture on each side of a quote.
 ///
@@ -152,9 +153,13 @@ pub fn shift_range(
 /// time it was re-resolved. But the character has no glyph, so a list or a card
 /// that printed it verbatim would show an empty box in the middle of the
 /// sentence. Substituted only at the point of display, never in what is stored.
+///
+/// A line break inside the paragraph is shown as a space, for the same reason: the
+/// quote is one line in the list, where it would show as nothing and run the two
+/// lines' words together.
 pub fn for_display(quote: &str) -> String {
-    if quote.contains('\u{FFFC}') {
-        quote.replace('\u{FFFC}', "🖼")
+    if quote.contains(['\u{FFFC}', LINE_SEPARATOR]) {
+        quote.replace('\u{FFFC}', "🖼").replace(LINE_SEPARATOR, " ")
     } else {
         quote.to_string()
     }

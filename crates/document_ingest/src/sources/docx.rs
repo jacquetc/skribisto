@@ -108,6 +108,7 @@ use crate::diagnostics::ImportDiagnostic;
 use crate::pictures::{DocumentPictures, PackagePictures, PictureRefusal, PlacedPicture};
 use crate::scanner::SourceScanner;
 use crate::sources::rich;
+use crate::sources::rich::LINE_SEPARATOR;
 use crate::sources::rich::{
     Alignment, AnnotationEnd, BlockProps, CommentMark, Direction, OpenMark, ParagraphKind,
     RichAnnotation, RichBlock, RichDocument, RichReply, RichRowMark, Run, RunStyle, assemble,
@@ -2422,6 +2423,16 @@ struct RawCount<'r, 'p> {
     equations: usize,
 }
 
+/// Whether a `w:br` ends its paragraph: a page or a column break. `docx-rs` reads a break's
+/// kind from its first attribute, whatever that attribute is, so this does too, or the raw
+/// offsets and the typed walk would disagree about where a paragraph ends.
+fn ends_paragraph(br: roxmltree::Node<'_, '_>) -> bool {
+    matches!(
+        br.attributes().next().map(|attribute| attribute.value()),
+        Some("page" | "column")
+    )
+}
+
 impl<'r, 'p> RawCount<'r, 'p> {
     fn new(ranged: &'r HashSet<usize>, pictures: &'r mut RawPictures<'p>, in_table: bool) -> Self {
         RawCount {
@@ -2456,14 +2467,14 @@ impl<'r, 'p> RawCount<'r, 'p> {
             match child.tag_name().name() {
                 "t" if !removed && !is_math(child) => self.offset += text_of(child).chars().count(),
                 "tab" | "ptab" if !removed => self.offset += 1,
-                "br" | "cr" if !removed => {
-                    if self.in_table {
-                        self.offset += 1;
-                    } else {
-                        self.stretch += 1;
-                        self.offset = 0;
-                    }
+                // A page or a column break starts a new paragraph, as in the typed walk;
+                // any other break is one character of its paragraph. Told apart by the
+                // element's first attribute alone, which is all `docx-rs` reads.
+                "br" if !removed && !self.in_table && ends_paragraph(child) => {
+                    self.stretch += 1;
+                    self.offset = 0;
                 }
+                "br" | "cr" if !removed => self.offset += 1,
                 "drawing" => {
                     if !removed && holds_picture(child) && self.pictures.comes(child) {
                         self.offset += 1;
@@ -2856,9 +2867,9 @@ struct ParaBuild {
 }
 
 impl ParaBuild {
-    /// The rest of the same paragraph after a line break: same kind, same alignment and
-    /// direction, and not the start of a page. `first_annotation` is the walk's count at
-    /// the break.
+    /// The rest of the same paragraph after a page or a column break: same kind, same
+    /// alignment and direction, and not the start of a page. `first_annotation` is the
+    /// walk's count at the break.
     fn continuation(&self, first_annotation: usize) -> ParaBuild {
         ParaBuild {
             kind: self.kind,
@@ -3755,10 +3766,12 @@ impl<'a> Walker<'a> {
                         footnote: None,
                     });
                 }
-                // A line break ends the paragraph here and the rest starts a new one:
-                // Djot has no line break inside a paragraph that the editor keeps. A page
-                // break does the same, and the text after it starts the new page.
-                RunChild::Break(kind) => {
+                // A page or a column break ends the paragraph here and the rest starts a
+                // new one, after a page break on a new page.
+                RunChild::Break(kind)
+                    if *kind == Break::new(BreakType::Page)
+                        || *kind == Break::new(BreakType::Column) =>
+                {
                     let next = build.continuation(self.annotations.len());
                     let finished = std::mem::replace(build, next);
                     self.flush(finished);
@@ -3766,10 +3779,20 @@ impl<'a> Walker<'a> {
                         self.page_break_pending = true;
                     }
                 }
-                RunChild::CarriageReturn(_) => {
-                    let next = build.continuation(self.annotations.len());
-                    let finished = std::mem::replace(build, next);
-                    self.flush(finished);
+                // Any other break is a line break inside the paragraph, Word's Shift+Enter:
+                // a `w:br` with no type, a text-wrapping one (`docx-rs` reads one that
+                // names its `w:clear` first as `Unsupported`), and a `w:cr`. It stays in the
+                // paragraph as one line separator. Read as the end of the paragraph, it
+                // turned a poem's stanza into a paragraph a line.
+                RunChild::Break(_) | RunChild::CarriageReturn(_) => {
+                    build.len += 1;
+                    build.runs.push(Run {
+                        text: LINE_SEPARATOR.to_string(),
+                        style,
+                        link: link.map(str::to_string),
+                        image: None,
+                        footnote: None,
+                    });
                 }
                 RunChild::Drawing(drawing) => match &drawing.data {
                     Some(DrawingData::Pic(pic)) => self.picture(pic, build),
@@ -3984,7 +4007,7 @@ impl<'a> Walker<'a> {
     /// in it go is decided once the whole paragraph is read, since that depends on whether
     /// any other line of it holds words ([`rich::settle_empty_lines`]).
     fn flush(&mut self, build: ParaBuild) {
-        if build.runs.is_empty() {
+        if rich::holds_nothing(&build.runs) {
             self.empty_lines.push(rich::EmptyLine {
                 line: self.stretches.len(),
                 annotations: build.first_annotation..self.annotations.len(),

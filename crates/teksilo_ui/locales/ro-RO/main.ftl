@@ -48,6 +48,7 @@ menu-focus-mode = Mod fără &distrageri
 menu-format = &Formatare
 menu-scene-break = Inserează se&parator de scenă
 menu-major-scene-break = Inserează separator &major de scenă
+menu-line-break = Inserea&ză întrerupere de rând
 
 ## Menu bar: Go
 menu-go = &Navigare
@@ -2768,11 +2769,6 @@ import-scrivener-prose-other-links-kept-as-text-line = { $count ->
     [few] { $count } legături către alte proiecte sau către fișiere sunt păstrate ca text.
    *[other] { $count } de legături către alte proiecte sau către fișiere sunt păstrate ca text.
 }
-import-scrivener-prose-soft-breaks-split-line = { $count ->
-    [one] Un salt de rând din interiorul unui paragraf începe acum un paragraf nou.
-    [few] { $count } salturi de rând din interiorul paragrafelor încep acum paragrafe noi.
-   *[other] { $count } de salturi de rând din interiorul paragrafelor încep acum paragrafe noi.
-}
 import-scrivener-prose-typed-indents-removed-line = { $count ->
     [one] O indentare tastată la începutul unui paragraf este eliminată.
     [few] { $count } indentări tastate la începutul paragrafelor sunt eliminate.
@@ -2787,11 +2783,6 @@ import-scrivener-prose-blank-lines-removed-line = { $count ->
     [one] Un paragraf gol aflat între alte două este eliminat.
     [few] { $count } paragrafe goale aflate între altele sunt eliminate.
    *[other] { $count } de paragrafe goale aflate între altele sunt eliminate.
-}
-import-scrivener-prose-verse-stanza-gaps-lost-line = { $count ->
-    [one] Un rând gol dintre strofele unei poezii este eliminat, așa că strofele se succed fără spațiu între ele.
-    [few] { $count } rânduri goale dintre strofele unei poezii sunt eliminate, așa că strofele se succed fără spațiu între ele.
-   *[other] { $count } de rânduri goale dintre strofele unei poezii sunt eliminate, așa că strofele se succed fără spațiu între ele.
 }
 import-scrivener-prose-blank-lines-became-scene-breaks-line = { $count ->
     [one] Un rând gol dintre paragrafe a devenit separator de scenă.

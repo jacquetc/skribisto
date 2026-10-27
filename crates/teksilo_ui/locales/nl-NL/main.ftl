@@ -40,6 +40,7 @@ menu-focus-mode = &Afleidingsvrije modus
 menu-format = &Opmaak
 menu-scene-break = Scèneovergang i&nvoegen
 menu-major-scene-break = &Grote scèneovergang invoegen
+menu-line-break = R&egeleinde invoegen
 
 menu-go = &Ga
 menu-go-next-scene = Volgende &scène
@@ -2274,10 +2275,6 @@ import-scrivener-prose-other-links-kept-as-text-line = { $count ->
         [one] 1 koppeling naar een ander project of naar een bestand blijft als tekst staan.
        *[other] { $count } koppelingen naar andere projecten of naar bestanden blijven als tekst staan.
     }
-import-scrivener-prose-soft-breaks-split-line = { $count ->
-        [one] 1 regeleinde binnen een alinea begint nu een eigen alinea.
-       *[other] { $count } regeleinden binnen alinea’s beginnen nu elk een eigen alinea.
-    }
 import-scrivener-prose-typed-indents-removed-line = { $count ->
         [one] 1 inspringing die aan het begin van een alinea was getypt, wordt verwijderd.
        *[other] { $count } inspringingen die aan het begin van alinea’s waren getypt, worden verwijderd.
@@ -2289,10 +2286,6 @@ import-scrivener-prose-left-indents-not-kept-line = { $count ->
 import-scrivener-prose-blank-lines-removed-line = { $count ->
         [one] 1 lege alinea tussen twee andere wordt verwijderd.
        *[other] { $count } lege alinea’s tussen andere worden verwijderd.
-    }
-import-scrivener-prose-verse-stanza-gaps-lost-line = { $count ->
-        [one] 1 lege regel tussen de strofen van een gedicht wordt verwijderd, zodat de strofen doorlopen.
-       *[other] { $count } lege regels tussen de strofen van een gedicht worden verwijderd, zodat de strofen doorlopen.
     }
 import-scrivener-prose-blank-lines-became-scene-breaks-line = { $count ->
         [one] 1 lege regel tussen alinea’s is een scèneovergang geworden.

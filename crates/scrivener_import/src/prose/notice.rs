@@ -194,17 +194,12 @@ pub enum ProseNotice {
     /// Links to anything but a web or mail address (another project, a file): the words
     /// stay.
     OtherLinksKeptAsText { at: Place, count: u32 },
-    /// Line breaks inside paragraphs, each made a paragraph of its own.
-    SoftBreaksSplit { at: Place, count: u32 },
     /// Indents typed at the start of paragraphs, removed.
     TypedIndentsRemoved { at: Place, count: u32 },
     /// Paragraphs indented from the margin: the indent is not kept.
     LeftIndentsNotKept { at: Place, count: u32 },
     /// Empty paragraphs between other paragraphs, removed.
     BlankLinesRemoved { at: Place, count: u32 },
-    /// Blank lines between the stanzas of a poem, removed with the others (I3 A14): the
-    /// stanzas now run on.
-    VerseStanzaGapsLost { at: Place, count: u32 },
     /// Blank lines between paragraphs of prose, made scene breaks.
     BlankLinesBecameSceneBreaks { at: Place, count: u32 },
     /// Centred ornament lines, made scene breaks.
@@ -301,11 +296,9 @@ impl ProseNotice {
         "scrivener-prose-document-links-dropped",
         "scrivener-prose-document-links-kept",
         "scrivener-prose-other-links-kept-as-text",
-        "scrivener-prose-soft-breaks-split",
         "scrivener-prose-typed-indents-removed",
         "scrivener-prose-left-indents-not-kept",
         "scrivener-prose-blank-lines-removed",
-        "scrivener-prose-verse-stanza-gaps-lost",
         "scrivener-prose-blank-lines-became-scene-breaks",
         "scrivener-prose-ornaments-became-scene-breaks",
         "scrivener-prose-table-first-row-header",
@@ -391,11 +384,9 @@ impl ProseNotice {
             ProseNotice::DocumentLinksDropped { .. } => "scrivener-prose-document-links-dropped",
             ProseNotice::DocumentLinksKept { .. } => "scrivener-prose-document-links-kept",
             ProseNotice::OtherLinksKeptAsText { .. } => "scrivener-prose-other-links-kept-as-text",
-            ProseNotice::SoftBreaksSplit { .. } => "scrivener-prose-soft-breaks-split",
             ProseNotice::TypedIndentsRemoved { .. } => "scrivener-prose-typed-indents-removed",
             ProseNotice::LeftIndentsNotKept { .. } => "scrivener-prose-left-indents-not-kept",
             ProseNotice::BlankLinesRemoved { .. } => "scrivener-prose-blank-lines-removed",
-            ProseNotice::VerseStanzaGapsLost { .. } => "scrivener-prose-verse-stanza-gaps-lost",
             ProseNotice::BlankLinesBecameSceneBreaks { .. } => {
                 "scrivener-prose-blank-lines-became-scene-breaks"
             }
@@ -480,7 +471,6 @@ impl ProseNotice {
             | ProseNotice::PicturesWithoutDescription { at, .. }
             | ProseNotice::StruckTextCompiledAway { at, .. }
             | ProseNotice::CompiledAwayStylePrinted { at, .. }
-            | ProseNotice::VerseStanzaGapsLost { at, .. }
             | ProseNotice::InlineNotesMerged { at, .. }
             | ProseNotice::InlineNotesJoinedAcrossParagraphs { at, .. }
             | ProseNotice::BlankNotesDropped { at, .. }
@@ -492,7 +482,6 @@ impl ProseNotice {
             | ProseNotice::DocumentLinksDropped { at, .. }
             | ProseNotice::DocumentLinksKept { at, .. }
             | ProseNotice::OtherLinksKeptAsText { at, .. }
-            | ProseNotice::SoftBreaksSplit { at, .. }
             | ProseNotice::TypedIndentsRemoved { at, .. }
             | ProseNotice::LeftIndentsNotKept { at, .. }
             | ProseNotice::BlankLinesRemoved { at, .. }
@@ -609,11 +598,9 @@ mod tests {
             ProseNotice::DocumentLinksDropped { at, count: 1 },
             ProseNotice::DocumentLinksKept { at, count: 1 },
             ProseNotice::OtherLinksKeptAsText { at, count: 1 },
-            ProseNotice::SoftBreaksSplit { at, count: 1 },
             ProseNotice::TypedIndentsRemoved { at, count: 1 },
             ProseNotice::LeftIndentsNotKept { at, count: 1 },
             ProseNotice::BlankLinesRemoved { at, count: 1 },
-            ProseNotice::VerseStanzaGapsLost { at, count: 1 },
             ProseNotice::BlankLinesBecameSceneBreaks { at, count: 1 },
             ProseNotice::OrnamentsBecameSceneBreaks { at, count: 1 },
             ProseNotice::TableFirstRowHeader { at, count: 1 },
@@ -683,25 +670,23 @@ mod tests {
             ProseNotice::DocumentLinksDropped { .. } => 31,
             ProseNotice::DocumentLinksKept { .. } => 32,
             ProseNotice::OtherLinksKeptAsText { .. } => 33,
-            ProseNotice::SoftBreaksSplit { .. } => 34,
-            ProseNotice::TypedIndentsRemoved { .. } => 35,
-            ProseNotice::LeftIndentsNotKept { .. } => 36,
-            ProseNotice::BlankLinesRemoved { .. } => 37,
-            ProseNotice::VerseStanzaGapsLost { .. } => 38,
-            ProseNotice::BlankLinesBecameSceneBreaks { .. } => 39,
-            ProseNotice::OrnamentsBecameSceneBreaks { .. } => 40,
-            ProseNotice::TableFirstRowHeader { .. } => 41,
-            ProseNotice::TableCellsJoined { .. } => 42,
-            ProseNotice::FormattingLost { .. } => 43,
-            ProseNotice::JustifiedTextNotKept { .. } => 44,
-            ProseNotice::CommentColoursLost { .. } => 45,
-            ProseNotice::ControlCharactersRemoved { .. } => 46,
-            ProseNotice::NoteOnHeadingLost { .. } => 47,
-            ProseNotice::LeftOut { .. } => 48,
-            ProseNotice::UndecodableCharacters { .. } => 49,
-            ProseNotice::MediaFileCopied { .. } => 50,
-            ProseNotice::MediaFileNotCarried { .. } => 51,
-            ProseNotice::StylesLostInExport { .. } => 52,
+            ProseNotice::TypedIndentsRemoved { .. } => 34,
+            ProseNotice::LeftIndentsNotKept { .. } => 35,
+            ProseNotice::BlankLinesRemoved { .. } => 36,
+            ProseNotice::BlankLinesBecameSceneBreaks { .. } => 37,
+            ProseNotice::OrnamentsBecameSceneBreaks { .. } => 38,
+            ProseNotice::TableFirstRowHeader { .. } => 39,
+            ProseNotice::TableCellsJoined { .. } => 40,
+            ProseNotice::FormattingLost { .. } => 41,
+            ProseNotice::JustifiedTextNotKept { .. } => 42,
+            ProseNotice::CommentColoursLost { .. } => 43,
+            ProseNotice::ControlCharactersRemoved { .. } => 44,
+            ProseNotice::NoteOnHeadingLost { .. } => 45,
+            ProseNotice::LeftOut { .. } => 46,
+            ProseNotice::UndecodableCharacters { .. } => 47,
+            ProseNotice::MediaFileCopied { .. } => 48,
+            ProseNotice::MediaFileNotCarried { .. } => 49,
+            ProseNotice::StylesLostInExport { .. } => 50,
             ProseNotice::Document { .. } => return None,
         })
     }

@@ -45,6 +45,7 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::sync::{Arc, RwLock};
 
+use text_document::LINE_SEPARATOR;
 use text_document::matching::{FoldLocale, FoldedText, MatchOptions};
 
 /// One discoverable item's matching surface, as the caller assembles it.
@@ -426,7 +427,8 @@ pub fn evidence_sentence(prose: &str, m: &Mention) -> String {
     let start = m.char_start.min(chars.len());
     let end = (m.char_start + m.char_len).min(chars.len());
 
-    let is_break = |c: char| matches!(c, '.' | '!' | '?' | '\n' | '…');
+    // A line break inside a paragraph ends a line of verse as `\n` ends a paragraph.
+    let is_break = |c: char| matches!(c, '.' | '!' | '?' | '\n' | '…' | LINE_SEPARATOR);
 
     // Walk back to just after the previous terminator.
     let mut from = start;

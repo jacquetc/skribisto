@@ -88,6 +88,29 @@ use emit::{Frame, MemberProof, Segment, Source};
 
 pub use super::MAX_LIST_LEVELS;
 
+/// Whether a paragraph's `runs` hold nothing a reader would see: none at all, or line
+/// breaks alone. Such a paragraph produces no block, as an empty one does: Word and
+/// LibreOffice files space their text with both, and a note or a comment on one is placed
+/// the way one on an empty paragraph is.
+pub fn holds_nothing(runs: &[Run]) -> bool {
+    runs.iter().all(|run| {
+        run.image.is_none()
+            && run.footnote.is_none()
+            && run.text.chars().all(|c| c == LINE_SEPARATOR)
+    })
+}
+
+/// A line break inside a paragraph, as the editor's document model holds one: U+2028 LINE
+/// SEPARATOR, `text_document::LINE_SEPARATOR` (a dependency this crate keeps to its tests,
+/// which pin the two together).
+///
+/// A scanner puts one in a run where its format breaks a line without ending the paragraph
+/// (Word's `w:br`, ODF's `text:line-break`, RTF's `\line`). The emitter writes it into the
+/// Djot as it stands, where the parser reads it as a character of the text and the editor
+/// as the line break it is; the editor's first save of the row writes it as Djot's own hard
+/// break.
+pub const LINE_SEPARATOR: char = '\u{2028}';
+
 /// Character formatting a container format can express and Djot can carry.
 ///
 /// Deliberately closed and small: these are exactly what the editor's document model

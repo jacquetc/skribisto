@@ -377,7 +377,22 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
         // different things, is exactly the confusion that work removed.
         .separator();
 
-    m.item(
+    // A line break inside the paragraph, the menu's way to Shift+Enter, which is the
+    // editor's own key and so has no chord to name here. Any prose takes one, a synopsis
+    // or a note included, so it follows the editor, not the scene; a table cell does not.
+    m.item({
+        let f = f.clone();
+        MenuEntry::new(tr!(menu_line_break()))
+            .enabled(f.can_break_line())
+            .on_activate(move |c| {
+                f.insert_line_break();
+                c.request_frame();
+                // As for the marks above: from a menu opened by the keyboard, focus sits on
+                // the menu bar, and the editor has to be given it back.
+                f.refocus(c);
+            })
+    })
+    .item(
         MenuEntry::new(tr!(menu_scene_break()))
             .enabled(on_scene.clone())
             .intent("format.scene_break")

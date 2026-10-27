@@ -39,6 +39,7 @@ menu-focus-mode = وضع بلا تشتيت (&D)
 menu-format = تنسيق (&O)
 menu-scene-break = إدراج فاصل مشهد (&K)
 menu-major-scene-break = إدراج فاصل مشهد رئيسي (&M)
+menu-line-break = إدراج فاصل سطر (&R)
 menu-go = انتقال (&G)
 menu-go-next-scene = المشهد التالي (&S)
 menu-go-prev-scene = المشهد السابق (&V)
@@ -3325,14 +3326,6 @@ import-scrivener-prose-other-links-kept-as-text-line = { $count ->
     [many] يُحتفظ بـ { $count } رابطًا إلى مشاريع أخرى أو إلى ملفات كنص.
    *[other] يُحتفظ بـ { $count } رابط إلى مشاريع أخرى أو إلى ملفات كنص.
 }
-import-scrivener-prose-soft-breaks-split-line = { $count ->
-    [zero] لا فواصل أسطر داخل الفقرات.
-    [one] صار فاصل سطر واحد داخل فقرة يبدأ فقرة خاصة به.
-    [two] صار فاصلا سطرين داخل فقرات يبدآن فقرتين خاصتين بهما.
-    [few] صارت { $count } فواصل أسطر داخل فقرات تبدأ فقرات خاصة بها.
-    [many] صار { $count } فاصلًا للأسطر داخل فقرات تبدأ فقرات خاصة بها.
-   *[other] صار { $count } فاصل سطر داخل فقرات تبدأ فقرات خاصة بها.
-}
 import-scrivener-prose-typed-indents-removed-line = { $count ->
     [zero] لا مسافات بادئة مكتوبة في بداية الفقرات.
     [one] تُزال مسافة بادئة واحدة مكتوبة في بداية فقرة.
@@ -3356,14 +3349,6 @@ import-scrivener-prose-blank-lines-removed-line = { $count ->
     [few] تُزال { $count } فقرات فارغة بين فقرات أخرى.
     [many] تُزال { $count } فقرةً فارغة بين فقرات أخرى.
    *[other] تُزال { $count } فقرة فارغة بين فقرات أخرى.
-}
-import-scrivener-prose-verse-stanza-gaps-lost-line = { $count ->
-    [zero] لا أسطر فارغة بين مقاطع القصائد.
-    [one] يُزال سطر فارغ واحد بين مقاطع قصيدة، فتتصل المقاطع.
-    [two] يُزال سطران فارغان بين مقاطع قصيدة، فتتصل المقاطع.
-    [few] تُزال { $count } أسطر فارغة بين مقاطع قصيدة، فتتصل المقاطع.
-    [many] يُزال { $count } سطرًا فارغًا بين مقاطع قصيدة، فتتصل المقاطع.
-   *[other] يُزال { $count } سطر فارغ بين مقاطع قصيدة، فتتصل المقاطع.
 }
 import-scrivener-prose-blank-lines-became-scene-breaks-line = { $count ->
     [zero] لم يصبح أي سطر فارغ فاصل مشهد.

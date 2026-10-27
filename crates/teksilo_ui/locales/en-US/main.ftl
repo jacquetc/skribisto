@@ -48,6 +48,7 @@ menu-focus-mode = &Distraction-free Mode
 menu-format = F&ormat
 menu-scene-break = Insert scene brea&k
 menu-major-scene-break = Insert &major scene break
+menu-line-break = Inse&rt line break
 
 ## Menu bar: Go
 menu-go = &Go
@@ -2595,10 +2596,6 @@ import-scrivener-prose-other-links-kept-as-text-line = { $count ->
     [one] 1 link to another project or to a file is kept as text.
    *[other] { $count } links to other projects or to files are kept as text.
 }
-import-scrivener-prose-soft-breaks-split-line = { $count ->
-    [one] 1 line break inside a paragraph now starts a paragraph of its own.
-   *[other] { $count } line breaks inside paragraphs now start paragraphs of their own.
-}
 import-scrivener-prose-typed-indents-removed-line = { $count ->
     [one] 1 indent typed at the start of a paragraph is removed.
    *[other] { $count } indents typed at the start of paragraphs are removed.
@@ -2610,10 +2607,6 @@ import-scrivener-prose-left-indents-not-kept-line = { $count ->
 import-scrivener-prose-blank-lines-removed-line = { $count ->
     [one] 1 empty paragraph between two others is removed.
    *[other] { $count } empty paragraphs between others are removed.
-}
-import-scrivener-prose-verse-stanza-gaps-lost-line = { $count ->
-    [one] 1 blank line between the stanzas of a poem is removed, so the stanzas run on.
-   *[other] { $count } blank lines between the stanzas of a poem are removed, so the stanzas run on.
 }
 import-scrivener-prose-blank-lines-became-scene-breaks-line = { $count ->
     [one] 1 blank line between paragraphs became a scene break.

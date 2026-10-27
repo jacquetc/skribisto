@@ -1105,6 +1105,21 @@ mod escape_tests;
 mod tests {
     use super::*;
 
+    /// A line break inside a paragraph stays one. Plume Creator's Qt HTML writes Shift+Enter
+    /// as `<br />` inside a `<p>`, and an older Skribisto's Markdown as a hard break: each
+    /// line used to come in as a paragraph of its own, and a `<br />` with no space around
+    /// it ran the two lines' words together.
+    #[test]
+    fn a_line_break_inside_a_paragraph_stays_one() {
+        let plume =
+            html_to_djot_and_text("<p>Roses are red,<br />violets are blue.</p>").expect("convert");
+        assert_eq!(plume.text, "Roses are red,\u{2028}violets are blue.");
+        assert_eq!(plume.djot, "Roses are red,\\\nviolets are blue.");
+        let legacy =
+            markdown_to_djot_and_text("Roses are red,  \nviolets are blue.\n").expect("convert");
+        assert_eq!(legacy.text, "Roses are red,\u{2028}violets are blue.");
+    }
+
     /// The contract the importer's comment anchoring is built on: blocks are joined
     /// by exactly **one** character in the plain text, and every block's reported
     /// start is that plain text's own character index.

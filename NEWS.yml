@@ -2,6 +2,10 @@ Version: 3.2.4
 Date: 2026-10-26
 Type: stable
 Description:
+- "Shift+Enter, or Format ▸ Insert line break, starts a new line in the same paragraph, for the lines of a poem, a song or a letter. Every export keeps the lines. In an older version of Skribisto, the project still opens, each line then a paragraph of its own"
+- "Text pasted from a web page or from LibreOffice keeps its line breaks. The words either side of a line break used to run together"
+- "Importing a Word, OpenDocument or RTF document, or a Scrivener, Plume Creator or older Skribisto project, keeps the line breaks inside its paragraphs. Each line used to become a paragraph of its own"
+- "A long paragraph in Arabic or Hebrew now shows its lines in reading order. Its first line used to show its last words"
 - "On a Mac with a Touch Bar, Skribisto no longer crashes when you close one of its windows, such as Settings or Help"
 - "On a Mac, quitting from the Dock now asks about unsaved changes, as Work ▸ Quit does, and Cancel keeps everything open. Skribisto used to close at once"
 - "When the system closes Skribisto (you log out, restart or shut down, or another program stops it), your open projects are now saved first, without a question. Skribisto used to close with the last changes unsaved"

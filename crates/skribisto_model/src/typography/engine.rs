@@ -41,6 +41,7 @@
 //! undo beats a delayed one that surprises them two words later.
 
 use common::entities::QuoteStyle;
+use text_document::LINE_SEPARATOR;
 // The locale facts moved to the domain crate: the analysis backend needs them too, and a
 // second copy there had already drifted on tag resolution. Re-exported so existing callers
 // (and tests) keep their `text_replacement::typography::…` paths.
@@ -203,7 +204,8 @@ fn uses_inverted_marks(tag: &str) -> bool {
 ///
 /// `,` and `;` count as boundaries because Spanish genuinely re-opens mid
 /// sentence — *Si puedes, ¿vienes?* — which is the case that makes this need a
-/// clause scan at all rather than a sentence one.
+/// clause scan at all rather than a sentence one. A line break inside the
+/// paragraph is one too: a line of verse or of a letter starts its own clause.
 ///
 /// `chars` is the paragraph up to the caret **excluding the mark just typed**.
 /// That exclusion is load-bearing: `?` is itself a clause boundary, so scanning
@@ -215,7 +217,7 @@ fn clause_start(chars: &[char]) -> usize {
     // would open the mark mid-number — `Cuesta 3.¿14?`, `Son las 10:¿30?` — so
     // those two marks are boundaries only when they are not digit-flanked.
     let is_boundary = |i: usize| match chars[i] {
-        '?' | '!' | ',' | ';' | '\u{2026}' => true,
+        '?' | '!' | ',' | ';' | '\u{2026}' | LINE_SEPARATOR => true,
         '.' | ':' => {
             let prev_digit = i.checked_sub(1).is_some_and(|p| chars[p].is_ascii_digit());
             let next_digit = chars.get(i + 1).is_some_and(char::is_ascii_digit);
@@ -416,12 +418,17 @@ impl TypographyEngine {
         // ── A dialogue dash opens the paragraph ──────────────────────────────
         //
         // `- ` and nothing else before it. Deliberately the whole paragraph so
-        // far: a hyphen anywhere else is a hyphen, and a rule that fired on
-        // "well - " mid-line would mangle ordinary prose.
+        // far, or the whole line after a line break inside it (one reply a line,
+        // set apart by Shift+Enter): a hyphen anywhere else is a hyphen, and a
+        // rule that fired on "well - " mid-line would mangle ordinary prose.
+        let line = chars
+            .iter()
+            .rposition(|&c| c == LINE_SEPARATOR)
+            .map_or(&chars[..], |at| &chars[at + 1..]);
         if self.flags.dialogue_marker
             && let Some(dash) = self.ruleset.dialogue_dash
-            && chars.len() == 2
-            && chars[0] == '-'
+            && line.len() == 2
+            && line[0] == '-'
             && last == ' '
         {
             return Some(fired(2, format!("{dash}\u{00A0}"), "- "));
@@ -1227,6 +1234,41 @@ mod tests {
         let en = dialogue("en-US");
         assert!(en.check_paragraph("- ").is_none());
         assert_eq!(en.check_list_start("- "), list(false, "- "));
+    }
+
+    /// A line break inside the paragraph starts a line the way the paragraph
+    /// starts: `- ` there opens a reply, and the hyphen in "well - " does not.
+    /// A list still cannot start there.
+    #[test]
+    fn the_dialogue_dash_opens_a_line_after_a_line_break() {
+        let fr = dialogue("fr-FR");
+        let fired = fr
+            .check_paragraph(&format!("\u{2014}\u{00A0}Bonjour.{LINE_SEPARATOR}- "))
+            .expect("the dash fires");
+        assert_eq!(fired.replace_chars, 2);
+        assert_eq!(fired.replacement, "\u{2014}\u{00A0}");
+        assert!(
+            fr.check_paragraph(&format!("Bonjour.{LINE_SEPARATOR}eh - "))
+                .is_none()
+        );
+        assert!(
+            fr.check_list_start(&format!("Bonjour.{LINE_SEPARATOR}- "))
+                .is_none()
+        );
+    }
+
+    /// Spanish opens a question where its clause began, and a line break
+    /// begins one: `¿` goes at the start of the line, not back on the line
+    /// before.
+    #[test]
+    fn a_spanish_question_opens_at_the_start_of_its_line() {
+        let es = TypographyEngine::new("es-ES", SmartPunctuationFlags::default());
+        let fired = es
+            .check_paragraph(&format!("Dime algo{LINE_SEPARATOR}vienes?"))
+            .expect("the mark is added");
+        assert!(fired.prepend);
+        assert_eq!(fired.replacement, "\u{00BF}");
+        assert_eq!(fired.replace_chars, "vienes?".chars().count());
     }
 
     #[test]

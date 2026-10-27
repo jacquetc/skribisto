@@ -457,9 +457,10 @@ fn a_point_comment_in_a_table_cell_or_a_content_control_keeps_its_words() {
     assert!(row(&plan, "Chapter Two").comments.is_empty());
 }
 
-/// A point comment after a line break belongs to the line it follows, the second one.
+/// A point comment after a line break stays in its paragraph, which keeps the line break
+/// between its two lines, and is placed on the paragraph.
 #[test]
-fn a_point_comment_after_a_line_break_stays_on_its_line() {
+fn a_point_comment_after_a_line_break_stays_in_its_paragraph() {
     let mut word = Word::with_body(concat!(
         r#"<w:p><w:r><w:t>Line A</w:t><w:br/><w:t>Line B</w:t></w:r>"#,
         r#"<w:r><w:commentReference w:id="5"/></w:r></w:p>"#,
@@ -467,17 +468,18 @@ fn a_point_comment_after_a_line_break_stays_on_its_line() {
     word.comments = vec![comment(5, "On line B.")];
     let plan = plan_of("lines.docx", &word.bytes());
     let row = only_row(&plan);
-    assert_eq!(text_of(row), "Line A\nLine B");
-    assert_eq!(anchored_words(row, 0), "Line B");
+    assert_eq!(text_of(row), "Line A\u{2028}Line B");
+    assert_eq!(anchored_words(row, 0), "Line A\u{2028}Line B");
     assert_eq!(unanchored_in(row), 0);
 }
 
 /// A comment on an empty line of a paragraph that has words on another stays in that
-/// paragraph, and nothing is reported: at the start of the line after it when it opens the
-/// paragraph, and at the end of the line before it otherwise. LibreOffice writes a comment
-/// made at the top of a page before the paragraph's leading break, and Word an empty range
-/// before its page break. Both went to the paragraph before, which may close another scene,
-/// and were reported as moved.
+/// paragraph, and nothing is reported. A line break keeps its paragraph whole, empty lines
+/// and all, so the comment is placed on the paragraph. Word writes an empty range before
+/// a page break, which does end the paragraph: the comment goes to the start of the text
+/// after it. LibreOffice writes a comment made at the top of a page before the paragraph's
+/// leading break. Both went to the paragraph before, which may close another scene, and
+/// were reported as moved.
 #[test]
 fn a_comment_on_an_empty_line_of_a_paragraph_with_words_stays_in_it() {
     let mut word = Word::with_body(
@@ -510,14 +512,20 @@ fn a_comment_on_an_empty_line_of_a_paragraph_with_words_stays_in_it() {
         vec![
             (
                 "At the top of the page.".to_string(),
-                "After a leading break.".to_string()
+                "\u{2028}After a leading break.".to_string()
             ),
             (
                 "An empty range at the top.".to_string(),
                 "New page text.".to_string()
             ),
-            ("On the empty line.".to_string(), "Line A".to_string()),
-            ("After the last line.".to_string(), "Last line.".to_string()),
+            (
+                "On the empty line.".to_string(),
+                "Line A\u{2028}\u{2028}Line B".to_string()
+            ),
+            (
+                "After the last line.".to_string(),
+                "Last line.\u{2028}".to_string()
+            ),
         ]
     );
     assert_eq!(unanchored_in(two), 0, "{:?}", two.diagnostics);
@@ -544,13 +552,16 @@ fn an_odt_comment_on_an_empty_line_of_a_paragraph_with_words_stays_in_it() {
         vec![
             (
                 "At the top of the page.".to_string(),
-                "After a leading break.".to_string()
+                "\u{2028}After a leading break.".to_string()
             ),
             (
                 "An empty range at the top.".to_string(),
-                "New page text.".to_string()
+                "\u{2028}New page text.".to_string()
             ),
-            ("On the empty line.".to_string(), "Line A".to_string()),
+            (
+                "On the empty line.".to_string(),
+                "Line A\u{2028}\u{2028}Line B".to_string()
+            ),
         ]
     );
     assert_eq!(unanchored_in(two), 0, "{:?}", two.diagnostics);
@@ -772,10 +783,10 @@ fn an_equation_is_reported_and_leaves_a_note_where_it_was_cited() {
     assert_eq!(objects, vec![2], "{:?}", plan.diagnostics);
 }
 
-/// A note alone on the empty stretch a line break leaves, after the paragraph's last line
-/// or before its first, stays in its paragraph: at the end of the line before it, or at the
-/// start of the line after it when nothing comes before. It was dropped and reported,
-/// although the same document read from OpenDocument carried it.
+/// A note alone on the line a line break opens, after the paragraph's last line or before
+/// its first, stays in its paragraph, on that line: the line break stays in the paragraph,
+/// so the note keeps the place it was cited at. It was dropped and reported, although the
+/// same document read from OpenDocument carried it.
 #[test]
 fn a_note_alone_beside_a_line_break_stays_in_its_paragraph() {
     let mut word = Word::with_body(format!(
@@ -803,7 +814,7 @@ fn a_note_alone_beside_a_line_break_stays_in_its_paragraph() {
     let row = only_row(&plan);
     assert_eq!(
         text_of(row),
-        "Verse line one.\u{FFFC}\n\u{FFFC}Text after the break.\nBefore.\u{FFFC}\nAfter."
+        "Verse line one.\u{2028}\u{FFFC}\n\u{FFFC}\u{2028}Text after the break.\nBefore.\u{2028}\u{FFFC}\u{2028}After."
     );
     let notes: Vec<&str> = row.footnotes.iter().map(|f| f.body.as_str()).collect();
     assert_eq!(
@@ -824,9 +835,10 @@ fn a_note_alone_beside_a_line_break_stays_in_its_paragraph() {
     );
 }
 
-/// Two notes with no line of their own beside a line break keep the order they were
-/// cited in. Moved to the end of the line before, the second went first: the first note
-/// was measured past the reference of the second, already in place.
+/// Two notes beside a line break keep the order they were cited in, each on the line it
+/// was cited on. Moved to the end of the line before, as a line break once split the
+/// paragraph, the second went first: the first note was measured past the reference of the
+/// second, already in place.
 #[test]
 fn two_notes_beside_a_line_break_keep_their_order() {
     let mut word = Word::with_body(format!(
@@ -854,10 +866,10 @@ fn two_notes_beside_a_line_break_keep_their_order() {
     let plan = plan_of("verse.docx", &word.bytes());
     let row = only_row(&plan);
     for line in [
-        "Verse line one.[^srcfn-1][^srcfn-2]",
-        "Verse line two.[^srcfn-3][^srcfn-4]",
-        "Verse line three.[^srcfn-5][^srcfn-6]",
-        "[^srcfn-7][^srcfn-8]Verse line four.",
+        "Verse line one.\u{2028}[^srcfn-1][^srcfn-2]",
+        "Verse line two.\u{2028}[^srcfn-3]\u{2028}[^srcfn-4]",
+        "Verse line three.[^srcfn-5]\u{2028}[^srcfn-6]",
+        "[^srcfn-7][^srcfn-8]\u{2028}Verse line four.",
     ] {
         assert!(
             row.djot.lines().any(|l| l == line),

@@ -40,6 +40,7 @@ menu-focus-mode = Р&ежим без отвлечений
 menu-format = &Формат
 menu-scene-break = Вставить &разрыв сцены
 menu-major-scene-break = Вставить &большой разрыв сцены
+menu-line-break = Встав&ить разрыв строки
 
 menu-go = П&ереход
 menu-go-next-scene = &Следующая сцена
@@ -2966,12 +2967,6 @@ import-scrivener-prose-other-links-kept-as-text-line = { $count ->
     [many] { $count } ссылок на другие проекты или на файлы сохраняются как текст.
    *[other] { $count } ссылки на другие проекты или на файлы сохраняются как текст.
 }
-import-scrivener-prose-soft-breaks-split-line = { $count ->
-    [one] { $count } разрыв строки внутри абзаца теперь начинает отдельный абзац.
-    [few] { $count } разрыва строки внутри абзацев теперь начинают отдельные абзацы.
-    [many] { $count } разрывов строки внутри абзацев теперь начинают отдельные абзацы.
-   *[other] { $count } разрыва строки внутри абзацев теперь начинают отдельные абзацы.
-}
 import-scrivener-prose-typed-indents-removed-line = { $count ->
     [one] { $count } отступ, набранный в начале абзаца, удалён.
     [few] { $count } отступа, набранные в начале абзацев, удалены.
@@ -2989,12 +2984,6 @@ import-scrivener-prose-blank-lines-removed-line = { $count ->
     [few] { $count } пустых абзаца между другими абзацами удалены.
     [many] { $count } пустых абзацев между другими абзацами удалены.
    *[other] { $count } пустого абзаца между другими абзацами удалены.
-}
-import-scrivener-prose-verse-stanza-gaps-lost-line = { $count ->
-    [one] { $count } пустая строка между строфами стихотворения удалена, поэтому строфы идут подряд.
-    [few] { $count } пустые строки между строфами стихотворения удалены, поэтому строфы идут подряд.
-    [many] { $count } пустых строк между строфами стихотворения удалены, поэтому строфы идут подряд.
-   *[other] { $count } пустой строки между строфами стихотворения удалены, поэтому строфы идут подряд.
 }
 import-scrivener-prose-blank-lines-became-scene-breaks-line = { $count ->
     [one] { $count } пустая строка между абзацами стала разрывом сцены.

@@ -495,6 +495,7 @@ const MENU_MNEMONIC_SCOPES: &[(&str, &[&str])] = &[
             "menu-format-blockquote",
             "menu-format-lists",
             "menu-format-table",
+            "menu-line-break",
             "menu-scene-break",
             "menu-major-scene-break",
         ],

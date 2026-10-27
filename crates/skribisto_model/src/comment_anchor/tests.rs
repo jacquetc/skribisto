@@ -147,6 +147,10 @@ fn a_quote_with_an_image_is_shown_as_a_picture_not_an_empty_box() {
     // Stored verbatim, displayed legibly.
     assert_eq!(for_display("a \u{FFFC} b"), "a 🖼 b");
     assert_eq!(for_display("no image here"), "no image here");
+    assert_eq!(
+        for_display("Roses are red,\u{2028}violets"),
+        "Roses are red, violets"
+    );
 }
 
 // ── capture ─────────────────────────────────────────────────────────────

@@ -40,6 +40,7 @@ menu-focus-mode = מצב ללא הסחות דעת (&D)
 menu-format = עיצוב (&O)
 menu-scene-break = הוספת מעבר סצנה (&K)
 menu-major-scene-break = הוספת מעבר סצנה ראשי (&M)
+menu-line-break = הוספת מעבר שורה (&R)
 
 menu-go = מעבר (&G)
 menu-go-next-scene = הסצנה הבאה (&S)
@@ -2600,11 +2601,6 @@ import-scrivener-prose-other-links-kept-as-text-line = { $count ->
     [two] שני קישורים לפרויקטים אחרים או לקבצים נשמרים כטקסט.
    *[other] { $count } קישורים לפרויקטים אחרים או לקבצים נשמרים כטקסט.
 }
-import-scrivener-prose-soft-breaks-split-line = { $count ->
-    [one] מעבר שורה אחד בתוך פסקה פותח עכשיו פסקה משלו.
-    [two] שני מעברי שורה בתוך פסקאות פותחים עכשיו פסקאות משלהם.
-   *[other] { $count } מעברי שורה בתוך פסקאות פותחים עכשיו פסקאות משלהם.
-}
 import-scrivener-prose-typed-indents-removed-line = { $count ->
     [one] הזחה אחת שהוקלדה בתחילת פסקה מוסרת.
     [two] שתי הזחות שהוקלדו בתחילת פסקאות מוסרות.
@@ -2619,11 +2615,6 @@ import-scrivener-prose-blank-lines-removed-line = { $count ->
     [one] פסקה ריקה אחת בין שתי פסקאות אחרות מוסרת.
     [two] שתי פסקאות ריקות בין פסקאות אחרות מוסרות.
    *[other] { $count } פסקאות ריקות בין פסקאות אחרות מוסרות.
-}
-import-scrivener-prose-verse-stanza-gaps-lost-line = { $count ->
-    [one] שורה ריקה אחת בין בתים של שיר מוסרת, ולכן הבתים מתחברים.
-    [two] שתי שורות ריקות בין בתים של שיר מוסרות, ולכן הבתים מתחברים.
-   *[other] { $count } שורות ריקות בין בתים של שיר מוסרות, ולכן הבתים מתחברים.
 }
 import-scrivener-prose-blank-lines-became-scene-breaks-line = { $count ->
     [one] שורה ריקה אחת בין פסקאות הפכה למעבר סצנה.

@@ -39,6 +39,7 @@ menu-focus-mode = &Zavarmentes mód
 menu-format = &Formátum
 menu-scene-break = &Jelenettörés beszúrása
 menu-major-scene-break = &Nagy jelenettörés beszúrása
+menu-line-break = S&ortörés beszúrása
 menu-go = &Ugrás
 menu-go-next-scene = Következő &jelenet
 menu-go-prev-scene = &Előző jelenet
@@ -2290,10 +2291,6 @@ import-scrivener-prose-other-links-kept-as-text-line = { $count ->
     [one] 1 másik projektre vagy fájlra mutató hivatkozás szövegként marad meg.
    *[other] { $count } más projektekre vagy fájlokra mutató hivatkozás szövegként marad meg.
 }
-import-scrivener-prose-soft-breaks-split-line = { $count ->
-    [one] 1 bekezdésen belüli sortörés mostantól új bekezdést kezd.
-   *[other] { $count } bekezdésen belüli sortörés mostantól új bekezdést kezd.
-}
 import-scrivener-prose-typed-indents-removed-line = { $count ->
     [one] 1 behúzás, amelyet egy bekezdés elejére gépeltek, törlődik.
    *[other] { $count } behúzás, amelyet bekezdések elejére gépeltek, törlődik.
@@ -2305,10 +2302,6 @@ import-scrivener-prose-left-indents-not-kept-line = { $count ->
 import-scrivener-prose-blank-lines-removed-line = { $count ->
     [one] 1 üres bekezdés törlődik két másik bekezdés közül.
    *[other] { $count } üres bekezdés törlődik más bekezdések közül.
-}
-import-scrivener-prose-verse-stanza-gaps-lost-line = { $count ->
-    [one] Egy vers versszakai közötti 1 üres sor törlődik, így a versszakok egybefolynak.
-   *[other] Egy vers versszakai közötti { $count } üres sor törlődik, így a versszakok egybefolynak.
 }
 import-scrivener-prose-blank-lines-became-scene-breaks-line = { $count ->
     [one] Bekezdések közötti 1 üres sorból jelenettörés lett.

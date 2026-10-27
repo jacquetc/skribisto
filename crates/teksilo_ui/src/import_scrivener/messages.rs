@@ -804,11 +804,6 @@ pub(crate) const TABLE: &[Entry] = &[
         Some(Differently),
     ),
     e(
-        "scrivener-prose-soft-breaks-split",
-        Report,
-        Some(Differently),
-    ),
-    e(
         "scrivener-prose-typed-indents-removed",
         Report,
         Some(Differently),
@@ -820,11 +815,6 @@ pub(crate) const TABLE: &[Entry] = &[
     ),
     e(
         "scrivener-prose-blank-lines-removed",
-        Report,
-        Some(Differently),
-    ),
-    e(
-        "scrivener-prose-verse-stanza-gaps-lost",
         Report,
         Some(Differently),
     ),
@@ -2443,9 +2433,6 @@ pub(crate) fn summary_line(key: &str, findings: &[&ScrivenerFinding]) -> Option<
         "scrivener-prose-other-links-kept-as-text" => tr!(
             import_scrivener_prose_other_links_kept_as_text_line(count = total(findings, "count"))
         ),
-        "scrivener-prose-soft-breaks-split" => tr!(import_scrivener_prose_soft_breaks_split_line(
-            count = total(findings, "count")
-        )),
         "scrivener-prose-typed-indents-removed" => tr!(
             import_scrivener_prose_typed_indents_removed_line(count = total(findings, "count"))
         ),
@@ -2454,9 +2441,6 @@ pub(crate) fn summary_line(key: &str, findings: &[&ScrivenerFinding]) -> Option<
         ),
         "scrivener-prose-blank-lines-removed" => tr!(
             import_scrivener_prose_blank_lines_removed_line(count = total(findings, "count"))
-        ),
-        "scrivener-prose-verse-stanza-gaps-lost" => tr!(
-            import_scrivener_prose_verse_stanza_gaps_lost_line(count = total(findings, "count"))
         ),
         "scrivener-prose-blank-lines-became-scene-breaks" => {
             tr!(import_scrivener_prose_blank_lines_became_scene_breaks_line(

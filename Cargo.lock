@@ -1405,7 +1405,7 @@ dependencies = [
  "libc",
  "option-ext",
  "redox_users",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -1612,7 +1612,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -3750,7 +3750,7 @@ version = "0.50.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7957b9740744892f114936ab4a57b3f487491bbeafaf8083688b16841a4240e5"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -4262,7 +4262,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7d8fae84b431384b68627d0f9b3b1245fcf9f46f6c0e3dc902e9dce64edd1967"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -5272,7 +5272,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys 0.12.1",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -6198,8 +6198,8 @@ version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0d204abcbdf8e88729306a8d0ca01a79d8a49969fe1f84696909d6dbc4321c1a"
 dependencies = [
- "foldhash 0.2.0",
- "hashbrown 0.17.1",
+ "foldhash 0.1.5",
+ "hashbrown 0.15.5",
 ]
 
 [[package]]
@@ -6248,7 +6248,7 @@ dependencies = [
  "cfg-if",
  "libc",
  "psm",
- "windows-sys 0.61.2",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
@@ -6872,7 +6872,7 @@ dependencies = [
  "getrandom 0.4.3",
  "once_cell",
  "rustix 1.1.4",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -6895,9 +6895,9 @@ dependencies = [
 
 [[package]]
 name = "text-document"
-version = "1.13.0"
+version = "1.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a9fd52983ef327c112db6b316e108369aab47e6246dcefa89c2e3ce435d3eb52"
+checksum = "5f09bc1e8fc53bd2e5f797f5c1182586902f30552316646106b1f9909bbb7aa2"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -6912,9 +6912,9 @@ dependencies = [
 
 [[package]]
 name = "text-document-common"
-version = "1.13.0"
+version = "1.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ebcaeab8a323b7b8d74d76284af9cb217707cdbe73945ed1e9a05c66c80d1fd3"
+checksum = "f4301fcd4f49704a7801c3c6344b731e0e586546f1fab6051ebf8c83f1f864e0"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -6937,9 +6937,9 @@ dependencies = [
 
 [[package]]
 name = "text-document-direct-access"
-version = "1.13.0"
+version = "1.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1ba27c2d068e3ae11ee4b6e4993dba6cf8c426d040a52b4a4ed898261f3b6241"
+checksum = "7baead7e29ddb7bd701e87abb1db303b427e97bb63d9ecbbae10f1efa87dc559"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6952,9 +6952,9 @@ dependencies = [
 
 [[package]]
 name = "text-document-editing"
-version = "1.13.0"
+version = "1.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3aaa801b2cb362d5039aadb250ce0f406b515a921211cc5b1914a1027bb6ee90"
+checksum = "a64a3f37ce7f2c96a97aaafdab35e5f8a5bf345851289f72d2a0483c17b59097"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6967,9 +6967,9 @@ dependencies = [
 
 [[package]]
 name = "text-document-formatting"
-version = "1.13.0"
+version = "1.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "014ce552f4c8f1cd9bb90672e7f522b2ddc79697b8faadc853a2f30d14406d95"
+checksum = "36f7fd5825bad083503949f9e11202402778e13a36788142a8c13c278663223d"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6982,9 +6982,9 @@ dependencies = [
 
 [[package]]
 name = "text-document-frontend"
-version = "1.13.0"
+version = "1.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc2ce7249dfe7a64529a0b1449d499165b0622faa7c7340f1305f008d84d85e9"
+checksum = "f157807fa449e692765609b21d83715d384ccd5050c908dc10ac89367cf1d684"
 dependencies = [
  "anyhow",
  "chrono",
@@ -7002,9 +7002,9 @@ dependencies = [
 
 [[package]]
 name = "text-document-inspection"
-version = "1.13.0"
+version = "1.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9ddd36f1b9baad065bce04300f54e935bb7a7978c65d914e6500d2eff5ecf4dc"
+checksum = "74ad9553d6790a078bc323df300ba4cf88e18fafea7405a692fb074402205d9c"
 dependencies = [
  "anyhow",
  "chrono",
@@ -7017,9 +7017,9 @@ dependencies = [
 
 [[package]]
 name = "text-document-io"
-version = "1.13.0"
+version = "1.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "625d603c23d3379bcfa8bd4c32f40f4e02f429effe427ad9d7c23fe17f06c57a"
+checksum = "43ebc8b4123e8f0f455e6bf219a016324c44411a2c89ad913f694cd326c62ae6"
 dependencies = [
  "anyhow",
  "chrono",
@@ -7043,9 +7043,9 @@ dependencies = [
 
 [[package]]
 name = "text-document-macros"
-version = "1.13.0"
+version = "1.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4fced3c615108edefa549fad0be1b5f9dbb991058dc716116602199db215b4e7"
+checksum = "bb9f860aa14104057bbdc3b68387b0c0d6bc4e2f656b5a282e6f10994939c993"
 dependencies = [
  "heck",
  "proc-macro2",
@@ -7055,9 +7055,9 @@ dependencies = [
 
 [[package]]
 name = "text-document-search"
-version = "1.13.0"
+version = "1.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "040bcbeeebd1effd486316fc7f137a251fe733623456c348d97a2aee5b7c38bb"
+checksum = "211d065d3aa8e20b3b007c9c50bfb0ec1518c790197f673c5b5cf1120aa4f702"
 dependencies = [
  "anyhow",
  "caseless",
@@ -7075,9 +7075,9 @@ dependencies = [
 
 [[package]]
 name = "text-typeset"
-version = "2.0.0"
+version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "daeb1619accd0e4f9c634cbca966c36acf58d92705825ed8e333f453bc0e4155"
+checksum = "97d9b6b96062a73c085232b69226ec4f70cbee018377d939783084614af70bad"
 dependencies = [
  "etagere",
  "fontdb 0.24.0",
@@ -7835,7 +7835,7 @@ checksum = "f2f6fb2847f6742cd76af783a2a2c49e9375d0a111c7bef6f71cd9e738c72d6e"
 dependencies = [
  "memoffset",
  "tempfile",
- "windows-sys 0.61.2",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
@@ -8655,7 +8655,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]

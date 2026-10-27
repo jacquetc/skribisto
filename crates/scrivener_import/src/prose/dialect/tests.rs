@@ -884,34 +884,21 @@ fn a_whole_paragraph_annotation_closed_after_its_mark_goes_to_the_next_paragraph
     assert_eq!(comment(&out.doc, 0), ["Move this later."]);
 }
 
-/// A poem's blank lines between stanzas are removed like any other, and said so apart;
-/// short lines each a paragraph of their own, as a character sheet has them, are no poem.
+/// A poem keeps its stanzas: the blank paragraph between two is removed like any other,
+/// and each stanza stays a paragraph of its own, its soft line breaks inside it. Typed in
+/// one paragraph, the empty line between its stanzas stays inside it too. Nothing of the
+/// poem is lost, so nothing is reported.
 #[test]
-fn a_poems_stanza_gaps_are_counted() {
+fn a_poem_keeps_its_stanzas() {
     let out = run(
         r"{\rtf1 The tide came in,\line the lamp was lit,\par\par the keeper slept,\line the gulls did not.\par\par Morning.\par}",
     );
-    assert_eq!(
-        out.found.stanza_gaps, 1,
-        "a one-line paragraph is not a stanza"
-    );
     assert_eq!(texts(&out.doc).len(), 3);
 
-    // The same poem in one paragraph, its stanzas apart by an empty line.
     let one = run(
         r"{\rtf1 The tide came in,\line the lamp was lit,\line\line the keeper slept,\line the gulls did not.\par}",
     );
-    assert_eq!(one.found.stanza_gaps, 1);
-    // Prose typed with soft breaks between its paragraphs is no poem.
-    let long = run(
-        r"{\rtf1 The keeper climbed the stairs again and counted every one of them aloud.\line\line He reached the lamp before the light had gone from the western sky.\par}",
-    );
-    assert_eq!(long.found.stanza_gaps, 0);
-
-    let sheet = run(
-        r"{\rtf1 Name: Ada Keeper\par\par Age: forty\par\par Lives: the lighthouse\par\par Fears: the fog\par}",
-    );
-    assert_eq!(sheet.found.stanza_gaps, 0);
+    assert_eq!(texts(&one.doc).len(), 1);
 }
 
 /// A blank line between stanzas never becomes a scene break, whatever the prose around.
@@ -942,7 +929,6 @@ fn a_blank_line_between_stanzas_is_not_a_scene_break() {
         },
     );
     assert_eq!(out.found.blank_lines_breaks, 0);
-    assert_eq!(out.found.stanza_gaps, 1);
 }
 
 /// Should Scrivener write a comment over two paragraphs as one field in each, it is still

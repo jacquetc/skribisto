@@ -864,11 +864,9 @@ pub(crate) fn prose_notice(notice: &ProseNotice, locator: &Locator<'_>) -> Scriv
         | ProseNotice::DocumentLinksDropped { count: n, .. }
         | ProseNotice::DocumentLinksKept { count: n, .. }
         | ProseNotice::OtherLinksKeptAsText { count: n, .. }
-        | ProseNotice::SoftBreaksSplit { count: n, .. }
         | ProseNotice::TypedIndentsRemoved { count: n, .. }
         | ProseNotice::LeftIndentsNotKept { count: n, .. }
         | ProseNotice::BlankLinesRemoved { count: n, .. }
-        | ProseNotice::VerseStanzaGapsLost { count: n, .. }
         | ProseNotice::BlankLinesBecameSceneBreaks { count: n, .. }
         | ProseNotice::OrnamentsBecameSceneBreaks { count: n, .. }
         | ProseNotice::TableFirstRowHeader { count: n, .. }
