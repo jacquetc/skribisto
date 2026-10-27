@@ -4774,7 +4774,8 @@ fn the_replace_row_fits_the_pane_and_names_preserve_case_where_it_fits() {
 /// It went to the *next* one, and in the replace field it replaced. A `TextInput`
 /// submits on Enter whatever the modifiers, and the banner listened for Shift+Enter on
 /// the row around the fields, which hears a key only after the focused field has had
-/// it. The row now claims the key in its preview, before either field sees it.
+/// it. Each field's wrapper now claims the key in its preview, before the field sees
+/// it, and a focused button keeps Shift+Enter as its own.
 #[test]
 fn shift_enter_in_the_find_bar_goes_to_the_previous_match() {
     use teksilo::core::event::{Key, Modifiers};
@@ -4854,9 +4855,24 @@ fn shift_enter_in_the_find_bar_goes_to_the_previous_match() {
     );
     assert_eq!(doc.to_plain_text().unwrap(), prose, "and replaces nothing");
     tree.press_key(Key::Enter, Modifiers::NONE);
-    assert!(
-        doc.to_plain_text().unwrap().contains("ONE"),
+    assert_eq!(
+        doc.to_plain_text().unwrap().matches("ONE").count(),
+        1,
         "positive control: Enter in the replace field still replaces"
+    );
+
+    // A focused button is not a field: Shift+Enter there is the button's own key, and
+    // the banner does not take it to step back.
+    let replace_button = first_of_type(&tree, banner, "::Button")
+        .and_then(|b| tree.first_focusable_descendant(b))
+        .expect("the Replace button is on the row");
+    tree.focus(replace_button);
+    let before = find.current_signal().get();
+    tree.press_key(Key::Enter, Modifiers::SHIFT);
+    assert_eq!(
+        find.current_signal().get(),
+        before,
+        "Shift+Enter on a focused button does not step back"
     );
     find.close();
 }

@@ -372,10 +372,15 @@ def check_line_break(s, lines, what):
     """Fail unless `lines` read as two lines of one paragraph: the first ends in a
     line separator, and the second follows it. Two paragraphs would end the first
     line with no separator. The line nodes are joined first, so a soft wrap that
-    splits a line across two nodes changes nothing."""
-    got = editor_lines(s)
-    if lines[0] + "\u2028" + lines[1] in "".join(got):
-        return
+    splits a line across two nodes changes nothing. Retried for a few seconds: a
+    reopened document reaches the accessibility tree after its editor mounts."""
+    got = []
+    end = time.time() + 10
+    while time.time() < end:
+        got = editor_lines(s)
+        if lines[0] + "\u2028" + lines[1] in "".join(got):
+            return
+        time.sleep(0.5)
     near = [line for line in got if lines[0] in line or lines[1] in line]
     s.shot("line-break-wrong.png")
     fail(f"{what}: {lines!r} are not two lines of one paragraph; the editor reads {near!r}", s)
