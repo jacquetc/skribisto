@@ -536,6 +536,8 @@ impl EditorsViewModel {
         if !crate::shared::editor_writes::accepts_writes(&handle) {
             return;
         }
+        // Under "Always forward", after a selection rather than over it.
+        crate::shared::editor_writes::collapse_selection_before_insert(&handle);
         // One atomic call rather than `insert_block` + `insert_text` +
         // `insert_block`: three separate entries into the widget give the
         // application three change notifications to react to mid-edit, and a

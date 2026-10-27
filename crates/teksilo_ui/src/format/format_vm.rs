@@ -61,7 +61,9 @@ use teksilo::prelude::{Signal, WidgetId};
 use teksilo::text_document::{Alignment, TextDirection};
 use teksilo::widgets::rich_text::{EditorHandle, list_style_is_ordered};
 
-use crate::shared::editor_writes::accepts_writes;
+use crate::shared::editor_writes::{
+    accepts_deletions, accepts_writes, collapse_selection_before_insert,
+};
 
 /// Index of "align left" in the alignment radio group.
 pub const ALIGN_LEFT: usize = 0;
@@ -570,6 +572,10 @@ pub struct FormatViewModel {
     /// and column commands. [`Self::in_table`] is only *where* the caret is, and
     /// also decides whether the dock shows its table group at all.
     can_edit_table: Signal<bool>,
+    /// [`Self::can_edit_table`], and the editor takes deletions: the row, column and
+    /// table removals, which take the cells' text with them. Off under "Always
+    /// forward", where the insertions stay on.
+    can_delete_in_table: Signal<bool>,
 
     /// Per-group visibility, pushed by [`Self::set_surface`].
     ///
@@ -657,6 +663,7 @@ impl FormatViewModel {
             can_break_scene: Signal::new(false),
             scene_focused: Rc::new(Cell::new(false)),
             can_edit_table: Signal::new(false),
+            can_delete_in_table: Signal::new(false),
             group_visible: GroupVisibility::new(FormatSurface::None),
             last_seen: Rc::new(Cell::new(NEVER_SEEN)),
         }
@@ -1150,6 +1157,12 @@ impl FormatViewModel {
         self.can_edit_table.clone()
     }
 
+    /// Whether the caret's table may lose a row, a column or itself — see
+    /// [`Self::can_delete_in_table`].
+    pub fn can_delete_in_table(&self) -> Signal<bool> {
+        self.can_delete_in_table.clone()
+    }
+
     /// Whether a scene break may go in — see [`Self::can_break_scene`].
     pub fn can_break_scene(&self) -> Signal<bool> {
         self.can_break_scene.clone()
@@ -1257,9 +1270,11 @@ impl FormatViewModel {
             writable && self.has_caret_target.get(),
         );
         set_if_changed(&self.can_break_scene, writable && self.scene_focused.get());
+        let table = writable && handle.is_some_and(EditorHandle::is_in_table);
+        set_if_changed(&self.can_edit_table, table);
         set_if_changed(
-            &self.can_edit_table,
-            writable && handle.is_some_and(EditorHandle::is_in_table),
+            &self.can_delete_in_table,
+            table && handle.is_some_and(accepts_deletions),
         );
         set_if_changed(&self.line_break, handle.is_some_and(line_break_allowed));
     }
@@ -1439,10 +1454,15 @@ impl FormatViewModel {
             }
         };
 
+        // Renaming takes the old words away, which "Always forward" refuses: there
+        // the link goes onto the words already in place, and a new name is only
+        // written where there were none (a bare caret).
+        let rename = name != current && (current.is_empty() || accepts_deletions(&handle));
+
         // One undo entry for the pair, so a writer who changed both the name
         // and the destination undoes one link edit rather than two halves.
         handle.edit_block(|| {
-            let end = if name == current {
+            let end = if !rename {
                 end
             } else {
                 // `replace_range` on an empty range is an insert, which is
@@ -1651,8 +1671,14 @@ impl FormatViewModel {
     /// synopsis, or a stream row's own editor. It also means the mark lands in
     /// the editor's own undo history as one step, which is what a writer who
     /// inserted the wrong one expects of Ctrl+Z.
+    ///
+    /// Under "Always forward" it goes in after a selection rather than over it, as
+    /// a typed character does.
     pub fn insert_mark(&self, text: &str) {
-        self.with_editor(|h| h.insert_text(text));
+        self.with_editor(|h| {
+            collapse_selection_before_insert(h);
+            h.insert_text(text);
+        });
     }
 
     /// Format ▸ Insert line break: a new line in the same paragraph, the editor's own
@@ -1698,7 +1724,10 @@ impl FormatViewModel {
         if rows == 0 || columns == 0 {
             return;
         }
-        self.with_editor(|h| h.insert_table(rows, columns));
+        self.with_editor(|h| {
+            collapse_selection_before_insert(h);
+            h.insert_table(rows, columns);
+        });
     }
 
     pub fn insert_row_above(&self) {
@@ -1713,14 +1742,31 @@ impl FormatViewModel {
     pub fn insert_column_after(&self) {
         self.with_editor(|h| h.insert_column_after());
     }
+    /// The three removals take the cells' text with them, so they wait for an
+    /// editor that takes deletions: not under "Always forward" (see
+    /// [`Self::can_delete_in_table`]).
     pub fn remove_row(&self) {
-        self.with_editor(|h| h.remove_current_row());
+        self.with_editor(|h| {
+            if accepts_deletions(h) {
+                h.remove_current_row();
+            }
+        });
     }
+    /// See [`Self::remove_row`].
     pub fn remove_column(&self) {
-        self.with_editor(|h| h.remove_current_column());
+        self.with_editor(|h| {
+            if accepts_deletions(h) {
+                h.remove_current_column();
+            }
+        });
     }
+    /// See [`Self::remove_row`].
     pub fn remove_table(&self) {
-        self.with_editor(|h| h.remove_current_table());
+        self.with_editor(|h| {
+            if accepts_deletions(h) {
+                h.remove_current_table();
+            }
+        });
     }
 
     // ── History ───────────────────────────────────────────────────────────

@@ -316,26 +316,28 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
                     .item(command(
                         &f,
                         tr!(menu_format_table_col_after()),
-                        in_table.clone(),
+                        in_table,
                         FormatViewModel::insert_column_after,
                     ))
                     .separator()
+                    // The removals take the cells' text with them, so
+                    // they are off under "Always forward" as well.
                     .item(command(
                         &f,
                         tr!(menu_format_table_row_delete()),
-                        in_table.clone(),
+                        f.can_delete_in_table(),
                         FormatViewModel::remove_row,
                     ))
                     .item(command(
                         &f,
                         tr!(menu_format_table_col_delete()),
-                        in_table.clone(),
+                        f.can_delete_in_table(),
                         FormatViewModel::remove_column,
                     ))
                     .item(command(
                         &f,
                         tr!(menu_format_table_remove()),
-                        in_table,
+                        f.can_delete_in_table(),
                         FormatViewModel::remove_table,
                     ))
             }

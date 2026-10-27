@@ -4885,7 +4885,8 @@ fn shift_enter_in_the_find_bar_goes_to_the_previous_match() {
 /// preview, while the replace row is open.
 #[test]
 fn alt_a_in_the_find_bar_replaces_every_match() {
-    use teksilo::core::event::{Key, Modifiers};
+    use teksilo::core::event::{Key, Modifiers, WidgetEvent};
+    use teksilo::core::widget_tree::WidgetTree;
     use teksilo::text_document::HighlightFormat;
 
     let ctx = Rc::new(AppContext::new());
@@ -4921,17 +4922,44 @@ fn alt_a_in_the_find_bar_replaces_every_match() {
     let field = first_of_type(&tree, banner, "TextInputField").expect("the query field");
     tree.focus(field);
 
-    tree.press_key(Key::A, Modifiers::ALT);
+    // As a keyboard sends it: Alt+A carries the letter, which the field types when
+    // it gets the key first. `press_key` would send no text for `Key::A`, and the
+    // "never typed the letter" check below would then hold whoever took the key.
+    //
+    // Laid out after it, because a field types what it is given on the next frame:
+    // a letter it took is in its text before anything below reads it.
+    fn alt_a(tree: &mut WidgetTree) {
+        tree.dispatch_event(WidgetEvent::KeyDown {
+            key: Key::A,
+            modifiers: Modifiers::ALT,
+            text: Some("a".into()),
+        });
+        tree.dispatch_event(WidgetEvent::KeyUp {
+            key: Key::A,
+            modifiers: Modifiers::ALT,
+        });
+        tree.request_frame();
+        tree.layout(teksilo::prelude::SizeProposal::exact(1000.0, 700.0));
+    }
+
+    alt_a(&mut tree);
     assert_eq!(
         doc.to_plain_text().unwrap(),
         prose,
         "with the replace row closed, Alt+A replaces nothing"
     );
+    // It went on to the field, which typed the letter: put the query back.
+    assert!(
+        find.query_signal().get().contains('a'),
+        "premise: a key the banner leaves alone reaches the field, which types it"
+    );
+    find.query_signal().set("one".into());
+    find.refresh_query();
 
     find.replace_mode_signal().set(true);
     tree.layout(teksilo::prelude::SizeProposal::exact(1000.0, 700.0));
     tree.focus(field);
-    tree.press_key(Key::A, Modifiers::ALT);
+    alt_a(&mut tree);
     assert_eq!(
         doc.to_plain_text().unwrap(),
         "ONE two ONE two ONE",
@@ -4941,6 +4969,26 @@ fn alt_a_in_the_find_bar_replaces_every_match() {
         find.query_signal().get(),
         "one",
         "and the field never typed the letter"
+    );
+
+    // Under "Always forward" replacing takes words away: the buttons grey, and
+    // Alt+A replaces nothing.
+    doc.set_plain_text(prose).unwrap();
+    find.refresh_query();
+    find.editor_handle()
+        .expect("the scene's editor is attached")
+        .set_command_filter(teksilo::widgets::rich_text::CommandFilter::ForwardOnly);
+    find.tick();
+    assert!(
+        !find.replace_allowed_signal().get(),
+        "Replace and Replace All are off under Always forward"
+    );
+    tree.focus(field);
+    alt_a(&mut tree);
+    assert_eq!(
+        doc.to_plain_text().unwrap(),
+        prose,
+        "and Alt+A replaces nothing there"
     );
     find.close();
 }

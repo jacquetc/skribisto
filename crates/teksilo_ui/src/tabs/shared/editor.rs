@@ -53,7 +53,7 @@ use crate::format::{EditorKind, FormatViewModel};
 use crate::intents::AppIntent;
 use crate::search::FindViewModel;
 use crate::settings::EditorTypography;
-use crate::shared::editor_writes::accepts_writes;
+use crate::shared::editor_writes::{accepts_deletions, accepts_writes};
 use crate::spellcheck::SpellSession;
 use crate::tabs::TitleField;
 use crate::text_replacement::TextReplacementSession;
@@ -868,7 +868,13 @@ fn editor_context_menu(
     // spelling here — ordinary prose gets a menu that starts at Cut, rather than a
     // greyed item nailed to the top of every right-click.
     if !spelling.words.is_empty() {
-        if let Some(c) = spelling.correction.as_ref().filter(|_| writable) {
+        // A correction replaces the misspelled word, which takes it away: not under
+        // "Always forward" either, where Backspace on the same word does nothing.
+        if let Some(c) = spelling
+            .correction
+            .as_ref()
+            .filter(|_| accepts_deletions(&handle))
+        {
             if c.suggestions.is_empty() {
                 // Flagged but uncorrectable: say so, rather than leave a gap that
                 // reads as "we forgot to look".

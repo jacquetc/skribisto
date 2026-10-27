@@ -1107,6 +1107,62 @@ fn a_read_only_editor_takes_no_format_command() {
     );
 }
 
+/// **Under "Always forward", no Format command takes words away.**
+///
+/// The game refuses what deletes, and the editor's keys honour it, but a command
+/// writing through the handle does not ask: a formatting mark over a selection
+/// replaced it, a renamed link replaced its words, and the table removals took the
+/// cells with them. Insertions still go in, after the selection; the removals are
+/// off. An ordinary editor is the control.
+#[test]
+fn always_forward_keeps_every_word_from_the_format_commands() {
+    use teksilo::widgets::rich_text::CommandFilter;
+
+    let (vm, editor, doc) = vm_over_doc("Roses are red");
+    let handle = editor.handle();
+    handle.set_command_filter(CommandFilter::ForwardOnly);
+
+    handle.select_range(6, 9);
+    vm.insert_mark("\u{a0}");
+    assert_eq!(
+        doc.to_plain_text().unwrap(),
+        "Roses are\u{a0} red",
+        "the mark goes in after the selected word, not over it"
+    );
+
+    handle.select_range(0, 5);
+    vm.apply_link("Tulips", "https://example.org");
+    assert!(
+        doc.to_plain_text().unwrap().starts_with("Roses "),
+        "the link goes onto the words in place, which stay"
+    );
+
+    // The table half on a fresh editor, caret at its start, as the table test above
+    // does: there the new table holds the caret.
+    let (vm, editor, _doc) = vm_over_doc("Hello");
+    let handle = editor.handle();
+    handle.set_command_filter(CommandFilter::ForwardOnly);
+    vm.insert_table(2, 2);
+    vm.refresh();
+    assert!(handle.is_in_table(), "a table still goes in");
+    assert!(vm.can_edit_table().get(), "and takes rows and columns");
+    assert!(
+        !vm.can_delete_in_table().get(),
+        "but gives none up under Always forward"
+    );
+    let with_table = handle.to_djot();
+    vm.remove_row();
+    vm.remove_column();
+    vm.remove_table();
+    assert_eq!(handle.to_djot(), with_table, "the removals did nothing");
+
+    handle.set_command_filter(CommandFilter::All);
+    vm.refresh();
+    assert!(vm.can_delete_in_table().get(), "control: with the game off");
+    vm.remove_table();
+    assert!(!handle.is_in_table(), "control: the table goes");
+}
+
 /// **The write mirrors follow the editor's filter, not only its text.**
 ///
 /// They used to be re-read only past `refresh`'s gate, which moves with the text,

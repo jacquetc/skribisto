@@ -428,24 +428,35 @@ fn controls(vm: &FormatViewModel) -> Padding {
             vm.clone(),
             |vm| vm.insert_column_after(),
         ))
-        .child(command_button(
-            glyph::table_row_delete(),
-            tr!(format_table_row_delete()),
-            vm.clone(),
-            |vm| vm.remove_row(),
-        ))
-        .child(command_button(
-            glyph::table_col_delete(),
-            tr!(format_table_col_delete()),
-            vm.clone(),
-            |vm| vm.remove_column(),
-        ))
-        .child(command_button(
-            glyph::table_remove(),
-            tr!(format_table_remove()),
-            vm.clone(),
-            |vm| vm.remove_table(),
-        ));
+        // The removals take the cells' text with them, so "Always forward" greys
+        // them where the insertions stay on (`FormatViewModel::can_delete_in_table`).
+        .child(
+            command_button(
+                glyph::table_row_delete(),
+                tr!(format_table_row_delete()),
+                vm.clone(),
+                |vm| vm.remove_row(),
+            )
+            .enabled(vm.can_delete_in_table()),
+        )
+        .child(
+            command_button(
+                glyph::table_col_delete(),
+                tr!(format_table_col_delete()),
+                vm.clone(),
+                |vm| vm.remove_column(),
+            )
+            .enabled(vm.can_delete_in_table()),
+        )
+        .child(
+            command_button(
+                glyph::table_remove(),
+                tr!(format_table_remove()),
+                vm.clone(),
+                |vm| vm.remove_table(),
+            )
+            .enabled(vm.can_delete_in_table()),
+        );
 
     let tables = VisibleWhen::new(
         g.tables.clone(),

@@ -315,6 +315,8 @@ fn finish(deps: &InsertDeps, ctx: &mut EventContext, pending: PendingImage, poli
     // Register before inserting: the insertion triggers a relayout, and a paint
     // that cannot resolve the name draws nothing where the image belongs.
     handle.add_image_resource(&image.relative_path(), &image.mime_type, &image.bytes);
+    // Under "Always forward", after a selection rather than over it.
+    crate::shared::editor_writes::collapse_selection_before_insert(&handle);
     handle.insert_djot(&image.djot("", image.width, image.height));
 
     // Puts the caret back in the prose, exactly as the template-insert command

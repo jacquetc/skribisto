@@ -170,6 +170,11 @@ pub struct FindViewModel {
     /// Preserve the case of each replaced occurrence (AURÉLIEN → AURÉLIAN, not
     /// aurélian). On by default, like the project-wide replace.
     preserve_case: Signal<bool>,
+    /// [`Self::may_replace`], kept for the Replace and Replace All buttons, which
+    /// would otherwise stay lit over a read-only editor or "Always forward" and do
+    /// nothing. Refreshed every [`Self::tick`]: a writing game switches the
+    /// editor's filter without an event a button could follow.
+    replace_allowed: Signal<bool>,
 }
 
 impl FindViewModel {
@@ -206,6 +211,7 @@ impl FindViewModel {
             replace_mode: Signal::new(false),
             replacement: Signal::new(String::new()),
             preserve_case: Signal::new(true),
+            replace_allowed: Signal::new(true),
         }
     }
 
@@ -252,6 +258,10 @@ impl FindViewModel {
     }
     pub fn preserve_case_signal(&self) -> Signal<bool> {
         self.preserve_case.clone()
+    }
+    /// Whether the replace half may run now — see [`Self::replace_allowed`].
+    pub fn replace_allowed_signal(&self) -> Signal<bool> {
+        self.replace_allowed.clone()
     }
 
     /// Attach (or replace) the editor handle — called on each editor build, since
@@ -660,7 +670,7 @@ impl FindViewModel {
     /// **Finding is untouched.** Only the replace half is withheld: re-reading,
     /// stepping through matches and highlighting take nothing away, and a writer
     /// drafting forward still needs to find where they were.
-    fn may_replace(&self) -> bool {
+    pub(crate) fn may_replace(&self) -> bool {
         self.handle.borrow().as_ref().is_none_or(|h| {
             h.command_filter()
                 .accepts(teksilo::widgets::rich_text::EditCommandKind::Cut)
@@ -738,6 +748,10 @@ impl FindViewModel {
     /// of any document an edit staled (offsets moved), keeping the highlight boxes on
     /// the right characters. Cheap no-op otherwise.
     pub fn tick(&self) {
+        let allowed = self.may_replace();
+        if self.replace_allowed.get() != allowed {
+            self.replace_allowed.set(allowed);
+        }
         if self.sync_documents() {
             self.apply_query();
             self.publish();

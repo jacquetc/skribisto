@@ -49,16 +49,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
                 // back, collapse to the end of the selection first: the template
                 // lands after the passage rather than instead of it, which is the
                 // same answer typing over a selection gets.
-                if !handle
-                    .command_filter()
-                    .accepts(teksilo::widgets::rich_text::EditCommandKind::DeleteNext)
-                {
-                    let (start, end) = handle.selection();
-                    if start != end {
-                        let at = start.max(end);
-                        handle.select_range(at, at);
-                    }
-                }
+                crate::shared::editor_writes::collapse_selection_before_insert(&handle);
                 handle.insert_djot(&row.body);
                 // Puts the caret back in the prose. A menu hands focus back to the editor
                 // before its command runs (since teksilo 0.21, a pointer never takes it

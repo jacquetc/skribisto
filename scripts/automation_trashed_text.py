@@ -10,15 +10,16 @@ every Skribisto command that writes goes through a handle. So each route has to
 ask first (`crate::shared::editor_writes`), and this drives the real window to
 prove they do:
 
-  1. control: over an ordinary scene, Format ▸ Bold is enabled (so a disabled
-     row below means the gate, not a probe that cannot see the flag);
+  1. control: over an ordinary scene, Format ▸ Bold is enabled and the right-click
+     menu brings its Bold strip and Paste (so their absence below means the gate,
+     not a probe that cannot see them);
   2. the scene is trashed, and reopened from the Trash dock under its banner;
   3. Backspace, Delete, a typed letter, Ctrl+X, Ctrl+V, Ctrl+B, Shift+Enter and
      Ctrl+Shift+Enter change nothing. The writing game's filter, `All` while the
      game is off, used to be pushed onto the read-only editor in place of its
      `ReadOnly`, so it took keys as an ordinary editor does: the first run of this
      probe saw Ctrl+X cut four characters out of the trashed scene;
-  4. the right-click menu offers Copy and no Paste, Bold strip or Split scene;
+  4. the right-click menu offers Copy, and no Cut, Paste, Bold strip or Split scene;
   5. Format ▸ Bold and Insert line break, and Document ▸ Insert footnote and
      Insert image, are disabled;
   6. after all of it, the text reads exactly as it did.
@@ -275,6 +276,24 @@ def row(rows, label):
     return next((n for n in rows if (n.get("label") or "") == label), None)
 
 
+def bold_strip_shown(s, ed):
+    """Right-click `ed` and say whether the menu brought its formatting strip.
+
+    The strip is a row of buttons, not menu rows, so it is told by the nodes
+    labelled Bold: the Format panel holds one already, and the strip adds its own.
+    The menu is closed again before returning."""
+    def count():
+        return sum(1 for n in s.nodes() if (n.get("label") or "") == "Bold")
+
+    before = count()
+    s.click(ed, button="secondary")
+    time.sleep(0.8)
+    shown = count() > before
+    labels = [n.get("label") or "" for n in s.nodes() if is_menu_row(n)]
+    close_menus(s)
+    return shown, labels
+
+
 def close_menus(s):
     for _ in range(3):
         s.key("Escape")
@@ -324,7 +343,12 @@ try:
     if row(rows, "Bold") is None or row(rows, "Bold").get("disabled"):
         fail("control: Format ▸ Bold is not enabled over an ordinary scene", s)
     close_menus(s)
-    print("1. Control: Format ▸ Bold is enabled over an ordinary scene.")
+    shown, labels = bold_strip_shown(s, s.prose())
+    if not shown or "Paste" not in labels:
+        fail(f"control: the right-click menu over an ordinary scene shows no Bold strip "
+             f"or no Paste; saw {labels}", s)
+    print("1. Control: Format ▸ Bold is enabled, and the right-click menu offers the Bold"
+          " strip and Paste, over an ordinary scene.")
 
     # ── 2. Trash it, and reopen it from the Trash dock ───────────────────────
     rows = open_menu(s, "Document", "Move to Trash")
@@ -379,18 +403,14 @@ try:
     )
 
     # ── 4. The right-click menu ──────────────────────────────────────────────
-    ed = s.prose()
-    s.click(ed, button="secondary")
-    time.sleep(0.8)
-    labels = [n.get("label") or "" for n in s.nodes() if is_menu_row(n)]
+    shown, labels = bold_strip_shown(s, s.prose())
     if "Copy" not in labels:
-        s.shot("trashed-context.png")
         fail(f"the right-click menu has no Copy; saw {labels}", s)
-    offered = [w for w in ("Paste", "Paste Unformatted", "Split scene", "Bold") if w in labels]
+    offered = [w for w in ("Cut", "Paste", "Paste Unformatted", "Split scene") if w in labels]
+    if shown:
+        offered.append("the Bold strip")
     if offered:
-        s.shot("trashed-context.png")
         fail(f"the right-click menu offers {offered} over trashed text; saw {labels}", s)
-    close_menus(s)
     print("4. The right-click menu offers Copy, and nothing that writes.")
 
     # ── 5. The menus ─────────────────────────────────────────────────────────

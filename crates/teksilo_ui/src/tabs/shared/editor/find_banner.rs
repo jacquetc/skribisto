@@ -269,14 +269,18 @@ impl Widget for FindBanner {
                             .on_key_preview(shift_enter_steps_back(self.find.clone())),
                     ),
             )
+            // Greyed where replacing is refused (a read-only editor, "Always
+            // forward"), rather than lit over a click that does nothing.
             .child(
                 Button::new(tr!(find_replace()))
                     .variant(ButtonVariant::Tinted)
+                    .enabled(self.find.replace_allowed_signal())
                     .on_activate_fn(move |ctx| rc_btn.replace_current(ctx)),
             )
             .child(
                 Button::new(tr!(find_replace_all()))
                     .variant(ButtonVariant::Filled)
+                    .enabled(self.find.replace_allowed_signal())
                     .on_activate_fn(move |ctx| ra_btn.replace_all(ctx)),
             )
             .child(Shrinkable::new().min_width(PRESERVE_CASE_MIN_WIDTH).child(
@@ -295,6 +299,7 @@ impl Widget for FindBanner {
         // did nothing), and not with Ctrl, which is AltGr on Windows: AltGr+A types a
         // letter on several layouts (ą in Polish). On macOS, Option+A composes a
         // character (å) and arrives as that, so the chord is Windows' and Linux's.
+        // Where replacing is refused the key is left alone, not swallowed.
         let keyed = VStack::new()
             .spacing(4.0)
             .child(find_row)
@@ -304,7 +309,11 @@ impl Widget for FindBanner {
                     key: Key::A,
                     modifiers,
                     ..
-                } if modifiers.alt() && !modifiers.ctrl() && alt_a.replace_mode_signal().get() => {
+                } if modifiers.alt()
+                    && !modifiers.ctrl()
+                    && alt_a.replace_mode_signal().get()
+                    && alt_a.may_replace() =>
+                {
                     alt_a.replace_all(ctx);
                     EventResponse::Handled
                 }

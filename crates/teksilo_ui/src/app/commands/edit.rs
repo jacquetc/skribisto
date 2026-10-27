@@ -208,6 +208,7 @@ mod tests {
     struct Host {
         group: Option<UndoGroupViewModel>,
         field: Option<TextInputField>,
+        editor: Option<teksilo::widgets::rich_text::RichTextEditor>,
     }
 
     impl std::fmt::Debug for Host {
@@ -222,7 +223,8 @@ mod tests {
                 register_with(ctx, &group);
             }
             let field = self.field.take().map(|f| ctx.add(f));
-            field.into_iter().collect()
+            let editor = self.editor.take().map(|e| ctx.add(e));
+            field.into_iter().chain(editor).collect()
         }
 
         fn layout_response(&self, proposal: SizeProposal, _ctx: &LayoutContext) -> LayoutResponse {
@@ -259,6 +261,7 @@ mod tests {
         let host = tree.add(Host {
             group: Some(group.clone()),
             field: Some(TextInputField::new(Signal::new("Chapter one".to_string()))),
+            editor: None,
         });
         tree.layout(SizeProposal::exact(300.0, 40.0));
         let field = tree
@@ -366,5 +369,62 @@ mod tests {
                 command.id()
             );
         }
+    }
+
+    /// **Ctrl+X under "Always forward" takes nothing away, even through a stale row.**
+    ///
+    /// The rich editor's own Cut declines under the game, and the chord comes on to
+    /// the Edit route's action. That action is enabled from the last refresh, so a
+    /// game started this frame still finds it lit: `cut` itself has to ask, and the
+    /// text surface it called cut without asking the editor's filter.
+    #[test]
+    fn ctrl_x_under_always_forward_takes_nothing_away() {
+        use teksilo::text_document::TextDocument;
+        use teksilo::widgets::rich_text::{CommandFilter, RichTextEditor};
+
+        let doc = TextDocument::new();
+        doc.set_plain_text("Roses are red").unwrap();
+        let editor = RichTextEditor::editor(doc.clone());
+        let handle = editor.handle();
+        let group = UndoGroupViewModel::with_live_editor(
+            handle.clone(),
+            Rc::new(Fake::default()),
+            Rc::new(Fake::default()),
+        );
+        let mut tree = WidgetTree::new();
+        let host = tree.add(Host {
+            group: Some(group.clone()),
+            field: None,
+            editor: Some(editor),
+        });
+        group.attach_surfaces(tree.text_surfaces());
+        tree.layout(SizeProposal::exact(300.0, 40.0));
+        let mounted = tree
+            .children(host)
+            .into_iter()
+            .next()
+            .and_then(|e| tree.first_focusable_descendant(e))
+            .expect("the editor is the host's one child");
+        tree.focus(mounted);
+
+        // The row is lit from a refresh under no game; the game starts after it.
+        handle.select_range(0, 6);
+        group.refresh();
+        assert!(group.can_cut().get(), "the premise: Cut is lit");
+        handle.set_command_filter(CommandFilter::ForwardOnly);
+        handle.select_range(0, 6);
+        tree.press_key(Key::X, Modifiers::COMMAND);
+        assert_eq!(
+            doc.to_plain_text().unwrap(),
+            "Roses are red",
+            "Ctrl+X took words away under Always forward"
+        );
+
+        // Positive control: with the game off, the same chord cuts.
+        handle.set_command_filter(CommandFilter::All);
+        handle.select_range(0, 6);
+        group.refresh();
+        tree.press_key(Key::X, Modifiers::COMMAND);
+        assert_eq!(doc.to_plain_text().unwrap(), "are red");
     }
 }
