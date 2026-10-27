@@ -41,6 +41,7 @@ use std::rc::Rc;
 
 use frontend::common::undo_redo::UndoLabel;
 use teksilo::prelude::*;
+use teksilo::widgets::rich_text::EditCommandKind;
 
 use super::domains::{DomainKind, EntityDomain, ProseDomain, UndoDomain};
 use crate::format::FormatViewModel;
@@ -200,6 +201,25 @@ impl UndoGroupViewModel {
             prose_live,
             on_entity_step,
             attach_editors,
+        )
+    }
+
+    /// [`with_domains`](Self::with_domains) with a rich editor the clipboard rows
+    /// fall back on when no text surface is focused: the route a menu takes, since
+    /// opening one moves the focus off the editor.
+    #[cfg(test)]
+    pub(crate) fn with_live_editor(
+        editor: teksilo::widgets::rich_text::EditorHandle,
+        prose: Rc<dyn UndoDomain>,
+        entity: Rc<dyn UndoDomain>,
+    ) -> Self {
+        Self::with_domains_and_editor(
+            Rc::new(move || Some(editor.clone())),
+            prose,
+            entity,
+            Rc::new(|| true),
+            Rc::new(|| {}),
+            Rc::new(|_| {}),
         )
     }
 
@@ -496,7 +516,7 @@ impl UndoGroupViewModel {
         // widget enforces that itself — so a row that lit up here would light
         // up over a command that cannot run.
         let copyable = selection && self.allows_copy();
-        set_if_changed(&self.inner.can_cut, copyable && self.accepts_paste());
+        set_if_changed(&self.inner.can_cut, copyable && self.accepts_cut());
         set_if_changed(&self.inner.can_copy, copyable);
         set_if_changed(&self.inner.can_paste, target && self.accepts_paste());
         set_if_changed(&self.inner.can_select_all, target);
@@ -612,15 +632,43 @@ impl UndoGroupViewModel {
         self.live_editor().is_some()
     }
 
-    /// May the focused surface accept a paste? A read-only field may not.
-    pub(crate) fn accepts_paste(&self) -> bool {
-        if let Some(surface) = self.focused_surface() {
-            return !surface.is_read_only();
+    /// May the focused text surface take `kind`, a clipboard command that writes?
+    ///
+    /// A read-only surface may not. Nor may a rich editor whose own filter refuses
+    /// it: teksilo's text surface for a rich editor cuts and pastes through
+    /// `EditorHandle`, which asks no filter, and reports itself read-only only when
+    /// it refuses everything. Under "Always forward" the editor's own Ctrl+X
+    /// declined, the command came on to this route, and the surface took the
+    /// selected words away. The rich editor holding the caret is `live_editor`,
+    /// and when there is one it *is* the focused surface; so its filter answers,
+    /// and only a surface that is not a rich editor answers for itself.
+    fn may_write(&self, kind: EditCommandKind) -> bool {
+        if let Some(h) = self.live_editor() {
+            return h.command_filter().accepts(kind);
         }
-        self.live_editor().is_some()
+        self.focused_surface().is_some_and(|s| !s.is_read_only())
     }
 
+    /// May the focused surface accept a paste? See [`Self::may_write`].
+    pub(crate) fn accepts_paste(&self) -> bool {
+        self.may_write(EditCommandKind::Paste)
+    }
+
+    /// May the focused surface give up its selection to a cut?
+    ///
+    /// Asked apart from [`Self::accepts_paste`] because "Always forward" takes a
+    /// paste and refuses a cut: a cut takes the selected words away.
+    pub(crate) fn accepts_cut(&self) -> bool {
+        self.may_write(EditCommandKind::Cut)
+    }
+
+    /// Cut, when [`Self::may_write`] says so. Asked here as well as by the row:
+    /// Ctrl+X reaches this whatever the row says, and neither the surface nor the
+    /// handle asks.
     pub(crate) fn cut(&self, ctx: &EventContext) {
+        if !self.may_write(EditCommandKind::Cut) {
+            return;
+        }
         if let Some(surface) = self.focused_surface() {
             surface.cut(ctx);
         } else if let Some(h) = self.live_editor() {
@@ -636,7 +684,11 @@ impl UndoGroupViewModel {
         }
     }
 
+    /// Paste, when [`Self::may_write`] says so; see [`Self::cut`] for why here.
     pub(crate) fn paste(&self, ctx: &EventContext) {
+        if !self.may_write(EditCommandKind::Paste) {
+            return;
+        }
         if let Some(surface) = self.focused_surface() {
             surface.paste(ctx);
         } else if let Some(h) = self.live_editor() {
@@ -644,7 +696,11 @@ impl UndoGroupViewModel {
         }
     }
 
+    /// See [`Self::paste`].
     pub(crate) fn paste_plain(&self, ctx: &EventContext) {
+        if !self.may_write(EditCommandKind::PasteUnformatted) {
+            return;
+        }
         if let Some(surface) = self.focused_surface() {
             surface.paste_plain(ctx);
         } else if let Some(h) = self.live_editor() {

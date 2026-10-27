@@ -13,9 +13,9 @@ Asserts, against the running app:
   1. the **Writing games** dock mounts on the leading rail and its toggle starts
      off;
   2. typing into a scene works normally before the game starts;
-  3. with the game on, **Backspace and Delete land on the document and change
-     nothing** — the invariant, driven through real key events rather than
-     through the view-model;
+  3. with the game on, **Backspace, Delete and Ctrl+X over a selection land on
+     the document and change nothing** — the invariant, driven through real key
+     events rather than through the view-model;
   4. typing still works while the game is on (the draft grows), and the
      status-bar warning has appeared;
   5. switching the game off gives Backspace back — on the *same* editor, without
@@ -152,6 +152,19 @@ def nodes():
 def settle(times=3):
     for _ in range(times):
         call("settle")
+
+
+def key(name, **mods):
+    """A key press to the focused widget.
+
+    `inject_key` takes no `node`: the bridge refuses a call naming one. This probe
+    used to name the editor on every Backspace and Delete, so none of them arrived,
+    and "Backspace took nothing away" passed whatever the game did. A refusal now
+    fails the probe instead of reading as a key that changed nothing.
+    """
+    result, _ = call("inject_key", {"key": name, **mods})
+    if not result or result.get("isError"):
+        fail(f"inject_key {name} {mods} was refused: {result}")
 
 
 def shot(path):
@@ -378,17 +391,30 @@ guarded_before = prose_text()
 if not guarded_before:
     fail("lost sight of the manuscript editor after switching the game on")
 for _ in range(5):
-    call("inject_key", {"node": ed, "key": "Backspace"})
+    key("Backspace")
 for _ in range(5):
-    call("inject_key", {"node": ed, "key": "Delete"})
+    key("Delete")
+# A cut takes the selected words away just as surely, and Ctrl+X is a global
+# shortcut: it reaches the editor through the Edit route, not through the
+# editor's own key handling.
+for _ in range(3):
+    key("Left", shift=True)
+key("x", command=True)
 settle(5)
 guarded_after = prose_text()
 if guarded_after != guarded_before:
-    fail(
-        "THE INVARIANT BROKE: prose changed under Backspace/Delete while the game was on\n"
-        f"  before={guarded_before[-80:]!r}\n  after ={guarded_after[-80:]!r}"
+    # Where they part, not their tails: the caret sits wherever the click put it,
+    # so a change is as likely near the top of the scene as at its end.
+    at = next(
+        (i for i, (a, b) in enumerate(zip(guarded_before, guarded_after)) if a != b),
+        min(len(guarded_before), len(guarded_after)),
     )
-print("4. OK — Backspace and Delete take nothing away while playing")
+    fail(
+        "THE INVARIANT BROKE: prose changed under Backspace/Delete/Ctrl+X while the game was on\n"
+        f"  before=...{guarded_before[max(0, at - 40):at + 40]!r}\n"
+        f"  after =...{guarded_after[max(0, at - 40):at + 40]!r}"
+    )
+print("4. OK — Backspace, Delete and Ctrl+X take nothing away while playing")
 
 # The draft may still grow.
 ed, _ = prose_editor()
@@ -408,7 +434,7 @@ print("6. OK — the game is off again, and the dock says so")
 ed, _ = prose_editor()
 click_into(ed)
 released_before = prose_text()
-call("inject_key", {"node": ed, "key": "Backspace"})
+key("Backspace")
 settle(4)
 released_after = prose_text()
 if released_after == released_before:
