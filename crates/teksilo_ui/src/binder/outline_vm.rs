@@ -301,13 +301,17 @@ impl OutlineViewModel {
         self.selection.prune_missing(move |k| model.contains(k));
     }
 
-    /// Bring the outline forward AND select a row ("reveal in outline").
+    /// Bring the binder forward AND select a row ("reveal in outline").
+    ///
+    /// The binder itself, not merely the left side: the side holds five panels, and
+    /// showing it with Search or the Trash in front selected a row in a panel nobody
+    /// could see.
     ///
     /// Expands the row's ancestors first: selecting a row inside a collapsed
     /// parent moves an invisible cursor, which reads to the writer as nothing
     /// having happened at all.
     pub fn reveal_item(&self, key: BinderTreeKey) {
-        self.show();
+        self.docking.reveal_dock(self.dock_id);
         self.select_in_place(key);
     }
 

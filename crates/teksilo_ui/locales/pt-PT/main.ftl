@@ -31,10 +31,10 @@ menu-settings = &Definições
 menu-quit = &Sair
 
 menu-view = &Ver
-menu-outline = &Estrutura
-menu-search = &Pesquisar no projeto
-menu-timeline = &Voltar atrás no tempo
-menu-search-preview = Pr&é-visualização da pesquisa
+menu-panels = &Painéis
+menu-side-start = Painel &esquerdo
+menu-side-end = Pa&inel direito
+menu-side-bottom = Pai&nel inferior
 menu-fullscreen = E&crã inteiro
 menu-focus-mode = M&odo sem distrações
 menu-format = &Formato
@@ -2764,7 +2764,6 @@ settings-group-spellcheck = Verificação ortográfica
 settings-spellcheck-enabled = Verificar a ortografia enquanto escrevo
 settings-spellcheck-hint = Sublinha as palavras que nenhum dicionário instalado conhece. Desativar isto para toda a verificação, em todos os projetos, até que a volte a ativar. Para deixar de verificar apenas um idioma, desmarque-o no campo Idioma do projeto ou de um item.
 
-menu-trash = &Lixo
 trash-title = Lixo
 trash-empty-state = O lixo está vazio.
 trash-empty-button = Esvaziar o lixo…
@@ -3201,7 +3200,6 @@ export-orphan-footnotes =
     }
 
 
-menu-footnotes = &Notas de rodapé
 footnotes-title = Notas de rodapé
 footnotes-insert = In&serir nota de rodapé
 footnotes-empty = Ainda não há notas de rodapé. Coloque o cursor numa cena e use + acima, ou Ctrl+Alt+F.

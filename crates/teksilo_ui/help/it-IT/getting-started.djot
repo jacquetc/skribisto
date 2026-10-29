@@ -30,7 +30,7 @@ Nella finestra iniziale, *Crea da…* avvia un progetto da [documenti](:help-imp
 
 ## Adatta lo spazio di lavoro
 
-- Premi `F9`, oppure scegli *Visualizza ▸ Struttura*, per mostrare o nascondere il Raccoglitore.
+- Premi `F9`, oppure scegli *Visualizza ▸ Pannello sinistro*, per mostrare o nascondere i pannelli a sinistra. `Ctrl+Maiusc+B` porta in primo piano il Raccoglitore stesso.
 - Premi `Ctrl+Invio` su un elemento selezionato per aprirlo nell'altro riquadro dell'editor.
 - Quando crei un progetto, *Capitoli singoli* permette di scrivere direttamente in ciascun capitolo senza dividerlo in scene. *Cartella* salva il progetto come cartella anziché come file singolo.
 

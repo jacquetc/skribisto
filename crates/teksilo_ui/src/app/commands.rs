@@ -143,12 +143,9 @@ pub(super) struct CommandDeps {
     /// Tier-3 (per WINDOW): the Scrivener wizard this window opens, whose inspection is
     /// wired to this window's tree. `None` only in a tree with no project-import job.
     pub import_scrivener: Option<crate::import_scrivener::ImportScrivenerViewModel>,
-    /// Fixed dock ids (see [`crate::docks`]) — the reveal targets.
+    /// Fixed dock ids (see [`crate::docks`]) that a command does more than reveal.
+    /// The plain "show this panel" commands take theirs from `docks::panels`.
     pub search_dock: DockWidgetId,
-    pub trash_dock: DockWidgetId,
-    /// The footnotes dock, for `footnotes.show` — the way back when a saved desk
-    /// has lost it. See that command for why a dock needs one at all.
-    pub footnotes_dock: DockWidgetId,
     /// The timeline band, for `timeline.show` — the only door into it, since a
     /// hidden bottom side leaves no rail glyph behind.
     pub timeline_dock: DockWidgetId,

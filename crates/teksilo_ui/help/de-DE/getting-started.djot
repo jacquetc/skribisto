@@ -45,7 +45,8 @@ Unter *Beispiele* in der Seitenleiste können Sie ein Beispielprojekt erkunden.
 
 ## Den Arbeitsbereich anpassen
 
-- Mit `F9` oder *Ansicht ▸ Gliederung* blenden Sie die Projektmappe ein oder aus.
+- Mit `F9` oder *Ansicht ▸ Linker Bereich* blenden Sie die Bereiche links ein oder aus.
+  `Strg+Umschalt+B` holt die Projektmappe selbst nach vorn.
 - Mit `Strg+Eingabe` öffnen Sie den ausgewählten Eintrag im anderen Editorbereich.
 - Beim Erstellen eines Projekts ermöglicht *Einzelkapitel* das direkte Schreiben im Kapitel,
   ohne es in Szenen aufzuteilen. *Ordner* speichert das Projekt als Ordner statt als einzelne Datei.

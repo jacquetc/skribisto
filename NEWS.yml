@@ -8,6 +8,9 @@ Description:
 - "Help ▸ Keyboard shortcuts opens Settings on its Keyboard shortcuts page, where every shortcut can be found and changed, in the Launcher too. It used to open a small sheet whose list the keyboard could not reach, and whose button did nothing in the Launcher. A Settings window opened for one page, from a message or a menu, now starts on that page's first setting"
 - "A screen reader announces the Help window as “Help - Skribisto” and each page by its title. They used to be “Skribisto” and an unnamed document"
 - "In the Help window, the short definitions under “What things are” open as pages you can enter and read with the keyboard, like the other topics. Their text used to be out of reach of Tab, and of Enter on the topic"
+- "Every panel has its own command and shortcut: Ctrl+Shift+B the binder, T the trash, C the comments, G the writing games, I the inspector, O formatting, D this document's comments, K the footnotes, R the versions, J the search preview and L Go back in time, beside Ctrl+Shift+F for Search. View ▸ Panels lists them all, and the command palette and Settings ▸ Keyboard shortcuts too"
+- "The View menu keeps the panels in their own submenu, then the left, right and bottom panels, then the window's modes. Panels and window settings used to be mixed in one list, and half the panels were missing from it"
+- "Search preview no longer claims F10, which belongs to the menu bar on Windows and Linux and never reached it there. Revealing an item in the binder brings the binder in front of Search or the Trash, which used to keep it hidden"
 ---
 Version: 3.3.0
 Date: 2026-10-27

@@ -31,10 +31,10 @@ menu-settings = Aya&rlar
 menu-quit = &Çık
 
 menu-view = &Görünüm
-menu-outline = &Ana hat
-menu-search = Projede a&ra
-menu-timeline = &Zamanda geri git
-menu-search-preview = Arama &önizlemesi
+menu-panels = &Paneller
+menu-side-start = S&ol panel
+menu-side-end = S&ağ panel
+menu-side-bottom = Alt pa&nel
 menu-fullscreen = &Tam ekran
 menu-focus-mode = &Dikkat dağıtmayan mod
 menu-format = &Biçim
@@ -2717,7 +2717,6 @@ settings-group-spellcheck = Yazım denetimi
 settings-spellcheck-enabled = Yazarken yazımı denetle
 settings-spellcheck-hint = Kurulu hiçbir sözlüğün tanımadığı sözcüklerin altını çizer. Bunu kapatmak, siz yeniden açana kadar her projedeki tüm denetimi durdurur. Yalnızca bir dilin denetimini durdurmak için projenin ya da bir öğenin Dil alanında o dilin onay işaretini kaldırın.
 
-menu-trash = &Çöp kutusu
 trash-title = Çöp kutusu
 trash-empty-state = Çöp kutusu boş.
 trash-empty-button = Çöp kutusunu boşalt…
@@ -3151,7 +3150,6 @@ export-orphan-footnotes =
        *[other] { $count } dipnota artık el yazmasının hiçbir yerinden gönderme yapılmıyor. Metinleri dışa aktarılan kitapta görünmeyecek.
     }
 
-menu-footnotes = Di&pnotlar
 footnotes-title = Dipnotlar
 footnotes-insert = Di&pnot ekle
 footnotes-empty = Henüz dipnot yok. İmleci bir sahneye koyun, sonra yukarıdaki + düğmesini ya da Ctrl+Alt+F kısayolunu kullanın.

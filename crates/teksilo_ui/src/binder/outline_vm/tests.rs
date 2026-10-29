@@ -1723,3 +1723,61 @@ mod new_binder {
         assert_eq!(outline.create_binder("Research"), None);
     }
 }
+
+#[cfg(not(feature = "mocks"))]
+mod reveal {
+    use super::recommend::{key_of, seed, seed_item};
+    use super::*;
+    use teksilo::widgets::{
+        DockOpenLocation, DockSide, DockWidget, DockWidgetId, DockingLayout, RectWidget,
+    };
+
+    /// "Reveal in outline" brings the binder itself in front, not merely the left
+    /// side: with Search in front, the row it selected was in a panel nobody saw.
+    #[test]
+    fn revealing_an_item_brings_the_binder_in_front_of_another_left_panel() {
+        let (outline, binder) = seed();
+        let scene = seed_item(
+            &outline,
+            binder,
+            BinderItemRole::Item,
+            BinderItemSubRole::Scene,
+            0,
+            0,
+        );
+        let docking = outline.docking();
+        let search = DockWidgetId::from_raw(crate::docks::SEARCH_DOCK_ID);
+        // `DockingLayout::dock` registers at builder time, so the builder can be
+        // dropped at once: no widget tree needed.
+        drop(
+            DockingLayout::new(docking.clone())
+                .dock(DockWidget::new(outline.dock_id(), lit!("Binder"), |_| {
+                    RectWidget::new()
+                }))
+                .dock(DockWidget::new(search, lit!("Search"), |_| {
+                    RectWidget::new()
+                })),
+        );
+        outline.open_in_layout();
+        docking.open_dock(search, DockOpenLocation::side(DockSide::Leading).new_tab());
+        docking.reveal_dock(search);
+        let binder_tab = docking
+            .dock_location(outline.dock_id())
+            .expect("the binder is on the desk")
+            .tab_idx;
+        assert_ne!(
+            docking.side_selected_tab(DockSide::Leading),
+            binder_tab,
+            "precondition: Search is in front"
+        );
+
+        outline.reveal_item(key_of(&outline, scene));
+
+        assert_eq!(
+            docking.side_selected_tab(DockSide::Leading),
+            binder_tab,
+            "the binder must come in front of Search"
+        );
+        assert!(outline.is_visible().get(), "and the left side must show");
+    }
+}

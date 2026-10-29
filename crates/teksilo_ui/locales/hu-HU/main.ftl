@@ -30,10 +30,10 @@ menu-welcome = Ü&dvözlőképernyő…
 menu-settings = Beállítá&sok
 menu-quit = &Kilépés
 menu-view = &Nézet
-menu-outline = &Vázlat
-menu-search = &Keresés a projektben
-menu-timeline = Vissza az &időben
-menu-search-preview = Keresési &előnézet
+menu-panels = &Panelek
+menu-side-start = &Bal oldali panel
+menu-side-end = &Jobb oldali panel
+menu-side-bottom = A&lsó panel
 menu-fullscreen = &Teljes képernyő
 menu-focus-mode = &Zavarmentes mód
 menu-format = &Formátum
@@ -2767,7 +2767,6 @@ settings-page-spellcheck = Helyesírás-ellenőrzés
 settings-group-spellcheck = Helyesírás-ellenőrzés
 settings-spellcheck-enabled = Helyesírás-ellenőrzés írás közben
 settings-spellcheck-hint = Aláhúzza azokat a szavakat, amelyeket egyik telepített szótár sem ismer. Kikapcsolásával minden ellenőrzés leáll, minden projektben, amíg vissza nem kapcsolja. Ha csak egy nyelv ellenőrzését szeretné leállítani, a projekt vagy egy elem Nyelv mezőjében vegye ki a pipát a nyelv mellől.
-menu-trash = K&uka
 trash-title = Kuka
 trash-empty-state = A kuka üres.
 trash-empty-button = Kuka ürítése…
@@ -3174,7 +3173,6 @@ export-orphan-footnotes =
         [one] Egy lábjegyzetre a kézirat már sehol sem hivatkozik. A szövege nem jelenik meg az exportált könyvben.
        *[other] { $count } lábjegyzetre a kézirat már sehol sem hivatkozik. A szövegük nem jelenik meg az exportált könyvben.
     }
-menu-footnotes = &Lábjegyzetek
 footnotes-title = Lábjegyzetek
 footnotes-insert = &Lábjegyzet beszúrása
 footnotes-empty = Még nincsenek lábjegyzetek. Helyezze a kurzort egy jelenetbe, majd használja a fenti + gombot vagy a Ctrl+Alt+F billentyűparancsot.

@@ -39,10 +39,14 @@ menu-quit = &Quit
 
 ## Menu bar: View
 menu-view = &View
-menu-outline = &Outline
-menu-search = &Search in Project
-menu-timeline = &Go back in time
-menu-search-preview = Search &Preview
+# View ▸ Panels: one row per panel, each labelled with the panel's own title.
+menu-panels = &Panels
+# The three sides of the window, shown or hidden. "Start" is the side the binder is on:
+# the left in a left-to-right language, the right in Arabic or Hebrew. Word them as the
+# reader sees them.
+menu-side-start = &Left panel
+menu-side-end = Ri&ght panel
+menu-side-bottom = &Bottom panel
 menu-fullscreen = &Fullscreen
 menu-focus-mode = &Distraction-free Mode
 menu-format = F&ormat
@@ -3124,7 +3128,6 @@ settings-spellcheck-enabled = Check spelling as I write
 settings-spellcheck-hint = Underlines words no installed dictionary knows. Turning this off stops all checking, in every project, until you turn it back on. To stop checking one language only, clear its check mark on the Language field of the work or of an item.
 
 ## Trash panel
-menu-trash = &Trash
 trash-title = Trash
 trash-empty-state = Trash is empty.
 trash-empty-button = Empty Trash…
@@ -3634,7 +3637,6 @@ export-orphan-footnotes =
 
 ## Footnotes
 
-menu-footnotes = Foot&notes
 footnotes-title = Footnotes
 footnotes-insert = Insert &footnote
 footnotes-empty = No footnotes yet. Put the cursor in a scene, then use + above, or Ctrl+Alt+F.
@@ -4244,6 +4246,18 @@ shortcut-name-editor-replace = Replace
 shortcut-name-editor-find-next = Next Match
 shortcut-name-editor-find-prev = Previous Match
 shortcut-name-search-show = Search in Project
+shortcut-name-binder-show = Show the binder
+shortcut-name-trash-show = Show the trash
+shortcut-name-comments-show = Show the comments
+shortcut-name-games-show = Show the writing games
+shortcut-name-inspector-show = Show the inspector
+shortcut-name-format-show = Show the formatting panel
+shortcut-name-document-comments-show = Show this document's comments
+shortcut-name-footnotes-show = Show the footnotes
+shortcut-name-versions-show = Show the versions
+shortcut-name-preview-show = Show the search preview
+shortcut-name-timeline-show = Go back in time
+shortcut-name-side-end-toggle = Show or hide the right panel
 shortcut-name-search-replace = Replace in Project
 shortcut-name-outline-open-to-side = Open to the Side
 shortcut-name-help-topics = Help Topics

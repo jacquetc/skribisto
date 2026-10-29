@@ -46,7 +46,8 @@ To explore a sample project, open *Examples* in the sidebar.
 
 ## Adjust your workspace
 
-- Press `F9`, or choose *View ▸ Outline*, to show or hide the Binder.
+- Press `F9`, or choose *View ▸ Left panel*, to show or hide the panels on the left.
+  `Ctrl+Shift+B` brings the Binder itself to the front.
 - Press `Ctrl+Enter` on a selected item to open it in the other editor pane.
 - When creating a project, *Flat chapters* lets you write directly in each chapter instead
   of dividing it into scenes. *Bundle* saves the project as a folder instead of a single file.

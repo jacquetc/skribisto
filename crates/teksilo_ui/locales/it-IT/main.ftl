@@ -31,10 +31,10 @@ menu-welcome = Benvenu&to…
 menu-settings = Imp&ostazioni
 menu-quit = Es&ci
 menu-view = &Visualizza
-menu-outline = &Struttura
-menu-search = &Cerca nel progetto
-menu-timeline = &Torna indietro nel tempo
-menu-search-preview = &Anteprima della ricerca
+menu-panels = &Pannelli
+menu-side-start = Pannello &sinistro
+menu-side-end = P&annello destro
+menu-side-bottom = Pa&nnello inferiore
 menu-fullscreen = Schermo &intero
 menu-focus-mode = Mo&dalità senza distrazioni
 menu-format = F&ormato
@@ -2732,7 +2732,6 @@ settings-page-spellcheck = Controllo ortografico
 settings-group-spellcheck = Controllo ortografico
 settings-spellcheck-enabled = Controlla l'ortografia mentre scrivo
 settings-spellcheck-hint = Sottolinea le parole sconosciute a tutti i dizionari installati. Disattivando l'opzione si interrompe ogni controllo in tutti i progetti, fino alla riattivazione. Per escludere una sola lingua, togli la sua spunta nel campo Lingua del progetto o dell'elemento.
-menu-trash = C&estino
 trash-title = Cestino
 trash-empty-state = Il cestino è vuoto.
 trash-empty-button = Svuota cestino…
@@ -3145,7 +3144,6 @@ export-orphan-footnotes =
         [one] Una nota a piè di pagina non ha più riferimenti nel manoscritto. Il suo testo non apparirà nel libro esportato.
        *[other] { $count } note a piè di pagina non hanno più riferimenti nel manoscritto. Il loro testo non apparirà nel libro esportato.
     }
-menu-footnotes = &Note a piè di pagina
 footnotes-title = Note a piè di pagina
 footnotes-insert = Inserisci nota a &piè di pagina
 footnotes-empty = Nessuna nota a piè di pagina. Posiziona il cursore in una scena, poi usa + in alto o Ctrl+Alt+F.

@@ -1953,8 +1953,6 @@ impl Widget for App {
             import_document: self.import_document.clone(),
             import_scrivener: self.import_scrivener.clone(),
             search_dock: self.search_dock,
-            trash_dock: self.trash_dock,
-            footnotes_dock: self.footnotes_dock,
             timeline_dock: self.timeline_dock,
             unsaved: self.unsaved.clone(),
             backup_mode: self.backup_mode.clone(),

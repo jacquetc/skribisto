@@ -30,10 +30,10 @@ menu-welcome = &Bonvenon…
 menu-settings = &Agordoj
 menu-quit = Fo&rlasi
 menu-view = &Vido
-menu-outline = &Skizo
-menu-search = Ser&ĉi en la projekto
-menu-timeline = R&eiri en la tempo
-menu-search-preview = Serĉ&a antaŭvido
+menu-panels = P&aneloj
+menu-side-start = Mald&ekstra panelo
+menu-side-end = De&kstra panelo
+menu-side-bottom = &Suba panelo
 menu-fullscreen = &Plenekrane
 menu-focus-mode = Sen&distra reĝimo
 menu-format = &Formato
@@ -2669,7 +2669,6 @@ settings-page-spellcheck = Literumkontrolo
 settings-group-spellcheck = Literumkontrolo
 settings-spellcheck-enabled = Kontroli literumadon dum verkado
 settings-spellcheck-hint = Substrekas vortojn nekonatajn al ĉiuj instalitaj vortaroj. Malŝalti haltigas kontroladon en ĉiuj projektoj ĝis vi reŝaltas ĝin. Por malŝalti nur unu lingvon, malmarku ĝin en la Lingva kampo de la verko aŭ ero.
-menu-trash = &Rubujo
 trash-title = Rubujo
 trash-empty-state = La rubujo estas malplena.
 trash-empty-button = Malplenigi la rubujon…
@@ -3076,7 +3075,6 @@ export-orphan-footnotes = { $count ->
     [one] Unu piednoto ne plu havas referencon en la manuskripto. Ĝia teksto ne aperos en la eksportita libro.
    *[other] { $count } piednotoj ne plu havas referencon en la manuskripto. Ilia teksto ne aperos en la eksportita libro.
 }
-menu-footnotes = Pied&notoj
 footnotes-title = Piednotoj
 footnotes-insert = Enmeti &piednoton
 footnotes-empty = Ankoraŭ neniuj piednotoj. Metu la kursoron en scenon, poste uzu + supre aŭ Ctrl+Alt+F.

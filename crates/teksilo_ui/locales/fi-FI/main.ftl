@@ -31,10 +31,10 @@ menu-settings = As&etukset
 menu-quit = &Lopeta
 
 menu-view = &Näytä
-menu-outline = &Jäsennys
-menu-search = &Hae projektista
-menu-timeline = &Palaa ajassa taaksepäin
-menu-search-preview = Haun &esikatselu
+menu-panels = &Paneelit
+menu-side-start = &Vasen paneeli
+menu-side-end = O&ikea paneeli
+menu-side-bottom = &Alapaneeli
 menu-fullscreen = &Koko näyttö
 menu-focus-mode = Häiriötön &tila
 menu-format = M&uotoilu
@@ -2826,7 +2826,6 @@ settings-group-spellcheck = Oikoluku
 settings-spellcheck-enabled = Oikolue kirjoittaessani
 settings-spellcheck-hint = Alleviivaa sanat, joita mikään asennettu sanakirja ei tunne. Kun tämä on pois päältä, kaikki tarkistus loppuu kaikissa projekteissa, kunnes otat sen taas käyttöön. Jos haluat lopettaa vain yhden kielen tarkistuksen, poista sen valintamerkki projektin tai kohteen Kieli-kentästä.
 
-menu-trash = &Roskakori
 trash-title = Roskakori
 trash-empty-state = Roskakori on tyhjä.
 trash-empty-button = Tyhjennä roskakori…
@@ -3263,7 +3262,6 @@ export-orphan-footnotes =
        }
 
 
-menu-footnotes = &Alaviitteet
 footnotes-title = Alaviitteet
 footnotes-insert = Lisää &alaviite
 footnotes-empty = Ei vielä alaviitteitä. Vie kohdistin kohtaukseen ja käytä sitten yllä olevaa +-painiketta tai pikanäppäintä Ctrl+Alt+F.

@@ -43,7 +43,8 @@ Aby obejrzeć przykładowy projekt, otwórz *Przykłady* na pasku bocznym.
 
 ## Dostosuj obszar pracy
 
-- Naciśnij `F9` lub wybierz *Widok ▸ Konspekt*, aby pokazać lub ukryć segregator.
+- Naciśnij `F9` lub wybierz *Widok ▸ Lewy panel*, aby pokazać lub ukryć panele po lewej.
+  `Ctrl+Shift+B` wysuwa na wierzch sam segregator.
 - Naciśnij `Ctrl+Enter` na zaznaczonym elemencie, aby otworzyć go w drugim panelu edytora.
 - Przy tworzeniu projektu opcja *Rozdziały płaskie* pozwala pisać bezpośrednio w każdym
   rozdziale, bez dzielenia go na sceny. *Folder projektu* zapisuje projekt jako folder zamiast

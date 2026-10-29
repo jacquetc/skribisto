@@ -49,7 +49,8 @@ Pour découvrir un projet d’exemple, ouvrez *Exemples* dans la barre latérale
 
 ## Adapter votre espace de travail
 
-- Appuyez sur `F9`, ou choisissez *Affichage ▸ Plan*, pour afficher ou masquer le Classeur.
+- Appuyez sur `F9`, ou choisissez *Affichage ▸ Panneau de gauche*, pour afficher ou masquer
+  les panneaux de gauche. `Ctrl+Maj+B` affiche le Classeur lui-même.
 - Appuyez sur `Ctrl+Entrée` sur un élément sélectionné pour l’ouvrir dans l’autre volet d’édition.
 - À la création du projet, *Chapitres à plat* permet d’écrire directement dans chaque chapitre,
   sans le diviser en scènes. Le format *Dossier* conserve le projet dans un dossier plutôt

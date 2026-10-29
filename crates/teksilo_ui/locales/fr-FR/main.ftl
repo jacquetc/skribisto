@@ -36,10 +36,13 @@ menu-quit = &Quitter
 
 ## Barre de menus: Affichage
 menu-view = &Affichage
-menu-outline = &Plan
-menu-search = &Rechercher dans le projet
-menu-timeline = R&emonter le temps
-menu-search-preview = &Aperçu de recherche
+# Affichage ▸ Panneaux : une ligne par panneau, chacune au titre du panneau lui-même.
+menu-panels = &Panneaux
+# Les trois côtés de la fenêtre, affichés ou masqués. « start » est le côté du classeur :
+# la gauche dans une langue écrite de gauche à droite, la droite en arabe ou en hébreu.
+menu-side-start = Panneau de &gauche
+menu-side-end = Panneau de d&roite
+menu-side-bottom = Panneau du &bas
 menu-fullscreen = P&lein écran
 menu-focus-mode = Mode sans &distraction
 menu-format = Fo&rmat
@@ -3102,7 +3105,6 @@ settings-spellcheck-enabled = Vérifier l’orthographe pendant que j’écris
 settings-spellcheck-hint = Souligne les mots qu’aucun dictionnaire installé ne connaît. Désactiver cette option arrête toute vérification, dans tous les projets, jusqu’à ce que vous la réactiviez. Pour ne cesser de vérifier qu’une seule langue, décochez-la dans le champ Langue de l’œuvre ou d’un élément.
 
 ## Panneau de la corbeille
-menu-trash = &Corbeille
 trash-title = Corbeille
 trash-empty-state = La corbeille est vide.
 trash-empty-button = Vider la corbeille…
@@ -3596,7 +3598,6 @@ export-orphan-footnotes =
 
 ## Notes de bas de page
 
-menu-footnotes = Notes de bas de pa&ge
 footnotes-title = Notes de bas de page
 footnotes-insert = Insérer une note de bas de p&age
 footnotes-empty = Aucune note de bas de page pour l’instant. Placez le curseur dans une scène, puis utilisez + ci-dessus, ou Ctrl+Alt+F.
@@ -4175,6 +4176,18 @@ shortcut-name-editor-replace = Remplacer
 shortcut-name-editor-find-next = Résultat suivant
 shortcut-name-editor-find-prev = Résultat précédent
 shortcut-name-search-show = Rechercher dans le projet
+shortcut-name-binder-show = Afficher le classeur
+shortcut-name-trash-show = Afficher la corbeille
+shortcut-name-comments-show = Afficher les commentaires
+shortcut-name-games-show = Afficher les jeux d’écriture
+shortcut-name-inspector-show = Afficher l’inspecteur
+shortcut-name-format-show = Afficher la mise en forme
+shortcut-name-document-comments-show = Afficher les commentaires de ce document
+shortcut-name-footnotes-show = Afficher les notes de bas de page
+shortcut-name-versions-show = Afficher les versions
+shortcut-name-preview-show = Afficher l’aperçu de recherche
+shortcut-name-timeline-show = Remonter le temps
+shortcut-name-side-end-toggle = Afficher ou masquer le panneau de droite
 shortcut-name-search-replace = Remplacer dans le projet
 shortcut-name-outline-open-to-side = Ouvrir sur le côté
 shortcut-name-help-topics = Rubriques d’aide

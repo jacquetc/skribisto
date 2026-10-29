@@ -31,10 +31,10 @@ menu-settings = Con&figuración
 menu-quit = &Salir
 
 menu-view = &Ver
-menu-outline = &Esquema
-menu-search = &Buscar en el proyecto
-menu-timeline = &Volver al pasado
-menu-search-preview = V&ista previa de búsqueda
+menu-panels = &Paneles
+menu-side-start = Panel &izquierdo
+menu-side-end = Panel &derecho
+menu-side-bottom = Pa&nel inferior
 menu-fullscreen = P&antalla completa
 menu-focus-mode = M&odo sin distracciones
 menu-format = &Formato
@@ -2816,7 +2816,6 @@ settings-group-spellcheck = Revisión ortográfica
 settings-spellcheck-enabled = Revisar la ortografía mientras escribo
 settings-spellcheck-hint = Subraya las palabras que no conoce ningún diccionario instalado. Al desactivarla se detiene toda la revisión, en todos los proyectos, hasta que vuelva a activarla. Para dejar de revisar un solo idioma, quite su marca en el campo Idioma del proyecto o de un elemento.
 
-menu-trash = &Papelera
 trash-title = Papelera
 trash-empty-state = La papelera está vacía.
 trash-empty-button = Vaciar la papelera…
@@ -3253,7 +3252,6 @@ export-orphan-footnotes =
     }
 
 
-menu-footnotes = &Notas al pie
 footnotes-title = Notas al pie
 footnotes-insert = Insertar nota al &pie
 footnotes-empty = Todavía no hay notas al pie. Ponga el cursor en una escena y use + arriba, o Ctrl+Alt+F.

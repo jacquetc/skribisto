@@ -30,7 +30,7 @@ Na janela inicial, *Criar a partir de…* inicia um projeto a partir de [documen
 
 ## Ajuste o espaço de trabalho
 
-- Prima `F9` ou escolha *Ver ▸ Estrutura* para mostrar ou ocultar o Arquivador.
+- Prima `F9` ou escolha *Ver ▸ Painel esquerdo* para mostrar ou ocultar os painéis à esquerda. `Ctrl+Shift+B` mostra o próprio Arquivador.
 - Prima `Ctrl+Enter` num item selecionado para o abrir no outro painel do editor.
 - Ao criar um projeto, *Capítulos simples* permite escrever diretamente em cada capítulo, sem o dividir em cenas. *Pasta de projeto* guarda o projeto como pasta em vez de ficheiro único.
 

@@ -30,10 +30,10 @@ menu-welcome = В&ітання…
 menu-settings = Н&алаштування
 menu-quit = &Вийти
 menu-view = &Вигляд
-menu-outline = &План
-menu-search = П&ошук у проєкті
-menu-timeline = Пов&ернутися в минуле
-menu-search-preview = Попере&дній перегляд пошуку
+menu-panels = &Панелі
+menu-side-start = Л&іва панель
+menu-side-end = Пр&ава панель
+menu-side-bottom = &Нижня панель
 menu-fullscreen = По&вноекранний режим
 menu-focus-mode = &Режим без відволікань
 menu-format = &Формат
@@ -3459,7 +3459,6 @@ settings-page-spellcheck = Перевірка правопису
 settings-group-spellcheck = Перевірка правопису
 settings-spellcheck-enabled = Перевіряти правопис під час письма
 settings-spellcheck-hint = Підкреслює слова, яких не знає жоден установлений словник. Якщо вимкнути, перевірка припиняється повністю, у кожному проєкті, доки ви не ввімкнете її знову. Щоб припинити перевірку лише однієї мови, зніміть прапорець цієї мови в полі «Мова» проєкту або елемента.
-menu-trash = &Кошик
 trash-title = Кошик
 trash-empty-state = Кошик порожній.
 trash-empty-button = Очистити кошик…
@@ -3892,7 +3891,6 @@ export-orphan-footnotes =
         [many] На { $count } виносок більше ніде в рукописі немає посилань. Їхній текст не з’явиться в експортованій книзі.
        *[other] На { $count } виноски більше ніде в рукописі немає посилань. Їхній текст не з’явиться в експортованій книзі.
     }
-menu-footnotes = Ви&носки
 footnotes-title = Виноски
 footnotes-insert = Вставити &виноску
 footnotes-empty = Виносок ще немає. Поставте курсор у сцену, а потім натисніть «+» вгорі або Ctrl+Alt+F.

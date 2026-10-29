@@ -13,13 +13,7 @@ use crate::intents::AppIntent;
 use super::CommandDeps;
 
 pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
-    {
-        let docking = deps.outline.docking();
-        let trash_dock = deps.trash_dock;
-        ctx.register_action_global(Action::new("trash.show").on_invoke(move |_i, _c| {
-            docking.reveal_dock(trash_dock);
-        }));
-    }
+    // `trash.show` is one of the panel commands (`app::commands::view`).
     {
         let trash = deps.trash.clone();
         ctx.register_action_global(

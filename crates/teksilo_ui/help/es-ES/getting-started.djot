@@ -45,7 +45,8 @@ Para explorar un proyecto de muestra, abra *Ejemplos* en la barra lateral.
 
 ## Ajuste su espacio de trabajo
 
-- Pulse `F9`, o elija *Ver ▸ Esquema*, para mostrar u ocultar el Archivador.
+- Pulse `F9`, o elija *Ver ▸ Panel izquierdo*, para mostrar u ocultar los paneles de la
+  izquierda. `Ctrl+Mayús+B` muestra el propio Archivador.
 - Pulse `Ctrl+Intro` sobre un elemento seleccionado para abrirlo en el otro panel del editor.
 - Al crear un proyecto, *Capítulos planos* le permite escribir directamente en cada capítulo
   en lugar de dividirlo en escenas. *Carpeta* guarda el proyecto como una carpeta en lugar de

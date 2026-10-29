@@ -31,10 +31,10 @@ menu-settings = 설정 (&E)
 menu-quit = 종료 (&Q)
 
 menu-view = 보기 (&V)
-menu-outline = 구조 (&O)
-menu-search = 프로젝트에서 검색 (&S)
-menu-timeline = 이전 시점으로 돌아가기 (&G)
-menu-search-preview = 검색 미리 보기 (&P)
+menu-panels = 패널 (&P)
+menu-side-start = 왼쪽 패널 (&L)
+menu-side-end = 오른쪽 패널 (&G)
+menu-side-bottom = 아래쪽 패널 (&B)
 menu-fullscreen = 전체 화면 (&F)
 menu-focus-mode = 집중 모드 (&D)
 menu-format = 서식 (&O)
@@ -1959,7 +1959,6 @@ settings-group-spellcheck = 맞춤법 검사
 settings-spellcheck-enabled = 입력 중 맞춤법 검사
 settings-spellcheck-hint = 설치된 사전에 없는 단어에 밑줄을 긋습니다. 끄면 모든 프로젝트에서 중지합니다. 한 언어만 끄려면 프로젝트나 항목의 언어 필드에서 해당 체크 표시를 해제하세요.
 
-menu-trash = 휴지통 (&T)
 trash-title = 휴지통
 trash-empty-state = 휴지통이 비어 있습니다.
 trash-empty-button = 휴지통 비우기…
@@ -2354,7 +2353,6 @@ export-comments-dropped = 댓글 { $count }개를 내보낼 본문에 배치할 
 export-orphan-footnotes = 각주 { $count }개가 원고 어디에서도 참조되지 않습니다. 내보낸 책에는 해당 각주가 표시되지 않습니다.
 
 
-menu-footnotes = 각주 (&N)
 footnotes-title = 각주
 footnotes-insert = 각주 삽입 (&F)
 footnotes-empty = 아직 각주가 없습니다. 장면에 커서를 놓고 위의 + 또는 Ctrl+Alt+F를 사용하세요.

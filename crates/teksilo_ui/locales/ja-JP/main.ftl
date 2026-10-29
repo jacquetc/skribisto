@@ -31,10 +31,10 @@ menu-settings = 設定(&E)
 menu-quit = 終了(&Q)
 
 menu-view = 表示(&V)
-menu-outline = アウトライン(&O)
-menu-search = プロジェクト内を検索(&S)
-menu-timeline = 過去の状態を開く(&G)
-menu-search-preview = 検索プレビュー(&P)
+menu-panels = パネル(&P)
+menu-side-start = 左パネル(&L)
+menu-side-end = 右パネル(&G)
+menu-side-bottom = 下パネル(&B)
 menu-fullscreen = 全画面表示(&F)
 menu-focus-mode = 集中モード(&D)
 menu-format = 書式(&O)
@@ -2033,7 +2033,6 @@ settings-group-spellcheck = スペルチェック
 settings-spellcheck-enabled = 入力中にスペルチェック
 settings-spellcheck-hint = インストール済み辞書にない単語に下線を引きます。無効にすると全プロジェクトで停止します。一つの言語だけを無効にするには、プロジェクトか項目の言語欄でチェックを外してください。
 
-menu-trash = ごみ箱(&T)
 trash-title = ごみ箱
 trash-empty-state = ごみ箱は空です。
 trash-empty-button = ごみ箱を空にする…
@@ -2428,7 +2427,6 @@ export-comments-dropped = コメント{ $count }件はエクスポートする�
 export-orphan-footnotes = 脚注{ $count }件は原稿内のどこからも参照されていないため、その本文はエクスポートする本に表示されません。
 
 
-menu-footnotes = 脚注(&N)
 footnotes-title = 脚注
 footnotes-insert = 脚注を挿入(&F)
 footnotes-empty = 脚注はまだありません。シーンにカーソルを置き、上の + または Ctrl+Alt+F を使ってください。

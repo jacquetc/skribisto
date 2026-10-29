@@ -31,10 +31,10 @@ menu-settings = Ins&tellingen
 menu-quit = A&fsluiten
 
 menu-view = &Beeld
-menu-outline = &Ordner
-menu-search = &Zoeken in project
-menu-timeline = &Terug in de tijd
-menu-search-preview = &Voorbeeld zoekresultaat
+menu-panels = &Panelen
+menu-side-start = &Linkerpaneel
+menu-side-end = R&echterpaneel
+menu-side-bottom = &Onderste paneel
 menu-fullscreen = Volledig sc&herm
 menu-focus-mode = &Afleidingsvrije modus
 menu-format = &Opmaak
@@ -2762,7 +2762,6 @@ settings-group-spellcheck = Spellingscontrole
 settings-spellcheck-enabled = Spelling controleren terwijl ik schrijf
 settings-spellcheck-hint = Onderstreept woorden die geen enkel geïnstalleerd woordenboek kent. Als u dit uitschakelt, stopt alle controle, in elk project, totdat u het weer inschakelt. Wilt u slechts één taal niet meer laten controleren, haal dan het vinkje bij die taal weg in het veld Taal van het project of van een item.
 
-menu-trash = &Prullenbak
 trash-title = Prullenbak
 trash-empty-state = De prullenbak is leeg.
 trash-empty-button = Prullenbak legen…
@@ -3199,7 +3198,6 @@ export-orphan-footnotes =
     }
 
 
-menu-footnotes = Voet&noten
 footnotes-title = Voetnoten
 footnotes-insert = &Voetnoot invoegen
 footnotes-empty = Nog geen voetnoten. Plaats de cursor in een scène en gebruik dan + hierboven, of Ctrl+Alt+F.

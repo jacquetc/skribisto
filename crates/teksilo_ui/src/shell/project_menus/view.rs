@@ -18,10 +18,6 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
     let placement = parts.placement.clone();
     let focus = parts.focus.clone();
 
-    // Reflect-only checkmarks: they mirror each dock's truth
-    // without writing it; the toggles are driven by the
-    // `outline.toggle` (F9) / `preview.toggle` (F10) intents.
-    let outline = outline.clone();
     // Increment 1 of distraction-free (plain fullscreen): a
     // reflect-only checkmark straight off THIS window's own
     // `WindowState::placement()` — the same round-tripping
@@ -37,56 +33,65 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
     // is no fresher source to read it from.
     let is_focus_mode = focus.active_signal();
 
-    // The bottom band has no persistent reveal affordance
-    // of its own — a hidden top/bottom side collapses its
-    // rail with it (unlike leading/trailing, whose rail
-    // survives as the way back). So the menu entry is not
-    // a convenience here, it is the only way to bring the
-    // preview back once it is closed.
-    let preview_visible = outline.docking().side_visible_signal(DockSide::Bottom);
-    m.item(
-        MenuEntry::new(tr!(menu_outline()))
-            .checked(outline.is_visible())
+    // The sides, shown or hidden. Reflect-only marks, like every row here.
+    let left_visible = outline.is_visible();
+    let right_visible = outline.docking().side_visible_signal(DockSide::Trailing);
+    // The bottom band has no persistent reveal affordance of its own: a hidden
+    // top/bottom side collapses its rail with it (unlike leading/trailing, whose rail
+    // survives as the way back). So this row, and the two bottom panels' own rows, are
+    // not a convenience: they are the only way to bring the band back once it is closed.
+    let bottom_visible = outline.docking().side_visible_signal(DockSide::Bottom);
+
+    // Every panel first, in a submenu of its own: they are places to go, and the rest
+    // of this menu changes how the window looks. One row per panel, grouped by side,
+    // built from the same table as the commands, so a panel cannot have a chord and no
+    // row, or a row and no chord.
+    m.submenu(tr!(menu_panels()), |s| {
+        let mut s = s;
+        let mut previous_side = None;
+        for panel in crate::docks::panels::PANELS {
+            let side = crate::docks::panels::side_of(panel.dock);
+            if previous_side.is_some_and(|p| p != side) {
+                s = s.separator();
+            }
+            previous_side = Some(side);
+            s = s.item(
+                MenuEntry::new((panel.title)())
+                    .intent(panel.intent)
+                    .shortcut(panel.intent),
+            );
+        }
+        s
+    })
+    .separator()
+    .item(
+        MenuEntry::new(tr!(menu_side_start()))
+            .checked(left_visible)
             .intent("outline.toggle")
             .shortcut("outline.toggle"),
     )
-    // The margin lane. Reflect-only, like the outline above it: the row shows
-    // the setting and the intent writes it, so the menu and Settings ▸ Editor ▸
-    // Margin marks are the same switch rather than two that can drift.
+    .item(
+        MenuEntry::new(tr!(menu_side_end()))
+            .checked(right_visible)
+            .intent("view.right_panel")
+            .shortcut("view.right_panel"),
+    )
+    .item(
+        MenuEntry::new(tr!(menu_side_bottom()))
+            .checked(bottom_visible)
+            .intent("preview.toggle")
+            .shortcut("preview.toggle"),
+    )
+    .separator()
+    // The margin lane. Reflect-only, like the sides above it: the row shows the
+    // setting and the intent writes it, so the menu and Settings ▸ Editor ▸ Margin
+    // marks are the same switch rather than two that can drift.
     .item(
         MenuEntry::new(tr!(menu_margin_lane()))
             .checked(parts.margin_lane_menu.clone())
             .intent("view.margin_lane")
             .shortcut("view.margin_lane"),
     )
-    // Reveal the leading search & replace dock. A plain
-    // action (not a reflect-only checkbox): the search
-    // dock is one of two switchable leading tabs, not a
-    // side that is simply shown or hidden.
-    .item(
-        MenuEntry::new(tr!(menu_search()))
-            .intent("search.show")
-            .shortcut("search.show"),
-    )
-    // Reveal the trash dock — like Search, a plain action
-    // (a switchable leading tab, not a shown/hidden side).
-    .item(MenuEntry::new(tr!(menu_trash())).intent("trash.show"))
-    // Reveal the footnotes dock. Not a convenience either: a dock
-    // reachable only from its rail has no way back once a saved
-    // desk stops mounting it, and this is the door that recovers it.
-    .item(MenuEntry::new(tr!(menu_footnotes())).intent("footnotes.show"))
-    .item(
-        MenuEntry::new(tr!(menu_search_preview()))
-            .checked(preview_visible)
-            .intent("preview.toggle")
-            .shortcut("preview.toggle"),
-    )
-    // Reveal the project-wide "Go back in time" band. Not a convenience: it
-    // shares the bottom side with the search preview, and a hidden
-    // bottom side takes its rail with it — so unlike a leading or
-    // trailing dock, there is no glyph left to click. Without this
-    // entry the band would be shipped and unreachable.
-    .item(MenuEntry::new(tr!(menu_timeline())).intent("timeline.show"))
     .separator()
     // Increment 1 of distraction-free: plain fullscreen,
     // not the collapsed-chrome mode itself (that is a
@@ -134,24 +139,21 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
-    /// `menu-timeline` (this row) and `timeline-title` (the dock's own
-    /// `tr!(timeline_title())`, resolved fresh in `timeline_dock`'s build
-    /// function) are two independent Fluent keys, not one label function read
-    /// from two places, the assumption the "Timeline" to "Go back in time"
-    /// rename plan asked to be confirmed by a direct look rather than trusted.
-    /// It does not hold, so this row was edited by hand alongside the dock's
-    /// own key; pinned here so the two cannot drift apart again silently.
+    /// The Panels rows are labelled with each dock's own title. The timeline's used to
+    /// be a separate key that had to be renamed by hand with the dock's ("Timeline" to
+    /// "Go back in time"); pinned here so a row can never again name a place the panel
+    /// does not.
     #[test]
-    fn the_menu_row_names_the_same_place_as_the_dock_title() {
-        let menu_label = tr!(menu_timeline()).resolve_now();
-        let dock_title = tr!(timeline_title()).resolve_now();
-        assert_eq!(dock_title, "Go back in time");
-        assert!(
-            menu_label.contains("Go back in time"),
-            "the View menu row must read '{}', not: {menu_label}",
-            dock_title
+    fn a_panel_row_names_the_same_place_as_its_dock() {
+        let timeline = crate::docks::panels::PANELS
+            .iter()
+            .find(|p| p.dock == crate::docks::TIMELINE_DOCK_ID)
+            .expect("the timeline has a panel command");
+        assert_eq!(
+            (timeline.title)().resolve_now(),
+            tr!(timeline_title()).resolve_now()
         );
     }
+
+    use teksilo::prelude::*;
 }

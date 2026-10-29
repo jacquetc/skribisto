@@ -31,10 +31,10 @@ menu-settings = &Ustawienia
 menu-quit = Z&akończ
 
 menu-view = &Widok
-menu-outline = &Konspekt
-menu-search = Sz&ukaj w projekcie
-menu-timeline = &Cofnij się w czasie
-menu-search-preview = P&odgląd wyszukiwania
+menu-panels = &Panele
+menu-side-start = &Lewy panel
+menu-side-end = Pr&awy panel
+menu-side-bottom = &Dolny panel
 menu-fullscreen = P&ełny ekran
 menu-focus-mode = &Tryb bez rozpraszania
 menu-format = &Format
@@ -3408,7 +3408,6 @@ settings-group-spellcheck = Sprawdzanie pisowni
 settings-spellcheck-enabled = Sprawdzaj pisownię podczas pisania
 settings-spellcheck-hint = Podkreśla słowa, których nie zna żaden zainstalowany słownik. Wyłączenie tej opcji zatrzymuje całe sprawdzanie, w każdym projekcie, dopóki jej ponownie nie włączysz. Aby przestać sprawdzać tylko jeden język, odznacz go w polu „Język” projektu lub elementu.
 
-menu-trash = Ko&sz
 trash-title = Kosz
 trash-empty-state = Kosz jest pusty.
 trash-empty-button = Opróżnij kosz…
@@ -3869,7 +3868,6 @@ export-orphan-footnotes =
     }
 
 
-menu-footnotes = &Przypisy
 footnotes-title = Przypisy
 footnotes-insert = Wstaw prz&ypis
 footnotes-empty = Brak przypisów. Umieść kursor w scenie, a następnie użyj przycisku + powyżej lub skrótu Ctrl+Alt+F.

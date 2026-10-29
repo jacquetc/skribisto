@@ -29,10 +29,10 @@ menu-welcome = &Välkommen…
 menu-settings = Instä&llningar
 menu-quit = &Avsluta
 menu-view = &Visa
-menu-outline = &Disposition
-menu-search = &Sök i projektet
-menu-timeline = &Gå tillbaka i tiden
-menu-search-preview = Sök&förhandsvisning
+menu-panels = &Paneler
+menu-side-start = &Vänster panel
+menu-side-end = Hö&ger panel
+menu-side-bottom = &Nedre panel
 menu-fullscreen = &Helskärm
 menu-focus-mode = Dis&traktionsfritt läge
 menu-format = F&ormat
@@ -2678,7 +2678,6 @@ settings-page-spellcheck = Stavningskontroll
 settings-group-spellcheck = Stavningskontroll
 settings-spellcheck-enabled = Kontrollera stavningen medan jag skriver
 settings-spellcheck-hint = Stryker under ord som ingen installerad ordlista känner till. Om du stänger av detta upphör all kontroll, i alla projekt, tills du slår på den igen. Om bara ett språk ska sluta kontrolleras avmarkerar du det i fältet Språk för projektet eller för ett objekt.
-menu-trash = &Papperskorg
 trash-title = Papperskorg
 trash-empty-state = Papperskorgen är tom.
 trash-empty-button = Töm papperskorgen…
@@ -3085,7 +3084,6 @@ export-orphan-footnotes =
            [one] En fotnot refereras inte längre någonstans i manuset. Dess text kommer inte med i den exporterade boken.
           *[other] { $count } fotnoter refereras inte längre någonstans i manuset. Deras text kommer inte med i den exporterade boken.
        }
-menu-footnotes = Fot&noter
 footnotes-title = Fotnoter
 footnotes-insert = Infoga &fotnot
 footnotes-empty = Inga fotnoter ännu. Placera markören i en scen och använd sedan + ovan, eller Ctrl+Alt+F.

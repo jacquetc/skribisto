@@ -30,10 +30,10 @@ menu-welcome = الترحيب… (&L)
 menu-settings = الإعدادات (&E)
 menu-quit = إنهاء (&Q)
 menu-view = عرض (&V)
-menu-outline = المخطط (&O)
-menu-search = البحث في المشروع (&S)
-menu-timeline = العودة بالزمن (&G)
-menu-search-preview = معاينة البحث (&P)
+menu-panels = اللوحات (&P)
+menu-side-start = اللوحة اليمنى (&L)
+menu-side-end = اللوحة اليسرى (&G)
+menu-side-bottom = اللوحة السفلية (&B)
 menu-fullscreen = ملء الشاشة (&F)
 menu-focus-mode = وضع بلا تشتيت (&D)
 menu-format = تنسيق (&O)
@@ -3960,7 +3960,6 @@ settings-page-spellcheck = التدقيق الإملائي
 settings-group-spellcheck = التدقيق الإملائي
 settings-spellcheck-enabled = تدقيق الإملاء أثناء الكتابة
 settings-spellcheck-hint = يسطّر الكلمات التي لا يعرفها أي قاموس مثبّت. إيقافه يوقف كل التدقيق، في كل المشاريع، حتى تعيد تشغيله. لإيقاف التدقيق للغة واحدة فقط، أزل علامة الاختيار عنها في حقل «اللغة» للمشروع أو للعنصر.
-menu-trash = سلة المهملات (&T)
 trash-title = سلة المهملات
 trash-empty-state = سلة المهملات فارغة.
 trash-empty-button = إفراغ سلة المهملات…
@@ -4415,7 +4414,6 @@ export-orphan-footnotes =
         [many] لم تعد هناك أي إحالة إلى { $count } حاشية سفلية في المخطوطة. لن يظهر نصها في الكتاب المصدَّر.
        *[other] لم تعد هناك أي إحالة إلى { $count } حاشية سفلية في المخطوطة. لن يظهر نصها في الكتاب المصدَّر.
     }
-menu-footnotes = الحواشي السفلية (&N)
 footnotes-title = الحواشي السفلية
 footnotes-insert = إدراج حاشية سفلية (&F)
 footnotes-empty = لا حواشي سفلية بعد. ضع المؤشر في مشهد، ثم استخدم + في الأعلى، أو Ctrl+Alt+F.

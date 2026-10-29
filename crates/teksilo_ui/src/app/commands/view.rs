@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-//! Dock and find-banner commands: the outline rail, the bottom preview band, the search &
-//! replace dock, the per-editor find banner, this window's plain-fullscreen toggle, and its
-//! distraction-free mode toggle.
+//! Dock and find-banner commands: one "show" command per panel (see
+//! [`crate::docks::panels`]), the three side toggles, the search & replace dock's
+//! replace mode, the per-editor find banner, this window's plain-fullscreen toggle, and
+//! its distraction-free mode toggle.
 
 use teksilo::prelude::*;
-use teksilo::widgets::DockSide;
+use teksilo::widgets::{DockSide, DockWidgetId};
 
 use super::CommandDeps;
 use crate::shared::shortcut_group::{ShortcutGroup, ShortcutGroupExt};
@@ -36,15 +37,33 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
             .primary(KeyStroke::new(Key::F9, Modifiers::NONE))
             .build(),
     );
-    // F10 collapses/reveals the bottom band (the search-preview dock). Unlike F9, which
-    // only relayouts, F10 parks/unparks the bottom content via `visible_when`.
+    // Shows or hides the bottom band. Unlike F9, which only relayouts, this parks and
+    // unparks the bottom content via `visible_when`. No default chord: it had F10, which
+    // the menu bar takes first on Linux and Windows (and screen-reader users reach the
+    // menus with), so it never fired there while the View menu went on advertising it.
+    // The search preview's own door is `preview.show` (Ctrl+Shift+J).
     ctx.register_shortcut_global(
         Shortcut::new("preview.toggle")
             .group(ShortcutGroup::View)
             .name(tr!(shortcut_name_preview_toggle()))
-            .primary(KeyStroke::new(Key::F10, Modifiers::NONE))
             .build(),
     );
+    // The right side's counterpart of F9, with no default chord: the status bar's
+    // button is its other door, and every panel on that side has its own.
+    ctx.register_shortcut_global(
+        Shortcut::new("view.right_panel")
+            .group(ShortcutGroup::View)
+            .name(tr!(shortcut_name_side_end_toggle()))
+            .build(),
+    );
+    {
+        let docking = deps.outline.docking();
+        let focus = deps.focus.clone();
+        ctx.register_action_global(Action::new("view.right_panel").on_invoke(move |_i, _c| {
+            unless_distraction_free(&focus, || docking.toggle_side_visible(DockSide::Trailing));
+        }));
+    }
+    register_panel_commands(ctx, deps);
     // Every dock command below runs through `unless_distraction_free` — see its own doc.
     {
         let docking = deps.outline.docking();
@@ -63,7 +82,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
 
     // Ctrl+Shift+M, not a function key: the lane is a writing-surface toggle
     // rather than a window-chrome one, and the free function keys are spoken
-    // for (F9 outline, F10 preview, F11 distraction-free). M for "marks"; Ctrl+M
+    // for (F9 outline, F10 the menu bar, F11 distraction-free). M for "marks"; Ctrl+M
     // alone is a plain Return in several editors, so the Shift is not
     // decorative.
     ctx.register_shortcut_global(
@@ -90,7 +109,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // Shift+F11. Plain F11 is the platform convention for fullscreen, but here it
     // belongs to distraction-free mode below: the writer reaches for that one far
     // more often, so it gets the single key. A Global shortcut so it fires
-    // regardless of which widget has focus, same rationale as F9/F10 above.
+    // regardless of which widget has focus, same rationale as F9 above.
     ctx.register_shortcut_global(
         Shortcut::new("view.fullscreen")
             .group(ShortcutGroup::View)
@@ -115,7 +134,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // disabled + fullscreen, together, as one per-window mode independent of
     // the Shift+F11 fullscreen toggle above (see `FocusViewModel`'s module doc for why
     // the two never share placement memory). Global for the same reason as
-    // Shift+F11/F9/F10.
+    // Shift+F11/F9.
     ctx.register_shortcut_global(
         Shortcut::new("view.focus_mode")
             .group(ShortcutGroup::View)
@@ -257,18 +276,11 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
         );
     }
 
-    // Ctrl+Shift+F reveals the search & replace dock; Ctrl+Shift+H reveals it *and* discloses
-    // the replace row. Global (resolved before a focused editor), and Shift-qualified so
-    // neither shadows Ctrl+F (find banner) or an editor chord. Only ever fired by keystroke,
-    // so — like `work.open` / `editor.save` — they are global actions with no `AppIntent`
+    // Ctrl+Shift+H reveals the search & replace dock *and* discloses the replace row
+    // (Ctrl+Shift+F, the dock alone, is one of the panel commands). Global (resolved
+    // before a focused editor), and Shift-qualified so it shadows neither Ctrl+H nor an
+    // editor chord. Like `work.open` / `editor.save`, a global action with no `AppIntent`
     // variant.
-    ctx.register_shortcut_global(
-        Shortcut::new("search.show")
-            .group(ShortcutGroup::Edit)
-            .name(tr!(shortcut_name_search_show()))
-            .primary(KeyStroke::new(Key::F, Modifiers::CTRL | Modifiers::SHIFT))
-            .build(),
-    );
     ctx.register_shortcut_global(
         Shortcut::new("search.replace")
             .group(ShortcutGroup::Edit)
@@ -276,14 +288,6 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
             .primary(KeyStroke::new(Key::H, Modifiers::CTRL | Modifiers::SHIFT))
             .build(),
     );
-    {
-        let docking = deps.outline.docking();
-        let search_dock = deps.search_dock;
-        let focus = deps.focus.clone();
-        ctx.register_action_global(Action::new("search.show").on_invoke(move |_i, _c| {
-            unless_distraction_free(&focus, || docking.reveal_dock(search_dock));
-        }));
-    }
     {
         let docking = deps.outline.docking();
         let search_dock = deps.search_dock;
@@ -296,27 +300,6 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
             });
         }));
     }
-    // `footnotes.show` — the way back to a dock a saved desk has lost.
-    //
-    // A dock reachable *only* from the rail has no way back once it stops being
-    // mounted, and a desk saved with an inconsistent roster does exactly that:
-    // `known_docks` records the whole roster while the exported layout may not
-    // contain every dock in it, and the reconcile then reads the absence as
-    // "the writer closed this" and never mounts it again. That state is
-    // self-perpetuating — it survives every restart — and the writer's only
-    // remedy was to delete `workspace.toml`.
-    //
-    // `reveal_dock` (not `toggle_dock`) because this is a recovery door: someone
-    // reaching for it wants the dock in front of them, and a toggle that hides a
-    // dock they cannot see would be the opposite of the point.
-    {
-        let docking = deps.outline.docking();
-        let footnotes_dock = deps.footnotes_dock;
-        let focus = deps.focus.clone();
-        ctx.register_action_global(Action::new("footnotes.show").on_invoke(move |_i, _c| {
-            unless_distraction_free(&focus, || docking.reveal_dock(footnotes_dock));
-        }));
-    }
     /// The least height the Timeline band can say what it is in.
     ///
     /// The chart wants about 120 dp to be a chart rather than a row of axis labels;
@@ -325,9 +308,8 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     /// nothing.
     const TIMELINE_MIN_HEIGHT: f32 = 300.0;
 
-    // `timeline.show` — the **only** way into the project-wide timeline.
-    //
-    // Not a recovery door like the two above. The band shares the bottom side
+    // `timeline.show`, the panel command `register_panel_commands` leaves to this
+    // block. Its door matters more than most. The band shares the bottom side
     // with the search preview, and the bottom side starts hidden — and hiding a
     // top/bottom side collapses its rail with it, unlike leading and trailing,
     // whose rail survives as the way back. So there is no glyph to click, and
@@ -354,6 +336,41 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
                 }
                 docking.reveal_dock(timeline_dock);
             });
+        }));
+    }
+}
+
+/// One shortcut and one command per panel, from [`crate::docks::panels::PANELS`]: the
+/// door a keyboard reader has to a panel they cannot click on the rail.
+///
+/// `reveal_dock`, never `toggle_dock`: someone reaching for a panel wants it in front of
+/// them, and a toggle that hides a panel they cannot see would be the opposite of the
+/// point. It is also the recovery door for a panel a saved desk has lost: a desk saved
+/// with an inconsistent roster stops mounting a dock, the reconcile reads the absence as
+/// "the writer closed this", and a rail-only dock then had no way back short of deleting
+/// `workspace.toml`.
+///
+/// Reveals and does not yet move the keyboard focus into the panel: teksilo's
+/// `DockingModel` has no call for it, and the panel's content id is the framework's.
+fn register_panel_commands(ctx: &mut BuildContext, deps: &CommandDeps) {
+    for panel in crate::docks::panels::PANELS {
+        ctx.register_shortcut_global(
+            Shortcut::new(panel.intent)
+                .group(ShortcutGroup::View)
+                .name((panel.name)())
+                .primary(KeyStroke::ctrl_shift(panel.chord))
+                .build(),
+        );
+        // The timeline raises the bottom band before revealing it: its own action is
+        // registered in `register`, after this.
+        if panel.dock == crate::docks::TIMELINE_DOCK_ID {
+            continue;
+        }
+        let docking = deps.outline.docking();
+        let dock = DockWidgetId::from_raw(panel.dock);
+        let focus = deps.focus.clone();
+        ctx.register_action_global(Action::new(panel.intent).on_invoke(move |_i, _c| {
+            unless_distraction_free(&focus, || docking.reveal_dock(dock));
         }));
     }
 }

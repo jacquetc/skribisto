@@ -62,7 +62,7 @@ Pin a version that came from a backup and clearing out old files will never dele
 ### Something you deleted
 
 *Restore this version* only works on something that is still there. For a scene or note you
-deleted, choose *View ▸ Go back in time*.
+deleted, choose *View ▸ Panels ▸ Go back in time*.
 
 *Bring this back…* recreates the item with the text it had, wherever in the binder you want it.
 To undo that, use the button in the message that appears.

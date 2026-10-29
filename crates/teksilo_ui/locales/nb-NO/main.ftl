@@ -31,10 +31,10 @@ menu-settings = Inns&tillinger
 menu-quit = &Avslutt
 
 menu-view = &Vis
-menu-outline = &Disposisjon
-menu-search = &Søk i prosjektet
-menu-timeline = &Gå tilbake i tid
-menu-search-preview = Søke&forhåndsvisning
+menu-panels = &Paneler
+menu-side-start = &Venstre panel
+menu-side-end = &Høyre panel
+menu-side-bottom = &Nederste panel
 menu-fullscreen = F&ullskjerm
 menu-focus-mode = Distraksjonsfri m&odus
 menu-format = F&ormat
@@ -2734,7 +2734,6 @@ settings-group-spellcheck = Stavekontroll
 settings-spellcheck-enabled = Kontroller stavemåten mens jeg skriver
 settings-spellcheck-hint = Understreker ord som ingen installert ordbok kjenner. Slår du dette av, stanser all kontroll i alle prosjekter til du slår det på igjen. Vil du slutte å kontrollere bare ett språk, fjerner du haken for det i Språk-feltet for prosjektet eller et element.
 
-menu-trash = &Papirkurv
 trash-title = Papirkurv
 trash-empty-state = Papirkurven er tom.
 trash-empty-button = Tøm papirkurven…
@@ -3171,7 +3170,6 @@ export-orphan-footnotes =
     }
 
 
-menu-footnotes = Fot&noter
 footnotes-title = Fotnoter
 footnotes-insert = Sett inn &fotnote
 footnotes-empty = Ingen fotnoter ennå. Plasser markøren i en scene, og bruk + ovenfor eller Ctrl+Alt+F.

@@ -456,6 +456,7 @@ pub mod create_split_button;
 pub mod inspector;
 pub mod inspector_sections;
 pub mod outline_card;
+pub(crate) mod panels;
 
 #[cfg(test)]
 mod extension_roster_tests {

@@ -39,10 +39,10 @@ menu-quit = Ieși&re
 
 ## Menu bar: View
 menu-view = &Vizualizare
-menu-outline = &Structură
-menu-search = &Caută în proiect
-menu-timeline = Înapoi în &timp
-menu-search-preview = &Previzualizare căutare
+menu-panels = &Panouri
+menu-side-start = Panoul din &stânga
+menu-side-end = P&anoul din dreapta
+menu-side-bottom = Panoul de &jos
 menu-fullscreen = &Ecran complet
 menu-focus-mode = Mod fără &distrageri
 menu-format = &Formatare
@@ -3330,7 +3330,6 @@ settings-spellcheck-enabled = Verifică ortografia în timp ce scriu
 settings-spellcheck-hint = Subliniază cuvintele pe care niciun dicționar instalat nu le cunoaște. Dezactivarea opțiunii oprește orice verificare, în toate proiectele, până o reactivați. Pentru a opri verificarea unei singure limbi, debifați-o în câmpul Limbă al proiectului sau al unui element.
 
 ## Trash panel
-menu-trash = Coș de &gunoi
 trash-title = Coș de gunoi
 trash-empty-state = Coșul de gunoi este gol.
 trash-empty-button = Golește coșul de gunoi…
@@ -3851,7 +3850,6 @@ export-orphan-footnotes =
 
 ## Footnotes
 
-menu-footnotes = &Note de subsol
 footnotes-title = Note de subsol
 footnotes-insert = Inserează &notă de subsol
 footnotes-empty = Încă nu există note de subsol. Puneți cursorul într-o scenă, apoi folosiți + de mai sus sau Ctrl+Alt+F.

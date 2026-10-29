@@ -31,10 +31,10 @@ menu-welcome = Star&tseite…
 menu-settings = &Einstellungen
 menu-quit = &Beenden
 menu-view = &Ansicht
-menu-outline = &Gliederung
-menu-search = Im Projekt &suchen
-menu-timeline = In der &Zeit zurückgehen
-menu-search-preview = Such&vorschau
+menu-panels = &Bereiche
+menu-side-start = &Linker Bereich
+menu-side-end = Re&chter Bereich
+menu-side-bottom = &Unterer Bereich
 menu-fullscreen = V&ollbild
 menu-focus-mode = Ablenkungs&freier Modus
 menu-format = F&ormat
@@ -2872,7 +2872,6 @@ settings-page-spellcheck = Rechtschreibprüfung
 settings-group-spellcheck = Rechtschreibprüfung
 settings-spellcheck-enabled = Rechtschreibung beim Schreiben prüfen
 settings-spellcheck-hint = Unterstreicht Wörter, die kein installiertes Wörterbuch kennt. Ausschalten beendet die Prüfung in allen Projekten bis zum erneuten Einschalten. Um nur eine Sprache auszunehmen, entfernen Sie ihr Häkchen im Sprachfeld des Projekts oder eines Eintrags.
-menu-trash = &Papierkorb
 trash-title = Papierkorb
 trash-empty-state = Der Papierkorb ist leer.
 trash-empty-button = Papierkorb leeren…
@@ -3279,7 +3278,6 @@ export-orphan-footnotes =
         [one] Auf eine Fußnote verweist keine Stelle im Manuskript mehr. Ihr Text erscheint nicht im exportierten Buch.
        *[other] Auf { $count } Fußnoten verweist keine Stelle im Manuskript mehr. Ihr Text erscheint nicht im exportierten Buch.
     }
-menu-footnotes = Fuß&noten
 footnotes-title = Fußnoten
 footnotes-insert = &Fußnote einfügen
 footnotes-empty = Noch keine Fußnoten. Setzen Sie die Schreibmarke in eine Szene und verwenden Sie oben + oder Strg+Alt+F.

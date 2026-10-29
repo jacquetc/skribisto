@@ -472,10 +472,10 @@ const MENU_MNEMONIC_SCOPES: &[(&str, &[&str])] = &[
     (
         "View",
         &[
-            "menu-outline",
-            "menu-search",
-            "menu-trash",
-            "menu-search-preview",
+            "menu-panels",
+            "menu-side-start",
+            "menu-side-end",
+            "menu-side-bottom",
             "menu-fullscreen",
             "menu-focus-mode",
         ],
@@ -787,8 +787,6 @@ fn added_locales_additional_menu_entries_have_unique_mnemonics() {
             "View",
             &[
                 "menu-margin-lane",
-                "menu-footnotes",
-                "menu-timeline",
                 "menu-text-size-increase",
                 "menu-text-size-decrease",
                 "menu-text-size-reset",

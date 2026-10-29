@@ -31,10 +31,10 @@ menu-settings = הגדרות (&E)
 menu-quit = יציאה (&Q)
 
 menu-view = תצוגה (&V)
-menu-outline = מתווה (&O)
-menu-search = חיפוש בפרויקט (&S)
-menu-timeline = חזרה בזמן (&G)
-menu-search-preview = תצוגה מקדימה של החיפוש (&P)
+menu-panels = חלוניות (&P)
+menu-side-start = חלונית ימנית (&L)
+menu-side-end = חלונית שמאלית (&G)
+menu-side-bottom = חלונית תחתונה (&B)
 menu-fullscreen = מסך מלא (&F)
 menu-focus-mode = מצב ללא הסחות דעת (&D)
 menu-format = עיצוב (&O)
@@ -3107,7 +3107,6 @@ settings-group-spellcheck = בדיקת איות
 settings-spellcheck-enabled = בדיקת איות תוך כדי כתיבה
 settings-spellcheck-hint = מסמנת בקו תחתון מילים שאף מילון מותקן לא מכיר. כיבוי האפשרות עוצר את כל הבדיקות, בכל הפרויקטים, עד שתפעילו אותה שוב. כדי להפסיק לבדוק שפה אחת בלבד, יש לבטל את הסימון שלה בשדה "שפה" של הפרויקט או של פריט.
 
-menu-trash = אשפה (&T)
 trash-title = אשפה
 trash-empty-state = האשפה ריקה.
 trash-empty-button = ריקון האשפה…
@@ -3541,7 +3540,6 @@ export-orphan-footnotes =
        *[other] { $count } הערות שוליים כבר אינן מופנות מאף מקום בכתב היד. הטקסט שלהן לא יופיע בספר המיוצא.
     }
 
-menu-footnotes = הערות שוליים (&N)
 footnotes-title = הערות שוליים
 footnotes-insert = הוספת הערת שוליים (&F)
 footnotes-empty = אין עדיין הערות שוליים. יש להציב את הסמן בסצנה, ואז להשתמש ב־+ שלמעלה, או ב־Ctrl+Alt+F.

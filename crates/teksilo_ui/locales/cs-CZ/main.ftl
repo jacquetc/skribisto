@@ -31,10 +31,10 @@ menu-settings = N&astavení
 menu-quit = Ukonči&t
 
 menu-view = &Zobrazení
-menu-outline = &Osnova
-menu-search = &Hledat v projektu
-menu-timeline = Návr&at v čase
-menu-search-preview = &Náhled hledání
+menu-panels = &Panely
+menu-side-start = &Levý panel
+menu-side-end = P&ravý panel
+menu-side-bottom = &Dolní panel
 menu-fullscreen = &Celá obrazovka
 menu-focus-mode = Režim &bez rozptylování
 menu-format = &Formát
@@ -3073,7 +3073,6 @@ settings-group-spellcheck = Kontrola pravopisu
 settings-spellcheck-enabled = Kontrolovat pravopis při psaní
 settings-spellcheck-hint = Podtrhává slova, která nezná žádný nainstalovaný slovník. Vypnutím zastavíte veškerou kontrolu ve všech projektech, dokud ji znovu nezapnete. Chcete-li přestat kontrolovat jen jeden jazyk, zrušte jeho zaškrtnutí v poli Jazyk u projektu nebo položky.
 
-menu-trash = &Koš
 trash-title = Koš
 trash-empty-state = Koš je prázdný.
 trash-empty-button = Vyprázdnit koš…
@@ -3522,7 +3521,6 @@ export-orphan-footnotes =
     }
 
 
-menu-footnotes = Poznámky pod ča&rou
 footnotes-title = Poznámky pod čarou
 footnotes-insert = Vložit poznámku pod ča&rou
 footnotes-empty = Zatím žádné poznámky pod čarou. Umístěte kurzor do scény a použijte + nahoře, nebo Ctrl+Alt+F.

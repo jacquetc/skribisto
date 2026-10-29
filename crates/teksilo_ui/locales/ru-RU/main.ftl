@@ -31,10 +31,10 @@ menu-settings = Н&астройки
 menu-quit = &Выход
 
 menu-view = &Вид
-menu-outline = С&труктура
-menu-search = &Поиск в проекте
-menu-timeline = &Вернуться в прошлое
-menu-search-preview = П&редпросмотр поиска
+menu-panels = &Панели
+menu-side-start = &Левая панель
+menu-side-end = П&равая панель
+menu-side-bottom = Н&ижняя панель
 menu-fullscreen = П&олный экран
 menu-focus-mode = Р&ежим без отвлечений
 menu-format = &Формат
@@ -3542,7 +3542,6 @@ settings-group-spellcheck = Проверка орфографии
 settings-spellcheck-enabled = Проверять орфографию при вводе
 settings-spellcheck-hint = Подчёркивает слова, которых не знает ни один установленный словарь. Выключение останавливает всю проверку во всех проектах, пока вы не включите её снова. Чтобы перестать проверять только один язык, снимите его флажок в поле «Язык» проекта или элемента.
 
-menu-trash = &Корзина
 trash-title = Корзина
 trash-empty-state = Корзина пуста.
 trash-empty-button = Очистить корзину…
@@ -4003,7 +4002,6 @@ export-orphan-footnotes =
     }
 
 
-menu-footnotes = &Сноски
 footnotes-title = Сноски
 footnotes-insert = Вставить &сноску
 footnotes-empty = Сносок пока нет. Поставьте курсор в сцену и нажмите + выше или Ctrl+Alt+F.
