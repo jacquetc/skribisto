@@ -9,10 +9,11 @@
 //! `format.scene_break` already use. Six are kind-specific (menu rows only, no
 //! individual shortcut — see the Go menu built in `shell/windows.rs`); the other two,
 //! `go.next`/`go.prev`, are the generic pair the distraction-free strip's own
-//! Next/Previous buttons fire, bound to Alt+Down/Alt+Up (verified free — no
-//! Alt-only chord is registered anywhere else — leaving Alt+Left/Alt+Right free for a
-//! possible future history feature). They read the *focused tab's own kind* at
-//! dispatch time and delegate to the matching kind-specific answer.
+//! Next/Previous buttons fire, bound to Alt+Down/Alt+Up while a writing editor
+//! holds the focus (see [`register_step_pair`] for why only then), leaving
+//! Alt+Left/Alt+Right free for a possible future history feature. They read the
+//! *focused tab's own kind* at dispatch time and delegate to the matching
+//! kind-specific answer.
 //!
 //! Every handler resolves its target through [`EditorsViewModel::go`], which is the
 //! **existing** `open_or_focus` path — never a bespoke `OpenDocsStore::open` — so
@@ -20,6 +21,8 @@
 //! like any ordinary binder navigation. A target that does not exist (nothing
 //! focused, or nothing of that kind in that direction — no wraparound) is a quiet
 //! no-op, the same shape `format.scene_break`'s own internal guard already uses.
+
+use std::rc::Rc;
 
 use skribisto_model::{GoDirection, GoKind};
 use teksilo::prelude::*;
@@ -65,35 +68,17 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // rows above already cover the menu). Alt+Down steps forward, Alt+Up backward —
     // Down/Up rather than Left/Right so a future history feature can still claim
     // Alt+Left/Alt+Right, matching the prior-art shape one axis over.
-    ctx.register_shortcut_global(
-        Shortcut::new("go.next")
-            .group(ShortcutGroup::Go)
-            .name(tr!(shortcut_name_go_next()))
-            .primary(KeyStroke::new(Key::ArrowDown, Modifiers::ALT))
-            .build(),
-    );
-    ctx.register_shortcut_global(
-        Shortcut::new("go.prev")
-            .group(ShortcutGroup::Go)
-            .name(tr!(shortcut_name_go_prev()))
-            .primary(KeyStroke::new(Key::ArrowUp, Modifiers::ALT))
-            .build(),
-    );
     {
         let editors = deps.editors.clone();
-        ctx.register_action_global(Action::new("go.next").on_invoke(move |_i, _c| {
-            if let Some(kind) = editors.focused_go_kind() {
-                editors.go(kind, GoDirection::Next);
-            }
-        }));
-    }
-    {
-        let editors = deps.editors.clone();
-        ctx.register_action_global(Action::new("go.prev").on_invoke(move |_i, _c| {
-            if let Some(kind) = editors.focused_go_kind() {
-                editors.go(kind, GoDirection::Previous);
-            }
-        }));
+        register_step_pair(
+            ctx,
+            deps.format.writing_focused(),
+            Rc::new(move |direction, ctx| {
+                if let Some(kind) = editors.focused_go_kind() {
+                    editors.go(kind, direction, ctx);
+                }
+            }),
+        );
     }
 
     // `go.to` — the shortcut only. Its **action** is registered by the
@@ -128,6 +113,51 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     }
 }
 
+/// What the generic pair does when it fires: step in `direction` from the focused
+/// tab, with the context it needs to put the caret in the item it opens.
+type Step = Rc<dyn Fn(GoDirection, &mut EventContext)>;
+
+/// Register the generic `go.next`/`go.prev` pair: Alt+Down and Alt+Up, and the
+/// actions the distraction-free strip's own buttons send.
+///
+/// The two shortcuts are live only while a writing editor holds the keyboard
+/// focus (`writing`). Teksilo gives the same chords to its widgets: a binder row
+/// moves with Alt+Up/Alt+Down, its only keyboard alternative to a drag, and a
+/// combo box or a date field opens with Alt+Down. A global shortcut resolves
+/// before the focused widget sees the key, so the ungated pair took the chord
+/// from every one of them. A shortcut that is not live counts as unregistered,
+/// and the key reaches the focused widget.
+///
+/// The actions stay ungated: a strip button sends its intent with the focus on
+/// the button, not in the text.
+fn register_step_pair(ctx: &mut BuildContext, writing: Signal<bool>, step: Step) {
+    for (id, name, key, direction) in [
+        (
+            "go.next",
+            tr!(shortcut_name_go_next()),
+            Key::ArrowDown,
+            GoDirection::Next,
+        ),
+        (
+            "go.prev",
+            tr!(shortcut_name_go_prev()),
+            Key::ArrowUp,
+            GoDirection::Previous,
+        ),
+    ] {
+        ctx.register_shortcut_global(
+            Shortcut::new(id)
+                .group(ShortcutGroup::Go)
+                .name(name)
+                .primary(KeyStroke::new(key, Modifiers::ALT))
+                .enabled_when(writing.clone())
+                .build(),
+        );
+        let step = step.clone();
+        ctx.register_action_global(Action::new(id).on_invoke(move |_i, c| step(direction, c)));
+    }
+}
+
 /// Register one kind-specific Go action: fixed `kind`/`direction`, no payload, no
 /// shortcut — reached only via its Go-menu row (`shell/windows.rs`) or a scripted
 /// intent by name.
@@ -139,7 +169,123 @@ fn register_kind(
     direction: GoDirection,
 ) {
     let editors: EditorsViewModel = deps.editors.clone();
-    ctx.register_action_global(Action::new(name).on_invoke(move |_i, _c| {
-        editors.go(kind, direction);
+    ctx.register_action_global(Action::new(name).on_invoke(move |_i, c| {
+        editors.go(kind, direction, c);
     }));
+}
+
+#[cfg(test)]
+mod tests {
+    use std::cell::{Cell, RefCell};
+
+    use teksilo::core::widget::{LayoutResponse, WidgetPlacement};
+    use teksilo::core::widget_tree::WidgetTree;
+    use teksilo::widgets::Spacer;
+
+    use super::*;
+
+    /// Registers the pair the way `App` does, over one focusable widget that
+    /// stands for a binder row: it counts the Alt+Down presses it is handed.
+    struct Host {
+        writing: Signal<bool>,
+        steps: Rc<RefCell<Vec<GoDirection>>>,
+        row_saw: Rc<Cell<u32>>,
+    }
+
+    impl std::fmt::Debug for Host {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.write_str("Host")
+        }
+    }
+
+    impl Widget for Host {
+        fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+            let steps = self.steps.clone();
+            register_step_pair(
+                ctx,
+                self.writing.clone(),
+                Rc::new(move |direction, _ctx| steps.borrow_mut().push(direction)),
+            );
+            let row_saw = self.row_saw.clone();
+            let row = Spacer::new().focusable(true).on_key(move |event, _ctx| {
+                if matches!(
+                    event,
+                    WidgetEvent::KeyDown {
+                        key: Key::ArrowDown,
+                        modifiers: Modifiers::ALT,
+                        ..
+                    }
+                ) {
+                    row_saw.set(row_saw.get() + 1);
+                    return EventResponse::Handled;
+                }
+                EventResponse::Ignored
+            });
+            vec![ctx.add(row)]
+        }
+
+        fn layout_response(&self, proposal: SizeProposal, _ctx: &LayoutContext) -> LayoutResponse {
+            Size::new(
+                proposal.width.unwrap_or(300.0),
+                proposal.height.unwrap_or(40.0),
+            )
+            .into()
+        }
+
+        fn place_children(
+            &self,
+            bounds: Rect,
+            _proposal: SizeProposal,
+            children: &mut [WidgetPlacement],
+            _ctx: &LayoutContext,
+        ) {
+            for child in children {
+                child.origin = Point::new(bounds.x, bounds.y);
+                child.size = Size::new(bounds.width, bounds.height);
+            }
+        }
+    }
+
+    /// Alt+Down is the binder row's own way to move without a drag. With no
+    /// writing editor focused it must reach the row; with one focused it steps to
+    /// the next item, and the row never sees it.
+    #[test]
+    fn alt_down_reaches_the_focused_widget_unless_a_writing_editor_holds_the_focus() {
+        let writing = Signal::new(false);
+        let steps = Rc::new(RefCell::new(Vec::new()));
+        let row_saw = Rc::new(Cell::new(0));
+        let mut tree = WidgetTree::new();
+        let host = tree.add(Host {
+            writing: writing.clone(),
+            steps: steps.clone(),
+            row_saw: row_saw.clone(),
+        });
+        tree.layout(SizeProposal::exact(300.0, 40.0));
+        let row = *tree
+            .children(host)
+            .first()
+            .expect("the row is the host's one child");
+        tree.focus(row);
+
+        tree.press_key(Key::ArrowDown, Modifiers::ALT);
+        assert_eq!(row_saw.get(), 1, "the focused row must be handed Alt+Down");
+        assert!(
+            steps.borrow().is_empty(),
+            "with no writing editor focused, Go must not take the chord"
+        );
+
+        writing.set(true);
+        tree.press_key(Key::ArrowDown, Modifiers::ALT);
+        tree.press_key(Key::ArrowUp, Modifiers::ALT);
+        assert_eq!(
+            *steps.borrow(),
+            vec![GoDirection::Next, GoDirection::Previous],
+            "from a writing editor, Alt+Down and Alt+Up step through the items"
+        );
+        assert_eq!(
+            row_saw.get(),
+            1,
+            "the chord the shortcut took is not the row's"
+        );
+    }
 }

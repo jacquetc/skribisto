@@ -1898,3 +1898,43 @@ fn seed_pinned_repaints_a_tab_that_was_opened_the_way_a_restore_opens_it() {
         "a restored pin kept every close affordance it should have lost: {info}"
     );
 }
+
+/// **Go puts the caret where it went.** Alt+Down in a scene opens the next one, and
+/// the writer's next key must land in that scene's text. It used to open the tab
+/// through `open_or_focus` alone: the new page showed, and focus stayed on the tab
+/// it replaced, so a screen reader announced the window and nothing else.
+#[cfg(not(feature = "mocks"))]
+#[test]
+fn go_next_opens_the_next_scene_and_asks_for_the_caret_in_it() {
+    use skribisto_model::{GoDirection, GoKind};
+
+    let project = crate::test_support::RealProject::empty_novel();
+    let (first, _) = project.scenes()[0];
+    let (second, _) = project.add_scene_after(first, "Second");
+    let save_state =
+        crate::save::SaveStateViewModel::new(project.app_ctx.clone(), project.ids.clone());
+    let vm = editors_with(project.app_ctx.clone(), save_state);
+    vm.ids.seed(&project.app_ctx, project.work_id);
+    vm.open_or_focus(first, "First");
+    assert_eq!(
+        vm.active_item().get(),
+        Some(first),
+        "the first scene is in front"
+    );
+
+    let vm2 = vm.clone();
+    with_event_context(move |ctx| vm2.go(GoKind::Scene, GoDirection::Next, ctx));
+
+    assert_eq!(
+        vm.active_item().get(),
+        Some(second),
+        "Go ▸ Next scene brings the second scene forward"
+    );
+    let ports = vm
+        .with_tab(Side::Primary, second, |t| t.view_state_ports())
+        .expect("the second scene has a tab");
+    assert!(
+        ports.take_focus(),
+        "Go must ask for the caret in the scene it opened, not leave it on the tab it left"
+    );
+}

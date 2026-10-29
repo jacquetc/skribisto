@@ -1875,3 +1875,39 @@ fn undo_editor_refuses_a_frozen_editor() {
         "positive control: with the game off the same call really does step back"
     );
 }
+
+/// What the Go pair's Alt+Up/Alt+Down are gated on. It follows the live focus
+/// and is never latched: the moment the writer moves to the binder, the chord
+/// must belong to the binder, unlike `has_caret_target`, which deliberately
+/// outlives the focus loss a menu causes.
+#[test]
+fn writing_focused_follows_the_keyboard_focus_and_is_never_latched() {
+    let (_editor, handle) = loose_editor("tab prose");
+    let resolved = handle.clone();
+    let vm = FormatViewModel::new(Rc::new(move || {
+        (Some(resolved.clone()), FormatSurface::Scene)
+    }));
+    let (id, _) = two_ids();
+    vm.register(id, handle.clone(), EditorKind::Prose);
+
+    vm.refresh();
+    assert!(
+        !vm.writing_focused().get(),
+        "the resolver's tab editor alone is not a focused editor"
+    );
+
+    handle.focused_signal().set(true);
+    vm.refresh();
+    assert!(vm.writing_focused().get(), "the writer is in the editor");
+
+    handle.focused_signal().set(false);
+    vm.refresh();
+    assert!(
+        !vm.writing_focused().get(),
+        "focus has left the editor, and the latch must not keep the chord from the binder"
+    );
+    assert!(
+        vm.has_caret_target().get(),
+        "the premise: the caret latch itself does outlive the focus"
+    );
+}

@@ -553,6 +553,12 @@ pub struct FormatViewModel {
     /// writer has been in the editor. That is the same limit `has_target` and
     /// the note gate live with, and for the same reason.
     has_caret_target: Signal<bool>,
+    /// A registered writing editor holds the keyboard focus now: the live answer
+    /// of [`Self::editor_focused`], mirrored on every [`Self::refresh`] for what has
+    /// to observe it. Never latched, unlike `has_caret_target`: the Go pair's
+    /// Alt+Up/Alt+Down are gated on it, and the moment the writer moves to the
+    /// binder, a list or a date field, those keys belong to that widget.
+    writing_focused: Signal<bool>,
     /// [`Self::has_target`], and that editor takes writes: the enablement of every
     /// Format command, and of the other commands that write into the editor's text
     /// (Insert template).
@@ -660,6 +666,7 @@ impl FormatViewModel {
             can_redo: Signal::new(false),
             has_target: Signal::new(false),
             has_caret_target: Signal::new(false),
+            writing_focused: Signal::new(false),
             can_edit: Signal::new(false),
             can_edit_at_caret: Signal::new(false),
             can_break_scene: Signal::new(false),
@@ -1142,6 +1149,13 @@ impl FormatViewModel {
         self.has_caret_target.clone()
     }
 
+    /// Whether a writing editor holds the keyboard focus right now: the live
+    /// answer, never latched, refreshed once per frame. What the Go pair's
+    /// Alt+Up/Alt+Down are gated on.
+    pub fn writing_focused(&self) -> Signal<bool> {
+        self.writing_focused.clone()
+    }
+
     /// Whether there is an editor to act on and it takes writes — see
     /// [`Self::can_edit`].
     pub fn can_edit(&self) -> Signal<bool> {
@@ -1239,6 +1253,7 @@ impl FormatViewModel {
         // is only ever written by a genuinely focused registered editor, so its
         // presence means the writer has put a caret in one.
         set_if_changed(&self.has_caret_target, self.sticky.borrow().is_some());
+        set_if_changed(&self.writing_focused, self.editor_focused());
         self.sync_write_mirrors(handle.as_ref());
 
         let Some(handle) = handle else {

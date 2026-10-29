@@ -431,12 +431,21 @@ impl EditorsViewModel {
     }
 
     /// Jump to the Next/Previous item of `kind` from the focused pane's active tab,
-    /// through [`Self::open_or_focus`] — the exact same path the
-    /// `AppIntent::OpenItem` handler calls, **never** a bypassing direct
+    /// through [`Self::activate`] — the same path a binder row's Enter takes, which
+    /// opens through [`Self::open_or_focus`], **never** a bypassing direct
     /// `OpenDocsStore::open` — so autosave, dirty tracking and `StatsModel::active_item`
     /// all see the jump like any ordinary binder navigation. A safe no-op when nothing
     /// is focused, or nothing of `kind` lies in that direction (no wraparound).
-    pub fn go(&self, kind: skribisto_model::GoKind, direction: skribisto_model::GoDirection) {
+    ///
+    /// The writer asked to go there, so the caret goes into the item's text. It used to
+    /// stay behind, on a tab no longer shown: a screen reader announced the window and
+    /// nothing else, and the next key went nowhere.
+    pub fn go(
+        &self,
+        kind: skribisto_model::GoKind,
+        direction: skribisto_model::GoDirection,
+        ctx: &mut teksilo::prelude::EventContext,
+    ) {
         let Some(focused) = self.active_item.get() else {
             return;
         };
@@ -447,7 +456,7 @@ impl EditorsViewModel {
         let title = binder_ops::item_dto(&self.app_ctx, target)
             .map(|it| it.title)
             .unwrap_or_default();
-        self.open_or_focus(target, &title);
+        self.activate(target, &title, ctx);
     }
 
     /// The `GoKind` of the focused pane's active tab, if it is a writing tab at all —

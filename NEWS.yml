@@ -3,6 +3,8 @@ Date: 2026-10-28
 Type: stable
 Description:
 - "Opening a text's menu with Shift+F10 or the Menu key leaves the cursor where it was. It used to jump to the middle of the text, so Paste landed there"
+- "Alt+Up and Alt+Down move the selected binder item up or down, and Alt+Down opens a list or a date field. Those keys used to go to the previous or next item from anywhere in the window; they now do that only while you write in a text"
+- "Go ▸ Next scene, Alt+Down and the other Go commands put the cursor in the text they open, so you can go on writing at once. It used to stay on the page you left, and a screen reader announced only the window"
 - "In the Help window, Enter on a topic, the Back button and a link to another page take you into the page's text, and a screen reader announces the page's title as its heading. Focus used to stay on the topic's button, with no sign that the page had changed"
 - "In Settings, Enter on a page in the list on the left, a link to a page, a page in the breadcrumb at the top or a search suggestion takes you to that page's first setting. Focus used to stay where it was, and was lost when that was on the page being left"
 - "Every on/off setting in Settings has its name on the left and its switch on the right, as most pages already did. Some pages put the switch first, and periodic backups now take two lines: one to turn them on, one for the interval"
