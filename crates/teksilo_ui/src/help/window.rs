@@ -40,6 +40,9 @@ const MIN_H: u32 = 420;
 /// Passing [`None`] opens whatever the window was last showing (or the default topic on
 /// a first open), which is what a bare "Help" command should do: a reader returning to
 /// a window they left open has not asked to lose their place.
+///
+/// A named topic was asked for to be read, so the reader lands in its text
+/// ([`HelpViewModel::open_to_read`]).
 pub fn open_or_focus_help(ctx: &mut EventContext, topic_key: Option<&str>) {
     let vm = ctx
         .app_state::<HelpViewModel>()
@@ -54,7 +57,7 @@ pub fn open_or_focus_help(ctx: &mut EventContext, topic_key: Option<&str>) {
         });
 
     if let Some(key) = topic_key {
-        vm.open_fresh(key);
+        vm.open_to_read(key);
     }
 
     match ctx.find_window(HELP_WINDOW_ID) {
@@ -86,10 +89,18 @@ pub fn help_window_config(vm: HelpViewModel) -> WindowConfig {
     let vm = Rc::new(vm);
     WindowConfig::new()
         .id(HELP_WINDOW_ID)
-        // The OS-level identity (taskbar, alt-tab) stays the application's name; the
-        // *visible* title below names the screen, which is why `help-window-title`
-        // exists and why it was unused until this window grew a title bar to put it in.
-        .title(crate::identity::display_name())
+        // "Help - Skribisto", the shape every project window's title has: the taskbar
+        // and Alt+Tab still say which application it is, and a screen reader, which
+        // announces this title when the window takes focus, says which window. It
+        // used to be the application's name alone, so the Help window was announced
+        // as "Skribisto".
+        .title(
+            tr!(window_title(
+                title = tr!(help_window_title()).resolve_now(),
+                app = crate::identity::display_name()
+            ))
+            .resolve_now(),
+        )
         // Which application this window belongs to, as far as the desktop is
         // concerned. Every window in the process sends the same one. See
         // `identity::desktop_id`.

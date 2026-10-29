@@ -15,14 +15,20 @@
 //! plain click when the surface is read-only (an editable one still wants Ctrl, since
 //! there a click places the caret).
 //!
-//! ## Why a tooltip-backed topic renders differently
+//! ## Why a tooltip-backed topic is a document too
 //!
 //! A [`HelpBody::Tooltip`] topic is not Djot at all: it is the registered rich
-//! tooltip's own body, which is Fluent text with teksilo's three-form inline markup.
-//! Rendering it through `TextWidget` rather than converting it to Djot is deliberate.
-//! Converting would make the page a *copy* of the tooltip, and a copy is a thing that
-//! drifts; reading the same `LocalizedString` means the page and the tooltip are the
-//! same words by construction.
+//! tooltip's own body, which is Fluent text with teksilo's three-form inline markup
+//! (`**bold**`, `*italic*`, `[label](url)`). It is read from the same `LocalizedString`
+//! the tooltip shows, every time the page is built, never stored: the page and the
+//! tooltip are the same words by construction.
+//!
+//! It is shown in the same read-only editor as a Djot page, not as a `TextWidget`. A
+//! label takes no keyboard focus, so a glossary entry was the one page a reader moving
+//! by keyboard could not get into: Enter on its topic left them on the button, and Tab
+//! went past the text. The markup is a subset of Markdown, which `text-document` reads
+//! synchronously (`TextCursor::insert_markdown`); a test keeps the tooltips free of the
+//! Markdown the subset does not have, so the page reads exactly as the bubble does.
 
 use teksilo::core::binding::BindingLevel;
 use teksilo::prelude::*;
@@ -115,9 +121,23 @@ impl Widget for HelpPanel {
         );
         ctx.register_action_global(Action::new(CLOSE_SHORTCUT).on_invoke(|_i, c| c.close_window()));
 
-        let nav_widget = self.build_nav();
+        // The page first: its id is where every way of opening a topic puts the
+        // reader (a topic in the list, a link, Back). It stays the same id across the
+        // page's own rebuilds, which is what lets a focus request made before one
+        // land in the page that replaces it.
+        let page = ctx.add(HelpPageBody::new(self.vm.clone()));
+        let header = ctx.add(HelpPageHeader::new(self.vm.clone(), page));
+        let nav_widget = self.build_nav(page);
         let nav = ctx.add_boxed(Box::new(nav_widget));
-        let content = ctx.add(HelpReadingPane::new(self.vm.clone()));
+        // The body fills whatever is left under the header. `RichTextEditor` sizes to
+        // its content rather than greedily, so without the `Expand` a short topic would
+        // leave the reading pane's background showing through beneath it.
+        let content = ctx.add(
+            VStack::new()
+                .spacing(0.0)
+                .child(header)
+                .child(Expand::new().child(page)),
+        );
 
         // `MinSize::width` capped by `MaxSize::width`, not `FixedSize::width`.
         // `FixedSize` proposes `None` on the axis it does not bind, so a width-only one
@@ -172,15 +192,19 @@ impl HelpPanel {
     /// Takes no [`BuildContext`] on purpose. Everything it assembles is a plain widget,
     /// and the one part that has to react to typing is [`HelpTopicList`], which owns its
     /// own `build` — which is the whole point of the split.
-    fn build_nav(&self) -> impl Widget + 'static {
+    fn build_nav(&self, page: WidgetId) -> impl Widget + 'static {
         VStack::new()
             .spacing(0.0)
             .child(
                 Padding::symmetric(8.0, 8.0).child(
-                    SearchField::new(self.vm.query()).placeholder(tr!(help_filter_topics())),
+                    // The placeholder is gone once the reader types, and is never a
+                    // name: without the label the field has none.
+                    SearchField::new(self.vm.query())
+                        .label(tr!(help_filter_topics()))
+                        .placeholder(tr!(help_filter_topics())),
                 ),
             )
-            .child(Expand::new().child(HelpTopicList::new(self.vm.clone())))
+            .child(Expand::new().child(HelpTopicList::new(self.vm.clone(), page)))
     }
 }
 
@@ -197,13 +221,16 @@ impl HelpPanel {
 /// It binds no locale: [`HelpPanel`] does, and a rebuild there rebuilds this with it.
 struct HelpTopicList {
     vm: HelpViewModel,
+    /// The page a topic opens into, and so where its button sends the reader.
+    page: WidgetId,
     root_child: Option<WidgetId>,
 }
 
 impl HelpTopicList {
-    fn new(vm: HelpViewModel) -> Self {
+    fn new(vm: HelpViewModel, page: WidgetId) -> Self {
         Self {
             vm,
+            page,
             root_child: None,
         }
     }
@@ -242,6 +269,7 @@ impl Widget for HelpTopicList {
             );
             for spec in topics {
                 let vm = self.vm.clone();
+                let page = self.page;
                 let key = spec.key;
                 let is_current = key == current;
                 column = column.child(
@@ -254,7 +282,13 @@ impl Widget for HelpTopicList {
                         } else {
                             ButtonVariant::Ghost
                         })
-                        .on_activate_fn(move |_ctx| vm.open(key)),
+                        // Into the page, not back onto this button: a reader who
+                        // moves by keyboard opens a topic to read it, and a focus
+                        // that stays here announces nothing new.
+                        .on_activate_fn(move |ctx| {
+                            vm.open(key);
+                            ctx.request_focus_into(page);
+                        }),
                 );
             }
         }
@@ -291,36 +325,37 @@ impl Widget for HelpTopicList {
     }
 }
 
-/// The reading pane: a header, then the topic body.
+/// The reading pane's header: Back, the topic's title, and the note a page served in
+/// another language carries.
 ///
-/// Bound to the open topic and the depth of the back trail, and to nothing else. Keeping
-/// it out of [`HelpPanel`] is what lets that shell stop rebuilding on the open topic,
-/// and so what keeps a click in the table of contents from recreating — and re-selecting
-/// the contents of — the filter field the reader may be part way through typing into.
-///
-/// It also means typing in the filter no longer re-parses and re-typesets the page being
-/// read on every keystroke.
-struct HelpReadingPane {
+/// Bound to the open topic and the depth of the back trail, and to nothing else. Kept
+/// out of [`HelpPanel`] so that shell does not rebuild on the open topic, which is
+/// what keeps a click in the table of contents from recreating (and re-selecting the
+/// contents of) the filter field the reader may be part way through typing into.
+struct HelpPageHeader {
     vm: HelpViewModel,
+    /// Where Back puts the reader: the page it brings back.
+    page: WidgetId,
     root_child: Option<WidgetId>,
 }
 
-impl HelpReadingPane {
-    fn new(vm: HelpViewModel) -> Self {
+impl HelpPageHeader {
+    fn new(vm: HelpViewModel, page: WidgetId) -> Self {
         Self {
             vm,
+            page,
             root_child: None,
         }
     }
 }
 
-impl std::fmt::Debug for HelpReadingPane {
+impl std::fmt::Debug for HelpPageHeader {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("HelpReadingPane").finish_non_exhaustive()
+        f.debug_struct("HelpPageHeader").finish_non_exhaustive()
     }
 }
 
-impl Widget for HelpReadingPane {
+impl Widget for HelpPageHeader {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
         let sid = ctx.self_id();
         let reg = ctx.binding_registry();
@@ -350,23 +385,15 @@ impl Widget for HelpReadingPane {
     }
 }
 
-impl HelpReadingPane {
-    /// The header, then the topic body.
+impl HelpPageHeader {
     fn build_content(&self, ctx: &mut BuildContext) -> WidgetId {
+        // A topic that names nothing has no header: the page says so on its own.
         let Some(spec) = self.vm.current_topic() else {
-            // Reachable when an extension that registered the open topic is dropped
-            // while the window is open. Say so rather than showing the last topic that
-            // happened to render.
-            return ctx.add(
-                Padding::symmetric(24.0, 24.0).child(
-                    TextWidget::new(tr!(help_topic_missing()))
-                        .style(TextStyleRole::Body)
-                        .color(TextRole::Secondary),
-                ),
-            );
+            return ctx.add(VStack::new());
         };
 
         let vm_back = self.vm.clone();
+        let page = self.page;
         let can_go_back = self.vm.depth().get() > 0;
         let header = HStack::new()
             .spacing(8.0)
@@ -378,12 +405,20 @@ impl HelpReadingPane {
                 IconButton::new(IconWidget::chevron_left(16.0))
                     .tooltip(tr!(help_back()))
                     .enabled(can_go_back)
-                    .on_activate_fn(move |_ctx| vm_back.back()),
+                    .on_activate_fn(move |ctx| {
+                        vm_back.back();
+                        ctx.request_focus_into(page);
+                    }),
             )
             .child(
+                // The page's level-one heading, so a screen reader landing in the
+                // page hears which one it is, and the page's own `##` headings sit
+                // under it (no page opens with a level-one heading of its own).
                 TextWidget::new((spec.title)())
                     .style(TextStyleRole::BodyBold)
-                    .single_line(),
+                    .single_line()
+                    .access_role(teksilo::core::accesskit::Role::Heading)
+                    .access_customize(|node| node.set_level(1)),
             )
             .child(Spacer::new());
 
@@ -405,23 +440,99 @@ impl HelpReadingPane {
                 ),
             );
         }
+        ctx.add(column)
+    }
+}
 
-        // The body fills whatever is left under the header. `RichTextEditor` sizes to
-        // its content rather than greedily, so without the `Expand` a short topic would
-        // leave the reading pane's background showing through beneath it.
-        let body = self.build_body(ctx, &spec);
-        ctx.add(column.child(Expand::new().child(body)))
+/// The open topic's text.
+///
+/// Bound to the open topic only, so typing in the filter does not re-parse and
+/// re-typeset the page being read on every keystroke. Its own id is the one the
+/// topic list, Back and the page's links send the reader into: a rebuild keeps it,
+/// and teksilo puts a focus that was inside it back at the same place among the
+/// fresh children, which is the new page's text.
+struct HelpPageBody {
+    vm: HelpViewModel,
+    root_child: Option<WidgetId>,
+}
+
+impl HelpPageBody {
+    fn new(vm: HelpViewModel) -> Self {
+        Self {
+            vm,
+            root_child: None,
+        }
+    }
+}
+
+impl std::fmt::Debug for HelpPageBody {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("HelpPageBody").finish_non_exhaustive()
+    }
+}
+
+impl Widget for HelpPageBody {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        let sid = ctx.self_id();
+        let reg = ctx.binding_registry();
+        self.vm
+            .current_key()
+            .bind_to(sid, reg, BindingLevel::Rebuild);
+        self.vm
+            .read_signal()
+            .bind_to(sid, reg, BindingLevel::Rebuild);
+
+        // Opened to be read (see `HelpViewModel::open_to_read`): enter the page once it
+        // is mounted under its window, which also wins over the window's own first
+        // focus on its filter field.
+        if self.vm.take_read_request() {
+            ctx.run_after_mount(move |c| c.request_focus_into(sid));
+        }
+
+        let id = match self.vm.current_topic() {
+            Some(spec) => self.build_body(ctx, &spec),
+            // Reachable when an extension that registered the open topic is dropped
+            // while the window is open. Say so rather than showing the last topic that
+            // happened to render.
+            None => ctx.add(
+                Padding::symmetric(24.0, 24.0).child(
+                    TextWidget::new(tr!(help_topic_missing()))
+                        .style(TextStyleRole::Body)
+                        .color(TextRole::Secondary),
+                ),
+            ),
+        };
+        self.root_child = Some(id);
+        vec![id]
     }
 
-    /// The prose itself, by body kind.
+    fn layout_response(
+        &self,
+        proposal: SizeProposal,
+        ctx: &LayoutContext,
+    ) -> teksilo::core::widget::LayoutResponse {
+        self.root_child
+            .and_then(|id| ctx.child_size(id, proposal))
+            .map(Into::into)
+            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    }
+
+    fn children(&self) -> Vec<WidgetId> {
+        self.root_child.into_iter().collect()
+    }
+}
+
+impl HelpPageBody {
+    /// The prose itself, by body kind: either way a read-only document named after its
+    /// topic.
     fn build_body(&self, ctx: &mut BuildContext, spec: &HelpTopicSpec) -> WidgetId {
+        let doc = TextDocument::new();
         match &spec.body {
             HelpBody::Djot(_) => {
                 let source = spec
                     .resolve(&current_locale_tag())
                     .map(|r| r.source)
                     .unwrap_or_default();
-                let doc = TextDocument::new();
                 // A malformed source is a bug in shipped content, and the drift test
                 // parses every one of them, so this cannot be reached by a built-in
                 // topic. A contributed topic gets an empty page rather than a panic.
@@ -433,46 +544,43 @@ impl HelpReadingPane {
                         spec.key
                     );
                 }
-                let vm = self.vm.clone();
-                ctx.add(
-                    RichTextEditor::read_only(doc)
-                        .content_padding_symmetric(14.0, 22.0)
-                        .typography_defaults(reading_typography())
-                        .on_link_activated(move |href, ctx| vm.follow_link(href, ctx)),
-                )
             }
             HelpBody::Tooltip(tooltip_key) => {
+                // The tooltip's text, then its "more", as two paragraphs.
                 let key = *tooltip_key;
-                let (text, more) = with_tooltip_registry(|reg| {
-                    reg.get(key)
-                        .map(|c| (Some(c.text.clone()), c.more.clone()))
-                        .unwrap_or((None, None))
+                let source = with_tooltip_registry(|reg| {
+                    reg.get(key).map(|c| {
+                        let mut source = c.text.resolve_now();
+                        if let Some(more) = &c.more {
+                            source.push_str("\n\n");
+                            source.push_str(&more.resolve_now());
+                        }
+                        source
+                    })
                 })
-                .unwrap_or((None, None));
-
-                let vm = self.vm.clone();
-                let mut column = VStack::new().spacing(12.0);
-                if let Some(text) = text {
-                    let vm = vm.clone();
-                    column = column.child(
-                        TextWidget::new(text)
-                            .markup(true)
-                            .style(TextStyleRole::Body)
-                            .on_link_click(move |href, ctx| vm.follow_link(href, ctx)),
-                    );
+                .flatten()
+                .unwrap_or_default();
+                if let Err(err) = doc.cursor().insert_markdown(&source) {
+                    eprintln!("skribisto: help topic '{}' failed to load: {err}", spec.key);
                 }
-                if let Some(more) = more {
-                    let vm = vm.clone();
-                    column = column.child(
-                        TextWidget::new(more)
-                            .markup(true)
-                            .style(TextStyleRole::Body)
-                            .on_link_click(move |href, ctx| vm.follow_link(href, ctx)),
-                    );
-                }
-                ctx.add(ScrollArea::new().child(Padding::symmetric(14.0, 22.0).child(column)))
             }
         }
+        // A link to another topic opens it, and the reader follows into it.
+        let page = ctx.self_id();
+        let vm = self.vm.clone();
+        ctx.add(
+            RichTextEditor::read_only(doc)
+                .content_padding_symmetric(14.0, 22.0)
+                .typography_defaults(reading_typography())
+                .on_link_activated(move |href, ctx| {
+                    if vm.follow_link(href, ctx) {
+                        ctx.request_focus_into(page);
+                    }
+                })
+                // The document is named after its topic, so landing in it says which
+                // page it is. It used to be an unnamed document.
+                .access_label((spec.title)()),
+        )
     }
 }
 

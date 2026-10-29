@@ -13,7 +13,7 @@
 //! It carries no widgets and no `AppContext`, which is what lets the whole of it be
 //! tested headlessly: everything below is plain Rust over three signals.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use teksilo::prelude::*;
@@ -38,6 +38,11 @@ pub struct HelpViewModel {
     /// bind to it. Kept in step by [`Self::push_history`] and [`Self::back`], the only
     /// two places the stack is touched.
     depth: Signal<usize>,
+    /// Set by an entry point that opened a topic *to be read* (see
+    /// [`Self::open_to_read`]), and taken by the page the next time it is built.
+    read_request: Rc<Cell<bool>>,
+    /// Bumped with `read_request`, so a page already on screen rebuilds and takes it.
+    read_signal: Signal<u64>,
 }
 
 impl Default for HelpViewModel {
@@ -54,7 +59,29 @@ impl HelpViewModel {
             query: Signal::new(String::new()),
             history: Rc::new(RefCell::new(Vec::new())),
             depth: Signal::new(0),
+            read_request: Rc::new(Cell::new(false)),
+            read_signal: Signal::new(0),
         }
+    }
+
+    /// [`Self::open_fresh`], and put the reader in the page: an entry point that names
+    /// a topic (the screen-reader guide's menu row and startup offer, an importer's
+    /// help button) opened it to be read. The Help window used to come up on its filter
+    /// field, so the reader heard a search box and not the page they had asked for.
+    pub fn open_to_read(&self, key: &str) {
+        self.open_fresh(key);
+        self.read_request.set(true);
+        self.read_signal.set(self.read_signal.get().wrapping_add(1));
+    }
+
+    /// Whether the page being built should take the focus. Taken once.
+    pub(crate) fn take_read_request(&self) -> bool {
+        self.read_request.replace(false)
+    }
+
+    /// Bumped by [`Self::open_to_read`]: what the page rebuilds on.
+    pub(crate) fn read_signal(&self) -> Signal<u64> {
+        self.read_signal.clone()
     }
 
     /// The key of the topic on screen.
@@ -122,20 +149,28 @@ impl HelpViewModel {
     /// the two cannot drift into different link syntaxes. Anything else is an external
     /// address and goes to the desktop's browser through the app's one allowlisted
     /// opener.
-    pub fn follow_link(&self, href: &str, ctx: &mut EventContext) {
+    ///
+    /// `true` when it opened a topic, so the caller can take the reader into it; an
+    /// external address leaves the window, and focus with it.
+    pub fn follow_link(&self, href: &str, ctx: &mut EventContext) -> bool {
         match href.strip_prefix(':') {
             Some(key) => {
                 if topic(key).is_some() {
                     self.open(key);
+                    true
                 } else {
                     // A link to a key nothing registers. The drift test makes this
                     // unreachable for built-in topics; it stays possible for a
                     // contributed one, and doing nothing is better than navigating to
                     // a blank page.
                     eprintln!("skribisto: help link to unknown topic key '{key}'");
+                    false
                 }
             }
-            None => crate::shared::external_link::open_external_link(href, ctx),
+            None => {
+                crate::shared::external_link::open_external_link(href, ctx);
+                false
+            }
         }
     }
 

@@ -1,3 +1,11 @@
+Version: 3.3.1
+Date: 2026-10-28
+Type: stable
+Description:
+- "In the Help window, Enter on a topic, the Back button and a link to another page take you into the page's text, and a screen reader announces the page's title as its heading. Focus used to stay on the topic's button, with no sign that the page had changed"
+- "A screen reader announces the Help window as “Help - Skribisto” and each page by its title. They used to be “Skribisto” and an unnamed document"
+- "In the Help window, the short definitions under “What things are” open as pages you can enter and read with the keyboard, like the other topics. Their text used to be out of reach of Tab, and of Enter on the topic"
+---
 Version: 3.3.0
 Date: 2026-10-27
 Type: stable

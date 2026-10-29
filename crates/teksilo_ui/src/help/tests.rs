@@ -863,3 +863,305 @@ fn ctrl_w_closes_the_help_window() {
     tree.press_key(Key::W, Modifiers::COMMAND);
     assert!(tree.take_close_window_request(), "Ctrl+W left Help open");
 }
+
+/// A Djot topic other than the one the window opens on, and its title.
+fn another_page() -> (&'static str, String) {
+    all_topics()
+        .iter()
+        .find(|spec| spec.key != DEFAULT_TOPIC && matches!(spec.body, HelpBody::Djot(_)))
+        .map(|spec| (spec.key, (spec.title)().resolve_now()))
+        .expect("the help set ships more than one page")
+}
+
+/// Whether the keyboard focus sits on the page itself: in the reading pane (right
+/// of the table of contents) and on something page-sized, not the Back button.
+fn focus_is_on_the_page(tree: &WidgetTree) -> bool {
+    tree.focused().is_some_and(|f| {
+        let b = tree.bounds(f);
+        b.x >= panel::NAV_WIDTH && b.height > 200.0
+    })
+}
+
+/// Enter on a topic opens it and puts the reader in its text. Focus used to stay on
+/// the topic's button, so a screen reader announced nothing new and the reader had
+/// no way to tell the page had changed, let alone reach it.
+#[test]
+fn opening_a_topic_from_the_keyboard_puts_the_reader_in_its_text() {
+    let vm = help_vm::HelpViewModel::new();
+    let mut tree = WidgetTree::new();
+    tree.add(panel::HelpPanel::new(vm.clone()));
+    let proposal = SizeProposal::exact(940.0, 680.0);
+    tree.layout(proposal);
+
+    let (key, title) = another_page();
+    let button = tree
+        .find_by_label(&title)
+        .expect("the topic's button is in the table of contents");
+    tree.focus(button);
+    tree.press_key(Key::Enter, Modifiers::NONE);
+    tree.layout(proposal);
+
+    assert_eq!(
+        vm.current_key().get(),
+        key,
+        "precondition: Enter opened the topic"
+    );
+    assert!(
+        focus_is_on_the_page(&tree),
+        "the reader must land in the page they opened, not stay in the list"
+    );
+}
+
+/// Back is the other door to a page, and it rebuilds the pane under the button that
+/// was pressed. The reader lands in the page it brings back, not lost in the rebuild.
+#[test]
+fn going_back_puts_the_reader_in_the_page_it_brings_back() {
+    let vm = help_vm::HelpViewModel::new();
+    let mut tree = WidgetTree::new();
+    tree.add(panel::HelpPanel::new(vm.clone()));
+    let proposal = SizeProposal::exact(940.0, 680.0);
+    tree.layout(proposal);
+
+    let (key, _) = another_page();
+    vm.open(key);
+    tree.layout(proposal);
+    let back = tree
+        .find_by_label(&tr!(help_back()).resolve_now())
+        .expect("the reading pane has a Back button");
+    tree.focus(back);
+    tree.press_key(Key::Enter, Modifiers::NONE);
+    tree.layout(proposal);
+
+    assert_eq!(
+        vm.current_key().get(),
+        DEFAULT_TOPIC,
+        "precondition: Back reopened the first page"
+    );
+    assert!(
+        focus_is_on_the_page(&tree),
+        "the reader must land in the page Back brought back"
+    );
+}
+
+/// The page's title is its level-one heading, so a screen reader landing in the page
+/// hears which one it is and the page's own `##` headings sit under it.
+#[test]
+fn the_page_title_is_a_level_one_heading() {
+    let vm = help_vm::HelpViewModel::new();
+    let mut tree = WidgetTree::new();
+    tree.add(panel::HelpPanel::new(vm.clone()));
+    tree.layout(SizeProposal::exact(940.0, 680.0));
+    let title = vm
+        .current_topic()
+        .map(|spec| (spec.title)().resolve_now())
+        .expect("the window opens on a topic");
+
+    let update = tree.sync_accessibility();
+    let heading = update
+        .nodes
+        .iter()
+        .find(|(_, node)| {
+            node.role() == teksilo::core::accesskit::Role::Heading
+                && node.label().is_some_and(|l| l == title)
+        })
+        .map(|(_, node)| node.level());
+    // AccessKit counts levels from zero (teksilo's `set_level` takes ARIA's 1-based
+    // one and converts), so a level-one heading reads back as 0.
+    assert_eq!(
+        heading,
+        Some(Some(0)),
+        "the title must be exposed as a level-one heading"
+    );
+}
+
+/// The page itself is named after its topic, so a screen reader landing in the text
+/// says which page it is. It was an unnamed document.
+#[test]
+fn the_page_is_a_document_named_after_its_topic() {
+    let vm = help_vm::HelpViewModel::new();
+    let mut tree = WidgetTree::new();
+    tree.add(panel::HelpPanel::new(vm.clone()));
+    tree.layout(SizeProposal::exact(940.0, 680.0));
+    let title = vm
+        .current_topic()
+        .map(|spec| (spec.title)().resolve_now())
+        .expect("the window opens on a topic");
+
+    let update = tree.sync_accessibility();
+    let named = update.nodes.iter().any(|(_, node)| {
+        node.role() == teksilo::core::accesskit::Role::Document
+            && node.label().is_some_and(|l| l == title)
+    });
+    assert!(named, "no document named \"{title}\" in the Help window");
+}
+
+/// A glossary entry is a page like the others: Enter on its topic puts the reader in
+/// its text, a document named after it that holds the tooltip's words with the markup
+/// read rather than shown. It was a plain label no key could reach.
+#[test]
+fn a_glossary_entry_is_a_page_the_reader_can_get_into() {
+    teksilo::widgets::tooltip::install_tooltip_registry(
+        crate::tooltip_registry::writing_model_tooltips(),
+    );
+    let (key, title) = builtin_topics()
+        .into_iter()
+        .find(|t| matches!(t.body, HelpBody::Tooltip(_)))
+        .map(|t| (t.key, (t.title)().resolve_now()))
+        .expect("the help set has glossary entries");
+    let vm = help_vm::HelpViewModel::new();
+    let mut tree = WidgetTree::new();
+    tree.add(panel::HelpPanel::new(vm.clone()));
+    let proposal = SizeProposal::exact(940.0, 680.0);
+    tree.layout(proposal);
+
+    let button = tree
+        .find_by_label(&title)
+        .expect("the entry's button is in the table of contents");
+    tree.focus(button);
+    tree.press_key(Key::Enter, Modifiers::NONE);
+    tree.layout(proposal);
+
+    assert_eq!(
+        vm.current_key().get(),
+        key,
+        "precondition: Enter opened the entry"
+    );
+    assert!(
+        focus_is_on_the_page(&tree),
+        "the reader must land in the entry's text"
+    );
+    let update = tree.sync_accessibility();
+    assert!(
+        update.nodes.iter().any(|(_, node)| {
+            node.role() == teksilo::core::accesskit::Role::Document
+                && node.label().is_some_and(|l| l == title)
+        }),
+        "the entry is a document named \"{title}\""
+    );
+    let texts: Vec<String> = update
+        .nodes
+        .iter()
+        .filter_map(|(_, n)| {
+            n.value()
+                .map(str::to_string)
+                .or(n.label().map(str::to_string))
+        })
+        .collect();
+    assert!(
+        texts
+            .iter()
+            .all(|t| !t.contains("**") && !t.contains("](:")),
+        "the markup must be read, not shown: {texts:?}"
+    );
+    // …and the words are the tooltip's own: its opening words, markup stripped.
+    let tip = builtin_topics()
+        .into_iter()
+        .find(|t| t.key == key)
+        .and_then(|t| match t.body {
+            HelpBody::Tooltip(tip) => Some(tip),
+            HelpBody::Djot(_) => None,
+        })
+        .expect("the entry is tooltip-backed");
+    let opening: String = teksilo::widgets::tooltip::with_tooltip_registry(|reg| {
+        reg.get(tip).map(|c| c.text.resolve_now())
+    })
+    .flatten()
+    .expect("the tooltip is registered")
+    .replace('*', "")
+    .split_whitespace()
+    .take(3)
+    .collect::<Vec<_>>()
+    .join(" ");
+    assert!(
+        texts.iter().any(|t| t.contains(&opening)),
+        "the page must hold the tooltip's words (\"{opening}…\"): {texts:?}"
+    );
+}
+
+/// A glossary page reads its tooltip's markup as Markdown, of which the tooltip's own
+/// parser understands three forms. Anything else Markdown gives meaning to would make
+/// the page read differently from the bubble: a line opening on `#` becomes a heading,
+/// `- ` a list item, `_x_` italic. None is used today in any locale; keep it that way.
+#[test]
+fn no_tooltip_body_uses_markdown_the_tooltip_parser_does_not_have() {
+    let locales = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("locales");
+    let mut checked = 0;
+    for locale in std::fs::read_dir(&locales).expect("locales/").flatten() {
+        let path = locale.path().join("tooltips.ftl");
+        let Ok(ftl) = std::fs::read_to_string(&path) else {
+            continue;
+        };
+        checked += 1;
+        for (number, line) in ftl.lines().enumerate() {
+            if line.trim_start().starts_with('#') || line.trim().is_empty() {
+                continue;
+            }
+            // A message's value, or a continuation line of one.
+            let value = match line.split_once(" = ") {
+                Some((id, value)) if !id.starts_with(' ') => value,
+                _ if line.starts_with(' ') => line.trim_start(),
+                _ => continue,
+            };
+            let block_start = value.starts_with('#')
+                || value.starts_with('>')
+                || value.starts_with("- ")
+                || value.starts_with("+ ")
+                || value.starts_with("* ")
+                || value.split_once(['.', ')']).is_some_and(|(n, rest)| {
+                    !n.is_empty() && n.bytes().all(|b| b.is_ascii_digit()) && rest.starts_with(' ')
+                });
+            let inline = ['_', '<', '&', '~', '|']
+                .iter()
+                .find(|c| value.contains(**c));
+            assert!(
+                !block_start && inline.is_none() && !value.contains("!["),
+                "{}:{}: Markdown the tooltip parser does not have, so the glossary page \
+                 would read differently from the bubble: {line}",
+                path.display(),
+                number + 1
+            );
+        }
+    }
+    assert!(checked > 0, "no tooltips.ftl found: the walk is broken");
+}
+
+/// A topic opened by name, to be read (the screen-reader guide's menu row and startup
+/// offer), puts the reader in its page, whether the Help window was already open or
+/// comes up for it. It came up on its filter field.
+#[test]
+fn a_topic_opened_to_be_read_puts_the_reader_in_its_page() {
+    let proposal = SizeProposal::exact(940.0, 680.0);
+    let settle = |tree: &mut WidgetTree| {
+        tree.layout(proposal);
+        tree.run_mount_actions(&mut teksilo::core::NoopWindowOps);
+        tree.layout(proposal);
+    };
+    let (key, _) = another_page();
+
+    // The window already open, on another page.
+    let vm = help_vm::HelpViewModel::new();
+    let mut tree = WidgetTree::new();
+    tree.add(panel::HelpPanel::new(vm.clone()));
+    settle(&mut tree);
+    vm.open_to_read(key);
+    settle(&mut tree);
+    assert_eq!(vm.current_key().get(), key);
+    assert!(
+        focus_is_on_the_page(&tree),
+        "the open window must put the reader in the page"
+    );
+
+    // The window opened for it.
+    let vm = help_vm::HelpViewModel::new();
+    vm.open_to_read(key);
+    let mut tree = WidgetTree::new();
+    tree.add(panel::HelpPanel::new(vm.clone()));
+    settle(&mut tree);
+    assert!(
+        focus_is_on_the_page(&tree),
+        "a new window must open in the page"
+    );
+
+    // Asked once: a rebuild later (another topic, from the list) does not jump again.
+    assert!(!vm.take_read_request());
+}
