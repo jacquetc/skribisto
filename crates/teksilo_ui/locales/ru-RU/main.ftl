@@ -599,6 +599,7 @@ close-split-view = Закрыть разделённый вид
 drop-open-here = Открыть здесь
 drop-open-to-side = Открыть сбоку
 
+segment-bar = Представления
 segment-chapter = Глава
 segment-part = Часть
 segment-book = Книга

@@ -517,6 +517,7 @@ close-split-view = 분할 보기 닫기
 drop-open-here = 여기서 열기
 drop-open-to-side = 측면에서 열기
 
+segment-bar = 보기
 segment-chapter = 장
 segment-part = 부
 segment-book = 책

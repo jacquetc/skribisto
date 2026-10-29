@@ -42,6 +42,8 @@ pub(super) fn corkboard_header(vm: &CorkboardViewModel) -> impl Widget {
             spacing: 10.0
             Expand::horizontal {
                 SearchField::new(vm.search_query_signal()) {
+                    // A placeholder is gone once the writer types and is never a name.
+                    label: tr!(corkboard_search_placeholder())
                     placeholder: tr!(corkboard_search_placeholder())
                 }
             }

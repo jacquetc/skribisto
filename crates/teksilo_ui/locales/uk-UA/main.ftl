@@ -568,6 +568,7 @@ split-editor = Розділити редактор
 close-split-view = Закрити розділене подання
 drop-open-here = Відкрити тут
 drop-open-to-side = Відкрити збоку
+segment-bar = Подання
 segment-chapter = Розділ
 segment-part = Частина
 segment-book = Книга

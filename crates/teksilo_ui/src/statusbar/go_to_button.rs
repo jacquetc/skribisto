@@ -74,6 +74,8 @@ impl Widget for GoToPalette {
         // match otherwise.
         let submit_vm = vm.clone();
         let field = SearchField::new(vm.query())
+            // A placeholder is gone once the writer types and is never a name.
+            .label(tr!(go_to_placeholder()))
             .placeholder(tr!(go_to_placeholder()))
             .on_submit_fn(move |ctx| {
                 if submit_vm.activate_current() {

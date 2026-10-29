@@ -133,6 +133,7 @@ fn add_row(vm: &UserDictionaryViewModel) -> impl Widget {
     let field = {
         let commit = commit.clone();
         TextInput::new(text.clone())
+            .label(tr!(settings_user_dict_add_placeholder()))
             .leading_slot(add_glyph().color(TextRole::Secondary))
             .placeholder(tr!(settings_user_dict_add_placeholder()))
             .rich_tooltip_content(teksilo::widgets::tooltip::TooltipContent::new(
@@ -163,8 +164,11 @@ fn add_row(vm: &UserDictionaryViewModel) -> impl Widget {
 
 /// The filter + live count on the left, Import… / Export… (with glyphs) pushed to the right.
 fn toolbar_row(vm: &UserDictionaryViewModel, query: Signal<String>) -> impl Widget {
-    let search = MaxSize::width(FILTER_FIELD_MAX_WIDTH)
-        .child(SearchField::new(query).placeholder(tr!(settings_user_dict_search())));
+    let search = MaxSize::width(FILTER_FIELD_MAX_WIDTH).child(
+        SearchField::new(query)
+            .label(tr!(settings_user_dict_search()))
+            .placeholder(tr!(settings_user_dict_search())),
+    );
 
     let count = {
         let vm = vm.clone();
@@ -215,6 +219,7 @@ fn word_row(vm: &UserDictionaryViewModel, row: &DictWordRow, index: usize) -> im
         // `Bare` = no field chrome, so the word reads as plain text until clicked — a rename in
         // place, without every row looking like a form input.
         TextInput::new(value.clone())
+            .label(tr!(settings_user_dict_word_label()))
             .variant(TextInputVariant::Bare)
             .on_submit_fn(move |_ctx| {
                 let _ = vm.rename(id, &value.get());

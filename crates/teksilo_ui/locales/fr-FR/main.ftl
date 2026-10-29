@@ -644,6 +644,12 @@ text-heading = Texte
 no-content = Cet élément n’a pas de contenu modifiable.
 untitled = Sans titre
 placeholder-title = Titre…
+# Ce qu’un lecteur d’écran annonce pour chaque champ de nom au-dessus du texte : rien à
+# l’écran ne les nomme, et le texte indicatif disparaît dès que le champ contient un nom.
+title-field-title = Titre
+title-field-subtitle = Sous-titre
+title-field-chapter = Titre du chapitre
+title-field-name = Nom
 placeholder-subtitle = Sous-titre…
 placeholder-chapter-title = Titre du chapitre…
 split-editor = Diviser l’éditeur
@@ -654,6 +660,9 @@ drop-open-to-side = Ouvrir sur le côté
 ## Flux du manuscrit (Chapitre / Partie / Livre complet + Synopsis complet)
 # La page du conteneur lui-même. « Chapitre » = ce chapitre ; « Chapitre complet » =
 # ce chapitre et toutes ses scènes.
+# Le nom de la barre de vues, pour un lecteur d’écran : il est annoncé avant la vue
+# sélectionnée (« Vues, Chapitre, 1 sur 5 »), et rien à l’écran ne nomme la barre.
+segment-bar = Vues
 segment-chapter = Chapitre
 segment-part = Partie
 segment-book = Livre
@@ -2952,6 +2961,7 @@ lang-pill-unmute = Activer la correction pour { $name }
 settings-page-personal-dictionary = Dictionnaire personnel
 settings-user-dict-desc = Les mots que vous ajoutez ici sont considérés comme correctement orthographiés partout dans l’application et ne sont plus jamais signalés.
 settings-user-dict-add-placeholder = Ajouter un mot…
+settings-user-dict-word-label = Mot
 settings-user-dict-add = Ajouter le mot
 settings-user-dict-search = Filtrer les mots
 settings-user-dict-count = { $count ->
@@ -4078,6 +4088,10 @@ milestone-target-gone = Cible supprimée
 milestone-no-target = Aucun objectif
 milestone-add = Ajouter
 milestone-add-label = Ce qui doit être atteint
+# Noms, pour un lecteur d’écran, de la date et de l’objectif de mots du nouveau jalon :
+# rien à l’écran ne les nomme.
+milestone-date-label = Date du jalon
+milestone-target-label = Mots à atteindre
 
 # Le résumé du plan d'écriture, affiché une fois à l'ouverture d'un projet dont le plan est
 # actif.
@@ -4349,6 +4363,8 @@ settings-statuses-added = « { $name } » ajouté
 settings-statuses-move-up = Monter (moins avancé)
 settings-statuses-move-down = Descendre (plus avancé)
 settings-statuses-details-placeholder = Ce que signifie cette étape (facultatif)
+settings-statuses-name-label = Nom du statut
+settings-statuses-category-label = Avancement
 settings-statuses-delete = Supprimer « { $name } »
 settings-statuses-delete-in-use = { $count ->
     [one] Supprimer « { $name } » : { $count } élément le porte et perdra son statut

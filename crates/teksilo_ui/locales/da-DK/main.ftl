@@ -659,6 +659,7 @@ drop-open-to-side = Åbn ved siden af
 ## Manuscript streams (Full Chapter / Part / Book + Full Synopsis)
 # The container's own page. "Chapter" is this chapter; "Full Chapter" is this chapter
 # and every scene in it.
+segment-bar = Visninger
 segment-chapter = Kapitel
 segment-part = Del
 segment-book = Bog

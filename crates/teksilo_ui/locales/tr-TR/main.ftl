@@ -565,6 +565,7 @@ close-split-view = Bölünmüş görünümü kapat
 drop-open-here = Burada aç
 drop-open-to-side = Yanda aç
 
+segment-bar = Görünümler
 segment-chapter = Bölüm
 segment-part = Kısım
 segment-book = Kitap

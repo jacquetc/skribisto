@@ -124,19 +124,24 @@ impl Widget for HolidayEditor {
                 range.set(None);
             })
         };
-        let add_row =
-            Wrap::new()
-                .spacing(8.0)
-                .line_spacing(8.0)
-                .child(FixedSize::new().width(NAME_FIELD_WIDTH).child(
-                    TextInput::new(self.label.clone()).placeholder(tr!(pace_holiday_label())),
-                ))
-                .child(
-                    FixedSize::new()
-                        .width(RANGE_FIELD_WIDTH)
-                        .child(DateRangeEdit::new(self.range.clone())),
-                )
-                .child(add);
+        let add_row = Wrap::new()
+            .spacing(8.0)
+            .line_spacing(8.0)
+            .child(
+                FixedSize::new().width(NAME_FIELD_WIDTH).child(
+                    // No label on screen beside these fields, and a placeholder is never a
+                    // name: name them for a screen reader.
+                    TextInput::new(self.label.clone())
+                        .label(tr!(pace_holiday_label()))
+                        .placeholder(tr!(pace_holiday_label())),
+                ),
+            )
+            .child(
+                FixedSize::new()
+                    .width(RANGE_FIELD_WIDTH)
+                    .child(DateRangeEdit::new(self.range.clone())),
+            )
+            .child(add);
         col = col.child(vspace(4.0)).child(add_row);
 
         self.root = Some(ctx.add(col));
@@ -313,42 +318,52 @@ impl Widget for AddMilestoneRow {
             && self.words.get() > 0;
         let vm = self.vm.clone();
         let (label, date, words) = (self.label.clone(), self.date.clone(), self.words.clone());
-        let row =
-            Wrap::new()
-                .spacing(8.0)
-                .line_spacing(8.0)
-                .child(FixedSize::new().width(NAME_FIELD_WIDTH).child(
-                    TextInput::new(self.label.clone()).placeholder(tr!(milestone_add_label())),
-                ))
-                .child(FixedSize::new().width(DATE_FIELD_WIDTH).child(
-                    DateEdit::new(self.date.clone()).placeholder(tr!(inspector_milestone_none())),
-                ))
-                .child(
-                    FixedSize::new().width(TARGET_FIELD_WIDTH).child(
-                        SpinBox::new(
-                            self.words.clone(),
-                            0_i64,
-                            skribisto_model::goal_unit::MAX_GOAL,
-                        )
-                        .single_step(1_000)
-                        .special_value_text(tr!(milestone_no_target())),
-                    ),
-                )
-                .child(
-                    Button::new(tr!(milestone_add()))
-                        .variant(ButtonVariant::Plain)
-                        .enabled(ready)
-                        .rich_tooltip(crate::tooltip_registry::GOAL_MILESTONE)
-                        .on_activate_fn(move |_c| {
-                            let Some(d) = date.get().map(crate::date_convert::jiff_to_naive) else {
-                                return;
-                            };
-                            vm.add_milestone(label.get().trim().to_string(), d, Some(words.get()));
-                            label.set(String::new());
-                            date.set(None);
-                            words.set(0);
-                        }),
-                );
+        let row = Wrap::new()
+            .spacing(8.0)
+            .line_spacing(8.0)
+            .child(
+                FixedSize::new().width(NAME_FIELD_WIDTH).child(
+                    // No label on screen beside these fields, and a placeholder is never a
+                    // name: name them for a screen reader.
+                    TextInput::new(self.label.clone())
+                        .label(tr!(milestone_add_label()))
+                        .placeholder(tr!(milestone_add_label())),
+                ),
+            )
+            .child(
+                FixedSize::new().width(DATE_FIELD_WIDTH).child(
+                    DateEdit::new(self.date.clone())
+                        .label(tr!(milestone_date_label()))
+                        .placeholder(tr!(inspector_milestone_none())),
+                ),
+            )
+            .child(
+                FixedSize::new().width(TARGET_FIELD_WIDTH).child(
+                    SpinBox::new(
+                        self.words.clone(),
+                        0_i64,
+                        skribisto_model::goal_unit::MAX_GOAL,
+                    )
+                    .single_step(1_000)
+                    .label(tr!(milestone_target_label()))
+                    .special_value_text(tr!(milestone_no_target())),
+                ),
+            )
+            .child(
+                Button::new(tr!(milestone_add()))
+                    .variant(ButtonVariant::Plain)
+                    .enabled(ready)
+                    .rich_tooltip(crate::tooltip_registry::GOAL_MILESTONE)
+                    .on_activate_fn(move |_c| {
+                        let Some(d) = date.get().map(crate::date_convert::jiff_to_naive) else {
+                            return;
+                        };
+                        vm.add_milestone(label.get().trim().to_string(), d, Some(words.get()));
+                        label.set(String::new());
+                        date.set(None);
+                        words.set(0);
+                    }),
+            );
         self.root = Some(ctx.add(row));
         self.root.into_iter().collect()
     }

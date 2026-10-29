@@ -217,6 +217,7 @@ fn add_row(ctx: &mut BuildContext, vm: &TagsViewModel) -> impl Widget {
     let field = {
         let commit = commit.clone();
         TextInput::new(text.clone())
+            .label(tr!(settings_tags_add_placeholder()))
             .leading_slot(add_glyph().color(TextRole::Secondary))
             .placeholder(tr!(settings_tags_add_placeholder()))
             .validation(validation.clone())
@@ -286,8 +287,11 @@ fn toolbar_row(vm: &TagsViewModel, query: Signal<String>) -> impl Widget {
     HStack::new()
         .spacing(10.0)
         .child(
-            MaxSize::width(FILTER_FIELD_MAX_WIDTH)
-                .child(SearchField::new(query).placeholder(tr!(settings_tags_filter()))),
+            MaxSize::width(FILTER_FIELD_MAX_WIDTH).child(
+                SearchField::new(query)
+                    .label(tr!(settings_tags_filter()))
+                    .placeholder(tr!(settings_tags_filter())),
+            ),
         )
         .child(
             TextWidget::new(lit!(""))
@@ -561,6 +565,7 @@ impl Widget for TagRowView {
             };
             let on_commit = commit.clone();
             TextInput::new(name.clone())
+                .label(tr!(settings_tags_name_label()))
                 .variant(TextInputVariant::Bare)
                 .validation(validation)
                 .on_submit_fn(move |_c| commit())
@@ -585,6 +590,7 @@ impl Widget for TagRowView {
             };
             let on_commit = commit.clone();
             TextInput::new(details.clone())
+                .label(tr!(settings_tags_details_placeholder()))
                 .variant(TextInputVariant::Bare)
                 .placeholder(tr!(settings_tags_details_placeholder()))
                 .on_submit_fn(move |_c| commit())
@@ -642,6 +648,7 @@ impl Widget for TagRowView {
             let selected = Signal::new(shown);
             let vm = self.vm.clone();
             ComboBox::from_items(folders, selected, |o: &PickOption| lit!(o.label.clone()))
+                .label(tr!(settings_tags_creates_in()))
                 .variant(ComboBoxVariant::Plain)
                 .on_select(move |o: &PickOption, _c| vm.set_creates_in(id, o.id))
         };
@@ -658,6 +665,7 @@ impl Widget for TagRowView {
             ComboBox::from_items(self.templates.clone(), selected, |o: &PickOption| {
                 lit!(o.label.clone())
             })
+            .label(tr!(settings_tags_template()))
             .variant(ComboBoxVariant::Plain)
             .on_select(move |o: &PickOption, _c| vm.set_note_template(id, o.id))
         };

@@ -106,7 +106,8 @@ impl RememberSegment {
             *shown.borrow_mut() = id.clone();
         }
 
-        let mut bar = SegmentedControl::new(tab.segment.clone());
+        // Named for a screen reader, which announces it before the selected view.
+        let mut bar = SegmentedControl::new(tab.segment.clone()).label(tr!(segment_bar()));
         let mut content = Switcher::new(segmented_control::index_signal(&tab.segment, &keys));
         for ((id, label, pane), key) in items.into_iter().zip(keys.iter().copied()) {
             let mut segment = Segment::new(label).id(key);

@@ -566,6 +566,7 @@ close-split-view = Lukk delt visning
 drop-open-here = Åpne her
 drop-open-to-side = Åpne ved siden av
 
+segment-bar = Visninger
 segment-chapter = Kapittel
 segment-part = Del
 segment-book = Bok

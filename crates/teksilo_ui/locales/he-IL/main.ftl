@@ -570,6 +570,7 @@ close-split-view = סגירת התצוגה המפוצלת
 drop-open-here = פתיחה כאן
 drop-open-to-side = פתיחה בצד
 
+segment-bar = תצוגות
 segment-chapter = פרק
 segment-part = חלק
 segment-book = ספר

@@ -200,6 +200,8 @@ pub fn binder_search_button(outline: OutlineViewModel) -> impl Widget {
             .child(
                 FixedSize::new().width(200.0).child(
                     SearchField::new(outline.search_query_signal())
+                        // A placeholder is gone once the writer types and is never a name.
+                        .label(tr!(binder_search_placeholder()))
                         .placeholder(tr!(binder_search_placeholder())),
                 ),
             )

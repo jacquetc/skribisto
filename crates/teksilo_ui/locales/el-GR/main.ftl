@@ -591,6 +591,7 @@ close-split-view = Κλείσιμο διαιρεμένης προβολής
 drop-open-here = Άνοιγμα εδώ
 drop-open-to-side = Άνοιγμα στο πλάι
 
+segment-bar = Προβολές
 segment-chapter = Κεφάλαιο
 segment-part = Μέρος
 segment-book = Βιβλίο

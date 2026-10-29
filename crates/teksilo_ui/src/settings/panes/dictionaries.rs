@@ -142,7 +142,9 @@ fn get_more_tab(ctx: &mut BuildContext, vm: &DictionariesViewModel) -> impl Widg
     // (ties the observer to the widget's lifetime — `filters_signal` would panic on a *derived*
     // signal, which is why the push is imperative).
     let query = Signal::new(String::new());
-    let search = SearchField::new(query.clone()).placeholder(tr!(dict_get_more_search()));
+    let search = SearchField::new(query.clone())
+        .label(tr!(dict_get_more_search()))
+        .placeholder(tr!(dict_get_more_search()));
     {
         let filter_view = filtered.clone();
         ctx.effect(&query, move |q| filter_view.set_filter(NAME_COL, q));

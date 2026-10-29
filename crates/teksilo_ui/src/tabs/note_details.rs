@@ -468,6 +468,7 @@ fn name_field(field: &Rc<crate::tabs::TitleField>, stack: Signal<Option<u64>>) -
     let commit_field = field.clone();
     shared::title_input(
         field,
+        tr!(title_field_name()),
         tr!(note_details_name_placeholder()),
         || {},
         move || {

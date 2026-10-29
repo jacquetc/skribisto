@@ -138,8 +138,11 @@ fn toolbar_row(vm: &NoteTemplatesViewModel, query: Signal<String>) -> impl Widge
     HStack::new()
         .spacing(10.0)
         .child(
-            MaxSize::width(FILTER_FIELD_MAX_WIDTH)
-                .child(SearchField::new(query).placeholder(tr!(settings_templates_filter()))),
+            MaxSize::width(FILTER_FIELD_MAX_WIDTH).child(
+                SearchField::new(query)
+                    .label(tr!(settings_templates_filter()))
+                    .placeholder(tr!(settings_templates_filter())),
+            ),
         )
         .child(
             TextWidget::new(lit!(""))
@@ -393,6 +396,7 @@ impl Widget for TemplateRowView {
             };
             let on_commit = commit.clone();
             TextInput::new(name.clone())
+                .label(tr!(settings_templates_name_placeholder()))
                 .variant(TextInputVariant::Bare)
                 .placeholder(tr!(settings_templates_name_placeholder()))
                 .validation(validation)

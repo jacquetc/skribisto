@@ -530,6 +530,7 @@ split-editor = Dividi redaktilon
 close-split-view = Fermi dividitan vidon
 drop-open-here = Malfermi ĉi tie
 drop-open-to-side = Malfermi apude
+segment-bar = Vidoj
 segment-chapter = Ĉapitro
 segment-part = Parto
 segment-book = Libro

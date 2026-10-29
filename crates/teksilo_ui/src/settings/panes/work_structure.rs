@@ -118,7 +118,10 @@ pub(in crate::settings) fn work_structure_pane(
                         confirm_unit_switch(vm.clone(), index.clone(), current, chosen, ctx);
                     }
                 }
-            }),
+            })
+            // Under a group heading and on no form line, so nothing else names it.
+            // The words New Work's own line uses for the same control.
+            .label(tr!(new_work_goal_unit())),
         ))
         .line(
             field_label(tr!(settings_part_resets_chapter())),

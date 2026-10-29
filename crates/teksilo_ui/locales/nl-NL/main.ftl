@@ -566,6 +566,7 @@ close-split-view = Gesplitste weergave sluiten
 drop-open-here = Hier openen
 drop-open-to-side = Openen aan de zijkant
 
+segment-bar = Weergaven
 segment-chapter = Hoofdstuk
 segment-part = Deel
 segment-book = Boek

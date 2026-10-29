@@ -355,6 +355,9 @@ pub fn card_synopsis_editor(
 
 /// A one-line name input bound to `field.value`, wired so an edit marks the tab dirty.
 ///
+/// `name` is what a screen reader calls the field: nothing on screen labels it, and a
+/// placeholder is gone once the field holds a title, and is never a name.
+///
 /// `TextInput` has no `on_change` hook and its text is a plain `Signal`, so the edit is
 /// detected by watching that signal and **diffing against the loaded value** — an effect
 /// that also fires on registration must not mark a freshly-opened tab dirty.
@@ -364,6 +367,7 @@ pub fn card_synopsis_editor(
 /// happened to flush the tab.
 pub fn title_input(
     field: &TitleField,
+    name: impl Into<LocalizedString>,
     placeholder: impl Into<LocalizedString>,
     on_change: impl Fn() + 'static,
     on_commit: impl Fn() + 'static,
@@ -375,6 +379,7 @@ pub fn title_input(
     let commit = Rc::new(on_commit);
     let (finished, submit) = (commit.clone(), commit);
     let input = TextInput::new(field.value.clone())
+        .label(name)
         .placeholder(placeholder)
         .on_commit_fn(move |_ctx| finished())
         .on_submit_fn(move |_ctx| submit());

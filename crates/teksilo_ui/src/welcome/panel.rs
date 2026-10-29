@@ -159,6 +159,9 @@ impl WelcomePanel {
                         spacing: 10.0
                         Expand::horizontal {
                             SearchField::new(vm.search_query()) {
+                                // A placeholder is gone once the writer types and is
+                                // never a name.
+                                label: tr!(welcome_search())
                                 placeholder: tr!(welcome_search())
                             }
                         }

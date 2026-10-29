@@ -23,7 +23,11 @@ pub(in crate::settings) fn keymap_pane(_ctx: &mut BuildContext, crumbs: &Crumbs)
     // the row rather than silently stealing it.
     let body = VStack::new()
         .spacing(12.0)
-        .child(SearchField::new(filter.clone()).placeholder(tr!(settings_keymap_filter())))
+        .child(
+            SearchField::new(filter.clone())
+                .label(tr!(settings_keymap_filter()))
+                .placeholder(tr!(settings_keymap_filter())),
+        )
         .child(
             Expand::horizontal().respect_intrinsic().child(
                 ShortcutSettings::new()

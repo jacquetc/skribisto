@@ -653,6 +653,12 @@ text-heading = Text
 no-content = This item has no editable content.
 untitled = Untitled
 placeholder-title = Title…
+# What a screen reader calls each name field above the text: nothing on screen labels
+# them, and the placeholder is gone once the field holds a name.
+title-field-title = Title
+title-field-subtitle = Subtitle
+title-field-chapter = Chapter title
+title-field-name = Name
 placeholder-subtitle = Subtitle…
 placeholder-chapter-title = Chapter title…
 split-editor = Split editor
@@ -663,6 +669,9 @@ drop-open-to-side = Open to the side
 ## Manuscript streams (Full Chapter / Part / Book + Full Synopsis)
 # The container's own page. "Chapter" is this chapter; "Full Chapter" is this chapter
 # and every scene in it.
+# The views bar's own name, for a screen reader: it is announced before the view
+# that is selected ("Views, Chapter, 1 of 5"), and nothing on screen names the bar.
+segment-bar = Views
 segment-chapter = Chapter
 segment-part = Part
 segment-book = Book
@@ -2986,6 +2995,7 @@ lang-pill-unmute = Turn spell-checking on for { $name }
 settings-page-personal-dictionary = Personal dictionary
 settings-user-dict-desc = Words you add here are treated as correctly spelled everywhere in the app, and never flagged again.
 settings-user-dict-add-placeholder = Add a word…
+settings-user-dict-word-label = Word
 settings-user-dict-add = Add word
 settings-user-dict-search = Filter words
 settings-user-dict-count = { $count ->
@@ -4141,6 +4151,10 @@ milestone-target-gone = Target deleted
 milestone-no-target = No target
 milestone-add = Add
 milestone-add-label = What should be reached
+# Screen-reader names of the new milestone's date and word target: nothing on screen
+# labels them.
+milestone-date-label = Milestone date
+milestone-target-label = Words to reach
 
 # The writing-plan summary shown once when a project with an active plan opens.
 pace-summary-title = Where the book stands
@@ -4415,6 +4429,8 @@ settings-statuses-added = Added "{ $name }"
 settings-statuses-move-up = Move up (less finished)
 settings-statuses-move-down = Move down (more finished)
 settings-statuses-details-placeholder = What this stage means (optional)
+settings-statuses-name-label = Status name
+settings-statuses-category-label = Progress
 settings-statuses-delete = Delete "{ $name }"
 settings-statuses-delete-in-use = { $count ->
     [one] Delete "{ $name }": 1 item is on it and will lose its status

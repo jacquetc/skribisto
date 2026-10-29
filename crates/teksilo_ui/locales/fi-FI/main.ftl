@@ -566,6 +566,7 @@ close-split-view = Sulje jakonäkymä
 drop-open-here = Avaa tähän
 drop-open-to-side = Avaa sivulle
 
+segment-bar = Näkymät
 segment-chapter = Luku
 segment-part = Osa
 segment-book = Kirja

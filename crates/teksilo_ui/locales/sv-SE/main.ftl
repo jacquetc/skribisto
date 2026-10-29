@@ -537,6 +537,7 @@ split-editor = Dela redigeraren
 close-split-view = Stäng delad vy
 drop-open-here = Öppna här
 drop-open-to-side = Öppna bredvid
+segment-bar = Vyer
 segment-chapter = Kapitel
 segment-part = Del
 segment-book = Bok

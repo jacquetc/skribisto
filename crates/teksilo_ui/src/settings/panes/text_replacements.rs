@@ -216,6 +216,7 @@ fn add_row(ctx: &mut BuildContext, vm: &TextReplacementRulesViewModel) -> impl W
     let trigger_field = {
         let commit = commit.clone();
         TextInput::new(trigger.clone())
+            .label(tr!(settings_text_repl_trigger_placeholder()))
             .leading_slot(add_glyph().color(TextRole::Secondary))
             .placeholder(tr!(settings_text_repl_trigger_placeholder()))
             .validation(validation.clone())
@@ -224,6 +225,7 @@ fn add_row(ctx: &mut BuildContext, vm: &TextReplacementRulesViewModel) -> impl W
     let replacement_field = {
         let commit = commit.clone();
         TextInput::new(replacement.clone())
+            .label(tr!(settings_text_repl_replacement_placeholder()))
             .placeholder(tr!(settings_text_repl_replacement_placeholder()))
             .on_submit_fn(move |ctx| commit(ctx))
     };
@@ -262,8 +264,11 @@ fn toolbar_row(vm: &TextReplacementRulesViewModel, query: Signal<String>) -> imp
     HStack::new()
         .spacing(10.0)
         .child(
-            MaxSize::width(FILTER_FIELD_MAX_WIDTH)
-                .child(SearchField::new(query).placeholder(tr!(settings_text_repl_filter()))),
+            MaxSize::width(FILTER_FIELD_MAX_WIDTH).child(
+                SearchField::new(query)
+                    .label(tr!(settings_text_repl_filter()))
+                    .placeholder(tr!(settings_text_repl_filter())),
+            ),
         )
         .child(
             TextWidget::new(lit!(""))
@@ -437,6 +442,7 @@ impl Widget for RuleRowView {
             };
             let on_commit = commit.clone();
             TextInput::new(trigger.clone())
+                .label(tr!(settings_text_repl_trigger_placeholder()))
                 .variant(TextInputVariant::Bare)
                 .validation(validation)
                 .on_submit_fn(move |_c| commit())
@@ -461,6 +467,7 @@ impl Widget for RuleRowView {
             };
             let on_commit = commit.clone();
             TextInput::new(replacement.clone())
+                .label(tr!(settings_text_repl_replacement_placeholder()))
                 .variant(TextInputVariant::Bare)
                 .on_submit_fn(move |_c| commit())
                 .on_commit_fn(move |_c| on_commit())

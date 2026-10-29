@@ -538,6 +538,7 @@ split-editor = Szerkesztő felosztása
 close-split-view = Osztott nézet bezárása
 drop-open-here = Megnyitás itt
 drop-open-to-side = Megnyitás oldalt
+segment-bar = Nézetek
 segment-chapter = Fejezet
 segment-part = Rész
 segment-book = Könyv

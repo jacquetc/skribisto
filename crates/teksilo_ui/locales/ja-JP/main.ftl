@@ -517,6 +517,7 @@ close-split-view = 分割表示を閉じる
 drop-open-here = ここで開く
 drop-open-to-side = 隣のペインで開く
 
+segment-bar = ビュー
 segment-chapter = 章
 segment-part = 部
 segment-book = 本

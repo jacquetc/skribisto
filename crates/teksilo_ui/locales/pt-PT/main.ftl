@@ -566,6 +566,7 @@ close-split-view = Fechar a vista dividida
 drop-open-here = Abrir aqui
 drop-open-to-side = Abrir ao lado
 
+segment-bar = Vistas
 segment-chapter = Capítulo
 segment-part = Parte
 segment-book = Livro

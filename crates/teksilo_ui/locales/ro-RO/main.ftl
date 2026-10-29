@@ -675,6 +675,7 @@ drop-open-to-side = Deschide în lateral
 ## Manuscript streams (Full Chapter / Part / Book + Full Synopsis)
 # The container's own page. "Chapter" is this chapter; "Full Chapter" is this chapter
 # and every scene in it.
+segment-bar = Vizualizări
 segment-chapter = Capitol
 segment-part = Parte
 segment-book = Carte

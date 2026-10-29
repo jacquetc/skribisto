@@ -539,6 +539,7 @@ split-editor = Dividi editor
 close-split-view = Chiudi vista divisa
 drop-open-here = Apri qui
 drop-open-to-side = Apri a lato
+segment-bar = Viste
 segment-chapter = Capitolo
 segment-part = Parte
 segment-book = Libro

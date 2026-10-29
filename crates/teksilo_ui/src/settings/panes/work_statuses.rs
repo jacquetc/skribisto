@@ -166,6 +166,7 @@ fn add_row(ctx: &mut BuildContext, vm: &StatusesViewModel) -> impl Widget {
     let field = {
         let commit = commit.clone();
         TextInput::new(text.clone())
+            .label(tr!(settings_statuses_add_placeholder()))
             .leading_slot(add_glyph().color(TextRole::Secondary))
             .placeholder(tr!(settings_statuses_add_placeholder()))
             .validation(validation.clone())
@@ -182,6 +183,7 @@ fn add_row(ctx: &mut BuildContext, vm: &StatusesViewModel) -> impl Widget {
         ComboBox::from_items(CATEGORIES.to_vec(), selected, |c: &StatusCategory| {
             category_label(c.clone())
         })
+        .label(tr!(settings_statuses_category_label()))
         .variant(ComboBoxVariant::Plain)
         .on_select(move |c: &StatusCategory, _| category.set(c.clone()))
     };
@@ -409,6 +411,7 @@ impl Widget for RungRowView {
             };
             let on_commit = commit.clone();
             TextInput::new(name.clone())
+                .label(tr!(settings_statuses_name_label()))
                 .variant(TextInputVariant::Bare)
                 .validation(validation)
                 .on_submit_fn(move |_c| commit())
@@ -421,6 +424,7 @@ impl Widget for RungRowView {
             ComboBox::from_items(CATEGORIES.to_vec(), selected, |c: &StatusCategory| {
                 category_label(c.clone())
             })
+            .label(tr!(settings_statuses_category_label()))
             .variant(ComboBoxVariant::Plain)
             .on_select(move |c: &StatusCategory, _| vm.set_category(id, c.clone()))
         };
@@ -496,6 +500,7 @@ impl Widget for RungRowView {
             };
             let on_commit = commit.clone();
             TextInput::new(details.clone())
+                .label(tr!(settings_statuses_details_placeholder()))
                 .variant(TextInputVariant::Bare)
                 .placeholder(tr!(settings_statuses_details_placeholder()))
                 .on_submit_fn(move |_c| commit())

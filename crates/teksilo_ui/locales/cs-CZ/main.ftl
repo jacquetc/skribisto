@@ -581,6 +581,7 @@ close-split-view = Zavřít rozdělené zobrazení
 drop-open-here = Otevřít zde
 drop-open-to-side = Otevřít vedle
 
+segment-bar = Zobrazení
 segment-chapter = Kapitola
 segment-part = Část
 segment-book = Kniha

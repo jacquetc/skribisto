@@ -85,6 +85,7 @@ settings-tags-count = { $n ->
    *[other] { $n } tags
 }
 settings-tags-details-placeholder = What this tag means
+settings-tags-name-label = Tag name
 settings-tags-discoverable = Find in prose
 settings-tags-creates-in = New notes go to
 settings-tags-creates-in-unset = Ask me the first time

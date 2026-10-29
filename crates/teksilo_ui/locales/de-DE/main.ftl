@@ -539,6 +539,7 @@ split-editor = Editor teilen
 close-split-view = Geteilte Ansicht schließen
 drop-open-here = Hier öffnen
 drop-open-to-side = Seitlich öffnen
+segment-bar = Ansichten
 segment-chapter = Kapitel
 segment-part = Teil
 segment-book = Buch

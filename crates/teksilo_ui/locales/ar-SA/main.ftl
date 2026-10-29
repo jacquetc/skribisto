@@ -598,6 +598,7 @@ split-editor = تقسيم المحرر
 close-split-view = إغلاق العرض المقسوم
 drop-open-here = الفتح هنا
 drop-open-to-side = الفتح في الجانب
+segment-bar = طرق العرض
 segment-chapter = الفصل
 segment-part = الجزء
 segment-book = الكتاب

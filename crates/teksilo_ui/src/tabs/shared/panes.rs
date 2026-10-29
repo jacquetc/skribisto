@@ -475,6 +475,7 @@ pub fn folder_own_pane(tab: &ContentTab) -> Box<dyn Widget> {
         col = col.child(centered(
             title_input(
                 t,
+                tr!(title_field_title()),
                 tr!(placeholder_title()),
                 tab.mark_dirty_fn(),
                 tab.commit_names_fn(),
@@ -486,6 +487,7 @@ pub fn folder_own_pane(tab: &ContentTab) -> Box<dyn Widget> {
         col = col.child(centered(
             title_input(
                 st,
+                tr!(title_field_subtitle()),
                 tr!(placeholder_subtitle()),
                 tab.mark_dirty_fn(),
                 tab.commit_names_fn(),
@@ -715,6 +717,7 @@ pub fn heading(tab: &ContentTab) -> Box<dyn Widget> {
         col = col.child(centered(
             title_input(
                 t,
+                tr!(title_field_title()),
                 tr!(placeholder_title()),
                 tab.mark_dirty_fn(),
                 tab.commit_names_fn(),
@@ -726,6 +729,7 @@ pub fn heading(tab: &ContentTab) -> Box<dyn Widget> {
         col = col.child(centered(
             title_input(
                 st,
+                tr!(title_field_subtitle()),
                 tr!(placeholder_subtitle()),
                 tab.mark_dirty_fn(),
                 tab.commit_names_fn(),

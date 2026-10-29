@@ -46,6 +46,7 @@ pub(super) fn manuscript_page(
             .child(centered(
                 title_input(
                     t,
+                    tr!(title_field_chapter()),
                     tr!(placeholder_chapter_title()),
                     tab.mark_dirty_fn(),
                     tab.commit_names_fn(),
