@@ -618,3 +618,54 @@ fn only_the_mounted_manuscript_arm_claims_the_tabs_prose_handle() {
          `focused_signal()` asks an off-screen editor and does nothing"
     );
 }
+
+/// Shift+F10 opens the writing surface's menu without moving the caret. Only a
+/// pointer names a place: a menu opened from the keyboard is handed an anchor in
+/// the middle of the editor, and moving the caret there sent Paste, and every
+/// caret-relative row of the menu, somewhere the writer never chose.
+#[test]
+fn opening_the_menu_from_the_keyboard_leaves_the_caret_where_it_was() {
+    use teksilo::widgets::FixedSize;
+    // Enough prose to fill the box, so the keyboard anchor (the editor's centre)
+    // lands on a word rather than below the last line, where it names no offset.
+    let doc = TextDocument::new();
+    let _ = doc.set_djot_sync(&"A line of synopsis prose that says what happens.\n\n".repeat(12));
+    let (editor, handle) = card_synopsis_editor(
+        doc,
+        test_typo(),
+        || {},
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    );
+    let mut tree = WidgetTree::new();
+    let root = tree.add(FixedSize::new().width(320.0).height(200.0).child(editor));
+    tree.layout(SizeProposal::exact(320.0, 200.0));
+    // A render lays the text out, without which no point maps to an offset and the
+    // test could not tell a guarded factory from an unguarded one.
+    let _ = tree.render();
+    let stop = *tree
+        .tab_stops_within(root)
+        .first()
+        .expect("the synopsis editor must be a Tab stop");
+    tree.focus(stop);
+    handle.select_range(3, 3);
+
+    tree.press_key(Key::F10, Modifiers::SHIFT);
+
+    assert_eq!(
+        tree.active_overlays().len(),
+        1,
+        "Shift+F10 must open the editor's menu"
+    );
+    assert_eq!(
+        handle.selection(),
+        (3, 3),
+        "a menu opened from the keyboard must not move the caret"
+    );
+}

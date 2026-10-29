@@ -169,7 +169,10 @@ pub fn synopsis_editor(
         let doc = doc.clone();
         let spell = spell.clone();
         editor = editor.context_menu(move |pt, ctx| {
-            handle.reposition_caret_for_context_menu(pt);
+            // A pointer only, as in the writing surface's menu.
+            if ctx.context_menu_trigger().is_some_and(|t| t.is_pointer()) {
+                handle.reposition_caret_for_context_menu(pt);
+            }
             let recents = super::capture_recents(ctx, capture.as_ref());
             Some(Box::new(editor_context_menu(
                 handle.clone(),
@@ -305,8 +308,11 @@ pub fn card_synopsis_editor(
         let cursor = editor.cursor_position_signal();
         let doc = doc.clone();
         let spell = spell.clone();
-        editor = editor.context_menu(move |pt, _ctx| {
-            handle.reposition_caret_for_context_menu(pt);
+        editor = editor.context_menu(move |pt, ctx| {
+            // A pointer only, as in the writing surface's menu.
+            if ctx.context_menu_trigger().is_some_and(|t| t.is_pointer()) {
+                handle.reposition_caret_for_context_menu(pt);
+            }
             Some(Box::new(editor_context_menu(
                 handle.clone(),
                 cursor.clone(),

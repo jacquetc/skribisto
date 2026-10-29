@@ -266,12 +266,15 @@ impl Turn {
                 .v_scroll_policy(ScrollPolicy::AlwaysOff)
                 // Replace the built-in right-click menu with the comment's own —
                 // the same standard editing actions, led by the Bold/Italic
-                // strip. The factory first moves the caret to the click point
-                // (unless the click lands inside a selection) so Paste lands
+                // strip. For a right-click, the factory first moves the caret to
+                // the click point (unless the click lands inside a selection; a
+                // menu opened from the keyboard keeps the caret) so Paste lands
                 // there and the strip formats the phrase the writer chose — the
                 // same order of operations as the writing editors' menus.
-                .context_menu(move |pt, _ctx| {
-                    handle.reposition_caret_for_context_menu(pt);
+                .context_menu(move |pt, ctx| {
+                    if ctx.context_menu_trigger().is_some_and(|t| t.is_pointer()) {
+                        handle.reposition_caret_for_context_menu(pt);
+                    }
                     Some(Box::new(comment_context_menu(handle.clone())))
                 })
                 .style(CommentBodyStyle {

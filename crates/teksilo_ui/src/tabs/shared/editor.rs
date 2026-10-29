@@ -408,7 +408,12 @@ pub fn writing_column(
         let spell = spell.clone();
         let comments = comments.clone();
         editor = editor.context_menu(move |pt, ctx| {
-            handle.reposition_caret_for_context_menu(pt);
+            // Only a pointer names a place: a menu opened from the keyboard is anchored
+            // on the editor's centre, and moving the caret there sent Paste away from
+            // where the writer is.
+            if ctx.context_menu_trigger().is_some_and(|t| t.is_pointer()) {
+                handle.reposition_caret_for_context_menu(pt);
+            }
             // Which tags this writer reaches for, read off the service the app already
             // holds open rather than reopening its file here. `MenuItem::submenu` runs
             // its factory during `build`, not at hover, so anything the submenu does
