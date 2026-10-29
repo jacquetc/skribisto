@@ -28,7 +28,7 @@ use teksilo::widgets::{
 
 use crate::app_ids::HasWorkId;
 use crate::models::TextReplacementRuleRow;
-use crate::settings::TextReplacementRulesViewModel;
+use crate::settings::{TextReplacementRulesViewModel, field_label};
 use crate::toast_scope::ToastWorkExt;
 
 const TRIGGER_COL: &str = "trigger";
@@ -73,7 +73,7 @@ pub fn text_replacements_pane(
     // so the explanation cannot drift from the one `concept-text-replacement` gives
     // everywhere else, and so it cascades to `concept-smart-punctuation`.
     let toggle = Toggle::new(on.clone())
-        .label(tr!(settings_text_repl_enable()))
+        .labelled_externally()
         .rich_tooltip(crate::tooltip_registry::CONCEPT_TEXT_REPLACEMENT);
 
     // Only the active body needs the `BuildContext` for its own effects, but `Switcher`
@@ -91,7 +91,7 @@ pub fn text_replacements_pane(
         .label(tr!(settings_page_text_replacements()))
         .label_gap(16.0)
         .row_spacing(14.0)
-        .full_width(toggle)
+        .line(field_label(tr!(settings_text_repl_enable())), toggle)
         .full_width(content)
 }
 

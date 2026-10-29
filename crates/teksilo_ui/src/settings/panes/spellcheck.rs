@@ -22,9 +22,10 @@ pub(in crate::settings) fn spellcheck_pane(crumbs: &Crumbs, vm: &SettingsViewMod
             crate::tooltip_registry::CONCEPT_SPELLCHECK,
             group(tr!(settings_group_spellcheck())),
         ))
-        .full_width(
+        .line(
+            field_label(tr!(settings_spellcheck_enabled())),
             Toggle::new(vm.spellcheck_enabled())
-                .label(tr!(settings_spellcheck_enabled()))
+                .labelled_externally()
                 .rich_tooltip_content(TooltipContent::new(
                     "settings.spellcheck",
                     tr!(settings_spellcheck_hint()),

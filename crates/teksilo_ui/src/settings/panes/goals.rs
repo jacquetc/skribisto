@@ -66,7 +66,10 @@ pub(in crate::settings) fn goals_pane(
                 ),
         )
         .full_width(group(tr!(settings_group_goals_display())))
-        .full_width(Toggle::new(vm.show_characters()).label(tr!(settings_show_characters())));
+        .line(
+            field_label(tr!(settings_show_characters())),
+            Toggle::new(vm.show_characters()).labelled_externally(),
+        );
 
     pane_frame(crumbs.of(Pane::Goals), form)
 }

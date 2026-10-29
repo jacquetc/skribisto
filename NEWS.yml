@@ -4,6 +4,7 @@ Type: stable
 Description:
 - "In the Help window, Enter on a topic, the Back button and a link to another page take you into the page's text, and a screen reader announces the page's title as its heading. Focus used to stay on the topic's button, with no sign that the page had changed"
 - "In Settings, Enter on a page in the list on the left, a link to a page, a page in the breadcrumb at the top or a search suggestion takes you to that page's first setting. Focus used to stay where it was, and was lost when that was on the page being left"
+- "Every on/off setting in Settings has its name on the left and its switch on the right, as most pages already did. Some pages put the switch first, and periodic backups now take two lines: one to turn them on, one for the interval"
 - "Help ▸ Keyboard shortcuts opens Settings on its Keyboard shortcuts page, where every shortcut can be found and changed, in the Launcher too. It used to open a small sheet whose list the keyboard could not reach, and whose button did nothing in the Launcher. A Settings window opened for one page, from a message or a menu, now starts on that page's first setting"
 - "A screen reader announces the Help window as “Help - Skribisto” and each page by its title. They used to be “Skribisto” and an unnamed document"
 - "In the Help window, the short definitions under “What things are” open as pages you can enter and read with the keyboard, like the other topics. Their text used to be out of reach of Tab, and of Enter on the topic"

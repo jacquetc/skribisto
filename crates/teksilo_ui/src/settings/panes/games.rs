@@ -65,9 +65,10 @@ pub(in crate::settings) fn games_pane(
         .label_gap(16.0)
         .row_spacing(14.0)
         .full_width(group(tr!(settings_group_games_forward())))
-        .full_width(
+        .line(
+            field_label(tr!(settings_games_forward_toggle())),
             Toggle::new(games.always_forward())
-                .label(tr!(settings_games_forward_toggle()))
+                .labelled_externally()
                 .enabled(playable),
         )
         .full_width(hint(tr!(settings_games_forward_hint())))
@@ -79,9 +80,13 @@ pub(in crate::settings) fn games_pane(
                 .color(TextRole::Warning),
         )
         .full_width(group(tr!(settings_group_games_scope())))
-        .full_width(Toggle::new(games.forward_in_prose()).label(tr!(settings_games_in_prose())))
-        .full_width(
-            Toggle::new(games.forward_in_synopsis()).label(tr!(settings_games_in_synopsis())),
+        .line(
+            field_label(tr!(settings_games_in_prose())),
+            Toggle::new(games.forward_in_prose()).labelled_externally(),
+        )
+        .line(
+            field_label(tr!(settings_games_in_synopsis())),
+            Toggle::new(games.forward_in_synopsis()).labelled_externally(),
         )
         .full_width(hint(tr!(settings_games_scope_hint())))
         // Shown only when the writer has switched the game on and then turned

@@ -46,27 +46,30 @@ pub(in crate::settings) fn distraction_free_form(
         // no Exit toggle — Exit always stays, and that promise is on the first
         // tip here so its absence is not read as an oversight.
         .full_width(group(tr!(settings_group_distraction_free_strip())))
-        .full_width(
+        .line(
+            field_label(tr!(settings_distraction_free_title())),
             Toggle::new(vm.distraction_free_title())
-                .label(tr!(settings_distraction_free_title()))
+                .labelled_externally()
                 .rich_tooltip_content(TooltipContent::new(
                     "settings.df_chrome",
                     tr!(settings_distraction_free_chrome_hint()),
                 )),
         )
-        .full_width(
-            Toggle::new(vm.distraction_free_word_count())
-                .label(tr!(settings_distraction_free_word_count())),
+        .line(
+            field_label(tr!(settings_distraction_free_word_count())),
+            Toggle::new(vm.distraction_free_word_count()).labelled_externally(),
         )
-        .full_width(
-            Toggle::new(vm.distraction_free_session())
-                .label(tr!(settings_distraction_free_session())),
+        .line(
+            field_label(tr!(settings_distraction_free_session())),
+            Toggle::new(vm.distraction_free_session()).labelled_externally(),
         )
-        .full_width(
-            Toggle::new(vm.distraction_free_go()).label(tr!(settings_distraction_free_go())),
+        .line(
+            field_label(tr!(settings_distraction_free_go())),
+            Toggle::new(vm.distraction_free_go()).labelled_externally(),
         )
-        .full_width(
-            Toggle::new(vm.distraction_free_go_to()).label(tr!(settings_distraction_free_go_to())),
+        .line(
+            field_label(tr!(settings_distraction_free_go_to())),
+            Toggle::new(vm.distraction_free_go_to()).labelled_externally(),
         )
 }
 

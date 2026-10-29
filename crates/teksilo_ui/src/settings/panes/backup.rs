@@ -274,7 +274,10 @@ pub fn work_backup_pane(
                 .style(TextStyleRole::Small)
                 .color(TextRole::Secondary),
         )
-        .full_width(Toggle::new(inherit).label(tr!(settings_backup_inherit())))
+        .line(
+            field_label(tr!(settings_backup_inherit())),
+            Toggle::new(inherit).labelled_externally(),
+        )
         .full_width(Divider::new());
     add_policy_rows(form, ctx, get, set, enabled)
         .full_width(Divider::new())
@@ -408,21 +411,30 @@ fn add_policy_rows(
             crate::tooltip_registry::CONCEPT_BACKUP,
             group(tr!(settings_backup_triggers())),
         ))
-        .full_width(
-            Toggle::new(on_close)
-                .label(tr!(settings_backup_on_close()))
-                .enabled(enabled.clone()),
-        )
-        .full_width(
-            Toggle::new(on_open)
-                .label(tr!(settings_backup_on_open()))
-                .enabled(enabled.clone()),
-        )
-        // Interval trigger + its "every N h" spin, on one aligned row.
         .line(
-            Toggle::new(interval_on)
-                .label(tr!(settings_backup_interval()))
+            field_label(tr!(settings_backup_on_close())),
+            Toggle::new(on_close)
+                .labelled_externally()
                 .enabled(enabled.clone()),
+        )
+        .line(
+            field_label(tr!(settings_backup_on_open())),
+            Toggle::new(on_open)
+                .labelled_externally()
+                .enabled(enabled.clone()),
+        )
+        // The interval trigger, then its length: two lines of the one label column.
+        // The switch used to be the spin box's row label, which read as one phrase
+        // to the eye, put the switch on the other side from every other one in the
+        // window, and named the spin box after the switch.
+        .line(
+            field_label(tr!(settings_backup_periodic())),
+            Toggle::new(interval_on)
+                .labelled_externally()
+                .enabled(enabled.clone()),
+        )
+        .line(
+            field_label(tr!(settings_backup_interval_length())),
             FixedSize::new().width(120.0).child(
                 SpinBox::new(interval_hours, 1i64, 168)
                     .suffix(" h")
@@ -444,10 +456,9 @@ fn add_policy_rows(
             field_label(tr!(settings_backup_min_keep())),
             spin_cell(min_keep, 1, 99, &enabled),
         )
-        .full_width(
-            Toggle::new(dedup)
-                .label(tr!(settings_backup_dedup()))
-                .enabled(enabled),
+        .line(
+            field_label(tr!(settings_backup_dedup())),
+            Toggle::new(dedup).labelled_externally().enabled(enabled),
         )
 }
 

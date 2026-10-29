@@ -77,11 +77,13 @@ pub(in crate::settings) fn corkboard_pane(
             )
             .step(crate::CORKBOARD_CARD_SIZE_STEP),
         )
-        .full_width(
-            Toggle::new(vm.corkboard_show_word_count()).label(tr!(corkboard_show_word_count())),
+        .line(
+            field_label(tr!(corkboard_show_word_count())),
+            Toggle::new(vm.corkboard_show_word_count()).labelled_externally(),
         )
-        .full_width(
-            Toggle::new(vm.corkboard_show_card_numbers()).label(tr!(corkboard_show_card_numbers())),
+        .line(
+            field_label(tr!(corkboard_show_card_numbers())),
+            Toggle::new(vm.corkboard_show_card_numbers()).labelled_externally(),
         )
         // The **expanded** editor's own size, beside the card's. The writer opens
         // "expand synopsis" to draft rather than to scan, so it is the one place on

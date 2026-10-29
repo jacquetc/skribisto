@@ -14,9 +14,10 @@ pub(in crate::settings) fn autosave_pane(crumbs: &Crumbs, vm: &SettingsViewModel
         .label_gap(16.0)
         .row_spacing(14.0)
         .full_width(group(tr!(settings_group_autosave())))
-        .full_width(
+        .line(
+            field_label(tr!(settings_autosave())),
             Toggle::new(vm.autosave())
-                .label(tr!(settings_autosave()))
+                .labelled_externally()
                 .rich_tooltip_content(TooltipContent::new(
                     "settings.autosave",
                     tr!(settings_autosave_hint()),

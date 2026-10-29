@@ -92,9 +92,10 @@ pub(in crate::settings) fn margin_lane_pane(
         .label(tr!(settings_page_margin_lane()))
         .label_gap(16.0)
         .row_spacing(14.0)
-        .full_width(
+        .line(
+            field_label(tr!(settings_margin_lane_enabled())),
             Toggle::new(enabled.clone())
-                .label(tr!(settings_margin_lane_enabled()))
+                .labelled_externally()
                 .rich_tooltip_content(
                     TooltipContent::new(
                         "settings.margin_lane_enabled",
@@ -138,9 +139,10 @@ pub(in crate::settings) fn margin_lane_pane(
     // ── the texture column ───────────────────────────────────────────────────
     form = form
         .full_width(group(tr!(settings_group_margin_lane_texture())))
-        .full_width(
+        .line(
+            field_label(tr!(settings_margin_lane_texture())),
             Toggle::new(texture)
-                .label(tr!(settings_margin_lane_texture()))
+                .labelled_externally()
                 .rich_tooltip_content(
                     TooltipContent::new(
                         "settings.margin_lane_texture",
@@ -160,7 +162,10 @@ pub(in crate::settings) fn margin_lane_pane(
             &crate::margin_lane_surface_key(surface),
             crate::margin_lane_surface_default(surface),
         );
-        form = form.full_width(Toggle::new(signal).label(surface_label(surface)));
+        form = form.line(
+            field_label(surface_label(surface)),
+            Toggle::new(signal).labelled_externally(),
+        );
     }
 
     pane_frame(crumbs.of(Pane::MarginLane), VStack::new().child(form))

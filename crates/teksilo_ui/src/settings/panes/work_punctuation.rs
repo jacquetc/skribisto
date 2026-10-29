@@ -200,27 +200,31 @@ pub(in crate::settings) fn work_punctuation_pane(
         .label_gap(16.0)
         .row_spacing(14.0)
         .full_width(group(tr!(settings_group_punctuation())))
-        .full_width(
+        .line(
+            field_label(tr!(settings_punctuation_override())),
             Toggle::new(over.clone())
-                .label(tr!(settings_punctuation_override()))
+                .labelled_externally()
                 .rich_tooltip_content(TooltipContent::new(
                     "settings.punct_override",
                     tr!(settings_punctuation_override_hint()),
                 )),
         )
-        .full_width(
+        .line(
+            field_label(tr!(settings_punctuation_dashes())),
             Toggle::new(dashes)
-                .label(tr!(settings_punctuation_dashes()))
+                .labelled_externally()
                 .enabled(over.clone()),
         )
-        .full_width(
+        .line(
+            field_label(tr!(settings_punctuation_ellipsis())),
             Toggle::new(ellipsis)
-                .label(tr!(settings_punctuation_ellipsis()))
+                .labelled_externally()
                 .enabled(over.clone()),
         )
-        .full_width(
+        .line(
+            field_label(tr!(settings_punctuation_quotes())),
             Toggle::new(quotes)
-                .label(tr!(settings_punctuation_quotes()))
+                .labelled_externally()
                 .enabled(over.clone()),
         )
         .line(
@@ -244,27 +248,30 @@ pub(in crate::settings) fn work_punctuation_pane(
                     .map(|(l, s)| language_sample(l, s)),
             ),
         )
-        .full_width(
+        .line(
+            field_label(tr!(settings_punctuation_spacing())),
             Toggle::new(spacing)
-                .label(tr!(settings_punctuation_spacing()))
+                .labelled_externally()
                 .enabled(over.clone())
                 .rich_tooltip_content(TooltipContent::new(
                     "settings.punct_spacing_work",
                     tr!(settings_punctuation_spacing_hint()),
                 )),
         )
-        .full_width(
+        .line(
+            field_label(tr!(settings_punctuation_dialogue())),
             Toggle::new(dialogue)
-                .label(tr!(settings_punctuation_dialogue()))
+                .labelled_externally()
                 .enabled(over.clone())
                 .rich_tooltip_content(TooltipContent::new(
                     "settings.punct_dialogue_work",
                     tr!(settings_punctuation_dialogue_hint()),
                 )),
         )
-        .full_width(
+        .line(
+            field_label(tr!(settings_punctuation_auto_lists())),
             Toggle::new(auto_lists)
-                .label(tr!(settings_punctuation_auto_lists()))
+                .labelled_externally()
                 .enabled(over.clone())
                 .rich_tooltip_content(TooltipContent::new(
                     "settings.punct_auto_lists_work",
