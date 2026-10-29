@@ -44,7 +44,7 @@ const LINK_DESCRIPTION_GAP: f32 = 3.0;
 /// One entry: the child's name as a link, and what is on it.
 fn entry(child: Pane, nav: &Navigator) -> impl Widget {
     let nav = nav.clone();
-    let link = Link::new(child.label()).on_activate_fn(move |_ctx| nav.go(child));
+    let link = Link::new(child.label()).on_activate_fn(move |ctx| nav.enter(child, ctx));
     let column = VStack::new().spacing(LINK_DESCRIPTION_GAP).child(link);
     match child.description() {
         Some(description) => column.child(hint(description)),
@@ -112,14 +112,20 @@ mod tests {
         fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
             let selected_pane = Signal::new(Pane::SceneTypography);
             let spec = Rc::new(crate::settings::tree_spec(false, &[]));
-            let (tree, reveal, selection, nodes) =
-                crate::settings::tree::build_tree(ctx, &selected_pane, &spec, String::new());
+            let (tree, reveal, selection, nodes) = crate::settings::tree::build_tree(
+                ctx,
+                &selected_pane,
+                &spec,
+                String::new(),
+                crate::settings::nav::PageFocus::default(),
+            );
             *self.out.borrow_mut() = Some(Navigator {
                 selection,
                 nodes: Rc::new(nodes),
                 selected_pane,
                 reveal,
                 spec,
+                focus: crate::settings::nav::PageFocus::default(),
             });
             vec![ctx.add(tree)]
         }
@@ -225,9 +231,12 @@ mod tests {
         ));
         tree.layout(SizeProposal::exact(657.0, 519.0));
 
-        // pane_frame → band · rule · scroll → ScrollArea → Padding → the body
-        // VStack, whose first child is the header column.
-        let scroll = tree.children(tree.children(frame)[2])[0];
+        // pane_frame (a traversal scope) → band · rule · scroll → its traversal
+        // scope → ScrollArea → Padding → the body VStack, whose first child is the
+        // header column.
+        let scroll = [0, 2, 0, 0]
+            .iter()
+            .fold(frame, |id, &i| tree.children(id)[i]);
         let body = tree.children(tree.children(scroll)[0])[0];
         let header = tree.children(body)[0];
         assert!(

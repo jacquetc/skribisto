@@ -3747,12 +3747,6 @@ help-topic-import-projects = Traer un proyecto completo
 help-topic-import-scrivener = Llegar desde Scrivener
 help-topic-backups-and-versions = Copias de seguridad y versiones
 
-help-shortcuts-title = Atajos de teclado
-help-shortcuts-filter = Filtrar atajos
-help-shortcuts-no-matches = Ningún atajo coincide.
-help-shortcuts-rebind = Cambiar atajos…
-help-shortcuts-close = Cerrar
-
 command-palette-placeholder = Escriba un comando
 
 shortcut-name-binder-duplicate = Duplicar

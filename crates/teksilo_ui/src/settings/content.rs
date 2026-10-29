@@ -29,7 +29,7 @@ use teksilo::prelude::*;
 use teksilo::res;
 use teksilo::widgets::{Expand, Padding, Switcher, VStack};
 
-use super::nav::{Branch, Navigator, Pane, Root, Sec, children_of};
+use super::nav::{Branch, Navigator, PageFocus, Pane, Root, Sec, children_of};
 use super::{Crumbs, empty_pane, pane_frame, panes, section_title, tree};
 use crate::backup::BackupSettingsViewModel;
 use crate::sessions::WorkSession;
@@ -102,15 +102,21 @@ pub(super) fn build(
     work_vm: &Option<WorkSettingsViewModel>,
     work: &Option<SingleWork>,
     work_title: String,
-) -> (VStack, Switcher, WidgetId) {
+) -> (VStack, WidgetId, WidgetId, PageFocus) {
     // ── Left rail: search + category tree ───────────────────────────────
     //
     // Built *before* the pages, not after: every page's breadcrumb is derived
     // from this tree's own spec and navigates with this tree's own selection
     // model, so the rail has to exist before the first page can be framed.
     let spec = Rc::new(spec);
-    let (tree, reveal, selection, nodes) =
-        tree::build_tree(ctx, &selected_pane, &spec, work_title.clone());
+    let focus = PageFocus::default();
+    let (tree, reveal, selection, nodes) = tree::build_tree(
+        ctx,
+        &selected_pane,
+        &spec,
+        work_title.clone(),
+        focus.clone(),
+    );
     // Every way of reaching a page that isn't clicking its own row goes
     // through this: the search suggestions, the links on each parent's page,
     // and every ancestor crumb above every page. It must be built from the
@@ -124,6 +130,7 @@ pub(super) fn build(
         selected_pane: selected_pane.clone(),
         reveal,
         spec: spec.clone(),
+        focus: focus.clone(),
     };
     // Added to the tree here rather than built inline, because the panel needs its
     // id: it is what the window focuses on open.
@@ -550,7 +557,59 @@ pub(super) fn build(
     let index = selected_pane.map(move |sel| order.iter().position(|p| p == sel).unwrap_or(0));
     let content = panes
         .into_iter()
-        .fold(Switcher::new(index), |sw, (_, body)| sw.child(body));
+        .fold(Switcher::new(index), |sw, (pane, body)| {
+            sw.child(PageRoot {
+                pane,
+                focus: focus.clone(),
+                body: Some(body),
+                child: None,
+            })
+        });
+    let content = ctx.add(content);
 
-    (left, content, search)
+    (left, content, search, focus)
+}
+
+/// One page of the `Switcher`, which says where it is as it is mounted, so a jump can
+/// put the reader in it. See [`PageFocus`].
+struct PageRoot {
+    pane: Pane,
+    focus: PageFocus,
+    body: Option<Box<dyn Widget>>,
+    child: Option<WidgetId>,
+}
+
+impl std::fmt::Debug for PageRoot {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PageRoot")
+            .field("pane", &self.pane)
+            .finish()
+    }
+}
+
+impl Widget for PageRoot {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        if let Some(body) = self.body.take() {
+            self.child = Some(ctx.add_boxed(body));
+        }
+        let page = ctx.self_id();
+        // A jump that reached this page before it existed: enter it once it is
+        // mounted and laid out. Not from here: while it is being built the page is
+        // not active yet, so it has no focusable descendant to enter.
+        if self.focus.mounted(self.pane, page) {
+            ctx.run_after_mount(move |c| c.request_focus_into(page));
+        }
+        self.child.into_iter().collect()
+    }
+
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        self.child
+            .and_then(|id| ctx.child_size(id, proposal))
+            .map(Into::into)
+            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    }
+
+    fn children(&self) -> Vec<WidgetId> {
+        self.child.into_iter().collect()
+    }
 }

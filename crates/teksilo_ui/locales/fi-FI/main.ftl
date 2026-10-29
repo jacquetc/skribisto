@@ -3755,12 +3755,6 @@ help-topic-import-projects = Koko projektin tuominen
 help-topic-import-scrivener = Siirtyminen Scriveneristä
 help-topic-backups-and-versions = Varmuuskopiot ja versiot
 
-help-shortcuts-title = Pikanäppäimet
-help-shortcuts-filter = Suodata pikanäppäimiä
-help-shortcuts-no-matches = Mikään pikanäppäin ei vastaa hakua.
-help-shortcuts-rebind = Muuta pikanäppäimiä…
-help-shortcuts-close = Sulje
-
 command-palette-placeholder = Kirjoita komento
 
 shortcut-name-binder-duplicate = Monista

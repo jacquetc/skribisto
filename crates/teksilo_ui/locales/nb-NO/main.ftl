@@ -3660,12 +3660,6 @@ help-topic-import-projects = Hente inn et helt prosjekt
 help-topic-import-scrivener = Fra Scrivener
 help-topic-backups-and-versions = Sikkerhetskopier og versjoner
 
-help-shortcuts-title = Hurtigtaster
-help-shortcuts-filter = Filtrer hurtigtaster
-help-shortcuts-no-matches = Ingen hurtigtaster samsvarer.
-help-shortcuts-rebind = Endre hurtigtaster…
-help-shortcuts-close = Lukk
-
 command-palette-placeholder = Skriv inn en kommando
 
 shortcut-name-binder-duplicate = Dupliser

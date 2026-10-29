@@ -4034,12 +4034,6 @@ help-topic-import-projects = העברת פרויקט שלם
 help-topic-import-scrivener = מעבר מ־Scrivener
 help-topic-backups-and-versions = גיבויים וגרסאות
 
-help-shortcuts-title = קיצורי מקלדת
-help-shortcuts-filter = סינון קיצורים
-help-shortcuts-no-matches = אין קיצור תואם.
-help-shortcuts-rebind = שינוי קיצורים…
-help-shortcuts-close = סגירה
-
 command-palette-placeholder = הקלידו פקודה
 
 shortcut-name-binder-duplicate = שכפול

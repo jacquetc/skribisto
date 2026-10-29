@@ -279,7 +279,12 @@ impl WelcomePanel {
             .child(
                 Button::new(tr!(learn_shortcuts()))
                     .variant(ButtonVariant::Ghost)
-                    .on_activate_fn(crate::help::shortcuts::present_shortcuts),
+                    // Settings ▸ Keymap, as from a project window's Help menu.
+                    .on_activate_fn(|ctx| {
+                        crate::settings::present(ctx, || {
+                            SettingsPanel::without_project_at(crate::settings::Pane::Keymap)
+                        })
+                    }),
             )
             .child(
                 Button::new(tr!(learn_website()))

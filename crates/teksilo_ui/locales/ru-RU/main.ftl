@@ -4583,12 +4583,6 @@ help-topic-import-projects = Перенос целого проекта
 help-topic-import-scrivener = Переход с Scrivener
 help-topic-backups-and-versions = Резервные копии и версии
 
-help-shortcuts-title = Сочетания клавиш
-help-shortcuts-filter = Фильтр сочетаний клавиш
-help-shortcuts-no-matches = Подходящих сочетаний нет.
-help-shortcuts-rebind = Изменить сочетания клавиш…
-help-shortcuts-close = Закрыть
-
 command-palette-placeholder = Введите команду
 
 shortcut-name-binder-duplicate = Дублировать

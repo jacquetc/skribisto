@@ -2724,12 +2724,6 @@ help-topic-import-projects = 프로젝트 전체 가져오기
 help-topic-import-scrivener = Scrivener에서 옮겨 오기
 help-topic-backups-and-versions = 백업 및 버전
 
-help-shortcuts-title = 키보드 단축키
-help-shortcuts-filter = 단축키 필터
-help-shortcuts-no-matches = 일치하는 단축키가 없습니다.
-help-shortcuts-rebind = 단축키 변경…
-help-shortcuts-close = 닫기
-
 command-palette-placeholder = 명령 입력
 
 shortcut-name-binder-duplicate = 복제

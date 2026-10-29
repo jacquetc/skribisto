@@ -2803,12 +2803,6 @@ help-topic-import-projects = プロジェクト全体の移行
 help-topic-import-scrivener = Scrivener からの移行
 help-topic-backups-and-versions = バックアップとバージョン
 
-help-shortcuts-title = キーボードショートカット
-help-shortcuts-filter = ショートカットを絞り込む
-help-shortcuts-no-matches = 一致するショートカットはありません。
-help-shortcuts-rebind = ショートカットを変更…
-help-shortcuts-close = 閉じる
-
 command-palette-placeholder = コマンドを入力
 
 shortcut-name-binder-duplicate = 複製

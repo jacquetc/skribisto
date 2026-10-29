@@ -14,6 +14,7 @@
 //! the rest of that file is its view: this half is a pure function of `has_work`
 //! and the registered extension pages, testable without building a widget.
 
+use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -670,9 +671,72 @@ pub(crate) struct Navigator {
     /// The shape the ancestors are read out of — the same `Rc` the rail, the
     /// breadcrumbs and the search index share.
     pub(crate) spec: Rc<Vec<Root>>,
+    /// Where each page is, so [`Self::enter`] can take the reader into one.
+    pub(crate) focus: PageFocus,
+}
+
+/// Which page widget shows which [`Pane`], so a jump can put the keyboard focus on
+/// the page it lands on.
+///
+/// The pages sit in a `Switcher` that mounts each one the first time it is shown, and
+/// shows a newly selected one only at the next layout pass. A focus request sent
+/// into the `Switcher` at the moment of the jump therefore landed in the page being
+/// left, which was then put away with the focus inside it: the reader lost the focus.
+/// Instead, each page registers itself here as it is mounted (`content::PageRoot`),
+/// and a jump asks for *its* page: teksilo enters a page that is mounted but not yet
+/// shown as soon as the layout wakes it, and a page not mounted yet takes the focus
+/// itself when it is.
+#[derive(Clone, Default)]
+pub(crate) struct PageFocus {
+    pages: Rc<RefCell<HashMap<Pane, WidgetId>>>,
+    pending: Rc<Cell<Option<Pane>>>,
+}
+
+impl std::fmt::Debug for PageFocus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PageFocus")
+            .field("mounted", &self.pages.borrow().len())
+            .field("pending", &self.pending.get())
+            .finish()
+    }
+}
+
+impl PageFocus {
+    /// Put the focus on `pane`'s page: its first Tab stop, which is its first setting
+    /// (see `pane_frame`).
+    pub(crate) fn enter(&self, pane: Pane, ctx: &mut EventContext) {
+        let mounted = self.pages.borrow().get(&pane).copied();
+        match mounted {
+            Some(page) => {
+                self.pending.set(None);
+                ctx.request_focus_into(page);
+            }
+            None => self.pending.set(Some(pane)),
+        }
+    }
+
+    /// Record a page as it is mounted. `true` when a jump is waiting for this page,
+    /// which then takes the focus itself.
+    pub(crate) fn mounted(&self, pane: Pane, page: WidgetId) -> bool {
+        self.pages.borrow_mut().insert(pane, page);
+        if self.pending.get() == Some(pane) {
+            self.pending.set(None);
+            return true;
+        }
+        false
+    }
 }
 
 impl Navigator {
+    /// [`Self::go`], then into the page: the reader who followed a link, a crumb or
+    /// a search suggestion lands on the page's first setting. Focus used to stay on
+    /// what was activated, which on a crumb or a link is a control of the page being
+    /// left: it went away with that page, and the focus with it.
+    pub(crate) fn enter(&self, pane: Pane, ctx: &mut EventContext) {
+        self.go(pane);
+        self.focus.enter(pane, ctx);
+    }
+
     /// Reveal, highlight, switch — in that order.
     ///
     /// **The reveal is not a nicety.** Editor and its nested Typography group

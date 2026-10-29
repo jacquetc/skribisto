@@ -491,6 +491,7 @@ fn following_a_link_reveals_the_row_and_moves_the_highlight_and_the_pane() {
         selected_pane: Signal::new(Pane::Section(Sec::Editor)),
         reveal: Some(slice.handle()),
         spec: spec.clone(),
+        focus: super::nav::PageFocus::default(),
     };
     assert!(
         !slice.is_expanded(editor) && !slice.is_expanded(typography),
@@ -533,6 +534,7 @@ fn a_parents_page_builds_and_lays_out() {
         selected_pane: Signal::new(Pane::Section(Sec::Editor)),
         reveal: None,
         spec: spec.clone(),
+        focus: super::nav::PageFocus::default(),
     };
     let crumbs = Crumbs::new(spec.clone(), "", Some(nav.clone()));
     for parent in all_panes(&spec)
@@ -738,7 +740,8 @@ fn a_contributed_page_is_framed_like_a_built_in_one() {
 
     // The frame: breadcrumb row · rule · scrolling body.
     let framed = tree.children(tree.children(hstack)[2]);
-    let page_root = descend(&tree, framed[0], &[0, 0]);
+    // FixedSize → Switcher → the frame's traversal scope → its three bands.
+    let page_root = descend(&tree, framed[0], &[0, 0, 0]);
     let parts = tree.children(page_root);
     assert_eq!(
         parts.len(),
@@ -1138,4 +1141,224 @@ fn ctrl_w_closes_settings_and_then_belongs_to_the_page_again() {
         1,
         "a closed Settings kept Ctrl+W from the project window"
     );
+}
+
+/// The type names of `id` and every ancestor above it, innermost first.
+fn ancestor_type_names(
+    tree: &teksilo::core::widget_tree::WidgetTree,
+    id: WidgetId,
+) -> Vec<&'static str> {
+    let mut out = Vec::new();
+    let mut cur = Some(id);
+    while let Some(node) = cur {
+        if let Some(name) = tree.widget_type_name(node) {
+            out.push(name);
+        }
+        cur = tree.parent(node);
+    }
+    out
+}
+
+/// Enter on a row of the rail takes the reader into that row's page, onto its
+/// first setting. Focus used to stay on the row, so a reader moving by keyboard
+/// had no way to tell that the page beside the rail was the one to read.
+///
+/// A nested page, so its breadcrumb has a link in it: the first Tab stop of the
+/// page must be a setting, not that link back up to the page's parent.
+#[test]
+fn enter_on_a_row_puts_the_reader_on_its_pages_first_setting() {
+    let app_ctx = std::rc::Rc::new(frontend::AppContext::new());
+    let mut tree = crate::test_support::tree_with_settings(&app_ctx);
+    let panel = SettingsPanel::without_project();
+    panel.selected_pane.set(Pane::SceneTypography);
+    let root = tree.add(panel);
+    let proposal = SizeProposal::exact(CARD_W, CARD_H);
+    tree.layout(proposal);
+
+    let mut all = Vec::new();
+    subtree(&tree, root, &mut all);
+    let search = all
+        .iter()
+        .copied()
+        .find(|id| {
+            tree.widget_type_name(*id)
+                .is_some_and(|n| n.contains("SearchField"))
+        })
+        .expect("the rail has a search field");
+    let field = *tree
+        .tab_stops_within(search)
+        .first()
+        .expect("the search field is a Tab stop");
+    tree.focus(field);
+    // From the search field, Tab reaches the rail, on the row of the open page.
+    tree.press_key(Key::Tab, Modifiers::NONE);
+    let row = tree.focused().expect("Tab moved the focus");
+    assert!(
+        ancestor_type_names(&tree, row)
+            .iter()
+            .any(|n| n.contains("TreeView")),
+        "precondition: Tab from the search field lands in the rail"
+    );
+
+    tree.press_key(Key::Enter, Modifiers::NONE);
+    tree.layout(proposal);
+
+    let landed = tree.focused().expect("Enter left the focus somewhere");
+    let chain = ancestor_type_names(&tree, landed);
+    assert!(
+        chain.iter().any(|n| n.contains("Switcher")),
+        "the reader must be in the page, not left on the row: {chain:?}"
+    );
+    assert!(
+        !chain.iter().any(|n| n.contains("Breadcrumb")),
+        "the page's first stop must be a setting, not the breadcrumb's link: {chain:?}"
+    );
+}
+
+/// Opened *at* a page (Help ▸ Keyboard shortcuts), Settings puts the reader on that
+/// page's first control once it is mounted; opened in general (Ctrl+,), it starts in
+/// the rail's search field. The modal focuses the hint as it is, so naming the pages
+/// there left the focus on their container, and Tab then skipped the page.
+#[test]
+fn a_window_opened_at_a_page_starts_in_it_and_a_general_one_in_the_search() {
+    let app_ctx = std::rc::Rc::new(frontend::AppContext::new());
+    let proposal = SizeProposal::exact(CARD_W, CARD_H);
+
+    let mut tree = crate::test_support::tree_with_settings(&app_ctx);
+    let root = tree.add(SettingsPanel::without_project_at(Pane::Keymap));
+    let hint = tree
+        .widget_initial_focus_hint(root)
+        .and_then(|id| tree.widget_type_name(id))
+        .unwrap_or("none");
+    assert!(
+        hint.contains("SearchField"),
+        "the modal's own first focus stays a real control, not {hint}"
+    );
+    settle(&mut tree, proposal);
+    focus_lands_in_the_page(&tree).unwrap();
+
+    let mut tree = crate::test_support::tree_with_settings(&app_ctx);
+    let root = tree.add(SettingsPanel::without_project());
+    settle(&mut tree, proposal);
+    let general = tree
+        .widget_initial_focus_hint(root)
+        .and_then(|id| tree.widget_type_name(id))
+        .unwrap_or("none");
+    assert!(
+        general.contains("SearchField"),
+        "Settings opened in general must start in the search field, not in {general}"
+    );
+    assert!(
+        tree.focused().is_none_or(|f| !ancestor_type_names(&tree, f)
+            .iter()
+            .any(|n| n.contains("PageRoot"))),
+        "and nothing moves it into a page"
+    );
+}
+
+/// The page a jump lands on gets the focus, by whichever door the reader took. Mounted
+/// pages are entered once the layout shows them; a page shown for the first time
+/// enters itself as it is mounted. Focus used to stay on what was activated: on a
+/// crumb or a link, a control of the page being put away, and it went with it.
+fn focus_lands_in_the_page(tree: &teksilo::core::widget_tree::WidgetTree) -> Result<(), String> {
+    let landed = tree.focused().ok_or("the focus is on nothing")?;
+    let chain = ancestor_type_names(tree, landed);
+    if !chain.iter().any(|n| n.contains("PageRoot")) {
+        return Err(format!("not in a page: {chain:?}"));
+    }
+    if chain.iter().any(|n| n.contains("Breadcrumb")) {
+        return Err(format!("on the breadcrumb, not a setting: {chain:?}"));
+    }
+    Ok(())
+}
+
+/// What the app loop does between two events: lay out, run what was queued for after
+/// mounting, lay out again.
+fn settle(tree: &mut teksilo::core::widget_tree::WidgetTree, proposal: SizeProposal) {
+    tree.layout(proposal);
+    tree.run_mount_actions(&mut teksilo::core::NoopWindowOps);
+    tree.layout(proposal);
+}
+
+/// A tree row's `TreeItemWrapper` whose subtree carries `label`.
+fn row_labelled(
+    tree: &teksilo::core::widget_tree::WidgetTree,
+    root: WidgetId,
+    label: &str,
+) -> WidgetId {
+    let mut all = Vec::new();
+    subtree(tree, root, &mut all);
+    let named = tree.find_by_label(label);
+    all.into_iter()
+        .filter(|id| {
+            tree.widget_type_name(*id)
+                .is_some_and(|n| n.contains("TreeItemWrapper"))
+        })
+        .find(|id| {
+            let mut sub = Vec::new();
+            subtree(tree, *id, &mut sub);
+            sub.into_iter().any(|w| Some(w) == named)
+        })
+        .unwrap_or_else(|| panic!("no row labelled {label:?}"))
+}
+
+/// An assistive technology's click on a row not selected yet selects and activates it
+/// in one event, before the page is on screen. The reader lands in that page.
+#[test]
+fn a_click_on_a_row_not_yet_selected_lands_in_its_page() {
+    let app_ctx = std::rc::Rc::new(frontend::AppContext::new());
+    let mut tree = crate::test_support::tree_with_settings(&app_ctx);
+    let panel = SettingsPanel::without_project();
+    panel.selected_pane.set(Pane::SceneTypography);
+    let root = tree.add(panel);
+    let proposal = SizeProposal::exact(CARD_W, CARD_H);
+    tree.layout(proposal);
+
+    let target = row_labelled(&tree, root, &Pane::SynopsisTypography.label().resolve_now());
+    tree.focus(target);
+    tree.dispatch_event(teksilo::core::event::WidgetEvent::AccessAction {
+        action: teksilo::core::accesskit::Action::Click,
+        target: Some(target),
+        target_node: teksilo::core::accessibility::widget_id_to_node_id(target),
+        data: None,
+    });
+    settle(&mut tree, proposal);
+
+    focus_lands_in_the_page(&tree).unwrap();
+}
+
+/// A crumb takes the reader into the page it names, both to a page already shown
+/// once and to one never mounted before.
+#[test]
+fn a_crumb_lands_in_the_page_it_names() {
+    let app_ctx = std::rc::Rc::new(frontend::AppContext::new());
+    let mut tree = crate::test_support::tree_with_settings(&app_ctx);
+    let panel = SettingsPanel::without_project();
+    panel.selected_pane.set(Pane::SceneTypography);
+    let root = tree.add(panel);
+    let proposal = SizeProposal::exact(CARD_W, CARD_H);
+    tree.layout(proposal);
+
+    // Scene's crumbs read "Editor › Typography › Scene"; Typography's page has never
+    // been shown in this window.
+    let typography = Pane::Group(GroupKind::Typography).label().resolve_now();
+    let mut all = Vec::new();
+    subtree(&tree, root, &mut all);
+    let crumb = all
+        .into_iter()
+        .find(|id| {
+            tree.widget_type_name(*id)
+                .is_some_and(|n| n.contains("BreadcrumbSegment"))
+                && tree.find_by_label(&typography).is_some_and(|w| {
+                    let mut sub = Vec::new();
+                    subtree(&tree, *id, &mut sub);
+                    sub.contains(&w)
+                })
+        })
+        .expect("the Typography crumb above Scene");
+    tree.focus(crumb);
+    tree.press_key(Key::Enter, Modifiers::NONE);
+    settle(&mut tree, proposal);
+
+    focus_lands_in_the_page(&tree).unwrap();
 }

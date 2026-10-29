@@ -3688,12 +3688,6 @@ help-topic-import-projects = Een volledig project overzetten
 help-topic-import-scrivener = Overstappen van Scrivener
 help-topic-backups-and-versions = Reservekopieën en versies
 
-help-shortcuts-title = Sneltoetsen
-help-shortcuts-filter = Sneltoetsen filteren
-help-shortcuts-no-matches = Geen enkele sneltoets komt overeen.
-help-shortcuts-rebind = Sneltoetsen wijzigen…
-help-shortcuts-close = Sluiten
-
 command-palette-placeholder = Typ een opdracht
 
 shortcut-name-binder-duplicate = Dupliceren

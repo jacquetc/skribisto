@@ -4057,12 +4057,6 @@ help-topic-import-projects = Převzetí celého projektu
 help-topic-import-scrivener = Přechod z aplikace Scrivener
 help-topic-backups-and-versions = Zálohy a verze
 
-help-shortcuts-title = Klávesové zkratky
-help-shortcuts-filter = Filtrovat zkratky
-help-shortcuts-no-matches = Žádná zkratka neodpovídá.
-help-shortcuts-rebind = Změnit zkratky…
-help-shortcuts-close = Zavřít
-
 command-palette-placeholder = Zadejte příkaz
 
 shortcut-name-binder-duplicate = Duplikovat

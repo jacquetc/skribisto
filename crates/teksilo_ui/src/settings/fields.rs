@@ -16,8 +16,9 @@ use teksilo::canvas::svg::SvgIcon;
 use teksilo::i18n::LocalizedString;
 use teksilo::prelude::*;
 use teksilo::widgets::{
-    Breadcrumb, BreadcrumbItem, Center, Divider, Expand, FixedSize, GroupHeader, HStack,
-    IconWidget, MinSize, Padding, ScrollArea, Slider, TextWidget, VStack,
+    Breadcrumb, BreadcrumbItem, Center, Divider, Expand, FixedSize, FocusScope, GroupHeader,
+    HStack, IconWidget, MinSize, Padding, ScrollArea, Slider, TextWidget, TraversalScopePolicy,
+    VStack,
 };
 
 use super::nav::{Navigator, Pane, Root, Sec, ancestors_of};
@@ -259,7 +260,7 @@ impl Crumbs {
     /// without a [`Navigator`], which is a headless test and never the window.
     pub(crate) fn jump(&self, pane: Pane) -> Option<CrumbJump> {
         let nav = self.nav.clone()?;
-        Some(Box::new(move |_ctx: &mut EventContext| nav.go(pane)))
+        Some(Box::new(move |ctx: &mut EventContext| nav.enter(pane, ctx)))
     }
 }
 
@@ -274,7 +275,22 @@ impl Crumbs {
 pub(crate) const CRUMB_BAND_H: f32 = 34.0;
 
 /// The right-pane frame: breadcrumb header · rule · scrollable content.
+///
+/// **The settings come before the breadcrumb in Tab order**, though the trail is
+/// drawn above them. Entering a page from the rail (Enter on its row) lands on its
+/// first Tab stop, and a reader who asked for a page wants its first setting, not
+/// a link back to the page they came through. The trail stays reachable, after the
+/// last setting. Both halves are traversal scopes: the content's `tab_index` orders
+/// it among the frame's own members only, so the frame keeps its place in the
+/// window's Tab order.
 pub(crate) fn pane_frame(
+    breadcrumb: impl Widget + 'static,
+    content: impl Widget + 'static,
+) -> impl Widget {
+    FocusScope::new(TraversalScopePolicy::Continue).child(pane_frame_body(breadcrumb, content))
+}
+
+fn pane_frame_body(
     breadcrumb: impl Widget + 'static,
     content: impl Widget + 'static,
 ) -> impl Widget {
@@ -296,15 +312,21 @@ pub(crate) fn pane_frame(
         )
         .child(Expand::horizontal().child(Divider::new()))
         .child(
+            // The scope inside the `Expand`, never around it: the column hands its
+            // leftover height to a direct `Expand` child only.
             Expand::vertical().child(
-                ScrollArea::new()
-                    // Content shorter than the viewport is *placed* at the
-                    // viewport's height rather than its own, which is what gives
-                    // [`list_box`]'s `Expand::vertical` something to claim. Without
-                    // it a `ScrollArea` proposes `height: None` for ever and a list
-                    // can only ever be as tall as a hand-written constant.
-                    .widget_resizable(true)
-                    .child(Padding::symmetric(20.0, PANE_H_INSET).child(content)),
+                FocusScope::new(TraversalScopePolicy::Continue)
+                    .child(
+                        ScrollArea::new()
+                            // Content shorter than the viewport is *placed* at the
+                            // viewport's height rather than its own, which is what gives
+                            // [`list_box`]'s `Expand::vertical` something to claim. Without
+                            // it a `ScrollArea` proposes `height: None` for ever and a list
+                            // can only ever be as tall as a hand-written constant.
+                            .widget_resizable(true)
+                            .child(Padding::symmetric(20.0, PANE_H_INSET).child(content)),
+                    )
+                    .tab_index(0),
             ),
         )
 }
@@ -389,11 +411,19 @@ mod tests {
     /// Spelled out rather than searched for: if the frame's shape changes, these
     /// tests must fail loudly rather than quietly measure some other widget.
     fn body_of(tree: &WidgetTree, frame: WidgetId) -> WidgetId {
-        let bands = tree.children(frame);
+        let bands = bands_of(tree, frame);
         assert_eq!(bands.len(), 3, "band · rule · scroll");
-        let scroll = tree.children(bands[2])[0];
+        // The scroll band's `Expand` holds the traversal scope that puts it first in
+        // Tab order.
+        let scope = tree.children(bands[2])[0];
+        let scroll = tree.children(scope)[0];
         let padding = tree.children(scroll)[0];
         tree.children(padding)[0]
+    }
+
+    /// The frame's three bands, inside the traversal scope the frame is.
+    fn bands_of(tree: &WidgetTree, frame: WidgetId) -> Vec<WidgetId> {
+        tree.children(tree.children(frame)[0])
     }
 
     fn frame_with(body: impl Widget + 'static, height: f32) -> (WidgetTree, WidgetId) {
@@ -456,7 +486,7 @@ mod tests {
     #[test]
     fn the_breadcrumb_band_spans_the_pane_at_its_own_height() {
         let (tree, frame) = frame_with(RectWidget::new(), VIEWPORT_H);
-        let band = tree.bounds(tree.children(frame)[0]);
+        let band = tree.bounds(bands_of(&tree, frame)[0]);
         assert!(
             (band.width - VIEWPORT_W).abs() < 0.5,
             "the band should span the pane's {VIEWPORT_W} px, got {}",

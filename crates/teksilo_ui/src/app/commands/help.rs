@@ -77,10 +77,21 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
             .name(tr!(shortcut_name_help_shortcuts()))
             .build(),
     );
-    ctx.register_action_global(
-        Action::new("help.shortcuts")
-            .on_invoke(|_i, c| crate::help::shortcuts::present_shortcuts(c)),
-    );
+    // Settings, opened straight at Keymap: every chord the app has, searchable, and
+    // where one is changed. It used to open a read-only sheet whose rows took no
+    // focus, so a keyboard reader met a filter field and two buttons and nothing
+    // else; the sheet's own button led here.
+    {
+        let session = deps.session.clone();
+        let undo = deps.undo_group.clone();
+        ctx.register_action_global(Action::new("help.shortcuts").on_invoke(move |_i, c| {
+            let session = session.clone();
+            let undo = undo.clone();
+            crate::settings::present(c, move || {
+                crate::settings::SettingsPanel::open_to_keymap(session, &undo)
+            });
+        }));
+    }
 
     ctx.register_shortcut_global(
         Shortcut::new("help.website")
@@ -157,20 +168,4 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     ctx.register_action_global(Action::new("app.command_palette").on_invoke(|_i, c| {
         CommandPalette::new().include(belongs_in_palette).present(c);
     }));
-
-    // Settings, opened straight at Keymap. A separate action rather than a payload on
-    // `app.settings`, which is how this app already addresses a specific settings page
-    // (see `app.settings.games`). Fired by the shortcuts sheet's own Rebind button,
-    // which promises that page by name.
-    {
-        let session = deps.session.clone();
-        let undo = deps.undo_group.clone();
-        ctx.register_action_global(Action::new("app.settings.keymap").on_invoke(move |_i, c| {
-            let session = session.clone();
-            let undo = undo.clone();
-            crate::settings::present(c, move || {
-                crate::settings::SettingsPanel::open_to_keymap(session, &undo)
-            });
-        }));
-    }
 }

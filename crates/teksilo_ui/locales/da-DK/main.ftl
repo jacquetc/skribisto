@@ -4090,12 +4090,6 @@ help-topic-import-projects = Overfør et helt projekt
 help-topic-import-scrivener = Skift fra Scrivener
 help-topic-backups-and-versions = Sikkerhedskopier og versioner
 
-help-shortcuts-title = Tastaturgenveje
-help-shortcuts-filter = Filtrér genveje
-help-shortcuts-no-matches = Ingen genvej matcher.
-help-shortcuts-rebind = Skift genveje…
-help-shortcuts-close = Luk
-
 command-palette-placeholder = Skriv en kommando
 
 # ── Shortcut names ───────────────────────────────────────────────────────────

@@ -22,7 +22,7 @@ use teksilo::prelude::*;
 use teksilo::text_document::matching::{FoldLocale, MatchOptions, find_all};
 use teksilo::widgets::{SearchField, StandardTreeItem, TreeView};
 
-use super::nav::{Branch, GroupKind, Navigator, Pane, Root, Sec, ancestors_of};
+use super::nav::{Branch, GroupKind, Navigator, PageFocus, Pane, Root, Sec, ancestors_of};
 use super::section_title;
 
 /// The parent rows the rail starts **open**.
@@ -80,6 +80,9 @@ pub(crate) fn build_tree(
     selected_pane: &Signal<Pane>,
     spec: &[Root],
     work_title: String,
+    // Where each page is: Enter on a row takes the reader into that row's page,
+    // which is built after this tree.
+    focus: PageFocus,
 ) -> (
     impl Widget,
     Option<TreeSliceHandle<Pane>>,
@@ -174,6 +177,15 @@ pub(crate) fn build_tree(
         Box::new(row)
     })
     .keyed_selection(selection.clone())
+    // Enter (or the activating click) goes into the page: the reader lands on its
+    // first setting (see `pane_frame`), and a screen reader says what that is. The
+    // selection has already moved to this row (an assistive technology's click
+    // selects and activates in one event), so the selected pane is the row's, and
+    // `PageFocus` waits for the page if it is not on screen yet.
+    .on_activate({
+        let selected_pane = selected_pane.clone();
+        move |_row, ctx| focus.enter(selected_pane.get(), ctx)
+    })
     .row_click_expands(false)
     // **Rows measure themselves.** A rail row's natural height is 31.7px at
     // interface text scale 1.3 and 35.3 at 1.5 — and that scale runs from 80% to
@@ -476,6 +488,8 @@ pub(crate) fn search_field(
 
     ctx.add(
         SearchField::new(Signal::new(String::new()))
+            // A placeholder is gone once the writer types and is never a name.
+            .label(tr!(settings_search()))
             .placeholder(tr!(settings_search()))
             .max_suggestions(8)
             .with_suggestions(move |prefix: &str| {
@@ -489,14 +503,14 @@ pub(crate) fn search_field(
                     .map(|(text, _)| text)
                     .collect()
             })
-            .on_select(move |value: &str, _ctx| {
+            .on_select(move |value: &str, ctx| {
                 // Resolved the same way the suggestion was, so the string that came
                 // back names exactly one page — including a disambiguated one.
                 if let Some((_, pane)) = search_rows(&select_index, &select_parents)
                     .into_iter()
                     .find(|(text, _)| text == value)
                 {
-                    nav.go(pane);
+                    nav.enter(pane, ctx);
                 }
             }),
     )

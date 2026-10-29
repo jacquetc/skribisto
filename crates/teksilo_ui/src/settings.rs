@@ -174,6 +174,9 @@ pub struct SettingsPanel {
     /// The rail's search field, captured for [`Widget::initial_focus_hint`] —
     /// see that method for why the header ✕ must not have it.
     search_field: Option<WidgetId>,
+    /// Whether this window was opened to show one page (the `open_to_*` doors), so
+    /// the reader starts on that page's first setting.
+    lands_on_page: bool,
     /// The pane column's live width, written from [`Widget::layout_response`]
     /// (which is the only hook that learns how much room the window really has)
     /// and read by the pane's `FixedSize` in the same pass — `FixedSize` resolves
@@ -244,7 +247,7 @@ pub(crate) const DEFAULT_PANE: Pane = Pane::Appearance;
 impl SettingsPanel {
     /// Opens on [`DEFAULT_PANE`] — Appearance & Behavior ▸ Appearance.
     pub fn new(session: WorkSession, undo: &crate::edit::UndoGroupViewModel) -> Self {
-        Self::opening_at(DEFAULT_PANE, Some(session), Some(undo))
+        Self::opening_at(DEFAULT_PANE, Some(session), Some(undo)).at_no_page_in_particular()
     }
 
     /// The Launcher's settings window — every app-level page, no Work section.
@@ -258,7 +261,14 @@ impl SettingsPanel {
     /// consistency: Appearance is the one page that is fully live with no
     /// project open.
     pub fn without_project() -> Self {
-        Self::opening_at(DEFAULT_PANE, None, None)
+        Self::opening_at(DEFAULT_PANE, None, None).at_no_page_in_particular()
+    }
+
+    /// The Launcher's settings window, opened straight at `pane` — Help ▸ Keyboard
+    /// shortcuts in the Launcher lands on Keymap, as it does in a project window.
+    /// A Work-scoped `pane` shows its "no project" placeholder.
+    pub(crate) fn without_project_at(pane: Pane) -> Self {
+        Self::opening_at(pane, None, None)
     }
 
     /// Open straight to Spelling ▸ Dictionaries — the target of the "install the
@@ -290,10 +300,8 @@ impl SettingsPanel {
         Self::opening_at(Pane::User, Some(session), Some(undo))
     }
 
-    /// Open straight to Keymap — the target of the Help ▸ Keyboard shortcuts sheet's
-    /// own "Change shortcuts…" button, which promises that page by name. The sheet
-    /// itself is read-only, so this is where a reader who wanted to *change* a chord
-    /// rather than look one up ends up.
+    /// Open straight to Keymap — Help ▸ Keyboard shortcuts. The page lists every
+    /// chord the app has, searchable, and is where a chord is changed.
     pub fn open_to_keymap(session: WorkSession, undo: &crate::edit::UndoGroupViewModel) -> Self {
         Self::opening_at(Pane::Keymap, Some(session), Some(undo))
     }
@@ -318,10 +326,21 @@ impl SettingsPanel {
         Self {
             selected_pane: Signal::new(pane),
             search_field: None,
+            // Every door but the two general ones names a page; those two say so
+            // with `at_no_page_in_particular`.
+            lands_on_page: true,
             pane_w: Signal::new(pane_width(CARD_W)),
             session,
             _undo_suspend: undo.map(|g| g.suspend()),
         }
+    }
+
+    /// Settings opened in general (Ctrl+,, the menu), not to show one page: the
+    /// reader starts in the search field, which is where a first keystroke is useful
+    /// in a window of ~30 pages.
+    fn at_no_page_in_particular(mut self) -> Self {
+        self.lands_on_page = false;
+        self
     }
 
     /// The card's real size inside the slot the modal overlay handed it.
@@ -448,7 +467,7 @@ impl Widget for SettingsPanel {
                 s.ids.stack_id.clone(),
             )
         });
-        let (left, content, search_field) = content::build(
+        let (left, content, search_field, pages) = content::build(
             ctx,
             self.session.as_ref(),
             self.selected_pane.clone(),
@@ -462,6 +481,16 @@ impl Widget for SettingsPanel {
         );
         // The rail's search field, for `initial_focus_hint`.
         self.search_field = Some(search_field);
+        // Opened *at* a page (Help ▸ Keyboard shortcuts, a message's "Open settings"):
+        // the reader starts on that page's first setting, not in the search field,
+        // since that page is what they asked for. After the modal has focused its
+        // hint, and through the pages' own registry: the hint is focused as it is, so
+        // naming the pages there put the focus on their container, and Tab then
+        // skipped the page.
+        if self.lands_on_page {
+            let pane = self.selected_pane.get();
+            ctx.run_after_mount(move |c| pages.enter(pane, c));
+        }
 
         let footer = self.footer(vm, scale, not_defaults);
         let right = VStack::new()
@@ -590,6 +619,9 @@ impl Widget for SettingsPanel {
     /// keyboard user's first keystroke is useful in a window of ~30 pages: type,
     /// and the tree filters. Same reasoning as `PaceSummaryPanel`'s footer Close,
     /// with a different answer because this card has somewhere better to put it.
+    ///
+    /// A window opened *at* a page moves on into that page once it is mounted (see
+    /// `build`).
     fn initial_focus_hint(&self) -> Option<WidgetId> {
         self.search_field
     }

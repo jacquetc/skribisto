@@ -4453,12 +4453,6 @@ help-topic-import-projects = Preluarea unui proiect întreg
 help-topic-import-scrivener = Trecerea de la Scrivener
 help-topic-backups-and-versions = Copii de siguranță și versiuni
 
-help-shortcuts-title = Comenzi rapide de la tastatură
-help-shortcuts-filter = Filtrează comenzile rapide
-help-shortcuts-no-matches = Nicio comandă rapidă nu corespunde.
-help-shortcuts-rebind = Modifică comenzile rapide…
-help-shortcuts-close = Închide
-
 command-palette-placeholder = Tastați o comandă
 
 # ── Shortcut names ───────────────────────────────────────────────────────────

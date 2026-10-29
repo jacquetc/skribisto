@@ -4193,12 +4193,6 @@ help-topic-import-projects = Bringing a whole project across
 help-topic-import-scrivener = Coming from Scrivener
 help-topic-backups-and-versions = Backups and versions
 
-help-shortcuts-title = Keyboard shortcuts
-help-shortcuts-filter = Filter shortcuts
-help-shortcuts-no-matches = No shortcut matches.
-help-shortcuts-rebind = Change shortcuts…
-help-shortcuts-close = Close
-
 command-palette-placeholder = Type a command
 
 # ── Shortcut names ───────────────────────────────────────────────────────────

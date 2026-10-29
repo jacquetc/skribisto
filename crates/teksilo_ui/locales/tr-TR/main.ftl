@@ -3640,12 +3640,6 @@ help-topic-import-projects = Bütün bir projeyi aktarmak
 help-topic-import-scrivener = Scrivener'dan geçiş
 help-topic-backups-and-versions = Yedekler ve sürümler
 
-help-shortcuts-title = Klavye kısayolları
-help-shortcuts-filter = Kısayolları süz
-help-shortcuts-no-matches = Eşleşen kısayol yok.
-help-shortcuts-rebind = Kısayolları değiştir…
-help-shortcuts-close = Kapat
-
 command-palette-placeholder = Bir komut yazın
 
 shortcut-name-binder-duplicate = Çoğalt

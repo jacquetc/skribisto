@@ -4438,12 +4438,6 @@ help-topic-import-projects = Przenoszenie całego projektu
 help-topic-import-scrivener = Przejście z programu Scrivener
 help-topic-backups-and-versions = Kopie zapasowe i wersje
 
-help-shortcuts-title = Skróty klawiszowe
-help-shortcuts-filter = Filtruj skróty
-help-shortcuts-no-matches = Żaden skrót nie pasuje.
-help-shortcuts-rebind = Zmień skróty…
-help-shortcuts-close = Zamknij
-
 command-palette-placeholder = Wpisz polecenie
 
 shortcut-name-binder-duplicate = Duplikuj

@@ -4128,12 +4128,6 @@ help-topic-import-projects = Importer un projet entier
 help-topic-import-scrivener = Venir de Scrivener
 help-topic-backups-and-versions = Copies de secours et versions
 
-help-shortcuts-title = Raccourcis clavier
-help-shortcuts-filter = Filtrer les raccourcis
-help-shortcuts-no-matches = Aucun raccourci ne correspond.
-help-shortcuts-rebind = Modifier les raccourcis…
-help-shortcuts-close = Fermer
-
 command-palette-placeholder = Saisissez une commande
 
 # ── Shortcut names ───────────────────────────────────────────────────────────

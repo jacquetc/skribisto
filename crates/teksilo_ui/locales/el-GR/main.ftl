@@ -3759,11 +3759,6 @@ help-topic-import-documents = Εισαγωγή εγγράφων
 help-topic-import-projects = Μεταφορά ολόκληρου έργου
 help-topic-import-scrivener = Μετάβαση από το Scrivener
 help-topic-backups-and-versions = Αντίγραφα ασφαλείας και εκδόσεις
-help-shortcuts-title = Συντομεύσεις πληκτρολογίου
-help-shortcuts-filter = Φιλτράρισμα συντομεύσεων
-help-shortcuts-no-matches = Καμία συντόμευση δεν αντιστοιχεί.
-help-shortcuts-rebind = Αλλαγή συντομεύσεων…
-help-shortcuts-close = Κλείσιμο
 command-palette-placeholder = Πληκτρολογήστε μια εντολή
 
 shortcut-name-binder-duplicate = Διπλότυπο
