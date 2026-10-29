@@ -198,10 +198,13 @@ impl Widget for PaceCharts {
             }
             line_series.push(target);
         }
+        // Each chart is named after the title above it. Unnamed, a screen reader heard the
+        // chart's default ("Bar chart: 1 series, 2 categories"), in English.
         let line = LineChart::new(ChartModel::from_series_vec(line_series))
             .points(true)
             .grid(true)
-            .legend(true);
+            .legend(true)
+            .access_label(tr!(pace_chart_progression()));
 
         // Words written per day, each bar tinted red when that day fell below the
         // even-pace daily target (and accent otherwise).
@@ -258,7 +261,7 @@ impl Widget for PaceCharts {
             .child(crate::tabs::shared::wide_chart(
                 per_day_len,
                 crate::tabs::shared::STRIP_HEIGHT,
-                bars,
+                bars.access_label(tr!(pace_chart_words_per_day())),
             ));
         self.root = Some(ctx.add(col));
         self.root.into_iter().collect()

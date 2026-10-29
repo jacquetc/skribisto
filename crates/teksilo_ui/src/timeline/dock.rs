@@ -438,6 +438,9 @@ impl TimelinePanel {
             .axis_x(AxisConfig::new().show_axis_line(false))
             .hover_tooltip(true)
             .selection(self.selection.clone())
+            // Named for what it shows. Unnamed, a screen reader heard the chart's
+            // default, "Bar chart: 1 series, 2 categories", in English.
+            .access_label(tr!(timeline_series_name()))
     }
 
     /// The date filter — the way to reach March without walking through the
@@ -1379,6 +1382,30 @@ mod tests {
             !spoken.iter().any(|t| t.contains("23:30")),
             "no moment is named on UTC's clock: {spoken:?}",
         );
+    }
+
+    /// The chart is named for what it shows. Unnamed, it took the chart's own default,
+    /// and a screen reader in a French interface heard "Bar chart: 1 series, 2
+    /// categories".
+    #[test]
+    fn the_chart_is_named_for_what_it_shows() {
+        crate::test_support::with_real_messages(|| {
+            let vm = TimelineViewModel::new();
+            vm.scan();
+            vm.seed_moments_for_test(three_evenings_in_utc());
+            let mut tree = WidgetTree::new().with_theme(teksilo::presets::intui::light());
+            tree.add_boxed(Box::new(TimelinePanel::new(vm)));
+            tree.layout(SizeProposal::exact(1200.0, 180.0));
+            let _ = tree.render();
+            let charts: Vec<String> = tree
+                .sync_accessibility()
+                .nodes
+                .iter()
+                .filter(|(_, n)| n.role() == teksilo::core::accesskit::Role::GraphicsDocument)
+                .map(|(_, n)| n.label().unwrap_or_default().to_string())
+                .collect();
+            assert_eq!(charts, vec![tr!(timeline_series_name()).resolve_now()]);
+        });
     }
 
     /// The line under the band dates the oldest version on the writer's

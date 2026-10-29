@@ -528,7 +528,15 @@ impl Widget for RuleRowView {
                 .child(toggle)
                 .child(delete),
         );
-        let root = ctx.add(body);
+        // A list row is named after its first named control unless it names itself, and
+        // here that is the shorthand field, labelled "Shorthand" in every row: a screen
+        // reader moving down the list heard the same word on every rule. The row is the
+        // rule, so it says the rule, in the words the page's own description uses.
+        let name = tr!(settings_text_repl_row_name(
+            trigger = self.row.trigger.clone(),
+            replacement = self.row.replacement.clone()
+        ));
+        let root = ctx.add(body.access_label(name));
         self.root_child = Some(root);
         vec![root]
     }

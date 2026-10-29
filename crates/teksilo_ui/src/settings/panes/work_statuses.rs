@@ -527,7 +527,10 @@ impl Widget for RungRowView {
                 )
                 .child(Padding::new(0.0, 0.0, 0.0, ORDINAL_WIDTH + 8.0).child(details_field)),
         );
-        let root = ctx.add(body);
+        // A list row is named after its first named control unless it names itself, and
+        // here that is the rung's ordinal: a screen reader moving down the ladder heard
+        // "1", "2", "3". The row is the rung, so it says the rung's name.
+        let root = ctx.add(body.access_label(lit!(self.row.name.clone())));
         self.root_child = Some(root);
         vec![root]
     }

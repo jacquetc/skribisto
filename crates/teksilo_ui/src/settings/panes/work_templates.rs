@@ -458,7 +458,14 @@ impl Widget for TemplateRowView {
             .child(down)
             .child(delete);
 
-        let child = ctx.add(Padding::symmetric(6.0, 10.0).child(root));
+        // A list row is named after its first named control unless it names itself. The row
+        // is the template, so it says the template's name rather than whatever control
+        // happens to come first.
+        let child = ctx.add(
+            Padding::symmetric(6.0, 10.0)
+                .child(root)
+                .access_label(lit!(self.row.name.clone())),
+        );
         self.root_child = Some(child);
         vec![child]
     }

@@ -3038,6 +3038,7 @@ settings-text-repl-count = { $n ->
    *[other] { $n } rules
 }
 settings-text-repl-row-enabled = Use this rule
+settings-text-repl-row-name = "{ $trigger }" becomes "{ $replacement }"
 settings-text-repl-delete = Delete the rule for { $trigger }
 settings-text-repl-deleted = Deleted the rule for "{ $trigger }"
 settings-text-repl-empty = No rules yet.

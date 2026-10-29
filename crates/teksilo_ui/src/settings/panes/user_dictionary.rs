@@ -244,7 +244,10 @@ fn word_row(vm: &UserDictionaryViewModel, row: &DictWordRow, index: usize) -> im
     if index > 0 {
         col = col.child(Divider::new());
     }
-    col.child(body)
+    // A list row is named after its first named control unless it names itself, and here
+    // that is the word field, labelled "Word" in every row. The row is the word, so it says
+    // the word.
+    col.child(body).access_label(lit!(row.word.clone()))
 }
 
 /// The centered "no words yet" hint shown inside the list card when the dictionary is empty.

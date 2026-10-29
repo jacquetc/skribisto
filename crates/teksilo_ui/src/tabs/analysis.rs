@@ -629,7 +629,10 @@ fn shape_view(
                 .reference_line(ReferenceLine::new(
                     median as f32,
                     tr!(analysis_median_line(count = median.round() as i64)),
-                )),
+                ))
+                // Named after its heading. Unnamed, a screen reader heard the chart's
+                // default, "Bar chart: 1 series, 12 categories", in English.
+                .access_label(tr!(analysis_words_per_scene())),
             )
             note(tr!(analysis_median_words(count = median.round() as i64)))
             heading(tr!(analysis_dialogue()))
@@ -646,7 +649,8 @@ fn shape_view(
                             .data(dialogue_points),
                     ]))
                     .grid(true)
-                    .legend(false),
+                    .legend(false)
+                    .access_label(tr!(analysis_dialogue())),
                 )
             }
             child: footnote_section

@@ -530,3 +530,74 @@ pub(crate) fn finish<T>(
         panic!("a text-document operation did not finish within {OPERATION_LIMIT:?}")
     })
 }
+
+/// What [`PaneHost`] calls to build its pane.
+#[cfg(feature = "mocks")]
+type PaneBuilder =
+    dyn FnMut(&mut teksilo::prelude::BuildContext) -> Box<dyn teksilo::prelude::Widget>;
+
+/// Hosts what a plain pane builder returns, the way `settings::content::build` hosts a
+/// Settings page: the builder is handed the host's own `BuildContext`, so effects it
+/// installs live as long as the host.
+#[cfg(feature = "mocks")]
+pub(crate) struct PaneHost {
+    build: Box<PaneBuilder>,
+    child: Option<WidgetId>,
+}
+
+#[cfg(feature = "mocks")]
+impl PaneHost {
+    pub(crate) fn new(
+        build: impl FnMut(&mut teksilo::prelude::BuildContext) -> Box<dyn teksilo::prelude::Widget>
+        + 'static,
+    ) -> Self {
+        Self {
+            build: Box::new(build),
+            child: None,
+        }
+    }
+}
+
+#[cfg(feature = "mocks")]
+impl std::fmt::Debug for PaneHost {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PaneHost").finish()
+    }
+}
+
+#[cfg(feature = "mocks")]
+impl teksilo::prelude::Widget for PaneHost {
+    fn build(&mut self, ctx: &mut teksilo::prelude::BuildContext) -> Vec<WidgetId> {
+        let pane = (self.build)(ctx);
+        let id = ctx.add_boxed(pane);
+        self.child = Some(id);
+        vec![id]
+    }
+
+    fn layout_response(
+        &self,
+        proposal: SizeProposal,
+        ctx: &teksilo::prelude::LayoutContext,
+    ) -> teksilo::prelude::LayoutResponse {
+        self.child
+            .and_then(|id| ctx.child_size(id, proposal))
+            .map(teksilo::prelude::LayoutResponse::from)
+            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    }
+
+    fn children(&self) -> Vec<WidgetId> {
+        self.child.into_iter().collect()
+    }
+}
+
+/// The names a screen reader hears for the rows of every list in `tree`, in tree order:
+/// the `ListBoxOption` nodes the accessibility walk emits, each named from its content.
+#[cfg(feature = "mocks")]
+pub(crate) fn list_row_names(tree: &mut WidgetTree) -> Vec<String> {
+    tree.sync_accessibility()
+        .nodes
+        .iter()
+        .filter(|(_, node)| node.role() == teksilo::core::accesskit::Role::ListBoxOption)
+        .map(|(_, node)| node.label().unwrap_or_default().to_string())
+        .collect()
+}

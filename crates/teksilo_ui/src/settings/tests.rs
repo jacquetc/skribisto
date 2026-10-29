@@ -1362,3 +1362,141 @@ fn a_crumb_lands_in_the_page_it_names() {
 
     focus_lands_in_the_page(&tree).unwrap();
 }
+
+/// The names a screen reader hears for the list rows of one Settings page, sorted.
+#[cfg(feature = "mocks")]
+fn row_names_on_page(
+    app_ctx: &Rc<frontend::AppContext>,
+    build: impl FnMut(&mut BuildContext) -> Box<dyn Widget> + 'static,
+) -> Vec<String> {
+    let mut tree = crate::test_support::tree_with_settings(app_ctx);
+    tree.add_boxed(Box::new(crate::test_support::PaneHost::new(build)));
+    // Tall enough for every fabricated row to be realised: a virtualised list emits
+    // nodes only for the rows it has built.
+    tree.layout(SizeProposal::exact(900.0, 4000.0));
+    let mut names = crate::test_support::list_row_names(&mut tree);
+    names.sort();
+    names
+}
+
+/// **A list row says what it holds.** A screen reader moving down one of Settings'
+/// editable lists hears each row's name, and a row is named after its first named
+/// control unless it names itself. A tag read as its colour ("#C0392B"), a status rung as
+/// its ordinal, and every dictionary word and every text replacement as its field's label,
+/// the same word on every row.
+#[cfg(feature = "mocks")]
+#[test]
+fn every_editable_list_row_is_named_after_what_it_holds() {
+    use crate::app_ids::AppIds;
+    use crate::models::{
+        DictWordListModel, TextReplacementRuleListModel, WorkNoteTemplatesListModel,
+    };
+    use crate::note_templates::NoteTemplatesViewModel;
+    use crate::singles::{SingleDictWord, SingleWork};
+    use crate::spellcheck::UserDictionaryViewModel;
+    use crate::statuses::StatusesViewModel;
+    use crate::tags::TagsViewModel;
+
+    fn sorted(mut names: Vec<String>) -> Vec<String> {
+        names.sort();
+        names
+    }
+
+    crate::test_support::with_real_messages(|| {
+        let app_ctx = Rc::new(frontend::AppContext::new());
+        let ids = AppIds::new();
+        let templates = NoteTemplatesViewModel::new(
+            WorkNoteTemplatesListModel::new(app_ctx.clone(), ids.clone()),
+            ids.clone(),
+        );
+
+        let tags = TagsViewModel::detached(app_ctx.clone(), ids.clone());
+        let expected = sorted(tags.rows().into_iter().map(|r| r.name).collect());
+        assert!(!expected.is_empty(), "the mocks fabricate tags");
+        let (vm, t) = (tags.clone(), templates.clone());
+        assert_eq!(
+            row_names_on_page(&app_ctx, move |ctx| Box::new(
+                super::panes::work_tags::work_tags_pane(ctx, &vm, &t)
+            )),
+            expected,
+            "Tags"
+        );
+
+        let statuses = StatusesViewModel::new(app_ctx.clone(), ids.clone());
+        let expected = sorted(statuses.ladder().into_iter().map(|r| r.name).collect());
+        assert!(!expected.is_empty(), "the mocks fabricate a ladder");
+        assert_eq!(
+            row_names_on_page(&app_ctx, move |ctx| Box::new(
+                super::panes::work_statuses::work_statuses_pane(ctx, &statuses)
+            )),
+            expected,
+            "Statuses"
+        );
+
+        let expected = sorted(templates.rows().into_iter().map(|r| r.name).collect());
+        assert!(!expected.is_empty(), "the mocks fabricate templates");
+        assert_eq!(
+            row_names_on_page(&app_ctx, move |ctx| Box::new(
+                super::panes::work_templates::work_templates_pane(ctx, &templates)
+            )),
+            expected,
+            "Note templates"
+        );
+
+        let dictionary = UserDictionaryViewModel::new(
+            DictWordListModel::new(app_ctx.clone(), ids.clone()),
+            SingleDictWord::new(app_ctx.clone()),
+            ids.clone(),
+        );
+        let expected = sorted(dictionary.words().into_iter().map(|r| r.word).collect());
+        assert!(!expected.is_empty(), "the mocks fabricate words");
+        assert_eq!(
+            row_names_on_page(&app_ctx, move |ctx| Box::new(
+                super::panes::user_dictionary::user_dictionary_pane(ctx, &dictionary)
+            )),
+            expected,
+            "User dictionary"
+        );
+
+        let work = SingleWork::new(app_ctx.clone());
+        work.set_custom_replacement_rules_enabled(true);
+        let rules = TextReplacementRulesViewModel::new(
+            TextReplacementRuleListModel::new(app_ctx.clone(), ids.clone()),
+            work,
+            ids,
+        );
+        let expected = sorted(
+            rules
+                .rows()
+                .into_iter()
+                .map(|r| format!("\"{}\" becomes \"{}\"", r.trigger, r.replacement))
+                .collect(),
+        );
+        assert!(!expected.is_empty(), "the mocks fabricate rules");
+        assert_eq!(
+            row_names_on_page(&app_ctx, move |ctx| Box::new(
+                super::panes::text_replacements::text_replacements_pane(ctx, &rules)
+            )),
+            expected,
+            "Text replacements"
+        );
+    });
+}
+
+/// The French name of a rule row carries both of its words: `tr!` checks a key's
+/// arguments against `en-US` only, so a French message naming the wrong variable would
+/// compile and read a placeholder instead of the writer's shorthand.
+#[test]
+fn a_rule_rows_name_carries_both_words_in_french() {
+    crate::test_support::with_shipped_messages("fr-FR", || {
+        let name = tr!(settings_text_repl_row_name(
+            trigger = "stp".to_string(),
+            replacement = "s’il te plaît".to_string()
+        ))
+        .resolve_now();
+        assert!(
+            name.contains("stp") && name.contains("s’il te plaît"),
+            "{name}"
+        );
+    });
+}

@@ -707,7 +707,10 @@ impl Widget for TagRowView {
                         .child(pickers_line(creates_in, template)),
                 ),
         );
-        let root = ctx.add(body);
+        // A list row is named after its first named control unless it names itself, and
+        // here that control is the colour picker: a screen reader moving down the list heard
+        // "#C0392B" for a tag. The row is the tag, so it says the tag's name.
+        let root = ctx.add(body.access_label(lit!(self.row.name.clone())));
         self.root_child = Some(root);
         vec![root]
     }
