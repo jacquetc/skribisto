@@ -129,6 +129,10 @@ pub fn theme_mode_of(theme: &teksilo::core::styles::Theme) -> &'static str {
 pub const IMAGE_SIZE_POLICY_KEY: &str = "editor.image_size_policy";
 /// Ask, every time, until the writer says otherwise.
 pub const IMAGE_SIZE_POLICY_DEFAULT: &str = "ask";
+/// Whether a start with a screen reader running offers the screen-reader guide (see
+/// `shared::screen_reader_offer`). On until the offer's own "Do not show this again"
+/// box turns it off; Help ▸ Using a screen reader opens the guide either way.
+pub const SCREEN_READER_OFFER_KEY: &str = "ui.screen_reader_offer";
 pub const LOCALE_KEY: &str = "ui.locale";
 /// Who is using this installation — the name a comment or reply is signed with.
 ///
@@ -677,6 +681,14 @@ pub static SETTINGS: &[SettingSpec] = &[
               them from the signing name rather than showing none.",
     },
     // ── Appearance & behaviour ────────────────────────────────────────────────
+    SettingSpec {
+        key: crate::SCREEN_READER_OFFER_KEY,
+        ty: "bool",
+        default: || val(true),
+        check: check::<bool>,
+        doc: "Offer the screen-reader guide when Skribisto starts with a screen reader \
+              running; the offer's \"Do not show this again\" box writes false.",
+    },
     SettingSpec {
         key: crate::IMAGE_SIZE_POLICY_KEY,
         ty: "string (\"ask\" | \"keep\" | \"downscale\")",

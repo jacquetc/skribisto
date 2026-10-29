@@ -559,6 +559,7 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
                         .intent("help.shortcuts")
                         .shortcut("help.shortcuts"),
                 )
+                .item(MenuEntry::new(tr!(menu_help_screen_reader())).intent("help.screen_reader"))
                 .separator()
                 .item(MenuEntry::new(tr!(menu_help_website())).intent("help.website"));
             // Sits with the other outward-facing rows, and is added only where the

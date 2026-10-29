@@ -3998,6 +3998,7 @@ pace-summary-menu = תוכנית כתיבה…
 
 menu-help-topics = נושאי עזרה (&T)
 menu-help-shortcuts = קיצורי מקלדת… (&K)
+menu-help-screen-reader = שימוש בקורא מסך (&E)
 menu-help-website = ‏Skribisto באינטרנט (&W)
 menu-help-report = דיווח על בעיה… (&R)
 menu-help-check-updates = בדיקת עדכונים (&U)

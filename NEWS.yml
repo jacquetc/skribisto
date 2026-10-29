@@ -14,6 +14,8 @@ Description:
 - "Every panel has its own command and shortcut: Ctrl+Shift+B the binder, T the trash, C the comments, G the writing games, I the inspector, O formatting, D this document's comments, K the footnotes, R the versions, J the search preview and L Go back in time, beside Ctrl+Shift+F for Search. View ▸ Panels lists them all, and the command palette and Settings ▸ Keyboard shortcuts too"
 - "The View menu keeps the panels in their own submenu, then the left, right and bottom panels, then the window's modes. Panels and window settings used to be mixed in one list, and half the panels were missing from it"
 - "Search preview no longer claims F10, which belongs to the menu bar on Windows and Linux and never reached it there. Revealing an item in the binder brings the binder in front of Search or the Trash, which used to keep it hidden"
+- "Help ▸ Using a screen reader opens a new page for writers who use NVDA, JAWS, Orca or VoiceOver, with the cursor in its text: how the window is laid out, the shortcut of every panel, and the keys of the binder, the views bar, the menus and Settings"
+- "When Skribisto starts with a screen reader running, it offers to open that page. Tick “Do not show this again” to stop the offer; the page stays in the Help menu, and Settings ▸ Reset to defaults brings the offer back"
 ---
 Version: 3.3.0
 Date: 2026-10-27

@@ -763,6 +763,8 @@ impl std::fmt::Debug for WelcomePanel {
 
 impl Widget for WelcomePanel {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        // See `App::build`: the first window of the run makes the offer.
+        crate::shared::screen_reader_offer::offer_once(ctx);
         // All logic on the view-model — created **once** (it owns the live search
         // query and the recents projection reading it; a per-build instance would
         // give the `SearchField` a new query signal every frame, so typing would

@@ -3711,6 +3711,7 @@ pace-summary-menu = Plan de escritura…
 
 menu-help-topics = &Temas de ayuda
 menu-help-shortcuts = Atajos de te&clado…
+menu-help-screen-reader = &Usar un lector de pantalla
 menu-help-website = &Skribisto en la web
 menu-help-report = &Informar de un problema…
 menu-help-check-updates = &Buscar actualizaciones
@@ -3735,6 +3736,7 @@ help-section-keeping = Proteger su trabajo
 help-section-extensions = Extensiones
 
 help-topic-getting-started = Su primer proyecto
+help-topic-screen-reader = Usar Skribisto con un lector de pantalla
 help-topic-writing-model = Cómo se construye un libro
 help-topic-drafts-and-old-versions = Conservar un borrador anterior
 help-topic-goals-and-pace = Objetivos y ritmo

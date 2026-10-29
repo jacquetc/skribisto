@@ -4402,6 +4402,7 @@ pace-summary-menu = Plan pisania…
 
 menu-help-topics = &Tematy pomocy
 menu-help-shortcuts = &Skróty klawiszowe…
+menu-help-screen-reader = &Korzystanie z czytnika ekranu
 menu-help-website = Skribisto w &internecie
 menu-help-report = &Zgłoś problem…
 menu-help-check-updates = Sprawdź &aktualizacje
@@ -4426,6 +4427,7 @@ help-section-keeping = Bezpieczeństwo Twojej pracy
 help-section-extensions = Rozszerzenia
 
 help-topic-getting-started = Twój pierwszy projekt
+help-topic-screen-reader = Korzystanie ze Skribisto z czytnikiem ekranu
 help-topic-writing-model = Jak zbudowana jest książka
 help-topic-drafts-and-old-versions = Zachowywanie starszej wersji roboczej
 help-topic-goals-and-pace = Cele i tempo

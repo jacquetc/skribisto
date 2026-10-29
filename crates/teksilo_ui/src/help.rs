@@ -307,6 +307,10 @@ pub fn topic(key: &str) -> Option<HelpTopicSpec> {
 /// The key the Help window opens on when nothing more specific was asked for.
 pub const DEFAULT_TOPIC: &str = "help-getting-started";
 
+/// The guide to the window and its keys for a reader using a screen reader: opened from
+/// Help ▸ Using a screen reader, and offered once at startup when one is running.
+pub const SCREEN_READER_TOPIC: &str = "help-screen-reader";
+
 // ── The built-in topics ─────────────────────────────────────────────────────
 
 /// One `(locale, source)` table per topic, built by including every locale's file.
@@ -517,6 +521,12 @@ pub fn builtin_topics() -> Vec<HelpTopicSpec> {
             section: HelpSection::GettingStarted,
             title: Rc::new(|| tr!(help_topic_getting_started())),
             body: djot_topic!("getting-started"),
+        },
+        HelpTopicSpec {
+            key: SCREEN_READER_TOPIC,
+            section: HelpSection::GettingStarted,
+            title: Rc::new(|| tr!(help_topic_screen_reader())),
+            body: djot_topic!("screen-reader"),
         },
         HelpTopicSpec {
             key: "help-writing-model",

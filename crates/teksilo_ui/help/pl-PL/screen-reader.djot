@@ -1,0 +1,81 @@
+Skribisto można obsługiwać w całości z klawiatury, z czytnikiem ekranu takim jak NVDA,
+JAWS, Orca czy VoiceOver. Ta strona opisuje okno i klawisze, którymi się po nim poruszasz.
+
+## Jak zbudowane jest okno
+
+Okno projektu ma cztery obszary:
+
+- *Pośrodku* otwarte elementy, każdy na własnej karcie. Środek może pokazać dwa elementy
+  obok siebie.
+- *Po lewej* panele dotyczące całego projektu: *Segregator*, *Szukaj*, *Kosz*,
+  *Komentarze* i *Gry pisarskie*. Widać naraz tylko jeden z nich.
+- *Po prawej* panele dotyczące elementu, który masz przed sobą: *Inspektor*, *Format*,
+  *Ten dokument*, *Przypisy* i *Wersje*.
+- *Na dole* *Podgląd* i *Cofnij się w czasie*. Pozostają ukryte, dopóki ich nie otworzysz.
+
+`Tab` przechodzi przez pasek tytułu, potem środek, potem lewą stronę, prawą i dół. Tekst
+zatrzymuje `Tab` dla siebie, aby wciąć listę albo wstawić tabulator. Aby opuścić tekst,
+naciśnij `Ctrl+Tab`. Aby wrócić w drugą stronę, naciśnij `Ctrl+Shift+Tab`.
+
+## Otwieranie panelu jego skrótem
+
+Każdy panel ma własny skrót, który wysuwa go na wierzch:
+
+- Po lewej: `Ctrl+Shift+B` *Segregator*, `Ctrl+Shift+F` *Szukaj*, `Ctrl+Shift+T` *Kosz*,
+  `Ctrl+Shift+C` *Komentarze* i `Ctrl+Shift+G` *Gry pisarskie*.
+- Po prawej: `Ctrl+Shift+I` *Inspektor*, `Ctrl+Shift+O` *Format*, `Ctrl+Shift+D`
+  *Ten dokument*, `Ctrl+Shift+K` *Przypisy* i `Ctrl+Shift+R` *Wersje*.
+- Na dole: `Ctrl+Shift+J` *Podgląd* i `Ctrl+Shift+L` *Cofnij się w czasie*.
+
+Skrót pokazuje panel, ale zostawia kursor tam, gdzie był. Przejdź do panelu klawiszem
+`Ctrl+Tab`, a potem `Tab`. *Widok ▸ Panele* wymienia te same panele z ich skrótami, a `F9`
+pokazuje lub ukrywa całą lewą stronę.
+
+## Poruszanie się po segregatorze
+
+Segregator to drzewo twoich rozdziałów, scen i notatek. Strzałki w górę i w dół przechodzą
+od elementu do elementu. Strzałka w prawo otwiera folder, a strzałka w lewo go zamyka.
+
+- `Enter` otwiera element i umieszcza kursor w jego tekście.
+- `Ctrl+Enter` otwiera go w drugiej połowie środka.
+- `F2` zmienia jego nazwę, a `Delete` przenosi go do kosza.
+- `Alt+↑` i `Alt+↓` przesuwają go w górę lub w dół. `Ctrl+]` i `Ctrl+[` przesuwają go o
+  jeden poziom do środka lub na zewnątrz.
+
+Menu elementu nie da się jeszcze otworzyć z klawiatury. Jego polecenia są w menu *Dokument*,
+które działa na elemencie zaznaczonym w segregatorze.
+
+## Zmiana widoku rozdziału, części lub książki
+
+Rozdział, część albo książka otwiera się z paskiem widoków u góry: własna strona, pełny
+tekst, streszczenia, tablica korkowa i przegląd. Czytnik ekranu ogłasza ten pasek jako grupę
+przycisków opcji o nazwie *Widoki*.
+
+Strzałkami w lewo i w prawo zmieniasz widok, a klawiszami `Home` i `End` przechodzisz do
+pierwszego i ostatniego. Strzałki w górę i w dół jeszcze go nie zmieniają.
+
+## Polecenia, menu i ustawienia
+
+- `F10` lub `Alt` otwiera pasek menu. Czytnik ekranu nie ogłasza jeszcze skrótu polecenia z
+  menu, dlatego wymieniają je ta strona i *Pomoc ▸ Skróty klawiszowe…*.
+- `Ctrl+Shift+P` otwiera paletę poleceń. Wpisz część nazwy polecenia i naciśnij `Enter`.
+- `Ctrl+G` lub *Przejdź ▸ Przejdź do…* znajduje element po nazwie i go otwiera.
+- Podczas pisania `Alt+↓` i `Alt+↑` przechodzą do następnego i do poprzedniego elementu,
+  z kursorem w jego tekście.
+- `Ctrl+,` otwiera *Ustawienia*. Na liście stron po lewej użyj strzałek, a potem naciśnij
+  `Enter`, aby przejść do pierwszego ustawienia strony.
+- `F1` otwiera tę pomoc. `Enter` na temacie przenosi cię do jego tekstu.
+
+## Na co uważać
+
+Cztery miejsca jeszcze cię nie prowadzą:
+
+- W oknie *Nowy projekt* po kliknięciu *Dalej* kursor zostaje na przycisku *Dalej*.
+  Naciśnij `Shift+Tab`, aby wrócić w górę strony, na którą właśnie przeszedłeś.
+- W polu daty `F4` lub `Alt+↓` otwiera kalendarz. Wybierz dzień strzałkami i naciśnij
+  `Enter`, albo `Esc`, aby zostawić datę bez zmian. `Tab` zamyka kalendarz bez wybierania.
+- W tej pomocy nie da się jeszcze przejść za łączem do innej strony z klawiatury. Lista
+  tematów po lewej prowadzi do każdej strony.
+- W *Ustawieniach* listy na stronach *Znaczniki*, *Statusy*, *Szablony*, *Słownik własny* i
+  *Zamiany tekstu* można czytać strzałkami, ale pól wiersza nie da się jeszcze osiągnąć z
+  klawiatury.

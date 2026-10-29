@@ -690,6 +690,12 @@ impl SettingsViewModel {
         self.store.signal(PACE_SUMMARY_ON_OPEN_KEY, true)
     }
 
+    /// Offer the screen-reader guide when Skribisto starts with a screen reader
+    /// running (see `shared::screen_reader_offer`).
+    pub fn screen_reader_offer(&self) -> Signal<bool> {
+        self.store.signal(crate::SCREEN_READER_OFFER_KEY, true)
+    }
+
     /// The margin lane's master switch.
     pub fn margin_lane_enabled(&self) -> Signal<bool> {
         self.store

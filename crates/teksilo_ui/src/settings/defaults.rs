@@ -265,6 +265,13 @@ pub(crate) fn reset_targets(vm: &SettingsViewModel) -> Vec<ResetTarget> {
             vm.pace_summary_on_open(),
             true,
         ),
+        // The startup offer's "Do not show this again" is the same kind of door as
+        // the two above: Reset brings the offer back.
+        flag(
+            crate::SCREEN_READER_OFFER_KEY,
+            vm.screen_reader_offer(),
+            true,
+        ),
         // ── The margin lane ──
         flag(
             crate::MARGIN_LANE_ENABLED_KEY,
@@ -730,6 +737,7 @@ mod tests {
             crate::REMEMBER_VIEW_KEY,
             crate::IMAGE_SIZE_POLICY_KEY,
             crate::PACE_SUMMARY_ON_OPEN_KEY,
+            crate::SCREEN_READER_OFFER_KEY,
             crate::MARGIN_LANE_ENABLED_KEY,
             crate::MARGIN_LANE_TEXTURE_KEY,
         ] {

@@ -5009,6 +5009,7 @@ pace-summary-dont-show = عدم إظهار هذا عند الفتح
 pace-summary-menu = خطة الكتابة…
 menu-help-topics = موضوعات المساعدة (&T)
 menu-help-shortcuts = اختصارات لوحة المفاتيح… (&K)
+menu-help-screen-reader = استخدام قارئ الشاشة (&E)
 menu-help-website = Skribisto على الويب (&W)
 menu-help-report = الإبلاغ عن مشكلة… (&R)
 menu-help-check-updates = التحقق من وجود تحديثات (&U)

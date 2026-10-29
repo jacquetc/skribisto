@@ -2688,6 +2688,7 @@ pace-summary-menu = 집필 계획…
 
 menu-help-topics = 도움말 주제 (&T)
 menu-help-shortcuts = 키보드 단축키… (&K)
+menu-help-screen-reader = 화면 낭독기 사용 (&E)
 menu-help-website = Skribisto 웹사이트 (&W)
 menu-help-report = 문제 신고… (&R)
 menu-help-check-updates = 업데이트 확인 (&U)

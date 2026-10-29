@@ -1,0 +1,86 @@
+Vous pouvez utiliser Skribisto entièrement au clavier, avec un lecteur d’écran comme NVDA,
+JAWS, Orca ou VoiceOver. Cette page décrit la fenêtre et les touches qui permettent de s’y
+déplacer.
+
+## Comment la fenêtre est organisée
+
+Une fenêtre de projet a quatre zones :
+
+- *Au centre*, les éléments que vous avez ouverts, chacun dans son propre onglet. Le centre
+  peut montrer deux éléments côte à côte.
+- *À gauche*, les panneaux qui portent sur tout le projet : *Classeur*, *Rechercher*,
+  *Corbeille*, *Commentaires* et *Jeux d’écriture*. Un seul s’affiche à la fois.
+- *À droite*, les panneaux qui portent sur l’élément devant vous : *Inspecteur*,
+  *Mise en forme*, *Ce document*, *Notes de bas de page* et *Versions*.
+- *En bas*, *Aperçu* et *Remonter le temps*. Ils restent masqués tant que vous ne les ouvrez
+  pas.
+
+`Tab` parcourt la barre de titre, puis le centre, puis la gauche, la droite et le bas. Un
+texte garde `Tab` pour lui, pour décaler une liste ou insérer une tabulation. Pour quitter
+un texte, appuyez sur `Ctrl+Tab`. Pour revenir en arrière, appuyez sur `Ctrl+Maj+Tab`.
+
+## Ouvrir un panneau par son raccourci
+
+Chaque panneau a son propre raccourci, qui le fait passer au premier plan :
+
+- À gauche : `Ctrl+Maj+B` *Classeur*, `Ctrl+Maj+F` *Rechercher*, `Ctrl+Maj+T` *Corbeille*,
+  `Ctrl+Maj+C` *Commentaires* et `Ctrl+Maj+G` *Jeux d’écriture*.
+- À droite : `Ctrl+Maj+I` *Inspecteur*, `Ctrl+Maj+O` *Mise en forme*, `Ctrl+Maj+D`
+  *Ce document*, `Ctrl+Maj+K` *Notes de bas de page* et `Ctrl+Maj+R` *Versions*.
+- En bas : `Ctrl+Maj+J` *Aperçu* et `Ctrl+Maj+L` *Remonter le temps*.
+
+Le raccourci affiche le panneau mais laisse le curseur où il était. Rejoignez le panneau
+avec `Ctrl+Tab`, puis `Tab`. *Affichage ▸ Panneaux* liste les mêmes panneaux avec leurs
+raccourcis, et `F9` affiche ou masque tout le côté gauche.
+
+## Se repérer dans le classeur
+
+Le classeur est une arborescence de vos chapitres, scènes et notes. Les flèches Haut et Bas
+vont d’un élément à l’autre. La flèche Droite ouvre un dossier, la flèche Gauche le referme.
+
+- `Entrée` ouvre l’élément et place le curseur dans son texte.
+- `Ctrl+Entrée` l’ouvre dans l’autre moitié du centre.
+- `F2` le renomme, et `Suppr` le met à la corbeille.
+- `Alt+↑` et `Alt+↓` le montent ou le descendent. `Ctrl+]` et `Ctrl+[` le décalent d’un
+  niveau vers l’intérieur ou vers l’extérieur.
+
+Le menu d’un élément ne s’ouvre pas encore au clavier. Ses commandes sont dans le menu
+*Document*, qui agit sur l’élément sélectionné dans le classeur.
+
+## Changer la vue d’un chapitre, d’une partie ou d’un livre
+
+Un chapitre, une partie ou un livre s’ouvre avec une barre de vues en haut : sa propre page,
+le texte complet, les synopsis, le tableau de liège et une vue d’ensemble. Un lecteur d’écran
+annonce cette barre comme un groupe de boutons radio nommé *Vues*.
+
+Utilisez les flèches Gauche et Droite pour changer de vue, et `Origine` ou `Fin` pour la
+première et la dernière. Les flèches Haut et Bas ne la changent pas encore.
+
+## Commandes, menus et paramètres
+
+- `F10` ou `Alt` ouvre la barre de menus. Un lecteur d’écran n’annonce pas encore le
+  raccourci d’une commande de menu : cette page et *Aide ▸ Raccourcis clavier…* les
+  donnent.
+- `Ctrl+Maj+P` ouvre la palette de commandes. Tapez une partie du nom d’une commande, puis
+  appuyez sur `Entrée`.
+- `Ctrl+G`, ou *Aller ▸ Aller à…*, trouve un élément par son nom et l’ouvre.
+- Pendant que vous écrivez, `Alt+↓` et `Alt+↑` passent à l’élément suivant et au précédent,
+  le curseur dans son texte.
+- `Ctrl+,` ouvre les *Paramètres*. Dans la liste des pages à gauche, utilisez les flèches,
+  puis appuyez sur `Entrée` pour aller au premier réglage de la page.
+- `F1` ouvre cette aide. `Entrée` sur une rubrique vous amène dans son texte.
+
+## Là où il faut être attentif
+
+Quatre endroits ne vous guident pas encore :
+
+- Dans *Nouvelle œuvre*, après *Suivant*, le curseur reste sur le bouton *Suivant*. Appuyez
+  sur `Maj+Tab` pour remonter dans la page que vous venez d’atteindre.
+- Dans un champ de date, `F4` ou `Alt+↓` ouvre le calendrier. Allez sur un jour avec les
+  flèches, puis appuyez sur `Entrée`, ou sur `Échap` pour garder la date telle qu’elle était.
+  `Tab` ferme le calendrier sans rien choisir.
+- Dans cette aide, un lien vers une autre page ne se suit pas encore au clavier. La liste des
+  rubriques à gauche mène à toutes les pages.
+- Dans les *Paramètres*, les listes des pages *Étiquettes*, *Statuts*, *Modèles*,
+  *Dictionnaire personnel* et *Remplacements de texte* se lisent avec les flèches, mais les
+  champs d’une ligne ne s’atteignent pas encore au clavier.

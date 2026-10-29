@@ -77,6 +77,11 @@ fn rewrite_chords(source: &str) -> String {
 /// pages' languages. `Ctrl` (`Strg`) is the primary accelerator, as `KeyStroke::ctrl`
 /// declares it; `Alt` and `Shift` (`Maj`, `Mayús`, `Maiusc`, `Umschalt`) are
 /// themselves. Anything else is not a chord.
+///
+/// Except with `Tab`: `Ctrl+Tab` is the physical Control key on a Mac too, where ⌘⇥
+/// is the application switcher and never reaches the app (teksilo's dispatcher and
+/// `RichTextEditor` read it the same way), so a page must not tell a Mac writer to
+/// press ⌘⇥ to leave a text.
 fn parse_chord(text: &str) -> Option<KeyStroke> {
     let mut parts: Vec<&str> = text.split('+').collect();
     let key = key_named(parts.pop()?)?;
@@ -84,10 +89,15 @@ fn parse_chord(text: &str) -> Option<KeyStroke> {
         return None;
     }
     let mut modifiers = Modifiers::NONE;
+    let control = if key == Key::Tab {
+        Modifiers::CTRL
+    } else {
+        Modifiers::COMMAND
+    };
     for part in parts {
         modifiers = modifiers
             | match part {
-                "Ctrl" | "Strg" => Modifiers::COMMAND,
+                "Ctrl" | "Strg" => control,
                 "Alt" => Modifiers::ALT,
                 "Shift" | "Maj" | "Mayús" | "Maiusc" | "Umschalt" => Modifiers::SHIFT,
                 _ => return None,
@@ -131,8 +141,18 @@ fn key_named(name: &str) -> Option<Key> {
     {
         return Some(LETTERS[(c as u8 - b'A') as usize]);
     }
+    // The three punctuation keys a chord here uses (Settings is `Ctrl+,`, the binder's
+    // indent and outdent `Ctrl+]` and `Ctrl+[`), as the `Key::Character` the app declares.
+    if let (Some(c @ (',' | '[' | ']')), None) = (name.chars().next(), name.chars().nth(1)) {
+        return Some(Key::Character(c));
+    }
     Some(match name {
         "Enter" | "Entrée" | "Intro" | "Invio" | "Eingabe" => Key::Enter,
+        // Arrows as the arrows themselves, which need no translation.
+        "↑" => Key::ArrowUp,
+        "↓" => Key::ArrowDown,
+        "←" => Key::ArrowLeft,
+        "→" => Key::ArrowRight,
         "Space" => Key::Space,
         "Tab" => Key::Tab,
         "Escape" => Key::Escape,
@@ -187,6 +207,23 @@ mod tests {
         assert_eq!(
             rewrite_chords("`Ctrl+Intro`"),
             rewrite_chords("`Ctrl+Enter`")
+        );
+        // Arrows, the punctuation chords, and Tab's literal Control.
+        assert_eq!(
+            rewrite_chords("`Alt+↓`"),
+            written(KeyStroke::new(Key::ArrowDown, Modifiers::ALT))
+        );
+        assert_eq!(
+            rewrite_chords("`Ctrl+,`"),
+            written(KeyStroke::command(Key::Character(',')))
+        );
+        assert_eq!(
+            rewrite_chords("`Ctrl+]`"),
+            written(KeyStroke::command(Key::Character(']')))
+        );
+        assert_eq!(
+            rewrite_chords("`Ctrl+Shift+Tab`"),
+            written(KeyStroke::new(Key::Tab, Modifiers::CTRL | Modifiers::SHIFT))
         );
         let page = "Press `Ctrl+S` to save.";
         if cfg!(target_os = "macos") {

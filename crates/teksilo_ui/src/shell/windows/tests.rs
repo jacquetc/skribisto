@@ -564,6 +564,7 @@ const MENU_MNEMONIC_SCOPES: &[(&str, &[&str])] = &[
             "menu-help-topics",
             "menu-command-palette",
             "menu-help-shortcuts",
+            "menu-help-screen-reader",
             "menu-help-website",
             "menu-help-report",
             "menu-about",

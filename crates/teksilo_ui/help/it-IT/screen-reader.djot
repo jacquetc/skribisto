@@ -1,0 +1,84 @@
+Puoi usare Skribisto interamente da tastiera, con un lettore di schermo come NVDA, JAWS,
+Orca o VoiceOver. Questa pagina descrive la finestra e i tasti per muoversi al suo interno.
+
+## Com'è organizzata la finestra
+
+Una finestra di progetto ha quattro zone:
+
+- *Al centro*, gli elementi che hai aperto, ciascuno in una scheda propria. Il centro può
+  mostrare due elementi affiancati.
+- *A sinistra*, i pannelli che riguardano tutto il progetto: *Raccoglitore*, *Cerca*,
+  *Cestino*, *Commenti* e *Giochi di scrittura*. Se ne vede uno alla volta.
+- *A destra*, i pannelli che riguardano l'elemento che hai davanti: *Proprietà*, *Formato*,
+  *Questo documento*, *Note a piè di pagina* e *Versioni*.
+- *In basso*, *Anteprima* e *Torna indietro nel tempo*. Restano nascosti finché non li apri.
+
+`Tab` attraversa la barra del titolo, poi il centro, poi la sinistra, la destra e il basso.
+Un testo tiene `Tab` per sé, per far rientrare un elenco o inserire una tabulazione. Per
+uscire da un testo, premi `Ctrl+Tab`. Per tornare indietro, premi `Ctrl+Maiusc+Tab`.
+
+## Aprire un pannello con la sua scorciatoia
+
+Ogni pannello ha una scorciatoia propria, che lo porta in primo piano:
+
+- A sinistra: `Ctrl+Maiusc+B` *Raccoglitore*, `Ctrl+Maiusc+F` *Cerca*, `Ctrl+Maiusc+T`
+  *Cestino*, `Ctrl+Maiusc+C` *Commenti* e `Ctrl+Maiusc+G` *Giochi di scrittura*.
+- A destra: `Ctrl+Maiusc+I` *Proprietà*, `Ctrl+Maiusc+O` *Formato*, `Ctrl+Maiusc+D`
+  *Questo documento*, `Ctrl+Maiusc+K` *Note a piè di pagina* e `Ctrl+Maiusc+R` *Versioni*.
+- In basso: `Ctrl+Maiusc+J` *Anteprima* e `Ctrl+Maiusc+L` *Torna indietro nel tempo*.
+
+La scorciatoia mostra il pannello ma lascia il cursore dov'era. Raggiungi il pannello con
+`Ctrl+Tab`, poi `Tab`. *Visualizza ▸ Pannelli* elenca gli stessi pannelli con le loro
+scorciatoie, e `F9` mostra o nasconde tutto il lato sinistro.
+
+## Orientarsi nel Raccoglitore
+
+Il Raccoglitore è un albero dei tuoi capitoli, scene e note. Le frecce su e giù passano da un
+elemento all'altro. La freccia destra apre una cartella, la freccia sinistra la chiude.
+
+- `Invio` apre l'elemento e mette il cursore nel suo testo.
+- `Ctrl+Invio` lo apre nell'altra metà del centro.
+- `F2` lo rinomina, e `Canc` lo sposta nel cestino.
+- `Alt+↑` e `Alt+↓` lo spostano in su o in giù. `Ctrl+]` e `Ctrl+[` lo spostano di un
+  livello verso l'interno o verso l'esterno.
+
+Il menu di un elemento non si apre ancora da tastiera. I suoi comandi sono nel menu
+*Documento*, che agisce sull'elemento selezionato nel Raccoglitore.
+
+## Cambiare la vista di un capitolo, una parte o un libro
+
+Un capitolo, una parte o un libro si apre con una barra di viste in alto: la sua pagina, il
+testo completo, i sinossi, la bacheca e una panoramica. Un lettore di schermo annuncia la
+barra come un gruppo di pulsanti di opzione chiamato *Viste*.
+
+Usa le frecce sinistra e destra per cambiare vista, e `Home` o `Fine` per la prima e
+l'ultima. Le frecce su e giù non la cambiano ancora.
+
+## Comandi, menu e impostazioni
+
+- `F10` o `Alt` apre la barra dei menu. Un lettore di schermo non annuncia ancora la
+  scorciatoia di un comando di menu: questa pagina e *Aiuto ▸ Scorciatoie da tastiera…* le
+  elencano.
+- `Ctrl+Maiusc+P` apre la tavolozza dei comandi. Digita una parte del nome di un comando,
+  poi premi `Invio`.
+- `Ctrl+G`, o *Vai ▸ Vai a…*, trova un elemento dal suo nome e lo apre.
+- Mentre scrivi, `Alt+↓` e `Alt+↑` passano all'elemento successivo e al precedente, con il
+  cursore nel suo testo.
+- `Ctrl+,` apre le *Impostazioni*. Nell'elenco delle pagine a sinistra usa le frecce, poi
+  premi `Invio` per arrivare alla prima impostazione della pagina.
+- `F1` apre questa guida. `Invio` su un argomento ti porta nel suo testo.
+
+## Dove fare attenzione
+
+Quattro punti non ti guidano ancora:
+
+- In *Nuovo progetto*, dopo *Avanti*, il cursore resta sul pulsante *Avanti*. Premi
+  `Maiusc+Tab` per risalire nella pagina che hai appena raggiunto.
+- In un campo data, `F4` o `Alt+↓` apre il calendario. Scegli un giorno con le frecce, poi
+  premi `Invio`, oppure `Esc` per lasciare la data com'era. `Tab` chiude il calendario senza
+  scegliere nulla.
+- In questa guida, un collegamento a un'altra pagina non si può ancora seguire da tastiera.
+  L'elenco degli argomenti a sinistra porta a ogni pagina.
+- Nelle *Impostazioni*, gli elenchi delle pagine *Etichette*, *Stati*, *Modelli*, *Dizionario
+  personale* e *Sostituzioni di testo* si leggono con le frecce, ma i campi di una riga non si
+  raggiungono ancora da tastiera.

@@ -1,0 +1,89 @@
+Sie können Skribisto vollständig mit der Tastatur bedienen, mit einem Bildschirmleser wie
+NVDA, JAWS, Orca oder VoiceOver. Diese Seite beschreibt das Fenster und die Tasten, mit
+denen Sie sich darin bewegen.
+
+## So ist das Fenster aufgebaut
+
+Ein Projektfenster hat vier Bereiche:
+
+- *In der Mitte* die geöffneten Einträge, jeder in einem eigenen Tab. Die Mitte kann zwei
+  Einträge nebeneinander zeigen.
+- *Links* die Bereiche für das ganze Projekt: *Projektmappe*, *Suchen*, *Papierkorb*,
+  *Kommentare* und *Schreibspiele*. Es ist immer nur einer davon zu sehen.
+- *Rechts* die Bereiche für den Eintrag vor Ihnen: *Inspektor*, *Format*,
+  *Dieses Dokument*, *Fußnoten* und *Versionen*.
+- *Unten* *Vorschau* und *In der Zeit zurückgehen*. Sie bleiben verborgen, bis Sie sie
+  öffnen.
+
+`Tab` führt durch die Titelleiste, dann die Mitte, dann links, rechts und unten. Ein Text
+behält `Tab` für sich, um eine Liste einzurücken oder einen Tabulator einzufügen. Einen Text
+verlassen Sie mit `Strg+Tab`. In die andere Richtung geht es mit `Strg+Umschalt+Tab`.
+
+## Einen Bereich mit seinem Tastenkürzel öffnen
+
+Jeder Bereich hat ein eigenes Tastenkürzel, das ihn nach vorn holt:
+
+- Links: `Strg+Umschalt+B` *Projektmappe*, `Strg+Umschalt+F` *Suchen*, `Strg+Umschalt+T`
+  *Papierkorb*, `Strg+Umschalt+C` *Kommentare* und `Strg+Umschalt+G` *Schreibspiele*.
+- Rechts: `Strg+Umschalt+I` *Inspektor*, `Strg+Umschalt+O` *Format*, `Strg+Umschalt+D`
+  *Dieses Dokument*, `Strg+Umschalt+K` *Fußnoten* und `Strg+Umschalt+R` *Versionen*.
+- Unten: `Strg+Umschalt+J` *Vorschau* und `Strg+Umschalt+L` *In der Zeit zurückgehen*.
+
+Das Tastenkürzel zeigt den Bereich, lässt den Cursor aber, wo er war. Gehen Sie mit
+`Strg+Tab` und dann `Tab` zum Bereich. *Ansicht ▸ Bereiche* listet dieselben Bereiche mit
+ihren Tastenkürzeln, und `F9` blendet die ganze linke Seite ein oder aus.
+
+## Sich in der Projektmappe zurechtfinden
+
+Die Projektmappe ist ein Baum Ihrer Kapitel, Szenen und Notizen. Die Pfeiltasten nach oben
+und unten gehen von Eintrag zu Eintrag. Der Pfeil nach rechts öffnet einen Ordner, der Pfeil
+nach links schließt ihn.
+
+- `Eingabe` öffnet den Eintrag und setzt den Cursor in seinen Text.
+- `Strg+Eingabe` öffnet ihn in der anderen Hälfte der Mitte.
+- `F2` benennt ihn um, und `Entf` legt ihn in den Papierkorb.
+- `Alt+↑` und `Alt+↓` verschieben ihn nach oben oder unten. `Strg+]` und `Strg+[` rücken
+  ihn um eine Ebene ein oder aus.
+
+Das Menü eines Eintrags lässt sich noch nicht mit der Tastatur öffnen. Seine Befehle stehen
+im Menü *Dokument*, das auf den in der Projektmappe ausgewählten Eintrag wirkt.
+
+## Die Ansicht eines Kapitels, Teils oder Buchs wechseln
+
+Ein Kapitel, ein Teil oder ein Buch öffnet sich mit einer Leiste von Ansichten oben: die
+eigene Seite, der ganze Text, die Synopsen, die Pinnwand und eine Übersicht. Ein
+Bildschirmleser kündigt die Leiste als Gruppe von Optionsfeldern mit dem Namen *Ansichten*
+an.
+
+Mit den Pfeilen nach links und rechts wechseln Sie die Ansicht, mit `Pos1` und `Ende`
+springen Sie zur ersten und zur letzten. Die Pfeile nach oben und unten wechseln sie noch
+nicht.
+
+## Befehle, Menüs und Einstellungen
+
+- `F10` oder `Alt` öffnet die Menüleiste. Ein Bildschirmleser sagt das Tastenkürzel eines
+  Menübefehls noch nicht an. Diese Seite und *Hilfe ▸ Tastenkürzel…* listen sie auf.
+- `Strg+Umschalt+P` öffnet die Befehlspalette. Tippen Sie einen Teil des Befehlsnamens und
+  drücken Sie `Eingabe`.
+- `Strg+G` oder *Navigation ▸ Gehe zu…* findet einen Eintrag über seinen Namen und öffnet
+  ihn.
+- Beim Schreiben gehen `Alt+↓` und `Alt+↑` zum nächsten und zum vorigen Eintrag, mit dem
+  Cursor in seinem Text.
+- `Strg+,` öffnet die *Einstellungen*. Wählen Sie in der Liste der Seiten links mit den
+  Pfeilen und drücken Sie `Eingabe`, um zur ersten Einstellung der Seite zu gelangen.
+- `F1` öffnet diese Hilfe. `Eingabe` auf einem Thema bringt Sie in seinen Text.
+
+## Wo Sie aufpassen sollten
+
+Vier Stellen führen Sie noch nicht:
+
+- In *Neues Projekt* bleibt der Cursor nach *Weiter* auf der Schaltfläche *Weiter*. Gehen
+  Sie mit `Umschalt+Tab` zurück nach oben durch die Seite, die Sie gerade erreicht haben.
+- In einem Datumsfeld öffnet `F4` oder `Alt+↓` den Kalender. Wählen Sie mit den Pfeilen
+  einen Tag und drücken Sie `Eingabe`, oder `Esc`, um das Datum unverändert zu lassen. `Tab`
+  schließt den Kalender, ohne etwas zu wählen.
+- Einem Link auf eine andere Seite dieser Hilfe können Sie noch nicht mit der Tastatur folgen.
+  Die Themenliste links führt zu jeder Seite.
+- In den *Einstellungen* lassen sich die Listen der Seiten *Schlagwörter*, *Statusstufen*,
+  *Vorlagen*, *Persönliches Wörterbuch* und *Textersetzungen* mit den Pfeilen lesen, aber die
+  Felder einer Zeile sind mit der Tastatur noch nicht erreichbar.

@@ -1468,6 +1468,9 @@ impl std::fmt::Debug for App {
 
 impl Widget for App {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        // Offered from whichever window comes up first in this run: this one when
+        // Skribisto starts on a project, the Launcher otherwise.
+        crate::shared::screen_reader_offer::offer_once(ctx);
         let view_model_setup::LayerBViewModels {
             settings,
             window_id,

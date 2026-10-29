@@ -4093,6 +4093,7 @@ pace-summary-menu = Plan d’écriture…
 # ce sont des documents Djot dans crates/teksilo_ui/help/<locale>/.
 menu-help-topics = &Rubriques d’aide
 menu-help-shortcuts = Raccourcis c&lavier…
+menu-help-screen-reader = &Utiliser un lecteur d’écran
 menu-help-website = Skribisto sur le &Web
 menu-help-report = &Signaler un problème…
 menu-help-check-updates = Rechercher les &mises à jour
@@ -4119,6 +4120,12 @@ help-section-keeping = Protéger votre travail
 help-section-extensions = Extensions
 
 help-topic-getting-started = Votre premier projet
+help-topic-screen-reader = Utiliser Skribisto avec un lecteur d’écran
+# Proposé une fois au démarrage quand un lecteur d’écran est actif.
+screen-reader-offer-title = Un lecteur d’écran est actif
+screen-reader-offer-text = Skribisto a une page sur son utilisation avec un lecteur d’écran : comment la fenêtre est organisée, et quelles touches mènent à chacune de ses parties.
+screen-reader-offer-open = Ouvrir le guide
+screen-reader-offer-never = Ne plus afficher
 help-topic-writing-model = Comment un livre est structuré
 help-topic-drafts-and-old-versions = Conserver un ancien brouillon
 help-topic-goals-and-pace = Objectifs et rythme
@@ -4193,6 +4200,7 @@ shortcut-name-outline-open-to-side = Ouvrir sur le côté
 shortcut-name-help-topics = Rubriques d’aide
 shortcut-name-help-close = Fermer l’aide
 shortcut-name-help-shortcuts = Raccourcis clavier
+shortcut-name-help-screen-reader = Utiliser Skribisto avec un lecteur d’écran
 shortcut-name-help-website = Skribisto sur le Web
 shortcut-name-help-report = Signaler un problème
 shortcut-name-help-check-updates = Rechercher les mises à jour

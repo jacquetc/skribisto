@@ -77,6 +77,17 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
             .name(tr!(shortcut_name_help_shortcuts()))
             .build(),
     );
+    // The screen-reader guide, by name and from the Help menu. No chord, like
+    // `help.shortcuts` above, and for the same reason.
+    ctx.register_shortcut_global(
+        Shortcut::new("help.screen_reader")
+            .group(ShortcutGroup::Help)
+            .name(tr!(shortcut_name_help_screen_reader()))
+            .build(),
+    );
+    ctx.register_action_global(Action::new("help.screen_reader").on_invoke(|_i, c| {
+        open_or_focus_help(c, Some(crate::help::SCREEN_READER_TOPIC));
+    }));
     // Settings, opened straight at Keymap: every chord the app has, searchable, and
     // where one is changed. It used to open a read-only sheet whose rows took no
     // focus, so a keyboard reader met a filter field and two buttons and nothing

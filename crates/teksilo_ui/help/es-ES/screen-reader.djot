@@ -1,0 +1,83 @@
+Puede usar Skribisto por completo con el teclado, con un lector de pantalla como NVDA,
+JAWS, Orca o VoiceOver. Esta página describe la ventana y las teclas para moverse por ella.
+
+## Cómo está organizada la ventana
+
+Una ventana de proyecto tiene cuatro zonas:
+
+- *En el centro*, los elementos que ha abierto, cada uno en su propia pestaña. El centro
+  puede mostrar dos elementos uno al lado del otro.
+- *A la izquierda*, los paneles sobre todo el proyecto: *Archivador*, *Buscar*, *Papelera*,
+  *Comentarios* y *Juegos de escritura*. Se muestra uno cada vez.
+- *A la derecha*, los paneles sobre el elemento que tiene delante: *Inspector*, *Formato*,
+  *Este documento*, *Notas al pie* y *Versiones*.
+- *Abajo*, *Vista previa* y *Volver al pasado*. Permanecen ocultos hasta que los abre.
+
+`Tab` recorre la barra de título, luego el centro, luego la izquierda, la derecha y la parte
+inferior. Un texto se queda con `Tab`, para sangrar una lista o insertar una tabulación. Para
+salir de un texto, pulse `Ctrl+Tab`. Para volver atrás, pulse `Ctrl+Mayús+Tab`.
+
+## Abrir un panel con su atajo
+
+Cada panel tiene su propio atajo, que lo trae al frente:
+
+- A la izquierda: `Ctrl+Mayús+B` *Archivador*, `Ctrl+Mayús+F` *Buscar*, `Ctrl+Mayús+T`
+  *Papelera*, `Ctrl+Mayús+C` *Comentarios* y `Ctrl+Mayús+G` *Juegos de escritura*.
+- A la derecha: `Ctrl+Mayús+I` *Inspector*, `Ctrl+Mayús+O` *Formato*, `Ctrl+Mayús+D`
+  *Este documento*, `Ctrl+Mayús+K` *Notas al pie* y `Ctrl+Mayús+R` *Versiones*.
+- Abajo: `Ctrl+Mayús+J` *Vista previa* y `Ctrl+Mayús+L` *Volver al pasado*.
+
+El atajo muestra el panel pero deja el cursor donde estaba. Vaya al panel con `Ctrl+Tab` y
+luego `Tab`. *Ver ▸ Paneles* enumera los mismos paneles con sus atajos, y `F9` muestra u
+oculta todo el lado izquierdo.
+
+## Orientarse en el Archivador
+
+El Archivador es un árbol de sus capítulos, escenas y notas. Las flechas arriba y abajo van
+de un elemento a otro. La flecha derecha abre una carpeta y la flecha izquierda la cierra.
+
+- `Intro` abre el elemento y pone el cursor en su texto.
+- `Ctrl+Intro` lo abre en la otra mitad del centro.
+- `F2` le cambia el nombre, y `Supr` lo envía a la papelera.
+- `Alt+↑` y `Alt+↓` lo suben o lo bajan. `Ctrl+]` y `Ctrl+[` lo desplazan un nivel hacia
+  dentro o hacia fuera.
+
+El menú de un elemento todavía no se abre con el teclado. Sus órdenes están en el menú
+*Documento*, que actúa sobre el elemento seleccionado en el Archivador.
+
+## Cambiar la vista de un capítulo, una parte o un libro
+
+Un capítulo, una parte o un libro se abre con una barra de vistas en la parte superior: su
+propia página, el texto completo, las sinopsis, el tablero de corcho y una vista general. Un
+lector de pantalla anuncia la barra como un grupo de botones de opción llamado *Vistas*.
+
+Use las flechas izquierda y derecha para cambiar de vista, e `Inicio` o `Fin` para la
+primera y la última. Las flechas arriba y abajo todavía no la cambian.
+
+## Órdenes, menús y configuración
+
+- `F10` o `Alt` abre la barra de menús. Un lector de pantalla todavía no anuncia el atajo de
+  una orden de menú: esta página y *Ayuda ▸ Atajos de teclado…* los enumeran.
+- `Ctrl+Mayús+P` abre la paleta de comandos. Escriba parte del nombre de una orden y pulse
+  `Intro`.
+- `Ctrl+G`, o *Ir ▸ Ir a…*, encuentra un elemento por su nombre y lo abre.
+- Mientras escribe, `Alt+↓` y `Alt+↑` pasan al elemento siguiente y al anterior, con el
+  cursor en su texto.
+- `Ctrl+,` abre la *Configuración*. En la lista de páginas de la izquierda, use las flechas
+  y pulse `Intro` para ir al primer ajuste de la página.
+- `F1` abre esta ayuda. `Intro` sobre un tema le lleva a su texto.
+
+## Dónde tener cuidado
+
+Cuatro lugares todavía no le guían:
+
+- En *Nuevo proyecto*, después de *Siguiente*, el cursor se queda en el botón *Siguiente*.
+  Pulse `Mayús+Tab` para subir por la página a la que acaba de llegar.
+- En un campo de fecha, `F4` o `Alt+↓` abre el calendario. Vaya a un día con las flechas y
+  pulse `Intro`, o `Esc` para dejar la fecha como estaba. `Tab` cierra el calendario sin
+  elegir nada.
+- En esta ayuda, un enlace a otra página todavía no se puede seguir con el teclado. La lista
+  de temas de la izquierda lleva a todas las páginas.
+- En la *Configuración*, las listas de las páginas *Etiquetas*, *Estados*, *Plantillas*,
+  *Diccionario personal* y *Sustituciones de texto* se leen con las flechas, pero los campos
+  de una línea todavía no se alcanzan con el teclado.

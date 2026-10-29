@@ -4158,6 +4158,7 @@ pace-summary-menu = Writing plan…
 # under crates/teksilo_ui/help/<locale>/, one file per topic per locale.
 menu-help-topics = Help &Topics
 menu-help-shortcuts = &Keyboard Shortcuts…
+menu-help-screen-reader = Using a &screen reader
 menu-help-website = Skribisto on the &Web
 menu-help-report = &Report a Problem…
 menu-help-check-updates = Check for &Updates
@@ -4185,6 +4186,13 @@ help-section-keeping = Keeping your work safe
 help-section-extensions = Extensions
 
 help-topic-getting-started = Your first project
+help-topic-screen-reader = Using Skribisto with a screen reader
+# Offered once at startup when a screen reader is running (Help ▸ Using a screen reader
+# stays the way to the same page).
+screen-reader-offer-title = A screen reader is running
+screen-reader-offer-text = Skribisto has a page about using it with a screen reader: how the window is laid out, and which keys take you to each part of it.
+screen-reader-offer-open = Open the guide
+screen-reader-offer-never = Do not show this again
 help-topic-writing-model = How a book is put together
 help-topic-drafts-and-old-versions = Keeping an older draft
 help-topic-goals-and-pace = Targets and pace
@@ -4263,6 +4271,7 @@ shortcut-name-outline-open-to-side = Open to the Side
 shortcut-name-help-topics = Help Topics
 shortcut-name-help-close = Close Help
 shortcut-name-help-shortcuts = Keyboard Shortcuts
+shortcut-name-help-screen-reader = Using Skribisto with a screen reader
 shortcut-name-help-website = Skribisto on the Web
 shortcut-name-help-report = Report a Problem
 shortcut-name-help-check-updates = Check for Updates

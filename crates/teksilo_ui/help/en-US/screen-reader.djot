@@ -1,0 +1,82 @@
+You can use Skribisto entirely from the keyboard, with a screen reader such as NVDA, JAWS,
+Orca or VoiceOver. This page describes the window and the keys that move around it.
+
+## How the window is laid out
+
+A project window has four areas:
+
+- *In the centre*, the items you have opened, each in a tab of its own. The centre can show
+  two items side by side.
+- *On the left*, the panels about the whole project: *Binder*, *Search*, *Trash*,
+  *Comments* and *Writing games*. One of them shows at a time.
+- *On the right*, the panels about the item in front of you: *Inspector*, *Format*,
+  *This document*, *Footnotes* and *Versions*.
+- *At the bottom*, *Preview* and *Go back in time*. They stay hidden until you open them.
+
+`Tab` moves through the title bar, then the centre, then the left, the right and the bottom.
+A text keeps `Tab` for itself, to indent a list or insert a tab. To leave a text, press
+`Ctrl+Tab`. To go back the other way, press `Ctrl+Shift+Tab`.
+
+## Open a panel with its shortcut
+
+Each panel has its own shortcut, which brings it to the front:
+
+- On the left: `Ctrl+Shift+B` *Binder*, `Ctrl+Shift+F` *Search*, `Ctrl+Shift+T` *Trash*,
+  `Ctrl+Shift+C` *Comments* and `Ctrl+Shift+G` *Writing games*.
+- On the right: `Ctrl+Shift+I` *Inspector*, `Ctrl+Shift+O` *Format*, `Ctrl+Shift+D`
+  *This document*, `Ctrl+Shift+K` *Footnotes* and `Ctrl+Shift+R` *Versions*.
+- At the bottom: `Ctrl+Shift+J` *Preview* and `Ctrl+Shift+L` *Go back in time*.
+
+The shortcut shows the panel but leaves the cursor where it was. Move to the panel with
+`Ctrl+Tab`, then `Tab`. *View ▸ Panels* lists the same panels with their shortcuts, and `F9`
+shows or hides the whole left side.
+
+## Find your way in the binder
+
+The binder is a tree of your chapters, scenes and notes. The Up and Down arrows go from item
+to item. The Right arrow opens a folder, and the Left arrow closes it.
+
+- `Enter` opens the item and puts the cursor in its text.
+- `Ctrl+Enter` opens it in the other half of the centre.
+- `F2` renames it, and `Delete` moves it to the trash.
+- `Alt+↑` and `Alt+↓` move it up or down. `Ctrl+]` and `Ctrl+[` move it one level in or out.
+
+The menu of an item cannot be opened from the keyboard yet. Its commands are in the
+*Document* menu, which acts on the item selected in the binder.
+
+## Change the view of a chapter, part or book
+
+A chapter, a part or a book opens with a bar of views at the top: its own page, the full
+text, the synopses, the corkboard and an overview. A screen reader announces the bar as a
+group of radio buttons named *Views*.
+
+Use the Left and Right arrows to change the view, and `Home` or `End` for the first and the
+last. The Up and Down arrows do not change it yet.
+
+## Commands, menus and settings
+
+- `F10` or `Alt` opens the menu bar. A screen reader does not announce a menu item's
+  shortcut yet, so this page and *Help ▸ Keyboard Shortcuts…* list them.
+- `Ctrl+Shift+P` opens the command palette. Type part of a command's name, then press
+  `Enter`.
+- `Ctrl+G`, or *Go ▸ Go to…*, finds an item by its name and opens it.
+- While you write, `Alt+↓` and `Alt+↑` go to the next and the previous item and put the
+  cursor in its text.
+- `Ctrl+,` opens *Settings*. In the list of pages on the left, use the arrows, then press
+  `Enter` to go to the page's first setting.
+- `F1` opens this help. `Enter` on a topic takes you into its text.
+
+## Where to take care
+
+Four places do not guide you yet:
+
+- In *New Work*, after *Next*, the cursor stays on the *Next* button. Press `Shift+Tab` to go
+  back up through the page you have just reached.
+- In a date field, `F4` or `Alt+↓` opens the calendar. Move to a day with the arrows, then
+  press `Enter`, or `Escape` to leave the date as it was. `Tab` closes the calendar without
+  choosing.
+- In this help, a link to another page cannot be followed with the keyboard yet. The list of
+  topics on the left reaches every page.
+- In *Settings*, the lists of the *Tags*, *Statuses*, *Templates*, *Personal dictionary* and
+  *Text replacements* pages can be read with the arrows, but the fields of a line cannot be
+  reached with the keyboard yet.
