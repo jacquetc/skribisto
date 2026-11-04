@@ -485,6 +485,8 @@ nav-about = Σχετικά
 
 synopsis = Σύνοψη
 epigraph = Μότο
+# The name a screen reader gives the editor holding an item's prose.
+editor-text-name = Κείμενο
 pane-manuscript = Χειρόγραφο
 corkboard = Φελλοπίνακας
 overview = Επισκόπηση

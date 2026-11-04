@@ -59,6 +59,7 @@ pub(super) fn synopsis_editor(
         Some(vm.writing_games()),
         open_doc.images(),
         Some(card.item_id),
+        tr!(synopsis()),
     )
 }
 

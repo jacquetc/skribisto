@@ -439,6 +439,8 @@ nav-learn = Lernen
 nav-about = Über
 synopsis = Zusammenfassung
 epigraph = Motto
+# The name a screen reader gives the editor holding an item's prose.
+editor-text-name = Text
 pane-manuscript = Manuskript
 corkboard = Pinnwand
 overview = Übersicht

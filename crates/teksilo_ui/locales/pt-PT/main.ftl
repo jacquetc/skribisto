@@ -461,6 +461,8 @@ nav-about = Acerca
 
 synopsis = Sinopse
 epigraph = Epígrafe
+# The name a screen reader gives the editor holding an item's prose.
+editor-text-name = Texto
 pane-manuscript = Manuscrito
 corkboard = Quadro de cortiça
 overview = Vista geral

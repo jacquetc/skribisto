@@ -551,3 +551,21 @@ fn the_scroll_offset_survives_a_rebuild_but_not_a_focus_change() {
         "a different item opened at {reset:.1} dp down, not at its own top"
     );
 }
+
+/// The target box is announced by name. Its caption is a separate line of text above
+/// it, so a screen reader used to give only its value ("No target"), with nothing to
+/// say what that value was of.
+#[test]
+fn the_goal_box_is_announced_by_name() {
+    let ctx = Rc::new(AppContext::new());
+    let (work_id, item_id) = work_with_item(&ctx, BinderItemSubRole::Scene);
+    let (mut tree, _root) = laid_out(&ctx, work_id, Some(item_id));
+    let names: Vec<String> = tree
+        .sync_accessibility()
+        .nodes
+        .iter()
+        .filter(|(_, n)| n.role() == teksilo::core::accesskit::Role::SpinButton)
+        .map(|(_, n)| n.label().unwrap_or_default().to_string())
+        .collect();
+    assert_eq!(names, vec![tr!(inspector_goal()).resolve_now()]);
+}

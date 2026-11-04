@@ -50,6 +50,7 @@ fn card_synopsis_editor_in_a_fixed_box_bounds_a_tall_synopsis_so_it_scrolls() {
         None,
         None,
         None,
+        tr!(synopsis()),
     );
     let mut tree = WidgetTree::new();
     let id = tree.add(FixedSize::new().width(320.0).height(200.0).child(editor));
@@ -96,6 +97,7 @@ fn synopsis_height(fit: SynopsisFit, pane_height: Option<f32>) -> f32 {
         // A widget test builds no project, so there is no palette; the submenu
         // comes down to Untagged alone.
         None,
+        tr!(synopsis()),
     );
     let mut tree = WidgetTree::new();
     let id = match pane_height {
@@ -596,6 +598,7 @@ fn only_the_mounted_manuscript_arm_claims_the_tabs_prose_handle() {
             false,
             None,
             None,
+            tr!(editor_text_name()),
         )
     };
 
@@ -642,6 +645,7 @@ fn opening_the_menu_from_the_keyboard_leaves_the_caret_where_it_was() {
         None,
         None,
         None,
+        tr!(synopsis()),
     );
     let mut tree = WidgetTree::new();
     let root = tree.add(FixedSize::new().width(320.0).height(200.0).child(editor));
@@ -690,6 +694,7 @@ fn tab_leaves_a_synopsis_and_types_nothing() {
         None,
         None,
         None,
+        tr!(synopsis()),
     );
     let mut tree = WidgetTree::new();
     let root = tree.add(
@@ -709,5 +714,105 @@ fn tab_leaves_a_synopsis_and_types_nothing() {
         tree.focused(),
         stops.last().copied(),
         "Tab goes on to the button"
+    );
+}
+
+/// The names a screen reader hears for the editable text areas in `tree`.
+fn editor_names(tree: &mut WidgetTree) -> Vec<String> {
+    tree.sync_accessibility()
+        .nodes
+        .iter()
+        .filter(|(_, n)| n.role() == teksilo::core::accesskit::Role::MultilineTextInput)
+        .map(|(_, n)| n.label().unwrap_or_default().to_string())
+        .collect()
+}
+
+/// A writer moving through a chapter with a screen reader hears which editor they are
+/// in: its text, its synopsis, its epigraph. All three used to be a bare "edit", so
+/// the only way to tell them apart was to read the words in them.
+#[test]
+fn the_text_the_synopsis_and_the_epigraph_are_announced_by_name() {
+    let doc = TextDocument::new();
+    doc.set_plain_text("Phileas Fogg left London.").unwrap();
+    let typo = test_typo();
+    let text = writing_column(
+        &doc,
+        &Signal::new(700.0),
+        &typo,
+        MAIN_MIN_LINES,
+        || {},
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        false,
+        None,
+        false,
+        None,
+        None,
+        tr!(editor_text_name()),
+    );
+    let epigraph = synopsis_editor(
+        &TextDocument::new(),
+        &typo,
+        SynopsisFit::Growing,
+        || {},
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        false,
+        None,
+        false,
+        None,
+        tr!(epigraph()),
+    );
+    let (card, _handle) = card_synopsis_editor(
+        TextDocument::new(),
+        test_typo(),
+        || {},
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        tr!(synopsis()),
+    );
+    let mut tree = WidgetTree::new();
+    tree.add(VStack::new().child(text).child(epigraph).child(card));
+    tree.layout(SizeProposal::exact(900.0, 900.0));
+
+    let names = editor_names(&mut tree);
+    for expected in [
+        tr!(editor_text_name()).resolve_now(),
+        tr!(epigraph()).resolve_now(),
+        tr!(synopsis()).resolve_now(),
+    ] {
+        assert!(
+            names.contains(&expected),
+            "no editor is announced as {expected:?}; names heard: {names:?}"
+        );
+    }
+    assert!(
+        names.iter().all(|n| !n.is_empty()),
+        "an editor is still announced with no name: {names:?}"
     );
 }

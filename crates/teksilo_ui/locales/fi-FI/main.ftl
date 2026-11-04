@@ -461,6 +461,8 @@ nav-about = Tietoja
 
 synopsis = Tiivistelmä
 epigraph = Motto
+# The name a screen reader gives the editor holding an item's prose.
+editor-text-name = Teksti
 pane-manuscript = Käsikirjoitus
 corkboard = Korkkitaulu
 overview = Yleiskatsaus

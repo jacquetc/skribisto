@@ -465,6 +465,8 @@ nav-about = אודות
 
 synopsis = תקציר
 epigraph = מוטו
+# The name a screen reader gives the editor holding an item's prose.
+editor-text-name = טקסט
 pane-manuscript = כתב יד
 corkboard = לוח שעם
 overview = סקירה כללית

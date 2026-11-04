@@ -71,6 +71,10 @@ pub(super) fn section(
         );
         col = col.child(
             SpinBox::new(value, 0_i64, skribisto_model::goal_unit::MAX_GOAL)
+                // The caption above is a separate line of text, not linked to the box,
+                // so the box carries the same words as its own name: a screen reader
+                // otherwise announced only its value ("No target").
+                .label(tr!(inspector_goal()))
                 .single_step(100)
                 // `0` is the no-target sentinel this field has always used, so
                 // the bottom of the range has to *read* as "none" rather than

@@ -118,6 +118,7 @@ fn epigraph_section(tab: &ContentTab) -> Option<impl Widget> {
             // A tab's editor is on screen and lays out on its first frame.
             false,
             tab.capture_palette(),
+            tr!(epigraph()),
         ));
     Some(crate::widgets::tip::RichTip::new(
         crate::tooltip_registry::CONCEPT_EPIGRAPH,
@@ -551,6 +552,7 @@ pub fn folder_own_pane(tab: &ContentTab) -> Box<dyn Widget> {
                 // A tab's editor is on screen and lays out on its first frame.
                 false,
                 tab.capture_palette(),
+                tr!(synopsis()),
             ));
     }
     // A chapter folder's own prose. Absent for a Part or a Book — the matrix gives
@@ -788,6 +790,7 @@ pub fn heading(tab: &ContentTab) -> Box<dyn Widget> {
                 // A tab's editor is on screen and lays out on its first frame.
                 false,
                 tab.capture_palette(),
+                tr!(synopsis()),
             ));
     }
     tab_backdrop(
@@ -874,6 +877,7 @@ fn folder_synopsis_body(tab: &ContentTab, will_show: bool) -> impl Widget {
                 // A tab's editor is on screen and lays out on its first frame.
                 false,
                 tab.capture_palette(),
+                tr!(synopsis()),
             ));
     }
     laned(

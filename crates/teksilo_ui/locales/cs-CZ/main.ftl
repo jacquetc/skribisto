@@ -468,6 +468,8 @@ nav-about = O aplikaci
 
 synopsis = Synopse
 epigraph = Motto
+# The name a screen reader gives the editor holding an item's prose.
+editor-text-name = Text
 pane-manuscript = Rukopis
 corkboard = Nástěnka
 overview = Přehled

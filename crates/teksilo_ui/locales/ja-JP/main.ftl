@@ -436,6 +436,8 @@ nav-about = このアプリについて
 
 synopsis = あらすじ
 epigraph = エピグラフ
+# The name a screen reader gives the editor holding an item's prose.
+editor-text-name = テキスト
 pane-manuscript = 原稿
 corkboard = コルクボード
 overview = 一覧

@@ -280,6 +280,7 @@ pub fn side_synopsis_editor(
         anchor,
         estimate_height,
         capture,
+        tr!(synopsis()),
     )
 }
 

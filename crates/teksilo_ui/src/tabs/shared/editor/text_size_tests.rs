@@ -69,6 +69,7 @@ fn column_over(typo: &EditorTypography) -> WidgetTree {
         None,
         // Nothing private on this probe's editor: the default `all()`.
         None,
+        tr!(editor_text_name()),
     );
     let mut tree = WidgetTree::new();
     tree.add(col);

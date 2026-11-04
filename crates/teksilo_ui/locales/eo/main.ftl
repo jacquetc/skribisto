@@ -430,6 +430,8 @@ nav-learn = Lerni
 nav-about = Pri
 synopsis = Resumo
 epigraph = Epigrafo
+# The name a screen reader gives the editor holding an item's prose.
+editor-text-name = Teksto
 pane-manuscript = Manuskripto
 corkboard = Kartotabulo
 overview = Superrigardo

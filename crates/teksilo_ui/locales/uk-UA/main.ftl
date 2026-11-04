@@ -452,6 +452,8 @@ nav-learn = Навчання
 nav-about = Про програму
 synopsis = Синопсис
 epigraph = Епіграф
+# The name a screen reader gives the editor holding an item's prose.
+editor-text-name = Текст
 pane-manuscript = Рукопис
 corkboard = Коркова дошка
 overview = Огляд

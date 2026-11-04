@@ -436,6 +436,8 @@ nav-about = 정보
 
 synopsis = 줄거리 요약
 epigraph = 머리말 인용문
+# The name a screen reader gives the editor holding an item's prose.
+editor-text-name = 텍스트
 pane-manuscript = 원고
 corkboard = 코르크보드
 overview = 개요

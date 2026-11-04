@@ -539,6 +539,8 @@ nav-about = À propos
 ## Onglets & volets d'édition
 synopsis = Synopsis
 epigraph = Épigraphe
+# The name a screen reader gives the editor holding an item's prose.
+editor-text-name = Texte
 pane-manuscript = Manuscrit
 corkboard = Tableau de liège
 overview = Vue d’ensemble

@@ -251,6 +251,10 @@ pub fn writing_column(
     // A mask and not a bare `SessionId`, so a surface with two private layers needs no
     // second parameter, and so the call site says what it means rather than what it holds.
     highlight_mask: Option<teksilo::text_document::HighlightMask>,
+    // What a screen reader calls this editor when focus lands in it: "Text" for the
+    // prose of an item, wherever it is shown. Without one it was announced as a bare
+    // edit field, and a writer could only tell where they were by reading the words.
+    name: teksilo::i18n::LocalizedString,
 ) -> HStack {
     // Stand by to supply an image this document does not have. A picture
     // pasted in from another editor arrives as a reference — pixels live on the
@@ -296,6 +300,7 @@ pub fn writing_column(
     }
     let mut editor = editor
         .style(WritingEditorStyle)
+        .label(name)
         .on_change(on_change)
         // Ctrl(⌘)+click follows a hyperlink; a plain click just puts the caret
         // in it, because this is an editor and the writer is usually trying to
@@ -1216,6 +1221,7 @@ pub fn writing_section(
             tags,
             // Nothing private on this surface: the default `all()`.
             None,
+            tr!(editor_text_name()),
         ))
 }
 

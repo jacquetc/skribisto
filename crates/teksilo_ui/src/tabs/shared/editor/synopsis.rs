@@ -98,6 +98,11 @@ pub fn synopsis_editor(
     // project around them and on the corkboard card, which is a preview rather than a
     // writing surface; the row is then not offered at all.
     capture: Option<crate::tabs::shared::editor::CapturePalette>,
+    // What a screen reader calls this editor: "Synopsis", or "Epigraph" for the
+    // quotation that opens a chapter, which is built here too. Without one, the two
+    // were announced as bare edit fields, indistinguishable from each other and from
+    // the text.
+    name: LocalizedString,
 ) -> impl Widget {
     // Stand by to supply an image this document does not have. A picture
     // pasted in from another editor arrives as a reference — pixels live on the
@@ -115,6 +120,7 @@ pub fn synopsis_editor(
     }
     let mut editor = editor
         .style(WritingEditorStyle)
+        .label(name)
         .on_change(on_change)
         // A synopsis and an epigraph are fields on a page: Tab goes on to the next
         // control, as in any form. Keeping it for indenting made them a trap for a
@@ -284,6 +290,8 @@ pub fn card_synopsis_editor(
     // The `BinderItem` this card is about; see `writing_column`'s own note.
     // Feeds "Add as note", same as every other editor's context menu.
     item: Option<common::types::EntityId>,
+    // What a screen reader calls the card's editor; see [`synopsis_editor`]'s note.
+    name: LocalizedString,
 ) -> (impl Widget, EditorHandle) {
     // Stand by to supply an image this document does not have. A picture
     // pasted in from another editor arrives as a reference — pixels live on the
@@ -296,6 +304,7 @@ pub fn card_synopsis_editor(
     }
     let mut editor = editor
         .style(WritingEditorStyle)
+        .label(name)
         .on_change(on_change)
         // A card's synopsis is a field, like the synopsis on the item's own page.
         .tab_key(teksilo::widgets::TabKey::MoveFocus)
@@ -537,7 +546,7 @@ pub fn synopsis_section(
                             read_only,
                             anchor,
                             estimate_height,
-                            capture.clone(),
+                            capture.clone(), tr!(synopsis()),
                         )
                     }
                 }
@@ -626,6 +635,8 @@ pub fn synopsis_column(
     // project around them and on the corkboard card, which is a preview rather than a
     // writing surface; the row is then not offered at all.
     capture: Option<crate::tabs::shared::editor::CapturePalette>,
+    // Forwarded straight to [`synopsis_editor`] — see its own note.
+    name: LocalizedString,
 ) -> CenterColumnFlowing {
     let synopsis_width = column_width.map(|w| (w - SYNOPSIS_WIDTH_INSET).max(0.0));
     // Read back below, once the editor has been constructed. Cloned first because
@@ -653,7 +664,7 @@ pub fn synopsis_column(
                     read_only,
                     anchor,
                     estimate_height,
-                    capture.clone(),
+                    capture.clone(), name,
                 )
             }
         }

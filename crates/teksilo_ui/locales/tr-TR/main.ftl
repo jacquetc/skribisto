@@ -460,6 +460,8 @@ nav-about = Hakkında
 
 synopsis = Özet
 epigraph = Epigraf
+# The name a screen reader gives the editor holding an item's prose.
+editor-text-name = Metin
 pane-manuscript = El yazması
 corkboard = Mantar pano
 overview = Genel bakış

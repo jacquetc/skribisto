@@ -477,6 +477,8 @@ nav-about = O programie
 
 synopsis = Streszczenie
 epigraph = Motto
+# The name a screen reader gives the editor holding an item's prose.
+editor-text-name = Tekst
 pane-manuscript = Rękopis
 corkboard = Tablica korkowa
 overview = Przegląd

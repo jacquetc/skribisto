@@ -728,6 +728,7 @@ impl NoteInProseBody {
                 // capture submenu is available from it like any other editor.
                 Some(self.tags.clone()),
                 mask,
+                tr!(editor_text_name()),
             ));
         }
         col

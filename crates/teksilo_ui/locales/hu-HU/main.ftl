@@ -438,6 +438,8 @@ nav-learn = Tanulás
 nav-about = Névjegy
 synopsis = Szinopszis
 epigraph = Mottó
+# The name a screen reader gives the editor holding an item's prose.
+editor-text-name = Szöveg
 pane-manuscript = Kézirat
 corkboard = Parafatábla
 overview = Áttekintés

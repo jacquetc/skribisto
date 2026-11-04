@@ -466,6 +466,8 @@ nav-learn = تعلّم
 nav-about = حول
 synopsis = الملخص
 epigraph = الاقتباس الاستهلالي
+# The name a screen reader gives the editor holding an item's prose.
+editor-text-name = النص
 pane-manuscript = المخطوطة
 corkboard = لوحة البطاقات
 overview = النظرة العامة

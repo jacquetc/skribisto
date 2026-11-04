@@ -478,6 +478,8 @@ nav-about = О программе
 
 synopsis = Синопсис
 epigraph = Эпиграф
+# The name a screen reader gives the editor holding an item's prose.
+editor-text-name = Текст
 pane-manuscript = Рукопись
 corkboard = Пробковая доска
 overview = Обзор

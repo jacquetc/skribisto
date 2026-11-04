@@ -461,6 +461,8 @@ nav-about = Om
 
 synopsis = Synopsis
 epigraph = Epigraf
+# The name a screen reader gives the editor holding an item's prose.
+editor-text-name = Tekst
 pane-manuscript = Manus
 corkboard = Oppslagstavle
 overview = Oversikt
