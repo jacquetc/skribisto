@@ -295,7 +295,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
         let focus = deps.focus.clone();
         ctx.register_action_global(Action::new("search.replace").on_invoke(move |_i, _c| {
             unless_distraction_free(&focus, || {
-                docking.reveal_dock(search_dock);
+                docking.focus_dock(search_dock);
                 search.set_show_replace(true);
             });
         }));
@@ -334,7 +334,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
                 if docking.side_size(DockSide::Bottom) < TIMELINE_MIN_HEIGHT {
                     docking.set_side_size(DockSide::Bottom, TIMELINE_MIN_HEIGHT);
                 }
-                docking.reveal_dock(timeline_dock);
+                docking.focus_dock(timeline_dock);
             });
         }));
     }
@@ -343,15 +343,16 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
 /// One shortcut and one command per panel, from [`crate::docks::panels::PANELS`]: the
 /// door a keyboard reader has to a panel they cannot click on the rail.
 ///
-/// `reveal_dock`, never `toggle_dock`: someone reaching for a panel wants it in front of
+/// `focus_dock`, never `toggle_dock`: someone reaching for a panel wants it in front of
 /// them, and a toggle that hides a panel they cannot see would be the opposite of the
 /// point. It is also the recovery door for a panel a saved desk has lost: a desk saved
 /// with an inconsistent roster stops mounting a dock, the reconcile reads the absence as
 /// "the writer closed this", and a rail-only dock then had no way back short of deleting
 /// `workspace.toml`.
 ///
-/// Reveals and does not yet move the keyboard focus into the panel: teksilo's
-/// `DockingModel` has no call for it, and the panel's content id is the framework's.
+/// The keyboard focus goes into the panel (where it last was there, else its first
+/// control) and a screen reader hears the panel's title. Revealing alone left the
+/// focus in the text, and a reader who pressed the chord heard nothing at all.
 fn register_panel_commands(ctx: &mut BuildContext, deps: &CommandDeps) {
     for panel in crate::docks::panels::PANELS {
         ctx.register_shortcut_global(
@@ -370,7 +371,7 @@ fn register_panel_commands(ctx: &mut BuildContext, deps: &CommandDeps) {
         let dock = DockWidgetId::from_raw(panel.dock);
         let focus = deps.focus.clone();
         ctx.register_action_global(Action::new(panel.intent).on_invoke(move |_i, _c| {
-            unless_distraction_free(&focus, || docking.reveal_dock(dock));
+            unless_distraction_free(&focus, || docking.focus_dock(dock));
         }));
     }
 }
