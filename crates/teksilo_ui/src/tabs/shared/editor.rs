@@ -281,12 +281,15 @@ pub fn writing_column(
         let tally = common::arrival::shared();
         editor = editor.on_text_inserted(move |source, chars| {
             use common::arrival::Arrival;
-            use teksilo::widgets::rich_text::EditSource;
+            use teksilo::widgets::EditSource;
             let arrival = match source {
                 EditSource::Keyboard | EditSource::Ime => Arrival::Typed,
                 EditSource::Clipboard => Arrival::Pasted,
-                EditSource::Accessibility => Arrival::Dictated,
-                EditSource::Programmatic => Arrival::Programmatic,
+                EditSource::Accessibility | EditSource::Dictation => Arrival::Dictated,
+                // macOS Writing Tools rewrites the writer's words on request: text
+                // the system put there for them, which is what "Inserted for you"
+                // says, not typing.
+                EditSource::Programmatic | EditSource::WritingTools => Arrival::Programmatic,
             };
             tally.record(&project, arrival, chars as u64);
         });

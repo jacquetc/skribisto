@@ -20,6 +20,19 @@ Description:
 - "Search preview no longer claims F10, which belongs to the menu bar on Windows and Linux and never reached it there. Revealing an item in the binder brings the binder in front of Search or the Trash, which used to keep it hidden"
 - "Help ▸ Using a screen reader opens a new page for writers who use NVDA, JAWS, Orca or VoiceOver, with the cursor in its text: how the window is laid out, the shortcut of every panel, and the keys of the binder, the views bar, the menus and Settings"
 - "When Skribisto starts with a screen reader running, it offers to open that page. Tick “Do not show this again” to stop the offer; the page stays in the Help menu, and Settings ▸ Reset to defaults brings the offer back"
+- "Undo works again after a visit to Settings. Once Settings had been opened and closed, Ctrl+Z and Edit ▸ Undo no longer took back a move in the binder, a trash or any other change to the project's structure, for the rest of the session"
+- "Cut, Copy, Paste and Select all work in the fields of Settings and of the other dialogs, such as Rename. Ctrl+V and Ctrl+A did nothing there"
+- "F6 and Shift+F6 move between the left panels, the text in the centre and the right panels, and a screen reader says where you are. Tab goes through the window in reading order: the title bar, the left, the centre, the right and the status bar"
+- "With a screen reader, the binder says each item's level and its place among its neighbours, and Shift+F10 or the Menu key opens an item's own menu, with Move at the end. Every item used to read as level 1, and the keyboard opened a Move menu in English instead"
+- "With a screen reader, a menu command, a command palette row and a button say their keyboard shortcut. A menu opened from the keyboard starts on its first row, where it used to start on the row chosen last time"
+- "The Up and Down arrows change the view of a chapter, part or book, as Left and Right do"
+- "In the help, Tab goes from link to link in a page and Enter follows one"
+- "A date field's calendar opens as a small dialog with Cancel and OK. Tab stays inside it, and a screen reader says the date chosen. Tab used to close the calendar without choosing"
+- "In New Work, Next takes you into the next page's first field and a screen reader announces the step. The cursor used to stay on Next"
+- "In a narrow window, the second half of a split editor no longer draws over the right panels: both halves shrink to fit"
+- "Enter at the end of a heading starts an ordinary paragraph, as in LibreOffice Writer, and Enter in the middle of one splits it"
+- "On Windows, input methods for Chinese, Japanese and Korean, the emoji panel and voice typing write into Skribisto as they do into Notepad: the candidate window follows the text, and voice typing shows its words as you speak"
+- "Chinese, Japanese and Korean text, and emoji, are drawn with the fonts your system uses for them, in colour for emoji, and bold or italic when the text around them is"
 ---
 Version: 3.3.0
 Date: 2026-10-27

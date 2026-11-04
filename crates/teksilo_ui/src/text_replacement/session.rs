@@ -62,7 +62,8 @@ use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use teksilo::text_document::TextDocument;
-use teksilo::widgets::rich_text::{EditSource, EditorHandle};
+use teksilo::widgets::EditSource;
+use teksilo::widgets::rich_text::EditorHandle;
 
 use super::engine::TextReplacementEngine;
 use super::typography::{SmartPunctuationFlags, TypographyEngine};
