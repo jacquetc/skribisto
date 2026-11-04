@@ -41,7 +41,9 @@ Il Raccoglitore è un albero dei tuoi capitoli, scene e note. Il tuo lettore di 
 il livello di ogni elemento e il suo posto tra i vicini. Le frecce su e giù passano da un
 elemento all'altro. La freccia destra apre una cartella, la freccia sinistra la chiude.
 
-- `Invio` apre l'elemento e mette il cursore nel suo testo.
+- `Invio` apre l'elemento e mette il cursore nel suo testo. Se l'elemento mostra una vista
+  senza testo, come la sua bacheca o *Ritmo*, il cursore resta nel Raccoglitore: `F6` ti
+  porta nell'*Area principale*.
 - `Ctrl+Invio` lo apre nell'altra metà del centro.
 - `F2` lo rinomina, e `Canc` lo sposta nel cestino.
 - `Alt+↑` e `Alt+↓` lo spostano in su o in giù. `Ctrl+]` e `Ctrl+[` lo spostano di un
@@ -51,9 +53,11 @@ elemento all'altro. La freccia destra apre una cartella, la freccia sinistra la 
 
 ## Cambiare la vista di un capitolo, una parte o un libro
 
-Un capitolo, una parte o un libro si apre con una barra di viste in alto: la sua pagina, il
-testo completo, i sinossi, la bacheca e una panoramica. Un lettore di schermo annuncia la
-barra come un gruppo di pulsanti di opzione chiamato *Viste*.
+Un capitolo che contiene scene, una parte o un libro si apre con una barra di viste in alto:
+la sua pagina, il testo completo, i sinossi, la bacheca e una panoramica. Un libro ha anche
+*Ritmo* e *Analisi*. Un capitolo scritto come un unico testo, senza scene, non ha la barra.
+Un lettore di schermo annuncia la barra come un gruppo di pulsanti di opzione chiamato
+*Viste*.
 
 Usa le frecce per cambiare vista, e `Home` o `Fine` per la prima e l'ultima.
 

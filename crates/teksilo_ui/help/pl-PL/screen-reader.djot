@@ -41,7 +41,9 @@ Segregator to drzewo twoich rozdziałów, scen i notatek. Czytnik ekranu podaje 
 każdego elementu i jego miejsce wśród sąsiadów. Strzałki w górę i w dół przechodzą od
 elementu do elementu. Strzałka w prawo otwiera folder, a strzałka w lewo go zamyka.
 
-- `Enter` otwiera element i umieszcza kursor w jego tekście.
+- `Enter` otwiera element i umieszcza kursor w jego tekście. Gdy element pokazuje widok bez
+  tekstu, na przykład tablicę korkową albo *Tempo*, kursor zostaje w segregatorze: `F6`
+  przenosi cię do *Obszaru głównego*.
 - `Ctrl+Enter` otwiera go w drugiej połowie środka.
 - `F2` zmienia jego nazwę, a `Delete` przenosi go do kosza.
 - `Alt+↑` i `Alt+↓` przesuwają go w górę lub w dół. `Ctrl+]` i `Ctrl+[` przesuwają go o
@@ -51,9 +53,10 @@ elementu do elementu. Strzałka w prawo otwiera folder, a strzałka w lewo go za
 
 ## Zmiana widoku rozdziału, części lub książki
 
-Rozdział, część albo książka otwiera się z paskiem widoków u góry: własna strona, pełny
-tekst, streszczenia, tablica korkowa i przegląd. Czytnik ekranu ogłasza ten pasek jako grupę
-przycisków opcji o nazwie *Widoki*.
+Rozdział zawierający sceny, część albo książka otwiera się z paskiem widoków u góry: własna
+strona, pełny tekst, streszczenia, tablica korkowa i przegląd. Książka ma też *Tempo* i
+*Analizę*. Rozdział napisany jako jeden tekst, bez scen, nie ma paska. Czytnik ekranu
+ogłasza ten pasek jako grupę przycisków opcji o nazwie *Widoki*.
 
 Strzałkami zmieniasz widok, a klawiszami `Home` i `End` przechodzisz do pierwszego i
 ostatniego.

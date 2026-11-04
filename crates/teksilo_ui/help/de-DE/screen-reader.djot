@@ -44,7 +44,9 @@ die Ebene jedes Eintrags und seine Stelle unter seinen Nachbarn. Die Pfeiltasten
 und unten gehen von Eintrag zu Eintrag. Der Pfeil nach rechts öffnet einen Ordner, der Pfeil
 nach links schließt ihn.
 
-- `Eingabe` öffnet den Eintrag und setzt den Cursor in seinen Text.
+- `Eingabe` öffnet den Eintrag und setzt den Cursor in seinen Text. Zeigt der Eintrag eine
+  Ansicht ohne Text, etwa seine Pinnwand oder *Schreibtempo*, bleibt der Cursor in der
+  Projektmappe: `F6` bringt Sie in den *Hauptbereich*.
 - `Strg+Eingabe` öffnet ihn in der anderen Hälfte der Mitte.
 - `F2` benennt ihn um, und `Entf` legt ihn in den Papierkorb.
 - `Alt+↑` und `Alt+↓` verschieben ihn nach oben oder unten. `Strg+]` und `Strg+[` rücken
@@ -54,10 +56,11 @@ nach links schließt ihn.
 
 ## Die Ansicht eines Kapitels, Teils oder Buchs wechseln
 
-Ein Kapitel, ein Teil oder ein Buch öffnet sich mit einer Leiste von Ansichten oben: die
-eigene Seite, der ganze Text, die Synopsen, die Pinnwand und eine Übersicht. Ein
-Bildschirmleser kündigt die Leiste als Gruppe von Optionsfeldern mit dem Namen *Ansichten*
-an.
+Ein Kapitel mit Szenen, ein Teil oder ein Buch öffnet sich mit einer Leiste von Ansichten
+oben: die eigene Seite, der ganze Text, die Synopsen, die Pinnwand und eine Übersicht. Ein
+Buch hat außerdem *Schreibtempo* und *Analyse*. Ein Kapitel, das ein einziger Text ohne
+Szenen ist, hat keine Leiste. Ein Bildschirmleser kündigt die Leiste als Gruppe von
+Optionsfeldern mit dem Namen *Ansichten* an.
 
 Mit den Pfeiltasten wechseln Sie die Ansicht, mit `Pos1` und `Ende` springen Sie zur ersten
 und zur letzten.

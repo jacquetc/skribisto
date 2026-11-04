@@ -41,7 +41,9 @@ The binder is a tree of your chapters, scenes and notes. Your screen reader says
 level and its place among its neighbours. The Up and Down arrows go from item to item. The
 Right arrow opens a folder, and the Left arrow closes it.
 
-- `Enter` opens the item and puts the cursor in its text.
+- `Enter` opens the item and puts the cursor in its text. When the item shows a view with
+  no text, such as its corkboard or *Pace*, the cursor stays in the binder: `F6` takes you
+  to the *Main area*.
 - `Ctrl+Enter` opens it in the other half of the centre.
 - `F2` renames it, and `Delete` moves it to the trash.
 - `Alt+↑` and `Alt+↓` move it up or down. `Ctrl+]` and `Ctrl+[` move it one level in or out.
@@ -50,9 +52,10 @@ Right arrow opens a folder, and the Left arrow closes it.
 
 ## Change the view of a chapter, part or book
 
-A chapter, a part or a book opens with a bar of views at the top: its own page, the full
-text, the synopses, the corkboard and an overview. A screen reader announces the bar as a
-group of radio buttons named *Views*.
+A chapter that holds scenes, a part or a book opens with a bar of views at the top: its own
+page, the full text, the synopses, the corkboard and an overview. A book also has *Pace* and
+*Analysis*. A chapter written as a single text, with no scenes, has no bar. A screen reader
+announces the bar as a group of radio buttons named *Views*.
 
 Use the arrows to change the view, and `Home` or `End` for the first and the last.
 

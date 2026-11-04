@@ -41,7 +41,9 @@ El Archivador es un árbol de sus capítulos, escenas y notas. Su lector de pant
 nivel de cada elemento y su lugar entre sus vecinos. Las flechas arriba y abajo van de un
 elemento a otro. La flecha derecha abre una carpeta y la flecha izquierda la cierra.
 
-- `Intro` abre el elemento y pone el cursor en su texto.
+- `Intro` abre el elemento y pone el cursor en su texto. Si el elemento muestra una vista
+  sin texto, como su tablero de corcho o *Ritmo*, el cursor se queda en el Archivador: `F6`
+  le lleva al *Área principal*.
 - `Ctrl+Intro` lo abre en la otra mitad del centro.
 - `F2` le cambia el nombre, y `Supr` lo envía a la papelera.
 - `Alt+↑` y `Alt+↓` lo suben o lo bajan. `Ctrl+]` y `Ctrl+[` lo desplazan un nivel hacia
@@ -51,9 +53,11 @@ elemento a otro. La flecha derecha abre una carpeta y la flecha izquierda la cie
 
 ## Cambiar la vista de un capítulo, una parte o un libro
 
-Un capítulo, una parte o un libro se abre con una barra de vistas en la parte superior: su
-propia página, el texto completo, las sinopsis, el tablero de corcho y una vista general. Un
-lector de pantalla anuncia la barra como un grupo de botones de opción llamado *Vistas*.
+Un capítulo que contiene escenas, una parte o un libro se abre con una barra de vistas en la
+parte superior: su propia página, el texto completo, las sinopsis, el tablero de corcho y una
+vista general. Un libro tiene además *Ritmo* y *Análisis*. Un capítulo escrito como un solo
+texto, sin escenas, no tiene barra. Un lector de pantalla anuncia la barra como un grupo de
+botones de opción llamado *Vistas*.
 
 Use las flechas para cambiar de vista, e `Inicio` o `Fin` para la primera y la última.
 

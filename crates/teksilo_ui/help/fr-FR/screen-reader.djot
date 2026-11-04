@@ -43,7 +43,9 @@ Le classeur est une arborescence de vos chapitres, scènes et notes. Votre lecte
 donne le niveau de chaque élément et sa place parmi ses voisins. Les flèches Haut et Bas
 vont d’un élément à l’autre. La flèche Droite ouvre un dossier, la flèche Gauche le referme.
 
-- `Entrée` ouvre l’élément et place le curseur dans son texte.
+- `Entrée` ouvre l’élément et place le curseur dans son texte. Si l’élément affiche une vue
+  sans texte, comme son tableau de liège ou *Rythme*, le curseur reste dans le classeur :
+  `F6` vous emmène dans la *Zone principale*.
 - `Ctrl+Entrée` l’ouvre dans l’autre moitié du centre.
 - `F2` le renomme, et `Suppr` le met à la corbeille.
 - `Alt+↑` et `Alt+↓` le montent ou le descendent. `Ctrl+]` et `Ctrl+[` le décalent d’un
@@ -53,9 +55,11 @@ vont d’un élément à l’autre. La flèche Droite ouvre un dossier, la flèc
 
 ## Changer la vue d’un chapitre, d’une partie ou d’un livre
 
-Un chapitre, une partie ou un livre s’ouvre avec une barre de vues en haut : sa propre page,
-le texte complet, les synopsis, le tableau de liège et une vue d’ensemble. Un lecteur d’écran
-annonce cette barre comme un groupe de boutons radio nommé *Vues*.
+Un chapitre qui contient des scènes, une partie ou un livre s’ouvre avec une barre de vues en
+haut : sa propre page, le texte complet, les synopsis, le tableau de liège et une vue
+d’ensemble. Un livre a aussi *Rythme* et *Analyse*. Un chapitre écrit d’un seul texte, sans
+scènes, n’a pas de barre. Un lecteur d’écran annonce cette barre comme un groupe de boutons
+radio nommé *Vues*.
 
 Utilisez les flèches pour changer de vue, et `Origine` ou `Fin` pour la première et la
 dernière.

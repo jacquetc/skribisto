@@ -41,7 +41,9 @@ O Arquivador é uma árvore dos seus capítulos, cenas e notas. O seu leitor de 
 nível de cada item e o seu lugar entre os vizinhos. As setas para cima e para baixo passam
 de item em item. A seta para a direita abre uma pasta e a seta para a esquerda fecha-a.
 
-- `Enter` abre o item e coloca o cursor no seu texto.
+- `Enter` abre o item e coloca o cursor no seu texto. Se o item mostrar uma vista sem texto,
+  como o seu quadro de cortiça ou *Ritmo*, o cursor fica no Arquivador: `F6` leva-o à
+  *Área principal*.
 - `Ctrl+Enter` abre-o na outra metade do centro.
 - `F2` muda-lhe o nome, e `Delete` envia-o para o lixo.
 - `Alt+↑` e `Alt+↓` sobem-no ou descem-no. `Ctrl+]` e `Ctrl+[` deslocam-no um nível para
@@ -51,9 +53,11 @@ de item em item. A seta para a direita abre uma pasta e a seta para a esquerda f
 
 ## Mudar a vista de um capítulo, de uma parte ou de um livro
 
-Um capítulo, uma parte ou um livro abre com uma barra de vistas no topo: a sua própria
-página, o texto completo, as sinopses, o quadro de cortiça e uma vista geral. Um leitor de
-ecrã anuncia a barra como um grupo de botões de opção chamado *Vistas*.
+Um capítulo que contém cenas, uma parte ou um livro abre com uma barra de vistas no topo: a
+sua própria página, o texto completo, as sinopses, o quadro de cortiça e uma vista geral. Um
+livro tem também *Ritmo* e *Análise*. Um capítulo escrito como um único texto, sem cenas,
+não tem barra. Um leitor de ecrã anuncia a barra como um grupo de botões de opção chamado
+*Vistas*.
 
 Use as setas para mudar de vista, e `Home` ou `End` para a primeira e a última.
 
