@@ -23,6 +23,70 @@ use teksilo::widgets::{
 
 use super::nav::{Navigator, Pane, Root, Sec, ancestors_of};
 
+// ── Sending the keyboard back to a field ─────────────────────────────────────
+
+/// Where a page sends the keyboard back to after a command: the field a
+/// [`FocusTarget`] wraps, once it is built.
+///
+/// An add row's button disables itself once its field is emptied, and the
+/// focus was left on that disabled button: the writer adding several words had
+/// to find the field again, and a screen reader heard "unavailable".
+#[derive(Clone, Default)]
+pub(crate) struct FocusBack(Rc<std::cell::Cell<Option<WidgetId>>>);
+
+impl FocusBack {
+    /// Put the keyboard in the wrapped field (its first Tab stop).
+    pub(crate) fn focus(&self, ctx: &mut EventContext) {
+        if let Some(id) = self.0.get() {
+            ctx.request_focus_into(id);
+        }
+    }
+}
+
+/// Wraps a field and tells its [`FocusBack`] the field's id when built.
+pub(crate) struct FocusTarget {
+    pending: Option<Box<dyn Widget>>,
+    child: Option<WidgetId>,
+    back: FocusBack,
+}
+
+impl FocusTarget {
+    pub(crate) fn new(field: impl Widget + 'static, back: &FocusBack) -> Self {
+        Self {
+            pending: Some(Box::new(field)),
+            child: None,
+            back: back.clone(),
+        }
+    }
+}
+
+impl std::fmt::Debug for FocusTarget {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("FocusTarget").finish()
+    }
+}
+
+impl Widget for FocusTarget {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        if let Some(field) = self.pending.take() {
+            self.child = Some(ctx.add_boxed(field));
+        }
+        self.back.0.set(self.child);
+        self.child.into_iter().collect()
+    }
+
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        self.child
+            .and_then(|id| ctx.child_size(id, proposal))
+            .map(LayoutResponse::from)
+            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    }
+
+    fn children(&self) -> Vec<WidgetId> {
+        self.child.into_iter().collect()
+    }
+}
+
 // ── The pane's own measure ───────────────────────────────────────────────────
 
 /// A pane body's horizontal inset, per side — the `24.0` half of

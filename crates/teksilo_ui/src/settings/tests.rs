@@ -1630,3 +1630,37 @@ fn f2_takes_the_keyboard_into_a_list_rows_fields() {
         assert!(under_a_row(&tree, next), "{page}: Tab left the row");
     }
 }
+
+/// After "Add word", the keyboard is back in the add field, ready for the next word.
+/// It was left on the button, which disables itself once the field is empty: a screen
+/// reader said "unavailable", and Tab then jumped out of the page.
+#[cfg(feature = "mocks")]
+#[test]
+fn after_adding_a_word_the_keyboard_is_back_in_the_field() {
+    let app_ctx = Rc::new(frontend::AppContext::new());
+    let (_, build) = editable_list_pages(&app_ctx)
+        .into_iter()
+        .find(|(page, _)| *page == "User dictionary")
+        .expect("the dictionary page");
+    crate::test_support::with_real_messages(|| {
+        let mut tree = crate::test_support::tree_with_settings(&app_ctx);
+        tree.add_boxed(Box::new(crate::test_support::PaneHost::new(build)));
+        let proposal = SizeProposal::exact(900.0, 2000.0);
+        tree.layout(proposal);
+        let field = tree.find_by_label("Add a word").expect("the add field");
+        tree.focus(field);
+        let typing = tree.focused().expect("the field takes the focus");
+        tree.type_text(typing, "Kerguelen");
+        settle(&mut tree, proposal);
+        let add = tree.find_by_label("Add word").expect("the add button");
+        tree.focus(add);
+        assert_eq!(tree.focused(), Some(add), "the button holds the keyboard");
+        tree.press_key(Key::Enter, Modifiers::NONE);
+        settle(&mut tree, proposal);
+        let now = tree.focused().expect("focus on something");
+        assert!(
+            now == field || tree.is_descendant_of(now, field),
+            "the keyboard is in the add field again"
+        );
+    });
+}

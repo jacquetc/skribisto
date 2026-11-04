@@ -123,14 +123,18 @@ pub fn user_dictionary_pane(ctx: &mut BuildContext, vm: &UserDictionaryViewModel
 fn add_row(vm: &UserDictionaryViewModel) -> impl Widget {
     let text = Signal::new(String::new());
 
+    // The keyboard goes back to the field after an add, ready for the next one.
+    let back = crate::settings::FocusBack::default();
     let commit = {
         let vm = vm.clone();
         let text = text.clone();
+        let back = back.clone();
         move |ctx: &mut EventContext| {
             let word = text.get().trim().to_string();
             let ids = vm.add_word(&word);
             vm.added_toast(ctx, ids, Some(word));
             text.set(String::new());
+            back.focus(ctx);
         }
     };
 
@@ -162,7 +166,7 @@ fn add_row(vm: &UserDictionaryViewModel) -> impl Widget {
 
     HStack::new()
         .spacing(10.0)
-        .child(Expand::horizontal().child(field))
+        .child(Expand::horizontal().child(crate::settings::FocusTarget::new(field, &back)))
         .child(add_btn)
 }
 

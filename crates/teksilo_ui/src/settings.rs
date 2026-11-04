@@ -85,8 +85,8 @@ mod work_settings_vm;
 // below is the settings window's whole internal vocabulary.
 pub(crate) use defaults::build_not_defaults;
 pub(crate) use fields::{
-    Crumbs, empty_pane, field_label, group, hint, index_to_method, method_to_index, pane_frame,
-    section_title, slider_field, slider_field_tipped,
+    Crumbs, FocusBack, FocusTarget, empty_pane, field_label, group, hint, index_to_method,
+    method_to_index, pane_frame, section_title, slider_field, slider_field_tipped,
 };
 pub(crate) use nav::{Navigator, Pane, Sec, tree_spec};
 

@@ -130,7 +130,10 @@ fn add_row(ctx: &mut BuildContext, vm: &StatusesViewModel) -> impl Widget {
         });
     }
 
+    // The keyboard goes back to the field after an add, ready for the next one.
+    let back = crate::settings::FocusBack::default();
     let commit = {
+        let back = back.clone();
         let vm = vm.clone();
         let text = text.clone();
         let validation = validation.clone();
@@ -160,6 +163,7 @@ fn add_row(ctx: &mut BuildContext, vm: &StatusesViewModel) -> impl Widget {
             }
             text.set(String::new());
             validation.set(ValidationState::None);
+            back.focus(ctx);
         }
     };
 
@@ -196,7 +200,7 @@ fn add_row(ctx: &mut BuildContext, vm: &StatusesViewModel) -> impl Widget {
 
     HStack::new()
         .spacing(10.0)
-        .child(Expand::horizontal().child(field))
+        .child(Expand::horizontal().child(crate::settings::FocusTarget::new(field, &back)))
         .child(
             Shrinkable::new()
                 .min_width(CATEGORY_MIN_WIDTH)

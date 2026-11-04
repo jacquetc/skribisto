@@ -188,11 +188,14 @@ fn add_row(ctx: &mut BuildContext, vm: &TextReplacementRulesViewModel) -> impl W
         });
     }
 
+    // The keyboard goes back to the field after an add, ready for the next one.
+    let back = crate::settings::FocusBack::default();
     let commit = {
         let vm = vm.clone();
         let trigger = trigger.clone();
         let replacement = replacement.clone();
         let validation = validation.clone();
+        let back = back.clone();
         move |ctx: &mut EventContext| {
             let t = trigger.get().trim().to_string();
             if t.is_empty() {
@@ -214,6 +217,7 @@ fn add_row(ctx: &mut BuildContext, vm: &TextReplacementRulesViewModel) -> impl W
             trigger.set(String::new());
             replacement.set(String::new());
             validation.set(ValidationState::None);
+            back.focus(ctx);
         }
     };
 
@@ -250,7 +254,7 @@ fn add_row(ctx: &mut BuildContext, vm: &TextReplacementRulesViewModel) -> impl W
         .child(
             FixedSize::new()
                 .width(TRIGGER_FIELD_WIDTH)
-                .child(trigger_field),
+                .child(crate::settings::FocusTarget::new(trigger_field, &back)),
         )
         .child(TextWidget::new(lit!("→")).color(TextRole::Secondary))
         .child(Expand::horizontal().child(replacement_field))
