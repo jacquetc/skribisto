@@ -82,9 +82,5 @@ ostatniego.
 
 ## Na co uważać
 
-Dwie rzeczy jeszcze nie działają dobrze:
-
-- Na monitorze brajlowskim strona tej pomocy przychodzi po jednej linii ekranu, jakby każda
-  linia była akapitem. Tekst, który piszesz, przychodzi akapitami.
-- Czytnik ekranu nie ogłasza jeszcze nagłówków strony pomocy jako nagłówków, więc nie możesz
-  przeskakiwać od jednego do drugiego.
+Jedna rzecz jeszcze nie działa dobrze: czytnik ekranu nie ogłasza nagłówków strony pomocy
+jako nagłówków, więc nie możesz przeskakiwać od jednego do drugiego.

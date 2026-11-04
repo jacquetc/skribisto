@@ -87,10 +87,5 @@ dernière.
 
 ## Là où il faut être attentif
 
-Deux choses ne fonctionnent pas encore bien :
-
-- Sur un afficheur braille, une page de cette aide arrive une ligne d’écran à la fois, comme
-  si chaque ligne était un paragraphe. Le texte que vous écrivez arrive paragraphe par
-  paragraphe.
-- Un lecteur d’écran n’annonce pas encore les titres d’une page d’aide comme des titres :
-  vous ne pouvez pas sauter de l’un à l’autre.
+Une chose ne fonctionne pas encore bien : un lecteur d’écran n’annonce pas les titres d’une
+page d’aide comme des titres, vous ne pouvez donc pas sauter de l’un à l’autre.

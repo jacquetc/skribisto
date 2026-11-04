@@ -110,6 +110,27 @@ fn every_djot_topic_has_a_source_locale_body() {
     }
 }
 
+/// A page holds no carriage return. The text engine breaks a line at each one, so a
+/// page checked out with CRLF showed every source line of a paragraph as a line of its
+/// own, and a braille display gave it one line at a time. `.gitattributes` keeps them
+/// out; this is where a checkout that ignored it fails, Windows CI included.
+#[test]
+fn no_page_holds_a_carriage_return() {
+    for topic in builtin_topics() {
+        let HelpBody::Djot(table) = &topic.body else {
+            continue;
+        };
+        for (locale, source) in table.iter() {
+            assert!(
+                !source.contains('\r'),
+                "help/{locale} page of '{}' holds a carriage return; check it out with LF \
+                 (`*.djot text eol=lf` in .gitattributes)",
+                topic.key
+            );
+        }
+    }
+}
+
 #[test]
 fn every_shipped_locale_has_a_body_for_every_topic() {
     // A topic missing a locale is not a build error at runtime (it falls back to

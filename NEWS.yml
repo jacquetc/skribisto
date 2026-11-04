@@ -44,6 +44,7 @@ Description:
 - "When a chapter's Epigraph section is closed, Tab goes past it. It used to stop on its hidden Source line button and on its field"
 - "With a screen reader, the Down arrow in the help reads every line of a list item that wraps onto several lines. It used to read the first line again and never reach the last"
 - "With a screen reader, the binder's items are no longer each described as a tooltip, the Rename field is announced by what it asks for, and a field whose grey hint repeats its name says that name only once"
+- "On Windows, a paragraph of the help flows to the width of the window, and a braille display or a screen reader reads it as one paragraph. Each paragraph used to break at the same places whatever the width, and a braille display showed each of those lines as a paragraph of its own"
 ---
 Version: 3.3.0
 Date: 2026-10-27

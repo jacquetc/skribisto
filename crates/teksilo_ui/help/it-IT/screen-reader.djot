@@ -84,10 +84,5 @@ Usa le frecce per cambiare vista, e `Home` o `Fine` per la prima e l'ultima.
 
 ## Dove fare attenzione
 
-Due cose non funzionano ancora bene:
-
-- Su un display braille, una pagina di questa guida arriva una riga dello schermo alla
-  volta, come se ogni riga fosse un paragrafo. Il testo che scrivi arriva un paragrafo alla
-  volta.
-- Un lettore di schermo non annuncia ancora i titoli di una pagina della guida come titoli,
-  quindi non puoi saltare dall'uno all'altro.
+Una cosa non funziona ancora bene: un lettore di schermo non annuncia i titoli di una pagina
+della guida come titoli, quindi non puoi saltare dall'uno all'altro.

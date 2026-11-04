@@ -89,9 +89,6 @@ und zur letzten.
 
 ## Wo Sie aufpassen sollten
 
-Zwei Dinge funktionieren noch nicht gut:
-
-- Auf einer Braillezeile kommt eine Seite dieser Hilfe Bildschirmzeile für Bildschirmzeile
-  an, als wäre jede Zeile ein Absatz. Der Text, den Sie schreiben, kommt absatzweise an.
-- Ein Bildschirmleser sagt die Überschriften einer Hilfeseite noch nicht als Überschriften
-  an, Sie können also nicht von einer zur nächsten springen.
+Eines funktioniert noch nicht gut: Ein Bildschirmleser sagt die Überschriften einer
+Hilfeseite nicht als Überschriften an, Sie können also nicht von einer zur nächsten
+springen.

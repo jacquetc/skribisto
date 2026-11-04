@@ -4,3 +4,8 @@
 # The Scrivener ground truth is the bytes Scrivener wrote, line ends included: checked out
 # as written on every platform, never converted.
 crates/scrivener_import/tests/fixtures/ground-truth-mac-3.5.2/** -text
+
+# The help pages are compiled in with include_str!, and the text engine breaks a line at
+# every carriage return. Checked out with CRLF (Git for Windows' default), each source
+# line of a paragraph became a line of its own on screen and on a braille display.
+*.djot text eol=lf

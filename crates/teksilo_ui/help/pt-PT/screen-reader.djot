@@ -83,9 +83,5 @@ Use as setas para mudar de vista, e `Home` ou `End` para a primeira e a última.
 
 ## Onde ter cuidado
 
-Duas coisas ainda não funcionam bem:
-
-- Numa linha braille, uma página desta ajuda chega uma linha do ecrã de cada vez, como se
-  cada linha fosse um parágrafo. O texto que escreve chega parágrafo a parágrafo.
-- Um leitor de ecrã ainda não anuncia os títulos de uma página de ajuda como títulos, por
-  isso não pode saltar de um para o outro.
+Uma coisa ainda não funciona bem: um leitor de ecrã não anuncia os títulos de uma página de
+ajuda como títulos, por isso não pode saltar de um para o outro.

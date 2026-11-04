@@ -84,9 +84,5 @@ Use las flechas para cambiar de vista, e `Inicio` o `Fin` para la primera y la �
 
 ## Dónde tener cuidado
 
-Dos cosas todavía no funcionan bien:
-
-- En una línea braille, una página de esta ayuda llega una línea de la pantalla cada vez,
-  como si cada línea fuera un párrafo. El texto que escribe llega párrafo a párrafo.
-- Un lector de pantalla todavía no anuncia los títulos de una página de ayuda como títulos,
-  así que no puede saltar de uno a otro.
+Una cosa todavía no funciona bien: un lector de pantalla no anuncia los títulos de una
+página de ayuda como títulos, así que no puede saltar de uno a otro.

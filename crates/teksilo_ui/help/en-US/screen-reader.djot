@@ -81,9 +81,5 @@ Use the arrows to change the view, and `Home` or `End` for the first and the las
 
 ## Where to take care
 
-Two things do not work well yet:
-
-- On a braille display, a page of this help arrives one line of the screen at a time, as if
-  each line were a paragraph. The text you write arrives a paragraph at a time.
-- A screen reader does not yet announce the headings of a help page as headings, so you
-  cannot jump from one to the next.
+One thing does not work well yet: a screen reader does not announce the headings of a help
+page as headings, so you cannot jump from one to the next.
