@@ -437,8 +437,8 @@ pub struct FormatViewModel {
     sticky: Rc<RefCell<Option<(WidgetId, EditorHandle, EditorKind)>>>,
     /// Set while a control the **dock itself** owns holds an overlay open.
     ///
-    /// Every dock button is `focusable(false)` precisely so that pressing one
-    /// never blurs the editor out from under itself — but a popover is not a
+    /// Every dock button is `focus_on_click(false)` precisely so that clicking
+    /// one never blurs the editor out from under itself — but a popover is not a
     /// button. `PopoverWidget` moves keyboard focus into its content (it has
     /// to: the list is arrow-key navigable), and from the resolver's side that
     /// is indistinguishable from clicking into the binder. The live surface
@@ -456,6 +456,16 @@ pub struct FormatViewModel {
     /// manager records the pre-overlay focus and replays it on every dismiss
     /// path, so the surface goes live again the moment the popover closes.
     dock_overlay_open: Signal<bool>,
+    /// Whether keyboard focus is on one of the dock's own controls: the writer
+    /// came in with Ctrl+Shift+O, F6 or Tab to work the buttons from the keyboard.
+    ///
+    /// Bound by the dock to its root's `focus_within`. Like
+    /// [`Self::dock_overlay_open`], it keeps [`Self::refresh`] showing the surface it
+    /// was showing: without it the resolver answers "nothing focused", every group
+    /// hides, and the button the writer just reached goes dormant under them. The
+    /// commands need nothing more, as [`Self::sticky`] already names the editor
+    /// they act on.
+    dock_focus_within: Signal<bool>,
     /// Which groups apply. Read by the dock to decide what to show and by the
     /// menu to decide what to enable.
     surface: Signal<FormatSurface>,
@@ -641,6 +651,7 @@ impl FormatViewModel {
             registry: Rc::new(RefCell::new(Vec::new())),
             sticky: Rc::new(RefCell::new(None)),
             dock_overlay_open: Signal::new(false),
+            dock_focus_within: Signal::new(false),
             surface: Signal::new(FormatSurface::None),
             active_image: Signal::new(None),
             dropped_files: Signal::new(Vec::new()),
@@ -1222,6 +1233,12 @@ impl FormatViewModel {
         set_if_changed(&self.dock_overlay_open, open);
     }
 
+    /// The signal the dock binds to its root's `focus_within`. See
+    /// [`Self::dock_focus_within`].
+    pub fn dock_focus_within_signal(&self) -> Signal<bool> {
+        self.dock_focus_within.clone()
+    }
+
     // ── Mirroring editor state ────────────────────────────────────────────
 
     /// Pull the editor's current formatting into the mirror signals.
@@ -1237,12 +1254,13 @@ impl FormatViewModel {
         // out of them entirely — without the document changing at all, and the
         // dock would otherwise keep showing the previous surface's groups.
         let (handle, resolved) = self.target();
-        // A popover the dock itself opened holds the keyboard focus, so the
-        // resolver truthfully answers "nothing focused". Keep showing what we
-        // were showing rather than hiding the group the writer just reached
-        // into. Only the *empty* answer is overridden — a different live
-        // surface is a real move and has to win.
-        let surface = if resolved.is_empty() && self.dock_overlay_open.get() {
+        // A popover the dock itself opened, or one of its buttons reached from the
+        // keyboard, holds the keyboard focus, so the resolver truthfully answers
+        // "nothing focused". Keep showing what we were showing rather than hiding
+        // the group the writer just reached into. Only the *empty* answer is
+        // overridden — a different live surface is a real move and has to win.
+        let in_dock = self.dock_overlay_open.get() || self.dock_focus_within.get();
+        let surface = if resolved.is_empty() && in_dock {
             self.surface.get()
         } else {
             resolved

@@ -62,8 +62,32 @@ pub fn format_dock(vm: FormatViewModel, dock_id: DockWidgetId) -> DockWidget {
     .default_location(DockOpenLocation::side(DockSide::Trailing))
 }
 
+/// A dock button as it is mounted: reachable by Tab, by the panel's shortcut and by a
+/// screen reader, but taking no focus from a click.
+///
+/// The click half is what the dock has always needed: a click leaves the editor's caret
+/// and selection where they were, so the command acts on what the writer selected. The
+/// keyboard half is newer. The buttons used to be `focusable(false)`, which bought the
+/// click behaviour by taking them out of reach of the keyboard altogether: Ctrl+Shift+O
+/// brought the panel forward and left the writer in the text, with no way in. With focus
+/// inside the dock, the view-model keeps the surface it was showing and the commands
+/// still reach the editor last written in (see `FormatViewModel::set_dock_focus_within`).
+fn tool(button: IconButton) -> impl Widget {
+    button.focus_on_click(false)
+}
+
 /// A momentary control: run it, then schedule the frame that shows the result.
 fn command_button(
+    icon: IconWidget,
+    tooltip: impl Into<teksilo::i18n::LocalizedString>,
+    vm: FormatViewModel,
+    run: fn(&FormatViewModel),
+) -> impl Widget {
+    tool(command_icon(icon, tooltip, vm, run))
+}
+
+/// [`command_button`] before it is mounted, for the few that carry an extra gate.
+fn command_icon(
     icon: IconWidget,
     tooltip: impl Into<teksilo::i18n::LocalizedString>,
     vm: FormatViewModel,
@@ -71,10 +95,6 @@ fn command_button(
 ) -> IconButton {
     IconButton::new(icon)
         .toolbar()
-        // Tab-order only. AccessKit emission and `Action::Click` are unaffected,
-        // so a screen reader still reaches every button; what this buys is that
-        // clicking one leaves the editor's caret and selection where they were.
-        .focusable(false)
         .tooltip(tooltip)
         .on_activate_fn(move |ctx| {
             run(&vm);
@@ -95,16 +115,17 @@ fn toggle_button(
     state: Signal<bool>,
     vm: FormatViewModel,
     run: fn(&FormatViewModel),
-) -> IconButton {
-    IconButton::new(icon)
-        .toolbar()
-        .focusable(false)
-        .tooltip(tooltip)
-        .toggle(state)
-        .on_activate_fn(move |ctx| {
-            run(&vm);
-            ctx.request_frame();
-        })
+) -> impl Widget {
+    tool(
+        IconButton::new(icon)
+            .toolbar()
+            .tooltip(tooltip)
+            .toggle(state)
+            .on_activate_fn(move |ctx| {
+                run(&vm);
+                ctx.request_frame();
+            }),
+    )
 }
 
 /// A button that fires one of the app's registered intents rather than calling
@@ -125,10 +146,18 @@ fn intent_button(
     icon: IconWidget,
     tooltip: impl Into<teksilo::i18n::LocalizedString>,
     intent: &'static str,
+) -> impl Widget {
+    tool(intent_icon(icon, tooltip, intent))
+}
+
+/// [`intent_button`] before it is mounted.
+fn intent_icon(
+    icon: IconWidget,
+    tooltip: impl Into<teksilo::i18n::LocalizedString>,
+    intent: &'static str,
 ) -> IconButton {
     IconButton::new(icon)
         .toolbar()
-        .focusable(false)
         .tooltip(tooltip)
         .on_activate_fn(move |ctx| ctx.send_intent(Intent::new(intent)))
 }
@@ -149,8 +178,8 @@ fn intent_toggle_button(
     tooltip: impl Into<teksilo::i18n::LocalizedString>,
     state: Signal<bool>,
     intent: &'static str,
-) -> IconButton {
-    intent_button(icon, tooltip, intent).toggle(state)
+) -> impl Widget {
+    tool(intent_icon(icon, tooltip, intent).toggle(state))
 }
 
 /// The heading picker: a glyph that opens the seven levels.
@@ -159,7 +188,7 @@ fn intent_toggle_button(
 /// width that would force a wrap in a 300px rail of 30dp buttons, and reads as a
 /// form field among icons. A popover keeps the row's rhythm.
 ///
-/// The one control here that `focusable(false)` cannot protect. Opening the
+/// The one control here that `focus_on_click(false)` cannot protect. Opening the
 /// popover moves keyboard focus into its list — it must, or the levels would be
 /// unreachable from the keyboard — which blurs the editor and, before
 /// [`FormatViewModel::set_dock_overlay_open`] existed, dropped the dock to its
@@ -168,7 +197,7 @@ fn intent_toggle_button(
 /// focus is what keeps the surface alive for as long as the list is up. Putting
 /// it back is not this module's job — the overlay manager restores the
 /// pre-overlay focus on every dismiss path, pick or Escape alike.
-fn heading_picker(vm: &FormatViewModel) -> PopoverIconButton {
+fn heading_picker(vm: &FormatViewModel) -> impl Widget {
     let mut list = MenuList::new();
     for (level, label) in [
         (0usize, tr!(format_heading_normal())),
@@ -201,13 +230,14 @@ fn heading_picker(vm: &FormatViewModel) -> PopoverIconButton {
     PopoverIconButton::new(
         IconButton::new(glyph::heading())
             .toolbar()
-            .focusable(false)
             .tooltip(tr!(format_heading())),
     )
     .bare()
     .on_open(move || opened.set_dock_overlay_open(true))
     .on_close(move || closed.set_dock_overlay_open(false))
     .content(list)
+    // Passed on to the trigger by the popover, like every other button here.
+    .focus_on_click(false)
 }
 
 /// One labelled group: a header over a flowing row, gated as a unit.
@@ -430,33 +460,33 @@ fn controls(vm: &FormatViewModel) -> Padding {
         ))
         // The removals take the cells' text with them, so "Always forward" greys
         // them where the insertions stay on (`FormatViewModel::can_delete_in_table`).
-        .child(
-            command_button(
+        .child(tool(
+            command_icon(
                 glyph::table_row_delete(),
                 tr!(format_table_row_delete()),
                 vm.clone(),
                 |vm| vm.remove_row(),
             )
             .enabled(vm.can_delete_in_table()),
-        )
-        .child(
-            command_button(
+        ))
+        .child(tool(
+            command_icon(
                 glyph::table_col_delete(),
                 tr!(format_table_col_delete()),
                 vm.clone(),
                 |vm| vm.remove_column(),
             )
             .enabled(vm.can_delete_in_table()),
-        )
-        .child(
-            command_button(
+        ))
+        .child(tool(
+            command_icon(
                 glyph::table_remove(),
                 tr!(format_table_remove()),
                 vm.clone(),
                 |vm| vm.remove_table(),
             )
             .enabled(vm.can_delete_in_table()),
-        );
+        ));
 
     let tables = VisibleWhen::new(
         g.tables.clone(),
@@ -611,7 +641,10 @@ impl Widget for FormatDock {
         // The ScrollArea is what gives `Wrap` its bounded width; without it the
         // rows would report their widest single line and never break.
         let padded = ctx.add(controls(&self.vm));
-        let root = ctx.add(ScrollArea::from_id(padded));
+        // Focus inside the dock is the writer working the buttons from the keyboard,
+        // not leaving the text: the view-model keeps the groups showing for it.
+        let root =
+            ctx.add(ScrollArea::from_id(padded).focus_within(self.vm.dock_focus_within_signal()));
         self.root = Some(root);
         vec![root]
     }
@@ -833,6 +866,111 @@ mod tests {
         assert!(
             !vm.groups().empty.get(),
             "the dock must not fall to its 'nothing to format' placeholder"
+        );
+    }
+
+    /// An editor whose focus the test drives, and a view-model resolving to it the way
+    /// `App`'s does: the target stays, the surface follows live focus.
+    fn focused_scene() -> (
+        teksilo::widgets::rich_text::RichTextEditor,
+        Signal<bool>,
+        FormatViewModel,
+    ) {
+        use teksilo::text_document::TextDocument;
+        use teksilo::widgets::rich_text::RichTextEditor;
+
+        let doc = TextDocument::new();
+        doc.set_markdown("scene prose")
+            .and_then(crate::test_support::finish)
+            .expect("import");
+        let editor = RichTextEditor::editor(doc);
+        let handle = editor.handle();
+        let focused = handle.focused_signal();
+        let live = focused.clone();
+        let vm = FormatViewModel::new(Rc::new(move || {
+            let surface = if live.get() {
+                FormatSurface::Scene
+            } else {
+                FormatSurface::None
+            };
+            (Some(handle.clone()), surface)
+        }));
+        (editor, focused, vm)
+    }
+
+    /// **The keyboard reaches the buttons, and the groups stay while it is there.**
+    ///
+    /// The buttons used to be out of the Tab order, so Ctrl+Shift+O brought the panel
+    /// forward and left the writer in the text. Now they are Tab stops — and with
+    /// focus on one, the resolver answers "nothing focused", so without the dock's own
+    /// latch every group would hide, the focused button with them.
+    #[test]
+    fn the_keyboard_reaches_the_buttons_and_the_groups_stay_while_it_is_there() {
+        let (_editor, focused, vm) = focused_scene();
+        focused.set(true);
+        vm.refresh();
+
+        let mut tree = WidgetTree::new();
+        let dock = tree.add(FormatDock::new(vm.clone()));
+        tree.layout(SizeProposal::exact(300.0, 900.0));
+
+        let stops = tree.focusables_in_tab_order(dock);
+        assert!(
+            stops.len() > 10,
+            "the dock's buttons must be Tab stops; found {}",
+            stops.len()
+        );
+
+        tree.focus(stops[0]);
+        // What that focus move costs: the editor is no longer focused.
+        focused.set(false);
+        tree.layout(SizeProposal::exact(300.0, 900.0));
+        vm.refresh();
+
+        assert!(
+            vm.groups().marks.get(),
+            "with focus on a button, the groups must stay in view"
+        );
+        assert!(!vm.groups().empty.get());
+        assert_eq!(tree.focused(), Some(stops[0]), "focus stays on the button");
+
+        tree.clear_focus();
+        tree.layout(SizeProposal::exact(300.0, 900.0));
+        vm.refresh();
+        assert!(
+            vm.groups().empty.get(),
+            "once focus leaves the dock for nowhere, the latch lets go"
+        );
+    }
+
+    /// **A click on a button still leaves the caret in the text.** Reaching the
+    /// buttons from the keyboard must not cost what `focusable(false)` was there for:
+    /// a pointer click that runs a command and keeps the writer's selection.
+    #[test]
+    fn a_click_on_a_button_leaves_focus_in_the_text() {
+        let (editor, focused, vm) = focused_scene();
+        focused.set(true);
+        vm.refresh();
+
+        let mut tree = WidgetTree::new();
+        let editor_root = tree.add(editor);
+        let dock = tree.add(FormatDock::new(vm.clone()));
+        tree.layout(SizeProposal::exact(300.0, 900.0));
+
+        let text = tree
+            .first_focusable_descendant(editor_root)
+            .expect("the editor takes focus");
+        tree.focus(text);
+        let button = tree.focusables_in_tab_order(dock)[0];
+        let r = tree.bounds(button);
+        let at = Point::new(r.x + r.width / 2.0, r.y + r.height / 2.0);
+        tree.pointer_down_button(at, PointerButton::Primary);
+        tree.pointer_up_button(at, PointerButton::Primary);
+
+        assert_eq!(
+            tree.focused(),
+            Some(text),
+            "a click on a Format button must not take focus from the text"
         );
     }
 
