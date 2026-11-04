@@ -423,6 +423,8 @@ fn body_editor(row: &FootnoteRow, vm: FootnotesViewModel) -> impl Widget {
         }
     };
     RichTextEditor::editor(doc)
+        // A footnote body is a field in a list of them: Tab goes on to the next one.
+        .tab_key(teksilo::widgets::TabKey::MoveFocus)
         // A footnote body is where a citation's URL naturally lands, whether
         // typed, pasted or imported. Nothing here can *make* a link, but one
         // that arrives has to be followable rather than dead.

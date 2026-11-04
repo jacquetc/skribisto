@@ -254,9 +254,12 @@ impl Turn {
         // A comment's own menu offers only Bold and Italic, so nothing here
         // makes a link — but one can arrive by paste or by import, and an
         // editorial remark citing a source is exactly where that happens.
-        let editor_widget = RichTextEditor::editor(doc.clone()).on_link_activated(|href, ctx| {
-            crate::shared::external_link::open_external_link(href, ctx);
-        });
+        // A comment box is a field: Tab goes on to the card's next control.
+        let editor_widget = RichTextEditor::editor(doc.clone())
+            .tab_key(teksilo::widgets::TabKey::MoveFocus)
+            .on_link_activated(|href, ctx| {
+                crate::shared::external_link::open_external_link(href, ctx);
+            });
         let handle = editor_widget.handle();
         let body = {
             let vm = vm.clone();

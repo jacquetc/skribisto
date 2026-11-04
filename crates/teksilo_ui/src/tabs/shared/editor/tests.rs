@@ -669,3 +669,45 @@ fn opening_the_menu_from_the_keyboard_leaves_the_caret_where_it_was() {
         "a menu opened from the keyboard must not move the caret"
     );
 }
+
+/// Tab leaves a synopsis for the next control and types nothing into it: a synopsis
+/// is a field on a page. It used to keep Tab for indenting, and a writer moving
+/// through a page with Tab filled it with tab characters.
+#[test]
+fn tab_leaves_a_synopsis_and_types_nothing() {
+    use teksilo::widgets::{Button, VStack};
+    let doc = TextDocument::new();
+    let _ = doc.set_djot_sync("What happens.");
+    let (editor, handle) = card_synopsis_editor(
+        doc.clone(),
+        test_typo(),
+        || {},
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    );
+    let mut tree = WidgetTree::new();
+    let root = tree.add(
+        VStack::new()
+            .child(editor)
+            .child(Button::new(teksilo::i18n::lit!("Next"))),
+    );
+    tree.layout(SizeProposal::exact(320.0, 300.0));
+    let stops = tree.tab_stops_within(root);
+    tree.focus(stops[0]);
+    handle.select_range(4, 4);
+
+    tree.press_key(Key::Tab, Modifiers::NONE);
+
+    assert_eq!(doc.to_plain_text().unwrap_or_default(), "What happens.");
+    assert_eq!(
+        tree.focused(),
+        stops.last().copied(),
+        "Tab goes on to the button"
+    );
+}

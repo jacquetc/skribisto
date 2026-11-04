@@ -116,6 +116,10 @@ pub fn synopsis_editor(
     let mut editor = editor
         .style(WritingEditorStyle)
         .on_change(on_change)
+        // A synopsis and an epigraph are fields on a page: Tab goes on to the next
+        // control, as in any form. Keeping it for indenting made them a trap for a
+        // writer moving with Tab, who typed tab characters into them unawares.
+        .tab_key(teksilo::widgets::TabKey::MoveFocus)
         // A synopsis is a formattable surface, so the Link command reaches it —
         // and a link nobody can follow reads as a broken app. Same opener, same
         // scheme allowlist, as the manuscript editors.
@@ -293,6 +297,8 @@ pub fn card_synopsis_editor(
     let mut editor = editor
         .style(WritingEditorStyle)
         .on_change(on_change)
+        // A card's synopsis is a field, like the synopsis on the item's own page.
+        .tab_key(teksilo::widgets::TabKey::MoveFocus)
         // A synopsis is a formattable surface, so the Link command reaches it —
         // and a link nobody can follow reads as a broken app. Same opener, same
         // scheme allowlist, as the manuscript editors.
