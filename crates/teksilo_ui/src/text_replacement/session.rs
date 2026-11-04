@@ -252,6 +252,18 @@ impl TextReplacementSession {
         if handle.is_composing() {
             return;
         }
+        // An undo or a redo is not typing, though it changes the text and often
+        // moves the caret forward: undoing a deletion puts the caret after what it
+        // restores, so the `- ` a list was made from comes back with the caret
+        // behind it and would make the list again, and a restored `btw ` would
+        // expand. A history step leaves something to redo; a keystroke clears it.
+        // Nothing pending outlives it either: what it was about has just moved.
+        if doc.can_redo() {
+            self.last_caret.set(Some(handle.cursor_position()));
+            self.pending.borrow_mut().take();
+            self.pending_list.borrow_mut().take();
+            return;
+        }
 
         let caret = handle.cursor_position();
         let advanced = self

@@ -214,6 +214,22 @@ fn a_deletion_that_exposes_a_trigger_does_not_expand() {
     );
 }
 
+/// Undoing a deletion is not typing either, though it moves the caret forward,
+/// to the end of what it restores: a `btw ` brought back by Ctrl+Z stays as the
+/// writer left it.
+#[test]
+fn undoing_a_deletion_does_not_expand_what_it_restores() {
+    let (doc, handle, session, _tree) = editor("say btw x");
+    handle.select_range(8, 8);
+    session.tick(&handle, &doc); // seed the caret baseline
+    handle.replace_range(4, 8, "");
+    session.tick(&handle, &doc);
+    assert_eq!(plain(&doc), "say x");
+    handle.undo();
+    session.tick(&handle, &doc);
+    assert_eq!(plain(&doc), "say btw x");
+}
+
 // ── Typography, through the same live editor ─────────────────────────────
 
 /// Turn on the punctuation rules for `locale` on an existing session.
