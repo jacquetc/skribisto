@@ -35,7 +35,7 @@ pub(super) fn overview_header(
                             SearchField::new(vm.search_query_signal()) {
                                 // A placeholder is gone once the writer types and is
                                 // never a name.
-                                label: tr!(overview_search_placeholder())
+                                label: tr!(overview_search_label())
                                 placeholder: tr!(overview_search_placeholder())
                             }
                         }

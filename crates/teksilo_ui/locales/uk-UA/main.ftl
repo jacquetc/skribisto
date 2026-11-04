@@ -472,6 +472,7 @@ corkboard-view-flat = Пласке
 corkboard-layout-hint = «Вкладене» показує безпосередні дочірні елементи контейнера. Відкрийте картку теки, щоб увійти в неї. «Пласке» показує одразу всі сцени цілого контейнера.
 corkboard-card-size = Розмір карток
 corkboard-search-placeholder = Фільтрувати картки…
+corkboard-search-label = Фільтрувати картки
 corkboard-empty-title = Тут поки що нічого немає
 corkboard-empty-hint = Скористайтеся кнопкою «＋ Створити» вгорі, щоб додати перший елемент.
 corkboard-new = Створити
@@ -535,6 +536,7 @@ overview-row-count = { $count ->
    *[other] { $count } елемента
 }
 overview-search-placeholder = Фільтрувати елементи…
+overview-search-label = Фільтрувати елементи
 overview-expand-all = Розгорнути все
 overview-collapse-all = Згорнути все
 overview-table-label = Вміст
@@ -669,6 +671,7 @@ binder-item-count = { $count ->
    *[other] { $count } елемента
 }
 binder-search-placeholder = Фільтрувати план…
+binder-search-label = Фільтрувати план
 binder-search-scope = Шукати в усіх підшивках
 binder-trash-confirm-title = Перемістити підшивку в кошик?
 binder-trash-confirm-text = «{ $name }» і всі її елементи буде переміщено в кошик.
@@ -3093,7 +3096,9 @@ backup-failed-title = Не вдалося створити резервну ко
 backup-complete-prune-warning = Резервне копіювання завершено (збережено: { $ok }, уже актуальних: { $skipped }). Деякі старі резервні копії не вдалося вилучити
 search = Пошук
 search-query-placeholder = Шукати…
+search-query-label = Шукати
 search-replace-placeholder = Замінити на…
+search-replace-label = Замінити на
 search-replace-toggle = Показати або сховати заміну
 search-replace-all = Замінити все
 search-opt-case = Враховувати регістр
@@ -3324,6 +3329,7 @@ lang-pill-unmute = Увімкнути перевірку правопису дл
 settings-page-personal-dictionary = Особистий словник
 settings-user-dict-desc = Слова, які ви тут додасте, вважаються написаними правильно всюди в програмі й більше ніколи не позначаються.
 settings-user-dict-add-placeholder = Додайте слово…
+settings-user-dict-add-label = Додайте слово
 settings-user-dict-add = Додати слово
 settings-user-dict-search = Фільтрувати слова
 settings-user-dict-count = { $count ->

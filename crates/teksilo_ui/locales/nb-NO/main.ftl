@@ -478,6 +478,7 @@ corkboard-view-flat = Flat
 corkboard-layout-hint = Nestet viser en beholders direkte underelementer. Åpne et mappekort for å gå inn i det. Flat viser alle scenene i hele beholderen samtidig.
 corkboard-card-size = Kortstørrelse
 corkboard-search-placeholder = Filtrer kort…
+corkboard-search-label = Filtrer kort
 corkboard-empty-title = Ingenting her ennå
 corkboard-empty-hint = Bruk «＋ Ny» ovenfor for å legge til det første.
 corkboard-new = Ny
@@ -532,6 +533,7 @@ overview-row-count = { $count ->
    *[other] { $count } elementer
 }
 overview-search-placeholder = Filtrer elementer…
+overview-search-label = Filtrer elementer
 overview-expand-all = Utvid alle
 overview-collapse-all = Fold sammen alle
 overview-table-label = Innhold
@@ -665,6 +667,7 @@ binder-item-count = { $count ->
    *[other] { $count } elementer
 }
 binder-search-placeholder = Filtrer disposisjonen…
+binder-search-label = Filtrer disposisjonen
 binder-search-scope = Søk i alle permer
 binder-trash-confirm-title = Vil du flytte permen til papirkurven?
 binder-trash-confirm-text = «{ $name }» og alle elementene i den flyttes til papirkurven.
@@ -2398,7 +2401,9 @@ backup-complete-prune-warning = Sikkerhetskopiering fullført ({ $ok } lagret, {
 
 search = Søk
 search-query-placeholder = Søk…
+search-query-label = Søk
 search-replace-placeholder = Erstatt med…
+search-replace-label = Erstatt med
 search-replace-toggle = Vis/skjul erstatning
 search-replace-all = Erstatt alle
 search-opt-case = Skill mellom store og små bokstaver
@@ -2608,6 +2613,7 @@ lang-pill-unmute = Slå på stavekontroll for { $name }
 settings-page-personal-dictionary = Personlig ordbok
 settings-user-dict-desc = Ord du legger til her, regnes som riktig stavet overalt i programmet og blir aldri markert igjen.
 settings-user-dict-add-placeholder = Legg til et ord…
+settings-user-dict-add-label = Legg til et ord
 settings-user-dict-add = Legg til ord
 settings-user-dict-search = Filtrer ord
 settings-user-dict-count = { $count ->

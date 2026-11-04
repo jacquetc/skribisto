@@ -482,6 +482,7 @@ corkboard-view-flat = שטוח
 corkboard-layout-hint = "מקונן" מציג את הצאצאים הישירים של מכל. פתיחת כרטיס תיקייה נכנסת לתוכה. "שטוח" מציג בבת אחת את כל הסצנות שבמכל כולו.
 corkboard-card-size = גודל הכרטיסים
 corkboard-search-placeholder = סינון כרטיסים…
+corkboard-search-label = סינון כרטיסים
 corkboard-empty-title = אין כאן כלום עדיין
 corkboard-empty-hint = יש להשתמש ב"＋ חדש" שלמעלה כדי להוסיף את הראשון.
 corkboard-new = חדש
@@ -536,6 +537,7 @@ overview-row-count = { $count ->
    *[other] { $count } פריטים
 }
 overview-search-placeholder = סינון פריטים…
+overview-search-label = סינון פריטים
 overview-expand-all = הרחבת הכול
 overview-collapse-all = כיווץ הכול
 overview-table-label = תוכן
@@ -669,6 +671,7 @@ binder-item-count = { $count ->
    *[other] { $count } פריטים
 }
 binder-search-placeholder = סינון המתווה…
+binder-search-label = סינון המתווה
 binder-search-scope = חיפוש בכל הקלסרים
 binder-trash-confirm-title = להעביר את הקלסר לאשפה?
 binder-trash-confirm-text = "{ $name }" וכל הפריטים שבו יועברו לאשפה.
@@ -2774,7 +2777,9 @@ backup-complete-prune-warning = הגיבוי הושלם ({ $ok } נשמרו, { $
 
 search = חיפוש
 search-query-placeholder = חיפוש…
+search-query-label = חיפוש
 search-replace-placeholder = החלפה ב…
+search-replace-label = החלפה ב
 search-replace-toggle = הצגה או הסתרה של ההחלפה
 search-replace-all = החלפת הכול
 search-opt-case = התאמת רישיות
@@ -2981,6 +2986,7 @@ lang-pill-unmute = הפעלת בדיקת האיות עבור { $name }
 settings-page-personal-dictionary = מילון אישי
 settings-user-dict-desc = מילים שתוסיפו כאן נחשבות מאויתות נכון בכל מקום ביישום, ולעולם לא יסומנו שוב.
 settings-user-dict-add-placeholder = הוספת מילה…
+settings-user-dict-add-label = הוספת מילה
 settings-user-dict-add = הוספת המילה
 settings-user-dict-search = סינון מילים
 settings-user-dict-count = { $count ->

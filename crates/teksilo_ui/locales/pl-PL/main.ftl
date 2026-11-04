@@ -498,6 +498,7 @@ corkboard-view-flat = Płaski
 corkboard-layout-hint = Widok zagnieżdżony pokazuje bezpośrednie elementy podrzędne kontenera. Otwórz kartę folderu, aby wejść do środka. Widok płaski pokazuje naraz wszystkie sceny całego kontenera.
 corkboard-card-size = Rozmiar kart
 corkboard-search-placeholder = Filtruj karty…
+corkboard-search-label = Filtruj karty
 corkboard-empty-title = Jeszcze nic tu nie ma
 corkboard-empty-hint = Użyj przycisku „＋ Nowy” powyżej, aby dodać pierwszy element.
 corkboard-new = Nowy
@@ -564,6 +565,7 @@ overview-row-count = { $count ->
        *[other] { $count } elementu
     }
 overview-search-placeholder = Filtruj elementy…
+overview-search-label = Filtruj elementy
 overview-expand-all = Rozwiń wszystkie
 overview-collapse-all = Zwiń wszystkie
 overview-table-label = Zawartość
@@ -701,6 +703,7 @@ binder-item-count = { $count ->
        *[other] { $count } elementu
     }
 binder-search-placeholder = Filtruj konspekt…
+binder-search-label = Filtruj konspekt
 binder-search-scope = Przeszukaj wszystkie segregatory
 binder-trash-confirm-title = Przenieść segregator do kosza?
 binder-trash-confirm-text = „{ $name }” i wszystkie jego elementy zostaną przeniesione do kosza.
@@ -3034,7 +3037,9 @@ backup-complete-prune-warning = Kopia zapasowa ukończona (zapisane: { $ok }, ju
 
 search = Szukaj
 search-query-placeholder = Szukaj…
+search-query-label = Szukaj
 search-replace-placeholder = Zastąp przez…
+search-replace-label = Zastąp przez
 search-replace-toggle = Pokaż lub ukryj zastępowanie
 search-replace-all = Zastąp wszystko
 search-opt-case = Uwzględniaj wielkość liter
@@ -3267,6 +3272,7 @@ lang-pill-unmute = Włącz sprawdzanie pisowni dla języka { $name }
 settings-page-personal-dictionary = Słownik własny
 settings-user-dict-desc = Dodane tu słowa są uznawane za poprawne w całej aplikacji i nigdy więcej nie są oznaczane.
 settings-user-dict-add-placeholder = Wpisz słowo…
+settings-user-dict-add-label = Wpisz słowo
 settings-user-dict-add = Dodaj słowo
 settings-user-dict-search = Filtruj słowa
 settings-user-dict-count = { $count ->

@@ -478,6 +478,7 @@ corkboard-view-flat = Plano
 corkboard-layout-hint = Anidado muestra los hijos directos de un contenedor. Abra una tarjeta de carpeta para entrar en ella. Plano muestra todas las escenas del contenedor a la vez.
 corkboard-card-size = Tamaño de la tarjeta
 corkboard-search-placeholder = Filtrar tarjetas…
+corkboard-search-label = Filtrar tarjetas
 corkboard-empty-title = Todavía no hay nada aquí
 corkboard-empty-hint = Use «＋ Nuevo» arriba para añadir el primero.
 corkboard-new = Nuevo
@@ -532,6 +533,7 @@ overview-row-count = { $count ->
    *[other] { $count } elementos
 }
 overview-search-placeholder = Filtrar elementos…
+overview-search-label = Filtrar elementos
 overview-expand-all = Expandir todo
 overview-collapse-all = Contraer todo
 overview-table-label = Contenido
@@ -665,6 +667,7 @@ binder-item-count = { $count ->
    *[other] { $count } elementos
 }
 binder-search-placeholder = Filtrar el esquema…
+binder-search-label = Filtrar el esquema
 binder-search-scope = Buscar en todos los archivadores
 binder-trash-confirm-title = ¿Mover el archivador a la papelera?
 binder-trash-confirm-text = «{ $name }» y todos sus elementos se moverán a la papelera.
@@ -2480,7 +2483,9 @@ backup-complete-prune-warning = Copia de seguridad completada ({ $ok } guardadas
 
 search = Buscar
 search-query-placeholder = Buscar…
+search-query-label = Buscar
 search-replace-placeholder = Reemplazar por…
+search-replace-label = Reemplazar por
 search-replace-toggle = Mostrar u ocultar reemplazar
 search-replace-all = Reemplazar todo
 search-opt-case = Coincidir mayúsculas y minúsculas
@@ -2690,6 +2695,7 @@ lang-pill-unmute = Activar la revisión ortográfica para { $name }
 settings-page-personal-dictionary = Diccionario personal
 settings-user-dict-desc = Las palabras que añada aquí se consideran bien escritas en toda la aplicación y nunca vuelven a marcarse.
 settings-user-dict-add-placeholder = Añadir una palabra…
+settings-user-dict-add-label = Añadir una palabra
 settings-user-dict-add = Añadir palabra
 settings-user-dict-search = Filtrar palabras
 settings-user-dict-count = { $count ->

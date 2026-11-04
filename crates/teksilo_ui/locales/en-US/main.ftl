@@ -567,6 +567,7 @@ corkboard-view-flat = Flat
 corkboard-layout-hint = Nested shows a container's direct children. Open a folder card to go inside it. Flat shows every scene in the whole container at once.
 corkboard-card-size = Card size
 corkboard-search-placeholder = Filter cards…
+corkboard-search-label = Filter cards
 corkboard-empty-title = Nothing here yet
 corkboard-empty-hint = Use “＋ New” above to add the first one.
 corkboard-new = New
@@ -626,6 +627,7 @@ overview-row-count = { $count ->
    *[other] { $count } items
 }
 overview-search-placeholder = Filter items…
+overview-search-label = Filter items
 overview-expand-all = Expand all
 overview-collapse-all = Collapse all
 overview-table-label = Contents
@@ -780,6 +782,7 @@ binder-item-count = { $count ->
    *[other] { $count } items
 }
 binder-search-placeholder = Filter the outline…
+binder-search-label = Filter the outline
 binder-search-scope = Search all binders
 binder-trash-confirm-title = Move binder to trash?
 binder-trash-confirm-text = “{ $name }” and all its items will be moved to the trash.
@@ -2773,7 +2776,9 @@ backup-complete-prune-warning = Backup complete ({ $ok } saved, { $skipped } alr
 # Search & Replace
 search = Search
 search-query-placeholder = Search…
+search-query-label = Search
 search-replace-placeholder = Replace with…
+search-replace-label = Replace with
 search-replace-toggle = Toggle replace
 search-replace-all = Replace All
 search-opt-case = Match case
@@ -2995,6 +3000,7 @@ lang-pill-unmute = Turn spell-checking on for { $name }
 settings-page-personal-dictionary = Personal dictionary
 settings-user-dict-desc = Words you add here are treated as correctly spelled everywhere in the app, and never flagged again.
 settings-user-dict-add-placeholder = Add a word…
+settings-user-dict-add-label = Add a word
 settings-user-dict-word-label = Word
 settings-user-dict-add = Add word
 settings-user-dict-search = Filter words

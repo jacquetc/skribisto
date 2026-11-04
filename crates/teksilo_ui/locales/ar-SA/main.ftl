@@ -490,6 +490,7 @@ corkboard-view-flat = مسطّح
 corkboard-layout-hint = يعرض الوضع المتداخل العناصر المباشرة للحاوية؛ افتح بطاقة مجلد للدخول إليه. ويعرض الوضع المسطّح كل مشاهد الحاوية دفعة واحدة.
 corkboard-card-size = حجم البطاقة
 corkboard-search-placeholder = تصفية البطاقات…
+corkboard-search-label = تصفية البطاقات
 corkboard-empty-title = لا شيء هنا بعد
 corkboard-empty-hint = استخدم «＋ جديد» في الأعلى لإضافة أول عنصر.
 corkboard-new = جديد
@@ -565,6 +566,7 @@ overview-row-count = { $count ->
    *[other] { $count } عنصر
 }
 overview-search-placeholder = تصفية العناصر…
+overview-search-label = تصفية العناصر
 overview-expand-all = توسيع الكل
 overview-collapse-all = طي الكل
 overview-table-label = المحتويات
@@ -703,6 +705,7 @@ binder-item-count = { $count ->
    *[other] { $count } عنصر
 }
 binder-search-placeholder = تصفية المخطط…
+binder-search-label = تصفية المخطط
 binder-search-scope = البحث في كل الحافظات
 binder-trash-confirm-title = نقل الحافظة إلى سلة المهملات؟
 binder-trash-confirm-text = ستُنقل «{ $name }» وكل عناصرها إلى سلة المهملات.
@@ -3556,7 +3559,9 @@ backup-failed-title = فشل النسخ الاحتياطي
 backup-complete-prune-warning = اكتمل النسخ الاحتياطي (المحفوظة: { $ok }، المحدَّثة مسبقًا: { $skipped }). تعذّرت إزالة بعض النسخ الاحتياطية القديمة
 search = البحث
 search-query-placeholder = بحث…
+search-query-label = بحث
 search-replace-placeholder = الاستبدال بـ…
+search-replace-label = الاستبدال بـ
 search-replace-toggle = إظهار الاستبدال أو إخفاؤه
 search-replace-all = استبدال الكل
 search-opt-case = مطابقة حالة الأحرف
@@ -3812,6 +3817,7 @@ lang-pill-unmute = تشغيل التدقيق الإملائي لـ { $name }
 settings-page-personal-dictionary = القاموس الشخصي
 settings-user-dict-desc = الكلمات التي تضيفها هنا تُعدّ صحيحة الإملاء في كل مكان في التطبيق، ولن يُشار إليها مجددًا.
 settings-user-dict-add-placeholder = إضافة كلمة…
+settings-user-dict-add-label = إضافة كلمة
 settings-user-dict-add = إضافة كلمة
 settings-user-dict-search = تصفية الكلمات
 settings-user-dict-count = { $count ->

@@ -137,7 +137,7 @@ fn add_row(vm: &UserDictionaryViewModel) -> impl Widget {
     let field = {
         let commit = commit.clone();
         TextInput::new(text.clone())
-            .label(tr!(settings_user_dict_add_placeholder()))
+            .label(tr!(settings_user_dict_add_label()))
             .leading_slot(add_glyph().color(TextRole::Secondary))
             .placeholder(tr!(settings_user_dict_add_placeholder()))
             .rich_tooltip_content(teksilo::widgets::tooltip::TooltipContent::new(

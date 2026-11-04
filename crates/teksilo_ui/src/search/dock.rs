@@ -78,7 +78,7 @@ fn query_row(vm: SearchReplaceViewModel) -> impl Widget {
     let suggestions = vm.query_suggestions_signal();
     let field = SearchField::new(vm.query_signal())
         // A placeholder is gone once the writer types and is never a name.
-        .label(tr!(search_query_placeholder()))
+        .label(tr!(search_query_label()))
         .placeholder(tr!(search_query_placeholder()))
         // History suggestions (MRU, per project) — the field filters them by the
         // typed prefix; an empty prefix offers the whole recent list.
@@ -138,7 +138,7 @@ fn replace_row(vm: SearchReplaceViewModel) -> impl Widget {
             .child(
                 Expand::horizontal().child(
                     SearchField::new(vm.replacement_signal())
-                        .label(tr!(search_replace_placeholder()))
+                        .label(tr!(search_replace_label()))
                         .placeholder(tr!(search_replace_placeholder())),
                 ),
             )

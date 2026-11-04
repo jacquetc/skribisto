@@ -453,6 +453,7 @@ corkboard-view-flat = Platt
 corkboard-layout-hint = Kapslad visar en behållares direkta underobjekt. Öppna ett mappkort för att gå in i det. Platt visar alla scener i hela behållaren på en gång.
 corkboard-card-size = Kortstorlek
 corkboard-search-placeholder = Filtrera kort…
+corkboard-search-label = Filtrera kort
 corkboard-empty-title = Inget här ännu
 corkboard-empty-hint = Använd ”＋ Ny” ovan för att lägga till det första.
 corkboard-new = Ny
@@ -504,6 +505,7 @@ overview-row-count = { $count ->
       *[other] { $count } objekt
    }
 overview-search-placeholder = Filtrera objekt…
+overview-search-label = Filtrera objekt
 overview-expand-all = Expandera alla
 overview-collapse-all = Fäll ihop alla
 overview-table-label = Innehåll
@@ -634,6 +636,7 @@ binder-item-count = { $count ->
       *[other] { $count } objekt
    }
 binder-search-placeholder = Filtrera dispositionen…
+binder-search-label = Filtrera dispositionen
 binder-search-scope = Sök i alla pärmar
 binder-trash-confirm-title = Flytta pärmen till papperskorgen?
 binder-trash-confirm-text = ”{ $name }” och alla dess objekt flyttas till papperskorgen.
@@ -2351,7 +2354,9 @@ backup-failed-title = Säkerhetskopieringen misslyckades
 backup-complete-prune-warning = Säkerhetskopieringen är klar ({ $ok } sparade, { $skipped } redan aktuella). Vissa gamla säkerhetskopior kunde inte tas bort
 search = Sök
 search-query-placeholder = Sök…
+search-query-label = Sök
 search-replace-placeholder = Ersätt med…
+search-replace-label = Ersätt med
 search-replace-toggle = Visa eller dölj ersättning
 search-replace-all = Ersätt alla
 search-opt-case = Matcha skiftläge
@@ -2558,6 +2563,7 @@ lang-pill-unmute = Slå på stavningskontrollen för { $name }
 settings-page-personal-dictionary = Egen ordlista
 settings-user-dict-desc = Ord som du lägger till här betraktas som rättstavade överallt i programmet och markeras aldrig igen.
 settings-user-dict-add-placeholder = Lägg till ett ord…
+settings-user-dict-add-label = Lägg till ett ord
 settings-user-dict-add = Lägg till ord
 settings-user-dict-search = Filtrera ord
 settings-user-dict-count = { $count ->

@@ -446,6 +446,7 @@ corkboard-view-flat = Ebena
 corkboard-layout-hint = Laŭnivela vido montras la rektajn enhavojn de grupo. Malfermu dosierujan karton por eniri. Ebena vido montras ĉiujn scenojn de la grupo samtempe.
 corkboard-card-size = Kartgrando
 corkboard-search-placeholder = Filtri kartojn…
+corkboard-search-label = Filtri kartojn
 corkboard-empty-title = Ankoraŭ nenio ĉi tie
 corkboard-empty-hint = Uzu «＋ Nova» supre por aldoni la unuan eron.
 corkboard-new = Nova
@@ -497,6 +498,7 @@ overview-row-count = { $count ->
    *[other] { $count } eroj
 }
 overview-search-placeholder = Filtri erojn…
+overview-search-label = Filtri erojn
 overview-expand-all = Malfaldi ĉiujn
 overview-collapse-all = Faldi ĉiujn
 overview-table-label = Enhavo
@@ -627,6 +629,7 @@ binder-item-count = { $count ->
    *[other] { $count } eroj
 }
 binder-search-placeholder = Filtri la skizon…
+binder-search-label = Filtri la skizon
 binder-search-scope = Serĉi en ĉiuj kolektujoj
 binder-trash-confirm-title = Ĉu movi la kolektujon en la rubujon?
 binder-trash-confirm-text = «{ $name }» kaj ĉiuj ĝiaj eroj estos movitaj en la rubujon.
@@ -2348,7 +2351,9 @@ backup-complete-prune-warning = Sekurkopiado finita ({ $ok ->
 }). Ne eblis forigi kelkajn malnovajn sekurkopiojn
 search = Serĉi
 search-query-placeholder = Serĉi…
+search-query-label = Serĉi
 search-replace-placeholder = Anstataŭigi per…
+search-replace-label = Anstataŭigi per
 search-replace-toggle = Montri aŭ kaŝi anstataŭigon
 search-replace-all = Anstataŭigi ĉiujn
 search-opt-case = Distingi usklecon
@@ -2549,6 +2554,7 @@ lang-pill-unmute = Ŝalti literumkontrolon por { $name }
 settings-page-personal-dictionary = Propra vortaro
 settings-user-dict-desc = Vortoj aldonitaj ĉi tie estas konsiderataj ĝuste literumitaj ĉie en la aplikaĵo kaj ne plu estas markataj.
 settings-user-dict-add-placeholder = Aldoni vorton…
+settings-user-dict-add-label = Aldoni vorton
 settings-user-dict-add = Aldoni vorton
 settings-user-dict-search = Filtri vortojn
 settings-user-dict-count = { $count ->

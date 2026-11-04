@@ -455,6 +455,7 @@ corkboard-view-flat = Flach
 corkboard-layout-hint = „Verschachtelt“ zeigt die direkten Untereinträge. Öffnen Sie eine Ordnerkarte, um hineinzugehen. „Flach“ zeigt alle enthaltenen Szenen auf einmal.
 corkboard-card-size = Kartengröße
 corkboard-search-placeholder = Karten filtern…
+corkboard-search-label = Karten filtern
 corkboard-empty-title = Hier ist noch nichts
 corkboard-empty-hint = Fügen Sie oben über „＋ Neu“ den ersten Eintrag hinzu.
 corkboard-new = Neu
@@ -506,6 +507,7 @@ overview-row-count = { $count ->
    *[other] { $count } Einträge
 }
 overview-search-placeholder = Einträge filtern…
+overview-search-label = Einträge filtern
 overview-expand-all = Alle aufklappen
 overview-collapse-all = Alle zuklappen
 overview-table-label = Inhalt
@@ -636,6 +638,7 @@ binder-item-count = { $count ->
    *[other] { $count } Einträge
 }
 binder-search-placeholder = Gliederung filtern…
+binder-search-label = Gliederung filtern
 binder-search-scope = Alle Projektmappen durchsuchen
 binder-trash-confirm-title = Projektmappe in den Papierkorb verschieben?
 binder-trash-confirm-text = „{ $name }“ und alle enthaltenen Einträge werden in den Papierkorb verschoben.
@@ -2545,7 +2548,9 @@ backup-failed-title = Sicherung fehlgeschlagen
 backup-complete-prune-warning = Sicherung abgeschlossen ({ $ok } gespeichert, { $skipped } bereits aktuell). Einige alte Sicherungen konnten nicht entfernt werden
 search = Suchen
 search-query-placeholder = Suchen…
+search-query-label = Suchen
 search-replace-placeholder = Ersetzen durch…
+search-replace-label = Ersetzen durch
 search-replace-toggle = Ersetzen ein-/ausblenden
 search-replace-all = Alle ersetzen
 search-opt-case = Groß-/Kleinschreibung beachten
@@ -2752,6 +2757,7 @@ lang-pill-unmute = Rechtschreibprüfung für { $name } einschalten
 settings-page-personal-dictionary = Persönliches Wörterbuch
 settings-user-dict-desc = Hier hinzugefügte Wörter gelten in der gesamten Anwendung als richtig geschrieben und werden nicht mehr markiert.
 settings-user-dict-add-placeholder = Wort hinzufügen…
+settings-user-dict-add-label = Wort hinzufügen
 settings-user-dict-add = Wort hinzufügen
 settings-user-dict-search = Wörter filtern
 settings-user-dict-count = { $count ->

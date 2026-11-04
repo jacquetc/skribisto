@@ -454,6 +454,7 @@ corkboard-view-flat = Egyszintű
 corkboard-layout-hint = Az egymásba ágyazott nézet a tároló közvetlen gyermekelemeit mutatja; egy mappakártyát megnyitva beléphet. Az egyszintű nézet a teljes tároló összes jelenetét egyszerre mutatja.
 corkboard-card-size = Kártyaméret
 corkboard-search-placeholder = Kártyák szűrése…
+corkboard-search-label = Kártyák szűrése
 corkboard-empty-title = Itt még nincs semmi
 corkboard-empty-hint = Az első elemet a fenti „＋ Új” gombbal adhatja hozzá.
 corkboard-new = Új
@@ -505,6 +506,7 @@ overview-row-count = { $count ->
    *[other] { $count } elem
 }
 overview-search-placeholder = Elemek szűrése…
+overview-search-label = Elemek szűrése
 overview-expand-all = Összes kibontása
 overview-collapse-all = Összes összecsukása
 overview-table-label = Tartalom
@@ -635,6 +637,7 @@ binder-item-count = { $count ->
    *[other] { $count } elem
 }
 binder-search-placeholder = A vázlat szűrése…
+binder-search-label = A vázlat szűrése
 binder-search-scope = Keresés minden iratrendezőben
 binder-trash-confirm-title = Áthelyezi az iratrendezőt a kukába?
 binder-trash-confirm-text = A(z) „{ $name }” és minden eleme a kukába kerül.
@@ -2440,7 +2443,9 @@ backup-failed-title = A biztonsági másolat készítése sikertelen
 backup-complete-prune-warning = A biztonsági másolat elkészült ({ $ok } mentve, { $skipped } már naprakész). Néhány régi biztonsági másolatot nem sikerült eltávolítani
 search = Keresés
 search-query-placeholder = Keresés…
+search-query-label = Keresés
 search-replace-placeholder = Csere erre…
+search-replace-label = Csere erre
 search-replace-toggle = Csere be- és kikapcsolása
 search-replace-all = Összes cseréje
 search-opt-case = Kis- és nagybetűk megkülönböztetése
@@ -2647,6 +2652,7 @@ lang-pill-unmute = Helyesírás-ellenőrzés bekapcsolása ehhez: { $name }
 settings-page-personal-dictionary = Saját szótár
 settings-user-dict-desc = Az itt hozzáadott szavakat az alkalmazás mindenhol helyesen írottnak tekinti, és soha többé nem jelöli meg.
 settings-user-dict-add-placeholder = Szó hozzáadása…
+settings-user-dict-add-label = Szó hozzáadása
 settings-user-dict-add = Szó hozzáadása
 settings-user-dict-search = Szavak szűrése
 settings-user-dict-count = { $count ->

@@ -487,6 +487,7 @@ corkboard-view-flat = Ploché
 corkboard-layout-hint = Vnořené zobrazení ukazuje přímé potomky kontejneru. Kartu složky otevřete, abyste do ní vstoupili. Ploché zobrazení ukazuje najednou všechny scény celého kontejneru.
 corkboard-card-size = Velikost karet
 corkboard-search-placeholder = Filtrovat karty…
+corkboard-search-label = Filtrovat karty
 corkboard-empty-title = Zatím tu nic není
 corkboard-empty-hint = První položku přidáte tlačítkem „＋ Nový“ nahoře.
 corkboard-new = Nový
@@ -547,6 +548,7 @@ overview-row-count = { $count ->
    *[other] { $count } položek
 }
 overview-search-placeholder = Filtrovat položky…
+overview-search-label = Filtrovat položky
 overview-expand-all = Rozbalit vše
 overview-collapse-all = Sbalit vše
 overview-table-label = Obsah
@@ -682,6 +684,7 @@ binder-item-count = { $count ->
    *[other] { $count } položek
 }
 binder-search-placeholder = Filtrovat osnovu…
+binder-search-label = Filtrovat osnovu
 binder-search-scope = Hledat ve všech pořadačích
 binder-trash-confirm-title = Přesunout pořadač do koše?
 binder-trash-confirm-text = „{ $name }“ a všechny jeho položky budou přesunuty do koše.
@@ -2720,7 +2723,9 @@ backup-complete-prune-warning = Zálohování dokončeno (uloženo: { $ok }, ji�
 
 search = Hledat
 search-query-placeholder = Hledat…
+search-query-label = Hledat
 search-replace-placeholder = Nahradit za…
+search-replace-label = Nahradit za
 search-replace-toggle = Zobrazit nebo skrýt nahrazování
 search-replace-all = Nahradit vše
 search-opt-case = Rozlišovat velikost písmen
@@ -2940,6 +2945,7 @@ lang-pill-unmute = Zapnout kontrolu pravopisu pro { $name }
 settings-page-personal-dictionary = Osobní slovník
 settings-user-dict-desc = Slova, která sem přidáte, se v celé aplikaci považují za správně napsaná a už nikdy nebudou označena.
 settings-user-dict-add-placeholder = Přidat slovo…
+settings-user-dict-add-label = Přidat slovo
 settings-user-dict-add = Přidat slovo
 settings-user-dict-search = Filtrovat slova
 settings-user-dict-count = { $count ->

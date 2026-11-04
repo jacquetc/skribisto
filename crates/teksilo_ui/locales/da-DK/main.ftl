@@ -563,6 +563,7 @@ corkboard-view-flat = Flad
 corkboard-layout-hint = Indlejret viser en beholders direkte underelementer. Åbn et mappekort for at gå ind i det. Flad viser alle scener i hele beholderen på én gang.
 corkboard-card-size = Kortstørrelse
 corkboard-search-placeholder = Filtrér kort…
+corkboard-search-label = Filtrér kort
 corkboard-empty-title = Intet her endnu
 corkboard-empty-hint = Brug »＋ Ny« ovenfor for at tilføje det første.
 corkboard-new = Ny
@@ -622,6 +623,7 @@ overview-row-count = { $count ->
    *[other] { $count } elementer
 }
 overview-search-placeholder = Filtrér elementer…
+overview-search-label = Filtrér elementer
 overview-expand-all = Udvid alle
 overview-collapse-all = Fold alle sammen
 overview-table-label = Indhold
@@ -768,6 +770,7 @@ binder-item-count = { $count ->
    *[other] { $count } elementer
 }
 binder-search-placeholder = Filtrér dispositionen…
+binder-search-label = Filtrér dispositionen
 binder-search-scope = Søg i alle ringbind
 binder-trash-confirm-title = Flyt ringbindet til papirkurven?
 binder-trash-confirm-text = »{ $name }« og alle dets elementer flyttes til papirkurven.
@@ -2658,7 +2661,9 @@ backup-complete-prune-warning = Sikkerhedskopieringen er fuldført ({ $ok } gemt
 # Search & Replace
 search = Søg
 search-query-placeholder = Søg…
+search-query-label = Søg
 search-replace-placeholder = Erstat med…
+search-replace-label = Erstat med
 search-replace-toggle = Vis eller skjul Erstat
 search-replace-all = Erstat alle
 search-opt-case = Forskel på store og små bogstaver
@@ -2880,6 +2885,7 @@ lang-pill-unmute = Slå stavekontrol til for { $name }
 settings-page-personal-dictionary = Personlig ordbog
 settings-user-dict-desc = Ord, du tilføjer her, betragtes som korrekt stavet overalt i programmet og markeres aldrig igen.
 settings-user-dict-add-placeholder = Tilføj et ord…
+settings-user-dict-add-label = Tilføj et ord
 settings-user-dict-add = Tilføj ord
 settings-user-dict-search = Filtrér ord
 settings-user-dict-count = { $count ->

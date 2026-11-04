@@ -478,6 +478,7 @@ corkboard-view-flat = Plat
 corkboard-layout-hint = Genest toont de directe onderliggende items van een container. Open een mapkaart om erin te gaan. Plat toont alle scènes van de hele container tegelijk.
 corkboard-card-size = Kaartgrootte
 corkboard-search-placeholder = Kaarten filteren…
+corkboard-search-label = Kaarten filteren
 corkboard-empty-title = Hier is nog niets
 corkboard-empty-hint = Gebruik “＋ Nieuw” hierboven om het eerste toe te voegen.
 corkboard-new = Nieuw
@@ -532,6 +533,7 @@ overview-row-count = { $count ->
        *[other] { $count } items
     }
 overview-search-placeholder = Items filteren…
+overview-search-label = Items filteren
 overview-expand-all = Alles uitvouwen
 overview-collapse-all = Alles invouwen
 overview-table-label = Inhoud
@@ -665,6 +667,7 @@ binder-item-count = { $count ->
        *[other] { $count } items
     }
 binder-search-placeholder = Ordner filteren…
+binder-search-label = Ordner filteren
 binder-search-scope = Alle ordners doorzoeken
 binder-trash-confirm-title = Ordner naar de prullenbak verplaatsen?
 binder-trash-confirm-text = “{ $name }” en al zijn items worden naar de prullenbak verplaatst.
@@ -2429,7 +2432,9 @@ backup-complete-prune-warning = Reservekopie voltooid ({ $ok } opgeslagen, { $sk
 
 search = Zoeken
 search-query-placeholder = Zoeken…
+search-query-label = Zoeken
 search-replace-placeholder = Vervangen door…
+search-replace-label = Vervangen door
 search-replace-toggle = Vervangen aan/uit
 search-replace-all = Alles vervangen
 search-opt-case = Hoofdlettergevoelig
@@ -2636,6 +2641,7 @@ lang-pill-unmute = Spellingscontrole inschakelen voor { $name }
 settings-page-personal-dictionary = Persoonlijk woordenboek
 settings-user-dict-desc = Woorden die u hier toevoegt, gelden overal in de app als correct gespeld en worden nooit meer gemarkeerd.
 settings-user-dict-add-placeholder = Een woord toevoegen…
+settings-user-dict-add-label = Een woord toevoegen
 settings-user-dict-add = Woord toevoegen
 settings-user-dict-search = Woorden filteren
 settings-user-dict-count = { $count ->

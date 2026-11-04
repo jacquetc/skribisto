@@ -455,6 +455,7 @@ corkboard-view-flat = Piatta
 corkboard-layout-hint = La vista gerarchica mostra i figli diretti del contenitore. Apri la scheda di una cartella per entrarvi. La vista piatta mostra insieme tutte le scene del contenitore.
 corkboard-card-size = Dimensione delle schede
 corkboard-search-placeholder = Filtra schede…
+corkboard-search-label = Filtra schede
 corkboard-empty-title = Non c'è ancora nulla
 corkboard-empty-hint = Usa «＋ Nuovo» in alto per aggiungere il primo elemento.
 corkboard-new = Nuovo
@@ -506,6 +507,7 @@ overview-row-count = { $count ->
    *[other] { $count } elementi
 }
 overview-search-placeholder = Filtra elementi…
+overview-search-label = Filtra elementi
 overview-expand-all = Espandi tutto
 overview-collapse-all = Comprimi tutto
 overview-table-label = Contenuti
@@ -636,6 +638,7 @@ binder-item-count = { $count ->
    *[other] { $count } elementi
 }
 binder-search-placeholder = Filtra la struttura…
+binder-search-label = Filtra la struttura
 binder-search-scope = Cerca in tutti i raccoglitori
 binder-trash-confirm-title = Spostare il raccoglitore nel cestino?
 binder-trash-confirm-text = «{ $name }» e tutti i suoi elementi verranno spostati nel cestino.
@@ -2405,7 +2408,9 @@ backup-complete-prune-warning = Backup completato ({ $ok ->
 }). Alcuni vecchi backup non sono stati rimossi
 search = Cerca
 search-query-placeholder = Cerca…
+search-query-label = Cerca
 search-replace-placeholder = Sostituisci con…
+search-replace-label = Sostituisci con
 search-replace-toggle = Mostra o nascondi la sostituzione
 search-replace-all = Sostituisci tutto
 search-opt-case = Distingui maiuscole e minuscole
@@ -2612,6 +2617,7 @@ lang-pill-unmute = Attiva il controllo ortografico per { $name }
 settings-page-personal-dictionary = Dizionario personale
 settings-user-dict-desc = Le parole aggiunte qui sono considerate corrette in tutta l'applicazione e non verranno più segnalate.
 settings-user-dict-add-placeholder = Aggiungi una parola…
+settings-user-dict-add-label = Aggiungi una parola
 settings-user-dict-add = Aggiungi parola
 settings-user-dict-search = Filtra parole
 settings-user-dict-count = { $count ->

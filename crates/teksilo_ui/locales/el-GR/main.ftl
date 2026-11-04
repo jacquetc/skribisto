@@ -502,6 +502,7 @@ corkboard-view-flat = Επίπεδη
 corkboard-layout-hint = Η ένθετη προβολή δείχνει τα άμεσα θυγατρικά στοιχεία ενός περιέκτη. Ανοίξτε μια κάρτα φακέλου για να μπείτε μέσα του. Η επίπεδη δείχνει ταυτόχρονα όλες τις σκηνές ολόκληρου του περιέκτη.
 corkboard-card-size = Μέγεθος κάρτας
 corkboard-search-placeholder = Φιλτράρισμα καρτών…
+corkboard-search-label = Φιλτράρισμα καρτών
 corkboard-empty-title = Δεν υπάρχει τίποτα εδώ ακόμη
 corkboard-empty-hint = Χρησιμοποιήστε το «＋ Νέο» παραπάνω για να προσθέσετε το πρώτο.
 corkboard-new = Νέο
@@ -557,6 +558,7 @@ overview-row-count = { $count ->
    *[other] { $count } στοιχεία
 }
 overview-search-placeholder = Φιλτράρισμα στοιχείων…
+overview-search-label = Φιλτράρισμα στοιχείων
 overview-expand-all = Ανάπτυξη όλων
 overview-collapse-all = Σύμπτυξη όλων
 overview-table-label = Περιεχόμενα
@@ -694,6 +696,7 @@ binder-item-count = { $count ->
    *[other] { $count } στοιχεία
 }
 binder-search-placeholder = Φιλτράρισμα της διάρθρωσης…
+binder-search-label = Φιλτράρισμα της διάρθρωσης
 binder-search-scope = Αναζήτηση σε όλα τα ντοσιέ
 binder-trash-confirm-title = Μετακίνηση του ντοσιέ στον κάδο;
 binder-trash-confirm-text = Το «{ $name }» και όλα τα στοιχεία του θα μετακινηθούν στον κάδο.
@@ -2484,7 +2487,9 @@ backup-complete-prune-warning = Το αντίγραφο ασφαλείας ολ�
 
 search = Αναζήτηση
 search-query-placeholder = Αναζήτηση…
+search-query-label = Αναζήτηση
 search-replace-placeholder = Αντικατάσταση με…
+search-replace-label = Αντικατάσταση με
 search-replace-toggle = Εμφάνιση ή απόκρυψη αντικατάστασης
 search-replace-all = Αντικατάσταση όλων
 search-opt-case = Διάκριση πεζών/κεφαλαίων
@@ -2693,6 +2698,7 @@ lang-pill-unmute = Ενεργοποίηση ορθογραφικού ελέγχ�
 settings-page-personal-dictionary = Προσωπικό λεξικό
 settings-user-dict-desc = Οι λέξεις που προσθέτετε εδώ θεωρούνται σωστά γραμμένες σε όλη την εφαρμογή και δεν επισημαίνονται ποτέ ξανά.
 settings-user-dict-add-placeholder = Προσθήκη λέξης…
+settings-user-dict-add-label = Προσθήκη λέξης
 settings-user-dict-add = Προσθήκη λέξης
 settings-user-dict-search = Φιλτράρισμα λέξεων
 settings-user-dict-count = { $count ->

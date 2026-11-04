@@ -477,6 +477,7 @@ corkboard-view-flat = Düz
 corkboard-layout-hint = İç içe görünüm bir kapsayıcının doğrudan alt öğelerini gösterir. İçine girmek için bir klasör kartını açın. Düz görünüm tüm kapsayıcıdaki bütün sahneleri bir arada gösterir.
 corkboard-card-size = Kart boyutu
 corkboard-search-placeholder = Kartları süz…
+corkboard-search-label = Kartları süz
 corkboard-empty-title = Burada henüz bir şey yok
 corkboard-empty-hint = İlkini eklemek için yukarıdaki “＋ Yeni” düğmesini kullanın.
 corkboard-new = Yeni
@@ -531,6 +532,7 @@ overview-row-count = { $count ->
    *[other] { $count } öğe
 }
 overview-search-placeholder = Öğeleri süz…
+overview-search-label = Öğeleri süz
 overview-expand-all = Tümünü genişlet
 overview-collapse-all = Tümünü daralt
 overview-table-label = İçindekiler
@@ -664,6 +666,7 @@ binder-item-count = { $count ->
    *[other] { $count } öğe
 }
 binder-search-placeholder = Ana hattı süz…
+binder-search-label = Ana hattı süz
 binder-search-scope = Tüm dizinlerde ara
 binder-trash-confirm-title = Dizin çöp kutusuna taşınsın mı?
 binder-trash-confirm-text = “{ $name }” ve tüm öğeleri çöp kutusuna taşınacak.
@@ -2384,7 +2387,9 @@ backup-complete-prune-warning = Yedekleme tamamlandı ({ $ok } kaydedildi, { $sk
 
 search = Ara
 search-query-placeholder = Ara…
+search-query-label = Ara
 search-replace-placeholder = Şununla değiştir…
+search-replace-label = Şununla değiştir
 search-replace-toggle = Değiştirmeyi göster/gizle
 search-replace-all = Tümünü değiştir
 search-opt-case = Büyük/küçük harf duyarlı
@@ -2591,6 +2596,7 @@ lang-pill-unmute = Yazım denetimini aç: { $name }
 settings-page-personal-dictionary = Kişisel sözlük
 settings-user-dict-desc = Buraya eklediğiniz sözcükler uygulamanın her yerinde doğru yazılmış sayılır ve bir daha işaretlenmez.
 settings-user-dict-add-placeholder = Bir sözcük ekleyin…
+settings-user-dict-add-label = Bir sözcük ekleyin
 settings-user-dict-add = Sözcük ekle
 settings-user-dict-search = Sözcükleri süz
 settings-user-dict-count = { $count ->

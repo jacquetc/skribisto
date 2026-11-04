@@ -499,6 +499,7 @@ corkboard-view-flat = Плоский
 corkboard-layout-hint = «Вложенный» показывает прямых потомков контейнера. Откройте карточку папки, чтобы войти в неё. «Плоский» показывает сразу все сцены контейнера.
 corkboard-card-size = Размер карточек
 corkboard-search-placeholder = Фильтр карточек…
+corkboard-search-label = Фильтр карточек
 corkboard-empty-title = Здесь пока ничего нет
 corkboard-empty-hint = Нажмите «＋ Новый» выше, чтобы добавить первую.
 corkboard-new = Новый
@@ -565,6 +566,7 @@ overview-row-count = { $count ->
    *[other] { $count } элемента
 }
 overview-search-placeholder = Фильтр элементов…
+overview-search-label = Фильтр элементов
 overview-expand-all = Развернуть всё
 overview-collapse-all = Свернуть всё
 overview-table-label = Содержание
@@ -702,6 +704,7 @@ binder-item-count = { $count ->
    *[other] { $count } элемента
 }
 binder-search-placeholder = Фильтр структуры…
+binder-search-label = Фильтр структуры
 binder-search-scope = Искать во всех подшивках
 binder-trash-confirm-title = Отправить подшивку в корзину?
 binder-trash-confirm-text = «{ $name }» и все её элементы будут перемещены в корзину.
@@ -3161,7 +3164,9 @@ backup-complete-prune-warning = Резервное копирование зав
 
 search = Поиск
 search-query-placeholder = Поиск…
+search-query-label = Поиск
 search-replace-placeholder = Заменить на…
+search-replace-label = Заменить на
 search-replace-toggle = Показать или скрыть замену
 search-replace-all = Заменить всё
 search-opt-case = С учётом регистра
@@ -3401,6 +3406,7 @@ lang-pill-unmute = Включить проверку орфографии для
 settings-page-personal-dictionary = Личный словарь
 settings-user-dict-desc = Слова, добавленные здесь, считаются написанными правильно во всём приложении и больше никогда не помечаются.
 settings-user-dict-add-placeholder = Добавить слово…
+settings-user-dict-add-label = Добавить слово
 settings-user-dict-add = Добавить слово
 settings-user-dict-search = Фильтр слов
 settings-user-dict-count = { $count ->

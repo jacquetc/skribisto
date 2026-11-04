@@ -557,6 +557,7 @@ corkboard-view-flat = À plat
 corkboard-layout-hint = « Imbriqué » affiche les enfants directs d’un conteneur : ouvrez une carte dossier pour y entrer. « À plat » affiche toutes les scènes du conteneur d’un coup.
 corkboard-card-size = Taille des cartes
 corkboard-search-placeholder = Filtrer les cartes…
+corkboard-search-label = Filtrer les cartes
 corkboard-empty-title = Rien ici pour l’instant
 corkboard-empty-hint = Utilisez « ＋ Nouveau » ci-dessus pour ajouter le premier élément.
 corkboard-new = Nouveau
@@ -617,6 +618,7 @@ overview-row-count = { $count ->
    *[other] { $count } éléments
 }
 overview-search-placeholder = Filtrer les éléments…
+overview-search-label = Filtrer les éléments
 overview-expand-all = Tout déplier
 overview-collapse-all = Tout replier
 overview-table-label = Contenu
@@ -771,6 +773,7 @@ binder-item-count = { $count ->
    *[other] { $count } éléments
 }
 binder-search-placeholder = Filtrer le plan…
+binder-search-label = Filtrer le plan
 binder-search-scope = Chercher dans tous les classeurs
 binder-trash-confirm-title = Mettre le classeur à la corbeille ?
 binder-trash-confirm-text = « { $name } » et tous ses éléments seront mis à la corbeille.
@@ -2739,7 +2742,9 @@ backup-complete-prune-warning = Copie de secours terminée ({ $ok ->
 # Recherche et remplacement
 search = Rechercher
 search-query-placeholder = Rechercher…
+search-query-label = Rechercher
 search-replace-placeholder = Remplacer par…
+search-replace-label = Remplacer par
 search-replace-toggle = Afficher le remplacement
 search-replace-all = Tout remplacer
 search-opt-case = Respecter la casse
@@ -2961,6 +2966,7 @@ lang-pill-unmute = Activer la correction pour { $name }
 settings-page-personal-dictionary = Dictionnaire personnel
 settings-user-dict-desc = Les mots que vous ajoutez ici sont considérés comme correctement orthographiés partout dans l’application et ne sont plus jamais signalés.
 settings-user-dict-add-placeholder = Ajouter un mot…
+settings-user-dict-add-label = Ajouter un mot
 settings-user-dict-word-label = Mot
 settings-user-dict-add = Ajouter le mot
 settings-user-dict-search = Filtrer les mots

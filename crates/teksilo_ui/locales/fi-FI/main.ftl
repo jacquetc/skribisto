@@ -478,6 +478,7 @@ corkboard-view-flat = Litteä
 corkboard-layout-hint = Sisäkkäinen näyttää säiliön välittömät alikohteet. Avaa kansiokortti siirtyäksesi sen sisään. Litteä näyttää kaikki koko säiliön kohtaukset kerralla.
 corkboard-card-size = Kortin koko
 corkboard-search-placeholder = Suodata kortteja…
+corkboard-search-label = Suodata kortteja
 corkboard-empty-title = Täällä ei ole vielä mitään
 corkboard-empty-hint = Lisää ensimmäinen yllä olevalla ”＋ Uusi”-painikkeella.
 corkboard-new = Uusi
@@ -532,6 +533,7 @@ overview-row-count = { $count ->
       *[other] { $count } kohdetta
    }
 overview-search-placeholder = Suodata kohteita…
+overview-search-label = Suodata kohteita
 overview-expand-all = Laajenna kaikki
 overview-collapse-all = Supista kaikki
 overview-table-label = Sisällys
@@ -665,6 +667,7 @@ binder-item-count = { $count ->
       *[other] { $count } kohdetta
    }
 binder-search-placeholder = Suodata jäsennystä…
+binder-search-label = Suodata jäsennystä
 binder-search-scope = Hae kaikista mapeista
 binder-trash-confirm-title = Siirretäänkö mappi roskakoriin?
 binder-trash-confirm-text = ”{ $name }” ja kaikki sen kohteet siirretään roskakoriin.
@@ -2490,7 +2493,9 @@ backup-complete-prune-warning = Varmuuskopiointi valmis ({ $ok } tallennettu, { 
 
 search = Hae
 search-query-placeholder = Hae…
+search-query-label = Hae
 search-replace-placeholder = Korvaa tekstillä…
+search-replace-label = Korvaa tekstillä
 search-replace-toggle = Näytä tai piilota korvaus
 search-replace-all = Korvaa kaikki
 search-opt-case = Sama kirjainkoko
@@ -2700,6 +2705,7 @@ lang-pill-unmute = Ota oikoluku käyttöön kielelle { $name }
 settings-page-personal-dictionary = Oma sanakirja
 settings-user-dict-desc = Tähän lisäämäsi sanat katsotaan oikein kirjoitetuiksi kaikkialla sovelluksessa, eikä niitä enää merkitä virheiksi.
 settings-user-dict-add-placeholder = Lisää sana…
+settings-user-dict-add-label = Lisää sana
 settings-user-dict-add = Lisää sana
 settings-user-dict-search = Suodata sanoja
 settings-user-dict-count = { $count ->

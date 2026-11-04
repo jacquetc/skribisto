@@ -573,6 +573,7 @@ corkboard-view-flat = Plat
 corkboard-layout-hint = „Imbricat” arată copiii direcți ai unui container. Deschideți fișa unui dosar pentru a intra în el. „Plat” arată dintr-odată toate scenele din întregul container.
 corkboard-card-size = Mărimea fișelor
 corkboard-search-placeholder = Filtrează fișele…
+corkboard-search-label = Filtrează fișele
 corkboard-empty-title = Încă nu este nimic aici
 corkboard-empty-hint = Folosiți „＋ Nou” de mai sus pentru a adăuga primul element.
 corkboard-new = Nou
@@ -638,6 +639,7 @@ overview-row-count = { $count ->
       *[other] { $count } de elemente
    }
 overview-search-placeholder = Filtrează elementele…
+overview-search-label = Filtrează elementele
 overview-expand-all = Extinde tot
 overview-collapse-all = Restrânge tot
 overview-table-label = Cuprins
@@ -786,6 +788,7 @@ binder-item-count = { $count ->
       *[other] { $count } de elemente
    }
 binder-search-placeholder = Filtrează structura…
+binder-search-label = Filtrează structura
 binder-search-scope = Caută în toate clasoarele
 binder-trash-confirm-title = Mutați clasorul la coșul de gunoi?
 binder-trash-confirm-text = „{ $name }” și toate elementele lui vor fi mutate la coșul de gunoi.
@@ -2950,7 +2953,9 @@ backup-complete-prune-warning = Copie de siguranță încheiată (salvate: { $ok
 # Search & Replace
 search = Căutare
 search-query-placeholder = Caută…
+search-query-label = Caută
 search-replace-placeholder = Înlocuiește cu…
+search-replace-label = Înlocuiește cu
 search-replace-toggle = Afișează sau ascunde înlocuirea
 search-replace-all = Înlocuiește tot
 search-opt-case = Potrivește majusculele
@@ -3182,6 +3187,7 @@ lang-pill-unmute = Pornește verificarea ortografică pentru { $name }
 settings-page-personal-dictionary = Dicționar personal
 settings-user-dict-desc = Cuvintele pe care le adăugați aici sunt considerate corecte peste tot în aplicație și nu mai sunt semnalate niciodată.
 settings-user-dict-add-placeholder = Adaugă un cuvânt…
+settings-user-dict-add-label = Adaugă un cuvânt
 settings-user-dict-add = Adaugă cuvântul
 settings-user-dict-search = Filtrează cuvintele
 settings-user-dict-count = { $count ->
