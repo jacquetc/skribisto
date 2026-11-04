@@ -13,13 +13,18 @@ Una finestra di progetto ha quattro zone:
   *Questo documento*, *Note a piè di pagina* e *Versioni*.
 - *In basso*, *Anteprima* e *Torna indietro nel tempo*. Restano nascosti finché non li apri.
 
-`Tab` attraversa la barra del titolo, poi il centro, poi la sinistra, la destra e il basso.
-Un testo tiene `Tab` per sé, per far rientrare un elenco o inserire una tabulazione. Per
-uscire da un testo, premi `Ctrl+Tab`. Per tornare indietro, premi `Ctrl+Maiusc+Tab`.
+`F6` passa da una zona alla successiva, e `Maiusc+F6` alla precedente. Il tuo lettore di
+schermo dice dove arrivi: *Pannello sinistro*, *Area principale* o *Pannello destro*.
+
+`Tab` attraversa la finestra nell'ordine di lettura: la barra del titolo, la sinistra, il
+centro, la destra e la barra di stato. Il testo che scrivi tiene `Tab` per sé, per far
+rientrare un elenco o inserire una tabulazione: per uscirne premi `Ctrl+Tab`, e
+`Ctrl+Maiusc+Tab` per tornare indietro. Una sinossi, un'epigrafe, un commento e una nota a
+piè di pagina sono campi come gli altri, e `Tab` ne esce.
 
 ## Aprire un pannello con la sua scorciatoia
 
-Ogni pannello ha una scorciatoia propria, che lo porta in primo piano:
+Ogni pannello ha una scorciatoia propria, che lo porta in primo piano e ti ci porta dentro:
 
 - A sinistra: `Ctrl+Maiusc+B` *Raccoglitore*, `Ctrl+Maiusc+F` *Cerca*, `Ctrl+Maiusc+T`
   *Cestino*, `Ctrl+Maiusc+C` *Commenti* e `Ctrl+Maiusc+G` *Giochi di scrittura*.
@@ -27,13 +32,13 @@ Ogni pannello ha una scorciatoia propria, che lo porta in primo piano:
   *Questo documento*, `Ctrl+Maiusc+K` *Note a piè di pagina* e `Ctrl+Maiusc+R` *Versioni*.
 - In basso: `Ctrl+Maiusc+J` *Anteprima* e `Ctrl+Maiusc+L` *Torna indietro nel tempo*.
 
-La scorciatoia mostra il pannello ma lascia il cursore dov'era. Raggiungi il pannello con
-`Ctrl+Tab`, poi `Tab`. *Visualizza ▸ Pannelli* elenca gli stessi pannelli con le loro
-scorciatoie, e `F9` mostra o nasconde tutto il lato sinistro.
+*Visualizza ▸ Pannelli* elenca gli stessi pannelli con le loro scorciatoie, e `F9` mostra o
+nasconde tutto il lato sinistro.
 
 ## Orientarsi nel Raccoglitore
 
-Il Raccoglitore è un albero dei tuoi capitoli, scene e note. Le frecce su e giù passano da un
+Il Raccoglitore è un albero dei tuoi capitoli, scene e note. Il tuo lettore di schermo dice
+il livello di ogni elemento e il suo posto tra i vicini. Le frecce su e giù passano da un
 elemento all'altro. La freccia destra apre una cartella, la freccia sinistra la chiude.
 
 - `Invio` apre l'elemento e mette il cursore nel suo testo.
@@ -41,9 +46,8 @@ elemento all'altro. La freccia destra apre una cartella, la freccia sinistra la 
 - `F2` lo rinomina, e `Canc` lo sposta nel cestino.
 - `Alt+↑` e `Alt+↓` lo spostano in su o in giù. `Ctrl+]` e `Ctrl+[` lo spostano di un
   livello verso l'interno o verso l'esterno.
-
-Il menu di un elemento non si apre ancora da tastiera. I suoi comandi sono nel menu
-*Documento*, che agisce sull'elemento selezionato nel Raccoglitore.
+- `Maiusc+F10` o il tasto Menu apre il suo menu, con tutti i comandi dell'elemento e, alla
+  fine, *Sposta*.
 
 ## Cambiare la vista di un capitolo, una parte o un libro
 
@@ -51,34 +55,35 @@ Un capitolo, una parte o un libro si apre con una barra di viste in alto: la sua
 testo completo, i sinossi, la bacheca e una panoramica. Un lettore di schermo annuncia la
 barra come un gruppo di pulsanti di opzione chiamato *Viste*.
 
-Usa le frecce sinistra e destra per cambiare vista, e `Home` o `Fine` per la prima e
-l'ultima. Le frecce su e giù non la cambiano ancora.
+Usa le frecce per cambiare vista, e `Home` o `Fine` per la prima e l'ultima.
 
 ## Comandi, menu e impostazioni
 
-- `F10` o `Alt` apre la barra dei menu. Un lettore di schermo non annuncia ancora la
-  scorciatoia di un comando di menu: questa pagina e *Aiuto ▸ Scorciatoie da tastiera…* le
-  elencano.
+- `F10` o `Alt` apre la barra dei menu. Il tuo lettore di schermo legge la scorciatoia di
+  ogni comando dopo il suo nome.
 - `Ctrl+Maiusc+P` apre la tavolozza dei comandi. Digita una parte del nome di un comando,
   poi premi `Invio`.
 - `Ctrl+G`, o *Vai ▸ Vai a…*, trova un elemento dal suo nome e lo apre.
 - Mentre scrivi, `Alt+↓` e `Alt+↑` passano all'elemento successivo e al precedente, con il
   cursore nel suo testo.
+- In un campo data, `F4` o `Alt+↓` apre il calendario. Scegli un giorno con le frecce, poi
+  premi `Invio`, oppure `Esc` per lasciare la data com'era. `Tab` resta nel calendario, che
+  ha anche *Annulla* e *OK*.
 - `Ctrl+,` apre le *Impostazioni*. Nell'elenco delle pagine a sinistra usa le frecce, poi
   premi `Invio` per arrivare alla prima impostazione della pagina.
-- `F1` apre questa guida. `Invio` su un argomento ti porta nel suo testo.
+- Nelle *Impostazioni*, gli elenchi delle pagine *Etichette*, *Stati*, *Modelli*, *Dizionario
+  personale* e *Sostituzioni di testo* leggono ogni riga per ciò che contiene. `F2` o
+  `Invio` entra in una riga, `Tab` passa da un suo campo all'altro, ed `Esc` torna
+  all'elenco.
+- `F1` apre questa guida. `Invio` su un argomento ti porta nel suo testo. In una pagina,
+  `Tab` va da un collegamento all'altro, e `Invio` ne segue uno.
 
 ## Dove fare attenzione
 
-Quattro punti non ti guidano ancora:
+Due cose non funzionano ancora bene:
 
-- In *Nuovo progetto*, dopo *Avanti*, il cursore resta sul pulsante *Avanti*. Premi
-  `Maiusc+Tab` per risalire nella pagina che hai appena raggiunto.
-- In un campo data, `F4` o `Alt+↓` apre il calendario. Scegli un giorno con le frecce, poi
-  premi `Invio`, oppure `Esc` per lasciare la data com'era. `Tab` chiude il calendario senza
-  scegliere nulla.
-- In questa guida, un collegamento a un'altra pagina non si può ancora seguire da tastiera.
-  L'elenco degli argomenti a sinistra porta a ogni pagina.
-- Nelle *Impostazioni*, gli elenchi delle pagine *Etichette*, *Stati*, *Modelli*, *Dizionario
-  personale* e *Sostituzioni di testo* si leggono con le frecce, ma i campi di una riga non si
-  raggiungono ancora da tastiera.
+- Su un display braille, una pagina di questa guida arriva una riga dello schermo alla
+  volta, come se ogni riga fosse un paragrafo. Il testo che scrivi arriva un paragrafo alla
+  volta.
+- Un lettore di schermo non annuncia ancora i titoli di una pagina della guida come titoli,
+  quindi non puoi saltare dall'uno all'altro.

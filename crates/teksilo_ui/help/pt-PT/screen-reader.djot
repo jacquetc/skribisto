@@ -13,13 +13,18 @@ Uma janela de projeto tem quatro zonas:
   *Este documento*, *Notas de rodapé* e *Versões*.
 - *Em baixo*, *Pré-visualização* e *Voltar atrás no tempo*. Ficam escondidos até os abrir.
 
-`Tab` percorre a barra de título, depois o centro, depois a esquerda, a direita e a parte de
-baixo. Um texto guarda `Tab` para si, para avançar uma lista ou inserir uma tabulação. Para
-sair de um texto, prima `Ctrl+Tab`. Para voltar atrás, prima `Ctrl+Shift+Tab`.
+`F6` passa de uma zona para a seguinte, e `Shift+F6` para a anterior. O seu leitor de ecrã
+diz onde chega: *Painel esquerdo*, *Área principal* ou *Painel direito*.
+
+`Tab` percorre a janela pela ordem de leitura: a barra de título, a esquerda, o centro, a
+direita e a barra de estado. O texto que escreve guarda `Tab` para si, para avançar uma
+lista ou inserir uma tabulação: para sair dele, prima `Ctrl+Tab`, e `Ctrl+Shift+Tab` para
+voltar atrás. Uma sinopse, uma epígrafe, um comentário e uma nota de rodapé são campos como
+os outros, e `Tab` sai deles.
 
 ## Abrir um painel com o seu atalho
 
-Cada painel tem o seu próprio atalho, que o traz para a frente:
+Cada painel tem o seu próprio atalho, que o traz para a frente e o leva para dentro dele:
 
 - À esquerda: `Ctrl+Shift+B` *Arquivador*, `Ctrl+Shift+F` *Pesquisar*, `Ctrl+Shift+T`
   *Lixo*, `Ctrl+Shift+C` *Comentários* e `Ctrl+Shift+G` *Jogos de escrita*.
@@ -27,24 +32,22 @@ Cada painel tem o seu próprio atalho, que o traz para a frente:
   *Este documento*, `Ctrl+Shift+K` *Notas de rodapé* e `Ctrl+Shift+R` *Versões*.
 - Em baixo: `Ctrl+Shift+J` *Pré-visualização* e `Ctrl+Shift+L` *Voltar atrás no tempo*.
 
-O atalho mostra o painel, mas deixa o cursor onde estava. Vá até ao painel com `Ctrl+Tab` e
-depois `Tab`. *Ver ▸ Painéis* lista os mesmos painéis com os seus atalhos, e `F9` mostra ou
-oculta todo o lado esquerdo.
+*Ver ▸ Painéis* lista os mesmos painéis com os seus atalhos, e `F9` mostra ou oculta todo o
+lado esquerdo.
 
 ## Orientar-se no Arquivador
 
-O Arquivador é uma árvore dos seus capítulos, cenas e notas. As setas para cima e para baixo
-passam de item em item. A seta para a direita abre uma pasta e a seta para a esquerda
-fecha-a.
+O Arquivador é uma árvore dos seus capítulos, cenas e notas. O seu leitor de ecrã diz o
+nível de cada item e o seu lugar entre os vizinhos. As setas para cima e para baixo passam
+de item em item. A seta para a direita abre uma pasta e a seta para a esquerda fecha-a.
 
 - `Enter` abre o item e coloca o cursor no seu texto.
 - `Ctrl+Enter` abre-o na outra metade do centro.
 - `F2` muda-lhe o nome, e `Delete` envia-o para o lixo.
 - `Alt+↑` e `Alt+↓` sobem-no ou descem-no. `Ctrl+]` e `Ctrl+[` deslocam-no um nível para
   dentro ou para fora.
-
-O menu de um item ainda não se abre com o teclado. Os seus comandos estão no menu
-*Documento*, que atua sobre o item selecionado no Arquivador.
+- `Shift+F10` ou a tecla de menu abre o seu menu, com todos os comandos do item e, no fim,
+  *Mover*.
 
 ## Mudar a vista de um capítulo, de uma parte ou de um livro
 
@@ -52,33 +55,33 @@ Um capítulo, uma parte ou um livro abre com uma barra de vistas no topo: a sua 
 página, o texto completo, as sinopses, o quadro de cortiça e uma vista geral. Um leitor de
 ecrã anuncia a barra como um grupo de botões de opção chamado *Vistas*.
 
-Use as setas para a esquerda e para a direita para mudar de vista, e `Home` ou `End` para a
-primeira e a última. As setas para cima e para baixo ainda não a mudam.
+Use as setas para mudar de vista, e `Home` ou `End` para a primeira e a última.
 
 ## Comandos, menus e definições
 
-- `F10` ou `Alt` abre a barra de menus. Um leitor de ecrã ainda não anuncia o atalho de um
-  comando de menu: esta página e *Ajuda ▸ Atalhos de teclado…* listam-nos.
+- `F10` ou `Alt` abre a barra de menus. O seu leitor de ecrã lê o atalho de cada comando
+  depois do nome.
 - `Ctrl+Shift+P` abre a paleta de comandos. Escreva parte do nome de um comando e prima
   `Enter`.
 - `Ctrl+G`, ou *Ir ▸ Ir para…*, encontra um item pelo nome e abre-o.
 - Enquanto escreve, `Alt+↓` e `Alt+↑` passam ao item seguinte e ao anterior, com o cursor
   no seu texto.
+- Num campo de data, `F4` ou `Alt+↓` abre o calendário. Vá até um dia com as setas e prima
+  `Enter`, ou `Esc` para deixar a data como estava. `Tab` fica dentro do calendário, que
+  também tem *Cancelar* e *OK*.
 - `Ctrl+,` abre as *Definições*. Na lista de páginas à esquerda, use as setas e prima
   `Enter` para ir à primeira definição da página.
-- `F1` abre esta ajuda. `Enter` sobre um tópico leva-o ao seu texto.
+- Nas *Definições*, as listas das páginas *Etiquetas*, *Estados*, *Modelos*, *Dicionário
+  pessoal* e *Substituições de texto* leem cada linha pelo que contém. `F2` ou `Enter` entra
+  numa linha, `Tab` passa de um campo para outro, e `Esc` volta à lista.
+- `F1` abre esta ajuda. `Enter` sobre um tópico leva-o ao seu texto. Numa página, `Tab` vai
+  de ligação em ligação, e `Enter` segue uma.
 
 ## Onde ter cuidado
 
-Quatro sítios ainda não o guiam:
+Duas coisas ainda não funcionam bem:
 
-- Em *Novo projeto*, depois de *Seguinte*, o cursor fica no botão *Seguinte*. Prima
-  `Shift+Tab` para subir pela página a que acabou de chegar.
-- Num campo de data, `F4` ou `Alt+↓` abre o calendário. Vá até um dia com as setas e prima
-  `Enter`, ou `Esc` para deixar a data como estava. `Tab` fecha o calendário sem escolher
-  nada.
-- Nesta ajuda, uma ligação para outra página ainda não pode ser seguida com o teclado. A lista
-  de tópicos à esquerda leva a todas as páginas.
-- Nas *Definições*, as listas das páginas *Etiquetas*, *Estados*, *Modelos*, *Dicionário
-  pessoal* e *Substituições de texto* leem-se com as setas, mas os campos de uma linha ainda
-  não se alcançam com o teclado.
+- Numa linha braille, uma página desta ajuda chega uma linha do ecrã de cada vez, como se
+  cada linha fosse um parágrafo. O texto que escreve chega parágrafo a parágrafo.
+- Um leitor de ecrã ainda não anuncia os títulos de uma página de ajuda como títulos, por
+  isso não pode saltar de um para o outro.

@@ -13,13 +13,18 @@ A project window has four areas:
   *This document*, *Footnotes* and *Versions*.
 - *At the bottom*, *Preview* and *Go back in time*. They stay hidden until you open them.
 
-`Tab` moves through the title bar, then the centre, then the left, the right and the bottom.
-A text keeps `Tab` for itself, to indent a list or insert a tab. To leave a text, press
-`Ctrl+Tab`. To go back the other way, press `Ctrl+Shift+Tab`.
+`F6` jumps from one area to the next, and `Shift+F6` to the one before. Your screen reader
+says where you arrive: *Left panel*, *Main area* or *Right panel*.
+
+`Tab` moves through the window in reading order: the title bar, the left, the centre, the
+right and the status bar. The text you write keeps `Tab` for itself, to indent a list or
+insert a tab: to leave it, press `Ctrl+Tab`, and `Ctrl+Shift+Tab` to go back the other way.
+A synopsis, an epigraph, a comment and a footnote are fields like the others, and `Tab`
+leaves them.
 
 ## Open a panel with its shortcut
 
-Each panel has its own shortcut, which brings it to the front:
+Each panel has its own shortcut, which brings it to the front and puts you in it:
 
 - On the left: `Ctrl+Shift+B` *Binder*, `Ctrl+Shift+F` *Search*, `Ctrl+Shift+T` *Trash*,
   `Ctrl+Shift+C` *Comments* and `Ctrl+Shift+G` *Writing games*.
@@ -27,22 +32,21 @@ Each panel has its own shortcut, which brings it to the front:
   *This document*, `Ctrl+Shift+K` *Footnotes* and `Ctrl+Shift+R` *Versions*.
 - At the bottom: `Ctrl+Shift+J` *Preview* and `Ctrl+Shift+L` *Go back in time*.
 
-The shortcut shows the panel but leaves the cursor where it was. Move to the panel with
-`Ctrl+Tab`, then `Tab`. *View ▸ Panels* lists the same panels with their shortcuts, and `F9`
-shows or hides the whole left side.
+*View ▸ Panels* lists the same panels with their shortcuts, and `F9` shows or hides the
+whole left side.
 
 ## Find your way in the binder
 
-The binder is a tree of your chapters, scenes and notes. The Up and Down arrows go from item
-to item. The Right arrow opens a folder, and the Left arrow closes it.
+The binder is a tree of your chapters, scenes and notes. Your screen reader says each item's
+level and its place among its neighbours. The Up and Down arrows go from item to item. The
+Right arrow opens a folder, and the Left arrow closes it.
 
 - `Enter` opens the item and puts the cursor in its text.
 - `Ctrl+Enter` opens it in the other half of the centre.
 - `F2` renames it, and `Delete` moves it to the trash.
 - `Alt+↑` and `Alt+↓` move it up or down. `Ctrl+]` and `Ctrl+[` move it one level in or out.
-
-The menu of an item cannot be opened from the keyboard yet. Its commands are in the
-*Document* menu, which acts on the item selected in the binder.
+- `Shift+F10` or the Menu key opens its menu, with every command for the item and, at the
+  end, *Move*.
 
 ## Change the view of a chapter, part or book
 
@@ -50,33 +54,33 @@ A chapter, a part or a book opens with a bar of views at the top: its own page, 
 text, the synopses, the corkboard and an overview. A screen reader announces the bar as a
 group of radio buttons named *Views*.
 
-Use the Left and Right arrows to change the view, and `Home` or `End` for the first and the
-last. The Up and Down arrows do not change it yet.
+Use the arrows to change the view, and `Home` or `End` for the first and the last.
 
 ## Commands, menus and settings
 
-- `F10` or `Alt` opens the menu bar. A screen reader does not announce a menu item's
-  shortcut yet, so this page and *Help ▸ Keyboard Shortcuts…* list them.
+- `F10` or `Alt` opens the menu bar. Your screen reader reads each command's shortcut after
+  its name.
 - `Ctrl+Shift+P` opens the command palette. Type part of a command's name, then press
   `Enter`.
 - `Ctrl+G`, or *Go ▸ Go to…*, finds an item by its name and opens it.
 - While you write, `Alt+↓` and `Alt+↑` go to the next and the previous item and put the
   cursor in its text.
+- In a date field, `F4` or `Alt+↓` opens the calendar. Move to a day with the arrows, then
+  press `Enter`, or `Escape` to leave the date as it was. `Tab` stays inside the calendar,
+  which also has *Cancel* and *OK*.
 - `Ctrl+,` opens *Settings*. In the list of pages on the left, use the arrows, then press
   `Enter` to go to the page's first setting.
-- `F1` opens this help. `Enter` on a topic takes you into its text.
+- In *Settings*, the lists of the *Tags*, *Statuses*, *Templates*, *Personal dictionary* and
+  *Text replacements* pages read each line by what it holds. `F2` or `Enter` goes into a
+  line, `Tab` moves between its fields, and `Escape` comes back to the list.
+- `F1` opens this help. `Enter` on a topic takes you into its text. In a page, `Tab` goes
+  from link to link, and `Enter` follows one.
 
 ## Where to take care
 
-Four places do not guide you yet:
+Two things do not work well yet:
 
-- In *New Work*, after *Next*, the cursor stays on the *Next* button. Press `Shift+Tab` to go
-  back up through the page you have just reached.
-- In a date field, `F4` or `Alt+↓` opens the calendar. Move to a day with the arrows, then
-  press `Enter`, or `Escape` to leave the date as it was. `Tab` closes the calendar without
-  choosing.
-- In this help, a link to another page cannot be followed with the keyboard yet. The list of
-  topics on the left reaches every page.
-- In *Settings*, the lists of the *Tags*, *Statuses*, *Templates*, *Personal dictionary* and
-  *Text replacements* pages can be read with the arrows, but the fields of a line cannot be
-  reached with the keyboard yet.
+- On a braille display, a page of this help arrives one line of the screen at a time, as if
+  each line were a paragraph. The text you write arrives a paragraph at a time.
+- A screen reader does not yet announce the headings of a help page as headings, so you
+  cannot jump from one to the next.

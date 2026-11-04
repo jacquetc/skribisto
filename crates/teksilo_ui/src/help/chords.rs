@@ -160,6 +160,19 @@ fn key_named(name: &str) -> Option<Key> {
         "Delete" => Key::Delete,
         "Home" => Key::Home,
         "End" => Key::End,
+        // Function keys, which a chord pairs with Shift (`Shift+F6`, `Shift+F10`).
+        "F1" => Key::F1,
+        "F2" => Key::F2,
+        "F3" => Key::F3,
+        "F4" => Key::F4,
+        "F5" => Key::F5,
+        "F6" => Key::F6,
+        "F7" => Key::F7,
+        "F8" => Key::F8,
+        "F9" => Key::F9,
+        "F10" => Key::F10,
+        "F11" => Key::F11,
+        "F12" => Key::F12,
         _ => return None,
     })
 }
@@ -207,6 +220,11 @@ mod tests {
         assert_eq!(
             rewrite_chords("`Ctrl+Intro`"),
             rewrite_chords("`Ctrl+Enter`")
+        );
+        // Function keys with a modifier.
+        assert_eq!(
+            rewrite_chords("`Shift+F6`"),
+            written(KeyStroke::new(Key::F6, Modifiers::SHIFT))
         );
         // Arrows, the punctuation chords, and Tab's literal Control.
         assert_eq!(

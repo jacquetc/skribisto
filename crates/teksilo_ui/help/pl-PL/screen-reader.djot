@@ -13,13 +13,18 @@ Okno projektu ma cztery obszary:
   *Ten dokument*, *Przypisy* i *Wersje*.
 - *Na dole* *Podgląd* i *Cofnij się w czasie*. Pozostają ukryte, dopóki ich nie otworzysz.
 
-`Tab` przechodzi przez pasek tytułu, potem środek, potem lewą stronę, prawą i dół. Tekst
-zatrzymuje `Tab` dla siebie, aby wciąć listę albo wstawić tabulator. Aby opuścić tekst,
-naciśnij `Ctrl+Tab`. Aby wrócić w drugą stronę, naciśnij `Ctrl+Shift+Tab`.
+`F6` przechodzi do następnego obszaru, a `Shift+F6` do poprzedniego. Czytnik ekranu mówi,
+dokąd trafiasz: *Lewy panel*, *Obszar główny* albo *Prawy panel*.
+
+`Tab` przechodzi przez okno w kolejności czytania: pasek tytułu, lewa strona, środek, prawa
+strona i pasek stanu. Tekst, który piszesz, zatrzymuje `Tab` dla siebie, aby wciąć listę
+albo wstawić tabulator: aby go opuścić, naciśnij `Ctrl+Tab`, a `Ctrl+Shift+Tab`, aby wrócić
+w drugą stronę. Streszczenie, motto, komentarz i przypis to pola jak inne i `Tab` je
+opuszcza.
 
 ## Otwieranie panelu jego skrótem
 
-Każdy panel ma własny skrót, który wysuwa go na wierzch:
+Każdy panel ma własny skrót, który wysuwa go na wierzch i przenosi cię do niego:
 
 - Po lewej: `Ctrl+Shift+B` *Segregator*, `Ctrl+Shift+F` *Szukaj*, `Ctrl+Shift+T` *Kosz*,
   `Ctrl+Shift+C` *Komentarze* i `Ctrl+Shift+G` *Gry pisarskie*.
@@ -27,23 +32,22 @@ Każdy panel ma własny skrót, który wysuwa go na wierzch:
   *Ten dokument*, `Ctrl+Shift+K` *Przypisy* i `Ctrl+Shift+R` *Wersje*.
 - Na dole: `Ctrl+Shift+J` *Podgląd* i `Ctrl+Shift+L` *Cofnij się w czasie*.
 
-Skrót pokazuje panel, ale zostawia kursor tam, gdzie był. Przejdź do panelu klawiszem
-`Ctrl+Tab`, a potem `Tab`. *Widok ▸ Panele* wymienia te same panele z ich skrótami, a `F9`
-pokazuje lub ukrywa całą lewą stronę.
+*Widok ▸ Panele* wymienia te same panele z ich skrótami, a `F9` pokazuje lub ukrywa całą
+lewą stronę.
 
 ## Poruszanie się po segregatorze
 
-Segregator to drzewo twoich rozdziałów, scen i notatek. Strzałki w górę i w dół przechodzą
-od elementu do elementu. Strzałka w prawo otwiera folder, a strzałka w lewo go zamyka.
+Segregator to drzewo twoich rozdziałów, scen i notatek. Czytnik ekranu podaje poziom
+każdego elementu i jego miejsce wśród sąsiadów. Strzałki w górę i w dół przechodzą od
+elementu do elementu. Strzałka w prawo otwiera folder, a strzałka w lewo go zamyka.
 
 - `Enter` otwiera element i umieszcza kursor w jego tekście.
 - `Ctrl+Enter` otwiera go w drugiej połowie środka.
 - `F2` zmienia jego nazwę, a `Delete` przenosi go do kosza.
 - `Alt+↑` i `Alt+↓` przesuwają go w górę lub w dół. `Ctrl+]` i `Ctrl+[` przesuwają go o
   jeden poziom do środka lub na zewnątrz.
-
-Menu elementu nie da się jeszcze otworzyć z klawiatury. Jego polecenia są w menu *Dokument*,
-które działa na elemencie zaznaczonym w segregatorze.
+- `Shift+F10` lub klawisz menu otwiera jego menu, ze wszystkimi poleceniami elementu i na
+  końcu *Przenieś*.
 
 ## Zmiana widoku rozdziału, części lub książki
 
@@ -51,31 +55,33 @@ Rozdział, część albo książka otwiera się z paskiem widoków u góry: wła
 tekst, streszczenia, tablica korkowa i przegląd. Czytnik ekranu ogłasza ten pasek jako grupę
 przycisków opcji o nazwie *Widoki*.
 
-Strzałkami w lewo i w prawo zmieniasz widok, a klawiszami `Home` i `End` przechodzisz do
-pierwszego i ostatniego. Strzałki w górę i w dół jeszcze go nie zmieniają.
+Strzałkami zmieniasz widok, a klawiszami `Home` i `End` przechodzisz do pierwszego i
+ostatniego.
 
 ## Polecenia, menu i ustawienia
 
-- `F10` lub `Alt` otwiera pasek menu. Czytnik ekranu nie ogłasza jeszcze skrótu polecenia z
-  menu, dlatego wymieniają je ta strona i *Pomoc ▸ Skróty klawiszowe…*.
+- `F10` lub `Alt` otwiera pasek menu. Czytnik ekranu czyta skrót każdego polecenia po jego
+  nazwie.
 - `Ctrl+Shift+P` otwiera paletę poleceń. Wpisz część nazwy polecenia i naciśnij `Enter`.
 - `Ctrl+G` lub *Przejdź ▸ Przejdź do…* znajduje element po nazwie i go otwiera.
 - Podczas pisania `Alt+↓` i `Alt+↑` przechodzą do następnego i do poprzedniego elementu,
   z kursorem w jego tekście.
+- W polu daty `F4` lub `Alt+↓` otwiera kalendarz. Wybierz dzień strzałkami i naciśnij
+  `Enter`, albo `Esc`, aby zostawić datę bez zmian. `Tab` zostaje w kalendarzu, który ma też
+  przyciski *Anuluj* i *OK*.
 - `Ctrl+,` otwiera *Ustawienia*. Na liście stron po lewej użyj strzałek, a potem naciśnij
   `Enter`, aby przejść do pierwszego ustawienia strony.
-- `F1` otwiera tę pomoc. `Enter` na temacie przenosi cię do jego tekstu.
+- W *Ustawieniach* listy na stronach *Znaczniki*, *Statusy*, *Szablony*, *Słownik własny* i
+  *Zamiany tekstu* czytają każdy wiersz według tego, co zawiera. `F2` lub `Enter` wchodzi do
+  wiersza, `Tab` przechodzi między jego polami, a `Esc` wraca do listy.
+- `F1` otwiera tę pomoc. `Enter` na temacie przenosi cię do jego tekstu. Na stronie `Tab`
+  przechodzi od łącza do łącza, a `Enter` otwiera łącze.
 
 ## Na co uważać
 
-Cztery miejsca jeszcze cię nie prowadzą:
+Dwie rzeczy jeszcze nie działają dobrze:
 
-- W oknie *Nowy projekt* po kliknięciu *Dalej* kursor zostaje na przycisku *Dalej*.
-  Naciśnij `Shift+Tab`, aby wrócić w górę strony, na którą właśnie przeszedłeś.
-- W polu daty `F4` lub `Alt+↓` otwiera kalendarz. Wybierz dzień strzałkami i naciśnij
-  `Enter`, albo `Esc`, aby zostawić datę bez zmian. `Tab` zamyka kalendarz bez wybierania.
-- W tej pomocy nie da się jeszcze przejść za łączem do innej strony z klawiatury. Lista
-  tematów po lewej prowadzi do każdej strony.
-- W *Ustawieniach* listy na stronach *Znaczniki*, *Statusy*, *Szablony*, *Słownik własny* i
-  *Zamiany tekstu* można czytać strzałkami, ale pól wiersza nie da się jeszcze osiągnąć z
-  klawiatury.
+- Na monitorze brajlowskim strona tej pomocy przychodzi po jednej linii ekranu, jakby każda
+  linia była akapitem. Tekst, który piszesz, przychodzi akapitami.
+- Czytnik ekranu nie ogłasza jeszcze nagłówków strony pomocy jako nagłówków, więc nie możesz
+  przeskakiwać od jednego do drugiego.

@@ -13,13 +13,18 @@ Una ventana de proyecto tiene cuatro zonas:
   *Este documento*, *Notas al pie* y *Versiones*.
 - *Abajo*, *Vista previa* y *Volver al pasado*. Permanecen ocultos hasta que los abre.
 
-`Tab` recorre la barra de título, luego el centro, luego la izquierda, la derecha y la parte
-inferior. Un texto se queda con `Tab`, para sangrar una lista o insertar una tabulación. Para
-salir de un texto, pulse `Ctrl+Tab`. Para volver atrás, pulse `Ctrl+Mayús+Tab`.
+`F6` pasa de una zona a la siguiente, y `Mayús+F6` a la anterior. Su lector de pantalla dice
+adónde llega: *Panel izquierdo*, *Área principal* o *Panel derecho*.
+
+`Tab` recorre la ventana en orden de lectura: la barra de título, la izquierda, el centro,
+la derecha y la barra de estado. El texto que escribe se queda con `Tab`, para sangrar una
+lista o insertar una tabulación: para salir de él, pulse `Ctrl+Tab`, y `Ctrl+Mayús+Tab` para
+volver atrás. Una sinopsis, un epígrafe, un comentario y una nota al pie son campos como los
+demás, y `Tab` sale de ellos.
 
 ## Abrir un panel con su atajo
 
-Cada panel tiene su propio atajo, que lo trae al frente:
+Cada panel tiene su propio atajo, que lo trae al frente y le lleva dentro:
 
 - A la izquierda: `Ctrl+Mayús+B` *Archivador*, `Ctrl+Mayús+F` *Buscar*, `Ctrl+Mayús+T`
   *Papelera*, `Ctrl+Mayús+C` *Comentarios* y `Ctrl+Mayús+G` *Juegos de escritura*.
@@ -27,23 +32,22 @@ Cada panel tiene su propio atajo, que lo trae al frente:
   *Este documento*, `Ctrl+Mayús+K` *Notas al pie* y `Ctrl+Mayús+R` *Versiones*.
 - Abajo: `Ctrl+Mayús+J` *Vista previa* y `Ctrl+Mayús+L` *Volver al pasado*.
 
-El atajo muestra el panel pero deja el cursor donde estaba. Vaya al panel con `Ctrl+Tab` y
-luego `Tab`. *Ver ▸ Paneles* enumera los mismos paneles con sus atajos, y `F9` muestra u
-oculta todo el lado izquierdo.
+*Ver ▸ Paneles* enumera los mismos paneles con sus atajos, y `F9` muestra u oculta todo el
+lado izquierdo.
 
 ## Orientarse en el Archivador
 
-El Archivador es un árbol de sus capítulos, escenas y notas. Las flechas arriba y abajo van
-de un elemento a otro. La flecha derecha abre una carpeta y la flecha izquierda la cierra.
+El Archivador es un árbol de sus capítulos, escenas y notas. Su lector de pantalla dice el
+nivel de cada elemento y su lugar entre sus vecinos. Las flechas arriba y abajo van de un
+elemento a otro. La flecha derecha abre una carpeta y la flecha izquierda la cierra.
 
 - `Intro` abre el elemento y pone el cursor en su texto.
 - `Ctrl+Intro` lo abre en la otra mitad del centro.
 - `F2` le cambia el nombre, y `Supr` lo envía a la papelera.
 - `Alt+↑` y `Alt+↓` lo suben o lo bajan. `Ctrl+]` y `Ctrl+[` lo desplazan un nivel hacia
   dentro o hacia fuera.
-
-El menú de un elemento todavía no se abre con el teclado. Sus órdenes están en el menú
-*Documento*, que actúa sobre el elemento seleccionado en el Archivador.
+- `Mayús+F10` o la tecla de menú abre su menú, con todas las órdenes del elemento y, al
+  final, *Mover*.
 
 ## Cambiar la vista de un capítulo, una parte o un libro
 
@@ -51,33 +55,34 @@ Un capítulo, una parte o un libro se abre con una barra de vistas en la parte s
 propia página, el texto completo, las sinopsis, el tablero de corcho y una vista general. Un
 lector de pantalla anuncia la barra como un grupo de botones de opción llamado *Vistas*.
 
-Use las flechas izquierda y derecha para cambiar de vista, e `Inicio` o `Fin` para la
-primera y la última. Las flechas arriba y abajo todavía no la cambian.
+Use las flechas para cambiar de vista, e `Inicio` o `Fin` para la primera y la última.
 
 ## Órdenes, menús y configuración
 
-- `F10` o `Alt` abre la barra de menús. Un lector de pantalla todavía no anuncia el atajo de
-  una orden de menú: esta página y *Ayuda ▸ Atajos de teclado…* los enumeran.
+- `F10` o `Alt` abre la barra de menús. Su lector de pantalla lee el atajo de cada orden
+  después de su nombre.
 - `Ctrl+Mayús+P` abre la paleta de comandos. Escriba parte del nombre de una orden y pulse
   `Intro`.
 - `Ctrl+G`, o *Ir ▸ Ir a…*, encuentra un elemento por su nombre y lo abre.
 - Mientras escribe, `Alt+↓` y `Alt+↑` pasan al elemento siguiente y al anterior, con el
   cursor en su texto.
+- En un campo de fecha, `F4` o `Alt+↓` abre el calendario. Vaya a un día con las flechas y
+  pulse `Intro`, o `Esc` para dejar la fecha como estaba. `Tab` se queda en el calendario,
+  que también tiene *Cancelar* y *Aceptar*.
 - `Ctrl+,` abre la *Configuración*. En la lista de páginas de la izquierda, use las flechas
   y pulse `Intro` para ir al primer ajuste de la página.
-- `F1` abre esta ayuda. `Intro` sobre un tema le lleva a su texto.
+- En la *Configuración*, las listas de las páginas *Etiquetas*, *Estados*, *Plantillas*,
+  *Diccionario personal* y *Sustituciones de texto* leen cada línea por lo que contiene.
+  `F2` o `Intro` entra en una línea, `Tab` pasa de uno de sus campos a otro, y `Esc` vuelve
+  a la lista.
+- `F1` abre esta ayuda. `Intro` sobre un tema le lleva a su texto. En una página, `Tab` va
+  de enlace en enlace, e `Intro` sigue uno.
 
 ## Dónde tener cuidado
 
-Cuatro lugares todavía no le guían:
+Dos cosas todavía no funcionan bien:
 
-- En *Nuevo proyecto*, después de *Siguiente*, el cursor se queda en el botón *Siguiente*.
-  Pulse `Mayús+Tab` para subir por la página a la que acaba de llegar.
-- En un campo de fecha, `F4` o `Alt+↓` abre el calendario. Vaya a un día con las flechas y
-  pulse `Intro`, o `Esc` para dejar la fecha como estaba. `Tab` cierra el calendario sin
-  elegir nada.
-- En esta ayuda, un enlace a otra página todavía no se puede seguir con el teclado. La lista
-  de temas de la izquierda lleva a todas las páginas.
-- En la *Configuración*, las listas de las páginas *Etiquetas*, *Estados*, *Plantillas*,
-  *Diccionario personal* y *Sustituciones de texto* se leen con las flechas, pero los campos
-  de una línea todavía no se alcanzan con el teclado.
+- En una línea braille, una página de esta ayuda llega una línea de la pantalla cada vez,
+  como si cada línea fuera un párrafo. El texto que escribe llega párrafo a párrafo.
+- Un lector de pantalla todavía no anuncia los títulos de una página de ayuda como títulos,
+  así que no puede saltar de uno a otro.

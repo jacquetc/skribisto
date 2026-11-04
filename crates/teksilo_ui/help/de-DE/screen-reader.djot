@@ -15,13 +15,18 @@ Ein Projektfenster hat vier Bereiche:
 - *Unten* *Vorschau* und *In der Zeit zurückgehen*. Sie bleiben verborgen, bis Sie sie
   öffnen.
 
-`Tab` führt durch die Titelleiste, dann die Mitte, dann links, rechts und unten. Ein Text
-behält `Tab` für sich, um eine Liste einzurücken oder einen Tabulator einzufügen. Einen Text
-verlassen Sie mit `Strg+Tab`. In die andere Richtung geht es mit `Strg+Umschalt+Tab`.
+`F6` springt von einem Bereich zum nächsten, `Umschalt+F6` zum vorigen. Ihr Bildschirmleser
+sagt, wo Sie ankommen: *Linker Bereich*, *Hauptbereich* oder *Rechter Bereich*.
+
+`Tab` führt in Leserichtung durch das Fenster: die Titelleiste, links, die Mitte, rechts und
+die Statusleiste. Der Text, den Sie schreiben, behält `Tab` für sich, um eine Liste
+einzurücken oder einen Tabulator einzufügen: Sie verlassen ihn mit `Strg+Tab`, und mit
+`Strg+Umschalt+Tab` geht es in die andere Richtung. Eine Synopse, ein Motto, ein Kommentar
+und eine Fußnote sind Felder wie die anderen, und `Tab` verlässt sie.
 
 ## Einen Bereich mit seinem Tastenkürzel öffnen
 
-Jeder Bereich hat ein eigenes Tastenkürzel, das ihn nach vorn holt:
+Jeder Bereich hat ein eigenes Tastenkürzel, das ihn nach vorn holt und Sie hineinbringt:
 
 - Links: `Strg+Umschalt+B` *Projektmappe*, `Strg+Umschalt+F` *Suchen*, `Strg+Umschalt+T`
   *Papierkorb*, `Strg+Umschalt+C` *Kommentare* und `Strg+Umschalt+G` *Schreibspiele*.
@@ -29,13 +34,13 @@ Jeder Bereich hat ein eigenes Tastenkürzel, das ihn nach vorn holt:
   *Dieses Dokument*, `Strg+Umschalt+K` *Fußnoten* und `Strg+Umschalt+R` *Versionen*.
 - Unten: `Strg+Umschalt+J` *Vorschau* und `Strg+Umschalt+L` *In der Zeit zurückgehen*.
 
-Das Tastenkürzel zeigt den Bereich, lässt den Cursor aber, wo er war. Gehen Sie mit
-`Strg+Tab` und dann `Tab` zum Bereich. *Ansicht ▸ Bereiche* listet dieselben Bereiche mit
-ihren Tastenkürzeln, und `F9` blendet die ganze linke Seite ein oder aus.
+*Ansicht ▸ Bereiche* listet dieselben Bereiche mit ihren Tastenkürzeln, und `F9` blendet
+die ganze linke Seite ein oder aus.
 
 ## Sich in der Projektmappe zurechtfinden
 
-Die Projektmappe ist ein Baum Ihrer Kapitel, Szenen und Notizen. Die Pfeiltasten nach oben
+Die Projektmappe ist ein Baum Ihrer Kapitel, Szenen und Notizen. Ihr Bildschirmleser nennt
+die Ebene jedes Eintrags und seine Stelle unter seinen Nachbarn. Die Pfeiltasten nach oben
 und unten gehen von Eintrag zu Eintrag. Der Pfeil nach rechts öffnet einen Ordner, der Pfeil
 nach links schließt ihn.
 
@@ -44,9 +49,8 @@ nach links schließt ihn.
 - `F2` benennt ihn um, und `Entf` legt ihn in den Papierkorb.
 - `Alt+↑` und `Alt+↓` verschieben ihn nach oben oder unten. `Strg+]` und `Strg+[` rücken
   ihn um eine Ebene ein oder aus.
-
-Das Menü eines Eintrags lässt sich noch nicht mit der Tastatur öffnen. Seine Befehle stehen
-im Menü *Dokument*, das auf den in der Projektmappe ausgewählten Eintrag wirkt.
+- `Umschalt+F10` oder die Menütaste öffnet sein Menü, mit allen Befehlen für den Eintrag
+  und am Ende *Verschieben*.
 
 ## Die Ansicht eines Kapitels, Teils oder Buchs wechseln
 
@@ -55,35 +59,36 @@ eigene Seite, der ganze Text, die Synopsen, die Pinnwand und eine Übersicht. Ei
 Bildschirmleser kündigt die Leiste als Gruppe von Optionsfeldern mit dem Namen *Ansichten*
 an.
 
-Mit den Pfeilen nach links und rechts wechseln Sie die Ansicht, mit `Pos1` und `Ende`
-springen Sie zur ersten und zur letzten. Die Pfeile nach oben und unten wechseln sie noch
-nicht.
+Mit den Pfeiltasten wechseln Sie die Ansicht, mit `Pos1` und `Ende` springen Sie zur ersten
+und zur letzten.
 
 ## Befehle, Menüs und Einstellungen
 
-- `F10` oder `Alt` öffnet die Menüleiste. Ein Bildschirmleser sagt das Tastenkürzel eines
-  Menübefehls noch nicht an. Diese Seite und *Hilfe ▸ Tastenkürzel…* listen sie auf.
+- `F10` oder `Alt` öffnet die Menüleiste. Ihr Bildschirmleser liest das Tastenkürzel jedes
+  Befehls nach seinem Namen vor.
 - `Strg+Umschalt+P` öffnet die Befehlspalette. Tippen Sie einen Teil des Befehlsnamens und
   drücken Sie `Eingabe`.
 - `Strg+G` oder *Navigation ▸ Gehe zu…* findet einen Eintrag über seinen Namen und öffnet
   ihn.
 - Beim Schreiben gehen `Alt+↓` und `Alt+↑` zum nächsten und zum vorigen Eintrag, mit dem
   Cursor in seinem Text.
+- In einem Datumsfeld öffnet `F4` oder `Alt+↓` den Kalender. Wählen Sie mit den Pfeilen
+  einen Tag und drücken Sie `Eingabe`, oder `Esc`, um das Datum unverändert zu lassen. `Tab`
+  bleibt im Kalender, der auch *Abbrechen* und *OK* hat.
 - `Strg+,` öffnet die *Einstellungen*. Wählen Sie in der Liste der Seiten links mit den
   Pfeilen und drücken Sie `Eingabe`, um zur ersten Einstellung der Seite zu gelangen.
-- `F1` öffnet diese Hilfe. `Eingabe` auf einem Thema bringt Sie in seinen Text.
+- In den *Einstellungen* lesen die Listen der Seiten *Schlagwörter*, *Statusstufen*,
+  *Vorlagen*, *Persönliches Wörterbuch* und *Textersetzungen* jede Zeile mit ihrem Inhalt
+  vor. `F2` oder `Eingabe` führt in eine Zeile, `Tab` geht von Feld zu Feld, und `Esc` kehrt
+  zur Liste zurück.
+- `F1` öffnet diese Hilfe. `Eingabe` auf einem Thema bringt Sie in seinen Text. Auf einer
+  Seite geht `Tab` von Link zu Link, und `Eingabe` folgt einem.
 
 ## Wo Sie aufpassen sollten
 
-Vier Stellen führen Sie noch nicht:
+Zwei Dinge funktionieren noch nicht gut:
 
-- In *Neues Projekt* bleibt der Cursor nach *Weiter* auf der Schaltfläche *Weiter*. Gehen
-  Sie mit `Umschalt+Tab` zurück nach oben durch die Seite, die Sie gerade erreicht haben.
-- In einem Datumsfeld öffnet `F4` oder `Alt+↓` den Kalender. Wählen Sie mit den Pfeilen
-  einen Tag und drücken Sie `Eingabe`, oder `Esc`, um das Datum unverändert zu lassen. `Tab`
-  schließt den Kalender, ohne etwas zu wählen.
-- Einem Link auf eine andere Seite dieser Hilfe können Sie noch nicht mit der Tastatur folgen.
-  Die Themenliste links führt zu jeder Seite.
-- In den *Einstellungen* lassen sich die Listen der Seiten *Schlagwörter*, *Statusstufen*,
-  *Vorlagen*, *Persönliches Wörterbuch* und *Textersetzungen* mit den Pfeilen lesen, aber die
-  Felder einer Zeile sind mit der Tastatur noch nicht erreichbar.
+- Auf einer Braillezeile kommt eine Seite dieser Hilfe Bildschirmzeile für Bildschirmzeile
+  an, als wäre jede Zeile ein Absatz. Der Text, den Sie schreiben, kommt absatzweise an.
+- Ein Bildschirmleser sagt die Überschriften einer Hilfeseite noch nicht als Überschriften
+  an, Sie können also nicht von einer zur nächsten springen.
