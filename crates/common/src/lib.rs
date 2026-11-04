@@ -17,6 +17,9 @@ pub mod entities;
 pub mod error;
 pub mod event;
 pub mod long_operation;
+/// Undo and redo of a structural command keep the prose written since it — see
+/// the module docs.
+pub mod prose_keep;
 pub mod snapshot;
 pub mod types;
 pub mod uid;

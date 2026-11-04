@@ -58,6 +58,15 @@ pub trait ClearTitlesUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "Content", action = "GetMulti")]
 #[macros::uow_action(entity = "Content", action = "Update")]
 pub trait ClearTitlesUnitOfWorkTrait: CommandUnitOfWork {
+    /// Read the prose a restore must not revert: see [`common::prose_keep`].
+    fn keep_prose(
+        &self,
+        target: &common::snapshot::EntityTreeSnapshot,
+        other: &common::snapshot::EntityTreeSnapshot,
+    ) -> Result<common::prose_keep::KeptProse>;
+    /// Write that prose back after the restore, in the same transaction.
+    fn put_back_prose(&self, kept: common::prose_keep::KeptProse) -> Result<()>;
+
     fn publish_clear_titles_event(&self, ids: Vec<EntityId>, data: Option<String>);
 }
 
@@ -176,11 +185,19 @@ impl ClearTitlesUseCase {
             .find(|c| &c.role == role))
     }
 
-    fn restore(&self, snap: Option<&EntityTreeSnapshot>, what: &str) -> Result<()> {
+    fn restore(
+        &self,
+        snap: Option<&EntityTreeSnapshot>,
+        other: Option<&EntityTreeSnapshot>,
+        what: &str,
+    ) -> Result<()> {
         let snap = snap.ok_or_else(|| anyhow!("clear_titles: nothing to {what}"))?;
+        let other = other.ok_or_else(|| anyhow!("clear_titles: nothing to {what}"))?;
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
+        let kept = uow.keep_prose(snap, other)?;
         uow.restore_binder_item(snap)?;
+        uow.put_back_prose(kept)?;
         uow.commit()?;
         uow.publish_clear_titles_event(self.cleared.clone(), None);
         Ok(())
@@ -191,11 +208,11 @@ use common::undo_redo::UndoRedoCommand;
 use std::any::Any;
 impl UndoRedoCommand for ClearTitlesUseCase {
     fn undo(&mut self) -> Result<()> {
-        self.restore(self.snap_before.as_ref(), "undo")
+        self.restore(self.snap_before.as_ref(), self.snap_after.as_ref(), "undo")
     }
 
     fn redo(&mut self) -> Result<()> {
-        self.restore(self.snap_after.as_ref(), "redo")
+        self.restore(self.snap_after.as_ref(), self.snap_before.as_ref(), "redo")
     }
     fn as_any(&self) -> &dyn Any {
         self

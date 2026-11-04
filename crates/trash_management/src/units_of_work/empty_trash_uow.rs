@@ -151,6 +151,18 @@ impl CommandUnitOfWork for EmptyTrashUnitOfWork {
 #[macros::uow_action(entity = "BinderItem", action = "RemoveMulti")]
 #[macros::uow_action(entity = "Content", action = "RemoveMulti")]
 impl EmptyTrashUnitOfWorkTrait for EmptyTrashUnitOfWork {
+    fn keep_prose(
+        &self,
+        target: &common::snapshot::EntityTreeSnapshot,
+        other: &common::snapshot::EntityTreeSnapshot,
+    ) -> Result<common::prose_keep::KeptProse> {
+        common::prose_keep::keep(self.transaction.as_ref(), target, other)
+    }
+
+    fn put_back_prose(&self, kept: common::prose_keep::KeptProse) -> Result<()> {
+        common::prose_keep::put_back(self.transaction.as_ref(), &self.event_buffer, kept)
+    }
+
     fn publish_empty_trash_event(&self, ids: Vec<EntityId>, data: Option<String>) {
         self.event_hub.send_event(Event {
             origin: Origin::TrashManagement(EmptyTrash),

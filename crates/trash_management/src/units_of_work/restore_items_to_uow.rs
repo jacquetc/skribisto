@@ -149,6 +149,18 @@ impl CommandUnitOfWork for RestoreItemsToUnitOfWork {
 #[macros::uow_action(entity = "BinderItem", action = "GetMulti")]
 #[macros::uow_action(entity = "BinderItem", action = "UpdateMulti")]
 impl RestoreItemsToUnitOfWorkTrait for RestoreItemsToUnitOfWork {
+    fn keep_prose(
+        &self,
+        target: &common::snapshot::EntityTreeSnapshot,
+        other: &common::snapshot::EntityTreeSnapshot,
+    ) -> Result<common::prose_keep::KeptProse> {
+        common::prose_keep::keep(self.transaction.as_ref(), target, other)
+    }
+
+    fn put_back_prose(&self, kept: common::prose_keep::KeptProse) -> Result<()> {
+        common::prose_keep::put_back(self.transaction.as_ref(), &self.event_buffer, kept)
+    }
+
     fn publish_restore_items_to_event(&self, ids: Vec<EntityId>, data: Option<String>) {
         self.event_hub.send_event(Event {
             origin: Origin::TrashManagement(RestoreItemsTo),

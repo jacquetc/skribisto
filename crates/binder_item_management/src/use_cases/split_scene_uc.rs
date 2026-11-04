@@ -67,6 +67,15 @@ pub trait SplitSceneUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "Footnote", action = "Snapshot")]
 #[macros::uow_action(entity = "Footnote", action = "Restore")]
 pub trait SplitSceneUnitOfWorkTrait: CommandUnitOfWork {
+    /// Read the prose a restore must not revert: see [`common::prose_keep`].
+    fn keep_prose(
+        &self,
+        target: &common::snapshot::EntityTreeSnapshot,
+        other: &common::snapshot::EntityTreeSnapshot,
+    ) -> Result<common::prose_keep::KeptProse>;
+    /// Write that prose back after the restore, in the same transaction.
+    fn put_back_prose(&self, kept: common::prose_keep::KeptProse) -> Result<()>;
+
     fn publish_split_scene_event(&self, ids: Vec<EntityId>, data: Option<String>);
 }
 
@@ -403,7 +412,13 @@ impl UndoRedoCommand for SplitSceneUseCase {
             .ok_or_else(|| anyhow!("split_scene: nothing to undo"))?;
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
+        let other = self
+            .snap_after
+            .as_ref()
+            .ok_or_else(|| anyhow!("split_scene: the other end of this command is missing"))?;
+        let kept = uow.keep_prose(snap, other)?;
         uow.restore_binder(snap)?;
+        uow.put_back_prose(kept)?;
         // Only set when this split reanchored a footnote (see
         // `reanchor_split_footnotes`) — restores its `content` pointer alongside the
         // structural undo above, in the same transaction, so the two can never drift
@@ -423,7 +438,13 @@ impl UndoRedoCommand for SplitSceneUseCase {
             .ok_or_else(|| anyhow!("split_scene: nothing to redo"))?;
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
+        let other = self
+            .snap_before
+            .as_ref()
+            .ok_or_else(|| anyhow!("split_scene: the other end of this command is missing"))?;
+        let kept = uow.keep_prose(snap, other)?;
         uow.restore_binder(snap)?;
+        uow.put_back_prose(kept)?;
         if let Some(fsnap) = self.footnote_snap_after.as_ref() {
             uow.restore_footnote(fsnap)?;
         }

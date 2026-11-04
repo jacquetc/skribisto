@@ -42,6 +42,15 @@ pub trait RestoreItemsUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "BinderItem", action = "GetMulti")]
 #[macros::uow_action(entity = "BinderItem", action = "UpdateMulti")]
 pub trait RestoreItemsUnitOfWorkTrait: CommandUnitOfWork {
+    /// Read the prose a restore must not revert: see [`common::prose_keep`].
+    fn keep_prose(
+        &self,
+        target: &common::snapshot::EntityTreeSnapshot,
+        other: &common::snapshot::EntityTreeSnapshot,
+    ) -> Result<common::prose_keep::KeptProse>;
+    /// Write that prose back after the restore, in the same transaction.
+    fn put_back_prose(&self, kept: common::prose_keep::KeptProse) -> Result<()>;
+
     fn publish_restore_items_event(&self, ids: Vec<EntityId>, data: Option<String>);
 }
 
@@ -296,7 +305,13 @@ impl UndoRedoCommand for RestoreItemsUseCase {
             .ok_or_else(|| anyhow!("restore_items: nothing to undo"))?;
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
+        let other = self
+            .snap_after
+            .as_ref()
+            .ok_or_else(|| anyhow!("restore_items: the other end of this command is missing"))?;
+        let kept = uow.keep_prose(snap, other)?;
         uow.restore_work(snap)?;
+        uow.put_back_prose(kept)?;
         uow.commit()?;
         Ok(())
     }
@@ -308,7 +323,13 @@ impl UndoRedoCommand for RestoreItemsUseCase {
             .ok_or_else(|| anyhow!("restore_items: nothing to redo"))?;
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
+        let other = self
+            .snap_before
+            .as_ref()
+            .ok_or_else(|| anyhow!("restore_items: the other end of this command is missing"))?;
+        let kept = uow.keep_prose(snap, other)?;
         uow.restore_work(snap)?;
+        uow.put_back_prose(kept)?;
         uow.commit()?;
         Ok(())
     }

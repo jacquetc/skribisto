@@ -231,6 +231,15 @@ pub trait ApplyDocumentImportUnitOfWorkFactoryTrait: Send + Sync {
 // it: `WorkInfo.file_name`, found by its `work` back-pointer (see the module doc).
 #[macros::uow_action(entity = "WorkInfo", action = "GetAll")]
 pub trait ApplyDocumentImportUnitOfWorkTrait: CommandUnitOfWork {
+    /// Read the prose a restore must not revert: see [`common::prose_keep`].
+    fn keep_prose(
+        &self,
+        target: &common::snapshot::EntityTreeSnapshot,
+        other: &common::snapshot::EntityTreeSnapshot,
+    ) -> Result<common::prose_keep::KeptProse>;
+    /// Write that prose back after the restore, in the same transaction.
+    fn put_back_prose(&self, kept: common::prose_keep::KeptProse) -> Result<()>;
+
     fn publish_apply_document_import_event(&self, ids: Vec<EntityId>, data: Option<String>);
 }
 
@@ -2176,7 +2185,12 @@ impl UndoRedoCommand for ApplyDocumentImportUseCase {
         // attached to before this import ran: that row lives outside the Binder
         // snapshot (an earlier, already-committed transaction), so it is
         // untouched by this restore and still there to point at.
+        let other = self.snap_after.as_ref().ok_or_else(|| {
+            anyhow!("apply_document_import: the other end of this command is missing")
+        })?;
+        let kept = uow.keep_prose(snap, other)?;
         uow.restore_binder(snap)?;
+        uow.put_back_prose(kept)?;
         self.set_comments_attached(uow.as_mut(), false)?;
         self.set_footnotes_attached(uow.as_mut(), false)?;
         self.set_assets_attached(uow.as_mut(), false)?;
@@ -2249,7 +2263,12 @@ impl UndoRedoCommand for ApplyDocumentImportUseCase {
                 return Err(error);
             }
         }
+        let other = self.snap_before.as_ref().ok_or_else(|| {
+            anyhow!("apply_document_import: the other end of this command is missing")
+        })?;
+        let kept = uow.keep_prose(snap, other)?;
         uow.restore_binder(snap)?;
+        uow.put_back_prose(kept)?;
         self.set_comments_attached(uow.as_mut(), true)?;
         self.set_footnotes_attached(uow.as_mut(), true)?;
         self.set_assets_attached(uow.as_mut(), true)?;
