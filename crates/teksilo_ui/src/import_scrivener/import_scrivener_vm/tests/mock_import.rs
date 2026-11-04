@@ -21,7 +21,7 @@ use teksilo::widgets::{
 };
 
 use crate::import_scrivener::messages::{self, Group};
-use crate::import_scrivener::report::{ImportReport, SHOWN_ITEMS};
+use crate::import_scrivener::report::{ImportReport, Listed, SHOWN_ITEMS};
 use crate::import_scrivener::report_panel::ImportReportPanel;
 use crate::models::scrivener_import_run::{EITHER_OR, FAILURE_WORDS, chosen_failure};
 use crate::shared::import_failure;
@@ -390,11 +390,39 @@ fn the_mocks_build_walks_an_import_to_its_report() {
         )));
         tree.layout(SizeProposal::exact(900.0, 700.0));
         assert!(tree.bounds(dialog).height > 0.0);
-        let more = lines
+        // A closed list is not on the page: open the line's group, then its list.
+        let (group, line) = report
+            .groups
             .iter()
-            .map(|l| l.more())
-            .find(|more| *more > 0)
-            .unwrap_or_default();
+            .find_map(|g| g.lines.iter().find(|l| l.more() > 0).map(|l| (g, l)))
+            .expect("a line lists more items than the dialog shows");
+        let mut open = |name: String| {
+            let header = tree
+                .find_by_label(&name)
+                .unwrap_or_else(|| panic!("a disclosure named {name:?}"));
+            crate::test_support::click(&mut tree, header);
+            tree.layout(SizeProposal::exact(900.0, 700.0));
+            tree.advance_time(Duration::from_secs(1));
+            tree.layout(SizeProposal::exact(900.0, 700.0));
+        };
+        if !group.expanded_by_default() {
+            open(group.title().resolve_now());
+        }
+        let (count, sentence) = (line.items.len() as i64, line.text.resolve_now());
+        open(
+            match line.listed {
+                Listed::Items => tr!(import_scrivener_report_items_toggle_named(
+                    count = count,
+                    line = sentence
+                )),
+                Listed::Names => tr!(import_scrivener_report_names_toggle_named(
+                    count = count,
+                    line = sentence
+                )),
+            }
+            .resolve_now(),
+        );
+        let more = line.more();
         let and_more = tr!(import_scrivener_report_more(count = more as i64)).resolve_now();
         assert!(
             tree.find_by_label(&and_more).is_some(),

@@ -41,6 +41,9 @@ Description:
 - "Ctrl+Shift+O puts you on the first button of the Format panel, like the other panels' shortcuts, and Tab moves through its buttons. They were out of reach of the keyboard, so the shortcut left you in the text. A click on one of them still leaves the cursor and the selection in the text"
 - "With a screen reader, the text of a scene, chapter or note is announced as “Text”, its synopsis as “Synopsis” (on a corkboard card too) and a chapter's epigraph as “Epigraph”, and the target box in the Inspector as “Target”. They used to be announced as edit fields with no name, so you could tell them apart only by reading the words in them"
 - "Undoing a change to the binder no longer erases what you wrote since. Undoing a move, a duplicate, a trash, a restore, Replace all or an import of tags or templates put the texts it covered back as they were before the change, so the words typed afterwards were lost and the open text was reloaded with a “Typing history reset” message. Only a text the change itself rewrote, as a merge, a split or Replace all does, goes back"
+- "When a chapter's Epigraph section is closed, Tab goes past it. It used to stop on its hidden Source line button and on its field"
+- "With a screen reader, the Down arrow in the help reads every line of a list item that wraps onto several lines. It used to read the first line again and never reach the last"
+- "With a screen reader, the binder's items are no longer each described as a tooltip, the Rename field is announced by what it asks for, and a field whose grey hint repeats its name says that name only once"
 ---
 Version: 3.3.0
 Date: 2026-10-27
