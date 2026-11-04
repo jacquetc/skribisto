@@ -70,7 +70,11 @@ pub fn user_dictionary_pane(ctx: &mut BuildContext, vm: &UserDictionaryViewModel
     let list = ListView::from_source(filtered, move |i, row: &DictWordRow, _selected| {
         Box::new(word_row(&list_vm, row, i))
     })
-    .auto_item_height(46.0);
+    .auto_item_height(46.0)
+    // Each row is a small form: F2 (or Enter) goes into it, Tab moves among its
+    // fields and Escape comes back to the list. A list is otherwise one Tab stop,
+    // and the fields of a row were out of reach of the keyboard.
+    .row_keyboard(teksilo::widgets::RowKeyboard::Actions);
 
     // The list lives in a bordered card; with no words at all it shows a centered hint instead —
     // an empty bordered box reads as "broken", a hint reads as "nothing here yet".

@@ -27,6 +27,7 @@ Description:
 - "With a screen reader, the binder says each item's level and its place among its neighbours, and Shift+F10 or the Menu key opens an item's own menu, with Move at the end. Every item used to read as level 1, and the keyboard opened a Move menu in English instead"
 - "With a screen reader, a menu command, a command palette row and a button say their keyboard shortcut. A menu opened from the keyboard starts on its first row, where it used to start on the row chosen last time"
 - "The Up and Down arrows change the view of a chapter, part or book, as Left and Right do"
+- "In Settings, the lines of the Tags, Statuses, Templates, Personal dictionary and Text replacements pages can be reached from the keyboard: F2 or Enter goes into a line, Tab moves between its fields and Escape comes back to the list"
 - "In the help, Tab goes from link to link in a page and Enter follows one"
 - "A date field's calendar opens as a small dialog with Cancel and OK. Tab stays inside it, and a screen reader says the date chosen. Tab used to close the calendar without choosing"
 - "In New Work, Next takes you into the next page's first field and a screen reader announces the step. The cursor used to stay on Next"

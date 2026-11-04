@@ -298,7 +298,11 @@ impl Widget for LadderList {
                 root_child: None,
             })
         })
-        .auto_item_height(ROW_HEIGHT);
+        .auto_item_height(ROW_HEIGHT)
+        // Each row is a small form: F2 (or Enter) goes into it, Tab moves among its
+        // fields and Escape comes back to the list. A list is otherwise one Tab stop,
+        // and the fields of a row were out of reach of the keyboard.
+        .row_keyboard(teksilo::widgets::RowKeyboard::Actions);
 
         let card = Panel::new()
             .background(SurfaceRole::Content)

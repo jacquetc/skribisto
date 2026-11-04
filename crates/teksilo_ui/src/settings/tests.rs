@@ -1500,3 +1500,133 @@ fn a_rule_rows_name_carries_both_words_in_french() {
         );
     });
 }
+
+/// Builds one Settings page, as Settings builds it.
+#[cfg(feature = "mocks")]
+type PageBuild = Box<dyn FnMut(&mut BuildContext) -> Box<dyn Widget>>;
+
+/// The five Settings pages whose lists hold small forms, each with its name.
+#[cfg(feature = "mocks")]
+fn editable_list_pages(app_ctx: &Rc<frontend::AppContext>) -> Vec<(&'static str, PageBuild)> {
+    use crate::app_ids::AppIds;
+    use crate::models::{
+        DictWordListModel, TextReplacementRuleListModel, WorkNoteTemplatesListModel,
+    };
+    use crate::note_templates::NoteTemplatesViewModel;
+    use crate::singles::{SingleDictWord, SingleWork};
+    use crate::spellcheck::UserDictionaryViewModel;
+    use crate::statuses::StatusesViewModel;
+    use crate::tags::TagsViewModel;
+
+    let ids = AppIds::new();
+    let templates = NoteTemplatesViewModel::new(
+        WorkNoteTemplatesListModel::new(app_ctx.clone(), ids.clone()),
+        ids.clone(),
+    );
+    let tags = TagsViewModel::detached(app_ctx.clone(), ids.clone());
+    let statuses = StatusesViewModel::new(app_ctx.clone(), ids.clone());
+    let dictionary = UserDictionaryViewModel::new(
+        DictWordListModel::new(app_ctx.clone(), ids.clone()),
+        SingleDictWord::new(app_ctx.clone()),
+        ids.clone(),
+    );
+    let work = SingleWork::new(app_ctx.clone());
+    work.set_custom_replacement_rules_enabled(true);
+    let rules = TextReplacementRulesViewModel::new(
+        TextReplacementRuleListModel::new(app_ctx.clone(), ids.clone()),
+        work,
+        ids,
+    );
+    let t = templates.clone();
+    vec![
+        (
+            "Tags",
+            Box::new(move |ctx: &mut BuildContext| {
+                Box::new(super::panes::work_tags::work_tags_pane(ctx, &tags, &t)) as Box<dyn Widget>
+            }),
+        ),
+        (
+            "Statuses",
+            Box::new(move |ctx: &mut BuildContext| {
+                Box::new(super::panes::work_statuses::work_statuses_pane(
+                    ctx, &statuses,
+                )) as Box<dyn Widget>
+            }),
+        ),
+        (
+            "Note templates",
+            Box::new(move |ctx: &mut BuildContext| {
+                Box::new(super::panes::work_templates::work_templates_pane(
+                    ctx, &templates,
+                )) as Box<dyn Widget>
+            }),
+        ),
+        (
+            "User dictionary",
+            Box::new(move |ctx: &mut BuildContext| {
+                Box::new(super::panes::user_dictionary::user_dictionary_pane(
+                    ctx,
+                    &dictionary,
+                )) as Box<dyn Widget>
+            }),
+        ),
+        (
+            "Text replacements",
+            Box::new(move |ctx: &mut BuildContext| {
+                Box::new(super::panes::text_replacements::text_replacements_pane(
+                    ctx, &rules,
+                )) as Box<dyn Widget>
+            }),
+        ),
+    ]
+}
+
+/// **F2 takes the keyboard into a list row's fields**, and Tab then stays among
+/// them. Teksilo kept every row out of the Tab order, so a tag's name, a rung's
+/// category or a rule's replacement could only be reached with the mouse.
+#[cfg(feature = "mocks")]
+#[test]
+fn f2_takes_the_keyboard_into_a_list_rows_fields() {
+    fn under_a_row(tree: &teksilo::core::widget_tree::WidgetTree, id: WidgetId) -> bool {
+        ancestor_type_names(tree, id)
+            .iter()
+            .any(|n| n.contains("ListItemWrapper"))
+    }
+    fn first_list(tree: &teksilo::core::widget_tree::WidgetTree, id: WidgetId) -> Option<WidgetId> {
+        if tree
+            .widget_type_name(id)
+            .is_some_and(|n| n.contains("list_view::ListView<"))
+        {
+            return Some(id);
+        }
+        tree.children(id)
+            .into_iter()
+            .find_map(|c| first_list(tree, c))
+    }
+
+    let app_ctx = Rc::new(frontend::AppContext::new());
+    for (page, build) in editable_list_pages(&app_ctx) {
+        let mut tree = crate::test_support::tree_with_settings(&app_ctx);
+        let root = tree.add_boxed(Box::new(crate::test_support::PaneHost::new(build)));
+        let proposal = SizeProposal::exact(900.0, 4000.0);
+        tree.layout(proposal);
+        let list = first_list(&tree, root).unwrap_or_else(|| panic!("{page}: no list"));
+        tree.focus(list);
+        settle(&mut tree, proposal);
+        tree.press_key(Key::F2, Modifiers::NONE);
+        settle(&mut tree, proposal);
+        let inside = tree
+            .focused()
+            .unwrap_or_else(|| panic!("{page}: focus on nothing"));
+        assert!(
+            under_a_row(&tree, inside),
+            "{page}: F2 left the focus outside the rows"
+        );
+        tree.press_key(Key::Tab, Modifiers::NONE);
+        settle(&mut tree, proposal);
+        let next = tree
+            .focused()
+            .unwrap_or_else(|| panic!("{page}: Tab lost the focus"));
+        assert!(under_a_row(&tree, next), "{page}: Tab left the row");
+    }
+}
