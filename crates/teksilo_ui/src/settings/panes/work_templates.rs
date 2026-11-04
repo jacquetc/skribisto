@@ -120,6 +120,10 @@ pub fn work_templates_pane(ctx: &mut BuildContext, vm: &NoteTemplatesViewModel) 
             crate::tooltip_registry::CONCEPT_NOTE_TEMPLATE,
             TextWidget::new(tr!(settings_templates_description())).color(TextRole::Secondary),
         ))
+        // On a row of its own, like the tag page's preset beside "Add tag": it creates
+        // templates, and in the toolbar it made the page wider than the Settings window
+        // at about 1,000 px, which then scrolled sideways.
+        .child(HStack::new().child(preset_button(vm)).child(Spacer::new()))
         .child(toolbar_row(vm, query))
         // `list_box`: the leftover height of the pane goes to the list, so one
         // scroll region replaces two. The floor it carries is the shared one — the
@@ -131,7 +135,7 @@ pub fn work_templates_pane(ctx: &mut BuildContext, vm: &NoteTemplatesViewModel) 
         ))
 }
 
-/// Filter + live count on the left; the three creating/exporting controls pushed right.
+/// Filter + live count on the left; Import… and Export… pushed right.
 fn toolbar_row(vm: &NoteTemplatesViewModel, query: Signal<String>) -> impl Widget {
     let count = {
         let vm = vm.clone();
@@ -154,7 +158,6 @@ fn toolbar_row(vm: &NoteTemplatesViewModel, query: Signal<String>) -> impl Widge
                 .color(TextRole::Secondary),
         )
         .child(Expand::horizontal().child(Spacer::new()))
-        .child(preset_button(vm))
         .child(import_button(vm))
         .child(export_button(vm))
 }

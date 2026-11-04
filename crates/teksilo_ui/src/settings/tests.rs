@@ -1664,3 +1664,32 @@ fn after_adding_a_word_the_keyboard_is_back_in_the_field() {
         );
     });
 }
+
+/// Each list page fits a Settings window opened in a window about 1,000 px wide, whose
+/// pages get about 640 px: the Templates page's toolbar made it wider, and the page
+/// scrolled sideways, cutting off the start of its lines.
+#[cfg(feature = "mocks")]
+#[test]
+fn every_list_page_fits_a_narrow_settings_window() {
+    fn right_edge(tree: &teksilo::core::widget_tree::WidgetTree, id: WidgetId) -> f32 {
+        let b = tree.bounds(id);
+        tree.children(id)
+            .into_iter()
+            .map(|c| right_edge(tree, c))
+            .fold(b.x + b.width, f32::max)
+    }
+    let app_ctx = Rc::new(frontend::AppContext::new());
+    for (page, build) in editable_list_pages(&app_ctx) {
+        crate::test_support::with_real_messages(|| {
+            let mut tree = crate::test_support::tree_with_settings(&app_ctx);
+            let root = tree.add_boxed(Box::new(crate::test_support::PaneHost::new(build)));
+            let width = 640.0;
+            tree.layout(SizeProposal::exact(width, 1500.0));
+            let edge = right_edge(&tree, root);
+            assert!(
+                edge <= width + 0.5,
+                "{page} is {edge:.0} px wide in {width} px"
+            );
+        });
+    }
+}

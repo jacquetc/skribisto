@@ -37,6 +37,7 @@ Description:
 - "On Windows, input methods for Chinese, Japanese and Korean, the emoji panel and voice typing write into Skribisto as they do into Notepad: the candidate window follows the text, and voice typing shows its words as you speak"
 - "Chinese, Japanese and Korean text, and emoji, are drawn with the fonts your system uses for them, in colour for emoji, and bold or italic when the text around them is"
 - "After Add word, Add rule, Add tag or Add status in Settings, the cursor is back in the field, ready for the next one. It stayed on the button, which greys itself out once the field is empty"
+- "The Templates page of Settings fits a narrow window. Its row of buttons made it scroll sideways, cutting off the start of its lines"
 ---
 Version: 3.3.0
 Date: 2026-10-27
