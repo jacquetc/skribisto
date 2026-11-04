@@ -15,9 +15,9 @@
 //! * **Every disclosure is a button controlling a named region** (D7-15): a group's, and
 //!   a line's list of items, whose button and region a screen reader hears with the line
 //!   they belong to ("3 items: …"), not three "3 items" in a row.
-//! * **What a closed disclosure holds is out of reach** ([`Disclosure`]): no Tab stop and
-//!   nothing read in it until it opens, though it stays laid out to close with the
-//!   animation.
+//! * **What a closed disclosure holds is out of reach**: no Tab stop and nothing read in
+//!   it until it opens. Teksilo's `Collapse` sees to that, for a list inside a closed
+//!   group too.
 //! * **Nothing sets the column's width but the dialog**: an item opening its row is a link
 //!   that wraps like the rest ([`WrappingLink`]), so a long binder path cannot widen the
 //!   report past its card and push every line off its right edge.
@@ -295,12 +295,11 @@ fn group_view(vm: &ImportReportViewModel, group: &ReportGroup) -> Box<dyn Widget
         title.clone(),
         title,
         Signal::new(group.expanded_by_default()),
-        None,
-        Box::new(move |reachable| {
+        Box::new(move || {
             let line_vm = line_vm.clone();
             let lines = ListModel::from_vec(lines.clone());
             Box::new(teksu!(Padding::new(4.0, 0.0, 4.0, 20.0) {
-                Repeater::new(lines, move |line: &ReportLine| line_view(&line_vm, line, &reachable)) {
+                Repeater::new(lines, move |line: &ReportLine| line_view(&line_vm, line)) {
                     spacing: 8.0
                 }
             }))
@@ -309,12 +308,8 @@ fn group_view(vm: &ImportReportViewModel, group: &ReportGroup) -> Box<dyn Widget
 }
 
 /// A line: its sentence, and the items it is about behind a disclosure of their own,
-/// inside the group's, whose `group_reachable` says whether the group is open.
-fn line_view(
-    vm: &ImportReportViewModel,
-    line: &ReportLine,
-    group_reachable: &Signal<bool>,
-) -> Box<dyn Widget> {
+/// inside the group's.
+fn line_view(vm: &ImportReportViewModel, line: &ReportLine) -> Box<dyn Widget> {
     let text = TextWidget::new(line.text.clone())
         .style(TextStyleRole::Small)
         .color(TextRole::Primary);
@@ -348,8 +343,7 @@ fn line_view(
         title,
         named,
         Signal::new(false),
-        Some(group_reachable.clone()),
-        Box::new(move |_| {
+        Box::new(move || {
             let item_vm = item_vm.clone();
             let items = ListModel::from_vec(shown.clone());
             let more_line = (more > 0).then(|| {
@@ -379,22 +373,18 @@ fn line_view(
     }))
 }
 
-/// What a disclosure holds, built when it is: given the disclosure's `reachable`, for a
-/// disclosure inside it.
-type DisclosureContent = Box<dyn Fn(Signal<bool>) -> Box<dyn Widget>>;
+/// What a disclosure holds, built when it is.
+type DisclosureContent = Box<dyn Fn() -> Box<dyn Widget>>;
 
 /// An accordion's header over a region of its own, which opens to its height as the
 /// accordion's own body would.
 ///
-/// Not the accordion's own body, for two reasons. That body is a region named after the
-/// header's visible title, and a line's title reads "3 items" like every other line's: a
-/// group of three lines would give a screen reader three regions of that name. Here the
-/// region carries `name`, which says which line it belongs to, as the header's spoken
-/// name does. And a closed body stays laid out, clipped to no height, so its buttons and
-/// links would still be Tab stops and still be read. Here, while the disclosure or one
-/// around it is closed, the region is no Tab stop and is hidden from assistive
-/// technologies; it still closes with the animation, since it is never taken out of the
-/// layout.
+/// Not the accordion's own body: that body is a region named after the header's visible
+/// title, and a line's title reads "3 items" like every other line's, so a group of three
+/// lines would give a screen reader three regions of that name. Here the region carries
+/// `name`, which says which line it belongs to, as the header's spoken name does. While
+/// it is closed, its `Collapse` keeps it out of the Tab order and away from assistive
+/// technologies, and so does the `Collapse` of a group around it.
 struct Disclosure {
     /// The header's visible title.
     title: LocalizedString,
@@ -403,13 +393,6 @@ struct Disclosure {
     /// A line's list of items: small, secondary type under its sentence.
     secondary: bool,
     open: Signal<bool>,
-    /// Whether the disclosure around this one is open and in reach, if there is one.
-    within: Option<Signal<bool>>,
-    /// Whether what this disclosure holds is in reach: it is open, and so is every
-    /// disclosure around it.
-    reachable: Signal<bool>,
-    /// `!reachable`, which the region's `access_hidden` binds.
-    hidden: Signal<bool>,
     content: DisclosureContent,
     root: Option<WidgetId>,
 }
@@ -419,18 +402,13 @@ impl Disclosure {
         title: LocalizedString,
         name: LocalizedString,
         open: Signal<bool>,
-        within: Option<Signal<bool>>,
         content: DisclosureContent,
     ) -> Self {
-        let reachable = open.get() && within.as_ref().is_none_or(Signal::get);
         Self {
             title,
             name,
             secondary: false,
             open,
-            within,
-            reachable: Signal::new(reachable),
-            hidden: Signal::new(!reachable),
             content,
             root: None,
         }
@@ -451,32 +429,12 @@ impl std::fmt::Debug for Disclosure {
 
 impl Widget for Disclosure {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        // Keep `reachable` and `hidden` in step with this disclosure and the one around it.
-        let sync = {
-            let (open, within) = (self.open.clone(), self.within.clone());
-            let (reachable, hidden) = (self.reachable.clone(), self.hidden.clone());
-            move || {
-                let now = open.get() && within.as_ref().is_none_or(Signal::get);
-                reachable.set_if_changed(now);
-                hidden.set_if_changed(!now);
-            }
-        };
-        {
-            let sync = sync.clone();
-            ctx.effect(&self.open, move |_: &bool| sync());
-        }
-        if let Some(within) = &self.within {
-            ctx.effect(within, move |_: &bool| sync());
-        }
-
-        let content = (self.content)(self.reachable.clone());
+        let content = (self.content)();
         let region = teksu!(ctx => VStack {
             access_role: Role::Region
             access_label: self.name.clone()
-            access_hidden: self.hidden.clone()
             child: content
         });
-        ctx.set_tab_stop(region, self.reachable.clone());
         let (style, color) = if self.secondary {
             (TextStyleRole::Small, TextRole::Secondary)
         } else {
