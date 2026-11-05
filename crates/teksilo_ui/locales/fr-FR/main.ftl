@@ -43,6 +43,12 @@ menu-panels = &Panneaux
 menu-side-start = Panneau de &gauche
 menu-side-end = Panneau de d&roite
 menu-side-bottom = Panneau du &bas
+side-start-hidden = Panneau de gauche masqué
+side-start-shown = Panneau de gauche affiché
+side-end-hidden = Panneau de droite masqué
+side-end-shown = Panneau de droite affiché
+side-bottom-hidden = Panneau du bas masqué
+side-bottom-shown = Panneau du bas affiché
 menu-fullscreen = P&lein écran
 menu-focus-mode = Mode sans &distraction
 menu-format = Fo&rmat
@@ -3377,6 +3383,8 @@ settings-punctuation-auto-lists-hint = Le paragraphe devient une liste à puces 
 statusbar-go-to = Aller à…
 go-to-placeholder = Rechercher dans le classeur
 go-to-no-matches = Aucun élément ne correspond à cette recherche.
+go-to-results = Résultats : { $count }. Premier : { $first }
+go-to-row = { $name }, { $kind }, { $position } sur { $total }
 menu-go-to = &Aller à…
 
 # ── Thèmes sans distraction (Paramètres ▸ Éditeur ▸ Thèmes sans distraction) ──

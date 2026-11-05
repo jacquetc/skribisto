@@ -33,7 +33,10 @@ Each panel has its own shortcut, which brings it to the front and puts you in it
 - At the bottom: `Ctrl+Shift+J` *Preview* and `Ctrl+Shift+L` *Go back in time*.
 
 *View ▸ Panels* lists the same panels with their shortcuts, and `F9` shows or hides the
-whole left side.
+whole left side. Your screen reader says which. If the cursor was on that side when it hides,
+it goes to the centre: into the text, or into the view in front of you when it has no text.
+When the side comes back the cursor stays where it is: `F6` or the panel's shortcut takes
+you there.
 
 ## Find your way in the binder
 
@@ -65,7 +68,11 @@ Use the arrows to change the view, and `Home` or `End` for the first and the las
   its name.
 - `Ctrl+Shift+P` opens the command palette. Type part of a command's name, then press
   `Enter`.
-- `Ctrl+G`, or *Go ▸ Go to…*, finds an item by its name and opens it.
+- `Ctrl+G`, or *Go ▸ Go to…*, finds an item by its name. As you type, your screen reader says
+  how many items match and the first of them. The Up and Down arrows go from match to match,
+  and it reads each one with its place in the list. `Enter` opens the item and puts the cursor
+  in its text. When the item shows a view with no text, the cursor goes into that view, or
+  stays in the binder if it was there.
 - While you write, `Alt+↓` and `Alt+↑` go to the next and the previous item and put the
   cursor in its text.
 - In a date field, `F4` or `Alt+↓` opens the calendar. Move to a day with the arrows, then

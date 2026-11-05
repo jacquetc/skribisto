@@ -802,6 +802,23 @@ fn activate_parks_a_focus_request_when_the_pane_has_never_been_built() {
     );
 }
 
+/// Raising a tab can park the page that held the keyboard, and the new one may have no text
+/// to take it: `activate` says so for `SideFocusKeeper`. The window is short, so a focus lost
+/// long after has nothing to do with it.
+#[test]
+fn activate_expects_the_keyboard_may_lose_its_home() {
+    let vm = editors();
+    push_tab(&vm, Side::Primary, 42);
+    assert!(!vm.focus_loss_expected(std::time::Instant::now()));
+
+    let vm2 = vm.clone();
+    with_event_context(move |ctx| vm2.activate(42, "Scene", ctx));
+
+    let now = std::time::Instant::now();
+    assert!(vm.focus_loss_expected(now));
+    assert!(!vm.focus_loss_expected(now + std::time::Duration::from_secs(60)));
+}
+
 /// `activate` must not duplicate a tab already open in the pane, the same
 /// dedupe [`open_or_focus_dedupes_within_the_primary_pane`] proves for
 /// `open_or_focus`, and the focus half must still run against that *existing*

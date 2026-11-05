@@ -47,6 +47,12 @@ menu-panels = &Panels
 menu-side-start = &Left panel
 menu-side-end = Ri&ght panel
 menu-side-bottom = &Bottom panel
+side-start-hidden = Left panel hidden
+side-start-shown = Left panel shown
+side-end-hidden = Right panel hidden
+side-end-shown = Right panel shown
+side-bottom-hidden = Bottom panel hidden
+side-bottom-shown = Bottom panel shown
 menu-fullscreen = &Fullscreen
 menu-focus-mode = &Distraction-free Mode
 menu-format = F&ormat
@@ -3394,6 +3400,8 @@ settings-punctuation-auto-lists-hint = The paragraph becomes a bulleted or numbe
 statusbar-go-to = Go to…
 go-to-placeholder = Search the binder
 go-to-no-matches = No item matches that search.
+go-to-results = Matches: { $count }. First: { $first }
+go-to-row = { $name }, { $kind }, { $position } of { $total }
 menu-go-to = &Go to…
 
 # ── Distraction-free themes (Settings ▸ Editor ▸ Distraction-free themes) ──

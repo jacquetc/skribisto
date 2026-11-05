@@ -33,7 +33,9 @@ Każdy panel ma własny skrót, który wysuwa go na wierzch i przenosi cię do n
 - Na dole: `Ctrl+Shift+J` *Podgląd* i `Ctrl+Shift+L` *Cofnij się w czasie*.
 
 *Widok ▸ Panele* wymienia te same panele z ich skrótami, a `F9` pokazuje lub ukrywa całą
-lewą stronę.
+lewą stronę. Czytnik ekranu mówi, co się stało. Jeśli kursor był po tej stronie, gdy się ukrywa,
+przechodzi na środek: do tekstu albo do widoku, gdy ten nie ma tekstu. Gdy strona wraca, kursor zostaje na miejscu: przejdziesz tam
+klawiszem `F6` lub skrótem panelu.
 
 ## Poruszanie się po segregatorze
 
@@ -66,7 +68,11 @@ ostatniego.
 - `F10` lub `Alt` otwiera pasek menu. Czytnik ekranu czyta skrót każdego polecenia po jego
   nazwie.
 - `Ctrl+Shift+P` otwiera paletę poleceń. Wpisz część nazwy polecenia i naciśnij `Enter`.
-- `Ctrl+G` lub *Przejdź ▸ Przejdź do…* znajduje element po nazwie i go otwiera.
+- `Ctrl+G` lub *Przejdź ▸ Przejdź do…* znajduje element po nazwie. Podczas pisania czytnik ekranu
+  mówi, ile elementów pasuje i który jest pierwszy. Strzałki w górę i w dół przechodzą od wyniku
+  do wyniku, a czytnik odczytuje każdy z jego miejscem na liście. `Enter` otwiera element i
+  ustawia kursor w jego tekście. Gdy element pokazuje widok bez tekstu, kursor przechodzi do tego
+  widoku albo zostaje w segregatorze, jeśli tam był.
 - Podczas pisania `Alt+↓` i `Alt+↑` przechodzą do następnego i do poprzedniego elementu,
   z kursorem w jego tekście.
 - W polu daty `F4` lub `Alt+↓` otwiera kalendarz. Wybierz dzień strzałkami i naciśnij

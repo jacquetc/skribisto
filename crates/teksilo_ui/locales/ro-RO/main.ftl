@@ -43,6 +43,12 @@ menu-panels = &Panouri
 menu-side-start = Panoul din &stânga
 menu-side-end = P&anoul din dreapta
 menu-side-bottom = Panoul de &jos
+side-start-hidden = Panoul din stânga este ascuns
+side-start-shown = Panoul din stânga este afișat
+side-end-hidden = Panoul din dreapta este ascuns
+side-end-shown = Panoul din dreapta este afișat
+side-bottom-hidden = Panoul de jos este ascuns
+side-bottom-shown = Panoul de jos este afișat
 menu-fullscreen = &Ecran complet
 menu-focus-mode = Mod fără &distrageri
 menu-format = &Formatare
@@ -3588,6 +3594,8 @@ settings-punctuation-auto-lists-hint = Paragraful devine o listă cu marcatori s
 statusbar-go-to = Salt la…
 go-to-placeholder = Caută în clasor
 go-to-no-matches = Niciun element nu corespunde acestei căutări.
+go-to-results = Rezultate: { $count }. Primul: { $first }
+go-to-row = { $name }, { $kind }, { $position } din { $total }
 menu-go-to = &Salt la…
 
 # ── Distraction-free themes (Settings ▸ Editor ▸ Distraction-free themes) ──

@@ -11,6 +11,8 @@
 //! `known_docks` roster that tells restore "a dock added since capture" from
 //! "the user closed it".
 
+mod side_focus;
 mod workspace_layout_vm;
 
+pub use side_focus::SideFocusKeeper;
 pub use workspace_layout_vm::WorkspaceLayoutViewModel;

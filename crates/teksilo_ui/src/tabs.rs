@@ -593,7 +593,10 @@ pub fn tab_pane(tab: &ContentTab) -> Box<dyn Widget> {
                 trashed,
                 trash_banner(item_id),
             ))
-            .child(Expand::new().child(Boxed::new(content))),
+            .child(Expand::new().child({
+                let ports = tab.view_state_ports();
+                Boxed::new(content).on_built(move |page| ports.attach_page(page))
+            })),
     )
 }
 
@@ -620,6 +623,7 @@ fn trash_banner(item_id: u64) -> impl Widget {
 pub struct Boxed {
     pending: Option<Box<dyn Widget>>,
     child_id: Option<WidgetId>,
+    on_built: Option<Box<dyn Fn(WidgetId)>>,
 }
 
 impl Boxed {
@@ -627,7 +631,15 @@ impl Boxed {
         Self {
             pending: Some(child),
             child_id: None,
+            on_built: None,
         }
+    }
+
+    /// Be told this widget's node on each build, for something that later has to
+    /// send the keyboard into it with `request_focus_into`.
+    pub fn on_built(mut self, f: impl Fn(WidgetId) + 'static) -> Self {
+        self.on_built = Some(Box::new(f));
+        self
     }
 }
 
@@ -641,6 +653,9 @@ impl Widget for Boxed {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
         if let Some(w) = self.pending.take() {
             self.child_id = Some(ctx.add_boxed(w));
+        }
+        if let Some(on_built) = &self.on_built {
+            on_built(ctx.self_id());
         }
         self.child_id.into_iter().collect()
     }

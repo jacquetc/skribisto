@@ -7,7 +7,7 @@
 //! its distraction-free mode toggle.
 
 use teksilo::prelude::*;
-use teksilo::widgets::{DockSide, DockWidgetId};
+use teksilo::widgets::{DockSide, DockWidgetId, DockingModel};
 
 use super::CommandDeps;
 use crate::shared::shortcut_group::{ShortcutGroup, ShortcutGroupExt};
@@ -24,6 +24,36 @@ fn unless_distraction_free(focus: &crate::shared::FocusViewModel, f: impl FnOnce
     if !focus.active_signal().get() {
         f();
     }
+}
+
+/// Show or hide a whole side and say so.
+///
+/// Toggling leaves the keyboard where it is, and a reader who is not in the side has no
+/// other way to tell that anything happened: the rail's and the menu's check marks are
+/// not where the focus is. Where the keyboard goes when it *was* in the side is
+/// [`crate::workspace_layout::SideFocusKeeper`]'s business, because that holds for every
+/// way a side can hide.
+fn toggle_side(docking: &DockingModel, side: DockSide, ctx: &mut EventContext) {
+    let was_visible = docking.is_side_visible(side);
+    docking.toggle_side_visible(side);
+    let visible = docking.is_side_visible(side);
+    if visible != was_visible {
+        ctx.announce(side_change_message(side, visible));
+    }
+}
+
+/// What a reader hears when `side` has just been shown or hidden, in the words of the
+/// *View* menu's rows.
+fn side_change_message(side: DockSide, visible: bool) -> String {
+    match (side, visible) {
+        (DockSide::Leading, true) => tr!(side_start_shown()),
+        (DockSide::Leading, false) => tr!(side_start_hidden()),
+        (DockSide::Trailing, true) => tr!(side_end_shown()),
+        (DockSide::Trailing, false) => tr!(side_end_hidden()),
+        (_, true) => tr!(side_bottom_shown()),
+        (_, false) => tr!(side_bottom_hidden()),
+    }
+    .into()
 }
 
 pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
@@ -59,8 +89,8 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     {
         let docking = deps.outline.docking();
         let focus = deps.focus.clone();
-        ctx.register_action_global(Action::new("view.right_panel").on_invoke(move |_i, _c| {
-            unless_distraction_free(&focus, || docking.toggle_side_visible(DockSide::Trailing));
+        ctx.register_action_global(Action::new("view.right_panel").on_invoke(move |_i, c| {
+            unless_distraction_free(&focus, || toggle_side(&docking, DockSide::Trailing, c));
         }));
     }
     register_panel_commands(ctx, deps);
@@ -68,15 +98,15 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     {
         let docking = deps.outline.docking();
         let focus = deps.focus.clone();
-        ctx.register_action_global(Action::new("preview.toggle").on_invoke(move |_i, _c| {
-            unless_distraction_free(&focus, || docking.toggle_side_visible(DockSide::Bottom));
+        ctx.register_action_global(Action::new("preview.toggle").on_invoke(move |_i, c| {
+            unless_distraction_free(&focus, || toggle_side(&docking, DockSide::Bottom, c));
         }));
     }
     {
-        let outline = deps.outline.clone();
+        let docking = deps.outline.docking();
         let focus = deps.focus.clone();
-        ctx.register_action_global(Action::new("outline.toggle").on_invoke(move |_i, _c| {
-            unless_distraction_free(&focus, || outline.toggle());
+        ctx.register_action_global(Action::new("outline.toggle").on_invoke(move |_i, c| {
+            unless_distraction_free(&focus, || toggle_side(&docking, DockSide::Leading, c));
         }));
     }
 
@@ -410,5 +440,55 @@ mod tests {
         focus.active_signal().set(false);
         unless_distraction_free(&focus, || outline.toggle());
         assert_ne!(outline.is_visible().get(), visible_before);
+    }
+
+    /// Each of the three toggles says what it just did, in both directions. The second
+    /// F9 used to say nothing at all: the keyboard was not on the side, so nothing a
+    /// screen reader follows had changed.
+    #[test]
+    fn toggling_a_side_says_which_side_and_which_way() {
+        use teksilo::core::NoopWindowOps;
+        use teksilo::core::widget_tree::WidgetTree;
+
+        crate::test_support::with_real_messages(|| {
+            let docking = DockingModel::new();
+            for side in [DockSide::Leading, DockSide::Trailing, DockSide::Bottom] {
+                docking.set_side_visible(side, true);
+            }
+            let mut tree = WidgetTree::new();
+            tree.add(teksilo::widgets::Spacer::new());
+            tree.set_records_announcements(true);
+            let said = |side: DockSide, tree: &mut WidgetTree| {
+                let mark = tree.announcements_since(0).last().map_or(0, |a| a.seq);
+                let docking = docking.clone();
+                tree.run_with_event_context(&mut NoopWindowOps, move |c| {
+                    toggle_side(&docking, side, c)
+                });
+                for _ in 0..2 {
+                    tree.layout(SizeProposal::exact(400.0, 300.0));
+                    let _ = tree.sync_accessibility();
+                }
+                tree.announcements_since(mark)
+                    .into_iter()
+                    .map(|a| a.text)
+                    .collect::<Vec<_>>()
+            };
+            for (side, hidden, shown) in [
+                (DockSide::Leading, "Left panel hidden", "Left panel shown"),
+                (
+                    DockSide::Trailing,
+                    "Right panel hidden",
+                    "Right panel shown",
+                ),
+                (
+                    DockSide::Bottom,
+                    "Bottom panel hidden",
+                    "Bottom panel shown",
+                ),
+            ] {
+                assert_eq!(said(side, &mut tree), vec![hidden.to_string()]);
+                assert_eq!(said(side, &mut tree), vec![shown.to_string()]);
+            }
+        });
     }
 }

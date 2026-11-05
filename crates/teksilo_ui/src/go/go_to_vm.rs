@@ -25,10 +25,15 @@
 //! (`shell/windows.rs`), for the reason its module doc gives: a process-wide
 //! instance would let one window's popup drive another window's editor.
 //!
-//! Activation goes through [`crate::editors::EditorsViewModel::open_or_focus`] — the same door
-//! the binder tree, the Go commands and the recents list already use — so a jump
-//! from here is indistinguishable downstream from any other navigation
-//! (autosave, dirty tracking, `StatsModel::active_item` all see it).
+//! Activation goes through [`crate::editors::EditorsViewModel::activate`], the same door
+//! the binder tree and the Go commands already use, so a jump from here is
+//! indistinguishable downstream from any other navigation (autosave, dirty tracking,
+//! `StatsModel::active_item` all see it), and it leaves the caret in the item's text.
+//!
+//! **What a screen reader hears.** Keyboard focus never leaves the search field, so
+//! nothing the tree does reaches a reader by itself. Two sentences carry the results:
+//! [`GoToViewModel::results_text`], which the popup keeps in a live region while a query
+//! is typed, and [`GoToViewModel::step_and_describe`], which the arrows announce.
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -44,7 +49,7 @@ use crate::models::{BinderBinderItemsTreeModel, BinderTreeKey, TreeFilters, Tree
 /// the only place that has an `EditorsViewModel` — the view-model itself must
 /// not import a peer (see the crate's cross-view-model DAG rule), so `App`
 /// injects the edge rather than this reaching for it.
-type OpenFn = Rc<dyn Fn(u64, &str)>;
+pub type OpenFn = Rc<dyn Fn(u64, &str, &mut EventContext)>;
 
 #[derive(Clone)]
 pub struct GoToViewModel {
@@ -86,7 +91,7 @@ impl GoToViewModel {
     }
 
     /// Inject the "open this item" edge. `App::build` supplies
-    /// `EditorsViewModel::open_or_focus`; tests supply a recorder.
+    /// `EditorsViewModel::activate`; tests supply a recorder.
     pub fn set_open_fn(&self, f: OpenFn) {
         *self.open_fn.borrow_mut() = Some(f);
     }
@@ -205,10 +210,92 @@ impl GoToViewModel {
         if query.is_empty() {
             return true;
         }
+        let needle = query.to_lowercase();
         self.model
-            .node_of(key)
-            .map(|(_, title)| title.to_lowercase().contains(&query.to_lowercase()))
-            .unwrap_or(false)
+            .node(key)
+            .is_some_and(|node| node.matches_query(&needle))
+    }
+
+    /// Every destination the current query leaves visible, in the order the list shows
+    /// them.
+    fn destinations(&self) -> Vec<BinderTreeKey> {
+        (0..self.model.visible_count())
+            .filter_map(|i| self.model.key_at(i))
+            .filter(|k| self.is_destination(k))
+            .collect()
+    }
+
+    /// The name a row goes by on screen: its title or generated name, after its number
+    /// when it has one.
+    fn row_name(node: &TreeNode) -> String {
+        let (label, badge) = crate::models::label_and_badge(
+            &node.title,
+            node.fallback_label.as_deref(),
+            node.number,
+        );
+        match badge {
+            Some(number) if label.is_empty() => format!("{number}."),
+            Some(number) => format!("{number}. {label}"),
+            None => label,
+        }
+    }
+
+    /// The sentence the popup shows and a screen reader hears while a query is typed:
+    /// how many rows match and the first of them, which is what Enter opens. `None` with
+    /// no query, when the list is simply the binder.
+    ///
+    /// Counted from [`Self::destinations`] and not from `TreeFilters::match_counts`, which
+    /// also counts the folders kept around a match: the sentence promises rows the arrows
+    /// and Enter can reach.
+    pub fn results_text(&self) -> Option<String> {
+        if self.filters.query.get().trim().is_empty() {
+            return None;
+        }
+        let destinations = self.destinations();
+        let Some(first) = destinations.first().and_then(|k| self.model.node(k)) else {
+            return Some(tr!(go_to_no_matches()).into());
+        };
+        Some(
+            tr!(go_to_results(
+                count = destinations.len() as i64,
+                first = Self::row_name(&first)
+            ))
+            .into(),
+        )
+    }
+
+    /// Move the highlight as [`Self::step_selection`] does and say where it is now: the
+    /// row's name and kind and its place among the destinations.
+    ///
+    /// At the end of the list the highlight stays where it is and that row is said again,
+    /// so a key that went nowhere is not a key that said nothing. With no destination at
+    /// all there is the sentence for that.
+    pub fn step_and_describe(&self, delta: isize) -> String {
+        self.step_selection(delta);
+        let destinations = self.destinations();
+        let current = self
+            .selection
+            .selected_keys()
+            .into_iter()
+            .find_map(|k| destinations.iter().position(|d| *d == k));
+        let row = current
+            .and_then(|i| destinations.get(i))
+            .and_then(|k| self.model.node(k));
+        match (current, row) {
+            (Some(position), Some(row)) => tr!(go_to_row(
+                name = Self::row_name(&row),
+                kind = crate::tabs::corkboard::sub_role_badge_label(&row.sub_role).resolve_now(),
+                position = position as i64 + 1,
+                total = destinations.len() as i64
+            ))
+            .into(),
+            _ => tr!(go_to_no_matches()).into(),
+        }
+    }
+
+    /// Where `key` sits in the list as shown, for scrolling it into view.
+    pub fn visible_index_of(&self, key: &BinderTreeKey) -> Option<usize> {
+        (0..self.model.visible_count()).find(|&i| self.model.key_at(i).as_ref() == Some(key))
     }
 
     /// The first row the current query leaves visible that is a real
@@ -222,7 +309,7 @@ impl GoToViewModel {
 
     /// Open whatever Enter should open: the highlighted row, or — when the
     /// writer has only typed — the first match. Returns whether it jumped.
-    pub fn activate_current(&self) -> bool {
+    pub fn activate_current(&self, ctx: &mut EventContext) -> bool {
         let key = self
             .selection
             .selected_keys()
@@ -233,11 +320,14 @@ impl GoToViewModel {
         let Some((item_id, title)) = self.model.node_of(&key) else {
             return false;
         };
-        self.activate(&TreeNode {
-            title,
-            item_id,
-            ..Default::default()
-        })
+        self.activate(
+            &TreeNode {
+                title,
+                item_id,
+                ..Default::default()
+            },
+            ctx,
+        )
     }
 
     /// Jump to `node`, if it names something openable, and close the popup.
@@ -247,14 +337,14 @@ impl GoToViewModel {
     /// Choosing one is a quiet no-op that leaves the popup open, so the writer
     /// can pick again rather than having it close on them having done nothing.
     /// Returns whether the jump happened.
-    pub fn activate(&self, node: &TreeNode) -> bool {
+    pub fn activate(&self, node: &TreeNode, ctx: &mut EventContext) -> bool {
         let Some(item_id) = node.item_id else {
             return false;
         };
         let Some(open) = self.open_fn.borrow().clone() else {
             return false;
         };
-        open(item_id, &node.title);
+        open(item_id, &node.title, ctx);
         self.hide();
         true
     }
@@ -276,6 +366,17 @@ mod tests {
             item_id: Some(id),
             ..Default::default()
         }
+    }
+
+    /// [`GoToViewModel::activate`] from a real `EventContext`, as Enter and a click
+    /// reach it.
+    fn activate(vm: &GoToViewModel, node: TreeNode) -> bool {
+        let jumped = Rc::new(Cell::new(false));
+        let (vm, sink) = (vm.clone(), jumped.clone());
+        crate::editors::test_support::with_event_context(move |ctx| {
+            sink.set(vm.activate(&node, ctx))
+        });
+        jumped.get()
     }
 
     fn binder_row(title: &str) -> TreeNode {
@@ -313,10 +414,10 @@ mod tests {
         let vm = vm();
         let opened: Rc<Cell<Option<u64>>> = Rc::new(Cell::new(None));
         let sink = opened.clone();
-        vm.set_open_fn(Rc::new(move |id, _title| sink.set(Some(id))));
+        vm.set_open_fn(Rc::new(move |id, _title, _ctx| sink.set(Some(id))));
         vm.show();
 
-        assert!(vm.activate(&item("Chapter 19", 42)));
+        assert!(activate(&vm, item("Chapter 19", 42)));
         assert_eq!(opened.get(), Some(42));
         assert!(!vm.is_open(), "a successful jump closes the popup");
     }
@@ -328,10 +429,10 @@ mod tests {
         let vm = vm();
         let opened: Rc<Cell<Option<u64>>> = Rc::new(Cell::new(None));
         let sink = opened.clone();
-        vm.set_open_fn(Rc::new(move |id, _title| sink.set(Some(id))));
+        vm.set_open_fn(Rc::new(move |id, _title, _ctx| sink.set(Some(id))));
         vm.show();
 
-        assert!(!vm.activate(&binder_row("Writings")));
+        assert!(!activate(&vm, binder_row("Writings")));
         assert_eq!(opened.get(), None, "nothing opened");
         assert!(
             vm.is_open(),
@@ -346,7 +447,7 @@ mod tests {
     fn activating_without_an_open_fn_is_inert() {
         let vm = vm();
         vm.show();
-        assert!(!vm.activate(&item("Chapter 1", 1)));
+        assert!(!activate(&vm, item("Chapter 1", 1)));
         assert!(vm.is_open());
     }
 
@@ -382,7 +483,12 @@ mod tests {
     fn a_failed_activation_leaves_the_popup_open() {
         let vm = vm();
         vm.show();
-        assert!(!vm.activate_current());
+        let jumped = Rc::new(Cell::new(true));
+        let (activating, sink) = (vm.clone(), jumped.clone());
+        crate::editors::test_support::with_event_context(move |ctx| {
+            sink.set(activating.activate_current(ctx))
+        });
+        assert!(!jumped.get());
         assert!(vm.is_open(), "nothing happened, so nothing closes");
     }
 

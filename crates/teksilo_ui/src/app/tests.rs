@@ -573,3 +573,22 @@ fn a_fresh_app_context_announces_that_its_history_grew() {
          not reaching the undo manager"
     );
 }
+
+/// Go to's jump is a deliberate gesture: it asks for the caret in the item's text, exactly
+/// as the Go commands do. `open_or_focus`, which it used, raises the tab and asks nothing.
+#[test]
+fn go_to_opens_the_item_with_the_caret_in_its_text() {
+    use crate::editors::Side;
+    use crate::editors::test_support::{editors, push_tab, with_event_context};
+
+    let vm = editors();
+    push_tab(&vm, Side::Primary, 42);
+    let open = project_shell::go_to_opens(&vm);
+    with_event_context(move |ctx| open(42, "Scene", ctx));
+
+    let ports = vm.active_ports().expect("the tab was raised");
+    assert!(
+        ports.take_focus(),
+        "the jump must ask for the keyboard on the page it opened"
+    );
+}

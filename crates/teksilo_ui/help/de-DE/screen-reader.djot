@@ -35,7 +35,10 @@ Jeder Bereich hat ein eigenes Tastenkürzel, das ihn nach vorn holt und Sie hine
 - Unten: `Strg+Umschalt+J` *Vorschau* und `Strg+Umschalt+L` *In der Zeit zurückgehen*.
 
 *Ansicht ▸ Bereiche* listet dieselben Bereiche mit ihren Tastenkürzeln, und `F9` blendet
-die ganze linke Seite ein oder aus.
+die ganze linke Seite ein oder aus. Ihr Bildschirmleser sagt, was davon geschehen ist. War der
+Cursor auf dieser Seite, als sie ausgeblendet wird, geht er in die Mitte: in den Text oder, wenn
+die angezeigte Ansicht keinen Text hat, in diese Ansicht. Kommt die Seite zurück, bleibt der Cursor, wo er ist: `F6` oder das Tastenkürzel des Bereichs bringt Sie
+dorthin.
 
 ## Sich in der Projektmappe zurechtfinden
 
@@ -71,8 +74,12 @@ und zur letzten.
   Befehls nach seinem Namen vor.
 - `Strg+Umschalt+P` öffnet die Befehlspalette. Tippen Sie einen Teil des Befehlsnamens und
   drücken Sie `Eingabe`.
-- `Strg+G` oder *Navigation ▸ Gehe zu…* findet einen Eintrag über seinen Namen und öffnet
-  ihn.
+- `Strg+G` oder *Navigation ▸ Gehe zu…* findet einen Eintrag über seinen Namen. Während Sie
+  tippen, sagt Ihr Bildschirmleser, wie viele Einträge passen und welcher der erste ist. Die
+  Pfeiltasten nach oben und unten gehen von Treffer zu Treffer, und er liest jeden mit seiner
+  Stelle in der Liste. `Eingabe` öffnet den Eintrag und setzt den Cursor in seinen Text. Zeigt
+  der Eintrag eine Ansicht ohne Text, geht der Cursor in diese Ansicht, oder er bleibt in der
+  Projektmappe, wenn er dort war.
 - Beim Schreiben gehen `Alt+↓` und `Alt+↑` zum nächsten und zum vorigen Eintrag, mit dem
   Cursor in seinem Text.
 - In einem Datumsfeld öffnet `F4` oder `Alt+↓` den Kalender. Wählen Sie mit den Pfeilen

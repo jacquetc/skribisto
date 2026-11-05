@@ -171,6 +171,29 @@ impl Default for TreeNode {
 }
 
 impl TreeNode {
+    /// Does this row answer a search for `needle`, already lowercased?
+    ///
+    /// Items only: a binder row survives a filter as an ancestor, never as a match.
+    ///
+    /// **The generated name counts too.** An untitled chapter is named by
+    /// `fallback_label`: the row *reads* "Chapter 7", and since numbering stopped writing
+    /// that string into titles, that is the only place it exists. Matching `title` alone
+    /// meant typing what the row plainly says found nothing. The two stay separate fields
+    /// everywhere else, since a rename must never seed from a name the writer did not type,
+    /// but searching is about what is on screen.
+    ///
+    /// The one definition: the binder dock's filter and Go To's choice of destination both
+    /// read it, so a row Go To shows is a row its arrows and Enter can reach.
+    pub fn matches_query(&self, needle: &str) -> bool {
+        self.kind != "binder"
+            && (self.title.to_lowercase().contains(needle)
+                || self.label.to_lowercase().contains(needle)
+                || self
+                    .fallback_label
+                    .as_deref()
+                    .is_some_and(|l| l.to_lowercase().contains(needle)))
+    }
+
     pub fn binder(name: String, binder_id: u64, uid: Uuid) -> Self {
         Self {
             title: name,
@@ -335,24 +358,7 @@ impl BinderBinderItemsTreeModel {
                 let needle = q.to_lowercase();
                 let kept = TreeRowFilter::new()
                     .filter_mode(TreeFilterMode::KeepAncestors)
-                    .filter(move |n: &TreeNode| {
-                        // Match items only; binder rows survive as ancestors.
-                        n.kind != "binder"
-                            && (n.title.to_lowercase().contains(&needle)
-                                || n.label.to_lowercase().contains(&needle)
-                                // **The generated name counts too.** An untitled chapter is
-                                // named by `fallback_label` — the row *reads* "Chapter 7",
-                                // and since numbering stopped writing that string into
-                                // titles, that is the only place it exists. Matching `title`
-                                // alone meant typing what the row plainly says found
-                                // nothing, in this dock and in Go To (which reuses this very
-                                // filter). The two stay separate fields everywhere else —
-                                // a rename must never seed from a name the writer did not
-                                // type — but searching is about what is on screen.
-                                || n.fallback_label
-                                    .as_deref()
-                                    .is_some_and(|l| l.to_lowercase().contains(&needle)))
-                    })
+                    .filter(move |n: &TreeNode| n.matches_query(&needle))
                     .apply(rows);
                 // Ancestors are kept for reachability but are not matches, so they must not
                 // be counted as such — "3 of 54" has to mean three rows the writer searched
@@ -485,6 +491,12 @@ impl BinderBinderItemsTreeModel {
     /// Resolve a key to `(item_id, title)` (binder rows have `item_id == None`).
     pub fn node_of(&self, key: &BinderTreeKey) -> Option<(Option<u64>, String)> {
         self.slice.with_key(key, |n| (n.item_id, n.title.clone()))
+    }
+
+    /// The whole row behind `key`, for a caller that has to say what the row *reads*
+    /// (its generated name, its number, its kind) and not only where it leads.
+    pub fn node(&self, key: &BinderTreeKey) -> Option<TreeNode> {
+        self.slice.with_key(key, TreeNode::clone)
     }
 
     /// The row's ancestor titles, root first — the outline card's breadcrumb.

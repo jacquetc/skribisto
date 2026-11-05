@@ -35,7 +35,10 @@ Chaque panneau a son propre raccourci, qui le fait passer au premier plan et vou
 - En bas : `Ctrl+Maj+J` *Aperçu* et `Ctrl+Maj+L` *Remonter le temps*.
 
 *Affichage ▸ Panneaux* liste les mêmes panneaux avec leurs raccourcis, et `F9` affiche ou
-masque tout le côté gauche.
+masque tout le côté gauche. Votre lecteur d’écran dit lequel des deux. Si le curseur était de
+ce côté quand il se masque, il passe au centre : dans le texte, ou dans la vue affichée quand
+elle n’a pas de texte. Quand le côté revient, le curseur reste où il est : `F6` ou le raccourci
+du panneau vous y mène.
 
 ## Se repérer dans le classeur
 
@@ -70,7 +73,11 @@ dernière.
   commande après son nom.
 - `Ctrl+Maj+P` ouvre la palette de commandes. Tapez une partie du nom d’une commande, puis
   appuyez sur `Entrée`.
-- `Ctrl+G`, ou *Aller ▸ Aller à…*, trouve un élément par son nom et l’ouvre.
+- `Ctrl+G`, ou *Aller ▸ Aller à…*, trouve un élément par son nom. Pendant la frappe, votre
+  lecteur d’écran dit combien d’éléments correspondent et lequel vient en premier. Les flèches
+  Haut et Bas vont d’un résultat à l’autre, et il lit chacun avec sa place dans la liste.
+  `Entrée` ouvre l’élément et place le curseur dans son texte. Quand l’élément montre une vue
+  sans texte, le curseur entre dans cette vue, ou reste dans le classeur s’il y était.
 - Pendant que vous écrivez, `Alt+↓` et `Alt+↑` passent à l’élément suivant et au précédent,
   le curseur dans son texte.
 - Dans un champ de date, `F4` ou `Alt+↓` ouvre le calendrier. Allez sur un jour avec les

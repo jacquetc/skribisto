@@ -33,7 +33,10 @@ Cada painel tem o seu próprio atalho, que o traz para a frente e o leva para de
 - Em baixo: `Ctrl+Shift+J` *Pré-visualização* e `Ctrl+Shift+L` *Voltar atrás no tempo*.
 
 *Ver ▸ Painéis* lista os mesmos painéis com os seus atalhos, e `F9` mostra ou oculta todo o
-lado esquerdo.
+lado esquerdo. O seu leitor de ecrã diz qual das duas coisas. Se o cursor estava nesse lado
+quando se oculta, passa para o centro: para o texto, ou para a vista à sua frente quando não tem
+texto. Quando o lado volta, o cursor fica onde está:
+`F6` ou o atalho do painel levam-no até lá.
 
 ## Orientar-se no Arquivador
 
@@ -67,7 +70,11 @@ Use as setas para mudar de vista, e `Home` ou `End` para a primeira e a última.
   depois do nome.
 - `Ctrl+Shift+P` abre a paleta de comandos. Escreva parte do nome de um comando e prima
   `Enter`.
-- `Ctrl+G`, ou *Ir ▸ Ir para…*, encontra um item pelo nome e abre-o.
+- `Ctrl+G`, ou *Ir ▸ Ir para…*, encontra um item pelo nome. Enquanto escreve, o seu leitor de
+  ecrã diz quantos itens correspondem e qual é o primeiro. As setas para cima e para baixo vão de
+  resultado em resultado, e lê cada um com o seu lugar na lista. `Enter` abre o item e põe o
+  cursor no seu texto. Quando o item mostra uma vista sem texto, o cursor entra nessa vista, ou
+  fica no Arquivador se estava lá.
 - Enquanto escreve, `Alt+↓` e `Alt+↑` passam ao item seguinte e ao anterior, com o cursor
   no seu texto.
 - Num campo de data, `F4` ou `Alt+↓` abre o calendário. Vá até um dia com as setas e prima

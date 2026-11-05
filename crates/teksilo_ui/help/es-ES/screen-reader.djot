@@ -33,7 +33,9 @@ Cada panel tiene su propio atajo, que lo trae al frente y le lleva dentro:
 - Abajo: `Ctrl+Mayús+J` *Vista previa* y `Ctrl+Mayús+L` *Volver al pasado*.
 
 *Ver ▸ Paneles* enumera los mismos paneles con sus atajos, y `F9` muestra u oculta todo el
-lado izquierdo.
+lado izquierdo. Su lector de pantalla dice cuál de las dos cosas. Si el cursor estaba en ese
+lado cuando se oculta, pasa al centro: al texto, o a la vista que hay delante cuando no tiene
+texto. Cuando el lado vuelve, el cursor se queda donde está: `F6` o el atajo del panel le llevan allí.
 
 ## Orientarse en el Archivador
 
@@ -67,7 +69,11 @@ Use las flechas para cambiar de vista, e `Inicio` o `Fin` para la primera y la �
   después de su nombre.
 - `Ctrl+Mayús+P` abre la paleta de comandos. Escriba parte del nombre de una orden y pulse
   `Intro`.
-- `Ctrl+G`, o *Ir ▸ Ir a…*, encuentra un elemento por su nombre y lo abre.
+- `Ctrl+G`, o *Ir ▸ Ir a…*, encuentra un elemento por su nombre. Mientras escribe, su lector
+  de pantalla dice cuántos elementos coinciden y cuál es el primero. Las flechas arriba y abajo
+  van de un resultado a otro, y lee cada uno con su lugar en la lista. `Intro` abre el elemento
+  y pone el cursor en su texto. Si el elemento muestra una vista sin texto, el cursor entra en
+  esa vista, o se queda en el Archivador si estaba allí.
 - Mientras escribe, `Alt+↓` y `Alt+↑` pasan al elemento siguiente y al anterior, con el
   cursor en su texto.
 - En un campo de fecha, `F4` o `Alt+↓` abre el calendario. Vaya a un día con las flechas y

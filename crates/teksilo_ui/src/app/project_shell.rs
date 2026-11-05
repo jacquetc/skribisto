@@ -63,6 +63,15 @@ pub(super) struct ShellParts {
     pub seam: crate::docks::DockContext,
 }
 
+/// What Go to does with the row the writer chose: what Go ▸ Next scene does, so the caret
+/// lands in the item's text. `open_or_focus` raised the tab and left the keyboard to the
+/// popup's dismissal, which gave it back to a page the new tab had just parked: a screen
+/// reader was left on the bare window.
+pub(super) fn go_to_opens(editors: &crate::editors::EditorsViewModel) -> crate::go::OpenFn {
+    let editors = editors.clone();
+    std::rc::Rc::new(move |item_id, title, ctx| editors.activate(item_id, title, ctx))
+}
+
 impl App {
     /// Build the docking layout + status bar + banners; return the root widget id.
     pub(super) fn build_shell(&mut self, ctx: &mut BuildContext, parts: ShellParts) -> WidgetId {
@@ -512,7 +521,10 @@ impl App {
                     .background(SurfaceRole::Main)
                     .divider(),
             )
-            .center(center)
+            .center({
+                let e = editors.clone();
+                crate::tabs::Boxed::new(Box::new(center)).on_built(move |id| e.set_main_area(id))
+            })
             .dock(crate::binder::dock::outline_dock(
                 outline.clone(),
                 self.app_ctx.clone(),
@@ -652,10 +664,6 @@ impl App {
             .app_state::<Rc<NotificationArchiveModel>>()
             .cloned()
             .expect("install_toast_default registers the notification archive");
-        // Status-bar dock toggles: hide/show the leading (binder) and trailing
-        // (inspector) sides — like Teksilo's `docking` example.
-        let dock_lead = outline.docking();
-        let dock_trail = outline.docking();
         // The save indicator sits right after the binder toggle: the quiet, always-
         // there answer to "is my last paragraph on disk?" — the one thing autosave
         // mode had no way to tell you (it hides Save + Ctrl+S). Failures are toasts;
@@ -711,11 +719,7 @@ impl App {
         // "open this item" edge, since a view-model may not import a peer.
         self.go_to.wire(ctx);
         {
-            let e = editors.clone();
-            self.go_to
-                .set_open_fn(std::rc::Rc::new(move |item_id, title| {
-                    e.open_or_focus(item_id, title)
-                }));
+            self.go_to.set_open_fn(go_to_opens(&editors));
         }
         let status = StatusBar::new().background(SurfaceRole::Main).child(
             HStack::new()
@@ -726,7 +730,9 @@ impl App {
                     IconButton::new(crate::icons::activity::sidebar_icon())
                         .size(IconButtonSize::Compact)
                         .tooltip(tr!(statusbar_toggle_outline()))
-                        .on_activate_fn(move |_| dock_lead.toggle_side_visible(DockSide::Leading)),
+                        // The commands F9 and the View menu fire, so a reader hears
+                        // what the button did.
+                        .on_activate_fn(|ctx| ctx.send_intent(Intent::new("outline.toggle"))),
                 )
                 .child(save_indicator)
                 // Beside the save glyph on purpose: both are standing statements
@@ -755,9 +761,7 @@ impl App {
                     IconButton::new(crate::icons::activity::inspector_icon())
                         .size(IconButtonSize::Compact)
                         .tooltip(tr!(statusbar_toggle_inspector()))
-                        .on_activate_fn(move |_| {
-                            dock_trail.toggle_side_visible(DockSide::Trailing)
-                        }),
+                        .on_activate_fn(|ctx| ctx.send_intent(Intent::new("view.right_panel"))),
                 )
                 .child(
                     crate::statusbar::notification_bell::NotificationBell::new(
@@ -833,6 +837,11 @@ impl App {
                 .child(backup_banner)
                 .child(Divider::new())
                 .child(Expand::new().child(layout))
+                .child(crate::workspace_layout::SideFocusKeeper::new(
+                    outline.docking(),
+                    editors.clone(),
+                    self.focus.active_signal(),
+                ))
                 .child(status)
                 .focus_within(in_project),
         )

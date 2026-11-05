@@ -25,7 +25,15 @@
 //! leaving the field, Enter activates the selected row. That is the palette
 //! convention — a writer types, glances, and commits without ever reaching for
 //! the mouse or Tab.
+//!
+//! **A screen reader hears the results from the field.** `SearchField::drives_listbox`
+//! is the framework's pattern for a list its host owns, but it needs the highlighted
+//! row's node and a `TreeView` keeps that to itself (`current_row_widget`), and a tree
+//! row cannot say its place among the matches anyway, since the ancestors kept around a
+//! match are rows too. So the line under the tree is a live region, and each arrow
+//! announces the row it reached.
 
+use teksilo::core::accesskit::Live;
 use teksilo::core::overlay::OverlayPlacement;
 use teksilo::data::TreeDataSource;
 use teksilo::prelude::*;
@@ -78,7 +86,7 @@ impl Widget for GoToPalette {
             .label(tr!(go_to_placeholder()))
             .placeholder(tr!(go_to_placeholder()))
             .on_submit_fn(move |ctx| {
-                if submit_vm.activate_current() {
+                if submit_vm.activate_current(ctx) {
                     // See the tree's `on_activate` below for why this is
                     // `dismiss_top_overlay` and not one of the scoped variants.
                     ctx.dismiss_top_overlay();
@@ -140,12 +148,15 @@ impl Widget for GoToPalette {
                 // `node_of` yields `(Option<item_id>, title)`; rebuild the
                 // shape `activate` wants and let the view-model decide. It is
                 // the one that knows a binder row is not a destination.
-                let jumped = activate_vm.activate(&TreeNode {
-                    title,
-                    item_id,
-                    kind: if item_id.is_some() { "item" } else { "binder" }.to_string(),
-                    ..Default::default()
-                });
+                let jumped = activate_vm.activate(
+                    &TreeNode {
+                        title,
+                        item_id,
+                        kind: if item_id.is_some() { "item" } else { "binder" }.to_string(),
+                        ..Default::default()
+                    },
+                    ctx,
+                );
                 // Dismiss the overlay itself, not merely the view-model's flag:
                 // `GoToViewModel::hide` owns "is the popup logically open", but
                 // the popover is presented by the framework and only an
@@ -163,45 +174,61 @@ impl Widget for GoToPalette {
             }
         });
 
-        // "No matches" only once a query has been typed **and** the projection
-        // really is empty. Zipping the model's version signal is what makes it
-        // reactive: the row set changes when the model re-sources, which the
-        // query signal alone does not announce.
-        let count_model = model.clone();
-        let empty_query = vm.query();
-        let empty = TextWidget::new(tr!(go_to_no_matches()))
+        // How many rows match and the first of them, once a query has been typed.
+        // Zipping the model's version signal is what makes it reactive: the row set
+        // changes when the model re-sources, which the query signal alone does not
+        // say. A live region, because keyboard focus stays in the field the whole
+        // time: a reader says the line as it appears and whenever its words change.
+        let results_vm = vm.clone();
+        let results = vm
+            .query()
+            .zip(&model.version_signal())
+            .map(move |_| results_vm.results_text());
+        let status = TextWidget::new(lit!(""))
+            .text(results.map(|text| text.clone().unwrap_or_default()))
             .color(TextRole::Secondary)
-            .visible_when(
-                empty_query
-                    .zip(&model.version_signal())
-                    .map(move |(q, _)| !q.trim().is_empty() && count_model.visible_count() == 0),
-            );
+            .overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing))
+            .access_live(Live::Polite)
+            .visible_when(results.map(Option::is_some));
 
         // Down/Up move the highlight through the list **while focus stays in the
         // field**, so a writer never has to Tab out of what they are typing to
         // choose a result. Handled on the wrapping column so it applies whether
         // focus is still in the field or has moved into the tree.
         let keys_vm = vm.clone();
+        let tree_handle = tree.handle();
+        let step = move |delta: isize, ctx: &mut EventContext| {
+            ctx.announce(keys_vm.step_and_describe(delta));
+            // The tree follows its own cursor and not a selection moved from outside.
+            if let Some(index) = keys_vm
+                .selection()
+                .selected_keys()
+                .first()
+                .and_then(|key| keys_vm.visible_index_of(key))
+            {
+                tree_handle.ensure_index_visible(index);
+            }
+        };
         let body = MinSize::new(POPUP_WIDTH, 0.0)
             .child(
                 VStack::new()
                     .spacing(6.0)
                     .child(Padding::symmetric(0.0, 2.0).child(field))
                     .child(MinSize::new(POPUP_WIDTH, POPUP_HEIGHT).child(Expand::new().child(tree)))
-                    .child(empty),
+                    .child(status),
             )
-            .on_key(move |ev, _ctx| match ev {
+            .on_key(move |ev, ctx| match ev {
                 WidgetEvent::KeyDown {
                     key: Key::ArrowDown,
                     ..
                 } => {
-                    keys_vm.step_selection(1);
+                    step(1, ctx);
                     EventResponse::Handled
                 }
                 WidgetEvent::KeyDown {
                     key: Key::ArrowUp, ..
                 } => {
-                    keys_vm.step_selection(-1);
+                    step(-1, ctx);
                     EventResponse::Handled
                 }
                 _ => EventResponse::Ignored,
@@ -296,5 +323,289 @@ impl Widget for GoToButton {
             .and_then(|id| ctx.child_size(id, proposal))
             .map(LayoutResponse::from)
             .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    }
+}
+
+/// Against the real store: the mock rows are fixed, and these tests need a row with no
+/// title, a folder kept only for what it holds, and more than one match.
+#[cfg(all(test, not(feature = "mocks")))]
+mod tests {
+    use super::*;
+    use std::cell::Cell;
+    use std::rc::Rc;
+    use std::time::Duration;
+
+    use frontend::AppContext;
+    use frontend::commands::{binder_commands, binder_item_commands, work_commands};
+    use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
+    use frontend::direct_access::{CreateBinderDto, CreateBinderItemDto, CreateWorkDto};
+    use teksilo::core::widget_tree::WidgetTree;
+
+    use crate::app_ids::AppIds;
+    use crate::models::BinderTreeKey;
+    use crate::test_support::with_real_messages;
+
+    const TOOLTIP: &str = "Jump to any item in the binder (Ctrl+G)";
+
+    /// A book holding two scenes whose names share a word, one that does not, and an
+    /// untitled chapter, which the binder names by its number.
+    fn seeded() -> (GoToViewModel, Rc<AppContext>) {
+        let app_ctx = Rc::new(AppContext::new());
+        let work = work_commands::create_orphan_work(
+            &app_ctx,
+            None,
+            &CreateWorkDto {
+                statuses: Vec::new(),
+                number_chapters: true,
+                dict_language: vec!["en".into()],
+                ..Default::default()
+            },
+        )
+        .expect("the in-memory store always accepts a Work");
+        let binder = binder_commands::create_binder(
+            &app_ctx,
+            None,
+            &CreateBinderDto {
+                name: "Manuscript".into(),
+                activated: true,
+                ..Default::default()
+            },
+            work.id,
+            0,
+        )
+        .expect("the in-memory store always accepts a binder");
+        for (title, role, sub_role, indent) in [
+            (
+                "The Book",
+                BinderItemRole::Folder,
+                BinderItemSubRole::Book,
+                0,
+            ),
+            ("Arrival", BinderItemRole::Item, BinderItemSubRole::Scene, 1),
+            (
+                "Second arrival",
+                BinderItemRole::Item,
+                BinderItemSubRole::Scene,
+                1,
+            ),
+            (
+                "Departure",
+                BinderItemRole::Item,
+                BinderItemSubRole::Scene,
+                1,
+            ),
+            ("", BinderItemRole::Item, BinderItemSubRole::ChapterScene, 1),
+        ] {
+            binder_item_commands::create_binder_item(
+                &app_ctx,
+                None,
+                &CreateBinderItemDto {
+                    status: None,
+                    title: title.into(),
+                    role,
+                    sub_role,
+                    activated: true,
+                    is_exportable: true,
+                    indent,
+                    ..Default::default()
+                },
+                binder.id,
+                -1,
+            )
+            .expect("the in-memory store always accepts an item");
+        }
+        let ids = AppIds::default();
+        ids.work_id.set(Some(work.id));
+        let vm = GoToViewModel::new(app_ctx.clone(), ids);
+        vm.model().reload();
+        (vm, app_ctx)
+    }
+
+    /// The count is of rows the arrows and Enter reach. The book is on screen for what it
+    /// holds, and counting it would promise a row nobody can go to.
+    #[test]
+    fn the_results_say_how_many_match_and_which_comes_first() {
+        with_real_messages(|| {
+            let (vm, _ctx) = seeded();
+            assert_eq!(vm.results_text(), None, "no query, nothing to say");
+
+            vm.query().set("arriv".into());
+            assert_eq!(
+                vm.results_text().as_deref(),
+                Some("Matches: 2. First: Arrival")
+            );
+
+            vm.query().set("zzz".into());
+            assert_eq!(
+                vm.results_text().as_deref(),
+                Some("No item matches that search.")
+            );
+        });
+    }
+
+    /// Typing what the row reads has to reach it. The filter shows an untitled chapter for
+    /// its generated name; a destination that read the title alone then skipped it, and
+    /// Enter did nothing on a list showing the very row asked for.
+    #[test]
+    fn a_row_found_by_its_generated_name_is_a_destination() {
+        with_real_messages(|| {
+            let (vm, _ctx) = seeded();
+            let chapter = vm.model().node(&visible_key(&vm, "")).expect("the chapter");
+            let name = chapter.fallback_label.clone().expect("a generated name");
+            vm.query().set(name.clone());
+            let results = vm.results_text().expect("a query was typed");
+            assert!(
+                results.contains(&name) && results.starts_with("Matches: 1."),
+                "got {results:?}"
+            );
+            assert!(
+                vm.first_openable().is_some(),
+                "Enter must have a row to open"
+            );
+        });
+    }
+
+    fn visible_key(vm: &GoToViewModel, title: &str) -> BinderTreeKey {
+        let model = vm.model();
+        (0..model.visible_count())
+            .filter_map(|i| model.key_at(i))
+            .find(|k| {
+                model
+                    .node(k)
+                    .is_some_and(|n| n.kind != "binder" && n.title == title)
+            })
+            .expect("the row is in the list")
+    }
+
+    /// The arrows say the row and its place among the matches, and an arrow at the end of
+    /// the list says the same row again instead of saying nothing.
+    #[test]
+    fn the_arrows_describe_the_row_they_reach() {
+        with_real_messages(|| {
+            let (vm, _ctx) = seeded();
+            vm.query().set("arriv".into());
+            assert_eq!(vm.step_and_describe(1), "Arrival, Scene, 1 of 2");
+            assert_eq!(vm.step_and_describe(1), "Second arrival, Scene, 2 of 2");
+            assert_eq!(vm.step_and_describe(1), "Second arrival, Scene, 2 of 2");
+            assert_eq!(vm.step_and_describe(-1), "Arrival, Scene, 1 of 2");
+
+            vm.query().set("zzz".into());
+            assert_eq!(vm.step_and_describe(1), "No item matches that search.");
+        });
+    }
+
+    fn settle(tree: &mut WidgetTree) {
+        let size = SizeProposal::exact(900.0, 700.0);
+        for _ in 0..3 {
+            tree.layout(size);
+            tree.tick_animations(Duration::from_millis(400));
+            tree.layout(size);
+            let _ = tree.sync_accessibility();
+        }
+    }
+
+    fn heard_since(tree: &WidgetTree, mark: u64) -> Vec<String> {
+        tree.announcements_since(mark)
+            .into_iter()
+            .map(|a| a.text)
+            .collect()
+    }
+
+    fn mark(tree: &WidgetTree) -> u64 {
+        tree.announcements_since(0).last().map_or(0, |a| a.seq)
+    }
+
+    /// The palette itself, heard the way an adapter is handed it: focus stays in the field,
+    /// so the results have to reach a reader from a live region and from the arrows.
+    #[test]
+    fn a_reader_hears_the_results_while_the_focus_stays_in_the_field() {
+        with_real_messages(|| {
+            let (vm, app_ctx) = seeded();
+            let mut tree = crate::test_support::tree_with_events(&app_ctx);
+            tree.set_records_announcements(true);
+            tree.add(GoToPalette {
+                vm: vm.clone(),
+                root: None,
+            });
+            settle(&mut tree);
+            let field = tree
+                .find_by_label("Search the binder")
+                .expect("the search field");
+            tree.focus(field);
+            settle(&mut tree);
+            let focused = tree.focused();
+
+            let m = mark(&tree);
+            vm.query().set("arriv".into());
+            settle(&mut tree);
+            let heard = heard_since(&tree, m);
+            assert!(
+                heard.iter().any(|t| t == "Matches: 2. First: Arrival"),
+                "typing must be answered, heard {heard:?}"
+            );
+
+            let m = mark(&tree);
+            tree.press_key(Key::ArrowDown, Modifiers::NONE);
+            settle(&mut tree);
+            let heard = heard_since(&tree, m);
+            assert!(
+                heard.iter().any(|t| t == "Arrival, Scene, 1 of 2"),
+                "Down must be answered, heard {heard:?}"
+            );
+            assert_eq!(
+                tree.focused(),
+                focused,
+                "the arrows leave focus in the field"
+            );
+        });
+    }
+
+    /// Enter closes the popup, and the popup giving the keyboard back must not undo the
+    /// jump: the focus the open edge asked for is the one that stands.
+    #[test]
+    fn enter_leaves_the_focus_where_the_jump_put_it() {
+        with_real_messages(|| {
+            let (vm, app_ctx) = seeded();
+            let mut tree = crate::test_support::tree_with_events(&app_ctx);
+            let target = Rc::new(Cell::new(None));
+            let opened = Rc::new(Cell::new(false));
+            {
+                let (target, opened) = (target.clone(), opened.clone());
+                vm.set_open_fn(Rc::new(move |_id, _title, ctx| {
+                    opened.set(true);
+                    if let Some(id) = target.get() {
+                        ctx.request_focus(id);
+                    }
+                }));
+            }
+            let root = tree.add(
+                VStack::new()
+                    .child(teksilo::widgets::Button::new(lit!("Where the writer was")))
+                    .child(teksilo::widgets::Button::new(lit!("Where the jump lands")))
+                    .child(GoToButton::new(vm.clone(), GO_TO_MAIN)),
+            );
+            settle(&mut tree);
+            let _ = root;
+            target.set(tree.find_by_label("Where the jump lands"));
+            let was = tree
+                .find_by_label("Where the writer was")
+                .expect("a control");
+            tree.focus(was);
+            settle(&mut tree);
+
+            let trigger = tree.find_by_label(TOOLTIP).expect("the trigger");
+            tree.click(trigger);
+            settle(&mut tree);
+            assert!(vm.is_open(), "the popup opened");
+            vm.query().set("arriv".into());
+            settle(&mut tree);
+
+            tree.press_key(Key::Enter, Modifiers::NONE);
+            settle(&mut tree);
+
+            assert!(opened.get(), "Enter opened the first match");
+            assert!(!vm.is_open(), "the popup closed");
+            assert_eq!(tree.focused(), target.get(), "the jump's focus stands");
+        });
     }
 }

@@ -43,6 +43,12 @@ menu-panels = &Paneler
 menu-side-start = &Venstre panel
 menu-side-end = &Højre panel
 menu-side-bottom = N&ederste panel
+side-start-hidden = Venstre panel skjult
+side-start-shown = Venstre panel vist
+side-end-hidden = Højre panel skjult
+side-end-shown = Højre panel vist
+side-bottom-hidden = Nederste panel skjult
+side-bottom-shown = Nederste panel vist
 menu-fullscreen = F&uld skærm
 menu-focus-mode = Dis&traktionsfri tilstand
 menu-format = F&ormat
@@ -3277,6 +3283,8 @@ settings-punctuation-auto-lists-hint = Afsnittet bliver til en punktopstilling e
 statusbar-go-to = Gå til…
 go-to-placeholder = Søg i ringbindet
 go-to-no-matches = Intet element matcher søgningen.
+go-to-results = Resultater: { $count }. Første: { $first }
+go-to-row = { $name }, { $kind }, { $position } af { $total }
 menu-go-to = &Gå til…
 
 # ── Distraction-free themes (Settings ▸ Editor ▸ Distraction-free themes) ──

@@ -242,7 +242,7 @@ pub(super) fn card_a11y_name(card: &CorkboardCard, number: Option<usize>) -> Str
 
 /// A short, sentence-case badge for a card's type. No existing sub_role→text map
 /// (the icons are `binder_icons`), so it lives here, the only consumer.
-pub(super) fn sub_role_badge_label(sub_role: &BinderItemSubRole) -> LocalizedString {
+pub(crate) fn sub_role_badge_label(sub_role: &BinderItemSubRole) -> LocalizedString {
     use BinderItemSubRole::*;
     match sub_role {
         Scene => tr!(corkboard_badge_scene()),

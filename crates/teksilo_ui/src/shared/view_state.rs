@@ -30,7 +30,7 @@
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
-use teksilo::prelude::{BuildContext, Signal};
+use teksilo::prelude::{BuildContext, Signal, WidgetId};
 use teksilo::widgets::rich_text::EditorHandle;
 
 /// Where the writer was in one document: the caret's character offset, and the
@@ -82,6 +82,9 @@ pub struct ViewStatePorts {
     /// double-click in an Overview table). A project opening must never take the
     /// focus away from wherever the writer left it.
     focus: Cell<bool>,
+    /// The node of the tab's body, for the keyboard to land on when the page has no
+    /// text to put the caret in: a corkboard, an overview.
+    page: Cell<Option<WidgetId>>,
 }
 
 impl ViewStatePorts {
@@ -100,6 +103,17 @@ impl ViewStatePorts {
     /// The main prose editor's handle, if this pane currently has one built.
     pub fn editor(&self) -> Option<EditorHandle> {
         self.editor.borrow().clone()
+    }
+
+    /// Publish the node of the tab's body. Called from [`crate::tabs::tab_pane`]'s
+    /// page on every build, like the slots above.
+    pub fn attach_page(&self, page: WidgetId) {
+        self.page.set(Some(page));
+    }
+
+    /// The node of the tab's body, once the tab has been built.
+    pub fn page(&self) -> Option<WidgetId> {
+        self.page.get()
     }
 
     /// Ask this pane, once it is mounted, to scroll its caret into view.

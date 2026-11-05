@@ -219,7 +219,7 @@ print("== typing filters the binder ==")
 # and asserting on it also pins that focus hand-off. Position alone is not a
 # discriminator: the Inspector's own date field sits in the same corner.
 fields = [n for n in s.nodes()
-          if n.get("role") == "TextInput" and n.get("focused")]
+          if n.get("role") in ("TextInput", "SearchInput") and n.get("focused")]
 if len(fields) != 1:
     s.shot(os.path.join(fixture.SCRATCH, "goto-field-ambiguous.png"))
     fail(f"expected the popover's search field to hold focus, found {len(fields)} "

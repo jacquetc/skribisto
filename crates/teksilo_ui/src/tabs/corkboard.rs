@@ -56,6 +56,7 @@ use crate::toast_scope::ToastWorkExt;
 
 mod card;
 mod chrome;
+pub(crate) use chrome::sub_role_badge_label;
 mod grid;
 /// The fixed "＋" glyph for the create button's main region.
 mod header;

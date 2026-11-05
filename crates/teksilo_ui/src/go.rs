@@ -13,5 +13,5 @@
 mod go_to_vm;
 mod go_vm;
 
-pub use go_to_vm::GoToViewModel;
+pub use go_to_vm::{GoToViewModel, OpenFn};
 pub use go_vm::GoAvailability;

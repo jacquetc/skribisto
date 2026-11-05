@@ -119,6 +119,9 @@ const PANE_MIN_WIDTH: f32 = 320.0;
 /// `editors_vm/tests.rs` want.
 pub type TabMenuInstaller = Rc<dyn Fn(TabId, TabInfo) -> TabInfo>;
 
+/// See [`EditorsViewModel::focus_loss_expected`].
+const FOCUS_LOSS_WINDOW: std::time::Duration = std::time::Duration::from_secs(2);
+
 #[derive(Clone)]
 pub struct EditorsViewModel {
     app_ctx: Rc<AppContext>,
@@ -131,6 +134,11 @@ pub struct EditorsViewModel {
     /// takes this view-model by: it is Tier 2 and this is Tier 3, so the handle is
     /// created first and pointed at afterwards.
     item_view_states: Rc<RefCell<Option<crate::shared::ItemViewStates>>>,
+    /// The main area's node, where the keyboard goes when no tab is open.
+    main_area: Rc<std::cell::Cell<Option<teksilo::prelude::WidgetId>>>,
+    /// When the writer last did something that can park what holds the keyboard. See
+    /// [`Self::focus_loss_expected`].
+    focus_loss_expected_at: Rc<std::cell::Cell<Option<std::time::Instant>>>,
     /// Attaches this window's tab-strip context menu to every tab as it is built.
     /// See [`TabMenuInstaller`] for why it is injected rather than constructed.
     tab_menu: Rc<RefCell<Option<TabMenuInstaller>>>,
@@ -286,6 +294,8 @@ impl EditorsViewModel {
             app_ctx,
             flush_failures: Rc::new(RefCell::new(Vec::new())),
             item_view_states: Rc::new(RefCell::new(None)),
+            main_area: Rc::new(std::cell::Cell::new(None)),
+            focus_loss_expected_at: Rc::new(std::cell::Cell::new(None)),
             tab_menu: Rc::new(RefCell::new(None)),
             primary: Pane::new(),
             secondary: Pane::new(),
@@ -1068,6 +1078,9 @@ impl EditorsViewModel {
     /// handle is live and is focused here and now; when it is not, the request is
     /// parked and the page takes it as it mounts.
     pub fn activate(&self, item_id: u64, title: &str, ctx: &mut teksilo::prelude::EventContext) {
+        // Raising the tab parks the page it covers, and the keyboard with it when it was
+        // there. The new page takes it if it has text; if not, nothing else would.
+        self.expect_focus_loss(std::time::Instant::now());
         self.open_in(Side::Primary, item_id, title);
         self.focus_main_editor(Side::Primary, item_id, ctx);
     }
@@ -1112,6 +1125,61 @@ impl EditorsViewModel {
         if let Some(handle) = handle {
             handle.focus(ctx);
         }
+    }
+
+    /// Put the caret in the text of the focused pane's active tab, the first half of
+    /// sending the keyboard to the main area. Returns whether there was an editor to
+    /// ask, which is not yet whether it took the focus: a container sitting on its
+    /// Corkboard keeps the editor of a page it showed earlier, parked, and a request
+    /// to a parked editor is dropped at the next layout pass.
+    pub fn focus_active_text(&self, ctx: &mut teksilo::prelude::EventContext) -> bool {
+        match self.active_ports().and_then(|ports| ports.editor()) {
+            Some(handle) => {
+                handle.focus(ctx);
+                true
+            }
+            None => false,
+        }
+    }
+
+    /// What the focused pane's active tab has published about its body.
+    pub(crate) fn active_ports(&self) -> Option<Rc<crate::shared::ViewStatePorts>> {
+        self.with_focused_tab(|t| Some(t.view_state_ports()))
+    }
+
+    /// Send the keyboard into the focused pane's active tab, whatever it shows, or into
+    /// the main area when no tab is open: the second half, for a page with no text.
+    /// Into the tab's body and not the main area's first control, which is the tab
+    /// strip's scroll button: on a corkboard, the bar of views comes first.
+    pub fn focus_active_page(&self, ctx: &mut teksilo::prelude::EventContext) {
+        let target = self
+            .active_ports()
+            .and_then(|ports| ports.page())
+            .or_else(|| self.main_area.get());
+        if let Some(target) = target {
+            ctx.request_focus_into(target);
+        }
+    }
+
+    /// Note that the writer has just done something that can park what holds the keyboard.
+    pub(crate) fn expect_focus_loss(&self, now: std::time::Instant) {
+        self.focus_loss_expected_at.set(Some(now));
+    }
+
+    /// Whether a focus falling to nothing `now` is down to something the writer just did,
+    /// for [`crate::workspace_layout::SideFocusKeeper`] to catch. Parking comes when the
+    /// layout gets to it, a side's only once its collapse has run, a fraction of
+    /// [`FOCUS_LOSS_WINDOW`]. A focus lost to something else inside the window lands in
+    /// the text too, which is no worse than nothing.
+    pub(crate) fn focus_loss_expected(&self, now: std::time::Instant) -> bool {
+        self.focus_loss_expected_at
+            .get()
+            .is_some_and(|at| now.saturating_duration_since(at) < FOCUS_LOSS_WINDOW)
+    }
+
+    /// Be told the main area's node. Called from its build, on every build.
+    pub(crate) fn set_main_area(&self, main_area: teksilo::prelude::WidgetId) {
+        self.main_area.set(Some(main_area));
     }
 
     /// The durable uid of an item, by a single-entity read rather than a walk of
