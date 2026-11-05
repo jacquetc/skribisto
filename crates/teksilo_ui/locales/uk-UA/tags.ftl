@@ -58,6 +58,7 @@ settings-tags-count = { $n ->
    *[other] { $n } мітки
 }
 settings-tags-details-placeholder = Що означає ця мітка
+settings-tags-name-label = Назва мітки
 settings-tags-discoverable = Шукати в прозі
 settings-tags-creates-in = Нові нотатки потрапляють до
 settings-tags-creates-in-unset = Запитати першого разу

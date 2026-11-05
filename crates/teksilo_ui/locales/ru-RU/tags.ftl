@@ -65,6 +65,7 @@ settings-tags-count = { $n ->
    *[other] { $n } тега
 }
 settings-tags-details-placeholder = Что означает этот тег
+settings-tags-name-label = Название тега
 settings-tags-discoverable = Поиск в прозе
 settings-tags-creates-in = Новые заметки создаются в
 settings-tags-creates-in-unset = Спросить в первый раз

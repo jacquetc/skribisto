@@ -53,6 +53,7 @@ settings-tags-duplicate = 「{ $name }」はすでに存在します
 settings-tags-filter = タグを絞り込む
 settings-tags-count = タグ{ $n }件
 settings-tags-details-placeholder = このタグの意味
+settings-tags-name-label = タグ名
 settings-tags-discoverable = 本文で検索
 settings-tags-creates-in = 新しいノートの保存先
 settings-tags-creates-in-unset = 初回に確認

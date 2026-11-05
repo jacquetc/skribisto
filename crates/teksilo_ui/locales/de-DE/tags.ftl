@@ -57,6 +57,7 @@ settings-tags-count = { $n ->
    *[other] { $n } Schlagwörter
 }
 settings-tags-details-placeholder = Bedeutung dieses Schlagworts
+settings-tags-name-label = Name des Schlagworts
 settings-tags-discoverable = Im Text suchen
 settings-tags-creates-in = Neue Notizen ablegen in
 settings-tags-creates-in-unset = Beim ersten Mal fragen

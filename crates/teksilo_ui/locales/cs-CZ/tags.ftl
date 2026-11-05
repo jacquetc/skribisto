@@ -64,6 +64,7 @@ settings-tags-count = { $n ->
    *[other] { $n } štítků
 }
 settings-tags-details-placeholder = Co tento štítek znamená
+settings-tags-name-label = Název štítku
 settings-tags-discoverable = Hledat v próze
 settings-tags-creates-in = Nové poznámky ukládat do
 settings-tags-creates-in-unset = Zeptat se poprvé

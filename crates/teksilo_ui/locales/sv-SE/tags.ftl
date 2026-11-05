@@ -55,6 +55,7 @@ settings-tags-count = { $n ->
       *[other] { $n } taggar
    }
 settings-tags-details-placeholder = Vad den här taggen betyder
+settings-tags-name-label = Namn på tagg
 settings-tags-discoverable = Sök i prosan
 settings-tags-creates-in = Nya anteckningar hamnar i
 settings-tags-creates-in-unset = Fråga mig första gången

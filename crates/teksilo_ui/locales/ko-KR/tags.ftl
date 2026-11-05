@@ -53,6 +53,7 @@ settings-tags-duplicate = "{ $name }"이 이미 있습니다
 settings-tags-filter = 태그 필터
 settings-tags-count = 태그 { $n }개
 settings-tags-details-placeholder = 이 태그의 의미
+settings-tags-name-label = 태그 이름
 settings-tags-discoverable = 본문에서 찾기
 settings-tags-creates-in = 새 노트의 저장 위치
 settings-tags-creates-in-unset = 처음에 묻기

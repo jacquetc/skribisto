@@ -56,6 +56,7 @@ settings-tags-count = { $n ->
    *[other] { $n } etikedoj
 }
 settings-tags-details-placeholder = Signifo de ĉi tiu etikedo
+settings-tags-name-label = Nomo de etikedo
 settings-tags-discoverable = Trovi en la teksto
 settings-tags-creates-in = Loko por novaj notoj
 settings-tags-creates-in-unset = Demandi la unuan fojon

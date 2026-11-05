@@ -62,6 +62,7 @@ settings-tags-count = { $n ->
    *[other] { $n } תגים
 }
 settings-tags-details-placeholder = מה התג הזה אומר
+settings-tags-name-label = שם התג
 settings-tags-discoverable = איתור בטקסט
 settings-tags-creates-in = פתקים חדשים נכנסים אל
 settings-tags-creates-in-unset = לשאול אותי בפעם הראשונה

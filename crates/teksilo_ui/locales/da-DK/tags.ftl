@@ -85,6 +85,7 @@ settings-tags-count = { $n ->
    *[other] { $n } mærker
 }
 settings-tags-details-placeholder = Hvad dette mærke betyder
+settings-tags-name-label = Navn på mærke
 settings-tags-discoverable = Søg i teksten
 settings-tags-creates-in = Nye noter placeres i
 settings-tags-creates-in-unset = Spørg mig første gang

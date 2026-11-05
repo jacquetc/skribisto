@@ -63,6 +63,7 @@ settings-tags-count = { $n ->
       *[other] { $n } tunnistetta
    }
 settings-tags-details-placeholder = Mitä tämä tunniste tarkoittaa
+settings-tags-name-label = Tunnisteen nimi
 settings-tags-discoverable = Etsi tekstistä
 settings-tags-creates-in = Uudet muistiinpanot sijoitetaan
 settings-tags-creates-in-unset = Kysy ensimmäisellä kerralla

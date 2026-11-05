@@ -86,6 +86,7 @@ settings-tags-count = { $n ->
       *[other] { $n } de etichete
    }
 settings-tags-details-placeholder = Ce înseamnă această etichetă
+settings-tags-name-label = Numele etichetei
 settings-tags-discoverable = Căutare în proză
 settings-tags-creates-in = Notele noi ajung în
 settings-tags-creates-in-unset = Întreabă-mă prima dată

@@ -677,6 +677,12 @@ text-heading = Text
 no-content = Acest element nu are conținut editabil.
 untitled = Fără titlu
 placeholder-title = Titlu…
+# What a screen reader calls each name field above the text: nothing on screen labels
+# them, and the placeholder is gone once the field holds a name.
+title-field-title = Titlu
+title-field-subtitle = Subtitlu
+title-field-chapter = Titlul capitolului
+title-field-name = Nume
 placeholder-subtitle = Subtitlu…
 placeholder-chapter-title = Titlul capitolului…
 split-editor = Împarte editorul
@@ -3198,6 +3204,7 @@ settings-page-personal-dictionary = Dicționar personal
 settings-user-dict-desc = Cuvintele pe care le adăugați aici sunt considerate corecte peste tot în aplicație și nu mai sunt semnalate niciodată.
 settings-user-dict-add-placeholder = Adaugă un cuvânt…
 settings-user-dict-add-label = Adaugă un cuvânt
+settings-user-dict-word-label = Cuvânt
 settings-user-dict-add = Adaugă cuvântul
 settings-user-dict-search = Filtrează cuvintele
 settings-user-dict-count = { $count ->
@@ -3244,6 +3251,7 @@ settings-text-repl-count = { $n ->
       *[other] { $n } de reguli
    }
 settings-text-repl-row-enabled = Folosește această regulă
+settings-text-repl-row-name = „{ $trigger }” devine „{ $replacement }”
 settings-text-repl-delete = Șterge regula pentru { $trigger }
 settings-text-repl-deleted = Regula pentru „{ $trigger }” a fost ștearsă
 settings-text-repl-empty = Încă nu există reguli.
@@ -4416,6 +4424,10 @@ milestone-target-gone = Țintă ștearsă
 milestone-no-target = Fără țintă
 milestone-add = Adaugă
 milestone-add-label = Ce trebuie atins
+# Screen-reader names of the new milestone's date and word target: nothing on screen
+# labels them.
+milestone-date-label = Data jalonului
+milestone-target-label = Numărul de cuvinte de atins
 
 # The writing-plan summary shown once when a project with an active plan opens.
 pace-summary-title = Unde a ajuns cartea
@@ -4461,6 +4473,13 @@ help-section-keeping = Siguranța muncii dumneavoastră
 help-section-extensions = Extensii
 
 help-topic-getting-started = Primul dumneavoastră proiect
+help-topic-screen-reader = Utilizarea aplicației Skribisto cu un cititor de ecran
+# Offered once at startup when a screen reader is running (Help ▸ Using a screen reader
+# stays the way to the same page).
+screen-reader-offer-title = Un cititor de ecran este activ
+screen-reader-offer-text = Skribisto are o pagină despre utilizarea cu un cititor de ecran: cum este organizată fereastra și ce taste vă duc la fiecare parte a ei.
+screen-reader-offer-open = Deschide ghidul
+screen-reader-offer-never = Nu mai afișa
 help-topic-writing-model = Cum este alcătuită o carte
 help-topic-drafts-and-old-versions = Păstrarea unei ciorne mai vechi
 help-topic-goals-and-pace = Ținte și ritm
@@ -4523,11 +4542,24 @@ shortcut-name-editor-replace = Înlocuiește
 shortcut-name-editor-find-next = Potrivirea următoare
 shortcut-name-editor-find-prev = Potrivirea precedentă
 shortcut-name-search-show = Caută în proiect
+shortcut-name-binder-show = Afișează clasorul
+shortcut-name-trash-show = Afișează coșul de gunoi
+shortcut-name-comments-show = Afișează comentariile
+shortcut-name-games-show = Afișează jocurile de scriere
+shortcut-name-inspector-show = Afișează inspectorul
+shortcut-name-format-show = Afișează panoul de formatare
+shortcut-name-document-comments-show = Afișează comentariile acestui document
+shortcut-name-footnotes-show = Afișează notele de subsol
+shortcut-name-versions-show = Afișează versiunile
+shortcut-name-preview-show = Afișează previzualizarea căutării
+shortcut-name-timeline-show = Înapoi în timp
+shortcut-name-side-end-toggle = Afișează sau ascunde panoul din dreapta
 shortcut-name-search-replace = Înlocuiește în proiect
 shortcut-name-outline-open-to-side = Deschide în lateral
 shortcut-name-help-topics = Subiecte de ajutor
 shortcut-name-help-close = Închide ajutorul
 shortcut-name-help-shortcuts = Comenzi rapide de la tastatură
+shortcut-name-help-screen-reader = Utilizarea aplicației Skribisto cu un cititor de ecran
 shortcut-name-help-website = Skribisto pe web
 shortcut-name-help-report = Raportează o problemă
 shortcut-name-help-check-updates = Caută actualizări
@@ -4671,6 +4703,8 @@ settings-statuses-added = A fost adăugată „{ $name }”
 settings-statuses-move-up = Mută în sus (mai puțin avansat)
 settings-statuses-move-down = Mută în jos (mai avansat)
 settings-statuses-details-placeholder = Ce înseamnă această etapă (opțional)
+settings-statuses-name-label = Numele stării
+settings-statuses-category-label = Progres
 settings-statuses-delete = Șterge „{ $name }”
 settings-statuses-delete-in-use = { $count ->
        [one] Șterge „{ $name }”: un element o are și își va pierde starea

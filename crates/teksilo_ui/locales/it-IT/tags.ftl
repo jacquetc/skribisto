@@ -56,6 +56,7 @@ settings-tags-count = { $n ->
    *[other] { $n } etichette
 }
 settings-tags-details-placeholder = Significato dell'etichetta
+settings-tags-name-label = Nome dell'etichetta
 settings-tags-discoverable = Cerca nel testo
 settings-tags-creates-in = Destinazione delle nuove note
 settings-tags-creates-in-unset = Chiedimelo la prima volta

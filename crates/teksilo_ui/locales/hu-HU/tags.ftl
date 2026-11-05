@@ -56,6 +56,7 @@ settings-tags-count = { $n ->
    *[other] { $n } címke
 }
 settings-tags-details-placeholder = Mit jelent ez a címke
+settings-tags-name-label = A címke neve
 settings-tags-discoverable = Keresés a prózában
 settings-tags-creates-in = Az új jegyzetek helye
 settings-tags-creates-in-unset = Első alkalommal kérdezzen rá

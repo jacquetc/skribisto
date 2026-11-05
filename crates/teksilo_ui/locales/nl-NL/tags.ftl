@@ -63,6 +63,7 @@ settings-tags-count = { $n ->
        *[other] { $n } tags
     }
 settings-tags-details-placeholder = Wat deze tag betekent
+settings-tags-name-label = Tagnaam
 settings-tags-discoverable = Zoeken in proza
 settings-tags-creates-in = Nieuwe notities gaan naar
 settings-tags-creates-in-unset = De eerste keer vragen

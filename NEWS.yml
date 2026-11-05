@@ -44,7 +44,7 @@ Description:
 - "When a chapter's Epigraph section is closed, Tab goes past it. It used to stop on its hidden Source line button and on its field"
 - "With a screen reader, the binder's items are no longer each described as a tooltip, the Rename field has a name, and a field whose grey hint repeats its name says that name only once"
 - "On Windows, a paragraph of the help is one paragraph for a screen reader, as in your own text, and with NVDA's Read by paragraph a braille display shows it whole. A hidden character at the end of each source line used to split it, and the display showed each of those lines as a paragraph of its own"
-- "Pictures show in the text again when a project is opened, a Scrivener project or a document is imported, or a text is reopened. Since version 3.0.5 they appeared as blank spaces of the right size, though they were safe in the project and present in exports"
+- "Pictures show in the text again when a project is opened, a Scrivener project or a document is imported, or a text is reopened. Since version 3.0.5 they appeared as blank spaces of the right size, though they were safe in the project and present in exports. On macOS, and on a high-resolution screen when the last project reopens at launch, a picture can still stay blank. It is safe in the project and shows in exports"
 - "A picture added after a project was saved to a new place, with Save As or by the first save of a new folder project, shows when pasted into a text that was already open. It stayed a blank space until the project was closed"
 - "Bold, italic, headings and other formatting are saved with your project even if you type nothing afterwards. They used to stay in the open text and be gone the next time you opened the project. After an undo, Redo is offered straight away, and the Edit menu says “Undo the last change to this text”. It used to stay unavailable, and to call every change typing"
 - "When you import a project from Scrivener, Manuskript or Plume Creator, Skribisto suggests the folder you last chose for a new project, or your documents folder, instead of the folder your old project sits in. You can still choose any other folder, and Skribisto remembers it next time"
@@ -53,6 +53,7 @@ Description:
 - "Go to… also finds an untitled chapter by the name the binder gives it. It used to show the row, then skip it with the arrows and refuse to open it with Enter"
 - "F9 no longer leaves you on the window when the left panel hides with the cursor in it: the cursor goes to the text in the centre, or into the view in front of you when it has no text. A screen reader says when a left, right or bottom panel is hidden or shown, which it used not to. Leaving distraction-free mode with F11 puts the cursor back in your text"
 - "On the corkboard, Shift+F2 takes you into a card's synopsis from the keyboard, Tab goes round the card and Escape brings you back to it. A synopsis used to need the mouse, and once inside, Tab jumped to the title bar"
+- "The panel names read out by a screen reader or listed under Keyboard shortcuts, the names of the title fields and a few other labels are now in your language in every translation. They used to appear in English in 22 of them"
 ---
 Version: 3.3.0
 Date: 2026-10-27

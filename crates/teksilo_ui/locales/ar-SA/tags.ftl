@@ -60,6 +60,7 @@ settings-tags-count = { $n ->
    *[other] { $n } وسم
 }
 settings-tags-details-placeholder = ما يعنيه هذا الوسم
+settings-tags-name-label = اسم الوسم
 settings-tags-discoverable = البحث في النص
 settings-tags-creates-in = توضع الملاحظات الجديدة في
 settings-tags-creates-in-unset = السؤال في المرة الأولى

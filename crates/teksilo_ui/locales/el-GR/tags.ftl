@@ -64,6 +64,7 @@ settings-tags-count = { $n ->
    *[other] { $n } ετικέτες
 }
 settings-tags-details-placeholder = Τι σημαίνει αυτή η ετικέτα
+settings-tags-name-label = Όνομα ετικέτας
 settings-tags-discoverable = Εύρεση στην πρόζα
 settings-tags-creates-in = Οι νέες σημειώσεις πηγαίνουν στο
 settings-tags-creates-in-unset = Ερώτηση την πρώτη φορά

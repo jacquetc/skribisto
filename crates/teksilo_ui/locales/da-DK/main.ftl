@@ -661,6 +661,12 @@ text-heading = Tekst
 no-content = Dette element har intet redigerbart indhold.
 untitled = Uden titel
 placeholder-title = Titel…
+# What a screen reader calls each name field above the text: nothing on screen labels
+# them, and the placeholder is gone once the field holds a name.
+title-field-title = Titel
+title-field-subtitle = Undertitel
+title-field-chapter = Kapitlets titel
+title-field-name = Navn
 placeholder-subtitle = Undertitel…
 placeholder-chapter-title = Kapitlets titel…
 split-editor = Opdel editor
@@ -2896,6 +2902,7 @@ settings-page-personal-dictionary = Personlig ordbog
 settings-user-dict-desc = Ord, du tilføjer her, betragtes som korrekt stavet overalt i programmet og markeres aldrig igen.
 settings-user-dict-add-placeholder = Tilføj et ord…
 settings-user-dict-add-label = Tilføj et ord
+settings-user-dict-word-label = Ord
 settings-user-dict-add = Tilføj ord
 settings-user-dict-search = Filtrér ord
 settings-user-dict-count = { $count ->
@@ -2938,6 +2945,7 @@ settings-text-repl-count = { $n ->
    *[other] { $n } regler
 }
 settings-text-repl-row-enabled = Brug denne regel
+settings-text-repl-row-name = »{ $trigger }« bliver til »{ $replacement }«
 settings-text-repl-delete = Slet reglen for { $trigger }
 settings-text-repl-deleted = Reglen for »{ $trigger }« er slettet
 settings-text-repl-empty = Ingen regler endnu.
@@ -4053,6 +4061,10 @@ milestone-target-gone = Målet er slettet
 milestone-no-target = Intet mål
 milestone-add = Tilføj
 milestone-add-label = Hvad der skal være nået
+# Screen-reader names of the new milestone's date and word target: nothing on screen
+# labels them.
+milestone-date-label = Dato for milepæl
+milestone-target-label = Antal ord, der skal nås
 
 # The writing-plan summary shown once when a project with an active plan opens.
 pace-summary-title = Hvor bogen står
@@ -4098,6 +4110,13 @@ help-section-keeping = Pas på dit arbejde
 help-section-extensions = Udvidelser
 
 help-topic-getting-started = Dit første projekt
+help-topic-screen-reader = Brug af Skribisto med skærmlæser
+# Offered once at startup when a screen reader is running (Help ▸ Using a screen reader
+# stays the way to the same page).
+screen-reader-offer-title = En skærmlæser kører
+screen-reader-offer-text = Skribisto har en side om brug af programmet med en skærmlæser: hvordan vinduet er indrettet, og hvilke taster der fører dig til hver enkelt del af det.
+screen-reader-offer-open = Åbn vejledningen
+screen-reader-offer-never = Vis ikke dette igen
 help-topic-writing-model = Hvordan en bog er bygget op
 help-topic-drafts-and-old-versions = Gem et ældre udkast
 help-topic-goals-and-pace = Mål og tempo
@@ -4160,11 +4179,24 @@ shortcut-name-editor-replace = Erstat
 shortcut-name-editor-find-next = Næste forekomst
 shortcut-name-editor-find-prev = Forrige forekomst
 shortcut-name-search-show = Søg i projekt
+shortcut-name-binder-show = Vis ringbindet
+shortcut-name-trash-show = Vis papirkurven
+shortcut-name-comments-show = Vis kommentarerne
+shortcut-name-games-show = Vis skrivelegene
+shortcut-name-inspector-show = Vis inspektøren
+shortcut-name-format-show = Vis formateringspanelet
+shortcut-name-document-comments-show = Vis dette dokuments kommentarer
+shortcut-name-footnotes-show = Vis fodnoterne
+shortcut-name-versions-show = Vis versionerne
+shortcut-name-preview-show = Vis forhåndsvisningen af søgningen
+shortcut-name-timeline-show = Gå tilbage i tiden
+shortcut-name-side-end-toggle = Vis eller skjul højre panel
 shortcut-name-search-replace = Erstat i projekt
 shortcut-name-outline-open-to-side = Åbn ved siden af
 shortcut-name-help-topics = Hjælpeemner
 shortcut-name-help-close = Luk hjælp
 shortcut-name-help-shortcuts = Tastaturgenveje
+shortcut-name-help-screen-reader = Brug af Skribisto med skærmlæser
 shortcut-name-help-website = Skribisto på nettet
 shortcut-name-help-report = Rapportér et problem
 shortcut-name-help-check-updates = Søg efter opdateringer
@@ -4307,6 +4339,8 @@ settings-statuses-added = »{ $name }« er tilføjet
 settings-statuses-move-up = Flyt op (mindre færdig)
 settings-statuses-move-down = Flyt ned (mere færdig)
 settings-statuses-details-placeholder = Hvad denne fase betyder (valgfrit)
+settings-statuses-name-label = Navn på status
+settings-statuses-category-label = Fremskridt
 settings-statuses-delete = Slet »{ $name }«
 settings-statuses-delete-in-use = { $count ->
     [one] Slet »{ $name }«: 1 element har denne status og mister den

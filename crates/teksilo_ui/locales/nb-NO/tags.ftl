@@ -63,6 +63,7 @@ settings-tags-count = { $n ->
    *[other] { $n } stikkord
 }
 settings-tags-details-placeholder = Hva dette stikkordet betyr
+settings-tags-name-label = Navn på stikkord
 settings-tags-discoverable = Finn i teksten
 settings-tags-creates-in = Nye notater havner i
 settings-tags-creates-in-unset = Spør meg første gang

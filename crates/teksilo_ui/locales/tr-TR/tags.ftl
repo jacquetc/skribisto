@@ -62,6 +62,7 @@ settings-tags-count = { $n ->
    *[other] { $n } etiket
 }
 settings-tags-details-placeholder = Bu etiketin anlamı
+settings-tags-name-label = Etiket adı
 settings-tags-discoverable = Metinde bul
 settings-tags-creates-in = Yeni notların gideceği yer
 settings-tags-creates-in-unset = İlk seferde bana sor

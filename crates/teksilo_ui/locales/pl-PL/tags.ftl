@@ -65,6 +65,7 @@ settings-tags-count = { $n ->
        *[other] { $n } znacznika
     }
 settings-tags-details-placeholder = Co oznacza ten znacznik
+settings-tags-name-label = Nazwa znacznika
 settings-tags-discoverable = Wyszukuj w prozie
 settings-tags-creates-in = Nowe notatki trafiają do
 settings-tags-creates-in-unset = Zapytaj mnie za pierwszym razem
