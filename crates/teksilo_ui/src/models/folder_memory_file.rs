@@ -49,7 +49,8 @@ const SETTINGS_DEBOUNCE: Duration = Duration::from_millis(500);
 pub enum FolderPurpose {
     /// Opening an existing `.skrib`.
     OpenProject,
-    /// Where a new project's folder is created.
+    /// Where a new project goes, whether New Work creates it or an import writes it: the
+    /// folder an import proposes, and the one its Browse records.
     NewProjectLocation,
     /// Picking documents to import (Markdown, plain text, …).
     ImportDocuments,

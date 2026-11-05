@@ -27,9 +27,9 @@ use teksilo::i18n::LocalizedString;
 use teksilo::prelude::*;
 use teksilo::widgets::{
     Banner, Button, ButtonVariant, CellContext, Checkbox, Column, ColumnWidth, ComboBox, DropZone,
-    Expand, FilePickerField, FilePickerKind, FixedSize, FormLayout, HStack, MaxSize, MessageBox,
-    MessageBoxButtons, Padding, Panel, ProgressBar, RadioButton, RadioGroup, Repeater, ScrollArea,
-    Spacer, Step, Stepper, Switcher, TabTraversal, TextInput, TextWidget, TreeTableView, VStack,
+    Expand, FixedSize, FormLayout, HStack, MaxSize, MessageBox, MessageBoxButtons, Padding, Panel,
+    ProgressBar, RadioButton, RadioGroup, Repeater, ScrollArea, Spacer, Step, Stepper, Switcher,
+    TabTraversal, TextInput, TextWidget, TreeTableView, VStack,
 };
 
 use super::import_scrivener_vm::{
@@ -84,10 +84,7 @@ pub fn present_import_scrivener(
     source: Option<String>,
 ) {
     vm.reset();
-    vm.set_remembered_folder(
-        ctx.app_state::<crate::models::FolderMemoryService>()
-            .and_then(|svc| svc.last(crate::models::FolderPurpose::NewProjectLocation)),
-    );
+    vm.set_remembered_folder(crate::shared::import_destination::remembered_folder(ctx));
     if let Some(source) = source {
         vm.review_again(&source);
     }
@@ -853,10 +850,11 @@ fn destination_form(vm: &ImportScrivenerViewModel) -> impl Widget + use<> {
         .row_spacing(14.0)
         .line(
             field_label(tr!(project_import_location())),
-            FilePickerField::new(vm.location())
-                .kind(FilePickerKind::PickFolder)
-                .dialog_title(tr!(project_import_location_title()))
-                .validation(vm.location_validation()),
+            crate::shared::import_destination::destination_picker(
+                vm.location(),
+                vm.location_validation(),
+                vm.remembered_folder(),
+            ),
         )
         .line(
             field_label(tr!(project_import_name())),

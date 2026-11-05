@@ -26,7 +26,7 @@
 //! The destination is `shared::import_destination`, shared with the Plume form:
 //! its checks run when a field changes rather than on every read.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use teksilo::prelude::*;
 use teksilo::widgets::ValidationState;
@@ -39,7 +39,7 @@ use skrib_format::importing::TITLE_SLOT;
 use super::messages;
 use crate::intents::AppIntent;
 use crate::shared::form_checks::{CachedValidation, DiskChecked, FolderMessages};
-use crate::shared::import_destination::{DestinationMessages, ImportDestination};
+use crate::shared::import_destination::{DestinationMessages, ImportDestination, is_inside};
 use crate::shared::import_warnings::{MANUSKRIPT as NOTICE, notice_sentence};
 use crate::shared::project_import::{ImportOutcome, Importer, ProjectImportJob};
 
@@ -115,6 +115,13 @@ fn output_stem(source: &str) -> String {
     }
 }
 
+/// Whether `folder` is inside the Manuskript project at `source`: the folder picked, or
+/// the folder a picked `.msk` keeps beside it under the same stem.
+fn inside_project(folder: &Path, source: &Path) -> bool {
+    let stem = output_stem(&source.to_string_lossy());
+    is_inside(folder, source) || is_inside(folder, &source.with_file_name(stem))
+}
+
 /// Validate the source: a non-blank path to something that exists.
 ///
 /// Deliberately accepts a directory as well as a file. The importer works out
@@ -178,13 +185,22 @@ impl ImportManuskriptViewModel {
         self.destination.name()
     }
 
-    /// React to either source picker: default the destination folder and name
-    /// from what was picked.
+    /// The folder remembered for new projects, the destination proposed first. Read where
+    /// the form opens.
+    pub fn set_remembered_folder(&self, folder: Option<PathBuf>) {
+        self.destination.set_remembered_folder(folder);
+    }
+
+    /// Where the destination field's Browse opens.
+    pub fn remembered_folder(&self) -> Option<PathBuf> {
+        self.destination.remembered_folder()
+    }
+
+    /// React to either source picker: name the new project after what was picked, and
+    /// propose a folder if the form has none.
     ///
-    /// Both shapes are handled, because both buttons write into the same field. A
-    /// picked **file** defaults the destination beside it; a picked **folder**
-    /// defaults beside its parent, not inside itself, so the new `.skrib` lands
-    /// next to the project it came from rather than inside it.
+    /// Both shapes are handled, because both buttons write into the same field. Whichever
+    /// was picked, the folder proposed is not inside the project ([`inside_project`]).
     pub fn apply_source_defaults(&self, res: &FileDialogResult) {
         let picked = match res {
             FileDialogResult::File(Some(path)) => Some(path.clone()),
@@ -194,7 +210,7 @@ impl ImportManuskriptViewModel {
         let Some(path) = picked else { return };
         self.source.set(path.to_string_lossy().into_owned());
         self.destination.default_from(
-            path.parent().and_then(|p| p.to_str()),
+            &|folder| inside_project(folder, &path),
             output_stem(&path.to_string_lossy()),
         );
     }
@@ -456,6 +472,51 @@ mod tests {
         assert_eq!(output_stem("/books/Tour du monde.msk"), "Tour du monde");
         assert_eq!(output_stem("/books/TOUR.MSK"), "TOUR");
         assert_eq!(output_stem("/books/Tour du monde"), "Tour du monde");
+    }
+
+    /// Either shape of the project goes where new projects go, never beside itself. A
+    /// folder the writer chose stays through another pick.
+    #[test]
+    fn picking_a_source_proposes_the_remembered_folder_not_its_own() {
+        let projects = tempfile::tempdir().unwrap();
+        let folder = projects.path().to_string_lossy().into_owned();
+        for picked in [
+            FileDialogResult::File(Some(PathBuf::from("/books/Tour du monde.msk"))),
+            FileDialogResult::Folder(Some(PathBuf::from("/books/Tour du monde"))),
+        ] {
+            let vm = form(&Rc::new(AppContext::new()));
+            vm.set_remembered_folder(Some(projects.path().to_path_buf()));
+            vm.apply_source_defaults(&picked);
+            assert_eq!(vm.location().get(), folder, "{picked:?}");
+            assert_eq!(vm.name().get(), "Tour du monde", "{picked:?}");
+
+            vm.location().set("/my/own/choice".into());
+            vm.apply_source_defaults(&FileDialogResult::File(Some(PathBuf::from(
+                "/books/Another.msk",
+            ))));
+            assert_eq!(vm.location().get(), "/my/own/choice", "{picked:?}");
+            assert_eq!(vm.name().get(), "Another", "{picked:?}");
+        }
+    }
+
+    /// A remembered folder inside the project being imported is not proposed, whichever
+    /// half of a folder-mode project was picked: the new project never lands inside it.
+    #[test]
+    fn a_remembered_folder_inside_the_project_is_not_proposed() {
+        let dir = tempfile::tempdir().unwrap();
+        let project = dir.path().join("Tour du monde");
+        let inside = project.join("outline");
+        std::fs::create_dir_all(&inside).unwrap();
+        for picked in [
+            FileDialogResult::File(Some(dir.path().join("Tour du monde.msk"))),
+            FileDialogResult::Folder(Some(project.clone())),
+        ] {
+            let vm = form(&Rc::new(AppContext::new()));
+            vm.set_remembered_folder(Some(inside.clone()));
+            vm.apply_source_defaults(&picked);
+            assert_eq!(vm.location().get(), "", "{picked:?}");
+            assert_eq!(vm.name().get(), "Tour du monde", "{picked:?}");
+        }
     }
 
     /// Reading the form, as its fields and its Import button do on every frame,

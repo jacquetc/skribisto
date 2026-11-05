@@ -176,6 +176,11 @@ fn readable(source: &Path) -> ScrivenerAnalysisDto {
 
 /// The wizard as it stands once `analysis` came back for `source`.
 fn read(vm: &ImportScrivenerViewModel, source: &Path, analysis: ScrivenerAnalysisDto) {
+    // A folder to propose, for a test not about which one: a test sees neither the
+    // writer's documents nor their home. One of its own, so nothing lands outside it.
+    if vm.remembered_folder().is_none() {
+        vm.set_remembered_folder(source.parent().map(Path::to_path_buf));
+    }
     *vm.inner.inspected.borrow_mut() = source.to_string_lossy().into_owned();
     vm.inner
         .inspection
@@ -245,66 +250,84 @@ fn a_picked_manifest_stands_for_its_project_folder() {
     );
 }
 
-/// Beside the project, unless that folder cannot be written to or is one of Scrivener's
-/// backup folders; then the remembered folder; then home.
+/// The new project goes where new projects go, not among the Scrivener projects: the
+/// folder holding the project is writable and is passed over all the same.
 #[test]
-fn the_default_folder_is_beside_the_project() {
-    let all = |_: &Path| true;
-    let remembered = Some(PathBuf::from("/remembered"));
-    let home = Some(PathBuf::from("/home/writer"));
-    assert_eq!(
-        default_location(
-            Path::new("/books/Novel.scriv/Novel.scrivx"),
-            false,
-            &all,
-            remembered.clone(),
-            home.clone()
-        ),
-        Some(PathBuf::from("/books"))
-    );
-    let not_books = |p: &Path| p != Path::new("/books");
-    assert_eq!(
-        default_location(
-            Path::new("/books/Novel.scriv"),
-            false,
-            &not_books,
-            remembered.clone(),
-            home.clone()
-        ),
-        Some(PathBuf::from("/remembered"))
-    );
-    assert_eq!(
-        default_location(
-            Path::new("/Users/a/Library/Application Support/Scrivener/Backups/Novel.bak1.zip"),
-            false,
-            &all,
-            None,
-            home.clone()
-        ),
-        home,
-        "never inside Scrivener's backups folder"
-    );
-    assert_eq!(
-        default_location(
-            Path::new("/home/a/Dropbox/Scrivener backups/Novel.bak3.zip"),
-            true,
-            &all,
-            None,
-            home.clone()
-        ),
-        home,
-        "nor in a backup folder of another name"
-    );
-    assert_eq!(
-        default_location(
-            Path::new("/books/Novel.scriv"),
-            false,
-            &|_| false,
-            None,
-            None
-        ),
-        None
-    );
+fn the_default_folder_is_the_remembered_one_not_beside_the_project() {
+    crate::test_support::with_real_messages(|| {
+        let (dir, project) = project_on_disk();
+        let elsewhere = tempfile::tempdir().unwrap();
+        let vm = wizard();
+        vm.set_remembered_folder(Some(elsewhere.path().to_path_buf()));
+        read(&vm, &project, readable(&project));
+        assert_eq!(vm.location().get(), text_of(elsewhere.path()));
+        assert_ne!(vm.location().get(), text_of(dir.path()));
+        assert!(vm.can_import().get());
+    });
+}
+
+/// With nothing remembered, and none of the writer's own folders to offer (a test sees
+/// none), the field asks: the folder holding the project is not a fallback either.
+#[test]
+fn with_no_folder_to_propose_the_field_asks() {
+    crate::test_support::with_real_messages(|| {
+        let (dir, project) = project_on_disk();
+        let vm = wizard();
+        vm.set_remembered_folder(None);
+        vm.inner
+            .inspection
+            .state()
+            .set(InspectState::Read(Rc::new(located(
+                readable(&project),
+                &project,
+            ))));
+        assert_eq!(vm.location().get(), "");
+        assert_ne!(vm.location().get(), text_of(dir.path()));
+        assert!(!vm.can_import().get());
+    });
+}
+
+/// A remembered folder inside the project read is not proposed, whatever was picked: a
+/// Browse into it stays in the memory even though this import refused it.
+#[test]
+fn a_remembered_folder_inside_the_project_is_not_proposed() {
+    crate::test_support::with_real_messages(|| {
+        let (_dir, project) = project_on_disk();
+        let files = project.join("Files");
+        std::fs::create_dir_all(&files).unwrap();
+        for pick in [project.clone(), project.join("project.scrivx")] {
+            let vm = wizard();
+            vm.set_remembered_folder(Some(files.clone()));
+            read(&vm, &pick, located(readable(&project), &project));
+            assert_eq!(vm.location().get(), "", "{pick:?}");
+            assert!(!vm.can_import().get(), "{pick:?}");
+        }
+    });
+}
+
+/// A folder the writer set on the Save page stays when the project is read again, and
+/// the remembered folder does not displace it.
+#[test]
+fn a_folder_the_writer_chose_outlives_a_new_reading() {
+    crate::test_support::with_real_messages(|| {
+        let (dir, project) = project_on_disk();
+        let remembered = tempfile::tempdir().unwrap();
+        let chosen = tempfile::tempdir().unwrap();
+        let vm = wizard();
+        vm.set_remembered_folder(Some(remembered.path().to_path_buf()));
+        read(&vm, &project, readable(&project));
+        vm.location().set(text_of(chosen.path()));
+        read(&vm, &project, readable(&project));
+        assert_eq!(vm.location().get(), text_of(chosen.path()));
+        vm.location().set(text_of(dir.path()));
+        read(&vm, &project, readable(&project));
+        assert_eq!(
+            vm.location().get(),
+            text_of(dir.path()),
+            "beside the project is still theirs to choose"
+        );
+        assert!(!refuses(vm.location_validation().get()));
+    });
 }
 
 /// Who last saved the project, as the manifest says; a project that names no version
@@ -681,7 +704,7 @@ fn a_readable_project_fills_every_page() {
         assert_eq!(
             vm.location().get(),
             dir.path().to_string_lossy().into_owned(),
-            "beside the project"
+            "the remembered folder"
         );
         assert_eq!(vm.title().get(), "The Lighthouse Keeper");
         assert_eq!(vm.author().get(), "Ada Marlowe, Ben Hart");
@@ -1182,10 +1205,10 @@ fn refuses(state: ValidationState) -> bool {
 }
 
 /// A folder or a file picked inside the project means the project around it (the wizard
-/// answers that question itself): the new project goes beside the project, never into
-/// it, and a folder inside it is refused whichever of its files was picked.
+/// answers that question itself): the new project never goes into it, and a folder
+/// inside it is refused whichever of its files was picked.
 #[test]
-fn a_pick_inside_the_project_defaults_beside_the_project() {
+fn a_pick_inside_the_project_defaults_outside_the_project() {
     crate::test_support::with_real_messages(|| {
         let (dir, project) = project_on_disk();
         let files = project.join("Files");
@@ -1198,6 +1221,7 @@ fn a_pick_inside_the_project_defaults_beside_the_project() {
             files.join("Workflow.scrivx"),
         ] {
             let vm = wizard();
+            vm.set_remembered_folder(Some(dir.path().to_path_buf()));
             read(&vm, &pick, located(readable(&project), &project));
             assert_eq!(vm.location().get(), text_of(dir.path()), "{pick:?}");
             assert!(vm.can_import().get(), "{pick:?}");
@@ -1213,19 +1237,16 @@ fn a_pick_inside_the_project_defaults_beside_the_project() {
     });
 }
 
-/// A folder holding the project is where the writer keeps their projects, not the
-/// project: the new project goes into it, beside the project, and it is not refused.
+/// A folder holding the project is not the project: remembered, it is proposed and not
+/// refused, and the new project goes into it.
 #[test]
 fn the_folder_around_the_project_is_not_the_project() {
     crate::test_support::with_real_messages(|| {
         let (dir, project) = project_on_disk();
         let vm = wizard();
+        vm.set_remembered_folder(Some(dir.path().to_path_buf()));
         read(&vm, dir.path(), located(readable(&project), &project));
-        assert_eq!(
-            vm.location().get(),
-            text_of(dir.path()),
-            "beside the project"
-        );
+        assert_eq!(vm.location().get(), text_of(dir.path()));
         assert!(!refuses(vm.location_validation().get()));
         assert!(vm.can_import().get());
         vm.location().set(text_of(&project.join("Files")));
@@ -1290,7 +1311,8 @@ fn a_folder_inside_the_project_is_refused_however_it_is_spelled() {
 }
 
 /// A backup Scrivener made, wherever its folder is and whatever it is called: the new
-/// project does not go into the backup folder by default.
+/// project does not go into the backup folder by default, since the folder holding a
+/// source never is the default.
 #[test]
 fn a_backup_folder_is_never_the_default_whatever_its_name() {
     crate::test_support::with_real_messages(|| {
@@ -1555,6 +1577,7 @@ fn review_again_keeps_what_the_writer_chose() {
     let app_ctx = Rc::new(AppContext::new());
     let job = ProjectImportJob::new(app_ctx.clone());
     let vm = ImportScrivenerViewModel::new(app_ctx.clone(), job);
+    vm.set_remembered_folder(Some(dir.path().to_path_buf()));
     let mut tree = crate::test_support::tree_with_events(&app_ctx);
     let several = ScrivenerAnalysisDto {
         outcome: ScrivenerAnalysisOutcome::Choose,
@@ -1923,6 +1946,7 @@ fn the_record_names_the_project_read_and_the_writers_answers() {
             project_path: text_of(&project),
             ..readable(&project)
         };
+        vm.set_remembered_folder(Some(dir.path().to_path_buf()));
         // The writer picked the folder around the project.
         read(&vm, dir.path(), analysis);
         vm.inner

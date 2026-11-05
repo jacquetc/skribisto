@@ -1,13 +1,21 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-//! The destination half of the two project importers' forms, Plume Creator and
-//! Manuskript: a folder and a file name that become `<folder>/<name>.skrib`.
+//! The destination half of the project importers' forms, Plume Creator, Manuskript and
+//! Scrivener: a folder and a file name that become `<folder>/<name>.skrib`.
 //!
-//! Shared because both forms ask the same two questions of the same disk in the
+//! Shared because the forms ask the same two questions of the same disk in the
 //! same way; each feature supplies only its own words ([`DestinationMessages`]).
-//! Besides the path arithmetic, two rules live here:
+//! Besides the path arithmetic, three rules live here:
 //!
+//! * **A new project goes where the writer keeps new projects**
+//!   ([`ImportDestination::proposed_folder`]): the folder remembered for them, else the
+//!   documents folder, else home. Never by default beside what it came from. The folder
+//!   a source sits in says where another program keeps its projects, which can be its sync
+//!   folder, its backups, its templates in application data, a download folder or a USB
+//!   key: an import is the last the writer sees of that place, and the new project is
+//!   what they go on writing in. A folder the writer chose keeps winning, and Browse
+//!   records it for next time ([`destination_picker`]).
 //! * **The checks are cached.** The folder check writes a probe file, and a
 //!   derived signal would run it on every read (see [`super::form_checks`]).
 //!   Both verdicts are worked out when the folder or the name is set,
@@ -30,8 +38,11 @@ use std::rc::Rc;
 
 use teksilo::i18n::LocalizedString;
 use teksilo::prelude::*;
-use teksilo::widgets::{MessageBox, MessageBoxButtons, ValidationState};
+use teksilo::widgets::{
+    FilePickerField, FilePickerKind, MessageBox, MessageBoxButtons, ValidationState,
+};
 
+use crate::models::{FolderMemoryService, FolderPurpose};
 use crate::sessions::WorkRegistry;
 use crate::shared::form_checks::{CachedValidation, FolderMessages, folder_state};
 use crate::shell::open_registry;
@@ -89,6 +100,69 @@ fn name_state(target: &str, messages: &DestinationMessages) -> ValidationState {
     }
 }
 
+/// The first of `folders` a new project can go to: one a path string can name, since
+/// the form's field holds one, and that `usable` accepts.
+fn first_usable(
+    folders: impl IntoIterator<Item = Option<PathBuf>>,
+    usable: &dyn Fn(&Path) -> bool,
+) -> Option<PathBuf> {
+    folders
+        .into_iter()
+        .flatten()
+        .find(|folder| folder.to_str().is_some() && usable(folder))
+}
+
+/// Where a new project goes when no folder is remembered: the writer's documents folder,
+/// else their home folder. A test sees neither: it would probe the folders of whoever
+/// runs it, and could then write there.
+fn standard_folders() -> [Option<PathBuf>; 2] {
+    if cfg!(test) {
+        return [None, None];
+    }
+    [dirs::document_dir(), dirs::home_dir()]
+}
+
+/// Whether `location` is, or is inside, `folder`: the folders themselves compared,
+/// whatever the spelling (a `..`, a link, a case or a Unicode normalisation the filesystem
+/// does not tell apart), as the open-project registry compares two projects.
+pub(crate) fn is_inside(location: &Path, folder: &Path) -> bool {
+    if location.as_os_str().is_empty() || folder.as_os_str().is_empty() {
+        return false;
+    }
+    let key = |path: &Path| open_registry::project_key(&path.to_string_lossy());
+    Path::new(&key(location)).starts_with(Path::new(&key(folder))) || location.starts_with(folder)
+}
+
+/// The folder the writer last chose for a new project, whichever door they chose it at.
+/// Read where a form opens, since a form's view-model has no context of its own.
+pub(crate) fn remembered_folder(ctx: &EventContext) -> Option<PathBuf> {
+    ctx.app_state::<FolderMemoryService>()
+        .and_then(|svc| svc.last(FolderPurpose::NewProjectLocation))
+}
+
+/// The folder field of an import form. Browse opens in the folder remembered for new
+/// projects (`start`) and records the one chosen, under the purpose New Work uses: one
+/// answer to "where do my projects go", whichever door asked. A `FilePickerField` builds
+/// its dialog itself, so it has to be told the folder up front, and a wizard's page has
+/// no `BuildContext` to read it from.
+pub(crate) fn destination_picker(
+    location: Signal<String>,
+    validation: Signal<ValidationState>,
+    start: Option<PathBuf>,
+) -> FilePickerField {
+    let field = FilePickerField::new(location)
+        .kind(FilePickerKind::PickFolder)
+        .dialog_title(tr!(project_import_location_title()))
+        .validation(validation)
+        .on_pick(|res, ctx| {
+            crate::models::remember_pick(ctx, FolderPurpose::NewProjectLocation, res);
+        });
+    match start {
+        Some(dir) => field.starting_dir(dir),
+        None => field,
+    }
+}
+
 /// The destination folder and file name of an import form, with their checks.
 ///
 /// Cheap to clone; clones share every signal.
@@ -98,6 +172,9 @@ pub(crate) struct ImportDestination {
     name: Signal<String>,
     location_check: CachedValidation,
     name_check: CachedValidation,
+    /// The folder remembered for new projects, the first folder proposed.
+    remembered: Rc<RefCell<Option<PathBuf>>>,
+    messages: &'static DestinationMessages,
 }
 
 impl ImportDestination {
@@ -123,7 +200,20 @@ impl ImportDestination {
             name,
             location_check,
             name_check,
+            remembered: Rc::new(RefCell::new(None)),
+            messages,
         }
+    }
+
+    /// Set the folder remembered for new projects ([`remembered_folder`]), when the form
+    /// opens.
+    pub(crate) fn set_remembered_folder(&self, folder: Option<PathBuf>) {
+        *self.remembered.borrow_mut() = folder;
+    }
+
+    /// The folder remembered for new projects, where the folder field's Browse opens.
+    pub(crate) fn remembered_folder(&self) -> Option<PathBuf> {
+        self.remembered.borrow().clone()
     }
 
     /// The destination folder, bound by the view's folder picker.
@@ -142,10 +232,35 @@ impl ImportDestination {
         self.name.set(String::new());
     }
 
-    /// Default both fields from a picked source: its folder and `stem`.
-    pub(crate) fn default_from(&self, folder: Option<&str>, stem: String) {
-        if let Some(folder) = folder {
-            self.location.set(folder.to_string());
+    /// The folder a new project goes to unless the writer says otherwise: the remembered
+    /// one, else the documents folder, else home, skipping one the disk refuses and one
+    /// `in_source` says is inside the project being imported. `None` when none will do:
+    /// the field then stays as it is and asks.
+    ///
+    /// Probes each folder it considers, so it runs when a source is picked or read, never
+    /// in a derived signal.
+    pub(crate) fn proposed_folder(&self, in_source: &dyn Fn(&Path) -> bool) -> Option<PathBuf> {
+        let [documents, home] = standard_folders();
+        first_usable(
+            [self.remembered_folder(), documents, home],
+            &|folder: &Path| {
+                !in_source(folder)
+                    && matches!(
+                        folder_state(&folder.to_string_lossy(), &self.messages.folder),
+                        ValidationState::None
+                    )
+            },
+        )
+    }
+
+    /// Fill the form from a picked source: `stem` names the new project, and an empty
+    /// folder field gets [`Self::proposed_folder`]. A folder already there stays: it is the
+    /// writer's own or the proposal already made, and picking another source changes neither.
+    pub(crate) fn default_from(&self, in_source: &dyn Fn(&Path) -> bool, stem: String) {
+        if self.location.get().trim().is_empty()
+            && let Some(folder) = self.proposed_folder(in_source)
+        {
+            self.location.set(folder.to_string_lossy().into_owned());
         }
         self.name.set(stem);
     }
@@ -489,6 +604,103 @@ mod tests {
             build_target(&folder.to_string_lossy(), "novel"),
             folder.join("novel.skrib").to_string_lossy()
         );
+    }
+
+    /// The folder remembered first, then documents, then home; one the check refuses is
+    /// passed over, and with none left the field is left to ask.
+    #[test]
+    fn a_new_project_goes_to_the_first_folder_that_will_have_it() {
+        let folders = |remembered: Option<&str>| {
+            [
+                remembered.map(PathBuf::from),
+                Some(PathBuf::from("/documents")),
+                Some(PathBuf::from("/home/writer")),
+            ]
+        };
+        let all = |_: &Path| true;
+        assert_eq!(
+            first_usable(folders(Some("/novels")), &all),
+            Some(PathBuf::from("/novels"))
+        );
+        assert_eq!(
+            first_usable(folders(None), &all),
+            Some(PathBuf::from("/documents"))
+        );
+        assert_eq!(
+            first_usable(folders(Some("/novels")), &|f: &Path| f
+                == Path::new("/home/writer")),
+            Some(PathBuf::from("/home/writer"))
+        );
+        assert_eq!(
+            first_usable(folders(Some("/novels")), &|_: &Path| false),
+            None
+        );
+    }
+
+    /// A folder gone since it was remembered, or one the caller says is inside the source,
+    /// is not proposed: the field then asks.
+    #[test]
+    fn a_remembered_folder_that_will_not_do_is_not_proposed() {
+        let dir = tempfile::tempdir().unwrap();
+        let dest = ImportDestination::new(&MESSAGES);
+        dest.set_remembered_folder(Some(dir.path().to_path_buf()));
+        assert_eq!(
+            dest.proposed_folder(&|_| false).as_deref(),
+            Some(dir.path())
+        );
+        assert_eq!(dest.proposed_folder(&|_| true), None);
+        dest.set_remembered_folder(Some(dir.path().join("gone")));
+        assert_eq!(dest.proposed_folder(&|_| false), None);
+    }
+
+    /// The form fills an empty folder field, and leaves one holding a folder alone: picking
+    /// another source does not undo what the writer chose.
+    #[test]
+    fn a_folder_already_in_the_field_stays_when_a_source_is_picked() {
+        let remembered = tempfile::tempdir().unwrap();
+        let dest = ImportDestination::new(&MESSAGES);
+        dest.set_remembered_folder(Some(remembered.path().to_path_buf()));
+        dest.default_from(&|_| false, "first".into());
+        assert_eq!(dest.location().get(), remembered.path().to_string_lossy());
+        assert_eq!(dest.name().get(), "first");
+
+        dest.location().set("/my/own/choice".into());
+        dest.default_from(&|_| false, "second".into());
+        assert_eq!(dest.location().get(), "/my/own/choice");
+        assert_eq!(dest.name().get(), "second", "the name follows the source");
+    }
+
+    /// A proposed folder is checked as a chosen one is: the file already there with the
+    /// project's name asks before it is replaced.
+    #[test]
+    fn a_proposed_folder_still_warns_of_a_file_it_would_replace() {
+        let remembered = tempfile::tempdir().unwrap();
+        std::fs::write(remembered.path().join("novel.skrib"), b"x").unwrap();
+        let dest = ImportDestination::new(&MESSAGES);
+        dest.set_remembered_folder(Some(remembered.path().to_path_buf()));
+        dest.default_from(&|_| false, "novel".into());
+        assert!(matches!(
+            dest.name_validation().get(),
+            ValidationState::Warning(_)
+        ));
+    }
+
+    /// Every import form's folder field is [`destination_picker`], which is what makes its
+    /// Browse remember the folder chosen, and every form reads the remembered folder when
+    /// it opens. Read from the sources: the defect is a field built by hand, and no
+    /// headless tree can answer a native file dialog.
+    #[test]
+    fn every_import_form_uses_the_picker_that_remembers() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+        for form in ["import_plume", "import_manuskript", "import_scrivener"] {
+            let text = std::fs::read_to_string(root.join(form).join("panel.rs")).unwrap();
+            assert!(text.contains("destination_picker("), "{form}");
+            assert!(text.contains("remembered_folder(ctx)"), "{form}");
+            assert!(
+                !text.contains("FilePickerField::new(vm.location())"),
+                "{form}"
+            );
+        }
     }
 
     /// The name's verdict follows both fields: a name that is free in one folder

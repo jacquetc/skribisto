@@ -50,7 +50,7 @@ In seguito puoi cambiare il tipo di ogni elemento dal raccoglitore. Consulta [il
 
 ## Salva il nuovo progetto
 
-*Salvataggio* chiede una *Cartella di destinazione* e un *Nome del file*, per impostazione predefinita accanto al progetto Scrivener. Mostra anche il *Titolo*, l'*Autore* e la *Lingua* indicati dal progetto. Cambia quello che vuoi prima di importare.
+*Salvataggio* chiede una *Cartella di destinazione* e un *Nome del file*. La cartella proposta è l'ultima che hai scelto per un nuovo progetto o, finché non ne hai scelta una, la tua cartella Documenti, non quella che contiene il progetto Scrivener. Mostra anche il *Titolo*, l'*Autore* e la *Lingua* indicati dal progetto. Cambia quello che vuoi prima di importare.
 
 Scrivener 3 conserva il titolo e l'autore solo nelle impostazioni di compilazione. Finché non li imposti lì, conserva il nome che il progetto aveva quando l'hai creato, e nessun autore: la pagina propone allora quel nome e lascia vuoto *Autore*. Un modello propone il proprio titolo.
 

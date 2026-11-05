@@ -85,9 +85,10 @@ Every item can be retyped afterwards from the binder. See
 
 ## Saving the new project
 
-*Save* asks for a *Destination folder* and a *File name*, beside your Scrivener project by
-default. It also shows the *Title*, *Author* and *Language* your project states. Change any
-of them before you import.
+*Save* asks for a *Destination folder* and a *File name*. The folder it proposes is the last
+one you chose for a new project, or your documents folder until you have chosen one, not the
+folder holding your Scrivener project. It also shows the *Title*, *Author* and *Language* your
+project states. Change any of them before you import.
 
 Scrivener 3 keeps a title and an author only in its compile settings. Until you set them
 there, it keeps the name the project had when you created it, and no author: the page then

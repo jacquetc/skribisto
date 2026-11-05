@@ -93,9 +93,11 @@ Chaque élément peut être retypé ensuite depuis le classeur. Voir
 
 ## Enregistrer le nouveau projet
 
-*Enregistrer* demande un *Dossier de destination* et un *Nom du fichier*, à côté de votre
-projet Scrivener par défaut. La page montre aussi le *Titre*, l’*Auteur* et la *Langue* que
-votre projet indique. Modifiez-les avant d’importer si besoin.
+*Enregistrer* demande un *Dossier de destination* et un *Nom du fichier*. Le dossier proposé
+est le dernier que vous avez choisi pour un nouveau projet, ou votre dossier Documents tant que
+vous n’en avez choisi aucun, et non celui qui contient votre projet Scrivener. La page montre
+aussi le *Titre*, l’*Auteur* et la *Langue* que votre projet indique. Modifiez-les avant
+d’importer si besoin.
 
 Scrivener 3 ne garde un titre et un auteur que dans ses réglages de compilation. Tant que vous
 ne les y avez pas indiqués, il garde le nom que le projet avait à sa création, et aucun

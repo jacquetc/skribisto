@@ -91,9 +91,10 @@ Después, cualquier elemento puede cambiar de tipo desde el archivador. Consulte
 
 ## Guardar el proyecto nuevo
 
-*Guardar* pide una *Carpeta de destino* y un *Nombre del archivo*, por defecto junto a su
-proyecto de Scrivener. También muestra el *Título*, el *Autor* y el *Idioma* que indica su
-proyecto. Cambie cualquiera de ellos antes de importar.
+*Guardar* pide una *Carpeta de destino* y un *Nombre del archivo*. La carpeta propuesta es la
+última que eligió para un proyecto nuevo o, mientras no haya elegido ninguna, su carpeta
+Documentos, no la que contiene su proyecto de Scrivener. También muestra el *Título*, el *Autor*
+y el *Idioma* que indica su proyecto. Cambie cualquiera de ellos antes de importar.
 
 Scrivener 3 solo guarda un título y un autor en sus ajustes de compilación. Hasta que los
 defina allí, conserva el nombre que tenía el proyecto cuando lo creó, y ningún autor: la

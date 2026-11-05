@@ -89,8 +89,9 @@ znajdziesz w temacie [jak zbudowana jest książka](:help-writing-model).
 
 ## Zapisanie nowego projektu
 
-Strona *Zapis* prosi o *Folder docelowy* i *Nazwę pliku*; domyślnie jest to miejsce obok
-Twojego projektu Scrivener. Pokazuje też *Tytuł*, *Autora* i *Język* podane w projekcie.
+Strona *Zapis* prosi o *Folder docelowy* i *Nazwę pliku*. Proponowany folder to ten, który
+ostatnio wybrano dla nowego projektu, a dopóki nie wybrano żadnego, folder Dokumenty, nie zaś
+folder z Twoim projektem Scrivener. Pokazuje też *Tytuł*, *Autora* i *Język* podane w projekcie.
 Każde z nich możesz zmienić przed importem.
 
 Scrivener 3 przechowuje tytuł i autora tylko w ustawieniach kompilacji. Dopóki ich tam nie

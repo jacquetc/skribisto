@@ -22,8 +22,8 @@ use teksilo::core::styles::PanelVariant;
 use teksilo::i18n::LocalizedString;
 use teksilo::prelude::*;
 use teksilo::widgets::{
-    Button, ButtonVariant, Divider, Expand, FilePickerField, FilePickerKind, FixedSize, FormLayout,
-    HStack, IconButton, Padding, Panel, ScrollArea, Spacer, TextInput, TextWidget, VStack,
+    Button, ButtonVariant, Divider, Expand, FixedSize, FormLayout, HStack, IconButton, Padding,
+    Panel, ScrollArea, Spacer, TextInput, TextWidget, VStack,
 };
 
 use crate::import_manuskript::ImportManuskriptViewModel;
@@ -51,6 +51,7 @@ pub(crate) fn present_import_manuskript(ctx: &mut EventContext) {
         return;
     };
     vm.reset_form();
+    vm.set_remembered_folder(crate::shared::import_destination::remembered_folder(ctx));
     ctx.present_modal(
         teksilo::core::modal::ModalRequest::deferred(move |t| {
             t.add(ImportManuskriptPanel::new(vm))
@@ -193,10 +194,11 @@ impl ImportManuskriptPanel {
             // ── Destination folder ────────────────────────────────────────
             .line(
                 Self::field_label(tr!(project_import_location())),
-                FilePickerField::new(vm.location())
-                    .kind(FilePickerKind::PickFolder)
-                    .dialog_title(tr!(project_import_location_title()))
-                    .validation(vm.location_validation()),
+                crate::shared::import_destination::destination_picker(
+                    vm.location(),
+                    vm.location_validation(),
+                    vm.remembered_folder(),
+                ),
             )
             // ── Output name + "Will create …" preview ─────────────────────
             .line(

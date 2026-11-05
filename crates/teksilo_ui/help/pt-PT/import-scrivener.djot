@@ -87,9 +87,10 @@ Qualquer item pode mudar de tipo depois, a partir do arquivador. Consulte
 
 ## Guardar o novo projeto
 
-A página *Guardar* pede uma *Pasta de destino* e um *Nome do ficheiro*, por predefinição ao lado
-do seu projeto Scrivener. Mostra também o *Título*, o *Autor* e o *Idioma* que o seu projeto
-indica. Altere qualquer um deles antes de importar.
+A página *Guardar* pede uma *Pasta de destino* e um *Nome do ficheiro*. A pasta proposta é a
+última que escolheu para um novo projeto ou, enquanto não tiver escolhido nenhuma, a sua pasta
+Documentos, e não a que contém o seu projeto Scrivener. Mostra também o *Título*, o *Autor* e o
+*Idioma* que o seu projeto indica. Altere qualquer um deles antes de importar.
 
 O Scrivener 3 só guarda um título e um autor nas suas definições de compilação. Enquanto não os
 definir lá, mantém o nome que o projeto tinha quando o criou, e nenhum autor: a página propõe

@@ -8,8 +8,8 @@
 //! mirroring the New Work panel's chrome (title strip + close, full-width rule,
 //! bottom action bar) and structure (a two-column [`FormLayout`]). All logic lives
 //! on [`ImportPlumeViewModel`]; this view is thin — it binds the VM's signals and
-//! forwards the footer buttons to its methods. Picking a source defaults the
-//! destination folder + name (same folder, same base name → `.skrib`); a warning
+//! forwards the footer buttons to its methods. Picking a source fills the
+//! destination (the folder new projects go to, its base name → `.skrib`); a warning
 //! notes that trashed items are not migrated. The words it shares with the
 //! Manuskript form are the shared `project-import-*` keys.
 
@@ -46,6 +46,7 @@ pub(crate) fn present_import_plume(ctx: &mut EventContext) {
         return;
     };
     vm.reset_form();
+    vm.set_remembered_folder(crate::shared::import_destination::remembered_folder(ctx));
     ctx.present_modal(
         teksilo::core::modal::ModalRequest::deferred(move |t| t.add(ImportPlumePanel::new(vm)))
             .presentation(teksilo::core::modal::ModalPresentation::InTree)
@@ -150,10 +151,11 @@ impl ImportPlumePanel {
             // ── Destination folder ────────────────────────────────────────
             .line(
                 Self::field_label(tr!(project_import_location())),
-                FilePickerField::new(vm.location())
-                    .kind(FilePickerKind::PickFolder)
-                    .dialog_title(tr!(project_import_location_title()))
-                    .validation(vm.location_validation()),
+                crate::shared::import_destination::destination_picker(
+                    vm.location(),
+                    vm.location_validation(),
+                    vm.remembered_folder(),
+                ),
             )
             // ── Output name + "Will create …" preview ─────────────────────
             .line(

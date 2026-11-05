@@ -47,6 +47,7 @@ Description:
 - "Pictures show in the text again when a project is opened, a Scrivener project or a document is imported, or a text is reopened. Since version 3.0.5 they appeared as blank spaces of the right size, though they were safe in the project and present in exports"
 - "A picture added after a project was saved to a new place, with Save As or by the first save of a new folder project, shows when pasted into a text that was already open. It stayed a blank space until the project was closed"
 - "Bold, italic, headings and other formatting are saved with your project even if you type nothing afterwards. They used to stay in the open text and be gone the next time you opened the project. After an undo, Redo is offered straight away, and the Edit menu says “Undo the last change to this text”. It used to stay unavailable, and to call every change typing"
+- "When you import a project from Scrivener, Manuskript or Plume Creator, Skribisto suggests the folder you last chose for a new project, or your documents folder, instead of the folder your old project sits in. You can still choose any other folder, and Skribisto remembers it next time"
 ---
 Version: 3.3.0
 Date: 2026-10-27

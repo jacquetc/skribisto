@@ -67,8 +67,8 @@ use crate::binder::create_labels::recommendation_label;
 use crate::intents::AppIntent;
 use crate::models::scrivener_import_run::ScrivenerImportRun;
 use crate::models::scrivener_inspection::{InspectState, ScrivenerInspection};
-use crate::shared::form_checks::{CachedValidation, DiskChecked, FolderMessages, folder_state};
-use crate::shared::import_destination::{DestinationMessages, ImportDestination};
+use crate::shared::form_checks::{CachedValidation, DiskChecked, FolderMessages};
+use crate::shared::import_destination::{DestinationMessages, ImportDestination, is_inside};
 use crate::shared::import_warnings::SCRIVENER as NOTICE;
 use crate::shared::project_import::{
     ImportOutcome, Importer, ProjectImportJob, ReviewAgain, SeeReport,
@@ -525,14 +525,11 @@ struct Inner {
     /// The source the current inspection reads, as it was submitted.
     inspected: RefCell<String>,
     /// The project the analysis on the page read, as it says it (else the source
-    /// submitted): what the new project goes beside, and what a destination may not be
-    /// inside.
+    /// submitted): what a destination may not be inside.
     read_source: Signal<String>,
     /// The structure choices an import asked for, applied again once the project reads:
     /// **Review the import again**.
     carried: RefCell<Option<Vec<ScrivenerChoice>>>,
-    /// The folder remembered for new projects, the default destination's second choice.
-    remembered_folder: RefCell<Option<PathBuf>>,
     answers: RefCell<Answers>,
     /// The questions to choose met so far, in the order they were asked.
     asked: RefCell<Vec<ScrivenerQuestion>>,
@@ -621,7 +618,6 @@ impl ImportScrivenerViewModel {
             inspected: RefCell::new(String::new()),
             read_source,
             carried: RefCell::new(None),
-            remembered_folder: RefCell::new(None),
             answers: RefCell::new(Answers::default()),
             asked: RefCell::new(Vec::new()),
             accepted: RefCell::new(BTreeSet::new()),
@@ -768,11 +764,15 @@ impl ImportScrivenerViewModel {
         self.refresh_gates();
     }
 
-    /// The folder the writer last created a project in, the default destination when the
-    /// one beside the Scrivener project will not do. Read where an `EventContext` is at
-    /// hand, when the wizard opens.
+    /// The folder remembered for new projects, the destination proposed first. Read where
+    /// an `EventContext` is at hand, when the wizard opens.
     pub fn set_remembered_folder(&self, folder: Option<PathBuf>) {
-        *self.inner.remembered_folder.borrow_mut() = folder;
+        self.inner.destination.set_remembered_folder(folder);
+    }
+
+    /// Where the destination field's Browse opens.
+    pub fn remembered_folder(&self) -> Option<PathBuf> {
+        self.inner.destination.remembered_folder()
     }
 
     pub fn controller(&self) -> StepperController {
@@ -1585,8 +1585,9 @@ impl ImportScrivenerViewModel {
             .and(&idle)
     }
 
-    /// Fill the Save page from what the project states: its name, beside it, and its
-    /// title, author and language. A field the writer edited keeps what they wrote.
+    /// Fill the Save page from what the project states: its name, and its title, author
+    /// and language; the folder is where new projects go, never inside the project read. A
+    /// field the writer edited keeps what they wrote.
     fn fill_save_page(&self, analysis: &ScrivenerAnalysisDto) {
         let inner = &self.inner;
         inner.research_files.set(analysis.research_files);
@@ -1614,19 +1615,10 @@ impl ImportScrivenerViewModel {
             inner.destination.name().set(default_name(analysis));
         }
         if !inner.location_touched.get() {
-            let project = PathBuf::from(inner.read_source.get());
-            let folder = default_location(
-                &project,
-                is_backup(analysis),
-                &|path| {
-                    matches!(
-                        folder_state(&path.to_string_lossy(), &FOLDER),
-                        ValidationState::None
-                    )
-                },
-                inner.remembered_folder.borrow().clone(),
-                home_folder(),
-            );
+            let project = project_folder(Path::new(&inner.read_source.get()));
+            let folder = inner
+                .destination
+                .proposed_folder(&|folder| is_inside(folder, &project));
             if let Some(folder) = folder {
                 inner
                     .destination
@@ -2202,12 +2194,7 @@ fn inside_state(location: &str, project: &str) -> ValidationState {
     if location.is_empty() || project.is_empty() {
         return ValidationState::None;
     }
-    let project = project_folder(Path::new(project));
-    let key = |path: &Path| crate::shell::open_registry::project_key(&path.to_string_lossy());
-    let (location_key, project_key) = (key(Path::new(location)), key(&project));
-    if Path::new(&location_key).starts_with(Path::new(&project_key))
-        || Path::new(location).starts_with(&project)
-    {
+    if is_inside(Path::new(location), &project_folder(Path::new(project))) {
         ValidationState::Error(tr!(import_scrivener_location_inside_project()))
     } else {
         ValidationState::None
@@ -2221,15 +2208,6 @@ fn read_project(analysis: &ScrivenerAnalysisDto, submitted: &str) -> String {
     } else {
         analysis.project_path.clone()
     }
-}
-
-/// Whether the analysis found the project to be one of Scrivener's backups: the folder
-/// holding it is then a backup folder, whatever it is called.
-fn is_backup(analysis: &ScrivenerAnalysisDto) -> bool {
-    analysis
-        .notices
-        .iter()
-        .any(|n| messages::key_of(n) == "scrivener-notice-source-is-backup")
 }
 
 /// The hint under the path, by platform.
@@ -2251,46 +2229,6 @@ pub(crate) fn project_folder(source: &Path) -> PathBuf {
         Some(parent) if is_manifest => parent.to_path_buf(),
         _ => source.to_path_buf(),
     }
-}
-
-/// Whether `folder` is, or is inside, a folder of Scrivener's automatic backups, where
-/// Scrivener's own manual says never to work.
-fn in_backups(folder: &Path) -> bool {
-    folder.components().any(|c| {
-        c.as_os_str()
-            .to_string_lossy()
-            .eq_ignore_ascii_case("backups")
-    })
-}
-
-/// Where the new project goes by default: beside the Scrivener project the analysis read
-/// (`project`), unless that folder cannot be written to or holds Scrivener's backups (the
-/// project is a backup, or the folder is named for them), or cannot be named in a
-/// string; then the folder remembered for new projects; then the writer's home folder.
-pub(crate) fn default_location(
-    project: &Path,
-    project_is_backup: bool,
-    is_writable: &dyn Fn(&Path) -> bool,
-    remembered: Option<PathBuf>,
-    home: Option<PathBuf>,
-) -> Option<PathBuf> {
-    let project = project_folder(project);
-    let beside = project
-        .parent()
-        .filter(|beside| !beside.as_os_str().is_empty() && beside.to_str().is_some())
-        .map(Path::to_path_buf)
-        .filter(|beside| !project_is_backup && !in_backups(beside));
-    [beside, remembered, home]
-        .into_iter()
-        .flatten()
-        .find(|folder| is_writable(folder))
-}
-
-/// The writer's home folder.
-fn home_folder() -> Option<PathBuf> {
-    std::env::var_os("HOME")
-        .or_else(|| std::env::var_os("USERPROFILE"))
-        .map(PathBuf::from)
 }
 
 /// The tags the language field offers: every dictionary's, and `proposed` first when no

@@ -5,9 +5,9 @@
 //!
 //! Single-instance live state, created once in `startup.rs` and registered as
 //! app-state (so the panel can reach it). It owns the form's `Signal`s (source
-//! `.plume`, destination folder, output name). Picking a source defaults the
-//! destination to the *same folder* and *same base name* (with `.skrib`), still
-//! editable.
+//! `.plume`, destination folder, output name). Picking a source names the new
+//! project after it (with `.skrib`) and proposes the folder new projects go to
+//! ([`ImportDestination::proposed_folder`]), both still editable.
 //!
 //! Everything from the moment **Import** is pressed belongs to the shared
 //! `shared::project_import::ProjectImportJob`, which this form drives through
@@ -19,7 +19,7 @@
 //! The destination is `shared::import_destination`, shared with the Manuskript
 //! form: its checks run when a field changes rather than on every read.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use teksilo::prelude::*; // EventContext, Signal, tr!, lit!, FileDialogResult
 use teksilo::widgets::ValidationState;
@@ -171,15 +171,26 @@ impl ImportPlumeViewModel {
         self.destination.name()
     }
 
-    /// React to the source file picker: default the destination folder + name
-    /// from the picked `.plume` (same folder, same base name → `.skrib`). Only
-    /// overwrites the destination fields — the source signal is already set by
-    /// the picker.
+    /// The folder remembered for new projects, the destination proposed first. Read where
+    /// the form opens.
+    pub fn set_remembered_folder(&self, folder: Option<PathBuf>) {
+        self.destination.set_remembered_folder(folder);
+    }
+
+    /// Where the destination field's Browse opens.
+    pub fn remembered_folder(&self) -> Option<PathBuf> {
+        self.destination.remembered_folder()
+    }
+
+    /// React to the source file picker: name the new project after the picked `.plume`,
+    /// and propose a folder if the form has none (a `.plume` is one file, so no folder is
+    /// inside it). Only touches the destination fields: the source signal is already set
+    /// by the picker.
     pub fn apply_source_defaults(&self, res: &FileDialogResult) {
         if let FileDialogResult::File(Some(path)) = res {
             let source = path.to_string_lossy().into_owned();
             self.destination
-                .default_from(path.parent().and_then(|p| p.to_str()), output_stem(&source));
+                .default_from(&|_| false, output_stem(&source));
         }
     }
 
@@ -330,19 +341,28 @@ mod tests {
         assert_eq!(output_stem("nodir.plume"), "nodir");
     }
 
+    /// The new project is named after the source and goes where new projects go, never
+    /// beside the source. A folder the writer chose stays through another pick.
     #[test]
-    fn picking_a_source_defaults_destination() {
+    fn picking_a_source_proposes_the_remembered_folder_not_its_own() {
+        let projects = tempfile::tempdir().unwrap();
+        let folder = projects.path().to_string_lossy().into_owned();
         let vm = form(&Rc::new(AppContext::new()));
+        vm.set_remembered_folder(Some(projects.path().to_path_buf()));
         let res = FileDialogResult::File(Some(PathBuf::from("/books/My Novel.plume")));
         vm.apply_source_defaults(&res);
-        assert_eq!(vm.location().get(), "/books");
+        assert_eq!(vm.location().get(), folder);
         assert_eq!(vm.name().get(), "My Novel");
         assert_eq!(
             vm.target_path().get(),
-            PathBuf::from("/books")
-                .join("My Novel.skrib")
-                .to_string_lossy()
+            projects.path().join("My Novel.skrib").to_string_lossy()
         );
+
+        vm.location().set("/my/own/choice".into());
+        let res = FileDialogResult::File(Some(PathBuf::from("/books/Another.plume")));
+        vm.apply_source_defaults(&res);
+        assert_eq!(vm.location().get(), "/my/own/choice");
+        assert_eq!(vm.name().get(), "Another");
     }
 
     #[test]

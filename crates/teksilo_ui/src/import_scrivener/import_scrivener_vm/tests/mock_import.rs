@@ -56,6 +56,7 @@ impl Walk {
         let sent = app_ctx.event_hub.subscribe_receiver();
         let job = ProjectImportJob::new(app_ctx.clone());
         let vm = ImportScrivenerViewModel::new(app_ctx.clone(), job.clone());
+        vm.set_remembered_folder(Some(dir.path().to_path_buf()));
         let archive = Rc::new(NotificationArchiveModel::in_memory());
         let toasts = ToastRegistry::with_archive(
             ToastInstallOptions {
@@ -79,7 +80,7 @@ impl Walk {
         // Review: one choice of the writer's, which the report records.
         vm.pick(PickTarget::Root(27), 3);
         assert!(vm.can_leave_review_step().get());
-        // Save: what the page proposes, beside the project.
+        // Save: what the page proposes, the folder remembered for new projects.
         assert!(vm.can_import().get(), "the Save page is complete");
         Walk {
             app_ctx,

@@ -6712,6 +6712,7 @@ dependencies = [
  "chrono",
  "csv",
  "dhat",
+ "dirs",
  "encoding_rs",
  "interprocess",
  "jiff",

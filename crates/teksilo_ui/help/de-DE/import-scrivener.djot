@@ -94,9 +94,11 @@ Typen bedeuten, erklärt [Wie ein Buch aufgebaut ist](:help-writing-model).
 
 ## Das neue Projekt speichern
 
-*Speichern* fragt nach *Zielordner* und *Dateiname*, standardmäßig neben Ihrem
-Scrivener-Projekt. Die Seite zeigt außerdem *Titel*, *Autor* und *Sprache*, die Ihr Projekt
-angibt. Ändern Sie davon, was Sie möchten, bevor Sie importieren.
+*Speichern* fragt nach *Zielordner* und *Dateiname*. Vorgeschlagen wird der Ordner, den Sie
+zuletzt für ein neues Projekt gewählt haben, und solange Sie keinen gewählt haben, Ihr
+Dokumente-Ordner, nicht der Ordner mit Ihrem Scrivener-Projekt. Die Seite zeigt außerdem
+*Titel*, *Autor* und *Sprache*, die Ihr Projekt angibt. Ändern Sie davon, was Sie möchten, bevor
+Sie importieren.
 
 Scrivener 3 speichert Titel und Autor nur in seinen Kompilierungseinstellungen. Solange Sie sie
 dort nicht festlegen, behält es den Namen, den das Projekt bei seiner Erstellung hatte, und
