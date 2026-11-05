@@ -1170,18 +1170,24 @@ pub fn folder_segmented(
 ///
 /// A free function rather than an inline `.child(..)` only so the two panes that render a
 /// subtitle (`folder_own_pane` and `heading`) cannot drift apart. `TagDotsRow` collapses to
-/// nothing when the item is untagged, so this costs an untagged item no height.
+/// nothing when the item is untagged, so this costs an untagged item no height, until a
+/// keyboard writer tabs onto it and it draws its placeholder: this is the item's own page,
+/// the one place a first tag can be added without leaving it.
 fn subtitle_tag_dots(tab: &ContentTab) -> impl Widget {
     // The dots hug their content, and `centered` centres whatever it is given inside the
     // pane — so on their own they floated in the middle of the page, aligned with nothing.
     // The trailing spacer pushes the row out to the full column width so the dots start at
     // the same left edge as the title and the prose beneath them.
     HStack::new()
-        .child(crate::tags::TagDotsRow::new(
-            tab.open_doc.tags.clone(),
-            tab.set_tags_fn(),
-            crate::tags::tag_chip::MAX_VISIBLE_EDITOR,
-        ))
+        .child(
+            crate::tags::TagDotsRow::new(
+                tab.open_doc.tags.clone(),
+                tab.set_tags_fn(),
+                crate::tags::tag_chip::MAX_VISIBLE_EDITOR,
+            )
+            .reachable_when_empty()
+            .with_palette(tab.tags()),
+        )
         .child(Expand::horizontal().child(Spacer::new()))
 }
 

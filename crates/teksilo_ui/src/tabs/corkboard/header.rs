@@ -6,67 +6,79 @@
 #[allow(unused_imports)]
 use super::*;
 
+use teksilo::widgets::{MaxSize, Shrinkable};
+
+use crate::tabs::shared::flow_row::{FILTER_MIN_WIDTH, FlowRow, ROW_LINE_GAP};
+
 // ── Header ────────────────────────────────────────────────────────────────────
 
 pub(super) fn corkboard_header(vm: &CorkboardViewModel) -> impl Widget {
-    // The four header widgets are plain Rust struct literals, so each one is
-    // parenthesised: a bare `Name { .. }` at body position is a `teksu!` *element*,
-    // which would lower to `Name::new().vm(..)` instead of the struct.
-    let top = teksu!(
-        HStack {
-            spacing: 10.0
-            Expand::horizontal {
-                child: (CorkboardBreadcrumb {
-                    vm: vm.clone(),
-                    root: None,
-                })
-            }
-            child: (CorkboardCount {
-                vm: vm.clone(),
-                root: None,
-            })
-            child: (NestedFlatToggle {
-                vm: vm.clone(),
-                index: Signal::new(0),
-                root: None,
-            })
-            child: (CorkboardCreateButton {
-                vm: vm.clone(),
-                root: None,
-            })
-        }
-    );
+    // `FlowRow` rather than `HStack`: this strip sits in the centre column, which docks on
+    // both sides can leave narrower than the sum of what the strip holds. An `HStack` then
+    // spends the deficit on its one flexible child, and a filter with no width at all was
+    // still a Tab stop. Here the line breaks instead, and the filter keeps a width to type in.
+    //
+    // The header widgets are plain Rust struct literals, so each one is parenthesised: a
+    // bare `Name { .. }` at body position is a `teksu!` *element*, which would lower to
+    // `Name::new().vm(..)` instead of the struct.
+    let top = FlowRow::new(10.0, ROW_LINE_GAP)
+        .fill_from_natural(CorkboardBreadcrumb {
+            vm: vm.clone(),
+            root: None,
+        })
+        .child(CorkboardCount {
+            vm: vm.clone(),
+            root: None,
+        })
+        .child(NestedFlatToggle {
+            vm: vm.clone(),
+            index: Signal::new(0),
+            root: None,
+        })
+        .child(CorkboardCreateButton {
+            vm: vm.clone(),
+            root: None,
+        });
 
-    let bottom = teksu!(
-        HStack {
-            spacing: 10.0
-            Expand::horizontal {
+    let bottom = FlowRow::new(10.0, ROW_LINE_GAP)
+        .fill(
+            teksu!(
                 SearchField::new(vm.search_query_signal()) {
                     // A placeholder is gone once the writer types and is never a name.
                     label: tr!(corkboard_search_label())
                     placeholder: tr!(corkboard_search_placeholder())
                 }
-            }
-            child: (SortControl {
-                vm: vm.clone(),
-                root: None,
-            })
-            TextWidget::new(tr!(corkboard_card_size())) {
-                color: TextRole::Secondary
-            }
-            FixedSize::new() {
-                width: 170.0
-                Slider::new(vm.card_size(), crate::CORKBOARD_CARD_SIZE_MIN, crate::CORKBOARD_CARD_SIZE_MAX) {
-                    step: crate::CORKBOARD_CARD_SIZE_STEP
-                    label: tr!(corkboard_card_size())
-                    // The slider writes an app-global setting, but sits inside one
-                    // tab's header — say so, or dragging it silently resizes every
-                    // other open board too.
-                    tooltip: tr!(corkboard_scope_hint())
+            ),
+            FILTER_MIN_WIDTH,
+        )
+        .child(SortControl {
+            vm: vm.clone(),
+            root: None,
+        })
+        // One child, so a line break cannot part the slider from its caption.
+        .child(teksu!(
+            HStack {
+                spacing: 10.0
+                TextWidget::new(tr!(corkboard_card_size())) {
+                    color: TextRole::Secondary
+                }
+                // Gives way before the row runs past the column, down to a slider still
+                // long enough to aim at.
+                Shrinkable::new() {
+                    min_width: 80.0
+                    MaxSize::width(170.0) {
+                        Slider::new(vm.card_size(), crate::CORKBOARD_CARD_SIZE_MIN, crate::CORKBOARD_CARD_SIZE_MAX) {
+                            step: crate::CORKBOARD_CARD_SIZE_STEP
+                            label: tr!(corkboard_card_size())
+                            // The slider writes an app-global setting, but sits inside one
+                            // tab's header — say so, or dragging it silently resizes every
+                            // other open board too.
+                            tooltip: tr!(corkboard_scope_hint())
+                        }
+                    }
                 }
             }
-        }
-    );
+        ));
 
     teksu!(
         Panel {

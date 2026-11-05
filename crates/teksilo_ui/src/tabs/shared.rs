@@ -23,6 +23,7 @@
 pub(crate) mod charts;
 pub(crate) mod dictionary_menu;
 pub(crate) mod editor;
+pub(crate) mod flow_row;
 /// A container's own-page target readout, and the Distribute entry point.
 pub mod goal_header;
 pub mod note_sections;

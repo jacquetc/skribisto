@@ -9,11 +9,38 @@ use super::*;
 use teksilo::res;
 use teksilo::widgets::{IconWidget, SplitButton};
 
+use crate::tabs::shared::flow_row::{FILTER_MIN_WIDTH, FlowRow, ROW_LINE_GAP};
+
 pub(super) fn overview_header(
     vm: &OverviewViewModel,
     tags: crate::tags::TagsViewModel,
     statuses: crate::statuses::StatusesViewModel,
 ) -> impl Widget {
+    // `FlowRow`, not `HStack`: in a centre column narrowed by docks an `HStack` spends the
+    // whole deficit on the filter, down to a Tab stop with no width at all. Here the line
+    // breaks instead.
+    let top = FlowRow::new(10.0, ROW_LINE_GAP)
+        .fill(
+            teksu!(
+                SearchField::new(vm.search_query_signal()) {
+                    // A placeholder is gone once the writer types and is never a name.
+                    label: tr!(overview_search_label())
+                    placeholder: tr!(overview_search_placeholder())
+                }
+            ),
+            FILTER_MIN_WIDTH,
+        )
+        // Plain Rust struct literals, so not `teksu!` elements.
+        .child(OverviewCount {
+            vm: vm.clone(),
+            root: None,
+        })
+        .child(expand_collapse_buttons(vm))
+        .child(OverviewCreateButton {
+            vm: vm.clone(),
+            root: None,
+        });
+
     teksu!(
         Panel {
             background: SurfaceRole::Raised
@@ -29,28 +56,7 @@ pub(super) fn overview_header(
                 // A `VStack` spacing would have reserved the gap either way.
                 VStack {
                     spacing: 0.0
-                    HStack {
-                        spacing: 10.0
-                        Expand::horizontal {
-                            SearchField::new(vm.search_query_signal()) {
-                                // A placeholder is gone once the writer types and is
-                                // never a name.
-                                label: tr!(overview_search_label())
-                                placeholder: tr!(overview_search_placeholder())
-                            }
-                        }
-                        // Parenthesised: a bare `Name { .. }` at body position is a
-                        // `teksu!` element, not a Rust struct literal.
-                        child: (OverviewCount {
-                            vm: vm.clone(),
-                            root: None,
-                        })
-                        expand_collapse_buttons(vm)
-                        child: (OverviewCreateButton {
-                            vm: vm.clone(),
-                            root: None,
-                        })
-                    }
+                    child: top
                     child: crate::tabs::Boxed::new(super::tag_filter::tag_filter_row(vm, tags))
                     // Beside the tag row, not merged with it: they are different
                     // questions on different axes, and a single row of mixed chips would

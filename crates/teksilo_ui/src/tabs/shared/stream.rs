@@ -506,7 +506,7 @@ fn stream_row(
         .spacing(4.0)
         // Structure headings breathe more than the scenes under them.
         .child(vspace(if is_heading { 22.0 } else { 10.0 }))
-        .child(centered(row_header(vm, row), header_width));
+        .child(centered(row_header(vm, row, tags), header_width));
 
     // Does this row have a surface in *this* flavour? The constraint matrix answers —
     // a part heading has no prose, but it does have a synopsis.
@@ -634,7 +634,11 @@ fn stream_row(
 /// heading is `BodyBold`/Primary above a full-width rule; a scene stays `SmallBold`/
 /// Secondary, so the hierarchy reads at a glance. (`TextStyleRole` has no dedicated
 /// heading variant — the prominence comes from weight, colour and spacing.)
-fn row_header(vm: &StreamViewModel, row: &StreamRow) -> impl Widget {
+fn row_header(
+    vm: &StreamViewModel,
+    row: &StreamRow,
+    tags: Option<&crate::tags::TagsViewModel>,
+) -> impl Widget {
     let id = row.item_id;
     let is_heading = row.sub_role.opens_chapter() || row.sub_role.opens_part();
     let (style, color) = if is_heading {
@@ -646,6 +650,21 @@ fn row_header(vm: &StreamViewModel, row: &StreamRow) -> impl Widget {
     // An untitled chapter is named by its ordinal rather than showing a bare "3.".
     let (_, badge) = crate::models::label_and_badge("", row.fallback_label.as_deref(), row.number);
     let fallback = row.fallback_label.clone();
+    let mut tag_dots = crate::tags::TagDotsRow::new(
+        vm.row_tags(id),
+        {
+            let vm = vm.clone();
+            std::rc::Rc::new(move |ids: Vec<u64>, _c: &mut EventContext| {
+                vm.set_row_tags(id, &ids);
+            })
+        },
+        crate::tags::tag_chip::MAX_VISIBLE_STREAM,
+    );
+    // This project's palette and not `app_state`'s, which is a throwaway one on a launch
+    // that starts at the Launcher: a tagged row then resolved no tag and drew no dots.
+    if let Some(tags) = tags {
+        tag_dots = tag_dots.with_palette(tags.clone());
+    }
     HStack::new()
         .spacing(8.0)
         .child(crate::binder::icons::sub_role_icon(&row.sub_role).icon_size(14.0))
@@ -680,16 +699,7 @@ fn row_header(vm: &StreamViewModel, row: &StreamRow) -> impl Widget {
                 .single_line(),
         )
         // Tag dots, between the label and the rule. Takes no space when the row is untagged.
-        .child(crate::tags::TagDotsRow::new(
-            vm.row_tags(id),
-            {
-                let vm = vm.clone();
-                std::rc::Rc::new(move |ids: Vec<u64>, _c: &mut EventContext| {
-                    vm.set_row_tags(id, &ids);
-                })
-            },
-            crate::tags::tag_chip::MAX_VISIBLE_STREAM,
-        ))
+        .child(tag_dots)
         .child(Expand::horizontal().child(Divider::new()))
         // The rung, immediately before the options menu — the trailing edge, where the
         // glyphs line up into a scannable column down the stream and never compete with

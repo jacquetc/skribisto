@@ -30,9 +30,12 @@
 //! Tooltips are unaffected either way: they hang off `PointerMove` hit-testing
 //! (`tooltip_pointer_enter` on the raw target), not off the gesture arena.
 
+use std::collections::HashMap;
 use teksilo::core::BindingLevel;
 use teksilo::core::accesskit::Role;
 use teksilo::core::overlay::TooltipPlacement;
+
+use teksilo::canvas::Point;
 use teksilo::core::widget::WidgetPlacement;
 use teksilo::prelude::*;
 use teksilo::tokens::{BorderRole, CornerRadius};
@@ -53,6 +56,11 @@ use crate::widgets::attach_labelled_composite_tooltip;
 /// a name and these do not: three of them pack into a stream row's header without competing
 /// with the title. Not so small that the discoverable ring around it stops reading.
 const DOT: f32 = 8.0;
+
+/// Clear space kept around a row that stays a Tab stop on an empty page, so its focus ring is
+/// whole. The ring is drawn outside the control, and `tabs::shared::centered` holds the row in a
+/// `MaxSize`, which clips to the row's own height: without this only the right edge showed.
+const RING_ROOM: f32 = 4.0;
 
 /// Hit area per dot. The dots tile the row at this pitch with no spacing between them, so
 /// every pixel of the row belongs to some dot and there is nothing to "miss" — the whole row
@@ -357,18 +365,28 @@ impl Widget for FixedDot {
 /// 18 dp of height on every untagged item in the binder, which is most of them, and offer a
 /// popover with no visible affordance.
 ///
-/// It reads `TagsViewModel` from `app_state` itself rather than taking one. All three call
-/// sites (the stream row header, the corkboard card, the editor subtitle) are plain
-/// composition functions with no `BuildContext`, so a passed-in view-model would have to be
-/// threaded down from `App::build` through `EditorsViewModel` and `ContentTab`'s
-/// already-nine-parameter constructor. This widget's own `build` has the context those
-/// functions lack, and the view-model is a documented singleton, so fetching it here is both
-/// shorter and impossible to get wrong.
+/// It reads `TagsViewModel` from `app_state` itself unless the caller hands it one
+/// ([`TagDotsRow::with_palette`]), which every caller with a palette to hand should: see that
+/// method for what `app_state` answers on a launch that starts at the Launcher.
+///
+/// ## What the keyboard meets on a row with no tags
+///
+/// An untagged row draws nothing, and something that draws nothing must not be a Tab stop: a
+/// writer tabbing lands on a place they cannot see, and a screen reader announces a button
+/// with no rectangle. So there are three behaviours, and the caller picks one:
+///
+/// * **Default**: the row is dormant while it has nothing to show, out of the Tab order and
+///   out of what a screen reader reads. The Inspector's tag field is the way to a first tag.
+///   This is the one for a list of rows, where one stop per untagged row is a long walk.
+/// * [`reachable_when_empty`](TagDotsRow::reachable_when_empty): it stays a Tab stop and
+///   draws its "+" as focus arrives. For one item's own page.
+/// * [`offering_when_empty`](TagDotsRow::offering_when_empty): the "+" is always there.
 pub struct TagDotsRow {
     value: Signal<Vec<u64>>,
     set: SetTags,
     max_visible: usize,
     offer_when_empty: bool,
+    reachable_when_empty: bool,
     /// The palette to resolve ids against, when the caller has one to give.
     /// `None` falls back to `app_state` — see [`TagDotsRow::with_palette`].
     palette: Option<crate::tags::TagsViewModel>,
@@ -382,6 +400,7 @@ impl TagDotsRow {
             set,
             max_visible,
             offer_when_empty: false,
+            reachable_when_empty: false,
             palette: None,
             root_child: None,
         }
@@ -390,13 +409,10 @@ impl TagDotsRow {
     /// Resolve tag ids against **this** palette instead of the one in
     /// `app_state`.
     ///
-    /// `app_state` is right for the three composition-function call sites (the
-    /// stream row header, the corkboard card, the editor subtitle): they have
-    /// no `BuildContext` and no view-model to thread one from, which is what
-    /// the type doc below explains.
-    ///
-    /// It is wrong wherever the caller *does* have a palette, and the Overview
-    /// is that caller. `app_state` resolves to whichever window's session
+    /// `app_state` is what is left for a call site with no palette to hand
+    /// (today the corkboard card). It is wrong wherever the caller *does* have
+    /// one, as the Overview, the stream row and the editor subtitle do.
+    /// `app_state` resolves to whichever window's session
     /// registered one last, which on the ordinary launcher-first startup path
     /// is `startup.rs`'s throwaway `WorkSession` on a never-seeded `AppIds` —
     /// and it cannot be re-registered afterwards. Its `WorkTagsListModel` is
@@ -429,6 +445,36 @@ impl TagDotsRow {
         self.offer_when_empty = true;
         self
     }
+
+    /// Keep the picker a Tab stop on an item with **no tags yet**, drawing the
+    /// placeholder only while focus is on it (or its picker is open).
+    ///
+    /// For an item's own page, the editor subtitle: nothing stands there for a
+    /// sighted writer who is not asking, and a keyboard writer tabbing past the
+    /// title finds a visible control they can open with Space, without a detour
+    /// through the Inspector. The row grows by one hit cell while focused, which
+    /// is the price of not reserving that height on every untagged page.
+    pub fn reachable_when_empty(mut self) -> Self {
+        self.reachable_when_empty = true;
+        self
+    }
+
+    /// What this row keeps clear around the control: see [`RING_ROOM`].
+    fn ring_room(&self) -> f32 {
+        if self.reachable_when_empty {
+            RING_ROOM
+        } else {
+            0.0
+        }
+    }
+}
+
+/// Whether a row with these assigned ids has anything to resolve against this palette.
+///
+/// Ids with no palette row do not count: that happens mid-delete, and [`ChipDots`] draws
+/// nothing for them.
+fn has_dots(assigned: &[u64], palette: &HashMap<u64, TagRow>) -> bool {
+    assigned.iter().any(|id| palette.contains_key(id))
 }
 
 impl std::fmt::Debug for TagDotsRow {
@@ -451,6 +497,13 @@ impl Widget for TagDotsRow {
             }
         };
 
+        // Whether the keyboard is on this row: focus on the trigger, or in the picker it
+        // opened, which is an overlay and so no descendant of it. Either way the writer is
+        // using a control that must be there to be used.
+        let focused = ctx.signal(false);
+        let open = ctx.signal(false);
+        let in_use = focused.zip(&open).map(|(focused, open)| *focused || *open);
+
         // Deliberately binds NOTHING. This widget owns the `Popover`, and a rebuild here
         // replaces that popover with a fresh one — tearing down the open overlay on every tag
         // toggle. The reactive part lives one level down in [`ChipDots`], so the dots repaint
@@ -460,8 +513,10 @@ impl Widget for TagDotsRow {
             vm: vm.clone(),
             max_visible: self.max_visible,
             offer_when_empty: self.offer_when_empty,
+            in_use: in_use.clone(),
             root_child: None,
         };
+        let palette = vm.lookup_signal();
         let picker = TagPicker::new(self.value.clone(), self.set.clone(), vm);
         // The dot row itself is the trigger, so it goes through `OverlayTrigger`
         // — the framework's adapter for a popover trigger that is not a button.
@@ -471,18 +526,44 @@ impl Widget for TagDotsRow {
             PopoverWidget::new(
                 OverlayTrigger::around(chips).named(tr!(tags_pill_list()).resolve_now()),
             )
-            .content(picker),
+            .content(picker)
+            .on_open({
+                let open = open.clone();
+                move || open.set(true)
+            })
+            .on_close(move || open.set(false))
+            .focus_within(focused),
+        );
+        // With nothing to draw and no promise to keep, the row is dormant rather than a
+        // zero-sized button: dormancy is what takes it out of the Tab order and out of the
+        // accessibility tree at once. `in_use` holds it up while the writer is on it, so
+        // removing the last tag from the picker does not pull the control from under them;
+        // it goes when they move on.
+        let keeps_its_stop = self.offer_when_empty || self.reachable_when_empty;
+        ctx.visible_when(
+            id,
+            self.value
+                .zip3(&palette, &in_use)
+                .map(move |(assigned, palette, in_use)| {
+                    keeps_its_stop || *in_use || has_dots(assigned, palette)
+                }),
         );
         self.root_child = Some(id);
         vec![id]
     }
 
     fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
-        match self.root_child {
-            Some(id) => ctx
-                .child_size(id, proposal)
-                .map(LayoutResponse::from)
-                .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into()),
+        let room = self.ring_room() * 2.0;
+        let inside = SizeProposal {
+            width: proposal.width.map(|width| (width - room).max(0.0)),
+            height: proposal.height.map(|height| (height - room).max(0.0)),
+        };
+        let drawn = self
+            .root_child
+            .and_then(|id| ctx.child_size(id, inside))
+            .filter(|size| size.width > 0.0 && size.height > 0.0);
+        match drawn {
+            Some(size) => Size::new(size.width + room, size.height + room).into(),
             // No tags: take no space at all.
             None => proposal.resolve(0.0, 0.0).into(),
         }
@@ -499,9 +580,13 @@ impl Widget for TagDotsRow {
         children: &mut [WidgetPlacement],
         _ctx: &LayoutContext,
     ) {
+        let room = self.ring_room();
         for child in children.iter_mut() {
-            child.origin = bounds.origin();
-            child.size = bounds.size();
+            child.origin = Point::new(bounds.x + room, bounds.y + room);
+            child.size = Size::new(
+                (bounds.width - room * 2.0).max(0.0),
+                (bounds.height - room * 2.0).max(0.0),
+            );
         }
     }
 }
@@ -516,6 +601,8 @@ struct ChipDots {
     vm: crate::tags::TagsViewModel,
     max_visible: usize,
     offer_when_empty: bool,
+    /// Focus is on the trigger, or its picker is open: see [`TagDotsRow::build`].
+    in_use: Signal<bool>,
     root_child: Option<WidgetId>,
 }
 
@@ -536,6 +623,8 @@ impl Widget for ChipDots {
             ctx.binding_registry(),
             BindingLevel::Rebuild,
         );
+        self.in_use
+            .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
 
         let assigned = self.value.get();
         // Resolve through the id → row map (`WorkTagsListModel::lookup_signal`), not by
@@ -557,7 +646,7 @@ impl Widget for ChipDots {
         // would be a second ordering.
         crate::models::sort_rows(&mut rows);
         if rows.is_empty() {
-            if !self.offer_when_empty {
+            if !self.offer_when_empty && !self.in_use.get() {
                 self.root_child = None;
                 return Vec::new();
             }
@@ -915,5 +1004,196 @@ mod tests {
         tree.layout(SizeProposal::exact(400.0, 40.0));
         let cs = cells(&tree, id);
         assert_eq!(cs.len(), 2, "one dot plus the overflow cell");
+    }
+
+    // ── What the keyboard meets on a row with no tags ─────────────────────────────
+
+    /// A palette holding one tag, its id, and whatever must outlive the test for the palette
+    /// to keep answering.
+    #[cfg(not(feature = "mocks"))]
+    fn palette_with_a_tag() -> (crate::tags::TagsViewModel, u64, impl Sized) {
+        let project = crate::test_support::RealProject::empty_novel();
+        let vm = crate::tags::TagsViewModel::detached(project.app_ctx.clone(), project.ids.clone());
+        let id = vm
+            .create("character", "#2980b9", "", false)
+            .expect("the novel takes a tag");
+        vm.refresh();
+        (vm, id, project)
+    }
+
+    #[cfg(feature = "mocks")]
+    fn palette_with_a_tag() -> (crate::tags::TagsViewModel, u64, impl Sized) {
+        let vm = crate::tags::TagsViewModel::detached(
+            std::rc::Rc::new(frontend::AppContext::new()),
+            crate::app_ids::AppIds::new(),
+        );
+        let id = vm.rows().first().expect("the mock palette has tags").id;
+        (vm, id, ())
+    }
+
+    fn row_on(
+        tree: &mut WidgetTree,
+        value: &Signal<Vec<u64>>,
+        vm: &crate::tags::TagsViewModel,
+        keep: impl FnOnce(TagDotsRow) -> TagDotsRow,
+    ) -> WidgetId {
+        let row = TagDotsRow::new(
+            value.clone(),
+            std::rc::Rc::new(|_, _| {}),
+            MAX_VISIBLE_EDITOR,
+        )
+        .with_palette(vm.clone());
+        let root = tree.add_boxed(Box::new(keep(row)));
+        tree.layout(SizeProposal::unspecified());
+        root
+    }
+
+    fn stop_and_area(tree: &WidgetTree, root: WidgetId) -> (bool, bool) {
+        match tree.focusables_in_tab_order(root).first() {
+            Some(stop) => {
+                let bounds = tree.bounds(*stop);
+                (true, bounds.width > 0.0 && bounds.height > 0.0)
+            }
+            None => (false, false),
+        }
+    }
+
+    /// The row in a list. Nothing drawn, nothing to land on, nothing for a screen reader;
+    /// and it has to come back when there is something to show, which a widget gone
+    /// dormant would not do unless the gate is reactive.
+    #[test]
+    fn an_untagged_row_is_no_stop_until_it_has_a_tag() {
+        let (vm, tag, _keep) = palette_with_a_tag();
+        let value = Signal::new(Vec::new());
+        let mut tree = WidgetTree::new();
+        let root = row_on(&mut tree, &value, &vm, |row| row);
+        assert_eq!(stop_and_area(&tree, root), (false, false));
+
+        value.set(vec![tag]);
+        tree.layout(SizeProposal::unspecified());
+        assert_eq!(
+            stop_and_area(&tree, root),
+            (true, true),
+            "tagged: reachable"
+        );
+
+        value.set(Vec::new());
+        tree.layout(SizeProposal::unspecified());
+        assert_eq!(stop_and_area(&tree, root), (false, false), "and gone again");
+    }
+
+    /// An id with no palette row draws nothing, so it must not keep a stop either. That is
+    /// what makes this a question for the palette and not for `value.is_empty()`.
+    #[test]
+    fn a_tag_the_palette_does_not_know_keeps_no_stop() {
+        let (vm, tag, _keep) = palette_with_a_tag();
+        let value = Signal::new(vec![tag + 1_000]);
+        let mut tree = WidgetTree::new();
+        let root = row_on(&mut tree, &value, &vm, |row| row);
+        assert_eq!(stop_and_area(&tree, root), (false, false));
+    }
+
+    /// Removing the last tag with focus on the row must not pull the control from under the
+    /// writer. It draws its placeholder while they are there, and goes when they leave.
+    #[test]
+    fn losing_the_last_tag_under_the_keyboard_keeps_the_control_until_it_moves_on() {
+        let (vm, tag, _keep) = palette_with_a_tag();
+        let value = Signal::new(vec![tag]);
+        let mut tree = WidgetTree::new();
+        let root = row_on(&mut tree, &value, &vm, |row| row);
+        let stop = tree.focusables_in_tab_order(root)[0];
+        tree.focus(stop);
+        tree.layout(SizeProposal::unspecified());
+
+        value.set(Vec::new());
+        tree.layout(SizeProposal::unspecified());
+        assert_eq!(tree.focused(), Some(stop), "focus stays where it was");
+        assert_eq!(stop_and_area(&tree, root), (true, true));
+
+        tree.clear_focus();
+        tree.layout(SizeProposal::unspecified());
+        assert_eq!(stop_and_area(&tree, root), (false, false));
+    }
+
+    /// The row on an item's own page: always a stop, and seen exactly while it holds focus.
+    #[test]
+    fn a_row_reachable_when_empty_draws_itself_as_focus_arrives() {
+        let (vm, _tag, _keep) = palette_with_a_tag();
+        let value = Signal::new(Vec::new());
+        let mut tree = WidgetTree::new();
+        let root = row_on(&mut tree, &value, &vm, TagDotsRow::reachable_when_empty);
+        assert_eq!(
+            stop_and_area(&tree, root),
+            (true, false),
+            "unfocused: no area"
+        );
+
+        let stop = tree.focusables_in_tab_order(root)[0];
+        tree.focus(stop);
+        tree.layout(SizeProposal::unspecified());
+        assert_eq!(stop_and_area(&tree, root), (true, true), "focused: drawn");
+
+        tree.clear_focus();
+        tree.layout(SizeProposal::unspecified());
+        assert_eq!(
+            stop_and_area(&tree, root),
+            (true, false),
+            "left: folded away"
+        );
+    }
+
+    /// The ring is drawn outside the control, and the row's own parent clips to the row: the
+    /// row has to hold it, or the writer sees one edge of a ring.
+    #[test]
+    fn a_row_reachable_when_empty_has_room_for_its_focus_ring() {
+        let (vm, _tag, _keep) = palette_with_a_tag();
+        let value = Signal::new(Vec::new());
+        let mut tree = WidgetTree::new();
+        let root = row_on(&mut tree, &value, &vm, TagDotsRow::reachable_when_empty);
+        let stop = tree.focusables_in_tab_order(root)[0];
+        tree.focus(stop);
+        tree.layout(SizeProposal::unspecified());
+        let (row, control) = (tree.bounds(root), tree.bounds(stop));
+        let ring = tree.theme().shape.focus_ring_stroke_distance()
+            + tree.theme().shape.focus_ring_width / 2.0;
+        assert!(control.x - row.x >= ring, "{row:?} {control:?} {ring}");
+        assert!(control.y - row.y >= ring, "{row:?} {control:?} {ring}");
+        assert!(
+            row.x + row.width - (control.x + control.width) >= ring,
+            "{row:?} {control:?} {ring}"
+        );
+        assert!(
+            row.y + row.height - (control.y + control.height) >= ring,
+            "{row:?} {control:?} {ring}"
+        );
+    }
+
+    /// A picker is an overlay, so focus inside it is not focus on the row. If the row folded
+    /// away with the picker open, the picker would lose what it is anchored to.
+    #[test]
+    fn the_control_stands_while_its_picker_is_open() {
+        let (vm, _tag, _keep) = palette_with_a_tag();
+        let value = Signal::new(Vec::new());
+        let mut tree = crate::test_support::tree_with_events(&vm.app_ctx());
+        tree.set_theme(teksilo::presets::intui::light());
+        let root = row_on(&mut tree, &value, &vm, TagDotsRow::reachable_when_empty);
+        let stop = tree.focusables_in_tab_order(root)[0];
+        crate::test_support::click(&mut tree, stop);
+        tree.layout(SizeProposal::unspecified());
+        assert!(
+            tree.focused().is_some_and(|focused| focused != stop),
+            "opening moved focus into the picker, so only its being open can hold the row up"
+        );
+        assert_eq!(stop_and_area(&tree, root), (true, true));
+    }
+
+    /// The Overview's cell: there whatever the keyboard is doing.
+    #[test]
+    fn a_row_offering_when_empty_is_always_there() {
+        let (vm, _tag, _keep) = palette_with_a_tag();
+        let value = Signal::new(Vec::new());
+        let mut tree = WidgetTree::new();
+        let root = row_on(&mut tree, &value, &vm, TagDotsRow::offering_when_empty);
+        assert_eq!(stop_and_area(&tree, root), (true, true));
     }
 }

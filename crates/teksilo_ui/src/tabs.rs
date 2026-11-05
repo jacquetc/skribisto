@@ -1676,5 +1676,7 @@ impl ProseField {
     }
 }
 
+#[cfg(all(test, not(feature = "mocks")))]
+mod tab_stop_area_tests;
 #[cfg(test)]
 mod tests;
