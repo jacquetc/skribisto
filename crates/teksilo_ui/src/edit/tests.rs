@@ -106,7 +106,7 @@ fn ctrl_z_means_the_surface_the_writer_is_looking_at() {
     r.caret_in_text.set(true);
     r.group.refresh();
     assert_eq!(r.group.routed(), Some(DomainKind::Prose));
-    assert_eq!(r.group.undo_target().get(), UndoTarget::Typing);
+    assert_eq!(r.group.undo_target().get(), UndoTarget::Text);
 
     // Focus in a claiming structural surface → the project's history.
     let claim = r.group.claim_entity(Signal::new(true));
@@ -276,7 +276,7 @@ fn redo_routes_by_its_own_availability_not_undos() {
     r.entity.can_redo.set(true);
     r.group.refresh();
 
-    assert_eq!(r.group.undo_target().get(), UndoTarget::Typing);
+    assert_eq!(r.group.undo_target().get(), UndoTarget::Text);
     assert!(
         matches!(r.group.redo_target().get(), UndoTarget::Entity(_)),
         "Undo and Redo are answered separately: a document with edits to undo \

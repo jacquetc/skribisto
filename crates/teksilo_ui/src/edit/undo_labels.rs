@@ -23,7 +23,7 @@ use super::UndoTarget;
 /// What the Edit menu should call this target, in the reader's language.
 pub(crate) fn target_text(target: &UndoTarget) -> LocalizedString {
     match target {
-        UndoTarget::Typing => tr!(undo_target_typing()),
+        UndoTarget::Text => tr!(undo_target_text()),
         UndoTarget::Entity(Some(label)) => entity_text(label),
         UndoTarget::Entity(None) | UndoTarget::Nothing | UndoTarget::Frozen => {
             tr!(undo_target_project())

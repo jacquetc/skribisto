@@ -95,9 +95,10 @@ impl UndoDomain for ProseDomain {
         self.format.redo_editor();
     }
 
-    // The document engine records no labels: every entry is the same act
-    // ("typing"), so a key per entry would say nothing a fixed row does not.
-    // The Edit menu names this domain, not its entries — see `undo_labels`.
+    // The document engine records no labels, and its entries are not all one
+    // act: typing, Bold, a heading, a pasted paragraph. So the Edit menu names
+    // this domain and not its entries ("the last change to this text"), which
+    // stays true of each of them. See `undo_labels`.
     fn undo_label(&self) -> Option<UndoLabel> {
         None
     }
@@ -271,8 +272,8 @@ impl UndoDomain for FieldDomain {
         self.surface.redo();
     }
 
-    // Every entry in a text widget's history is the same act — typing — so the
-    // row names the domain, not the entry.
+    // A text widget's history records no labels either, so the row names the
+    // domain, not the entry.
     fn undo_label(&self) -> Option<UndoLabel> {
         None
     }

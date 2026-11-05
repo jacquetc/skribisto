@@ -1560,17 +1560,8 @@ impl ProseField {
     /// Takes no `stack` for that reason: a parameter accepted and ignored is
     /// how prose finds its way back onto the history.
     pub(crate) fn flush(&self) -> anyhow::Result<()> {
-        // Gated on [`is_stale`](Self::is_stale), **not** `is_modified()`.
-        //
-        // `is_modified()` is a flag this function itself clears, with no memory
-        // of which edit it was cleared against, so anything that changes the
-        // buffer without setting it strands the store one revision behind and
-        // every later flush returns early here. An editor undo used to do
-        // exactly that: type, autosave, Ctrl+Z, and the reverted text never
-        // reached disk while the screen showed it. That has been fixed at the
-        // root (`TextDocument::undo` now marks the document modified), and this
-        // is the belt beside those braces — the revision comparison cannot be
-        // fooled by a writer that forgets the flag.
+        // Gated on [`is_stale`](Self::is_stale), which asks two questions because
+        // each misses what the other sees. See there.
         if !self.is_stale() {
             return Ok(());
         }
@@ -1650,19 +1641,23 @@ impl ProseField {
         true
     }
 
-    /// Exact "has this field changed since it was last flushed (or reloaded)"
-    /// check — a sharper question than `doc.is_modified()`, the plain boolean
-    /// [`flush`](Self::flush) itself gates on and unconditionally clears.
+    /// "Has this field changed since it was last flushed (or reloaded)?"
     ///
-    /// `is_modified()`/`OpenDoc::dirty` are flags: set on any edit, cleared on
-    /// flush, with no memory of *which* edit they were cleared against. That
-    /// can't distinguish "flushed, then edited again" from "flushed and quiet"
-    /// — both leave the flag `false` right after a flush. Comparing
-    /// `content_revision()` (a monotonic counter the document itself bumps on
-    /// every real content change) against the revision recorded at the last
-    /// flush is exact: a concurrent/subsequent edit bumps the live revision
-    /// past the recorded one, so this stays `true` even though `is_modified()`
-    /// was just reset.
+    /// Two questions, because each misses what the other sees:
+    ///
+    /// - **`content_revision()` moved.** A monotonic counter of the *text* changes
+    ///   the document has made, so it stays exact where a flag cannot: an edit
+    ///   after a flush moves it past the recorded revision, and a writer that
+    ///   forgets the flag cannot fool it.
+    /// - **`is_modified()` is set.** A formatting change moves no text, so the
+    ///   document reports it as `FormatChanged`, which leaves the revision where it
+    ///   was. Asking the revision alone, a word made bold or a paragraph made a
+    ///   heading stayed in the editor and never reached the store: the save
+    ///   rewrote the project without it, and it was gone the next time the project
+    ///   was opened, unless the writer happened to type in that text before saving.
+    ///   Undoing or redoing a formatting change is the same case. The flag is set
+    ///   on all of them, and only an edit sets it (a load does not, and a flush
+    ///   clears it).
     ///
     /// **Not** a fix for undo-past-save reporting dirty: `content_revision()`
     /// bumps on undo too (see `text_document::TextDocument::content_revision`'s
@@ -1671,7 +1666,7 @@ impl ProseField {
     /// This is what [`flush`](Self::flush) gates on, and it is also called by
     /// `OpenDoc::is_stale`.
     pub(crate) fn is_stale(&self) -> bool {
-        self.doc.content_revision() != self.flushed_revision.get()
+        self.doc.content_revision() != self.flushed_revision.get() || self.doc.is_modified()
     }
 
     /// This field's current text as Djot (empty on a serialisation error) — the

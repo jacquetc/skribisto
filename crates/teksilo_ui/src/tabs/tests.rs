@@ -4270,6 +4270,84 @@ fn an_undo_after_a_flush_still_reaches_the_store() {
     );
 }
 
+/// A formatting change reaches the store with no text changing, and so does taking it
+/// back.
+///
+/// The document reports one as `FormatChanged`, which moves no `content_revision`, and
+/// `is_stale` used to ask the revision alone. So a word made bold stayed in the editor
+/// and never reached the store: a save rewrote the project without it, and it was gone
+/// the next time the project was opened, unless the writer happened to type in that text
+/// first. The formatting commands all go through the same gate, whichever surface they
+/// came from, so a heading stands in for the block half here and Bold for the character
+/// half.
+#[cfg(not(feature = "mocks"))]
+#[test]
+fn a_formatting_change_reaches_the_store_with_no_text_changing() {
+    use frontend::commands::content_commands;
+    use teksilo::text_document::{BlockFormat, MoveMode, TextFormat};
+
+    let (ctx, item_id, field) = scene_item_and_prose_field();
+    field
+        .doc
+        .cursor_at(0)
+        .insert_text("Phileas Fogg avait quitté")
+        .unwrap();
+    field.flush().expect("the typing is stored");
+    let content_id = field.content_id().expect("the flush creates the row");
+    let row = || {
+        content_commands::get_content(&ctx, &content_id)
+            .expect("the row reads back")
+            .expect("the row exists")
+    };
+    assert_eq!(row().data, "Phileas Fogg avait quitté");
+    assert!(!field.is_stale(), "flushed and quiet");
+
+    let cursor = field.doc.cursor_at(0);
+    cursor.set_position(7, MoveMode::KeepAnchor);
+    cursor
+        .merge_char_format(&TextFormat {
+            font_bold: Some(true),
+            ..TextFormat::default()
+        })
+        .expect("the editor formats the word");
+    assert!(field.is_stale(), "the store is behind the formatting");
+    field.flush().expect("the formatting is stored");
+    assert_eq!(row().data, "*Phileas* Fogg avait quitté");
+    assert!(!field.is_stale(), "and flushed once");
+
+    field.doc.undo().expect("undo the bold");
+    assert!(field.is_stale(), "the store is behind the undo");
+    field.flush().expect("the undo is stored");
+    assert_eq!(row().data, "Phileas Fogg avait quitté");
+
+    field.doc.redo().expect("redo the bold");
+    assert!(field.is_stale(), "the store is behind the redo");
+    field.flush().expect("the redo is stored");
+    assert_eq!(row().data, "*Phileas* Fogg avait quitté");
+
+    field
+        .doc
+        .cursor_at(0)
+        .set_block_format(&BlockFormat {
+            heading_level: Some(2),
+            ..BlockFormat::default()
+        })
+        .expect("the editor makes the paragraph a heading");
+    assert!(field.is_stale(), "the store is behind the heading");
+    field.flush().expect("the heading is stored");
+    assert_eq!(row().data, "## *Phileas* Fogg avait quitté");
+
+    let reopened = prose_field(
+        &ctx,
+        &teksilo::text_document::DocumentBackend::new(),
+        item_id,
+        ContentRole::SceneText,
+        Some(&row()),
+    );
+    assert!(!reopened.is_stale(), "a load is not an edit");
+    assert_eq!(reopened.djot(), row().data, "and it reads back as stored");
+}
+
 /// Autosaving prose must not put anything on the project's undo history.
 ///
 /// It used to put a whole-Djot `Content::update` there every few seconds, so

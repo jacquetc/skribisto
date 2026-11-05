@@ -54,8 +54,9 @@ use crate::format::FormatViewModel;
 pub(crate) enum UndoTarget {
     /// Nothing to take back anywhere the writer is looking.
     Nothing,
-    /// The focused document's own prose.
-    Typing,
+    /// The text holding the caret: what was typed in it or how it was formatted. The
+    /// row names the text and not the act, because its history does not say which.
+    Text,
     /// A structural command, with the backend's machine key for it when the
     /// command named itself.
     Entity(Option<UndoLabel>),
@@ -443,7 +444,7 @@ impl UndoGroupViewModel {
         let routed = self.route(step);
         let target = match routed {
             None => UndoTarget::Nothing,
-            Some(DomainKind::Prose | DomainKind::TextField) => UndoTarget::Typing,
+            Some(DomainKind::Prose | DomainKind::TextField) => UndoTarget::Text,
             Some(DomainKind::Entity) => UndoTarget::Entity(match step {
                 Step::Undo => self.inner.entity.undo_label(),
                 Step::Redo => self.inner.entity.redo_label(),

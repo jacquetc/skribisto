@@ -1876,6 +1876,43 @@ fn undo_editor_refuses_a_frozen_editor() {
     );
 }
 
+/// The Edit menu reads whether there is something to take back from these mirrors,
+/// and the editor publishes it through a debounce of up to 150 ms, so it can move after
+/// the frame the edit moved `format_version` or the caret on. Refreshed only behind that
+/// gate, the mirrors kept their old answer until the caret next moved: Redo stayed
+/// unavailable after an undo.
+#[test]
+fn the_history_mirrors_follow_what_the_editor_publishes_after_its_debounce() {
+    let (handle, tree) = laid_out_at("Phileas Fogg", 400.0);
+    let resolved = handle.clone();
+    let vm = FormatViewModel::new(Rc::new(move || {
+        (Some(resolved.clone()), FormatSurface::Scene)
+    }));
+    // More frames than the debounce window, the way a pumped window runs them.
+    let frames = || {
+        for _ in 0..8 {
+            tree.frame_tick().set(0.05);
+            vm.refresh();
+        }
+    };
+
+    frames();
+    assert!(!vm.can_undo().get(), "a text just opened has no history");
+
+    handle.select_range(0, 7);
+    vm.toggle_bold();
+    frames();
+    assert!(vm.can_undo().get(), "the Bold can be taken back");
+    assert!(!vm.can_redo().get(), "and there is nothing to redo yet");
+
+    // As Ctrl+Z does it: the focused editor answers the chord itself, so nothing here
+    // runs `sync_now`.
+    handle.undo();
+    frames();
+    assert!(vm.can_redo().get(), "the Bold can be put back");
+    assert!(!vm.can_undo().get(), "and the history is empty again");
+}
+
 /// What the Go pair's Alt+Up/Alt+Down are gated on. It follows the live focus
 /// and is never latched: the moment the writer moves to the binder, the chord
 /// must belong to the binder, unlike `has_caret_target`, which deliberately

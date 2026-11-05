@@ -2174,13 +2174,12 @@ mod tests {
             .as_ref()
             .expect("a Scene owns a main text document");
         // Staged the way a keystroke stages it, and that matters: `ProseField::
-        // flush` gates on `content_revision`, and the whole-document setters
+        // flush` gates on `is_stale`, and the whole-document setters
         // (`set_djot_sync`, `set_plain_text`) *reset* a document rather than
-        // edit it — they move neither `content_revision` nor `is_modified`. An
-        // edit faked with a setter plus `set_modified(true)` therefore satisfies
-        // the coarse flag and nothing else, and the flush correctly declines to
-        // write text no edit produced. `remove_selected_text` + `insert_text`
-        // are the primitives live typing goes through.
+        // edit it — they move neither `content_revision` nor `is_modified`, so
+        // the flush declines to write text no edit produced.
+        // `remove_selected_text` + `insert_text` are the primitives live typing
+        // goes through.
         //
         // Selected to the end of the text by moving there: `character_count()` counts
         // no paragraph break, so a selection ending at it left the loaded text's last

@@ -117,13 +117,7 @@ fn blockquote_levels_bound(djot: &str) -> usize {
 /// gate skips the one sync that mattered — leaving the dock showing plain text
 /// over a document that opens bold, or the previous editor's state after a
 /// switch between two documents that happen to agree on both numbers.
-///
-/// The third component is "may this editor step through its history" — the
-/// editor's command filter, folded in because a writing game switches it while
-/// the document and the caret both stand still. Without it the dedup gate below
-/// skips the only sync that mattered, and the Edit menu keeps offering an Undo
-/// row that does nothing.
-const NEVER_SEEN: (u64, usize, bool) = (u64::MAX, usize::MAX, false);
+const NEVER_SEEN: (u64, usize) = (u64::MAX, usize::MAX);
 
 /// May this editor step back through its own history?
 ///
@@ -603,11 +597,10 @@ pub struct FormatViewModel {
     /// and blow up the first time a group changed.
     group_visible: GroupVisibility,
 
-    /// Last `(format_version, cursor_position, history_allowed)` seen by
-    /// [`Self::refresh`], so a per-frame call is nearly free when nothing has
-    /// moved. [`NEVER_SEEN`] when the mirrors hold nothing worth comparing
-    /// against.
-    last_seen: Rc<Cell<(u64, usize, bool)>>,
+    /// Last `(format_version, cursor_position)` seen by [`Self::refresh`], so a
+    /// per-frame call is nearly free when nothing has moved. [`NEVER_SEEN`] when
+    /// the mirrors hold nothing worth comparing against.
+    last_seen: Rc<Cell<(u64, usize)>>,
 }
 
 impl std::fmt::Debug for FormatViewModel {
@@ -1278,14 +1271,14 @@ impl FormatViewModel {
             self.clear_mirrors();
             return;
         };
+        self.sync_history_mirrors(&handle);
 
         let version = handle.format_version().get();
         let caret = handle.cursor_position_signal().get();
-        let history = history_allowed(&handle);
-        if (version, caret, history) == self.last_seen.get() {
+        if (version, caret) == self.last_seen.get() {
             return;
         }
-        self.last_seen.set((version, caret, history));
+        self.last_seen.set((version, caret));
         self.sync_from(&handle);
     }
 
@@ -1314,6 +1307,25 @@ impl FormatViewModel {
         set_if_changed(&self.line_break, handle.is_some_and(line_break_allowed));
     }
 
+    /// Whether this editor can step back or forward: what `edit::ProseDomain`, and
+    /// through it the Edit menu's rows and the undo router, read.
+    ///
+    /// Gated on the editor's own command filter as well as on whether there is
+    /// history to step through: a writing game ("Always forward") refuses them, so
+    /// the menu goes quiet the moment the focused editor is frozen, rather than
+    /// offering a step the editor will silently refuse.
+    ///
+    /// Read on every [`Self::refresh`], ahead of its version gate, because the
+    /// editor publishes `can_undo` and `can_redo` through a debounce of up to 150 ms,
+    /// so they can move after the frame the edit moved the version or the caret on.
+    /// Behind the gate the mirror then kept its old answer until the caret next moved:
+    /// Redo stayed unavailable after an undo.
+    fn sync_history_mirrors(&self, handle: &EditorHandle) {
+        let history = history_allowed(handle);
+        set_if_changed(&self.can_undo, handle.can_undo().get() && history);
+        set_if_changed(&self.can_redo, handle.can_redo().get() && history);
+    }
+
     /// Re-read every mirror from `handle`, unconditionally.
     ///
     /// Used straight after a command so a toggle button shows the result
@@ -1326,7 +1338,6 @@ impl FormatViewModel {
             self.last_seen.set((
                 handle.format_version().get(),
                 handle.cursor_position_signal().get(),
-                history_allowed(&handle),
             ));
             self.sync_from(&handle);
         } else {
@@ -1357,16 +1368,7 @@ impl FormatViewModel {
         let direction = direction_index(handle.get_direction());
         set_if_changed(&self.direction, direction);
         set_if_changed(&self.dir_rtl, direction == DIR_RTL);
-        // Undo/redo are gated on the editor's own command filter as well as on
-        // whether there is history to step through: a writing game
-        // ("Always forward") refuses them. These two mirrors are read by
-        // `edit::ProseDomain`, and through it by the Edit menu's rows and the
-        // Ctrl+Z router — so folding the rule in here is what makes the menu go
-        // quiet the moment the focused editor is frozen, rather than offering a
-        // step the editor will silently refuse.
-        let history = history_allowed(handle);
-        set_if_changed(&self.can_undo, handle.can_undo().get() && history);
-        set_if_changed(&self.can_redo, handle.can_redo().get() && history);
+        self.sync_history_mirrors(handle);
     }
 
     fn clear_mirrors(&self) {
