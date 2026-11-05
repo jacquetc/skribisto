@@ -46,6 +46,7 @@ Description:
 - "With a screen reader, the binder's items are no longer each described as a tooltip, the Rename field is announced by what it asks for, and a field whose grey hint repeats its name says that name only once"
 - "On Windows, a paragraph of the help flows to the width of the window, and a braille display or a screen reader reads it as one paragraph. Each paragraph used to break at the same places whatever the width, and a braille display showed each of those lines as a paragraph of its own"
 - "Pictures show in the text again when a project is opened, a Scrivener project or a document is imported, or a text is reopened. Since version 3.0.5 they appeared as blank spaces of the right size, though they were safe in the project and present in exports"
+- "A picture added after a project was saved to a new place, with Save As or by the first save of a new folder project, shows when pasted into a text that was already open. It stayed a blank space until the project was closed"
 ---
 Version: 3.3.0
 Date: 2026-10-27

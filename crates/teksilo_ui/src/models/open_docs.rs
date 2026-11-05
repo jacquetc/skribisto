@@ -203,7 +203,7 @@ impl OpenDoc {
             sub_role,
             contents,
             edited,
-            media_dir,
+            crate::shared::images::ImageSource::at(media_dir.to_path_buf()),
         )
     }
 
@@ -218,7 +218,7 @@ impl OpenDoc {
         sub_role: &BinderItemSubRole,
         contents: &[ContentDto],
         edited: Signal<u64>,
-        media_dir: &std::path::Path,
+        images: crate::shared::images::ImageSource,
     ) -> Self {
         let mut doc = OpenDoc {
             item_id,
@@ -312,14 +312,12 @@ impl OpenDoc {
         .flatten()
         {
             let djot = field.doc.to_djot().unwrap_or_default();
-            crate::shared::images::register_referenced(&field.doc, &djot, media_dir);
+            crate::shared::images::register_referenced(&field.doc, &djot, &images.media_dir());
         }
         // …and stand by for the ones that arrive later. An image pasted in from
         // another editor brings its reference and not its pixels, so the editor
         // asks for them the first time it tries to paint one it does not know.
-        doc.images = Some(crate::shared::images::ImageSource::new(
-            media_dir.to_path_buf(),
-        ));
+        doc.images = Some(images);
 
         doc
     }
@@ -968,6 +966,15 @@ impl OpenDocsStore {
         resolver.map(|resolve| resolve()).unwrap_or_default()
     }
 
+    /// Where a document this store builds fetches its pictures: the resolver itself, so
+    /// the document follows the project wherever it moves while it is open.
+    fn image_source(&self) -> crate::shared::images::ImageSource {
+        match self.inner.media_dir_resolver.borrow().clone() {
+            Some(resolve) => crate::shared::images::ImageSource::following(resolve),
+            None => crate::shared::images::ImageSource::at(std::path::PathBuf::new()),
+        }
+    }
+
     pub fn new(app_ctx: Rc<AppContext>) -> Self {
         Self {
             inner: Rc::new(Inner {
@@ -1516,7 +1523,7 @@ impl OpenDocsStore {
             &item.sub_role,
             &contents,
             self.inner.edited.clone(),
-            &self.media_dir(),
+            self.image_source(),
         ));
         // Seed the trash state (a trashed item can be opened from the trash dock).
         doc.trashed.set(!item.activated);
@@ -1574,7 +1581,7 @@ impl OpenDocsStore {
             &item.sub_role,
             &contents,
             self.inner.edited.clone(),
-            &self.media_dir(),
+            self.image_source(),
         ));
         if let Some(entry) = self.inner.open.borrow_mut().get_mut(&item_id) {
             entry.doc = fresh.clone();
@@ -2596,6 +2603,32 @@ mod remembered_history_tests {
         assert!(picture(&doc).is_some(), "opened");
         let rebuilt = store.rebuild(items[0], None).expect("the scene is open");
         assert!(picture(&rebuilt).is_some(), "rebuilt");
+    }
+
+    /// A document open while its project moves still finds a picture added after the move,
+    /// which exists only in the new place. So does one edited, closed and opened again:
+    /// that is the same document, handed back from the remembered ones.
+    #[test]
+    fn a_document_follows_its_project_when_the_project_moves() {
+        let (_ctx, store, items) = store_with_scenes(1);
+        let (old, new) = (tempfile::tempdir().unwrap(), tempfile::tempdir().unwrap());
+        let now = Rc::new(RefCell::new(old.path().to_path_buf()));
+        {
+            let now = now.clone();
+            store.set_media_dir_resolver(move || now.borrow().clone());
+        }
+        let doc = store.open(items[0]).expect("the scene opens");
+
+        *now.borrow_mut() = new.path().to_path_buf();
+        std::fs::write(new.path().join("x.png"), b"the bytes").unwrap();
+        let fetch = |doc: &OpenDoc| doc.images().expect("a source").resolver()("assets/x.png");
+        assert!(fetch(&doc).is_some(), "open across the move");
+
+        type_into(&doc, "typed. ");
+        store.release(items[0], None);
+        let again = store.open(items[0]).expect("the scene opens again");
+        assert!(Rc::ptr_eq(&doc, &again), "the remembered document");
+        assert!(fetch(&again).is_some(), "edited, closed and opened again");
     }
 
     #[test]

@@ -206,30 +206,54 @@ pub fn store(image: &PendingImage, media_dir: &Path) -> Result<PathBuf, ImageErr
 /// pixels live on the document that owns it and a fragment is not a document.
 /// The same hook covers a drop and an undo that brings a deleted image back.
 ///
-/// Cheap to clone and safe to hold: it is a path, and the files under it are
+/// Cheap to clone and safe to hold: the files under the directory are
 /// content-addressed, so a name either resolves to the same bytes forever or to
 /// nothing at all.
-#[derive(Clone, Debug)]
+///
+/// It holds what answers where the directory is, never the answer. A document can
+/// stay open while its project moves (a Save As, a new folder project's first
+/// save), and a picture added after that exists only in the new place, so a path
+/// kept from when the document opened left that picture blank wherever it was
+/// pasted, until the project was closed.
+#[derive(Clone)]
 pub struct ImageSource {
-    media_dir: std::rc::Rc<PathBuf>,
+    media_dir: std::rc::Rc<dyn Fn() -> PathBuf>,
+}
+
+impl std::fmt::Debug for ImageSource {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ImageSource")
+            .field("media_dir", &self.media_dir())
+            .finish()
+    }
 }
 
 impl ImageSource {
-    pub fn new(media_dir: PathBuf) -> Self {
-        Self {
-            media_dir: std::rc::Rc::new(media_dir),
-        }
+    /// A source that asks `media_dir` where the project's pictures are each time it
+    /// needs one.
+    pub fn following(media_dir: std::rc::Rc<dyn Fn() -> PathBuf>) -> Self {
+        Self { media_dir }
+    }
+
+    /// A source that always looks in `media_dir`.
+    pub fn at(media_dir: PathBuf) -> Self {
+        Self::following(std::rc::Rc::new(move || media_dir.clone()))
+    }
+
+    /// Where the project's pictures are now.
+    pub fn media_dir(&self) -> PathBuf {
+        (self.media_dir)()
     }
 
     /// The callback `RichTextEditor::on_image_missing` wants.
     pub fn resolver(&self) -> impl Fn(&str) -> Option<(String, Vec<u8>)> + 'static {
-        let dir = self.media_dir.clone();
+        let source = self.clone();
         move |name: &str| {
             // The prose names `assets/<hash>.<ext>`; the media directory holds
             // the file under that basename. Only the basename is used, so a
             // name that tried to walk out of the project cannot.
             let base = Path::new(name).file_name()?;
-            let bytes = std::fs::read(dir.join(base)).ok()?;
+            let bytes = std::fs::read(source.media_dir().join(base)).ok()?;
             Some((mime_for_extension(name).to_string(), bytes))
         }
     }
