@@ -237,6 +237,61 @@ fn a_narrow_column_keeps_the_filters_usable() {
 
 /// With the header back inside its column, nothing past it pushes the cards out either: they
 /// were being cut at the right edge of the same narrow window.
+/// The same for a card: its dots come from the project's palette. A tagged scene's card drew
+/// none after a launch from the Launcher.
+#[test]
+fn a_tagged_card_draws_its_dots_from_its_own_project_palette() {
+    use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
+    use frontend::direct_access::BinderItemRelationshipDto;
+
+    let project = RealProject::empty_novel();
+    let chapter = folder(&project, BinderItemSubRole::ChapterScene);
+    let scene =
+        crate::models::binder_stream::ordered_binder_items(&project.app_ctx, project.work_id)
+            .into_iter()
+            .find(|row| {
+                frontend::commands::binder_item_commands::get_binder_item(&project.app_ctx, &row.id)
+                    .ok()
+                    .flatten()
+                    .is_some_and(|i| i.sub_role == BinderItemSubRole::Scene)
+            })
+            .expect("the novel has a scene")
+            .id;
+    let tag = crate::tags::TagsViewModel::detached(project.app_ctx.clone(), project.ids.clone())
+        .create("character", "#2980b9", "", false)
+        .expect("the novel takes a tag");
+    frontend::commands::binder_item_commands::set_binder_item_relationship(
+        &project.app_ctx,
+        None,
+        &BinderItemRelationshipDto {
+            id: scene,
+            field: BinderItemRelationshipField::Tags,
+            right_ids: vec![tag],
+        },
+    )
+    .expect("the scene takes the tag");
+
+    let tab = open_tab(
+        &project,
+        chapter,
+        &BinderItemRole::Folder,
+        &BinderItemSubRole::ChapterScene,
+    );
+    tab.tags().refresh();
+    let (tree, root) = mount(&project, &tab, segments::SEG_CORKBOARD, WIDE);
+    let grid = first_of_type(&tree, root, "CorkboardGrid").expect("the board has a grid");
+    let mut stack = vec![grid];
+    let mut drawn = false;
+    while let Some(id) = stack.pop() {
+        drawn |= tree
+            .widget_type_name(id)
+            .is_some_and(|name| name.ends_with("FixedDot"))
+            && !is_empty(&tree, id);
+        stack.extend(tree.children(id));
+    }
+    assert!(drawn, "the tagged scene's card draws no tag dot");
+}
+
 #[test]
 fn a_narrow_column_keeps_the_corkboard_inside_it() {
     let project = RealProject::empty_novel();

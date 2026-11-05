@@ -38,6 +38,7 @@ struct Board {
 
 fn vm_over(app_ctx: Rc<AppContext>, ids: AppIds, container: u64) -> CorkboardViewModel {
     let docs = OpenDocsStore::new(app_ctx.clone());
+    let tags = crate::tags::TagsViewModel::detached(app_ctx.clone(), ids.clone());
     CorkboardViewModel::new(
         app_ctx,
         ids,
@@ -61,6 +62,7 @@ fn vm_over(app_ctx: Rc<AppContext>, ids: AppIds, container: u64) -> CorkboardVie
         crate::shared::CaretBand::off(),
         crate::writing_session::WritingGamesViewModel::detached(),
         crate::format::FormatViewModel::detached(),
+        tags,
     )
 }
 

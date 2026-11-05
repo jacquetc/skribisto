@@ -166,11 +166,16 @@ impl Widget for CorkboardTile {
                     mirror.set(ids);
                 })
             };
-            footer = footer.child(DeadZone::new().child(crate::tags::TagDotsRow::new(
-                value,
-                set,
-                crate::tags::tag_chip::MAX_VISIBLE_CORKBOARD,
-            )));
+            footer = footer.child(
+                DeadZone::new().child(
+                    crate::tags::TagDotsRow::new(
+                        value,
+                        set,
+                        crate::tags::tag_chip::MAX_VISIBLE_CORKBOARD,
+                    )
+                    .with_palette(self.vm.tags()),
+                ),
+            );
         }
         let footer = footer.child(Spacer::new()).child(FooterCount {
             is_container: self.card.is_container,

@@ -813,6 +813,7 @@ impl ContentTab {
                 crate::shared::CaretBand::new(caret_highlight.clone(), caret_locale.clone()),
                 writing_games.clone(),
                 format.clone(),
+                tags.clone(),
             )
         });
         // The Overview gates on `overview_capable`, which is deliberately *not* the

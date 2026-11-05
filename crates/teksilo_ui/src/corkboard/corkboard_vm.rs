@@ -120,6 +120,9 @@ struct Inner {
     /// The writing games this project is playing — a card's synopsis editor is
     /// a synopsis surface like any other, so it follows the same option.
     writing_games: crate::writing_session::WritingGamesViewModel,
+    /// This project's tag palette, which a card's dots resolve against. Handed down from
+    /// the tab, since `app_state`'s is a throwaway one on a launch from the Launcher.
+    tags: crate::tags::TagsViewModel,
     /// This window's Format surfaces — card synopsis editors register with it.
     format: FormatViewModel,
 
@@ -157,6 +160,7 @@ impl CorkboardViewModel {
         caret_band: crate::shared::CaretBand,
         writing_games: crate::writing_session::WritingGamesViewModel,
         format: FormatViewModel,
+        tags: crate::tags::TagsViewModel,
     ) -> Self {
         let current_container = Signal::new(container_id);
         let cards = CorkboardCardsModel::new(
@@ -196,6 +200,7 @@ impl CorkboardViewModel {
                 synopsis_typo,
                 caret_band,
                 writing_games,
+                tags,
                 format,
                 cards,
                 projection,
@@ -645,6 +650,11 @@ impl CorkboardViewModel {
     /// A transient probe, exactly as `commit_rename` above does: the corkboard keeps no
     /// per-card `SingleBinderItem` (only `container_probe`), and a write is rare enough that
     /// standing one up per card would cost more than it saves.
+    /// This project's tag palette.
+    pub fn tags(&self) -> crate::tags::TagsViewModel {
+        self.inner.tags.clone()
+    }
+
     /// This project's workflow ladder.
     ///
     /// A fresh handle rather than the `WorkSession`'s, which is safe here for the reason
@@ -1384,6 +1394,7 @@ mod tests {
         let ctx = Rc::new(AppContext::new());
         let ids = AppIds::new();
         let docs = OpenDocsStore::new(ctx.clone());
+        let tags = crate::tags::TagsViewModel::detached(ctx.clone(), ids.clone());
         CorkboardViewModel::new(
             ctx,
             ids,
@@ -1399,6 +1410,7 @@ mod tests {
             crate::shared::CaretBand::off(),
             crate::writing_session::WritingGamesViewModel::detached(),
             FormatViewModel::detached(),
+            tags,
         )
     }
 
