@@ -87,5 +87,12 @@ dernière.
 
 ## Là où il faut être attentif
 
-Une chose ne fonctionne pas encore bien : un lecteur d’écran n’annonce pas les titres d’une
-page d’aide comme des titres, vous ne pouvez donc pas sauter de l’un à l’autre.
+Deux choses ne fonctionnent pas encore bien :
+
+- Quand le curseur est tout au début d’une ligne issue d’un retour automatique, un lecteur
+  d’écran lit la ligne au-dessus, dans cette aide comme dans votre texte. La dernière ligne
+  d’un élément de liste sur plusieurs lignes ne s’atteint donc pas avec les flèches. *Dire
+  tout* lit toutes les lignes et, dans NVDA, *Lire par paragraphe* dans les paramètres
+  braille affiche le paragraphe entier sur l’afficheur.
+- Un lecteur d’écran n’annonce pas encore les titres d’une page d’aide comme des titres :
+  vous ne pouvez pas sauter de l’un à l’autre.

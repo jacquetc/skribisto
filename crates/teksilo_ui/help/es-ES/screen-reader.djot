@@ -84,5 +84,12 @@ Use las flechas para cambiar de vista, e `Inicio` o `Fin` para la primera y la �
 
 ## Dónde tener cuidado
 
-Una cosa todavía no funciona bien: un lector de pantalla no anuncia los títulos de una
-página de ayuda como títulos, así que no puede saltar de uno a otro.
+Dos cosas todavía no funcionan bien:
+
+- Cuando el cursor está justo al principio de una línea que continúa la anterior, un lector
+  de pantalla lee la línea de arriba, en esta ayuda y en su texto. Por eso la última línea
+  de un elemento de lista de varias líneas no se alcanza con las flechas. *Verbalizar todo*
+  lee todas las líneas y, en NVDA, *Leer por párrafos* en las opciones de braille muestra el
+  párrafo entero en la línea braille.
+- Un lector de pantalla todavía no anuncia los títulos de una página de ayuda como títulos,
+  así que no puede saltar de uno a otro.

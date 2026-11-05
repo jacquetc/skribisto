@@ -83,5 +83,12 @@ Use as setas para mudar de vista, e `Home` ou `End` para a primeira e a última.
 
 ## Onde ter cuidado
 
-Uma coisa ainda não funciona bem: um leitor de ecrã não anuncia os títulos de uma página de
-ajuda como títulos, por isso não pode saltar de um para o outro.
+Duas coisas ainda não funcionam bem:
+
+- Quando o cursor está mesmo no início de uma linha que continua a anterior, um leitor de
+  ecrã lê a linha de cima, nesta ajuda e no seu texto. Por isso, a última linha de um item
+  de lista com várias linhas não se alcança com as setas. A *Leitura contínua* lê todas as
+  linhas e, no NVDA, *Ler por parágrafo* nas definições de braille mostra o parágrafo
+  inteiro na linha braille.
+- Um leitor de ecrã ainda não anuncia os títulos de uma página de ajuda como títulos, por
+  isso não pode saltar de um para o outro.

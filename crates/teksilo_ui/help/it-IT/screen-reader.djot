@@ -84,5 +84,12 @@ Usa le frecce per cambiare vista, e `Home` o `Fine` per la prima e l'ultima.
 
 ## Dove fare attenzione
 
-Una cosa non funziona ancora bene: un lettore di schermo non annuncia i titoli di una pagina
-della guida come titoli, quindi non puoi saltare dall'uno all'altro.
+Due cose non funzionano ancora bene:
+
+- Quando il cursore è proprio all'inizio di una riga che va a capo da sola, un lettore di
+  schermo legge la riga sopra, in questa guida come nel tuo testo. L'ultima riga di una voce
+  di elenco su più righe non si raggiunge quindi con le frecce. *Dire tutto* legge ogni riga
+  e, in NVDA, *Lettura per paragrafi* nelle impostazioni braille mostra l'intero paragrafo
+  sul display.
+- Un lettore di schermo non annuncia ancora i titoli di una pagina della guida come titoli,
+  quindi non puoi saltare dall'uno all'altro.
