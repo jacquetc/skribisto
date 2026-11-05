@@ -3104,6 +3104,7 @@ settings-themes-field-widget-text = Ohjauspalkin teksti
 settings-themes-field-caret-band = Korostus kohdistimen ympärillä
 
 statusbar-focus-settings = Häiriöttömän tilan asetukset
+statusbar-focus-no-text = Häiriötön tila. Täällä ei ole tekstiä, johon kirjoittaa.
 statusbar-focus-manage-themes = Hallitse teemoja…
 
 comments-title = Kommentit

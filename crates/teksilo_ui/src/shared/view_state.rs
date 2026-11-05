@@ -30,7 +30,7 @@
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
-use teksilo::prelude::{BuildContext, Signal, WidgetId};
+use teksilo::prelude::{BuildContext, EventContext, Signal, WidgetId};
 use teksilo::widgets::rich_text::EditorHandle;
 
 /// Where the writer was in one document: the caret's character offset, and the
@@ -85,6 +85,13 @@ pub struct ViewStatePorts {
     /// The node of the tab's body, for the keyboard to land on when the page has no
     /// text to put the caret in: a corkboard, an overview.
     page: Cell<Option<WidgetId>>,
+    /// The arm `WidthProbe` last measured this tab onto, so a rebuilt tab starts on it
+    /// rather than measuring again with nothing on the page. `None` until it has
+    /// measured, and on a tab with no probe.
+    arm: Cell<Option<usize>>,
+    /// Whether `WidthProbe` is waiting for the width before it builds its arm: there is
+    /// a page of text on its way, and no editor to ask yet.
+    arm_pending: Cell<bool>,
 }
 
 impl ViewStatePorts {
@@ -114,6 +121,41 @@ impl ViewStatePorts {
     /// The node of the tab's body, once the tab has been built.
     pub fn page(&self) -> Option<WidgetId> {
         self.page.get()
+    }
+
+    /// The arm `WidthProbe` last measured this tab onto.
+    pub(crate) fn arm(&self) -> Option<usize> {
+        self.arm.get()
+    }
+
+    /// Remember the arm `WidthProbe` measured this tab onto.
+    pub(crate) fn set_arm(&self, arm: usize) {
+        self.arm.set(Some(arm));
+    }
+
+    /// Say whether `WidthProbe` is waiting for the width before it builds its arm.
+    pub(crate) fn set_arm_pending(&self, pending: bool) {
+        self.arm_pending.set(pending);
+    }
+
+    /// Send the keyboard into this tab, now that its pane has been through a layout pass:
+    /// to its text, or when it has none (a corkboard, a book on *Pace*) to the first
+    /// control of `region`, the part of the window that holds the tab.
+    ///
+    /// A page still waiting for its width has no editor to ask, so the request stays
+    /// armed for the page to take as it mounts. Otherwise it is settled here and disarmed,
+    /// because a request left on a tab with no text would fire uninvited on the first page
+    /// with text the writer opens.
+    pub fn take_keyboard(&self, region: WidgetId, ctx: &mut EventContext) {
+        if self.arm_pending.get() {
+            self.request_focus();
+            return;
+        }
+        self.take_focus();
+        match self.editor() {
+            Some(handle) => handle.focus(ctx),
+            None => ctx.request_focus_into(region),
+        }
     }
 
     /// Ask this pane, once it is mounted, to scroll its caret into view.
@@ -364,6 +406,43 @@ mod tests {
             scroll: 250.0,
         });
         assert_eq!(ports.capture(ViewState::default()).scroll, 0.0);
+    }
+
+    /// A tree with a button in it, and `take_keyboard` run on `ports` as a mount action.
+    fn take_keyboard_on_a_button(
+        ports: Rc<ViewStatePorts>,
+    ) -> (teksilo::core::widget_tree::WidgetTree, WidgetId) {
+        use teksilo::prelude::{SizeProposal, lit};
+        let mut tree = teksilo::core::widget_tree::WidgetTree::new();
+        let button = tree.add(teksilo::widgets::Button::new(lit!("In the region")));
+        tree.layout(SizeProposal::exact(400.0, 300.0));
+        tree.run_with_event_context(&mut teksilo::core::NoopWindowOps, |ctx| {
+            ports.take_keyboard(button, ctx);
+        });
+        (tree, button)
+    }
+
+    /// A tab whose page has no text, a corkboard or a book on *Pace*, lands in the region
+    /// around it. It also lets go of the request: left armed, it would fire on the first
+    /// page with text the writer opened for reasons of their own.
+    #[test]
+    fn with_no_editor_the_keyboard_goes_into_the_region_and_nothing_stays_armed() {
+        let ports = Rc::new(ViewStatePorts::default());
+        ports.request_focus();
+        let (tree, button) = take_keyboard_on_a_button(ports.clone());
+        assert_eq!(tree.focused(), Some(button));
+        assert!(!ports.wants_after_mount());
+    }
+
+    /// A page waiting for its width has its text on the way: the request waits for it, and
+    /// the keyboard does not stop anywhere in between, where a reader would hear it.
+    #[test]
+    fn with_an_arm_on_its_way_the_request_waits_for_it() {
+        let ports = Rc::new(ViewStatePorts::default());
+        ports.set_arm_pending(true);
+        let (tree, _button) = take_keyboard_on_a_button(ports.clone());
+        assert_eq!(tree.focused(), None);
+        assert!(ports.take_focus(), "the arm takes it as it mounts");
     }
 
     #[test]

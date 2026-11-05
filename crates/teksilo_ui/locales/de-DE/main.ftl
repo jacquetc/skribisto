@@ -3135,6 +3135,7 @@ settings-themes-field-general = Hintergrund
 settings-themes-field-widget-text = Text der Bedienleiste
 settings-themes-field-caret-band = Hervorhebung an der Schreibmarke
 statusbar-focus-settings = Einstellungen für ablenkungsfreies Schreiben
+statusbar-focus-no-text = Ablenkungsfreies Schreiben. Hier gibt es keinen Text, in dem geschrieben werden kann.
 statusbar-focus-manage-themes = Designs verwalten…
 comments-title = Kommentare
 comments-document-title = Dieses Dokument

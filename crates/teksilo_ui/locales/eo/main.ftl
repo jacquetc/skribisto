@@ -2938,6 +2938,7 @@ settings-themes-field-general = Fono
 settings-themes-field-widget-text = Teksto de la regilbreto
 settings-themes-field-caret-band = Emfazo ĉirkaŭ la kursoro
 statusbar-focus-settings = Agordoj de sendistra reĝimo
+statusbar-focus-no-text = Sendistra reĝimo. Ĉi tie ne estas teksto por tajpi.
 statusbar-focus-manage-themes = Administri etosojn…
 comments-title = Komentoj
 comments-document-title = Ĉi tiu dokumento

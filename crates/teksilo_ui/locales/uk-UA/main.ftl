@@ -3726,6 +3726,7 @@ settings-themes-field-general = Тло
 settings-themes-field-widget-text = Текст панелі керування
 settings-themes-field-caret-band = Підсвічування навколо курсора
 statusbar-focus-settings = Налаштування режиму без відволікань
+statusbar-focus-no-text = Режим без відволікань. Тут немає тексту для введення.
 statusbar-focus-manage-themes = Керувати темами…
 comments-title = Коментарі
 comments-document-title = Цей документ

@@ -3030,6 +3030,7 @@ settings-themes-field-general = Háttér
 settings-themes-field-widget-text = A vezérlősáv szövege
 settings-themes-field-caret-band = Kiemelés a kurzor körül
 statusbar-focus-settings = Zavarmentes mód beállításai
+statusbar-focus-no-text = Zavarmentes mód. Itt nincs szöveg, amelybe írni lehetne.
 statusbar-focus-manage-themes = Témák kezelése…
 comments-title = Megjegyzések
 comments-document-title = Ez a dokumentum

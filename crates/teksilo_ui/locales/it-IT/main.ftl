@@ -3001,6 +3001,7 @@ settings-themes-field-general = Sfondo
 settings-themes-field-widget-text = Testo della barra dei comandi
 settings-themes-field-caret-band = Evidenziazione intorno al cursore
 statusbar-focus-settings = Impostazioni senza distrazioni
+statusbar-focus-no-text = Modalità senza distrazioni. Qui non c’è testo in cui scrivere.
 statusbar-focus-manage-themes = Gestisci temi…
 comments-title = Commenti
 comments-document-title = Questo documento

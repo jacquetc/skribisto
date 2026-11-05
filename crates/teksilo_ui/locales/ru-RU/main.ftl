@@ -3824,6 +3824,7 @@ settings-themes-field-widget-text = Текст панели управления
 settings-themes-field-caret-band = Подсветка вокруг курсора
 
 statusbar-focus-settings = Настройки режима без отвлечений
+statusbar-focus-no-text = Режим без отвлечений. Здесь нет текста для ввода.
 statusbar-focus-manage-themes = Управление темами…
 
 comments-title = Комментарии

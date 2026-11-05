@@ -3012,6 +3012,7 @@ settings-themes-field-widget-text = Tekst i kontrollstripen
 settings-themes-field-caret-band = Markering rundt markøren
 
 statusbar-focus-settings = Innstillinger for distraksjonsfri modus
+statusbar-focus-no-text = Distraksjonsfri modus. Her er det ingen tekst å skrive i.
 statusbar-focus-manage-themes = Behandle temaer…
 
 comments-title = Kommentarer

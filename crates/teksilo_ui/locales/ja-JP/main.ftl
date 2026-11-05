@@ -2305,6 +2305,7 @@ settings-themes-field-widget-text = 操作バーの文字
 settings-themes-field-caret-band = カーソル周辺を強調
 
 statusbar-focus-settings = 集中モードの設定
+statusbar-focus-no-text = 集中モード。ここには入力できるテキストがありません。
 statusbar-focus-manage-themes = テーマを管理…
 
 comments-title = コメント

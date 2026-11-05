@@ -3353,6 +3353,7 @@ settings-themes-field-widget-text = Text ovládací lišty
 settings-themes-field-caret-band = Zvýraznění kolem kurzoru
 
 statusbar-focus-settings = Nastavení režimu bez rozptylování
+statusbar-focus-no-text = Režim bez rozptylování. Není tu žádný text, do kterého by se dalo psát.
 statusbar-focus-manage-themes = Spravovat motivy…
 
 comments-title = Komentáře

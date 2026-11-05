@@ -3040,6 +3040,7 @@ settings-themes-field-widget-text = Tekst van bedieningsbalk
 settings-themes-field-caret-band = Markering rond de cursor
 
 statusbar-focus-settings = Instellingen voor afleidingsvrij schrijven
+statusbar-focus-no-text = Afleidingsvrij schrijven. Er is hier geen tekst om in te typen.
 statusbar-focus-manage-themes = Thema’s beheren…
 
 comments-title = Opmerkingen

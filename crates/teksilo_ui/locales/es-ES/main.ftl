@@ -3094,6 +3094,7 @@ settings-themes-field-widget-text = Texto de la barra de controles
 settings-themes-field-caret-band = Resaltado alrededor del cursor
 
 statusbar-focus-settings = Configuración sin distracciones
+statusbar-focus-no-text = Modo sin distracciones. Aquí no hay ningún texto en el que escribir.
 statusbar-focus-manage-themes = Gestionar temas…
 
 comments-title = Comentarios

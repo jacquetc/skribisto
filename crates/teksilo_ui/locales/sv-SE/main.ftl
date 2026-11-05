@@ -2941,6 +2941,7 @@ settings-themes-field-general = Bakgrund
 settings-themes-field-widget-text = Kontrollremsans text
 settings-themes-field-caret-band = Markering kring markören
 statusbar-focus-settings = Inställningar för distraktionsfritt läge
+statusbar-focus-no-text = Distraktionsfritt läge. Här finns ingen text att skriva i.
 statusbar-focus-manage-themes = Hantera teman…
 comments-title = Kommentarer
 comments-document-title = Det här dokumentet

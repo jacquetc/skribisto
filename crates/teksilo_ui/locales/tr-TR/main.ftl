@@ -2994,6 +2994,7 @@ settings-themes-field-widget-text = Denetim şeridi metni
 settings-themes-field-caret-band = İmlecin çevresindeki vurgu
 
 statusbar-focus-settings = Dikkat dağıtmayan mod ayarları
+statusbar-focus-no-text = Dikkat dağıtmayan mod. Burada yazılacak bir metin yok.
 statusbar-focus-manage-themes = Temaları yönet…
 
 comments-title = Yorumlar

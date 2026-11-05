@@ -4231,6 +4231,7 @@ settings-themes-field-general = الخلفية
 settings-themes-field-widget-text = نص شريط التحكم
 settings-themes-field-caret-band = التظليل حول المؤشر
 statusbar-focus-settings = إعدادات وضع بلا تشتيت
+statusbar-focus-no-text = وضع بلا تشتيت. لا يوجد هنا نص للكتابة فيه.
 statusbar-focus-manage-themes = إدارة السمات…
 comments-title = التعليقات
 comments-document-title = هذا المستند

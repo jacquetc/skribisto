@@ -693,6 +693,7 @@ fn prose_body(tab: &ContentTab) -> impl Widget {
     // across the synopsis strip as well. That placement is unaffected by which of
     // this body's two callers adds the outer backdrop, or when.
     WidthProbe::new(
+        tab.view_state_ports(),
         wants_side,
         tab.synopsis_side_width.clone(),
         Box::new(top),

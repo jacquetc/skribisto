@@ -3101,6 +3101,7 @@ settings-themes-field-widget-text = Κείμενο λωρίδας ελέγχου
 settings-themes-field-caret-band = Τονισμός γύρω από τον δρομέα
 
 statusbar-focus-settings = Ρυθμίσεις χωρίς περισπασμούς
+statusbar-focus-no-text = Λειτουργία χωρίς περισπασμούς. Δεν υπάρχει εδώ κείμενο για πληκτρολόγηση.
 statusbar-focus-manage-themes = Διαχείριση θεμάτων…
 
 comments-title = Σχόλια

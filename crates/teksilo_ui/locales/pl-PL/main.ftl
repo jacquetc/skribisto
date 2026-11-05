@@ -3690,6 +3690,7 @@ settings-themes-field-widget-text = Tekst paska sterowania
 settings-themes-field-caret-band = Podświetlenie wokół kursora
 
 statusbar-focus-settings = Ustawienia trybu bez rozpraszania
+statusbar-focus-no-text = Tryb bez rozpraszania. Nie ma tu tekstu, w którym można pisać.
 statusbar-focus-manage-themes = Zarządzaj motywami…
 
 comments-title = Komentarze

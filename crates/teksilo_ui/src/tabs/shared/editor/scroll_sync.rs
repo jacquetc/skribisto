@@ -62,7 +62,22 @@ pub(super) const MODE_SIDE: usize = 1;
 /// thereafter only shown or hidden — crossing the breakpoint back and forth keeps
 /// the editors' carets, scroll offsets and spell sessions intact instead of
 /// rebuilding a scene's worth of widgets on a window drag.
+///
+/// **It builds no arm until it knows the width**, when Side is wanted. Starting on Top
+/// and flipping left a page that was gone one pass later: a focus request answered by
+/// its editor was parked with it, so F11 left the keyboard on nothing, and a caret
+/// revealed there was revealed on an editor nobody would see. The page paints empty for
+/// that one pass, instead of the wrong arrangement. A rebuilt tab starts on the arm it
+/// was measured onto (see [`ViewStatePorts::arm`]), so that the framework can put the
+/// keyboard back where it was.
+///
+/// **An arm that goes away with the keyboard in it hands it to the other**, with the
+/// caret, through [`ArmHandover`]. Each arm has its own editor, so nothing else would:
+/// a writer typing as the window narrows past the breakpoint would be left on nothing.
+///
+/// [`ViewStatePorts::arm`]: crate::shared::ViewStatePorts::arm
 pub(crate) struct WidthProbe {
+    ports: Rc<crate::shared::ViewStatePorts>,
     /// Whether Side is wanted at all (the placement setting). Derived signals are
     /// fine here: `bind_to` walks a derived signal's mutable roots, and only
     /// `observe()` rejects them.
@@ -88,27 +103,40 @@ pub(crate) struct WidthProbe {
     /// Non-reactive mirror of the last value written to `mode` — the guard that
     /// makes the layout-time write idempotent.
     last_mode: Cell<usize>,
+    /// Whether a layout pass has told this probe its width. Rebuilds it, once, to build
+    /// the arm it was waiting to choose.
+    measured: Signal<bool>,
+    /// Whether the keyboard is somewhere in the arms.
+    focus_within: Signal<bool>,
+    handover: ArmHandoverRequest,
     switcher_id: Option<WidgetId>,
+    handover_id: Option<WidgetId>,
     pending: Option<(Box<dyn Widget>, Box<dyn Widget>)>,
 }
 
 impl WidthProbe {
     pub fn new(
+        ports: Rc<crate::shared::ViewStatePorts>,
         side_enabled: Signal<bool>,
         side_width: Signal<f32>,
         top: Box<dyn Widget>,
         side: Box<dyn Widget>,
     ) -> Self {
+        let arm = ports.arm();
+        // Top when Side is not wanted, since it never leaves it unless that changes.
+        let mode = arm.unwrap_or(MODE_TOP);
         Self {
+            ports,
             side_enabled,
             side_width,
             reserved: None,
-            // Start on Top: the available width is unknown until the first
-            // layout pass, and Top is the layout that fits every width. A tab
-            // that should be Side flips on that first pass, before paint.
-            mode: Signal::new(MODE_TOP),
-            last_mode: Cell::new(MODE_TOP),
+            mode: Signal::new(mode),
+            last_mode: Cell::new(mode),
+            measured: Signal::new(arm.is_some()),
+            focus_within: Signal::new(false),
+            handover: ArmHandoverRequest::new(),
             switcher_id: None,
+            handover_id: None,
             pending: Some((top, side)),
         }
     }
@@ -180,11 +208,25 @@ impl Widget for WidthProbe {
             self.reserved = Some(reserved);
         }
 
-        if let Some((top, side)) = self.pending.take() {
-            let switcher = Switcher::new(self.mode.clone()).child(top).child(side);
-            self.switcher_id = Some(ctx.add(switcher));
+        if self.side_enabled.get() && !self.measured.get() {
+            self.ports.set_arm_pending(true);
+            self.measured
+                .bind_to(self_id, ctx.binding_registry(), BindingLevel::Rebuild);
+            return Vec::new();
         }
-        self.switcher_id.into_iter().collect()
+        if let Some((top, side)) = self.pending.take() {
+            self.ports.set_arm_pending(false);
+            let switcher = Switcher::new(self.mode.clone())
+                .child(top)
+                .child(side)
+                .focus_within(self.focus_within.clone());
+            self.switcher_id = Some(ctx.add(switcher));
+            self.handover_id = Some(ctx.add(ArmHandover {
+                ports: self.ports.clone(),
+                request: self.handover.clone(),
+            }));
+        }
+        self.children()
     }
 
     fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
@@ -203,17 +245,93 @@ impl Widget for WidthProbe {
     ) {
         let next = self.resolve_mode(bounds.width);
         if self.last_mode.get() != next {
+            if self.focus_within.get() {
+                self.handover.ask(self.ports.editor());
+            }
             self.last_mode.set(next);
             self.mode.set(next);
         }
+        self.ports.set_arm(next);
+        if !self.measured.get() {
+            self.measured.set(true);
+        }
         for child in children.iter_mut() {
             child.origin = Point::new(bounds.x, bounds.y);
-            child.size = bounds.size();
+            child.size = if Some(child.id) == self.switcher_id {
+                bounds.size()
+            } else {
+                Size::ZERO
+            };
         }
     }
 
     fn children(&self) -> Vec<WidgetId> {
-        self.switcher_id.into_iter().collect()
+        self.switcher_id
+            .into_iter()
+            .chain(self.handover_id)
+            .collect()
+    }
+}
+
+/// What the outgoing arm's editor had when the keyboard has to leave it. Written during
+/// layout, read by the [`ArmHandover`] it rebuilds.
+#[derive(Clone)]
+struct ArmHandoverRequest {
+    caret: Rc<Cell<Option<usize>>>,
+    rebuild: Signal<u64>,
+}
+
+impl ArmHandoverRequest {
+    fn new() -> Self {
+        Self {
+            caret: Rc::new(Cell::new(None)),
+            rebuild: Signal::new(0),
+        }
+    }
+
+    fn ask(&self, outgoing: Option<EditorHandle>) {
+        self.caret
+            .set(Some(outgoing.map_or(0, |h| h.cursor_position())));
+        self.rebuild.set(self.rebuild.get().wrapping_add(1));
+    }
+}
+
+/// Moves the keyboard and the caret to the arm [`WidthProbe`] has just shown.
+///
+/// A child rebuilt by the request, for the `EventContext` of its post-mount action: only
+/// that can move focus, and a mount action runs after the layout pass that parks the
+/// old arm and attaches the new one's editor to the ports.
+struct ArmHandover {
+    ports: Rc<crate::shared::ViewStatePorts>,
+    request: ArmHandoverRequest,
+}
+
+impl std::fmt::Debug for ArmHandover {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("ArmHandover")
+    }
+}
+
+impl Widget for ArmHandover {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        self.request
+            .rebuild
+            .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
+        if let Some(caret) = self.request.caret.take() {
+            let ports = self.ports.clone();
+            ctx.run_after_mount(move |c| {
+                if let Some(handle) = ports.editor() {
+                    handle.select_range(caret, caret);
+                    handle.reveal_range(c, caret, caret);
+                    handle.focus(c);
+                }
+            });
+        }
+        Vec::new()
+    }
+
+    fn layout_response(&self, _proposal: SizeProposal, _ctx: &LayoutContext) -> LayoutResponse {
+        Size::ZERO.into()
     }
 }
 

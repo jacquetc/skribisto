@@ -68,6 +68,11 @@ struct Fixture {
 /// A surface view-model with its dependencies attached and one Scene
 /// document (id 1) seeded into the shared store.
 fn fixture() -> Fixture {
+    fixture_with_column(SURFACE_COLUMN)
+}
+
+/// [`fixture`] with the mode's writing column at `column` wide.
+fn fixture_with_column(column: f32) -> Fixture {
     let app_ctx = Rc::new(AppContext::new());
     let ids = AppIds::new();
     let docs = OpenDocsStore::new(app_ctx.clone());
@@ -93,7 +98,7 @@ fn fixture() -> Fixture {
             crate::models::TreeExpansionService::in_memory_default(),
         ),
         Signal::new(false),
-        Signal::new(SURFACE_COLUMN),
+        Signal::new(column),
         crate::go::GoAvailability::new(),
         crate::format::FormatViewModel::detached(),
         crate::writing_session::WritingGamesViewModel::detached(),
@@ -174,6 +179,9 @@ fn mount(fx: &Fixture) -> WidgetTree {
     let ctx = Rc::new(AppContext::new());
     let mut tree = crate::test_support::tree_with_events(&ctx);
     tree.add(DistractionFreeSurface::new(fx.vm.clone()));
+    // Twice: a page that may go Side builds its text once the first pass has told it
+    // its width.
+    tree.layout(SizeProposal::exact(1200.0, 800.0));
     tree.layout(SizeProposal::exact(1200.0, 800.0));
     tree
 }
@@ -1098,4 +1106,421 @@ fn the_strip_shows_and_hides_comments_through_the_shared_setting() {
     visible.set(false);
     tree.layout(SizeProposal::exact(1200.0, 800.0));
     assert_eq!(comments_toggle_state(&mut tree), Some(false));
+}
+
+/// The window the way `shell::windows` builds it: the project shell behind a
+/// `VisibleWhen`, the surface inside a `Slide` beside it, and in the shell a button and
+/// an editor for the keyboard to start in.
+struct FullWindow {
+    tree: WidgetTree,
+    shell_editor: teksilo::widgets::rich_text::EditorHandle,
+    width: f32,
+}
+
+fn full_window(fx: &Fixture) -> FullWindow {
+    use crate::tabs::shared::editor::VisibleWhen;
+    use teksilo::widgets::rich_text::RichTextEditor;
+    use teksilo::widgets::{Button, Expand, Slide, SlideEdge, VStack, ZStack};
+
+    let ctx = Rc::new(AppContext::new());
+    let mut tree = crate::test_support::tree_with_events(&ctx);
+    let editor = RichTextEditor::editor(teksilo::text_document::TextDocument::new());
+    let shell_editor = editor.handle();
+    let shown = fx.focus.active_signal().map(|active| !*active);
+    tree.add(
+        Expand::new().child(
+            ZStack::new()
+                .child(VisibleWhen::new(
+                    shown,
+                    VStack::new()
+                        .child(Button::new(lit!("In the binder")))
+                        .child(editor),
+                ))
+                .child(
+                    Slide::new(fx.focus.active_signal())
+                        .from(SlideEdge::Trailing)
+                        .child(DistractionFreeSurface::new(fx.vm.clone())),
+                ),
+        ),
+    );
+    let mut window = FullWindow {
+        tree,
+        shell_editor,
+        width: 1200.0,
+    };
+    window.frames(3);
+    window
+}
+
+impl FullWindow {
+    /// Turns of the host's loop: a layout pass, then what it drains after the pass.
+    fn frames(&mut self, n: usize) {
+        for _ in 0..n {
+            self.tree.layout(SizeProposal::exact(self.width, 800.0));
+            self.tree
+                .run_mount_actions(&mut teksilo::core::NoopWindowOps);
+            self.tree
+                .tick_animations(std::time::Duration::from_millis(16));
+            let _ = self.tree.sync_accessibility();
+        }
+    }
+
+    /// The type of the live widget holding the keyboard.
+    fn focused_type(&self) -> Option<String> {
+        let id = self.tree.focused()?;
+        self.tree.is_active(id).then_some(())?;
+        self.tree.widget_type_name(id).map(|n| n.to_string())
+    }
+
+    /// The first editor in the tree, which while the mode is off is the shell's.
+    fn first_editor(&self) -> WidgetId {
+        fn find(tree: &WidgetTree, id: WidgetId) -> Option<WidgetId> {
+            if tree
+                .widget_type_name(id)
+                .is_some_and(|t| t.contains("RichTextEditor"))
+            {
+                return Some(id);
+            }
+            tree.children(id).into_iter().find_map(|c| find(tree, c))
+        }
+        self.tree
+            .roots()
+            .into_iter()
+            .find_map(|r| find(&self.tree, r))
+            .expect("the shell has an editor")
+    }
+}
+
+fn assert_entering_lands_in_the_text(column: f32) {
+    let fx = fixture_with_column(column);
+    fx.editors.active_item().set(Some(1));
+    let mut window = full_window(&fx);
+    let shell_editor = window.first_editor();
+    window.tree.focus(shell_editor);
+    window.frames(2);
+    assert!(
+        window.shell_editor.focused_signal().get(),
+        "precondition: the keyboard is in the shell's editor"
+    );
+
+    fx.focus.active_signal().set(true);
+    window.frames(6);
+
+    assert!(
+        window
+            .focused_type()
+            .is_some_and(|t| t.contains("RichTextEditor")),
+        "F11 must leave the keyboard in the text, it is on {:?}",
+        window.focused_type()
+    );
+}
+
+/// F11 left a blind writer nowhere: the keyboard must end in the text.
+///
+/// At the column's default width, which is what shows it. The mode pins the synopsis
+/// to Side, and a page wide enough for that starts on the Top arm and moves to the Side
+/// one on its first layout.
+#[test]
+fn entering_from_an_editor_puts_the_keyboard_in_the_text() {
+    assert_entering_lands_in_the_text(crate::DISTRACTION_FREE_WIDTH_DEFAULT);
+}
+
+/// A column too narrow for Side stays on the arm it started on.
+#[test]
+fn entering_on_a_narrow_column_puts_the_keyboard_in_the_text() {
+    assert_entering_lands_in_the_text(SURFACE_COLUMN);
+}
+
+/// F11 in a narrow window: the keyboard takes the text at once, and stays there when the
+/// window has gone fullscreen, some frames later.
+#[test]
+fn entering_from_a_narrow_window_keeps_the_keyboard_as_it_goes_fullscreen() {
+    let fx = fixture_with_column(crate::DISTRACTION_FREE_WIDTH_DEFAULT);
+    fx.editors.active_item().set(Some(1));
+    let mut window = full_window(&fx);
+    window.width = 500.0;
+    window.frames(2);
+
+    fx.focus.active_signal().set(true);
+    window.frames(6);
+    assert!(
+        window
+            .focused_type()
+            .is_some_and(|t| t.contains("RichTextEditor")),
+        "precondition: in the text, it is on {:?}",
+        window.focused_type()
+    );
+
+    window.width = 1200.0;
+    window.frames(6);
+
+    assert!(
+        window
+            .focused_type()
+            .is_some_and(|t| t.contains("RichTextEditor")),
+        "the window growing took the keyboard away, it is on {:?}",
+        window.focused_type()
+    );
+}
+
+/// From the binder, the mode's text takes the keyboard all the same: what held it is
+/// parked behind the surface whatever it was.
+#[test]
+fn entering_from_a_panel_puts_the_keyboard_in_the_text() {
+    let fx = fixture_with_column(crate::DISTRACTION_FREE_WIDTH_DEFAULT);
+    fx.editors.active_item().set(Some(1));
+    let mut window = full_window(&fx);
+    let binder = window
+        .tree
+        .find_by_label("In the binder")
+        .expect("a control");
+    window.tree.focus(binder);
+    window.frames(2);
+    assert_eq!(window.tree.focused(), Some(binder), "precondition");
+
+    fx.focus.active_signal().set(true);
+    window.frames(6);
+    assert!(
+        window
+            .focused_type()
+            .is_some_and(|t| t.contains("RichTextEditor")),
+        "it is on {:?}",
+        window.focused_type()
+    );
+}
+
+/// With nothing focused too: a writer who has just opened the window.
+#[test]
+fn entering_with_nothing_focused_puts_the_keyboard_in_the_text() {
+    let fx = fixture_with_column(crate::DISTRACTION_FREE_WIDTH_DEFAULT);
+    fx.editors.active_item().set(Some(1));
+    let mut window = full_window(&fx);
+    assert_eq!(window.tree.focused(), None, "precondition");
+
+    fx.focus.active_signal().set(true);
+    window.frames(6);
+    assert!(
+        window
+            .focused_type()
+            .is_some_and(|t| t.contains("RichTextEditor")),
+        "it is on {:?}",
+        window.focused_type()
+    );
+}
+
+/// The caret goes with the keyboard: a reader goes on from where they were reading.
+#[test]
+fn entering_keeps_the_writers_caret() {
+    let fx = fixture_with_column(crate::DISTRACTION_FREE_WIDTH_DEFAULT);
+    fx.editors.open_in(Side::Primary, 1, "Scene");
+    let state = ViewState {
+        caret: 12,
+        scroll: 0.0,
+    };
+    fx.editors.apply_view_state(1, state);
+    fx.editors.seed_view_state(Side::Primary, 1, state);
+    fx.editors.active_item().set(Some(1));
+    let mut window = full_window(&fx);
+
+    fx.focus.active_signal().set(true);
+    window.frames(6);
+    assert!(
+        window
+            .focused_type()
+            .is_some_and(|t| t.contains("RichTextEditor")),
+        "precondition: the keyboard is in the text"
+    );
+
+    // What the surface's editor hands back on the way out is that editor's own caret.
+    // Asking the document would prove nothing: the caret is the view's.
+    fx.editors.apply_view_state(
+        1,
+        ViewState {
+            caret: 0,
+            scroll: 0.0,
+        },
+    );
+    fx.focus.active_signal().set(false);
+    window.frames(2);
+    assert_eq!(
+        fx.editors.view_state_of(1).map(|s| s.caret),
+        Some(12),
+        "the reader must stay on the same caret"
+    );
+}
+
+/// Go ▸ Next scene inside the mode swaps the document under the keyboard, and the next
+/// one has to take it too.
+#[test]
+fn moving_to_another_item_in_the_mode_keeps_the_keyboard_in_the_text() {
+    let fx = fixture_with_column(crate::DISTRACTION_FREE_WIDTH_DEFAULT);
+    fx.docs.insert_for_test(Rc::new(OpenDoc::build(
+        &Rc::new(AppContext::new()),
+        2,
+        &BinderItemRole::Item,
+        &BinderItemSubRole::Scene,
+        &[],
+        Signal::new(0),
+        std::path::Path::new(""),
+    )));
+    fx.editors.active_item().set(Some(1));
+    let mut window = full_window(&fx);
+    fx.focus.active_signal().set(true);
+    window.frames(6);
+    let first = window.tree.focused();
+
+    fx.editors.active_item().set(Some(2));
+    window.frames(6);
+
+    assert!(
+        window
+            .focused_type()
+            .is_some_and(|t| t.contains("RichTextEditor")),
+        "it is on {:?}",
+        window.focused_type()
+    );
+    assert_ne!(window.tree.focused(), first, "on the new document's editor");
+}
+
+/// Something rebuilding the surface in the mode leaves a writer in the text. A rebuilt
+/// tab must not spend a pass with no text on the page, or the framework's restore lands
+/// on the strip.
+#[test]
+fn a_rebuild_inside_the_mode_keeps_the_keyboard_in_the_text() {
+    let fx = fixture_with_column(crate::DISTRACTION_FREE_WIDTH_DEFAULT);
+    fx.editors.active_item().set(Some(1));
+    let mut window = full_window(&fx);
+    fx.focus.active_signal().set(true);
+    window.frames(6);
+    assert!(window.focused_type().is_some(), "precondition");
+
+    fx.vm.revision().set(fx.vm.revision().get() + 1);
+    window.frames(6);
+
+    assert!(
+        window
+            .focused_type()
+            .is_some_and(|t| t.contains("RichTextEditor")),
+        "it is on {:?}",
+        window.focused_type()
+    );
+}
+
+/// Once the writer has moved off the text, a rebuild for some other reason does not
+/// pull them back into it.
+#[test]
+fn a_rebuild_inside_the_mode_does_not_steal_the_strip_back() {
+    let fx = fixture_with_column(crate::DISTRACTION_FREE_WIDTH_DEFAULT);
+    fx.editors.active_item().set(Some(1));
+    let mut window = full_window(&fx);
+    fx.focus.active_signal().set(true);
+    window.frames(6);
+    let exit = window
+        .tree
+        .find_by_label(&tr!(statusbar_focus_exit()).resolve_now())
+        .expect("the strip");
+    window.tree.focus(exit);
+    window.frames(1);
+
+    fx.focus.synopsis_visible_signal().set(true);
+    fx.focus.synopsis_visible_signal().set(false);
+    window.frames(6);
+
+    assert_eq!(
+        window
+            .tree
+            .focused()
+            .and_then(|id| window.tree.widget_type_name(id).map(|n| n.to_string())),
+        window.tree.widget_type_name(exit).map(|n| n.to_string())
+    );
+}
+
+/// A folder's page is its synopsis, which takes the keyboard as a scene's text does.
+#[test]
+fn a_page_that_is_a_synopsis_takes_the_keyboard_in_it() {
+    let fx = fixture_with_column(crate::DISTRACTION_FREE_WIDTH_DEFAULT);
+    let doc = OpenDoc::build(
+        &Rc::new(AppContext::new()),
+        2,
+        &BinderItemRole::Folder,
+        &BinderItemSubRole::Note,
+        &[],
+        Signal::new(0),
+        std::path::Path::new(""),
+    );
+    fx.docs.insert_for_test(Rc::new(doc));
+    fx.editors.active_item().set(Some(2));
+    let mut window = full_window(&fx);
+    fx.focus.active_signal().set(true);
+    window.frames(6);
+
+    assert!(
+        window
+            .focused_type()
+            .is_some_and(|t| t.contains("RichTextEditor")),
+        "it is on {:?}",
+        window.focused_type()
+    );
+}
+
+fn said(tree: &WidgetTree) -> Vec<String> {
+    tree.announcements_since(0)
+        .into_iter()
+        .map(|a| a.text)
+        .collect()
+}
+
+/// With nothing open there is nothing to type in, and the mode says so instead of
+/// leaving the writer on nothing. Once: a rebuild does not repeat it.
+#[test]
+fn entering_with_nothing_open_goes_to_the_strip_and_says_so() {
+    let fx = fixture_with_column(crate::DISTRACTION_FREE_WIDTH_DEFAULT);
+    let mut window = full_window(&fx);
+    window.tree.set_records_announcements(true);
+
+    fx.focus.active_signal().set(true);
+    window.frames(6);
+
+    assert!(
+        window.focused_type().is_some(),
+        "the keyboard must be on the strip, it is on nothing"
+    );
+    let want = tr!(statusbar_focus_no_text()).resolve_now();
+    assert_eq!(said(&window.tree), std::slice::from_ref(&want));
+
+    fx.vm.revision().set(fx.vm.revision().get() + 1);
+    window.frames(6);
+    assert_eq!(said(&window.tree), std::slice::from_ref(&want), "said once");
+}
+
+/// A book's end marker is open but holds only a label: the strip again, and the same
+/// words.
+#[test]
+fn a_page_with_no_content_goes_to_the_strip_and_says_so() {
+    let fx = fixture_with_column(crate::DISTRACTION_FREE_WIDTH_DEFAULT);
+    let doc = OpenDoc::build(
+        &Rc::new(AppContext::new()),
+        2,
+        &BinderItemRole::Item,
+        &BinderItemSubRole::BookEnd,
+        &[],
+        Signal::new(0),
+        std::path::Path::new(""),
+    );
+    fx.docs.insert_for_test(Rc::new(doc));
+    fx.editors.active_item().set(Some(2));
+    let mut window = full_window(&fx);
+    window.tree.set_records_announcements(true);
+
+    fx.focus.active_signal().set(true);
+    window.frames(6);
+
+    assert!(
+        window.focused_type().is_some(),
+        "the keyboard must be on the strip, it is on nothing"
+    );
+    assert_eq!(
+        said(&window.tree),
+        [tr!(statusbar_focus_no_text()).resolve_now()]
+    );
 }

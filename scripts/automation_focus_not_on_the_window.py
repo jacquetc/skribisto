@@ -21,7 +21,9 @@ Asserts, against the running app:
      scene's text, while Go to from the binder stays in the binder; and the View menu's row
      behaves as F9 does;
   8. the status bar's right-panel button does the same as F9;
-  9. leaving distraction-free mode gives the keyboard back to the text.
+  9. entering distraction-free mode puts the keyboard in its text, and leaving it gives
+     the keyboard back to the text underneath (`automation_distraction_free_focus.py`
+     has the other ways in).
 
 The announcements are what the bridge captures from the live regions, as a platform
 adapter is handed them. No screen reader takes part: what one makes of them is measured
@@ -321,6 +323,7 @@ try:
     key("F11")
     time.sleep(2.0)
     session.settle(3)
+    wait_for(prose_has_focus, "the focus to reach the text in the mode")
     print("  in the mode:", describe_focus(session.nodes()))
     key("F11")
     wait_for(prose_has_focus, "the focus to reach the text after leaving the mode")

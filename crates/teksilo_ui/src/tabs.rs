@@ -1405,6 +1405,18 @@ impl ContentTab {
         renders_prose(&self.open_doc.role, &self.open_doc.sub_role)
     }
 
+    /// Whether this tab shows only [`shared::placeholder`]'s label, with nothing on it
+    /// that can take the keyboard.
+    pub fn has_no_content(&self) -> bool {
+        matches!(
+            (&self.open_doc.role, &self.open_doc.sub_role),
+            (
+                BinderItemRole::Item,
+                BinderItemSubRole::BookEnd | BinderItemSubRole::Text
+            )
+        )
+    }
+
     /// How much horizontal room this tab's Side synopsis is claiming right now —
     /// its column plus the divider, or zero whenever the synopsis is not beside
     /// the manuscript.

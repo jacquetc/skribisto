@@ -3384,6 +3384,7 @@ settings-themes-field-widget-text = טקסט רצועת הבקרה
 settings-themes-field-caret-band = הדגשה סביב הסמן
 
 statusbar-focus-settings = הגדרות ללא הסחות דעת
+statusbar-focus-no-text = מצב ללא הסחות דעת. אין כאן טקסט להקלדה.
 statusbar-focus-manage-themes = ניהול ערכות נושא…
 
 comments-title = הערות

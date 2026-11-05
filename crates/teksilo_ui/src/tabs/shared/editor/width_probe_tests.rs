@@ -61,6 +61,7 @@ impl Probe {
         let (top, top_builds) = Tagged::new();
         let (side, side_builds) = Tagged::new();
         let probe = WidthProbe::new(
+            Rc::default(),
             Signal::new(enabled),
             Signal::new(side_width),
             Box::new(top),
@@ -150,9 +151,10 @@ fn crossing_the_breakpoint_keeps_each_branch_alive() {
 
     probe.settle(900.0);
     assert_eq!(probe.side_builds.get(), 1, "Side mounted once");
-    let top_after_first = probe.top_builds.get();
-
     probe.settle(400.0);
+    let top_after_first = probe.top_builds.get();
+    assert_eq!(top_after_first, 1, "Top mounted on the first crossing");
+
     probe.settle(900.0);
     probe.settle(400.0);
 
@@ -166,6 +168,178 @@ fn crossing_the_breakpoint_keeps_each_branch_alive() {
         top_after_first,
         "Top was rebuilt on a later crossing — the Switcher is not preserving it"
     );
+}
+
+/// A tab that fits Side never builds the Top arm at all. Starting there and flipping
+/// handed anything acting on the new page an editor gone one pass later, which is how
+/// F11 lost the keyboard.
+#[test]
+fn a_tab_that_fits_side_never_builds_the_top_arm() {
+    let mut probe = Probe::new(true, 280.0);
+    assert_eq!(probe.settle(900.0), MODE_SIDE);
+    assert_eq!(probe.side_builds.get(), 1);
+    assert_eq!(probe.top_builds.get(), 0);
+}
+
+/// A tab that does not want Side has nothing to measure for, and builds its page at once.
+#[test]
+fn a_top_placed_tab_builds_its_arm_without_waiting_for_the_width() {
+    let probe = Probe::new(false, 280.0);
+    assert_eq!(probe.top_builds.get(), 1);
+    assert_eq!(probe.side_builds.get(), 0);
+}
+
+/// Two arms with an editor each, the way `prose_body` builds them.
+struct Arms {
+    tree: WidgetTree,
+    ports: Rc<crate::shared::ViewStatePorts>,
+    top: EditorHandle,
+    side: EditorHandle,
+    top_id: Rc<Cell<Option<WidgetId>>>,
+}
+
+/// An arm: an editor, and the port that publishes it while the arm is on screen.
+struct Arm {
+    ports: Rc<crate::shared::ViewStatePorts>,
+    handle: EditorHandle,
+    editor: Option<teksilo::widgets::rich_text::RichTextEditor>,
+    id: Rc<Cell<Option<WidgetId>>>,
+}
+
+impl std::fmt::Debug for Arm {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("Arm")
+    }
+}
+
+impl Widget for Arm {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        let port = ctx.add(PageScrollPort::new(
+            self.ports.clone(),
+            Signal::new(0.0),
+            Signal::new(0.0),
+            Rc::new(RefCell::new(Some(self.handle.clone()))),
+        ));
+        let editor = ctx.add(self.editor.take().expect("an arm is built once"));
+        self.id.set(Some(editor));
+        vec![port, editor]
+    }
+
+    fn layout_response(&self, proposal: SizeProposal, _ctx: &LayoutContext) -> LayoutResponse {
+        proposal.resolve(10.0, 10.0).into()
+    }
+}
+
+fn arms() -> Arms {
+    use teksilo::text_document::TextDocument;
+    use teksilo::widgets::rich_text::RichTextEditor;
+
+    let doc = TextDocument::new();
+    doc.cursor_at(0).insert_text("Twelve words of it").unwrap();
+    let ports: Rc<crate::shared::ViewStatePorts> = Rc::default();
+    let top_editor = RichTextEditor::editor(doc.clone());
+    let side_editor = RichTextEditor::editor(doc);
+    let (top, side) = (top_editor.handle(), side_editor.handle());
+    let top_id = Rc::new(Cell::new(None));
+    let probe = WidthProbe::new(
+        ports.clone(),
+        Signal::new(true),
+        Signal::new(280.0),
+        Box::new(Arm {
+            ports: ports.clone(),
+            handle: top.clone(),
+            editor: Some(top_editor),
+            id: top_id.clone(),
+        }),
+        Box::new(Arm {
+            ports: ports.clone(),
+            handle: side.clone(),
+            editor: Some(side_editor),
+            id: Rc::new(Cell::new(None)),
+        }),
+    );
+    let mut tree = WidgetTree::new();
+    tree.add_boxed(Box::new(probe));
+    Arms {
+        tree,
+        ports,
+        top,
+        side,
+        top_id,
+    }
+}
+
+impl Arms {
+    fn settle(&mut self, width: f32) {
+        for _ in 0..4 {
+            self.tree
+                .layout(teksilo::prelude::SizeProposal::exact(width, 600.0));
+            self.tree
+                .run_mount_actions(&mut teksilo::core::NoopWindowOps);
+        }
+    }
+}
+
+/// The arm going away with the keyboard in it hands it to the other, on the same caret:
+/// a window changing size under a writer in mid-sentence.
+#[test]
+fn crossing_the_breakpoint_takes_the_keyboard_and_the_caret_across() {
+    let mut a = arms();
+    a.settle(500.0);
+    let id = a.top_id.get().expect("a narrow tab builds Top");
+    a.tree.focus(id);
+    a.settle(500.0);
+    a.top.select_range(7, 7);
+    assert!(a.top.focused_signal().get(), "precondition: in the Top arm");
+
+    a.settle(900.0);
+
+    assert!(
+        a.side.focused_signal().get(),
+        "the keyboard must follow the arm, it is on {:?}",
+        a.tree.focused()
+    );
+    assert_eq!(a.side.cursor_position(), 7, "the caret goes with it");
+    assert_eq!(
+        a.ports.editor().map(|h| h.cursor_position()),
+        Some(7),
+        "the tab reports the arm on screen"
+    );
+}
+
+/// Crossing with the keyboard somewhere else must not pull the writer into the text.
+#[test]
+fn crossing_the_breakpoint_elsewhere_moves_no_keyboard() {
+    let mut a = arms();
+    a.settle(500.0);
+    a.settle(900.0);
+    assert_eq!(a.tree.focused(), None);
+    assert!(!a.side.focused_signal().get());
+}
+
+/// A rebuilt tab starts on the arm it was measured onto, without an empty pass the
+/// framework would have to restore the keyboard through.
+#[test]
+fn a_probe_rebuilt_on_a_measured_tab_needs_no_second_measure() {
+    let ports: Rc<crate::shared::ViewStatePorts> = Rc::default();
+    ports.set_arm(MODE_SIDE);
+    let (top, top_builds) = Tagged::new();
+    let (side, side_builds) = Tagged::new();
+    let probe = WidthProbe::new(
+        ports.clone(),
+        Signal::new(true),
+        Signal::new(280.0),
+        Box::new(top),
+        Box::new(side),
+    );
+    let mut tree = WidgetTree::new();
+    tree.add_boxed(Box::new(probe));
+    assert_eq!(
+        side_builds.get(),
+        1,
+        "built at once, with no pass to measure"
+    );
+    assert_eq!(top_builds.get(), 0);
 }
 
 /// A `Probe` whose tree carries a real settings store, so the breakpoint sees the
@@ -197,6 +371,7 @@ fn probe_with_settings(
     let (top, top_builds) = Tagged::new();
     let (side, side_builds) = Tagged::new();
     let probe = WidthProbe::new(
+        Rc::default(),
         Signal::new(enabled),
         Signal::new(side_width),
         Box::new(top),

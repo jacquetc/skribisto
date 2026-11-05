@@ -41,7 +41,7 @@ struct Mounted {
     /// Snapshotted when the tab was opened — see this module's doc.
     stack: Option<u64>,
     tab: ContentTab,
-    /// Whether this document's editor has already been given keyboard focus.
+    /// Whether this document has already been given the keyboard.
     /// Guards `run_after_mount`, which is a *per-enqueue* one-shot: the surface
     /// rebuilds for reasons that are not a new document (the settings the strip
     /// reads, for one), and stealing focus back on each of those would fight the
@@ -53,6 +53,16 @@ pub struct DistractionFreeSurface {
     vm: DistractionFreeSurfaceViewModel,
     mounted: Option<Mounted>,
     root_child: Option<WidgetId>,
+    /// Whether the mode has already told a writer with nothing open where they are.
+    /// `Mounted::focused`'s guard, for when there is no document to carry it.
+    said_no_text: bool,
+}
+
+/// There is nothing to write in: the keyboard goes to the strip, the one thing here it
+/// can do anything on, and a reader is told why there is no text.
+fn say_there_is_no_text(surface: WidgetId, ctx: &mut EventContext) {
+    ctx.request_focus_into(surface);
+    ctx.announce(tr!(statusbar_focus_no_text()));
 }
 
 impl DistractionFreeSurface {
@@ -61,6 +71,7 @@ impl DistractionFreeSurface {
             vm,
             mounted: None,
             root_child: None,
+            said_no_text: false,
         }
     }
 
@@ -180,6 +191,7 @@ impl Widget for DistractionFreeSurface {
         self.sync_mounted(want);
         if !active.get() {
             self.root_child = None;
+            self.said_no_text = false;
             return Vec::new();
         }
 
@@ -208,22 +220,34 @@ impl Widget for DistractionFreeSurface {
             let ports = m.tab.view_state_ports();
 
             // What still cannot be done inline: take keyboard focus, so the writer
-            // can just carry on typing.
+            // can just carry on typing, whatever held it behind the surface: the
+            // shell has parked by now.
             //    Also what re-points the Format menu and dock: their target is a
             //    sticky latch keyed by `WidgetId`, released only on a real
             //    `Drop`, so the pane's editor — dormant, not destroyed — would
             //    otherwise stay the target and the formatting surfaces would
             //    show the frozen state of an editor that is not on screen.
+            //
+            // Through the ports and not the editor's handle, because this mode pins
+            // the synopsis to Side and such a page has no editor yet: it builds one
+            // once it knows its width, and that one takes the request as it mounts.
             if !m.focused {
+                let nothing_to_type_in = m.tab.has_no_content();
                 if let Some(m) = self.mounted.as_mut() {
                     m.focused = true;
                 }
                 ctx.run_after_mount(move |ctx| {
-                    if let Some(handle) = ports.editor() {
-                        handle.focus(ctx);
+                    if nothing_to_type_in {
+                        say_there_is_no_text(self_id, ctx);
+                    } else {
+                        ports.take_keyboard(self_id, ctx);
                     }
                 });
             }
+            self.said_no_text = false;
+        } else if !self.said_no_text {
+            self.said_no_text = true;
+            ctx.run_after_mount(move |ctx| say_there_is_no_text(self_id, ctx));
         }
 
         // The manuscript layer, and — for a prose tab — the page it sits on.

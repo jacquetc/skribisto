@@ -3645,6 +3645,7 @@ settings-themes-field-caret-band = Evidențiere în jurul cursorului
 # The distraction-free strip's quick-settings gear, and the way through to the
 # full theme library from inside it.
 statusbar-focus-settings = Setările modului fără distrageri
+statusbar-focus-no-text = Modul fără distrageri. Aici nu există text în care se poate scrie.
 statusbar-focus-manage-themes = Gestionează temele…
 
 ## Comments: the two docks, the thread cards, and their actions.

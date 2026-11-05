@@ -3334,6 +3334,7 @@ settings-themes-field-caret-band = Fremhævning omkring markøren
 # The distraction-free strip's quick-settings gear, and the way through to the
 # full theme library from inside it.
 statusbar-focus-settings = Indstillinger for distraktionsfri tilstand
+statusbar-focus-no-text = Distraktionsfri tilstand. Her er ingen tekst at skrive i.
 statusbar-focus-manage-themes = Administrér temaer…
 
 ## Comments: the two docks, the thread cards, and their actions.

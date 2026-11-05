@@ -54,6 +54,7 @@ Description:
 - "F9 no longer leaves you on the window when the left panel hides with the cursor in it: the cursor goes to the text in the centre, or into the view in front of you when it has no text. A screen reader says when a left, right or bottom panel is hidden or shown, which it used not to. Leaving distraction-free mode with F11 puts the cursor back in your text"
 - "On the corkboard, Shift+F2 takes you into a card's synopsis from the keyboard, Tab goes round the card and Escape brings you back to it. A synopsis used to need the mouse, and once inside, Tab jumped to the title bar"
 - "The panel names read out by a screen reader or listed under Keyboard shortcuts, the names of the title fields and a few other labels are now in your language in every translation. They used to appear in English in 22 of them"
+- "Entering distraction-free mode puts the cursor in your text where you left it, whichever way you enter, so you can go on writing at once. A page with no text takes the cursor in its view, and with nothing open the mode's bar takes it and a screen reader says there is nothing to type in. The cursor used to be lost: keys went nowhere, and a screen reader was left on nothing until you pressed Tab or left the mode. Also, a text in which the synopsis sits beside the prose keeps the cursor when the window gets too narrow or wide enough for that arrangement to change"
 ---
 Version: 3.3.0
 Date: 2026-10-27

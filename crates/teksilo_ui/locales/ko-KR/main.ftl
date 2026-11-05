@@ -2231,6 +2231,7 @@ settings-themes-field-widget-text = 도구 막대 글자
 settings-themes-field-caret-band = 커서 주변 강조
 
 statusbar-focus-settings = 집중 모드 설정
+statusbar-focus-no-text = 집중 모드입니다. 여기에는 입력할 텍스트가 없습니다.
 statusbar-focus-manage-themes = 테마 관리…
 
 comments-title = 댓글

@@ -3427,6 +3427,7 @@ settings-themes-field-caret-band = Mise en évidence autour du curseur
 # L'engrenage de paramètres rapides de la bande sans distraction, et l'accès à la
 # bibliothèque complète de thèmes depuis le mode.
 statusbar-focus-settings = Paramètres du mode sans distraction
+statusbar-focus-no-text = Mode sans distraction. Il n’y a pas de texte où écrire ici.
 statusbar-focus-manage-themes = Gérer les thèmes…
 
 ## Commentaires : les deux panneaux, les fiches de fil et leurs actions.
