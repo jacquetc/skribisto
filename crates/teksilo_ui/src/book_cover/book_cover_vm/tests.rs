@@ -34,7 +34,8 @@ fn project() -> (RealProject, OpenDocsStore, tempfile::TempDir) {
     let p = RealProject::empty_novel();
     let media = tempfile::tempdir().expect("media dir");
     let docs = OpenDocsStore::new(p.app_ctx.clone());
-    docs.set_media_dir(media.path().to_path_buf());
+    let dir = media.path().to_path_buf();
+    docs.set_media_dir_resolver(move || dir.clone());
     (p, docs, media)
 }
 

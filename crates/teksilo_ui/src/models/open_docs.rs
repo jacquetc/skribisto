@@ -828,12 +828,10 @@ struct Inner {
     /// the Work's). Set by `App` on `LoadWork`/`NewWork`.
     work_id: Cell<Option<u64>>,
     work_lang: RefCell<Vec<String>>,
-    /// Where this project's image bytes live. Tier 2, beside `work_id`: two
-    /// Works open at once have different media directories, and a document
+    /// Where this project's image bytes live, resolved afresh at each ask, since it moves
+    /// with the project ([`OpenDocsStore::set_media_dir_resolver`]). Tier 2, beside
+    /// `work_id`: two Works open at once have different media directories, and a document
     /// loaded against the wrong one shows blanks.
-    media_dir: RefCell<std::path::PathBuf>,
-    /// What answers [`OpenDocsStore::media_dir`] when set: the directory resolved afresh at
-    /// each ask, since it moves with the project ([`OpenDocsStore::set_media_dir_resolver`]).
     media_dir_resolver: RefCell<Option<Rc<dyn Fn() -> std::path::PathBuf>>>,
     /// The open project's punctuation rules, pushed down to every session on
     /// change and to each newly-opened document. `None` until resolved.
@@ -945,20 +943,12 @@ impl OpenDocsStore {
         }
     }
 
-    /// Point this store at the open project's media directory.
-    ///
-    /// Set when a Work opens, before any document is built: an image's bytes are
-    /// resolved as its document loads, so a document created before this is
-    /// known shows every picture as a correctly-sized blank.
-    ///
-    /// Tier 2, beside `work_id` — two Works open at once have different media
-    /// directories, and resolving against the wrong one finds nothing.
-    pub fn set_media_dir(&self, dir: std::path::PathBuf) {
-        *self.inner.media_dir.borrow_mut() = dir;
-    }
-
     /// Resolve the open project's media directory with `resolve` each time it is asked for,
     /// rather than once.
+    ///
+    /// Set when a Work opens, before any document is built: an image's bytes are resolved
+    /// as its document loads, so a document created before this is known shows every
+    /// picture as a correctly-sized blank.
     ///
     /// The directory moves with the project: a new folder project's first save makes the
     /// folder whose `assets/` it lives in from then on, and a Save As can move it again.
@@ -969,15 +959,13 @@ impl OpenDocsStore {
         *self.inner.media_dir_resolver.borrow_mut() = Some(Rc::new(resolve));
     }
 
-    /// The open project's media directory.
+    /// The open project's media directory, or an empty path until a Work has set its
+    /// resolver.
     pub fn media_dir(&self) -> std::path::PathBuf {
         // Cloned out before it runs: the resolver reads the store, and holding this borrow
         // across it would make any path back into this store a double borrow.
         let resolver = self.inner.media_dir_resolver.borrow().clone();
-        match resolver {
-            Some(resolve) => resolve(),
-            None => self.inner.media_dir.borrow().clone(),
-        }
+        resolver.map(|resolve| resolve()).unwrap_or_default()
     }
 
     pub fn new(app_ctx: Rc<AppContext>) -> Self {
@@ -999,7 +987,6 @@ impl OpenDocsStore {
                 squiggle: Cell::new(Color::rgb(202, 66, 60)),
                 work_id: Cell::new(None),
                 work_lang: RefCell::new(Vec::new()),
-                media_dir: RefCell::new(std::path::PathBuf::new()),
                 media_dir_resolver: RefCell::new(None),
                 punctuation: RefCell::new(None),
                 lang_cache: RefCell::new(None),
@@ -1529,7 +1516,7 @@ impl OpenDocsStore {
             &item.sub_role,
             &contents,
             self.inner.edited.clone(),
-            &self.inner.media_dir.borrow(),
+            &self.media_dir(),
         ));
         // Seed the trash state (a trashed item can be opened from the trash dock).
         doc.trashed.set(!item.activated);
@@ -1587,7 +1574,7 @@ impl OpenDocsStore {
             &item.sub_role,
             &contents,
             self.inner.edited.clone(),
-            &self.inner.media_dir.borrow(),
+            &self.media_dir(),
         ));
         if let Some(entry) = self.inner.open.borrow_mut().get_mut(&item_id) {
             entry.doc = fresh.clone();
@@ -2568,6 +2555,47 @@ mod remembered_history_tests {
             .cursor_at(0)
             .insert_text(text)
             .unwrap();
+    }
+
+    /// A document the store opens has the bytes of the pictures its prose names, read from
+    /// where the resolver says the project is now, and so does one it rebuilds. The
+    /// resolver is the only way a running app sets the directory: when the store read
+    /// anything else, every picture of an opened document was a correctly-sized blank,
+    /// while an export, which finds the directory on its own, still had them.
+    #[test]
+    fn an_opened_document_has_the_pictures_its_prose_names() {
+        let (ctx, store, items) = store_with_scenes(1);
+        let media = tempfile::tempdir().unwrap();
+        std::fs::write(media.path().join("x.png"), b"the bytes").unwrap();
+        let dir = media.path().to_path_buf();
+        store.set_media_dir_resolver(move || dir.clone());
+        content_commands::create_content(
+            &ctx,
+            None,
+            &frontend::direct_access::CreateContentDto {
+                role: frontend::common::entities::ContentRole::SceneText,
+                activated: true,
+                data: "![](assets/x.png){width=10 height=10}".to_string(),
+                ..Default::default()
+            },
+            items[0],
+            -1,
+        )
+        .unwrap();
+        let picture = |doc: &OpenDoc| {
+            doc.main
+                .as_ref()
+                .expect("a scene has prose")
+                .doc
+                .resource("assets/x.png")
+                .ok()
+                .flatten()
+        };
+
+        let doc = store.open(items[0]).expect("the scene opens");
+        assert!(picture(&doc).is_some(), "opened");
+        let rebuilt = store.rebuild(items[0], None).expect("the scene is open");
+        assert!(picture(&rebuilt).is_some(), "rebuilt");
     }
 
     #[test]

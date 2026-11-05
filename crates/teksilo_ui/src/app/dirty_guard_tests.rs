@@ -469,7 +469,8 @@ fn setting_a_books_cover_is_an_unsaved_change_of_its_work() {
         .id;
     let media = tempfile::tempdir().expect("media dir");
     let docs = crate::models::OpenDocsStore::new(p.app_ctx.clone());
-    docs.set_media_dir(media.path().to_path_buf());
+    let dir = media.path().to_path_buf();
+    docs.set_media_dir_resolver(move || dir.clone());
     let vm =
         crate::book_cover::BookCoverViewModel::new(p.app_ctx.clone(), p.ids.clone(), docs, book);
     let image = crate::shared::images::examine_bytes(
