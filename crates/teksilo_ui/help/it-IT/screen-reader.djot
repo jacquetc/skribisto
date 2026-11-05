@@ -63,6 +63,17 @@ Un lettore di schermo annuncia la barra come un gruppo di pulsanti di opzione ch
 
 Usa le frecce per cambiare vista, e `Home` o `Fine` per la prima e l'ultima.
 
+## Lavorare su una bacheca
+
+Le schede di una bacheca sono un'unica fermata per `Tab`, chiamata *Schede della bacheca*. Le
+frecce passano da una scheda all'altra, e il tuo lettore di schermo dice il titolo di ogni
+scheda e il suo posto.
+
+- `Invio` apre l'elemento della scheda, e `F2` lo rinomina.
+- `Maiusc+F2` ti porta nella *Sinossi* della scheda, dove puoi scrivere.
+- Dentro una scheda, `Tab` passa da un controllo all'altro senza uscire dalla scheda. `Esc`
+  ti riporta sulla scheda.
+
 ## Comandi, menu e impostazioni
 
 - `F10` o `Alt` apre la barra dei menu. Il tuo lettore di schermo legge la scorciatoia di

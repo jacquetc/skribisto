@@ -67,6 +67,17 @@ radio nommé *Vues*.
 Utilisez les flèches pour changer de vue, et `Origine` ou `Fin` pour la première et la
 dernière.
 
+## Travailler sur un tableau de liège
+
+Les cartes d’un tableau de liège sont un seul arrêt pour `Tab`, nommé *Cartes du tableau*.
+Les flèches vont d’une carte à l’autre, et votre lecteur d’écran donne le titre de chaque
+carte et sa place.
+
+- `Entrée` ouvre l’élément de la carte, et `F2` le renomme.
+- `Maj+F2` vous place dans le *Synopsis* de la carte, où vous pouvez écrire.
+- Dans une carte, `Tab` passe d’une commande à l’autre sans quitter la carte. `Échap` vous
+  ramène sur la carte.
+
 ## Commandes, menus et paramètres
 
 - `F10` ou `Alt` ouvre la barre de menus. Votre lecteur d’écran lit le raccourci de chaque

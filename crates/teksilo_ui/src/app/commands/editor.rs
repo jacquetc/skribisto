@@ -14,6 +14,7 @@ use super::CommandDeps;
 use crate::shared::shortcut_group::{ShortcutGroup, ShortcutGroupExt};
 
 pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
+    ctx.register_shortcut_global(crate::corkboard::edit_synopsis_shortcut());
     // F7 — the spell-check key every office suite has used for thirty years. A bare function
     // key for the same reason F9 is: a Global shortcut resolves before the focused widget sees
     // the raw key, so any Ctrl+letter here would shadow one of `RichTextEditor`'s built-in

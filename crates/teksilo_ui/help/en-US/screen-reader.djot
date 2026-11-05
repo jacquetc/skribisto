@@ -62,6 +62,16 @@ announces the bar as a group of radio buttons named *Views*.
 
 Use the arrows to change the view, and `Home` or `End` for the first and the last.
 
+## Work on a corkboard
+
+The cards of a corkboard are a single stop for `Tab`, named *Corkboard cards*. The arrows go
+from card to card, and your screen reader says each card's title and place.
+
+- `Enter` opens the card's item, and `F2` renames it.
+- `Shift+F2` puts you in the card's *Synopsis*, where you can write.
+- Inside a card, `Tab` goes round its controls and stays in the card. `Escape` brings you
+  back to the card.
+
 ## Commands, menus and settings
 
 - `F10` or `Alt` opens the menu bar. Your screen reader reads each command's shortcut after

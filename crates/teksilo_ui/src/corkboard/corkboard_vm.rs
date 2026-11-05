@@ -14,7 +14,7 @@
 //!
 //! Plain Rust → headless-testable.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -23,7 +23,8 @@ use teksilo::data::{
     ListDataSource, SelectionMode, SelectionModel, SortDirection, SortFilterListModel,
 };
 use teksilo::prelude::*; // Signal, BuildContext, EventContext
-use teksilo::widgets::InputDialog;
+use teksilo::widgets::rich_text::EditorHandle;
+use teksilo::widgets::{GridViewHandle, InputDialog, ScrollAnchor};
 
 use frontend::AppContext;
 use frontend::binder_item_management::{MergeTwoScenesDto, MovePlace, SplitSceneDto};
@@ -50,6 +51,9 @@ use crate::shared::binder_ops::{
 
 /// The sort column ids bound into the projection (see [`CorkboardCardsModel::projection`]).
 pub const SORT_TITLE: &str = "title";
+
+/// The command that takes the keyboard into the synopsis of the card it is on.
+pub const EDIT_SYNOPSIS_COMMAND: &str = "corkboard.edit_synopsis";
 
 struct Inner {
     /// The container currently shown (the tab's own container at the trail root,
@@ -88,6 +92,16 @@ struct Inner {
     /// title editor returns focus here when it commits/cancels, so a screen
     /// reader (and keyboard nav) lands back on the card instead of the window.
     grid_id: Signal<Option<WidgetId>>,
+    /// The `GridView`'s handle, for the keyboard cursor it alone holds: the card the
+    /// arrows stepped to, which a multiple selection does not say.
+    grid_handle: RefCell<Option<GridViewHandle>>,
+    /// The synopsis editors of the realized cards, keyed by item id. The widget id tells
+    /// a rebuilt card's editor from the one it replaced, whichever of the two is dropped
+    /// or built first.
+    card_editors: RefCell<HashMap<u64, (WidgetId, EditorHandle)>>,
+    /// The card whose synopsis the keyboard asked for while the card was scrolled out of
+    /// the realized window. Its editor takes focus as it is built.
+    awaiting_editor: Cell<Option<u64>>,
     /// The shared open documents backing the visible cards' synopsis editors — one
     /// per card realized since the container was entered, keyed by item id. Every
     /// card renders its synopsis in a *live* editor over the **same** `OpenDoc` an
@@ -174,6 +188,9 @@ impl CorkboardViewModel {
                 scroll_y: Signal::new(0.0),
                 editing_item: Signal::new(None),
                 grid_id: Signal::new(None),
+                grid_handle: RefCell::new(None),
+                card_editors: RefCell::new(HashMap::new()),
+                awaiting_editor: Cell::new(None),
                 open_synopses: RefCell::new(HashMap::new()),
                 docs,
                 synopsis_typo,
@@ -431,6 +448,159 @@ impl CorkboardViewModel {
     pub fn set_grid_id(&self, id: WidgetId) {
         if self.inner.grid_id.get() != Some(id) {
             self.inner.grid_id.set(Some(id));
+        }
+    }
+
+    /// The grid publishes its handle here on build.
+    pub fn set_grid_handle(&self, handle: GridViewHandle) {
+        *self.inner.grid_handle.borrow_mut() = Some(handle);
+    }
+
+    /// The position of the card the keyboard is on: the cursor, else the first selected
+    /// card, else the first card, the order the grid's own keys start from.
+    fn keyboard_index(&self, count: usize) -> Option<usize> {
+        let cursor = self
+            .inner
+            .grid_handle
+            .borrow()
+            .as_ref()
+            .and_then(GridViewHandle::cursor);
+        cursor
+            .or_else(|| self.inner.selection.selected_indices().first().copied())
+            .or((count > 0).then_some(0))
+            .filter(|index| *index < count)
+    }
+
+    /// Put the keyboard in the synopsis of the card it is on. Reports whether there was
+    /// a synopsis to go to: a card can only lack one when its item could not be opened.
+    pub fn edit_current_synopsis(&self, ctx: &mut EventContext) -> bool {
+        let cards = self.visible_cards();
+        let Some(index) = self.keyboard_index(cards.len()) else {
+            return false;
+        };
+        let Some(card) = cards.get(index) else {
+            return false;
+        };
+        if !self
+            .synopsis_doc_for(card.item_id)
+            .is_some_and(|doc| doc.synopsis.is_some())
+        {
+            return false;
+        }
+        let realized = self
+            .inner
+            .card_editors
+            .borrow()
+            .get(&card.item_id)
+            .map(|(_, handle)| handle.clone());
+        if let Some(grid) = self.inner.grid_handle.borrow().as_ref() {
+            grid.set_cursor(Some(index));
+            if realized.is_none() {
+                grid.ensure_index_visible(index, ScrollAnchor::Auto);
+            }
+        }
+        match realized {
+            Some(handle) => handle.focus(ctx),
+            // The cursor can be far from the view: the wheel scrolls without moving it.
+            None => self.inner.awaiting_editor.set(Some(card.item_id)),
+        }
+        true
+    }
+
+    /// A card's synopsis editor exists now. Reports whether it should take focus, because
+    /// the keyboard asked for it before it was realized.
+    pub fn card_editor_mounted(
+        &self,
+        item_id: u64,
+        editor: WidgetId,
+        handle: EditorHandle,
+    ) -> bool {
+        self.inner
+            .card_editors
+            .borrow_mut()
+            .insert(item_id, (editor, handle));
+        let awaited = self.inner.awaiting_editor.get() == Some(item_id);
+        if awaited {
+            self.inner.awaiting_editor.set(None);
+        }
+        awaited
+    }
+
+    /// A card's synopsis editor is gone, unless a rebuilt card has already replaced it.
+    pub fn card_editor_unmounted(&self, item_id: u64, editor: WidgetId) {
+        let mut editors = self.inner.card_editors.borrow_mut();
+        if editors.get(&item_id).is_some_and(|(id, _)| *id == editor) {
+            editors.remove(&item_id);
+        }
+    }
+
+    /// Focus arrived inside the card at `index`, by whatever route: the chord, a click,
+    /// or an assistive technology. The cursor goes with it, so the way back lands on this
+    /// card, and the next arrow key steps from it.
+    pub fn card_took_focus(&self, index: usize) {
+        if let Some(grid) = self.inner.grid_handle.borrow().as_ref()
+            && grid.cursor() != Some(index)
+        {
+            grid.set_cursor(Some(index));
+        }
+    }
+
+    /// Where the grid's keyboard cursor is.
+    #[cfg(test)]
+    pub(crate) fn grid_cursor(&self) -> Option<usize> {
+        self.inner
+            .grid_handle
+            .borrow()
+            .as_ref()
+            .and_then(GridViewHandle::cursor)
+    }
+
+    /// Scroll the board to its first card, leaving the cursor where it is, as a wheel does.
+    #[cfg(all(test, not(feature = "mocks")))]
+    pub(crate) fn scroll_grid_to_top(&self) {
+        if let Some(grid) = self.inner.grid_handle.borrow().as_ref() {
+            grid.scroll_to_index(0, ScrollAnchor::Start);
+        }
+    }
+
+    /// Whether a card's synopsis editor is realized.
+    #[cfg(all(test, not(feature = "mocks")))]
+    pub(crate) fn card_editor_is_mounted(&self, item_id: u64) -> bool {
+        self.inner.card_editors.borrow().contains_key(&item_id)
+    }
+
+    /// Give focus back to the grid: the writer is on the card again.
+    pub fn return_to_grid(&self, ctx: &mut EventContext) {
+        if let Some(grid) = self.inner.grid_id.get() {
+            ctx.request_focus(grid);
+        }
+    }
+
+    /// A key no control inside the card used, on its way up to the grid.
+    ///
+    /// While focus is inside a card the card is a small form, and the board's keys stay
+    /// out of it. Left to bubble, the arrows on the card's menu button walk the cursor
+    /// away behind it, a typed letter jumps to another card, and `Delete` trashes the
+    /// selection, whichever card the writer is standing in.
+    pub fn card_key(
+        &self,
+        ctx: &mut EventContext,
+        item_id: u64,
+        key: Key,
+        modifiers: Modifiers,
+    ) -> EventResponse {
+        match key {
+            Key::Escape => {
+                self.return_to_grid(ctx);
+                EventResponse::Handled
+            }
+            // This card, which is not always the selection's first.
+            Key::F2 if modifiers == Modifiers::NONE => {
+                self.begin_rename(item_id);
+                EventResponse::Handled
+            }
+            _ if is_a_board_key(key, modifiers) => EventResponse::Handled,
+            _ => EventResponse::Ignored,
         }
     }
 
@@ -730,7 +900,7 @@ impl CorkboardViewModel {
 
     /// A snapshot of the container's cards in order (what the grid shows before
     /// any filter/sort projection) — the basis for move/merge neighbour math.
-    fn ordered_cards(&self) -> Vec<CorkboardCard> {
+    pub(crate) fn ordered_cards(&self) -> Vec<CorkboardCard> {
         self.inner.cards.cards()
     }
 
@@ -1160,6 +1330,34 @@ impl CorkboardViewModel {
             !self.inner.query.get().trim().is_empty() || self.inner.sort.get().is_some();
         if self.inner.projecting.get() != projecting {
             self.inner.projecting.set(projecting);
+        }
+    }
+}
+
+/// Whether the grid under a card would act on this key. `GridView` reads the first group
+/// whatever the modifiers, and the printable keys are its type-ahead; `Delete` and
+/// `Backspace` are the board's own trash keys. `Tab` is left out: it moves on inside the
+/// card, and the framework only does that with a key nobody used.
+fn is_a_board_key(key: Key, modifiers: Modifiers) -> bool {
+    match key {
+        Key::ArrowLeft
+        | Key::ArrowRight
+        | Key::ArrowUp
+        | Key::ArrowDown
+        | Key::Home
+        | Key::End
+        | Key::PageUp
+        | Key::PageDown
+        | Key::Enter
+        | Key::Space
+        | Key::Delete
+        | Key::Backspace => true,
+        Key::A if modifiers.command() => true,
+        _ => {
+            key.to_char().is_some()
+                && !modifiers.ctrl()
+                && !modifiers.alt()
+                && !modifiers.super_key()
         }
     }
 }

@@ -114,6 +114,7 @@ impl Widget for CorkboardGrid {
             })
             .a11y_label(tr!(corkboard_grid_label()))
             .empty_view(move || Box::new(corkboard_empty(&empty_vm)));
+        self.vm.set_grid_handle(grid.handle());
 
         // F2 renames the selected card in place; Delete/Backspace trashes the whole
         // selection. Neither is used by `GridView` itself — its own key handler
@@ -143,10 +144,31 @@ impl Widget for CorkboardGrid {
             EventResponse::Ignored
         });
 
-        let id = ctx.add(grid);
+        // Said with the grid, not with each card: a card's description would be read
+        // again at every arrow key. The chord as the writer has it bound, if at all.
+        let chord = match ctx.effective_shortcut(crate::corkboard::EDIT_SYNOPSIS_COMMAND) {
+            Some(shortcut) => shortcut.primary,
+            None => Some(crate::corkboard::edit_synopsis_default_key()),
+        };
+        let id = match chord {
+            Some(chord) => ctx.add(grid.access_description(tr!(corkboard_grid_keys(
+                edit = teksilo::widgets::keystroke_format::format_keystroke(chord)
+            )))),
+            None => ctx.add(grid),
+        };
         // Publish the grid id so the inline title editor can return focus here on
         // commit/cancel (a11y: land back on the card, not the window root).
         self.vm.set_grid_id(id);
+
+        // The way into a card's synopsis, answered here so it is this board's: the
+        // chord is one for the window (`edit_synopsis_shortcut`), and the walk from
+        // the focused widget reaches the board the keyboard is on.
+        let enter_vm = self.vm.clone();
+        ctx.register_action(
+            Action::new(crate::corkboard::EDIT_SYNOPSIS_COMMAND).on_invoke(move |_i, ctx| {
+                enter_vm.edit_current_synopsis(ctx);
+            }),
+        );
         self.root = Some(id);
         vec![id]
     }

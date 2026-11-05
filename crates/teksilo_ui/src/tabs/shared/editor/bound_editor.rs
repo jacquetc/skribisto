@@ -174,6 +174,9 @@ pub(super) struct TypographyBoundEditor {
     /// **while it is the arm on screen**. `None` on every surface that is not a
     /// tab's main prose column. See [`Self::with_find_claim`].
     pub(super) find: Option<crate::search::FindViewModel>,
+    /// What a screen reader adds to this editor's name. Put on the editor at build:
+    /// it has to sit on the editor's own node, which this wrapper is not.
+    pub(super) access_description: Option<LocalizedString>,
 }
 
 impl TypographyBoundEditor {
@@ -202,7 +205,14 @@ impl TypographyBoundEditor {
             footnotes: None,
             anchor: None,
             find: None,
+            access_description: None,
         }
+    }
+
+    /// What a screen reader adds to this editor's name.
+    pub(super) fn with_access_description(mut self, description: LocalizedString) -> Self {
+        self.access_description = Some(description);
+        self
     }
 
     /// Claim this tab's find handle for as long as this editor is the arm on screen.
@@ -314,7 +324,10 @@ impl Widget for TypographyBoundEditor {
             .take()
             .expect("TypographyBoundEditor built once");
         let handle = editor.handle();
-        let id = ctx.add(editor);
+        let id = match self.access_description.take() {
+            Some(description) => ctx.add(editor.access_description(description)),
+            None => ctx.add(editor),
+        };
         self.child_id = Some(id);
         // **The arm on screen owns the tab's prose handle — not the last one built.**
         //

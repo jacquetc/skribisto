@@ -63,6 +63,17 @@ botones de opción llamado *Vistas*.
 
 Use las flechas para cambiar de vista, e `Inicio` o `Fin` para la primera y la última.
 
+## Trabajar en un tablero de corcho
+
+Las tarjetas de un tablero de corcho son una sola parada para `Tab`, llamada *Tarjetas del
+tablón de corcho*. Las flechas van de una tarjeta a otra, y su lector de pantalla dice el
+título de cada tarjeta y su lugar.
+
+- `Intro` abre el elemento de la tarjeta, y `F2` le cambia el nombre.
+- `Mayús+F2` le pone en la *Sinopsis* de la tarjeta, donde puede escribir.
+- Dentro de una tarjeta, `Tab` pasa de un control a otro sin salir de la tarjeta. `Esc` le
+  devuelve a la tarjeta.
+
 ## Órdenes, menús y configuración
 
 - `F10` o `Alt` abre la barra de menús. Su lector de pantalla lee el atajo de cada orden

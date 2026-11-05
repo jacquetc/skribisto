@@ -68,6 +68,17 @@ Optionsfeldern mit dem Namen *Ansichten* an.
 Mit den Pfeiltasten wechseln Sie die Ansicht, mit `Pos1` und `Ende` springen Sie zur ersten
 und zur letzten.
 
+## Auf einer Pinnwand arbeiten
+
+Die Karten einer Pinnwand sind ein einziger Tabstopp mit dem Namen *Pinnwandkarten*. Die
+Pfeiltasten gehen von Karte zu Karte, und Ihr Bildschirmleser nennt den Titel jeder Karte und
+ihre Stelle.
+
+- `Eingabe` öffnet den Eintrag der Karte, und `F2` benennt ihn um.
+- `Umschalt+F2` setzt Sie in die *Zusammenfassung* der Karte, in der Sie schreiben können.
+- In einer Karte geht `Tab` von Bedienelement zu Bedienelement und bleibt dabei in der Karte.
+  `Esc` bringt Sie zurück auf die Karte.
+
 ## Befehle, Menüs und Einstellungen
 
 - `F10` oder `Alt` öffnet die Menüleiste. Ihr Bildschirmleser liest das Tastenkürzel jedes

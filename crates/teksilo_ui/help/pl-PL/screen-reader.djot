@@ -63,6 +63,17 @@ ogłasza ten pasek jako grupę przycisków opcji o nazwie *Widoki*.
 Strzałkami zmieniasz widok, a klawiszami `Home` i `End` przechodzisz do pierwszego i
 ostatniego.
 
+## Praca na tablicy korkowej
+
+Karty tablicy korkowej to jeden przystanek klawisza `Tab`, o nazwie *Karty tablicy korkowej*.
+Strzałki przechodzą od karty do karty, a czytnik ekranu podaje tytuł każdej karty i jej
+miejsce.
+
+- `Enter` otwiera element karty, a `F2` zmienia jego nazwę.
+- `Shift+F2` umieszcza cię w polu *Streszczenie* karty, gdzie możesz pisać.
+- W karcie `Tab` przechodzi między jej kontrolkami i z niej nie wychodzi. `Esc` przenosi cię
+  z powrotem na kartę.
+
 ## Polecenia, menu i ustawienia
 
 - `F10` lub `Alt` otwiera pasek menu. Czytnik ekranu czyta skrót każdego polecenia po jego

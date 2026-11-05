@@ -24,7 +24,9 @@ use std::rc::Rc;
 
 use teksilo::canvas::{EdgeInsets, Rect};
 use teksilo::core::BindingLevel;
+use teksilo::core::focus::TraversalScopePolicy;
 use teksilo::core::modal::{ModalCloseBehavior, ModalPresentation, ModalRequest};
+use teksilo::core::shortcut::KeyStroke;
 use teksilo::core::styles::PanelVariant;
 use teksilo::core::widget::WidgetPlacement;
 use teksilo::data::{ListDataSource, SortDirection};
@@ -33,10 +35,10 @@ use teksilo::prelude::*;
 use teksilo::res;
 use teksilo::widgets::{
     Badge, Breadcrumb, BreadcrumbItem, ButtonVariant, Center, DeadZone, Divider, DragTransferMode,
-    DropTarget, Expand, FixedSize, GridSizing, GridView, HStack, IconButton, IconWidget, MenuItem,
-    MenuList, Padding, Panel, PopoverIconButton, RowDragData, SearchField, Segment,
-    SegmentedControl, Slider, Spacer, SplitButton, Switcher, TextInput, TextWidget, TileContext,
-    Toast, VStack,
+    DropTarget, Expand, FixedSize, FocusScope, GridSizing, GridView, HStack, IconButton,
+    IconWidget, MenuItem, MenuList, Padding, Panel, PopoverIconButton, RowDragData, SearchField,
+    Segment, SegmentedControl, Slider, Spacer, SplitButton, Switcher, TextInput, TextWidget,
+    TileContext, Toast, VStack,
 };
 
 // `WidgetEvent`, `Key`, `PointerButton`, `EventResponse` and the `WidgetBuilder`
@@ -60,6 +62,8 @@ pub(crate) use chrome::sub_role_badge_label;
 mod grid;
 /// The fixed "＋" glyph for the create button's main region.
 mod header;
+#[cfg(test)]
+mod keyboard_tests;
 mod move_target;
 mod synopsis;
 

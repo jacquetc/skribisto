@@ -64,6 +64,17 @@ não tem barra. Um leitor de ecrã anuncia a barra como um grupo de botões de o
 
 Use as setas para mudar de vista, e `Home` ou `End` para a primeira e a última.
 
+## Trabalhar num quadro de cortiça
+
+Os cartões de um quadro de cortiça são uma única paragem para `Tab`, chamada *Cartões do
+quadro de cortiça*. As setas passam de cartão em cartão, e o seu leitor de ecrã diz o título
+de cada cartão e o seu lugar.
+
+- `Enter` abre o item do cartão, e `F2` muda-lhe o nome.
+- `Shift+F2` coloca-o na *Sinopse* do cartão, onde pode escrever.
+- Dentro de um cartão, `Tab` passa de controlo em controlo sem sair do cartão. `Esc` leva-o
+  de volta ao cartão.
+
 ## Comandos, menus e definições
 
 - `F10` ou `Alt` abre a barra de menus. O seu leitor de ecrã lê o atalho de cada comando

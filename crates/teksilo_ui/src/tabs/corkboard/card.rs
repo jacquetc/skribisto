@@ -91,6 +91,7 @@ impl Widget for CorkboardTile {
             card: self.card.clone(),
             open_doc: self.vm.synopsis_doc_for(self.card.item_id),
             root: None,
+            mounted_editor: None,
         };
 
         // Is this card the one the writer is working on? `hover_within` /
@@ -202,6 +203,31 @@ impl Widget for CorkboardTile {
         }
         let inner = CardColumn::new(total, 6.0, top, synopsis, footer);
 
+        // The card's controls and the keyboard. `GridView` holds every tile out of the
+        // Tab order, because a grid is one Tab stop and only the realized tiles exist,
+        // and that is right while the writer is on the grid. Once focus is inside a
+        // card, though, the card is a small form: its controls are Tab stops, and `Tab`
+        // goes round them until `Escape` comes back, which is `RowKeyboard::Actions` on
+        // a list row. Neither half can be left out. The `tab_stop` is what makes the
+        // controls stops at all, and with focus on a control that is not one, `Tab`
+        // starts over from the window's first control, the title bar's menu button.
+        //
+        // The stops follow `focus_in`, not a keystroke, so a click into the synopsis or
+        // an assistive technology's focus enters the card as well.
+        let controls = ctx.add(
+            FocusScope::new(TraversalScopePolicy::Cycle).child(Padding::uniform(12.0).child(inner)),
+        );
+        ctx.set_tab_stop(controls, focus_in.clone());
+        {
+            let vm = self.vm.clone();
+            let index = self.index;
+            ctx.effect(&focus_in, move |inside| {
+                if *inside {
+                    vm.card_took_focus(index);
+                }
+            });
+        }
+
         // Selection shows as the border accent *only* — no fill, no stripe.
         // Reactive (RepaintOnly, no tile rebuild): a click repaints the border
         // immediately, since GridView never rebuilds a tile on selection. The
@@ -233,6 +259,8 @@ impl Widget for CorkboardTile {
         // button so primary-click selection / drag / double-click-open are intact.
         let mid_vm = self.vm.clone();
         let mid_card = self.card.clone();
+        let key_vm = self.vm.clone();
+        let key_item = self.card.item_id;
 
         // `Padding` insets the content; `CardColumn` inside sizes itself from the
         // slider (the tile forces the Panel to the card height, so no `Expand` needed).
@@ -241,7 +269,7 @@ impl Widget for CorkboardTile {
             .corner_radius(10.0)
             .border_color(border_role)
             .border_width(1.0)
-            .child(Padding::uniform(12.0).child(inner))
+            .child(controls)
             .hover_within(hover_in.clone())
             .focus_within(focus_in.clone())
             .on_hover(move |entered, _ctx| hover_self.set(entered))
@@ -255,6 +283,12 @@ impl Widget for CorkboardTile {
                     return EventResponse::Handled;
                 }
                 EventResponse::Ignored
+            })
+            .on_key(move |ev, ctx| match ev {
+                WidgetEvent::KeyDown { key, modifiers, .. } => {
+                    key_vm.card_key(ctx, key_item, *key, *modifiers)
+                }
+                _ => EventResponse::Ignored,
             });
 
         // A **container** card is also a drop target: dropping cards onto it moves
@@ -338,9 +372,7 @@ impl Widget for CorkboardTile {
 /// reader and keyboard navigation land back on the card — not the window root,
 /// where focus would otherwise fall when the editor field is removed.
 pub(super) fn refocus_grid(vm: &CorkboardViewModel, ctx: &mut EventContext) {
-    if let Some(gid) = vm.grid_id().get() {
-        ctx.request_focus(gid);
-    }
+    vm.return_to_grid(ctx);
 }
 
 /// The card's title, editable in place. Normally a one-line label; a single click on
@@ -373,11 +405,14 @@ impl Widget for InlineTitle {
             // that follows as focus goes back to the grid is a no-op.
             let buffer = Signal::new(self.title.clone());
             let original = self.title.clone();
-            let field = TextInput::new(buffer.clone())
+            let input = TextInput::new(buffer.clone())
                 // Accessible name: a screen reader announces "Rename item, edit
                 // text, <current title>" instead of a bare "edit text". The
                 // visible title is unchanged (this is a11y-only).
-                .label(tr!(corkboard_rename_field()))
+                .label(tr!(corkboard_rename_field()));
+            // The node that holds focus: a `TextInput`'s outer node cannot.
+            let focus_slot = input.field_id();
+            let field = input
                 .on_submit_fn({
                     let vm = self.vm.clone();
                     let buffer = buffer.clone();
@@ -420,8 +455,13 @@ impl Widget for InlineTitle {
                     }
                 });
             let fid = ctx.add(field);
-            // Focus the field so the writer can type immediately.
-            ctx.focus(fid);
+            // Focus the field so the writer can type immediately. After mount rather
+            // than `ctx.focus`, which does not reach the ancestors from a `build`: the
+            // card's `focus_within` would stay off, the card's controls would not be Tab
+            // stops, and `Tab` from this field would land in the title bar.
+            if let Some(focus_target) = focus_slot.get() {
+                ctx.run_after_mount(move |ctx| ctx.request_focus(focus_target));
+            }
             // A **gesture dead zone**, for the same reason the synopsis, the expand
             // button and the kebab are each one — and this was the last control on a
             // card without it. Selecting inside the field is press-move-release, which

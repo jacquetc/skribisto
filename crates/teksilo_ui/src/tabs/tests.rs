@@ -889,6 +889,7 @@ fn a_press_in_a_card_synopsis_does_not_arm_an_ancestor_drag() {
             None,
             None,
             tr!(synopsis()),
+            None,
         )
         .0
     }

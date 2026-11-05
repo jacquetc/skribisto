@@ -52,6 +52,7 @@ Description:
 - "With a screen reader, Go ▸ Go to… (Ctrl+G) says how many items match as you type and the first of them, and the Up and Down arrows read each match with its place in the list. Enter opens the item with the cursor in its text. It used to say nothing about the results, and Enter left you on the window"
 - "Go to… also finds an untitled chapter by the name the binder gives it. It used to show the row, then skip it with the arrows and refuse to open it with Enter"
 - "F9 no longer leaves you on the window when the left panel hides with the cursor in it: the cursor goes to the text in the centre, or into the view in front of you when it has no text. A screen reader says when a left, right or bottom panel is hidden or shown, which it used not to. Leaving distraction-free mode with F11 puts the cursor back in your text"
+- "On the corkboard, Shift+F2 takes you into a card's synopsis from the keyboard, Tab goes round the card and Escape brings you back to it. A synopsis used to need the mouse, and once inside, Tab jumped to the title bar"
 ---
 Version: 3.3.0
 Date: 2026-10-27

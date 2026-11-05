@@ -51,6 +51,7 @@ fn card_synopsis_editor_in_a_fixed_box_bounds_a_tall_synopsis_so_it_scrolls() {
         None,
         None,
         tr!(synopsis()),
+        None,
     );
     let mut tree = WidgetTree::new();
     let id = tree.add(FixedSize::new().width(320.0).height(200.0).child(editor));
@@ -646,6 +647,7 @@ fn opening_the_menu_from_the_keyboard_leaves_the_caret_where_it_was() {
         None,
         None,
         tr!(synopsis()),
+        None,
     );
     let mut tree = WidgetTree::new();
     let root = tree.add(FixedSize::new().width(320.0).height(200.0).child(editor));
@@ -695,6 +697,7 @@ fn tab_leaves_a_synopsis_and_types_nothing() {
         None,
         None,
         tr!(synopsis()),
+        None,
     );
     let mut tree = WidgetTree::new();
     let root = tree.add(
@@ -795,6 +798,7 @@ fn the_text_the_synopsis_and_the_epigraph_are_announced_by_name() {
         None,
         None,
         tr!(synopsis()),
+        None,
     );
     let mut tree = WidgetTree::new();
     tree.add(VStack::new().child(text).child(epigraph).child(card));

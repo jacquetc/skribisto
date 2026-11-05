@@ -35,6 +35,8 @@ pub(super) fn synopsis_editor(
     card: &CorkboardCard,
     open_doc: &Rc<OpenDoc>,
     typo: EditorTypography,
+    // What a screen reader adds to the editor's name: on a card, the way back to the card.
+    description: Option<LocalizedString>,
 ) -> (impl Widget, teksilo::widgets::rich_text::EditorHandle) {
     // Every writing row has a `SynopsisText` field; the `None` fallback is only the
     // defensive path (a card whose type carries no synopsis) — the callers already
@@ -60,6 +62,7 @@ pub(super) fn synopsis_editor(
         open_doc.images(),
         Some(card.item_id),
         tr!(synopsis()),
+        description,
     )
 }
 
@@ -195,6 +198,15 @@ pub(super) struct CardSynopsis {
     /// store). `None` only if the item couldn't be opened.
     pub(super) open_doc: Option<Rc<OpenDoc>>,
     pub(super) root: Option<WidgetId>,
+    /// The editor this card registered with the view-model, to withdraw it on `Drop`.
+    pub(super) mounted_editor: Option<WidgetId>,
+}
+impl Drop for CardSynopsis {
+    fn drop(&mut self) {
+        if let Some(editor) = self.mounted_editor {
+            self.vm.card_editor_unmounted(self.card.item_id, editor);
+        }
+    }
 }
 impl std::fmt::Debug for CardSynopsis {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -227,9 +239,25 @@ impl Widget for CardSynopsis {
                 // sizes the editor exactly as before. The card stays draggable by
                 // its header, its status line and its padding.
                 {
-                    let (editor, _handle) =
-                        synopsis_editor(&self.vm, &self.card, doc, self.vm.synopsis_typo());
-                    ctx.add(DeadZone::new().child(editor))
+                    let exit = teksilo::widgets::keystroke_format::format_keystroke(
+                        KeyStroke::new(Key::Escape, Modifiers::NONE),
+                    );
+                    let (editor, handle) = synopsis_editor(
+                        &self.vm,
+                        &self.card,
+                        doc,
+                        self.vm.synopsis_typo(),
+                        Some(tr!(corkboard_card_synopsis_hint(exit = exit))),
+                    );
+                    let id = ctx.add(DeadZone::new().child(editor));
+                    if self
+                        .vm
+                        .card_editor_mounted(self.card.item_id, id, handle.clone())
+                    {
+                        ctx.run_after_mount(move |ctx| handle.focus(ctx));
+                    }
+                    self.mounted_editor = Some(id);
+                    id
                 }
             }
             // No synopsis field (or unreadable): an empty filler so the card still
@@ -326,8 +354,9 @@ impl Widget for SynopsisModal {
             Some(doc) if doc.synopsis.is_some() => {
                 // The expanded editor gets its **own** size scale (Settings ▸ Corkboard):
                 // the card's is chosen to be scannable in a tile, this one to be written in.
+                // No way back to describe: `Escape` closes a dialog, as everywhere.
                 let (editor, handle) =
-                    synopsis_editor(&self.vm, &self.card, &doc, self.vm.modal_typo());
+                    synopsis_editor(&self.vm, &self.card, &doc, self.vm.modal_typo(), None);
                 // `FixedSize` → `Padding` forward an *exact* bounded height to the
                 // greedy editor, which is what makes it consume that height and
                 // scroll. An `Expand` in between would measure the editor with an

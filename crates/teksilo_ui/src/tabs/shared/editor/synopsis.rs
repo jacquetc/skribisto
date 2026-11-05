@@ -292,6 +292,8 @@ pub fn card_synopsis_editor(
     item: Option<common::types::EntityId>,
     // What a screen reader calls the card's editor; see [`synopsis_editor`]'s note.
     name: LocalizedString,
+    // What a screen reader adds to that name, when this surface has more to say.
+    description: Option<LocalizedString>,
 ) -> (impl Widget, EditorHandle) {
     // Stand by to supply an image this document does not have. A picture
     // pasted in from another editor arrives as a reference — pixels live on the
@@ -360,6 +362,9 @@ pub fn card_synopsis_editor(
     );
     if let Some(g) = games {
         bound = bound.with_writing_games(g);
+    }
+    if let Some(description) = description {
+        bound = bound.with_access_description(description);
     }
     let widget = match caret {
         Some(band) => bound.with_caret_band(band),
