@@ -158,6 +158,44 @@ pub(crate) fn drain_dialog_titles(tree: &mut WidgetTree) -> Vec<String> {
         .collect()
 }
 
+/// Click the button labelled `label` in the dialog a press raised last, after
+/// checking it is the one titled `title`. The others still queued are dropped.
+pub(crate) fn answer_dialog(tree: &mut WidgetTree, title: &str, label: &str) {
+    answer_dialog_with(tree, title, label, &mut teksilo::core::NoopWindowOps);
+}
+
+/// [`answer_dialog`], dispatching the click through `ops`: for an answer that
+/// opens or closes windows, which a bare tree's own no-op window sink refuses.
+pub(crate) fn answer_dialog_with(
+    tree: &mut WidgetTree,
+    title: &str,
+    label: &str,
+    ops: &mut dyn teksilo::core::window::WindowOps,
+) {
+    use teksilo::core::ModalContent;
+    let request = tree
+        .drain_pending_modal_requests()
+        .pop()
+        .expect("a question is asked")
+        .request;
+    assert_eq!(request.title.as_deref(), Some(title));
+    let ModalContent::Deferred(builder) = request.content else {
+        panic!("a MessageBox presents deferred content");
+    };
+    builder(tree);
+    tree.layout(SizeProposal::exact(900.0, 600.0));
+    let button = tree.find_by_label(label).expect("the question offers it");
+    tree.dispatch_event_with_ops(
+        WidgetEvent::AccessAction {
+            action: teksilo::core::accesskit::Action::Click,
+            target: Some(button),
+            target_node: widget_id_to_node_id(button),
+            data: None,
+        },
+        ops,
+    );
+}
+
 /// Points the open registry at a directory of the test's own for as long as
 /// this lives, so code that consults it (the import dialogs' refusal to write
 /// over an open project) neither reads nor reaps the machine's real lock files.
@@ -452,6 +490,28 @@ impl RealProject {
             .expect("a finished save has a result");
     }
 
+    /// A session over this project, the way a project window holds one.
+    pub(crate) fn session(&self) -> crate::sessions::WorkSession {
+        work_session(&self.app_ctx, &self.ids)
+    }
+
+    /// Make every later save of this project fail, as a network drive that
+    /// dropped or a USB key taken out does: the project's file is now said to
+    /// live under a plain file, so nothing can be written there, even by root.
+    pub(crate) fn make_unwritable(&self) {
+        use frontend::commands::work_info_commands;
+
+        let blocker = self.path.with_file_name("not-a-folder");
+        std::fs::write(&blocker, b"").expect("the blocking file");
+        let work_info_id = self.ids.work_info_id.get().expect("a WorkInfo");
+        let mut info = work_info_commands::get_work_info(&self.app_ctx, &work_info_id)
+            .expect("get_work_info")
+            .expect("the WorkInfo exists");
+        info.file_name = Some(blocker.join("Novel.skrib").to_string_lossy().into_owned());
+        work_info_commands::update_work_info(&self.app_ctx, &info.into())
+            .expect("the WorkInfo is updated");
+    }
+
     /// Open the saved project in a backend of its own, as reopening the file does.
     pub(crate) fn reopened(&self) -> Rc<AppContext> {
         use frontend::commands::work_management_commands;
@@ -467,6 +527,57 @@ impl RealProject {
         )
         .expect("the saved project opens");
         app_ctx
+    }
+}
+
+/// A session over the Work `ids` names in `app_ctx`, the way a project window
+/// holds one, with in-memory settings.
+#[cfg(not(feature = "mocks"))]
+pub(crate) fn work_session(
+    app_ctx: &Rc<AppContext>,
+    ids: &crate::app_ids::AppIds,
+) -> crate::sessions::WorkSession {
+    crate::sessions::WorkSession::new(
+        app_ctx.clone(),
+        ids.clone(),
+        crate::spellcheck::SpellcheckService::new(),
+        teksilo::widgets::DockingModel::new(),
+        crate::backup::BackupSettingsViewModel::new(
+            crate::models::BackupSettingsService::in_memory_default(),
+        ),
+        crate::models::WorkspaceLayoutService::in_memory_default(),
+        crate::models::TreeExpansionService::in_memory_default(),
+    )
+}
+
+/// Wait for the one save of `app_ctx` that failed, and the `LongOperation::Failed`
+/// event its worker sent, built the way the long-operation manager builds it.
+#[cfg(not(feature = "mocks"))]
+pub(crate) fn failed_save_event(app_ctx: &AppContext) -> frontend::Event {
+    use frontend::common::event::{LongOperationEvent, Origin};
+    use frontend::common::long_operation::{OperationStatus, lock_or_recover};
+
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(60);
+    loop {
+        let failed = lock_or_recover(&app_ctx.long_operation_manager)
+            .get_operations_summary()
+            .into_iter()
+            .find_map(|(id, status, _)| match status {
+                OperationStatus::Failed(error) => Some((id, error)),
+                _ => None,
+            });
+        if let Some((id, error)) = failed {
+            return frontend::Event {
+                origin: Origin::LongOperation(LongOperationEvent::Failed),
+                ids: Vec::new(),
+                data: Some(serde_json::json!({ "id": id, "error": error }).to_string()),
+            };
+        }
+        assert!(
+            std::time::Instant::now() < deadline,
+            "the save never failed"
+        );
+        std::thread::sleep(std::time::Duration::from_millis(20));
     }
 }
 

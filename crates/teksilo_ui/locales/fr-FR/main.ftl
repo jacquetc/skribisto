@@ -809,11 +809,15 @@ new-work-unsaved-question = Enregistrer les modifications avant de créer une no
 open-work-unsaved-question = Enregistrer les modifications avant d’ouvrir une autre œuvre ?
 switch-backup-discard-title = Abandonner les modifications de cette copie de secours ?
 switch-backup-discard-text = Les modifications d’une copie de secours ne peuvent pas y être enregistrées. Utilisez « Enregistrer sous » ou « Restaurer » pour les conserver, ou abandonnez-les et ouvrez l’autre œuvre.
-switch-save-failed = L’œuvre n’a pas pu être enregistrée, elle n’a donc pas été remplacée : { $error }
-switch-save-not-started = L’œuvre n’a pas pu être enregistrée, elle n’a donc pas été remplacée.
-close-save-failed = L’œuvre n’a pas pu être enregistrée, elle n’a donc pas été fermée : { $error }
-close-save-not-started = L’œuvre n’a pas pu être enregistrée, elle n’a donc pas été fermée.
 save-not-started = L’œuvre n’a pas pu être enregistrée.
+save-failed-quit-title = Quitter sans enregistrer { $title } ?
+save-failed-close-title = Fermer { $title } sans enregistrer ?
+save-failed-switch-title = Laisser { $title } sans enregistrer ?
+save-failed-text = Impossible d’enregistrer { $title }. Le disque est peut-être plein ou protégé en écriture, ou un lecteur réseau ou une clé USB a peut-être été déconnecté.
+save-failed-consequence = Sans enregistrement, les modifications faites depuis le dernier enregistrement réussi sont perdues. Annuler garde l’œuvre ouverte avec toutes ses modifications : vous pourrez réessayer ou les conserver ailleurs avec « Enregistrer sous ».
+save-failed-quit = Quitter sans enregistrer
+save-failed-close = Fermer sans enregistrer
+save-failed-switch = Continuer sans enregistrer
 
 ## Notifications
 # Titre de notification. Court, car le titre tient sur une ligne et se voit tronqué ; la

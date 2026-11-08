@@ -14,13 +14,15 @@
 //! every load path. [`QuitSequencer`] walks every open Work through the same
 //! unsaved-changes guard, waits for each save's sequence, takes each Work's
 //! on-close backup, then closes every window — cancel anywhere aborts the
-//! whole quit.
+//! whole quit. [`save_failed_question`] is what all three (a quit, a close, a
+//! switch) ask when the save they were waiting on fails.
 
 mod open_failure;
 mod project_lifecycle_vm;
 mod project_switch_vm;
 pub mod project_switcher;
 mod quit_sequencer_vm;
+pub mod save_failed_question;
 
 pub use open_failure::{import_in_flight_toast, open_failure_toast};
 pub use project_lifecycle_vm::ProjectLifecycleViewModel;

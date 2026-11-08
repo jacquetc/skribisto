@@ -811,11 +811,15 @@ new-work-unsaved-question = Vil du gemme ændringerne, før du opretter et nyt p
 open-work-unsaved-question = Vil du gemme ændringerne, før du åbner et andet projekt?
 switch-backup-discard-title = Kassér ændringerne i denne sikkerhedskopi?
 switch-backup-discard-text = Ændringer i en sikkerhedskopi kan ikke gemmes i den. Brug Gem som eller Gendan for at beholde dem, eller kassér dem og åbn det andet projekt.
-switch-save-failed = Projektet kunne ikke gemmes, så det blev ikke erstattet: { $error }
-switch-save-not-started = Projektet kunne ikke gemmes, så det blev ikke erstattet.
-close-save-failed = Projektet kunne ikke gemmes, så det blev ikke lukket: { $error }
-close-save-not-started = Projektet kunne ikke gemmes, så det blev ikke lukket.
 save-not-started = Projektet kunne ikke gemmes.
+save-failed-quit-title = Vil du afslutte uden at gemme { $title }?
+save-failed-close-title = Vil du lukke { $title } uden at gemme?
+save-failed-switch-title = Vil du forlade { $title } uden at gemme?
+save-failed-text = { $title } kunne ikke gemmes. Disken kan være fuld eller skrivebeskyttet, eller et netværksdrev eller en USB-nøgle kan være blevet frakoblet.
+save-failed-consequence = Uden at gemme går ændringerne siden sidste vellykkede lagring tabt. Annuller holder projektet åbent med alle ændringerne, så du kan prøve igen eller gemme dem et andet sted med Gem som.
+save-failed-quit = Afslut uden at gemme
+save-failed-close = Luk uden at gemme
+save-failed-switch = Fortsæt uden at gemme
 
 ## Toasts
 # Toast title. Kept short because a toast title is one line and truncates; the cause goes

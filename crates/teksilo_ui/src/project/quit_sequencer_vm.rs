@@ -52,6 +52,18 @@
 //! snapshot can predate the flush. This is the same contract the single-window
 //! deferred close already uses.
 //!
+//! ## A save that fails
+//!
+//! When the save a Work's turn was waiting on fails (or cannot even be
+//! started), the writer is asked ([`super::save_failed_question`]) rather than
+//! the quit being dropped: with autosave on, dropping it meant the next Quit
+//! saved again, failed again and stayed again, with no way out but a
+//! force-quit. *Quit without saving* leaves that Work as Discard would (no
+//! flush, no on-close backup) and goes on to the next one; *Cancel*, like
+//! Cancel anywhere else, aborts the whole quit with every edit intact. The quit
+//! stays under way while the question is up, so a second Ctrl+Q does not ask
+//! it twice.
+//!
 //! It is driven from `App::build`'s `LongOperation::Completed` subscriber, which is
 //! the only place in the crate holding both an `EventContext` and that event. The
 //! sequencer routes the event into the *waiting* Work's own
@@ -99,6 +111,7 @@ use teksilo::prelude::*;
 use teksilo::widgets::{MessageBox, MessageBoxButton, MessageBoxButtons, StandardButton};
 
 use crate::app::PendingExit;
+use crate::project::save_failed_question::{Leaving, SaveFailedAnswer, ask_after_failed_save};
 use crate::project::{UnsavedDecision, unsaved_decision};
 use crate::sessions::{WorkRegistry, WorkSession};
 use crate::shared::project_import::ProjectImportJob;
@@ -360,10 +373,9 @@ impl QuitSequencer {
                     if self.start_save(work_id, &session) {
                         return; // resumes from `on_long_op_completed`
                     }
-                    // The save could not even be issued. Stopping is the only
-                    // safe answer: continuing would close a window over edits
-                    // that were never written, having promised to write them.
-                    return self.abort();
+                    // The save could not even be issued. Never close a window
+                    // over edits that were promised a write: ask instead.
+                    return self.ask_after_failed_save(ctx, &session, None);
                 }
                 QuitStep::AskSaveDiscardCancel => {
                     return self.ask_save_discard_cancel(ctx, work_id, &session);
@@ -391,7 +403,7 @@ impl QuitSequencer {
                 if me.start_save(work_id, &session) {
                     return; // resumes from `on_long_op_completed`
                 }
-                me.abort();
+                me.ask_after_failed_save(c, &session, None);
             }
             StandardButton::Discard => me.discard_and_continue(c),
             // Cancel — and the escape key, and closing the dialog — abort the
@@ -536,19 +548,53 @@ impl QuitSequencer {
     /// Route a `LongOperation::Failed` while a quit is waiting on a save.
     ///
     /// A write that did not happen must never be followed by closing the window
-    /// over it. Abort, leaving every window open and every edit intact; the
-    /// failure itself is reported by the existing save-failure toast, which does
-    /// not need a second voice here.
-    pub fn on_long_op_failed(&self, event: &Event, _ctx: &mut EventContext) {
+    /// over it, and must not silently drop the quit either: the writer is asked
+    /// (see the module doc). The question carries the failure, so it is the
+    /// report: the generic save-failure toast stands down for it.
+    ///
+    /// Every window calls this for the one broadcast event; the first clears
+    /// `waiting` before asking, so the question is asked once.
+    pub fn on_long_op_failed(&self, event: &Event, ctx: &mut EventContext) {
         let Some((work_id, _)) = *self.inner.waiting.borrow() else {
             return;
         };
         let Some(session) = self.inner.registry.session_for(work_id) else {
-            return;
+            // The Work vanished mid-save. Nothing left to protect.
+            self.inner.waiting.borrow_mut().take();
+            return self.advance(ctx);
         };
-        if session.save_state.on_save_failed(event).is_some() {
-            self.abort();
+        if let Some(error) = session.save_state.on_save_failed(event) {
+            session.save_state.note_specific_failure_report(event);
+            self.ask_after_failed_save(ctx, &session, Some(error));
         }
+    }
+
+    /// The save `session`'s turn was waiting on failed, or could not be started
+    /// (`error` is then `None`). Ask whether to quit without saving it.
+    ///
+    /// Nothing is waited on while the question is up, and the quit stays
+    /// active. *Quit without saving* takes the Discard road for this Work and
+    /// carries on; anything else aborts the whole quit, as Cancel does
+    /// everywhere in it.
+    fn ask_after_failed_save(
+        &self,
+        ctx: &mut EventContext,
+        session: &WorkSession,
+        error: Option<String>,
+    ) {
+        self.inner.waiting.borrow_mut().take();
+        self.inner.resaves.set(0);
+        let me = self.clone();
+        ask_after_failed_save(
+            ctx,
+            Leaving::Quit,
+            Some(session.single_work.title().get()),
+            error.as_deref(),
+            move |answer, c| match answer {
+                SaveFailedAnswer::LeaveWithoutSaving => me.discard_and_continue(c),
+                SaveFailedAnswer::Stay => me.abort(),
+            },
+        );
     }
 
     /// Give up on the whole quit: clear the queue and let every window stay.
@@ -858,22 +904,6 @@ mod tests {
         );
     }
 
-    /// A session over a real project, the way a project window holds one.
-    #[cfg(not(feature = "mocks"))]
-    fn session_over(project: &crate::test_support::RealProject) -> WorkSession {
-        WorkSession::new(
-            project.app_ctx.clone(),
-            project.ids.clone(),
-            crate::spellcheck::SpellcheckService::new(),
-            teksilo::widgets::DockingModel::new(),
-            crate::backup::BackupSettingsViewModel::new(
-                crate::models::BackupSettingsService::in_memory_default(),
-            ),
-            crate::models::WorkspaceLayoutService::in_memory_default(),
-            crate::models::TreeExpansionService::in_memory_default(),
-        )
-    }
-
     /// The titles of the project saved at `project.path`, read back the way
     /// reopening it does.
     #[cfg(not(feature = "mocks"))]
@@ -898,7 +928,7 @@ mod tests {
     fn a_quit_nobody_can_answer_saves_the_project_first() {
         let project = crate::test_support::RealProject::empty_novel();
         project.save();
-        let session = session_over(&project);
+        let session = project.session();
         let (first, _) = project.scenes()[0];
         project.add_scene_after(first, "Written at the last moment");
         session.save_state.bump_dirty();
@@ -922,7 +952,7 @@ mod tests {
     fn a_quit_nobody_can_answer_never_writes_over_a_backup() {
         let project = crate::test_support::RealProject::empty_novel();
         project.save();
-        let session = session_over(&project);
+        let session = project.session();
         session.backup_mode.set(true);
         let (first, _) = project.scenes()[0];
         project.add_scene_after(first, "Typed into a backup");
@@ -981,20 +1011,171 @@ mod tests {
 
     /// Click the button labelled `label` in the one question a press raised.
     fn answer(tree: &mut teksilo::core::widget_tree::WidgetTree, title: &str, label: &str) {
-        use teksilo::core::ModalContent;
-        let request = tree
-            .drain_pending_modal_requests()
-            .pop()
-            .expect("a question is asked")
-            .request;
-        assert_eq!(request.title.as_deref(), Some(title));
-        let ModalContent::Deferred(builder) = request.content else {
-            panic!("a MessageBox presents deferred content");
-        };
-        builder(tree);
-        tree.layout(SizeProposal::exact(900.0, 600.0));
-        let button = tree.find_by_label(label).expect("the question offers it");
-        crate::test_support::click(tree, button);
+        crate::test_support::answer_dialog(tree, title, label);
+    }
+
+    /// A project with an edit not on disk, open in `registry` with autosave on,
+    /// whose every save fails from now on, and a quit sequencer over it.
+    #[cfg(not(feature = "mocks"))]
+    fn dirty_unsaveable(
+        title: &str,
+    ) -> (
+        crate::test_support::RealProject,
+        WorkSession,
+        WorkRegistry,
+        QuitSequencer,
+    ) {
+        let project = crate::test_support::RealProject::empty_novel();
+        project.save();
+        let session = project.session();
+        session.single_work.title().set(title.to_string());
+        let (first, _) = project.scenes()[0];
+        project.add_scene_after(first, "Written on the train");
+        session.save_state.bump_dirty();
+        project.make_unwritable();
+        let registry = WorkRegistry::new();
+        registry.register(project.work_id, session.clone());
+        let q = QuitSequencer::new(project.app_ctx.clone(), registry.clone(), Signal::new(true));
+        (project, session, registry, q)
+    }
+
+    /// Start the quit and let its silent save fail, as on a network drive that
+    /// dropped: the failure reaches the sequencer the way `App::build` routes it.
+    #[cfg(not(feature = "mocks"))]
+    fn quit_until_the_save_fails(
+        tree: &mut teksilo::core::widget_tree::WidgetTree,
+        project: &crate::test_support::RealProject,
+        q: &QuitSequencer,
+    ) {
+        let quitting = q.clone();
+        crate::test_support::press(tree, move |c| quitting.begin(c));
+        assert!(q.is_active(), "the quit waits on the save");
+        let failed = crate::test_support::failed_save_event(&project.app_ctx);
+        let routing = q.clone();
+        crate::test_support::press(tree, move |c| routing.on_long_op_failed(&failed, c));
+    }
+
+    #[cfg(not(feature = "mocks"))]
+    fn open_works(app_ctx: &AppContext) -> usize {
+        frontend::commands::work_commands::get_all_work(app_ctx)
+            .map(|works| works.len())
+            .unwrap_or_default()
+    }
+
+    /// With autosave on, a quit whose save fails asks, naming the project, and
+    /// "Quit without saving" quits: the writer is never trapped in an app that
+    /// can only be force-quit. Before, the quit was dropped with a toast, and the
+    /// next one did the same.
+    #[cfg(not(feature = "mocks"))]
+    #[test]
+    fn a_quit_whose_save_fails_asks_and_can_quit_without_saving() {
+        let (project, _session, _registry, q) = dirty_unsaveable("The Lighthouse");
+        let mut tree = teksilo::core::widget_tree::WidgetTree::new();
+        quit_until_the_save_fails(&mut tree, &project, &q);
+        assert!(
+            q.is_active(),
+            "the quit is not dropped while the writer is asked"
+        );
+        answer(
+            &mut tree,
+            &tr!(save_failed_quit_title(title = "The Lighthouse")).resolve_now(),
+            &tr!(save_failed_quit()).resolve_now(),
+        );
+        assert!(!q.is_active(), "the quit went through");
+        assert_eq!(open_works(&project.app_ctx), 0, "the project was closed");
+    }
+
+    /// Cancel in that question stays, with the project open and its edit still
+    /// unsaved, so nothing is lost and the writer can try again.
+    #[cfg(not(feature = "mocks"))]
+    #[test]
+    fn cancelling_after_a_failed_save_keeps_the_project_and_its_edit() {
+        let (project, session, _registry, q) = dirty_unsaveable("The Lighthouse");
+        let mut tree = teksilo::core::widget_tree::WidgetTree::new();
+        quit_until_the_save_fails(&mut tree, &project, &q);
+        answer(
+            &mut tree,
+            &tr!(save_failed_quit_title(title = "The Lighthouse")).resolve_now(),
+            &StandardButton::Cancel.default_label().resolve_now(),
+        );
+        assert!(!q.is_active(), "the whole quit is called off");
+        assert_eq!(open_works(&project.app_ctx), 1, "the project stays open");
+        assert!(
+            session.save_state.is_unsaved(),
+            "and its edit is still there"
+        );
+    }
+
+    /// Leaving one project without saving goes on to the next one, as Discard
+    /// does: here a backup open with changes, which is asked about in turn.
+    #[cfg(not(feature = "mocks"))]
+    #[test]
+    fn leaving_one_project_without_saving_goes_on_to_the_next() {
+        use frontend::commands::work_management_commands;
+        use frontend::work_management::{NewWorkDto, NewWorkTemplate};
+
+        let (project, _session, registry, q) = dirty_unsaveable("The Lighthouse");
+        let other_path = project.path.with_file_name("Other.skrib");
+        work_management_commands::new_work(
+            &project.app_ctx,
+            &NewWorkDto {
+                goal_unit: Default::default(),
+                file_name: other_path.to_string_lossy().into_owned(),
+                title: String::new(),
+                is_folder: false,
+                template_kind: NewWorkTemplate::EmptyNovel,
+                labels: vec![],
+                language: vec!["en-US".to_string()],
+                author_name: String::new(),
+                chapter_scene_mode: false,
+                paratext_front: Vec::new(),
+                paratext_back: Vec::new(),
+            },
+        )
+        .expect("a second work");
+        let other_id = frontend::commands::work_commands::get_all_work(&project.app_ctx)
+            .expect("get_all_work")
+            .into_iter()
+            .map(|work| work.id)
+            .find(|id| *id != project.work_id)
+            .expect("the second work");
+        assert!(other_id > project.work_id, "asked about second");
+        let other_ids = crate::app_ids::AppIds::new();
+        other_ids.seed(&project.app_ctx, other_id);
+        let other = crate::test_support::work_session(&project.app_ctx, &other_ids);
+        other.single_work.title().set("Notebook".into());
+        other.backup_mode.set(true);
+        other.save_state.bump_dirty();
+        registry.register(other_id, other);
+
+        let mut tree = teksilo::core::widget_tree::WidgetTree::new();
+        quit_until_the_save_fails(&mut tree, &project, &q);
+        answer(
+            &mut tree,
+            &tr!(save_failed_quit_title(title = "The Lighthouse")).resolve_now(),
+            &tr!(save_failed_quit()).resolve_now(),
+        );
+        assert!(q.is_active(), "the quit goes on");
+        assert_eq!(
+            crate::test_support::drain_dialog_titles(&mut tree),
+            vec![tr!(quit_backup_discard_work_question(title = "Notebook")).resolve_now()],
+            "to the next project"
+        );
+    }
+
+    /// A quit nobody can answer (a termination signal, the session ending) asks
+    /// nothing and waits for nobody, even when the save fails: the window may go.
+    #[cfg(not(feature = "mocks"))]
+    #[test]
+    fn a_quit_nobody_can_answer_does_not_hang_on_a_failed_save() {
+        let (_project, session, _registry, q) = dirty_unsaveable("The Lighthouse");
+        let mut tree = teksilo::core::widget_tree::WidgetTree::new();
+        let response = in_guard(&mut tree, |ctx| q.close_without_asking(ctx, Some(&session)));
+        assert!(matches!(response, CloseResponse::Close));
+        assert!(
+            crate::test_support::drain_dialog_titles(&mut tree).is_empty(),
+            "no question nobody can see"
+        );
     }
 
     /// Quitting while a project import runs asks first. Stopping it cancels the

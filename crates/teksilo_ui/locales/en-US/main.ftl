@@ -817,11 +817,21 @@ new-work-unsaved-question = Save changes before creating a new work?
 open-work-unsaved-question = Save changes before opening another work?
 switch-backup-discard-title = Discard changes to this backup?
 switch-backup-discard-text = Changes to a backup can't be saved to it. Use Save As or Restore to keep them, or discard them and open the other work.
-switch-save-failed = The work couldn't be saved, so it wasn't replaced: { $error }
-switch-save-not-started = The work couldn't be saved, so it wasn't replaced.
-close-save-failed = The work couldn't be saved, so it wasn't closed: { $error }
-close-save-not-started = The work couldn't be saved, so it wasn't closed.
 save-not-started = The work couldn't be saved.
+# Asked when the save a quit, a close or the opening of another work in this
+# window was waiting on has failed (a network drive that dropped, a full or
+# write-protected disk, a USB key taken out). $title is the work's title. The
+# system's own message, untranslated, sits under the dialog's "Show details".
+# The "without saving" button loses the changes since the last successful
+# save; Cancel keeps everything open.
+save-failed-quit-title = Quit without saving { $title }?
+save-failed-close-title = Close { $title } without saving?
+save-failed-switch-title = Leave { $title } without saving?
+save-failed-text = { $title } could not be saved. The disk may be full or write-protected, or a network drive or USB key may have been disconnected.
+save-failed-consequence = Without saving, the changes made since the last successful save are lost. Cancel keeps the work open with all its changes, so you can try again or keep them somewhere else with Save As.
+save-failed-quit = Quit without saving
+save-failed-close = Close without saving
+save-failed-switch = Continue without saving
 
 ## Toasts
 # Toast title. Kept short because a toast title is one line and truncates; the cause goes

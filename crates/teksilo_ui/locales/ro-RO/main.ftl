@@ -829,11 +829,15 @@ new-work-unsaved-question = Salvați modificările înainte de a crea un proiect
 open-work-unsaved-question = Salvați modificările înainte de a deschide alt proiect?
 switch-backup-discard-title = Renunțați la modificările din această copie de siguranță?
 switch-backup-discard-text = Modificările dintr-o copie de siguranță nu pot fi salvate în ea. Folosiți „Salvează ca” sau „Restaurează” pentru a le păstra, ori renunțați la ele și deschideți celălalt proiect.
-switch-save-failed = Proiectul nu a putut fi salvat, așa că nu a fost înlocuit: { $error }
-switch-save-not-started = Proiectul nu a putut fi salvat, așa că nu a fost înlocuit.
-close-save-failed = Proiectul nu a putut fi salvat, așa că nu a fost închis: { $error }
-close-save-not-started = Proiectul nu a putut fi salvat, așa că nu a fost închis.
 save-not-started = Proiectul nu a putut fi salvat.
+save-failed-quit-title = Ieșiți fără să salvați { $title }?
+save-failed-close-title = Închideți { $title } fără să salvați?
+save-failed-switch-title = Părăsiți { $title } fără să salvați?
+save-failed-text = Proiectul { $title } nu a putut fi salvat. Este posibil ca discul să fie plin sau protejat la scriere ori ca o unitate de rețea sau un stick USB să fi fost deconectat.
+save-failed-consequence = Fără salvare, modificările făcute de la ultima salvare reușită se pierd. „Anulare” păstrează proiectul deschis cu toate modificările, ca să puteți încerca din nou sau să le păstrați în alt loc cu „Salvează ca”.
+save-failed-quit = Ieșire fără salvare
+save-failed-close = Închidere fără salvare
+save-failed-switch = Continuare fără salvare
 
 ## Toasts
 # Toast title. Kept short because a toast title is one line and truncates; the cause goes

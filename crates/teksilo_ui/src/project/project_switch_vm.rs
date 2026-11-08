@@ -48,6 +48,13 @@
 //! guard asks for one, its snapshot predating our flush, and the op that
 //! finally carries our edits may be a coalesced follow-up with a different id.
 //!
+//! **A save that fails** is asked about rather than dropped
+//! ([`ProjectSwitchViewModel::on_save_failed`],
+//! [`crate::project::save_failed_question`]): with autosave on, a dropped switch
+//! saved again on the next New/Open, failed again and stayed again. *Continue
+//! without saving* performs the switch the way Discard does; Cancel keeps the
+//! project, and every edit in it.
+//!
 //! Single-instance live state: created in `main.rs` and registered as
 //! app-state; `App::build` takes it from there to install its hooks and to
 //! serve the `work.new` / `work.open` / `work.open_path` actions. The two
@@ -64,15 +71,15 @@ use std::rc::Rc;
 use teksilo::prelude::*;
 use teksilo::widgets::{
     EventContextMessageBoxExt, MessageBox, MessageBoxButton, MessageBoxButtons, StandardButton,
-    Toast,
 };
 
 use frontend::AppContext;
 use frontend::commands::work_management_commands;
 use frontend::work_management::LoadWorkDto;
 
-use crate::toast_scope::ToastWorkExt;
-
+use crate::project::save_failed_question::{
+    Leaving, SaveFailedAnswer, ask_after_failed_save, work_title,
+};
 use crate::shared::long_op::CapturedWork;
 
 /// The window action that performs a switch the writer chose Discard for. See
@@ -353,15 +360,12 @@ impl ProjectSwitchViewModel {
     ///
     /// The switch is parked only if a save was really asked for. If the command
     /// could not be issued at all, nothing is parked: a switch waiting on a write
-    /// that will never happen is a command that silently never happens.
+    /// that will never happen is a command that silently never happens. The
+    /// writer is asked instead, as when a parked save fails.
     fn defer(&self, ctx: &mut EventContext, switch: PendingSwitch, outgoing_work_id: Option<u64>) {
         let save = self.save_hook.borrow().clone();
         let Some(covers) = save() else {
-            // Work-scoped: about the outgoing Work's own save, not every open
-            // window's.
-            ctx.show_toast(
-                Toast::error(tr!(switch_save_not_started())).target_work(outgoing_work_id),
-            );
+            self.ask_after_failed_save(ctx, switch, outgoing_work_id, None);
             return;
         };
         self.pending.set(switch);
@@ -483,34 +487,53 @@ impl ProjectSwitchViewModel {
     }
 
     /// The save the switch was waiting on failed. The project is still open and
-    /// still dirty, so drop the parked switch and say why, instead of leaving the
-    /// user with a New/Open that silently never happens. Nothing is lost: the edits
-    /// are exactly where they were.
+    /// still dirty: unpark the switch and ask the writer whether to go on without
+    /// saving or stay, instead of a New/Open that silently never happens (and,
+    /// with autosave on, never can). Nothing is lost unless the writer says so.
     ///
     /// `error` is `None` when the save never started, so there is no backend message
     /// to quote.
     ///
-    /// `true` if a switch *was* parked — the caller has then already reported the
-    /// failure (this toast says both that the save failed and that the switch
-    /// didn't happen) and must not toast a second time.
+    /// `true` if a switch *was* parked — the question is then the report, and the
+    /// caller must not toast as well.
     pub fn on_save_failed(&self, ctx: &mut EventContext, error: Option<&str>) -> bool {
         if self.pending_seq.get().is_none() {
             return false;
         }
         // Read BEFORE `take_pending()` — it clears `pending_work_id` as part of
         // dropping the parked switch, so the outgoing Work's id must be
-        // captured first or every one of these toasts would silently fall
-        // back to the origin-window default.
-        let outgoing_work_id = self.pending_work_id.get();
-        self.take_pending();
-        ctx.show_toast(
-            Toast::error(match error {
-                Some(e) => tr!(switch_save_failed(error = e.to_string())),
-                None => tr!(switch_save_not_started()),
-            })
-            .target_work(outgoing_work_id),
-        );
+        // captured first.
+        let outgoing_work_id: Option<u64> = self.pending_work_id.get().into();
+        let switch = self.take_pending();
+        self.ask_after_failed_save(ctx, switch, outgoing_work_id, error);
         true
+    }
+
+    /// Ask whether to go on with `switch` without saving `outgoing_work_id`.
+    /// *Continue without saving* hands it to [`Self::after_discard`], the road
+    /// Discard takes; anything else keeps the project as it is.
+    fn ask_after_failed_save(
+        &self,
+        ctx: &mut EventContext,
+        switch: PendingSwitch,
+        outgoing_work_id: Option<u64>,
+        error: Option<&str>,
+    ) {
+        if switch == PendingSwitch::None {
+            return;
+        }
+        let me = self.clone();
+        ask_after_failed_save(
+            ctx,
+            Leaving::Switch,
+            work_title(ctx, outgoing_work_id),
+            error,
+            move |answer, c| {
+                if answer == SaveFailedAnswer::LeaveWithoutSaving {
+                    me.after_discard(c, switch.clone(), outgoing_work_id);
+                }
+            },
+        );
     }
 
     /// Abandon any parked switch (the close flow won the race: the project is
@@ -824,6 +847,72 @@ mod tests {
         ) -> teksilo::core::widget::LayoutResponse {
             proposal.resolve(0.0, 0.0).into()
         }
+    }
+
+    /// A window on `vm`, laid out, and a counter of the New Work forms it shows.
+    fn window_counting_forms(
+        vm: &ProjectSwitchViewModel,
+    ) -> (teksilo::core::widget_tree::WidgetTree, Rc<Cell<u32>>) {
+        let forms = Rc::new(Cell::new(0u32));
+        {
+            let forms = forms.clone();
+            vm.set_new_work_form_hook(Rc::new(move |_c: &mut EventContext| {
+                forms.set(forms.get() + 1)
+            }));
+        }
+        let mut tree = teksilo::core::widget_tree::WidgetTree::new();
+        tree.add(Window { vm: vm.clone() });
+        tree.layout(SizeProposal::exact(400.0, 300.0));
+        (tree, forms)
+    }
+
+    /// New Work parked on a save (autosave on), and that save failed.
+    fn a_parked_switch_whose_save_failed(
+        vm: &ProjectSwitchViewModel,
+        tree: &mut teksilo::core::widget_tree::WidgetTree,
+    ) {
+        vm.set_save_hook(Rc::new(|| Some(4)));
+        defer_headless(vm, PendingSwitch::NewWork, Some(7));
+        let failing = vm.clone();
+        crate::test_support::press(tree, move |c| {
+            assert!(
+                failing.on_save_failed(c, Some("Read-only file system")),
+                "a switch was parked, so the failure is reported here"
+            );
+        });
+        assert_eq!(vm.pending.get(), PendingSwitch::None, "no longer parked");
+    }
+
+    /// With autosave on, a New Work whose save fails asks instead of staying put,
+    /// and "Continue without saving" goes on with it, the way Discard does. Before,
+    /// the switch was dropped with a toast, and the next New Work did the same.
+    #[test]
+    fn a_switch_whose_save_failed_asks_and_can_go_on_without_saving() {
+        let vm = test_vm(true, false, true);
+        let (mut tree, forms) = window_counting_forms(&vm);
+        a_parked_switch_whose_save_failed(&vm, &mut tree);
+        let untitled = crate::project::save_failed_question::display_title(None);
+        crate::test_support::answer_dialog(
+            &mut tree,
+            &tr!(save_failed_switch_title(title = untitled)).resolve_now(),
+            &tr!(save_failed_switch()).resolve_now(),
+        );
+        assert_eq!(forms.get(), 1, "the New Work form is shown");
+    }
+
+    /// Cancel keeps the project, unswitched.
+    #[test]
+    fn cancelling_after_a_failed_save_keeps_the_project() {
+        let vm = test_vm(true, false, true);
+        let (mut tree, forms) = window_counting_forms(&vm);
+        a_parked_switch_whose_save_failed(&vm, &mut tree);
+        let untitled = crate::project::save_failed_question::display_title(None);
+        crate::test_support::answer_dialog(
+            &mut tree,
+            &tr!(save_failed_switch_title(title = untitled)).resolve_now(),
+            &StandardButton::Cancel.default_label().resolve_now(),
+        );
+        assert_eq!(forms.get(), 0, "nothing was switched");
     }
 
     /// Discard in the unsaved-changes question opens the New Work form from the

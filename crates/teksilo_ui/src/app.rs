@@ -2195,6 +2195,8 @@ impl Widget for App {
                 ids: ids.clone(),
                 quit: self.quit.clone(),
                 save_state: save_state.clone(),
+                app_ctx: self.app_ctx.clone(),
+                work_title: session.single_work.title(),
             },
         );
 
