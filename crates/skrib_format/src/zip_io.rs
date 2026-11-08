@@ -17,7 +17,7 @@ use zip::write::SimpleFileOptions;
 
 use super::bundle::WorkBundle;
 use super::folder_io::{read_folder, write_folder};
-use super::writer::persist_durably;
+use super::writer::{discard, persist_durably};
 
 pub fn write_zip(target: &Path, bundle: &WorkBundle) -> Result<()> {
     let staging = tempfile::tempdir().context("creating staging dir for zip save")?;
@@ -36,7 +36,10 @@ pub fn write_zip(target: &Path, bundle: &WorkBundle) -> Result<()> {
     // Write through the `NamedTempFile`'s own fd (not a second, independent
     // `File::create` on the same path) so the bytes we fsync in
     // `persist_durably` are demonstrably the bytes we just wrote.
-    zip_dir(staging.path(), tmp.as_file_mut())?;
+    if let Err(e) = zip_dir(staging.path(), tmp.as_file_mut()) {
+        discard(tmp);
+        return Err(e);
+    }
     persist_durably(tmp, target)
 }
 

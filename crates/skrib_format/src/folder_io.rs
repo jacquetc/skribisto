@@ -27,7 +27,7 @@ use super::migration::COMMENT_BODIES_ARE_DJOT_FROM;
 use super::shape::MANIFEST_NAME;
 use super::slug::{ASSETS_DIR, TEMPLATES_DIR, binder_dir_name};
 use super::version_gate::compute_min_read_version;
-use super::writer::persist_durably;
+use super::writer::{discard, persist_durably};
 
 fn to_ron<T: Serialize>(value: &T) -> Result<String> {
     let cfg = ron::ser::PrettyConfig::new().struct_names(true);
@@ -54,8 +54,10 @@ fn write_if_changed(path: &Path, bytes: &[u8]) -> Result<bool> {
     fs::create_dir_all(parent).with_context(|| format!("creating {}", parent.display()))?;
     let mut tmp = NamedTempFile::new_in(parent)
         .with_context(|| format!("temp file in {}", parent.display()))?;
-    tmp.write_all(bytes)
-        .with_context(|| format!("writing {}", path.display()))?;
+    if let Err(e) = tmp.write_all(bytes) {
+        discard(tmp);
+        return Err(e).with_context(|| format!("writing {}", path.display()));
+    }
     persist_durably(tmp, path)?;
     Ok(true)
 }

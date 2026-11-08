@@ -339,7 +339,8 @@ pub fn serialize_and_write(
             skrib::history::thin(&mut bundle.history, &policy, min_keep, now);
         }
     }
-    skrib::write_bundle(&target, shape, &bundle).map_err(|e| anyhow!("writing '{target}': {e}"))?;
+    skrib::write_bundle(&target, shape, &bundle)
+        .map_err(|e| anyhow!("writing '{target}': {e:#}"))?;
     // The backend seam's "a write landed" hook, beside the contributor call it
     // mirrors: same function, same `unique_id`, same once-per-write cardinality
     // that both get here for free.

@@ -46,6 +46,11 @@ unicode-normalization = "0.1"
 # same parser and version the importers already use, so this adds no second one.
 roxmltree = "0.21.1"
 
+# `F_FULLFSYNC`'s fallback, and the errors that call for it: `sync_all` has no
+# plain `fsync` on Apple platforms. See `writer::sync_file`.
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
 # Used only by the `build_example` tool, which reads each bundled example's
 # editorial-metadata spec.
 [dev-dependencies]

@@ -199,8 +199,10 @@ impl StagedOutput {
             .to_path_buf();
         let mut zipped =
             NamedTempFile::new_in(&beside).map_err(|e| self.refused(&beside, &e.into()))?;
-        crate::zip_io::zip_dir(staging.path(), zipped.as_file_mut())
-            .map_err(|e| self.refused(&beside, &e))?;
+        if let Err(e) = crate::zip_io::zip_dir(staging.path(), zipped.as_file_mut()) {
+            crate::writer::discard(zipped);
+            return Err(self.refused(&beside, &e));
+        }
         crate::writer::persist_durably(zipped, &self.staged).map_err(|e| self.refused(&beside, &e))
     }
 

@@ -5922,6 +5922,7 @@ dependencies = [
  "anyhow",
  "blake3",
  "chrono",
+ "libc",
  "proptest",
  "ron",
  "roxmltree 0.21.1",
