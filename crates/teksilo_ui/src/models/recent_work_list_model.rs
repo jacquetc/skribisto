@@ -21,6 +21,14 @@
 //! twice would diverge on flush. On each successful open the just-opened work is
 //! recorded via `MruList::add`; `flush_now()` is called once at app shutdown.
 //!
+//! **A project that moves is recorded where it went.** Save As and a restored
+//! backup point an open window at a new path with no `LoadWork` in between, so the
+//! view-model that moved it calls [`RecentWorkListModel::record_relocation`]: the
+//! new path goes first and the copy left behind leaves the list. Every live view
+//! re-derives its rows on the `WorkInfo` update that follows, but only when the
+//! shared list has changed since that view last read it, since the same event also
+//! fires for every progress snapshot.
+//!
 //! Two `#[cfg]`-gated `mod imp` variants share one public surface (the real one
 //! is `MruList`-backed; the mock ships one fabricated row).
 
@@ -37,7 +45,9 @@ mod imp {
 
     use frontend::AppContext;
     use frontend::commands::{work_commands, work_info_commands};
-    use frontend::common::event::{Event, Origin, WorkManagementEvent};
+    use frontend::common::event::{
+        DirectAccessEntity, EntityEvent, Event, Origin, WorkManagementEvent,
+    };
     use frontend::common::types::EntityId;
     use frontend::direct_access::RecentWorkDto;
 
@@ -88,15 +98,81 @@ mod imp {
     fn shared_mru() -> Option<MruList<RecentEntry>> {
         SHARED_MRU.with(|cell| {
             if cell.borrow().is_none() {
-                let opened = crate::identity::app_paths().and_then(|paths| {
-                    MruList::open(&paths, "recents", MAX_RECENTS)
-                        .map_err(|e| eprintln!("recents MRU: open failed: {e}"))
-                        .ok()
-                });
-                *cell.borrow_mut() = opened;
+                *cell.borrow_mut() = open_shared_mru();
             }
             cell.borrow().clone()
         })
+    }
+
+    /// The person's own `recents.toml`.
+    #[cfg(not(test))]
+    fn open_shared_mru() -> Option<MruList<RecentEntry>> {
+        crate::identity::app_paths().and_then(|paths| {
+            MruList::open(&paths, "recents", MAX_RECENTS)
+                .map_err(|e| eprintln!("recents MRU: open failed: {e}"))
+                .ok()
+        })
+    }
+
+    /// A test never reads or writes the recents of whoever runs it: with no
+    /// [`TestRecents`] installed on its thread, the list is simply unavailable.
+    #[cfg(test)]
+    fn open_shared_mru() -> Option<MruList<RecentEntry>> {
+        None
+    }
+
+    /// Installs a recents list of the test's own, in a temporary directory, as this
+    /// thread's shared MRU for as long as it lives, so a test can follow what a
+    /// view-model records without touching the real `recents.toml`.
+    #[cfg(test)]
+    pub(crate) struct TestRecents {
+        mru: MruList<RecentEntry>,
+        _dir: tempfile::TempDir,
+    }
+
+    #[cfg(test)]
+    impl TestRecents {
+        pub(crate) fn new() -> Self {
+            let dir = tempfile::tempdir().expect("a directory for the recents");
+            let mru = MruList::open_at(
+                dir.path().join("recents.toml"),
+                MAX_RECENTS,
+                std::time::Duration::ZERO,
+            )
+            .expect("a recents list in the temporary directory");
+            SHARED_MRU.with(|cell| *cell.borrow_mut() = Some(mru.clone()));
+            Self { mru, _dir: dir }
+        }
+
+        /// Record `path` as opened, the way a `LoadWork` does.
+        pub(crate) fn opened(&self, path: &str, title: &str) {
+            self.mru.add(RecentEntry {
+                path: path.to_string(),
+                title: title.to_string(),
+                last_opened_ms: now_ms(),
+                pinned: false,
+            });
+        }
+
+        /// Every entry's path, most recent first, reachable or not.
+        pub(crate) fn paths(&self) -> Vec<String> {
+            raw_paths(&self.mru)
+        }
+
+        /// Every entry's title, in the same order as [`Self::paths`].
+        pub(crate) fn titles(&self) -> Vec<String> {
+            let model = self.mru.model();
+            (0..model.len())
+                .filter_map(|i| model.with_item(i, |e| e.title.clone()))
+                .collect()
+        }
+    }
+
+    #[cfg(test)]
+    impl Drop for TestRecents {
+        fn drop(&mut self) {
+            SHARED_MRU.with(|cell| cell.borrow_mut().take());
+        }
     }
 
     fn now_ms() -> i64 {
@@ -111,6 +187,11 @@ mod imp {
         model: ListModel<RecentWorkDto>,
         /// Bumped on every refresh, for `Rebuild`-bound (non-`ListView`) consumers.
         version: Signal<u64>,
+        /// The MRU's paths, in order, as they stood when `model` was last derived
+        /// from it: what tells a `WorkInfo` update that moved a project (see
+        /// [`RecentWorkListModel::record_relocation`]) from the many that did not,
+        /// without a `Path::exists` per entry on every one of them.
+        derived_from: RefCell<Vec<String>>,
         /// One-shot guard: subscriptions persist across the consumer's rebuilds.
         ctx: Rc<AppContext>,
         /// The main-thread async executor (T2-3): `on_open`'s backup sniff (a
@@ -133,11 +214,13 @@ mod imp {
             // recents on the very first frame — before any work is opened.
             let mru = shared_mru();
             let model = ListModel::from_vec(visible_rows(&mru));
+            let derived_from = RefCell::new(mru.as_ref().map(raw_paths).unwrap_or_default());
             Self {
                 inner: Rc::new(Inner {
                     mru,
                     model,
                     version: Signal::new(0),
+                    derived_from,
                     ctx,
                     async_rt: RefCell::new(None),
                 }),
@@ -170,6 +253,55 @@ mod imp {
                     }
                 },
             );
+            // A project that moved (Save As, a restored backup) was recorded by the
+            // view-model that moved it, just before its `WorkInfo` update; this is
+            // how every other view learns of it.
+            let me = self.clone();
+            ctx.subscribe_event(
+                Origin::DirectAccess(DirectAccessEntity::WorkInfo(EntityEvent::Updated)),
+                move |_event: &Event| me.refresh_if_changed(),
+            );
+        }
+
+        /// Record that an open project now lives at `path`: Save As wrote it there,
+        /// or a restored backup was put back there, and the window that showed it
+        /// went with it. `path` goes first, under the title of `work_id` (the Work
+        /// that moved, captured when the operation started: the window may show
+        /// another one by now). `previous`, the path the window showed until now,
+        /// leaves the list, and its pin goes to `path`.
+        ///
+        /// Why the copy left behind is dropped rather than kept below: every later
+        /// edit goes to `path`, while `previous` still opens, under the same title,
+        /// on the project as it stood before the Save As. Kept, it is one click from
+        /// writing on in the stale copy and ending up with two diverging versions of
+        /// the book. It stays on disk, and Work ▸ Open Work… still reaches it.
+        ///
+        /// No backup sniff, unlike `on_open`: a Save As writes a regular project,
+        /// never a backup, and a restore puts one back at its own path.
+        pub fn record_relocation(
+            ctx: &AppContext,
+            work_id: Option<EntityId>,
+            previous: Option<&str>,
+            path: &str,
+        ) {
+            let Some(mru) = shared_mru() else {
+                return;
+            };
+            let title = work_id.map(|id| work_title(ctx, id)).unwrap_or_default();
+            relocate(&mru, previous, path, &title);
+        }
+
+        /// Re-derive the view only if the shared MRU no longer holds what it was
+        /// derived from. `WorkInfo` updates for a progress snapshot as well as for a
+        /// move, so the cheap comparison comes first and the `Path::exists` sweep
+        /// of `refresh` runs only when there is something new to show.
+        fn refresh_if_changed(&self) {
+            let Some(mru) = &self.inner.mru else {
+                return;
+            };
+            if *self.inner.derived_from.borrow() != raw_paths(mru) {
+                self.refresh();
+            }
         }
 
         /// The reactive (reachable-only) model to bind a `ListView` to.
@@ -297,6 +429,8 @@ mod imp {
         /// snapshot actually needs, so an unrelated peer-driven refresh doesn't
         /// reset the list out from under the user.
         fn refresh(&self) {
+            *self.inner.derived_from.borrow_mut() =
+                self.inner.mru.as_ref().map(raw_paths).unwrap_or_default();
             self.inner
                 .model
                 .reconcile_by_key(visible_rows(&self.inner.mru), |dto| {
@@ -323,17 +457,37 @@ mod imp {
             .into_iter()
             .find(|wi| wi.work == Some(work_id))?
             .file_name?;
-        let title = work_commands::get_work(ctx, &work_id)
-            .ok()
-            .flatten()
-            .map(|w| w.title)
-            .unwrap_or_default();
         Some(RecentEntry {
             path,
-            title,
+            title: work_title(ctx, work_id),
             last_opened_ms: now_ms(),
             pinned: false,
         })
+    }
+
+    /// The title a recents entry carries for `work_id`: empty when the Work is
+    /// gone, which the list shows by its file name instead.
+    fn work_title(ctx: &AppContext, work_id: EntityId) -> String {
+        work_commands::get_work(ctx, &work_id)
+            .ok()
+            .flatten()
+            .map(|w| w.title)
+            .unwrap_or_default()
+    }
+
+    /// [`RecentWorkListModel::record_relocation`] on an already-opened MRU.
+    fn relocate(mru: &MruList<RecentEntry>, previous: Option<&str>, path: &str, title: &str) {
+        let left_behind = previous.filter(|p| *p != path);
+        let pinned = left_behind.is_some_and(|p| mru.is_pinned(p));
+        mru.add(RecentEntry {
+            path: path.to_string(),
+            title: title.to_string(),
+            last_opened_ms: now_ms(),
+            pinned,
+        });
+        if let Some(p) = left_behind {
+            mru.remove(p);
+        }
     }
 
     /// Pure: every raw entry's path from an already-opened MRU, in whatever order
@@ -512,6 +666,78 @@ mod imp {
             let _ = std::fs::remove_file(&toml);
         }
 
+        /// A project that moves keeps a pin it had, and a move onto the path it
+        /// already had (nothing left behind) neither drops nor duplicates it.
+        #[test]
+        fn a_relocation_carries_the_pin_and_never_drops_the_new_path() {
+            let toml = tmp("recents_relocate.toml");
+            let _ = std::fs::remove_file(&toml);
+            let mru = MruList::open_at(toml.clone(), 30, Duration::ZERO).unwrap();
+            mru.add(entry("/b.skrib", "B", 1));
+            mru.add(RecentEntry {
+                pinned: true,
+                ..entry("/a.skrib", "A", 2)
+            });
+
+            relocate(&mru, Some("/a.skrib"), "/A", "A");
+            assert_eq!(raw_paths(&mru), vec!["/A", "/b.skrib"]);
+            assert!(mru.is_pinned("/A"), "the pin moves with the project");
+
+            relocate(&mru, Some("/A"), "/A", "A");
+            assert_eq!(raw_paths(&mru), vec!["/A", "/b.skrib"]);
+
+            relocate(&mru, None, "/c.skrib", "C");
+            assert_eq!(raw_paths(&mru), vec!["/c.skrib", "/A", "/b.skrib"]);
+
+            let _ = std::fs::remove_file(&toml);
+        }
+
+        /// Two windows each have their own view of the one shared list (their
+        /// title-bar switchers): a move recorded through either reaches both on the
+        /// `WorkInfo` update that follows, while an update that moved nothing (a
+        /// progress snapshot) leaves them alone, rows and `version` both.
+        #[test]
+        fn every_view_picks_up_a_move_and_only_a_move() {
+            let dir = tempfile::tempdir().unwrap();
+            let zip = dir.path().join("Novel.skrib");
+            let folder = dir.path().join("Novel");
+            std::fs::write(&zip, b"x").unwrap();
+            std::fs::create_dir(&folder).unwrap();
+            let zip = zip.to_string_lossy().into_owned();
+            let folder = folder.to_string_lossy().into_owned();
+
+            let recents = TestRecents::new();
+            recents.opened(&zip, "Novel");
+            let ctx = Rc::new(frontend::AppContext::new());
+            let views = [
+                RecentWorkListModel::new(ctx.clone()),
+                RecentWorkListModel::new(ctx.clone()),
+            ];
+            let shown = |view: &RecentWorkListModel| {
+                view.items()
+                    .into_iter()
+                    .map(|row| row.absolute_path)
+                    .collect::<Vec<_>>()
+            };
+
+            for view in &views {
+                view.refresh_if_changed();
+                assert_eq!(shown(view), vec![zip.clone()]);
+                assert_eq!(view.version_signal().get(), 0, "nothing moved");
+            }
+
+            RecentWorkListModel::record_relocation(&ctx, None, Some(&zip), &folder);
+            for view in &views {
+                view.refresh_if_changed();
+                assert_eq!(
+                    shown(view),
+                    vec![folder.clone()],
+                    "the view must offer the folder the project now lives in, not the zip"
+                );
+            }
+            assert_eq!(recents.paths(), vec![folder.clone()]);
+        }
+
         // End-to-end, GUI-free proof of *cross-restart* recents: open a work in the
         // backend, derive the MRU entry the way `on_open` does, persist it, then
         // reopen the file from disk (simulating a fresh launch) and confirm the
@@ -630,9 +856,20 @@ mod imp {
             Vec::new()
         }
 
+        /// No persistence in the mock build, so a move has nowhere to be recorded.
+        pub fn record_relocation(
+            _ctx: &AppContext,
+            _work_id: Option<u64>,
+            _previous: Option<&str>,
+            _path: &str,
+        ) {
+        }
+
         /// No persistence in the mock build.
         pub fn shutdown() {}
     }
 }
 
 pub use imp::RecentWorkListModel;
+#[cfg(all(test, not(feature = "mocks")))]
+pub(crate) use imp::TestRecents;

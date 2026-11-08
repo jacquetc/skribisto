@@ -124,6 +124,8 @@ pub use overview_rows_model::{
 pub use pace_model::{DailyCount, HolidayRow, MilestoneKind, MilestoneRow, PaceModel};
 pub use paratext_presets::{NEW_PRESET_TEMPLATE, ParatextPreset, ParatextPresetsService};
 pub use recent_work_list_model::RecentWorkListModel;
+#[cfg(all(test, not(feature = "mocks")))]
+pub(crate) use recent_work_list_model::TestRecents;
 pub use search_results_model::SearchResultsModel;
 pub use search_settings_file::{SearchPrefs, SearchSettingsService};
 pub use search_tree_model::{SearchNode, SearchTreeKey, SearchTreeModel};

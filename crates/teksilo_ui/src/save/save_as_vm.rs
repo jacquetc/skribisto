@@ -2,7 +2,8 @@
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
 //! `SaveAsViewModel` — records the new path/shape into `WorkInfo` after a
-//! background "Save As" completes.
+//! background "Save As" completes, and moves the project's entry in the recents
+//! list to where it now lives.
 //!
 //! `save_as` runs **read-only** on a background thread (it must not hold a
 //! whole-store write savepoint there — see `save_as_uc.rs`). When the long
@@ -306,6 +307,16 @@ impl SaveAsViewModel {
                     crate::shell::open_registry::release(prev);
                 }
                 crate::shell::open_registry::claim(&output_path, &self.single_work.title().get());
+                // …and the recents list follows it: the new path first, the copy left
+                // behind dropped, or reopening from the list lands in the old file
+                // while every later edit went to this one. Titled from the Work
+                // that was saved, not this window's live one (see `Pending::tracked`).
+                crate::models::RecentWorkListModel::record_relocation(
+                    &self.app_ctx,
+                    pending.tracked.work_id().into(),
+                    cur.file_name.as_deref(),
+                    &output_path,
+                );
                 // Routes AND scopes on the Work THIS Save As started for — see
                 // `Pending::tracked`'s doc — never a live `self.ids.work_id.get()`.
                 ctx.show_toast(
@@ -620,5 +631,109 @@ mod tests {
              `self.ids.work_id.get()` read would make both resolve to Work B and \
              merge into a single entry"
         );
+    }
+
+    // ── Recents follow a Save As ────────────────────────────────────────────
+    //
+    // A Save As points the window at a new file with no `LoadWork` in between,
+    // and the recents list used to hear only about opens: it went on listing the
+    // file the project came from, so reopening from it opened the older copy
+    // while every later edit had gone to the new one.
+
+    /// Run a real Save As of the view-model's Work to `target`, in the given
+    /// shape, through the view-model's own start and completion handlers, as the
+    /// menu does.
+    #[cfg(not(feature = "mocks"))]
+    fn save_as_through_the_view_model(
+        vm: &SaveAsViewModel,
+        tree: &mut teksilo::core::widget_tree::WidgetTree,
+        target: &std::path::Path,
+        as_folder: bool,
+    ) {
+        use frontend::common::event::{LongOperationEvent, Origin};
+
+        let (_, op_id) = vm
+            .start_flushed(target.to_string_lossy().into_owned(), as_folder)
+            .expect("the Save As starts");
+        let completion = vm
+            .app_ctx
+            .long_operation_manager
+            .lock()
+            .expect("the long-operation manager")
+            .completion_signal();
+        assert!(
+            completion.wait_for(&op_id, Some(std::time::Duration::from_secs(60))),
+            "the Save As never finished"
+        );
+        let completed = Event {
+            origin: Origin::LongOperation(LongOperationEvent::Completed),
+            ids: vec![],
+            data: Some(serde_json::json!({ "id": op_id }).to_string()),
+        };
+        let finishing = vm.clone();
+        crate::test_support::press(tree, move |c| finishing.on_long_op_completed(c, &completed));
+    }
+
+    /// Every way Save As moves a project (a single file to a folder, a folder
+    /// back to a single file, a single file to another one) leaves the recents
+    /// list with the new location first, under the project's title, and the copy
+    /// left behind gone; a project that has nothing to do with it stays.
+    #[cfg(not(feature = "mocks"))]
+    #[test]
+    fn each_save_as_puts_where_the_project_went_first_in_the_recents() {
+        let _registry = crate::test_support::IsolatedOpenRegistry::new();
+        let recents = crate::models::TestRecents::new();
+        let project = crate::test_support::RealProject::empty_novel();
+        project.save();
+        let original = project.path.to_string_lossy().into_owned();
+        recents.opened("/elsewhere/Other.skrib", "Other");
+        // As the `NewWork`/`LoadWork` that opened it recorded it.
+        recents.opened(&original, "Novel");
+
+        let vm = SaveAsViewModel::new(
+            project.app_ctx.clone(),
+            project.ids.clone(),
+            SingleWork::new(project.app_ctx.clone()),
+            Signal::new(false),
+            Signal::new(None),
+        );
+        let mut tree = crate::test_support::tree_with_events(&project.app_ctx);
+        let Some(dir) = project.path.parent() else {
+            panic!("the project sits in a directory");
+        };
+        let moves = [
+            ("a single file to a folder", dir.join("Novel"), true),
+            (
+                "a folder to a single file",
+                dir.join("Novel 2.skrib"),
+                false,
+            ),
+            ("a single file to another", dir.join("Novel 3.skrib"), false),
+        ];
+        let mut from = original;
+        for (how, to, as_folder) in moves {
+            save_as_through_the_view_model(&vm, &mut tree, &to, as_folder);
+            let to = to.to_string_lossy().into_owned();
+            assert_eq!(
+                recents.paths(),
+                vec![to.clone(), "/elsewhere/Other.skrib".to_string()],
+                "after a Save As from {how}, the recents must list where the project \
+                 went first and no longer offer {from}, the copy every later edit missed"
+            );
+            assert_eq!(recents.titles()[0], "Novel", "listed under its title");
+            let shown = project
+                .ids
+                .work_info_id
+                .get()
+                .and_then(|id| work_info_commands::get_work_info(&project.app_ctx, &id).ok())
+                .flatten()
+                .and_then(|info| info.file_name);
+            assert_eq!(
+                shown.as_deref(),
+                Some(to.as_str()),
+                "the window, and any other on the Work, now shows the project there"
+            );
+            from = to;
+        }
     }
 }

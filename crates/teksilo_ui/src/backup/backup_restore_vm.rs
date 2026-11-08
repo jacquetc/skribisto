@@ -385,6 +385,15 @@ impl BackupRestoreViewModel {
             crate::shell::open_registry::release(prev);
         }
         crate::shell::open_registry::claim(&pending.target, &self.single_work.title().get());
+        // The restored project is the one this window now shows, so it goes first
+        // in the recents list, as an open would put it. `previous_path` is the
+        // backup's, which the list never holds.
+        crate::models::RecentWorkListModel::record_relocation(
+            &self.app_ctx,
+            pending.tracked.work_id().into(),
+            previous_path.as_deref(),
+            &pending.target,
+        );
 
         let msg = match &pending.safety_backup_path {
             Some(p) => tr!(backup_restored_with_safety(path = p.clone())),
@@ -792,5 +801,75 @@ mod tests {
 
         assert!(target.join("project.skrib").exists());
         assert!(!temp.exists());
+    }
+
+    /// A restore leaves this window on the project it put back, with no `LoadWork`
+    /// in between: that project goes first in the recents list, as an open would put
+    /// it, and the backup the window showed until then is not added.
+    #[cfg(not(feature = "mocks"))]
+    #[test]
+    fn a_restored_project_goes_first_in_the_recents() {
+        use frontend::common::event::{LongOperationEvent, Origin};
+
+        let _registry = crate::test_support::IsolatedOpenRegistry::new();
+        let recents = crate::models::TestRecents::new();
+        let project = crate::test_support::RealProject::empty_novel();
+        let d = tempdir().unwrap();
+        let target = d.path().join("Tidewrack.skrib");
+        let temp = d.path().join("Tidewrack.skrib.restore-tmp-x");
+        let backup = d.path().join("Tidewrack-20261108-101500.skrib");
+        std::fs::write(&target, b"the project as it was").unwrap();
+        std::fs::write(&temp, b"the backup's content").unwrap();
+        let target = target.to_string_lossy().into_owned();
+        recents.opened(&target, "Novel");
+        recents.opened("/elsewhere/Other.skrib", "Other");
+
+        // The window shows the backup, as a restore always starts from one.
+        let work_info_id = project.ids.work_info_id.get();
+        let Some(Ok(Some(info))) =
+            work_info_id.map(|id| work_info_commands::get_work_info(&project.app_ctx, &id))
+        else {
+            panic!("the project has its WorkInfo");
+        };
+        work_info_commands::update_work_info(
+            &project.app_ctx,
+            &UpdateWorkInfoDto {
+                id: info.id,
+                created_at: info.created_at,
+                updated_at: info.updated_at,
+                file_name: Some(backup.to_string_lossy().into_owned()),
+                shape: info.shape,
+            },
+        )
+        .expect("the window shows the backup");
+
+        let vm = BackupRestoreViewModel::new(
+            project.app_ctx.clone(),
+            project.ids.clone(),
+            SingleWork::new(project.app_ctx.clone()),
+            Signal::new(true),
+            Signal::new(None),
+        );
+        *vm.pending.borrow_mut() = Some(BackupRestorePending {
+            tracked: TrackedOp::start(&project.ids, "restore-op".to_string()),
+            target: target.clone(),
+            temp_target: temp.to_string_lossy().into_owned(),
+            as_folder: false,
+            work_info_id,
+            safety_backup_path: None,
+        });
+        let mut tree = crate::test_support::tree_with_events(&project.app_ctx);
+        let completed = Event {
+            origin: Origin::LongOperation(LongOperationEvent::Completed),
+            ids: vec![],
+            data: Some(r#"{"id":"restore-op"}"#.to_string()),
+        };
+        crate::test_support::press(&mut tree, move |c| vm.on_long_op_completed(c, &completed));
+
+        assert_eq!(
+            recents.paths(),
+            vec![target, "/elsewhere/Other.skrib".to_string()],
+            "the project the window now shows comes first, and the backup is not listed"
+        );
     }
 }
