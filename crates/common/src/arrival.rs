@@ -44,6 +44,8 @@
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
+use crate::open_work::OpenWork;
+
 /// Which route text came down. The application's own vocabulary, mapped from
 /// the toolkit's at the point where it is reported.
 ///
@@ -107,12 +109,14 @@ struct Project {
     session: Counts,
 }
 
-/// One tally per open project, keyed by `Work.unique_id`.
+/// One tally per open project, keyed by [`OpenWork`] rather than
+/// `Work.unique_id`: two copies of one project open side by side are two
+/// sessions, and must not count into one tally.
 ///
 /// Cheap to clone; every clone shares one map.
 #[derive(Clone, Default)]
 pub struct Arrivals {
-    inner: Arc<RwLock<HashMap<String, Project>>>,
+    inner: Arc<RwLock<HashMap<OpenWork, Project>>>,
 }
 
 impl std::fmt::Debug for Arrivals {
@@ -130,24 +134,22 @@ impl Arrivals {
         Self::default()
     }
 
-    fn read(&self) -> std::sync::RwLockReadGuard<'_, HashMap<String, Project>> {
+    fn read(&self) -> std::sync::RwLockReadGuard<'_, HashMap<OpenWork, Project>> {
         // Poison-safe, like every other lock in this crate: a panic somewhere
         // unrelated must not make a manuscript unsaveable.
         self.inner.read().unwrap_or_else(|e| e.into_inner())
     }
 
-    fn write(&self) -> std::sync::RwLockWriteGuard<'_, HashMap<String, Project>> {
+    fn write(&self) -> std::sync::RwLockWriteGuard<'_, HashMap<OpenWork, Project>> {
         self.inner.write().unwrap_or_else(|e| e.into_inner())
     }
 
     /// Add `chars` of `arrival` to this project's tally.
     ///
-    /// The empty uid is what an **unsaved** project carries, and is refused: a
-    /// tally under it would pool every unsaved project's typing into one entry
-    /// that no save ever asks for. Zero is refused for the same reason it is at
-    /// every other layer — no characters arriving is not an event.
-    pub fn record(&self, work_unique_id: &str, arrival: Arrival, chars: u64) {
-        if work_unique_id.is_empty() || chars == 0 {
+    /// Zero is refused, as it is at every other layer: no characters arriving
+    /// is not an event.
+    pub fn record(&self, work: OpenWork, arrival: Arrival, chars: u64) {
+        if chars == 0 {
             return;
         }
         // ⚠ **One lock, held across the read and the add.** An earlier cut read
@@ -158,7 +160,7 @@ impl Arrivals {
         // would overwrite the other's characters. `entry` gives the slot itself,
         // so there is nothing between the read and the add.
         let mut projects = self.write();
-        let project = projects.entry(work_unique_id.to_string()).or_default();
+        let project = projects.entry(work).or_default();
         for bucket in [&mut project.pending, &mut project.session] {
             let slot = bucket.entry(arrival).or_insert(0);
             *slot = slot.saturating_add(chars);
@@ -167,18 +169,18 @@ impl Arrivals {
 
     /// This project's count for one route, without disturbing it. For tests and
     /// for a readout that must not consume.
-    pub fn peek(&self, work_unique_id: &str, arrival: Arrival) -> u64 {
+    pub fn peek(&self, work: OpenWork, arrival: Arrival) -> u64 {
         self.read()
-            .get(work_unique_id)
+            .get(&work)
             .and_then(|p| p.pending.get(&arrival))
             .copied()
             .unwrap_or(0)
     }
 
     /// This project's whole tally, without disturbing it.
-    pub fn snapshot(&self, work_unique_id: &str) -> Counts {
+    pub fn snapshot(&self, work: OpenWork) -> Counts {
         self.read()
-            .get(work_unique_id)
+            .get(&work)
             .map(|p| p.pending.clone())
             .unwrap_or_default()
     }
@@ -189,9 +191,9 @@ impl Arrivals {
     /// What a readout on screen wants. [`Self::take`] empties the other bucket
     /// on every save, so a surface reading that would show the gap since the
     /// last autosave and call it a session.
-    pub fn session_total(&self, work_unique_id: &str) -> Counts {
+    pub fn session_total(&self, work: OpenWork) -> Counts {
         self.read()
-            .get(work_unique_id)
+            .get(&work)
             .map(|p| p.session.clone())
             .unwrap_or_default()
     }
@@ -202,9 +204,9 @@ impl Arrivals {
     /// stops a character typed between the two from being counted twice or lost
     /// — a snapshot-then-clear pair has a window in it, and the window is
     /// exactly one keystroke wide.
-    pub fn take(&self, work_unique_id: &str) -> Counts {
+    pub fn take(&self, work: OpenWork) -> Counts {
         let mut projects = self.write();
-        let Some(project) = projects.get_mut(work_unique_id) else {
+        let Some(project) = projects.get_mut(&work) else {
             return Counts::default();
         };
         // Only the pending half. Removing the whole entry — which this used to
@@ -214,8 +216,8 @@ impl Arrivals {
     }
 
     /// Forget a project entirely — what a close does.
-    pub fn forget(&self, work_unique_id: &str) {
-        self.write().remove(work_unique_id);
+    pub fn forget(&self, work: OpenWork) {
+        self.write().remove(&work);
     }
 
     /// How many projects currently have a tally.
@@ -245,15 +247,25 @@ pub fn shared() -> Arrivals {
 mod tests {
     use super::*;
 
+    /// One key per number, stable within a test. Each test builds its own
+    /// `Arrivals`, so tests sharing these keys cannot see each other.
+    fn w(n: u64) -> OpenWork {
+        static DB: std::sync::LazyLock<crate::database::db_context::DbContext> =
+            std::sync::LazyLock::new(|| {
+                crate::database::db_context::DbContext::new().expect("an in-memory store")
+            });
+        OpenWork::of(&DB, n)
+    }
+
     #[test]
     fn counts_accumulate_per_route() {
         let a = Arrivals::new();
-        a.record("uid", Arrival::Typed, 100);
-        a.record("uid", Arrival::Typed, 40);
-        a.record("uid", Arrival::Pasted, 900);
-        assert_eq!(a.peek("uid", Arrival::Typed), 140);
-        assert_eq!(a.peek("uid", Arrival::Pasted), 900);
-        assert_eq!(a.peek("uid", Arrival::Dictated), 0);
+        a.record(w(1), Arrival::Typed, 100);
+        a.record(w(1), Arrival::Typed, 40);
+        a.record(w(1), Arrival::Pasted, 900);
+        assert_eq!(a.peek(w(1), Arrival::Typed), 140);
+        assert_eq!(a.peek(w(1), Arrival::Pasted), 900);
+        assert_eq!(a.peek(w(1), Arrival::Dictated), 0);
     }
 
     /// **The count that means anything is the project's**, and two open at once
@@ -262,10 +274,10 @@ mod tests {
     #[test]
     fn two_projects_never_see_each_others_typing() {
         let a = Arrivals::new();
-        a.record("uid-a", Arrival::Typed, 100);
-        a.record("uid-b", Arrival::Typed, 7);
-        assert_eq!(a.peek("uid-a", Arrival::Typed), 100);
-        assert_eq!(a.peek("uid-b", Arrival::Typed), 7);
+        a.record(w(1), Arrival::Typed, 100);
+        a.record(w(2), Arrival::Typed, 7);
+        assert_eq!(a.peek(w(1), Arrival::Typed), 100);
+        assert_eq!(a.peek(w(2), Arrival::Typed), 7);
         assert_eq!(a.len(), 2);
     }
 
@@ -276,16 +288,16 @@ mod tests {
     #[test]
     fn taking_a_tally_empties_it() {
         let a = Arrivals::new();
-        a.record("uid", Arrival::Typed, 100);
-        let first = a.take("uid");
+        a.record(w(1), Arrival::Typed, 100);
+        let first = a.take(w(1));
         assert_eq!(first.get(&Arrival::Typed), Some(&100));
         assert!(
-            a.take("uid").is_empty(),
+            a.take(w(1)).is_empty(),
             "a second read must find nothing, or the same words are counted twice"
         );
 
-        a.record("uid", Arrival::Typed, 5);
-        assert_eq!(a.take("uid").get(&Arrival::Typed), Some(&5));
+        a.record(w(1), Arrival::Typed, 5);
+        assert_eq!(a.take(w(1)).get(&Arrival::Typed), Some(&5));
     }
 
     /// …and `snapshot` does not, so a readout can show a figure without
@@ -293,45 +305,35 @@ mod tests {
     #[test]
     fn snapshot_leaves_the_tally_alone() {
         let a = Arrivals::new();
-        a.record("uid", Arrival::Typed, 100);
-        assert_eq!(a.snapshot("uid").get(&Arrival::Typed), Some(&100));
-        assert_eq!(a.snapshot("uid").get(&Arrival::Typed), Some(&100));
-        assert_eq!(a.take("uid").get(&Arrival::Typed), Some(&100));
-    }
-
-    /// The empty uid is an **unsaved** project's. A tally under it would pool
-    /// every unsaved project's typing into one entry no save ever asks for.
-    #[test]
-    fn an_unsaved_project_gets_no_tally() {
-        let a = Arrivals::new();
-        a.record("", Arrival::Typed, 100);
-        assert!(a.is_empty());
-        assert_eq!(a.peek("", Arrival::Typed), 0);
+        a.record(w(1), Arrival::Typed, 100);
+        assert_eq!(a.snapshot(w(1)).get(&Arrival::Typed), Some(&100));
+        assert_eq!(a.snapshot(w(1)).get(&Arrival::Typed), Some(&100));
+        assert_eq!(a.take(w(1)).get(&Arrival::Typed), Some(&100));
     }
 
     #[test]
     fn zero_characters_is_not_an_event() {
         let a = Arrivals::new();
-        a.record("uid", Arrival::Typed, 0);
+        a.record(w(1), Arrival::Typed, 0);
         assert!(a.is_empty());
     }
 
     #[test]
     fn a_huge_tally_saturates_rather_than_wrapping() {
         let a = Arrivals::new();
-        a.record("uid", Arrival::Typed, u64::MAX);
-        a.record("uid", Arrival::Typed, 10);
-        assert_eq!(a.peek("uid", Arrival::Typed), u64::MAX);
+        a.record(w(1), Arrival::Typed, u64::MAX);
+        a.record(w(1), Arrival::Typed, 10);
+        assert_eq!(a.peek(w(1), Arrival::Typed), u64::MAX);
     }
 
     #[test]
     fn closing_a_project_forgets_its_tally_and_no_others() {
         let a = Arrivals::new();
-        a.record("uid-a", Arrival::Typed, 1);
-        a.record("uid-b", Arrival::Typed, 2);
-        a.forget("uid-a");
-        assert_eq!(a.peek("uid-a", Arrival::Typed), 0);
-        assert_eq!(a.peek("uid-b", Arrival::Typed), 2);
+        a.record(w(1), Arrival::Typed, 1);
+        a.record(w(2), Arrival::Typed, 2);
+        a.forget(w(1));
+        assert_eq!(a.peek(w(1), Arrival::Typed), 0);
+        assert_eq!(a.peek(w(2), Arrival::Typed), 2);
     }
 
     /// Every clone shares one map — the whole reason this type exists is that
@@ -340,10 +342,10 @@ mod tests {
     fn every_clone_shares_one_tally() {
         let writer = Arrivals::new();
         let reader = writer.clone();
-        writer.record("uid", Arrival::Dictated, 42);
-        assert_eq!(reader.peek("uid", Arrival::Dictated), 42);
-        assert!(!reader.take("uid").is_empty());
-        assert_eq!(writer.peek("uid", Arrival::Dictated), 0, "…and one clear");
+        writer.record(w(1), Arrival::Dictated, 42);
+        assert_eq!(reader.peek(w(1), Arrival::Dictated), 42);
+        assert!(!reader.take(w(1)).is_empty());
+        assert_eq!(writer.peek(w(1), Arrival::Dictated), 0, "…and one clear");
     }
 
     /// A `Debug` that printed the tallies would put a writer's working habits
@@ -351,7 +353,7 @@ mod tests {
     #[test]
     fn debug_shows_the_project_count_and_no_tallies() {
         let a = Arrivals::new();
-        a.record("uid", Arrival::Typed, 12345);
+        a.record(w(1), Arrival::Typed, 12345);
         let text = format!("{a:?}");
         assert!(text.contains('1'), "the project count is shown: {text}");
         assert!(!text.contains("12345"), "the tally is not: {text}");
@@ -363,19 +365,19 @@ mod tests {
     #[test]
     fn taking_the_pending_half_leaves_the_session_total() {
         let a = Arrivals::new();
-        a.record("uid", Arrival::Typed, 100);
-        assert_eq!(a.take("uid").get(&Arrival::Typed), Some(&100));
-        assert!(a.take("uid").is_empty(), "the pending half really is empty");
+        a.record(w(1), Arrival::Typed, 100);
+        assert_eq!(a.take(w(1)).get(&Arrival::Typed), Some(&100));
+        assert!(a.take(w(1)).is_empty(), "the pending half really is empty");
         assert_eq!(
-            a.session_total("uid").get(&Arrival::Typed),
+            a.session_total(w(1)).get(&Arrival::Typed),
             Some(&100),
             "…and the session still knows what it saw"
         );
 
-        a.record("uid", Arrival::Typed, 5);
-        assert_eq!(a.take("uid").get(&Arrival::Typed), Some(&5));
+        a.record(w(1), Arrival::Typed, 5);
+        assert_eq!(a.take(w(1)).get(&Arrival::Typed), Some(&5));
         assert_eq!(
-            a.session_total("uid").get(&Arrival::Typed),
+            a.session_total(w(1)).get(&Arrival::Typed),
             Some(&105),
             "the session total accumulates across every take"
         );
@@ -386,10 +388,10 @@ mod tests {
     #[test]
     fn closing_the_project_empties_the_session_total() {
         let a = Arrivals::new();
-        a.record("uid", Arrival::Dictated, 42);
-        assert_eq!(a.session_total("uid").get(&Arrival::Dictated), Some(&42));
-        a.forget("uid");
-        assert!(a.session_total("uid").is_empty());
+        a.record(w(1), Arrival::Dictated, 42);
+        assert_eq!(a.session_total(w(1)).get(&Arrival::Dictated), Some(&42));
+        a.forget(w(1));
+        assert!(a.session_total(w(1)).is_empty());
     }
 
     /// **Nothing is lost when two threads record at once.** The editor writes
@@ -404,12 +406,12 @@ mod tests {
                 let a = a.clone();
                 s.spawn(move || {
                     for _ in 0..1000 {
-                        a.record("uid", Arrival::Typed, 1);
+                        a.record(w(1), Arrival::Typed, 1);
                     }
                 });
             }
         });
-        assert_eq!(a.peek("uid", Arrival::Typed), 8000);
+        assert_eq!(a.peek(w(1), Arrival::Typed), 8000);
     }
 
     #[test]

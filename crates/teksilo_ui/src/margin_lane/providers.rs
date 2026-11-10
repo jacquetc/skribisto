@@ -472,20 +472,11 @@ fn story_bible() -> LaneProviderSpec {
             let Some(subject) = super::subject::active_subject().get() else {
                 return Vec::new();
             };
-            // A second window on a second project marks nothing rather than this
-            // project's names, the same guard every other work-scoped lane applies.
-            let here = frontend::commands::work_commands::get_work(
-                ctx.app_ctx,
-                &match ctx.ids.work_id.get() {
-                    Some(w) => w,
-                    None => return Vec::new(),
-                },
-            )
-            .ok()
-            .flatten()
-            .map(|w| w.unique_id)
-            .unwrap_or_default();
-            if here != subject.work_uid {
+            // A window on another project marks nothing rather than this project's
+            // names, the same guard every other work-scoped lane applies. By open
+            // Work, so a second copy of this project (a backup beside it) is
+            // "another project" too.
+            if ctx.ids.open_work(ctx.app_ctx) != Some(subject.work) {
                 return Vec::new();
             }
 
@@ -663,7 +654,7 @@ mod tests {
                     aliases: Vec::new(),
                 },
                 table: Vec::new(),
-                work_uid: work.unique_id.clone(),
+                work: ids.open_work(&app_ctx).expect("a seeded Work"),
                 publisher: crate::margin_lane::LaneScope::fresh(),
             },
         ));
@@ -698,10 +689,34 @@ mod tests {
         };
         let a = marks_of(row_a);
         let b = marks_of(row_b);
+        // A second copy of this project open beside it (a backup, the file Save As left
+        // behind) is another open Work under the same `unique_id`. Its window must not
+        // mark this reading's names in its own prose.
+        let copy = crate::test_support::work_with_uid(&app_ctx, &work.unique_id);
+        let copy_ids = AppIds::new();
+        copy_ids.work_id.set(Some(copy));
+        let in_the_copy = (spec.marks)(&LaneContext {
+            kind: crate::format::EditorKind::Prose,
+            app_ctx: &app_ctx,
+            ids: &copy_ids,
+            surface: LaneSurface::Stream,
+            doc: &doc,
+            item_id: row_a,
+            comment_anchors: &anchors,
+            misspellings: &[],
+            color: teksilo::tokens::Color::from_hex("#009E73"),
+            group: 3,
+            locate: &locate,
+        })
+        .len();
         // Withdraw before asserting: the subject is a thread-local, and a failing assert
         // must not leave it published for whatever test runs next on this thread.
         crate::margin_lane::subject::set_active_subject(None);
 
+        assert_eq!(
+            in_the_copy, 0,
+            "a second copy of the project marked this reading's names"
+        );
         assert_eq!(a.len(), 3, "the declaration and both names: {a:?}");
         assert_eq!(b.len(), 3, "and the same for the second row: {b:?}");
         let mut all = [a.clone(), b.clone()].concat();
@@ -833,7 +848,7 @@ mod tests {
                     aliases: Vec::new(),
                 },
                 table: Vec::new(),
-                work_uid: work.unique_id.clone(),
+                work: ids.open_work(&app_ctx).expect("a seeded Work"),
                 publisher: crate::margin_lane::LaneScope::fresh(),
             },
         ));

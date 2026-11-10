@@ -89,6 +89,10 @@ impl QueryUnitOfWork for ExportWorkUnitOfWork {
 #[macros::uow_action(entity = "Comment", action = "GetRelationshipRO", thread_safe = true)]
 #[macros::uow_action(entity = "CommentReply", action = "GetMultiRO", thread_safe = true)]
 impl ExportWorkUnitOfWorkTrait for ExportWorkUnitOfWork {
+    fn open_work(&self, work_id: EntityId) -> common::open_work::OpenWork {
+        common::open_work::OpenWork::of(&self.context, work_id)
+    }
+
     fn publish_export_work_event(&self, ids: Vec<EntityId>, data: Option<String>) {
         self.event_hub.send_event(Event {
             origin: Origin::ExportManagement(ExportWork),

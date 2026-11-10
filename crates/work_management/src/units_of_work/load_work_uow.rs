@@ -181,6 +181,10 @@ impl CommandUnitOfWork for LoadWorkUnitOfWork {
 #[macros::uow_action(entity = "Root", action = "GetAll")]
 #[macros::uow_action(entity = "Root", action = "GetRelationship")]
 impl LoadWorkUnitOfWorkTrait for LoadWorkUnitOfWork {
+    fn open_work(&self, work_id: EntityId) -> common::open_work::OpenWork {
+        common::open_work::OpenWork::of(&self.context, work_id)
+    }
+
     fn publish_load_work_event(&self, ids: Vec<EntityId>, data: Option<String>) {
         self.event_hub.send_event(Event {
             origin: Origin::WorkManagement(LoadWork),

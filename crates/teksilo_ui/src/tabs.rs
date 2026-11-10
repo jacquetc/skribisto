@@ -1260,9 +1260,10 @@ impl ContentTab {
     /// This project's durable `Work.unique_id`, or `None` when it has none.
     ///
     /// `None` is an **unsaved** project — the empty uid, which is not a project
-    /// identity but the absence of one. Every per-project store in the workspace
-    /// refuses it rather than pooling every unsaved project under one key, and a
-    /// caller here gets the same answer in a shape it cannot ignore.
+    /// identity but the absence of one, and a caller here gets that answer in a
+    /// shape it cannot ignore. For what this project holds only while it is open
+    /// (the arrival tally, an extension's slot), use the open Work instead
+    /// ([`crate::app_ids::AppIds::open_work`]), which an unsaved project has too.
     ///
     /// Read through the store rather than held, because it is set when the
     /// project is first saved and this tab may have been built before that.
@@ -1275,6 +1276,15 @@ impl ContentTab {
             .flatten()?
             .unique_id;
         (!uid.is_empty()).then_some(uid)
+    }
+    /// Which open project this tab's typing is counted for, and the durable id
+    /// its capture recents are filed under. `None` only before a project is
+    /// seeded; an unsaved project counts like any other.
+    pub fn arrival_project(&self) -> Option<crate::tabs::shared::editor::ArrivalProject> {
+        Some(crate::tabs::shared::editor::ArrivalProject {
+            work: self.ids.open_work(&self.app_ctx)?,
+            uid: self.work_unique_id(),
+        })
     }
     /// What every editor on this tab needs to offer "Add as note": this project's tags
     /// and the uid its capture recents are filed under.

@@ -50,6 +50,12 @@ pub struct ExportedRow {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ExportOrigins {
     pub version: u32,
+    /// Which open copy of the project this export came out of, for a listener
+    /// keeping something in memory for it. Two copies of one project can be open
+    /// at once under one `unique_id`; see `ImportOrigins::work` and
+    /// [`common::open_work`]. Meaningful only inside this process.
+    #[serde(with = "common::open_work::in_process")]
+    pub work: common::open_work::OpenWork,
     /// Which project this export came out of — `Work.unique_id`, the durable one.
     ///
     /// Here rather than left for a listener to work out, for the reason
@@ -78,10 +84,13 @@ pub struct ExportOrigins {
 }
 
 /// The version this build writes.
-pub const EXPORT_ORIGINS_VERSION: u32 = 1;
+///
+/// 2 added [`ExportOrigins::work`].
+pub const EXPORT_ORIGINS_VERSION: u32 = 2;
 
 impl ExportOrigins {
     pub fn new(
+        work: common::open_work::OpenWork,
         work_unique_id: impl Into<String>,
         output_path: impl Into<String>,
         format: impl Into<String>,
@@ -90,6 +99,7 @@ impl ExportOrigins {
     ) -> Self {
         Self {
             version: EXPORT_ORIGINS_VERSION,
+            work,
             work_unique_id: work_unique_id.into(),
             output_path: output_path.into(),
             format: format.into(),
@@ -157,6 +167,7 @@ mod tests {
     #[test]
     fn a_payload_round_trips() {
         let origins = ExportOrigins::new(
+            common::open_work::OpenWork::detached(),
             "the-lighthouse-uid",
             "/tmp/book.docx",
             "Docx",
@@ -173,6 +184,7 @@ mod tests {
     #[test]
     fn the_digests_survive_the_round_trip_verbatim() {
         let origins = ExportOrigins::new(
+            common::open_work::OpenWork::detached(),
             "uid",
             "/tmp/b.docx",
             "Docx",
@@ -188,6 +200,7 @@ mod tests {
     #[test]
     fn an_export_with_no_marks_carries_an_empty_receipt() {
         let origins = ExportOrigins::new(
+            common::open_work::OpenWork::detached(),
             "uid",
             "/tmp/b.pdf",
             "Pdf",

@@ -3349,6 +3349,12 @@ fn the_payload_names_the_project_the_import_landed_in() {
     let origins = origins_for(&mut ctx, vec![create_from("One", "Prose.", "a.md", "aaa")]);
     assert!(!expected.is_empty(), "the fixture project has a durable id");
     assert_eq!(origins.work_unique_id, expected);
+    // …and the open copy, which two copies of one project share no part of
+    // (the `unique_id` above they do).
+    assert_eq!(
+        origins.work,
+        common::open_work::OpenWork::of(&ctx.db, ctx.work_id)
+    );
 }
 
 /// **A returning file that touched no prose must not read as text arriving.**

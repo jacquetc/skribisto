@@ -73,8 +73,17 @@ use std::sync::{Arc, LazyLock, RwLock};
 /// intended behaviour — the seam-drift build is what surfaces it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SaveContext {
-    /// The project being written. Never an entity id: those are re-minted on
-    /// every load, and a contributor's state outlives one.
+    /// The open project being written: the key for anything this contributor
+    /// holds in memory for it, such as a
+    /// [`ProjectStore`](crate::project_store::ProjectStore) slot.
+    ///
+    /// Not [`Self::work_unique_id`], which two copies of one project open side
+    /// by side share (see [`common::open_work`]).
+    pub work: common::open_work::OpenWork,
+    /// The project's durable identity, for what outlives the process: a record
+    /// kept between sessions, a request to a service. Shared by every copy of
+    /// the project, its backups included, so never the key of an in-memory slot.
+    /// Empty for a project that has not been given one yet.
     pub work_unique_id: String,
     /// Which write path asked. A contributor that records history wants
     /// [`SaveKind::Save`](crate::lifecycle::SaveKind::Save) only: a backup is a
@@ -98,28 +107,32 @@ pub struct SaveContext {
 }
 
 impl SaveContext {
-    /// A context naming one project and a plain in-place save, **for testing a
-    /// contributor in isolation**.
+    /// A context naming one open project and a plain in-place save, **for
+    /// testing a contributor in isolation**.
     ///
     /// [`Self::manuscript_fingerprint`] is empty, which no real write ever
     /// produces: a contributor that reads it should set the field rather than
     /// assert on this. What this exists for is the far commoner case of a
-    /// contributor that only looks at the project id, whose tests would
-    /// otherwise all hand-write the same three fields and all break together
-    /// the day a fourth is added.
+    /// contributor that only looks at the project, whose tests would otherwise
+    /// all hand-write every field and all break together the day one is added.
+    /// [`Self::work_unique_id`] is empty too; set it if the contributor reads it.
     ///
     /// ```
     /// # use work_management::bundle_contributors::SaveContext;
     /// # use work_management::lifecycle::SaveKind;
+    /// # use work_management::project_store::OpenWork;
+    /// let work = OpenWork::detached();
     /// let backup = SaveContext {
     ///     kind: SaveKind::Backup,
-    ///     ..SaveContext::for_project("some-project-uid")
+    ///     work_unique_id: "some-project-uid".to_string(),
+    ///     ..SaveContext::for_work(work)
     /// };
-    /// assert_eq!(backup.work_unique_id, "some-project-uid");
+    /// assert_eq!(backup.work, work);
     /// ```
-    pub fn for_project(work_unique_id: impl Into<String>) -> Self {
+    pub fn for_work(work: common::open_work::OpenWork) -> Self {
         Self {
-            work_unique_id: work_unique_id.into(),
+            work,
+            work_unique_id: String::new(),
             kind: crate::lifecycle::SaveKind::Save,
             manuscript_fingerprint: String::new(),
         }
@@ -238,6 +251,7 @@ pub fn manuscript_fingerprint(bundle: &skrib_format::WorkBundle) -> String {
 /// stderr. See the module docs for why a save must survive a bad extension.
 pub(crate) fn collect(
     bundle: &skrib_format::WorkBundle,
+    work: common::open_work::OpenWork,
     work_unique_id: &str,
     kind: crate::lifecycle::SaveKind,
 ) -> BTreeMap<String, Vec<u8>> {
@@ -253,6 +267,7 @@ pub(crate) fn collect(
     // Scoped so the copy `manuscript_fingerprint` makes is gone before any
     // extension code runs.
     let ctx = SaveContext {
+        work,
         work_unique_id: work_unique_id.to_string(),
         kind,
         manuscript_fingerprint: manuscript_fingerprint(bundle),
@@ -289,6 +304,7 @@ pub(crate) fn collect(
 mod tests {
     use super::*;
     use crate::lifecycle::SaveKind;
+    use common::open_work::OpenWork;
 
     /// A contributor that always writes the same files — **for one project id
     /// only**.
@@ -403,7 +419,12 @@ mod tests {
                 vec![("project.skrib", b"hijacked"), ("guard/ok.ron", b"fine")],
             ),
         );
-        let got = collect(&bundle("guard"), "uid-guard", SaveKind::Save);
+        let got = collect(
+            &bundle("guard"),
+            OpenWork::detached(),
+            "uid-guard",
+            SaveKind::Save,
+        );
         assert!(
             !got.contains_key("project.skrib"),
             "an extension must never be able to rewrite the manifest"
@@ -424,7 +445,13 @@ mod tests {
         // No panic, no error type at all — and the healthy contributor still
         // gets its file in, because one bad extension may not silence another.
         assert!(
-            collect(&bundle("broken"), "uid-broken", SaveKind::Save).contains_key("broken/ok.ron")
+            collect(
+                &bundle("broken"),
+                OpenWork::detached(),
+                "uid-broken",
+                SaveKind::Save
+            )
+            .contains_key("broken/ok.ron")
         );
     }
 
@@ -441,9 +468,9 @@ mod tests {
     /// run, in a crate with no connection to extensions.
     ///
     /// It is also the production rule, not merely a test convenience: a real
-    /// contributor is keyed by `Work.unique_id`, because several projects are
-    /// open at once and one that answers for all of them writes the first
-    /// project's data into the second's file.
+    /// contributor is keyed by the open Work ([`SaveContext::work`]), because
+    /// several projects are open at once and one that answers for all of them
+    /// writes the first project's data into the second's file.
     #[test]
     fn a_contributor_scoped_to_one_project_stays_out_of_another() {
         let _h = register(
@@ -451,11 +478,23 @@ mod tests {
             Fixed::for_uid("uid-mine", vec![("foreign/a.ron", b"x")]),
         );
         assert!(
-            collect(&bundle("mine"), "uid-mine", SaveKind::Save).contains_key("foreign/a.ron"),
+            collect(
+                &bundle("mine"),
+                OpenWork::detached(),
+                "uid-mine",
+                SaveKind::Save
+            )
+            .contains_key("foreign/a.ron"),
             "positive control: it does contribute to the project it answers for"
         );
         assert!(
-            collect(&bundle("theirs"), "uid-theirs", SaveKind::Save).is_empty(),
+            collect(
+                &bundle("theirs"),
+                OpenWork::detached(),
+                "uid-theirs",
+                SaveKind::Save
+            )
+            .is_empty(),
             "a neighbouring project's bundle must come back untouched — an \
              unscoped contributor here is a flake somewhere else"
         );
@@ -472,9 +511,14 @@ mod tests {
             Fixed::for_uid("uid-dup", vec![("dup/a.ron", b"second")]),
         );
         assert_eq!(
-            collect(&bundle("dup"), "uid-dup", SaveKind::Save)
-                .get("dup/a.ron")
-                .map(Vec::as_slice),
+            collect(
+                &bundle("dup"),
+                OpenWork::detached(),
+                "uid-dup",
+                SaveKind::Save
+            )
+            .get("dup/a.ron")
+            .map(Vec::as_slice),
             Some(&b"second"[..]),
             "the later registration must win outright, not merge with the earlier"
         );
@@ -488,12 +532,23 @@ mod tests {
                 Fixed::for_uid("uid-scoped", vec![("scoped/a.ron", b"y")]),
             );
             assert!(
-                collect(&bundle("scoped"), "uid-scoped", SaveKind::Save)
-                    .contains_key("scoped/a.ron")
+                collect(
+                    &bundle("scoped"),
+                    OpenWork::detached(),
+                    "uid-scoped",
+                    SaveKind::Save
+                )
+                .contains_key("scoped/a.ron")
             );
         }
         assert!(
-            !collect(&bundle("scoped"), "uid-scoped", SaveKind::Save).contains_key("scoped/a.ron"),
+            !collect(
+                &bundle("scoped"),
+                OpenWork::detached(),
+                "uid-scoped",
+                SaveKind::Save
+            )
+            .contains_key("scoped/a.ron"),
             "a dropped handle must leave no contributor behind"
         );
     }
@@ -529,9 +584,10 @@ mod tests {
     #[test]
     fn the_context_carries_the_project_and_the_kind_through_unchanged() {
         let rec = Recording::watching("uid-ctx");
+        let work = OpenWork::detached();
         let _h = register("test.ctx", rec.clone());
         for kind in [SaveKind::Save, SaveKind::SaveAs, SaveKind::Backup] {
-            let _ = collect(&bundle("ctx"), "uid-ctx", kind);
+            let _ = collect(&bundle("ctx"), work, "uid-ctx", kind);
         }
         let seen = rec.seen();
         assert_eq!(
@@ -539,6 +595,7 @@ mod tests {
             vec![SaveKind::Save, SaveKind::SaveAs, SaveKind::Backup],
         );
         assert!(seen.iter().all(|c| c.work_unique_id == "uid-ctx"));
+        assert!(seen.iter().all(|c| c.work == work));
         assert!(
             seen.iter().all(|c| !c.manuscript_fingerprint.is_empty()),
             "every context carries a fingerprint, whatever the write path"
@@ -551,9 +608,24 @@ mod tests {
     fn the_fingerprint_is_stable_across_writes_and_moves_with_the_manuscript() {
         let rec = Recording::watching("uid-fp");
         let _h = register("test.fp", rec.clone());
-        let _ = collect(&bundle("Chapter one"), "uid-fp", SaveKind::Save);
-        let _ = collect(&bundle("Chapter one"), "uid-fp", SaveKind::Save);
-        let _ = collect(&bundle("Chapter two"), "uid-fp", SaveKind::Save);
+        let _ = collect(
+            &bundle("Chapter one"),
+            OpenWork::detached(),
+            "uid-fp",
+            SaveKind::Save,
+        );
+        let _ = collect(
+            &bundle("Chapter one"),
+            OpenWork::detached(),
+            "uid-fp",
+            SaveKind::Save,
+        );
+        let _ = collect(
+            &bundle("Chapter two"),
+            OpenWork::detached(),
+            "uid-fp",
+            SaveKind::Save,
+        );
         let f = rec.fingerprints();
         assert_eq!(f[0], f[1], "an unchanged manuscript must fingerprint alike");
         assert_ne!(f[1], f[2], "an edited manuscript must fingerprint anew");
@@ -570,8 +642,8 @@ mod tests {
         folder.manifest.shape = skrib_format::ShapeTag::Folder;
         let mut zip = bundle("same book");
         zip.manifest.shape = skrib_format::ShapeTag::Zip;
-        let _ = collect(&folder, "uid-shape", SaveKind::Save);
-        let _ = collect(&zip, "uid-shape", SaveKind::Backup);
+        let _ = collect(&folder, OpenWork::detached(), "uid-shape", SaveKind::Save);
+        let _ = collect(&zip, OpenWork::detached(), "uid-shape", SaveKind::Backup);
         let f = rec.fingerprints();
         assert_eq!(
             f[0], f[1],

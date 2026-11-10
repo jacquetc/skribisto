@@ -68,9 +68,13 @@ pub struct LaneSubject {
     /// Empty is legitimate: the index is empty until its first scan lands, and
     /// [`hits`] still matches the subject's own names against the prose.
     pub table: Vec<DiscoverableEntity>,
-    /// Which Work this belongs to, so a second window on a second project marks nothing
+    /// Which open Work this belongs to, so a window on another project marks nothing
     /// rather than this project's names.
-    pub work_uid: String,
+    ///
+    /// The open copy, not `Work.unique_id`: a backup opened beside its project, or the
+    /// file Save As left behind, shares that id, and its window would mark this
+    /// reading's names in its own prose. See [`common::open_work`].
+    pub work: common::open_work::OpenWork,
     /// **Which reading published it**: the surface token that reading hands its own
     /// editors and its own lane ([`super::LaneScope`]).
     ///
@@ -316,7 +320,7 @@ mod tests {
         let subject = LaneSubject {
             entity: entry("Elizabeth", &[]),
             table: Vec::new(),
-            work_uid: "w".into(),
+            work: common::open_work::OpenWork::detached(),
             publisher: mine,
         };
         set_active_subject(Some(subject.clone()));

@@ -36,7 +36,7 @@
 //! | [`register`] (identity) | **earliest of all**, before `AppContext` exists | nothing; it *is* the answer |
 //! | [`register_brand_mark`] | a window is built, so **latest of all** | nothing; a mark is artwork |
 //!
-//! Two rules that the table cannot show, and that have both gone wrong before:
+//! Three rules that the table cannot show, and that have all gone wrong before:
 //!
 //! * **Every registry is a snapshot, not a subscription.** Register on the main
 //!   thread *before* `run()`. Identity is the strictest — it is read before
@@ -51,10 +51,21 @@
 //!   inside `run`, so a captured one is a second, permanently empty store and the
 //!   panel renders a convincing "nothing here" forever. Every slot hands the live
 //!   handles to the *view* instead, through the context types below.
+//! * **Key what is held in memory by the open Work, what is written by
+//!   `unique_id`.** Two copies of one project can be open together, sharing a
+//!   `unique_id`: Save As keeps it, a backup carries it. A slot keyed by it is
+//!   one slot for two projects, so opening a backup beside its project put the
+//!   backup's state into the project's next save. [`OpenWork`] names one open
+//!   copy: `ProjectStore`, the lifecycle events, `SaveContext` and the change
+//!   count all key by it, and a view gets it from `ids.open_work(&app_ctx)`.
 //!
 //! The backend-side slots are not re-exported here because they live in another
 //! crate entirely: `work_management::{bundle_contributors, project_store,
 //! lifecycle}`.
+
+/// One open copy of a project: the key for what an extension holds in memory
+/// for it. See the third rule above and [`common::open_work`].
+pub use common::open_work::OpenWork;
 
 // ── Docks ────────────────────────────────────────────────────────────────────
 pub use crate::docks::{

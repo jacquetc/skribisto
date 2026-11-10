@@ -89,6 +89,9 @@ pub trait LoadWorkUnitOfWorkFactoryTrait: Send + Sync {
 // current list first.
 #[macros::uow_action(entity = "Root", action = "GetRelationship")]
 pub trait LoadWorkUnitOfWorkTrait: CommandUnitOfWork {
+    /// This open Work's in-process key: what the extension seam's in-memory
+    /// state is keyed by. See [`common::open_work`].
+    fn open_work(&self, work_id: EntityId) -> common::open_work::OpenWork;
     fn publish_load_work_event(&self, ids: Vec<EntityId>, data: Option<String>);
 }
 
@@ -171,6 +174,7 @@ impl LoadWorkUseCase {
         // in the manuscript.
         if crate::lifecycle::has_listeners() {
             crate::lifecycle::notify(crate::lifecycle::LifecycleEvent::Opened {
+                work: uow.open_work(mat.work_id),
                 unique_id: loaded.work.unique_id.clone(),
                 path: file_name.clone(),
                 live_binder_item_uids: crate::work_io::loaded_binder_item_uids(&loaded),

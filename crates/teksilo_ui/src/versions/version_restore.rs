@@ -250,9 +250,8 @@ pub fn content_id_for(doc: &OpenDoc, slot: Slot) -> Option<u64> {
 /// and the explicit flush is what makes the closed case land on disk — `release`
 /// only flushes on the *last* reference, which a row with a visible tab does not
 /// reach.
-/// `work_unique_id` is the project the restored characters belong to, for
-/// [`common::arrival`]. `None` on an unsaved project, which has no durable id
-/// and no tally.
+/// `work` is the open project the restored characters belong to, for
+/// [`common::arrival`]. `None` when no project is seeded, which has no tally.
 ///
 /// ⚠ **Restoring a version was invisible to arrival counting entirely.** Every
 /// other way text enters a manuscript reports which channel it came through,
@@ -276,7 +275,7 @@ pub fn apply(
     target: &ContentRole,
     past: &str,
     stack: Option<u64>,
-    work_unique_id: Option<&str>,
+    work: Option<common::open_work::OpenWork>,
 ) -> Result<(), RestoreRefusal> {
     let Some(slot) = slot_for(target) else {
         return Err(RestoreRefusal::NotEditableText {
@@ -294,11 +293,11 @@ pub fn apply(
         // the restore rather than from the Djot that produced it: `past` is
         // markup, and counting its asterisks would report more text than the
         // row now holds.
-        if let Some(uid) = work_unique_id
+        if let Some(work) = work
             && let Ok(plain) = document.to_plain_text()
         {
             common::arrival::shared().record(
-                uid,
+                work,
                 common::arrival::Arrival::Programmatic,
                 plain.chars().count() as u64,
             );

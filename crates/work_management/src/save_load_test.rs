@@ -3793,7 +3793,7 @@ impl crate::lifecycle::LifecycleListener for LifecycleLog {
     fn on_event(&self, event: &crate::lifecycle::LifecycleEvent) {
         use crate::lifecycle::LifecycleEvent::*;
         let mine = match event {
-            Opened { unique_id, .. } | Closed { unique_id } | Saved { unique_id, .. } => {
+            Opened { unique_id, .. } | Closed { unique_id, .. } | Saved { unique_id, .. } => {
                 unique_id == &self.uid
             }
         };
@@ -3864,8 +3864,8 @@ fn loading_a_project_fires_opened_with_its_live_item_uids() {
 ///
 /// **The ordering that makes it work:** `unique_id` is read *before* the
 /// teardown. Read after, it would come back empty — with no compiler error and
-/// nothing failing — so every extension would keep that project's state resident
-/// for the life of the process, and re-opening it would find the stale slot.
+/// nothing failing — so a listener filing something by the durable id would file
+/// it under nothing.
 #[test]
 fn closing_a_project_fires_closed_naming_the_project_that_closed() {
     let log = LifecycleLog::new("lifecycle-close-uid");
@@ -4293,4 +4293,300 @@ fn a_books_cover_survives_a_save_load_round_trip() {
 fn a_cover_naming_no_picture_loads_as_no_cover() {
     let out = load_and_resave(&bundle_with_book_cover(999));
     assert_eq!(saved_book_cover(&out), None);
+}
+
+// ── Two open Works carrying one `unique_id` ───────────────────────────────────
+//
+// `save_as` keeps the uid, a file-manager copy keeps it, and a backup shares it
+// by design (`verify_backup_at` asserts it). So nothing stops two Works with one
+// uid being open in one process: the moved project and the file it left behind,
+// or a project and one of its backups opened from the Backups list. A
+// process-wide map keyed by the uid had one slot for two projects, which is why
+// the seam's in-memory state is keyed by the open Work (`OpenWork`) instead.
+//
+// The extension below is built the way the seam's docs, and the one real
+// consumer, build one: a `ProjectStore`, a listener that loads the project's
+// file into its slot on `Opened`, `evict_on_close`, and a
+// `ProjectStoreContributor`.
+
+use common::open_work::OpenWork;
+
+const PLAN_FILE: &str = "ext/plan.ron";
+
+struct PlanLoader {
+    plans: crate::project_store::ProjectStore<String>,
+    /// The registries are process-wide and tests run in parallel, so each test's
+    /// extension answers only for the projects its own test opened.
+    uid: &'static str,
+}
+
+impl crate::lifecycle::LifecycleListener for PlanLoader {
+    fn on_event(&self, event: &crate::lifecycle::LifecycleEvent) {
+        if let crate::lifecycle::LifecycleEvent::Opened {
+            work,
+            unique_id,
+            path,
+            ..
+        } = event
+            && unique_id == self.uid
+        {
+            // A project with no plan gets no slot, as the real consumer does.
+            if let Some(file) = skrib::carry::load(path).get(PLAN_FILE) {
+                self.plans
+                    .scoped(*work)
+                    .set(String::from_utf8_lossy(&file.bytes).into_owned());
+            }
+        }
+    }
+}
+
+struct PlanExtension {
+    plans: crate::project_store::ProjectStore<String>,
+    _listener: crate::lifecycle::Handle,
+    _eviction: crate::lifecycle::Handle,
+    _contributor: crate::bundle_contributors::ContributorHandle,
+}
+
+impl PlanExtension {
+    fn install(namespace: &str, uid: &'static str) -> Self {
+        let plans = crate::project_store::ProjectStore::<String>::new();
+        let listener = crate::lifecycle::register(
+            namespace,
+            Arc::new(PlanLoader {
+                plans: plans.clone(),
+                uid,
+            }),
+        );
+        let eviction = crate::lifecycle::evict_on_close(namespace, Arc::new(plans.clone()));
+        let contributor = crate::bundle_contributors::register(
+            namespace,
+            Arc::new(crate::project_store::ProjectStoreContributor {
+                path: PLAN_FILE,
+                store: plans.clone(),
+                serialize: |plan: &String| Ok(plan.clone().into_bytes()),
+            }),
+        );
+        Self {
+            plans,
+            _listener: listener,
+            _eviction: eviction,
+            _contributor: contributor,
+        }
+    }
+
+    /// What the writer does in the extension's panel: change the plan in memory.
+    fn edit(&self, work: OpenWork, plan: &str) {
+        self.plans.scoped(work).set(plan.to_string());
+    }
+}
+
+/// A folder bundle at `dir/name` under `uid`, holding `plan` if given.
+fn write_copy(
+    dir: &std::path::Path,
+    name: &str,
+    uid: &str,
+    plan: Option<&str>,
+    kind: skrib::BundleKind,
+) -> String {
+    let mut bundle = sample_bundle();
+    bundle.manifest.work.unique_id = uid.to_string();
+    bundle.manifest.kind = kind;
+    if let Some(plan) = plan {
+        bundle.carried.insert(
+            PLAN_FILE.to_string(),
+            skrib::CarriedFile::new(plan.as_bytes().to_vec()),
+        );
+    }
+    let path = dir.join(name).to_str().unwrap().to_string();
+    skrib::write_bundle(&path, SkribShape::ExplodedFolder, &bundle).unwrap();
+    path
+}
+
+/// Open `path` beside whatever is already open, and return the new Work's id.
+fn open_beside(db: &DbContext, hub: &Arc<EventHub>, path: &str) -> u64 {
+    let before: std::collections::HashSet<u64> = db
+        .get_store()
+        .works
+        .read()
+        .unwrap()
+        .keys()
+        .copied()
+        .collect();
+    work_management_controller::load_work(
+        db,
+        hub,
+        &LoadWorkDto {
+            media_root: String::new(),
+            file_name: path.to_string(),
+        },
+    )
+    .expect("load");
+    *db.get_store()
+        .works
+        .read()
+        .unwrap()
+        .keys()
+        .find(|id| !before.contains(id))
+        .expect("the load added a Work")
+}
+
+fn save_work_to(db: &DbContext, hub: &Arc<EventHub>, work_id: u64, path: &str) {
+    SaveWorkUseCase::new(
+        Box::new(SaveWorkUnitOfWorkFactory::new(db, hub)),
+        &SaveWorkDto {
+            media_root: String::new(),
+            work_id,
+            file_name: path.to_string(),
+            overwrite: true,
+        },
+    )
+    .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
+    .expect("save");
+}
+
+fn plan_on_disk(path: &str) -> Option<String> {
+    skrib::carry::load(path)
+        .get(PLAN_FILE)
+        .map(|f| String::from_utf8_lossy(&f.bytes).into_owned())
+}
+
+/// **Save As, then open the file it left behind.** Opening the old copy loads
+/// *that* file's plan, and with one slot per uid it lands over the moved
+/// project's, which the moved project's next save then writes out as its own.
+#[test]
+fn opening_the_file_a_save_as_left_behind_keeps_the_moved_projects_extension_data() {
+    let uid = "dup-uid-save-as";
+    let ext = PlanExtension::install("test.dup.save_as", uid);
+    let dir = tempfile::tempdir().unwrap();
+    let old = write_copy(
+        dir.path(),
+        "Old",
+        uid,
+        Some("plan as it was"),
+        Default::default(),
+    );
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+
+    let moved_id = open_beside(&db, &hub, &old);
+    let moved = dir.path().join("Moved").to_str().unwrap().to_string();
+    SaveAsUseCase::new(
+        Box::new(SaveAsUnitOfWorkFactory::new(&db, &hub)),
+        &SaveAsDto {
+            media_root: String::new(),
+            work_id: moved_id,
+            file_name: moved.clone(),
+            as_folder: true,
+        },
+    )
+    .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
+    .expect("save as");
+    ext.edit(OpenWork::of(&db, moved_id), "plan moved on");
+    save_work_to(&db, &hub, moved_id, &moved);
+    assert_eq!(plan_on_disk(&moved).as_deref(), Some("plan moved on"));
+
+    // The writer opens the old file to look something up.
+    let _old_id = open_beside(&db, &hub, &old);
+    save_work_to(&db, &hub, moved_id, &moved);
+
+    assert_eq!(
+        plan_on_disk(&moved).as_deref(),
+        Some("plan moved on"),
+        "opening the old copy put its plan into the moved project"
+    );
+}
+
+/// **Closing one copy empties the other's slot.** The copy closed was opened,
+/// looked at and closed; the copy still open loses every change made to its
+/// extension data since its last save.
+#[test]
+fn closing_one_copy_keeps_the_unsaved_extension_data_of_the_other() {
+    let uid = "dup-uid-close";
+    let ext = PlanExtension::install("test.dup.close", uid);
+    let dir = tempfile::tempdir().unwrap();
+    let live = write_copy(dir.path(), "Live", uid, Some("plan v1"), Default::default());
+    // A file-manager copy taken before the project had a plan: its `Opened`
+    // leaves the slot alone, so only the close is in play here.
+    let copy = write_copy(dir.path(), "Copy", uid, None, Default::default());
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+
+    let live_id = open_beside(&db, &hub, &live);
+    ext.edit(OpenWork::of(&db, live_id), "plan v2, not saved yet");
+    let copy_id = open_beside(&db, &hub, &copy);
+    work_management_controller::close_work(&db, &hub, &CloseWorkDto { work_id: copy_id })
+        .expect("close the copy");
+    save_work_to(&db, &hub, live_id, &live);
+
+    assert_eq!(
+        plan_on_disk(&live).as_deref(),
+        Some("plan v2, not saved yet"),
+        "closing the other copy discarded this project's unsaved extension data"
+    );
+}
+
+/// **A backup opened beside its project.** The Backups list opens a backup in a
+/// window of its own while the project stays open, and a backup carries the
+/// project's uid by design. Its `Opened` loads the old plan over the live one,
+/// and the live project's next save writes the old plan back.
+#[test]
+fn opening_a_backup_beside_its_project_keeps_the_projects_extension_data() {
+    let uid = "dup-uid-backup";
+    let ext = PlanExtension::install("test.dup.backup", uid);
+    let dir = tempfile::tempdir().unwrap();
+    let live = write_copy(
+        dir.path(),
+        "Live",
+        uid,
+        Some("plan today"),
+        Default::default(),
+    );
+    let backup = write_copy(
+        dir.path(),
+        "Live-20260101-090000",
+        uid,
+        Some("plan last month"),
+        skrib::BundleKind::Backup,
+    );
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+
+    let live_id = open_beside(&db, &hub, &live);
+    ext.edit(OpenWork::of(&db, live_id), "plan today, edited");
+    let _backup_id = open_beside(&db, &hub, &backup);
+    save_work_to(&db, &hub, live_id, &live);
+
+    assert_eq!(
+        plan_on_disk(&live).as_deref(),
+        Some("plan today, edited"),
+        "opening a backup put last month's plan into the live project"
+    );
+}
+
+/// **The "unsaved extension change" generation goes backwards.** Closing one
+/// copy forgets the uid's generation, so the copy still open compares a fresh
+/// count against the higher one its last save recorded, and a later change no
+/// longer reads as unsaved: Close proceeds with no prompt.
+#[test]
+fn closing_one_copy_does_not_reset_the_external_change_generation_of_the_other() {
+    let uid = "dup-uid-external";
+    let dir = tempfile::tempdir().unwrap();
+    let live = write_copy(dir.path(), "Live", uid, None, Default::default());
+    let copy = write_copy(dir.path(), "Copy", uid, None, Default::default());
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+
+    let live = OpenWork::of(&db, open_beside(&db, &hub, &live));
+    crate::external_changes::mark_changed(live);
+    let seen = crate::external_changes::mark_changed(live);
+    let copy_id = open_beside(&db, &hub, &copy);
+    work_management_controller::close_work(&db, &hub, &CloseWorkDto { work_id: copy_id })
+        .expect("close the copy");
+
+    assert!(
+        crate::external_changes::generation(live) >= seen,
+        "the generation of a project still open went from {seen} back to {}",
+        crate::external_changes::generation(live)
+    );
+    crate::external_changes::forget(live);
 }

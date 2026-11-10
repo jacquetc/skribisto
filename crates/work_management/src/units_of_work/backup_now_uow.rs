@@ -101,6 +101,10 @@ impl QueryUnitOfWork for BackupNowUnitOfWork {
 #[macros::uow_action(entity = "WorkInfo", action = "GetRelationshipRO", thread_safe = true)]
 #[macros::uow_action(entity = "ProgressSnapshot", action = "GetMultiRO", thread_safe = true)]
 impl BackupNowUnitOfWorkTrait for BackupNowUnitOfWork {
+    fn open_work(&self, work_id: EntityId) -> common::open_work::OpenWork {
+        common::open_work::OpenWork::of(&self.context, work_id)
+    }
+
     fn publish_backup_now_event(&self, ids: Vec<EntityId>, data: Option<String>) {
         self.event_hub.send_event(Event {
             origin: Origin::WorkManagement(BackupNow),

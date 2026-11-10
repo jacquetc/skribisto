@@ -20,9 +20,19 @@
 //!   an id against, so the payload has to be captured before teardown — which
 //!   only the use case itself can do.
 //!
-//! So the payload here is plain, already-resolved data — `unique_id`, a path, a
-//! `Vec<Uuid>` — captured inside the use case and handed over whole. No context
-//! crosses the boundary in either direction.
+//! So the payload here is plain, already-resolved data — the open Work's key, its
+//! `unique_id`, a path, a `Vec<Uuid>` — captured inside the use case and handed
+//! over whole. No context crosses the boundary in either direction.
+//!
+//! ## Two identities, for two jobs
+//!
+//! Every event carries both. `work` ([`OpenWork`](common::open_work::OpenWork)) names this open copy of the
+//! project and is the key for anything held in memory while it is open: a
+//! [`ProjectStore`](crate::project_store::ProjectStore) slot, a cache.
+//! `unique_id` names the project wherever it lives, and is shared by every copy
+//! of it, backups included, so two copies can be open with the same one. Keyed by
+//! `unique_id`, opening the second copy loaded its state over the first's, and
+//! closing either evicted both. See [`common::open_work`].
 //!
 //! ## The pruning problem this exists to solve
 //!
@@ -43,6 +53,7 @@
 
 use std::sync::{Arc, LazyLock, RwLock};
 
+use common::open_work::OpenWork;
 use uuid::Uuid;
 
 /// Which write produced a [`LifecycleEvent::Saved`].
@@ -63,10 +74,13 @@ pub enum LifecycleEvent {
     /// A project is now open in the store. Fired once from `load_work` /
     /// `new_work`, strictly after the transaction commits.
     Opened {
+        /// This open copy of the project: the key for state held in memory.
+        work: OpenWork,
+        /// The project's durable identity, shared by every copy of it. Empty
+        /// for a project that has not been given one.
         unique_id: String,
         /// Absolute path of the file or folder opened. Empty for a `new_work`
-        /// that has never been saved — which is also the state whose
-        /// `unique_id` cannot yet key a [`crate::project_store::ProjectStore`].
+        /// that has never been saved.
         path: String,
         /// Every `BinderItem` uid the project currently holds. Prune against it.
         live_binder_item_uids: Vec<Uuid>,
@@ -74,10 +88,14 @@ pub enum LifecycleEvent {
     /// A project's subtree is gone from the store. Fired once from `close_work`,
     /// strictly **after** the teardown — but with a `unique_id` captured
     /// **before** it, since afterwards there is no row left to read it from.
-    Closed { unique_id: String },
+    ///
+    /// Drop what is keyed by `work`. Another copy of the project, under the
+    /// same `unique_id`, may still be open.
+    Closed { work: OpenWork, unique_id: String },
     /// A write landed. Once for a save or a save-as; once **per destination**
     /// for a backup.
     Saved {
+        work: OpenWork,
         unique_id: String,
         /// Where these bytes went. For a backup that is the backup file, not the
         /// project.
@@ -99,9 +117,13 @@ pub trait LifecycleListener: Send + Sync {
 /// The tally itself lives in `common` because both ends need it and they sit on
 /// opposite sides of this crate — see [`common::arrival`]. The `ProjectSlots`
 /// impl has to be here, where the trait is.
+///
+/// The application's own tally, [`common::arrival::shared`], needs no
+/// registration: every `Closed` event empties it, after the registered
+/// evictions. This is for a tally kept separately, handed to [`evict_on_close`].
 impl ProjectSlots for common::arrival::Arrivals {
-    fn forget(&self, work_unique_id: &str) {
-        common::arrival::Arrivals::forget(self, work_unique_id);
+    fn forget(&self, work: OpenWork) {
+        common::arrival::Arrivals::forget(self, work);
     }
 }
 
@@ -110,7 +132,7 @@ impl ProjectSlots for common::arrival::Arrivals {
 /// Object-safe so the registry can hold stores of different value types
 /// together; `ProjectStore<T>` implements it for every `T`.
 pub trait ProjectSlots: Send + Sync {
-    fn forget(&self, work_unique_id: &str);
+    fn forget(&self, work: OpenWork);
 }
 
 struct Registration {
@@ -151,9 +173,9 @@ pub fn register(namespace: impl Into<String>, listener: Arc<dyn LifecycleListene
 /// project's slot when that project closes.
 ///
 /// Without this, every project a session opens stays resident for the life of
-/// the process — a slow leak, and worse a *correctness* hazard: re-opening the
-/// same project would find a stale slot instead of loading from disk. Eviction
-/// is therefore the app's job on the extension's behalf, not something each
+/// the process: a slow leak, one slot per open. (Re-opening a project does not
+/// find the old slot: it is a new Work with a new [`OpenWork`].) Eviction is
+/// therefore the app's job on the extension's behalf, not something each
 /// extension has to remember.
 ///
 /// Eviction runs **after** every listener, so a listener still sees the closing
@@ -221,7 +243,7 @@ pub(crate) fn notify(event: LifecycleEvent) {
         }
     }
     // Eviction last, so a listener above still saw the closing project's state.
-    if let LifecycleEvent::Closed { unique_id } = &event {
+    if let LifecycleEvent::Closed { work, .. } = &event {
         let slots: Vec<Arc<dyn ProjectSlots>> = EVICTIONS
             .read()
             .unwrap_or_else(|e| e.into_inner())
@@ -229,14 +251,18 @@ pub(crate) fn notify(event: LifecycleEvent) {
             .map(|r| r.slots.clone())
             .collect();
         for s in slots {
-            s.forget(unique_id);
+            s.forget(*work);
         }
         // …and the "an extension changed something off-thread" generation with
         // them. A Work that is closing has either been written or has been
         // abandoned deliberately, and both are answers the writer has already
-        // given, so there is nothing here to carry into the next project that
-        // happens to reuse the id.
-        crate::external_changes::forget(unique_id);
+        // given. Keyed by the open Work, so another copy of the project still
+        // open keeps its own.
+        crate::external_changes::forget(*work);
+        // …and the application's arrival tally, which nothing registered for
+        // eviction: without this every project a session opened kept its counts
+        // for the rest of the process. Same key, so the other copy keeps its own.
+        common::arrival::shared().forget(*work);
     }
 }
 
@@ -270,7 +296,7 @@ mod tests {
         fn on_event(&self, event: &LifecycleEvent) {
             let mine = match event {
                 LifecycleEvent::Opened { unique_id, .. }
-                | LifecycleEvent::Closed { unique_id }
+                | LifecycleEvent::Closed { unique_id, .. }
                 | LifecycleEvent::Saved { unique_id, .. } => unique_id == self.uid,
             };
             if mine {
@@ -287,7 +313,12 @@ mod tests {
     }
 
     fn closed(uid: &str) -> LifecycleEvent {
+        closed_work(OpenWork::detached(), uid)
+    }
+
+    fn closed_work(work: OpenWork, uid: &str) -> LifecycleEvent {
         LifecycleEvent::Closed {
+            work,
             unique_id: uid.to_string(),
         }
     }
@@ -337,13 +368,13 @@ mod tests {
     #[test]
     fn closing_a_project_evicts_its_store_slot() {
         let store: ProjectStore<String> = ProjectStore::new();
-        let a = store.scoped("uid-a").unwrap();
-        let b = store.scoped("uid-b").unwrap();
+        let a = store.scoped(OpenWork::detached());
+        let b = store.scoped(OpenWork::detached());
         a.set("A's plan".into());
         b.set("B's plan".into());
 
         let _h = evict_on_close("test.lc.evict", Arc::new(store.clone()));
-        notify(closed("uid-a"));
+        notify(closed_work(a.work(), "uid-a"));
 
         assert!(!a.exists(), "the closed project's slot must be gone");
         assert_eq!(
@@ -368,19 +399,19 @@ mod tests {
         }
         impl LifecycleListener for Peeker {
             fn on_event(&self, event: &LifecycleEvent) {
-                let LifecycleEvent::Closed { unique_id } = event else {
+                let LifecycleEvent::Closed { work, unique_id } = event else {
                     return;
                 };
                 if unique_id != self.uid {
                     return;
                 }
-                let scope = self.store.scoped(unique_id).unwrap();
-                *self.found.lock().unwrap() = scope.get();
+                *self.found.lock().unwrap() = self.store.scoped(*work).get();
             }
         }
 
         let store: ProjectStore<String> = ProjectStore::new();
-        store.scoped("uid-peek").unwrap().set("still here".into());
+        let work = OpenWork::detached();
+        store.scoped(work).set("still here".into());
         let peeker = Arc::new(Peeker {
             uid: "uid-peek",
             store: store.clone(),
@@ -389,13 +420,49 @@ mod tests {
         let _l = register("test.lc.peek", peeker.clone());
         let _e = evict_on_close("test.lc.peek.evict", Arc::new(store.clone()));
 
-        notify(closed("uid-peek"));
+        notify(closed_work(work, "uid-peek"));
 
         assert_eq!(peeker.found.lock().unwrap().as_deref(), Some("still here"));
         assert!(
-            !store.scoped("uid-peek").unwrap().exists(),
+            !store.scoped(work).exists(),
             "…and it is gone afterwards all the same"
         );
+    }
+
+    /// **Two copies of one project open together** share a `unique_id`: the
+    /// file Save As left behind, a backup opened from the Backups list. Closing
+    /// one must leave the other's slot alone, which a store keyed by `unique_id`
+    /// could not do.
+    #[test]
+    fn closing_one_copy_of_a_project_keeps_the_slot_of_the_other() {
+        let store: ProjectStore<String> = ProjectStore::new();
+        let first = store.scoped(OpenWork::detached());
+        let second = store.scoped(OpenWork::detached());
+        first.set("first copy".into());
+        second.set("second copy".into());
+
+        let _h = evict_on_close("test.lc.copies", Arc::new(store.clone()));
+        notify(closed_work(first.work(), "uid-copies"));
+
+        assert!(!first.exists());
+        assert_eq!(second.get().as_deref(), Some("second copy"));
+    }
+
+    /// The application's arrival tally is emptied for the project that closed,
+    /// and for no other copy of it.
+    #[test]
+    fn closing_a_project_empties_its_arrival_tally_and_no_other() {
+        use common::arrival::{Arrival, shared};
+        let closing = OpenWork::detached();
+        let staying = OpenWork::detached();
+        shared().record(closing, Arrival::Typed, 5);
+        shared().record(staying, Arrival::Typed, 7);
+
+        notify(closed_work(closing, "uid-arrivals"));
+
+        assert!(shared().session_total(closing).is_empty());
+        assert_eq!(shared().peek(staying, Arrival::Typed), 7);
+        shared().forget(staying);
     }
 
     /// Dropping the handle must take the eviction with it, or a store outlives
@@ -403,12 +470,12 @@ mod tests {
     #[test]
     fn dropping_the_handle_also_drops_the_eviction() {
         let store: ProjectStore<String> = ProjectStore::new();
-        let a = store.scoped("uid-gone").unwrap();
+        let a = store.scoped(OpenWork::detached());
         {
             let _h = evict_on_close("test.lc.evict.drop", Arc::new(store.clone()));
         }
         a.set("kept".into());
-        notify(closed("uid-gone"));
+        notify(closed_work(a.work(), "uid-gone"));
         assert!(a.exists(), "a dropped handle must leave no eviction behind");
     }
 

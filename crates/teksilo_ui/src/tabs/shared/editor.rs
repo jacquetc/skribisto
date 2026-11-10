@@ -172,11 +172,12 @@ pub fn writing_column(
     // have — a picture pasted in from another editor, or brought back by an
     // undo. `None` on the surfaces built without a project around them.
     images: Option<crate::shared::images::ImageSource>,
-    // Which project this surface's typing belongs to — `Work.unique_id`, from
-    // [`ContentTab::work_unique_id`].
+    // Which project this surface's typing belongs to, from
+    // [`ContentTab::arrival_project`]: the open Work the tally counts for, and
+    // the durable id the capture submenu files its recents under.
     //
-    // `None` on every surface built without a project around it, on an unsaved
-    // one, and in the widget tests — the same shape as `comments` / `footnotes`
+    // `None` on every surface built without a project around it, and in the
+    // widget tests — the same shape as `comments` / `footnotes`
     // / `images` above, and for the same reason.
     //
     // The **project**, not the item and not the window: a project can have
@@ -184,7 +185,7 @@ pub fn writing_column(
     // would mean nothing at all. The tally itself is `common::arrival::shared()`,
     // reached rather than threaded — see that module for why the end that
     // reports and the end that reads cannot hand it to each other.
-    arrival_project: Option<String>,
+    arrival_project: Option<ArrivalProject>,
     // Whether this surface may be typed into.
     //
     // A **construction-time** choice, not a runtime flag: `RichTextEditor` fixes
@@ -270,13 +271,13 @@ pub fn writing_column(
         let resolve = source.resolver();
         editor = editor.on_image_missing(resolve);
     }
-    // Cloned before the tally consumes it: the capture submenu, built later, keys this
-    // project's recents on the same uid.
+    // Read before the tally consumes it: the capture submenu, built later, keys this
+    // project's recents on its durable uid.
     let capture = tags.clone().map(|tags| CapturePalette {
         tags,
-        work_uid: arrival_project.clone(),
+        work_uid: arrival_project.as_ref().and_then(|p| p.uid.clone()),
     });
-    if let Some(project) = arrival_project {
+    if let Some(project) = arrival_project.map(|p| p.work) {
         // The toolkit says which channel; what a *manuscript* makes of that is
         // the application's to decide, so the mapping is here rather than in
         // teksilo. `Ime` maps to `Typed` because a writer composing in Japanese
@@ -295,7 +296,7 @@ pub fn writing_column(
                 // says, not typing.
                 EditSource::Programmatic | EditSource::WritingTools => Arrival::Programmatic,
             };
-            tally.record(&project, arrival, chars as u64);
+            tally.record(project, arrival, chars as u64);
         });
     }
     let mut editor = editor
@@ -670,6 +671,22 @@ pub struct CapturePalette {
     /// under. `None` on a project not yet saved anywhere, which simply has no recents
     /// yet and gets plain palette order.
     pub work_uid: Option<String>,
+}
+
+/// Which open project a writing surface's typing is counted for.
+///
+/// Two keys, because the two things the editor files under its project ask
+/// different questions. The arrival tally lives only while the project is open,
+/// so it keys by the open Work: two copies of one project open side by side (a
+/// backup beside it, the file Save As left behind) are two sessions. The capture
+/// submenu's recents are kept between sessions, so they key by `unique_id`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ArrivalProject {
+    /// The tally's key — see [`common::open_work`].
+    pub work: common::open_work::OpenWork,
+    /// `Work.unique_id`, for the capture recents. `None` on a project not yet
+    /// saved anywhere.
+    pub uid: Option<String>,
 }
 
 /// Which tags this project's writer reached for most recently, for the capture submenu's
@@ -1180,7 +1197,7 @@ pub fn writing_section(
     // undo. `None` on the surfaces built without a project around them.
     images: Option<crate::shared::images::ImageSource>,
     // Forwarded straight to [`writing_column`] — see its own note.
-    arrival_project: Option<String>,
+    arrival_project: Option<ArrivalProject>,
     // Whether this surface may be typed into — see `writing_column`.
     read_only: bool,
     // Forwarded straight to [`writing_column`] — see its own note.

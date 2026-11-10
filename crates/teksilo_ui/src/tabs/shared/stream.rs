@@ -136,7 +136,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
             let gutter = gutter.clone();
             // Resolved once for the page rather than per row: it is one store
             // read, and a stream can be a hundred rows.
-            let arrival_project = tab.work_unique_id();
+            let arrival_project = tab.arrival_project();
             let tags = tab.tags();
             let extents = extents.clone();
             let page_scroll = page_scroll.clone();
@@ -159,7 +159,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                         &band,
                         &games,
                         &gutter,
-                        arrival_project.as_deref(),
+                        arrival_project.as_ref(),
                         scope,
                         Some(&tags),
                     ),
@@ -223,7 +223,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     // marker in a Full Book.
                     tab.open_doc.footnote_binding_main(),
                     tab.open_doc.images(),
-                    tab.work_unique_id(),
+                    tab.arrival_project(),
                     // The container's own prose, read-only while it is in the trash.
                     tab.open_doc.trashed.get(),
                     // The container itself: its own prose is one more item's text on
@@ -490,8 +490,8 @@ fn stream_row(
     // one measure down the page (see `ColumnWithMargin::reserve`).
     gutter: &Signal<f32>,
     // Which project this row's typing belongs to — forwarded straight to
-    // [`writing_column`], see its own note. `None` on an unsaved project.
-    arrival_project: Option<&str>,
+    // [`writing_column`], see its own note.
+    arrival_project: Option<&crate::tabs::shared::editor::ArrivalProject>,
     // The stream page this row is on, so its editor answers to that page's lane and
     // not to a tab open on the same scene — see `crate::margin_lane::LaneScope`.
     scope: crate::margin_lane::LaneScope,
@@ -566,7 +566,7 @@ fn stream_row(
                         // Every row of a stream is the same project's, so they all count
                         // into one tally — which is the whole point of it being the
                         // project's rather than the editor's.
-                        arrival_project.map(str::to_string),
+                        arrival_project.cloned(),
                         // Each row answers for itself: a stream shows many items, and only the
                         // ones actually in the trash are locked.
                         doc.trashed.get(),
@@ -619,7 +619,7 @@ fn stream_row(
                         // the same pair the prose flavour above passes.
                         tags.map(|tags| crate::tabs::shared::editor::CapturePalette {
                             tags: tags.clone(),
-                            work_uid: arrival_project.map(str::to_string),
+                            work_uid: arrival_project.and_then(|p| p.uid.clone()),
                         }),
                         tr!(synopsis()),
                     ));

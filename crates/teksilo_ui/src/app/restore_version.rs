@@ -143,7 +143,7 @@ pub fn restore_version(
                         &target,
                         &past,
                         stack,
-                        editors.work_unique_id().as_deref(),
+                        editors.open_work(),
                     ) {
                         return refuse(c, e);
                     }

@@ -44,6 +44,9 @@ pub trait ExportWorkUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "Comment", action = "GetRelationshipRO")]
 #[macros::uow_action(entity = "CommentReply", action = "GetMultiRO")]
 pub trait ExportWorkUnitOfWorkTrait: QueryUnitOfWork + Send + Sync {
+    /// This open Work's in-process key, for the event payload. See
+    /// [`common::open_work`].
+    fn open_work(&self, work_id: EntityId) -> common::open_work::OpenWork;
     fn publish_export_work_event(&self, ids: Vec<EntityId>, data: Option<String>);
 }
 
@@ -197,6 +200,7 @@ impl LongOperation for ExportWorkUseCase {
         // thread drains — so a listener that panics, cannot parse this, or is
         // not there at all changes nothing about the file just written.
         let origins = crate::events::ExportOrigins::new(
+            uow.open_work(work_id),
             &work_unique_id,
             &result.output_path,
             format!("{:?}", self.dto.format),

@@ -128,6 +128,10 @@ impl CommandUnitOfWork for CloseWorkUnitOfWork {
 #[macros::uow_action(entity = "Work", action = "RemoveMulti")]
 #[macros::uow_action(entity = "Work", action = "Get")]
 impl CloseWorkUnitOfWorkTrait for CloseWorkUnitOfWork {
+    fn open_work(&self, work_id: EntityId) -> common::open_work::OpenWork {
+        common::open_work::OpenWork::of(&self.context, work_id)
+    }
+
     fn publish_close_work_event(&self, ids: Vec<EntityId>, data: Option<String>) {
         self.event_hub.send_event(Event {
             origin: Origin::WorkManagement(CloseWork),

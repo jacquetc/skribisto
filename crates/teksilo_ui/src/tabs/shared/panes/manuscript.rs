@@ -143,7 +143,7 @@ pub(super) fn manuscript_page(
             // uid is read only once the answer is yes, because it is a store read
             // and a Note tab has no use for it.
             counts_toward_the_manuscript(tab)
-                .then(|| tab.work_unique_id())
+                .then(|| tab.arrival_project())
                 .flatten(),
             // A trashed item's text is read-only. The banner above it is a
             // statement, not a guard: before this the content beneath it was built

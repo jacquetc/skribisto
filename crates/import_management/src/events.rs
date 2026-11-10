@@ -90,7 +90,19 @@ pub struct ImportedRow {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ImportOrigins {
     pub version: u32,
-    /// Which project this import landed in — `Work.unique_id`, the durable one.
+    /// Which open copy of the project this import landed in: the key for
+    /// anything a listener holds in memory for it, such as its slot in a
+    /// `ProjectStore` or the arrival tally.
+    ///
+    /// Beside [`Self::work_unique_id`] rather than instead of it, because two
+    /// copies of one project can be open at once under one `unique_id` (a
+    /// backup beside its project, the file Save As left behind), and a listener
+    /// handed only that could not tell which of them took the import. Meaningful
+    /// only inside this process — see [`common::open_work`].
+    #[serde(with = "common::open_work::in_process")]
+    pub work: common::open_work::OpenWork,
+    /// Which project this import landed in — `Work.unique_id`, the durable one,
+    /// for what a listener keeps beyond this session.
     ///
     /// Here rather than left for a listener to work out, and that is the
     /// difference between a payload anyone can use and one only the application
@@ -107,12 +119,19 @@ pub struct ImportOrigins {
 }
 
 /// The version this build writes.
-pub const IMPORT_ORIGINS_VERSION: u32 = 1;
+///
+/// 2 added [`ImportOrigins::work`].
+pub const IMPORT_ORIGINS_VERSION: u32 = 2;
 
 impl ImportOrigins {
-    pub fn new(work_unique_id: impl Into<String>, rows: Vec<ImportedRow>) -> Self {
+    pub fn new(
+        work: common::open_work::OpenWork,
+        work_unique_id: impl Into<String>,
+        rows: Vec<ImportedRow>,
+    ) -> Self {
         Self {
             version: IMPORT_ORIGINS_VERSION,
+            work,
             work_unique_id: work_unique_id.into(),
             rows,
         }
@@ -147,6 +166,7 @@ mod tests {
 
     fn sample() -> ImportOrigins {
         ImportOrigins::new(
+            common::open_work::OpenWork::detached(),
             "the-lighthouse-uid",
             vec![
                 ImportedRow {
@@ -176,13 +196,18 @@ mod tests {
 
     /// The payload is read by code outside this workspace, so its field names are
     /// as much a contract as any id. Pinned literally rather than by round trip,
-    /// which would pass just as happily if every name changed at once.
+    /// which would pass just as happily if every name changed at once. Read from
+    /// the literal first, because `work` holds numbers no two runs agree on.
     #[test]
     fn the_payload_looks_exactly_like_this() {
-        let text = sample().to_payload().unwrap();
+        let literal = r#"{"version":2,"work":[7,3],"work_unique_id":"the-lighthouse-uid","rows":[{"item_uid":"8f14e45f-ceea-467a-9c05-1b4e0d2f9a11","action":"created","source_file_name":"novel-draft-3.docx","source_file_digest":"abc123","char_count":4200},{"item_uid":"b3d9a1c2-0000-4000-8000-000000000002","action":"comments_only","source_file_name":"chapter-7-editor.docx","source_file_digest":"def456","char_count":0}]}"#;
+        let read = ImportOrigins::from_payload(literal).expect("this payload");
+        assert_eq!(read.work_unique_id, "the-lighthouse-uid");
+        assert_eq!(read.rows, sample().rows);
+        let text = read.to_payload().unwrap();
         assert_eq!(
             text,
-            r#"{"version":1,"work_unique_id":"the-lighthouse-uid","rows":[{"item_uid":"8f14e45f-ceea-467a-9c05-1b4e0d2f9a11","action":"created","source_file_name":"novel-draft-3.docx","source_file_digest":"abc123","char_count":4200},{"item_uid":"b3d9a1c2-0000-4000-8000-000000000002","action":"comments_only","source_file_name":"chapter-7-editor.docx","source_file_digest":"def456","char_count":0}]}"#
+            r#"{"version":2,"work":[7,3],"work_unique_id":"the-lighthouse-uid","rows":[{"item_uid":"8f14e45f-ceea-467a-9c05-1b4e0d2f9a11","action":"created","source_file_name":"novel-draft-3.docx","source_file_digest":"abc123","char_count":4200},{"item_uid":"b3d9a1c2-0000-4000-8000-000000000002","action":"comments_only","source_file_name":"chapter-7-editor.docx","source_file_digest":"def456","char_count":0}]}"#
         );
     }
 

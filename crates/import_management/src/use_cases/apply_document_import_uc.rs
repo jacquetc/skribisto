@@ -231,6 +231,9 @@ pub trait ApplyDocumentImportUnitOfWorkFactoryTrait: Send + Sync {
 // it: `WorkInfo.file_name`, found by its `work` back-pointer (see the module doc).
 #[macros::uow_action(entity = "WorkInfo", action = "GetAll")]
 pub trait ApplyDocumentImportUnitOfWorkTrait: CommandUnitOfWork {
+    /// This open Work's in-process key, for the event payload. See
+    /// [`common::open_work`].
+    fn open_work(&self, work_id: EntityId) -> common::open_work::OpenWork;
     /// Read the prose a restore must not revert: see [`common::prose_keep`].
     fn keep_prose(
         &self,
@@ -870,7 +873,8 @@ impl ApplyDocumentImportUseCase {
         // not there at all changes nothing about what was just written.
         uow.publish_apply_document_import_event(
             created_ids.clone(),
-            crate::events::ImportOrigins::new(work_unique_id, origins).to_payload(),
+            crate::events::ImportOrigins::new(uow.open_work(dto.work_id), work_unique_id, origins)
+                .to_payload(),
         );
 
         self.snap_before = Some(snap_before);

@@ -2084,8 +2084,8 @@ impl EditorsViewModel {
     /// through the store off `ids.work_id`, because the uid is set when the
     /// project is first saved and this view-model long predates that. `None` is
     /// an **unsaved** project, which is the absence of an identity rather than
-    /// one more identity, and every per-project store in the workspace refuses
-    /// it rather than pooling them.
+    /// one more identity. For what is held only while the project is open, use
+    /// [`Self::open_work`].
     pub fn work_unique_id(&self) -> Option<String> {
         let work_id = self.ids.work_id.get()?;
         let uid = frontend::commands::work_commands::get_work(&self.app_ctx, &work_id)
@@ -2093,6 +2093,13 @@ impl EditorsViewModel {
             .flatten()?
             .unique_id;
         (!uid.is_empty()).then_some(uid)
+    }
+
+    /// This window's Work as an [`OpenWork`](common::open_work::OpenWork): the
+    /// key for what is held in memory while it is open, such as the arrival
+    /// tally. See [`crate::app_ids::AppIds::open_work`].
+    pub fn open_work(&self) -> Option<common::open_work::OpenWork> {
+        self.ids.open_work(&self.app_ctx)
     }
 
     pub fn request_save(&self) -> Option<u64> {

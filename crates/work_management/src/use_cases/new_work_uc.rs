@@ -62,6 +62,9 @@ pub trait NewWorkUnitOfWorkFactoryTrait: Send + Sync {
 // current list first.
 #[macros::uow_action(entity = "Root", action = "GetRelationship")]
 pub trait NewWorkUnitOfWorkTrait: CommandUnitOfWork {
+    /// This open Work's in-process key: what the extension seam's in-memory
+    /// state is keyed by. See [`common::open_work`].
+    fn open_work(&self, work_id: EntityId) -> common::open_work::OpenWork;
     fn publish_new_work_event(&self, ids: Vec<EntityId>, data: Option<String>);
 }
 
@@ -384,6 +387,7 @@ impl NewWorkUseCase {
         // read back off the store rather than off a bundle that does not exist.
         if crate::lifecycle::has_listeners() {
             crate::lifecycle::notify(crate::lifecycle::LifecycleEvent::Opened {
+                work: uow.open_work(work.id),
                 unique_id: work.unique_id.clone(),
                 path: dto.file_name.clone(),
                 live_binder_item_uids: created_item_uids,

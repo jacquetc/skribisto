@@ -109,7 +109,7 @@ pub(crate) fn note_in_prose_pane(tab: &ContentTab) -> Box<dyn Widget> {
         typewriter: tab.typewriter.clone(),
         caret: tab.caret_band(),
         games: tab.writing_games(),
-        arrival_project: tab.work_unique_id(),
+        arrival_project: tab.arrival_project(),
         tags: tab.tags(),
         mention_index: tab.mention_index(),
         extents: extents.clone(),
@@ -260,7 +260,7 @@ struct NoteInProseBody {
     typewriter: crate::shared::TypewriterSettings,
     caret: crate::shared::CaretBand,
     games: crate::writing_session::WritingGamesViewModel,
-    arrival_project: Option<String>,
+    arrival_project: Option<crate::tabs::shared::editor::ArrivalProject>,
     /// This project's palette, for the capture submenu on every row's editor. Held
     /// rather than reached for: it is Tier-2, so `app_state` would answer with whichever
     /// Work registered first.
@@ -399,8 +399,8 @@ fn work_uid_of(app_ctx: &Rc<frontend::AppContext>, ids: &AppIds) -> Option<Strin
 /// Put a reading's entry on the margin lane, or take it back off.
 ///
 /// Published when there is something to publish **and the page is on screen**, and
-/// **withdrawn by name** otherwise: an entry with no title and no alias, or a project with no
-/// uid yet, has nothing for the lane to mark, and clearing unconditionally would blank the
+/// **withdrawn by name** otherwise: an entry with no title and no alias, or a page with no open
+/// Work behind it, has nothing for the lane to mark, and clearing unconditionally would blank the
 /// marks a second window's reading of a different note had put there. The same "only if it is
 /// mine" rule `NoteInProseBody`'s [`Drop`] takes this off the lane with.
 ///
@@ -427,11 +427,11 @@ fn publish_subject(
     let subject = on_screen.then_some(()).and_then(|()| {
         entity
             .cloned()
-            .zip(work_uid_of(app_ctx, ids))
-            .map(|(entity, work_uid)| crate::margin_lane::LaneSubject {
+            .zip(ids.open_work(app_ctx))
+            .map(|(entity, work)| crate::margin_lane::LaneSubject {
                 entity,
                 table: table.to_vec(),
-                work_uid,
+                work,
                 publisher: scope,
             })
     });
@@ -1750,12 +1750,15 @@ mod tests {
     }
 
     /// A reading with nothing to publish (an entry with no title and no alias, or a
-    /// project with no uid yet) must **withdraw its own** subject and not blank the
+    /// page with no open Work behind it) must **withdraw its own** subject and not blank the
     /// marks a second window's reading of a different note put on the lane.
     #[test]
     fn a_reading_with_nothing_to_publish_leaves_another_readings_marks_alone() {
         let f = seed();
-        // No uid on this Work, so this page has nothing to publish.
+        // No open Work behind this page, so it has nothing to publish: a subject
+        // names the open Work it belongs to. (An unsaved Work used to be this case
+        // too; it now has a key like any other.)
+        f.tab.ids.work_id.set(None);
         let elsewhere = crate::margin_lane::LaneSubject {
             entity: skribisto_model::mentions::DiscoverableEntity {
                 id: f.note_id + 1_000,
@@ -1763,7 +1766,7 @@ mod tests {
                 aliases: vec!["Lizzy".into()],
             },
             table: Vec::new(),
-            work_uid: "another-project".into(),
+            work: common::open_work::OpenWork::detached(),
             publisher: crate::margin_lane::LaneScope::fresh(),
         };
         crate::margin_lane::set_active_subject(Some(elsewhere.clone()));

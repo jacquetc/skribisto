@@ -325,16 +325,9 @@ fn commit(
     // again because one of its texts would not write is a worse answer than a row
     // plus a sentence saying how many are missing.
     let mut failed = 0usize;
-    let work_uid = cx.editors.work_unique_id();
+    let work = cx.editors.open_work();
     for (role, text) in req.writable_prose() {
-        if let Err(e) = version_restore::apply(
-            &cx.docs,
-            created.id,
-            &role,
-            &text,
-            stack,
-            work_uid.as_deref(),
-        ) {
+        if let Err(e) = version_restore::apply(&cx.docs, created.id, &role, &text, stack, work) {
             eprintln!("recreate: writing {role:?} back failed: {e:?}");
             failed += 1;
         }

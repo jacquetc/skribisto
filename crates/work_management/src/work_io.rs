@@ -254,8 +254,13 @@ fn holds_another_project(source: &str, unique_id: &str) -> bool {
     }
 }
 
+// Eight, one over clippy's line: `work` and `kind` both answer the seam's "which
+// write is this, for which open project", and are passed straight through to
+// `bundle_contributors::collect` and `LifecycleEvent::Saved`.
+#[allow(clippy::too_many_arguments)]
 pub fn serialize_and_write(
     g: &Gathered,
+    work: common::open_work::OpenWork,
     target: String,
     shape: SkribShape,
     shape_tag: ShapeTag,
@@ -287,7 +292,7 @@ pub fn serialize_and_write(
     // rest on it — `manuscript_fingerprint` drops `carried` wherever it is asked,
     // which is what stops an extension's own bytes from looking like an edit to
     // the book.
-    let contributed = crate::bundle_contributors::collect(&bundle, &g.work.unique_id, kind);
+    let contributed = crate::bundle_contributors::collect(&bundle, work, &g.work.unique_id, kind);
 
     // A source holding another project is one this write replaces, not one it goes
     // on from: its history and the files it carries are that project's own.
@@ -346,6 +351,7 @@ pub fn serialize_and_write(
     // that both get here for free.
     if crate::lifecycle::has_listeners() {
         crate::lifecycle::notify(crate::lifecycle::LifecycleEvent::Saved {
+            work,
             unique_id: g.work.unique_id.clone(),
             path: target.clone(),
             kind,

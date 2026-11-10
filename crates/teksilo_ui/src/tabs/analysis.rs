@@ -192,8 +192,10 @@ fn builtin_categories() -> Vec<AnalysisCategorySpec> {
                     // measurement about the writing, and this is where a writer
                     // comes to read those.
                     AnalysisCategory::Arrivals => Box::new(arrivals_view(
-                        &common::arrival::shared()
-                            .session_total(&vm.work_unique_id().unwrap_or_default()),
+                        &vm.ids()
+                            .open_work(&vm.app_ctx())
+                            .map(|work| common::arrival::shared().session_total(work))
+                            .unwrap_or_default(),
                     )),
                 }),
             }

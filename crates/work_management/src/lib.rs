@@ -17,7 +17,7 @@ pub mod external_changes;
 /// Project opened / closed / saved, for code outside this workspace. The third
 /// part of the backend seam, beside `bundle_contributors` and `project_store`.
 pub mod lifecycle;
-/// One value per open project, keyed by `Work.unique_id` — the `Send + Sync`
+/// One value per open project, keyed by the open Work (`OpenWork`) — the `Send + Sync`
 /// half of an extension's own state, and the structural cure for the singleton
 /// that evicted one project's data when a second opened. Also part of the seam.
 pub mod project_store;

@@ -17,6 +17,10 @@ pub mod entities;
 pub mod error;
 pub mod event;
 pub mod long_operation;
+/// One open project in this process: the key for state held in memory while a
+/// project is open, where `Work.unique_id` would give two copies one slot — see
+/// the module docs.
+pub mod open_work;
 /// Undo and redo of a structural command keep the prose written since it — see
 /// the module docs.
 pub mod prose_keep;

@@ -120,6 +120,10 @@ impl QueryUnitOfWork for SaveWorkUnitOfWork {
 #[macros::uow_action(entity = "WorkInfo", action = "GetRelationshipRO", thread_safe = true)]
 #[macros::uow_action(entity = "ProgressSnapshot", action = "GetMultiRO", thread_safe = true)]
 impl SaveWorkUnitOfWorkTrait for SaveWorkUnitOfWork {
+    fn open_work(&self, work_id: EntityId) -> common::open_work::OpenWork {
+        common::open_work::OpenWork::of(&self.context, work_id)
+    }
+
     fn publish_save_work_event(&self, ids: Vec<EntityId>, data: Option<String>) {
         self.event_hub.send_event(Event {
             origin: Origin::WorkManagement(SaveWork),

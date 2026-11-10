@@ -165,6 +165,10 @@ impl CommandUnitOfWork for ApplyDocumentImportUnitOfWork {
 #[macros::uow_action(entity = "Asset", action = "GetMulti")]
 #[macros::uow_action(entity = "WorkInfo", action = "GetAll")]
 impl ApplyDocumentImportUnitOfWorkTrait for ApplyDocumentImportUnitOfWork {
+    fn open_work(&self, work_id: EntityId) -> common::open_work::OpenWork {
+        common::open_work::OpenWork::of(&self.context, work_id)
+    }
+
     fn keep_prose(
         &self,
         target: &common::snapshot::EntityTreeSnapshot,

@@ -23,6 +23,7 @@
 
 use teksilo::prelude::Signal;
 
+use common::open_work::OpenWork;
 use frontend::AppContext;
 use frontend::commands::{undo_redo_commands, work_info_commands};
 
@@ -69,6 +70,19 @@ impl AppIds {
                 .and_then(|list| list.into_iter().find(|wi| wi.work == Some(work_id)))
                 .map(|wi| wi.id),
         );
+    }
+
+    /// This window's Work as an [`OpenWork`]: the key for anything held in
+    /// memory while the project is open, such as an extension's
+    /// `ProjectStore` slot, the arrival tally or the off-thread change count.
+    /// `None` before a project is seeded.
+    ///
+    /// Not `Work.unique_id`, which every copy of a project shares (Save As keeps
+    /// it, a backup carries it), so two copies open side by side would share one
+    /// slot. Keep `unique_id` for what is written to disk. See
+    /// [`common::open_work`].
+    pub fn open_work(&self, ctx: &AppContext) -> Option<OpenWork> {
+        Some(OpenWork::of(&ctx.db_context, self.work_id.get()?))
     }
 
     /// Open a fresh per-`Work` undo stack and record its id. Call on `LoadWork`.

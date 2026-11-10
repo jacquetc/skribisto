@@ -112,10 +112,6 @@ struct Inner {
     /// [`SaveStateViewModel::poll_external`], so one extension change bumps the
     /// sequence once, not once per pumped frame.
     external_seen: Cell<u64>,
-    /// `Work.unique_id`, cached per `work_id`: the generation is asked for on
-    /// every pumped frame, and a store read per frame for a value that only
-    /// changes when the Work does would be waste.
-    uid_cache: RefCell<Option<(u64, String)>>,
     /// The save last asked for was preceded by an editor flush that failed —
     /// see [`SaveStateViewModel::request_save_after_flush`].
     flush_failed: Cell<bool>,
@@ -164,7 +160,6 @@ impl SaveStateViewModel {
                 external_saved: Cell::new(0),
                 external_in_flight: Cell::new(0),
                 external_seen: Cell::new(0),
-                uid_cache: RefCell::new(None),
                 flush_failed: Cell::new(false),
                 queue: RefCell::new(SaveQueue::default()),
                 last_completed: RefCell::new(None),
@@ -208,35 +203,18 @@ impl SaveStateViewModel {
             || self.external_generation() > self.inner.external_saved.get()
     }
 
-    /// This Work's [`frontend::work_management::external_changes`] generation.
+    /// This Work's [`frontend::work_management::external_changes`] generation,
+    /// `0` before a project is seeded.
     ///
-    /// `0` when the Work has no durable id yet, which is what an **unsaved**
-    /// project carries: there is nothing on disk for an extension to be
-    /// out of step with, and nothing to key a generation by.
+    /// Keyed by the open Work, never by `unique_id`: two copies of one project
+    /// open side by side share that, and closing one used to forget the count
+    /// the other was being compared with.
     fn external_generation(&self) -> u64 {
-        self.work_unique_id()
-            .map(|uid| frontend::work_management::external_changes::generation(&uid))
+        self.inner
+            .ids
+            .open_work(&self.inner.app_ctx)
+            .map(frontend::work_management::external_changes::generation)
             .unwrap_or(0)
-    }
-
-    /// This Work's `unique_id`, or `None` for an unsaved project. Cached once
-    /// known: a `unique_id` never changes for the life of a store row.
-    fn work_unique_id(&self) -> Option<String> {
-        let work_id = self.inner.ids.work_id.get()?;
-        if let Some((cached_id, uid)) = self.inner.uid_cache.borrow().as_ref()
-            && *cached_id == work_id
-        {
-            return Some(uid.clone());
-        }
-        let uid = frontend::commands::work_commands::get_work(&self.inner.app_ctx, &work_id)
-            .ok()
-            .flatten()?
-            .unique_id;
-        if uid.is_empty() {
-            return None;
-        }
-        *self.inner.uid_cache.borrow_mut() = Some((work_id, uid.clone()));
-        Some(uid)
     }
 
     /// Fold an extension's off-thread change into the edit sequence.
@@ -591,7 +569,6 @@ impl SaveStateViewModel {
         // The extensions' half starts clean too, baselined on whatever the
         // *incoming* Work's generation already is — the outgoing project's
         // number must not stay behind as the floor the new one is judged by.
-        *self.inner.uid_cache.borrow_mut() = None;
         let generation = self.external_generation();
         self.inner.external_saved.set(generation);
         self.inner.external_in_flight.set(generation);
@@ -1111,43 +1088,6 @@ mod tests {
 
     // ── The extensions' half, and a flush that failed ────────────────────────
 
-    /// A Work with a durable id in the store, so `external_changes` has a key.
-    fn work_with_uid(ctx: &AppContext, uid: &str) -> u64 {
-        use frontend::commands::{smart_punctuation_commands, work_commands};
-        use frontend::common::entities::QuoteStyle;
-        use frontend::direct_access::{CreateSmartPunctuationDto, CreateWorkDto};
-        let now = chrono::Utc::now();
-        let smart_punctuation = smart_punctuation_commands::create_orphan_smart_punctuation(
-            ctx,
-            None,
-            &CreateSmartPunctuationDto {
-                created_at: now,
-                updated_at: now,
-                override_app_default: false,
-                dashes: false,
-                ellipsis: false,
-                quotes: false,
-                quote_style: QuoteStyle::LocaleDefault,
-                pre_punctuation_spacing: false,
-                dialogue_marker: false,
-                auto_lists: true,
-            },
-        )
-        .expect("smart punctuation")
-        .id;
-        work_commands::create_orphan_work(
-            ctx,
-            None,
-            &CreateWorkDto {
-                unique_id: uid.into(),
-                smart_punctuation,
-                ..Default::default()
-            },
-        )
-        .expect("work")
-        .id
-    }
-
     /// An extension's off-thread change reaches every surface through the one
     /// counter they all read — folded in by the frame tick's poll, exactly once —
     /// and a guard asked before any frame pumps is not fooled in the meantime.
@@ -1156,14 +1096,17 @@ mod tests {
         use frontend::work_management::external_changes;
         let ctx = Rc::new(AppContext::new());
         let ids = AppIds::new();
-        let uid = "save-state-test-poll";
-        ids.work_id.set(Some(work_with_uid(&ctx, uid)));
+        ids.work_id.set(Some(crate::test_support::work_with_uid(
+            &ctx,
+            "save-state-test-poll",
+        )));
+        let work = ids.open_work(&ctx).expect("a seeded Work");
         let vm = SaveStateViewModel::new(ctx, ids);
         vm.mark_clean();
         assert!(!vm.poll_external());
         assert!(!vm.is_unsaved());
 
-        external_changes::mark_changed(uid);
+        external_changes::mark_changed(work);
         assert!(vm.is_unsaved(), "seen before any frame pumps");
         assert!(vm.poll_external(), "the first poll folds it in");
         assert_eq!(vm.dirty_seq().get(), 1);
@@ -1176,7 +1119,7 @@ mod tests {
             "a clean slate baselines on the current generation"
         );
         assert!(!vm.poll_external());
-        external_changes::forget(uid);
+        external_changes::forget(work);
     }
 
     /// A save credited with text an editor could not hand over would read as

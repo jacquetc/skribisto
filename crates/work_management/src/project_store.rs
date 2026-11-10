@@ -16,18 +16,25 @@
 //! saved, with no error anywhere. This was not hypothetical; it is the shape the
 //! first real extension shipped with.
 //!
-//! A `HashMap` keyed by `Work.unique_id` cannot have that bug: there is no
-//! "current project" to repoint.
+//! A `HashMap` keyed by the project cannot have that bug: there is no "current
+//! project" to repoint.
 //!
-//! ## Why the by-uid methods are not public
+//! ## Keyed by the open Work, not by `unique_id`
 //!
-//! `ProjectStore::scoped` is the only public door, and it returns `None` for
-//! the empty uid — which is exactly what an unsaved `Work` carries. So "a handle
-//! answering for no project" is a value that cannot be constructed, rather than a
-//! runtime check every caller has to remember (the check `uid_is_usable()` exists
-//! for on the UI side, generalised into the type). A public `set(uid, value)`
-//! would be precisely the by-uid-string write path this abolishes, and it would
-//! accept `""`.
+//! The key is [`OpenWork`](common::open_work::OpenWork), one per Work open in this process. It used to be
+//! `Work.unique_id`, and that gave two projects one slot whenever two copies of
+//! one project were open together, which is ordinary: Save As keeps the id, so
+//! does a copy made in a file manager, and a backup carries it by design. Open a
+//! backup from the Backups list beside the project, and the backup's state loaded
+//! over the live project's, which the live project's next save then wrote out as
+//! its own. Closing either copy emptied the slot both were using.
+//!
+//! Keep `unique_id` for what outlives the process: a file in the project's
+//! bundle, a record kept between sessions, a request to a service. See
+//! [`common::open_work`] for the rule.
+//!
+//! An unsaved project has a key like any other, so an extension can hold state
+//! for it from the start, and its first save writes that state out.
 //!
 //! ## Send + Sync by construction
 //!
@@ -39,10 +46,12 @@
 use std::collections::{BTreeMap, HashMap};
 use std::sync::{Arc, RwLock};
 
+pub use common::open_work::OpenWork;
+
 /// A `Send + Sync` store of one value per open project, keyed by
-/// `Work.unique_id`. Cheap to clone; every clone shares one map.
+/// [`OpenWork`]. Cheap to clone; every clone shares one map.
 pub struct ProjectStore<T> {
-    inner: Arc<RwLock<HashMap<String, T>>>,
+    inner: Arc<RwLock<HashMap<OpenWork, T>>>,
 }
 
 // Hand-written rather than derived: `#[derive(Clone)]` would demand `T: Clone`,
@@ -89,75 +98,63 @@ impl<T> ProjectStore<T> {
         self.len() == 0
     }
 
-    fn read(&self) -> std::sync::RwLockReadGuard<'_, HashMap<String, T>> {
+    fn read(&self) -> std::sync::RwLockReadGuard<'_, HashMap<OpenWork, T>> {
         // Poison-safe, like `lock_or_recover` elsewhere in the workspace: a
         // panic in an unrelated extension must not make a manuscript unsaveable.
         self.inner.read().unwrap_or_else(|e| e.into_inner())
     }
 
-    fn write(&self) -> std::sync::RwLockWriteGuard<'_, HashMap<String, T>> {
+    fn write(&self) -> std::sync::RwLockWriteGuard<'_, HashMap<OpenWork, T>> {
         self.inner.write().unwrap_or_else(|e| e.into_inner())
     }
 
-    // ── The by-uid plumbing. `pub(crate)` on purpose — see the module docs. ──
+    // ── The plumbing behind `WorkScoped`. ────────────────────────────────────
 
-    pub(crate) fn get_by_uid(&self, uid: &str) -> Option<T>
+    pub(crate) fn get_by_work(&self, work: OpenWork) -> Option<T>
     where
         T: Clone,
     {
-        self.read().get(uid).cloned()
+        self.read().get(&work).cloned()
     }
 
-    pub(crate) fn with_by_uid<R>(&self, uid: &str, f: impl FnOnce(&T) -> R) -> Option<R> {
-        self.read().get(uid).map(f)
+    pub(crate) fn with_by_work<R>(&self, work: OpenWork, f: impl FnOnce(&T) -> R) -> Option<R> {
+        self.read().get(&work).map(f)
     }
 
-    pub(crate) fn set_by_uid(&self, uid: &str, value: T) {
-        if uid.is_empty() {
-            return;
-        }
-        self.write().insert(uid.to_string(), value);
+    pub(crate) fn set_by_work(&self, work: OpenWork, value: T) {
+        self.write().insert(work, value);
     }
 
-    pub(crate) fn update_by_uid<R>(&self, uid: &str, f: impl FnOnce(&mut T) -> R) -> Option<R>
+    pub(crate) fn update_by_work<R>(&self, work: OpenWork, f: impl FnOnce(&mut T) -> R) -> R
     where
         T: Default,
     {
-        if uid.is_empty() {
-            return None;
-        }
         let mut guard = self.write();
-        Some(f(guard.entry(uid.to_string()).or_default()))
+        f(guard.entry(work).or_default())
     }
 
-    pub(crate) fn forget_by_uid(&self, uid: &str) {
-        self.write().remove(uid);
+    pub(crate) fn forget_by_work(&self, work: OpenWork) {
+        self.write().remove(&work);
     }
 
     // ── The public door ──────────────────────────────────────────────────────
 
-    /// A handle permanently bound to one project, or `None` if `uid` names no
-    /// project at all.
+    /// A handle permanently bound to one open project.
     ///
-    /// The empty string is the uid an **unsaved** `Work` carries, and writing
-    /// under it would pool every unsaved project's state into one slot that no
-    /// save ever asks for. Refusing to build the handle is what makes that
-    /// unexpressible instead of merely wrong.
-    pub fn scoped(&self, uid: impl AsRef<str>) -> Option<WorkScoped<T>> {
-        let uid = uid.as_ref();
-        if uid.is_empty() {
-            return None;
-        }
-        Some(WorkScoped {
+    /// Take `work` from the seam: [`LifecycleEvent`](crate::lifecycle::LifecycleEvent)
+    /// and [`SaveContext`](crate::bundle_contributors::SaveContext) carry it, and
+    /// the UI side derives it from the window's Work id.
+    pub fn scoped(&self, work: OpenWork) -> WorkScoped<T> {
+        WorkScoped {
             store: self.clone(),
-            uid: Arc::from(uid),
-        })
+            work,
+        }
     }
 
     /// Drop a project's slot — on `LifecycleEvent::Closed`, or whenever the
     /// caller knows the project is gone.
     ///
-    /// Takes a [`WorkScoped`] rather than a raw uid so it cannot name a project
+    /// Takes a [`WorkScoped`] rather than a bare key so it cannot name a project
     /// the caller never opened.
     pub fn evict(&self, scope: &WorkScoped<T>) {
         scope.forget();
@@ -172,14 +169,14 @@ impl<T> ProjectStore<T> {
 /// others open afterwards.
 pub struct WorkScoped<T> {
     store: ProjectStore<T>,
-    uid: Arc<str>,
+    work: OpenWork,
 }
 
 impl<T> Clone for WorkScoped<T> {
     fn clone(&self) -> Self {
         Self {
             store: self.store.clone(),
-            uid: Arc::clone(&self.uid),
+            work: self.work,
         }
     }
 }
@@ -187,20 +184,20 @@ impl<T> Clone for WorkScoped<T> {
 impl<T> std::fmt::Debug for WorkScoped<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("WorkScoped")
-            .field("uid", &self.uid)
+            .field("work", &self.work)
             .finish()
     }
 }
 
 impl<T> WorkScoped<T> {
-    /// The `Work.unique_id` this handle is bound to. Never empty.
-    pub fn uid(&self) -> &str {
-        &self.uid
+    /// The open project this handle is bound to.
+    pub fn work(&self) -> OpenWork {
+        self.work
     }
 
-    /// Whether this handle names the same project as `uid`.
-    pub fn is(&self, uid: &str) -> bool {
-        &*self.uid == uid
+    /// Whether this handle names the open project `work`.
+    pub fn is(&self, work: OpenWork) -> bool {
+        self.work == work
     }
 
     /// This project's value, cloned out.
@@ -208,12 +205,12 @@ impl<T> WorkScoped<T> {
     where
         T: Clone,
     {
-        self.store.get_by_uid(&self.uid)
+        self.store.get_by_work(self.work)
     }
 
     /// Read this project's value in place, without cloning it.
     pub fn with<R>(&self, f: impl FnOnce(&T) -> R) -> Option<R> {
-        self.store.with_by_uid(&self.uid, f)
+        self.store.with_by_work(self.work, f)
     }
 
     pub fn get_or_default(&self) -> T
@@ -224,7 +221,7 @@ impl<T> WorkScoped<T> {
     }
 
     pub fn set(&self, value: T) {
-        self.store.set_by_uid(&self.uid, value);
+        self.store.set_by_work(self.work, value);
     }
 
     /// Mutate this project's value in place, creating it from `Default` if the
@@ -234,14 +231,12 @@ impl<T> WorkScoped<T> {
     where
         T: Default,
     {
-        self.store
-            .update_by_uid(&self.uid, f)
-            .expect("a WorkScoped is never built for the empty uid")
+        self.store.update_by_work(self.work, f)
     }
 
     /// Whether this project has a value at all.
     pub fn exists(&self) -> bool {
-        self.store.with_by_uid(&self.uid, |_| ()).is_some()
+        self.store.with_by_work(self.work, |_| ()).is_some()
     }
 
     /// Drop this project's slot, back to the state before anything was stored.
@@ -253,15 +248,15 @@ impl<T> WorkScoped<T> {
     /// here, or it leaves an empty file behind in a project that was never
     /// touched.
     pub fn forget(&self) {
-        self.store.forget_by_uid(&self.uid);
+        self.store.forget_by_work(self.work);
     }
 }
 
 /// Emptying a project's slot when the project closes — see
 /// [`crate::lifecycle::evict_on_close`], which is what calls this.
 impl<T: Send + Sync> crate::lifecycle::ProjectSlots for ProjectStore<T> {
-    fn forget(&self, work_unique_id: &str) {
-        self.forget_by_uid(work_unique_id);
+    fn forget(&self, work: OpenWork) {
+        self.forget_by_work(work);
     }
 }
 
@@ -270,7 +265,7 @@ impl<T: Send + Sync> crate::lifecycle::ProjectSlots for ProjectStore<T> {
 ///
 /// Replaces a hand-rolled contributor plus an "is this my project?" equality
 /// check with a `HashMap` lookup: there is no current project to compare
-/// against, so every uid a save asks about is answered independently and two
+/// against, so every project a save asks about is answered independently and two
 /// simultaneously-open projects cannot leak into each other's bundle.
 ///
 /// A project with no value writes **no file**, and carry-through then preserves
@@ -287,7 +282,7 @@ pub struct ProjectStoreContributor<T> {
 }
 
 impl<T: Send + Sync> crate::bundle_contributors::BundleContributor for ProjectStoreContributor<T> {
-    /// Ignores everything in the context but the project id, deliberately: a
+    /// Ignores everything in the context but the open project, deliberately: a
     /// store's contents are whatever the UI last put there, and writing them out
     /// is the same act whether the writer saved, saved-as or a backup ran. A
     /// contributor that *does* care which write this is — one recording history,
@@ -299,7 +294,7 @@ impl<T: Send + Sync> crate::bundle_contributors::BundleContributor for ProjectSt
         let mut out = BTreeMap::new();
         if let Some(bytes) = self
             .store
-            .with_by_uid(&ctx.work_unique_id, |value| (self.serialize)(value))
+            .with_by_work(ctx.work, |value| (self.serialize)(value))
             .transpose()?
         {
             out.insert(self.path.to_string(), bytes);
@@ -312,6 +307,12 @@ impl<T: Send + Sync> crate::bundle_contributors::BundleContributor for ProjectSt
 mod tests {
     use super::*;
     use crate::bundle_contributors::{BundleContributor, SaveContext};
+    use std::sync::LazyLock;
+
+    /// Two open projects. Every test builds its own store, so sharing the keys
+    /// across tests cannot make two of them see each other.
+    static A: LazyLock<OpenWork> = LazyLock::new(OpenWork::detached);
+    static B: LazyLock<OpenWork> = LazyLock::new(OpenWork::detached);
 
     #[derive(Clone, Debug, Default, PartialEq, Eq)]
     struct Plan {
@@ -327,8 +328,8 @@ mod tests {
     #[test]
     fn two_projects_in_one_store_never_see_each_others_data() {
         let store: ProjectStore<Plan> = ProjectStore::new();
-        let a = store.scoped("uid-a").expect("a real uid");
-        let b = store.scoped("uid-b").expect("a real uid");
+        let a = store.scoped(*A);
+        let b = store.scoped(*B);
 
         a.set(Plan {
             beats: vec!["opening".into()],
@@ -343,17 +344,14 @@ mod tests {
         assert_eq!(store.len(), 2);
     }
 
-    /// The empty uid is what an **unsaved** `Work` carries. A handle for it must
-    /// not exist, so nothing can pool every unsaved project into one slot.
+    /// An unsaved project has a key like any other, so the handle always exists:
+    /// there is no "no project" value left to refuse.
     #[test]
-    fn a_scoped_handle_cannot_be_built_for_the_empty_uid() {
+    fn every_open_project_gets_a_handle() {
         let store: ProjectStore<Plan> = ProjectStore::new();
-        assert!(store.scoped("").is_none());
-        assert!(store.scoped(String::new()).is_none());
-        // …and the crate-internal path refuses it too, so no internal caller can
-        // sneak one in behind the public door.
-        store.set_by_uid("", Plan::default());
-        assert!(store.is_empty());
+        store.scoped(*A).set(Plan::default());
+        assert!(store.scoped(*A).exists());
+        assert!(!store.scoped(*B).exists());
     }
 
     /// A scoped handle names one project for good — the property that lets an
@@ -361,12 +359,12 @@ mod tests {
     #[test]
     fn a_scope_cannot_be_repointed() {
         let store: ProjectStore<Plan> = ProjectStore::new();
-        let a = store.scoped("uid-a").unwrap();
+        let a = store.scoped(*A);
         let a2 = a.clone();
-        let _b = store.scoped("uid-b").unwrap();
-        assert_eq!(a.uid(), "uid-a");
-        assert_eq!(a2.uid(), "uid-a");
-        assert!(a.is("uid-a") && !a.is("uid-b"));
+        let _b = store.scoped(*B);
+        assert_eq!(a.work(), *A);
+        assert_eq!(a2.work(), *A);
+        assert!(a.is(*A) && !a.is(*B));
     }
 
     /// `update` creates from `Default` and returns whatever the closure returns —
@@ -375,7 +373,7 @@ mod tests {
     #[test]
     fn update_creates_on_first_touch_and_reports_the_change() {
         let store: ProjectStore<Plan> = ProjectStore::new();
-        let a = store.scoped("uid-a").unwrap();
+        let a = store.scoped(*A);
         assert!(!a.exists());
 
         let changed = a.update(|p| {
@@ -398,7 +396,7 @@ mod tests {
             serialize,
         };
         assert!(
-            c.files(&SaveContext::for_project("uid-never-opened"))
+            c.files(&SaveContext::for_work(OpenWork::detached()))
                 .unwrap()
                 .is_empty()
         );
@@ -409,7 +407,7 @@ mod tests {
     #[test]
     fn the_contributor_writes_an_emptied_value_so_the_removal_persists() {
         let store: ProjectStore<Plan> = ProjectStore::new();
-        let a = store.scoped("uid-a").unwrap();
+        let a = store.scoped(*A);
         a.set(Plan {
             beats: vec!["opening".into()],
         });
@@ -420,7 +418,7 @@ mod tests {
             store: store.clone(),
             serialize,
         };
-        let files = c.files(&SaveContext::for_project("uid-a")).unwrap();
+        let files = c.files(&SaveContext::for_work(*A)).unwrap();
         assert_eq!(
             files.get("test/plan.txt").map(Vec::as_slice),
             Some(&b""[..])
@@ -432,10 +430,10 @@ mod tests {
     #[test]
     fn the_contributor_answers_per_project() {
         let store: ProjectStore<Plan> = ProjectStore::new();
-        store.scoped("uid-a").unwrap().set(Plan {
+        store.scoped(*A).set(Plan {
             beats: vec!["a".into()],
         });
-        store.scoped("uid-b").unwrap().set(Plan {
+        store.scoped(*B).set(Plan {
             beats: vec!["b".into()],
         });
         let c = ProjectStoreContributor {
@@ -444,14 +442,14 @@ mod tests {
             serialize,
         };
         assert_eq!(
-            c.files(&SaveContext::for_project("uid-a"))
+            c.files(&SaveContext::for_work(*A))
                 .unwrap()
                 .get("test/plan.txt")
                 .unwrap(),
             b"a"
         );
         assert_eq!(
-            c.files(&SaveContext::for_project("uid-b"))
+            c.files(&SaveContext::for_work(*B))
                 .unwrap()
                 .get("test/plan.txt")
                 .unwrap(),
@@ -460,13 +458,13 @@ mod tests {
     }
 
     /// Eviction is what stops a session accumulating every project it ever
-    /// opened — and, worse, re-opening one finding a stale slot instead of
-    /// loading from disk.
+    /// opened. A reopen is a new Work with a new key, so it never finds the old
+    /// slot; without eviction the old slot simply stays.
     #[test]
     fn evicting_a_scope_forgets_only_that_project() {
         let store: ProjectStore<Plan> = ProjectStore::new();
-        let a = store.scoped("uid-a").unwrap();
-        let b = store.scoped("uid-b").unwrap();
+        let a = store.scoped(*A);
+        let b = store.scoped(*B);
         a.set(Plan::default());
         b.set(Plan {
             beats: vec!["kept".into()],
@@ -484,9 +482,9 @@ mod tests {
     fn clones_share_one_map() {
         let store: ProjectStore<Plan> = ProjectStore::new();
         let other = store.clone();
-        store.scoped("uid-a").unwrap().set(Plan {
+        store.scoped(*A).set(Plan {
             beats: vec!["x".into()],
         });
-        assert!(other.scoped("uid-a").unwrap().exists());
+        assert!(other.scoped(*A).exists());
     }
 }

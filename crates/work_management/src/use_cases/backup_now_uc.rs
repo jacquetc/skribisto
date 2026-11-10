@@ -86,6 +86,9 @@ pub trait BackupNowUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "WorkInfo", action = "GetRelationshipRO")]
 #[macros::uow_action(entity = "ProgressSnapshot", action = "GetMultiRO")]
 pub trait BackupNowUnitOfWorkTrait: QueryUnitOfWork + Send + Sync {
+    /// This open Work's in-process key: what the extension seam's in-memory
+    /// state is keyed by. See [`common::open_work`].
+    fn open_work(&self, work_id: EntityId) -> common::open_work::OpenWork;
     fn publish_backup_now_event(&self, ids: Vec<EntityId>, data: Option<String>);
 }
 
@@ -267,6 +270,7 @@ fn run_backup(
     let source = skrib::canonical_project_path(&source);
     let work_id = g.work.id;
     let unique_id = g.work.unique_id.clone();
+    let work = uow.open_work(g.work.id);
 
     // Build the bundle once (pure, in-memory) and reuse it for every destination.
     // Fingerprint BEFORE marking it a backup, so `backup_created_at` doesn't make
@@ -308,6 +312,7 @@ fn run_backup(
     // from the writer pressing save.
     let contributed = crate::bundle_contributors::collect(
         &bundle,
+        work,
         &unique_id,
         crate::lifecycle::SaveKind::Backup,
     );
@@ -391,6 +396,7 @@ fn run_backup(
                     // know about each.
                     if crate::lifecycle::has_listeners() {
                         crate::lifecycle::notify(crate::lifecycle::LifecycleEvent::Saved {
+                            work,
                             unique_id: unique_id.clone(),
                             path: target.clone(),
                             kind: crate::lifecycle::SaveKind::Backup,

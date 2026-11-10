@@ -712,3 +712,42 @@ pub(crate) fn list_row_names(tree: &mut WidgetTree) -> Vec<String> {
         .map(|(_, node)| node.label().unwrap_or_default().to_string())
         .collect()
 }
+
+/// A Work with `unique_id` set to `uid` in `ctx`'s store, owning the punctuation row
+/// every Work must have its own of. Two calls with one `uid` build two open copies of one
+/// project, as a backup opened beside it does.
+pub(crate) fn work_with_uid(ctx: &frontend::AppContext, uid: &str) -> u64 {
+    use frontend::commands::{smart_punctuation_commands, work_commands};
+    use frontend::common::entities::QuoteStyle;
+    use frontend::direct_access::{CreateSmartPunctuationDto, CreateWorkDto};
+    let now = chrono::Utc::now();
+    let smart_punctuation = smart_punctuation_commands::create_orphan_smart_punctuation(
+        ctx,
+        None,
+        &CreateSmartPunctuationDto {
+            created_at: now,
+            updated_at: now,
+            override_app_default: false,
+            dashes: false,
+            ellipsis: false,
+            quotes: false,
+            quote_style: QuoteStyle::LocaleDefault,
+            pre_punctuation_spacing: false,
+            dialogue_marker: false,
+            auto_lists: true,
+        },
+    )
+    .expect("smart punctuation")
+    .id;
+    work_commands::create_orphan_work(
+        ctx,
+        None,
+        &CreateWorkDto {
+            unique_id: uid.into(),
+            smart_punctuation,
+            ..Default::default()
+        },
+    )
+    .expect("work")
+    .id
+}

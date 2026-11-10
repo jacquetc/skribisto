@@ -33,6 +33,9 @@ pub trait CloseWorkUnitOfWorkFactoryTrait: Send + Sync {
 // `execute` for why the ordering is the whole point.
 #[macros::uow_action(entity = "Work", action = "Get")]
 pub trait CloseWorkUnitOfWorkTrait: CommandUnitOfWork {
+    /// This open Work's in-process key: what the extension seam's in-memory
+    /// state is keyed by. See [`common::open_work`].
+    fn open_work(&self, work_id: EntityId) -> common::open_work::OpenWork;
     fn publish_close_work_event(&self, ids: Vec<EntityId>, data: Option<String>);
 }
 
@@ -85,9 +88,14 @@ impl CloseWorkUseCase {
                 uow.publish_close_work_event(vec![work_id], None);
                 // The backend seam's "this project is gone" hook — after the
                 // teardown, since that is what it reports, and unconditional
-                // (unlike `Opened`/`Saved`) because the payload is one string
-                // already in hand and eviction rides on it.
-                crate::lifecycle::notify(crate::lifecycle::LifecycleEvent::Closed { unique_id });
+                // (unlike `Opened`/`Saved`) because the payload is already in
+                // hand and eviction rides on it. The key is the closing Work's
+                // own, so another copy of the project open under the same
+                // `unique_id` keeps its state.
+                crate::lifecycle::notify(crate::lifecycle::LifecycleEvent::Closed {
+                    work: uow.open_work(work_id),
+                    unique_id,
+                });
                 Ok(())
             }
             Err(e) => {

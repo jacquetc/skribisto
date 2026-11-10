@@ -68,6 +68,9 @@ pub trait SaveAsUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "WorkInfo", action = "GetRelationshipRO")]
 #[macros::uow_action(entity = "ProgressSnapshot", action = "GetMultiRO")]
 pub trait SaveAsUnitOfWorkTrait: QueryUnitOfWork + Send + Sync {
+    /// This open Work's in-process key: what the extension seam's in-memory
+    /// state is keyed by. See [`common::open_work`].
+    fn open_work(&self, work_id: EntityId) -> common::open_work::OpenWork;
     fn publish_save_as_event(&self, ids: Vec<EntityId>, data: Option<String>);
 }
 
@@ -269,6 +272,7 @@ fn run_save_as(
     };
     let output = work_io::serialize_and_write(
         &g,
+        uow.open_work(work_id),
         target,
         shape,
         tag,

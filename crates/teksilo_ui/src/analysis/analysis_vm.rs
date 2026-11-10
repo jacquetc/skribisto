@@ -256,7 +256,8 @@ impl AnalysisViewModel {
     /// This project's durable `Work.unique_id`, or `None` when it has none.
     ///
     /// `None` is an **unsaved** project — the empty uid, which is the absence of
-    /// an identity rather than one, and which every per-project store refuses.
+    /// an identity rather than one. For what is held only while the project is
+    /// open, use `ids().open_work(..)` instead, which an unsaved project has too.
     ///
     /// Read through the store rather than held: it is set when the project is
     /// first saved, and this view-model may have been built before that.
