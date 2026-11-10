@@ -63,9 +63,9 @@ use teksilo::prelude::*;
 use teksilo::settings::{SettingsExt, TEXT_SCALE_KEY};
 use teksilo::widgets::{
     Button, ButtonVariant, Divider, Expand, FixedSize, FontPicker, FormLayout, HStack, IconButton,
-    LanguageSwitcher, MessageBox, MessageBoxButton, MessageBoxButtons, Padding, Panel, RadioButton,
-    RadioGroup, Slider, Spacer, StandardButton, TextScaleControl, TextWidget, ThemeSwitcher,
-    Toggle, VStack,
+    LanguageSwitcher, MessageBox, MessageBoxButton, MessageBoxButtons, MinSize, Padding, Panel,
+    RadioButton, RadioGroup, Slider, Spacer, StandardButton, TextScaleControl, TextWidget,
+    ThemeSwitcher, Toggle, VStack,
 };
 
 mod content;
@@ -103,13 +103,15 @@ use crate::shared::shortcut_group::{ShortcutGroup, ShortcutGroupExt};
 use crate::shared::{HighlightScope, TypewriterAnchor};
 use skribisto_model::ChapterMode;
 
-/// The card's **preferred** dimensions (a compact two-pane preferences window).
+/// The card's **preferred** dimensions at 100 % interface text (a compact
+/// two-pane preferences window).
 ///
-/// Preferred, not fixed: [`SettingsPanel::card_size`] shrinks the card into
-/// whatever the window actually offers. Project windows declare a
-/// `.min_size(800, 600)` (`shell/windows.rs`), and a 620-tall card in a 600-tall
-/// window used to lose the bottom 20 px of the footer band — *Done* clipped in
-/// half, on every 1366×768 @125 % and 1920×1080 @175 % desktop as well.
+/// Preferred, not fixed: [`SettingsPanel::card_size`] grows the card with the
+/// interface text scale (see [`card_growth`]), then shrinks it into whatever the
+/// window actually offers. Project windows declare a `.min_size(800, 600)`
+/// (`shell/windows.rs`), and a 620-tall card in a 600-tall window used to lose
+/// the bottom 20 px of the footer band — *Done* clipped in half, on every
+/// 1366×768 @125 % and 1920×1080 @175 % desktop as well.
 const CARD_W: f32 = 920.0;
 const CARD_H: f32 = 620.0;
 /// The floor the card will not shrink past: below this the two-pane layout stops
@@ -119,9 +121,17 @@ const MIN_CARD_H: f32 = 360.0;
 /// Breathing room left between the card and the window edge once the card has had
 /// to shrink at all — the gutter that says "this is a window over a window".
 const VIEWPORT_MARGIN: f32 = 32.0;
+/// The header strip's height at 100 % text, and its floor: the strip takes its
+/// content's natural height when larger text needs more (see `build`).
 const HEADER_H: f32 = 44.0;
+/// The footer band's height at 100 % text, and its floor, like [`HEADER_H`].
 const FOOTER_H: f32 = 56.0;
+/// The rail's width at 100 % text, and its floor. See [`rail_width`].
 const TREE_W: f32 = 262.0;
+/// The largest share of the card the rail may take when larger text widens it.
+/// At 100 % the rail is 262 of 920 px, about 28 %; a third leaves the page it
+/// shows at least twice the rail's width.
+const RAIL_SHARE_MAX: f32 = 1.0 / 3.0;
 /// The vertical rule between the rail and the pane.
 const RULE_W: f32 = 1.0;
 /// The default text-scale factor (framework `TEXT_SCALE_KEY` baseline).
@@ -142,8 +152,42 @@ const CLOSE_SHORTCUT: &str = "settings.close";
 /// so one `.respect_intrinsic()`, or one refactor dropping the `Expand`, would
 /// have blown the card open, and every layout pass paid for a full extra
 /// unbounded walk per pane in the meantime.
-fn pane_width(card_w: f32) -> f32 {
-    (card_w - TREE_W - RULE_W).max(0.0)
+fn pane_width(card_w: f32, rail_w: f32) -> f32 {
+    (card_w - rail_w - RULE_W).max(0.0)
+}
+
+/// How much the card's preferred size grows at an effective interface text
+/// scale of `text_scale` (the user's setting times the system's text-size
+/// preference, as `LayoutContext::text_scale` reports it).
+///
+/// The text inside the card grows with that scale, and a card of fixed size
+/// then cut the rail's page names, the search field's hint and the Keymap's
+/// command names short. The card grows in proportion instead, so a page laid
+/// out at 100 % keeps its proportions at 200 %, and the window remains the
+/// only limit (see [`SettingsPanel::card_size`]).
+///
+/// Never below 1: at a scale under 100 % only the text shrinks, while the
+/// icons, controls and paddings keep their size, so a card shrunk with it would
+/// squeeze those instead. A non-finite scale counts as 100 %.
+fn card_growth(text_scale: f32) -> f32 {
+    if text_scale.is_finite() {
+        text_scale.max(1.0)
+    } else {
+        1.0
+    }
+}
+
+/// The rail's width in a card `card_w` wide at an effective text scale of
+/// `text_scale`.
+///
+/// The rail grows with the text it lists, like the card, but takes at most
+/// [`RAIL_SHARE_MAX`] of the card, so a window too small for the grown card
+/// does not give the rail the room its page needs. Never narrower than
+/// [`TREE_W`], which is what it has always been, at every window size.
+fn rail_width(card_w: f32, text_scale: f32) -> f32 {
+    (TREE_W * card_growth(text_scale))
+        .min(card_w * RAIL_SHARE_MAX)
+        .max(TREE_W)
 }
 
 /// Present the settings window, however it was reached.
@@ -185,6 +229,10 @@ pub struct SettingsPanel {
     /// A plain `Signal`, not a `Signal::map` of a card-width one: a derived signal
     /// is read-only and `observe()` panics on it, and a `Prop` observes.
     pane_w: Signal<f32>,
+    /// The rail's live width, written beside [`Self::pane_w`] for the same reason:
+    /// it follows the text scale and the window (see [`rail_width`]), and only
+    /// [`Widget::layout_response`] learns both.
+    rail_w: Signal<f32>,
     /// The Tier-2 bundle for the Work the OPENING window shows, or `None` when
     /// the window that opened this one holds no project at all.
     ///
@@ -329,7 +377,8 @@ impl SettingsPanel {
             // Every door but the two general ones names a page; those two say so
             // with `at_no_page_in_particular`.
             lands_on_page: true,
-            pane_w: Signal::new(pane_width(CARD_W)),
+            pane_w: Signal::new(pane_width(CARD_W, TREE_W)),
+            rail_w: Signal::new(TREE_W),
             session,
             _undo_suspend: undo.map(|g| g.suspend()),
         }
@@ -343,14 +392,6 @@ impl SettingsPanel {
         self
     }
 
-    /// The card's real size inside the slot the modal overlay handed it.
-    ///
-    /// `OverlayPlacement::Centered` clamps an overlay's bounds to the viewport and
-    /// then lays its content out at exactly those bounds, so `slot` *is* the
-    /// viewport once the card no longer fits — which is what makes this stable:
-    /// [`Widget::layout_response`] always reports the full [`CARD_W`]×[`CARD_H`]
-    /// aspiration, so the slot handed back is `min(preferred, viewport)` on every
-    /// pass rather than a size that shrinks by a margin each time round.
     /// Ctrl+W (⌘W on macOS) closes Settings, as it closes a window: the fourth
     /// way out (see the module doc).
     ///
@@ -377,7 +418,25 @@ impl SettingsPanel {
         );
     }
 
-    fn card_size(slot_w: f32, slot_h: f32) -> (f32, f32) {
+    /// The card's preferred size at an effective text scale of `text_scale`:
+    /// [`CARD_W`]×[`CARD_H`] grown by [`card_growth`].
+    fn preferred_size(text_scale: f32) -> (f32, f32) {
+        let growth = card_growth(text_scale);
+        (CARD_W * growth, CARD_H * growth)
+    }
+
+    /// The card's real size inside the `slot_w`×`slot_h` slot the modal overlay
+    /// handed it, at an effective text scale of `text_scale`.
+    ///
+    /// `OverlayPlacement::Centered` clamps an overlay's bounds to the viewport and
+    /// then lays its content out at exactly those bounds, so `slot` *is* the
+    /// viewport once the card no longer fits — which is what makes this stable:
+    /// [`Widget::layout_response`] always reports the full
+    /// [preferred size](Self::preferred_size), so the slot handed back is
+    /// `min(preferred, viewport)` on every pass rather than a size that shrinks
+    /// by a margin each time round.
+    fn card_size(slot_w: f32, slot_h: f32, text_scale: f32) -> (f32, f32) {
+        let (preferred_w, preferred_h) = Self::preferred_size(text_scale);
         fn fit(slot: f32, preferred: f32, floor: f32) -> f32 {
             if slot >= preferred {
                 preferred
@@ -388,8 +447,8 @@ impl SettingsPanel {
             }
         }
         (
-            fit(slot_w, CARD_W, MIN_CARD_W),
-            fit(slot_h, CARD_H, MIN_CARD_H),
+            fit(slot_w, preferred_w, MIN_CARD_W),
+            fit(slot_h, preferred_h, MIN_CARD_H),
         )
     }
 }
@@ -497,10 +556,17 @@ impl Widget for SettingsPanel {
             .spacing(0.0)
             .child(Expand::vertical().child(content))
             .child(Expand::horizontal().child(Divider::new()))
-            .child(FixedSize::new().height(FOOTER_H).child(footer));
+            // A floor, not a fixed height: the buttons grow with the interface
+            // text, and a fixed band squeezed them into its own margin (at 250 %
+            // the 10 px above and below them fell under 9). `MinSize` also
+            // passes the column's width down, which a height-only `FixedSize`
+            // did not: the bar was as narrow as its buttons, its spacer
+            // collapsed, and Done sat against Reset to defaults.
+            .child(MinSize::height(FOOTER_H).child(footer));
 
         // ── Header strip (title + close), mirroring the Welcome panel ───────
-        let header = FixedSize::new().height(HEADER_H).child(
+        // A floor, not a fixed height, like the footer band above.
+        let header = MinSize::height(HEADER_H).child(
             Padding::symmetric(8.0, 14.0).child(
                 HStack::new()
                     .spacing(8.0)
@@ -546,7 +612,7 @@ impl Widget for SettingsPanel {
                             spacing: 0.0
                             Expand::vertical {
                                 FixedSize {
-                                    width: TREE_W
+                                    width: self.rail_w.clone()
                                     child: left
                                 }
                             }
@@ -576,15 +642,23 @@ impl Widget for SettingsPanel {
     /// out from it. Answering the aspiration in both is what keeps that loop
     /// stable — a shrunken answer would be re-clamped and re-shrunk every frame —
     /// and the clamped proposal is the only place the real viewport is legible,
-    /// so the pane width is written from here. Idempotent, so the per-pass layout
-    /// memo is welcome to skip a repeat (see `Widget::cacheable_layout`), and
-    /// guarded by `set_if_changed` so a steady window fans out to nobody.
-    fn layout_response(&self, proposal: SizeProposal, _ctx: &LayoutContext) -> LayoutResponse {
+    /// so the rail and pane widths are written from here. Idempotent, so the
+    /// per-pass layout memo is welcome to skip a repeat (see
+    /// `Widget::cacheable_layout`), and guarded by `set_if_changed` so a steady
+    /// window fans out to nobody.
+    ///
+    /// The preferred size follows `ctx.text_scale`, the effective scale (the
+    /// writer's setting times the system's), which a change of either
+    /// relayouts: no signal of the card's own has to be bound for it.
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
         if let (Some(slot_w), Some(slot_h)) = (proposal.width, proposal.height) {
-            let (card_w, _) = Self::card_size(slot_w, slot_h);
-            self.pane_w.set_if_changed(pane_width(card_w));
+            let (card_w, _) = Self::card_size(slot_w, slot_h, ctx.text_scale);
+            let rail_w = rail_width(card_w, ctx.text_scale);
+            self.rail_w.set_if_changed(rail_w);
+            self.pane_w.set_if_changed(pane_width(card_w, rail_w));
         }
-        Size::new(CARD_W, CARD_H).into()
+        let (preferred_w, preferred_h) = Self::preferred_size(ctx.text_scale);
+        Size::new(preferred_w, preferred_h).into()
     }
 
     /// Centre the card in the slot the overlay gave it, at whatever size fits.
@@ -598,9 +672,9 @@ impl Widget for SettingsPanel {
         bounds: Rect,
         _proposal: SizeProposal,
         children: &mut [WidgetPlacement],
-        _ctx: &LayoutContext,
+        ctx: &LayoutContext,
     ) {
-        let (w, h) = Self::card_size(bounds.width, bounds.height);
+        let (w, h) = Self::card_size(bounds.width, bounds.height, ctx.text_scale);
         let origin = Point::new(
             bounds.x + ((bounds.width - w) / 2.0).max(0.0),
             bounds.y + ((bounds.height - h) / 2.0).max(0.0),

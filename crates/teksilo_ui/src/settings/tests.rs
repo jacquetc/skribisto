@@ -875,22 +875,25 @@ fn a_contributed_page_is_searchable() {
 #[test]
 fn the_card_shrinks_into_the_window_it_was_given() {
     // A roomy desktop: the preferred card, no gutter taken.
-    assert_eq!(SettingsPanel::card_size(1600.0, 1000.0), (CARD_W, CARD_H));
+    assert_eq!(
+        SettingsPanel::card_size(1600.0, 1000.0, 1.0),
+        (CARD_W, CARD_H)
+    );
 
     // The app's own minimum window. The overlay hands us `min(preferred,
     // viewport)`, so the slot *is* the window on both axes here.
     assert_eq!(
-        SettingsPanel::card_size(800.0, 600.0),
+        SettingsPanel::card_size(800.0, 600.0, 1.0),
         (800.0 - VIEWPORT_MARGIN, 600.0 - VIEWPORT_MARGIN)
     );
 
     // The two scaled-desktop cases from the finding: wide enough, one row short.
     assert_eq!(
-        SettingsPanel::card_size(920.0, 614.0),
+        SettingsPanel::card_size(920.0, 614.0, 1.0),
         (CARD_W, 614.0 - VIEWPORT_MARGIN)
     );
     assert_eq!(
-        SettingsPanel::card_size(920.0, 617.0),
+        SettingsPanel::card_size(920.0, 617.0, 1.0),
         (CARD_W, 617.0 - VIEWPORT_MARGIN)
     );
 
@@ -904,7 +907,7 @@ fn the_card_shrinks_into_the_window_it_was_given() {
         (920.0, 620.0),
         (2560.0, 1440.0),
     ] {
-        let (cw, ch) = SettingsPanel::card_size(w, h);
+        let (cw, ch) = SettingsPanel::card_size(w, h, 1.0);
         assert!(
             cw <= w + 0.001 && ch <= h + 0.001,
             "a {w}x{h} slot produced a {cw}x{ch} card"
@@ -921,8 +924,8 @@ fn the_card_shrinks_into_the_window_it_was_given() {
     // each frame until it hit the floor.
     let slot = (CARD_W.min(800.0), CARD_H.min(600.0));
     assert_eq!(
-        SettingsPanel::card_size(slot.0, slot.1),
-        SettingsPanel::card_size(CARD_W.min(800.0), CARD_H.min(600.0))
+        SettingsPanel::card_size(slot.0, slot.1, 1.0),
+        SettingsPanel::card_size(CARD_W.min(800.0), CARD_H.min(600.0), 1.0)
     );
 }
 
@@ -944,8 +947,8 @@ fn the_footer_band_is_whole_in_the_apps_minimum_window() {
     use teksilo::widgets::{Divider, FixedSize, HStack, Spacer};
 
     const EPS: f32 = 0.5;
-    let (card_w, card_h) = SettingsPanel::card_size(800.0, 600.0);
-    let pane_w = pane_width(card_w);
+    let (card_w, card_h) = SettingsPanel::card_size(800.0, 600.0, 1.0);
+    let pane_w = pane_width(card_w, rail_width(card_w, 1.0));
 
     // The trailing column: scrolling content · rule · footer, exactly as
     // `SettingsPanel::build` assembles `right`.
@@ -1033,7 +1036,7 @@ fn the_card_fits_the_launchers_fixed_window() {
     use crate::shell::launcher_window::{LAUNCHER_H, LAUNCHER_W};
 
     let (slot_w, slot_h) = (LAUNCHER_W as f32, LAUNCHER_H as f32);
-    let (card_w, card_h) = SettingsPanel::card_size(slot_w, slot_h);
+    let (card_w, card_h) = SettingsPanel::card_size(slot_w, slot_h, 1.0);
 
     // Inside the window, gutter and all — the card shrank rather than clipped.
     assert!(
@@ -1057,12 +1060,13 @@ fn the_card_fits_the_launchers_fixed_window() {
          further shrink of that window clips it with no way to resize"
     );
 
-    // The two-pane split still has a real pane column left at that width — the
-    // rail is a fixed `TREE_W`, so this is what actually gets squeezed.
+    // The two-pane split still has a real pane column left at that width — at
+    // 100 % the rail keeps its `TREE_W` floor, so this is what actually gets
+    // squeezed.
     assert!(
-        pane_width(card_w) > TREE_W,
+        pane_width(card_w, rail_width(card_w, 1.0)) > TREE_W,
         "the pane column ({}) is narrower than the rail beside it",
-        pane_width(card_w)
+        pane_width(card_w, rail_width(card_w, 1.0))
     );
 
     // The chrome the card owes at that height leaves the pages real room, so
@@ -1072,6 +1076,335 @@ fn the_card_fits_the_launchers_fixed_window() {
         "only {:.1} px left for the pages after header + footer",
         card_h - HEADER_H - FOOTER_H
     );
+}
+
+/// **The card grows with the interface text, and the window still bounds it.**
+///
+/// At 200 % the card used to stay 920×620 while everything in it doubled: the
+/// rail cut "Appearance & Behavior", "Backup & Sync" and the project's name
+/// short, the search field its own hint, and the Keymap page its command names
+/// (a user on GNOME reported it, with no way to enlarge the window it sits in).
+/// The preferred size now follows the effective scale, and `fit` shrinks it
+/// into the slot exactly as before.
+#[test]
+fn the_card_grows_with_the_interface_text() {
+    // Room for everything: the card is the preferred size times the scale.
+    assert_eq!(
+        SettingsPanel::card_size(4000.0, 3000.0, 2.0),
+        (2.0 * CARD_W, 2.0 * CARD_H)
+    );
+    assert_eq!(
+        SettingsPanel::card_size(4000.0, 3000.0, 1.5),
+        (1.5 * CARD_W, 1.5 * CARD_H)
+    );
+    // The GNOME case: the system's "Large text" (1.25) times 200 % here.
+    assert_eq!(
+        SettingsPanel::card_size(4000.0, 3000.0, 2.5),
+        (2.5 * CARD_W, 2.5 * CARD_H)
+    );
+
+    // A window smaller than the grown card: the same gutter as at 100 %.
+    assert_eq!(
+        SettingsPanel::card_size(1200.0, 800.0, 2.0),
+        (1200.0 - VIEWPORT_MARGIN, 800.0 - VIEWPORT_MARGIN)
+    );
+    // One axis fits, the other does not.
+    assert_eq!(
+        SettingsPanel::card_size(1400.0, 900.0, 1.5),
+        (1380.0, 900.0 - VIEWPORT_MARGIN)
+    );
+
+    // Below 100 % only the text shrinks, so the card does not: a card shrunk
+    // with it would squeeze the icons and controls, which keep their size.
+    assert_eq!(
+        SettingsPanel::card_size(1600.0, 1000.0, 0.8),
+        (CARD_W, CARD_H)
+    );
+    // A scale that is not a number is 100 %, never a card of NaN size.
+    for odd in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY, 0.0, -1.0] {
+        assert_eq!(
+            SettingsPanel::card_size(1600.0, 1000.0, odd),
+            (CARD_W, CARD_H),
+            "a text scale of {odd}"
+        );
+    }
+
+    // At every scale: never larger than the slot, never below the floor while
+    // the slot can hold the floor, and the preferred size whenever it fits.
+    for scale in [1.0f32, 1.25, 1.5, 2.0, 2.5, 3.0] {
+        let (pw, ph) = SettingsPanel::preferred_size(scale);
+        for (w, h) in [
+            (300.0f32, 200.0f32),
+            (800.0, 600.0),
+            (820.0, 590.0),
+            (1200.0, 800.0),
+            (1920.0, 1080.0),
+            (3840.0, 2160.0),
+        ] {
+            let (cw, ch) = SettingsPanel::card_size(w, h, scale);
+            assert!(
+                cw <= w + 0.001 && ch <= h + 0.001,
+                "{scale}: a {w}x{h} slot produced a {cw}x{ch} card"
+            );
+            assert!(
+                cw <= pw && ch <= ph,
+                "{scale}: grew past its preferred size"
+            );
+            if w >= MIN_CARD_W + VIEWPORT_MARGIN && h >= MIN_CARD_H + VIEWPORT_MARGIN {
+                assert!(
+                    cw >= MIN_CARD_W && ch >= MIN_CARD_H,
+                    "{scale}: a {w}x{h} slot shrank the card to {cw}x{ch}, past its floor"
+                );
+            }
+            if w >= pw && h >= ph {
+                assert_eq!((cw, ch), (pw, ph), "{scale}: a {w}x{h} slot holds the card");
+            }
+        }
+    }
+}
+
+/// **The rail grows with its page names, but never at the page's expense.**
+#[test]
+fn the_rail_grows_with_the_text_within_a_third_of_the_card() {
+    // 100 %: the rail is what it always was, whatever the window.
+    for card_w in [200.0f32, MIN_CARD_W, 788.0, CARD_W, 2000.0] {
+        assert_eq!(rail_width(card_w, 1.0), TREE_W, "a {card_w}-wide card");
+        // …and below 100 % too: the rail does not shrink with the text.
+        assert_eq!(
+            rail_width(card_w, 0.8),
+            TREE_W,
+            "a {card_w}-wide card at 80 %"
+        );
+    }
+
+    // A card with room for it: the rail grows in proportion.
+    assert_eq!(rail_width(2.0 * CARD_W, 2.0), 2.0 * TREE_W);
+    assert_eq!(rail_width(1.5 * CARD_W, 1.5), 1.5 * TREE_W);
+
+    // A card the window held back: the rail stops at a third of it.
+    let card_w = 1200.0 - VIEWPORT_MARGIN;
+    let rail = rail_width(card_w, 2.0);
+    assert!(
+        (rail - card_w / 3.0).abs() < 0.001,
+        "a {rail} rail in a {card_w} card"
+    );
+    assert!(
+        pane_width(card_w, rail) >= 2.0 * rail - RULE_W - 0.001,
+        "the page ({}) is narrower than twice the rail ({rail})",
+        pane_width(card_w, rail)
+    );
+
+    // Rail, rule and page always tile the card.
+    for scale in [1.0f32, 1.5, 2.0, 2.5] {
+        for card_w in [MIN_CARD_W, 788.0, CARD_W, 1168.0, 1840.0, 2300.0] {
+            let rail = rail_width(card_w, scale);
+            assert!(
+                (rail + RULE_W + pane_width(card_w, rail) - card_w).abs() < 0.001,
+                "{scale}: rail {rail} + rule + page do not make a {card_w} card"
+            );
+            assert!(rail >= TREE_W, "{scale}: the rail fell below its floor");
+        }
+    }
+}
+
+/// Every widget at or under `root` whose type name contains `name` (a generic
+/// widget's name carries its parameters, so it does not *end* with it).
+fn widgets_named(
+    tree: &teksilo::core::widget_tree::WidgetTree,
+    root: WidgetId,
+    name: &str,
+) -> Vec<WidgetId> {
+    let mut all = Vec::new();
+    subtree(tree, root, &mut all);
+    all.into_iter()
+        .filter(|id| tree.widget_type_name(*id).is_some_and(|n| n.contains(name)))
+        .collect()
+}
+
+/// **The real card, laid out at 100 %, 200 % and 250 % text.**
+///
+/// The arithmetic above is only half of it: the header and footer bands were
+/// fixed heights, and a band of fixed height cuts off the title and *Done* once
+/// their text outgrows it, whatever size the card is. This builds the real
+/// panel, sets the interface text scale on its tree, and checks what a writer
+/// would see: the card at its grown size, the rail and page at their computed
+/// widths, and every widget of both bands inside its band and inside the card.
+#[test]
+fn the_real_card_follows_the_interface_text_scale() {
+    const EPS: f32 = 0.5;
+    // Large enough to hold the card grown to 250 %.
+    const SLOT_W: f32 = 2400.0;
+    const SLOT_H: f32 = 1600.0;
+
+    // The header's and the footer's margins, measured at 100 % (the first
+    // scale) and required at every other.
+    let mut margins: [Option<f32>; 2] = [None, None];
+    for scale in [1.0f32, 2.0, 2.5] {
+        let app_ctx = std::rc::Rc::new(frontend::AppContext::new());
+        // The real shaper, with the bundled Inter, or this asserts nothing about
+        // the bands: with no backend `TextWidget` measures 8 px a character and
+        // 16 px a line, and `MockTextBackend` does the same, at every font size,
+        // so text that doubled would still fit a band that did not grow.
+        let mut tree =
+            crate::test_support::tree_with_settings(&app_ctx).with_text_backend(std::rc::Rc::new(
+                std::cell::RefCell::new(teksilo::text::TypesetterBridge::new_with_default_font()),
+            ));
+        tree.set_user_text_scale(scale);
+        let panel = SettingsPanel::without_project();
+        let (rail_sig, pane_sig) = (panel.rail_w.clone(), panel.pane_w.clone());
+        let root = tree.add(panel);
+        tree.layout(SizeProposal::exact(SLOT_W, SLOT_H));
+
+        assert!(
+            (tree.effective_text_scale() - scale).abs() < 1e-6,
+            "the test tree did not take the scale"
+        );
+
+        // The card: the panel's one child, placed by `place_children`.
+        let card = descend(&tree, root, &[0]);
+        let cb = tree.bounds(card);
+        let (want_w, want_h) = SettingsPanel::preferred_size(scale);
+        assert!(
+            (cb.width - want_w).abs() < EPS && (cb.height - want_h).abs() < EPS,
+            "{scale}: the card is {}x{}, not {want_w}x{want_h}",
+            cb.width,
+            cb.height
+        );
+
+        // The rail and page widths the card wrote, and the rail really is that
+        // wide on screen.
+        let rail = rail_width(want_w, scale);
+        assert!(
+            (rail_sig.get() - rail).abs() < EPS,
+            "{scale}: rail {}",
+            rail_sig.get()
+        );
+        assert!(
+            (pane_sig.get() - pane_width(want_w, rail)).abs() < EPS,
+            "{scale}: page {}",
+            pane_sig.get()
+        );
+        let trees = widgets_named(&tree, card, "TreeView");
+        assert!(!trees.is_empty(), "{scale}: no rail TreeView");
+        for t in &trees {
+            assert!(
+                tree.bounds(*t).width <= rail + EPS,
+                "{scale}: the rail's tree is {} wide in a {rail} rail",
+                tree.bounds(*t).width
+            );
+        }
+
+        // The two bands: the header spans the card at its top, the footer spans
+        // the page column at its bottom.
+        let bands = widgets_named(&tree, card, "MinSize");
+        // A band is found by its edge and its floor, not its width: the shortest
+        // widget of that kind on the card's top (or bottom) edge that is at
+        // least the band's floor tall. Whatever else shares the edge (the page
+        // column above the footer) is taller than the band.
+        let shortest = |pick: &dyn Fn(Rect) -> bool| {
+            bands
+                .iter()
+                .copied()
+                .filter(|id| pick(tree.bounds(*id)))
+                .min_by(|a, b| tree.bounds(*a).height.total_cmp(&tree.bounds(*b).height))
+        };
+        let header = shortest(&|b| (b.y - cb.y).abs() < EPS && b.height >= HEADER_H - EPS)
+            .unwrap_or_else(|| panic!("{scale}: no header band at the card's top"));
+        let footer = shortest(&|b| {
+            (b.y + b.height - (cb.y + cb.height)).abs() < EPS && b.height >= FOOTER_H - EPS
+        })
+        .unwrap_or_else(|| panic!("{scale}: no footer band on the card's bottom edge"));
+        let (hb, fb) = (tree.bounds(header), tree.bounds(footer));
+
+        // The bar is "Reset to defaults · (spacer) · Done": Reset at its leading
+        // end, Done at its trailing end, each the same distance from its edge.
+        // A band of fixed height only (the old `FixedSize`) proposed no width,
+        // so the spacer collapsed and Done sat against Reset.
+        let mut buttons: Vec<Rect> = widgets_named(&tree, footer, "button::Button")
+            .into_iter()
+            .map(|id| tree.bounds(id))
+            .collect();
+        buttons.sort_by(|a, b| a.x.total_cmp(&b.x));
+        let (Some(first), Some(last)) = (buttons.first(), buttons.last()) else {
+            panic!("{scale}: no buttons in the footer");
+        };
+        assert_eq!(buttons.len(), 2, "{scale}: Reset to defaults and Done");
+        assert!(
+            (fb.width - pane_sig.get()).abs() < EPS,
+            "{scale}: the footer bar is {:.1} wide under a {:.1} page: it does not span it",
+            fb.width,
+            pane_sig.get()
+        );
+        let lead = first.x - fb.x;
+        let trail = fb.x + fb.width - (last.x + last.width);
+        assert!(
+            (lead - trail).abs() < EPS,
+            "{scale}: Done ends {trail:.1} from the bar's end, Reset starts {lead:.1} from \
+             its start"
+        );
+
+        if scale == 1.0 {
+            // 100 % is unchanged: the bands are exactly what they were.
+            assert!(
+                (hb.height - HEADER_H).abs() < EPS,
+                "the header is {} tall at 100 %, not {HEADER_H}",
+                hb.height
+            );
+            assert!(
+                (fb.height - FOOTER_H).abs() < EPS,
+                "the footer is {} tall at 100 %, not {FOOTER_H}",
+                fb.height
+            );
+        } else {
+            assert!(
+                hb.height >= HEADER_H - EPS,
+                "{scale}: header below its floor"
+            );
+            assert!(
+                fb.height >= FOOTER_H - EPS,
+                "{scale}: footer below its floor"
+            );
+        }
+
+        // Each band keeps the margin it has at 100 %, at every scale. Its first
+        // child is the `Padding` around its row; the row's offset inside the
+        // band at 100 % is that margin. A band of fixed height did not *cut*
+        // the grown buttons and title: it squeezed them into that margin (at
+        // 250 % the footer's 10 px fell to under 9), which is what this
+        // catches. And the bands stay inside the card.
+        for (i, (band, bb, what)) in [(header, hb, "header"), (footer, fb, "footer")]
+            .into_iter()
+            .enumerate()
+        {
+            assert!(
+                bb.y >= cb.y - EPS && bb.y + bb.height <= cb.y + cb.height + EPS,
+                "{scale}: the {what} band runs outside the card"
+            );
+            let padding = descend(&tree, band, &[0]);
+            let row = descend(&tree, padding, &[0]);
+            let measured = tree.bounds(row).y - bb.y;
+            let margin = *margins[i].get_or_insert(measured);
+            assert!(margin > 0.0, "the {what} has no margin at 100 %");
+            let mut inside = Vec::new();
+            subtree(&tree, row, &mut inside);
+            for id in inside {
+                let b = tree.bounds(id);
+                if b.width <= 0.0 || b.height <= 0.0 {
+                    continue;
+                }
+                assert!(
+                    b.y >= bb.y + margin - EPS && b.y + b.height <= bb.y + bb.height - margin + EPS,
+                    "{scale}: a {} in the {what} runs from {:.1} to {:.1}, into the \
+                     band's {margin:.1} px margin ({:.1} to {:.1})",
+                    tree.widget_type_name(id).unwrap_or("widget"),
+                    b.y - bb.y,
+                    b.y + b.height - bb.y,
+                    margin,
+                    bb.height - margin
+                );
+            }
+        }
+    }
 }
 
 /// A page with its own Ctrl+W, as the project window has (`work.close`).

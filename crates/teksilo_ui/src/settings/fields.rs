@@ -109,8 +109,10 @@ pub(crate) const PANE_H_INSET: f32 = 24.0;
 /// asserts against must be *this* one.
 ///
 /// `settings.rs` owns the column arithmetic as [`super::pane_width`], which the
-/// live card drives from its *clamped* width; this constant is that same formula
-/// evaluated at the preferred [`super::CARD_W`], minus the frame's inset. The
+/// live card drives from its *clamped* width and the text scale; this constant
+/// is that same formula evaluated at 100 % text, where the card's preferred
+/// width is [`super::CARD_W`] and the rail's [`super::TREE_W`], minus the frame's
+/// inset. The
 /// three terms below are `settings.rs`'s own constants, never re-typed here —
 /// there must not be two definitions of this number.
 ///
