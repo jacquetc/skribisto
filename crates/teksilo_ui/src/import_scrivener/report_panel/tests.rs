@@ -604,9 +604,12 @@ fn closed_disclosures_are_out_of_reach() {
         let finder: ItemFinder =
             std::rc::Rc::new(|uid| (uid == ROW).then(|| (7, "Arrival".to_string())));
         let (mut tree, id) = mount(Some(finder), REPORT_W, REPORT_H);
+        // A list button found by its name is the node a screen reader reads, which an
+        // accordion publishes beside itself; Tab lands on the accordion behind it.
         let reachable = |tree: &WidgetTree, node: WidgetId| {
+            let stop = tree.focusable_composite_behind(node).unwrap_or(node);
             (
-                tree.tab_stops_within(id).contains(&node),
+                tree.tab_stops_within(id).contains(&stop),
                 reached_by_at(tree, node),
             )
         };
@@ -628,12 +631,15 @@ fn closed_disclosures_are_out_of_reach() {
             count = 2
         ))
         .resolve_now();
+        // A closed group has not been laid out, so its accordion still carries the name it
+        // hands to its header button once shown: look for either, never the region.
         let hidden_toggle = every_node(&tree, id)
             .into_iter()
             .find(|n| {
-                let node = tree.accessibility_node(*n);
-                node.role() == Role::Button
-                    && node.name() == Some(format!("1 item: {changed}").as_str())
+                tree.widget_type_name(*n)
+                    .is_some_and(|t| t.contains("::accordion::"))
+                    && tree.accessibility_node(*n).name()
+                        == Some(format!("1 item: {changed}").as_str())
             })
             .expect("the closed group's list button");
         assert_eq!(

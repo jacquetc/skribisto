@@ -98,11 +98,5 @@ from card to card, and your screen reader says each card's title and place.
 
 ## Where to take care
 
-Two things do not work well yet:
-
-- When the cursor is at the very start of a line that wraps, a screen reader reads the line
-  above it, in this help and in your text. So the last line of a list item that wraps cannot
-  be reached with the arrows. Say all reads every line, and in NVDA, *Read by paragraph* in
-  the braille settings shows the whole paragraph on the display.
-- A screen reader does not yet announce the headings of a help page as headings, so you
-  cannot jump from one to the next.
+One thing does not work well yet: a screen reader does not announce the headings of a help
+page as headings, so you cannot jump from one to the next.

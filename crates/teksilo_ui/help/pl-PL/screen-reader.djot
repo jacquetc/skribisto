@@ -99,12 +99,5 @@ miejsce.
 
 ## Na co uważać
 
-Dwie rzeczy jeszcze nie działają dobrze:
-
-- Gdy kursor stoi na samym początku zawiniętej linii, czytnik ekranu odczytuje linię
-  powyżej, w tej pomocy i w Twoim tekście. Ostatniej linii wielowierszowego elementu listy
-  nie da się więc osiągnąć strzałkami. *Czytaj wszystko* odczytuje każdą linię, a w NVDA
-  opcja *Czytaj akapitami* w ustawieniach brajla pokazuje na monitorze brajlowskim cały
-  akapit.
-- Czytnik ekranu nie ogłasza jeszcze nagłówków strony pomocy jako nagłówków, więc nie możesz
-  przeskakiwać od jednego do drugiego.
+Jedna rzecz jeszcze nie działa dobrze: czytnik ekranu nie ogłasza nagłówków strony pomocy
+jako nagłówków, więc nie możesz przeskakiwać od jednego do drugiego.

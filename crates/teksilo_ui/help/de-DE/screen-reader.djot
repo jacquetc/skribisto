@@ -107,12 +107,6 @@ ihre Stelle.
 
 ## Wo Sie aufpassen sollten
 
-Zwei Dinge funktionieren noch nicht gut:
-
-- Steht der Cursor ganz am Anfang einer umbrochenen Zeile, liest ein Bildschirmleser die
-  Zeile darüber, in dieser Hilfe wie in Ihrem Text. Die letzte Zeile eines umbrochenen
-  Listeneintrags ist mit den Pfeiltasten deshalb nicht erreichbar. *Alles vorlesen* liest
-  jede Zeile, und in NVDA zeigt *Absatzweises Vorlesen* in den Braille-Einstellungen den
-  ganzen Absatz auf der Braillezeile.
-- Ein Bildschirmleser sagt die Überschriften einer Hilfeseite noch nicht als Überschriften
-  an, Sie können also nicht von einer zur nächsten springen.
+Eines funktioniert noch nicht gut: Ein Bildschirmleser sagt die Überschriften einer
+Hilfeseite nicht als Überschriften an, Sie können also nicht von einer zur nächsten
+springen.
