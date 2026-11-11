@@ -606,8 +606,15 @@ mod synopsis {
                 .find(|(_, node)| node.role() == Role::MultilineTextInput)
                 .map(|(_, node)| node.clone())
                 .expect("a card's editor");
-            // The key's name is teksilo's, the rest of the sentence is ours.
-            assert_eq!(editor.description(), Some("Esc returns to the card."));
+            // The key's name is teksilo's (`⎋` on macOS), the rest of the sentence is ours.
+            let exit = teksilo::widgets::keystroke_format::format_keystroke(KeyStroke::new(
+                Key::Escape,
+                Modifiers::NONE,
+            ));
+            assert_eq!(
+                editor.description(),
+                Some(format!("{exit} returns to the card.").as_str())
+            );
         });
     }
 }
