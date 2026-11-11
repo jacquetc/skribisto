@@ -592,9 +592,13 @@ mod synopsis {
                 .find(|(_, node)| node.role() == Role::Grid)
                 .map(|(_, node)| node.clone())
                 .expect("the grid");
+            // The chord is written the platform's way (`⇧F2` on macOS), the sentence is ours.
+            let chord = teksilo::widgets::keystroke_format::format_keystroke(
+                crate::corkboard::edit_synopsis_default_key(),
+            );
             assert_eq!(
                 grid.description(),
-                Some("Press Shift+F2 to edit the card’s synopsis.")
+                Some(format!("Press {chord} to edit the card’s synopsis.").as_str())
             );
             let editor = update
                 .nodes
