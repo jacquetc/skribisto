@@ -81,7 +81,12 @@ env:
 jobs:
   build:
     name: Build ${{ matrix.arch }}
-    runs-on: macos-14 # Apple Silicon; cross-links x86_64 via Xcode CLT
+    # Apple Silicon; cross-links x86_64 via Xcode CLT. A pinned image, not
+    # macos-latest, so the release toolchain changes only when this line does.
+    # The price is a retirement: macos-14 went on 2026-11-02 and its jobs then
+    # ended in a second as "cancelled", which cost the first v3.3.1 run. Both
+    # jobs here name the same image; move them together.
+    runs-on: macos-15
     timeout-minutes: 90
     strategy:
       # Never fail-fast. One architecture failing while the other is mid-compile
@@ -129,7 +134,7 @@ jobs:
   package:
     name: Build universal .dmg
     needs: build
-    runs-on: macos-14
+    runs-on: macos-15
     # Packaging itself is minutes. The variable part is notarization, which is a
     # round trip to Apple's service and is the reason this is not tighter; it is
     # dormant until the signing secrets exist.
