@@ -61,6 +61,10 @@ pub const RING_RADIUS_ROW: f32 = 4.0;
 /// resolves to a capsule.
 pub const RING_RADIUS_PILL: f32 = 9999.0;
 
+/// The hover frame's thickness, in dp: a hairline, thinner than [`RING_WIDTH`], so the
+/// pointer's frame never reads as the keyboard's.
+pub const HOVER_RING_WIDTH: f32 = 1.0;
+
 /// The ring rect alone — a transparent rectangle whose *border* appears while
 /// `focused` and the input modality is keyboard.
 ///
@@ -110,6 +114,52 @@ pub fn with_focus_ring(
     ZStack::new()
         .child(content)
         .child(focus_ring(ctx, radius, focused))
+}
+
+/// The pointer's frame: a hairline in the theme's hover border
+/// (`BorderRole::Strong`) while `hovered`, and nothing otherwise.
+///
+/// Hit-transparent for the same reason as [`focus_ring`]: it covers the whole row.
+pub fn hover_ring(radius: f32, hovered: &Signal<bool>) -> impl Widget {
+    let width = hovered.map(|h| if *h { HOVER_RING_WIDTH } else { 0.0 });
+    RectWidget::new()
+        .corner_radius(CornerRadius::uniform(radius))
+        .border_color(BorderRole::Strong)
+        .border_width(width)
+        .hit_transparent(true)
+}
+
+/// A clickable row framed for both pointer and keyboard: a hairline while the pointer
+/// is over it, the focus ring while the keyboard is on it.
+///
+/// For a row that *does* something on a click (opens what it names), where a frame
+/// under the pointer says "this is one target" before the click rather than after.
+/// The focus ring is stacked over the hover frame, so a row that is both hovered and
+/// keyboard-focused shows the stronger of the two, not a mix.
+///
+/// Returned already focusable, with `on_focus` and `on_hover` driving the two signals.
+/// The caller still adds the role, the name, `on_tap` and the Enter/Space `on_key`
+/// (see the module docs), and must not set `on_focus` or `on_hover` again: a second
+/// one replaces these and the frame it drove goes dark.
+///
+/// Hovering a control *inside* the row (a button at its end) still counts as hovering
+/// the row, since the frame is the row's and the control is part of it.
+pub fn with_hover_and_focus_ring(
+    ctx: &BuildContext,
+    radius: f32,
+    content: impl Widget + 'static,
+    focused: &Signal<bool>,
+    hovered: &Signal<bool>,
+) -> teksilo::core::WidgetWithHandlers<ZStack> {
+    let focused = focused.clone();
+    let hovered = hovered.clone();
+    ZStack::new()
+        .child(content)
+        .child(hover_ring(radius, &hovered))
+        .child(focus_ring(ctx, radius, &focused))
+        .focusable(true)
+        .on_focus(move |gained, _c| focused.set(gained))
+        .on_hover(move |inside, _c| hovered.set(inside))
 }
 
 #[cfg(test)]
@@ -210,6 +260,113 @@ mod tests {
             "the rest of the row still opens on a click"
         );
         assert_eq!(control_taps.get(), 1);
+    }
+
+    /// **The hover frame follows the pointer, over the row's own control too.**
+    ///
+    /// Moving onto the row lights it, moving onto the button at its end keeps it lit
+    /// (the frame is the row's, and the button is part of the row), and moving off the
+    /// row puts it out. A frame that went dark over the button would flicker off at
+    /// exactly the moment the writer reaches for it.
+    #[test]
+    fn the_hover_frame_follows_the_pointer_over_the_row_and_its_control() {
+        use teksilo::core::event::WidgetEvent;
+
+        let hovered = Signal::new(false);
+        let ids = std::rc::Rc::new(std::cell::Cell::new(None));
+        let mut tree = tree();
+        tree.add(HoverRow {
+            hovered: hovered.clone(),
+            ids: ids.clone(),
+            root: None,
+        });
+        tree.layout(SizeProposal::exact(400.0, 200.0));
+        let Some((label, control, below)) = ids.get() else {
+            panic!("the probe publishes its ids when it builds");
+        };
+
+        assert!(
+            !hovered.get(),
+            "nothing is hovered before the pointer arrives"
+        );
+        tree.dispatch_event(WidgetEvent::pointer_move(tree.bounds(label).center()));
+        assert!(
+            hovered.get(),
+            "the pointer on the row's text lights the frame"
+        );
+        tree.dispatch_event(WidgetEvent::pointer_move(tree.bounds(control).center()));
+        assert!(hovered.get(), "and the button inside the row keeps it lit");
+        tree.dispatch_event(WidgetEvent::pointer_move(tree.bounds(below).center()));
+        assert!(!hovered.get(), "moving off the row puts it out");
+    }
+
+    /// A row built with [`with_hover_and_focus_ring`], holding a label and a button,
+    /// over an empty area the pointer can move off onto.
+    struct HoverRow {
+        hovered: Signal<bool>,
+        /// `(label, control, empty area below the row)`, published on build.
+        ids: std::rc::Rc<std::cell::Cell<Option<(WidgetId, WidgetId, WidgetId)>>>,
+        root: Option<WidgetId>,
+    }
+
+    impl std::fmt::Debug for HoverRow {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_struct("HoverRow").finish()
+        }
+    }
+
+    impl Widget for HoverRow {
+        fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+            let label = ctx.add(TextWidget::new(lit!("Chapter Three")));
+            let control = ctx.add(teksilo::widgets::Button::new(lit!("Add to cast")));
+            let body = teksilo::widgets::HStack::new()
+                .child(label)
+                .child(
+                    teksilo::widgets::Expand::horizontal().child(teksilo::widgets::Spacer::new()),
+                )
+                .child(control);
+            let focused = ctx.signal(false);
+            let row = ctx.add(with_hover_and_focus_ring(
+                ctx,
+                RING_RADIUS_ROW,
+                body,
+                &focused,
+                &self.hovered,
+            ));
+            let below = ctx.add(teksilo::widgets::FixedSize::new().height(100.0));
+            let id = ctx.add(teksilo::widgets::VStack::new().child(row).child(below));
+            self.ids.set(Some((label, control, below)));
+            self.root = Some(id);
+            vec![id]
+        }
+
+        fn layout_response(
+            &self,
+            proposal: SizeProposal,
+            ctx: &teksilo::core::widget::LayoutContext,
+        ) -> teksilo::core::widget::LayoutResponse {
+            self.root
+                .and_then(|id| ctx.child_size(id, proposal))
+                .map(Into::into)
+                .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+        }
+
+        fn children(&self) -> Vec<WidgetId> {
+            self.root.into_iter().collect()
+        }
+
+        fn place_children(
+            &self,
+            bounds: Rect,
+            _proposal: SizeProposal,
+            children: &mut [teksilo::core::widget::WidgetPlacement],
+            _ctx: &teksilo::core::widget::LayoutContext,
+        ) {
+            for child in children.iter_mut() {
+                child.origin = bounds.origin();
+                child.size = bounds.size();
+            }
+        }
     }
 
     /// A primary press and release at an absolute point, through the ordinary

@@ -3,6 +3,7 @@ Date: 2026-11-16
 Type: stable
 Description:
 - "On a note's Details page, each scene listed under “Appears in the manuscript” has an Add to cast button that answers a click. It used to be a bare tick that only Tab could reach: clicking it opened the scene beside instead. Confirm every appearance, below the list, is now called Add to every cast. The plus and the cross beside each name of a scene's cast in the Inspector answer a click again too"
+- "In that list, a light frame appears around a scene when the mouse is over it, and a stronger one around the scene Tab is on, with room around its title and its quotation. Nothing showed under the mouse, and the Tab frame was drawn over the words"
 ---
 Version: 3.3.1
 Date: 2026-11-11

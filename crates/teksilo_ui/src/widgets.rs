@@ -34,7 +34,9 @@ pub mod tip;
 
 pub use destination_picker::DestinationPicker;
 pub(crate) use diff_pane::DiffPane;
-pub use focus_ring::{RING_RADIUS_PILL, RING_RADIUS_ROW, focus_ring, with_focus_ring};
+pub use focus_ring::{
+    RING_RADIUS_PILL, RING_RADIUS_ROW, focus_ring, with_focus_ring, with_hover_and_focus_ring,
+};
 pub use margin_lane::{
     DEFAULT_LANE_WIDTH, DEFAULT_TEXTURE_WIDTH, LaneBar, LaneColumn, LaneMark, LaneShape, LaneSpan,
     MIN_MARK_HEIGHT, MarginLane, ResolvedMark, TEXTURE_DIVIDER,

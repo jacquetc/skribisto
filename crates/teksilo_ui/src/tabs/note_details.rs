@@ -912,6 +912,19 @@ fn backlinks_empty_hint() -> VStack {
 /// column is the better answer. The same judgement `pace`'s dashboard makes.
 const MIN_DETAILS_COLUMN: f32 = 320.0;
 
+/// The space between a backlink row's frame (the hover hairline or the keyboard-focus
+/// ring) and what it holds: (vertical, horizontal), in dp.
+///
+/// Without it the ring was drawn on the row's own edge, through the first letters of the
+/// title, the last line of the quote and the hit count at the right end, and read as a
+/// smudge on the text rather than a frame around the entry. The rows' spacing is taken
+/// down by twice the vertical inset, so the text keeps the rhythm it had before the ring
+/// had room.
+const ROW_RING_INSET: (f32, f32) = (4.0, 6.0);
+
+/// The gap between the text of two backlink rows, ring insets included.
+const ROW_GAP: f32 = 12.0;
+
 struct BacklinksList {
     rows: Vec<BacklinkRow>,
     /// Confirm, on a row the scan only guessed at, that this entry really does appear in
@@ -932,7 +945,7 @@ impl std::fmt::Debug for BacklinksList {
 
 impl Widget for BacklinksList {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        let mut col = VStack::new().spacing(12.0);
+        let mut col = VStack::new().spacing(ROW_GAP - 2.0 * ROW_RING_INSET.0);
 
         for row in &self.rows {
             // Plain when the mentioning scene has declared a real relationship to
@@ -994,23 +1007,22 @@ impl Widget for BacklinksList {
             let owner_id = row.owner_id;
             let title = row.document_title.clone();
             // A focus stop with no visible ring is WCAG 2.4.7 — see
-            // `crate::widgets::focus_ring` for why the framework paints none.
+            // `crate::widgets::focus_ring` for why the framework paints none. The row
+            // also opens on a click, so the pointer gets a frame of its own: a hairline
+            // that says "this whole entry is one target" before the click.
             let focused = ctx.signal(false);
-            let ringed = crate::widgets::with_focus_ring(
+            let hovered = ctx.signal(false);
+            let ringed = crate::widgets::with_hover_and_focus_ring(
                 ctx,
                 crate::widgets::RING_RADIUS_ROW,
-                line,
+                Padding::symmetric(ROW_RING_INSET.0, ROW_RING_INSET.1).child(line),
                 &focused,
+                &hovered,
             );
             let id = ctx.add(
                 ringed
                     .access_role(Role::ListItem)
                     .access_label(lit!(row.document_title.clone()))
-                    .focusable(true)
-                    .on_focus({
-                        let focused = focused.clone();
-                        move |gained, _c| focused.set(gained)
-                    })
                     .on_tap({
                         let title = title.clone();
                         move |_e, c: &mut EventContext| {
@@ -1182,6 +1194,70 @@ mod tests {
             (0, 0),
             "a declared point of view is not an unconfirmed suggestion"
         );
+    }
+
+    /// **The focus ring goes around a backlink row, not through it.** Every piece of text
+    /// in the row sits inside the ring's rectangle with room to spare on all four sides.
+    /// The ring used to be drawn on the row's own edge, over the title's first letters,
+    /// the quote's last line and the hit count.
+    #[test]
+    fn the_focus_ring_leaves_room_around_a_backlink_row() {
+        fn walk(
+            tree: &teksilo::core::widget_tree::WidgetTree,
+            id: WidgetId,
+            out: &mut Vec<(WidgetId, String)>,
+        ) {
+            out.push((
+                id,
+                tree.widget_type_name(id).unwrap_or_default().to_string(),
+            ));
+            for child in tree.children(id) {
+                walk(tree, child, out);
+            }
+        }
+
+        let mut tree = teksilo::core::widget_tree::WidgetTree::new()
+            .with_theme(teksilo::presets::intui::light());
+        let mut long = row(7, 42, "Elena", 12, "Elena crossed the square at dawn.");
+        long.is_title_match = false;
+        long.matched_names = vec!["Lena".to_string()];
+        let root = tree.add(BacklinksList {
+            rows: backlink_rows(
+                vec![long],
+                &[(7, "Chapter Three".to_string())].into_iter().collect(),
+                "Untitled",
+            ),
+            confirm: None,
+            root: None,
+        });
+        tree.layout(teksilo::prelude::SizeProposal::exact(500.0, 200.0));
+
+        let mut all = Vec::new();
+        walk(&tree, root, &mut all);
+        // The ringed row is the focus ring's `ZStack`; its bounds are the ring's.
+        let ring = all
+            .iter()
+            .find(|(_, t)| t.contains("ZStack"))
+            .map(|(id, _)| tree.bounds(*id))
+            .expect("the row is ringed");
+        let texts: Vec<_> = all
+            .iter()
+            .filter(|(_, t)| t.ends_with("::TextWidget"))
+            .map(|(id, _)| tree.bounds(*id))
+            .collect();
+        assert_eq!(texts.len(), 4, "title, alias, count and quote");
+
+        let (v, h) = ROW_RING_INSET;
+        for t in &texts {
+            assert!(
+                t.x >= ring.x + h - 0.5
+                    && t.x + t.width <= ring.x + ring.width - h + 0.5
+                    && t.y >= ring.y + v - 0.5
+                    && t.y + t.height <= ring.y + ring.height - v + 0.5,
+                "text {t:?} must sit inside the ring {ring:?} with {v}dp above and below \
+                 and {h}dp either side"
+            );
+        }
     }
 
     /// **"Add to cast" answers a click.** It sat in a row whose keyboard-focus ring covered
