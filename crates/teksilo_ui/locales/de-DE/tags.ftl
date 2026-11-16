@@ -91,6 +91,7 @@ cast-unpin = { $name } aus den Beteiligten entfernen
 cast-empty = Noch niemand zugeordnet. Fügen Sie jemanden hinzu oder übernehmen Sie einen Vorschlag
 cast-unresolved = Nicht mehr in der Geschichtenbibel
 mentions-confirm = Zu den Beteiligten von { $name } hinzufügen
+mentions-confirm-button = Beteiligte hinzufügen
 mentions-hit-count = { $n ->
     [one] einmal
    *[other] { $n }-mal
@@ -125,7 +126,7 @@ note-details-pov-multiple = Diese Notiz hat zwei Erzählperspektiven.
 note-details-backlinks = Kommt im Manuskript vor
 note-details-backlinks-empty = Noch nichts. Sobald dieser Name in Ihrem Text vorkommt, erscheint die Stelle hier.
 note-details-backlinks-outside = Außerhalb der Bücher
-note-details-backlinks-confirm-all = Alle Auftritte bestätigen
+note-details-backlinks-confirm-all = Überall zu den Beteiligten hinzufügen
 note-details-backlinks-confirm-all-tooltip = Diesen Eintrag zu den Beteiligten aller hier angezeigten Dokumente hinzufügen, in denen er noch nicht bestätigt ist
 note-details-untitled-document = Ohne Titel
 note-in-prose-mentions = { $n ->

@@ -106,6 +106,7 @@ cast-empty = Nikogo jeszcze nie przypięto. Dodaj kogoś lub zachowaj sugestię
 cast-unresolved = Już nie ma w biblii opowieści
 
 mentions-confirm = Dodaj do obsady { $name }
+mentions-confirm-button = Dodaj do obsady
 mentions-hit-count = { $n ->
     [one] raz
     [few] { $n } razy
@@ -146,7 +147,7 @@ note-details-pov-multiple = Ta notatka ma dwa punkty widzenia.
 note-details-backlinks = Występuje w rękopisie
 note-details-backlinks-empty = Na razie nic. Gdy ta nazwa pojawi się w Twojej prozie, zobaczysz to tutaj.
 note-details-backlinks-outside = Poza książkami
-note-details-backlinks-confirm-all = Potwierdź wszystkie wystąpienia
+note-details-backlinks-confirm-all = Dodaj do każdej obsady
 note-details-backlinks-confirm-all-tooltip = Dodaj ten wpis do obsady każdego dokumentu pokazanego tutaj, który jeszcze go nie potwierdził
 note-details-untitled-document = Bez tytułu
 

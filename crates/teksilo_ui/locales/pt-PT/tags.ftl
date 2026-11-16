@@ -100,6 +100,7 @@ cast-empty = Ainda ninguém foi fixado. Adicione ou mantenha uma sugestão
 cast-unresolved = Já não está na bíblia da história
 
 mentions-confirm = Adicionar ao elenco de { $name }
+mentions-confirm-button = Adicionar ao elenco
 mentions-hit-count = { $n ->
     [one] uma vez
    *[other] { $n } vezes
@@ -138,7 +139,7 @@ note-details-pov-multiple = Esta nota tem dois pontos de vista.
 note-details-backlinks = Aparece no manuscrito
 note-details-backlinks-empty = Ainda nada. Assim que este nome aparecer na sua prosa, aparecerá aqui.
 note-details-backlinks-outside = Fora dos livros
-note-details-backlinks-confirm-all = Confirmar todas as aparições
+note-details-backlinks-confirm-all = Adicionar a todos os elencos
 note-details-backlinks-confirm-all-tooltip = Adicionar esta entrada ao elenco de todos os documentos mostrados aqui que ainda não a confirmaram
 note-details-untitled-document = Sem título
 

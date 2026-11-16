@@ -101,6 +101,7 @@ cast-empty = Δεν έχει καρφιτσωθεί ακόμη κανείς. Π�
 cast-unresolved = Δεν υπάρχει πια στη βίβλο ιστορίας
 
 mentions-confirm = Προσθήκη στα πρόσωπα του { $name }
+mentions-confirm-button = Προσθήκη στα πρόσωπα
 mentions-hit-count = { $n ->
     [one] μία φορά
    *[other] { $n } φορές
@@ -140,7 +141,7 @@ note-details-pov-multiple = Αυτή η σημείωση έχει δύο οπτ�
 note-details-backlinks = Εμφανίζεται στο χειρόγραφο
 note-details-backlinks-empty = Τίποτα ακόμη. Μόλις αυτό το όνομα εμφανιστεί στην πρόζα σας, θα εμφανιστεί εδώ.
 note-details-backlinks-outside = Έξω από τα βιβλία
-note-details-backlinks-confirm-all = Επιβεβαίωση κάθε εμφάνισης
+note-details-backlinks-confirm-all = Προσθήκη στα πρόσωπα όλων
 note-details-backlinks-confirm-all-tooltip = Προσθήκη αυτής της καταχώρισης στα πρόσωπα κάθε εγγράφου που εμφανίζεται εδώ και δεν την έχει επιβεβαιώσει ακόμη
 note-details-untitled-document = Χωρίς τίτλο
 

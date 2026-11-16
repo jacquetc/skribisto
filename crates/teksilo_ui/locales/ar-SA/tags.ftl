@@ -102,6 +102,7 @@ cast-unpin = إزالة { $name } من الحاضرين
 cast-empty = لم يُثبَّت أحد بعد. أضف أحدًا أو احتفظ باقتراح
 cast-unresolved = لم يعد في مرجع القصة
 mentions-confirm = إضافة إلى الحاضرين في { $name }
+mentions-confirm-button = إضافة إلى الحاضرين
 mentions-hit-count = { $n ->
     [zero] ولا مرة
     [one] مرة واحدة
@@ -140,7 +141,7 @@ note-details-pov-multiple = لهذه الملاحظة وجهتا نظر.
 note-details-backlinks = يظهر في المخطوطة
 note-details-backlinks-empty = لا شيء بعد. حين يظهر هذا الاسم في نصك، سيظهر هنا.
 note-details-backlinks-outside = خارج الكتب
-note-details-backlinks-confirm-all = تأكيد كل الظهورات
+note-details-backlinks-confirm-all = إضافة إلى الحاضرين في كل مكان
 note-details-backlinks-confirm-all-tooltip = إضافة هذا المدخل إلى الحاضرين في كل مستند معروض هنا لم يؤكده بعد
 note-details-untitled-document = بلا عنوان
 note-in-prose-mentions = { $n ->

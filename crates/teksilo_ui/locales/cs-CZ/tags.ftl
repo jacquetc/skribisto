@@ -103,6 +103,7 @@ cast-empty = Zatím nikdo není připnut. Přidejte nebo ponechte některý náv
 cast-unresolved = Už není v bibli příběhu
 
 mentions-confirm = Přidat mezi postavy dokumentu { $name }
+mentions-confirm-button = Přidat mezi postavy
 mentions-hit-count = { $n ->
     [one] jednou
     [few] { $n }krát
@@ -142,7 +143,7 @@ note-details-pov-multiple = Tato poznámka má dva úhly pohledu.
 note-details-backlinks = Výskyty v rukopisu
 note-details-backlinks-empty = Zatím nic. Jakmile se toto jméno objeví ve vaší próze, zobrazí se zde.
 note-details-backlinks-outside = Mimo knihy
-note-details-backlinks-confirm-all = Potvrdit všechny výskyty
+note-details-backlinks-confirm-all = Přidat mezi postavy všude
 note-details-backlinks-confirm-all-tooltip = Přidá tento záznam mezi postavy každého zde zobrazeného dokumentu, který jej ještě nepotvrdil
 note-details-untitled-document = Bez názvu
 

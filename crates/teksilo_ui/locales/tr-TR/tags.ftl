@@ -99,6 +99,7 @@ cast-empty = Henüz kimse sabitlenmedi. Birini ekleyin ya da bir öneriyi tutun
 cast-unresolved = Artık hikâye rehberinde değil
 
 mentions-confirm = Şunun kadrosuna ekle: { $name }
+mentions-confirm-button = Kadroya ekle
 mentions-hit-count = { $n ->
     [one] bir kez
    *[other] { $n } kez
@@ -137,7 +138,7 @@ note-details-pov-multiple = Bu notun iki bakış açısı var.
 note-details-backlinks = El yazmasında geçtiği yerler
 note-details-backlinks-empty = Henüz bir şey yok. Bu ad metninizde geçtiğinde burada görünecek.
 note-details-backlinks-outside = Kitapların dışında
-note-details-backlinks-confirm-all = Her geçişi onayla
+note-details-backlinks-confirm-all = Tüm kadrolara ekle
 note-details-backlinks-confirm-all-tooltip = Bu kaydı, burada gösterilen ve onu henüz onaylamamış her belgenin kadrosuna ekler
 note-details-untitled-document = Adsız
 

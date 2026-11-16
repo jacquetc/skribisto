@@ -100,6 +100,7 @@ cast-empty = Todavía no hay nadie fijado. Añada a alguien o conserve una suger
 cast-unresolved = Ya no está en la biblia narrativa
 
 mentions-confirm = Añadir al reparto de { $name }
+mentions-confirm-button = Añadir al reparto
 mentions-hit-count = { $n ->
     [one] una vez
    *[other] { $n } veces
@@ -138,7 +139,7 @@ note-details-pov-multiple = Esta nota tiene dos puntos de vista.
 note-details-backlinks = Aparece en el manuscrito
 note-details-backlinks-empty = Todavía nada. En cuanto este nombre aparezca en su prosa, aparecerá aquí.
 note-details-backlinks-outside = Fuera de los libros
-note-details-backlinks-confirm-all = Confirmar todas las apariciones
+note-details-backlinks-confirm-all = Añadir a todos los repartos
 note-details-backlinks-confirm-all-tooltip = Añadir esta entrada al reparto de todos los documentos mostrados aquí que aún no la han confirmado
 note-details-untitled-document = Sin título
 

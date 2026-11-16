@@ -99,6 +99,7 @@ cast-empty = עדיין לא הוצמד איש. אפשר להוסיף, או לא
 cast-unresolved = כבר לא נמצא בתיק הסיפור
 
 mentions-confirm = הוספה לצוות הדמויות של { $name }
+mentions-confirm-button = הוספה לצוות הדמויות
 mentions-hit-count = { $n ->
     [one] פעם אחת
    *[other] { $n } פעמים
@@ -137,7 +138,7 @@ note-details-pov-multiple = לפתק הזה יש שתי נקודות מבט.
 note-details-backlinks = מופיע בכתב היד
 note-details-backlinks-empty = עדיין כלום. כשהשם הזה יופיע בטקסט שלכם, הוא יוצג כאן.
 note-details-backlinks-outside = מחוץ לספרים
-note-details-backlinks-confirm-all = אישור כל ההופעות
+note-details-backlinks-confirm-all = הוספה לכל צוותי הדמויות
 note-details-backlinks-confirm-all-tooltip = הוספת הרשומה הזו לצוות הדמויות של כל מסמך שמוצג כאן ועדיין לא אישר אותה
 note-details-untitled-document = ללא כותרת
 

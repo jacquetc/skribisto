@@ -134,6 +134,7 @@ cast-unresolved = Findes ikke længere i historiebiblen
 # made from the other end. Confirm only: there is no "not her" to record; see
 # `teksilo_ui::mentions::presence`.
 mentions-confirm = Føj til persongalleriet i { $name }
+mentions-confirm-button = Føj til persongalleriet
 mentions-hit-count = { $n ->
     [one] én gang
    *[other] { $n } gange
@@ -192,7 +193,7 @@ note-details-pov-multiple = Denne note har to synsvinkler.
 note-details-backlinks = Optræder i manuskriptet
 note-details-backlinks-empty = Intet endnu. Når navnet optræder i din tekst, vises det her.
 note-details-backlinks-outside = Uden for bøgerne
-note-details-backlinks-confirm-all = Bekræft alle forekomster
+note-details-backlinks-confirm-all = Føj til alle persongallerier
 note-details-backlinks-confirm-all-tooltip = Føj dette opslag til persongalleriet i alle de viste dokumenter, der endnu ikke har bekræftet det
 note-details-untitled-document = Uden titel
 

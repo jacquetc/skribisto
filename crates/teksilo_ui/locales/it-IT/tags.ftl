@@ -90,6 +90,7 @@ cast-unpin = Rimuovi { $name } dai personaggi presenti
 cast-empty = Ancora nessuna presenza confermata. Aggiungine una o accetta un suggerimento
 cast-unresolved = Non più nella bibbia narrativa
 mentions-confirm = Aggiungi ai personaggi presenti di { $name }
+mentions-confirm-button = Aggiungi ai personaggi presenti
 mentions-hit-count = { $n ->
     [one] una volta
    *[other] { $n } volte
@@ -124,7 +125,7 @@ note-details-pov-multiple = Questa nota ha due punti di vista.
 note-details-backlinks = Compare nel manoscritto
 note-details-backlinks-empty = Ancora nulla. Quando questo nome comparirà nel testo, verrà elencato qui.
 note-details-backlinks-outside = Fuori dai libri
-note-details-backlinks-confirm-all = Conferma tutte le presenze
+note-details-backlinks-confirm-all = Aggiungi ovunque ai personaggi presenti
 note-details-backlinks-confirm-all-tooltip = Aggiungi questa voce ai personaggi presenti di ogni documento qui elencato che non l'ha ancora confermata
 note-details-untitled-document = Senza titolo
 note-in-prose-mentions = { $n ->

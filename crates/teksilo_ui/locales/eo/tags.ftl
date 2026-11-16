@@ -90,6 +90,7 @@ cast-unpin = Forigi { $name } el la rolularo
 cast-empty = Ankoraŭ neniu fiksita. Aldonu eron aŭ akceptu proponon
 cast-unresolved = Ne plu en la rakonta gvidilo
 mentions-confirm = Aldoni al la rolularo de { $name }
+mentions-confirm-button = Aldoni al la rolularo
 mentions-hit-count = { $n ->
     [one] unufoje
    *[other] { $n } fojojn
@@ -124,7 +125,7 @@ note-details-pov-multiple = Ĉi tiu noto havas du vidpunktojn.
 note-details-backlinks = Aperas en la manuskripto
 note-details-backlinks-empty = Ankoraŭ nenio. Kiam ĉi tiu nomo aperos en via teksto, ĝi montriĝos ĉi tie.
 note-details-backlinks-outside = Ekster la libroj
-note-details-backlinks-confirm-all = Konfirmi ĉiujn aperojn
+note-details-backlinks-confirm-all = Aldoni al ĉiuj rolularoj
 note-details-backlinks-confirm-all-tooltip = Aldoni ĉi tiun eron al la rolularo de ĉiu montrata dokumento, kiu ankoraŭ ne konfirmis ĝin
 note-details-untitled-document = Sentitola
 note-in-prose-mentions = { $n ->

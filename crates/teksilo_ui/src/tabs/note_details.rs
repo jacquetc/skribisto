@@ -82,8 +82,8 @@ use teksilo::core::accesskit::Role;
 use teksilo::core::widget::WidgetPlacement;
 use teksilo::prelude::*;
 use teksilo::widgets::{
-    Button, ButtonVariant, ColumnFlow, Expand, GroupHeader, HStack, IconButton, Padding,
-    PopoverButton, ScrollArea, Segment, SegmentId, SegmentedControl, Spacer, TextWidget, VStack,
+    Button, ButtonVariant, ColumnFlow, Expand, GroupHeader, HStack, Padding, PopoverButton,
+    ScrollArea, Segment, SegmentId, SegmentedControl, Spacer, TextWidget, VStack,
 };
 
 use frontend::AppContext;
@@ -96,7 +96,7 @@ use crate::singles::SingleBinderItem;
 use crate::tags::alias_pill_field::SetAliases;
 use crate::tags::books::ClearBook;
 use crate::tags::cast_add::{CastAddPopover, CastCandidate};
-use crate::tags::mention_list::{CONFIRM_GLYPH, ConfirmPresence, PinReference};
+use crate::tags::mention_list::{ConfirmPresence, PinReference, confirm_presence_button};
 use crate::tags::tag_pill_field::SetTags;
 use crate::tags::{
     AliasPillField, TagPillField, TagsViewModel, book_add_button, book_chip_row, book_chips,
@@ -252,8 +252,8 @@ impl Widget for NoteDetailsPane {
         // else reads it, so without this binding the chip moved and the list under it did
         // not: `SegmentedControl` binds the selection to *itself* only (Relayout /
         // AccessibilityOnly), which repaints the strip but never rebuilds this pane. The
-        // rows, their quoted evidence, the per-row confirm buttons and "Confirm every
-        // appearance" (scoped to the Book on screen) all come from `backlinks_section`'s
+        // rows, their quoted evidence, the per-row "Add to cast" buttons and "Add to
+        // every cast" (scoped to the Book on screen) all come from `backlinks_section`'s
         // own read of this value, so they stayed on the previous Book while the bar said
         // otherwise. Same binding `note_in_prose` already gives its own Book bar.
         self.appears_in_book
@@ -974,14 +974,8 @@ impl Widget for BacklinksList {
                 && !row.is_point_of_view
                 && let Some(confirm) = self.confirm.clone()
             {
-                let owner = row.owner_id;
                 head = head.child(Expand::horizontal().child(Spacer::new())).child(
-                    IconButton::new(teksilo::widgets::primitives::IconWidget::checkmark(
-                        CONFIRM_GLYPH,
-                    ))
-                    .embedded()
-                    .tooltip(tr!(mentions_confirm(name = row.document_title.clone())))
-                    .on_activate_fn(move |c| confirm(owner, c)),
+                    confirm_presence_button(&row.document_title, row.owner_id, confirm),
                 );
             }
 
@@ -1117,39 +1111,55 @@ mod tests {
         out
     }
 
-    fn section(rows: Vec<MentionRow>) -> Vec<String> {
+    /// How many `Button`s the backlinks section builds: `(inside the list, outside it)`.
+    ///
+    /// Counted by *where* they sit rather than by type, since the per-row control and the
+    /// section's "Add to every cast" are both plain `Button`s: the list's own rows
+    /// against the page under it.
+    fn button_counts(rows: Vec<MentionRow>) -> (usize, usize) {
+        fn find(
+            tree: &teksilo::core::widget_tree::WidgetTree,
+            id: WidgetId,
+            suffix: &str,
+        ) -> Option<WidgetId> {
+            if tree
+                .widget_type_name(id)
+                .is_some_and(|t| t.ends_with(suffix))
+            {
+                return Some(id);
+            }
+            tree.children(id)
+                .into_iter()
+                .find_map(|child| find(tree, child, suffix))
+        }
+        let buttons = |names: Vec<String>| names.iter().filter(|t| t.ends_with("::Button")).count();
+
         let ctx = Rc::new(frontend::AppContext::new());
         let selected: Signal<Option<SegmentId>> = Signal::new(None);
         let mut tree = teksilo::core::widget_tree::WidgetTree::new();
         let root = tree.add(backlinks_section(&ctx, 0, rows, &selected, 42, None));
         tree.layout(teksilo::prelude::SizeProposal::exact(500.0, 600.0));
-        types(&tree, root)
+        let in_list = find(&tree, root, "::BacklinksList")
+            .map(|list| buttons(types(&tree, list)))
+            .unwrap_or(0);
+        (in_list, buttons(types(&tree, root)) - in_list)
     }
 
     /// **Both confirm controls are offered only while there is something to confirm** —
-    /// the per-row checkmark, and the section's "Confirm every appearance".
+    /// the per-row "Add to cast", and the section's "Add to every cast".
     ///
     /// A reading the writer has already worked through would otherwise keep a button that
     /// can do nothing, and pressing it would be indistinguishable from pressing it on a
     /// reading full of suggestions, since it writes nothing either way. Their absence is
     /// how the section says the work is done.
     ///
-    /// The two are counted apart — `IconButton` also ends in "Button" — because they
-    /// answer different questions: one row, or the whole page.
+    /// The two are counted apart because they answer different questions: one row, or
+    /// the whole page.
     #[test]
     fn the_confirm_controls_appear_only_while_something_is_unconfirmed() {
-        let counts = |rows: Vec<MentionRow>| {
-            let built = section(rows);
-            // Full paths, so `ends_with` separates the two: an `IconButton` also ends
-            // in "Button", and the section's own button is the wider claim of the pair.
-            let per_row = built.iter().filter(|t| t.ends_with("::IconButton")).count();
-            let all = built.iter().filter(|t| t.ends_with("::Button")).count();
-            (per_row, all)
-        };
-
         let suggested = row(7, 42, "Elena", 2, "Elena crossed.");
         assert_eq!(
-            counts(vec![suggested.clone()]),
+            button_counts(vec![suggested.clone()]),
             (1, 1),
             "a suggested appearance is confirmable on its own row and with the page"
         );
@@ -1157,7 +1167,7 @@ mod tests {
         let mut agreed = suggested.clone();
         agreed.is_confirmed = true;
         assert_eq!(
-            counts(vec![agreed]),
+            button_counts(vec![agreed]),
             (0, 0),
             "nothing left to confirm, so neither control"
         );
@@ -1168,9 +1178,68 @@ mod tests {
         let mut pov = suggested;
         pov.is_point_of_view = true;
         assert_eq!(
-            counts(vec![pov]),
+            button_counts(vec![pov]),
             (0, 0),
             "a declared point of view is not an unconfirmed suggestion"
+        );
+    }
+
+    /// **"Add to cast" answers a click.** It sat in a row whose keyboard-focus ring covered
+    /// it and took every press, so it was a Tab stop the mouse could not reach (see
+    /// `crate::widgets::focus_ring`). Pressed at its centre through the ordinary hit test.
+    #[test]
+    fn add_to_cast_on_a_backlink_row_answers_a_click() {
+        use std::cell::RefCell;
+        use teksilo::core::event::{Modifiers, PointerButton, WidgetEvent};
+
+        fn find_button(
+            tree: &teksilo::core::widget_tree::WidgetTree,
+            id: WidgetId,
+        ) -> Option<WidgetId> {
+            if tree
+                .widget_type_name(id)
+                .is_some_and(|t| t.ends_with("::Button"))
+            {
+                return Some(id);
+            }
+            tree.children(id)
+                .into_iter()
+                .find_map(|child| find_button(tree, child))
+        }
+
+        let confirmed: Rc<RefCell<Vec<u64>>> = Rc::new(RefCell::new(Vec::new()));
+        let sink = confirmed.clone();
+        let confirm: ConfirmPresence = Rc::new(move |owner, _c| sink.borrow_mut().push(owner));
+        let mut tree = teksilo::core::widget_tree::WidgetTree::new()
+            .with_theme(teksilo::presets::intui::light());
+        let root = tree.add(BacklinksList {
+            rows: backlink_rows(
+                vec![row(7, 42, "Elena", 2, "Elena crossed.")],
+                &[(7, "Chapter Three".to_string())].into_iter().collect(),
+                "Untitled",
+            ),
+            confirm: Some(confirm),
+            root: None,
+        });
+        tree.layout(teksilo::prelude::SizeProposal::exact(500.0, 200.0));
+
+        let button = find_button(&tree, root).expect("a suggested row offers Add to cast");
+        let at = tree.bounds(button).center();
+        tree.dispatch_event(WidgetEvent::pointer_down(
+            at,
+            PointerButton::Primary,
+            Modifiers::NONE,
+        ));
+        tree.dispatch_event(WidgetEvent::pointer_up(
+            at,
+            PointerButton::Primary,
+            Modifiers::NONE,
+        ));
+
+        assert_eq!(
+            *confirmed.borrow(),
+            vec![7],
+            "the click confirmed the mentioning document, not the entry"
         );
     }
 

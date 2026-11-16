@@ -106,6 +106,7 @@ cast-empty = Пока никто не закреплён. Добавьте ко�
 cast-unresolved = Больше нет в библии истории
 
 mentions-confirm = Добавить в действующие лица «{ $name }»
+mentions-confirm-button = Добавить в действующие лица
 mentions-hit-count = { $n ->
     [one] { $n } раз
     [few] { $n } раза
@@ -146,7 +147,7 @@ note-details-pov-multiple = У этой заметки две точки зре�
 note-details-backlinks = Встречается в рукописи
 note-details-backlinks-empty = Пока нигде. Как только это имя появится в вашей прозе, оно будет показано здесь.
 note-details-backlinks-outside = За пределами книг
-note-details-backlinks-confirm-all = Подтвердить все появления
+note-details-backlinks-confirm-all = Добавить в действующие лица везде
 note-details-backlinks-confirm-all-tooltip = Добавить эту запись в действующие лица всех показанных здесь документов, где она ещё не подтверждена
 note-details-untitled-document = Без названия
 

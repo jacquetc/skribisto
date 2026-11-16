@@ -100,6 +100,7 @@ cast-empty = Nog niemand vastgezet. Voeg iemand toe of houd een suggestie aan
 cast-unresolved = Niet meer in de verhaalbijbel
 
 mentions-confirm = Toevoegen aan de rolbezetting van { $name }
+mentions-confirm-button = Toevoegen aan rolbezetting
 mentions-hit-count = { $n ->
     [one] eenmaal
    *[other] { $n } keer
@@ -138,7 +139,7 @@ note-details-pov-multiple = Deze notitie heeft twee vertelperspectieven.
 note-details-backlinks = Komt voor in het manuscript
 note-details-backlinks-empty = Nog niets. Zodra deze naam in uw proza voorkomt, verschijnt die hier.
 note-details-backlinks-outside = Buiten de boeken
-note-details-backlinks-confirm-all = Elk voorkomen bevestigen
+note-details-backlinks-confirm-all = Toevoegen aan elke rolbezetting
 note-details-backlinks-confirm-all-tooltip = Dit item toevoegen aan de rolbezetting van elk hier getoond document dat het nog niet heeft bevestigd
 note-details-untitled-document = Naamloos
 

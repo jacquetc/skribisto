@@ -90,6 +90,7 @@ cast-unpin = { $name } eltávolítása a szereplők közül
 cast-empty = Még senki sincs rögzítve. Adjon hozzá valakit, vagy tartson meg egy javaslatot
 cast-unresolved = Már nincs a történetbibliában
 mentions-confirm = Hozzáadás a(z) { $name } szereplőihez
+mentions-confirm-button = Hozzáadás a szereplőkhöz
 mentions-hit-count = { $n ->
     [one] egyszer
    *[other] { $n } alkalommal
@@ -124,7 +125,7 @@ note-details-pov-multiple = Ennek a jegyzetnek két nézőpontja van.
 note-details-backlinks = Előfordulások a kéziratban
 note-details-backlinks-empty = Még semmi. Amint ez a név megjelenik a prózájában, itt is feltűnik.
 note-details-backlinks-outside = A könyveken kívül
-note-details-backlinks-confirm-all = Minden előfordulás megerősítése
+note-details-backlinks-confirm-all = Hozzáadás mindenhol a szereplőkhöz
 note-details-backlinks-confirm-all-tooltip = A bejegyzés hozzáadása minden itt látható dokumentum szereplőihez, ahol még nincs megerősítve
 note-details-untitled-document = Névtelen
 note-in-prose-mentions = { $n ->

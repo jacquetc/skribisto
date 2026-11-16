@@ -96,6 +96,7 @@ cast-unpin = Вилучити { $name } з дійових осіб
 cast-empty = Ще нікого не додано. Додайте когось або залиште пропозицію
 cast-unresolved = Більше немає в довіднику історії
 mentions-confirm = Додати до дійових осіб «{ $name }»
+mentions-confirm-button = Додати до дійових осіб
 mentions-hit-count = { $n ->
     [1] один раз
     [one] { $n } раз
@@ -133,7 +134,7 @@ note-details-pov-multiple = Ця нотатка має дві точки зор�
 note-details-backlinks = Трапляється в рукописі
 note-details-backlinks-empty = Поки нічого. Щойно це ім’я з’явиться у вашій прозі, воно з’явиться й тут.
 note-details-backlinks-outside = Поза книгами
-note-details-backlinks-confirm-all = Підтвердити всі появи
+note-details-backlinks-confirm-all = Додати до дійових осіб усюди
 note-details-backlinks-confirm-all-tooltip = Додати цей запис до дійових осіб кожного показаного тут документа, де його ще не підтверджено
 note-details-untitled-document = Без назви
 note-in-prose-mentions = { $n ->

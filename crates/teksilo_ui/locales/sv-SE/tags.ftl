@@ -89,6 +89,7 @@ cast-unpin = Ta bort { $name } från persongalleriet
 cast-empty = Ingen fäst ännu. Lägg till eller behåll ett förslag
 cast-unresolved = Finns inte längre i berättelsebibeln
 mentions-confirm = Lägg till i persongalleriet för { $name }
+mentions-confirm-button = Lägg till i persongalleriet
 mentions-hit-count = { $n ->
        [one] en gång
       *[other] { $n } gånger
@@ -123,7 +124,7 @@ note-details-pov-multiple = Den här anteckningen har två berättarperspektiv.
 note-details-backlinks = Förekommer i manuset
 note-details-backlinks-empty = Inget ännu. När namnet förekommer i din prosa visas det här.
 note-details-backlinks-outside = Utanför böckerna
-note-details-backlinks-confirm-all = Bekräfta alla förekomster
+note-details-backlinks-confirm-all = Lägg till i alla persongallerier
 note-details-backlinks-confirm-all-tooltip = Lägg till posten i persongalleriet för alla dokument som visas här och som inte har bekräftat den ännu
 note-details-untitled-document = Namnlöst
 note-in-prose-mentions = { $n ->

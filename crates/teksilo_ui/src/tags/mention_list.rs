@@ -44,13 +44,9 @@ use teksilo::core::accesskit::Role;
 use teksilo::core::overlay::TooltipPlacement;
 use teksilo::core::widget::WidgetPlacement;
 use teksilo::prelude::*;
-use teksilo::widgets::{Badge, HStack, IconButton, TextWidget, VStack};
+use teksilo::widgets::{Badge, Button, ButtonVariant, HStack, IconButton, TextWidget, VStack};
 
 use crate::mentions::MentionRow;
-
-/// The confirm checkmark's glyph size, matching the leading glyphs the framework's own
-/// menu rows draw at.
-pub(crate) const CONFIRM_GLYPH: f32 = 12.0;
 use crate::widgets::{RING_RADIUS_ROW, attach_labelled_composite_tooltip, with_focus_ring};
 
 /// Persist a new confirmed-reference list for the item the list belongs to (append one id).
@@ -70,6 +66,27 @@ pub type ConfirmPresence = Rc<dyn Fn(u64, &mut EventContext)>;
 
 /// Open a row's target in the side pane.
 pub type OpenTarget = Rc<dyn Fn(u64, String, &mut EventContext)>;
+
+/// The control on a suggested **backlink** row: this entry really does appear in
+/// `document`, so write it into that document's cast.
+///
+/// **Worded, not drawn.** It was a bare checkmark, which reads as "done" or "OK" and says
+/// nothing about what pressing it writes, or where. The label names the write in the same
+/// words as the cast list's own "Add to cast…" picker, minus the ellipsis because nothing
+/// opens; the tooltip names the document, and teksilo hands a tooltip to assistive
+/// technology as the button's description, so a screen reader hears which row's cast this
+/// is without the visible label having to repeat the title beside it.
+pub(crate) fn confirm_presence_button(
+    document: &str,
+    owner: u64,
+    confirm: ConfirmPresence,
+) -> Button {
+    Button::new(tr!(mentions_confirm_button()))
+        .variant(ButtonVariant::Plain)
+        .text_style(TextStyleRole::Small)
+        .tooltip(tr!(mentions_confirm(name = document.to_string())))
+        .on_activate_fn(move |c| confirm(owner, c))
+}
 
 /// Which end of each mention names its row.
 ///
@@ -292,24 +309,16 @@ impl Widget for MentionList {
             } else if !row.is_point_of_view
                 && let Some(confirm) = self.confirm.clone()
             {
-                // A checkmark, not the roster's plus: from this end the writer is
-                // agreeing with something the scan already found, not adding someone to
-                // a scene they were absent from.
+                // Not the roster's plus: from this end the writer is agreeing with
+                // something the scan already found, not adding someone to a scene they
+                // were absent from. See `confirm_presence_button`.
                 //
                 // Never on a declared point of view. `set_point_of_view` already writes
                 // the character into the scene's cast as one composite, so such a row is
                 // confirmed too and never reaches here — and a row that renders *plain*,
                 // as a declaration does, must not also carry a control that says the
                 // writer has yet to agree with it.
-                let owner = row.owner_id;
-                line = line.child(
-                    IconButton::new(teksilo::widgets::primitives::IconWidget::checkmark(
-                        CONFIRM_GLYPH,
-                    ))
-                    .embedded()
-                    .tooltip(tr!(mentions_confirm(name = name.clone())))
-                    .on_activate_fn(move |c| confirm(owner, c)),
-                );
+                line = line.child(confirm_presence_button(&name, row.owner_id, confirm));
             }
 
             let open = self.open.clone();
@@ -499,6 +508,78 @@ mod tests {
             .iter()
             .filter(|(_, n)| n.role() == Role::Button)
             .count()
+    }
+
+    /// **Pin and unpin answer a click**, each with its own row's target. Both sit in a
+    /// row whose keyboard-focus ring once covered them and took every press, so the cast
+    /// list could be edited from the keyboard and not with the mouse (see
+    /// `crate::widgets::focus_ring`). Pressed at each control's centre through the
+    /// ordinary hit test, which `WidgetTree::click` would skip.
+    #[test]
+    fn pin_and_unpin_answer_a_click() {
+        use std::cell::RefCell;
+        use teksilo::core::event::{Modifiers, PointerButton};
+
+        fn icon_buttons(tree: &WidgetTree, id: WidgetId, out: &mut Vec<WidgetId>) {
+            if tree
+                .widget_type_name(id)
+                .is_some_and(|t| t.ends_with("::IconButton"))
+            {
+                out.push(id);
+                return;
+            }
+            for child in tree.children(id) {
+                icon_buttons(tree, child, out);
+            }
+        }
+
+        let pinned: Rc<RefCell<Vec<u64>>> = Rc::new(RefCell::new(Vec::new()));
+        let unpinned: Rc<RefCell<Vec<u64>>> = Rc::new(RefCell::new(Vec::new()));
+        let (pin_sink, unpin_sink) = (pinned.clone(), unpinned.clone());
+        let mut tree = WidgetTree::new().with_theme(teksilo::presets::intui::light());
+        let root = tree.add(MentionList::new(
+            vec![
+                row(2, "Grace", false, "Grace smiled."),
+                row(3, "Will", true, ""),
+            ],
+            MentionNaming::Target,
+            Some(Rc::new(move |id, _c: &mut EventContext| {
+                pin_sink.borrow_mut().push(id)
+            })),
+            Some(Rc::new(move |id, _c: &mut EventContext| {
+                unpin_sink.borrow_mut().push(id)
+            })),
+            Rc::new(|_id: u64, _t: String, _c: &mut EventContext| {}),
+        ));
+        tree.layout(SizeProposal::exact(300.0, 200.0));
+
+        let mut controls = Vec::new();
+        icon_buttons(&tree, root, &mut controls);
+        assert_eq!(controls.len(), 2, "Grace's pin, then Will's unpin");
+        for control in controls {
+            let at = tree.bounds(control).center();
+            tree.dispatch_event(WidgetEvent::pointer_down(
+                at,
+                PointerButton::Primary,
+                Modifiers::NONE,
+            ));
+            tree.dispatch_event(WidgetEvent::pointer_up(
+                at,
+                PointerButton::Primary,
+                Modifiers::NONE,
+            ));
+        }
+
+        assert_eq!(
+            *pinned.borrow(),
+            vec![2],
+            "the suggestion's plus pinned Grace"
+        );
+        assert_eq!(
+            *unpinned.borrow(),
+            vec![3],
+            "the confirmed row's cross unpinned Will"
+        );
     }
 
     /// A confirmed row offers unpin; a suggestion offers pin — never both on one row.

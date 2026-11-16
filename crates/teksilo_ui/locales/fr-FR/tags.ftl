@@ -144,6 +144,7 @@ cast-unresolved = Ne fait plus partie de la bible narrative
 # et l’entrée est inscrite dans la présence de ce document. Confirmation seule : il
 # n’y a pas de « ce n’est pas elle » à enregistrer.
 mentions-confirm = Ajouter à la présence de { $name }
+mentions-confirm-button = Ajouter à la présence
 mentions-hit-count = { $n ->
     [1] une fois
    *[other] { $n } fois
@@ -201,7 +202,7 @@ note-details-pov-multiple = Cette note a deux points de vue.
 note-details-backlinks = Apparaît dans le manuscrit
 note-details-backlinks-empty = Rien pour l’instant. Dès que ce nom apparaîtra dans votre texte, il s’affichera ici.
 note-details-backlinks-outside = Hors des livres
-note-details-backlinks-confirm-all = Confirmer toutes les présences
+note-details-backlinks-confirm-all = Ajouter à toutes les présences
 note-details-backlinks-confirm-all-tooltip = Inscrit cette entrée dans la présence de chaque document affiché ici qui ne l’a pas encore confirmée
 note-details-untitled-document = Sans titre
 

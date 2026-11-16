@@ -100,6 +100,7 @@ cast-empty = Ketään ei ole vielä lisätty. Lisää esiintyjä tai hyväksy eh
 cast-unresolved = Ei enää tarinan tietopankissa
 
 mentions-confirm = Lisää kohteen { $name } esiintyjiin
+mentions-confirm-button = Lisää esiintyjiin
 mentions-hit-count = { $n ->
     [one] kerran
    *[other] { $n } kertaa
@@ -138,7 +139,7 @@ note-details-pov-multiple = Tällä muistiinpanolla on kaksi näkökulmaa.
 note-details-backlinks = Esiintyy käsikirjoituksessa
 note-details-backlinks-empty = Ei vielä mitään. Kun tämä nimi esiintyy tekstissäsi, se näkyy tässä.
 note-details-backlinks-outside = Kirjojen ulkopuolella
-note-details-backlinks-confirm-all = Vahvista kaikki esiintymät
+note-details-backlinks-confirm-all = Lisää esiintyjiin kaikkialla
 note-details-backlinks-confirm-all-tooltip = Lisää tämä merkintä kaikkien tässä näkyvien asiakirjojen esiintyjiin, joissa sitä ei ole vielä vahvistettu
 note-details-untitled-document = Nimetön
 

@@ -137,6 +137,7 @@ cast-unresolved = Nu mai este în biblia poveștii
 # made from the other end. Confirm only: there is no "not her" to record; see
 # `teksilo_ui::mentions::presence`.
 mentions-confirm = Adaugă în distribuția lui „{ $name }”
+mentions-confirm-button = Adaugă în distribuție
 mentions-hit-count = { $n ->
        [one] o dată
        [few] de { $n } ori
@@ -196,7 +197,7 @@ note-details-pov-multiple = Această notă are două puncte de vedere.
 note-details-backlinks = Apare în manuscris
 note-details-backlinks-empty = Încă nimic. Când acest nume va apărea în proza dumneavoastră, va fi afișat aici.
 note-details-backlinks-outside = În afara cărților
-note-details-backlinks-confirm-all = Confirmă toate aparițiile
+note-details-backlinks-confirm-all = Adaugă în fiecare distribuție
 note-details-backlinks-confirm-all-tooltip = Adaugă această intrare în distribuția fiecărui document afișat aici care nu a confirmat-o încă
 note-details-untitled-document = Fără titlu
 

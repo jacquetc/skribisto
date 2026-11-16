@@ -100,6 +100,7 @@ cast-empty = Ingen er festet ennå. Legg til noen, eller behold et forslag
 cast-unresolved = Finnes ikke lenger i historiebibelen
 
 mentions-confirm = Legg til i persongalleriet for { $name }
+mentions-confirm-button = Legg til i persongalleriet
 mentions-hit-count = { $n ->
     [one] én gang
    *[other] { $n } ganger
@@ -138,7 +139,7 @@ note-details-pov-multiple = Dette notatet har to synsvinkler.
 note-details-backlinks = Forekommer i manuset
 note-details-backlinks-empty = Ingenting ennå. Når dette navnet forekommer i teksten din, vises det her.
 note-details-backlinks-outside = Utenfor bøkene
-note-details-backlinks-confirm-all = Bekreft alle forekomster
+note-details-backlinks-confirm-all = Legg til i alle persongalleriene
 note-details-backlinks-confirm-all-tooltip = Legg til denne oppføringen i persongalleriet til alle dokumentene som vises her og ennå ikke har bekreftet den
 note-details-untitled-document = Uten tittel
 

@@ -134,6 +134,11 @@ cast-unresolved = No longer in the story bible
 # made from the other end. Confirm only: there is no "not her" to record; see
 # `teksilo_ui::mentions::presence`.
 mentions-confirm = Add to the cast of { $name }
+# The visible label on that control. Short, because it sits at the end of a row
+# beside the document's title; `mentions-confirm` above is its tooltip, which
+# names the document and which a screen reader also hears. Same words as
+# `cast-add` without the ellipsis: nothing opens, the write happens at once.
+mentions-confirm-button = Add to cast
 mentions-hit-count = { $n ->
     [one] once
    *[other] { $n } times
@@ -192,7 +197,7 @@ note-details-pov-multiple = This note has two points of view.
 note-details-backlinks = Appears in the manuscript
 note-details-backlinks-empty = Nothing yet. Once this name appears in your prose, it will show up here.
 note-details-backlinks-outside = Outside the books
-note-details-backlinks-confirm-all = Confirm every appearance
+note-details-backlinks-confirm-all = Add to every cast
 note-details-backlinks-confirm-all-tooltip = Add this entry to the cast of every document shown here that has not confirmed it yet
 note-details-untitled-document = Untitled
 
