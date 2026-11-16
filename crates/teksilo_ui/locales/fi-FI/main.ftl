@@ -3754,12 +3754,14 @@ menu-help-shortcuts = &Pikanäppäimet…
 menu-help-screen-reader = &Ruudunlukijan käyttö
 menu-help-website = &Skribisto verkossa
 menu-help-report = &Ilmoita ongelmasta…
+menu-help-report-translation = Ilmoita käännös&virheestä…
 menu-help-check-updates = Tarkista päivit&ykset
 menu-command-palette = &Komentopaletti…
 
 learn-help-topics = Ohjeaiheet
 learn-shortcuts = Pikanäppäimet
 learn-website = Skribisto verkossa
+learn-report-translation = Ilmoita käännösvirheestä
 
 help-window-title = Ohje
 help-filter-topics = Suodata aiheita
@@ -3767,6 +3769,7 @@ help-no-matching-topic = Mikään aihe ei vastaa hakua.
 help-topic-missing = Tämä aihe ei ole enää käytettävissä.
 help-back = Takaisin
 help-not-translated = Tätä sivua ei ole vielä käännetty, joten se näytetään englanniksi.
+help-report-translation = Ilmoita käännösvirheestä tällä sivulla
 
 help-section-getting-started = Aloittaminen
 help-section-writing = Kirjoittaminen
@@ -3791,6 +3794,7 @@ help-topic-import-documents = Asiakirjojen tuonti
 help-topic-import-projects = Koko projektin tuominen
 help-topic-import-scrivener = Siirtyminen Scriveneristä
 help-topic-backups-and-versions = Varmuuskopiot ja versiot
+help-topic-report-translation-errors = Käännösvirheestä ilmoittaminen
 
 command-palette-placeholder = Kirjoita komento
 
@@ -3855,6 +3859,8 @@ shortcut-name-help-shortcuts = Pikanäppäimet
 shortcut-name-help-screen-reader = Skribiston käyttö ruudunlukijan kanssa
 shortcut-name-help-website = Skribisto verkossa
 shortcut-name-help-report = Ilmoita ongelmasta
+shortcut-name-help-report-translation = Ilmoita käännösvirheestä
+shortcut-name-translation-report-close = Sulje käännösvirheilmoitus
 shortcut-name-help-check-updates = Tarkista päivitykset
 update-check-behind = Versio { $version } on saatavilla.
 update-check-current = Käytössäsi on uusin versio.
@@ -4196,3 +4202,89 @@ import-plume-group-characters = Henkilöt
 import-plume-group-items = Esineet
 import-plume-group-places = Paikat
 import-plume-untitled-project = Tuotu Plume-projekti
+
+## Help ▸ Report a Translation Error…
+## The window that finds a translated string and sends a report about it to the
+## project's public issue tracker, through the writer's browser.
+
+translation-report-window-title = Ilmoita käännösvirheestä
+settings-report-translation = Ilmoita käännösvirheestä
+translation-report-language = Kieli
+translation-report-find = Etsi teksti
+translation-report-find-placeholder = Kirjoita näkemäsi sanat
+translation-report-results = Vastaavat tekstit
+translation-report-type-to-search = Kirjoita muutama sana tekstistä, josta haluat ilmoittaa, tällä kielellä tai englanniksi.
+translation-report-no-results = Mikään ei vastaa hakua. Kokeile vähemmillä sanoilla tai englanninkielisellä tekstillä.
+translation-report-scope = Vain sivu ”{ $page }”
+translation-report-scope-clear = Hae kaikkialta
+translation-report-not-found = En löydä tekstiä
+translation-report-seen-at = Missä näit tekstin?
+translation-report-seen-at-placeholder = Esimerkiksi: Vie-ikkunassa esikatselun alla
+translation-report-system-dialogs = Tiedostoikkunat ja sanat, joita järjestelmäsi niihin lisää, kuuluvat käyttöjärjestelmääsi: ilmoita niiden virheistä käyttöjärjestelmän tekijöille.
+translation-report-places = { $count ->
+    [one] { $count } paikka
+   *[other] { $count } paikkaa
+}
+translation-report-english = Englanti: { $sources }
+translation-report-english-item = { $source } ×{ $count }
+translation-report-same-as-english = Sama kuin englanniksi
+translation-report-composed = ”{ $first }” + ”{ $second }”
+translation-report-english-original = Englanninkielinen alkuperäinen. { $language }: ”{ $translation }”
+translation-report-english-untranslated = Englanninkielinen alkuperäinen, käännöksessä kielelle { $language } yhä englanniksi
+translation-report-english-missing = Englanninkielinen alkuperäinen, ei käännöstä kielelle { $language }
+translation-report-where-control = Yhteinen käyttöliittymän osa
+translation-report-where-book = Viety kirja
+translation-report-where-help = Ohje: { $page }
+translation-report-where-help-window = Ohjeikkuna
+translation-report-where-tooltip = Työkaluvihje
+translation-report-where-menu = Valikko
+translation-report-where-settings = Asetukset
+translation-report-where-command = Komennon nimi
+translation-report-where-status = Tila
+translation-report-where-tags = Tunnisteet
+translation-report-where-template = Muistiinpanomallit
+translation-report-where-story-bible = Tarinan tietopankki
+translation-report-where-launcher = Aloitusikkuna
+translation-report-where-import = Tuonti
+translation-report-where-export = Vienti
+translation-report-where-new-work = Uusi projekti
+translation-report-where-interface = Käyttöliittymä
+translation-report-selected = Valitsemasi teksti
+translation-report-message-id = Viesti: { $id } ({ $path })
+translation-report-place = Mikä paikka?
+translation-report-place-all = Kaikki { $count } paikkaa
+translation-report-note-seeded = Tämä muuttaa sitä, mitä Skribisto luo tästä eteenpäin. Projektissasi jo olevat säilyttävät nimensä; voit nimetä ne itse uudelleen.
+translation-report-note-export = Tämä näkyy kirjoissa, jotka viedään kielellä { $language }.
+translation-report-note-composed = Tämä teksti koostuu kahdesta viestistä. Korjaus voi kuulua kumpaan tahansa.
+translation-report-kind = Mikä on vialla?
+translation-report-kind-placeholder = Valitse…
+translation-report-kind-wrong-meaning = Merkitys on väärä
+translation-report-kind-spelling = Oikeinkirjoitus, kielioppi tai välimerkit
+translation-report-kind-not-translated = Yhä englanniksi
+translation-report-kind-unnatural = Ymmärrettävä mutta luonnoton, tai väärä sävy
+translation-report-kind-inconsistent = Nimetty muualla toisin
+translation-report-kind-plural-form = Väärä muoto luvun kanssa
+translation-report-kind-cut-off = Katkeaa tai ei mahdu
+translation-report-kind-other = Jokin muu
+translation-report-explain = Selitys (valinnainen, millä kielellä tahansa)
+translation-report-suggestion = Parempi käännös
+translation-report-hint-mnemonic = Merkki & osoittaa kirjaimen, jolla valikkoon pääsee näppäimistöltä. Säilytä yksi, sellaisessa kirjaimessa, jota mikään muu saman valikon kohta ei käytä.
+translation-report-hint-placeholder = Jätä jokainen aaltosulkeissa oleva osa, kuten {"{ $count }"}, täsmälleen ennalleen: Skribisto lisää siihen luvun tai nimen.
+translation-report-hint-select = Tämä teksti muuttuu luvun mukaan. Muuta vain sanoja kunkin [muoto]-merkinnän jälkeen, ja säilytä kaikki muodot.
+translation-report-public = Mikä tulee julkiseksi
+translation-report-public-cost = Ilmoituksesi julkaistaan GitHubissa kaikkien nähtäväksi. Tarvitset maksuttoman GitHub-tilin, ja sivu on englanniksi.
+translation-report-public-steps = Kirjaudu GitHubiin, rastita Contributor License Agreement -sopimusta (osallistujan lisenssisopimus) koskeva ruutu ja paina ”Create”.
+translation-report-public-title = Otsikko: { $title }
+translation-report-copy-text = Kopioi teksti
+translation-report-copy-link = Kopioi linkki
+translation-report-close = Sulje
+translation-report-continue = Jatka GitHubissa
+translation-report-another = Ilmoita toisesta
+translation-report-continued = Selaimesi pitäisi nyt näyttää ilmoitus GitHubissa valmiina tarkistettavaksi ja lähetettäväksi.
+translation-report-continued-copied = Ilmoitus oli liian pitkä linkkiin, joten Skribisto kopioi sen: liitä se kenttiin, joissa sitä pyydetään.
+translation-report-continued-help = Jos selaimesi ei avautunut, paina ”Kopioi linkki” ja liitä linkki selaimeesi. Jos GitHub hukkasi ilmoituksesi tai näyttää virhesivun (esimerkiksi tilin luomisen jälkeen), paina ”Kopioi teksti”, avaa GitHubissa uusi käännösvirheilmoitus ja liitä teksti siihen.
+translation-report-open-failed = Skribisto ei voinut avata selaintasi ({ $error }). Paina ”Kopioi linkki” ja liitä linkki selaimeesi.
+translation-report-text-copied = Ilmoitus kopioitu
+translation-report-link-copied = Linkki kopioitu
+translation-report-copy-failed = Leikepöytä ei hyväksynyt sitä.
+translation-report-dev-catalogue = Tämä versio seuraa kielen { $locale } muutoksia, mutta haku näyttää luettelon, jolla versio rakennettiin.

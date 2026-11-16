@@ -208,6 +208,7 @@ pub mod text_overflow;
 pub mod text_replacement;
 pub mod timeline;
 pub mod toast_scope;
+pub mod translation_report;
 pub mod trash;
 pub mod updates;
 pub mod versions;
@@ -716,6 +717,12 @@ pub fn run() {
         // (F1, the Help menu, the Launcher's Learn pane) reads this one instance, which
         // is what lets a reader who reopens Help find the topic they left it on.
         .app_state(crate::help::help_vm::HelpViewModel::new())
+        // Tier 1 for the same reason: one report window per process, about the
+        // application's strings rather than any open `Work`, so every door opens
+        // the report the writer left half written.
+        .app_state(
+            crate::translation_report::translation_report_vm::TranslationReportViewModel::new(),
+        )
         // Tier 1, like the registry above: one folder memory per process, correct for
         // every window because it is about the writer's habits and not about any Work.
         .app_state(folder_memory.clone())

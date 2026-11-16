@@ -1,0 +1,77 @@
+## When a word reads wrong
+
+Skribisto is translated by people who write in your language. If a menu, a message or a
+help page reads wrong to you, tell them. Choose *Help ▸ Report a Translation Error…*.
+
+You can also start from these places:
+
+- *Report a translation error* in the *Learn* page of the window Skribisto opens on.
+- *Report a translation error* under the language choice, in *Settings ▸ Appearance*.
+- *Report a translation error on this page*, at the foot of any help page shown in your
+  language. The search then lists only that page.
+
+The report window stays open beside your work. Go and look at the menu again if you need
+to, then come back.
+
+## Find the text
+
+The report is most useful when it names the exact line to change. So rather than
+describing where you saw the text, you find it.
+
+- Check the *Language*. It follows the language of the interface until you pick another.
+- Type a few words of the text in *Find the text*. Accents and capitals do not matter.
+- Pick the text in the list. Below each one you see where it appears and the English it
+  translates.
+
+If the same words appear in several places, the list shows them once and says how many
+places use them. *Which place?* then lets you choose one, or all of them. Choose all of
+them when the problem is a word used everywhere, such as a term your language says
+differently.
+
+You can also type the English text, if you know it. The list then shows what your
+language says for it.
+
+## When the search finds nothing
+
+Press *I can’t find it* and say where you saw the text. Some words do not come from
+Skribisto at all. The file dialogs, for example, belong to your operating system.
+
+## Say what is wrong
+
+- Under *What is wrong?*, pick the closest kind of problem.
+- Under *Explain (optional, in any language)*, say why it reads wrong.
+- Under *Better translation*, write how it should read. The box starts with the text as it
+  is now, so you only change what is wrong.
+
+Leave the special marks in place:
+
+- The `&` in a menu name marks the letter used to reach it from the keyboard. Keep one.
+- A part in braces, such as `{ $count }`, is where Skribisto puts a number or a name.
+- A text that changes with a number lists each form. Correct every one.
+
+Some names are written into your project when you create it: the first statuses, the
+preset tags, the note templates. A correction changes them for new projects only. You can
+rename them in yours yourself.
+
+## Send it
+
+Press *Continue on GitHub*. Your browser opens a public report on the project’s GitHub
+page, already filled in. Check it, tick the box about the Contributor License Agreement,
+and press *Create*.
+
+You need a free GitHub account, and the page is in English. *What will be public* shows
+exactly what the report says before you send it. It holds no project names and none of
+your writing.
+
+A long report, or one in a script such as Japanese or Arabic, may not fit in the link.
+Skribisto then copies the whole report for you, and the fields that could not travel say
+to paste it.
+
+## If something goes wrong
+
+- If your browser did not open, press *Copy link* and paste the link into your browser.
+- If GitHub shows an error page or loses your report, press *Copy text*. Open a new
+  translation report on GitHub and paste it.
+- *Copy text* also suits other channels, such as the project’s Discord.
+
+Press *Report another* to start again in the same language.

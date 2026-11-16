@@ -122,6 +122,18 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
         }));
     }
 
+    if links.translation_form.is_some() {
+        ctx.register_shortcut_global(
+            Shortcut::new("help.report_translation")
+                .group(ShortcutGroup::Help)
+                .name(tr!(shortcut_name_help_report_translation()))
+                .build(),
+        );
+        ctx.register_action_global(Action::new("help.report_translation").on_invoke(|_i, c| {
+            crate::translation_report::window::open_or_focus_translation_report(c, None);
+        }));
+    }
+
     if let Some(url) = links.issues {
         ctx.register_shortcut_global(
             Shortcut::new("help.report")

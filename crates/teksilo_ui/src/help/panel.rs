@@ -132,11 +132,13 @@ impl Widget for HelpPanel {
         // The body fills whatever is left under the header. `RichTextEditor` sizes to
         // its content rather than greedily, so without the `Expand` a short topic would
         // leave the reading pane's background showing through beneath it.
+        let footer = ctx.add(HelpReportFooter::new(self.vm.clone()));
         let content = ctx.add(
             VStack::new()
                 .spacing(0.0)
                 .child(header)
-                .child(Expand::new().child(page)),
+                .child(Expand::new().child(page))
+                .child(footer),
         );
 
         // `MinSize::width` capped by `MaxSize::width`, not `FixedSize::width`.
@@ -441,6 +443,94 @@ impl HelpPageHeader {
             );
         }
         ctx.add(column)
+    }
+}
+
+/// "Report a translation error on this page", under the page.
+///
+/// Opens the report window narrowed to this page: its paragraphs for a Djot topic,
+/// the tooltip's two texts for a topic built from one. Not on a page shown in English
+/// because it has no translation yet: the header already says so, and a report of
+/// the English text against the reader's language would describe a gap, not an
+/// error. Not at all where the running edition takes no translation reports.
+struct HelpReportFooter {
+    vm: HelpViewModel,
+    root_child: Option<WidgetId>,
+}
+
+impl HelpReportFooter {
+    fn new(vm: HelpViewModel) -> Self {
+        Self {
+            vm,
+            root_child: None,
+        }
+    }
+
+    fn scope(&self) -> Option<crate::translation_report::translation_report_vm::Scope> {
+        use crate::translation_report::translation_report_vm::Scope;
+        crate::identity::links().translation_form?;
+        let spec = self.vm.current_topic()?;
+        match spec.body {
+            HelpBody::Tooltip(key) => Some(Scope::Tooltip(key.to_string())),
+            HelpBody::Djot(_) => {
+                let resolved = spec.resolve(&current_locale_tag())?;
+                (!resolved.is_fallback).then(|| Scope::HelpPage(spec.key.to_string()))
+            }
+        }
+    }
+}
+
+impl std::fmt::Debug for HelpReportFooter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("HelpReportFooter").finish_non_exhaustive()
+    }
+}
+
+impl Widget for HelpReportFooter {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        let sid = ctx.self_id();
+        let reg = ctx.binding_registry();
+        self.vm
+            .current_key()
+            .bind_to(sid, reg, BindingLevel::Rebuild);
+        let id = match self.scope() {
+            Some(scope) => ctx.add(
+                VStack::new().spacing(0.0).child(Divider::new()).child(
+                    Padding::symmetric(6.0, 14.0).child(
+                        HStack::new()
+                            .child(
+                                Button::new(tr!(help_report_translation()))
+                                    .variant(ButtonVariant::Link)
+                                    .on_activate_fn(move |ctx| {
+                                        crate::translation_report::window::open_or_focus_translation_report(
+                                            ctx,
+                                            Some(scope.clone()),
+                                        )
+                                    }),
+                            )
+                            .child(Spacer::new()),
+                    ),
+                ),
+            ),
+            None => ctx.add(VStack::new()),
+        };
+        self.root_child = Some(id);
+        vec![id]
+    }
+
+    fn layout_response(
+        &self,
+        proposal: SizeProposal,
+        ctx: &LayoutContext,
+    ) -> teksilo::core::widget::LayoutResponse {
+        self.root_child
+            .and_then(|id| ctx.child_size(id, proposal))
+            .map(Into::into)
+            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    }
+
+    fn children(&self) -> Vec<WidgetId> {
+        self.root_child.into_iter().collect()
     }
 }
 

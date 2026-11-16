@@ -17,7 +17,7 @@ pub(in crate::settings) fn appearance_pane(
     vm: &SettingsViewModel,
     scale: Signal<f32>,
 ) -> impl Widget {
-    let form = FormLayout::new()
+    let mut form = FormLayout::new()
         .label(tr!(settings_page_appearance()))
         .label_gap(16.0)
         .row_spacing(14.0)
@@ -25,7 +25,20 @@ pub(in crate::settings) fn appearance_pane(
         .line(
             field_label(tr!(settings_field_language())),
             LanguageSwitcher::new(),
-        )
+        );
+    // Under the language picker, where someone who has just switched language and
+    // met a wrong word looks. Only where the running edition takes such reports.
+    if crate::identity::links().translation_form.is_some() {
+        form = form.line(
+            TextWidget::new(lit!(String::new())),
+            Button::new(tr!(settings_report_translation()))
+                .variant(ButtonVariant::Link)
+                .on_activate_fn(|ctx| {
+                    crate::translation_report::window::open_or_focus_translation_report(ctx, None)
+                }),
+        );
+    }
+    let form = form
         .full_width(group(tr!(settings_group_theme())))
         .line(field_label(tr!(settings_field_app_theme())), {
             // Light / Dark / System — the same three entries as ever, but

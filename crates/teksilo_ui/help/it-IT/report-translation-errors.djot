@@ -1,0 +1,57 @@
+## Quando una parola suona male
+
+Skribisto è tradotto da persone che scrivono nella tua lingua. Se un menu, un messaggio o una pagina di aiuto ti suona male, diglielo. Scegli *Aiuto ▸ Segnala un errore di traduzione…*.
+
+Puoi partire anche da questi punti:
+
+- *Segnala un errore di traduzione* nella pagina *Impara* della finestra con cui si apre Skribisto.
+- *Segnala un errore di traduzione* sotto la scelta della lingua, in *Impostazioni ▸ Aspetto*.
+- *Segnala un errore di traduzione in questa pagina*, in fondo a ogni pagina di aiuto mostrata nella tua lingua. In quel caso la ricerca elenca solo quella pagina.
+
+La finestra della segnalazione resta aperta accanto al tuo lavoro. Se serve, torna a guardare il menu e poi riprendi da dove eri.
+
+## Trova il testo
+
+Una segnalazione è più utile quando indica la riga esatta da cambiare. Per questo, invece di descrivere dove hai visto il testo, lo ritrovi.
+
+- Controlla la *Lingua*. Segue la lingua dell'interfaccia finché non ne scegli un'altra.
+- Digita qualche parola del testo in *Trova il testo*. Accenti e maiuscole non contano.
+- Scegli il testo nell'elenco. Sotto ciascuno vedi dove compare e quale testo inglese traduce.
+
+Se le stesse parole compaiono in più posizioni, l'elenco le mostra una sola volta e dice quante posizioni le usano. *Quale posizione?* ti permette allora di sceglierne una, oppure tutte. Scegli tutte quando il problema è una parola usata ovunque, per esempio un termine che la tua lingua dice in un altro modo.
+
+Puoi anche digitare il testo inglese, se lo conosci. L'elenco mostra allora come lo dice la tua lingua.
+
+## Quando la ricerca non trova nulla
+
+Fai clic su *Non lo trovo* e indica dove hai visto il testo. Alcune parole non vengono affatto da Skribisto. Le finestre per aprire e salvare i file, per esempio, appartengono al tuo sistema operativo.
+
+## Spiega cosa non va
+
+- In *Che cosa non va?*, scegli il tipo di problema più vicino.
+- In *Spiegazione (facoltativa, in qualsiasi lingua)*, spiega perché il testo suona male.
+- In *Traduzione migliore*, scrivi come dovrebbe essere. Il campo contiene già il testo attuale, così cambi solo ciò che non va.
+
+Lascia al loro posto i segni speciali:
+
+- La `&` in un nome di menu indica la lettera con cui raggiungi quel menu dalla tastiera. Tienine una.
+- Una parte tra parentesi graffe, come `{ $count }`, è il punto in cui Skribisto inserisce un numero o un nome.
+- Un testo che cambia con un numero elenca ogni sua forma. Correggile tutte.
+
+Alcuni nomi vengono scritti nel progetto al momento della creazione: i primi stati, le etichette predefinite, i modelli di nota. Una correzione li cambia solo per i nuovi progetti. Nel tuo progetto puoi rinominarli direttamente.
+
+## Invia la segnalazione
+
+Fai clic su *Continua su GitHub*. Il browser apre una segnalazione pubblica sulla pagina GitHub del progetto, già compilata. Controllala, spunta la casella del Contributor License Agreement e fai clic su *Create*.
+
+Ti serve un account GitHub gratuito, e la pagina è in inglese. *Che cosa sarà pubblico* mostra esattamente il contenuto della segnalazione prima dell'invio. Non contiene nomi di progetti né nulla di ciò che scrivi.
+
+Una segnalazione lunga, o scritta in una scrittura come quella giapponese o araba, potrebbe non entrare nel collegamento. Allora Skribisto copia per te l'intera segnalazione, e i campi che non sono passati ti chiedono di incollarla.
+
+## Se qualcosa va storto
+
+- Se il browser non si è aperto, fai clic su *Copia collegamento* e incolla il collegamento nel browser.
+- Se GitHub mostra una pagina di errore o perde la segnalazione, fai clic su *Copia testo*. Apri su GitHub una nuova segnalazione di traduzione e incolla il testo.
+- *Copia testo* va bene anche per altri canali, come il Discord del progetto.
+
+Fai clic su *Segnalane un altro* per ricominciare nella stessa lingua.

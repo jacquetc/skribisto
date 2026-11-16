@@ -146,6 +146,13 @@ serde = { workspace = true }
 # Parse the LongOperation event payloads (id/percentage/message/error JSON) that
 # drive the import progress toast.
 serde_json = "1.0"
+# The translation-report search parses the shipped catalogues itself: teksilo keeps no
+# message id beside rendered text and offers no bundle enumeration. Same version as
+# fluent-bundle and the compiler use.
+fluent-syntax = "0.12"
+# Percent-encodes a translation report into its prefilled issue link, and measures
+# the sign-in address GitHub would re-encode it into.
+percent-encoding = "2.3"
 # Lenient deserialize of the per-work `workspace.toml`'s embedded `DockLayoutState`
 # (teksilo's dock-layout snapshot): a future non-additive change to that *external*
 # type would otherwise fail-load the whole file for every project — so its blob is

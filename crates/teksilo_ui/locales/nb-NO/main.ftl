@@ -3659,12 +3659,14 @@ menu-help-shortcuts = Hurtig&taster…
 menu-help-screen-reader = &Bruke skjermleser
 menu-help-website = Skribisto på &nettet
 menu-help-report = &Rapporter et problem…
+menu-help-report-translation = Rapporter en oversettelses&feil…
 menu-help-check-updates = Se etter opp&dateringer
 menu-command-palette = &Kommandopalett…
 
 learn-help-topics = Hjelpeemner
 learn-shortcuts = Hurtigtaster
 learn-website = Skribisto på nettet
+learn-report-translation = Rapporter en oversettelsesfeil
 
 help-window-title = Hjelp
 help-filter-topics = Filtrer emner
@@ -3672,6 +3674,7 @@ help-no-matching-topic = Ingen emner samsvarer.
 help-topic-missing = Dette emnet er ikke lenger tilgjengelig.
 help-back = Tilbake
 help-not-translated = Denne siden er ikke oversatt ennå, så den vises på engelsk.
+help-report-translation = Rapporter en oversettelsesfeil på denne siden
 
 help-section-getting-started = Komme i gang
 help-section-writing = Skriving
@@ -3696,6 +3699,7 @@ help-topic-import-documents = Importere dokumenter
 help-topic-import-projects = Hente inn et helt prosjekt
 help-topic-import-scrivener = Fra Scrivener
 help-topic-backups-and-versions = Sikkerhetskopier og versjoner
+help-topic-report-translation-errors = Rapportere en oversettelsesfeil
 
 command-palette-placeholder = Skriv inn en kommando
 
@@ -3760,6 +3764,8 @@ shortcut-name-help-shortcuts = Hurtigtaster
 shortcut-name-help-screen-reader = Bruke Skribisto med skjermleser
 shortcut-name-help-website = Skribisto på nettet
 shortcut-name-help-report = Rapporter et problem
+shortcut-name-help-report-translation = Rapporter en oversettelsesfeil
+shortcut-name-translation-report-close = Lukk oversettelsesrapporten
 shortcut-name-help-check-updates = Se etter oppdateringer
 update-check-behind = Versjon { $version } er tilgjengelig.
 update-check-current = Du kjører den nyeste versjonen.
@@ -4140,3 +4146,89 @@ import-plume-group-characters = Personer
 import-plume-group-items = Gjenstander
 import-plume-group-places = Steder
 import-plume-untitled-project = Importert Plume-prosjekt
+
+## Help ▸ Report a Translation Error…
+## The window that finds a translated string and sends a report about it to the
+## project's public issue tracker, through the writer's browser.
+
+translation-report-window-title = Rapporter en oversettelsesfeil
+settings-report-translation = Rapporter en oversettelsesfeil
+translation-report-language = Språk
+translation-report-find = Finn teksten
+translation-report-find-placeholder = Skriv ordene du så
+translation-report-results = Tekster som passer
+translation-report-type-to-search = Skriv noen ord fra teksten du vil rapportere, på dette språket eller på engelsk.
+translation-report-no-results = Ingenting passer. Prøv færre ord, eller den engelske teksten.
+translation-report-scope = Bare siden «{ $page }»
+translation-report-scope-clear = Søk overalt
+translation-report-not-found = Jeg finner ikke teksten
+translation-report-seen-at = Hvor så du teksten?
+translation-report-seen-at-placeholder = For eksempel: vinduet Eksporter, under forhåndsvisningen
+translation-report-system-dialogs = Fildialogene, og ordene systemet ditt legger til i dem, hører til operativsystemet ditt: rapporter feil i dem der.
+translation-report-places = { $count ->
+    [one] { $count } sted
+   *[other] { $count } steder
+}
+translation-report-english = Engelsk: { $sources }
+translation-report-english-item = { $source } ×{ $count }
+translation-report-same-as-english = Samme som på engelsk
+translation-report-composed = «{ $first }» + «{ $second }»
+translation-report-english-original = Engelsk original. { $language }: «{ $translation }»
+translation-report-english-untranslated = Engelsk original, fortsatt på engelsk i oversettelsen til { $language }
+translation-report-english-missing = Engelsk original, uten oversettelse til { $language }
+translation-report-where-control = Et felles kontrollelement
+translation-report-where-book = En eksportert bok
+translation-report-where-help = Hjelp: { $page }
+translation-report-where-help-window = Hjelpevinduet
+translation-report-where-tooltip = Et verktøytips
+translation-report-where-menu = En meny
+translation-report-where-settings = Innstillinger
+translation-report-where-command = Et kommandonavn
+translation-report-where-status = En status
+translation-report-where-tags = Stikkord
+translation-report-where-template = Notatmaler
+translation-report-where-story-bible = Historiebibelen
+translation-report-where-launcher = Startvinduet
+translation-report-where-import = Import
+translation-report-where-export = Eksport
+translation-report-where-new-work = Nytt prosjekt
+translation-report-where-interface = Grensesnittet
+translation-report-selected = Teksten du valgte
+translation-report-message-id = Melding: { $id } ({ $path })
+translation-report-place = Hvilket sted?
+translation-report-place-all = Alle de { $count } stedene
+translation-report-note-seeded = Dette endrer hva Skribisto oppretter fra nå av. Det som allerede er i prosjektet ditt, beholder navnet sitt; du kan gi det nytt navn selv.
+translation-report-note-export = Dette står i bøker som eksporteres med språket { $language }.
+translation-report-note-composed = Denne teksten består av to meldinger. Rettelsen kan høre hjemme i den ene eller den andre.
+translation-report-kind = Hva er galt?
+translation-report-kind-placeholder = Velg…
+translation-report-kind-wrong-meaning = Betydningen er feil
+translation-report-kind-spelling = Stavemåte, grammatikk eller tegnsetting
+translation-report-kind-not-translated = Fortsatt på engelsk
+translation-report-kind-unnatural = Forståelig, men unaturlig eller feil tone
+translation-report-kind-inconsistent = Heter noe annet andre steder
+translation-report-kind-plural-form = Feil form for et tall
+translation-report-kind-cut-off = Kuttet av eller får ikke plass
+translation-report-kind-other = Noe annet
+translation-report-explain = Forklaring (valgfritt, på hvilket som helst språk)
+translation-report-suggestion = Bedre oversettelse
+translation-report-hint-mnemonic = Tegnet & markerer bokstaven som brukes for å nå en meny fra tastaturet. Behold ett, på en bokstav som ingen andre elementer i samme meny bruker.
+translation-report-hint-placeholder = Behold hver del i krøllparenteser, som {"{ $count }"}, nøyaktig som den er: Skribisto setter inn et tall eller et navn der.
+translation-report-hint-select = Denne teksten endrer seg med et tall. Endre bare ordene etter hver [form], og behold alle formene.
+translation-report-public = Dette blir offentlig
+translation-report-public-cost = Rapporten din blir en offentlig sak på GitHub. Du trenger en gratis GitHub-konto, og siden er på engelsk.
+translation-report-public-steps = Logg inn på GitHub, kryss av i boksen om Contributor License Agreement (avtalen om bidragene dine), og trykk på «Create».
+translation-report-public-title = Tittel: { $title }
+translation-report-copy-text = Kopier tekst
+translation-report-copy-link = Kopier lenke
+translation-report-close = Lukk
+translation-report-continue = Fortsett på GitHub
+translation-report-another = Rapporter en til
+translation-report-continued = Nettleseren din skal nå vise rapporten på GitHub, klar til at du kan sjekke og sende den.
+translation-report-continued-copied = Rapporten var for lang for lenken, så Skribisto kopierte den: lim den inn i feltene som ber om det.
+translation-report-continued-help = Hvis nettleseren ikke åpnet seg, trykk på «Kopier lenke» og lim inn lenken i nettleseren. Hvis GitHub mistet rapporten din eller viser en feilside (for eksempel etter at du opprettet en konto), trykk på «Kopier tekst», åpne en ny oversettelsesrapport på GitHub og lim inn teksten.
+translation-report-open-failed = Skribisto kunne ikke åpne nettleseren din ({ $error }). Trykk på «Kopier lenke» og lim inn lenken i nettleseren.
+translation-report-text-copied = Rapport kopiert
+translation-report-link-copied = Lenke kopiert
+translation-report-copy-failed = Utklippstavlen tok ikke imot den.
+translation-report-dev-catalogue = Denne versjonen følger med på endringer i { $locale }, men søket viser katalogen den ble bygget med.

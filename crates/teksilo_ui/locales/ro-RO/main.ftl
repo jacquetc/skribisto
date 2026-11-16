@@ -4453,6 +4453,7 @@ menu-help-shortcuts = Comenzi &rapide de la tastatură…
 menu-help-screen-reader = &Utilizarea unui cititor de ecran
 menu-help-website = Skribisto pe &web
 menu-help-report = Raportează o pro&blemă…
+menu-help-report-translation = Raportează o &eroare de traducere…
 menu-help-check-updates = Caută &actualizări
 menu-command-palette = &Paleta de comenzi…
 
@@ -4462,6 +4463,7 @@ menu-command-palette = &Paleta de comenzi…
 learn-help-topics = Subiecte de ajutor
 learn-shortcuts = Comenzi rapide de la tastatură
 learn-website = Skribisto pe web
+learn-report-translation = Raportează o eroare de traducere
 
 help-window-title = Ajutor
 help-filter-topics = Filtrează subiectele
@@ -4469,6 +4471,7 @@ help-no-matching-topic = Niciun subiect nu corespunde.
 help-topic-missing = Acest subiect nu mai este disponibil.
 help-back = Înapoi
 help-not-translated = Această pagină nu a fost încă tradusă, așa că este afișată în engleză.
+help-report-translation = Raportează o eroare de traducere din această pagină
 
 help-section-getting-started = Primii pași
 help-section-writing = Scrierea
@@ -4495,6 +4498,7 @@ help-topic-import-documents = Importul de documente
 help-topic-import-projects = Preluarea unui proiect întreg
 help-topic-import-scrivener = Trecerea de la Scrivener
 help-topic-backups-and-versions = Copii de siguranță și versiuni
+help-topic-report-translation-errors = Raportarea unei erori de traducere
 
 command-palette-placeholder = Tastați o comandă
 
@@ -4567,6 +4571,8 @@ shortcut-name-help-shortcuts = Comenzi rapide de la tastatură
 shortcut-name-help-screen-reader = Utilizarea aplicației Skribisto cu un cititor de ecran
 shortcut-name-help-website = Skribisto pe web
 shortcut-name-help-report = Raportează o problemă
+shortcut-name-help-report-translation = Raportează o eroare de traducere
+shortcut-name-translation-report-close = Închide raportul de traducere
 shortcut-name-help-check-updates = Caută actualizări
 # Raised only by the Help menu command, which the reader asked for.
 update-check-behind = Versiunea { $version } este disponibilă.
@@ -4977,3 +4983,90 @@ import-plume-group-characters = Personaje
 import-plume-group-items = Obiecte
 import-plume-group-places = Locuri
 import-plume-untitled-project = Proiect Plume importat
+
+## Help ▸ Report a Translation Error…
+## The window that finds a translated string and sends a report about it to the
+## project's public issue tracker, through the writer's browser.
+
+translation-report-window-title = Raportează o eroare de traducere
+settings-report-translation = Raportează o eroare de traducere
+translation-report-language = Limbă
+translation-report-find = Găsiți textul
+translation-report-find-placeholder = Tastați cuvintele pe care le-ați văzut
+translation-report-results = Texte care corespund
+translation-report-type-to-search = Tastați câteva cuvinte din textul pe care vreți să-l raportați, în această limbă sau în engleză.
+translation-report-no-results = Nu corespunde nimic. Încercați mai puține cuvinte sau textul în engleză.
+translation-report-scope = Doar pagina „{ $page }”
+translation-report-scope-clear = Caută peste tot
+translation-report-not-found = Nu îl găsesc
+translation-report-seen-at = Unde l-ați văzut?
+translation-report-seen-at-placeholder = De exemplu: în fereastra Export, sub previzualizare
+translation-report-system-dialogs = Ferestrele de dialog pentru fișiere și cuvintele pe care sistemul le adaugă în ele aparțin sistemului de operare: raportați-le celor care îl dezvoltă.
+translation-report-places = { $count ->
+    [one] { $count } loc
+    [few] { $count } locuri
+   *[other] { $count } de locuri
+}
+translation-report-english = Engleză: { $sources }
+translation-report-english-item = { $source } ×{ $count }
+translation-report-same-as-english = La fel ca în engleză
+translation-report-composed = „{ $first }” + „{ $second }”
+translation-report-english-original = Original în engleză. În limba { $language }: „{ $translation }”
+translation-report-english-untranslated = Original în engleză, încă în engleză în limba { $language }
+translation-report-english-missing = Original în engleză, fără traducere în limba { $language }
+translation-report-where-control = Un control comun
+translation-report-where-book = O carte exportată
+translation-report-where-help = Ajutor: { $page }
+translation-report-where-help-window = Fereastra de ajutor
+translation-report-where-tooltip = Un balon explicativ
+translation-report-where-menu = Un meniu
+translation-report-where-settings = Setări
+translation-report-where-command = Un nume de comandă
+translation-report-where-status = O stare
+translation-report-where-tags = Etichete
+translation-report-where-template = Șabloane de note
+translation-report-where-story-bible = Biblia poveștii
+translation-report-where-launcher = Lansatorul
+translation-report-where-import = Import
+translation-report-where-export = Export
+translation-report-where-new-work = Proiect nou
+translation-report-where-interface = Interfața
+translation-report-selected = Textul ales
+translation-report-message-id = Mesaj: { $id } ({ $path })
+translation-report-place = Care loc?
+translation-report-place-all = Toate locurile ({ $count })
+translation-report-note-seeded = Aceasta schimbă ceea ce creează Skribisto de acum înainte. Ce există deja în proiect își păstrează numele; îl puteți redenumi chiar dumneavoastră.
+translation-report-note-export = Acest text apare tipărit în cărțile exportate în limba { $language }.
+translation-report-note-composed = Acest text este alcătuit din două mesaje. Corectura poate ține de oricare dintre ele.
+translation-report-kind = Ce nu este în regulă?
+translation-report-kind-placeholder = Alege…
+translation-report-kind-wrong-meaning = Sensul este greșit
+translation-report-kind-spelling = Ortografie, gramatică sau punctuație
+translation-report-kind-not-translated = Încă în engleză
+translation-report-kind-unnatural = De înțeles, dar nefiresc sau pe un ton nepotrivit
+translation-report-kind-inconsistent = Numit altfel în altă parte
+translation-report-kind-plural-form = Formă greșită pentru un număr
+translation-report-kind-cut-off = Tăiat sau nu încape
+translation-report-kind-other = Altceva
+translation-report-explain = Explicație (opțională, în orice limbă)
+translation-report-suggestion = Traducere mai bună
+translation-report-hint-mnemonic = Semnul & marchează litera care deschide un meniu de la tastatură. Păstrați unul, pe o literă pe care nu o folosește niciun alt element din același meniu.
+translation-report-hint-placeholder = Păstrați fiecare parte dintre acolade, precum {"{ $count }"}, exact așa cum este: Skribisto pune acolo un număr sau un nume.
+translation-report-hint-select = Acest text se schimbă în funcție de un număr. Modificați doar cuvintele de după fiecare [formă] și păstrați toate formele.
+translation-report-public = Ce va fi public
+translation-report-public-cost = Raportul dumneavoastră devine un tichet public pe GitHub. Aveți nevoie de un cont GitHub gratuit, iar pagina este în engleză.
+translation-report-public-steps = Pe GitHub, autentificați-vă, bifați caseta despre Contributor License Agreement (acordul de licență pentru contribuitori) și apăsați „Create”.
+translation-report-public-title = Titlu: { $title }
+translation-report-copy-text = Copiază textul
+translation-report-copy-link = Copiază legătura
+translation-report-close = Închide
+translation-report-continue = Continuă pe GitHub
+translation-report-another = Raportează alta
+translation-report-continued = Navigatorul ar trebui să afișeze acum raportul pe GitHub, gata să îl verificați și să îl trimiteți.
+translation-report-continued-copied = Raportul era prea lung pentru legătură, așa că Skribisto l-a copiat: lipiți-l în câmpurile care cer acest lucru.
+translation-report-continued-help = Dacă navigatorul nu s-a deschis, apăsați Copiază legătura și lipiți legătura în navigator. Dacă GitHub v-a pierdut raportul sau afișează o pagină de eroare (de exemplu după ce v-ați creat un cont), apăsați Copiază textul, deschideți un nou raport de traducere pe GitHub și lipiți-l.
+translation-report-open-failed = Skribisto nu a putut deschide navigatorul ({ $error }). Apăsați Copiază legătura și lipiți legătura în navigator.
+translation-report-text-copied = Raport copiat
+translation-report-link-copied = Legătură copiată
+translation-report-copy-failed = Clipboardul nu a acceptat conținutul.
+translation-report-dev-catalogue = Această versiune urmărește modificările din { $locale }, dar căutarea afișează catalogul cu care a fost compilată.

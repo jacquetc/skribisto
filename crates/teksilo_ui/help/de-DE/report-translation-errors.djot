@@ -1,0 +1,85 @@
+## Wenn ein Wort falsch klingt
+
+Skribisto wird von Menschen übersetzt, die in Ihrer Sprache schreiben. Klingt ein Menü, eine
+Meldung oder eine Hilfeseite für Sie falsch, sagen Sie es ihnen. Wählen Sie
+*Hilfe ▸ Übersetzungsfehler melden…*.
+
+Sie können auch an diesen Stellen beginnen:
+
+- *Übersetzungsfehler melden* auf der Seite *Lernen* im Fenster, mit dem Skribisto startet.
+- *Übersetzungsfehler melden* unter der Sprachauswahl, in *Einstellungen ▸ Erscheinungsbild*.
+- *Einen Übersetzungsfehler auf dieser Seite melden* am Ende jeder Hilfeseite, die in Ihrer
+  Sprache angezeigt wird. Die Suche zeigt dann nur diese Seite.
+
+Das Meldefenster bleibt neben Ihrer Arbeit geöffnet. Schauen Sie bei Bedarf noch einmal ins
+Menü und kehren Sie dann zurück.
+
+## Den Text finden
+
+Eine Meldung hilft am meisten, wenn sie genau die Zeile nennt, die sich ändern soll. Statt zu
+beschreiben, wo Sie den Text gesehen haben, suchen Sie ihn deshalb heraus.
+
+- Prüfen Sie die *Sprache*. Sie folgt der Sprache der Oberfläche, bis Sie eine andere wählen.
+- Geben Sie unter *Text suchen* einige Wörter des Textes ein. Akzente sowie Groß- und
+  Kleinschreibung spielen keine Rolle.
+- Wählen Sie den Text in der Liste. Unter jedem Eintrag sehen Sie, wo er erscheint und welchen
+  englischen Text er übersetzt.
+
+Kommen dieselben Wörter an mehreren Stellen vor, zeigt die Liste sie nur einmal und nennt die
+Zahl der Stellen. Unter *Welche Stelle?* wählen Sie dann eine davon oder alle. Wählen Sie alle,
+wenn ein überall verwendetes Wort das Problem ist, etwa ein Begriff, den Ihre Sprache anders
+sagt.
+
+Kennen Sie den englischen Text, können Sie auch ihn eingeben. Die Liste zeigt dann, wie er in
+Ihrer Sprache lautet.
+
+## Wenn die Suche nichts findet
+
+Klicken Sie auf *Ich finde den Text nicht* und geben Sie an, wo Sie den Text gesehen haben.
+Manche Wörter stammen gar nicht von Skribisto. Die Dateidialoge zum Beispiel gehören zu Ihrem
+Betriebssystem.
+
+## Sagen, was falsch ist
+
+- Wählen Sie unter *Was ist falsch?* die Art von Problem, die am besten passt.
+- Erklären Sie unter *Erläuterung (optional, in beliebiger Sprache)*, warum der Text falsch
+  klingt.
+- Schreiben Sie unter *Bessere Übersetzung*, wie er lauten sollte. Das Feld enthält zu Beginn
+  den jetzigen Text, sodass Sie nur ändern, was falsch ist.
+
+Lassen Sie die besonderen Zeichen stehen:
+
+- Das `&` in einem Menünamen markiert den Buchstaben, über den man das Menü mit der Tastatur
+  erreicht. Behalten Sie eines davon.
+- Ein Teil in geschweiften Klammern, etwa `{ $count }`, ist die Stelle, an der Skribisto eine
+  Zahl oder einen Namen einsetzt.
+- Ein Text, der sich mit einer Zahl ändert, führt jede Form auf. Korrigieren Sie jede davon.
+
+Manche Namen schreibt Skribisto beim Anlegen in Ihr Projekt: die ersten Statusstufen, die
+vorgegebenen Schlagwörter, die Notizvorlagen. Eine Korrektur ändert sie nur für neue Projekte.
+In Ihrem eigenen Projekt können Sie sie selbst umbenennen.
+
+## Die Meldung absenden
+
+Klicken Sie auf *Weiter auf GitHub*. Ihr Browser öffnet eine öffentliche, bereits ausgefüllte
+Meldung auf der GitHub-Seite des Projekts. Prüfen Sie sie, setzen Sie das Häkchen beim
+Contributor License Agreement und klicken Sie auf *Create*.
+
+Sie brauchen ein kostenloses GitHub-Konto, und die Seite ist auf Englisch. *Was öffentlich wird*
+zeigt vor dem Absenden genau, was die Meldung enthält. Darin stehen keine Projektnamen und
+nichts von Ihren Texten.
+
+Eine lange Meldung oder eine in japanischer oder arabischer Schrift passt unter Umständen nicht
+in den Link. Skribisto kopiert dann die ganze Meldung für Sie, und die Felder, die nicht
+mitkamen, bitten Sie, sie einzufügen.
+
+## Wenn etwas schiefgeht
+
+- Hat sich Ihr Browser nicht geöffnet, klicken Sie auf *Link kopieren* und fügen Sie den Link
+  in Ihren Browser ein.
+- Zeigt GitHub eine Fehlerseite oder geht Ihre Meldung verloren, klicken Sie auf
+  *Text kopieren*. Öffnen Sie auf GitHub eine neue Übersetzungsmeldung und fügen Sie den Text
+  dort ein.
+- *Text kopieren* eignet sich auch für andere Wege, etwa den Discord des Projekts.
+
+Klicken Sie auf *Noch einen Fehler melden*, um in derselben Sprache neu zu beginnen.

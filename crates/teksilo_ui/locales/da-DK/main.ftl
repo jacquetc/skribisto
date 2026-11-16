@@ -4090,6 +4090,7 @@ menu-help-shortcuts = &Tastaturgenveje…
 menu-help-screen-reader = &Brug af skærmlæser
 menu-help-website = Skribisto på &nettet
 menu-help-report = &Rapportér et problem…
+menu-help-report-translation = Rapportér en oversættelses&fejl…
 menu-help-check-updates = Søg efter op&dateringer
 menu-command-palette = &Kommandopalet…
 
@@ -4099,6 +4100,7 @@ menu-command-palette = &Kommandopalet…
 learn-help-topics = Hjælpeemner
 learn-shortcuts = Tastaturgenveje
 learn-website = Skribisto på nettet
+learn-report-translation = Rapportér en oversættelsesfejl
 
 help-window-title = Hjælp
 help-filter-topics = Filtrér emner
@@ -4106,6 +4108,7 @@ help-no-matching-topic = Intet emne matcher.
 help-topic-missing = Dette emne er ikke længere tilgængeligt.
 help-back = Tilbage
 help-not-translated = Denne side er endnu ikke oversat, så den vises på engelsk.
+help-report-translation = Rapportér en oversættelsesfejl på denne side
 
 help-section-getting-started = Kom i gang
 help-section-writing = Skrivning
@@ -4132,6 +4135,7 @@ help-topic-import-documents = Import af dokumenter
 help-topic-import-projects = Overfør et helt projekt
 help-topic-import-scrivener = Skift fra Scrivener
 help-topic-backups-and-versions = Sikkerhedskopier og versioner
+help-topic-report-translation-errors = Rapportér en oversættelsesfejl
 
 command-palette-placeholder = Skriv en kommando
 
@@ -4204,6 +4208,8 @@ shortcut-name-help-shortcuts = Tastaturgenveje
 shortcut-name-help-screen-reader = Brug af Skribisto med skærmlæser
 shortcut-name-help-website = Skribisto på nettet
 shortcut-name-help-report = Rapportér et problem
+shortcut-name-help-report-translation = Rapportér en oversættelsesfejl
+shortcut-name-translation-report-close = Luk oversættelsesrapporten
 shortcut-name-help-check-updates = Søg efter opdateringer
 # Raised only by the Help menu command, which the reader asked for.
 update-check-behind = Version { $version } er tilgængelig.
@@ -4598,3 +4604,89 @@ import-plume-group-characters = Personer
 import-plume-group-items = Genstande
 import-plume-group-places = Steder
 import-plume-untitled-project = Importeret Plume-projekt
+
+## Help ▸ Report a Translation Error…
+## The window that finds a translated string and sends a report about it to the
+## project's public issue tracker, through the writer's browser.
+
+translation-report-window-title = Rapportér en oversættelsesfejl
+settings-report-translation = Rapportér en oversættelsesfejl
+translation-report-language = Sprog
+translation-report-find = Find teksten
+translation-report-find-placeholder = Skriv de ord, du så
+translation-report-results = Tekster, der passer
+translation-report-type-to-search = Skriv et par ord fra den tekst, du vil rapportere, på dette sprog eller på engelsk.
+translation-report-no-results = Intet passer. Prøv med færre ord eller med den engelske tekst.
+translation-report-scope = Kun siden »{ $page }«
+translation-report-scope-clear = Søg overalt
+translation-report-not-found = Jeg kan ikke finde teksten
+translation-report-seen-at = Hvor så du teksten?
+translation-report-seen-at-placeholder = For eksempel: vinduet Eksport, under forhåndsvisningen
+translation-report-system-dialogs = Fildialogerne og de ord, dit system tilføjer i dem, hører til dit styresystem: rapportér fejl i dem dér.
+translation-report-places = { $count ->
+    [one] { $count } sted
+   *[other] { $count } steder
+}
+translation-report-english = Engelsk: { $sources }
+translation-report-english-item = { $source } ×{ $count }
+translation-report-same-as-english = Samme som på engelsk
+translation-report-composed = »{ $first }« + »{ $second }«
+translation-report-english-original = Engelsk original. { $language }: »{ $translation }«
+translation-report-english-untranslated = Engelsk original, stadig på engelsk i oversættelsen til { $language }
+translation-report-english-missing = Engelsk original, uden oversættelse til { $language }
+translation-report-where-control = Et fælles betjeningselement
+translation-report-where-book = En eksporteret bog
+translation-report-where-help = Hjælp: { $page }
+translation-report-where-help-window = Hjælpevinduet
+translation-report-where-tooltip = Et værktøjstip
+translation-report-where-menu = En menu
+translation-report-where-settings = Indstillinger
+translation-report-where-command = Et kommandonavn
+translation-report-where-status = En status
+translation-report-where-tags = Mærker
+translation-report-where-template = Noteskabeloner
+translation-report-where-story-bible = Historiebiblen
+translation-report-where-launcher = Startskærmen
+translation-report-where-import = Import
+translation-report-where-export = Eksport
+translation-report-where-new-work = Nyt projekt
+translation-report-where-interface = Brugerfladen
+translation-report-selected = Den tekst, du valgte
+translation-report-message-id = Meddelelse: { $id } ({ $path })
+translation-report-place = Hvilket sted?
+translation-report-place-all = Alle { $count } steder
+translation-report-note-seeded = Det ændrer, hvad Skribisto opretter fra nu af. Det, der allerede er i dit projekt, beholder sit navn; du kan selv omdøbe det.
+translation-report-note-export = Dette står i bøger, der eksporteres med sproget { $language }.
+translation-report-note-composed = Denne tekst består af to meddelelser. Rettelsen kan høre til i den ene eller den anden.
+translation-report-kind = Hvad er galt?
+translation-report-kind-placeholder = Vælg…
+translation-report-kind-wrong-meaning = Betydningen er forkert
+translation-report-kind-spelling = Stavning, grammatik eller tegnsætning
+translation-report-kind-not-translated = Stadig på engelsk
+translation-report-kind-unnatural = Forståeligt, men unaturligt eller i den forkerte tone
+translation-report-kind-inconsistent = Hedder noget andet andre steder
+translation-report-kind-plural-form = Forkert form til et tal
+translation-report-kind-cut-off = Afskåret eller passer ikke
+translation-report-kind-other = Noget andet
+translation-report-explain = Forklaring (valgfri, på et hvilket som helst sprog)
+translation-report-suggestion = Bedre oversættelse
+translation-report-hint-mnemonic = Tegnet & markerer det bogstav, man når en menu med fra tastaturet. Behold ét, på et bogstav, som intet andet punkt i samme menu bruger.
+translation-report-hint-placeholder = Bevar hver del i krøllede parenteser, som {"{ $count }"}, præcis som den er: Skribisto sætter et tal eller et navn ind dér.
+translation-report-hint-select = Denne tekst ændrer sig med et tal. Ret kun ordene efter hver [form], og behold alle formerne.
+translation-report-public = Det bliver offentligt
+translation-report-public-cost = Din rapport bliver en offentlig sag på GitHub. Du skal have en gratis GitHub-konto, og siden er på engelsk.
+translation-report-public-steps = Log ind på GitHub, sæt flueben ved Contributor License Agreement (aftalen om dine bidrag), og tryk på »Create«.
+translation-report-public-title = Titel: { $title }
+translation-report-copy-text = Kopiér tekst
+translation-report-copy-link = Kopiér link
+translation-report-close = Luk
+translation-report-continue = Fortsæt på GitHub
+translation-report-another = Rapportér en til
+translation-report-continued = Din browser burde nu vise rapporten på GitHub, klar til, at du kan tjekke og sende den.
+translation-report-continued-copied = Rapporten var for lang til linket, så Skribisto har kopieret den: indsæt den i de felter, der beder om det.
+translation-report-continued-help = Hvis din browser ikke åbnede, så tryk på »Kopiér link«, og indsæt linket i din browser. Hvis GitHub har mistet din rapport eller viser en fejlside (for eksempel efter at du har oprettet en konto), så tryk på »Kopiér tekst«, åbn en ny oversættelsesrapport på GitHub, og indsæt teksten.
+translation-report-open-failed = Skribisto kunne ikke åbne din browser ({ $error }). Tryk på »Kopiér link«, og indsæt linket i din browser.
+translation-report-text-copied = Rapport kopieret
+translation-report-link-copied = Link kopieret
+translation-report-copy-failed = Udklipsholderen tog ikke imod den.
+translation-report-dev-catalogue = Denne version holder øje med ændringer i { $locale }, men søgningen viser det katalog, den blev bygget med.

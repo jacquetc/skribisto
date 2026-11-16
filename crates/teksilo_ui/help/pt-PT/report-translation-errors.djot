@@ -1,0 +1,79 @@
+## Quando uma palavra soa mal
+
+O Skribisto é traduzido por pessoas que escrevem na sua língua. Se um menu, uma mensagem ou uma
+página de ajuda lhe soar mal, diga-lhes. Escolha *Ajuda ▸ Comunicar um erro de tradução…*.
+
+Também pode começar a partir destes locais:
+
+- *Comunicar um erro de tradução* na página *Aprender* da janela com que o Skribisto abre.
+- *Comunicar um erro de tradução* por baixo da escolha do idioma, em
+  *Definições ▸ Aparência*.
+- *Comunicar um erro de tradução nesta página*, no fundo de qualquer página de ajuda apresentada
+  no seu idioma. A pesquisa mostra então apenas essa página.
+
+A janela da comunicação fica aberta ao lado do seu trabalho. Se precisar, volte a ver o menu e
+regresse depois.
+
+## Encontrar o texto
+
+A comunicação é mais útil quando indica a linha exata a alterar. Por isso, em vez de descrever
+onde viu o texto, procura-o.
+
+- Verifique o *Idioma*. Acompanha o idioma da interface até escolher outro.
+- Escreva algumas palavras do texto em *Encontrar o texto*. Os acentos e as maiúsculas não
+  contam.
+- Escolha o texto na lista. Por baixo de cada um, vê onde aparece e que texto inglês traduz.
+
+Se as mesmas palavras aparecerem em vários locais, a lista mostra-as uma só vez e diz quantos
+locais as usam. *Que local?* permite então escolher um, ou todos. Escolha todos quando o
+problema for uma palavra usada em todo o lado, como um termo que o seu idioma diz de outra
+forma.
+
+Também pode escrever o texto inglês, se o conhecer. A lista mostra então como o seu idioma o
+diz.
+
+## Quando a pesquisa não encontra nada
+
+Clique em *Não o encontro* e diga onde viu o texto. Algumas palavras nem sequer vêm do
+Skribisto. As caixas de diálogo de ficheiros, por exemplo, pertencem ao seu sistema operativo.
+
+## Dizer o que está errado
+
+- Em *O que está errado?*, escolha o tipo de problema mais próximo.
+- Em *Explicação (opcional, em qualquer idioma)*, diga porque soa mal.
+- Em *Tradução melhor*, escreva como deveria ficar. A caixa começa com o texto tal como está,
+  para que só mude o que está errado.
+
+Deixe as marcas especiais no lugar:
+
+- O `&` num nome de menu marca a letra que permite chegar a esse menu pelo teclado. Mantenha
+  um.
+- Uma parte entre chavetas, como `{ $count }`, é onde o Skribisto coloca um número ou um nome.
+- Um texto que muda consoante um número apresenta cada uma das suas formas. Corrija todas.
+
+Alguns nomes são escritos no seu projeto quando o cria: os primeiros estados, as etiquetas
+predefinidas, os modelos de notas. Uma correção só os altera nos projetos novos. No seu, pode
+mudar-lhes o nome diretamente.
+
+## Enviar a comunicação
+
+Clique em *Continuar no GitHub*. O seu navegador abre uma comunicação pública na página do
+projeto no GitHub, já preenchida. Verifique-a, marque a caixa do Contributor License Agreement e
+clique em *Create*.
+
+Precisa de uma conta gratuita no GitHub, e a página está em inglês. *O que será público* mostra
+exatamente o que a comunicação diz antes de a enviar. Não contém nomes de projetos nem nada do
+que escreve.
+
+Uma comunicação longa, ou numa escrita como a japonesa ou a árabe, pode não caber na ligação. O
+Skribisto copia então a comunicação inteira por si, e os campos que não conseguiram passar
+pedem-lhe que a cole.
+
+## Se algo correr mal
+
+- Se o navegador não abriu, clique em *Copiar ligação* e cole a ligação no navegador.
+- Se o GitHub mostrar uma página de erro ou perder a sua comunicação, clique em *Copiar texto*.
+  Abra uma nova comunicação de tradução no GitHub e cole lá o texto.
+- *Copiar texto* também serve para outros canais, como o Discord do projeto.
+
+Clique em *Comunicar outro* para recomeçar no mesmo idioma.

@@ -1,0 +1,80 @@
+## Cuando una palabra suena mal
+
+A Skribisto lo traducen personas que escriben en su idioma. Si un menú, un mensaje o una página
+de ayuda le suena mal, dígaselo. Elija *Ayuda ▸ Informar de un error de traducción…*.
+
+También puede empezar desde estos lugares:
+
+- *Informar de un error de traducción* en la página *Aprender* de la ventana con la que se abre
+  Skribisto.
+- *Informar de un error de traducción* bajo la elección del idioma, en
+  *Configuración ▸ Apariencia*.
+- *Informar de un error de traducción en esta página*, al pie de cualquier página de ayuda que
+  se muestre en su idioma. La búsqueda solo muestra entonces esa página.
+
+La ventana del informe sigue abierta junto a su trabajo. Si lo necesita, vuelva a mirar el menú
+y después regrese.
+
+## Buscar el texto
+
+El informe es más útil cuando señala la línea exacta que hay que cambiar. Por eso, en lugar de
+describir dónde vio el texto, lo busca usted.
+
+- Compruebe el *Idioma*. Sigue el idioma de la interfaz hasta que elija otro.
+- Escriba unas palabras del texto en *Buscar el texto*. Los acentos y las mayúsculas no
+  importan.
+- Elija el texto en la lista. Debajo de cada uno verá dónde aparece y qué texto inglés traduce.
+
+Si las mismas palabras aparecen en varios lugares, la lista las muestra una sola vez e indica
+cuántos lugares las usan. *¿Qué lugar?* le permite entonces elegir uno, o todos. Elíjalos todos
+cuando el problema sea una palabra usada en todas partes, como un término que su idioma dice de
+otra manera.
+
+También puede escribir el texto inglés, si lo conoce. La lista muestra entonces cómo lo dice su
+idioma.
+
+## Cuando la búsqueda no encuentra nada
+
+Haga clic en *No lo encuentro* y diga dónde vio el texto. Algunas palabras ni siquiera vienen de
+Skribisto. Los cuadros de diálogo de archivos, por ejemplo, pertenecen a su sistema operativo.
+
+## Decir qué está mal
+
+- En *¿Qué está mal?*, elija el tipo de problema que más se acerque.
+- En *Explicación (opcional, en cualquier idioma)*, diga por qué suena mal.
+- En *Mejor traducción*, escriba cómo debería decirse. El cuadro empieza con el texto tal como
+  está ahora, así que solo cambia lo que está mal.
+
+Deje las marcas especiales en su sitio:
+
+- El `&` de un nombre de menú marca la letra que permite llegar a ese menú desde el teclado.
+  Conserve uno.
+- Una parte entre llaves, como `{ $count }`, es donde Skribisto pone un número o un nombre.
+- Un texto que cambia según un número enumera cada una de sus formas. Corríjalas todas.
+
+Algunos nombres se escriben en su proyecto al crearlo: los primeros estados, las etiquetas
+predefinidas, las plantillas de notas. Una corrección solo los cambia en los proyectos nuevos.
+En el suyo puede cambiarles el nombre usted mismo.
+
+## Enviar el informe
+
+Haga clic en *Continuar en GitHub*. Su navegador abre un informe público en la página de GitHub
+del proyecto, ya rellenado. Revíselo, marque la casilla del Contributor License Agreement y haga
+clic en *Create*.
+
+Necesita una cuenta gratuita de GitHub, y la página está en inglés. *Qué será público* muestra
+exactamente lo que dice el informe antes de enviarlo. No contiene nombres de proyectos ni nada
+de lo que escribe.
+
+Un informe largo, o en una escritura como la japonesa o la árabe, puede no caber en el enlace.
+Skribisto copia entonces el informe completo por usted, y los campos que no pudieron pasar le
+piden que lo pegue.
+
+## Si algo falla
+
+- Si su navegador no se abrió, haga clic en *Copiar enlace* y pegue el enlace en el navegador.
+- Si GitHub muestra una página de error o pierde su informe, haga clic en *Copiar texto*. Abra
+  un nuevo informe de traducción en GitHub y pegue ahí el texto.
+- *Copiar texto* también sirve para otros canales, como el Discord del proyecto.
+
+Haga clic en *Informar de otro* para empezar de nuevo en el mismo idioma.

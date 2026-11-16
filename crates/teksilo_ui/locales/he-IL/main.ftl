@@ -4033,12 +4033,14 @@ menu-help-shortcuts = קיצורי מקלדת… (&K)
 menu-help-screen-reader = שימוש בקורא מסך (&E)
 menu-help-website = ‏Skribisto באינטרנט (&W)
 menu-help-report = דיווח על בעיה… (&R)
+menu-help-report-translation = דיווח על שגיאת תרגום… (&L)
 menu-help-check-updates = בדיקת עדכונים (&U)
 menu-command-palette = לוח הפקודות… (&C)
 
 learn-help-topics = נושאי עזרה
 learn-shortcuts = קיצורי מקלדת
 learn-website = ‏Skribisto באינטרנט
+learn-report-translation = דיווח על שגיאת תרגום
 
 help-window-title = עזרה
 help-filter-topics = סינון נושאים
@@ -4046,6 +4048,7 @@ help-no-matching-topic = אין נושא תואם.
 help-topic-missing = הנושא הזה כבר אינו זמין.
 help-back = חזרה
 help-not-translated = הדף הזה עדיין לא תורגם, ולכן הוא מוצג באנגלית.
+help-report-translation = דיווח על שגיאת תרגום בדף הזה
 
 help-section-getting-started = צעדים ראשונים
 help-section-writing = כתיבה
@@ -4070,6 +4073,7 @@ help-topic-import-documents = ייבוא מסמכים
 help-topic-import-projects = העברת פרויקט שלם
 help-topic-import-scrivener = מעבר מ־Scrivener
 help-topic-backups-and-versions = גיבויים וגרסאות
+help-topic-report-translation-errors = דיווח על שגיאות תרגום
 
 command-palette-placeholder = הקלידו פקודה
 
@@ -4134,6 +4138,8 @@ shortcut-name-help-shortcuts = קיצורי מקלדת
 shortcut-name-help-screen-reader = שימוש ב־Skribisto עם קורא מסך
 shortcut-name-help-website = ‏Skribisto באינטרנט
 shortcut-name-help-report = דיווח על בעיה
+shortcut-name-help-report-translation = דיווח על שגיאת תרגום
+shortcut-name-translation-report-close = סגירת הדיווח על שגיאת תרגום
 shortcut-name-help-check-updates = בדיקת עדכונים
 update-check-behind = גרסה { $version } זמינה.
 update-check-current = אתם משתמשים בגרסה החדשה ביותר.
@@ -4520,3 +4526,90 @@ import-plume-group-characters = דמויות
 import-plume-group-items = חפצים
 import-plume-group-places = מקומות
 import-plume-untitled-project = פרויקט Plume מיובא
+
+## Help ▸ Report a Translation Error…
+## The window that finds a translated string and sends a report about it to the
+## project's public issue tracker, through the writer's browser.
+
+translation-report-window-title = דיווח על שגיאת תרגום
+settings-report-translation = דיווח על שגיאת תרגום
+translation-report-language = שפה
+translation-report-find = חיפוש הטקסט
+translation-report-find-placeholder = הקלידו את המילים שראיתם
+translation-report-results = טקסטים תואמים
+translation-report-type-to-search = הקלידו כמה מילים מהטקסט שעליו תרצו לדווח, בשפה הזו או באנגלית.
+translation-report-no-results = אין התאמות. נסו פחות מילים, או את הטקסט באנגלית.
+translation-report-scope = רק הדף "{ $page }"
+translation-report-scope-clear = חיפוש בכל מקום
+translation-report-not-found = לא מצאתי אותו
+translation-report-seen-at = איפה ראיתם אותו?
+translation-report-seen-at-placeholder = לדוגמה: בחלון הייצוא, מתחת לתצוגה המקדימה
+translation-report-system-dialogs = חלונות בחירת הקבצים, והמילים שהמערכת מוסיפה להם, שייכים למערכת ההפעלה שלכם: עליהם יש לדווח שם.
+translation-report-places = { $count ->
+    [one] מקום אחד
+    [two] שני מקומות
+   *[other] { $count } מקומות
+}
+translation-report-english = אנגלית: { $sources }
+translation-report-english-item = ‏{ $source } ×{ $count }
+translation-report-same-as-english = זהה לאנגלית
+translation-report-composed = ‏"{ $first }" + "{ $second }"
+translation-report-english-original = המקור באנגלית. בשפה { $language }: "{ $translation }"
+translation-report-english-untranslated = המקור באנגלית, שעדיין מופיע באנגלית בשפה { $language }
+translation-report-english-missing = המקור באנגלית, ללא תרגום לשפה { $language }
+translation-report-where-control = פקד משותף
+translation-report-where-book = ספר מיוצא
+translation-report-where-help = עזרה: { $page }
+translation-report-where-help-window = חלון העזרה
+translation-report-where-tooltip = תיאור כלי
+translation-report-where-menu = תפריט
+translation-report-where-settings = הגדרות
+translation-report-where-command = שם של פקודה
+translation-report-where-status = מצב
+translation-report-where-tags = תגים
+translation-report-where-template = תבניות פתקים
+translation-report-where-story-bible = תיק הסיפור
+translation-report-where-launcher = מסך הפתיחה
+translation-report-where-import = ייבוא
+translation-report-where-export = ייצוא
+translation-report-where-new-work = פרויקט חדש
+translation-report-where-interface = הממשק
+translation-report-selected = הטקסט שבחרתם
+translation-report-message-id = הודעה: { $id } ({ $path })
+translation-report-place = איזה מקום?
+translation-report-place-all = כל { $count } המקומות
+translation-report-note-seeded = השינוי הזה משפיע על מה ש־Skribisto יוצרת מעכשיו. מה שכבר נמצא בפרויקט שלכם שומר על שמו, ואפשר לשנות את שמו בעצמכם.
+translation-report-note-export = הטקסט הזה מודפס בספרים שמיוצאים בשפה { $language }.
+translation-report-note-composed = הטקסט הזה מורכב משתי הודעות. ייתכן שהתיקון שייך לכל אחת מהן.
+translation-report-kind = מה שגוי?
+translation-report-kind-placeholder = בחירה…
+translation-report-kind-wrong-meaning = המשמעות שגויה
+translation-report-kind-spelling = כתיב, דקדוק או פיסוק
+translation-report-kind-not-translated = עדיין באנגלית
+translation-report-kind-unnatural = מובן אבל לא טבעי, או בטון הלא נכון
+translation-report-kind-inconsistent = נקרא בשם אחר במקום אחר
+translation-report-kind-plural-form = צורה לא נכונה למספר
+translation-report-kind-cut-off = חתוך או לא נכנס במקום
+translation-report-kind-other = משהו אחר
+translation-report-explain = הסבר (רשות, בכל שפה)
+translation-report-suggestion = תרגום טוב יותר
+translation-report-hint-mnemonic = התו & מסמן את האות שבעזרתה מגיעים לתפריט מהמקלדת. השאירו אחד בלבד, על אות שאף פריט אחר באותו תפריט לא משתמש בה.
+translation-report-hint-placeholder = השאירו כל חלק שבסוגריים מסולסלים, כמו {"{ $count }"}, בדיוק כמו שהוא: ‏Skribisto מציבה שם מספר או שם.
+translation-report-hint-select = הטקסט הזה משתנה לפי מספר. שנו רק את המילים שאחרי כל [צורה], והשאירו את כל הצורות.
+translation-report-public = מה יהיה ציבורי
+translation-report-public-cost = הדיווח שלכם יפורסם ב־GitHub כדיווח ציבורי. צריך חשבון GitHub חינמי, והדף הוא באנגלית.
+translation-report-public-steps = ב־GitHub, התחברו לחשבון, סמנו את התיבה שעוסקת ב־Contributor License Agreement (הסכם הרישיון לתורמים), ולחצו על Create.
+translation-report-public-title = כותרת: { $title }
+translation-report-copy-text = העתקת הטקסט
+translation-report-copy-link = העתקת הקישור
+translation-report-close = סגירה
+translation-report-continue = המשך ב־GitHub
+translation-report-another = דיווח נוסף
+translation-report-continued = הדפדפן אמור להציג עכשיו את הדיווח ב־GitHub, מוכן לבדיקה ולשליחה.
+translation-report-continued-copied = הדיווח היה ארוך מדי בשביל הקישור, ולכן Skribisto העתיקה אותו: הדביקו אותו בשדות שמבקשים זאת.
+translation-report-continued-help = אם הדפדפן לא נפתח, לחצו על "העתקת הקישור" והדביקו את הקישור בדפדפן. אם הדיווח אבד ב־GitHub או שמוצג דף שגיאה (למשל אחרי שיצרתם חשבון), לחצו על "העתקת הטקסט", פתחו ב־GitHub דיווח חדש על שגיאת תרגום, והדביקו אותו שם.
+translation-report-open-failed = ‏Skribisto לא הצליחה לפתוח את הדפדפן ({ $error }). לחצו על "העתקת הקישור" והדביקו את הקישור בדפדפן.
+translation-report-text-copied = הדיווח הועתק
+translation-report-link-copied = הקישור הועתק
+translation-report-copy-failed = לוח העריכה לא קיבל אותו.
+translation-report-dev-catalogue = הגרסה הזו עוקבת אחרי שינויים ב־{ $locale }, אבל החיפוש מציג את הקטלוג שאיתו היא נבנתה.

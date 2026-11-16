@@ -1,0 +1,87 @@
+## Quand un mot sonne faux
+
+Skribisto est traduit par des gens qui écrivent dans votre langue. Si un menu, un message ou
+une page d’aide sonne faux pour vous, dites-le-leur. Choisissez *Aide ▸ Signaler une erreur
+de traduction…*.
+
+Vous pouvez aussi partir de ces endroits :
+
+- *Signaler une erreur de traduction* dans la page *Apprendre* de la fenêtre qui s’ouvre au
+  lancement de Skribisto.
+- *Signaler une erreur de traduction* sous le choix de la langue, dans *Paramètres ▸
+  Apparence*.
+- *Signaler une erreur de traduction sur cette page*, au pied de toute page d’aide affichée
+  dans votre langue. La recherche ne montre alors que cette page.
+
+La fenêtre du signalement reste ouverte à côté de votre travail. Allez revoir le menu si
+besoin, puis revenez.
+
+## Trouver le texte
+
+Un signalement est plus utile quand il désigne la ligne exacte à corriger. Alors plutôt que
+de décrire où vous avez vu le texte, vous le retrouvez.
+
+- Vérifiez la *Langue*. Elle suit la langue de l’interface tant que vous n’en choisissez pas
+  une autre.
+- Tapez quelques mots du texte dans *Trouver le texte*. Les accents et les majuscules ne
+  comptent pas.
+- Choisissez le texte dans la liste. Sous chacun, vous voyez où il apparaît et l’anglais
+  qu’il traduit.
+
+Si les mêmes mots apparaissent à plusieurs endroits, la liste ne les montre qu’une fois et
+dit combien d’endroits les utilisent. *Quel endroit ?* vous laisse alors en choisir un, ou
+tous. Choisissez-les tous quand le problème est un mot employé partout, comme un terme que
+votre langue dit autrement.
+
+Vous pouvez aussi taper le texte anglais, si vous le connaissez. La liste montre alors ce
+que votre langue dit à sa place.
+
+## Quand la recherche ne trouve rien
+
+Appuyez sur *Je ne le trouve pas* et dites où vous avez vu le texte. Certains mots ne
+viennent pas du tout de Skribisto. Les boîtes de dialogue de fichiers, par exemple,
+appartiennent à votre système d’exploitation.
+
+## Dire ce qui ne va pas
+
+- Sous *Qu’est-ce qui ne va pas ?*, choisissez le genre de problème le plus proche.
+- Sous *Expliquer (facultatif, dans n’importe quelle langue)*, dites pourquoi il sonne
+  faux.
+- Sous *Meilleure traduction*, écrivez comment il devrait se lire. La zone commence par le
+  texte tel qu’il est, pour que vous ne changiez que ce qui ne va pas.
+
+Laissez les marques spéciales en place :
+
+- Le `&` d’un nom de menu marque la lettre qui permet de l’atteindre au clavier. Gardez-en
+  un.
+- Une partie entre accolades, comme `{ $count }`, est l’endroit où Skribisto met un nombre
+  ou un nom.
+- Un texte qui change avec un nombre donne chaque forme. Corrigez-les toutes.
+
+Certains noms sont écrits dans votre projet quand vous le créez : les premiers statuts,
+les étiquettes proposées, les modèles de notes. Une correction ne les change que pour les
+nouveaux projets. Vous pouvez les renommer vous-même dans le vôtre.
+
+## L’envoyer
+
+Appuyez sur *Continuer sur GitHub*. Votre navigateur ouvre un signalement public sur la
+page GitHub du projet, déjà rempli. Vérifiez-le, cochez la case du Contributor License
+Agreement et appuyez sur *Create*.
+
+Il vous faut un compte GitHub gratuit, et la page est en anglais. *Ce qui sera public*
+montre exactement ce que dit le signalement avant de l’envoyer. Il ne contient aucun nom de
+projet et rien de ce que vous écrivez.
+
+Un long signalement, ou un signalement dans une écriture comme le japonais ou l’arabe,
+peut ne pas tenir dans le lien. Skribisto copie alors tout le signalement pour vous, et les
+champs qui n’ont pas pu passer disent de le coller.
+
+## Si quelque chose ne va pas
+
+- Si votre navigateur ne s’est pas ouvert, appuyez sur *Copier le lien* et collez le lien
+  dans votre navigateur.
+- Si GitHub affiche une page d’erreur ou perd votre signalement, appuyez sur *Copier le
+  texte*. Ouvrez un nouveau signalement de traduction sur GitHub et collez-le.
+- *Copier le texte* convient aussi à d’autres canaux, comme le Discord du projet.
+
+Appuyez sur *Signaler autre chose* pour recommencer dans la même langue.

@@ -4205,6 +4205,7 @@ menu-help-shortcuts = &Keyboard Shortcuts…
 menu-help-screen-reader = Using a &screen reader
 menu-help-website = Skribisto on the &Web
 menu-help-report = &Report a Problem…
+menu-help-report-translation = Report a Translation &Error…
 menu-help-check-updates = Check for &Updates
 menu-command-palette = &Command Palette…
 
@@ -4214,6 +4215,7 @@ menu-command-palette = &Command Palette…
 learn-help-topics = Help topics
 learn-shortcuts = Keyboard shortcuts
 learn-website = Skribisto on the web
+learn-report-translation = Report a translation error
 
 help-window-title = Help
 help-filter-topics = Filter topics
@@ -4221,6 +4223,7 @@ help-no-matching-topic = No topic matches.
 help-topic-missing = This topic is no longer available.
 help-back = Back
 help-not-translated = This page has not been translated yet, so it is shown in English.
+help-report-translation = Report a translation error on this page
 
 help-section-getting-started = Getting started
 help-section-writing = Writing
@@ -4247,6 +4250,7 @@ help-topic-import-documents = Importing documents
 help-topic-import-projects = Bringing a whole project across
 help-topic-import-scrivener = Coming from Scrivener
 help-topic-backups-and-versions = Backups and versions
+help-topic-report-translation-errors = Reporting a translation error
 
 command-palette-placeholder = Type a command
 
@@ -4319,6 +4323,8 @@ shortcut-name-help-shortcuts = Keyboard Shortcuts
 shortcut-name-help-screen-reader = Using Skribisto with a screen reader
 shortcut-name-help-website = Skribisto on the Web
 shortcut-name-help-report = Report a Problem
+shortcut-name-help-report-translation = Report a Translation Error
+shortcut-name-translation-report-close = Close the translation report
 shortcut-name-help-check-updates = Check for Updates
 # Raised only by the Help menu command, which the reader asked for.
 update-check-behind = Version { $version } is available.
@@ -4716,3 +4722,89 @@ import-plume-group-characters = Characters
 import-plume-group-items = Items
 import-plume-group-places = Places
 import-plume-untitled-project = Imported Plume project
+
+## Help ▸ Report a Translation Error…
+## The window that finds a translated string and sends a report about it to the
+## project's public issue tracker, through the writer's browser.
+
+translation-report-window-title = Report a translation error
+settings-report-translation = Report a translation error
+translation-report-language = Language
+translation-report-find = Find the text
+translation-report-find-placeholder = Type the words you saw
+translation-report-results = Matching texts
+translation-report-type-to-search = Type a few words of the text you want to report, in this language or in English.
+translation-report-no-results = Nothing matches. Try fewer words, or the English text.
+translation-report-scope = Only the page “{ $page }”
+translation-report-scope-clear = Search everything
+translation-report-not-found = I can’t find it
+translation-report-seen-at = Where did you see it?
+translation-report-seen-at-placeholder = For example: the Export window, under the preview
+translation-report-system-dialogs = The file dialogs, and the words your system adds to them, belong to your operating system: report those to it.
+translation-report-places = { $count ->
+    [one] { $count } place
+   *[other] { $count } places
+}
+translation-report-english = English: { $sources }
+translation-report-english-item = { $source } ×{ $count }
+translation-report-same-as-english = Same as the English
+translation-report-composed = “{ $first }” + “{ $second }”
+translation-report-english-original = English original. In { $language }: “{ $translation }”
+translation-report-english-untranslated = English original, still in English in { $language }
+translation-report-english-missing = English original, with no translation in { $language }
+translation-report-where-control = A shared control
+translation-report-where-book = An exported book
+translation-report-where-help = Help: { $page }
+translation-report-where-help-window = The Help window
+translation-report-where-tooltip = A tooltip
+translation-report-where-menu = A menu
+translation-report-where-settings = Settings
+translation-report-where-command = A command name
+translation-report-where-status = A status
+translation-report-where-tags = Tags
+translation-report-where-template = Note templates
+translation-report-where-story-bible = The story bible
+translation-report-where-launcher = The Launcher
+translation-report-where-import = Import
+translation-report-where-export = Export
+translation-report-where-new-work = New project
+translation-report-where-interface = The interface
+translation-report-selected = The text you picked
+translation-report-message-id = Message: { $id } ({ $path })
+translation-report-place = Which place?
+translation-report-place-all = All { $count } places
+translation-report-note-seeded = This changes what Skribisto creates from now on. What is already in your project keeps its name; you can rename it yourself.
+translation-report-note-export = This is printed in books exported in { $language }.
+translation-report-note-composed = This text is made of two messages. The fix may belong in either one.
+translation-report-kind = What is wrong?
+translation-report-kind-placeholder = Choose…
+translation-report-kind-wrong-meaning = The meaning is wrong
+translation-report-kind-spelling = Spelling, grammar or punctuation
+translation-report-kind-not-translated = Still in English
+translation-report-kind-unnatural = Understandable but unnatural, or the wrong tone
+translation-report-kind-inconsistent = Named differently elsewhere
+translation-report-kind-plural-form = Wrong form for a number
+translation-report-kind-cut-off = Cut off or does not fit
+translation-report-kind-other = Something else
+translation-report-explain = Explain (optional, in any language)
+translation-report-suggestion = Better translation
+translation-report-hint-mnemonic = The & marks the letter used to reach a menu from the keyboard. Keep one, on a letter no other item of the same menu uses.
+translation-report-hint-placeholder = Keep each part in braces, such as {"{ $count }"}, exactly as it is: Skribisto puts a number or a name there.
+translation-report-hint-select = This text changes with a number. Change only the words after each [form], and keep every form.
+translation-report-public = What will be public
+translation-report-public-cost = Your report becomes a public issue on GitHub. You need a free GitHub account, and the page is in English.
+translation-report-public-steps = On GitHub, sign in, tick the box about the Contributor License Agreement, and press Create.
+translation-report-public-title = Title: { $title }
+translation-report-copy-text = Copy text
+translation-report-copy-link = Copy link
+translation-report-close = Close
+translation-report-continue = Continue on GitHub
+translation-report-another = Report another
+translation-report-continued = Your browser should now show the report on GitHub, ready for you to check and send.
+translation-report-continued-copied = The report was too long for the link, so Skribisto copied it: paste it into the fields that say so.
+translation-report-continued-help = If your browser did not open, press Copy link and paste the link into your browser. If GitHub lost your report or shows an error page (for example after you created an account), press Copy text, open a new translation report on GitHub, and paste it.
+translation-report-open-failed = Skribisto could not open your browser ({ $error }). Press Copy link and paste the link into your browser.
+translation-report-text-copied = Report copied
+translation-report-link-copied = Link copied
+translation-report-copy-failed = The clipboard did not accept it.
+translation-report-dev-catalogue = This build is watching { $locale } for changes, but the search shows the catalogue it was built with.

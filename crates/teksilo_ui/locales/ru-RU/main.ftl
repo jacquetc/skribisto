@@ -4582,12 +4582,14 @@ menu-help-shortcuts = Сочетания &клавиш…
 menu-help-screen-reader = &Работа с программой чтения с экрана
 menu-help-website = Skribisto в &Интернете
 menu-help-report = &Сообщить о проблеме…
+menu-help-report-translation = Сообщить об о&шибке перевода…
 menu-help-check-updates = Проверить о&бновления
 menu-command-palette = &Палитра команд…
 
 learn-help-topics = Темы справки
 learn-shortcuts = Сочетания клавиш
 learn-website = Skribisto в Интернете
+learn-report-translation = Сообщить об ошибке перевода
 
 help-window-title = Справка
 help-filter-topics = Фильтр тем
@@ -4595,6 +4597,7 @@ help-no-matching-topic = Подходящих тем нет.
 help-topic-missing = Эта тема больше не доступна.
 help-back = Назад
 help-not-translated = Эта страница пока не переведена и отображается на английском языке.
+help-report-translation = Сообщить об ошибке перевода на этой странице
 
 help-section-getting-started = Начало работы
 help-section-writing = Письмо
@@ -4619,6 +4622,7 @@ help-topic-import-documents = Импорт документов
 help-topic-import-projects = Перенос целого проекта
 help-topic-import-scrivener = Переход с Scrivener
 help-topic-backups-and-versions = Резервные копии и версии
+help-topic-report-translation-errors = Как сообщить об ошибке перевода
 
 command-palette-placeholder = Введите команду
 
@@ -4683,6 +4687,8 @@ shortcut-name-help-shortcuts = Сочетания клавиш
 shortcut-name-help-screen-reader = Работа в Skribisto с программой чтения с экрана
 shortcut-name-help-website = Skribisto в Интернете
 shortcut-name-help-report = Сообщить о проблеме
+shortcut-name-help-report-translation = Сообщить об ошибке перевода
+shortcut-name-translation-report-close = Закрыть сообщение об ошибке перевода
 shortcut-name-help-check-updates = Проверить обновления
 update-check-behind = Доступна версия { $version }.
 update-check-current = У вас самая новая версия.
@@ -5086,3 +5092,91 @@ import-plume-group-characters = Персонажи
 import-plume-group-items = Предметы
 import-plume-group-places = Места
 import-plume-untitled-project = Импортированный проект Plume
+
+## Help ▸ Report a Translation Error…
+## The window that finds a translated string and sends a report about it to the
+## project's public issue tracker, through the writer's browser.
+
+translation-report-window-title = Сообщить об ошибке перевода
+settings-report-translation = Сообщить об ошибке перевода
+translation-report-language = Язык
+translation-report-find = Найдите текст
+translation-report-find-placeholder = Введите слова, которые вы видели
+translation-report-results = Подходящие тексты
+translation-report-type-to-search = Введите несколько слов текста, о котором хотите сообщить, на этом языке или по-английски.
+translation-report-no-results = Ничего не найдено. Попробуйте меньше слов или английский текст.
+translation-report-scope = Только страница «{ $page }»
+translation-report-scope-clear = Искать везде
+translation-report-not-found = Не могу найти
+translation-report-seen-at = Где вы это увидели?
+translation-report-seen-at-placeholder = Например: в окне экспорта, под предварительным просмотром
+translation-report-system-dialogs = Диалоги выбора файлов и слова, которые добавляет к ним система, относятся к вашей операционной системе: сообщайте о них её разработчикам.
+translation-report-places = { $count ->
+    [one] { $count } место
+    [few] { $count } места
+    [many] { $count } мест
+   *[other] { $count } места
+}
+translation-report-english = По-английски: { $sources }
+translation-report-english-item = { $source } ×{ $count }
+translation-report-same-as-english = Как в английском
+translation-report-composed = «{ $first }» + «{ $second }»
+translation-report-english-original = Английский оригинал. Перевод ({ $language }): «{ $translation }»
+translation-report-english-untranslated = Английский оригинал, пока не переведён ({ $language })
+translation-report-english-missing = Английский оригинал, перевода нет ({ $language })
+translation-report-where-control = Общий элемент управления
+translation-report-where-book = Экспортированная книга
+translation-report-where-help = Справка: { $page }
+translation-report-where-help-window = Окно справки
+translation-report-where-tooltip = Всплывающая подсказка
+translation-report-where-menu = Меню
+translation-report-where-settings = Настройки
+translation-report-where-command = Название команды
+translation-report-where-status = Статус
+translation-report-where-tags = Теги
+translation-report-where-template = Шаблоны заметок
+translation-report-where-story-bible = Библия истории
+translation-report-where-launcher = Окно запуска
+translation-report-where-import = Импорт
+translation-report-where-export = Экспорт
+translation-report-where-new-work = Новый проект
+translation-report-where-interface = Интерфейс
+translation-report-selected = Выбранный текст
+translation-report-message-id = Сообщение: { $id } ({ $path })
+translation-report-place = Какое место?
+translation-report-place-all = Все места ({ $count })
+translation-report-note-seeded = Это изменит то, что Skribisto будет создавать с этого момента. То, что уже есть в вашем проекте, сохранит своё название; его можно переименовать самостоятельно.
+translation-report-note-export = Этот текст печатается в книгах, экспортированных на этом языке: { $language }.
+translation-report-note-composed = Этот текст составлен из двух сообщений. Исправление может относиться к любому из них.
+translation-report-kind = Что не так?
+translation-report-kind-placeholder = Выбрать…
+translation-report-kind-wrong-meaning = Неверный смысл
+translation-report-kind-spelling = Орфография, грамматика или пунктуация
+translation-report-kind-not-translated = Осталось на английском
+translation-report-kind-unnatural = Понятно, но неестественно или не тот тон
+translation-report-kind-inconsistent = В другом месте называется иначе
+translation-report-kind-plural-form = Неверная форма при числе
+translation-report-kind-cut-off = Обрезано или не помещается
+translation-report-kind-other = Другое
+translation-report-explain = Пояснение (необязательно, на любом языке)
+translation-report-suggestion = Лучший перевод
+translation-report-hint-mnemonic = Знак & отмечает букву, с помощью которой пункт меню выбирается с клавиатуры. Оставьте один такой знак, перед буквой, которую не использует ни один другой пункт того же меню.
+translation-report-hint-placeholder = Каждую часть в фигурных скобках, например {"{ $count }"}, оставьте в точности как есть: Skribisto подставляет туда число или название.
+translation-report-hint-select = Этот текст меняется в зависимости от числа. Меняйте только слова после каждой метки [форма] и сохраните все формы.
+translation-report-public = Что станет публичным
+translation-report-public-cost = Ваше сообщение станет публичным обращением на GitHub. Нужна бесплатная учётная запись GitHub, а страница на английском языке.
+translation-report-public-steps = На GitHub войдите в учётную запись, отметьте флажок о Contributor License Agreement (лицензионное соглашение участника) и нажмите «Create».
+translation-report-public-title = Заголовок: { $title }
+translation-report-copy-text = Копировать текст
+translation-report-copy-link = Копировать ссылку
+translation-report-close = Закрыть
+translation-report-continue = Продолжить на GitHub
+translation-report-another = Сообщить о другой ошибке
+translation-report-continued = Сейчас ваш браузер должен показывать сообщение на GitHub, готовое к проверке и отправке.
+translation-report-continued-copied = Сообщение оказалось слишком длинным для ссылки, поэтому оно скопировано в буфер обмена: вставьте его в поля, где это указано.
+translation-report-continued-help = Если браузер не открылся, нажмите «Копировать ссылку» и вставьте ссылку в браузер. Если GitHub потерял ваше сообщение или показывает страницу с ошибкой (например, после создания учётной записи), нажмите «Копировать текст», откройте на GitHub новое сообщение об ошибке перевода и вставьте текст.
+translation-report-open-failed = Не удалось открыть браузер ({ $error }). Нажмите «Копировать ссылку» и вставьте ссылку в браузер.
+translation-report-text-copied = Сообщение скопировано
+translation-report-link-copied = Ссылка скопирована
+translation-report-copy-failed = Буфер обмена не принял текст.
+translation-report-dev-catalogue = Эта сборка отслеживает изменения в { $locale }, но поиск показывает каталог, с которым она была собрана.

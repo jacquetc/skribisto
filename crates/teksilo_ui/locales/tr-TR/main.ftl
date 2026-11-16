@@ -3639,12 +3639,14 @@ menu-help-shortcuts = Klavye kı&sayolları…
 menu-help-screen-reader = &Ekran okuyucu kullanma
 menu-help-website = &Web'de Skribisto
 menu-help-report = Sorun &bildir…
+menu-help-report-translation = &Çeviri hatası bildir…
 menu-help-check-updates = &Güncellemeleri denetle
 menu-command-palette = &Komut paleti…
 
 learn-help-topics = Yardım konuları
 learn-shortcuts = Klavye kısayolları
 learn-website = Web'de Skribisto
+learn-report-translation = Çeviri hatası bildir
 
 help-window-title = Yardım
 help-filter-topics = Konuları süz
@@ -3652,6 +3654,7 @@ help-no-matching-topic = Eşleşen konu yok.
 help-topic-missing = Bu konu artık kullanılamıyor.
 help-back = Geri
 help-not-translated = Bu sayfa henüz çevrilmediği için İngilizce gösteriliyor.
+help-report-translation = Bu sayfadaki bir çeviri hatasını bildir
 
 help-section-getting-started = Başlarken
 help-section-writing = Yazma
@@ -3676,6 +3679,7 @@ help-topic-import-documents = Belgeleri içe aktarma
 help-topic-import-projects = Bütün bir projeyi aktarmak
 help-topic-import-scrivener = Scrivener'dan geçiş
 help-topic-backups-and-versions = Yedekler ve sürümler
+help-topic-report-translation-errors = Çeviri hatası bildirme
 
 command-palette-placeholder = Bir komut yazın
 
@@ -3740,6 +3744,8 @@ shortcut-name-help-shortcuts = Klavye kısayolları
 shortcut-name-help-screen-reader = Skribisto'yu ekran okuyucuyla kullanma
 shortcut-name-help-website = Web'de Skribisto
 shortcut-name-help-report = Sorun bildir
+shortcut-name-help-report-translation = Çeviri hatası bildir
+shortcut-name-translation-report-close = Çeviri hatası bildirimini kapat
 shortcut-name-help-check-updates = Güncellemeleri denetle
 update-check-behind = Sürüm { $version } kullanıma sunuldu.
 update-check-current = En yeni sürümü kullanıyorsunuz.
@@ -4080,3 +4086,89 @@ import-plume-group-characters = Kişiler
 import-plume-group-items = Nesneler
 import-plume-group-places = Mekânlar
 import-plume-untitled-project = İçe aktarılan Plume projesi
+
+## Help ▸ Report a Translation Error…
+## The window that finds a translated string and sends a report about it to the
+## project's public issue tracker, through the writer's browser.
+
+translation-report-window-title = Çeviri hatası bildir
+settings-report-translation = Çeviri hatası bildir
+translation-report-language = Dil
+translation-report-find = Metni bulun
+translation-report-find-placeholder = Gördüğünüz sözcükleri yazın
+translation-report-results = Eşleşen metinler
+translation-report-type-to-search = Bildirmek istediğiniz metinden birkaç sözcüğü bu dilde ya da İngilizce yazın.
+translation-report-no-results = Eşleşen bir şey yok. Daha az sözcük ya da İngilizce metni deneyin.
+translation-report-scope = Yalnızca “{ $page }” sayfası
+translation-report-scope-clear = Her yerde ara
+translation-report-not-found = Bulamıyorum
+translation-report-seen-at = Nerede gördünüz?
+translation-report-seen-at-placeholder = Örneğin: Dışa aktar penceresinde, önizlemenin altında
+translation-report-system-dialogs = Dosya iletişim kutuları ve sistemin bunlara eklediği sözcükler işletim sisteminize aittir: bunları işletim sisteminin geliştiricilerine bildirin.
+translation-report-places = { $count ->
+    [one] { $count } yer
+   *[other] { $count } yer
+}
+translation-report-english = İngilizce: { $sources }
+translation-report-english-item = { $source } ×{ $count }
+translation-report-same-as-english = İngilizcesiyle aynı
+translation-report-composed = “{ $first }” + “{ $second }”
+translation-report-english-original = İngilizce özgün metin. Çeviri ({ $language }): “{ $translation }”
+translation-report-english-untranslated = İngilizce özgün metin, hâlâ çevrilmemiş ({ $language })
+translation-report-english-missing = İngilizce özgün metin, çevirisi yok ({ $language })
+translation-report-where-control = Ortak bir denetim öğesi
+translation-report-where-book = Dışa aktarılmış bir kitap
+translation-report-where-help = Yardım: { $page }
+translation-report-where-help-window = Yardım penceresi
+translation-report-where-tooltip = Araç ipucu
+translation-report-where-menu = Bir menü
+translation-report-where-settings = Ayarlar
+translation-report-where-command = Bir komut adı
+translation-report-where-status = Bir durum
+translation-report-where-tags = Etiketler
+translation-report-where-template = Not şablonları
+translation-report-where-story-bible = Hikâye rehberi
+translation-report-where-launcher = Başlatıcı
+translation-report-where-import = İçe aktarma
+translation-report-where-export = Dışa aktarma
+translation-report-where-new-work = Yeni proje
+translation-report-where-interface = Arayüz
+translation-report-selected = Seçtiğiniz metin
+translation-report-message-id = İleti: { $id } ({ $path })
+translation-report-place = Hangi yer?
+translation-report-place-all = { $count } yerin tümü
+translation-report-note-seeded = Bu, Skribisto'nun bundan sonra oluşturacaklarını değiştirir. Projenizde zaten bulunanlar adlarını korur; onları kendiniz yeniden adlandırabilirsiniz.
+translation-report-note-export = Bu metin şu dilde dışa aktarılan kitaplara basılır: { $language }.
+translation-report-note-composed = Bu metin iki iletiden oluşur. Düzeltme ikisinden birine ait olabilir.
+translation-report-kind = Sorun ne?
+translation-report-kind-placeholder = Seç…
+translation-report-kind-wrong-meaning = Anlam yanlış
+translation-report-kind-spelling = Yazım, dil bilgisi ya da noktalama
+translation-report-kind-not-translated = Hâlâ İngilizce
+translation-report-kind-unnatural = Anlaşılır ama doğal değil ya da üslubu yanlış
+translation-report-kind-inconsistent = Başka yerde farklı adlandırılmış
+translation-report-kind-plural-form = Sayıya göre yanlış biçim
+translation-report-kind-cut-off = Kesilmiş ya da sığmıyor
+translation-report-kind-other = Başka bir şey
+translation-report-explain = Açıklama (isteğe bağlı, herhangi bir dilde)
+translation-report-suggestion = Daha iyi çeviri
+translation-report-hint-mnemonic = & işareti, menüdeki bir öğeye klavyeden ulaşmak için kullanılan harfi belirtir. Bir tane bırakın ve aynı menüdeki başka hiçbir öğenin kullanmadığı bir harfin önüne koyun.
+translation-report-hint-placeholder = Süslü ayraç içindeki her bölümü, örneğin {"{ $count }"}, olduğu gibi bırakın: Skribisto oraya bir sayı ya da ad yerleştirir.
+translation-report-hint-select = Bu metin bir sayıya göre değişir. Yalnızca her [biçim] işaretinden sonraki sözcükleri değiştirin ve tüm biçimleri koruyun.
+translation-report-public = Neler herkese açık olacak
+translation-report-public-cost = Bildiriminiz GitHub'da herkese açık bir kayıt olur. Ücretsiz bir GitHub hesabına ihtiyacınız var ve sayfa İngilizcedir.
+translation-report-public-steps = GitHub'da oturum açın, Contributor License Agreement (katkıda bulunan lisans sözleşmesi) ile ilgili kutuyu işaretleyin ve “Create” düğmesine basın.
+translation-report-public-title = Başlık: { $title }
+translation-report-copy-text = Metni kopyala
+translation-report-copy-link = Bağlantıyı kopyala
+translation-report-close = Kapat
+translation-report-continue = GitHub'da devam et
+translation-report-another = Başka bir hata bildir
+translation-report-continued = Tarayıcınız şimdi bildirimi GitHub'da, kontrol edip göndermeniz için hazır olarak göstermelidir.
+translation-report-continued-copied = Bildirim bağlantıya sığmayacak kadar uzundu, bu yüzden Skribisto onu kopyaladı: bunu isteyen alanlara yapıştırın.
+translation-report-continued-help = Tarayıcınız açılmadıysa “Bağlantıyı kopyala” düğmesine basın ve bağlantıyı tarayıcınıza yapıştırın. GitHub bildiriminizi kaybettiyse ya da bir hata sayfası gösteriyorsa (örneğin bir hesap oluşturduktan sonra), “Metni kopyala” düğmesine basın, GitHub'da yeni bir çeviri hatası bildirimi açın ve metni yapıştırın.
+translation-report-open-failed = Skribisto tarayıcınızı açamadı ({ $error }). “Bağlantıyı kopyala” düğmesine basın ve bağlantıyı tarayıcınıza yapıştırın.
+translation-report-text-copied = Bildirim kopyalandı
+translation-report-link-copied = Bağlantı kopyalandı
+translation-report-copy-failed = Pano bunu kabul etmedi.
+translation-report-dev-catalogue = Bu derleme { $locale } dosyalarındaki değişiklikleri izliyor, ancak arama, derlendiği kataloğu gösteriyor.

@@ -1,0 +1,80 @@
+## Gdy słowo brzmi źle
+
+Skribisto tłumaczą ludzie, którzy piszą w Twoim języku. Jeśli menu, komunikat lub strona pomocy
+brzmi dla Ciebie źle, daj im znać. Wybierz *Pomoc ▸ Zgłoś błąd tłumaczenia…*.
+
+Możesz też zacząć z tych miejsc:
+
+- *Zgłoś błąd tłumaczenia* na stronie *Nauka* w oknie, które Skribisto otwiera na starcie.
+- *Zgłoś błąd tłumaczenia* pod wyborem języka, w *Ustawienia ▸ Wygląd*.
+- *Zgłoś błąd tłumaczenia na tej stronie* u dołu każdej strony pomocy wyświetlanej w Twoim
+  języku. Wyszukiwanie pokazuje wtedy tylko tę stronę.
+
+Okno zgłoszenia pozostaje otwarte obok Twojej pracy. W razie potrzeby zajrzyj jeszcze raz do
+menu, a potem wróć.
+
+## Wyszukiwanie tekstu
+
+Zgłoszenie jest najbardziej przydatne, gdy wskazuje dokładnie ten wiersz, który trzeba zmienić.
+Dlatego zamiast opisywać, gdzie tekst się pojawia, odszukujesz go.
+
+- Sprawdź pole *Język*. Podąża ono za językiem interfejsu, dopóki nie wybierzesz innego.
+- Wpisz kilka słów tekstu w polu *Znajdź tekst*. Znaki diakrytyczne i wielkość liter nie mają
+  znaczenia.
+- Wybierz tekst z listy. Pod każdym widać, gdzie się pojawia i jaki tekst angielski tłumaczy.
+
+Jeśli te same słowa występują w kilku miejscach, lista pokazuje je raz i podaje, ile miejsc ich
+używa. W polu *Które miejsce?* możesz wtedy wybrać jedno z nich albo wszystkie. Wybierz
+wszystkie, gdy problemem jest słowo używane wszędzie, na przykład termin, który w Twoim języku
+brzmi inaczej.
+
+Możesz też wpisać tekst angielski, jeśli go znasz. Lista pokaże wtedy, jak brzmi on w Twoim
+języku.
+
+## Gdy wyszukiwanie nic nie znajduje
+
+Kliknij *Nie mogę go znaleźć* i napisz, gdzie tekst się pojawił. Niektóre słowa w ogóle nie
+pochodzą ze Skribisto. Na przykład okna wyboru plików należą do systemu operacyjnego.
+
+## Opis problemu
+
+- W polu *Co jest nie tak?* wybierz najbliższy rodzaj problemu.
+- W polu *Wyjaśnienie (opcjonalne, w dowolnym języku)* napisz, dlaczego tekst brzmi źle.
+- W polu *Lepsze tłumaczenie* wpisz, jak powinien brzmieć. Na początku pole zawiera obecny
+  tekst, więc zmieniasz tylko to, co jest błędne.
+
+Zostaw znaki specjalne na miejscu:
+
+- Znak `&` w nazwie menu wskazuje literę, za pomocą której otwiera się to menu z klawiatury.
+  Zachowaj jeden.
+- Fragment w nawiasach klamrowych, na przykład `{ $count }`, to miejsce, w które Skribisto
+  wstawia liczbę lub nazwę.
+- Tekst, który zmienia się zależnie od liczby, podaje każdą swoją formę. Popraw wszystkie.
+
+Niektóre nazwy trafiają do projektu w chwili jego utworzenia: pierwsze statusy, gotowe
+znaczniki, szablony notatek. Poprawka zmienia je tylko w nowych projektach. W swoim projekcie
+możesz samodzielnie zmienić ich nazwy.
+
+## Wysyłanie zgłoszenia
+
+Kliknij *Kontynuuj w serwisie GitHub*. Przeglądarka otworzy publiczne, już wypełnione zgłoszenie
+na stronie projektu w serwisie GitHub. Sprawdź je, zaznacz pole dotyczące umowy Contributor
+License Agreement i kliknij *Create*.
+
+Potrzebujesz bezpłatnego konta w serwisie GitHub, a strona jest po angielsku. Przycisk
+*Co będzie publiczne* pokazuje dokładną treść zgłoszenia, zanim je wyślesz. Nie ma w nim nazw
+projektów ani niczego, co piszesz.
+
+Długie zgłoszenie albo zgłoszenie w piśmie takim jak japońskie czy arabskie może nie zmieścić
+się w odnośniku. Skribisto skopiuje wtedy całe zgłoszenie za Ciebie, a pola, które się nie
+zmieściły, poproszą o jego wklejenie.
+
+## Gdy coś pójdzie nie tak
+
+- Jeśli przeglądarka się nie otworzyła, kliknij *Kopiuj odnośnik* i wklej odnośnik do
+  przeglądarki.
+- Jeśli GitHub pokaże stronę błędu lub zgubi zgłoszenie, kliknij *Kopiuj tekst*. Otwórz
+  w serwisie GitHub nowe zgłoszenie dotyczące tłumaczenia i wklej tekst.
+- *Kopiuj tekst* przyda się też w innych kanałach, na przykład na Discordzie projektu.
+
+Kliknij *Zgłoś kolejny błąd*, aby zacząć od nowa w tym samym języku.

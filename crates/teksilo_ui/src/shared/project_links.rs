@@ -36,6 +36,10 @@ const COMMUNITY_DISCORD: &str = "https://discord.gg/5BSkvQmyVH";
 /// The community issue tracker.
 const COMMUNITY_ISSUES: &str = "https://github.com/jacquetc/skribisto/issues";
 
+/// The community's translation-error issue form, which a report link prefills.
+const COMMUNITY_TRANSLATION_FORM: &str =
+    "https://github.com/jacquetc/skribisto/issues/new?template=translation-error.yml";
+
 /// Where an edition sends a reader who leaves the application. Every field is
 /// optional, and a `None` field means the surface that would use it **is not
 /// built**: no menu row, no button, no registered action. A row that opened
@@ -55,6 +59,11 @@ pub struct ProjectLinks {
     /// Help ▸ Report a Problem: the issue **list**, not a new-issue form, so the
     /// reader sees the open reports before writing one (CONTRIBUTING asks for it).
     pub issues: Option<String>,
+    /// Help ▸ Report a Translation Error…: the new-issue address of the edition's
+    /// translation form, template included. A report link adds the form's fields to
+    /// it, so it must already carry a query. Unset, the action and every door to it
+    /// are not built.
+    pub translation_form: Option<String>,
 }
 
 impl ProjectLinks {
@@ -66,6 +75,7 @@ impl ProjectLinks {
             github: Some(COMMUNITY_GITHUB.to_string()),
             discord: Some(COMMUNITY_DISCORD.to_string()),
             issues: Some(COMMUNITY_ISSUES.to_string()),
+            translation_form: Some(COMMUNITY_TRANSLATION_FORM.to_string()),
         }
     }
 }
@@ -82,8 +92,9 @@ mod tests {
             github,
             discord,
             issues,
+            translation_form,
         } = links;
-        vec![website, github, discord, issues]
+        vec![website, github, discord, issues, translation_form]
     }
 
     #[test]
@@ -98,6 +109,21 @@ mod tests {
             );
             assert!(url.starts_with("https://"), "{url} is not https");
         }
+    }
+
+    /// A report link appends the form's fields with `&`, which needs the template's
+    /// `?` already there.
+    #[test]
+    fn the_translation_form_names_its_template() {
+        let form = ProjectLinks::community()
+            .translation_form
+            .unwrap_or_default();
+        assert!(form.contains("/issues/new?template="), "{form}");
+        let file = form.rsplit('=').next().unwrap_or_default();
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../.github/ISSUE_TEMPLATE")
+            .join(file);
+        assert!(path.is_file(), "{} does not exist", path.display());
     }
 
     #[test]

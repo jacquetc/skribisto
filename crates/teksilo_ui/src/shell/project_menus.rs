@@ -583,6 +583,12 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
             if links.issues.is_some() {
                 m = m.item(MenuEntry::new(tr!(menu_help_report())).intent("help.report"));
             }
+            if links.translation_form.is_some() {
+                m = m.item(
+                    MenuEntry::new(tr!(menu_help_report_translation()))
+                        .intent("help.report_translation"),
+                );
+            }
             m.separator()
                 .item(MenuEntry::new(tr!(menu_about())).intent("app.about"))
         })
@@ -999,8 +1005,9 @@ mod tests {
         let edition = help_row_count(&build_project_menu(empty_parts()));
         assert_eq!(
             community - edition,
-            2,
-            "an edition with no links loses exactly Website and Report a Problem"
+            3,
+            "an edition with no links loses exactly Website, Report a Problem and Report \
+             a Translation Error"
         );
 
         let _links = crate::identity::register(

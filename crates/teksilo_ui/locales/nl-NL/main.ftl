@@ -3687,12 +3687,14 @@ menu-help-shortcuts = &Sneltoetsen…
 menu-help-screen-reader = &Een schermlezer gebruiken
 menu-help-website = Skribisto op het &web
 menu-help-report = Een probleem &melden…
+menu-help-report-translation = Een &vertaalfout melden…
 menu-help-check-updates = Controleren op &updates
 menu-command-palette = Opdrachten&palet…
 
 learn-help-topics = Helponderwerpen
 learn-shortcuts = Sneltoetsen
 learn-website = Skribisto op het web
+learn-report-translation = Een vertaalfout melden
 
 help-window-title = Help
 help-filter-topics = Onderwerpen filteren
@@ -3700,6 +3702,7 @@ help-no-matching-topic = Geen onderwerp komt overeen.
 help-topic-missing = Dit onderwerp is niet meer beschikbaar.
 help-back = Terug
 help-not-translated = Deze pagina is nog niet vertaald en wordt daarom in het Engels getoond.
+help-report-translation = Een vertaalfout op deze pagina melden
 
 help-section-getting-started = Aan de slag
 help-section-writing = Schrijven
@@ -3724,6 +3727,7 @@ help-topic-import-documents = Documenten importeren
 help-topic-import-projects = Een volledig project overzetten
 help-topic-import-scrivener = Overstappen van Scrivener
 help-topic-backups-and-versions = Reservekopieën en versies
+help-topic-report-translation-errors = Een vertaalfout melden
 
 command-palette-placeholder = Typ een opdracht
 
@@ -3788,6 +3792,8 @@ shortcut-name-help-shortcuts = Sneltoetsen
 shortcut-name-help-screen-reader = Skribisto gebruiken met een schermlezer
 shortcut-name-help-website = Skribisto op het web
 shortcut-name-help-report = Een probleem melden
+shortcut-name-help-report-translation = Een vertaalfout melden
+shortcut-name-translation-report-close = Vertaalmelding sluiten
 shortcut-name-help-check-updates = Controleren op updates
 update-check-behind = Versie { $version } is beschikbaar.
 update-check-current = U gebruikt de nieuwste versie.
@@ -4129,3 +4135,89 @@ import-plume-group-characters = Personages
 import-plume-group-items = Voorwerpen
 import-plume-group-places = Plaatsen
 import-plume-untitled-project = Geïmporteerd Plume-project
+
+## Help ▸ Report a Translation Error…
+## The window that finds a translated string and sends a report about it to the
+## project's public issue tracker, through the writer's browser.
+
+translation-report-window-title = Een vertaalfout melden
+settings-report-translation = Een vertaalfout melden
+translation-report-language = Taal
+translation-report-find = De tekst zoeken
+translation-report-find-placeholder = Typ de woorden die u zag
+translation-report-results = Overeenkomende teksten
+translation-report-type-to-search = Typ een paar woorden van de tekst die u wilt melden, in deze taal of in het Engels.
+translation-report-no-results = Niets gevonden. Probeer minder woorden, of de Engelse tekst.
+translation-report-scope = Alleen de pagina “{ $page }”
+translation-report-scope-clear = Overal zoeken
+translation-report-not-found = Ik kan de tekst niet vinden
+translation-report-seen-at = Waar zag u de tekst?
+translation-report-seen-at-placeholder = Bijvoorbeeld: het venster Exporteren, onder het voorbeeld
+translation-report-system-dialogs = De bestandsdialoogvensters, en de woorden die uw systeem eraan toevoegt, horen bij uw besturingssysteem: meld fouten daarin bij de makers daarvan.
+translation-report-places = { $count ->
+    [one] { $count } plek
+   *[other] { $count } plekken
+}
+translation-report-english = Engels: { $sources }
+translation-report-english-item = { $source } ×{ $count }
+translation-report-same-as-english = Gelijk aan het Engels
+translation-report-composed = “{ $first }” + “{ $second }”
+translation-report-english-original = Engels origineel. { $language }: “{ $translation }”
+translation-report-english-untranslated = Engels origineel, in de vertaling voor { $language } nog in het Engels
+translation-report-english-missing = Engels origineel, zonder vertaling voor { $language }
+translation-report-where-control = Een gedeeld bedieningselement
+translation-report-where-book = Een geëxporteerd boek
+translation-report-where-help = Help: { $page }
+translation-report-where-help-window = Het Help-venster
+translation-report-where-tooltip = Een knopinfo
+translation-report-where-menu = Een menu
+translation-report-where-settings = Instellingen
+translation-report-where-command = Een opdrachtnaam
+translation-report-where-status = Een status
+translation-report-where-tags = Tags
+translation-report-where-template = Notitiesjablonen
+translation-report-where-story-bible = De verhaalbijbel
+translation-report-where-launcher = Het startscherm
+translation-report-where-import = Importeren
+translation-report-where-export = Exporteren
+translation-report-where-new-work = Nieuw project
+translation-report-where-interface = De interface
+translation-report-selected = De gekozen tekst
+translation-report-message-id = Bericht: { $id } ({ $path })
+translation-report-place = Welke plek?
+translation-report-place-all = Alle { $count } plekken
+translation-report-note-seeded = Dit verandert wat Skribisto vanaf nu aanmaakt. Wat al in uw project staat, houdt zijn naam; u kunt het zelf hernoemen.
+translation-report-note-export = Dit verschijnt in boeken die worden geëxporteerd in de taal { $language }.
+translation-report-note-composed = Deze tekst bestaat uit twee berichten. De correctie kan in elk van beide thuishoren.
+translation-report-kind = Wat is er mis?
+translation-report-kind-placeholder = Kiezen…
+translation-report-kind-wrong-meaning = De betekenis klopt niet
+translation-report-kind-spelling = Spelling, grammatica of interpunctie
+translation-report-kind-not-translated = Nog in het Engels
+translation-report-kind-unnatural = Begrijpelijk maar onnatuurlijk, of de verkeerde toon
+translation-report-kind-inconsistent = Elders anders genoemd
+translation-report-kind-plural-form = Verkeerde vorm bij een getal
+translation-report-kind-cut-off = Afgekapt of past niet
+translation-report-kind-other = Iets anders
+translation-report-explain = Toelichting (optioneel, in elke taal)
+translation-report-suggestion = Betere vertaling
+translation-report-hint-mnemonic = De & markeert de letter waarmee u een menu met het toetsenbord bereikt. Houd er één, op een letter die geen ander item van hetzelfde menu gebruikt.
+translation-report-hint-placeholder = Laat elk deel tussen accolades, zoals {"{ $count }"}, precies zoals het is: Skribisto zet daar een getal of een naam neer.
+translation-report-hint-select = Deze tekst verandert met een getal. Wijzig alleen de woorden na elke [vorm], en behoud elke vorm.
+translation-report-public = Wat openbaar wordt
+translation-report-public-cost = Uw melding wordt openbaar op GitHub geplaatst. U hebt een gratis GitHub-account nodig, en de pagina is in het Engels.
+translation-report-public-steps = Meld u op GitHub aan, vink het vakje over de Contributor License Agreement (de overeenkomst voor bijdragers) aan en klik op “Create”.
+translation-report-public-title = Titel: { $title }
+translation-report-copy-text = Tekst kopiëren
+translation-report-copy-link = Link kopiëren
+translation-report-close = Sluiten
+translation-report-continue = Verder op GitHub
+translation-report-another = Nog een fout melden
+translation-report-continued = Uw browser toont nu als het goed is de melding op GitHub, klaar om te controleren en te verzenden.
+translation-report-continued-copied = De melding was te lang voor de link, daarom heeft Skribisto hem gekopieerd: plak hem in de velden waar daarom gevraagd wordt.
+translation-report-continued-help = Als uw browser niet is geopend, klik dan op “Link kopiëren” en plak de link in uw browser. Als GitHub uw melding kwijt is of een foutpagina toont (bijvoorbeeld nadat u een account hebt aangemaakt), klik dan op “Tekst kopiëren”, open op GitHub een nieuwe vertaalmelding en plak de tekst erin.
+translation-report-open-failed = Skribisto kon uw browser niet openen ({ $error }). Klik op “Link kopiëren” en plak de link in uw browser.
+translation-report-text-copied = Melding gekopieerd
+translation-report-link-copied = Link gekopieerd
+translation-report-copy-failed = Het klembord heeft het niet aangenomen.
+translation-report-dev-catalogue = Deze versie houdt wijzigingen in { $locale } in de gaten, maar de zoekfunctie toont de catalogus waarmee ze is gebouwd.

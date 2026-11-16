@@ -77,6 +77,9 @@ pub(crate) mod progress_toast;
 pub(crate) mod project_import;
 pub mod project_links;
 pub mod screen_reader_offer;
+// The interface strings stored into projects as data, and the functions that store
+// them: the binder, statuses, tags, note templates, New Work and the importers.
+pub(crate) mod seeded_strings;
 /// Which menu a keyboard shortcut is filed under, for Keymap, the shortcut sheet
 /// and the command palette.
 pub(crate) mod shortcut_group;

@@ -3689,12 +3689,14 @@ menu-help-shortcuts = Atal&hos de teclado…
 menu-help-screen-reader = Usar um &leitor de ecrã
 menu-help-website = &Skribisto na Web
 menu-help-report = &Comunicar um problema…
+menu-help-report-translation = Comunicar um &erro de tradução…
 menu-help-check-updates = Procurar at&ualizações
 menu-command-palette = &Paleta de comandos…
 
 learn-help-topics = Tópicos de ajuda
 learn-shortcuts = Atalhos de teclado
 learn-website = Skribisto na web
+learn-report-translation = Comunicar um erro de tradução
 
 help-window-title = Ajuda
 help-filter-topics = Filtrar tópicos
@@ -3702,6 +3704,7 @@ help-no-matching-topic = Nenhum tópico corresponde.
 help-topic-missing = Este tópico já não está disponível.
 help-back = Voltar
 help-not-translated = Esta página ainda não foi traduzida, pelo que é apresentada em inglês.
+help-report-translation = Comunicar um erro de tradução nesta página
 
 help-section-getting-started = Primeiros passos
 help-section-writing = Escrita
@@ -3726,6 +3729,7 @@ help-topic-import-documents = Importar documentos
 help-topic-import-projects = Trazer um projeto inteiro
 help-topic-import-scrivener = Vindo do Scrivener
 help-topic-backups-and-versions = Cópias de segurança e versões
+help-topic-report-translation-errors = Comunicar um erro de tradução
 
 command-palette-placeholder = Escreva um comando
 
@@ -3790,6 +3794,8 @@ shortcut-name-help-shortcuts = Atalhos de teclado
 shortcut-name-help-screen-reader = Usar o Skribisto com um leitor de ecrã
 shortcut-name-help-website = Skribisto na Web
 shortcut-name-help-report = Comunicar um problema
+shortcut-name-help-report-translation = Comunicar um erro de tradução
+shortcut-name-translation-report-close = Fechar a comunicação de erro de tradução
 shortcut-name-help-check-updates = Procurar atualizações
 update-check-behind = A versão { $version } está disponível.
 update-check-current = Está a utilizar a versão mais recente.
@@ -4122,3 +4128,89 @@ import-plume-group-characters = Personagens
 import-plume-group-items = Objetos
 import-plume-group-places = Lugares
 import-plume-untitled-project = Projeto Plume importado
+
+## Help ▸ Report a Translation Error…
+## The window that finds a translated string and sends a report about it to the
+## project's public issue tracker, through the writer's browser.
+
+translation-report-window-title = Comunicar um erro de tradução
+settings-report-translation = Comunicar um erro de tradução
+translation-report-language = Idioma
+translation-report-find = Encontrar o texto
+translation-report-find-placeholder = Escreva as palavras que viu
+translation-report-results = Textos correspondentes
+translation-report-type-to-search = Escreva algumas palavras do texto que quer comunicar, neste idioma ou em inglês.
+translation-report-no-results = Nada corresponde. Experimente menos palavras, ou o texto em inglês.
+translation-report-scope = Apenas a página «{ $page }»
+translation-report-scope-clear = Pesquisar em tudo
+translation-report-not-found = Não o encontro
+translation-report-seen-at = Onde o viu?
+translation-report-seen-at-placeholder = Por exemplo: na janela Exportar, por baixo da pré-visualização
+translation-report-system-dialogs = As caixas de diálogo de ficheiros, e as palavras que o seu sistema lhes acrescenta, pertencem ao seu sistema operativo: comunique esses erros a quem o desenvolve.
+translation-report-places = { $count ->
+    [one] { $count } local
+   *[other] { $count } locais
+}
+translation-report-english = Inglês: { $sources }
+translation-report-english-item = { $source } ×{ $count }
+translation-report-same-as-english = Igual ao inglês
+translation-report-composed = «{ $first }» + «{ $second }»
+translation-report-english-original = Original em inglês. Em { $language }: «{ $translation }»
+translation-report-english-untranslated = Original em inglês, ainda em inglês em { $language }
+translation-report-english-missing = Original em inglês, sem tradução em { $language }
+translation-report-where-control = Um controlo partilhado
+translation-report-where-book = Um livro exportado
+translation-report-where-help = Ajuda: { $page }
+translation-report-where-help-window = A janela de ajuda
+translation-report-where-tooltip = Uma dica de ferramenta
+translation-report-where-menu = Um menu
+translation-report-where-settings = Definições
+translation-report-where-command = Um nome de comando
+translation-report-where-status = Um estado
+translation-report-where-tags = Etiquetas
+translation-report-where-template = Modelos de notas
+translation-report-where-story-bible = A bíblia da história
+translation-report-where-launcher = A janela inicial
+translation-report-where-import = Importar
+translation-report-where-export = Exportar
+translation-report-where-new-work = Novo projeto
+translation-report-where-interface = A interface
+translation-report-selected = O texto que escolheu
+translation-report-message-id = Mensagem: { $id } ({ $path })
+translation-report-place = Que local?
+translation-report-place-all = Todos os { $count } locais
+translation-report-note-seeded = Isto muda o que o Skribisto cria daqui em diante. O que já está no seu projeto mantém o nome; pode mudar-lhe o nome manualmente.
+translation-report-note-export = Isto é impresso nos livros exportados em { $language }.
+translation-report-note-composed = Este texto é formado por duas mensagens. A correção pode pertencer a qualquer uma delas.
+translation-report-kind = O que está errado?
+translation-report-kind-placeholder = Escolher…
+translation-report-kind-wrong-meaning = O sentido está errado
+translation-report-kind-spelling = Ortografia, gramática ou pontuação
+translation-report-kind-not-translated = Ainda em inglês
+translation-report-kind-unnatural = Compreensível mas pouco natural, ou com o tom errado
+translation-report-kind-inconsistent = Com outro nome noutro sítio
+translation-report-kind-plural-form = Forma errada para um número
+translation-report-kind-cut-off = Cortado ou não cabe
+translation-report-kind-other = Outra coisa
+translation-report-explain = Explicação (opcional, em qualquer idioma)
+translation-report-suggestion = Tradução melhor
+translation-report-hint-mnemonic = O & marca a letra que abre um menu a partir do teclado. Mantenha um, numa letra que nenhum outro item do mesmo menu use.
+translation-report-hint-placeholder = Mantenha cada parte entre chavetas, como {"{ $count }"}, exatamente como está: o Skribisto coloca aí um número ou um nome.
+translation-report-hint-select = Este texto muda consoante um número. Altere apenas as palavras a seguir a cada [forma] e mantenha todas as formas.
+translation-report-public = O que será público
+translation-report-public-cost = A sua comunicação torna-se uma questão pública no GitHub. Precisa de uma conta gratuita no GitHub, e a página está em inglês.
+translation-report-public-steps = No GitHub, inicie sessão, assinale a caixa sobre o Contributor License Agreement (o acordo de licença para contribuidores) e prima «Create».
+translation-report-public-title = Título: { $title }
+translation-report-copy-text = Copiar texto
+translation-report-copy-link = Copiar ligação
+translation-report-close = Fechar
+translation-report-continue = Continuar no GitHub
+translation-report-another = Comunicar outro
+translation-report-continued = O seu navegador deve agora mostrar a comunicação no GitHub, pronta para a verificar e enviar.
+translation-report-continued-copied = A comunicação era demasiado longa para a ligação, por isso o Skribisto copiou-a: cole-a nos campos que o indicam.
+translation-report-continued-help = Se o navegador não abriu, prima Copiar ligação e cole a ligação no navegador. Se o GitHub perdeu a sua comunicação ou mostra uma página de erro (por exemplo, depois de criar uma conta), prima Copiar texto, abra uma nova comunicação de tradução no GitHub e cole-o.
+translation-report-open-failed = O Skribisto não conseguiu abrir o seu navegador ({ $error }). Prima Copiar ligação e cole a ligação no navegador.
+translation-report-text-copied = Comunicação copiada
+translation-report-link-copied = Ligação copiada
+translation-report-copy-failed = A área de transferência não o aceitou.
+translation-report-dev-catalogue = Esta compilação está a vigiar as alterações de { $locale }, mas a pesquisa mostra o catálogo com que foi compilada.

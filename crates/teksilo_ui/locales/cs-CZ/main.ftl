@@ -4056,12 +4056,14 @@ menu-help-shortcuts = &Klávesové zkratky…
 menu-help-screen-reader = Použití &čtečky obrazovky
 menu-help-website = Skribisto na &webu
 menu-help-report = &Nahlásit problém…
+menu-help-report-translation = Nahlásit &chybu v překladu…
 menu-help-check-updates = Zkontrolovat &aktualizace
 menu-command-palette = &Paleta příkazů…
 
 learn-help-topics = Témata nápovědy
 learn-shortcuts = Klávesové zkratky
 learn-website = Skribisto na webu
+learn-report-translation = Nahlásit chybu v překladu
 
 help-window-title = Nápověda
 help-filter-topics = Filtrovat témata
@@ -4069,6 +4071,7 @@ help-no-matching-topic = Žádné téma neodpovídá.
 help-topic-missing = Toto téma už není k dispozici.
 help-back = Zpět
 help-not-translated = Tato stránka zatím nebyla přeložena, proto se zobrazuje anglicky.
+help-report-translation = Nahlásit chybu v překladu na této stránce
 
 help-section-getting-started = Začínáme
 help-section-writing = Psaní
@@ -4093,6 +4096,7 @@ help-topic-import-documents = Import dokumentů
 help-topic-import-projects = Převzetí celého projektu
 help-topic-import-scrivener = Přechod z aplikace Scrivener
 help-topic-backups-and-versions = Zálohy a verze
+help-topic-report-translation-errors = Nahlášení chyby v překladu
 
 command-palette-placeholder = Zadejte příkaz
 
@@ -4157,6 +4161,8 @@ shortcut-name-help-shortcuts = Klávesové zkratky
 shortcut-name-help-screen-reader = Použití aplikace Skribisto se čtečkou obrazovky
 shortcut-name-help-website = Skribisto na webu
 shortcut-name-help-report = Nahlásit problém
+shortcut-name-help-report-translation = Nahlásit chybu v překladu
+shortcut-name-translation-report-close = Zavřít hlášení chyby v překladu
 shortcut-name-help-check-updates = Zkontrolovat aktualizace
 update-check-behind = Je k dispozici verze { $version }.
 update-check-current = Používáte nejnovější verzi.
@@ -4548,3 +4554,91 @@ import-plume-group-characters = Postavy
 import-plume-group-items = Předměty
 import-plume-group-places = Místa
 import-plume-untitled-project = Importovaný projekt Plume
+
+## Help ▸ Report a Translation Error…
+## The window that finds a translated string and sends a report about it to the
+## project's public issue tracker, through the writer's browser.
+
+translation-report-window-title = Nahlásit chybu v překladu
+settings-report-translation = Nahlásit chybu v překladu
+translation-report-language = Jazyk
+translation-report-find = Najít text
+translation-report-find-placeholder = Napište slova, která jste viděli
+translation-report-results = Odpovídající texty
+translation-report-type-to-search = Napište několik slov textu, který chcete nahlásit, v tomto jazyce nebo anglicky.
+translation-report-no-results = Nic neodpovídá. Zkuste méně slov nebo anglický text.
+translation-report-scope = Pouze stránka „{ $page }“
+translation-report-scope-clear = Hledat všude
+translation-report-not-found = Nemohu ho najít
+translation-report-seen-at = Kde jste ho viděli?
+translation-report-seen-at-placeholder = Například: v okně Export, pod náhledem
+translation-report-system-dialogs = Dialogy pro výběr souborů a slova, která do nich přidává systém, patří vašemu operačnímu systému: nahlaste je jeho tvůrcům.
+translation-report-places = { $count ->
+    [one] { $count } místo
+    [few] { $count } místa
+    [many] { $count } místa
+   *[other] { $count } míst
+}
+translation-report-english = Anglicky: { $sources }
+translation-report-english-item = { $source } ×{ $count }
+translation-report-same-as-english = Stejné jako v angličtině
+translation-report-composed = „{ $first }“ + „{ $second }“
+translation-report-english-original = Anglický originál. Překlad ({ $language }): „{ $translation }“
+translation-report-english-untranslated = Anglický originál, stále nepřeložený ({ $language })
+translation-report-english-missing = Anglický originál, bez překladu ({ $language })
+translation-report-where-control = Sdílený ovládací prvek
+translation-report-where-book = Exportovaná kniha
+translation-report-where-help = Nápověda: { $page }
+translation-report-where-help-window = Okno nápovědy
+translation-report-where-tooltip = Popisek
+translation-report-where-menu = Menu
+translation-report-where-settings = Nastavení
+translation-report-where-command = Název příkazu
+translation-report-where-status = Stav
+translation-report-where-tags = Štítky
+translation-report-where-template = Šablony poznámek
+translation-report-where-story-bible = Bible příběhu
+translation-report-where-launcher = Úvodní obrazovka
+translation-report-where-import = Import
+translation-report-where-export = Export
+translation-report-where-new-work = Nový projekt
+translation-report-where-interface = Rozhraní
+translation-report-selected = Vybraný text
+translation-report-message-id = Zpráva: { $id } ({ $path })
+translation-report-place = Které místo?
+translation-report-place-all = Všechna místa ({ $count })
+translation-report-note-seeded = Tím se změní, co bude Skribisto vytvářet od této chvíle. Co už ve vašem projektu je, si ponechá svůj název; můžete ho přejmenovat sami.
+translation-report-note-export = Tento text se tiskne v knihách exportovaných v tomto jazyce: { $language }.
+translation-report-note-composed = Tento text se skládá ze dvou zpráv. Oprava může patřit do kterékoli z nich.
+translation-report-kind = Co je špatně?
+translation-report-kind-placeholder = Vybrat…
+translation-report-kind-wrong-meaning = Špatný význam
+translation-report-kind-spelling = Pravopis, gramatika nebo interpunkce
+translation-report-kind-not-translated = Stále anglicky
+translation-report-kind-unnatural = Srozumitelné, ale nepřirozené nebo ve špatném tónu
+translation-report-kind-inconsistent = Jinde se jmenuje jinak
+translation-report-kind-plural-form = Špatný tvar pro číslo
+translation-report-kind-cut-off = Useknuté nebo se nevejde
+translation-report-kind-other = Něco jiného
+translation-report-explain = Vysvětlení (nepovinné, v libovolném jazyce)
+translation-report-suggestion = Lepší překlad
+translation-report-hint-mnemonic = Znak & označuje písmeno, kterým se k položce menu dostanete z klávesnice. Ponechte jeden, před písmenem, které nepoužívá žádná jiná položka téhož menu.
+translation-report-hint-placeholder = Každou část ve složených závorkách, například {"{ $count }"}, ponechte přesně tak, jak je: Skribisto tam vloží číslo nebo název.
+translation-report-hint-select = Tento text se mění podle čísla. Měňte jen slova za každým označením [tvar] a zachovejte všechny tvary.
+translation-report-public = Co bude veřejné
+translation-report-public-cost = Vaše hlášení se stane veřejným požadavkem na GitHubu. Potřebujete bezplatný účet GitHub a stránka je v angličtině.
+translation-report-public-steps = Na GitHubu se přihlaste, zaškrtněte políčko týkající se Contributor License Agreement (licenční smlouva přispěvatele) a stiskněte „Create“.
+translation-report-public-title = Název: { $title }
+translation-report-copy-text = Kopírovat text
+translation-report-copy-link = Kopírovat odkaz
+translation-report-close = Zavřít
+translation-report-continue = Pokračovat na GitHubu
+translation-report-another = Nahlásit další chybu
+translation-report-continued = Váš prohlížeč by teď měl zobrazovat hlášení na GitHubu, připravené ke kontrole a odeslání.
+translation-report-continued-copied = Hlášení bylo pro odkaz příliš dlouhé, proto ho aplikace Skribisto zkopírovala: vložte ho do polí, která o to žádají.
+translation-report-continued-help = Pokud se prohlížeč neotevřel, stiskněte „Kopírovat odkaz“ a vložte odkaz do prohlížeče. Pokud GitHub vaše hlášení ztratil nebo zobrazuje chybovou stránku (například po vytvoření účtu), stiskněte „Kopírovat text“, otevřete na GitHubu nové hlášení chyby v překladu a text do něj vložte.
+translation-report-open-failed = Aplikace Skribisto nemohla otevřít váš prohlížeč ({ $error }). Stiskněte „Kopírovat odkaz“ a vložte odkaz do prohlížeče.
+translation-report-text-copied = Hlášení zkopírováno
+translation-report-link-copied = Odkaz zkopírován
+translation-report-copy-failed = Schránka ho nepřijala.
+translation-report-dev-catalogue = Toto sestavení sleduje změny v { $locale }, ale vyhledávání ukazuje katalog, se kterým bylo sestaveno.

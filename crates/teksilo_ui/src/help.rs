@@ -43,7 +43,7 @@ use teksilo::prelude::*;
 
 use crate::docks::LabelFn;
 
-mod chords;
+pub(crate) mod chords;
 pub mod help_vm;
 pub mod panel;
 pub mod window;
@@ -587,6 +587,12 @@ pub fn builtin_topics() -> Vec<HelpTopicSpec> {
             section: HelpSection::Keeping,
             title: Rc::new(|| tr!(help_topic_backups_and_versions())),
             body: djot_topic!("backups-and-versions"),
+        },
+        HelpTopicSpec {
+            key: "help-report-translation-errors",
+            section: HelpSection::Reference,
+            title: Rc::new(|| tr!(help_topic_report_translation_errors())),
+            body: djot_topic!("report-translation-errors"),
         },
     ]
     .into_iter()

@@ -200,7 +200,7 @@ pub(crate) const SUPPORTED_LOCALES: &[&str] = &[
 // predates that and still wins for every key it defines (override first, then the
 // framework), so a correction to one of those strings belongs in this file, not
 // upstream.
-const WIDGET_LOCALE_OVERRIDES: &[(&str, &[&str])] =
+pub(crate) const WIDGET_LOCALE_OVERRIDES: &[(&str, &[&str])] =
     &[("eo", &[include_str!("../widget_locales/eo.ftl")])];
 
 /// What the interface language is when nobody has ever chosen one: the closest
@@ -232,15 +232,9 @@ pub(crate) fn os_default_locale() -> String {
 /// [`app_locales`]. Adding a topic file means adding it here once, not once
 /// per locale.
 ///
-/// Its only reader outside `mod tests` is `cli::resolve_translation_dev`, which
-/// validates a `--translation-dev` directory, and that flag is debug-only. So in
-/// a release build the list is genuinely unread, and the `allow` records that
-/// once instead of the build reporting it on every compile. Gating the constant
-/// itself would be worse: the drift test below is what holds it in step with
-/// `app_locales`, and the two doc links in `cli.rs` point at it from prose that
-/// ships in both profiles. Same shape as `resolve_translation_dev`'s own
-/// `#[cfg_attr(not(debug_assertions), allow(unused_variables))]`.
-#[cfg_attr(not(debug_assertions), allow(dead_code))]
+/// Read by `cli::resolve_translation_dev`, which validates a `--translation-dev`
+/// directory, and by the translation-report search, which names the file a string
+/// came from: `app_locales` hands out each locale's sources in this order.
 pub(crate) const LOCALE_FILES: &[&str] = &[
     "main.ftl",
     "tooltips.ftl",
@@ -287,6 +281,19 @@ pub(crate) fn app_locales() -> &'static [(&'static str, &'static [&'static str])
             "story_bible.ftl",
         ],
     )
+}
+
+/// The locales `--translation-dev` watches in this run. Set once, when the i18n
+/// configuration is assembled.
+static WATCHED_LOCALES: std::sync::OnceLock<Vec<String>> = std::sync::OnceLock::new();
+
+/// The locales `--translation-dev` watches in this run, empty in an ordinary one.
+///
+/// For the translation report, whose search indexes the catalogue compiled into the
+/// binary: while a translator edits a watched locale on disk, the screen shows their
+/// files and the search does not, and the report window says so.
+pub(crate) fn watched_locales() -> &'static [String] {
+    WATCHED_LOCALES.get().map(Vec::as_slice).unwrap_or(&[])
 }
 
 /// The theme, the compiled `I18nConfig`, and the persisted UI-prefs booleans
@@ -462,6 +469,7 @@ pub(crate) fn build_ui_config(
     // files), and it is also why this is a development flag rather than a
     // setting: an extension's strings for the watched locale disappear until the
     // app is restarted without it.
+    let _ = WATCHED_LOCALES.set(translation_dev.iter().map(|(l, _)| l.to_string()).collect());
     let i18n = translation_dev
         .into_iter()
         .fold(i18n, |cfg, (locale, dir)| cfg.runtime_override(locale, dir));

@@ -642,6 +642,15 @@ fn learn_rows(links: &crate::identity::ProjectLinks) -> VStack {
                 }),
         );
     }
+    if links.translation_form.is_some() {
+        rows = rows.child(
+            Button::new(tr!(learn_report_translation()))
+                .variant(ButtonVariant::Ghost)
+                .on_activate_fn(|ctx| {
+                    crate::translation_report::window::open_or_focus_translation_report(ctx, None)
+                }),
+        );
+    }
     if let Some(url) = links.discord.clone() {
         rows = rows.child(
             Button::new(tr!(welcome_discord()))
@@ -1271,12 +1280,12 @@ mod tests {
     }
 
     /// The Launcher's outward rows follow the running edition, as the Help menu's
-    /// do: Help topics and Shortcuts always, Website and Discord only where the
-    /// edition declares them.
+    /// do: Help topics and Shortcuts always; Website, Report a translation error and
+    /// Discord only where the edition declares them.
     #[test]
     fn the_learn_rows_follow_the_editions_links() {
         use crate::identity::ProjectLinks;
-        assert_eq!(child_count(learn_rows(&ProjectLinks::community()), &[]), 4);
+        assert_eq!(child_count(learn_rows(&ProjectLinks::community()), &[]), 5);
         assert_eq!(child_count(learn_rows(&ProjectLinks::default()), &[]), 2);
     }
 
