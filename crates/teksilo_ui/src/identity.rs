@@ -69,6 +69,8 @@ use teksilo::settings::AppPaths;
 use teksilo::widgets::IconWidget;
 use teksilo::widgets::primitives::icon_widget::IconMode;
 
+pub use crate::shared::project_links::ProjectLinks;
+
 /// The community edition's `directories` triple.
 ///
 /// Also the default: a build that registers nothing behaves exactly as it did
@@ -118,6 +120,12 @@ pub struct AppIdentity {
     /// [`AppIdentity::community`] sets [`COMMUNITY_UPDATE_FEED`], so the
     /// community application is unaffected.
     pub update_feed: Option<String>,
+    /// Where this edition sends a reader who leaves the application: its website,
+    /// its chat, its issue tracker. Empty for a registered identity, for the
+    /// reason [`AppIdentity::update_feed`] is `None`; see
+    /// [`crate::shared::project_links`]. A surface whose link is unset is not
+    /// built.
+    pub links: ProjectLinks,
 }
 
 /// An application name as the filesystem and the desktop spell it: lowercased,
@@ -148,6 +156,7 @@ impl AppIdentity {
             display_name: application.clone(),
             application,
             update_feed: None,
+            links: ProjectLinks::default(),
         }
     }
 
@@ -159,6 +168,16 @@ impl AppIdentity {
     #[must_use]
     pub fn with_update_feed(mut self, url: impl Into<String>) -> Self {
         self.update_feed = Some(url.into());
+        self
+    }
+
+    /// Declare where this edition sends a reader who leaves the application.
+    ///
+    /// Each unset field removes the surface that would use it; see
+    /// [`ProjectLinks`].
+    #[must_use]
+    pub fn with_links(mut self, links: ProjectLinks) -> Self {
+        self.links = links;
         self
     }
 
@@ -192,6 +211,7 @@ impl AppIdentity {
             COMMUNITY_APPLICATION,
         )
         .with_update_feed(COMMUNITY_UPDATE_FEED)
+        .with_links(ProjectLinks::community())
     }
 
     /// Whether this *is* the community identity (all three path fields), which is
@@ -289,6 +309,12 @@ pub fn app_paths() -> Option<AppPaths> {
 /// never asks. See [`AppIdentity::update_feed`].
 pub fn update_feed() -> Option<String> {
     current().update_feed
+}
+
+/// Where this edition sends a reader who leaves the application. See
+/// [`AppIdentity::links`].
+pub fn links() -> ProjectLinks {
+    current().links
 }
 
 /// The **community** directories, whatever edition is running.
@@ -688,6 +714,27 @@ mod tests {
         }
         assert_eq!(display_name(), "Skribisto");
         assert!(is_community());
+    }
+
+    /// The links follow the edition, which is the whole point of hanging them
+    /// here: an edition that says nothing must not send its readers to the
+    /// community tracker.
+    #[test]
+    fn the_links_follow_the_registered_identity() {
+        let _serial = lock_for_test();
+        assert_eq!(links(), ProjectLinks::community());
+        {
+            let _h = register(AppIdentity::new("eu", "skribisto-pro", "Skribisto Pro"));
+            assert_eq!(links(), ProjectLinks::default());
+        }
+        let own = ProjectLinks {
+            issues: Some("https://example.org/issues".to_string()),
+            ..ProjectLinks::default()
+        };
+        let _h = register(
+            AppIdentity::new("eu", "skribisto-pro", "Skribisto Pro").with_links(own.clone()),
+        );
+        assert_eq!(links(), own);
     }
 
     /// The display name is allowed to differ from the path name — a product can

@@ -196,7 +196,10 @@ pub(crate) const SUPPORTED_LOCALES: &[&str] = &[
     "ro-RO", "sv-SE", "tr-TR",
 ];
 
-// Teksilo does not yet ship Esperanto for its shared controls.
+// Teksilo has shipped Esperanto for its shared controls since 0.26. This override
+// predates that and still wins for every key it defines (override first, then the
+// framework), so a correction to one of those strings belongs in this file, not
+// upstream.
 const WIDGET_LOCALE_OVERRIDES: &[(&str, &[&str])] =
     &[("eo", &[include_str!("../widget_locales/eo.ftl")])];
 

@@ -560,8 +560,14 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
                         .shortcut("help.shortcuts"),
                 )
                 .item(MenuEntry::new(tr!(menu_help_screen_reader())).intent("help.screen_reader"))
-                .separator()
-                .item(MenuEntry::new(tr!(menu_help_website())).intent("help.website"));
+                .separator();
+            // The outward rows follow the running edition's addresses
+            // (`identity::links`), conditional in step with their registration in
+            // `app/commands/help.rs`.
+            let links = crate::identity::links();
+            if links.website.is_some() {
+                m = m.item(MenuEntry::new(tr!(menu_help_website())).intent("help.website"));
+            }
             // Sits with the other outward-facing rows, and is added only where the
             // channel shows update state at all: on a Flathub or distribution
             // install the software centre owns this, and offering a row whose
@@ -574,8 +580,10 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
                     MenuEntry::new(tr!(menu_help_check_updates())).intent("help.check_updates"),
                 );
             }
-            m.item(MenuEntry::new(tr!(menu_help_report())).intent("help.report"))
-                .separator()
+            if links.issues.is_some() {
+                m = m.item(MenuEntry::new(tr!(menu_help_report())).intent("help.report"));
+            }
+            m.separator()
                 .item(MenuEntry::new(tr!(menu_about())).intent("app.about"))
         })
 }
@@ -956,6 +964,54 @@ mod tests {
                 "Go is the menu it precedes"
             );
         });
+    }
+
+    /// How many command rows the Help menu holds: Help is the last top-level node
+    /// (see [`the_window_menu_sits_just_before_help`]). Separators do not count.
+    fn help_row_count(model: &MenuModel) -> usize {
+        let mut count = 0;
+        model.modify(|nodes| {
+            if let Some(MenuNode::Submenu { children, .. }) = nodes.last() {
+                count = children
+                    .iter()
+                    .filter(|c| matches!(c, MenuNode::Item(_)))
+                    .count();
+            }
+        });
+        count
+    }
+
+    /// An edition that registered its own identity and declared no addresses must
+    /// get no row that would send its readers to the community project: Website and
+    /// Report a Problem go, and nothing else does. `MenuEntry` publishes neither
+    /// its title nor its intent, so the rows are counted; the update row is
+    /// conditional on the channel, which both builds share.
+    #[test]
+    fn the_outward_help_rows_follow_the_running_edition() {
+        let _serial = crate::identity::lock_for_test();
+        let community = help_row_count(&build_project_menu(empty_parts()));
+
+        let _h = crate::identity::register(crate::identity::AppIdentity::new(
+            "eu",
+            "acme-writer",
+            "Acme Writer",
+        ));
+        let edition = help_row_count(&build_project_menu(empty_parts()));
+        assert_eq!(
+            community - edition,
+            2,
+            "an edition with no links loses exactly Website and Report a Problem"
+        );
+
+        let _links = crate::identity::register(
+            crate::identity::AppIdentity::new("eu", "acme-writer", "Acme Writer")
+                .with_links(crate::identity::ProjectLinks::community()),
+        );
+        assert_eq!(
+            help_row_count(&build_project_menu(empty_parts())),
+            community,
+            "declaring the addresses brings both rows back"
+        );
     }
 
     /// The neighbours above only mean something if the menu was absent to begin

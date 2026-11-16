@@ -104,31 +104,35 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
         }));
     }
 
-    ctx.register_shortcut_global(
-        Shortcut::new("help.website")
-            .group(ShortcutGroup::Help)
-            .name(tr!(shortcut_name_help_website()))
-            .build(),
-    );
-    ctx.register_action_global(Action::new("help.website").on_invoke(|_i, c| {
-        crate::shared::external_link::open_external_link(
-            crate::shared::project_links::GITHUB_URL,
-            c,
+    // The two outward rows exist only where the running edition declares an
+    // address for them (`identity::links`). Registered conditionally, exactly as
+    // the matching menu rows are built, so a row can never point at an action that
+    // was not registered, and an edition that declared nothing gets no command in
+    // the palette that would open the community project.
+    let links = crate::identity::links();
+    if let Some(url) = links.website {
+        ctx.register_shortcut_global(
+            Shortcut::new("help.website")
+                .group(ShortcutGroup::Help)
+                .name(tr!(shortcut_name_help_website()))
+                .build(),
         );
-    }));
+        ctx.register_action_global(Action::new("help.website").on_invoke(move |_i, c| {
+            crate::shared::external_link::open_external_link(&url, c);
+        }));
+    }
 
-    ctx.register_shortcut_global(
-        Shortcut::new("help.report")
-            .group(ShortcutGroup::Help)
-            .name(tr!(shortcut_name_help_report()))
-            .build(),
-    );
-    ctx.register_action_global(Action::new("help.report").on_invoke(|_i, c| {
-        crate::shared::external_link::open_external_link(
-            crate::shared::project_links::ISSUES_URL,
-            c,
+    if let Some(url) = links.issues {
+        ctx.register_shortcut_global(
+            Shortcut::new("help.report")
+                .group(ShortcutGroup::Help)
+                .name(tr!(shortcut_name_help_report()))
+                .build(),
         );
-    }));
+        ctx.register_action_global(Action::new("help.report").on_invoke(move |_i, c| {
+            crate::shared::external_link::open_external_link(&url, c);
+        }));
+    }
 
     // Asking on purpose, which is a different thing from the once-a-day check and
     // obeys neither its cadence nor its setting: a reader who opens this menu has

@@ -13,4 +13,4 @@ mod welcome_vm;
 
 pub mod panel;
 
-pub use welcome_vm::{DISCORD_URL, GITHUB_URL, WelcomeViewModel};
+pub use welcome_vm::WelcomeViewModel;

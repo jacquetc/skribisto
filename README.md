@@ -392,7 +392,7 @@ crates/teksilo_ui/locales/en-US/{main,tooltips,tags,templates,story_bible}.ftl
 crates/teksilo_ui/locales/fr-FR/{main,tooltips,tags,templates,story_bible}.ftl
 ```
 
-The longer help pages are separate, and are Djot rather than Fluent. There are ten pages per
+The longer help pages are separate, and are Djot rather than Fluent. There are twelve pages per
 locale, under [crates/teksilo_ui/help/](crates/teksilo_ui/help/):
 
 ```

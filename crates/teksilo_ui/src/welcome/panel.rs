@@ -59,7 +59,7 @@ use crate::shell::launcher_menu::{
     ACTION_IMPORT_MANUSKRIPT, ACTION_IMPORT_PLUME, ACTION_IMPORT_SCRIVENER, ACTION_NEW,
     ACTION_NEW_FROM_DOCUMENTS, ACTION_OPEN, ACTION_SETTINGS,
 };
-use crate::welcome::{DISCORD_URL, GITHUB_URL, WelcomeViewModel};
+use crate::welcome::WelcomeViewModel;
 
 /// The four left-rail sections, in order.
 #[derive(Clone, Copy)]
@@ -269,46 +269,7 @@ impl WelcomePanel {
     /// coming soon." placeholder; a row here that led nowhere would be the same promise
     /// broken twice.
     fn learn_pane(&self) -> impl Widget + 'static {
-        // Each row is a button rather than a `ListView` selection: these are four
-        // unrelated actions, not a list of like things to pick between, and a selection
-        // highlight would suggest the pane remembers which one you chose.
-        let rows = VStack::new()
-            .spacing(2.0)
-            .child(
-                Button::new(tr!(learn_help_topics()))
-                    .variant(ButtonVariant::Ghost)
-                    .on_activate_fn(|ctx| crate::help::window::open_or_focus_help(ctx, None)),
-            )
-            .child(
-                Button::new(tr!(learn_shortcuts()))
-                    .variant(ButtonVariant::Ghost)
-                    // Settings ▸ Keymap, as from a project window's Help menu.
-                    .on_activate_fn(|ctx| {
-                        crate::settings::present(ctx, || {
-                            SettingsPanel::without_project_at(crate::settings::Pane::Keymap)
-                        })
-                    }),
-            )
-            .child(
-                Button::new(tr!(learn_website()))
-                    .variant(ButtonVariant::Ghost)
-                    .on_activate_fn(|ctx| {
-                        crate::shared::external_link::open_external_link(
-                            crate::shared::project_links::GITHUB_URL,
-                            ctx,
-                        )
-                    }),
-            )
-            .child(
-                Button::new(tr!(welcome_discord()))
-                    .variant(ButtonVariant::Ghost)
-                    .on_activate_fn(|ctx| {
-                        crate::shared::external_link::open_external_link(
-                            crate::shared::project_links::DISCORD_URL,
-                            ctx,
-                        )
-                    }),
-            );
+        let rows = learn_rows(&crate::identity::links());
 
         teksu!(
             VStack {
@@ -640,31 +601,87 @@ fn create_from_button() -> impl Widget + 'static {
 }
 
 fn social_links(vm: &WelcomeViewModel) -> impl Widget + 'static {
+    let vm = vm.clone();
+    social_row(crate::identity::links(), move |url, ctx| {
+        vm.open_link(url, ctx)
+    })
+}
+
+/// The Learn pane's rows: the two inward doors, then one row per outward address
+/// the running edition declares ([`crate::identity::links`]), as the Help menu
+/// builds its own. An edition that declares none gets no row leading to the
+/// community project.
+///
+/// Each row is a button rather than a `ListView` selection: these are unrelated
+/// actions, not a list of like things to pick between, and a selection highlight
+/// would suggest the pane remembers which one you chose.
+fn learn_rows(links: &crate::identity::ProjectLinks) -> VStack {
+    let mut rows = VStack::new()
+        .spacing(2.0)
+        .child(
+            Button::new(tr!(learn_help_topics()))
+                .variant(ButtonVariant::Ghost)
+                .on_activate_fn(|ctx| crate::help::window::open_or_focus_help(ctx, None)),
+        )
+        .child(
+            Button::new(tr!(learn_shortcuts()))
+                .variant(ButtonVariant::Ghost)
+                // Settings ▸ Keymap, as from a project window's Help menu.
+                .on_activate_fn(|ctx| {
+                    crate::settings::present(ctx, || {
+                        SettingsPanel::without_project_at(crate::settings::Pane::Keymap)
+                    })
+                }),
+        );
+    if let Some(url) = links.website.clone() {
+        rows = rows.child(
+            Button::new(tr!(learn_website()))
+                .variant(ButtonVariant::Ghost)
+                .on_activate_fn(move |ctx| {
+                    crate::shared::external_link::open_external_link(&url, ctx)
+                }),
+        );
+    }
+    if let Some(url) = links.discord.clone() {
+        rows = rows.child(
+            Button::new(tr!(welcome_discord()))
+                .variant(ButtonVariant::Ghost)
+                .on_activate_fn(move |ctx| {
+                    crate::shared::external_link::open_external_link(&url, ctx)
+                }),
+        );
+    }
+    rows
+}
+
+/// The sidebar's logo row: one flat [`link_button`] per service the running
+/// edition declares. An edition with no Discord server must not show the
+/// community's.
+fn social_row(
+    links: crate::identity::ProjectLinks,
+    open: impl Fn(&str, &mut EventContext) + Clone + 'static,
+) -> impl Widget + 'static {
     // The Discord logo's viewBox is 71×55, not square — `SvgIcon` fits it into
     // the icon box preserving aspect and centring, so it lands ~18×14 next to
     // the square GitHub mark. That is the logo's own proportion, not a squash.
-    let github_icon =
-        IconWidget::from_svg_icon(res!("../../resources/icons/Octicons-mark-github.svg"))
+    let mut row = HStack::new().spacing(4.0);
+    if let Some(url) = links.github {
+        let icon =
+            IconWidget::from_svg_icon(res!("../../resources/icons/Octicons-mark-github.svg"))
+                .icon_size(SOCIAL_ICON);
+        let open = open.clone();
+        row = row.child(link_button(icon, tr!(welcome_github()), move |ctx| {
+            open(&url, ctx)
+        }));
+    }
+    if let Some(url) = links.discord {
+        let icon = IconWidget::from_svg_icon(res!("../../resources/icons/Discord-Logo-Color.svg"))
             .icon_size(SOCIAL_ICON);
-    let discord_icon =
-        IconWidget::from_svg_icon(res!("../../resources/icons/Discord-Logo-Color.svg"))
-            .icon_size(SOCIAL_ICON);
-
-    let github_vm = vm.clone();
-    let discord_vm = vm.clone();
-    teksu!(
-        Center {
-            HStack {
-                spacing: 4.0
-                link_button(github_icon, tr!(welcome_github()), move |ctx| {
-                    github_vm.open_link(GITHUB_URL, ctx)
-                })
-                link_button(discord_icon, tr!(welcome_discord()), move |ctx| {
-                    discord_vm.open_link(DISCORD_URL, ctx)
-                })
-            }
-        }
-    )
+        row = row.child(link_button(icon, tr!(welcome_discord()), move |ctx| {
+            open(&url, ctx)
+        }));
+    }
+    teksu!(Center { child: row })
 }
 
 /// The sidebar column: the brand block at the top, then — pushed to the bottom
@@ -1239,6 +1256,50 @@ mod tests {
             !update.nodes.iter().any(|(_, n)| n.role() == Role::Button),
             "the Button role is overridden in place, not left on a sibling node"
         );
+    }
+
+    /// Builds `widget` alone and returns how many children its first container
+    /// holds after layout.
+    fn child_count(widget: impl Widget + 'static, path: &[usize]) -> usize {
+        let mut tree = WidgetTree::new();
+        let mut id = tree.add_boxed(Box::new(widget));
+        tree.layout(SizeProposal::exact(300.0, 300.0));
+        for &i in path {
+            id = tree.children(id)[i];
+        }
+        tree.children(id).len()
+    }
+
+    /// The Launcher's outward rows follow the running edition, as the Help menu's
+    /// do: Help topics and Shortcuts always, Website and Discord only where the
+    /// edition declares them.
+    #[test]
+    fn the_learn_rows_follow_the_editions_links() {
+        use crate::identity::ProjectLinks;
+        assert_eq!(child_count(learn_rows(&ProjectLinks::community()), &[]), 4);
+        assert_eq!(child_count(learn_rows(&ProjectLinks::default()), &[]), 2);
+    }
+
+    /// The sidebar logos likewise: none for an edition that declares neither
+    /// service, so it never shows the community's Discord server.
+    #[test]
+    fn the_sidebar_logos_follow_the_editions_links() {
+        use crate::identity::ProjectLinks;
+        let open = |_: &str, _: &mut EventContext| {};
+        // Center ▸ HStack ▸ [logos]
+        assert_eq!(
+            child_count(social_row(ProjectLinks::community(), open), &[0]),
+            2
+        );
+        assert_eq!(
+            child_count(social_row(ProjectLinks::default(), open), &[0]),
+            0
+        );
+        let github_only = ProjectLinks {
+            github: Some("https://example.org/repo".to_string()),
+            ..ProjectLinks::default()
+        };
+        assert_eq!(child_count(social_row(github_only, open), &[0]), 1);
     }
 
     /// The social links stay pinned to the sidebar's bottom, under the nav —

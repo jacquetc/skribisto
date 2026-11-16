@@ -61,13 +61,6 @@ pub const RECENTS_PAGE_EMPTY: usize = 0;
 pub const RECENTS_PAGE_NO_MATCH: usize = 1;
 pub const RECENTS_PAGE_LIST: usize = 2;
 
-pub use crate::shared::project_links::DISCORD_URL;
-/// The two public links the Welcome sidebar offers under its nav — the pair
-/// v1.9.x carried in its own welcome screen. They live here rather than in the
-/// view because *which* addresses the app advertises is a product fact, not a
-/// layout one (and the view is meant to be thin).
-pub use crate::shared::project_links::GITHUB_URL;
-
 #[derive(Clone)]
 pub struct WelcomeViewModel {
     show_welcome: Signal<bool>,
@@ -321,9 +314,11 @@ impl WelcomeViewModel {
     /// handler, i.e. the user's browser.
     ///
     /// Delegates to [`crate::shared::external_link`], which prose hyperlinks
-    /// also go through. These URLs are hard-coded and would not need its scheme
-    /// check, but one opener means one place where "what may a click launch" is
-    /// decided, rather than a rule that holds in the manuscript and not here.
+    /// also go through. These URLs come from the running identity
+    /// ([`crate::identity::links`]), not from the writer, and would not need its
+    /// scheme check, but one opener means one place where "what may a click
+    /// launch" is decided, rather than a rule that holds in the manuscript and
+    /// not here.
     pub fn open_link(&self, url: &str, ctx: &mut EventContext) {
         crate::shared::external_link::open_external_link(url, ctx);
     }
