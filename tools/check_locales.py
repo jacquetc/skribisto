@@ -304,14 +304,22 @@ def scan_braces(line: str, depth: int) -> int:
 
 
 def parse_ftl(path: Path, locale: str, parsed: ParsedLocale) -> None:
-    """Parse one .ftl file into `parsed`, recording duplicates and junk.
+    """Parse one .ftl file into `parsed`, recording duplicates and junk."""
+    parse_ftl_text(path.read_text(encoding="utf-8"), path, locale, parsed)
+
+
+def parse_ftl_text(text: str, path: Path, locale: str, parsed: ParsedLocale) -> None:
+    """Parse the text of one .ftl file into `parsed`, recording duplicates and junk.
+
+    `path` is only where the text says it came from, for the problems it
+    records: the translation-report triage parses files it fetched from the
+    GitHub API, which never touched the disk.
 
     This is a structural parser, not a validating one: it recovers entry names,
     line numbers, values and attributes. Nesting depth is tracked so that a
     selector's closing `}` at column 0 — which the source locale uses freely —
     reads as a continuation rather than as the end of the entry.
     """
-    text = path.read_text(encoding="utf-8")
     lines = text.splitlines()
 
     current: Entry | None = None

@@ -1,0 +1,16 @@
+skribisto-translation-report: 1
+locale: fr-FR
+catalogue: app
+area: interface
+file: main.ftl
+line: 3080
+message: menu-edit-undo-target
+composed: undo-target-trash
+also:
+upstream:
+kind: wrong-meaning
+version: 3.3.1+5c62c8cac
+crate-version: 3.3.1
+framework: teksilo-widgets 0.26.0
+channel: flathub
+os: linux

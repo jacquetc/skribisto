@@ -1,0 +1,49 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+#
+# Triage for the reports Skribisto's Help ▸ Report a Translation Error… files:
+# labels, a permalink to the line, the text on dev, duplicates. The work is in
+# tools/translation_report_triage.py, whose module docs explain each step.
+#
+# Runs from the default branch (master), as every `issues` workflow does: this file
+# and the issue form must be there before a release links to the form.
+#
+# Gated on the body's marker, not on the form's labels: those arrive as separate
+# events seconds after `opened`, and a report pasted into an issue has none.
+#
+# The issue body is written by whoever opened the issue. It never reaches a shell:
+# no `${{ }}` of it appears below, and the script reads the event file itself.
+name: Translation report triage
+
+on:
+  issues:
+    types: [opened, edited]
+
+permissions:
+  issues: write
+  contents: read
+
+concurrency:
+  group: translation-report-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  triage:
+    if: contains(github.event.issue.body, 'skribisto-translation-report:')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # Pinned to a commit, unlike the build workflows: this job holds a token that
+      # writes to issues and handles text from anyone. v6.1.0.
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            tools/check_locales.py
+            tools/translation_report_triage.py
+            crates/teksilo_ui/src/startup.rs
+          sparse-checkout-cone-mode: false
+      - name: Triage
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 -I tools/translation_report_triage.py

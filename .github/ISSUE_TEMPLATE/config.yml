@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+#
+# No blank issue: both forms carry the Contributor License Agreement checkbox, and a
+# blank issue would bypass it. The maintainer can still open one.
+blank_issues_enabled: false
+contact_links:
+  - name: Ask a question or talk about Skribisto
+    url: https://discord.gg/5BSkvQmyVH
+    about: The community chat, for questions, ideas and help with writing in Skribisto.

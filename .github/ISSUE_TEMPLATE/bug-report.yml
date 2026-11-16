@@ -1,0 +1,63 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+name: Bug report
+description: Something in Skribisto does not work as it should.
+labels: ["needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to report a problem. Please check the
+        [open issues](https://github.com/jacquetc/skribisto/issues) first: yours may
+        already be there, and a comment on it helps more than a second report.
+
+        Please write the report yourself: an issue drafted by an AI assistant is closed
+        ([CONTRIBUTING](https://github.com/jacquetc/skribisto/blob/master/CONTRIBUTING.md), rule 1).
+        A wrong translation has its own form, and Help ▸ Report a Translation Error… in
+        Skribisto fills it in for you.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what Skribisto did instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The shortest sequence of steps that shows the problem, if you know one.
+      placeholder: |
+        1.
+        2.
+        3.
+  - type: input
+    id: version
+    attributes:
+      label: Skribisto version
+      description: Shown in Help ▸ About Skribisto.
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: System
+      description: Your operating system and how you installed Skribisto (Flathub, the Windows installer, a distribution package…).
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Anything else
+      description: >-
+        Optional. Screenshots or a log can go here. They become public: make sure they
+        show none of your own writing.
+  - type: checkboxes
+    id: cla
+    attributes:
+      label: Contributor License Agreement
+      options:
+        - label: >-
+            This report is my own, and may be used under the project's
+            [Contributor License Agreement](https://github.com/jacquetc/skribisto/blob/master/CLA.md).
+          required: true

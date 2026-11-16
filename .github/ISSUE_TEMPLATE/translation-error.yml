@@ -1,0 +1,92 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+#
+# Filled in by Skribisto's Help ▸ Report a Translation Error…, which prefills every
+# field below by its `id` through the link it opens. The ids, the "What is wrong"
+# labels and the report-data block are a contract with the application
+# (crates/teksilo_ui/src/translation_report/report.rs, whose tests read this file)
+# and with tools/translation_report_triage.py: rename one and both stop matching.
+name: Translation error
+description: A word or sentence that reads wrong in your language. Skribisto's Help menu fills this form in for you.
+labels: ["translation", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping Skribisto read well in your language. The quickest way to
+        report is **Help ▸ Report a Translation Error…** in Skribisto: it finds the exact
+        text and fills this form in. You can write the explanation in any language.
+
+        Please write the report yourself: an issue drafted by an AI assistant is closed
+        ([CONTRIBUTING](https://github.com/jacquetc/skribisto/blob/master/CONTRIBUTING.md), rule 1).
+  - type: input
+    id: language
+    attributes:
+      label: Language
+      description: The language the text is in, as a tag such as fr-FR or ja-JP.
+    validations:
+      required: true
+  - type: textarea
+    id: message
+    attributes:
+      label: Message
+      description: The message id Skribisto found, or where you saw the text if it could not find it.
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: Current text
+      description: The text as Skribisto shows it.
+  - type: textarea
+    id: english
+    attributes:
+      label: English source
+      description: The English text it translates, when there is one.
+  - type: input
+    id: kind
+    attributes:
+      label: What is wrong
+      description: >-
+        One of: The meaning is wrong (wrong-meaning) · Spelling, grammar or punctuation
+        (spelling) · Still in English (not-translated) · Understandable but unnatural, or
+        the wrong tone (unnatural) · Named differently elsewhere (inconsistent) · Wrong form
+        for a number (plural-form) · Cut off or does not fit (cut-off) · Something else (other).
+    validations:
+      required: true
+  - type: textarea
+    id: explanation
+    attributes:
+      label: Explanation
+      description: Why it reads wrong, in any language. Optional.
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Better translation
+      description: >-
+        How it should read. Keep each { $name } placeholder, and the & that marks a menu's
+        access key. For a text that changes with a number, give every form.
+    validations:
+      required: true
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot
+      description: >-
+        Optional. Drag an image here. It becomes public: make sure it shows none of your
+        own writing.
+  - type: textarea
+    id: report-data
+    attributes:
+      label: Report data
+      description: Filled in by Skribisto (skribisto-translation-report). Please leave it as it is.
+      render: text
+  - type: checkboxes
+    id: cla
+    attributes:
+      label: Contributor License Agreement
+      options:
+        - label: >-
+            The explanation and suggestion are my own, and may be used under the project's
+            [Contributor License Agreement](https://github.com/jacquetc/skribisto/blob/master/CLA.md).
+          required: true
