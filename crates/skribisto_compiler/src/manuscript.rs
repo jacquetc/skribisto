@@ -61,6 +61,14 @@ const CATALOGUES: &[(&str, &str)] = &[
     ("uk", include_str!("../locales/uk.ftl")),
 ];
 
+/// Every catalogue's source, by primary language subtag, `en` first.
+///
+/// For the application's translation-report search, which indexes the words an
+/// exported book prints so that a report about one names its file and line.
+pub fn catalogue_sources() -> &'static [(&'static str, &'static str)] {
+    CATALOGUES
+}
+
 static BUNDLES: LazyLock<HashMap<&'static str, FluentBundle<FluentResource>>> =
     LazyLock::new(|| {
         CATALOGUES

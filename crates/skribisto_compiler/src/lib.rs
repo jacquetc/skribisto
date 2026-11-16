@@ -33,6 +33,7 @@ mod preset;
 pub mod receipt;
 mod render;
 
+pub use manuscript::catalogue_sources;
 pub use preset::{
     DigitStyle, DirectionMode, EpigraphPlacement, ExportFormat, FootnoteNumbering,
     FootnotePlacement, HeadingLanguage, HeadingScheme, ImageHandling, LineSpacing, Margins,
