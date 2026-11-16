@@ -35,6 +35,12 @@ Skribisto is built under the following seven rules. They apply to your contribut
 - Provide a clear description of the problem
 - Include steps to reproduce, expected behavior, and actual behavior
 - Mention your environment (OS, Rust version, etc.)
+- New issues go through one of two forms, a bug report and a translation error. Both ask you
+  to confirm that the report is your own and may be used under the
+  [Contributor License Agreement](CLA.md), which counts issue-tracker submissions as
+  Contributions
+- For a wrong translation, use **Help ▸ Report a Translation Error…** in Skribisto: it finds
+  the exact message and fills the form in for you (see the README's *Translation* section)
 
 ### Suggesting Features
 

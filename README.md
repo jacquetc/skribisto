@@ -392,7 +392,7 @@ crates/teksilo_ui/locales/en-US/{main,tooltips,tags,templates,story_bible}.ftl
 crates/teksilo_ui/locales/fr-FR/{main,tooltips,tags,templates,story_bible}.ftl
 ```
 
-The longer help pages are separate, and are Djot rather than Fluent. There are twelve pages per
+The longer help pages are separate, and are Djot rather than Fluent. There are thirteen pages per
 locale, under [crates/teksilo_ui/help/](crates/teksilo_ui/help/):
 
 ```
@@ -446,6 +446,29 @@ is a development flag; release builds refuse it.
 
 There is no Transifex, no `lupdate` or `lrelease`, and no `.ts`/`.qm` step any more. Edit the
 `.ftl` and `.djot` files directly and open a pull request.
+
+### Reports from readers
+
+Anyone can report a wrong translation from inside the app with **Help ▸ Report a Translation
+Error…**. The writer finds the text by the words they saw, says what is wrong and suggests a
+better one; the app then opens a prefilled issue on the
+[translation error form](.github/ISSUE_TEMPLATE/translation-error.yml) in their browser. The
+app itself sends nothing.
+
+Each report carries a small block naming the locale, the catalogue, the file, the line and the
+message id. The [triage workflow](.github/workflows/translation-report.yml) reads it and:
+
+- labels the issue `lang: <tag>`, `kind: <problem>`, `area: <interface|help|default
+  content|export>`, and `upstream: teksilo` for a string of the shared controls, which are
+  fixed in teksilo's own catalogue;
+- comments with a permalink to the line, the text on `dev` (already fixed or not), the
+  English source and the other messages that read the same in that language;
+- flags another open report about the same message as a possible duplicate.
+
+To fix one, edit the line and say `Fixes #N` in the commit. The issue closes when the fix
+reaches `master`; close it by hand with the release number otherwise. NEWS.yml gets one line
+per release for all of them ("Corrected translations in French and Polish"), not one per
+string.
 
 ## To contact me
 
