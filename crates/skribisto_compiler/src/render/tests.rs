@@ -3471,8 +3471,8 @@ fn a_work_with_numbering_off_exports_titles_without_numerals() {
     let mut g = five_chapter_book();
     g.work.number_chapters = false;
     // Give the chapters real titles, so there is something left once numbers go.
-    for n in 1..=5usize {
-        g.binders[0].items[n].contents[0].data = format!("Title {n}");
+    for (n, item) in g.binders[0].items.iter_mut().enumerate().skip(1).take(5) {
+        item.contents[0].data = format!("Title {n}");
     }
     let p = preset("neutral");
     assert_eq!(p.chapter_heading, HeadingScheme::NumberAndTitle);

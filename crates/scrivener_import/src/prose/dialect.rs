@@ -852,10 +852,10 @@ impl Pass<'_, '_> {
                         _ => None,
                     })
                     .collect();
-                if text == marker {
-                    for i in first..=last {
-                        seg.marker[i] = true;
-                    }
+                if text == marker
+                    && let Some(chars) = seg.marker.get_mut(first..=last)
+                {
+                    chars.fill(true);
                 }
             }
             let note = self.graft_note(entry);
@@ -1317,8 +1317,8 @@ impl Pass<'_, '_> {
             seg.atoms.len()
         };
         let body_end = seg.at[group.close.0];
-        for i in first..=last {
-            seg.in_span[i] = true;
+        if let Some(span) = seg.in_span.get_mut(first..=last) {
+            span.fill(true);
         }
         for (start, end) in &group.markers {
             mark_chars(seg, *start, *end);
@@ -2375,11 +2375,13 @@ fn gap(seg: &Segment, from: usize, to: usize) -> Gap {
         seg.at.get(from).copied().unwrap_or(seg.atoms.len()),
         seg.at.get(to).copied().unwrap_or(seg.atoms.len()),
     );
-    for i in first..last {
-        if matches!(&seg.atoms[i], Atom::Inline(inline) if matches!(**inline, Inline::Picture(_) | Inline::NoteReference(_)))
-        {
-            return Gap::Text;
-        }
+    let separates = |atom: &Atom| matches!(atom, Atom::Inline(inline) if matches!(**inline, Inline::Picture(_) | Inline::NoteReference(_)));
+    if seg
+        .atoms
+        .get(first..last)
+        .is_some_and(|between| between.iter().any(separates))
+    {
+        return Gap::Text;
     }
     match (breaks, blank) {
         (false, false) => Gap::None,
