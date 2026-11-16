@@ -123,7 +123,8 @@ impl ImportManuskriptPanel {
             .spacing(8.0)
             .child(
                 Expand::horizontal().child(
-                    TextInput::new(self.vm.source()).validation(self.vm.source_validation()),
+                    crate::shared::address_input::address_input(self.vm.source())
+                        .validation(self.vm.source_validation()),
                 ),
             )
             .child(

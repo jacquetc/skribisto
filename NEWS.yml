@@ -6,6 +6,7 @@ Description:
 - "In that list, a light frame appears around a scene when the mouse is over it, and a stronger one around the scene Tab is on, with room around its title and its quotation. Nothing showed under the mouse, and the Tab frame was drawn over the words"
 - "Help ▸ Report a Translation Error… finds a wrong word in your language by the words you saw, in menus, messages, help pages and exported books, and turns it into a report for the translators: what is wrong and how it should read. It opens a public report on GitHub in your browser, already filled in; Skribisto itself sends nothing. The same window opens from the Learn page of the Launcher, under the language choice in Settings ▸ Appearance, and from the foot of every help page in your language"
 - "The Help window has a new page, Reporting a translation error"
+- "Arabic or Hebrew typed into a one-line field, such as Search or a rename box, now shows, and reads right to left from the right edge, even in a French or English interface. It used to be invisible. In the Arabic and Hebrew interfaces, Latin text typed into such a field reads left to right. A link's address and the file path of a Manuskript or Scrivener import always read left to right"
 ---
 Version: 3.3.1
 Date: 2026-11-11

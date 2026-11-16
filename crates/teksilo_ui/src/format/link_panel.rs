@@ -119,7 +119,8 @@ impl Widget for LinkPanel {
             )
             .line(
                 field_label(tr!(link_dialog_url_label())),
-                TextInput::new(self.href.clone()).placeholder(tr!(link_dialog_url_placeholder())),
+                crate::shared::address_input::address_input(self.href.clone())
+                    .placeholder(tr!(link_dialog_url_placeholder())),
             );
 
         // A link with no destination is not a link. The name may be blank —

@@ -255,7 +255,7 @@ fn project_step(vm: &ImportScrivenerViewModel, path_field: &PathFieldSlot) -> im
     let commit_vm = vm.clone();
     let file_vm = vm.clone();
     let folder_vm = vm.clone();
-    let input = TextInput::new(vm.source_text())
+    let input = crate::shared::address_input::address_input(vm.source_text())
         .label(tr!(import_scrivener_source()))
         .placeholder(tr!(import_scrivener_source_placeholder()))
         .validation(vm.source_validation())

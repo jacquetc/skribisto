@@ -29,6 +29,9 @@
 /// corkboard, overview) — crate-internal, not exposed past the extension seam.
 pub(crate) mod binder_ops;
 
+/// A field for an address or a path, left to right in every interface.
+pub(crate) mod address_input;
+
 mod caret_highlight;
 pub mod editor_size;
 /// Whether a command may write into an editor's text: the one question every
