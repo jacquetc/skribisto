@@ -77,6 +77,22 @@ impl Channel {
         }
     }
 
+    /// The stamp that names this channel, the inverse of [`Self::parse`]:
+    /// `unknown` for a stamp this build did not recognise, so a report never
+    /// carries a packager's raw string.
+    pub fn stamp(self) -> &'static str {
+        match self {
+            Self::Flathub => "flathub",
+            Self::FlatpakBundle => "flatpak-bundle",
+            Self::Tarball => "tarball",
+            Self::Dmg => "dmg",
+            Self::Windows => "windows",
+            Self::Distro => "distro",
+            Self::Source => "source",
+            Self::Unknown => "unknown",
+        }
+    }
+
     /// Whether this channel may check on its own, without being asked.
     ///
     /// Governs the unprompted daily check only. Asking by hand, through the Help
@@ -122,6 +138,24 @@ pub enum ManagedBy {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// `stamp` is the inverse of `parse` for every channel a build can carry, so a
+    /// report names the channel the way the packaging does.
+    #[test]
+    fn every_channel_stamps_what_parses_back_to_it() {
+        for channel in [
+            Channel::Flathub,
+            Channel::FlatpakBundle,
+            Channel::Tarball,
+            Channel::Dmg,
+            Channel::Windows,
+            Channel::Distro,
+            Channel::Source,
+            Channel::Unknown,
+        ] {
+            assert_eq!(Channel::parse(channel.stamp()), channel, "{channel:?}");
+        }
+    }
 
     #[test]
     fn every_stamp_the_packaging_writes_is_recognised() {

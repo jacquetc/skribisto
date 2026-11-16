@@ -32,6 +32,7 @@ fn main() {
     println!("cargo:rustc-env=SKRIBISTO_GIT_DESCRIBE={describe}");
 
     stamp_channel();
+    stamp_framework_version();
     embed_windows_resources();
     reserve_windows_main_stack();
 }
@@ -89,6 +90,50 @@ fn stamp_channel() {
         .filter(|s| !s.is_empty())
         .unwrap_or_else(|| "source".to_string());
     println!("cargo:rustc-env=SKRIBISTO_CHANNEL={channel}");
+}
+
+/// Stamps the teksilo-widgets version this binary was built against into
+/// `SKRIBISTO_TEKSILO_VERSION`, for the translation report's machine block: a
+/// framework string is fixed in teksilo's catalogue *at that release*, and teksilo
+/// has no version constant of its own to ask at runtime.
+///
+/// `SKRIBISTO_TEKSILO_VERSION` set in the environment wins. Otherwise the version is
+/// read from the workspace's `Cargo.lock`, two directories up, when that file
+/// exists. An edition that builds this crate from its own workspace may resolve a
+/// different teksilo than this lock says, so the value is a hint the triage workflow
+/// checks against the lock at the reported commit; empty when neither is available,
+/// and the report then leaves the line out.
+fn stamp_framework_version() {
+    println!("cargo:rerun-if-env-changed=SKRIBISTO_TEKSILO_VERSION");
+    let version = std::env::var("SKRIBISTO_TEKSILO_VERSION")
+        .ok()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .or_else(|| {
+            let manifest = std::env::var("CARGO_MANIFEST_DIR").ok()?;
+            let lock = Path::new(&manifest).join("../../Cargo.lock");
+            if !lock.is_file() {
+                return None;
+            }
+            println!("cargo:rerun-if-changed={}", lock.display());
+            locked_version(&std::fs::read_to_string(&lock).ok()?, "teksilo-widgets")
+        })
+        .unwrap_or_default();
+    println!("cargo:rustc-env=SKRIBISTO_TEKSILO_VERSION={version}");
+}
+
+/// The `version` of package `name` in a `Cargo.lock`: the line after its `name`.
+fn locked_version(lock: &str, name: &str) -> Option<String> {
+    let wanted = format!("name = \"{name}\"");
+    let mut lines = lock.lines();
+    while let Some(line) = lines.next() {
+        if line.trim() == wanted {
+            let next = lines.next()?.trim();
+            let version = next.strip_prefix("version = \"")?.strip_suffix('"')?;
+            return Some(version.to_string());
+        }
+    }
+    None
 }
 
 /// For a Windows *target*, embed the app icon + version metadata into
