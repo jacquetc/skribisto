@@ -119,6 +119,7 @@ fn epigraph_section(tab: &ContentTab) -> Option<impl Widget> {
             false,
             tab.capture_palette(),
             tr!(epigraph()),
+            Some(tab.open_doc.content_language()),
         ));
     Some(crate::widgets::tip::RichTip::new(
         crate::tooltip_registry::CONCEPT_EPIGRAPH,
@@ -480,6 +481,7 @@ pub fn folder_own_pane(tab: &ContentTab) -> Box<dyn Widget> {
                 tr!(placeholder_title()),
                 tab.mark_dirty_fn(),
                 tab.commit_names_fn(),
+                Some(tab.open_doc.content_language()),
             ),
             &tab.column_width,
         ));
@@ -492,6 +494,7 @@ pub fn folder_own_pane(tab: &ContentTab) -> Box<dyn Widget> {
                 tr!(placeholder_subtitle()),
                 tab.mark_dirty_fn(),
                 tab.commit_names_fn(),
+                Some(tab.open_doc.content_language()),
             ),
             &tab.column_width,
         ));
@@ -553,6 +556,7 @@ pub fn folder_own_pane(tab: &ContentTab) -> Box<dyn Widget> {
                 false,
                 tab.capture_palette(),
                 tr!(synopsis()),
+                Some(tab.open_doc.content_language()),
             ));
     }
     // A chapter folder's own prose. Absent for a Part or a Book — the matrix gives
@@ -589,6 +593,7 @@ pub fn folder_own_pane(tab: &ContentTab) -> Box<dyn Widget> {
             // A tab's editor is on screen and lays out on its first frame.
             false,
             Some(tab.tags()),
+            Some(tab.open_doc.content_language()),
         ));
     }
     // Flowing page: the editors are intrinsic-height, so this `ScrollArea` scrolls the
@@ -724,6 +729,7 @@ pub fn heading(tab: &ContentTab) -> Box<dyn Widget> {
                 tr!(placeholder_title()),
                 tab.mark_dirty_fn(),
                 tab.commit_names_fn(),
+                Some(tab.open_doc.content_language()),
             ),
             &tab.column_width,
         ));
@@ -736,6 +742,7 @@ pub fn heading(tab: &ContentTab) -> Box<dyn Widget> {
                 tr!(placeholder_subtitle()),
                 tab.mark_dirty_fn(),
                 tab.commit_names_fn(),
+                Some(tab.open_doc.content_language()),
             ),
             &tab.column_width,
         ));
@@ -792,6 +799,7 @@ pub fn heading(tab: &ContentTab) -> Box<dyn Widget> {
                 false,
                 tab.capture_palette(),
                 tr!(synopsis()),
+                Some(tab.open_doc.content_language()),
             ));
     }
     tab_backdrop(
@@ -879,6 +887,7 @@ fn folder_synopsis_body(tab: &ContentTab, will_show: bool) -> impl Widget {
                 false,
                 tab.capture_palette(),
                 tr!(synopsis()),
+                Some(tab.open_doc.content_language()),
             ));
     }
     laned(

@@ -729,6 +729,7 @@ impl NoteInProseBody {
                 Some(self.tags.clone()),
                 mask,
                 tr!(editor_text_name()),
+                Some(doc.content_language()),
             ));
         }
         col

@@ -273,6 +273,26 @@ impl App {
                 crate::models::live_prose(&app_ctx, work_id.get()?, uid, role)
             }));
         }
+        // …and the language a row is written in, for the reader's text: the row's
+        // own while it exists, the project's once it is gone. Asked once per opened
+        // moment, so the binder walk is not on any hot path.
+        {
+            let app_ctx = self.app_ctx.clone();
+            let work_id = ids.work_id.clone();
+            let docs = session.open_docs.clone();
+            timeline.set_language_source(std::rc::Rc::new(move |uid| {
+                let live = work_id.get().and_then(|wid| {
+                    crate::models::ordered_binder_items(&app_ctx, wid)
+                        .into_iter()
+                        .find(|r| r.uid == uid)
+                        .map(|r| r.id)
+                });
+                match live {
+                    Some(id) => docs.item_language(id),
+                    None => docs.project_language(),
+                }
+            }));
+        }
 
         // …and the way back for a row that is gone entirely. Assembled here for
         // the same reason the restore below is: it needs the open-documents
@@ -596,6 +616,10 @@ impl App {
                 editors.active_item(),
                 uid_of,
                 restore,
+                {
+                    let docs = session.open_docs.clone();
+                    std::rc::Rc::new(move |id| docs.item_language(id))
+                },
             ))
             .dock(crate::timeline::dock::timeline_dock(
                 timeline.clone(),

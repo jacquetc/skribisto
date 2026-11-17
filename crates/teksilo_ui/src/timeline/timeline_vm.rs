@@ -61,7 +61,7 @@ use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
 use chrono::{DateTime, Utc};
-use teksilo::prelude::{AsyncRuntimeHandle, EventContext, Signal, spawn_blocking};
+use teksilo::prelude::{AsyncRuntimeHandle, EventContext, LanguageTag, Signal, spawn_blocking};
 use teksilo::widgets::DateRange;
 
 use common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
@@ -220,6 +220,11 @@ pub type LiveManuscriptFn = Rc<dyn Fn() -> Vec<LiveRow>>;
 /// runs once, when a row is actually opened.
 pub type LiveProseFn = Rc<dyn Fn(uuid::Uuid, &ContentRole) -> Option<String>>;
 
+/// The language a row of the manuscript is written in, by its durable uid: its own
+/// dictionary language while it exists, the project's once it is gone. Installed by
+/// the shell, which holds the open-documents store this needs.
+pub type LanguageFn = Rc<dyn Fn(uuid::Uuid) -> Option<LanguageTag>>;
+
 /// Puts a **deleted** row back into the binder.
 ///
 /// Supplied by the shell for the same reason the two readers above are, and more
@@ -261,6 +266,10 @@ pub struct TimelineViewModel {
     range: Signal<Option<DateRange>>,
     live: Rc<RefCell<Option<LiveManuscriptFn>>>,
     live_prose: Rc<RefCell<Option<LiveProseFn>>>,
+    /// The language a row is written in, for the reader's text. See
+    /// [`LanguageFn`]. `None` until the shell installs one (a mocks build), and the
+    /// reader then reads in the interface's language.
+    language: Rc<RefCell<Option<LanguageFn>>>,
     /// Puts a removed row back — see [`RecreateFn`]. `None` until the shell
     /// installs one, which is what the reader's "Bring this back" is gated on.
     recreate: Rc<RefCell<Option<RecreateFn>>>,
@@ -290,6 +299,7 @@ impl TimelineViewModel {
             range: Signal::new(None),
             live: Rc::new(RefCell::new(None)),
             live_prose: Rc::new(RefCell::new(None)),
+            language: Rc::new(RefCell::new(None)),
             recreate: Rc::new(RefCell::new(None)),
             scanned: Rc::new(RefCell::new(None)),
             compared: Rc::new(RefCell::new(None)),
@@ -530,6 +540,21 @@ impl TimelineViewModel {
         if slot.is_none() {
             *slot = Some(live);
         }
+    }
+
+    /// Install the row-language reader (once, from the shell).
+    pub fn set_language_source(&self, language: LanguageFn) {
+        let mut slot = self.language.borrow_mut();
+        if slot.is_none() {
+            *slot = Some(language);
+        }
+    }
+
+    /// The language one row is written in, for the reader: its own dictionary
+    /// language while it still exists, else the project's.
+    pub fn language_of(&self, uid: uuid::Uuid) -> Option<LanguageTag> {
+        let read = self.language.borrow().clone()?;
+        read(uid)
     }
 
     /// Install the recreate sink (once, from the shell).

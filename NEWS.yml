@@ -8,6 +8,7 @@ Description:
 - "The Help window has a new page, Reporting a translation error"
 - "Arabic or Hebrew typed into a one-line field, such as Search or a rename box, now shows, and reads right to left from the right edge, even in a French or English interface. It used to be invisible. In the Arabic and Hebrew interfaces, Latin text typed into such a field reads left to right. A link's address and the file path of a Manuskript or Scrivener import always read left to right"
 - "Settings ▸ Editor ▸ Editor Behavior has a new choice, Tabs kept open: One, Last five or All. With One, each item you open replaces the tab you were on. With Last five, opening a sixth closes the tab you have gone longest without looking at. Pinned tabs never count and are never closed, and a tab whose text could not be saved stays open. All, the default, keeps every tab as before"
+- "Your writing now tells a screen reader which language it is in: a scene, a note, a synopsis, a title, a comment or a footnote is announced in the language set for it in the Inspector, or else the project's, while the menu bar, the panels and their buttons keep the interface's. A screen reader that switches voices can then read an English novel in an English voice inside a French interface. A help page shown in English because it is not translated yet is announced as English, and in Report a Translation Error the better translation is announced in the language being reported"
 ---
 Version: 3.3.1
 Date: 2026-11-11

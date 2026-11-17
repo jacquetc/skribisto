@@ -27,7 +27,7 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 
-use teksilo::prelude::{BuildContext, Signal};
+use teksilo::prelude::{BuildContext, LanguageTag, Signal};
 use teksilo::text_document::Color;
 
 use frontend::AppContext;
@@ -136,6 +136,17 @@ pub struct OpenDoc {
     /// smart-punctuation engine exists for — and the locale-aware quote pairs matter more
     /// here than anywhere else in the manuscript.
     replacement_epigraph: RefCell<Option<Rc<TextReplacementSession>>>,
+    /// The language this item is written in, for every editor that shows it: its
+    /// own dictionary language, else the project's. `None` until the store first
+    /// resolves it, and for a project that names no language.
+    ///
+    /// Declared on the editors with `content_language`, so a screen reader can read
+    /// the prose in its language rather than the interface's, the text engine shapes
+    /// it in that language, and an empty paragraph falls back on its direction.
+    /// Pushed by [`OpenDocsStore::attach_all`] and on open, the same two doors that
+    /// tell the spell checker and the replacement engine, so the three cannot
+    /// disagree about what language a document is in.
+    language: Signal<Option<LanguageTag>>,
     /// How many mounted views are currently *showing* this doc's synopsis.
     ///
     /// Visibility stopped being one global answer once the synopsis could be
@@ -251,6 +262,7 @@ impl OpenDoc {
             replacement_main: RefCell::new(None),
             replacement_synopsis: RefCell::new(None),
             replacement_epigraph: RefCell::new(None),
+            language: Signal::new(None),
             synopsis_viewers: Cell::new(0),
         };
         for cr in skribisto_model::allowed_content(role, sub_role) {
@@ -682,6 +694,21 @@ impl OpenDoc {
         }
     }
 
+    /// The language this item is written in, for its editors' `content_language`.
+    pub fn content_language(&self) -> Signal<Option<LanguageTag>> {
+        self.language.clone()
+    }
+
+    /// Point [`content_language`](Self::content_language) at the item's effective
+    /// language list. Idempotent: an unchanged language does not notify, so the
+    /// editors bound to it are not laid out again for nothing.
+    pub fn set_language(&self, languages: &[String]) {
+        let tag = content_language_of(languages);
+        if self.language.get() != tag {
+            self.language.set(tag);
+        }
+    }
+
     /// Tell both replace-while-typing sessions what language this document is
     /// written in. Idempotent; a real change makes the next keystroke recompile.
     ///
@@ -743,6 +770,21 @@ impl OpenDoc {
     pub fn spell_epigraph(&self) -> Option<Rc<SpellSession>> {
         self.spell_epigraph.clone()
     }
+}
+
+/// The language a text is written in, from an effective language list: its first
+/// tag, when that is a language tag teksilo accepts.
+///
+/// A list names every dictionary a text is checked against, first the one it is
+/// written in. A legacy or malformed tag declares nothing rather than a wrong
+/// language: the editor then reads in the interface's, as it did before any
+/// declaration existed.
+pub fn content_language_of(languages: &[String]) -> Option<LanguageTag> {
+    let primary = skribisto_model::language::primary(languages).trim();
+    if primary.is_empty() {
+        return None;
+    }
+    LanguageTag::parse(primary).ok()
 }
 
 struct Entry {
@@ -1265,6 +1307,7 @@ impl OpenDocsStore {
         // feature that needs an engine; this one only needs the tag.
         let punctuation = self.inner.punctuation.borrow().clone();
         for (doc, tags) in &attachments {
+            doc.set_language(tags);
             doc.set_replacement_locale(tags);
             // Pushed here too, not only from `set_punctuation`: a document
             // opened after the settings resolved would otherwise never hear
@@ -1281,6 +1324,9 @@ impl OpenDocsStore {
 
     /// Attach the spell-checker to one freshly-built doc (on open / rebuild).
     fn attach_one(&self, doc: &Rc<OpenDoc>) {
+        // The language first and unconditionally: it needs neither an engine nor a
+        // lexicon, and an editor built from this doc reads it on its first layout.
+        doc.set_language(&self.language_for(doc.item_id));
         // Comments first and unconditionally: unlike spell-check it needs no
         // engine and no installed dictionary, so a freshly-opened document must
         // re-anchor its threads even in a project with nothing else configured.
@@ -1344,6 +1390,19 @@ impl OpenDocsStore {
             skribisto_model::language::all(&self.inner.work_lang.borrow()).map(str::to_string),
         );
         out
+    }
+
+    /// The language one item is written in, for a surface that shows its text
+    /// without an [`OpenDoc`]: a comment card, a footnote, an earlier version. The
+    /// same resolution as [`OpenDoc::content_language`], read once.
+    pub fn item_language(&self, item_id: u64) -> Option<LanguageTag> {
+        content_language_of(&self.language_for(item_id))
+    }
+
+    /// The project's own language, for text whose item no longer exists (a removed
+    /// row read back on the Timeline).
+    pub fn project_language(&self) -> Option<LanguageTag> {
+        content_language_of(&self.inner.work_lang.borrow())
     }
 
     /// The effective language list of one item (its own tag, else the Work's), for the
@@ -2788,5 +2847,123 @@ mod remembered_history_tests {
         // across a project switch would be handed to whatever inherits its id.
         store.clear();
         assert_eq!(store.remembered_count(), 0);
+    }
+}
+
+/// The language a document's editors declare: resolved by the same door the spell
+/// checker and the replacement engine use, and kept in step with it.
+#[cfg(all(test, not(feature = "mocks")))]
+mod content_language_tests {
+    use super::*;
+    use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
+    use frontend::direct_access::{CreateBinderDto, CreateBinderItemDto, CreateWorkDto};
+
+    fn tag(s: &str) -> Option<LanguageTag> {
+        LanguageTag::parse(s).ok()
+    }
+
+    /// A project with two scenes: the first with no language of its own, the second
+    /// written in Japanese.
+    fn project() -> (OpenDocsStore, u64, u64, u64) {
+        let ctx = Rc::new(AppContext::new());
+        let work = work_commands::create_orphan_work(&ctx, None, &CreateWorkDto::default())
+            .expect("a work");
+        let binder = binder_commands::create_binder(
+            &ctx,
+            None,
+            &CreateBinderDto {
+                name: "B".into(),
+                activated: true,
+                ..Default::default()
+            },
+            work.id,
+            0,
+        )
+        .expect("a binder");
+        let scene = |title: &str, languages: Vec<String>| {
+            binder_item_commands::create_binder_item(
+                &ctx,
+                None,
+                &CreateBinderItemDto {
+                    title: title.into(),
+                    role: BinderItemRole::Item,
+                    sub_role: BinderItemSubRole::Scene,
+                    activated: true,
+                    dict_language: languages,
+                    ..Default::default()
+                },
+                binder.id,
+                -1,
+            )
+            .expect("a scene")
+            .id
+        };
+        let inheriting = scene("Inherits", Vec::new());
+        let japanese = scene("Japanese", vec!["ja-JP".into()]);
+        let store = OpenDocsStore::new(ctx);
+        (store, work.id, inheriting, japanese)
+    }
+
+    #[test]
+    fn an_open_document_declares_its_items_language_else_the_projects() {
+        let (store, work, inheriting, japanese) = project();
+        store.set_project_language(Some(work), vec!["en-GB".into()]);
+        let a = store.open(inheriting).expect("opens");
+        let b = store.open(japanese).expect("opens");
+        assert_eq!(a.content_language().get(), tag("en-GB"), "the project's");
+        assert_eq!(b.content_language().get(), tag("ja-JP"), "its own");
+        assert_eq!(store.item_language(inheriting), tag("en-GB"));
+        assert_eq!(store.item_language(japanese), tag("ja-JP"));
+        assert_eq!(store.project_language(), tag("en-GB"));
+    }
+
+    /// The project's language changing reaches an open document through the same
+    /// re-attach that re-points its spell checker: the editors bound to the signal
+    /// follow without being rebuilt.
+    #[test]
+    fn a_new_project_language_reaches_an_open_document() {
+        let (store, work, inheriting, japanese) = project();
+        store.set_project_language(Some(work), vec!["en-GB".into()]);
+        let a = store.open(inheriting).expect("opens");
+        let b = store.open(japanese).expect("opens");
+        store.set_project_language(Some(work), vec!["fr-FR".into()]);
+        store.attach_all();
+        assert_eq!(a.content_language().get(), tag("fr-FR"));
+        assert_eq!(
+            b.content_language().get(),
+            tag("ja-JP"),
+            "its own still wins"
+        );
+    }
+
+    /// A project that names no language declares none: its editors read in the
+    /// interface's language, exactly as before there was anything to declare.
+    #[test]
+    fn a_project_with_no_language_declares_none() {
+        let (store, work, inheriting, _) = project();
+        store.set_project_language(Some(work), Vec::new());
+        let a = store.open(inheriting).expect("opens");
+        assert_eq!(a.content_language().get(), None);
+        assert_eq!(store.item_language(inheriting), None);
+    }
+
+    #[test]
+    fn a_language_list_declares_its_first_usable_tag() {
+        let list = |tags: &[&str]| tags.iter().map(|t| t.to_string()).collect::<Vec<_>>();
+        assert_eq!(
+            content_language_of(&list(&["de-DE", "en-US"])),
+            tag("de-DE")
+        );
+        assert_eq!(
+            content_language_of(&list(&["", " ", "it-IT"])),
+            tag("it-IT")
+        );
+        assert_eq!(
+            content_language_of(&list(&["fr_FR"])),
+            tag("fr-FR"),
+            "legacy"
+        );
+        assert_eq!(content_language_of(&list(&["not a tag!"])), None);
+        assert_eq!(content_language_of(&[]), None);
     }
 }

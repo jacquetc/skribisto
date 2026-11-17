@@ -1122,3 +1122,40 @@ fn a_topic_opened_to_be_read_puts_the_reader_in_its_page() {
     // Asked once: a rebuild later (another topic, from the list) does not jump again.
     assert!(!vm.take_read_request());
 }
+
+/// The page body named `title`: its document, not the topic's button in the list.
+fn page_named(tree: &WidgetTree, title: &str) -> Option<WidgetId> {
+    let mut stack = tree.roots();
+    while let Some(id) = stack.pop() {
+        let node = tree.accessibility_node(id);
+        if node.name() == Some(title) && node.role() != teksilo::core::accesskit::Role::Button {
+            return Some(id);
+        }
+        stack.extend(tree.children(id));
+    }
+    None
+}
+
+/// A page shown in English because it is not translated yet says so to a screen
+/// reader, which then reads it as English rather than with the interface's voice;
+/// a translated page is declared in its own language.
+#[test]
+fn a_page_is_declared_in_the_language_it_is_written_in() {
+    for (interface, page) in [("nl-NL", "en-US"), ("fr-FR", "fr-FR")] {
+        crate::test_support::with_shipped_messages(interface, || {
+            let vm = help_vm::HelpViewModel::new();
+            vm.open("help-report-translation-errors");
+            let mut tree = WidgetTree::new();
+            tree.add(panel::HelpPanel::new(vm));
+            tree.layout(SizeProposal::exact(940.0, 680.0));
+            let title = tr!(help_topic_report_translation_errors()).resolve_now();
+            let body = page_named(&tree, &title)
+                .unwrap_or_else(|| panic!("{interface}: no page named {title:?}"));
+            assert_eq!(
+                tree.content_language(body).map(|t| t.as_str().to_string()),
+                Some(page.to_string()),
+                "{interface}"
+            );
+        });
+    }
+}

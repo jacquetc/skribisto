@@ -52,6 +52,7 @@ fn card_synopsis_editor_in_a_fixed_box_bounds_a_tall_synopsis_so_it_scrolls() {
         None,
         tr!(synopsis()),
         None,
+        None,
     );
     let mut tree = WidgetTree::new();
     let id = tree.add(FixedSize::new().width(320.0).height(200.0).child(editor));
@@ -99,6 +100,7 @@ fn synopsis_height(fit: SynopsisFit, pane_height: Option<f32>) -> f32 {
         // comes down to Untagged alone.
         None,
         tr!(synopsis()),
+        None,
     );
     let mut tree = WidgetTree::new();
     let id = match pane_height {
@@ -600,6 +602,7 @@ fn only_the_mounted_manuscript_arm_claims_the_tabs_prose_handle() {
             None,
             None,
             tr!(editor_text_name()),
+            None,
         )
     };
 
@@ -647,6 +650,7 @@ fn opening_the_menu_from_the_keyboard_leaves_the_caret_where_it_was() {
         None,
         None,
         tr!(synopsis()),
+        None,
         None,
     );
     let mut tree = WidgetTree::new();
@@ -697,6 +701,7 @@ fn tab_leaves_a_synopsis_and_types_nothing() {
         None,
         None,
         tr!(synopsis()),
+        None,
         None,
     );
     let mut tree = WidgetTree::new();
@@ -763,6 +768,7 @@ fn the_text_the_synopsis_and_the_epigraph_are_announced_by_name() {
         None,
         None,
         tr!(editor_text_name()),
+        None,
     );
     let epigraph = synopsis_editor(
         &TextDocument::new(),
@@ -784,6 +790,7 @@ fn the_text_the_synopsis_and_the_epigraph_are_announced_by_name() {
         false,
         None,
         tr!(epigraph()),
+        None,
     );
     let (card, _handle) = card_synopsis_editor(
         TextDocument::new(),
@@ -798,6 +805,7 @@ fn the_text_the_synopsis_and_the_epigraph_are_announced_by_name() {
         None,
         None,
         tr!(synopsis()),
+        None,
         None,
     );
     let mut tree = WidgetTree::new();
@@ -819,4 +827,136 @@ fn the_text_the_synopsis_and_the_epigraph_are_announced_by_name() {
         names.iter().all(|n| !n.is_empty()),
         "an editor is still announced with no name: {names:?}"
     );
+}
+
+/// The language a screen reader is told each editable text area is written in, by
+/// the editor's name.
+fn editor_languages(tree: &mut WidgetTree) -> Vec<(String, Option<String>)> {
+    let update = tree.sync_accessibility();
+    let languages = teksilo::core::accessibility::audit::effective_languages(&update);
+    update
+        .nodes
+        .iter()
+        .filter(|(_, n)| n.role() == teksilo::core::accesskit::Role::MultilineTextInput)
+        .map(|(id, n)| {
+            (
+                n.label().unwrap_or_default().to_string(),
+                languages.get(id).cloned(),
+            )
+        })
+        .collect()
+}
+
+/// An English manuscript in a French window: the prose and the synopsis are read
+/// as what they are written in, an editor told nothing reads in the interface's
+/// language, and a change of the item's language reaches a mounted editor without
+/// rebuilding it.
+#[test]
+fn an_editor_is_read_in_the_language_it_is_given() {
+    let tag = |s: &str| LanguageTag::parse(s).ok();
+    let prose_language = Signal::new(tag("en-GB"));
+    let synopsis_language = Signal::new(tag("ja-JP"));
+    let typo = test_typo();
+    let text = writing_column(
+        &TextDocument::new(),
+        &Signal::new(700.0),
+        &typo,
+        MAIN_MIN_LINES,
+        || {},
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        false,
+        None,
+        false,
+        None,
+        None,
+        tr!(editor_text_name()),
+        Some(prose_language.clone()),
+    );
+    let synopsis = synopsis_editor(
+        &TextDocument::new(),
+        &typo,
+        SynopsisFit::Growing,
+        || {},
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        false,
+        None,
+        false,
+        None,
+        tr!(synopsis()),
+        Some(synopsis_language),
+    );
+    let epigraph = synopsis_editor(
+        &TextDocument::new(),
+        &typo,
+        SynopsisFit::Growing,
+        || {},
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        false,
+        None,
+        false,
+        None,
+        tr!(epigraph()),
+        None,
+    );
+    let mut tree = WidgetTree::new();
+    tree.set_locale("fr-FR".to_owned());
+    tree.add(VStack::new().child(text).child(synopsis).child(epigraph));
+    tree.layout(SizeProposal::exact(900.0, 900.0));
+
+    let language_of = |tree: &mut WidgetTree, name: &str| {
+        editor_languages(tree)
+            .into_iter()
+            .find(|(n, _)| n == name)
+            .unwrap_or_else(|| panic!("no editor named {name:?}"))
+            .1
+    };
+    let (text_name, synopsis_name, epigraph_name) = (
+        tr!(editor_text_name()).resolve_now(),
+        tr!(synopsis()).resolve_now(),
+        tr!(epigraph()).resolve_now(),
+    );
+    assert_eq!(language_of(&mut tree, &text_name).as_deref(), Some("en-GB"));
+    assert_eq!(
+        language_of(&mut tree, &synopsis_name).as_deref(),
+        Some("ja-JP")
+    );
+    assert_eq!(
+        language_of(&mut tree, &epigraph_name).as_deref(),
+        Some("fr-FR"),
+        "an editor told nothing reads in the interface's language"
+    );
+
+    prose_language.set(tag("de-DE"));
+    tree.layout(SizeProposal::exact(900.0, 900.0));
+    assert_eq!(language_of(&mut tree, &text_name).as_deref(), Some("de-DE"));
 }

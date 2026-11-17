@@ -770,6 +770,8 @@ fn open_past(ctx: &mut EventContext, vm: &TimelineViewModel, index: usize) {
     // build. Assembled before the modal is presented because the reader is built
     // in a deferred closure that has no `vm` to ask.
     let recreate = deleted_row(change).zip(vm.recreate_sink());
+    // The text as it was, in the language of the row it belongs to.
+    let language = vm.language_of(change.uid);
 
     // Two documents, not one swapped between: the writer switches back and forth
     // to check a passage against the comparison, and reparsing on every press
@@ -784,15 +786,18 @@ fn open_past(ctx: &mut EventContext, vm: &TimelineViewModel, index: usize) {
         let (docs, mode, view) = (docs.clone(), mode.clone(), view.clone());
         ctx.present_modal(
             ModalRequest::deferred(move |t| {
-                t.add(PastReader::new(
-                    title.clone(),
-                    taken_at,
-                    gone,
-                    recreate.clone(),
-                    docs.clone(),
-                    mode.clone(),
-                    view.clone(),
-                ))
+                t.add(
+                    PastReader::new(
+                        title.clone(),
+                        taken_at,
+                        gone,
+                        recreate.clone(),
+                        docs.clone(),
+                        mode.clone(),
+                        view.clone(),
+                    )
+                    .with_language(language.clone()),
+                )
             })
             .presentation(ModalPresentation::InTree)
             // No `.title()` and no `.size()`. Both are read only by the *native
@@ -1058,6 +1063,9 @@ struct PastReader {
     /// Filled by [`open_past`] once the bundle is open — the reader is presented
     /// before the archive has been read, so these start empty on purpose.
     docs: ReaderDocs,
+    /// The language the text is written in, declared on the pages alone: the
+    /// reader's own chrome (the title, the date, the buttons) is the interface's.
+    language: Option<LanguageTag>,
     /// What was found, so the stamp under the title cannot claim a comparison the
     /// documents do not hold. Written by the same completion that fills them, and
     /// bound here so the header redraws with it.
@@ -1089,10 +1097,17 @@ impl PastReader {
             gone,
             recreate,
             docs,
+            language: None,
             mode,
             view,
             root_child: None,
         }
+    }
+
+    /// Declare the language the text is written in.
+    fn with_language(mut self, language: Option<LanguageTag>) -> Self {
+        self.language = language;
+        self
     }
 
     /// The way out of "you can read it and copy it out here".
@@ -1128,10 +1143,11 @@ impl PastReader {
     /// `read_only` and not merely a disabled editor: the two are not the same
     /// promise, and a read-only editor still selects and copies, which is the
     /// whole reason to open this.
-    fn page(doc: &TextDocument) -> impl Widget + use<> {
+    fn page(doc: &TextDocument, language: &Option<LanguageTag>) -> impl Widget + use<> {
         RichTextEditor::read_only(doc.clone())
             .content_padding_symmetric(8.0, 4.0)
             .h_scroll_policy(ScrollPolicy::AlwaysOff)
+            .content_language(language.clone())
     }
 
     /// **Comparison or plain text — the writer's choice, when there is one.**
@@ -1164,13 +1180,13 @@ impl PastReader {
     /// text alone when there is not.
     fn body(&self, comparing: bool) -> Box<dyn Widget> {
         if !comparing {
-            return Box::new(Self::page(&self.docs.text));
+            return Box::new(Self::page(&self.docs.text, &self.language));
         }
         let switcher = self
             .pages()
             .into_iter()
             .fold(Switcher::new(self.view.clone()), |sw, (_, _, doc)| {
-                sw.child(Box::new(Self::page(doc)))
+                sw.child(Box::new(Self::page(doc, &self.language)))
             });
         Box::new(switcher)
     }

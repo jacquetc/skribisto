@@ -282,7 +282,11 @@ impl Widget for NoteDetailsPane {
         // person, quoted. A form with more room would have been the lazy answer.
         let mut fields = VStack::new().spacing(22.0);
 
-        fields = fields.child(name_field(&self.name, stack.clone()));
+        fields = fields.child(name_field(
+            &self.name,
+            stack.clone(),
+            self.open_doc.content_language(),
+        ));
 
         fields = fields.child(tags_section(
             self.open_doc.tags.clone(),
@@ -464,7 +468,11 @@ fn item_is_discoverable(tags: &[u64], discoverable_ids: &HashSet<u64>) -> bool {
 /// is lost by that: `set_title` below writes to the backend immediately, on
 /// blur or Enter, exactly like every pill and chip write on this page already
 /// does.
-fn name_field(field: &Rc<crate::tabs::TitleField>, stack: Signal<Option<u64>>) -> impl Widget {
+fn name_field(
+    field: &Rc<crate::tabs::TitleField>,
+    stack: Signal<Option<u64>>,
+    language: Signal<Option<LanguageTag>>,
+) -> impl Widget {
     let commit_field = field.clone();
     shared::title_input(
         field,
@@ -474,6 +482,7 @@ fn name_field(field: &Rc<crate::tabs::TitleField>, stack: Signal<Option<u64>>) -
         move || {
             let _ = commit_field.flush(stack.get());
         },
+        Some(language),
     )
 }
 

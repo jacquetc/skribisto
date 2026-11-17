@@ -413,6 +413,8 @@ fn marker_chip(row: &FootnoteRow, here: Signal<bool>) -> impl Widget {
 /// flatten it on the way in.
 fn body_editor(row: &FootnoteRow, vm: FootnotesViewModel) -> impl Widget {
     let id = row.id;
+    // A note is part of the scene that cites it, and is written in its language.
+    let language = vm.item_language(row.item_id);
     let doc = vm.body_doc(id, &row.body);
     let commit = {
         let vm = vm.clone();
@@ -435,6 +437,7 @@ fn body_editor(row: &FootnoteRow, vm: FootnotesViewModel) -> impl Widget {
         .v_scroll_policy(ScrollPolicy::AlwaysOff)
         .style(NoteBodyStyle { id, vm })
         .on_change(commit)
+        .content_language(language)
 }
 
 /// A body that reads as prose, not as a form field — and the one place that

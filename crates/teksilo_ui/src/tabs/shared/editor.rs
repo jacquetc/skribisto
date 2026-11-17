@@ -112,6 +112,17 @@ pub const MAIN_MIN_LINES: u32 = 10;
 /// with its content, keeps the manuscript readable.
 pub const HEADING_PROSE_MIN_LINES: u32 = 1;
 
+/// A `content_language` declaration from an optional binding: declaring nothing
+/// (`None`) leaves the subtree in the language it inherits.
+pub(crate) fn language_prop(
+    language: Option<Signal<Option<LanguageTag>>>,
+) -> Prop<Option<LanguageTag>> {
+    match language {
+        Some(signal) => signal.into(),
+        None => Prop::Static(None),
+    }
+}
+
 /// The centered, max-width main writing column for `doc`, wired so user edits
 /// flip the tab's dirty flag via `on_change`.
 ///
@@ -256,6 +267,13 @@ pub fn writing_column(
     // prose of an item, wherever it is shown. Without one it was announced as a bare
     // edit field, and a writer could only tell where they were by reading the words.
     name: teksilo::i18n::LocalizedString,
+    // The language this text is written in, declared on the editor alone: the item's
+    // own dictionary language, else the project's (`OpenDoc::content_language`). A
+    // screen reader reads the prose in it rather than in the interface's, the engine
+    // shapes it in it, and an empty paragraph falls back on its direction. Not on the
+    // row around it: the comment margin beside the editor holds interface text.
+    // `None` on the surfaces built with no project around them.
+    language: Option<Signal<Option<LanguageTag>>>,
 ) -> HStack {
     // Stand by to supply an image this document does not have. A picture
     // pasted in from another editor arrives as a reference — pixels live on the
@@ -539,7 +557,7 @@ pub fn writing_column(
         MaxSize::width(column_width.get()) {
             max_width: column_width.clone()
             Expand::horizontal {
-                child: bound
+                child: bound.content_language(language_prop(language))
             }
         }
     );
@@ -1205,6 +1223,8 @@ pub fn writing_section(
     // Forwarded straight to [`writing_column`] — see its own note.
     estimate_height: bool,
     tags: Option<crate::tags::TagsViewModel>,
+    // Forwarded straight to [`writing_column`] — see its own note.
+    language: Option<Signal<Option<LanguageTag>>>,
 ) -> impl Widget {
     VStack::new()
         .spacing(5.0)
@@ -1239,6 +1259,7 @@ pub fn writing_section(
             // Nothing private on this surface: the default `all()`.
             None,
             tr!(editor_text_name()),
+            language,
         ))
 }
 

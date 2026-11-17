@@ -75,6 +75,9 @@ pub fn comment_card(
     row: CommentRow,
     palette: CommentPalette,
 ) -> impl Widget {
+    // The language of the text the thread is about: a remark on an English scene is
+    // read as English. Resolved once per card, which rebuilds with the thread.
+    let language = vm.item_language(row.item_id);
     let mut col = VStack::new().spacing(4.0).child(Turn {
         vm: vm.clone(),
         comment_id: row.id,
@@ -84,6 +87,7 @@ pub fn comment_card(
         created_at: row.created_at,
         resolved: row.resolved,
         palette,
+        language: language.clone(),
         root: None,
     });
 
@@ -101,6 +105,7 @@ pub fn comment_card(
                 created_at: reply.created_at,
                 resolved: row.resolved,
                 palette,
+                language: language.clone(),
                 root: None,
             }));
     }
@@ -200,6 +205,9 @@ struct Turn {
     created_at: chrono::DateTime<chrono::Utc>,
     resolved: bool,
     palette: CommentPalette,
+    /// The language the commented text is written in, declared on the body alone:
+    /// the author, the date and the menu are the interface's.
+    language: Option<LanguageTag>,
     root: Option<WidgetId>,
 }
 
@@ -300,6 +308,7 @@ impl Turn {
                         ThreadEntry::Reply(id) => vm.set_reply_body(id, &text, None),
                     }
                 })
+                .content_language(self.language.clone())
         };
 
         // ── The one menu ─────────────────────────────────────────────────

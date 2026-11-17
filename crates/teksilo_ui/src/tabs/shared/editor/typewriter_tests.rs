@@ -100,6 +100,7 @@ fn fixture_column(
         // Nothing private on this probe's editor: the default `all()`.
         None,
         tr!(editor_text_name()),
+        None,
     )
 }
 

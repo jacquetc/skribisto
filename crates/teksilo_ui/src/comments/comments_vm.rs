@@ -476,6 +476,16 @@ impl CommentsViewModel {
         *self.docs.borrow_mut() = Some(docs);
     }
 
+    /// The language the item a comment is about is written in, for the card's
+    /// editors: its own dictionary language, else the project's. `None` with no
+    /// item (an unplaced comment) or no project, and the card then reads in the
+    /// interface's language.
+    pub fn item_language(&self, item_id: Option<u64>) -> Option<LanguageTag> {
+        let item_id = item_id?;
+        let docs = self.docs.borrow().as_ref()?.upgrade()?;
+        docs.item_language(item_id)
+    }
+
     /// A document in the project's backend, or a standalone one where there is no
     /// project — a comment body is a document like any other, and one per thread
     /// used to mean one event hub and one OS thread per thread, held for as long

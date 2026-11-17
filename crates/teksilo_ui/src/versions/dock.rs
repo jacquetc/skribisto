@@ -64,14 +64,13 @@ pub fn versions_dock(
     focus: Signal<Option<u64>>,
     uid_of: UidLookup,
     restore: RestoreFn,
+    language_of: LanguageLookup,
 ) -> DockWidget {
     DockWidget::new(dock_id, tr!(versions_title()), move |_id| {
-        FocusScope::new(TraversalScopePolicy::Continue).child(VersionsPanel::new(
-            vm.clone(),
-            focus.clone(),
-            uid_of.clone(),
-            restore.clone(),
-        ))
+        FocusScope::new(TraversalScopePolicy::Continue).child(
+            VersionsPanel::new(vm.clone(), focus.clone(), uid_of.clone(), restore.clone())
+                .with_language(language_of.clone()),
+        )
     })
     .icon(crate::icons::activity::versions_icon)
     .show_header(true)
@@ -85,6 +84,9 @@ pub fn versions_dock(
 /// outline and trash docks follow with `OpenItemFn`. `EntityId` is re-minted on
 /// every load, so the uid is the only thing a timeline can key on.
 pub type UidLookup = Rc<dyn Fn(u64) -> Option<uuid::Uuid>>;
+
+/// The language an item is written in, by its store id, for the comparison's text.
+pub type LanguageLookup = Rc<dyn Fn(u64) -> Option<LanguageTag>>;
 
 /// Put a past version back.
 ///
@@ -100,6 +102,8 @@ struct VersionsPanel {
     focus: Signal<Option<u64>>,
     uid_of: UidLookup,
     restore: RestoreFn,
+    /// `None` in the headless tests, which build the panel with no project.
+    language_of: Option<LanguageLookup>,
     pane: DiffPane,
     root_child: Option<WidgetId>,
 }
@@ -116,9 +120,16 @@ impl VersionsPanel {
             focus,
             uid_of,
             restore,
+            language_of: None,
             pane: DiffPane::new(),
             root_child: None,
         }
+    }
+
+    /// Declare the comparison's text in the language of the item it belongs to.
+    fn with_language(mut self, language_of: LanguageLookup) -> Self {
+        self.language_of = Some(language_of);
+        self
     }
 }
 
@@ -287,6 +298,12 @@ impl VersionsPanel {
             return Box::new(note(tr!(versions_no_change())));
         }
 
+        // The text compared is the focused item's, in its language; the summary and
+        // the controls around it stay in the interface's.
+        let language = self
+            .focus
+            .get()
+            .and_then(|id| self.language_of.as_ref().and_then(|of| of(id)));
         let editor = RichTextEditor::read_only(self.pane.doc.clone())
             .content_padding_symmetric(6.0, 8.0)
             .h_scroll_policy(ScrollPolicy::AlwaysOff);
@@ -297,7 +314,7 @@ impl VersionsPanel {
                 .spacing(0.0)
                 .child(summary_line(&diff))
                 .child(self.controls(&diff))
-                .child(Expand::vertical().child(editor))
+                .child(Expand::vertical().child(editor.content_language(language)))
                 .child(Divider::new())
                 .child(self.restore_bar()),
         )

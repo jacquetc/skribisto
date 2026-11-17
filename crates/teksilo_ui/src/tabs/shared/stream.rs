@@ -239,6 +239,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     // Nothing private on a split half: the default `all()`.
                     None,
                     tr!(editor_text_name()),
+                    Some(tab.open_doc.content_language()),
                 )),
                 SplitFlavour::Synopsis => Box::new(synopsis_column(
                     &field.doc,
@@ -276,6 +277,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     true,
                     tab.capture_palette(),
                     tr!(synopsis()),
+                    Some(tab.open_doc.content_language()),
                 )),
             };
             col = col
@@ -580,6 +582,7 @@ fn stream_row(
                         // Nothing private on a stream row: the default `all()`.
                         None,
                         tr!(editor_text_name()),
+                        Some(doc.content_language()),
                     ));
                 }
             }
@@ -622,6 +625,7 @@ fn stream_row(
                             work_uid: arrival_project.and_then(|p| p.uid.clone()),
                         }),
                         tr!(synopsis()),
+                        Some(doc.content_language()),
                     ));
                 }
             }

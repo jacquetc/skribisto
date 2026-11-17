@@ -50,6 +50,7 @@ pub(super) fn manuscript_page(
                     tr!(placeholder_chapter_title()),
                     tab.mark_dirty_fn(),
                     tab.commit_names_fn(),
+                    Some(tab.open_doc.content_language()),
                 ),
                 &tab.column_width,
             ))
@@ -112,6 +113,7 @@ pub(super) fn manuscript_page(
                 // See the prose column above.
                 false,
                 tab.capture_palette(),
+                Some(tab.open_doc.content_language()),
             ),
         ));
     }
@@ -155,6 +157,7 @@ pub(super) fn manuscript_page(
             // A tab's editor is on screen and lays out on its first frame.
             false,
             Some(tab.tags()),
+            Some(tab.open_doc.content_language()),
         ));
     }
 
@@ -239,6 +242,7 @@ pub(super) fn side_synopsis_pane(
                     Some(crate::margin_lane::LaneAnchor::new(tab.item_id(), scope)),
                     false,
                     tab.capture_palette(),
+                    Some(tab.open_doc.content_language()),
                 ))),
         ),
         None => Box::new(vspace(0.0)),

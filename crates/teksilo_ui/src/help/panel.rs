@@ -617,12 +617,19 @@ impl HelpPageBody {
     /// topic.
     fn build_body(&self, ctx: &mut BuildContext, spec: &HelpTopicSpec) -> WidgetId {
         let doc = TextDocument::new();
+        // The language the page is written in. The interface's for a translated page,
+        // which declares nothing new; English for a page shown in English because it
+        // is not translated yet, so a screen reader reads it as English rather than
+        // with the interface's voice. A tooltip-backed topic inherits: its text comes
+        // through the interface's own catalogue.
+        let mut language = None;
         match &spec.body {
             HelpBody::Djot(_) => {
-                let source = spec
-                    .resolve(&current_locale_tag())
-                    .map(|r| r.source)
-                    .unwrap_or_default();
+                let resolved = spec.resolve(&current_locale_tag());
+                language = resolved
+                    .as_ref()
+                    .and_then(|r| LanguageTag::parse(r.locale).ok());
+                let source = resolved.map(|r| r.source).unwrap_or_default();
                 // A malformed source is a bug in shipped content, and the drift test
                 // parses every one of them, so this cannot be reached by a built-in
                 // topic. A contributed topic gets an empty page rather than a panic.
@@ -669,7 +676,8 @@ impl HelpPageBody {
                 })
                 // The document is named after its topic, so landing in it says which
                 // page it is. It used to be an unnamed document.
-                .access_label((spec.title)()),
+                .access_label((spec.title)())
+                .content_language(language),
         )
     }
 }

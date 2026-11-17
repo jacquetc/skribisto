@@ -445,8 +445,11 @@ impl Widget for PreviewBody {
                         scope,
                         prose.doc.clone(),
                         kind,
-                        Padding::symmetric(12.0, 8.0)
-                            .child(crate::tabs::shared::editor::centered(editor, &width)),
+                        // The previewed text in its own language, as in its tab.
+                        Padding::symmetric(12.0, 8.0).child(crate::tabs::shared::editor::centered(
+                            editor.content_language(open_doc.content_language()),
+                            &width,
+                        )),
                     ))
                 }
                 None => {

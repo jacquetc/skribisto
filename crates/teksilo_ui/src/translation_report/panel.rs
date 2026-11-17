@@ -153,6 +153,8 @@ fn search_column(vm: &TranslationReportViewModel) -> impl Widget + 'static {
         language,
         |tag: &String| lit!(TranslationReportViewModel::language_label(tag)),
     )
+    // Each language's own name is read in that language, as in Settings.
+    .item_language(|tag: &String| LanguageTag::parse(tag).ok())
     .label(tr!(translation_report_language()))
     .searchable(true)
     .on_select(move |tag, _ctx| pick_vm.choose_language(tag));
@@ -239,6 +241,8 @@ fn search_column(vm: &TranslationReportViewModel) -> impl Widget + 'static {
                 SearchField::new(query) {
                     label: tr!(translation_report_find())
                     placeholder: tr!(translation_report_find_placeholder())
+                    // The words typed are the ones seen, in the reported language.
+                    content_language: vm.target_language()
                 }
                 Expand::vertical {
                     child: results
@@ -295,7 +299,11 @@ fn report_column(vm: &TranslationReportViewModel) -> impl Widget + 'static {
         .tab_key(TabKey::MoveFocus)
         .min_lines(3)
         .max_lines(10)
-        .on_change(move || suggest_vm.edited());
+        .on_change(move || suggest_vm.edited())
+        // The better translation is written in the language being reported, which
+        // is often not the interface's: a writer reporting Japanese from a French
+        // window. The explanation above is in any language and declares none.
+        .content_language(vm.target_language());
 
     let hints_vm = vm.clone();
     let hints = Rebuilding::new(
@@ -384,7 +392,8 @@ fn build_card(vm: &TranslationReportViewModel, ctx: &mut BuildContext) -> Widget
             TextWidget::new(lit!(card.text.clone()))
                 .style(TextStyleRole::BodyBold)
                 .access_role(Role::Heading)
-                .access_customize(|node| node.set_level(2)),
+                .access_customize(|node| node.set_level(2))
+                .content_language(vm.target_language()),
         );
     let mut detail = card.location.clone();
     if let Some(english) = &card.english {

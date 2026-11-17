@@ -98,6 +98,7 @@ fn column_with(
         // Nothing private on this probe's editor: the default `all()`.
         None,
         tr!(editor_text_name()),
+        None,
     );
     let mut tree = WidgetTree::new();
     tree.add(col);
@@ -214,6 +215,7 @@ fn prose_column_playing_with(
         // Nothing private on this probe's editor: the default `all()`.
         None,
         tr!(editor_text_name()),
+        None,
     );
     let mut tree = WidgetTree::new();
     tree.add(col);
@@ -357,6 +359,7 @@ fn a_game_stops_typing_and_not_the_programmatic_api() {
         // Nothing private on this probe's editor: the default `all()`.
         None,
         tr!(editor_text_name()),
+        None,
     );
     let mut tree = WidgetTree::new();
     tree.add(col);

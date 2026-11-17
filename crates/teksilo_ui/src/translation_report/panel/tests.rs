@@ -350,6 +350,36 @@ fn nothing_paints_past_the_window_at_its_smallest() {
     }
 }
 
+/// What the writer types as the better translation, and the words they search by,
+/// are in the language being reported, which the window declares for them; the
+/// explanation is in any language and declares none. Picking another language
+/// re-declares both without rebuilding the editors.
+#[test]
+fn the_suggestion_is_in_the_reported_language() {
+    with_shipped_messages("en-US", || {
+        let vm = TranslationReportViewModel::new();
+        let mut tree = mounted(&vm);
+        let language_of = |tree: &WidgetTree, label: &str| {
+            tree.content_language(control_named(tree, label))
+                .map(|t| t.as_str().to_string())
+        };
+        let suggestion = tr!(translation_report_suggestion()).resolve_now();
+        let explanation = tr!(translation_report_explain()).resolve_now();
+        let find = tr!(translation_report_find()).resolve_now();
+        assert_eq!(
+            language_of(&tree, &suggestion).as_deref(),
+            Some("en-US"),
+            "the interface's, until a language is picked"
+        );
+
+        vm.choose_language("ja-JP");
+        tree.layout(size());
+        assert_eq!(language_of(&tree, &suggestion).as_deref(), Some("ja-JP"));
+        assert_eq!(language_of(&tree, &find).as_deref(), Some("ja-JP"));
+        assert_eq!(language_of(&tree, &explanation), None, "any language");
+    });
+}
+
 /// The results take the height left in the search column, and the "can't find it"
 /// button sits under them. A column given no height laid the list out zero pixels
 /// tall: its rows spilled downwards and the button was drawn over the first match,

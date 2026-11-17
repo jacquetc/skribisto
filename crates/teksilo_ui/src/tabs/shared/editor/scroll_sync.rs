@@ -378,6 +378,9 @@ pub fn side_synopsis_editor(
     estimate_height: bool,
     // Forwarded straight to [`synopsis_editor`] — see its own note.
     capture: Option<crate::tabs::shared::editor::CapturePalette>,
+    // The language this text is written in, declared on the editor alone. See
+    // `writing_column`'s note. `None` on the surfaces built with no project around them.
+    language: Option<Signal<Option<LanguageTag>>>,
 ) -> impl Widget {
     synopsis_editor(
         doc,
@@ -399,6 +402,7 @@ pub fn side_synopsis_editor(
         estimate_height,
         capture,
         tr!(synopsis()),
+        language,
     )
 }
 

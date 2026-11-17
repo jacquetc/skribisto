@@ -388,6 +388,13 @@ impl Widget for EntryPanel {
 
         let mut col = VStack::new().spacing(14.0);
 
+        // The entry's name and body are the writer's text, in the language of the row
+        // being configured: its own dictionary language, else the project's.
+        let language = {
+            let Mode::Configure { item_id } = &self.mode;
+            self.deps.editors.open_docs().item_language(*item_id)
+        };
+
         // ── Name ──
         col = col
             .child(
@@ -397,7 +404,8 @@ impl Widget for EntryPanel {
             )
             .child(
                 TextInput::new(self.name.clone())
-                    .placeholder(tr!(story_bible_modal_name_placeholder())),
+                    .placeholder(tr!(story_bible_modal_name_placeholder()))
+                    .content_language(language.clone()),
             );
 
         // ── Tags ──
@@ -527,7 +535,10 @@ impl Widget for EntryPanel {
         );
         let editor = RichTextEditor::editor(self.doc.clone()).min_lines(6);
         *self.handle.borrow_mut() = Some(editor.handle());
-        col = col.child(MaxSize::height(180.0).child(ScrollArea::new().child(editor)));
+        col = col.child(
+            MaxSize::height(180.0)
+                .child(ScrollArea::new().child(editor.content_language(language.clone()))),
+        );
 
         // ── Buttons ──
         let name_ok = self.name.map(|s| !s.trim().is_empty());

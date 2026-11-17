@@ -170,6 +170,9 @@ struct Inner {
     /// The interface language last seen, which the report follows until the writer
     /// picks one.
     interface_language: Signal<String>,
+    /// [`TranslationReportViewModel::language`] as a tag, for the fields that hold
+    /// text in it: kept in step by the two methods that change either input.
+    target_language: Signal<Option<LanguageTag>>,
     query: Signal<String>,
     rows: ListModel<ResultRow>,
     /// Which of the result area's pages shows: see [`RESULTS_PROMPT`].
@@ -208,6 +211,7 @@ impl TranslationReportViewModel {
         let inner = Rc::new(Inner {
             chosen_language: Signal::new(None),
             interface_language: Signal::new(interface_tag()),
+            target_language: Signal::new(LanguageTag::parse(&interface_tag()).ok()),
             query: Signal::new(String::new()),
             rows: ListModel::new(),
             results_page: Signal::new(RESULTS_PROMPT),
@@ -376,6 +380,21 @@ impl TranslationReportViewModel {
         if self.inner.chosen_language.get().as_deref() != Some(tag) {
             self.clear_pick();
             self.inner.chosen_language.set(Some(tag.to_string()));
+            self.sync_target_language();
+        }
+    }
+
+    /// The language the report is about, as a tag, for `content_language`: the
+    /// search field, the picked text and the suggestion hold text in it, while the
+    /// window around them stays in the interface's.
+    pub(crate) fn target_language(&self) -> Signal<Option<LanguageTag>> {
+        self.inner.target_language.clone()
+    }
+
+    fn sync_target_language(&self) {
+        let tag = LanguageTag::parse(&self.language()).ok();
+        if self.inner.target_language.get() != tag {
+            self.inner.target_language.set(tag);
         }
     }
 
@@ -388,6 +407,7 @@ impl TranslationReportViewModel {
                 self.clear_pick();
             }
             self.inner.interface_language.set(tag);
+            self.sync_target_language();
         }
     }
 

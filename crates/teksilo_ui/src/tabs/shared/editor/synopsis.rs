@@ -103,6 +103,9 @@ pub fn synopsis_editor(
     // were announced as bare edit fields, indistinguishable from each other and from
     // the text.
     name: LocalizedString,
+    // The language this text is written in, declared on the editor alone. See
+    // `writing_column`'s note. `None` on the surfaces built with no project around them.
+    language: Option<Signal<Option<LanguageTag>>>,
 ) -> impl Widget {
     // Stand by to supply an image this document does not have. A picture
     // pasted in from another editor arrives as a reference — pixels live on the
@@ -235,7 +238,7 @@ pub fn synopsis_editor(
             border_color: BorderRole::Default
             border_width: border_width
             corner_radius: radius
-            child: bound
+            child: bound.content_language(super::language_prop(language))
         }
     )
 }
@@ -294,6 +297,9 @@ pub fn card_synopsis_editor(
     name: LocalizedString,
     // What a screen reader adds to that name, when this surface has more to say.
     description: Option<LocalizedString>,
+    // The language this text is written in, declared on the editor alone. See
+    // `writing_column`'s note. `None` on the surfaces built with no project around them.
+    language: Option<Signal<Option<LanguageTag>>>,
 ) -> (impl Widget, EditorHandle) {
     // Stand by to supply an image this document does not have. A picture
     // pasted in from another editor arrives as a reference — pixels live on the
@@ -370,7 +376,10 @@ pub fn card_synopsis_editor(
         Some(band) => bound.with_caret_band(band),
         None => bound,
     };
-    (widget, handle)
+    (
+        widget.content_language(super::language_prop(language)),
+        handle,
+    )
 }
 
 /// A one-line name input bound to `field.value`, wired so an edit marks the tab dirty.
@@ -391,6 +400,9 @@ pub fn title_input(
     placeholder: impl Into<LocalizedString>,
     on_change: impl Fn() + 'static,
     on_commit: impl Fn() + 'static,
+    // The language the title is written in, the item's own: a chapter title is the
+    // writer's text, read and shaped like its prose. See `writing_column`'s note.
+    language: Option<Signal<Option<LanguageTag>>>,
 ) -> impl Widget {
     // `on_commit` fires when editing finishes (the field losing focus, or a click on a
     // control that takes none, before that control's command runs) and on Enter. A name
@@ -410,6 +422,7 @@ pub fn title_input(
         on_change: Rc::new(on_change),
         child_id: None,
     }
+    .content_language(super::language_prop(language))
 }
 
 /// Wraps a title `TextInput` and reports genuine edits (see [`title_input`]).
@@ -519,6 +532,9 @@ pub fn synopsis_section(
     // project around them and on the corkboard card, which is a preview rather than a
     // writing surface; the row is then not offered at all.
     capture: Option<crate::tabs::shared::editor::CapturePalette>,
+    // The language this text is written in, declared on the editor alone. See
+    // `writing_column`'s note. `None` on the surfaces built with no project around them.
+    language: Option<Signal<Option<LanguageTag>>>,
 ) -> impl Widget {
     let synopsis_width = column_width.map(|w| (w - SYNOPSIS_WIDTH_INSET).max(0.0));
     teksu!(
@@ -552,6 +568,7 @@ pub fn synopsis_section(
                             anchor,
                             estimate_height,
                             capture.clone(), tr!(synopsis()),
+                            language,
                         )
                     }
                 }
@@ -642,6 +659,9 @@ pub fn synopsis_column(
     capture: Option<crate::tabs::shared::editor::CapturePalette>,
     // Forwarded straight to [`synopsis_editor`] — see its own note.
     name: LocalizedString,
+    // The language this text is written in, declared on the editor alone. See
+    // `writing_column`'s note. `None` on the surfaces built with no project around them.
+    language: Option<Signal<Option<LanguageTag>>>,
 ) -> CenterColumnFlowing {
     let synopsis_width = column_width.map(|w| (w - SYNOPSIS_WIDTH_INSET).max(0.0));
     // Read back below, once the editor has been constructed. Cloned first because
@@ -670,6 +690,7 @@ pub fn synopsis_column(
                     anchor,
                     estimate_height,
                     capture.clone(), name,
+                    language,
                 )
             }
         }

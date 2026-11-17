@@ -63,6 +63,7 @@ pub(super) fn synopsis_editor(
         Some(card.item_id),
         tr!(synopsis()),
         description,
+        Some(open_doc.content_language()),
     )
 }
 

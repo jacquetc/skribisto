@@ -247,6 +247,14 @@ impl FootnotesViewModel {
 
     // ── Editing ──────────────────────────────────────────────────────────────
 
+    /// The language a footnote's item is written in, for its body editor: the
+    /// item's own dictionary language, else the project's. `None` for a note no
+    /// scene cites yet, or with the `Work` closed; its body then reads in the
+    /// interface's language.
+    pub fn item_language(&self, item_id: Option<u64>) -> Option<LanguageTag> {
+        self.inner.docs.upgrade()?.item_language(item_id?)
+    }
+
     /// The live document behind one note's body editor, cached per note.
     ///
     /// Cached, and not rebuilt from `initial` on every pass, for the reason the
