@@ -690,6 +690,7 @@ fn release_own_open_docs_releases_only_this_windows_items_never_a_siblings() {
         crate::tags::TagsViewModel::detached(app_ctx.clone(), ids_a.clone()),
         crate::statuses::StatusesViewModel::new(app_ctx.clone(), ids_a.clone()),
         index_a,
+        Signal::new(crate::shared::TabLimit::default()),
     );
     let ids_b = AppIds::new();
     let index_b = crate::mentions::MentionIndex::new(app_ctx.clone(), ids_b.clone());
@@ -724,6 +725,7 @@ fn release_own_open_docs_releases_only_this_windows_items_never_a_siblings() {
         crate::tags::TagsViewModel::detached(app_ctx.clone(), ids_b.clone()),
         crate::statuses::StatusesViewModel::new(app_ctx.clone(), ids_b.clone()),
         index_b,
+        Signal::new(crate::shared::TabLimit::default()),
     );
 
     // Window A has item 1 in its primary pane and item 2 in its side pane;
@@ -1953,5 +1955,238 @@ fn go_next_opens_the_next_scene_and_asks_for_the_caret_in_it() {
     assert!(
         ports.take_focus(),
         "Go must ask for the caret in the scene it opened, not leave it on the tab it left"
+    );
+}
+
+// ── The tab limit (Settings ▸ Editor ▸ Editor Behavior ▸ Tabs) ─────────────────
+
+/// Push a Scene tab and bring it forward, as an open or a click on the strip does:
+/// the per-pane selection effect in `focus_sync` ends in `set_focused`, which is where
+/// the use order is written.
+fn open_and_use(vm: &EditorsViewModel, side: Side, item_id: u64) -> TabId {
+    seed_doc(vm, item_id);
+    let tab = push_tab(vm, side, item_id);
+    use_tab(vm, side, tab);
+    tab
+}
+
+/// Bring an already open tab forward.
+fn use_tab(vm: &EditorsViewModel, side: Side, tab: TabId) {
+    vm.pane(side).selected.set(Some(tab));
+    vm.set_focused(side);
+}
+
+/// The default changes nothing: every tab stays, however many there are.
+#[test]
+fn the_default_tab_limit_closes_nothing() {
+    let vm = editors();
+    assert_eq!(vm.tab_limit.get(), crate::shared::TabLimit::All);
+    for id in 1..=8 {
+        open_and_use(&vm, Side::Primary, id);
+    }
+    vm.enforce_tab_limit(Side::Primary, 8);
+    assert_eq!(vm.tab_item_ids(Side::Primary), (1..=8).collect::<Vec<_>>());
+}
+
+/// One: the item just opened is the only unpinned tab left, and it is the one in front.
+#[test]
+fn a_limit_of_one_leaves_only_the_tab_just_opened() {
+    let vm = editors();
+    vm.tab_limit.set(crate::shared::TabLimit::One);
+    open_and_use(&vm, Side::Primary, 1);
+    open_and_use(&vm, Side::Primary, 2);
+    let newest = open_and_use(&vm, Side::Primary, 3);
+
+    vm.enforce_tab_limit(Side::Primary, 3);
+
+    assert_eq!(vm.tab_item_ids(Side::Primary), vec![3]);
+    assert_eq!(vm.selected(Side::Primary).get(), Some(newest));
+    assert!(
+        vm.docs.peek(1).is_none() && vm.docs.peek(2).is_none(),
+        "a closed tab must give its document back"
+    );
+}
+
+/// Five keeps the five most recently **used**, not the five most recently opened: a
+/// tab the writer went back to outlives one opened after it and left alone.
+#[test]
+fn a_limit_of_five_closes_the_least_recently_used_tab() {
+    let vm = editors();
+    vm.tab_limit.set(crate::shared::TabLimit::Five);
+    let first = open_and_use(&vm, Side::Primary, 1);
+    for id in 2..=5 {
+        open_and_use(&vm, Side::Primary, id);
+    }
+    use_tab(&vm, Side::Primary, first); // back to the first one
+    open_and_use(&vm, Side::Primary, 6);
+
+    vm.enforce_tab_limit(Side::Primary, 6);
+
+    assert_eq!(
+        vm.tab_item_ids(Side::Primary),
+        vec![1, 3, 4, 5, 6],
+        "item 2 was the one gone longest without a look"
+    );
+}
+
+/// Pinned tabs neither count toward the limit nor close for it.
+#[test]
+fn pinned_tabs_neither_count_nor_close() {
+    let vm = editors();
+    vm.tab_limit.set(crate::shared::TabLimit::One);
+    let a = open_and_use(&vm, Side::Primary, 1);
+    let b = open_and_use(&vm, Side::Primary, 2);
+    vm.pin(Side::Primary, a);
+    vm.pin(Side::Primary, b);
+    open_and_use(&vm, Side::Primary, 3);
+    open_and_use(&vm, Side::Primary, 4);
+
+    vm.enforce_tab_limit(Side::Primary, 4);
+
+    assert_eq!(vm.tab_item_ids(Side::Primary), vec![1, 2, 4]);
+}
+
+/// The limit is per pane: opening in the main pane never closes a tab in the side one.
+#[test]
+fn the_tab_limit_is_per_pane() {
+    let vm = editors();
+    vm.tab_limit.set(crate::shared::TabLimit::One);
+    vm.set_split(true);
+    open_and_use(&vm, Side::Secondary, 10);
+    open_and_use(&vm, Side::Primary, 1);
+    open_and_use(&vm, Side::Primary, 2);
+
+    vm.enforce_tab_limit(Side::Primary, 2);
+
+    assert_eq!(vm.tab_item_ids(Side::Primary), vec![2]);
+    assert_eq!(vm.tab_item_ids(Side::Secondary), vec![10]);
+}
+
+/// A tab with no recorded use counts as older than every tab with one, and such tabs
+/// close in strip order among themselves. Every open path records a use today, so this
+/// is the fallback; it must still never close the tab the writer is using.
+#[test]
+fn tabs_with_no_recorded_use_close_first_in_strip_order() {
+    let vm = editors();
+    vm.tab_limit.set(crate::shared::TabLimit::Five);
+    for id in 1..=4 {
+        seed_doc(&vm, id);
+        push_tab(&vm, Side::Primary, id); // pushed, never brought forward
+    }
+    open_and_use(&vm, Side::Primary, 5);
+    open_and_use(&vm, Side::Primary, 6);
+
+    vm.enforce_tab_limit(Side::Primary, 6);
+
+    assert_eq!(vm.tab_item_ids(Side::Primary), vec![2, 3, 4, 5, 6]);
+}
+
+/// A tab moved in from the other pane is a tab opened here, as far as the limit goes.
+#[test]
+fn moving_a_tab_into_a_pane_applies_its_limit() {
+    let vm = editors();
+    vm.tab_limit.set(crate::shared::TabLimit::One);
+    vm.set_split(true);
+    open_and_use(&vm, Side::Secondary, 10);
+    let moving = open_and_use(&vm, Side::Primary, 1);
+
+    vm.move_tab_to(Side::Primary, Side::Secondary, moving);
+
+    assert_eq!(vm.tab_item_ids(Side::Secondary), vec![1]);
+    assert!(
+        vm.docs.peek(10).is_none(),
+        "the tab the move pushed out must give its document back"
+    );
+}
+
+/// The open paths apply the limit; a restored desk does not, since its pins land only
+/// after every tab is open and a smaller limit should close nothing until the next open.
+#[cfg(not(feature = "mocks"))]
+#[test]
+fn open_in_applies_the_tab_limit_and_restore_tab_does_not() {
+    use crate::editors::test_support::{seed_item, seed_work};
+
+    let vm = editors();
+    vm.tab_limit.set(crate::shared::TabLimit::One);
+    let binder = seed_work(&vm);
+    let a = seed_item(&vm, binder, "The Storm", BinderItemSubRole::Scene);
+    let b = seed_item(&vm, binder, "The Calm", BinderItemSubRole::Scene);
+    let c = seed_item(&vm, binder, "The Harbour", BinderItemSubRole::Scene);
+
+    vm.restore_tab(Side::Primary, a, "The Storm");
+    vm.restore_tab(Side::Primary, b, "The Calm");
+    assert_eq!(vm.tab_item_ids(Side::Primary), vec![a, b]);
+
+    vm.open_in(Side::Primary, c, "The Harbour");
+    assert_eq!(vm.tab_item_ids(Side::Primary), vec![c]);
+
+    // Bringing an open tab forward through `open_in` changes nothing more.
+    vm.open_in(Side::Primary, c, "The Harbour");
+    assert_eq!(vm.tab_item_ids(Side::Primary), vec![c]);
+}
+
+/// A tab whose text cannot be saved is never closed for the limit: closing it would
+/// release the document, and a release whose flush fails loses the text for good.
+#[cfg(not(feature = "mocks"))]
+#[test]
+fn a_tab_whose_text_cannot_be_saved_is_never_closed_for_the_limit() {
+    let vm = editors();
+    vm.tab_limit.set(crate::shared::TabLimit::One);
+    // A tab over a `Content` row that was never created, the same deterministic
+    // stand-in `open_docs`' own flush test uses: its save goes to `update_content` on
+    // a missing id, which the store refuses. In the app, that is a row trashed and
+    // purged while its tab was open.
+    let stale_row = frontend::direct_access::ContentDto {
+        id: 999_999,
+        role: frontend::common::entities::ContentRole::SceneText,
+        ..Default::default()
+    };
+    let tab = tabs::tab_for(
+        &vm.app_ctx,
+        999,
+        &BinderItemRole::Item,
+        &BinderItemSubRole::Scene,
+        &[stale_row],
+        vm.column_width.clone(),
+        vm.show_synopsis.clone(),
+        vm.typography.clone(),
+        vm.view_memory.clone(),
+        &vm.ids,
+    );
+    let doomed = TabId::fresh();
+    vm.pane(Side::Primary).tabs.push(TabHandle::dynamic(
+        doomed,
+        "editor",
+        TabInfo::new().closable(true),
+        tab,
+    ));
+    use_tab(&vm, Side::Primary, doomed);
+    let staged = vm
+        .with_tab_id(Side::Primary, doomed, |t| {
+            t.open_doc
+                .main
+                .as_ref()
+                .expect("a Scene owns a main text")
+                .doc
+                .cursor_at(0)
+                .insert_text("words with nowhere to go")
+                .is_ok()
+        })
+        .expect("the tab is open");
+    assert!(staged, "staging the edit itself must succeed");
+    let stack = vm.ids.stack_id.get();
+    assert_eq!(
+        vm.with_tab_id(Side::Primary, doomed, |t| t.flush(stack).is_err()),
+        Some(true),
+        "precondition: this tab's text cannot reach the store"
+    );
+
+    open_and_use(&vm, Side::Primary, 2);
+    vm.enforce_tab_limit(Side::Primary, 2);
+
+    assert_eq!(
+        vm.tab_item_ids(Side::Primary),
+        vec![999, 2],
+        "the pane may go over its limit, but unsaved text stays open"
     );
 }

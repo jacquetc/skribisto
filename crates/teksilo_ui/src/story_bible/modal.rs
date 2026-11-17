@@ -770,6 +770,7 @@ mod tests {
             tags_vm(f),
             crate::statuses::StatusesViewModel::new(f.app_ctx.clone(), f.ids.clone()),
             crate::mentions::MentionIndex::new(f.app_ctx.clone(), f.ids.clone()),
+            Signal::new(crate::shared::TabLimit::default()),
         )
     }
 

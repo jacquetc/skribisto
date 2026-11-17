@@ -388,13 +388,13 @@ impl WorkspaceLayoutViewModel {
         let secondary_tabs = resolve_uids(&order, &rec.secondary.tabs);
 
         for (id, title) in &primary_tabs {
-            editors.open_in(Side::Primary, *id, title);
+            editors.restore_tab(Side::Primary, *id, title);
         }
         let (split, focus) = split_and_focus(secondary_tabs.len(), rec.focus_secondary);
         editors.set_split(split); // never an empty split (side collapses if nothing resolved)
         if split {
             for (id, title) in &secondary_tabs {
-                editors.open_in(Side::Secondary, *id, title);
+                editors.restore_tab(Side::Secondary, *id, title);
             }
             // The two-pane splitter ratio (only meaningful while split).
             if let Some(sp) = &rec.editor_splitter {
@@ -1078,6 +1078,7 @@ mod tests {
             crate::tags::TagsViewModel::detached(app_ctx.clone(), ids.clone()),
             crate::statuses::StatusesViewModel::new(app_ctx.clone(), ids.clone()),
             crate::mentions::MentionIndex::new(app_ctx.clone(), ids.clone()),
+            Signal::new(crate::shared::TabLimit::default()),
         );
         editors.set_item_view_states(item_view_states.clone());
 

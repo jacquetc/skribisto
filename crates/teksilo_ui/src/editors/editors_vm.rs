@@ -91,6 +91,20 @@ struct Pane {
     /// open here is inert and can never reach the capture. Entries are pruned on
     /// close for hygiene, not for correctness.
     pinned: Rc<RefCell<HashSet<u64>>>,
+    /// The items this pane's tabs show, by `BinderItem` **store id**, least recently
+    /// used first: what [`EditorsViewModel::enforce_tab_limit`] closes from the front of.
+    ///
+    /// Keyed by item id for the reasons [`Self::pinned`] gives: a Promote or a
+    /// trash-restore rebuilds a tab under a fresh `TabId`, and the item id survives it.
+    /// Written by [`EditorsViewModel::set_focused`], which every way of bringing a tab
+    /// forward reaches (an open, a click on the strip, Ctrl+Tab), through the per-pane
+    /// selection effect in `app/wiring/focus_sync.rs`.
+    ///
+    /// **An ordering only**: which tabs exist comes from `tabs`, as for `pinned`. Every
+    /// open path brings its tab forward, a restore included (in strip order, so a
+    /// restored desk closes from the left), so a tab with no entry here is a fallback
+    /// case; it counts as older than every tab that has one.
+    recency: Rc<RefCell<Vec<u64>>>,
 }
 
 impl Pane {
@@ -99,7 +113,29 @@ impl Pane {
             tabs: ListModel::from_vec(Vec::new()),
             selected: Signal::new(None),
             pinned: Rc::new(RefCell::new(HashSet::new())),
+            recency: Rc::new(RefCell::new(Vec::new())),
         }
+    }
+
+    /// Record `item_id` as this pane's most recently used tab.
+    fn note_used(&self, item_id: u64) {
+        let mut recency = self.recency.borrow_mut();
+        if recency.last() == Some(&item_id) {
+            return;
+        }
+        recency.retain(|id| *id != item_id);
+        recency.push(item_id);
+    }
+
+    /// Forget `item_id`: its tab has left this pane.
+    fn forget_use(&self, item_id: u64) {
+        self.recency.borrow_mut().retain(|id| *id != item_id);
+    }
+
+    /// Where `item_id` sits in the use order: `None` (never brought forward) sorts first,
+    /// then oldest to newest.
+    fn use_rank(&self, item_id: u64) -> Option<usize> {
+        self.recency.borrow().iter().position(|id| *id == item_id)
     }
 }
 
@@ -242,6 +278,10 @@ pub struct EditorsViewModel {
     /// a never-seeded `AppIds`. That index's own `fire` returns early with no `work_id`,
     /// so it never scans anything and the column is empty for the whole session.
     mention_index: crate::mentions::MentionIndex,
+    /// How many unpinned tabs each pane keeps (Settings ▸ Editor ▸ Editor Behavior),
+    /// read at each open by [`Self::enforce_tab_limit`]. Never observed: a smaller limit
+    /// closes nothing until the next open.
+    tab_limit: Signal<crate::shared::TabLimit>,
 }
 
 impl EditorsViewModel {
@@ -274,6 +314,7 @@ impl EditorsViewModel {
         tags: crate::tags::TagsViewModel,
         statuses: crate::statuses::StatusesViewModel,
         mention_index: crate::mentions::MentionIndex,
+        tab_limit: Signal<crate::shared::TabLimit>,
     ) -> Self {
         // Two equal panes; the side pane starts hidden (no divider) until split.
         // The Splitter sums *every* pane's `min_size` into its own intrinsic
@@ -328,6 +369,7 @@ impl EditorsViewModel {
             tags,
             statuses,
             mention_index,
+            tab_limit,
         }
     }
 
@@ -382,6 +424,14 @@ impl EditorsViewModel {
     /// from `App`'s per-pane selection effects.
     pub fn set_focused(&self, side: Side) {
         self.focused_side.set(side);
+        let pane = self.pane(side);
+        if let Some(item_id) = pane
+            .selected
+            .get()
+            .and_then(|tab| self.item_of_tab(side, tab))
+        {
+            pane.note_used(item_id);
+        }
         self.sync_active_item();
     }
 
@@ -749,6 +799,24 @@ impl EditorsViewModel {
     /// `(role, sub_role)`; the document is shared through the store, so the same
     /// item can be open once in each pane over one live document.
     pub fn open_in(&self, side: Side, item_id: u64, title: &str) {
+        self.open_tab(side, item_id, title);
+        self.enforce_tab_limit(side, item_id);
+    }
+
+    /// Open `item_id` in `side` the way a saved desk comes back: like
+    /// [`Self::open_in`], but **never** closing a tab to honour the tab limit.
+    ///
+    /// A restore opens its tabs one by one and only pins them afterwards
+    /// (`seed_pinned` ignores an item that is not open yet), so a limit applied here
+    /// would close tabs the desk was about to pin. And a writer who lowers the limit
+    /// should not find tabs gone the next time the project opens: the limit applies at
+    /// the next open, as everywhere else.
+    pub fn restore_tab(&self, side: Side, item_id: u64, title: &str) {
+        self.open_tab(side, item_id, title);
+    }
+
+    /// Open `item_id` in `side`, or bring its tab forward. No limit applied.
+    fn open_tab(&self, side: Side, item_id: u64, title: &str) {
         if let Some(tid) = self.find_open(side, item_id) {
             self.pane(side).selected.set(Some(tid));
             self.set_focused(side);
@@ -782,6 +850,77 @@ impl EditorsViewModel {
         // has just taken ownership of; before the pane builds, because that is when
         // the seed is read.
         self.seed_from_memory(side, item_id);
+    }
+
+    /// Close `side`'s least recently used tabs until no more than the tab limit of
+    /// unpinned ones remain. `keep` is the item just opened, which is never a candidate.
+    ///
+    /// Pinned tabs neither count nor close. Every candidate is flushed **before** it is
+    /// closed, and one whose flush fails is left open: closing releases the document,
+    /// and a release whose flush fails loses the text for good
+    /// (`OpenDocsStore::release`). Such a tab stays, the pane is allowed past its limit,
+    /// and the next save's `flush_all` reports it the usual way.
+    fn enforce_tab_limit(&self, side: Side, keep: u64) {
+        let Some(cap) = self.tab_limit.get().cap() else {
+            return;
+        };
+        let pane = self.pane(side);
+        let stack = self.ids.stack_id.get();
+        // (tab, item) for every unpinned editor tab, in strip order.
+        let unpinned: Vec<(TabId, u64)> = {
+            let pinned = pane.pinned.borrow();
+            (0..pane.tabs.len())
+                .filter_map(|i| {
+                    pane.tabs
+                        .with_item(i, |h| {
+                            h.payload
+                                .downcast_ref::<ContentTab>()
+                                .map(|t| (h.id, t.item_id()))
+                        })
+                        .flatten()
+                })
+                .filter(|(_, item)| !pinned.contains(item))
+                .collect()
+        };
+        let mut excess = unpinned.len().saturating_sub(cap);
+        if excess == 0 {
+            return;
+        }
+        let mut candidates: Vec<(TabId, u64)> = unpinned
+            .into_iter()
+            .filter(|(_, item)| *item != keep)
+            .collect();
+        // Stable: tabs never brought forward keep their strip order among themselves.
+        candidates.sort_by_key(|(_, item)| pane.use_rank(*item));
+        for (tab_id, _) in candidates {
+            if excess == 0 {
+                break;
+            }
+            let flushed = self
+                .with_tab_id(side, tab_id, |t| t.flush(stack).is_ok())
+                .unwrap_or(true);
+            if !flushed {
+                continue;
+            }
+            self.close_tab(side, tab_id, true, true);
+            excess -= 1;
+        }
+        // Closing the selected tab moves the selection, and the new tab must stay the
+        // one in front.
+        if let Some(tid) = self.find_open(side, keep)
+            && pane.selected.get() != Some(tid)
+        {
+            pane.selected.set(Some(tid));
+        }
+    }
+
+    /// Run `f` against the editor tab `tab_id` in `side`, if there is one.
+    fn with_tab_id<R>(&self, side: Side, tab_id: TabId, f: impl Fn(&ContentTab) -> R) -> Option<R> {
+        let idx = self.index_of(side, tab_id)?;
+        self.pane(side)
+            .tabs
+            .with_item(idx, |h| h.payload.downcast_ref::<ContentTab>().map(&f))
+            .flatten()
     }
 
     /// This window's own synopsis-visibility signal — what a **pane** tab is
@@ -1330,6 +1469,7 @@ impl EditorsViewModel {
             .collect();
         pane.tabs.clear();
         pane.pinned.borrow_mut().clear();
+        pane.recency.borrow_mut().clear();
         for id in items {
             self.docs.release(id, stack); // flushes + evicts on the last reference
         }
@@ -1937,6 +2077,7 @@ impl EditorsViewModel {
             // anyway — but it *would* silently re-pin the tab if the same item
             // were reopened in this pane later.
             pane.pinned.borrow_mut().remove(&item_id);
+            pane.forget_use(item_id);
             self.docs.release(item_id, stack);
         }
         if auto_collapse && side == Side::Secondary && self.secondary.tabs.is_empty() {
@@ -1968,6 +2109,7 @@ impl EditorsViewModel {
                 h.payload.downcast_ref::<ContentTab>().map(|t| t.item_id())
             }) {
                 pane.pinned.borrow_mut().remove(&item_id);
+                pane.forget_use(item_id);
             }
             pane.tabs.remove(p);
         }
@@ -2016,6 +2158,10 @@ impl EditorsViewModel {
         }
         self.pane(side).selected.set(Some(id));
         self.set_focused(side);
+        // A tab moved in is a tab opened here, as far as the limit is concerned.
+        if let Some(item_id) = item_id {
+            self.enforce_tab_limit(side, item_id);
+        }
     }
 
     // ── Flush / save / reset ────────────────────────────────────────────────
@@ -2205,6 +2351,8 @@ impl EditorsViewModel {
         self.secondary.tabs.clear();
         self.primary.pinned.borrow_mut().clear();
         self.secondary.pinned.borrow_mut().clear();
+        self.primary.recency.borrow_mut().clear();
+        self.secondary.recency.borrow_mut().clear();
         // Drop the documents *before* clearing selection: `selected.set(None)`
         // synchronously re-fires App's per-pane effect (which calls `flush_all`),
         // so emptying the store first keeps that a cheap no-op and honors this
@@ -2699,6 +2847,7 @@ pub(crate) mod test_support {
             tags,
             statuses,
             mention_index,
+            Signal::new(crate::shared::TabLimit::default()),
         )
     }
 

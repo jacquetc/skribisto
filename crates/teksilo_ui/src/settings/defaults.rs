@@ -32,7 +32,7 @@ use frontend::common::entities::QuoteStyle;
 
 use super::TEXT_SCALE_DEFAULT;
 use crate::settings::{EditorTypography, SettingsViewModel};
-use crate::shared::{HighlightScope, SynopsisPlacement, TypewriterAnchor};
+use crate::shared::{HighlightScope, SynopsisPlacement, TabLimit, TypewriterAnchor};
 
 // ── One resettable knob ──────────────────────────────────────────────────────
 
@@ -441,6 +441,12 @@ pub(crate) fn reset_targets(vm: &SettingsViewModel) -> Vec<ResetTarget> {
             vm.highlight_scope(),
             HighlightScope::default(),
             HighlightScope::Paragraph,
+        ),
+        choice(
+            crate::TAB_LIMIT_KEY,
+            vm.tab_limit(),
+            TabLimit::default(),
+            TabLimit::One,
         ),
         // ── Smart punctuation, application level ──
         flag(

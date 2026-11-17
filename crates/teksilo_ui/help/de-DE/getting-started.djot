@@ -48,6 +48,10 @@ Unter *Beispiele* in der Seitenleiste können Sie ein Beispielprojekt erkunden.
 - Mit `F9` oder *Ansicht ▸ Linker Bereich* blenden Sie die Bereiche links ein oder aus.
   `Strg+Umschalt+B` holt die Projektmappe selbst nach vorn.
 - Mit `Strg+Eingabe` öffnen Sie den ausgewählten Eintrag im anderen Editorbereich.
+- Damit sich keine Tabs ansammeln, wählen Sie unter *Einstellungen ▸ Editor ▸
+  Editorverhalten* bei *Offene Tabs* eine Grenze. Mit *Einer* ersetzt jedes Element, das Sie
+  öffnen, den Tab, in dem Sie waren. Mit *Letzte 5* schließt ein sechster Tab den, den Sie
+  am längsten nicht angesehen haben. Ein angehefteter Tab bleibt immer offen.
 - Beim Erstellen eines Projekts ermöglicht *Einzelkapitel* das direkte Schreiben im Kapitel,
   ohne es in Szenen aufzuteilen. *Ordner* speichert das Projekt als Ordner statt als einzelne Datei.
 

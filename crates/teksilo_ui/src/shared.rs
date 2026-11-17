@@ -89,6 +89,7 @@ pub(crate) mod shortcut_group;
 pub mod slug;
 pub mod stamps;
 mod synopsis_placement;
+mod tab_limit;
 pub mod text;
 mod typewriter;
 /// The interface's language as a plain tag.
@@ -105,5 +106,6 @@ pub use fullscreen_vm::FullscreenViewModel;
 pub use item_view_states::ItemViewStates;
 pub use progress_recorder::ProgressRecorder;
 pub use synopsis_placement::SynopsisPlacement;
+pub use tab_limit::TabLimit;
 pub use typewriter::{TypewriterAnchor, TypewriterSettings};
 pub use view_state::{ViewState, ViewStateBinding, ViewStatePorts};

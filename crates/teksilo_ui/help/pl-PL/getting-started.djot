@@ -46,6 +46,10 @@ Aby obejrzeć przykładowy projekt, otwórz *Przykłady* na pasku bocznym.
 - Naciśnij `F9` lub wybierz *Widok ▸ Lewy panel*, aby pokazać lub ukryć panele po lewej.
   `Ctrl+Shift+B` wysuwa na wierzch sam segregator.
 - Naciśnij `Ctrl+Enter` na zaznaczonym elemencie, aby otworzyć go w drugim panelu edytora.
+- Aby karty się nie mnożyły, wybierz opcję *Otwarte karty* w *Ustawienia ▸ Edytor ▸
+  Zachowanie edytora*. Przy opcji *Jedna* każdy otwarty element zastępuje bieżącą kartę.
+  Przy opcji *Ostatnie 5* otwarcie szóstej karty zamyka tę, której najdłużej nie oglądano.
+  Przypięta karta zawsze pozostaje otwarta.
 - Przy tworzeniu projektu opcja *Rozdziały płaskie* pozwala pisać bezpośrednio w każdym
   rozdziale, bez dzielenia go na sceny. *Folder projektu* zapisuje projekt jako folder zamiast
   pojedynczego pliku.

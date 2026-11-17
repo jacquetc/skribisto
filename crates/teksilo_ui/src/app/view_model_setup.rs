@@ -175,6 +175,7 @@ impl App {
                     // The Work's own index, for the same reason and with the same
                     // consequence if it were read off `app_state` instead.
                     session.mention_index.clone(),
+                    settings.tab_limit(),
                 )
             })
             .clone();

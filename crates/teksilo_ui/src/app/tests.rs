@@ -457,6 +457,7 @@ fn test_editors_view_model(app_ctx: &Rc<frontend::AppContext>) -> EditorsViewMod
         crate::tags::TagsViewModel::detached(app_ctx.clone(), ids.clone()),
         crate::statuses::StatusesViewModel::new(app_ctx.clone(), ids.clone()),
         crate::mentions::MentionIndex::new(app_ctx.clone(), ids),
+        Signal::new(crate::shared::TabLimit::default()),
     )
 }
 

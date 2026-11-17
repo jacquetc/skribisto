@@ -26,7 +26,7 @@ use skribisto_model::counting::CountingMethodSetting;
 
 use frontend::common::entities::QuoteStyle;
 
-use crate::shared::{HighlightScope, SynopsisPlacement, TypewriterAnchor};
+use crate::shared::{HighlightScope, SynopsisPlacement, TabLimit, TypewriterAnchor};
 
 use crate::{
     AUTOSAVE_KEY, CHECK_FOR_UPDATES_DEFAULT, CHECK_FOR_UPDATES_KEY, COMMENTS_VISIBLE_DEFAULT,
@@ -73,8 +73,9 @@ use crate::{
     SYNOPSIS_PARA_SPACING_AFTER_DEFAULT, SYNOPSIS_PARA_SPACING_AFTER_KEY,
     SYNOPSIS_PARA_SPACING_BEFORE_DEFAULT, SYNOPSIS_PARA_SPACING_BEFORE_KEY, SYNOPSIS_PLACEMENT_KEY,
     SYNOPSIS_SIDE_WIDTH_DEFAULT, SYNOPSIS_SIDE_WIDTH_KEY, SYNOPSIS_SIZE_DEFAULT, SYNOPSIS_SIZE_KEY,
-    THEME_MODE_DARK, THEME_MODE_DEFAULT, THEME_MODE_KEY, THEME_MODE_LIGHT, THEME_MODE_SYSTEM,
-    TYPEWRITER_ANCHOR_KEY, TYPEWRITER_DEFAULT, TYPEWRITER_KEY, USER_INITIALS_KEY, USER_NAME_KEY,
+    TAB_LIMIT_KEY, THEME_MODE_DARK, THEME_MODE_DEFAULT, THEME_MODE_KEY, THEME_MODE_LIGHT,
+    THEME_MODE_SYSTEM, TYPEWRITER_ANCHOR_KEY, TYPEWRITER_DEFAULT, TYPEWRITER_KEY,
+    USER_INITIALS_KEY, USER_NAME_KEY,
 };
 
 /// Which of the six writing surfaces a typography bundle dresses.
@@ -410,6 +411,7 @@ pub struct SettingsViewModel {
     typewriter: Signal<bool>,
     typewriter_anchor: Signal<Option<TypewriterAnchor>>,
     highlight_scope: Signal<HighlightScope>,
+    tab_limit: Signal<TabLimit>,
     remember_view: Signal<bool>,
     // ── Goals & word count ──
     counting_method: Signal<CountingMethodSetting>,
@@ -600,6 +602,7 @@ impl SettingsViewModel {
             typewriter_anchor: store
                 .signal(TYPEWRITER_ANCHOR_KEY, Some(TypewriterAnchor::default())),
             highlight_scope: store.signal(HIGHLIGHT_SCOPE_KEY, HighlightScope::default()),
+            tab_limit: store.signal(TAB_LIMIT_KEY, TabLimit::default()),
             remember_view: store.signal(REMEMBER_VIEW_KEY, REMEMBER_VIEW_DEFAULT),
             counting_method: store
                 .signal(GOALS_COUNTING_METHOD_KEY, CountingMethodSetting::default()),
@@ -897,6 +900,11 @@ impl SettingsViewModel {
     /// How much text around the caret gets an ambient band while you write.
     pub fn highlight_scope(&self) -> Signal<HighlightScope> {
         self.highlight_scope.clone()
+    }
+    /// How many unpinned tabs each editor pane keeps. The same store-backed signal
+    /// every window's `EditorsViewModel` reads at each open.
+    pub fn tab_limit(&self) -> Signal<TabLimit> {
+        self.tab_limit.clone()
     }
     /// Remember the last `SegmentedControl` view per container type (Book / Part /
     /// Chapter). Same cached `REMEMBER_VIEW_KEY` signal [`EditorViewMemory`] reads.
@@ -1226,6 +1234,30 @@ mod tests {
         vm.highlight_scope().set(HighlightScope::Paragraph);
         vm.reset_editor_defaults();
         assert_eq!(vm.highlight_scope().get(), HighlightScope::default());
+    }
+
+    /// The tab limit is an enum in a store that speaks TOML scalars, so each variant has
+    /// to survive the round trip, and Reset has to bring back "All", which is what every
+    /// installation did before the setting existed.
+    #[test]
+    fn the_tab_limit_persists_every_variant_and_resets() {
+        let store = temp_store();
+        let vm = SettingsViewModel::new(&store);
+        assert_eq!(vm.tab_limit().get(), TabLimit::All);
+
+        for limit in [TabLimit::One, TabLimit::Five, TabLimit::All] {
+            vm.tab_limit().set(limit);
+            let reopened = SettingsViewModel::new(&store);
+            assert_eq!(
+                reopened.tab_limit().get(),
+                limit,
+                "{limit:?} must survive a fresh view-model over the same store"
+            );
+        }
+
+        vm.tab_limit().set(TabLimit::One);
+        vm.reset_editor_defaults();
+        assert_eq!(vm.tab_limit().get(), TabLimit::All);
     }
 
     /// The synopsis placement and its column width round-trip the store and come

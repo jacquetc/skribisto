@@ -492,6 +492,9 @@ pub const PUNCT_AUTO_LISTS_DEFAULT: bool = true;
 /// would be a lie. The old key is simply never read again — it never had an effect to lose,
 /// since nothing outside the settings pane ever consumed it.
 pub const HIGHLIGHT_SCOPE_KEY: &str = "editor.highlight_scope";
+/// How many unpinned tabs each editor pane keeps: one, the five most recently used, or
+/// all of them. See [`crate::shared::TabLimit`], stored by variant name.
+pub const TAB_LIMIT_KEY: &str = "editor.tab_limit";
 
 // ── Goals & word count (Settings ▸ Editor ▸ Goals) ────────────────────────────
 /// How words are counted for the live status-bar / focused count: `Auto` (per the
@@ -586,7 +589,7 @@ pub const CORKBOARD_PARA_SPACING_AFTER_DEFAULT: f32 = 6.0;
 use frontend::common::entities::QuoteStyle;
 use skribisto_model::counting::CountingMethodSetting;
 
-use crate::shared::{HighlightScope, TypewriterAnchor};
+use crate::shared::{HighlightScope, TabLimit, TypewriterAnchor};
 
 /// One settable key: what it is called, what it holds, and what it means.
 ///
@@ -894,6 +897,14 @@ pub static SETTINGS: &[SettingSpec] = &[
         default: || val(HighlightScope::default()),
         check: check::<HighlightScope>,
         doc: "How much text around the caret gets an ambient highlight band.",
+    },
+    SettingSpec {
+        key: crate::TAB_LIMIT_KEY,
+        ty: "one of: One | Five | All",
+        default: || val(TabLimit::default()),
+        check: check::<TabLimit>,
+        doc: "How many unpinned tabs each editor pane keeps. Opening one more closes the \
+              least recently used; pinned tabs never count and are never closed.",
     },
     // ── Editor: smart punctuation (the app-level tier) ────────────────────────
     // ── Editor: the margin lane ───────────────────────────────────────────────

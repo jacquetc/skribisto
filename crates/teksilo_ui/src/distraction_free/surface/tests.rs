@@ -106,6 +106,7 @@ fn fixture_with_column(column: f32) -> Fixture {
         crate::tags::TagsViewModel::detached(app_ctx.clone(), ids.clone()),
         crate::statuses::StatusesViewModel::new(app_ctx.clone(), ids.clone()),
         crate::mentions::MentionIndex::new(app_ctx.clone(), ids.clone()),
+        Signal::new(crate::shared::TabLimit::default()),
     );
     let doc = Rc::new(OpenDoc::build(
         &app_ctx,

@@ -48,6 +48,10 @@ Para explorar un proyecto de muestra, abra *Ejemplos* en la barra lateral.
 - Pulse `F9`, o elija *Ver ▸ Panel izquierdo*, para mostrar u ocultar los paneles de la
   izquierda. `Ctrl+Mayús+B` muestra el propio Archivador.
 - Pulse `Ctrl+Intro` sobre un elemento seleccionado para abrirlo en el otro panel del editor.
+- Para que no se acumulen pestañas, elija una opción en *Pestañas abiertas*, en
+  *Configuración ▸ Editor ▸ Comportamiento del editor*. Con *Una*, cada elemento que abre
+  sustituye a la pestaña en la que estaba. Con *Últimas 5*, abrir una sexta cierra la que
+  lleva más tiempo sin mirar. Una pestaña fijada siempre queda abierta.
 - Al crear un proyecto, *Capítulos planos* le permite escribir directamente en cada capítulo
   en lugar de dividirlo en escenas. *Carpeta* guarda el proyecto como una carpeta en lugar de
   un único archivo.

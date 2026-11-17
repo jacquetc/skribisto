@@ -7,6 +7,7 @@ Description:
 - "Help ▸ Report a Translation Error… finds a wrong word in your language by the words you saw, in menus, messages, help pages and exported books, and turns it into a report for the translators: what is wrong and how it should read. It opens a public report on GitHub in your browser, already filled in; Skribisto itself sends nothing. The same window opens from the Learn page of the Launcher, under the language choice in Settings ▸ Appearance, and from the foot of every help page in your language"
 - "The Help window has a new page, Reporting a translation error"
 - "Arabic or Hebrew typed into a one-line field, such as Search or a rename box, now shows, and reads right to left from the right edge, even in a French or English interface. It used to be invisible. In the Arabic and Hebrew interfaces, Latin text typed into such a field reads left to right. A link's address and the file path of a Manuskript or Scrivener import always read left to right"
+- "Settings ▸ Editor ▸ Editor Behavior has a new choice, Tabs kept open: One, Last five or All. With One, each item you open replaces the tab you were on. With Last five, opening a sixth closes the tab you have gone longest without looking at. Pinned tabs never count and are never closed, and a tab whose text could not be saved stays open. All, the default, keeps every tab as before"
 ---
 Version: 3.3.1
 Date: 2026-11-11
