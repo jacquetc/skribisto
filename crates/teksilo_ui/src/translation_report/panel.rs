@@ -25,8 +25,8 @@ use teksilo::prelude::*;
 use teksilo::widgets::code_editor::TabKey;
 use teksilo::widgets::rich_text::RichTextEditor;
 use teksilo::widgets::{
-    ActivateOn, Button, ButtonVariant, ComboBox, Divider, Expand, FixedSize, HStack, IconLocation,
-    IconWidget, ListView, Padding, Panel, ScrollArea, SearchField, Spacer, StandardListItem,
+    ActivateOn, Button, ButtonVariant, ComboBox, Divider, Expand, HStack, IconLocation, IconWidget,
+    ListView, MaxSize, MinSize, Padding, Panel, ScrollArea, SearchField, Spacer, StandardListItem,
     Switcher, TextInput, TextWidget, VStack,
 };
 
@@ -39,8 +39,11 @@ use crate::shared::shortcut_group::{ShortcutGroup, ShortcutGroupExt};
 const CLOSE_SHORTCUT: &str = "help.translation_report_close";
 
 /// The search column's width: wide enough for a menu label and its English source
-/// on one line each. Fixed, not a minimum: a minimum lets the column take the
-/// one-line width of its longest prose, which left the report column 63 px wide.
+/// on one line each. Exactly this, neither more nor less: a minimum alone lets the
+/// column take the one-line width of its longest prose, which left the report column
+/// 63 px wide. A floor and a cap rather than a `FixedSize`, which passes its child
+/// only the axes it fixes: a width-only one left the results list no height at all,
+/// and the button under it was drawn over the matches.
 const SEARCH_WIDTH: f32 = 380.0;
 
 /// The label above a field.
@@ -105,9 +108,10 @@ impl Widget for TranslationReportPanel {
                 Expand::vertical {
                     HStack {
                         spacing: 0.0
-                        FixedSize::new() {
-                            width: SEARCH_WIDTH
-                            child: search
+                        MinSize::width(SEARCH_WIDTH) {
+                            MaxSize::width(SEARCH_WIDTH) {
+                                child: search
+                            }
                         }
                         Divider::vertical()
                         Expand::horizontal {

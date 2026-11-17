@@ -349,3 +349,46 @@ fn nothing_paints_past_the_window_at_its_smallest() {
         });
     }
 }
+
+/// The results take the height left in the search column, and the "can't find it"
+/// button sits under them. A column given no height laid the list out zero pixels
+/// tall: its rows spilled downwards and the button was drawn over the first match,
+/// and over the prompt before anything was typed.
+#[test]
+fn the_matches_have_room_and_nothing_is_drawn_over_them() {
+    with_shipped_messages("en-US", || {
+        let vm = TranslationReportViewModel::new();
+        let mut tree = mounted(&vm);
+        let button = |tree: &WidgetTree| {
+            tree.bounds(control_named(
+                tree,
+                &tr!(translation_report_not_found()).resolve_now(),
+            ))
+        };
+        let prompt = tree
+            .find_by_label(&tr!(translation_report_type_to_search()).resolve_now())
+            .expect("the prompt");
+        let (prompt, below) = (tree.bounds(prompt), button(&tree));
+        assert!(
+            prompt.y + prompt.height <= below.y + 0.5,
+            "the button {below:?} is drawn over the prompt {prompt:?}"
+        );
+
+        vm.query().set("Cancel".to_string());
+        tree.layout(size());
+        let list = tree.bounds(control_named(
+            &tree,
+            &tr!(translation_report_results()).resolve_now(),
+        ));
+        let below = button(&tree);
+        assert!(
+            list.height > 200.0,
+            "the list has {} px in a 540 px window",
+            list.height
+        );
+        assert!(
+            list.y + list.height <= below.y + 0.5,
+            "the button {below:?} is drawn over the list {list:?}"
+        );
+    });
+}
