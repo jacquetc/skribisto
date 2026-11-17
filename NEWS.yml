@@ -1,5 +1,5 @@
 Version: 3.3.2
-Date: 2026-11-16
+Date: 2026-11-17
 Type: stable
 Description:
 - "On a note's Details page, each scene listed under “Appears in the manuscript” has an Add to cast button that answers a click. It used to be a bare tick that only Tab could reach: clicking it opened the scene beside instead. Confirm every appearance, below the list, is now called Add to every cast. The plus and the cross beside each name of a scene's cast in the Inspector answer a click again too"
