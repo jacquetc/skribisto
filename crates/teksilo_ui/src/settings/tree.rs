@@ -292,6 +292,8 @@ pub(crate) fn search_index(spec: &[Root], work_title: &str) -> Vec<(LocalizedStr
         (tr!(settings_field_column_width()), Pane::DistractionFree),
         (tr!(settings_field_app_theme()), Pane::Appearance),
         (tr!(settings_field_text_scale()), Pane::Appearance),
+        (tr!(settings_text_contrast()), Pane::Appearance),
+        (tr!(settings_glyph_rendering()), Pane::Appearance),
         (tr!(settings_field_language()), Pane::Appearance),
         (tr!(settings_show_welcome()), Pane::Appearance),
         (tr!(settings_autosave()), Pane::Autosave),

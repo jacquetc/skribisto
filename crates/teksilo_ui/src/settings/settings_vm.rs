@@ -27,6 +27,9 @@ use skribisto_model::counting::CountingMethodSetting;
 use frontend::common::entities::QuoteStyle;
 
 use crate::shared::{HighlightScope, SynopsisPlacement, TabLimit, TypewriterAnchor};
+use teksilo::prelude::{
+    GLYPH_RENDERING_KEY, GlyphRenderingPreference, TEXT_CONTRAST_KEY, TextContrastLevel,
+};
 
 use crate::{
     AUTOSAVE_KEY, CHECK_FOR_UPDATES_DEFAULT, CHECK_FOR_UPDATES_KEY, COMMENTS_VISIBLE_DEFAULT,
@@ -376,6 +379,8 @@ pub struct SettingsViewModel {
     spellcheck_enabled: Signal<bool>,
     comments_visible: Signal<bool>,
     show_welcome: Signal<bool>,
+    text_contrast: Signal<TextContrastLevel>,
+    glyph_rendering: Signal<GlyphRenderingPreference>,
     check_for_updates: Signal<bool>,
     // ── Editor typography (per type) ──
     scene_typo: EditorTypography,
@@ -453,6 +458,8 @@ impl SettingsViewModel {
             spellcheck_enabled: store.signal(SPELLCHECK_ENABLED_KEY, SPELLCHECK_ENABLED_DEFAULT),
             comments_visible: store.signal(COMMENTS_VISIBLE_KEY, COMMENTS_VISIBLE_DEFAULT),
             show_welcome: store.signal(SHOW_WELCOME_KEY, true),
+            text_contrast: store.signal_for(&TEXT_CONTRAST_KEY),
+            glyph_rendering: store.signal_for(&GLYPH_RENDERING_KEY),
             check_for_updates: store.signal(CHECK_FOR_UPDATES_KEY, CHECK_FOR_UPDATES_DEFAULT),
             scene_typo: EditorTypography {
                 font_family: store
@@ -655,6 +662,18 @@ impl SettingsViewModel {
     /// `SHOW_WELCOME_KEY` signal the Welcome dialog's inline checkbox binds.
     pub fn show_welcome(&self) -> Signal<bool> {
         self.show_welcome.clone()
+    }
+
+    /// How dark text edges are drawn: teksilo's own key, which `run()` binds and
+    /// follows live in every window, so writing this signal is all a control does.
+    pub fn text_contrast(&self) -> Signal<TextContrastLevel> {
+        self.text_contrast.clone()
+    }
+
+    /// How glyphs are fitted to the pixel grid: teksilo's own key, followed live
+    /// the same way as [`text_contrast`](Self::text_contrast).
+    pub fn glyph_rendering(&self) -> Signal<GlyphRenderingPreference> {
+        self.glyph_rendering.clone()
     }
 
     /// Whether the once-a-day update check may run. See
@@ -1258,6 +1277,32 @@ mod tests {
         vm.tab_limit().set(TabLimit::One);
         vm.reset_editor_defaults();
         assert_eq!(vm.tab_limit().get(), TabLimit::All);
+    }
+
+    /// The two text-drawing signals are teksilo's own keys, the ones `run()` follows:
+    /// a value set through the view-model is what the framework reads back. Bound to
+    /// a key of the app's own instead, the controls would save a choice nothing draws.
+    #[test]
+    fn the_text_drawing_choices_are_teksilos_keys() {
+        let store = temp_store();
+        let vm = SettingsViewModel::new(&store);
+        assert_eq!(vm.text_contrast().get(), TextContrastLevel::Standard);
+        assert_eq!(
+            vm.glyph_rendering().get(),
+            GlyphRenderingPreference::FollowDesktop
+        );
+        vm.text_contrast().set(TextContrastLevel::Strongest);
+        vm.glyph_rendering().set(GlyphRenderingPreference::Crisp);
+        assert_eq!(
+            store.signal_for(&TEXT_CONTRAST_KEY).get(),
+            TextContrastLevel::Strongest
+        );
+        assert_eq!(
+            store.signal_for(&GLYPH_RENDERING_KEY).get(),
+            GlyphRenderingPreference::Crisp
+        );
+        let reopened = SettingsViewModel::new(&store);
+        assert_eq!(reopened.text_contrast().get(), TextContrastLevel::Strongest);
     }
 
     /// The synopsis placement and its column width round-trip the store and come

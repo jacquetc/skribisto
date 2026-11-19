@@ -1,3 +1,11 @@
+Version: 3.3.3
+Date: 2026-11-19
+Type: stable
+Description:
+- "Text on screen is drawn better, everywhere in Skribisto. Letters are as dark as in a web browser: the edges of each letter used to come out about a quarter lighter, so text looked grey and thin, and in a dark theme light text looked heavier than in other applications. Letters are evenly spaced: each one used to be placed on the nearest whole pixel, so the gap between two letters could be a pixel off and words seemed to run together. And when your desktop's font settings ask for medium or full hinting, in KDE Plasma or GNOME, text is now drawn sharp, fitted to whole pixels as Windows draws it"
+- "Settings ▸ Appearance has a new choice, Text contrast: Standard, Stronger or Strongest. It sets how dark the edges of letters are drawn, in every window at once. Standard is the browser-like rendering described above; the other two help when text still looks grey or thin"
+- "Settings ▸ Appearance also has Text rendering: System, Smooth or Sharp. Sharp puts each letter on whole pixels, as Windows draws text, for crisper letters at the cost of slightly wider lines; Smooth keeps each font's exact shapes, as a web browser does. System, the default, is sharp when your desktop's font settings ask for medium or full hinting, and follows them when they change; while it is chosen, its button says which of the two your desktop gives"
+---
 Version: 3.3.2
 Date: 2026-11-17
 Type: stable

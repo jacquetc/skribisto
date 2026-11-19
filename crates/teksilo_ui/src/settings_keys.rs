@@ -767,6 +767,25 @@ pub static SETTINGS: &[SettingSpec] = &[
         check: check::<f32>,
         doc: "Interface text scale. Teksilo's own key, read before the first window opens.",
     },
+    SettingSpec {
+        key: teksilo::prelude::TEXT_CONTRAST_KEY.key,
+        ty: "one of: standard | stronger | strongest",
+        default: || val((teksilo::prelude::TEXT_CONTRAST_KEY.default)()),
+        check: check::<teksilo::prelude::TextContrastLevel>,
+        doc: "How dark the edges of text are drawn in every window. Standard matches a \
+              web browser; the other two draw them heavier. Teksilo's own key, followed \
+              live.",
+    },
+    SettingSpec {
+        key: teksilo::prelude::GLYPH_RENDERING_KEY.key,
+        ty: "one of: follow-desktop | natural | crisp",
+        default: || val((teksilo::prelude::GLYPH_RENDERING_KEY.default)()),
+        check: check::<teksilo::prelude::GlyphRenderingPreference>,
+        doc: "How glyphs are fitted to the pixel grid in every window. follow-desktop is \
+              crisp under the desktop's medium or full font hinting; crisp puts glyphs on \
+              whole pixels and makes lines 1 to 5 % wider. Teksilo's own key, followed \
+              live.",
+    },
     // ── Editor: layout & saving ───────────────────────────────────────────────
     SettingSpec {
         key: crate::EDITOR_WIDTH_KEY,

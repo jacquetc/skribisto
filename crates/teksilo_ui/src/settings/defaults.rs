@@ -33,6 +33,9 @@ use frontend::common::entities::QuoteStyle;
 use super::TEXT_SCALE_DEFAULT;
 use crate::settings::{EditorTypography, SettingsViewModel};
 use crate::shared::{HighlightScope, SynopsisPlacement, TabLimit, TypewriterAnchor};
+use teksilo::prelude::{
+    GLYPH_RENDERING_KEY, GlyphRenderingPreference, TEXT_CONTRAST_KEY, TextContrastLevel,
+};
 
 // ── One resettable knob ──────────────────────────────────────────────────────
 
@@ -246,6 +249,18 @@ pub(crate) fn reset_targets(vm: &SettingsViewModel) -> Vec<ResetTarget> {
             crate::COMMENTS_VISIBLE_DEFAULT,
         ),
         flag(crate::SHOW_WELCOME_KEY, vm.show_welcome(), true),
+        choice(
+            TEXT_CONTRAST_KEY.key,
+            vm.text_contrast(),
+            TextContrastLevel::default(),
+            TextContrastLevel::Strongest,
+        ),
+        choice(
+            GLYPH_RENDERING_KEY.key,
+            vm.glyph_rendering(),
+            GlyphRenderingPreference::default(),
+            GlyphRenderingPreference::Crisp,
+        ),
         flag(
             crate::REMEMBER_VIEW_KEY,
             vm.remember_view(),

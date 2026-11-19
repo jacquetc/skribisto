@@ -365,6 +365,7 @@ pub(super) fn build(
         (
             Pane::Appearance,
             Box::new(panes::appearance::appearance_pane(
+                ctx,
                 &crumbs,
                 vm,
                 scale.clone(),
