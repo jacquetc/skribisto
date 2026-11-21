@@ -2852,6 +2852,7 @@ search-field-footnote = Note de bas de page
 search-include-in-replace = Inclure dans « Tout remplacer »
 search-collapse-all = Replier tous les résultats
 search-replace-here = Remplacer ceci
+search-open-in-editor = Ouvrir dans l’éditeur
 search-dismiss = Retirer des résultats
 search-undo-dismiss = Rétablir le dernier résultat retiré
 search-replace-nothing = (rien)

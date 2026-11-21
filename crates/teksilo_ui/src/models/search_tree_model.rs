@@ -214,6 +214,10 @@ impl SearchTreeModel {
         self.slice.reload();
     }
 
+    pub(crate) fn item_name(&self, item_id: u64) -> Option<String> {
+        self.names.borrow().get(&item_id).cloned()
+    }
+
     /// Re-read what every matched item is called.
     ///
     /// The result rows carry `item_title`, which is the item's *title* and is empty

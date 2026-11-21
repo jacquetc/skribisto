@@ -44,8 +44,9 @@ pub(super) fn manuscript_page(
     if let Some(t) = tab.title() {
         col = col
             .child(centered(
-                title_input(
+                crate::tabs::shared::editor::searchable_title_input(
                     t,
+                    tab.pending_search_hit.clone(),
                     tr!(title_field_chapter()),
                     tr!(placeholder_chapter_title()),
                     tab.mark_dirty_fn(),
@@ -84,12 +85,11 @@ pub(super) fn manuscript_page(
         // frame. See `shared::editor::VisibleWhen`.
         col = col.child(crate::tabs::shared::editor::SynopsisPaneEffects::new(
             tab.open_doc.clone(),
-            tab.show_synopsis.clone(),
+            tab.visible_synopsis.clone(),
             None,
         ));
-        col = col.child(VisibleWhen::new(
-            showing,
-            synopsis_section(
+        col = col.child(VisibleWhen::new(showing, {
+            let editor = synopsis_section(
                 &s.doc,
                 &tab.column_width,
                 &tab.typography.synopsis,
@@ -114,8 +114,9 @@ pub(super) fn manuscript_page(
                 false,
                 tab.capture_palette(),
                 Some(tab.open_doc.content_language()),
-            ),
-        ));
+            );
+            searchable_synopsis(tab, s, editor)
+        }));
     }
 
     // The per-editor find banner's view-model (Ctrl+F). `Some` for every prose
@@ -123,42 +124,51 @@ pub(super) fn manuscript_page(
     // `writing_section` attaches its handle to this vm; the banner above binds it.
     let find = tab.find().cloned();
     if let Some(m) = tab.main() {
-        col = col.child(vspace(10.0)).child(writing_section(
-            &m.doc,
-            tab.main_column_width(),
-            tab.main_typography(),
-            tab.mark_dirty_fn(),
-            find.clone(),
-            tab.open_doc.spell_main(),
-            tab.open_doc.replacement_main(),
-            Some(tab.format.clone()),
-            Some(tab.typewriter.clone()),
-            Some(tab.caret_band()),
-            Some(tab.writing_games()),
-            Some(page.clone()),
-            tab.open_doc.comment_binding_main(),
-            tab.open_doc.footnote_binding_main(),
-            tab.open_doc.images(),
-            // Only a page whose main field is the book's own prose counts what is
-            // typed into it. See `counts_toward_the_manuscript`: this page is built
-            // for four combinations and only three of them are the manuscript. The
-            // uid is read only once the answer is yes, because it is a store read
-            // and a Note tab has no use for it.
-            counts_toward_the_manuscript(tab)
-                .then(|| tab.arrival_project())
-                .flatten(),
-            // A trashed item's text is read-only. The banner above it is a
-            // statement, not a guard: before this the content beneath it was built
-            // by the same editable render path as any other tab.
-            tab.open_doc.trashed.get(),
-            // This tab's own item and this arm's surface, so the margin lane beside
-            // *this* page reaches this editor rather than the other arm's.
-            Some(crate::margin_lane::LaneAnchor::new(tab.item_id(), scope)),
-            // A tab's editor is on screen and lays out on its first frame.
-            false,
-            Some(tab.tags()),
-            Some(tab.open_doc.content_language()),
-        ));
+        col = col.child(vspace(10.0)).child({
+            let editor = writing_section(
+                &m.doc,
+                tab.main_column_width(),
+                tab.main_typography(),
+                tab.mark_dirty_fn(),
+                find.clone(),
+                tab.open_doc.spell_main(),
+                tab.open_doc.replacement_main(),
+                Some(tab.format.clone()),
+                Some(tab.typewriter.clone()),
+                Some(tab.caret_band()),
+                Some(tab.writing_games()),
+                Some(page.clone()),
+                tab.open_doc.comment_binding_main(),
+                tab.open_doc.footnote_binding_main(),
+                tab.open_doc.images(),
+                // Only a page whose main field is the book's own prose counts what is
+                // typed into it. See `counts_toward_the_manuscript`: this page is built
+                // for four combinations and only three of them are the manuscript. The
+                // uid is read only once the answer is yes, because it is a store read
+                // and a Note tab has no use for it.
+                counts_toward_the_manuscript(tab)
+                    .then(|| tab.arrival_project())
+                    .flatten(),
+                // A trashed item's text is read-only. The banner above it is a
+                // statement, not a guard: before this the content beneath it was built
+                // by the same editable render path as any other tab.
+                tab.open_doc.trashed.get(),
+                // This tab's own item and this arm's surface, so the margin lane beside
+                // *this* page reaches this editor rather than the other arm's.
+                Some(crate::margin_lane::LaneAnchor::new(tab.item_id(), scope)),
+                // A tab's editor is on screen and lays out on its first frame.
+                false,
+                Some(tab.tags()),
+                Some(tab.open_doc.content_language()),
+            );
+            crate::search::editor_result::Destination::prose(
+                editor,
+                tab.pending_search_hit.clone(),
+                frontend::common::entities::MatchField::Body,
+                &m.doc,
+                page.page_editor.borrow().clone(),
+            )
+        });
     }
 
     // This page owns the tab's scroll and its editor handle only while it is the page
@@ -222,28 +232,31 @@ pub(super) fn side_synopsis_pane(
                                 .on_activate_fn(move |_| sync.fold()),
                         ),
                 )
-                .child(Expand::new().child(side_synopsis_editor(
-                    &s.doc,
-                    &tab.typography.synopsis,
-                    tab.mark_dirty_fn(),
-                    tab.open_doc.spell_synopsis(),
-                    tab.open_doc.replacement_synopsis(),
-                    Some(tab.synopsis_handle_sink()),
-                    Some(tab.format.clone()),
-                    Some(tab.caret_band()),
-                    Some(tab.writing_games()),
-                    tab.open_doc.comment_binding_synopsis(),
-                    tab.open_doc.images(),
-                    // A trashed item's synopsis is read-only for the same reason its prose
-                    // is — see `writing_column`.
-                    tab.open_doc.trashed.get(),
-                    // See the Top layout's call above. The scope is the Side arm's,
-                    // shared with the manuscript column beside it.
-                    Some(crate::margin_lane::LaneAnchor::new(tab.item_id(), scope)),
-                    false,
-                    tab.capture_palette(),
-                    Some(tab.open_doc.content_language()),
-                ))),
+                .child(Expand::new().child({
+                    let editor = side_synopsis_editor(
+                        &s.doc,
+                        &tab.typography.synopsis,
+                        tab.mark_dirty_fn(),
+                        tab.open_doc.spell_synopsis(),
+                        tab.open_doc.replacement_synopsis(),
+                        Some(tab.synopsis_handle_sink()),
+                        Some(tab.format.clone()),
+                        Some(tab.caret_band()),
+                        Some(tab.writing_games()),
+                        tab.open_doc.comment_binding_synopsis(),
+                        tab.open_doc.images(),
+                        // A trashed item's synopsis is read-only for the same reason its prose
+                        // is — see `writing_column`.
+                        tab.open_doc.trashed.get(),
+                        // See the Top layout's call above. The scope is the Side arm's,
+                        // shared with the manuscript column beside it.
+                        Some(crate::margin_lane::LaneAnchor::new(tab.item_id(), scope)),
+                        false,
+                        tab.capture_palette(),
+                        Some(tab.open_doc.content_language()),
+                    );
+                    searchable_synopsis(tab, s, editor)
+                })),
         ),
         None => Box::new(vspace(0.0)),
     };

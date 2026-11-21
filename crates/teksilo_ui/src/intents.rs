@@ -151,6 +151,14 @@ pub enum AppIntent {
     #[name = "editor.open_item"]
     OpenItem { item_id: u64, title: String },
 
+    /// Open the clicked search row in the active editor pane.
+    #[name = "editor.open_search_result"]
+    OpenSearchResult {
+        item_id: u64,
+        title: String,
+        hit: Option<crate::search::editor_result::EditorHit>,
+    },
+
     /// Open (or focus) a binder item in the **side** pane, revealing the split.
     /// Fired from the outline's "Open to the Side" (context menu / Ctrl+Enter /
     /// middle-click). Consumed by the `editor.open_item_to_side` global action.

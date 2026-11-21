@@ -540,6 +540,58 @@ impl SearchReplaceViewModel {
 
     // ── selection + preview ─────────────────────────────────────────────────
 
+    /// Resolve on demand: a result may have outlived the item or its former type.
+    pub(crate) fn editor_target(
+        &self,
+        node: &crate::models::SearchNode,
+    ) -> Option<crate::intents::AppIntent> {
+        use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
+        if node.binder_item_id == 0 {
+            return None;
+        }
+        let probe = crate::singles::SingleBinderItem::new(self.app_ctx());
+        probe.set_id(Some(node.binder_item_id));
+        let item = probe.dto()?;
+        let roles = skribisto_model::allowed_content(&item.role, &item.sub_role);
+        if roles.is_empty() {
+            // Book-end and inert text markers open a placeholder page.
+            return None;
+        }
+        let hit = if node.is_item {
+            None
+        } else {
+            let compatible = match node.match_field {
+                MatchField::Title => {
+                    skribisto_model::title_role_of(&item.role, &item.sub_role).is_some()
+                        || (item.role == BinderItemRole::Item
+                            && item.sub_role == BinderItemSubRole::Note)
+                }
+                MatchField::Synopsis => roles.contains(&ContentRole::SynopsisText),
+                MatchField::Epigraph => roles.contains(&ContentRole::EpigraphText),
+                MatchField::Body => roles.iter().any(|role| {
+                    matches!(
+                        role,
+                        ContentRole::SceneText | ContentRole::NoteText | ContentRole::ParatextText
+                    )
+                }),
+                _ => false,
+            };
+            if !compatible || node.snippet_match.is_empty() {
+                return None;
+            }
+            Some(super::editor_result::EditorHit {
+                field: node.match_field.clone(),
+                start: usize::try_from(node.char_start).ok()?,
+                matched: node.snippet_match.clone(),
+            })
+        };
+        Some(crate::intents::AppIntent::OpenSearchResult {
+            item_id: item.id,
+            title: self.tree().item_name(item.id).unwrap_or(item.title),
+            hit,
+        })
+    }
+
     /// Select result `result_id`: open its item's shared document into the preview
     /// (releasing whatever the preview held before — the store is refcounted), and
     /// reveal the bottom band (which has no rail to reopen it by hand).
@@ -1366,11 +1418,11 @@ fn codes_to_set(codes: &[i64]) -> HashSet<SearchFacet> {
 }
 
 #[cfg(test)]
-mod tests {
+pub(super) mod tests {
     use super::*;
     use teksilo::widgets::DockingModel;
 
-    fn vm() -> SearchReplaceViewModel {
+    pub(in crate::search) fn vm() -> SearchReplaceViewModel {
         let app_ctx = Rc::new(AppContext::new());
         let ids = AppIds::new();
         let results = SearchResultsModel::new(app_ctx.clone(), ids.work_info_id.clone());

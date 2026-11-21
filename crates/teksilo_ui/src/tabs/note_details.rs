@@ -132,6 +132,7 @@ pub(crate) fn note_details_pane(tab: &ContentTab) -> Box<dyn Widget> {
     // Not pointed at the item yet: see the first lines of `NoteDetailsPane::build`.
     let probe = SingleBinderItem::new(app_ctx.clone());
     Box::new(NoteDetailsPane {
+        pending_hit: tab.pending_search_hit.clone(),
         ids: tab.ids().clone(),
         item_id: tab.item_id(),
         open_doc: tab.open_doc.clone(),
@@ -157,6 +158,7 @@ pub(crate) fn note_details_pane(tab: &ContentTab) -> Box<dyn Widget> {
 }
 
 struct NoteDetailsPane {
+    pending_hit: crate::search::editor_result::PendingHit,
     app_ctx: Rc<AppContext>,
     ids: AppIds,
     item_id: u64,
@@ -284,6 +286,7 @@ impl Widget for NoteDetailsPane {
 
         fields = fields.child(name_field(
             &self.name,
+            self.pending_hit.clone(),
             stack.clone(),
             self.open_doc.content_language(),
         ));
@@ -470,12 +473,14 @@ fn item_is_discoverable(tags: &[u64], discoverable_ids: &HashSet<u64>) -> bool {
 /// does.
 fn name_field(
     field: &Rc<crate::tabs::TitleField>,
+    pending_hit: crate::search::editor_result::PendingHit,
     stack: Signal<Option<u64>>,
     language: Signal<Option<LanguageTag>>,
 ) -> impl Widget {
     let commit_field = field.clone();
-    shared::title_input(
+    shared::editor::searchable_title_input(
         field,
+        pending_hit,
         tr!(title_field_name()),
         tr!(note_details_name_placeholder()),
         || {},

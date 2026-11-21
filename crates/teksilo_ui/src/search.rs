@@ -12,6 +12,7 @@
 //! the view rather than on the view-model because it needs an `EventContext`.
 
 pub mod dock;
+pub mod editor_result;
 mod find_vm;
 pub mod preview_dock;
 pub mod replace_flow;

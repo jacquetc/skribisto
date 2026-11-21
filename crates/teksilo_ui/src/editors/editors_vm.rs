@@ -1224,6 +1224,56 @@ impl EditorsViewModel {
         self.focus_main_editor(Side::Primary, item_id, ctx);
     }
 
+    pub(crate) fn open_search_result(
+        &self,
+        item: u64,
+        title: &str,
+        hit: Option<crate::search::editor_result::EditorHit>,
+        ctx: &mut teksilo::prelude::EventContext,
+    ) {
+        use crate::tabs::shared::segments;
+        use frontend::common::entities::{
+            BinderItemRole as Role, BinderItemSubRole as Sub, MatchField,
+        };
+        let side = self.focused_side();
+        self.expect_focus_loss(std::time::Instant::now());
+        self.open_in(side, item, title);
+        self.with_tab(side, item, |tab| {
+            if let Some(hit) = &hit {
+                let segment = match (tab.role(), tab.sub_role()) {
+                    (Role::Folder, Sub::Note | Sub::Paratext) => Some(segments::SEG_NOTES),
+                    (Role::Folder, Sub::ChapterScene | Sub::Book | Sub::Part) => {
+                        Some(segments::SEG_OWN)
+                    }
+                    (Role::Item, Sub::Note) if hit.field == MatchField::Title => {
+                        Some(segments::SEG_NOTE_DETAILS)
+                    }
+                    (Role::Item, Sub::Note) => Some(segments::SEG_NOTE_OWN),
+                    _ => None,
+                };
+                if let Some(segment) = segment {
+                    tab.take_segment_seed();
+                    tab.segment.set(Some(segments::segment_id(segment)));
+                }
+                if hit.field == MatchField::Synopsis
+                    && crate::tabs::renders_prose(tab.role(), tab.sub_role())
+                {
+                    tab.visible_synopsis.set(true);
+                    tab.side_splitter
+                        .set_collapsed(crate::tabs::shared::editor::SYNOPSIS_PANE, false);
+                }
+                if hit.field == MatchField::Epigraph {
+                    tab.epigraph_expanded.set(true);
+                }
+            }
+            tab.pending_search_hit.set(hit.clone());
+        });
+        if hit.is_none() {
+            self.focus_main_editor(side, item, ctx);
+        }
+        ctx.request_frame();
+    }
+
     /// [`Self::activate`], into the side pane: Ctrl+Enter, a middle-click, and both
     /// "Open to the Side" context-menu rows.
     pub fn activate_to_side(

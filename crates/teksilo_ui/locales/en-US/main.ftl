@@ -2893,6 +2893,7 @@ search-field-footnote = Footnote
 search-include-in-replace = Include in Replace All
 search-collapse-all = Collapse all results
 search-replace-here = Replace this
+search-open-in-editor = Open in editor
 search-dismiss = Dismiss from the results
 search-undo-dismiss = Bring back the last dismissed result
 search-replace-nothing = (nothing)

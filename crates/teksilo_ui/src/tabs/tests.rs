@@ -3223,6 +3223,29 @@ fn mounted_scene(paragraphs: usize) -> (ContentTab, WidgetTree, WidgetId) {
     (tab, tree, root)
 }
 
+#[test]
+fn global_search_reveals_the_specific_offscreen_occurrence_in_the_tab() {
+    use crate::search::editor_result::EditorHit;
+    use frontend::common::entities::MatchField;
+    let (tab, mut tree, _) = mounted_scene(80);
+    let start = "The rain kept on.\n".chars().count() * 72 + 4;
+    tab.pending_search_hit.set(Some(EditorHit {
+        field: MatchField::Body,
+        start,
+        matched: "rain".into(),
+    }));
+    for _ in 0..4 {
+        tree.layout(SizeProposal::exact(900.0, 300.0));
+        tree.run_mount_actions(&mut teksilo::core::NoopWindowOps);
+        tree.render();
+        tree.advance_time(std::time::Duration::from_millis(100));
+    }
+    let handle = tab.view_state_ports().editor().unwrap();
+    assert_eq!(handle.selected_text(), "rain");
+    assert_eq!(handle.cursor_position(), start + 4);
+    assert!(tab.capture_view_state().scroll > 0.0);
+}
+
 /// A mounted prose pane must publish **both** ports. They come from two
 /// different widgets — the caret from the editor handle, the scroll from the
 /// page `ScrollArea` — because the editors run with their own scroll bars

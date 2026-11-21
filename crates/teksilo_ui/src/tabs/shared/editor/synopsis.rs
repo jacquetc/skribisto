@@ -404,6 +404,52 @@ pub fn title_input(
     // writer's text, read and shaped like its prose. See `writing_column`'s note.
     language: Option<Signal<Option<LanguageTag>>>,
 ) -> impl Widget {
+    title_widget(field, name, placeholder, on_change, on_commit, language).0
+}
+
+pub(crate) fn searchable_title_input(
+    field: &TitleField,
+    pending: crate::search::editor_result::PendingHit,
+    name: impl Into<LocalizedString>,
+    placeholder: impl Into<LocalizedString>,
+    on_change: impl Fn() + 'static,
+    on_commit: impl Fn() + 'static,
+    language: Option<Signal<Option<LanguageTag>>>,
+) -> impl Widget {
+    let (widget, handle) = title_widget(field, name, placeholder, on_change, on_commit, language);
+    crate::search::editor_result::Destination::new(
+        widget,
+        pending,
+        frontend::common::entities::MatchField::Title,
+        move |hit, id, ctx| {
+            use teksilo::core::text_input_document::TextInputEditor;
+            let length = hit.matched.chars().count();
+            if handle
+                .text()
+                .chars()
+                .skip(hit.start)
+                .take(length)
+                .eq(hit.matched.chars())
+                && handle
+                    .set_selection(hit.start..hit.start + length, false)
+                    .is_ok()
+            {
+                ctx.ensure_widget_visible(id);
+                ctx.request_focus_into(id);
+            }
+            true
+        },
+    )
+}
+
+fn title_widget(
+    field: &TitleField,
+    name: impl Into<LocalizedString>,
+    placeholder: impl Into<LocalizedString>,
+    on_change: impl Fn() + 'static,
+    on_commit: impl Fn() + 'static,
+    language: Option<Signal<Option<LanguageTag>>>,
+) -> (impl Widget, teksilo::widgets::primitives::TextFieldHandle) {
     // `on_commit` fires when editing finishes (the field losing focus, or a click on a
     // control that takes none, before that control's command runs) and on Enter. A name
     // is also an identifier (the tree, the tab and the Inspector all show it), so it must
@@ -415,14 +461,16 @@ pub fn title_input(
         .placeholder(placeholder)
         .on_commit_fn(move |_ctx| finished())
         .on_submit_fn(move |_ctx| submit());
-    DirtyOnEdit {
+    let handle = input.handle();
+    let widget = DirtyOnEdit {
         input: Some(input),
         value: field.value.clone(),
         is_edited: field.edited_probe(),
         on_change: Rc::new(on_change),
         child_id: None,
     }
-    .content_language(super::language_prop(language))
+    .content_language(super::language_prop(language));
+    (widget, handle)
 }
 
 /// Wraps a title `TextInput` and reports genuine edits (see [`title_input`]).

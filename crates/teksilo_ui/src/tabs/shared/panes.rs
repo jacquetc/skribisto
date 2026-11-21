@@ -55,6 +55,21 @@ mod remember;
 use manuscript::*;
 use remember::*;
 
+/// Capture this layout's handle immediately after constructing its synopsis.
+fn searchable_synopsis(
+    tab: &ContentTab,
+    field: &crate::tabs::ProseField,
+    editor: impl Widget + 'static,
+) -> impl Widget {
+    crate::search::editor_result::Destination::prose(
+        editor,
+        tab.pending_search_hit.clone(),
+        frontend::common::entities::MatchField::Synopsis,
+        &field.doc,
+        tab.synopsis_handle(),
+    )
+}
+
 /// The epigraph disclosure — the quotation set at the head of this part or chapter.
 ///
 /// Not a book: the matrix allows `EpigraphText` on exactly four combinations (part and
@@ -82,45 +97,55 @@ fn epigraph_section(tab: &ContentTab) -> Option<impl Widget> {
     let body = VStack::new()
         .spacing(4.0)
         .child(attribution_control(handle.clone()))
-        .child(synopsis_column(
-            &field.doc,
-            &tab.column_width,
-            // Scene typography, not the synopsis's: an epigraph is finished-book matter
-            // that ships in the manuscript, not editorial commentary about it.
-            tab.main_typography(),
-            tab.mark_dirty_fn(),
-            Option::None,
-            tab.open_doc.spell_epigraph(),
-            tab.open_doc.replacement_epigraph(),
-            // The sink is live now, for the attribution control. No comment binding
-            // still: a comment anchors to the author's own prose, and an epigraph is
-            // quoted matter — see `OpenDoc::build`.
-            Some(handle.clone()),
-            Some(tab.format.clone()),
-            Some(tab.typewriter.clone()),
-            Some(tab.caret_band()),
-            Some(tab.writing_games()),
-            Option::None,
-            tab.open_doc.images(),
-            // A trashed item's text is read-only. The banner above it is a
-            // statement, not a guard: before this the content beneath it was built
-            // by the same editable render path as any other tab.
-            tab.open_doc.trashed.get(),
-            // An epigraph is a field on a page, never the page. Whatever else this
-            // tab shows owns its remembered position.
-            Option::None,
-            // **Not** this item, deliberately. The registry keys an editor by
-            // `(item, kind)`, and an epigraph is a second `Synopsis`-kind editor on
-            // the same item as the synopsis below it — naming both would make
-            // "this item's synopsis editor" resolve to whichever was built first,
-            // and a lane would then convert its offsets against the wrong text.
-            Option::None,
-            // A tab's editor is on screen and lays out on its first frame.
-            false,
-            tab.capture_palette(),
-            tr!(epigraph()),
-            Some(tab.open_doc.content_language()),
-        ));
+        .child({
+            let editor = synopsis_column(
+                &field.doc,
+                &tab.column_width,
+                // Scene typography, not the synopsis's: an epigraph is finished-book matter
+                // that ships in the manuscript, not editorial commentary about it.
+                tab.main_typography(),
+                tab.mark_dirty_fn(),
+                Option::None,
+                tab.open_doc.spell_epigraph(),
+                tab.open_doc.replacement_epigraph(),
+                // The sink is live now, for the attribution control. No comment binding
+                // still: a comment anchors to the author's own prose, and an epigraph is
+                // quoted matter — see `OpenDoc::build`.
+                Some(handle.clone()),
+                Some(tab.format.clone()),
+                Some(tab.typewriter.clone()),
+                Some(tab.caret_band()),
+                Some(tab.writing_games()),
+                Option::None,
+                tab.open_doc.images(),
+                // A trashed item's text is read-only. The banner above it is a
+                // statement, not a guard: before this the content beneath it was built
+                // by the same editable render path as any other tab.
+                tab.open_doc.trashed.get(),
+                // An epigraph is a field on a page, never the page. Whatever else this
+                // tab shows owns its remembered position.
+                Option::None,
+                // **Not** this item, deliberately. The registry keys an editor by
+                // `(item, kind)`, and an epigraph is a second `Synopsis`-kind editor on
+                // the same item as the synopsis below it — naming both would make
+                // "this item's synopsis editor" resolve to whichever was built first,
+                // and a lane would then convert its offsets against the wrong text.
+                Option::None,
+                // A tab's editor is on screen and lays out on its first frame.
+                false,
+                tab.capture_palette(),
+                tr!(epigraph()),
+                Some(tab.open_doc.content_language()),
+            );
+            let handle = handle.borrow().clone();
+            crate::search::editor_result::Destination::prose(
+                editor,
+                tab.pending_search_hit.clone(),
+                frontend::common::entities::MatchField::Epigraph,
+                &field.doc,
+                handle,
+            )
+        });
     Some(crate::widgets::tip::RichTip::new(
         crate::tooltip_registry::CONCEPT_EPIGRAPH,
         Accordion::new(tr!(epigraph()), tab.epigraph_expanded.clone()).content(body),
@@ -475,8 +500,9 @@ pub fn folder_own_pane(tab: &ContentTab) -> Box<dyn Widget> {
     let mut col = VStack::new().spacing(8.0).child(vspace(12.0));
     if let Some(t) = tab.title() {
         col = col.child(centered(
-            title_input(
+            crate::tabs::shared::editor::searchable_title_input(
                 t,
+                tab.pending_search_hit.clone(),
                 tr!(title_field_title()),
                 tr!(placeholder_title()),
                 tab.mark_dirty_fn(),
@@ -528,73 +554,85 @@ pub fn folder_own_pane(tab: &ContentTab) -> Box<dyn Widget> {
                     .style(TextStyleRole::SmallBold)
                     .color(TextRole::Secondary),
             )
-            .child(synopsis_column(
-                &s.doc,
-                &tab.column_width,
-                &tab.typography.synopsis,
-                tab.mark_dirty_fn(),
-                Option::None,
-                tab.open_doc.spell_synopsis(),
-                tab.open_doc.replacement_synopsis(),
-                Some(tab.synopsis_handle_sink()),
-                Some(tab.format.clone()),
-                Some(tab.typewriter.clone()),
-                Some(tab.caret_band()),
-                Some(tab.writing_games()),
-                tab.open_doc.comment_binding_synopsis(),
-                tab.open_doc.images(),
-                // A trashed item's text is read-only. The banner above it is a
-                // statement, not a guard: before this the content beneath it was built
-                // by the same editable render path as any other tab.
-                tab.open_doc.trashed.get(),
-                // A **chapter** folder carries its own prose below, and that is this
-                // tab's main widget; a Part or a Book has none, so here the synopsis is
-                // the page and the position worth remembering is its.
-                tab.main().is_none().then(|| page.clone()),
-                Some(crate::margin_lane::LaneAnchor::new(tab.item_id(), scope)),
-                // A tab's editor is on screen and lays out on its first frame.
-                false,
-                tab.capture_palette(),
-                tr!(synopsis()),
-                Some(tab.open_doc.content_language()),
-            ));
+            .child({
+                let editor = synopsis_column(
+                    &s.doc,
+                    &tab.column_width,
+                    &tab.typography.synopsis,
+                    tab.mark_dirty_fn(),
+                    Option::None,
+                    tab.open_doc.spell_synopsis(),
+                    tab.open_doc.replacement_synopsis(),
+                    Some(tab.synopsis_handle_sink()),
+                    Some(tab.format.clone()),
+                    Some(tab.typewriter.clone()),
+                    Some(tab.caret_band()),
+                    Some(tab.writing_games()),
+                    tab.open_doc.comment_binding_synopsis(),
+                    tab.open_doc.images(),
+                    // A trashed item's text is read-only. The banner above it is a
+                    // statement, not a guard: before this the content beneath it was built
+                    // by the same editable render path as any other tab.
+                    tab.open_doc.trashed.get(),
+                    // A **chapter** folder carries its own prose below, and that is this
+                    // tab's main widget; a Part or a Book has none, so here the synopsis is
+                    // the page and the position worth remembering is its.
+                    tab.main().is_none().then(|| page.clone()),
+                    Some(crate::margin_lane::LaneAnchor::new(tab.item_id(), scope)),
+                    // A tab's editor is on screen and lays out on its first frame.
+                    false,
+                    tab.capture_palette(),
+                    tr!(synopsis()),
+                    Some(tab.open_doc.content_language()),
+                );
+                searchable_synopsis(tab, s, editor)
+            });
     }
     // A chapter folder's own prose. Absent for a Part or a Book — the matrix gives
     // them no `SceneText`.
     if let Some(m) = tab.main() {
-        col = col.child(vspace(10.0)).child(writing_section(
-            &m.doc,
-            tab.main_column_width(),
-            tab.main_typography(),
-            tab.mark_dirty_fn(),
-            // The banner is mounted over the whole page below, not inside this
-            // section — so it spans the prose it searches and stays pinned above it.
-            // The editor still attaches its handle to it, which is what Escape
-            // returns focus through.
-            tab.find().cloned(),
-            tab.open_doc.spell_main(),
-            tab.open_doc.replacement_main(),
-            Some(tab.format.clone()),
-            Some(tab.typewriter.clone()),
-            Some(tab.caret_band()),
-            Some(tab.writing_games()),
-            Some(page.clone()),
-            tab.open_doc.comment_binding_main(),
-            tab.open_doc.footnote_binding_main(),
-            tab.open_doc.images(),
-            tab.arrival_project(),
-            // A trashed item's text is read-only. The banner above it is a
-            // statement, not a guard: before this the content beneath it was built
-            // by the same editable render path as any other tab.
-            tab.open_doc.trashed.get(),
-            // This tab's own item, so the margin lane can reach this editor by
-            // name rather than through focus.
-            Some(crate::margin_lane::LaneAnchor::new(tab.item_id(), scope)),
-            // A tab's editor is on screen and lays out on its first frame.
-            false,
-            Some(tab.tags()),
-            Some(tab.open_doc.content_language()),
-        ));
+        col = col.child(vspace(10.0)).child({
+            let editor = writing_section(
+                &m.doc,
+                tab.main_column_width(),
+                tab.main_typography(),
+                tab.mark_dirty_fn(),
+                // The banner is mounted over the whole page below, not inside this
+                // section — so it spans the prose it searches and stays pinned above it.
+                // The editor still attaches its handle to it, which is what Escape
+                // returns focus through.
+                tab.find().cloned(),
+                tab.open_doc.spell_main(),
+                tab.open_doc.replacement_main(),
+                Some(tab.format.clone()),
+                Some(tab.typewriter.clone()),
+                Some(tab.caret_band()),
+                Some(tab.writing_games()),
+                Some(page.clone()),
+                tab.open_doc.comment_binding_main(),
+                tab.open_doc.footnote_binding_main(),
+                tab.open_doc.images(),
+                tab.arrival_project(),
+                // A trashed item's text is read-only. The banner above it is a
+                // statement, not a guard: before this the content beneath it was built
+                // by the same editable render path as any other tab.
+                tab.open_doc.trashed.get(),
+                // This tab's own item, so the margin lane can reach this editor by
+                // name rather than through focus.
+                Some(crate::margin_lane::LaneAnchor::new(tab.item_id(), scope)),
+                // A tab's editor is on screen and lays out on its first frame.
+                false,
+                Some(tab.tags()),
+                Some(tab.open_doc.content_language()),
+            );
+            crate::search::editor_result::Destination::prose(
+                editor,
+                tab.pending_search_hit.clone(),
+                frontend::common::entities::MatchField::Body,
+                &m.doc,
+                page.page_editor.borrow().clone(),
+            )
+        });
     }
     // Flowing page: the editors are intrinsic-height, so this `ScrollArea` scrolls the
     // whole thing rather than each editor scrolling inside its own box.
@@ -657,7 +695,7 @@ fn prose_body(tab: &ContentTab) -> impl Widget {
 
     // The Top layout — today's flowing page, unchanged: title, tags, the compact
     // synopsis box and the prose all scroll together.
-    let top = manuscript_page(tab, Some(tab.show_synopsis.clone()), top_scope);
+    let top = manuscript_page(tab, Some(tab.visible_synopsis.clone()), top_scope);
 
     // The Side layout, built lazily by the `WidthProbe`'s `Switcher` and only if the
     // writer ever actually gets it — a Top-placement project never pays for it.
@@ -680,7 +718,7 @@ fn prose_body(tab: &ContentTab) -> impl Widget {
             .spacing(0.0)
             .child(SynopsisPaneEffects::new(
                 tab.open_doc.clone(),
-                tab.show_synopsis.clone(),
+                tab.visible_synopsis.clone(),
                 Some(sync),
             ))
             .child(Expand::new().child(splitter))
@@ -723,8 +761,9 @@ pub fn heading(tab: &ContentTab) -> Box<dyn Widget> {
 
     if let Some(t) = tab.title() {
         col = col.child(centered(
-            title_input(
+            crate::tabs::shared::editor::searchable_title_input(
                 t,
+                tab.pending_search_hit.clone(),
                 tr!(title_field_title()),
                 tr!(placeholder_title()),
                 tab.mark_dirty_fn(),
@@ -772,35 +811,38 @@ pub fn heading(tab: &ContentTab) -> Box<dyn Widget> {
                     .style(TextStyleRole::SmallBold)
                     .color(TextRole::Secondary),
             )
-            .child(synopsis_column(
-                &s.doc,
-                &tab.column_width,
-                &tab.typography.synopsis,
-                tab.mark_dirty_fn(),
-                Option::None,
-                tab.open_doc.spell_synopsis(),
-                tab.open_doc.replacement_synopsis(),
-                Some(tab.synopsis_handle_sink()),
-                Some(tab.format.clone()),
-                Some(tab.typewriter.clone()),
-                Some(tab.caret_band()),
-                Some(tab.writing_games()),
-                tab.open_doc.comment_binding_synopsis(),
-                tab.open_doc.images(),
-                // A trashed item's text is read-only. The banner above it is a
-                // statement, not a guard: before this the content beneath it was built
-                // by the same editable render path as any other tab.
-                tab.open_doc.trashed.get(),
-                // On a heading tab the synopsis is the page, so it is this tab's main
-                // widget and what its remembered caret belongs to.
-                Some(page.clone()),
-                Some(crate::margin_lane::LaneAnchor::new(tab.item_id(), scope)),
-                // A tab's editor is on screen and lays out on its first frame.
-                false,
-                tab.capture_palette(),
-                tr!(synopsis()),
-                Some(tab.open_doc.content_language()),
-            ));
+            .child({
+                let editor = synopsis_column(
+                    &s.doc,
+                    &tab.column_width,
+                    &tab.typography.synopsis,
+                    tab.mark_dirty_fn(),
+                    Option::None,
+                    tab.open_doc.spell_synopsis(),
+                    tab.open_doc.replacement_synopsis(),
+                    Some(tab.synopsis_handle_sink()),
+                    Some(tab.format.clone()),
+                    Some(tab.typewriter.clone()),
+                    Some(tab.caret_band()),
+                    Some(tab.writing_games()),
+                    tab.open_doc.comment_binding_synopsis(),
+                    tab.open_doc.images(),
+                    // A trashed item's text is read-only. The banner above it is a
+                    // statement, not a guard: before this the content beneath it was built
+                    // by the same editable render path as any other tab.
+                    tab.open_doc.trashed.get(),
+                    // On a heading tab the synopsis is the page, so it is this tab's main
+                    // widget and what its remembered caret belongs to.
+                    Some(page.clone()),
+                    Some(crate::margin_lane::LaneAnchor::new(tab.item_id(), scope)),
+                    // A tab's editor is on screen and lays out on its first frame.
+                    false,
+                    tab.capture_palette(),
+                    tr!(synopsis()),
+                    Some(tab.open_doc.content_language()),
+                );
+                searchable_synopsis(tab, s, editor)
+            });
     }
     tab_backdrop(
         tab.backdrop_role(),
@@ -861,34 +903,37 @@ fn folder_synopsis_body(tab: &ContentTab, will_show: bool) -> impl Widget {
                     .style(TextStyleRole::SmallBold)
                     .color(TextRole::Secondary),
             )
-            .child(synopsis_column(
-                &s.doc,
-                &tab.column_width,
-                &tab.typography.synopsis,
-                tab.mark_dirty_fn(),
-                Option::None,
-                tab.open_doc.spell_synopsis(),
-                tab.open_doc.replacement_synopsis(),
-                Some(tab.synopsis_handle_sink()),
-                Some(tab.format.clone()),
-                Some(tab.typewriter.clone()),
-                Some(tab.caret_band()),
-                Some(tab.writing_games()),
-                tab.open_doc.comment_binding_synopsis(),
-                tab.open_doc.images(),
-                // A trashed item's text is read-only. The banner above it is a
-                // statement, not a guard: before this the content beneath it was built
-                // by the same editable render path as any other tab.
-                tab.open_doc.trashed.get(),
-                // The synopsis *is* this page, so it is the tab's main widget.
-                Some(page.clone()),
-                Some(crate::margin_lane::LaneAnchor::new(tab.item_id(), scope)),
-                // A tab's editor is on screen and lays out on its first frame.
-                false,
-                tab.capture_palette(),
-                tr!(synopsis()),
-                Some(tab.open_doc.content_language()),
-            ));
+            .child({
+                let editor = synopsis_column(
+                    &s.doc,
+                    &tab.column_width,
+                    &tab.typography.synopsis,
+                    tab.mark_dirty_fn(),
+                    Option::None,
+                    tab.open_doc.spell_synopsis(),
+                    tab.open_doc.replacement_synopsis(),
+                    Some(tab.synopsis_handle_sink()),
+                    Some(tab.format.clone()),
+                    Some(tab.typewriter.clone()),
+                    Some(tab.caret_band()),
+                    Some(tab.writing_games()),
+                    tab.open_doc.comment_binding_synopsis(),
+                    tab.open_doc.images(),
+                    // A trashed item's text is read-only. The banner above it is a
+                    // statement, not a guard: before this the content beneath it was built
+                    // by the same editable render path as any other tab.
+                    tab.open_doc.trashed.get(),
+                    // The synopsis *is* this page, so it is the tab's main widget.
+                    Some(page.clone()),
+                    Some(crate::margin_lane::LaneAnchor::new(tab.item_id(), scope)),
+                    // A tab's editor is on screen and lays out on its first frame.
+                    false,
+                    tab.capture_palette(),
+                    tr!(synopsis()),
+                    Some(tab.open_doc.content_language()),
+                );
+                searchable_synopsis(tab, s, editor)
+            });
     }
     laned(
         tab,

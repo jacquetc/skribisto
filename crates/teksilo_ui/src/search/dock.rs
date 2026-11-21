@@ -388,11 +388,7 @@ fn results_list(vm: SearchReplaceViewModel) -> impl Widget {
                     // which fetches the branch before it opens -- so the chevron,
                     // the keyboard and an accessibility action all take one path.
                     .on_chevron_toggle_rc(row.toggle_callback());
-                let menu_vm = row_vm.clone();
-                let target = RowTarget::Item(node.binder_item_id);
-                Box::new(item.context_menu(move |_pos, _ctx| {
-                    Some(Box::new(row_context_menu(&menu_vm, target)) as Box<dyn Widget>)
-                })) as Box<dyn Widget>
+                result_interactions(item, &row_vm, node, RowTarget::Item(node.binder_item_id))
             } else {
                 // An occurrence: where it landed, and the text around it.
                 let result_id = node.result_id;
@@ -449,40 +445,36 @@ fn results_list(vm: SearchReplaceViewModel) -> impl Widget {
                             .color(TextRole::Secondary)
                             .overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing)),
                     );
-                Box::new(
-                    StandardTreeItem::new(lit!(snippet))
-                        .depth(row.depth)
-                        .has_children(false)
-                        .label_slot(excerpt)
-                        // The icon is the glance; the label beside it is the name. An
-                        // `IconWidget` carries no accessible name and a row is named
-                        // from its label alone, so an icon-only source would be
-                        // invisible to a screen reader -- which is what the flat list
-                        // this replaces did not do.
-                        .interaction_signal(hover.clone())
-                        .leading_slot(
-                            field_icon(&node.match_field)
-                                .icon_size(14.0)
-                                .color(TextRole::Secondary),
-                        )
-                        .trailing_slot(row_actions(
-                            &row_vm,
-                            &hover,
-                            TextWidget::new(field_label(&node.match_field))
-                                .style(TextStyleRole::Tiny)
-                                .color(TextRole::Secondary),
-                            RowTarget::Occurrence(result_id, node.char_start),
-                        ))
-                        .selected(is_selected)
-                        .context_menu({
-                            let menu_vm = row_vm.clone();
-                            let target = RowTarget::Occurrence(result_id, node.char_start);
-                            move |_pos, _ctx| {
-                                Some(Box::new(row_context_menu(&menu_vm, target))
-                                    as Box<dyn Widget>)
-                            }
-                        }),
-                ) as Box<dyn Widget>
+                let item = StandardTreeItem::new(lit!(snippet))
+                    .depth(row.depth)
+                    .has_children(false)
+                    .label_slot(excerpt)
+                    // The icon is the glance; the label beside it is the name. An
+                    // `IconWidget` carries no accessible name and a row is named
+                    // from its label alone, so an icon-only source would be
+                    // invisible to a screen reader -- which is what the flat list
+                    // this replaces did not do.
+                    .interaction_signal(hover.clone())
+                    .leading_slot(
+                        field_icon(&node.match_field)
+                            .icon_size(14.0)
+                            .color(TextRole::Secondary),
+                    )
+                    .trailing_slot(row_actions(
+                        &row_vm,
+                        &hover,
+                        TextWidget::new(field_label(&node.match_field))
+                            .style(TextStyleRole::Tiny)
+                            .color(TextRole::Secondary),
+                        RowTarget::Occurrence(result_id, node.char_start),
+                    ))
+                    .selected(is_selected);
+                result_interactions(
+                    item,
+                    &row_vm,
+                    node,
+                    RowTarget::Occurrence(result_id, node.char_start),
+                )
             }
         },
     )
@@ -663,9 +655,50 @@ fn row_actions(
         ))
 }
 
-/// The same two actions, by the route a keyboard and a screen reader can take.
-fn row_context_menu(vm: &SearchReplaceViewModel, target: RowTarget) -> MenuList {
+fn result_interactions(
+    item: StandardTreeItem,
+    vm: &SearchReplaceViewModel,
+    node: &SearchNode,
+    target: RowTarget,
+) -> Box<dyn Widget> {
+    let node = std::rc::Rc::new(node.clone());
+    let menu_node = node.clone();
+    let menu_vm = vm.clone();
+    let vm = vm.clone();
+    Box::new(
+        item.context_menu(move |_pos, _ctx| {
+            Some(Box::new(row_context_menu(&menu_vm, target, &menu_node)) as Box<dyn Widget>)
+        })
+        .on_pointer_event(move |ev, ctx| {
+            if matches!(
+                ev,
+                WidgetEvent::PointerDown {
+                    button: PointerButton::Middle,
+                    ..
+                }
+            ) && let Some(intent) = vm.editor_target(&node)
+            {
+                ctx.send_intent(intent);
+                return EventResponse::Handled;
+            }
+            EventResponse::Ignored
+        }),
+    )
+}
+
+fn row_context_menu(vm: &SearchReplaceViewModel, target: RowTarget, node: &SearchNode) -> MenuList {
     let mut menu = MenuList::new();
+    if vm.editor_target(node).is_some() {
+        let vm = vm.clone();
+        let node = node.clone();
+        menu = menu.item(
+            MenuItem::new(tr!(search_open_in_editor())).on_activate_fn(move |ctx| {
+                if let Some(intent) = vm.editor_target(&node) {
+                    ctx.send_intent(intent);
+                }
+            }),
+        );
+    }
     if vm.show_replace_signal().get() {
         let vm = vm.clone();
         menu = menu.item(
@@ -787,5 +820,81 @@ impl Widget for SearchDockRoot {
 
     fn children(&self) -> Vec<WidgetId> {
         self.child_id.into_iter().collect()
+    }
+}
+
+#[cfg(all(test, feature = "mocks"))]
+mod tests {
+    use super::*;
+    use crate::intents::AppIntent;
+    use crate::search::search_replace_vm::tests::vm;
+    use crate::test_support::{PaneHost, click};
+    use std::{cell::RefCell, rc::Rc};
+    use teksilo::core::widget_tree::WidgetTree;
+
+    #[test]
+    fn menu_and_middle_click_open_the_clicked_occurrence() {
+        let vm = vm();
+        let node = SearchNode {
+            binder_item_id: 105,
+            result_id: 2,
+            match_field: MatchField::Epigraph,
+            char_start: 17,
+            snippet_match: "sun".into(),
+            ..Default::default()
+        };
+        let mut incompatible = node.clone();
+        incompatible.match_field = MatchField::Comment;
+        assert!(vm.editor_target(&incompatible).is_none());
+        let mut header = node.clone();
+        header.is_item = true;
+        assert!(matches!(
+            vm.editor_target(&header),
+            Some(AppIntent::OpenSearchResult { hit: None, .. })
+        ));
+
+        header.binder_item_id = 107; // The mock binder's contentless text marker.
+        assert!(vm.editor_target(&header).is_none());
+
+        let calls = Rc::new(RefCell::new(Vec::new()));
+        let captured = calls.clone();
+        let mut tree = WidgetTree::new();
+        tree.add(PaneHost::new(move |ctx| {
+            let captured = captured.clone();
+            ctx.register_action_global(Action::new("editor.open_search_result").on_invoke(
+                move |i, _| {
+                    if let Some(AppIntent::OpenSearchResult {
+                        item_id,
+                        hit: Some(hit),
+                        ..
+                    }) = AppIntent::from_intent(i)
+                    {
+                        captured
+                            .borrow_mut()
+                            .push((*item_id, hit.start, hit.field.clone()));
+                    }
+                },
+            ));
+            result_interactions(
+                StandardTreeItem::new(lit!("sun"))
+                    .label_overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing)),
+                &vm,
+                &node,
+                RowTarget::Occurrence(2, 17),
+            )
+        }));
+        let size = SizeProposal::exact(300.0, 45.0);
+        tree.layout(size);
+        let point = Point::new(20.0, 12.0);
+        tree.pointer_down_button(point, PointerButton::Middle);
+        tree.pointer_up_button(point, PointerButton::Middle);
+        tree.pointer_down_button(point, PointerButton::Secondary);
+        tree.pointer_up_button(point, PointerButton::Secondary);
+        tree.layout(size);
+        let action = tree
+            .find_by_label(&tr!(search_open_in_editor()).resolve_now())
+            .unwrap();
+        click(&mut tree, action);
+        assert_eq!(*calls.borrow(), vec![(105, 17, MatchField::Epigraph); 2]);
     }
 }

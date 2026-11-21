@@ -139,6 +139,7 @@ pub struct ProseField {
 /// presentation state. Field access to the shared documents goes through the
 /// accessor methods, which forward to `open_doc`.
 pub struct ContentTab {
+    pub(crate) pending_search_hit: crate::search::editor_result::PendingHit,
     /// The shared, refcounted open-document state for this item — the live
     /// `TextDocument`s + write-back. Two tabs (e.g. one per split pane) showing
     /// the same item hold the **same** `Rc<OpenDoc>`.
@@ -265,6 +266,8 @@ pub struct ContentTab {
     /// local flag instead, so showing the synopsis while writing full-screen does
     /// not rewrite a preference that governs every other window.
     pub show_synopsis: Signal<bool>,
+    pub(crate) visible_synopsis: Signal<bool>,
+    _synopsis_preference: teksilo::core::ObserverHandle,
     /// Whether the epigraph disclosure is open. Per-tab view state, seeded on build from
     /// whether there is an epigraph to show: an authored one is open so it is not hidden
     /// from its own author, an empty one is folded away so a book that has no epigraph
@@ -971,6 +974,11 @@ impl ContentTab {
             .as_ref()
             .and_then(|f| f.doc.to_plain_text().ok())
             .is_some_and(|t| !t.trim().is_empty());
+        // Opening a synopsis search hit can reveal this tab alone. A later
+        // settings change still reaches every open tab.
+        let tab_synopsis = Signal::new(show_synopsis.get());
+        let visible = tab_synopsis.clone();
+        let synopsis_preference = show_synopsis.observe(move |shown| visible.set(*shown));
         Self {
             open_doc,
             stream,
@@ -987,6 +995,7 @@ impl ContentTab {
             find,
             page_find,
             in_prose_docs,
+            pending_search_hit: Signal::new(None),
             synopsis_handle: Rc::new(RefCell::new(None)),
             view_state: Signal::new(crate::shared::ViewState::default()),
             view_state_ports: Rc::new(crate::shared::ViewStatePorts::default()),
@@ -996,6 +1005,8 @@ impl ContentTab {
             column_width,
             epigraph_expanded: Signal::new(open_doc_epigraph_seed),
             show_synopsis,
+            visible_synopsis: tab_synopsis,
+            _synopsis_preference: synopsis_preference,
             synopsis_placement,
             synopsis_side_width,
             side_splitter,
@@ -1439,7 +1450,7 @@ impl ContentTab {
     pub fn side_pane_extent(&self) -> Signal<f32> {
         let model = self.side_splitter.clone();
         self.synopsis_placement
-            .zip3(&self.show_synopsis, &model.version())
+            .zip3(&self.visible_synopsis, &model.version())
             .zip(&self.synopsis_side_width)
             .map(move |((placement, show, _version), width)| {
                 // `version` is in the zip purely so this recomputes when the

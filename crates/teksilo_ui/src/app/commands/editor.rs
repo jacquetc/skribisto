@@ -74,6 +74,21 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
         ));
     }
 
+    {
+        let editors = deps.editors.clone();
+        ctx.register_action_global(Action::new("editor.open_search_result").on_invoke(
+            move |i, ctx| {
+                if let Some(AppIntent::OpenSearchResult {
+                    item_id,
+                    title,
+                    hit,
+                }) = AppIntent::from_intent(i)
+                {
+                    editors.open_search_result(*item_id, title, hit.clone(), ctx);
+                }
+            },
+        ));
+    }
     // Add the resolved selection/caret word(s) to the personal dictionary, fired from the
     // editor's "Add to dictionary" context-menu item. The menu mounts at the arena root, so
     // only a **global** action reaches it. The resulting `DictWord(Created)` event drives the

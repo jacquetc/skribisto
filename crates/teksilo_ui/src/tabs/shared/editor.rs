@@ -39,6 +39,7 @@ pub use scroll_sync::{PROSE_MIN_WIDTH, side_synopsis_editor};
 pub(crate) use scroll_sync::{
     PageScrollPort, SYNOPSIS_PANE, SideSync, SynopsisPaneEffects, WidthProbe,
 };
+pub(crate) use synopsis::searchable_title_input;
 pub use synopsis::{
     SYNOPSIS_MIN_LINES, SynopsisFit, card_synopsis_editor, synopsis_column, synopsis_editor,
     synopsis_section, title_input,

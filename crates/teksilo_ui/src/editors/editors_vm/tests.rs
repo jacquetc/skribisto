@@ -2190,3 +2190,66 @@ fn a_tab_whose_text_cannot_be_saved_is_never_closed_for_the_limit() {
         "the pane may go over its limit, but unsaved text stays open"
     );
 }
+
+#[cfg(feature = "mocks")]
+#[test]
+fn global_search_opens_hidden_fields_in_the_active_pane_only() {
+    use crate::search::editor_result::EditorHit;
+    use frontend::common::entities::MatchField;
+    use teksilo::core::{NoopWindowOps, widget_tree::WidgetTree};
+
+    let editors = editors();
+    editors.show_synopsis().set(false);
+    editors.set_split(true);
+    editors.set_focused(Side::Secondary);
+    let mut tree = WidgetTree::new();
+    let open = |tree: &mut WidgetTree, field, word: &str| {
+        tree.run_with_event_context(&mut NoopWindowOps, |ctx| {
+            editors.open_search_result(
+                105,
+                "Chapter",
+                Some(EditorHit {
+                    field,
+                    start: 2,
+                    matched: word.into(),
+                }),
+                ctx,
+            );
+        });
+    };
+    open(&mut tree, MatchField::Synopsis, "summary");
+    let pane = editors
+        .with_tab(Side::Secondary, 105, |tab| {
+            assert!(tab.visible_synopsis.get());
+            tab.synopsis()
+                .unwrap()
+                .doc
+                .set_plain_text("A summary")
+                .unwrap();
+            tab.epigraph()
+                .unwrap()
+                .doc
+                .set_plain_text("A quotation")
+                .unwrap();
+            tab.epigraph_expanded.set(false);
+            tabs::tab_pane(tab)
+        })
+        .unwrap();
+    tree.add_boxed(pane);
+    let selected = |tree: &mut WidgetTree| {
+        for _ in 0..4 {
+            tree.layout(SizeProposal::exact(900.0, 500.0));
+            tree.render();
+            tree.run_mount_actions(&mut NoopWindowOps);
+        }
+        let handle = editors.format.handle_for_commands().expect("focused field");
+        assert!(handle.focused_signal().get());
+        handle.selected_text()
+    };
+    assert_eq!(selected(&mut tree), "summary");
+    open(&mut tree, MatchField::Epigraph, "quotation");
+    assert_eq!(selected(&mut tree), "quotation");
+    assert!(editors.tabs(Side::Primary).is_empty());
+    assert_eq!(editors.tabs(Side::Secondary).len(), 1);
+    assert!(!editors.show_synopsis().get());
+}
