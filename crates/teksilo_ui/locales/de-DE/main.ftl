@@ -487,7 +487,9 @@ corkboard-child-count = { $count ->
 }
 corkboard-view-nested = Verschachtelt
 corkboard-view-flat = Flach
-corkboard-layout-hint = „Verschachtelt“ zeigt die direkten Untereinträge. Öffnen Sie eine Ordnerkarte, um hineinzugehen. „Flach“ zeigt alle enthaltenen Szenen auf einmal.
+corkboard-view-nested-hint = Nur die Karten eine Ebene tiefer; doppelklicken Sie auf einen Teil oder ein Kapitel, um seine eigenen Karten zu sehen. Gilt für alle geöffneten Pinnwände in allen Projekten.
+corkboard-view-flat-hint = Alle Karten aller Ebenen darunter, in Lesereihenfolge, auf einer einzigen Pinnwand. Gilt für alle geöffneten Pinnwände in allen Projekten.
+corkboard-layout-hint = „Verschachtelt“ zeigt die direkten Untereinträge. Öffnen Sie eine Ordnerkarte, um hineinzugehen. „Flach“ zeigt den gesamten Inhalt auf einmal, auf allen Ebenen und in Lesereihenfolge, Ordnerkarten eingeschlossen.
 corkboard-card-size = Kartengröße
 corkboard-search-placeholder = Karten filtern…
 corkboard-search-label = Karten filtern

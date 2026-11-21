@@ -589,7 +589,9 @@ corkboard-child-count = { $count ->
 }
 corkboard-view-nested = Imbriqué
 corkboard-view-flat = À plat
-corkboard-layout-hint = « Imbriqué » affiche les enfants directs d’un conteneur : ouvrez une carte dossier pour y entrer. « À plat » affiche toutes les scènes du conteneur d’un coup.
+corkboard-view-nested-hint = Seulement les cartes du niveau en dessous ; double-cliquez sur une partie ou un chapitre pour voir ses propres cartes. S’applique à tous les tableaux ouverts, dans tous les projets.
+corkboard-view-flat-hint = Toutes les cartes de tous les niveaux en dessous, dans l’ordre de lecture, sur un seul tableau. S’applique à tous les tableaux ouverts, dans tous les projets.
+corkboard-layout-hint = « Imbriqué » affiche les enfants directs d’un conteneur : ouvrez une carte dossier pour y entrer. « À plat » affiche d’un coup tout le contenu du conteneur, à tous les niveaux et dans l’ordre de lecture, cartes dossier comprises.
 corkboard-card-size = Taille des cartes
 corkboard-search-placeholder = Filtrer les cartes…
 corkboard-search-label = Filtrer les cartes

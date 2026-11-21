@@ -605,7 +605,9 @@ corkboard-child-count = { $count ->
    }
 corkboard-view-nested = Imbricat
 corkboard-view-flat = Plat
-corkboard-layout-hint = „Imbricat” arată copiii direcți ai unui container. Deschideți fișa unui dosar pentru a intra în el. „Plat” arată dintr-odată toate scenele din întregul container.
+corkboard-view-nested-hint = Doar fișele de pe nivelul imediat inferior; faceți dublu clic pe o parte sau pe un capitol pentru a-i vedea fișele. Se aplică tuturor avizierelor deschise, în toate proiectele.
+corkboard-view-flat-hint = Toate fișele de pe toate nivelurile inferioare, în ordinea lecturii, pe un singur avizier. Se aplică tuturor avizierelor deschise, în toate proiectele.
+corkboard-layout-hint = „Imbricat” arată copiii direcți ai unui container. Deschideți fișa unui dosar pentru a intra în el. „Plat” arată dintr-odată tot conținutul containerului, pe toate nivelurile și în ordinea lecturii, inclusiv fișele dosarelor.
 corkboard-card-size = Mărimea fișelor
 corkboard-search-placeholder = Filtrează fișele…
 corkboard-search-label = Filtrează fișele

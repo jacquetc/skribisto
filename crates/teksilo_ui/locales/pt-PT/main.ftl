@@ -510,7 +510,9 @@ corkboard-child-count = { $count ->
 }
 corkboard-view-nested = Aninhado
 corkboard-view-flat = Plano
-corkboard-layout-hint = Aninhado mostra os filhos diretos de um contentor. Abra um cartão de pasta para entrar nela. Plano mostra todas as cenas de todo o contentor ao mesmo tempo.
+corkboard-view-nested-hint = Apenas os cartões do nível abaixo; faça duplo clique numa parte ou num capítulo para ver os seus próprios cartões. Aplica-se a todos os quadros de cortiça abertos, em todos os projetos.
+corkboard-view-flat-hint = Todos os cartões de todos os níveis abaixo, pela ordem de leitura, num só quadro. Aplica-se a todos os quadros de cortiça abertos, em todos os projetos.
+corkboard-layout-hint = Aninhado mostra os filhos diretos de um contentor. Abra um cartão de pasta para entrar nela. Plano mostra todo o conteúdo do contentor ao mesmo tempo, em todos os níveis e pela ordem de leitura, incluindo os cartões de pasta.
 corkboard-card-size = Tamanho dos cartões
 corkboard-search-placeholder = Filtrar cartões…
 corkboard-search-label = Filtrar cartões

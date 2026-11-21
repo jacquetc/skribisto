@@ -510,7 +510,9 @@ corkboard-child-count = { $count ->
 }
 corkboard-view-nested = Anidado
 corkboard-view-flat = Plano
-corkboard-layout-hint = Anidado muestra los hijos directos de un contenedor. Abra una tarjeta de carpeta para entrar en ella. Plano muestra todas las escenas del contenedor a la vez.
+corkboard-view-nested-hint = Solo las tarjetas del nivel inferior; haga doble clic en una parte o un capítulo para ver sus propias tarjetas. Se aplica a todos los tablones de corcho abiertos, en todos los proyectos.
+corkboard-view-flat-hint = Todas las tarjetas de todos los niveles inferiores, en orden de lectura, en un solo tablón. Se aplica a todos los tablones de corcho abiertos, en todos los proyectos.
+corkboard-layout-hint = Anidado muestra los hijos directos de un contenedor. Abra una tarjeta de carpeta para entrar en ella. Plano muestra todo el contenido del contenedor a la vez, en todos los niveles y en orden de lectura, incluidas las tarjetas de carpeta.
 corkboard-card-size = Tamaño de la tarjeta
 corkboard-search-placeholder = Filtrar tarjetas…
 corkboard-search-label = Filtrar tarjetas

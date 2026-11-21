@@ -478,7 +478,9 @@ corkboard-child-count = { $count ->
 }
 corkboard-view-nested = Laŭ niveloj
 corkboard-view-flat = Ebena
-corkboard-layout-hint = Laŭnivela vido montras la rektajn enhavojn de grupo. Malfermu dosierujan karton por eniri. Ebena vido montras ĉiujn scenojn de la grupo samtempe.
+corkboard-view-nested-hint = Nur la kartoj unu nivelon pli sube; duoble alklaku parton aŭ ĉapitron por vidi ĝiajn proprajn kartojn. Validas por ĉiuj malfermitaj kartotabuloj en ĉiuj projektoj.
+corkboard-view-flat-hint = Ĉiuj kartoj de ĉiuj niveloj sube, laŭ la ordo de legado, sur unu sola kartotabulo. Validas por ĉiuj malfermitaj kartotabuloj en ĉiuj projektoj.
+corkboard-layout-hint = Laŭnivela vido montras la rektajn enhavojn de grupo. Malfermu dosierujan karton por eniri. Ebena vido montras ĉion en la grupo samtempe, je ĉiuj niveloj kaj laŭ la ordo de legado, inkluzive de dosierujaj kartoj.
 corkboard-card-size = Kartgrando
 corkboard-search-placeholder = Filtri kartojn…
 corkboard-search-label = Filtri kartojn

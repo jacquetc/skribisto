@@ -600,7 +600,9 @@ corkboard-child-count = { $count ->
 }
 corkboard-view-nested = Nested
 corkboard-view-flat = Flat
-corkboard-layout-hint = Nested shows a container's direct children. Open a folder card to go inside it. Flat shows every scene in the whole container at once.
+corkboard-view-nested-hint = Only the cards one level down; double-click a part or a chapter to see its own cards. Applies to every open corkboard, in every project.
+corkboard-view-flat-hint = Every card at every level below, in reading order, on one board. Applies to every open corkboard, in every project.
+corkboard-layout-hint = Nested shows a container's direct children. Open a folder card to go inside it. Flat shows everything in the container at once, at every level and in reading order, folder cards included.
 corkboard-card-size = Card size
 corkboard-search-placeholder = Filter cards…
 corkboard-search-label = Filter cards

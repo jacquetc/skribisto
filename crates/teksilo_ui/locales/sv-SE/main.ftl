@@ -485,7 +485,9 @@ corkboard-child-count = { $count ->
    }
 corkboard-view-nested = Kapslad
 corkboard-view-flat = Platt
-corkboard-layout-hint = Kapslad visar en behållares direkta underobjekt. Öppna ett mappkort för att gå in i det. Platt visar alla scener i hela behållaren på en gång.
+corkboard-view-nested-hint = Bara korten en nivå ner; dubbelklicka på en del eller ett kapitel för att se dess egna kort. Gäller alla öppna anslagstavlor, i alla projekt.
+corkboard-view-flat-hint = Alla kort på alla nivåer under, i läsordning, på en enda anslagstavla. Gäller alla öppna anslagstavlor, i alla projekt.
+corkboard-layout-hint = Kapslad visar en behållares direkta underobjekt. Öppna ett mappkort för att gå in i det. Platt visar allt i hela behållaren på en gång, på alla nivåer och i läsordning, inklusive mappkort.
 corkboard-card-size = Kortstorlek
 corkboard-search-placeholder = Filtrera kort…
 corkboard-search-label = Filtrera kort

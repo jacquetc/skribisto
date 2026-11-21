@@ -510,7 +510,9 @@ corkboard-child-count = { $count ->
     }
 corkboard-view-nested = Genest
 corkboard-view-flat = Plat
-corkboard-layout-hint = Genest toont de directe onderliggende items van een container. Open een mapkaart om erin te gaan. Plat toont alle scènes van de hele container tegelijk.
+corkboard-view-nested-hint = Alleen de kaarten één niveau lager; dubbelklik op een deel of een hoofdstuk om zijn eigen kaarten te zien. Geldt voor elk geopend prikbord, in elk project.
+corkboard-view-flat-hint = Alle kaarten op alle niveaus eronder, in leesvolgorde, op één prikbord. Geldt voor elk geopend prikbord, in elk project.
+corkboard-layout-hint = Genest toont de directe onderliggende items van een container. Open een mapkaart om erin te gaan. Plat toont alles in de hele container tegelijk, op alle niveaus en in leesvolgorde, mapkaarten inbegrepen.
 corkboard-card-size = Kaartgrootte
 corkboard-search-placeholder = Kaarten filteren…
 corkboard-search-label = Kaarten filteren

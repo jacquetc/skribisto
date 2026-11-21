@@ -530,7 +530,9 @@ corkboard-child-count = { $count ->
     }
 corkboard-view-nested = Zagnieżdżony
 corkboard-view-flat = Płaski
-corkboard-layout-hint = Widok zagnieżdżony pokazuje bezpośrednie elementy podrzędne kontenera. Otwórz kartę folderu, aby wejść do środka. Widok płaski pokazuje naraz wszystkie sceny całego kontenera.
+corkboard-view-nested-hint = Tylko karty o jeden poziom niżej; kliknij dwukrotnie część lub rozdział, aby zobaczyć karty, które zawiera. Dotyczy wszystkich otwartych tablic korkowych we wszystkich projektach.
+corkboard-view-flat-hint = Wszystkie karty ze wszystkich poziomów poniżej, w kolejności czytania, na jednej tablicy. Dotyczy wszystkich otwartych tablic korkowych we wszystkich projektach.
+corkboard-layout-hint = Widok zagnieżdżony pokazuje bezpośrednie elementy podrzędne kontenera. Otwórz kartę folderu, aby wejść do środka. Widok płaski pokazuje naraz całą zawartość kontenera, na wszystkich poziomach i w kolejności czytania, łącznie z kartami folderów.
 corkboard-card-size = Rozmiar kart
 corkboard-search-placeholder = Filtruj karty…
 corkboard-search-label = Filtruj karty

@@ -487,7 +487,9 @@ corkboard-child-count = { $count ->
 }
 corkboard-view-nested = Gerarchica
 corkboard-view-flat = Piatta
-corkboard-layout-hint = La vista gerarchica mostra i figli diretti del contenitore. Apri la scheda di una cartella per entrarvi. La vista piatta mostra insieme tutte le scene del contenitore.
+corkboard-view-nested-hint = Solo le schede del livello sottostante; fai doppio clic su una parte o un capitolo per vederne le schede. Vale per tutte le bacheche aperte, in ogni progetto.
+corkboard-view-flat-hint = Tutte le schede di tutti i livelli sottostanti, in ordine di lettura, su un'unica bacheca. Vale per tutte le bacheche aperte, in ogni progetto.
+corkboard-layout-hint = La vista gerarchica mostra i figli diretti del contenitore. Apri la scheda di una cartella per entrarvi. La vista piatta mostra insieme tutto il contenuto del contenitore, a tutti i livelli e in ordine di lettura, comprese le schede delle cartelle.
 corkboard-card-size = Dimensione delle schede
 corkboard-search-placeholder = Filtra schede…
 corkboard-search-label = Filtra schede

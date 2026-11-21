@@ -519,7 +519,9 @@ corkboard-child-count = { $count ->
 }
 corkboard-view-nested = Vnořené
 corkboard-view-flat = Ploché
-corkboard-layout-hint = Vnořené zobrazení ukazuje přímé potomky kontejneru. Kartu složky otevřete, abyste do ní vstoupili. Ploché zobrazení ukazuje najednou všechny scény celého kontejneru.
+corkboard-view-nested-hint = Jen karty o úroveň níž; dvojitým kliknutím na část nebo kapitolu zobrazíte její vlastní karty. Platí pro všechny otevřené nástěnky ve všech projektech.
+corkboard-view-flat-hint = Všechny karty ze všech úrovní níže, v pořadí čtení, na jedné nástěnce. Platí pro všechny otevřené nástěnky ve všech projektech.
+corkboard-layout-hint = Vnořené zobrazení ukazuje přímé potomky kontejneru. Kartu složky otevřete, abyste do ní vstoupili. Ploché zobrazení ukazuje najednou veškerý obsah kontejneru, na všech úrovních a v pořadí čtení, včetně karet složek.
 corkboard-card-size = Velikost karet
 corkboard-search-placeholder = Filtrovat karty…
 corkboard-search-label = Filtrovat karty

@@ -486,7 +486,9 @@ corkboard-child-count = { $count ->
 }
 corkboard-view-nested = Egymásba ágyazott
 corkboard-view-flat = Egyszintű
-corkboard-layout-hint = Az egymásba ágyazott nézet a tároló közvetlen gyermekelemeit mutatja; egy mappakártyát megnyitva beléphet. Az egyszintű nézet a teljes tároló összes jelenetét egyszerre mutatja.
+corkboard-view-nested-hint = Csak az egy szinttel lejjebb lévő kártyák; egy részre vagy fejezetre duplán kattintva láthatja annak saját kártyáit. Minden megnyitott parafatáblára érvényes, minden projektben.
+corkboard-view-flat-hint = Az alatta lévő összes szint minden kártyája, olvasási sorrendben, egyetlen táblán. Minden megnyitott parafatáblára érvényes, minden projektben.
+corkboard-layout-hint = Az egymásba ágyazott nézet a tároló közvetlen gyermekelemeit mutatja; egy mappakártyát megnyitva beléphet. Az egyszintű nézet a tároló teljes tartalmát egyszerre mutatja, minden szinten és olvasási sorrendben, a mappakártyákat is beleértve.
 corkboard-card-size = Kártyaméret
 corkboard-search-placeholder = Kártyák szűrése…
 corkboard-search-label = Kártyák szűrése

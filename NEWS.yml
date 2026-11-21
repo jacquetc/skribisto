@@ -8,6 +8,7 @@ Description:
 - "A notes folder has a new view, Gallery: the pictures of its notes as thumbnails in columns, each keeping its proportions. First image shows one per note with the number of its other pictures, All images shows every one. Nested shows each subfolder as a tile with its first four pictures, Flat shows the pictures of every subfolder at once, and Notes without images adds the text notes as tiles of their opening words. The Image size slider makes the thumbnails smaller or larger"
 - "The Gallery and the Overview share their search, their tag and status filters and their order. A double click on a thumbnail opens the image viewer over the pictures the Gallery shows, in its order; a right click offers Open the note"
 - "The Help window has a new page, Pictures and the gallery"
+- "On the corkboard, the tooltips of Nested and Flat say what each one shows, and Settings ▸ Corkboard says that Flat shows everything in the container, folder cards included, in reading order. They only said that the choice applies to every corkboard, and that Flat showed every scene"
 ---
 Version: 3.3.3
 Date: 2026-11-19

@@ -509,7 +509,9 @@ corkboard-child-count = { $count ->
 }
 corkboard-view-nested = İç içe
 corkboard-view-flat = Düz
-corkboard-layout-hint = İç içe görünüm bir kapsayıcının doğrudan alt öğelerini gösterir. İçine girmek için bir klasör kartını açın. Düz görünüm tüm kapsayıcıdaki bütün sahneleri bir arada gösterir.
+corkboard-view-nested-hint = Yalnızca bir alt düzeydeki kartlar; kendi kartlarını görmek için bir kısma veya bölüme çift tıklayın. Her projedeki tüm açık mantar panolara uygulanır.
+corkboard-view-flat-hint = Alttaki tüm düzeylerdeki bütün kartlar, okuma sırasıyla, tek bir panoda. Her projedeki tüm açık mantar panolara uygulanır.
+corkboard-layout-hint = İç içe görünüm bir kapsayıcının doğrudan alt öğelerini gösterir. İçine girmek için bir klasör kartını açın. Düz görünüm kapsayıcının tüm içeriğini, tüm düzeylerde ve okuma sırasıyla, klasör kartları dahil bir arada gösterir.
 corkboard-card-size = Kart boyutu
 corkboard-search-placeholder = Kartları süz…
 corkboard-search-label = Kartları süz

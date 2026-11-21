@@ -510,7 +510,9 @@ corkboard-child-count = { $count ->
    }
 corkboard-view-nested = Sisäkkäinen
 corkboard-view-flat = Litteä
-corkboard-layout-hint = Sisäkkäinen näyttää säiliön välittömät alikohteet. Avaa kansiokortti siirtyäksesi sen sisään. Litteä näyttää kaikki koko säiliön kohtaukset kerralla.
+corkboard-view-nested-hint = Vain yhtä tasoa alempana olevat kortit; kaksoisnapsauta osaa tai lukua, niin näet sen omat kortit. Koskee jokaista avointa korkkitaulua joka projektissa.
+corkboard-view-flat-hint = Kaikki kortit kaikilta alemmilta tasoilta lukemisjärjestyksessä yhdellä korkkitaululla. Koskee jokaista avointa korkkitaulua joka projektissa.
+corkboard-layout-hint = Sisäkkäinen näyttää säiliön välittömät alikohteet. Avaa kansiokortti siirtyäksesi sen sisään. Litteä näyttää kerralla koko säiliön sisällön kaikilta tasoilta lukemisjärjestyksessä, kansiokortit mukaan lukien.
 corkboard-card-size = Kortin koko
 corkboard-search-placeholder = Suodata kortteja…
 corkboard-search-label = Suodata kortteja

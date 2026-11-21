@@ -595,7 +595,9 @@ corkboard-child-count = { $count ->
 }
 corkboard-view-nested = Indlejret
 corkboard-view-flat = Flad
-corkboard-layout-hint = Indlejret viser en beholders direkte underelementer. Åbn et mappekort for at gå ind i det. Flad viser alle scener i hele beholderen på én gang.
+corkboard-view-nested-hint = Kun kortene ét niveau nede; dobbeltklik på en del eller et kapitel for at se kortene indeni. Gælder for alle åbne opslagstavler i alle projekter.
+corkboard-view-flat-hint = Alle kort på alle niveauer nedenunder, i læserækkefølge, på én opslagstavle. Gælder for alle åbne opslagstavler i alle projekter.
+corkboard-layout-hint = Indlejret viser en beholders direkte underelementer. Åbn et mappekort for at gå ind i det. Flad viser alt i hele beholderen på én gang, på alle niveauer og i læserækkefølge, inklusive mappekort.
 corkboard-card-size = Kortstørrelse
 corkboard-search-placeholder = Filtrér kort…
 corkboard-search-label = Filtrér kort
