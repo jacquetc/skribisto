@@ -49,6 +49,7 @@ pub mod units;
 pub(crate) mod form_checks;
 mod fullscreen_vm;
 pub mod images;
+pub mod picture_cache;
 // The destination folder and file name of the two project importers' forms,
 // and their refusal to write over a project that is open.
 pub(crate) mod import_destination;

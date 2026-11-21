@@ -3218,10 +3218,33 @@ image-resize-invalid = Introduza um número entre 1 e 1000.
 image-menu-describe = &Descrever a imagem…
 image-menu-resize = &Redimensionar a imagem…
 image-menu-reset-size = &Tamanho original
+image-menu-view = &Ver a imagem
+image-menu-open-externally = Abrir noutra a&plicação
+
+# The image viewer: one picture at a time, opened from a picture in the text or from
+# the Gallery. "Fit" shows the whole picture in the window; "100 %" its own pixels.
+picture-viewer-title = Visualizador de imagens
+picture-viewer-position = { $index } de { $count }
+picture-viewer-previous = Anterior
+picture-viewer-next = Seguinte
+picture-viewer-zoom-out = Reduzir
+picture-viewer-zoom-in = Ampliar
+picture-viewer-close = Fechar
+picture-viewer-fit = Ajustar
+picture-viewer-actual-size = 100%
+picture-viewer-open-note = Abrir a nota
+picture-viewer-open-externally = Abrir noutra aplicação
+picture-viewer-save-copy = Guardar uma cópia…
+picture-viewer-save-copy-title = Guardar uma cópia da imagem
+picture-viewer-saved = Cópia guardada.
+picture-viewer-save-failed = Não foi possível guardar a cópia: { $error }
+picture-viewer-loading = A carregar a imagem…
+picture-viewer-failed = Não é possível mostrar esta imagem. O ficheiro está em falta, ou não é uma imagem PNG, JPEG ou WebP.
 
 cover-heading = Capa
 cover-pick = Escolher…
 cover-change = Alterar…
+cover-view = Ver
 cover-remove = Remover
 cover-none = Ainda sem capa
 cover-missing = O ficheiro da imagem não se encontra no projeto

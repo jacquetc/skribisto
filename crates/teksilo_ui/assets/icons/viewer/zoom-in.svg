@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Zoom in: a magnifier with a plus -->
+  <circle cx="7" cy="7" r="4.5"/>
+  <path d="M10.3 10.3 L14 14"/>
+  <path d="M5 7 H9"/>
+  <path d="M7 5 V9"/>
+</svg>

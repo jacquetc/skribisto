@@ -3617,11 +3617,35 @@ image-resize-invalid = Saisissez un nombre entre 1 et 1000.
 image-menu-describe = &Décrire l’image…
 image-menu-resize = &Redimensionner l’image…
 image-menu-reset-size = Taille d’&origine
+image-menu-view = &Voir l’image
+image-menu-open-externally = Ouvrir dans une autre a&pplication
+
+# La visionneuse d’images : une image à la fois, ouverte depuis une image du texte ou
+# depuis la galerie. « Ajuster » montre l’image entière ; « 100 % » ses propres pixels.
+picture-viewer-title = Visionneuse d’images
+picture-viewer-position = { $index } sur { $count }
+picture-viewer-previous = Précédente
+picture-viewer-next = Suivante
+picture-viewer-zoom-out = Dézoomer
+picture-viewer-zoom-in = Zoomer
+picture-viewer-close = Fermer
+picture-viewer-fit = Ajuster
+picture-viewer-actual-size = 100 %
+picture-viewer-open-note = Ouvrir la note
+picture-viewer-open-externally = Ouvrir dans une autre application
+picture-viewer-save-copy = Enregistrer une copie…
+picture-viewer-save-copy-title = Enregistrer une copie de l’image
+picture-viewer-saved = Copie enregistrée.
+picture-viewer-save-failed = La copie n’a pas pu être enregistrée : { $error }
+picture-viewer-loading = Chargement de l’image…
+picture-viewer-failed = Impossible d’afficher cette image. Son fichier manque, ou ce n’est pas une image PNG, JPEG ou WebP.
 
 # La couverture du livre, choisie depuis le livre, non insérée dans une scène.
 cover-heading = Couverture
 cover-pick = Choisir…
 cover-change = Changer…
+# Ouvre la couverture dans la visionneuse d’images, en grand.
+cover-view = Voir
 cover-remove = Retirer
 cover-none = Pas encore de couverture
 cover-missing = Le fichier de l’image manque dans le projet

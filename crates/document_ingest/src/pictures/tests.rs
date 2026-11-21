@@ -613,3 +613,43 @@ fn a_document_holds_its_pictures_up_to_a_budget() {
     assert!(refused.first_time, "reported");
     assert_eq!(pictures.into_pictures().len(), 1);
 }
+
+#[test]
+fn a_displayable_size_is_read_from_the_header_as_the_editor_shows_it() {
+    assert_eq!(displayable_size(&png(30, 20)), Ok((30, 20)));
+    assert_eq!(
+        displayable_size(&encoded(ImageFormat::WebP, 7, 9, [1, 2, 3, 255])),
+        Ok((7, 9))
+    );
+    // Turned a quarter by its EXIF: the sides the editor paints, not the stored ones.
+    assert_eq!(
+        displayable_size(&jpeg_with_orientation(40, 10, 6)),
+        Ok((10, 40))
+    );
+}
+
+#[test]
+fn a_displayable_size_refuses_a_crafted_header_before_any_decode() {
+    for (width, height) in [(100_000, 100_000), (20_000, 2), (10_000, 10_000)] {
+        assert_eq!(
+            displayable_size(&png_claiming(width, height)),
+            Err(PictureRefusal::TooLarge),
+            "{width} × {height}"
+        );
+    }
+    let mut huge = png(2, 2);
+    huge.resize(MAX_PICTURE_BYTES as usize + 1, 0);
+    assert_eq!(displayable_size(&huge), Err(PictureRefusal::TooLarge));
+}
+
+#[test]
+fn a_displayable_size_names_a_format_the_editor_does_not_paint() {
+    assert_eq!(
+        displayable_size(&gif(4, 4, &[[1, 2, 3, 255]])),
+        Err(PictureRefusal::Unsupported { format: "GIF" })
+    );
+    assert_eq!(
+        displayable_size(b"not a picture at all"),
+        Err(PictureRefusal::Unsupported { format: "unknown" })
+    );
+}

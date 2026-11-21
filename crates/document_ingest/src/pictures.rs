@@ -286,6 +286,44 @@ pub fn ingest(bytes: Vec<u8>, name: &str) -> Result<Ingested, PictureRefusal> {
     }
 }
 
+/// The upright size of a picture the editor paints (PNG, JPEG or WebP), read from its header
+/// under the same ceilings [`ingest`] applies, and without decoding a single pixel.
+///
+/// For a reader about to decode a picture the project already holds, such as a thumbnail or
+/// a full-size view: the file on disk is trusted no more than an imported one, since a project
+/// can come from anywhere, and a few dozen crafted bytes can claim billions of pixels. A JPEG
+/// turned a quarter by its EXIF reports its sides swapped, as the editor shows it.
+pub fn displayable_size(bytes: &[u8]) -> Result<(u32, u32), PictureRefusal> {
+    if bytes.len() as u64 > MAX_PICTURE_BYTES {
+        return Err(PictureRefusal::TooLarge);
+    }
+    let format = match sniff(bytes) {
+        Some(Sniffed::Png) => ImageFormat::Png,
+        Some(Sniffed::Jpeg) => ImageFormat::Jpeg,
+        Some(Sniffed::Webp) => ImageFormat::WebP,
+        Some(Sniffed::Gif) => return Err(PictureRefusal::Unsupported { format: "GIF" }),
+        Some(Sniffed::Tiff) => return Err(PictureRefusal::Unsupported { format: "TIFF" }),
+        Some(Sniffed::Bmp) => return Err(PictureRefusal::Unsupported { format: "BMP" }),
+        None => {
+            return Err(PictureRefusal::Unsupported {
+                format: unsupported_format_name(bytes),
+            });
+        }
+    };
+    let mut reader = ImageReader::with_format(Cursor::new(bytes), format);
+    reader.limits(limits());
+    let mut decoder = reader.into_decoder().map_err(refusal)?;
+    let (width, height) = decoder.dimensions();
+    check_size(width, height)?;
+    let turned =
+        format == ImageFormat::Jpeg && decoder.orientation().map(turns_a_quarter).unwrap_or(false);
+    Ok(if turned {
+        (height, width)
+    } else {
+        (width, height)
+    })
+}
+
 /// The formats read from a picture's first bytes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Sniffed {

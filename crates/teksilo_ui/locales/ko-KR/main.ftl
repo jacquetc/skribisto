@@ -2379,10 +2379,33 @@ image-resize-invalid = 1부터 1000 사이의 숫자를 입력하세요.
 image-menu-describe = 이미지 설명… (&D)
 image-menu-resize = 이미지 크기 조절… (&R)
 image-menu-reset-size = 원본 크기 (&Z)
+image-menu-view = 이미지 보기 (&V)
+image-menu-open-externally = 다른 앱에서 열기 (&P)
+
+# The image viewer: one picture at a time, opened from a picture in the text or from
+# the Gallery. "Fit" shows the whole picture in the window; "100 %" its own pixels.
+picture-viewer-title = 이미지 뷰어
+picture-viewer-position = { $index } / { $count }
+picture-viewer-previous = 이전
+picture-viewer-next = 다음
+picture-viewer-zoom-out = 축소
+picture-viewer-zoom-in = 확대
+picture-viewer-close = 닫기
+picture-viewer-fit = 창에 맞춤
+picture-viewer-actual-size = 100%
+picture-viewer-open-note = 노트 열기
+picture-viewer-open-externally = 다른 앱에서 열기
+picture-viewer-save-copy = 사본 저장…
+picture-viewer-save-copy-title = 이미지 사본 저장
+picture-viewer-saved = 사본을 저장했습니다.
+picture-viewer-save-failed = 사본을 저장할 수 없습니다: { $error }
+picture-viewer-loading = 이미지를 불러오는 중…
+picture-viewer-failed = 이 이미지를 표시할 수 없습니다. 파일이 없거나 PNG, JPEG, WebP 이미지가 아닙니다.
 
 cover-heading = 표지
 cover-pick = 선택…
 cover-change = 변경…
+cover-view = 보기
 cover-remove = 제거
 cover-none = 아직 표지가 없습니다
 cover-missing = 이미지 파일이 프로젝트에 없습니다

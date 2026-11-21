@@ -3907,9 +3907,32 @@ image-resize-invalid = Введіть число від 1 до 1000.
 image-menu-describe = &Описати зображення…
 image-menu-resize = &Змінити розмір зображення…
 image-menu-reset-size = &Початковий розмір
+image-menu-view = Пере&глянути зображення
+image-menu-open-externally = &Відкрити в іншій програмі
+
+# The image viewer: one picture at a time, opened from a picture in the text or from
+# the Gallery. "Fit" shows the whole picture in the window; "100 %" its own pixels.
+picture-viewer-title = Переглядач зображень
+picture-viewer-position = { $index } з { $count }
+picture-viewer-previous = Попереднє
+picture-viewer-next = Наступне
+picture-viewer-zoom-out = Зменшити
+picture-viewer-zoom-in = Збільшити
+picture-viewer-close = Закрити
+picture-viewer-fit = За розміром вікна
+picture-viewer-actual-size = 100%
+picture-viewer-open-note = Відкрити нотатку
+picture-viewer-open-externally = Відкрити в іншій програмі
+picture-viewer-save-copy = Зберегти копію…
+picture-viewer-save-copy-title = Зберегти копію зображення
+picture-viewer-saved = Копію збережено.
+picture-viewer-save-failed = Не вдалося зберегти копію: { $error }
+picture-viewer-loading = Завантаження зображення…
+picture-viewer-failed = Не вдається показати це зображення. Його файлу немає, або це не зображення PNG, JPEG чи WebP.
 cover-heading = Обкладинка
 cover-pick = Вибрати…
 cover-change = Замінити…
+cover-view = Показати
 cover-remove = Вилучити
 cover-none = Обкладинки ще немає
 cover-missing = Файлу із зображенням немає в проєкті

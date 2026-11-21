@@ -178,6 +178,7 @@ pub mod note_templates;
 pub mod overview;
 pub mod pace;
 pub mod panels;
+pub mod picture_viewer;
 pub mod project;
 pub mod read_signal;
 pub mod save;

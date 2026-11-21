@@ -334,6 +334,9 @@ struct RegisteredEditor {
     /// them, which is also the only case
     /// [`FormatViewModel::handle_for_item`] still answers by order.
     scope: Option<crate::margin_lane::LaneScope>,
+    /// The width the editor was last laid out at, in logical pixels: the measure a picture
+    /// in it is capped to. `None` until its first layout.
+    width: Option<f32>,
 }
 
 /// One gate per control group, for the dock to hang `visible_when` on.
@@ -712,6 +715,7 @@ impl FormatViewModel {
                 typo: None,
                 item: None,
                 scope: None,
+                width: None,
             }),
         }
         // A rebuild of the editor the menu is sticky on must re-point the latch
@@ -812,6 +816,32 @@ impl FormatViewModel {
 
     fn handle(&self) -> Option<EditorHandle> {
         self.target().0
+    }
+
+    /// Record the width a registered editor was laid out at. Called from
+    /// `TypographyBoundEditor`'s `place_children`, on every layout.
+    pub fn set_registered_width(&self, id: WidgetId, width: f32) {
+        if let Some(entry) = self.registry.borrow_mut().iter_mut().find(|e| e.id == id) {
+            entry.width = (width.is_finite() && width > 0.0).then_some(width);
+        }
+    }
+
+    /// The width the editor commands act on was last laid out at: the focused registered
+    /// editor, else the one the menu is sticky on. `None` when neither is known.
+    ///
+    /// It is what a picture in that editor is drawn no wider than, so a command that
+    /// speaks of "the size it is shown at" (Resize) measures from it rather than from the
+    /// stored size, which the layout may have capped.
+    pub fn target_width(&self) -> Option<f32> {
+        let id = self
+            .focused_registered()
+            .map(|(id, _, _)| id)
+            .or_else(|| self.sticky.borrow().as_ref().map(|(id, _, _)| *id))?;
+        self.registry
+            .borrow()
+            .iter()
+            .find(|e| e.id == id)
+            .and_then(|e| e.width)
     }
 
     /// Give an already-registered editor its footnote door. Separate from

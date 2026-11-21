@@ -3188,10 +3188,33 @@ image-resize-invalid = Skriv inn et tall mellom 1 og 1000.
 image-menu-describe = &Beskriv bildet…
 image-menu-resize = &Endre størrelse på bildet…
 image-menu-reset-size = &Opprinnelig størrelse
+image-menu-view = &Vis bildet
+image-menu-open-externally = Åpne i et annet &program
+
+# The image viewer: one picture at a time, opened from a picture in the text or from
+# the Gallery. "Fit" shows the whole picture in the window; "100 %" its own pixels.
+picture-viewer-title = Bildeviser
+picture-viewer-position = { $index } av { $count }
+picture-viewer-previous = Forrige
+picture-viewer-next = Neste
+picture-viewer-zoom-out = Zoom ut
+picture-viewer-zoom-in = Zoom inn
+picture-viewer-close = Lukk
+picture-viewer-fit = Tilpass
+picture-viewer-actual-size = 100 %
+picture-viewer-open-note = Åpne notatet
+picture-viewer-open-externally = Åpne i et annet program
+picture-viewer-save-copy = Lagre en kopi…
+picture-viewer-save-copy-title = Lagre en kopi av bildet
+picture-viewer-saved = Kopien er lagret.
+picture-viewer-save-failed = Kopien kunne ikke lagres: { $error }
+picture-viewer-loading = Laster inn bildet…
+picture-viewer-failed = Dette bildet kan ikke vises. Filen mangler, eller det er ikke et PNG-, JPEG- eller WebP-bilde.
 
 cover-heading = Omslag
 cover-pick = Velg…
 cover-change = Bytt…
+cover-view = Vis
 cover-remove = Fjern
 cover-none = Ingen omslag ennå
 cover-missing = Bildefilen mangler i prosjektet

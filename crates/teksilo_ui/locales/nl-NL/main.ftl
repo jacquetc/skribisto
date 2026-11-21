@@ -3216,10 +3216,33 @@ image-resize-invalid = Voer een getal in tussen 1 en 1000.
 image-menu-describe = Afbeelding &beschrijven…
 image-menu-resize = &Grootte van afbeelding wijzigen…
 image-menu-reset-size = &Oorspronkelijke grootte
+image-menu-view = Afbeelding be&kijken
+image-menu-open-externally = Openen in een andere a&pp
+
+# The image viewer: one picture at a time, opened from a picture in the text or from
+# the Gallery. "Fit" shows the whole picture in the window; "100 %" its own pixels.
+picture-viewer-title = Afbeeldingsviewer
+picture-viewer-position = { $index } van { $count }
+picture-viewer-previous = Vorige
+picture-viewer-next = Volgende
+picture-viewer-zoom-out = Uitzoomen
+picture-viewer-zoom-in = Inzoomen
+picture-viewer-close = Sluiten
+picture-viewer-fit = Passend
+picture-viewer-actual-size = 100%
+picture-viewer-open-note = Notitie openen
+picture-viewer-open-externally = Openen in een andere app
+picture-viewer-save-copy = Kopie opslaan…
+picture-viewer-save-copy-title = Een kopie van de afbeelding opslaan
+picture-viewer-saved = Kopie opgeslagen.
+picture-viewer-save-failed = De kopie kon niet worden opgeslagen: { $error }
+picture-viewer-loading = Afbeelding laden…
+picture-viewer-failed = Deze afbeelding kan niet worden getoond. Het bestand ontbreekt, of het is geen PNG-, JPEG- of WebP-afbeelding.
 
 cover-heading = Omslag
 cover-pick = Kiezen…
 cover-change = Wijzigen…
+cover-view = Bekijken
 cover-remove = Verwijderen
 cover-none = Nog geen omslag
 cover-missing = Het afbeeldingsbestand ontbreekt in het project

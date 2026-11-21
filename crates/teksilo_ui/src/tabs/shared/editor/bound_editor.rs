@@ -588,6 +588,11 @@ impl Widget for TypographyBoundEditor {
         children: &mut [WidgetPlacement],
         _ctx: &LayoutContext,
     ) {
+        // The formatting registry keeps the width, so a command acting on a picture
+        // here knows how wide the layout lets it be drawn.
+        if let Some((format, id)) = &self.format {
+            format.set_registered_width(*id, bounds.width);
+        }
         for child in children.iter_mut() {
             child.origin = Point::new(bounds.x, bounds.y);
             child.size = bounds.size();

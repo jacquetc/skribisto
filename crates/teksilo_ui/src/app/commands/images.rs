@@ -336,6 +336,7 @@ fn finish(deps: &InsertDeps, ctx: &mut EventContext, pending: PendingImage, poli
 /// undo stack, at the granularity a writer expects — one Ctrl+Z puts the old
 /// description back.
 fn register_editing(ctx: &mut BuildContext, deps: &CommandDeps) {
+    register_viewing(ctx, deps);
     let describe_format = deps.format.clone();
     ctx.register_action_global(Action::new("image.describe").on_invoke(
         move |_intent, c: &mut EventContext| {
@@ -367,6 +368,9 @@ fn register_editing(ctx: &mut BuildContext, deps: &CommandDeps) {
             };
             let format = resize_format.clone();
             let offset = image_offset(&resize_format).unwrap_or(0);
+            // The layout draws a picture no wider than its line, so "the size it is shown
+            // at now" is the stored size capped to the editor's width, not the stored size.
+            let measure = resize_format.target_width();
             // A percentage of the size it is *now*, not of the file's own
             // dimensions: the writer is looking at the picture on the page, and
             // "half of what I can see" is the thing they can judge. 100 is
@@ -384,7 +388,7 @@ fn register_editing(ctx: &mut BuildContext, deps: &CommandDeps) {
                 .on_result(move |result, c| {
                     if let Some(text) = result
                         && let Ok(percent) = text.trim().parse::<u32>()
-                        && let Some(size) = image.scaled(percent)
+                        && let Some(size) = image.scaled_within(percent, measure)
                     {
                         handle.select_range(offset, offset + 1);
                         handle.insert_djot(&image.djot(&image.alt, Some(size)));
@@ -413,6 +417,61 @@ fn register_editing(ctx: &mut BuildContext, deps: &CommandDeps) {
             reset_format.refocus(c);
         },
     ));
+}
+
+/// `image.view` and `image.open_externally`: looking at the picture last clicked.
+///
+/// Neither writes, so both act on a trashed item's text as on any other: a picture in the
+/// trash is still the writer's to look at. The viewer gets every picture of that text, in
+/// document order, and starts on the clicked one, so the arrow keys walk the text's
+/// pictures the way a reader would.
+fn register_viewing(ctx: &mut BuildContext, deps: &CommandDeps) {
+    let view_format = deps.format.clone();
+    let view_docs = deps.session.open_docs.clone();
+    let view_ctx = deps.app_ctx.clone();
+    ctx.register_action_global(Action::new("image.view").on_invoke(
+        move |_intent, c: &mut EventContext| {
+            let Some((handle, image)) = resolve_clicked(&view_format) else {
+                return;
+            };
+            let pictures = images::parse_images(&handle.to_djot());
+            let entries = crate::picture_viewer::with_file_names(
+                &view_ctx,
+                crate::picture_viewer::ViewerEntry::from_images(&pictures, None),
+            );
+            crate::picture_viewer::present(c, entries, image.index, view_docs.media_dir());
+        },
+    ));
+
+    let open_format = deps.format.clone();
+    let open_docs = deps.session.open_docs.clone();
+    ctx.register_action_global(Action::new("image.open_externally").on_invoke(
+        move |_intent, _c: &mut EventContext| {
+            let Some((_, image)) = resolve_clicked(&open_format) else {
+                return;
+            };
+            // Only a project picture's own file, never a path the prose names: nothing
+            // typed into a document can make this launch an arbitrary file.
+            let Some(path) =
+                crate::shared::picture_cache::asset_path(&open_docs.media_dir(), &image.src)
+                    .filter(|p| p.exists())
+            else {
+                return;
+            };
+            crate::shell::process::open_in_default_app(&path.to_string_lossy());
+        },
+    ));
+}
+
+/// The editor holding the clicked image and the image, for a command that only reads:
+/// unlike [`resolve_active`], a trashed item's text qualifies.
+fn resolve_clicked(
+    format: &crate::format::FormatViewModel,
+) -> Option<(teksilo::widgets::rich_text::EditorHandle, images::ImageRef)> {
+    let (offset, _src) = format.active_image().get()?;
+    let handle = format.handle_for_commands()?;
+    let image = images::image_at(&handle.to_plain_text(), offset, &handle.to_djot())?;
+    Some((handle, image))
 }
 
 /// The clicked image's character offset, if there is one.

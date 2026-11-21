@@ -170,7 +170,7 @@ pub fn apply_policy(image: PendingImage, policy: SizePolicy) -> PendingImage {
     }
 }
 
-fn encode_png(icon: &teksilo::canvas::RasterIcon) -> Option<Vec<u8>> {
+pub(crate) fn encode_png(icon: &teksilo::canvas::RasterIcon) -> Option<Vec<u8>> {
     let mut out = Vec::new();
     {
         let mut enc = png::Encoder::new(&mut out, icon.width(), icon.height());
@@ -332,7 +332,35 @@ impl ImageRef {
     /// aspect ratio is edited by hand is almost always a mistake, and the one
     /// case where it is not — cropping — is not something a size field can do.
     pub fn scaled(&self, percent: u32) -> Option<(u32, u32)> {
+        self.scaled_within(percent, None)
+    }
+
+    /// The size this reference is drawn at in a line `measure` logical pixels wide.
+    ///
+    /// The layout never draws a picture wider than its line: one stored wider is drawn at
+    /// the line's width, its height in proportion (text-typeset's cap). `None` for the
+    /// measure means it is not known, and the stored size is the answer.
+    pub fn shown_size(&self, measure: Option<f32>) -> Option<(u32, u32)> {
         let (w, h) = self.size?;
+        match measure {
+            Some(m) if m.is_finite() && m >= 1.0 && f64::from(w) > f64::from(m) => {
+                let m = f64::from(m);
+                let ratio = m / f64::from(w.max(1));
+                Some((
+                    (m.floor() as u32).max(1),
+                    ((f64::from(h) * ratio).round() as u32).max(1),
+                ))
+            }
+            _ => Some((w, h)),
+        }
+    }
+
+    /// [`Self::scaled`], from the size the picture is drawn at in a line `measure` wide
+    /// ([`Self::shown_size`]) rather than the stored one, which the layout may have capped.
+    /// So "50" halves what the writer sees, even for a picture stored far wider than the
+    /// page.
+    pub fn scaled_within(&self, percent: u32, measure: Option<f32>) -> Option<(u32, u32)> {
+        let (w, h) = self.shown_size(measure)?;
         let f = f64::from(percent) / 100.0;
         Some((
             ((f64::from(w) * f).round() as u32).max(1),
@@ -638,6 +666,26 @@ mod tests {
             size: Some((3, 1)),
         };
         assert_eq!(tiny.scaled(1), Some((1, 1)));
+    }
+
+    #[test]
+    fn a_percentage_is_of_the_size_the_line_lets_a_picture_be_drawn_at() {
+        let wide = ImageRef {
+            index: 0,
+            src: "assets/x.png".into(),
+            alt: String::new(),
+            size: Some((4000, 1000)),
+        };
+        // A 4000 px picture in an 800 px line is drawn 800 × 200.
+        assert_eq!(wide.shown_size(Some(800.0)), Some((800, 200)));
+        assert_eq!(wide.scaled_within(50, Some(800.0)), Some((400, 100)));
+        // Unknown measure: the stored size, as before the cap.
+        assert_eq!(wide.scaled_within(50, None), Some((2000, 500)));
+        // A picture narrower than its line is drawn at its own size.
+        assert_eq!(wide.shown_size(Some(5000.0)), Some((4000, 1000)));
+        // A nonsense measure is ignored, never a division by zero.
+        assert_eq!(wide.shown_size(Some(0.0)), Some((4000, 1000)));
+        assert_eq!(wide.shown_size(Some(f32::NAN)), Some((4000, 1000)));
     }
 
     #[test]

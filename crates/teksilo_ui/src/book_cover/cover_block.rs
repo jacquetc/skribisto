@@ -119,9 +119,14 @@ impl Widget for CoverBlock {
             CoverState::Shown { asset, path } => match thumbnail(&asset.content_hash, path) {
                 Some(t) => {
                     let (w, h) = shown_size(t.width, t.height);
+                    let entry = viewer_entry(asset, path, self.vm.book_title());
+                    // A double click opens the cover at full size, as it does a picture
+                    // in the prose or a thumbnail in a Gallery.
                     Box::new(teksu!(FixedSize {
                         width: w
                         height: h
+                        cursor: CursorIcon::Pointer
+                        on_double_tap: move |_, c| view_cover(c, &entry)
                         ImageWidget::from_raw(t.pixels.clone(), t.width, t.height) {
                             fit: ImageFit::Contain
                             alt: self.vm.book_title()
@@ -143,6 +148,19 @@ impl Widget for CoverBlock {
         })
         .variant(ButtonVariant::Plain)
         .on_activate_fn(move |c| choose_vm.choose(c));
+        // View only a cover there is a file for; the double click on the thumbnail is the
+        // same door for a mouse, this one is for the keyboard and a screen reader.
+        let view: Option<Box<dyn Widget>> = match &state {
+            CoverState::Shown { asset, path } => {
+                let entry = viewer_entry(asset, path, self.vm.book_title());
+                Some(Box::new(
+                    Button::new(tr!(cover_view()))
+                        .variant(ButtonVariant::Plain)
+                        .on_activate_fn(move |c| view_cover(c, &entry)),
+                ) as Box<dyn Widget>)
+            }
+            _ => None,
+        };
         // Remove only when there is something to remove.
         let remove: Option<Box<dyn Widget>> = has_cover.then(|| {
             let remove_vm = self.vm.clone();
@@ -164,6 +182,7 @@ impl Widget for CoverBlock {
                 child: picture
                 VStack {
                     spacing: 4.0
+                    child_opt: view
                     child: choose
                     child_opt: remove
                 }
@@ -185,6 +204,42 @@ impl Widget for CoverBlock {
     }
 }
 
+/// The cover as the image viewer's only picture.
+///
+/// The viewer addresses a picture by its reference, `assets/<file>`, inside a media
+/// directory: the cover's own file name and the directory it is in say both.
+fn viewer_entry(
+    asset: &frontend::asset::dtos::AssetDto,
+    path: &Path,
+    book_title: String,
+) -> (crate::picture_viewer::ViewerEntry, std::path::PathBuf) {
+    let file = path
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    let alt = if asset.alt.trim().is_empty() {
+        book_title
+    } else {
+        asset.alt.clone()
+    };
+    (
+        crate::picture_viewer::ViewerEntry {
+            src: format!("assets/{file}"),
+            alt,
+            item: None,
+            file_name: (!asset.file_name.trim().is_empty()).then(|| asset.file_name.clone()),
+        },
+        path.parent().map(Path::to_path_buf).unwrap_or_default(),
+    )
+}
+
+fn view_cover(
+    ctx: &mut EventContext,
+    (entry, media_dir): &(crate::picture_viewer::ViewerEntry, std::path::PathBuf),
+) {
+    crate::picture_viewer::present(ctx, vec![entry.clone()], 0, media_dir.clone());
+}
+
 fn note(text: LocalizedString) -> TextWidget {
     TextWidget::new(text)
         .style(TextStyleRole::Small)
@@ -194,6 +249,25 @@ fn note(text: LocalizedString) -> TextWidget {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_viewer_finds_the_cover_where_the_thumbnail_did() {
+        let hash = "a".repeat(64);
+        let path = std::path::PathBuf::from(format!("/media/project/{hash}.jpg"));
+        let asset = frontend::asset::dtos::AssetDto {
+            content_hash: hash.clone(),
+            file_name: "cover-final.jpg".into(),
+            ..Default::default()
+        };
+        let (entry, dir) = viewer_entry(&asset, &path, "The Lighthouse".into());
+        assert_eq!(
+            crate::shared::picture_cache::asset_path(&dir, &entry.src),
+            Some(path.clone())
+        );
+        // No description of its own: the Book's title says what it is.
+        assert_eq!(entry.alt, "The Lighthouse");
+        assert_eq!(entry.suggested_file_name(), "cover-final.jpg");
+    }
 
     #[test]
     fn a_thumbnail_keeps_the_pictures_proportions_within_the_edge() {

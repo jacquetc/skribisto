@@ -3280,10 +3280,34 @@ image-resize-invalid = Anna luku väliltä 1–1000.
 image-menu-describe = &Kuvaile kuvaa…
 image-menu-resize = &Muuta kuvan kokoa…
 image-menu-reset-size = &Alkuperäinen koko
+image-menu-view = &Näytä kuva
+image-menu-open-externally = A&vaa toisessa sovelluksessa
+
+# The image viewer: one picture at a time, opened from a picture in the text or from
+# the Gallery. "Fit" shows the whole picture in the window; "100 %" its own pixels.
+picture-viewer-title = Kuvankatselin
+picture-viewer-position = { $index }/{ $count }
+picture-viewer-previous = Edellinen
+picture-viewer-next = Seuraava
+picture-viewer-zoom-out = Loitonna
+picture-viewer-zoom-in = Lähennä
+picture-viewer-close = Sulje
+picture-viewer-fit = Sovita
+picture-viewer-actual-size = 100 %
+picture-viewer-open-note = Avaa muistiinpano
+picture-viewer-open-externally = Avaa toisessa sovelluksessa
+picture-viewer-save-copy = Tallenna kopio…
+picture-viewer-save-copy-title = Tallenna kopio kuvasta
+picture-viewer-saved = Kopio tallennettu.
+picture-viewer-save-failed = Kopiota ei voitu tallentaa: { $error }
+picture-viewer-loading = Ladataan kuvaa…
+picture-viewer-failed = Tätä kuvaa ei voi näyttää. Sen tiedosto puuttuu, tai se ei ole PNG-, JPEG- tai WebP-kuva.
 
 cover-heading = Kansikuva
 cover-pick = Valitse…
 cover-change = Vaihda…
+# Opens the cover in the image viewer, at full size.
+cover-view = Näytä
 cover-remove = Poista
 cover-none = Ei vielä kansikuvaa
 cover-missing = Kuvatiedosto puuttuu projektista

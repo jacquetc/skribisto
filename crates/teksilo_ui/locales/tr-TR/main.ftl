@@ -3169,10 +3169,34 @@ image-resize-invalid = 1 ile 1000 arasında bir sayı girin.
 image-menu-describe = Resmi &tanımla…
 image-menu-resize = Resmi yeniden &boyutlandır…
 image-menu-reset-size = Özgün b&oyut
+image-menu-view = Resmi &görüntüle
+image-menu-open-externally = Başka bir uygulamada &aç
+
+# The image viewer: one picture at a time, opened from a picture in the text or from
+# the Gallery. "Fit" shows the whole picture in the window; "100 %" its own pixels.
+picture-viewer-title = Resim görüntüleyici
+picture-viewer-position = { $index } / { $count }
+picture-viewer-previous = Önceki
+picture-viewer-next = Sonraki
+picture-viewer-zoom-out = Uzaklaştır
+picture-viewer-zoom-in = Yakınlaştır
+picture-viewer-close = Kapat
+picture-viewer-fit = Sığdır
+picture-viewer-actual-size = %100
+picture-viewer-open-note = Notu aç
+picture-viewer-open-externally = Başka bir uygulamada aç
+picture-viewer-save-copy = Kopyasını kaydet…
+picture-viewer-save-copy-title = Resmin bir kopyasını kaydet
+picture-viewer-saved = Kopya kaydedildi.
+picture-viewer-save-failed = Kopya kaydedilemedi: { $error }
+picture-viewer-loading = Resim yükleniyor…
+picture-viewer-failed = Bu resim gösterilemiyor. Dosyası eksik ya da bir PNG, JPEG veya WebP resmi değil.
 
 cover-heading = Kapak
 cover-pick = Seç…
 cover-change = Değiştir…
+# Opens the cover in the image viewer, at full size.
+cover-view = Görüntüle
 cover-remove = Kaldır
 cover-none = Henüz kapak yok
 cover-missing = Resim dosyası projede eksik

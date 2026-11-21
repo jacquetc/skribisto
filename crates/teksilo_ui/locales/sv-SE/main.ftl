@@ -3106,9 +3106,32 @@ image-resize-invalid = Ange ett tal mellan 1 och 1000.
 image-menu-describe = &Beskriv bilden…
 image-menu-resize = Än&dra storlek på bilden…
 image-menu-reset-size = &Originalstorlek
+image-menu-view = &Visa bilden
+image-menu-open-externally = Öppna i en annan a&pp
+
+# The image viewer: one picture at a time, opened from a picture in the text or from
+# the Gallery. "Fit" shows the whole picture in the window; "100 %" its own pixels.
+picture-viewer-title = Bildvisare
+picture-viewer-position = { $index } av { $count }
+picture-viewer-previous = Föregående
+picture-viewer-next = Nästa
+picture-viewer-zoom-out = Zooma ut
+picture-viewer-zoom-in = Zooma in
+picture-viewer-close = Stäng
+picture-viewer-fit = Anpassa
+picture-viewer-actual-size = 100 %
+picture-viewer-open-note = Öppna anteckningen
+picture-viewer-open-externally = Öppna i en annan app
+picture-viewer-save-copy = Spara en kopia…
+picture-viewer-save-copy-title = Spara en kopia av bilden
+picture-viewer-saved = Kopian har sparats.
+picture-viewer-save-failed = Kopian kunde inte sparas: { $error }
+picture-viewer-loading = Läser in bilden…
+picture-viewer-failed = Bilden kan inte visas. Filen saknas, eller så är den inte en PNG-, JPEG- eller WebP-bild.
 cover-heading = Omslag
 cover-pick = Välj…
 cover-change = Byt…
+cover-view = Visa
 cover-remove = Ta bort
 cover-none = Inget omslag ännu
 cover-missing = Bildfilen saknas i projektet

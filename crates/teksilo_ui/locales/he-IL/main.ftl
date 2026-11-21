@@ -3559,10 +3559,33 @@ image-resize-invalid = יש להזין מספר בין 1 ל־1000.
 image-menu-describe = תיאור התמונה… (&D)
 image-menu-resize = שינוי גודל התמונה… (&R)
 image-menu-reset-size = גודל מקורי (&Z)
+image-menu-view = הצגת התמונה (&V)
+image-menu-open-externally = פתיחה באפליקציה אחרת (&P)
+
+# The image viewer: one picture at a time, opened from a picture in the text or from
+# the Gallery. "Fit" shows the whole picture in the window; "100 %" its own pixels.
+picture-viewer-title = מציג תמונות
+picture-viewer-position = { $index } מתוך { $count }
+picture-viewer-previous = הקודמת
+picture-viewer-next = הבאה
+picture-viewer-zoom-out = הקטנה
+picture-viewer-zoom-in = הגדלה
+picture-viewer-close = סגירה
+picture-viewer-fit = התאמה לחלון
+picture-viewer-actual-size = 100%
+picture-viewer-open-note = פתיחת הפתק
+picture-viewer-open-externally = פתיחה באפליקציה אחרת
+picture-viewer-save-copy = שמירת עותק…
+picture-viewer-save-copy-title = שמירת עותק של התמונה
+picture-viewer-saved = העותק נשמר.
+picture-viewer-save-failed = לא ניתן היה לשמור את העותק: { $error }
+picture-viewer-loading = התמונה נטענת…
+picture-viewer-failed = לא ניתן להציג את התמונה הזו. הקובץ שלה חסר, או שאין זו תמונת PNG,‏ JPEG או WebP.
 
 cover-heading = כריכה
 cover-pick = בחירה…
 cover-change = החלפה…
+cover-view = הצגה
 cover-remove = הסרה
 cover-none = עדיין אין כריכה
 cover-missing = קובץ התמונה חסר בפרויקט

@@ -3280,10 +3280,34 @@ image-resize-invalid = Δώστε έναν αριθμό από 1 έως 1000.
 image-menu-describe = &Περιγραφή της εικόνας…
 image-menu-resize = &Αλλαγή μεγέθους της εικόνας…
 image-menu-reset-size = Αρχικό &μέγεθος
+image-menu-view = Προ&βολή της εικόνας
+image-menu-open-externally = Άνοιγμα σε άλλη εφαρμο&γή
+
+# The image viewer: one picture at a time, opened from a picture in the text or from
+# the Gallery. "Fit" shows the whole picture in the window; "100 %" its own pixels.
+picture-viewer-title = Προβολή εικόνων
+picture-viewer-position = { $index } από { $count }
+picture-viewer-previous = Προηγούμενη
+picture-viewer-next = Επόμενη
+picture-viewer-zoom-out = Σμίκρυνση
+picture-viewer-zoom-in = Μεγέθυνση
+picture-viewer-close = Κλείσιμο
+picture-viewer-fit = Προσαρμογή
+picture-viewer-actual-size = 100%
+picture-viewer-open-note = Άνοιγμα της σημείωσης
+picture-viewer-open-externally = Άνοιγμα σε άλλη εφαρμογή
+picture-viewer-save-copy = Αποθήκευση αντιγράφου…
+picture-viewer-save-copy-title = Αποθήκευση αντιγράφου της εικόνας
+picture-viewer-saved = Το αντίγραφο αποθηκεύτηκε.
+picture-viewer-save-failed = Δεν ήταν δυνατή η αποθήκευση του αντιγράφου: { $error }
+picture-viewer-loading = Φόρτωση της εικόνας…
+picture-viewer-failed = Αυτή η εικόνα δεν μπορεί να εμφανιστεί. Το αρχείο της λείπει ή δεν είναι εικόνα PNG, JPEG ή WebP.
 
 cover-heading = Εξώφυλλο
 cover-pick = Επιλογή…
 cover-change = Αλλαγή…
+# Opens the cover in the image viewer, at full size.
+cover-view = Προβολή
 cover-remove = Αφαίρεση
 cover-none = Δεν υπάρχει ακόμη εξώφυλλο
 cover-missing = Το αρχείο της εικόνας λείπει από το έργο

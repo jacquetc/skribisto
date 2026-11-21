@@ -3166,9 +3166,32 @@ image-resize-invalid = Inserisci un numero tra 1 e 1000.
 image-menu-describe = &Descrivi l'immagine…
 image-menu-resize = &Ridimensiona l'immagine…
 image-menu-reset-size = Dimensione &originale
+image-menu-view = &Visualizza l'immagine
+image-menu-open-externally = Apri con un'altra a&pplicazione
+
+# The image viewer: one picture at a time, opened from a picture in the text or from
+# the Gallery. "Fit" shows the whole picture in the window; "100 %" its own pixels.
+picture-viewer-title = Visualizzatore di immagini
+picture-viewer-position = { $index } di { $count }
+picture-viewer-previous = Precedente
+picture-viewer-next = Successiva
+picture-viewer-zoom-out = Riduci
+picture-viewer-zoom-in = Ingrandisci
+picture-viewer-close = Chiudi
+picture-viewer-fit = Adatta
+picture-viewer-actual-size = 100%
+picture-viewer-open-note = Apri la nota
+picture-viewer-open-externally = Apri con un'altra applicazione
+picture-viewer-save-copy = Salva una copia…
+picture-viewer-save-copy-title = Salva una copia dell'immagine
+picture-viewer-saved = Copia salvata.
+picture-viewer-save-failed = Impossibile salvare la copia: { $error }
+picture-viewer-loading = Caricamento dell'immagine…
+picture-viewer-failed = Impossibile mostrare questa immagine. Il suo file manca, oppure non è un'immagine PNG, JPEG o WebP.
 cover-heading = Copertina
 cover-pick = Scegli…
 cover-change = Cambia…
+cover-view = Vedi
 cover-remove = Rimuovi
 cover-none = Ancora nessuna copertina
 cover-missing = Il file dell'immagine manca nel progetto

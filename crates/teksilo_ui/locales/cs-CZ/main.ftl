@@ -3537,10 +3537,33 @@ image-resize-invalid = Zadejte číslo od 1 do 1000.
 image-menu-describe = &Popsat obrázek…
 image-menu-resize = &Změnit velikost obrázku…
 image-menu-reset-size = Pů&vodní velikost
+image-menu-view = Z&obrazit obrázek
+image-menu-open-externally = Otevřít v jiné &aplikaci
+
+# The image viewer: one picture at a time, opened from a picture in the text or from
+# the Gallery. "Fit" shows the whole picture in the window; "100 %" its own pixels.
+picture-viewer-title = Prohlížeč obrázků
+picture-viewer-position = { $index } z { $count }
+picture-viewer-previous = Předchozí
+picture-viewer-next = Další
+picture-viewer-zoom-out = Oddálit
+picture-viewer-zoom-in = Přiblížit
+picture-viewer-close = Zavřít
+picture-viewer-fit = Přizpůsobit oknu
+picture-viewer-actual-size = 100 %
+picture-viewer-open-note = Otevřít poznámku
+picture-viewer-open-externally = Otevřít v jiné aplikaci
+picture-viewer-save-copy = Uložit kopii…
+picture-viewer-save-copy-title = Uložit kopii obrázku
+picture-viewer-saved = Kopie uložena.
+picture-viewer-save-failed = Kopii se nepodařilo uložit: { $error }
+picture-viewer-loading = Načítání obrázku…
+picture-viewer-failed = Tento obrázek nelze zobrazit. Jeho soubor chybí, nebo nejde o obrázek PNG, JPEG ani WebP.
 
 cover-heading = Obálka
 cover-pick = Vybrat…
 cover-change = Změnit…
+cover-view = Zobrazit
 cover-remove = Odebrat
 cover-none = Zatím žádná obálka
 cover-missing = Soubor s obrázkem v projektu chybí

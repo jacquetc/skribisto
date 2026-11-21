@@ -2453,10 +2453,33 @@ image-resize-invalid = 1から1000までの数値を入力してください。
 image-menu-describe = 画像の説明(&D)…
 image-menu-resize = 画像の大きさを変更(&R)…
 image-menu-reset-size = 元の大きさ(&Z)
+image-menu-view = 画像を表示(&V)
+image-menu-open-externally = 別のアプリで開く(&P)
+
+# The image viewer: one picture at a time, opened from a picture in the text or from
+# the Gallery. "Fit" shows the whole picture in the window; "100 %" its own pixels.
+picture-viewer-title = 画像ビューアー
+picture-viewer-position = { $index } / { $count }
+picture-viewer-previous = 前へ
+picture-viewer-next = 次へ
+picture-viewer-zoom-out = 縮小
+picture-viewer-zoom-in = 拡大
+picture-viewer-close = 閉じる
+picture-viewer-fit = 全体を表示
+picture-viewer-actual-size = 100%
+picture-viewer-open-note = ノートを開く
+picture-viewer-open-externally = 別のアプリで開く
+picture-viewer-save-copy = コピーを保存…
+picture-viewer-save-copy-title = 画像のコピーを保存
+picture-viewer-saved = コピーを保存しました。
+picture-viewer-save-failed = コピーを保存できませんでした：{ $error }
+picture-viewer-loading = 画像を読み込んでいます…
+picture-viewer-failed = この画像は表示できません。ファイルが見つからないか、PNG、JPEG、WebP のいずれの画像でもありません。
 
 cover-heading = 表紙
 cover-pick = 選択…
 cover-change = 変更…
+cover-view = 表示
 cover-remove = 削除
 cover-none = 表紙はまだありません
 cover-missing = 画像ファイルがプロジェクトにありません

@@ -3195,9 +3195,33 @@ image-resize-invalid = Adjon meg egy számot 1 és 1000 között.
 image-menu-describe = A kép &leírása…
 image-menu-resize = A kép &átméretezése…
 image-menu-reset-size = &Eredeti méret
+image-menu-view = A kép &megtekintése
+image-menu-open-externally = Megnyitás má&sik alkalmazásban
+
+# The image viewer: one picture at a time, opened from a picture in the text or from
+# the Gallery. "Fit" shows the whole picture in the window; "100 %" its own pixels.
+picture-viewer-title = Képnézegető
+picture-viewer-position = { $index } / { $count }
+picture-viewer-previous = Előző
+picture-viewer-next = Következő
+picture-viewer-zoom-out = Kicsinyítés
+picture-viewer-zoom-in = Nagyítás
+picture-viewer-close = Bezárás
+picture-viewer-fit = Ablakhoz igazítás
+picture-viewer-actual-size = 100%
+picture-viewer-open-note = A jegyzet megnyitása
+picture-viewer-open-externally = Megnyitás másik alkalmazásban
+picture-viewer-save-copy = Másolat mentése…
+picture-viewer-save-copy-title = A kép másolatának mentése
+picture-viewer-saved = A másolat elmentve.
+picture-viewer-save-failed = A másolatot nem sikerült menteni: { $error }
+picture-viewer-loading = A kép betöltése…
+picture-viewer-failed = Ez a kép nem jeleníthető meg. A fájlja hiányzik, vagy nem PNG-, JPEG- vagy WebP-kép.
 cover-heading = Borító
 cover-pick = Kiválasztás…
 cover-change = Módosítás…
+# Opens the cover in the image viewer, at full size.
+cover-view = Megtekintés
 cover-remove = Eltávolítás
 cover-none = Még nincs borító
 cover-missing = A képfájl hiányzik a projektből

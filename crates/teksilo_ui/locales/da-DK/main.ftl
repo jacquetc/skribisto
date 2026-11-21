@@ -3546,11 +3546,34 @@ image-resize-invalid = Angiv et tal mellem 1 og 1000.
 image-menu-describe = &Beskriv billedet…
 image-menu-resize = &Skift billedets størrelse…
 image-menu-reset-size = &Oprindelig størrelse
+image-menu-view = &Vis billedet
+image-menu-open-externally = Åbn i en anden a&pp
+
+# The image viewer: one picture at a time, opened from a picture in the text or from
+# the Gallery. "Fit" shows the whole picture in the window; "100 %" its own pixels.
+picture-viewer-title = Billedfremviser
+picture-viewer-position = { $index } af { $count }
+picture-viewer-previous = Forrige
+picture-viewer-next = Næste
+picture-viewer-zoom-out = Zoom ud
+picture-viewer-zoom-in = Zoom ind
+picture-viewer-close = Luk
+picture-viewer-fit = Tilpas
+picture-viewer-actual-size = 100 %
+picture-viewer-open-note = Åbn noten
+picture-viewer-open-externally = Åbn i en anden app
+picture-viewer-save-copy = Gem en kopi…
+picture-viewer-save-copy-title = Gem en kopi af billedet
+picture-viewer-saved = Kopien er gemt.
+picture-viewer-save-failed = Kopien kunne ikke gemmes: { $error }
+picture-viewer-loading = Indlæser billedet…
+picture-viewer-failed = Billedet kan ikke vises. Filen mangler, eller det er ikke et PNG-, JPEG- eller WebP-billede.
 
 # The book's cover, chosen from the book, not typed into a scene.
 cover-heading = Omslag
 cover-pick = Vælg…
 cover-change = Skift…
+cover-view = Vis
 cover-remove = Fjern
 cover-none = Intet omslag endnu
 cover-missing = Billedfilen mangler i projektet

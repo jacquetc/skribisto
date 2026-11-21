@@ -4428,9 +4428,32 @@ image-resize-invalid = أدخل رقمًا بين 1 و1000.
 image-menu-describe = وصف الصورة… (&D)
 image-menu-resize = تغيير حجم الصورة… (&R)
 image-menu-reset-size = الحجم الأصلي (&Z)
+image-menu-view = عرض الصورة (&V)
+image-menu-open-externally = فتح في تطبيق آخر (&P)
+
+# The image viewer: one picture at a time, opened from a picture in the text or from
+# the Gallery. "Fit" shows the whole picture in the window; "100 %" its own pixels.
+picture-viewer-title = عارض الصور
+picture-viewer-position = { $index } من { $count }
+picture-viewer-previous = السابقة
+picture-viewer-next = التالية
+picture-viewer-zoom-out = تصغير
+picture-viewer-zoom-in = تكبير
+picture-viewer-close = إغلاق
+picture-viewer-fit = ملاءمة
+picture-viewer-actual-size = 100%
+picture-viewer-open-note = فتح الملاحظة
+picture-viewer-open-externally = فتح في تطبيق آخر
+picture-viewer-save-copy = حفظ نسخة…
+picture-viewer-save-copy-title = حفظ نسخة من الصورة
+picture-viewer-saved = حُفظت النسخة.
+picture-viewer-save-failed = تعذّر حفظ النسخة: { $error }
+picture-viewer-loading = جارٍ تحميل الصورة…
+picture-viewer-failed = لا يمكن عرض هذه الصورة. ملفها مفقود، أو أنها ليست صورة PNG أو JPEG أو WebP.
 cover-heading = الغلاف
 cover-pick = اختيار…
 cover-change = تغيير…
+cover-view = عرض
 cover-remove = إزالة
 cover-none = لا يوجد غلاف بعد
 cover-missing = ملف الصورة غير موجود في المشروع

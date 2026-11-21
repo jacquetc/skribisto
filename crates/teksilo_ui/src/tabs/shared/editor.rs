@@ -476,8 +476,23 @@ pub fn writing_column(
         // its whole manuscript on every open and close. See
         // `teksilo::widgets::rich_text::WeakEditorHandle`.
         let handle = editor.handle().downgrade();
-        editor = editor.on_image_activated(move |activation, _ctx| {
+        // The editor reports each click on a picture alone; a second one on the same
+        // picture within the double-click interval opens the viewer, as a double click
+        // opens a picture in a file manager or a word processor.
+        let last_click: std::cell::Cell<Option<(usize, std::time::Instant)>> =
+            std::cell::Cell::new(None);
+        editor = editor.on_image_activated(move |activation, ctx| {
+            let now = std::time::Instant::now();
+            let double = last_click.get().is_some_and(|(offset, at)| {
+                offset == activation.offset
+                    && now.duration_since(at)
+                        <= teksilo::tokens::GestureProfile::MOUSE.multi_tap_interval
+            });
+            last_click.set((!double).then_some((activation.offset, now)));
             fvm.set_active_image(Some((activation.offset, activation.name.clone())));
+            if double {
+                ctx.send_intent(Intent::new("image.view"));
+            }
             let Some(handle) = handle.upgrade() else {
                 return;
             };
@@ -635,8 +650,20 @@ fn image_context_menu(handle: EditorHandle) -> MenuList {
         menu = menu.item(MenuItem::new(tr!(menu_cut())).on_activate_fn(move |ctx| cut.cut(ctx)));
     }
     menu = menu.item(MenuItem::new(tr!(menu_copy())).on_activate_fn(move |ctx| copy.copy(ctx)));
+    // Looking at the picture writes nothing, so it is offered on a trashed item's text too.
+    menu = menu
+        .separator()
+        .item(
+            MenuItem::new(tr!(image_menu_view()))
+                .on_activate_fn(move |ctx| ctx.send_intent(Intent::new("image.view"))),
+        )
+        .item(
+            MenuItem::new(tr!(image_menu_open_externally()))
+                .on_activate_fn(move |ctx| ctx.send_intent(Intent::new("image.open_externally"))),
+        );
     // Everything below writes into the prose, and a trashed item's text takes no
-    // writes: what is left is the copy (see `crate::shared::editor_writes`).
+    // writes: what is left is the copy and the viewing (see
+    // `crate::shared::editor_writes`).
     if !writable {
         return menu;
     }

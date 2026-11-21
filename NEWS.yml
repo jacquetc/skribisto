@@ -1,3 +1,11 @@
+Version: 3.4.0
+Date: 2026-11-22
+Type: stable
+Description:
+- "A picture wider than its text is drawn at the width of the text, its height in proportion, in every text. It used to keep its own size and run past the right edge, which is how screenshots imported from Scrivener often looked. Nothing in the project changes: widen the window, or the column, and the picture grows back up to its own size. Resize the image now works from the size you see: 50 halves it"
+- "Double-click a picture, or choose View the image in its menu, to open it in the new image viewer: as large as the window allows, with Zoom in, Zoom out, Fit and 100 %, Ctrl and the mouse wheel to zoom where you point, a pinch on a trackpad, and a drag to move around a large picture. The arrow keys go to the text's previous and next pictures. Save a copy… writes the picture to a file under its original name, and Open in another app opens it in your system's picture application"
+- "On a Book's page, View beside the cover, or a double click on it, opens the cover in the image viewer"
+---
 Version: 3.3.3
 Date: 2026-11-19
 Type: stable

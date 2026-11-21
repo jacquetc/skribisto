@@ -3864,11 +3864,34 @@ image-resize-invalid = Introduceți un număr între 1 și 1000.
 image-menu-describe = &Descrie imaginea…
 image-menu-resize = &Redimensionează imaginea…
 image-menu-reset-size = &Mărimea originală
+image-menu-view = &Vezi imaginea
+image-menu-open-externally = Deschide în altă a&plicație
+
+# The image viewer: one picture at a time, opened from a picture in the text or from
+# the Gallery. "Fit" shows the whole picture in the window; "100 %" its own pixels.
+picture-viewer-title = Vizualizator de imagini
+picture-viewer-position = { $index } din { $count }
+picture-viewer-previous = Anterioara
+picture-viewer-next = Următoarea
+picture-viewer-zoom-out = Micșorează
+picture-viewer-zoom-in = Mărește
+picture-viewer-close = Închide
+picture-viewer-fit = Încadrează
+picture-viewer-actual-size = 100%
+picture-viewer-open-note = Deschide nota
+picture-viewer-open-externally = Deschide în altă aplicație
+picture-viewer-save-copy = Salvează o copie…
+picture-viewer-save-copy-title = Salvarea unei copii a imaginii
+picture-viewer-saved = Copia a fost salvată.
+picture-viewer-save-failed = Copia nu a putut fi salvată: { $error }
+picture-viewer-loading = Se încarcă imaginea…
+picture-viewer-failed = Această imagine nu poate fi afișată. Fișierul ei lipsește sau nu este o imagine PNG, JPEG ori WebP.
 
 # The book's cover, chosen from the book, not typed into a scene.
 cover-heading = Copertă
 cover-pick = Alege…
 cover-change = Schimbă…
+cover-view = Vezi
 cover-remove = Elimină
 cover-none = Încă nicio copertă
 cover-missing = Fișierul imaginii lipsește din proiect

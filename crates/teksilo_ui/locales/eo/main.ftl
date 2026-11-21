@@ -3099,9 +3099,33 @@ image-resize-invalid = Enigu nombron inter 1 kaj 1000.
 image-menu-describe = &Priskribi la bildon…
 image-menu-resize = Ŝanĝi bild&grandon…
 image-menu-reset-size = &Originala grando
+image-menu-view = &Vidi la bildon
+image-menu-open-externally = Malfermi en &alia aplikaĵo
+
+# The image viewer: one picture at a time, opened from a picture in the text or from
+# the Gallery. "Fit" shows the whole picture in the window; "100 %" its own pixels.
+picture-viewer-title = Bildomontrilo
+picture-viewer-position = { $index } el { $count }
+picture-viewer-previous = Antaŭa
+picture-viewer-next = Sekva
+picture-viewer-zoom-out = Malzomi
+picture-viewer-zoom-in = Zomi
+picture-viewer-close = Fermi
+picture-viewer-fit = Adapti
+picture-viewer-actual-size = 100%
+picture-viewer-open-note = Malfermi la noton
+picture-viewer-open-externally = Malfermi en alia aplikaĵo
+picture-viewer-save-copy = Konservi kopion…
+picture-viewer-save-copy-title = Konservi kopion de la bildo
+picture-viewer-saved = Kopio konservita.
+picture-viewer-save-failed = Ne eblis konservi la kopion: { $error }
+picture-viewer-loading = Ŝargante la bildon…
+picture-viewer-failed = Ĉi tiu bildo ne montreblas. Ĝia dosiero mankas, aŭ ĝi ne estas PNG-, JPEG- aŭ WebP-bildo.
 cover-heading = Kovrilo
 cover-pick = Elekti…
 cover-change = Ŝanĝi…
+# Opens the cover in the image viewer, at full size.
+cover-view = Vidi
 cover-remove = Forigi
 cover-none = Ankoraŭ neniu kovrilo
 cover-missing = La bilddosiero mankas en la projekto

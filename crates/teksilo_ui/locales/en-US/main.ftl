@@ -3661,12 +3661,36 @@ image-resize-invalid = Enter a number between 1 and 1000.
 image-menu-describe = &Describe the image…
 image-menu-resize = &Resize the image…
 image-menu-reset-size = Original si&ze
+image-menu-view = &View the image
+image-menu-open-externally = Open in another a&pp
+
+# The image viewer: one picture at a time, opened from a picture in the text or from
+# the Gallery. "Fit" shows the whole picture in the window; "100 %" its own pixels.
+picture-viewer-title = Image viewer
+picture-viewer-position = { $index } of { $count }
+picture-viewer-previous = Previous
+picture-viewer-next = Next
+picture-viewer-zoom-out = Zoom out
+picture-viewer-zoom-in = Zoom in
+picture-viewer-close = Close
+picture-viewer-fit = Fit
+picture-viewer-actual-size = 100 %
+picture-viewer-open-note = Open the note
+picture-viewer-open-externally = Open in another app
+picture-viewer-save-copy = Save a copy…
+picture-viewer-save-copy-title = Save a copy of the image
+picture-viewer-saved = Copy saved.
+picture-viewer-save-failed = The copy could not be saved: { $error }
+picture-viewer-loading = Loading the image…
+picture-viewer-failed = This image cannot be shown. Its file is missing, or it is not a PNG, JPEG or WebP picture.
 
 # A Book's cover, set on the Book's own page. Each Book has its own: a project
 # holding a trilogy holds three covers.
 cover-heading = Cover
 cover-pick = Choose…
 cover-change = Change…
+# Opens the cover in the image viewer, at full size.
+cover-view = View
 cover-remove = Remove
 cover-none = No cover yet
 cover-missing = The picture file is missing from the project

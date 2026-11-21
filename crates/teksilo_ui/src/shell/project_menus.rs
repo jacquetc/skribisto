@@ -213,21 +213,25 @@ pub(crate) fn sync_image_menu(
     // Between Format and Go: the writer reached for a picture, and the menus
     // either side are the ones that act on what is selected.
     model.insert_menu_at(IMAGE_MENU_INDEX, id, tr!(menu_image()), |m| {
-        m.item(
-            MenuEntry::new(tr!(image_menu_describe()))
-                .enabled(can_edit.clone())
-                .intent("image.describe"),
-        )
-        .item(
-            MenuEntry::new(tr!(image_menu_resize()))
-                .enabled(can_edit.clone())
-                .intent("image.resize"),
-        )
-        .item(
-            MenuEntry::new(tr!(image_menu_reset_size()))
-                .enabled(can_edit.clone())
-                .intent("image.reset_size"),
-        )
+        // Viewing writes nothing, so it stays enabled where the edits are not.
+        m.item(MenuEntry::new(tr!(image_menu_view())).intent("image.view"))
+            .item(MenuEntry::new(tr!(image_menu_open_externally())).intent("image.open_externally"))
+            .separator()
+            .item(
+                MenuEntry::new(tr!(image_menu_describe()))
+                    .enabled(can_edit.clone())
+                    .intent("image.describe"),
+            )
+            .item(
+                MenuEntry::new(tr!(image_menu_resize()))
+                    .enabled(can_edit.clone())
+                    .intent("image.resize"),
+            )
+            .item(
+                MenuEntry::new(tr!(image_menu_reset_size()))
+                    .enabled(can_edit.clone())
+                    .intent("image.reset_size"),
+            )
     });
 }
 
