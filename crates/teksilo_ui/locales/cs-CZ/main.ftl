@@ -631,6 +631,7 @@ segment-book = Kniha
 segment-pace = Tempo
 segment-notes = Poznámky
 segment-story-bible = Bible příběhu
+segment-gallery = Galerie
 segment-note-own = Poznámka
 segment-note-details = Podrobnosti
 segment-note-in-prose = V próze
@@ -3560,6 +3561,55 @@ picture-viewer-save-failed = Kopii se nepodařilo uložit: { $error }
 picture-viewer-loading = Načítání obrázku…
 picture-viewer-failed = Tento obrázek nelze zobrazit. Jeho soubor chybí, nebo nejde o obrázek PNG, JPEG ani WebP.
 
+# The Gallery: a notes folder's pictures as thumbnails. It shares the Overview's search,
+# chips and order. "First image" shows one tile per note, "All images" one per picture.
+gallery-grid-label = Obrázky v této složce
+gallery-search-label = Filtrovat galerii
+gallery-mode-first = První obrázek
+gallery-mode-all = Všechny obrázky
+gallery-mode-first-hint = Jedna miniatura pro každou poznámku: její první obrázek s počtem jejích dalších obrázků. Platí pro všechny otevřené galerie ve všech projektech.
+gallery-mode-all-hint = Jedna miniatura pro každý obrázek: všechny obrázky všech poznámek. Platí pro všechny otevřené galerie ve všech projektech.
+gallery-view-nested-hint = Každá podsložka jako miniatura s jejími prvními čtyřmi obrázky; dvojitým kliknutím na ni zobrazíte její obsah. Platí pro všechny otevřené galerie ve všech projektech.
+gallery-view-flat-hint = Všechny obrázky této složky a jejích podsložek najednou. Platí pro všechny otevřené galerie ve všech projektech.
+gallery-text-notes-hint = Poznámky bez obrázků: zobrazit i poznámky, které obsahují jen text, jako miniatury s jejich prvními slovy. Platí pro všechny otevřené galerie ve všech projektech.
+gallery-tile-size = Velikost obrázků
+gallery-scope-hint = Platí pro všechny otevřené galerie ve všech projektech.
+gallery-breadcrumb-label = Složky
+gallery-breadcrumb-root = Tato složka
+gallery-sort-label = Pořadí
+gallery-sort-binder = Pořadí v pořadači
+gallery-sort-title-ascending = Název, od A do Z
+gallery-sort-title-descending = Název, od Z do A
+gallery-sort-status = Stav, nejméně hotové první
+gallery-sort-overview = Jak je seřazeno v Přehledu
+gallery-empty = Zatím tu nejsou žádné obrázky. Objeví se tu každý obrázek vložený do poznámky v této složce.
+gallery-empty-text-notes-hint = Zatím tu nejsou žádné obrázky. Zapněte „Poznámky bez obrázků“ a uvidíte textové poznámky.
+gallery-tile-picture = { $title }, obrázek
+gallery-tile-picture-described = { $title }, obrázek: { $description }
+gallery-more-images = { $count ->
+    [1] ještě jeden obrázek v této poznámce
+    [few] ještě { $count } obrázky v této poznámce
+    [many] ještě { $count } obrázku v této poznámce
+   *[other] ještě { $count } obrázků v této poznámce
+}
+gallery-more-badge = +{ $count }
+gallery-tile-text = { $title }, textová poznámka
+gallery-tile-folder = { $title }, složka, { $count ->
+    [0] žádné obrázky
+    [1] jeden obrázek
+    [few] { $count } obrázky
+    [many] { $count } obrázku
+   *[other] { $count } obrázků
+}
+gallery-folder-count = { $count ->
+    [0] Žádné obrázky
+    [1] Jeden obrázek
+    [few] { $count } obrázky
+    [many] { $count } obrázku
+   *[other] { $count } obrázků
+}
+gallery-unavailable = Obrázek není k dispozici
+
 cover-heading = Obálka
 cover-pick = Vybrat…
 cover-change = Změnit…
@@ -4139,6 +4189,7 @@ screen-reader-offer-never = Tuto zprávu už nezobrazovat
 help-topic-writing-model = Jak je kniha poskládaná
 help-topic-drafts-and-old-versions = Uchování staršího konceptu
 help-topic-goals-and-pace = Cíle a tempo
+help-topic-pictures = Obrázky a galerie
 help-topic-comments = Komentáře
 help-topic-round-trip = Odeslání knihy čtenáři
 help-topic-export = Export

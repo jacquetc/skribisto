@@ -1,0 +1,76 @@
+## Las imágenes en su texto
+
+Para añadir una imagen, coloque el cursor donde debe ir y elija *Documento ▸ Insertar
+imagen…*. También puede soltar un archivo de imagen sobre el texto, o pegar una.
+
+Una imagen nunca se dibuja más ancha que el texto que la rodea. Una captura de pantalla ancha
+se muestra al ancho del texto, con su altura en proporción. Su propio tamaño se conserva:
+ensanche la ventana o la columna de texto y vuelve a crecer, hasta ese tamaño.
+
+## Cambiar una imagen
+
+Haga clic en una imagen para seleccionarla. Su menú, con un clic con el botón derecho o desde
+el menú *Imagen*, ofrece:
+
+- *Ver la imagen*, para mirarla en grande;
+- *Abrir en otra aplicación*, para abrirla en la aplicación que su sistema usa para las
+  imágenes;
+- *Describir la imagen…*, para un lector que no puede verla;
+- *Redimensionar la imagen…*, en porcentaje del tamaño con el que se muestra: 50 la reduce a
+  la mitad;
+- *Tamaño original*, para volver al tamaño propio de la imagen.
+
+También puede arrastrar una esquina de una imagen seleccionada para cambiar su tamaño.
+
+## El visor de imágenes
+
+Haga doble clic en una imagen, o elija *Ver la imagen*, para abrir el visor. Muestra la imagen
+tan grande como lo permite la ventana.
+
+- *Ampliar*, *Reducir*, *Ajustar* y *100 %* cambian su tamaño. También las teclas `+` y `−`,
+  `0` para *Ajustar* y `1` para *100 %*.
+- Mantenga pulsada `Ctrl` y gire la rueda del ratón para ampliar allí donde apunta. En un
+  panel táctil, pellizque.
+- Arrastre la imagen para recorrerla cuando es más grande que la ventana.
+- Las flechas izquierda y derecha pasan a la imagen anterior y a la siguiente.
+- *Guardar una copia…* escribe la imagen en el archivo que usted elija.
+
+Pulse `Esc`, o *Cerrar* al final de la barra, para cerrar el visor.
+
+La cubierta de un libro también se abre ahí: en la página del libro, elija *Ver* junto a la
+cubierta, o haga doble clic en ella.
+
+## La galería de una carpeta de notas
+
+Una carpeta de notas tiene una vista *Galería*, junto a *Notas*, *Biblia narrativa* y *Vista
+general*. Muestra en miniaturas las imágenes de las notas de la carpeta. Cada miniatura
+conserva las proporciones de su imagen.
+
+Elija lo que muestra:
+
+- *Primera imagen* da una miniatura por nota, con el número de sus otras imágenes. *Todas las
+  imágenes* da una por imagen.
+- *Anidado* muestra cada subcarpeta como una miniatura con sus cuatro primeras imágenes. Haga
+  doble clic en ella para entrar; la ruta de arriba le lleva de vuelta. *Plano* muestra a la
+  vez todas las imágenes de la carpeta y de sus subcarpetas.
+- *Notas sin imágenes* añade las notas que solo contienen texto, como miniaturas con sus
+  primeras palabras.
+- *Tamaño de las imágenes* hace las miniaturas más pequeñas o más grandes.
+
+Estas opciones valen para todas las galerías que abra.
+
+## Encontrar una imagen
+
+La galería comparte con la *Vista general* su campo de búsqueda, sus filtros de etiquetas y de
+estados y su orden. Lo que acota en una vista queda acotado en la otra.
+
+Haga doble clic en una miniatura, o pulse `Intro`, para abrirla en el visor de imágenes. Las
+flechas recorren entonces las imágenes que muestra la galería, en su orden. Haga clic con el
+botón derecho en una miniatura y elija *Abrir la nota* para abrir la nota en la que está.
+
+## La investigación de Scrivener
+
+Las imágenes de la investigación de un proyecto Scrivener llegan como notas, una imagen cada
+una, en la carpeta que la importación crea para ellas (consulte
+[Llegar desde Scrivener](:help-import-scrivener)). Abra esa carpeta y elija *Galería* para
+verlas todas.

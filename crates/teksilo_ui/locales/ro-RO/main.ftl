@@ -727,6 +727,7 @@ segment-book = Carte
 segment-pace = Ritm
 segment-notes = Note
 segment-story-bible = Biblia poveștii
+segment-gallery = Galerie
 # The three segments on an `Item/Note` tab: its own prose, its story-bible fields, and
 # (only when it carries a discoverable tag) the manuscript prose it has been declared
 # present in. See `teksilo_ui::tabs::item_note`.
@@ -3887,6 +3888,52 @@ picture-viewer-save-failed = Copia nu a putut fi salvată: { $error }
 picture-viewer-loading = Se încarcă imaginea…
 picture-viewer-failed = Această imagine nu poate fi afișată. Fișierul ei lipsește sau nu este o imagine PNG, JPEG ori WebP.
 
+# The Gallery: a notes folder's pictures as thumbnails. It shares the Overview's search,
+# chips and order. "First image" shows one tile per note, "All images" one per picture.
+gallery-grid-label = Imaginile din acest dosar
+gallery-search-label = Filtrează galeria
+gallery-mode-first = Prima imagine
+gallery-mode-all = Toate imaginile
+gallery-mode-first-hint = O miniatură pentru fiecare notă: prima ei imagine, cu numărul celorlalte imagini ale ei. Se aplică tuturor galeriilor deschise, în toate proiectele.
+gallery-mode-all-hint = O miniatură pentru fiecare imagine: toate imaginile din toate notele. Se aplică tuturor galeriilor deschise, în toate proiectele.
+gallery-view-nested-hint = Fiecare subdosar ca miniatură a primelor lui patru imagini; faceți dublu clic pe el pentru a vedea ce conține. Se aplică tuturor galeriilor deschise, în toate proiectele.
+gallery-view-flat-hint = Toate imaginile din acest dosar și din subdosarele lui, deodată. Se aplică tuturor galeriilor deschise, în toate proiectele.
+gallery-text-notes-hint = Note fără imagini: sunt afișate și notele care conțin doar text, ca miniaturi cu primele lor cuvinte. Se aplică tuturor galeriilor deschise, în toate proiectele.
+gallery-tile-size = Mărimea imaginilor
+gallery-scope-hint = Se aplică tuturor galeriilor deschise, în toate proiectele.
+gallery-breadcrumb-label = Dosare
+gallery-breadcrumb-root = Acest dosar
+gallery-sort-label = Ordine
+gallery-sort-binder = Ordinea din clasor
+gallery-sort-title-ascending = Titlu, de la A la Z
+gallery-sort-title-descending = Titlu, de la Z la A
+gallery-sort-status = Stare, întâi cele mai puțin avansate
+gallery-sort-overview = Ca în vederea de ansamblu
+gallery-empty = Încă nu există imagini aici. O imagine inserată într-o notă din acest dosar apare aici.
+gallery-empty-text-notes-hint = Încă nu există imagini aici. Activați „Note fără imagini” pentru a vedea notele cu text.
+gallery-tile-picture = { $title }, imagine
+gallery-tile-picture-described = { $title }, imagine: { $description }
+gallery-more-images = { $count ->
+    [1] încă o imagine în această notă
+    [few] încă { $count } imagini în această notă
+   *[other] încă { $count } de imagini în această notă
+}
+gallery-more-badge = +{ $count }
+gallery-tile-text = { $title }, notă cu text
+gallery-tile-folder = { $title }, dosar, { $count ->
+    [0] nicio imagine
+    [1] o imagine
+    [few] { $count } imagini
+   *[other] { $count } de imagini
+}
+gallery-folder-count = { $count ->
+    [0] Nicio imagine
+    [1] O imagine
+    [few] { $count } imagini
+   *[other] { $count } de imagini
+}
+gallery-unavailable = Imagine indisponibilă
+
 # The book's cover, chosen from the book, not typed into a scene.
 cover-heading = Copertă
 cover-pick = Alege…
@@ -4541,6 +4588,7 @@ screen-reader-offer-never = Nu mai afișa
 help-topic-writing-model = Cum este alcătuită o carte
 help-topic-drafts-and-old-versions = Păstrarea unei ciorne mai vechi
 help-topic-goals-and-pace = Ținte și ritm
+help-topic-pictures = Imaginile și galeria
 help-topic-comments = Comentarii
 help-topic-round-trip = Trimiterea cărții către un cititor
 help-topic-export = Exportul

@@ -567,6 +567,7 @@ segment-book = 本
 segment-pace = 執筆ペース
 segment-notes = ノート
 segment-story-bible = 設定資料集
+segment-gallery = ギャラリー
 segment-note-own = ノート
 segment-note-details = 詳細
 segment-note-in-prose = 本文内
@@ -2476,6 +2477,49 @@ picture-viewer-save-failed = コピーを保存できませんでした：{ $err
 picture-viewer-loading = 画像を読み込んでいます…
 picture-viewer-failed = この画像は表示できません。ファイルが見つからないか、PNG、JPEG、WebP のいずれの画像でもありません。
 
+# The Gallery: a notes folder's pictures as thumbnails. It shares the Overview's search,
+# chips and order. "First image" shows one tile per note, "All images" one per picture.
+gallery-grid-label = このフォルダーの画像
+gallery-search-label = ギャラリーを絞り込む
+gallery-mode-first = 最初の画像
+gallery-mode-all = すべての画像
+gallery-mode-first-hint = ノートごとにサムネイルを1つ表示します。最初の画像と、ほかの画像の枚数を示します。 全プロジェクトの開いているギャラリーに適用します。
+gallery-mode-all-hint = 画像ごとにサムネイルを1つ表示します。すべてのノートのすべての画像が並びます。 全プロジェクトの開いているギャラリーに適用します。
+gallery-view-nested-hint = サブフォルダーごとに、最初の4枚の画像をまとめたサムネイルを表示します。ダブルクリックすると中を表示します。 全プロジェクトの開いているギャラリーに適用します。
+gallery-view-flat-hint = このフォルダーとそのサブフォルダーのすべての画像を一度に表示します。 全プロジェクトの開いているギャラリーに適用します。
+gallery-text-notes-hint = 画像のないノート：テキストだけのノートも、冒頭の言葉を示すサムネイルとして表示します。 全プロジェクトの開いているギャラリーに適用します。
+gallery-tile-size = 画像の大きさ
+gallery-scope-hint = 全プロジェクトの開いているギャラリーに適用します。
+gallery-breadcrumb-label = フォルダー
+gallery-breadcrumb-root = このフォルダー
+gallery-sort-label = 並び順
+gallery-sort-binder = バインダー順
+gallery-sort-title-ascending = タイトル昇順
+gallery-sort-title-descending = タイトル降順
+gallery-sort-status = 状態、進んでいないものから
+gallery-sort-overview = 一覧と同じ並び順
+gallery-empty = まだ画像はありません。このフォルダーのノートに挿入した画像がここに表示されます。
+gallery-empty-text-notes-hint = まだ画像はありません。「画像のないノート」をオンにすると、テキストのノートが表示されます。
+gallery-tile-picture = { $title }、画像
+gallery-tile-picture-described = { $title }、画像：{ $description }
+gallery-more-images = { $count ->
+    [1] このノートにはほかに画像が1枚あります
+   *[other] このノートにはほかに画像が{ $count }枚あります
+}
+gallery-more-badge = +{ $count }
+gallery-tile-text = { $title }、テキストのノート
+gallery-tile-folder = { $title }、フォルダー、{ $count ->
+    [0] 画像なし
+    [1] 画像1枚
+   *[other] 画像{ $count }枚
+}
+gallery-folder-count = { $count ->
+    [0] 画像なし
+    [1] 画像1枚
+   *[other] 画像{ $count }枚
+}
+gallery-unavailable = 画像を表示できません
+
 cover-heading = 表紙
 cover-pick = 選択…
 cover-change = 変更…
@@ -2885,6 +2929,7 @@ screen-reader-offer-never = 今後表示しない
 help-topic-writing-model = 本の構成方法
 help-topic-drafts-and-old-versions = 以前の下書きを残す
 help-topic-goals-and-pace = 目標と執筆ペース
+help-topic-pictures = 画像とギャラリー
 help-topic-comments = コメント
 help-topic-round-trip = 読者に本を送る
 help-topic-export = エクスポート

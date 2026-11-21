@@ -152,6 +152,7 @@ pub mod ext;
 pub mod first_run;
 pub mod footnotes;
 pub mod format;
+pub mod gallery;
 pub mod go;
 pub mod goals;
 pub mod heap;

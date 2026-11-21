@@ -952,6 +952,14 @@ pub fn folder_synopsis_with_overview(tab: &ContentTab) -> Box<dyn Widget> {
             tr!(segment_story_bible()),
             crate::tabs::story_bible_place::story_bible_pane(tab),
         ));
+        // The folder's pictures. A notes folder only, for the reason Story bible is: a
+        // paratext folder is not a place research screenshots are filed, and the
+        // manuscript's own folders have the Corkboard.
+        items.push((
+            segments::SEG_GALLERY,
+            tr!(segment_gallery()),
+            crate::tabs::gallery::gallery_pane(tab),
+        ));
     }
     for spec in segments::registered_for(&sub_role) {
         // Leaked so the id borrows for the rest of this build: see `folder_segmented`,

@@ -718,6 +718,7 @@ segment-book = Book
 segment-pace = Pace
 segment-notes = Notes
 segment-story-bible = Story bible
+segment-gallery = Gallery
 # The three segments on an `Item/Note` tab: its own prose, its story-bible fields, and
 # (only when it carries a discoverable tag) the manuscript prose it has been declared
 # present in. See `teksilo_ui::tabs::item_note`.
@@ -3684,6 +3685,49 @@ picture-viewer-save-failed = The copy could not be saved: { $error }
 picture-viewer-loading = Loading the image…
 picture-viewer-failed = This image cannot be shown. Its file is missing, or it is not a PNG, JPEG or WebP picture.
 
+# The Gallery: a notes folder's pictures as thumbnails. It shares the Overview's search,
+# chips and order. "First image" shows one tile per note, "All images" one per picture.
+gallery-grid-label = Images in this folder
+gallery-search-label = Filter the gallery
+gallery-mode-first = First image
+gallery-mode-all = All images
+gallery-mode-first-hint = One thumbnail per note: its first image, with the number of its other images. Applies to every open gallery, in every project.
+gallery-mode-all-hint = One thumbnail per image: every image of every note. Applies to every open gallery, in every project.
+gallery-view-nested-hint = Each subfolder as a tile with its first four images; double-click it to see inside. Applies to every open gallery, in every project.
+gallery-view-flat-hint = Every image of this folder and of its subfolders, all at once. Applies to every open gallery, in every project.
+gallery-text-notes-hint = Notes without images: also show the notes that hold only text, as tiles of their opening words. Applies to every open gallery, in every project.
+gallery-tile-size = Image size
+gallery-scope-hint = Applies to every open gallery, in every project.
+gallery-breadcrumb-label = Folders
+gallery-breadcrumb-root = This folder
+gallery-sort-label = Order
+gallery-sort-binder = Binder order
+gallery-sort-title-ascending = Title, A to Z
+gallery-sort-title-descending = Title, Z to A
+gallery-sort-status = Status, least finished first
+gallery-sort-overview = As sorted in the Overview
+gallery-empty = No images here yet. A picture inserted in a note of this folder appears here.
+gallery-empty-text-notes-hint = No images here yet. Turn on "Notes without images" to see the text notes.
+gallery-tile-picture = { $title }, image
+gallery-tile-picture-described = { $title }, image: { $description }
+gallery-more-images = { $count ->
+    [1] one more image in this note
+   *[other] { $count } more images in this note
+}
+gallery-more-badge = +{ $count }
+gallery-tile-text = { $title }, text note
+gallery-tile-folder = { $title }, folder, { $count ->
+    [0] no images
+    [1] one image
+   *[other] { $count } images
+}
+gallery-folder-count = { $count ->
+    [0] No images
+    [1] One image
+   *[other] { $count } images
+}
+gallery-unavailable = Image unavailable
+
 # A Book's cover, set on the Book's own page. Each Book has its own: a project
 # holding a trilogy holds three covers.
 cover-heading = Cover
@@ -4295,6 +4339,7 @@ screen-reader-offer-never = Do not show this again
 help-topic-writing-model = How a book is put together
 help-topic-drafts-and-old-versions = Keeping an older draft
 help-topic-goals-and-pace = Targets and pace
+help-topic-pictures = Pictures and the gallery
 help-topic-comments = Comments
 help-topic-round-trip = Sending your book to a reader
 help-topic-export = Exporting

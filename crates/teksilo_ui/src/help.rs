@@ -547,6 +547,12 @@ pub fn builtin_topics() -> Vec<HelpTopicSpec> {
             body: djot_topic!("goals-and-pace"),
         },
         HelpTopicSpec {
+            key: "help-pictures",
+            section: HelpSection::Writing,
+            title: Rc::new(|| tr!(help_topic_pictures())),
+            body: djot_topic!("pictures"),
+        },
+        HelpTopicSpec {
             key: "help-comments",
             section: HelpSection::Reviewing,
             title: Rc::new(|| tr!(help_topic_comments())),

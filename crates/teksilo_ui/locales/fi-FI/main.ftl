@@ -616,6 +616,7 @@ segment-book = Kirja
 segment-pace = Tahti
 segment-notes = Muistiinpanot
 segment-story-bible = Tarinan tietopankki
+segment-gallery = Galleria
 segment-note-own = Muistiinpano
 segment-note-details = Yksityiskohdat
 segment-note-in-prose = Tekstissä
@@ -3303,6 +3304,49 @@ picture-viewer-save-failed = Kopiota ei voitu tallentaa: { $error }
 picture-viewer-loading = Ladataan kuvaa…
 picture-viewer-failed = Tätä kuvaa ei voi näyttää. Sen tiedosto puuttuu, tai se ei ole PNG-, JPEG- tai WebP-kuva.
 
+# The Gallery: a notes folder's pictures as thumbnails. It shares the Overview's search,
+# chips and order. "First image" shows one tile per note, "All images" one per picture.
+gallery-grid-label = Tämän kansion kuvat
+gallery-search-label = Suodata galleriaa
+gallery-mode-first = Ensimmäinen kuva
+gallery-mode-all = Kaikki kuvat
+gallery-mode-first-hint = Yksi pikkukuva muistiinpanoa kohden: sen ensimmäinen kuva ja sen muiden kuvien määrä. Koskee jokaista avointa galleriaa joka projektissa.
+gallery-mode-all-hint = Yksi pikkukuva kuvaa kohden: jokaisen muistiinpanon jokainen kuva. Koskee jokaista avointa galleriaa joka projektissa.
+gallery-view-nested-hint = Jokainen alikansio ruutuna, jossa on sen neljä ensimmäistä kuvaa; kaksoisnapsauta sitä, niin näet sen sisällön. Koskee jokaista avointa galleriaa joka projektissa.
+gallery-view-flat-hint = Kaikki tämän kansion ja sen alikansioiden kuvat kerralla. Koskee jokaista avointa galleriaa joka projektissa.
+gallery-text-notes-hint = Muistiinpanot ilman kuvia: näytä myös muistiinpanot, joissa on pelkkää tekstiä, ruutuina niiden ensimmäisistä sanoista. Koskee jokaista avointa galleriaa joka projektissa.
+gallery-tile-size = Kuvan koko
+gallery-scope-hint = Koskee jokaista avointa galleriaa joka projektissa.
+gallery-breadcrumb-label = Kansiot
+gallery-breadcrumb-root = Tämä kansio
+gallery-sort-label = Järjestys
+gallery-sort-binder = Mapin järjestys
+gallery-sort-title-ascending = Otsikko, A–Ö
+gallery-sort-title-descending = Otsikko, Ö–A
+gallery-sort-status = Tila, keskeneräisimmät ensin
+gallery-sort-overview = Yleiskatsauksen järjestyksessä
+gallery-empty = Täällä ei ole vielä kuvia. Tämän kansion muistiinpanoon lisätty kuva näkyy täällä.
+gallery-empty-text-notes-hint = Täällä ei ole vielä kuvia. Ota käyttöön ”Muistiinpanot ilman kuvia”, niin näet tekstimuistiinpanot.
+gallery-tile-picture = { $title }, kuva
+gallery-tile-picture-described = { $title }, kuva: { $description }
+gallery-more-images = { $count ->
+    [1] yksi kuva lisää tässä muistiinpanossa
+   *[other] { $count } kuvaa lisää tässä muistiinpanossa
+}
+gallery-more-badge = +{ $count }
+gallery-tile-text = { $title }, tekstimuistiinpano
+gallery-tile-folder = { $title }, kansio, { $count ->
+    [0] ei kuvia
+    [1] yksi kuva
+   *[other] { $count } kuvaa
+}
+gallery-folder-count = { $count ->
+    [0] Ei kuvia
+    [1] Yksi kuva
+   *[other] { $count } kuvaa
+}
+gallery-unavailable = Kuva ei ole saatavilla
+
 cover-heading = Kansikuva
 cover-pick = Valitse…
 cover-change = Vaihda…
@@ -3838,6 +3882,7 @@ screen-reader-offer-never = Älä näytä tätä uudelleen
 help-topic-writing-model = Miten kirja kootaan
 help-topic-drafts-and-old-versions = Vanhemman luonnoksen säilyttäminen
 help-topic-goals-and-pace = Tavoitteet ja tahti
+help-topic-pictures = Kuvat ja galleria
 help-topic-comments = Kommentit
 help-topic-round-trip = Kirjan lähettäminen lukijalle
 help-topic-export = Vienti

@@ -567,6 +567,7 @@ segment-book = 책
 segment-pace = 집필 계획
 segment-notes = 노트
 segment-story-bible = 설정집
+segment-gallery = 갤러리
 segment-note-own = 노트
 segment-note-details = 세부 정보
 segment-note-in-prose = 본문 내
@@ -2402,6 +2403,49 @@ picture-viewer-save-failed = 사본을 저장할 수 없습니다: { $error }
 picture-viewer-loading = 이미지를 불러오는 중…
 picture-viewer-failed = 이 이미지를 표시할 수 없습니다. 파일이 없거나 PNG, JPEG, WebP 이미지가 아닙니다.
 
+# The Gallery: a notes folder's pictures as thumbnails. It shares the Overview's search,
+# chips and order. "First image" shows one tile per note, "All images" one per picture.
+gallery-grid-label = 이 폴더의 이미지
+gallery-search-label = 갤러리 필터
+gallery-mode-first = 첫 이미지
+gallery-mode-all = 모든 이미지
+gallery-mode-first-hint = 노트마다 썸네일을 하나씩 표시합니다. 첫 이미지와 나머지 이미지 개수를 보여 줍니다. 모든 프로젝트의 열린 갤러리에 적용합니다.
+gallery-mode-all-hint = 이미지마다 썸네일을 하나씩 표시합니다. 모든 노트의 모든 이미지가 나옵니다. 모든 프로젝트의 열린 갤러리에 적용합니다.
+gallery-view-nested-hint = 하위 폴더마다 첫 이미지 4개를 담은 썸네일을 표시합니다. 두 번 클릭하면 안으로 들어갑니다. 모든 프로젝트의 열린 갤러리에 적용합니다.
+gallery-view-flat-hint = 이 폴더와 하위 폴더의 모든 이미지를 한 번에 표시합니다. 모든 프로젝트의 열린 갤러리에 적용합니다.
+gallery-text-notes-hint = 이미지 없는 노트: 텍스트만 있는 노트도 첫 단어를 보여 주는 썸네일로 표시합니다. 모든 프로젝트의 열린 갤러리에 적용합니다.
+gallery-tile-size = 이미지 크기
+gallery-scope-hint = 모든 프로젝트의 열린 갤러리에 적용합니다.
+gallery-breadcrumb-label = 폴더
+gallery-breadcrumb-root = 이 폴더
+gallery-sort-label = 순서
+gallery-sort-binder = 문서 트리 순서
+gallery-sort-title-ascending = 제목 오름차순
+gallery-sort-title-descending = 제목 내림차순
+gallery-sort-status = 상태, 덜 진행된 것부터
+gallery-sort-overview = 개요의 정렬 순서대로
+gallery-empty = 아직 이미지가 없습니다. 이 폴더의 노트에 삽입한 이미지가 여기에 표시됩니다.
+gallery-empty-text-notes-hint = 아직 이미지가 없습니다. 텍스트 노트를 보려면 "이미지 없는 노트"를 켜세요.
+gallery-tile-picture = { $title }, 이미지
+gallery-tile-picture-described = { $title }, 이미지: { $description }
+gallery-more-images = { $count ->
+    [1] 이 노트에 이미지가 1개 더 있습니다
+   *[other] 이 노트에 이미지가 { $count }개 더 있습니다
+}
+gallery-more-badge = +{ $count }
+gallery-tile-text = { $title }, 텍스트 노트
+gallery-tile-folder = { $title }, 폴더, { $count ->
+    [0] 이미지 없음
+    [1] 이미지 1개
+   *[other] 이미지 { $count }개
+}
+gallery-folder-count = { $count ->
+    [0] 이미지 없음
+    [1] 이미지 1개
+   *[other] 이미지 { $count }개
+}
+gallery-unavailable = 이미지를 사용할 수 없음
+
 cover-heading = 표지
 cover-pick = 선택…
 cover-change = 변경…
@@ -2806,6 +2850,7 @@ screen-reader-offer-never = 다시 표시하지 않음
 help-topic-writing-model = 책의 구성 방식
 help-topic-drafts-and-old-versions = 이전 초안 보관
 help-topic-goals-and-pace = 목표 및 집필 계획
+help-topic-pictures = 이미지와 갤러리
 help-topic-comments = 댓글
 help-topic-round-trip = 독자에게 책 보내기
 help-topic-export = 내보내기

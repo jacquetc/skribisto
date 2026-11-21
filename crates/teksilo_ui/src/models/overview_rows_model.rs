@@ -595,6 +595,30 @@ impl OverviewRowsModel {
     }
 }
 
+/// The subtree of `container_id` as the Overview shows it: the same rows, kept and ordered
+/// by the same search, tag filter, status filter and sort ([`shape`]), in depth-first
+/// order with each row's depth below the container.
+///
+/// For a view that shares the Overview's filters without being a table (the Gallery):
+/// reading the rows through this one function is what keeps the two views agreeing about
+/// which notes match, and in what order, rather than holding two copies of the rules.
+/// Word counts are computed with the default method, since such a view shows none.
+pub(crate) fn shaped_subtree(
+    ctx: &AppContext,
+    work_id: &Signal<Option<u64>>,
+    container_id: u64,
+    filters: &OverviewFilters,
+) -> Vec<TreeRow<Uuid, OverviewRow>> {
+    let loaded = rows::load(
+        ctx,
+        work_id,
+        container_id,
+        CountingMethodSetting::default(),
+        &GoalUnit::default(),
+    );
+    shape(loaded.rows, filters)
+}
+
 /// Re-source, then restore the expand state the re-source pruned.
 ///
 /// The union with the slice's own post-reload set is what keeps

@@ -1,0 +1,74 @@
+## Les images dans votre texte
+
+Pour ajouter une image, placez le curseur à l’endroit voulu et choisissez *Document ▸ Insérer
+une image…*. Vous pouvez aussi déposer un fichier d’image sur le texte, ou en coller une.
+
+Une image n’est jamais dessinée plus large que le texte qui l’entoure. Une capture d’écran large
+est montrée à la largeur du texte, sa hauteur en proportion. Sa taille propre est conservée :
+élargissez la fenêtre ou la colonne de texte et elle grandit à nouveau, jusqu’à cette taille.
+
+## Modifier une image
+
+Cliquez sur une image pour la sélectionner. Son menu, d’un clic droit ou par le menu *Image*,
+propose :
+
+- *Voir l’image*, pour la regarder en grand ;
+- *Ouvrir dans une autre application*, pour l’ouvrir dans l’application que votre système
+  utilise pour les images ;
+- *Décrire l’image…*, pour qui ne peut pas la voir ;
+- *Redimensionner l’image…*, en pourcentage de la taille affichée : 50 la réduit de moitié ;
+- *Taille d’origine*, pour revenir à la taille propre de l’image.
+
+Vous pouvez aussi faire glisser un coin d’une image sélectionnée pour la redimensionner.
+
+## La visionneuse d’images
+
+Double-cliquez sur une image, ou choisissez *Voir l’image*, pour ouvrir la visionneuse. Elle
+montre l’image aussi grande que la fenêtre le permet.
+
+- *Zoomer*, *Dézoomer*, *Ajuster* et *100 %* changent sa taille. Les touches + et − aussi, 0
+  pour *Ajuster* et 1 pour *100 %*.
+- Maintenez Ctrl et tournez la molette pour zoomer là où vous pointez. Sur un pavé tactile,
+  pincez.
+- Faites glisser l’image pour vous y déplacer quand elle est plus grande que la fenêtre.
+- Les flèches gauche et droite passent à l’image précédente et à la suivante.
+- *Enregistrer une copie…* écrit l’image dans le fichier de votre choix.
+
+Appuyez sur Échap, ou sur *Fermer* au bout de la barre, pour fermer la visionneuse.
+
+La couverture d’un livre s’y ouvre aussi : sur la page du livre, choisissez *Voir* à côté de la
+couverture, ou double-cliquez dessus.
+
+## La galerie d’un dossier de notes
+
+Un dossier de notes a une vue *Galerie*, à côté de *Notes*, *Bible narrative* et *Vue
+d’ensemble*. Elle montre en vignettes les images des notes du dossier. Chaque vignette garde les
+proportions de son image.
+
+Choisissez ce qu’elle montre :
+
+- *Première image* donne une vignette par note, avec le nombre de ses autres images. *Toutes les
+  images* en donne une par image.
+- *Imbriqué* montre chaque sous-dossier comme une vignette de ses quatre premières images.
+  Double-cliquez dessus pour y entrer ; le chemin en haut vous ramène. *À plat* montre d’un coup
+  toutes les images du dossier et de ses sous-dossiers.
+- *Notes sans image* ajoute les notes qui ne contiennent que du texte, en vignettes de leurs
+  premiers mots.
+- *Taille des images* rend les vignettes plus petites ou plus grandes.
+
+Ces choix valent pour toutes les galeries que vous ouvrez.
+
+## Retrouver une image
+
+La galerie partage avec la *Vue d’ensemble* son champ de recherche, ses filtres d’étiquettes et
+de statuts et son ordre. Ce que vous restreignez dans une vue l’est aussi dans l’autre.
+
+Double-cliquez sur une vignette, ou appuyez sur Entrée, pour l’ouvrir dans la visionneuse. Les
+flèches parcourent alors les images que la galerie montre, dans son ordre. Faites un clic droit
+sur une vignette et choisissez *Ouvrir la note* pour ouvrir la note où elle se trouve.
+
+## Les recherches venues de Scrivener
+
+Les images des recherches d’un projet Scrivener arrivent en notes, une image chacune, dans
+le dossier que l’import leur crée (voir [Venir de Scrivener](:help-import-scrivener)). Ouvrez ce
+dossier et choisissez *Galerie* pour les voir toutes.

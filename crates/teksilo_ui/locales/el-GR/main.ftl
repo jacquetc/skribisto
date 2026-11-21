@@ -641,6 +641,7 @@ segment-book = Βιβλίο
 segment-pace = Ρυθμός
 segment-notes = Σημειώσεις
 segment-story-bible = Βίβλος ιστορίας
+segment-gallery = Συλλογή
 
 segment-note-own = Σημείωση
 segment-note-details = Λεπτομέρειες
@@ -3303,6 +3304,49 @@ picture-viewer-save-failed = Δεν ήταν δυνατή η αποθήκευσ�
 picture-viewer-loading = Φόρτωση της εικόνας…
 picture-viewer-failed = Αυτή η εικόνα δεν μπορεί να εμφανιστεί. Το αρχείο της λείπει ή δεν είναι εικόνα PNG, JPEG ή WebP.
 
+# The Gallery: a notes folder's pictures as thumbnails. It shares the Overview's search,
+# chips and order. "First image" shows one tile per note, "All images" one per picture.
+gallery-grid-label = Εικόνες σε αυτόν τον φάκελο
+gallery-search-label = Φιλτράρισμα της συλλογής
+gallery-mode-first = Πρώτη εικόνα
+gallery-mode-all = Όλες οι εικόνες
+gallery-mode-first-hint = Μία μικρογραφία ανά σημείωση: η πρώτη της εικόνα, με τον αριθμό των υπόλοιπων εικόνων της. Ισχύει για κάθε ανοιχτή συλλογή, σε κάθε έργο.
+gallery-mode-all-hint = Μία μικρογραφία ανά εικόνα: κάθε εικόνα κάθε σημείωσης. Ισχύει για κάθε ανοιχτή συλλογή, σε κάθε έργο.
+gallery-view-nested-hint = Κάθε υποφάκελος ως μικρογραφία με τις τέσσερις πρώτες εικόνες του· κάντε διπλό κλικ πάνω του για να δείτε τα περιεχόμενά του. Ισχύει για κάθε ανοιχτή συλλογή, σε κάθε έργο.
+gallery-view-flat-hint = Όλες οι εικόνες αυτού του φακέλου και των υποφακέλων του, όλες μαζί. Ισχύει για κάθε ανοιχτή συλλογή, σε κάθε έργο.
+gallery-text-notes-hint = Σημειώσεις χωρίς εικόνες: εμφανίζονται και οι σημειώσεις που περιέχουν μόνο κείμενο, ως μικρογραφίες με τις πρώτες τους λέξεις. Ισχύει για κάθε ανοιχτή συλλογή, σε κάθε έργο.
+gallery-tile-size = Μέγεθος εικόνων
+gallery-scope-hint = Ισχύει για κάθε ανοιχτή συλλογή, σε κάθε έργο.
+gallery-breadcrumb-label = Φάκελοι
+gallery-breadcrumb-root = Αυτός ο φάκελος
+gallery-sort-label = Σειρά
+gallery-sort-binder = Σειρά ντοσιέ
+gallery-sort-title-ascending = Τίτλος, Α–Ω
+gallery-sort-title-descending = Τίτλος, Ω–Α
+gallery-sort-status = Κατάσταση, πρώτα τα λιγότερο ολοκληρωμένα
+gallery-sort-overview = Όπως ταξινομούνται στην Επισκόπηση
+gallery-empty = Δεν υπάρχουν εικόνες εδώ ακόμη. Μια εικόνα που παρεμβάλλεται σε σημείωση αυτού του φακέλου εμφανίζεται εδώ.
+gallery-empty-text-notes-hint = Δεν υπάρχουν εικόνες εδώ ακόμη. Ενεργοποιήστε το «Σημειώσεις χωρίς εικόνες» για να δείτε τις σημειώσεις κειμένου.
+gallery-tile-picture = { $title }, εικόνα
+gallery-tile-picture-described = { $title }, εικόνα: { $description }
+gallery-more-images = { $count ->
+    [1] άλλη μία εικόνα σε αυτή τη σημείωση
+   *[other] άλλες { $count } εικόνες σε αυτή τη σημείωση
+}
+gallery-more-badge = +{ $count }
+gallery-tile-text = { $title }, σημείωση κειμένου
+gallery-tile-folder = { $title }, φάκελος, { $count ->
+    [0] καμία εικόνα
+    [1] μία εικόνα
+   *[other] { $count } εικόνες
+}
+gallery-folder-count = { $count ->
+    [0] Καμία εικόνα
+    [1] Μία εικόνα
+   *[other] { $count } εικόνες
+}
+gallery-unavailable = Η εικόνα δεν είναι διαθέσιμη
+
 cover-heading = Εξώφυλλο
 cover-pick = Επιλογή…
 cover-change = Αλλαγή…
@@ -3843,6 +3887,7 @@ screen-reader-offer-never = Να μην εμφανιστεί ξανά
 help-topic-writing-model = Πώς συντίθεται ένα βιβλίο
 help-topic-drafts-and-old-versions = Διατήρηση ενός παλαιότερου προσχεδίου
 help-topic-goals-and-pace = Στόχοι και ρυθμός
+help-topic-pictures = Οι εικόνες και η συλλογή
 help-topic-comments = Σχόλια
 help-topic-round-trip = Αποστολή του βιβλίου σας σε αναγνώστη
 help-topic-export = Εξαγωγή

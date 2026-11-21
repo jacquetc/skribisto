@@ -707,6 +707,7 @@ segment-part = Partie
 segment-book = Livre
 segment-notes = Notes
 segment-story-bible = Bible narrative
+segment-gallery = Galerie
 segment-pace = Rythme
 # Les trois segments de l'onglet d'un `Item/Note` : son propre texte, ses champs de
 # bible narrative, et (seulement si elle porte une étiquette repérable) le texte du
@@ -3640,6 +3641,50 @@ picture-viewer-save-failed = La copie n’a pas pu être enregistrée : { $erro
 picture-viewer-loading = Chargement de l’image…
 picture-viewer-failed = Impossible d’afficher cette image. Son fichier manque, ou ce n’est pas une image PNG, JPEG ou WebP.
 
+# La galerie : les images des notes d’un dossier, en vignettes. Elle partage la recherche,
+# les pastilles et l’ordre de la vue d’ensemble. « Première image » montre une vignette
+# par note, « Toutes les images » une par image.
+gallery-grid-label = Images de ce dossier
+gallery-search-label = Filtrer la galerie
+gallery-mode-first = Première image
+gallery-mode-all = Toutes les images
+gallery-mode-first-hint = Une vignette par note : sa première image, avec le nombre de ses autres images. S’applique à toutes les galeries ouvertes, dans tous les projets.
+gallery-mode-all-hint = Une vignette par image : toutes les images de toutes les notes. S’applique à toutes les galeries ouvertes, dans tous les projets.
+gallery-view-nested-hint = Chaque sous-dossier en vignette de ses quatre premières images ; double-cliquez dessus pour y entrer. S’applique à toutes les galeries ouvertes, dans tous les projets.
+gallery-view-flat-hint = Toutes les images de ce dossier et de ses sous-dossiers, d’un coup. S’applique à toutes les galeries ouvertes, dans tous les projets.
+gallery-text-notes-hint = Notes sans image : montrer aussi les notes qui ne contiennent que du texte, en vignettes de leurs premiers mots. S’applique à toutes les galeries ouvertes, dans tous les projets.
+gallery-tile-size = Taille des images
+gallery-scope-hint = S’applique à toutes les galeries ouvertes, dans tous les projets.
+gallery-breadcrumb-label = Dossiers
+gallery-breadcrumb-root = Ce dossier
+gallery-sort-label = Ordre
+gallery-sort-binder = Ordre du classeur
+gallery-sort-title-ascending = Titre, de A à Z
+gallery-sort-title-descending = Titre, de Z à A
+gallery-sort-status = Statut, les moins avancées d’abord
+gallery-sort-overview = Comme trié dans la vue d’ensemble
+gallery-empty = Aucune image pour l’instant. Une image insérée dans une note de ce dossier apparaît ici.
+gallery-empty-text-notes-hint = Aucune image pour l’instant. Activez « Notes sans image » pour voir les notes de texte.
+gallery-tile-picture = { $title }, image
+gallery-tile-picture-described = { $title }, image : { $description }
+gallery-more-images = { $count ->
+    [1] une autre image dans cette note
+   *[other] { $count } autres images dans cette note
+}
+gallery-more-badge = +{ $count }
+gallery-tile-text = { $title }, note de texte
+gallery-tile-folder = { $title }, dossier, { $count ->
+    [0] aucune image
+    [1] une image
+   *[other] { $count } images
+}
+gallery-folder-count = { $count ->
+    [0] Aucune image
+    [1] Une image
+   *[other] { $count } images
+}
+gallery-unavailable = Image indisponible
+
 # La couverture du livre, choisie depuis le livre, non insérée dans une scène.
 cover-heading = Couverture
 cover-pick = Choisir…
@@ -4221,6 +4266,7 @@ screen-reader-offer-never = Ne plus afficher
 help-topic-writing-model = Comment un livre est structuré
 help-topic-drafts-and-old-versions = Conserver un ancien brouillon
 help-topic-goals-and-pace = Objectifs et rythme
+help-topic-pictures = Les images et la galerie
 help-topic-comments = Commentaires
 help-topic-round-trip = Envoyer votre livre à un lecteur
 help-topic-export = Exporter

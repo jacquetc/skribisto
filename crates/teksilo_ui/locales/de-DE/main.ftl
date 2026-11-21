@@ -589,6 +589,7 @@ segment-book = Buch
 segment-pace = Schreibtempo
 segment-notes = Notizen
 segment-story-bible = Geschichtenbibel
+segment-gallery = Galerie
 segment-note-own = Notiz
 segment-note-details = Details
 segment-note-in-prose = Im Text
@@ -3322,6 +3323,50 @@ picture-viewer-saved = Kopie gespeichert.
 picture-viewer-save-failed = Die Kopie konnte nicht gespeichert werden: { $error }
 picture-viewer-loading = Bild wird geladen…
 picture-viewer-failed = Dieses Bild kann nicht angezeigt werden. Seine Datei fehlt, oder es ist kein PNG-, JPEG- oder WebP-Bild.
+
+# The Gallery: a notes folder's pictures as thumbnails. It shares the Overview's search,
+# chips and order. "First image" shows one tile per note, "All images" one per picture.
+gallery-grid-label = Bilder in diesem Ordner
+gallery-search-label = Galerie filtern
+gallery-mode-first = Erstes Bild
+gallery-mode-all = Alle Bilder
+gallery-mode-first-hint = Ein Vorschaubild pro Notiz: ihr erstes Bild, mit der Anzahl ihrer weiteren Bilder. Gilt für alle geöffneten Galerien in allen Projekten.
+gallery-mode-all-hint = Ein Vorschaubild pro Bild: alle Bilder aller Notizen. Gilt für alle geöffneten Galerien in allen Projekten.
+gallery-view-nested-hint = Jeder Unterordner als Kachel mit seinen ersten vier Bildern; doppelklicken Sie darauf, um seinen Inhalt zu sehen. Gilt für alle geöffneten Galerien in allen Projekten.
+gallery-view-flat-hint = Alle Bilder dieses Ordners und seiner Unterordner auf einmal. Gilt für alle geöffneten Galerien in allen Projekten.
+gallery-text-notes-hint = Notizen ohne Bilder: auch die Notizen zeigen, die nur Text enthalten, als Kacheln mit ihren ersten Wörtern. Gilt für alle geöffneten Galerien in allen Projekten.
+gallery-tile-size = Bildgröße
+gallery-scope-hint = Gilt für alle geöffneten Galerien in allen Projekten.
+gallery-breadcrumb-label = Ordner
+gallery-breadcrumb-root = Dieser Ordner
+gallery-sort-label = Reihenfolge
+gallery-sort-binder = Reihenfolge der Projektmappe
+gallery-sort-title-ascending = Titel, A bis Z
+gallery-sort-title-descending = Titel, Z bis A
+gallery-sort-status = Status, am wenigsten fortgeschrittene zuerst
+gallery-sort-overview = Wie in der Übersicht sortiert
+gallery-empty = Hier gibt es noch keine Bilder. Ein Bild, das Sie in eine Notiz dieses Ordners einfügen, erscheint hier.
+gallery-empty-text-notes-hint = Hier gibt es noch keine Bilder. Aktivieren Sie „Notizen ohne Bilder“, um die Textnotizen zu sehen.
+gallery-tile-picture = { $title }, Bild
+gallery-tile-picture-described = { $title }, Bild: { $description }
+gallery-more-images = { $count ->
+    [1] ein weiteres Bild in dieser Notiz
+   *[other] { $count } weitere Bilder in dieser Notiz
+}
+gallery-more-badge = +{ $count }
+gallery-tile-text = { $title }, Textnotiz
+gallery-tile-folder = { $title }, Ordner, { $count ->
+    [0] keine Bilder
+    [1] ein Bild
+   *[other] { $count } Bilder
+}
+gallery-folder-count = { $count ->
+    [0] Keine Bilder
+    [1] Ein Bild
+   *[other] { $count } Bilder
+}
+gallery-unavailable = Bild nicht verfügbar
+
 cover-heading = Umschlag
 cover-pick = Auswählen…
 cover-change = Ändern…
@@ -3836,6 +3881,7 @@ screen-reader-offer-never = Nicht mehr anzeigen
 help-topic-writing-model = Wie ein Buch aufgebaut ist
 help-topic-drafts-and-old-versions = Einen älteren Entwurf behalten
 help-topic-goals-and-pace = Ziele und Schreibtempo
+help-topic-pictures = Bilder und Galerie
 help-topic-comments = Kommentare
 help-topic-round-trip = Ihr Buch an einen Leser senden
 help-topic-export = Exportieren

@@ -1,0 +1,69 @@
+## Pictures in your text
+
+To add a picture, place the cursor where it goes and choose *Document ▸ Insert image…*. You
+can also drop a picture file on the text, or paste one.
+
+A picture is never drawn wider than the text around it. A wide screenshot is shown at the
+width of the text, its height in proportion. Its own size is kept: widen the window or the
+text column and it grows back, up to that size.
+
+## Changing a picture
+
+Click a picture to select it. Its menu, from a right click or the *Image* menu, offers:
+
+- *View the image*, to look at it full size;
+- *Open in another app*, to open it in the application your system uses for pictures;
+- *Describe the image…*, for a reader who cannot see it;
+- *Resize the image…*, as a percentage of the size it is shown at: 50 halves it;
+- *Original size*, to go back to the picture's own size.
+
+You can also drag a corner of a selected picture to resize it.
+
+## The image viewer
+
+Double-click a picture, or choose *View the image*, to open the viewer. It shows the picture
+as large as the window allows.
+
+- *Zoom in*, *Zoom out*, *Fit* and *100 %* change its size. So do the + and − keys, 0 for
+  *Fit* and 1 for *100 %*.
+- Hold Ctrl and turn the mouse wheel to zoom where you point. On a trackpad, pinch.
+- Drag the picture to move around it when it is larger than the window.
+- The left and right arrow keys go to the previous and next picture.
+- *Save a copy…* writes the picture to a file of your choice.
+
+Press Escape, or *Close* at the right end of the bar, to close the viewer.
+
+A Book's cover opens there too: on the Book's page, choose *View* beside the cover, or
+double-click it.
+
+## The gallery of a notes folder
+
+A notes folder has a *Gallery* view, beside *Notes*, *Story bible* and *Overview*. It shows the
+pictures in the folder's notes as thumbnails. Each thumbnail keeps its picture's proportions.
+
+Choose what it shows:
+
+- *First image* gives one thumbnail per note, with the number of its other pictures. *All
+  images* gives one per picture.
+- *Nested* shows each subfolder as a tile with its first four pictures. Double-click it to go
+  inside; the path at the top takes you back. *Flat* shows every picture of the folder and its
+  subfolders at once.
+- *Notes without images* adds the notes that hold only text, as tiles of their opening words.
+- *Image size* makes the thumbnails smaller or larger.
+
+These choices apply to every gallery you open.
+
+## Finding a picture
+
+The gallery shares its search field, its tag and status filters and its order with the
+*Overview*. What you narrow in one view is narrowed in the other.
+
+Double-click a thumbnail, or press Enter, to open it in the image viewer. The arrow keys then
+go through the pictures the gallery shows, in its order. Right-click a thumbnail and choose
+*Open the note* to open the note it is in.
+
+## Research from Scrivener
+
+A Scrivener project's research pictures arrive as notes, one picture each, in the folder the
+import makes for them (see [Coming from Scrivener](:help-import-scrivener)). Open that folder
+and choose *Gallery* to see them all.

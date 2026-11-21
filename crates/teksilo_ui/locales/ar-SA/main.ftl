@@ -648,6 +648,7 @@ segment-book = الكتاب
 segment-pace = الوتيرة
 segment-notes = الملاحظات
 segment-story-bible = مرجع القصة
+segment-gallery = المعرض
 segment-note-own = الملاحظة
 segment-note-details = التفاصيل
 segment-note-in-prose = في النص
@@ -4450,6 +4451,59 @@ picture-viewer-saved = حُفظت النسخة.
 picture-viewer-save-failed = تعذّر حفظ النسخة: { $error }
 picture-viewer-loading = جارٍ تحميل الصورة…
 picture-viewer-failed = لا يمكن عرض هذه الصورة. ملفها مفقود، أو أنها ليست صورة PNG أو JPEG أو WebP.
+
+# The Gallery: a notes folder's pictures as thumbnails. It shares the Overview's search,
+# chips and order. "First image" shows one tile per note, "All images" one per picture.
+gallery-grid-label = الصور في هذا المجلد
+gallery-search-label = تصفية المعرض
+gallery-mode-first = الصورة الأولى
+gallery-mode-all = كل الصور
+gallery-mode-first-hint = صورة مصغّرة واحدة لكل ملاحظة: صورتها الأولى، مع عدد صورها الأخرى. ينطبق على كل المعارض المفتوحة، في كل المشاريع.
+gallery-mode-all-hint = صورة مصغّرة واحدة لكل صورة: كل صور كل الملاحظات. ينطبق على كل المعارض المفتوحة، في كل المشاريع.
+gallery-view-nested-hint = كل مجلد فرعي في صورة مصغّرة تضم صوره الأربع الأولى؛ انقر عليه نقرًا مزدوجًا لرؤية محتواه. ينطبق على كل المعارض المفتوحة، في كل المشاريع.
+gallery-view-flat-hint = كل صور هذا المجلد ومجلداته الفرعية، دفعة واحدة. ينطبق على كل المعارض المفتوحة، في كل المشاريع.
+gallery-text-notes-hint = ملاحظات بلا صور: عرض الملاحظات التي لا تحتوي إلا على نص أيضًا، في صور مصغّرة لكلماتها الأولى. ينطبق على كل المعارض المفتوحة، في كل المشاريع.
+gallery-tile-size = حجم الصور
+gallery-scope-hint = ينطبق على كل المعارض المفتوحة، في كل المشاريع.
+gallery-breadcrumb-label = المجلدات
+gallery-breadcrumb-root = هذا المجلد
+gallery-sort-label = الترتيب
+gallery-sort-binder = ترتيب الحافظة
+gallery-sort-title-ascending = العنوان، من أ إلى ي
+gallery-sort-title-descending = العنوان، من ي إلى أ
+gallery-sort-status = الحالة، الأقل تقدمًا أولًا
+gallery-sort-overview = كما هي مرتبة في النظرة العامة
+gallery-empty = لا صور هنا بعد. أي صورة تُدرج في ملاحظة من هذا المجلد تظهر هنا.
+gallery-empty-text-notes-hint = لا صور هنا بعد. فعّل «ملاحظات بلا صور» لرؤية الملاحظات النصية.
+gallery-tile-picture = { $title }، صورة
+gallery-tile-picture-described = { $title }، صورة: { $description }
+gallery-more-images = { $count ->
+    [zero] لا صور أخرى في هذه الملاحظة
+    [1] صورة أخرى في هذه الملاحظة
+    [two] صورتان أخريان في هذه الملاحظة
+    [few] { $count } صور أخرى في هذه الملاحظة
+    [many] { $count } صورة أخرى في هذه الملاحظة
+   *[other] { $count } صورة أخرى في هذه الملاحظة
+}
+gallery-more-badge = +{ $count }
+gallery-tile-text = { $title }، ملاحظة نصية
+gallery-tile-folder = { $title }، مجلد، { $count ->
+    [0] لا صور
+    [1] صورة واحدة
+    [two] صورتان
+    [few] { $count } صور
+    [many] { $count } صورة
+   *[other] { $count } صورة
+}
+gallery-folder-count = { $count ->
+    [0] لا صور
+    [1] صورة واحدة
+    [two] صورتان
+    [few] { $count } صور
+    [many] { $count } صورة
+   *[other] { $count } صورة
+}
+gallery-unavailable = الصورة غير متاحة
 cover-heading = الغلاف
 cover-pick = اختيار…
 cover-change = تغيير…
@@ -5123,6 +5177,7 @@ screen-reader-offer-never = عدم إظهار هذا مرة أخرى
 help-topic-writing-model = كيف يُبنى الكتاب
 help-topic-drafts-and-old-versions = الاحتفاظ بمسودة أقدم
 help-topic-goals-and-pace = الأهداف والوتيرة
+help-topic-pictures = الصور والمعرض
 help-topic-comments = التعليقات
 help-topic-round-trip = إرسال كتابك إلى قارئ
 help-topic-export = التصدير

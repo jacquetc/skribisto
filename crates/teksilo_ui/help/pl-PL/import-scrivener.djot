@@ -126,7 +126,8 @@ w folderze obok niego.
 - Pole „Include in Compile” (uwzględnij w kompilacji), które staje się opcją *Uwzględnij
   w eksporcie*.
 - Szablony dokumentów, jako szablony notatek.
-- Obrazy z materiałów, każdy we własnej notatce.
+- Obrazy z materiałów, każdy we własnej notatce. *Galeria* folderu pokazuje je jako miniatury:
+  zobacz [Obrazy i galeria](:help-pictures).
 
 ## Folder „Z programu Scrivener”
 

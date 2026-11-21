@@ -648,6 +648,7 @@ segment-book = Książka
 segment-pace = Tempo
 segment-notes = Notatki
 segment-story-bible = Biblia opowieści
+segment-gallery = Galeria
 segment-note-own = Notatka
 segment-note-details = Szczegóły
 segment-note-in-prose = W prozie
@@ -3905,6 +3906,55 @@ picture-viewer-save-failed = Nie udało się zapisać kopii: { $error }
 picture-viewer-loading = Wczytywanie obrazu…
 picture-viewer-failed = Nie można wyświetlić tego obrazu. Brakuje jego pliku albo nie jest to obraz PNG, JPEG ani WebP.
 
+# The Gallery: a notes folder's pictures as thumbnails. It shares the Overview's search,
+# chips and order. "First image" shows one tile per note, "All images" one per picture.
+gallery-grid-label = Obrazy w tym folderze
+gallery-search-label = Filtruj galerię
+gallery-mode-first = Pierwszy obraz
+gallery-mode-all = Wszystkie obrazy
+gallery-mode-first-hint = Jedna miniatura dla każdej notatki: jej pierwszy obraz wraz z liczbą pozostałych jej obrazów. Dotyczy wszystkich otwartych galerii we wszystkich projektach.
+gallery-mode-all-hint = Jedna miniatura dla każdego obrazu: wszystkie obrazy ze wszystkich notatek. Dotyczy wszystkich otwartych galerii we wszystkich projektach.
+gallery-view-nested-hint = Każdy podfolder jako miniatura z jego czterema pierwszymi obrazami; kliknij go dwukrotnie, aby zobaczyć jego zawartość. Dotyczy wszystkich otwartych galerii we wszystkich projektach.
+gallery-view-flat-hint = Wszystkie obrazy tego folderu i jego podfolderów naraz. Dotyczy wszystkich otwartych galerii we wszystkich projektach.
+gallery-text-notes-hint = Notatki bez obrazów: pokazuj też notatki zawierające tylko tekst, jako miniatury z ich pierwszymi słowami. Dotyczy wszystkich otwartych galerii we wszystkich projektach.
+gallery-tile-size = Rozmiar obrazów
+gallery-scope-hint = Dotyczy wszystkich otwartych galerii we wszystkich projektach.
+gallery-breadcrumb-label = Foldery
+gallery-breadcrumb-root = Ten folder
+gallery-sort-label = Kolejność
+gallery-sort-binder = Kolejność w segregatorze
+gallery-sort-title-ascending = Tytuł, od A do Z
+gallery-sort-title-descending = Tytuł, od Z do A
+gallery-sort-status = Status, najpierw najmniej zaawansowane
+gallery-sort-overview = Tak jak w Przeglądzie
+gallery-empty = Nie ma tu jeszcze obrazów. Pojawi się tu każdy obraz wstawiony do notatki z tego folderu.
+gallery-empty-text-notes-hint = Nie ma tu jeszcze obrazów. Włącz „Notatki bez obrazów”, aby zobaczyć notatki tekstowe.
+gallery-tile-picture = { $title }, obraz
+gallery-tile-picture-described = { $title }, obraz: { $description }
+gallery-more-images = { $count ->
+    [1] jeszcze jeden obraz w tej notatce
+    [few] jeszcze { $count } obrazy w tej notatce
+    [many] jeszcze { $count } obrazów w tej notatce
+   *[other] jeszcze { $count } obrazu w tej notatce
+}
+gallery-more-badge = +{ $count }
+gallery-tile-text = { $title }, notatka tekstowa
+gallery-tile-folder = { $title }, folder, { $count ->
+    [0] brak obrazów
+    [1] jeden obraz
+    [few] { $count } obrazy
+    [many] { $count } obrazów
+   *[other] { $count } obrazu
+}
+gallery-folder-count = { $count ->
+    [0] Brak obrazów
+    [1] Jeden obraz
+    [few] { $count } obrazy
+    [many] { $count } obrazów
+   *[other] { $count } obrazu
+}
+gallery-unavailable = Obraz niedostępny
+
 cover-heading = Okładka
 cover-pick = Wybierz…
 cover-change = Zmień…
@@ -4520,6 +4570,7 @@ screen-reader-offer-never = Nie pokazuj tego ponownie
 help-topic-writing-model = Jak zbudowana jest książka
 help-topic-drafts-and-old-versions = Zachowywanie starszej wersji roboczej
 help-topic-goals-and-pace = Cele i tempo
+help-topic-pictures = Obrazy i galeria
 help-topic-comments = Komentarze
 help-topic-round-trip = Wysyłanie książki do czytelnika
 help-topic-export = Eksportowanie

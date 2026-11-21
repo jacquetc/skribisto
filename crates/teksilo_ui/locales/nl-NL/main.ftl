@@ -616,6 +616,7 @@ segment-book = Boek
 segment-pace = Tempo
 segment-notes = Notities
 segment-story-bible = Verhaalbijbel
+segment-gallery = Galerij
 segment-note-own = Notitie
 segment-note-details = Details
 segment-note-in-prose = In proza
@@ -3239,6 +3240,49 @@ picture-viewer-save-failed = De kopie kon niet worden opgeslagen: { $error }
 picture-viewer-loading = Afbeelding laden…
 picture-viewer-failed = Deze afbeelding kan niet worden getoond. Het bestand ontbreekt, of het is geen PNG-, JPEG- of WebP-afbeelding.
 
+# The Gallery: a notes folder's pictures as thumbnails. It shares the Overview's search,
+# chips and order. "First image" shows one tile per note, "All images" one per picture.
+gallery-grid-label = Afbeeldingen in deze map
+gallery-search-label = Galerij filteren
+gallery-mode-first = Eerste afbeelding
+gallery-mode-all = Alle afbeeldingen
+gallery-mode-first-hint = Eén miniatuur per notitie: de eerste afbeelding ervan, met het aantal overige afbeeldingen. Geldt voor elke geopende galerij, in elk project.
+gallery-mode-all-hint = Eén miniatuur per afbeelding: elke afbeelding van elke notitie. Geldt voor elke geopende galerij, in elk project.
+gallery-view-nested-hint = Elke submap als tegel met de eerste vier afbeeldingen ervan; dubbelklik erop om de inhoud te zien. Geldt voor elke geopende galerij, in elk project.
+gallery-view-flat-hint = Alle afbeeldingen van deze map en van de submappen ervan, allemaal tegelijk. Geldt voor elke geopende galerij, in elk project.
+gallery-text-notes-hint = Notities zonder afbeeldingen: ook de notities tonen die alleen tekst bevatten, als tegels met hun eerste woorden. Geldt voor elke geopende galerij, in elk project.
+gallery-tile-size = Afbeeldingsgrootte
+gallery-scope-hint = Geldt voor elke geopende galerij, in elk project.
+gallery-breadcrumb-label = Mappen
+gallery-breadcrumb-root = Deze map
+gallery-sort-label = Volgorde
+gallery-sort-binder = Volgorde in de ordner
+gallery-sort-title-ascending = Titel, A tot Z
+gallery-sort-title-descending = Titel, Z tot A
+gallery-sort-status = Status, minst gevorderde eerst
+gallery-sort-overview = Zoals gesorteerd in het overzicht
+gallery-empty = Hier zijn nog geen afbeeldingen. Een afbeelding die u in een notitie van deze map invoegt, verschijnt hier.
+gallery-empty-text-notes-hint = Hier zijn nog geen afbeeldingen. Zet “Notities zonder afbeeldingen” aan om de tekstnotities te zien.
+gallery-tile-picture = { $title }, afbeelding
+gallery-tile-picture-described = { $title }, afbeelding: { $description }
+gallery-more-images = { $count ->
+    [1] nog één afbeelding in deze notitie
+   *[other] nog { $count } afbeeldingen in deze notitie
+}
+gallery-more-badge = +{ $count }
+gallery-tile-text = { $title }, tekstnotitie
+gallery-tile-folder = { $title }, map, { $count ->
+    [0] geen afbeeldingen
+    [1] één afbeelding
+   *[other] { $count } afbeeldingen
+}
+gallery-folder-count = { $count ->
+    [0] Geen afbeeldingen
+    [1] Eén afbeelding
+   *[other] { $count } afbeeldingen
+}
+gallery-unavailable = Afbeelding niet beschikbaar
+
 cover-heading = Omslag
 cover-pick = Kiezen…
 cover-change = Wijzigen…
@@ -3770,6 +3814,7 @@ screen-reader-offer-never = Dit niet meer tonen
 help-topic-writing-model = Hoe een boek wordt samengesteld
 help-topic-drafts-and-old-versions = Een oudere versie bewaren
 help-topic-goals-and-pace = Doelen en tempo
+help-topic-pictures = Afbeeldingen en de galerij
 help-topic-comments = Opmerkingen
 help-topic-round-trip = Uw boek naar een lezer sturen
 help-topic-export = Exporteren

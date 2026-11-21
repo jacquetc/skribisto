@@ -649,6 +649,7 @@ segment-book = Книга
 segment-pace = Темп
 segment-notes = Заметки
 segment-story-bible = Библия истории
+segment-gallery = Галерея
 segment-note-own = Заметка
 segment-note-details = Подробности
 segment-note-in-prose = В прозе
@@ -4039,6 +4040,58 @@ picture-viewer-save-failed = Не удалось сохранить копию: 
 picture-viewer-loading = Загрузка изображения…
 picture-viewer-failed = Не удаётся показать это изображение. Его файл отсутствует, или это не изображение PNG, JPEG или WebP.
 
+# The Gallery: a notes folder's pictures as thumbnails. It shares the Overview's search,
+# chips and order. "First image" shows one tile per note, "All images" one per picture.
+gallery-grid-label = Изображения в этой папке
+gallery-search-label = Фильтр галереи
+gallery-mode-first = Первое изображение
+gallery-mode-all = Все изображения
+gallery-mode-first-hint = Одна миниатюра на заметку: её первое изображение и число остальных её изображений. Действует для всех открытых галерей во всех проектах.
+gallery-mode-all-hint = Одна миниатюра на изображение: все изображения всех заметок. Действует для всех открытых галерей во всех проектах.
+gallery-view-nested-hint = Каждая подпапка как миниатюра с её первыми четырьмя изображениями; дважды щёлкните по ней, чтобы увидеть содержимое. Действует для всех открытых галерей во всех проектах.
+gallery-view-flat-hint = Все изображения этой папки и её подпапок сразу. Действует для всех открытых галерей во всех проектах.
+gallery-text-notes-hint = Заметки без изображений: показывать и заметки, содержащие только текст, в виде миниатюр с их первыми словами. Действует для всех открытых галерей во всех проектах.
+gallery-tile-size = Размер изображений
+gallery-scope-hint = Действует для всех открытых галерей во всех проектах.
+gallery-breadcrumb-label = Папки
+gallery-breadcrumb-root = Эта папка
+gallery-sort-label = Порядок
+gallery-sort-binder = Порядок в подшивке
+gallery-sort-title-ascending = Название, от А до Я
+gallery-sort-title-descending = Название, от Я до А
+gallery-sort-status = Статус, сначала наименее готовые
+gallery-sort-overview = Как отсортировано в Обзоре
+gallery-empty = Изображений здесь пока нет. Изображение, вставленное в заметку этой папки, появится здесь.
+gallery-empty-text-notes-hint = Изображений здесь пока нет. Включите «Заметки без изображений», чтобы увидеть текстовые заметки.
+gallery-tile-picture = { $title }, изображение
+gallery-tile-picture-described = { $title }, изображение: { $description }
+gallery-more-images = { $count ->
+    [1] ещё одно изображение в этой заметке
+    [one] ещё { $count } изображение в этой заметке
+    [few] ещё { $count } изображения в этой заметке
+    [many] ещё { $count } изображений в этой заметке
+   *[other] ещё { $count } изображения в этой заметке
+}
+gallery-more-badge = +{ $count }
+gallery-tile-text = { $title }, текстовая заметка
+gallery-tile-folder = { $title }, папка, { $count ->
+    [0] нет изображений
+    [1] одно изображение
+    [one] { $count } изображение
+    [few] { $count } изображения
+    [many] { $count } изображений
+   *[other] { $count } изображения
+}
+gallery-folder-count = { $count ->
+    [0] Нет изображений
+    [1] Одно изображение
+    [one] { $count } изображение
+    [few] { $count } изображения
+    [many] { $count } изображений
+   *[other] { $count } изображения
+}
+gallery-unavailable = Изображение недоступно
+
 cover-heading = Обложка
 cover-pick = Выбрать…
 cover-change = Заменить…
@@ -4665,6 +4718,7 @@ screen-reader-offer-never = Больше не показывать
 help-topic-writing-model = Как складывается книга
 help-topic-drafts-and-old-versions = Как сохранить старый черновик
 help-topic-goals-and-pace = Цели и темп
+help-topic-pictures = Изображения и галерея
 help-topic-comments = Комментарии
 help-topic-round-trip = Отправка книги читателю
 help-topic-export = Экспорт

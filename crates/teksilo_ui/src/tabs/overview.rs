@@ -43,6 +43,9 @@ mod table;
 mod tag_filter;
 mod wire;
 
+pub(crate) use status_filter::status_filter_row;
+pub(crate) use tag_filter::tag_filter_row;
+
 use columns::*;
 use header::*;
 use table::*;

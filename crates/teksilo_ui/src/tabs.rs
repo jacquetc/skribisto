@@ -61,6 +61,7 @@ mod folder_none;
 mod folder_note;
 mod folder_paratext;
 mod folder_part;
+pub(crate) mod gallery;
 mod item_book_begin;
 mod item_book_end;
 mod item_chapter_scene;

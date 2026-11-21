@@ -38,7 +38,7 @@ use crate::tags::TagsViewModel;
 /// same "no chrome for a question nobody can ask yet" discipline the Books column and the
 /// Story bible place's own Books chip row both follow. That is why the padding is inside
 /// this widget rather than wrapped around it by the pane.
-pub(super) fn tag_filter_row(vm: &OverviewViewModel, tags: TagsViewModel) -> Box<dyn Widget> {
+pub(crate) fn tag_filter_row(vm: &OverviewViewModel, tags: TagsViewModel) -> Box<dyn Widget> {
     Box::new(TagFilterChips {
         selected: vm.tag_filter_signal(),
         tags,

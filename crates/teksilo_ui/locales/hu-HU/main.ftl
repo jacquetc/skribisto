@@ -588,6 +588,7 @@ segment-book = Könyv
 segment-pace = Tempó
 segment-notes = Jegyzetek
 segment-story-bible = Történetbiblia
+segment-gallery = Galéria
 segment-note-own = Jegyzet
 segment-note-details = Részletek
 segment-note-in-prose = A prózában
@@ -3217,6 +3218,49 @@ picture-viewer-saved = A másolat elmentve.
 picture-viewer-save-failed = A másolatot nem sikerült menteni: { $error }
 picture-viewer-loading = A kép betöltése…
 picture-viewer-failed = Ez a kép nem jeleníthető meg. A fájlja hiányzik, vagy nem PNG-, JPEG- vagy WebP-kép.
+
+# The Gallery: a notes folder's pictures as thumbnails. It shares the Overview's search,
+# chips and order. "First image" shows one tile per note, "All images" one per picture.
+gallery-grid-label = Képek ebben a mappában
+gallery-search-label = A galéria szűrése
+gallery-mode-first = Első kép
+gallery-mode-all = Minden kép
+gallery-mode-first-hint = Jegyzetenként egy bélyegkép: a jegyzet első képe, a többi képe számával. Minden megnyitott galériára érvényes, minden projektben.
+gallery-mode-all-hint = Képenként egy bélyegkép: minden jegyzet minden képe. Minden megnyitott galériára érvényes, minden projektben.
+gallery-view-nested-hint = Minden almappa bélyegképként, az első négy képével; kattintson rá duplán a tartalma megtekintéséhez. Minden megnyitott galériára érvényes, minden projektben.
+gallery-view-flat-hint = Ennek a mappának és almappáinak minden képe, egyszerre. Minden megnyitott galériára érvényes, minden projektben.
+gallery-text-notes-hint = Kép nélküli jegyzetek: a csak szöveget tartalmazó jegyzeteket is megjeleníti, az első szavaikat mutató bélyegképként. Minden megnyitott galériára érvényes, minden projektben.
+gallery-tile-size = Képméret
+gallery-scope-hint = Minden megnyitott galériára érvényes, minden projektben.
+gallery-breadcrumb-label = Mappák
+gallery-breadcrumb-root = Ez a mappa
+gallery-sort-label = Sorrend
+gallery-sort-binder = Iratrendezőbeli sorrend
+gallery-sort-title-ascending = Cím szerint, A–Z
+gallery-sort-title-descending = Cím szerint, Z–A
+gallery-sort-status = Állapot szerint, a legkevésbé kész elöl
+gallery-sort-overview = Az Áttekintés sorrendjében
+gallery-empty = Itt még nincs kép. A mappa jegyzeteibe beszúrt képek itt jelennek meg.
+gallery-empty-text-notes-hint = Itt még nincs kép. A szöveges jegyzetek megjelenítéséhez kapcsolja be a „Kép nélküli jegyzetek” lehetőséget.
+gallery-tile-picture = { $title }, kép
+gallery-tile-picture-described = { $title }, kép: { $description }
+gallery-more-images = { $count ->
+    [1] még egy kép ebben a jegyzetben
+   *[other] még { $count } kép ebben a jegyzetben
+}
+gallery-more-badge = +{ $count }
+gallery-tile-text = { $title }, szöveges jegyzet
+gallery-tile-folder = { $title }, mappa, { $count ->
+    [0] nincs kép
+    [1] egy kép
+   *[other] { $count } kép
+}
+gallery-folder-count = { $count ->
+    [0] Nincs kép
+    [1] Egy kép
+   *[other] { $count } kép
+}
+gallery-unavailable = A kép nem érhető el
 cover-heading = Borító
 cover-pick = Kiválasztás…
 cover-change = Módosítás…
@@ -3732,6 +3776,7 @@ screen-reader-offer-never = Ne jelenjen meg többé
 help-topic-writing-model = Hogyan épül fel egy könyv
 help-topic-drafts-and-old-versions = Egy régebbi piszkozat megőrzése
 help-topic-goals-and-pace = Célértékek és tempó
+help-topic-pictures = Képek és a galéria
 help-topic-comments = Megjegyzések
 help-topic-round-trip = A könyv elküldése egy olvasónak
 help-topic-export = Exportálás

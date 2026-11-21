@@ -1,0 +1,79 @@
+## Bilder in Ihrem Text
+
+Um ein Bild hinzuzufügen, setzen Sie die Schreibmarke an die gewünschte Stelle und wählen Sie
+*Dokument ▸ Bild einfügen…*. Sie können eine Bilddatei auch auf den Text ziehen oder ein Bild
+einfügen.
+
+Ein Bild wird nie breiter gezeichnet als der Text um es herum. Ein breites Bildschirmfoto wird
+in der Breite des Textes gezeigt, seine Höhe im gleichen Verhältnis. Seine eigene Größe bleibt
+erhalten: Verbreitern Sie das Fenster oder die Textspalte, und es wächst wieder, bis zu dieser
+Größe.
+
+## Ein Bild ändern
+
+Klicken Sie auf ein Bild, um es auszuwählen. Sein Menü, per Rechtsklick oder über das Menü
+*Bild*, bietet:
+
+- *Bild anzeigen*, um es in voller Größe anzusehen;
+- *In einer anderen App öffnen*, um es in dem Programm zu öffnen, das Ihr System für Bilder
+  verwendet;
+- *Bild beschreiben…*, für Leser, die es nicht sehen können;
+- *Bildgröße ändern…*, als Prozentsatz der angezeigten Größe: 50 halbiert sie;
+- *Originalgröße*, um zur eigenen Größe des Bildes zurückzukehren.
+
+Sie können auch eine Ecke eines ausgewählten Bildes ziehen, um seine Größe zu ändern.
+
+## Der Bildbetrachter
+
+Doppelklicken Sie auf ein Bild oder wählen Sie *Bild anzeigen*, um den Betrachter zu öffnen.
+Er zeigt das Bild so groß, wie das Fenster es erlaubt.
+
+- *Vergrößern*, *Verkleinern*, *Einpassen* und *100 %* ändern seine Größe. Ebenso die Tasten +
+  und −, 0 für *Einpassen* und 1 für *100 %*.
+- Halten Sie Strg gedrückt und drehen Sie das Mausrad, um dort zu zoomen, wo Sie hinzeigen.
+  Auf einem Touchpad ziehen Sie zwei Finger zusammen oder auseinander.
+- Ziehen Sie das Bild, um sich darin zu bewegen, wenn es größer als das Fenster ist.
+- Die Pfeiltasten nach links und rechts gehen zum vorherigen und zum nächsten Bild.
+- *Kopie speichern…* schreibt das Bild in eine Datei Ihrer Wahl.
+
+Drücken Sie Esc oder klicken Sie rechts in der Leiste auf *Schließen*, um den Betrachter zu
+schließen.
+
+Auch der Umschlag eines Buchs öffnet sich dort: Wählen Sie auf der Seite des Buchs *Ansehen*
+neben dem Umschlag, oder doppelklicken Sie darauf.
+
+## Die Galerie eines Notizordners
+
+Ein Notizordner hat eine Ansicht *Galerie*, neben *Notizen*, *Geschichtenbibel* und
+*Übersicht*. Sie zeigt die Bilder in den Notizen des Ordners als Vorschaubilder. Jedes
+Vorschaubild behält die Proportionen seines Bildes.
+
+Wählen Sie, was sie zeigt:
+
+- *Erstes Bild* zeigt ein Vorschaubild pro Notiz, mit der Zahl ihrer weiteren Bilder. *Alle
+  Bilder* zeigt eines pro Bild.
+- *Verschachtelt* zeigt jeden Unterordner als Kachel mit seinen ersten vier Bildern.
+  Doppelklicken Sie darauf, um hineinzugehen; der Pfad oben bringt Sie zurück. *Flach* zeigt
+  alle Bilder des Ordners und seiner Unterordner auf einmal.
+- *Notizen ohne Bilder* fügt die Notizen hinzu, die nur Text enthalten, als Kacheln mit ihren
+  ersten Wörtern.
+- *Bildgröße* macht die Vorschaubilder kleiner oder größer.
+
+Diese Einstellungen gelten für jede Galerie, die Sie öffnen.
+
+## Ein Bild wiederfinden
+
+Die Galerie teilt ihr Suchfeld, ihre Filter nach Schlagwörtern und Status und ihre
+Reihenfolge mit der *Übersicht*. Was Sie in einer Ansicht eingrenzen, ist auch in der anderen
+eingegrenzt.
+
+Doppelklicken Sie auf ein Vorschaubild oder drücken Sie die Eingabetaste, um es im
+Bildbetrachter zu öffnen. Die Pfeiltasten gehen dann durch die Bilder, die die Galerie zeigt,
+in ihrer Reihenfolge. Klicken Sie mit der rechten Maustaste auf ein Vorschaubild und wählen
+Sie *Notiz öffnen*, um die Notiz zu öffnen, in der es steht.
+
+## Recherche aus Scrivener
+
+Die Recherchebilder eines Scrivener-Projekts kommen als Notizen an, je ein Bild pro Notiz, in
+dem Ordner, den der Import für sie anlegt (siehe [Von Scrivener wechseln](:help-import-scrivener)).
+Öffnen Sie diesen Ordner und wählen Sie *Galerie*, um sie alle zu sehen.

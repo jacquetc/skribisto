@@ -615,6 +615,7 @@ segment-book = Kitap
 segment-pace = Tempo
 segment-notes = Notlar
 segment-story-bible = Hikâye rehberi
+segment-gallery = Galeri
 segment-note-own = Not
 segment-note-details = Ayrıntılar
 segment-note-in-prose = Metinde
@@ -3192,6 +3193,49 @@ picture-viewer-save-failed = Kopya kaydedilemedi: { $error }
 picture-viewer-loading = Resim yükleniyor…
 picture-viewer-failed = Bu resim gösterilemiyor. Dosyası eksik ya da bir PNG, JPEG veya WebP resmi değil.
 
+# The Gallery: a notes folder's pictures as thumbnails. It shares the Overview's search,
+# chips and order. "First image" shows one tile per note, "All images" one per picture.
+gallery-grid-label = Bu klasördeki resimler
+gallery-search-label = Galeriyi süz
+gallery-mode-first = İlk resim
+gallery-mode-all = Tüm resimler
+gallery-mode-first-hint = Her not için bir küçük resim: notun ilk resmi ve diğer resimlerinin sayısı. Her projedeki tüm açık galerilere uygulanır.
+gallery-mode-all-hint = Her resim için bir küçük resim: her notun her resmi. Her projedeki tüm açık galerilere uygulanır.
+gallery-view-nested-hint = Her alt klasör, ilk dört resmini gösteren bir küçük resim olarak; içini görmek için çift tıklayın. Her projedeki tüm açık galerilere uygulanır.
+gallery-view-flat-hint = Bu klasörün ve alt klasörlerinin tüm resimleri, bir arada. Her projedeki tüm açık galerilere uygulanır.
+gallery-text-notes-hint = Resimsiz notlar: yalnızca metin içeren notları da ilk sözcüklerini gösteren küçük resimler olarak gösterir. Her projedeki tüm açık galerilere uygulanır.
+gallery-tile-size = Resim boyutu
+gallery-scope-hint = Her projedeki tüm açık galerilere uygulanır.
+gallery-breadcrumb-label = Klasörler
+gallery-breadcrumb-root = Bu klasör
+gallery-sort-label = Sıra
+gallery-sort-binder = Dizin sırası
+gallery-sort-title-ascending = Başlık, A–Z
+gallery-sort-title-descending = Başlık, Z–A
+gallery-sort-status = Durum, en az ilerlemiş olanlar önce
+gallery-sort-overview = Genel bakıştaki sıralamayla
+gallery-empty = Burada henüz resim yok. Bu klasördeki bir nota eklenen resim burada görünür.
+gallery-empty-text-notes-hint = Burada henüz resim yok. Metin notlarını görmek için “Resimsiz notlar” seçeneğini açın.
+gallery-tile-picture = { $title }, resim
+gallery-tile-picture-described = { $title }, resim: { $description }
+gallery-more-images = { $count ->
+    [1] bu notta bir resim daha
+   *[other] bu notta { $count } resim daha
+}
+gallery-more-badge = +{ $count }
+gallery-tile-text = { $title }, metin notu
+gallery-tile-folder = { $title }, klasör, { $count ->
+    [0] resim yok
+    [1] bir resim
+   *[other] { $count } resim
+}
+gallery-folder-count = { $count ->
+    [0] Resim yok
+    [1] Bir resim
+   *[other] { $count } resim
+}
+gallery-unavailable = Resim kullanılamıyor
+
 cover-heading = Kapak
 cover-pick = Seç…
 cover-change = Değiştir…
@@ -3723,6 +3767,7 @@ screen-reader-offer-never = Bunu bir daha gösterme
 help-topic-writing-model = Bir kitap nasıl bir araya gelir
 help-topic-drafts-and-old-versions = Eski bir taslağı saklamak
 help-topic-goals-and-pace = Hedefler ve tempo
+help-topic-pictures = Resimler ve galeri
 help-topic-comments = Yorumlar
 help-topic-round-trip = Kitabınızı bir okura göndermek
 help-topic-export = Dışa aktarma

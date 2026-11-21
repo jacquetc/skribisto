@@ -1,0 +1,76 @@
+## Obrazy w tekście
+
+Aby dodać obraz, umieść kursor w miejscu, w którym ma się znaleźć, i wybierz
+*Dokument ▸ Wstaw obraz…*. Możesz też upuścić plik obrazu na tekst albo go wkleić.
+
+Obraz nigdy nie jest szerszy niż otaczający go tekst. Szeroki zrzut ekranu jest pokazywany
+na szerokość tekstu, a jego wysokość zmienia się proporcjonalnie. Jego własny rozmiar zostaje
+zachowany: poszerz okno lub kolumnę tekstu, a obraz znów urośnie, aż do tego rozmiaru.
+
+## Zmienianie obrazu
+
+Kliknij obraz, aby go zaznaczyć. Jego menu, otwierane prawym przyciskiem myszy lub z menu
+*Obraz*, zawiera:
+
+- *Wyświetl obraz*, aby obejrzeć go w pełnym rozmiarze;
+- *Otwórz w innej aplikacji*, aby otworzyć go w aplikacji, której system używa do obrazów;
+- *Opisz obraz…*, dla czytelnika, który go nie widzi;
+- *Zmień rozmiar obrazu…*, jako procent rozmiaru, w jakim jest pokazywany: 50 zmniejsza go
+  o połowę;
+- *Oryginalny rozmiar*, aby wrócić do własnego rozmiaru obrazu.
+
+Możesz też przeciągnąć róg zaznaczonego obrazu, aby zmienić jego rozmiar.
+
+## Przeglądarka obrazów
+
+Kliknij dwukrotnie obraz lub wybierz *Wyświetl obraz*, aby otworzyć przeglądarkę. Pokazuje
+ona obraz tak duży, jak pozwala na to okno.
+
+- *Powiększ*, *Pomniejsz*, *Dopasuj* i *100%* zmieniają jego rozmiar. Tak samo działają
+  klawisze + i −, 0 dla *Dopasuj* i 1 dla *100%*.
+- Przytrzymaj Ctrl i obróć kółko myszy, aby powiększyć miejsce, które wskazujesz. Na gładziku
+  zsuń lub rozsuń palce.
+- Przeciągnij obraz, aby się po nim przesuwać, gdy jest większy niż okno.
+- Klawisze strzałek w lewo i w prawo przechodzą do poprzedniego i następnego obrazu.
+- *Zapisz kopię…* zapisuje obraz do wybranego przez Ciebie pliku.
+
+Naciśnij Escape albo *Zamknij* na końcu paska, aby zamknąć przeglądarkę.
+
+Otwiera się w niej też okładka książki: na stronie książki wybierz *Pokaż* obok okładki albo
+kliknij ją dwukrotnie.
+
+## Galeria folderu notatek
+
+Folder notatek ma widok *Galeria*, obok widoków *Notatki*, *Biblia opowieści* i *Przegląd*.
+Pokazuje on obrazy z notatek folderu jako miniatury. Każda miniatura zachowuje proporcje
+swojego obrazu.
+
+Wybierz, co ma być widoczne:
+
+- *Pierwszy obraz* daje jedną miniaturę na notatkę, z liczbą jej pozostałych obrazów.
+  *Wszystkie obrazy* daje jedną miniaturę na każdy obraz.
+- *Zagnieżdżony* pokazuje każdy podfolder jako kafelek z jego czterema pierwszymi obrazami.
+  Kliknij go dwukrotnie, aby wejść do środka; ścieżka u góry pozwala wrócić. *Płaski* pokazuje
+  naraz wszystkie obrazy folderu i jego podfolderów.
+- *Notatki bez obrazów* dodaje notatki, które zawierają tylko tekst, jako kafelki z ich
+  pierwszymi słowami.
+- *Rozmiar obrazów* zmniejsza lub powiększa miniatury.
+
+Te wybory dotyczą każdej galerii, którą otworzysz.
+
+## Szukanie obrazu
+
+Galeria dzieli z widokiem *Przegląd* pole wyszukiwania, filtry znaczników i statusów oraz
+kolejność. To, co zawęzisz w jednym widoku, jest zawężone także w drugim.
+
+Kliknij dwukrotnie miniaturę lub naciśnij Enter, aby otworzyć ją w przeglądarce obrazów.
+Klawisze strzałek przechodzą wtedy przez obrazy pokazywane w galerii, w jej kolejności.
+Kliknij miniaturę prawym przyciskiem myszy i wybierz *Otwórz notatkę*, aby otworzyć notatkę,
+w której się znajduje.
+
+## Materiały z programu Scrivener
+
+Obrazy z materiałów projektu Scrivener trafiają do notatek, po jednym obrazie w każdej,
+w folderze, który tworzy dla nich import
+(zobacz [Przejście z programu Scrivener](:help-import-scrivener)). Otwórz ten folder
+i wybierz *Galeria*, aby zobaczyć je wszystkie.

@@ -44,7 +44,7 @@ pub const UNSET: u64 = 0;
 /// Like the tag row, a project with no ladder mounts no child and resolves to zero height,
 /// **its own padding included** — which is why the padding is inside this widget rather
 /// than wrapped around it by the pane.
-pub(super) fn status_filter_row(
+pub(crate) fn status_filter_row(
     vm: &OverviewViewModel,
     statuses: StatusesViewModel,
 ) -> Box<dyn Widget> {

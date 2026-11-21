@@ -580,6 +580,7 @@ segment-book = Libro
 segment-pace = Ritmo
 segment-notes = Notoj
 segment-story-bible = Rakonta gvidilo
+segment-gallery = Galerio
 segment-note-own = Noto
 segment-note-details = Detaloj
 segment-note-in-prose = En la teksto
@@ -3121,6 +3122,49 @@ picture-viewer-saved = Kopio konservita.
 picture-viewer-save-failed = Ne eblis konservi la kopion: { $error }
 picture-viewer-loading = Ŝargante la bildon…
 picture-viewer-failed = Ĉi tiu bildo ne montreblas. Ĝia dosiero mankas, aŭ ĝi ne estas PNG-, JPEG- aŭ WebP-bildo.
+
+# The Gallery: a notes folder's pictures as thumbnails. It shares the Overview's search,
+# chips and order. "First image" shows one tile per note, "All images" one per picture.
+gallery-grid-label = Bildoj en ĉi tiu dosierujo
+gallery-search-label = Filtri la galerion
+gallery-mode-first = Unua bildo
+gallery-mode-all = Ĉiuj bildoj
+gallery-mode-first-hint = Unu miniaturo por ĉiu noto: ĝia unua bildo, kun la nombro de ĝiaj aliaj bildoj. Validas por ĉiuj malfermitaj galerioj en ĉiuj projektoj.
+gallery-mode-all-hint = Unu miniaturo por ĉiu bildo: ĉiuj bildoj de ĉiuj notoj. Validas por ĉiuj malfermitaj galerioj en ĉiuj projektoj.
+gallery-view-nested-hint = Ĉiu subdosierujo kiel kahelo kun siaj unuaj kvar bildoj; duoble alklaku ĝin por vidi ĝian enhavon. Validas por ĉiuj malfermitaj galerioj en ĉiuj projektoj.
+gallery-view-flat-hint = Ĉiuj bildoj de ĉi tiu dosierujo kaj de ĝiaj subdosierujoj, ĉiuj samtempe. Validas por ĉiuj malfermitaj galerioj en ĉiuj projektoj.
+gallery-text-notes-hint = Notoj sen bildoj: montri ankaŭ la notojn, kiuj enhavas nur tekston, kiel kahelojn kun iliaj unuaj vortoj. Validas por ĉiuj malfermitaj galerioj en ĉiuj projektoj.
+gallery-tile-size = Bildgrando
+gallery-scope-hint = Validas por ĉiuj malfermitaj galerioj en ĉiuj projektoj.
+gallery-breadcrumb-label = Dosierujoj
+gallery-breadcrumb-root = Ĉi tiu dosierujo
+gallery-sort-label = Ordo
+gallery-sort-binder = Kolektuja ordo
+gallery-sort-title-ascending = Titolo, A–Z
+gallery-sort-title-descending = Titolo, Z–A
+gallery-sort-status = Stato, la malplej finitaj unue
+gallery-sort-overview = Kiel ordigite en la Superrigardo
+gallery-empty = Ankoraŭ neniu bildo ĉi tie. Bildo enmetita en noton de ĉi tiu dosierujo aperas ĉi tie.
+gallery-empty-text-notes-hint = Ankoraŭ neniu bildo ĉi tie. Ŝaltu «Notoj sen bildoj» por vidi la tekstajn notojn.
+gallery-tile-picture = { $title }, bildo
+gallery-tile-picture-described = { $title }, bildo: { $description }
+gallery-more-images = { $count ->
+    [1] ankoraŭ unu bildo en ĉi tiu noto
+   *[other] ankoraŭ { $count } bildoj en ĉi tiu noto
+}
+gallery-more-badge = +{ $count }
+gallery-tile-text = { $title }, teksta noto
+gallery-tile-folder = { $title }, dosierujo, { $count ->
+    [0] neniu bildo
+    [1] unu bildo
+   *[other] { $count } bildoj
+}
+gallery-folder-count = { $count ->
+    [0] Neniu bildo
+    [1] Unu bildo
+   *[other] { $count } bildoj
+}
+gallery-unavailable = Bildo ne disponebla
 cover-heading = Kovrilo
 cover-pick = Elekti…
 cover-change = Ŝanĝi…
@@ -3615,6 +3659,7 @@ screen-reader-offer-never = Ne plu montri ĉi tion
 help-topic-writing-model = Kiel libro estas organizita
 help-topic-drafts-and-old-versions = Konservi pli fruan malneton
 help-topic-goals-and-pace = Celoj kaj ritmo
+help-topic-pictures = Bildoj kaj la galerio
 help-topic-comments = Komentoj
 help-topic-round-trip = Sendi vian libron al leganto
 help-topic-export = Eksportado

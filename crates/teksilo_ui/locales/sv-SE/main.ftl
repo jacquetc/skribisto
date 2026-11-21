@@ -587,6 +587,7 @@ segment-book = Bok
 segment-pace = Tempo
 segment-notes = Anteckningar
 segment-story-bible = Berättelsebibel
+segment-gallery = Galleri
 segment-note-own = Anteckning
 segment-note-details = Detaljer
 segment-note-in-prose = I prosan
@@ -3128,6 +3129,50 @@ picture-viewer-saved = Kopian har sparats.
 picture-viewer-save-failed = Kopian kunde inte sparas: { $error }
 picture-viewer-loading = Läser in bilden…
 picture-viewer-failed = Bilden kan inte visas. Filen saknas, eller så är den inte en PNG-, JPEG- eller WebP-bild.
+
+# The Gallery: a notes folder's pictures as thumbnails. It shares the Overview's search,
+# chips and order. "First image" shows one tile per note, "All images" one per picture.
+gallery-grid-label = Bilder i den här mappen
+gallery-search-label = Filtrera galleriet
+gallery-mode-first = Första bilden
+gallery-mode-all = Alla bilder
+gallery-mode-first-hint = En miniatyr per anteckning: dess första bild, med antalet övriga bilder. Gäller alla öppna gallerier, i alla projekt.
+gallery-mode-all-hint = En miniatyr per bild: varje bild i varje anteckning. Gäller alla öppna gallerier, i alla projekt.
+gallery-view-nested-hint = Varje undermapp som en ruta med dess fyra första bilder; dubbelklicka på den för att se innehållet. Gäller alla öppna gallerier, i alla projekt.
+gallery-view-flat-hint = Alla bilder i den här mappen och i dess undermappar, på en gång. Gäller alla öppna gallerier, i alla projekt.
+gallery-text-notes-hint = Anteckningar utan bilder: visa även anteckningarna som bara innehåller text, som rutor med deras första ord. Gäller alla öppna gallerier, i alla projekt.
+gallery-tile-size = Bildstorlek
+gallery-scope-hint = Gäller alla öppna gallerier, i alla projekt.
+gallery-breadcrumb-label = Mappar
+gallery-breadcrumb-root = Den här mappen
+gallery-sort-label = Ordning
+gallery-sort-binder = Pärmens ordning
+gallery-sort-title-ascending = Titel, A till Ö
+gallery-sort-title-descending = Titel, Ö till A
+gallery-sort-status = Status, minst färdiga först
+gallery-sort-overview = Som sorterat i översikten
+gallery-empty = Inga bilder här ännu. En bild som infogas i en anteckning i den här mappen visas här.
+gallery-empty-text-notes-hint = Inga bilder här ännu. Slå på ”Anteckningar utan bilder” för att se textanteckningarna.
+gallery-tile-picture = { $title }, bild
+gallery-tile-picture-described = { $title }, bild: { $description }
+gallery-more-images = { $count ->
+    [1] en bild till i den här anteckningen
+   *[other] { $count } bilder till i den här anteckningen
+}
+gallery-more-badge = +{ $count }
+gallery-tile-text = { $title }, textanteckning
+gallery-tile-folder = { $title }, mapp, { $count ->
+    [0] inga bilder
+    [1] en bild
+   *[other] { $count } bilder
+}
+gallery-folder-count = { $count ->
+    [0] Inga bilder
+    [1] En bild
+   *[other] { $count } bilder
+}
+gallery-unavailable = Bilden är inte tillgänglig
+
 cover-heading = Omslag
 cover-pick = Välj…
 cover-change = Byt…
@@ -3637,6 +3682,7 @@ screen-reader-offer-never = Visa inte detta igen
 help-topic-writing-model = Hur en bok är uppbyggd
 help-topic-drafts-and-old-versions = Behålla ett äldre utkast
 help-topic-goals-and-pace = Mål och tempo
+help-topic-pictures = Bilder och galleriet
 help-topic-comments = Kommentarer
 help-topic-round-trip = Skicka boken till en läsare
 help-topic-export = Exportera

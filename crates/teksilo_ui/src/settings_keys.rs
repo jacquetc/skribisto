@@ -539,6 +539,23 @@ pub const CORKBOARD_CARD_SIZE_DEFAULT: f32 = 480.0;
 pub const CORKBOARD_CARD_SIZE_MIN: f32 = 210.0;
 pub const CORKBOARD_CARD_SIZE_MAX: f32 = 680.0;
 pub const CORKBOARD_CARD_SIZE_STEP: f32 = 10.0;
+// ── Gallery (a notes folder's pictures) ───────────────────────────────────────
+/// One tile per picture (`true`) or one per note, its first picture (`false`).
+pub const GALLERY_ALL_IMAGES_KEY: &str = "gallery.all_images";
+pub const GALLERY_ALL_IMAGES_DEFAULT: bool = false;
+/// Subfolders as tiles one can enter (`true`), or every picture beneath at once.
+pub const GALLERY_NESTED_KEY: &str = "gallery.nested";
+pub const GALLERY_NESTED_DEFAULT: bool = true;
+/// Text-only notes as tiles of their opening words. Off: a gallery shows pictures.
+pub const GALLERY_TEXT_NOTES_KEY: &str = "gallery.text_notes";
+pub const GALLERY_TEXT_NOTES_DEFAULT: bool = false;
+/// The thumbnails' minimum width in logical pixels, which the size slider drives.
+pub const GALLERY_TILE_SIZE_KEY: &str = "gallery.tile_size";
+pub const GALLERY_TILE_SIZE_DEFAULT: f32 = 220.0;
+pub const GALLERY_TILE_SIZE_MIN: f32 = 120.0;
+pub const GALLERY_TILE_SIZE_MAX: f32 = 520.0;
+pub const GALLERY_TILE_SIZE_STEP: f32 = 10.0;
+
 /// Show a card's word count in its footer.
 pub const CORKBOARD_SHOW_WORD_COUNT_KEY: &str = "corkboard.show_word_count";
 pub const CORKBOARD_SHOW_WORD_COUNT_DEFAULT: bool = true;
@@ -1286,6 +1303,37 @@ pub static SETTINGS: &[SettingSpec] = &[
               Replace All, another window — because it would then describe words \
               that are no longer in the file. Off, and closing a tab forgets its \
               typing history immediately.",
+    },
+    // ── Gallery ───────────────────────────────────────────────────────────────
+    SettingSpec {
+        key: crate::GALLERY_ALL_IMAGES_KEY,
+        ty: "bool",
+        default: || val(crate::GALLERY_ALL_IMAGES_DEFAULT),
+        check: check::<bool>,
+        doc: "A notes folder's Gallery shows every picture (true) or each note's first \
+              picture (false).",
+    },
+    SettingSpec {
+        key: crate::GALLERY_NESTED_KEY,
+        ty: "bool",
+        default: || val(crate::GALLERY_NESTED_DEFAULT),
+        check: check::<bool>,
+        doc: "The Gallery shows subfolders as tiles to enter (true) or every picture \
+              beneath the folder at once (false).",
+    },
+    SettingSpec {
+        key: crate::GALLERY_TEXT_NOTES_KEY,
+        ty: "bool",
+        default: || val(crate::GALLERY_TEXT_NOTES_DEFAULT),
+        check: check::<bool>,
+        doc: "The Gallery also shows notes without pictures, as tiles of their opening words.",
+    },
+    SettingSpec {
+        key: crate::GALLERY_TILE_SIZE_KEY,
+        ty: "float (px, 120–520)",
+        default: || val(crate::GALLERY_TILE_SIZE_DEFAULT),
+        check: check::<f32>,
+        doc: "Minimum width of a Gallery thumbnail.",
     },
     // ── Corkboard ─────────────────────────────────────────────────────────────
     SettingSpec {

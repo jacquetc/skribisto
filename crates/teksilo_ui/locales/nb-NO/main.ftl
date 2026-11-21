@@ -616,6 +616,7 @@ segment-book = Bok
 segment-pace = Tempo
 segment-notes = Notater
 segment-story-bible = Historiebibel
+segment-gallery = Galleri
 segment-note-own = Notat
 segment-note-details = Detaljer
 segment-note-in-prose = I teksten
@@ -3211,6 +3212,49 @@ picture-viewer-save-failed = Kopien kunne ikke lagres: { $error }
 picture-viewer-loading = Laster inn bildet…
 picture-viewer-failed = Dette bildet kan ikke vises. Filen mangler, eller det er ikke et PNG-, JPEG- eller WebP-bilde.
 
+# The Gallery: a notes folder's pictures as thumbnails. It shares the Overview's search,
+# chips and order. "First image" shows one tile per note, "All images" one per picture.
+gallery-grid-label = Bilder i denne mappen
+gallery-search-label = Filtrer galleriet
+gallery-mode-first = Første bilde
+gallery-mode-all = Alle bilder
+gallery-mode-first-hint = Ett miniatyrbilde per notat: notatets første bilde, med antallet andre bilder i det. Gjelder alle åpne gallerier i alle prosjekter.
+gallery-mode-all-hint = Ett miniatyrbilde per bilde: alle bildene i alle notatene. Gjelder alle åpne gallerier i alle prosjekter.
+gallery-view-nested-hint = Hver undermappe som en flis med de fire første bildene i den; dobbeltklikk på den for å se innholdet. Gjelder alle åpne gallerier i alle prosjekter.
+gallery-view-flat-hint = Alle bildene i denne mappen og i undermappene dens, på én gang. Gjelder alle åpne gallerier i alle prosjekter.
+gallery-text-notes-hint = Notater uten bilder: viser også notatene som bare inneholder tekst, som fliser med de første ordene i dem. Gjelder alle åpne gallerier i alle prosjekter.
+gallery-tile-size = Bildestørrelse
+gallery-scope-hint = Gjelder alle åpne gallerier i alle prosjekter.
+gallery-breadcrumb-label = Mapper
+gallery-breadcrumb-root = Denne mappen
+gallery-sort-label = Rekkefølge
+gallery-sort-binder = Rekkefølge i permen
+gallery-sort-title-ascending = Tittel, A til Å
+gallery-sort-title-descending = Tittel, Å til A
+gallery-sort-status = Status, minst ferdige først
+gallery-sort-overview = Som sortert i Oversikt
+gallery-empty = Ingen bilder her ennå. Et bilde som settes inn i et notat i denne mappen, vises her.
+gallery-empty-text-notes-hint = Ingen bilder her ennå. Slå på «Notater uten bilder» for å se tekstnotatene.
+gallery-tile-picture = { $title }, bilde
+gallery-tile-picture-described = { $title }, bilde: { $description }
+gallery-more-images = { $count ->
+    [1] ett bilde til i dette notatet
+   *[other] { $count } bilder til i dette notatet
+}
+gallery-more-badge = +{ $count }
+gallery-tile-text = { $title }, tekstnotat
+gallery-tile-folder = { $title }, mappe, { $count ->
+    [0] ingen bilder
+    [1] ett bilde
+   *[other] { $count } bilder
+}
+gallery-folder-count = { $count ->
+    [0] Ingen bilder
+    [1] Ett bilde
+   *[other] { $count } bilder
+}
+gallery-unavailable = Bildet er ikke tilgjengelig
+
 cover-heading = Omslag
 cover-pick = Velg…
 cover-change = Bytt…
@@ -3742,6 +3786,7 @@ screen-reader-offer-never = Ikke vis dette igjen
 help-topic-writing-model = Hvordan en bok settes sammen
 help-topic-drafts-and-old-versions = Ta vare på et eldre utkast
 help-topic-goals-and-pace = Mål og tempo
+help-topic-pictures = Bilder og galleriet
 help-topic-comments = Kommentarer
 help-topic-round-trip = Sende boken til en leser
 help-topic-export = Eksportere

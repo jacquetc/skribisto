@@ -616,6 +616,7 @@ segment-book = Livro
 segment-pace = Ritmo
 segment-notes = Notas
 segment-story-bible = Bíblia da história
+segment-gallery = Galeria
 segment-note-own = Nota
 segment-note-details = Detalhes
 segment-note-in-prose = Em prosa
@@ -3241,6 +3242,49 @@ picture-viewer-save-failed = Não foi possível guardar a cópia: { $error }
 picture-viewer-loading = A carregar a imagem…
 picture-viewer-failed = Não é possível mostrar esta imagem. O ficheiro está em falta, ou não é uma imagem PNG, JPEG ou WebP.
 
+# The Gallery: a notes folder's pictures as thumbnails. It shares the Overview's search,
+# chips and order. "First image" shows one tile per note, "All images" one per picture.
+gallery-grid-label = Imagens desta pasta
+gallery-search-label = Filtrar a galeria
+gallery-mode-first = Primeira imagem
+gallery-mode-all = Todas as imagens
+gallery-mode-first-hint = Uma miniatura por nota: a sua primeira imagem, com o número das suas outras imagens. Aplica-se a todas as galerias abertas, em todos os projetos.
+gallery-mode-all-hint = Uma miniatura por imagem: todas as imagens de todas as notas. Aplica-se a todas as galerias abertas, em todos os projetos.
+gallery-view-nested-hint = Cada subpasta como uma miniatura das suas quatro primeiras imagens; faça duplo clique nela para ver o conteúdo. Aplica-se a todas as galerias abertas, em todos os projetos.
+gallery-view-flat-hint = Todas as imagens desta pasta e das suas subpastas, de uma só vez. Aplica-se a todas as galerias abertas, em todos os projetos.
+gallery-text-notes-hint = Notas sem imagens: mostrar também as notas que só contêm texto, como miniaturas das suas primeiras palavras. Aplica-se a todas as galerias abertas, em todos os projetos.
+gallery-tile-size = Tamanho das imagens
+gallery-scope-hint = Aplica-se a todas as galerias abertas, em todos os projetos.
+gallery-breadcrumb-label = Pastas
+gallery-breadcrumb-root = Esta pasta
+gallery-sort-label = Ordem
+gallery-sort-binder = Ordem do arquivador
+gallery-sort-title-ascending = Título, de A a Z
+gallery-sort-title-descending = Título, de Z a A
+gallery-sort-status = Estado, primeiro as menos avançadas
+gallery-sort-overview = Pela ordem da Vista geral
+gallery-empty = Ainda não há imagens. Uma imagem inserida numa nota desta pasta aparece aqui.
+gallery-empty-text-notes-hint = Ainda não há imagens. Ative «Notas sem imagens» para ver as notas de texto.
+gallery-tile-picture = { $title }, imagem
+gallery-tile-picture-described = { $title }, imagem: { $description }
+gallery-more-images = { $count ->
+    [1] mais uma imagem nesta nota
+   *[other] mais { $count } imagens nesta nota
+}
+gallery-more-badge = +{ $count }
+gallery-tile-text = { $title }, nota de texto
+gallery-tile-folder = { $title }, pasta, { $count ->
+    [0] sem imagens
+    [1] uma imagem
+   *[other] { $count } imagens
+}
+gallery-folder-count = { $count ->
+    [0] Sem imagens
+    [1] Uma imagem
+   *[other] { $count } imagens
+}
+gallery-unavailable = Imagem indisponível
+
 cover-heading = Capa
 cover-pick = Escolher…
 cover-change = Alterar…
@@ -3772,6 +3816,7 @@ screen-reader-offer-never = Não voltar a mostrar
 help-topic-writing-model = Como um livro é montado
 help-topic-drafts-and-old-versions = Manter um rascunho mais antigo
 help-topic-goals-and-pace = Metas e ritmo
+help-topic-pictures = As imagens e a galeria
 help-topic-comments = Comentários
 help-topic-round-trip = Enviar o seu livro a um leitor
 help-topic-export = Exportação

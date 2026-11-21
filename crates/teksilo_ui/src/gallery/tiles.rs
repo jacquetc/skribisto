@@ -1,0 +1,344 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
+//! What the Gallery shows, as plain data: the notes of a folder turned into tiles.
+//!
+//! A gallery is a gallery: its tiles are pictures. A note with three pictures is one tile
+//! in *First image* (its first, with a badge saying how many more) and three in *All
+//! images*. A note with no picture is left out, unless the writer asks for *Notes without
+//! images*, when it is a tile of its opening words. In *Nested* a subfolder is a tile of
+//! its own, its name over the first four pictures found anywhere beneath it; in *Flat*
+//! there are no folder tiles, and every picture below the folder is shown.
+//!
+//! The order is the order of the notes the caller hands in, which is the Overview's:
+//! binder order, or the Overview's sort, with its search and filters applied
+//! (`models::overview_rows_model::shaped_subtree`). This module does not reorder.
+
+use crate::shared::images::ImageRef;
+
+/// How many pictures a folder tile previews.
+pub const FOLDER_PREVIEWS: usize = 4;
+
+/// How many characters of a text note a tile shows.
+pub const EXCERPT_CHARS: usize = 280;
+
+/// One row of the folder's subtree, with what the Gallery needs from it.
+#[derive(Debug, Clone, PartialEq)]
+pub struct GalleryNote {
+    pub item_id: u64,
+    pub title: String,
+    /// Depth below the folder the Gallery shows: `0` for its own children.
+    pub depth: usize,
+    /// A folder (any `Folder` role), shown as a folder tile in Nested.
+    pub is_folder: bool,
+    /// Its pictures in document order, empty for a folder or a note with none.
+    pub pictures: Vec<ImageRef>,
+    /// Its opening words, for a tile when it has no picture.
+    pub excerpt: String,
+}
+
+/// The Gallery's three switches.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct GalleryOptions {
+    /// One tile per picture, rather than one per note.
+    pub all_images: bool,
+    /// Subfolders as tiles one can enter, rather than everything at once.
+    pub nested: bool,
+    /// Text-only notes as tiles of their opening words.
+    pub text_notes: bool,
+}
+
+impl Default for GalleryOptions {
+    fn default() -> Self {
+        Self {
+            all_images: false,
+            nested: true,
+            text_notes: false,
+        }
+    }
+}
+
+/// One tile.
+#[derive(Debug, Clone, PartialEq)]
+pub enum GalleryTile {
+    Picture {
+        item_id: u64,
+        title: String,
+        image: ImageRef,
+        /// Pictures of the same note this tile does not show: the badge in First image,
+        /// always `0` in All images.
+        more: usize,
+    },
+    Text {
+        item_id: u64,
+        title: String,
+        excerpt: String,
+    },
+    Folder {
+        item_id: u64,
+        title: String,
+        /// Up to [`FOLDER_PREVIEWS`] pictures from anywhere beneath it, in order.
+        previews: Vec<ImageRef>,
+        /// Every picture beneath it.
+        pictures: usize,
+    },
+}
+
+impl GalleryTile {
+    /// The note or folder the tile stands for.
+    pub fn item_id(&self) -> u64 {
+        match self {
+            Self::Picture { item_id, .. }
+            | Self::Text { item_id, .. }
+            | Self::Folder { item_id, .. } => *item_id,
+        }
+    }
+
+    pub fn title(&self) -> &str {
+        match self {
+            Self::Picture { title, .. } | Self::Text { title, .. } | Self::Folder { title, .. } => {
+                title
+            }
+        }
+    }
+
+    /// The picture the tile shows, when it shows exactly one.
+    pub fn image(&self) -> Option<&ImageRef> {
+        match self {
+            Self::Picture { image, .. } => Some(image),
+            _ => None,
+        }
+    }
+}
+
+/// The tiles for `notes` under `options`.
+pub fn build_tiles(notes: &[GalleryNote], options: GalleryOptions) -> Vec<GalleryTile> {
+    let mut tiles = Vec::new();
+    for (at, note) in notes.iter().enumerate() {
+        if options.nested && note.depth > 0 {
+            // Inside a subfolder: that folder's tile stands for it.
+            continue;
+        }
+        if note.is_folder {
+            if options.nested {
+                let beneath = subtree(notes, at);
+                let pictures: Vec<&ImageRef> =
+                    beneath.iter().flat_map(|n| n.pictures.iter()).collect();
+                tiles.push(GalleryTile::Folder {
+                    item_id: note.item_id,
+                    title: note.title.clone(),
+                    previews: pictures
+                        .iter()
+                        .take(FOLDER_PREVIEWS)
+                        .map(|p| (*p).clone())
+                        .collect(),
+                    pictures: pictures.len(),
+                });
+            }
+            // A folder's own synopsis is not a note's text: in Flat it is not a tile.
+            continue;
+        }
+        note_tiles(note, options, &mut tiles);
+    }
+    tiles
+}
+
+fn note_tiles(note: &GalleryNote, options: GalleryOptions, tiles: &mut Vec<GalleryTile>) {
+    match note.pictures.split_first() {
+        Some((first, rest)) if !options.all_images => tiles.push(GalleryTile::Picture {
+            item_id: note.item_id,
+            title: note.title.clone(),
+            image: first.clone(),
+            more: rest.len(),
+        }),
+        Some(_) => tiles.extend(note.pictures.iter().map(|image| GalleryTile::Picture {
+            item_id: note.item_id,
+            title: note.title.clone(),
+            image: image.clone(),
+            more: 0,
+        })),
+        None if options.text_notes => tiles.push(GalleryTile::Text {
+            item_id: note.item_id,
+            title: note.title.clone(),
+            excerpt: note.excerpt.clone(),
+        }),
+        None => {}
+    }
+}
+
+/// The rows strictly beneath `notes[at]`: those after it that are deeper, up to the first
+/// that is not.
+fn subtree(notes: &[GalleryNote], at: usize) -> &[GalleryNote] {
+    let depth = notes[at].depth;
+    let rest = &notes[at + 1..];
+    let end = rest
+        .iter()
+        .position(|n| n.depth <= depth)
+        .unwrap_or(rest.len());
+    &rest[..end]
+}
+
+/// The opening of `plain`, at most [`EXCERPT_CHARS`] characters, its runs of white space
+/// folded to one space, cut at a word when one ends near the limit.
+pub fn excerpt(plain: &str) -> String {
+    let folded: String = plain
+        .replace('\u{fffc}', " ")
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ");
+    if folded.chars().count() <= EXCERPT_CHARS {
+        return folded;
+    }
+    let cut: String = folded.chars().take(EXCERPT_CHARS).collect();
+    let at_word = cut
+        .rfind(' ')
+        .filter(|&i| i > EXCERPT_CHARS / 2)
+        .map_or(cut.as_str(), |i| &cut[..i]);
+    format!("{}…", at_word.trim_end())
+}
+
+/// Whether any note under the folder has text but no picture: what makes the empty
+/// Gallery worth a hint about *Notes without images*.
+pub fn has_text_only_notes(notes: &[GalleryNote]) -> bool {
+    notes
+        .iter()
+        .any(|n| !n.is_folder && n.pictures.is_empty() && !n.excerpt.is_empty())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn picture(src: &str) -> ImageRef {
+        ImageRef {
+            index: 0,
+            src: src.to_string(),
+            alt: String::new(),
+            size: Some((100, 50)),
+        }
+    }
+
+    fn note(id: u64, depth: usize, pictures: &[&str], excerpt: &str) -> GalleryNote {
+        GalleryNote {
+            item_id: id,
+            title: format!("note {id}"),
+            depth,
+            is_folder: false,
+            pictures: pictures.iter().map(|s| picture(s)).collect(),
+            excerpt: excerpt.to_string(),
+        }
+    }
+
+    fn folder(id: u64, depth: usize) -> GalleryNote {
+        GalleryNote {
+            item_id: id,
+            title: format!("folder {id}"),
+            depth,
+            is_folder: true,
+            pictures: Vec::new(),
+            excerpt: String::new(),
+        }
+    }
+
+    /// A folder of mixed notes with a subfolder holding five pictures over two notes.
+    fn folder_of_research() -> Vec<GalleryNote> {
+        vec![
+            note(1, 0, &["a", "b", "c"], ""),
+            note(2, 0, &[], "a quotation typed by hand"),
+            folder(3, 0),
+            note(4, 1, &["d", "e"], ""),
+            note(5, 1, &["f", "g", "h"], ""),
+            note(6, 0, &["i"], ""),
+        ]
+    }
+
+    fn srcs(tiles: &[GalleryTile]) -> Vec<String> {
+        tiles
+            .iter()
+            .map(|t| match t {
+                GalleryTile::Picture { image, more, .. } => format!("{}+{more}", image.src),
+                GalleryTile::Text { item_id, .. } => format!("text {item_id}"),
+                GalleryTile::Folder {
+                    previews, pictures, ..
+                } => format!(
+                    "folder[{}]/{pictures}",
+                    previews
+                        .iter()
+                        .map(|p| p.src.as_str())
+                        .collect::<Vec<_>>()
+                        .join("")
+                ),
+            })
+            .collect()
+    }
+
+    #[test]
+    fn first_image_nested_shows_one_tile_per_note_and_folder_tiles() {
+        let tiles = build_tiles(&folder_of_research(), GalleryOptions::default());
+        assert_eq!(srcs(&tiles), ["a+2", "folder[defg]/5", "i+0"]);
+    }
+
+    #[test]
+    fn all_images_flat_shows_every_picture_beneath_in_order() {
+        let options = GalleryOptions {
+            all_images: true,
+            nested: false,
+            text_notes: false,
+        };
+        let tiles = build_tiles(&folder_of_research(), options);
+        assert_eq!(
+            srcs(&tiles),
+            [
+                "a+0", "b+0", "c+0", "d+0", "e+0", "f+0", "g+0", "h+0", "i+0"
+            ]
+        );
+    }
+
+    #[test]
+    fn text_notes_appear_only_when_asked_for() {
+        let notes = folder_of_research();
+        assert!(
+            !srcs(&build_tiles(&notes, GalleryOptions::default())).contains(&"text 2".to_string())
+        );
+        let options = GalleryOptions {
+            text_notes: true,
+            ..GalleryOptions::default()
+        };
+        assert_eq!(
+            srcs(&build_tiles(&notes, options)),
+            ["a+2", "text 2", "folder[defg]/5", "i+0"]
+        );
+        assert!(has_text_only_notes(&notes));
+    }
+
+    #[test]
+    fn a_folder_tile_previews_from_its_whole_subtree_and_stops_at_its_end() {
+        let notes = vec![
+            folder(1, 0),
+            folder(2, 1),
+            note(3, 2, &["deep"], ""),
+            note(4, 1, &["near"], ""),
+            note(5, 0, &["after"], ""),
+        ];
+        let tiles = build_tiles(&notes, GalleryOptions::default());
+        assert_eq!(srcs(&tiles), ["folder[deepnear]/2", "after+0"]);
+    }
+
+    #[test]
+    fn an_empty_folder_is_still_a_tile_to_enter() {
+        let tiles = build_tiles(&[folder(1, 0)], GalleryOptions::default());
+        assert_eq!(srcs(&tiles), ["folder[]/0"]);
+    }
+
+    #[test]
+    fn an_excerpt_folds_white_space_and_cuts_at_a_word() {
+        assert_eq!(excerpt("  a\n\n quote\u{fffc}here "), "a quote here");
+        let long = "word ".repeat(200);
+        let cut = excerpt(&long);
+        assert!(cut.ends_with("word…"), "{cut}");
+        assert!(cut.chars().count() <= EXCERPT_CHARS + 1);
+        // One long unbroken run is cut where it must be.
+        let run = "x".repeat(1000);
+        assert_eq!(excerpt(&run).chars().count(), EXCERPT_CHARS + 1);
+    }
+}

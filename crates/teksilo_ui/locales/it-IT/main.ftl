@@ -589,6 +589,7 @@ segment-book = Libro
 segment-pace = Ritmo
 segment-notes = Note
 segment-story-bible = Bibbia narrativa
+segment-gallery = Galleria
 segment-note-own = Nota
 segment-note-details = Dettagli
 segment-note-in-prose = Nel testo
@@ -3188,6 +3189,49 @@ picture-viewer-saved = Copia salvata.
 picture-viewer-save-failed = Impossibile salvare la copia: { $error }
 picture-viewer-loading = Caricamento dell'immagine…
 picture-viewer-failed = Impossibile mostrare questa immagine. Il suo file manca, oppure non è un'immagine PNG, JPEG o WebP.
+
+# The Gallery: a notes folder's pictures as thumbnails. It shares the Overview's search,
+# chips and order. "First image" shows one tile per note, "All images" one per picture.
+gallery-grid-label = Immagini di questa cartella
+gallery-search-label = Filtra la galleria
+gallery-mode-first = Prima immagine
+gallery-mode-all = Tutte le immagini
+gallery-mode-first-hint = Una miniatura per nota: la sua prima immagine, con il numero delle sue altre immagini. Vale per tutte le gallerie aperte, in ogni progetto.
+gallery-mode-all-hint = Una miniatura per immagine: tutte le immagini di tutte le note. Vale per tutte le gallerie aperte, in ogni progetto.
+gallery-view-nested-hint = Ogni sottocartella come una miniatura delle sue prime quattro immagini; fai doppio clic su di essa per vederne il contenuto. Vale per tutte le gallerie aperte, in ogni progetto.
+gallery-view-flat-hint = Tutte le immagini di questa cartella e delle sue sottocartelle, tutte insieme. Vale per tutte le gallerie aperte, in ogni progetto.
+gallery-text-notes-hint = Note senza immagini: mostra anche le note che contengono solo testo, come miniature delle loro prime parole. Vale per tutte le gallerie aperte, in ogni progetto.
+gallery-tile-size = Dimensione delle immagini
+gallery-scope-hint = Vale per tutte le gallerie aperte, in ogni progetto.
+gallery-breadcrumb-label = Cartelle
+gallery-breadcrumb-root = Questa cartella
+gallery-sort-label = Ordine
+gallery-sort-binder = Ordine del raccoglitore
+gallery-sort-title-ascending = Titolo, dalla A alla Z
+gallery-sort-title-descending = Titolo, dalla Z alla A
+gallery-sort-status = Stato, prima le meno avanzate
+gallery-sort-overview = Come nella Panoramica
+gallery-empty = Ancora nessuna immagine. Un'immagine inserita in una nota di questa cartella compare qui.
+gallery-empty-text-notes-hint = Ancora nessuna immagine. Attiva «Note senza immagini» per vedere le note di testo.
+gallery-tile-picture = { $title }, immagine
+gallery-tile-picture-described = { $title }, immagine: { $description }
+gallery-more-images = { $count ->
+    [1] un'altra immagine in questa nota
+   *[other] altre { $count } immagini in questa nota
+}
+gallery-more-badge = +{ $count }
+gallery-tile-text = { $title }, nota di testo
+gallery-tile-folder = { $title }, cartella, { $count ->
+    [0] nessuna immagine
+    [1] un'immagine
+   *[other] { $count } immagini
+}
+gallery-folder-count = { $count ->
+    [0] Nessuna immagine
+    [1] Un'immagine
+   *[other] { $count } immagini
+}
+gallery-unavailable = Immagine non disponibile
 cover-heading = Copertina
 cover-pick = Scegli…
 cover-change = Cambia…
@@ -3697,6 +3741,7 @@ screen-reader-offer-never = Non mostrare più
 help-topic-writing-model = Come è fatto un libro
 help-topic-drafts-and-old-versions = Conservare una vecchia bozza
 help-topic-goals-and-pace = Obiettivi e ritmo
+help-topic-pictures = Le immagini e la galleria
 help-topic-comments = Commenti
 help-topic-round-trip = Inviare il libro a un lettore
 help-topic-export = Esportazione

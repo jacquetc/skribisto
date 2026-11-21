@@ -618,6 +618,7 @@ segment-book = Книга
 segment-pace = Темп
 segment-notes = Нотатки
 segment-story-bible = Довідник історії
+segment-gallery = Галерея
 segment-note-own = Нотатка
 segment-note-details = Подробиці
 segment-note-in-prose = У прозі
@@ -3929,6 +3930,58 @@ picture-viewer-saved = Копію збережено.
 picture-viewer-save-failed = Не вдалося зберегти копію: { $error }
 picture-viewer-loading = Завантаження зображення…
 picture-viewer-failed = Не вдається показати це зображення. Його файлу немає, або це не зображення PNG, JPEG чи WebP.
+
+# The Gallery: a notes folder's pictures as thumbnails. It shares the Overview's search,
+# chips and order. "First image" shows one tile per note, "All images" one per picture.
+gallery-grid-label = Зображення в цій теці
+gallery-search-label = Фільтрувати галерею
+gallery-mode-first = Перше зображення
+gallery-mode-all = Усі зображення
+gallery-mode-first-hint = Одна мініатюра на нотатку: її перше зображення та кількість інших її зображень. Застосовується до всіх відкритих галерей у всіх проєктах.
+gallery-mode-all-hint = Одна мініатюра на зображення: усі зображення всіх нотаток. Застосовується до всіх відкритих галерей у всіх проєктах.
+gallery-view-nested-hint = Кожна підтека як мініатюра з її першими чотирма зображеннями; двічі клацніть її, щоб побачити вміст. Застосовується до всіх відкритих галерей у всіх проєктах.
+gallery-view-flat-hint = Усі зображення цієї теки та її підтек одразу. Застосовується до всіх відкритих галерей у всіх проєктах.
+gallery-text-notes-hint = Нотатки без зображень: показувати й нотатки, що містять лише текст, як мініатюри з їхніми першими словами. Застосовується до всіх відкритих галерей у всіх проєктах.
+gallery-tile-size = Розмір зображень
+gallery-scope-hint = Застосовується до всіх відкритих галерей у всіх проєктах.
+gallery-breadcrumb-label = Теки
+gallery-breadcrumb-root = Ця тека
+gallery-sort-label = Порядок
+gallery-sort-binder = Порядок у підшивці
+gallery-sort-title-ascending = Назва, від А до Я
+gallery-sort-title-descending = Назва, від Я до А
+gallery-sort-status = Стан, спершу найменш завершені
+gallery-sort-overview = Як упорядковано в Огляді
+gallery-empty = Зображень тут поки що немає. Зображення, вставлене в нотатку цієї теки, з’явиться тут.
+gallery-empty-text-notes-hint = Зображень тут поки що немає. Увімкніть «Нотатки без зображень», щоб побачити текстові нотатки.
+gallery-tile-picture = { $title }, зображення
+gallery-tile-picture-described = { $title }, зображення: { $description }
+gallery-more-images = { $count ->
+    [1] ще одне зображення в цій нотатці
+    [one] ще { $count } зображення в цій нотатці
+    [few] ще { $count } зображення в цій нотатці
+    [many] ще { $count } зображень у цій нотатці
+   *[other] ще { $count } зображення в цій нотатці
+}
+gallery-more-badge = +{ $count }
+gallery-tile-text = { $title }, текстова нотатка
+gallery-tile-folder = { $title }, тека, { $count ->
+    [0] жодного зображення
+    [1] одне зображення
+    [one] { $count } зображення
+    [few] { $count } зображення
+    [many] { $count } зображень
+   *[other] { $count } зображення
+}
+gallery-folder-count = { $count ->
+    [0] Жодного зображення
+    [1] Одне зображення
+    [one] { $count } зображення
+    [few] { $count } зображення
+    [many] { $count } зображень
+   *[other] { $count } зображення
+}
+gallery-unavailable = Зображення недоступне
 cover-heading = Обкладинка
 cover-pick = Вибрати…
 cover-change = Замінити…
@@ -4534,6 +4587,7 @@ screen-reader-offer-never = Більше не показувати
 help-topic-writing-model = Як складається книга
 help-topic-drafts-and-old-versions = Як зберегти старішу чернетку
 help-topic-goals-and-pace = Цілі та темп
+help-topic-pictures = Зображення та галерея
 help-topic-comments = Коментарі
 help-topic-round-trip = Надсилання книги читачеві
 help-topic-export = Експорт

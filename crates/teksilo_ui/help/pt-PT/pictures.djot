@@ -1,0 +1,74 @@
+## As imagens no seu texto
+
+Para adicionar uma imagem, coloque o cursor onde ela deve ficar e escolha *Documento ▸ Inserir
+imagem…*. Também pode largar um ficheiro de imagem sobre o texto, ou colar uma.
+
+Uma imagem nunca é desenhada mais larga do que o texto à sua volta. Uma captura de ecrã larga
+é mostrada à largura do texto, com a altura em proporção. O seu próprio tamanho é mantido:
+alargue a janela ou a coluna de texto e ela volta a crescer, até esse tamanho.
+
+## Alterar uma imagem
+
+Clique numa imagem para a selecionar. O seu menu, com um clique com o botão direito ou no menu
+*Imagem*, oferece:
+
+- *Ver a imagem*, para a ver em grande;
+- *Abrir noutra aplicação*, para a abrir na aplicação que o seu sistema usa para imagens;
+- *Descrever a imagem…*, para um leitor que não a pode ver;
+- *Redimensionar a imagem…*, em percentagem do tamanho com que é mostrada: 50 reduz-na a
+  metade;
+- *Tamanho original*, para voltar ao tamanho próprio da imagem.
+
+Também pode arrastar um canto de uma imagem selecionada para mudar o seu tamanho.
+
+## O visualizador de imagens
+
+Faça duplo clique numa imagem, ou escolha *Ver a imagem*, para abrir o visualizador. Ele
+mostra a imagem tão grande quanto a janela permite.
+
+- *Ampliar*, *Reduzir*, *Ajustar* e *100%* mudam o seu tamanho. As teclas `+` e `−` também,
+  `0` para *Ajustar* e `1` para *100%*.
+- Mantenha `Ctrl` premida e rode a roda do rato para ampliar onde está a apontar. Num painel
+  tátil, junte ou afaste dois dedos.
+- Arraste a imagem para a percorrer quando é maior do que a janela.
+- As setas para a esquerda e para a direita passam para a imagem anterior e para a seguinte.
+- *Guardar uma cópia…* escreve a imagem num ficheiro à sua escolha.
+
+Prima `Esc`, ou *Fechar* no fim da barra, para fechar o visualizador.
+
+A capa de um livro também se abre aí: na página do livro, escolha *Ver* ao lado da capa, ou
+faça duplo clique nela.
+
+## A galeria de uma pasta de notas
+
+Uma pasta de notas tem uma vista *Galeria*, ao lado de *Notas*, *Bíblia da história* e *Vista
+geral*. Mostra em miniaturas as imagens das notas da pasta. Cada miniatura mantém as
+proporções da sua imagem.
+
+Escolha o que ela mostra:
+
+- *Primeira imagem* dá uma miniatura por nota, com o número das suas outras imagens. *Todas
+  as imagens* dá uma por imagem.
+- *Aninhado* mostra cada subpasta como uma miniatura com as suas quatro primeiras imagens.
+  Faça duplo clique nela para entrar; o caminho no topo leva-o de volta. *Plano* mostra de uma
+  só vez todas as imagens da pasta e das suas subpastas.
+- *Notas sem imagens* acrescenta as notas que só têm texto, como miniaturas com as suas
+  primeiras palavras.
+- *Tamanho das imagens* torna as miniaturas mais pequenas ou maiores.
+
+Estas escolhas valem para todas as galerias que abrir.
+
+## Encontrar uma imagem
+
+A galeria partilha com a *Vista geral* o seu campo de pesquisa, os seus filtros de etiquetas e
+de estados e a sua ordem. O que restringir numa vista fica restringido na outra.
+
+Faça duplo clique numa miniatura, ou prima `Enter`, para a abrir no visualizador de imagens.
+As setas percorrem então as imagens que a galeria mostra, pela sua ordem. Clique com o botão
+direito numa miniatura e escolha *Abrir a nota* para abrir a nota onde ela está.
+
+## A pesquisa vinda do Scrivener
+
+As imagens da pesquisa de um projeto Scrivener chegam como notas, uma imagem cada, na pasta
+que a importação cria para elas (consulte [Vindo do Scrivener](:help-import-scrivener)). Abra
+essa pasta e escolha *Galeria* para as ver todas.

@@ -299,6 +299,17 @@ impl OverviewViewModel {
 
     // ── Handles for the view ─────────────────────────────────────────────────
 
+    /// The search, tag, status and sort state, shared by clone with any view that shows
+    /// the same rows another way (the Gallery).
+    pub fn filters(&self) -> OverviewFilters {
+        self.inner.filters.clone()
+    }
+
+    /// The container this table tabulates.
+    pub fn container_id(&self) -> u64 {
+        self.inner.container_id
+    }
+
     /// The `TreeDataSource` to hand to `TreeTableView::from_source_keyed`.
     pub fn rows(&self) -> OverviewRowsModel {
         self.inner.rows.clone()

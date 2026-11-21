@@ -711,6 +711,7 @@ segment-book = Bog
 segment-pace = Tempo
 segment-notes = Noter
 segment-story-bible = Historiebibel
+segment-gallery = Galleri
 # The three segments on an `Item/Note` tab: its own prose, its story-bible fields, and
 # (only when it carries a discoverable tag) the manuscript prose it has been declared
 # present in. See `teksilo_ui::tabs::item_note`.
@@ -3569,6 +3570,49 @@ picture-viewer-save-failed = Kopien kunne ikke gemmes: { $error }
 picture-viewer-loading = Indlæser billedet…
 picture-viewer-failed = Billedet kan ikke vises. Filen mangler, eller det er ikke et PNG-, JPEG- eller WebP-billede.
 
+# The Gallery: a notes folder's pictures as thumbnails. It shares the Overview's search,
+# chips and order. "First image" shows one tile per note, "All images" one per picture.
+gallery-grid-label = Billeder i denne mappe
+gallery-search-label = Filtrér galleriet
+gallery-mode-first = Første billede
+gallery-mode-all = Alle billeder
+gallery-mode-first-hint = Ét miniaturebillede pr. note: notens første billede og antallet af dens øvrige billeder. Gælder for alle åbne gallerier i alle projekter.
+gallery-mode-all-hint = Ét miniaturebillede pr. billede: alle billeder i alle noter. Gælder for alle åbne gallerier i alle projekter.
+gallery-view-nested-hint = Hver undermappe som en flise med dens første fire billeder; dobbeltklik på den for at se indholdet. Gælder for alle åbne gallerier i alle projekter.
+gallery-view-flat-hint = Alle billeder i denne mappe og i dens undermapper, på én gang. Gælder for alle åbne gallerier i alle projekter.
+gallery-text-notes-hint = Noter uden billeder: vis også de noter, der kun indeholder tekst, som fliser med deres første ord. Gælder for alle åbne gallerier i alle projekter.
+gallery-tile-size = Billedstørrelse
+gallery-scope-hint = Gælder for alle åbne gallerier i alle projekter.
+gallery-breadcrumb-label = Mapper
+gallery-breadcrumb-root = Denne mappe
+gallery-sort-label = Rækkefølge
+gallery-sort-binder = Ringbindets rækkefølge
+gallery-sort-title-ascending = Titel, A til Å
+gallery-sort-title-descending = Titel, Å til A
+gallery-sort-status = Status, mindst færdige først
+gallery-sort-overview = Som sorteret i oversigten
+gallery-empty = Ingen billeder her endnu. Et billede, der indsættes i en note i denne mappe, vises her.
+gallery-empty-text-notes-hint = Ingen billeder her endnu. Slå »Noter uden billeder« til for at se tekstnoterne.
+gallery-tile-picture = { $title }, billede
+gallery-tile-picture-described = { $title }, billede: { $description }
+gallery-more-images = { $count ->
+    [1] ét billede mere i denne note
+   *[other] { $count } billeder mere i denne note
+}
+gallery-more-badge = +{ $count }
+gallery-tile-text = { $title }, tekstnote
+gallery-tile-folder = { $title }, mappe, { $count ->
+    [0] ingen billeder
+    [1] ét billede
+   *[other] { $count } billeder
+}
+gallery-folder-count = { $count ->
+    [0] Ingen billeder
+    [1] Ét billede
+   *[other] { $count } billeder
+}
+gallery-unavailable = Billedet er ikke tilgængeligt
+
 # The book's cover, chosen from the book, not typed into a scene.
 cover-heading = Omslag
 cover-pick = Vælg…
@@ -4178,6 +4222,7 @@ screen-reader-offer-never = Vis ikke dette igen
 help-topic-writing-model = Hvordan en bog er bygget op
 help-topic-drafts-and-old-versions = Gem et ældre udkast
 help-topic-goals-and-pace = Mål og tempo
+help-topic-pictures = Billeder og galleriet
 help-topic-comments = Kommentarer
 help-topic-round-trip = Send din bog til en læser
 help-topic-export = Eksport

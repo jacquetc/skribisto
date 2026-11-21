@@ -620,6 +620,7 @@ segment-book = ספר
 segment-pace = קצב
 segment-notes = פתקים
 segment-story-bible = תיק הסיפור
+segment-gallery = גלריה
 segment-note-own = פתק
 segment-note-details = פרטים
 segment-note-in-prose = בטקסט
@@ -3582,6 +3583,52 @@ picture-viewer-save-failed = לא ניתן היה לשמור את העותק: { 
 picture-viewer-loading = התמונה נטענת…
 picture-viewer-failed = לא ניתן להציג את התמונה הזו. הקובץ שלה חסר, או שאין זו תמונת PNG,‏ JPEG או WebP.
 
+# The Gallery: a notes folder's pictures as thumbnails. It shares the Overview's search,
+# chips and order. "First image" shows one tile per note, "All images" one per picture.
+gallery-grid-label = תמונות בתיקייה זו
+gallery-search-label = סינון הגלריה
+gallery-mode-first = התמונה הראשונה
+gallery-mode-all = כל התמונות
+gallery-mode-first-hint = תמונה ממוזערת אחת לכל פתק: התמונה הראשונה שלו, עם מספר שאר התמונות שבו. חל על כל גלריה פתוחה, בכל פרויקט.
+gallery-mode-all-hint = תמונה ממוזערת אחת לכל תמונה: כל התמונות של כל הפתקים. חל על כל גלריה פתוחה, בכל פרויקט.
+gallery-view-nested-hint = כל תת־תיקייה כתמונה ממוזערת עם ארבע התמונות הראשונות שלה; לחיצה כפולה עליה מציגה את תוכנה. חל על כל גלריה פתוחה, בכל פרויקט.
+gallery-view-flat-hint = כל התמונות של תיקייה זו ושל תתי־התיקיות שלה, בבת אחת. חל על כל גלריה פתוחה, בכל פרויקט.
+gallery-text-notes-hint = פתקים ללא תמונות: הצגה גם של הפתקים שמכילים טקסט בלבד, כתמונות ממוזערות של המילים הראשונות שלהם. חל על כל גלריה פתוחה, בכל פרויקט.
+gallery-tile-size = גודל התמונות
+gallery-scope-hint = חל על כל גלריה פתוחה, בכל פרויקט.
+gallery-breadcrumb-label = תיקיות
+gallery-breadcrumb-root = תיקייה זו
+gallery-sort-label = סדר
+gallery-sort-binder = סדר הקלסר
+gallery-sort-title-ascending = כותרת, מ־א עד ת
+gallery-sort-title-descending = כותרת, מ־ת עד א
+gallery-sort-status = מצב, הפחות מתקדמים תחילה
+gallery-sort-overview = כפי שממוין בסקירה הכללית
+gallery-empty = אין כאן תמונות עדיין. תמונה שנוספה לפתק בתיקייה זו מופיעה כאן.
+gallery-empty-text-notes-hint = אין כאן תמונות עדיין. יש להפעיל את "פתקים ללא תמונות" כדי לראות את פתקי הטקסט.
+gallery-tile-picture = { $title }, תמונה
+gallery-tile-picture-described = { $title }, תמונה: { $description }
+gallery-more-images = { $count ->
+    [1] עוד תמונה אחת בפתק זה
+    [two] עוד שתי תמונות בפתק זה
+   *[other] עוד { $count } תמונות בפתק זה
+}
+gallery-more-badge = +{ $count }
+gallery-tile-text = { $title }, פתק טקסט
+gallery-tile-folder = { $title }, תיקייה, { $count ->
+    [0] אין תמונות
+    [1] תמונה אחת
+    [two] שתי תמונות
+   *[other] { $count } תמונות
+}
+gallery-folder-count = { $count ->
+    [0] אין תמונות
+    [1] תמונה אחת
+    [two] שתי תמונות
+   *[other] { $count } תמונות
+}
+gallery-unavailable = התמונה אינה זמינה
+
 cover-heading = כריכה
 cover-pick = בחירה…
 cover-change = החלפה…
@@ -4116,6 +4163,7 @@ screen-reader-offer-never = לא להציג שוב
 help-topic-writing-model = איך ספר בנוי
 help-topic-drafts-and-old-versions = שמירה על טיוטה ישנה
 help-topic-goals-and-pace = יעדים וקצב
+help-topic-pictures = תמונות והגלריה
 help-topic-comments = הערות
 help-topic-round-trip = שליחת הספר לקורא
 help-topic-export = ייצוא

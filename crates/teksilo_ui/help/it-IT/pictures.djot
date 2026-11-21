@@ -1,0 +1,54 @@
+## Le immagini nel testo
+
+Per aggiungere un'immagine, metti il cursore dove deve andare e scegli *Documento ▸ Inserisci immagine…*. Puoi anche trascinare un file d'immagine sul testo, oppure incollarne una.
+
+Un'immagine non viene mai disegnata più larga del testo che la circonda. Uno screenshot largo viene mostrato alla larghezza del testo, con l'altezza in proporzione. La sua dimensione propria resta conservata: allarga la finestra o la colonna di testo e l'immagine torna a crescere, fino a quella dimensione.
+
+## Modificare un'immagine
+
+Fai clic su un'immagine per selezionarla. Il suo menu, con un clic con il pulsante destro o dal menu *Immagine*, offre:
+
+- *Visualizza l'immagine*, per guardarla in grande;
+- *Apri con un'altra applicazione*, per aprirla nell'applicazione che il tuo sistema usa per le immagini;
+- *Descrivi l'immagine…*, per chi non può vederla;
+- *Ridimensiona l'immagine…*, in percentuale della dimensione visualizzata: 50 la dimezza;
+- *Dimensione originale*, per tornare alla dimensione propria dell'immagine.
+
+Puoi anche trascinare un angolo di un'immagine selezionata per ridimensionarla.
+
+## Il visualizzatore di immagini
+
+Fai doppio clic su un'immagine, o scegli *Visualizza l'immagine*, per aprire il visualizzatore. Mostra l'immagine grande quanto la finestra permette.
+
+- *Ingrandisci*, *Riduci*, *Adatta* e *100%* ne cambiano la dimensione. Lo fanno anche i tasti `+` e `−`, `0` per *Adatta* e `1` per *100%*.
+- Tieni premuto `Ctrl` e gira la rotella del mouse per ingrandire nel punto indicato. Su un touchpad, avvicina o allontana due dita.
+- Trascina l'immagine per spostarti al suo interno quando è più grande della finestra.
+- Le frecce sinistra e destra passano all'immagine precedente e alla successiva.
+- *Salva una copia…* scrive l'immagine in un file a tua scelta.
+
+Premi `Esc`, o *Chiudi* in fondo alla barra, per chiudere il visualizzatore.
+
+Anche la copertina di un libro si apre qui: nella pagina del libro, scegli *Vedi* accanto alla copertina, oppure fai doppio clic su di essa.
+
+## La galleria di una cartella di note
+
+Una cartella di note ha una vista *Galleria*, accanto a *Note*, *Bibbia narrativa* e *Panoramica*. Mostra in miniatura le immagini delle note della cartella. Ogni miniatura conserva le proporzioni della sua immagine.
+
+Scegli cosa mostra:
+
+- *Prima immagine* dà una miniatura per nota, con il numero delle sue altre immagini. *Tutte le immagini* ne dà una per immagine.
+- *Gerarchica* mostra ogni sottocartella come una miniatura con le sue prime quattro immagini. Fai doppio clic per entrarci; il percorso in alto ti riporta indietro. *Piatta* mostra insieme tutte le immagini della cartella e delle sue sottocartelle.
+- *Note senza immagini* aggiunge le note che contengono solo testo, come miniature con le loro prime parole.
+- *Dimensione delle immagini* rende le miniature più piccole o più grandi.
+
+Queste scelte valgono per tutte le gallerie che apri.
+
+## Trovare un'immagine
+
+La galleria condivide con la *Panoramica* il campo di ricerca, i filtri per etichette e stati e l'ordine. Ciò che restringi in una vista viene ristretto anche nell'altra.
+
+Fai doppio clic su una miniatura, o premi `Invio`, per aprirla nel visualizzatore di immagini. Le frecce scorrono poi le immagini mostrate dalla galleria, nel suo ordine. Fai clic con il pulsante destro su una miniatura e scegli *Apri la nota* per aprire la nota che la contiene.
+
+## La ricerca da Scrivener
+
+Le immagini della ricerca di un progetto Scrivener arrivano come note, un'immagine ciascuna, nella cartella che l'importazione crea per loro (consulta [Passare da Scrivener](:help-import-scrivener)). Apri quella cartella e scegli *Galleria* per vederle tutte.
