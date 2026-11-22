@@ -593,3 +593,114 @@ fn go_to_opens_the_item_with_the_caret_in_its_text() {
         "the jump must ask for the keyboard on the page it opened"
     );
 }
+
+// ── A press anywhere in a pane marks it focused ─────────────────────────
+//
+// The trailing docks follow the focused pane. `focus_within` only moves it when
+// keyboard focus enters the pane, so a press on a margin or on the empty space
+// under the cards left the docks on the other pane's item.
+
+const PANE_W: f32 = 200.0;
+const PANE_H: f32 = 200.0;
+
+/// Two side-by-side stand-ins for the editor panes, wrapped exactly as
+/// `project_shell` wraps the real ones: a text field and empty space on the
+/// left, a button and empty space on the right.
+fn two_pane_tree(
+    editors: &EditorsViewModel,
+    pressed: Rc<std::cell::Cell<bool>>,
+) -> (teksilo::core::widget_tree::WidgetTree, WidgetId) {
+    use teksilo::core::widget_tree::WidgetTree;
+    use teksilo::widgets::{Button, FixedSize, HStack, Spacer, TextInput, VStack};
+
+    let left = FixedSize::new()
+        .width(PANE_W)
+        .height(PANE_H)
+        .child(
+            VStack::new()
+                .child(TextInput::new(Signal::new(String::new())).label(lit!("Left field")))
+                .child(Spacer::new()),
+        )
+        .on_pointer_event(mark_focused_on_press(editors, Side::Primary));
+    let right = FixedSize::new()
+        .width(PANE_W)
+        .height(PANE_H)
+        .child(
+            VStack::new()
+                .child(
+                    Button::new(lit!("Right button")).on_activate_fn(move |_ctx| pressed.set(true)),
+                )
+                .child(Spacer::new()),
+        )
+        .on_pointer_event(mark_focused_on_press(editors, Side::Secondary));
+
+    let mut tree = WidgetTree::new();
+    tree.add(HStack::new().child(left).child(right));
+    tree.layout(SizeProposal::exact(2.0 * PANE_W, PANE_H));
+    let field = tree
+        .find_by_label("Left field")
+        .expect("the left pane's field");
+    (tree, field)
+}
+
+/// A press on the empty part of the other pane moves the docks to it and leaves
+/// the caret where it was.
+#[test]
+fn a_press_on_a_panes_background_marks_it_focused_and_keeps_the_caret() {
+    let app_ctx = Rc::new(frontend::AppContext::new());
+    let editors = test_editors_view_model(&app_ctx);
+    editors.set_split(true);
+    editors.set_focused(Side::Primary);
+    let (mut tree, field) = two_pane_tree(&editors, Rc::new(std::cell::Cell::new(false)));
+    tree.focus(field);
+
+    let background = Point::new(PANE_W * 1.5, PANE_H - 10.0);
+    tree.pointer_down_button(background, PointerButton::Primary);
+    tree.pointer_up_button(background, PointerButton::Primary);
+
+    assert_eq!(editors.focused_side(), Side::Secondary);
+    assert_eq!(
+        tree.focused(),
+        Some(field),
+        "keyboard focus stays in the left pane's field"
+    );
+
+    let left_background = Point::new(PANE_W * 0.5, PANE_H - 10.0);
+    tree.pointer_down_button(left_background, PointerButton::Primary);
+    tree.pointer_up_button(left_background, PointerButton::Primary);
+    assert_eq!(editors.focused_side(), Side::Primary);
+}
+
+/// The handler only watches: a press on a control in the other pane still
+/// reaches that control.
+#[test]
+fn a_press_on_a_control_in_a_pane_marks_it_focused_and_still_reaches_the_control() {
+    let app_ctx = Rc::new(frontend::AppContext::new());
+    let editors = test_editors_view_model(&app_ctx);
+    editors.set_split(true);
+    editors.set_focused(Side::Primary);
+    let pressed = Rc::new(std::cell::Cell::new(false));
+    let (mut tree, _field) = two_pane_tree(&editors, pressed.clone());
+
+    let button = tree
+        .find_by_label("Right button")
+        .expect("the right pane's button");
+    tree.click(button);
+
+    assert_eq!(editors.focused_side(), Side::Secondary);
+    assert!(pressed.get(), "the button still activates");
+}
+
+/// Moving the pointer over a pane is not a press: the docks stay.
+#[test]
+fn hovering_a_pane_does_not_mark_it_focused() {
+    let app_ctx = Rc::new(frontend::AppContext::new());
+    let editors = test_editors_view_model(&app_ctx);
+    editors.set_split(true);
+    editors.set_focused(Side::Primary);
+    let (mut tree, _field) = two_pane_tree(&editors, Rc::new(std::cell::Cell::new(false)));
+
+    tree.pointer_move(Point::new(PANE_W * 1.5, PANE_H - 10.0));
+
+    assert_eq!(editors.focused_side(), Side::Primary);
+}

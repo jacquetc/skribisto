@@ -124,6 +124,29 @@ fn build_pane_tabs(
         .bar_trailing_slot(trailing)
 }
 
+/// The preview handler that makes a press anywhere in `side`'s pane mark that pane
+/// focused, so the trailing docks follow the item the writer just clicked into.
+///
+/// `focus_within` alone misses a press that moves no keyboard focus: the margin
+/// beside the text, a label, the empty space under the corkboard's cards. A
+/// preview handler runs on every ancestor of the pressed widget before the widget
+/// itself, so this sees those presses too. It returns `Ignored` and asks for no
+/// focus: the press reaches its widget unchanged and a caret in the other pane
+/// stays where it was. Only `PointerDown`, so scrolling a pane with the wheel
+/// leaves the docks alone.
+fn mark_focused_on_press(
+    editors: &EditorsViewModel,
+    side: Side,
+) -> impl FnMut(&WidgetEvent, &mut EventContext) -> EventResponse + 'static {
+    let editors = editors.clone();
+    move |ev, _ctx| {
+        if matches!(ev, WidgetEvent::PointerDown { .. }) && editors.focused_side() != side {
+            editors.set_focused(side);
+        }
+        EventResponse::Ignored
+    }
+}
+
 /// Open every binder item in a dropped `RowDragData<TreeNode>` payload, routing
 /// each `(item_id, title)` through `open` (which picks the pane / side). Binder
 /// rows (no `item_id`) are ignored. Returns whether anything opened — the drop's

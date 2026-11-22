@@ -33,7 +33,7 @@ use crate::settings::SettingsViewModel;
 use crate::tabs::shared::editor::VisibleWhen;
 use crate::versions::RestoreRequest;
 
-use super::{App, build_pane_tabs, drain_dropped};
+use super::{App, build_pane_tabs, drain_dropped, mark_focused_on_press};
 
 /// Locals the shell tree needs from `App::build` (everything not already on `App`).
 pub(super) struct ShellParts {
@@ -407,6 +407,9 @@ impl App {
         // pane's content (e.g. clicking into its editor), mark that pane focused so
         // the Inspector + open-item marker track the pane you're actually working
         // in. `focus_within` is set by the framework when a descendant has focus.
+        // It covers the keyboard (Tab, the pane-switch commands); a press that
+        // moves no focus (a margin, the space under the cards) is caught by each
+        // pane's `mark_focused_on_press` preview handler below.
         let primary_focus = Signal::new(false);
         let secondary_focus = Signal::new(false);
         for (sig, side) in [
@@ -457,6 +460,7 @@ impl App {
                     tab_bar_visibility.clone(),
                 ))
                 .focus_within(primary_focus.clone())
+                .on_pointer_event(mark_focused_on_press(&editors, Side::Primary))
         };
 
         let secondary_pane = {
@@ -482,6 +486,7 @@ impl App {
                     tab_bar_visibility,
                 ))
                 .focus_within(secondary_focus.clone())
+                .on_pointer_event(mark_focused_on_press(&editors, Side::Secondary))
         };
 
         let center = Splitter::new(editors.splitter())
