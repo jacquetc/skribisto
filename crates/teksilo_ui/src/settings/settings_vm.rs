@@ -194,9 +194,9 @@ pub struct EditorTypographySet {
 /// same live state. Threaded through `EditorsViewModel` into every `ContentTab`,
 /// like [`EditorTypographySet`].
 ///
-/// Only the three folder-container sub-roles carry a `SegmentedControl` (a Scene /
-/// Note / heading tab has no views to remember); [`Self::stored`] returns `None`
-/// for everything else, so `initial`/`remember` are inert there.
+/// Only the folders and a single note carry a `SegmentedControl` (a Scene or a
+/// heading tab has no views to remember); [`Self::stored`] returns `None` for
+/// everything else, so `initial`/`remember` are inert there.
 #[derive(Clone)]
 pub struct EditorViewMemory {
     enabled: Signal<bool>,
@@ -208,6 +208,8 @@ pub struct EditorViewMemory {
     part: Signal<String>,
     chapter: Signal<String>,
     note: Signal<String>,
+    /// A plain grouping folder (`Folder/None`): its own page, then its Resources.
+    folder: Signal<String>,
     /// A **single note**, not a notes folder.
     ///
     /// Its own slot because `stored` used to key on `sub_role` alone, and both
@@ -227,6 +229,7 @@ impl EditorViewMemory {
             part: store.signal("editor.last_view.part", seg::SEG_OWN.to_string()),
             chapter: store.signal("editor.last_view.chapter", seg::SEG_OWN.to_string()),
             note: store.signal("editor.last_view.note", seg::SEG_NOTES.to_string()),
+            folder: store.signal("editor.last_view.folder", seg::SEG_OWN.to_string()),
             item_note: store.signal("editor.last_view.item_note", seg::SEG_NOTE_OWN.to_string()),
         }
     }
@@ -241,6 +244,7 @@ impl EditorViewMemory {
             part: Signal::new(seg::SEG_OWN.to_string()),
             chapter: Signal::new(seg::SEG_OWN.to_string()),
             note: Signal::new(seg::SEG_NOTES.to_string()),
+            folder: Signal::new(seg::SEG_OWN.to_string()),
             item_note: Signal::new(seg::SEG_NOTE_OWN.to_string()),
         }
     }
@@ -287,7 +291,10 @@ impl EditorViewMemory {
             // three. They still share one remembered setting: giving Paratext its own key
             // would split one setting into two for one function's worth of bar.
             Note | Paratext => Some(self.note.clone()),
-            // `None` is shadowed by `BinderItemSubRole::None` under the glob import.
+            // A plain folder had no bar until it gained a Resources page; its own slot,
+            // because its bar (own page, Resources) is no other container's. Under the
+            // glob import `None` here is `BinderItemSubRole::None`.
+            None if *role == BinderItemRole::Folder => Some(self.folder.clone()),
             _ => Option::None,
         }
     }
@@ -704,6 +711,16 @@ impl SettingsViewModel {
     pub fn image_size_policy(&self) -> Signal<String> {
         self.store
             .signal(IMAGE_SIZE_POLICY_KEY, IMAGE_SIZE_POLICY_DEFAULT.to_string())
+    }
+
+    /// What a file over 10 MB attached as a resource does: `"ask"`, `"store"` or
+    /// `"link"`. The same cached [`crate::RESOURCES_LARGE_FILE_KEY`] signal the
+    /// Resources dock's question reads and its "Don't ask again" box writes.
+    pub fn resources_large_file(&self) -> Signal<String> {
+        self.store.signal(
+            crate::RESOURCES_LARGE_FILE_KEY,
+            crate::RESOURCES_LARGE_FILE_DEFAULT.to_string(),
+        )
     }
 
     /// Show where the book stands when a project with an active writing plan
@@ -1450,6 +1467,39 @@ mod tests {
             m.initial(&BinderItemRole::Item, &Note),
             id(seg::SEG_NOTE_IN_PROSE),
             "and the single note keeps its own, which the folder can never resolve"
+        );
+    }
+
+    /// A plain folder gained a bar (its own page, then Resources) and remembers which it
+    /// was left on, in a slot of its own: no other container's bar has its two ids.
+    #[test]
+    fn a_plain_folder_remembers_its_view_apart_from_the_others() {
+        use BinderItemSubRole::*;
+        let m = EditorViewMemory::detached(true);
+        let id = |s: &str| Some(seg::segment_id(s));
+        assert_eq!(
+            m.initial(&BinderItemRole::Folder, &BinderItemSubRole::None),
+            id(seg::SEG_OWN),
+            "a plain folder starts on its own page"
+        );
+        m.remember(
+            &BinderItemRole::Folder,
+            &BinderItemSubRole::None,
+            seg::SEG_RESOURCES,
+        );
+        assert_eq!(
+            m.initial(&BinderItemRole::Folder, &BinderItemSubRole::None),
+            id(seg::SEG_RESOURCES)
+        );
+        assert_eq!(
+            m.initial(&BinderItemRole::Folder, &Book),
+            id(seg::SEG_OWN),
+            "a Book is not told to open on its Resources by a plain folder"
+        );
+        assert_eq!(
+            m.initial(&BinderItemRole::Folder, &Note),
+            id(seg::SEG_NOTES),
+            "nor is a notes folder"
         );
     }
 

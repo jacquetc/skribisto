@@ -130,3 +130,74 @@ resources-drop-insert-link = 리소스 링크 삽입
 
 progress-resources-storing = 파일 복사 중
 progress-resources-stored = 파일 복사 완료
+
+## 폴더의 리소스 페이지
+
+segment-folder = 폴더
+resources-folder-count = { $count ->
+   *[other] 리소스 { $count }개
+}
+resources-view-label = 리소스 보기 방식
+resources-view-list = 목록
+resources-view-grid = 격자
+resources-grid-label = 리소스
+resources-folder-drop-hint = 파일이나 웹 주소를 여기에 놓으면 이 폴더에 첨부됩니다
+resources-folder-empty = 이 폴더와 그 안의 항목에는 아직 첨부된 것이 없습니다. 위의 버튼으로 파일이나 웹 링크를 추가하거나 여기에 놓으세요. 폴더에 첨부됩니다.
+resources-attached-to = 첨부된 곳
+resources-attached-separator = ,
+resources-attached-more = { $count ->
+   *[other] 외 { $count }개
+}
+resources-row-name-attached = { $name }, 첨부된 곳 { $items }
+resources-open-item = "{ $title }" 열기
+resources-detach-from = "{ $title }"에서 떼기
+
+## 갤러리의 이미지 리소스
+
+gallery-resource-badge = 리소스
+gallery-tile-resource = { $title }의 이미지 리소스: { $description }
+
+## 프로젝트 설정의 리소스 페이지
+
+settings-page-resources = 리소스
+settings-desc-resources = 더 이상 어떤 항목에도 첨부되지 않은 파일과 웹 링크: 다시 첨부하거나, 제거하거나, 사본을 내보냅니다
+settings-resources-description = 리소스를 마지막 항목에서 떼거나, 리소스가 첨부된 항목을 완전히 삭제하면 그 리소스는 어디에도 첨부되지 않은 상태가 됩니다. 리소스는 프로젝트에 남고, 보관된 파일은 다시 첨부하거나 제거할 때까지 프로젝트의 모든 사본과 모든 백업에 함께 들어갑니다.
+settings-resources-group-storage = 저장 공간
+settings-resources-group-unattached = 어디에도 첨부되지 않음
+settings-resources-stored = 이 프로젝트에 보관된 파일: { $size }
+settings-resources-folder-advice = 파일 하나로 저장한 프로젝트는 저장할 때마다 보관된 파일까지 모두 다시 씁니다. 폴더로 저장하면 바뀐 부분만 저장하므로 더 빠릅니다.
+settings-resources-count = { $count ->
+   *[other] 리소스 { $count }개
+}
+settings-resources-empty = 이 프로젝트의 모든 리소스가 어떤 항목에 첨부되어 있습니다.
+resources-attach-to-items = 항목에 첨부…
+resources-export-copies = 사본 내보내기…
+resources-export-copy = 사본 내보내기…
+resources-remove-many-title = 프로젝트에서 리소스 { $count }개를 제거할까요?
+resources-attach-title = 항목에 첨부
+resources-attach-hint = 첨부할 항목을 고르세요. Ctrl+클릭이나 Shift+클릭으로 여러 개를 고를 수 있습니다.
+resources-attach-empty = 이 프로젝트에는 아직 항목이 없습니다.
+resources-attach-confirm = 첨부
+resources-attached = { $count ->
+   *[other] 리소스 { $count }개를
+} { $items ->
+   *[other] 항목 { $items }개에 첨부했습니다
+}
+resources-export-title = 사본을 폴더로 내보내기
+resources-exported = { $count ->
+   *[other] 리소스 { $count }개를 내보냈습니다
+}
+resources-export-missing = { $count ->
+   *[other] 파일 { $count }개가 프로젝트가 예상한 곳에 없어 제외했습니다: { $names }
+}
+resources-export-failed = { $count ->
+   *[other] 파일 { $count }개를 복사하지 못했습니다: { $names }
+}
+
+## 큰 파일 설정 (편집기 동작)
+
+settings-resources-large-file = 10 MB가 넘는 파일
+settings-resources-large-ask = 매번 묻기
+settings-resources-large-store = 항상 프로젝트에 보관
+settings-resources-large-link = 항상 파일에 연결
+settings-hint-resources-large-file = 리소스로 첨부하는 10 MB가 넘는 파일을 어떻게 할지 정합니다. 프로젝트에 보관하면 프로젝트의 모든 사본과 모든 백업에 함께 들어갑니다. 연결하면 파일은 원래 자리에 그대로 있고, 프로젝트는 그 위치만 기억합니다.

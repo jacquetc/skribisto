@@ -1967,6 +1967,8 @@ impl Widget for App {
                 save_as_folder,
             )
         };
+        // Every tab of this window reaches it: a folder's Resources page, the Gallery.
+        editors.set_resources(resources.clone());
         let command_deps = commands::CommandDeps {
             app_ctx: self.app_ctx.clone(),
             ids: session.ids.clone(),

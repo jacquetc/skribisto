@@ -90,6 +90,7 @@ fn every_built_in_pane() -> Vec<Pane> {
         Pane::DistractionFree,
         Pane::DistractionFreeThemes,
         Pane::WorkTemplates,
+        Pane::WorkResources,
     ]
 }
 
@@ -338,9 +339,16 @@ fn the_work_section_is_absent_until_a_project_is_open() {
     assert!(all_panes(&open).contains(&Pane::Section(Sec::Work)));
     assert_eq!(
         children_of(&open, Pane::Section(Sec::Work)).len(),
-        10,
+        11,
         "author, structure, language, backup, dictionary, tags, statuses, templates, \
-         text replacements, punctuation"
+         resources, text replacements, punctuation"
+    );
+    let work = children_of(&open, Pane::Section(Sec::Work));
+    let templates = work.iter().position(|p| *p == Pane::WorkTemplates);
+    assert_eq!(
+        work.iter().position(|p| *p == Pane::WorkResources),
+        templates.map(|t| t + 1),
+        "Resources comes right after Templates"
     );
 }
 

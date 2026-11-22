@@ -178,6 +178,10 @@ pub struct EditorsViewModel {
     /// Attaches this window's tab-strip context menu to every tab as it is built.
     /// See [`TabMenuInstaller`] for why it is injected rather than constructed.
     tab_menu: Rc<RefCell<Option<TabMenuInstaller>>>,
+    /// The window's Resources view-model, handed to every tab this builds. Injected
+    /// after construction ([`Self::set_resources`]) for the reason [`Self::tab_menu`]
+    /// is: it is made after this view-model, from this view-model's active item.
+    resources: crate::resources::ResourcesSlot,
     primary: Pane,
     secondary: Pane,
     /// `true` when the side pane is shown. Drives the split button visual, the
@@ -338,6 +342,7 @@ impl EditorsViewModel {
             main_area: Rc::new(std::cell::Cell::new(None)),
             focus_loss_expected_at: Rc::new(std::cell::Cell::new(None)),
             tab_menu: Rc::new(RefCell::new(None)),
+            resources: crate::resources::ResourcesSlot::default(),
             primary: Pane::new(),
             secondary: Pane::new(),
             split_active: Signal::new(false),
@@ -1033,6 +1038,11 @@ impl EditorsViewModel {
         *self.tab_menu.borrow_mut() = Some(installer);
     }
 
+    /// Hand this window's Resources view-model to every tab, built or still to come.
+    pub fn set_resources(&self, vm: crate::resources::ResourcesViewModel) {
+        self.resources.set(vm);
+    }
+
     /// Build a `ContentTab` over `doc` with this window's shared settings
     /// handles. The one place `ContentTab::new`'s arguments are assembled, so a
     /// tab opened in a pane, one rebuilt by a Promote, and one opened by the
@@ -1046,7 +1056,7 @@ impl EditorsViewModel {
         synopsis_placement: Signal<crate::shared::SynopsisPlacement>,
         caret_highlight: crate::shared::CaretHighlightSettings,
     ) -> ContentTab {
-        ContentTab::new(
+        let mut tab = ContentTab::new(
             self.app_ctx.clone(),
             self.ids.clone(),
             self.docs.clone(),
@@ -1072,7 +1082,9 @@ impl EditorsViewModel {
             self.tags.clone(),
             self.statuses.clone(),
             self.mention_index.clone(),
-        )
+        );
+        tab.resources = self.resources.clone();
+        tab
     }
 
     /// Build a tab for the **distraction-free surface**: the same shared

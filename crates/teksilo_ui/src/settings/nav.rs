@@ -121,6 +121,9 @@ pub(crate) enum Pane {
     DistractionFreeThemes,
     /// Per-project note templates (under the open Work's section, beside Tags).
     WorkTemplates,
+    /// Per-project resources attached to nothing (under the open Work's section, after
+    /// Templates): attach them, delete them, export copies.
+    WorkResources,
     /// A page an extension contributed, carrying its registered id.
     ///
     /// A variant rather than a separate parallel concept, so a contributed page
@@ -180,6 +183,7 @@ impl Pane {
             Pane::DistractionFree => "distraction-free",
             Pane::DistractionFreeThemes => "distraction-free-themes",
             Pane::WorkTemplates => "work-templates",
+            Pane::WorkResources => "work-resources",
             // Already namespaced by `settings_ext::register_page`, which refuses
             // an id without a dot.
             Pane::Extension(id) => id,
@@ -225,6 +229,7 @@ impl Pane {
             Pane::WorkTags => tr!(settings_page_tags()),
             Pane::WorkStatuses => tr!(settings_page_statuses()),
             Pane::WorkTemplates => tr!(settings_page_templates()),
+            Pane::WorkResources => tr!(settings_page_resources()),
             // Resolved through the registry rather than stored, so a runtime
             // locale switch reaches a contributed page's label too. A page that
             // has since been unregistered falls back to its id — visible, and
@@ -279,6 +284,7 @@ impl Pane {
             Pane::WorkTags => tr!(settings_desc_tags()),
             Pane::WorkStatuses => tr!(settings_desc_statuses()),
             Pane::WorkTemplates => tr!(settings_desc_templates()),
+            Pane::WorkResources => tr!(settings_desc_resources()),
             Pane::WorkAuthor => tr!(settings_desc_author()),
             Pane::WorkTextReplacements => tr!(settings_desc_text_replacements()),
             Pane::Spellcheck => tr!(settings_desc_spellcheck()),
@@ -539,6 +545,9 @@ pub(crate) fn tree_spec(has_work: bool, extension_pages: &[&'static str]) -> Vec
                 // Beside the tag palette: the other per-project catalogue the
                 // writer curates and that travels inside the `.skrib`.
                 Branch::Page(Pane::WorkTemplates),
+                // After Templates: the files and links the project carries, the ones
+                // no item holds any more found and dealt with here.
+                Branch::Page(Pane::WorkResources),
                 // Beside the personal dictionary and the tag palette: the third
                 // per-project vocabulary the writer curates.
                 Branch::Page(Pane::WorkTextReplacements),

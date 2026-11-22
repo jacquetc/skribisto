@@ -1175,6 +1175,43 @@ mod rows {
     fn flat_items(ctx: &AppContext, work_id: u64) -> Vec<(u64, BinderItemDto)> {
         crate::models::binder_stream::ordered_flat_items(ctx, work_id)
     }
+
+    /// The container's subtree as `(id, title)`, binder order, trashed rows left out:
+    /// the same walk as [`load`] with nothing counted.
+    pub fn items(
+        ctx: &AppContext,
+        work_id: &Signal<Option<u64>>,
+        container_id: u64,
+    ) -> Vec<(u64, String)> {
+        let Some(work_id) = work_id.get() else {
+            return Vec::new();
+        };
+        let flat = flat_items(ctx, work_id);
+        match subtree_of(
+            &flat,
+            container_id,
+            |(_, it)| it.id,
+            |(_, it)| it.indent,
+            |(binder, _)| *binder,
+        ) {
+            Subtree::Found { rows, .. } => rows
+                .iter()
+                .map(|(_, it)| (it.id, it.title.clone()))
+                .collect(),
+            Subtree::ContainerGone => Vec::new(),
+        }
+    }
+}
+
+/// The items inside `container_id` (not the container itself), as `(id, title)` in
+/// binder order, trashed rows left out: the subtree the Overview tabulates, without the
+/// counting. What a folder's Resources page walks.
+pub(crate) fn subtree_items(
+    ctx: &AppContext,
+    work_id: &Signal<Option<u64>>,
+    container_id: u64,
+) -> Vec<(u64, String)> {
+    rows::items(ctx, work_id, container_id)
 }
 
 /// The static mock subtree (no backend). Mirrors the fixture ids used by the outline,
@@ -1411,6 +1448,25 @@ mod rows {
             container_present: true,
             in_scope: HashSet::new(),
         }
+    }
+
+    /// The fixture's subtree of `container_id` as `(id, title)`, as [`load`] shapes it.
+    pub fn items(
+        ctx: &AppContext,
+        work_id: &Signal<Option<u64>>,
+        container_id: u64,
+    ) -> Vec<(u64, String)> {
+        load(
+            ctx,
+            work_id,
+            container_id,
+            CountingMethodSetting::default(),
+            &GoalUnit::default(),
+        )
+        .rows
+        .into_iter()
+        .map(|r| (r.item.item_id, r.item.title))
+        .collect()
     }
 }
 

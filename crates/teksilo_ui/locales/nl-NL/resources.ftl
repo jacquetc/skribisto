@@ -135,3 +135,82 @@ resources-drop-insert-link = Een koppeling naar de bron invoegen
 
 progress-resources-storing = De bestanden kopiëren
 progress-resources-stored = Bestanden gekopieerd
+
+## De pagina Bronnen van een map
+
+segment-folder = Map
+resources-folder-count = { $count ->
+    [one] Eén bron
+   *[other] { $count } bronnen
+}
+resources-view-label = Bronnen tonen als
+resources-view-list = Lijst
+resources-view-grid = Raster
+resources-grid-label = Bronnen
+resources-folder-drop-hint = Sleep bestanden of webadressen hierheen om ze aan deze map te hangen
+resources-folder-empty = Aan deze map en aan wat erin zit hangt nog niets. Voeg bestanden of weblinks toe met de knoppen hierboven, of sleep ze hierheen: ze worden aan de map gehangen.
+resources-attached-to = Aan
+resources-attached-separator = ,
+resources-attached-more = { $count ->
+    [one] en nog één
+   *[other] en nog { $count }
+}
+resources-row-name-attached = { $name }, aan { $items }
+resources-open-item = “{ $title }” openen
+resources-detach-from = Losmaken van “{ $title }”
+
+## Afbeeldingen die bronnen zijn, in de Galerij
+
+gallery-resource-badge = Bron
+gallery-tile-resource = Afbeelding die een bron is van { $title }: { $description }
+
+## De pagina Bronnen van de projectinstellingen
+
+settings-page-resources = Bronnen
+settings-desc-resources = De bestanden en weblinks die aan geen enkel item meer hangen: hang ze weer ergens aan, verwijder ze, of exporteer kopieën
+settings-resources-description = Een bron hangt nergens meer aan zodra ze van haar laatste item is losgemaakt, of zodra het item waar ze aan hing definitief is verwijderd. Ze blijft in het project, en een opgeslagen bestand reist mee met elke kopie en elke back-up ervan, tot u haar weer ergens aan hangt of verwijdert.
+settings-resources-group-storage = Opslag
+settings-resources-group-unattached = Nergens aan gehangen
+settings-resources-stored = Bestanden opgeslagen in dit project: { $size }
+settings-resources-folder-advice = Een project dat als één bestand wordt bewaard, wordt bij elke opslag helemaal opnieuw geschreven, de opgeslagen bestanden ook. Als map bewaard slaat het alleen op wat er is veranderd, en dat gaat sneller.
+settings-resources-count = { $count ->
+    [one] Eén bron
+   *[other] { $count } bronnen
+}
+settings-resources-empty = Elke bron van dit project hangt aan een item.
+resources-attach-to-items = Aan items hangen…
+resources-export-copies = Kopieën exporteren…
+resources-export-copy = Een kopie exporteren…
+resources-remove-many-title = { $count } bronnen uit het project verwijderen?
+resources-attach-title = Aan items hangen
+resources-attach-hint = Kies de items om aan te hangen. Ctrl+klik of Shift+klik kiest er meerdere.
+resources-attach-empty = Dit project heeft nog geen items.
+resources-attach-confirm = Aanhangen
+resources-attached = { $count ->
+    [one] Eén bron
+   *[other] { $count } bronnen
+} gehangen aan { $items ->
+    [one] één item
+   *[other] { $items } items
+}
+resources-export-title = Kopieën naar een map exporteren
+resources-exported = { $count ->
+    [one] Eén bron geëxporteerd
+   *[other] { $count } bronnen geëxporteerd
+}
+resources-export-missing = { $count ->
+    [one] Eén bestand staat niet waar het project het verwacht, en is weggelaten: { $names }
+   *[other] { $count } bestanden staan niet waar het project ze verwacht, en zijn weggelaten: { $names }
+}
+resources-export-failed = { $count ->
+    [one] Eén bestand kon niet worden gekopieerd: { $names }
+   *[other] { $count } bestanden konden niet worden gekopieerd: { $names }
+}
+
+## De voorkeur voor grote bestanden (Gedrag van de editor)
+
+settings-resources-large-file = Bestanden boven 10 MB
+settings-resources-large-ask = Elke keer vragen
+settings-resources-large-store = Altijd in het project opslaan
+settings-resources-large-link = Altijd aan het bestand koppelen
+settings-hint-resources-large-file = Wat er gebeurt met een bestand boven 10 MB dat u als bron toevoegt. In het project opgeslagen reist het mee met elke kopie en elke back-up ervan. Gekoppeld blijft het waar het is, en onthoudt het project alleen waar het te vinden is.

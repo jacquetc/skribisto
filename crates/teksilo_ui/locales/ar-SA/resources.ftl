@@ -155,3 +155,114 @@ resources-drop-insert-link = إدراج رابط إلى المورد
 
 progress-resources-storing = جارٍ نسخ الملفات
 progress-resources-stored = نُسخت الملفات
+
+## صفحة الموارد لمجلد
+
+segment-folder = مجلد
+resources-folder-count = { $count ->
+    [zero] لا موارد
+    [one] مورد واحد
+    [two] موردان
+    [few] { $count } موارد
+    [many] { $count } موردًا
+   *[other] { $count } مورد
+}
+resources-view-label = عرض الموارد
+resources-view-list = قائمةً
+resources-view-grid = شبكةً
+resources-grid-label = الموارد
+resources-folder-drop-hint = أفلت هنا ملفات أو عناوين ويب لإرفاقها بهذا المجلد
+resources-folder-empty = لم يُرفق شيء بعد بهذا المجلد ولا بما يحتويه. أضف ملفات أو روابط ويب بالأزرار في الأعلى، أو أفلتها هنا: ستُرفق بالمجلد.
+resources-attached-to = على
+resources-attached-separator = ،
+resources-attached-more = { $count ->
+    [zero] ولا شيء آخر
+    [one] وواحد آخر
+    [two] واثنان آخران
+    [few] و{ $count } أخرى
+    [many] و{ $count } أخرى
+   *[other] و{ $count } أخرى
+}
+resources-row-name-attached = { $name }، على { $items }
+resources-open-item = فتح «{ $title }»
+resources-detach-from = فصل عن «{ $title }»
+
+## موارد الصور في المعرض
+
+gallery-resource-badge = مورد
+gallery-tile-resource = مورد صورة لـ { $title }: { $description }
+
+## صفحة الموارد في إعدادات المشروع
+
+settings-page-resources = الموارد
+settings-desc-resources = الملفات وروابط الويب التي لم يعد أي عنصر يحملها: أرفقها من جديد، أو أزلها، أو صدّر نسخًا منها
+settings-resources-description = لا يكون المورد مرفقًا بأي شيء بعد فصله عن آخر عنصر له، أو بعد حذف العنصر الذي كان يحمله نهائيًا. يبقى في المشروع، ويرافق الملف المخزَّن كل نسخة وكل نسخة احتياطية من المشروع، إلى أن ترفقه من جديد أو تزيله.
+settings-resources-group-storage = التخزين
+settings-resources-group-unattached = غير مرفقة بأي شيء
+settings-resources-stored = الملفات المخزَّنة في هذا المشروع: { $size }
+settings-resources-folder-advice = المشروع المحفوظ كملف واحد يُعاد كتابته كاملًا عند كل حفظ، مع ملفاته المخزَّنة. أما المحفوظ كمجلد فلا يحفظ إلا ما تغيّر، وهذا أسرع.
+settings-resources-count = { $count ->
+    [zero] لا موارد
+    [one] مورد واحد
+    [two] موردان
+    [few] { $count } موارد
+    [many] { $count } موردًا
+   *[other] { $count } مورد
+}
+settings-resources-empty = كل مورد في هذا المشروع مرفق بعنصر ما.
+resources-attach-to-items = إرفاق بعناصر…
+resources-export-copies = تصدير نسخ…
+resources-export-copy = تصدير نسخة…
+resources-remove-many-title = هل تريد إزالة الموارد ({ $count }) من المشروع؟
+resources-attach-title = إرفاق بعناصر
+resources-attach-hint = اختر العناصر التي تريد الإرفاق بها. Ctrl+نقرة أو Shift+نقرة يختار عدة عناصر.
+resources-attach-empty = لا يحتوي هذا المشروع على عناصر بعد.
+resources-attach-confirm = إرفاق
+resources-attached = { $count ->
+    [zero] لم يُرفق أي مورد
+    [one] أُرفق مورد واحد
+    [two] أُرفق موردان
+    [few] أُرفقت { $count } موارد
+    [many] أُرفق { $count } موردًا
+   *[other] أُرفق { $count } مورد
+} { $items ->
+    [zero] بلا عناصر
+    [one] بعنصر واحد
+    [two] بعنصرين
+    [few] بـ{ $items } عناصر
+    [many] بـ{ $items } عنصرًا
+   *[other] بـ{ $items } عنصر
+}
+resources-export-title = تصدير نسخ إلى مجلد
+resources-exported = { $count ->
+    [zero] لم يُصدَّر أي مورد
+    [one] صُدِّر مورد واحد
+    [two] صُدِّر موردان
+    [few] صُدِّرت { $count } موارد
+    [many] صُدِّر { $count } موردًا
+   *[other] صُدِّر { $count } مورد
+}
+resources-export-missing = { $count ->
+    [zero] لا ملف مفقود: { $names }
+    [one] ملف واحد ليس حيث يتوقعه المشروع، فتُرك: { $names }
+    [two] ملفان ليسا حيث يتوقعهما المشروع، فتُركا: { $names }
+    [few] { $count } ملفات ليست حيث يتوقعها المشروع، فتُركت: { $names }
+    [many] { $count } ملفًا ليست حيث يتوقعها المشروع، فتُركت: { $names }
+   *[other] { $count } ملف ليست حيث يتوقعها المشروع، فتُركت: { $names }
+}
+resources-export-failed = { $count ->
+    [zero] لم يفشل نسخ أي ملف: { $names }
+    [one] تعذّر نسخ ملف واحد: { $names }
+    [two] تعذّر نسخ ملفين: { $names }
+    [few] تعذّر نسخ { $count } ملفات: { $names }
+    [many] تعذّر نسخ { $count } ملفًا: { $names }
+   *[other] تعذّر نسخ { $count } ملف: { $names }
+}
+
+## تفضيل الملفات الكبيرة (سلوك المحرر)
+
+settings-resources-large-file = الملفات الأكبر من 10 ميغابايت
+settings-resources-large-ask = السؤال في كل مرة
+settings-resources-large-store = التخزين دائمًا في المشروع
+settings-resources-large-link = الربط دائمًا بالملف
+settings-hint-resources-large-file = ما يحدث لملف أكبر من 10 ميغابايت ترفقه كمورد. إذا خُزّن في المشروع رافق كل نسخة وكل نسخة احتياطية منه. وإذا رُبط بقي في مكانه، ولا يتذكر المشروع إلا مكان العثور عليه.

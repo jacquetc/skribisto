@@ -72,6 +72,7 @@ fn views_of(role: &BinderItemRole, sub_role: &BinderItemSubRole) -> Vec<&'static
             segments::SEG_SYNOPSIS,
             segments::SEG_PACE,
             segments::SEG_ANALYSIS,
+            segments::SEG_RESOURCES,
             segments::SEG_CORKBOARD,
             segments::SEG_OVERVIEW,
         ],
@@ -79,12 +80,17 @@ fn views_of(role: &BinderItemRole, sub_role: &BinderItemSubRole) -> Vec<&'static
             segments::SEG_OWN,
             segments::SEG_MANUSCRIPT,
             segments::SEG_SYNOPSIS,
+            segments::SEG_RESOURCES,
             segments::SEG_CORKBOARD,
             segments::SEG_OVERVIEW,
         ],
         (BinderItemRole::Folder, _) => vec![
+            // A plain folder's own page and Resources; a notes folder's three and its
+            // Resources.
+            segments::SEG_OWN,
             segments::SEG_NOTES,
             segments::SEG_STORY_BIBLE,
+            segments::SEG_RESOURCES,
             segments::SEG_OVERVIEW,
         ],
         _ => vec![segments::SEG_OWN],
@@ -119,7 +125,7 @@ fn mount(
     (width, height): (f32, f32),
 ) -> (WidgetTree, WidgetId) {
     tab.segment.set(Some(segment_id(view)));
-    let mut tree = crate::test_support::tree_with_events(&project.app_ctx);
+    let mut tree = crate::test_support::tree_with_settings(&project.app_ctx);
     let root = tree.add_boxed(tab_pane(tab));
     let proposal = SizeProposal::exact(width, height);
     tree.layout(proposal);

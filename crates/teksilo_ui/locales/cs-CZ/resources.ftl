@@ -145,3 +145,98 @@ resources-drop-insert-link = Vložit odkaz na zdroj
 
 progress-resources-storing = Kopírování souborů
 progress-resources-stored = Soubory zkopírovány
+
+## Stránka Zdroje u složky
+
+segment-folder = Složka
+resources-folder-count = { $count ->
+    [one] Jeden zdroj
+    [few] { $count } zdroje
+    [many] { $count } zdroje
+   *[other] { $count } zdrojů
+}
+resources-view-label = Zobrazit zdroje jako
+resources-view-list = Seznam
+resources-view-grid = Mřížka
+resources-grid-label = Zdroje
+resources-folder-drop-hint = Přetáhněte sem soubory nebo webové adresy a připojte je k této složce
+resources-folder-empty = K této složce ani k ničemu v ní zatím není nic připojeno. Přidejte soubory nebo webové odkazy tlačítky nahoře, nebo je sem přetáhněte: připojí se ke složce.
+resources-attached-to = U
+resources-attached-separator = ,
+resources-attached-more = { $count ->
+    [one] a jedné další
+    [few] a { $count } dalších
+    [many] a { $count } dalších
+   *[other] a { $count } dalších
+}
+resources-row-name-attached = { $name }, u { $items }
+resources-open-item = Otevřít „{ $title }“
+resources-detach-from = Odpojit od „{ $title }“
+
+## Obrázkové zdroje v Galerii
+
+gallery-resource-badge = Zdroj
+gallery-tile-resource = Obrázkový zdroj položky { $title }: { $description }
+
+## Stránka Zdroje v nastavení projektu
+
+settings-page-resources = Zdroje
+settings-desc-resources = Soubory a webové odkazy, které už nenese žádná položka: znovu je připojte, odeberte je nebo vyexportujte kopie
+settings-resources-description = Zdroj není připojen k ničemu, jakmile ho odpojíte od jeho poslední položky, nebo jakmile je položka, u které byl, nadobro smazána. Zůstává v projektu a uložený soubor putuje s každou kopií a každou zálohou projektu, dokud ho znovu nepřipojíte nebo neodeberete.
+settings-resources-group-storage = Úložiště
+settings-resources-group-unattached = Nepřipojené k ničemu
+settings-resources-stored = Soubory uložené v tomto projektu: { $size }
+settings-resources-folder-advice = Projekt uložený jako jediný soubor se při každém uložení zapisuje celý znovu, i s uloženými soubory. Uložený jako složka zapisuje jen to, co se změnilo, a to je rychlejší.
+settings-resources-count = { $count ->
+    [one] Jeden zdroj
+    [few] { $count } zdroje
+    [many] { $count } zdroje
+   *[other] { $count } zdrojů
+}
+settings-resources-empty = Každý zdroj tohoto projektu je připojen k nějaké položce.
+resources-attach-to-items = Připojit k položkám…
+resources-export-copies = Exportovat kopie…
+resources-export-copy = Exportovat kopii…
+resources-remove-many-title = Odebrat z projektu zdroje ({ $count })?
+resources-attach-title = Připojit k položkám
+resources-attach-hint = Vyberte položky, ke kterým se má připojit. Ctrl+klepnutí nebo Shift+klepnutí vybere několik.
+resources-attach-empty = Tento projekt zatím nemá žádné položky.
+resources-attach-confirm = Připojit
+resources-attached = { $count ->
+    [one] Jeden zdroj připojen
+    [few] { $count } zdroje připojeny
+    [many] { $count } zdroje připojeno
+   *[other] { $count } zdrojů připojeno
+} k { $items ->
+    [one] jedné položce
+    [few] { $items } položkám
+    [many] { $items } položky
+   *[other] { $items } položkám
+}
+resources-export-title = Exportovat kopie do složky
+resources-exported = { $count ->
+    [one] Exportován jeden zdroj
+    [few] Exportovány { $count } zdroje
+    [many] Exportováno { $count } zdroje
+   *[other] Exportováno { $count } zdrojů
+}
+resources-export-missing = { $count ->
+    [one] Jeden soubor není tam, kde ho projekt čeká, a byl vynechán: { $names }
+    [few] { $count } soubory nejsou tam, kde je projekt čeká, a byly vynechány: { $names }
+    [many] { $count } souboru není tam, kde je projekt čeká, a bylo vynecháno: { $names }
+   *[other] { $count } souborů není tam, kde je projekt čeká, a bylo vynecháno: { $names }
+}
+resources-export-failed = { $count ->
+    [one] Jeden soubor nešlo zkopírovat: { $names }
+    [few] { $count } soubory nešlo zkopírovat: { $names }
+    [many] { $count } souboru nešlo zkopírovat: { $names }
+   *[other] { $count } souborů nešlo zkopírovat: { $names }
+}
+
+## Předvolba pro velké soubory (Chování editoru)
+
+settings-resources-large-file = Soubory nad 10 MB
+settings-resources-large-ask = Pokaždé se zeptat
+settings-resources-large-store = Vždy uložit do projektu
+settings-resources-large-link = Vždy propojit se souborem
+settings-hint-resources-large-file = Co se stane se souborem nad 10 MB, který připojíte jako zdroj. Uložený v projektu putuje s každou kopií a každou zálohou projektu. Propojený zůstane, kde je, a projekt si pamatuje jen, kde ho najít.

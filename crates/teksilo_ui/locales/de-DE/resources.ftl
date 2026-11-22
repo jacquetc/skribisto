@@ -135,3 +135,82 @@ resources-drop-insert-link = Einen Link zur Ressource einfügen
 
 progress-resources-storing = Dateien werden kopiert
 progress-resources-stored = Dateien kopiert
+
+## Die Ressourcen-Seite eines Ordners
+
+segment-folder = Ordner
+resources-folder-count = { $count ->
+    [one] Eine Ressource
+   *[other] { $count } Ressourcen
+}
+resources-view-label = Ressourcen anzeigen als
+resources-view-list = Liste
+resources-view-grid = Raster
+resources-grid-label = Ressourcen
+resources-folder-drop-hint = Dateien oder Webadressen hier ablegen, um sie an diesen Ordner anzuhängen
+resources-folder-empty = An diesen Ordner und an seinen Inhalt ist noch nichts angehängt. Fügen Sie mit den Schaltflächen oben Dateien oder Weblinks hinzu, oder legen Sie sie hier ab: Sie werden an den Ordner angehängt.
+resources-attached-to = An
+resources-attached-separator = ,
+resources-attached-more = { $count ->
+    [one] und einem weiteren
+   *[other] und { $count } weiteren
+}
+resources-row-name-attached = { $name }, an { $items }
+resources-open-item = „{ $title }“ öffnen
+resources-detach-from = Von „{ $title }“ lösen
+
+## Bild-Ressourcen in der Galerie
+
+gallery-resource-badge = Ressource
+gallery-tile-resource = Bild-Ressource von { $title }: { $description }
+
+## Die Ressourcen-Seite der Projekteinstellungen
+
+settings-page-resources = Ressourcen
+settings-desc-resources = Die Dateien und Weblinks, die an keinem Eintrag mehr hängen: wieder anhängen, entfernen oder Kopien exportieren
+settings-resources-description = Eine Ressource hängt an nichts mehr, sobald sie von ihrem letzten Eintrag gelöst wird oder der Eintrag, an dem sie hing, endgültig gelöscht wird. Sie bleibt im Projekt, und eine abgelegte Datei reist mit jeder Kopie und jeder Sicherung des Projekts mit, bis Sie sie wieder anhängen oder entfernen.
+settings-resources-group-storage = Speicherplatz
+settings-resources-group-unattached = An nichts angehängt
+settings-resources-stored = Im Projekt abgelegte Dateien: { $size }
+settings-resources-folder-advice = Ein Projekt, das als einzelne Datei gespeichert ist, wird bei jedem Speichern vollständig neu geschrieben, mitsamt seinen abgelegten Dateien. Als Ordner gespeichert, schreibt es nur, was sich geändert hat, und das geht schneller.
+settings-resources-count = { $count ->
+    [one] Eine Ressource
+   *[other] { $count } Ressourcen
+}
+settings-resources-empty = Jede Ressource dieses Projekts hängt an einem Eintrag.
+resources-attach-to-items = An Einträge anhängen…
+resources-export-copies = Kopien exportieren…
+resources-export-copy = Eine Kopie exportieren…
+resources-remove-many-title = { $count } Ressourcen aus dem Projekt entfernen?
+resources-attach-title = An Einträge anhängen
+resources-attach-hint = Wählen Sie die Einträge, an die angehängt wird. Mit Strg+Klick oder Umschalt+Klick wählen Sie mehrere.
+resources-attach-empty = Dieses Projekt hat noch keine Einträge.
+resources-attach-confirm = Anhängen
+resources-attached = { $count ->
+    [one] Eine Ressource
+   *[other] { $count } Ressourcen
+} an { $items ->
+    [one] einen Eintrag
+   *[other] { $items } Einträge
+} angehängt
+resources-export-title = Kopien in einen Ordner exportieren
+resources-exported = { $count ->
+    [one] Eine Ressource exportiert
+   *[other] { $count } Ressourcen exportiert
+}
+resources-export-missing = { $count ->
+    [one] Eine Datei ist nicht dort, wo das Projekt sie erwartet, und wurde ausgelassen: { $names }
+   *[other] { $count } Dateien sind nicht dort, wo das Projekt sie erwartet, und wurden ausgelassen: { $names }
+}
+resources-export-failed = { $count ->
+    [one] Eine Datei konnte nicht kopiert werden: { $names }
+   *[other] { $count } Dateien konnten nicht kopiert werden: { $names }
+}
+
+## Die Einstellung für große Dateien (Editorverhalten)
+
+settings-resources-large-file = Dateien über 10 MB
+settings-resources-large-ask = Jedes Mal fragen
+settings-resources-large-store = Immer im Projekt ablegen
+settings-resources-large-link = Immer mit der Datei verknüpfen
+settings-hint-resources-large-file = Was mit einer Datei über 10 MB geschieht, die Sie als Ressource anhängen. Im Projekt abgelegt, reist sie mit jeder Kopie und jeder Sicherung des Projekts mit. Verknüpft, bleibt sie, wo sie ist, und das Projekt merkt sich nur, wo sie zu finden ist.

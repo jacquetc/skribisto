@@ -135,3 +135,82 @@ resources-drop-insert-link = Infoga en länk till resursen
 
 progress-resources-storing = Kopierar filerna
 progress-resources-stored = Filerna har kopierats
+
+## En mapps sida Resurser
+
+segment-folder = Mapp
+resources-folder-count = { $count ->
+    [one] En resurs
+   *[other] { $count } resurser
+}
+resources-view-label = Visa resurser som
+resources-view-list = Lista
+resources-view-grid = Rutnät
+resources-grid-label = Resurser
+resources-folder-drop-hint = Släpp filer eller webbadresser här för att koppla dem till den här mappen
+resources-folder-empty = Inget är kopplat till den här mappen eller till det den innehåller än. Lägg till filer eller webblänkar med knapparna ovan, eller släpp dem här: de kopplas till mappen.
+resources-attached-to = På
+resources-attached-separator = ,
+resources-attached-more = { $count ->
+    [one] och en till
+   *[other] och { $count } till
+}
+resources-row-name-attached = { $name }, på { $items }
+resources-open-item = Öppna ”{ $title }”
+resources-detach-from = Koppla bort från ”{ $title }”
+
+## Bildresurser i Galleriet
+
+gallery-resource-badge = Resurs
+gallery-tile-resource = Bildresurs till { $title }: { $description }
+
+## Projektinställningarnas sida Resurser
+
+settings-page-resources = Resurser
+settings-desc-resources = De filer och webblänkar som inget objekt har längre: koppla dem igen, ta bort dem eller exportera kopior
+settings-resources-description = En resurs är kopplad till ingenting när den har kopplats bort från sitt sista objekt, eller när objektet den satt på har raderats för gott. Den finns kvar i projektet, och en lagrad fil följer med varje kopia och varje säkerhetskopia av det, tills du kopplar den igen eller tar bort den.
+settings-resources-group-storage = Lagring
+settings-resources-group-unattached = Kopplade till ingenting
+settings-resources-stored = Filer lagrade i det här projektet: { $size }
+settings-resources-folder-advice = Ett projekt som sparas som en enda fil skrivs om helt vid varje sparning, även dess lagrade filer. Sparat som mapp sparar det bara det som har ändrats, och det går fortare.
+settings-resources-count = { $count ->
+    [one] En resurs
+   *[other] { $count } resurser
+}
+settings-resources-empty = Varje resurs i det här projektet är kopplad till ett objekt.
+resources-attach-to-items = Koppla till objekt…
+resources-export-copies = Exportera kopior…
+resources-export-copy = Exportera en kopia…
+resources-remove-many-title = Ta bort { $count } resurser från projektet?
+resources-attach-title = Koppla till objekt
+resources-attach-hint = Välj de objekt som ska kopplas. Ctrl+klick eller Skift+klick väljer flera.
+resources-attach-empty = Det här projektet har inga objekt än.
+resources-attach-confirm = Koppla
+resources-attached = { $count ->
+    [one] En resurs kopplad
+   *[other] { $count } resurser kopplade
+} till { $items ->
+    [one] ett objekt
+   *[other] { $items } objekt
+}
+resources-export-title = Exportera kopior till en mapp
+resources-exported = { $count ->
+    [one] En resurs exporterad
+   *[other] { $count } resurser exporterade
+}
+resources-export-missing = { $count ->
+    [one] En fil finns inte där projektet väntar sig den, och utelämnades: { $names }
+   *[other] { $count } filer finns inte där projektet väntar sig dem, och utelämnades: { $names }
+}
+resources-export-failed = { $count ->
+    [one] En fil kunde inte kopieras: { $names }
+   *[other] { $count } filer kunde inte kopieras: { $names }
+}
+
+## Inställningen för stora filer (Redigerarens beteende)
+
+settings-resources-large-file = Filer över 10 MB
+settings-resources-large-ask = Fråga varje gång
+settings-resources-large-store = Lagra alltid i projektet
+settings-resources-large-link = Länka alltid till filen
+settings-hint-resources-large-file = Vad som händer med en fil över 10 MB som du kopplar som resurs. Lagrad i projektet följer den med varje kopia och varje säkerhetskopia av det. Länkad stannar den där den är, och projektet minns bara var den finns.

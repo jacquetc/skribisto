@@ -135,3 +135,82 @@ resources-drop-insert-link = Inserisci un collegamento alla risorsa
 
 progress-resources-storing = Copia dei file
 progress-resources-stored = File copiati
+
+## La pagina Risorse di una cartella
+
+segment-folder = Cartella
+resources-folder-count = { $count ->
+    [one] Una risorsa
+   *[other] { $count } risorse
+}
+resources-view-label = Mostra le risorse come
+resources-view-list = Elenco
+resources-view-grid = Griglia
+resources-grid-label = Risorse
+resources-folder-drop-hint = Trascina qui file o indirizzi web per allegarli a questa cartella
+resources-folder-empty = A questa cartella e a ciò che contiene non è ancora allegato nulla. Aggiungi file o collegamenti web con i pulsanti qui sopra, oppure trascinali qui: vengono allegati alla cartella.
+resources-attached-to = Su
+resources-attached-separator = ,
+resources-attached-more = { $count ->
+    [one] e un altro
+   *[other] e altri { $count }
+}
+resources-row-name-attached = { $name }, su { $items }
+resources-open-item = Apri «{ $title }»
+resources-detach-from = Stacca da «{ $title }»
+
+## Le immagini risorsa nella Galleria
+
+gallery-resource-badge = Risorsa
+gallery-tile-resource = Immagine risorsa di { $title }: { $description }
+
+## La pagina Risorse delle impostazioni del progetto
+
+settings-page-resources = Risorse
+settings-desc-resources = I file e i collegamenti web che nessun elemento porta più: allegali di nuovo, rimuovili o esportane delle copie
+settings-resources-description = Una risorsa non è più allegata a nulla quando viene staccata dal suo ultimo elemento, o quando l'elemento che la portava viene eliminato per sempre. Resta nel progetto, e un file conservato viaggia con ogni copia e ogni backup del progetto, finché non la alleghi di nuovo o non la rimuovi.
+settings-resources-group-storage = Spazio occupato
+settings-resources-group-unattached = Allegate a nulla
+settings-resources-stored = File conservati in questo progetto: { $size }
+settings-resources-folder-advice = Un progetto tenuto in un unico file viene riscritto per intero a ogni salvataggio, file conservati compresi. Tenuto come cartella, salva solo ciò che è cambiato, ed è più rapido.
+settings-resources-count = { $count ->
+    [one] Una risorsa
+   *[other] { $count } risorse
+}
+settings-resources-empty = Ogni risorsa di questo progetto è allegata a un elemento.
+resources-attach-to-items = Allega a elementi…
+resources-export-copies = Esporta copie…
+resources-export-copy = Esporta una copia…
+resources-remove-many-title = Rimuovere { $count } risorse dal progetto?
+resources-attach-title = Allega a elementi
+resources-attach-hint = Scegli gli elementi a cui allegare. Ctrl+clic o Maiusc+clic ne sceglie più di uno.
+resources-attach-empty = Questo progetto non ha ancora elementi.
+resources-attach-confirm = Allega
+resources-attached = { $count ->
+    [one] Una risorsa allegata
+   *[other] { $count } risorse allegate
+} a { $items ->
+    [one] un elemento
+   *[other] { $items } elementi
+}
+resources-export-title = Esporta copie in una cartella
+resources-exported = { $count ->
+    [one] Una risorsa esportata
+   *[other] { $count } risorse esportate
+}
+resources-export-missing = { $count ->
+    [one] Un file non è dove il progetto se lo aspetta, ed è stato escluso: { $names }
+   *[other] { $count } file non sono dove il progetto se li aspetta, e sono stati esclusi: { $names }
+}
+resources-export-failed = { $count ->
+    [one] Un file non è stato copiato: { $names }
+   *[other] { $count } file non sono stati copiati: { $names }
+}
+
+## La preferenza per i file grandi (Comportamento dell'editor)
+
+settings-resources-large-file = File oltre 10 MB
+settings-resources-large-ask = Chiedi ogni volta
+settings-resources-large-store = Conserva sempre nel progetto
+settings-resources-large-link = Collega sempre al file
+settings-hint-resources-large-file = Cosa succede a un file oltre 10 MB che alleghi come risorsa. Conservato nel progetto, viaggia con ogni copia e ogni backup del progetto. Collegato, resta dov'è, e il progetto ricorda solo dove trovarlo.

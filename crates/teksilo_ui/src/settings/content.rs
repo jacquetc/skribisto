@@ -329,6 +329,16 @@ pub(super) fn build(
         _ => Box::new(empty_pane(&crumbs, Pane::WorkTemplates, book_icon())),
     };
 
+    // Work ▸ Resources — the resources no item carries, over THIS WINDOW's own
+    // `WorkSession::resources` (never `ctx.app_state`), same reasoning as `tags_pane`.
+    let resources_pane: Box<dyn Widget> = match (session, &work) {
+        (Some(session), Some(w)) if w.id().is_some() => Box::new(pane_frame(
+            crumbs.of(Pane::WorkResources),
+            crate::settings::panes::work_resources::work_resources_pane(ctx, session),
+        )),
+        _ => Box::new(empty_pane(&crumbs, Pane::WorkResources, book_icon())),
+    };
+
     // Work ▸ Text replacements — the per-project custom lexicon, over THIS
     // WINDOW's own `WorkSession::text_replacements` (never `ctx.app_state`),
     // same reasoning as `tags_pane`/`dictionary_pane`/`punctuation` above.
@@ -476,6 +486,7 @@ pub(super) fn build(
         ),
         (Pane::DistractionFreeThemes, df_themes_pane),
         (Pane::WorkTemplates, templates_pane),
+        (Pane::WorkResources, resources_pane),
     ];
     // Anything an extension registered, appended in the same order
     // `build_tree` inserted its nodes — the `Switcher` index is derived from

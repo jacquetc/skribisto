@@ -135,3 +135,82 @@ resources-drop-insert-link = Enmeti ligilon al la rimedo
 
 progress-resources-storing = Kopiado de la dosieroj
 progress-resources-stored = Dosieroj kopiitaj
+
+## La paĝo Rimedoj de dosierujo
+
+segment-folder = Dosierujo
+resources-folder-count = { $count ->
+    [one] Unu rimedo
+   *[other] { $count } rimedoj
+}
+resources-view-label = Montri la rimedojn kiel
+resources-view-list = Listo
+resources-view-grid = Krado
+resources-grid-label = Rimedoj
+resources-folder-drop-hint = Demetu dosierojn aŭ retadresojn ĉi tie por alkroĉi ilin al ĉi tiu dosierujo
+resources-folder-empty = Nenio estas ankoraŭ alkroĉita al ĉi tiu dosierujo nek al io en ĝi. Aldonu dosierojn aŭ retligilojn per la supraj butonoj, aŭ demetu ilin ĉi tie: ili estas alkroĉitaj al la dosierujo.
+resources-attached-to = Ĉe
+resources-attached-separator = ,
+resources-attached-more = { $count ->
+    [one] kaj unu plia
+   *[other] kaj { $count } pliaj
+}
+resources-row-name-attached = { $name }, ĉe { $items }
+resources-open-item = Malfermi «{ $title }»
+resources-detach-from = Malkroĉi de «{ $title }»
+
+## Bildaj rimedoj en la Galerio
+
+gallery-resource-badge = Rimedo
+gallery-tile-resource = Bilda rimedo de { $title }: { $description }
+
+## La paĝo Rimedoj de la projektaj agordoj
+
+settings-page-resources = Rimedoj
+settings-desc-resources = La dosieroj kaj retligiloj, kiujn neniu ero plu portas: alkroĉu ilin denove, forigu ilin aŭ eksportu kopiojn
+settings-resources-description = Rimedo estas alkroĉita al nenio, kiam ĝi estas malkroĉita de sia lasta ero, aŭ kiam la ero, kiu portis ĝin, estas forigita porĉiame. Ĝi restas en la projekto, kaj konservita dosiero vojaĝas kun ĉiu kopio kaj ĉiu sekurkopio de la projekto, ĝis vi denove alkroĉos aŭ forigos ĝin.
+settings-resources-group-storage = Spaco
+settings-resources-group-unattached = Alkroĉitaj al nenio
+settings-resources-stored = Dosieroj konservitaj en ĉi tiu projekto: { $size }
+settings-resources-folder-advice = Projekto tenata kiel unu dosiero estas tute reskribita ĉe ĉiu konservo, ankaŭ ĝiaj konservitaj dosieroj. Tenata kiel dosierujo, ĝi konservas nur tion, kio ŝanĝiĝis, kaj tio estas pli rapida.
+settings-resources-count = { $count ->
+    [one] Unu rimedo
+   *[other] { $count } rimedoj
+}
+settings-resources-empty = Ĉiu rimedo de ĉi tiu projekto estas alkroĉita al ero.
+resources-attach-to-items = Alkroĉi al eroj…
+resources-export-copies = Eksporti kopiojn…
+resources-export-copy = Eksporti kopion…
+resources-remove-many-title = Ĉu forigi { $count } rimedojn el la projekto?
+resources-attach-title = Alkroĉi al eroj
+resources-attach-hint = Elektu la erojn, al kiuj alkroĉi. Stir+klako aŭ Maj+klako elektas plurajn.
+resources-attach-empty = Ĉi tiu projekto ankoraŭ ne havas erojn.
+resources-attach-confirm = Alkroĉi
+resources-attached = { $count ->
+    [one] Unu rimedo alkroĉita
+   *[other] { $count } rimedoj alkroĉitaj
+} al { $items ->
+    [one] unu ero
+   *[other] { $items } eroj
+}
+resources-export-title = Eksporti kopiojn al dosierujo
+resources-exported = { $count ->
+    [one] Unu rimedo eksportita
+   *[other] { $count } rimedoj eksportitaj
+}
+resources-export-missing = { $count ->
+    [one] Unu dosiero ne estas tie, kie la projekto atendas ĝin, kaj estis preterlasita: { $names }
+   *[other] { $count } dosieroj ne estas tie, kie la projekto atendas ilin, kaj estis preterlasitaj: { $names }
+}
+resources-export-failed = { $count ->
+    [one] Unu dosiero ne povis esti kopiita: { $names }
+   *[other] { $count } dosieroj ne povis esti kopiitaj: { $names }
+}
+
+## La prefero por grandaj dosieroj (Konduto de la redaktilo)
+
+settings-resources-large-file = Dosieroj super 10 MB
+settings-resources-large-ask = Demandi ĉiufoje
+settings-resources-large-store = Ĉiam konservi en la projekto
+settings-resources-large-link = Ĉiam ligi al la dosiero
+settings-hint-resources-large-file = Kio okazas al dosiero super 10 MB, kiun vi alkroĉas kiel rimedon. Konservita en la projekto, ĝi vojaĝas kun ĉiu kopio kaj ĉiu sekurkopio de la projekto. Ligita, ĝi restas kie ĝi estas, kaj la projekto memoras nur kie trovi ĝin.

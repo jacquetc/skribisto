@@ -122,12 +122,12 @@ pub use numbering::{
     numbers_for_work, ordered_item_dtos, work_language_tags,
 };
 pub use open_docs::{FlushFailure, OpenDoc, OpenDocsStore, SynopsisViewerGuard, WeakOpenDocsStore};
-pub(crate) use overview_rows_model::shaped_subtree;
 pub use overview_rows_model::{
     COL_BOOKS, COL_GOAL, COL_LABEL, COL_OPEN_COMMENTS, COL_OWN_WORDS, COL_STATUS, COL_TAGS,
     COL_TITLE, COL_TOTAL_COMMENTS, COL_TOTAL_WORDS, COL_TYPE, OverviewFilters, OverviewRow,
     OverviewRowsModel,
 };
+pub(crate) use overview_rows_model::{shaped_subtree, subtree_items};
 pub use pace_model::{DailyCount, HolidayRow, MilestoneKind, MilestoneRow, PaceModel};
 pub use paratext_presets::{NEW_PRESET_TEMPLATE, ParatextPreset, ParatextPresetsService};
 pub use recent_work_list_model::RecentWorkListModel;

@@ -33,6 +33,23 @@ type CommitFn = Rc<dyn Fn(&mut EventContext, &str, &str) -> bool>;
 pub fn present_add_link(vm: &ResourcesViewModel, ctx: &mut EventContext, url: &str) {
     let vm = vm.clone();
     let commit: CommitFn = Rc::new(move |c, url, title| vm.add_web_link(c, url, title));
+    present_link_dialog(ctx, url, commit);
+}
+
+/// Ask for a web address and its title, and attach it to `items`: a folder's Resources
+/// page attaches to the folder.
+pub fn present_add_link_to(
+    vm: &ResourcesViewModel,
+    ctx: &mut EventContext,
+    url: &str,
+    items: Vec<u64>,
+) {
+    let vm = vm.clone();
+    let commit: CommitFn = Rc::new(move |c, url, title| vm.add_web_link_to(c, &items, url, title));
+    present_link_dialog(ctx, url, commit);
+}
+
+fn present_link_dialog(ctx: &mut EventContext, url: &str, commit: CommitFn) {
     present(
         ctx,
         Spec {

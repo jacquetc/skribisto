@@ -130,3 +130,74 @@ resources-drop-insert-link = リソースへのリンクを挿入
 
 progress-resources-storing = ファイルをコピーしています
 progress-resources-stored = ファイルをコピーしました
+
+## フォルダーのリソースページ
+
+segment-folder = フォルダー
+resources-folder-count = { $count ->
+   *[other] リソース{ $count }件
+}
+resources-view-label = リソースの表示
+resources-view-list = リスト
+resources-view-grid = グリッド
+resources-grid-label = リソース
+resources-folder-drop-hint = ファイルやウェブアドレスをここにドロップすると、このフォルダーに添付されます
+resources-folder-empty = このフォルダーにも、その中の項目にも、まだ何も添付されていません。上のボタンでファイルやウェブリンクを追加するか、ここにドロップしてください。フォルダーに添付されます。
+resources-attached-to = 添付先
+resources-attached-separator = 、
+resources-attached-more = { $count ->
+   *[other] ほか{ $count }件
+}
+resources-row-name-attached = { $name }、添付先 { $items }
+resources-open-item = 「{ $title }」を開く
+resources-detach-from = 「{ $title }」から外す
+
+## ギャラリーの画像リソース
+
+gallery-resource-badge = リソース
+gallery-tile-resource = { $title }の画像リソース: { $description }
+
+## プロジェクト設定のリソースページ
+
+settings-page-resources = リソース
+settings-desc-resources = どの項目にも添付されていないファイルとウェブリンク: もう一度添付する、削除する、コピーを書き出す
+settings-resources-description = 最後の項目から外したとき、または添付していた項目を完全に削除したとき、リソースはどこにも添付されていない状態になります。リソースはプロジェクトに残り、保管されたファイルは、もう一度添付するか削除するまで、プロジェクトのすべてのコピーとすべてのバックアップに含まれます。
+settings-resources-group-storage = 容量
+settings-resources-group-unattached = どこにも添付されていないもの
+settings-resources-stored = このプロジェクトに保管されたファイル: { $size }
+settings-resources-folder-advice = 1つのファイルとして保存したプロジェクトは、保存のたびに保管ファイルも含めてすべて書き直されます。フォルダーとして保存すれば、変更された部分だけが保存されるので速くなります。
+settings-resources-count = { $count ->
+   *[other] リソース{ $count }件
+}
+settings-resources-empty = このプロジェクトのリソースはすべて、いずれかの項目に添付されています。
+resources-attach-to-items = 項目に添付…
+resources-export-copies = コピーを書き出す…
+resources-export-copy = コピーを書き出す…
+resources-remove-many-title = { $count }件のリソースをプロジェクトから削除しますか？
+resources-attach-title = 項目に添付
+resources-attach-hint = 添付先の項目を選んでください。Ctrl+クリックまたは Shift+クリックで複数選べます。
+resources-attach-empty = このプロジェクトにはまだ項目がありません。
+resources-attach-confirm = 添付
+resources-attached = { $count ->
+   *[other] { $count }件のリソースを
+}{ $items ->
+   *[other] { $items }件の項目に添付しました
+}
+resources-export-title = コピーをフォルダーに書き出す
+resources-exported = { $count ->
+   *[other] リソースを{ $count }件書き出しました
+}
+resources-export-missing = { $count ->
+   *[other] { $count }件のファイルがプロジェクトの想定する場所にないため、除外しました: { $names }
+}
+resources-export-failed = { $count ->
+   *[other] { $count }件のファイルをコピーできませんでした: { $names }
+}
+
+## 大きなファイルの設定 (エディターの動作)
+
+settings-resources-large-file = 10 MB を超えるファイル
+settings-resources-large-ask = 毎回確認
+settings-resources-large-store = 常にプロジェクトに保管
+settings-resources-large-link = 常にファイルにリンク
+settings-hint-resources-large-file = リソースとして添付する 10 MB を超えるファイルの扱いです。プロジェクトに保管すると、プロジェクトのすべてのコピーとすべてのバックアップに含まれます。リンクすると、ファイルは元の場所に残り、プロジェクトはその場所だけを覚えます。

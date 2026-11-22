@@ -17,8 +17,12 @@
 //! in its tab; a subfolder, in Nested, by entering it. A right click offers the other
 //! door (open the note a picture is in).
 //!
+//! A picture resource's tile says it is one (a badge under it, and the name a screen
+//! reader hears), opens in the viewer with the others, and its right click offers what
+//! the Resources dock offers for a resource, after the Gallery's own two doors.
+//!
 //! The thumbnails are decoded off the interface thread and cached
-//! ([`crate::shared::picture_cache`]); a tile shows a placeholder of its final size until
+//! ([`crate::shared::thumbnail`]); a tile shows a placeholder of its final size until
 //! its picture arrives, so the columns do not move when it does.
 
 use std::rc::Rc;
@@ -31,15 +35,16 @@ use teksilo::settings::SettingsExt;
 use teksilo::widgets::tooltip::TooltipContent;
 use teksilo::widgets::{
     AspectRatio, Badge, Breadcrumb, BreadcrumbItem, Center, ComboBox, Expand, GridSizing, GridView,
-    HStack, IconButton, ImageFit, ImageWidget, MaxSize, MenuItem, MenuList, Padding, Panel,
-    SearchField, Segment, SegmentedControl, Shrinkable, Slider, TextWidget, TileContext, VStack,
+    HStack, IconButton, MaxSize, MenuItem, MenuList, Padding, Panel, SearchField, Segment,
+    SegmentedControl, Shrinkable, Slider, TextWidget, TileContext, VStack,
 };
 
-use crate::gallery::{GalleryOptions, GalleryTile, GalleryViewModel, tiles};
+use crate::gallery::{GalleryOptions, GalleryPicture, GalleryTile, GalleryViewModel, tiles};
 use crate::intents::AppIntent;
 use crate::models::{COL_STATUS, COL_TITLE};
-use crate::shared::images::ImageRef;
-use crate::shared::picture_cache::{self, PictureCache, PictureKey, PictureState};
+use crate::resources::ResourcesViewModel;
+use crate::resources::row::{AttachedItem, DetachFrom, resource_actions};
+use crate::shared::thumbnail::{Thumb, thumb_edge, tile_ratio};
 use crate::tabs::shared::flow_row::{FILTER_MIN_WIDTH, FlowRow, ROW_LINE_GAP};
 
 /// The pane, or an empty column for a tab with no Overview (never reached: the segment
@@ -48,14 +53,20 @@ pub fn gallery_pane(tab: &super::ContentTab) -> Box<dyn Widget> {
     let Some(overview) = tab.overview().cloned() else {
         return Box::new(VStack::new());
     };
+    let resources = tab.resources();
     let vm = GalleryViewModel::new(
         tab.app_ctx(),
         tab.ids().work_id.clone(),
         overview,
         tab.docs(),
+    )
+    .with_resources(
+        resources.session().model().clone(),
+        tab.open_doc.tag_probe.title(),
     );
     Box::new(GalleryPane {
         vm,
+        resources,
         tags: tab.tags(),
         statuses: tab.statuses(),
         root: None,
@@ -104,6 +115,9 @@ impl GallerySettings {
 
 struct GalleryPane {
     vm: GalleryViewModel,
+    /// The window's Resources view-model: a resource tile's menu and its Open in another
+    /// app in the viewer go through it.
+    resources: ResourcesViewModel,
     tags: crate::tags::TagsViewModel,
     statuses: crate::statuses::StatusesViewModel,
     root: Option<WidgetId>,
@@ -134,6 +148,7 @@ impl Widget for GalleryPane {
             Expand::new() {
                 child: (GalleryGrid {
                     vm: self.vm.clone(),
+                    resources: self.resources.clone(),
                     settings,
                     root: None,
                 })
@@ -474,33 +489,11 @@ impl Widget for GallerySortControl {
     }
 }
 
-/// The thumbnail edge, in physical pixels, for tiles `size` logical pixels wide: twice the
-/// width so a picture stays sharp on a high-density screen, in steps so dragging the slider
-/// asks for a few sizes rather than one per pixel.
-fn thumb_edge(size: f32) -> u32 {
-    let want = (size.max(1.0) * 2.0).ceil() as u32;
-    [256, 512, picture_cache::MAX_THUMB_EDGE]
-        .into_iter()
-        .find(|&edge| edge >= want)
-        .unwrap_or(picture_cache::MAX_THUMB_EDGE)
-}
-
-/// A picture's width over its height, from its stored size, kept within 1:4 and 4:1 so a
-/// sliver of a screenshot is neither an endless column nor a line of pixels.
-fn tile_ratio(image: &ImageRef) -> f32 {
-    let (w, h) = image.size.unwrap_or((4, 3));
-    let ratio = w.max(1) as f32 / h.max(1) as f32;
-    if ratio.is_finite() {
-        ratio.clamp(0.25, 4.0)
-    } else {
-        4.0 / 3.0
-    }
-}
-
 /// The grid, rebuilt when the folder's rows change, an open note's pictures change, a
-/// subfolder is entered or left, or a switch flips.
+/// resource or an attachment changes, a subfolder is entered or left, or a switch flips.
 struct GalleryGrid {
     vm: GalleryViewModel,
+    resources: ResourcesViewModel,
     settings: GallerySettings,
     root: Option<WidgetId>,
 }
@@ -521,6 +514,9 @@ impl Widget for GalleryGrid {
             .version_signal()
             .bind_to(sid, reg, BindingLevel::Rebuild);
         self.vm.revision().bind_to(sid, reg, BindingLevel::Rebuild);
+        if let Some(version) = self.vm.resources_version() {
+            version.bind_to(sid, reg, BindingLevel::Rebuild);
+        }
         self.vm.trail().bind_to(sid, reg, BindingLevel::Rebuild);
         self.vm.work_id().bind_to(sid, reg, BindingLevel::Rebuild);
         self.settings
@@ -590,6 +586,10 @@ impl Widget for GalleryGrid {
         let menu_at = entry_of.clone();
         let menu_dir = self.vm.media_dir();
         let view_dir = self.vm.media_dir();
+        let menu_resources = self.resources.clone();
+        // A picture resource in the viewer opens elsewhere through the Resources feature.
+        let opener = self.resources.viewer_opener();
+        let menu_opener = opener.clone();
 
         let grid = GridView::new(model, delegate)
             .sizing(sizing)
@@ -610,11 +610,12 @@ impl Widget for GalleryGrid {
                 match tile {
                     GalleryTile::Picture { .. } => {
                         if let Some(Some(start)) = activate_at.get(i) {
-                            crate::picture_viewer::present(
+                            crate::picture_viewer::present_with_opener(
                                 ectx,
                                 activate_entries.as_ref().clone(),
                                 *start,
                                 view_dir.clone(),
+                                opener.clone(),
                             );
                         }
                     }
@@ -635,25 +636,38 @@ impl Widget for GalleryGrid {
                     let entries = menu_entries.clone();
                     let start = *start;
                     let dir = menu_dir.clone();
+                    let opener = menu_opener.clone();
                     menu = menu.item(MenuItem::new(tr!(image_menu_view())).on_activate_fn(
                         move |c| {
-                            crate::picture_viewer::present(
+                            crate::picture_viewer::present_with_opener(
                                 c,
                                 entries.as_ref().clone(),
                                 start,
                                 dir.clone(),
+                                opener.clone(),
                             )
                         },
                     ));
                 }
                 if !matches!(tile, GalleryTile::Folder { .. }) {
+                    let open_title = title.clone();
                     menu = menu.item(
                         MenuItem::new(tr!(picture_viewer_open_note())).on_activate_fn(move |c| {
                             c.send_intent(AppIntent::OpenItem {
                                 item_id,
-                                title: title.clone(),
+                                title: open_title.clone(),
                             })
                         }),
+                    );
+                }
+                // What the dock offers for a resource, taken off the item this tile is
+                // filed under.
+                if let Some(row) = tile.resource() {
+                    menu = resource_actions(
+                        menu.separator(),
+                        row,
+                        menu_resources.clone(),
+                        DetachFrom::Items(vec![AttachedItem { id: item_id, title }]),
                     );
                 }
                 Some(Box::new(menu) as Box<dyn Widget>)
@@ -679,10 +693,19 @@ impl Widget for GalleryGrid {
 fn tile_a11y_label(tile: &GalleryTile) -> String {
     match tile {
         GalleryTile::Picture {
-            title, image, more, ..
+            title,
+            picture,
+            more,
+            ..
         } => {
-            let alt = image.alt.trim();
-            let what = if alt.is_empty() {
+            let alt = picture.image.alt.trim();
+            let what = if picture.is_resource() {
+                tr!(gallery_tile_resource(
+                    title = title.clone(),
+                    description = alt.to_string()
+                ))
+                .resolve_now()
+            } else if alt.is_empty() {
                 tr!(gallery_tile_picture(title = title.clone())).resolve_now()
             } else {
                 tr!(gallery_tile_picture_described(
@@ -731,15 +754,18 @@ impl std::fmt::Debug for TileView {
 }
 
 impl TileView {
-    fn thumb(&self, image: &ImageRef, backdrop: bool) -> Thumb {
-        Thumb {
-            image: image.clone(),
-            path: picture_cache::asset_path(&self.media_dir, &image.src),
-            rt: self.rt.clone(),
-            edge: self.edge,
-            backdrop,
-            root: None,
-        }
+    fn thumb(&self, picture: &GalleryPicture, backdrop: bool) -> Thumb {
+        let thumb = match &picture.resource {
+            Some(row) => Thumb::of_file(
+                (!row.missing).then(|| row.path.clone()).flatten(),
+                &row.content_hash,
+                &picture.image.alt,
+                self.rt.clone(),
+                self.edge,
+            ),
+            None => Thumb::of_picture(&self.media_dir, &picture.image, self.rt.clone(), self.edge),
+        };
+        thumb.backdrop(backdrop)
     }
 }
 
@@ -747,14 +773,21 @@ impl Widget for TileView {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
         let id = match &self.tile {
             GalleryTile::Picture {
-                title, image, more, ..
+                title,
+                picture,
+                more,
+                ..
             } => {
                 let badge: Option<Badge> =
                     (*more > 0).then(|| Badge::new(tr!(gallery_more_badge(count = *more as i64))));
-                let thumb = self.thumb(image, false);
+                // A resource says so, under its picture: it is filed on the note, not in it.
+                let resource: Option<Badge> = picture
+                    .is_resource()
+                    .then(|| Badge::new(tr!(gallery_resource_badge())));
+                let thumb = self.thumb(picture, false);
                 teksu!(ctx => VStack {
                     spacing: 4.0
-                    AspectRatio::new(tile_ratio(image)) {
+                    AspectRatio::new(tile_ratio(picture.image.size)) {
                         child: thumb
                     }
                     HStack {
@@ -765,6 +798,7 @@ impl Widget for TileView {
                                 single_line
                             }
                         }
+                        child_opt: resource
                         child_opt: badge
                     }
                 })
@@ -795,7 +829,7 @@ impl Widget for TileView {
                 let cells: Vec<Box<dyn Widget>> = (0..tiles::FOLDER_PREVIEWS)
                     .map(|i| -> Box<dyn Widget> {
                         match previews.get(i) {
-                            Some(image) => Box::new(self.thumb(image, true)),
+                            Some(picture) => Box::new(self.thumb(picture, true)),
                             None => Box::new(Panel::new().background(SurfaceRole::Sunken)),
                         }
                     })
@@ -899,124 +933,9 @@ impl Widget for QuadGrid {
     }
 }
 
-/// A thumbnail: its picture once decoded, a quiet placeholder of the same size until then,
-/// and the same placeholder with a word when the picture cannot be shown.
-struct Thumb {
-    image: ImageRef,
-    /// `None` for a reference outside the project's pictures, which is never read.
-    path: Option<std::path::PathBuf>,
-    rt: Option<AsyncRuntimeHandle>,
-    edge: u32,
-    /// Draw the picture on the placeholder's background: a folder preview fits a picture
-    /// of any shape into a square cell, and the cell should still read as one.
-    backdrop: bool,
-    root: Option<WidgetId>,
-}
-
-impl std::fmt::Debug for Thumb {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Thumb")
-            .field("src", &self.image.src)
-            .finish()
-    }
-}
-
-impl Widget for Thumb {
-    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        let state = match (
-            self.path.clone(),
-            PictureKey::for_src(&self.image.src, self.edge),
-        ) {
-            (Some(path), Some(key)) => {
-                let slot = PictureCache::shared().request(self.rt.as_ref(), path, key);
-                slot.bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
-                slot.get()
-            }
-            _ => PictureState::Failed,
-        };
-        let id = match state {
-            PictureState::Ready(decoded) => {
-                let picture =
-                    ImageWidget::from_raw(decoded.pixels.clone(), decoded.width, decoded.height)
-                        .fit(ImageFit::Contain)
-                        .alt(self.image.alt.clone());
-                if self.backdrop {
-                    ctx.add(Panel::new().background(SurfaceRole::Sunken).child(picture))
-                } else {
-                    ctx.add(picture)
-                }
-            }
-            PictureState::Failed => ctx.add(
-                Panel::new().background(SurfaceRole::Sunken).child(
-                    Center::new().child(
-                        TextWidget::new(tr!(gallery_unavailable()))
-                            .style(TextStyleRole::Tiny)
-                            .color(TextRole::Secondary),
-                    ),
-                ),
-            ),
-            PictureState::Loading | PictureState::Idle => {
-                ctx.add(Panel::new().background(SurfaceRole::Sunken))
-            }
-        };
-        self.root = Some(id);
-        vec![id]
-    }
-
-    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
-        self.root
-            .and_then(|id| ctx.child_size(id, proposal))
-            .map(LayoutResponse::from)
-            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
-    }
-
-    fn place_children(
-        &self,
-        bounds: Rect,
-        _proposal: SizeProposal,
-        children: &mut [teksilo::core::widget::WidgetPlacement],
-        _ctx: &LayoutContext,
-    ) {
-        // The cell is the aspect box around it: the picture, or its placeholder, fills it.
-        for child in children.iter_mut() {
-            child.origin = bounds.origin();
-            child.size = bounds.size();
-        }
-    }
-
-    fn children(&self) -> Vec<WidgetId> {
-        self.root.into_iter().collect()
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn a_thumbnail_is_twice_the_tile_in_a_few_steps() {
-        assert_eq!(thumb_edge(100.0), 256);
-        assert_eq!(thumb_edge(128.0), 256);
-        assert_eq!(thumb_edge(200.0), 512);
-        assert_eq!(thumb_edge(400.0), 1024);
-        assert_eq!(thumb_edge(5000.0), picture_cache::MAX_THUMB_EDGE);
-        assert_eq!(thumb_edge(f32::NAN), 256);
-    }
-
-    #[test]
-    fn a_tile_keeps_its_picture_proportions_within_bounds() {
-        let at = |size| ImageRef {
-            index: 0,
-            src: String::new(),
-            alt: String::new(),
-            size,
-        };
-        assert!((tile_ratio(&at(Some((1600, 900)))) - 16.0 / 9.0).abs() < 1e-4);
-        assert_eq!(tile_ratio(&at(Some((10, 10_000)))), 0.25);
-        assert_eq!(tile_ratio(&at(Some((10_000, 10)))), 4.0);
-        assert_eq!(tile_ratio(&at(Some((0, 0)))), 1.0);
-        assert!((tile_ratio(&at(None)) - 4.0 / 3.0).abs() < 1e-4);
-    }
 
     #[test]
     fn the_gallery_orders_are_the_overviews_sorts() {

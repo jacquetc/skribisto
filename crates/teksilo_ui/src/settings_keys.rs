@@ -134,10 +134,17 @@ pub const IMAGE_SIZE_POLICY_DEFAULT: &str = "ask";
 ///
 /// A string for the reason [`IMAGE_SIZE_POLICY_KEY`] is one: the prompt's "Don't ask
 /// again" box writes the answer given, and "ask" brings the prompt back. Settings shows
-/// it later; the key exists now so the box has somewhere to write.
+/// again" box writes the answer given, and "ask" brings the prompt back. Editor ▸ Editor
+/// behavior shows it, so the writer can change their mind.
 pub const RESOURCES_LARGE_FILE_KEY: &str = "resources.large_file";
 /// Ask about every large file until the writer says otherwise.
 pub const RESOURCES_LARGE_FILE_DEFAULT: &str = "ask";
+/// How a folder's Resources page lays its resources out: `"list"` (default) or
+/// `"grid"`. App-wide, as the Gallery's switches are: how a writer likes to look at
+/// their research is the same in every folder and every project.
+pub const RESOURCES_FOLDER_VIEW_KEY: &str = "resources.folder_view";
+/// The list: what the dock shows, plus the items each resource is on.
+pub const RESOURCES_FOLDER_VIEW_DEFAULT: &str = "list";
 /// The projects that said "Don't ask again" to the offer to keep a large single-file
 /// project as a folder: their `Work.unique_id`s, separated by spaces.
 ///
@@ -742,6 +749,14 @@ pub static SETTINGS: &[SettingSpec] = &[
               the prompt's \"Don't ask again\" box writes \"store\" or \"link\" here.",
     },
     SettingSpec {
+        key: crate::RESOURCES_FOLDER_VIEW_KEY,
+        ty: "string (\"list\" | \"grid\")",
+        default: || val(crate::RESOURCES_FOLDER_VIEW_DEFAULT),
+        check: check::<String>,
+        doc: "How a folder's Resources page shows its resources: as a list, or as a grid \
+              of thumbnails.",
+    },
+    SettingSpec {
         key: crate::RESOURCES_FOLDER_NOTICE_DECLINED_KEY,
         ty: "string (unique ids separated by spaces)",
         default: || val(""),
@@ -933,6 +948,13 @@ pub static SETTINGS: &[SettingSpec] = &[
         default: || val(crate::tabs::shared::segments::SEG_NOTES),
         check: check::<String>,
         doc: "Remembered segment id for notes-folder tabs (\"notes\" or \"overview\").",
+    },
+    SettingSpec {
+        key: "editor.last_view.folder",
+        ty: "string (segment id)",
+        default: || val(crate::tabs::shared::segments::SEG_OWN),
+        check: check::<String>,
+        doc: "Remembered segment id for plain folder tabs (\"own\" or \"resources\").",
     },
     SettingSpec {
         key: "editor.last_view.item_note",

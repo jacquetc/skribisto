@@ -135,3 +135,82 @@ resources-drop-insert-link = Insérer un lien vers la ressource
 
 progress-resources-storing = Copie des fichiers
 progress-resources-stored = Fichiers copiés
+
+## La page Ressources d’un dossier
+
+segment-folder = Dossier
+resources-folder-count = { $count ->
+    [1] Une ressource
+   *[other] { $count } ressources
+}
+resources-view-label = Afficher les ressources en
+resources-view-list = Liste
+resources-view-grid = Grille
+resources-grid-label = Ressources
+resources-folder-drop-hint = Déposez des fichiers ou des adresses web pour les attacher à ce dossier
+resources-folder-empty = Rien n’est encore attaché à ce dossier ni à ce qu’il contient. Ajoutez des fichiers ou des liens web avec les boutons ci-dessus, ou déposez-les ici : ils sont attachés au dossier.
+resources-attached-to = Sur
+resources-attached-separator = ,
+resources-attached-more = { $count ->
+    [1] et un autre
+   *[other] et { $count } autres
+}
+resources-row-name-attached = { $name }, sur { $items }
+resources-open-item = Ouvrir « { $title } »
+resources-detach-from = Détacher de « { $title } »
+
+## Les images en ressource dans la Galerie
+
+gallery-resource-badge = Ressource
+gallery-tile-resource = Image en ressource de { $title } : { $description }
+
+## La page Ressources des réglages du projet
+
+settings-page-resources = Ressources
+settings-desc-resources = Les fichiers et liens web qu’aucun élément ne porte plus : attachez-les de nouveau, retirez-les, ou exportez-en des copies
+settings-resources-description = Une ressource n’est plus attachée à rien quand elle est détachée de son dernier élément, ou quand l’élément qui la portait est supprimé pour de bon. Elle reste dans le projet, et un fichier rangé voyage avec chaque copie et chaque sauvegarde du projet, jusqu’à ce que vous l’attachiez de nouveau ou la retiriez.
+settings-resources-group-storage = Stockage
+settings-resources-group-unattached = Attachées à rien
+settings-resources-stored = Fichiers rangés dans ce projet : { $size }
+settings-resources-folder-advice = Un projet gardé en un seul fichier est réécrit en entier à chaque enregistrement, ses fichiers rangés aussi. Gardé en dossier, il n’enregistre que ce qui a changé, ce qui va plus vite.
+settings-resources-count = { $count ->
+    [1] Une ressource
+   *[other] { $count } ressources
+}
+settings-resources-empty = Chaque ressource de ce projet est attachée à un élément.
+resources-attach-to-items = Attacher à des éléments…
+resources-export-copies = Exporter des copies…
+resources-export-copy = Exporter une copie…
+resources-remove-many-title = Retirer { $count } ressources du projet ?
+resources-attach-title = Attacher à des éléments
+resources-attach-hint = Choisissez les éléments auxquels attacher. Ctrl+clic ou Maj+clic en choisit plusieurs.
+resources-attach-empty = Ce projet n’a encore aucun élément.
+resources-attach-confirm = Attacher
+resources-attached = { $count ->
+    [1] Une ressource attachée
+   *[other] { $count } ressources attachées
+} à { $items ->
+    [1] un élément
+   *[other] { $items } éléments
+}
+resources-export-title = Exporter des copies dans un dossier
+resources-exported = { $count ->
+    [1] Une ressource exportée
+   *[other] { $count } ressources exportées
+}
+resources-export-missing = { $count ->
+    [1] Un fichier n’est pas là où le projet l’attend, et a été laissé de côté : { $names }
+   *[other] { $count } fichiers ne sont pas là où le projet les attend, et ont été laissés de côté : { $names }
+}
+resources-export-failed = { $count ->
+    [1] Un fichier n’a pas pu être copié : { $names }
+   *[other] { $count } fichiers n’ont pas pu être copiés : { $names }
+}
+
+## La préférence des gros fichiers (Comportement de l’éditeur)
+
+settings-resources-large-file = Fichiers de plus de 10 Mo
+settings-resources-large-ask = Demander à chaque fois
+settings-resources-large-store = Toujours ranger dans le projet
+settings-resources-large-link = Toujours lier au fichier
+settings-hint-resources-large-file = Ce que devient un fichier de plus de 10 Mo que vous attachez comme ressource. Rangé dans le projet, il voyage avec chaque copie et chaque sauvegarde du projet. Lié, il reste où il est, et le projet retient seulement où le trouver.

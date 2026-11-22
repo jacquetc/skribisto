@@ -150,3 +150,106 @@ resources-drop-insert-link = Вставить ссылку на ресурс
 
 progress-resources-storing = Копирование файлов
 progress-resources-stored = Файлы скопированы
+
+## Страница «Ресурсы» папки
+
+segment-folder = Папка
+resources-folder-count = { $count ->
+    [1] Один ресурс
+    [one] { $count } ресурс
+    [few] { $count } ресурса
+    [many] { $count } ресурсов
+   *[other] { $count } ресурса
+}
+resources-view-label = Показывать ресурсы
+resources-view-list = Списком
+resources-view-grid = Сеткой
+resources-grid-label = Ресурсы
+resources-folder-drop-hint = Перетащите сюда файлы или веб-адреса, чтобы прикрепить их к этой папке
+resources-folder-empty = К этой папке и к тому, что в ней, пока ничего не прикреплено. Добавьте файлы или веб-ссылки кнопками выше или перетащите их сюда: они прикрепятся к папке.
+resources-attached-to = У
+resources-attached-separator = ,
+resources-attached-more = { $count ->
+    [1] и ещё одного
+    [one] и ещё { $count }
+    [few] и ещё { $count }
+    [many] и ещё { $count }
+   *[other] и ещё { $count }
+}
+resources-row-name-attached = { $name }, у { $items }
+resources-open-item = Открыть «{ $title }»
+resources-detach-from = Открепить от «{ $title }»
+
+## Ресурсы-изображения в Галерее
+
+gallery-resource-badge = Ресурс
+gallery-tile-resource = Изображение-ресурс элемента { $title }: { $description }
+
+## Страница «Ресурсы» в настройках проекта
+
+settings-page-resources = Ресурсы
+settings-desc-resources = Файлы и веб-ссылки, которых больше нет ни у одного элемента: прикрепите их снова, удалите или экспортируйте копии
+settings-resources-description = Ресурс ни к чему не прикреплён, когда его открепили от последнего элемента или когда элемент, к которому он был прикреплён, удалён насовсем. Он остаётся в проекте, а хранимый файл переходит в каждую копию и каждую резервную копию проекта, пока вы снова его не прикрепите или не удалите.
+settings-resources-group-storage = Место
+settings-resources-group-unattached = Ни к чему не прикреплены
+settings-resources-stored = Файлы, хранимые в этом проекте: { $size }
+settings-resources-folder-advice = Проект, хранимый одним файлом, при каждом сохранении записывается целиком, вместе с хранимыми файлами. Хранимый папкой, он записывает только то, что изменилось, и это быстрее.
+settings-resources-count = { $count ->
+    [1] Один ресурс
+    [one] { $count } ресурс
+    [few] { $count } ресурса
+    [many] { $count } ресурсов
+   *[other] { $count } ресурса
+}
+settings-resources-empty = Каждый ресурс этого проекта прикреплён к какому-либо элементу.
+resources-attach-to-items = Прикрепить к элементам…
+resources-export-copies = Экспортировать копии…
+resources-export-copy = Экспортировать копию…
+resources-remove-many-title = Удалить ресурсы ({ $count }) из проекта?
+resources-attach-title = Прикрепить к элементам
+resources-attach-hint = Выберите элементы, к которым прикрепить. Ctrl+щелчок или Shift+щелчок выбирает несколько.
+resources-attach-empty = В этом проекте пока нет элементов.
+resources-attach-confirm = Прикрепить
+resources-attached = { $count ->
+    [1] Один ресурс прикреплён
+    [one] { $count } ресурс прикреплён
+    [few] { $count } ресурса прикреплены
+    [many] { $count } ресурсов прикреплены
+   *[other] { $count } ресурса прикреплены
+} к { $items ->
+    [1] одному элементу
+    [one] { $items } элементу
+    [few] { $items } элементам
+    [many] { $items } элементам
+   *[other] { $items } элемента
+}
+resources-export-title = Экспортировать копии в папку
+resources-exported = { $count ->
+    [1] Экспортирован один ресурс
+    [one] Экспортирован { $count } ресурс
+    [few] Экспортировано { $count } ресурса
+    [many] Экспортировано { $count } ресурсов
+   *[other] Экспортировано { $count } ресурса
+}
+resources-export-missing = { $count ->
+    [1] Одного файла нет там, где его ждёт проект, и он пропущен: { $names }
+    [one] { $count } файла нет там, где его ждёт проект, и он пропущен: { $names }
+    [few] { $count } файлов нет там, где их ждёт проект, и они пропущены: { $names }
+    [many] { $count } файлов нет там, где их ждёт проект, и они пропущены: { $names }
+   *[other] { $count } файла нет там, где его ждёт проект, и он пропущен: { $names }
+}
+resources-export-failed = { $count ->
+    [1] Не удалось скопировать один файл: { $names }
+    [one] Не удалось скопировать { $count } файл: { $names }
+    [few] Не удалось скопировать { $count } файла: { $names }
+    [many] Не удалось скопировать { $count } файлов: { $names }
+   *[other] Не удалось скопировать { $count } файла: { $names }
+}
+
+## Настройка для больших файлов (Поведение редактора)
+
+settings-resources-large-file = Файлы больше 10 МБ
+settings-resources-large-ask = Спрашивать каждый раз
+settings-resources-large-store = Всегда хранить в проекте
+settings-resources-large-link = Всегда связывать с файлом
+settings-hint-resources-large-file = Что происходит с файлом больше 10 МБ, который вы прикрепляете как ресурс. Хранимый в проекте, он переходит в каждую копию и каждую резервную копию проекта. Связанный, он остаётся на своём месте, а проект помнит только, где его найти.

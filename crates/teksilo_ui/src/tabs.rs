@@ -351,6 +351,13 @@ pub struct ContentTab {
     /// `backlinks_for` answers empty for every note, forever. What that looks like from
     /// the writer's chair is "Appears in the manuscript" simply never working.
     mention_index: crate::mentions::MentionIndex,
+    /// The window's Resources view-model, for a folder's Resources page and the Gallery's
+    /// picture resources. A slot rather than the handle: the window mints that
+    /// view-model after its `EditorsViewModel`, which builds the tabs, so the editors
+    /// hand every tab the one shared slot ([`crate::editors::EditorsViewModel::set_resources`])
+    /// and a page reads it when it is built. Empty for a tab with no window behind it,
+    /// which then gets a view-model of its own ([`Self::resources`]).
+    pub(crate) resources: crate::resources::ResourcesSlot,
     /// This tab's shared document store, threaded from the same
     /// [`crate::sessions::WorkSession`] [`Self::tags`] is. **Not** read from
     /// `ctx.app_state::<OpenDocsStore>()`: [`crate::tabs::note_in_prose::note_in_prose_pane`]
@@ -1022,8 +1029,18 @@ impl ContentTab {
             tags,
             statuses,
             mention_index,
+            resources: crate::resources::ResourcesSlot::default(),
             docs: docs_for_tab,
         }
+    }
+
+    /// The window's Resources view-model; see [`Self::resources`]'s field doc. A tab
+    /// built with no window behind it gets one over a session of its own, kept in its
+    /// slot so every page of the tab shares it.
+    pub fn resources(&self) -> crate::resources::ResourcesViewModel {
+        self.resources.get_or_insert_with(|| {
+            crate::resources::ResourcesViewModel::detached(self.app_ctx.clone(), self.ids.clone())
+        })
     }
 
     /// The writing games this project is playing — handed to every writing

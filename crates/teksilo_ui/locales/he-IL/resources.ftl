@@ -140,3 +140,90 @@ resources-drop-insert-link = הוספת קישור למשאב
 
 progress-resources-storing = מעתיק את הקבצים
 progress-resources-stored = הקבצים הועתקו
+
+## עמוד המשאבים של תיקייה
+
+segment-folder = תיקייה
+resources-folder-count = { $count ->
+    [one] משאב אחד
+    [two] שני משאבים
+   *[other] { $count } משאבים
+}
+resources-view-label = הצגת המשאבים בתור
+resources-view-list = רשימה
+resources-view-grid = רשת
+resources-grid-label = משאבים
+resources-folder-drop-hint = אפשר לשחרר כאן קבצים או כתובות אינטרנט כדי לצרף אותם לתיקייה הזו
+resources-folder-empty = עדיין לא צורף דבר לתיקייה הזו או למה שבתוכה. אפשר להוסיף קבצים או קישורי אינטרנט בכפתורים שלמעלה, או לשחרר אותם כאן: הם יצורפו לתיקייה.
+resources-attached-to = על
+resources-attached-separator = ,
+resources-attached-more = { $count ->
+    [one] ועוד אחד
+    [two] ועוד שניים
+   *[other] ועוד { $count }
+}
+resources-row-name-attached = { $name }, על { $items }
+resources-open-item = פתיחת "{ $title }"
+resources-detach-from = ניתוק מ־"{ $title }"
+
+## משאבי תמונה בגלריה
+
+gallery-resource-badge = משאב
+gallery-tile-resource = משאב תמונה של { $title }: { $description }
+
+## עמוד המשאבים בהגדרות הפרויקט
+
+settings-page-resources = משאבים
+settings-desc-resources = הקבצים וקישורי האינטרנט שאף פריט כבר לא נושא: אפשר לצרף אותם מחדש, להסיר אותם או לייצא עותקים
+settings-resources-description = משאב אינו מצורף לשום דבר לאחר שנותק מהפריט האחרון שלו, או לאחר שהפריט שנשא אותו נמחק לצמיתות. הוא נשאר בפרויקט, וקובץ מאוחסן נוסע עם כל עותק וכל גיבוי של הפרויקט, עד שתצרפו אותו מחדש או תסירו אותו.
+settings-resources-group-storage = אחסון
+settings-resources-group-unattached = לא מצורפים לשום דבר
+settings-resources-stored = קבצים המאוחסנים בפרויקט הזה: { $size }
+settings-resources-folder-advice = פרויקט שנשמר כקובץ יחיד נכתב מחדש במלואו בכל שמירה, יחד עם הקבצים המאוחסנים בו. כשהוא נשמר כתיקייה, הוא שומר רק את מה שהשתנה, וזה מהיר יותר.
+settings-resources-count = { $count ->
+    [one] משאב אחד
+    [two] שני משאבים
+   *[other] { $count } משאבים
+}
+settings-resources-empty = כל משאב בפרויקט הזה מצורף לפריט כלשהו.
+resources-attach-to-items = צירוף לפריטים…
+resources-export-copies = ייצוא עותקים…
+resources-export-copy = ייצוא עותק…
+resources-remove-many-title = להסיר { $count } משאבים מהפרויקט?
+resources-attach-title = צירוף לפריטים
+resources-attach-hint = בחרו את הפריטים שאליהם יצורף. Ctrl+לחיצה או Shift+לחיצה בוחרים כמה.
+resources-attach-empty = בפרויקט הזה עדיין אין פריטים.
+resources-attach-confirm = צירוף
+resources-attached = { $count ->
+    [one] משאב אחד צורף
+    [two] שני משאבים צורפו
+   *[other] { $count } משאבים צורפו
+} ל{ $items ->
+    [one] פריט אחד
+    [two] שני פריטים
+   *[other] ־{ $items } פריטים
+}
+resources-export-title = ייצוא עותקים לתיקייה
+resources-exported = { $count ->
+    [one] משאב אחד יוצא
+    [two] שני משאבים יוצאו
+   *[other] { $count } משאבים יוצאו
+}
+resources-export-missing = { $count ->
+    [one] קובץ אחד אינו במקום שבו הפרויקט מצפה לו, ולכן הושמט: { $names }
+    [two] שני קבצים אינם במקום שבו הפרויקט מצפה להם, ולכן הושמטו: { $names }
+   *[other] { $count } קבצים אינם במקום שבו הפרויקט מצפה להם, ולכן הושמטו: { $names }
+}
+resources-export-failed = { $count ->
+    [one] לא ניתן היה להעתיק קובץ אחד: { $names }
+    [two] לא ניתן היה להעתיק שני קבצים: { $names }
+   *[other] לא ניתן היה להעתיק { $count } קבצים: { $names }
+}
+
+## ההעדפה לקבצים גדולים (התנהגות העורך)
+
+settings-resources-large-file = קבצים מעל 10 MB
+settings-resources-large-ask = לשאול בכל פעם
+settings-resources-large-store = תמיד לאחסן בפרויקט
+settings-resources-large-link = תמיד לקשר לקובץ
+settings-hint-resources-large-file = מה קורה לקובץ מעל 10 MB שאתם מצרפים כמשאב. כשהוא מאוחסן בפרויקט, הוא נוסע עם כל עותק וכל גיבוי של הפרויקט. כשהוא מקושר, הוא נשאר במקומו, והפרויקט זוכר רק היכן למצוא אותו.

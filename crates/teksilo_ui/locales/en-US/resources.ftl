@@ -135,3 +135,82 @@ resources-drop-insert-link = Insert a link to the resource
 
 progress-resources-storing = Copying the files
 progress-resources-stored = Files copied
+
+## A folder's Resources page
+
+segment-folder = Folder
+resources-folder-count = { $count ->
+    [one] One resource
+   *[other] { $count } resources
+}
+resources-view-label = Show resources as
+resources-view-list = List
+resources-view-grid = Grid
+resources-grid-label = Resources
+resources-folder-drop-hint = Drop files or web addresses to attach them to this folder
+resources-folder-empty = Nothing is attached to this folder or to anything in it yet. Add files or web links with the buttons above, or drop them here: they are attached to the folder.
+resources-attached-to = On
+resources-attached-separator = ,
+resources-attached-more = { $count ->
+    [one] and one more
+   *[other] and { $count } more
+}
+resources-row-name-attached = { $name }, on { $items }
+resources-open-item = Open “{ $title }”
+resources-detach-from = Detach from “{ $title }”
+
+## Picture resources in the Gallery
+
+gallery-resource-badge = Resource
+gallery-tile-resource = Picture resource of { $title }: { $description }
+
+## The Work's Resources settings page
+
+settings-page-resources = Resources
+settings-desc-resources = The files and web links no item carries any more: attach them again, remove them, or export copies
+settings-resources-description = A resource is attached to nothing once it is detached from its last item, or once the item it was on is deleted for good. It stays in the project, and a stored file travels with every copy and every backup of it, until you attach it again or remove it.
+settings-resources-group-storage = Storage
+settings-resources-group-unattached = Attached to nothing
+settings-resources-stored = Files stored in this project: { $size }
+settings-resources-folder-advice = A project kept as a single file is written whole at every save, its stored files too. Kept as a folder, it saves only what changed, which is faster.
+settings-resources-count = { $count ->
+    [one] One resource
+   *[other] { $count } resources
+}
+settings-resources-empty = Every resource of this project is attached to an item.
+resources-attach-to-items = Attach to items…
+resources-export-copies = Export copies…
+resources-export-copy = Export a copy…
+resources-remove-many-title = Remove { $count } resources from the project?
+resources-attach-title = Attach to items
+resources-attach-hint = Choose the items to attach to. Ctrl+click or Shift+click chooses several.
+resources-attach-empty = This project has no items yet.
+resources-attach-confirm = Attach
+resources-attached = { $count ->
+    [one] One resource attached
+   *[other] { $count } resources attached
+} to { $items ->
+    [one] one item
+   *[other] { $items } items
+}
+resources-export-title = Export copies to a folder
+resources-exported = { $count ->
+    [one] One resource exported
+   *[other] { $count } resources exported
+}
+resources-export-missing = { $count ->
+    [one] One file is not where the project expects it, and was left out: { $names }
+   *[other] { $count } files are not where the project expects them, and were left out: { $names }
+}
+resources-export-failed = { $count ->
+    [one] One file could not be copied: { $names }
+   *[other] { $count } files could not be copied: { $names }
+}
+
+## The large-file preference (Editor behavior)
+
+settings-resources-large-file = Files over 10 MB
+settings-resources-large-ask = Ask each time
+settings-resources-large-store = Always store in the project
+settings-resources-large-link = Always link to the file
+settings-hint-resources-large-file = What happens to a file over 10 MB you attach as a resource. Stored in the project, it travels with every copy and every backup of it. Linked, it stays where it is, and the project only remembers where to find it.

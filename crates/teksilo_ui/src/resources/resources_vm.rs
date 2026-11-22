@@ -160,6 +160,26 @@ impl ResourcesViewModel {
         }
     }
 
+    /// A view-model over a session of its own, following no item: for a tab built with
+    /// no window behind it (a test, a standalone tab), which still has to build.
+    pub fn detached(app_ctx: Rc<AppContext>, ids: AppIds) -> Self {
+        let session = ResourcesSession::new(app_ctx.clone(), ids.clone());
+        Self::new(
+            app_ctx,
+            ids,
+            session,
+            Signal::new(None),
+            Signal::new(None),
+            Signal::new(String::new()),
+        )
+    }
+
+    /// The project's shape, as the Work's Resources page says whether a folder would
+    /// save faster.
+    pub fn shape(&self) -> Signal<Option<WorkShape>> {
+        self.inner.shape.clone()
+    }
+
     /// Hand over what this view-model reaches through the window rather than owns.
     pub fn connect(&self, editor: EditorFn, media_dir: MediaDirFn, save_as_folder: SaveAsFolderFn) {
         *self.inner.editor.borrow_mut() = Some(editor);
@@ -214,7 +234,13 @@ impl ResourcesViewModel {
 
     /// Ask for files to attach to the item in front of the writer.
     pub fn pick_files(&self, ctx: &mut EventContext) {
-        if self.inner.focus.get().is_none() {
+        self.pick_files_for(ctx, self.items());
+    }
+
+    /// Ask for files to attach to `items`: a folder's Resources page attaches to the
+    /// folder, whatever is in front of the writer.
+    pub fn pick_files_for(&self, ctx: &mut EventContext, items: Vec<u64>) {
+        if items.is_empty() {
             return;
         }
         let req = crate::models::dialog_start_in(
@@ -229,7 +255,7 @@ impl ResourcesViewModel {
                 return;
             };
             if !paths.is_empty() {
-                vm.add_paths(c, paths, AddTarget::Dock);
+                vm.add_paths_to(c, items.clone(), paths, AddTarget::Dock);
             }
         });
     }
@@ -237,7 +263,18 @@ impl ResourcesViewModel {
     /// Attach `paths` to the item in front of the writer: ask about the large ones,
     /// store the rest, link what the writer chose to link. See the module docs.
     pub fn add_paths(&self, ctx: &mut EventContext, paths: Vec<PathBuf>, target: AddTarget) {
-        let items = self.items();
+        self.add_paths_to(ctx, self.items(), paths, target);
+    }
+
+    /// [`Self::add_paths`], attaching to `items` rather than the item in front of the
+    /// writer.
+    pub fn add_paths_to(
+        &self,
+        ctx: &mut EventContext,
+        items: Vec<u64>,
+        paths: Vec<PathBuf>,
+        target: AddTarget,
+    ) {
         if items.is_empty() || paths.is_empty() {
             return;
         }
@@ -613,7 +650,17 @@ impl ResourcesViewModel {
 
     /// Attach a web address to the item in front of the writer.
     pub fn add_web_link(&self, ctx: &mut EventContext, url: &str, title: &str) -> bool {
-        let items = self.items();
+        self.add_web_link_to(ctx, &self.items(), url, title)
+    }
+
+    /// Attach a web address to `items`.
+    pub fn add_web_link_to(
+        &self,
+        ctx: &mut EventContext,
+        items: &[u64],
+        url: &str,
+        title: &str,
+    ) -> bool {
         if items.is_empty() {
             return false;
         }
@@ -630,7 +677,7 @@ impl ResourcesViewModel {
             title: title.trim().to_string(),
         };
         match self.inner.session.model().add(
-            &items,
+            items,
             &StoredResourceFilesDto::default(),
             &[],
             std::slice::from_ref(&link),
@@ -652,10 +699,15 @@ impl ResourcesViewModel {
 
     /// Text dropped or pasted on the dock: every web address in it becomes a link.
     pub fn add_dropped_text(&self, ctx: &mut EventContext, text: &str) -> bool {
+        self.add_dropped_text_to(ctx, &self.items(), text)
+    }
+
+    /// Text dropped or pasted on a folder's Resources page: links of `items`.
+    pub fn add_dropped_text_to(&self, ctx: &mut EventContext, items: &[u64], text: &str) -> bool {
         let urls = web_addresses_in(text);
         let mut any = false;
         for url in urls {
-            any |= self.add_web_link(ctx, &url, "");
+            any |= self.add_web_link_to(ctx, items, &url, "");
         }
         any
     }
@@ -892,9 +944,33 @@ impl ResourcesViewModel {
         };
         let vm = self.clone();
         let row = row.clone();
-        let opener: crate::picture_viewer::OpenElsewhereFn =
-            Rc::new(move |c| vm.open_file(c, &row));
+        let opener: crate::picture_viewer::OpenElsewhereFn = Rc::new(move |c, _entry| {
+            vm.open_file(c, &row);
+            true
+        });
         crate::picture_viewer::present_with_opener(ctx, vec![entry], 0, self.media_dir(), opener);
+    }
+
+    /// The image viewer's Open in another app for a list that mixes pictures of the text
+    /// with picture resources (the Gallery): a resource goes through
+    /// [`Self::open_file`], so a single-file project opens a copy and gets the edit
+    /// back; anything else is left to the viewer.
+    pub fn viewer_opener(&self) -> crate::picture_viewer::OpenElsewhereFn {
+        let vm = self.clone();
+        Rc::new(move |c, entry| {
+            let Some(row) = links::resource_uid(&entry.src)
+                .and_then(|uid| vm.inner.session.model().by_uid(uid))
+            else {
+                return false;
+            };
+            // Through the same check as every other open: a resource reaches the
+            // viewer by its name, and this hands its path to the system.
+            match open_safety::verdict(&name_to_judge(&row)) {
+                OpenVerdict::Open => vm.open_file(c, &row),
+                OpenVerdict::Ask => vm.ask_before_opening(c, &row),
+            }
+            true
+        })
     }
 
     // ── Editing ──────────────────────────────────────────────────────────────
@@ -919,11 +995,90 @@ impl ResourcesViewModel {
         let Some(item) = self.inner.focus.get() else {
             return;
         };
+        self.detach_from(ctx, item, row);
+    }
+
+    /// Take `row` off `item`; it stays in the project.
+    pub fn detach_from(&self, ctx: &mut EventContext, item: u64, row: &ResourceRow) {
         if let Err(e) = self.inner.session.model().detach(item, row.id) {
             ctx.show_toast(
                 Toast::error(tr!(resources_edit_failed(error = e)))
                     .scoped_id("resources.failed", self.work_id()),
             );
+        }
+    }
+
+    /// Attach the resources `ids` to every item of `items`, as one undo step. Says how
+    /// many it attached, or why it could not.
+    pub fn attach(&self, ctx: &mut EventContext, items: &[u64], ids: &[u64]) -> bool {
+        if items.is_empty() || ids.is_empty() {
+            return false;
+        }
+        match self.inner.session.model().attach(items, ids) {
+            Ok(()) => {
+                self.inner.session.model().reload();
+                ctx.announce(
+                    tr!(resources_attached(
+                        count = ids.len() as i64,
+                        items = items.len() as i64
+                    ))
+                    .resolve_now(),
+                );
+                true
+            }
+            Err(e) => {
+                ctx.show_toast(
+                    Toast::error(tr!(resources_edit_failed(error = e)))
+                        .scoped_id("resources.failed", self.work_id()),
+                );
+                false
+            }
+        }
+    }
+
+    /// Remove `rows` from the project after asking, as one undo step: the Work's
+    /// Resources page, for one row or a selection.
+    pub fn remove_many(&self, ctx: &mut EventContext, rows: &[ResourceRow]) {
+        match rows {
+            [] => {}
+            [row] => self.remove(ctx, row),
+            _ => {
+                let vm = self.clone();
+                let rows = rows.to_vec();
+                MessageBox::warning(tr!(resources_remove_many_title(count = rows.len() as i64)))
+                    .text(tr!(resources_remove_text()))
+                    .buttons(MessageBoxButtons::Custom(vec![
+                        MessageBoxButton::standard(StandardButton::Discard)
+                            .label(tr!(resources_remove_confirm())),
+                        MessageBoxButton::standard(StandardButton::Cancel),
+                    ]))
+                    .default_button(StandardButton::Cancel)
+                    .escape_button(StandardButton::Cancel)
+                    .on_result(move |r, c| {
+                        if r.button == StandardButton::Discard {
+                            vm.remove_now(c, &rows);
+                        }
+                    })
+                    .present(ctx);
+            }
+        }
+    }
+
+    /// Remove `rows` with no question, as one undo step.
+    fn remove_now(&self, ctx: &mut EventContext, rows: &[ResourceRow]) {
+        let ids: Vec<u64> = rows.iter().map(|r| r.id).collect();
+        match self.inner.session.model().remove(&ids) {
+            Ok(()) => {
+                for row in rows {
+                    self.inner.session.opened().forget(row.uid);
+                }
+            }
+            Err(e) => {
+                ctx.show_toast(
+                    Toast::error(tr!(resources_remove_failed(error = e)))
+                        .scoped_id("resources.failed", self.work_id()),
+                );
+            }
         }
     }
 
@@ -941,17 +1096,8 @@ impl ResourcesViewModel {
             .default_button(StandardButton::Cancel)
             .escape_button(StandardButton::Cancel)
             .on_result(move |r, c| {
-                if r.button != StandardButton::Discard {
-                    return;
-                }
-                match vm.inner.session.model().remove(&[row.id]) {
-                    Ok(()) => vm.inner.session.opened().forget(row.uid),
-                    Err(e) => {
-                        c.show_toast(
-                            Toast::error(tr!(resources_remove_failed(error = e)))
-                                .scoped_id("resources.failed", vm.work_id()),
-                        );
-                    }
+                if r.button == StandardButton::Discard {
+                    vm.remove_now(c, std::slice::from_ref(&row));
                 }
             })
             .present(ctx);
@@ -1143,7 +1289,7 @@ pub fn sorted_by_title(mut rows: Vec<ResourceRow>) -> Vec<ResourceRow> {
     rows
 }
 
-fn title_key(title: &str) -> String {
+pub(crate) fn title_key(title: &str) -> String {
     use unicode_normalization::UnicodeNormalization;
     title
         .nfd()
@@ -1278,7 +1424,7 @@ pub fn with_declined(setting: &str, uid: &str) -> String {
 /// shared project can pair a harmless name ("map.pdf") with a path to a `.desktop`
 /// launcher or a script; judged by the name it was given, it opened without asking.
 /// A stored file's path is built from its `file_name`, so the two agree there anyway.
-fn name_to_judge(row: &ResourceRow) -> String {
+pub(crate) fn name_to_judge(row: &ResourceRow) -> String {
     row.path
         .as_deref()
         .and_then(Path::file_name)

@@ -6,8 +6,9 @@
 //!
 //! One model per open project (it lives on the project's
 //! [`WorkSession`](crate::sessions::WorkSession)), project-wide: [`rows_for`] answers
-//! for one item, [`all`] for the whole project. A dock filters by the item in front of
-//! the writer, so two windows on one project read one model.
+//! for one item, [`attachments`] for many at once (a folder's subtree), [`unattached`]
+//! for the resources no item carries, [`all`] for the whole project. A dock filters by
+//! the item in front of the writer, so two windows on one project read one model.
 //!
 //! A row carries what the backend stores plus two facts only this machine can answer:
 //! where the file is ([`ResourceRow::path`]: the stored file in the project's resources
@@ -21,6 +22,8 @@
 //! automation scripts drive the mocks build.
 //!
 //! [`rows_for`]: imp::ResourcesListModel::rows_for
+//! [`attachments`]: imp::ResourcesListModel::attachments
+//! [`unattached`]: imp::ResourcesListModel::unattached
 //! [`all`]: imp::ResourcesListModel::all
 
 use std::path::PathBuf;
@@ -115,6 +118,7 @@ pub struct WebLink {
 
 #[cfg(not(feature = "mocks"))]
 mod imp {
+    use std::collections::{HashMap, HashSet};
     use std::path::{Path, PathBuf};
     use std::rc::Rc;
 
@@ -123,13 +127,13 @@ mod imp {
     use frontend::AppContext;
     use frontend::commands::{
         binder_item_commands, long_operation_commands, resource_commands,
-        resource_management_commands, work_commands,
+        resource_management_commands, undo_redo_commands, work_commands,
     };
     use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
     use frontend::common::direct_access::work::WorkRelationshipField;
     use frontend::common::event::{
-        DirectAccessEntity, EntityEvent, Origin, ResourceManagementEvent, TrashManagementEvent,
-        UndoRedoEvent, WorkManagementEvent,
+        BinderItemManagementEvent, DirectAccessEntity, EntityEvent, Origin,
+        ResourceManagementEvent, TrashManagementEvent, UndoRedoEvent, WorkManagementEvent,
     };
     use frontend::direct_access::{BinderItemRelationshipDto, ResourceDto, UpdateResourceDto};
     use frontend::resource_management::{AddResourcesDto, StoreResourceFilesDto};
@@ -185,6 +189,15 @@ mod imp {
                 Origin::DirectAccess(BinderItem(Updated)),
                 Origin::DirectAccess(Work(Updated)),
                 Origin::ResourceManagement(ResourceManagementEvent::AddResources),
+                // A folder's Resources page lists its subtree's: a move, a trash or a
+                // restore changes which items that is.
+                Origin::DirectAccess(BinderItem(Removed)),
+                Origin::BinderItemManagement(BinderItemManagementEvent::MoveItems),
+                Origin::BinderItemManagement(BinderItemManagementEvent::Duplicate),
+                Origin::BinderItemManagement(BinderItemManagementEvent::Promote),
+                Origin::TrashManagement(TrashManagementEvent::TrashBinderItems),
+                Origin::TrashManagement(TrashManagementEvent::TrashBinder),
+                Origin::TrashManagement(TrashManagementEvent::RestoreItems),
                 Origin::TrashManagement(TrashManagementEvent::EmptyTrash),
                 Origin::UndoRedo(UndoRedoEvent::Undone),
                 Origin::UndoRedo(UndoRedoEvent::Redone),
@@ -267,6 +280,84 @@ mod imp {
         /// The resource `id`, if this project has it.
         pub fn by_id(&self, id: u64) -> Option<ResourceRow> {
             self.rows_of(&[id]).into_iter().next()
+        }
+
+        /// The resources `ids` this project has, in no particular order.
+        pub fn by_ids(&self, ids: &[u64]) -> Vec<ResourceRow> {
+            self.rows_of(ids)
+        }
+
+        /// The resource ids attached to each of `item_ids`, in the order they were
+        /// attached. An item with none is absent or maps to an empty list.
+        pub fn attachments(&self, item_ids: &[u64]) -> HashMap<u64, Vec<u64>> {
+            if item_ids.is_empty() {
+                return HashMap::new();
+            }
+            binder_item_commands::get_binder_item_relationship_many(
+                &self.inner.app_ctx,
+                item_ids,
+                &BinderItemRelationshipField::Resources,
+            )
+            .unwrap_or_default()
+        }
+
+        /// The project's resources that no item carries, trashed items included: a
+        /// resource on an item in the trash comes back with it, so it is not loose.
+        pub fn unattached(&self) -> Vec<ResourceRow> {
+            let Some(work_id) = self.work_id() else {
+                return Vec::new();
+            };
+            let items: Vec<u64> =
+                crate::models::binder_stream::ordered_all_items(&self.inner.app_ctx, work_id)
+                    .into_iter()
+                    .map(|(_, item)| item.id)
+                    .collect();
+            let held: HashSet<u64> = self.attachments(&items).into_values().flatten().collect();
+            self.all()
+                .into_iter()
+                .filter(|r| !held.contains(&r.id))
+                .collect()
+        }
+
+        /// Attach the resources `ids` to every item of `item_ids`, keeping what each
+        /// already carries: one undo step.
+        pub fn attach(&self, item_ids: &[u64], ids: &[u64]) -> Result<(), String> {
+            let ctx = &self.inner.app_ctx;
+            let field = BinderItemRelationshipField::Resources;
+            let current = self.attachments(item_ids);
+            let writes: Vec<BinderItemRelationshipDto> = item_ids
+                .iter()
+                .filter_map(|item| {
+                    let mut right_ids = current.get(item).cloned().unwrap_or_default();
+                    let before = right_ids.len();
+                    for id in ids {
+                        if !right_ids.contains(id) {
+                            right_ids.push(*id);
+                        }
+                    }
+                    (right_ids.len() != before).then(|| BinderItemRelationshipDto {
+                        id: *item,
+                        field: field.clone(),
+                        right_ids,
+                    })
+                })
+                .collect();
+            if writes.is_empty() {
+                return Ok(());
+            }
+            let stack = self.stack();
+            let grouped = writes.len() > 1;
+            if grouped {
+                undo_redo_commands::begin_composite(ctx, stack).map_err(|e| format!("{e:#}"))?;
+            }
+            let wrote = writes.iter().try_for_each(|dto| {
+                binder_item_commands::set_binder_item_relationship(ctx, stack, dto)
+            });
+            // Closed on every path, so a failed write never leaves the group open.
+            if grouped {
+                undo_redo_commands::end_composite(ctx);
+            }
+            wrote.map_err(|e| format!("{e:#}"))
         }
 
         fn rows_of(&self, ids: &[u64]) -> Vec<ResourceRow> {
@@ -474,7 +565,7 @@ mod imp {
 #[cfg(feature = "mocks")]
 mod imp {
     use std::cell::RefCell;
-    use std::collections::HashSet;
+    use std::collections::HashMap;
     use std::path::{Path, PathBuf};
     use std::rc::Rc;
 
@@ -490,10 +581,8 @@ mod imp {
     struct Inner {
         version: Signal<u64>,
         rows: RefCell<Vec<ResourceRow>>,
-        /// `(item, resource)` pairs taken apart; every other pair is attached.
-        detached: RefCell<HashSet<(u64, u64)>>,
-        /// Rows added during the session, and the items they went to.
-        added_to: RefCell<Vec<(u64, Vec<u64>)>>,
+        /// `(item, resource)` pairs, in the order they were attached.
+        attached: RefCell<Vec<(u64, u64)>>,
         next_id: RefCell<u64>,
     }
 
@@ -510,8 +599,26 @@ mod imp {
         uuid::Uuid::from_u128(0x5e5_0000_0000_4000_8000_0000_0000_0000 + n)
     }
 
-    /// A writer's research for a seaside novel: a map and a photograph stored in the
-    /// project, a recording, a linked file that moved, and a web page.
+    /// Where the seeded resources are attached, as `(item, resource)` pairs over the mock
+    /// binder's items: the map on the Book and on Chapter Two (one resource on two
+    /// items), the photograph on a scene and on the character sketch, the recording on
+    /// Scene 3, the moved tide tables on Confrontation, the web page on Chapter Two. The
+    /// cottage photograph and the lighthouse page are attached to nothing, for the
+    /// Work's Resources settings page.
+    fn seed_attachments() -> Vec<(u64, u64)> {
+        vec![
+            (101, 9001),
+            (104, 9001),
+            (201, 9002),
+            (106, 9002),
+            (203, 9003),
+            (105, 9004),
+            (104, 9005),
+        ]
+    }
+
+    /// A writer's research for a seaside novel: a map and two photographs stored in
+    /// the project, a recording, a linked file that moved, and two web pages.
     fn seed() -> Vec<ResourceRow> {
         let stored = |id: u64, n: u128, title: &str, file: &str, mime: &str, size: u64| {
             let uid = uid(n);
@@ -580,6 +687,26 @@ mod imp {
                 location: "https://example.org/harbour-records".into(),
                 ..Default::default()
             },
+            ResourceRow {
+                width: 1200,
+                height: 900,
+                ..stored(
+                    9006,
+                    6,
+                    "Keeper's cottage",
+                    "Keeper's cottage.jpg",
+                    "image/jpeg",
+                    356_352,
+                )
+            },
+            ResourceRow {
+                id: 9007,
+                uid: uid(7),
+                title: "Lighthouse history".into(),
+                kind: ResourceKind::WebLink,
+                location: "https://example.org/lighthouse-history".into(),
+                ..Default::default()
+            },
         ]
     }
 
@@ -589,8 +716,7 @@ mod imp {
                 inner: Rc::new(Inner {
                     version: Signal::new(0),
                     rows: RefCell::new(seed()),
-                    detached: RefCell::new(HashSet::new()),
-                    added_to: RefCell::new(Vec::new()),
+                    attached: RefCell::new(seed_attachments()),
                     next_id: RefCell::new(9100),
                 }),
             }
@@ -614,23 +740,19 @@ mod imp {
             mock_dir()
         }
 
-        /// Every seeded resource is on every item, unless detached; an added one is on
-        /// the items it was added to.
+        /// The resources attached to `item_id`, in the order they were attached.
         pub fn rows_for(&self, item_id: u64) -> Vec<ResourceRow> {
-            let detached = self.inner.detached.borrow();
-            let added = self.inner.added_to.borrow();
-            self.inner
-                .rows
+            let ids: Vec<u64> = self
+                .inner
+                .attached
                 .borrow()
                 .iter()
-                .filter(|r| {
-                    let on_item = match added.iter().find(|(id, _)| *id == r.id) {
-                        Some((_, items)) => items.contains(&item_id),
-                        None => true,
-                    };
-                    on_item && !detached.contains(&(item_id, r.id))
-                })
-                .cloned()
+                .filter(|(item, _)| *item == item_id)
+                .map(|(_, id)| *id)
+                .collect();
+            let rows = self.inner.rows.borrow();
+            ids.iter()
+                .filter_map(|id| rows.iter().find(|r| r.id == *id).cloned())
                 .collect()
         }
 
@@ -644,6 +766,46 @@ mod imp {
 
         pub fn by_id(&self, id: u64) -> Option<ResourceRow> {
             self.all().into_iter().find(|r| r.id == id)
+        }
+
+        pub fn by_ids(&self, ids: &[u64]) -> Vec<ResourceRow> {
+            self.all()
+                .into_iter()
+                .filter(|r| ids.contains(&r.id))
+                .collect()
+        }
+
+        pub fn attachments(&self, item_ids: &[u64]) -> HashMap<u64, Vec<u64>> {
+            let mut out: HashMap<u64, Vec<u64>> = HashMap::new();
+            for (item, id) in self.inner.attached.borrow().iter() {
+                if item_ids.contains(item) {
+                    out.entry(*item).or_default().push(*id);
+                }
+            }
+            out
+        }
+
+        pub fn unattached(&self) -> Vec<ResourceRow> {
+            let attached = self.inner.attached.borrow();
+            self.all()
+                .into_iter()
+                .filter(|r| !attached.iter().any(|(_, id)| *id == r.id))
+                .collect()
+        }
+
+        pub fn attach(&self, item_ids: &[u64], ids: &[u64]) -> Result<(), String> {
+            {
+                let mut attached = self.inner.attached.borrow_mut();
+                for item in item_ids {
+                    for id in ids {
+                        if !attached.contains(&(*item, *id)) {
+                            attached.push((*item, *id));
+                        }
+                    }
+                }
+            }
+            self.reload();
+            Ok(())
         }
 
         /// No backend to copy through: say what the files are, as the store run would.
@@ -749,9 +911,9 @@ mod imp {
             for row in rows {
                 created.push(row.id);
                 self.inner
-                    .added_to
+                    .attached
                     .borrow_mut()
-                    .push((row.id, item_ids.to_vec()));
+                    .extend(item_ids.iter().map(|item| (*item, row.id)));
                 self.inner.rows.borrow_mut().push(row);
             }
             self.reload();
@@ -800,7 +962,10 @@ mod imp {
         }
 
         pub fn detach(&self, item_id: u64, id: u64) -> Result<(), String> {
-            self.inner.detached.borrow_mut().insert((item_id, id));
+            self.inner
+                .attached
+                .borrow_mut()
+                .retain(|pair| *pair != (item_id, id));
             self.reload();
             Ok(())
         }
@@ -810,6 +975,10 @@ mod imp {
                 .rows
                 .borrow_mut()
                 .retain(|r| !ids.contains(&r.id));
+            self.inner
+                .attached
+                .borrow_mut()
+                .retain(|(_, id)| !ids.contains(id));
             self.reload();
             Ok(())
         }

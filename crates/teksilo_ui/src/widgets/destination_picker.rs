@@ -2,6 +2,8 @@
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
 //! "Where should this land?" — the live binder tree, single-select, read only.
+//! [`DestinationPicker::multiple`] asks "which items?" over the same tree instead,
+//! several at once: the Work's Resources page attaches a resource with it.
 //!
 //! Extracted from the **Restore to…** modal once document import needed the same
 //! question asked. The machinery was never trash-specific: a
@@ -176,6 +178,35 @@ impl DestinationPicker {
             selection: KeyedSelectionModel::new(SelectionMode::Single),
             pending: Rc::new(RefCell::new(None)),
         }
+    }
+
+    /// A picker of **items**, several at once (Ctrl+click, Shift+click): the question
+    /// "which items?" rather than "where?", which the Work's Resources page asks to
+    /// attach a resource. Read the answer with [`Self::selected_item_ids`]; a binder row
+    /// can be selected but is never an answer.
+    pub fn multiple(app_ctx: std::rc::Rc<AppContext>, work_id: Signal<Option<u64>>) -> Self {
+        Self {
+            selection: KeyedSelectionModel::new(SelectionMode::Multi),
+            ..Self::new(app_ctx, work_id)
+        }
+    }
+
+    /// The items chosen, in no particular order; binder rows left out.
+    pub fn selected_item_ids(&self) -> Vec<u64> {
+        self.selection
+            .selected_keys()
+            .iter()
+            .filter_map(|key| self.model.item_id_of(key))
+            .collect()
+    }
+
+    /// True while at least one item (not only a binder) is chosen: what a confirm
+    /// button of [`Self::multiple`] binds.
+    pub fn has_item_selection(&self) -> impl Into<Prop<bool>> + use<> {
+        let model = self.model.clone();
+        self.selection
+            .selection_signal()
+            .map(move |s| s.iter().any(|key| model.item_id_of(key).is_some()))
     }
 
     /// Open pointing at `key`, as if the writer had clicked that row.

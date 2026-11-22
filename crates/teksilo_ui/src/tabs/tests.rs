@@ -326,6 +326,55 @@ fn a_notes_folder_lays_out_its_two_segment_bar() {
     );
 }
 
+/// **Every folder has a Resources page**, the plain folder included, which gained a bar
+/// for it: asked for that segment, each folder's tab mounts the page under a bar, and an
+/// item's tab, which has no such segment, does not.
+#[test]
+fn every_folder_has_a_resources_segment_under_a_bar() {
+    use crate::tabs::shared::segments::{SEG_RESOURCES, segment_id};
+    use BinderItemRole::*;
+    use BinderItemSubRole::*;
+    let ctx = Rc::new(AppContext::new());
+    let tab = |role, sub_role| {
+        tab_for(
+            &ctx,
+            1,
+            &role,
+            &sub_role,
+            &[],
+            Signal::new(700.0),
+            Signal::new(true),
+            test_typography(),
+            crate::settings::EditorViewMemory::detached(false),
+            &AppIds::new(),
+        )
+    };
+    for sub_role in [None, Note, Paratext, ChapterScene, Part, Book] {
+        let tab = tab(Folder, sub_role.clone());
+        tab.segment.set(Some(segment_id(SEG_RESOURCES)));
+        let mut tree = crate::test_support::tree_with_settings(&ctx);
+        let id = tree.add_boxed(tab_pane(&tab));
+        tree.layout(teksilo::prelude::SizeProposal::exact(1000.0, 700.0));
+        assert!(
+            first_of_type(&tree, id, "SegmentedControl").is_some(),
+            "Folder/{sub_role:?} has no bar"
+        );
+        let page = first_of_type(&tree, id, "FolderResourcesPane")
+            .unwrap_or_else(|| panic!("Folder/{sub_role:?} did not mount its Resources page"));
+        let b = tree.bounds(page);
+        assert!(
+            b.width > 0.0 && b.height > 0.0,
+            "Folder/{sub_role:?}: the page laid out to nothing ({b:?})"
+        );
+    }
+    let scene = tab(Item, Scene);
+    scene.segment.set(Some(segment_id(SEG_RESOURCES)));
+    let mut tree = crate::test_support::tree_with_settings(&ctx);
+    let id = tree.add_boxed(tab_pane(&scene));
+    tree.layout(teksilo::prelude::SizeProposal::exact(1000.0, 700.0));
+    assert!(first_of_type(&tree, id, "FolderResourcesPane").is_none());
+}
+
 /// The Overview view-model exists for exactly the containers that offer the segment
 /// — a **wider** set than the stream's, because a notes folder has a subtree but no
 /// manuscript extent.

@@ -140,3 +140,90 @@ resources-drop-insert-link = Inserează o legătură către resursă
 
 progress-resources-storing = Se copiază fișierele
 progress-resources-stored = Fișiere copiate
+
+## Pagina Resurse a unui dosar
+
+segment-folder = Dosar
+resources-folder-count = { $count ->
+    [one] O resursă
+    [few] { $count } resurse
+   *[other] { $count } de resurse
+}
+resources-view-label = Afișează resursele ca
+resources-view-list = Listă
+resources-view-grid = Grilă
+resources-grid-label = Resurse
+resources-folder-drop-hint = Plasați aici fișiere sau adrese web pentru a le atașa acestui dosar
+resources-folder-empty = Nimic nu este încă atașat acestui dosar sau la ceea ce conține. Adăugați fișiere sau legături web cu butoanele de mai sus, sau plasați-le aici: vor fi atașate dosarului.
+resources-attached-to = La
+resources-attached-separator = ,
+resources-attached-more = { $count ->
+    [one] și încă unul
+    [few] și încă { $count }
+   *[other] și încă { $count }
+}
+resources-row-name-attached = { $name }, la { $items }
+resources-open-item = Deschide „{ $title }”
+resources-detach-from = Detașează de „{ $title }”
+
+## Resursele-imagine în Galerie
+
+gallery-resource-badge = Resursă
+gallery-tile-resource = Imagine-resursă a elementului { $title }: { $description }
+
+## Pagina Resurse din setările proiectului
+
+settings-page-resources = Resurse
+settings-desc-resources = Fișierele și legăturile web pe care nu le mai poartă niciun element: atașați-le din nou, eliminați-le sau exportați copii
+settings-resources-description = O resursă nu mai este atașată la nimic când este detașată de ultimul ei element, sau când elementul care o purta este șters definitiv. Rămâne în proiect, iar un fișier păstrat călătorește cu fiecare copie și fiecare copie de siguranță a proiectului, până când o atașați din nou sau o eliminați.
+settings-resources-group-storage = Spațiu
+settings-resources-group-unattached = Neatașate la nimic
+settings-resources-stored = Fișiere păstrate în acest proiect: { $size }
+settings-resources-folder-advice = Un proiect păstrat ca un singur fișier este rescris în întregime la fiecare salvare, cu tot cu fișierele păstrate. Păstrat ca dosar, salvează doar ce s-a schimbat, iar asta e mai rapid.
+settings-resources-count = { $count ->
+    [one] O resursă
+    [few] { $count } resurse
+   *[other] { $count } de resurse
+}
+settings-resources-empty = Fiecare resursă a acestui proiect este atașată unui element.
+resources-attach-to-items = Atașează la elemente…
+resources-export-copies = Exportă copii…
+resources-export-copy = Exportă o copie…
+resources-remove-many-title = Eliminați din proiect resursele ({ $count })?
+resources-attach-title = Atașează la elemente
+resources-attach-hint = Alegeți elementele la care atașați. Ctrl+clic sau Shift+clic alege mai multe.
+resources-attach-empty = Acest proiect nu are încă elemente.
+resources-attach-confirm = Atașează
+resources-attached = { $count ->
+    [one] O resursă atașată
+    [few] { $count } resurse atașate
+   *[other] { $count } de resurse atașate
+} la { $items ->
+    [one] un element
+    [few] { $items } elemente
+   *[other] { $items } de elemente
+}
+resources-export-title = Exportă copii într-un dosar
+resources-exported = { $count ->
+    [one] O resursă exportată
+    [few] { $count } resurse exportate
+   *[other] { $count } de resurse exportate
+}
+resources-export-missing = { $count ->
+    [one] Un fișier nu este unde îl așteaptă proiectul, și a fost lăsat deoparte: { $names }
+    [few] { $count } fișiere nu sunt unde le așteaptă proiectul, și au fost lăsate deoparte: { $names }
+   *[other] { $count } de fișiere nu sunt unde le așteaptă proiectul, și au fost lăsate deoparte: { $names }
+}
+resources-export-failed = { $count ->
+    [one] Un fișier nu a putut fi copiat: { $names }
+    [few] { $count } fișiere nu au putut fi copiate: { $names }
+   *[other] { $count } de fișiere nu au putut fi copiate: { $names }
+}
+
+## Preferința pentru fișierele mari (Comportamentul editorului)
+
+settings-resources-large-file = Fișiere de peste 10 MB
+settings-resources-large-ask = Întreabă de fiecare dată
+settings-resources-large-store = Păstrează întotdeauna în proiect
+settings-resources-large-link = Leagă întotdeauna la fișier
+settings-hint-resources-large-file = Ce se întâmplă cu un fișier de peste 10 MB pe care îl atașați ca resursă. Păstrat în proiect, călătorește cu fiecare copie și fiecare copie de siguranță a proiectului. Legat, rămâne unde este, iar proiectul ține minte doar unde să-l găsească.

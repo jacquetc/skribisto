@@ -7,12 +7,12 @@
 //! the [`heading`] form (Item Chapter / Part / BookBegin), the dual-pane
 //! [`prose`] editor (Item Scene / ChapterScene, and the "Note" segment of Item Note's
 //! own tab), the [`placeholder`] for contentless rows (Item BookEnd / Text), and the
-//! folder-container bodies ([`folder_synopsis_only`] for a plain grouping folder,
-//! [`folder_synopsis_with_overview`] for a notes folder, [`folder_segmented`] for the
-//! three structural containers). [`item_note_segmented`] is the one function here
-//! built for a single combination rather than several: it still belongs beside the
-//! others because it is the third caller (after `folder_synopsis_with_overview` and
-//! `folder_segmented`) of the segmented-tab machinery in this module's own
+//! folder-container bodies ([`folder_synopsis_with_overview`] for a notes or paratext
+//! folder, [`folder_segmented`] for the three structural containers).
+//! [`item_note_segmented`] and [`folder_synopsis_with_resources`] (a plain grouping
+//! folder) are built for a single combination each rather than several: they still
+//! belong beside the others because they too call the segmented-tab machinery in this
+//! module's own
 //! `remember` submodule, and that machinery is what actually needs to live in one
 //! place. The fields each body
 //! shows are decided by the constraint matrix (via `tab_for`), so one body covers
@@ -662,8 +662,8 @@ pub fn folder_own_pane(tab: &ContentTab) -> Box<dyn Widget> {
 /// chapter-title field) and the "Note" segment of an `Item/Note` tab (which switches
 /// to Notes typography).
 ///
-/// Body and backdrop are split the same way [`folder_synopsis_body`] and
-/// [`folder_synopsis_only`] are, and for the identical reason: [`prose_body`] is the
+/// Body and backdrop are split for the reason [`folder_synopsis_body`] has no backdrop
+/// of its own: [`prose_body`] is the
 /// content alone, reused by [`item_note_segmented`] as one segment among several
 /// sharing the *one* outer backdrop [`RememberSegment::wrap`] applies to the whole
 /// bar-plus-`Switcher` pair, while [`prose`] itself adds that backdrop directly for
@@ -872,22 +872,48 @@ pub fn placeholder(tab: &ContentTab) -> Box<dyn Widget> {
     )
 }
 
-/// A synopsis-only folder body (Folder/None): a plain grouping folder, which the matrix
-/// gives *only* a synopsis — so there is nothing to segment, and no stream (it has no
-/// manuscript extent).
+/// A plain grouping folder's body (`Folder/None`): its own page, which is its synopsis,
+/// then its **Resources**, the files and web links filed in it and in everything inside
+/// it.
 ///
+/// The matrix gives a plain folder only a synopsis and no manuscript extent, so there is
+/// no stream, Corkboard or Overview to offer; its research is the one other view it has.
 /// Its synopsis is the page, not a footnote to one, so it grows with its content like
 /// any other primary writing surface.
 ///
-/// A **notes** folder used to share this body; it now gets
-/// [`folder_synopsis_with_overview`] instead, because it does have a subtree to tabulate.
-pub fn folder_synopsis_only(tab: &ContentTab) -> Box<dyn Widget> {
-    tab_backdrop(tab.backdrop_role(), folder_synopsis_body(tab, true))
+/// It used to be a bare synopsis page with no bar at all (`folder_synopsis_only`, which a
+/// notes folder shared until it got [`folder_synopsis_with_overview`]).
+/// Registered segments are not offered here: a plain folder had no bar when the slot was
+/// opened, and a segment registered for the containers that had one cannot be assumed to
+/// mean this one.
+pub fn folder_synopsis_with_resources(tab: &ContentTab) -> Box<dyn Widget> {
+    let items: Vec<(&str, LocalizedString, Box<dyn Widget>)> = vec![
+        (
+            segments::SEG_OWN,
+            tr!(segment_folder()),
+            Box::new(folder_synopsis_body(
+                tab,
+                segment_will_show(tab, segments::SEG_OWN),
+            )) as Box<dyn Widget>,
+        ),
+        (
+            segments::SEG_RESOURCES,
+            tr!(resources_title()),
+            crate::resources::folder_pane::resources_pane(tab),
+        ),
+    ];
+    Box::new(RememberSegment::wrap(tab, items, &[], |bar, content| {
+        VStack::new()
+            .spacing(8.0)
+            .child(vspace(10.0))
+            .child(centered(bar, &tab.column_width))
+            .child(Expand::new().child(content))
+    }))
 }
 
-/// The synopsis page itself, without the tab backdrop — so it can be either a whole tab
-/// body ([`folder_synopsis_only`]) or one segment of one
-/// ([`folder_synopsis_with_overview`]), which owns the backdrop for the pair.
+/// The synopsis page itself, without the tab backdrop: one segment of a folder's bar
+/// ([`folder_synopsis_with_overview`], [`folder_synopsis_with_resources`]), whose
+/// wrapper owns the backdrop for the bar and its pages.
 fn folder_synopsis_body(tab: &ContentTab, will_show: bool) -> impl Widget {
     let (area, port, page) = writing_page_scroll(tab, will_show);
     // One token for this page: the editors below and the lane beside them are the
@@ -1006,6 +1032,12 @@ pub fn folder_synopsis_with_overview(tab: &ContentTab) -> Box<dyn Widget> {
             crate::tabs::gallery::gallery_pane(tab),
         ));
     }
+    // Every folder has its Resources page, a paratext folder's too.
+    items.push((
+        segments::SEG_RESOURCES,
+        tr!(resources_title()),
+        crate::resources::folder_pane::resources_pane(tab),
+    ));
     for spec in segments::registered_for(&sub_role) {
         // Leaked so the id borrows for the rest of this build: see `folder_segmented`,
         // which leaks the same way for the same reason: bounded by the number of
@@ -1184,6 +1216,13 @@ pub fn folder_segmented(
         let id: &str = id;
         (id, label, pane)
     }));
+    // The research filed in the container and everything inside it: after the
+    // container's own views, before the two views of its manuscript.
+    items.push((
+        segments::SEG_RESOURCES,
+        tr!(resources_title()),
+        crate::resources::folder_pane::resources_pane(tab),
+    ));
     for spec in segments::registered_for(&sub_role) {
         // Leaked so the id borrows for the rest of this build. Bounded by the number of
         // distinct registered segment ids in the process — a handful, registered once at

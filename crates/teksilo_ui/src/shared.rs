@@ -92,6 +92,9 @@ pub mod stamps;
 mod synopsis_placement;
 mod tab_limit;
 pub mod text;
+/// A picture's thumbnail in a waterfall grid, laid out from its stored size before it
+/// decodes: the Gallery's tiles and a folder's Resources grid.
+pub mod thumbnail;
 mod typewriter;
 /// The interface's language as a plain tag.
 pub(crate) mod ui_locale;

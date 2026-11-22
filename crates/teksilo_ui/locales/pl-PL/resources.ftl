@@ -145,3 +145,98 @@ resources-drop-insert-link = Wstaw odnośnik do zasobu
 
 progress-resources-storing = Kopiowanie plików
 progress-resources-stored = Pliki skopiowane
+
+## Strona Zasoby folderu
+
+segment-folder = Folder
+resources-folder-count = { $count ->
+    [one] Jeden zasób
+    [few] { $count } zasoby
+    [many] { $count } zasobów
+   *[other] { $count } zasobu
+}
+resources-view-label = Pokaż zasoby jako
+resources-view-list = Lista
+resources-view-grid = Siatka
+resources-grid-label = Zasoby
+resources-folder-drop-hint = Upuść tu pliki lub adresy internetowe, aby dołączyć je do tego folderu
+resources-folder-empty = Do tego folderu ani do niczego, co zawiera, nic jeszcze nie dołączono. Dodaj pliki lub odnośniki internetowe przyciskami powyżej albo upuść je tutaj: zostaną dołączone do folderu.
+resources-attached-to = W
+resources-attached-separator = ,
+resources-attached-more = { $count ->
+    [one] i jeszcze jednym
+    [few] i jeszcze { $count }
+    [many] i jeszcze { $count }
+   *[other] i jeszcze { $count }
+}
+resources-row-name-attached = { $name }, w { $items }
+resources-open-item = Otwórz „{ $title }”
+resources-detach-from = Odłącz od „{ $title }”
+
+## Zasoby-obrazy w Galerii
+
+gallery-resource-badge = Zasób
+gallery-tile-resource = Obraz będący zasobem elementu { $title }: { $description }
+
+## Strona Zasoby w ustawieniach projektu
+
+settings-page-resources = Zasoby
+settings-desc-resources = Pliki i odnośniki internetowe, których nie ma już żaden element: dołącz je ponownie, usuń je lub wyeksportuj kopie
+settings-resources-description = Zasób nie jest dołączony do niczego, gdy odłączysz go od jego ostatniego elementu albo gdy element, do którego był dołączony, zostanie usunięty na dobre. Zostaje w projekcie, a przechowywany plik wędruje z każdą kopią i każdą kopią zapasową projektu, dopóki nie dołączysz go ponownie albo go nie usuniesz.
+settings-resources-group-storage = Miejsce
+settings-resources-group-unattached = Niedołączone do niczego
+settings-resources-stored = Pliki przechowywane w tym projekcie: { $size }
+settings-resources-folder-advice = Projekt trzymany w jednym pliku jest zapisywany od nowa w całości przy każdym zapisie, razem z przechowywanymi plikami. Trzymany jako folder zapisuje tylko to, co się zmieniło, a to jest szybsze.
+settings-resources-count = { $count ->
+    [one] Jeden zasób
+    [few] { $count } zasoby
+    [many] { $count } zasobów
+   *[other] { $count } zasobu
+}
+settings-resources-empty = Każdy zasób tego projektu jest dołączony do jakiegoś elementu.
+resources-attach-to-items = Dołącz do elementów…
+resources-export-copies = Eksportuj kopie…
+resources-export-copy = Eksportuj kopię…
+resources-remove-many-title = Usunąć zasoby ({ $count }) z projektu?
+resources-attach-title = Dołącz do elementów
+resources-attach-hint = Wybierz elementy, do których dołączyć. Ctrl+kliknięcie lub Shift+kliknięcie wybiera kilka.
+resources-attach-empty = Ten projekt nie ma jeszcze elementów.
+resources-attach-confirm = Dołącz
+resources-attached = { $count ->
+    [one] Dołączono jeden zasób
+    [few] Dołączono { $count } zasoby
+    [many] Dołączono { $count } zasobów
+   *[other] Dołączono { $count } zasobu
+} do { $items ->
+    [one] jednego elementu
+    [few] { $items } elementów
+    [many] { $items } elementów
+   *[other] { $items } elementu
+}
+resources-export-title = Eksportuj kopie do folderu
+resources-exported = { $count ->
+    [one] Wyeksportowano jeden zasób
+    [few] Wyeksportowano { $count } zasoby
+    [many] Wyeksportowano { $count } zasobów
+   *[other] Wyeksportowano { $count } zasobu
+}
+resources-export-missing = { $count ->
+    [one] Jednego pliku nie ma tam, gdzie oczekuje go projekt, więc pominięto go: { $names }
+    [few] { $count } plików nie ma tam, gdzie oczekuje ich projekt, więc pominięto je: { $names }
+    [many] { $count } plików nie ma tam, gdzie oczekuje ich projekt, więc pominięto je: { $names }
+   *[other] { $count } pliku nie ma tam, gdzie oczekuje go projekt, więc pominięto go: { $names }
+}
+resources-export-failed = { $count ->
+    [one] Nie udało się skopiować jednego pliku: { $names }
+    [few] Nie udało się skopiować { $count } plików: { $names }
+    [many] Nie udało się skopiować { $count } plików: { $names }
+   *[other] Nie udało się skopiować { $count } pliku: { $names }
+}
+
+## Ustawienie dla dużych plików (Zachowanie edytora)
+
+settings-resources-large-file = Pliki powyżej 10 MB
+settings-resources-large-ask = Pytaj za każdym razem
+settings-resources-large-store = Zawsze przechowuj w projekcie
+settings-resources-large-link = Zawsze łącz z plikiem
+settings-hint-resources-large-file = Co dzieje się z plikiem powyżej 10 MB, który dołączasz jako zasób. Przechowywany w projekcie wędruje z każdą kopią i każdą kopią zapasową projektu. Połączony zostaje tam, gdzie jest, a projekt pamięta tylko, gdzie go znaleźć.

@@ -77,7 +77,11 @@ pub struct ViewerFile {
 /// Opens the current picture in another application, when the opener is not simply
 /// "hand the file to the desktop": a resource's stored file goes through the Resources
 /// feature, which opens a single-file project's as a copy and brings an edit back.
-pub type OpenElsewhereFn = Rc<dyn Fn(&mut EventContext)>;
+///
+/// Handed the current entry, and answers whether it opened it: a list that mixes
+/// pictures of the text with resources (the Gallery) opens only the resources itself,
+/// and leaves the rest to the desktop hand-over.
+pub type OpenElsewhereFn = Rc<dyn Fn(&mut EventContext, &ViewerEntry) -> bool>;
 
 impl ViewerEntry {
     /// The entries for every picture of one text, in document order.
@@ -246,8 +250,10 @@ impl PictureViewerViewModel {
     /// with. Only ever a project picture: a reference the writer typed is never handed to
     /// the desktop, so nothing in a document can make the viewer launch an arbitrary path.
     pub fn open_externally(&self, ctx: &mut EventContext) {
-        if let Some(open) = &self.open_elsewhere {
-            open(ctx);
+        if let Some(open) = &self.open_elsewhere
+            && let Some(entry) = self.current().cloned()
+            && open(ctx, &entry)
+        {
             return;
         }
         if let Some(path) = self.current_path().filter(|p| p.exists()) {

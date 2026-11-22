@@ -160,7 +160,7 @@ fn the_gallery_reads_each_notes_own_pictures_in_binder_order() {
             ("Deep shot".to_string(), 1, 1, false),
         ]
     );
-    assert_eq!(notes[0].pictures[1].src, B);
+    assert_eq!(notes[0].pictures[1].image.src, B);
     assert_eq!(notes[1].excerpt, "Only words here.");
 
     let tiles = build_tiles(&notes, GalleryOptions::default());
@@ -174,7 +174,7 @@ fn the_gallery_reads_each_notes_own_pictures_in_binder_order() {
             previews, pictures, ..
         } => {
             assert_eq!(*pictures, 1);
-            assert_eq!(previews[0].src, C);
+            assert_eq!(previews[0].image.src, C);
         }
         other => panic!("a folder tile, got {other:?}"),
     }
@@ -253,4 +253,204 @@ fn the_viewer_walks_the_picture_tiles_in_their_order() {
         entries[2].item.as_ref().map(|i| i.title.as_str()),
         Some("One shot")
     );
+}
+
+// ── Picture resources ────────────────────────────────────────────────────────
+
+/// The project's resources, with stored pictures (and one PDF) attached where asked.
+struct Research {
+    model: crate::models::ResourcesListModel,
+    _dir: tempfile::TempDir,
+}
+
+impl Research {
+    fn new(f: &Fixture) -> Self {
+        let dir = tempfile::tempdir().unwrap_or_else(|e| panic!("tmp: {e}"));
+        let model = crate::models::ResourcesListModel::new(f.app_ctx.clone(), f.ids.clone());
+        model.set_media_root(dir.path().join("media"));
+        Self { model, _dir: dir }
+    }
+
+    /// Attach a stored file called `name` to `items`.
+    fn attach(&self, items: &[u64], name: &str) -> u64 {
+        let picture = crate::resources::file_kind::is_viewable_picture(name);
+        let stored = frontend::resource_management::StoredResourceFilesDto {
+            uids: vec![uuid::Uuid::new_v4().hyphenated().to_string()],
+            file_names: vec![name.to_string()],
+            mime_types: vec![String::new()],
+            byte_sizes: vec![1024],
+            content_hashes: vec!["d".repeat(64)],
+            widths: vec![if picture { 1600 } else { 0 }],
+            heights: vec![if picture { 900 } else { 0 }],
+            ..Default::default()
+        };
+        self.model
+            .add(items, &stored, &[], &[])
+            .unwrap_or_else(|e| panic!("add: {e}"))[0]
+    }
+}
+
+impl Fixture {
+    fn gallery_with(&self, research: &Research) -> GalleryViewModel {
+        self.gallery()
+            .with_resources(research.model.clone(), Signal::new("Research".into()))
+    }
+}
+
+/// What each note holds, as `title: picture names`, a resource by its file name.
+fn holdings(notes: &[GalleryNote]) -> Vec<String> {
+    notes
+        .iter()
+        .map(|n| {
+            let pictures: Vec<String> = n
+                .pictures
+                .iter()
+                .map(|p| match &p.resource {
+                    Some(r) => r.file_name.clone(),
+                    None => p.image.src[7..9].to_string(),
+                })
+                .collect();
+            format!("{}: {}", n.title, pictures.join(" "))
+        })
+        .collect()
+}
+
+#[test]
+fn a_picture_resource_is_a_picture_of_its_note_after_those_of_its_text() {
+    let f = Fixture::new();
+    let shots = f.note("Two shots", 1, &format!("{}\n\n{}", picture(A), picture(B)));
+    let quote = f.note("Typed quote", 1, "Only words here.");
+    let threads = f.item("Threads", BinderItemRole::Folder, 1, true);
+    f.note("Deep shot", 2, &picture(C));
+    let research = Research::new(&f);
+    research.attach(&[shots], "Quay.jpg");
+    research.attach(&[quote], "Gull.png");
+    research.attach(&[quote], "Notes.pdf");
+    research.attach(&[threads], "Lamp.jpg");
+    research.attach(&[f.folder], "Coast.jpg");
+    let notes = f.gallery_with(&research).notes();
+    assert_eq!(
+        holdings(&notes),
+        [
+            // The folder's own, first: the folder itself, not a subfolder tile.
+            "Research: Coast.jpg",
+            "Two shots: aa bb Quay.jpg",
+            // A PDF is a resource but not a picture.
+            "Typed quote: Gull.png",
+            "Threads: Lamp.jpg",
+            "Deep shot: cc",
+        ]
+    );
+    assert!(!notes[0].is_folder && notes[3].is_folder);
+
+    // Every mode stays coherent: First image counts the resource; All images shows it.
+    let first = build_tiles(&notes, GalleryOptions::default());
+    let more: Vec<(u64, usize)> = first
+        .iter()
+        .filter_map(|t| match t {
+            GalleryTile::Picture { item_id, more, .. } => Some((*item_id, *more)),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(more, [(f.folder, 0), (shots, 2), (quote, 0)]);
+    match &first[3] {
+        GalleryTile::Folder {
+            pictures, previews, ..
+        } => {
+            assert_eq!(
+                *pictures, 2,
+                "the subfolder's own resource and its note's picture"
+            );
+            assert!(previews[0].is_resource());
+        }
+        other => panic!("the subfolder's tile, got {other:?}"),
+    }
+    let all = build_tiles(
+        &notes,
+        GalleryOptions {
+            all_images: true,
+            nested: false,
+            text_notes: false,
+        },
+    );
+    assert_eq!(all.len(), 7, "coast, a, b, quay, gull, lamp, c: {all:?}");
+    assert!(
+        !tiles::has_text_only_notes(&notes),
+        "a note whose picture is a resource is not a text note"
+    );
+}
+
+#[test]
+fn the_viewer_opens_a_resource_from_its_file_in_the_gallerys_order() {
+    let f = Fixture::new();
+    let shots = f.note("Two shots", 1, &picture(A));
+    let research = Research::new(&f);
+    let quay = research.attach(&[shots], "Quay.jpg");
+    let gallery = f.gallery_with(&research);
+    let options = GalleryOptions {
+        all_images: true,
+        ..GalleryOptions::default()
+    };
+    let tiles = build_tiles(&gallery.notes(), options);
+    let (entries, at) = gallery.viewer_entries(&tiles);
+    assert_eq!(at, [Some(0), Some(1)]);
+    assert_eq!(entries[0].src, A);
+    let row = research
+        .model
+        .by_id(quay)
+        .unwrap_or_else(|| panic!("the resource"));
+    assert_eq!(
+        entries[1].src,
+        crate::resources::links::resource_href(row.uid)
+    );
+    assert_eq!(entries[1].file_name.as_deref(), Some("Quay.jpg"));
+    assert_eq!(
+        entries[1].file.as_ref().map(|file| file.path.clone()),
+        row.path,
+        "the viewer reads the resource's own file"
+    );
+}
+
+#[test]
+fn a_filter_keeps_the_folders_own_resources_out_and_a_filtered_notes_with_it() {
+    let f = Fixture::new();
+    let gull = f.note("Gull on a post", 1, &picture(A));
+    let lamp = f.note("Lighthouse", 1, &picture(B));
+    let research = Research::new(&f);
+    research.attach(&[f.folder], "Coast.jpg");
+    research.attach(&[gull], "Gull.png");
+    research.attach(&[lamp], "Lamp.jpg");
+    let gallery = f.gallery_with(&research);
+    gallery.overview().search_query_signal().set("gull".into());
+    assert_eq!(holdings(&gallery.notes()), ["Gull on a post: aa Gull.png"]);
+}
+
+#[test]
+fn a_gallery_with_no_resources_model_shows_the_pictures_of_the_text_only() {
+    let f = Fixture::new();
+    let shots = f.note("Two shots", 1, &picture(A));
+    let research = Research::new(&f);
+    research.attach(&[shots, f.folder], "Quay.jpg");
+    assert_eq!(holdings(&f.gallery().notes()), ["Two shots: aa"]);
+}
+
+/// A resource reaches the Gallery, and so the viewer's "Open in another app", by the
+/// file it opens: a link named like a picture but pointing at a launcher is not one.
+#[test]
+fn a_link_named_like_a_picture_but_opening_something_else_is_not_shown() {
+    use crate::models::{ResourceKind, ResourceRow};
+    let disguised = ResourceRow {
+        kind: ResourceKind::LinkedFile,
+        file_name: "lighthouse.png".into(),
+        path: Some(std::path::PathBuf::from("/home/someone/evil.desktop")),
+        ..Default::default()
+    };
+    assert!(!super::is_picture_resource(&disguised));
+    let honest = ResourceRow {
+        kind: ResourceKind::LinkedFile,
+        file_name: "lighthouse.png".into(),
+        path: Some(std::path::PathBuf::from("/home/someone/lighthouse.png")),
+        ..Default::default()
+    };
+    assert!(super::is_picture_resource(&honest));
 }

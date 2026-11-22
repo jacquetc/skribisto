@@ -72,6 +72,56 @@ fn image_policy_index(value: &str) -> usize {
         .unwrap_or(0)
 }
 
+/// The three values `resources.large_file` takes, in the order they are offered: the
+/// storage vocabulary the Resources dock's question reads back
+/// (`resources::large_file_choice`), as the image policy's is above.
+const LARGE_FILE_CHOICES: [&str; 3] = ["ask", "store", "link"];
+
+/// Display name for each large-file answer, worded as the dock's question words them.
+fn large_file_label(value: &str) -> LocalizedString {
+    match value {
+        "store" => tr!(settings_resources_large_store()),
+        "link" => tr!(settings_resources_large_link()),
+        _ => tr!(settings_resources_large_ask()),
+    }
+}
+
+/// Which choice a stored large-file answer selects; anything unrecognised is "Ask each
+/// time", the dock's own reading of it.
+fn large_file_choice(value: &str) -> &'static str {
+    LARGE_FILE_CHOICES
+        .iter()
+        .find(|p| **p == value)
+        .copied()
+        .unwrap_or(LARGE_FILE_CHOICES[0])
+}
+
+/// Bridge the stored `resources.large_file` string to the `ComboBox`'s selection, the
+/// image policy's bridge over another vocabulary. A combo box rather than segments: the
+/// three answers are worded as the dock's question words them, and three sentences that
+/// long do not fit side by side.
+fn bridge_large_file(
+    ctx: &mut BuildContext,
+    choice: Signal<String>,
+) -> Signal<Option<&'static str>> {
+    let selected = Signal::new(Some(large_file_choice(&choice.get())));
+    {
+        let selected = selected.clone();
+        ctx.effect(&choice, move |v: &String| {
+            selected.set_if_changed(Some(large_file_choice(v)));
+        });
+    }
+    {
+        ctx.effect(&selected, move |s| {
+            let want = s.unwrap_or(LARGE_FILE_CHOICES[0]).to_string();
+            if choice.get() != want {
+                choice.set(want);
+            }
+        });
+    }
+    selected
+}
+
 /// Display name for each caret-band scope.
 fn highlight_scope_label(scope: HighlightScope) -> LocalizedString {
     match scope {
@@ -296,6 +346,13 @@ pub(in crate::settings) fn editor_behavior_pane(
             control.segment(Segment::new(image_policy_label(value)))
         });
 
+    let large_file_control = ComboBox::from_items(
+        LARGE_FILE_CHOICES,
+        bridge_large_file(ctx, vm.resources_large_file()),
+        |value: &&str| large_file_label(value),
+    )
+    .label(tr!(settings_resources_large_file()));
+
     let choice_index = bridge_synopsis_choice(ctx, vm.synopsis_pane(), vm.synopsis_placement());
     let synopsis_control = SYNOPSIS_CHOICES.into_iter().fold(
         SegmentedControl::indexed(choice_index),
@@ -388,6 +445,14 @@ pub(in crate::settings) fn editor_behavior_pane(
             image_policy_control,
         )
         .full_width(hint(tr!(settings_hint_image_size_policy())))
+        // The same one-way door on the Resources side: the large-file question's
+        // "Don't ask again" writes here, and this is the way back.
+        .full_width(group(tr!(resources_title())))
+        .line(
+            field_label(tr!(settings_resources_large_file())),
+            large_file_control,
+        )
+        .full_width(hint(tr!(settings_hint_resources_large_file())))
         // How many tabs a pane keeps. Applied when a tab opens, never on the change
         // itself, which the hint says, since nothing visible happens on the click.
         .full_width(group(tr!(settings_group_tabs())))
@@ -463,6 +528,65 @@ mod tests {
             index,
             _tree: tree,
         }
+    }
+
+    /// Hosts [`bridge_large_file`] the way [`PolicyHost`] hosts the image policy's.
+    struct LargeFileHost {
+        choice: Signal<String>,
+        out: Rc<std::cell::RefCell<Option<Signal<Option<&'static str>>>>>,
+    }
+    impl std::fmt::Debug for LargeFileHost {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_struct("LargeFileHost").finish()
+        }
+    }
+    impl Widget for LargeFileHost {
+        fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+            *self.out.borrow_mut() = Some(bridge_large_file(ctx, self.choice.clone()));
+            Vec::new()
+        }
+        fn layout_response(&self, proposal: SizeProposal, _ctx: &LayoutContext) -> LayoutResponse {
+            proposal.resolve(0.0, 0.0).into()
+        }
+    }
+
+    /// The Resources dock's large-file question and this page speak one vocabulary: the
+    /// three values the combo box writes are the ones the question reads back, and
+    /// picking one writes it, while one written by the question's "Don't ask again"
+    /// moves the combo box.
+    #[test]
+    fn the_large_file_preference_round_trips_with_the_docks_question() {
+        use crate::resources::{LargeFileChoice, large_file_choice as read};
+        assert_eq!(LARGE_FILE_CHOICES[0], crate::RESOURCES_LARGE_FILE_DEFAULT);
+        assert_eq!(
+            read(LARGE_FILE_CHOICES[0]),
+            None,
+            "ask: the question comes up"
+        );
+        assert_eq!(read(LARGE_FILE_CHOICES[1]), Some(LargeFileChoice::Store));
+        assert_eq!(read(LARGE_FILE_CHOICES[2]), Some(LargeFileChoice::Link));
+
+        let choice = Signal::new("ask".to_string());
+        let out = Rc::new(std::cell::RefCell::new(None));
+        let mut tree = WidgetTree::new();
+        tree.add(LargeFileHost {
+            choice: choice.clone(),
+            out: out.clone(),
+        });
+        tree.layout(SizeProposal::exact(100.0, 100.0));
+        let selected = out.borrow().clone().expect("the bridge was built");
+        assert_eq!(selected.get(), Some("ask"));
+        selected.set(Some("link"));
+        assert_eq!(choice.get(), "link");
+        choice.set("store".to_string()); // the question's "Don't ask again"
+        assert_eq!(selected.get(), Some("store"));
+        choice.set("whatever".to_string());
+        assert_eq!(
+            selected.get(),
+            Some("ask"),
+            "unknown reads as ask, as the dock does"
+        );
+        drop(tree);
     }
 
     /// The vocabulary this page writes is the one the *insert* path reads.

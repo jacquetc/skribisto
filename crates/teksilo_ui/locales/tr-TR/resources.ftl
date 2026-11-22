@@ -135,3 +135,82 @@ resources-drop-insert-link = Kaynağa bağlantı ekle
 
 progress-resources-storing = Dosyalar kopyalanıyor
 progress-resources-stored = Dosyalar kopyalandı
+
+## Bir klasörün Kaynaklar sayfası
+
+segment-folder = Klasör
+resources-folder-count = { $count ->
+    [one] Bir kaynak
+   *[other] { $count } kaynak
+}
+resources-view-label = Kaynakları göster
+resources-view-list = Liste olarak
+resources-view-grid = Izgara olarak
+resources-grid-label = Kaynaklar
+resources-folder-drop-hint = Bu klasöre eklemek için dosyaları veya web adreslerini buraya bırakın
+resources-folder-empty = Bu klasöre ve içindekilere henüz hiçbir şey eklenmedi. Yukarıdaki düğmelerle dosya veya web bağlantısı ekleyin ya da onları buraya bırakın: klasöre eklenirler.
+resources-attached-to = Ekli:
+resources-attached-separator = ,
+resources-attached-more = { $count ->
+    [one] ve bir tane daha
+   *[other] ve { $count } tane daha
+}
+resources-row-name-attached = { $name }, ekli: { $items }
+resources-open-item = “{ $title }” öğesini aç
+resources-detach-from = “{ $title }” öğesinden ayır
+
+## Galerideki resim kaynakları
+
+gallery-resource-badge = Kaynak
+gallery-tile-resource = { $title } öğesinin resim kaynağı: { $description }
+
+## Proje ayarlarının Kaynaklar sayfası
+
+settings-page-resources = Kaynaklar
+settings-desc-resources = Artık hiçbir öğeye ekli olmayan dosyalar ve web bağlantıları: onları yeniden ekleyin, kaldırın ya da kopyalarını dışa aktarın
+settings-resources-description = Bir kaynak, son öğesinden ayrıldığında ya da ekli olduğu öğe kalıcı olarak silindiğinde hiçbir şeye ekli olmaz. Projede kalır ve saklanan bir dosya, siz onu yeniden ekleyene ya da kaldırana kadar projenin her kopyasıyla ve her yedeğiyle birlikte taşınır.
+settings-resources-group-storage = Depolama
+settings-resources-group-unattached = Hiçbir şeye ekli değil
+settings-resources-stored = Bu projede saklanan dosyalar: { $size }
+settings-resources-folder-advice = Tek bir dosya olarak tutulan bir proje, saklanan dosyalarıyla birlikte her kayıtta baştan yazılır. Klasör olarak tutulduğunda yalnızca değişeni kaydeder ve bu daha hızlıdır.
+settings-resources-count = { $count ->
+    [one] Bir kaynak
+   *[other] { $count } kaynak
+}
+settings-resources-empty = Bu projenin her kaynağı bir öğeye ekli.
+resources-attach-to-items = Öğelere ekle…
+resources-export-copies = Kopyaları dışa aktar…
+resources-export-copy = Bir kopyayı dışa aktar…
+resources-remove-many-title = { $count } kaynak projeden kaldırılsın mı?
+resources-attach-title = Öğelere ekle
+resources-attach-hint = Eklenecek öğeleri seçin. Ctrl+tıklama veya Shift+tıklama birden fazlasını seçer.
+resources-attach-empty = Bu projede henüz öğe yok.
+resources-attach-confirm = Ekle
+resources-attached = { $count ->
+    [one] Bir kaynak
+   *[other] { $count } kaynak
+} { $items ->
+    [one] bir öğeye eklendi
+   *[other] { $items } öğeye eklendi
+}
+resources-export-title = Kopyaları bir klasöre aktar
+resources-exported = { $count ->
+    [one] Bir kaynak dışa aktarıldı
+   *[other] { $count } kaynak dışa aktarıldı
+}
+resources-export-missing = { $count ->
+    [one] Bir dosya projenin beklediği yerde değil ve dışarıda bırakıldı: { $names }
+   *[other] { $count } dosya projenin beklediği yerde değil ve dışarıda bırakıldı: { $names }
+}
+resources-export-failed = { $count ->
+    [one] Bir dosya kopyalanamadı: { $names }
+   *[other] { $count } dosya kopyalanamadı: { $names }
+}
+
+## Büyük dosyalar tercihi (Düzenleyici davranışı)
+
+settings-resources-large-file = 10 MB'tan büyük dosyalar
+settings-resources-large-ask = Her seferinde sor
+settings-resources-large-store = Her zaman projede sakla
+settings-resources-large-link = Her zaman dosyaya bağla
+settings-hint-resources-large-file = Kaynak olarak eklediğiniz 10 MB'tan büyük bir dosyaya ne olacağı. Projede saklanırsa projenin her kopyasıyla ve her yedeğiyle birlikte taşınır. Bağlanırsa olduğu yerde kalır ve proje yalnızca onu nerede bulacağını hatırlar.

@@ -135,3 +135,82 @@ resources-drop-insert-link = Insertar un enlace al recurso
 
 progress-resources-storing = Copiando los archivos
 progress-resources-stored = Archivos copiados
+
+## La página Recursos de una carpeta
+
+segment-folder = Carpeta
+resources-folder-count = { $count ->
+    [one] Un recurso
+   *[other] { $count } recursos
+}
+resources-view-label = Mostrar los recursos como
+resources-view-list = Lista
+resources-view-grid = Cuadrícula
+resources-grid-label = Recursos
+resources-folder-drop-hint = Suelte archivos o direcciones web para adjuntarlos a esta carpeta
+resources-folder-empty = Todavía no hay nada adjunto a esta carpeta ni a lo que contiene. Añada archivos o enlaces web con los botones de arriba, o suéltelos aquí: se adjuntan a la carpeta.
+resources-attached-to = En
+resources-attached-separator = ,
+resources-attached-more = { $count ->
+    [one] y uno más
+   *[other] y { $count } más
+}
+resources-row-name-attached = { $name }, en { $items }
+resources-open-item = Abrir «{ $title }»
+resources-detach-from = Separar de «{ $title }»
+
+## Las imágenes que son recursos, en la Galería
+
+gallery-resource-badge = Recurso
+gallery-tile-resource = Imagen que es un recurso de { $title }: { $description }
+
+## La página Recursos de los ajustes del proyecto
+
+settings-page-resources = Recursos
+settings-desc-resources = Los archivos y enlaces web que ya no lleva ningún elemento: vuelva a adjuntarlos, quítelos o exporte copias
+settings-resources-description = Un recurso deja de estar adjunto a nada cuando se separa de su último elemento, o cuando el elemento que lo llevaba se elimina para siempre. Sigue en el proyecto, y un archivo guardado viaja con cada copia y cada copia de seguridad del proyecto, hasta que vuelva a adjuntarlo o lo quite.
+settings-resources-group-storage = Almacenamiento
+settings-resources-group-unattached = Adjuntos a nada
+settings-resources-stored = Archivos guardados en este proyecto: { $size }
+settings-resources-folder-advice = Un proyecto guardado como un solo archivo se reescribe entero cada vez que se guarda, sus archivos guardados también. Guardado como carpeta, solo guarda lo que ha cambiado, y es más rápido.
+settings-resources-count = { $count ->
+    [one] Un recurso
+   *[other] { $count } recursos
+}
+settings-resources-empty = Cada recurso de este proyecto está adjunto a un elemento.
+resources-attach-to-items = Adjuntar a elementos…
+resources-export-copies = Exportar copias…
+resources-export-copy = Exportar una copia…
+resources-remove-many-title = ¿Quitar { $count } recursos del proyecto?
+resources-attach-title = Adjuntar a elementos
+resources-attach-hint = Elija los elementos a los que adjuntar. Ctrl+clic o Mayús+clic elige varios.
+resources-attach-empty = Este proyecto todavía no tiene elementos.
+resources-attach-confirm = Adjuntar
+resources-attached = { $count ->
+    [one] Un recurso adjuntado
+   *[other] { $count } recursos adjuntados
+} a { $items ->
+    [one] un elemento
+   *[other] { $items } elementos
+}
+resources-export-title = Exportar copias a una carpeta
+resources-exported = { $count ->
+    [one] Un recurso exportado
+   *[other] { $count } recursos exportados
+}
+resources-export-missing = { $count ->
+    [one] Un archivo no está donde el proyecto lo espera, y se ha dejado fuera: { $names }
+   *[other] { $count } archivos no están donde el proyecto los espera, y se han dejado fuera: { $names }
+}
+resources-export-failed = { $count ->
+    [one] Un archivo no se ha podido copiar: { $names }
+   *[other] { $count } archivos no se han podido copiar: { $names }
+}
+
+## La preferencia de los archivos grandes (Comportamiento del editor)
+
+settings-resources-large-file = Archivos de más de 10 MB
+settings-resources-large-ask = Preguntar cada vez
+settings-resources-large-store = Guardar siempre en el proyecto
+settings-resources-large-link = Vincular siempre al archivo
+settings-hint-resources-large-file = Qué ocurre con un archivo de más de 10 MB que adjunta como recurso. Guardado en el proyecto, viaja con cada copia y cada copia de seguridad del proyecto. Vinculado, se queda donde está, y el proyecto solo recuerda dónde encontrarlo.

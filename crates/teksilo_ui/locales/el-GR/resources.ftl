@@ -135,3 +135,82 @@ resources-drop-insert-link = Παρεμβολή συνδέσμου προς το
 
 progress-resources-storing = Αντιγραφή των αρχείων
 progress-resources-stored = Τα αρχεία αντιγράφηκαν
+
+## Η σελίδα Πόροι ενός φακέλου
+
+segment-folder = Φάκελος
+resources-folder-count = { $count ->
+    [one] Ένας πόρος
+   *[other] { $count } πόροι
+}
+resources-view-label = Εμφάνιση των πόρων ως
+resources-view-list = Λίστα
+resources-view-grid = Πλέγμα
+resources-grid-label = Πόροι
+resources-folder-drop-hint = Αφήστε εδώ αρχεία ή διευθύνσεις ιστού για να τα επισυνάψετε σε αυτόν τον φάκελο
+resources-folder-empty = Δεν έχει επισυναφθεί ακόμη τίποτα σε αυτόν τον φάκελο ούτε σε ό,τι περιέχει. Προσθέστε αρχεία ή συνδέσμους ιστού με τα κουμπιά παραπάνω, ή αφήστε τα εδώ: επισυνάπτονται στον φάκελο.
+resources-attached-to = Σε
+resources-attached-separator = ,
+resources-attached-more = { $count ->
+    [one] και ένα ακόμη
+   *[other] και { $count } ακόμη
+}
+resources-row-name-attached = { $name }, σε { $items }
+resources-open-item = Άνοιγμα του «{ $title }»
+resources-detach-from = Αποσύνδεση από το «{ $title }»
+
+## Πόροι-εικόνες στη Συλλογή
+
+gallery-resource-badge = Πόρος
+gallery-tile-resource = Εικόνα-πόρος του { $title }: { $description }
+
+## Η σελίδα Πόροι στις ρυθμίσεις του έργου
+
+settings-page-resources = Πόροι
+settings-desc-resources = Τα αρχεία και οι σύνδεσμοι ιστού που δεν τα έχει πια κανένα στοιχείο: επισυνάψτε τα ξανά, αφαιρέστε τα ή εξαγάγετε αντίγραφα
+settings-resources-description = Ένας πόρος δεν είναι επισυναμμένος πουθενά όταν αποσυνδεθεί από το τελευταίο του στοιχείο, ή όταν το στοιχείο που τον είχε διαγραφεί οριστικά. Μένει στο έργο, και ένα αποθηκευμένο αρχείο ταξιδεύει με κάθε αντίγραφο και κάθε αντίγραφο ασφαλείας του, μέχρι να τον επισυνάψετε ξανά ή να τον αφαιρέσετε.
+settings-resources-group-storage = Χώρος
+settings-resources-group-unattached = Χωρίς στοιχείο
+settings-resources-stored = Αρχεία αποθηκευμένα σε αυτό το έργο: { $size }
+settings-resources-folder-advice = Ένα έργο που κρατιέται ως ένα αρχείο ξαναγράφεται ολόκληρο σε κάθε αποθήκευση, μαζί με τα αποθηκευμένα αρχεία του. Κρατημένο ως φάκελος, γράφει μόνο ό,τι άλλαξε, και αυτό είναι γρηγορότερο.
+settings-resources-count = { $count ->
+    [one] Ένας πόρος
+   *[other] { $count } πόροι
+}
+settings-resources-empty = Κάθε πόρος αυτού του έργου είναι επισυναμμένος σε κάποιο στοιχείο.
+resources-attach-to-items = Επισύναψη σε στοιχεία…
+resources-export-copies = Εξαγωγή αντιγράφων…
+resources-export-copy = Εξαγωγή αντιγράφου…
+resources-remove-many-title = Αφαίρεση { $count } πόρων από το έργο;
+resources-attach-title = Επισύναψη σε στοιχεία
+resources-attach-hint = Επιλέξτε τα στοιχεία στα οποία θα γίνει η επισύναψη. Με Ctrl+κλικ ή Shift+κλικ επιλέγετε πολλά.
+resources-attach-empty = Αυτό το έργο δεν έχει ακόμη στοιχεία.
+resources-attach-confirm = Επισύναψη
+resources-attached = { $count ->
+    [one] Ένας πόρος επισυνάφθηκε
+   *[other] { $count } πόροι επισυνάφθηκαν
+} σε { $items ->
+    [one] ένα στοιχείο
+   *[other] { $items } στοιχεία
+}
+resources-export-title = Εξαγωγή αντιγράφων σε φάκελο
+resources-exported = { $count ->
+    [one] Ένας πόρος εξήχθη
+   *[other] { $count } πόροι εξήχθησαν
+}
+resources-export-missing = { $count ->
+    [one] Ένα αρχείο δεν είναι εκεί που το περιμένει το έργο, και παραλείφθηκε: { $names }
+   *[other] { $count } αρχεία δεν είναι εκεί που τα περιμένει το έργο, και παραλείφθηκαν: { $names }
+}
+resources-export-failed = { $count ->
+    [one] Ένα αρχείο δεν ήταν δυνατό να αντιγραφεί: { $names }
+   *[other] { $count } αρχεία δεν ήταν δυνατό να αντιγραφούν: { $names }
+}
+
+## Η προτίμηση για τα μεγάλα αρχεία (Συμπεριφορά επεξεργαστή)
+
+settings-resources-large-file = Αρχεία άνω των 10 MB
+settings-resources-large-ask = Ερώτηση κάθε φορά
+settings-resources-large-store = Πάντα αποθήκευση μέσα στο έργο
+settings-resources-large-link = Πάντα σύνδεση με το αρχείο
+settings-hint-resources-large-file = Τι γίνεται με ένα αρχείο άνω των 10 MB που επισυνάπτετε ως πόρο. Αποθηκευμένο μέσα στο έργο, ταξιδεύει με κάθε αντίγραφο και κάθε αντίγραφο ασφαλείας του. Συνδεδεμένο, μένει εκεί που είναι, και το έργο θυμάται μόνο πού να το βρει.

@@ -135,3 +135,82 @@ resources-drop-insert-link = Lisää linkki resurssiin
 
 progress-resources-storing = Tiedostoja kopioidaan
 progress-resources-stored = Tiedostot kopioitu
+
+## Kansion Resurssit-sivu
+
+segment-folder = Kansio
+resources-folder-count = { $count ->
+    [one] Yksi resurssi
+   *[other] { $count } resurssia
+}
+resources-view-label = Näytä resurssit
+resources-view-list = Luettelona
+resources-view-grid = Ruudukkona
+resources-grid-label = Resurssit
+resources-folder-drop-hint = Pudota tiedostoja tai verkko-osoitteita tähän liittääksesi ne tähän kansioon
+resources-folder-empty = Tähän kansioon tai sen sisältöön ei ole vielä liitetty mitään. Lisää tiedostoja tai verkkolinkkejä yllä olevilla painikkeilla tai pudota ne tähän: ne liitetään kansioon.
+resources-attached-to = Kohteissa
+resources-attached-separator = ,
+resources-attached-more = { $count ->
+    [one] ja yksi muu
+   *[other] ja { $count } muuta
+}
+resources-row-name-attached = { $name }, kohteissa { $items }
+resources-open-item = Avaa ”{ $title }”
+resources-detach-from = Irrota kohteesta ”{ $title }”
+
+## Kuvaresurssit Galleriassa
+
+gallery-resource-badge = Resurssi
+gallery-tile-resource = Kohteen { $title } kuvaresurssi: { $description }
+
+## Projektin asetusten Resurssit-sivu
+
+settings-page-resources = Resurssit
+settings-desc-resources = Tiedostot ja verkkolinkit, joita mikään kohde ei enää kanna: liitä ne uudelleen, poista ne tai vie niistä kopioita
+settings-resources-description = Resurssi ei ole liitettynä mihinkään, kun se on irrotettu viimeisestä kohteestaan tai kun kohde, jossa se oli, on poistettu lopullisesti. Se pysyy projektissa, ja tallennettu tiedosto kulkee projektin jokaisen kopion ja jokaisen varmuuskopion mukana, kunnes liität sen uudelleen tai poistat sen.
+settings-resources-group-storage = Tallennustila
+settings-resources-group-unattached = Ei liitetty mihinkään
+settings-resources-stored = Tähän projektiin tallennetut tiedostot: { $size }
+settings-resources-folder-advice = Yhtenä tiedostona pidetty projekti kirjoitetaan kokonaan uudelleen joka tallennuksella, myös sen tallennetut tiedostot. Kansiona pidetty tallentaa vain sen, mikä on muuttunut, ja se on nopeampaa.
+settings-resources-count = { $count ->
+    [one] Yksi resurssi
+   *[other] { $count } resurssia
+}
+settings-resources-empty = Jokainen tämän projektin resurssi on liitetty johonkin kohteeseen.
+resources-attach-to-items = Liitä kohteisiin…
+resources-export-copies = Vie kopiot…
+resources-export-copy = Vie kopio…
+resources-remove-many-title = Poistetaanko { $count } resurssia projektista?
+resources-attach-title = Liitä kohteisiin
+resources-attach-hint = Valitse kohteet, joihin liitetään. Ctrl+napsautus tai Vaihto+napsautus valitsee useita.
+resources-attach-empty = Tässä projektissa ei ole vielä kohteita.
+resources-attach-confirm = Liitä
+resources-attached = { $count ->
+    [one] Yksi resurssi liitetty
+   *[other] { $count } resurssia liitetty
+} { $items ->
+    [one] yhteen kohteeseen
+   *[other] { $items } kohteeseen
+}
+resources-export-title = Vie kopiot kansioon
+resources-exported = { $count ->
+    [one] Yksi resurssi viety
+   *[other] { $count } resurssia viety
+}
+resources-export-missing = { $count ->
+    [one] Yksi tiedosto ei ole siellä, missä projekti sen odottaa olevan, ja se jätettiin pois: { $names }
+   *[other] { $count } tiedostoa ei ole siellä, missä projekti niiden odottaa olevan, ja ne jätettiin pois: { $names }
+}
+resources-export-failed = { $count ->
+    [one] Yhtä tiedostoa ei voitu kopioida: { $names }
+   *[other] { $count } tiedostoa ei voitu kopioida: { $names }
+}
+
+## Suurten tiedostojen asetus (Editorin toiminta)
+
+settings-resources-large-file = Yli 10 Mt:n tiedostot
+settings-resources-large-ask = Kysy joka kerta
+settings-resources-large-store = Tallenna aina projektiin
+settings-resources-large-link = Linkitä aina tiedostoon
+settings-hint-resources-large-file = Mitä tapahtuu yli 10 Mt:n tiedostolle, jonka liität resurssiksi. Projektiin tallennettuna se kulkee projektin jokaisen kopion ja jokaisen varmuuskopion mukana. Linkitettynä se pysyy paikallaan, ja projekti muistaa vain, mistä sen löytää.

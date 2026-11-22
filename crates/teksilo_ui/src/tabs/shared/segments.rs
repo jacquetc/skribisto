@@ -71,6 +71,9 @@ pub const SEG_STORY_BIBLE: &str = "story-bible";
 /// A notes folder's pictures as thumbnails (`folder_synopsis_with_overview`, between Story
 /// bible and Overview). Persisted verbatim as a remembered view, like every other `SEG_*`.
 pub const SEG_GALLERY: &str = "gallery";
+/// The files and web links of a folder and of everything inside it. On every folder:
+/// before Corkboard and Overview where those are, after a plain folder's own page.
+pub const SEG_RESOURCES: &str = "resources";
 
 /// The three segments an `Item/Note` carries: its own prose, its story-bible fields, and
 /// the manuscript prose it has been declared present in.
@@ -162,6 +165,7 @@ fn is_builtin(id: &str) -> bool {
             | SEG_NOTES
             | SEG_STORY_BIBLE
             | SEG_GALLERY
+            | SEG_RESOURCES
             | SEG_NOTE_OWN
             | SEG_NOTE_DETAILS
             | SEG_NOTE_IN_PROSE

@@ -7,6 +7,8 @@ use super::*;
 use crate::app_ids::AppIds;
 use crate::models::ResourceKind;
 use crate::resources::ResourcesSession;
+use crate::resources::file_kind::FileKind;
+use crate::resources::row::{detail_line, kind_of, row_name};
 
 fn vm(app_ctx: &Rc<frontend::AppContext>, focus: Option<u64>) -> ResourcesViewModel {
     let ids = AppIds::new();
@@ -83,7 +85,11 @@ fn a_row_builds_at_the_trailing_docks_width() {
         },
     ] {
         let mut tree = crate::test_support::tree_with_events(&ctx);
-        let id = tree.add_boxed(Box::new(resource_row(&row, vm(&ctx, Some(10)))));
+        let id = tree.add_boxed(Box::new(resource_row(
+            &row,
+            vm(&ctx, Some(10)),
+            DetachFrom::Focus,
+        )));
         tree.layout(SizeProposal::exact(260.0, 80.0));
         let b = tree.bounds(id);
         assert!(b.width > 0.0 && b.height > 0.0, "{}: {b:?}", row.title);

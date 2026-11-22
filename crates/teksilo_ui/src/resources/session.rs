@@ -56,6 +56,7 @@ pub struct UndoChange {
 }
 
 struct Inner {
+    app_ctx: Rc<AppContext>,
     model: ResourcesListModel,
     opened: OpenedFiles,
     notices: RefCell<Vec<ChangeNotice>>,
@@ -79,6 +80,7 @@ impl ResourcesSession {
     pub fn new(app_ctx: Rc<AppContext>, ids: AppIds) -> Self {
         Self {
             inner: Rc::new(Inner {
+                app_ctx: app_ctx.clone(),
                 model: ResourcesListModel::new(app_ctx, ids),
                 opened: OpenedFiles::new(),
                 notices: RefCell::new(Vec::new()),
@@ -88,6 +90,12 @@ impl ResourcesSession {
 
     pub fn model(&self) -> &ResourcesListModel {
         &self.inner.model
+    }
+
+    /// The backend this project lives in: what a surface outside any window's
+    /// view-model (the Work's Resources settings page) builds its own with.
+    pub fn app_ctx(&self) -> Rc<AppContext> {
+        self.inner.app_ctx.clone()
     }
 
     pub fn opened(&self) -> &OpenedFiles {

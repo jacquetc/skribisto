@@ -135,3 +135,82 @@ resources-drop-insert-link = Hivatkozás beszúrása a forrásra
 
 progress-resources-storing = A fájlok másolása
 progress-resources-stored = A fájlok átmásolva
+
+## Egy mappa Források oldala
+
+segment-folder = Mappa
+resources-folder-count = { $count ->
+    [one] Egy forrás
+   *[other] { $count } forrás
+}
+resources-view-label = Források megjelenítése
+resources-view-list = Listaként
+resources-view-grid = Rácsként
+resources-grid-label = Források
+resources-folder-drop-hint = Ejtsen ide fájlokat vagy webcímeket, hogy ehhez a mappához csatolja őket
+resources-folder-empty = Ehhez a mappához és a tartalmához még semmi sincs csatolva. Adjon hozzá fájlokat vagy webes hivatkozásokat a fenti gombokkal, vagy ejtse ide őket: a mappához lesznek csatolva.
+resources-attached-to = Itt:
+resources-attached-separator = ,
+resources-attached-more = { $count ->
+    [one] és még egy
+   *[other] és még { $count }
+}
+resources-row-name-attached = { $name }, itt: { $items }
+resources-open-item = „{ $title }” megnyitása
+resources-detach-from = Leválasztás erről: „{ $title }”
+
+## Képforrások a Galériában
+
+gallery-resource-badge = Forrás
+gallery-tile-resource = { $title } képforrása: { $description }
+
+## A projektbeállítások Források oldala
+
+settings-page-resources = Források
+settings-desc-resources = A fájlok és webes hivatkozások, amelyek már egyetlen elemhez sincsenek csatolva: csatolja őket újra, távolítsa el őket, vagy exportáljon róluk másolatot
+settings-resources-description = Egy forrás semmihez sincs csatolva, ha leválasztották az utolsó eleméről, vagy ha az elem, amelyhez csatolva volt, végleg törlődött. A projektben marad, és egy tárolt fájl a projekt minden másolatával és minden biztonsági mentésével együtt utazik, amíg újra nem csatolja vagy el nem távolítja.
+settings-resources-group-storage = Tárhely
+settings-resources-group-unattached = Semmihez sincs csatolva
+settings-resources-stored = A projektben tárolt fájlok: { $size }
+settings-resources-folder-advice = Az egyetlen fájlként tárolt projekt minden mentéskor teljesen újraíródik, a tárolt fájljaival együtt. Mappaként tárolva csak azt menti, ami megváltozott, és ez gyorsabb.
+settings-resources-count = { $count ->
+    [one] Egy forrás
+   *[other] { $count } forrás
+}
+settings-resources-empty = A projekt minden forrása csatolva van valamelyik elemhez.
+resources-attach-to-items = Csatolás elemekhez…
+resources-export-copies = Másolatok exportálása…
+resources-export-copy = Másolat exportálása…
+resources-remove-many-title = Eltávolítja a projektből ezt a(z) { $count } forrást?
+resources-attach-title = Csatolás elemekhez
+resources-attach-hint = Válassza ki az elemeket, amelyekhez csatol. Ctrl+kattintással vagy Shift+kattintással többet is választhat.
+resources-attach-empty = Ebben a projektben még nincsenek elemek.
+resources-attach-confirm = Csatolás
+resources-attached = { $count ->
+    [one] Egy forrás csatolva
+   *[other] { $count } forrás csatolva
+} { $items ->
+    [one] egy elemhez
+   *[other] { $items } elemhez
+}
+resources-export-title = Másolatok exportálása egy mappába
+resources-exported = { $count ->
+    [one] Egy forrás exportálva
+   *[other] { $count } forrás exportálva
+}
+resources-export-missing = { $count ->
+    [one] Egy fájl nincs ott, ahol a projekt várja, ezért kimaradt: { $names }
+   *[other] { $count } fájl nincs ott, ahol a projekt várja, ezért kimaradtak: { $names }
+}
+resources-export-failed = { $count ->
+    [one] Egy fájlt nem sikerült átmásolni: { $names }
+   *[other] { $count } fájlt nem sikerült átmásolni: { $names }
+}
+
+## A nagy fájlok beállítása (Szerkesztő viselkedése)
+
+settings-resources-large-file = 10 MB-nál nagyobb fájlok
+settings-resources-large-ask = Rákérdezés minden alkalommal
+settings-resources-large-store = Mindig a projektben tárolja
+settings-resources-large-link = Mindig a fájlra hivatkozzon
+settings-hint-resources-large-file = Mi történik egy 10 MB-nál nagyobb fájllal, amelyet forrásként csatol. A projektben tárolva a projekt minden másolatával és minden biztonsági mentésével együtt utazik. Hivatkozva ott marad, ahol van, és a projekt csak azt jegyzi meg, hol találja.

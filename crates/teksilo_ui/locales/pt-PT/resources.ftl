@@ -135,3 +135,82 @@ resources-drop-insert-link = Inserir uma ligação para o recurso
 
 progress-resources-storing = A copiar os ficheiros
 progress-resources-stored = Ficheiros copiados
+
+## A página Recursos de uma pasta
+
+segment-folder = Pasta
+resources-folder-count = { $count ->
+    [one] Um recurso
+   *[other] { $count } recursos
+}
+resources-view-label = Mostrar os recursos como
+resources-view-list = Lista
+resources-view-grid = Grelha
+resources-grid-label = Recursos
+resources-folder-drop-hint = Largue ficheiros ou endereços web para os anexar a esta pasta
+resources-folder-empty = Ainda não há nada anexado a esta pasta nem ao que ela contém. Adicione ficheiros ou ligações web com os botões acima, ou largue-os aqui: ficam anexados à pasta.
+resources-attached-to = Em
+resources-attached-separator = ,
+resources-attached-more = { $count ->
+    [one] e mais um
+   *[other] e mais { $count }
+}
+resources-row-name-attached = { $name }, em { $items }
+resources-open-item = Abrir «{ $title }»
+resources-detach-from = Desanexar de «{ $title }»
+
+## As imagens que são recursos, na Galeria
+
+gallery-resource-badge = Recurso
+gallery-tile-resource = Imagem que é um recurso de { $title }: { $description }
+
+## A página Recursos das definições do projeto
+
+settings-page-resources = Recursos
+settings-desc-resources = Os ficheiros e ligações web que nenhum item tem já: anexe-os de novo, remova-os ou exporte cópias
+settings-resources-description = Um recurso deixa de estar anexado a algo quando é desanexado do seu último item, ou quando o item que o tinha é eliminado de vez. Continua no projeto, e um ficheiro guardado viaja com cada cópia e cada cópia de segurança do projeto, até o voltar a anexar ou o remover.
+settings-resources-group-storage = Armazenamento
+settings-resources-group-unattached = Sem item
+settings-resources-stored = Ficheiros guardados neste projeto: { $size }
+settings-resources-folder-advice = Um projeto mantido num único ficheiro é reescrito por inteiro a cada gravação, incluindo os seus ficheiros guardados. Mantido como pasta, só grava o que mudou, o que é mais rápido.
+settings-resources-count = { $count ->
+    [one] Um recurso
+   *[other] { $count } recursos
+}
+settings-resources-empty = Cada recurso deste projeto está anexado a um item.
+resources-attach-to-items = Anexar a itens…
+resources-export-copies = Exportar cópias…
+resources-export-copy = Exportar uma cópia…
+resources-remove-many-title = Remover { $count } recursos do projeto?
+resources-attach-title = Anexar a itens
+resources-attach-hint = Escolha os itens a que anexar. Ctrl+clique ou Shift+clique escolhe vários.
+resources-attach-empty = Este projeto ainda não tem itens.
+resources-attach-confirm = Anexar
+resources-attached = { $count ->
+    [one] Um recurso anexado
+   *[other] { $count } recursos anexados
+} a { $items ->
+    [one] um item
+   *[other] { $items } itens
+}
+resources-export-title = Exportar cópias para uma pasta
+resources-exported = { $count ->
+    [one] Um recurso exportado
+   *[other] { $count } recursos exportados
+}
+resources-export-missing = { $count ->
+    [one] Um ficheiro não está onde o projeto o espera, e foi deixado de fora: { $names }
+   *[other] { $count } ficheiros não estão onde o projeto os espera, e foram deixados de fora: { $names }
+}
+resources-export-failed = { $count ->
+    [one] Um ficheiro não pôde ser copiado: { $names }
+   *[other] { $count } ficheiros não puderam ser copiados: { $names }
+}
+
+## A preferência dos ficheiros grandes (Comportamento do editor)
+
+settings-resources-large-file = Ficheiros com mais de 10 MB
+settings-resources-large-ask = Perguntar de cada vez
+settings-resources-large-store = Guardar sempre no projeto
+settings-resources-large-link = Ligar sempre ao ficheiro
+settings-hint-resources-large-file = O que acontece a um ficheiro com mais de 10 MB que anexa como recurso. Guardado no projeto, viaja com cada cópia e cada cópia de segurança do projeto. Ligado, fica onde está, e o projeto só guarda onde o encontrar.

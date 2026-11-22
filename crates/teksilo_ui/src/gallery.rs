@@ -22,6 +22,16 @@
 //! The pane rebuilds when such a note's list of pictures changes, and only then: typing
 //! words beside a picture costs a comparison, not a reload.
 //!
+//! ## Picture resources
+//!
+//! A photograph attached to a note as a resource, not put into its text, is a picture of
+//! that note too, after those of its text ([`tiles`] says how each mode shows it). A
+//! folder's own picture resources are its pictures; those of the folder the Gallery shows
+//! come first, while no search or filter narrows the notes (a filter is about notes, and
+//! the folder is not one of them). They open in the image viewer with the others, in the
+//! Gallery's order, and the viewer's Open in another app goes through the Resources
+//! feature for them ([`crate::resources::ResourcesViewModel::viewer_opener`]).
+//!
 //! Plain Rust over the backend; the widgets are in [`crate::tabs::gallery`].
 
 pub mod tiles;
@@ -37,18 +47,22 @@ use frontend::AppContext;
 use frontend::commands::{binder_item_commands, content_commands};
 use frontend::common::entities::{BinderItemRole, ContentRole};
 
-use crate::models::OpenDocsStore;
 use crate::models::shaped_subtree;
+use crate::models::{OpenDocsStore, ResourceRow, ResourcesListModel};
 use crate::overview::OverviewViewModel;
-use crate::picture_viewer::{ViewerEntry, ViewerItem};
+use crate::picture_viewer::{ViewerEntry, ViewerFile, ViewerItem};
 use crate::shared::images::{ImageRef, parse_images};
-pub use tiles::{GalleryNote, GalleryOptions, GalleryTile};
+pub use tiles::{GalleryNote, GalleryOptions, GalleryPicture, GalleryTile};
 
 struct Inner {
     app_ctx: Rc<AppContext>,
     work_id: Signal<Option<u64>>,
     /// The folder whose tab this is.
     container_id: u64,
+    /// The project's resources, and the title of the tab's own folder, which a picture
+    /// resource on it is filed under. `None` until [`GalleryViewModel::with_resources`]:
+    /// a Gallery with no resources model shows the pictures of the text only.
+    resources: Option<(ResourcesListModel, Signal<String>)>,
     overview: OverviewViewModel,
     docs: OpenDocsStore,
     /// The subfolders entered in Nested, outermost first, with their titles for the
@@ -90,6 +104,7 @@ impl GalleryViewModel {
                 app_ctx,
                 work_id,
                 container_id,
+                resources: None,
                 overview,
                 docs,
                 trail: Signal::new(Vec::new()),
@@ -98,6 +113,27 @@ impl GalleryViewModel {
                 observers: RefCell::new(Vec::new()),
             }),
         }
+    }
+
+    /// The same Gallery, showing the picture resources of `resources` beside the pictures
+    /// of the text; `container_title` names the tab's own folder. Call before cloning.
+    pub fn with_resources(
+        mut self,
+        resources: ResourcesListModel,
+        container_title: Signal<String>,
+    ) -> Self {
+        if let Some(inner) = Rc::get_mut(&mut self.inner) {
+            inner.resources = Some((resources, container_title));
+        }
+        self
+    }
+
+    /// Bumps when a resource or an attachment may have changed: `None` with no resources.
+    pub fn resources_version(&self) -> Option<Signal<u64>> {
+        self.inner
+            .resources
+            .as_ref()
+            .map(|(model, _)| model.version_signal())
     }
 
     pub fn app_ctx(&self) -> Rc<AppContext> {
@@ -156,26 +192,54 @@ impl GalleryViewModel {
     /// picture added or removed there before any save still reaches the Gallery.
     pub fn notes(&self) -> Vec<GalleryNote> {
         let folder = self.current_folder();
-        let rows = shaped_subtree(
-            &self.inner.app_ctx,
-            &self.inner.work_id,
-            folder,
-            &self.inner.overview.filters(),
-        );
-        if rows.is_empty() {
+        let filters = self.inner.overview.filters();
+        let rows = shaped_subtree(&self.inner.app_ctx, &self.inner.work_id, folder, &filters);
+        // The folder's own picture resources lead, unless a filter is narrowing the notes.
+        let filtering = !filters.query.get().trim().is_empty()
+            || !filters.tag_filter.get().is_empty()
+            || !filters.status_filter.get().is_empty();
+        let mut ids: Vec<u64> = rows.iter().map(|r| r.item.item_id).collect();
+        if !filtering {
+            ids.push(folder);
+        }
+        let mut resources = self.picture_resources(&ids);
+        let own = (!filtering)
+            .then(|| resources.remove(&folder))
+            .flatten()
+            .filter(|p| !p.is_empty())
+            .map(|pictures| GalleryNote {
+                item_id: folder,
+                title: self.folder_title(folder),
+                depth: 0,
+                // The folder itself, not one of its subfolders: its pictures are tiles.
+                is_folder: false,
+                pictures,
+                excerpt: String::new(),
+            });
+        if rows.is_empty() && own.is_none() {
             self.watch_open_notes(&[]);
             return Vec::new();
         }
-        let ids: Vec<u64> = rows.iter().map(|r| r.item.item_id).collect();
         let texts = self.note_texts(&ids);
         // The shaped rows' depths are relative to the folder whose subtree was loaded.
         let base = rows.iter().map(|r| r.depth).min().unwrap_or(0);
-        let notes: Vec<GalleryNote> = rows
+        let notes: Vec<GalleryNote> = own
             .into_iter()
-            .map(|row| {
+            .chain(rows.into_iter().map(|row| {
                 let item = row.item;
-                let text = texts.get(&item.item_id).cloned().unwrap_or_default();
-                let pictures = parse_images(&text);
+                let is_folder = item.role == BinderItemRole::Folder;
+                // A folder's own synopsis is not its text: it has no pictures of its own
+                // but its resources.
+                let text = if is_folder {
+                    String::new()
+                } else {
+                    texts.get(&item.item_id).cloned().unwrap_or_default()
+                };
+                let mut pictures: Vec<GalleryPicture> = parse_images(&text)
+                    .into_iter()
+                    .map(GalleryPicture::in_text)
+                    .collect();
+                pictures.extend(resources.remove(&item.item_id).unwrap_or_default());
                 let plain = skrib_format::djot_plain_text(&text)
                     .map(|(plain, _)| plain)
                     .unwrap_or_default();
@@ -183,14 +247,68 @@ impl GalleryViewModel {
                     item_id: item.item_id,
                     title: item.title,
                     depth: row.depth.saturating_sub(base),
-                    is_folder: item.role == BinderItemRole::Folder,
+                    is_folder,
                     pictures,
                     excerpt: tiles::excerpt(&plain),
                 }
-            })
+            }))
             .collect();
         self.watch_open_notes(&notes);
         notes
+    }
+
+    /// The picture resources of each of `item_ids`, each item's by title. Empty with no
+    /// resources model.
+    fn picture_resources(&self, item_ids: &[u64]) -> HashMap<u64, Vec<GalleryPicture>> {
+        let Some((model, _)) = &self.inner.resources else {
+            return HashMap::new();
+        };
+        let attachments = model.attachments(item_ids);
+        let mut wanted: Vec<u64> = attachments.values().flatten().copied().collect();
+        wanted.sort_unstable();
+        wanted.dedup();
+        let rows: HashMap<u64, ResourceRow> = model
+            .by_ids(&wanted)
+            .into_iter()
+            .filter(is_picture_resource)
+            .map(|r| (r.id, r))
+            .collect();
+        attachments
+            .into_iter()
+            .filter_map(|(item, ids)| {
+                let mut found: Vec<ResourceRow> =
+                    ids.iter().filter_map(|id| rows.get(id).cloned()).collect();
+                found.dedup_by_key(|r| r.id);
+                let found = crate::resources::sorted_by_title(found);
+                (!found.is_empty()).then(|| {
+                    let pictures = found
+                        .into_iter()
+                        .enumerate()
+                        .map(|(i, row)| GalleryPicture::of_resource(row, i))
+                        .collect();
+                    (item, pictures)
+                })
+            })
+            .collect()
+    }
+
+    /// The title of `folder`: the tab's own, or the subfolder entered last.
+    fn folder_title(&self, folder: u64) -> String {
+        if folder == self.inner.container_id {
+            return self
+                .inner
+                .resources
+                .as_ref()
+                .map(|(_, title)| title.get())
+                .unwrap_or_default();
+        }
+        self.inner
+            .trail
+            .get()
+            .into_iter()
+            .find(|(id, _)| *id == folder)
+            .map(|(_, title)| title)
+            .unwrap_or_default()
     }
 
     /// Each note's own text as Djot: the live document for a note open in an editor,
@@ -242,7 +360,7 @@ impl GalleryViewModel {
             let Some(doc) = self.inner.docs.peek(note.item_id) else {
                 continue;
             };
-            live.insert(note.item_id, srcs(&note.pictures));
+            live.insert(note.item_id, text_srcs(&note.pictures));
             let me = self.clone();
             let item_id = note.item_id;
             observers.push(doc.edit_gen.observe(move |_| me.note_edited(item_id)));
@@ -272,7 +390,8 @@ impl GalleryViewModel {
     }
 
     /// The viewer's list for `tiles`: every picture tile, in order, and for each tile the
-    /// entry it opens on (a text or folder tile opens none).
+    /// entry it opens on (a text or folder tile opens none). A picture resource's entry
+    /// names its file, as the dock's own viewer does.
     pub fn viewer_entries(&self, tiles: &[GalleryTile]) -> (Vec<ViewerEntry>, Vec<Option<usize>>) {
         let mut entries = Vec::new();
         let mut at = Vec::with_capacity(tiles.len());
@@ -281,19 +400,25 @@ impl GalleryViewModel {
                 GalleryTile::Picture {
                     item_id,
                     title,
-                    image,
+                    picture,
                     ..
                 } => {
                     at.push(Some(entries.len()));
+                    let resource = picture.resource.as_deref();
                     entries.push(ViewerEntry {
-                        src: image.src.clone(),
-                        alt: image.alt.clone(),
+                        src: picture.image.src.clone(),
+                        alt: picture.image.alt.clone(),
                         item: Some(ViewerItem {
                             item_id: *item_id,
                             title: title.clone(),
                         }),
-                        file_name: None,
-                        file: None,
+                        file_name: resource.map(|r| r.file_name.clone()),
+                        file: resource.and_then(|r| {
+                            Some(ViewerFile {
+                                path: r.path.clone()?,
+                                hash: r.content_hash.clone(),
+                            })
+                        }),
                     });
                 }
                 _ => at.push(None),
@@ -308,6 +433,24 @@ impl GalleryViewModel {
 
 fn srcs(pictures: &[ImageRef]) -> Vec<String> {
     pictures.iter().map(|p| p.src.clone()).collect()
+}
+
+/// The pictures of a note's own text, as [`srcs`] lists them: what an edit in an open
+/// note is compared against (its resources do not move when its text does).
+fn text_srcs(pictures: &[GalleryPicture]) -> Vec<String> {
+    pictures
+        .iter()
+        .filter(|p| !p.is_resource())
+        .map(|p| p.image.src.clone())
+        .collect()
+}
+
+/// A resource the Gallery shows: a file in a picture format the editor paints. A web
+/// link is never one, whatever its address ends with.
+fn is_picture_resource(row: &ResourceRow) -> bool {
+    // Judged by the file it opens, never only by its name: see `name_to_judge`.
+    !row.is_web_link()
+        && crate::resources::file_kind::is_viewable_picture(&crate::resources::name_to_judge(row))
 }
 
 #[cfg(all(test, not(feature = "mocks")))]

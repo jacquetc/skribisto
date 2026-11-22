@@ -120,8 +120,8 @@ fn every_declared_key_is_registered() {
 /// The other direction. A registered key that no longer exists in the app is dead
 /// weight that `--dump-config` still advertises as settable.
 ///
-/// Eight keys are legitimately not declared as `*_KEY` constants and are exempt: the
-/// five `editor.last_view.*` (inline literals in `EditorViewMemory::new`) and
+/// Nine keys are legitimately not declared as `*_KEY` constants and are exempt: the
+/// six `editor.last_view.*` (inline literals in `EditorViewMemory::new`) and
 /// teksilo's own three (`SettingsKey`s in the framework, which `run()` follows):
 /// `accessibility.text_scale`, `accessibility.text_contrast` and
 /// `appearance.glyph_rendering`.
@@ -137,6 +137,7 @@ fn every_registered_key_still_exists() {
         "editor.last_view.part",
         "editor.last_view.chapter",
         "editor.last_view.note",
+        "editor.last_view.folder",
         "editor.last_view.item_note",
         teksilo::settings::TEXT_SCALE_KEY.key,
         teksilo::prelude::TEXT_CONTRAST_KEY.key,

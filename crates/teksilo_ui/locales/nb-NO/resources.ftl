@@ -135,3 +135,82 @@ resources-drop-insert-link = Sett inn en lenke til ressursen
 
 progress-resources-storing = Kopierer filene
 progress-resources-stored = Filene er kopiert
+
+## En mappes side Ressurser
+
+segment-folder = Mappe
+resources-folder-count = { $count ->
+    [one] Én ressurs
+   *[other] { $count } ressurser
+}
+resources-view-label = Vis ressurser som
+resources-view-list = Liste
+resources-view-grid = Rutenett
+resources-grid-label = Ressurser
+resources-folder-drop-hint = Slipp filer eller nettadresser her for å knytte dem til denne mappen
+resources-folder-empty = Ingenting er knyttet til denne mappen eller til det den inneholder ennå. Legg til filer eller nettlenker med knappene over, eller slipp dem her: de knyttes til mappen.
+resources-attached-to = På
+resources-attached-separator = ,
+resources-attached-more = { $count ->
+    [one] og én til
+   *[other] og { $count } til
+}
+resources-row-name-attached = { $name }, på { $items }
+resources-open-item = Åpne «{ $title }»
+resources-detach-from = Løsne fra «{ $title }»
+
+## Bilderessurser i Galleriet
+
+gallery-resource-badge = Ressurs
+gallery-tile-resource = Bilderessurs for { $title }: { $description }
+
+## Prosjektinnstillingenes side Ressurser
+
+settings-page-resources = Ressurser
+settings-desc-resources = Filene og nettlenkene som ikke noe element har lenger: knytt dem til igjen, fjern dem, eller eksporter kopier
+settings-resources-description = En ressurs er knyttet til ingenting når den er løsnet fra sitt siste element, eller når elementet den var knyttet til er slettet for godt. Den blir i prosjektet, og en lagret fil følger med hver kopi og hver sikkerhetskopi av det, til du knytter den til igjen eller fjerner den.
+settings-resources-group-storage = Lagring
+settings-resources-group-unattached = Knyttet til ingenting
+settings-resources-stored = Filer lagret i dette prosjektet: { $size }
+settings-resources-folder-advice = Et prosjekt som holdes i én fil, skrives helt på nytt ved hver lagring, de lagrede filene også. Holdt som mappe lagrer det bare det som er endret, og det går raskere.
+settings-resources-count = { $count ->
+    [one] Én ressurs
+   *[other] { $count } ressurser
+}
+settings-resources-empty = Hver ressurs i dette prosjektet er knyttet til et element.
+resources-attach-to-items = Knytt til elementer…
+resources-export-copies = Eksporter kopier…
+resources-export-copy = Eksporter en kopi…
+resources-remove-many-title = Fjerne { $count } ressurser fra prosjektet?
+resources-attach-title = Knytt til elementer
+resources-attach-hint = Velg elementene det skal knyttes til. Ctrl+klikk eller Skift+klikk velger flere.
+resources-attach-empty = Dette prosjektet har ingen elementer ennå.
+resources-attach-confirm = Knytt til
+resources-attached = { $count ->
+    [one] Én ressurs
+   *[other] { $count } ressurser
+} knyttet til { $items ->
+    [one] ett element
+   *[other] { $items } elementer
+}
+resources-export-title = Eksporter kopier til en mappe
+resources-exported = { $count ->
+    [one] Én ressurs eksportert
+   *[other] { $count } ressurser eksportert
+}
+resources-export-missing = { $count ->
+    [one] Én fil er ikke der prosjektet venter den, og ble utelatt: { $names }
+   *[other] { $count } filer er ikke der prosjektet venter dem, og ble utelatt: { $names }
+}
+resources-export-failed = { $count ->
+    [one] Én fil kunne ikke kopieres: { $names }
+   *[other] { $count } filer kunne ikke kopieres: { $names }
+}
+
+## Innstillingen for store filer (Redigeringsatferd)
+
+settings-resources-large-file = Filer over 10 MB
+settings-resources-large-ask = Spør hver gang
+settings-resources-large-store = Lagre alltid i prosjektet
+settings-resources-large-link = Lenk alltid til filen
+settings-hint-resources-large-file = Hva som skjer med en fil over 10 MB som du knytter til som ressurs. Lagret i prosjektet følger den med hver kopi og hver sikkerhetskopi av det. Lenket blir den der den er, og prosjektet husker bare hvor den finnes.
