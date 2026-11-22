@@ -301,6 +301,7 @@ pub fn from_entities(
             // suggest producers are each responsible for it, which is the arrangement
             // that lets one of them silently forget.
             format_min_read_version: None,
+            legacy_resource_dirs: Default::default(),
             shape,
             work: WorkFile {
                 file_id: work.id,

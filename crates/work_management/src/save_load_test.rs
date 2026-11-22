@@ -4919,13 +4919,18 @@ fn opening_a_project_removes_the_files_of_resources_it_no_longer_has() {
     .unwrap();
     let stray = project
         .join("resources")
-        .join("not-a-resource")
+        .join(common::uid::fixture_uid(999).hyphenated().to_string())
         .join("old.pdf");
     std::fs::create_dir_all(stray.parent().unwrap()).unwrap();
     std::fs::write(&stray, b"gone").unwrap();
 
+    let research = project.join("resources/research/old.pdf");
+    std::fs::create_dir_all(research.parent().unwrap()).unwrap();
+    std::fs::write(&research, b"keep").unwrap();
+
     let (_db, _hub) = load_at(&project, &media_root);
     assert!(!stray.exists());
+    assert_eq!(std::fs::read(research).unwrap(), b"keep");
     let kept = project
         .join("resources")
         .join(common::uid::fixture_uid(800).hyphenated().to_string())

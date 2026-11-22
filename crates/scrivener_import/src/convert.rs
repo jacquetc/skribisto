@@ -1090,6 +1090,7 @@ impl<'c, 't, 'i, 'd> Converter<'c, 't, 'i, 'd> {
                 format_version: FORMAT_VERSION,
                 // The read floor is the writer's to compute when it commits the manifest.
                 format_min_read_version: None,
+                legacy_resource_dirs: Default::default(),
                 shape: ShapeTag::Zip,
                 work,
                 binder_order,

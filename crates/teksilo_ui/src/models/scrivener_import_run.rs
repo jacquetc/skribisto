@@ -441,6 +441,7 @@ mod imp {
                 format_version: FORMAT_VERSION,
                 // Stamped by the writer, as for every bundle built by hand.
                 format_min_read_version: None,
+                legacy_resource_dirs: Default::default(),
                 shape: ShapeTag::Zip,
                 work: WorkFile {
                     file_id: 1,

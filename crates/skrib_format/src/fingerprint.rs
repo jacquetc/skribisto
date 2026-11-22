@@ -202,6 +202,7 @@ mod tests {
             manifest: ProjectManifest {
                 format_version: FORMAT_VERSION,
                 format_min_read_version: None,
+                legacy_resource_dirs: Default::default(),
                 shape: ShapeTag::Zip,
                 work: WorkFile {
                     goal_unit: Default::default(),

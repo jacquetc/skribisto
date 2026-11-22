@@ -522,6 +522,11 @@ fn write_folder_placing(root: &Path, bundle: &WorkBundle, placing: Placing) -> R
     // blobs already written above.
     let mut manifest = bundle.manifest.clone();
     manifest.format_min_read_version = Some(compute_min_read_version(bundle));
+    manifest.legacy_resource_dirs = bundle
+        .carried
+        .keys()
+        .filter_map(|rel| super::carry::resource_owner(rel))
+        .collect();
     write_if_changed(
         root,
         &root.join(MANIFEST_NAME),
@@ -664,7 +669,7 @@ pub(crate) fn read_folder_kept(
     crate::media::refuse_link(root, &root.join(MANIFEST_NAME), "the manifest")?;
     let manifest_text = fs::read_to_string(root.join(MANIFEST_NAME))
         .with_context(|| format!("reading {}", root.join(MANIFEST_NAME).display()))?;
-    let manifest: ProjectManifest = from_ron(&manifest_text, "project.skrib")?;
+    let mut manifest: ProjectManifest = from_ron(&manifest_text, "project.skrib")?;
     let locator = Locator::new();
 
     let tags = read_ron_vec(root, "tags.ron")?;
@@ -957,6 +962,7 @@ pub(crate) fn read_folder_kept(
     // Directories are not carried — only files. An empty directory holds no
     // data, and `write_if_changed` recreates any parent a carried file needs.
     let mut carried: BTreeMap<String, CarriedFile> = BTreeMap::new();
+    let live = super::carry::stored_uids(&resources);
     for entry in walkdir::WalkDir::new(root).sort_by_file_name() {
         let entry = entry.with_context(|| format!("walking {}", root.display()))?;
         // The walk does not follow links (`WalkDir`'s default; only the project folder
@@ -970,7 +976,9 @@ pub(crate) fn read_folder_kept(
         let Some(key) = rel_key(root, entry.path()) else {
             continue;
         };
-        if super::carry::is_modelled(&key) || super::carry::is_stray_bundle(&key) {
+        if super::carry::modelled_in(&key, || Some(&manifest), &live)
+            || super::carry::is_stray_bundle(&key)
+        {
             continue;
         }
         if linked {
@@ -982,6 +990,10 @@ pub(crate) fn read_folder_kept(
         carried.insert(key, CarriedFile::new(bytes));
     }
 
+    manifest.legacy_resource_dirs = carried
+        .keys()
+        .filter_map(|rel| super::carry::resource_owner(rel))
+        .collect();
     Ok(WorkBundle {
         manifest,
         tags,

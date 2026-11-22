@@ -490,6 +490,41 @@ fn a_note_found_by_its_picture_keeps_the_folders_around_it() {
 }
 
 #[test]
+fn a_tagged_child_does_not_make_its_parents_pictures_match_the_filter() {
+    use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
+    use frontend::direct_access::BinderItemRelationshipDto;
+
+    let f = Fixture::new();
+    let parent = f.item("Ports", BinderItemRole::Folder, 1, true);
+    let child = f.note("Tower", 2, "");
+    let tag = crate::tags::TagsViewModel::detached(f.app_ctx.clone(), f.ids.clone())
+        .create("place", "#123456", "", false)
+        .unwrap();
+    binder_item_commands::set_binder_item_relationship(
+        &f.app_ctx,
+        None,
+        &BinderItemRelationshipDto {
+            id: child,
+            field: BinderItemRelationshipField::Tags,
+            right_ids: vec![tag],
+        },
+    )
+    .unwrap();
+    let research = Research::new(&f);
+    research.attach(&[parent], "Map.jpg");
+    let gallery = f.gallery_with(&research);
+    gallery.overview().filters().tag_filter.set(vec![tag]);
+    gallery.overview().search_query_signal().set("map".into());
+    assert!(gallery.notes().is_empty());
+
+    research.attach(&[child], "Coast map.jpg");
+    assert_eq!(
+        holdings(&gallery.notes()),
+        ["Ports: ", "Tower: Coast map.jpg"]
+    );
+}
+
+#[test]
 fn the_folders_own_pictures_stay_when_a_search_names_them_and_leave_for_a_tag() {
     let f = Fixture::new();
     f.note("Gull on a post", 1, &picture(A));

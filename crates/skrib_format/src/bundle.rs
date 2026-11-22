@@ -302,6 +302,10 @@ pub struct ProjectManifest {
     /// refuse-if-greater rule this crate always had.
     #[serde(default)]
     pub format_min_read_version: Option<u32>,
+    /// UUID-named directories under resources/ that already held unrelated files
+    /// before resources became part of the format in v17.
+    #[serde(default, skip_serializing_if = "std::collections::BTreeSet::is_empty")]
+    pub legacy_resource_dirs: std::collections::BTreeSet<uuid::Uuid>,
     pub shape: ShapeTag,
     pub work: WorkFile,
     /// Ordered binder `file_id`s (authoritative binder order).

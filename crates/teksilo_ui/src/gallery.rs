@@ -209,22 +209,19 @@ impl GalleryViewModel {
         let filters = self.inner.overview.filters();
         let needle = search_needle(&filters.query.get());
         // A tag or status filter asks about notes, which the folder is not.
-        let narrowing_notes =
-            !filters.tag_filter.get().is_empty() || !filters.status_filter.get().is_empty();
+        let tags = filters.tag_filter.get();
+        let statuses = filters.status_filter.get();
+        let narrowing_notes = !tags.is_empty() || !statuses.is_empty();
         let (rows, by_picture) = self.shaped_rows(folder, &filters, needle.as_deref());
         let mut ids: Vec<u64> = rows.iter().map(|r| r.item.item_id).collect();
         if !narrowing_notes {
             ids.push(folder);
         }
         let mut resources = self.picture_resources(&ids);
-        if let Some(needle) = &needle {
-            // Of a note found by a picture, and of the folder itself, the pictures that
-            // were asked for.
-            for id in by_picture.iter().chain(std::iter::once(&folder)) {
-                if let Some(pictures) = resources.get_mut(id) {
-                    pictures.retain(|p| picture_matches(p, needle));
-                }
-            }
+        if let Some(needle) = &needle
+            && let Some(pictures) = resources.get_mut(&folder)
+        {
+            pictures.retain(|p| picture_matches(p, needle));
         }
         let own = (!narrowing_notes)
             .then(|| resources.remove(&folder))
@@ -263,7 +260,16 @@ impl GalleryViewModel {
                     .into_iter()
                     .map(GalleryPicture::in_text)
                     .collect();
-                pictures.extend(resources.remove(&item.item_id).unwrap_or_default());
+                // Ancestors kept to show a match in context contribute no pictures of their own.
+                if item.matches_tags_and_status(&tags, &statuses) {
+                    let mut attached = resources.remove(&item.item_id).unwrap_or_default();
+                    if let Some(needle) = &needle
+                        && !row_matches(needle, &[&item.title, &item.label])
+                    {
+                        attached.retain(|picture| picture_matches(picture, needle));
+                    }
+                    pictures.extend(attached);
+                }
                 let plain = skrib_format::djot_plain_text(&text)
                     .map(|(plain, _)| plain)
                     .unwrap_or_default();
@@ -305,8 +311,11 @@ impl GalleryViewModel {
         };
         let all = shaped_subtree(ctx, work_id, folder, &unsearched);
         let kept: HashSet<u64> = matched.iter().map(|r| r.item.item_id).collect();
+        let tags = filters.tag_filter.get();
+        let statuses = filters.status_filter.get();
         let candidates: Vec<u64> = all
             .iter()
+            .filter(|row| row.item.matches_tags_and_status(&tags, &statuses))
             .map(|r| r.item.item_id)
             .filter(|id| !kept.contains(id))
             .collect();

@@ -74,6 +74,8 @@ pub struct UndoChange {
     pub kept: PathBuf,
     /// The row as it was.
     pub previous: FileFacts,
+    /// The version this action is allowed to undo.
+    applied_hash: String,
 }
 
 struct Inner {
@@ -132,6 +134,16 @@ impl ResourcesSession {
             let Some(row) = self.inner.model.by_uid(changed.uid) else {
                 continue;
             };
+            // The external application may still be editing the original after Save As.
+            if changed.place == OpenedWhere::InPlace
+                && !row
+                    .path
+                    .as_deref()
+                    .is_some_and(|path| super::resources_vm::same_place(path, &changed.path))
+            {
+                self.inner.opened.stop_tracking_in_place(&changed.path);
+                continue;
+            }
             let notice = match changed.place {
                 OpenedWhere::Copy => {
                     self.take_copy(&row, &changed.path, changed.len, &changed.hash)
@@ -241,6 +253,7 @@ impl ResourcesSession {
             undo: kept.map(|kept| UndoChange {
                 kept,
                 previous: FileFacts::of(row),
+                applied_hash: hash.to_owned(),
             }),
         })
     }
@@ -264,14 +277,19 @@ impl ResourcesSession {
             eprintln!("resources: the resource to undo the change of is gone");
             return Ok(());
         };
-        opened_files::replace_file(&undo.kept, &stored).map_err(|e| e.to_string())?;
-        self.inner.model.set_file_facts(row_id, &undo.previous)?;
-        if let Err(e) = self.inner.opened.rewrite_copies(row.uid, &stored) {
-            eprintln!(
-                "resources: could not put the previous version back into the copy of {}: {e}",
-                row.file_name
-            );
+        let copies = self.inner.opened.copy_paths(row.uid);
+        // Check every destination before changing any of them. The other application
+        // can save again without a focus change or another pickup.
+        for path in std::iter::once(&stored).chain(&copies) {
+            opened_files::require_version(path, &undo.applied_hash).map_err(|e| e.to_string())?;
         }
+        opened_files::replace_version(&undo.kept, &stored, &undo.applied_hash)
+            .map_err(|e| e.to_string())?;
+        self.inner.model.set_file_facts(row_id, &undo.previous)?;
+        self.inner
+            .opened
+            .rewrite_copies(&copies, &stored, &undo.applied_hash)
+            .map_err(|e| e.to_string())?;
         Ok(())
     }
 }

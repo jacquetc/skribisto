@@ -523,6 +523,52 @@ mod real {
         );
     }
 
+    #[test]
+    fn undo_preserves_a_newer_edit_before_and_after_pickup() {
+        let fx = fixture();
+        let src = fx.data.join("map.pdf");
+        std::fs::write(&src, b"first").unwrap();
+        store_and_add(&fx.project.app_ctx, &fx.session, fx.scene, &[src]);
+        let row = fx.session.model().rows_for(fx.scene)[0].clone();
+        let stored = row.path.as_ref().unwrap();
+        let copy = fx.session.open_copy(&row, &fx.data).unwrap();
+        std::fs::write(&copy, b"second").unwrap();
+        assert!(fx.session.pickup_changes());
+        let undo = fx.session.take_notices()[0].undo.clone().unwrap();
+
+        std::fs::write(&copy, b"third edit").unwrap();
+        assert!(fx.session.undo_change(row.id, &undo).is_err());
+        assert_eq!(std::fs::read(stored).unwrap(), b"second");
+        assert_eq!(std::fs::read(&copy).unwrap(), b"third edit");
+        assert!(fx.session.pickup_changes());
+        assert!(fx.session.undo_change(row.id, &undo).is_err());
+        assert_eq!(std::fs::read(stored).unwrap(), b"third edit");
+    }
+
+    #[test]
+    fn save_as_leaves_in_place_edits_with_the_original_project() {
+        let fx = fixture();
+        let src = fx.data.join("map.pdf");
+        std::fs::write(&src, b"first").unwrap();
+        store_and_add(&fx.project.app_ctx, &fx.session, fx.scene, &[src]);
+        let row = fx.session.model().rows_for(fx.scene)[0].clone();
+        let original = row.path.as_ref().unwrap();
+        fx.session
+            .opened()
+            .remember(row.uid, original, OpenedWhere::InPlace, &row.content_hash);
+        fx.session.model().set_media_root(fx.data.join("moved"));
+        let current = fx.session.model().by_id(row.id).unwrap().path.unwrap();
+        opened_files::replace_file(original, &current).unwrap();
+        std::fs::write(original, b"edited after Save As").unwrap();
+        assert!(!fx.session.pickup_changes());
+        assert!(fx.session.opened().files().is_empty());
+        assert_eq!(std::fs::read(current).unwrap(), b"first");
+        assert_eq!(
+            fx.session.model().by_id(row.id).unwrap().content_hash,
+            row.content_hash
+        );
+    }
+
     /// Undo finds the stored file where it is when asked, not where it was at the
     /// pickup: a Save As in between moves the project's working folder.
     #[test]

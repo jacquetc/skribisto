@@ -192,6 +192,7 @@ pub fn build_bundle(
             // hand-written literal is exactly the kind of second construction site that
             // would otherwise have been forgotten.
             format_min_read_version: None,
+            legacy_resource_dirs: Default::default(),
             shape: ShapeTag::Zip,
             work,
             binder_order,

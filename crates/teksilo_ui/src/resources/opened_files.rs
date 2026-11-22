@@ -203,6 +203,23 @@ impl OpenedFiles {
         }
     }
 
+    pub(super) fn stop_tracking_in_place(&self, path: &Path) {
+        self.inner
+            .files
+            .borrow_mut()
+            .retain(|f| f.place != OpenedWhere::InPlace || f.path != path);
+    }
+
+    pub(super) fn copy_paths(&self, uid: uuid::Uuid) -> Vec<PathBuf> {
+        self.inner
+            .files
+            .borrow()
+            .iter()
+            .filter(|f| f.uid == uid && f.place == OpenedWhere::Copy)
+            .map(|f| f.path.clone())
+            .collect()
+    }
+
     /// What is remembered now, for a test.
     pub fn files(&self) -> Vec<OpenedFile> {
         self.inner.files.borrow().clone()
@@ -262,29 +279,21 @@ impl OpenedFiles {
     /// bytes: an Undo just put them back into the project, and the copy still showed
     /// what was undone. The other application's next save is then a change of its own.
     ///
-    /// A copy that cannot be written (held open on Windows) is settled as it is, on the
-    /// stored file's hash: the bytes it holds were just undone and are not taken in
-    /// again, a later save there is, and the close keeps it, since it differs.
-    pub fn rewrite_copies(&self, uid: uuid::Uuid, stored: &Path) -> std::io::Result<()> {
+    /// A copy changed since the pickup stays unsettled for the next pickup.
+    pub(super) fn rewrite_copies(
+        &self,
+        copies: &[PathBuf],
+        stored: &Path,
+        expected: &str,
+    ) -> std::io::Result<()> {
         let (_, hash) = hash_file(stored)?;
-        let copies: Vec<PathBuf> = self
-            .inner
-            .files
-            .borrow()
-            .iter()
-            .filter(|f| f.uid == uid && f.place == OpenedWhere::Copy)
-            .map(|f| f.path.clone())
-            .collect();
-        let mut result = Ok(());
         for copy in copies {
-            if let Err(e) = replace_file(stored, &copy) {
-                result = Err(e);
-            }
-            if let Some(stamp) = FileStamp::of(&copy) {
-                self.settle(&copy, stamp, &hash);
+            replace_version(stored, copy, expected)?;
+            if let Some(stamp) = FileStamp::of(copy) {
+                self.settle(copy, stamp, &hash);
             }
         }
-        result
+        Ok(())
     }
 
     /// The project closed: remove the copies handed over and forget every file, and drop
@@ -531,6 +540,30 @@ pub fn write_open_copy(
 
 /// Replace `target` with a copy of `source`, through a temporary file beside `target`.
 pub fn replace_file(source: &Path, target: &Path) -> std::io::Result<()> {
+    staged_copy(source, target)?
+        .persist(target)
+        .map_err(|e| e.error)?;
+    Ok(())
+}
+
+pub(super) fn require_version(path: &Path, expected: &str) -> std::io::Result<()> {
+    if hash_file(path)?.1 != expected {
+        return Err(std::io::Error::other(format!(
+            "{} has changed since this edit",
+            path.display()
+        )));
+    }
+    Ok(())
+}
+
+pub(super) fn replace_version(source: &Path, target: &Path, expected: &str) -> std::io::Result<()> {
+    let tmp = staged_copy(source, target)?;
+    require_version(target, expected)?;
+    tmp.persist(target).map_err(|e| e.error)?;
+    Ok(())
+}
+
+fn staged_copy(source: &Path, target: &Path) -> std::io::Result<tempfile::NamedTempFile> {
     let folder = target
         .parent()
         .ok_or_else(|| std::io::Error::other("no folder for the file"))?;
@@ -539,8 +572,7 @@ pub fn replace_file(source: &Path, target: &Path) -> std::io::Result<()> {
         .prefix(".replacing")
         .tempfile_in(folder)?;
     std::fs::copy(source, tmp.path())?;
-    tmp.persist(target).map_err(|e| e.error)?;
-    Ok(())
+    Ok(tmp)
 }
 
 #[cfg(test)]
@@ -919,7 +951,13 @@ mod tests {
         let opened = OpenedFiles::new();
         opened.remember(uid(2), &copy, OpenedWhere::Copy, "the annotated hash");
 
-        opened.rewrite_copies(uid(2), &stored).expect("rewritten");
+        opened
+            .rewrite_copies(
+                &opened.copy_paths(uid(2)),
+                &stored,
+                &hash_file(&copy).unwrap().1,
+            )
+            .expect("rewritten");
         assert_eq!(std::fs::read(&copy).expect("read"), b"map");
         assert!(opened.changed().is_empty());
         std::fs::write(&copy, b"map, annotated again").expect("edit");

@@ -676,16 +676,7 @@ fn shape(
             let text_ok = needle
                 .as_ref()
                 .is_none_or(|n| row_search::row_matches(n, &[&r.title, &r.label]));
-            let tag_ok = tag_filter.is_empty() || r.tags.iter().any(|t| tag_filter.contains(t));
-            // `UNSET` (0) matches a row with no rung, and also one whose rung no longer
-            // resolves — to every reader those are the same state, because the reference
-            // is weak on purpose.
-            let status_ok = status_filter.is_empty()
-                || match r.status {
-                    Some(id) => status_filter.contains(&id),
-                    None => status_filter.contains(&0),
-                };
-            text_ok && tag_ok && status_ok
+            text_ok && r.matches_tags_and_status(&tag_filter, &status_filter)
         });
     }
     if let Some((col, dir)) = sort {
@@ -696,6 +687,14 @@ fn shape(
         };
     }
     sieve.apply(rows)
+}
+
+impl OverviewRow {
+    pub(crate) fn matches_tags_and_status(&self, tags: &[u64], statuses: &[u64]) -> bool {
+        let tag_ok = tags.is_empty() || self.tags.iter().any(|tag| tags.contains(tag));
+        // Zero is the filter's "unset" option, including a rung that no longer resolves.
+        tag_ok && (statuses.is_empty() || statuses.contains(&self.status.unwrap_or(0)))
+    }
 }
 
 /// The comparator for a column id. An unknown id sorts everything equal, which leaves the

@@ -275,6 +275,70 @@ fn a_resource_with_no_uid_or_a_shared_one_gets_its_own_and_keeps_its_file() {
 }
 
 #[test]
+fn unknown_resource_entries_survive_open_and_save_as() {
+    let (dir, _) = round_trip(SkribShape::ExplodedFolder, &build_bundle(ShapeTag::Folder));
+    let root = dir.path().join("Novel.skrib");
+    let extras = ["resources/research/map.pdf", "resources/notes.txt"];
+    for name in extras {
+        let path = root.join(name);
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(path, b"research").unwrap();
+    }
+    super::media::prune_resources_dir(&root.join("resources"), &[]);
+    let bundle = read_bundle(root.to_str().unwrap()).unwrap();
+    let (_, copy) = round_trip(SkribShape::ZipFile, &bundle);
+    for name in extras {
+        assert_eq!(copy.carried[name].bytes, b"research");
+    }
+}
+
+#[test]
+fn an_older_projects_uuid_named_research_directory_survives_upgrade_and_backup() {
+    let mut old = build_bundle(ShapeTag::Folder);
+    old.resources.clear();
+    old.resource_blobs.clear();
+    old.manifest.format_version = 16;
+    let (dir, _) = round_trip(SkribShape::ExplodedFolder, &old);
+    let root = dir.path().join("Novel.skrib");
+    let path = root.to_str().unwrap();
+    let rel = format!("resources/{}/research.pdf", stored_key());
+    let file = root.join(&rel);
+    std::fs::create_dir_all(file.parent().unwrap()).unwrap();
+    std::fs::write(&file, b"research").unwrap();
+    std::fs::remove_file(root.join("resources.ron")).unwrap();
+
+    let mut back = read_bundle(path).unwrap();
+    super::media::prune_resources_except(
+        &root.join("resources"),
+        &[],
+        &back.manifest.legacy_resource_dirs,
+    );
+    assert_eq!(std::fs::read(file).unwrap(), b"research");
+    back.manifest.format_version = super::FORMAT_VERSION;
+    back.carried = super::carry::load_for_save(path, &back.resources);
+    write_bundle(path, SkribShape::ExplodedFolder, &back).unwrap();
+    let upgraded = read_bundle(path).unwrap();
+    let (backup, restored) = round_trip(SkribShape::ZipFile, &upgraded);
+    assert_eq!(restored.carried[&rel].bytes, b"research");
+    assert_eq!(
+        super::carry::load(backup.path().join("Novel.skrib").to_str().unwrap())[&rel].bytes,
+        b"research"
+    );
+}
+
+#[test]
+fn a_decomposed_resource_name_is_found_after_open() {
+    let dir = tempfile::tempdir().unwrap();
+    let uid = common::uid::fixture_uid(60);
+    let folder = dir.path().join(uid.hyphenated().to_string());
+    std::fs::create_dir_all(&folder).unwrap();
+    std::fs::write(folder.join("Cafe\u{301}.pdf"), b"map").unwrap();
+    super::media::prune_resources_dir(dir.path(), &[(uid, "Café.pdf".into())]);
+    let path = super::media::resource_file(dir.path(), uid, "Café.pdf");
+    assert_eq!(std::fs::read(path).unwrap(), b"map");
+}
+
+#[test]
 fn prune_keeps_a_file_whose_name_only_changed_case() {
     let dir = tempfile::tempdir().unwrap();
     let uid = common::uid::fixture_uid(60);

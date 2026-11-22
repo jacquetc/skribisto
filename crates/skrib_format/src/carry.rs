@@ -33,9 +33,9 @@
 //! to the format means adding it here, and the test at the bottom of this module
 //! walks a freshly written bundle to assert the two agree.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
-use crate::bundle::CarriedFile;
+use crate::bundle::{CarriedFile, ProjectManifest, ResourceFile};
 use crate::history::{HISTORY_DIR, HISTORY_INDEX};
 use crate::shape::MANIFEST_NAME;
 use crate::slug::{ASSETS_DIR, RESOURCES_DIR, TEMPLATES_DIR};
@@ -76,7 +76,7 @@ pub fn is_modelled(rel: &str) -> bool {
         // assets/<hash>.<ext> — content-addressed image blobs, any extension.
         [dir, _name] if *dir == ASSETS_DIR => true,
         // resources/<uid>/<name> — one stored resource's file, any name.
-        [dir, _uid, _name] if *dir == RESOURCES_DIR => true,
+        [dir, uid, _name] if *dir == RESOURCES_DIR => crate::media::resource_dir_uid(uid).is_some(),
         // history/index.ron plus one content-addressed blob per recorded state.
         [dir, name] if *dir == HISTORY_DIR => rel == HISTORY_INDEX || name.ends_with(".djot"),
         // binders/<dir>/items.ron
@@ -89,6 +89,37 @@ pub fn is_modelled(rel: &str) -> bool {
         }
         _ => false,
     }
+}
+
+/// The UID in a path occupying a stored file's position in the bundle.
+pub(crate) fn resource_owner(rel: &str) -> Option<uuid::Uuid> {
+    let rest = rel.strip_prefix("resources/")?;
+    let (dir, file) = rest.split_once('/')?;
+    if file.contains('/') {
+        return None;
+    }
+    crate::media::resource_dir_uid(dir)
+}
+
+pub(crate) fn modelled_in<'a>(
+    rel: &str,
+    manifest: impl FnOnce() -> Option<&'a ProjectManifest>,
+    live: &BTreeSet<uuid::Uuid>,
+) -> bool {
+    if let Some(uid) = resource_owner(rel) {
+        return live.contains(&uid)
+            || manifest()
+                .is_some_and(|m| m.format_version >= 17 && !m.legacy_resource_dirs.contains(&uid));
+    }
+    is_modelled(rel)
+}
+
+pub(crate) fn stored_uids(resources: &[ResourceFile]) -> BTreeSet<uuid::Uuid> {
+    resources
+        .iter()
+        .filter(|r| r.kind == common::entities::ResourceKind::StoredFile)
+        .map(|r| r.uid)
+        .collect()
 }
 
 /// A bundle that ended up **inside** this one — neither modelled nor carried.
@@ -121,15 +152,28 @@ pub fn is_stray_bundle(rel: &str) -> bool {
 /// error: there is nothing to carry, which is an ordinary state for a brand-new
 /// project, not a failure.
 pub fn load(path: &str) -> BTreeMap<String, CarriedFile> {
+    load_for_save(path, &[])
+}
+
+/// Known live resources include files newly added to a pre-v17 folder before its
+/// first save. They are streamed by the writer, never buffered as legacy files.
+pub fn load_for_save(path: &str, resources: &[ResourceFile]) -> BTreeMap<String, CarriedFile> {
+    // Most projects need no extra manifest read to classify their files.
+    let manifest = std::cell::LazyCell::new(|| crate::peek_manifest(path).ok());
+    let live = stored_uids(resources);
+    let modelled = |rel: &str| modelled_in(rel, || manifest.as_ref(), &live);
     use crate::shape::{SkribShape, detect_shape, folder_root};
     match detect_shape(path) {
-        Ok(SkribShape::ExplodedFolder) => load_folder(&folder_root(path)),
-        Ok(SkribShape::ZipFile) => load_zip(std::path::Path::new(path)),
+        Ok(SkribShape::ExplodedFolder) => load_folder(&folder_root(path), modelled),
+        Ok(SkribShape::ZipFile) => load_zip(std::path::Path::new(path), modelled),
         _ => BTreeMap::new(),
     }
 }
 
-fn load_folder(root: &std::path::Path) -> BTreeMap<String, CarriedFile> {
+fn load_folder(
+    root: &std::path::Path,
+    modelled: impl Fn(&str) -> bool,
+) -> BTreeMap<String, CarriedFile> {
     let mut out = BTreeMap::new();
     for entry in walkdir::WalkDir::new(root).sort_by_file_name() {
         let Ok(entry) = entry else { continue };
@@ -148,7 +192,7 @@ fn load_folder(root: &std::path::Path) -> BTreeMap<String, CarriedFile> {
         else {
             continue;
         };
-        if is_modelled(&rel) || is_stray_bundle(&rel) {
+        if modelled(&rel) || is_stray_bundle(&rel) {
             continue;
         }
         // The same filter the zip side applies, for the same reason and with the
@@ -168,7 +212,10 @@ fn load_folder(root: &std::path::Path) -> BTreeMap<String, CarriedFile> {
     out
 }
 
-fn load_zip(path: &std::path::Path) -> BTreeMap<String, CarriedFile> {
+fn load_zip(
+    path: &std::path::Path,
+    modelled: impl Fn(&str) -> bool,
+) -> BTreeMap<String, CarriedFile> {
     let Ok(file) = std::fs::File::open(path) else {
         return BTreeMap::new();
     };
@@ -190,7 +237,7 @@ fn load_zip(path: &std::path::Path) -> BTreeMap<String, CarriedFile> {
     let unmodelled: Vec<String> = archive
         .file_names()
         .filter_map(Result::ok)
-        .filter(|n| !n.ends_with('/') && !is_modelled(n) && !is_stray_bundle(n))
+        .filter(|n| !n.ends_with('/') && !modelled(n) && !is_stray_bundle(n))
         .filter(|n| match crate::safe_path::bundle_relative(n) {
             Ok(_) => true,
             Err(e) => {

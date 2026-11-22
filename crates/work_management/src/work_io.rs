@@ -195,7 +195,11 @@ pub fn write_resource_blobs(
         .filter(|r| r.kind == common::entities::ResourceKind::StoredFile)
         .map(|r| (r.uid, r.file_name.clone()))
         .collect();
-    skrib::media::prune_resources_dir(resources_dir, &keep);
+    skrib::media::prune_resources_except(
+        resources_dir,
+        &keep,
+        &bundle.manifest.legacy_resource_dirs,
+    );
     for r in &bundle.resources {
         let Some(blob) = bundle.resource_blobs.get(&r.uid.hyphenated().to_string()) else {
             continue;
@@ -464,7 +468,7 @@ pub fn serialize_and_write(
     bundle.carried = if foreign {
         Default::default()
     } else {
-        skrib::carry::load(history.source())
+        skrib::carry::load_for_save(history.source(), &bundle.resources)
     };
 
     // The contributors' files then land **over** the on-disk read. That

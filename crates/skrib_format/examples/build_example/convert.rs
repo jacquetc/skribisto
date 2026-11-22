@@ -303,6 +303,7 @@ fn build(spec: &Spec, chapters: &[RawChapter]) -> Result<WorkBundle> {
         manifest: ProjectManifest {
             format_version: FORMAT_VERSION,
             format_min_read_version: Some(7),
+            legacy_resource_dirs: Default::default(),
             shape: ShapeTag::Zip,
             work: WorkFile {
                 file_id: 1,

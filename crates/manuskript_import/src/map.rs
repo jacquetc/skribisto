@@ -351,6 +351,7 @@ pub fn build_bundle(
             // the manifest, never here. Stamping it in a second place is how the
             // two drift apart.
             format_min_read_version: None,
+            legacy_resource_dirs: Default::default(),
             shape: ShapeTag::Zip,
             work,
             binder_order,

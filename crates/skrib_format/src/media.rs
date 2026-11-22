@@ -165,6 +165,13 @@ pub fn resources_dir(
     ))
 }
 
+/// Resource directories use exactly the lowercase, hyphenated UID written by the format.
+pub(crate) fn resource_dir_uid(name: &str) -> Option<uuid::Uuid> {
+    uuid::Uuid::parse_str(name)
+        .ok()
+        .filter(|uid| uid.hyphenated().to_string() == name)
+}
+
 /// Where one stored resource's file is in `resources_dir`: `<uid>/<safe name>`.
 ///
 /// The name an earlier build gave the file when it is there and today's is not (see
@@ -177,11 +184,12 @@ pub fn resources_dir(
 /// device, which is not the writer's file.
 pub fn resource_file(resources_dir: &Path, uid: uuid::Uuid, file_name: &str) -> PathBuf {
     let folder = resources_dir.join(uid.hyphenated().to_string());
-    let path = folder.join(crate::slug::safe_file_name(file_name));
+    let locator = crate::locate::Locator::new();
+    let path = locator.locate_child(&folder, &crate::slug::safe_file_name(file_name));
     if std::fs::symlink_metadata(&path).is_err()
         && let Some(legacy) = crate::slug::legacy_safe_file_name(file_name)
     {
-        let legacy = folder.join(legacy);
+        let legacy = locator.locate_child(&folder, &legacy);
         if std::fs::symlink_metadata(&legacy).is_ok_and(|m| m.is_file() || m.is_symlink()) {
             return legacy;
         }
@@ -252,6 +260,15 @@ pub(crate) fn refuse_link(dir: &Path, path: &Path, what: &str) -> anyhow::Result
 /// names. Best effort, like every prune: what cannot be removed now is tried again
 /// on the next open.
 pub fn prune_resources_dir(resources_dir: &Path, keep: &[(uuid::Uuid, String)]) {
+    prune_resources_except(resources_dir, keep, &std::collections::BTreeSet::new());
+}
+
+/// Preserve directories the bundle reader identified as legacy extension data.
+pub fn prune_resources_except(
+    resources_dir: &Path,
+    keep: &[(uuid::Uuid, String)],
+    legacy: &std::collections::BTreeSet<uuid::Uuid>,
+) {
     // The whole folder a link (a folder project's `resources/` pointing elsewhere):
     // listed, it would be the folder it points at, and every folder there not named by
     // a resource would go. The reader left every file under it out already.
@@ -291,38 +308,27 @@ pub fn prune_resources_dir(resources_dir: &Path, keep: &[(uuid::Uuid, String)]) 
         let Some(dir_name) = path.file_name().and_then(|n| n.to_str()) else {
             continue;
         };
-        match kept.get(dir_name) {
-            None => {
-                if path.is_dir() {
-                    let _ = std::fs::remove_dir_all(&path);
-                } else {
-                    let _ = std::fs::remove_file(&path);
-                }
+        let Some(uid) = resource_dir_uid(dir_name) else {
+            continue;
+        };
+        if legacy.contains(&uid) || !entry.file_type().is_ok_and(|t| t.is_dir()) {
+            continue;
+        }
+        let names = kept.get(dir_name);
+        let Ok(files) = std::fs::read_dir(&path) else {
+            continue;
+        };
+        for file in files.flatten() {
+            // Only direct files belong to the format. Leave nested extension data alone.
+            if file.file_type().is_ok_and(|t| t.is_file())
+                && let Some(name) = file.file_name().to_str()
+                && !names.is_some_and(|names| names.contains(&fold(name)))
+            {
+                let _ = std::fs::remove_file(file.path());
             }
-            // A live resource's folder that is a link is left alone: listed, it would be
-            // the folder it points at, anywhere on the disk, and the prune would delete
-            // every file there the resource does not name.
-            Some(_) if entry.file_type().is_ok_and(|t| t.is_symlink()) => {
-                eprintln!(
-                    "skrib: {} is a link, not a resource folder; nothing in it is touched",
-                    path.display()
-                );
-            }
-            Some(names) => {
-                let Ok(files) = std::fs::read_dir(&path) else {
-                    continue;
-                };
-                for file in files.flatten() {
-                    let fp = file.path();
-                    let keep = fp
-                        .file_name()
-                        .and_then(|n| n.to_str())
-                        .is_some_and(|n| names.contains(&fold(n)));
-                    if !keep && fp.is_file() {
-                        let _ = std::fs::remove_file(&fp);
-                    }
-                }
-            }
+        }
+        if names.is_none() {
+            let _ = std::fs::remove_dir(path);
         }
     }
 }
@@ -343,8 +349,9 @@ fn rename_to_current_name(resources_dir: &Path, uid: uuid::Uuid, file_name: &str
     if std::fs::symlink_metadata(&folder).is_ok_and(|m| m.file_type().is_symlink()) {
         return;
     }
-    let current = folder.join(crate::slug::safe_file_name(file_name));
-    let earlier = folder.join(earlier);
+    let locator = crate::locate::Locator::new();
+    let current = locator.locate_child(&folder, &crate::slug::safe_file_name(file_name));
+    let earlier = locator.locate_child(&folder, &earlier);
     if std::fs::symlink_metadata(&current).is_ok()
         || !std::fs::symlink_metadata(&earlier).is_ok_and(|m| m.is_file())
     {
