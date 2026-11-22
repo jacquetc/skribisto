@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter">
+  <!-- Folder/Note — the plain folder holding a solid note bubble.
+       It used to share `note.svg` with the note items inside it, so a notes folder
+       and its notes read as one list of identical rows, which is the collision
+       Paratext's pair already had to solve. The outline is Folder's, unchanged, so it
+       reads as a container before anything else; the solid shape inside is what
+       separates it from a plain folder, by ink mass, the one difference a 16px
+       raster keeps. The bubble's tail does not survive at this size and is not
+       relied on: "a solid mark in a folder" is the whole reading.
+       Not a stacked pair of bubbles: that is the Comments panel's glyph. Not a
+       folder whose edge runs into a tail: that rendered as BookBegin's pennant.
+       Folder edges on the half-grid as in `folder.svg`; the bubble on integer
+       bounds. -->
+  <path d="M2.5 5.5V4.5a1 1 0 0 1 1-1h2l1.5 2H12.5a1 1 0 0 1 1 1V11.5a1 1 0 0 1-1 1H3.5a1 1 0 0 1-1-1Z"/>
+  <path d="M5 7H11V10H7.5L5 12Z" fill="currentColor" stroke="none"/>
+</svg>

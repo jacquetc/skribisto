@@ -474,11 +474,11 @@ fn binder_context_menu(outline: OutlineViewModel, key: BinderTreeKey) -> MenuLis
 pub fn promote_menu(outline: OutlineViewModel, key: BinderTreeKey) -> MenuList {
     let mut menu = MenuList::new();
     for target in outline.promote_targets_of(key) {
-        let (_, sub_role) = target.combo();
+        let (role, sub_role) = target.combo();
         let vm = outline.clone();
         menu = menu.item(
             MenuItem::new(crate::binder::create_labels::promote_target_label(target))
-                .icon(crate::binder::icons::sub_role_icon(&sub_role))
+                .icon(crate::binder::icons::role_sub_role_icon(&role, &sub_role))
                 .rich_tooltip(crate::binder::create_labels::promote_target_tooltip_key(
                     target,
                 ))

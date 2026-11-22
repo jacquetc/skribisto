@@ -74,29 +74,33 @@ pub const ICON_SIZE: f32 = 16.0;
 
 /// Icon for a binder item, chosen by its `sub_role`.
 ///
-/// The leaf reading. Every sub_role but one looks the same whether it is carried by an
-/// item or a folder — a notes folder and a note share a glyph, and always have — so this
-/// is the right answer nearly everywhere. Paratext is the exception, and callers that
-/// know the role should use [`role_sub_role_icon`].
+/// The leaf reading. Most sub_roles look the same whether they are carried by an item or
+/// a folder, so this is the right answer nearly everywhere. Note and Paratext are the
+/// exceptions, and callers that know the role should use [`role_sub_role_icon`].
 pub fn sub_role_icon(sub_role: &BinderItemSubRole) -> IconWidget {
     role_sub_role_icon(&BinderItemRole::Item, sub_role)
 }
 
 /// Icon for a binder item, chosen by its `(role, sub_role)`.
 ///
-/// Only paratexts distinguish the two, and they have to: a paratext folder and the pages
-/// inside it are both new, both unfamiliar, and sat next to each other in the same
-/// subtree — with one glyph between them the tree read as a list of identical rows.
-/// They differ by ink mass (a line for the leaf, a band for the container), the same
-/// device that separates Scene from Chapter, because a raster at 16px preserves mass and
-/// destroys stroke counts.
+/// Paratexts and notes distinguish the two, and they have to: a folder and the pages
+/// inside it sit next to each other in the same subtree, and with one glyph between them
+/// the tree read as a list of identical rows. A paratext folder differs from its pages by
+/// ink mass (a line for the leaf, a band for the container), the same device that
+/// separates Scene from Chapter, because a raster at 16px preserves mass and destroys
+/// stroke counts. A notes folder is the plain folder holding a solid bubble: the folder
+/// outline says container, the solid mark says notes.
 pub fn role_sub_role_icon(role: &BinderItemRole, sub_role: &BinderItemSubRole) -> IconWidget {
-    if matches!(
-        (role, sub_role),
-        (BinderItemRole::Folder, BinderItemSubRole::Paratext)
-    ) {
-        return IconWidget::from_svg_icon(res!("assets/icons/binder/paratext-folder.svg"))
-            .icon_size(ICON_SIZE);
+    match (role, sub_role) {
+        (BinderItemRole::Folder, BinderItemSubRole::Paratext) => {
+            return IconWidget::from_svg_icon(res!("assets/icons/binder/paratext-folder.svg"))
+                .icon_size(ICON_SIZE);
+        }
+        (BinderItemRole::Folder, BinderItemSubRole::Note) => {
+            return IconWidget::from_svg_icon(res!("assets/icons/binder/note-folder.svg"))
+                .icon_size(ICON_SIZE);
+        }
+        _ => {}
     }
     let svg = match sub_role {
         BinderItemSubRole::Text => res!("assets/icons/binder/text.svg"),

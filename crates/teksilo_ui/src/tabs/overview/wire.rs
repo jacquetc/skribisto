@@ -142,11 +142,11 @@ fn add_recommendations_menu(vm: OverviewViewModel, uid: Uuid) -> MenuList {
 fn promote_menu(vm: OverviewViewModel, uid: Uuid) -> MenuList {
     let mut menu = MenuList::new();
     for target in vm.promote_targets_of(uid) {
-        let (_, sub_role) = target.combo();
+        let (role, sub_role) = target.combo();
         let vm = vm.clone();
         menu = menu.item(
             MenuItem::new(crate::binder::create_labels::promote_target_label(target))
-                .icon(crate::binder::icons::sub_role_icon(&sub_role))
+                .icon(crate::binder::icons::role_sub_role_icon(&role, &sub_role))
                 .rich_tooltip(crate::binder::create_labels::promote_target_tooltip_key(
                     target,
                 ))
