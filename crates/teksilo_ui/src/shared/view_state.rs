@@ -315,6 +315,10 @@ pub struct ViewStateBinding {
     /// captured, and `EditorHandle::focus` on it does nothing at all, because an
     /// unmounted editor has no widget id to focus.
     pub page_editor: Rc<RefCell<Option<EditorHandle>>>,
+    /// Where the same editor puts what a press under the page needs to put the
+    /// caret at the end of its text (see `PageTail`). Staged beside
+    /// `page_editor`, by the same editors, and read at the press.
+    pub page_caret: Rc<RefCell<Option<crate::tabs::shared::PageCaret>>>,
 }
 
 #[cfg(test)]

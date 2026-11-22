@@ -49,6 +49,11 @@ pub struct ColumnWithMargin {
     /// left while the others stayed centred, and the manuscript would zigzag down
     /// the page. All rows reserve, or none do.
     reserve: Signal<f32>,
+    /// What a press on the empty space around the column puts the caret in — see
+    /// [`Self::caret_beside`].
+    caret: Option<crate::tabs::shared::PageCaret>,
+    /// Where `place_children` put the column, for the press handler.
+    span: crate::tabs::shared::editor::page_caret::ColumnSpan,
 }
 
 impl std::fmt::Debug for ColumnWithMargin {
@@ -70,7 +75,18 @@ impl ColumnWithMargin {
             margin: None,
             cap,
             reserve: Signal::new(0.0),
+            caret: None,
+            span: std::rc::Rc::new(std::cell::Cell::new((0.0, 0.0))),
         }
+    }
+
+    /// Put the caret in `caret`'s editor on a press beside the column, on the
+    /// line at that height: either side of it, and on the comment margin's own
+    /// empty space, which is as much the page as the space left of the text. A
+    /// card in the margin is a node of its own and keeps its presses.
+    pub fn caret_beside(mut self, caret: crate::tabs::shared::PageCaret) -> Self {
+        self.caret = Some(caret);
+        self
     }
 
     /// Reserve `width` for the margin whatever this document holds — see
@@ -168,6 +184,23 @@ impl Widget for ColumnWithMargin {
         if let Some(w) = self.pending_margin.take() {
             self.margin = Some(ctx.add_boxed(w));
         }
+        if let Some(caret) = self.caret.clone() {
+            use crate::tabs::shared::editor::page_caret;
+            let (me, margin) = (ctx.self_id(), self.margin);
+            let span = self.span.clone();
+            ctx.apply_self_handlers(
+                teksilo::core::widget_builder::HandlerSet::new().on_pointer_event(
+                    page_caret::caret_on_press(
+                        move || Some(caret.clone()),
+                        move |target| target == me || Some(target) == margin,
+                        move |local| {
+                            let (left, width) = span.get();
+                            page_caret::beside(left, width, local)
+                        },
+                    ),
+                ),
+            );
+        }
         self.children()
     }
 
@@ -203,6 +236,7 @@ impl Widget for ColumnWithMargin {
                 // would put a click target for the prose beside a comment card.
                 child.origin = Point::new(bounds.x + p.column_x, bounds.y);
                 child.size = Size::new(p.column_width, column.height);
+                self.span.set((p.column_x, p.column_width));
             } else if Some(child.id) == self.margin {
                 // Full height, so the cards can stack anywhere down the page and
                 // the leaders can be painted the whole way.

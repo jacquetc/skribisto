@@ -207,7 +207,14 @@ pub(crate) fn laned(
     surface: crate::margin_lane::LaneSurface,
     scope: crate::margin_lane::LaneScope,
     area: ScrollArea,
+    // The page's own `ViewStateBinding::page_caret`: the editor a press under the
+    // page puts the caret in, whichever of its editors published itself as the page's.
+    caret: Rc<RefCell<Option<crate::tabs::shared::PageCaret>>>,
     content: impl Widget + 'static,
+    // Empty space kept under the content, part of the page a press there reaches
+    // the editor from. Not a spacer inside `content`: that would be a node of its
+    // own, and a press on it would land on nothing.
+    bottom_space: f32,
 ) -> impl Widget {
     // The page reports where it landed, exactly as a stream row does — and for the
     // same reason, which is not the geometry but the **signal**. The marks are
@@ -229,8 +236,12 @@ pub(crate) fn laned(
         area.scroll_y_signal().clone(),
         content,
     );
+    // Stretched to the viewport, so the space under a short page is the
+    // `PageTail`'s own and a press there reaches its editor. The scroll range is
+    // unchanged: content shorter than the viewport has none either way.
+    let page = crate::tabs::shared::PageTail::new(caret, page).bottom_space(bottom_space);
     HStack::new()
-        .child(Expand::new().child(area.child(page)))
+        .child(Expand::new().child(area.widget_resizable(true).child(page)))
         .child(lane)
 }
 
@@ -448,6 +459,7 @@ pub(crate) fn writing_page_scroll(
         initial: tab.view_state().get(),
         ports: tab.view_state_ports(),
         page_editor: Rc::new(RefCell::new(None)),
+        page_caret: Rc::new(RefCell::new(None)),
     };
     let port = super::editor::PageScrollPort::new(
         tab.view_state_ports(),
@@ -641,7 +653,9 @@ pub fn folder_own_pane(tab: &ContentTab) -> Box<dyn Widget> {
         crate::margin_lane::LaneSurface::Editor,
         scope,
         area,
-        col.child(vspace(28.0)).child(port),
+        page.page_caret.clone(),
+        col.child(port),
+        28.0,
     );
     // A **chapter folder** carries its own prose here, and Ctrl+F reached it long before
     // this: `open_find` resolves the tab's banner and opened it, on a page that mounted
@@ -851,7 +865,9 @@ pub fn heading(tab: &ContentTab) -> Box<dyn Widget> {
             crate::margin_lane::LaneSurface::Editor,
             scope,
             area,
-            col.child(vspace(28.0)).child(port),
+            page.page_caret.clone(),
+            col.child(port),
+            28.0,
         ),
     )
 }
@@ -966,7 +982,9 @@ fn folder_synopsis_body(tab: &ContentTab, will_show: bool) -> impl Widget {
         crate::margin_lane::LaneSurface::Editor,
         scope,
         area,
-        col.child(vspace(28.0)).child(port),
+        page.page_caret.clone(),
+        col.child(port),
+        28.0,
     )
 }
 

@@ -732,7 +732,7 @@ fn carry_comments(
 
 /// The cursor position at the end of `doc`'s main text. `character_count()` is not that
 /// position: it leaves out the separator between each two paragraphs.
-fn end_of(doc: &TextDocument) -> usize {
+pub(crate) fn end_of(doc: &TextDocument) -> usize {
     let c = doc.cursor();
     c.move_position(MoveOperation::End, MoveMode::MoveAnchor, 1);
     c.position()

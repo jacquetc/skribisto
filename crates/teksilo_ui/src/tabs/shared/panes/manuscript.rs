@@ -184,7 +184,9 @@ pub(super) fn manuscript_page(
         crate::margin_lane::LaneSurface::Editor,
         scope,
         area,
+        page.page_caret.clone(),
         col.child(port),
+        0.0,
     );
     let body: Box<dyn Widget> = match find {
         Some(find) => Box::new(crate::tabs::shared::editor::find_banner_over(find, page)),

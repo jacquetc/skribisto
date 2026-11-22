@@ -715,7 +715,7 @@ pub fn synopsis_column(
     // Read back below, once the editor has been constructed. Cloned first because
     // the sink itself is moved into the builder.
     let sink_probe = view_state.as_ref().and(handle_sink.clone());
-    let column = CenterColumnFlowing::new(teksu!(
+    let mut column = CenterColumnFlowing::new(teksu!(
         MaxSize::width(synopsis_width.get()) {
             max_width: synopsis_width.clone()
             Expand::horizontal {
@@ -751,6 +751,11 @@ pub fn synopsis_column(
         && let Some(handle) = sink_probe.and_then(|s| s.borrow().clone())
     {
         *vs.page_editor.borrow_mut() = Some(handle.clone());
+        // The page's main editor, so a press on the empty page around it lands
+        // here, as it does around the prose of a page that has some.
+        let caret = super::PageCaret::new(&handle, doc);
+        *vs.page_caret.borrow_mut() = Some(caret.clone());
+        column = column.caret_beside(caret);
         // Unclamped, for the reason `writing_column` gives: the cursor's own
         // `set_position` clamps to the maximum cursor position, and
         // `character_count` is a smaller number that does not count block

@@ -30,11 +30,13 @@ use teksilo::widgets::{
 /// a search page, not a compact IntelliJ-style bar.
 mod bound_editor;
 mod find_banner;
+pub(crate) mod page_caret;
 mod scroll_sync;
 mod synopsis;
 
 pub(crate) use bound_editor::wire_spell;
 pub(crate) use find_banner::highlight_of;
+pub use page_caret::{PageCaret, PageTail};
 pub use scroll_sync::{PROSE_MIN_WIDTH, side_synopsis_editor};
 pub(crate) use scroll_sync::{
     PageScrollPort, SYNOPSIS_PANE, SideSync, SynopsisPaneEffects, WidthProbe,
@@ -356,9 +358,13 @@ pub fn writing_column(
     // editor by `tab_pane` before this build started, so a rebuild (a Promote, a
     // settings-driven relayout) puts the writer back where they were rather than
     // at the position the tab was first opened at.
+    // What a press on the empty page around this editor puts the caret in: the
+    // margins beside it here, and the space under the page through `view_state`.
+    let page_caret = PageCaret::new(&editor.handle(), doc);
     if let Some(vs) = &view_state {
         let handle = editor.handle();
         *vs.page_editor.borrow_mut() = Some(handle.clone());
+        *vs.page_caret.borrow_mut() = Some(page_caret.clone());
         // A comment dock's "jump to this thread" parks a seek that only this
         // editor can perform, because only it exists once the tab is built. It
         // wins over the restored caret: the writer just asked to go somewhere
@@ -631,11 +637,14 @@ pub fn writing_column(
                         margin,
                         column_width.clone(),
                     )
-                    .reserve(gutter),
+                    .reserve(gutter)
+                    .caret_beside(page_caret),
                 ),
             )
         }
-        None => row.child(Expand::horizontal().child(CenterColumnFlowing::new(capped))),
+        None => row.child(
+            Expand::horizontal().child(CenterColumnFlowing::new(capped).caret_beside(page_caret)),
+        ),
     }
 }
 
@@ -1559,10 +1568,17 @@ impl RichTextEditorStyle for WritingEditorStyle {
 /// The proposal is floored at [`MIN_COLUMN_WIDTH`], so the column bottoms out instead
 /// of collapsing toward zero (which would wrap the prose one word per line and make
 /// the page absurdly tall).
+///
+/// With [`caret_beside`](Self::caret_beside), a press in the empty space either
+/// side of the column puts the caret in its editor, on the line at that height
+/// (see [`page_caret`]).
 #[derive(Debug)]
 pub struct CenterColumnFlowing {
     child_id: Option<WidgetId>,
     pending: Option<Box<dyn Widget>>,
+    caret: Option<PageCaret>,
+    /// Where `place_children` put the column, for the press handler.
+    span: page_caret::ColumnSpan,
 }
 
 impl CenterColumnFlowing {
@@ -1570,7 +1586,15 @@ impl CenterColumnFlowing {
         Self {
             child_id: None,
             pending: Some(Box::new(child)),
+            caret: None,
+            span: Rc::new(Cell::new((0.0, 0.0))),
         }
+    }
+
+    /// Put the caret in `caret`'s editor on a press beside the column.
+    pub fn caret_beside(mut self, caret: PageCaret) -> Self {
+        self.caret = Some(caret);
+        self
     }
 }
 
@@ -1578,6 +1602,20 @@ impl Widget for CenterColumnFlowing {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
         if let Some(w) = self.pending.take() {
             self.child_id = Some(ctx.add_boxed(w));
+        }
+        if let Some(caret) = self.caret.clone() {
+            let me = ctx.self_id();
+            let span = self.span.clone();
+            ctx.apply_self_handlers(HandlerSet::new().on_pointer_event(
+                page_caret::caret_on_press(
+                    move || Some(caret.clone()),
+                    move |target| target == me,
+                    move |local| {
+                        let (left, width) = span.get();
+                        page_caret::beside(left, width, local)
+                    },
+                ),
+            ));
         }
         self.child_id.into_iter().collect()
     }
@@ -1609,6 +1647,7 @@ impl Widget for CenterColumnFlowing {
             let dx = ((bounds.width - size.width) / 2.0).max(0.0);
             child.origin = Point::new(bounds.x + dx, bounds.y);
             child.size = size;
+            self.span.set((dx, size.width));
         }
     }
 
@@ -1664,3 +1703,7 @@ mod text_size_tests;
 
 #[cfg(test)]
 mod width_probe_tests;
+
+/// A press on the page around a writing editor, from the pointer to the caret.
+#[cfg(test)]
+mod page_caret_tests;
