@@ -40,6 +40,7 @@ impl<'a> WorkHashMapTable<'a> {
                 &self.store.jn_note_template_from_work_note_templates
             }
             WorkRelationshipField::Paces => &self.store.jn_pace_from_work_paces,
+            WorkRelationshipField::Resources => &self.store.jn_resource_from_work_resources,
             WorkRelationshipField::SmartPunctuation => {
                 &self.store.jn_smart_punctuation_from_work_smart_punctuation
             }
@@ -67,6 +68,7 @@ impl<'a> WorkHashMapTable<'a> {
             WorkRelationshipField::Footnotes => false,
             WorkRelationshipField::NoteTemplates => true,
             WorkRelationshipField::Paces => true,
+            WorkRelationshipField::Resources => false,
             WorkRelationshipField::SmartPunctuation => false,
             WorkRelationshipField::Statuses => true,
             WorkRelationshipField::Tags => false,
@@ -183,6 +185,22 @@ impl<'a> WorkHashMapTable<'a> {
             }
             WorkRelationshipField::Paces => {
                 let targets = read_or_recover(&self.store.paces);
+                let missing: Vec<_> = rows
+                    .iter()
+                    .flat_map(|(_, ids)| ids)
+                    .copied()
+                    .filter(|id| !targets.contains_key(id))
+                    .collect();
+                if !missing.is_empty() {
+                    return Err(RepositoryError::MissingRelationshipTarget {
+                        operation: "relationship update",
+                        ids: missing,
+                    });
+                }
+                false
+            }
+            WorkRelationshipField::Resources => {
+                let targets = read_or_recover(&self.store.resources);
                 let missing: Vec<_> = rows
                     .iter()
                     .flat_map(|(_, ids)| ids)
@@ -315,6 +333,7 @@ impl<'a> WorkHashMapTable<'a> {
         entity.paces = junction_get(&self.store.jn_pace_from_work_paces, &entity.id);
         entity.comments = junction_get(&self.store.jn_comment_from_work_comments, &entity.id);
         entity.footnotes = junction_get(&self.store.jn_footnote_from_work_footnotes, &entity.id);
+        entity.resources = junction_get(&self.store.jn_resource_from_work_resources, &entity.id);
     }
 }
 
@@ -436,6 +455,14 @@ impl<'a> WorkTable for WorkHashMapTable<'a> {
                 .collect::<Vec<_>>(),
             &entities.iter().map(|e| e.id).collect::<Vec<_>>(),
         )?;
+        self.validate_relationship_updates(
+            &WorkRelationshipField::Resources,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.resources.clone()))
+                .collect::<Vec<_>>(),
+            &entities.iter().map(|e| e.id).collect::<Vec<_>>(),
+        )?;
         let mut created = Vec::with_capacity(entities.len());
         let mut work_map = write_or_recover(&self.store.works);
 
@@ -510,6 +537,11 @@ impl<'a> WorkTable for WorkHashMapTable<'a> {
                 &self.store.jn_pace_from_work_paces,
                 new_entity.id,
                 new_entity.paces.clone(),
+            );
+            junction_set(
+                &self.store.jn_resource_from_work_resources,
+                new_entity.id,
+                new_entity.resources.clone(),
             );
             junction_set(
                 &self.store.jn_smart_punctuation_from_work_smart_punctuation,
@@ -711,6 +743,14 @@ impl<'a> WorkTable for WorkHashMapTable<'a> {
                 .collect::<Vec<_>>(),
             &[],
         )?;
+        self.validate_relationship_updates(
+            &WorkRelationshipField::Resources,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.resources.clone()))
+                .collect::<Vec<_>>(),
+            &[],
+        )?;
         let mut work_map = write_or_recover(&self.store.works);
         for entity in entities {
             // one-to-one constraint check: ensure smart_punctuation is not already referenced by another work
@@ -793,6 +833,11 @@ impl<'a> WorkTable for WorkHashMapTable<'a> {
                 entity.id,
                 entity.footnotes.clone(),
             );
+            junction_set(
+                &self.store.jn_resource_from_work_resources,
+                entity.id,
+                entity.resources.clone(),
+            );
         }
         drop(work_map);
         let ids: Vec<EntityId> = entities.iter().map(|e| e.id).collect();
@@ -831,6 +876,7 @@ impl<'a> WorkTable for WorkHashMapTable<'a> {
             junction_remove(&self.store.jn_pace_from_work_paces, id);
             junction_remove(&self.store.jn_comment_from_work_comments, id);
             junction_remove(&self.store.jn_footnote_from_work_footnotes, id);
+            junction_remove(&self.store.jn_resource_from_work_resources, id);
 
             // Clean up backward references (uses the owning entity's forward junction)
 
@@ -863,6 +909,7 @@ impl<'a> WorkHashMapTableRO<'a> {
                 &self.store.jn_note_template_from_work_note_templates
             }
             WorkRelationshipField::Paces => &self.store.jn_pace_from_work_paces,
+            WorkRelationshipField::Resources => &self.store.jn_resource_from_work_resources,
             WorkRelationshipField::SmartPunctuation => {
                 &self.store.jn_smart_punctuation_from_work_smart_punctuation
             }
@@ -907,6 +954,7 @@ impl<'a> WorkHashMapTableRO<'a> {
         entity.paces = junction_get(&self.store.jn_pace_from_work_paces, &entity.id);
         entity.comments = junction_get(&self.store.jn_comment_from_work_comments, &entity.id);
         entity.footnotes = junction_get(&self.store.jn_footnote_from_work_footnotes, &entity.id);
+        entity.resources = junction_get(&self.store.jn_resource_from_work_resources, &entity.id);
     }
 }
 

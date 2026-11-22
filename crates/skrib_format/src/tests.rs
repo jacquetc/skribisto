@@ -123,12 +123,13 @@ pub(crate) struct SampleInputs {
     pub(crate) note_templates: Vec<common::entities::NoteTemplate>,
     pub(crate) statuses: Vec<common::entities::BinderStatus>,
     pub(crate) assets: Vec<Asset>,
+    pub(crate) resources: Vec<common::entities::Resource>,
     pub(crate) smart_punctuation: common::entities::SmartPunctuation,
     pub(crate) trash: Vec<TrashInfo>,
     pub(crate) binders: Vec<BinderWithItems>,
 }
 
-fn sample_inputs() -> SampleInputs {
+pub(crate) fn sample_inputs() -> SampleInputs {
     let now = ts();
     let work = Work {
         // Deliberately NOT the default: a lossless round trip has to prove it carries the
@@ -158,6 +159,7 @@ fn sample_inputs() -> SampleInputs {
         paces: vec![],
         comments: vec![],
         footnotes: vec![],
+        resources: vec![60, 61, 62],
     };
     // Every field deliberately OFF-default, for the reason spelled out on the
     // tags below: the round-trip tests compare whole bundles, and a row left at
@@ -272,6 +274,9 @@ fn sample_inputs() -> SampleInputs {
             // No status by default, for the same reason the ladder above is empty.
             status: None,
             cover: None,
+            // One item holds all three resources, the others none, so the round trip
+            // covers both the populated and the empty case.
+            resources: if i == 1 { vec![60, 61, 62] } else { Vec::new() },
             id: item_id,
             created_at: now,
             updated_at: now,
@@ -380,8 +385,52 @@ fn sample_inputs() -> SampleInputs {
         },
     ];
 
+    // One resource of each kind, every field off-default, so a round trip that dropped
+    // a field could not pass by comparing two defaults.
+    let resource = |id: u64, kind, title: &str| common::entities::Resource {
+        id,
+        created_at: now,
+        updated_at: now,
+        uid: common::uid::fixture_uid(id),
+        title: title.into(),
+        description: format!("About {title}"),
+        kind,
+        location: String::new(),
+        file_name: String::new(),
+        mime_type: String::new(),
+        byte_size: 0,
+        content_hash: String::new(),
+        width: 0,
+        height: 0,
+    };
+    let resources = vec![
+        common::entities::Resource {
+            file_name: "Village map.pdf".into(),
+            mime_type: "application/pdf".into(),
+            byte_size: 8,
+            content_hash: "hash-of-village-map".into(),
+            width: 0,
+            height: 0,
+            ..resource(
+                60,
+                common::entities::ResourceKind::StoredFile,
+                "Village map",
+            )
+        },
+        common::entities::Resource {
+            location: "/home/someone/Research/interview.mp3".into(),
+            file_name: "interview.mp3".into(),
+            ..resource(61, common::entities::ResourceKind::LinkedFile, "Interview")
+        },
+        common::entities::Resource {
+            location: "https://example.org/tanneries".into(),
+            ..resource(62, common::entities::ResourceKind::WebLink, "Tanneries")
+        },
+    ];
+
     SampleInputs {
         assets,
+        resources,
         work,
         tags,
         dict_words,
@@ -586,6 +635,8 @@ pub(crate) fn build_bundle_with_footnotes(shape: ShapeTag) -> WorkBundle {
         &s.statuses,
         &s.assets,
         Default::default(),
+        &[],
+        Default::default(),
         Some(&s.smart_punctuation),
         &s.trash,
         &[],
@@ -629,6 +680,8 @@ pub(crate) fn build_bundle_with_bytes(
         &s.statuses,
         &s.assets,
         asset_blobs,
+        &[],
+        Default::default(),
         Some(&s.smart_punctuation),
         &s.trash,
         &[],
@@ -653,6 +706,14 @@ pub(crate) fn prose_paths(bundle: &WorkBundle) -> Vec<String> {
     paths
 }
 
+/// The stored resource's bytes, keyed as `WorkBundle::resource_blobs` is.
+pub(crate) fn sample_resource_blobs() -> BTreeMap<String, crate::Blob> {
+    BTreeMap::from([(
+        common::uid::fixture_uid(60).hyphenated().to_string(),
+        crate::Blob::from(b"%PDF-1.7".to_vec()),
+    )])
+}
+
 pub(crate) fn build_bundle(shape: ShapeTag) -> WorkBundle {
     let s = sample_inputs();
     let comments = sample_comments(&s.binders);
@@ -665,6 +726,8 @@ pub(crate) fn build_bundle(shape: ShapeTag) -> WorkBundle {
         &s.statuses,
         &s.assets,
         Default::default(),
+        &s.resources,
+        sample_resource_blobs(),
         Some(&s.smart_punctuation),
         &s.trash,
         &[],
@@ -911,6 +974,8 @@ fn disallowed_content_is_dropped() {
         &[],
         // statuses — this project has no ladder.
         &[],
+        &[],
+        Default::default(),
         &[],
         Default::default(),
         None,
@@ -1178,6 +1243,8 @@ fn an_uncommented_project_writes_no_comment_files_at_all() {
         &s.note_templates,
         &s.statuses,
         &s.assets,
+        Default::default(),
+        &[],
         Default::default(),
         Some(&s.smart_punctuation),
         &s.trash,
@@ -2685,6 +2752,7 @@ fn a_bundle_from_a_newer_format_is_refused() {
     // hold the floor at 6 and stop this asserting the v5 case it is named for.
     let mut bundle = build_bundle(ShapeTag::Folder);
     strip_epigraphs(&mut bundle);
+    strip_resources(&mut bundle);
     assert!(
         !bundle.note_templates.is_empty(),
         "the fixture must carry templates for this to be the v5 case"
@@ -3006,6 +3074,18 @@ fn migrate_bundle_no_longer_bails_on_a_stamp_above_current() {
 // The content-derived floor (`compute_min_read_version`)
 // ---------------------------------------------------------------------------
 
+/// Drop the fixture's resources and every item's link to one, so a test can judge
+/// another axis of the read floor without the v17 one holding it up.
+pub(crate) fn strip_resources(bundle: &mut WorkBundle) {
+    bundle.resources.clear();
+    bundle.resource_blobs.clear();
+    for b in &mut bundle.binders {
+        for item in &mut b.items {
+            item.item.resource_ids.clear();
+        }
+    }
+}
+
 /// Drop every epigraph row (and its blob) from a bundle, so a test can isolate one
 /// floor axis from the other. Epigraph text is prose-role, so it lives in `prose_refs`
 /// with its body in `BundledItem::prose`, keyed by the same `file_id`.
@@ -3043,11 +3123,20 @@ fn the_floor_rises_only_for_content_that_needs_it() {
     let everything = build_bundle(ShapeTag::Folder);
     assert_eq!(
         crate::version_gate::compute_min_read_version(&everything),
+        17,
+        "resources are the v17 axis and the fixture carries them"
+    );
+
+    let mut no_resources = build_bundle(ShapeTag::Folder);
+    strip_resources(&mut no_resources);
+    assert_eq!(
+        crate::version_gate::compute_min_read_version(&no_resources),
         6,
         "epigraphs are the v6 axis and the fixture carries them"
     );
 
     let mut no_epigraphs = build_bundle(ShapeTag::Folder);
+    strip_resources(&mut no_epigraphs);
     strip_epigraphs(&mut no_epigraphs);
     assert_eq!(
         crate::version_gate::compute_min_read_version(&no_epigraphs),
@@ -3056,6 +3145,7 @@ fn the_floor_rises_only_for_content_that_needs_it() {
     );
 
     let mut without = build_bundle(ShapeTag::Folder);
+    strip_resources(&mut without);
     strip_epigraphs(&mut without);
     without.note_templates.clear();
     without.note_template_bodies.clear();
@@ -3079,12 +3169,13 @@ fn the_floor_is_recomputed_at_every_write_not_carried_over() {
     .unwrap();
     assert_eq!(
         peek_manifest(path).unwrap().format_min_read_version,
-        Some(6),
-        "epigraphs must have raised the stamped floor"
+        Some(17),
+        "resources must have raised the stamped floor"
     );
 
     let mut shed = read_bundle(path).unwrap();
-    assert_eq!(shed.manifest.format_min_read_version, Some(6));
+    assert_eq!(shed.manifest.format_min_read_version, Some(17));
+    strip_resources(&mut shed);
     strip_epigraphs(&mut shed);
     shed.note_templates.clear();
     shed.note_template_bodies.clear();
@@ -3131,6 +3222,8 @@ fn the_floor_ignores_content_dropped_by_content_allowed() {
         &s.note_templates,
         &s.statuses,
         &s.assets,
+        Default::default(),
+        &[],
         Default::default(),
         Some(&s.smart_punctuation),
         &s.trash,
@@ -3386,6 +3479,8 @@ fn a_status_ladder_round_trips_through_the_bundle() {
         &statuses,
         &s.assets,
         Default::default(),
+        &[],
+        Default::default(),
         Some(&s.smart_punctuation),
         &s.trash,
         &[],
@@ -3459,6 +3554,8 @@ fn a_project_without_a_ladder_keeps_its_lower_floor() {
         &s.note_templates,
         &[],
         &s.assets,
+        Default::default(),
+        &[],
         Default::default(),
         Some(&s.smart_punctuation),
         &s.trash,

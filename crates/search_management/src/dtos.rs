@@ -18,6 +18,7 @@ pub struct RunSearchDto {
     pub search_synopsis: bool,
     pub search_labels: bool,
     pub search_comments: bool,
+    pub search_resources: bool,
     pub include_trashed: bool,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]

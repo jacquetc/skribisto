@@ -72,6 +72,16 @@ pub fn footnotes_icon() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/activities/footnotes.svg"))
 }
 
+/// The Resources activity icon: a paper clip, what is attached to a page without
+/// being part of it.
+///
+/// Not a folder (the binder's own rows) and not a chain link (a link in the text,
+/// on the editor's toolbar): a resource is neither, and the clip is the one shape
+/// every desktop already uses for "attached".
+pub fn resources_icon() -> IconWidget {
+    IconWidget::from_svg_icon(res!("assets/icons/activities/resources.svg"))
+}
+
 /// The Versions activity icon: a clock hand swept back, over the page it belongs
 /// to.
 ///

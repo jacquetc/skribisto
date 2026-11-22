@@ -2511,6 +2511,7 @@ search-field-epigraph = Epigraf
 search-field-comment = Kommentar
 search-field-comment-reply = Svar
 search-field-footnote = Fotnote
+search-field-resource = Ressurs
 search-include-in-replace = Ta med i Erstatt alle
 search-collapse-all = Fold sammen alle resultater
 search-replace-here = Erstatt dette

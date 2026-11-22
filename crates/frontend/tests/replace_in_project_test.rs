@@ -61,6 +61,7 @@ fn search(ctx: &AppContext, query: &str) -> RunSearchDto {
         search_synopsis: true,
         search_labels: false,
         search_comments: false,
+        search_resources: false,
         include_trashed: false,
     }
 }
@@ -756,6 +757,7 @@ fn manuscript_of(scenes: usize) -> AppContext {
             point_of_view: vec![],
             books: vec![],
             tags: vec![],
+            resources: vec![],
         })
         .collect();
     let created = binder_item_commands::create_binder_item_multi(&ctx, None, &items, binder, -1)
@@ -941,6 +943,7 @@ fn one_scene(tag: &str, text: &str) -> (AppContext, u64) {
             point_of_view: vec![],
             books: vec![],
             tags: vec![],
+            resources: vec![],
         }],
         binder,
         -1,

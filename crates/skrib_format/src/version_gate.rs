@@ -34,7 +34,7 @@
 //! ours is legitimate on entry there. See its own doc comment.
 
 use anyhow::Context;
-use common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
+use common::entities::{BinderItemRole, BinderItemSubRole, ContentRole, ResourceKind};
 use std::fs::File;
 
 use super::bundle::{FORMAT_VERSION, WorkBundle};
@@ -113,6 +113,15 @@ pub fn compute_min_read_version(bundle: &WorkBundle) -> u32 {
         floor = floor.max(8);
     }
 
+    // Resources are why v17 exists, for the reason assets were why v8 does: an older
+    // build's first save would rebuild the archive (or prune the folder) without
+    // `resources.ron` and `resources/`, losing every attached file and link. Gated on
+    // the project having any; each kind is weighed below so a future kind has to say
+    // which version it needs.
+    for r in &bundle.resources {
+        floor = floor.max(resource_kind_min_version(&r.kind));
+    }
+
     for bb in &bundle.binders {
         for bi in &bb.items {
             floor = floor.max(binder_item_role_min_version(&bi.item.role));
@@ -153,6 +162,12 @@ fn content_role_min_version(role: &ContentRole) -> u32 {
         // cannot deserialize the variant, so the gate refuses the bundle rather than
         // letting `items.ron` fail with a raw "unexpected variant".
         ContentRole::ParatextText => 7,
+    }
+}
+
+fn resource_kind_min_version(kind: &ResourceKind) -> u32 {
+    match kind {
+        ResourceKind::StoredFile | ResourceKind::LinkedFile | ResourceKind::WebLink => 17,
     }
 }
 

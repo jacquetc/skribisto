@@ -50,6 +50,9 @@ pub mod write {
                 recent_work_repository::RecentWorkRepository,
                 recent_work_table::RecentWorkHashMapTable,
             },
+            resource::{
+                resource_repository::ResourceRepository, resource_table::ResourceHashMapTable,
+            },
             root::{root_repository::RootRepository, root_table::RootHashMapTable},
             search::{search_repository::SearchRepository, search_table::SearchHashMapTable},
             search_result::{
@@ -282,6 +285,16 @@ pub mod write {
         let asset_table = AssetHashMapTable::new(transaction.get_store());
         Ok(AssetRepository::new(Box::new(asset_table), transaction))
     }
+
+    pub fn create_resource_repository(
+        transaction: &'_ Transaction,
+    ) -> Result<ResourceRepository<'_>> {
+        let resource_table = ResourceHashMapTable::new(transaction.get_store());
+        Ok(ResourceRepository::new(
+            Box::new(resource_table),
+            transaction,
+        ))
+    }
 }
 
 pub mod read {
@@ -337,6 +350,9 @@ pub mod read {
             recent_work::{
                 recent_work_repository::RecentWorkRepositoryRO,
                 recent_work_table::RecentWorkHashMapTableRO,
+            },
+            resource::{
+                resource_repository::ResourceRepositoryRO, resource_table::ResourceHashMapTableRO,
             },
             root::{root_repository::RootRepositoryRO, root_table::RootHashMapTableRO},
             search::{search_repository::SearchRepositoryRO, search_table::SearchHashMapTableRO},
@@ -537,5 +553,12 @@ pub mod read {
     pub fn create_asset_repository(transaction: &'_ Transaction) -> Result<AssetRepositoryRO<'_>> {
         let asset_table = AssetHashMapTableRO::new(transaction.get_store());
         Ok(AssetRepositoryRO::new(Box::new(asset_table)))
+    }
+
+    pub fn create_resource_repository(
+        transaction: &'_ Transaction,
+    ) -> Result<ResourceRepositoryRO<'_>> {
+        let resource_table = ResourceHashMapTableRO::new(transaction.get_store());
+        Ok(ResourceRepositoryRO::new(Box::new(resource_table)))
     }
 }

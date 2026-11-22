@@ -531,7 +531,11 @@ fn editable_field(
         // editors: falling through would highlight the scene, which does not
         // contain the match. Same trap, same answer — the note is shown in the
         // footnotes dock instead.
-        Some(MatchField::Comment) | Some(MatchField::CommentReply) | Some(MatchField::Footnote) => {
+        // A resource's words are on its card, not in this document.
+        Some(MatchField::Comment)
+        | Some(MatchField::CommentReply)
+        | Some(MatchField::Footnote)
+        | Some(MatchField::Resource) => {
             return None;
         }
         Some(MatchField::Synopsis) => match open_doc.synopsis.as_ref() {

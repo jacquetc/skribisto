@@ -66,6 +66,10 @@ impl<'a> TreeReader for dyn CountWordsUnitOfWorkTrait + 'a {
     fn asset_multi(&self, _ids: &[EntityId]) -> Result<Vec<Option<common::entities::Asset>>> {
         Ok(Vec::new())
     }
+    /// A resource has no words to count.
+    fn resource_multi(&self, _ids: &[EntityId]) -> Result<Vec<Option<common::entities::Resource>>> {
+        Ok(Vec::new())
+    }
     /// Word counting reads no templates — see [`TreeReader::note_template_multi`].
     fn note_template_multi(
         &self,

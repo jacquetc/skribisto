@@ -433,6 +433,9 @@ impl ReplaceInProjectUseCase {
                 // comment gets. A note carries italics and a citation, and a raw
                 // string replace would happily rewrite the middle of a formatting
                 // marker.
+                // A resource's words are its filing card, not the book: Replace All
+                // leaves them alone, and the results list says so on the row.
+                MatchField::Resource => continue,
                 MatchField::Footnote => {
                     let Some(mut footnote) = uow.get_footnote(&row.footnote_id)? else {
                         skipped_stale.push(row.id);

@@ -36,6 +36,7 @@ pub struct WorkDto {
     pub paces: Vec<EntityId>,
     pub comments: Vec<EntityId>,
     pub footnotes: Vec<EntityId>,
+    pub resources: Vec<EntityId>,
 }
 
 impl From<WorkDto> for Work {
@@ -65,6 +66,7 @@ impl From<WorkDto> for Work {
             paces: dto.paces,
             comments: dto.comments,
             footnotes: dto.footnotes,
+            resources: dto.resources,
         }
     }
 }
@@ -96,6 +98,7 @@ impl From<&WorkDto> for Work {
             paces: dto.paces.clone(),
             comments: dto.comments.clone(),
             footnotes: dto.footnotes.clone(),
+            resources: dto.resources.clone(),
         }
     }
 }
@@ -127,6 +130,7 @@ impl From<Work> for WorkDto {
             paces: entity.paces,
             comments: entity.comments,
             footnotes: entity.footnotes,
+            resources: entity.resources,
         }
     }
 }
@@ -156,6 +160,7 @@ pub struct CreateWorkDto {
     pub paces: Vec<EntityId>,
     pub comments: Vec<EntityId>,
     pub footnotes: Vec<EntityId>,
+    pub resources: Vec<EntityId>,
 }
 
 impl From<CreateWorkDto> for Work {
@@ -185,6 +190,7 @@ impl From<CreateWorkDto> for Work {
             paces: dto.paces,
             comments: dto.comments,
             footnotes: dto.footnotes,
+            resources: dto.resources,
         }
     }
 }
@@ -216,6 +222,7 @@ impl From<&CreateWorkDto> for Work {
             paces: dto.paces.clone(),
             comments: dto.comments.clone(),
             footnotes: dto.footnotes.clone(),
+            resources: dto.resources.clone(),
         }
     }
 }
@@ -246,6 +253,7 @@ impl From<Work> for CreateWorkDto {
             paces: entity.paces,
             comments: entity.comments,
             footnotes: entity.footnotes,
+            resources: entity.resources,
         }
     }
 }
@@ -292,6 +300,7 @@ impl From<UpdateWorkDto> for Work {
             paces: Default::default(),
             comments: Default::default(),
             footnotes: Default::default(),
+            resources: Default::default(),
         }
     }
 }
@@ -323,6 +332,7 @@ impl From<&UpdateWorkDto> for Work {
             paces: Default::default(),
             comments: Default::default(),
             footnotes: Default::default(),
+            resources: Default::default(),
         }
     }
 }

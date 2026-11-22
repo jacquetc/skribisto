@@ -3155,6 +3155,7 @@ search-field-epigraph = Motto
 search-field-comment = Komentarz
 search-field-comment-reply = Odpowiedź
 search-field-footnote = Przypis
+search-field-resource = Zasób
 search-include-in-replace = Uwzględnij w „Zastąp wszystko”
 search-collapse-all = Zwiń wszystkie wyniki
 search-replace-here = Zastąp to

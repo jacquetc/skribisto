@@ -366,6 +366,8 @@ pub fn build_bundle(
         // Manuskript stores no images or other binary assets of its own.
         assets: Vec::new(),
         asset_blobs: Default::default(),
+        resources: Vec::new(),
+        resource_blobs: Default::default(),
         note_template_bodies: Default::default(),
         trash_infos: Vec::new(),
         orphan_footnotes: Vec::new(),
@@ -699,6 +701,7 @@ impl<'a> Builder<'a> {
                     aliases: Vec::new(),
                     status_id: None,
                     cover_id: None,
+                    resource_ids: Vec::new(),
                     inline_contents,
                     prose_refs,
                     reference_ids: Vec::new(),

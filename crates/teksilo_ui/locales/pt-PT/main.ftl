@@ -2544,6 +2544,7 @@ search-field-epigraph = Epígrafe
 search-field-comment = Comentário
 search-field-comment-reply = Resposta
 search-field-footnote = Nota de rodapé
+search-field-resource = Recurso
 search-include-in-replace = Incluir em Substituir tudo
 search-collapse-all = Recolher todos os resultados
 search-replace-here = Substituir isto

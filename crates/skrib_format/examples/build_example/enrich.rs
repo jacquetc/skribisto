@@ -589,6 +589,7 @@ fn blank(file_id: u64, uid: uuid::Uuid, now: &str) -> BinderItemFile {
     BinderItemFile {
         status_id: None,
         cover_id: None,
+        resource_ids: Vec::new(),
         file_id,
         uid,
         created_at: now.to_string(),

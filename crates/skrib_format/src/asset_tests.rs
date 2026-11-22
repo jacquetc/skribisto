@@ -148,7 +148,9 @@ fn a_project_with_images_raises_its_read_floor() {
     // An older build has no assets field and both writers rebuild from what the
     // bundle holds, so its first save would delete every image. The floor makes
     // that a refusal to open instead.
-    let with = bundle_with_assets();
+    let mut with = bundle_with_assets();
+    // Isolated to the asset axis: the fixture's resources would hold the floor at 17.
+    super::tests::strip_resources(&mut with);
     assert_eq!(super::version_gate::compute_min_read_version(&with), 8);
 }
 
@@ -156,7 +158,8 @@ fn a_project_with_images_raises_its_read_floor() {
 fn a_project_without_images_keeps_the_lower_floor() {
     // The floor is content-driven: adding the *capability* must not lock every
     // existing project out of every older build.
-    let without = super::tests::build_bundle(ShapeTag::Folder);
+    let mut without = super::tests::build_bundle(ShapeTag::Folder);
+    super::tests::strip_resources(&mut without);
     assert!(
         super::version_gate::compute_min_read_version(&without) < 8,
         "an image-free project should still open in an older build"

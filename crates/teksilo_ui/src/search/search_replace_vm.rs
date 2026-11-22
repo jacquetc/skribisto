@@ -453,6 +453,7 @@ impl SearchReplaceViewModel {
             search_synopsis: self.search_synopsis.get(),
             search_labels: self.search_labels.get(),
             search_comments: self.search_comments.get(),
+            search_resources: false,
             include_trashed: self.include_trashed.get(),
         }
     }
@@ -626,6 +627,17 @@ impl SearchReplaceViewModel {
         // match: `preview` stays `None` (so `PreviewBody` renders the footnote-aware
         // empty state instead of trying to resolve an editable field), and the
         // Footnotes dock is revealed directly.
+        // A resource's words are on its card, not in any text: like a footnote, the
+        // preview stays empty rather than opening a scene that does not contain them.
+        if row.match_field == MatchField::Resource {
+            if let Some(old) = self.preview_open_id.borrow_mut().take() {
+                self.docs.release(old, self.ids.stack_id.get());
+            }
+            self.preview.set(None);
+            self.preview_field.set(Some(MatchField::Resource));
+            self.selected_result.set(Some(result_id));
+            return;
+        }
         if row.match_field == MatchField::Footnote {
             if let Some(old) = self.preview_open_id.borrow_mut().take() {
                 self.docs.release(old, self.ids.stack_id.get());
@@ -679,8 +691,26 @@ impl SearchReplaceViewModel {
         self.set_excluded(result_id, !self.is_excluded(result_id));
     }
 
-    /// Set whether result `result_id` is excluded from Replace All.
+    /// Whether result `result_id` is a resource's: listed, but never replaced. A
+    /// resource's title and description are the writer's filing, not the book, and
+    /// `replace_in_project` skips them, so a tick on one would claim a rewrite that
+    /// never happens.
+    fn is_resource_row(&self, result_id: u64) -> bool {
+        let mut found = false;
+        self.results.for_each(|row| {
+            if row.id == result_id && row.match_field == MatchField::Resource {
+                found = true;
+            }
+        });
+        found
+    }
+
+    /// Set whether result `result_id` is excluded from Replace All. A resource's row
+    /// stays excluded: see [`Self::is_resource_row`].
     pub fn set_excluded(&self, result_id: u64, excluded: bool) {
+        if !excluded && self.is_resource_row(result_id) {
+            return;
+        }
         let mut set = self.excluded.get();
         let changed = if excluded {
             set.insert(result_id)
@@ -981,6 +1011,9 @@ impl SearchReplaceViewModel {
     /// exclusion standing would make the tick they just made do nothing while
     /// showing that it had.
     pub fn set_excluded_occurrence(&self, result_id: u64, char_start: i64, excluded: bool) {
+        if !excluded && self.is_resource_row(result_id) {
+            return;
+        }
         if !excluded && self.excluded.get().contains(&result_id) {
             self.set_excluded(result_id, false);
         }
@@ -1019,7 +1052,8 @@ impl SearchReplaceViewModel {
             && self.included_count() > 0
     }
 
-    /// Untick every comment hit, leaving prose ticked.
+    /// Untick every comment hit and every resource hit, leaving prose ticked. A
+    /// resource's row cannot be ticked back on at all (see `is_resource_row`).
     ///
     /// Run after each search, because a fresh result set clears the exclusions and
     /// every row would otherwise arrive included. A comment is the writer's own
@@ -1036,7 +1070,7 @@ impl SearchReplaceViewModel {
         self.results.for_each(|row| {
             if matches!(
                 row.match_field,
-                MatchField::Comment | MatchField::CommentReply
+                MatchField::Comment | MatchField::CommentReply | MatchField::Resource
             ) {
                 set.insert(row.id);
             }
@@ -1917,6 +1951,7 @@ pub(super) mod tests {
             comment_id: 0,
             reply_id: 0,
             footnote_id: 7,
+            resource_id: 0,
             occurrence_count: 1,
             snippet_before: String::new(),
             snippet_match: "note text".into(),

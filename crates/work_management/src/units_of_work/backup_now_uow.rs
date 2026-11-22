@@ -14,7 +14,7 @@ use common::database::{db_context::DbContext, transactions::Transaction};
 #[allow(unused_imports)]
 use common::entities::{
     Asset, Binder, BinderItem, BinderStatus, BinderTag, Comment, CommentReply, Content, DictWord,
-    Footnote, Holiday, Milestone, NoteTemplate, Pace, ProgressSnapshot, SmartPunctuation,
+    Footnote, Holiday, Milestone, NoteTemplate, Pace, ProgressSnapshot, Resource, SmartPunctuation,
     TextReplacementRule, TrashInfo, Work, WorkInfo,
 };
 use common::event::WorkManagementEvent::BackupNow;
@@ -88,6 +88,7 @@ impl QueryUnitOfWork for BackupNowUnitOfWork {
 #[macros::uow_action(entity = "NoteTemplate", action = "GetMultiRO", thread_safe = true)]
 #[macros::uow_action(entity = "BinderStatus", action = "GetMultiRO", thread_safe = true)]
 #[macros::uow_action(entity = "Asset", action = "GetMultiRO", thread_safe = true)]
+#[macros::uow_action(entity = "Resource", action = "GetMultiRO", thread_safe = true)]
 #[macros::uow_action(entity = "Footnote", action = "GetMultiRO", thread_safe = true)]
 #[macros::uow_action(entity = "Footnote", action = "GetRelationshipRO", thread_safe = true)]
 #[macros::uow_action(entity = "SmartPunctuation", action = "GetRO", thread_safe = true)]

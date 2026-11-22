@@ -2464,6 +2464,7 @@ search-field-epigraph = Motto
 search-field-comment = Kommentar
 search-field-comment-reply = Svar
 search-field-footnote = Fotnot
+search-field-resource = Resurs
 search-include-in-replace = Ta med i Ersätt alla
 search-collapse-all = Fäll ihop alla resultat
 search-replace-here = Ersätt här

@@ -186,6 +186,102 @@ pub const TEMPLATES_DIR: &str = "templates";
 /// Directory holding a bundle's binary assets, relative to its root.
 pub const ASSETS_DIR: &str = "assets";
 
+/// Directory holding a bundle's stored resources, relative to its root: one folder
+/// per resource, named by its `uid`, holding the file under its own name.
+pub const RESOURCES_DIR: &str = "resources";
+
+/// The longest a stored file's name may be, in characters and in bytes: well inside
+/// what every file system accepts (255 bytes on Linux and macOS, 255 UTF-16 units on
+/// Windows, which a name within 200 bytes never passes).
+const MAX_NAME_CHARS: usize = 120;
+const MAX_NAME_BYTES: usize = 200;
+
+/// The longest suffix read as a file's extension, and so kept when a long name is cut.
+const MAX_EXTENSION_CHARS: usize = 16;
+
+/// Bundle-root-relative path of a stored resource's file: `resources/<uid>/<name>`.
+///
+/// The `uid` folder is what lets two resources keep the same file name, and what keeps
+/// the path stable across a reopen (an `EntityId` is re-minted on every load, see
+/// [`note_template_relpath`]). The name is the writer's own, made safe by
+/// [`safe_file_name`], so a folder project shows the file as they know it.
+pub fn resource_relpath(uid: Uuid, file_name: &str) -> String {
+    format!(
+        "{RESOURCES_DIR}/{}/{}",
+        uid.hyphenated(),
+        safe_file_name(file_name)
+    )
+}
+
+/// `name` as one safe file name: no separator, no character a file system refuses, no
+/// name Windows reserves, not only dots, and not too long, in characters or in bytes. A
+/// name cut to fit keeps its extension, so the file still opens with the application it
+/// belongs to. NFC, so a name that came from macOS compares equal to the same name typed
+/// elsewhere.
+///
+/// The one rule for a file name that came from outside and has to become a path here: a
+/// resource's name comes from a shared project, and `..`, a separator or `CON` in it must
+/// not be able to escape its folder or fail the write.
+pub fn safe_file_name(name: &str) -> String {
+    use unicode_normalization::UnicodeNormalization;
+    let mut out: String = name
+        .nfc()
+        .map(|c| match c {
+            '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|' => '_',
+            c if c.is_control() => '_',
+            c => c,
+        })
+        .collect();
+    out = trim_name(&out);
+    let (stem, extension) = match out.rsplit_once('.') {
+        Some((stem, extension))
+            if !stem.is_empty()
+                && !extension.is_empty()
+                && extension.chars().count() <= MAX_EXTENSION_CHARS
+                && extension.chars().all(char::is_alphanumeric) =>
+        {
+            (stem.to_string(), format!(".{extension}"))
+        }
+        _ => (out.clone(), String::new()),
+    };
+    let chars_left = MAX_NAME_CHARS.saturating_sub(extension.chars().count());
+    let bytes_left = MAX_NAME_BYTES.saturating_sub(extension.len());
+    let mut kept = String::new();
+    for c in stem.chars().take(chars_left) {
+        if kept.len() + c.len_utf8() > bytes_left {
+            break;
+        }
+        kept.push(c);
+    }
+    // A cut can leave a space or a dot at the end, which Windows refuses.
+    let kept = trim_name(&kept);
+    out = if kept.is_empty() && !extension.is_empty() {
+        format!("_{extension}")
+    } else {
+        format!("{kept}{extension}")
+    };
+    let stem = out
+        .split('.')
+        .next()
+        .unwrap_or_default()
+        .to_ascii_uppercase();
+    let reserved = ["CON", "PRN", "AUX", "NUL"].contains(&stem.as_str())
+        || ((stem.starts_with("COM") || stem.starts_with("LPT"))
+            && stem.len() == 4
+            && stem[3..].chars().all(|c| c.is_ascii_digit()));
+    if out.is_empty() {
+        out = "_".to_string();
+    } else if reserved {
+        out.insert(0, '_');
+    }
+    out
+}
+
+/// `name` without the spaces and dots a file system drops or refuses at its ends.
+fn trim_name(name: &str) -> String {
+    name.trim().trim_matches('.').trim().to_string()
+}
+
 /// Bundle-root-relative path of one note template's Djot body.
 ///
 /// `slugify` is what makes this safe for a name the writer typed: a template called
@@ -204,7 +300,33 @@ pub fn note_template_relpath(uid: Uuid, name: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{nearest_titled_ancestor, nearest_titled_ancestors, slugify};
+    use super::{nearest_titled_ancestor, nearest_titled_ancestors, safe_file_name, slugify};
+
+    #[test]
+    fn a_file_name_is_made_safe_and_never_a_path() {
+        assert_eq!(safe_file_name("../../etc/passwd"), "_.._etc_passwd");
+        assert_eq!(safe_file_name("Tide: tables?.pdf"), "Tide_ tables_.pdf");
+        assert_eq!(safe_file_name("CON.pdf"), "_CON.pdf");
+        assert_eq!(safe_file_name("  "), "_");
+        assert_eq!(safe_file_name("map.desktop"), "map.desktop");
+    }
+
+    #[test]
+    fn a_long_file_name_is_cut_and_keeps_its_extension() {
+        let long = format!("{}.pdf", "é".repeat(300));
+        let safe = safe_file_name(&long);
+        assert!(safe.ends_with(".pdf"));
+        assert!(safe.len() <= 200);
+    }
+
+    #[test]
+    fn a_resource_lives_in_its_own_folder() {
+        let uid = uuid::Uuid::nil();
+        assert_eq!(
+            super::resource_relpath(uid, "Carte/du village.png"),
+            "resources/00000000-0000-0000-0000-000000000000/Carte_du village.png"
+        );
+    }
 
     #[test]
     fn empty_input_falls_back_to_item() {

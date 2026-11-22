@@ -2603,6 +2603,7 @@ search-field-epigraph = Motto
 search-field-comment = Kommentti
 search-field-comment-reply = Vastaus
 search-field-footnote = Alaviite
+search-field-resource = Resurssi
 search-include-in-replace = Sisällytä toimintoon Korvaa kaikki
 search-collapse-all = Supista kaikki tulokset
 search-replace-here = Korvaa tämä

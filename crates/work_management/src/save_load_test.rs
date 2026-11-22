@@ -71,6 +71,7 @@ fn item(
             // trash fixture below also names, which keeps the fixture small.
             status: (id == 302).then_some(91),
             cover: None,
+            resources: Vec::new(),
             uid: common::uid::fixture_uid(3),
             id,
             created_at: ts(),
@@ -141,6 +142,7 @@ pub(crate) fn sample_bundle() -> WorkBundle {
         note_templates: vec![],
         assets: vec![],
         footnotes: vec![],
+        resources: vec![],
         // Non-default too, and for the same reason as chapter_mode above: an
         // all-default row would round-trip equal even if the field were dropped.
         smart_punctuation: 30,
@@ -327,6 +329,8 @@ pub(crate) fn sample_bundle() -> WorkBundle {
         &[],
         &[],
         &statuses,
+        &[],
+        Default::default(),
         &[],
         Default::default(),
         Some(&common::entities::SmartPunctuation {
@@ -4589,4 +4593,394 @@ fn closing_one_copy_does_not_reset_the_external_change_generation_of_the_other()
         crate::external_changes::generation(live)
     );
     crate::external_changes::forget(live);
+}
+
+/// A folder project saved as a single file keeps its pictures on the saves after: the
+/// window now is the new file, and its next save reads the pictures from the new file's
+/// media directory, which the Save As has to fill. It used to leave them in the folder's
+/// own `assets/`, so the first save of the copy dropped every one.
+#[test]
+fn pictures_survive_the_saves_after_a_folder_is_saved_as_a_single_file() {
+    let dir = tempfile::tempdir().unwrap();
+    let media_root = dir.path().join("media-root");
+    let src = dir.path().join("WithCover");
+    skrib::write_bundle(
+        src.to_str().unwrap(),
+        SkribShape::ExplodedFolder,
+        &bundle_with_book_cover(700),
+    )
+    .unwrap();
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+    work_management_controller::load_work(
+        &db,
+        &hub,
+        &LoadWorkDto {
+            media_root: media_root.to_string_lossy().into_owned(),
+            file_name: src.to_str().unwrap().to_string(),
+        },
+    )
+    .expect("load");
+
+    let zip = dir.path().join("Copy.skrib");
+    SaveAsUseCase::new(
+        Box::new(SaveAsUnitOfWorkFactory::new(&db, &hub)),
+        &SaveAsDto {
+            media_root: media_root.to_string_lossy().into_owned(),
+            work_id: live_work_id(&db),
+            file_name: zip.to_str().unwrap().to_string(),
+            as_folder: false,
+        },
+    )
+    .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
+    .expect("save as");
+
+    // The next save, aimed at the copy as the window now is.
+    SaveWorkUseCase::new(
+        Box::new(SaveWorkUnitOfWorkFactory::new(&db, &hub)),
+        &SaveWorkDto {
+            media_root: media_root.to_string_lossy().into_owned(),
+            work_id: live_work_id(&db),
+            file_name: zip.to_str().unwrap().to_string(),
+            overwrite: true,
+        },
+    )
+    .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
+    .expect("save");
+
+    let saved = skrib::read_bundle(zip.to_str().unwrap()).unwrap();
+    assert_eq!(saved_book_cover(&saved).as_deref(), Some("front"));
+    assert_eq!(
+        saved.asset_blobs.get("front").map(|b| b.read().unwrap()),
+        Some(vec![0x89, b'P', b'N', b'G', 7, 7])
+    );
+}
+
+// ── Resources ─────────────────────────────────────────────────────────────────
+
+/// The three kinds on the sample bundle's first item, every field off-default. The
+/// linked file's path is as a bundle stores it: relative to the folder holding the
+/// project.
+fn bundle_with_resources() -> WorkBundle {
+    const T: &str = "2020-01-01T00:00:00+00:00";
+    let mut bundle = sample_bundle();
+    let uid = |n| common::uid::fixture_uid(n);
+    let row = |file_id: u64, kind, title: &str| skrib::ResourceFile {
+        file_id,
+        uid: uid(file_id),
+        created_at: T.into(),
+        updated_at: T.into(),
+        title: title.into(),
+        description: format!("About {title}"),
+        kind,
+        location: String::new(),
+        file_name: String::new(),
+        mime_type: String::new(),
+        byte_size: 0,
+        content_hash: String::new(),
+        width: 0,
+        height: 0,
+        path: String::new(),
+    };
+    bundle.resources = vec![
+        skrib::ResourceFile {
+            file_name: "Village map.pdf".into(),
+            mime_type: "application/pdf".into(),
+            byte_size: 8,
+            content_hash: "hash-of-village-map".into(),
+            path: skrib::slug::resource_relpath(uid(800), "Village map.pdf"),
+            ..row(
+                800,
+                common::entities::ResourceKind::StoredFile,
+                "Village map",
+            )
+        },
+        skrib::ResourceFile {
+            location: "../Research/interview.mp3".into(),
+            file_name: "interview.mp3".into(),
+            ..row(801, common::entities::ResourceKind::LinkedFile, "Interview")
+        },
+        skrib::ResourceFile {
+            location: "https://example.org/tanneries".into(),
+            ..row(802, common::entities::ResourceKind::WebLink, "Tanneries")
+        },
+    ];
+    bundle.resource_blobs = std::collections::BTreeMap::from([(
+        uid(800).hyphenated().to_string(),
+        skrib::Blob::from(b"%PDF-1.7".to_vec()),
+    )]);
+    let item = &mut bundle.binders[0].items[0].item;
+    item.resource_ids = vec![800, 801, 802];
+    bundle
+}
+
+/// Load the project at `path` with `media_root`.
+fn load_at(path: &std::path::Path, media_root: &std::path::Path) -> (DbContext, Arc<EventHub>) {
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+    work_management_controller::load_work(
+        &db,
+        &hub,
+        &LoadWorkDto {
+            media_root: media_root.to_string_lossy().into_owned(),
+            file_name: path.to_str().unwrap().to_string(),
+        },
+    )
+    .expect("load");
+    (db, hub)
+}
+
+/// Save the open project to `path` with `media_root`, and read what was written.
+fn save_at(
+    db: &DbContext,
+    hub: &Arc<EventHub>,
+    path: &std::path::Path,
+    media_root: &std::path::Path,
+) -> WorkBundle {
+    SaveWorkUseCase::new(
+        Box::new(SaveWorkUnitOfWorkFactory::new(db, hub)),
+        &SaveWorkDto {
+            media_root: media_root.to_string_lossy().into_owned(),
+            work_id: live_work_id(db),
+            file_name: path.to_str().unwrap().to_string(),
+            overwrite: true,
+        },
+    )
+    .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
+    .expect("save");
+    skrib::read_bundle(path.to_str().unwrap()).unwrap()
+}
+
+fn first_item_resources(bundle: &WorkBundle) -> Vec<String> {
+    let ids = &bundle.binders[0].items[0].item.resource_ids;
+    let mut titles: Vec<String> = ids
+        .iter()
+        .filter_map(|id| bundle.resources.iter().find(|r| r.file_id == *id))
+        .map(|r| r.title.clone())
+        .collect();
+    titles.sort();
+    titles
+}
+
+fn stored_bytes(bundle: &WorkBundle) -> Option<Vec<u8>> {
+    bundle
+        .resource_blobs
+        .get(&common::uid::fixture_uid(800).hyphenated().to_string())
+        .map(|b| b.read().unwrap())
+}
+
+#[test]
+fn resources_survive_the_store_round_trip_in_a_folder_project() {
+    let dir = tempfile::tempdir().unwrap();
+    let media_root = dir.path().join("media-root");
+    let project = dir.path().join("Books").join("Novel");
+    skrib::write_bundle(
+        project.to_str().unwrap(),
+        SkribShape::ExplodedFolder,
+        &bundle_with_resources(),
+    )
+    .unwrap();
+
+    let (db, hub) = load_at(&project, &media_root);
+    let saved = save_at(&db, &hub, &project, &media_root);
+
+    assert_eq!(saved.resources.len(), 3);
+    for r in &saved.resources {
+        assert_eq!(r.description, format!("About {}", r.title));
+    }
+    assert_eq!(
+        first_item_resources(&saved),
+        vec!["Interview", "Tanneries", "Village map"]
+    );
+    assert_eq!(stored_bytes(&saved), Some(b"%PDF-1.7".to_vec()));
+    let linked = saved
+        .resources
+        .iter()
+        .find(|r| r.title == "Interview")
+        .unwrap();
+    assert_eq!(linked.location, "../Research/interview.mp3");
+    let web = saved
+        .resources
+        .iter()
+        .find(|r| r.title == "Tanneries")
+        .unwrap();
+    assert_eq!(web.location, "https://example.org/tanneries");
+}
+
+#[test]
+fn resources_survive_the_store_round_trip_in_a_single_file_project() {
+    let dir = tempfile::tempdir().unwrap();
+    let media_root = dir.path().join("media-root");
+    let project = dir.path().join("Books").join("Novel.skrib");
+    skrib::write_bundle(
+        project.to_str().unwrap(),
+        SkribShape::ZipFile,
+        &bundle_with_resources(),
+    )
+    .unwrap();
+
+    let (db, hub) = load_at(&project, &media_root);
+    // The stored file was placed in the project's working folder under the data.
+    let placed = walkdir_files(&media_root.join("resources"));
+    assert!(
+        placed.iter().any(|p| p.ends_with("Village map.pdf")),
+        "placed: {placed:?}"
+    );
+    let saved = save_at(&db, &hub, &project, &media_root);
+
+    assert_eq!(saved.resources.len(), 3);
+    assert_eq!(
+        first_item_resources(&saved),
+        vec!["Interview", "Tanneries", "Village map"]
+    );
+    assert_eq!(stored_bytes(&saved), Some(b"%PDF-1.7".to_vec()));
+}
+
+#[test]
+fn a_linked_path_is_restated_relative_to_where_a_save_as_puts_the_copy() {
+    let dir = tempfile::tempdir().unwrap();
+    let media_root = dir.path().join("media-root");
+    let project = dir.path().join("Books").join("Novel");
+    skrib::write_bundle(
+        project.to_str().unwrap(),
+        SkribShape::ExplodedFolder,
+        &bundle_with_resources(),
+    )
+    .unwrap();
+    let (db, hub) = load_at(&project, &media_root);
+
+    // `dir/Books/../Research/interview.mp3` is `dir/Research/interview.mp3`; seen from
+    // `dir/Other/Deep`, that is two folders up.
+    let copy = dir.path().join("Other").join("Deep").join("Copy.skrib");
+    std::fs::create_dir_all(copy.parent().unwrap()).unwrap();
+    SaveAsUseCase::new(
+        Box::new(SaveAsUnitOfWorkFactory::new(&db, &hub)),
+        &SaveAsDto {
+            media_root: media_root.to_string_lossy().into_owned(),
+            work_id: live_work_id(&db),
+            file_name: copy.to_str().unwrap().to_string(),
+            as_folder: false,
+        },
+    )
+    .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
+    .expect("save as");
+    let written = skrib::read_bundle(copy.to_str().unwrap()).unwrap();
+    let linked = written
+        .resources
+        .iter()
+        .find(|r| r.title == "Interview")
+        .unwrap();
+    assert_eq!(linked.location, "../../Research/interview.mp3");
+}
+
+/// The resources follow a folder project saved as a single file, as its pictures do:
+/// the copy's later saves read them from the copy's working folder.
+#[test]
+fn stored_resources_survive_the_saves_after_a_folder_is_saved_as_a_single_file() {
+    let dir = tempfile::tempdir().unwrap();
+    let media_root = dir.path().join("media-root");
+    let project = dir.path().join("Novel");
+    skrib::write_bundle(
+        project.to_str().unwrap(),
+        SkribShape::ExplodedFolder,
+        &bundle_with_resources(),
+    )
+    .unwrap();
+    let (db, hub) = load_at(&project, &media_root);
+
+    let zip = dir.path().join("Copy.skrib");
+    SaveAsUseCase::new(
+        Box::new(SaveAsUnitOfWorkFactory::new(&db, &hub)),
+        &SaveAsDto {
+            media_root: media_root.to_string_lossy().into_owned(),
+            work_id: live_work_id(&db),
+            file_name: zip.to_str().unwrap().to_string(),
+            as_folder: false,
+        },
+    )
+    .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
+    .expect("save as");
+    let saved = save_at(&db, &hub, &zip, &media_root);
+    assert_eq!(stored_bytes(&saved), Some(b"%PDF-1.7".to_vec()));
+}
+
+/// A resource removed in an earlier session leaves its file until the next open, then
+/// goes; one still listed keeps its own.
+#[test]
+fn opening_a_project_removes_the_files_of_resources_it_no_longer_has() {
+    let dir = tempfile::tempdir().unwrap();
+    let media_root = dir.path().join("media-root");
+    let project = dir.path().join("Novel");
+    skrib::write_bundle(
+        project.to_str().unwrap(),
+        SkribShape::ExplodedFolder,
+        &bundle_with_resources(),
+    )
+    .unwrap();
+    let stray = project
+        .join("resources")
+        .join("not-a-resource")
+        .join("old.pdf");
+    std::fs::create_dir_all(stray.parent().unwrap()).unwrap();
+    std::fs::write(&stray, b"gone").unwrap();
+
+    let (_db, _hub) = load_at(&project, &media_root);
+    assert!(!stray.exists());
+    let kept = project
+        .join("resources")
+        .join(common::uid::fixture_uid(800).hyphenated().to_string())
+        .join("Village map.pdf");
+    assert!(kept.is_file());
+}
+
+/// Every file under `root`, for asserting where a load put things.
+fn walkdir_files(root: &std::path::Path) -> Vec<std::path::PathBuf> {
+    let mut out = Vec::new();
+    let mut stack = vec![root.to_path_buf()];
+    while let Some(dir) = stack.pop() {
+        for entry in std::fs::read_dir(&dir).into_iter().flatten().flatten() {
+            let p = entry.path();
+            if p.is_dir() {
+                stack.push(p);
+            } else {
+                out.push(p);
+            }
+        }
+    }
+    out
+}
+
+/// Opening a copy of a project (same `unique_id`, another file) while the original is
+/// open must not touch the original's working files: its working folder is its own.
+#[test]
+fn opening_a_copy_leaves_the_originals_unsaved_resource_files_alone() {
+    let dir = tempfile::tempdir().unwrap();
+    let media_root = dir.path().join("media-root");
+    let original = dir.path().join("Novel.skrib");
+    let copy = dir.path().join("Copy.skrib");
+    for p in [&original, &copy] {
+        skrib::write_bundle(
+            p.to_str().unwrap(),
+            SkribShape::ZipFile,
+            &bundle_with_resources(),
+        )
+        .unwrap();
+    }
+    let (_db, _hub) = load_at(&original, &media_root);
+    // A file the original added since its last save, not yet in any bundle.
+    let uid = skrib::read_bundle(original.to_str().unwrap())
+        .unwrap()
+        .manifest
+        .work
+        .unique_id;
+    let working = skrib::media::resources_dir(&original, &uid, &media_root, &uid);
+    let added = skrib::media::resource_file(&working, uuid::Uuid::new_v4(), "new.wav");
+    std::fs::create_dir_all(added.parent().unwrap()).unwrap();
+    std::fs::write(&added, b"RIFF").unwrap();
+
+    let (_db2, _hub2) = load_at(&copy, &media_root);
+    assert!(
+        added.is_file(),
+        "opening the copy pruned the original's file"
+    );
 }

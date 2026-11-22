@@ -71,6 +71,12 @@ fn strip_volatile(b: &mut WorkBundle) {
         a.created_at.clear();
         a.updated_at.clear();
     }
+    // A resource's bytes are as absent as an asset's (`resource_blobs` is skipped), and
+    // its `content_hash` covers them; only its bookkeeping stamps are volatile.
+    for r in &mut b.resources {
+        r.created_at.clear();
+        r.updated_at.clear();
+    }
     for t in &mut b.tags {
         t.created_at.clear();
         t.updated_at.clear();
@@ -191,6 +197,8 @@ mod tests {
             statuses: Vec::new(),
             assets: Vec::new(),
             asset_blobs: Default::default(),
+            resources: Vec::new(),
+            resource_blobs: Default::default(),
             manifest: ProjectManifest {
                 format_version: FORMAT_VERSION,
                 format_min_read_version: None,
@@ -324,6 +332,7 @@ mod tests {
             item: BinderItemFile {
                 status_id: None,
                 cover_id: None,
+                resource_ids: Vec::new(),
                 file_id: 10,
                 uid: uuid::Uuid::nil(),
                 created_at: "2020-01-01T00:00:00Z".into(),

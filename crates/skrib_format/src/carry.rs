@@ -38,7 +38,7 @@ use std::collections::BTreeMap;
 use crate::bundle::CarriedFile;
 use crate::history::{HISTORY_DIR, HISTORY_INDEX};
 use crate::shape::MANIFEST_NAME;
-use crate::slug::{ASSETS_DIR, TEMPLATES_DIR};
+use crate::slug::{ASSETS_DIR, RESOURCES_DIR, TEMPLATES_DIR};
 
 /// The `.ron` manifests that live directly at the bundle root.
 const ROOT_MANIFESTS: &[&str] = &[
@@ -53,6 +53,7 @@ const ROOT_MANIFESTS: &[&str] = &[
     "templates.ron",
     "assets.ron",
     "statuses.ron",
+    "resources.ron",
 ];
 
 /// Does `rel` — a bundle-root-relative, `/`-separated path — name a file this
@@ -74,6 +75,8 @@ pub fn is_modelled(rel: &str) -> bool {
         [dir, name] if *dir == TEMPLATES_DIR => name.ends_with(".djot"),
         // assets/<hash>.<ext> — content-addressed image blobs, any extension.
         [dir, _name] if *dir == ASSETS_DIR => true,
+        // resources/<uid>/<name> — one stored resource's file, any name.
+        [dir, _uid, _name] if *dir == RESOURCES_DIR => true,
         // history/index.ron plus one content-addressed blob per recorded state.
         [dir, name] if *dir == HISTORY_DIR => rel == HISTORY_INDEX || name.ends_with(".djot"),
         // binders/<dir>/items.ron

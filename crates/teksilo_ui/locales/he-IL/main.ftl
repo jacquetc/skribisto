@@ -2887,6 +2887,7 @@ search-field-epigraph = מוטו
 search-field-comment = הערה
 search-field-comment-reply = תשובה
 search-field-footnote = הערת שוליים
+search-field-resource = משאב
 search-include-in-replace = הכללה ב"החלפת הכול"
 search-collapse-all = כיווץ כל התוצאות
 search-replace-here = החלפת המופע הזה

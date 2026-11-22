@@ -3214,6 +3214,7 @@ search-field-epigraph = Епіграф
 search-field-comment = Коментар
 search-field-comment-reply = Відповідь на коментар
 search-field-footnote = Виноска
+search-field-resource = Ресурс
 search-include-in-replace = Включити в «Замінити все»
 search-collapse-all = Згорнути всі результати
 search-replace-here = Замінити тут

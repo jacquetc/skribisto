@@ -129,6 +129,7 @@ fn create_note(
             is_exportable: true,
             indent: 1,
             tags,
+            resources: vec![],
             aliases,
             books,
             ..Default::default()

@@ -89,6 +89,31 @@ impl Carried<'_> {
 }
 
 pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
+    write_folder_placing(root, bundle, Placing::Keep)
+}
+
+/// [`write_folder`] into a folder that is thrown away once the write is done (a zip's
+/// staging): pictures and stored files are hard-linked rather than copied where the
+/// file system allows, which is what keeps a zip save of a large project affordable.
+pub(crate) fn write_folder_staged(root: &Path, bundle: &WorkBundle) -> Result<()> {
+    write_folder_placing(root, bundle, Placing::Throwaway)
+}
+
+/// Whether the folder written outlives the write. See [`crate::Blob::place_at`].
+#[derive(Clone, Copy)]
+enum Placing {
+    Keep,
+    Throwaway,
+}
+
+fn place(blob: &crate::Blob, dest: &Path, placing: Placing) -> std::io::Result<bool> {
+    match placing {
+        Placing::Keep => blob.place_at(dest),
+        Placing::Throwaway => blob.link_or_place_at(dest),
+    }
+}
+
+fn write_folder_placing(root: &Path, bundle: &WorkBundle, placing: Placing) -> Result<()> {
     fs::create_dir_all(root).with_context(|| format!("creating {}", root.display()))?;
     let binders_dir = root.join("binders");
     fs::create_dir_all(&binders_dir).ok();
@@ -227,11 +252,38 @@ pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
             )
         })?;
         let dest = locator.locate(root, &a.path, "asset")?;
-        blob.place_at(&dest)
+        place(blob, &dest, placing)
             .with_context(|| format!("writing asset {} to {}", a.file_name, dest.display()))?;
         expected_assets.insert(nfc(&fname));
     }
     prune_assets_dir(&assets_dir, &expected_assets, &carried)?;
+
+    // Resources: the index, then each stored file in its own `resources/<uid>/`
+    // folder under its own name. Placed like assets (a folder project saved in place
+    // writes nothing), and the path always rebuilt from `uid` and `file_name` here,
+    // never taken from the row, so a crafted `path` cannot steer a write.
+    //
+    // No prune, unlike assets: a resource removed during a session keeps its file
+    // until the project is next opened (`media::prune_resources_dir`), which is what
+    // lets Undo bring it back with its bytes. A zip is staged afresh and so never
+    // carries a removed one anyway. A stored resource with no blob is written as a
+    // row only: shown as missing, not dropped.
+    write_if_changed(
+        &root.join("resources.ron"),
+        to_ron(&bundle.resources)?.as_bytes(),
+    )?;
+    for r in &bundle.resources {
+        if r.kind != common::entities::ResourceKind::StoredFile {
+            continue;
+        }
+        let Some(blob) = bundle.resource_blobs.get(&r.uid.hyphenated().to_string()) else {
+            continue;
+        };
+        let rel = crate::slug::resource_relpath(r.uid, &r.file_name);
+        let dest = locator.locate(root, &rel, "resource")?;
+        place(blob, &dest, placing)
+            .with_context(|| format!("writing resource {} to {}", r.file_name, dest.display()))?;
+    }
 
     // The history log: an index plus one content-addressed blob per recorded
     // state, the same split assets use. Written only when the log is non-empty, so
@@ -566,6 +618,30 @@ pub(crate) fn read_folder_kept(
     // Absent before v14, and an absent ladder is a legitimate "no statuses" state, so
     // `read_ron_vec` returning empty for a missing file is exactly right here.
     let statuses: Vec<BinderStatusFile> = read_ron_vec(&root.join("statuses.ron"), "statuses.ron")?;
+    // Absent before v17, and an absent list is the "nothing attached" state.
+    let resources: Vec<ResourceFile> = read_ron_vec(&root.join("resources.ron"), "resources.ron")?;
+    // Each stored file pointed at, never read. A missing one is not an error, unlike a
+    // missing asset: the resource's card loads and shows its file as missing, and the
+    // writer can locate it or remove it. Its path is rebuilt from `uid` and `file_name`,
+    // the same rule the writer follows, rather than trusted from the row.
+    let mut resource_blobs = std::collections::BTreeMap::new();
+    for r in &resources {
+        if r.kind != common::entities::ResourceKind::StoredFile {
+            continue;
+        }
+        let rel = crate::slug::resource_relpath(r.uid, &r.file_name);
+        let Ok(path) = locator.locate(root, &rel, "resource") else {
+            continue;
+        };
+        if !path.is_file() {
+            continue;
+        }
+        let blob = match &keep {
+            Some(keep) => crate::Blob::file_in(path, std::sync::Arc::clone(keep)),
+            None => crate::Blob::file(path),
+        };
+        resource_blobs.insert(r.uid.hyphenated().to_string(), blob);
+    }
     // Each asset is checked to be there, never read: its blob points at the file,
     // and only a writer that copies it somewhere opens it.
     let mut asset_blobs = std::collections::BTreeMap::new();
@@ -699,6 +775,8 @@ pub(crate) fn read_folder_kept(
         note_template_bodies,
         assets,
         asset_blobs,
+        resources,
+        resource_blobs,
         trash_infos,
         paces,
         progress_snapshots,

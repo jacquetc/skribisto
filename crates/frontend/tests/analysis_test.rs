@@ -65,6 +65,7 @@ fn item(sub_role: BinderItemSubRole, title: &str, role: BinderItemRole) -> Creat
         point_of_view: vec![],
         books: vec![],
         tags: vec![],
+        resources: vec![],
     }
 }
 

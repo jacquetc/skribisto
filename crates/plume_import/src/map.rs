@@ -212,6 +212,8 @@ pub fn build_bundle(
         // A Plume project has no binary assets to carry over.
         assets: Vec::new(),
         asset_blobs: Default::default(),
+        resources: Vec::new(),
+        resource_blobs: Default::default(),
         note_template_bodies: Default::default(),
         trash_infos: Vec::new(),
         // Plume has no comment/annotation concept either, so there is nothing to
@@ -949,6 +951,7 @@ impl<'a> Builder<'a> {
                     label: label.to_string(),
                     status_id,
                     cover_id: None,
+                    resource_ids: Vec::new(),
                     activated: true,
                     is_favorite: false,
                     is_exportable,

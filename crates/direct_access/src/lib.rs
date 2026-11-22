@@ -97,6 +97,9 @@ pub mod note_template;
 // Asset
 pub mod asset;
 
+// Resource
+pub mod resource;
+
 // Re-exports for all project entities
 
 pub use root::dtos::*;
@@ -173,3 +176,6 @@ pub use note_template::note_template_controller;
 
 pub use asset::asset_controller;
 pub use asset::dtos::*;
+
+pub use resource::dtos::*;
+pub use resource::resource_controller;

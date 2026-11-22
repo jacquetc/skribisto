@@ -2459,6 +2459,7 @@ search-field-epigraph = Epigrafo
 search-field-comment = Komento
 search-field-comment-reply = Respondo
 search-field-footnote = Piednoto
+search-field-resource = Rimedo
 search-include-in-replace = Inkluzivi en Anstataŭigi ĉiujn
 search-collapse-all = Faldi ĉiujn rezultojn
 search-replace-here = Anstataŭigi ĉi tion

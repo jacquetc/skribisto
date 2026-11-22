@@ -25,7 +25,7 @@ use common::direct_access::work::WorkRelationshipField;
 use common::direct_access::work_info::WorkInfoRelationshipField;
 use common::entities::{
     Asset, Binder, BinderItem, BinderStatus, BinderTag, Comment, CommentReply, Content, DictWord,
-    Footnote, Holiday, Milestone, NoteTemplate, Pace, ProgressSnapshot, SmartPunctuation,
+    Footnote, Holiday, Milestone, NoteTemplate, Pace, ProgressSnapshot, Resource, SmartPunctuation,
     TextReplacementRule, TrashInfo, Work, WorkInfo,
 };
 use common::long_operation::{LongOperation, OperationProgress};
@@ -55,6 +55,7 @@ pub trait SaveAsUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "NoteTemplate", action = "GetMultiRO")]
 #[macros::uow_action(entity = "BinderStatus", action = "GetMultiRO")]
 #[macros::uow_action(entity = "Asset", action = "GetMultiRO")]
+#[macros::uow_action(entity = "Resource", action = "GetMultiRO")]
 #[macros::uow_action(entity = "Footnote", action = "GetMultiRO")]
 #[macros::uow_action(entity = "Footnote", action = "GetRelationshipRO")]
 #[macros::uow_action(entity = "SmartPunctuation", action = "GetRO")]
@@ -136,6 +137,9 @@ impl<'a> TreeReader for dyn SaveAsUnitOfWorkTrait + 'a {
     }
     fn asset_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<Asset>>> {
         self.get_asset_multi(ids)
+    }
+    fn resource_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<Resource>>> {
+        self.get_resource_multi(ids)
     }
     fn smart_punctuation(&self, id: &EntityId) -> Result<Option<SmartPunctuation>> {
         self.get_smart_punctuation(id)
@@ -258,11 +262,10 @@ fn run_save_as(
         .as_ref()
         .and_then(|wi| wi.file_name.clone())
         .unwrap_or_else(|| target.clone());
-    let media_dir = skrib_format::media::media_dir(
+    let dirs = work_io::ProjectDirs::of(
         std::path::Path::new(&source),
         &g.work.unique_id,
         std::path::Path::new(&dto.media_root),
-        &g.work.unique_id,
     );
     // Save As is a copy of the state already on disk, not a new edit: it carries
     // the source's history so the copy remembers as much as the original, and
@@ -276,9 +279,21 @@ fn run_save_as(
         target,
         shape,
         tag,
-        &media_dir,
+        &dirs,
         history,
         crate::lifecycle::SaveKind::SaveAs,
+    )?;
+    // The window becomes the copy once this lands (the UI records the new path), and
+    // every later save reads the pictures and resources from the copy's directories.
+    // Resolved from the written output, which exists now, so a folder is recognised.
+    work_io::carry_project_files(
+        &g,
+        &dirs,
+        &work_io::ProjectDirs::of(
+            std::path::Path::new(&output),
+            &g.work.unique_id,
+            std::path::Path::new(&dto.media_root),
+        ),
     )?;
     Ok((
         work_id,

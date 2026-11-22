@@ -2497,6 +2497,7 @@ search-field-epigraph = Epigraf
 search-field-comment = Yorum
 search-field-comment-reply = Yanıt
 search-field-footnote = Dipnot
+search-field-resource = Kaynak
 search-include-in-replace = Tümünü değiştir'e dahil et
 search-collapse-all = Tüm sonuçları daralt
 search-replace-here = Bunu değiştir

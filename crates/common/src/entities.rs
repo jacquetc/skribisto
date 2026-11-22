@@ -104,6 +104,7 @@ pub struct Search {
     pub search_titles: bool,
     pub search_synopsis: bool,
     pub search_labels: bool,
+    pub search_resources: bool,
     pub include_trashed: bool,
     pub truncated: bool,
     pub results: Vec<EntityId>,
@@ -128,6 +129,7 @@ pub struct SearchResult {
     pub comment_id: u64,
     pub reply_id: u64,
     pub footnote_id: u64,
+    pub resource_id: u64,
     pub occurrence_count: u64,
     pub snippet_before: String,
     pub snippet_match: String,
@@ -151,6 +153,7 @@ pub enum MatchField {
     Comment,
     CommentReply,
     Footnote,
+    Resource,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -200,6 +203,7 @@ pub struct Work {
     pub paces: Vec<EntityId>,
     pub comments: Vec<EntityId>,
     pub footnotes: Vec<EntityId>,
+    pub resources: Vec<EntityId>,
 }
 
 impl HasId for Work {
@@ -475,6 +479,7 @@ pub struct BinderItem {
     pub books: Vec<EntityId>,
     pub status: Option<EntityId>,
     pub cover: Option<EntityId>,
+    pub resources: Vec<EntityId>,
     pub tags: Vec<EntityId>,
 }
 
@@ -659,4 +664,37 @@ impl HasId for Asset {
     fn id(&self) -> EntityId {
         self.id
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct Resource {
+    pub id: EntityId,
+    #[serde(with = "chrono::serde::ts_milliseconds")]
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    #[serde(with = "chrono::serde::ts_milliseconds")]
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub uid: uuid::Uuid,
+    pub title: String,
+    pub description: String,
+    pub kind: ResourceKind,
+    pub location: String,
+    pub file_name: String,
+    pub mime_type: String,
+    pub byte_size: u64,
+    pub content_hash: String,
+    pub width: u64,
+    pub height: u64,
+}
+
+impl HasId for Resource {
+    fn id(&self) -> EntityId {
+        self.id
+    }
+}
+#[derive(Serialize, Deserialize, Default, Clone, Debug, PartialEq, Eq)]
+pub enum ResourceKind {
+    #[default]
+    StoredFile,
+    LinkedFile,
+    WebLink,
 }

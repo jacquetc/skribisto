@@ -14,8 +14,8 @@ use common::event::{
     AllEvent, AnalysisManagementEvent, BinderItemManagementEvent, DirectAccessEntity, EntityEvent,
     Event, ExportManagementEvent, HandlingAppLifecycleEvent, ImportManagementEvent,
     LongOperationEvent, MentionManagementEvent, NoteTemplateManagementEvent, Origin,
-    ProgressManagementEvent, SearchManagementEvent, TagManagementEvent, TrashManagementEvent,
-    UndoRedoEvent, WorkManagementEvent,
+    ProgressManagementEvent, ResourceManagementEvent, SearchManagementEvent, TagManagementEvent,
+    TrashManagementEvent, UndoRedoEvent, WorkManagementEvent,
 };
 use common::types::EntityId;
 
@@ -102,6 +102,9 @@ pub enum FlatEventKind {
     AssetCreated,
     AssetUpdated,
     AssetRemoved,
+    ResourceCreated,
+    ResourceUpdated,
+    ResourceRemoved,
 
     // Per-feature use case events
     WorkManagementLoadWork,
@@ -129,6 +132,9 @@ pub enum FlatEventKind {
     TrashManagementDeleteTrashEntries,
 
     NoteTemplateManagementImportNoteTemplates,
+
+    ResourceManagementStoreResourceFiles,
+    ResourceManagementAddResources,
 
     TagManagementImportTags,
 
@@ -354,6 +360,15 @@ impl From<Event> for FlatEvent {
                 DirectAccessEntity::Asset(EntityEvent::Created) => FlatEventKind::AssetCreated,
                 DirectAccessEntity::Asset(EntityEvent::Updated) => FlatEventKind::AssetUpdated,
                 DirectAccessEntity::Asset(EntityEvent::Removed) => FlatEventKind::AssetRemoved,
+                DirectAccessEntity::Resource(EntityEvent::Created) => {
+                    FlatEventKind::ResourceCreated
+                }
+                DirectAccessEntity::Resource(EntityEvent::Updated) => {
+                    FlatEventKind::ResourceUpdated
+                }
+                DirectAccessEntity::Resource(EntityEvent::Removed) => {
+                    FlatEventKind::ResourceRemoved
+                }
             },
 
             Origin::WorkManagement(fe) => match fe {
@@ -403,6 +418,14 @@ impl From<Event> for FlatEvent {
             Origin::NoteTemplateManagement(fe) => match fe {
                 NoteTemplateManagementEvent::ImportNoteTemplates => {
                     FlatEventKind::NoteTemplateManagementImportNoteTemplates
+                }
+            },
+            Origin::ResourceManagement(fe) => match fe {
+                ResourceManagementEvent::StoreResourceFiles => {
+                    FlatEventKind::ResourceManagementStoreResourceFiles
+                }
+                ResourceManagementEvent::AddResources => {
+                    FlatEventKind::ResourceManagementAddResources
                 }
             },
             Origin::TagManagement(fe) => match fe {
@@ -576,6 +599,9 @@ pub fn is_mutation(kind: &FlatEventKind) -> bool {
             | AssetCreated
             | AssetUpdated
             | AssetRemoved
+            | ResourceCreated
+            | ResourceUpdated
+            | ResourceRemoved
     )
 }
 
@@ -706,6 +732,10 @@ mod tests {
         assert!(is_mutation(&FlatEventKind::AssetCreated));
         assert!(is_mutation(&FlatEventKind::AssetUpdated));
         assert!(is_mutation(&FlatEventKind::AssetRemoved));
+
+        assert!(is_mutation(&FlatEventKind::ResourceCreated));
+        assert!(is_mutation(&FlatEventKind::ResourceUpdated));
+        assert!(is_mutation(&FlatEventKind::ResourceRemoved));
 
         assert!(!is_mutation(&FlatEventKind::Reset));
         assert!(!is_mutation(&FlatEventKind::UndoPerformed));

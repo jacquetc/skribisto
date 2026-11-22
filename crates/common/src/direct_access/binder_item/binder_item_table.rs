@@ -41,6 +41,9 @@ impl<'a> BinderItemHashMapTable<'a> {
             BinderItemRelationshipField::References => {
                 &self.store.jn_binder_item_from_binder_item_references
             }
+            BinderItemRelationshipField::Resources => {
+                &self.store.jn_resource_from_binder_item_resources
+            }
             BinderItemRelationshipField::Status => {
                 &self.store.jn_binder_status_from_binder_item_status
             }
@@ -60,6 +63,7 @@ impl<'a> BinderItemHashMapTable<'a> {
             BinderItemRelationshipField::Cover => false,
             BinderItemRelationshipField::PointOfView => false,
             BinderItemRelationshipField::References => false,
+            BinderItemRelationshipField::Resources => false,
             BinderItemRelationshipField::Status => false,
             BinderItemRelationshipField::Tags => false,
         }
@@ -176,6 +180,22 @@ impl<'a> BinderItemHashMapTable<'a> {
                 }
                 false
             }
+            BinderItemRelationshipField::Resources => {
+                let targets = read_or_recover(&self.store.resources);
+                let missing: Vec<_> = rows
+                    .iter()
+                    .flat_map(|(_, ids)| ids)
+                    .copied()
+                    .filter(|id| !targets.contains_key(id))
+                    .collect();
+                if !missing.is_empty() {
+                    return Err(RepositoryError::MissingRelationshipTarget {
+                        operation: "relationship update",
+                        ids: missing,
+                    });
+                }
+                false
+            }
             BinderItemRelationshipField::Status => {
                 let targets = read_or_recover(&self.store.binder_statuses);
                 let missing: Vec<_> = rows
@@ -240,6 +260,10 @@ impl<'a> BinderItemHashMapTable<'a> {
         entity.cover = junction_get(&self.store.jn_asset_from_binder_item_cover, &entity.id)
             .into_iter()
             .next();
+        entity.resources = junction_get(
+            &self.store.jn_resource_from_binder_item_resources,
+            &entity.id,
+        );
         entity.tags = junction_get(&self.store.jn_binder_tag_from_binder_item_tags, &entity.id);
     }
 }
@@ -310,6 +334,14 @@ impl<'a> BinderItemTable for BinderItemHashMapTable<'a> {
             &entities.iter().map(|e| e.id).collect::<Vec<_>>(),
         )?;
         self.validate_relationship_updates(
+            &BinderItemRelationshipField::Resources,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.resources.clone()))
+                .collect::<Vec<_>>(),
+            &entities.iter().map(|e| e.id).collect::<Vec<_>>(),
+        )?;
+        self.validate_relationship_updates(
             &BinderItemRelationshipField::Tags,
             &entities
                 .iter()
@@ -358,6 +390,11 @@ impl<'a> BinderItemTable for BinderItemHashMapTable<'a> {
                 &self.store.jn_binder_item_from_binder_item_references,
                 new_entity.id,
                 new_entity.references.clone(),
+            );
+            junction_set(
+                &self.store.jn_resource_from_binder_item_resources,
+                new_entity.id,
+                new_entity.resources.clone(),
             );
             junction_set(
                 &self.store.jn_binder_status_from_binder_item_status,
@@ -498,6 +535,14 @@ impl<'a> BinderItemTable for BinderItemHashMapTable<'a> {
             &[],
         )?;
         self.validate_relationship_updates(
+            &BinderItemRelationshipField::Resources,
+            &entities
+                .iter()
+                .map(|e| (e.id, e.resources.clone()))
+                .collect::<Vec<_>>(),
+            &[],
+        )?;
+        self.validate_relationship_updates(
             &BinderItemRelationshipField::Tags,
             &entities
                 .iter()
@@ -540,6 +585,11 @@ impl<'a> BinderItemTable for BinderItemHashMapTable<'a> {
                 entity.cover.into_iter().collect::<Vec<EntityId>>(),
             );
             junction_set(
+                &self.store.jn_resource_from_binder_item_resources,
+                entity.id,
+                entity.resources.clone(),
+            );
+            junction_set(
                 &self.store.jn_binder_tag_from_binder_item_tags,
                 entity.id,
                 entity.tags.clone(),
@@ -571,6 +621,7 @@ impl<'a> BinderItemTable for BinderItemHashMapTable<'a> {
             junction_remove(&self.store.jn_binder_item_from_binder_item_books, id);
             junction_remove(&self.store.jn_binder_status_from_binder_item_status, id);
             junction_remove(&self.store.jn_asset_from_binder_item_cover, id);
+            junction_remove(&self.store.jn_resource_from_binder_item_resources, id);
             junction_remove(&self.store.jn_binder_tag_from_binder_item_tags, id);
 
             // Clean up backward references (uses the owning entity's forward junction)
@@ -631,6 +682,9 @@ impl<'a> BinderItemHashMapTableRO<'a> {
             BinderItemRelationshipField::References => {
                 &self.store.jn_binder_item_from_binder_item_references
             }
+            BinderItemRelationshipField::Resources => {
+                &self.store.jn_resource_from_binder_item_resources
+            }
             BinderItemRelationshipField::Status => {
                 &self.store.jn_binder_status_from_binder_item_status
             }
@@ -663,6 +717,10 @@ impl<'a> BinderItemHashMapTableRO<'a> {
         entity.cover = junction_get(&self.store.jn_asset_from_binder_item_cover, &entity.id)
             .into_iter()
             .next();
+        entity.resources = junction_get(
+            &self.store.jn_resource_from_binder_item_resources,
+            &entity.id,
+        );
         entity.tags = junction_get(&self.store.jn_binder_tag_from_binder_item_tags, &entity.id);
     }
 }

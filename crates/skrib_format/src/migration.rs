@@ -80,6 +80,7 @@ pub fn migrate_bundle(bundle: &mut WorkBundle) -> Result<()> {
             13 => step_v13_to_v14(bundle),
             14 => step_v14_to_v15(bundle),
             15 => step_v15_to_v16(bundle),
+            16 => step_v16_to_v17(bundle),
             other => anyhow::bail!("no migration step from .skrib format_version {other}"),
         }
         bundle.manifest.format_version += 1;
@@ -328,6 +329,12 @@ fn step_v14_to_v15(_bundle: &mut WorkBundle) {}
 /// `#[serde(default)]` already reads a v15 bundle as "on", which is what it meant.
 /// See `FORMAT_VERSION`.
 fn step_v15_to_v16(_bundle: &mut WorkBundle) {}
+
+/// v16 → v17 added resources. Nothing to heal: a v16 bundle has no `resources.ron` and
+/// reads back with nothing attached, which is what it meant. The version floor (see
+/// `version_gate::compute_min_read_version`) keeps an older build from opening a project
+/// that has any. See `FORMAT_VERSION`.
+fn step_v16_to_v17(_bundle: &mut WorkBundle) {}
 
 /// v7 → v8 added binary assets. Nothing to heal: a v7 bundle has no `assets.ron`
 /// and no `assets/` tree, and `#[serde(default)]` already reads that as an empty

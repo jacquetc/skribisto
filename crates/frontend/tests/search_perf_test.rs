@@ -104,6 +104,7 @@ fn big_manuscript() -> AppContext {
             point_of_view: vec![],
             books: vec![],
             tags: vec![],
+            resources: vec![],
         })
         .collect();
     let created = binder_item_commands::create_binder_item_multi(&ctx, None, &items, binder, -1)
@@ -149,6 +150,7 @@ fn query(ctx: &AppContext, q: &str) -> RunSearchDto {
         search_synopsis: true,
         search_labels: false,
         search_comments: false,
+        search_resources: false,
         include_trashed: false,
     }
 }

@@ -18,7 +18,7 @@
 
 use common::entities::{
     BinderItemRole, BinderItemSubRole, CommentAnchorKind, CommentOrphanReason, ContentRole,
-    GoalUnit, MilestoneKind, StatusCategory,
+    GoalUnit, MilestoneKind, ResourceKind, StatusCategory,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -185,6 +185,20 @@ use std::collections::BTreeMap;
 /// a v16 bundle drops the field, and the project reads back with the rule on: a
 /// preference re-set in one click, not authored content.
 ///
+/// # v16 → v17: resources
+///
+/// `resources.ron`, the files and web links the writer attached to items, with each
+/// stored file under `resources/<uid>/<name>`, plus `resource_ids` on every item.
+///
+/// **This one claims a floor**, the v5/v8/v14 call. `resources.ron` is a new root
+/// manifest and `resources/` a new tree, and an older build's first save rebuilds the
+/// archive without either (or prunes them from a folder): every title, description,
+/// attachment, web link and stored file the writer added would go. Gated on the project
+/// having any, so a project with none stays open to older builds.
+///
+/// `BinderItemFile.resource_ids` on its own would have needed nothing: additive with a
+/// default, the v15 `cover_id` call.
+///
 /// # Not a version step: a line break inside a paragraph
 ///
 /// A line break inside a paragraph (Shift+Enter, for verse or a letter) is saved in the
@@ -193,7 +207,7 @@ use std::collections::BTreeMap;
 /// reader takes each hard break for the end of a paragraph, so the lines come back as
 /// paragraphs, and only a row it then edits (see `is_stale` in the editor) is saved that
 /// way. The words survive; their layout is re-made in a keystroke a line.
-pub const FORMAT_VERSION: u32 = 16;
+pub const FORMAT_VERSION: u32 = 17;
 
 /// Read `dict_language` as a list, accepting the pre-v4 space-separated string.
 ///
@@ -552,6 +566,51 @@ pub struct AssetFile {
     pub path: String,
 }
 
+/// One file or web link the writer attached to items — a row of `resources.ron` at the
+/// bundle root. See the `Resource` entity for what each field means.
+///
+/// A stored file's bytes are at `path`, `resources/<uid>/<name>` (see
+/// [`crate::slug::resource_relpath`]), never inline, exactly as an asset's are. A linked
+/// file's `location` is relative to the folder holding the project (see
+/// [`crate::media::relative_link`]), so the link survives the project and its research
+/// moving to another computer together.
+///
+/// Every field but the ids carries a default, so a row a later build wrote with fewer
+/// fields still reads.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ResourceFile {
+    pub file_id: u64,
+    pub uid: uuid::Uuid,
+    #[serde(default)]
+    pub created_at: String,
+    #[serde(default)]
+    pub updated_at: String,
+    #[serde(default)]
+    pub title: String,
+    #[serde(default)]
+    pub description: String,
+    pub kind: ResourceKind,
+    #[serde(default)]
+    pub location: String,
+    #[serde(default)]
+    pub file_name: String,
+    #[serde(default)]
+    pub mime_type: String,
+    #[serde(default)]
+    pub byte_size: u64,
+    #[serde(default)]
+    pub content_hash: String,
+    #[serde(default)]
+    pub width: u32,
+    #[serde(default)]
+    pub height: u32,
+    /// Where a stored file's bytes are, relative to the bundle root; empty for a linked
+    /// file or a web link. Written from `uid` and `file_name`, never taken from a read
+    /// bundle as a place to write.
+    #[serde(default)]
+    pub path: String,
+}
+
 /// One rung of the project's workflow ladder — `statuses.ron` at the bundle root.
 ///
 /// Ordered: the file is written in ladder order and read back the same way, which is what
@@ -896,6 +955,11 @@ pub struct BinderItemFile {
     /// resolve at load reads as `None` too, since the relationship is weak.
     #[serde(default)]
     pub cover_id: Option<u64>,
+    /// The resources attached to this row, as `file_id`s of `ResourceFile`s in the same
+    /// bundle. Additive with a default (an item written before v17 has none); a
+    /// `file_id` that no longer resolves is skipped at load, the relationship being weak.
+    #[serde(default)]
+    pub resource_ids: Vec<u64>,
     pub inline_contents: Vec<InlineContent>,
     pub prose_refs: Vec<ProseRef>,
     /// M2M self-references (cross-links), as `file_id`s.
@@ -980,6 +1044,21 @@ pub struct WorkBundle {
     /// The hashes in `AssetFile::content_hash` already cover the bytes.
     #[serde(skip)]
     pub asset_blobs: BTreeMap<String, crate::Blob>,
+    /// The files and links attached to items — `resources.ron` at the bundle root.
+    ///
+    /// `#[serde(default)]` so a pre-v17 bundle reads back with none, the correct
+    /// "nothing attached" state.
+    #[serde(default)]
+    pub resources: Vec<ResourceFile>,
+    /// Stored resources' bytes keyed by the resource's `uid` (hyphenated), the
+    /// `resources/<uid>/<name>` files. `#[serde(skip)]` for the reasons
+    /// [`Self::asset_blobs`] is, and more so: a resource can be an hour of audio.
+    ///
+    /// A stored resource with no blob here is written without its file rather than
+    /// dropped: its title, description and attachments are the writer's, and a file a
+    /// save could not find is better shown as missing than lost with its card.
+    #[serde(skip)]
+    pub resource_blobs: BTreeMap<String, crate::Blob>,
     pub trash_infos: Vec<TrashInfoFile>,
     pub paces: Vec<PaceFile>,
     pub progress_snapshots: Vec<ProgressSnapshotFile>,
@@ -1036,6 +1115,31 @@ pub struct WorkBundle {
     /// modelled ends up with the modelled bytes.
     #[serde(default)]
     pub carried: BTreeMap<String, CarriedFile>,
+}
+
+impl WorkBundle {
+    /// Give every resource a uid of its own before anything is placed by it.
+    ///
+    /// A resource's uid names its folder, so a row written by hand without one (nil), or
+    /// two rows sharing one, would have no folder or share a single file. Healed on the
+    /// bundle, before the load places the files, and the bytes follow the new uid: a uid
+    /// minted only once the rows exist named a folder nothing was in, and the next open
+    /// pruned the bytes away. Two rows that shared a file each keep a copy.
+    pub fn heal_resource_uids(&mut self) {
+        let mut seen = std::collections::BTreeSet::new();
+        let mut blobs = BTreeMap::new();
+        for r in &mut self.resources {
+            let old = r.uid.hyphenated().to_string();
+            if r.uid.is_nil() || !seen.insert(r.uid) {
+                r.uid = uuid::Uuid::new_v4();
+                seen.insert(r.uid);
+            }
+            if let Some(blob) = self.resource_blobs.get(&old) {
+                blobs.insert(r.uid.hyphenated().to_string(), blob.clone());
+            }
+        }
+        self.resource_blobs = blobs;
+    }
 }
 
 /// One unmodelled bundle file, held as opaque bytes plus a digest.

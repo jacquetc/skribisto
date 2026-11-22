@@ -2596,6 +2596,7 @@ search-field-epigraph = Μότο
 search-field-comment = Σχόλιο
 search-field-comment-reply = Απάντηση
 search-field-footnote = Υποσημείωση
+search-field-resource = Πόρος
 search-include-in-replace = Συμπερίληψη στην «Αντικατάσταση όλων»
 search-collapse-all = Σύμπτυξη όλων των αποτελεσμάτων
 search-replace-here = Αντικατάσταση αυτού

@@ -19,7 +19,7 @@ use common::direct_access::work::WorkRelationshipField;
 use common::direct_access::work_info::WorkInfoRelationshipField;
 use common::entities::{
     Asset, Binder, BinderItem, BinderStatus, BinderTag, Comment, CommentReply, Content, DictWord,
-    Footnote, Holiday, Milestone, NoteTemplate, Pace, ProgressSnapshot, SmartPunctuation,
+    Footnote, Holiday, Milestone, NoteTemplate, Pace, ProgressSnapshot, Resource, SmartPunctuation,
     TextReplacementRule, TrashInfo, Work, WorkInfo,
 };
 use common::long_operation::{LongOperation, OperationProgress};
@@ -48,6 +48,7 @@ pub trait SaveWorkUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "NoteTemplate", action = "GetMultiRO")]
 #[macros::uow_action(entity = "BinderStatus", action = "GetMultiRO")]
 #[macros::uow_action(entity = "Asset", action = "GetMultiRO")]
+#[macros::uow_action(entity = "Resource", action = "GetMultiRO")]
 #[macros::uow_action(entity = "Footnote", action = "GetMultiRO")]
 #[macros::uow_action(entity = "Footnote", action = "GetRelationshipRO")]
 #[macros::uow_action(entity = "SmartPunctuation", action = "GetRO")]
@@ -130,6 +131,9 @@ impl<'a> TreeReader for dyn SaveWorkUnitOfWorkTrait + 'a {
     }
     fn asset_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<Asset>>> {
         self.get_asset_multi(ids)
+    }
+    fn resource_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<Resource>>> {
+        self.get_resource_multi(ids)
     }
     fn smart_punctuation(&self, id: &EntityId) -> Result<Option<SmartPunctuation>> {
         self.get_smart_punctuation(id)
@@ -228,11 +232,10 @@ fn run_save(
     // The per-project media directory, resolved from the caller's root: at this
     // point the Work is in hand, so its `unique_id` is known and the fallback
     // key is never needed.
-    let media_dir = skrib_format::media::media_dir(
+    let dirs = work_io::ProjectDirs::of(
         std::path::Path::new(&target),
         &g.work.unique_id,
         std::path::Path::new(&dto.media_root),
-        &g.work.unique_id,
     );
     // A save overwrites the project in place, so the file we are about to replace
     // is also the file whose history we carry forward: read it, append this state,
@@ -248,7 +251,7 @@ fn run_save(
         target,
         shape,
         tag,
-        &media_dir,
+        &dirs,
         history,
         crate::lifecycle::SaveKind::Save,
     )?;

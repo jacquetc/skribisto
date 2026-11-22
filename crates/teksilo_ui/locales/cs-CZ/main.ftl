@@ -2837,6 +2837,7 @@ search-field-epigraph = Motto
 search-field-comment = Komentář
 search-field-comment-reply = Odpověď
 search-field-footnote = Poznámka pod čarou
+search-field-resource = Zdroj
 search-include-in-replace = Zahrnout do Nahradit vše
 search-collapse-all = Sbalit všechny výsledky
 search-replace-here = Nahradit zde

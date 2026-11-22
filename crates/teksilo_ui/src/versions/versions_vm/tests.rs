@@ -651,6 +651,8 @@ fn saved_twice(
             &[],
             &[],
             Default::default(),
+            &[],
+            Default::default(),
             None,
             &[],
             &[],

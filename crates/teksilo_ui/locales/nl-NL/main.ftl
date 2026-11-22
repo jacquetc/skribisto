@@ -2542,6 +2542,7 @@ search-field-epigraph = Motto
 search-field-comment = Opmerking
 search-field-comment-reply = Antwoord
 search-field-footnote = Voetnoot
+search-field-resource = Bron
 search-include-in-replace = Opnemen in Alles vervangen
 search-collapse-all = Alle resultaten invouwen
 search-replace-here = Dit vervangen

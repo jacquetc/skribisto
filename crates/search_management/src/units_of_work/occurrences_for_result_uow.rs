@@ -12,8 +12,8 @@ use common::database::write_guard::WriteTransactionGuard;
 use common::database::{db_context::DbContext, transactions::Transaction};
 #[allow(unused_imports)]
 use common::entities::{
-    Binder, BinderItem, Comment, CommentReply, Content, Footnote, Search, SearchResult, Work,
-    WorkInfo,
+    Binder, BinderItem, Comment, CommentReply, Content, Footnote, Resource, Search, SearchResult,
+    Work, WorkInfo,
 };
 use common::event::SearchManagementEvent::OccurrencesForResult;
 use common::event::{AllEvent, DirectAccessEntity, Event, EventBuffer, EventHub, Origin};
@@ -144,6 +144,7 @@ impl CommandUnitOfWork for OccurrencesForResultUnitOfWork {
 #[macros::uow_action(entity = "Comment", action = "Get")]
 #[macros::uow_action(entity = "CommentReply", action = "Get")]
 #[macros::uow_action(entity = "Footnote", action = "Get")]
+#[macros::uow_action(entity = "Resource", action = "Get")]
 impl OccurrencesForResultUnitOfWorkTrait for OccurrencesForResultUnitOfWork {
     fn publish_occurrences_for_result_event(&self, ids: Vec<EntityId>, data: Option<String>) {
         self.event_hub.send_event(Event {

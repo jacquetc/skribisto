@@ -2553,6 +2553,7 @@ search-field-epigraph = Mottó
 search-field-comment = Megjegyzés
 search-field-comment-reply = Válasz
 search-field-footnote = Lábjegyzet
+search-field-resource = Forrás
 search-include-in-replace = Belefoglalás az Összes cseréjébe
 search-collapse-all = Minden találat összecsukása
 search-replace-here = Ennek cseréje

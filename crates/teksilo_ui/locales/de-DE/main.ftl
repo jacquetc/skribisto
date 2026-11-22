@@ -2658,6 +2658,7 @@ search-field-epigraph = Motto
 search-field-comment = Kommentar
 search-field-comment-reply = Antwort
 search-field-footnote = Fußnote
+search-field-resource = Ressource
 search-include-in-replace = In „Alle ersetzen“ einschließen
 search-collapse-all = Alle Ergebnisse zuklappen
 search-replace-here = Diesen Treffer ersetzen

@@ -1865,6 +1865,7 @@ search-field-epigraph = エピグラフ
 search-field-comment = コメント
 search-field-comment-reply = 返信
 search-field-footnote = 脚注
+search-field-resource = リソース
 search-include-in-replace = すべて置換に含める
 search-collapse-all = すべての結果を折りたたむ
 search-replace-here = この箇所を置換

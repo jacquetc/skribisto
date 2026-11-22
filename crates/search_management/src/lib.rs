@@ -12,6 +12,7 @@ pub mod corpus_cache;
 pub mod field_text;
 pub mod match_field;
 pub mod matching;
+pub mod resource_text;
 pub mod snippet;
 
 // The language-resolution chain moved to `skribisto_model` so search and spell-check share

@@ -102,6 +102,7 @@ pub fn create_entry(
         aliases: draft.aliases.clone(),
         books: draft.books.clone(),
         tags: draft.tags.clone(),
+        resources: vec![],
         ..Default::default()
     };
     let created =

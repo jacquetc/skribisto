@@ -147,6 +147,7 @@ fn seed_second_work(ctx: &AppContext, title: &str) -> SecondWork {
             paces: vec![],
             comments: vec![],
             footnotes: vec![],
+            resources: vec![],
         },
     )
     .unwrap_or_else(|e| panic!("create work {title}: {e}"));
@@ -305,6 +306,7 @@ fn seed_mentionable_scene(
         point_of_view: vec![],
         books: vec![],
         tags: vec![],
+        resources: vec![],
     };
     let mut character = mk(BinderItemSubRole::Note, &format!("{needle} Sarraute"));
     character.aliases = vec![needle.to_string()];
@@ -413,6 +415,7 @@ fn seed_prose_scene(ctx: &AppContext, binder_id: EntityId, words: usize) {
             point_of_view: vec![],
             books: vec![],
             tags: vec![],
+            resources: vec![],
         }],
         binder_id,
         -1,
@@ -473,6 +476,7 @@ fn seed_trashed_item(
             point_of_view: vec![],
             books: vec![],
             tags: vec![],
+            resources: vec![],
         }],
         binder_id,
         -1,
@@ -815,6 +819,7 @@ fn seed_needle_scene(ctx: &AppContext, binder_id: EntityId, title: &str, prose: 
             point_of_view: vec![],
             books: vec![],
             tags: vec![],
+            resources: vec![],
         }],
         binder_id,
         -1,
@@ -880,6 +885,7 @@ fn run_search_only_searches_the_requested_work() {
                 search_synopsis: true,
                 search_labels: false,
                 search_comments: false,
+                search_resources: false,
                 include_trashed: false,
             },
         )
@@ -970,6 +976,7 @@ fn replace_in_project_only_replaces_in_the_requested_work() {
                 search_synopsis: false,
                 search_labels: false,
                 search_comments: false,
+                search_resources: false,
                 include_trashed: false,
             },
         )
@@ -1134,6 +1141,7 @@ fn seed_active_item(ctx: &AppContext, binder_id: EntityId, uid_seed: u64) -> Ent
             point_of_view: vec![],
             books: vec![],
             tags: vec![],
+            resources: vec![],
         }],
         binder_id,
         -1,
@@ -1179,6 +1187,7 @@ fn seed_scene_pair(
         point_of_view: vec![],
         books: vec![],
         tags: vec![],
+        resources: vec![],
     };
     let created = binder_item_commands::create_binder_item_multi(
         ctx,

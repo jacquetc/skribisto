@@ -94,6 +94,10 @@ impl<'a> TreeReader for dyn AnalyzeBookUnitOfWorkTrait + 'a {
     fn asset_multi(&self, _ids: &[EntityId]) -> Result<Vec<Option<common::entities::Asset>>> {
         Ok(Vec::new())
     }
+    /// An analysis reads no resources; it writes no bundle.
+    fn resource_multi(&self, _ids: &[EntityId]) -> Result<Vec<Option<common::entities::Resource>>> {
+        Ok(Vec::new())
+    }
     /// see [`TreeReader::note_template_multi`], and `scan_mentions_uc` for the same call.
     fn note_template_multi(
         &self,

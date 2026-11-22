@@ -692,6 +692,8 @@ impl ExportViewModel {
             // stance `status_multi` takes on the three analysis readers.
             statuses: Vec::new(),
             assets: Vec::new(),
+            // Resources are research, not the book: an export carries none.
+            resources: Vec::new(),
             work,
             tags: Vec::new(),
             dict_words: Vec::new(),

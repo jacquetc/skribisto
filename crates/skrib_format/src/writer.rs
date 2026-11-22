@@ -148,7 +148,7 @@ fn plain_fsync(file: &File) -> io::Result<()> {
 /// Directory sync is a POSIX-only concept (Windows has no directory handle to
 /// sync), so there the rename is atomic but not additionally journaled by us.
 #[cfg(unix)]
-fn sync_directory(dir: &Path) -> Result<()> {
+pub(crate) fn sync_directory(dir: &Path) -> Result<()> {
     let Ok(handle) = File::open(dir) else {
         return Ok(());
     };

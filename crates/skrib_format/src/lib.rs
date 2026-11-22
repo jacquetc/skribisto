@@ -86,6 +86,8 @@ mod normalisation_tests;
 #[cfg(test)]
 mod property_tests;
 mod reader;
+#[cfg(test)]
+mod resource_tests;
 pub mod retention;
 /// Turning a path that came out of a bundle into a path on this machine, safely.
 /// `pub` because every reader and writer of bundle-supplied paths has to go
@@ -137,8 +139,8 @@ pub use bundle::{
     BundleKind, BundledBinder, BundledItem, CarriedFile, CommentFile, CommentReplyFile,
     CommentWithReplies, DictWordFile, FORMAT_VERSION, FootnoteFile, FootnoteWithContent,
     HolidayFile, InlineContent, ItemWithContents, ItemsFile, MilestoneFile, NoteTemplateFile,
-    PaceFile, PaceWithChildren, ProgressSnapshotFile, ProjectManifest, ProseRef, ShapeTag,
-    SmartPunctuationFile, TextReplacementRuleFile, TrashInfoFile, WorkBundle, WorkFile,
+    PaceFile, PaceWithChildren, ProgressSnapshotFile, ProjectManifest, ProseRef, ResourceFile,
+    ShapeTag, SmartPunctuationFile, TextReplacementRuleFile, TrashInfoFile, WorkBundle, WorkFile,
 };
 pub use convert::HTML_FOOTNOTE_ATTR;
 pub use convert::{
@@ -175,6 +177,7 @@ pub use tree_read::{Gathered, TreeReader, gather};
 pub use writer::{mark_existing_as_backup, verify_backup_at, write_bundle};
 pub use xml_depth::{FoldersTooDeep, MAX_DEPTH as MAX_XML_DEPTH, XmlDeclaresEntities, XmlTooDeep};
 pub use zip_guard::{MAX_RATIO, RATIO_FLOOR_BYTES, ZipGuard, ZipLimits, ZipRefused};
+pub use zip_io::FITS_TAG as ZIP_TOO_LARGE_TAG;
 
 /// Generate a fresh, stable project identity string (UUID v4). Used to mint a
 /// `Work.unique_id` for brand-new projects, to heal a load whose source carries

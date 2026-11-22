@@ -523,6 +523,7 @@ fn field_icon(field: &MatchField) -> IconWidget {
         MatchField::Comment => activity::comments_icon(),
         MatchField::CommentReply => ic::comment_reply_icon(),
         MatchField::Footnote => activity::footnotes_icon(),
+        MatchField::Resource => activity::resources_icon(),
     }
 }
 
@@ -537,6 +538,7 @@ fn field_label(field: &MatchField) -> LocalizedString {
         MatchField::Comment => tr!(search_field_comment()),
         MatchField::CommentReply => tr!(search_field_comment_reply()),
         MatchField::Footnote => tr!(search_field_footnote()),
+        MatchField::Resource => tr!(search_field_resource()),
     }
 }
 

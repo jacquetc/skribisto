@@ -220,6 +220,21 @@ impl DuplicateUseCase {
                     )?;
                 }
 
+                // Copy the attached resources (shared M2M, like tags): a duplicated scene
+                // keeps the map and the recording filed on it. The resources are the
+                // Work's, so both rows point at the same ones and no file is copied.
+                let resource_ids = uow.get_binder_item_relationship(
+                    &src.id,
+                    &BinderItemRelationshipField::Resources,
+                )?;
+                if !resource_ids.is_empty() {
+                    uow.set_binder_item_relationship(
+                        &created_item.id,
+                        &BinderItemRelationshipField::Resources,
+                        &resource_ids,
+                    )?;
+                }
+
                 // Copy confirmed references (cast pins). Same shared-target M2M shape as
                 // tags: the clone keeps the same story-bible cast the writer already chose.
                 let ref_ids = uow.get_binder_item_relationship(

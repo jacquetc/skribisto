@@ -1020,6 +1020,7 @@ mod tests {
             point_of_view: vec![],
             books: vec![],
             tags: vec![44],
+            resources: vec![45],
         };
 
         let out = update_item_dto(&src);

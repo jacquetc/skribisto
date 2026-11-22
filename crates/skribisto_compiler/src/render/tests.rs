@@ -47,6 +47,7 @@ fn gathered(items: Vec<ItemWithContents>, work_lang: &str) -> Gathered {
     Gathered {
         statuses: Vec::new(),
         assets: Vec::new(),
+        resources: Vec::new(),
         footnotes: Vec::new(),
         work: Work {
             id: 1,

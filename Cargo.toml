@@ -17,6 +17,7 @@ members = [
     "crates/analysis_management",
     "crates/tag_management",
     "crates/note_template_management",
+    "crates/resource_management",
     "crates/binder_item_management",
     "crates/binder_ordering",
     "crates/document_ingest",
@@ -85,6 +86,7 @@ mention_management = { package = "skribisto-mention-management", version = "3.3.
 analysis_management = { package = "skribisto-analysis-management", version = "3.3.3", path = "crates/analysis_management" }
 tag_management = { package = "skribisto-tag-management", version = "3.3.3", path = "crates/tag_management" }
 note_template_management = { package = "skribisto-note-template-management", version = "3.3.3", path = "crates/note_template_management" }
+resource_management = { package = "skribisto-resource-management", version = "3.3.3", path = "crates/resource_management" }
 binder_item_management = { package = "skribisto-binder-item-management", version = "3.3.3", path = "crates/binder_item_management" }
 binder_ordering = { package = "skribisto-binder-ordering", version = "3.3.3", path = "crates/binder_ordering" }
 handling_app_lifecycle = { package = "skribisto-handling-app-lifecycle", version = "3.3.3", path = "crates/handling_app_lifecycle" }

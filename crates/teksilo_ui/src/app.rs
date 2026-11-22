@@ -1045,8 +1045,8 @@ fn open_search_settings() -> crate::models::SearchSettingsService {
 fn mutation_origins() -> Vec<Origin> {
     use DirectAccessEntity::{
         Asset, Binder, BinderItem, BinderStatus, BinderTag, Comment, CommentReply, DictWord,
-        Footnote, Holiday, Milestone, NoteTemplate, Pace, SmartPunctuation, TextReplacementRule,
-        Work,
+        Footnote, Holiday, Milestone, NoteTemplate, Pace, Resource, SmartPunctuation,
+        TextReplacementRule, Work,
     };
     let mut v = Vec::new();
     for ent in [
@@ -1127,6 +1127,11 @@ fn mutation_origins() -> Vec<Origin> {
         Asset(EntityEvent::Created),
         Asset(EntityEvent::Updated),
         Asset(EntityEvent::Removed),
+        // Written only by a writer's action (add, rename, describe, relink, replace,
+        // remove), never by a flush or an open, so no write here is a no-op.
+        Resource(EntityEvent::Created),
+        Resource(EntityEvent::Updated),
+        Resource(EntityEvent::Removed),
     ] {
         v.push(Origin::DirectAccess(ent));
     }
@@ -1234,6 +1239,7 @@ fn mutation_ids_belong_to_work(
         DirectAccessEntity::Pace(_)
         | DirectAccessEntity::TextReplacementRule(_)
         | DirectAccessEntity::Asset(_)
+        | DirectAccessEntity::Resource(_)
         | DirectAccessEntity::SmartPunctuation(_) => {
             let field = match entity {
                 DirectAccessEntity::Pace(_) => WorkRelationshipField::Paces,
@@ -1241,6 +1247,7 @@ fn mutation_ids_belong_to_work(
                     WorkRelationshipField::TextReplacementRules
                 }
                 DirectAccessEntity::Asset(_) => WorkRelationshipField::Assets,
+                DirectAccessEntity::Resource(_) => WorkRelationshipField::Resources,
                 _ => WorkRelationshipField::SmartPunctuation,
             };
             let mine =

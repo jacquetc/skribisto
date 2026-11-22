@@ -3685,6 +3685,7 @@ search-field-epigraph = الاقتباس الاستهلالي
 search-field-comment = تعليق
 search-field-comment-reply = رد
 search-field-footnote = حاشية سفلية
+search-field-resource = مورد
 search-include-in-replace = التضمين في «استبدال الكل»
 search-collapse-all = طي كل النتائج
 search-replace-here = استبدال هذه

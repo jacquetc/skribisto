@@ -81,6 +81,10 @@ impl<'a> TreeReader for dyn ScanMentionsUnitOfWorkTrait + 'a {
     fn asset_multi(&self, _ids: &[EntityId]) -> Result<Vec<Option<common::entities::Asset>>> {
         Ok(Vec::new())
     }
+    /// Mentions are found in prose, never in a resource.
+    fn resource_multi(&self, _ids: &[EntityId]) -> Result<Vec<Option<common::entities::Resource>>> {
+        Ok(Vec::new())
+    }
     /// defaulted — see [`TreeReader::note_template_multi`].
     fn note_template_multi(
         &self,

@@ -473,6 +473,8 @@ mod imp {
             assets: Vec::new(),
             note_template_bodies: Default::default(),
             asset_blobs: Default::default(),
+            resources: Vec::new(),
+            resource_blobs: Default::default(),
             trash_infos: Vec::new(),
             paces: Vec::new(),
             progress_snapshots: Vec::new(),

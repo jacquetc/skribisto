@@ -32,7 +32,7 @@ use common::direct_access::work::WorkRelationshipField;
 use common::direct_access::work_info::WorkInfoRelationshipField;
 use common::entities::{
     Asset, Binder, BinderItem, BinderStatus, BinderTag, Comment, CommentReply, Content, DictWord,
-    Footnote, Holiday, Milestone, NoteTemplate, Pace, ProgressSnapshot, SmartPunctuation,
+    Footnote, Holiday, Milestone, NoteTemplate, Pace, ProgressSnapshot, Resource, SmartPunctuation,
     TextReplacementRule, TrashInfo, Work, WorkInfo,
 };
 use common::long_operation::OperationProgress;
@@ -94,6 +94,11 @@ pub trait TreeReader {
     /// forgot to override it would write every project with zero assets, and the
     /// exploded writer's prune would then delete every image file on disk.
     fn asset_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<Asset>>>;
+    /// The files and links attached to items. **Required and undefaulted for the same
+    /// reason as `asset_multi`**: a save path that forgot it would write every project
+    /// with nothing attached, and every title, description and link the writer added
+    /// would be gone after one save. Readers that write no bundle stub it empty.
+    fn resource_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<Resource>>>;
     /// The punctuation house style. Singular, not a `_multi`, because the
     /// relationship is one-to-one — there is exactly one row or none.
     ///
@@ -194,6 +199,7 @@ pub struct Gathered {
     /// The workflow ladder, in ladder order.
     pub statuses: Vec<BinderStatus>,
     pub assets: Vec<Asset>,
+    pub resources: Vec<Resource>,
     /// `None` when the reader does not read settings (export), or when the row
     /// genuinely does not resolve — never fabricated here, so the writer can
     /// record its absence faithfully.
@@ -253,6 +259,7 @@ pub fn gather<R: TreeReader + ?Sized>(
     work.note_templates = reader.work_rel(&work_id, &WorkRelationshipField::NoteTemplates)?;
     work.statuses = reader.work_rel(&work_id, &WorkRelationshipField::Statuses)?;
     work.assets = reader.work_rel(&work_id, &WorkRelationshipField::Assets)?;
+    work.resources = reader.work_rel(&work_id, &WorkRelationshipField::Resources)?;
     // A one-to-one relationship still comes back as a vector — take the first,
     // and treat an empty one as "no row", which is what a Work loaded from a
     // pre-feature bundle looks like before the materialiser heals it.
@@ -278,6 +285,7 @@ pub fn gather<R: TreeReader + ?Sized>(
     let note_templates = fetch_multi(&work.note_templates, |ids| reader.note_template_multi(ids))?;
     let statuses = fetch_multi(&work.statuses, |ids| reader.status_multi(ids))?;
     let assets = fetch_multi(&work.assets, |ids| reader.asset_multi(ids))?;
+    let resources = fetch_multi(&work.resources, |ids| reader.resource_multi(ids))?;
     // Skip the read entirely for an unwired Work rather than asking for id 0,
     // which no store row can have.
     let smart_punctuation = if work.smart_punctuation == 0 {
@@ -350,6 +358,7 @@ pub fn gather<R: TreeReader + ?Sized>(
                 reader.item_rel(&item.id, &BinderItemRelationshipField::PointOfView)?;
             item.books = reader.item_rel(&item.id, &BinderItemRelationshipField::Books)?;
             item.tags = reader.item_rel(&item.id, &BinderItemRelationshipField::Tags)?;
+            item.resources = reader.item_rel(&item.id, &BinderItemRelationshipField::Resources)?;
             let contents = fetch_multi(&item.contents, |ids| reader.content_multi(ids))?;
             items.push(ItemWithContents { item, contents });
         }
@@ -369,6 +378,7 @@ pub fn gather<R: TreeReader + ?Sized>(
         note_templates,
         statuses,
         assets,
+        resources,
         smart_punctuation,
         trash_infos,
         paces,

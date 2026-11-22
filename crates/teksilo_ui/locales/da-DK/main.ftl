@@ -2774,6 +2774,7 @@ search-field-epigraph = Motto
 search-field-comment = Kommentar
 search-field-comment-reply = Svar
 search-field-footnote = Fodnote
+search-field-resource = Ressource
 search-include-in-replace = Medtag i Erstat alle
 search-collapse-all = Fold alle resultater sammen
 search-replace-here = Erstat denne

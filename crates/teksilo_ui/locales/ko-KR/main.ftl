@@ -1791,6 +1791,7 @@ search-field-epigraph = 머리말 인용문
 search-field-comment = 댓글
 search-field-comment-reply = 답글
 search-field-footnote = 각주
+search-field-resource = 리소스
 search-include-in-replace = 모두 바꾸기에 포함
 search-collapse-all = 모든 결과 접기
 search-replace-here = 이 항목 바꾸기

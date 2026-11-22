@@ -109,6 +109,118 @@ pub fn resolve_target(
 }
 
 /// Serialise `g` and write it to `target` in `shape`. Returns `target`.
+/// Where an open project's binary files are on disk: its pictures (the media directory)
+/// and its stored resources. Both resolved by `skrib_format::media` from the project's
+/// path and `unique_id`, under the app's media root: inside an exploded folder, or a
+/// working folder under the app's data for a zip.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProjectDirs {
+    pub media: std::path::PathBuf,
+    pub resources: std::path::PathBuf,
+}
+
+impl ProjectDirs {
+    /// The directories of the project at `project_path`.
+    pub fn of(
+        project_path: &std::path::Path,
+        unique_id: &str,
+        media_root: &std::path::Path,
+    ) -> Self {
+        Self {
+            media: skrib::media::media_dir(project_path, unique_id, media_root, unique_id),
+            resources: skrib::media::resources_dir(project_path, unique_id, media_root, unique_id),
+        }
+    }
+}
+
+/// Point at the file of every stored resource in the project's resources directory,
+/// keyed by the resource's `uid` as `WorkBundle::resource_blobs` is.
+///
+/// A missing file is skipped, as a missing picture is, but its resource is not:
+/// `from_entities` still writes the row, so the card survives and shows its file as
+/// missing rather than vanishing with it.
+pub fn read_resource_blobs(
+    resources: &[common::entities::Resource],
+    resources_dir: &std::path::Path,
+) -> std::collections::BTreeMap<String, skrib::Blob> {
+    let mut out = std::collections::BTreeMap::new();
+    for r in resources {
+        if r.kind != common::entities::ResourceKind::StoredFile {
+            continue;
+        }
+        let path = skrib::media::resource_file(resources_dir, r.uid, &r.file_name);
+        if path.is_file() {
+            out.insert(r.uid.hyphenated().to_string(), skrib::Blob::file(path));
+        }
+    }
+    out
+}
+
+/// Place a loaded bundle's stored resources into the project's resources directory,
+/// and remove what no resource names any more (see `media::prune_resources_dir`).
+///
+/// For an exploded folder every blob already is the file it would be placed on, so
+/// only the prune does anything. A resource whose file the bundle lacks is left as it
+/// is: missing, shown so, never a reason to refuse the project.
+pub fn write_resource_blobs(
+    bundle: &skrib::WorkBundle,
+    resources_dir: &std::path::Path,
+) -> Result<()> {
+    let keep: Vec<(uuid::Uuid, String)> = bundle
+        .resources
+        .iter()
+        .filter(|r| r.kind == common::entities::ResourceKind::StoredFile)
+        .map(|r| (r.uid, r.file_name.clone()))
+        .collect();
+    skrib::media::prune_resources_dir(resources_dir, &keep);
+    for r in &bundle.resources {
+        let Some(blob) = bundle.resource_blobs.get(&r.uid.hyphenated().to_string()) else {
+            continue;
+        };
+        let path = skrib::media::resource_file(resources_dir, r.uid, &r.file_name);
+        // From a zip's extraction, thrown away after the load: a link is safe. A folder
+        // project's blob already is this file, and nothing is written.
+        blob.link_or_place_at(&path)
+            .with_context(|| format!("writing resource file {}", path.display()))?;
+    }
+    Ok(())
+}
+
+/// Copy the open project's pictures and stored resources from `from` to `to`, for a
+/// Save As that moves the project somewhere its files are not.
+///
+/// After a Save As the window is the new file, and every later save reads its files
+/// from the new file's directories. A folder project saved as a single file keeps them
+/// in the folder it came from, so without this the first save of the copy found none
+/// and wrote it without its pictures. Linked when the two share a disk, copied
+/// otherwise; nothing done when the directories are the same.
+pub fn carry_project_files(g: &Gathered, from: &ProjectDirs, to: &ProjectDirs) -> Result<()> {
+    if from.media != to.media {
+        for (hash, blob) in read_asset_blobs(&g.assets, &from.media) {
+            let Some(a) = g.assets.iter().find(|a| a.content_hash == hash) else {
+                continue;
+            };
+            let ext = skrib::media::extension_for(&a.mime_type);
+            let dest = to.media.join(format!("{hash}.{ext}"));
+            blob.place_at(&dest)
+                .with_context(|| format!("copying media file to {}", dest.display()))?;
+        }
+    }
+    if from.resources != to.resources {
+        for r in &g.resources {
+            let src = skrib::media::resource_file(&from.resources, r.uid, &r.file_name);
+            if r.kind != common::entities::ResourceKind::StoredFile || !src.is_file() {
+                continue;
+            }
+            let dest = skrib::media::resource_file(&to.resources, r.uid, &r.file_name);
+            skrib::Blob::file(src)
+                .place_at(&dest)
+                .with_context(|| format!("copying resource file to {}", dest.display()))?;
+        }
+    }
+    Ok(())
+}
+
 /// Point at the file of every gathered asset in the project's media directory.
 ///
 /// Nothing is read: each [`skrib::Blob`] names the file, and the writer streams or
@@ -164,7 +276,8 @@ pub fn write_asset_blobs(bundle: &skrib::WorkBundle, media_dir: &std::path::Path
             .asset_blobs
             .get(&a.content_hash)
             .ok_or_else(|| anyhow!("bundle lists asset {} with no bytes", a.file_name))?;
-        blob.place_at(&path)
+        // From a zip's extraction, thrown away after the load: a link is safe.
+        blob.link_or_place_at(&path)
             .with_context(|| format!("writing media file {}", path.display()))?;
     }
     Ok(())
@@ -268,7 +381,7 @@ pub fn serialize_and_write(
     target: String,
     shape: SkribShape,
     shape_tag: ShapeTag,
-    media_dir: &std::path::Path,
+    dirs: &ProjectDirs,
     history: HistoryAction,
     kind: crate::lifecycle::SaveKind,
 ) -> Result<String> {
@@ -280,7 +393,9 @@ pub fn serialize_and_write(
         &g.note_templates,
         &g.statuses,
         &g.assets,
-        read_asset_blobs(&g.assets, media_dir),
+        read_asset_blobs(&g.assets, &dirs.media),
+        &g.resources,
+        read_resource_blobs(&g.resources, &dirs.resources),
         g.smart_punctuation.as_ref(),
         &g.trash_infos,
         &g.paces,
@@ -289,6 +404,13 @@ pub fn serialize_and_write(
         &g.footnotes,
         &g.binders,
         shape_tag,
+    );
+    // A linked file's path is stored relative to the folder holding the project, so the
+    // link moves with the project and its research. Made relative to where THIS bundle
+    // goes: a Save As elsewhere stores the paths as seen from there.
+    skrib::media::relativise_links(
+        &mut bundle,
+        skrib::media::link_base(std::path::Path::new(&target)).as_deref(),
     );
     // Asked here, merged below. The gap is only an economy: `collect` clones the
     // bundle to fingerprint it, and doing that before `carry::load` means not

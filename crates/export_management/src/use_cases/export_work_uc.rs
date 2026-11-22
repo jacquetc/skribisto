@@ -71,6 +71,11 @@ impl<'a> TreeReader for dyn ExportWorkUnitOfWorkTrait + 'a {
     fn asset_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<common::entities::Asset>>> {
         self.get_asset_multi(ids)
     }
+    /// Export carries no resource (decided: they are research, not the book), so it
+    /// reads none.
+    fn resource_multi(&self, _ids: &[EntityId]) -> Result<Vec<Option<common::entities::Resource>>> {
+        Ok(Vec::new())
+    }
     /// Export reads comments — but never puts one in the manuscript.
     ///
     /// They ride out as a side payload the DOCX and ODT writers attach beside the prose, so a

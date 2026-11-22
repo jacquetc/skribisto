@@ -15,7 +15,7 @@ use walkdir::WalkDir;
 use zip::write::SimpleFileOptions;
 
 use super::bundle::WorkBundle;
-use super::folder_io::{read_folder_kept, write_folder};
+use super::folder_io::{read_folder_kept, write_folder_staged};
 use super::writer::{discard, persist_durably};
 
 pub fn write_zip(target: &Path, bundle: &WorkBundle) -> Result<()> {
@@ -23,7 +23,11 @@ pub fn write_zip(target: &Path, bundle: &WorkBundle) -> Result<()> {
     // directory: the pictures and files are hard-linked into the staging rather
     // than copied, and none of them lands in a RAM-backed temporary folder.
     let staging = crate::scratch::tempdir().context("creating staging dir for zip save")?;
-    write_folder(staging.path(), bundle)?;
+    write_folder_staged(staging.path(), bundle)?;
+    // Write and open share one ceiling: a zip this build would refuse to open is not
+    // written. Without this, attaching a long recording let an autosave succeed and
+    // the next open refuse the whole project.
+    check_fits(staging.path(), MAX_TOTAL_BYTES)?;
 
     let parent = target.parent().filter(|p| !p.as_os_str().is_empty());
     if let Some(p) = parent {
@@ -44,6 +48,29 @@ pub fn write_zip(target: &Path, bundle: &WorkBundle) -> Result<()> {
     }
     persist_durably(tmp, target)
 }
+
+/// Refuse a staged project larger than a zip read accepts (see [`MAX_TOTAL_BYTES`]).
+fn check_fits(staged: &Path, limit: u64) -> Result<()> {
+    let mut total: u64 = 0;
+    for entry in WalkDir::new(staged) {
+        let entry = entry.context("measuring the project")?;
+        if entry.file_type().is_file() {
+            total += entry.metadata().context("measuring the project")?.len();
+        }
+    }
+    if total > limit {
+        anyhow::bail!(
+            "{FITS_TAG}{total}: the project holds {} MiB, more than the {} MiB a single-file \
+             project may; save it as a folder project instead",
+            total >> 20,
+            limit >> 20
+        );
+    }
+    Ok(())
+}
+
+/// The tag a "too large for a single file" refusal starts with, so the UI can word it.
+pub const FITS_TAG: &str = "zip-too-large:";
 
 /// Most entries a real project has: prose, sidecars, assets, history blobs.
 ///
@@ -269,6 +296,15 @@ pub fn zip_dir(src_dir: &Path, target: &mut File) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_project_past_the_open_ceiling_is_refused_at_write() {
+        let src = tempfile::tempdir().unwrap();
+        std::fs::write(src.path().join("a.bin"), vec![0u8; 2048]).unwrap();
+        assert!(check_fits(src.path(), 4096).is_ok());
+        let err = check_fits(src.path(), 1024).unwrap_err().to_string();
+        assert!(err.starts_with(FITS_TAG), "{err}");
+    }
 
     #[test]
     fn compressed_files_are_stored_and_text_is_deflated() {

@@ -79,6 +79,7 @@ pub enum DirectAccessEntity {
     TextReplacementRule(EntityEvent),
     NoteTemplate(EntityEvent),
     Asset(EntityEvent),
+    Resource(EntityEvent),
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize)]
@@ -126,6 +127,12 @@ pub enum TrashManagementEvent {
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize)]
 pub enum NoteTemplateManagementEvent {
     ImportNoteTemplates,
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize)]
+pub enum ResourceManagementEvent {
+    StoreResourceFiles,
+    AddResources,
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize)]
@@ -182,6 +189,7 @@ pub enum Origin {
     ProgressManagement(ProgressManagementEvent),
     TrashManagement(TrashManagementEvent),
     NoteTemplateManagement(NoteTemplateManagementEvent),
+    ResourceManagement(ResourceManagementEvent),
     TagManagement(TagManagementEvent),
     BinderItemManagement(BinderItemManagementEvent),
     HandlingAppLifecycle(HandlingAppLifecycleEvent),
@@ -257,6 +265,9 @@ impl Event {
                     format!("direct_access_note_template_{:?}", event)
                 }
                 DirectAccessEntity::Asset(event) => format!("direct_access_asset_{:?}", event),
+                DirectAccessEntity::Resource(event) => {
+                    format!("direct_access_resource_{:?}", event)
+                }
             },
             Origin::UndoRedo(event) => format!("undo_redo_{:?}", event),
             Origin::LongOperation(event) => format!("long_operation_{:?}", event),
@@ -270,6 +281,7 @@ impl Event {
             Origin::NoteTemplateManagement(event) => {
                 format!("note_template_management_{:?}", event)
             }
+            Origin::ResourceManagement(event) => format!("resource_management_{:?}", event),
             Origin::TagManagement(event) => format!("tag_management_{:?}", event),
             Origin::BinderItemManagement(event) => format!("binder_item_management_{:?}", event),
             Origin::HandlingAppLifecycle(event) => format!("handling_app_lifecycle_{:?}", event),

@@ -28,8 +28,9 @@ use common::direct_access::work::WorkRelationshipField;
 use common::direct_access::work_info::WorkInfoRelationshipField;
 use common::entities::{
     Asset, Binder, BinderItem, BinderStatus, BinderTag, Comment, CommentReply, Content, DictWord,
-    Footnote, Holiday, Milestone, NoteTemplate, Pace, ProgressSnapshot, RecentWork, Root, Search,
-    SmartPunctuation, System, TextReplacementRule, TrashInfo, Work, WorkInfo, WorkShape,
+    Footnote, Holiday, Milestone, NoteTemplate, Pace, ProgressSnapshot, RecentWork, Resource,
+    ResourceKind, Root, Search, SmartPunctuation, System, TextReplacementRule, TrashInfo, Work,
+    WorkInfo, WorkShape,
 };
 use common::types::EntityId;
 use skrib_format::{self as skrib, LoadedWork, SkribShape};
@@ -53,6 +54,7 @@ pub trait LoadWorkUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "NoteTemplate", action = "CreateOrphan")]
 #[macros::uow_action(entity = "BinderStatus", action = "CreateOrphan")]
 #[macros::uow_action(entity = "Asset", action = "CreateOrphan")]
+#[macros::uow_action(entity = "Resource", action = "CreateOrphan")]
 #[macros::uow_action(entity = "SmartPunctuation", action = "CreateOrphan")]
 #[macros::uow_action(entity = "RecentWork", action = "CreateOrphan")]
 #[macros::uow_action(entity = "WorkInfo", action = "CreateOrphan")]
@@ -124,8 +126,10 @@ impl LoadWorkUseCase {
                 legacy_to_loaded(project, now)
             }
             SkribShape::ZipFile | SkribShape::ExplodedFolder => {
-                let bundle = skrib::read_bundle(&file_name)
+                let mut bundle = skrib::read_bundle(&file_name)
                     .with_context(|| format!("reading project '{file_name}'"))?;
+                // Before anything is placed by uid: see `heal_resource_uids`.
+                bundle.heal_resource_uids();
                 // Put the images where the editor and the exporters will look
                 // for them, before the entities that reference them exist.
                 //
@@ -133,15 +137,31 @@ impl LoadWorkUseCase {
                 // media directory *is* the project's own `assets/`, so the
                 // bytes are already there and nothing is copied. Only a zip
                 // needs a working copy extracted.
-                let media_dir = skrib_format::media::media_dir(
+                let dirs = crate::work_io::ProjectDirs::of(
                     std::path::Path::new(&file_name),
                     &bundle.manifest.work.unique_id,
                     std::path::Path::new(&dto.media_root),
-                    &bundle.manifest.work.unique_id,
                 );
-                crate::work_io::write_asset_blobs(&bundle, &media_dir)
+                crate::work_io::write_asset_blobs(&bundle, &dirs.media)
                     .with_context(|| format!("writing media for '{file_name}'"))?;
-                skrib::bundle_to_loaded(bundle, &file_name)?
+                // The stored resources the same way, and what a resource removed in
+                // an earlier session left behind goes (it was kept for Undo, see
+                // `media::prune_resources_dir`).
+                crate::work_io::write_resource_blobs(&bundle, &dirs.resources)
+                    .with_context(|| format!("writing resources for '{file_name}'"))?;
+                let mut loaded = skrib::bundle_to_loaded(bundle, &file_name)?;
+                // A linked file's path was stored relative to the folder holding the
+                // project; the store holds it as a path on this machine.
+                if let Some(base) = skrib::media::link_base(std::path::Path::new(&file_name)) {
+                    for r in &mut loaded.resources {
+                        if r.kind == ResourceKind::LinkedFile && !r.location.is_empty() {
+                            r.location = skrib::media::resolve_link(&r.location, &base)
+                                .to_string_lossy()
+                                .into_owned();
+                        }
+                    }
+                }
+                loaded
             }
         };
 
@@ -307,6 +327,7 @@ pub(crate) fn materialize(
         paces: Vec::new(),
         comments: Vec::new(),
         footnotes: Vec::new(),
+        resources: Vec::new(),
     })?;
 
     // Tags (file id -> new id).
@@ -430,6 +451,20 @@ pub(crate) fn materialize(
         asset_ids.push(created.id);
     }
 
+    // The files and links attached to items. A stored one's bytes were placed in the
+    // project's resources directory as the bundle was read; a linked one's path was
+    // resolved against where the project is. Keyed by file id for the items below.
+    let mut resource_ids: Vec<EntityId> = Vec::new();
+    let mut resource_map: HashMap<u64, EntityId> = HashMap::new();
+    for r in &loaded.resources {
+        // The uid is carried as it is: `heal_resource_uids` already gave every row one of
+        // its own before its file was placed, and minting one here would name a folder
+        // nothing is in.
+        let created = uow.create_orphan_resource(&Resource { id: 0, ..r.clone() })?;
+        resource_map.insert(r.id, created.id);
+        resource_ids.push(created.id);
+    }
+
     // Binders -> items -> contents.
     let mut binder_map: HashMap<u64, EntityId> = HashMap::new();
     let mut item_map: HashMap<u64, EntityId> = HashMap::new();
@@ -439,6 +474,7 @@ pub(crate) fn materialize(
     let mut content_map: HashMap<u64, EntityId> = HashMap::new();
     let mut binder_ids: Vec<EntityId> = Vec::new();
     let mut item_tag_links: Vec<(EntityId, Vec<u64>)> = Vec::new();
+    let mut item_resource_links: Vec<(EntityId, Vec<u64>)> = Vec::new();
     // (store item id, status **file** id) — remapped once every rung exists.
     let mut item_status_links: Vec<(EntityId, u64)> = Vec::new();
     // (store item id, asset **file** id): each Book's cover.
@@ -511,6 +547,7 @@ pub(crate) fn materialize(
                 // have been remapped.
                 status: None,
                 cover: None,
+                resources: Vec::new(),
             })?;
 
             if !content_ids.is_empty() {
@@ -523,6 +560,9 @@ pub(crate) fn materialize(
             item_map.insert(li.item.id, created_item.id);
             if !li.tag_ids.is_empty() {
                 item_tag_links.push((created_item.id, li.tag_ids.clone()));
+            }
+            if !li.resource_ids.is_empty() {
+                item_resource_links.push((created_item.id, li.resource_ids.clone()));
             }
             if let Some(sid) = li.status_id {
                 item_status_links.push((created_item.id, sid));
@@ -560,6 +600,23 @@ pub(crate) fn materialize(
             uow.set_binder_item_relationship(
                 item_id,
                 &BinderItemRelationshipField::Tags,
+                &resolved,
+            )?;
+        }
+    }
+
+    // Each item's resources (remap file resource ids -> store ids), deduplicated like
+    // the tags above. An id naming no resource is dropped: the link is weak.
+    for (item_id, file_resource_ids) in &item_resource_links {
+        let resolved = distinct(
+            file_resource_ids
+                .iter()
+                .filter_map(|r| resource_map.get(r).copied()),
+        );
+        if !resolved.is_empty() {
+            uow.set_binder_item_relationship(
+                item_id,
+                &BinderItemRelationshipField::Resources,
                 &resolved,
             )?;
         }
@@ -873,6 +930,9 @@ pub(crate) fn materialize(
     if !asset_ids.is_empty() {
         uow.set_work_relationship(&work.id, &WorkRelationshipField::Assets, &asset_ids)?;
     }
+    if !resource_ids.is_empty() {
+        uow.set_work_relationship(&work.id, &WorkRelationshipField::Resources, &resource_ids)?;
+    }
     // Unconditional, unlike every collection above: there is always exactly one
     // punctuation row, so there is no "empty" case to skip.
     uow.set_work_relationship(
@@ -1032,6 +1092,7 @@ pub(crate) fn create_trunk(
         search_titles: false,
         search_synopsis: false,
         search_labels: false,
+        search_resources: false,
         include_trashed: false,
         truncated: false,
         results: Vec::new(),
@@ -1193,6 +1254,7 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
         // this is genuinely empty rather than not-yet-read.
         comments: Vec::new(),
         footnotes: Vec::new(),
+        resources: Vec::new(),
     };
 
     let mut tag_map: HashMap<i64, u64> = HashMap::new();
@@ -1324,6 +1386,7 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
                     tags: Vec::new(),
                     status: None,
                     cover: None,
+                    resources: Vec::new(),
                 },
                 contents,
                 tag_ids,
@@ -1332,6 +1395,7 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
                 // version of the old app ever wrote a workflow state. Nothing to migrate.
                 status_id: None,
                 cover_id: None,
+                resource_ids: Vec::new(),
             });
         }
 
@@ -1372,6 +1436,7 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
         note_templates: Vec::new(),
         statuses: Vec::new(),
         assets: Vec::new(),
+        resources: Vec::new(),
         // Likewise — and `None` rather than an all-false row, so `materialize`
         // treats it as "never configured" and leaves the project following the
         // app default instead of recording a house style nobody chose.

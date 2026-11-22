@@ -94,51 +94,25 @@ impl Blob {
         }
     }
 
-    /// Make `dest` hold these bytes, atomically and durably. Returns whether
-    /// anything was written.
+    /// Make `dest` hold these bytes, atomically and durably, as a file of its own.
+    /// Returns whether anything was written.
     ///
-    /// Nothing is written when `dest` is the very file the blob reads from (a
-    /// folder project saved in place), or already holds the same bytes. Otherwise
-    /// the bytes go to a temporary file beside `dest`, which is renamed over it:
-    /// a hard link of the source when the two share a file system (no byte is
-    /// copied, which is what keeps a zip save of a large project affordable), a
-    /// streamed copy when they do not.
+    /// Nothing is written when `dest` is the very file the blob reads from (a folder
+    /// project saved in place), or already holds the same bytes. Otherwise the bytes are
+    /// streamed to a temporary file beside `dest`, synced, renamed over it, and the
+    /// folder's entry synced too, so a power cut leaves either the old file or the new
+    /// one and never a manifest naming a file that is not there.
+    ///
+    /// Always a copy, never a hard link: `dest` outlives this write (a folder project, a
+    /// Save As, a working folder), and a link would make two projects one file, so an
+    /// application editing one in place would change the other. See
+    /// [`Self::link_or_place_at`] for a destination that is thrown away.
     pub fn place_at(&self, dest: &Path) -> io::Result<bool> {
-        if let Some(src) = self.path()
-            && same_file(src, dest)
-        {
+        if self.already_at(dest)? {
             return Ok(false);
         }
-        if dest.is_file() && self.same_contents_as(dest)? {
-            return Ok(false);
-        }
-        let parent = dest
-            .parent()
-            .filter(|p| !p.as_os_str().is_empty())
-            .ok_or_else(|| {
-                io::Error::new(
-                    io::ErrorKind::InvalidInput,
-                    format!("no parent folder for {}", dest.display()),
-                )
-            })?;
+        let parent = parent_of(dest)?;
         fs::create_dir_all(parent)?;
-
-        if let Some(src) = self.path() {
-            // A hard link needs a free name: take one from `tempfile`, give it
-            // back, and link onto it. `TempPath` removes it again on any way out
-            // but the final rename.
-            let slot = tempfile::Builder::new()
-                .prefix(".blob")
-                .tempfile_in(parent)?
-                .into_temp_path();
-            fs::remove_file(&slot)?;
-            if fs::hard_link(src, &slot).is_ok() {
-                return slot.persist(dest).map(|_| true).map_err(|e| e.error);
-            }
-            // Another file system, or one with no hard links: copy instead.
-            drop(slot);
-        }
-
         let mut tmp = tempfile::Builder::new()
             .prefix(".blob")
             .tempfile_in(parent)?;
@@ -147,7 +121,46 @@ impl Blob {
         crate::writer::sync_file(tmp.as_file())?;
         let (file, path) = tmp.into_parts();
         drop(file);
-        path.persist(dest).map(|_| true).map_err(|e| e.error)
+        path.persist(dest).map_err(|e| e.error)?;
+        sync_parent(parent)?;
+        Ok(true)
+    }
+
+    /// [`Self::place_at`] for a destination that lives only as long as one write (a zip's
+    /// staging folder) or whose source is thrown away right after (a zip's extraction):
+    /// a hard link when the two share a file system, which copies no byte, and
+    /// [`Self::place_at`] when they do not. Never for a file that stays in a project.
+    pub fn link_or_place_at(&self, dest: &Path) -> io::Result<bool> {
+        if self.already_at(dest)? {
+            return Ok(false);
+        }
+        if let Some(src) = self.path() {
+            let parent = parent_of(dest)?;
+            fs::create_dir_all(parent)?;
+            // A hard link needs a free name: take one from `tempfile`, give it back,
+            // and link onto it. `TempPath` removes it again on any way out but the
+            // final rename.
+            let slot = tempfile::Builder::new()
+                .prefix(".blob")
+                .tempfile_in(parent)?
+                .into_temp_path();
+            fs::remove_file(&slot)?;
+            if fs::hard_link(src, &slot).is_ok() {
+                slot.persist(dest).map_err(|e| e.error)?;
+                return Ok(true);
+            }
+        }
+        self.place_at(dest)
+    }
+
+    /// Whether `dest` already is, or already holds, these bytes.
+    fn already_at(&self, dest: &Path) -> io::Result<bool> {
+        if let Some(src) = self.path()
+            && same_file(src, dest)
+        {
+            return Ok(true);
+        }
+        Ok(dest.is_file() && self.same_contents_as(dest)?)
     }
 
     /// Whether the file at `other` holds exactly these bytes. Sizes first, so two
@@ -192,6 +205,30 @@ impl fmt::Debug for Blob {
             Blob::File { path, .. } => write!(f, "Blob::File({})", path.display()),
         }
     }
+}
+
+/// The folder `dest` goes in.
+fn parent_of(dest: &Path) -> io::Result<&Path> {
+    dest.parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::InvalidInput,
+                format!("no parent folder for {}", dest.display()),
+            )
+        })
+}
+
+/// Sync a folder's entries after a rename into it, as `writer::persist_durably` does.
+#[cfg(unix)]
+fn sync_parent(dir: &Path) -> io::Result<()> {
+    crate::writer::sync_directory(dir).map_err(io::Error::other)
+}
+
+/// Windows has no directory handle to sync; the rename itself is what it offers.
+#[cfg(not(unix))]
+fn sync_parent(_dir: &Path) -> io::Result<()> {
+    Ok(())
 }
 
 /// Whether `a` and `b` name the same file on disk, through whatever spelling
@@ -266,6 +303,28 @@ mod tests {
         assert!(Blob::file(&src).place_at(&dest).unwrap());
         assert_eq!(fs::read(&dest).unwrap(), b"%PDF-1.7 research");
         assert_eq!(fs::read(&src).unwrap(), b"%PDF-1.7 research");
+    }
+
+    #[test]
+    fn a_placed_file_is_its_own_never_a_link_to_its_source() {
+        // Editing the copy in place (as a PDF viewer does) must not change the source.
+        let dir = tempfile::tempdir().unwrap();
+        let src = dir.path().join("src.pdf");
+        fs::write(&src, b"original").unwrap();
+        let dest = dir.path().join("copy.pdf");
+        Blob::file(&src).place_at(&dest).unwrap();
+        fs::write(&dest, b"edited!!").unwrap();
+        assert_eq!(fs::read(&src).unwrap(), b"original");
+    }
+
+    #[test]
+    fn a_throwaway_destination_may_share_its_source() {
+        let dir = tempfile::tempdir().unwrap();
+        let src = dir.path().join("src.png");
+        fs::write(&src, b"pixels").unwrap();
+        let dest = dir.path().join("staging").join("a.png");
+        assert!(Blob::file(&src).link_or_place_at(&dest).unwrap());
+        assert_eq!(fs::read(&dest).unwrap(), b"pixels");
     }
 
     #[test]

@@ -81,8 +81,8 @@ use common::direct_access::comment::CommentRelationshipField;
 use common::direct_access::search::SearchRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::entities::{
-    Binder, BinderItem, Comment, CommentReply, Content, Footnote, MatchField, Search, SearchResult,
-    Work, WorkInfo,
+    Binder, BinderItem, Comment, CommentReply, Content, Footnote, MatchField, Resource, Search,
+    SearchResult, Work, WorkInfo,
 };
 use common::types::EntityId;
 use skribisto_model::{SearchFacet, search_facet_of};
@@ -135,6 +135,8 @@ pub trait RunSearchUnitOfWorkFactoryTrait: Send + Sync {
 // the relationship gives this Work's threads, and each thread's own relationship
 // gives its replies.
 #[macros::uow_action(entity = "Footnote", action = "GetMulti")]
+#[macros::uow_action(entity = "Resource", action = "GetMulti")]
+#[macros::uow_action(entity = "BinderItem", action = "GetRelationshipsFromRightIds")]
 #[macros::uow_action(entity = "Comment", action = "GetMulti")]
 #[macros::uow_action(entity = "Comment", action = "GetRelationship")]
 #[macros::uow_action(entity = "CommentReply", action = "GetMulti")]
@@ -160,6 +162,8 @@ struct Field {
     reply_id: EntityId,
     /// The `Footnote` row a footnote hit is in — 0 for every other field.
     footnote_id: EntityId,
+    /// The `Resource` a resource hit is in — 0 for every other field.
+    resource_id: EntityId,
     /// The language *this field* is written in, resolved per item (own tag, else the Work) (see
     /// [`crate::language`]). Carried per field, not per search: one pass folds a French
     /// scene and a Turkish scene under different rules, because in Turkish the dotted and
@@ -171,6 +175,14 @@ struct Field {
 /// Which item a `Content` row belongs to — the reverse pointer the store does not
 /// have, collected during the item walk so the comment pass can name its scene.
 struct ContentOwner {
+    item_id: EntityId,
+    item_title: String,
+    trashed: bool,
+    locale: FoldLocale,
+}
+
+/// An item a resource is attached to, as the resource pass needs to name it.
+struct AttachedItem {
     item_id: EntityId,
     item_title: String,
     trashed: bool,
@@ -293,6 +305,10 @@ impl RunSearchUseCase {
         // its `BinderItem` — building it here costs nothing, since the walk is
         // already visiting every row it would have to search for.
         let mut owners: HashMap<EntityId, ContentOwner> = HashMap::new();
+        // Which walked items each resource is attached to, filled in by the item walk
+        // when resources are searched: the store has no pointer from a resource to its
+        // items, and the walk visits every item anyway.
+        let mut attached: HashMap<EntityId, Vec<AttachedItem>> = HashMap::new();
         let binder_ids = uow.get_work_relationship(&work.id, &WorkRelationshipField::Binders)?;
         for binder in uow.get_binder_multi(&binder_ids)?.into_iter().flatten() {
             let item_ids =
@@ -321,7 +337,7 @@ impl RunSearchUseCase {
                 let locale = tags.get(&item.id).map_or(FoldLocale::Root, |tag| {
                     FoldLocale::from_tag(crate::language::primary(tag))
                 });
-                self.item_fields(
+                let walked = self.item_fields(
                     uow,
                     item,
                     dto,
@@ -330,6 +346,20 @@ impl RunSearchUseCase {
                     &mut fields,
                     &mut owners,
                 )?;
+                if walked && dto.search_resources {
+                    let resource_ids = uow.get_binder_item_relationship(
+                        &item.id,
+                        &BinderItemRelationshipField::Resources,
+                    )?;
+                    for resource_id in resource_ids {
+                        attached.entry(resource_id).or_default().push(AttachedItem {
+                            item_id: item.id,
+                            item_title: item.title.clone(),
+                            trashed: !item.activated,
+                            locale,
+                        });
+                    }
+                }
             }
         }
         if dto.search_comments {
@@ -342,7 +372,73 @@ impl RunSearchUseCase {
         if dto.search_body {
             self.footnote_fields(uow, dto, &work, &owners, &mut fields)?;
         }
+        if dto.search_resources {
+            self.resource_fields(uow, &work, &attached, &mut fields)?;
+        }
         Ok(fields)
+    }
+
+    /// Resources, as one plain field per item they are attached to.
+    ///
+    /// One per item, not one per resource, because a result row opens an item: a map
+    /// attached to three chapters is found under each of them. A resource attached to
+    /// nothing is one row with no item (the Work's settings list it). A resource whose
+    /// only items were left out of this search (trashed, or outside the ticked kinds)
+    /// is left out with them, which is what "attached to nothing" must not be confused
+    /// with.
+    ///
+    /// The text is [`crate::resource_text::resource_text`], the same string
+    /// `occurrences_for_result` reads back, so the two count the same hits.
+    fn resource_fields(
+        &self,
+        uow: &mut Box<dyn RunSearchUnitOfWorkTrait>,
+        work: &Work,
+        attached: &HashMap<EntityId, Vec<AttachedItem>>,
+        out: &mut Vec<Field>,
+    ) -> Result<()> {
+        let ids = uow.get_work_relationship(&work.id, &WorkRelationshipField::Resources)?;
+        for resource in uow.get_resource_multi(&ids)?.into_iter().flatten() {
+            let text = crate::resource_text::resource_text(&resource);
+            if text.is_empty() {
+                continue;
+            }
+            let field = |item_id, item_title, trashed, locale| Field {
+                item_id,
+                item_title,
+                match_field: MatchField::Resource,
+                text: FieldText::Plain(text.clone()),
+                trashed,
+                locale,
+                comment_id: 0,
+                reply_id: 0,
+                footnote_id: 0,
+                resource_id: resource.id,
+            };
+            match attached.get(&resource.id) {
+                Some(items) => {
+                    for item in items {
+                        out.push(field(
+                            item.item_id,
+                            item.item_title.clone(),
+                            item.trashed,
+                            item.locale,
+                        ));
+                    }
+                }
+                None if uow
+                    .get_binder_item_relationships_from_right_ids(
+                        &BinderItemRelationshipField::Resources,
+                        &[resource.id],
+                    )?
+                    .iter()
+                    .all(|(_, holders)| holders.is_empty()) =>
+                {
+                    out.push(field(0, String::new(), false, FoldLocale::Root));
+                }
+                None => {}
+            }
+        }
+        Ok(())
     }
 
     /// Footnote bodies, scanned in their own walk.
@@ -417,6 +513,7 @@ impl RunSearchUseCase {
                 comment_id: 0,
                 reply_id: 0,
                 footnote_id: footnote.id,
+                resource_id: 0,
             });
         }
         Ok(())
@@ -502,6 +599,7 @@ impl RunSearchUseCase {
                         comment_id: comment.id,
                         reply_id: 0,
                         footnote_id: 0,
+                        resource_id: 0,
                     });
                 }
             }
@@ -531,6 +629,7 @@ impl RunSearchUseCase {
                     comment_id: comment.id,
                     reply_id: reply.id,
                     footnote_id: 0,
+                    resource_id: 0,
                 });
             }
         }
@@ -563,7 +662,9 @@ impl RunSearchUseCase {
         (!resolved.is_empty()).then_some(resolved)
     }
 
-    /// The searchable fields of one item, filtered by the requested scopes.
+    /// The searchable fields of one item, filtered by the requested scopes. Returns whether
+    /// the item was searched at all: `false` for one left out (trashed while trash is not
+    /// searched, or outside the ticked kinds), whose resources are left out with it.
     #[allow(clippy::too_many_arguments)]
     fn item_fields(
         &self,
@@ -574,7 +675,7 @@ impl RunSearchUseCase {
         facets: Option<&[SearchFacet]>,
         out: &mut Vec<Field>,
         owners: &mut HashMap<EntityId, ContentOwner>,
-    ) -> Result<()> {
+    ) -> Result<bool> {
         // How this item's prose folds. `whole_word` is deliberately absent: it decides which
         // matches survive, not how a character folds, so one cached fold answers both kinds
         // of query and ticking the checkbox costs nothing.
@@ -588,13 +689,13 @@ impl RunSearchUseCase {
 
         let trashed = !item.activated;
         if trashed && !dto.include_trashed {
-            return Ok(());
+            return Ok(false);
         }
 
         if let Some(wanted) = facets {
             match search_facet_of(&item.role, &item.sub_role) {
                 Some(f) if wanted.contains(&f) => {}
-                Some(_) => return Ok(()),
+                Some(_) => return Ok(false),
                 // A combination the matrix does not contain — which means it cannot exist, and
                 // yet here it is (the Plume importer and the legacy upgrader both synthesise
                 // sub_roles). **Never hide what we cannot name.** Filtering it out would make
@@ -622,6 +723,7 @@ impl RunSearchUseCase {
                 comment_id: 0,
                 reply_id: 0,
                 footnote_id: 0,
+                resource_id: 0,
             });
         }
         if dto.search_labels && !item.label.is_empty() {
@@ -635,6 +737,7 @@ impl RunSearchUseCase {
                 comment_id: 0,
                 reply_id: 0,
                 footnote_id: 0,
+                resource_id: 0,
             });
         }
 
@@ -642,7 +745,7 @@ impl RunSearchUseCase {
         // place that learns which item a `Content` row belongs to, and a comment hit
         // has to be able to name its scene.
         if !dto.search_body && !dto.search_synopsis && !dto.search_comments {
-            return Ok(());
+            return Ok(true);
         }
         let content_ids =
             uow.get_binder_item_relationship(&item.id, &BinderItemRelationshipField::Contents)?;
@@ -686,7 +789,8 @@ impl RunSearchUseCase {
                 | MatchField::Label
                 | MatchField::Comment
                 | MatchField::CommentReply
-                | MatchField::Footnote => false,
+                | MatchField::Footnote
+                | MatchField::Resource => false,
             };
             if !wanted {
                 continue;
@@ -723,9 +827,10 @@ impl RunSearchUseCase {
                 comment_id: 0,
                 reply_id: 0,
                 footnote_id: 0,
+                resource_id: 0,
             });
         }
-        Ok(())
+        Ok(true)
     }
 
     /// Match every field, one row per field that hits. Stops at `RESULT_CAP`.
@@ -779,6 +884,7 @@ impl RunSearchUseCase {
                 // error, so only the dead-code warning on `Field::footnote_id` ever
                 // said the value was being computed and thrown away.
                 footnote_id: field.footnote_id,
+                resource_id: field.resource_id,
                 ..Default::default()
             });
         }

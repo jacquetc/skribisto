@@ -36,6 +36,7 @@ pub struct BinderItemDto {
     pub books: Vec<EntityId>,
     pub status: Option<EntityId>,
     pub cover: Option<EntityId>,
+    pub resources: Vec<EntityId>,
     pub tags: Vec<EntityId>,
 }
 
@@ -66,6 +67,7 @@ impl From<BinderItemDto> for BinderItem {
             books: dto.books,
             status: dto.status,
             cover: dto.cover,
+            resources: dto.resources,
             tags: dto.tags,
         }
     }
@@ -98,6 +100,7 @@ impl From<&BinderItemDto> for BinderItem {
             books: dto.books.clone(),
             status: dto.status,
             cover: dto.cover,
+            resources: dto.resources.clone(),
             tags: dto.tags.clone(),
         }
     }
@@ -130,6 +133,7 @@ impl From<BinderItem> for BinderItemDto {
             books: entity.books,
             status: entity.status,
             cover: entity.cover,
+            resources: entity.resources,
             tags: entity.tags,
         }
     }
@@ -160,6 +164,7 @@ pub struct CreateBinderItemDto {
     pub books: Vec<EntityId>,
     pub status: Option<EntityId>,
     pub cover: Option<EntityId>,
+    pub resources: Vec<EntityId>,
     pub tags: Vec<EntityId>,
 }
 
@@ -190,6 +195,7 @@ impl From<CreateBinderItemDto> for BinderItem {
             books: dto.books,
             status: dto.status,
             cover: dto.cover,
+            resources: dto.resources,
             tags: dto.tags,
         }
     }
@@ -222,6 +228,7 @@ impl From<&CreateBinderItemDto> for BinderItem {
             books: dto.books.clone(),
             status: dto.status,
             cover: dto.cover,
+            resources: dto.resources.clone(),
             tags: dto.tags.clone(),
         }
     }
@@ -253,6 +260,7 @@ impl From<BinderItem> for CreateBinderItemDto {
             books: entity.books,
             status: entity.status,
             cover: entity.cover,
+            resources: entity.resources,
             tags: entity.tags,
         }
     }
@@ -306,6 +314,7 @@ impl From<UpdateBinderItemDto> for BinderItem {
             books: Default::default(),
             status: Default::default(),
             cover: Default::default(),
+            resources: Default::default(),
             tags: Default::default(),
         }
     }
@@ -338,6 +347,7 @@ impl From<&UpdateBinderItemDto> for BinderItem {
             books: Default::default(),
             status: Default::default(),
             cover: Default::default(),
+            resources: Default::default(),
             tags: Default::default(),
         }
     }

@@ -41,8 +41,8 @@ use common::direct_access::binder_item::BinderItemRelationshipField;
 use common::direct_access::search::SearchRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::entities::{
-    Binder, BinderItem, Comment, CommentReply, Content, Footnote, MatchField, Search, SearchResult,
-    Work, WorkInfo,
+    Binder, BinderItem, Comment, CommentReply, Content, Footnote, MatchField, Resource, Search,
+    SearchResult, Work, WorkInfo,
 };
 use common::types::EntityId;
 use std::collections::HashMap;
@@ -101,6 +101,7 @@ pub trait OccurrencesForResultUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "Comment", action = "Get")]
 #[macros::uow_action(entity = "CommentReply", action = "Get")]
 #[macros::uow_action(entity = "Footnote", action = "Get")]
+#[macros::uow_action(entity = "Resource", action = "Get")]
 pub trait OccurrencesForResultUnitOfWorkTrait: CommandUnitOfWork {
     fn publish_occurrences_for_result_event(&self, ids: Vec<EntityId>, data: Option<String>);
 }
@@ -291,6 +292,17 @@ impl OccurrencesForResultUseCase {
                 Ok(FieldText::Prose(corpus_cache::corpus_for(
                     &footnote.body,
                     &fold_spec,
+                )))
+            }
+            // A resource's title, description, file name and address: plain words on
+            // the row, joined exactly as `run_search` joined them.
+            MatchField::Resource => {
+                let id = row.resource_id;
+                let resource: Resource = uow
+                    .get_resource(&id)?
+                    .ok_or_else(|| anyhow!("occurrences_for_result: no resource {id}"))?;
+                Ok(FieldText::Plain(crate::resource_text::resource_text(
+                    &resource,
                 )))
             }
         }

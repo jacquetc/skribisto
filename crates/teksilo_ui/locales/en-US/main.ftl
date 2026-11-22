@@ -2890,6 +2890,7 @@ search-field-epigraph = Epigraph
 search-field-comment = Comment
 search-field-comment-reply = Reply
 search-field-footnote = Footnote
+search-field-resource = Resource
 search-include-in-replace = Include in Replace All
 search-collapse-all = Collapse all results
 search-replace-here = Replace this

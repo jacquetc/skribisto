@@ -20,6 +20,7 @@ pub mod pace;
 pub mod progress_snapshot;
 pub mod recent_work;
 pub mod repository_factory;
+pub mod resource;
 pub mod root;
 pub mod search;
 pub mod search_result;

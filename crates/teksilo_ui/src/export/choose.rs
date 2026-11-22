@@ -411,6 +411,7 @@ mod tests {
         Gathered {
             statuses: Vec::new(),
             assets: Vec::new(),
+            resources: Vec::new(),
             work: Work {
                 id: 1,
                 ..Default::default()

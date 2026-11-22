@@ -3070,6 +3070,7 @@ search-field-epigraph = Motto
 search-field-comment = Comentariu
 search-field-comment-reply = Răspuns
 search-field-footnote = Notă de subsol
+search-field-resource = Resursă
 search-include-in-replace = Include în „Înlocuiește tot”
 search-collapse-all = Restrânge toate rezultatele
 search-replace-here = Înlocuiește aici

@@ -127,6 +127,228 @@ pub fn asset_relpath(content_hash: &str, extension: &str) -> String {
     format!("{ASSETS_DIR}/{}.{ext}", sanitize_key(content_hash))
 }
 
+/// The folder holding a project's stored resources while it is open: one folder per
+/// resource, named by its `uid`, holding the file under its own name, the same layout
+/// as `resources/` inside the bundle (see [`crate::slug::resource_relpath`]).
+///
+/// The same two answers as [`media_dir`], for the same reasons: an exploded folder's
+/// own `resources/`, where a resource opens in place and a save writes nothing; for a
+/// zip, a working folder under the app's data root.
+///
+/// The zip's folder is keyed by the Work's `unique_id` (or `fallback_key` for a project
+/// never saved) **and by the project's path**, unlike [`media_dir`]. A Save As, a backup
+/// and a file-manager copy all keep the `unique_id`, and opening a project prunes its
+/// working folder of what it does not list: keyed by the id alone, opening a copy while
+/// the original is open deleted the files the original had added since its last save.
+/// Pictures get away with one key because nothing prunes them and their names are their
+/// hashes; a resource's file is neither.
+pub fn resources_dir(
+    project_path: &Path,
+    unique_id: &str,
+    data_root: &Path,
+    fallback_key: &str,
+) -> PathBuf {
+    if let Some(root) = folder_project_root(project_path) {
+        return root.join(crate::slug::RESOURCES_DIR);
+    }
+    let key = if unique_id.trim().is_empty() {
+        fallback_key
+    } else {
+        unique_id
+    };
+    let place = crate::shape::canonical_project_path(&project_path.to_string_lossy());
+    let place = blake3::hash(place.as_bytes()).to_hex();
+    data_root.join(crate::slug::RESOURCES_DIR).join(format!(
+        "{}-{}",
+        sanitize_key(key),
+        &place[..16]
+    ))
+}
+
+/// Where one stored resource's file is in `resources_dir`: `<uid>/<safe name>`.
+pub fn resource_file(resources_dir: &Path, uid: uuid::Uuid, file_name: &str) -> PathBuf {
+    resources_dir
+        .join(uid.hyphenated().to_string())
+        .join(crate::slug::safe_file_name(file_name))
+}
+
+/// Remove from `resources_dir` what no resource of the project names any more: the
+/// folder of a removed resource, and an old file left in a live resource's folder.
+///
+/// Run when a project opens, never by a save. A resource removed during a session
+/// keeps its file until the project is next opened, which is what lets Undo bring it
+/// back whole: a save in between must not have deleted the bytes the restored row
+/// names. Best effort, like every prune: what cannot be removed now is tried again
+/// on the next open.
+pub fn prune_resources_dir(resources_dir: &Path, keep: &[(uuid::Uuid, String)]) {
+    let Ok(entries) = std::fs::read_dir(resources_dir) else {
+        return;
+    };
+    let mut kept: std::collections::BTreeMap<String, std::collections::BTreeSet<String>> =
+        std::collections::BTreeMap::new();
+    // Compared without case as well as without normalisation: on a volume that ignores
+    // case (APFS, NTFS by default) a file renamed `village map.pdf` in the file manager
+    // is still the resource's, and deleting it would delete its only copy.
+    let fold = |name: &str| crate::locate::nfc(name).to_lowercase();
+    for (uid, name) in keep {
+        kept.entry(uid.hyphenated().to_string())
+            .or_default()
+            .insert(fold(&crate::slug::safe_file_name(name)));
+    }
+    for entry in entries.flatten() {
+        let path = entry.path();
+        let Some(dir_name) = path.file_name().and_then(|n| n.to_str()) else {
+            continue;
+        };
+        match kept.get(dir_name) {
+            None => {
+                if path.is_dir() {
+                    let _ = std::fs::remove_dir_all(&path);
+                } else {
+                    let _ = std::fs::remove_file(&path);
+                }
+            }
+            Some(names) => {
+                let Ok(files) = std::fs::read_dir(&path) else {
+                    continue;
+                };
+                for file in files.flatten() {
+                    let fp = file.path();
+                    let keep = fp
+                        .file_name()
+                        .and_then(|n| n.to_str())
+                        .is_some_and(|n| names.contains(&fold(n)));
+                    if !keep && fp.is_file() {
+                        let _ = std::fs::remove_file(&fp);
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// The folder a linked file's path is stored relative to: the folder that holds the
+/// project. For a zip that is the `.skrib` file's folder; for an exploded folder the
+/// folder around it, so converting a project between the two shapes moves no link.
+/// `None` for a path with no parent (a bare file name, a root).
+pub fn link_base(project_path: &Path) -> Option<PathBuf> {
+    let project = folder_project_root(project_path).unwrap_or_else(|| project_path.to_path_buf());
+    project
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .map(Path::to_path_buf)
+}
+
+/// `absolute` as the bundle stores it: relative to `base`, with `/` separators, so the
+/// link still resolves on another computer where the project and its research sit side
+/// by side as they did here. A path that has no relative form from `base` (another
+/// Windows drive) is kept absolute, which the writer is told in the resource's details.
+pub fn relative_link(absolute: &Path, base: &Path) -> String {
+    use std::path::Component;
+    // `..` applied first, on both sides: `/data/Books/../Research/map.pdf` is
+    // `/data/Research/map.pdf`, and dropping the `..` instead would store a path into
+    // the wrong folder.
+    let absolute = lexical(absolute);
+    let base = lexical(base);
+    let absolute = absolute.as_path();
+    let target: Vec<Component> = absolute.components().collect();
+    let from: Vec<Component> = base.components().collect();
+    // Both must start at the same root (and drive), or there is no way between them.
+    let same_root = match (target.first(), from.first()) {
+        (Some(a), Some(b)) => a == b,
+        _ => false,
+    };
+    if !absolute.is_absolute() || !same_root {
+        return absolute.to_string_lossy().replace('\\', "/");
+    }
+    let common = target
+        .iter()
+        .zip(from.iter())
+        .take_while(|(a, b)| a == b)
+        .count();
+    let mut parts: Vec<String> = Vec::new();
+    for c in &from[common..] {
+        if matches!(c, Component::Normal(_)) {
+            parts.push("..".to_string());
+        }
+    }
+    for c in &target[common..] {
+        if let Component::Normal(n) = c {
+            parts.push(n.to_string_lossy().into_owned());
+        }
+    }
+    if parts.is_empty() {
+        ".".to_string()
+    } else {
+        parts.join("/")
+    }
+}
+
+/// `path` with `.` dropped and each `..` applied to the part before it, without asking
+/// the file system (a link is a place the writer named, not wherever a symbolic link
+/// leads). A `..` at the root stays at the root.
+fn lexical(path: &Path) -> PathBuf {
+    use std::path::Component;
+    let mut out = PathBuf::new();
+    for c in path.components() {
+        match c {
+            Component::CurDir => {}
+            Component::ParentDir => {
+                if matches!(out.components().next_back(), Some(Component::Normal(_))) {
+                    out.pop();
+                } else if !out.has_root() {
+                    out.push("..");
+                }
+            }
+            other => out.push(other.as_os_str()),
+        }
+    }
+    out
+}
+
+/// A linked file's stored path as a path on this machine: an absolute one as it is, a
+/// relative one joined onto `base` (see [`link_base`]). Lexically normalised, so a
+/// stored `../Research/map.pdf` names the folder, not a `..` the file system resolves
+/// through a symbolic link.
+pub fn resolve_link(stored: &str, base: &Path) -> PathBuf {
+    use std::path::Component;
+    let stored_path = Path::new(stored);
+    if stored_path.is_absolute() || stored.starts_with('/') && !cfg!(windows) {
+        return stored_path.to_path_buf();
+    }
+    let mut out = base.to_path_buf();
+    for part in stored.split(['/', '\\']) {
+        match part {
+            "" | "." => {}
+            ".." => {
+                if !matches!(
+                    out.components().next_back(),
+                    Some(Component::RootDir | Component::Prefix(_)) | None
+                ) {
+                    out.pop();
+                }
+            }
+            p => out.push(p),
+        }
+    }
+    out
+}
+
+/// Make every linked file's path in `bundle` relative to `base` (see [`link_base`]),
+/// as the bundle stores it. Called by each write path with the base of where the
+/// bundle goes, after `from_entities`, which writes the store's absolute paths.
+/// `None` (a target with no parent folder) leaves the paths absolute.
+pub fn relativise_links(bundle: &mut crate::WorkBundle, base: Option<&Path>) {
+    let Some(base) = base else {
+        return;
+    };
+    for r in &mut bundle.resources {
+        if r.kind == common::entities::ResourceKind::LinkedFile && !r.location.is_empty() {
+            r.location = relative_link(Path::new(&r.location), base);
+        }
+    }
+}
+
 /// Escape a string for use as an image's alt text in Djot.
 ///
 /// The alt runs inside `![…]`, so `]` would close it early and turn the rest of

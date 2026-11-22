@@ -542,6 +542,7 @@ fn field_rank(field: &MatchField) -> u8 {
         MatchField::Comment => 5,
         MatchField::CommentReply => 6,
         MatchField::Footnote => 7,
+        MatchField::Resource => 8,
     }
 }
 

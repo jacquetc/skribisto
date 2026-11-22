@@ -182,13 +182,14 @@ impl StagedOutput {
     /// Write `bundle`, as a `.skrib` zip, to the staged file.
     ///
     /// The same steps as `write_bundle` for a zip, taken one by one so a failure
-    /// names the folder it happened in: the bundle is assembled in the system's
-    /// temporary folder, then zipped into a temporary file beside the target, then
+    /// names the folder it happened in: the bundle is assembled in a scratch
+    /// folder (see [`crate::scratch`]), then zipped into a temporary file beside the target, then
     /// renamed onto the staged path, durably.
     pub fn write(&self, bundle: &WorkBundle) -> Result<(), OutputRefused> {
-        let assembly = std::env::temp_dir();
-        let staging = tempfile::tempdir().map_err(|e| self.refused(&assembly, &e.into()))?;
-        crate::folder_io::write_folder(staging.path(), bundle)
+        let staging = crate::scratch::tempdir()
+            .map_err(|e| self.refused(&std::env::temp_dir(), &e.into()))?;
+        let assembly = staging.path().to_path_buf();
+        crate::folder_io::write_folder_staged(staging.path(), bundle)
             .map_err(|e| self.refused(&assembly, &e))?;
 
         let beside = self

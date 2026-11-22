@@ -146,6 +146,9 @@ entities:
     type: boolean
   - name: search_labels
     type: boolean
+  # Resources' titles, descriptions, file names and addresses.
+  - name: search_resources
+    type: boolean
   - name: include_trashed
     type: boolean
   - name: truncated
@@ -200,6 +203,10 @@ entities:
       # footnote is not a `Content` row — it is reached by its own walk, and a
       # replace rewrites a different table.
       - Footnote
+      # A resource's title, description, file name or address. `resource_id`
+      # names it; `binder_item_id` is one item it is attached to (one result per
+      # item), or 0 for a resource attached to nothing.
+      - Resource
   # The comment THREAD a `Comment` / `CommentReply` hit belongs to — the opening
   # `Comment`'s id in both cases, because that is what the margin and the docks
   # reveal: a thread is one card, replies included. 0 for every other match field.
@@ -220,6 +227,8 @@ entities:
   # `comment_id` above are: a SearchResult is a projection, re-derived on every
   # search and re-validated on activation.
   - name: footnote_id
+    type: uinteger
+  - name: resource_id
     type: uinteger
   - name: occurrence_count
     type: uinteger
@@ -403,6 +412,19 @@ entities:
     strong: true
     list_model: true
     list_model_displayed_field: body
+  # The files and links the writer attached to their items: a scanned map, an
+  # interview recording, the web page on tanneries. The project's, not an item's:
+  # one resource may sit on several items or on none (then the Work's settings list
+  # it), and trashing an item leaves its resources here.
+  #
+  # Unordered, like `assets`: every list of resources sorts by its own criteria.
+  - name: resources
+    type: entity
+    entity: Resource
+    relationship: one_to_many
+    strong: true
+    list_model: true
+    list_model_displayed_field: title
   undoable: true
 # Per-project smart punctuation: the "-- becomes an em dash, « » get their
 # non-breaking spaces" rules, as the DOCUMENT's house style rather than this
@@ -928,6 +950,17 @@ entities:
     entity: Asset
     relationship: many_to_one
     optional: true
+  # The resources attached to this row. Weak and many-to-many, the shape of
+  # `references` and `books`: the resource is the Work's, the row only points at
+  # it, so removing a resource never leaves a dangling entry, and purging a
+  # trashed row (empty trash) detaches it without deleting the resource. Trashing
+  # and restoring touch no junction, so a restored row has its resources back.
+  - name: resources
+    type: entity
+    entity: Resource
+    relationship: many_to_many
+    list_model: true
+    list_model_displayed_field: title
   - name: tags
     type: entity
     entity: BinderTag
@@ -1166,6 +1199,61 @@ entities:
   - name: alt
     type: string
   undoable: true
+# A file or a web link the writer attached to binder items: research, not book
+# content. Nothing in the prose depends on a resource (a link to one degrades to its
+# words), and no export carries one.
+#
+# Deliberately NOT an `Asset`. An asset is a picture the text shows: the prose names
+# it by content hash, a Book's cover may adopt it, an export copies it beside its
+# output. A resource is a filing card with a title and a description, of any file
+# type, and its bytes live in `resources/<uid>/<file_name>` inside the `.skrib`
+# under the name the writer knows them by. A picture resource inserted into the text
+# becomes an asset there, a copy, because from then on the text uses it.
+#
+# `kind` says where the bytes are:
+# - `StoredFile`: inside the project. `file_name`, `mime_type`, `byte_size` and
+#   `content_hash` (blake3) describe them; `location` is empty. While the project is
+#   open the bytes are in its resources directory (see `skrib_format::media`).
+# - `LinkedFile`: outside the project. `location` is the absolute path on this
+#   machine, resolved at load from the path the bundle stores relative to the folder
+#   holding the project; `file_name` is its last segment.
+# - `WebLink`: `location` is the URL; no file facts.
+#
+# `width`/`height` only for a stored picture, so a grid can lay it out before its
+# thumbnail is decoded; 0 otherwise.
+- name: Resource
+  inherits_from: EntityBase
+  fields:
+  # A durable identity, for the same reason BinderTag carries one, and one more: it
+  # names the resource's folder in the bundle.
+  - name: uid
+    type: uuid
+  - name: title
+    type: string
+  - name: description
+    type: string
+  - name: kind
+    type: enum
+    enum_name: ResourceKind
+    enum_values:
+      - StoredFile
+      - LinkedFile
+      - WebLink
+  - name: location
+    type: string
+  - name: file_name
+    type: string
+  - name: mime_type
+    type: string
+  - name: byte_size
+    type: uinteger
+  - name: content_hash
+    type: string
+  - name: width
+    type: uinteger
+  - name: height
+    type: uinteger
+  undoable: true
 features:
 - name: work_management
   use_cases:
@@ -1186,6 +1274,7 @@ features:
     - TextReplacementRule
     - NoteTemplate
     - Asset
+    - Resource
     undoable: false
     dto_in:
       name: LoadWorkDto
@@ -1210,6 +1299,7 @@ features:
     - Asset
     - TrashInfo
     - WorkInfo
+    - Resource
     undoable: false
     read_only: true
     long_operation: true
@@ -1251,6 +1341,7 @@ features:
     - Asset
     - TrashInfo
     - WorkInfo
+    - Resource
     undoable: false
     read_only: true
     long_operation: true
@@ -1291,6 +1382,7 @@ features:
     - Asset
     - TrashInfo
     - WorkInfo
+    - Resource
     undoable: false
     read_only: true
     long_operation: true
@@ -1964,6 +2056,134 @@ features:
       # actually created under, so the UI can report exactly what it did.
       - name: renamed_to
         type: string
+        is_list: true
+- name: resource_management
+  use_cases:
+  # Two use cases, and the split is forced. Copying a file the writer attaches can take
+  # seconds (an hour of audio, a scanned book), so it has to be a long operation with
+  # progress and cancel -- and Qleany ignores `undoable: true` on a long operation (see
+  # `replace_in_project`). So the copy is one use case that touches no entity, and the
+  # rows are another, undoable one, run when the copy is done. Everything else a
+  # resource needs (rename, describe, relink, remove, attach, detach) is the generated
+  # Resource CRUD and `set_binder_item_relationship`, the same reasoning as
+  # `tag_management`.
+  #
+  # store_resource_files: copy each file into the open project's resources directory,
+  # in a folder named by a fresh uid (`<dest_dir>/<uid>/<name>`), and say what it is,
+  # its blake3 included. The caller resolves the directory (it
+  # depends on the project's path and shape, see `skrib_format::media::resources_dir`).
+  # A file that cannot be read is reported and skipped; the others are stored.
+  - name: store_resource_files
+    entities: []
+    undoable: false
+    read_only: true
+    long_operation: true
+    dto_in:
+      name: StoreResourceFilesDto
+      fields:
+      - name: dest_dir
+        type: string
+      - name: source_paths
+        type: string
+        is_list: true
+    dto_out:
+      name: StoredResourceFilesDto
+      fields:
+      # One entry per stored file, in the order asked, each list the same length.
+      - name: source_paths
+        type: string
+        is_list: true
+      # The uid each file was stored under: its folder, `<dest_dir>/<uid>/<name>`, and
+      # the uid `add_resources` gives its row, which is what ties the two together.
+      - name: uids
+        type: string
+        is_list: true
+      - name: file_names
+        type: string
+        is_list: true
+      - name: mime_types
+        type: string
+        is_list: true
+      - name: byte_sizes
+        type: uinteger
+        is_list: true
+      - name: content_hashes
+        type: string
+        is_list: true
+      - name: widths
+        type: uinteger
+        is_list: true
+      - name: heights
+        type: uinteger
+        is_list: true
+      # The files that could not be stored, and why, in plain English for the log;
+      # the UI words its own message.
+      - name: failed_paths
+        type: string
+        is_list: true
+      - name: failure_reasons
+        type: string
+        is_list: true
+  # add_resources: create stored files, linked files and web links in one undoable
+  # step, attached to `item_ids` (none: attached to nothing). Dropping five files on a
+  # scene is one Ctrl+Z, not ten. The stored-file lists come from
+  # `store_resource_files`; each group of lists is the same length.
+  - name: add_resources
+    entities:
+    - Work
+    - BinderItem
+    - Resource
+    undoable: true
+    dto_in:
+      name: AddResourcesDto
+      fields:
+      - name: work_id
+        type: uinteger
+      - name: item_ids
+        type: uinteger
+        is_list: true
+      # From `store_resource_files`: the folder each file is already in.
+      - name: stored_uids
+        type: string
+        is_list: true
+      - name: stored_titles
+        type: string
+        is_list: true
+      - name: stored_file_names
+        type: string
+        is_list: true
+      - name: stored_mime_types
+        type: string
+        is_list: true
+      - name: stored_byte_sizes
+        type: uinteger
+        is_list: true
+      - name: stored_content_hashes
+        type: string
+        is_list: true
+      - name: stored_widths
+        type: uinteger
+        is_list: true
+      - name: stored_heights
+        type: uinteger
+        is_list: true
+      # Absolute paths of files kept outside the project.
+      - name: linked_paths
+        type: string
+        is_list: true
+      - name: web_urls
+        type: string
+        is_list: true
+      # A title per URL; an empty one takes the address's host.
+      - name: web_titles
+        type: string
+        is_list: true
+    dto_out:
+      name: AddResourcesResultDto
+      fields:
+      # Stored files first, then linked files, then web links, each in the order asked.
+      - name: created_ids
+        type: uinteger
         is_list: true
 - name: tag_management
   use_cases:
@@ -3400,6 +3620,7 @@ features:
     # `run_search_uc::comment_fields`.
     - Comment
     - CommentReply
+    - Resource
     undoable: false
     dto_in:
       name: RunSearchDto
@@ -3434,6 +3655,9 @@ features:
       # about that phrase back as well.
       - name: search_comments
         type: boolean
+      # Resources' titles, descriptions, file names and addresses.
+      - name: search_resources
+        type: boolean
       - name: include_trashed
         type: boolean
     dto_out:
@@ -3465,6 +3689,7 @@ features:
   # Nothing here writes.
   - name: occurrences_for_result
     entities:
+    - Resource
     - Work
     - WorkInfo
     - Search

@@ -60,6 +60,7 @@ fn item(role: BinderItemRole, sub_role: BinderItemSubRole, title: &str) -> Creat
         point_of_view: vec![],
         books: vec![],
         tags: vec![],
+        resources: vec![],
     }
 }
 
@@ -172,6 +173,7 @@ fn search(ctx: &AppContext, facets: Vec<i64>) -> RunSearchDto {
         search_synopsis: true,
         search_labels: false,
         search_comments: false,
+        search_resources: false,
         include_trashed: false,
     }
 }

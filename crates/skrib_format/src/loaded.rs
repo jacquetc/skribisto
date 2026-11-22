@@ -11,7 +11,7 @@
 
 use common::entities::{
     Asset, Binder, BinderItem, BinderStatus, BinderTag, CommentAnchorKind, CommentOrphanReason,
-    Content, DictWord, NoteTemplate, SmartPunctuation, TextReplacementRule, Work,
+    Content, DictWord, NoteTemplate, Resource, SmartPunctuation, TextReplacementRule, Work,
 };
 
 pub struct LoadedWork {
@@ -32,6 +32,10 @@ pub struct LoadedWork {
     /// bundle, which is what keeps a project's photographs out of the store
     /// and off every snapshot, undo and fingerprint path.
     pub assets: Vec<Asset>,
+    /// The files and links attached to items. A linked file's `location` is still the
+    /// path the bundle stored (relative to the folder holding the project): the load
+    /// use case resolves it, since only it knows where the project is.
+    pub resources: Vec<Resource>,
     /// The punctuation house style, or `None` for a bundle written before the
     /// setting existed.
     ///
@@ -87,6 +91,9 @@ pub struct LoadedItem {
     /// materialise time like `status_id`. A file id naming no live asset reads as
     /// no cover.
     pub cover_id: Option<u64>,
+    /// The resources attached to this row, as resource **file ids**, remapped at
+    /// materialise time like `tag_ids`. An id naming no resource is skipped.
+    pub resource_ids: Vec<u64>,
 }
 
 pub struct LoadedTrash {

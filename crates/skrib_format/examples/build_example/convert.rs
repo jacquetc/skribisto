@@ -345,6 +345,8 @@ fn build(spec: &Spec, chapters: &[RawChapter]) -> Result<WorkBundle> {
         assets: Vec::new(),
         note_template_bodies: BTreeMap::new(),
         asset_blobs: BTreeMap::new(),
+        resources: Vec::new(),
+        resource_blobs: Default::default(),
         trash_infos: Vec::new(),
         paces: Vec::new(),
         progress_snapshots: Vec::new(),
@@ -438,6 +440,7 @@ fn blank(file_id: u64, uid: uuid::Uuid, now: &str) -> BinderItemFile {
     BinderItemFile {
         status_id: None,
         cover_id: None,
+        resource_ids: Vec::new(),
         file_id,
         uid,
         created_at: now.to_string(),

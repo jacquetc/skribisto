@@ -8,8 +8,8 @@ use anyhow::{Context, Result};
 use chrono::{DateTime, Utc};
 use common::entities::{
     Asset, Binder, BinderItem, BinderStatus, BinderTag, ChapterMode, Content, DictWord,
-    NoteTemplate, ProgressSnapshot, QuoteStyle, SmartPunctuation, TextReplacementRule, TrashInfo,
-    Work,
+    NoteTemplate, ProgressSnapshot, QuoteStyle, Resource, ResourceKind, SmartPunctuation,
+    TextReplacementRule, TrashInfo, Work,
 };
 use skribisto_model::content_allowed;
 use std::collections::{BTreeMap, BTreeSet};
@@ -17,6 +17,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use super::bundle::*;
 use super::loaded::*;
 use super::media::{asset_relpath, extension_for};
+use super::slug::resource_relpath;
 use super::slug::{
     binder_dir_name, nearest_titled_ancestors, note_template_relpath, prose_file_name, prose_kind,
     prose_relpath,
@@ -88,6 +89,12 @@ pub fn from_entities(
     // Asset bytes keyed by content hash, read from the project's media
     // directory by the caller — this crate resolves no paths of its own.
     asset_blobs: BTreeMap<String, crate::Blob>,
+    resources: &[Resource],
+    // Stored resources' files keyed by the resource's `uid` (hyphenated), resolved
+    // by the caller from the project's resources directory. A linked file's
+    // `location` is written as the store holds it (absolute): the caller makes it
+    // relative to where the bundle goes, see `media::relative_link`.
+    resource_blobs: BTreeMap<String, crate::Blob>,
     // Deliberately **not** a slice, though every neighbour here is one: this is
     // a one-to-one child, and taking `&Option<_>` means a caller cannot pass it
     // in the wrong positional slot — the two `&[...]` parameters on either side
@@ -108,6 +115,9 @@ pub fn from_entities(
     let mut comments_by_content: BTreeMap<u64, Vec<CommentFile>> = BTreeMap::new();
     // The assets that will actually be written (see the `assets` field below): a Book's
     // cover is kept only when its picture is among them.
+    // The Work's own resources: an item's link to anything else (another Work's row,
+    // a stale id) is not written.
+    let own_resources: BTreeSet<u64> = resources.iter().map(|r| r.id).collect();
     let written_assets: BTreeSet<u64> = assets
         .iter()
         .filter(|a| asset_blobs.contains_key(&a.content_hash))
@@ -244,6 +254,12 @@ pub fn from_entities(
                     point_of_view_ids: item.point_of_view.clone(),
                     book_ids: item.books.clone(),
                     tag_ids: item.tags.clone(),
+                    resource_ids: item
+                        .resources
+                        .iter()
+                        .copied()
+                        .filter(|id| own_resources.contains(id))
+                        .collect(),
                 },
                 prose,
                 comments: item_comments,
@@ -415,6 +431,32 @@ pub fn from_entities(
             })
             .collect(),
         asset_blobs,
+        // Every row, whether or not its file was found: a stored resource whose file
+        // is missing keeps its card (see `WorkBundle::resource_blobs`).
+        resources: resources
+            .iter()
+            .map(|r| ResourceFile {
+                file_id: r.id,
+                uid: r.uid,
+                created_at: fmt_dt(&r.created_at),
+                updated_at: fmt_dt(&r.updated_at),
+                title: r.title.clone(),
+                description: r.description.clone(),
+                kind: r.kind.clone(),
+                location: r.location.clone(),
+                file_name: r.file_name.clone(),
+                mime_type: r.mime_type.clone(),
+                byte_size: r.byte_size,
+                content_hash: r.content_hash.clone(),
+                width: u32::try_from(r.width).unwrap_or(0),
+                height: u32::try_from(r.height).unwrap_or(0),
+                path: match r.kind {
+                    ResourceKind::StoredFile => resource_relpath(r.uid, &r.file_name),
+                    ResourceKind::LinkedFile | ResourceKind::WebLink => String::new(),
+                },
+            })
+            .collect(),
+        resource_blobs,
         trash_infos: trash_infos
             .iter()
             .map(|ti| TrashInfoFile {
@@ -604,6 +646,7 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
         paces: Vec::new(),
         comments: Vec::new(),
         footnotes: Vec::new(),
+        resources: Vec::new(),
     };
 
     let tags = bundle
@@ -722,6 +765,32 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
         })
         .collect::<Result<Vec<_>>>()?;
 
+    // A date this build cannot read takes the epoch rather than failing the load: a
+    // resource's dates are bookkeeping, and its card is worth more than them.
+    let lenient_dt = |s: &str| parse_dt(s).unwrap_or_default();
+    let resources: Vec<Resource> = bundle
+        .resources
+        .iter()
+        .map(|r| Resource {
+            id: r.file_id,
+            created_at: lenient_dt(&r.created_at),
+            updated_at: lenient_dt(&r.updated_at),
+            uid: r.uid,
+            title: r.title.clone(),
+            description: r.description.clone(),
+            kind: r.kind.clone(),
+            // Still as stored (relative for a linked file): `load_work` resolves it
+            // against where the project is, which this crate does not know.
+            location: r.location.clone(),
+            file_name: r.file_name.clone(),
+            mime_type: r.mime_type.clone(),
+            byte_size: r.byte_size,
+            content_hash: r.content_hash.clone(),
+            width: u64::from(r.width),
+            height: u64::from(r.height),
+        })
+        .collect();
+
     let mut references: Vec<(u64, u64)> = Vec::new();
     let mut point_of_view: Vec<(u64, u64)> = Vec::new();
     // A tag's own filing, collected as pairs for the same reason every other
@@ -832,11 +901,14 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
                     status: None,
                     // Same: a file id until every asset row exists.
                     cover: None,
+                    // Same: file ids, on `LoadedItem::resource_ids`.
+                    resources: Vec::new(),
                 },
                 contents,
                 tag_ids: f.tag_ids.clone(),
                 status_id: f.status_id,
                 cover_id: f.cover_id,
+                resource_ids: f.resource_ids.clone(),
             });
         }
 
@@ -983,6 +1055,7 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
 
     Ok(LoadedWork {
         assets,
+        resources,
         work,
         tags,
         dict_words,

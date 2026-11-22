@@ -5708,11 +5708,13 @@ dependencies = [
  "skribisto-model",
  "skribisto-note-template-management",
  "skribisto-progress-management",
+ "skribisto-resource-management",
  "skribisto-search-management",
  "skribisto-skrib-format",
  "skribisto-tag-management",
  "skribisto-trash-management",
  "skribisto-work-management",
+ "tempfile",
  "zip 9.1.2",
 ]
 
@@ -5850,6 +5852,23 @@ dependencies = [
  "skribisto-model",
  "skribisto-skrib-format",
  "skribisto-work-management",
+ "tempfile",
+ "uuid",
+]
+
+[[package]]
+name = "skribisto-resource-management"
+version = "3.3.3"
+dependencies = [
+ "anyhow",
+ "blake3",
+ "chrono",
+ "serde",
+ "serde_json",
+ "skribisto-common",
+ "skribisto-document-ingest",
+ "skribisto-macros",
+ "skribisto-skrib-format",
  "tempfile",
  "uuid",
 ]

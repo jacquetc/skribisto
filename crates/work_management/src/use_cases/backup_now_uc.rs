@@ -39,7 +39,7 @@ use common::direct_access::work::WorkRelationshipField;
 use common::direct_access::work_info::WorkInfoRelationshipField;
 use common::entities::{
     Asset, Binder, BinderItem, BinderStatus, BinderTag, Comment, CommentReply, Content, DictWord,
-    Footnote, Holiday, Milestone, NoteTemplate, Pace, ProgressSnapshot, SmartPunctuation,
+    Footnote, Holiday, Milestone, NoteTemplate, Pace, ProgressSnapshot, Resource, SmartPunctuation,
     TextReplacementRule, TrashInfo, Work, WorkInfo,
 };
 use common::long_operation::{LongOperation, OperationProgress};
@@ -73,6 +73,7 @@ pub trait BackupNowUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "NoteTemplate", action = "GetMultiRO")]
 #[macros::uow_action(entity = "BinderStatus", action = "GetMultiRO")]
 #[macros::uow_action(entity = "Asset", action = "GetMultiRO")]
+#[macros::uow_action(entity = "Resource", action = "GetMultiRO")]
 #[macros::uow_action(entity = "Footnote", action = "GetMultiRO")]
 #[macros::uow_action(entity = "Footnote", action = "GetRelationshipRO")]
 #[macros::uow_action(entity = "SmartPunctuation", action = "GetRO")]
@@ -154,6 +155,9 @@ impl<'a> TreeReader for dyn BackupNowUnitOfWorkTrait + 'a {
     }
     fn asset_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<Asset>>> {
         self.get_asset_multi(ids)
+    }
+    fn resource_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<Resource>>> {
+        self.get_resource_multi(ids)
     }
     fn smart_punctuation(&self, id: &EntityId) -> Result<Option<SmartPunctuation>> {
         self.get_smart_punctuation(id)
@@ -279,13 +283,14 @@ fn run_backup(
     // not of its prose. The bytes come from the same media directory a save
     // reads, resolved from the source path so a folder project's `assets/` is
     // used in place rather than a working copy.
-    let media_dir = skrib_format::media::media_dir(
+    // Its attached files too, from the same project directories.
+    let dirs = work_io::ProjectDirs::of(
         std::path::Path::new(&source),
         &unique_id,
         std::path::Path::new(&dto.media_root),
-        &unique_id,
     );
-    let asset_blobs = work_io::read_asset_blobs(&g.assets, &media_dir);
+    let asset_blobs = work_io::read_asset_blobs(&g.assets, &dirs.media);
+    let resource_blobs = work_io::read_resource_blobs(&g.resources, &dirs.resources);
 
     let mut bundle = skrib::from_entities(
         &g.work,
@@ -296,6 +301,8 @@ fn run_backup(
         &g.statuses,
         &g.assets,
         asset_blobs,
+        &g.resources,
+        resource_blobs,
         g.smart_punctuation.as_ref(),
         &g.trash_infos,
         &g.paces,
@@ -304,6 +311,12 @@ fn run_backup(
         &g.footnotes,
         &g.binders,
         ShapeTag::Zip,
+    );
+    // Linked files relative to the SOURCE project's folder, not the backup's: a backup
+    // is restored to where the project lives, and its links must resolve from there.
+    skrib::media::relativise_links(
+        &mut bundle,
+        skrib::media::link_base(std::path::Path::new(&source)).as_deref(),
     );
     // Asked here, merged below — the same shape as `work_io::serialize_and_write`
     // and for the same reason: `collect` clones the bundle to fingerprint it, so
