@@ -67,6 +67,9 @@ Die Galerie teilt ihr Suchfeld, ihre Filter nach Schlagwörtern und Status und i
 Reihenfolge mit der *Übersicht*. Was Sie in einer Ansicht eingrenzen, ist auch in der anderen
 eingegrenzt.
 
+In der Galerie findet eine Suche auch ein Ressourcenbild über seinen Titel, seinen Dateinamen
+oder seine Beschreibung. Seine Notiz wird dann nur mit diesem Bild gezeigt.
+
 Doppelklicken Sie auf ein Vorschaubild oder drücken Sie die Eingabetaste, um es im
 Bildbetrachter zu öffnen. Die Pfeiltasten gehen dann durch die Bilder, die die Galerie zeigt,
 in ihrer Reihenfolge. Klicken Sie mit der rechten Maustaste auf ein Vorschaubild und wählen

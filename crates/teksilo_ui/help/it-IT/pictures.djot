@@ -47,6 +47,8 @@ Queste scelte valgono per tutte le gallerie che apri.
 
 La galleria condivide con la *Panoramica* il campo di ricerca, i filtri per etichette e stati e l'ordine. Ciò che restringi in una vista viene ristretto anche nell'altra.
 
+Nella galleria una ricerca trova anche un'immagine risorsa dal suo titolo, dal nome del file o dalla descrizione. La sua nota viene allora mostrata con quella sola immagine.
+
 Fai doppio clic su una miniatura, o premi `Invio`, per aprirla nel visualizzatore di immagini. Le frecce scorrono poi le immagini mostrate dalla galleria, nel suo ordine. Fai clic con il pulsante destro su una miniatura e scegli *Apri la nota* per aprire la nota che la contiene.
 
 ## La ricerca da Scrivener

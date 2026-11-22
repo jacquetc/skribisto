@@ -27,10 +27,21 @@
 //! A photograph attached to a note as a resource, not put into its text, is a picture of
 //! that note too, after those of its text ([`tiles`] says how each mode shows it). A
 //! folder's own picture resources are its pictures; those of the folder the Gallery shows
-//! come first, while no search or filter narrows the notes (a filter is about notes, and
-//! the folder is not one of them). They open in the image viewer with the others, in the
-//! Gallery's order, and the viewer's Open in another app goes through the Resources
-//! feature for them ([`crate::resources::ResourcesViewModel::viewer_opener`]).
+//! come first. They open in the image viewer with the others, in the Gallery's order, and
+//! the viewer's Open in another app goes through the Resources feature for them
+//! ([`crate::resources::ResourcesViewModel::viewer_opener`]).
+//!
+//! ## A search finds a picture resource by its name
+//!
+//! The Overview's search matches a row's title and label, the names its table shows. The
+//! Gallery shows more: each picture resource, named on its tile. So here a search also
+//! finds a picture resource by its title, its file name or its description, the way the
+//! Resources dock names it. A note the search does not match, but which carries such a
+//! picture, is shown holding that picture only (its other pictures are not what was
+//! asked for), with the folders around it kept as the Overview keeps them; the folder's
+//! own picture resources stay when they match. The tag and status filters are still the
+//! Overview's alone: they ask about notes, a picture has neither, and the folder's own
+//! pictures leave while one narrows the notes.
 //!
 //! Plain Rust over the backend; the widgets are in [`crate::tabs::gallery`].
 
@@ -47,12 +58,15 @@ use frontend::AppContext;
 use frontend::commands::{binder_item_commands, content_commands};
 use frontend::common::entities::{BinderItemRole, ContentRole};
 
-use crate::models::shaped_subtree;
 use crate::models::{OpenDocsStore, ResourceRow, ResourcesListModel};
+use crate::models::{row_matches, search_needle, shaped_subtree};
 use crate::overview::OverviewViewModel;
 use crate::picture_viewer::{ViewerEntry, ViewerFile, ViewerItem};
 use crate::shared::images::{ImageRef, parse_images};
 pub use tiles::{GalleryNote, GalleryOptions, GalleryPicture, GalleryTile};
+
+/// A row of a folder's subtree, as the Overview shapes it.
+type OverviewTreeRow = teksilo::data::TreeRow<uuid::Uuid, crate::models::OverviewRow>;
 
 struct Inner {
     app_ctx: Rc<AppContext>,
@@ -193,17 +207,26 @@ impl GalleryViewModel {
     pub fn notes(&self) -> Vec<GalleryNote> {
         let folder = self.current_folder();
         let filters = self.inner.overview.filters();
-        let rows = shaped_subtree(&self.inner.app_ctx, &self.inner.work_id, folder, &filters);
-        // The folder's own picture resources lead, unless a filter is narrowing the notes.
-        let filtering = !filters.query.get().trim().is_empty()
-            || !filters.tag_filter.get().is_empty()
-            || !filters.status_filter.get().is_empty();
+        let needle = search_needle(&filters.query.get());
+        // A tag or status filter asks about notes, which the folder is not.
+        let narrowing_notes =
+            !filters.tag_filter.get().is_empty() || !filters.status_filter.get().is_empty();
+        let (rows, by_picture) = self.shaped_rows(folder, &filters, needle.as_deref());
         let mut ids: Vec<u64> = rows.iter().map(|r| r.item.item_id).collect();
-        if !filtering {
+        if !narrowing_notes {
             ids.push(folder);
         }
         let mut resources = self.picture_resources(&ids);
-        let own = (!filtering)
+        if let Some(needle) = &needle {
+            // Of a note found by a picture, and of the folder itself, the pictures that
+            // were asked for.
+            for id in by_picture.iter().chain(std::iter::once(&folder)) {
+                if let Some(pictures) = resources.get_mut(id) {
+                    pictures.retain(|p| picture_matches(p, needle));
+                }
+            }
+        }
+        let own = (!narrowing_notes)
             .then(|| resources.remove(&folder))
             .flatten()
             .filter(|p| !p.is_empty())
@@ -230,7 +253,8 @@ impl GalleryViewModel {
                 let is_folder = item.role == BinderItemRole::Folder;
                 // A folder's own synopsis is not its text: it has no pictures of its own
                 // but its resources.
-                let text = if is_folder {
+                // A note found by a picture shows that picture, not its text's.
+                let text = if is_folder || by_picture.contains(&item.item_id) {
                     String::new()
                 } else {
                     texts.get(&item.item_id).cloned().unwrap_or_default()
@@ -255,6 +279,65 @@ impl GalleryViewModel {
             .collect();
         self.watch_open_notes(&notes);
         notes
+    }
+
+    /// The rows of `folder` as the Overview shapes them, and, under a search, also the
+    /// notes the search does not match but whose picture resources it does, with the rows
+    /// above them; those notes are the second half of the answer. In the Overview's order
+    /// either way.
+    fn shaped_rows(
+        &self,
+        folder: u64,
+        filters: &crate::models::OverviewFilters,
+        needle: Option<&str>,
+    ) -> (Vec<OverviewTreeRow>, HashSet<u64>) {
+        let ctx = &self.inner.app_ctx;
+        let work_id = &self.inner.work_id;
+        let matched = shaped_subtree(ctx, work_id, folder, filters);
+        let Some(needle) = needle.filter(|_| self.inner.resources.is_some()) else {
+            return (matched, HashSet::new());
+        };
+        // The same rows with every filter but the search, so the order and the tag and
+        // status filters are the Overview's.
+        let unsearched = crate::models::OverviewFilters {
+            query: Signal::new(String::new()),
+            ..filters.clone()
+        };
+        let all = shaped_subtree(ctx, work_id, folder, &unsearched);
+        let kept: HashSet<u64> = matched.iter().map(|r| r.item.item_id).collect();
+        let candidates: Vec<u64> = all
+            .iter()
+            .map(|r| r.item.item_id)
+            .filter(|id| !kept.contains(id))
+            .collect();
+        let by_picture: HashSet<u64> = self
+            .picture_resources(&candidates)
+            .into_iter()
+            .filter(|(_, pictures)| pictures.iter().any(|p| picture_matches(p, needle)))
+            .map(|(id, _)| id)
+            .collect();
+        if by_picture.is_empty() {
+            return (matched, by_picture);
+        }
+        // Keep each found note's ancestors, as the Overview's search keeps a match's: the
+        // rows before it, in depth-first order, each shallower than the last.
+        let mut keep = kept;
+        let mut above: Vec<(usize, u64)> = Vec::new();
+        for row in &all {
+            while above.last().is_some_and(|(depth, _)| *depth >= row.depth) {
+                above.pop();
+            }
+            if by_picture.contains(&row.item.item_id) {
+                keep.extend(above.iter().map(|(_, id)| *id));
+                keep.insert(row.item.item_id);
+            }
+            above.push((row.depth, row.item.item_id));
+        }
+        let rows = all
+            .into_iter()
+            .filter(|r| keep.contains(&r.item.item_id))
+            .collect();
+        (rows, by_picture)
     }
 
     /// The picture resources of each of `item_ids`, each item's by title. Empty with no
@@ -454,6 +537,15 @@ fn text_srcs(pictures: &[GalleryPicture]) -> Vec<String> {
 /// The store refuses a resource listed twice on an item, and loading a project collapses
 /// the repeats, so this only stands between a list that somehow holds one and a picture
 /// shown twice. Not `dedup`, which collapses only neighbours: `[A, B, A]` would stay.
+/// Whether a search for `needle` (lower-cased) names this picture: a resource by its
+/// title, its file name or its description. A picture of the text has no name of its own.
+fn picture_matches(picture: &GalleryPicture, needle: &str) -> bool {
+    picture
+        .resource
+        .as_ref()
+        .is_some_and(|r| row_matches(needle, &[&r.title, &r.file_name, &r.description]))
+}
+
 fn once_each(ids: &[u64]) -> Vec<u64> {
     let mut seen = HashSet::new();
     ids.iter().copied().filter(|id| seen.insert(*id)).collect()

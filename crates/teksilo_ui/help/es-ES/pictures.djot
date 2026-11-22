@@ -64,6 +64,9 @@ Estas opciones valen para todas las galerías que abra.
 La galería comparte con la *Vista general* su campo de búsqueda, sus filtros de etiquetas y de
 estados y su orden. Lo que acota en una vista queda acotado en la otra.
 
+En la galería, una búsqueda también encuentra una imagen recurso por su título, su nombre de
+archivo o su descripción. Su nota se muestra entonces solo con esa imagen.
+
 Haga doble clic en una miniatura, o pulse `Intro`, para abrirla en el visor de imágenes. Las
 flechas recorren entonces las imágenes que muestra la galería, en su orden. Haga clic con el
 botón derecho en una miniatura y elija *Abrir la nota* para abrir la nota en la que está.

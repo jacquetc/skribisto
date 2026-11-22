@@ -63,6 +63,9 @@ Ces choix valent pour toutes les galeries que vous ouvrez.
 La galerie partage avec la *Vue d’ensemble* son champ de recherche, ses filtres d’étiquettes et
 de statuts et son ordre. Ce que vous restreignez dans une vue l’est aussi dans l’autre.
 
+Dans la galerie, une recherche trouve aussi une image ressource par son titre, son nom de
+fichier ou sa description. Sa note est alors montrée avec cette seule image.
+
 Double-cliquez sur une vignette, ou appuyez sur Entrée, pour l’ouvrir dans la visionneuse. Les
 flèches parcourent alors les images que la galerie montre, dans son ordre. Faites un clic droit
 sur une vignette et choisissez *Ouvrir la note* pour ouvrir la note où elle se trouve.

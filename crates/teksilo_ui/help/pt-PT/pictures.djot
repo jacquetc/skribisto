@@ -63,6 +63,9 @@ Estas escolhas valem para todas as galerias que abrir.
 A galeria partilha com a *Vista geral* o seu campo de pesquisa, os seus filtros de etiquetas e
 de estados e a sua ordem. O que restringir numa vista fica restringido na outra.
 
+Na galeria, uma pesquisa também encontra uma imagem recurso pelo seu título, nome de ficheiro
+ou descrição. A sua nota é então mostrada só com essa imagem.
+
 Faça duplo clique numa miniatura, ou prima `Enter`, para a abrir no visualizador de imagens.
 As setas percorrem então as imagens que a galeria mostra, pela sua ordem. Clique com o botão
 direito numa miniatura e escolha *Abrir a nota* para abrir a nota onde ela está.

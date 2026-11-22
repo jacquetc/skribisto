@@ -58,6 +58,9 @@ These choices apply to every gallery you open.
 The gallery shares its search field, its tag and status filters and its order with the
 *Overview*. What you narrow in one view is narrowed in the other.
 
+In the gallery, a search also finds a picture resource by its title, its file name or its
+description. Its note is then shown with that picture alone.
+
 Double-click a thumbnail, or press Enter, to open it in the image viewer. The arrow keys then
 go through the pictures the gallery shows, in its order. Right-click a thumbnail and choose
 *Open the note* to open the note it is in.

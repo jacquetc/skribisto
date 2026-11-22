@@ -426,7 +426,7 @@ fn the_viewer_opens_a_resource_from_its_file_in_the_gallerys_order() {
 }
 
 #[test]
-fn a_filter_keeps_the_folders_own_resources_out_and_a_filtered_notes_with_it() {
+fn a_search_leaves_out_the_pictures_it_does_not_name() {
     let f = Fixture::new();
     let gull = f.note("Gull on a post", 1, &picture(A));
     let lamp = f.note("Lighthouse", 1, &picture(B));
@@ -437,6 +437,72 @@ fn a_filter_keeps_the_folders_own_resources_out_and_a_filtered_notes_with_it() {
     let gallery = f.gallery_with(&research);
     gallery.overview().search_query_signal().set("gull".into());
     assert_eq!(holdings(&gallery.notes()), ["Gull on a post: aa Gull.png"]);
+}
+
+/// The Gallery names each picture resource on its tile, so a search finds one by its
+/// name: the note carrying it is shown holding that picture alone.
+#[test]
+fn a_search_finds_a_picture_resource_by_its_name() {
+    let f = Fixture::new();
+    let lamp = f.note("Lighthouse", 1, &picture(B));
+    f.note("Gull on a post", 1, &picture(A));
+    let research = Research::new(&f);
+    research.attach(&[lamp], "Lamp.jpg");
+    research.attach(&[lamp], "Keeper.jpg");
+    let gallery = f.gallery_with(&research);
+    gallery.overview().search_query_signal().set("LAMP".into());
+    assert_eq!(holdings(&gallery.notes()), ["Lighthouse: Lamp.jpg"]);
+
+    // Its description counts too: it is the name a screen reader reads on the tile.
+    let row = research
+        .model
+        .rows_for(lamp)
+        .into_iter()
+        .find(|r| r.file_name == "Keeper.jpg")
+        .unwrap_or_else(|| panic!("the keeper"));
+    research
+        .model
+        .edit_text(row.id, "Keeper", "The old keeper at the lamp room door")
+        .unwrap_or_else(|e| panic!("edit: {e}"));
+    assert_eq!(
+        holdings(&gallery.notes()),
+        ["Lighthouse: Keeper.jpg Lamp.jpg"]
+    );
+}
+
+#[test]
+fn a_note_found_by_its_picture_keeps_the_folders_around_it() {
+    let f = Fixture::new();
+    let threads = f.item("Threads", BinderItemRole::Folder, 1, true);
+    let tower = f.note("Tower", 2, &picture(A));
+    f.note("Gull on a post", 1, &picture(B));
+    let research = Research::new(&f);
+    research.attach(&[tower], "Lantern.jpg");
+    let gallery = f.gallery_with(&research);
+    gallery
+        .overview()
+        .search_query_signal()
+        .set("lantern".into());
+    let notes = gallery.notes();
+    assert_eq!(holdings(&notes), ["Threads: ", "Tower: Lantern.jpg"]);
+    assert_eq!(notes[0].item_id, threads);
+    assert!(notes[0].is_folder);
+}
+
+#[test]
+fn the_folders_own_pictures_stay_when_a_search_names_them_and_leave_for_a_tag() {
+    let f = Fixture::new();
+    f.note("Gull on a post", 1, &picture(A));
+    let research = Research::new(&f);
+    research.attach(&[f.folder], "Coast.jpg");
+    research.attach(&[f.folder], "Harbour.jpg");
+    let gallery = f.gallery_with(&research);
+    gallery.overview().search_query_signal().set("coast".into());
+    assert_eq!(holdings(&gallery.notes()), ["Research: Coast.jpg"]);
+
+    // A tag asks about notes; the folder is not one, and a picture has no tags.
+    gallery.overview().filters().tag_filter.set(vec![999]);
+    assert!(holdings(&gallery.notes()).is_empty());
 }
 
 #[test]

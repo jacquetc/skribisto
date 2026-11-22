@@ -133,6 +133,7 @@ pub use paratext_presets::{NEW_PRESET_TEMPLATE, ParatextPreset, ParatextPresetsS
 pub use recent_work_list_model::RecentWorkListModel;
 #[cfg(all(test, not(feature = "mocks")))]
 pub(crate) use recent_work_list_model::TestRecents;
+pub(crate) use row_search::{needle as search_needle, row_matches};
 pub use search_results_model::SearchResultsModel;
 pub use search_settings_file::{SearchPrefs, SearchSettingsService};
 pub use search_tree_model::{SearchNode, SearchTreeKey, SearchTreeModel};
