@@ -444,8 +444,11 @@ fn read_entry(bundle: &Path, rel: &str) -> Result<String> {
             // Same rule as every other bundle-supplied path: `rel` comes out of
             // a backup's own `items.ron`/history index, and a backup is a file
             // like any other. See `crate::safe_path`.
-            let full =
-                crate::locate::Locator::new().locate(&folder_root(&path), rel, "version blob")?;
+            let root = folder_root(&path);
+            let full = crate::locate::Locator::new().locate(&root, rel, "version blob")?;
+            // Nor through a link, as the folder reader refuses one: a past version is
+            // shown, compared and restored into the book.
+            crate::media::refuse_link(&root, &full, "the version file")?;
             std::fs::read_to_string(&full).with_context(|| format!("reading {}", full.display()))
         }
         SkribShape::ZipFile => {
@@ -478,6 +481,15 @@ fn folder_rows(root: &Path) -> Result<Vec<VersionRow>> {
     let locator = crate::locate::Locator::new();
     for d in dirs {
         let items_path = d.join("items.ron");
+        // A binder list reached through a link is not the backup's: left out, like
+        // one that cannot be read (see `folder_io`'s module docs).
+        if crate::media::passes_through_link(root, &items_path) {
+            eprintln!(
+                "skrib: ignoring {}: it is a link, not a file of the project",
+                items_path.display()
+            );
+            continue;
+        }
         let Ok(text) = std::fs::read_to_string(&items_path) else {
             continue;
         };
@@ -493,6 +505,7 @@ fn folder_rows(root: &Path) -> Result<Vec<VersionRow>> {
                     let bytes = locator
                         .locate(root, &pr.path, "version prose")
                         .ok()
+                        .filter(|p| !crate::media::passes_through_link(root, p))
                         .and_then(|p| std::fs::metadata(p).ok())
                         .map(|m| m.len())
                         .unwrap_or(0);

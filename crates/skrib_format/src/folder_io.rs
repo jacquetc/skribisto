@@ -10,6 +10,37 @@
 //! read and the write side, and every prune compares names by NFC form: a folder
 //! that crossed a Unicode-normalisation boundary (a sync client, HFS+) still opens,
 //! and a save into it edits the files as they are spelled rather than writing twins.
+//!
+//! # Symbolic links
+//!
+//! A folder project can arrive from anywhere (a shared drive, an archive that keeps
+//! links, a synchronised folder), and a link inside it can point at any file on the
+//! disk. Whatever the reader takes in travels on: into the zip a Save As writes, into a
+//! backup, into the copy a writer sends. So no file of the project is read through a
+//! link, the file itself or any folder between the project folder and it
+//! ([`crate::media::passes_through_link`]). The project folder itself is not judged:
+//! the writer may well keep their books behind a link of their own.
+//!
+//! What a linked file gets depends on what leaving it out would cost:
+//!
+//! * **Refused, the project does not open**: `project.skrib`, every work-level `.ron`
+//!   list, a binder's `items.ron`, a prose file, a footnote list, a note template's
+//!   body. Each holds the writer's own words or the structure that places them. Left
+//!   out, the book would open with a scene empty or a list gone, look like data loss,
+//!   and the next autosave would write that loss into the project within seconds. A
+//!   refusal names the file and keeps everything on disk as it is.
+//! * **Left out, and said on stderr**: a comment list, the history index and its
+//!   blobs, a stored resource's file, a picture, a file this build does not model.
+//!   Each is something the format already reads as possibly absent (no comments yet, a
+//!   thinned history, a resource shown as missing, a dropped picture row, nothing to
+//!   carry), so the book opens whole. The link itself is never followed and nothing
+//!   behind it is touched: a later save replaces it or prunes the link alone.
+//!
+//! The writer never writes through a link either. A link met on the way to a file it
+//! writes, the file or a folder above it, is removed and a real folder or file written
+//! in its place, by the same temporary file and rename as every write here; whatever
+//! the link pointed at is left exactly as it was. A prune never lists a folder reached
+//! through a link, so it cannot delete files elsewhere on the disk.
 
 use anyhow::{Context, Result};
 use serde::Serialize;
@@ -40,9 +71,52 @@ fn from_ron<T: DeserializeOwned>(text: &str, what: &str) -> Result<T> {
     ron::from_str(text).with_context(|| format!("parsing {what}"))
 }
 
-/// Write `bytes` to `path` only if the on-disk content differs. Returns whether
-/// a write happened. Uses a same-dir temp file + atomic rename.
-fn write_if_changed(path: &Path, bytes: &[u8]) -> Result<bool> {
+/// Make the way from the project folder `root` down to `path` the project's own before
+/// anything is written there: the first symbolic link on it, a folder or `path`
+/// itself, is removed, so the write that follows creates a real folder or file in its
+/// place instead of following the link out of the project (see the module docs).
+/// Removing a link touches nothing it points at. A `path` not under `root` is left to
+/// the caller, which never builds one.
+fn own_way(root: &Path, path: &Path) -> Result<()> {
+    let Ok(rel) = path.strip_prefix(root) else {
+        return Ok(());
+    };
+    let mut at = root.to_path_buf();
+    for component in rel.components() {
+        at.push(component);
+        match fs::symlink_metadata(&at) {
+            Ok(meta) if meta.file_type().is_symlink() => {
+                eprintln!(
+                    "skrib: {} is a link; it is replaced by the project's own, and what it \
+                     points at is left alone",
+                    at.display()
+                );
+                // `remove_file` takes a link to a folder on Unix; Windows wants
+                // `remove_dir` for one. Neither follows the link.
+                fs::remove_file(&at)
+                    .or_else(|_| fs::remove_dir(&at))
+                    .with_context(|| format!("removing the link {}", at.display()))?;
+                // Everything below it is gone from the project's view, to be created.
+                return Ok(());
+            }
+            Ok(_) => {}
+            Err(_) => return Ok(()),
+        }
+    }
+    Ok(())
+}
+
+/// [`own_way`], then create the folder `dir` of the project.
+fn own_dir(root: &Path, dir: &Path) -> Result<()> {
+    own_way(root, dir)?;
+    fs::create_dir_all(dir).with_context(|| format!("creating {}", dir.display()))
+}
+
+/// Write `bytes` to `path`, under the project folder `root`, only if the on-disk
+/// content differs. Returns whether a write happened. Uses a same-dir temp file +
+/// atomic rename, in a folder of the project's own (see [`own_way`]).
+fn write_if_changed(root: &Path, path: &Path, bytes: &[u8]) -> Result<bool> {
+    own_way(root, path)?;
     if let Ok(existing) = fs::read(path)
         && existing == bytes
     {
@@ -106,17 +180,23 @@ enum Placing {
     Throwaway,
 }
 
-fn place(blob: &crate::Blob, dest: &Path, placing: Placing) -> std::io::Result<bool> {
-    match placing {
-        Placing::Keep => blob.place_at(dest),
-        Placing::Throwaway => blob.link_or_place_at(dest),
-    }
+/// Put `blob` at `dest`, under the project folder `root`, never through a link (see
+/// [`own_way`]): a link left at `dest` would otherwise be kept whenever what it points
+/// at already holds the bytes.
+fn place(root: &Path, blob: &crate::Blob, dest: &Path, placing: Placing) -> Result<bool> {
+    own_way(root, dest)?;
+    Ok(match placing {
+        Placing::Keep => blob.place_at(dest)?,
+        Placing::Throwaway => blob.link_or_place_at(dest)?,
+    })
 }
 
 fn write_folder_placing(root: &Path, bundle: &WorkBundle, placing: Placing) -> Result<()> {
     fs::create_dir_all(root).with_context(|| format!("creating {}", root.display()))?;
     let binders_dir = root.join("binders");
-    fs::create_dir_all(&binders_dir).ok();
+    // A link here is replaced, not followed (see the module docs); a failure to is met
+    // again, and reported, by the first write below it.
+    own_dir(root, &binders_dir).ok();
 
     let carried = Carried {
         root,
@@ -136,26 +216,38 @@ fn write_folder_placing(root: &Path, bundle: &WorkBundle, placing: Placing) -> R
         // a `WorkBundle` can also be built by hand (both project importers do),
         // so the write side checks rather than assuming.
         let target = locator.locate(root, rel, "carried file")?;
-        write_if_changed(&target, &file.bytes)
+        write_if_changed(root, &target, &file.bytes)
             .with_context(|| format!("writing carried file {rel}"))?;
     }
 
     // Work-level manifests.
-    write_if_changed(&root.join("tags.ron"), to_ron(&bundle.tags)?.as_bytes())?;
     write_if_changed(
+        root,
+        &root.join("tags.ron"),
+        to_ron(&bundle.tags)?.as_bytes(),
+    )?;
+    write_if_changed(
+        root,
         &root.join("dictionary.ron"),
         to_ron(&bundle.dict_words)?.as_bytes(),
     )?;
     write_if_changed(
+        root,
         &root.join("replacements.ron"),
         to_ron(&bundle.text_replacement_rules)?.as_bytes(),
     )?;
     write_if_changed(
+        root,
         &root.join("trash.ron"),
         to_ron(&bundle.trash_infos)?.as_bytes(),
     )?;
-    write_if_changed(&root.join("paces.ron"), to_ron(&bundle.paces)?.as_bytes())?;
     write_if_changed(
+        root,
+        &root.join("paces.ron"),
+        to_ron(&bundle.paces)?.as_bytes(),
+    )?;
+    write_if_changed(
+        root,
         &root.join("snapshots.ron"),
         to_ron(&bundle.progress_snapshots)?.as_bytes(),
     )?;
@@ -166,7 +258,11 @@ fn write_folder_placing(root: &Path, bundle: &WorkBundle, placing: Placing) -> R
     if bundle.orphan_comments.is_empty() {
         fs::remove_file(&orphans_path).ok();
     } else {
-        write_if_changed(&orphans_path, to_ron(&bundle.orphan_comments)?.as_bytes())?;
+        write_if_changed(
+            root,
+            &orphans_path,
+            to_ron(&bundle.orphan_comments)?.as_bytes(),
+        )?;
     }
 
     // The same for footnotes whose annotated content is gone. Kept, not dropped:
@@ -176,6 +272,7 @@ fn write_folder_placing(root: &Path, bundle: &WorkBundle, placing: Placing) -> R
         fs::remove_file(&orphan_notes_path).ok();
     } else {
         write_if_changed(
+            root,
             &orphan_notes_path,
             to_ron(&bundle.orphan_footnotes)?.as_bytes(),
         )?;
@@ -188,14 +285,14 @@ fn write_folder_placing(root: &Path, bundle: &WorkBundle, placing: Placing) -> R
     // and every delete would leave an orphan `.djot` behind for good, growing the
     // git-tracked tree and undoing the whole reason the bodies are separate files.
     write_if_changed(
+        root,
         &root.join("templates.ron"),
         to_ron(&bundle.note_templates)?.as_bytes(),
     )?;
     let templates_dir = root.join(TEMPLATES_DIR);
     let mut expected_templates: BTreeSet<String> = BTreeSet::new();
     if !bundle.note_templates.is_empty() {
-        fs::create_dir_all(&templates_dir)
-            .with_context(|| format!("creating {}", templates_dir.display()))?;
+        own_dir(root, &templates_dir)?;
     }
     for t in &bundle.note_templates {
         let rel = Path::new(&t.path);
@@ -209,6 +306,7 @@ fn write_folder_placing(root: &Path, bundle: &WorkBundle, placing: Placing) -> R
             .get(&t.file_id)
             .ok_or_else(|| anyhow::anyhow!("missing body blob for note template {}", t.file_id))?;
         write_if_changed(
+            root,
             &locator.locate(root, &t.path, "note-template body")?,
             body.as_bytes(),
         )?;
@@ -226,16 +324,20 @@ fn write_folder_placing(root: &Path, bundle: &WorkBundle, placing: Placing) -> R
     // addressed, so *replacing* an image writes a new name and leaves the old
     // blob behind. Without this a project would accumulate every version of
     // every picture a writer ever swapped out, forever.
-    write_if_changed(&root.join("assets.ron"), to_ron(&bundle.assets)?.as_bytes())?;
     write_if_changed(
+        root,
+        &root.join("assets.ron"),
+        to_ron(&bundle.assets)?.as_bytes(),
+    )?;
+    write_if_changed(
+        root,
         &root.join("statuses.ron"),
         to_ron(&bundle.statuses)?.as_bytes(),
     )?;
     let assets_dir = root.join(ASSETS_DIR);
     let mut expected_assets: BTreeSet<String> = BTreeSet::new();
     if !bundle.assets.is_empty() {
-        fs::create_dir_all(&assets_dir)
-            .with_context(|| format!("creating {}", assets_dir.display()))?;
+        own_dir(root, &assets_dir)?;
     }
     for a in &bundle.assets {
         let rel = Path::new(&a.path);
@@ -252,7 +354,7 @@ fn write_folder_placing(root: &Path, bundle: &WorkBundle, placing: Placing) -> R
             )
         })?;
         let dest = locator.locate(root, &a.path, "asset")?;
-        place(blob, &dest, placing)
+        place(root, blob, &dest, placing)
             .with_context(|| format!("writing asset {} to {}", a.file_name, dest.display()))?;
         expected_assets.insert(nfc(&fname));
     }
@@ -269,6 +371,7 @@ fn write_folder_placing(root: &Path, bundle: &WorkBundle, placing: Placing) -> R
     // carries a removed one anyway. A stored resource with no blob is written as a
     // row only: shown as missing, not dropped.
     write_if_changed(
+        root,
         &root.join("resources.ron"),
         to_ron(&bundle.resources)?.as_bytes(),
     )?;
@@ -281,7 +384,7 @@ fn write_folder_placing(root: &Path, bundle: &WorkBundle, placing: Placing) -> R
         };
         let rel = crate::slug::resource_relpath(r.uid, &r.file_name);
         let dest = locator.locate(root, &rel, "resource")?;
-        place(blob, &dest, placing)
+        place(root, blob, &dest, placing)
             .with_context(|| format!("writing resource {} to {}", r.file_name, dest.display()))?;
     }
 
@@ -296,12 +399,15 @@ fn write_folder_placing(root: &Path, bundle: &WorkBundle, placing: Placing) -> R
     if bundle.history.is_empty() {
         // Nothing to keep — remove any index left from a previous save so the
         // on-disk state matches the bundle rather than resurrecting a stale log.
-        let _ = fs::remove_file(root.join(HISTORY_INDEX));
+        // Not through a linked `history/`: the index it would remove is elsewhere.
+        if !crate::media::passes_through_link(root, &root.join(HISTORY_INDEX)) {
+            let _ = fs::remove_file(root.join(HISTORY_INDEX));
+        }
         prune_dir(&history_dir, &BTreeSet::new(), "djot", &carried)?;
     } else {
-        fs::create_dir_all(&history_dir)
-            .with_context(|| format!("creating {}", history_dir.display()))?;
+        own_dir(root, &history_dir)?;
         write_if_changed(
+            root,
             &root.join(HISTORY_INDEX),
             to_ron(&bundle.history.entries)?.as_bytes(),
         )?;
@@ -310,7 +416,7 @@ fn write_folder_placing(root: &Path, bundle: &WorkBundle, placing: Placing) -> R
             let text = bundle.history.blobs.get(&hash).ok_or_else(|| {
                 anyhow::anyhow!("history index references blob {hash} with no bytes in the bundle")
             })?;
-            write_if_changed(&root.join(blob_relpath(&hash)), text.as_bytes())?;
+            write_if_changed(root, &root.join(blob_relpath(&hash)), text.as_bytes())?;
             expected_blobs.insert(format!("{hash}.djot"));
         }
         prune_dir(&history_dir, &expected_blobs, "djot", &carried)?;
@@ -326,7 +432,7 @@ fn write_folder_placing(root: &Path, bundle: &WorkBundle, placing: Placing) -> R
         // collide with it on a normalisation-insensitive one.
         let bdir = locator.locate_child(&binders_dir, &dir_name);
         let tdir = bdir.join("text");
-        fs::create_dir_all(&tdir).with_context(|| format!("creating {}", tdir.display()))?;
+        own_dir(root, &tdir)?;
 
         // Prose blobs + the set of expected `.djot` file names, and beside each one
         // its `.comments.ron` sidecar (written only when that content actually has
@@ -349,7 +455,11 @@ fn write_folder_placing(root: &Path, bundle: &WorkBundle, placing: Placing) -> R
                 let data = item.prose.get(&pr.file_id).ok_or_else(|| {
                     anyhow::anyhow!("missing prose blob for content {}", pr.file_id)
                 })?;
-                write_if_changed(&locator.locate(root, &pr.path, "prose")?, data.as_bytes())?;
+                write_if_changed(
+                    root,
+                    &locator.locate(root, &pr.path, "prose")?,
+                    data.as_bytes(),
+                )?;
                 expected_prose.insert(nfc(&fname));
 
                 if let Some(comments) = item.comments.get(&pr.file_id)
@@ -357,6 +467,7 @@ fn write_folder_placing(root: &Path, bundle: &WorkBundle, placing: Placing) -> R
                 {
                     let cname = comments_file_name(&fname);
                     write_if_changed(
+                        root,
                         &locator.locate_child(&tdir, &cname),
                         to_ron(comments)?.as_bytes(),
                     )?;
@@ -368,6 +479,7 @@ fn write_folder_placing(root: &Path, bundle: &WorkBundle, placing: Placing) -> R
                 {
                     let fnname = footnotes_file_name(&fname);
                     write_if_changed(
+                        root,
                         &locator.locate_child(&tdir, &fnname),
                         to_ron(footnotes)?.as_bytes(),
                     )?;
@@ -387,10 +499,14 @@ fn write_folder_placing(root: &Path, bundle: &WorkBundle, placing: Placing) -> R
             binder: bb.binder.clone(),
             items: bb.items.iter().map(|i| i.item.clone()).collect(),
         };
-        write_if_changed(&bdir.join("items.ron"), to_ron(&items_file)?.as_bytes())?;
+        write_if_changed(
+            root,
+            &bdir.join("items.ron"),
+            to_ron(&items_file)?.as_bytes(),
+        )?;
     }
 
-    prune_binder_dirs(&binders_dir, &expected_binder_dirs)?;
+    prune_binder_dirs(root, &binders_dir, &expected_binder_dirs)?;
 
     // Commit point — written last.
     //
@@ -406,7 +522,11 @@ fn write_folder_placing(root: &Path, bundle: &WorkBundle, placing: Placing) -> R
     // blobs already written above.
     let mut manifest = bundle.manifest.clone();
     manifest.format_min_read_version = Some(compute_min_read_version(bundle));
-    write_if_changed(&root.join(MANIFEST_NAME), to_ron(&manifest)?.as_bytes())?;
+    write_if_changed(
+        root,
+        &root.join(MANIFEST_NAME),
+        to_ron(&manifest)?.as_bytes(),
+    )?;
     Ok(())
 }
 
@@ -432,6 +552,22 @@ pub(crate) fn footnotes_file_name(prose_file_name: &str) -> String {
     format!("{stem}.footnotes.ron")
 }
 
+/// Whether a prune may list `dir`, under the project folder `root`: not when it is
+/// reached through a link, whose listing is a folder elsewhere on the disk, and whose
+/// files the prune would delete. A write into it replaces the link first (see
+/// [`own_way`]), so this only meets one the save had nothing to write into. An entry
+/// that is itself a link is removed as one, which removes only the link.
+fn prunable(root: &Path, dir: &Path) -> bool {
+    if crate::media::passes_through_link(root, dir) {
+        eprintln!(
+            "skrib: not pruning {}: it is a link, not a folder of the project",
+            dir.display()
+        );
+        return false;
+    }
+    true
+}
+
 /// Remove files in `dir` with extension `ext` whose name is not in `keep` — and
 /// which this write is not carrying through (see [`Carried`]).
 ///
@@ -439,6 +575,9 @@ pub(crate) fn footnotes_file_name(prose_file_name: &str) -> String {
 /// a file whose name reached this machine in another normalisation is the file the
 /// bundle means, not a stale one (see [`super::locate`]).
 fn prune_dir(dir: &Path, keep: &BTreeSet<String>, ext: &str, carried: &Carried) -> Result<()> {
+    if !prunable(carried.root, dir) {
+        return Ok(());
+    }
     let Ok(entries) = fs::read_dir(dir) else {
         return Ok(());
     };
@@ -464,6 +603,9 @@ fn prune_dir(dir: &Path, keep: &BTreeSet<String>, ext: &str, carried: &Carried) 
 /// the old blob. Without this a project would keep every version of every
 /// picture ever swapped out.
 fn prune_assets_dir(dir: &Path, keep: &BTreeSet<String>, carried: &Carried) -> Result<()> {
+    if !prunable(carried.root, dir) {
+        return Ok(());
+    }
     let Ok(entries) = fs::read_dir(dir) else {
         return Ok(());
     };
@@ -489,7 +631,10 @@ fn prune_assets_dir(dir: &Path, keep: &BTreeSet<String>, carried: &Carried) -> R
 /// binder that no longer exists, growing the project forever. Carrying protects
 /// data whose *meaning* this build cannot judge; it does not override a
 /// deletion the writer actually asked for.
-fn prune_binder_dirs(binders_dir: &Path, keep: &BTreeSet<String>) -> Result<()> {
+fn prune_binder_dirs(root: &Path, binders_dir: &Path, keep: &BTreeSet<String>) -> Result<()> {
+    if !prunable(root, binders_dir) {
+        return Ok(());
+    }
     let Ok(entries) = fs::read_dir(binders_dir) else {
         return Ok(());
     };
@@ -516,31 +661,30 @@ pub(crate) fn read_folder_kept(
     root: &Path,
     keep: Option<std::sync::Arc<tempfile::TempDir>>,
 ) -> Result<WorkBundle> {
+    crate::media::refuse_link(root, &root.join(MANIFEST_NAME), "the manifest")?;
     let manifest_text = fs::read_to_string(root.join(MANIFEST_NAME))
         .with_context(|| format!("reading {}", root.join(MANIFEST_NAME).display()))?;
     let manifest: ProjectManifest = from_ron(&manifest_text, "project.skrib")?;
     let locator = Locator::new();
 
-    let tags = read_ron_vec(&root.join("tags.ron"), "tags.ron")?;
-    let dict_words = read_ron_vec(&root.join("dictionary.ron"), "dictionary.ron")?;
+    let tags = read_ron_vec(root, "tags.ron")?;
+    let dict_words = read_ron_vec(root, "dictionary.ron")?;
     // Additive: a pre-feature bundle has no `replacements.ron`; `read_ron_vec` treats a
     // missing file as an empty vec, so old projects load with zero rules (no version bump).
-    let text_replacement_rules = read_ron_vec(&root.join("replacements.ron"), "replacements.ron")?;
-    let trash_infos = read_ron_vec(&root.join("trash.ron"), "trash.ron")?;
+    let text_replacement_rules = read_ron_vec(root, "replacements.ron")?;
+    let trash_infos = read_ron_vec(root, "trash.ron")?;
     // Additive: a pre-Pace bundle has no `paces.ron`; `read_ron_vec` treats a missing
     // file as an empty vec, so old projects load with zero paces (no version bump).
-    let paces = read_ron_vec(&root.join("paces.ron"), "paces.ron")?;
-    let progress_snapshots = read_ron_vec(&root.join("snapshots.ron"), "snapshots.ron")?;
+    let paces = read_ron_vec(root, "paces.ron")?;
+    let progress_snapshots = read_ron_vec(root, "snapshots.ron")?;
     // Additive: a bundle written before comments existed has no orphanage, which
     // `read_ron_vec` reads back as an empty vec — no `format_version` bump needed.
     //
     // The bodies are Djot the comment and footnote cards parse, so they are held to
     // the same ceiling as the prose below, and refused the same way.
-    let mut orphan_comments: Vec<CommentFile> =
-        read_ron_vec(&root.join("orphan_comments.ron"), "orphan_comments.ron")?;
+    let mut orphan_comments: Vec<CommentFile> = read_ron_vec(root, "orphan_comments.ron")?;
     admit_comment_bodies(&manifest, &mut orphan_comments, "orphan_comments.ron")?;
-    let mut orphan_footnotes: Vec<FootnoteFile> =
-        read_ron_vec(&root.join("orphan_footnotes.ron"), "orphan_footnotes.ron")?;
+    let mut orphan_footnotes: Vec<FootnoteFile> = read_ron_vec(root, "orphan_footnotes.ron")?;
     crate::djot_depth::admit_footnotes(&mut orphan_footnotes)
         .context("footnotes orphan_footnotes.ron")?;
     // Additive like its neighbours: a pre-v5 bundle has no `templates.ron` and reads back
@@ -549,11 +693,11 @@ pub(crate) fn read_folder_kept(
     // autosave rewrite the file from that empty state within seconds of opening, so a
     // typo in a hand-edited manifest would cost the writer every template permanently.
     // Refusing to open keeps the bytes on disk and is recoverable.
-    let note_templates: Vec<NoteTemplateFile> =
-        read_ron_vec(&root.join("templates.ron"), "templates.ron")?;
+    let note_templates: Vec<NoteTemplateFile> = read_ron_vec(root, "templates.ron")?;
     let mut note_template_bodies = std::collections::BTreeMap::new();
     for t in &note_templates {
         let path = locator.locate(root, &t.path, "note-template body")?;
+        crate::media::refuse_link(root, &path, "the note template")?;
         let text = fs::read_to_string(&path)
             .with_context(|| format!("reading note-template body {}", t.path))?;
         let text = crate::djot_depth::admit(text)
@@ -577,7 +721,20 @@ pub(crate) fn read_folder_kept(
     // failing the open, and the next write prunes its index entry's claim on it.
     let history = {
         let index_path = root.join(HISTORY_INDEX);
-        let entries: Vec<super::history::HistoryEntry> = match fs::read_to_string(&index_path) {
+        // A link is left out, like an unreadable index: the log is a convenience.
+        let linked = crate::media::passes_through_link(root, &index_path);
+        if linked {
+            eprintln!(
+                "skrib: ignoring history index {}: it is a link, not a file of the project",
+                index_path.display()
+            );
+        }
+        let read = if linked {
+            Err(std::io::ErrorKind::NotFound.into())
+        } else {
+            fs::read_to_string(&index_path)
+        };
+        let entries: Vec<super::history::HistoryEntry> = match read {
             Err(_) => Vec::new(),
             Ok(text) => ron::from_str(&text).unwrap_or_else(|e| {
                 eprintln!(
@@ -597,7 +754,15 @@ pub(crate) fn read_folder_kept(
             // Dropping the blob rather than failing the open matches the rest of
             // the history reader, which treats a missing blob as a thinned entry
             // — a convenience file must not lock a writer out of their book.
-            if let Ok(text) = fs::read_to_string(root.join(blob_relpath(&hash)))
+            let blob_path = root.join(blob_relpath(&hash));
+            if crate::media::passes_through_link(root, &blob_path) {
+                eprintln!(
+                    "skrib: ignoring history blob {}: it is a link, not a file of the project",
+                    blob_path.display()
+                );
+                continue;
+            }
+            if let Ok(text) = fs::read_to_string(&blob_path)
                 && let Ok(text) = crate::djot_depth::admit(text)
             {
                 blobs.insert(hash, text);
@@ -614,12 +779,12 @@ pub(crate) fn read_folder_kept(
 
     // Assets. `fs::read`, not `read_to_string` — this is the one part of a
     // bundle that is not UTF-8, and every other reader here would reject it.
-    let assets: Vec<AssetFile> = read_ron_vec(&root.join("assets.ron"), "assets.ron")?;
+    let assets: Vec<AssetFile> = read_ron_vec(root, "assets.ron")?;
     // Absent before v14, and an absent ladder is a legitimate "no statuses" state, so
     // `read_ron_vec` returning empty for a missing file is exactly right here.
-    let statuses: Vec<BinderStatusFile> = read_ron_vec(&root.join("statuses.ron"), "statuses.ron")?;
+    let statuses: Vec<BinderStatusFile> = read_ron_vec(root, "statuses.ron")?;
     // Absent before v17, and an absent list is the "nothing attached" state.
-    let resources: Vec<ResourceFile> = read_ron_vec(&root.join("resources.ron"), "resources.ron")?;
+    let resources: Vec<ResourceFile> = read_ron_vec(root, "resources.ron")?;
     // Each stored file pointed at, never read. A missing one is not an error, unlike a
     // missing asset: the resource's card loads and shows its file as missing, and the
     // writer can locate it or remove it. Its path is rebuilt from `uid` and `file_name`,
@@ -696,6 +861,7 @@ pub(crate) fn read_folder_kept(
     if let Ok(entries) = fs::read_dir(&binders_dir) {
         for entry in entries.flatten() {
             let items_path = entry.path().join("items.ron");
+            crate::media::refuse_link(root, &items_path, "the binder list")?;
             if items_path.is_file() {
                 let text = fs::read_to_string(&items_path)
                     .with_context(|| format!("reading {}", items_path.display()))?;
@@ -717,6 +883,7 @@ pub(crate) fn read_folder_kept(
             let mut footnotes = std::collections::BTreeMap::new();
             for pr in &item.prose_refs {
                 let prose_path = locator.locate(root, &pr.path, "prose")?;
+                crate::media::refuse_link(root, &prose_path, "the prose file")?;
                 let text = fs::read_to_string(&prose_path)
                     .with_context(|| format!("reading prose {}", pr.path))?;
                 // Refuse before the prose can reach an editor or an exporter: the
@@ -738,8 +905,18 @@ pub(crate) fn read_folder_kept(
                     prose_path.parent(),
                     prose_path.file_name().and_then(|n| n.to_str()),
                 ) {
+                    // A comment list reached through a link is left out, a footnote list
+                    // refused: a remark can be missing, words of the book cannot (see
+                    // the module docs).
                     let cpath = locator.locate_child(dir, &comments_file_name(fname));
-                    if let Ok(ctext) = fs::read_to_string(&cpath) {
+                    let linked = crate::media::passes_through_link(root, &cpath);
+                    if linked {
+                        eprintln!(
+                            "skrib: ignoring comments {}: it is a link, not a file of the project",
+                            cpath.display()
+                        );
+                    }
+                    if !linked && let Ok(ctext) = fs::read_to_string(&cpath) {
                         let mut list: Vec<CommentFile> = from_ron(&ctext, "comments.ron")?;
                         admit_comment_bodies(&manifest, &mut list, &comments_file_name(&pr.path))?;
                         if !list.is_empty() {
@@ -747,6 +924,7 @@ pub(crate) fn read_folder_kept(
                         }
                     }
                     let fpath = locator.locate_child(dir, &footnotes_file_name(fname));
+                    crate::media::refuse_link(root, &fpath, "the footnote list")?;
                     if let Ok(ftext) = fs::read_to_string(&fpath) {
                         let mut list: Vec<FootnoteFile> = from_ron(&ftext, "footnotes.ron")?;
                         crate::djot_depth::admit_footnotes(&mut list).with_context(|| {
@@ -781,13 +959,22 @@ pub(crate) fn read_folder_kept(
     let mut carried: BTreeMap<String, CarriedFile> = BTreeMap::new();
     for entry in walkdir::WalkDir::new(root).sort_by_file_name() {
         let entry = entry.with_context(|| format!("walking {}", root.display()))?;
-        if !entry.file_type().is_file() {
+        // The walk does not follow links (`WalkDir`'s default; only the project folder
+        // itself is), so neither a linked file nor anything under a linked folder is
+        // carried: its bytes are not the project's. A link is neither a file nor a
+        // folder to the walk, and is said once here when nothing above reported it.
+        let linked = entry.depth() > 0 && entry.path_is_symlink();
+        if !linked && !entry.file_type().is_file() {
             continue;
         }
         let Some(key) = rel_key(root, entry.path()) else {
             continue;
         };
         if super::carry::is_modelled(&key) || super::carry::is_stray_bundle(&key) {
+            continue;
+        }
+        if linked {
+            eprintln!("skrib: not carrying {key}: it is a link, not a file of the project");
             continue;
         }
         let bytes = fs::read(entry.path())
@@ -839,9 +1026,14 @@ fn admit_comment_bodies(
     crate::djot_depth::admit_comments(threads).with_context(|| format!("comments {file}"))
 }
 
-fn read_ron_vec<T: DeserializeOwned>(path: &Path, what: &str) -> Result<Vec<T>> {
-    match fs::read_to_string(path) {
-        Ok(text) => from_ron(&text, what),
+/// The list in the work-level manifest `name` of the project folder `root`, empty when
+/// the file is not there. One reached through a link is refused like every manifest
+/// (see the module docs): read as missing, its list would be saved back empty.
+fn read_ron_vec<T: DeserializeOwned>(root: &Path, name: &str) -> Result<Vec<T>> {
+    let path = root.join(name);
+    crate::media::refuse_link(root, &path, "the list")?;
+    match fs::read_to_string(&path) {
+        Ok(text) => from_ron(&text, name),
         Err(_) => Ok(Vec::new()), // a missing optional manifest = empty
     }
 }

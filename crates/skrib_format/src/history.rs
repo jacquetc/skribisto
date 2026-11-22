@@ -404,8 +404,19 @@ pub fn load(path: &str) -> HistoryLog {
     }
 }
 
+/// The log of the folder project at `root`. An index or a blob reached through a
+/// symbolic link is left out, as `folder_io::read_folder_kept` leaves it out: its text
+/// is not the project's, and the next save would copy it into the project.
 fn load_folder(root: &std::path::Path) -> HistoryLog {
-    let Ok(text) = std::fs::read_to_string(root.join(HISTORY_INDEX)) else {
+    let index = root.join(HISTORY_INDEX);
+    if crate::media::passes_through_link(root, &index) {
+        eprintln!(
+            "skrib: ignoring history index {}: it is a link, not a file of the project",
+            index.display()
+        );
+        return HistoryLog::default();
+    }
+    let Ok(text) = std::fs::read_to_string(&index) else {
         return HistoryLog::default();
     };
     let entries: Vec<HistoryEntry> = match ron::from_str(&text) {
@@ -417,7 +428,15 @@ fn load_folder(root: &std::path::Path) -> HistoryLog {
         if blobs.contains_key(&hash) {
             continue;
         }
-        if let Ok(t) = std::fs::read_to_string(root.join(blob_relpath(&hash)))
+        let blob = root.join(blob_relpath(&hash));
+        if crate::media::passes_through_link(root, &blob) {
+            eprintln!(
+                "skrib: ignoring history blob {}: it is a link, not a file of the project",
+                blob.display()
+            );
+            continue;
+        }
+        if let Ok(t) = std::fs::read_to_string(&blob)
             && let Ok(t) = crate::djot_depth::admit(t)
         {
             blobs.insert(hash, t);

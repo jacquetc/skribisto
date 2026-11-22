@@ -117,6 +117,11 @@ pub fn resolve_target(
 pub struct ProjectDirs {
     pub media: std::path::PathBuf,
     pub resources: std::path::PathBuf,
+    /// The folder a symbolic link is judged from (see
+    /// `skrib_format::media::passes_through_link`): an exploded folder's own folder, so
+    /// that its `assets/` or `resources/` made a link counts as one, and for a zip the
+    /// app's data root, whose working folders are the app's own.
+    pub base: std::path::PathBuf,
 }
 
 impl ProjectDirs {
@@ -129,6 +134,8 @@ impl ProjectDirs {
         Self {
             media: skrib::media::media_dir(project_path, unique_id, media_root, unique_id),
             resources: skrib::media::resources_dir(project_path, unique_id, media_root, unique_id),
+            base: skrib::media::folder_project_root(project_path)
+                .unwrap_or_else(|| media_root.to_path_buf()),
         }
     }
 }
@@ -144,23 +151,23 @@ impl ProjectDirs {
 /// `skrib_format::media::passes_through_link`).
 pub fn read_resource_blobs(
     resources: &[common::entities::Resource],
-    resources_dir: &std::path::Path,
+    dirs: &ProjectDirs,
 ) -> std::collections::BTreeMap<String, skrib::Blob> {
     let mut out = std::collections::BTreeMap::new();
     for r in resources {
         if r.kind != common::entities::ResourceKind::StoredFile {
             continue;
         }
-        let path = skrib::media::resource_file(resources_dir, r.uid, &r.file_name);
-        if own_file(resources_dir, &path) {
+        let path = skrib::media::resource_file(&dirs.resources, r.uid, &r.file_name);
+        if own_file(&dirs.base, &path) {
             out.insert(r.uid.hyphenated().to_string(), skrib::Blob::file(path));
         }
     }
     out
 }
 
-/// Whether `path`, under the project directory `dir`, is a file of the project's own:
-/// there, and not reached through a symbolic link. A linked one is reported.
+/// Whether `path`, under `dir` (a [`ProjectDirs::base`]), is a file of the project's
+/// own: there, and not reached through a symbolic link. A linked one is reported.
 fn own_file(dir: &std::path::Path, path: &std::path::Path) -> bool {
     if skrib::media::passes_through_link(dir, path) {
         eprintln!(
@@ -217,7 +224,7 @@ pub fn write_resource_blobs(
 /// otherwise; nothing done when the directories are the same.
 pub fn carry_project_files(g: &Gathered, from: &ProjectDirs, to: &ProjectDirs) -> Result<()> {
     if from.media != to.media {
-        for (hash, blob) in read_asset_blobs(&g.assets, &from.media) {
+        for (hash, blob) in read_asset_blobs(&g.assets, from) {
             let Some(a) = g.assets.iter().find(|a| a.content_hash == hash) else {
                 continue;
             };
@@ -230,9 +237,7 @@ pub fn carry_project_files(g: &Gathered, from: &ProjectDirs, to: &ProjectDirs) -
     if from.resources != to.resources {
         for r in &g.resources {
             let src = skrib::media::resource_file(&from.resources, r.uid, &r.file_name);
-            if r.kind != common::entities::ResourceKind::StoredFile
-                || !own_file(&from.resources, &src)
-            {
+            if r.kind != common::entities::ResourceKind::StoredFile || !own_file(&from.base, &src) {
                 continue;
             }
             let dest = skrib::media::resource_file(&to.resources, r.uid, &r.file_name);
@@ -258,13 +263,13 @@ pub fn carry_project_files(g: &Gathered, from: &ProjectDirs, to: &ProjectDirs) -
 /// said: a picture is the project's own bytes, never a door to a file elsewhere.
 pub fn read_asset_blobs(
     assets: &[common::entities::Asset],
-    media_dir: &std::path::Path,
+    dirs: &ProjectDirs,
 ) -> std::collections::BTreeMap<String, skrib::Blob> {
     let mut out = std::collections::BTreeMap::new();
     for a in assets {
         let ext = skrib::media::extension_for(&a.mime_type);
-        let path = media_dir.join(format!("{}.{ext}", a.content_hash));
-        if own_file(media_dir, &path) {
+        let path = dirs.media.join(format!("{}.{ext}", a.content_hash));
+        if own_file(&dirs.base, &path) {
             out.insert(a.content_hash.clone(), skrib::Blob::file(path));
         }
     }
@@ -417,9 +422,9 @@ pub fn serialize_and_write(
         &g.note_templates,
         &g.statuses,
         &g.assets,
-        read_asset_blobs(&g.assets, &dirs.media),
+        read_asset_blobs(&g.assets, dirs),
         &g.resources,
-        read_resource_blobs(&g.resources, &dirs.resources),
+        read_resource_blobs(&g.resources, dirs),
         g.smart_punctuation.as_ref(),
         &g.trash_infos,
         &g.paces,
@@ -536,6 +541,11 @@ mod tests {
         let secret = dir.path().join("id_rsa");
         std::fs::write(&secret, b"PRIVATE KEY").expect("write");
         let resources_dir = dir.path().join("resources");
+        let dirs = ProjectDirs {
+            media: dir.path().join("assets"),
+            resources: resources_dir.clone(),
+            base: dir.path().to_path_buf(),
+        };
         let own = stored(1, "Village map.pdf");
         let linked = stored(2, "Tide tables.pdf");
         for r in [&own, &linked] {
@@ -553,7 +563,7 @@ mod tests {
         )
         .expect("link");
 
-        let blobs = read_resource_blobs(&[own.clone(), linked.clone()], &resources_dir);
+        let blobs = read_resource_blobs(&[own.clone(), linked.clone()], &dirs);
         assert_eq!(
             blobs.keys().cloned().collect::<Vec<_>>(),
             vec![own.uid.hyphenated().to_string()]
@@ -567,7 +577,7 @@ mod tests {
             ..Default::default()
         };
         std::os::unix::fs::symlink(&secret, media_dir.join("hash-of-map.png")).expect("link");
-        assert!(read_asset_blobs(&[picture], &media_dir).is_empty());
+        assert!(read_asset_blobs(&[picture], &dirs).is_empty());
     }
 
     /// A Save As that moves the project's files copies only its own, never a linked one.
@@ -580,10 +590,12 @@ mod tests {
         let from = ProjectDirs {
             media: dir.path().join("from-media"),
             resources: dir.path().join("from"),
+            base: dir.path().to_path_buf(),
         };
         let to = ProjectDirs {
             media: dir.path().join("to-media"),
             resources: dir.path().join("to"),
+            base: dir.path().to_path_buf(),
         };
         let linked = stored(2, "Tide tables.pdf");
         let src = skrib::media::resource_file(&from.resources, linked.uid, &linked.file_name);
@@ -611,5 +623,35 @@ mod tests {
         assert!(
             !skrib::media::resource_file(&to.resources, linked.uid, &linked.file_name).exists()
         );
+    }
+
+    /// A folder project whose whole `resources/` or `assets/` folder is a link: the
+    /// link is judged from the project folder, not from the folder it replaces, so a
+    /// save or a backup reads none of what it points at.
+    #[cfg(unix)]
+    #[test]
+    fn a_folder_projects_linked_resources_or_assets_folder_is_not_read() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let elsewhere = dir.path().join("elsewhere");
+        let r = stored(3, "Thesis.odt");
+        let uid_folder = elsewhere.join(r.uid.hyphenated().to_string());
+        std::fs::create_dir_all(&uid_folder).expect("folder");
+        std::fs::write(uid_folder.join("Thesis.odt"), b"outside").expect("write");
+        std::fs::write(elsewhere.join("hash-of-map.png"), b"outside").expect("write");
+        let project = dir.path().join("Novel");
+        std::fs::create_dir_all(&project).expect("folder");
+        std::fs::write(project.join("project.skrib"), b"").expect("manifest");
+        std::os::unix::fs::symlink(&elsewhere, project.join("resources")).expect("link");
+        std::os::unix::fs::symlink(&elsewhere, project.join("assets")).expect("link");
+
+        let dirs = ProjectDirs::of(&project, "uid", &dir.path().join("data"));
+        assert_eq!(dirs.base, project);
+        assert!(read_resource_blobs(std::slice::from_ref(&r), &dirs).is_empty());
+        let picture = Asset {
+            content_hash: "hash-of-map".into(),
+            mime_type: "image/png".into(),
+            ..Default::default()
+        };
+        assert!(read_asset_blobs(&[picture], &dirs).is_empty());
     }
 }

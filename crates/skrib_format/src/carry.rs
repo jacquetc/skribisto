@@ -133,6 +133,9 @@ fn load_folder(root: &std::path::Path) -> BTreeMap<String, CarriedFile> {
     let mut out = BTreeMap::new();
     for entry in walkdir::WalkDir::new(root).sort_by_file_name() {
         let Ok(entry) = entry else { continue };
+        // A link is not a file to a walk that does not follow links (`WalkDir`'s
+        // default), and a linked folder is not descended: nothing reached through one
+        // is carried, as `folder_io::read_folder_kept` carries none.
         if !entry.file_type().is_file() {
             continue;
         }

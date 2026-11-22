@@ -58,7 +58,9 @@ pub fn read_bundle(path: &str) -> Result<WorkBundle, SkribFormatError> {
 pub fn peek_manifest(path: &str) -> Result<ProjectManifest> {
     match detect_shape(path)? {
         SkribShape::ExplodedFolder => {
-            let manifest_path = folder_root(path).join(MANIFEST_NAME);
+            let root = folder_root(path);
+            let manifest_path = root.join(MANIFEST_NAME);
+            crate::media::refuse_link(&root, &manifest_path, "the manifest")?;
             let text = std::fs::read_to_string(&manifest_path)
                 .with_context(|| format!("reading {}", manifest_path.display()))?;
             ron::from_str(&text).with_context(|| format!("parsing {}", manifest_path.display()))

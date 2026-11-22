@@ -217,6 +217,29 @@ pub fn passes_through_link(dir: &Path, path: &Path) -> bool {
     false
 }
 
+/// Fail when `path`, under the project folder `dir`, is reached through a symbolic link
+/// (see [`passes_through_link`]), naming it as `what` (`prose`, `tags.ron`).
+///
+/// For the files a project cannot open without: a manifest, a prose file, a footnote
+/// list. Leaving one of those out would show the writer a book with words missing, and
+/// the next save would write that loss into the project, so the read stops instead and
+/// says which file to put back as a file of its own (see `folder_io`'s module docs for
+/// what each kind gets). The check answers for the tree as it is now, like every
+/// containment check here (see [`crate::safe_path`]): a link made between it and the
+/// read is not caught, which is not the case it is for (a project folder that arrived
+/// with links in it).
+pub(crate) fn refuse_link(dir: &Path, path: &Path, what: &str) -> anyhow::Result<()> {
+    if passes_through_link(dir, path) {
+        let shown = path.strip_prefix(dir).unwrap_or(path);
+        anyhow::bail!(
+            "{what} {} is a symbolic link, or inside a linked folder: a project is read only \
+             from its own folder, so put the file itself there in place of the link",
+            shown.display()
+        );
+    }
+    Ok(())
+}
+
 /// Remove from `resources_dir` what no resource of the project names any more: the
 /// folder of a removed resource, and an old file left in a live resource's folder.
 ///
@@ -229,6 +252,16 @@ pub fn passes_through_link(dir: &Path, path: &Path) -> bool {
 /// names. Best effort, like every prune: what cannot be removed now is tried again
 /// on the next open.
 pub fn prune_resources_dir(resources_dir: &Path, keep: &[(uuid::Uuid, String)]) {
+    // The whole folder a link (a folder project's `resources/` pointing elsewhere):
+    // listed, it would be the folder it points at, and every folder there not named by
+    // a resource would go. The reader left every file under it out already.
+    if std::fs::symlink_metadata(resources_dir).is_ok_and(|m| m.file_type().is_symlink()) {
+        eprintln!(
+            "skrib: {} is a link, not the project's resources folder; nothing in it is touched",
+            resources_dir.display()
+        );
+        return;
+    }
     let Ok(entries) = std::fs::read_dir(resources_dir) else {
         return;
     };

@@ -68,6 +68,10 @@ pub mod import_notice;
 /// either the finished project or nothing, and the slot a caller's title pattern
 /// holds. `pub` because each converter crate writes its `.skrib` through it.
 pub mod importing;
+/// Symbolic links in a folder project: what the reader refuses or leaves out, and
+/// that a save never writes through one.
+#[cfg(test)]
+mod link_tests;
 mod loaded;
 /// Finding a bundle path on disk whatever Unicode normalisation a sync client or
 /// another filesystem gave its name. Every reader and writer of bundle-supplied

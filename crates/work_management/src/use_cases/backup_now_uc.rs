@@ -289,8 +289,8 @@ fn run_backup(
         &unique_id,
         std::path::Path::new(&dto.media_root),
     );
-    let asset_blobs = work_io::read_asset_blobs(&g.assets, &dirs.media);
-    let resource_blobs = work_io::read_resource_blobs(&g.resources, &dirs.resources);
+    let asset_blobs = work_io::read_asset_blobs(&g.assets, &dirs);
+    let resource_blobs = work_io::read_resource_blobs(&g.resources, &dirs);
 
     let mut bundle = skrib::from_entities(
         &g.work,
