@@ -1,0 +1,118 @@
+## Files and links for your research
+
+A resource is a file or a web page you keep with your project: a map of the village, a
+photograph, the recording of an interview, an article you found. You attach it to the items it
+belongs with, a scene, a chapter or a note. It is not part of your book, so it is never
+exported.
+
+The *Resources* panel, on the right of the window, shows the resources of the item you are on.
+Open it with its icon, a paper clip, or with Ctrl+Shift+X.
+
+## Adding a resource
+
+- *Add files* chooses one or more files on your computer.
+- *Add a web link* asks for an address and, if you like, a title.
+- You can also drop files, or a web address from your browser, on the panel. Ctrl+V on the
+  list adds the web addresses you copied.
+
+A file is stored in the project: it travels with every copy and every backup of it. A file
+larger than 10 MB asks first. *Store it in the project*, or *Link to it instead*: a linked file
+stays where it is, and the project only remembers where to find it. *Don't ask again* keeps your
+answer. You can change it later in *Settings ▸ Editor ▸ Editor Behavior*, under *Files over
+10 MB*.
+
+When the stored files of a project kept as a single file pass 100 MB, Skribisto offers once to
+save it as a folder instead. A folder project saves only what changed.
+
+## Opening a resource
+
+Double-click a resource, or press Enter on it, to open it. Its other actions are in its menu:
+the button at the end of its line, or a right click on its tile in a grid.
+
+- A picture opens in the image viewer.
+- A web link opens in your browser.
+- Any other file opens in the application your system uses for that kind of file.
+
+A file that could start a program, such as a script or an installer, asks first. A project can
+come from someone else. *Show in folder* lets you look at it before you decide.
+
+If you change a stored file in another application, a map you annotate or a recording you trim,
+Skribisto takes the new version into the project when you come back to its window, before
+each save, and when you close the project. A message says so. In a project kept as a single file, its *Undo* puts the previous
+version back.
+
+## Putting a resource in your text
+
+Drag a resource from the panel into a text, where you want it.
+
+- A web link becomes a link to its address.
+- Any other file becomes a link to the resource. Ctrl+click on it opens the resource. An export
+  keeps only its words.
+- A picture asks: *Insert the picture* puts the picture itself in the text, and *Insert a link
+  to the resource* puts a link.
+
+The menu's *Insert into the text* does the same at the cursor. A resource you drop on a text is
+also attached to that text's item.
+
+A file from your computer dropped on a text is added too. A picture goes into the text as a
+picture. Any other file becomes a resource of the item, linked where you dropped it. The message
+that says so offers *Undo*, which takes back both.
+
+## Attaching to more items
+
+A resource can be on several items at once.
+
+- Drag it onto an item in the binder.
+- Or choose *Attach to items…* in its menu, then choose the items in the binder tree.
+  Ctrl+click or Shift+click chooses several.
+
+*Detach from this item* takes it off the item you are on; it stays in the project. *Remove from
+the project…* takes it out of every item. A message offers *Undo* in both cases.
+
+*Rename and describe…* gives a resource a title and a description of its own.
+
+## A folder's resources
+
+Every folder has a *Resources* view. It shows the resources of the folder and of everything
+inside it, each once, with the items it is on.
+
+- *List* shows them one under the other.
+- *Grid* shows a tile for each, with a thumbnail for a picture.
+
+The *Gallery* of a notes folder shows picture resources too, marked *Resource*, after the
+pictures of the notes' text.
+
+## Resources attached to nothing
+
+A resource is attached to nothing once it is detached from its last item, or once that item is
+deleted for good. It stays in the project.
+
+*Settings ▸ Work ▸ Resources* lists them. Choose one or several, then:
+
+- *Attach to items…* to put them back on items;
+- *Remove from the project…* to delete them;
+- *Export copies…* to copy their files to a folder. Their web links are listed in a file named
+  links.txt.
+
+The page also says how much room the stored files take.
+
+## When a linked file has moved
+
+A linked file that is not where the project expects it is marked *Not found*. Choose *Locate…*
+and show Skribisto where it is now. Any other missing file from the same folder, found in the
+new one under its name, is linked again with it.
+
+A linked file is remembered by its place next to the project. Keep the project and its research
+side by side, copy both to another computer, and the links still work there.
+
+## Finding a resource
+
+Global search finds resources by their titles, descriptions, file names and web addresses when
+its *Resources* switch is on. A replace never changes them.
+
+## From Scrivener
+
+Importing a Scrivener project brings its research files into the new project as resources: the
+pictures, PDF files, sounds and web pages of your research folder, attached to the folder they
+sat in. Scrivener bookmarks to web pages and to files on your computer become links among the
+resources of the document that held them. See [Coming from Scrivener](:help-import-scrivener).

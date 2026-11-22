@@ -3655,6 +3655,7 @@ help-topic-writing-model = Kiel libro estas organizita
 help-topic-drafts-and-old-versions = Konservi pli fruan malneton
 help-topic-goals-and-pace = Celoj kaj ritmo
 help-topic-pictures = Bildoj kaj la galerio
+help-topic-resources = Dosieroj kaj ligiloj por via esplorado
 help-topic-comments = Komentoj
 help-topic-round-trip = Sendi vian libron al leganto
 help-topic-export = Eksportado

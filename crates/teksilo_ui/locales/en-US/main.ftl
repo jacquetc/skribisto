@@ -4335,6 +4335,7 @@ help-topic-writing-model = How a book is put together
 help-topic-drafts-and-old-versions = Keeping an older draft
 help-topic-goals-and-pace = Targets and pace
 help-topic-pictures = Pictures and the gallery
+help-topic-resources = Files and links for your research
 help-topic-comments = Comments
 help-topic-round-trip = Sending your book to a reader
 help-topic-export = Exporting

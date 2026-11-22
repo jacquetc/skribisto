@@ -70,7 +70,7 @@ botón derecho en una miniatura y elija *Abrir la nota* para abrir la nota en la
 
 ## La investigación de Scrivener
 
-Las imágenes de la investigación de un proyecto Scrivener llegan como notas, una imagen cada
-una, en la carpeta que la importación crea para ellas (consulte
-[Llegar desde Scrivener](:help-import-scrivener)). Abra esa carpeta y elija *Galería* para
-verlas todas.
+Las imágenes de la investigación de un proyecto Scrivener llegan como recursos de la carpeta en
+la que estaban (consulte [Llegar desde Scrivener](:help-import-scrivener) y [Archivos y enlaces
+de su investigación](:help-resources)). Abra esa carpeta y elija *Galería* para verlas con las
+demás imágenes, marcadas *Recurso*.

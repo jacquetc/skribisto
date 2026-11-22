@@ -1,0 +1,125 @@
+## Pliki i odnośniki do Twoich badań
+
+Zasób to plik lub strona internetowa, które przechowujesz razem z projektem: plan wioski,
+fotografia, nagranie wywiadu, znaleziony artykuł. Dołączasz go do elementów, do których
+należy, czyli sceny, rozdziału albo notatki. Nie jest częścią Twojej książki, więc nigdy nie
+trafia do eksportu.
+
+Panel *Zasoby*, po prawej stronie okna, pokazuje zasoby elementu, w którym jesteś. Otwórz go
+jego ikoną, spinaczem, albo skrótem `Ctrl+Shift+X`.
+
+## Dodawanie zasobu
+
+- *Dodaj pliki* wybiera jeden lub kilka plików na Twoim komputerze.
+- *Dodaj odnośnik internetowy* pyta o adres i, jeśli chcesz, o tytuł.
+- Możesz też upuścić na panel pliki albo adres internetowy z przeglądarki. `Ctrl+V` na liście
+  dodaje skopiowane adresy internetowe.
+
+Plik jest przechowywany w projekcie: trafia do każdej kopii i każdej kopii zapasowej projektu.
+Przy pliku powyżej 10 MB Skribisto najpierw pyta. *Przechowaj go w projekcie* albo *Zamiast
+tego połącz*: połączony plik zostaje tam, gdzie jest, a projekt pamięta tylko, gdzie go
+znaleźć. *Nie pytaj ponownie* zapamiętuje Twoją odpowiedź. Możesz ją później zmienić
+w *Ustawienia ▸ Edytor ▸ Zachowanie edytora*, w pozycji *Pliki powyżej 10 MB*.
+
+Gdy przechowywane pliki projektu zapisanego jako jeden plik przekroczą 100 MB, Skribisto raz
+proponuje zapisanie go jako folderu. Projekt w folderze zapisuje tylko to, co się zmieniło.
+
+## Otwieranie zasobu
+
+Kliknij zasób dwukrotnie lub naciśnij na nim Enter, aby go otworzyć. Pozostałe działania są
+w jego menu: pod przyciskiem na końcu jego wiersza albo pod prawym przyciskiem myszy na jego
+kafelku w siatce.
+
+- Obraz otwiera się w przeglądarce obrazów.
+- Odnośnik internetowy otwiera się w Twojej przeglądarce internetowej.
+- Każdy inny plik otwiera się w aplikacji, której system używa do tego rodzaju plików.
+
+Przed otwarciem pliku, który mógłby uruchomić program, na przykład skryptu lub instalatora,
+Skribisto najpierw pyta.
+Projekt może pochodzić od kogoś innego. *Pokaż w folderze* pozwala obejrzeć plik przed
+decyzją.
+
+Jeśli zmienisz przechowywany plik w innej aplikacji, na przykład opiszesz plan lub skrócisz
+nagranie, Skribisto wczyta nową wersję do projektu. Robi to, gdy wracasz do jego okna, przed
+każdym zapisem i przy zamykaniu projektu. Informuje o tym komunikat. W projekcie zapisanym jako jeden plik jego przycisk
+*Cofnij* przywraca poprzednią wersję.
+
+## Wstawianie zasobu do tekstu
+
+Przeciągnij zasób z panelu do tekstu, w miejsce, w którym ma się znaleźć.
+
+- Odnośnik internetowy staje się odnośnikiem do swojego adresu.
+- Każdy inny plik staje się odnośnikiem do zasobu. Ctrl+kliknięcie odnośnika otwiera zasób.
+  Eksport zachowuje tylko jego słowa.
+- Obraz pyta: *Wstaw obraz* wstawia do tekstu sam obraz, a *Wstaw odnośnik do zasobu* wstawia
+  odnośnik.
+
+*Wstaw do tekstu* w jego menu robi to samo w miejscu kursora. Zasób upuszczony na tekst
+zostaje też dołączony do elementu tego tekstu.
+
+Plik z Twojego komputera upuszczony na tekst również zostaje dodany. Obraz trafia do tekstu
+jako obraz. Każdy inny plik staje się zasobem elementu, z odnośnikiem w miejscu upuszczenia.
+Komunikat, który o tym mówi, oferuje *Cofnij*, co wycofuje jedno i drugie.
+
+## Dołączanie do kolejnych elementów
+
+Zasób może być dołączony do kilku elementów naraz.
+
+- Przeciągnij go na element w segregatorze.
+- Albo wybierz w jego menu *Dołącz do elementów…*, a potem elementy w drzewie segregatora.
+  Ctrl+kliknięcie lub Shift+kliknięcie wybiera kilka.
+
+*Odłącz od tego elementu* zdejmuje go z elementu, w którym jesteś; zostaje w projekcie. *Usuń
+z projektu…* zdejmuje go ze wszystkich elementów. W obu przypadkach komunikat oferuje
+*Cofnij*.
+
+*Zmień nazwę i opisz…* nadaje zasobowi własny tytuł i własny opis.
+
+## Zasoby folderu
+
+Każdy folder ma widok *Zasoby*. Pokazuje on zasoby folderu i wszystkiego, co się w nim
+znajduje, każdy tylko raz, razem z elementami, do których jest dołączony.
+
+- *Lista* pokazuje je jeden pod drugim.
+- *Siatka* pokazuje dla każdego kafelek, a dla obrazu jego miniaturę.
+
+*Galeria* folderu notatek pokazuje też obrazy będące zasobami, oznaczone jako *Zasób*, po
+obrazach z tekstu notatek.
+
+## Zasoby niedołączone do niczego
+
+Zasób przestaje być dołączony do czegokolwiek, gdy odłączysz go od ostatniego elementu. Tak
+samo dzieje się, gdy ten element zostanie usunięty na dobre. Zasób zostaje w projekcie.
+
+*Ustawienia ▸ Projekt ▸ Zasoby* je wyświetla. Wybierz jeden lub kilka, a potem:
+
+- *Dołącz do elementów…*, aby znów dołączyć je do elementów;
+- *Usuń z projektu…*, aby je usunąć;
+- *Eksportuj kopie…*, aby skopiować ich pliki do folderu. Ich odnośniki internetowe trafiają
+  do pliku o nazwie links.txt.
+
+Strona pokazuje też, ile miejsca zajmują przechowywane pliki.
+
+## Gdy połączony plik został przeniesiony
+
+Połączony plik, którego nie ma tam, gdzie spodziewa się go projekt, jest oznaczony jako *Nie
+znaleziono*. Wybierz *Odszukaj…* i pokaż Skribisto, gdzie teraz jest. Każdy inny brakujący
+plik z tego samego folderu, który leży w nowym folderze pod swoją nazwą, zostaje połączony
+razem z nim.
+
+Projekt pamięta połączony plik po jego położeniu względem projektu. Trzymaj projekt i swoje
+materiały obok siebie, skopiuj jedno i drugie na inny komputer, a połączenia nadal tam
+działają.
+
+## Szukanie zasobu
+
+Wyszukiwanie globalne znajduje zasoby po ich tytułach, opisach, nazwach plików i adresach
+internetowych, gdy jego przełącznik *Zasoby* jest włączony. Zamiana nigdy ich nie zmienia.
+
+## Z programu Scrivener
+
+Import projektu Scrivener przenosi jego pliki z materiałów do nowego projektu jako zasoby:
+obrazy, pliki PDF, nagrania dźwiękowe i strony internetowe z folderu materiałów, dołączone do
+folderu, w którym się znajdowały. Zakładki z programu Scrivener do stron internetowych i do
+plików na Twoim komputerze stają się odnośnikami wśród zasobów dokumentu, który je zawierał.
+Zobacz [Przejście z programu Scrivener](:help-import-scrivener).

@@ -3883,6 +3883,7 @@ help-topic-writing-model = Πώς συντίθεται ένα βιβλίο
 help-topic-drafts-and-old-versions = Διατήρηση ενός παλαιότερου προσχεδίου
 help-topic-goals-and-pace = Στόχοι και ρυθμός
 help-topic-pictures = Οι εικόνες και η συλλογή
+help-topic-resources = Αρχεία και σύνδεσμοι για την έρευνά σας
 help-topic-comments = Σχόλια
 help-topic-round-trip = Αποστολή του βιβλίου σας σε αναγνώστη
 help-topic-export = Εξαγωγή

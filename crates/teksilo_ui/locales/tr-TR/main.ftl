@@ -3763,6 +3763,7 @@ help-topic-writing-model = Bir kitap nasıl bir araya gelir
 help-topic-drafts-and-old-versions = Eski bir taslağı saklamak
 help-topic-goals-and-pace = Hedefler ve tempo
 help-topic-pictures = Resimler ve galeri
+help-topic-resources = Araştırmanız için dosyalar ve bağlantılar
 help-topic-comments = Yorumlar
 help-topic-round-trip = Kitabınızı bir okura göndermek
 help-topic-export = Dışa aktarma

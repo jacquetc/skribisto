@@ -1,0 +1,130 @@
+## Dateien und Links für Ihre Recherche
+
+Eine Ressource ist eine Datei oder eine Webseite, die Sie bei Ihrem Projekt aufbewahren: ein
+Plan des Dorfes, ein Foto, die Aufnahme eines Interviews, ein Artikel, den Sie gefunden haben.
+Sie hängen sie an die Einträge an, zu denen sie gehört, eine Szene, ein Kapitel oder eine
+Notiz. Sie ist nicht Teil Ihres Buchs und wird daher nie exportiert.
+
+Der Bereich *Ressourcen* rechts im Fenster zeigt die Ressourcen des Eintrags, in dem Sie sich
+befinden. Öffnen Sie ihn über sein Symbol, eine Büroklammer, oder mit `Strg+Umschalt+X`.
+
+## Eine Ressource hinzufügen
+
+- *Dateien hinzufügen* wählt eine oder mehrere Dateien auf Ihrem Computer.
+- *Weblink hinzufügen* fragt nach einer Adresse und, wenn Sie möchten, nach einem Titel.
+- Sie können auch Dateien oder eine Webadresse aus Ihrem Browser auf dem Bereich ablegen.
+  `Strg+V` in der Liste fügt die Webadressen hinzu, die Sie kopiert haben.
+
+Eine Datei wird im Projekt abgelegt: Sie reist mit jeder Kopie und jeder Sicherung des
+Projekts. Bei einer Datei über 10 MB fragt Skribisto zuerst. *Im Projekt ablegen* oder
+*Stattdessen verknüpfen*: Eine verknüpfte Datei bleibt, wo sie ist, und das Projekt merkt sich
+nur, wo sie zu finden ist. *Nicht mehr fragen* behält Ihre Antwort. Sie können sie später unter
+*Einstellungen ▸ Editor ▸ Editorverhalten* ändern, bei *Dateien über 10 MB*.
+
+Überschreiten die abgelegten Dateien eines Projekts, das als einzelne Datei gespeichert ist,
+100 MB, bietet Skribisto einmal an, es stattdessen als Ordner zu speichern. Ein Projekt als
+Ordner speichert nur, was sich geändert hat.
+
+## Eine Ressource öffnen
+
+Doppelklicken Sie auf eine Ressource, oder wählen Sie sie aus und drücken Sie die
+Eingabetaste, um sie zu öffnen. Ihre weiteren Aktionen stehen in ihrem Menü: die Schaltfläche am Ende ihrer Zeile oder
+ein Rechtsklick auf ihre Kachel in einem Raster.
+
+- Ein Bild öffnet sich im Bildbetrachter.
+- Ein Weblink öffnet sich in Ihrem Browser.
+- Jede andere Datei öffnet sich in dem Programm, das Ihr System für diese Art von Datei
+  verwendet.
+
+Bei einer Datei, die ein Programm starten könnte, etwa einem Skript oder einem
+Installationsprogramm, fragt Skribisto zuerst nach. Ein Projekt kann von jemand anderem stammen. Mit *Im Ordner anzeigen* sehen
+Sie sie sich an, bevor Sie entscheiden.
+
+Ändern Sie eine abgelegte Datei in einem anderen Programm, etwa einen Plan mit Ihren Notizen
+oder eine gekürzte Aufnahme, übernimmt Skribisto die neue Fassung ins Projekt. Das geschieht,
+sobald Sie zu seinem Fenster zurückkehren, vor jedem Speichern und beim Schließen des
+Projekts. Eine Meldung sagt es Ihnen.
+In einem Projekt als einzelne Datei holt die Schaltfläche *Rückgängig* der Meldung die vorherige
+Fassung zurück.
+
+## Eine Ressource in Ihren Text setzen
+
+Ziehen Sie eine Ressource aus dem Bereich in einen Text, an die gewünschte Stelle.
+
+- Ein Weblink wird zu einem Link auf seine Adresse.
+- Jede andere Datei wird zu einem Link auf die Ressource. Strg+Klick darauf öffnet die
+  Ressource. Ein Export behält nur seine Wörter.
+- Ein Bild fragt nach: *Das Bild einfügen* setzt das Bild selbst in den Text, und *Einen Link
+  zur Ressource einfügen* setzt einen Link.
+
+*In den Text einfügen* im Menü tut dasselbe an der Schreibmarke. Eine Ressource, die Sie auf
+einem Text ablegen, wird außerdem an den Eintrag dieses Textes angehängt.
+
+Auch eine Datei von Ihrem Computer, die Sie auf einem Text ablegen, wird hinzugefügt. Ein Bild
+kommt als Bild in den Text. Jede andere Datei wird eine Ressource des Eintrags, verlinkt an der
+Stelle, an der Sie sie abgelegt haben. Die Meldung dazu bietet *Rückgängig* an, das beides
+zurücknimmt.
+
+## An weitere Einträge anhängen
+
+Eine Ressource kann an mehreren Einträgen zugleich hängen.
+
+- Ziehen Sie sie auf einen Eintrag in der Projektmappe.
+- Oder wählen Sie in ihrem Menü *An Einträge anhängen…* und dann die Einträge im Baum der
+  Projektmappe. Mit Strg+Klick oder Umschalt+Klick wählen Sie mehrere.
+
+*Von diesem Eintrag lösen* nimmt sie von dem Eintrag, in dem Sie sich befinden; sie bleibt im
+Projekt. *Aus dem Projekt entfernen…* nimmt sie von allen Einträgen. In beiden Fällen bietet
+eine Meldung *Rückgängig* an.
+
+*Umbenennen und beschreiben…* gibt einer Ressource einen eigenen Titel und eine eigene
+Beschreibung.
+
+## Die Ressourcen eines Ordners
+
+Jeder Ordner hat eine Ansicht *Ressourcen*. Sie zeigt die Ressourcen des Ordners und von allem
+darin, jede nur einmal, mit den Einträgen, an denen sie hängt.
+
+- *Liste* zeigt sie untereinander.
+- *Raster* zeigt für jede eine Kachel, bei einem Bild mit einem Vorschaubild.
+
+Die *Galerie* eines Notizordners zeigt auch Bildressourcen, markiert mit *Ressource*, nach den
+Bildern aus dem Text der Notizen.
+
+## Ressourcen, die an nichts hängen
+
+Eine Ressource hängt an nichts mehr, sobald sie von ihrem letzten Eintrag gelöst ist. Ebenso,
+wenn dieser Eintrag endgültig gelöscht wird. Sie bleibt im Projekt.
+
+*Einstellungen ▸ Projekt ▸ Ressourcen* listet sie auf. Wählen Sie eine oder mehrere, dann:
+
+- *An Einträge anhängen…*, um sie wieder an Einträge zu hängen;
+- *Aus dem Projekt entfernen…*, um sie zu löschen;
+- *Kopien exportieren…*, um ihre Dateien in einen Ordner zu kopieren. Ihre Weblinks stehen in
+  einer Datei namens links.txt.
+
+Die Seite zeigt auch, wie viel Platz die abgelegten Dateien einnehmen.
+
+## Wenn eine verknüpfte Datei verschoben wurde
+
+Eine verknüpfte Datei, die nicht dort liegt, wo das Projekt sie erwartet, ist mit *Nicht
+gefunden* markiert. Wählen Sie *Wiederfinden…* und zeigen Sie Skribisto, wo sie jetzt liegt.
+Jede andere fehlende Datei aus demselben Ordner, die im neuen Ordner unter ihrem Namen liegt,
+wird gleich mit verknüpft.
+
+Eine verknüpfte Datei wird über ihre Lage neben dem Projekt gefunden. Halten Sie das Projekt
+und seine Recherche nebeneinander, kopieren Sie beide auf einen anderen Computer, und die Links
+funktionieren dort weiter.
+
+## Eine Ressource finden
+
+Die globale Suche findet Ressourcen über ihre Titel, Beschreibungen, Dateinamen und
+Webadressen, wenn ihr Schalter *Ressourcen* eingeschaltet ist. Ersetzen ändert sie nie.
+
+## Aus Scrivener
+
+Beim Import eines Scrivener-Projekts kommen seine Recherchedateien als Ressourcen ins neue
+Projekt: die Bilder, PDF-Dateien, Tondateien und Webseiten Ihres Rechercheordners, angehängt an
+den Ordner, in dem sie lagen. Scrivener-Lesezeichen zu Webseiten und zu Dateien auf Ihrem
+Computer werden zu Links unter den Ressourcen des Dokuments, das sie enthielt. Siehe [Von
+Scrivener wechseln](:help-import-scrivener).

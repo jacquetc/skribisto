@@ -2924,6 +2924,7 @@ help-topic-writing-model = 本の構成方法
 help-topic-drafts-and-old-versions = 以前の下書きを残す
 help-topic-goals-and-pace = 目標と執筆ペース
 help-topic-pictures = 画像とギャラリー
+help-topic-resources = 資料のファイルとリンク
 help-topic-comments = コメント
 help-topic-round-trip = 読者に本を送る
 help-topic-export = エクスポート

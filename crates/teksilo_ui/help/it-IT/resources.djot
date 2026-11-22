@@ -1,0 +1,85 @@
+## File e link per le tue ricerche
+
+Una risorsa è un file o una pagina web che tieni con il tuo progetto: la mappa del paese, una fotografia, la registrazione di un'intervista, un articolo trovato per strada. La alleghi agli elementi a cui appartiene, una scena, un capitolo o una nota. Non fa parte del tuo libro, quindi non viene mai esportata.
+
+Il pannello *Risorse*, a destra della finestra, mostra le risorse dell'elemento in cui ti trovi. Aprilo con la sua icona, una graffetta, o con `Ctrl+Maiusc+X`.
+
+## Aggiungere una risorsa
+
+- *Aggiungi file* sceglie uno o più file sul tuo computer.
+- *Aggiungi un collegamento web* chiede un indirizzo e, se vuoi, un titolo.
+- Puoi anche trascinare sul pannello dei file, o un indirizzo web preso dal tuo browser. `Ctrl+V` sull'elenco aggiunge gli indirizzi web che hai copiato.
+
+Un file viene conservato nel progetto: viaggia con ogni copia e ogni backup del progetto. Per un file oltre 10 MB, Skribisto chiede prima. *Conservalo nel progetto*, oppure *Collegalo invece*: un file collegato resta dov'è, e il progetto ricorda soltanto dove trovarlo. *Non chiedere più* tiene la tua risposta. Puoi cambiarla in seguito in *Impostazioni ▸ Editor ▸ Comportamento dell'editor*, alla voce *File oltre 10 MB*.
+
+Quando i file conservati di un progetto salvato come file unico superano i 100 MB, Skribisto propone una volta di salvarlo invece come cartella. Un progetto salvato come cartella registra solo ciò che è cambiato.
+
+## Aprire una risorsa
+
+Fai doppio clic su una risorsa, o premi `Invio` su di essa, per aprirla. Le sue altre azioni sono nel suo menu: il pulsante in fondo alla sua riga, o un clic con il pulsante destro sulla sua miniatura in una griglia.
+
+- Un'immagine si apre nel visualizzatore di immagini.
+- Un collegamento web si apre nel tuo browser.
+- Ogni altro file si apre nell'applicazione che il tuo sistema usa per quel tipo di file.
+
+Per un file che potrebbe avviare un programma, come uno script o un programma di installazione, Skribisto chiede prima. Un progetto può venire da qualcun altro. *Mostra nella cartella* ti permette di guardarlo prima di decidere.
+
+Se modifichi un file conservato in un'altra applicazione, una mappa che annoti o una registrazione che accorci, Skribisto porta la nuova versione nel progetto. Lo fa quando torni alla sua finestra, prima di ogni salvataggio e quando chiudi il progetto. Un messaggio te lo dice. In un progetto salvato come file unico, il suo pulsante *Annulla* rimette la versione precedente.
+
+## Mettere una risorsa nel testo
+
+Trascina una risorsa dal pannello in un testo, nel punto in cui la vuoi.
+
+- Un collegamento web diventa un collegamento al suo indirizzo.
+- Ogni altro file diventa un collegamento alla risorsa. Ctrl+clic su di esso apre la risorsa. Un'esportazione ne tiene solo le parole.
+- Un'immagine chiede: *Inserisci l'immagine* mette l'immagine stessa nel testo, e *Inserisci un collegamento alla risorsa* mette un collegamento.
+
+*Inserisci nel testo*, nel suo menu, fa lo stesso al cursore. Una risorsa che trascini su un testo viene anche allegata all'elemento di quel testo.
+
+Anche un file del tuo computer trascinato su un testo viene aggiunto. Un'immagine entra nel testo come immagine. Ogni altro file diventa una risorsa dell'elemento, collegata nel punto in cui l'hai lasciato. Il messaggio che lo dice offre *Annulla*, che annulla entrambe le cose.
+
+## Allegarla ad altri elementi
+
+Una risorsa può stare su più elementi alla volta.
+
+- Trascinala su un elemento del raccoglitore.
+- Oppure scegli *Allega a elementi…* nel suo menu, poi gli elementi nell'albero del raccoglitore. Ctrl+clic o Maiusc+clic ne sceglie più di uno.
+
+*Stacca da questo elemento* la toglie dall'elemento in cui ti trovi; resta nel progetto. *Rimuovi dal progetto…* la toglie da tutti gli elementi. In entrambi i casi, un messaggio offre *Annulla*.
+
+*Rinomina e descrivi…* dà a una risorsa un titolo e una descrizione tutti suoi.
+
+## Le risorse di una cartella
+
+Ogni cartella ha una vista *Risorse*. Mostra le risorse della cartella e di tutto ciò che contiene, ognuna una sola volta, con gli elementi su cui si trova.
+
+- *Elenco* le mostra una sotto l'altra.
+- *Griglia* mostra una miniatura per ciascuna, con un'anteprima per un'immagine.
+
+La *Galleria* di una cartella di note mostra anche le immagini risorsa, segnate con *Risorsa*, dopo le immagini del testo delle note.
+
+## Le risorse allegate a nulla
+
+Una risorsa non è più allegata a nulla quando viene staccata dal suo ultimo elemento. Lo stesso vale quando quell'elemento viene eliminato per sempre. Resta nel progetto.
+
+*Impostazioni ▸ Progetto ▸ Risorse* le elenca. Scegline una o più, poi:
+
+- *Allega a elementi…* per rimetterle su degli elementi;
+- *Rimuovi dal progetto…* per eliminarle;
+- *Esporta copie…* per copiare i loro file in una cartella. I loro collegamenti web sono elencati in un file chiamato links.txt.
+
+La pagina dice anche quanto spazio occupano i file conservati.
+
+## Quando un file collegato è stato spostato
+
+Un file collegato che non si trova dove il progetto se lo aspetta è segnato *Non trovato*. Scegli *Ritrova…* e mostra a Skribisto dove si trova ora. Ogni altro file mancante della stessa cartella, presente nella nuova con il suo nome, viene ricollegato insieme a lui.
+
+Un file collegato viene ritrovato dalla sua posizione accanto al progetto. Tieni il progetto e le sue ricerche uno accanto all'altro, copia entrambi su un altro computer, e i collegamenti funzionano ancora.
+
+## Trovare una risorsa
+
+La ricerca globale trova le risorse dai loro titoli, descrizioni, nomi di file e indirizzi web quando il suo interruttore *Risorse* è attivo. Una sostituzione non le cambia mai.
+
+## Da Scrivener
+
+Importare un progetto Scrivener porta i suoi file di ricerca nel nuovo progetto come risorse: le immagini, i PDF, i suoni e le pagine web della tua cartella di ricerca, allegati alla cartella in cui si trovavano. I segnalibri di Scrivener a pagine web e a file del tuo computer diventano collegamenti tra le risorse del documento che li aveva. Consulta [Passare da Scrivener](:help-import-scrivener).

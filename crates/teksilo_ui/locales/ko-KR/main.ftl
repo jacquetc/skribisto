@@ -2846,6 +2846,7 @@ help-topic-writing-model = 책의 구성 방식
 help-topic-drafts-and-old-versions = 이전 초안 보관
 help-topic-goals-and-pace = 목표 및 집필 계획
 help-topic-pictures = 이미지와 갤러리
+help-topic-resources = 자료 조사용 파일과 링크
 help-topic-comments = 댓글
 help-topic-round-trip = 독자에게 책 보내기
 help-topic-export = 내보내기

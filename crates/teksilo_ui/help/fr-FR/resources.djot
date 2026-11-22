@@ -1,0 +1,124 @@
+## Les fichiers et liens de vos recherches
+
+Une ressource est un fichier ou une page web que vous gardez avec votre projet : le plan du
+village, une photographie, l’enregistrement d’un entretien, un article trouvé en chemin. Vous
+l’attachez aux éléments qu’elle concerne, une scène, un chapitre ou une note. Elle ne fait pas
+partie de votre livre : elle n’est jamais exportée.
+
+Le panneau *Ressources*, à droite de la fenêtre, montre les ressources de l’élément où vous
+êtes. Ouvrez-le avec son icône, un trombone, ou avec Ctrl+Maj+X.
+
+## Ajouter une ressource
+
+- *Ajouter des fichiers* choisit un ou plusieurs fichiers sur votre ordinateur.
+- *Ajouter un lien web* demande une adresse et, si vous le souhaitez, un titre.
+- Vous pouvez aussi déposer des fichiers, ou une adresse web venue de votre navigateur, sur le
+  panneau. Ctrl+V sur la liste ajoute les adresses web que vous avez copiées.
+
+Un fichier est rangé dans le projet : il suit chaque copie et chaque copie de secours. Un
+fichier de plus de 10 Mo pose d’abord la question. *Le ranger dans le projet*, ou *Le lier
+plutôt* : un fichier lié reste où il est, et le projet se souvient seulement de l’endroit où le
+trouver. *Ne plus demander* garde votre réponse. Vous pourrez la changer dans *Paramètres ▸
+Éditeur ▸ Comportement de l’éditeur*, sous *Fichiers de plus de 10 Mo*.
+
+Quand les fichiers rangés d’un projet en un seul fichier dépassent 100 Mo, Skribisto propose une
+fois de l’enregistrer plutôt comme dossier. Un projet en dossier n’enregistre que ce qui a
+changé.
+
+## Ouvrir une ressource
+
+Double-cliquez une ressource, ou appuyez sur Entrée, pour l’ouvrir. Ses autres actions sont
+dans son menu : le bouton au bout de sa ligne, ou un clic droit sur sa vignette dans une grille.
+
+- Une image s’ouvre dans la visionneuse d’images.
+- Un lien web s’ouvre dans votre navigateur.
+- Tout autre fichier s’ouvre dans l’application que votre système utilise pour ce genre de
+  fichier.
+
+Un fichier qui pourrait lancer un programme, un script ou un installateur par exemple, demande
+d’abord. Un projet peut venir de quelqu’un d’autre. *Afficher dans le dossier* vous laisse le
+regarder avant de décider.
+
+Si vous modifiez un fichier rangé dans une autre application, un plan que vous annotez ou un
+enregistrement que vous raccourcissez, Skribisto reprend la nouvelle version dans le projet quand
+vous revenez à sa fenêtre, avant chaque enregistrement, et quand vous fermez le projet. Un message le dit. Dans un projet en
+un seul fichier, son bouton *Annuler* remet la version précédente.
+
+## Mettre une ressource dans votre texte
+
+Faites glisser une ressource du panneau dans un texte, là où vous la voulez.
+
+- Un lien web devient un lien vers son adresse.
+- Tout autre fichier devient un lien vers la ressource. Ctrl+clic dessus ouvre la ressource.
+  Un export n’en garde que les mots.
+- Une image pose la question : *Insérer l’image* met l’image elle-même dans le texte, et
+  *Insérer un lien vers la ressource* y met un lien.
+
+*Insérer dans le texte*, dans son menu, fait de même au curseur. Une ressource déposée sur un
+texte est aussi attachée à l’élément de ce texte.
+
+Un fichier de votre ordinateur déposé sur un texte est ajouté lui aussi. Une image entre dans le
+texte comme image. Tout autre fichier devient une ressource de l’élément, liée là où vous l’avez
+déposé. Le message qui le dit propose *Annuler*, qui reprend les deux.
+
+## L’attacher à d’autres éléments
+
+Une ressource peut être sur plusieurs éléments à la fois.
+
+- Faites-la glisser sur un élément du classeur.
+- Ou choisissez *Attacher à des éléments…* dans son menu, puis les éléments dans l’arbre du
+  classeur. Ctrl+clic ou Maj+clic en choisit plusieurs.
+
+*Détacher de cet élément* la retire de l’élément où vous êtes ; elle reste dans le projet.
+*Retirer du projet…* la retire de tous les éléments. Dans les deux cas, un message propose
+*Annuler*.
+
+*Renommer et décrire…* donne à une ressource un titre et une description bien à elle.
+
+## Les ressources d’un dossier
+
+Chaque dossier a une vue *Ressources*. Elle montre les ressources du dossier et de tout ce qu’il
+contient, chacune une fois, avec les éléments où elle se trouve.
+
+- *Liste* les montre l’une sous l’autre.
+- *Grille* montre une vignette pour chacune, avec un aperçu pour une image.
+
+La *Galerie* d’un dossier de notes montre aussi les images ressources, marquées *Ressource*,
+après les images du texte des notes.
+
+## Les ressources attachées à rien
+
+Une ressource n’est plus attachée à rien quand elle est détachée de son dernier élément, ou quand
+cet élément est supprimé pour de bon. Elle reste dans le projet.
+
+*Paramètres ▸ Œuvre ▸ Ressources* les liste. Choisissez-en une ou plusieurs, puis :
+
+- *Attacher à des éléments…* pour les remettre sur des éléments ;
+- *Retirer du projet…* pour les supprimer ;
+- *Exporter des copies…* pour copier leurs fichiers dans un dossier. Leurs liens web sont listés
+  dans un fichier nommé links.txt.
+
+La page dit aussi la place que prennent les fichiers rangés.
+
+## Quand un fichier lié a bougé
+
+Un fichier lié qui n’est pas où le projet l’attend est marqué *Introuvable*. Choisissez
+*Retrouver…* et montrez à Skribisto où il est maintenant. Tout autre fichier manquant du même
+dossier, présent dans le nouveau sous son nom, est relié avec lui.
+
+Un fichier lié est retenu par sa place à côté du projet. Gardez le projet et ses recherches côte
+à côte, copiez les deux sur un autre ordinateur : les liens y fonctionnent encore.
+
+## Retrouver une ressource
+
+La recherche globale trouve les ressources par leurs titres, leurs descriptions, leurs noms de
+fichiers et leurs adresses web quand son bouton *Ressources* est activé. Un remplacement ne les
+modifie jamais.
+
+## Depuis Scrivener
+
+Importer un projet Scrivener fait entrer ses fichiers de recherche dans le nouveau projet comme
+ressources : les images, PDF, sons et pages web de votre dossier de recherche, attachés au dossier
+où ils se trouvaient. Les signets Scrivener vers des pages web et vers des fichiers de votre
+ordinateur deviennent des liens parmi les ressources du document qui les portait. Voir [Venir de
+Scrivener](:help-import-scrivener).

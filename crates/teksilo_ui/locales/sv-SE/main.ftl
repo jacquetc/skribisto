@@ -3678,6 +3678,7 @@ help-topic-writing-model = Hur en bok är uppbyggd
 help-topic-drafts-and-old-versions = Behålla ett äldre utkast
 help-topic-goals-and-pace = Mål och tempo
 help-topic-pictures = Bilder och galleriet
+help-topic-resources = Filer och länkar för din research
 help-topic-comments = Kommentarer
 help-topic-round-trip = Skicka boken till en läsare
 help-topic-export = Exportera

@@ -4156,6 +4156,7 @@ help-topic-writing-model = איך ספר בנוי
 help-topic-drafts-and-old-versions = שמירה על טיוטה ישנה
 help-topic-goals-and-pace = יעדים וקצב
 help-topic-pictures = תמונות והגלריה
+help-topic-resources = קבצים וקישורים למחקר שלך
 help-topic-comments = הערות
 help-topic-round-trip = שליחת הספר לקורא
 help-topic-export = ייצוא

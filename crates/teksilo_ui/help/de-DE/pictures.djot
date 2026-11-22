@@ -74,6 +74,7 @@ Sie *Notiz öffnen*, um die Notiz zu öffnen, in der es steht.
 
 ## Recherche aus Scrivener
 
-Die Recherchebilder eines Scrivener-Projekts kommen als Notizen an, je ein Bild pro Notiz, in
-dem Ordner, den der Import für sie anlegt (siehe [Von Scrivener wechseln](:help-import-scrivener)).
-Öffnen Sie diesen Ordner und wählen Sie *Galerie*, um sie alle zu sehen.
+Die Recherchebilder eines Scrivener-Projekts kommen als Ressourcen des Ordners an, in dem sie
+lagen (siehe [Von Scrivener wechseln](:help-import-scrivener) und [Dateien und Links für Ihre
+Recherche](:help-resources)). Öffnen Sie diesen Ordner und wählen Sie *Galerie*, um sie mit den
+anderen Bildern zu sehen, markiert mit *Ressource*.

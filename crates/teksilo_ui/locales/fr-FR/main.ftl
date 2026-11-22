@@ -4259,6 +4259,7 @@ help-topic-writing-model = Comment un livre est structuré
 help-topic-drafts-and-old-versions = Conserver un ancien brouillon
 help-topic-goals-and-pace = Objectifs et rythme
 help-topic-pictures = Les images et la galerie
+help-topic-resources = Les fichiers et liens de vos recherches
 help-topic-comments = Commentaires
 help-topic-round-trip = Envoyer votre livre à un lecteur
 help-topic-export = Exporter

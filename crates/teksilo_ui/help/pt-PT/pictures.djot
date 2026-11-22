@@ -69,6 +69,7 @@ direito numa miniatura e escolha *Abrir a nota* para abrir a nota onde ela está
 
 ## A pesquisa vinda do Scrivener
 
-As imagens da pesquisa de um projeto Scrivener chegam como notas, uma imagem cada, na pasta
-que a importação cria para elas (consulte [Vindo do Scrivener](:help-import-scrivener)). Abra
-essa pasta e escolha *Galeria* para as ver todas.
+As imagens da pesquisa de um projeto Scrivener chegam como recursos da pasta onde estavam
+(consulte [Vindo do Scrivener](:help-import-scrivener) e [Ficheiros e ligações da sua
+pesquisa](:help-resources)). Abra essa pasta e escolha *Galeria* para as ver com as outras
+imagens, marcadas *Recurso*.

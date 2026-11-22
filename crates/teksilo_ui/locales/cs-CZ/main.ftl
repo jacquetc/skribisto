@@ -4184,6 +4184,7 @@ help-topic-writing-model = Jak je kniha poskládaná
 help-topic-drafts-and-old-versions = Uchování staršího konceptu
 help-topic-goals-and-pace = Cíle a tempo
 help-topic-pictures = Obrázky a galerie
+help-topic-resources = Soubory a odkazy k vašemu výzkumu
 help-topic-comments = Komentáře
 help-topic-round-trip = Odeslání knihy čtenáři
 help-topic-export = Export

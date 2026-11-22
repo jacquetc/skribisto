@@ -1,0 +1,124 @@
+## Archivos y enlaces de su investigación
+
+Un recurso es un archivo o una página web que usted guarda con su proyecto: el plano del
+pueblo, una fotografía, la grabación de una entrevista, un artículo que encontró. Lo adjunta a
+los elementos a los que pertenece, una escena, un capítulo o una nota. No forma parte de su
+libro, así que nunca se exporta.
+
+El panel *Recursos*, a la derecha de la ventana, muestra los recursos del elemento en el que
+está. Ábralo con su icono, un clip, o con `Ctrl+Mayús+X`.
+
+## Añadir un recurso
+
+- *Añadir archivos* elige uno o varios archivos de su ordenador.
+- *Añadir un enlace web* pide una dirección y, si lo desea, un título.
+- También puede soltar archivos, o una dirección web de su navegador, sobre el panel. `Ctrl+V`
+  en la lista añade las direcciones web que haya copiado.
+
+Un archivo se guarda en el proyecto: viaja con cada copia y cada copia de seguridad del
+proyecto. Con un archivo de más de 10 MB, Skribisto pregunta primero. *Guardarlo en el
+proyecto*, o *Vincularlo en su lugar*: un archivo vinculado se queda donde está, y el proyecto
+solo recuerda dónde encontrarlo. *No volver a preguntar* conserva su respuesta. Puede cambiarla
+más tarde en *Configuración ▸ Editor ▸ Comportamiento del editor*, en *Archivos de más de
+10 MB*.
+
+Cuando los archivos guardados de un proyecto en un solo archivo pasan de 100 MB, Skribisto
+ofrece una vez guardarlo como carpeta. Un proyecto en carpeta solo guarda lo que ha cambiado.
+
+## Abrir un recurso
+
+Haga doble clic en un recurso, o pulse `Intro` sobre él, para abrirlo. Sus demás acciones
+están en su menú: el botón al final de su línea, o un clic con el botón derecho en su miniatura
+dentro de una cuadrícula.
+
+- Una imagen se abre en el visor de imágenes.
+- Un enlace web se abre en su navegador.
+- Cualquier otro archivo se abre en la aplicación que su sistema usa para ese tipo de archivo.
+
+Con un archivo que podría iniciar un programa, como un script o un instalador, Skribisto
+pregunta primero. Un proyecto puede venir de otra persona. *Mostrar en la carpeta* le permite mirarlo antes de
+decidir.
+
+Si cambia un archivo guardado en otra aplicación, un plano que anota o una grabación que
+recorta, Skribisto incorpora la versión nueva al proyecto. Lo hace cuando usted vuelve a su
+ventana, antes de cada guardado y al cerrar el proyecto. Un mensaje se lo indica. En un proyecto en un solo archivo,
+su botón *Deshacer* devuelve la versión anterior.
+
+## Poner un recurso en su texto
+
+Arrastre un recurso desde el panel hasta un texto, allí donde lo quiera.
+
+- Un enlace web se convierte en un enlace a su dirección.
+- Cualquier otro archivo se convierte en un enlace al recurso. Ctrl+clic sobre él abre el
+  recurso. Una exportación solo conserva sus palabras.
+- Una imagen pregunta: *Insertar la imagen* pone la propia imagen en el texto, e *Insertar un
+  enlace al recurso* pone un enlace.
+
+*Insertar en el texto*, en su menú, hace lo mismo en el cursor. Un recurso que suelta sobre un
+texto también queda adjunto al elemento de ese texto.
+
+Un archivo de su ordenador que suelta sobre un texto también se añade. Una imagen entra en el
+texto como imagen. Cualquier otro archivo pasa a ser un recurso del elemento, enlazado allí
+donde lo soltó. El mensaje que lo indica ofrece *Deshacer*, que retira ambas cosas.
+
+## Adjuntarlo a más elementos
+
+Un recurso puede estar en varios elementos a la vez.
+
+- Arrástrelo sobre un elemento del archivador.
+- O elija *Adjuntar a elementos…* en su menú, y luego los elementos en el árbol del
+  archivador. Ctrl+clic o Mayús+clic elige varios.
+
+*Separar de este elemento* lo quita del elemento en el que está; sigue en el proyecto. *Quitar
+del proyecto…* lo quita de todos los elementos. En ambos casos, un mensaje ofrece *Deshacer*.
+
+*Cambiar nombre y describir…* da a un recurso un título y una descripción propios.
+
+## Los recursos de una carpeta
+
+Cada carpeta tiene una vista *Recursos*. Muestra los recursos de la carpeta y de todo lo que
+contiene, cada uno una sola vez, con los elementos en los que está.
+
+- *Lista* los muestra uno debajo de otro.
+- *Cuadrícula* muestra una miniatura para cada uno, con una vista previa si es una imagen.
+
+La *Galería* de una carpeta de notas muestra también las imágenes que son recursos, marcadas
+*Recurso*, después de las imágenes del texto de las notas.
+
+## Los recursos adjuntos a nada
+
+Un recurso deja de estar adjunto a algo cuando se separa de su último elemento. Lo mismo ocurre
+cuando ese elemento se elimina definitivamente. Sigue en el proyecto.
+
+*Configuración ▸ Proyecto ▸ Recursos* los muestra. Elija uno o varios, y luego:
+
+- *Adjuntar a elementos…* para volver a ponerlos en elementos;
+- *Quitar del proyecto…* para eliminarlos;
+- *Exportar copias…* para copiar sus archivos en una carpeta. Sus enlaces web se listan en un
+  archivo llamado links.txt.
+
+La página indica también cuánto espacio ocupan los archivos guardados.
+
+## Cuando un archivo vinculado se ha movido
+
+Un archivo vinculado que no está donde el proyecto lo espera aparece marcado como *No
+encontrado*. Elija *Localizar…* y muestre a Skribisto dónde está ahora. Cualquier otro archivo
+que falte de la misma carpeta, y que esté en la nueva con su nombre, se vuelve a vincular con
+él.
+
+Un archivo vinculado se recuerda por su lugar junto al proyecto. Mantenga el proyecto y su
+investigación uno al lado del otro, copie ambos a otro ordenador, y los vínculos siguen
+funcionando allí.
+
+## Encontrar un recurso
+
+La búsqueda global encuentra los recursos por sus títulos, descripciones, nombres de archivo y
+direcciones web cuando su interruptor *Recursos* está activado. Un reemplazo nunca los cambia.
+
+## Desde Scrivener
+
+Importar un proyecto Scrivener trae sus archivos de investigación al proyecto nuevo como
+recursos: las imágenes, archivos PDF, sonidos y páginas web de su carpeta de investigación,
+adjuntos a la carpeta en la que estaban. Los marcadores de Scrivener a páginas web y a archivos
+de su ordenador se convierten en enlaces entre los recursos del documento que los tenía.
+Consulte [Llegar desde Scrivener](:help-import-scrivener).

@@ -3876,6 +3876,7 @@ help-topic-writing-model = Miten kirja kootaan
 help-topic-drafts-and-old-versions = Vanhemman luonnoksen säilyttäminen
 help-topic-goals-and-pace = Tavoitteet ja tahti
 help-topic-pictures = Kuvat ja galleria
+help-topic-resources = Taustatyön tiedostot ja linkit
 help-topic-comments = Kommentit
 help-topic-round-trip = Kirjan lähettäminen lukijalle
 help-topic-export = Vienti

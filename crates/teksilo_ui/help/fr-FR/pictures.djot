@@ -69,6 +69,7 @@ sur une vignette et choisissez *Ouvrir la note* pour ouvrir la note où elle se 
 
 ## Les recherches venues de Scrivener
 
-Les images des recherches d’un projet Scrivener arrivent en notes, une image chacune, dans
-le dossier que l’import leur crée (voir [Venir de Scrivener](:help-import-scrivener)). Ouvrez ce
-dossier et choisissez *Galerie* pour les voir toutes.
+Les images des recherches d’un projet Scrivener arrivent comme ressources du dossier où elles
+se trouvaient (voir [Venir de Scrivener](:help-import-scrivener) et [Les fichiers et liens de vos
+recherches](:help-resources)). Ouvrez ce dossier et choisissez *Galerie* pour les voir avec les
+autres images, marquées *Ressource*.

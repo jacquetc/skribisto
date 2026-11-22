@@ -4566,6 +4566,7 @@ help-topic-writing-model = Jak zbudowana jest książka
 help-topic-drafts-and-old-versions = Zachowywanie starszej wersji roboczej
 help-topic-goals-and-pace = Cele i tempo
 help-topic-pictures = Obrazy i galeria
+help-topic-resources = Pliki i odnośniki do Twoich badań
 help-topic-comments = Komentarze
 help-topic-round-trip = Wysyłanie książki do czytelnika
 help-topic-export = Eksportowanie

@@ -64,6 +64,7 @@ go through the pictures the gallery shows, in its order. Right-click a thumbnail
 
 ## Research from Scrivener
 
-A Scrivener project's research pictures arrive as notes, one picture each, in the folder the
-import makes for them (see [Coming from Scrivener](:help-import-scrivener)). Open that folder
-and choose *Gallery* to see them all.
+A Scrivener project's research pictures arrive as resources of the folder they sat in (see
+[Coming from Scrivener](:help-import-scrivener) and [Files and links for your
+research](:help-resources)). Open that folder and choose *Gallery* to see them with the other
+pictures, marked *Resource*.

@@ -3737,6 +3737,7 @@ help-topic-writing-model = Come è fatto un libro
 help-topic-drafts-and-old-versions = Conservare una vecchia bozza
 help-topic-goals-and-pace = Obiettivi e ritmo
 help-topic-pictures = Le immagini e la galleria
+help-topic-resources = File e link per le tue ricerche
 help-topic-comments = Commenti
 help-topic-round-trip = Inviare il libro a un lettore
 help-topic-export = Esportazione

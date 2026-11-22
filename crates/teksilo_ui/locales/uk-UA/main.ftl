@@ -4576,6 +4576,7 @@ help-topic-writing-model = Як складається книга
 help-topic-drafts-and-old-versions = Як зберегти старішу чернетку
 help-topic-goals-and-pace = Цілі та темп
 help-topic-pictures = Зображення та галерея
+help-topic-resources = Файли й посилання для ваших досліджень
 help-topic-comments = Коментарі
 help-topic-round-trip = Надсилання книги читачеві
 help-topic-export = Експорт

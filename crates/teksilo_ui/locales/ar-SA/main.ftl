@@ -5172,6 +5172,7 @@ help-topic-writing-model = كيف يُبنى الكتاب
 help-topic-drafts-and-old-versions = الاحتفاظ بمسودة أقدم
 help-topic-goals-and-pace = الأهداف والوتيرة
 help-topic-pictures = الصور والمعرض
+help-topic-resources = ملفات وروابط لأبحاثك
 help-topic-comments = التعليقات
 help-topic-round-trip = إرسال كتابك إلى قارئ
 help-topic-export = التصدير

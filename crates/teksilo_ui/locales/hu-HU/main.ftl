@@ -3771,6 +3771,7 @@ help-topic-writing-model = Hogyan épül fel egy könyv
 help-topic-drafts-and-old-versions = Egy régebbi piszkozat megőrzése
 help-topic-goals-and-pace = Célértékek és tempó
 help-topic-pictures = Képek és a galéria
+help-topic-resources = Fájlok és hivatkozások a kutatáshoz
 help-topic-comments = Megjegyzések
 help-topic-round-trip = A könyv elküldése egy olvasónak
 help-topic-export = Exportálás

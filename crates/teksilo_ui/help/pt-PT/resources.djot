@@ -1,0 +1,122 @@
+## Ficheiros e ligações da sua pesquisa
+
+Um recurso é um ficheiro ou uma página web que guarda com o seu projeto: o mapa da aldeia, uma
+fotografia, a gravação de uma entrevista, um artigo que encontrou. Anexa-o aos itens a que
+pertence, uma cena, um capítulo ou uma nota. Não faz parte do seu livro, por isso nunca é
+exportado.
+
+O painel *Recursos*, à direita da janela, mostra os recursos do item em que está. Abra-o com o
+seu ícone, um clipe, ou com `Ctrl+Shift+X`.
+
+## Adicionar um recurso
+
+- *Adicionar ficheiros* escolhe um ou vários ficheiros no seu computador.
+- *Adicionar uma ligação web* pede um endereço e, se quiser, um título.
+- Também pode largar ficheiros, ou um endereço web vindo do seu navegador, sobre o painel.
+  `Ctrl+V` na lista acrescenta os endereços web que copiou.
+
+Um ficheiro é guardado no projeto: acompanha cada cópia e cada cópia de segurança do projeto.
+Com um ficheiro com mais de 10 MB, o Skribisto pergunta primeiro. *Guardá-lo no projeto*, ou
+*Ligá-lo em vez disso*: um ficheiro ligado fica onde está, e o projeto lembra-se apenas de onde
+o encontrar. *Não voltar a perguntar* guarda a sua resposta. Pode mudá-la mais tarde em
+*Definições ▸ Editor ▸ Comportamento do editor*, em *Ficheiros com mais de 10 MB*.
+
+Quando os ficheiros guardados de um projeto num só ficheiro passam dos 100 MB, o Skribisto
+propõe uma vez guardá-lo antes como pasta. Um projeto em pasta só grava o que mudou.
+
+## Abrir um recurso
+
+Faça duplo clique num recurso, ou prima `Enter` sobre ele, para o abrir. As suas outras ações
+estão no seu menu: o botão no fim da sua linha, ou um clique com o botão direito na sua
+miniatura numa grelha.
+
+- Uma imagem abre-se no visualizador de imagens.
+- Uma ligação web abre-se no seu navegador.
+- Qualquer outro ficheiro abre-se na aplicação que o seu sistema usa para esse tipo de ficheiro.
+
+Com um ficheiro que poderia iniciar um programa, como um script ou um instalador, o
+Skribisto pergunta primeiro. Um projeto pode vir de outra pessoa. *Mostrar na pasta* permite-lhe vê-lo antes
+de decidir.
+
+Se alterar um ficheiro guardado noutra aplicação, um mapa que anota ou uma gravação que
+encurta, o Skribisto leva a nova versão para o projeto. Fá-lo quando volta à sua janela,
+antes de cada gravação e ao fechar o projeto. Uma mensagem avisa-o. Num projeto num só ficheiro, o botão *Anular* dessa
+mensagem repõe a versão anterior.
+
+## Pôr um recurso no seu texto
+
+Arraste um recurso do painel para um texto, onde o quiser.
+
+- Uma ligação web torna-se uma ligação para o seu endereço.
+- Qualquer outro ficheiro torna-se uma ligação para o recurso. Ctrl+clique nela abre o
+  recurso. Uma exportação só guarda as suas palavras.
+- Uma imagem pergunta: *Inserir a imagem* põe a própria imagem no texto, e *Inserir uma ligação
+  para o recurso* põe uma ligação.
+
+*Inserir no texto*, no seu menu, faz o mesmo no cursor. Um recurso que larga sobre um texto fica
+também anexado ao item desse texto.
+
+Um ficheiro do seu computador largado sobre um texto também é adicionado. Uma imagem entra no
+texto como imagem. Qualquer outro ficheiro torna-se um recurso do item, ligado onde o largou. A
+mensagem que o diz oferece *Anular*, que desfaz as duas coisas.
+
+## Anexá-lo a mais itens
+
+Um recurso pode estar em vários itens ao mesmo tempo.
+
+- Arraste-o para um item do arquivador.
+- Ou escolha *Anexar a itens…* no seu menu, e depois os itens na árvore do arquivador.
+  Ctrl+clique ou Shift+clique escolhe vários.
+
+*Desanexar deste item* retira-o do item em que está; fica no projeto. *Remover do projeto…*
+retira-o de todos os itens. Nos dois casos, uma mensagem oferece *Anular*.
+
+*Mudar o nome e descrever…* dá a um recurso um título e uma descrição só seus.
+
+## Os recursos de uma pasta
+
+Cada pasta tem uma vista *Recursos*. Mostra os recursos da pasta e de tudo o que ela contém,
+cada um uma só vez, com os itens em que está.
+
+- *Lista* mostra-os uns por baixo dos outros.
+- *Grelha* mostra uma miniatura para cada um, com uma pré-visualização se for uma imagem.
+
+A *Galeria* de uma pasta de notas também mostra as imagens que são recursos, marcadas
+*Recurso*, depois das imagens do texto das notas.
+
+## Os recursos sem item
+
+Um recurso deixa de estar anexado a algum item quando é desanexado do seu último item. O mesmo
+acontece quando esse item é eliminado de vez. Fica no projeto.
+
+*Definições ▸ Projeto ▸ Recursos* lista-os. Escolha um ou vários, e depois:
+
+- *Anexar a itens…* para os voltar a pôr em itens;
+- *Remover do projeto…* para os eliminar;
+- *Exportar cópias…* para copiar os seus ficheiros para uma pasta. As suas ligações web ficam
+  listadas num ficheiro chamado links.txt.
+
+A página diz também quanto espaço ocupam os ficheiros guardados.
+
+## Quando um ficheiro ligado mudou de sítio
+
+Um ficheiro ligado que não está onde o projeto o espera fica marcado *Não encontrado*. Escolha
+*Localizar…* e mostre ao Skribisto onde ele está agora. Qualquer outro ficheiro em falta da
+mesma pasta, presente na nova com o seu nome, é ligado de novo com ele.
+
+Um ficheiro ligado é encontrado pelo seu lugar ao lado do projeto. Mantenha o projeto e a sua
+pesquisa lado a lado, copie os dois para outro computador, e as ligações continuam a funcionar
+lá.
+
+## Encontrar um recurso
+
+A pesquisa global encontra os recursos pelos seus títulos, descrições, nomes de ficheiro e
+endereços web quando o seu interruptor *Recursos* está ligado. Uma substituição nunca os altera.
+
+## Vindo do Scrivener
+
+Importar um projeto Scrivener traz os seus ficheiros de pesquisa para o novo projeto como
+recursos: as imagens, ficheiros PDF, sons e páginas web da sua pasta de pesquisa, anexados à
+pasta onde estavam. Os marcadores do Scrivener para páginas web e para ficheiros do seu
+computador tornam-se ligações entre os recursos do documento que os tinha. Consulte [Vindo do
+Scrivener](:help-import-scrivener).
