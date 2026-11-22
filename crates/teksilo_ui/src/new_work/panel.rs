@@ -443,6 +443,18 @@ fn template_set_combo(vm: &NewWorkViewModel) -> ComboBox<crate::note_templates::
     .placeholder(tr!(new_work_note_templates_none()))
 }
 
+/// What a starter picker's current choice lays down — "Tags: character, place, …" —
+/// right under the picker, so the writer reads the contents before the explanation.
+/// Primary rather than secondary text: it is the answer they picked, not a note about it.
+///
+/// Hidden while `shown` is false — "No tags" lays down nothing, and an empty line would
+/// still take the stack's spacing and push the hint down.
+fn preset_contents(text: LocalizedString, shown: impl Into<Prop<bool>>) -> impl Widget {
+    TextWidget::new(text)
+        .style(TextStyleRole::Small)
+        .visible_when(shown)
+}
+
 /// The reactive "Will create …" preview — the one runtime-computed string.
 fn path_preview(vm: &NewWorkViewModel) -> impl Widget + use<> {
     HStack::new()
@@ -629,6 +641,10 @@ fn template_step(vm: &NewWorkViewModel) -> impl Widget + use<> {
                 VStack::new()
                     .spacing(6.0)
                     .child(FixedSize::new().width(240.0).child(tag_preset_combo(vm)))
+                    .child(preset_contents(
+                        vm.tag_contents(),
+                        vm.tag_preset().map(Option::is_some),
+                    ))
                     .child(hint(tr!(new_work_tags_hint()))),
             )
             // ── The workflow ladder. Beside the palette for the same reason the
@@ -639,6 +655,7 @@ fn template_step(vm: &NewWorkViewModel) -> impl Widget + use<> {
                 VStack::new()
                     .spacing(6.0)
                     .child(FixedSize::new().width(240.0).child(status_preset_combo(vm)))
+                    .child(preset_contents(vm.status_contents(), true))
                     .child(hint(tr!(new_work_statuses_hint()))),
             )
             // ── Note templates: the shapes a story-bible entry starts in. Beside
@@ -650,6 +667,10 @@ fn template_step(vm: &NewWorkViewModel) -> impl Widget + use<> {
                 VStack::new()
                     .spacing(6.0)
                     .child(FixedSize::new().width(240.0).child(template_set_combo(vm)))
+                    .child(preset_contents(
+                        vm.template_set_contents(),
+                        vm.template_set().map(Option::is_some),
+                    ))
                     .child(hint(tr!(new_work_note_templates_hint()))),
             ),
     )

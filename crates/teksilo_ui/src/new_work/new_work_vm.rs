@@ -40,6 +40,7 @@ use std::rc::Rc;
 
 use crate::models::{ParatextPreset, ParatextPresetsService};
 
+use teksilo::i18n::{LocalizedString, localized};
 use teksilo::prelude::*; // EventContext, Signal, tr!
 use teksilo::widgets::{
     MessageBox, MessageBoxButtons, StandardButton, StepStatus, StepperController, Toast,
@@ -217,6 +218,12 @@ fn build_target_path(dir: &str, name: &str, format_idx: usize) -> String {
 /// Filesystem-forbidden characters (POSIX separators + the Windows set); each
 /// is replaced by a `-` so the name is always a safe single path component.
 const FORBIDDEN_CHARS: &[char] = &['/', '\\', ':', '*', '?', '"', '<', '>', '|'];
+
+/// The names a starter preset lays down, as the list its summary line shows — joined
+/// the locale's way (`、` in Japanese, `، ` in Arabic), not with a hard-coded comma.
+fn join_names(names: Vec<String>) -> String {
+    names.join(&tr!(new_work_contents_separator()).resolve_now())
+}
 
 /// Turn a work name into a safe filename stem: lowercase, whitespace / control /
 /// forbidden characters collapsed to a single `-`, with leading/trailing `-` and
@@ -771,6 +778,59 @@ impl NewWorkViewModel {
     /// The chosen ladder, for the New Work form's own picker.
     pub fn status_preset(&self) -> Signal<Option<crate::statuses::Preset>> {
         self.status_preset.clone()
+    }
+
+    /// What the chosen tag palette holds, as one line under its picker: "Tags: character,
+    /// place, …". A preset's name says what it is for, not what it lays down, and a writer
+    /// should not have to create a project to find out. Empty while no palette is chosen.
+    ///
+    /// Reactive on the choice and on the locale, since the names are `tr!`'d at
+    /// resolution, exactly as they will be when the preset is applied.
+    pub fn tag_contents(&self) -> LocalizedString {
+        let chosen = self.tag_preset.clone();
+        localized(move || {
+            chosen
+                .get()
+                .map(|p| {
+                    let names = p.rows().into_iter().map(|r| r.name).collect();
+                    tr!(new_work_tags_contents(names = join_names(names))).resolve_now()
+                })
+                .unwrap_or_default()
+        })
+        .also_observing(&self.tag_preset)
+    }
+
+    /// [`Self::tag_contents`] for the workflow ladder: its rungs, in order. Never empty,
+    /// because an untouched picker still seeds [`crate::statuses::Preset::DEFAULT`] — the
+    /// line says so rather than leaving the default's contents to be guessed.
+    pub fn status_contents(&self) -> LocalizedString {
+        let chosen = self.status_preset.clone();
+        localized(move || {
+            let preset = chosen.get().unwrap_or(crate::statuses::Preset::DEFAULT);
+            let names = preset.resolved_names();
+            tr!(new_work_statuses_contents(names = join_names(names))).resolve_now()
+        })
+        .also_observing(&self.status_preset)
+    }
+
+    /// [`Self::tag_contents`] for the starter note templates: the name each one is
+    /// created under. Empty while no set is chosen.
+    pub fn template_set_contents(&self) -> LocalizedString {
+        let chosen = self.template_set.clone();
+        localized(move || {
+            chosen
+                .get()
+                .map(|set| {
+                    let names = set
+                        .presets()
+                        .iter()
+                        .map(|p| p.label().resolve_now())
+                        .collect();
+                    tr!(new_work_note_templates_contents(names = join_names(names))).resolve_now()
+                })
+                .unwrap_or_default()
+        })
+        .also_observing(&self.template_set)
     }
 
     pub fn paratext_preset(&self) -> Signal<Option<String>> {
@@ -1761,5 +1821,67 @@ mod tests {
             vm.template_idx().set(idx);
             assert!(!applicable.get(), "idx {idx} should disable the toggle");
         }
+    }
+
+    /// Each starter picker says what its choice lays down: every name the preset would
+    /// create, and nothing while there is no choice to describe. The status line is the
+    /// exception, because an untouched ladder picker still seeds the default.
+    #[test]
+    fn each_starter_line_lists_what_its_choice_lays_down() {
+        let vm = NewWorkViewModel::new(
+            Rc::new(AppContext::new()),
+            crate::app_ids::AppIds::new(),
+            crate::app::PendingStarters::default(),
+        );
+
+        assert_eq!(vm.tag_contents().resolve_now(), "");
+        assert_eq!(vm.template_set_contents().resolve_now(), "");
+        let ladder = vm.status_contents().resolve_now();
+        for rung in crate::statuses::Preset::DEFAULT.resolved_names() {
+            assert!(
+                ladder.contains(&rung),
+                "{ladder:?} lacks the default's {rung:?}"
+            );
+        }
+
+        vm.tag_preset().set(Some(Preset::Fantasy));
+        let tags = vm.tag_contents().resolve_now();
+        for row in Preset::Fantasy.rows() {
+            assert!(tags.contains(&row.name), "{tags:?} lacks {:?}", row.name);
+        }
+
+        vm.status_preset().set(Some(crate::statuses::Preset::Plume));
+        let ladder = vm.status_contents().resolve_now();
+        for rung in crate::statuses::Preset::Plume.resolved_names() {
+            assert!(ladder.contains(&rung), "{ladder:?} lacks {rung:?}");
+        }
+
+        let set = crate::note_templates::StarterSet::Essentials;
+        vm.template_set().set(Some(set));
+        let templates = vm.template_set_contents().resolve_now();
+        for preset in set.presets() {
+            let name = preset.label().resolve_now();
+            assert!(templates.contains(&name), "{templates:?} lacks {name:?}");
+        }
+    }
+
+    /// The line follows the picker while the page is up: it is bound once, so it must
+    /// re-resolve when the choice moves rather than keep the value it was built with.
+    #[test]
+    fn a_starter_line_follows_its_picker() {
+        let vm = NewWorkViewModel::new(
+            Rc::new(AppContext::new()),
+            crate::app_ids::AppIds::new(),
+            crate::app::PendingStarters::default(),
+        );
+        let shown = vm.tag_contents().to_signal();
+        assert_eq!(shown.get(), "");
+
+        vm.tag_preset().set(Some(Preset::Basic));
+        assert_eq!(shown.get(), vm.tag_contents().resolve_now());
+        assert!(!shown.get().is_empty());
+
+        vm.tag_preset().set(None);
+        assert_eq!(shown.get(), "");
     }
 }
