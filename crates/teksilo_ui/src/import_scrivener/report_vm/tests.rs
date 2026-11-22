@@ -17,7 +17,6 @@ const ROW: Uuid = Uuid::from_u128(42);
 fn report() -> ImportReport {
     ImportReport::from_result(&ScrivenerImportResult {
         output_path: "/books/The Lighthouse.skrib".into(),
-        research_folder: String::new(),
         totals: ScrivenerTotals::Empty,
         findings: vec![ScrivenerFinding::Reported {
             key: "scrivener-prose-heading-repeats-title".into(),

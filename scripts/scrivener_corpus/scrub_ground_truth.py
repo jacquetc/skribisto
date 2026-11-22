@@ -53,10 +53,9 @@ The script refuses to finish, and removes what it wrote, unless:
   `com.apple.`, `__MACOSX`, `.DS_Store` or `QuickLook`;
 * the only device and lock host left is `Writers-Mac`, no PDF keeps an Info dictionary or
   XMP, and no PNG keeps a text chunk;
-* the importer raises the same notices on the scrubbed copy as on the source, the copied
-  research file's name aside (it follows the item's title). This runs the crate's
-  `notice_set` example through cargo, from a scratch folder, with the repository's
-  manifest.
+* the importer raises the same notices on the scrubbed copy as on the source. This runs
+  the crate's `notice_set` example through cargo, from a scratch folder, with the
+  repository's manifest.
 """
 
 from __future__ import annotations
@@ -645,8 +644,6 @@ def notice_sets(paths: list[Path]) -> dict[str, list[str]]:
             current = Path(line[3:]).name
             sets[current] = []
         elif current is not None:
-            # The copied research file is named after its item, which the scrub retitles.
-            line = re.sub(r'(MediaFileCopied \{.*path: )"[^"]*"', r'\1"<research file>"', line)
             sets[current].append(line)
     return {name: sorted(lines) for name, lines in sets.items()}
 

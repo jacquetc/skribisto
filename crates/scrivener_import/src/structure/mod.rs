@@ -24,8 +24,11 @@
 //! child carrying its title. Root front and back matter goes inside the book, out
 //! of export. The **notes** binder holds every other root item in Scrivener's
 //! order (story-bible folders tag their entries), then the format 1.x project
-//! notes, the recovered texts, and the Trash, as deleted rows. The Templates
-//! folder becomes note templates. The decisions and their measurements are in
+//! notes, the recovered texts, and the Trash, as deleted rows. A picture, PDF or
+//! other file of the notes binder's part becomes a resource of the new project,
+//! attached to the row its parent became ([`PlannedResource`]); one that carries
+//! more than its file keeps a note of its own, which the resource is attached to.
+//! The Templates folder becomes note templates. The decisions and their measurements are in
 //! the design note `D3-structure.md` and its critique; each rule below names its
 //! decision (D3.n).
 //!
@@ -42,7 +45,9 @@
 //! * the notes binder holds notes only, and no note is ever exported;
 //! * every text, synopsis, document note, picture or file, card image, project
 //!   note and recovered text that carries anything lands in exactly one row or
-//!   note template, or is reported as left behind;
+//!   note template, or is reported as left behind; a picture or file of the
+//!   notes binder's part is a resource attached to its own row or its parent's,
+//!   unless it is plain text, which a note holds;
 //! * every item is represented by one row, a note template, or a reported
 //!   absence; items keep their order among their siblings, and a child whose
 //!   parent has a row sits under that row.
@@ -77,7 +82,7 @@ use serde::{Deserialize, Serialize};
 use crate::content::ContentFacts;
 use crate::model::{Project, ShapeError};
 
-pub(crate) use build::clean_title;
+pub(crate) use build::{clean_title, is_picture_file, is_plain_text_name};
 pub use check::{Violation, check};
 pub use notice::{ReportGroup, StructureNotice};
 
@@ -97,6 +102,9 @@ pub struct StructurePlan {
     pub tags: Vec<PlannedTag>,
     /// The notes rows that open a trashed subtree, one trash entry each (D3.17).
     pub trash_roots: Vec<u32>,
+    /// The research files stored as resources of the new project, in binder order.
+    #[serde(default)]
+    pub resources: Vec<PlannedResource>,
     /// How new chapters are made in this project: the encoding most of its
     /// chapters already use (D3.5).
     pub chapter_encoding: ChapterEncoding,
@@ -482,6 +490,20 @@ pub enum ChapterEncoding {
     Flat,
 }
 
+/// A picture, PDF, web archive, sound or other file of the notes binder's part, stored
+/// as a resource of the new project rather than in a note (decided 2026-11-22). Plain
+/// text files (`.txt`, `.md`, `.fountain`…) are not: a note holds their words.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PlannedResource {
+    /// The binder row whose file it is.
+    pub item: u32,
+    /// The row it is attached to: the item's own, when it carries more than its file (a
+    /// synopsis, document notes, keywords, children…), else the row its parent became.
+    /// `None` at the top of the notes binder, where no parent has a row: attached to
+    /// nothing, listed with the project's resources.
+    pub attach: Option<RowRef>,
+}
+
 /// A row, by binder and index.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct RowRef {
@@ -518,6 +540,9 @@ pub enum Absence {
     TrashLeftOut,
     /// A root folder, or inside one, the writer left out.
     LeftOut,
+    /// A picture or file of the notes binder's part with nothing else to it: a resource
+    /// of the new project, attached to the row its parent became.
+    Resource,
 }
 
 /// What the review step offers, each control with what was detected and what
@@ -700,6 +725,15 @@ pub struct Shape {
     pub trashed_rows: u32,
     pub templates: u32,
     pub tags: u32,
+    /// Files stored as resources, and their size in bytes as the project states it:
+    /// what the review says the new project will hold. The notes binder's research
+    /// files and every other file the converter stores rather than shows (a PDF in the
+    /// manuscript, a template's leftover), each once; not a file larger than one read
+    /// takes, which stays behind.
+    #[serde(default)]
+    pub resources: u32,
+    #[serde(default)]
+    pub resource_bytes: u64,
 }
 
 /// What the writer chose in the review. Every field left at its default means
@@ -903,6 +937,11 @@ fn add_import_note(plan: &mut StructurePlan, sections: &[NoteSection]) {
             at_ref.row += added;
         }
     };
+    for resource in &mut plan.resources {
+        if let Some(r) = resource.attach.as_mut() {
+            shift_ref(r);
+        }
+    }
     for placement in &mut plan.placements {
         if let Some(r) = placement.item.as_mut() {
             shift_ref(r);

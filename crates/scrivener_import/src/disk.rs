@@ -28,7 +28,7 @@
 //! business, since they are names, not metadata.
 
 use std::ffi::OsString;
-use std::io::{self, Read};
+use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -71,6 +71,10 @@ pub(crate) trait Disk {
     fn read(&self, path: &Path, limit: u64) -> io::Result<Vec<u8>>;
     /// The first `count` bytes of the regular file at `path`, or fewer.
     fn read_head(&self, path: &Path, count: u64) -> io::Result<Vec<u8>>;
+    /// Copy the regular file at `path` into `out` as it is read, refusing more than
+    /// `limit` bytes, and say how many it held: a file stored as a resource, never held
+    /// whole in memory.
+    fn copy(&self, path: &Path, limit: u64, out: &mut dyn Write) -> io::Result<u64>;
     /// Whether reading may go on. A read this disk does not make itself asks first: a
     /// member of an archive opened through it, read from the archive's own handle. Always,
     /// but on a disk the writer can cancel.
@@ -182,6 +186,15 @@ impl Disk for RealDisk {
         file.take(count).read_to_end(&mut out)?;
         Ok(out)
     }
+
+    fn copy(&self, path: &Path, limit: u64, out: &mut dyn Write) -> io::Result<u64> {
+        let file = open_regular(path)?;
+        let copied = io::copy(&mut file.take(limit.saturating_add(1)), out)?;
+        if copied > limit {
+            return Err(io::Error::from(io::ErrorKind::FileTooLarge));
+        }
+        Ok(copied)
+    }
 }
 
 /// A disk that stops answering once the writer cancels: every call after `cancel` is set
@@ -231,6 +244,11 @@ impl Disk for Cancellable<'_> {
     fn read_head(&self, path: &Path, count: u64) -> io::Result<Vec<u8>> {
         self.go_on()?;
         self.inner.read_head(path, count)
+    }
+
+    fn copy(&self, path: &Path, limit: u64, out: &mut dyn Write) -> io::Result<u64> {
+        self.go_on()?;
+        self.inner.copy(path, limit, out)
     }
 }
 
@@ -322,6 +340,10 @@ pub(crate) mod testing {
             self.note(path);
             RealDisk.read_head(path, count)
         }
+        fn copy(&self, path: &Path, limit: u64, out: &mut dyn Write) -> io::Result<u64> {
+            self.note(path);
+            RealDisk.copy(path, limit, out)
+        }
     }
 
     /// The real disk, except that the files whose name ends with `suffix` report
@@ -397,6 +419,10 @@ pub(crate) mod testing {
             self.read.borrow_mut().insert(path.to_path_buf());
             RealDisk.read_head(path, count)
         }
+        fn copy(&self, path: &Path, limit: u64, out: &mut dyn Write) -> io::Result<u64> {
+            self.read.borrow_mut().insert(path.to_path_buf());
+            RealDisk.copy(path, limit, out)
+        }
     }
 
     /// The real disk, except that paths ending with one of `suffixes` are cloud
@@ -446,6 +472,12 @@ pub(crate) mod testing {
                 return Err(io::Error::other("a placeholder was read"));
             }
             RealDisk.read_head(path, count)
+        }
+        fn copy(&self, path: &Path, limit: u64, out: &mut dyn Write) -> io::Result<u64> {
+            if self.marked(path) {
+                return Err(io::Error::other("a placeholder was read"));
+            }
+            RealDisk.copy(path, limit, out)
         }
     }
 }

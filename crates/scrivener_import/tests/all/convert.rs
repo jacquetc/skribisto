@@ -13,8 +13,10 @@ use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
 use chrono::{DateTime, Utc};
-use common::entities::{BinderItemSubRole as SubRole, CommentAnchorKind, ContentRole};
-use scrivener_fixtures::{Generation, Item, Kind, Platform, Spec, TINY_PNG};
+use common::entities::{
+    BinderItemSubRole as SubRole, CommentAnchorKind, ContentRole, ResourceKind,
+};
+use scrivener_fixtures::{Bookmark, Generation, Item, Kind, Platform, Spec, TINY_PNG};
 use scrivener_import::structure::Choices;
 use scrivener_import::{
     Answers, ConvertError, ProseChoices, ProseNotice, Request, Summary, TITLE_SLOT, Words, convert,
@@ -31,7 +33,6 @@ pub(crate) fn words() -> Words {
         project_notes: "W-ProjectNotes".to_string(),
         recovered: "W-Recovered".to_string(),
         untitled_template: "W-Untitled".to_string(),
-        research_folder: format!("{TITLE_SLOT} W-research"),
         list_separator: " W+ ".to_string(),
         label_details: format!("W-field {TITLE_SLOT}"),
         status_details: format!("W-status-field {TITLE_SLOT}"),
@@ -98,7 +99,6 @@ pub(crate) fn request<'a>(
         title: None,
         author: None,
         language: Some("en-US"),
-        copy_research_files: true,
         now: instant(),
         today: instant().date_naive(),
     }
@@ -258,25 +258,58 @@ fn every_generation_converts_into_a_project_that_loads() {
                 !prose(notes, ContentRole::NoteText).is_empty(),
                 "{label}: the document notes, beside the scene"
             );
-            // The picture in Research is an asset shown on its note.
-            assert_eq!(summary.totals.pictures, 1, "{label}");
+            // The picture and the PDF in Research are resources of the Research folder,
+            // stored inside the project, with no note of their own.
+            assert_eq!(summary.totals.resources, 2, "{label}");
+            assert_eq!(summary.totals.pictures, 0, "{label}");
+            for title in ["Harbour map", "Tide tables"] {
+                assert!(
+                    items(&bundle).all(|i| i.item.title != title),
+                    "{label}: no note for {title}"
+                );
+            }
+            let research = item(&bundle, "Research");
+            let attached: Vec<(&str, Vec<u8>)> = research
+                .item
+                .resource_ids
+                .iter()
+                .filter_map(|id| bundle.resources.iter().find(|r| r.file_id == *id))
+                .map(|r| {
+                    let bytes = bundle
+                        .resource_blobs
+                        .get(&r.uid.hyphenated().to_string())
+                        .and_then(|b| b.read().ok())
+                        .unwrap_or_default();
+                    (r.file_name.as_str(), bytes)
+                })
+                .collect();
+            assert_eq!(
+                attached,
+                [
+                    ("Harbour map.png", scrivener_fixtures::TINY_PNG.to_vec()),
+                    ("Tide tables.pdf", scrivener_fixtures::TINY_PDF.to_vec()),
+                ],
+                "{label}"
+            );
             assert!(
-                prose(item(&bundle, "Harbour map"), ContentRole::NoteText).contains("](assets/"),
+                bundle
+                    .resources
+                    .iter()
+                    .all(|r| r.kind == ResourceKind::StoredFile && r.description.is_empty()),
                 "{label}"
             );
-            // The PDF is copied beside the project, and its note names where.
-            assert_eq!(summary.totals.research_files, 1, "{label}");
+            // Nothing is written beside the project.
+            let mut beside: Vec<String> = std::fs::read_dir(dir.path())
+                .map(|d| {
+                    d.filter_map(Result::ok)
+                        .map(|e| e.file_name().to_string_lossy().into_owned())
+                        .collect()
+                })
+                .unwrap_or_default();
+            beside.sort();
             assert_eq!(
-                summary.research_folder.as_deref(),
-                Some("novel W-research"),
-                "{label}"
-            );
-            let note = addressable(&prose(item(&bundle, "Tide tables"), ContentRole::NoteText));
-            assert_eq!(note, "novel W-research/Tide tables.pdf", "{label}");
-            assert_eq!(
-                std::fs::read(dir.path().join("novel W-research/Tide tables.pdf"))
-                    .unwrap_or_default(),
-                scrivener_fixtures::TINY_PDF,
+                beside,
+                [spec.folder(), "novel.skrib".to_string()],
                 "{label}"
             );
             assert_eq!(bundle.note_templates.len(), 1, "{label}: the template");
@@ -429,12 +462,19 @@ fn a_scenes_notes_comments_and_picture_arrive_on_their_words() {
 
     // The picture: one asset, named by its place in the project, at its display size.
     assert!(djot.contains("{width=20 height=20}"), "{djot}");
-    // The scene's picture is the same image as the Research picture: one asset, which both
-    // name.
+    // The scene's picture is the same image as the Research picture, which is a resource
+    // of its own: one asset, for the scene.
     assert_eq!(bundle.assets.len(), 1);
     let path = &bundle.assets[0].path;
     assert!(djot.contains(path.as_str()), "{djot}");
-    assert!(prose(item(&bundle, "Harbour map"), ContentRole::NoteText).contains(path.as_str()));
+    assert!(
+        bundle
+            .resources
+            .iter()
+            .any(|r| r.title == "Harbour map" && r.content_hash == bundle.assets[0].content_hash),
+        "{:?}",
+        bundle.resources
+    );
     assert!(
         summary
             .prose
@@ -903,36 +943,256 @@ fn a_cancelled_conversion_leaves_nothing() {
                 .collect()
         })
         .unwrap_or_default();
-    assert_eq!(beside, [spec.folder()], "no research folder, staged or not");
+    assert_eq!(
+        beside,
+        [spec.folder()],
+        "nothing beside the project, staged or not"
+    );
 }
 
-/// The folder beside the project taken while the import ran (another program made it):
-/// the research files cannot be put there, so the import fails whole and says where,
-/// rather than leaving a project whose notes name files that are not in that folder.
+/// A project with research files everywhere a binder can hold one (decided 2026-11-22):
+/// a picture and a PDF in the manuscript, a picture in a folder of Research, a PDF with a
+/// synopsis and keywords of its own, a PDF with a child, a plain text file, a picture at
+/// the top of the binder and a PDF in the Trash. Bookmarks to a page, to a file on the
+/// writer's disk and to a mailbox on the PDF with a synopsis, a page bookmarked by the
+/// picture in Research, and a page the project bookmarks.
+pub(crate) fn research_spec() -> Spec {
+    let mut spec = Spec::novel(Generation::Format20, Platform::Mac);
+    spec.template_folder = None;
+    let png = || Some(("png".to_string(), TINY_PNG.to_vec()));
+    let pdf = || Some(("pdf".to_string(), scrivener_fixtures::TINY_PDF.to_vec()));
+    spec.items = vec![
+        Item::new(0, Kind::Draft, "Manuscript").compiled(),
+        Item::new(1, Kind::Folder, "Chapter 1").compiled(),
+        Item::new(2, Kind::Text, "Arrival")
+            .compiled()
+            .with_text(0, 2),
+        Item {
+            media: png(),
+            ..Item::new(2, Kind::Image, "Harbour sketch")
+        },
+        Item {
+            media: pdf(),
+            ..Item::new(2, Kind::Pdf, "Chart of the bay")
+        },
+        Item::new(0, Kind::Research, "Research"),
+        Item::new(1, Kind::Folder, "Places"),
+        Item {
+            media: png(),
+            bookmarks: vec![Bookmark::web("https://example.com/lights", None)],
+            ..Item::new(2, Kind::Image, "Lighthouse at dusk")
+        },
+        Item {
+            media: pdf(),
+            keywords: vec![2],
+            bookmarks: vec![
+                Bookmark::web("https://example.org/almanac", Some("Tide almanac")),
+                Bookmark::web("file:///Users/someone/Maps/harbour%20plan.pdf", None),
+                Bookmark::web("mailto:keeper@example.org", Some("Keeper")),
+            ],
+            ..Item::new(1, Kind::Pdf, "Tide tables").with_synopsis(3)
+        },
+        Item {
+            media: pdf(),
+            ..Item::new(1, Kind::Pdf, "Survey")
+        },
+        Item::new(2, Kind::Text, "Survey notes").with_text(4, 1),
+        Item {
+            media: Some(("txt".to_string(), b"Books to find".to_vec())),
+            ..Item::new(1, Kind::Other, "Reading list")
+        },
+        Item {
+            media: png(),
+            ..Item::new(0, Kind::Image, "Loose sketch")
+        },
+        Item::new(0, Kind::Trash, "Trash"),
+        Item {
+            media: pdf(),
+            ..Item::new(1, Kind::Pdf, "Old chart")
+        },
+    ];
+    spec.project_bookmarks = vec![Bookmark::web("https://example.net/coast", None)];
+    spec
+}
+
+/// The resources of `bundle` attached to the row titled `title`: title, kind and file
+/// name, in order.
+fn attached(bundle: &WorkBundle, title: &str) -> Vec<(String, ResourceKind, String)> {
+    item(bundle, title)
+        .item
+        .resource_ids
+        .iter()
+        .filter_map(|id| bundle.resources.iter().find(|r| r.file_id == *id))
+        .map(|r| (r.title.clone(), r.kind.clone(), r.file_name.clone()))
+        .collect()
+}
+
+fn stored(title: &str, file: &str) -> (String, ResourceKind, String) {
+    (
+        title.to_string(),
+        ResourceKind::StoredFile,
+        file.to_string(),
+    )
+}
+
+/// Every research file of the notes binder's part is a stored resource of the row its
+/// parent became, or of its own note when it carries more than its file; a picture or a
+/// PDF of the manuscript stays where it was; a plain text file stays a note's words; and
+/// nothing is written beside the project.
 #[test]
-fn a_research_folder_that_cannot_be_put_in_place_fails_the_import_whole() {
+fn research_files_become_resources_of_the_rows_they_sat_in() {
     let dir = temp();
-    let spec = Spec::novel(Generation::Format20, Platform::Mac);
+    let spec = research_spec();
     let folder = write_files(&spec.build(), dir.path(), &spec.folder());
     let out = dir.path().join("novel.skrib");
-    let output = out.to_string_lossy().into_owned();
-    let (choices, words, answers, options) =
-        (Choices::default(), words(), Answers::default(), options());
-    let request = request(&folder, &output, &choices, &words, &answers, &options);
-    let taken = dir.path().join("novel W-research");
-    let report = |_: f32, phase: &str| {
-        if phase == "import.writing" {
-            let _ = std::fs::create_dir_all(&taken);
-            let _ = std::fs::write(taken.join("mine.txt"), b"the writer's own");
-        }
-    };
-    let result = convert(&request, &report, &AtomicBool::new(false));
-    assert!(
-        matches!(result, Err(ConvertError::Output(_))),
-        "{:?}",
-        result.map(|s| s.prose.len())
+    let summary = converted(&folder, &out);
+    let bundle = read(&out);
+
+    // A picture in a folder of Research: a resource of that folder, no note of its own.
+    assert_eq!(
+        attached(&bundle, "Places"),
+        [
+            stored("Lighthouse at dusk", "Lighthouse at dusk.png"),
+            (
+                "example.com".to_string(),
+                ResourceKind::WebLink,
+                String::new()
+            ),
+        ]
     );
-    assert!(!out.exists(), "no project whose notes name missing files");
+    assert!(items(&bundle).all(|i| i.item.title != "Lighthouse at dusk"));
+    // A PDF with a synopsis and a keyword of its own keeps its note, and its file, its
+    // page and its file on disk are that note's resources; the mailbox stays a line.
+    assert_eq!(
+        attached(&bundle, "Tide tables"),
+        [
+            stored("Tide tables", "Tide tables.pdf"),
+            (
+                "Tide almanac".to_string(),
+                ResourceKind::WebLink,
+                String::new()
+            ),
+            (
+                "harbour plan".to_string(),
+                ResourceKind::LinkedFile,
+                "harbour plan.pdf".to_string()
+            ),
+        ]
+    );
+    let tides = item(&bundle, "Tide tables");
+    assert_eq!(
+        prose(tides, ContentRole::SynopsisText).trim(),
+        scrivener_fixtures::text::sentence(3)
+    );
+    assert!(!tides.item.tag_ids.is_empty(), "its keyword is a tag on it");
+    let note = prose(tides, ContentRole::NoteText);
+    assert!(note.contains("Keeper"), "{note}");
+    assert!(
+        !note.contains("example.org/almanac") && !note.contains("harbour"),
+        "{note}"
+    );
+    // A PDF with a child is the folder holding it, its file that folder's resource.
+    assert_eq!(
+        attached(&bundle, "Survey"),
+        [stored("Survey", "Survey.pdf")]
+    );
+    assert_eq!(
+        item(&bundle, "Survey").item.role,
+        common::entities::BinderItemRole::Folder
+    );
+    assert!(!prose(item(&bundle, "Survey notes"), ContentRole::NoteText).is_empty());
+    // A plain text file is a note holding its words.
+    assert_eq!(
+        addressable(&prose(item(&bundle, "Reading list"), ContentRole::NoteText)),
+        "Books to find"
+    );
+    assert!(item(&bundle, "Reading list").item.resource_ids.is_empty());
+    // At the top of the binder and at the top of the Trash, a file is attached to nothing.
+    let held: Vec<u64> = items(&bundle)
+        .flat_map(|i| i.item.resource_ids.iter().copied())
+        .collect();
+    let unattached: Vec<&str> = bundle
+        .resources
+        .iter()
+        .filter(|r| !held.contains(&r.file_id))
+        .map(|r| r.title.as_str())
+        .collect();
+    assert_eq!(unattached, ["Loose sketch", "Old chart", "example.net"]);
+    // The manuscript's picture is still a picture shown on its note; its PDF, which no note
+    // can show, is a resource of that note.
+    assert!(prose(item(&bundle, "Harbour sketch"), ContentRole::NoteText).contains("](assets/"));
+    assert_eq!(summary.totals.pictures, 1);
+    assert_eq!(
+        attached(&bundle, "Chart of the bay"),
+        [stored("Chart of the bay", "Chart of the bay.pdf")]
+    );
+    // Stored inside the project, byte for byte, and counted once each.
+    for r in bundle
+        .resources
+        .iter()
+        .filter(|r| r.kind == ResourceKind::StoredFile)
+    {
+        let bytes = bundle
+            .resource_blobs
+            .get(&r.uid.hyphenated().to_string())
+            .and_then(|b| b.read().ok())
+            .unwrap_or_default();
+        let expected = if r.file_name.ends_with(".png") {
+            TINY_PNG.to_vec()
+        } else {
+            scrivener_fixtures::TINY_PDF.to_vec()
+        };
+        assert_eq!(bytes, expected, "{}", r.file_name);
+        assert_eq!(r.byte_size, expected.len() as u64);
+        assert_eq!(r.content_hash, blake3::hash(&expected).to_hex().to_string());
+        assert_eq!(r.mime_type, skrib_format::media::mime_for(&r.file_name));
+        assert!(r.description.is_empty());
+    }
+    assert_eq!(summary.totals.resources, 6);
+    // The review said as much before the import: every file stored, the manuscript's PDF
+    // among them, at the size the project states.
+    let shape = crate::support::read(crate::support::run(&folder))
+        .structure
+        .shape;
+    assert_eq!(shape.resources, summary.totals.resources);
+    let stored_bytes: u64 = bundle
+        .resources
+        .iter()
+        .filter(|r| r.kind == ResourceKind::StoredFile)
+        .map(|r| r.byte_size)
+        .sum();
+    assert_eq!(shape.resource_bytes, stored_bytes);
+    assert_eq!(summary.totals.links, 4);
+    let stored_notices = summary
+        .prose
+        .iter()
+        .filter(|n| matches!(n, ProseNotice::MediaFileStored { .. }))
+        .count();
+    assert_eq!(stored_notices, 6);
+    // The file on disk is kept relative to the folder the project is in, and resolves to
+    // where Scrivener recorded it.
+    let plan = bundle
+        .resources
+        .iter()
+        .find(|r| r.kind == ResourceKind::LinkedFile)
+        .map(|r| r.location.clone())
+        .unwrap_or_default();
+    let base = skrib_format::media::link_base(&out).unwrap_or_default();
+    assert_eq!(
+        skrib_format::media::resolve_link(&plan, &base),
+        Path::new("/Users/someone/Maps/harbour plan.pdf")
+    );
+    // No line of any note lists a page or a file that became a resource.
+    for row in items(&bundle) {
+        for djot in row.prose.values() {
+            assert!(
+                !djot.contains("example.net") && !djot.contains("example.com"),
+                "{}: {djot}",
+                row.item.title
+            );
+        }
+    }
+    // Nothing beside the project.
     let mut beside: Vec<String> = std::fs::read_dir(dir.path())
         .map(|d| {
             d.filter_map(Result::ok)
@@ -941,80 +1201,81 @@ fn a_research_folder_that_cannot_be_put_in_place_fails_the_import_whole() {
         })
         .unwrap_or_default();
     beside.sort();
-    assert_eq!(beside, [spec.folder(), "novel W-research".to_string()]);
-    let held: Vec<String> = std::fs::read_dir(&taken)
-        .map(|d| {
-            d.filter_map(Result::ok)
-                .map(|e| e.file_name().to_string_lossy().into_owned())
-                .collect()
-        })
-        .unwrap_or_default();
-    assert_eq!(held, ["mine.txt"], "the other folder is left as it was");
+    assert_eq!(beside, [spec.folder(), "novel.skrib".to_string()]);
+    survives_the_editor(&bundle);
+    loads(bundle, &out);
 }
 
-/// A research picture in a format Skribisto cannot show is still a research file it cannot
-/// open: copied beside the project with the others, its note naming where.
+/// A research file past what one read takes stays in the Scrivener project, said, while
+/// every other is stored; its note, which holds its synopsis, stays. The review counts only
+/// what will be stored, the manuscript's PDF included.
 #[test]
-fn a_research_picture_the_editor_cannot_show_is_copied_beside_the_project() {
+fn a_research_file_too_large_to_read_is_reported_not_carried() {
     let dir = temp();
-    let svg = r#"<svg xmlns="http://www.w3.org/2000/svg" width="4" height="4"/>"#.to_string();
-    let folder = novel_with(
-        Generation::Format20,
-        Platform::Mac,
-        dir.path(),
-        &[("Harbour map", "content.png", svg.clone())],
-    );
+    let spec = research_spec();
+    let folder = write_files(&spec.build(), dir.path(), &spec.folder());
+    let Some(index) = spec.index_of("Tide tables") else {
+        panic!("no Tide tables");
+    };
+    let path = folder.join(format!("{}content.pdf", spec.payload_prefix(index)));
+    // Sparse: past the ceiling on paper, nothing on the disk.
+    let grown = std::fs::OpenOptions::new()
+        .write(true)
+        .open(&path)
+        .and_then(|f| f.set_len((512 << 20) + 1));
+    assert!(grown.is_ok(), "{grown:?}");
+
+    let analysed = crate::support::read(crate::support::run(&folder));
+    assert_eq!(analysed.structure.shape.resources, 5);
     let out = dir.path().join("novel.skrib");
     let summary = converted(&folder, &out);
-    let copied: Vec<&String> = summary
+    let not_carried: Vec<&str> = summary
         .prose
         .iter()
         .filter_map(|n| match n {
-            ProseNotice::MediaFileCopied { path, .. } => Some(path),
+            ProseNotice::MediaFileNotCarried { name, .. } => Some(name.as_str()),
             _ => None,
         })
         .collect();
-    assert!(
-        copied.iter().any(|p| p.ends_with("/Harbour map.png")),
-        "{:?}",
-        summary.prose
-    );
-    let research = summary.research_folder.clone().unwrap_or_default();
-    assert_eq!(
-        std::fs::read(dir.path().join(&research).join("Harbour map.png")).unwrap_or_default(),
-        svg.as_bytes()
-    );
+    assert_eq!(not_carried, ["Tide tables.pdf"]);
+    assert_eq!(summary.totals.resources, 5);
     let bundle = read(&out);
-    let note = addressable(&prose(item(&bundle, "Harbour map"), ContentRole::NoteText));
-    assert_eq!(note, format!("{research}/Harbour map.png"));
+    let tides = item(&bundle, "Tide tables");
+    assert!(!prose(tides, ContentRole::SynopsisText).is_empty());
+    assert!(
+        attached(&bundle, "Tide tables")
+            .iter()
+            .all(|(_, kind, _)| *kind != ResourceKind::StoredFile)
+    );
 }
 
-/// Off, the research file stays in the Scrivener project and its note names where.
+/// A research file still in the cloud is not counted by the review, since it is never
+/// read: the review's total is what the import stores.
 #[test]
-fn research_files_left_in_the_scrivener_project_are_named_there() {
+fn a_research_file_left_in_the_cloud_is_not_counted() {
     let dir = temp();
-    let spec = Spec::novel(Generation::Format20, Platform::Mac);
+    let spec = research_spec();
     let folder = write_files(&spec.build(), dir.path(), &spec.folder());
-    let out = dir.path().join("novel.skrib");
-    let output = out.to_string_lossy().into_owned();
-    let (choices, words, answers, options) =
-        (Choices::default(), words(), Answers::default(), options());
-    let mut request = request(&folder, &output, &choices, &words, &answers, &options);
-    request.copy_research_files = false;
-    let summary = match convert(&request, &|_, _| {}, &AtomicBool::new(false)) {
-        Ok(summary) => summary,
-        Err(e) => panic!("{e}"),
+    let Some(index) = spec.index_of("Chart of the bay") else {
+        panic!("no Chart of the bay");
     };
-    assert_eq!(summary.research_folder, None);
-    assert!(
-        summary
-            .prose
-            .iter()
-            .any(|n| matches!(n, ProseNotice::MediaFileNotCarried { .. }))
+    let prefix = spec.payload_prefix(index);
+    let moved = std::fs::rename(
+        folder.join(format!("{prefix}content.pdf")),
+        folder.join(format!(
+            "{prefix}{}",
+            scrivener_fixtures::traps::icloud_stub("content.pdf")
+        )),
     );
-    let bundle = read(&out);
-    let note = addressable(&prose(item(&bundle, "Tide tables"), ContentRole::NoteText));
-    assert!(note.starts_with("Lighthouse.scriv/Files/Data/"), "{note}");
+    assert!(moved.is_ok(), "{moved:?}");
+
+    let shape = crate::support::read(crate::support::run(&folder))
+        .structure
+        .shape;
+    let out = dir.path().join("novel.skrib");
+    let summary = converted(&folder, &out);
+    assert_eq!(summary.totals.resources, 5);
+    assert_eq!(shape.resources, summary.totals.resources);
 }
 
 #[test]
@@ -1307,12 +1568,9 @@ fn a_cancel_at_any_point_leaves_nothing() {
             Err(ConvertError::Cancelled) => {
                 assert_eq!(beside(), [spec.folder()], "cancelled at report {point}");
             }
-            Ok(summary) => {
+            Ok(_) => {
                 completed = true;
                 let _ = std::fs::remove_file(&out);
-                if let Some(research) = summary.research_folder {
-                    let _ = std::fs::remove_dir_all(dir.path().join(research));
-                }
                 assert_eq!(beside(), [spec.folder()]);
                 break;
             }

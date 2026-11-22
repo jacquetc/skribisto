@@ -843,7 +843,8 @@ pub(crate) fn prose_notice(notice: &ProseNotice, locator: &Locator<'_>) -> Scriv
         | ProseNotice::ReadAsPlainText { .. }
         | ProseNotice::CommentsUnreadable { .. }
         | ProseNotice::HeadingRepeatsTitle { .. }
-        | ProseNotice::AnnotationOnlyDocumentKept { .. } => Vec::new(),
+        | ProseNotice::AnnotationOnlyDocumentKept { .. }
+        | ProseNotice::MediaFileStored { .. } => Vec::new(),
         ProseNotice::InlineNoteUnmatched { count: n, .. }
         | ProseNotice::StyleUnresolved { count: n, .. }
         | ProseNotice::StylesLostInExport { count: n, .. }
@@ -902,7 +903,6 @@ pub(crate) fn prose_notice(notice: &ProseNotice, locator: &Locator<'_>) -> Scriv
         ProseNotice::LeftOut { what, count: n, .. } => {
             vec![token("what", left_out(*what)), count("count", *n)]
         }
-        ProseNotice::MediaFileCopied { path, .. } => vec![text("path", path)],
         ProseNotice::Document {
             warning,
             count: n,

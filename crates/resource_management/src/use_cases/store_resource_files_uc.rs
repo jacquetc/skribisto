@@ -241,50 +241,9 @@ fn read_head(path: &Path, limit: u64) -> Option<Vec<u8>> {
     Some(out)
 }
 
-/// The media type of a file, from its extension. What decides how the dock shows it
-/// (its icon, whether it has a thumbnail, whether it opens in the image viewer) and
-/// nothing else: it is never trusted to say whether a file is safe to open.
-pub fn mime_for(file_name: &str) -> &'static str {
-    let ext = file_name
-        .rsplit_once('.')
-        .map(|(_, e)| e.to_ascii_lowercase())
-        .unwrap_or_default();
-    match ext.as_str() {
-        "png" => "image/png",
-        "jpg" | "jpeg" => "image/jpeg",
-        "webp" => "image/webp",
-        "gif" => "image/gif",
-        "svg" => "image/svg+xml",
-        "tif" | "tiff" => "image/tiff",
-        "bmp" => "image/bmp",
-        "heic" | "heif" => "image/heic",
-        "avif" => "image/avif",
-        "pdf" => "application/pdf",
-        "epub" => "application/epub+zip",
-        "txt" | "text" => "text/plain",
-        "md" | "markdown" => "text/markdown",
-        "rtf" => "application/rtf",
-        "html" | "htm" => "text/html",
-        "csv" => "text/csv",
-        "doc" => "application/msword",
-        "docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "odt" => "application/vnd.oasis.opendocument.text",
-        "ods" => "application/vnd.oasis.opendocument.spreadsheet",
-        "xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "mp3" => "audio/mpeg",
-        "m4a" | "aac" => "audio/mp4",
-        "ogg" | "oga" | "opus" => "audio/ogg",
-        "flac" => "audio/flac",
-        "wav" => "audio/wav",
-        "mp4" | "m4v" => "video/mp4",
-        "mov" => "video/quicktime",
-        "webm" => "video/webm",
-        "mkv" => "video/x-matroska",
-        "avi" => "video/x-msvideo",
-        "zip" => "application/zip",
-        _ => "application/octet-stream",
-    }
-}
+/// The media type of a file, from its extension: the one table every way of storing a
+/// resource shares (see `skrib_format::media::mime_for`).
+pub use skrib_format::media::mime_for;
 
 #[cfg(test)]
 mod tests {

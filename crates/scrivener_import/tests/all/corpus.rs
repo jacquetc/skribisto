@@ -774,7 +774,6 @@ fn corpus_every_project_converts_and_loads_back() {
         project_notes: "Project notes".to_string(),
         recovered: "Recovered".to_string(),
         untitled_template: "Template".to_string(),
-        research_folder: format!("{TITLE_SLOT} research files"),
         list_separator: ", ".to_string(),
         label_details: format!("{TITLE_SLOT} in Scrivener"),
         status_details: format!("{TITLE_SLOT} in Scrivener"),
@@ -860,7 +859,6 @@ fn corpus_every_project_converts_and_loads_back() {
                 title: None,
                 author: None,
                 language: None,
-                copy_research_files: true,
                 now: chrono::Utc::now(),
                 today: chrono::Utc::now().date_naive(),
             };
@@ -952,9 +950,6 @@ fn corpus_every_project_converts_and_loads_back() {
                 failures.push(format!("{label}: does not load: {e:#}"));
             }
             let _ = std::fs::remove_file(&out);
-            if let Some(folder) = &summary.research_folder {
-                let _ = std::fs::remove_dir_all(scratch.path().join(folder));
-            }
             for notice in &summary.metadata {
                 *metadata_notices
                     .entry(notice.key().to_string())

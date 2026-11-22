@@ -860,7 +860,7 @@ pub(crate) const TABLE: &[Entry] = &[
         Some(Differently),
     ),
     e(
-        "scrivener-prose-media-file-copied",
+        "scrivener-prose-media-file-stored",
         Report,
         Some(Differently),
     ),
@@ -2356,8 +2356,8 @@ pub(crate) fn summary_line(key: &str, findings: &[&ScrivenerFinding]) -> Option<
         "scrivener-prose-annotation-only-document-kept" => tr!(
             import_scrivener_prose_annotation_only_document_kept_line(count = count)
         ),
-        "scrivener-prose-media-file-copied" => {
-            tr!(import_scrivener_prose_media_file_copied_line(count = count))
+        "scrivener-prose-media-file-stored" => {
+            tr!(import_scrivener_prose_media_file_stored_line(count = count))
         }
         "scrivener-prose-media-file-not-carried" => tr!(
             import_scrivener_prose_media_file_not_carried_line(count = count)

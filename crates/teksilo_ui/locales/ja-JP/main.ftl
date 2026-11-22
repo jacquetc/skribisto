@@ -1101,6 +1101,7 @@ import-scrivener-in-exports-no = いいえ
 import-scrivener-becomes-item = 項目
 import-scrivener-becomes-trashed = ごみ箱内
 import-scrivener-before-title = インポートの前に
+import-scrivener-review-resources = 調査資料ファイル{ $count }件（{ $size }）を、リソースとして新しいプロジェクトの中に保存します。
 import-scrivener-review-error-unreadable = 確認内容を準備できませんでした。もう一度プロジェクトを選んでください。
 import-scrivener-review-error-choice = この選択はプロジェクトに合いません。もう一度プロジェクトを選んでください。
 import-scrivener-review-error-unmappable = この選択では、何かを失わずにバインダーを移行することができません。別の選択にするか、問題を報告してください。
@@ -1111,8 +1112,6 @@ import-scrivener-title-field = タイトル
 import-scrivener-author = 著者
 import-scrivener-language = 言語
 import-scrivener-location-inside-project = Scrivener プロジェクトの外にあるフォルダーを選んでください。Scrivener はプロジェクトの中に自身のファイルだけを置きます。
-import-scrivener-copy-research-label = 調査資料ファイルを新しいプロジェクトの隣にコピー
-import-scrivener-copy-research = PDF や音声など、Skribisto で開けない調査資料ファイル{ $count }件を、プロジェクトの隣のフォルダーにコピーします。チェックを外すと、Scrivener プロジェクト内のファイルの場所を各ファイルのノートに記載します。
 # The file name proposed when the project's name holds nothing a file name can.
 import-scrivener-default-name = Scrivener プロジェクト
 
@@ -1143,20 +1142,14 @@ import-scrivener-report-templates = ノートのテンプレート{ $count }件
 import-scrivener-report-tags = タグ{ $count }件
 import-scrivener-report-statuses = 状態{ $count }件
 import-scrivener-report-trashed = ごみ箱内の{ $count }項目
-import-scrivener-report-research-files = 調査資料ファイル{ $count }件
+import-scrivener-report-resources = リソースとして保存した調査資料ファイル{ $count }件
+import-scrivener-report-links = ウェブページやファイルへのリンク{ $count }件
 import-scrivener-report-choices = 選んだ内容
 import-scrivener-report-accepted-mobile = iPhone・iPad 版 Scrivener で加えた変更のうち、まだプロジェクトに取り込まれていないものを含めずにインポートしました。
 import-scrivener-report-accepted-no-text = 文書の本文が一つも含まれていなかったため、このコピーを空の文書のままインポートしました。
 import-scrivener-report-choice = { $subject }：{ $answer }
 import-scrivener-report-yes = はい
 import-scrivener-report-no = いいえ
-import-scrivener-report-research-copied = Skribisto で開けない調査資料ファイルを、新しいプロジェクトの隣の「{ $folder }」にコピーしました。
-import-scrivener-report-research-not-copied = Skribisto で開けない調査資料ファイルはコピーしていません。Scrivener プロジェクト内のファイルの場所は、各ファイルのノートに記載されています。
-import-scrivener-report-research-copied-except = Skribisto で開けない調査資料ファイルを、新しいプロジェクトの隣の「{ $folder }」にコピーしました。ただし{ $count }件は Scrivener プロジェクトに残っています。その場所は各ファイルのノートに記載されています。
-import-scrivener-report-research-none-copied = { $count ->
-    [1] 調査資料ファイルのコピーを選びましたが、対象となる唯一のファイルをコピーできませんでした。そのファイルは Scrivener プロジェクトに残っており、その場所はファイルのノートに記載されています。
-   *[other] 調査資料ファイルのコピーを選びましたが、対象の{ $count }件はどれもコピーできませんでした。それらは Scrivener プロジェクトに残っており、その場所は各ファイルのノートに記載されています。
-}
 import-scrivener-report-chose-project = 選んだフォルダーまたはアーカイブにある複数のプロジェクトのうち、「{ $project }」をインポートすることを選びました。
 import-scrivener-report-chose-manifest = バインダーファイル「{ $file }」を選びました。
 import-scrivener-report-chose-enclosing = 「{ $project }」の中にあるものを選んだため、プロジェクト全体をインポートしました。
@@ -1217,8 +1210,6 @@ import-scrivener-notes-of = { $title }（ノート）
 import-scrivener-project-notes = プロジェクトのノート
 import-scrivener-recovered = 回収した本文
 import-scrivener-untitled-template = 無題のテンプレート
-# The folder beside the new project its research files are copied into.
-import-scrivener-research-folder = { $name } の調査資料ファイル
 # Between two authors' names.
 import-scrivener-list-separator = {"、"}
 import-scrivener-label-details = Scrivener の「{ $field }」フィールドから
@@ -1744,8 +1735,8 @@ import-scrivener-prose-justified-text-not-kept-line = 両端揃えの{ $count }�
 import-scrivener-prose-comment-colours-lost-line = コメント{ $count }件の色がなくなります。
 import-scrivener-prose-control-characters-removed-line = 目に見えない制御文字{ $count }個を、削除します。
 import-scrivener-prose-note-on-heading-lost-line = 章の見出しに付いていた脚注またはコメント{ $count }件は、その位置に残せませんでした。コメントは章の最初の段落に移し、脚注は除外します。
-import-scrivener-prose-media-file-copied-line = Skribisto で開けない調査資料ファイル{ $count }件を、新しいプロジェクトの隣にコピーしました。コピー先は各ファイルのノートに記載されています。
-import-scrivener-prose-media-file-not-carried-line = Skribisto で開けない調査資料ファイル{ $count }件は、Scrivener プロジェクトに残ります。ファイル名は各ファイルのノートに記載されています。
+import-scrivener-prose-media-file-stored-line = 調査資料ファイル{ $count }件が、新しいプロジェクトのリソースになりました。
+import-scrivener-prose-media-file-not-carried-line = 読み込めなかったか、取り込むには大きすぎるファイル{ $count }件は、Scrivener プロジェクトに残ります。
 
 ## When the import fails
 import-scrivener-error-refused = { $refusal }何も書き込んでいません。

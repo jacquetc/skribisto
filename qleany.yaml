@@ -2782,8 +2782,8 @@ features:
         type: integer
         optional: true
       # Binder items; documents (texts), of them in the Draft, and with a file of writing on
-      # disk; pictures and other files; research files Skribisto cannot open; items in the
-      # Trash; snapshots Scrivener keeps (not imported).
+      # disk; pictures and other files; items in the Trash; snapshots Scrivener keeps (not
+      # imported).
       - name: items
         type: integer
       - name: documents
@@ -2793,8 +2793,6 @@ features:
       - name: documents_present
         type: integer
       - name: media_items
-        type: integer
-      - name: research_files
         type: integer
       - name: trashed_items
         type: integer
@@ -3047,12 +3045,14 @@ features:
         enum_values:
         - Import
         - LeaveOut
+      # `resources` and `resource_bytes`: the research files the import will store as
+      # resources, and their size, for the review page.
       - name: shape
         type: enum
         enum_name: ScrivenerShape
         enum_values:
         - Empty
-        - "Counted { books: i64, parts: i64, chapter_folders: i64, flat_chapters: i64, scenes: i64, paratexts: i64, plain_folders: i64, manuscript_notes: i64, notes_rows: i64, trashed_rows: i64, templates: i64, tags: i64 }"
+        - "Counted { books: i64, parts: i64, chapter_folders: i64, flat_chapters: i64, scenes: i64, paratexts: i64, plain_folders: i64, manuscript_notes: i64, notes_rows: i64, trashed_rows: i64, templates: i64, tags: i64, resources: i64, resource_bytes: i64 }"
       - name: chapter_encoding
         type: enum
         enum_name: ScrivenerChapterEncoding
@@ -3138,9 +3138,6 @@ features:
       - name: language
         type: string
         optional: true
-      # Copy the research files Skribisto cannot open into a folder beside the project.
-      - name: copy_research_files
-        type: boolean
       # The words the import writes into the project, resolved by the interface in its own
       # language when the import starts, and stored as they are: nothing English is
       # defaulted here. A pattern holds `import_management::scrivener::TITLE_SLOT` where its
@@ -3156,8 +3153,6 @@ features:
       - name: recovered_name
         type: string
       - name: untitled_template_name
-        type: string
-      - name: research_folder_pattern
         type: string
       - name: list_separator
         type: string
@@ -3201,16 +3196,14 @@ features:
       fields:
       - name: output_path
         type: string
-      # The folder beside the project the research files were copied into, by name; empty
-      # when none was.
-      - name: research_folder
-        type: string
+      # `resources`: research files stored as resources; `links`: bookmarks to pages and
+      # files outside the project, as link resources.
       - name: totals
         type: enum
         enum_name: ScrivenerTotals
         enum_values:
         - Empty
-        - "Counted { rows: i64, words: i64, footnotes: i64, comments: i64, pictures: i64, templates: i64, tags: i64, rungs: i64, trashed: i64, research_files: i64, synopses: i64, document_notes: i64 }"
+        - "Counted { rows: i64, words: i64, footnotes: i64, comments: i64, pictures: i64, templates: i64, tags: i64, rungs: i64, trashed: i64, resources: i64, links: i64, synopses: i64, document_notes: i64 }"
       # Every notice, one row per kind and item: the analysis's again, the structure's, the
       # prose's and the metadata's.
       - name: findings

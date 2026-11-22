@@ -44,7 +44,7 @@ Accanto all'albero, alcune scelte cambiano il modo in cui il raccoglitore viene 
 - *Trasferisci il cestino* trasferisce gli elementi del cestino di Scrivener nel cestino di Skribisto.
 - *Le righe vuote diventano separatori di scena* e *Le righe di ornamenti diventano separatori di scena* decidono cosa diventa un separatore di scena nel testo.
 
-Sotto l'albero, *Prima di importare* elenca cosa fa l'importazione con il raccoglitore e con le parole chiave, i metadati personalizzati, le raccolte, i segnalibri e gli obiettivi, e cosa lascia indietro, così lo sai prima di importare.
+Sotto l'albero, *Prima di importare* elenca cosa fa l'importazione con il raccoglitore e con le parole chiave, i metadati personalizzati, le raccolte, i segnalibri e gli obiettivi, e cosa lascia indietro, così lo sai prima di importare. L'elenco comincia da quanti file di ricerca conterrà il nuovo progetto e da quanto spazio occupano: ci entrano tutti.
 
 In seguito puoi cambiare il tipo di ogni elemento dal raccoglitore. Consulta [il modello di scrittura](:help-writing-model) per sapere cos'è ciascun tipo.
 
@@ -53,8 +53,6 @@ In seguito puoi cambiare il tipo di ogni elemento dal raccoglitore. Consulta [il
 *Salvataggio* chiede una *Cartella di destinazione* e un *Nome del file*. La cartella proposta è l'ultima che hai scelto per un nuovo progetto o, finché non ne hai scelta una, la tua cartella Documenti, non quella che contiene il progetto Scrivener. Mostra anche il *Titolo*, l'*Autore* e la *Lingua* indicati dal progetto. Cambia quello che vuoi prima di importare.
 
 Scrivener 3 conserva il titolo e l'autore solo nelle impostazioni di compilazione. Finché non li imposti lì, conserva il nome che il progetto aveva quando l'hai creato, e nessun autore: la pagina propone allora quel nome e lascia vuoto *Autore*. Un modello propone il proprio titolo.
-
-Quando la tua ricerca contiene file che Skribisto non sa aprire, come PDF o suoni, *Copia i file di ricerca accanto al nuovo progetto* li mette in una cartella accanto al nuovo progetto.
 
 ## Cosa porta con sé Scrivener
 
@@ -69,20 +67,21 @@ Quando la tua ricerca contiene file che Skribisto non sa aprire, come PDF o suon
 - Le singole parole dell'elenco di completamento automatico, che entrano nel dizionario personale del progetto, così non vengono segnalate come errori di ortografia.
 - La casella di Scrivener che include un elemento nella compilazione, che diventa *Includi nelle esportazioni*.
 - I modelli di documento, che diventano modelli di nota.
-- Le immagini della ricerca, ognuna in una nota a parte. La *Galleria* di una cartella le mostra in miniatura: consulta [Le immagini e la galleria](:help-pictures).
+- I file della ricerca, immagini, PDF, suoni e pagine web allo stesso modo, che diventano risorse del nuovo progetto, conservate al suo interno. Ognuno appartiene alla cartella in cui si trovava, o alla propria nota quando aveva una sinossi, delle note o delle parole chiave sue. Un file di solo testo diventa una nota con le sue parole. Le immagini e i file del manoscritto restano note accanto al suo testo.
+- I segnalibri a pagine web e a file del tuo computer, che diventano collegamenti tra le risorse del documento che li aveva. I segnalibri del progetto stesso verso di essi non appartengono a nessun documento.
 
 ## La cartella «Da Scrivener»
 
 Ciò che il progetto contiene e che non ha un posto proprio in Skribisto viene trasferito come testo, così puoi comunque leggerlo e copiarlo. Finisce in una cartella di note chiamata *Da Scrivener*, dopo le tue note e prima del cestino, che non viene mai inclusa nelle esportazioni. Ogni nota elenca un tipo di contenuto, e una nota c'è solo se ha qualcosa da elencare:
 
 - *Progetto*: il titolo abbreviato, gli argomenti e la società delle impostazioni di compilazione; l'obiettivo della sessione, segnalato come calcolato quando Scrivener lo ha ricavato dalla scadenza e dai giorni di scrittura; i giorni di scrittura, quando nessun *Ritmo* li mantiene o Skribisto non è riuscito a leggerli; un obiettivo della bozza che non è diventato un obiettivo; e la scadenza, anche quando ha impostato il *Ritmo* del libro.
-- *Segnalibri del progetto*.
+- *Segnalibri del progetto* verso documenti del progetto.
 - *Sostituzioni di compilazione*. Skribisto non le applica quando esporta.
 - *Voci di completamento automatico* di più parole.
 - *Ricerche salvate*, con ciò che ciascuna cercava.
 - *Metadati personalizzati*: i campi di testo e di data, documento per documento.
 - *Obiettivi* impostati su note, il cui testo non è conteggiato da alcun obiettivo, e su documenti divisi alle loro intestazioni, i cui capitoli non sono conteggiati insieme da un unico obiettivo.
-- *Segnalibri* che nessun collegamento di Skribisto può mostrare, come quello da una scena a un'altra scena o a una pagina web.
+- *Segnalibri* che nessun collegamento di Skribisto può mostrare, come quello da una scena a un'altra scena o a un indirizzo email.
 
 I metadati personalizzati e i segnalibri di una nota che ha un suo posto, come una scheda personaggio, vengono invece aggiunti alla fine di quella nota.
 
@@ -93,7 +92,7 @@ I metadati personalizzati e i segnalibri di una nota che ha un suo posto, come u
 - **Il punto di vista.** Quando le diciture o un campo indicano personaggi della bibbia narrativa, il rapporto lo segnala: imposta il punto di vista nelle *Proprietà*.
 - **L'ordine di una raccolta**, perché un'etichetta non ha un ordine, e **gli obiettivi che contano le pagine**.
 - **Il colore del testo, l'evidenziazione e i caratteri.** È Skribisto a definire l'aspetto del testo.
-- **I file di ricerca che non sono immagini**, come PDF, suoni o pagine web. Ognuno diventa una nota che indica il file, il quale resta nel tuo progetto Scrivener a meno che tu non lo copi accanto al nuovo progetto.
+- **Un file che non si può leggere**, o più grande di 512 MB. Resta nel tuo progetto Scrivener, e il rapporto lo nomina.
 - **I segnaposto** come `<$wc>` o `<$title>`. Vengono conservati come testo semplice: sostituiscili a mano.
 - **Le impostazioni di compilazione e il registro delle parole scritte ogni giorno.** Imposta l'esportazione in Skribisto. Consulta [esportare](:help-export).
 

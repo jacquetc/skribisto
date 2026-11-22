@@ -155,6 +155,8 @@ pub(crate) fn structure(
             trashed_rows: i64::from(shape.trashed_rows),
             templates: i64::from(shape.templates),
             tags: i64::from(shape.tags),
+            resources: i64::from(shape.resources),
+            resource_bytes: i64::try_from(shape.resource_bytes).unwrap_or(i64::MAX),
         },
         chapter_encoding: match plan.chapter_encoding {
             ChapterEncoding::Folder => ScrivenerChapterEncoding::Folder,

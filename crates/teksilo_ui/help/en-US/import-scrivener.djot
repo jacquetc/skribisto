@@ -78,7 +78,8 @@ Beside the tree, the choices change how the binder comes across:
 
 Under the tree, *Before you import* lists what the import does with your binder and with your
 keywords, custom metadata, collections, bookmarks and targets, and what it leaves behind, so
-you know before you import.
+you know before you import. It starts with how many research files the new project will
+hold, and how much room they take: they all go inside it.
 
 Every item can be retyped afterwards from the binder. See
 [the writing model](:help-writing-model) for what each type is.
@@ -93,9 +94,6 @@ project states. Change any of them before you import.
 Scrivener 3 keeps a title and an author only in its compile settings. Until you set them
 there, it keeps the name the project had when you created it, and no author: the page then
 proposes that name and leaves *Author* empty. A template proposes its own title.
-
-When your research holds files Skribisto cannot open, such as PDF files or sounds, *Copy
-research files beside the new project* puts them in a folder next to it.
 
 ## What Scrivener brings with it
 
@@ -118,8 +116,14 @@ research files beside the new project* puts them in a folder next to it.
   are not marked as misspelled.
 - The "Include in Compile" box, which becomes *Include in exports*.
 - Your document templates, as note templates.
-- The pictures in your research, each in a note of its own. A folder's *Gallery* shows them
-  as thumbnails: see [Pictures and the gallery](:help-pictures).
+- The files in your research, pictures, PDF files, sounds and web pages alike, as resources
+  of the new project, kept inside it. Each one belongs to the folder it sat in, or to its
+  own note when it had a synopsis, notes or keywords of its own. A plain text file becomes a
+  note holding its words. The pictures and files of your manuscript stay notes beside its
+  text.
+- Your bookmarks to web pages and to files on your computer, as links among the resources
+  of the document that held them. The project's own bookmarks to them belong to no
+  document.
 
 ## The "From Scrivener" folder
 
@@ -132,7 +136,7 @@ Each note lists one kind of thing, and a note is there only when it has somethin
   session target, marked as calculated when Scrivener worked it out from your deadline and
   writing days, the writing days when no *Pace* keeps them or Skribisto could not read them,
   a draft target that did not become a goal, and the deadline, even when it set up the book's *Pace*.
-- *Project bookmarks*.
+- *Project bookmarks* to documents of the project.
 - *Compile replacements*. Skribisto does not make them when it exports.
 - *Auto-complete entries* of more than one word.
 - *Saved searches*, with what each one looked for.
@@ -140,7 +144,7 @@ Each note lists one kind of thing, and a note is there only when it has somethin
 - *Targets* set on notes, whose writing no goal counts, and on documents split at their
   headings, whose chapters no one goal counts together.
 - *Bookmarks* that no link in Skribisto can show, such as one from a scene to another scene
-  or to a web page.
+  or to an email address.
 
 The custom metadata and bookmarks of a note of its own, such as a character sheet, are added
 at the end of that note instead.
@@ -155,9 +159,8 @@ at the end of that note instead.
 - **The order of a collection**, since a tag holds no order, and **targets that count
   pages**.
 - **Text color, highlighting and fonts.** Skribisto sets the look of the text itself.
-- **Research files that are not pictures**, such as PDF files, sound or web pages. Each one
-  becomes a note that names the file, which stays in your Scrivener project unless you copy
-  it beside the new one.
+- **A file that cannot be read**, or one larger than 512 MB. It stays in your Scrivener
+  project, and the report names it.
 - **Placeholders** such as `<$wc>` or `<$title>`. They are kept as plain text: replace them
   by hand.
 - **Compile settings and the record of words written each day.** Set up your export in

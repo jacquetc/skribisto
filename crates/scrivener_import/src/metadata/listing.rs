@@ -16,6 +16,8 @@
 //! label out rather than writing an empty one. A link leads somewhere only when its scheme
 //! is one a reader may follow from a note (`http`, `https`, `mailto`, I3 S2): any other
 //! destination, and a file on the writer's disk (kept by its name alone), is kept as text.
+//! A web page and a file named by its absolute path are not listed at all: they are link
+//! resources of the new project (`collect`'s `LinkResource`).
 
 use skrib_format::{
     DjotInlineStyle, EscapeContext, djot_link_destination, escape_djot_text, guard_djot_line_start,

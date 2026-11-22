@@ -1262,6 +1262,14 @@ import-scrivener-in-exports-no = لا
 import-scrivener-becomes-item = عنصر
 import-scrivener-becomes-trashed = في سلة المهملات
 import-scrivener-before-title = قبل أن تستورد
+import-scrivener-review-resources = { $count ->
+    [zero] لن يُحفظ أي ملف بحث وتوثيق في المشروع الجديد.
+    [one] سيُحفظ ملف بحث وتوثيق واحد ({ $size }) داخل المشروع الجديد بوصفه موردًا.
+    [two] سيُحفظ ملفا بحث وتوثيق ({ $size } في المجموع) داخل المشروع الجديد بوصفهما موردين.
+    [few] ستُحفظ { $count } ملفات بحث وتوثيق ({ $size } في المجموع) داخل المشروع الجديد بوصفها موارد.
+    [many] سيُحفظ { $count } ملفًا للبحث والتوثيق ({ $size } في المجموع) داخل المشروع الجديد بوصفها موارد.
+   *[other] سيُحفظ { $count } ملف بحث وتوثيق ({ $size } في المجموع) داخل المشروع الجديد بوصفها موارد.
+}
 import-scrivener-review-error-unreadable = تعذّر إعداد المراجعة. اختر المشروع من جديد.
 import-scrivener-review-error-choice = هذا الاختيار لا يناسب المشروع. اختر المشروع من جديد.
 import-scrivener-review-error-unmappable = بهذا الاختيار، تعذّر نقل الحافظة دون فقدان شيء. اختر خيارًا آخر، أو أبلغ عن المشكلة.
@@ -1272,15 +1280,6 @@ import-scrivener-title-field = العنوان
 import-scrivener-author = المؤلف
 import-scrivener-language = اللغة
 import-scrivener-location-inside-project = اختر مجلدًا خارج مشروع Scrivener. لا يحتفظ Scrivener هناك إلا بملفاته.
-import-scrivener-copy-research-label = نسخ ملفات البحث والتوثيق بجانب المشروع الجديد
-import-scrivener-copy-research = { $count ->
-    [zero] لا ملفات بحث وتوثيق هنا لا يستطيع Skribisto فتحها.
-    [one] يوضع ملف بحث وتوثيق واحد لا يستطيع Skribisto فتحه، كملف PDF أو ملف صوتي، في مجلد بجانب المشروع. إن ألغيت تحديد هذا الخيار، فستذكر ملاحظته مكانه في مشروعك في Scrivener.
-    [two] يوضع ملفا بحث وتوثيق لا يستطيع Skribisto فتحهما، كملفات PDF أو الملفات الصوتية، في مجلد بجانب المشروع. إن ألغيت تحديد هذا الخيار، فستذكر ملاحظتاهما مكانهما في مشروعك في Scrivener.
-    [few] توضع { $count } ملفات بحث وتوثيق لا يستطيع Skribisto فتحها، كملفات PDF أو الملفات الصوتية، في مجلد بجانب المشروع. إن ألغيت تحديد هذا الخيار، فستذكر ملاحظاتها أماكنها في مشروعك في Scrivener.
-    [many] يوضع { $count } ملفًا للبحث والتوثيق لا يستطيع Skribisto فتحها، كملفات PDF أو الملفات الصوتية، في مجلد بجانب المشروع. إن ألغيت تحديد هذا الخيار، فستذكر ملاحظاتها أماكنها في مشروعك في Scrivener.
-   *[other] يوضع { $count } ملف بحث وتوثيق لا يستطيع Skribisto فتحها، كملفات PDF أو الملفات الصوتية، في مجلد بجانب المشروع. إن ألغيت تحديد هذا الخيار، فستذكر ملاحظاتها أماكنها في مشروعك في Scrivener.
-}
 import-scrivener-default-name = مشروع Scrivener
 
 ## Progress and result
@@ -1405,13 +1404,21 @@ import-scrivener-report-trashed = { $count ->
     [many] { $count } عنصرًا في سلة المهملات
    *[other] { $count } عنصر في سلة المهملات
 }
-import-scrivener-report-research-files = { $count ->
-    [zero] لا ملفات بحث وتوثيق
-    [one] ملف بحث وتوثيق واحد
-    [two] ملفا بحث وتوثيق
-    [few] { $count } ملفات بحث وتوثيق
-    [many] { $count } ملفًا للبحث والتوثيق
-   *[other] { $count } ملف بحث وتوثيق
+import-scrivener-report-resources = { $count ->
+    [zero] لا ملفات بحث وتوثيق محفوظة موارد
+    [one] ملف بحث وتوثيق واحد محفوظ موردًا
+    [two] ملفا بحث وتوثيق محفوظان موردين
+    [few] { $count } ملفات بحث وتوثيق محفوظة موارد
+    [many] { $count } ملفًا للبحث والتوثيق محفوظًا موارد
+   *[other] { $count } ملف بحث وتوثيق محفوظ موارد
+}
+import-scrivener-report-links = { $count ->
+    [zero] لا روابط
+    [one] رابط واحد إلى صفحة ويب أو ملف
+    [two] رابطان إلى صفحات ويب وملفات
+    [few] { $count } روابط إلى صفحات ويب وملفات
+    [many] { $count } رابطًا إلى صفحات ويب وملفات
+   *[other] { $count } رابط إلى صفحات ويب وملفات
 }
 import-scrivener-report-choices = ما اخترته
 import-scrivener-report-accepted-mobile = استوردت المشروع دون التغييرات التي أُجريت في Scrivener لأجهزة iPhone أو iPad ولم تكن قد وصلت إليه بعد.
@@ -1419,21 +1426,6 @@ import-scrivener-report-accepted-no-text = استوردت هذه النسخة ب
 import-scrivener-report-choice = { $subject }: { $answer }
 import-scrivener-report-yes = نعم
 import-scrivener-report-no = لا
-import-scrivener-report-research-copied = نُسخت ملفات البحث والتوثيق التي لا يستطيع Skribisto فتحها إلى «{ $folder }»، بجانب المشروع الجديد.
-import-scrivener-report-research-not-copied = لم تُنسخ ملفات البحث والتوثيق التي لا يستطيع Skribisto فتحها. تذكر ملاحظاتها أماكنها في مشروعك في Scrivener.
-import-scrivener-report-research-copied-except = { $count ->
-    [zero] نُسخت ملفات البحث والتوثيق التي لا يستطيع Skribisto فتحها إلى «{ $folder }»، بجانب المشروع الجديد.
-    [one] نُسخت ملفات البحث والتوثيق التي لا يستطيع Skribisto فتحها إلى «{ $folder }»، بجانب المشروع الجديد، إلا ملفًا واحدًا بقي في مشروعك في Scrivener. تذكر ملاحظته مكانه.
-    [two] نُسخت ملفات البحث والتوثيق التي لا يستطيع Skribisto فتحها إلى «{ $folder }»، بجانب المشروع الجديد، إلا ملفين بقيا في مشروعك في Scrivener. تذكر ملاحظتاهما مكانهما.
-    [few] نُسخت ملفات البحث والتوثيق التي لا يستطيع Skribisto فتحها إلى «{ $folder }»، بجانب المشروع الجديد، إلا { $count } ملفات بقيت في مشروعك في Scrivener. تذكر ملاحظاتها أماكنها.
-    [many] نُسخت ملفات البحث والتوثيق التي لا يستطيع Skribisto فتحها إلى «{ $folder }»، بجانب المشروع الجديد، إلا { $count } ملفًا بقيت في مشروعك في Scrivener. تذكر ملاحظاتها أماكنها.
-   *[other] نُسخت ملفات البحث والتوثيق التي لا يستطيع Skribisto فتحها إلى «{ $folder }»، بجانب المشروع الجديد، إلا { $count } ملف بقيت في مشروعك في Scrivener. تذكر ملاحظاتها أماكنها.
-}
-import-scrivener-report-research-none-copied = { $count ->
-    [1] طلبت نسخ ملفات البحث والتوثيق، لكن تعذّر نسخ الملف الوحيد. يبقى في مشروعك في Scrivener، وتذكر ملاحظته مكانه.
-    [two] طلبت نسخ ملفات البحث والتوثيق، لكن تعذّر نسخ أيٍّ من الملفين. يبقيان في مشروعك في Scrivener، وتذكر ملاحظتاهما مكانهما.
-   *[other] طلبت نسخ ملفات البحث والتوثيق، لكن تعذّر نسخ أيٍّ من الملفات الـ{ $count }. تبقى في مشروعك في Scrivener، وتذكر ملاحظاتها أماكنها.
-}
 import-scrivener-report-chose-project = اخترت استيراد «{ $project }»، وهو واحد من عدة مشاريع في المجلد أو الملف المضغوط الذي اخترته.
 import-scrivener-report-chose-manifest = اخترت ملف الحافظة «{ $file }».
 import-scrivener-report-chose-enclosing = اخترت شيئًا داخل «{ $project }»، فاستُورد المشروع كله.
@@ -1534,7 +1526,6 @@ import-scrivener-notes-of = { $title } (ملاحظات)
 import-scrivener-project-notes = ملاحظات المشروع
 import-scrivener-recovered = نصوص مستعادة
 import-scrivener-untitled-template = قالب بلا عنوان
-import-scrivener-research-folder = { $name } - ملفات البحث والتوثيق
 import-scrivener-list-separator = {"، "}
 import-scrivener-label-details = من الحقل «{ $field }» في Scrivener
 import-scrivener-status-details = من الحقل «{ $field }» في Scrivener
@@ -3515,21 +3506,21 @@ import-scrivener-prose-note-on-heading-lost-line = { $count ->
     [many] { $count } حاشيةً سفلية أو تعليقًا على عناوين فصول لم يمكن إبقاؤها هناك: ينتقل التعليق إلى الفقرة الأولى من الفصل، وتُستبعد الحاشية السفلية.
    *[other] { $count } حاشية سفلية أو تعليق على عناوين فصول لم يمكن إبقاؤها هناك: ينتقل التعليق إلى الفقرة الأولى من الفصل، وتُستبعد الحاشية السفلية.
 }
-import-scrivener-prose-media-file-copied-line = { $count ->
-    [zero] لم يُنسخ أي ملف بحث وتوثيق.
-    [one] نُسخ ملف بحث وتوثيق واحد لا يستطيع Skribisto فتحه بجانب المشروع الجديد. تذكر ملاحظته مكانه.
-    [two] نُسخ ملفا بحث وتوثيق لا يستطيع Skribisto فتحهما بجانب المشروع الجديد. تذكر ملاحظتاهما مكانهما.
-    [few] نُسخت { $count } ملفات بحث وتوثيق لا يستطيع Skribisto فتحها بجانب المشروع الجديد. تذكر ملاحظاتها أماكنها.
-    [many] نُسخ { $count } ملفًا للبحث والتوثيق لا يستطيع Skribisto فتحها بجانب المشروع الجديد. تذكر ملاحظاتها أماكنها.
-   *[other] نُسخ { $count } ملف بحث وتوثيق لا يستطيع Skribisto فتحها بجانب المشروع الجديد. تذكر ملاحظاتها أماكنها.
+import-scrivener-prose-media-file-stored-line = { $count ->
+    [zero] لم يصبح أي ملف بحث وتوثيق موردًا.
+    [one] أصبح ملف بحث وتوثيق واحد موردًا من موارد المشروع الجديد.
+    [two] أصبح ملفا بحث وتوثيق موردين من موارد المشروع الجديد.
+    [few] أصبحت { $count } ملفات بحث وتوثيق موارد للمشروع الجديد.
+    [many] أصبح { $count } ملفًا للبحث والتوثيق موارد للمشروع الجديد.
+   *[other] أصبح { $count } ملف بحث وتوثيق موارد للمشروع الجديد.
 }
 import-scrivener-prose-media-file-not-carried-line = { $count ->
-    [zero] لا يبقى أي ملف بحث وتوثيق في مشروعك في Scrivener.
-    [one] يبقى ملف بحث وتوثيق واحد لا يستطيع Skribisto فتحه في مشروعك في Scrivener. تذكر ملاحظته اسمه.
-    [two] يبقى ملفا بحث وتوثيق لا يستطيع Skribisto فتحهما في مشروعك في Scrivener. تذكر ملاحظتاهما اسميهما.
-    [few] تبقى { $count } ملفات بحث وتوثيق لا يستطيع Skribisto فتحها في مشروعك في Scrivener. تذكر ملاحظاتها أسماءها.
-    [many] يبقى { $count } ملفًا للبحث والتوثيق لا يستطيع Skribisto فتحها في مشروعك في Scrivener. تذكر ملاحظاتها أسماءها.
-   *[other] يبقى { $count } ملف بحث وتوثيق لا يستطيع Skribisto فتحها في مشروعك في Scrivener. تذكر ملاحظاتها أسماءها.
+    [zero] لا يبقى أي ملف في مشروعك في Scrivener.
+    [one] تعذّرت قراءة ملف واحد، أو أنه أكبر من أن يُنقل. يبقى في مشروعك في Scrivener.
+    [two] تعذّرت قراءة ملفين، أو أنهما أكبر من أن يُنقلا. يبقيان في مشروعك في Scrivener.
+    [few] تعذّرت قراءة { $count } ملفات، أو أنها أكبر من أن تُنقل. تبقى في مشروعك في Scrivener.
+    [many] تعذّرت قراءة { $count } ملفًا، أو أنها أكبر من أن تُنقل. تبقى في مشروعك في Scrivener.
+   *[other] تعذّرت قراءة { $count } ملف، أو أنها أكبر من أن تُنقل. تبقى في مشروعك في Scrivener.
 }
 
 ## When the import fails

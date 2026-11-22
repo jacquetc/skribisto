@@ -35,7 +35,7 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 use uuid::Uuid;
 
 use crate::disk::EntryKind;
-use crate::index::{Entry, Index, ReadError, join};
+use crate::index::{Copied, CopyError, Entry, Index, ReadError, join};
 use crate::model::{
     BinderRow, ConflictScheme, Counts, IdScheme, ItemKey, MemberRef, RecoveredOrigin,
     RecoveredText, TextRole,
@@ -113,6 +113,16 @@ impl<'i, 'd> Tree<'i, 'd> {
 
     pub(crate) fn read(&self, rel: &str, limit: u64) -> Result<Vec<u8>, ReadError> {
         self.index.read(&self.key(rel), limit)
+    }
+
+    /// [`Index::copy`], by a path relative to the project folder.
+    pub(crate) fn copy(
+        &self,
+        rel: &str,
+        limit: u64,
+        out: &mut dyn std::io::Write,
+    ) -> Result<Copied, CopyError> {
+        self.index.copy(&self.key(rel), limit, out)
     }
 
     pub(crate) fn is_placeholder(&self, rel: &str) -> bool {

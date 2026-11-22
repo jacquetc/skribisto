@@ -55,6 +55,9 @@ common = { workspace = true }
 # importers share, written as Djot by the same emitter and proved by the same parser, its
 # comments anchored by the same rule, its pictures brought in by the same checks.
 document_ingest = { workspace = true, features = ["rtf"] }
+# The scratch folder research files are stored in, one at a time, until the project is
+# written: each stored file's blob keeps it alive.
+tempfile = "3"
 
 [target.'cfg(unix)'.dependencies]
 # Opening a member without following a link or blocking on a FIFO.

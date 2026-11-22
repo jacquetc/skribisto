@@ -22,9 +22,10 @@
 //! * **Review**: the structure the converter's own mapping plans, with the choices it
 //!   offers. Every change recomputes the plan synchronously, through the seam, from the
 //!   analysis's own review data: the preview and the import cannot disagree (D7-5).
-//! * **Save**: where the new project goes and what it is called, its title, author and
-//!   language as the project states them (else the interface's language), and whether the
-//!   research files Skribisto cannot open are copied beside it.
+//! * **Save**: where the new project goes and what it is called, and its title, author and
+//!   language as the project states them (else the interface's language). Research files
+//!   need no choice: every one is stored inside the new project, as a resource, and the
+//!   Review page says how much that is.
 //!
 //! Every word the import writes into the project is resolved here, in the interface
 //! language, once ([`ImportScrivenerViewModel::request`]).
@@ -52,8 +53,9 @@ use frontend::import_management::{
     ScrivenerChoice, ScrivenerComputers, ScrivenerContainer, ScrivenerContainerRung,
     ScrivenerControl, ScrivenerDefaultRung, ScrivenerDestination, ScrivenerFinding,
     ScrivenerGeneration, ScrivenerItemRef, ScrivenerManifestCandidate, ScrivenerPlatform,
-    ScrivenerPreviewRow, ScrivenerQuestion, ScrivenerSiblingChoice, ScrivenerStructure,
-    ScrivenerTextKind, ScrivenerTitleKind, ScrivenerTotals, ScrivenerTrashChoice,
+    ScrivenerPreviewRow, ScrivenerQuestion, ScrivenerShape, ScrivenerSiblingChoice,
+    ScrivenerStructure, ScrivenerTextKind, ScrivenerTitleKind, ScrivenerTotals,
+    ScrivenerTrashChoice,
 };
 use skrib_format::importing::TITLE_SLOT;
 use skribisto_model::CreateType;
@@ -163,10 +165,6 @@ pub struct ImportRecord {
     pub worded: Vec<ChoiceLine>,
     pub blank_lines_as_scene_breaks: bool,
     pub ornaments_as_scene_breaks: bool,
-    pub copy_research_files: bool,
-    /// Whether the project held research files Skribisto cannot open, so the copy
-    /// choice was offered at all.
-    pub research_files: bool,
     /// The new project's title, author and language (as the language field names it),
     /// as the Save page sent them.
     pub title: String,
@@ -192,8 +190,6 @@ pub struct ChoiceLine {
 #[derive(Clone)]
 pub struct ScrivenerImportResult {
     pub output_path: String,
-    /// The folder the research files were copied into, or empty.
-    pub research_folder: String,
     pub totals: ScrivenerTotals,
     /// One row per kind and place, as the converter reports them.
     pub findings: Vec<ScrivenerFinding>,
@@ -205,7 +201,6 @@ impl ScrivenerImportResult {
     fn new(result: ImportScrivenerProjectResultDto, record: Option<ImportRecord>) -> Self {
         Self {
             output_path: result.output_path,
-            research_folder: result.research_folder,
             totals: result.totals,
             findings: result.findings,
             record,
@@ -570,8 +565,6 @@ struct Inner {
     language: Signal<Option<String>>,
     /// The tags the language field offers.
     languages: ListModel<String>,
-    copy_research: Signal<bool>,
-    research_files: Signal<i64>,
     save_hints: ListModel<LocalizedString>,
     /// The writer edited the name, the folder, the title, the author or the language: a
     /// later reading no longer replaces it.
@@ -646,8 +639,6 @@ impl ImportScrivenerViewModel {
             author: Signal::new(String::new()),
             language: Signal::new(None),
             languages: ListModel::from_vec(language_tags(None)),
-            copy_research: Signal::new(true),
-            research_files: Signal::new(0),
             save_hints: ListModel::new(),
             name_touched: Cell::new(false),
             location_touched: Cell::new(false),
@@ -722,7 +713,6 @@ impl ImportScrivenerViewModel {
         inner.page.set(PAGE_EMPTY);
         inner.blank_lines.set(true);
         inner.ornaments.set(false);
-        inner.copy_research.set(true);
         inner.defaulting.set(true);
         inner.destination.clear();
         inner.defaulting.set(false);
@@ -748,7 +738,6 @@ impl ImportScrivenerViewModel {
         inner.has_before.set_if_changed(false);
         inner.review_error.set(None);
         inner.save_hints.replace_all(Vec::new());
-        inner.research_files.set(0);
         // What the writer typed stays; what the last project proposed goes with it.
         inner.defaulting.set(true);
         if !inner.title_touched.get() {
@@ -875,7 +864,6 @@ impl ImportScrivenerViewModel {
         }
         inner.blank_lines.set(request.blank_lines_as_scene_breaks);
         inner.ornaments.set(request.ornaments_as_scene_breaks);
-        inner.copy_research.set(request.copy_research_files);
         // The Save page as the writer confirmed it by importing: theirs, whatever the
         // project proposes when it reads again.
         inner.destination.location().set(sent.location.clone());
@@ -1479,7 +1467,22 @@ impl ImportScrivenerViewModel {
         if let Some(ScrivenerStructure::Planned { notices, .. }) = structure.as_ref() {
             findings.extend(notices.iter());
         }
-        let lines = before_lines(&findings);
+        let mut lines = before_lines(&findings);
+        // How much research the new project will hold, first: a large one is the writer's
+        // to know before it is copied in whole.
+        if let Some(ScrivenerStructure::Planned {
+            shape:
+                ScrivenerShape::Counted {
+                    resources,
+                    resource_bytes,
+                    ..
+                },
+            ..
+        }) = structure.as_ref()
+            && *resources > 0
+        {
+            lines.insert(0, resources_line(*resources, *resource_bytes));
+        }
         self.inner.has_before.set_if_changed(!lines.is_empty());
         self.inner.before.replace_all(lines);
     }
@@ -1554,16 +1557,6 @@ impl ImportScrivenerViewModel {
             .unwrap_or_else(|| tag.to_string())
     }
 
-    pub fn copy_research_files(&self) -> Signal<bool> {
-        self.inner.copy_research.clone()
-    }
-
-    /// How many research files Skribisto cannot open the project holds: the copy
-    /// checkbox shows only when there are some.
-    pub fn research_files(&self) -> Signal<i64> {
-        self.inner.research_files.clone()
-    }
-
     /// The hints about what the project states, under the title, author and language.
     pub fn save_hints(&self) -> ListModel<LocalizedString> {
         self.inner.save_hints.clone()
@@ -1590,7 +1583,6 @@ impl ImportScrivenerViewModel {
     /// field the writer edited keeps what they wrote.
     fn fill_save_page(&self, analysis: &ScrivenerAnalysisDto) {
         let inner = &self.inner;
-        inner.research_files.set(analysis.research_files);
         inner.defaulting.set(true);
         let proposed = proposals(analysis);
         if !inner.title_touched.get() {
@@ -1657,14 +1649,12 @@ impl ImportScrivenerViewModel {
             title: Some(inner.title.get()),
             author: Some(inner.author.get()),
             language: Some(inner.language.get().unwrap_or_default()),
-            copy_research_files: analysis.research_files > 0 && inner.copy_research.get(),
             manuscript_binder_name: words.manuscript_binder,
             notes_binder_name: words.notes_binder,
             notes_of_pattern: words.notes_of,
             project_notes_name: words.project_notes,
             recovered_name: words.recovered,
             untitled_template_name: words.untitled_template,
-            research_folder_pattern: words.research_folder,
             list_separator: words.list_separator,
             label_details_pattern: words.label_details,
             status_details_pattern: words.status_details,
@@ -1711,8 +1701,6 @@ impl ImportScrivenerViewModel {
             worded: self.worded_choices(&request.choices),
             blank_lines_as_scene_breaks: request.blank_lines_as_scene_breaks,
             ornaments_as_scene_breaks: request.ornaments_as_scene_breaks,
-            copy_research_files: request.copy_research_files,
-            research_files: analysis_research_files(&analysis),
             title_changed: title.trim() != proposed.title.trim(),
             author_changed: author.trim() != proposed.author.trim(),
             language_changed: language != proposed.language.clone().unwrap_or_default(),
@@ -1953,11 +1941,6 @@ fn proposals(analysis: &ScrivenerAnalysisDto) -> Proposals {
     }
 }
 
-/// Whether the analysis on the page found research files Skribisto cannot open.
-fn analysis_research_files(analysis: &Option<Rc<ScrivenerAnalysisDto>>) -> bool {
-    analysis.as_ref().is_some_and(|a| a.research_files > 0)
-}
-
 /// Whether `row` is the Review page row that offers `choice`.
 fn row_is_about(row: &ReviewRow, choice: &ScrivenerChoice) -> bool {
     use ScrivenerChoice as C;
@@ -2029,7 +2012,6 @@ struct Words {
     project_notes: String,
     recovered: String,
     untitled_template: String,
-    research_folder: String,
     list_separator: String,
     label_details: String,
     status_details: String,
@@ -2052,7 +2034,6 @@ impl Words {
             project_notes: tr!(import_scrivener_project_notes()).resolve_now(),
             recovered: tr!(import_scrivener_recovered()).resolve_now(),
             untitled_template: tr!(import_scrivener_untitled_template()).resolve_now(),
-            research_folder: tr!(import_scrivener_research_folder(name = slot())).resolve_now(),
             list_separator: tr!(import_scrivener_list_separator()).resolve_now(),
             label_details: tr!(import_scrivener_label_details(field = slot())).resolve_now(),
             status_details: tr!(import_scrivener_status_details(field = slot())).resolve_now(),
@@ -2849,6 +2830,20 @@ pub(crate) fn preview_rows(rows: &[ScrivenerPreviewRow]) -> Vec<PreviewRowView> 
         }
     }
     out
+}
+
+/// What the review says of the research files the import will store: how many, and how
+/// much they weigh, in the units of the language Skribisto shows itself in at the moment
+/// the line is read.
+pub(crate) fn resources_line(count: i64, bytes: i64) -> LocalizedString {
+    let bytes = u64::try_from(bytes).unwrap_or(0);
+    teksilo::i18n::localized(move || {
+        tr!(import_scrivener_review_resources(
+            count = count,
+            size = crate::shared::units::byte_size(bytes)
+        ))
+        .resolve_now()
+    })
 }
 
 /// One line per kind of finding, in the report groups' order, for the "before you import"

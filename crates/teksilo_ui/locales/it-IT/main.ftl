@@ -1135,6 +1135,10 @@ import-scrivener-in-exports-no = No
 import-scrivener-becomes-item = Elemento
 import-scrivener-becomes-trashed = Nel cestino
 import-scrivener-before-title = Prima di importare
+import-scrivener-review-resources = { $count ->
+    [one] 1 file di ricerca, { $size }, sarà conservato nel nuovo progetto come risorsa.
+   *[other] { $count } file di ricerca, { $size } in tutto, saranno conservati nel nuovo progetto come risorse.
+}
 import-scrivener-review-error-unreadable = Non è stato possibile preparare la verifica. Scegli di nuovo il progetto.
 import-scrivener-review-error-choice = Questa scelta non è adatta al progetto. Scegli di nuovo il progetto.
 import-scrivener-review-error-unmappable = Con questa scelta non è stato possibile trasferire il raccoglitore senza perdere qualcosa. Scegli diversamente o segnala il problema.
@@ -1145,11 +1149,6 @@ import-scrivener-title-field = Titolo
 import-scrivener-author = Autore
 import-scrivener-language = Lingua
 import-scrivener-location-inside-project = Scegli una cartella fuori dal progetto Scrivener. Scrivener vi tiene soltanto i propri file.
-import-scrivener-copy-research-label = Copia i file di ricerca accanto al nuovo progetto
-import-scrivener-copy-research = { $count ->
-    [one] 1 file di ricerca che Skribisto non sa aprire, come un PDF o un suono, va in una cartella accanto al progetto. Se l'opzione non è selezionata, la sua nota indica dove si trova nel tuo progetto Scrivener.
-   *[other] { $count } file di ricerca che Skribisto non sa aprire, come PDF o suoni, vanno in una cartella accanto al progetto. Se l'opzione non è selezionata, le loro note indicano dove si trovano nel tuo progetto Scrivener.
-}
 import-scrivener-default-name = Progetto Scrivener
 
 ## Progress and result
@@ -1218,9 +1217,13 @@ import-scrivener-report-trashed = { $count ->
     [one] 1 elemento nel cestino
    *[other] { $count } elementi nel cestino
 }
-import-scrivener-report-research-files = { $count ->
-    [one] 1 file di ricerca
-   *[other] { $count } file di ricerca
+import-scrivener-report-resources = { $count ->
+    [one] 1 file di ricerca conservato come risorsa
+   *[other] { $count } file di ricerca conservati come risorse
+}
+import-scrivener-report-links = { $count ->
+    [one] 1 collegamento a una pagina web o a un file
+   *[other] { $count } collegamenti a pagine web e file
 }
 import-scrivener-report-choices = Cosa hai scelto
 import-scrivener-report-accepted-mobile = Hai importato il progetto senza le modifiche fatte in Scrivener per iPhone o iPad che non vi erano ancora arrivate.
@@ -1228,16 +1231,6 @@ import-scrivener-report-accepted-no-text = Hai importato questa copia con i docu
 import-scrivener-report-choice = { $subject }: { $answer }
 import-scrivener-report-yes = sì
 import-scrivener-report-no = no
-import-scrivener-report-research-copied = I file di ricerca che Skribisto non sa aprire sono stati copiati in «{ $folder }», accanto al nuovo progetto.
-import-scrivener-report-research-not-copied = I file di ricerca che Skribisto non sa aprire non sono stati copiati. Le loro note indicano dove si trovano nel tuo progetto Scrivener.
-import-scrivener-report-research-copied-except = { $count ->
-    [one] I file di ricerca che Skribisto non sa aprire sono stati copiati in «{ $folder }», accanto al nuovo progetto, tranne 1 che resta nel tuo progetto Scrivener. La sua nota indica dove si trova.
-   *[other] I file di ricerca che Skribisto non sa aprire sono stati copiati in «{ $folder }», accanto al nuovo progetto, tranne { $count } che restano nel tuo progetto Scrivener. Le loro note indicano dove si trovano.
-}
-import-scrivener-report-research-none-copied = { $count ->
-    [1] Hai chiesto di copiare i file di ricerca, ma non è stato possibile copiare l'unico file interessato. Resta nel tuo progetto Scrivener e la sua nota indica dove si trova.
-   *[other] Hai chiesto di copiare i file di ricerca, ma non è stato possibile copiare nessuno dei { $count } file. Restano nel tuo progetto Scrivener e le loro note indicano dove si trovano.
-}
 import-scrivener-report-chose-project = Hai scelto di importare «{ $project }», uno dei vari progetti contenuti nella cartella o nell'archivio che hai selezionato.
 import-scrivener-report-chose-manifest = Hai scelto il file del raccoglitore «{ $file }».
 import-scrivener-report-chose-enclosing = Hai selezionato qualcosa all'interno di «{ $project }», quindi è stato importato l'intero progetto.
@@ -1311,7 +1304,6 @@ import-scrivener-notes-of = { $title } (note)
 import-scrivener-project-notes = Note del progetto
 import-scrivener-recovered = Testi recuperati
 import-scrivener-untitled-template = Modello senza titolo
-import-scrivener-research-folder = File di ricerca di { $name }
 import-scrivener-list-separator = {", "}
 import-scrivener-label-details = Dal campo «{ $field }» in Scrivener
 import-scrivener-status-details = Dal campo «{ $field }» in Scrivener
@@ -2365,13 +2357,13 @@ import-scrivener-prose-note-on-heading-lost-line = { $count ->
     [one] 1 nota a piè di pagina o commento sull'intestazione di un capitolo non poteva restare lì: un commento si sposta sul primo paragrafo del capitolo, una nota a piè di pagina viene esclusa.
    *[other] { $count } note a piè di pagina o commenti sulle intestazioni dei capitoli non potevano restare lì: un commento si sposta sul primo paragrafo del capitolo, una nota a piè di pagina viene esclusa.
 }
-import-scrivener-prose-media-file-copied-line = { $count ->
-    [one] 1 file di ricerca che Skribisto non sa aprire è stato copiato accanto al nuovo progetto. La sua nota indica dove.
-   *[other] { $count } file di ricerca che Skribisto non sa aprire sono stati copiati accanto al nuovo progetto. Le loro note indicano dove.
+import-scrivener-prose-media-file-stored-line = { $count ->
+    [one] 1 file di ricerca è ora una risorsa del nuovo progetto.
+   *[other] { $count } file di ricerca sono ora risorse del nuovo progetto.
 }
 import-scrivener-prose-media-file-not-carried-line = { $count ->
-    [one] 1 file di ricerca che Skribisto non sa aprire resta nel tuo progetto Scrivener. La sua nota ne riporta il nome.
-   *[other] { $count } file di ricerca che Skribisto non sa aprire restano nel tuo progetto Scrivener. Le loro note ne riportano i nomi.
+    [one] 1 file non si è potuto leggere o è troppo grande per essere portato nel nuovo progetto. Resta nel tuo progetto Scrivener.
+   *[other] { $count } file non si sono potuti leggere o sono troppo grandi per essere portati nel nuovo progetto. Restano nel tuo progetto Scrivener.
 }
 
 ## When the import fails

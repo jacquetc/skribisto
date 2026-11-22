@@ -1157,6 +1157,10 @@ import-scrivener-in-exports-no = Nem
 import-scrivener-becomes-item = Elem
 import-scrivener-becomes-trashed = A kukában
 import-scrivener-before-title = Az importálás előtt
+import-scrivener-review-resources = { $count ->
+    [one] 1 kutatási fájl ({ $size }) forrásként kerül az új projektbe.
+   *[other] { $count } kutatási fájl (összesen { $size }) forrásként kerül az új projektbe.
+}
 import-scrivener-review-error-unreadable = Az ellenőrzést nem sikerült előkészíteni. Válassza ki újra a projektet.
 import-scrivener-review-error-choice = Ez a választás nem illik a projekthez. Válassza ki újra a projektet.
 import-scrivener-review-error-unmappable = Ezzel a választással az iratrendezőt nem lehetett veszteség nélkül átvinni. Válasszon másként, vagy jelentse be a hibát.
@@ -1167,11 +1171,6 @@ import-scrivener-title-field = Cím
 import-scrivener-author = Szerző
 import-scrivener-language = Nyelv
 import-scrivener-location-inside-project = Válasszon a Scrivener-projekten kívüli mappát. A Scrivener ott csak a saját fájljait tartja.
-import-scrivener-copy-research-label = Kutatási fájlok másolása az új projekt mellé
-import-scrivener-copy-research = { $count ->
-    [one] 1 kutatási fájl, amelyet a Skribisto nem tud megnyitni (például egy PDF vagy egy hangfájl), a projekt melletti mappába kerül. Ha nincs bejelölve, a jegyzete megmondja, hol található a Scrivener-projektjében.
-   *[other] { $count } kutatási fájl, amelyet a Skribisto nem tud megnyitni (például PDF-ek vagy hangfájlok), a projekt melletti mappába kerül. Ha nincs bejelölve, a jegyzeteik megmondják, hol találhatók a Scrivener-projektjében.
-}
 # The file name proposed when the project's name holds nothing a file name can.
 import-scrivener-default-name = Scrivener-projekt
 
@@ -1244,9 +1243,13 @@ import-scrivener-report-trashed = { $count ->
     [one] 1 elem a kukában
    *[other] { $count } elem a kukában
 }
-import-scrivener-report-research-files = { $count ->
-    [one] 1 kutatási fájl
-   *[other] { $count } kutatási fájl
+import-scrivener-report-resources = { $count ->
+    [one] 1 kutatási fájl forrásként mentve
+   *[other] { $count } kutatási fájl forrásként mentve
+}
+import-scrivener-report-links = { $count ->
+    [one] 1 hivatkozás weboldalra vagy fájlra
+   *[other] { $count } hivatkozás weboldalakra és fájlokra
 }
 import-scrivener-report-choices = Az Ön választásai
 import-scrivener-report-accepted-mobile = A projektet a Scrivener iPhone- vagy iPad-változatában végzett, de még bele nem került módosítások nélkül importálta.
@@ -1254,16 +1257,6 @@ import-scrivener-report-accepted-no-text = Ezt a példányt üres dokumentumokka
 import-scrivener-report-choice = { $subject }: { $answer }
 import-scrivener-report-yes = igen
 import-scrivener-report-no = nem
-import-scrivener-report-research-copied = A kutatási fájlok, amelyeket a Skribisto nem tud megnyitni, az új projekt mellé, a(z) „{ $folder }” mappába lettek másolva.
-import-scrivener-report-research-not-copied = A kutatási fájlok, amelyeket a Skribisto nem tud megnyitni, nem lettek átmásolva. A jegyzeteik megmondják, hol vannak a Scrivener-projektjében.
-import-scrivener-report-research-copied-except = { $count ->
-    [one] A kutatási fájlok, amelyeket a Skribisto nem tud megnyitni, az új projekt mellé, a(z) „{ $folder }” mappába lettek másolva, 1 kivételével, amely a Scrivener-projektjében marad. A jegyzete megmondja, hol van.
-   *[other] A kutatási fájlok, amelyeket a Skribisto nem tud megnyitni, az új projekt mellé, a(z) „{ $folder }” mappába lettek másolva, { $count } kivételével, amelyek a Scrivener-projektjében maradnak. A jegyzeteik megmondják, hol vannak.
-}
-import-scrivener-report-research-none-copied = { $count ->
-    [1] Kérte a kutatási fájlok átmásolását, de az egyetlen ilyen fájlt nem sikerült átmásolni. A Scrivener-projektjében marad, és a jegyzete megmondja, hol van.
-   *[other] Kérte a kutatási fájlok átmásolását, de a(z) { $count } fájl közül egyet sem sikerült átmásolni. A Scrivener-projektjében maradnak, és a jegyzeteik megmondják, hol vannak.
-}
 import-scrivener-report-chose-project = A kiválasztott mappában vagy archívumban talált több projekt közül a(z) „{ $project }” importálását választotta.
 import-scrivener-report-chose-manifest = A(z) „{ $file }” iratrendezőfájlt választotta.
 import-scrivener-report-chose-enclosing = A(z) „{ $project }” projekten belül választott ki valamit, ezért a teljes projekt importálva lett.
@@ -1345,8 +1338,6 @@ import-scrivener-notes-of = { $title } (jegyzetek)
 import-scrivener-project-notes = Projektjegyzetek
 import-scrivener-recovered = Helyreállított szövegek
 import-scrivener-untitled-template = Névtelen sablon
-# The folder beside the new project its research files are copied into.
-import-scrivener-research-folder = { $name } kutatási fájljai
 # Between two authors' names.
 import-scrivener-list-separator = {", "}
 import-scrivener-label-details = A Scrivener „{ $field }” mezőjéből
@@ -2412,13 +2403,13 @@ import-scrivener-prose-note-on-heading-lost-line = { $count ->
     [one] 1 fejezetcímen lévő lábjegyzet vagy megjegyzés nem maradhatott ott: a megjegyzés a fejezet első bekezdésére kerül, a lábjegyzet kimarad.
    *[other] { $count } fejezetcímeken lévő lábjegyzet vagy megjegyzés nem maradhatott ott: a megjegyzés a fejezet első bekezdésére kerül, a lábjegyzet kimarad.
 }
-import-scrivener-prose-media-file-copied-line = { $count ->
-    [one] 1 kutatási fájl, amelyet a Skribisto nem tud megnyitni, az új projekt mellé lett másolva. A jegyzete megmondja, hová.
-   *[other] { $count } kutatási fájl, amelyet a Skribisto nem tud megnyitni, az új projekt mellé lett másolva. A jegyzeteik megmondják, hová.
+import-scrivener-prose-media-file-stored-line = { $count ->
+    [one] 1 kutatási fájl mostantól az új projekt forrása.
+   *[other] { $count } kutatási fájl mostantól az új projekt forrása.
 }
 import-scrivener-prose-media-file-not-carried-line = { $count ->
-    [one] 1 kutatási fájl, amelyet a Skribisto nem tud megnyitni, a Scrivener-projektjében marad. A jegyzete megnevezi.
-   *[other] { $count } kutatási fájl, amelyet a Skribisto nem tud megnyitni, a Scrivener-projektjében marad. A jegyzeteik megnevezik őket.
+    [one] 1 fájlt nem sikerült beolvasni, vagy túl nagy az átvételhez. A Scrivener-projektjében marad.
+   *[other] { $count } fájlt nem sikerült beolvasni, vagy túl nagyok az átvételhez. A Scrivener-projektjében maradnak.
 }
 
 ## When the import fails

@@ -41,7 +41,6 @@ fn finding(key: &str, group: ScrivenerReportGroup, item: i64, title: &str) -> Sc
 fn report() -> ImportReport {
     ImportReport::from_result(&ScrivenerImportResult {
         output_path: "/books/The Lighthouse.skrib".into(),
-        research_folder: String::new(),
         totals: ScrivenerTotals::Counted {
             rows: 12,
             words: 3400,
@@ -52,7 +51,8 @@ fn report() -> ImportReport {
             tags: 2,
             rungs: 4,
             trashed: 0,
-            research_files: 0,
+            resources: 0,
+            links: 0,
             synopses: 4,
             document_notes: 2,
         },
@@ -171,7 +171,6 @@ fn long_paths() -> ImportReport {
     };
     ImportReport::from_result(&ScrivenerImportResult {
         output_path: "/books/The Lighthouse.skrib".into(),
-        research_folder: String::new(),
         totals: ScrivenerTotals::Empty,
         findings: vec![
             long(
@@ -365,7 +364,6 @@ fn a_line_of_names_says_names_and_links_none() {
     crate::test_support::with_real_messages(|| {
         let report = ImportReport::from_result(&ScrivenerImportResult {
             output_path: "/books/The Lighthouse.skrib".into(),
-            research_folder: String::new(),
             totals: ScrivenerTotals::Empty,
             findings: vec![ScrivenerFinding::Reported {
                 key: "scrivener-metadata-unused-keywords-skipped".into(),

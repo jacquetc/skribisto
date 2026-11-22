@@ -296,7 +296,6 @@ pub(crate) const SEEDING_SITES: &[SeedingSite] = &[
             "import-scrivener-notes-of",
             "import-scrivener-project-notes",
             "import-scrivener-recovered",
-            "import-scrivener-research-folder",
             "import-scrivener-status-details",
             "import-scrivener-unnamed-label",
             "import-scrivener-unnamed-status",

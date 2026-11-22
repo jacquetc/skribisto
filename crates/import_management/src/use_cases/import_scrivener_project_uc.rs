@@ -97,7 +97,6 @@ impl LongOperation for ImportScrivenerProjectUseCase {
             title: dto.title.as_deref(),
             author: dto.author.as_deref(),
             language: dto.language.as_deref(),
-            copy_research_files: dto.copy_research_files,
             now: chrono::Utc::now(),
             // The writer's day, as the interface has it: a deadline's plan starts on it.
             today: dto.today.date_naive(),
@@ -158,10 +157,8 @@ mod tests {
             &ImportScrivenerProjectDto {
                 source_path: folder.to_string_lossy().into_owned(),
                 output_path: out.join("novel.skrib").to_string_lossy().into_owned(),
-                copy_research_files: true,
                 manuscript_binder_name: "Manuscrit".into(),
                 notes_binder_name: "Notes".into(),
-                research_folder_pattern: format!("{} recherches", crate::scrivener::TITLE_SLOT),
                 ..ImportScrivenerProjectDto::default()
             },
         );
@@ -186,7 +183,7 @@ mod tests {
     }
 
     /// A cancelled import ends as the typed cancellation and leaves nothing on disk: no
-    /// project, no staged file, no research folder. Cancelled before it starts, while the
+    /// project, no staged file, nothing beside it. Cancelled before it starts, while the
     /// project is read (every read after it is refused), and between two rows.
     #[test]
     fn a_cancelled_import_leaves_nothing_behind() {

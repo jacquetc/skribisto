@@ -233,13 +233,13 @@ pub enum ProseNotice {
     /// so it went to the chapter's first paragraph (a comment) or was left out (a note).
     NoteOnHeadingLost { at: Place, count: u32 },
 
-    /// A research file Skribisto cannot open, copied into the folder beside the project:
-    /// `path` is where, relative to the project's folder, as its note names it.
-    MediaFileCopied { at: Place, path: String },
+    /// A picture, PDF or other file stored as a resource of the new project (decided
+    /// 2026-11-22), attached to the row its item or its parent became.
+    MediaFileStored { at: Place },
 
     // ------------------------------------------------ left behind
-    /// A research file Skribisto cannot open, left in the Scrivener project: its note names
-    /// the file.
+    /// A picture, PDF or other file that could not be read, or is past what the import
+    /// reads: it stays in the Scrivener project. A note holding it names the file there.
     MediaFileNotCarried { at: Place, name: String },
 
     // ------------------------------------------------ the document importer's own
@@ -310,7 +310,7 @@ impl ProseNotice {
         "scrivener-prose-note-on-heading-lost",
         "scrivener-prose-left-out",
         "scrivener-prose-undecodable-characters",
-        "scrivener-prose-media-file-copied",
+        "scrivener-prose-media-file-stored",
         "scrivener-prose-media-file-not-carried",
         "scrivener-prose-styles-lost-in-export",
     ];
@@ -404,7 +404,7 @@ impl ProseNotice {
             ProseNotice::NoteOnHeadingLost { .. } => "scrivener-prose-note-on-heading-lost",
             ProseNotice::LeftOut { .. } => "scrivener-prose-left-out",
             ProseNotice::UndecodableCharacters { .. } => "scrivener-prose-undecodable-characters",
-            ProseNotice::MediaFileCopied { .. } => "scrivener-prose-media-file-copied",
+            ProseNotice::MediaFileStored { .. } => "scrivener-prose-media-file-stored",
             ProseNotice::MediaFileNotCarried { .. } => "scrivener-prose-media-file-not-carried",
             ProseNotice::StylesLostInExport { .. } => "scrivener-prose-styles-lost-in-export",
             ProseNotice::Document { key, .. } => key,
@@ -496,7 +496,7 @@ impl ProseNotice {
             | ProseNotice::NoteOnHeadingLost { at, .. }
             | ProseNotice::LeftOut { at, .. }
             | ProseNotice::UndecodableCharacters { at, .. }
-            | ProseNotice::MediaFileCopied { at, .. }
+            | ProseNotice::MediaFileStored { at }
             | ProseNotice::MediaFileNotCarried { at, .. }
             | ProseNotice::Document { at, .. } => *at,
         }
@@ -620,7 +620,7 @@ mod tests {
                 count: 1,
             },
             ProseNotice::UndecodableCharacters { at, count: 1 },
-            ProseNotice::MediaFileCopied { at, path: name() },
+            ProseNotice::MediaFileStored { at },
             ProseNotice::MediaFileNotCarried { at, name: name() },
             ProseNotice::StylesLostInExport { at, count: 1 },
         ]
@@ -684,7 +684,7 @@ mod tests {
             ProseNotice::NoteOnHeadingLost { .. } => 45,
             ProseNotice::LeftOut { .. } => 46,
             ProseNotice::UndecodableCharacters { .. } => 47,
-            ProseNotice::MediaFileCopied { .. } => 48,
+            ProseNotice::MediaFileStored { .. } => 48,
             ProseNotice::MediaFileNotCarried { .. } => 49,
             ProseNotice::StylesLostInExport { .. } => 50,
             ProseNotice::Document { .. } => return None,

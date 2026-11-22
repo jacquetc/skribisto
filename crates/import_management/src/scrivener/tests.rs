@@ -474,9 +474,8 @@ fn some_prose_notices() -> Vec<ProseNotice> {
             what: LeftOut::HeaderOrFooter,
             count: 1,
         },
-        ProseNotice::MediaFileCopied {
+        ProseNotice::MediaFileStored {
             at: Place::Media { item: 3 },
-            path: s("Novel research/tides.pdf"),
         },
         ProseNotice::Document {
             at: Place::Text { item: 2 },
@@ -896,7 +895,6 @@ fn every_word_reaches_the_converter_as_given() {
         project_notes_name: s("Notes du projet"),
         recovered_name: s("Retrouvé dans Scrivener"),
         untitled_template_name: s("Modèle sans titre"),
-        research_folder_pattern: format!("{slot} documentation"),
         list_separator: s(" et "),
         label_details_pattern: format!("Champ Scrivener : {slot}"),
         status_details_pattern: format!("Statut Scrivener : {slot}"),
@@ -920,7 +918,6 @@ fn every_word_reaches_the_converter_as_given() {
     assert_eq!(words.project_notes, "Notes du projet");
     assert_eq!(words.recovered, "Retrouvé dans Scrivener");
     assert_eq!(words.untitled_template, "Modèle sans titre");
-    assert_eq!(words.research_folder, format!("{slot} documentation"));
     assert_eq!(words.list_separator, " et ");
     assert_eq!(words.label_details, format!("Champ Scrivener : {slot}"));
     assert_eq!(words.status_details, format!("Statut Scrivener : {slot}"));

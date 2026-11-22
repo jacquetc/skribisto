@@ -1162,6 +1162,10 @@ import-scrivener-in-exports-no = Nei
 import-scrivener-becomes-item = Element
 import-scrivener-becomes-trashed = I papirkurven
 import-scrivener-before-title = Før du importerer
+import-scrivener-review-resources = { $count ->
+    [one] 1 researchfil, { $size }, lagres i det nye prosjektet som ressurs.
+   *[other] { $count } researchfiler, { $size } til sammen, lagres i det nye prosjektet som ressurser.
+}
 import-scrivener-review-error-unreadable = Gjennomgangen kunne ikke forberedes. Velg prosjektet på nytt.
 import-scrivener-review-error-choice = Dette valget passer ikke til prosjektet. Velg prosjektet på nytt.
 import-scrivener-review-error-unmappable = Med dette valget kunne ikke permen overføres uten at noe gikk tapt. Velg annerledes, eller rapporter problemet.
@@ -1170,11 +1174,6 @@ import-scrivener-title-field = Tittel
 import-scrivener-author = Forfatter
 import-scrivener-language = Språk
 import-scrivener-location-inside-project = Velg en mappe utenfor Scrivener-prosjektet. Scrivener holder bare sine egne filer der inne.
-import-scrivener-copy-research-label = Kopier researchfiler ved siden av det nye prosjektet
-import-scrivener-copy-research = { $count ->
-    [one] 1 researchfil som Skribisto ikke kan åpne, for eksempel en PDF eller en lyd, legges i en mappe ved siden av prosjektet. Hvis boksen ikke er krysset av, sier notatet hvor den ligger i Scrivener-prosjektet ditt.
-   *[other] { $count } researchfiler som Skribisto ikke kan åpne, for eksempel PDF-er eller lyder, legges i en mappe ved siden av prosjektet. Hvis boksen ikke er krysset av, sier notatene hvor de ligger i Scrivener-prosjektet ditt.
-}
 import-scrivener-default-name = Scrivener-prosjekt
 import-scrivener-progress-title = Importerer Scrivener-prosjekt…
 import-scrivener-done-title = Scrivener-prosjektet er importert
@@ -1239,9 +1238,13 @@ import-scrivener-report-trashed = { $count ->
     [one] 1 element i papirkurven
    *[other] { $count } elementer i papirkurven
 }
-import-scrivener-report-research-files = { $count ->
-    [one] 1 researchfil
-   *[other] { $count } researchfiler
+import-scrivener-report-resources = { $count ->
+    [one] 1 researchfil lagret som ressurs
+   *[other] { $count } researchfiler lagret som ressurser
+}
+import-scrivener-report-links = { $count ->
+    [one] 1 lenke til en nettside eller en fil
+   *[other] { $count } lenker til nettsider og filer
 }
 import-scrivener-report-choices = Dette valgte du
 import-scrivener-report-accepted-mobile = Du importerte prosjektet uten endringene som ble gjort i Scrivener for iPhone eller iPad, og som ennå ikke var kommet inn i det.
@@ -1249,16 +1252,6 @@ import-scrivener-report-accepted-no-text = Du importerte denne kopien med tomme 
 import-scrivener-report-choice = { $subject }: { $answer }
 import-scrivener-report-yes = ja
 import-scrivener-report-no = nei
-import-scrivener-report-research-copied = Researchfiler som Skribisto ikke kan åpne, ble kopiert til «{ $folder }», ved siden av det nye prosjektet.
-import-scrivener-report-research-not-copied = Researchfiler som Skribisto ikke kan åpne, ble ikke kopiert. Notatene deres sier hvor de ligger i Scrivener-prosjektet ditt.
-import-scrivener-report-research-copied-except = { $count ->
-    [one] Researchfiler som Skribisto ikke kan åpne, ble kopiert til «{ $folder }», ved siden av det nye prosjektet, bortsett fra 1 som blir værende i Scrivener-prosjektet ditt. Notatet sier hvor den ligger.
-   *[other] Researchfiler som Skribisto ikke kan åpne, ble kopiert til «{ $folder }», ved siden av det nye prosjektet, bortsett fra { $count } som blir værende i Scrivener-prosjektet ditt. Notatene deres sier hvor de ligger.
-}
-import-scrivener-report-research-none-copied = { $count ->
-    [1] Du ba om at researchfiler skulle kopieres, men den eneste filen kunne ikke kopieres. Den blir værende i Scrivener-prosjektet ditt, og notatet sier hvor den ligger.
-   *[other] Du ba om at researchfiler skulle kopieres, men ingen av de { $count } kunne kopieres. De blir værende i Scrivener-prosjektet ditt, og notatene deres sier hvor de ligger.
-}
 import-scrivener-report-chose-project = Du valgte å importere «{ $project }», ett av flere prosjekter i mappen eller arkivet du valgte ut.
 import-scrivener-report-chose-manifest = Du valgte permfilen «{ $file }».
 import-scrivener-report-chose-enclosing = Du valgte noe inne i «{ $project }», så hele prosjektet ble importert.
@@ -1332,7 +1325,6 @@ import-scrivener-notes-of = { $title } (notater)
 import-scrivener-project-notes = Prosjektnotater
 import-scrivener-recovered = Reddede tekster
 import-scrivener-untitled-template = Mal uten tittel
-import-scrivener-research-folder = Researchfiler for { $name }
 import-scrivener-list-separator = {", "}
 import-scrivener-label-details = Fra feltet «{ $field }» i Scrivener
 import-scrivener-status-details = Fra feltet «{ $field }» i Scrivener
@@ -2367,13 +2359,13 @@ import-scrivener-prose-note-on-heading-lost-line = { $count ->
     [one] 1 fotnote eller kommentar på en kapitteloverskrift kunne ikke bli stående der: en kommentar flyttes til kapitlets første avsnitt, en fotnote utelates.
    *[other] { $count } fotnoter eller kommentarer på kapitteloverskrifter kunne ikke bli stående der: en kommentar flyttes til kapitlets første avsnitt, en fotnote utelates.
 }
-import-scrivener-prose-media-file-copied-line = { $count ->
-    [one] 1 researchfil som Skribisto ikke kan åpne, ble kopiert ved siden av det nye prosjektet. Notatet sier hvor.
-   *[other] { $count } researchfiler som Skribisto ikke kan åpne, ble kopiert ved siden av det nye prosjektet. Notatene deres sier hvor.
+import-scrivener-prose-media-file-stored-line = { $count ->
+    [one] 1 researchfil er nå en ressurs i det nye prosjektet.
+   *[other] { $count } researchfiler er nå ressurser i det nye prosjektet.
 }
 import-scrivener-prose-media-file-not-carried-line = { $count ->
-    [one] 1 researchfil som Skribisto ikke kan åpne, blir værende i Scrivener-prosjektet ditt. Notatet oppgir den.
-   *[other] { $count } researchfiler som Skribisto ikke kan åpne, blir værende i Scrivener-prosjektet ditt. Notatene deres oppgir dem.
+    [one] 1 fil kunne ikke leses eller er for stor til å bli overført. Den blir værende i Scrivener-prosjektet ditt.
+   *[other] { $count } filer kunne ikke leses eller er for store til å bli overført. De blir værende i Scrivener-prosjektet ditt.
 }
 
 ## When the import fails

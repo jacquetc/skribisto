@@ -4,8 +4,9 @@
 //! The second half of the metadata mapping, named and worded: the keywords, the list and
 //! checkbox fields and the collections as tags (D4-7, D4-8, D4-13), the targets as goals
 //! and the project's unit (D4-11, X-30), the deadline as a pace plan (D4-12), bookmarks as
-//! links where Skribisto shows them (D4-14, X-35), the auto-complete list as the
-//! dictionary (D4-17), and the "From Scrivener" folder's notes (D4-20).
+//! links where Skribisto shows them (D4-14, X-35) and, outside the project, as link
+//! resources, the auto-complete list as the dictionary (D4-17), and the "From Scrivener"
+//! folder's notes (D4-20).
 //!
 //! [`extended()`] takes what [`super::collect::collect()`] decided and gives every tag a name no other
 //! tag holds (D4-9), every made-up word from the interface ([`MetadataWords`]), and the
@@ -14,9 +15,11 @@
 use std::collections::{HashMap, HashSet};
 
 use chrono::{Datelike, NaiveDate};
-use common::entities::GoalUnit;
+use common::entities::{GoalUnit, ResourceKind};
 
-use super::collect::{Collected, Goal, PaceInputs, ProjectLine, RawTag, TagSource, collect};
+use super::collect::{
+    Collected, Goal, LinkKind, PaceInputs, ProjectLine, RawTag, TagSource, collect,
+};
 use super::listing;
 use super::notice::{DeadlineReason, MetadataNotice};
 use super::vocabulary::{PALETTE, folded, hex};
@@ -50,6 +53,18 @@ pub struct PlannedPace {
     pub day_off: Option<String>,
 }
 
+/// A bookmark to somewhere outside the project, as the link resource it becomes (decided
+/// 2026-11-22): a web page (`WebLink`) or a file on the writer's disk (`LinkedFile`).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExtendedLink {
+    pub kind: ResourceKind,
+    /// The address, or the file's absolute path, as Scrivener recorded it.
+    pub location: String,
+    pub title: String,
+    /// The row it is attached to; `None` for a project bookmark, attached to nothing.
+    pub attach: Option<RowRef>,
+}
+
 /// Everything the second half writes, by row of the plan it was made for.
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Extended {
@@ -61,6 +76,8 @@ pub struct Extended {
     pub goal_unit: GoalUnit,
     /// References, owner row to target row.
     pub edges: Vec<(RowRef, RowRef)>,
+    /// Bookmarks outside the project, as link resources.
+    pub links: Vec<ExtendedLink>,
     pub dictionary: Vec<String>,
     pub pace: Option<PlannedPace>,
     /// The "From Scrivener" folder's notes, in its order, as Djot.
@@ -218,6 +235,7 @@ pub fn extended(
         book_goal,
         unit,
         edges,
+        links,
         dictionary,
         pace,
         deadline_blocked,
@@ -225,6 +243,18 @@ pub fn extended(
         sheets,
         mut notices,
     } = collect(project, plan);
+    let links = links
+        .into_iter()
+        .map(|link| ExtendedLink {
+            kind: match link.kind {
+                LinkKind::Web => ResourceKind::WebLink,
+                LinkKind::File => ResourceKind::LinkedFile,
+            },
+            location: link.location,
+            title: link.title,
+            attach: link.attach,
+        })
+        .collect();
     let w = &words.metadata;
 
     // Names, each once across every kind of tag (D4-9).
@@ -301,6 +331,7 @@ pub fn extended(
         goals: by_row,
         goal_unit,
         edges,
+        links,
         dictionary,
         pace: planned,
         notes,

@@ -105,6 +105,31 @@ pub(crate) enum LinkLine {
     },
 }
 
+/// What a bookmark to somewhere outside the project becomes (decided 2026-11-22): a web
+/// page or a file on the writer's disk is a link resource of the new project, attached to
+/// the bookmark's item, and no line lists it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum LinkKind {
+    /// An `http:` or `https:` address.
+    Web,
+    /// A file named by its absolute path.
+    File,
+}
+
+/// A link resource, decided.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct LinkResource {
+    pub(crate) kind: LinkKind,
+    /// The address, or the absolute path, as Scrivener recorded it.
+    pub(crate) location: String,
+    /// The bookmark's own text, else the file's name without its extension, else the
+    /// address's host: never empty for a link a writer can follow.
+    pub(crate) title: String,
+    /// The row it is attached to: the one its item's metadata goes to, else the one the
+    /// item's own file is attached to; `None` for a project bookmark, attached to nothing.
+    pub(crate) attach: Option<RowRef>,
+}
+
 /// One document's entry in a listing.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum Entry<T> {
@@ -234,6 +259,9 @@ pub(crate) struct Collected {
     pub(crate) unit: Option<GoalUnit>,
     /// References to write, owner row to target row (X-35), each once.
     pub(crate) edges: Vec<(RowRef, RowRef)>,
+    /// Bookmarks outside the project that become link resources, in binder order, then
+    /// the project's own.
+    pub(crate) links: Vec<LinkResource>,
     pub(crate) dictionary: Vec<String>,
     pub(crate) pace: Option<PaceInputs>,
     /// Why the deadline in force makes no plan, before the day is known.
@@ -331,6 +359,8 @@ struct Ctx<'a> {
     /// one; a line adds the ordinal after the path.
     ordinals: Vec<u32>,
     by_key: HashMap<ItemKey, u32>,
+    /// Per research file stored as a resource: the row it is attached to.
+    stored: HashMap<u32, Option<RowRef>>,
 }
 
 impl<'a> Ctx<'a> {
@@ -395,6 +425,7 @@ impl<'a> Ctx<'a> {
             titles,
             ordinals,
             by_key,
+            stored: plan.resources.iter().map(|r| (r.item, r.attach)).collect(),
         }
     }
 
@@ -1012,6 +1043,65 @@ fn external(link: &Link) -> Option<LinkLine> {
     })
 }
 
+/// The host of an `http:` or `https:` address, when it is one: what a link resource with no
+/// words of its own is called. `None` for any other scheme, and for an address with no host.
+fn web_host(url: &str) -> Option<&str> {
+    let (scheme, rest) = url.split_once("://")?;
+    if !scheme.eq_ignore_ascii_case("http") && !scheme.eq_ignore_ascii_case("https") {
+        return None;
+    }
+    let authority = rest.split(['/', '?', '#']).next().unwrap_or_default();
+    let host = authority.rsplit('@').next().unwrap_or_default();
+    // A port, never the brackets of an IPv6 address.
+    let host = match host.rsplit_once(':') {
+        Some((name, port)) if !name.is_empty() && port.chars().all(|c| c.is_ascii_digit()) => name,
+        _ => host,
+    };
+    (!host.is_empty()).then_some(host)
+}
+
+/// The link resource an outside bookmark becomes, attached to `attach`: a web page, or a
+/// file named by its absolute path. `None` for anything else (a mail, another Scrivener
+/// project, a share's address, a path from a home folder), which a line keeps.
+fn link_resource(link: &Link, attach: Option<RowRef>) -> Option<LinkResource> {
+    if link.target.is_some() {
+        return None;
+    }
+    let label = link
+        .text
+        .as_deref()
+        .map(|t| clean_title(Some(t)).0)
+        .filter(|t| !t.is_empty());
+    if let Some(path) = link.path.as_deref() {
+        let name = path
+            .trim_end_matches(['/', '\\'])
+            .rsplit(['/', '\\'])
+            .next()
+            .unwrap_or(path);
+        let stem = match name.rsplit_once('.') {
+            Some((stem, _)) if !stem.is_empty() => stem,
+            _ => name,
+        };
+        return Some(LinkResource {
+            kind: LinkKind::File,
+            location: path.to_string(),
+            title: label.unwrap_or_else(|| stem.to_string()),
+            attach,
+        });
+    }
+    let url = link.destination.as_deref()?.trim();
+    if link.local_file {
+        return None;
+    }
+    let host = web_host(url)?;
+    Some(LinkResource {
+        kind: LinkKind::Web,
+        location: url.to_string(),
+        title: label.unwrap_or_else(|| host.to_string()),
+        attach,
+    })
+}
+
 fn bookmarks(ctx: &Ctx<'_>, out: &mut Collected) {
     let project = ctx.project;
     let mut edges: HashSet<(RowRef, RowRef)> = HashSet::new();
@@ -1022,11 +1112,17 @@ fn bookmarks(ctx: &Ctx<'_>, out: &mut Collected) {
             continue;
         }
         if !ctx.carried(item) {
-            if row
-                .links
-                .iter()
-                .any(|l| l.target.is_some() || l.destination.is_some())
-            {
+            // A research file with nothing else to it has no row: its file is a resource,
+            // and the pages and files it bookmarks are attached where that resource is.
+            let stored = ctx.stored.get(&item).copied();
+            let mut lost = false;
+            for link in &row.links {
+                match stored.and_then(|attach| link_resource(link, attach)) {
+                    Some(resource) => out.links.push(resource),
+                    None => lost |= link.target.is_some() || link.destination.is_some(),
+                }
+            }
+            if lost {
                 without_row += 1;
             }
             continue;
@@ -1035,7 +1131,9 @@ fn bookmarks(ctx: &Ctx<'_>, out: &mut Collected) {
         let mut lines: Vec<LinkLine> = Vec::new();
         for link in &row.links {
             let Some(key) = link.target else {
-                if let Some(line) = external(link) {
+                if let Some(resource) = link_resource(link, ctx.item_row(item)) {
+                    out.links.push(resource);
+                } else if let Some(line) = external(link) {
                     lines.push(line);
                 }
                 continue;
@@ -1096,7 +1194,11 @@ fn bookmarks(ctx: &Ctx<'_>, out: &mut Collected) {
                 None => unresolved += 1,
             },
             None => {
-                if let Some(line) = external(link) {
+                // A page or a file the project bookmarks belongs to no document: a link
+                // resource attached to nothing.
+                if let Some(resource) = link_resource(link, None) {
+                    out.links.push(resource);
+                } else if let Some(line) = external(link) {
                     out.listing.project_links.push(line);
                 }
             }
@@ -1706,6 +1808,63 @@ fn icons_and_script(ctx: &Ctx<'_>, out: &mut Collected) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn link(destination: &str, text: Option<&str>) -> Link {
+        Link {
+            target: None,
+            destination: crate::manifest::local_file_name(destination)
+                .or_else(|| Some(destination.to_string())),
+            local_file: crate::manifest::local_file_name(destination).is_some(),
+            path: crate::manifest::absolute_file_path(destination),
+            text: text.map(str::to_string),
+        }
+    }
+
+    /// A page or a file outside the project is a link resource, titled by the bookmark's
+    /// words, else the file's name without its extension, else the address's host; a mail,
+    /// a share, a home folder's file and a bookmark to a document of the project are not.
+    #[test]
+    fn a_bookmark_outside_the_project_becomes_a_titled_link_resource() {
+        let made = |l: &Link| link_resource(l, None).map(|r| (r.kind, r.title, r.location));
+        assert_eq!(
+            made(&link("https://user@example.org:8443/tides?x=1", None)),
+            Some((
+                LinkKind::Web,
+                "example.org".to_string(),
+                "https://user@example.org:8443/tides?x=1".to_string()
+            ))
+        );
+        assert_eq!(
+            made(&link(" HTTP://example.net ", Some(" Harbour  plans "))),
+            Some((
+                LinkKind::Web,
+                "Harbour plans".to_string(),
+                "HTTP://example.net".to_string()
+            ))
+        );
+        assert_eq!(
+            made(&link("file:///Users/ines/Maps/harbour%20plan.pdf", None)),
+            Some((
+                LinkKind::File,
+                "harbour plan".to_string(),
+                "/Users/ines/Maps/harbour plan.pdf".to_string()
+            ))
+        );
+        for kept in [
+            "mailto:keeper@example.org",
+            "smb://host/share/a.pdf",
+            "~/notes.txt",
+            "https://",
+            "x-scrivener-item:///Users/ines/Series.scriv?id=1",
+        ] {
+            assert_eq!(made(&link(kept, None)), None, "{kept}");
+        }
+        let inside = Link {
+            target: Some(ItemKey::Number(4)),
+            ..link("https://example.org", None)
+        };
+        assert_eq!(made(&inside), None);
+    }
 
     /// Scrivener numbers the days from Sunday (Monday, Wednesday and Friday are `2, 4, 6`,
     /// M18); the Pace's mask counts from Monday = 1 to Sunday = 64.

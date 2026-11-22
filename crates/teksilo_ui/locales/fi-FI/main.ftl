@@ -1199,6 +1199,10 @@ import-scrivener-in-exports-no = Ei
 import-scrivener-becomes-item = Kohde
 import-scrivener-becomes-trashed = Roskakorissa
 import-scrivener-before-title = Ennen tuontia
+import-scrivener-review-resources = { $count ->
+    [one] 1 tutkimustiedosto, { $size }, tallennetaan uuteen projektiin resurssina.
+   *[other] { $count } tutkimustiedostoa, { $size } yhteensä, tallennetaan uuteen projektiin resursseina.
+}
 import-scrivener-review-error-unreadable = Tarkistusta ei voitu valmistella. Valitse projekti uudelleen.
 import-scrivener-review-error-choice = Tämä valinta ei sovi projektiin. Valitse projekti uudelleen.
 import-scrivener-review-error-unmappable = Tällä valinnalla mappia ei voitu siirtää menettämättä jotain. Valitse toisin, tai ilmoita ongelmasta.
@@ -1209,11 +1213,6 @@ import-scrivener-title-field = Otsikko
 import-scrivener-author = Tekijä
 import-scrivener-language = Kieli
 import-scrivener-location-inside-project = Valitse Scrivener-projektin ulkopuolinen kansio. Scrivener säilyttää siellä vain omia tiedostojaan.
-import-scrivener-copy-research-label = Kopioi tutkimustiedostot uuden projektin viereen
-import-scrivener-copy-research = { $count ->
-    [one] 1 tutkimustiedosto, jota Skribisto ei voi avata, kuten PDF tai äänitiedosto, kopioidaan kansioon projektin viereen. Jos valinta ei ole päällä, sen muistiinpano kertoo, missä se on Scrivener-projektissasi.
-   *[other] { $count } tutkimustiedostoa, joita Skribisto ei voi avata, kuten PDF- tai äänitiedostot, kopioidaan kansioon projektin viereen. Jos valinta ei ole päällä, niiden muistiinpanot kertovat, missä ne ovat Scrivener-projektissasi.
-}
 # The file name proposed when the project's name holds nothing a file name can.
 import-scrivener-default-name = Scrivener-projekti
 
@@ -1285,9 +1284,13 @@ import-scrivener-report-trashed = { $count ->
     [one] 1 kohde roskakorissa
    *[other] { $count } kohdetta roskakorissa
 }
-import-scrivener-report-research-files = { $count ->
-    [one] 1 tutkimustiedosto
-   *[other] { $count } tutkimustiedostoa
+import-scrivener-report-resources = { $count ->
+    [one] 1 tutkimustiedosto tallennettuna resurssina
+   *[other] { $count } tutkimustiedostoa tallennettuina resursseina
+}
+import-scrivener-report-links = { $count ->
+    [one] 1 linkki verkkosivulle tai tiedostoon
+   *[other] { $count } linkkiä verkkosivuille ja tiedostoihin
 }
 import-scrivener-report-choices = Mitä valitsit
 import-scrivener-report-accepted-mobile = Toit projektin ilman niitä iPhonen tai iPadin Scrivenerissä tehtyjä muutoksia, jotka eivät vielä olleet siinä.
@@ -1295,16 +1298,6 @@ import-scrivener-report-accepted-no-text = Toit tämän kopion asiakirjat tyhjin
 import-scrivener-report-choice = { $subject }: { $answer }
 import-scrivener-report-yes = kyllä
 import-scrivener-report-no = ei
-import-scrivener-report-research-copied = Tutkimustiedostot, joita Skribisto ei voi avata, kopioitiin kansioon ”{ $folder }” uuden projektin viereen.
-import-scrivener-report-research-not-copied = Tutkimustiedostoja, joita Skribisto ei voi avata, ei kopioitu. Niiden muistiinpanot kertovat, missä ne ovat Scrivener-projektissasi.
-import-scrivener-report-research-copied-except = { $count ->
-    [one] Tutkimustiedostot, joita Skribisto ei voi avata, kopioitiin kansioon ”{ $folder }” uuden projektin viereen, paitsi 1, joka jää Scrivener-projektiisi. Sen muistiinpano kertoo, missä se on.
-   *[other] Tutkimustiedostot, joita Skribisto ei voi avata, kopioitiin kansioon ”{ $folder }” uuden projektin viereen, paitsi { $count }, jotka jäävät Scrivener-projektiisi. Niiden muistiinpanot kertovat, missä ne ovat.
-}
-import-scrivener-report-research-none-copied = { $count ->
-    [1] Pyysit kopioimaan tutkimustiedostot, mutta ainoaa tiedostoa ei voitu kopioida. Se jää Scrivener-projektiisi, ja sen muistiinpano kertoo, missä se on.
-   *[other] Pyysit kopioimaan tutkimustiedostot, mutta yhtäkään { $count } tiedostosta ei voitu kopioida. Ne jäävät Scrivener-projektiisi, ja niiden muistiinpanot kertovat, missä ne ovat.
-}
 import-scrivener-report-chose-project = Valitsit tuotavaksi projektin ”{ $project }”, yhden useista projekteista, jotka olivat valitsemassasi kansiossa tai arkistossa.
 import-scrivener-report-chose-manifest = Valitsit mappitiedoston ”{ $file }”.
 import-scrivener-report-chose-enclosing = Valitsit jotain projektin ”{ $project }” sisältä, joten koko projekti tuotiin.
@@ -1387,9 +1380,6 @@ import-scrivener-notes-of = { $title } (muistiinpanot)
 import-scrivener-project-notes = Projektin muistiinpanot
 import-scrivener-recovered = Palautetut tekstit
 import-scrivener-untitled-template = Nimetön malli
-# The folder beside the new project its research files are copied into. A folder name on
-# disk: keep it free of the characters a file name cannot hold (/ \ : * ? " < > |).
-import-scrivener-research-folder = { $name } (tutkimustiedostot)
 # Between two authors' names.
 import-scrivener-list-separator = {", "}
 import-scrivener-label-details = Scrivenerin kentästä ”{ $field }”
@@ -2459,13 +2449,13 @@ import-scrivener-prose-note-on-heading-lost-line = { $count ->
     [one] 1 luvun otsikossa ollut alaviite tai kommentti ei voinut jäädä sinne: kommentti siirtyy luvun ensimmäiseen kappaleeseen, alaviite jätetään pois.
    *[other] { $count } lukujen otsikoissa ollutta alaviitettä tai kommenttia ei voinut jäädä sinne: kommentti siirtyy luvun ensimmäiseen kappaleeseen, alaviite jätetään pois.
 }
-import-scrivener-prose-media-file-copied-line = { $count ->
-    [one] 1 tutkimustiedosto, jota Skribisto ei voi avata, kopioitiin uuden projektin viereen. Sen muistiinpano kertoo, minne.
-   *[other] { $count } tutkimustiedostoa, joita Skribisto ei voi avata, kopioitiin uuden projektin viereen. Niiden muistiinpanot kertovat, minne.
+import-scrivener-prose-media-file-stored-line = { $count ->
+    [one] 1 tutkimustiedosto on nyt uuden projektin resurssi.
+   *[other] { $count } tutkimustiedostoa on nyt uuden projektin resursseja.
 }
 import-scrivener-prose-media-file-not-carried-line = { $count ->
-    [one] 1 tutkimustiedosto, jota Skribisto ei voi avata, jää Scrivener-projektiisi. Sen muistiinpano kertoo tiedoston nimen.
-   *[other] { $count } tutkimustiedostoa, joita Skribisto ei voi avata, jää Scrivener-projektiisi. Niiden muistiinpanot kertovat tiedostojen nimet.
+    [one] 1 tiedostoa ei voitu lukea, tai se on liian suuri siirrettäväksi. Se jää Scrivener-projektiisi.
+   *[other] { $count } tiedostoa ei voitu lukea, tai ne ovat liian suuria siirrettäviksi. Ne jäävät Scrivener-projektiisi.
 }
 
 ## When the import fails

@@ -135,7 +135,6 @@ fn french(request: ImportScrivenerProjectDto) -> ImportScrivenerProjectDto {
         project_notes_name: "Notes du projet".into(),
         recovered_name: "Textes retrouvés".into(),
         untitled_template_name: "Modèle sans titre".into(),
-        research_folder_pattern: format!("{TITLE_SLOT} - documentation"),
         list_separator: " et ".into(),
         label_details_pattern: format!("Venu de Scrivener, champ « {TITLE_SLOT} »"),
         status_details_pattern: format!("Venu de Scrivener, champ « {TITLE_SLOT} »"),
@@ -197,7 +196,6 @@ fn import_request(
         title: Some(analysis.proposed_title.clone()),
         author: Some(analysis.proposed_authors.join(" et ")),
         language: Some("fr-FR".into()),
-        copy_research_files: true,
         ..ImportScrivenerProjectDto::default()
     })
 }
@@ -831,14 +829,26 @@ fn with_french_words_no_english_reaches_the_project() {
         for template in &bundle.note_templates {
             assert!(own.contains(&template.name) || from_the_interface(&template.name));
         }
-        // The research files' folder beside the project, named in the writer's words.
-        let research: Vec<String> = std::fs::read_dir(dir.path())
+        // The research files are resources inside the project, titled as the writer titled
+        // them; nothing is written beside it.
+        let stored: Vec<&str> = bundle
+            .resources
+            .iter()
+            .filter(|r| r.kind == common::entities::ResourceKind::StoredFile)
+            .map(|r| r.title.as_str())
+            .collect();
+        assert_eq!(stored, ["Harbour map", "Tide tables"], "{generation:?}");
+        let mut beside: Vec<String> = std::fs::read_dir(dir.path())
             .expect("the folder lists")
             .flatten()
             .map(|e| e.file_name().to_string_lossy().into_owned())
-            .filter(|name| name.contains("documentation"))
             .collect();
-        assert_eq!(research, ["roman - documentation"], "{generation:?}");
+        beside.sort();
+        assert_eq!(
+            beside,
+            [spec.folder(), "roman.skrib".to_string()],
+            "{generation:?}"
+        );
     }
 }
 

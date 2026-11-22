@@ -1121,6 +1121,10 @@ import-scrivener-in-exports-no = Ne
 import-scrivener-becomes-item = Ero
 import-scrivener-becomes-trashed = En la rubujo
 import-scrivener-before-title = Antaŭ ol importi
+import-scrivener-review-resources = { $count ->
+    [one] 1 esplora dosiero, { $size }, estos konservita en la nova projekto kiel rimedo.
+   *[other] { $count } esploraj dosieroj, { $size } entute, estos konservitaj en la nova projekto kiel rimedoj.
+}
 import-scrivener-review-error-unreadable = La kontrolo ne povis esti preparita. Elektu la projekton denove.
 import-scrivener-review-error-choice = Ĉi tiu elekto ne taŭgas por la projekto. Elektu la projekton denove.
 import-scrivener-review-error-unmappable = Kun ĉi tiu elekto, la kolektujo ne povis esti transprenita sen perdi ion. Elektu alie, aŭ raportu la problemon.
@@ -1129,11 +1133,6 @@ import-scrivener-title-field = Titolo
 import-scrivener-author = Aŭtoro
 import-scrivener-language = Lingvo
 import-scrivener-location-inside-project = Elektu dosierujon ekster la Scrivener-projekto. Scrivener tenas tie nur siajn proprajn dosierojn.
-import-scrivener-copy-research-label = Kopii esplorajn dosierojn apud la novan projekton
-import-scrivener-copy-research = { $count ->
-    [one] 1 esplora dosiero, kiun Skribisto ne povas malfermi, ekzemple PDF aŭ sono, iras en dosierujon apud la projekto. Se ĉi tio ne estas markita, ĝia noto diras, kie ĝi troviĝas en via Scrivener-projekto.
-   *[other] { $count } esploraj dosieroj, kiujn Skribisto ne povas malfermi, ekzemple PDF-oj aŭ sonoj, iras en dosierujon apud la projekto. Se ĉi tio ne estas markita, iliaj notoj diras, kie ili troviĝas en via Scrivener-projekto.
-}
 import-scrivener-default-name = Scrivener-projekto
 import-scrivener-progress-title = Importado de Scrivener-projekto…
 import-scrivener-done-title = Scrivener-projekto importita
@@ -1198,9 +1197,13 @@ import-scrivener-report-trashed = { $count ->
     [one] 1 ero en la rubujo
    *[other] { $count } eroj en la rubujo
 }
-import-scrivener-report-research-files = { $count ->
-    [one] 1 esplora dosiero
-   *[other] { $count } esploraj dosieroj
+import-scrivener-report-resources = { $count ->
+    [one] 1 esplora dosiero konservita kiel rimedo
+   *[other] { $count } esploraj dosieroj konservitaj kiel rimedoj
+}
+import-scrivener-report-links = { $count ->
+    [one] 1 ligilo al retpaĝo aŭ dosiero
+   *[other] { $count } ligiloj al retpaĝoj kaj dosieroj
 }
 import-scrivener-report-choices = Kion vi elektis
 import-scrivener-report-accepted-mobile = Vi importis la projekton sen la ŝanĝoj faritaj en Scrivener por iPhone aŭ iPad, kiuj ankoraŭ ne estis en ĝi.
@@ -1208,16 +1211,6 @@ import-scrivener-report-accepted-no-text = Vi importis ĉi tiun kopion kun malpl
 import-scrivener-report-choice = { $subject }: { $answer }
 import-scrivener-report-yes = jes
 import-scrivener-report-no = ne
-import-scrivener-report-research-copied = Esploraj dosieroj, kiujn Skribisto ne povas malfermi, estis kopiitaj en «{ $folder }», apud la nova projekto.
-import-scrivener-report-research-not-copied = Esploraj dosieroj, kiujn Skribisto ne povas malfermi, ne estis kopiitaj. Iliaj notoj diras, kie ili troviĝas en via Scrivener-projekto.
-import-scrivener-report-research-copied-except = { $count ->
-    [one] Esploraj dosieroj, kiujn Skribisto ne povas malfermi, estis kopiitaj en «{ $folder }», apud la nova projekto, krom 1, kiu restas en via Scrivener-projekto. Ĝia noto diras, kie ĝi troviĝas.
-   *[other] Esploraj dosieroj, kiujn Skribisto ne povas malfermi, estis kopiitaj en «{ $folder }», apud la nova projekto, krom { $count }, kiuj restas en via Scrivener-projekto. Iliaj notoj diras, kie ili troviĝas.
-}
-import-scrivener-report-research-none-copied = { $count ->
-    [1] Vi petis kopii la esplorajn dosierojn, sed la sola koncernata dosiero ne povis esti kopiita. Ĝi restas en via Scrivener-projekto, kaj ĝia noto diras, kie ĝi troviĝas.
-   *[other] Vi petis kopii la esplorajn dosierojn, sed neniu el la { $count } povis esti kopiita. Ili restas en via Scrivener-projekto, kaj iliaj notoj diras, kie ili troviĝas.
-}
 import-scrivener-report-chose-project = Vi elektis importi «{ $project }», unu el pluraj projektoj en la dosierujo aŭ arkivo, kiun vi elektis.
 import-scrivener-report-chose-manifest = Vi elektis la kolektujan dosieron «{ $file }».
 import-scrivener-report-chose-enclosing = Vi elektis ion ene de «{ $project }», do la tuta projekto estis importita.
@@ -1289,7 +1282,6 @@ import-scrivener-notes-of = { $title } (notoj)
 import-scrivener-project-notes = Projektaj notoj
 import-scrivener-recovered = Retrovitaj tekstoj
 import-scrivener-untitled-template = Sentitola ŝablono
-import-scrivener-research-folder = { $name } (esploraj dosieroj)
 import-scrivener-list-separator = {", "}
 import-scrivener-label-details = El la kampo «{ $field }» en Scrivener
 import-scrivener-status-details = El la kampo «{ $field }» en Scrivener
@@ -2313,13 +2305,13 @@ import-scrivener-prose-note-on-heading-lost-line = { $count ->
     [one] 1 piednoto aŭ komento sur ĉapitrotitolo ne povis resti tie: komento moviĝas al la unua alineo de la ĉapitro, piednoto estas preterlasita.
    *[other] { $count } piednotoj aŭ komentoj sur ĉapitrotitoloj ne povis resti tie: komento moviĝas al la unua alineo de la ĉapitro, piednoto estas preterlasita.
 }
-import-scrivener-prose-media-file-copied-line = { $count ->
-    [one] 1 esplora dosiero, kiun Skribisto ne povas malfermi, estis kopiita apud la novan projekton. Ĝia noto diras kien.
-   *[other] { $count } esploraj dosieroj, kiujn Skribisto ne povas malfermi, estis kopiitaj apud la novan projekton. Iliaj notoj diras kien.
+import-scrivener-prose-media-file-stored-line = { $count ->
+    [one] 1 esplora dosiero nun estas rimedo de la nova projekto.
+   *[other] { $count } esploraj dosieroj nun estas rimedoj de la nova projekto.
 }
 import-scrivener-prose-media-file-not-carried-line = { $count ->
-    [one] 1 esplora dosiero, kiun Skribisto ne povas malfermi, restas en via Scrivener-projekto. Ĝia noto nomas ĝin.
-   *[other] { $count } esploraj dosieroj, kiujn Skribisto ne povas malfermi, restas en via Scrivener-projekto. Iliaj notoj nomas ilin.
+    [one] 1 dosiero ne legeblis aŭ estas tro granda por esti transportita. Ĝi restas en via Scrivener-projekto.
+   *[other] { $count } dosieroj ne legeblis aŭ estas tro grandaj por esti transportitaj. Ili restas en via Scrivener-projekto.
 }
 import-scrivener-error-refused = { $refusal } Nenio estis skribita.
 import-scrivener-error-question = La projekto nun starigas demandon, al kiu ĝia kontrolo ne respondis. Elektu «Rekontroli la importon», poste importu. Nenio estis skribita.

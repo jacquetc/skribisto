@@ -80,7 +80,8 @@ Ao lado da árvore, as escolhas mudam a forma como o arquivador é trazido:
 
 Por baixo da árvore, *Antes de importar* lista o que a importação faz com o seu arquivador e com as
 suas palavras-chave, metadados personalizados, coleções, marcadores e objetivos, e o que deixa para
-trás, para que o saiba antes de importar.
+trás, para que o saiba antes de importar. A lista começa por quantos ficheiros de pesquisa o
+novo projeto vai conter e quanto espaço ocupam: entram todos nele.
 
 Qualquer item pode mudar de tipo depois, a partir do arquivador. Consulte
 [o modelo de escrita](:help-writing-model) para saber o que é cada tipo.
@@ -95,10 +96,6 @@ Documentos, e não a que contém o seu projeto Scrivener. Mostra também o *Tít
 O Scrivener 3 só guarda um título e um autor nas suas definições de compilação. Enquanto não os
 definir lá, mantém o nome que o projeto tinha quando o criou, e nenhum autor: a página propõe
 então esse nome e deixa o *Autor* vazio. Um modelo propõe o seu próprio título.
-
-Quando a sua pesquisa contém ficheiros que o Skribisto não consegue abrir, como ficheiros PDF ou
-sons, *Copiar os ficheiros de pesquisa para junto do novo projeto* coloca-os numa pasta ao lado
-dele.
 
 ## O que o Scrivener traz consigo
 
@@ -123,8 +120,14 @@ dele.
   para não serem assinaladas como erros ortográficos.
 - A caixa «Include in Compile», que se torna *Incluir nas exportações*.
 - Os seus modelos de documento, como modelos de notas.
-- As imagens da sua pesquisa, cada uma numa nota própria. A *Galeria* de uma pasta mostra-as
-  em miniaturas: consulte [As imagens e a galeria](:help-pictures).
+- Os ficheiros da sua pesquisa, imagens, ficheiros PDF, sons e páginas web por igual, como
+  recursos do novo projeto, guardados dentro dele. Cada um pertence à pasta onde estava, ou à
+  sua própria nota quando tinha uma sinopse, notas ou palavras-chave próprias. Um ficheiro de
+  texto simples torna-se uma nota com as suas palavras. As imagens e os ficheiros do seu
+  manuscrito continuam a ser notas junto ao seu texto.
+- Os seus marcadores para páginas web e para ficheiros do seu computador, como ligações entre
+  os recursos do documento que os tinha. Os marcadores do próprio projeto para eles não
+  pertencem a nenhum documento.
 
 ## A pasta «Do Scrivener»
 
@@ -138,7 +141,7 @@ de coisa, e uma nota só existe quando tem alguma coisa para listar:
   seus dias de escrita, os dias de escrita quando nenhum *Ritmo* os mantém ou o Skribisto não os
   conseguiu ler, um objetivo do rascunho que não se tornou uma meta, e o prazo, mesmo quando
   configurou o *Ritmo* do livro.
-- *Marcadores do projeto*.
+- *Marcadores do projeto* para documentos do projeto.
 - *Substituições de compilação*. O Skribisto não as aplica quando exporta.
 - *Entradas de preenchimento automático* com mais de uma palavra.
 - *Pesquisas guardadas*, com aquilo que cada uma procurava.
@@ -146,7 +149,7 @@ de coisa, e uma nota só existe quando tem alguma coisa para listar:
 - *Objetivos* definidos em notas, cuja escrita nenhuma meta conta, e em documentos divididos nos
   seus títulos internos, cujos capítulos nenhuma meta conta em conjunto.
 - *Marcadores* que nenhuma ligação do Skribisto consegue mostrar, como um de uma cena para outra
-  cena ou para uma página web.
+  cena ou para um endereço de e-mail.
 
 Os metadados personalizados e os marcadores de um documento que se torna uma nota própria, como uma
 ficha de personagem, são antes acrescentados no fim dessa nota.
@@ -161,9 +164,8 @@ ficha de personagem, são antes acrescentados no fim dessa nota.
 - **A ordem de uma coleção**, já que uma etiqueta não guarda nenhuma ordem, e **os objetivos que
   contam páginas**.
 - **A cor do texto, o realce e os tipos de letra.** É o Skribisto que define o aspeto do texto.
-- **Os ficheiros de pesquisa que não são imagens**, como ficheiros PDF, sons ou páginas web. Cada
-  um torna-se uma nota que nomeia o ficheiro, que fica no seu projeto Scrivener, salvo se o copiar
-  para junto do novo.
+- **Um ficheiro que não pode ser lido**, ou com mais de 512 MB. Fica no seu projeto Scrivener, e
+  o relatório indica-o.
 - **Os marcadores de posição** como `<$wc>` ou `<$title>`. São mantidos como texto simples:
   substitua-os à mão.
 - **As definições de compilação e o registo das palavras escritas em cada dia.** Configure a sua

@@ -1229,6 +1229,11 @@ import-scrivener-in-exports-no = Ne
 import-scrivener-becomes-item = Položka
 import-scrivener-becomes-trashed = V koši
 import-scrivener-before-title = Před importem
+import-scrivener-review-resources = { $count ->
+    [one] 1 soubor z rešerší ({ $size }) se uloží do nového projektu jako zdroj.
+    [few] { $count } soubory z rešerší (celkem { $size }) se uloží do nového projektu jako zdroje.
+   *[other] { $count } souborů z rešerší (celkem { $size }) se uloží do nového projektu jako zdroje.
+}
 import-scrivener-review-error-unreadable = Kontrolu nebylo možné připravit. Vyberte projekt znovu.
 import-scrivener-review-error-choice = Tato volba k projektu nesedí. Vyberte projekt znovu.
 import-scrivener-review-error-unmappable = S touto volbou nelze pořadač převést, aniž by se něco ztratilo. Zvolte jinak, nebo problém nahlaste.
@@ -1238,12 +1243,6 @@ import-scrivener-title-field = Název
 import-scrivener-author = Autor
 import-scrivener-language = Jazyk
 import-scrivener-location-inside-project = Vyberte složku mimo projekt Scrivener. Scrivener v ní uchovává jen své vlastní soubory.
-import-scrivener-copy-research-label = Zkopírovat soubory z rešerší vedle nového projektu
-import-scrivener-copy-research = { $count ->
-    [one] 1 soubor z rešerší, který Skribisto neumí otevřít, například PDF nebo zvuk, se uloží do složky vedle projektu. Pokud volbu nezaškrtnete, jeho poznámka uvede, kde ve vašem projektu Scrivener leží.
-    [few] { $count } soubory z rešerší, které Skribisto neumí otevřít, například PDF nebo zvuky, se uloží do složky vedle projektu. Pokud volbu nezaškrtnete, jejich poznámky uvedou, kde ve vašem projektu Scrivener leží.
-   *[other] { $count } souborů z rešerší, které Skribisto neumí otevřít, například PDF nebo zvuky, se uloží do složky vedle projektu. Pokud volbu nezaškrtnete, jejich poznámky uvedou, kde ve vašem projektu Scrivener leží.
-}
 # The file name proposed when the project's name holds nothing a file name can.
 import-scrivener-default-name = Projekt Scrivener
 ## Progress and result
@@ -1328,10 +1327,15 @@ import-scrivener-report-trashed = { $count ->
     [few] { $count } položky v koši
    *[other] { $count } položek v koši
 }
-import-scrivener-report-research-files = { $count ->
-    [one] 1 soubor z rešerší
-    [few] { $count } soubory z rešerší
-   *[other] { $count } souborů z rešerší
+import-scrivener-report-resources = { $count ->
+    [one] 1 soubor z rešerší uložený jako zdroj
+    [few] { $count } soubory z rešerší uložené jako zdroje
+   *[other] { $count } souborů z rešerší uložených jako zdroje
+}
+import-scrivener-report-links = { $count ->
+    [one] 1 odkaz na webovou stránku nebo soubor
+    [few] { $count } odkazy na webové stránky a soubory
+   *[other] { $count } odkazů na webové stránky a soubory
 }
 import-scrivener-report-choices = Co jste zvolili
 import-scrivener-report-accepted-mobile = Projekt jste importovali bez změn provedených v aplikaci Scrivener pro iPhone nebo iPad, které v něm ještě nebyly.
@@ -1339,17 +1343,6 @@ import-scrivener-report-accepted-no-text = Tuto kopii jste importovali s prázdn
 import-scrivener-report-choice = { $subject }: { $answer }
 import-scrivener-report-yes = ano
 import-scrivener-report-no = ne
-import-scrivener-report-research-copied = Soubory z rešerší, které Skribisto neumí otevřít, byly zkopírovány do složky „{ $folder }“ vedle nového projektu.
-import-scrivener-report-research-not-copied = Soubory z rešerší, které Skribisto neumí otevřít, nebyly zkopírovány. Jejich poznámky uvádějí, kde ve vašem projektu Scrivener leží.
-import-scrivener-report-research-copied-except = { $count ->
-    [one] Soubory z rešerší, které Skribisto neumí otevřít, byly zkopírovány do složky „{ $folder }“ vedle nového projektu, kromě 1 souboru, který zůstává ve vašem projektu Scrivener. Jeho poznámka uvádí, kde leží.
-    [few] Soubory z rešerší, které Skribisto neumí otevřít, byly zkopírovány do složky „{ $folder }“ vedle nového projektu, kromě { $count } souborů, které zůstávají ve vašem projektu Scrivener. Jejich poznámky uvádějí, kde leží.
-   *[other] Soubory z rešerší, které Skribisto neumí otevřít, byly zkopírovány do složky „{ $folder }“ vedle nového projektu, kromě { $count } souborů, které zůstávají ve vašem projektu Scrivener. Jejich poznámky uvádějí, kde leží.
-}
-import-scrivener-report-research-none-copied = { $count ->
-    [1] Požádali jste o zkopírování souborů z rešerší, ale jediný takový soubor se zkopírovat nepodařilo. Zůstává ve vašem projektu Scrivener a jeho poznámka uvádí, kde leží.
-   *[other] Požádali jste o zkopírování souborů z rešerší, ale nepodařilo se zkopírovat žádný z { $count } souborů. Zůstávají ve vašem projektu Scrivener a jejich poznámky uvádějí, kde leží.
-}
 import-scrivener-report-chose-project = Zvolili jste import projektu „{ $project }“, jednoho z několika projektů, které obsahuje vámi vybraná složka nebo archiv.
 import-scrivener-report-chose-manifest = Zvolili jste soubor pořadače „{ $file }“.
 import-scrivener-report-chose-enclosing = Vybrali jste něco uvnitř projektu „{ $project }“, proto byl importován celý projekt.
@@ -1436,8 +1429,6 @@ import-scrivener-notes-of = { $title } (poznámky)
 import-scrivener-project-notes = Poznámky k projektu
 import-scrivener-recovered = Obnovené texty
 import-scrivener-untitled-template = Šablona bez názvu
-# The folder beside the new project its research files are copied into.
-import-scrivener-research-folder = { $name } (soubory z rešerší)
 # Between two authors' names.
 import-scrivener-list-separator = {", "}
 import-scrivener-label-details = Z pole „{ $field }“ v aplikaci Scrivener
@@ -2687,15 +2678,15 @@ import-scrivener-prose-note-on-heading-lost-line = { $count ->
     [few] { $count } poznámky pod čarou nebo komentáře u nadpisů kapitol nebylo možné ponechat na místě: komentář se přesune do prvního odstavce kapitoly, poznámka pod čarou se vynechá.
    *[other] { $count } poznámek pod čarou nebo komentářů u nadpisů kapitol nebylo možné ponechat na místě: komentář se přesune do prvního odstavce kapitoly, poznámka pod čarou se vynechá.
 }
-import-scrivener-prose-media-file-copied-line = { $count ->
-    [one] 1 soubor z rešerší, který Skribisto neumí otevřít, byl zkopírován vedle nového projektu. Jeho poznámka uvádí kam.
-    [few] { $count } soubory z rešerší, které Skribisto neumí otevřít, byly zkopírovány vedle nového projektu. Jejich poznámky uvádějí kam.
-   *[other] { $count } souborů z rešerší, které Skribisto neumí otevřít, bylo zkopírováno vedle nového projektu. Jejich poznámky uvádějí kam.
+import-scrivener-prose-media-file-stored-line = { $count ->
+    [one] 1 soubor z rešerší je nyní zdrojem nového projektu.
+    [few] { $count } soubory z rešerší jsou nyní zdroji nového projektu.
+   *[other] { $count } souborů z rešerší je nyní zdroji nového projektu.
 }
 import-scrivener-prose-media-file-not-carried-line = { $count ->
-    [one] 1 soubor z rešerší, který Skribisto neumí otevřít, zůstává ve vašem projektu Scrivener. Jeho poznámka uvádí jeho název.
-    [few] { $count } soubory z rešerší, které Skribisto neumí otevřít, zůstávají ve vašem projektu Scrivener. Jejich poznámky uvádějí jejich názvy.
-   *[other] { $count } souborů z rešerší, které Skribisto neumí otevřít, zůstává ve vašem projektu Scrivener. Jejich poznámky uvádějí jejich názvy.
+    [one] 1 soubor se nepodařilo přečíst, nebo je příliš velký na převzetí. Zůstává ve vašem projektu Scrivener.
+    [few] { $count } soubory se nepodařilo přečíst, nebo jsou příliš velké na převzetí. Zůstávají ve vašem projektu Scrivener.
+   *[other] { $count } souborů se nepodařilo přečíst, nebo jsou příliš velké na převzetí. Zůstávají ve vašem projektu Scrivener.
 }
 ## When the import fails
 import-scrivener-error-refused = { $refusal } Nic nebylo zapsáno.

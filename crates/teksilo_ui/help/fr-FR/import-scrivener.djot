@@ -86,7 +86,8 @@ sera chaque élément, et *Exporté* s’il sera inclus quand vous exporterez le
 
 Sous l’arborescence, *Avant d’importer* énumère ce que l’import fait de votre classeur et de vos
 mots-clés, métadonnées personnalisées, collections, signets et objectifs, et ce qu’il laisse de
-côté : vous le savez avant d’importer.
+côté : vous le savez avant d’importer. La liste commence par le nombre de fichiers de recherche
+que le nouveau projet contiendra, et la place qu’ils prennent : ils y entrent tous.
 
 Chaque élément peut être retypé ensuite depuis le classeur. Voir
 [le modèle d’écriture](:help-writing-model) pour ce qu’est chaque type.
@@ -103,10 +104,6 @@ Scrivener 3 ne garde un titre et un auteur que dans ses réglages de compilation
 ne les y avez pas indiqués, il garde le nom que le projet avait à sa création, et aucun
 auteur : la page propose alors ce nom et laisse l’*Auteur* vide. Un modèle propose son propre
 titre.
-
-Quand vos recherches contiennent des fichiers que Skribisto ne sait pas ouvrir, comme des PDF
-ou des sons, *Copier les fichiers de recherche à côté du nouveau projet* les place dans un
-dossier à côté de lui.
 
 ## Ce que Scrivener apporte avec lui
 
@@ -132,8 +129,14 @@ dossier à côté de lui.
 - La case de Scrivener qui inclut un élément dans la compilation, qui devient *Inclure dans
   les exports*.
 - Vos modèles de documents, en modèles de notes.
-- Les images de vos recherches, chacune dans une note. La *Galerie* d’un dossier les montre
-  en vignettes : voir [Les images et la galerie](:help-pictures).
+- Les fichiers de vos recherches, images, PDF, sons et pages web compris, en ressources du
+  nouveau projet, rangées à l’intérieur. Chacun appartient au dossier où il se trouvait, ou à
+  sa propre note quand il avait un résumé, des notes ou des mots-clés à lui. Un fichier de
+  texte brut devient une note qui contient ses mots. Les images et les fichiers de votre
+  manuscrit restent des notes à côté de son texte.
+- Vos signets vers des pages web et des fichiers de votre ordinateur, en liens parmi les
+  ressources du document qui les portait. Les signets du projet lui-même vers eux
+  n’appartiennent à aucun document.
 
 ## Le dossier « Venu de Scrivener »
 
@@ -148,7 +151,7 @@ que si elle a quelque chose à énumérer :
   de vos jours d’écriture, les jours d’écriture quand aucun *Rythme* ne les garde ou que
   Skribisto n’a pas su les lire, un objectif du manuscrit qui n’est pas devenu un objectif, et
   l’échéance, même quand elle a mis en place le *Rythme* du livre.
-- *Signets du projet*.
+- *Signets du projet* vers des documents du projet.
 - *Remplacements à la compilation*. Skribisto ne les fait pas quand il exporte.
 - *Entrées d’autocomplétion* de plusieurs mots.
 - *Recherches enregistrées*, avec ce que chacune cherchait.
@@ -156,7 +159,7 @@ que si elle a quelque chose à énumérer :
 - *Objectifs* fixés sur des notes, dont aucun objectif ne compte l’écriture, et sur des
   documents découpés à leurs titres, dont aucun objectif ne compte ensemble les chapitres.
 - *Signets* qu’aucun lien de Skribisto ne peut montrer, comme un signet d’une scène vers une
-  autre scène ou vers une page web.
+  autre scène ou vers une adresse e-mail.
 
 Les métadonnées personnalisées et les signets d’une note à part entière, comme une fiche de
 personnage, sont ajoutés à la fin de cette note.
@@ -172,9 +175,8 @@ personnage, sont ajoutés à la fin de cette note.
   comptent des pages**.
 - **La couleur du texte, le surlignage et les polices.** Skribisto règle lui-même l’aspect du
   texte.
-- **Les fichiers de recherche qui ne sont pas des images**, comme les PDF, les sons ou les
-  pages web. Chacun devient une note qui nomme le fichier, lequel reste dans votre projet
-  Scrivener, sauf si vous le copiez à côté du nouveau.
+- **Un fichier illisible**, ou de plus de 512 Mo. Il reste dans votre projet Scrivener, et le
+  compte rendu le nomme.
 - **Les balises** comme `<$wc>` ou `<$title>`. Elles sont gardées telles quelles :
   remplacez-les à la main.
 - **Les réglages de compilation et le relevé des mots écrits chaque jour.** Préparez votre

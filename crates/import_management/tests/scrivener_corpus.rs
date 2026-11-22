@@ -104,14 +104,12 @@ fn import_request(
         } else {
             analysis.proposed_language.clone()
         }),
-        copy_research_files: true,
         manuscript_binder_name: "Manuscript".into(),
         notes_binder_name: "Notes".into(),
         notes_of_pattern: format!("{TITLE_SLOT} (notes)"),
         project_notes_name: "Project notes".into(),
         recovered_name: "Recovered".into(),
         untitled_template_name: "Template".into(),
-        research_folder_pattern: format!("{TITLE_SLOT} research files"),
         list_separator: ", ".into(),
         label_details_pattern: format!("{TITLE_SLOT} in Scrivener"),
         status_details_pattern: format!("{TITLE_SLOT} in Scrivener"),
@@ -348,7 +346,7 @@ fn corpus_every_project_goes_through_both_use_cases() {
                     }
                 }
             }
-            // The research folder beside it goes with the scratch folder.
+            // Nothing is written beside it: every research file is inside.
             let _ = std::fs::remove_file(&output);
         }
     }

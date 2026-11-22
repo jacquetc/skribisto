@@ -22,9 +22,8 @@
 //!   item keeps its own sentence, which names it.
 //! * **The writer's own choices** (D7 critique 4): which project, binder file or copy was
 //!   read, what they accepted, how each level or folder they changed came across, the
-//!   prose choices, the title, author and language the new project carries, and what
-//!   became of the research files, as the import did it. After the fact, the copied report
-//!   is the writer's record of the import.
+//!   prose choices, and the title, author and language the new project carries. After the
+//!   fact, the copied report is the writer's record of the import.
 //! * **Words are resolved when they are read**: every line is a `LocalizedString`, so the
 //!   dialog follows a change of language, and [`ImportReport::text`] is in the language
 //!   Skribisto shows itself in at the moment it is copied.
@@ -204,11 +203,7 @@ impl ImportReport {
             output_path: result.output_path.clone(),
             source: result.record.as_ref().map(|r| r.source.clone()),
             came_across: came_across(&result.totals),
-            choices: result
-                .record
-                .as_ref()
-                .map(|record| choices(record, &result.findings, &result.research_folder))
-                .unwrap_or_default(),
+            choices: result.record.as_ref().map(choices).unwrap_or_default(),
             groups: group_findings(&result.findings, result.record.as_ref()),
         }
     }
@@ -299,14 +294,15 @@ fn came_across(totals: &ScrivenerTotals) -> Vec<LocalizedString> {
         tags,
         rungs,
         trashed,
-        research_files,
+        resources,
+        links,
         synopses,
         document_notes,
     } = totals
     else {
         return Vec::new();
     };
-    let phrases: [(i64, Phrase); 12] = [
+    let phrases: [(i64, Phrase); 13] = [
         (*rows, |n| tr!(import_scrivener_report_items(count = n))),
         (*words, |n| tr!(import_scrivener_report_words(count = n))),
         (*synopses, |n| {
@@ -332,9 +328,10 @@ fn came_across(totals: &ScrivenerTotals) -> Vec<LocalizedString> {
         (*trashed, |n| {
             tr!(import_scrivener_report_trashed(count = n))
         }),
-        (*research_files, |n| {
-            tr!(import_scrivener_report_research_files(count = n))
+        (*resources, |n| {
+            tr!(import_scrivener_report_resources(count = n))
         }),
+        (*links, |n| tr!(import_scrivener_report_links(count = n))),
     ];
     phrases
         .into_iter()
@@ -345,12 +342,8 @@ fn came_across(totals: &ScrivenerTotals) -> Vec<LocalizedString> {
 
 /// What the writer chose, one sentence each: which project, binder file or copy the
 /// import read, what they accepted, the choices of the Review page, what the new project
-/// is called and by whom, and what became of the research files.
-fn choices(
-    record: &ImportRecord,
-    findings: &[ScrivenerFinding],
-    research_folder: &str,
-) -> Vec<LocalizedString> {
+/// is called and by whom.
+fn choices(record: &ImportRecord) -> Vec<LocalizedString> {
     let mut out = record.project_answers.clone();
     for key in &record.accepted {
         out.push(match key.as_str() {
@@ -384,39 +377,7 @@ fn choices(
             .resolve_now()
         }));
     }
-    out.extend(research_line(record, findings, research_folder));
     out
-}
-
-/// What became of the research files Skribisto cannot open, as the import did it: the
-/// files it copied and the ones it left in the Scrivener project, never what the
-/// analysis counted before the writer left a folder out. Nothing when it met none.
-fn research_line(
-    record: &ImportRecord,
-    findings: &[ScrivenerFinding],
-    research_folder: &str,
-) -> Option<LocalizedString> {
-    let items = |key: &str| {
-        findings
-            .iter()
-            .filter(|f| messages::key_of(f) == key)
-            .count() as i64
-    };
-    let copied = items("scrivener-prose-media-file-copied");
-    let stayed = items("scrivener-prose-media-file-not-carried");
-    let folder = research_folder.trim().to_string();
-    Some(match (copied > 0 && !folder.is_empty(), stayed) {
-        (true, 0) => tr!(import_scrivener_report_research_copied(folder = folder)),
-        (true, stayed) => tr!(import_scrivener_report_research_copied_except(
-            folder = folder,
-            count = stayed
-        )),
-        (false, 0) => return None,
-        (false, stayed) if record.copy_research_files => {
-            tr!(import_scrivener_report_research_none_copied(count = stayed))
-        }
-        (false, _) => tr!(import_scrivener_report_research_not_copied()),
-    })
 }
 
 /// Whether the writer changed, on the Save page, the field a hint was said beside.

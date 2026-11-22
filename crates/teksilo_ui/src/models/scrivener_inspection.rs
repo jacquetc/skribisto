@@ -662,7 +662,6 @@ mod imp {
             documents: 22,
             manuscript_documents: 12,
             documents_present: 22,
-            research_files: 2,
             trashed_items: 2,
             snapshots: 12,
             computers: ScrivenerComputers::Named {
@@ -1266,6 +1265,7 @@ mod imp {
             }
         }
         let mut books = 1;
+        let mut research_kept = false;
         for (root, children, destination) in &roots {
             let items = children.len() as i64;
             match destination {
@@ -1290,8 +1290,13 @@ mod imp {
                 }
                 ScrivenerDestination::Notes | ScrivenerDestination::StoryBible => {
                     rows.push(row(Notes, 0, (R::Folder, S::Note), root.title(), root.item));
-                    for child in children {
-                        rows.push(row(Notes, 1, (R::Item, S::Note), child.title(), child.item));
+                    // The research files are resources of the folder, with no row.
+                    if root.item == RESEARCH {
+                        research_kept = true;
+                    } else {
+                        for child in children {
+                            rows.push(row(Notes, 1, (R::Item, S::Note), child.title(), child.item));
+                        }
                     }
                     if *destination == ScrivenerDestination::StoryBible {
                         notices.push(at_item(
@@ -1424,7 +1429,24 @@ mod imp {
             controls,
             set_aside_trashed: 0,
             set_aside_recovered: 0,
-            shape: ScrivenerShape::Empty,
+            // Only what the review says: the research files it will store, and their size
+            // (the recording is past what an import reads).
+            shape: ScrivenerShape::Counted {
+                books: 0,
+                parts: 0,
+                chapter_folders: 0,
+                flat_chapters: 0,
+                scenes: 0,
+                paratexts: 0,
+                plain_folders: 0,
+                manuscript_notes: 0,
+                notes_rows: 0,
+                trashed_rows: 0,
+                templates: 0,
+                tags: 0,
+                resources: i64::from(research_kept),
+                resource_bytes: if research_kept { 3_400_000 } else { 0 },
+            },
             chapter_encoding: Default::default(),
             templates: Vec::new(),
             tags: Vec::new(),

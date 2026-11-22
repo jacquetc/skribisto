@@ -1168,6 +1168,10 @@ import-scrivener-in-exports-no = Nee
 import-scrivener-becomes-item = Item
 import-scrivener-becomes-trashed = In de prullenbak
 import-scrivener-before-title = Voordat u importeert
+import-scrivener-review-resources = { $count ->
+    [one] 1 onderzoeksbestand, { $size }, wordt in het nieuwe project bewaard als bron.
+   *[other] { $count } onderzoeksbestanden, { $size } in totaal, worden in het nieuwe project bewaard als bronnen.
+}
 import-scrivener-review-error-unreadable = De controle kon niet worden voorbereid. Kies het project opnieuw.
 import-scrivener-review-error-choice = Deze keuze past niet bij het project. Kies het project opnieuw.
 import-scrivener-review-error-unmappable = Met deze keuze kon de ordner niet worden overgenomen zonder iets te verliezen. Maak een andere keuze, of meld het probleem.
@@ -1178,11 +1182,6 @@ import-scrivener-title-field = Titel
 import-scrivener-author = Auteur
 import-scrivener-language = Taal
 import-scrivener-location-inside-project = Kies een map buiten het Scrivener-project. Scrivener bewaart daarin alleen zijn eigen bestanden.
-import-scrivener-copy-research-label = Onderzoeksbestanden naast het nieuwe project kopiëren
-import-scrivener-copy-research = { $count ->
-        [one] 1 onderzoeksbestand dat Skribisto niet kan openen, zoals een PDF of een geluidsbestand, gaat naar een map naast het project. Staat het vinkje uit, dan zegt de notitie ervan waar het in uw Scrivener-project staat.
-       *[other] { $count } onderzoeksbestanden die Skribisto niet kan openen, zoals PDF’s of geluidsbestanden, gaan naar een map naast het project. Staat het vinkje uit, dan zeggen hun notities waar ze in uw Scrivener-project staan.
-    }
 import-scrivener-default-name = Scrivener-project
 
 ## Progress and result
@@ -1251,26 +1250,20 @@ import-scrivener-report-trashed = { $count ->
         [one] 1 item in de prullenbak
        *[other] { $count } items in de prullenbak
     }
-import-scrivener-report-research-files = { $count ->
-        [one] 1 onderzoeksbestand
-       *[other] { $count } onderzoeksbestanden
-    }
+import-scrivener-report-resources = { $count ->
+    [one] 1 onderzoeksbestand bewaard als bron
+   *[other] { $count } onderzoeksbestanden bewaard als bronnen
+}
+import-scrivener-report-links = { $count ->
+    [one] 1 link naar een webpagina of een bestand
+   *[other] { $count } links naar webpagina’s en bestanden
+}
 import-scrivener-report-choices = Wat u hebt gekozen
 import-scrivener-report-accepted-mobile = U hebt het project geïmporteerd zonder de wijzigingen uit Scrivener voor iPhone of iPad die er nog niet in stonden.
 import-scrivener-report-accepted-no-text = U hebt deze kopie geïmporteerd met lege documenten, omdat er geen enkele tekst van in stond.
 import-scrivener-report-choice = { $subject }: { $answer }
 import-scrivener-report-yes = ja
 import-scrivener-report-no = nee
-import-scrivener-report-research-copied = Onderzoeksbestanden die Skribisto niet kan openen, zijn gekopieerd naar “{ $folder }”, naast het nieuwe project.
-import-scrivener-report-research-not-copied = Onderzoeksbestanden die Skribisto niet kan openen, zijn niet gekopieerd. Hun notities zeggen waar ze in uw Scrivener-project staan.
-import-scrivener-report-research-copied-except = { $count ->
-        [one] Onderzoeksbestanden die Skribisto niet kan openen, zijn gekopieerd naar “{ $folder }”, naast het nieuwe project, behalve 1 dat in uw Scrivener-project blijft. De notitie ervan zegt waar het staat.
-       *[other] Onderzoeksbestanden die Skribisto niet kan openen, zijn gekopieerd naar “{ $folder }”, naast het nieuwe project, behalve { $count } die in uw Scrivener-project blijven. Hun notities zeggen waar ze staan.
-    }
-import-scrivener-report-research-none-copied = { $count ->
-        [1] U hebt gevraagd om onderzoeksbestanden te kopiëren, maar het enige bestand kon niet worden gekopieerd. Het blijft in uw Scrivener-project, en de notitie ervan zegt waar het staat.
-       *[other] U hebt gevraagd om onderzoeksbestanden te kopiëren, maar geen van de { $count } kon worden gekopieerd. Ze blijven in uw Scrivener-project, en hun notities zeggen waar ze staan.
-    }
 import-scrivener-report-chose-project = U hebt ervoor gekozen “{ $project }” te importeren, een van meerdere projecten in de gekozen map of het gekozen archief.
 import-scrivener-report-chose-manifest = U hebt het ordnerbestand “{ $file }” gekozen.
 import-scrivener-report-chose-enclosing = U hebt iets binnen “{ $project }” gekozen, dus het hele project is geïmporteerd.
@@ -1344,7 +1337,6 @@ import-scrivener-notes-of = { $title } (notities)
 import-scrivener-project-notes = Projectnotities
 import-scrivener-recovered = Teruggevonden teksten
 import-scrivener-untitled-template = Naamloos sjabloon
-import-scrivener-research-folder = Onderzoeksbestanden van { $name }
 import-scrivener-list-separator = {", "}
 import-scrivener-label-details = Uit het veld “{ $field }” in Scrivener
 import-scrivener-status-details = Uit het veld “{ $field }” in Scrivener
@@ -2396,14 +2388,14 @@ import-scrivener-prose-note-on-heading-lost-line = { $count ->
         [one] 1 voetnoot of opmerking bij een hoofdstukkop kon daar niet blijven: een opmerking gaat naar de eerste alinea van het hoofdstuk, een voetnoot wordt weggelaten.
        *[other] { $count } voetnoten of opmerkingen bij hoofdstukkoppen konden daar niet blijven: een opmerking gaat naar de eerste alinea van het hoofdstuk, een voetnoot wordt weggelaten.
     }
-import-scrivener-prose-media-file-copied-line = { $count ->
-        [one] 1 onderzoeksbestand dat Skribisto niet kan openen, is naast het nieuwe project gekopieerd. De notitie ervan zegt waar.
-       *[other] { $count } onderzoeksbestanden die Skribisto niet kan openen, zijn naast het nieuwe project gekopieerd. Hun notities zeggen waar.
-    }
+import-scrivener-prose-media-file-stored-line = { $count ->
+    [one] 1 onderzoeksbestand is nu een bron van het nieuwe project.
+   *[other] { $count } onderzoeksbestanden zijn nu bronnen van het nieuwe project.
+}
 import-scrivener-prose-media-file-not-carried-line = { $count ->
-        [one] 1 onderzoeksbestand dat Skribisto niet kan openen, blijft in uw Scrivener-project. De notitie ervan noemt het.
-       *[other] { $count } onderzoeksbestanden die Skribisto niet kan openen, blijven in uw Scrivener-project. Hun notities noemen ze.
-    }
+    [one] 1 bestand kon niet worden gelezen of is te groot om over te nemen. Het blijft in uw Scrivener-project.
+   *[other] { $count } bestanden konden niet worden gelezen of zijn te groot om over te nemen. Ze blijven in uw Scrivener-project.
+}
 
 ## When the import fails
 ## Shown in the notice of a failed import, above the button import-scrivener-review-again,

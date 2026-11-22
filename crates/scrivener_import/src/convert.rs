@@ -12,7 +12,9 @@
 //! Exactly what the [`StructurePlan`] says, recomputed from the same analysis and the
 //! writer's [`Choices`], so the review and the import cannot disagree: two binders of rows,
 //! every row's contents made from the Scrivener texts the plan lists for it, footnotes and
-//! comments beside the prose that cites them, pictures as assets, the story bible's tags,
+//! comments beside the prose that cites them, pictures as assets, the research files of the
+//! notes binder's part as stored resources and the bookmarks to pages and files outside
+//! the project as link resources (decided 2026-11-22), the story bible's tags,
 //! the labels as tags and the status list as the workflow ladder on the rows that wore them
 //! ([`metadata::vocabularies`]), the keywords, fields and collections as tags, the goals,
 //! the references, the dictionary, the pace plan and the "From Scrivener" folder's notes
@@ -35,16 +37,26 @@
 //! The `.skrib` is staged beside its target and moved into place only once whole and not
 //! cancelled (`skrib_format::importing::StagedOutput`): a refusal, a cancellation, an error
 //! or a panic leaves the target as it was and no staged file behind. A failure to write
-//! names the folder that refused. The research files copied beside it go into place with it
-//! or not at all.
+//! names the folder that refused. Nothing is written beside the project: every research
+//! file goes inside it.
+//!
+//! # One research file in memory at a time
+//!
+//! A project's research can be gigabytes of scans and recordings. Each file is read, hashed
+//! and written to a scratch folder on disk ([`skrib_format::scratch`]) before the next is
+//! read, and the bundle holds it as a file there ([`skrib_format::Blob::file_in`]), which
+//! keeps the folder until the project is written. A file past the reading ceilings (512 MiB
+//! a file, and a zipped project's own total) is reported as not carried, like one that
+//! cannot be read.
 
 use std::cell::{Cell, RefCell};
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::path::Path;
+use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use chrono::{DateTime, NaiveDate, Utc};
-use common::entities::{CommentAnchorKind, ContentRole, StatusCategory};
+use common::entities::{CommentAnchorKind, ContentRole, ResourceKind, StatusCategory};
 use document_ingest::pictures::{DocumentPictures, PictureRefusal};
 use document_ingest::plan::{PlannedComment, RowPart, assemble_row};
 use document_ingest::sources::rich::{self, RichBlock, RichDocument, Run};
@@ -55,29 +67,29 @@ use skrib_format::importing::{OutputRefused, StagedOutput};
 use skrib_format::{
     BinderFile, BinderItemFile, BinderStatusFile, BinderTagFile, BundledBinder, BundledItem,
     CommentFile, DictWordFile, FORMAT_VERSION, FootnoteFile, HolidayFile, InlineContent,
-    NoteTemplateFile, PaceFile, ProjectManifest, ProseRef, ShapeTag, TrashInfoFile, WorkBundle,
-    WorkFile, binder_dir_name, new_unique_id, prose_file_name, prose_kind, prose_relpath,
+    NoteTemplateFile, PaceFile, ProjectManifest, ProseRef, ResourceFile, ShapeTag, TrashInfoFile,
+    WorkBundle, WorkFile, binder_dir_name, new_unique_id, prose_file_name, prose_kind,
+    prose_relpath,
 };
 use skribisto_model::comment_anchor;
+use tempfile::TempDir;
 use uuid::Uuid;
 
 use crate::analyze::{self, Answers, Moved, Options, ReadProject};
 use crate::disk::{Cancellable, RealDisk};
-use crate::index::{MAX_MEMBER_BYTES, ReadError};
+use crate::index::{CopyError, MAX_MEMBER_BYTES, ReadError};
 use crate::layout::Tree;
 use crate::metadata::{self, Extended, MetadataNotice, MetadataWords, PALETTE};
 use crate::model::{
-    Generation, ItemKey, ItemKind, MemberRef, Platform, Project, SourceFacts, SourceNames, TextRole,
+    Generation, ItemKey, MemberRef, Platform, Project, SourceFacts, SourceNames, TextRole,
 };
 use crate::outcome::{Notice, Question, Refusal};
 use crate::prose::{self, Pictures, Place, ProseChoices, ProseNotice, dialect, sidecar, styles};
 use crate::structure::{
     self, BinderKind, Body, ChapterEncoding, Choices, NoteSection, Origin, PlanError, PlannedRow,
-    PlannedTitle, RowRef, Source, StructureNotice, StructurePlan, SubRole,
+    PlannedTitle, RowRef, Source, StructureNotice, StructurePlan, SubRole, clean_title,
+    is_picture_file, is_plain_text_name,
 };
-
-mod research;
-use research::ResearchCopy;
 
 /// Where a pattern's value goes in [`Words`]: the one slot every importer's patterns hold,
 /// so the interface resolves all of them alike.
@@ -98,9 +110,6 @@ pub struct Words {
     pub recovered: String,
     /// A note template whose document had no title.
     pub untitled_template: String,
-    /// The folder beside the project that research files are copied into, with
-    /// [`TITLE_SLOT`] where the project's file name goes.
-    pub research_folder: String,
     /// What goes between two authors' names when the project names several (`, `).
     pub list_separator: String,
     /// A label tag's details, saying where it came from: [`TITLE_SLOT`] is where the
@@ -160,10 +169,6 @@ pub struct Request<'a> {
     /// one the project states, else the interface's own. `None` takes the one the project
     /// states, or none.
     pub language: Option<&'a str>,
-    /// Copy the research files Skribisto cannot open into a folder beside the project
-    /// (UQ-37: on by default). Off, their notes name where they are in the Scrivener
-    /// project, which keeps them.
-    pub copy_research_files: bool,
     /// The instant of the import: the date of everything Scrivener does not date.
     pub now: DateTime<Utc>,
     /// The day of the import on the writer's own calendar, which a pace plan starts on and
@@ -190,8 +195,10 @@ pub struct Totals {
     pub rungs: u32,
     /// Rows written in the Trash.
     pub trashed: u32,
-    /// Research files copied beside the project.
-    pub research_files: u32,
+    /// Research files stored as resources.
+    pub resources: u32,
+    /// Bookmarks to pages and files outside the project, stored as link resources.
+    pub links: u32,
 }
 
 /// What a conversion did.
@@ -214,8 +221,6 @@ pub struct Summary {
     pub rows: Vec<WrittenRow>,
     /// How the writer knew each item, project note and recovered text the notices name.
     pub names: SourceNames,
-    /// The folder beside the project the research files were copied into, by name.
-    pub research_folder: Option<String>,
 }
 
 /// A row the conversion wrote.
@@ -289,17 +294,11 @@ pub fn convert(
     // Before the project is even opened: whether the target may be replaced.
     let output =
         StagedOutput::begin(request.output, request.overwrite).map_err(ConvertError::Output)?;
-    let mut research = request
-        .copy_research_files
-        .then(|| ResearchCopy::beside(request.output, &request.words.research_folder));
     report(2.0, "import.opening");
     let mut built: Option<Result<Built, ConvertError>> = None;
     let mut visit = |tree: &Tree<'_, '_>, read: &ReadProject| -> Result<(), Moved> {
         report(12.0, "import.outline");
-        if let Some(research) = research.as_mut() {
-            research.restart();
-        }
-        match build(tree, read, request, report, cancel, research.as_mut()) {
+        match build(tree, read, request, report, cancel) {
             Err(Stop::Moved) => Err(Moved),
             Err(Stop::Error(e)) => {
                 built = Some(Err(e));
@@ -348,17 +347,7 @@ pub fn convert(
     if cancel.load(Ordering::Relaxed) {
         return Err(ConvertError::Cancelled);
     }
-    // The research folder just before the project, so that neither stands without the
-    // other: one that cannot be placed fails the import whole, and one placed goes again
-    // if the project then cannot be (dropped, it removes itself).
-    let research_folder = match research.as_mut() {
-        Some(research) => research.place().map_err(ConvertError::Output)?,
-        None => None,
-    };
     output.commit().map_err(ConvertError::Output)?;
-    if let Some(research) = research {
-        research.keep();
-    }
     report(100.0, "import.done");
     Ok(Summary {
         output_path: request.output.to_string(),
@@ -370,7 +359,6 @@ pub fn convert(
         placements: built.placements,
         rows: built.rows,
         names,
-        research_folder,
     })
 }
 
@@ -404,7 +392,6 @@ fn build(
     request: &Request<'_>,
     report: &dyn Fn(f32, &str),
     cancel: &AtomicBool,
-    research: Option<&mut ResearchCopy>,
 ) -> Result<Built, Stop> {
     if let Some(expected) = request.fingerprint
         && expected != read.fingerprint
@@ -416,10 +403,9 @@ fn build(
     }
     let plan = structure::plan(&read.project, &read.content, request.choices)
         .map_err(ConvertError::Plan)?;
-    let mut converter = Converter::new(tree, read, request, &plan, research);
+    let mut converter = Converter::new(tree, read, request, &plan);
     converter.load_shared()?;
     let bundle = converter.run(report, cancel)?;
-    converter.totals.research_files = converter.research.as_ref().map_or(0, |r| r.copied());
     Ok(Built {
         totals: converter.totals,
         structure: plan.notices.clone(),
@@ -474,10 +460,23 @@ struct ContentOut {
     words: usize,
 }
 
-struct Converter<'c, 't, 'i, 'd, 'r> {
+/// The research files stored so far, and the folder on disk that holds their bytes.
+#[derive(Default)]
+struct Stored {
+    /// Made on the first file stored; each blob keeps it alive.
+    scratch: Option<Arc<TempDir>>,
+    resources: Vec<ResourceFile>,
+    /// By the resource's uid, hyphenated.
+    blobs: BTreeMap<String, skrib_format::Blob>,
+    /// Stored from a row's own contents (a file of the manuscript, of a template's leftovers)
+    /// and not attached yet: the row being made takes them.
+    unattached: Vec<u64>,
+}
+
+struct Converter<'c, 't, 'i, 'd> {
     tree: &'t Tree<'i, 'd>,
-    /// Where research files are copied, when they are.
-    research: Option<&'r mut ResearchCopy>,
+    /// The research files stored as resources.
+    stored: Stored,
     read: &'c ReadProject,
     project: &'c Project,
     request: &'c Request<'c>,
@@ -506,13 +505,12 @@ struct Converter<'c, 't, 'i, 'd, 'r> {
     written: Vec<WrittenRow>,
 }
 
-impl<'c, 't, 'i, 'd, 'r> Converter<'c, 't, 'i, 'd, 'r> {
+impl<'c, 't, 'i, 'd> Converter<'c, 't, 'i, 'd> {
     fn new(
         tree: &'t Tree<'i, 'd>,
         read: &'c ReadProject,
         request: &'c Request<'c>,
         plan: &'c StructurePlan,
-        research: Option<&'r mut ResearchCopy>,
     ) -> Self {
         let project = &read.project;
         let mut by_uuid: HashMap<String, usize> = HashMap::new();
@@ -525,7 +523,7 @@ impl<'c, 't, 'i, 'd, 'r> Converter<'c, 't, 'i, 'd, 'r> {
         }
         Converter {
             tree,
-            research,
+            stored: Stored::default(),
             read,
             project,
             request,
@@ -585,7 +583,10 @@ impl<'c, 't, 'i, 'd, 'r> Converter<'c, 't, 'i, 'd, 'r> {
 
     fn run(&mut self, report: &dyn Fn(f32, &str), cancel: &AtomicBool) -> Result<WorkBundle, Stop> {
         let plan = self.plan;
-        let total = (plan.manuscript.len() + plan.notes.len() + plan.templates.len()) as u64;
+        let total = (plan.manuscript.len()
+            + plan.notes.len()
+            + plan.templates.len()
+            + plan.resources.len()) as u64;
         report(20.0, "import.converting");
         let mut done = 0u64;
         // Reported by the percent, not by the row, and always at the last row, with the
@@ -769,6 +770,41 @@ impl<'c, 't, 'i, 'd, 'r> Converter<'c, 't, 'i, 'd, 'r> {
             &edges,
             cancel,
         )?;
+
+        // The research files of the notes binder's part, each stored as a resource of the
+        // row the plan attaches it to (decided 2026-11-22), then the bookmarks to pages and
+        // files outside the project as link resources.
+        let mut attachments: Vec<(u64, u64)> = Vec::new();
+        for resource in &plan.resources {
+            if cancel.load(Ordering::Relaxed) {
+                return Err(ConvertError::Cancelled.into());
+            }
+            if let Some(id) = self.store(resource.item)?
+                && let Some(owner) = resource.attach.and_then(file_id_of)
+            {
+                attachments.push((owner, id));
+            }
+            done += 1;
+            tick(done, "import.converting");
+        }
+        for link in &extended.links {
+            let id = self.link(link);
+            if let Some(owner) = link.attach.and_then(file_id_of) {
+                attachments.push((owner, id));
+            }
+        }
+        if !attachments.is_empty() {
+            let mut by_id: HashMap<u64, &mut Vec<u64>> = binders
+                .iter_mut()
+                .flat_map(|b| b.items.iter_mut())
+                .map(|i| (i.item.file_id, &mut i.item.resource_ids))
+                .collect();
+            for (owner, id) in attachments {
+                if let Some(list) = by_id.get_mut(&owner) {
+                    list.push(id);
+                }
+            }
+        }
 
         // Note templates (D3.16).
         let mut note_templates = Vec::with_capacity(plan.templates.len());
@@ -1048,7 +1084,8 @@ impl<'c, 't, 'i, 'd, 'r> Converter<'c, 't, 'i, 'd, 'r> {
                 .push(MetadataNotice::DatesUnreadable { items: undated });
         }
 
-        Ok(WorkBundle {
+        let stored = std::mem::take(&mut self.stored);
+        let mut bundle = WorkBundle {
             manifest: ProjectManifest {
                 format_version: FORMAT_VERSION,
                 // The read floor is the writer's to compute when it commits the manifest.
@@ -1068,8 +1105,8 @@ impl<'c, 't, 'i, 'd, 'r> Converter<'c, 't, 'i, 'd, 'r> {
             assets,
             note_template_bodies,
             asset_blobs,
-            resources: Vec::new(),
-            resource_blobs: Default::default(),
+            resources: stored.resources,
+            resource_blobs: stored.blobs,
             trash_infos,
             paces,
             progress_snapshots: Vec::new(),
@@ -1079,7 +1116,177 @@ impl<'c, 't, 'i, 'd, 'r> Converter<'c, 't, 'i, 'd, 'r> {
             history: Default::default(),
             binders,
             carried: Default::default(),
-        })
+        };
+        // A linked file's path as every write stores it: relative to the folder the new
+        // project goes in, so the project and its research can move together.
+        skrib_format::media::relativise_links(
+            &mut bundle,
+            skrib_format::media::link_base(Path::new(self.request.output)).as_deref(),
+        );
+        Ok(bundle)
+    }
+
+    /// The folder this conversion stores research files in, made on the first one.
+    fn scratch(&mut self) -> Result<Arc<TempDir>, Stop> {
+        if let Some(scratch) = &self.stored.scratch {
+            return Ok(Arc::clone(scratch));
+        }
+        let scratch = skrib_format::scratch::tempdir().map_err(|e| {
+            ConvertError::Output(OutputRefused::NotWritten {
+                file: String::new(),
+                folder: std::env::temp_dir().display().to_string(),
+                disk_full: out_of_space(&e),
+                reason: e.to_string(),
+            })
+        })?;
+        let scratch = Arc::new(scratch);
+        self.stored.scratch = Some(Arc::clone(&scratch));
+        Ok(scratch)
+    }
+
+    /// Store `item`'s file as a resource, copied into the scratch folder as it is read, so
+    /// memory never holds it whole. Its id, or `None` when it could not be read or is past
+    /// the reading ceilings, which is said.
+    fn store(&mut self, item: u32) -> Result<Option<u64>, Stop> {
+        let project = self.project;
+        let Some(row) = project.binder.get(item as usize) else {
+            return Ok(None);
+        };
+        let Some(member) = &row.payload.file else {
+            return Ok(None);
+        };
+        let at = Place::Media { item };
+        let name = media_name(row.title.as_deref(), member);
+        let scratch = self.scratch()?;
+        let not_written = |e: &std::io::Error| {
+            Stop::from(ConvertError::Output(OutputRefused::NotWritten {
+                file: name.clone(),
+                folder: scratch.path().display().to_string(),
+                disk_full: out_of_space(e),
+                reason: e.to_string(),
+            }))
+        };
+        let uid = common::uid::new_uid();
+        let path = scratch.path().join(uid.simple().to_string());
+        let mut out = match std::fs::File::create(&path) {
+            Ok(file) => std::io::BufWriter::new(file),
+            Err(e) => return Err(not_written(&e)),
+        };
+        let copied = self.tree.copy(&member.path, MAX_MEMBER_BYTES, &mut out);
+        drop(out);
+        let copied = match copied {
+            Ok(copied) => copied,
+            Err(error) => {
+                // What part of the file came through is of no use to anyone.
+                if let Err(e) = std::fs::remove_file(&path) {
+                    eprintln!("resources: a partial copy stays in the scratch folder: {e}");
+                }
+                return match error {
+                    CopyError::Write(e) => Err(not_written(&e)),
+                    CopyError::Read(ReadError::Changed) => Err(Stop::Moved),
+                    // Past a ceiling, one file stays behind, not the project: a member
+                    // larger than any read takes, or one an archive's ratio refuses.
+                    CopyError::Read(ReadError::Refused(
+                        Refusal::ArchiveMemberTooLarge { .. } | Refusal::ArchiveTooLarge { .. },
+                    )) => {
+                        self.notices
+                            .push(ProseNotice::MediaFileNotCarried { at, name });
+                        Ok(None)
+                    }
+                    CopyError::Read(ReadError::Refused(refusal)) => {
+                        Err(ConvertError::Refused(refusal).into())
+                    }
+                    CopyError::Read(_) => {
+                        self.notices
+                            .push(ProseNotice::MediaFileNotCarried { at, name });
+                        Ok(None)
+                    }
+                };
+            }
+        };
+        let mime_type = skrib_format::media::mime_for(&name);
+        // A picture's size, for a grid to lay it out before a thumbnail exists; none for
+        // anything else, and for a picture the editor could not show. Read back from the
+        // copy, and only for a picture small enough to be shown at all.
+        let picture = matches!(mime_type, "image/png" | "image/jpeg" | "image/webp");
+        let (width, height) =
+            if picture && copied.len <= document_ingest::pictures::MAX_PICTURE_BYTES {
+                std::fs::read(&path)
+                    .ok()
+                    .and_then(|bytes| document_ingest::pictures::displayable_size(&bytes).ok())
+                    .unwrap_or((0, 0))
+            } else {
+                (0, 0)
+            };
+        let title = match clean_title(row.title.as_deref()).0 {
+            title if !title.trim().is_empty() => title,
+            _ => file_stem(&name).to_string(),
+        };
+        let (created_at, updated_at) = self.dates(&Origin::Item { item });
+        let file_id = self.ids.take();
+        self.stored.resources.push(ResourceFile {
+            file_id,
+            uid,
+            created_at,
+            updated_at,
+            title,
+            description: String::new(),
+            kind: ResourceKind::StoredFile,
+            location: String::new(),
+            path: skrib_format::slug::resource_relpath(uid, &name),
+            file_name: name,
+            mime_type: mime_type.to_string(),
+            byte_size: copied.len,
+            content_hash: copied.hash.to_hex().to_string(),
+            width,
+            height,
+        });
+        self.stored.blobs.insert(
+            uid.hyphenated().to_string(),
+            skrib_format::Blob::file_in(path, scratch),
+        );
+        self.notices.push(ProseNotice::MediaFileStored { at });
+        self.totals.resources += 1;
+        Ok(Some(file_id))
+    }
+
+    /// A bookmark outside the project as a link resource: its id.
+    fn link(&mut self, link: &metadata::ExtendedLink) -> u64 {
+        let file_name = match link.kind {
+            ResourceKind::LinkedFile => link
+                .location
+                .trim_end_matches(['/', '\\'])
+                .rsplit(['/', '\\'])
+                .next()
+                .unwrap_or_default()
+                .to_string(),
+            ResourceKind::StoredFile | ResourceKind::WebLink => String::new(),
+        };
+        let mime_type = if file_name.is_empty() {
+            String::new()
+        } else {
+            skrib_format::media::mime_for(&file_name).to_string()
+        };
+        let file_id = self.ids.take();
+        self.stored.resources.push(ResourceFile {
+            file_id,
+            uid: common::uid::new_uid(),
+            created_at: self.now.clone(),
+            updated_at: self.now.clone(),
+            title: link.title.clone(),
+            description: String::new(),
+            kind: link.kind.clone(),
+            location: link.location.clone(),
+            file_name,
+            mime_type,
+            byte_size: 0,
+            content_hash: String::new(),
+            width: 0,
+            height: 0,
+            path: String::new(),
+        });
+        self.totals.links += 1;
+        file_id
     }
 
     /// The project's title: the Save page's, else the one the project states (D4-15).
@@ -1357,7 +1564,8 @@ impl<'c, 't, 'i, 'd, 'r> Converter<'c, 't, 'i, 'd, 'r> {
             aliases: Vec::new(),
             status_id: worn.status,
             cover_id: None,
-            resource_ids: Vec::new(),
+            // A file of its contents no note can show, stored while they were made.
+            resource_ids: std::mem::take(&mut self.stored.unattached),
             inline_contents,
             prose_refs,
             reference_ids: Vec::new(),
@@ -1836,9 +2044,14 @@ impl<'c, 't, 'i, 'd, 'r> Converter<'c, 't, 'i, 'd, 'r> {
             .collect())
     }
 
-    /// A picture, PDF or other file an item is (X-31): a picture as an asset shown at its
-    /// own size; a text file's words; anything else one line naming the file where it is in
+    /// A picture, PDF or other file a row holds for its item (X-31): a picture as an asset
+    /// shown at its own size; a text file's words; anything else (a picture the editor
+    /// cannot show included) stored as a resource attached to the row, the row holding
+    /// nothing for it. A file that cannot be read leaves one line naming it where it is in
     /// the Scrivener project, which keeps it.
+    ///
+    /// The research files of the notes binder's part never come here: the plan makes them
+    /// resources of their own ([`StructurePlan::resources`]).
     fn media(&mut self, item: u32) -> Result<Option<Piece>, Stop> {
         let project = self.project;
         let Some(row) = project.binder.get(item as usize) else {
@@ -1848,22 +2061,9 @@ impl<'c, 't, 'i, 'd, 'r> Converter<'c, 't, 'i, 'd, 'r> {
             return Ok(None);
         };
         let at = Place::Media { item };
-        // The extension of the file's own name: a path whose file has none has none, never
-        // the folders before it.
-        let file = file_name(member);
-        let extension = file
-            .rsplit_once('.')
-            .map(|(_, extension)| extension.to_ascii_lowercase())
-            .unwrap_or_default();
-        let name = match row.title.as_deref().map(str::trim) {
-            Some(title) if !title.is_empty() && !extension.is_empty() => {
-                format!("{title}.{extension}")
-            }
-            Some(title) if !title.is_empty() => title.to_string(),
-            _ => file,
-        };
-        let pictures = ["png", "jpg", "jpeg", "gif", "tif", "tiff", "bmp", "webp"];
-        let picture = row.kind == ItemKind::Image || pictures.contains(&extension.as_str());
+        let name = media_name(row.title.as_deref(), member);
+        // As the review counts what is stored (`structure::stored_in_place`).
+        let picture = is_picture_file(&row.kind, &member.path);
         // A picture the editor cannot show (its format, its size) is a research file it
         // cannot open like any other, and goes where they go.
         if picture && let Some(piece) = self.picture_piece(member, &name, at) {
@@ -1873,29 +2073,16 @@ impl<'c, 't, 'i, 'd, 'r> Converter<'c, 't, 'i, 'd, 'r> {
             return Err(Stop::Moved);
         }
         if !picture
-            && matches!(
-                extension.as_str(),
-                "txt" | "text" | "md" | "markdown" | "mmd" | "fountain"
-            )
+            && is_plain_text_name(&member.path)
             && let Some(bytes) = self.member(member, MAX_MEMBER_BYTES)?
         {
             return Ok(Some(plain_piece(&String::from_utf8_lossy(&bytes), at)));
-        } else if self.research.is_some()
-            && let Some(bytes) = self.member(member, MAX_MEMBER_BYTES)?
-            && let Some(research) = self.research.as_mut()
-        {
-            // Beside the project, its note naming where (UQ-37).
-            let relative = research.copy(&name, &bytes).map_err(ConvertError::Output)?;
-            self.notices.push(ProseNotice::MediaFileCopied {
-                at,
-                path: relative.clone(),
-            });
-            return Ok(Some(plain_piece(&relative, at)));
         }
-        self.notices.push(ProseNotice::MediaFileNotCarried {
-            at,
-            name: name.clone(),
-        });
+        if let Some(id) = self.store(item)? {
+            self.stored.unattached.push(id);
+            return Ok(None);
+        }
+        // Said by `store`.
         let line = format!("{}/{}", project.source.folder_name, member.path);
         Ok(Some(plain_piece(&line, at)))
     }
@@ -2144,6 +2331,46 @@ fn row_item_title(project: &Project, origin: &Origin) -> Option<String> {
         .binder
         .get(*item as usize)
         .and_then(|row| row.title.clone())
+}
+
+/// The name a media item's file goes by in the new project: the item's title with the
+/// file's extension, which Scrivener names `content.pdf` or `12.pdf`; the file's own name
+/// when the item has no title.
+fn media_name(title: Option<&str>, member: &MemberRef) -> String {
+    let file = file_name(member);
+    let extension = file
+        .rsplit_once('.')
+        .map(|(_, extension)| extension.to_ascii_lowercase())
+        .unwrap_or_default();
+    match title.map(str::trim) {
+        Some(title)
+            if !title.is_empty()
+                && !extension.is_empty()
+                && !title
+                    .to_ascii_lowercase()
+                    .ends_with(&format!(".{extension}")) =>
+        {
+            format!("{title}.{extension}")
+        }
+        Some(title) if !title.is_empty() => title.to_string(),
+        _ => file,
+    }
+}
+
+/// `name` without its extension.
+fn file_stem(name: &str) -> &str {
+    match name.rsplit_once('.') {
+        Some((stem, _)) if !stem.is_empty() => stem,
+        _ => name,
+    }
+}
+
+/// Whether a write failed for want of room.
+fn out_of_space(error: &std::io::Error) -> bool {
+    matches!(
+        error.kind(),
+        std::io::ErrorKind::StorageFull | std::io::ErrorKind::QuotaExceeded
+    )
 }
 
 /// A member's file name, never its folders.

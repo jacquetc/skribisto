@@ -1163,6 +1163,10 @@ import-scrivener-in-exports-no = Hayır
 import-scrivener-becomes-item = Öğe
 import-scrivener-becomes-trashed = Çöp kutusunda
 import-scrivener-before-title = İçe aktarmadan önce
+import-scrivener-review-resources = { $count ->
+    [one] 1 araştırma dosyası ({ $size }) yeni projenin içine kaynak olarak kaydedilecek.
+   *[other] { $count } araştırma dosyası (toplam { $size }) yeni projenin içine kaynak olarak kaydedilecek.
+}
 import-scrivener-review-error-unreadable = Gözden geçirme hazırlanamadı. Projeyi yeniden seçin.
 import-scrivener-review-error-choice = Bu seçim projeye uymuyor. Projeyi yeniden seçin.
 import-scrivener-review-error-unmappable = Bu seçimle dizin hiçbir şey kaybetmeden aktarılamadı. Başka bir seçim yapın ya da sorunu bildirin.
@@ -1171,11 +1175,6 @@ import-scrivener-title-field = Başlık
 import-scrivener-author = Yazar
 import-scrivener-language = Dil
 import-scrivener-location-inside-project = Scrivener projesinin dışında bir klasör seçin. Scrivener o klasörde yalnızca kendi dosyalarını tutar.
-import-scrivener-copy-research-label = Araştırma dosyalarını yeni projenin yanına kopyala
-import-scrivener-copy-research = { $count ->
-    [one] Skribisto'nun açamadığı 1 araştırma dosyası, örneğin bir PDF ya da bir ses kaydı, projenin yanındaki bir klasöre gider. İşaret kaldırılırsa dosyanın notu, onun Scrivener projenizde nerede olduğunu söyler.
-   *[other] Skribisto'nun açamadığı { $count } araştırma dosyası, örneğin PDF'ler ya da ses kayıtları, projenin yanındaki bir klasöre gider. İşaret kaldırılırsa dosyaların notları, onların Scrivener projenizde nerede olduğunu söyler.
-}
 import-scrivener-default-name = Scrivener projesi
 import-scrivener-progress-title = Scrivener projesi içe aktarılıyor…
 import-scrivener-done-title = Scrivener projesi içe aktarıldı
@@ -1240,9 +1239,13 @@ import-scrivener-report-trashed = { $count ->
     [one] Çöp kutusunda 1 öğe
    *[other] Çöp kutusunda { $count } öğe
 }
-import-scrivener-report-research-files = { $count ->
-    [one] 1 araştırma dosyası
-   *[other] { $count } araştırma dosyası
+import-scrivener-report-resources = { $count ->
+    [one] 1 araştırma dosyası, kaynak olarak
+   *[other] { $count } araştırma dosyası, kaynak olarak
+}
+import-scrivener-report-links = { $count ->
+    [one] 1 web sayfası ya da dosya bağlantısı
+   *[other] { $count } web sayfası ve dosya bağlantısı
 }
 import-scrivener-report-choices = Seçimleriniz
 import-scrivener-report-accepted-mobile = Projeyi, iPhone ya da iPad için Scrivener'da yapılmış ama henüz projeye geçmemiş değişiklikler olmadan içe aktardınız.
@@ -1250,16 +1253,6 @@ import-scrivener-report-accepted-no-text = Bu kopyayı belgeleri boş hâlde iç
 import-scrivener-report-choice = { $subject }: { $answer }
 import-scrivener-report-yes = evet
 import-scrivener-report-no = hayır
-import-scrivener-report-research-copied = Skribisto'nun açamadığı araştırma dosyaları, yeni projenin yanındaki “{ $folder }” klasörüne kopyalandı.
-import-scrivener-report-research-not-copied = Skribisto'nun açamadığı araştırma dosyaları kopyalanmadı. Notları, Scrivener projenizde nerede olduklarını söyler.
-import-scrivener-report-research-copied-except = { $count ->
-    [one] Skribisto'nun açamadığı araştırma dosyaları, yeni projenin yanındaki “{ $folder }” klasörüne kopyalandı; yalnızca 1 tanesi Scrivener projenizde kaldı. Notu, nerede olduğunu söyler.
-   *[other] Skribisto'nun açamadığı araştırma dosyaları, yeni projenin yanındaki “{ $folder }” klasörüne kopyalandı; yalnızca { $count } tanesi Scrivener projenizde kaldı. Notları, nerede olduklarını söyler.
-}
-import-scrivener-report-research-none-copied = { $count ->
-    [1] Araştırma dosyalarının kopyalanmasını istediniz, ama ilgili tek dosya kopyalanamadı. Scrivener projenizde kalıyor ve notu nerede olduğunu söylüyor.
-   *[other] Araştırma dosyalarının kopyalanmasını istediniz, ama { $count } dosyanın hiçbiri kopyalanamadı. Scrivener projenizde kalıyorlar ve notları nerede olduklarını söylüyor.
-}
 import-scrivener-report-chose-project = Seçtiğiniz klasör ya da arşivdeki birkaç projeden biri olan “{ $project }” projesini içe aktarmayı seçtiniz.
 import-scrivener-report-chose-manifest = “{ $file }” dizin dosyasını seçtiniz.
 import-scrivener-report-chose-enclosing = “{ $project }” projesinin içindeki bir şeyi seçtiniz, bu yüzden projenin tamamı içe aktarıldı.
@@ -1331,7 +1324,6 @@ import-scrivener-notes-of = { $title } (notlar)
 import-scrivener-project-notes = Proje notları
 import-scrivener-recovered = Kurtarılan metinler
 import-scrivener-untitled-template = Adsız şablon
-import-scrivener-research-folder = { $name } araştırma dosyaları
 import-scrivener-list-separator = {", "}
 import-scrivener-label-details = Scrivener'daki “{ $field }” alanından
 import-scrivener-status-details = Scrivener'daki “{ $field }” alanından
@@ -2355,13 +2347,13 @@ import-scrivener-prose-note-on-heading-lost-line = { $count ->
     [one] Bir bölüm başlığındaki 1 dipnot ya da yorum orada kalamadı: yorum bölümün ilk paragrafına taşınır, dipnot dışarıda bırakılır.
    *[other] Bölüm başlıklarındaki { $count } dipnot ya da yorum orada kalamadı: yorumlar bölümün ilk paragrafına taşınır, dipnotlar dışarıda bırakılır.
 }
-import-scrivener-prose-media-file-copied-line = { $count ->
-    [one] Skribisto'nun açamadığı 1 araştırma dosyası yeni projenin yanına kopyalandı. Notu, nereye kopyalandığını söyler.
-   *[other] Skribisto'nun açamadığı { $count } araştırma dosyası yeni projenin yanına kopyalandı. Notları, nereye kopyalandıklarını söyler.
+import-scrivener-prose-media-file-stored-line = { $count ->
+    [one] 1 araştırma dosyası artık yeni projenin bir kaynağı.
+   *[other] { $count } araştırma dosyası artık yeni projenin kaynakları.
 }
 import-scrivener-prose-media-file-not-carried-line = { $count ->
-    [one] Skribisto'nun açamadığı 1 araştırma dosyası Scrivener projenizde kalıyor. Notu, dosyanın adını verir.
-   *[other] Skribisto'nun açamadığı { $count } araştırma dosyası Scrivener projenizde kalıyor. Notları, dosyaların adını verir.
+    [one] 1 dosya okunamadı ya da aktarılamayacak kadar büyük. Scrivener projenizde kalıyor.
+   *[other] { $count } dosya okunamadı ya da aktarılamayacak kadar büyük. Scrivener projenizde kalıyor.
 }
 import-scrivener-error-refused = { $refusal } Hiçbir şey yazılmadı.
 import-scrivener-error-question = Proje artık, gözden geçirmenin yanıtlamadığı bir soru soruyor. “İçe aktarmayı gözden geçir” düğmesini seçin, sonra içe aktarın. Hiçbir şey yazılmadı.

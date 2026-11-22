@@ -57,7 +57,6 @@ fn converted(spec: &Spec, language: Option<&str>) -> (tempfile::TempDir, WorkBun
         title: None,
         author: None,
         language,
-        copy_research_files: false,
         now: instant(),
         today: instant().date_naive(),
     };
@@ -95,6 +94,23 @@ fn note_text(row: &BundledItem) -> String {
         Ok((text, _)) => text,
         Err(e) => panic!("'{}': the note does not read: {e}", row.item.title),
     }
+}
+
+/// The web links attached to `row`, title and address; to nothing, with `None`.
+fn web_links(bundle: &WorkBundle, row: Option<&BundledItem>) -> Vec<(String, String)> {
+    let held: Vec<u64> = items(bundle)
+        .flat_map(|i| i.item.resource_ids.iter().copied())
+        .collect();
+    bundle
+        .resources
+        .iter()
+        .filter(|r| r.kind == common::entities::ResourceKind::WebLink)
+        .filter(|r| match row {
+            Some(row) => row.item.resource_ids.contains(&r.file_id),
+            None => !held.contains(&r.file_id),
+        })
+        .map(|r| (r.title.clone(), r.location.clone()))
+        .collect()
 }
 
 fn has(summary: &Summary, wanted: &MetadataNotice) -> bool {
@@ -310,7 +326,17 @@ fn every_generation_brings_what_it_writes_of_the_second_half() {
             bookmarks.contains("Research › Mara"),
             "{label}: {bookmarks}"
         );
-        assert!(bookmarks.contains("Tide chart"), "{label}: {bookmarks}");
+        // A page bookmarked is a link resource of its document (decided 2026-11-22), no
+        // line of the listing.
+        assert!(!bookmarks.contains("Tide chart"), "{label}: {bookmarks}");
+        assert_eq!(
+            web_links(&bundle, Some(item(&bundle, "Arrival"))),
+            [(
+                "Tide chart".to_string(),
+                "https://example.org/tides".to_string()
+            )],
+            "{label}"
+        );
         assert!(
             bookmarks.contains("Templates › Scene sheet"),
             "{label}: {bookmarks}"
@@ -327,12 +353,17 @@ fn every_generation_brings_what_it_writes_of_the_second_half() {
         }
         let arrival_bookmarks = prose(item(&bundle, "W-note-bookmarks"), ContentRole::NoteText);
         assert!(
-            arrival_bookmarks.contains("](https://example.org/tides)"),
-            "{label}: a web bookmark is a link: {arrival_bookmarks}"
+            !arrival_bookmarks.contains("example.org/tides"),
+            "{label}: a web bookmark is a resource: {arrival_bookmarks}"
         );
         assert!(
-            mara.contains("Map"),
-            "{label}: the note's own bookmarks: {mara}"
+            !mara.contains("example.org/map"),
+            "{label}: the note's own page is a resource: {mara}"
+        );
+        assert_eq!(
+            web_links(&bundle, Some(item(&bundle, "Mara"))),
+            [("Map".to_string(), "https://example.org/map".to_string())],
+            "{label}"
         );
         assert!(has(
             &summary,
@@ -351,8 +382,14 @@ fn every_generation_brings_what_it_writes_of_the_second_half() {
             project_links.contains("Notes › Ideas"),
             "{label}: {project_links}"
         );
+        // A page the project bookmarks is a link resource attached to nothing.
+        assert!(!project_links.contains("Site"), "{label}: {project_links}");
         if v3 {
-            assert!(project_links.contains("Site"), "{label}: {project_links}");
+            assert_eq!(
+                web_links(&bundle, None),
+                [("Site".to_string(), "https://example.org".to_string())],
+                "{label}"
+            );
         }
 
         // Targets (D4-11, X-30): goals on the prose they measure, the draft's on the book,
@@ -903,7 +940,8 @@ fn the_second_half_survives_the_store() {
     };
     assert_eq!(pace(&saved), pace(&imported));
     assert_eq!(pace(&imported).len(), 1);
-    assert_eq!(saved.manifest.format_min_read_version, Some(14));
+    // The research files stored as resources claim a floor above the ladder's (14).
+    assert_eq!(saved.manifest.format_min_read_version, Some(17));
     // And what was saved opens again.
     let again = match DbContext::new() {
         Ok(db) => db,

@@ -362,7 +362,8 @@ fn the_mocks_build_walks_an_import_to_its_report() {
                 "{text}"
             );
         }
-        // The writer's choices: the folder left out, the title, and the research files.
+        // The writer's choices: the folder left out and the title. The research files are
+        // no choice: they came across as resources, which the counts say.
         let choices: Vec<String> = report.choices.iter().map(|c| c.resolve_now()).collect();
         assert!(
             choices.iter().any(|c| c.contains("Old ideas")),
@@ -372,13 +373,10 @@ fn the_mocks_build_walks_an_import_to_its_report() {
             choices.iter().any(|c| c.contains(&walk.vm.title().get())),
             "{choices:?}"
         );
+        let came = report.came_across_line().resolve_now();
         assert!(
-            !result.research_folder.is_empty(),
-            "the research files were copied"
-        );
-        assert!(
-            choices.iter().any(|c| c.contains(&result.research_folder)),
-            "{choices:?}"
+            came.contains("1 research file stored as a resource"),
+            "the research files were stored: {came}"
         );
 
         // The dialog builds, lays out, and says how many more items a line has.

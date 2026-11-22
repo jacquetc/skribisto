@@ -1071,6 +1071,7 @@ import-scrivener-in-exports-no = 아니요
 import-scrivener-becomes-item = 항목
 import-scrivener-becomes-trashed = 휴지통에 있음
 import-scrivener-before-title = 가져오기 전에
+import-scrivener-review-resources = 조사 자료 파일 { $count }개({ $size })를 새 프로젝트 안에 리소스로 저장합니다.
 import-scrivener-review-error-unreadable = 검토를 준비할 수 없습니다. 프로젝트를 다시 선택하세요.
 import-scrivener-review-error-choice = 이 선택은 프로젝트에 맞지 않습니다. 프로젝트를 다시 선택하세요.
 import-scrivener-review-error-unmappable = 이 선택으로는 아무것도 잃지 않고 문서 트리를 가져올 수 없습니다. 다르게 선택하거나 문제를 신고하세요.
@@ -1081,8 +1082,6 @@ import-scrivener-title-field = 제목
 import-scrivener-author = 저자
 import-scrivener-language = 언어
 import-scrivener-location-inside-project = Scrivener 프로젝트 밖의 폴더를 선택하세요. 프로젝트 폴더 안에는 Scrivener 자체 파일만 둡니다.
-import-scrivener-copy-research-label = 새 프로젝트 옆에 조사 자료 파일 복사
-import-scrivener-copy-research = Skribisto에서 열 수 없는 조사 자료 파일 { $count }개(PDF, 소리 파일 등)를 프로젝트 옆 폴더에 복사합니다. 선택을 해제하면 각 파일의 노트에 Scrivener 프로젝트 안의 위치를 적습니다.
 import-scrivener-default-name = Scrivener 프로젝트
 
 ## Progress and result
@@ -1109,20 +1108,14 @@ import-scrivener-report-templates = 노트 템플릿 { $count }개
 import-scrivener-report-tags = 태그 { $count }개
 import-scrivener-report-statuses = 상태 { $count }개
 import-scrivener-report-trashed = 휴지통 항목 { $count }개
-import-scrivener-report-research-files = 조사 자료 파일 { $count }개
+import-scrivener-report-resources = 리소스로 저장한 조사 자료 파일 { $count }개
+import-scrivener-report-links = 웹 페이지와 파일 링크 { $count }개
 import-scrivener-report-choices = 선택한 사항
 import-scrivener-report-accepted-mobile = iPhone이나 iPad용 Scrivener에서 한 변경 중 아직 프로젝트에 반영되지 않은 내용은 제외하고 가져왔습니다.
 import-scrivener-report-accepted-no-text = 이 사본에는 문서의 글이 하나도 없었으므로, 문서를 빈 상태로 가져오기로 했습니다.
 import-scrivener-report-choice = { $subject }: { $answer }
 import-scrivener-report-yes = 예
 import-scrivener-report-no = 아니요
-import-scrivener-report-research-copied = Skribisto에서 열 수 없는 조사 자료 파일을 새 프로젝트 옆 "{ $folder }" 폴더에 복사했습니다.
-import-scrivener-report-research-not-copied = Skribisto에서 열 수 없는 조사 자료 파일은 복사하지 않았습니다. 각 파일의 노트에 Scrivener 프로젝트 안의 위치가 적혀 있습니다.
-import-scrivener-report-research-copied-except = Skribisto에서 열 수 없는 조사 자료 파일을 새 프로젝트 옆 "{ $folder }" 폴더에 복사했습니다. 단, { $count }개는 Scrivener 프로젝트에 남아 있으며 노트에 그 위치가 적혀 있습니다.
-import-scrivener-report-research-none-copied = { $count ->
-    [1] 조사 자료 파일 복사를 선택했지만 하나뿐인 파일을 복사하지 못했습니다. 이 파일은 Scrivener 프로젝트에 남아 있으며 노트에 그 위치가 적혀 있습니다.
-   *[other] 조사 자료 파일 복사를 선택했지만 { $count }개 중 하나도 복사하지 못했습니다. 이 파일들은 Scrivener 프로젝트에 남아 있으며 각 노트에 그 위치가 적혀 있습니다.
-}
 import-scrivener-report-chose-project = 선택한 폴더나 압축 파일에 있는 여러 프로젝트 중 "{ $project }" 프로젝트를 가져오기로 선택했습니다.
 import-scrivener-report-chose-manifest = 문서 트리 파일 "{ $file }"을(를) 선택했습니다.
 import-scrivener-report-chose-enclosing = "{ $project }" 프로젝트 안의 항목을 선택했으므로 프로젝트 전체를 가져왔습니다.
@@ -1175,7 +1168,6 @@ import-scrivener-notes-of = { $title } (노트)
 import-scrivener-project-notes = 프로젝트 노트
 import-scrivener-recovered = 복구한 글
 import-scrivener-untitled-template = 제목 없는 템플릿
-import-scrivener-research-folder = { $name } 조사 자료 파일
 import-scrivener-list-separator = {", "}
 import-scrivener-label-details = Scrivener의 "{ $field }" 필드에서 가져옴
 import-scrivener-status-details = Scrivener의 "{ $field }" 필드에서 가져옴
@@ -1670,8 +1662,8 @@ import-scrivener-prose-justified-text-not-kept-line = 양쪽 정렬된 문단 { 
 import-scrivener-prose-comment-colours-lost-line = 댓글 { $count }개의 색이 없어집니다.
 import-scrivener-prose-control-characters-removed-line = 보이지 않는 제어 문자 { $count }개를 제거합니다.
 import-scrivener-prose-note-on-heading-lost-line = 장 제목에 달린 각주나 댓글 { $count }개는 그 자리에 둘 수 없습니다. 댓글은 장의 첫 문단으로 옮기고 각주는 제외합니다.
-import-scrivener-prose-media-file-copied-line = Skribisto에서 열 수 없는 조사 자료 파일 { $count }개를 새 프로젝트 옆에 복사했습니다. 각 노트에 위치가 적혀 있습니다.
-import-scrivener-prose-media-file-not-carried-line = Skribisto에서 열 수 없는 조사 자료 파일 { $count }개는 Scrivener 프로젝트에 남습니다. 각 노트에 파일 이름이 적혀 있습니다.
+import-scrivener-prose-media-file-stored-line = 조사 자료 파일 { $count }개가 이제 새 프로젝트의 리소스입니다.
+import-scrivener-prose-media-file-not-carried-line = 읽을 수 없거나 가져오기에 너무 큰 파일 { $count }개는 Scrivener 프로젝트에 남습니다.
 
 ## When the import fails
 import-scrivener-error-refused = { $refusal } 기록된 내용은 없습니다.

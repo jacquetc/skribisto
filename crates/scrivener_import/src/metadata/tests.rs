@@ -170,7 +170,6 @@ fn words() -> Words {
         project_notes: "W-ProjectNotes".to_string(),
         recovered: "W-Recovered".to_string(),
         untitled_template: "W-Untitled".to_string(),
-        research_folder: format!("{TITLE_SLOT} W-research"),
         list_separator: " W+ ".to_string(),
         label_details: format!("W-from {TITLE_SLOT}"),
         status_details: format!("W-status {TITLE_SLOT}"),
@@ -1382,18 +1381,21 @@ mod second_half {
                 target: Some(b_key),
                 destination: None,
                 local_file: false,
+                path: None,
                 text: Some("the quay at 10:30:45".to_string()),
             },
             Link {
                 target: Some(a_key),
                 destination: None,
                 local_file: false,
+                path: None,
                 text: None,
             },
             Link {
                 target: None,
                 destination: Some("message://%3cid%3e".to_string()),
                 local_file: false,
+                path: None,
                 text: Some("Mail".to_string()),
             },
         ];
@@ -1402,6 +1404,7 @@ mod second_half {
             target: Some(note_key),
             destination: None,
             local_file: false,
+            path: None,
             text: None,
         }];
         let (_, e) = run(&p);
@@ -1443,6 +1446,7 @@ mod second_half {
             target: Some(target),
             destination: None,
             local_file: false,
+            path: None,
             text: None,
         });
     }
@@ -1939,6 +1943,7 @@ mod second_half {
                 target: Some(target_key),
                 destination: None,
                 local_file: false,
+                path: None,
                 text: None,
             }];
         }

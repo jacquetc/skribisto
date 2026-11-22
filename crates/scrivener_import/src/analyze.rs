@@ -2367,10 +2367,6 @@ fn fill_counts(
         }
     }
     counts.media_missing = resolution.missing_media.len() as u32;
-    counts.research_files = rows
-        .iter()
-        .filter(|r| r.kind.is_media() && r.kind != ItemKind::Image && r.payload.file.is_some())
-        .count() as u32;
     counts.unreferenced_files = debris.unreferenced_other;
     counts.unreferenced_empty_files = debris.empty_texts;
 }

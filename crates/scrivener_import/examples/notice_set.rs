@@ -56,7 +56,6 @@ fn words() -> Words {
         project_notes: "W-ProjectNotes".to_string(),
         recovered: "W-Recovered".to_string(),
         untitled_template: "W-Untitled".to_string(),
-        research_folder: format!("{TITLE_SLOT} W-research"),
         list_separator: " W+ ".to_string(),
         label_details: format!("W-field {TITLE_SLOT}"),
         status_details: format!("W-status-field {TITLE_SLOT}"),
@@ -118,7 +117,6 @@ fn notices_of(source: &Path, scratch: &Path) -> Vec<String> {
         title: None,
         author: None,
         language: None,
-        copy_research_files: true,
         now: instant,
         today: instant.date_naive(),
     };

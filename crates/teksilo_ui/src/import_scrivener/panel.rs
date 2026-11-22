@@ -784,10 +784,6 @@ fn before_strip(vm: &ImportScrivenerViewModel) -> impl Widget + use<> {
 
 /// Step three: where the new project goes, what it is called, and what it states.
 fn save_step(vm: &ImportScrivenerViewModel) -> impl Widget + use<> {
-    let research = vm.research_files().map(|n| usize::from(*n > 0));
-    let research_detail = vm
-        .research_files()
-        .map(|n| tr!(import_scrivener_copy_research(count = *n)).resolve_now());
     let busy = vm.job_running().map(|running| usize::from(*running));
     let busy_banner =
         Banner::info(tr!(project_import_busy_title())).description(tr!(project_import_busy_text()));
@@ -810,22 +806,6 @@ fn save_step(vm: &ImportScrivenerViewModel) -> impl Widget + use<> {
                     ) as Box<dyn Widget>
                 }) {
                     spacing: 4.0
-                }
-                Switcher::new(research) {
-                    Spacer
-                    VStack {
-                        spacing: 2.0
-                        Checkbox::new(vm.copy_research_files()) {
-                            label: tr!(import_scrivener_copy_research_label())
-                        }
-                        Padding::symmetric(0.0, 28.0) {
-                            TextWidget::new(lit!("")) {
-                                text: research_detail
-                                style: TextStyleRole::Small
-                                color: TextRole::Secondary
-                            }
-                        }
-                    }
                 }
                 Switcher::new(busy) {
                     Spacer

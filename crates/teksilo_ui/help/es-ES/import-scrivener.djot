@@ -84,7 +84,8 @@ Junto al árbol, las opciones cambian la forma en que llega el archivador:
 
 Bajo el árbol, *Antes de importar* enumera lo que la importación hace con su archivador y con
 sus palabras clave, metadatos personalizados, colecciones, marcadores y objetivos, y lo que
-deja atrás, para que lo sepa antes de importar.
+deja atrás, para que lo sepa antes de importar. La lista empieza por cuántos archivos de
+investigación tendrá el proyecto nuevo y cuánto espacio ocupan: entran todos en él.
 
 Después, cualquier elemento puede cambiar de tipo desde el archivador. Consulte
 [el modelo de escritura](:help-writing-model) para saber qué es cada tipo.
@@ -100,10 +101,6 @@ Scrivener 3 solo guarda un título y un autor en sus ajustes de compilación. Ha
 defina allí, conserva el nombre que tenía el proyecto cuando lo creó, y ningún autor: la
 página propone entonces ese nombre y deja *Autor* vacío. Una plantilla propone su propio
 título.
-
-Cuando su investigación contiene archivos que Skribisto no puede abrir, como archivos PDF o
-sonidos, *Copiar los archivos de investigación junto al proyecto nuevo* los pone en una
-carpeta a su lado.
 
 ## Lo que trae Scrivener
 
@@ -130,8 +127,14 @@ carpeta a su lado.
   proyecto, para que no se marquen como errores ortográficos.
 - La casilla «Incluir en la compilación», que se convierte en *Incluir en las exportaciones*.
 - Sus plantillas de documento, como plantillas de notas.
-- Las imágenes de su investigación, cada una en una nota propia. La *Galería* de una carpeta
-  las muestra en miniaturas: consulte [Las imágenes y la galería](:help-pictures).
+- Los archivos de su investigación, imágenes, archivos PDF, sonidos y páginas web por igual,
+  como recursos del proyecto nuevo, guardados dentro de él. Cada uno pertenece a la carpeta
+  en la que estaba, o a su propia nota cuando tenía una sinopsis, notas o palabras clave
+  propias. Un archivo de texto sin formato se convierte en una nota con sus palabras. Las
+  imágenes y los archivos de su manuscrito siguen siendo notas junto a su texto.
+- Sus marcadores a páginas web y a archivos de su ordenador, como enlaces entre los recursos
+  del documento que los tenía. Los marcadores del propio proyecto a ellos no pertenecen a
+  ningún documento.
 
 ## La carpeta «De Scrivener»
 
@@ -146,7 +149,7 @@ que enumerar:
   de sus días de escritura; los días de escritura, cuando ningún *Ritmo* los conserva o
   Skribisto no pudo leerlos; un objetivo del borrador que no se convirtió en objetivo; y la
   fecha límite, incluso cuando puso en marcha el *Ritmo* del libro.
-- *Marcadores del proyecto*.
+- *Marcadores del proyecto* a documentos del proyecto.
 - *Reemplazos de compilación*. Skribisto no los aplica al exportar.
 - *Entradas de autocompletado* de más de una palabra.
 - *Búsquedas guardadas*, con lo que buscaba cada una.
@@ -154,7 +157,7 @@ que enumerar:
 - *Objetivos* definidos en notas, cuyo texto no cuenta para ningún objetivo, y en documentos
   divididos por sus encabezados, cuyos capítulos ningún objetivo cuenta en conjunto.
 - *Marcadores* que ningún enlace de Skribisto puede mostrar, como uno de una escena a otra
-  escena o a una página web.
+  escena o a una dirección de correo.
 
 Los metadatos personalizados y los marcadores de un documento que llega como nota propia,
 como una ficha de personaje, se añaden en su lugar al final de esa nota.
@@ -170,9 +173,8 @@ como una ficha de personaje, se añaden en su lugar al final de esa nota.
   objetivos que cuentan páginas**.
 - **El color del texto, el resaltado y las fuentes.** Skribisto define él mismo el aspecto
   del texto.
-- **Los archivos de investigación que no son imágenes**, como archivos PDF, sonidos o páginas
-  web. Cada uno se convierte en una nota que nombra el archivo, que se queda en su proyecto de
-  Scrivener salvo que lo copie junto al nuevo.
+- **Un archivo que no se puede leer**, o de más de 512 MB. Se queda en su proyecto de
+  Scrivener, y el informe lo nombra.
 - **Los comodines** como `<$wc>` o `<$title>`. Se conservan como texto sin formato:
   sustitúyalos a mano.
 - **Los ajustes de compilación y el registro de palabras escritas cada día.** Configure su

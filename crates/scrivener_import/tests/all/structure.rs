@@ -102,14 +102,40 @@ fn every_generation_plans_the_same_novel() {
         assert_eq!(manuscript, expected, "{label}");
         let mut notes = vec!["Folder/Note Research"];
         if !stub {
-            notes.extend([
-                "  Item/Note Harbour map",
-                "  Item/Note Tide tables",
-                "  Item/Note Mara",
-                "  Item/Note Mara (notes)",
-            ]);
+            // The picture and the PDF are resources of the Research folder, not notes.
+            notes.extend(["  Item/Note Mara", "  Item/Note Mara (notes)"]);
+            let research = structure::RowRef {
+                binder: structure::BinderKind::Notes,
+                row: 0,
+            };
+            let stored: Vec<(String, Option<structure::RowRef>)> = plan
+                .resources
+                .iter()
+                .map(|r| {
+                    let title = read.project.binder[r.item as usize]
+                        .title
+                        .clone()
+                        .unwrap_or_default();
+                    (title, r.attach)
+                })
+                .collect();
+            assert_eq!(
+                stored,
+                [
+                    ("Harbour map".to_string(), Some(research)),
+                    ("Tide tables".to_string(), Some(research)),
+                ],
+                "{label}"
+            );
+            assert_eq!(plan.shape.resources, 2, "{label}");
+            assert_eq!(
+                plan.shape.resource_bytes,
+                (scrivener_fixtures::TINY_PNG.len() + scrivener_fixtures::TINY_PDF.len()) as u64,
+                "{label}"
+            );
         } else {
             notes.push("  Item/Note Mara");
+            assert!(plan.resources.is_empty(), "{label}");
         }
         notes.extend(["Folder/Note Notes", "  Item/Note Ideas"]);
         if stub {

@@ -30,7 +30,7 @@
 
 use std::cell::{OnceCell, RefCell};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 
 use skrib_format::zip_guard::{ZipGuard, ZipLimits, ZipRefused};
@@ -42,8 +42,11 @@ use crate::outcome::Refusal;
 
 /// The most members a project may hold.
 pub(crate) const MAX_MEMBERS: u64 = 100_000;
-/// The most bytes of writing and binder a project may hold, together. Pictures
-/// and research files are not counted: they are never read into memory here.
+/// The most bytes of writing and binder a project may hold, together, with the
+/// pictures the prose shows, which stay in memory until the project is written.
+/// The files stored as resources are not counted: [`Index::copy`] streams each one
+/// to disk as it is read, so it costs no memory, and a zipped project's weigh
+/// against a guard of their own ([`STORED_ZIP_LIMITS`]).
 pub(crate) const MAX_TEXT_BYTES: u64 = 1 << 30;
 /// The most bytes one member may hold.
 pub(crate) const MAX_MEMBER_BYTES: u64 = 512 << 20;
@@ -59,6 +62,15 @@ const ZIP_LIMITS: ZipLimits = ZipLimits {
     max_member_bytes: MAX_MEMBER_BYTES,
     max_total_bytes: MAX_TEXT_BYTES,
     max_ratio: skrib_format::zip_guard::MAX_RATIO,
+};
+
+/// What the files an archive's members are stored as may unpack to, together, for the
+/// [`ZipGuard`] they are copied through. No total of their own: they go to disk, never
+/// into memory, and a folder project's stored files have none either. The ratio still
+/// holds, member by member and over all of them, which is what stops a bomb.
+const STORED_ZIP_LIMITS: ZipLimits = ZipLimits {
+    max_total_bytes: u64::MAX,
+    ..ZIP_LIMITS
 };
 
 /// A reader an archive can sit on: a file on disk or bytes in memory.
@@ -94,7 +106,10 @@ enum Backing<'d> {
     },
     Archive {
         archive: RefCell<ZipArchive<Box<dyn ReadSeek>>>,
+        /// What the members read into memory have unpacked to.
         guard: RefCell<ZipGuard>,
+        /// What the members copied to disk have unpacked to ([`Index::copy`]).
+        stored_guard: RefCell<ZipGuard>,
         /// The disk the archive was opened through, asked before each member is read.
         disk: &'d dyn Disk,
     },
@@ -148,6 +163,57 @@ impl ReadError {
             },
             ReadError::Changed | ReadError::Refused(_) => return None,
         })
+    }
+}
+
+/// Why a member could not be copied ([`Index::copy`]).
+#[derive(Debug)]
+pub(crate) enum CopyError {
+    /// It could not be read, as [`Index::read`] says.
+    Read(ReadError),
+    /// What it was copied into refused the bytes: the system's error.
+    Write(std::io::Error),
+}
+
+/// A member copied: how many bytes it held, and their hash.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Copied {
+    pub(crate) len: u64,
+    pub(crate) hash: blake3::Hash,
+}
+
+/// A writer that hashes what goes through it, and keeps the error its own writer
+/// gave, so a copy that fails can tell a full disk from a member that could not be
+/// read.
+struct Hashing<'w> {
+    out: &'w mut dyn Write,
+    hasher: blake3::Hasher,
+    failed: Option<std::io::Error>,
+}
+
+impl Hashing<'_> {
+    fn keep(&mut self, e: std::io::Error) -> std::io::Error {
+        let passed = std::io::Error::new(e.kind(), e.to_string());
+        if e.kind() != std::io::ErrorKind::Interrupted {
+            self.failed = Some(e);
+        }
+        passed
+    }
+}
+
+impl Write for Hashing<'_> {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        match self.out.write(buf) {
+            Ok(n) => {
+                self.hasher.update(&buf[..n]);
+                Ok(n)
+            }
+            Err(e) => Err(self.keep(e)),
+        }
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        self.out.flush().map_err(|e| self.keep(e))
     }
 }
 
@@ -298,8 +364,19 @@ impl<'d> Index<'d> {
 
     fn of_archive(
         disk: &'d dyn Disk,
+        reader: Box<dyn ReadSeek>,
+        label: String,
+    ) -> Result<Self, Refusal> {
+        Index::of_archive_limited(disk, reader, label, ZIP_LIMITS)
+    }
+
+    /// [`Index::of_archive`] with `limits` for the members read into memory: a test's
+    /// smaller ones, which no archive small enough for a test could otherwise reach.
+    fn of_archive_limited(
+        disk: &'d dyn Disk,
         mut reader: Box<dyn ReadSeek>,
         label: String,
+        limits: ZipLimits,
     ) -> Result<Self, Refusal> {
         let unreadable = |reason: String| Refusal::ArchiveUnreadable {
             file: label.clone(),
@@ -307,8 +384,12 @@ impl<'d> Index<'d> {
         };
         // (`reason` is always the archive reader's or the system's own words.)
         let declared = declared_entries(&mut reader).map_err(|e| unreadable(e.to_string()))?;
+        let archive_len = reader
+            .seek(SeekFrom::End(0))
+            .map_err(|e| unreadable(e.to_string()))?;
+        let stored_guard = ZipGuard::new(STORED_ZIP_LIMITS, archive_len);
         let (mut archive, guard) =
-            ZipGuard::open(ZIP_LIMITS, reader).map_err(|e| unreadable(e.to_string()))?;
+            ZipGuard::open(limits, reader).map_err(|e| unreadable(e.to_string()))?;
         guard
             .check_directory(&mut archive, |_| false)
             .map_err(|refusal| from_zip_refusal(&refusal))?;
@@ -400,6 +481,7 @@ impl<'d> Index<'d> {
         index.backing = Backing::Archive {
             archive: RefCell::new(archive),
             guard: RefCell::new(guard),
+            stored_guard: RefCell::new(stored_guard),
             disk,
         };
         Ok(index)
@@ -533,8 +615,8 @@ impl<'d> Index<'d> {
             .map(|(folder, _)| folder.as_str())
     }
 
-    /// Read the member `key` whole, refusing more than `limit` bytes.
-    pub(crate) fn read(&self, key: &str, limit: u64) -> Result<Vec<u8>, ReadError> {
+    /// The member `key`, if a read of at most `limit` bytes may open it.
+    fn readable(&self, key: &str, limit: u64) -> Result<&Entry, ReadError> {
         let entry = self.entries.get(key).ok_or(ReadError::Missing)?;
         match entry.kind {
             EntryKind::File => {}
@@ -547,6 +629,12 @@ impl<'d> Index<'d> {
         if entry.size > limit {
             return Err(ReadError::TooLarge);
         }
+        Ok(entry)
+    }
+
+    /// Read the member `key` whole, refusing more than `limit` bytes.
+    pub(crate) fn read(&self, key: &str, limit: u64) -> Result<Vec<u8>, ReadError> {
+        let entry = self.readable(key, limit)?;
         let bytes = match (&self.backing, &entry.location) {
             (Backing::Folder { disk }, Location::Disk(path)) => {
                 let bytes = disk.read(path, limit).map_err(|e| ReadError::from_io(&e))?;
@@ -560,6 +648,7 @@ impl<'d> Index<'d> {
                     archive,
                     guard,
                     disk,
+                    ..
                 },
                 Location::Archive { index, compression },
             ) => {
@@ -596,6 +685,95 @@ impl<'d> Index<'d> {
             hash: blake3::hash(&bytes),
         });
         Ok(bytes)
+    }
+
+    /// Copy the member `key` into `out` as it is read, refusing more than `limit` bytes:
+    /// for a file stored as a resource, which can be far larger than any text and is
+    /// never held whole in memory. An archive member inflates through a guard of its
+    /// own, so what the stored files unpack to never counts against [`MAX_TEXT_BYTES`]
+    /// and cannot refuse the text read after them.
+    ///
+    /// The copy is recorded like a read. On an error, `out` may hold part of the
+    /// member: the caller discards it.
+    pub(crate) fn copy(
+        &self,
+        key: &str,
+        limit: u64,
+        out: &mut dyn Write,
+    ) -> Result<Copied, CopyError> {
+        let entry = self.readable(key, limit).map_err(CopyError::Read)?;
+        let mut hashing = Hashing {
+            out,
+            hasher: blake3::Hasher::new(),
+            failed: None,
+        };
+        let copied = match (&self.backing, &entry.location) {
+            (Backing::Folder { disk }, Location::Disk(path)) => {
+                match disk.copy(path, limit, &mut hashing) {
+                    Ok(copied) => copied,
+                    Err(e) => {
+                        return Err(match hashing.failed.take() {
+                            Some(written) => CopyError::Write(written),
+                            None => CopyError::Read(ReadError::from_io(&e)),
+                        });
+                    }
+                }
+            }
+            (
+                Backing::Archive {
+                    archive,
+                    stored_guard,
+                    disk,
+                    ..
+                },
+                Location::Archive { index, compression },
+            ) => {
+                disk.go_on()
+                    .map_err(|e| CopyError::Read(ReadError::from_io(&e)))?;
+                if let Some(method) = compression {
+                    return Err(CopyError::Read(ReadError::Refused(
+                        Refusal::ArchiveUnsupportedCompression {
+                            member: key.to_string(),
+                            method: method.clone(),
+                        },
+                    )));
+                }
+                let mut archive = archive.borrow_mut();
+                let mut member = archive
+                    .by_index(*index)
+                    .map_err(|e| CopyError::Read(ReadError::Unreadable(e.to_string())))?;
+                match stored_guard.borrow_mut().copy(&mut member, &mut hashing) {
+                    Ok(copied) => copied,
+                    Err(e) => {
+                        return Err(match hashing.failed.take() {
+                            Some(written) => CopyError::Write(written),
+                            None => CopyError::Read(match skrib_format::zip_guard::refused(&e) {
+                                Some(refusal) => ReadError::Refused(from_zip_refusal(refusal)),
+                                None => ReadError::Unreadable(e.to_string()),
+                            }),
+                        });
+                    }
+                }
+            }
+            _ => return Err(CopyError::Read(ReadError::Missing)),
+        };
+        if copied > limit {
+            return Err(CopyError::Read(ReadError::TooLarge));
+        }
+        if matches!(self.backing, Backing::Folder { .. }) && copied != entry.size {
+            return Err(CopyError::Read(ReadError::Changed));
+        }
+        if let Err(e) = hashing.flush() {
+            return Err(CopyError::Write(hashing.failed.take().unwrap_or(e)));
+        }
+        let hash = hashing.hasher.finalize();
+        self.reads.borrow_mut().push(ReadRecord {
+            key: key.to_string(),
+            size: entry.size,
+            modified_ns: entry.modified_ns,
+            hash,
+        });
+        Ok(Copied { len: copied, hash })
     }
 
     /// The hash of the bytes each member read so far held, by key: the last read of a
@@ -830,5 +1008,128 @@ mod tests {
             1,
             "nothing read after the cancel"
         );
+    }
+
+    /// Bytes no deflate shrinks, as a PDF or a video is.
+    fn noise(len: usize) -> Vec<u8> {
+        let mut state: u32 = 0x2545_f491;
+        (0..len)
+            .map(|_| {
+                state ^= state << 13;
+                state ^= state >> 17;
+                state ^= state << 5;
+                (state >> 24) as u8
+            })
+            .collect()
+    }
+
+    /// A zipped project whose text, read into memory, may unpack to `text_budget` bytes,
+    /// holding a scene and a research file larger than that budget.
+    fn archive_with_a_large_research_file(pdf: &[u8], text_budget: u64) -> Index<'static> {
+        let mut files = scrivener_fixtures::Files::new();
+        files.put("Novel.scriv/Novel.scrivx", "<ScrivenerProject/>");
+        files.put("Novel.scriv/Files/Data/a/content.rtf", "{\\rtf1 One.}");
+        files.put("Novel.scriv/Files/Data/b/content.pdf", pdf.to_vec());
+        let bytes = match files.zip(None) {
+            Ok(bytes) => bytes,
+            Err(e) => panic!("the archive: {e}"),
+        };
+        let limits = ZipLimits {
+            max_total_bytes: text_budget,
+            ..ZIP_LIMITS
+        };
+        match Index::of_archive_limited(
+            &RealDisk,
+            Box::new(std::io::Cursor::new(bytes)),
+            "Backup.zip".to_string(),
+            limits,
+        ) {
+            Ok(index) => index,
+            Err(refusal) => panic!("the archive indexes: {refusal:?}"),
+        }
+    }
+
+    /// A research file stored out of a zipped project is copied through a guard of its
+    /// own: however large, it leaves the text's budget whole, so the scene read after it
+    /// is not refused (which refused the whole import).
+    #[test]
+    fn a_stored_file_does_not_spend_the_text_budget_of_an_archive() {
+        let pdf = noise(300_000);
+        let index = archive_with_a_large_research_file(&pdf, 100_000);
+        let mut out = Vec::new();
+        let copied = match index.copy("Novel.scriv/Files/Data/b/content.pdf", 1 << 20, &mut out) {
+            Ok(copied) => copied,
+            Err(e) => panic!("the research file copies: {e:?}"),
+        };
+        assert_eq!(out, pdf);
+        assert_eq!(copied.len, pdf.len() as u64);
+        assert_eq!(copied.hash, blake3::hash(&pdf));
+        assert_eq!(
+            index
+                .read_hashes()
+                .get("Novel.scriv/Files/Data/b/content.pdf"),
+            Some(&blake3::hash(&pdf)),
+            "a copy is recorded like a read"
+        );
+        assert!(
+            index
+                .read("Novel.scriv/Files/Data/a/content.rtf", 1 << 20)
+                .is_ok(),
+            "the scene still reads"
+        );
+
+        // Read into memory instead, the same file is what the text may not unpack to.
+        let index = archive_with_a_large_research_file(&pdf, 100_000);
+        assert!(matches!(
+            index.read("Novel.scriv/Files/Data/b/content.pdf", 1 << 20),
+            Err(ReadError::Refused(Refusal::ArchiveTooLarge { .. }))
+        ));
+    }
+
+    /// A writer that refuses every byte, as a full disk does.
+    struct Full;
+
+    impl Write for Full {
+        fn write(&mut self, _: &[u8]) -> std::io::Result<usize> {
+            Err(std::io::Error::other("no space left"))
+        }
+        fn flush(&mut self) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
+
+    /// A folder project's file is streamed whole, checked against its listed size, and a
+    /// destination that refuses the bytes is told apart from a file that cannot be read.
+    #[test]
+    fn a_folder_member_is_copied_and_a_refusing_destination_is_a_write_error() {
+        let dir = match tempfile::tempdir() {
+            Ok(dir) => dir,
+            Err(e) => panic!("a temporary folder: {e}"),
+        };
+        let pdf = noise(200_000);
+        let mut files = scrivener_fixtures::Files::new();
+        files.put("Novel.scrivx", "<ScrivenerProject/>");
+        files.put("Files/Data/b/content.pdf", pdf.clone());
+        if let Err(e) = files.write_to(dir.path()) {
+            panic!("the project: {e}");
+        }
+        let index = match Index::of_folder(&RealDisk, dir.path()) {
+            Ok(index) => index,
+            Err(refusal) => panic!("the folder indexes: {refusal:?}"),
+        };
+        let mut out = Vec::new();
+        match index.copy("Files/Data/b/content.pdf", 1 << 20, &mut out) {
+            Ok(copied) => assert_eq!(copied.hash, blake3::hash(&pdf)),
+            Err(e) => panic!("the research file copies: {e:?}"),
+        }
+        assert_eq!(out, pdf);
+        assert!(matches!(
+            index.copy("Files/Data/b/content.pdf", 1000, &mut Vec::new()),
+            Err(CopyError::Read(ReadError::TooLarge))
+        ));
+        assert!(matches!(
+            index.copy("Files/Data/b/content.pdf", 1 << 20, &mut Full),
+            Err(CopyError::Write(_))
+        ));
     }
 }

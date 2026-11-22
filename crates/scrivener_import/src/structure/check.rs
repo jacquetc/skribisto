@@ -109,6 +109,15 @@ pub enum Violation {
     /// A listing of the "From Scrivener" folder anywhere but as the note text of its own
     /// note in the notes binder, or such a note under anything but that folder.
     ImportNoteMisplaced { binder: BinderKind, row: u32 },
+    /// A resource naming an item with no file, an item outside the project, or an item
+    /// listed twice.
+    ResourceUnfounded { item: u32 },
+    /// A resource attached elsewhere than its own row, or the row its parent became when
+    /// it has none, or to a row outside the notes binder.
+    ResourceMisattached { item: u32 },
+    /// A file of the notes binder's part that is not plain text, held by a note instead of
+    /// stored as a resource.
+    FileInNote { row: u32, item: u32 },
 }
 
 fn rank(row: &PlannedRow) -> Option<u8> {
@@ -174,6 +183,7 @@ pub fn check(
     notes(plan)?;
     tags(plan)?;
     routing(plan)?;
+    resources(project, plan)?;
     conservation(project, facts, plan)?;
     items(project, plan)?;
     absences(project, plan)?;
@@ -346,6 +356,85 @@ fn routing(plan: &StructurePlan) -> Result<(), Violation> {
             }
         }) {
             return Err(Violation::TemplateBody { template: t as u32 });
+        }
+    }
+    Ok(())
+}
+
+/// Whether a file named `path` is one a note shows as words: plain text by the extension
+/// of its own name. Written here again, not taken from the mapper.
+fn plain_text(path: &str) -> bool {
+    let name = path.rsplit(['/', '\\']).next().unwrap_or(path);
+    let extension = name
+        .rsplit_once('.')
+        .map(|(_, e)| e.to_ascii_lowercase())
+        .unwrap_or_default();
+    matches!(
+        extension.as_str(),
+        "txt" | "text" | "md" | "markdown" | "mmd" | "fountain"
+    )
+}
+
+/// The research files of the notes binder's part (decided 2026-11-22): each resource is
+/// an item with a file, listed once, attached to the item's own row when it has one and
+/// to the row its parent became when it has none, always in the notes binder; and every
+/// file a note of the notes binder holds for its own item is plain text, a picture or a
+/// PDF there being a resource instead.
+fn resources(project: &Project, plan: &StructurePlan) -> Result<(), Violation> {
+    let parents = project.parents();
+    let mut listed: HashSet<u32> = HashSet::new();
+    for resource in &plan.resources {
+        let item = resource.item;
+        let has_file = project
+            .binder
+            .get(item as usize)
+            .is_some_and(|row| row.payload.file.is_some());
+        if !has_file || !listed.insert(item) {
+            return Err(Violation::ResourceUnfounded { item });
+        }
+        let own = plan.placements.get(item as usize).and_then(|p| p.item);
+        let expected = match own {
+            Some(at) => Some(at),
+            None => parents
+                .get(item as usize)
+                .copied()
+                .flatten()
+                .and_then(|p| plan.placements.get(p))
+                .and_then(|p| p.item),
+        };
+        let in_notes = resource
+            .attach
+            .is_none_or(|at| at.binder == BinderKind::Notes && row_at(plan, at).is_some());
+        if resource.attach != expected || !in_notes {
+            return Err(Violation::ResourceMisattached { item });
+        }
+    }
+    for (r, row) in plan.notes.iter().enumerate() {
+        let owner = match row.origin {
+            Origin::Item { item } | Origin::OwnText { item } => item,
+            _ => continue,
+        };
+        // The Trash folder's own writing is the Trash's, not research.
+        let Some(source) = project.binder.get(owner as usize) else {
+            continue;
+        };
+        if source.kind == ItemKind::TrashFolder {
+            continue;
+        }
+        let holds_file = row.contents.iter().any(|c| match &c.body {
+            Body::From(sources) => sources.contains(&Source::Media { item: owner }),
+            Body::Title | Body::Generated(_) => false,
+        });
+        let words = source
+            .payload
+            .file
+            .as_ref()
+            .is_some_and(|file| source.kind != ItemKind::Image && plain_text(&file.path));
+        if holds_file && !words {
+            return Err(Violation::FileInNote {
+                row: r as u32,
+                item: owner,
+            });
         }
     }
     Ok(())
@@ -601,6 +690,7 @@ fn conservation(
         depth += left_out_runs[i];
         *flag = depth > 0;
     }
+    let stored: HashSet<u32> = plan.resources.iter().map(|r| r.item).collect();
     let need = |source: Source| {
         if placed.contains_key(&source) {
             Ok(())
@@ -651,7 +741,13 @@ fn conservation(
             need(Source::Synopsis { item })?;
         }
         if row.payload.file.is_some() {
-            need(Source::Media { item })?;
+            // In a note, or stored as a resource: one of the two, never both.
+            let media = Source::Media { item };
+            match (placed.contains_key(&media), stored.contains(&item)) {
+                (true, true) => return Err(Violation::PlacedTwice { source: media }),
+                (false, false) => return Err(Violation::NotPlaced { source: media }),
+                _ => {}
+            }
         }
         if row.payload.card_image.is_some() && !placed.contains_key(&Source::CardImage { item }) {
             if !cards_left.contains(&item) {
@@ -884,6 +980,7 @@ fn absences(project: &Project, plan: &StructurePlan) -> Result<(), Violation> {
         .position(|row| row.depth == 0 && row.kind == ItemKind::TrashFolder)
         .map(|i| i as u32);
     let trash_left_out = plan.choices.trash == TrashChoice::LeaveOut;
+    let stored: HashSet<u32> = plan.resources.iter().map(|r| r.item).collect();
     let left_out_root = |item: u32| {
         roots
             .get(item as usize)
@@ -906,6 +1003,16 @@ fn absences(project: &Project, plan: &StructurePlan) -> Result<(), Violation> {
             }
             Some(Absence::LeftOut) => left_out_root(item),
             Some(Absence::TrashLeftOut) => trash_left_out && trash.is_some_and(|t| within(item, t)),
+            // Its file is all it is, and the file is a resource; where it is attached is
+            // held against the binder by `resources`.
+            Some(Absence::Resource) => {
+                stored.contains(&item)
+                    && placement.template.is_none()
+                    && !matches!(
+                        row.kind,
+                        ItemKind::DraftFolder | ItemKind::ResearchFolder | ItemKind::TrashFolder
+                    )
+            }
         };
         if !founded {
             return Err(Violation::AbsenceUnfounded { item });
@@ -925,7 +1032,9 @@ fn absences(project: &Project, plan: &StructurePlan) -> Result<(), Violation> {
         let as_chosen = if trash_left_out {
             gone && placement.absence == Some(Absence::TrashLeftOut)
         } else {
-            deleted_row
+            // A trashed research file with nothing else to it is a resource, which has
+            // no trash of its own.
+            deleted_row || (gone && placement.absence == Some(Absence::Resource))
         };
         if !as_chosen {
             let _ = t;

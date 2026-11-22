@@ -129,7 +129,6 @@ pub struct ScrivenerAnalysisDto {
     pub manuscript_documents: i64,
     pub documents_present: i64,
     pub media_items: i64,
-    pub research_files: i64,
     pub trashed_items: i64,
     pub snapshots: i64,
     pub computers: ScrivenerComputers,
@@ -608,6 +607,8 @@ pub enum ScrivenerShape {
         trashed_rows: i64,
         templates: i64,
         tags: i64,
+        resources: i64,
+        resource_bytes: i64,
     },
 }
 
@@ -663,14 +664,12 @@ pub struct ImportScrivenerProjectDto {
     pub title: Option<String>,
     pub author: Option<String>,
     pub language: Option<String>,
-    pub copy_research_files: bool,
     pub manuscript_binder_name: String,
     pub notes_binder_name: String,
     pub notes_of_pattern: String,
     pub project_notes_name: String,
     pub recovered_name: String,
     pub untitled_template_name: String,
-    pub research_folder_pattern: String,
     pub list_separator: String,
     pub label_details_pattern: String,
     pub status_details_pattern: String,
@@ -696,7 +695,6 @@ pub enum ScrivenerDefaultRung {
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct ImportScrivenerProjectResultDto {
     pub output_path: String,
-    pub research_folder: String,
     pub totals: ScrivenerTotals,
     pub findings: Vec<ScrivenerFinding>,
 }
@@ -715,7 +713,8 @@ pub enum ScrivenerTotals {
         tags: i64,
         rungs: i64,
         trashed: i64,
-        research_files: i64,
+        resources: i64,
+        links: i64,
         synopses: i64,
         document_notes: i64,
     },

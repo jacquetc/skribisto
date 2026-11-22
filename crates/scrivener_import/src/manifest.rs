@@ -375,8 +375,84 @@ fn read_link(node: roxmltree::Node<'_, '_>) -> Link {
         target,
         destination,
         local_file,
+        path: raw.and_then(absolute_file_path),
         text: text(node).filter(|t| !t.is_empty()),
     }
+}
+
+/// When `destination` names a file by an absolute path, that path: a `file:` URL's path
+/// with its escapes read back (`file:///Users/a/My%20map.pdf` is `/Users/a/My map.pdf`,
+/// `file:///C:/Maps/a.pdf` is `C:/Maps/a.pdf`), or a path written as one on the computer
+/// that recorded it (`/…`, `C:\…`, `\\server\…`). Anything else is `None`: a path from a
+/// home folder (`~/…`) says where only on that computer's account, and a share's address
+/// (`smb:`) or another Scrivener project's (`x-scrivener-item:`) is not a file's path.
+pub(crate) fn absolute_file_path(destination: &str) -> Option<String> {
+    let trimmed = destination.trim();
+    let path = match trimmed.get(..5) {
+        Some(scheme) if scheme.eq_ignore_ascii_case("file:") => {
+            let rest = &trimmed[5..];
+            // `file://host/path`: only a local host names a path on this computer.
+            let rest = match rest.strip_prefix("//") {
+                Some(after) => {
+                    let (host, path) = after.split_at(after.find('/').unwrap_or(after.len()));
+                    if !host.is_empty() && !host.eq_ignore_ascii_case("localhost") {
+                        return None;
+                    }
+                    path
+                }
+                None => rest,
+            };
+            let rest = rest.split(['?', '#']).next().unwrap_or_default();
+            let decoded = percent_decoded(rest)?;
+            // `/C:/…`: a Windows drive behind the URL's own slash.
+            let bytes = decoded.as_bytes();
+            if bytes.len() >= 3
+                && bytes[0] == b'/'
+                && bytes[1].is_ascii_alphabetic()
+                && bytes[2] == b':'
+            {
+                decoded[1..].to_string()
+            } else {
+                decoded
+            }
+        }
+        _ => trimmed.to_string(),
+    };
+    let bytes = path.as_bytes();
+    let drive = bytes.len() >= 3
+        && bytes[0].is_ascii_alphabetic()
+        && bytes[1] == b':'
+        && matches!(bytes[2], b'/' | b'\\');
+    let absolute = path.starts_with('/') || path.starts_with("\\\\") || drive;
+    let named = path
+        .trim_end_matches(['/', '\\'])
+        .rsplit(['/', '\\'])
+        .next()
+        .is_some_and(|name| !name.is_empty() && name != ".." && name != ".");
+    (absolute && named && !path.contains('\0')).then_some(path)
+}
+
+/// `text` with its `%XX` escapes read back, `None` when they do not make UTF-8.
+fn percent_decoded(text: &str) -> Option<String> {
+    let bytes = text.as_bytes();
+    let mut out = Vec::with_capacity(bytes.len());
+    let mut i = 0;
+    while i < bytes.len() {
+        let hex = |b: u8| (b as char).to_digit(16);
+        if bytes[i] == b'%'
+            && let (Some(Some(high)), Some(Some(low))) = (
+                bytes.get(i + 1).map(|b| hex(*b)),
+                bytes.get(i + 2).map(|b| hex(*b)),
+            )
+        {
+            out.push((high * 16 + low) as u8);
+            i += 3;
+            continue;
+        }
+        out.push(bytes[i]);
+        i += 1;
+    }
+    String::from_utf8(out).ok()
 }
 
 /// The schemes whose address is a place on a disk, the writer's or a shared one, rather
@@ -817,6 +893,57 @@ mod tests {
         assert_eq!(local_file_name("x-scrivener-item:").as_deref(), Some(""));
         assert_eq!(local_file_name("https://example.org/page"), None);
         assert_eq!(local_file_name("mailto:someone@example.org"), None);
+    }
+
+    /// A file a linked-file resource can point at: an absolute path, on any of the
+    /// computers Scrivener runs on, a `file:` URL read back into one. A home folder's
+    /// path, a share's address and anything else name no such file.
+    #[test]
+    fn a_link_to_a_file_keeps_its_absolute_path_only() {
+        let path = |d: &str| absolute_file_path(d);
+        assert_eq!(
+            path("file:///Users/ines/Maps/harbour%20plan.pdf").as_deref(),
+            Some("/Users/ines/Maps/harbour plan.pdf")
+        );
+        assert_eq!(
+            path("file://localhost/home/ines/notes.txt").as_deref(),
+            Some("/home/ines/notes.txt")
+        );
+        assert_eq!(
+            path("FILE:///C:/Books/draft.docx").as_deref(),
+            Some("C:/Books/draft.docx")
+        );
+        assert_eq!(
+            path("C:\\Books\\draft.docx").as_deref(),
+            Some("C:\\Books\\draft.docx")
+        );
+        assert_eq!(
+            path(" /home/ines/a.pdf ").as_deref(),
+            Some("/home/ines/a.pdf")
+        );
+        assert_eq!(
+            path("\\\\server\\share\\a.pdf").as_deref(),
+            Some("\\\\server\\share\\a.pdf")
+        );
+        assert_eq!(path("file://elsewhere/home/a.pdf"), None, "another host");
+        assert_eq!(path("~/notes.txt"), None, "a home folder");
+        assert_eq!(path("notes.txt"), None);
+        assert_eq!(path("smb://host/share/a.pdf"), None);
+        assert_eq!(path("https://example.org/a.pdf"), None);
+        assert_eq!(path("file:///"), None, "no file named");
+        assert_eq!(path("file:///home/a%FF.pdf"), None, "not UTF-8");
+        let link =
+            read_link_of(r#"<Bookmark Destination="file:///home/ines/a.pdf">Plan</Bookmark>"#);
+        assert_eq!(link.path.as_deref(), Some("/home/ines/a.pdf"));
+        assert!(link.local_file);
+        assert_eq!(link.destination.as_deref(), Some("a.pdf"), "the name alone");
+    }
+
+    fn read_link_of(xml: &str) -> Link {
+        match roxmltree::Document::parse(xml) {
+            Ok(doc) => read_link(doc.root_element()),
+            Err(e) => panic!("{e}"),
+        }
     }
 
     fn field_of(xml: &str) -> CustomFieldDef {

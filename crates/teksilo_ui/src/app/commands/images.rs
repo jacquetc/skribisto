@@ -7,7 +7,7 @@
 //! hand the rest to [`crate::shared::images`], which owns every step that
 //! can be tested without a window.
 //!
-//! ## Why a large image is worth a question
+//! ## Why a large image asks first
 //!
 //! A phone photograph is tens of megapixels. Stored as-is it travels in the
 //! project, in every backup, and through every export — which is the writer's

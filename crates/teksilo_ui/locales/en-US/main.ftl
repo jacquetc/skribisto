@@ -1392,6 +1392,12 @@ import-scrivener-in-exports-no = No
 import-scrivener-becomes-item = Item
 import-scrivener-becomes-trashed = In the Trash
 import-scrivener-before-title = Before you import
+# The review page, above what the import does before you import: $size is the files'
+# size with its unit, already in the interface's language (2.4 MB).
+import-scrivener-review-resources = { $count ->
+    [one] 1 research file, { $size }, will be stored inside the new project, as a resource.
+   *[other] { $count } research files, { $size } in all, will be stored inside the new project, as resources.
+}
 import-scrivener-review-error-unreadable = The review could not be prepared. Choose the project again.
 import-scrivener-review-error-choice = This choice does not fit the project. Choose the project again.
 import-scrivener-review-error-unmappable = With this choice, the binder could not be brought across without losing something. Choose differently, or report the problem.
@@ -1402,11 +1408,6 @@ import-scrivener-title-field = Title
 import-scrivener-author = Author
 import-scrivener-language = Language
 import-scrivener-location-inside-project = Choose a folder outside the Scrivener project. Scrivener keeps only its own files in there.
-import-scrivener-copy-research-label = Copy research files beside the new project
-import-scrivener-copy-research = { $count ->
-    [one] 1 research file Skribisto cannot open, such as a PDF or a sound, goes into a folder beside the project. Unticked, its note says where it is in your Scrivener project.
-   *[other] { $count } research files Skribisto cannot open, such as PDFs or sounds, go into a folder beside the project. Unticked, their notes say where they are in your Scrivener project.
-}
 # The file name proposed when the project's name holds nothing a file name can.
 import-scrivener-default-name = Scrivener project
 
@@ -1482,9 +1483,14 @@ import-scrivener-report-trashed = { $count ->
     [one] 1 item in the Trash
    *[other] { $count } items in the Trash
 }
-import-scrivener-report-research-files = { $count ->
-    [one] 1 research file
-   *[other] { $count } research files
+import-scrivener-report-resources = { $count ->
+    [one] 1 research file stored as a resource
+   *[other] { $count } research files stored as resources
+}
+# Bookmarks to web pages and to files on the writer's disk, now links of the new project.
+import-scrivener-report-links = { $count ->
+    [one] 1 link to a web page or a file
+   *[other] { $count } links to web pages and files
 }
 import-scrivener-report-choices = What you chose
 import-scrivener-report-accepted-mobile = You imported the project without the changes made in Scrivener for iPhone or iPad that were not in it yet.
@@ -1492,18 +1498,6 @@ import-scrivener-report-accepted-no-text = You imported this copy with its docum
 import-scrivener-report-choice = { $subject }: { $answer }
 import-scrivener-report-yes = yes
 import-scrivener-report-no = no
-import-scrivener-report-research-copied = Research files Skribisto cannot open were copied into “{ $folder }”, beside the new project.
-import-scrivener-report-research-not-copied = Research files Skribisto cannot open were not copied. Their notes say where they are in your Scrivener project.
-import-scrivener-report-research-copied-except = { $count ->
-    [one] Research files Skribisto cannot open were copied into “{ $folder }”, beside the new project, except 1 that stays in your Scrivener project. Its note says where it is.
-   *[other] Research files Skribisto cannot open were copied into “{ $folder }”, beside the new project, except { $count } that stay in your Scrivener project. Their notes say where they are.
-}
-# The writer asked for research files to be copied and none was: $count is how many
-# stay in the Scrivener project, which is all of them.
-import-scrivener-report-research-none-copied = { $count ->
-    [1] You asked for research files to be copied, but the only one could not be. It stays in your Scrivener project, and its note says where it is.
-   *[other] You asked for research files to be copied, but none of the { $count } could be. They stay in your Scrivener project, and their notes say where they are.
-}
 import-scrivener-report-chose-project = You chose to import “{ $project }”, one of several projects in the folder or archive you picked.
 import-scrivener-report-chose-manifest = You chose the binder file “{ $file }”.
 import-scrivener-report-chose-enclosing = You picked something inside “{ $project }”, so the whole project was imported.
@@ -1592,9 +1586,6 @@ import-scrivener-notes-of = { $title } (notes)
 import-scrivener-project-notes = Project notes
 import-scrivener-recovered = Recovered texts
 import-scrivener-untitled-template = Untitled template
-# The folder beside the new project its research files are copied into. A folder name on
-# disk: keep it free of the characters a file name cannot hold (/ \ : * ? " < > |).
-import-scrivener-research-folder = { $name } research files
 # Between two authors' names.
 import-scrivener-list-separator = {", "}
 # Here and in the lines about labels below, “label” is Scrivener's Label: the colored label
@@ -2732,13 +2723,13 @@ import-scrivener-prose-note-on-heading-lost-line = { $count ->
     [one] 1 footnote or comment on a chapter heading could not stay there: a comment moves to the chapter’s first paragraph, a footnote is left out.
    *[other] { $count } footnotes or comments on chapter headings could not stay there: a comment moves to the chapter’s first paragraph, a footnote is left out.
 }
-import-scrivener-prose-media-file-copied-line = { $count ->
-    [one] 1 research file Skribisto cannot open was copied beside the new project. Its note says where.
-   *[other] { $count } research files Skribisto cannot open were copied beside the new project. Their notes say where.
+import-scrivener-prose-media-file-stored-line = { $count ->
+    [one] 1 research file is now a resource of the new project.
+   *[other] { $count } research files are now resources of the new project.
 }
 import-scrivener-prose-media-file-not-carried-line = { $count ->
-    [one] 1 research file Skribisto cannot open stays in your Scrivener project. Its note names it.
-   *[other] { $count } research files Skribisto cannot open stay in your Scrivener project. Their notes name them.
+    [one] 1 file could not be read, or is too large to bring across. It stays in your Scrivener project.
+   *[other] { $count } files could not be read, or are too large to bring across. They stay in your Scrivener project.
 }
 
 ## When the import fails

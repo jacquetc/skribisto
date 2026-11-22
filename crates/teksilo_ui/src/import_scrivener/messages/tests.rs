@@ -733,22 +733,6 @@ fn the_result_counts_what_the_new_project_holds() {
     });
 }
 
-/// The research folder's name reads right whatever the project's name begins with: no
-/// word before it that would have to change with it.
-#[test]
-fn the_research_folders_name_needs_no_elision() {
-    for locale in LOCALES {
-        crate::test_support::with_shipped_messages(locale, || {
-            let named = tr!(import_scrivener_research_folder(
-                name = "Ombres".to_string()
-            ))
-            .resolve_now();
-            assert!(!named.contains(" de Ombres"), "{locale}: {named}");
-            assert!(named.contains("Ombres"), "{locale}: {named}");
-        });
-    }
-}
-
 /// The review's hint names the binder command that changes an item's type.
 #[test]
 fn the_review_hint_names_the_command() {

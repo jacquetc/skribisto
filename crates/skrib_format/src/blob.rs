@@ -47,8 +47,10 @@ impl Blob {
         }
     }
 
-    /// A file inside a scratch folder this blob keeps alive.
-    pub(crate) fn file_in(path: PathBuf, keep: Arc<TempDir>) -> Self {
+    /// A file inside a scratch folder this blob keeps alive: the folder is removed once
+    /// the last blob pointing into it is dropped. What an importer stores its files as,
+    /// one at a time, so that a project's research is never held in memory whole.
+    pub fn file_in(path: PathBuf, keep: Arc<TempDir>) -> Self {
         Blob::File {
             path,
             keep: Some(keep),

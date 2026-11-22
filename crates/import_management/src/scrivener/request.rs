@@ -66,7 +66,6 @@ pub(crate) fn words(dto: &ImportScrivenerProjectDto) -> Words {
         project_notes: dto.project_notes_name.clone(),
         recovered: dto.recovered_name.clone(),
         untitled_template: dto.untitled_template_name.clone(),
-        research_folder: dto.research_folder_pattern.clone(),
         list_separator: dto.list_separator.clone(),
         label_details: dto.label_details_pattern.clone(),
         status_details: dto.status_details_pattern.clone(),

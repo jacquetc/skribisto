@@ -1215,6 +1215,11 @@ import-scrivener-in-exports-no = לא
 import-scrivener-becomes-item = פריט
 import-scrivener-becomes-trashed = באשפה
 import-scrivener-before-title = לפני הייבוא
+import-scrivener-review-resources = { $count ->
+    [one] קובץ מחקר אחד ({ $size }) יישמר בתוך הפרויקט החדש כמשאב.
+    [two] שני קובצי מחקר ({ $size } בסך הכול) יישמרו בתוך הפרויקט החדש כמשאבים.
+   *[other] { $count } קובצי מחקר ({ $size } בסך הכול) יישמרו בתוך הפרויקט החדש כמשאבים.
+}
 import-scrivener-review-error-unreadable = לא ניתן היה להכין את הסקירה. יש לבחור את הפרויקט שוב.
 import-scrivener-review-error-choice = הבחירה הזו לא מתאימה לפרויקט. יש לבחור את הפרויקט שוב.
 import-scrivener-review-error-unmappable = עם הבחירה הזו, לא ניתן היה להעביר את הקלסר בלי לאבד משהו. אפשר לבחור אחרת, או לדווח על הבעיה.
@@ -1225,12 +1230,6 @@ import-scrivener-title-field = כותרת
 import-scrivener-author = מחבר
 import-scrivener-language = שפה
 import-scrivener-location-inside-project = יש לבחור תיקייה מחוץ לפרויקט ה־Scrivener. בתוכו Scrivener שומר רק את הקבצים שלו.
-import-scrivener-copy-research-label = העתקת קובצי המחקר לצד הפרויקט החדש
-import-scrivener-copy-research = { $count ->
-    [one] קובץ מחקר אחד ש־Skribisto לא יכולה לפתוח, כמו PDF או קובץ שמע, מועתק לתיקייה לצד הפרויקט. אם האפשרות לא מסומנת, הפתק שלו מציין היכן הוא נמצא בפרויקט ה־Scrivener שלכם.
-    [two] שני קובצי מחקר ש־Skribisto לא יכולה לפתוח, כמו קובצי PDF או קובצי שמע, מועתקים לתיקייה לצד הפרויקט. אם האפשרות לא מסומנת, הפתקים שלהם מציינים היכן הם נמצאים בפרויקט ה־Scrivener שלכם.
-   *[other] { $count } קובצי מחקר ש־Skribisto לא יכולה לפתוח, כמו קובצי PDF או קובצי שמע, מועתקים לתיקייה לצד הפרויקט. אם האפשרות לא מסומנת, הפתקים שלהם מציינים היכן הם נמצאים בפרויקט ה־Scrivener שלכם.
-}
 # The file name proposed when the project's name holds nothing a file name can.
 import-scrivener-default-name = פרויקט Scrivener
 
@@ -1316,10 +1315,15 @@ import-scrivener-report-trashed = { $count ->
     [two] שני פריטים באשפה
    *[other] { $count } פריטים באשפה
 }
-import-scrivener-report-research-files = { $count ->
-    [one] קובץ מחקר אחד
-    [two] שני קובצי מחקר
-   *[other] { $count } קובצי מחקר
+import-scrivener-report-resources = { $count ->
+    [one] קובץ מחקר אחד שנשמר כמשאב
+    [two] שני קובצי מחקר שנשמרו כמשאבים
+   *[other] { $count } קובצי מחקר שנשמרו כמשאבים
+}
+import-scrivener-report-links = { $count ->
+    [one] קישור אחד לדף אינטרנט או לקובץ
+    [two] שני קישורים לדפי אינטרנט ולקבצים
+   *[other] { $count } קישורים לדפי אינטרנט ולקבצים
 }
 import-scrivener-report-choices = מה בחרתם
 import-scrivener-report-accepted-mobile = ייבאתם את הפרויקט בלי השינויים שנעשו ב־Scrivener ל־iPhone או ל־iPad ועדיין לא היו בו.
@@ -1327,18 +1331,6 @@ import-scrivener-report-accepted-no-text = ייבאתם את העותק הזה �
 import-scrivener-report-choice = { $subject }: { $answer }
 import-scrivener-report-yes = כן
 import-scrivener-report-no = לא
-import-scrivener-report-research-copied = קובצי מחקר ש־Skribisto לא יכולה לפתוח הועתקו אל "{ $folder }", לצד הפרויקט החדש.
-import-scrivener-report-research-not-copied = קובצי מחקר ש־Skribisto לא יכולה לפתוח לא הועתקו. הפתקים שלהם מציינים היכן הם נמצאים בפרויקט ה־Scrivener שלכם.
-import-scrivener-report-research-copied-except = { $count ->
-    [one] קובצי מחקר ש־Skribisto לא יכולה לפתוח הועתקו אל "{ $folder }", לצד הפרויקט החדש, חוץ מאחד שנשאר בפרויקט ה־Scrivener שלכם. הפתק שלו מציין היכן הוא נמצא.
-    [two] קובצי מחקר ש־Skribisto לא יכולה לפתוח הועתקו אל "{ $folder }", לצד הפרויקט החדש, חוץ משניים שנשארים בפרויקט ה־Scrivener שלכם. הפתקים שלהם מציינים היכן הם נמצאים.
-   *[other] קובצי מחקר ש־Skribisto לא יכולה לפתוח הועתקו אל "{ $folder }", לצד הפרויקט החדש, חוץ מ־{ $count } שנשארים בפרויקט ה־Scrivener שלכם. הפתקים שלהם מציינים היכן הם נמצאים.
-}
-import-scrivener-report-research-none-copied = { $count ->
-    [1] ביקשתם להעתיק את קובצי המחקר, אבל את הקובץ היחיד לא ניתן היה להעתיק. הוא נשאר בפרויקט ה־Scrivener שלכם, והפתק שלו מציין היכן הוא נמצא.
-    [two] ביקשתם להעתיק את קובצי המחקר, אבל אף אחד משני הקבצים לא ניתן היה להעתיק. הם נשארים בפרויקט ה־Scrivener שלכם, והפתקים שלהם מציינים היכן הם נמצאים.
-   *[other] ביקשתם להעתיק את קובצי המחקר, אבל אף אחד מ־{ $count } הקבצים לא ניתן היה להעתיק. הם נשארים בפרויקט ה־Scrivener שלכם, והפתקים שלהם מציינים היכן הם נמצאים.
-}
 import-scrivener-report-chose-project = בחרתם לייבא את "{ $project }", אחד מכמה פרויקטים שבתיקייה או בארכיון שבחרתם.
 import-scrivener-report-chose-manifest = בחרתם בקובץ הקלסר "{ $file }".
 import-scrivener-report-chose-enclosing = בחרתם משהו שנמצא בתוך "{ $project }", ולכן יובא הפרויקט כולו.
@@ -1428,9 +1420,6 @@ import-scrivener-notes-of = { $title } (פתקים)
 import-scrivener-project-notes = פתקי הפרויקט
 import-scrivener-recovered = טקסטים משוחזרים
 import-scrivener-untitled-template = תבנית ללא כותרת
-# The folder beside the new project its research files are copied into. A folder name on
-# disk: keep it free of the characters a file name cannot hold (/ \ : * ? " < > |).
-import-scrivener-research-folder = קובצי המחקר של { $name }
 # Between two authors' names.
 import-scrivener-list-separator = {", "}
 import-scrivener-label-details = מהשדה "{ $field }" ב־Scrivener
@@ -2739,15 +2728,15 @@ import-scrivener-prose-note-on-heading-lost-line = { $count ->
     [two] שתי הערות שוליים או הערות שהיו על כותרות של פרקים לא יכלו להישאר שם: הערה עוברת לפסקה הראשונה של הפרק, והערת שוליים מושמטת.
    *[other] { $count } הערות שוליים או הערות שהיו על כותרות של פרקים לא יכלו להישאר שם: הערה עוברת לפסקה הראשונה של הפרק, והערת שוליים מושמטת.
 }
-import-scrivener-prose-media-file-copied-line = { $count ->
-    [one] קובץ מחקר אחד ש־Skribisto לא יכולה לפתוח הועתק לצד הפרויקט החדש. הפתק שלו מציין לאן.
-    [two] שני קובצי מחקר ש־Skribisto לא יכולה לפתוח הועתקו לצד הפרויקט החדש. הפתקים שלהם מציינים לאן.
-   *[other] { $count } קובצי מחקר ש־Skribisto לא יכולה לפתוח הועתקו לצד הפרויקט החדש. הפתקים שלהם מציינים לאן.
+import-scrivener-prose-media-file-stored-line = { $count ->
+    [one] קובץ מחקר אחד הוא עכשיו משאב של הפרויקט החדש.
+    [two] שני קובצי מחקר הם עכשיו משאבים של הפרויקט החדש.
+   *[other] { $count } קובצי מחקר הם עכשיו משאבים של הפרויקט החדש.
 }
 import-scrivener-prose-media-file-not-carried-line = { $count ->
-    [one] קובץ מחקר אחד ש־Skribisto לא יכולה לפתוח נשאר בפרויקט ה־Scrivener שלכם. הפתק שלו מציין את שמו.
-    [two] שני קובצי מחקר ש־Skribisto לא יכולה לפתוח נשארים בפרויקט ה־Scrivener שלכם. הפתקים שלהם מציינים את שמותיהם.
-   *[other] { $count } קובצי מחקר ש־Skribisto לא יכולה לפתוח נשארים בפרויקט ה־Scrivener שלכם. הפתקים שלהם מציינים את שמותיהם.
+    [one] קובץ אחד לא נקרא, או שהוא גדול מכדי להעביר אותו. הוא נשאר בפרויקט ה־Scrivener שלכם.
+    [two] שני קבצים לא נקראו, או שהם גדולים מכדי להעביר אותם. הם נשארים בפרויקט ה־Scrivener שלכם.
+   *[other] { $count } קבצים לא נקראו, או שהם גדולים מכדי להעביר אותם. הם נשארים בפרויקט ה־Scrivener שלכם.
 }
 
 ## When the import fails

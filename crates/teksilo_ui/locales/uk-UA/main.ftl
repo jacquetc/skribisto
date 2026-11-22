@@ -1234,6 +1234,12 @@ import-scrivener-in-exports-no = Ні
 import-scrivener-becomes-item = Елемент
 import-scrivener-becomes-trashed = У кошику
 import-scrivener-before-title = Перед імпортом
+import-scrivener-review-resources = { $count ->
+    [one] { $count } файл досліджень ({ $size }) буде збережено в новому проєкті як ресурс.
+    [few] { $count } файли досліджень (разом { $size }) буде збережено в новому проєкті як ресурси.
+    [many] { $count } файлів досліджень (разом { $size }) буде збережено в новому проєкті як ресурси.
+   *[other] { $count } файлу досліджень (разом { $size }) буде збережено в новому проєкті як ресурси.
+}
 import-scrivener-review-error-unreadable = Не вдалося підготувати перевірку. Виберіть проєкт ще раз.
 import-scrivener-review-error-choice = Цей вибір не підходить до проєкту. Виберіть проєкт ще раз.
 import-scrivener-review-error-unmappable = З таким вибором підшивку не вдалося перенести без втрат. Виберіть інакше або повідомте про проблему.
@@ -1244,14 +1250,6 @@ import-scrivener-title-field = Назва
 import-scrivener-author = Автор
 import-scrivener-language = Мова
 import-scrivener-location-inside-project = Виберіть теку поза проєктом Scrivener. Scrivener зберігає там лише власні файли.
-import-scrivener-copy-research-label = Копіювати файли досліджень поруч із новим проєктом
-import-scrivener-copy-research = { $count ->
-    [1] Файл досліджень, який Skribisto не може відкрити (наприклад, PDF чи звук), потрапить до теки поруч із проєктом. Якщо прапорець знято, його нотатка вказуватиме, де він лежить у вашому проєкті Scrivener.
-    [one] { $count } файл досліджень, який Skribisto не може відкрити (наприклад, PDF чи звук), потрапить до теки поруч із проєктом. Якщо прапорець знято, його нотатка вказуватиме, де він лежить у вашому проєкті Scrivener.
-    [few] { $count } файли досліджень, які Skribisto не може відкрити (наприклад, PDF чи звуки), потраплять до теки поруч із проєктом. Якщо прапорець знято, їхні нотатки вказуватимуть, де вони лежать у вашому проєкті Scrivener.
-    [many] { $count } файлів досліджень, які Skribisto не може відкрити (наприклад, PDF чи звуки), потраплять до теки поруч із проєктом. Якщо прапорець знято, їхні нотатки вказуватимуть, де вони лежать у вашому проєкті Scrivener.
-   *[other] { $count } файлу досліджень, які Skribisto не може відкрити (наприклад, PDF чи звуки), потраплять до теки поруч із проєктом. Якщо прапорець знято, їхні нотатки вказуватимуть, де вони лежать у вашому проєкті Scrivener.
-}
 # The file name proposed when the project's name holds nothing a file name can.
 import-scrivener-default-name = Проєкт Scrivener
 
@@ -1355,11 +1353,17 @@ import-scrivener-report-trashed = { $count ->
     [many] { $count } елементів у кошику
    *[other] { $count } елемента в кошику
 }
-import-scrivener-report-research-files = { $count ->
-    [one] { $count } файл досліджень
-    [few] { $count } файли досліджень
-    [many] { $count } файлів досліджень
-   *[other] { $count } файлу досліджень
+import-scrivener-report-resources = { $count ->
+    [one] { $count } файл досліджень, збережений як ресурс
+    [few] { $count } файли досліджень, збережені як ресурси
+    [many] { $count } файлів досліджень, збережених як ресурси
+   *[other] { $count } файлу досліджень, збережених як ресурси
+}
+import-scrivener-report-links = { $count ->
+    [one] { $count } посилання на вебсторінку або файл
+    [few] { $count } посилання на вебсторінки й файли
+    [many] { $count } посилань на вебсторінки й файли
+   *[other] { $count } посилання на вебсторінки й файли
 }
 import-scrivener-report-choices = Що ви вибрали
 import-scrivener-report-accepted-mobile = Ви імпортували проєкт без змін, зроблених у Scrivener для iPhone або iPad, яких у ньому ще не було.
@@ -1367,22 +1371,6 @@ import-scrivener-report-accepted-no-text = Ви імпортували цю ко
 import-scrivener-report-choice = { $subject }: { $answer }
 import-scrivener-report-yes = так
 import-scrivener-report-no = ні
-import-scrivener-report-research-copied = Файли досліджень, які Skribisto не може відкрити, скопійовано до «{ $folder }» поруч із новим проєктом.
-import-scrivener-report-research-not-copied = Файли досліджень, які Skribisto не може відкрити, не скопійовано. Їхні нотатки вказують, де вони лежать у вашому проєкті Scrivener.
-import-scrivener-report-research-copied-except = { $count ->
-    [1] Файли досліджень, які Skribisto не може відкрити, скопійовано до «{ $folder }» поруч із новим проєктом, крім одного, який лишається у вашому проєкті Scrivener. Його нотатка вказує, де він лежить.
-    [one] Файли досліджень, які Skribisto не може відкрити, скопійовано до «{ $folder }» поруч із новим проєктом, крім { $count } файлу, які лишаються у вашому проєкті Scrivener. Їхні нотатки вказують, де вони лежать.
-    [few] Файли досліджень, які Skribisto не може відкрити, скопійовано до «{ $folder }» поруч із новим проєктом, крім { $count } файлів, які лишаються у вашому проєкті Scrivener. Їхні нотатки вказують, де вони лежать.
-    [many] Файли досліджень, які Skribisto не може відкрити, скопійовано до «{ $folder }» поруч із новим проєктом, крім { $count } файлів, які лишаються у вашому проєкті Scrivener. Їхні нотатки вказують, де вони лежать.
-   *[other] Файли досліджень, які Skribisto не може відкрити, скопійовано до «{ $folder }» поруч із новим проєктом, крім { $count } файлу, які лишаються у вашому проєкті Scrivener. Їхні нотатки вказують, де вони лежать.
-}
-import-scrivener-report-research-none-copied = { $count ->
-    [1] Ви попросили скопіювати файли досліджень, але єдиний такий файл скопіювати не вдалося. Він лишається у вашому проєкті Scrivener, а його нотатка вказує, де він лежить.
-    [one] Ви попросили скопіювати файли досліджень, але не вдалося скопіювати жодного з { $count } файлу. Вони лишаються у вашому проєкті Scrivener, а їхні нотатки вказують, де вони лежать.
-    [few] Ви попросили скопіювати файли досліджень, але не вдалося скопіювати жодного з { $count } файлів. Вони лишаються у вашому проєкті Scrivener, а їхні нотатки вказують, де вони лежать.
-    [many] Ви попросили скопіювати файли досліджень, але не вдалося скопіювати жодного з { $count } файлів. Вони лишаються у вашому проєкті Scrivener, а їхні нотатки вказують, де вони лежать.
-   *[other] Ви попросили скопіювати файли досліджень, але не вдалося скопіювати жодного з { $count } файлу. Вони лишаються у вашому проєкті Scrivener, а їхні нотатки вказують, де вони лежать.
-}
 import-scrivener-report-chose-project = Ви вирішили імпортувати «{ $project }», один із кількох проєктів у вибраній вами теці чи архіві.
 import-scrivener-report-chose-manifest = Ви вибрали файл підшивки «{ $file }».
 import-scrivener-report-chose-enclosing = Ви вибрали щось усередині «{ $project }», тож імпортовано весь проєкт.
@@ -1474,9 +1462,6 @@ import-scrivener-notes-of = { $title } (нотатки)
 import-scrivener-project-notes = Нотатки проєкту
 import-scrivener-recovered = Відновлені тексти
 import-scrivener-untitled-template = Шаблон без назви
-# The folder beside the new project its research files are copied into. A folder name on
-# disk: keep it free of the characters a file name cannot hold (/ \ : * ? " < > |).
-import-scrivener-research-folder = { $name } (файли досліджень)
 # Between two authors' names.
 import-scrivener-list-separator = {", "}
 import-scrivener-label-details = З поля «{ $field }» у Scrivener
@@ -3057,17 +3042,17 @@ import-scrivener-prose-note-on-heading-lost-line = { $count ->
     [many] { $count } виносок чи коментарів на заголовках розділів не можуть там лишитися: коментар переходить до першого абзацу розділу, а виноску не перенесено.
    *[other] { $count } виноски чи коментаря на заголовках розділів не можуть там лишитися: коментар переходить до першого абзацу розділу, а виноску не перенесено.
 }
-import-scrivener-prose-media-file-copied-line = { $count ->
-    [one] { $count } файл досліджень, який Skribisto не може відкрити, скопійовано поруч із новим проєктом. Його нотатка вказує, куди саме.
-    [few] { $count } файли досліджень, які Skribisto не може відкрити, скопійовано поруч із новим проєктом. Їхні нотатки вказують, куди саме.
-    [many] { $count } файлів досліджень, які Skribisto не може відкрити, скопійовано поруч із новим проєктом. Їхні нотатки вказують, куди саме.
-   *[other] { $count } файлу досліджень, які Skribisto не може відкрити, скопійовано поруч із новим проєктом. Їхні нотатки вказують, куди саме.
+import-scrivener-prose-media-file-stored-line = { $count ->
+    [one] { $count } файл досліджень тепер ресурс нового проєкту.
+    [few] { $count } файли досліджень тепер ресурси нового проєкту.
+    [many] { $count } файлів досліджень тепер ресурси нового проєкту.
+   *[other] { $count } файлу досліджень тепер ресурси нового проєкту.
 }
 import-scrivener-prose-media-file-not-carried-line = { $count ->
-    [one] { $count } файл досліджень, який Skribisto не може відкрити, лишається у вашому проєкті Scrivener. Його нотатка вказує, який це файл.
-    [few] { $count } файли досліджень, які Skribisto не може відкрити, лишаються у вашому проєкті Scrivener. Їхні нотатки вказують, які це файли.
-    [many] { $count } файлів досліджень, які Skribisto не може відкрити, лишаються у вашому проєкті Scrivener. Їхні нотатки вказують, які це файли.
-   *[other] { $count } файлу досліджень, які Skribisto не може відкрити, лишаються у вашому проєкті Scrivener. Їхні нотатки вказують, які це файли.
+    [one] { $count } файл не вдалося прочитати, або він завеликий для перенесення. Він лишається у вашому проєкті Scrivener.
+    [few] { $count } файли не вдалося прочитати, або вони завеликі для перенесення. Вони лишаються у вашому проєкті Scrivener.
+    [many] { $count } файлів не вдалося прочитати, або вони завеликі для перенесення. Вони лишаються у вашому проєкті Scrivener.
+   *[other] { $count } файлу не вдалося прочитати, або вони завеликі для перенесення. Вони лишаються у вашому проєкті Scrivener.
 }
 
 ## When the import fails

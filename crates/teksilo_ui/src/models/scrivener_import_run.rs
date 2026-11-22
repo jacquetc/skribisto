@@ -23,7 +23,7 @@
 //!   one again (`models::scrivener_inspection`'s mock analysis and plan, with the
 //!   writer's choices), and adds what only an import finds: a finding for every group and
 //!   every family, a line listing more items than the dialog shows, and the research files,
-//!   copied or not as the writer chose. Every row it names, it names from the inspection's
+//!   stored as resources or too large to read. Every row it names, it names from the inspection's
 //!   one table of the fabricated binder, so the report and the Review page agree. Between
 //!   the plan and the run, every metadata kind the converter has reaches a report; the ones
 //!   a single project has only one of (its draft target, its deadline, its status list)
@@ -37,8 +37,8 @@
 //! **What the mock writes.** The new project, and nothing else: a small `.skrib` holding the
 //! title, author and language the Save page sent, written through `skrib_format` with the
 //! converter's own staged output, so an existing file is refused or replaced as the real
-//! import does it, and **Open now** opens a project the mocks build can load. Its research
-//! folder, like every line of its report, is fabricated and never made on disk.
+//! import does it, and **Open now** opens a project the mocks build can load. Every line of
+//! its report is fabricated: the project it writes holds no resource.
 
 #[cfg(not(feature = "mocks"))]
 mod imp {
@@ -86,7 +86,7 @@ mod imp {
         ScrivenerPlace, ScrivenerPreviewRow, ScrivenerQuestion, ScrivenerReportGroup,
         ScrivenerStructure, ScrivenerTotals, ScrivenerTrashChoice,
     };
-    use skrib_format::importing::{OutputRefused, StagedOutput, fill_title};
+    use skrib_format::importing::{OutputRefused, StagedOutput};
     use skrib_format::{
         BinderFile, BundleKind, BundledBinder, FORMAT_VERSION, ProjectManifest, ShapeTag,
         WorkBundle, WorkFile,
@@ -785,9 +785,9 @@ mod imp {
             vec![words("names", &["Flashback", "Dream"])],
         ));
 
-        // The research files Skribisto cannot open, unless their folder was left out:
-        // copied beside the new project when the writer asked, the one too large to copy
-        // left in the Scrivener project either way.
+        // The research files, unless their folder was left out: the chart stored as a
+        // resource of the new project, the recording too large to read left in the
+        // Scrivener project; and the pages the project bookmarks, as links.
         let research_kept = !request.choices.iter().any(|choice| {
             matches!(
                 choice,
@@ -797,39 +797,19 @@ mod imp {
                 }
             )
         });
-        let mut research_folder = String::new();
-        let mut research_files = 0;
+        let mut resources = 0;
         if research_kept {
             let chart = text(RESEARCH + 1);
             let recording = text(RESEARCH + 2);
-            if request.copy_research_files {
-                let stem = Path::new(&request.output_path)
-                    .file_stem()
-                    .map(|s| s.to_string_lossy().into_owned())
-                    .unwrap_or_default();
-                research_folder = fill_title(&request.research_folder_pattern, &stem);
-                research_files = 1;
-                findings.push(at(
-                    "scrivener-prose-media-file-copied",
-                    Prose,
-                    Differently,
-                    &chart,
-                    ScrivenerPlace::Media,
-                    vec![said(
-                        "path",
-                        &format!("{research_folder}/Harbour chart.pdf"),
-                    )],
-                ));
-            } else {
-                findings.push(at(
-                    "scrivener-prose-media-file-not-carried",
-                    Prose,
-                    Left,
-                    &chart,
-                    ScrivenerPlace::Media,
-                    vec![said("name", "Harbour chart.pdf")],
-                ));
-            }
+            resources = 1;
+            findings.push(at(
+                "scrivener-prose-media-file-stored",
+                Prose,
+                Differently,
+                &chart,
+                ScrivenerPlace::Media,
+                Vec::new(),
+            ));
             findings.push(at(
                 "scrivener-prose-media-file-not-carried",
                 Prose,
@@ -851,7 +831,6 @@ mod imp {
         let trashed = if trash_imported { 2 } else { 0 };
         ImportScrivenerProjectResultDto {
             output_path: request.output_path.clone(),
-            research_folder,
             totals: ScrivenerTotals::Counted {
                 rows: planned_titles(plan).len() as i64,
                 words: 61_240,
@@ -862,7 +841,8 @@ mod imp {
                 tags: 8,
                 rungs: if statuses { 4 } else { SEEDED_RUNGS },
                 trashed,
-                research_files,
+                resources,
+                links: 2,
                 synopses: 18,
                 document_notes: 5,
             },
@@ -927,13 +907,8 @@ mod mock_tests {
             title: Some("Harbour Lights".into()),
             author: Some("Mina Okafor".into()),
             language: Some("en-GB".into()),
-            copy_research_files: true,
             manuscript_binder_name: "Manuscript".into(),
             notes_binder_name: "Notes".into(),
-            research_folder_pattern: format!(
-                "{} research files",
-                skrib_format::importing::TITLE_SLOT
-            ),
             ..ImportScrivenerProjectDto::default()
         }
     }
@@ -1048,15 +1023,15 @@ mod mock_tests {
         assert_eq!(chosen_failure(&request(dir.path())), None);
     }
 
-    /// The research files follow the writer: copied, left in the project, or not met at all
-    /// when their folder was left out; the trash comes across when asked.
+    /// The research files follow the writer: stored as resources (the one too large to
+    /// read left in the project), or not met at all when their folder was left out; the
+    /// trash comes across when asked.
     #[test]
     fn the_result_follows_the_writers_choices() {
         let dir = scratch();
-        let keys = |choices: Vec<ScrivenerChoice>, copy: bool| {
+        let keys = |choices: Vec<ScrivenerChoice>| {
             let asked = ImportScrivenerProjectDto {
                 choices: choices.clone(),
-                copy_research_files: copy,
                 ..request(dir.path())
             };
             let analysis = fabricated_analysis(&Default::default());
@@ -1070,30 +1045,33 @@ mod mock_tests {
                 .collect();
             (result, research)
         };
-        let (copied, research) = keys(Vec::new(), true);
-        assert_eq!(copied.research_folder, "Harbour research files");
+        let (stored, research) = keys(Vec::new());
+        assert!(matches!(
+            stored.totals,
+            ScrivenerTotals::Counted { resources: 1, .. }
+        ));
         assert_eq!(
             research,
             vec![
-                "scrivener-prose-media-file-copied",
+                "scrivener-prose-media-file-stored",
                 "scrivener-prose-media-file-not-carried"
             ]
         );
-        let (kept, research) = keys(Vec::new(), false);
-        assert!(kept.research_folder.is_empty());
-        assert_eq!(research.len(), 2);
-        assert!(research.iter().all(|k| k.ends_with("not-carried")));
         let left_out = ScrivenerChoice::Root {
             item: 24,
             destination: ScrivenerDestination::LeaveOut,
         };
-        let (none, research) = keys(vec![left_out], true);
-        assert!(none.research_folder.is_empty() && research.is_empty());
+        let (none, research) = keys(vec![left_out]);
+        assert!(research.is_empty());
+        assert!(matches!(
+            none.totals,
+            ScrivenerTotals::Counted { resources: 0, .. }
+        ));
 
         let trash = ScrivenerChoice::Trash {
             choice: ScrivenerTrashChoice::Import,
         };
-        let (with_trash, _) = keys(vec![trash], true);
+        let (with_trash, _) = keys(vec![trash]);
         assert!(matches!(
             with_trash.totals,
             ScrivenerTotals::Counted { trashed: 2, .. }
@@ -1288,7 +1266,8 @@ mod mock_tests {
     /// One binder row has one name: every finding about a row, from the review's plan or
     /// from the run, gives it the same path, the Review page shows it under the last part
     /// of that path (blank only where a finding says its title was a placeholder), and no
-    /// two rows of the plan are the same binder row.
+    /// two rows of the plan are the same binder row. A research file is the one exception:
+    /// it is a resource of its folder, with no row of its own to show.
     #[test]
     fn a_row_has_one_name_in_the_review_and_the_report() {
         let dir = scratch();
@@ -1306,6 +1285,7 @@ mod mock_tests {
             let result = imported(dir.path(), &format!("Harbour {n}"), choices.clone());
             let mut paths: std::collections::BTreeMap<i64, Vec<String>> = Default::default();
             let mut placeholders = Vec::new();
+            let mut research = Vec::new();
             for finding in &result.findings {
                 let ScrivenerFinding::Reported {
                     key,
@@ -1321,6 +1301,9 @@ mod mock_tests {
                 }
                 if key == "scrivener-structure-placeholder-title" {
                     placeholders.push(*item);
+                }
+                if key.starts_with("scrivener-prose-media-file-") {
+                    research.push(*item);
                 }
                 let known = paths.entry(*item).or_insert_with(|| binder_path.clone());
                 assert_eq!(known, binder_path, "row {item} has two names");
@@ -1365,8 +1348,8 @@ mod mock_tests {
             // Every row a finding names is one the review showed.
             for item in paths.keys() {
                 assert!(
-                    planned.contains(item),
-                    "row {item} is named in the report but not in the review"
+                    planned.contains(item) != research.contains(item),
+                    "row {item} is named in the report, and is a research file, or in the review"
                 );
             }
         }

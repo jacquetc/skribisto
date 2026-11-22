@@ -1221,6 +1221,10 @@ import-scrivener-in-exports-no = Όχι
 import-scrivener-becomes-item = Στοιχείο
 import-scrivener-becomes-trashed = Στον κάδο
 import-scrivener-before-title = Πριν από την εισαγωγή
+import-scrivener-review-resources = { $count ->
+    [one] 1 αρχείο έρευνας, { $size }, θα αποθηκευτεί μέσα στο νέο έργο ως πόρος.
+   *[other] { $count } αρχεία έρευνας, { $size } συνολικά, θα αποθηκευτούν μέσα στο νέο έργο ως πόροι.
+}
 import-scrivener-review-error-unreadable = Ο έλεγχος δεν μπόρεσε να προετοιμαστεί. Επιλέξτε ξανά το έργο.
 import-scrivener-review-error-choice = Αυτή η επιλογή δεν ταιριάζει στο έργο. Επιλέξτε ξανά το έργο.
 import-scrivener-review-error-unmappable = Με αυτή την επιλογή, το ντοσιέ δεν μπορεί να μεταφερθεί χωρίς να χαθεί κάτι. Κάντε διαφορετική επιλογή ή αναφέρετε το πρόβλημα.
@@ -1231,11 +1235,6 @@ import-scrivener-title-field = Τίτλος
 import-scrivener-author = Συγγραφέας
 import-scrivener-language = Γλώσσα
 import-scrivener-location-inside-project = Επιλέξτε έναν φάκελο έξω από το έργο Scrivener. Το Scrivener κρατά εκεί μέσα μόνο τα δικά του αρχεία.
-import-scrivener-copy-research-label = Αντιγραφή των αρχείων έρευνας δίπλα στο νέο έργο
-import-scrivener-copy-research = { $count ->
-    [one] 1 αρχείο έρευνας που το Skribisto δεν μπορεί να ανοίξει, όπως ένα PDF ή ένας ήχος, μπαίνει σε έναν φάκελο δίπλα στο έργο. Αν δεν το επιλέξετε, η σημείωσή του λέει πού βρίσκεται στο έργο σας στο Scrivener.
-   *[other] { $count } αρχεία έρευνας που το Skribisto δεν μπορεί να ανοίξει, όπως PDF ή ήχοι, μπαίνουν σε έναν φάκελο δίπλα στο έργο. Αν δεν το επιλέξετε, οι σημειώσεις τους λένε πού βρίσκονται στο έργο σας στο Scrivener.
-}
 import-scrivener-default-name = Έργο Scrivener
 
 ## Progress and result
@@ -1304,9 +1303,13 @@ import-scrivener-report-trashed = { $count ->
     [one] 1 στοιχείο στον κάδο
    *[other] { $count } στοιχεία στον κάδο
 }
-import-scrivener-report-research-files = { $count ->
-    [one] 1 αρχείο έρευνας
-   *[other] { $count } αρχεία έρευνας
+import-scrivener-report-resources = { $count ->
+    [one] 1 αρχείο έρευνας αποθηκευμένο ως πόρος
+   *[other] { $count } αρχεία έρευνας αποθηκευμένα ως πόροι
+}
+import-scrivener-report-links = { $count ->
+    [one] 1 σύνδεσμος προς ιστοσελίδα ή αρχείο
+   *[other] { $count } σύνδεσμοι προς ιστοσελίδες και αρχεία
 }
 import-scrivener-report-choices = Τι επιλέξατε
 import-scrivener-report-accepted-mobile = Εισαγάγατε το έργο χωρίς τις αλλαγές που έγιναν στο Scrivener για iPhone ή iPad και δεν είχαν περάσει ακόμη σε αυτό.
@@ -1314,16 +1317,6 @@ import-scrivener-report-accepted-no-text = Εισαγάγατε αυτό το α
 import-scrivener-report-choice = { $subject }: { $answer }
 import-scrivener-report-yes = ναι
 import-scrivener-report-no = όχι
-import-scrivener-report-research-copied = Τα αρχεία έρευνας που το Skribisto δεν μπορεί να ανοίξει αντιγράφηκαν στο «{ $folder }», δίπλα στο νέο έργο.
-import-scrivener-report-research-not-copied = Τα αρχεία έρευνας που το Skribisto δεν μπορεί να ανοίξει δεν αντιγράφηκαν. Οι σημειώσεις τους λένε πού βρίσκονται στο έργο σας στο Scrivener.
-import-scrivener-report-research-copied-except = { $count ->
-    [one] Τα αρχεία έρευνας που το Skribisto δεν μπορεί να ανοίξει αντιγράφηκαν στο «{ $folder }», δίπλα στο νέο έργο, εκτός από 1 που μένει στο έργο σας στο Scrivener. Η σημείωσή του λέει πού βρίσκεται.
-   *[other] Τα αρχεία έρευνας που το Skribisto δεν μπορεί να ανοίξει αντιγράφηκαν στο «{ $folder }», δίπλα στο νέο έργο, εκτός από { $count } που μένουν στο έργο σας στο Scrivener. Οι σημειώσεις τους λένε πού βρίσκονται.
-}
-import-scrivener-report-research-none-copied = { $count ->
-    [1] Ζητήσατε να αντιγραφούν τα αρχεία έρευνας, αλλά το μοναδικό αρχείο δεν μπόρεσε να αντιγραφεί. Μένει στο έργο σας στο Scrivener, και η σημείωσή του λέει πού βρίσκεται.
-   *[other] Ζητήσατε να αντιγραφούν τα αρχεία έρευνας, αλλά κανένα από τα { $count } δεν μπόρεσε να αντιγραφεί. Μένουν στο έργο σας στο Scrivener, και οι σημειώσεις τους λένε πού βρίσκονται.
-}
 import-scrivener-report-chose-project = Επιλέξατε να εισαγάγετε το «{ $project }», ένα από τα έργα που περιείχε ο φάκελος ή το συμπιεσμένο αρχείο που επιλέξατε.
 import-scrivener-report-chose-manifest = Επιλέξατε το αρχείο ντοσιέ «{ $file }».
 import-scrivener-report-chose-enclosing = Επιλέξατε κάτι μέσα στο «{ $project }», οπότε εισήχθη ολόκληρο το έργο.
@@ -1397,7 +1390,6 @@ import-scrivener-notes-of = { $title } (σημειώσεις)
 import-scrivener-project-notes = Σημειώσεις έργου
 import-scrivener-recovered = Ανακτημένα κείμενα
 import-scrivener-untitled-template = Πρότυπο χωρίς τίτλο
-import-scrivener-research-folder = { $name } – αρχεία έρευνας
 import-scrivener-list-separator = {", "}
 import-scrivener-label-details = Από το πεδίο «{ $field }» του Scrivener
 import-scrivener-status-details = Από το πεδίο «{ $field }» του Scrivener
@@ -2447,13 +2439,13 @@ import-scrivener-prose-note-on-heading-lost-line = { $count ->
     [one] 1 υποσημείωση ή σχόλιο σε επικεφαλίδα κεφαλαίου δεν μπόρεσε να μείνει εκεί: ένα σχόλιο μετακινείται στην πρώτη παράγραφο του κεφαλαίου, μια υποσημείωση παραλείπεται.
    *[other] { $count } υποσημειώσεις ή σχόλια σε επικεφαλίδες κεφαλαίων δεν μπόρεσαν να μείνουν εκεί: ένα σχόλιο μετακινείται στην πρώτη παράγραφο του κεφαλαίου, μια υποσημείωση παραλείπεται.
 }
-import-scrivener-prose-media-file-copied-line = { $count ->
-    [one] 1 αρχείο έρευνας που το Skribisto δεν μπορεί να ανοίξει αντιγράφηκε δίπλα στο νέο έργο. Η σημείωσή του λέει πού.
-   *[other] { $count } αρχεία έρευνας που το Skribisto δεν μπορεί να ανοίξει αντιγράφηκαν δίπλα στο νέο έργο. Οι σημειώσεις τους λένε πού.
+import-scrivener-prose-media-file-stored-line = { $count ->
+    [one] 1 αρχείο έρευνας είναι πλέον πόρος του νέου έργου.
+   *[other] { $count } αρχεία έρευνας είναι πλέον πόροι του νέου έργου.
 }
 import-scrivener-prose-media-file-not-carried-line = { $count ->
-    [one] 1 αρχείο έρευνας που το Skribisto δεν μπορεί να ανοίξει μένει στο έργο σας στο Scrivener. Η σημείωσή του το κατονομάζει.
-   *[other] { $count } αρχεία έρευνας που το Skribisto δεν μπορεί να ανοίξει μένουν στο έργο σας στο Scrivener. Οι σημειώσεις τους τα κατονομάζουν.
+    [one] 1 αρχείο δεν μπόρεσε να διαβαστεί ή είναι πολύ μεγάλο για να μεταφερθεί. Μένει στο έργο σας στο Scrivener.
+   *[other] { $count } αρχεία δεν μπόρεσαν να διαβαστούν ή είναι πολύ μεγάλα για να μεταφερθούν. Μένουν στο έργο σας στο Scrivener.
 }
 
 ## When the import fails

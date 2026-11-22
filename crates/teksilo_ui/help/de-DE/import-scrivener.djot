@@ -87,7 +87,9 @@ Neben dem Baum legen die Auswahlmöglichkeiten fest, wie die Projektmappe übern
 
 Unter dem Baum führt *Vor dem Import* auf, was der Import mit Ihrer Projektmappe und mit Ihren
 Schlüsselwörtern, benutzerdefinierten Metadaten, Sammlungen, Lesezeichen und Zielen macht und
-was er zurücklässt, damit Sie es vor dem Import wissen.
+was er zurücklässt, damit Sie es vor dem Import wissen. Die Liste beginnt damit, wie viele
+Recherchedateien das neue Projekt enthalten wird und wie viel Platz sie brauchen: Sie kommen
+alle hinein.
 
 Jeder Eintrag lässt sich danach in der Projektmappe in einen anderen Typ umwandeln. Was die
 Typen bedeuten, erklärt [Wie ein Buch aufgebaut ist](:help-writing-model).
@@ -104,10 +106,6 @@ Scrivener 3 speichert Titel und Autor nur in seinen Kompilierungseinstellungen. 
 dort nicht festlegen, behält es den Namen, den das Projekt bei seiner Erstellung hatte, und
 keinen Autor: Die Seite schlägt dann diesen Namen vor und lässt *Autor* leer. Eine Vorlage
 schlägt ihren eigenen Titel vor.
-
-Enthält Ihre Recherche Dateien, die Skribisto nicht öffnen kann, etwa PDF-Dateien oder
-Tondateien, legt *Recherchedateien neben das neue Projekt kopieren* sie in einen Ordner neben
-dem neuen Projekt.
 
 ## Was aus Scrivener übernommen wird
 
@@ -135,8 +133,14 @@ dem neuen Projekt.
 - Das Kästchen, mit dem Scrivener ein Dokument in die Kompilierung einbezieht; es wird zu
   *In Exporte einschließen*.
 - Ihre Dokumentvorlagen, als Notizvorlagen.
-- Die Bilder in Ihrer Recherche, jedes in einer eigenen Notiz. Die *Galerie* eines Ordners
-  zeigt sie als Vorschaubilder: siehe [Bilder und Galerie](:help-pictures).
+- Die Dateien Ihrer Recherche, Bilder, PDF-Dateien, Tondateien und Webseiten gleichermaßen,
+  als Ressourcen des neuen Projekts, in ihm gespeichert. Jede gehört zu dem Ordner, in dem sie
+  lag, oder zu ihrer eigenen Notiz, wenn sie eine eigene Zusammenfassung, eigene Notizen oder
+  Schlüsselwörter hatte. Eine reine Textdatei wird zu einer Notiz mit ihren Wörtern. Die
+  Bilder und Dateien Ihres Manuskripts bleiben Notizen neben seinem Text.
+- Ihre Lesezeichen zu Webseiten und zu Dateien auf Ihrem Computer, als Links unter den
+  Ressourcen des Dokuments, das sie hatte. Die Lesezeichen des Projekts selbst zu ihnen
+  gehören zu keinem Dokument.
 
 ## Der Ordner „Aus Scrivener“
 
@@ -151,7 +155,7 @@ etwas aufzuführen hat:
   Schreibtagen ermittelt hat; die Schreibtage, wenn kein *Schreibtempo* sie übernimmt oder
   Skribisto sie nicht lesen konnte; ein Manuskriptziel, das nicht zum Ziel wurde; und der
   Abgabetermin, auch wenn er das *Schreibtempo* des Buchs eingerichtet hat.
-- *Projektlesezeichen*.
+- *Projektlesezeichen* zu Dokumenten des Projekts.
 - *Ersetzungen beim Kompilieren*. Skribisto führt sie beim Exportieren nicht aus.
 - *Autovervollständigung*: die Ausdrücke aus mehr als einem Wort.
 - *Gespeicherte Suchen*, jeweils mit dem, wonach gesucht wurde.
@@ -159,7 +163,7 @@ etwas aufzuführen hat:
 - *Ziele*, die auf Notizen gesetzt sind, deren Text kein Ziel zählt, und auf Dokumenten, die an
   ihren Überschriften geteilt werden und deren Kapitel kein einzelnes Ziel gemeinsam zählt.
 - *Lesezeichen*, die keine Verknüpfung in Skribisto darstellen kann, etwa eines von einer Szene
-  zu einer anderen Szene oder zu einer Webseite.
+  zu einer anderen Szene oder zu einer E-Mail-Adresse.
 
 Die benutzerdefinierten Metadaten und Lesezeichen einer eigenständigen Notiz, etwa eines
 Figurenbogens, werden stattdessen am Ende dieser Notiz angefügt.
@@ -175,9 +179,8 @@ Figurenbogens, werden stattdessen am Ende dieser Notiz angefügt.
   die Seiten zählen**.
 - **Textfarbe, Hervorhebungen und Schriftarten.** Skribisto bestimmt das Aussehen des Texts
   selbst.
-- **Recherchedateien, die keine Bilder sind**, etwa PDF-Dateien, Tondateien oder Webseiten.
-  Jede wird zu einer Notiz, die die Datei nennt. Die Datei selbst bleibt in Ihrem
-  Scrivener-Projekt, sofern Sie sie nicht neben das neue Projekt kopieren.
+- **Eine Datei, die sich nicht lesen lässt**, oder eine über 512 MB. Sie bleibt in Ihrem
+  Scrivener-Projekt, und der Bericht nennt sie.
 - **Platzhalter** wie `<$wc>` oder `<$title>`. Sie bleiben als reiner Text erhalten: Ersetzen
   Sie sie von Hand.
 - **Kompilierungseinstellungen und die Aufzeichnung der täglich geschriebenen Wörter.**

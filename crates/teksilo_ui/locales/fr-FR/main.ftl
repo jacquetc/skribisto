@@ -1382,6 +1382,10 @@ import-scrivener-in-exports-no = Non
 import-scrivener-becomes-item = Élément
 import-scrivener-becomes-trashed = Dans la corbeille
 import-scrivener-before-title = Avant d’importer
+import-scrivener-review-resources = { $count ->
+    [one] { $count } fichier de recherche, { $size }, sera rangé dans le nouveau projet, comme ressource.
+   *[other] { $count } fichiers de recherche, { $size } en tout, seront rangés dans le nouveau projet, comme ressources.
+}
 import-scrivener-review-error-unreadable = La vérification n’a pas pu être préparée. Choisissez de nouveau le projet.
 import-scrivener-review-error-choice = Ce choix ne correspond pas au projet. Choisissez de nouveau le projet.
 import-scrivener-review-error-unmappable = Avec ce choix, le classeur ne peut pas être repris sans rien perdre. Faites un autre choix, ou signalez le problème.
@@ -1392,11 +1396,6 @@ import-scrivener-title-field = Titre
 import-scrivener-author = Auteur
 import-scrivener-language = Langue
 import-scrivener-location-inside-project = Choisissez un dossier en dehors du projet Scrivener. Scrivener n’y range que ses propres fichiers.
-import-scrivener-copy-research-label = Copier les fichiers de recherche à côté du nouveau projet
-import-scrivener-copy-research = { $count ->
-    [one] { $count } fichier de recherche que Skribisto ne sait pas ouvrir, comme un PDF ou un son, va dans un dossier à côté du projet. Si la case est décochée, sa note indique où il se trouve dans votre projet Scrivener.
-   *[other] { $count } fichiers de recherche que Skribisto ne sait pas ouvrir, comme des PDF ou des sons, vont dans un dossier à côté du projet. Si la case est décochée, leurs notes indiquent où ils se trouvent dans votre projet Scrivener.
-}
 import-scrivener-default-name = Projet Scrivener
 
 ## Progression et résultat
@@ -1467,9 +1466,13 @@ import-scrivener-report-trashed = { $count ->
     [one] { $count } élément dans la corbeille
    *[other] { $count } éléments dans la corbeille
 }
-import-scrivener-report-research-files = { $count ->
-    [one] { $count } fichier de recherche
-   *[other] { $count } fichiers de recherche
+import-scrivener-report-resources = { $count ->
+    [one] { $count } fichier de recherche rangé comme ressource
+   *[other] { $count } fichiers de recherche rangés comme ressources
+}
+import-scrivener-report-links = { $count ->
+    [one] { $count } lien vers une page web ou un fichier
+   *[other] { $count } liens vers des pages web et des fichiers
 }
 import-scrivener-report-choices = Ce que vous avez choisi
 import-scrivener-report-accepted-mobile = Vous avez importé le projet sans les modifications faites dans Scrivener pour iPhone ou iPad qui n’y étaient pas encore.
@@ -1477,18 +1480,6 @@ import-scrivener-report-accepted-no-text = Vous avez importé cette copie avec s
 import-scrivener-report-choice = { $subject } : { $answer }
 import-scrivener-report-yes = oui
 import-scrivener-report-no = non
-import-scrivener-report-research-copied = Les fichiers de recherche que Skribisto ne sait pas ouvrir ont été copiés dans « { $folder } », à côté du nouveau projet.
-import-scrivener-report-research-not-copied = Les fichiers de recherche que Skribisto ne sait pas ouvrir n’ont pas été copiés. Leurs notes indiquent où ils se trouvent dans votre projet Scrivener.
-import-scrivener-report-research-copied-except = { $count ->
-    [one] Les fichiers de recherche que Skribisto ne sait pas ouvrir ont été copiés dans « { $folder } », à côté du nouveau projet, sauf { $count } qui reste dans votre projet Scrivener. Sa note indique où il se trouve.
-   *[other] Les fichiers de recherche que Skribisto ne sait pas ouvrir ont été copiés dans « { $folder } », à côté du nouveau projet, sauf { $count } qui restent dans votre projet Scrivener. Leurs notes indiquent où ils se trouvent.
-}
-# L’auteur a demandé la copie des fichiers de recherche et aucun n’a été copié : $count est
-# le nombre de fichiers restés dans le projet Scrivener, c’est-à-dire tous.
-import-scrivener-report-research-none-copied = { $count ->
-    [1] Vous avez demandé que les fichiers de recherche soient copiés, mais le seul fichier concerné n’a pas pu l’être. Il reste dans votre projet Scrivener, et sa note indique où il se trouve.
-   *[other] Vous avez demandé que les fichiers de recherche soient copiés, mais aucun des { $count } n’a pu l’être. Ils restent dans votre projet Scrivener, et leurs notes indiquent où ils se trouvent.
-}
 import-scrivener-report-chose-project = Vous avez choisi d’importer « { $project } », l’un des projets que contenait le dossier ou l’archive choisi.
 import-scrivener-report-chose-manifest = Vous avez choisi le fichier de classeur « { $file } ».
 import-scrivener-report-chose-enclosing = Vous aviez sélectionné un élément de « { $project } » : le projet entier a été importé.
@@ -1575,9 +1566,6 @@ import-scrivener-notes-of = { $title } (notes)
 import-scrivener-project-notes = Notes du projet
 import-scrivener-recovered = Textes récupérés
 import-scrivener-untitled-template = Modèle sans titre
-# Le dossier, à côté du nouveau projet, où ses fichiers de recherche sont copiés. Un nom de
-# dossier : sans caractère interdit dans un nom de fichier.
-import-scrivener-research-folder = { $name } (fichiers de recherche)
 import-scrivener-list-separator = {", "}
 # Ici et plus bas, le « libellé » est le Label de Scrivener (une étiquette de couleur),
 # que l’import change en étiquette ; pas le Libellé de Skribisto.
@@ -2685,13 +2673,13 @@ import-scrivener-prose-note-on-heading-lost-line = { $count ->
     [one] { $count } note de bas de page ou commentaire sur un titre de chapitre ne pouvait pas y rester : un commentaire passe au premier paragraphe du chapitre, une note de bas de page est laissée de côté.
    *[other] { $count } notes de bas de page ou commentaires sur des titres de chapitre ne pouvaient pas y rester : un commentaire passe au premier paragraphe du chapitre, une note de bas de page est laissée de côté.
 }
-import-scrivener-prose-media-file-copied-line = { $count ->
-    [one] { $count } fichier de recherche que Skribisto ne sait pas ouvrir a été copié à côté du nouveau projet. Sa note dit où.
-   *[other] { $count } fichiers de recherche que Skribisto ne sait pas ouvrir ont été copiés à côté du nouveau projet. Leurs notes disent où.
+import-scrivener-prose-media-file-stored-line = { $count ->
+    [one] { $count } fichier de recherche est désormais une ressource du nouveau projet.
+   *[other] { $count } fichiers de recherche sont désormais des ressources du nouveau projet.
 }
 import-scrivener-prose-media-file-not-carried-line = { $count ->
-    [one] { $count } fichier de recherche que Skribisto ne sait pas ouvrir reste dans votre projet Scrivener. Sa note le nomme.
-   *[other] { $count } fichiers de recherche que Skribisto ne sait pas ouvrir restent dans votre projet Scrivener. Leurs notes les nomment.
+    [one] { $count } fichier n’a pas pu être lu, ou est trop volumineux pour être repris. Il reste dans votre projet Scrivener.
+   *[other] { $count } fichiers n’ont pas pu être lus, ou sont trop volumineux pour être repris. Ils restent dans votre projet Scrivener.
 }
 
 ## Quand l’import échoue

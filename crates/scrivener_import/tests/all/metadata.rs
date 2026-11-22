@@ -57,7 +57,6 @@ fn convert_stated(source: &Path, out: &Path) -> Summary {
         title: None,
         author: None,
         language: None,
-        copy_research_files: false,
         now: instant(),
         today: instant().date_naive(),
     };
@@ -329,7 +328,6 @@ fn the_writers_answers_on_the_save_page_are_what_is_written() {
         title: Some("Keepers"),
         author: Some(" M. V. "),
         language: Some("ja"),
-        copy_research_files: false,
         now: instant(),
         today: instant().date_naive(),
     };
@@ -713,6 +711,16 @@ fn a_date_past_the_years_the_app_stores_leaves_the_project_loadable() {
 
 // ── the backend ──────────────────────────────────────────────────────────────────
 
+/// `spec` with its pictures and PDFs made empty texts, every item where it was: research
+/// files are resources, which claim a read floor of their own, above the ladder's.
+fn without_research_files(spec: &mut Spec) {
+    for item in &mut spec.items {
+        if item.media.take().is_some() {
+            item.kind = Kind::Text;
+        }
+    }
+}
+
 /// The written project loads into a real store through `load_work` and saves back out with
 /// its tags, its ladder, every row's tags and rung, and every row's dates.
 #[test]
@@ -723,7 +731,8 @@ fn tags_the_ladder_and_dates_survive_the_store() {
     use work_management::{LoadWorkDto, SaveWorkDto, work_management_controller as controller};
 
     let dir = temp();
-    let spec = Spec::novel(Generation::Format20, Platform::Mac).with_metadata();
+    let mut spec = Spec::novel(Generation::Format20, Platform::Mac).with_metadata();
+    without_research_files(&mut spec);
     let folder = write(&spec, dir.path());
     let out = dir.path().join("novel.skrib");
     convert_stated(&folder, &out);
@@ -876,6 +885,7 @@ fn tags_the_ladder_and_dates_survive_the_store() {
 fn no_ladder_claims_no_read_floor() {
     let dir = temp();
     let mut spec = Spec::novel(Generation::Format20, Platform::Mac);
+    without_research_files(&mut spec);
     spec.statuses = vec![(-1, "No Status".to_string())];
     for item in &mut spec.items {
         item.status = None;

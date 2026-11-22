@@ -277,10 +277,6 @@ fn novel_reads_back(generation: FixtureGeneration, platform: FixturePlatform) {
         spec.items.iter().filter(|i| i.media.is_some()).count()
     );
     assert_eq!(counts.media_missing, 0);
-    assert_eq!(
-        counts.research_files as usize,
-        spec.items.iter().filter(|i| i.kind == Kind::Pdf).count()
-    );
     assert_eq!(counts.trashed_items, 1);
     assert_eq!(counts.snapshots, if stub { 0 } else { 2 });
     assert_eq!(counts.items_with_snapshots, if stub { 0 } else { 1 });

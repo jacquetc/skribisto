@@ -1240,6 +1240,12 @@ import-scrivener-in-exports-no = Nie
 import-scrivener-becomes-item = Element
 import-scrivener-becomes-trashed = W koszu
 import-scrivener-before-title = Zanim zaimportujesz
+import-scrivener-review-resources = { $count ->
+    [one] { $count } plik materiałów ({ $size }) zostanie zapisany w nowym projekcie jako zasób.
+    [few] { $count } pliki materiałów (łącznie { $size }) zostaną zapisane w nowym projekcie jako zasoby.
+    [many] { $count } plików materiałów (łącznie { $size }) zostanie zapisanych w nowym projekcie jako zasoby.
+   *[other] { $count } pliku materiałów (łącznie { $size }) zostanie zapisane w nowym projekcie jako zasoby.
+}
 import-scrivener-review-error-unreadable = Nie udało się przygotować sprawdzenia. Wybierz projekt ponownie.
 import-scrivener-review-error-choice = Ten wybór nie pasuje do projektu. Wybierz projekt ponownie.
 import-scrivener-review-error-unmappable = Przy tym wyborze segregatora nie da się przenieść bez utraty czegoś. Wybierz inaczej albo zgłoś problem.
@@ -1250,13 +1256,6 @@ import-scrivener-title-field = Tytuł
 import-scrivener-author = Autor
 import-scrivener-language = Język
 import-scrivener-location-inside-project = Wybierz folder poza projektem Scrivener. Scrivener przechowuje w nim tylko własne pliki.
-import-scrivener-copy-research-label = Skopiuj pliki materiałów obok nowego projektu
-import-scrivener-copy-research = { $count ->
-        [one] { $count } plik materiałów, którego Skribisto nie potrafi otworzyć, np. PDF lub nagranie dźwiękowe, trafi do folderu obok projektu. Jeśli to pole nie jest zaznaczone, jego notatka podaje, gdzie leży on w Twoim projekcie Scrivener.
-        [few] { $count } pliki materiałów, których Skribisto nie potrafi otworzyć, np. pliki PDF lub nagrania dźwiękowe, trafią do folderu obok projektu. Jeśli to pole nie jest zaznaczone, ich notatki podają, gdzie leżą one w Twoim projekcie Scrivener.
-        [many] { $count } plików materiałów, których Skribisto nie potrafi otworzyć, np. pliki PDF lub nagrania dźwiękowe, trafi do folderu obok projektu. Jeśli to pole nie jest zaznaczone, ich notatki podają, gdzie leżą one w Twoim projekcie Scrivener.
-       *[other] { $count } pliku materiałów, których Skribisto nie potrafi otworzyć, np. pliki PDF lub nagrania dźwiękowe, trafi do folderu obok projektu. Jeśli to pole nie jest zaznaczone, ich notatki podają, gdzie leżą one w Twoim projekcie Scrivener.
-    }
 import-scrivener-default-name = Projekt Scrivener
 
 ## Progress and result
@@ -1353,30 +1352,24 @@ import-scrivener-report-trashed = { $count ->
         [many] { $count } elementów w koszu
        *[other] { $count } elementu w koszu
     }
-import-scrivener-report-research-files = { $count ->
-        [one] { $count } plik materiałów
-        [few] { $count } pliki materiałów
-        [many] { $count } plików materiałów
-       *[other] { $count } pliku materiałów
-    }
+import-scrivener-report-resources = { $count ->
+    [one] { $count } plik materiałów zapisany jako zasób
+    [few] { $count } pliki materiałów zapisane jako zasoby
+    [many] { $count } plików materiałów zapisanych jako zasoby
+   *[other] { $count } pliku materiałów zapisanego jako zasoby
+}
+import-scrivener-report-links = { $count ->
+    [one] { $count } link do strony internetowej lub pliku
+    [few] { $count } linki do stron internetowych i plików
+    [many] { $count } linków do stron internetowych i plików
+   *[other] { $count } linku do stron internetowych i plików
+}
 import-scrivener-report-choices = Twoje wybory
 import-scrivener-report-accepted-mobile = Projekt zaimportowano bez zmian wprowadzonych w programie Scrivener na iPhonie lub iPadzie, których jeszcze w nim nie było.
 import-scrivener-report-accepted-no-text = Tę kopię zaimportowano z pustymi dokumentami, ponieważ nie było w niej ani słowa ich tekstu.
 import-scrivener-report-choice = { $subject }: { $answer }
 import-scrivener-report-yes = tak
 import-scrivener-report-no = nie
-import-scrivener-report-research-copied = Pliki materiałów, których Skribisto nie potrafi otworzyć, skopiowano do „{ $folder }” obok nowego projektu.
-import-scrivener-report-research-not-copied = Pliki materiałów, których Skribisto nie potrafi otworzyć, nie zostały skopiowane. Ich notatki podają, gdzie leżą w Twoim projekcie Scrivener.
-import-scrivener-report-research-copied-except = { $count ->
-        [one] Pliki materiałów, których Skribisto nie potrafi otworzyć, skopiowano do „{ $folder }” obok nowego projektu, z wyjątkiem { $count } pliku, który zostaje w Twoim projekcie Scrivener. Jego notatka podaje, gdzie leży.
-        [few] Pliki materiałów, których Skribisto nie potrafi otworzyć, skopiowano do „{ $folder }” obok nowego projektu, z wyjątkiem { $count } plików, które zostają w Twoim projekcie Scrivener. Ich notatki podają, gdzie leżą.
-        [many] Pliki materiałów, których Skribisto nie potrafi otworzyć, skopiowano do „{ $folder }” obok nowego projektu, z wyjątkiem { $count } plików, które zostają w Twoim projekcie Scrivener. Ich notatki podają, gdzie leżą.
-       *[other] Pliki materiałów, których Skribisto nie potrafi otworzyć, skopiowano do „{ $folder }” obok nowego projektu, z wyjątkiem { $count } pliku, które zostają w Twoim projekcie Scrivener. Ich notatki podają, gdzie leżą.
-    }
-import-scrivener-report-research-none-copied = { $count ->
-        [1] Zaznaczono kopiowanie plików materiałów, ale jedynego takiego pliku nie udało się skopiować. Zostaje w Twoim projekcie Scrivener, a jego notatka podaje, gdzie leży.
-       *[other] Zaznaczono kopiowanie plików materiałów, ale nie udało się skopiować żadnego z { $count } plików. Zostają w Twoim projekcie Scrivener, a ich notatki podają, gdzie leżą.
-    }
 import-scrivener-report-chose-project = Wybrano import projektu „{ $project }”, jednego z kilku projektów we wskazanym folderze lub archiwum.
 import-scrivener-report-chose-manifest = Wybrano plik segregatora „{ $file }”.
 import-scrivener-report-chose-enclosing = Wskazano coś wewnątrz projektu „{ $project }”, więc zaimportowano cały projekt.
@@ -1464,7 +1457,6 @@ import-scrivener-notes-of = { $title } (notatki)
 import-scrivener-project-notes = Notatki projektu
 import-scrivener-recovered = Odzyskane teksty
 import-scrivener-untitled-template = Szablon bez tytułu
-import-scrivener-research-folder = { $name } (pliki materiałów)
 import-scrivener-list-separator = {", "}
 import-scrivener-label-details = Z pola „{ $field }” w programie Scrivener
 import-scrivener-status-details = Z pola „{ $field }” w programie Scrivener
@@ -2997,18 +2989,18 @@ import-scrivener-prose-note-on-heading-lost-line = { $count ->
         [many] { $count } przypisów lub komentarzy przy nagłówkach rozdziałów nie mogło tam pozostać: komentarz trafia do pierwszego akapitu rozdziału, a przypis zostaje pominięty.
        *[other] { $count } przypisu lub komentarza przy nagłówkach rozdziałów nie mogło tam pozostać: komentarz trafia do pierwszego akapitu rozdziału, a przypis zostaje pominięty.
     }
-import-scrivener-prose-media-file-copied-line = { $count ->
-        [one] { $count } plik materiałów, którego Skribisto nie potrafi otworzyć, został skopiowany obok nowego projektu. Jego notatka podaje, gdzie się znajduje.
-        [few] { $count } pliki materiałów, których Skribisto nie potrafi otworzyć, zostały skopiowane obok nowego projektu. Ich notatki podają, gdzie się znajdują.
-        [many] { $count } plików materiałów, których Skribisto nie potrafi otworzyć, zostało skopiowanych obok nowego projektu. Ich notatki podają, gdzie się znajdują.
-       *[other] { $count } pliku materiałów, których Skribisto nie potrafi otworzyć, zostało skopiowanych obok nowego projektu. Ich notatki podają, gdzie się znajdują.
-    }
+import-scrivener-prose-media-file-stored-line = { $count ->
+    [one] { $count } plik materiałów jest teraz zasobem nowego projektu.
+    [few] { $count } pliki materiałów są teraz zasobami nowego projektu.
+    [many] { $count } plików materiałów jest teraz zasobami nowego projektu.
+   *[other] { $count } pliku materiałów jest teraz zasobami nowego projektu.
+}
 import-scrivener-prose-media-file-not-carried-line = { $count ->
-        [one] { $count } plik materiałów, którego Skribisto nie potrafi otworzyć, zostaje w Twoim projekcie Scrivener. Jego notatka podaje jego nazwę.
-        [few] { $count } pliki materiałów, których Skribisto nie potrafi otworzyć, zostają w Twoim projekcie Scrivener. Ich notatki podają ich nazwy.
-        [many] { $count } plików materiałów, których Skribisto nie potrafi otworzyć, zostaje w Twoim projekcie Scrivener. Ich notatki podają ich nazwy.
-       *[other] { $count } pliku materiałów, których Skribisto nie potrafi otworzyć, zostaje w Twoim projekcie Scrivener. Ich notatki podają ich nazwy.
-    }
+    [one] { $count } plik nie dał się odczytać albo jest za duży do przeniesienia. Zostaje w Twoim projekcie Scrivener.
+    [few] { $count } pliki nie dały się odczytać albo są za duże do przeniesienia. Zostają w Twoim projekcie Scrivener.
+    [many] { $count } plików nie dało się odczytać albo są za duże do przeniesienia. Zostają w Twoim projekcie Scrivener.
+   *[other] { $count } pliku nie dało się odczytać albo są za duże do przeniesienia. Zostają w Twoim projekcie Scrivener.
+}
 
 ## When the import fails
 import-scrivener-error-refused = { $refusal } Nic nie zostało zapisane.

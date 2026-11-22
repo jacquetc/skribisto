@@ -45,9 +45,9 @@ pub(crate) use request::{analysis_answers, import_answers, words};
 pub use review::{ScrivenerReview, ScrivenerReviewError};
 
 /// Where a pattern's value goes in the words an import request carries: the item's title
-/// in `notes_of_pattern`, the project's file name in `research_folder_pattern`, a field's
-/// name in the two details patterns, a number in the two unnamed-value patterns, a label's
-/// name in `label_tag_pattern`. A pattern without it has the value put before it.
+/// in `notes_of_pattern`, a field's name in the two details patterns, a number in the two
+/// unnamed-value patterns, a label's name in `label_tag_pattern`. A pattern without it has
+/// the value put before it.
 pub const TITLE_SLOT: char = scrivener_import::TITLE_SLOT;
 
 /// Where the second value of a two-value pattern goes: an option's name in the
@@ -197,7 +197,6 @@ fn read_to_dto(read: ReadProject, today: NaiveDate) -> anyhow::Result<ScrivenerA
         manuscript_documents: count(plan::manuscript_documents(&project)),
         documents_present: count(counts.texts_present),
         media_items: count(counts.media_items),
-        research_files: count(counts.research_files),
         trashed_items: count(counts.trashed_items),
         snapshots: count(counts.snapshots),
         computers,
@@ -259,7 +258,6 @@ pub(crate) fn summary_to_dto(summary: Summary) -> ImportScrivenerProjectResultDt
         .count();
     ImportScrivenerProjectResultDto {
         output_path: summary.output_path.clone(),
-        research_folder: summary.research_folder.clone().unwrap_or_default(),
         totals: ScrivenerTotals::Counted {
             rows: count(totals.rows),
             words: i64::try_from(totals.words).unwrap_or(i64::MAX),
@@ -270,7 +268,8 @@ pub(crate) fn summary_to_dto(summary: Summary) -> ImportScrivenerProjectResultDt
             tags: count(totals.tags),
             rungs: count(totals.rungs),
             trashed: count(totals.trashed),
-            research_files: count(totals.research_files),
+            resources: count(totals.resources),
+            links: count(totals.links),
             synopses: i64::try_from(synopses).unwrap_or(i64::MAX),
             document_notes: i64::try_from(document_notes).unwrap_or(i64::MAX),
         },

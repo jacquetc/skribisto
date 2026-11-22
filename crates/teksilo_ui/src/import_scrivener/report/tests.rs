@@ -62,8 +62,6 @@ fn record() -> ImportRecord {
         worded: Vec::new(),
         blank_lines_as_scene_breaks: true,
         ornaments_as_scene_breaks: false,
-        copy_research_files: true,
-        research_files: true,
         title: "The Lighthouse".into(),
         author: String::new(),
         language: "en-US".into(),
@@ -73,18 +71,15 @@ fn record() -> ImportRecord {
     }
 }
 
-/// A research file the import copied, about binder row `item`.
-fn copied(item: i64, name: &str) -> ScrivenerFinding {
+/// A research file the import stored as a resource, about binder row `item`.
+fn stored(item: i64, name: &str) -> ScrivenerFinding {
     found(
-        "scrivener-prose-media-file-copied",
+        "scrivener-prose-media-file-stored",
         ScrivenerFindingFamily::Prose,
         ScrivenerReportGroup::BroughtAcrossDifferently,
         item,
         &["Research", name],
-        vec![ScrivenerArg::Text {
-            name: "path".into(),
-            value: format!("The Lighthouse research files/{name}"),
-        }],
+        Vec::new(),
     )
 }
 
@@ -106,7 +101,6 @@ fn stayed(item: i64, name: &str) -> ScrivenerFinding {
 fn result(findings: Vec<ScrivenerFinding>, record: Option<ImportRecord>) -> ScrivenerImportResult {
     ScrivenerImportResult {
         output_path: "/books/The Lighthouse.skrib".into(),
-        research_folder: String::new(),
         totals: ScrivenerTotals::Counted {
             rows: 12,
             words: 3400,
@@ -117,7 +111,8 @@ fn result(findings: Vec<ScrivenerFinding>, record: Option<ImportRecord>) -> Scri
             tags: 2,
             rungs: 0,
             trashed: 0,
-            research_files: 0,
+            resources: 0,
+            links: 0,
             synopses: 4,
             document_notes: 0,
         },
@@ -276,8 +271,8 @@ fn what_came_across_leaves_out_the_zeros() {
     });
 }
 
-/// The writer's own choices are in the report: what they accepted, each choice of the
-/// Review page, and what became of the research files (D7 critique 4).
+/// The writer's own choices are in the report: what they accepted and each choice of the
+/// Review page (D7 critique 4). The research files are no choice: they are all stored.
 #[test]
 fn the_writers_choices_are_in_the_report() {
     crate::test_support::with_real_messages(|| {
@@ -289,8 +284,7 @@ fn the_writers_choices_are_in_the_report() {
             }],
             ..record()
         };
-        let mut imported = result(vec![copied(7, "Map.pdf")], Some(record));
-        imported.research_folder = "The Lighthouse research files".into();
+        let imported = result(vec![stored(7, "Map.pdf")], Some(record));
         let report = ImportReport::from_result(&imported);
         let choices: Vec<String> = report.choices.iter().map(|c| c.resolve_now()).collect();
         assert_eq!(
@@ -302,9 +296,6 @@ fn the_writers_choices_are_in_the_report() {
                 "Ideas: Leave out".to_string(),
                 "Title: The Lighthouse".to_string(),
                 "Language: en-US".to_string(),
-                "Research files Skribisto cannot open were copied into “The Lighthouse \
-                 research files”, beside the new project."
-                    .to_string(),
             ]
         );
         assert_eq!(
@@ -646,43 +637,76 @@ fn every_item_has_a_name_of_its_own() {
     });
 }
 
-/// What became of the research files is what the import did with them, not what the
-/// analysis counted: nothing when none was imported, each case said as it happened.
+/// What became of the research files is what the import did with them: the ones stored
+/// as resources counted in what came across and listed under *Brought across
+/// differently*, the one it could not read under *Left behind*, both by their place in
+/// Scrivener's binder.
 #[test]
-fn the_research_line_says_what_the_import_did() {
+fn the_research_files_are_reported_as_the_import_stored_them() {
     crate::test_support::with_real_messages(|| {
-        let research = |findings: Vec<ScrivenerFinding>, copy: bool| {
-            let mut imported = result(
-                findings,
-                Some(ImportRecord {
-                    copy_research_files: copy,
-                    ..record()
-                }),
-            );
-            if imported
-                .findings
-                .iter()
-                .any(|f| messages::key_of(f) == "scrivener-prose-media-file-copied")
-            {
-                imported.research_folder = "The Lighthouse research files".into();
-            }
-            ImportReport::from_result(&imported)
+        let mut imported = result(
+            vec![
+                stored(7, "Map.pdf"),
+                stored(9, "Tides.pdf"),
+                stayed(8, "Huge.mov"),
+            ],
+            Some(record()),
+        );
+        if let ScrivenerTotals::Counted {
+            resources, links, ..
+        } = &mut imported.totals
+        {
+            *resources = 2;
+            *links = 3;
+        }
+        let report = ImportReport::from_result(&imported);
+        let came = report.came_across_line().resolve_now();
+        assert!(
+            came.contains("2 research files stored as resources")
+                && came.contains("3 links to web pages and files"),
+            "{came}"
+        );
+        let lines: Vec<(Group, String, Vec<String>)> = report
+            .groups
+            .iter()
+            .flat_map(|g| {
+                g.lines.iter().map(move |l| {
+                    (
+                        g.group,
+                        l.text.resolve_now(),
+                        l.items.iter().map(|i| i.label().resolve_now()).collect(),
+                    )
+                })
+            })
+            .filter(|(_, text, _)| text.contains("file"))
+            .collect();
+        assert_eq!(
+            lines,
+            vec![
+                (
+                    Group::BroughtAcrossDifferently,
+                    "2 research files are now resources of the new project.".to_string(),
+                    vec![
+                        "Research ▸ Map.pdf".to_string(),
+                        "Research ▸ Tides.pdf".to_string()
+                    ],
+                ),
+                (
+                    Group::LeftBehind,
+                    "1 file could not be read, or is too large to bring across. It stays in \
+                     your Scrivener project."
+                        .to_string(),
+                    vec!["Research ▸ Huge.mov".to_string()],
+                ),
+            ]
+        );
+        assert!(
+            report
                 .choices
                 .iter()
-                .map(|c| c.resolve_now())
-                .find(|c| c.contains("esearch files"))
-        };
-        assert_eq!(research(Vec::new(), true), None, "none was imported");
-        let mixed =
-            research(vec![copied(7, "Map.pdf"), stayed(8, "Huge.mov")], true).unwrap_or_default();
-        assert!(
-            mixed.contains("“The Lighthouse research files”") && mixed.contains("except 1"),
-            "{mixed}"
+                .all(|c| !c.resolve_now().contains("copied")),
+            "no choice about research files is left"
         );
-        let none = research(vec![stayed(8, "Huge.mov")], true).unwrap_or_default();
-        assert!(none.starts_with("You asked for research files"), "{none}");
-        let off = research(vec![stayed(8, "Huge.mov")], false).unwrap_or_default();
-        assert!(off.contains("were not copied"), "{off}");
     });
 }
 

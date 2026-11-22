@@ -9,7 +9,7 @@
 //! item's level, once to emit rows, because an empty folder takes the level its
 //! siblings take (D3.4) and its later siblings are not decided yet when it is met.
 
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
 use common::entities::BinderItemRole as Role;
 use common::entities::BinderItemSubRole as SubRole;
@@ -21,9 +21,9 @@ use super::lexicon::{self, MatterSide, SectionClass, TitleClass, TitleMatch};
 use super::{
     Absence, BinderKind, Body, BooksChoice, BooksControl, ChapterEncoding, ChoiceError, Choices,
     ContainerRung, DepthControl, Destination, Level, Origin, Placement, PlanError, PlannedContent,
-    PlannedRow, PlannedTag, PlannedTemplate, PlannedTitle, Review, RootControl, RowRef, Shape,
-    ShapeFlag, Signal, Source, SplitControl, StructureNotice, StructurePlan, TextKind,
-    TextsControl, TrashChoice, TrashControl, Why,
+    PlannedResource, PlannedRow, PlannedTag, PlannedTemplate, PlannedTitle, Review, RootControl,
+    RowRef, Shape, ShapeFlag, Signal, Source, SplitControl, StructureNotice, StructurePlan,
+    TextKind, TextsControl, TrashChoice, TrashControl, Why,
 };
 use crate::content::ContentFacts;
 use crate::model::{ItemKey, ItemKind, Project, TextRole};
@@ -554,6 +554,12 @@ struct Builder<'a> {
     splits: Vec<SplitControl>,
     roots: Vec<RootControl>,
     books: Option<BooksControl>,
+    /// Research files stored as resources, in the order they were met.
+    resources: Vec<PlannedResource>,
+    /// Per item: its file is a resource, so no note holds it.
+    stored: Vec<bool>,
+    /// Items some collection lists, by key: a collection becomes a tag on a row.
+    collected: HashSet<ItemKey>,
 }
 
 impl<'a> Builder<'a> {
@@ -618,6 +624,21 @@ impl<'a> Builder<'a> {
             splits: Vec::new(),
             roots: Vec::new(),
             books: None,
+            resources: Vec::new(),
+            stored: vec![false; n],
+            // The binder, the last search and the saved searches are what Scrivener's
+            // window showed, and become no tag (D4-13).
+            collected: project
+                .collections
+                .iter()
+                .filter(|c| {
+                    !matches!(
+                        c.kind.as_deref().map(str::trim),
+                        Some("Binder" | "RecentSearch" | "SavedSearch")
+                    )
+                })
+                .flat_map(|c| c.members.iter().copied())
+                .collect(),
             tree,
         }
     }
@@ -642,6 +663,40 @@ impl<'a> Builder<'a> {
 
     fn media(&self, i: u32) -> bool {
         self.row(i).payload.file.is_some()
+    }
+
+    /// The item's file as a note's content: `None` when it has none, or when it is
+    /// stored as a resource instead.
+    fn media_source(&self, i: u32) -> Option<Source> {
+        (self.media(i) && !self.stored[i as usize]).then_some(Source::Media { item: i })
+    }
+
+    /// A file a note shows as words: plain text by its extension, never a picture.
+    fn plain_text_file(&self, i: u32) -> bool {
+        let row = self.row(i);
+        let Some(file) = &row.payload.file else {
+            return false;
+        };
+        row.kind != ItemKind::Image && is_plain_text_name(&file.path)
+    }
+
+    /// Whether the item carries more than its file, which would be lost if the file
+    /// became a resource with no row of its own: writing (a text, document notes, a
+    /// synopsis, a card picture) or metadata a row wears (keywords, a label, a status,
+    /// custom metadata, a target, a collection, a bookmark to another document).
+    fn holds_more(&self, i: u32) -> bool {
+        let row = self.row(i);
+        self.text(i)
+            || self.has_notes(i)
+            || self.synopsis(i)
+            || self.card(i)
+            || !row.keyword_ids.is_empty()
+            || row.meta.label.is_some()
+            || row.meta.status.is_some()
+            || !row.meta.custom.is_empty()
+            || row.target.is_some()
+            || row.links.iter().any(|l| l.target.is_some())
+            || row.key.is_some_and(|key| self.collected.contains(&key))
     }
 
     fn card(&self, i: u32) -> bool {
@@ -734,7 +789,7 @@ impl<'a> Builder<'a> {
                 ContentRole::NoteText,
                 vec![
                     self.card(i).then_some(Source::CardImage { item: i }),
-                    self.media(i).then_some(Source::Media { item: i }),
+                    self.media_source(i),
                     self.text_source(i),
                 ],
             ),
@@ -2177,7 +2232,7 @@ impl<'a> Builder<'a> {
                         ContentRole::NoteText,
                         body(vec![
                             self.card(j).then_some(Source::CardImage { item: j }),
-                            self.media(j).then_some(Source::Media { item: j }),
+                            self.media_source(j),
                             self.text_source(j),
                         ]),
                     ),
@@ -2364,6 +2419,13 @@ impl<'a> Builder<'a> {
 
     /// The notes rules (D3.12) over one subtree: every folder a notes folder,
     /// every leaf a note, story-bible folders tagging their entries (D3.14).
+    ///
+    /// A picture or other file here is a resource of the new project, not a note
+    /// (decided 2026-11-22), plain text aside, which a note holds as words. An item
+    /// that carries more than its file keeps its note (or its folder, when it has
+    /// children), and the resource is attached to that row; one that carries only its
+    /// file has no row, and its resource is attached to the row its parent became, or
+    /// to nothing at the top of the subtree.
     fn walk_notes(
         &mut self,
         first: u32,
@@ -2373,15 +2435,22 @@ impl<'a> Builder<'a> {
         bible_root: bool,
     ) {
         let nb = BinderKind::Notes;
-        // Open ancestors: source depth, indent for children, the tag entries take.
-        let mut frames: Vec<(u16, u16, Option<u32>)> = Vec::new();
+        // Open ancestors: source depth, indent for children, the tag entries take, the
+        // row the ancestor became.
+        let mut frames: Vec<(u16, u16, Option<u32>, u32)> = Vec::new();
         let mut j = first;
         while j < stop {
             let d = self.tree.depth[j as usize];
-            while frames.last().is_some_and(|(fd, _, _)| *fd >= d) {
+            while frames.last().is_some_and(|(fd, _, _, _)| *fd >= d) {
                 frames.pop();
             }
-            let (depth, entry_tag) = frames.last().map_or((indent, None), |(_, i, t)| (*i, *t));
+            let (depth, entry_tag) = frames
+                .last()
+                .map_or((indent, None), |(_, i, t, _)| (*i, *t));
+            let parent_row = frames.last().map(|(_, _, _, row)| RowRef {
+                binder: nb,
+                row: *row,
+            });
             if activated && Some(j) == self.templates_folder {
                 self.templates(j, depth);
                 j = self.tree.end[j as usize];
@@ -2397,11 +2466,35 @@ impl<'a> Builder<'a> {
             } else {
                 Why::Notes
             };
-            if self.tree.container[j as usize] {
-                let row_index = self.notes.len() as u32;
+            let container = self.tree.container[j as usize];
+            let resource = self.media(j) && !self.plain_text_file(j);
+            if resource {
+                self.stored[j as usize] = true;
+            }
+            if resource && !container && !self.holds_more(j) {
+                // Its file is all it is: the resource is the item.
+                self.absence[j as usize] = Some(Absence::Resource);
+                self.resources.push(PlannedResource {
+                    item: j,
+                    attach: parent_row,
+                });
+                j += 1;
+                continue;
+            }
+            let row_index = self.notes.len() as u32;
+            if resource {
+                self.resources.push(PlannedResource {
+                    item: j,
+                    attach: Some(RowRef {
+                        binder: nb,
+                        row: row_index,
+                    }),
+                });
+            }
+            if container {
                 let own_tag = recognised.then(|| self.tag_for(j, row_index));
                 self.note_item(nb, j, depth, activated, entry_tag, why, None);
-                frames.push((d, depth + 1, own_tag.or(entry_tag)));
+                frames.push((d, depth + 1, own_tag.or(entry_tag), row_index));
             } else {
                 self.note_item(nb, j, depth, activated, entry_tag, why, None);
             }
@@ -2739,6 +2832,7 @@ impl<'a> Builder<'a> {
             templates: self.templates,
             tags: self.tags,
             trash_roots: self.trash_roots,
+            resources: self.resources,
             chapter_encoding,
             placements,
             review,
@@ -2928,6 +3022,43 @@ impl<'a> Builder<'a> {
         }
         shape.templates = self.templates.len() as u32;
         shape.tags = self.tags.len() as u32;
+        // What will be stored: the notes binder's research files, and every file a
+        // content holds that the converter stores rather than shows (a PDF on a
+        // manuscript row, a template's leftover, see `stored_in_place`). A file past
+        // what one read takes stays behind, and the report says so. A cloud placeholder
+        // is not here at all: the project's reading leaves it out of the item's payload.
+        let mut stored: BTreeSet<u32> = self.resources.iter().map(|r| r.item).collect();
+        let contents = self
+            .manuscript
+            .iter()
+            .chain(&self.notes)
+            .flat_map(|row| &row.contents)
+            .filter_map(|content| match &content.body {
+                Body::From(sources) => Some(sources.as_slice()),
+                Body::Title | Body::Generated(_) => None,
+            })
+            .flatten();
+        let templates = self.templates.iter().filter_map(|t| t.body.as_ref());
+        for source in contents.chain(templates) {
+            if let Source::Media { item } = *source
+                && self
+                    .row(item)
+                    .payload
+                    .file
+                    .as_ref()
+                    .is_some_and(|file| stored_in_place(&self.row(item).kind, &file.path))
+            {
+                stored.insert(item);
+            }
+        }
+        let storable = stored
+            .iter()
+            .filter_map(|item| self.row(*item).payload.file.as_ref())
+            .filter(|file| file.size <= crate::index::MAX_MEMBER_BYTES);
+        for file in storable {
+            shape.resources += 1;
+            shape.resource_bytes = shape.resource_bytes.saturating_add(file.size);
+        }
         shape
     }
 
@@ -2992,6 +3123,39 @@ impl<'a> Builder<'a> {
             self.facts.recovered.iter().filter(|c| c.counts()).count() as u32;
         review
     }
+}
+
+/// The extensions of the files a content shows as a picture in the text.
+const PICTURE_EXTENSIONS: [&str; 8] = ["png", "jpg", "jpeg", "gif", "tif", "tiff", "bmp", "webp"];
+
+/// Whether a media item's file is a picture, by its kind or the extension of its own
+/// name, never of the folders before it.
+pub(crate) fn is_picture_file(kind: &ItemKind, path: &str) -> bool {
+    *kind == ItemKind::Image || has_extension(path, &PICTURE_EXTENSIONS)
+}
+
+/// Whether the converter stores a media item's file, put in a content, as a resource:
+/// a file neither a picture (shown in the text, unless reading it shows it cannot be)
+/// nor plain text (shown as words). What the review counts and the converter does
+/// both ask this, so the total on the review page is what goes in.
+pub(crate) fn stored_in_place(kind: &ItemKind, path: &str) -> bool {
+    !is_picture_file(kind, path) && !is_plain_text_name(path)
+}
+
+/// Whether the name at the end of `path` has one of `extensions`, in any case.
+fn has_extension(path: &str, extensions: &[&str]) -> bool {
+    let name = path.rsplit(['/', '\\']).next().unwrap_or(path);
+    name.rsplit_once('.')
+        .is_some_and(|(_, extension)| extensions.contains(&extension.to_ascii_lowercase().as_str()))
+}
+
+/// The extensions of the files a note holds as words rather than as a resource.
+const PLAIN_TEXT_EXTENSIONS: [&str; 6] = ["txt", "text", "md", "markdown", "mmd", "fountain"];
+
+/// Whether the file at `path` (a member of the project) is plain text by its extension:
+/// the extension of its own name, never of the folders before it.
+pub(crate) fn is_plain_text_name(path: &str) -> bool {
+    has_extension(path, &PLAIN_TEXT_EXTENSIONS)
 }
 
 /// The item a row represents, when it represents one.

@@ -9,7 +9,8 @@ use frontend::import_management::{
     ScrivenerAnalysisDto, ScrivenerAnalysisOutcome, ScrivenerArg, ScrivenerBinder,
     ScrivenerControl, ScrivenerDestination, ScrivenerFinding, ScrivenerFindingFamily,
     ScrivenerItemRef, ScrivenerMobileEdits, ScrivenerPlace, ScrivenerPreviewRow, ScrivenerQuestion,
-    ScrivenerReportGroup, ScrivenerStructure, ScrivenerTitleKind, ScrivenerTrashChoice,
+    ScrivenerReportGroup, ScrivenerShape, ScrivenerStructure, ScrivenerTitleKind,
+    ScrivenerTrashChoice,
 };
 use teksilo::core::widget_tree::WidgetTree;
 
@@ -128,7 +129,6 @@ fn analysis() -> ScrivenerAnalysisDto {
         writer_version: "3.3.6".into(),
         documents: 8,
         manuscript_documents: 8,
-        research_files: 3,
         structure: ScrivenerStructure::Planned {
             rows,
             controls,
@@ -148,7 +148,23 @@ fn analysis() -> ScrivenerAnalysisDto {
             choices: Vec::new(),
             set_aside_trashed: 0,
             set_aside_recovered: 0,
-            shape: Default::default(),
+            // Three research files the import will store.
+            shape: ScrivenerShape::Counted {
+                books: 1,
+                parts: 0,
+                chapter_folders: 0,
+                flat_chapters: 0,
+                scenes: 8,
+                paratexts: 0,
+                plain_folders: 0,
+                manuscript_notes: 0,
+                notes_rows: 0,
+                trashed_rows: 0,
+                templates: 0,
+                tags: 0,
+                resources: 3,
+                resource_bytes: 2_500_000,
+            },
             chapter_encoding: Default::default(),
             templates: Vec::new(),
             tags: Vec::new(),
@@ -264,17 +280,37 @@ fn the_review_keeps_the_preview_tall_at_twelve_top_level_folders() {
     });
 }
 
+/// The review says how many research files the new project will store, and how much they
+/// weigh, before the writer imports.
+#[test]
+fn the_review_says_how_much_research_will_be_stored() {
+    crate::test_support::with_real_messages(|| {
+        let (mut tree, id, vm) = mount(Some(InspectState::Read(std::rc::Rc::new(analysis()))));
+        go_to(&mut tree, &vm, 1);
+        let line = crate::import_scrivener::import_scrivener_vm::resources_line(3, 2_500_000)
+            .resolve_now();
+        assert!(line.contains('3') && line.contains("2.4 MB"), "{line}");
+        let before = vm.before_you_import();
+        let first = before.with_item(0, |l| l.resolve_now());
+        assert_eq!(
+            first.as_deref(),
+            Some(line.as_str()),
+            "the research comes first"
+        );
+        assert!(
+            tree.find_by_label(&line).is_some(),
+            "the strip shows it: {line}"
+        );
+        assert_inside_the_card(&tree, id);
+    });
+}
+
 #[test]
 fn the_save_page_lays_out_inside_the_card() {
     crate::test_support::with_real_messages(|| {
         let (mut tree, id, vm) = mount(Some(InspectState::Read(std::rc::Rc::new(analysis()))));
         go_to(&mut tree, &vm, 2);
         assert!(first_of_type(&tree, id, "FilePickerField").is_some());
-        assert!(
-            tree.find_by_label(&tr!(import_scrivener_copy_research_label()).resolve_now())
-                .is_some(),
-            "three research files: the copy is offered"
-        );
         assert_inside_the_card(&tree, id);
     });
 }

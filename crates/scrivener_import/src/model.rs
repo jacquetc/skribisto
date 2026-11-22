@@ -468,6 +468,12 @@ pub struct Link {
     pub destination: Option<String>,
     /// The destination named a file on the writer's disk, reduced to its name.
     pub local_file: bool,
+    /// That file's absolute path, as Scrivener recorded it (a `file:` URL read back into
+    /// a path), when it was recorded as one: what a linked-file resource of the new
+    /// project points at (decided 2026-11-22). `None` for anything else, a path from the
+    /// writer's home folder (`~/…`) or a network share's address included.
+    #[serde(default)]
+    pub path: Option<String>,
     /// The description or label, as written.
     pub text: Option<String>,
 }
@@ -821,9 +827,6 @@ pub struct Counts {
     pub media_items: u32,
     /// Media items whose file is missing.
     pub media_missing: u32,
-    /// Research files present that are not pictures (PDFs, web archives, sound,
-    /// anything else): what is copied beside the imported project.
-    pub research_files: u32,
     /// Items in the Trash, at any depth.
     pub trashed_items: u32,
     /// Snapshots Scrivener keeps, over every item.

@@ -298,15 +298,26 @@ fn a_novel_maps_to_a_book_of_parts_chapters_and_scenes_and_a_notes_binder() {
             "  Item/BookEnd",
         ]
     );
+    // The picture in Research is a resource of the Research folder, with no note.
     assert_eq!(
         show(&plan.notes),
-        [
-            "Folder/Note Research",
-            "  Item/Note Harbour map",
-            "Item/Note Deleted scene ~",
-        ]
+        ["Folder/Note Research", "Item/Note Deleted scene ~"]
     );
-    assert_eq!(plan.trash_roots, [2]);
+    assert_eq!(
+        plan.resources,
+        [PlannedResource {
+            item: map,
+            attach: Some(RowRef {
+                binder: BinderKind::Notes,
+                row: 0
+            }),
+        }]
+    );
+    assert_eq!(
+        plan.placements[map as usize].absence,
+        Some(Absence::Resource)
+    );
+    assert_eq!(plan.trash_roots, [1]);
     assert_eq!(plan.chapter_encoding, ChapterEncoding::Folder);
     assert_eq!(
         row_of(&plan, 1).why,
@@ -938,8 +949,12 @@ fn root_front_and_back_matter_go_inside_the_book_out_of_export() {
 
 // ---------------------------------------------------------------- D3.12, D3.13
 
+/// A file in the manuscript is a note beside the prose; one in the notes binder is a
+/// resource (decided 2026-11-22): of its own note when it carries more than its file, of
+/// its folder when it has children, of its parent's row else, and of nothing at the top.
+/// A plain text file stays a note holding its words, wherever it is.
 #[test]
-fn media_items_become_notes_where_they_are() {
+fn media_items_are_notes_in_the_manuscript_and_resources_in_the_notes_binder() {
     let mut p = P::new();
     p.draft();
     let stray = p.add(1, ItemKind::Pdf, "Stray PDF");
@@ -951,27 +966,152 @@ fn media_items_become_notes_where_they_are() {
     let with_children = p.add(1, ItemKind::Image, "Album");
     p.with_media(with_children);
     p.text(2, "Caption");
+    let plain = p.add(1, ItemKind::Image, "Coastline");
+    p.with_media(plain);
+    let words = p.add(1, ItemKind::Other, "Reading list");
+    p.project.binder[words as usize].payload.file = Some(member("Files/Data/y/content.TXT"));
+    let loose = p.add(0, ItemKind::Pdf, "Loose page");
+    p.with_media(loose);
     let plan = p.plan();
     assert_eq!(row_of(&plan, stray).sub_role, SubRole::Note);
     assert!(has(&plan, &StructureNotice::MediaInDraft { item: stray }));
+    assert_eq!(
+        row_of(&plan, stray).contents[0].body,
+        Body::From(vec![Source::Media { item: stray }])
+    );
     assert_eq!(
         show(&plan.notes),
         [
             "Folder/Note Recherches",
             "  Item/Note Map",
             "  Folder/Note Album",
-            "    Item/Note Album",
             "    Item/Note Caption",
+            "  Item/Note Reading list",
         ]
     );
-    let map = row_of(&plan, pic);
+    // The picture with a text of its own keeps its note, holding the text alone.
     assert_eq!(
-        map.contents[0].body,
-        Body::From(vec![
-            Source::Media { item: pic },
-            Source::Text { item: pic }
-        ])
+        row_of(&plan, pic).contents[0].body,
+        Body::From(vec![Source::Text { item: pic }])
     );
+    assert_eq!(
+        row_of(&plan, words).contents[0].body,
+        Body::From(vec![Source::Media { item: words }])
+    );
+    let notes = |row| {
+        Some(RowRef {
+            binder: BinderKind::Notes,
+            row,
+        })
+    };
+    let attached: Vec<(u32, Option<RowRef>)> =
+        plan.resources.iter().map(|r| (r.item, r.attach)).collect();
+    assert_eq!(
+        attached,
+        [
+            (pic, notes(1)),
+            (with_children, notes(2)),
+            (plain, notes(0)),
+            (loose, None),
+        ]
+    );
+    for item in [plain, loose] {
+        assert_eq!(plan.placements[item as usize].item, None);
+        assert_eq!(
+            plan.placements[item as usize].absence,
+            Some(Absence::Resource)
+        );
+    }
+    assert_eq!(plan.shape.resources, 4);
+    assert_eq!(plan.shape.resource_bytes, 4 * 64);
+}
+
+/// Metadata a row wears (a keyword, a label, a status) keeps a research file's note, so
+/// that it has somewhere to go; a page it bookmarks does not.
+#[test]
+fn a_research_file_with_metadata_of_its_own_keeps_its_note() {
+    let mut p = P::new();
+    p.draft();
+    p.add(0, ItemKind::ResearchFolder, "Research");
+    let tagged = p.add(1, ItemKind::Pdf, "Tagged");
+    p.with_media(tagged);
+    p.project.binder[tagged as usize].keyword_ids = vec![7];
+    let labelled = p.add(1, ItemKind::Pdf, "Labelled");
+    p.with_media(labelled);
+    p.meta(labelled).label = Some(1);
+    let bookmarked = p.add(1, ItemKind::Pdf, "Bookmarked");
+    p.with_media(bookmarked);
+    p.project.binder[bookmarked as usize].links = vec![crate::model::Link {
+        target: None,
+        destination: Some("https://example.org/".to_string()),
+        local_file: false,
+        path: None,
+        text: None,
+    }];
+    let plan = p.plan();
+    assert_eq!(
+        show(&plan.notes),
+        [
+            "Folder/Note Research",
+            "  Item/Note Tagged",
+            "  Item/Note Labelled"
+        ]
+    );
+    assert_eq!(
+        plan.placements[bookmarked as usize].absence,
+        Some(Absence::Resource)
+    );
+}
+
+/// The checker holds the resources against the binder on its own: a file a note holds in
+/// the notes binder, a resource attached to the wrong row, or a file both stored and held,
+/// is a violation.
+#[test]
+fn the_checker_refuses_a_research_file_misplaced() {
+    let mut p = P::new();
+    p.draft();
+    p.add(0, ItemKind::ResearchFolder, "Research");
+    let pic = p.add(1, ItemKind::Image, "Map");
+    p.with_media(pic);
+    p.with_text(pic);
+    let plain = p.add(1, ItemKind::Pdf, "Chart");
+    p.with_media(plain);
+    let plan = p.plan();
+    let (project, facts) = (&p.project, &p.facts);
+    assert_eq!(check(project, facts, &plan), Ok(()));
+
+    let mut wrong = plan.clone();
+    wrong.resources[1].attach = None;
+    assert_eq!(
+        check(project, facts, &wrong),
+        Err(Violation::ResourceMisattached { item: plain })
+    );
+
+    let mut twice = plan.clone();
+    let at = plan.placements[pic as usize].item.map_or(0, |r| r.row) as usize;
+    twice.notes[at].contents[0].body = Body::From(vec![
+        Source::Media { item: pic },
+        Source::Text { item: pic },
+    ]);
+    assert!(check(project, facts, &twice).is_err());
+
+    let mut held = plan.clone();
+    held.resources.remove(0);
+    held.notes[at].contents[0].body = Body::From(vec![
+        Source::Media { item: pic },
+        Source::Text { item: pic },
+    ]);
+    assert_eq!(
+        check(project, facts, &held),
+        Err(Violation::FileInNote {
+            row: at as u32,
+            item: pic
+        })
+    );
+
+    let mut forgotten = plan.clone();
+    forgotten.resources.pop();
+    assert!(check(project, facts, &forgotten).is_err());
 }
 
 // ---------------------------------------------------------------- D3.14 story bible

@@ -46,8 +46,10 @@
 //!   own values follow its own text, every other document's go to the "From Scrivener"
 //!   folder.
 //! * **bookmarks and references** become links only where Skribisto shows one (a note to a
-//!   note, a scene to a story-bible entry: X-35); the others are listed under their
-//!   document, with a 1.x reference's description.
+//!   note, a scene to a story-bible entry: X-35); one to a web page or to a file named by
+//!   its absolute path becomes a link resource of its document, or of nothing for a project
+//!   bookmark (decided 2026-11-22); the others are listed under their document, with a 1.x
+//!   reference's description.
 //! * **document targets** become goals on rows whose writing a goal measures, the **draft
 //!   target** the book's goal, and the project counts in its draft target's unit (else most
 //!   goals', else its language's); targets on notes are listed (X-30).
@@ -80,7 +82,7 @@ use crate::content::{ContentFacts, Letters};
 use crate::model::{CompileFacts, CompileFormat, Container, ItemKind, Project};
 use crate::structure::clean_title;
 
-pub use extended::{Extended, ExtendedTag, PlannedPace, extended, foreseen};
+pub use extended::{Extended, ExtendedLink, ExtendedTag, PlannedPace, extended, foreseen};
 #[doc(hidden)]
 pub use notice::every_example;
 pub use notice::{DeadlineReason, DraftTargetReason, Field, MetadataNotice, TargetUnit};

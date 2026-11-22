@@ -82,7 +82,8 @@ Obok drzewa znajdują się opcje, które zmieniają sposób przeniesienia segreg
 
 Pod drzewem lista *Zanim zaimportujesz* podaje, co import robi z segregatorem oraz ze słowami
 kluczowymi, własnymi metadanymi, kolekcjami, zakładkami i celami, a także co pozostawia, więc
-wiesz to jeszcze przed importem.
+wiesz to jeszcze przed importem. Lista zaczyna się od tego, ile plików materiałów będzie
+zawierał nowy projekt i ile miejsca zajmują: trafiają do niego wszystkie.
 
 Typ każdego elementu można później zmienić w segregatorze. Opis poszczególnych typów
 znajdziesz w temacie [jak zbudowana jest książka](:help-writing-model).
@@ -97,10 +98,6 @@ Każde z nich możesz zmienić przed importem.
 Scrivener 3 przechowuje tytuł i autora tylko w ustawieniach kompilacji. Dopóki ich tam nie
 ustawisz, przechowuje nazwę, jaką projekt miał przy tworzeniu, i żadnego autora: strona
 proponuje wtedy tę nazwę, a pole *Autor* zostawia puste. Szablon proponuje własny tytuł.
-
-Gdy Twoje materiały zawierają pliki, których Skribisto nie potrafi otworzyć, np. pliki PDF
-lub nagrania dźwiękowe, opcja *Skopiuj pliki materiałów obok nowego projektu* umieszcza je
-w folderze obok niego.
 
 ## Co przenosi Scrivener
 
@@ -126,8 +123,14 @@ w folderze obok niego.
 - Pole „Include in Compile” (uwzględnij w kompilacji), które staje się opcją *Uwzględnij
   w eksporcie*.
 - Szablony dokumentów, jako szablony notatek.
-- Obrazy z materiałów, każdy we własnej notatce. *Galeria* folderu pokazuje je jako miniatury:
-  zobacz [Obrazy i galeria](:help-pictures).
+- Pliki z materiałów, zarówno obrazy, jak i pliki PDF, nagrania dźwiękowe i strony
+  internetowe, jako zasoby nowego projektu, przechowywane w nim. Każdy należy do folderu, w
+  którym leżał, albo do własnej notatki, gdy miał własne streszczenie, notatki lub słowa
+  kluczowe. Zwykły plik tekstowy staje się notatką z jego słowami. Obrazy i pliki z
+  rękopisu pozostają notatkami obok jego tekstu.
+- Twoje zakładki do stron internetowych i plików na komputerze, jako linki wśród zasobów
+  dokumentu, który je miał. Zakładki samego projektu do nich nie należą do żadnego
+  dokumentu.
 
 ## Folder „Z programu Scrivener”
 
@@ -141,7 +144,7 @@ coś do wymienienia:
   jako obliczony, jeśli Scrivener wyliczył go na podstawie terminu i dni pisania), dni
   pisania, gdy nie zachowuje ich *Tempo* książki albo nie udało się ich odczytać,
   cel rękopisu, który nie stał się celem, oraz termin, nawet jeśli ustawił *Tempo* książki.
-- *Zakładki projektu*.
+- *Zakładki projektu* do dokumentów projektu.
 - *Zamiany przy kompilacji*. Skribisto nie wykonuje ich podczas eksportu.
 - *Wpisy autouzupełniania* składające się z więcej niż jednego słowa.
 - *Zapisane wyszukiwania*, z tym, czego każde z nich szukało.
@@ -150,7 +153,7 @@ coś do wymienienia:
   dokumentach dzielonych według nagłówków, których rozdziałów żaden pojedynczy cel nie liczy
   razem.
 - *Zakładki*, których nie może pokazać żadne powiązanie w Skribisto, np. zakładka ze sceny do
-  innej sceny lub do strony internetowej.
+  innej sceny lub do adresu e-mail.
 
 Własne metadane i zakładki notatki, która stanowi osobny wpis, np. karty postaci, są zamiast
 tego dopisywane na końcu tej notatki.
@@ -165,9 +168,8 @@ tego dopisywane na końcu tej notatki.
 - **Kolejność w kolekcji**, ponieważ znacznik nie przechowuje kolejności, oraz **cele liczone
   w stronach**.
 - **Kolor tekstu, zakreślenie i czcionki.** Wygląd tekstu określa Skribisto.
-- **Pliki materiałów, które nie są obrazami**, np. pliki PDF, nagrania dźwiękowe lub strony
-  internetowe. Każdy z nich staje się notatką podającą nazwę pliku, który zostaje w Twoim
-  projekcie Scrivener, chyba że skopiujesz go obok nowego projektu.
+- **Plik, którego nie da się odczytać**, albo większy niż 512 MB. Zostaje w Twoim projekcie
+  Scrivener, a raport podaje jego nazwę.
 - **Symbole zastępcze**, takie jak `<$wc>` lub `<$title>`. Zostają zachowane jako zwykły
   tekst: zastąp je ręcznie.
 - **Ustawienia kompilacji i zapis słów napisanych każdego dnia.** Skonfiguruj eksport

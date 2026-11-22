@@ -1401,6 +1401,11 @@ import-scrivener-in-exports-no = Nu
 import-scrivener-becomes-item = Element
 import-scrivener-becomes-trashed = În coșul de gunoi
 import-scrivener-before-title = Înainte de import
+import-scrivener-review-resources = { $count ->
+    [one] Un fișier de documentare ({ $size }) va fi păstrat în noul proiect ca resursă.
+    [few] { $count } fișiere de documentare (în total { $size }) vor fi păstrate în noul proiect ca resurse.
+   *[other] { $count } de fișiere de documentare (în total { $size }) vor fi păstrate în noul proiect ca resurse.
+}
 import-scrivener-review-error-unreadable = Verificarea nu a putut fi pregătită. Alegeți din nou proiectul.
 import-scrivener-review-error-choice = Această alegere nu se potrivește proiectului. Alegeți din nou proiectul.
 import-scrivener-review-error-unmappable = Cu această alegere, clasorul nu ar putea fi preluat fără să se piardă ceva. Alegeți altfel sau raportați problema.
@@ -1411,12 +1416,6 @@ import-scrivener-title-field = Titlu
 import-scrivener-author = Autor
 import-scrivener-language = Limbă
 import-scrivener-location-inside-project = Alegeți un dosar din afara proiectului Scrivener. Scrivener păstrează acolo doar propriile fișiere.
-import-scrivener-copy-research-label = Copiază fișierele de documentare lângă noul proiect
-import-scrivener-copy-research = { $count ->
-    [one] Un fișier de documentare pe care Skribisto nu îl poate deschide, de exemplu un PDF sau un sunet, este pus într-un dosar lângă proiect. Dacă opțiunea nu este bifată, nota lui spune unde se află în proiectul dumneavoastră Scrivener.
-    [few] { $count } fișiere de documentare pe care Skribisto nu le poate deschide, de exemplu PDF-uri sau sunete, sunt puse într-un dosar lângă proiect. Dacă opțiunea nu este bifată, notele lor spun unde se află în proiectul dumneavoastră Scrivener.
-   *[other] { $count } de fișiere de documentare pe care Skribisto nu le poate deschide, de exemplu PDF-uri sau sunete, sunt puse într-un dosar lângă proiect. Dacă opțiunea nu este bifată, notele lor spun unde se află în proiectul dumneavoastră Scrivener.
-}
 # The file name proposed when the project's name holds nothing a file name can.
 import-scrivener-default-name = Proiect Scrivener
 
@@ -1503,10 +1502,15 @@ import-scrivener-report-trashed = { $count ->
     [few] { $count } elemente în coșul de gunoi
    *[other] { $count } de elemente în coșul de gunoi
 }
-import-scrivener-report-research-files = { $count ->
-    [one] Un fișier de documentare
-    [few] { $count } fișiere de documentare
-   *[other] { $count } de fișiere de documentare
+import-scrivener-report-resources = { $count ->
+    [one] Un fișier de documentare păstrat ca resursă
+    [few] { $count } fișiere de documentare păstrate ca resurse
+   *[other] { $count } de fișiere de documentare păstrate ca resurse
+}
+import-scrivener-report-links = { $count ->
+    [one] Un link către o pagină web sau un fișier
+    [few] { $count } linkuri către pagini web și fișiere
+   *[other] { $count } de linkuri către pagini web și fișiere
 }
 import-scrivener-report-choices = Ce ați ales
 import-scrivener-report-accepted-mobile = Ați importat proiectul fără modificările făcute în Scrivener pentru iPhone sau iPad care nu ajunseseră încă în el.
@@ -1514,17 +1518,6 @@ import-scrivener-report-accepted-no-text = Ați importat această copie cu docum
 import-scrivener-report-choice = { $subject }: { $answer }
 import-scrivener-report-yes = da
 import-scrivener-report-no = nu
-import-scrivener-report-research-copied = Fișierele de documentare pe care Skribisto nu le poate deschide au fost copiate în „{ $folder }”, lângă noul proiect.
-import-scrivener-report-research-not-copied = Fișierele de documentare pe care Skribisto nu le poate deschide nu au fost copiate. Notele lor spun unde se află în proiectul dumneavoastră Scrivener.
-import-scrivener-report-research-copied-except = { $count ->
-    [one] Fișierele de documentare pe care Skribisto nu le poate deschide au fost copiate în „{ $folder }”, lângă noul proiect, cu excepția unuia, care rămâne în proiectul dumneavoastră Scrivener. Nota lui spune unde se află.
-    [few] Fișierele de documentare pe care Skribisto nu le poate deschide au fost copiate în „{ $folder }”, lângă noul proiect, cu excepția a { $count } dintre ele, care rămân în proiectul dumneavoastră Scrivener. Notele lor spun unde se află.
-   *[other] Fișierele de documentare pe care Skribisto nu le poate deschide au fost copiate în „{ $folder }”, lângă noul proiect, cu excepția a { $count } dintre ele, care rămân în proiectul dumneavoastră Scrivener. Notele lor spun unde se află.
-}
-import-scrivener-report-research-none-copied = { $count ->
-    [1] Ați cerut copierea fișierelor de documentare, dar singurul fișier de documentare nu a putut fi copiat. Rămâne în proiectul dumneavoastră Scrivener, iar nota lui spune unde se află.
-   *[other] Ați cerut copierea fișierelor de documentare, dar niciunul dintre cele { $count } nu a putut fi copiat. Rămân în proiectul dumneavoastră Scrivener, iar notele lor spun unde se află.
-}
 import-scrivener-report-chose-project = Ați ales să importați „{ $project }”, unul dintre mai multe proiecte aflate în dosarul sau în arhiva pe care ați selectat-o.
 import-scrivener-report-chose-manifest = Ați ales fișierul de clasor „{ $file }”.
 import-scrivener-report-chose-enclosing = Ați ales ceva din interiorul proiectului „{ $project }”, așa că a fost importat întregul proiect.
@@ -1613,8 +1606,6 @@ import-scrivener-notes-of = { $title } (note)
 import-scrivener-project-notes = Notele proiectului
 import-scrivener-recovered = Texte recuperate
 import-scrivener-untitled-template = Șablon fără titlu
-# The folder beside the new project its research files are copied into.
-import-scrivener-research-folder = { $name } (fișiere de documentare)
 # Between two authors' names.
 import-scrivener-list-separator = {", "}
 import-scrivener-label-details = Din câmpul „{ $field }” din Scrivener
@@ -2909,15 +2900,15 @@ import-scrivener-prose-note-on-heading-lost-line = { $count ->
     [few] { $count } note de subsol sau comentarii de pe titlurile capitolelor nu au putut rămâne acolo: un comentariu este mutat la primul paragraf al capitolului, o notă de subsol este omisă.
    *[other] { $count } de note de subsol sau comentarii de pe titlurile capitolelor nu au putut rămâne acolo: un comentariu este mutat la primul paragraf al capitolului, o notă de subsol este omisă.
 }
-import-scrivener-prose-media-file-copied-line = { $count ->
-    [one] Un fișier de documentare pe care Skribisto nu îl poate deschide a fost copiat lângă noul proiect. Nota lui spune unde.
-    [few] { $count } fișiere de documentare pe care Skribisto nu le poate deschide au fost copiate lângă noul proiect. Notele lor spun unde.
-   *[other] { $count } de fișiere de documentare pe care Skribisto nu le poate deschide au fost copiate lângă noul proiect. Notele lor spun unde.
+import-scrivener-prose-media-file-stored-line = { $count ->
+    [one] Un fișier de documentare este acum o resursă a noului proiect.
+    [few] { $count } fișiere de documentare sunt acum resurse ale noului proiect.
+   *[other] { $count } de fișiere de documentare sunt acum resurse ale noului proiect.
 }
 import-scrivener-prose-media-file-not-carried-line = { $count ->
-    [one] Un fișier de documentare pe care Skribisto nu îl poate deschide rămâne în proiectul dumneavoastră Scrivener. Nota lui îl numește.
-    [few] { $count } fișiere de documentare pe care Skribisto nu le poate deschide rămân în proiectul dumneavoastră Scrivener. Notele lor le numesc.
-   *[other] { $count } de fișiere de documentare pe care Skribisto nu le poate deschide rămân în proiectul dumneavoastră Scrivener. Notele lor le numesc.
+    [one] Un fișier nu a putut fi citit sau este prea mare pentru a fi preluat. Rămâne în proiectul dumneavoastră Scrivener.
+    [few] { $count } fișiere nu au putut fi citite sau sunt prea mari pentru a fi preluate. Rămân în proiectul dumneavoastră Scrivener.
+   *[other] { $count } de fișiere nu au putut fi citite sau sunt prea mari pentru a fi preluate. Rămân în proiectul dumneavoastră Scrivener.
 }
 
 ## When the import fails

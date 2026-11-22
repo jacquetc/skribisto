@@ -108,7 +108,6 @@ fn readable(source: &Path) -> ScrivenerAnalysisDto {
         modified: Some(1_717_236_000),
         documents: 3,
         manuscript_documents: 2,
-        research_files: 2,
         proposed_title: "The Lighthouse Keeper".into(),
         proposed_authors: vec!["Ada Marlowe".into(), "Ben Hart".into()],
         structure: ScrivenerStructure::Planned {
@@ -603,7 +602,6 @@ fn the_strip_says_each_field_and_each_note_of_its_own() {
 fn the_headline_counts_only_what_needs_a_look() {
     let result = ImportScrivenerProjectResultDto {
         output_path: "/out/Novel.skrib".into(),
-        research_folder: String::new(),
         totals: ScrivenerTotals::Counted {
             rows: 412,
             words: 0,
@@ -614,7 +612,8 @@ fn the_headline_counts_only_what_needs_a_look() {
             tags: 0,
             rungs: 0,
             trashed: 0,
-            research_files: 0,
+            resources: 0,
+            links: 0,
             synopses: 0,
             document_notes: 0,
         },
@@ -867,7 +866,6 @@ fn the_words_written_into_the_project_are_the_interfaces() {
             }
             for pattern in [
                 &dto.notes_of_pattern,
-                &dto.research_folder_pattern,
                 &dto.label_details_pattern,
                 &dto.status_details_pattern,
                 &dto.unnamed_label_pattern,
@@ -916,7 +914,6 @@ fn the_words_written_into_the_project_are_the_interfaces() {
                 format!("fingerprint of {}", project.display())
             );
             assert_eq!(dto.title.as_deref(), Some("The Lighthouse Keeper"));
-            assert!(dto.copy_research_files, "on by default when there are some");
             assert!(dto.blank_lines_as_scene_breaks && !dto.ornaments_as_scene_breaks);
             assert!(dto.output_path.ends_with("The Lighthouse Keeper.skrib"));
         });
@@ -1597,7 +1594,6 @@ fn review_again_keeps_what_the_writer_chose() {
         ))));
     vm.toggle(ToggleTarget::BlankLines, false);
     vm.toggle(ToggleTarget::Ornaments, true);
-    vm.copy_research_files().set(false);
     vm.title().set("The Keeper".into());
     vm.name().set("Keeper".into());
     let target = dir.path().join("Keeper.skrib");
@@ -1630,7 +1626,6 @@ fn review_again_keeps_what_the_writer_chose() {
     };
     assert_eq!(request.chosen_project, "Lighthouse.scriv");
     assert!(!request.blank_lines_as_scene_breaks && request.ornaments_as_scene_breaks);
-    assert!(!request.copy_research_files);
     assert_eq!(request.title.as_deref(), Some("The Keeper"));
     assert_eq!(request.output_path, text_of(&target));
 }
