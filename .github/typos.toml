@@ -39,6 +39,9 @@ extend-exclude = [
     # Third-party licence texts, shipped verbatim with the bundled
     # dictionaries. Their wording is not ours to correct.
     "crates/teksilo_ui/assets/dictionaries/licenses/*",
+    # The bundled fonts' licence texts, for the same reason: the Noto one names
+    # its font files, `wdth` and all.
+    "crates/teksilo_ui/assets/fonts/*.txt",
     # The dictionary registry names each language and its variants **in that
     # language** ("variantes", "Deutsch"), which is the whole point of it.
     "crates/teksilo_ui/assets/dictionaries/registry.ron",

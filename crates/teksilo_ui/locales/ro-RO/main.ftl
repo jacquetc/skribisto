@@ -570,7 +570,6 @@ welcome-empty-recents = Încă nu există proiecte recente.
 # distinct from having no recent works at all.
 welcome-no-matches = Niciun proiect recent nu corespunde căutării.
 welcome-learn-soon = Ghidurile și sfaturile vor fi disponibile în curând.
-welcome-about-blurb = Skribisto, aplicația de scris rescrisă în Rust + Teksilo.
 # The *…* is inline markup, not decoration: it italicizes the line (the widget
 # renders it in a serif italic). Keep the asterisks when translating.
 welcome-tagline = *Un loc liniștit pentru a scrie lucruri lungi.*
@@ -3568,8 +3567,24 @@ about-update-flathub = Flathub ține această copie la zi.
 about-update-distro = Distribuția dumneavoastră ține această copie la zi.
 about-tagline = O aplicație pentru scrierea romanelor și a ficțiunii de lungă durată, scrisă în Rust cu trusa de instrumente Teksilo.
 about-license = Publicat sub Licența Publică Generală GNU, versiunea 3.
-about-copyright = © 2026 Cyril Jacquet
+about-copyright = © { $years } { $holder }
 about-close = Închide
+about-whats-new = Noutăți în această versiune
+about-whats-new-title = Noutăți în versiunea { $version }
+about-whats-new-date = Lansată pe { $date }
+about-whats-new-date-english = Lansată pe { $date }. Aceste note sunt în engleză.
+about-copy-version = Copiază informațiile despre versiune
+about-copy-version-done = Informațiile despre versiune au fost copiate
+about-copy-version-failed = Informațiile despre versiune nu au putut fi copiate.
+about-links = Linkuri
+about-link-website = Site web
+about-link-source = Cod sursă
+about-link-report = Raportează o problemă
+about-built-with = Construit cu
+about-fonts = Fonturi
+about-license-section = Licență
+about-read-license = Citește licența
+about-read-license-of = Citește licența pentru { $name }
 
 ## Native (macOS) menu bar
 # Labels for the platform-standard App and Window menus mirrored into the macOS

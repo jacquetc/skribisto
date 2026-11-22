@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-//! The dictionary **licence** modal — shown to read a licence (from a "View licence" button)
-//! and to accept one before downloading (the licence gate, §7 of the plan).
+//! The **licence** modal — shown to read a dictionary's licence (from a "View licence"
+//! button), to accept one before downloading (the licence gate, §7 of the plan), and to read
+//! any other bundled text from the About box ([`present_text_view`]): the application's
+//! licence, a font's, this version's release notes.
 //!
 //! The full licence text is a **bundled** asset (never fetched), so the modal always works
 //! offline and the exact text the user accepts is a permanent, immutable record. `MessageBox`
@@ -48,30 +50,65 @@ pub fn present_license_accept(
     present(ctx, id, Mode::Accept(Rc::new(on_accept)));
 }
 
+/// Present `text` read-only under `title` and `subtitle`: the scrolling card a dictionary's
+/// licence opens in, with a single Close button. For the About box's bundled texts, which
+/// have no dictionary entry to look up.
+pub fn present_text_view(
+    ctx: &mut EventContext,
+    title: String,
+    subtitle: String,
+    text: impl Into<String>,
+) {
+    show(ctx, title, subtitle, text.into(), Mode::View);
+}
+
 fn present(ctx: &mut EventContext, id: &str, mode: Mode) {
-    let title = dictionary_registry::by_id(id)
+    let entry = dictionary_registry::by_id(id);
+    let title = entry
         .map(|e| e.display_name.clone())
         .unwrap_or_else(|| id.to_string());
-    let id = id.to_string();
+    let subtitle = entry.map(|e| e.license_name.clone()).unwrap_or_default();
+    let text = entry
+        .and_then(|e| dictionary_registry::license_text(&e.license_asset))
+        .unwrap_or("This dictionary's licence text is unavailable.")
+        .to_string();
+    show(ctx, title, subtitle, text, mode);
+}
+
+fn show(ctx: &mut EventContext, title: String, subtitle: String, text: String, mode: Mode) {
+    let modal_title = title.clone();
     ctx.present_modal(
-        ModalRequest::deferred(move |t| t.add(LicensePanel::new(id.clone(), mode.clone())))
-            .presentation(ModalPresentation::InTree)
-            .title(title)
-            .size(CARD_W as u32, CARD_H as u32)
-            .close_behavior(ModalCloseBehavior::EscapeOrClickOutside),
+        ModalRequest::deferred(move |t| {
+            t.add(LicensePanel::new(
+                title.clone(),
+                subtitle.clone(),
+                text.clone(),
+                mode.clone(),
+            ))
+        })
+        .presentation(ModalPresentation::InTree)
+        .title(modal_title)
+        .size(CARD_W as u32, CARD_H as u32)
+        .close_behavior(ModalCloseBehavior::EscapeOrClickOutside),
     );
 }
 
 struct LicensePanel {
-    id: String,
+    /// The header's first line: the dictionary, the font, the application.
+    title: String,
+    /// The header's second line: the licence's name, or a release's date.
+    subtitle: String,
+    text: String,
     mode: Mode,
     root_child: Option<WidgetId>,
 }
 
 impl LicensePanel {
-    fn new(id: String, mode: Mode) -> Self {
+    fn new(title: String, subtitle: String, text: String, mode: Mode) -> Self {
         Self {
-            id,
+            title,
+            subtitle,
+            text,
             mode,
             root_child: None,
         }
@@ -81,26 +118,20 @@ impl LicensePanel {
 impl std::fmt::Debug for LicensePanel {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("LicensePanel")
-            .field("id", &self.id)
+            .field("title", &self.title)
             .finish()
     }
 }
 
 impl Widget for LicensePanel {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        let entry = dictionary_registry::by_id(&self.id);
-        let display = entry
-            .map(|e| e.display_name.clone())
-            .unwrap_or_else(|| self.id.clone());
-        let license_name = entry.map(|e| e.license_name.clone()).unwrap_or_default();
-        let text = entry
-            .and_then(|e| dictionary_registry::license_text(&e.license_asset))
-            .unwrap_or("This dictionary's licence text is unavailable.");
+        let display = self.title.clone();
+        let license_name = self.subtitle.clone();
 
         // The scrollable licence body — a plain, wrapping, read-only text block.
         let body = ScrollArea::new().child(
             Padding::symmetric(16.0, 18.0)
-                .child(TextWidget::new(lit!(text.to_string())).style(TextStyleRole::Small)),
+                .child(TextWidget::new(lit!(self.text.clone())).style(TextStyleRole::Small)),
         );
 
         // The footer buttons depend on the mode. Both arms are an `HStack` so the `child:`
@@ -143,7 +174,7 @@ impl Widget for LicensePanel {
                 padding: 0.0
                 VStack {
                     spacing: 0.0
-                    // Header: dictionary name + licence name, and a close button.
+                    // Header: what the text is about and its licence name, and a close button.
                     Expand::horizontal {
                         FixedSize {
                             height: 52.0

@@ -505,7 +505,6 @@ welcome-empty-recents = Δεν υπάρχουν ακόμη πρόσφατα έρ
 
 welcome-no-matches = Κανένα πρόσφατο έργο δεν ταιριάζει με την αναζήτησή σας.
 welcome-learn-soon = Οδηγοί και συμβουλές έρχονται σύντομα.
-welcome-about-blurb = Skribisto, μια νέα υλοποίηση της εφαρμογής γραφής σε Rust + Teksilo.
 
 welcome-tagline = *Ένα ήσυχο μέρος για να γράφετε μεγάλα κείμενα.*
 
@@ -3043,8 +3042,24 @@ about-update-flathub = Το Flathub διατηρεί αυτό το αντίγρ�
 about-update-distro = Η διανομή σας διατηρεί αυτό το αντίγραφο ενημερωμένο.
 about-tagline = Μια εφαρμογή συγγραφής μυθιστορημάτων για πεζογραφία μεγάλης έκτασης, γραμμένη σε Rust με την εργαλειοθήκη Teksilo.
 about-license = Διατίθεται υπό την άδεια GNU General Public License, έκδοση 3.
-about-copyright = © 2026 Cyril Jacquet
+about-copyright = © { $years } { $holder }
 about-close = Κλείσιμο
+about-whats-new = Τι νέο υπάρχει σε αυτήν την έκδοση
+about-whats-new-title = Τι νέο υπάρχει στην έκδοση { $version }
+about-whats-new-date = Κυκλοφόρησε στις { $date }
+about-whats-new-date-english = Κυκλοφόρησε στις { $date }. Αυτές οι σημειώσεις είναι στα αγγλικά.
+about-copy-version = Αντιγραφή πληροφοριών έκδοσης
+about-copy-version-done = Οι πληροφορίες έκδοσης αντιγράφηκαν
+about-copy-version-failed = Δεν ήταν δυνατή η αντιγραφή των πληροφοριών έκδοσης.
+about-links = Σύνδεσμοι
+about-link-website = Ιστότοπος
+about-link-source = Πηγαίος κώδικας
+about-link-report = Αναφορά προβλήματος
+about-built-with = Κατασκευάστηκε με
+about-fonts = Γραμματοσειρές
+about-license-section = Άδεια χρήσης
+about-read-license = Ανάγνωση της άδειας χρήσης
+about-read-license-of = Ανάγνωση της άδειας χρήσης: { $name }
 
 native-menu-about = Σχετικά με το { $app }
 native-menu-hide = Απόκρυψη του { $app }

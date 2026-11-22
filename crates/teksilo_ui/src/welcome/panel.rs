@@ -45,9 +45,9 @@ use teksilo::widgets::button::InteractionState;
 use teksilo::widgets::styles::{RecipeButtonStyle, RecipeStandardItemStyle};
 use teksilo::widgets::{
     ActivateOn, Button, ButtonVariant, Center, Divider, Expand, HStack, IconLocation, IconWidget,
-    ListView, MenuItem, MenuList, MinSize, Padding, Panel, PopoverButton, SearchField, Spacer,
-    StandardListItem, Switcher, TabBar, TabDelegate, TabId, TabIndicatorPosition, TabSizing,
-    TextWidget, VStack,
+    ListView, MenuItem, MenuList, MinSize, Padding, Panel, PopoverButton, ScrollArea, SearchField,
+    Spacer, StandardListItem, Switcher, TabBar, TabDelegate, TabId, TabIndicatorPosition,
+    TabSizing, TextWidget, VStack,
 };
 
 use frontend::AppContext;
@@ -285,6 +285,32 @@ impl WelcomePanel {
                 }
                 Expand::vertical {
                     Spacer
+                }
+            }
+        )
+    }
+
+    /// About pane: what the Help ▸ About modal shows, from the same builder
+    /// ([`crate::panels::about::content::about_body`]), so the Launcher, which has
+    /// no menu bar of its own, is not left with less. The name, the version and the
+    /// update line are the sidebar's, right beside it, so the pane starts at the
+    /// tagline.
+    fn about_pane(&self) -> impl Widget + 'static {
+        teksu!(
+            VStack {
+                spacing: 0.0
+                Padding::symmetric(12.0, 16.0) {
+                    GroupHeader::new(tr!(about_title())) {
+                        style: TextStyleRole::SmallBold
+                        color: TextRole::Secondary
+                    }
+                }
+                Expand::vertical {
+                    ScrollArea::new() {
+                        Padding::new(0.0, 24.0, 16.0, 16.0) {
+                            child: crate::panels::about::content::about_body()
+                        }
+                    }
                 }
             }
         )
@@ -772,18 +798,6 @@ fn empty_note(text: impl Into<LocalizedString>) -> impl Widget + 'static {
     )
 }
 
-/// Centered muted placeholder for the not-yet-designed Learn/About panes.
-fn placeholder(text: impl Into<LocalizedString>) -> impl Widget + 'static {
-    teksu!(
-        Center {
-            TextWidget::new(text) {
-                style: TextStyleRole::Body
-                color: TextRole::Secondary
-            }
-        }
-    )
-}
-
 impl std::fmt::Debug for WelcomePanel {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("WelcomePanel").finish()
@@ -1169,7 +1183,7 @@ impl Widget for WelcomePanel {
             .child(self.works_pane(&vm, ctx))
             .child(self.examples_pane(&vm))
             .child(self.learn_pane())
-            .child(placeholder(tr!(welcome_about_blurb())));
+            .child(self.about_pane());
 
         // Sidebar: brand block, a Spacer, the bottom-pinned nav + links.
         let sidebar = welcome_sidebar(branding, bar, social_links(&vm));

@@ -567,7 +567,6 @@ welcome-empty-recents = No recent works yet.
 # distinct from having no recent works at all.
 welcome-no-matches = No recent work matches your search.
 welcome-learn-soon = Guides and tips are coming soon.
-welcome-about-blurb = Skribisto, a Rust + Teksilo rewrite of the writing app.
 # The *…* is inline markup, not decoration: it italicizes the line (the widget
 # renders it in a serif italic). Keep the asterisks when translating.
 welcome-tagline = *A quiet place to write long things.*
@@ -3374,8 +3373,35 @@ about-update-flathub = Flathub keeps this copy up to date.
 about-update-distro = Your distribution keeps this copy up to date.
 about-tagline = A novel-writing app for long-form fiction, written in Rust with the Teksilo toolkit.
 about-license = Released under the GNU General Public License, version 3.
-about-copyright = © 2026 Cyril Jacquet
+# $years is the span of years the project has been worked on (2015–2026) and
+# $holder the name of who holds the copyright: both are data, keep them as they are.
+about-copyright = © { $years } { $holder }
 about-close = Close
+# This version's release notes, which are written in English only. The
+# English-only variant of the date line is shown when the interface is in
+# another language, so the reader knows why the notes are not translated.
+about-whats-new = What's new in this version
+about-whats-new-title = What's new in { $version }
+about-whats-new-date = Released on { $date }
+about-whats-new-date-english = Released on { $date }. These notes are in English.
+# Puts the version, the Teksilo version, the channel and the system on the
+# clipboard, for a bug report. What it copies stays in English.
+about-copy-version = Copy version info
+about-copy-version-done = Version info copied
+about-copy-version-failed = The version info could not be copied.
+# Section headers and rows of the About content. Library and font names
+# are product names and stay as they are.
+about-links = Links
+about-link-website = Website
+about-link-source = Source code
+about-link-report = Report a problem
+about-built-with = Built with
+about-fonts = Fonts
+about-license-section = License
+about-read-license = Read the license
+# What a screen reader hears for each Read the license link; $name is a
+# font or the application.
+about-read-license-of = Read the license of { $name }
 
 ## Native (macOS) menu bar
 # Labels for the platform-standard App and Window menus mirrored into the macOS

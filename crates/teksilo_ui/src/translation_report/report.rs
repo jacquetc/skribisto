@@ -29,6 +29,8 @@
 
 use percent_encoding::{AsciiSet, NON_ALPHANUMERIC, utf8_percent_encode};
 
+pub(crate) use crate::version::BuildInfo;
+
 /// The first line of the machine block, and the marker the triage workflow looks for
 /// in an issue body.
 pub(crate) const BLOCK_MARKER: &str = "skribisto-translation-report: 1";
@@ -180,36 +182,6 @@ pub(crate) enum Target {
         /// Where the writer saw it.
         seen_at: String,
     },
-}
-
-/// The build a report comes from.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct BuildInfo {
-    /// `3.3.1`, `3.3.1+5c62c8cac`, or a bare hash in a clone with no tags.
-    pub version: String,
-    /// The crate's own version, the fallback the triage tries when `version` names
-    /// no tag.
-    pub crate_version: String,
-    /// The teksilo-widgets version, or `None` when the build could not tell.
-    pub framework: Option<String>,
-    /// [`crate::updates::Channel::stamp`].
-    pub channel: &'static str,
-    /// `linux`, `macos`, `windows`.
-    pub os: &'static str,
-}
-
-impl BuildInfo {
-    /// This binary.
-    pub(crate) fn current() -> Self {
-        Self {
-            version: crate::version::app_version(),
-            crate_version: env!("CARGO_PKG_VERSION").to_string(),
-            framework: Some(env!("SKRIBISTO_TEKSILO_VERSION").to_string())
-                .filter(|v| !v.is_empty()),
-            channel: crate::updates::Channel::current().stamp(),
-            os: std::env::consts::OS,
-        }
-    }
 }
 
 /// One report, as the writer has filled it in.

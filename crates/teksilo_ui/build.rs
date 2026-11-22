@@ -33,6 +33,7 @@ fn main() {
 
     stamp_channel();
     stamp_framework_version();
+    stamp_text_document_version();
     embed_windows_resources();
     reserve_windows_main_stack();
 }
@@ -120,6 +121,30 @@ fn stamp_framework_version() {
         })
         .unwrap_or_default();
     println!("cargo:rustc-env=SKRIBISTO_TEKSILO_VERSION={version}");
+}
+
+/// Stamps the text-document version into `SKRIBISTO_TEXT_DOCUMENT_VERSION`, for
+/// the About box's "Built with" list. Read from the workspace's `Cargo.lock` the way
+/// [`stamp_framework_version`] reads teksilo's, with the same override and the same
+/// caveat for an edition that resolves its own; empty when neither is available,
+/// and the list then names the library without a version.
+fn stamp_text_document_version() {
+    println!("cargo:rerun-if-env-changed=SKRIBISTO_TEXT_DOCUMENT_VERSION");
+    let version = std::env::var("SKRIBISTO_TEXT_DOCUMENT_VERSION")
+        .ok()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .or_else(|| {
+            let manifest = std::env::var("CARGO_MANIFEST_DIR").ok()?;
+            let lock = Path::new(&manifest).join("../../Cargo.lock");
+            if !lock.is_file() {
+                return None;
+            }
+            println!("cargo:rerun-if-changed={}", lock.display());
+            locked_version(&std::fs::read_to_string(&lock).ok()?, "text-document")
+        })
+        .unwrap_or_default();
+    println!("cargo:rustc-env=SKRIBISTO_TEXT_DOCUMENT_VERSION={version}");
 }
 
 /// The `version` of package `name` in a `Cargo.lock`: the line after its `name`.

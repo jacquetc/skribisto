@@ -562,7 +562,6 @@ welcome-empty-recents = Ingen seneste projekter endnu.
 # distinct from having no recent works at all.
 welcome-no-matches = Intet af de seneste projekter matcher din søgning.
 welcome-learn-soon = Vejledninger og tips kommer snart.
-welcome-about-blurb = Skribisto, skriveprogrammet genskrevet i Rust og Teksilo.
 # The *…* is inline markup, not decoration: it italicizes the line (the widget
 # renders it in a serif italic). Keep the asterisks when translating.
 welcome-tagline = *Et stille sted at skrive lange ting.*
@@ -3257,8 +3256,24 @@ about-update-flathub = Flathub holder denne kopi opdateret.
 about-update-distro = Din distribution holder denne kopi opdateret.
 about-tagline = Et program til at skrive romaner og andre lange fiktionstekster, skrevet i Rust med Teksilo-værktøjssættet.
 about-license = Udgivet under GNU General Public License, version 3.
-about-copyright = © 2026 Cyril Jacquet
+about-copyright = © { $years } { $holder }
 about-close = Luk
+about-whats-new = Nyt i denne version
+about-whats-new-title = Nyt i version { $version }
+about-whats-new-date = Udgivet { $date }
+about-whats-new-date-english = Udgivet { $date }. Disse noter er på engelsk.
+about-copy-version = Kopiér versionsoplysninger
+about-copy-version-done = Versionsoplysninger kopieret
+about-copy-version-failed = Versionsoplysningerne kunne ikke kopieres.
+about-links = Links
+about-link-website = Websted
+about-link-source = Kildekode
+about-link-report = Rapportér et problem
+about-built-with = Bygget med
+about-fonts = Skrifttyper
+about-license-section = Licens
+about-read-license = Læs licensen
+about-read-license-of = Læs licensen for { $name }
 
 ## Native (macOS) menu bar
 # Labels for the platform-standard App and Window menus mirrored into the macOS

@@ -39,6 +39,8 @@ Description:
 - "A project kept as a folder and saved as a single file with Save As keeps its pictures. The first save of the new file used to look for them in the wrong place and leave every one of them out"
 - "A project kept as a folder is never read or saved through a symbolic link any more. A scene, a list of the project or a footnote file that is a link to a file elsewhere stops the project from opening, and the message names it; a linked picture, stored file, comment or history entry is left out with a warning. Before, the file the link pointed at was read in, and a copy or a backup of the project carried it along"
 - "On the corkboard, the tooltips of Nested and Flat say what each one shows, and Settings ▸ Corkboard says that Flat shows everything in the container, folder cards included, in reading order. They only said that the choice applies to every corkboard, and that Flat showed every scene"
+- "The About page of the Launcher now shows what Help ▸ About shows, and both show more: links to the source code, Discord and the place to report a problem, the libraries and fonts Skribisto is built with, and the full text of each licence, all readable without a connection. The Launcher's page used to hold a single line"
+- "In About, What's new in this version opens this version's release notes, in English, and Copy version info puts the version, the system and how Skribisto was installed on the clipboard, ready to paste into a bug report"
 ---
 Version: 3.3.3
 Date: 2026-11-19

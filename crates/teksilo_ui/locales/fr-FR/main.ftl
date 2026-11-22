@@ -556,7 +556,6 @@ welcome-empty-recents = Aucune œuvre récente.
 # trouve aucune, à distinguer du cas où il n'y a aucune œuvre récente.
 welcome-no-matches = Aucune œuvre récente ne correspond à votre recherche.
 welcome-learn-soon = Guides et astuces à venir.
-welcome-about-blurb = Skribisto, une réécriture en Rust + Teksilo de l’application d’écriture.
 # Les *…* sont du balisage, pas de la décoration : ils mettent la ligne en
 # italique (rendue dans un serif italique). Conserver les astérisques.
 welcome-tagline = *Un endroit calme pour écrire de longs textes.*
@@ -3347,8 +3346,24 @@ about-update-flathub = Flathub tient cette copie à jour.
 about-update-distro = Votre distribution tient cette copie à jour.
 about-tagline = Une application d’écriture de romans pour la fiction longue, écrite en Rust avec la boîte à outils Teksilo.
 about-license = Distribué sous la Licence publique générale GNU, version 3.
-about-copyright = © 2026 Cyril Jacquet
+about-copyright = © { $years } { $holder }
 about-close = Fermer
+about-whats-new = Nouveautés de cette version
+about-whats-new-title = Nouveautés de la version { $version }
+about-whats-new-date = Publiée le { $date }
+about-whats-new-date-english = Publiée le { $date }. Ces notes sont en anglais.
+about-copy-version = Copier les informations de version
+about-copy-version-done = Informations de version copiées
+about-copy-version-failed = Les informations de version n’ont pas pu être copiées.
+about-links = Liens
+about-link-website = Site web
+about-link-source = Code source
+about-link-report = Signaler un problème
+about-built-with = Construit avec
+about-fonts = Polices
+about-license-section = Licence
+about-read-license = Lire la licence
+about-read-license-of = Lire la licence de { $name }
 
 ## Barre de menus native (macOS)
 # Libellés des menus standard « Application » et « Fenêtre » recopiés dans la

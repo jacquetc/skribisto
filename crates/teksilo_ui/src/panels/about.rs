@@ -3,15 +3,19 @@
 
 //! The **About** modal — Help ▸ About.
 //!
-//! Deliberately small and static: the app's name, the running version (from
+//! The header carries the app's name, the running version (from
 //! [`crate::version::app_version`], so a dev build shows its git description
-//! rather than a bare crate version), what it is, and the licence. There is no
-//! model behind it and nothing to configure, so unlike the other panels it takes
-//! no view-model and has no real/mock split.
+//! rather than a bare crate version) and the update line; the scrolling body is
+//! [`content::about_body`], which the Launcher's About pane shows too. There is
+//! no model behind it and nothing to configure, so unlike the other panels it
+//! takes no view-model and has no real/mock split.
 //!
 //! Shaped like [`LicensePanel`](super::license) — the same raised card with a
-//! header, a body and a footer — but without the scroll area, since the content
-//! is a handful of lines rather than a page of legal text.
+//! header, a scrolling body and a footer.
+
+pub(crate) mod content;
+pub(crate) mod credits;
+pub(crate) mod news;
 
 use teksilo::core::modal::{ModalCloseBehavior, ModalPresentation, ModalRequest};
 use teksilo::core::styles::PanelVariant;
@@ -19,11 +23,11 @@ use teksilo::prelude::*;
 use teksilo::res;
 use teksilo::widgets::{
     Button, ButtonVariant, Divider, Expand, FixedSize, HStack, IconButton, IconWidget, Padding,
-    Panel, Spacer, TextWidget, VStack,
+    Panel, ScrollArea, Spacer, TextWidget, VStack,
 };
 
-const CARD_W: f32 = 460.0;
-const CARD_H: f32 = 300.0;
+const CARD_W: f32 = 520.0;
+const CARD_H: f32 = 480.0;
 
 /// Present the About modal. Fired by the `app.about` global action, which
 /// `App::build` registers — see the note there on why it must be *global*.
@@ -65,17 +69,6 @@ impl Widget for AboutPanel {
         // is current, which is the usual case, leaving the header exactly as it
         // was.
         let update_line = crate::updates::UpdateLine::new(crate::updates::view_model());
-
-        // On a channel somebody else keeps current there is no check and no line,
-        // so this says who is responsible instead. Without it, a Flathub reader
-        // finds an application that never mentions versions and cannot tell that
-        // from one whose check is broken.
-        let managed = crate::updates::Channel::current()
-            .managed_by()
-            .map(|by| match by {
-                crate::updates::ManagedBy::Flathub => tr!(about_update_flathub()),
-                crate::updates::ManagedBy::Distribution => tr!(about_update_distro()),
-            });
 
         let footer = HStack::new().spacing(8.0).child(Spacer::new()).child(
             Button::new(tr!(about_close()))
@@ -127,26 +120,9 @@ impl Widget for AboutPanel {
                         Divider
                     }
                     Expand::vertical {
-                        Padding::symmetric(18.0, 20.0) {
-                            VStack {
-                                spacing: 10.0
-                                TextWidget::new(tr!(about_tagline())) {
-                                    style: TextStyleRole::Body
-                                }
-                                TextWidget::new(tr!(about_license())) {
-                                    style: TextStyleRole::Small
-                                    color: TextRole::Secondary
-                                }
-                                TextWidget::new(tr!(about_copyright())) {
-                                    style: TextStyleRole::Small
-                                    color: TextRole::Secondary
-                                }
-                                child_opt: managed.map(|line| {
-                                    TextWidget::new(line)
-                                        .style(TextStyleRole::Small)
-                                        .color(TextRole::Secondary)
-                                })
-                                Spacer
+                        ScrollArea::new() {
+                            Padding::symmetric(18.0, 20.0) {
+                                child: content::about_body()
                             }
                         }
                     }

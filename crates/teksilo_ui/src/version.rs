@@ -66,9 +66,102 @@ fn strip_v(tag: &str) -> &str {
         .unwrap_or(tag)
 }
 
+/// The build this binary is: what a translation report carries in its machine block
+/// and what About ▸ **Copy version info** puts on the clipboard.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct BuildInfo {
+    /// `3.3.1`, `3.3.1+5c62c8cac`, or a bare hash in a clone with no tags.
+    pub version: String,
+    /// The crate's own version, the fallback the triage tries when `version` names
+    /// no tag.
+    pub crate_version: String,
+    /// The teksilo-widgets version, or `None` when the build could not tell.
+    pub framework: Option<String>,
+    /// [`crate::updates::Channel::stamp`].
+    pub channel: &'static str,
+    /// `linux`, `macos`, `windows`.
+    pub os: &'static str,
+}
+
+impl BuildInfo {
+    /// This binary.
+    pub(crate) fn current() -> Self {
+        Self {
+            version: crate::version::app_version(),
+            crate_version: env!("CARGO_PKG_VERSION").to_string(),
+            framework: Some(env!("SKRIBISTO_TEKSILO_VERSION").to_string())
+                .filter(|v| !v.is_empty()),
+            channel: crate::updates::Channel::current().stamp(),
+            os: std::env::consts::OS,
+        }
+    }
+
+    /// The lines **Copy version info** puts on the clipboard, under `app`, the
+    /// edition's display name: what a bug report needs to name the build, and
+    /// nothing about the writer. In English whatever the interface language, like
+    /// the report it is pasted into; the framework line is left out when the build
+    /// could not tell it.
+    pub(crate) fn summary(&self, app: &str) -> String {
+        let mut lines = vec![format!("{app} {}", self.version)];
+        if let Some(framework) = &self.framework {
+            lines.push(format!("Teksilo {framework}"));
+        }
+        lines.push(format!("Channel: {}", self.channel));
+        lines.push(format!("OS: {} {}", self.os, std::env::consts::ARCH));
+        lines.join("\n")
+    }
+}
+
+/// The release a displayed version belongs to: `3.3.1` for `3.3.1` and for a build
+/// past it (`3.3.1+5c62c8cac`), `None` for a bare commit hash, which names no release.
+pub(crate) fn release_of(version: &str) -> Option<&str> {
+    let release = version.split_once('+').map_or(version, |(tag, _)| tag);
+    release
+        .starts_with(|c: char| c.is_ascii_digit())
+        .then_some(release)
+        .filter(|r| r.contains('.'))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_build_past_a_release_belongs_to_that_release() {
+        assert_eq!(release_of("3.3.1"), Some("3.3.1"));
+        assert_eq!(release_of("3.3.1+5c62c8cac"), Some("3.3.1"));
+        assert_eq!(release_of("3.0.0-alpha1+5c62c8cac"), Some("3.0.0-alpha1"));
+        // A clone with no tags shows a bare hash, which names no release, even one
+        // that happens to start with a digit.
+        assert_eq!(release_of("5c62c8cac"), None);
+        assert_eq!(release_of("deadbee"), None);
+    }
+
+    #[test]
+    fn the_version_summary_names_the_build_and_nothing_else() {
+        let build = BuildInfo {
+            version: "3.3.1+5c62c8cac".to_string(),
+            crate_version: "3.0.0".to_string(),
+            framework: Some("0.28.1".to_string()),
+            channel: "flathub",
+            os: "linux",
+        };
+        let arch = std::env::consts::ARCH;
+        assert_eq!(
+            build.summary("Skribisto"),
+            format!(
+                "Skribisto 3.3.1+5c62c8cac\nTeksilo 0.28.1\nChannel: flathub\nOS: linux {arch}"
+            )
+        );
+        let unknown = BuildInfo {
+            framework: None,
+            ..build
+        };
+        assert!(
+            !unknown.summary("Skribisto").contains("Teksilo"),
+            "a framework the build could not tell is left out, not printed empty"
+        );
+    }
 
     #[test]
     fn on_a_tag_shows_the_tag_alone() {

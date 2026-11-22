@@ -87,6 +87,9 @@ pub const COMMUNITY_APPLICATION: &str = "Skribisto";
 /// [`crate::updates`] for why this is not the GitHub API.
 pub const COMMUNITY_UPDATE_FEED: &str = "https://www.skribisto.eu/updates/stable.json";
 
+/// Who the About box names in its copyright line, unless an edition says otherwise.
+pub const COMMUNITY_COPYRIGHT_HOLDER: &str = "Cyril Jacquet";
+
 /// Who the running application is.
 ///
 /// The triple follows the `directories` / `etcetera` convention and picks the
@@ -126,6 +129,9 @@ pub struct AppIdentity {
     /// [`crate::shared::project_links`]. A surface whose link is unset is not
     /// built.
     pub links: ProjectLinks,
+    /// Who the About box names after the ©. Defaults to
+    /// [`COMMUNITY_COPYRIGHT_HOLDER`]: the code every edition is built on is his.
+    pub copyright_holder: String,
 }
 
 /// An application name as the filesystem and the desktop spell it: lowercased,
@@ -157,6 +163,7 @@ impl AppIdentity {
             application,
             update_feed: None,
             links: ProjectLinks::default(),
+            copyright_holder: COMMUNITY_COPYRIGHT_HOLDER.to_string(),
         }
     }
 
@@ -178,6 +185,13 @@ impl AppIdentity {
     #[must_use]
     pub fn with_links(mut self, links: ProjectLinks) -> Self {
         self.links = links;
+        self
+    }
+
+    /// Override who the About box's copyright line names.
+    #[must_use]
+    pub fn with_copyright_holder(mut self, holder: impl Into<String>) -> Self {
+        self.copyright_holder = holder.into();
         self
     }
 
@@ -325,6 +339,11 @@ pub fn links() -> ProjectLinks {
 /// it, and `open_registry`'s for how the elections stay separate anyway.
 pub fn family_paths() -> Option<AppPaths> {
     AppIdentity::community().app_paths()
+}
+
+/// Who the About box's copyright line names. See [`AppIdentity::copyright_holder`].
+pub fn copyright_holder() -> String {
+    current().copyright_holder
 }
 
 /// What the writer sees. Product names are **data**, never translated — the same
