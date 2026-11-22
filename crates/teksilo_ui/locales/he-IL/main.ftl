@@ -885,6 +885,7 @@ new-work-create = יצירת הפרויקט
 new-work-step-details = פרטים
 new-work-step-language = שפה ומבנה
 new-work-step-template = תבנית
+new-work-step-starters = ארגון
 new-work-back = הקודם
 new-work-next = הבא
 new-work-documents-title = פרויקט חדש ממסמכים

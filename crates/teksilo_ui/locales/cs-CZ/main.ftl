@@ -901,6 +901,7 @@ new-work-create = Vytvořit projekt
 new-work-step-details = Podrobnosti
 new-work-step-language = Jazyk a struktura
 new-work-step-template = Šablona
+new-work-step-starters = Uspořádání
 new-work-back = Zpět
 new-work-next = Další
 new-work-documents-title = Nový projekt z dokumentů

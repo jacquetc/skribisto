@@ -845,6 +845,7 @@ new-work-create = Projekt létrehozása
 new-work-step-details = Adatok
 new-work-step-language = Nyelv és szerkezet
 new-work-step-template = Sablon
+new-work-step-starters = Rendszerezés
 new-work-back = Vissza
 new-work-next = Tovább
 new-work-documents-title = Új projekt dokumentumokból

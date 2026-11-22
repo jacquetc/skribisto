@@ -881,6 +881,7 @@ new-work-create = Luo projekti
 new-work-step-details = Yksityiskohdat
 new-work-step-language = Kieli ja rakenne
 new-work-step-template = Malli
+new-work-step-starters = Järjestäminen
 new-work-back = Takaisin
 new-work-next = Seuraava
 new-work-documents-title = Uusi projekti asiakirjoista

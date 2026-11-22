@@ -914,6 +914,7 @@ new-work-create = Δημιουργία έργου
 new-work-step-details = Λεπτομέρειες
 new-work-step-language = Γλώσσα και δομή
 new-work-step-template = Πρότυπο
+new-work-step-starters = Οργάνωση
 new-work-back = Πίσω
 new-work-next = Επόμενο
 

@@ -881,6 +881,7 @@ new-work-create = Opprett prosjekt
 new-work-step-details = Detaljer
 new-work-step-language = Språk og struktur
 new-work-step-template = Mal
+new-work-step-starters = Organisering
 new-work-back = Tilbake
 new-work-next = Neste
 new-work-documents-title = Nytt prosjekt fra dokumenter

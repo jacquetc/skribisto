@@ -883,6 +883,7 @@ new-work-create = Criar projeto
 new-work-step-details = Detalhes
 new-work-step-language = Idioma e estrutura
 new-work-step-template = Modelo
+new-work-step-starters = Organização
 new-work-back = Voltar
 new-work-next = Seguinte
 new-work-documents-title = Novo projeto a partir de documentos

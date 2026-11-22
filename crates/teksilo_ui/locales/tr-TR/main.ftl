@@ -880,6 +880,7 @@ new-work-create = Projeyi oluştur
 new-work-step-details = Ayrıntılar
 new-work-step-language = Dil ve yapı
 new-work-step-template = Şablon
+new-work-step-starters = Düzen
 new-work-back = Geri
 new-work-next = İleri
 new-work-documents-title = Belgelerden yeni proje

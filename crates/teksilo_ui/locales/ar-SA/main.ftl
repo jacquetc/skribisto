@@ -925,6 +925,7 @@ new-work-create = إنشاء المشروع
 new-work-step-details = التفاصيل
 new-work-step-language = اللغة والبنية
 new-work-step-template = القالب
+new-work-step-starters = التنظيم
 new-work-back = رجوع
 new-work-next = التالي
 new-work-documents-title = مشروع جديد من مستندات

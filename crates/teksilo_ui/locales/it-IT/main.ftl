@@ -855,6 +855,7 @@ new-work-create = Crea progetto
 new-work-step-details = Dettagli
 new-work-step-language = Lingua e struttura
 new-work-step-template = Modello
+new-work-step-starters = Organizzazione
 new-work-back = Indietro
 new-work-next = Avanti
 new-work-documents-title = Nuovo progetto da documenti

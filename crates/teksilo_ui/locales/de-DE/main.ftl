@@ -846,6 +846,7 @@ new-work-create = Projekt erstellen
 new-work-step-details = Details
 new-work-step-language = Sprache und Struktur
 new-work-step-template = Vorlage
+new-work-step-starters = Organisation
 new-work-back = Zurück
 new-work-next = Weiter
 new-work-documents-title = Neues Projekt aus Dokumenten

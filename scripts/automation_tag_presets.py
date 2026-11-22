@@ -774,9 +774,10 @@ def wizard_button(names):
 NEXT_BTN = ("next", "suivant")                                  # new-work-next
 CREATE_BTN = ("create work", "créer l’œuvre", "créer l'œuvre")  # new-work-create
 
-# The wizard's three steps: name and place, then language and structure, then
-# the template. Create Work is on the last one.
-for step in (2, 3):
+# The wizard's four steps: name and place, then language and structure, then
+# the template, then the organization (tags, workflow, note templates). Create
+# Work is on the last one.
+for step in (2, 3, 4):
     next_btn = wizard_button(NEXT_BTN)
     if not next_btn:
         dump(s, f"no Next button before step {step}")

@@ -885,6 +885,7 @@ new-work-create = Створити проєкт
 new-work-step-details = Подробиці
 new-work-step-language = Мова і структура
 new-work-step-template = Шаблон
+new-work-step-starters = Організація
 new-work-back = Назад
 new-work-next = Далі
 new-work-documents-title = Новий проєкт із документів

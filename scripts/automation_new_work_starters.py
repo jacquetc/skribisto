@@ -4,7 +4,7 @@
 
 """Live-app probe: the New Work starter pickers say what they create, and lead back to none.
 
-On the wizard's last page, the Tags, Workflow and Note templates pickers each show
+On the wizard's last page, Organization, the Tags, Workflow and Note templates pickers each show
 a line under the list naming what the current choice lays down. "None" used to be
 only the placeholder of the Tags, Note templates and Book structure pickers, so
 once the writer had picked something there was no way back to it; it is now the
@@ -14,7 +14,7 @@ value at all.
 
 Asserts, against the running app (Ctrl+N over a project, en-US):
 
-  1. on the Template page, Tags reads "No tags", Note templates "No templates" and
+  1. on the Organization page, Tags reads "No tags", Note templates "No templates" and
      Workflow "Drafting", and only the Stages line is shown;
   2. picking Fantasy, Plume Creator and Essentials shows each choice's names;
   3. picking "No tags", "Drafting" and "No templates" again works, and hides the
@@ -153,10 +153,10 @@ try:
                     "the New Work form")
     session.call("set_value", {"node": name["id"], "value": "Starter Probe"})
     session.settle(3)
-    click_button("Next")
-    click_button("Next")
+    for _ in range(3):
+        click_button("Next")
     wait_for(lambda: any(n.get("role") == "ComboBox" and n.get("label") == "Tags"
-                         for n in nodes()), "the Template page")
+                         for n in nodes()), "the Organization page")
 
     # 1. What an untouched page shows.
     start = {label: combo(label).get("value") for label in ("Tags", "Workflow", "Note templates")}
@@ -181,7 +181,8 @@ try:
     expect_lines({"Stages": ["To do", "Final"]}, "back to none")
     print("PASS 3: No tags and No templates can be chosen again, and hide their lines")
 
-    # 4. Book structure, on the page before.
+    # 4. Book structure, two pages before.
+    click_button("Back")
     click_button("Back")
     wait_for(lambda: any(n.get("role") == "ComboBox" and n.get("label") == "Book structure"
                          for n in nodes()), "the Language & structure page")

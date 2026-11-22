@@ -1029,6 +1029,7 @@ new-work-create = Creează proiectul
 new-work-step-details = Detalii
 new-work-step-language = Limbă și structură
 new-work-step-template = Șablon
+new-work-step-starters = Organizare
 new-work-back = Înapoi
 new-work-next = Înainte
 # The same wizard, opened from the Launcher's "From documents…"

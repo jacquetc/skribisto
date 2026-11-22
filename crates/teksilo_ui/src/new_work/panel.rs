@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-//! The New Work modal — create a work, as a three-step wizard.
+//! The New Work modal — create a work, as a four-step wizard.
 //!
 //! Built on Teksilo's [`Stepper`], the same shape as
-//! the Import documents wizard: **Details → Language & structure → Template**,
+//! the Import documents wizard: **Details → Language & structure → Template →
+//! Organization**,
 //! with the framework's indicator strip and Cancel / Back / Next / Create Work
 //! footer. See `teksilo` docs `widgets/stepper.md`.
 //!
@@ -15,9 +16,12 @@
 //! template is pinned to None, because every template lays down a manuscript the
 //! import would then be poured beside.
 //!
-//! That branch is **four declared steps**, the last two gated on the purpose
-//! with `Step::visible_when` — the hidden one leaves navigation, the indicator
-//! strip and the a11y tree, so either door is three pages long. Declaring both
+//! That branch is **five declared steps**, the last three gated on the purpose
+//! with `Step::visible_when` — a hidden one leaves navigation, the indicator
+//! strip and the a11y tree, so an ordinary project is four pages long and one
+//! from documents three. (Template and Organization are both the ordinary door's:
+//! an import brings its own structure, and its project starts with the default
+//! starters.) Declaring both
 //! keeps one builder and lets a test ask which step the flow actually reaches;
 //! the alternative (a `match` producing two step lists) put the shared builder
 //! inside the branch and made that question unaskable.
@@ -32,7 +36,9 @@
 //!   2. **Language & structure** — the project's default writing language and the
 //!      paratext tradition its book opens and closes with.
 //!   3. **Template** — how much book to generate, and whether its chapters are
-//!      flat. Finish (`Create Work`) commits.
+//!      flat.
+//!   4. **Organization** — the tag palette, the workflow ladder and the note
+//!      templates the project starts with. Finish (`Create Work`) commits.
 //!
 //! No step past the first carries a gate: every control there is a picker with a
 //! valid default, so there is nothing left to be invalid about. Finish itself
@@ -88,19 +94,22 @@ use crate::shared::form_checks::{RETRY_REFUSED_AFTER, retry_refusals};
 const CARD_W: f32 = 640.0;
 const CARD_H: f32 = 620.0;
 
-/// Steps **declared**, which is not how many a given wizard shows: the two last
-/// ones are mutually exclusive, gated on [`NewWorkPurpose`] (see `build`).
-const STEP_COUNT: usize = 4;
+/// Steps **declared**, which is not how many a given wizard shows: the last three
+/// are the branch, gated on [`NewWorkPurpose`] (see `build`).
+const STEP_COUNT: usize = 5;
 
-/// The declared step indices. The last two are the branch: only one is ever
-/// visible, so the flow is always three pages long.
+/// The declared step indices. Template and Organization are an ordinary project's,
+/// Import is the from-documents one's.
 // Step ordinals the wizard's own step-order test names; the panel itself walks
 // the steps rather than indexing them.
 #[cfg(test)]
 const STEP_TEMPLATE: usize = 2;
 // See STEP_TEMPLATE.
 #[cfg(test)]
-const STEP_IMPORT: usize = 3;
+const STEP_STARTERS: usize = 3;
+// See STEP_TEMPLATE.
+#[cfg(test)]
+const STEP_IMPORT: usize = 4;
 
 pub struct NewWorkPanel {
     /// Owns the form's signals for this modal session (created once in `new`).
@@ -651,7 +660,6 @@ fn language_step(vm: &NewWorkViewModel) -> impl Widget + use<> {
 }
 
 /// Step three — how much book to generate, and whether its chapters are flat.
-/// Finish commits from here.
 fn template_step(vm: &NewWorkViewModel) -> impl Widget + use<> {
     step_page(
         FormLayout::new()
@@ -669,13 +677,25 @@ fn template_step(vm: &NewWorkViewModel) -> impl Widget + use<> {
                     .label(tr!(new_work_chapter_scene()))
                     .enabled(vm.chapter_scene_applicable())
                     .rich_tooltip_content(chapter_scene_tooltip()),
-            )
-            // ── Tags: the palette the project starts with. Here rather than on
-            // its own step because it is the same question the template asks —
-            // what is already in the project on the first morning — and because
-            // "none" is the default, so a writer who does not care walks past it
-            // without a decision to make. ────────────────────────────────────
-            .full_width(Divider::new())
+            ),
+    )
+}
+
+/// Step four — what the project starts with beyond its book: the tag palette, the
+/// workflow ladder and the note templates. Finish commits from here.
+///
+/// Its own page rather than the bottom of the Template one, where all three sat below
+/// the fold: the template list alone fills that page, and the question there is how
+/// much book, while this one is how the writer will sort and track what they write.
+/// Every picker has a default ("none" for two of them), so a writer who does not care
+/// walks past it without a decision to make.
+fn starters_step(vm: &NewWorkViewModel) -> impl Widget + use<> {
+    step_page(
+        FormLayout::new()
+            .label(tr!(new_work_step_starters()))
+            .label_gap(16.0)
+            .row_spacing(18.0)
+            // ── Tags: the palette the project starts with. ─────────────────
             .line(
                 field_label(tr!(new_work_tags())),
                 VStack::new()
@@ -779,6 +799,7 @@ impl Widget for NewWorkPanel {
         let details_vm = self.vm.clone();
         let language_vm = self.vm.clone();
         let template_vm = self.vm.clone();
+        let starters_vm = self.vm.clone();
         let import_vm = self.vm.clone();
         let create_vm = self.vm.clone();
         let purpose = self.vm.purpose();
@@ -792,10 +813,10 @@ impl Widget for NewWorkPanel {
             NewWorkPurpose::FromDocuments => tr!(new_work_create_and_import()),
         };
 
-        // Both last steps are **declared**, each gated on the purpose that
-        // selects it (`Step::visible_when`): the hidden one drops out of
+        // The branch's steps are all **declared**, each gated on the purpose that
+        // selects it (`Step::visible_when`): a hidden one drops out of
         // navigation, out of the indicator strip and out of the a11y tree, and
-        // the flow ends on whichever survives. Two `.step(..)` arms in a `match`
+        // the flow ends on the last that survives. Two `.step(..)` arms in a `match`
         // was the old shape, and it put the shared builder inside the branch.
         // Not `content_boxed` on one step: the *title* differs too ("Template"
         // vs "Import"), and a title is not reactive.
@@ -822,6 +843,11 @@ impl Widget for NewWorkPanel {
                 Step::new(tr!(new_work_step_template()))
                     .visible_when(is_project)
                     .content(move || template_step(&template_vm)),
+            )
+            .step(
+                Step::new(tr!(new_work_step_starters()))
+                    .visible_when(is_project)
+                    .content(move || starters_step(&starters_vm)),
             )
             .step(
                 Step::new(tr!(new_work_step_import()))
@@ -955,6 +981,7 @@ mod tests {
             ),
             ("language", Box::new(language_step(&vm))),
             ("template", Box::new(template_step(&vm))),
+            ("starters", Box::new(starters_step(&vm))),
             // The from-documents variants: a language step with no paratext row,
             // and the "what happens next" page in place of the templates.
             ("language/documents", Box::new(language_step(&documents))),
@@ -998,17 +1025,17 @@ mod tests {
         (controller, tree, id)
     }
 
-    /// Both last steps are declared; only the one this door needs is reachable.
+    /// Every branch step is declared; only the ones this door needs are reachable.
     ///
-    /// The wizard is three pages long either way — walking it must never land on
-    /// the branch that does not apply, and Back must not find it either. (The
-    /// two used to be separate step *lists*, which made "is the other one
-    /// reachable?" an unaskable question.)
+    /// An ordinary project walks Template then Organization, one from documents
+    /// goes straight to Import — walking it must never land on a step of the other
+    /// door, and Back must not find one either. (The two used to be separate step
+    /// *lists*, which made "is the other one reachable?" an unaskable question.)
     #[test]
-    fn only_the_last_step_this_purpose_needs_is_reachable() {
-        for (from_documents, wanted, hidden) in [
-            (false, STEP_TEMPLATE, STEP_IMPORT),
-            (true, STEP_IMPORT, STEP_TEMPLATE),
+    fn only_the_steps_this_purpose_needs_are_reachable() {
+        for (from_documents, branch) in [
+            (false, vec![STEP_TEMPLATE, STEP_STARTERS]),
+            (true, vec![STEP_IMPORT]),
         ] {
             let (ctrl, _tree, _id) = mounted(from_documents);
             assert_eq!(ctrl.current(), 0, "wizards open on Details");
@@ -1016,16 +1043,28 @@ mod tests {
             ctrl.next();
             assert_eq!(ctrl.current(), 1, "then Language & structure");
 
+            for &wanted in &branch {
+                ctrl.next();
+                assert_eq!(
+                    ctrl.current(),
+                    wanted,
+                    "from_documents={from_documents}: the flow must walk its own steps"
+                );
+            }
+            // Next on the last page goes nowhere: the flow ends there.
             ctrl.next();
             assert_eq!(
                 ctrl.current(),
-                wanted,
+                *branch.last().unwrap_or(&1),
                 "from_documents={from_documents}: the flow must end on its own last step"
             );
-            assert_ne!(ctrl.current(), hidden, "and never on the hidden one");
 
-            // Back retraces the pages actually visited — the hidden step is not
-            // one of them.
+            // Back retraces the pages actually visited — a hidden step is not one
+            // of them.
+            for &wanted in branch.iter().rev().skip(1) {
+                ctrl.back();
+                assert_eq!(ctrl.current(), wanted);
+            }
             ctrl.back();
             assert_eq!(ctrl.current(), 1);
         }

@@ -5,9 +5,9 @@
 """Drive a live Skribisto via the teksilo automation MCP bridge and verify the
 New Work **wizard** end-to-end.
 
-The modal is a three-step `Stepper` (Details → Language & structure →
-Template), so this script walks all three: the old one-page form no longer
-exists and a single structural assertion could not see past step one.
+The modal is a four-step `Stepper` (Details → Language & structure →
+Template → Organization), so this script walks all four: the old one-page form
+no longer exists and a single structural assertion could not see past step one.
 
 Flow: launch the app (no CLI arg) → the **Launcher window** opens (the
 Welcome UI is a real window now, not a modal — see `teksilo_ui::main`'s module
@@ -18,8 +18,9 @@ by `automation_launcher_menu.py`) → **step 1**: assert the Form landmark, the
 Format RadioGroup, that Next is gated off while the name is empty, that focus
 opens on the name field, and that the reactive "Will create …/<slug>.skrib"
 path preview recomputes (single-file vs bundle) → **step 2**: the language and
-paratext ComboBoxes → **step 3**: the Template RadioGroup and an enabled
-"Create Work" → screenshot each. Assertions favour locale-independent anchors
+paratext ComboBoxes → **step 3**: the Template RadioGroup, and no Create Work yet
+→ **step 4**: the three starter ComboBoxes and an enabled "Create Work" →
+screenshot each. Assertions favour locale-independent anchors
 (roles + the .skrib path) so the harness passes whatever UI language is
 persisted.
 
@@ -512,15 +513,36 @@ if len(radios) < 5:
 if not checkboxes:
     fail("expected the 'Flat chapters' toggle on step 3", s.app, s.mcp, s.log)
 
+if s.by_role("ComboBox"):
+    s.dump("step 3")
+    fail("the tag, workflow and note template pickers belong to step 4, not step 3",
+         s.app, s.mcp, s.log)
+if find_create_button():
+    s.dump("step 3")
+    fail("'Create Work' must not be on step 3: Organization comes after it",
+         s.app, s.mcp, s.log)
+print("PASS: step 3 shows the templates + flat-chapters toggle, and Next")
+s.shot(os.path.join(fixture.SCRATCH, "sk-new-work-step3.png"))
+
+
+# ── Step 4 (Organization) ─────────────────────────────────────────────────────
+advance()
+combos = s.by_role("ComboBox")
+print(f"step 4 structure: ComboBox x{len(combos)}")
+# Tags, Workflow, Note templates — counted, not named, to stay locale-blind.
+if len(combos) != 3:
+    s.dump("step 4")
+    fail(f"expected the three starter pickers on step 4, got {len(combos)}",
+         s.app, s.mcp, s.log)
 create_btn = find_create_button()
 if not create_btn:
-    s.dump("step 3")
+    s.dump("step 4")
     fail("no 'Create Work' button on the last step", s.app, s.mcp, s.log)
 if not node_enabled(create_btn["id"]):
     fail("Create Work should be ENABLED on the last step (name + location are valid)",
          s.app, s.mcp, s.log)
-print("PASS: step 3 shows the templates + flat-chapters toggle, Create enabled")
-s.shot(os.path.join(fixture.SCRATCH, "sk-new-work-step3.png"))
+print("PASS: step 4 shows the tag, workflow and note template pickers, Create enabled")
+s.shot(os.path.join(fixture.SCRATCH, "sk-new-work-step4.png"))
 
 s.close()
 time.sleep(1.0)

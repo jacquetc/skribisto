@@ -881,6 +881,7 @@ new-work-create = Project aanmaken
 new-work-step-details = Details
 new-work-step-language = Taal en opbouw
 new-work-step-template = Sjabloon
+new-work-step-starters = Organisatie
 new-work-back = Terug
 new-work-next = Volgende
 new-work-documents-title = Nieuw project uit documenten

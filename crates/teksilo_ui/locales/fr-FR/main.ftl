@@ -1014,6 +1014,7 @@ new-work-create = Créer l’œuvre
 new-work-step-details = Détails
 new-work-step-language = Langue et structure
 new-work-step-template = Modèle
+new-work-step-starters = Organisation
 new-work-back = Précédent
 new-work-next = Suivant
 # Le même assistant, ouvert depuis « Depuis des documents… » du lanceur

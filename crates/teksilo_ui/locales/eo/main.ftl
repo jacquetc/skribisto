@@ -846,6 +846,7 @@ new-work-create = Krei verkon
 new-work-step-details = Detaloj
 new-work-step-language = Lingvo kaj strukturo
 new-work-step-template = Ŝablono
+new-work-step-starters = Organizo
 new-work-back = Reen
 new-work-next = Sekva
 new-work-documents-title = Nova verko el dokumentoj

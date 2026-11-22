@@ -817,6 +817,7 @@ new-work-create = 프로젝트 만들기
 new-work-step-details = 세부 정보
 new-work-step-language = 언어 및 구조
 new-work-step-template = 템플릿
+new-work-step-starters = 정리
 new-work-back = 뒤로
 new-work-next = 다음
 new-work-documents-title = 문서에서 새 프로젝트 만들기

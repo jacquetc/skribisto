@@ -1008,6 +1008,7 @@ new-work-create = Opret projekt
 new-work-step-details = Detaljer
 new-work-step-language = Sprog og struktur
 new-work-step-template = Skabelon
+new-work-step-starters = Organisering
 new-work-back = Tilbage
 new-work-next = Næste
 # The same wizard, opened from the Launcher's "From documents…"

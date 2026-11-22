@@ -817,6 +817,7 @@ new-work-create = プロジェクトを作成
 new-work-step-details = 詳細
 new-work-step-language = 言語と構造
 new-work-step-template = テンプレート
+new-work-step-starters = 整理
 new-work-back = 戻る
 new-work-next = 次へ
 new-work-documents-title = 文書から新しいプロジェクトを作成

@@ -923,6 +923,7 @@ new-work-create = Utwórz projekt
 new-work-step-details = Szczegóły
 new-work-step-language = Język i struktura
 new-work-step-template = Szablon
+new-work-step-starters = Organizacja
 new-work-back = Wstecz
 new-work-next = Dalej
 new-work-documents-title = Nowy projekt z dokumentów

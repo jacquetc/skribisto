@@ -1021,6 +1021,7 @@ new-work-create = Create Work
 new-work-step-details = Details
 new-work-step-language = Language & structure
 new-work-step-template = Template
+new-work-step-starters = Organization
 new-work-back = Back
 new-work-next = Next
 # The same wizard, opened from the Launcher's "From documents…"
