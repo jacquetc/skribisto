@@ -62,6 +62,7 @@ mod search_results_model;
 mod search_settings_file;
 mod search_tree_model;
 mod stats_model;
+mod story_bible_entries;
 mod stream_rows_model;
 mod text_replacement_rule_list_model;
 mod trash_tree_model;
@@ -131,6 +132,7 @@ pub use search_results_model::SearchResultsModel;
 pub use search_settings_file::{SearchPrefs, SearchSettingsService};
 pub use search_tree_model::{SearchNode, SearchTreeKey, SearchTreeModel};
 pub use stats_model::StatsModel;
+pub use story_bible_entries::{TAG_ORIGINS, discoverable_tag_ids_for_work};
 pub use stream_rows_model::{StreamLevel, StreamRow, StreamRowsModel};
 pub use text_replacement_rule_list_model::{
     TextReplacementRuleListModel, TextReplacementRuleRow, trigger_key,

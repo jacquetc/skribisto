@@ -49,3 +49,8 @@ story-bible-capture-where-confirm = Arkiver her
 story-bible-capture-where-needs-folder = Velg en mappe disse notatene skal ligge i.
 story-bible-capture-where-tag = Du blir spurt én gang. Notater med stikkordet «{ $tag }» havner her fra nå av, og du kan endre det senere under Innstillinger, Prosjekt, Stikkord.
 story-bible-capture-where-untagged = Du blir spurt én gang. Notater uten stikkord havner her fra nå av, og du kan endre det senere under Innstillinger, Prosjekt, Stikkord.
+
+# What a screen reader hears for a binder row that is a story bible entry: its icon
+# says so on screen, and this says it aloud. The second form keeps the row's label.
+binder-row-story-bible-entry = Oppføring i historiebibelen
+binder-row-story-bible-entry-with-label = Oppføring i historiebibelen, { $label }

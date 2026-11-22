@@ -825,8 +825,9 @@ impl EditorsViewModel {
         let Some(doc) = self.docs.open(item_id) else {
             return;
         };
+        let role = doc.role.clone();
         let sub_role = doc.sub_role.clone();
-        let trashed = doc.trashed.clone();
+        let tab_doc = doc.clone();
         let tab = self.make_tab(
             doc,
             self.distraction_free.clone(),
@@ -839,7 +840,7 @@ impl EditorsViewModel {
         // A freshly opened tab is never pinned: pinning is a gesture on a tab
         // that is already there, and the workspace restore re-applies a
         // remembered pin through `seed_pinned` once every tab has landed.
-        let info = self.tab_info(id, tab_title, &sub_role, &trashed, false);
+        let info = self.tab_info(id, tab_title, &role, &sub_role, &tab_doc, false);
         self.pane(side)
             .tabs
             .push(TabHandle::dynamic(id, "editor", info, tab));
@@ -957,10 +958,12 @@ impl EditorsViewModel {
         &self,
         id: TabId,
         caption: LocalizedString,
+        role: &frontend::common::entities::BinderItemRole,
         sub_role: &frontend::common::entities::BinderItemSubRole,
-        trashed: &Signal<bool>,
+        doc: &OpenDoc,
         pinned: bool,
     ) -> TabInfo {
+        let trashed = &doc.trashed;
         // A trashed item can be open (from the trash dock) — tint its tab icon
         // warning-orange, reactively (flips live on trash/restore, no rebuild).
         let icon_color = trashed.map(|t| {
@@ -970,17 +973,11 @@ impl EditorsViewModel {
                 TextRole::Primary
             }
         });
-        let sub_role = sub_role.clone();
+        let icon = self.tab_icon(role, sub_role, &doc.tags, pinned);
         let mut info = TabInfo::new()
             .title(caption)
             .closable(!pinned)
-            .icon(move || {
-                if pinned {
-                    crate::icons::editor::pinned_tab().color(icon_color.clone())
-                } else {
-                    crate::binder::icons::sub_role_icon(&sub_role).color(icon_color.clone())
-                }
-            });
+            .icon(move || icon().color(icon_color.clone()));
         if pinned {
             // The glyph replaced the sub-role icon, so hovering is the only way
             // left to learn *why* this tab has no cross.
@@ -995,6 +992,38 @@ impl EditorsViewModel {
         match installer {
             Some(install) => install(id, info),
             None => info,
+        }
+    }
+
+    /// The leading glyph of an editor tab, as a factory the tab strip calls whenever it
+    /// builds the tab's header.
+    ///
+    /// A pinned tab shows the drawing pin. Any other shows the item's type glyph, or the
+    /// story bible entry glyph for a note wearing a discoverable tag. A `TabInfo` icon is
+    /// a plain `IconWidget` rebuilt with the header, so entry status is decided here, at
+    /// that moment, against the doc's live tags and the store: no palette to go stale.
+    /// The header is rebuilt by [`Self::refresh_captions`], which runs after every item
+    /// update and every tag event, so a retag or a "find in prose" switch reaches the tab.
+    fn tab_icon(
+        &self,
+        role: &frontend::common::entities::BinderItemRole,
+        sub_role: &frontend::common::entities::BinderItemSubRole,
+        tags: &Signal<Vec<u64>>,
+        pinned: bool,
+    ) -> impl Fn() -> teksilo::widgets::IconWidget + 'static {
+        let app_ctx = self.app_ctx.clone();
+        let role = role.clone();
+        let sub_role = sub_role.clone();
+        let tags = tags.clone();
+        move || {
+            if pinned {
+                return crate::icons::editor::pinned_tab();
+            }
+            let can_be_entry =
+                skribisto_model::story_bible::shows_entry_glyph(&role, &sub_role, true);
+            let is_entry =
+                can_be_entry && crate::story_bible::tags_make_an_entry(&app_ctx, &tags.get());
+            crate::binder::icons::item_icon(&role, &sub_role, is_entry)
         }
     }
 
@@ -1718,14 +1747,10 @@ impl EditorsViewModel {
         let Some(mut handle) = pane.tabs.with_item(idx, |h| h.clone()) else {
             return;
         };
-        let Some(Some((item_id, sub_role, trashed))) = pane.tabs.with_item(idx, |h| {
-            h.payload.downcast_ref::<ContentTab>().map(|t| {
-                (
-                    t.item_id(),
-                    t.sub_role().clone(),
-                    t.open_doc.trashed.clone(),
-                )
-            })
+        let Some(Some((item_id, sub_role, doc))) = pane.tabs.with_item(idx, |h| {
+            h.payload
+                .downcast_ref::<ContentTab>()
+                .map(|t| (t.item_id(), t.sub_role().clone(), t.open_doc.clone()))
         }) else {
             return;
         };
@@ -1734,24 +1759,23 @@ impl EditorsViewModel {
             .zip(binder_ops::item_dto(&self.app_ctx, item_id))
             .map(|(names, it)| Self::caption_of(&it.title, names.generated_name(&it)));
         handle.info = match caption {
-            Some(caption) => self.tab_info(tab_id, caption, &sub_role, &trashed, pinned),
+            Some(caption) => self.tab_info(tab_id, caption, &doc.role, &sub_role, &doc, pinned),
             None => {
                 // No caption to rebuild with: keep the one on screen and patch the
                 // two fields that are safe to patch.
-                let icon_color = trashed.map(|t| {
+                let icon_color = doc.trashed.map(|t| {
                     if *t {
                         TextRole::Warning
                     } else {
                         TextRole::Primary
                     }
                 });
-                handle.info.clone().closable(!pinned).icon(move || {
-                    if pinned {
-                        crate::icons::editor::pinned_tab().color(icon_color.clone())
-                    } else {
-                        crate::binder::icons::sub_role_icon(&sub_role).color(icon_color.clone())
-                    }
-                })
+                let icon = self.tab_icon(&doc.role, &sub_role, &doc.tags, pinned);
+                handle
+                    .info
+                    .clone()
+                    .closable(!pinned)
+                    .icon(move || icon().color(icon_color.clone()))
             }
         };
         pane.tabs.set(idx, handle);
@@ -2485,6 +2509,13 @@ impl EditorsViewModel {
             let me = self.clone();
             ctx.subscribe_event(origin, move |_e: &Event| me.refresh_captions());
         }
+        // A tag's "find in prose" switch makes every open note wearing it an entry, or a
+        // plain note again, with no item event. Re-setting each tab rebuilds its header,
+        // and the header asks [`Self::tab_icon`] again.
+        for origin in crate::models::TAG_ORIGINS {
+            let me = self.clone();
+            ctx.subscribe_event(origin, move |_e: &Event| me.refresh_captions());
+        }
     }
 
     /// React to `BinderItem::Updated` for `item_ids`: **rebuild** any open tab whose item's
@@ -2623,7 +2654,7 @@ impl EditorsViewModel {
                 // `it.sub_role`, not `doc.sub_role`: a Promote is exactly the case
                 // where the document's cached type is the *old* one, and the
                 // freshly read DTO is the whole reason this rebuild is happening.
-                let info = self.tab_info(new_id, caption, &it.sub_role, &doc.trashed, pinned);
+                let info = self.tab_info(new_id, caption, &it.role, &it.sub_role, &doc, pinned);
                 pane.tabs.remove(i);
                 pane.tabs
                     .insert(i, TabHandle::dynamic(new_id, "editor", info, tab));
@@ -2748,6 +2779,10 @@ impl EditorsViewModel {
     /// rebuilt with a new caption around the *same* `ContentTab` — the same live documents,
     /// caret and scroll position are carried straight through, and the `TabWidget` keys its
     /// mounted content by tab id, which does not change.
+    ///
+    /// Re-setting a handle also rebuilds the tab's header, which calls its icon factory
+    /// again: that is how a note that became a story bible entry (see [`Self::tab_icon`])
+    /// changes glyph, so the tag events reach here too.
     pub fn refresh_captions(&self) {
         if self.primary.tabs.is_empty() && self.secondary.tabs.is_empty() {
             return;

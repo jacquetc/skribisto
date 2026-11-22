@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+  <!-- Story bible entry (a note Item wearing a discoverable tag) — the Note bubble made
+       solid, with its top-right corner cut off and set apart as a small triangle.
+       Solid is the whole distinction from Note, and it is drawn as ink mass, the one
+       difference a 16px raster keeps: an outline bubble against a filled one. The two
+       bars are knocked out (evenodd) so it still reads as a note with writing in it.
+       The corner is *detached*, never folded: a folded corner is Scene's, and an entry
+       that leaned toward the page family would lose the tail's whole job.
+       Filled shapes take integer bounds; the 1-unit gap along the cut is what keeps the
+       corner apart on the dark theme, where light-on-dark blooms. -->
+  <path fill-rule="evenodd" clip-rule="evenodd" fill="currentColor"
+        d="M3 3H9L14 8V10a1 1 0 0 1-1 1H6l-4 3V4a1 1 0 0 1 1-1Z
+           M5 6H8V7H5Z
+           M5 8H10V9H5Z"/>
+  <path fill="currentColor" d="M11 3H14V6Z"/>
+</svg>

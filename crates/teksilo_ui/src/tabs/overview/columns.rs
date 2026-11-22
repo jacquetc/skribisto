@@ -162,8 +162,9 @@ fn title_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
             if cx.is_editing {
                 return Box::new(cell_editor(&vm, row.uid, COL_TITLE));
             }
-            // The row's icon comes from its sub-role, exactly as in the outline tree — the
-            // same item must not wear two different glyphs in two views.
+            // The row's icon comes from its type and whether it is a story bible entry,
+            // exactly as in the outline tree: the same item must not wear two different
+            // glyphs in two views.
             let (label, badge) = crate::models::label_and_badge(
                 &row.title,
                 row.fallback_label.as_deref(),
@@ -174,7 +175,12 @@ fn title_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
                 row,
                 HStack::new()
                     .spacing(6.0)
-                    .child(crate::binder::icons::sub_role_icon(&row.sub_role))
+                    .child(crate::binder::icons::LiveItemIcon::new(
+                        row.role.clone(),
+                        row.sub_role.clone(),
+                        row.tags.clone(),
+                        vm.tags(),
+                    ))
                     // The ordinal, in the read cell only. The edit branch above returns
                     // early to `cell_editor`, which seeds from `row.title` — so neither the
                     // number nor the generated fallback name can end up inside a rename.

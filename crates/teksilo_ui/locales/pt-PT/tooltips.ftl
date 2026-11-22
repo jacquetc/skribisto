@@ -18,7 +18,7 @@ wm-folder-more = Um contentor para organizar os itens no arquivador da forma que
 wm-end-of-book = Marca onde termina um livro.
 wm-end-of-book-more = Todos os livros partilham uma única lista contínua, por isso o fim de um livro não é decidido pelo aninhamento. Este marcador indica que o [livro](:wm-book) termina aqui. Tudo o que vem depois pertence ao livro seguinte.
 wm-story-bible-entry = Uma nota sobre a sua história, com etiquetas e outros nomes.
-wm-story-bible-entry-more = Uma [nota](:wm-note) sobre uma personagem, um lugar ou qualquer outra coisa que mereça ser arquivada, criada com um nome, etiquetas, outros nomes e um modelo inicial, tudo num só passo. Depois disso, nada na página a distingue, pois continua a ser uma nota comum a que pode mudar o nome, as etiquetas ou o tipo como a qualquer outra.
+wm-story-bible-entry-more = Uma [nota](:wm-note) sobre uma personagem, um lugar ou qualquer outra coisa que mereça ser arquivada, criada com um nome, etiquetas, outros nomes e um modelo inicial, tudo num só passo. Continua a ser uma nota comum a que pode mudar o nome, as etiquetas ou o tipo como a qualquer outra. Enquanto tiver uma etiqueta de [procurar na prosa](:wm-find-in-prose), o seu ícone é uma nota preenchida em vez de uma nota em contorno.
 wm-synopsis = Um resumo de um item de escrita.
 wm-synopsis-more = Um resumo associado a qualquer item de escrita, normalmente um parágrafo curto, mas tão longo quanto quiser. Use-o para planear e navegar antes de a prosa existir. Fica ao lado do texto principal no editor.
 

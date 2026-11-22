@@ -53,3 +53,8 @@ story-bible-capture-where-confirm = Umieść tutaj
 story-bible-capture-where-needs-folder = Wybierz folder, do którego mają trafiać te notatki.
 story-bible-capture-where-tag = Pytanie pada tylko raz. Notatki ze znacznikiem „{ $tag }” będą od teraz trafiać tutaj; możesz to później zmienić w Ustawienia, Projekt, Znaczniki.
 story-bible-capture-where-untagged = Pytanie pada tylko raz. Notatki bez znacznika będą od teraz trafiać tutaj; możesz to później zmienić w Ustawienia, Projekt, Znaczniki.
+
+# What a screen reader hears for a binder row that is a story bible entry: its icon
+# says so on screen, and this says it aloud. The second form keeps the row's label.
+binder-row-story-bible-entry = Wpis biblii opowieści
+binder-row-story-bible-entry-with-label = Wpis biblii opowieści, { $label }

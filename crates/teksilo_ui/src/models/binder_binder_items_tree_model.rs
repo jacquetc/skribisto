@@ -105,6 +105,13 @@ pub struct TreeNode {
     /// The row's tag ids. Resolved to names and colours against the cached
     /// palette, never fetched per row.
     pub tags: Vec<u64>,
+    /// Whether this item is a story bible entry: it wears a discoverable tag
+    /// (`skribisto_model::story_bible::is_entry`). Computed at load against the Work's
+    /// tags, once, and refreshed by the tag events [`BinderBinderItemsTreeModel::wire`]
+    /// listens to, since a tag's "find in prose" switch changes it with no item event.
+    /// Whether the row *shows* the entry glyph is a narrower question, answered by
+    /// [`crate::binder::icons::item_icon`].
+    pub is_entry: bool,
     /// `BinderItem.is_exportable` — the writer's "leave this out of the
     /// exported book" flag. `true` for binder rows, which are never excluded.
     pub is_exportable: bool,
@@ -156,6 +163,7 @@ impl Default for TreeNode {
             number: None,
             fallback_label: None,
             tags: Vec::new(),
+            is_entry: false,
             role: BinderItemRole::default(),
             sub_title: String::new(),
             word_count_goal: 0,
@@ -208,6 +216,7 @@ impl TreeNode {
             number: None,
             fallback_label: None,
             tags: Vec::new(),
+            is_entry: false,
             role: BinderItemRole::default(),
             sub_title: String::new(),
             word_count_goal: 0,
@@ -461,7 +470,11 @@ impl BinderBinderItemsTreeModel {
             Origin::TrashManagement(TrashManagementEvent::TrashBinder),
             Origin::TrashManagement(TrashManagementEvent::RestoreItems),
             Origin::TrashManagement(TrashManagementEvent::EmptyTrash),
-        ];
+        ]
+        .into_iter()
+        // A tag's "find in prose" switch makes every note wearing it an entry, or a plain
+        // note again, and no item event says so.
+        .chain(crate::models::TAG_ORIGINS);
         // Coalesced: one reload per frame, not one per event. A bulk operation
         // publishes one event per item — measured, not assumed — and each reload
         // here re-queries the whole binder. See `models::coalesced_reload`.
@@ -797,6 +810,8 @@ mod rows {
         let numbers = crate::models::numbers_for_work(ctx, work_id, &metas);
         // For the untitled-row fallback below: a row's own language tag wins, else this.
         let work_langs = crate::models::work_language_tags(ctx, work_id);
+        // Once per load, not per row: which of this Work's tags make an item an entry.
+        let discoverable = crate::models::discoverable_tag_ids_for_work(ctx, work_id);
 
         for (binder_id, binder_items) in fetched {
             // Display scope: `Some(id)` shows only that binder (the switcher's
@@ -846,6 +861,7 @@ mod rows {
                         uid: it.uid,
                         number,
                         fallback_label,
+                        is_entry: skribisto_model::story_bible::is_entry(&it.tags, &discoverable),
                         tags: it.tags,
                         role: it.role,
                         sub_title: it.sub_title,
@@ -898,6 +914,15 @@ mod rows {
             105 => Some(3), // Confrontation
             _ => None,      // scenes, notes, the book-begin marker, loose text
         };
+        // Enough variety that a consumer rendering these fields shows something other
+        // than one uniform row: two scenes carry tags, and the character sketch wears the
+        // discoverable "character" tag, so the mock binder shows one story bible entry.
+        let tags: Vec<u64> = match id {
+            201 => vec![1, 2],
+            202 => vec![3],
+            106 => vec![5],
+            _ => Vec::new(),
+        };
         TreeRow::new(
             BinderTreeKey::Item(common::uid::fixture_uid(id)),
             TreeNode {
@@ -911,15 +936,14 @@ mod rows {
                 number,
                 // Every fixture row is titled, so none needs the untitled fallback.
                 fallback_label: None,
-                // Enough variety that a consumer rendering these fields shows
-                // something other than one uniform row: the notes carry tags,
-                // the book-begin marker is excluded from the export, and the
+                // The book-begin marker is excluded from the export, and the
                 // prologue-shaped row opts out of numbering.
-                tags: match id {
-                    201 => vec![1, 2],
-                    202 => vec![3],
-                    _ => Vec::new(),
-                },
+                tags: tags.clone(),
+                // The mock palette's discoverable tags are 5 ("character") and 6 ("place").
+                is_entry: skribisto_model::story_bible::is_entry(
+                    &tags,
+                    &std::collections::HashSet::from([5, 6]),
+                ),
                 role: if kind == "folder" {
                     BinderItemRole::Folder
                 } else {
@@ -1469,5 +1493,66 @@ mod filter_feedback_tests {
             "clearing puts it back exactly"
         );
         assert!(m.visible_count() > 0);
+    }
+
+    /// **A note is an entry exactly while it wears a discoverable tag, and the tree
+    /// follows a tag's switch with no item event.**
+    ///
+    /// The example's story bible is real: its character and place notes wear its
+    /// discoverable tags. Turning "find in prose" off on one of those tags changes no item
+    /// at all, so the only way the rows can learn it is the reload the tag event triggers,
+    /// which `reload` stands in for here (a headless context drops backend events).
+    #[test]
+    fn a_tags_find_in_prose_switch_decides_which_rows_are_entries() {
+        let f = filters();
+        let (m, ctx) = loaded(&f);
+        let items = frontend::commands::binder_item_commands::get_all_binder_item(&ctx)
+            .expect("the example's items");
+        let tags = frontend::commands::binder_tag_commands::get_all_binder_tag(&ctx)
+            .expect("the example's tags");
+        let discoverable = skribisto_model::story_bible::discoverable_tag_ids(
+            tags.iter().map(|t| (t.id, t.discoverable)),
+        );
+        let entries: Vec<_> = items
+            .iter()
+            .filter(|it| {
+                it.activated && skribisto_model::story_bible::is_entry(&it.tags, &discoverable)
+            })
+            .collect();
+        assert!(
+            !entries.is_empty(),
+            "the example must hold story bible entries, or this test proves nothing"
+        );
+        for it in &items {
+            let Some(key) = m.key_for_item(it.id) else {
+                continue;
+            };
+            let node = m.node(&key).expect("a loaded row");
+            assert_eq!(
+                node.is_entry,
+                skribisto_model::story_bible::is_entry(&it.tags, &discoverable),
+                "row '{}' disagrees with the rule",
+                it.title
+            );
+        }
+
+        // Switch "find in prose" off on every tag the first entry wears.
+        let entry = entries[0];
+        for tag in tags
+            .iter()
+            .filter(|t| t.discoverable && entry.tags.contains(&t.id))
+        {
+            let mut dto: frontend::direct_access::UpdateBinderTagDto = tag.clone().into();
+            dto.discoverable = false;
+            frontend::commands::binder_tag_commands::update_binder_tag(&ctx, None, &dto)
+                .expect("update the tag");
+        }
+        m.reload();
+        let key = m.key_for_item(entry.id).expect("the entry's row");
+        assert!(
+            !m.node(&key).expect("a loaded row").is_entry,
+            "with no discoverable tag left, '{}' is a plain note again",
+            entry.title
+        );
     }
 }

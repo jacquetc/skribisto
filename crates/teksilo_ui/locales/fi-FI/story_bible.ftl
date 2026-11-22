@@ -49,3 +49,8 @@ story-bible-capture-where-confirm = Sijoita tähän
 story-bible-capture-where-needs-folder = Valitse kansio, jonka sisään nämä muistiinpanot sijoitetaan.
 story-bible-capture-where-tag = Kysytään vain kerran. Tunnisteella ”{ $tag }” merkityt muistiinpanot sijoitetaan tästä lähtien tänne, ja voit muuttaa tätä myöhemmin kohdassa Asetukset ▸ Projekti ▸ Tunnisteet.
 story-bible-capture-where-untagged = Kysytään vain kerran. Tunnisteettomat muistiinpanot sijoitetaan tästä lähtien tänne, ja voit muuttaa tätä myöhemmin kohdassa Asetukset ▸ Projekti ▸ Tunnisteet.
+
+# What a screen reader hears for a binder row that is a story bible entry: its icon
+# says so on screen, and this says it aloud. The second form keeps the row's label.
+binder-row-story-bible-entry = Tietopankin merkintä
+binder-row-story-bible-entry-with-label = Tietopankin merkintä, { $label }

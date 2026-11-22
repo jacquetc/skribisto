@@ -49,3 +49,8 @@ story-bible-capture-where-confirm = Помістити сюди
 story-bible-capture-where-needs-folder = Виберіть теку, у яку помістити ці нотатки.
 story-bible-capture-where-tag = Запитується лише раз. Відтепер нотатки з міткою «{ $tag }» потраплятимуть сюди; змінити це можна пізніше в «Налаштування ▸ Проєкт ▸ Мітки».
 story-bible-capture-where-untagged = Запитується лише раз. Відтепер нотатки без мітки потраплятимуть сюди; змінити це можна пізніше в «Налаштування ▸ Проєкт ▸ Мітки».
+
+# What a screen reader hears for a binder row that is a story bible entry: its icon
+# says so on screen, and this says it aloud. The second form keeps the row's label.
+binder-row-story-bible-entry = Запис довідника історії
+binder-row-story-bible-entry-with-label = Запис довідника історії, { $label }

@@ -18,7 +18,7 @@ wm-folder-more = Kontejner, ve kterém si položky v pořadači uspořádáte, j
 wm-end-of-book = Označuje, kde kniha končí.
 wm-end-of-book-more = Všechny knihy sdílejí jeden souvislý seznam, takže konec knihy se neurčuje vnořením. Tato značka říká, že [kniha](:wm-book) končí zde. Vše za ní patří do další knihy.
 wm-story-bible-entry = Poznámka o vašem příběhu se štítky a alternativními jmény.
-wm-story-bible-entry-more = [Poznámka](:wm-note) o postavě, místě nebo čemkoli jiném, co stojí za zaznamenání, vytvořená v jediném kroku i se jménem, štítky, alternativními jmény a výchozí šablonou. Na stránce ji pak nic neodlišuje: zůstává obyčejnou poznámkou, kterou můžete přejmenovat, přeštítkovat nebo převést jako kteroukoli jinou.
+wm-story-bible-entry-more = [Poznámka](:wm-note) o postavě, místě nebo čemkoli jiném, co stojí za zaznamenání, vytvořená v jediném kroku i se jménem, štítky, alternativními jmény a výchozí šablonou. Zůstává obyčejnou poznámkou, kterou můžete přejmenovat, přeštítkovat nebo převést jako kteroukoli jinou. Dokud nese štítek [hledání v próze](:wm-find-in-prose), má místo obrysové ikony plnou ikonu poznámky.
 wm-synopsis = Shrnutí psací položky.
 wm-synopsis-more = Shrnutí připojené ke každé psací položce, obvykle krátký odstavec, ale může být libovolně dlouhé. Slouží k plánování a orientaci ještě předtím, než próza existuje. V editoru stojí vedle hlavního textu.
 

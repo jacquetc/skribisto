@@ -49,3 +49,8 @@ story-bible-capture-where-confirm = Buraya kaydet
 story-bible-capture-where-needs-folder = Bu notların içine gideceği bir klasör seçin.
 story-bible-capture-where-tag = Yalnızca bir kez sorulur. "{ $tag }" etiketli notlar bundan sonra buraya gidecek; bunu daha sonra Ayarlar, Proje, Etiketler'den değiştirebilirsiniz.
 story-bible-capture-where-untagged = Yalnızca bir kez sorulur. Etiketsiz notlar bundan sonra buraya gidecek; bunu daha sonra Ayarlar, Proje, Etiketler'den değiştirebilirsiniz.
+
+# What a screen reader hears for a binder row that is a story bible entry: its icon
+# says so on screen, and this says it aloud. The second form keeps the row's label.
+binder-row-story-bible-entry = Hikâye rehberi kaydı
+binder-row-story-bible-entry-with-label = Hikâye rehberi kaydı, { $label }

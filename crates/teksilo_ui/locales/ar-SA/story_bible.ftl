@@ -53,3 +53,8 @@ story-bible-capture-where-confirm = التدوين هنا
 story-bible-capture-where-needs-folder = اختر مجلدًا توضع هذه الملاحظات بداخله.
 story-bible-capture-where-tag = يُسأل هذا مرة واحدة. ستوضع الملاحظات الموسومة بـ«{ $tag }» هنا من الآن فصاعدًا، ويمكنك تغيير ذلك لاحقًا في الإعدادات ▸ المشروع ▸ الوسوم.
 story-bible-capture-where-untagged = يُسأل هذا مرة واحدة. ستوضع الملاحظات التي بلا وسم هنا من الآن فصاعدًا، ويمكنك تغيير ذلك لاحقًا في الإعدادات ▸ المشروع ▸ الوسوم.
+
+# What a screen reader hears for a binder row that is a story bible entry: its icon
+# says so on screen, and this says it aloud. The second form keeps the row's label.
+binder-row-story-bible-entry = مدخل مرجع القصة
+binder-row-story-bible-entry-with-label = مدخل مرجع القصة، { $label }

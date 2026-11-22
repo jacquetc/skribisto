@@ -43,3 +43,8 @@ story-bible-capture-where-confirm = ここに保存
 story-bible-capture-where-needs-folder = このノートを入れるフォルダーを選んでください。
 story-bible-capture-where-tag = この確認は初回のみです。今後「{ $tag }」タグの付いたノートはここに保存されます。設定 ▸ プロジェクト ▸ タグで変更できます。
 story-bible-capture-where-untagged = この確認は初回のみです。今後タグのないノートはここに保存されます。設定 ▸ プロジェクト ▸ タグで変更できます。
+
+# What a screen reader hears for a binder row that is a story bible entry: its icon
+# says so on screen, and this says it aloud. The second form keeps the row's label.
+binder-row-story-bible-entry = 設定資料集の項目
+binder-row-story-bible-entry-with-label = 設定資料集の項目、{ $label }

@@ -1112,7 +1112,7 @@ pub fn item_note_segmented(tab: &ContentTab) -> Box<dyn Widget> {
 /// A live reading of whether `tab`'s own item carries at least one tag flagged
 /// discoverable, which is the question [`item_note_segmented`] gates its third
 /// segment's *chip* by. [`Signal::map`] makes this a **derived** signal: every read
-/// re-runs [`any_tag_discoverable`] against whatever [`OpenDoc::tags`](crate::models::OpenDoc::tags)
+/// re-runs [`crate::story_bible::tags_make_an_entry`] against whatever [`OpenDoc::tags`](crate::models::OpenDoc::tags)
 /// currently holds, so `SegmentedControl` binding to it (via `Segment::visible`) picks
 /// up a tag edit the moment it fires, with no separate cache of this function's own to
 /// keep in step.
@@ -1129,23 +1129,7 @@ fn note_discoverable_signal(tab: &ContentTab) -> Signal<bool> {
     let app_ctx = tab.app_ctx();
     tab.open_doc
         .tags
-        .map(move |tags| any_tag_discoverable(&app_ctx, tags))
-}
-
-/// Whether any of `tag_ids` is flagged discoverable. Split out from
-/// [`note_discoverable_signal`] purely so the actual decision is testable against a
-/// real backend fixture without having to stand up a whole [`ContentTab`] (let alone a
-/// live `Signal`) just to reach it, the same shape
-/// [`crate::tabs::story_bible_place`] is tested at.
-fn any_tag_discoverable(ctx: &frontend::AppContext, tag_ids: &[u64]) -> bool {
-    if tag_ids.is_empty() {
-        return false;
-    }
-    frontend::commands::binder_tag_commands::get_binder_tag_multi(ctx, tag_ids)
-        .unwrap_or_default()
-        .into_iter()
-        .flatten()
-        .any(|t| t.discoverable)
+        .map(move |tags| crate::story_bible::tags_make_an_entry(&app_ctx, tags))
 }
 
 /// The body every folder container shares: a `SegmentedControl` over
@@ -1448,7 +1432,7 @@ mod item_note_segmented_tests {
     #[test]
     fn a_note_with_no_tags_at_all_is_not_discoverable() {
         let (ctx, _work_id) = seed_work();
-        assert!(!any_tag_discoverable(&ctx, &[]));
+        assert!(!crate::story_bible::tags_make_an_entry(&ctx, &[]));
     }
 
     /// A note carrying only ordinary, non-discoverable tags (a `status/…` workflow
@@ -1458,7 +1442,7 @@ mod item_note_segmented_tests {
     fn a_note_with_only_non_discoverable_tags_is_not_discoverable() {
         let (ctx, work_id) = seed_work();
         let workflow = create_tag(&ctx, work_id, false);
-        assert!(!any_tag_discoverable(&ctx, &[workflow]));
+        assert!(!crate::story_bible::tags_make_an_entry(&ctx, &[workflow]));
     }
 
     /// One discoverable tag among several is enough: the writer does not have to
@@ -1468,7 +1452,10 @@ mod item_note_segmented_tests {
         let (ctx, work_id) = seed_work();
         let workflow = create_tag(&ctx, work_id, false);
         let character = create_tag(&ctx, work_id, true);
-        assert!(any_tag_discoverable(&ctx, &[workflow, character]));
+        assert!(crate::story_bible::tags_make_an_entry(
+            &ctx,
+            &[workflow, character]
+        ));
     }
 
     /// A tag id the palette no longer holds (deleted between the read that
@@ -1478,7 +1465,7 @@ mod item_note_segmented_tests {
     #[test]
     fn a_stale_tag_id_that_no_longer_resolves_is_not_discoverable() {
         let (ctx, _work_id) = seed_work();
-        assert!(!any_tag_discoverable(&ctx, &[999_999]));
+        assert!(!crate::story_bible::tags_make_an_entry(&ctx, &[999_999]));
     }
 
     /// Before any discoverable tag exists, a seed naming "In prose" (a workspace

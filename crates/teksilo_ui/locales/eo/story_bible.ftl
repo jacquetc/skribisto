@@ -45,3 +45,8 @@ story-bible-capture-where-confirm = Konservi ĉi tie
 story-bible-capture-where-needs-folder = Elektu dosierujon por enhavi ĉi tiujn notojn.
 story-bible-capture-where-tag = Demandita unufoje. Notoj kun la etikedo «{ $tag }» ekde nun estos konservataj ĉi tie. Vi povas ŝanĝi tion en Agordoj ▸ Verko ▸ Etikedoj.
 story-bible-capture-where-untagged = Demandita unufoje. Notoj sen etikedo ekde nun estos konservataj ĉi tie. Vi povas ŝanĝi tion en Agordoj ▸ Verko ▸ Etikedoj.
+
+# What a screen reader hears for a binder row that is a story bible entry: its icon
+# says so on screen, and this says it aloud. The second form keeps the row's label.
+binder-row-story-bible-entry = Ero de la rakonta gvidilo
+binder-row-story-bible-entry-with-label = Ero de la rakonta gvidilo, { $label }

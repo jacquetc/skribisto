@@ -151,13 +151,15 @@ fn binder_tree(
             if !node.label.is_empty() {
                 item = item.subtitle(lit!(node.label.clone()));
             }
-            // Leading icon chosen purely by sub_role (binder rows get the binder
-            // glyph); tint follows the theme via `TextRole::Primary`.
+            // Leading icon chosen by sub_role, and by whether the item is a story bible
+            // entry (binder rows get the binder glyph); tint follows the theme via
+            // `TextRole::Primary`.
             let mut icon = if node.kind == "binder" {
                 crate::binder::icons::binder_icon()
             } else {
-                crate::binder::icons::kind_sub_role_icon(&node.kind, &node.sub_role)
+                crate::binder::icons::kind_item_icon(&node.kind, &node.sub_role, node.is_entry)
             };
+
             // Persistent "open document" marker: the row whose item is the
             // active editor tab shows an accent title + icon — independent of
             // selection and focus, so you can always see what's open. Reactive
@@ -185,8 +187,8 @@ fn binder_tree(
             let cm = menu_outline.clone();
             // Middle-click opens the item to the side (only for item rows).
             let mid = node.item_id.map(|id| (id, node.title.clone()));
-            Box::new(
-                item.context_menu(move |_pos, _ctx| {
+            let row = item
+                .context_menu(move |_pos, _ctx| {
                     // Operate on the right-clicked row directly — do NOT mutate the
                     // selection here: selecting rebuilds this row, destroying the
                     // menu's anchor (the overlay would fall back to the corner).
@@ -209,8 +211,17 @@ fn binder_tree(
                         return EventResponse::Handled;
                     }
                     EventResponse::Ignored
-                }),
-            ) as Box<dyn Widget>
+                });
+            // The glyph is silent to a screen reader, so an entry row says so in its
+            // description instead (keeping its label). Read from the node, which reloads
+            // on tag events, so it stays as live as the icon.
+            crate::binder::icons::describe_entry_row(
+                row,
+                &node.role,
+                &node.sub_role,
+                node.is_entry,
+                &node.label,
+            )
         },
     )
     // Adaptive row heights: each row measures to its content, so title-only

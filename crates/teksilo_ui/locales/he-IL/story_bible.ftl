@@ -49,3 +49,8 @@ story-bible-capture-where-confirm = תיוק כאן
 story-bible-capture-where-needs-folder = יש לבחור תיקייה שהפתקים האלה ייכנסו לתוכה.
 story-bible-capture-where-tag = השאלה נשאלת פעם אחת. פתקים עם התג "{ $tag }" ייכנסו לכאן מעכשיו, ואפשר לשנות זאת מאוחר יותר בהגדרות, פרויקט, תגים.
 story-bible-capture-where-untagged = השאלה נשאלת פעם אחת. פתקים ללא תג ייכנסו לכאן מעכשיו, ואפשר לשנות זאת מאוחר יותר בהגדרות, פרויקט, תגים.
+
+# What a screen reader hears for a binder row that is a story bible entry: its icon
+# says so on screen, and this says it aloud. The second form keeps the row's label.
+binder-row-story-bible-entry = רשומה בתיק הסיפור
+binder-row-story-bible-entry-with-label = רשומה בתיק הסיפור, { $label }

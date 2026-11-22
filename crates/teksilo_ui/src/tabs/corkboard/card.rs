@@ -53,7 +53,17 @@ impl Widget for CorkboardTile {
                 show: self.show_numbers.clone(),
                 root: None,
             })
-            .child(crate::binder::icons::sub_role_icon(&self.card.sub_role).icon_size(15.0))
+            .child(
+                // Live over the board's own palette, like the tag dots below: turning
+                // "find in prose" on for a tag makes its notes entries with no card event.
+                crate::binder::icons::LiveItemIcon::new(
+                    self.card.role.clone(),
+                    self.card.sub_role.clone(),
+                    self.card.tags.clone(),
+                    self.vm.tags(),
+                )
+                .icon_size(15.0),
+            )
             // The chapter's ordinal in the *book* — a second, distinct badge from
             // `CardNumber` above, which is its position on the *board*. Card #7 is
             // routinely Chapter 3, so fusing them would state a falsehood; they sit on

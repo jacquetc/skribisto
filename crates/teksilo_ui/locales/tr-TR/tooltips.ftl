@@ -18,7 +18,7 @@ wm-folder-more = Öğeleri dizinde size uygun düştüğü gibi düzenlemek içi
 wm-end-of-book = Bir kitabın bittiği yeri işaretler.
 wm-end-of-book-more = Tüm kitaplar tek ve kesintisiz bir listeyi paylaşır, bu yüzden bir kitabın sonu iç içe yerleşimle belirlenmez. Bu işaret, [kitabın](:wm-book) burada bittiğini söyler. Ondan sonra gelen her şey sonraki kitaba aittir.
 wm-story-bible-entry = Hikâyeniz hakkında etiketli, diğer adları olan bir not.
-wm-story-bible-entry-more = Bir kişi, bir yer ya da kaydetmeye değer başka bir şey hakkında, adı, etiketleri, diğer adları ve başlangıç şablonuyla tek adımda oluşturulan bir [not](:wm-note). Sonrasında sayfada onu ayıran hiçbir şey yoktur; diğerleri gibi yeniden adlandırabileceğiniz, yeniden etiketleyebileceğiniz ya da dönüştürebileceğiniz sıradan bir not olarak kalır.
+wm-story-bible-entry-more = Bir kişi, bir yer ya da kaydetmeye değer başka bir şey hakkında, adı, etiketleri, diğer adları ve başlangıç şablonuyla tek adımda oluşturulan bir [not](:wm-note). Diğerleri gibi yeniden adlandırabileceğiniz, yeniden etiketleyebileceğiniz ya da dönüştürebileceğiniz sıradan bir not olarak kalır. [Metinde bul](:wm-find-in-prose) etiketi taşıdığı sürece simgesi, çerçeve yerine dolu bir not olarak görünür.
 wm-synopsis = Bir yazı öğesinin özeti.
 wm-synopsis-more = Her yazı öğesine bağlı bir özet; genellikle kısa bir paragraf, ama dilediğiniz kadar uzun olabilir. Metin ortada yokken planlamak ve gezinmek için kullanın. Düzenleyicide ana metnin yanında durur.
 

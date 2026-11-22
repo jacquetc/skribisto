@@ -23,7 +23,7 @@ wm-folder-more = Un container pentru a aranja elementele în clasor cum vă conv
 wm-end-of-book = Marchează unde se termină o carte.
 wm-end-of-book-more = Toate cărțile împart o singură listă continuă, așa că sfârșitul unei cărți nu este stabilit prin imbricare. Acest marcaj spune că [cartea](:wm-book) se oprește aici. Tot ce urmează după el aparține cărții următoare.
 wm-story-bible-entry = O notă cu etichete și nume alternative despre povestea dumneavoastră.
-wm-story-bible-entry-more = O [notă](:wm-note) despre un personaj, un loc sau orice altceva merită consemnat, creată într-un singur pas cu nume, etichete, nume alternative și un șablon de pornire. Ulterior, nimic de pe pagină nu o mai deosebește: rămâne o notă obișnuită, pe care o puteți redenumi, reeticheta sau converti ca pe oricare alta.
+wm-story-bible-entry-more = O [notă](:wm-note) despre un personaj, un loc sau orice altceva merită consemnat, creată într-un singur pas cu nume, etichete, nume alternative și un șablon de pornire. Rămâne o notă obișnuită, pe care o puteți redenumi, reeticheta sau converti ca pe oricare alta. Cât timp poartă o etichetă cu [căutare în proză](:wm-find-in-prose), este afișată cu o pictogramă de notă plină în loc de una conturată.
 wm-synopsis = Un rezumat al unui element de scris.
 wm-synopsis-more = Un rezumat atașat oricărui element de scris, de obicei un paragraf scurt, dar oricât de lung doriți. Folosiți-l pentru a planifica și a vă orienta înainte să existe proza. Stă lângă textul principal în editor.
 

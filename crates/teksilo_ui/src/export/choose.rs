@@ -41,6 +41,10 @@ pub struct ChooseNode {
     pub title: String,
     pub sub_role: BinderItemSubRole,
     pub kind: String, // "binder" | "folder" | "item"
+    /// Whether the item wears a discoverable tag, read from the same frozen snapshot as
+    /// everything else here. Only for the row's glyph and its accessible description:
+    /// what an export contains never depends on it.
+    pub is_entry: bool,
     pub exportable: bool,
     /// The chapter/part/book ordinal this row will carry in the exported file.
     ///
@@ -58,6 +62,7 @@ impl ChooseNode {
             title: name,
             sub_role: BinderItemSubRole::default(),
             kind: "binder".to_string(),
+            is_entry: false,
             exportable: true,
             number: None,
         }
@@ -98,6 +103,9 @@ impl ChooseModel {
         } else {
             std::collections::HashMap::new()
         };
+        let discoverable = skribisto_model::story_bible::discoverable_tag_ids(
+            g.tags.iter().map(|t| (t.id, t.discoverable)),
+        );
         for bwi in &g.binders {
             let broot = tree.insert_root(
                 tree.root_count(),
@@ -138,6 +146,7 @@ impl ChooseModel {
                         title: it.title.clone(),
                         sub_role: it.sub_role.clone(),
                         kind,
+                        is_entry: skribisto_model::story_bible::is_entry(&it.tags, &discoverable),
                         exportable: it.is_exportable,
                         number: numbers
                             .get(&it.id)
@@ -300,7 +309,7 @@ impl Widget for ChooseTreeWidget {
                 let icon = if node.kind == "binder" {
                     crate::binder::icons::binder_icon()
                 } else {
-                    crate::binder::icons::kind_sub_role_icon(&node.kind, &node.sub_role)
+                    crate::binder::icons::kind_item_icon(&node.kind, &node.sub_role, node.is_entry)
                 };
                 let title_color = if node.exportable {
                     TextRole::Primary
@@ -328,7 +337,14 @@ impl Widget for ChooseTreeWidget {
                 if node.number.is_some() {
                     item = item.center_slot(crate::widgets::StructureNumber::new(node.number));
                 }
-                Box::new(item) as Box<dyn Widget>
+                // No label on these rows, so an entry's description is the entry alone.
+                crate::binder::icons::describe_entry_row(
+                    item,
+                    &crate::binder::icons::role_of_kind(&node.kind),
+                    &node.sub_role,
+                    node.is_entry,
+                    "",
+                )
             },
         )
         // Rows measure themselves rather than sitting at a constant: a row's
@@ -419,6 +435,46 @@ mod tests {
             }],
             work_info: None,
         }
+    }
+
+    /// A row is an entry when its item wears one of the snapshot's discoverable tags: the
+    /// chooser reads the same frozen `Gathered` as the export, never the live store.
+    #[test]
+    fn a_note_wearing_a_discoverable_tag_is_an_entry_row() {
+        use BinderItemRole::Item;
+        use BinderItemSubRole as SR;
+        let mut character = item(1, Item, SR::Note, 0, true);
+        character.item.tags = vec![50];
+        let mut flagged = item(2, Item, SR::Note, 0, true);
+        flagged.item.tags = vec![60];
+        let plain = item(3, Item, SR::Note, 0, true);
+        let mut g = gathered(vec![character, flagged, plain]);
+        g.tags = vec![
+            frontend::common::entities::BinderTag {
+                id: 50,
+                discoverable: true,
+                ..Default::default()
+            },
+            frontend::common::entities::BinderTag {
+                id: 60,
+                discoverable: false,
+                ..Default::default()
+            },
+        ];
+        let m = ChooseModel::build(&g, false, Signal::new(0));
+        let entry_of = |id: u64| {
+            all_nodes(&m.tree)
+                .into_iter()
+                .find_map(|n| {
+                    m.tree
+                        .with_item(n, |c| (c.item_id == Some(id)).then_some(c.is_entry))
+                        .flatten()
+                })
+                .expect("the row")
+        };
+        assert!(entry_of(1), "a discoverable tag makes an entry");
+        assert!(!entry_of(2), "a tag that is not discoverable does not");
+        assert!(!entry_of(3), "nor does wearing no tag");
     }
 
     #[test]

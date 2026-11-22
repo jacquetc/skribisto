@@ -18,7 +18,7 @@ wm-folder-more = Een container om items in de ordner te schikken zoals het u uit
 wm-end-of-book = Markeert waar een boek eindigt.
 wm-end-of-book-more = Alle boeken delen één doorlopende lijst, dus het einde van een boek wordt niet door nesting bepaald. Deze markering zegt dat het [boek](:wm-book) hier stopt. Alles erna hoort bij het volgende boek.
 wm-story-bible-entry = Een notitie over uw verhaal, met tags en alternatieve namen.
-wm-story-bible-entry-more = Een [notitie](:wm-note) over een personage, een plaats of iets anders dat het bewaren waard is, in één stap aangemaakt met een naam, tags, alternatieve namen en een beginsjabloon. Daarna is er op de pagina niets meer dat haar onderscheidt: ze blijft een gewone notitie die u kunt hernoemen, opnieuw taggen of omzetten zoals elke andere.
+wm-story-bible-entry-more = Een [notitie](:wm-note) over een personage, een plaats of iets anders dat het bewaren waard is, in één stap aangemaakt met een naam, tags, alternatieve namen en een beginsjabloon. Ze blijft een gewone notitie die u kunt hernoemen, opnieuw taggen of omzetten zoals elke andere. Zolang ze een tag met [zoeken in proza](:wm-find-in-prose) draagt, heeft ze een gevuld notitiepictogram in plaats van een omlijnd.
 wm-synopsis = Een samenvatting van een schrijfitem.
 wm-synopsis-more = Een samenvatting bij een schrijfitem, meestal een korte alinea maar zo lang als u wilt. Gebruik ze om te plannen en te navigeren voordat het proza bestaat. Ze staat in de editor naast de hoofdtekst.
 

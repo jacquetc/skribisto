@@ -78,3 +78,8 @@ story-bible-capture-where-confirm = Classer ici
 story-bible-capture-where-needs-folder = Choisissez un dossier dans lequel ranger ces notes.
 story-bible-capture-where-tag = Question posée une seule fois. Les notes étiquetées « { $tag } » iront désormais ici, et vous pourrez le changer dans Paramètres, Œuvre, Étiquettes.
 story-bible-capture-where-untagged = Question posée une seule fois. Les notes sans étiquette iront désormais ici, et vous pourrez le changer dans Paramètres, Œuvre, Étiquettes.
+
+# What a screen reader hears for a binder row that is a story bible entry: its icon
+# says so on screen, and this says it aloud. The second form keeps the row's label.
+binder-row-story-bible-entry = Entrée de bible narrative
+binder-row-story-bible-entry-with-label = Entrée de bible narrative, { $label }

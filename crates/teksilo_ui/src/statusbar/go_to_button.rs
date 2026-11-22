@@ -121,7 +121,7 @@ impl Widget for GoToPalette {
                 let icon = if node.kind == "binder" {
                     crate::binder::icons::binder_icon()
                 } else {
-                    crate::binder::icons::kind_sub_role_icon(&node.kind, &node.sub_role)
+                    crate::binder::icons::kind_item_icon(&node.kind, &node.sub_role, node.is_entry)
                 };
                 item = item.leading_slot(icon);
                 // The chapter's ordinal, between the icon and the title — jumping by
@@ -132,7 +132,13 @@ impl Widget for GoToPalette {
                 if badge.is_some() {
                     item = item.center_slot(crate::widgets::StructureNumber::new(badge));
                 }
-                Box::new(item) as Box<dyn Widget>
+                crate::binder::icons::describe_entry_row(
+                    item,
+                    &node.role,
+                    &node.sub_role,
+                    node.is_entry,
+                    &node.label,
+                )
             },
         )
         .auto_item_height(28.0)

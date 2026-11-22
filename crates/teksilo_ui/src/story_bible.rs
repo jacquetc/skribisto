@@ -31,3 +31,25 @@ pub mod create;
 pub mod highlight;
 pub mod infer_book;
 pub mod modal;
+
+/// Whether an item wearing `tag_ids` is a story bible entry, read from the store.
+///
+/// For a surface that holds an item's tags but not the project's palette: the editor
+/// tab icon, and the note page's "In prose" segment. A note carries a handful of tags, so
+/// this is one small batched read over just those ids, never a scan of the whole palette.
+/// A tag id the store no longer holds (deleted between the read that produced `tag_ids`
+/// and this one) is simply not discoverable. The rule itself is
+/// [`skribisto_model::story_bible::is_entry`].
+pub fn tags_make_an_entry(ctx: &frontend::AppContext, tag_ids: &[u64]) -> bool {
+    if tag_ids.is_empty() {
+        return false;
+    }
+    let discoverable = skribisto_model::story_bible::discoverable_tag_ids(
+        frontend::commands::binder_tag_commands::get_binder_tag_multi(ctx, tag_ids)
+            .unwrap_or_default()
+            .into_iter()
+            .flatten()
+            .map(|t| (t.id, t.discoverable)),
+    );
+    skribisto_model::story_bible::is_entry(tag_ids, &discoverable)
+}

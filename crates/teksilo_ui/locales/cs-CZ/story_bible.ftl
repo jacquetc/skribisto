@@ -50,3 +50,8 @@ story-bible-capture-where-confirm = Zařadit sem
 story-bible-capture-where-needs-folder = Zvolte složku, do které se tyto poznámky mají ukládat.
 story-bible-capture-where-tag = Ptáme se jen jednou. Poznámky se štítkem „{ $tag }“ budou odteď ukládány sem a později to můžete změnit v Nastavení, Projekt, Štítky.
 story-bible-capture-where-untagged = Ptáme se jen jednou. Poznámky bez štítku budou odteď ukládány sem a později to můžete změnit v Nastavení, Projekt, Štítky.
+
+# What a screen reader hears for a binder row that is a story bible entry: its icon
+# says so on screen, and this says it aloud. The second form keeps the row's label.
+binder-row-story-bible-entry = Záznam bible příběhu
+binder-row-story-bible-entry-with-label = Záznam bible příběhu, { $label }

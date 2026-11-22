@@ -556,6 +556,7 @@ mod tests {
             number: None,
             fallback_label: None,
             tags: Vec::new(),
+            is_entry: false,
             role: frontend::common::entities::BinderItemRole::Item,
             sub_title: String::new(),
             word_count_goal: 0,

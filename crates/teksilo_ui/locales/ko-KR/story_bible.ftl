@@ -37,3 +37,8 @@ story-bible-capture-where-confirm = 여기에 보관
 story-bible-capture-where-needs-folder = 이 노트를 담을 폴더를 선택하세요.
 story-bible-capture-where-tag = 한 번만 묻습니다. 앞으로 "{ $tag }" 태그가 있는 노트는 여기에 보관됩니다. 설정 ▸ 프로젝트 ▸ 태그에서 변경할 수 있습니다.
 story-bible-capture-where-untagged = 한 번만 묻습니다. 앞으로 태그가 없는 노트는 여기에 보관됩니다. 설정 ▸ 프로젝트 ▸ 태그에서 변경할 수 있습니다.
+
+# What a screen reader hears for a binder row that is a story bible entry: its icon
+# says so on screen, and this says it aloud. The second form keeps the row's label.
+binder-row-story-bible-entry = 설정집 항목
+binder-row-story-bible-entry-with-label = 설정집 항목, { $label }

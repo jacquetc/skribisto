@@ -24,7 +24,7 @@ wm-folder-more = Un conteneur pour ranger les éléments du classeur à votre co
 wm-end-of-book = Marque la fin d’un livre.
 wm-end-of-book-more = Chaque livre partage une seule liste continue ; sa fin n’est donc pas déterminée par l’imbrication. Ce repère indique que le [livre](:wm-book) s’arrête ici. Tout ce qui suit appartient au livre suivant.
 wm-story-bible-entry = Une note sur votre histoire, étiquetée et pourvue d’alias.
-wm-story-bible-entry-more = Une [note](:wm-note) sur un personnage, un lieu ou tout autre élément à répertorier, créée avec un nom, des étiquettes, des alias et un modèle de départ en une seule étape. Rien sur la page ne la distingue ensuite : elle reste une note ordinaire, que vous pouvez renommer, réétiqueter ou convertir comme n’importe quelle autre.
+wm-story-bible-entry-more = Une [note](:wm-note) sur un personnage, un lieu ou tout autre élément à répertorier, créée avec un nom, des étiquettes, des alias et un modèle de départ en une seule étape. Elle reste une note ordinaire, que vous pouvez renommer, réétiqueter ou convertir comme n’importe quelle autre. Tant qu’elle porte une étiquette [repérer dans le texte](:wm-find-in-prose), son icône est une note pleine au lieu d’une note en contour.
 wm-synopsis = Un résumé d’un élément d’écriture.
 wm-synopsis-more = Un résumé attaché à tout élément d’écriture, en général un court paragraphe mais aussi long que vous voulez. Utilisez-le pour préparer et naviguer avant que le texte n’existe. Il se place à côté du texte principal dans l’éditeur.
 

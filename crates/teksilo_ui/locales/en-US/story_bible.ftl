@@ -78,3 +78,8 @@ story-bible-capture-where-confirm = File here
 story-bible-capture-where-needs-folder = Choose a folder for these notes to go inside.
 story-bible-capture-where-tag = Asked once. Notes tagged "{ $tag }" will go here from now on, and you can change it later in Settings, Work, Tags.
 story-bible-capture-where-untagged = Asked once. Notes with no tag will go here from now on, and you can change it later in Settings, Work, Tags.
+
+# What a screen reader hears for a binder row that is a story bible entry: its icon
+# says so on screen, and this says it aloud. The second form keeps the row's label.
+binder-row-story-bible-entry = Story bible entry
+binder-row-story-bible-entry-with-label = Story bible entry, { $label }

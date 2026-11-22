@@ -86,6 +86,9 @@ pub mod replacement;
 /// is a round trip that silently never matches.
 pub mod round_trip;
 pub mod scene_break;
+/// Which binder items are story bible entries: one definition for the mention scan, the
+/// note page and every row icon.
+pub mod story_bible;
 
 /// The per-project chapter storage mode — generated on the `Work` entity, re-exported
 /// here so `CreateType::combo` and the UI can name it via `skribisto_model`.

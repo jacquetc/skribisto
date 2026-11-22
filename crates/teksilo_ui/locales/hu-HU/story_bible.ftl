@@ -45,3 +45,8 @@ story-bible-capture-where-confirm = Elhelyezés itt
 story-bible-capture-where-needs-folder = Válasszon egy mappát, amelybe ezek a jegyzetek kerülnek.
 story-bible-capture-where-tag = Csak egyszer kérdezzük. A „{ $tag }” címkéjű jegyzetek mostantól ide kerülnek; ezt később a Beállítások ▸ Projekt ▸ Címkék oldalon módosíthatja.
 story-bible-capture-where-untagged = Csak egyszer kérdezzük. A címke nélküli jegyzetek mostantól ide kerülnek; ezt később a Beállítások ▸ Projekt ▸ Címkék oldalon módosíthatja.
+
+# What a screen reader hears for a binder row that is a story bible entry: its icon
+# says so on screen, and this says it aloud. The second form keeps the row's label.
+binder-row-story-bible-entry = Történetbiblia-bejegyzés
+binder-row-story-bible-entry-with-label = Történetbiblia-bejegyzés, { $label }

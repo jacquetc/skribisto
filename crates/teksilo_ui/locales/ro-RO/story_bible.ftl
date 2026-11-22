@@ -80,3 +80,8 @@ story-bible-capture-where-confirm = Pune aici
 story-bible-capture-where-needs-folder = Alegeți un dosar în care să intre aceste note.
 story-bible-capture-where-tag = Întrebare unică. De acum înainte, notele etichetate „{ $tag }” vor ajunge aici; puteți schimba asta oricând din Setări, Proiect, Etichete.
 story-bible-capture-where-untagged = Întrebare unică. De acum înainte, notele fără etichetă vor ajunge aici; puteți schimba asta oricând din Setări, Proiect, Etichete.
+
+# What a screen reader hears for a binder row that is a story bible entry: its icon
+# says so on screen, and this says it aloud. The second form keeps the row's label.
+binder-row-story-bible-entry = Intrare în biblia poveștii
+binder-row-story-bible-entry-with-label = Intrare în biblia poveștii, { $label }

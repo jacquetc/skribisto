@@ -96,13 +96,10 @@ pub(super) fn section(
         // anything else would be indexed against nothing. Gating on the tags the
         // *mirror* holds (not the fetched DTO) means the field appears the moment
         // a discoverable tag is added, without waiting for a refetch.
-        let discoverable: std::collections::HashSet<u64> = tags_vm
-            .rows()
-            .into_iter()
-            .filter(|t| t.discoverable)
-            .map(|t| t.id)
-            .collect();
-        if tag_value.get().iter().any(|id| discoverable.contains(id)) {
+        let discoverable = skribisto_model::story_bible::discoverable_tag_ids(
+            tags_vm.rows().into_iter().map(|t| (t.id, t.discoverable)),
+        );
+        if skribisto_model::story_bible::is_entry(&tag_value.get(), &discoverable) {
             let alias_value = Signal::new(d.aliases.clone());
             let alias_probe = SingleBinderItem::new(panel.app_ctx.clone());
             alias_probe.set_id(Some(d.id));

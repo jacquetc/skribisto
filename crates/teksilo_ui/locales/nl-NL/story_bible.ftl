@@ -49,3 +49,8 @@ story-bible-capture-where-confirm = Hier opbergen
 story-bible-capture-where-needs-folder = Kies een map waarin deze notities terechtkomen.
 story-bible-capture-where-tag = Dit wordt één keer gevraagd. Notities met de tag “{ $tag }” komen voortaan hier terecht; u kunt dat later wijzigen in Instellingen, Project, Tags.
 story-bible-capture-where-untagged = Dit wordt één keer gevraagd. Notities zonder tag komen voortaan hier terecht; u kunt dat later wijzigen in Instellingen, Project, Tags.
+
+# What a screen reader hears for a binder row that is a story bible entry: its icon
+# says so on screen, and this says it aloud. The second form keeps the row's label.
+binder-row-story-bible-entry = Item in verhaalbijbel
+binder-row-story-bible-entry-with-label = Item in verhaalbijbel, { $label }

@@ -109,7 +109,9 @@ fn trash_tree(trash: TrashViewModel, on_open: OpenItemFn) -> impl Widget {
             let icon = if node.is_root && node.item_id.is_none() {
                 crate::binder::icons::binder_icon() // whole-binder root
             } else {
-                crate::binder::icons::sub_role_icon(&node.sub_role)
+                // By role as well as sub_role, now that the row carries it: a trashed
+                // paratext folder shows the container glyph it had in the binder.
+                crate::binder::icons::item_icon(&node.role, &node.sub_role, node.is_entry)
             };
             item = item.leading_slot(icon);
             // Cascade (descendant) rows read as a dimmed, non-actionable preview.
@@ -118,9 +120,15 @@ fn trash_tree(trash: TrashViewModel, on_open: OpenItemFn) -> impl Widget {
             }
             let cm = menu_vm.clone();
             let key = key_of(node);
-            Box::new(item.context_menu(move |_pos, _ctx| {
-                Some(Box::new(trash_context_menu(cm.clone(), key)) as Box<dyn Widget>)
-            })) as Box<dyn Widget>
+            crate::binder::icons::describe_entry_row(
+                item.context_menu(move |_pos, _ctx| {
+                    Some(Box::new(trash_context_menu(cm.clone(), key)) as Box<dyn Widget>)
+                }),
+                &node.role,
+                &node.sub_role,
+                node.is_entry,
+                &node.label,
+            )
         },
     )
     .auto_item_height(28.0)

@@ -18,7 +18,7 @@ wm-folder-more = Kontener do układania elementów w segregatorze tak, jak Ci od
 wm-end-of-book = Oznacza miejsce, w którym kończy się książka.
 wm-end-of-book-more = Wszystkie książki dzielą jedną ciągłą listę, więc o końcu książki nie decyduje zagnieżdżenie. Ten znacznik mówi, że [książka](:wm-book) kończy się w tym miejscu. Wszystko, co jest po nim, należy do następnej książki.
 wm-story-bible-entry = Notatka o Twojej opowieści, ze znacznikami i innymi nazwami.
-wm-story-bible-entry-more = [Notatka](:wm-note) o postaci, miejscu lub czymkolwiek innym, co warto skatalogować, utworzona w jednym kroku z nazwą, znacznikami, innymi nazwami i szablonem początkowym. Później nic na stronie jej nie wyróżnia: pozostaje zwykłą notatką, której nazwę, znaczniki i typ można zmieniać jak każdej innej.
+wm-story-bible-entry-more = [Notatka](:wm-note) o postaci, miejscu lub czymkolwiek innym, co warto skatalogować, utworzona w jednym kroku z nazwą, znacznikami, innymi nazwami i szablonem początkowym. Pozostaje zwykłą notatką, której nazwę, znaczniki i typ można zmieniać jak każdej innej. Dopóki ma znacznik z [wyszukiwaniem w prozie](:wm-find-in-prose), wyświetla się z wypełnioną ikoną notatki zamiast konturowej.
 wm-synopsis = Streszczenie elementu z tekstem.
 wm-synopsis-more = Streszczenie dołączone do każdego elementu z tekstem, zwykle krótki akapit, ale może być dowolnie długie. Służy do planowania i poruszania się po tekście, zanim powstanie proza. W edytorze znajduje się obok tekstu głównego.
 

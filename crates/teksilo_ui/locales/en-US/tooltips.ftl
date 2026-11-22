@@ -23,7 +23,7 @@ wm-folder-more = A container for arranging items in the binder however suits you
 wm-end-of-book = Marks where a book ends.
 wm-end-of-book-more = Every book shares one continuous list, so a book's end is not decided by nesting. This marker says the [book](:wm-book) stops here. Anything after it belongs to the next book.
 wm-story-bible-entry = A tagged, aliased note about your story.
-wm-story-bible-entry-more = A [note](:wm-note) about a character, a location, or anything else worth filing, created with a name, tags, aliases and a starting template all in one step. Nothing on the page distinguishes it afterward, since it stays an ordinary note you can rename, retag or convert like any other.
+wm-story-bible-entry-more = A [note](:wm-note) about a character, a location, or anything else worth filing, created with a name, tags, aliases and a starting template all in one step. It stays an ordinary note you can rename, retag or convert like any other. While it carries a [find in prose](:wm-find-in-prose) tag, its icon is a solid note instead of an outlined one.
 wm-synopsis = A summary of a writing item.
 wm-synopsis-more = A summary attached to any writing item, usually a short paragraph but as long as you like. Use it to plan and navigate before the prose exists. It sits beside the main text in the editor.
 

@@ -23,7 +23,7 @@ wm-folder-more = En beholder, så du kan arrangere elementerne i ringbindet, som
 wm-end-of-book = Markerer, hvor en bog slutter.
 wm-end-of-book-more = Alle bøger deler én sammenhængende liste, så en bogs slutning afgøres ikke af indlejring. Denne markør siger, at [bogen](:wm-book) stopper her. Alt efter den hører til den næste bog.
 wm-story-bible-entry = En note om din historie, med mærker og alternative navne.
-wm-story-bible-entry-more = En [note](:wm-note) om en person, et sted eller noget andet, der er værd at registrere, oprettet med navn, mærker, alternative navne og en startskabelon i ét trin. Bagefter er der intet på siden, der adskiller den: den forbliver en almindelig note, som du kan omdøbe, give nye mærker eller konvertere som alle andre.
+wm-story-bible-entry-more = En [note](:wm-note) om en person, et sted eller noget andet, der er værd at registrere, oprettet med navn, mærker, alternative navne og en startskabelon i ét trin. Den forbliver en almindelig note, som du kan omdøbe, give nye mærker eller konvertere som alle andre. Så længe den har et mærke med [søg i teksten](:wm-find-in-prose), vises den med et udfyldt noteikon i stedet for et ikon med omrids.
 wm-synopsis = Et resumé af et skriveelement.
 wm-synopsis-more = Et resumé knyttet til et skriveelement, som regel et kort afsnit, men så langt du vil. Brug det til at planlægge og navigere, før teksten findes. Det står ved siden af hovedteksten i editoren.
 

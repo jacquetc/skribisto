@@ -45,3 +45,8 @@ story-bible-capture-where-confirm = Hier ablegen
 story-bible-capture-where-needs-folder = Wählen Sie einen Ordner, der diese Notizen aufnehmen soll.
 story-bible-capture-where-tag = Einmalige Frage. Notizen mit dem Schlagwort „{ $tag }“ werden künftig hier abgelegt. Unter Einstellungen ▸ Projekt ▸ Schlagwörter können Sie dies später ändern.
 story-bible-capture-where-untagged = Einmalige Frage. Notizen ohne Schlagwort werden künftig hier abgelegt. Unter Einstellungen ▸ Projekt ▸ Schlagwörter können Sie dies später ändern.
+
+# What a screen reader hears for a binder row that is a story bible entry: its icon
+# says so on screen, and this says it aloud. The second form keeps the row's label.
+binder-row-story-bible-entry = Eintrag in der Geschichtenbibel
+binder-row-story-bible-entry-with-label = Eintrag in der Geschichtenbibel, { $label }

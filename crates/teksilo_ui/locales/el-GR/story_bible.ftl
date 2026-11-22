@@ -51,3 +51,8 @@ story-bible-capture-where-confirm = Αρχειοθέτηση εδώ
 story-bible-capture-where-needs-folder = Επιλέξτε έναν φάκελο μέσα στον οποίο θα μπουν αυτές οι σημειώσεις.
 story-bible-capture-where-tag = Ερωτάται μία φορά. Οι σημειώσεις με την ετικέτα «{ $tag }» θα πηγαίνουν εδώ από τώρα και στο εξής, και μπορείτε να το αλλάξετε αργότερα στις Ρυθμίσεις, Έργο, Ετικέτες.
 story-bible-capture-where-untagged = Ερωτάται μία φορά. Οι σημειώσεις χωρίς ετικέτα θα πηγαίνουν εδώ από τώρα και στο εξής, και μπορείτε να το αλλάξετε αργότερα στις Ρυθμίσεις, Έργο, Ετικέτες.
+
+# What a screen reader hears for a binder row that is a story bible entry: its icon
+# says so on screen, and this says it aloud. The second form keeps the row's label.
+binder-row-story-bible-entry = Καταχώριση βίβλου ιστορίας
+binder-row-story-bible-entry-with-label = Καταχώριση βίβλου ιστορίας, { $label }

@@ -33,7 +33,8 @@ use common::types::EntityId;
 use skrib_format::{TreeReader, gather};
 use skribisto_model::language;
 use skribisto_model::mentions::{self, DiscoverableEntity};
-use std::collections::{HashMap, HashSet};
+use skribisto_model::story_bible;
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use text_document::matching::FoldLocale;
@@ -204,12 +205,8 @@ fn run_scan(
     let work_id = g.work.id;
 
     // Which tags mark story-bible material.
-    let discoverable: HashSet<EntityId> = g
-        .tags
-        .iter()
-        .filter(|t| t.discoverable)
-        .map(|t| t.id)
-        .collect();
+    let discoverable =
+        story_bible::discoverable_tag_ids(g.tags.iter().map(|t| (t.id, t.discoverable)));
 
     // The alias table: every live item carrying one of those tags. Trashed items are
     // excluded here rather than filtered later — a deleted character must not appear in a
@@ -219,7 +216,7 @@ fn run_scan(
     for b in &g.binders {
         for iwc in &b.items {
             let it = &iwc.item;
-            if !it.activated || !it.tags.iter().any(|t| discoverable.contains(t)) {
+            if !it.activated || !story_bible::is_entry(&it.tags, &discoverable) {
                 continue;
             }
             titles.insert(it.id, it.title.clone());

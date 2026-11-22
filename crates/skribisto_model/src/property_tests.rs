@@ -16,7 +16,8 @@
 //! * neither text engine can be made to panic, or to claim more characters than the writer
 //!   typed (`replacement`, `typography::engine`);
 //! * a scene break the writer typed is the scene break that is recognised (`scene_break`);
-//! * case folding is idempotent and never loses a Turkish letter (`casing`).
+//! * case folding is idempotent and never loses a Turkish letter (`casing`);
+//! * an item is a story bible entry exactly when it wears a discoverable tag (`story_bible`).
 //!
 //! # Offsets are characters
 //!
@@ -689,6 +690,36 @@ proptest! {
         } else {
             prop_assert_eq!(crate::casing::to_uppercase("i", locale), "I");
             prop_assert_eq!(crate::casing::to_lowercase("I", locale), "i");
+        }
+    }
+}
+
+// ───────────────────────────────────────────────────────────────────────────────
+// story_bible
+// ───────────────────────────────────────────────────────────────────────────────
+
+proptest! {
+    /// Being an entry is exactly "wears a discoverable tag", whatever else it wears.
+    ///
+    /// Stated against the tag list rather than a table: a tag that is not discoverable can
+    /// never make an item an entry, and adding a tag can only ever make one, never unmake it.
+    /// A row icon that disagreed with the mention scan on any item is what this guards.
+    #[test]
+    fn an_entry_is_an_item_wearing_a_discoverable_tag(
+        tags in prop::collection::vec((0u64..12, any::<bool>()), 0..12),
+        item_tags in prop::collection::vec(0u64..16, 0..6),
+        extra in 0u64..16,
+    ) {
+        let discoverable = crate::story_bible::discoverable_tag_ids(tags.iter().copied());
+        let expected = item_tags
+            .iter()
+            .any(|id| tags.iter().any(|(t, d)| t == id && *d));
+        prop_assert_eq!(crate::story_bible::is_entry(&item_tags, &discoverable), expected);
+
+        let mut more = item_tags.clone();
+        more.push(extra);
+        if crate::story_bible::is_entry(&item_tags, &discoverable) {
+            prop_assert!(crate::story_bible::is_entry(&more, &discoverable));
         }
     }
 }

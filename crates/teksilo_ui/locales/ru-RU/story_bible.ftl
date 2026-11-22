@@ -53,3 +53,8 @@ story-bible-capture-where-confirm = Поместить сюда
 story-bible-capture-where-needs-folder = Выберите папку, в которую будут помещаться эти заметки.
 story-bible-capture-where-tag = Спрашиваем один раз. Заметки с тегом «{ $tag }» теперь будут помещаться сюда; изменить это можно позже в разделе Настройки ▸ Проект ▸ Теги.
 story-bible-capture-where-untagged = Спрашиваем один раз. Заметки без тега теперь будут помещаться сюда; изменить это можно позже в разделе Настройки ▸ Проект ▸ Теги.
+
+# What a screen reader hears for a binder row that is a story bible entry: its icon
+# says so on screen, and this says it aloud. The second form keeps the row's label.
+binder-row-story-bible-entry = Запись библии истории
+binder-row-story-bible-entry-with-label = Запись библии истории, { $label }

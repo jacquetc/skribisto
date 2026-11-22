@@ -78,3 +78,8 @@ story-bible-capture-where-confirm = Placér her
 story-bible-capture-where-needs-folder = Vælg en mappe, noterne skal placeres i.
 story-bible-capture-where-tag = Du bliver kun spurgt én gang. Noter med mærket »{ $tag }« placeres her fra nu af, og du kan ændre det senere under Indstillinger ▸ Projekt ▸ Mærker.
 story-bible-capture-where-untagged = Du bliver kun spurgt én gang. Noter uden mærke placeres her fra nu af, og du kan ændre det senere under Indstillinger ▸ Projekt ▸ Mærker.
+
+# What a screen reader hears for a binder row that is a story bible entry: its icon
+# says so on screen, and this says it aloud. The second form keeps the row's label.
+binder-row-story-bible-entry = Opslag i historiebiblen
+binder-row-story-bible-entry-with-label = Opslag i historiebiblen, { $label }

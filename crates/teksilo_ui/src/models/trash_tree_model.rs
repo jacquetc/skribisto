@@ -20,7 +20,7 @@ use std::cell::Cell;
 use std::rc::Rc;
 
 use frontend::AppContext;
-use frontend::common::entities::BinderItemSubRole;
+use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
 use frontend::common::event::{DirectAccessEntity, EntityEvent, Origin, TrashManagementEvent};
 use teksilo::data::{
     DragEligibility, DropCommit, DropQuery, DropResponse, FlatEntry, TreeDataSlice, TreeDataSource,
@@ -58,6 +58,13 @@ pub struct TrashNode {
     pub root_kind: TrashRootKind,
     /// Icon selector (default on whole-binder roots, which use the binder glyph).
     pub sub_role: BinderItemSubRole,
+    /// The item's role: with `sub_role`, what decides whether a story bible entry shows
+    /// as one (only a note *item* does; see `skribisto_model::story_bible`).
+    pub role: BinderItemRole,
+    /// Whether the item wears a discoverable tag. Trashing does not untag anything, so a
+    /// trashed character sheet is still recognisably one; the scan leaves it out, but the
+    /// writer deciding whether to restore it should still see what it was.
+    pub is_entry: bool,
     /// The `BinderItem` to open on activation — `Some` for descendants and for
     /// item roots; `None` for whole-binder roots (nothing single to open).
     pub item_id: Option<u64>,
@@ -115,7 +122,10 @@ impl TrashTreeModel {
             Origin::DirectAccess(Binder(Created)),
             Origin::DirectAccess(Binder(Updated)),
             Origin::DirectAccess(Binder(Removed)),
-        ];
+        ]
+        .into_iter()
+        // A tag's "find in prose" switch changes which rows are entries.
+        .chain(crate::models::TAG_ORIGINS);
         // Coalesced — see `models::coalesced_reload`. Empty Trash is the worst
         // case here: it removes every trashed item, one event each.
         let me = self.clone();
@@ -322,6 +332,9 @@ mod rows {
         let binder_ids =
             work_commands::get_work_relationship(ctx, &work_id, &WorkRelationshipField::Binders)
                 .unwrap_or_default();
+        let discoverable = crate::models::discoverable_tag_ids_for_work(ctx, work_id);
+        let is_entry =
+            |tags: &[EntityId]| skribisto_model::story_bible::is_entry(tags, &discoverable);
 
         for info in infos {
             if let Some(binder_id) = info.trashed_binder {
@@ -359,6 +372,8 @@ mod rows {
                             label: it.label,
                             is_root: false,
                             sub_role: it.sub_role,
+                            role: it.role,
+                            is_entry: is_entry(&it.tags),
                             item_id: Some(it.id),
                             ..Default::default()
                         },
@@ -379,6 +394,8 @@ mod rows {
                         is_root: true,
                         root_kind: TrashRootKind::Item,
                         sub_role: root_item.sub_role,
+                        role: root_item.role,
+                        is_entry: is_entry(&root_item.tags),
                         item_id: Some(item_id),
                         trash_info_id: Some(info.id),
                     },
@@ -408,6 +425,8 @@ mod rows {
                                     label: it.label,
                                     is_root: false,
                                     sub_role: it.sub_role,
+                                    role: it.role,
+                                    is_entry: is_entry(&it.tags),
                                     item_id: Some(it.id),
                                     ..Default::default()
                                 },
@@ -468,6 +487,9 @@ mod rows {
                 label: String::new(),
                 is_root: false,
                 sub_role,
+                // The stray note was a character sheet: one trashed story bible entry,
+                // so the mock trash shows the entry glyph too.
+                is_entry: id == 8102,
                 item_id: Some(id),
                 ..Default::default()
             },
@@ -506,6 +528,8 @@ mod rows {
                     is_root: true,
                     root_kind: TrashRootKind::Item,
                     sub_role: ChapterScene,
+                    role: frontend::common::entities::BinderItemRole::Folder,
+                    is_entry: false,
                     item_id: Some(8200),
                     trash_info_id: Some(9002),
                 },

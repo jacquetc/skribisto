@@ -44,3 +44,8 @@ story-bible-capture-where-confirm = Arkivera här
 story-bible-capture-where-needs-folder = Välj en mapp som anteckningarna ska placeras i.
 story-bible-capture-where-tag = Frågas bara en gång. Anteckningar taggade ”{ $tag }” hamnar här från och med nu, och du kan ändra det senare under Inställningar, Projekt, Taggar.
 story-bible-capture-where-untagged = Frågas bara en gång. Anteckningar utan tagg hamnar här från och med nu, och du kan ändra det senare under Inställningar, Projekt, Taggar.
+
+# What a screen reader hears for a binder row that is a story bible entry: its icon
+# says so on screen, and this says it aloud. The second form keeps the row's label.
+binder-row-story-bible-entry = Post i berättelsebibeln
+binder-row-story-bible-entry-with-label = Post i berättelsebibeln, { $label }

@@ -74,7 +74,7 @@
 //! room to show what was actually written, and "this is what the segment is
 //! for" only lands if the sentence is visible without an extra gesture.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::rc::Rc;
 
 use teksilo::core::BindingLevel;
@@ -261,14 +261,12 @@ impl Widget for NoteDetailsPane {
         self.appears_in_book
             .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
 
-        let discoverable_ids: HashSet<u64> = self
-            .tags
-            .rows()
-            .into_iter()
-            .filter(|t| t.discoverable)
-            .map(|t| t.id)
-            .collect();
-        let is_discoverable = item_is_discoverable(&d.tags, &discoverable_ids);
+        // The gate it decides (aliases, and whether an empty backlinks list still shows its
+        // "nothing yet" hint) is the same membership the row icons and the mention scan read.
+        let discoverable_ids = skribisto_model::story_bible::discoverable_tag_ids(
+            self.tags.rows().into_iter().map(|t| (t.id, t.discoverable)),
+        );
+        let is_discoverable = skribisto_model::story_bible::is_entry(&d.tags, &discoverable_ids);
 
         // ── Two columns, deliberately ────────────────────────────────────────
         //
@@ -442,14 +440,6 @@ impl Widget for NoteDetailsPane {
     fn children(&self) -> Vec<WidgetId> {
         self.root.into_iter().collect()
     }
-}
-
-/// True when any of `tags` is one of `discoverable_ids`. Pulled out of
-/// [`NoteDetailsPane::build`] purely so it has a name and a unit test of its
-/// own; the gate it decides (aliases, and whether an empty backlinks list still
-/// shows its "nothing yet" hint) is worth pinning down on its own.
-fn item_is_discoverable(tags: &[u64], discoverable_ids: &HashSet<u64>) -> bool {
-    tags.iter().any(|id| discoverable_ids.contains(id))
 }
 
 /// The name: a one-line input over `BinderItem.title`, committed on blur or
@@ -1331,24 +1321,6 @@ mod tests {
             vec![7],
             "the click confirmed the mentioning document, not the entry"
         );
-    }
-
-    #[test]
-    fn an_item_with_no_discoverable_tags_at_all_is_not_discoverable() {
-        let discoverable: HashSet<u64> = [10, 11].into_iter().collect();
-        assert!(!item_is_discoverable(&[1, 2], &discoverable));
-    }
-
-    #[test]
-    fn an_item_carrying_a_discoverable_tag_is_discoverable() {
-        let discoverable: HashSet<u64> = [10, 11].into_iter().collect();
-        assert!(item_is_discoverable(&[2, 11], &discoverable));
-    }
-
-    #[test]
-    fn an_item_with_no_tags_at_all_is_not_discoverable() {
-        let discoverable: HashSet<u64> = [10].into_iter().collect();
-        assert!(!item_is_discoverable(&[], &discoverable));
     }
 
     /// The whole reason `backlink_rows` exists: the document title, not
