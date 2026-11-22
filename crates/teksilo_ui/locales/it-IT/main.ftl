@@ -2474,6 +2474,7 @@ search-tip-title = Titolo: cerca nei titoli degli elementi del raccoglitore.
 search-tip-synopsis = Sinossi: cerca nel riassunto di ogni elemento di scrittura.
 search-tip-label = Dicitura: cerca nella breve annotazione sotto il titolo di un elemento.
 search-tip-comment = Commenti: cerca nelle discussioni e nelle risposte. Un commento riguarda il manoscritto ma non ne fa parte, quindi ha un interruttore proprio; nella sostituzione i commenti restano deselezionati finché non li selezioni.
+search-tip-resource = Risorse: cerca nei titoli, nelle descrizioni, nei nomi dei file e negli indirizzi web dei file e dei link allegati ai tuoi elementi. I loro risultati sono elencati perché tu li ritrovi, e una sostituzione non li modifica mai.
 search-tip-book = Libri: il contenitore del libro e i suoi marcatori di inizio e fine.
 search-tip-part = Parti: le divisioni a livello di parte.
 search-tip-chapter = Capitoli: in qualsiasi forma siano memorizzati nel progetto.

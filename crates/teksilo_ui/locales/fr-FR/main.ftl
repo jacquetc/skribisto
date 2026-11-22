@@ -2801,6 +2801,7 @@ search-tip-title = Titre : rechercher dans les titres des éléments du classeu
 search-tip-synopsis = Synopsis : rechercher dans le résumé de chaque élément d’écriture.
 search-tip-label = Libellé : rechercher dans le court texte affiché sous le titre d’un élément.
 search-tip-comment = Commentaires : rechercher dans le texte des fils de commentaires et de leurs réponses. Un commentaire porte sur le manuscrit sans en faire partie, d’où son propre bouton, et un remplacement laisse les commentaires décochés tant que vous ne les cochez pas.
+search-tip-resource = Ressources : rechercher dans les titres, les descriptions, les noms de fichiers et les adresses web des fichiers et des liens joints à vos éléments. Leurs résultats sont listés pour que vous les retrouviez, et un remplacement ne les modifie jamais.
 search-tip-book = Livres : le conteneur du livre et ses marqueurs de début / fin.
 search-tip-part = Parties : les séparateurs de partie.
 search-tip-chapter = Chapitres : les chapitres, quel que soit leur stockage.

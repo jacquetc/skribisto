@@ -248,6 +248,14 @@ fn scope_options(vm: SearchReplaceViewModel) -> impl Widget {
             "search-tip-comment".into(),
             tr!(search_tip_comment()),
         ))
+        // Resources too: a file or a link filed on an item is the writer's research,
+        // found by its title or description, and never part of a replace.
+        .child(option_toggle(
+            crate::icons::activity::resources_icon(),
+            vm.search_resources_signal(),
+            "search-tip-resource".into(),
+            tr!(search_tip_resource()),
+        ))
 }
 
 /// The six facet chips — which KINDS of item to show. Multi-select flat icon

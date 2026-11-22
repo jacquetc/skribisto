@@ -2845,6 +2845,7 @@ search-tip-title = Title: search the titles of binder items.
 search-tip-synopsis = Synopsis: search each writing item’s summary.
 search-tip-label = Label: search the short note shown under a binder item’s title.
 search-tip-comment = Comments: search the text of comment threads and their replies. A comment is about the manuscript rather than part of it, so it has its own switch, and a replace leaves comment matches unticked until you tick them.
+search-tip-resource = Resources: search the titles, descriptions, file names and web addresses of the files and links attached to your items. Their matches are listed so you can find them, and a replace never changes them.
 search-tip-book = Books: the book container and its begin / end markers.
 search-tip-part = Parts: part-level dividers.
 search-tip-chapter = Chapters: chapters, in whichever way the project stores them.

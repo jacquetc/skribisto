@@ -2788,6 +2788,7 @@ search-tip-title = Název: hledá v názvech položek pořadače.
 search-tip-synopsis = Synopse: hledá ve shrnutí každé psací položky.
 search-tip-label = Popisek: hledá v krátké poznámce zobrazené pod názvem položky pořadače.
 search-tip-comment = Komentáře: hledá v textu vláken komentářů a odpovědí na ně. Komentář se týká rukopisu, ale není jeho součástí, proto má vlastní přepínač a nahrazování nechává shody v komentářích nezaškrtnuté, dokud je nezaškrtnete.
+search-tip-resource = Zdroje: hledat v názvech, popisech, názvech souborů a webových adresách souborů a odkazů připojených k vašim položkám. Jejich výsledky se zobrazí, abyste je našli, a nahrazení je nikdy nezmění.
 search-tip-book = Knihy: kontejner knihy a jeho značky začátku a konce.
 search-tip-part = Části: oddělovače na úrovni částí.
 search-tip-chapter = Kapitoly: kapitoly, ať je projekt ukládá jakkoli.

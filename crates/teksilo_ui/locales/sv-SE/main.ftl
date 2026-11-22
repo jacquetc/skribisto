@@ -2420,6 +2420,7 @@ search-tip-title = Titel: sök i titlarna på pärmens objekt.
 search-tip-synopsis = Synopsis: sök i varje skrivobjekts sammanfattning.
 search-tip-label = Etikett: sök i den korta anteckning som visas under ett objekts titel i pärmen.
 search-tip-comment = Kommentarer: sök i texten i kommentarstrådar och deras svar. En kommentar handlar om manuset snarare än är en del av det, så den har en egen brytare, och vid ersättning lämnas kommentarsträffar omarkerade tills du markerar dem.
+search-tip-resource = Resurser: sök i titlar, beskrivningar, filnamn och webbadresser för filerna och länkarna som är kopplade till dina objekt. Deras träffar visas så att du hittar dem, och en ersättning ändrar dem aldrig.
 search-tip-book = Böcker: bokbehållaren och dess start- och slutmarkörer.
 search-tip-part = Delar: avdelare på delnivå.
 search-tip-chapter = Kapitel: kapitel, hur projektet än lagrar dem.

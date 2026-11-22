@@ -2453,6 +2453,7 @@ search-tip-title = Başlık: dizin öğelerinin başlıklarında arar.
 search-tip-synopsis = Özet: her yazı öğesinin özetinde arar.
 search-tip-label = Açıklama: bir dizin öğesinin başlığının altında gösterilen kısa notta arar.
 search-tip-comment = Yorumlar: yorum dizilerinin ve yanıtlarının metninde arar. Yorum el yazmasının bir parçası değil, onun hakkındadır; bu yüzden kendi anahtarı vardır ve değiştirme işlemi siz işaretleyene kadar yorum eşleşmelerini işaretsiz bırakır.
+search-tip-resource = Kaynaklar: öğelerinize eklenen dosya ve bağlantıların başlıklarında, açıklamalarında, dosya adlarında ve web adreslerinde arayın. Eşleşmeleri bulabilmeniz için listelenir, değiştirme ise onları asla değiştirmez.
 search-tip-book = Kitaplar: kitap kapsayıcısı ve başlangıç / bitiş işaretleri.
 search-tip-part = Kısımlar: kısım düzeyindeki ayırıcılar.
 search-tip-chapter = Bölümler: proje bölümleri hangi biçimde saklıyorsa.

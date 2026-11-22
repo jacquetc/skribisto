@@ -2417,6 +2417,7 @@ search-tip-title = Titolo: serĉi en la titoloj de kolektujaj eroj.
 search-tip-synopsis = Resumo: serĉi en la resumo de ĉiu verkero.
 search-tip-label = Surskribo: serĉi en la mallonga noto sub la titolo de kolektuja ero.
 search-tip-comment = Komentoj: serĉi en komentoj kaj respondoj. Komentoj havas propran ŝaltilon ĉar ili temas pri la manuskripto sed ne apartenas al ĝi. Iliaj kongruoj restas nemarkitaj por anstataŭigo ĝis vi markas ilin.
+search-tip-resource = Rimedoj: serĉi en la titoloj, priskriboj, dosiernomoj kaj retadresoj de la dosieroj kaj ligiloj alligitaj al viaj eroj. Iliaj trafoj aperas en la listo por ke vi trovu ilin, kaj anstataŭigo neniam ŝanĝas ilin.
 search-tip-book = Libroj: la libro kaj ĝiaj komencaj kaj finaj markiloj.
 search-tip-part = Partoj: disigiloj je parta nivelo.
 search-tip-chapter = Ĉapitroj: ĉapitroj, sendepende de ilia konservmaniero en la projekto.

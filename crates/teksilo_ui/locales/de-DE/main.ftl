@@ -2610,6 +2610,7 @@ search-tip-title = Titel: Die Titel der Projektmappeneinträge durchsuchen.
 search-tip-synopsis = Zusammenfassung: Die Zusammenfassung jedes Schreibeintrags durchsuchen.
 search-tip-label = Kennzeichnung: Die kurze Anmerkung unter dem Titel eines Projektmappeneintrags durchsuchen.
 search-tip-comment = Kommentare: Kommentarstränge und ihre Antworten durchsuchen. Ein Kommentar bezieht sich auf das Manuskript, gehört aber nicht dazu. Deshalb hat er einen eigenen Schalter. Beim Ersetzen bleiben Kommentartreffer abgewählt, bis Sie sie selbst auswählen.
+search-tip-resource = Ressourcen: in den Titeln, Beschreibungen, Dateinamen und Webadressen der Dateien und Links suchen, die an deine Elemente angehängt sind. Ihre Treffer werden aufgelistet, damit du sie findest, und Ersetzen ändert sie nie.
 search-tip-book = Bücher: Der Bucheintrag und seine Anfangs- und Endmarkierungen.
 search-tip-part = Teile: Unterteilungen auf Teilebene.
 search-tip-chapter = Kapitel: Kapitel in jeder vom Projekt verwendeten Form.

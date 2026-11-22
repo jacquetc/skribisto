@@ -2467,6 +2467,7 @@ search-tip-title = Tittel: søk i titlene til elementene i permen.
 search-tip-synopsis = Synopsis: søk i sammendraget til hvert skriveelement.
 search-tip-label = Etikett: søk i den korte merknaden som vises under tittelen til et element i permen.
 search-tip-comment = Kommentarer: søk i teksten i kommentartråder og svarene på dem. En kommentar handler om manuset og er ikke en del av det, så den har sin egen bryter, og ved erstatning er kommentartreff ikke avkrysset før du krysser dem av.
+search-tip-resource = Ressurser: søk i titler, beskrivelser, filnavn og nettadresser for filene og lenkene som er knyttet til elementene dine. Treffene deres vises slik at du finner dem, og en erstatning endrer dem aldri.
 search-tip-book = Bøker: bokbeholderen og markørene for start og slutt.
 search-tip-part = Deler: skillene på delnivå.
 search-tip-chapter = Kapitler: kapitler, uansett hvordan prosjektet lagrer dem.

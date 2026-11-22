@@ -2729,6 +2729,7 @@ search-tip-title = Titel: søg i titlerne på ringbindets elementer.
 search-tip-synopsis = Synopsis: søg i hvert skriveelements resumé.
 search-tip-label = Etiket: søg i den korte note, der vises under titlen på et element i ringbindet.
 search-tip-comment = Kommentarer: søg i teksten i kommentartråde og deres svar. En kommentar handler om manuskriptet og er ikke en del af det, så den har sin egen kontakt, og en erstatning lader forekomster i kommentarer være umarkerede, indtil du markerer dem.
+search-tip-resource = Ressourcer: søg i titler, beskrivelser, filnavne og webadresser for de filer og links, der er knyttet til dine elementer. Deres resultater vises, så du kan finde dem, og en erstatning ændrer dem aldrig.
 search-tip-book = Bøger: bogbeholderen og dens start- og slutmarkører.
 search-tip-part = Dele: skillelinjer på delniveau.
 search-tip-chapter = Kapitler: kapitler, uanset hvordan projektet gemmer dem.

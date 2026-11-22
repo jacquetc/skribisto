@@ -88,6 +88,9 @@ pub struct SearchReplaceViewModel {
     search_labels: Signal<bool>,
     /// Comment threads and their replies — see `RunSearchDto.search_comments`.
     search_comments: Signal<bool>,
+    /// Resources' titles, descriptions, file names and addresses — see
+    /// `RunSearchDto.search_resources`. Their hits are listed, never replaced.
+    search_resources: Signal<bool>,
     include_trashed: Signal<bool>,
     /// One two-way `Signal<bool>` per facet chip, indexed by the chip's position
     /// in [`SearchFacet::ALL`]. Individual signals (not one `HashSet`) because the
@@ -201,6 +204,7 @@ impl SearchReplaceViewModel {
             search_synopsis: Signal::new(p.search_synopsis),
             search_labels: Signal::new(p.search_labels),
             search_comments: Signal::new(p.search_comments),
+            search_resources: Signal::new(p.search_resources),
             include_trashed: Signal::new(p.include_trashed),
             facets: facet_signals_from_codes(&p.facets),
             match_count: Signal::new(0),
@@ -298,6 +302,9 @@ impl SearchReplaceViewModel {
 
     pub fn search_comments_signal(&self) -> Signal<bool> {
         self.search_comments.clone()
+    }
+    pub fn search_resources_signal(&self) -> Signal<bool> {
+        self.search_resources.clone()
     }
     pub fn include_trashed_signal(&self) -> Signal<bool> {
         self.include_trashed.clone()
@@ -412,6 +419,9 @@ impl SearchReplaceViewModel {
     pub fn set_search_comments(&self, v: bool) {
         self.search_comments.set(v);
     }
+    pub fn set_search_resources(&self, v: bool) {
+        self.search_resources.set(v);
+    }
     pub fn set_search_labels(&self, v: bool) {
         self.search_labels.set(v);
     }
@@ -453,7 +463,7 @@ impl SearchReplaceViewModel {
             search_synopsis: self.search_synopsis.get(),
             search_labels: self.search_labels.get(),
             search_comments: self.search_comments.get(),
-            search_resources: false,
+            search_resources: self.search_resources.get(),
             include_trashed: self.include_trashed.get(),
         }
     }
@@ -1262,6 +1272,7 @@ impl SearchReplaceViewModel {
         self.search_synopsis.set(p.search_synopsis);
         self.search_labels.set(p.search_labels);
         self.search_comments.set(p.search_comments);
+        self.search_resources.set(p.search_resources);
         self.include_trashed.set(p.include_trashed);
         set_facets_from_codes(&self.facets, &p.facets);
         // The restored prefs are, by definition, what is on disk — cache them so
@@ -1318,6 +1329,7 @@ impl SearchReplaceViewModel {
         arm_on!(self.search_synopsis);
         arm_on!(self.search_labels);
         arm_on!(self.search_comments);
+        arm_on!(self.search_resources);
         arm_on!(self.include_trashed);
         for sig in &self.facets {
             arm_on!(sig);
@@ -1372,6 +1384,7 @@ impl SearchReplaceViewModel {
             search_synopsis: self.search_synopsis.get(),
             search_labels: self.search_labels.get(),
             search_comments: self.search_comments.get(),
+            search_resources: self.search_resources.get(),
             include_trashed: self.include_trashed.get(),
             facets: self.facet_codes(),
         }

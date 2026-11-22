@@ -3021,6 +3021,7 @@ search-tip-title = Titlu: caută în titlurile elementelor din clasor.
 search-tip-synopsis = Sinopsis: caută în rezumatul fiecărui element de scris.
 search-tip-label = Legendă: caută în nota scurtă afișată sub titlul unui element din clasor.
 search-tip-comment = Comentarii: caută în textul firelor de comentarii și al răspunsurilor. Un comentariu este despre manuscris, nu parte din el, așa că are propriul comutator, iar la înlocuire potrivirile din comentarii rămân nebifate până când le bifați.
+search-tip-resource = Resurse: caută în titlurile, descrierile, numele de fișiere și adresele web ale fișierelor și linkurilor atașate elementelor tale. Rezultatele lor sunt afișate ca să le găsești, iar o înlocuire nu le modifică niciodată.
 search-tip-book = Cărți: containerul cărții și marcajele sale de început și de sfârșit.
 search-tip-part = Părți: separatoarele la nivel de parte.
 search-tip-chapter = Capitole: capitolele, în orice formă le stochează proiectul.

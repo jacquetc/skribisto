@@ -2498,6 +2498,7 @@ search-tip-title = Titel: de titels van items in de ordner doorzoeken.
 search-tip-synopsis = Synopsis: de samenvatting van elk schrijfitem doorzoeken.
 search-tip-label = Label: de korte notitie onder de titel van een item in de ordner doorzoeken.
 search-tip-comment = Opmerkingen: de tekst van opmerkingen en hun antwoorden doorzoeken. Een opmerking gaat over het manuscript en maakt er geen deel van uit; daarom heeft ze een eigen schakelaar, en bij vervangen blijven treffers in opmerkingen uitgevinkt totdat u ze aanvinkt.
+search-tip-resource = Bronnen: zoek in de titels, beschrijvingen, bestandsnamen en webadressen van de bestanden en links die aan je items zijn gekoppeld. Hun resultaten worden getoond zodat je ze vindt, en vervangen verandert ze nooit.
 search-tip-book = Boeken: de boekcontainer en de markeringen voor begin en einde.
 search-tip-part = Delen: scheidingen op het niveau van delen.
 search-tip-chapter = Hoofdstukken: hoofdstukken, op welke manier het project ze ook opslaat.

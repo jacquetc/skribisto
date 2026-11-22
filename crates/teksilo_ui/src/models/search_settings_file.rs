@@ -63,6 +63,11 @@ pub struct SearchPrefs {
     /// own default below rather than relying on `bool`'s.
     #[serde(default = "yes")]
     pub search_comments: bool,
+    /// The files and links attached to items: their titles, descriptions, file names
+    /// and addresses. On by default, like comments, and defaulted the same way so a
+    /// `search.toml` written before resources existed reads as on.
+    #[serde(default = "yes")]
+    pub search_resources: bool,
     /// Include trashed items in the scan.
     pub include_trashed: bool,
     /// The ticked facet chips as `skribisto_model::SearchFacet::code()` values.
@@ -90,6 +95,7 @@ impl Default for SearchPrefs {
             search_synopsis: true,
             search_labels: true,
             search_comments: true,
+            search_resources: true,
             include_trashed: false,
             facets: Vec::new(),
         }
@@ -341,6 +347,20 @@ fn push_front_dedup(history: &mut Vec<String>, value: &str) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A `search.toml` written before resources existed has no `search_resources`
+    /// line: it must read as on, the scope's default, not as `bool`'s off.
+    #[test]
+    fn a_search_file_from_before_resources_searches_them() {
+        let mut text = toml::to_string(&SearchPrefs::default()).unwrap();
+        text = text
+            .lines()
+            .filter(|l| !l.starts_with("search_resources"))
+            .collect::<Vec<_>>()
+            .join("\n");
+        let prefs: SearchPrefs = toml::from_str(&text).unwrap();
+        assert!(prefs.search_resources);
+    }
     use tempfile::tempdir;
 
     fn svc(dir: &std::path::Path) -> SearchSettingsService {

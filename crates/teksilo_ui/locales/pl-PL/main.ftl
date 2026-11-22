@@ -3103,6 +3103,7 @@ search-tip-title = Tytuł: przeszukuje tytuły elementów segregatora.
 search-tip-synopsis = Streszczenie: przeszukuje streszczenie każdego elementu z tekstem.
 search-tip-label = Etykieta: przeszukuje krótką adnotację wyświetlaną pod tytułem elementu segregatora.
 search-tip-comment = Komentarze: przeszukuje tekst wątków komentarzy i odpowiedzi. Komentarz dotyczy rękopisu, a nie jest jego częścią, więc ma osobny przełącznik, a przy zastępowaniu trafienia w komentarzach pozostają niezaznaczone, dopóki ich nie zaznaczysz.
+search-tip-resource = Zasoby: szukaj w tytułach, opisach, nazwach plików i adresach internetowych plików i odnośników dołączonych do Twoich elementów. Ich wyniki są wyświetlane, abyś je odnalazł, a zamiana nigdy ich nie zmienia.
 search-tip-book = Książki: kontener książki i jej znaczniki początku / końca.
 search-tip-part = Części: separatory na poziomie części.
 search-tip-chapter = Rozdziały: rozdziały, niezależnie od tego, w jaki sposób projekt je przechowuje.
