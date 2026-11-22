@@ -42,8 +42,7 @@ pub fn work_resources_pane(ctx: &mut BuildContext, session: &WorkSession) -> imp
         session.single_work_info.shape(),
         session.single_work.unique_id(),
     );
-    let page =
-        UnattachedResourcesViewModel::new(resources.app_ctx(), session.ids.work_id.clone(), vm);
+    let page = UnattachedResourcesViewModel::new(session.ids.work_id.clone(), vm);
     work_resources_body(ctx, &page)
 }
 

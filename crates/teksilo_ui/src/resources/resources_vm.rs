@@ -50,7 +50,7 @@ use crate::models::{ResourceRow, StoreStart, StoredResourceFilesDto, WebLink};
 use crate::resources::links::{self, InsertedSpan};
 use crate::resources::open_safety::{self, OpenVerdict};
 use crate::resources::opened_files::{self, OpenedWhere};
-use crate::resources::session::{ChangeNotice, ResourcesSession};
+use crate::resources::session::{AttachNotice, ChangeNotice, ResourcesSession};
 use crate::resources::{file_kind, sizes};
 use crate::shared::long_op::{TrackedOp, event_id};
 use crate::shared::progress_toast::ProgressToast;
@@ -1000,12 +1000,63 @@ impl ResourcesViewModel {
 
     /// Take `row` off `item`; it stays in the project.
     pub fn detach_from(&self, ctx: &mut EventContext, item: u64, row: &ResourceRow) {
-        if let Err(e) = self.inner.session.model().detach(item, row.id) {
-            ctx.show_toast(
-                Toast::error(tr!(resources_edit_failed(error = e)))
-                    .scoped_id("resources.failed", self.work_id()),
-            );
+        match self.inner.session.model().detach(item, row.id) {
+            Ok(()) => self.undo_toast(
+                ctx,
+                tr!(resources_detached_toast(title = row.title.clone())),
+            ),
+            Err(e) => {
+                ctx.show_toast(
+                    Toast::error(tr!(resources_edit_failed(error = e)))
+                        .scoped_id("resources.failed", self.work_id()),
+                );
+            }
         }
+    }
+
+    /// Say what was just done, with an Undo that takes back exactly that step and
+    /// nothing a later edit pushed on top of it (`shared::undo_toast`). Read straight
+    /// after the call that pushed, as the stamp has to be.
+    fn undo_toast(&self, ctx: &mut EventContext, message: LocalizedString) {
+        let app_ctx = self.inner.app_ctx.clone();
+        let seq = crate::shared::undo_toast::stamp(&app_ctx);
+        if seq.is_none() {
+            return;
+        }
+        let stack = self.inner.ids.stack_id.get();
+        let session = self.inner.session.clone();
+        ctx.show_toast(
+            Toast::info(message)
+                // One toast for the feature: a burst of removals replaces its own
+                // snackbar rather than stacking a tower of them.
+                .scoped_id("resources.undo", self.work_id())
+                .action(crate::shared::undo_toast::undo_action(
+                    app_ctx,
+                    stack,
+                    seq,
+                    tr!(resources_undo()),
+                    move |_c| session.model().reload(),
+                )),
+        );
+    }
+
+    /// Ask which items to attach `rows` to, in the binder tree, then attach them as one
+    /// undo step: the row menu's Attach to items…, wherever a resource is listed, and
+    /// the Work's Resources page.
+    pub fn pick_items_and_attach(&self, ctx: &mut EventContext, rows: Vec<ResourceRow>) {
+        if rows.is_empty() {
+            return;
+        }
+        let picker = crate::widgets::DestinationPicker::multiple(
+            self.inner.app_ctx.clone(),
+            self.inner.ids.work_id.clone(),
+        );
+        let vm = self.clone();
+        let ids: Vec<u64> = rows.iter().map(|r| r.id).collect();
+        let on_confirm: crate::resources::unattached::ChoseItems = Rc::new(move |c, items| {
+            vm.attach(c, &items, &ids);
+        });
+        crate::resources::unattached::present_attach(ctx, picker, on_confirm);
     }
 
     /// Attach the resources `ids` to every item of `items`, as one undo step. Says how
@@ -1034,6 +1085,93 @@ impl ResourcesViewModel {
                 false
             }
         }
+    }
+
+    /// Attach the resources `ids` to `item`, dropped on its text or its binder row, and
+    /// say so with an Undo. Those it already carries are left as they are; nothing at
+    /// all is said when it carried every one.
+    pub fn attach_dropped(&self, ctx: &mut EventContext, item: u64, ids: &[u64]) {
+        match self.attach_quietly(item, ids) {
+            Ok(Some(notice)) => self.raise_attach_notice(ctx, notice),
+            Ok(None) => {}
+            Err(e) => {
+                ctx.show_toast(
+                    Toast::error(tr!(resources_edit_failed(error = e)))
+                        .scoped_id("resources.failed", self.work_id()),
+                );
+            }
+        }
+    }
+
+    /// [`Self::attach_dropped`] for a drop with no event context (a binder row's, which
+    /// lands in the tree's data source): the attach is made now and its toast waits
+    /// for the window's next event (`raise_attach_notices`).
+    pub fn attach_dropped_later(&self, item: u64, ids: &[u64]) {
+        if let Ok(Some(notice)) = self.attach_quietly(item, ids) {
+            self.inner.session.push_attach_notice(notice);
+        }
+    }
+
+    /// Raise the attach notices binder drops queued.
+    pub fn raise_attach_notices(&self, ctx: &mut EventContext) {
+        for notice in self.inner.session.take_attach_notices() {
+            self.raise_attach_notice(ctx, notice);
+        }
+    }
+
+    /// Attach what `item` does not carry yet, as one undo step. `None` when it carried
+    /// every one already.
+    fn attach_quietly(&self, item: u64, ids: &[u64]) -> Result<Option<AttachNotice>, String> {
+        let model = self.inner.session.model();
+        let carried = model.attachments(&[item]).remove(&item).unwrap_or_default();
+        let mut new: Vec<u64> = Vec::new();
+        for id in ids {
+            if !carried.contains(id) && !new.contains(id) {
+                new.push(*id);
+            }
+        }
+        if new.is_empty() {
+            return Ok(None);
+        }
+        model.attach(&[item], &new)?;
+        let seq = crate::shared::undo_toast::stamp(&self.inner.app_ctx);
+        model.reload();
+        let title = match new.as_slice() {
+            [one] => model.by_id(*one).map(|r| r.title).unwrap_or_default(),
+            _ => String::new(),
+        };
+        Ok(Some(AttachNotice {
+            seq,
+            title,
+            count: new.len(),
+            item_title: model.item_title(item),
+        }))
+    }
+
+    fn raise_attach_notice(&self, ctx: &mut EventContext, notice: AttachNotice) {
+        let message = if notice.count == 1 {
+            tr!(resources_attached_one_toast(
+                title = notice.title.clone(),
+                item = notice.item_title.clone()
+            ))
+        } else {
+            tr!(resources_attached_many_toast(
+                count = notice.count as i64,
+                item = notice.item_title.clone()
+            ))
+        };
+        let session = self.inner.session.clone();
+        let mut toast = Toast::info(message).scoped_id("resources.undo", self.work_id());
+        if notice.seq.is_some() {
+            toast = toast.action(crate::shared::undo_toast::undo_action(
+                self.inner.app_ctx.clone(),
+                self.inner.ids.stack_id.get(),
+                notice.seq,
+                tr!(resources_undo()),
+                move |_c| session.model().reload(),
+            ));
+        }
+        ctx.show_toast(toast);
     }
 
     /// Remove `rows` from the project after asking, as one undo step: the Work's
@@ -1069,6 +1207,11 @@ impl ResourcesViewModel {
         let ids: Vec<u64> = rows.iter().map(|r| r.id).collect();
         match self.inner.session.model().remove(&ids) {
             Ok(()) => {
+                let message = match rows {
+                    [row] => tr!(resources_removed_toast(title = row.title.clone())),
+                    _ => tr!(resources_removed_many_toast(count = rows.len() as i64)),
+                };
+                self.undo_toast(ctx, message);
                 for row in rows {
                     self.inner.session.opened().forget(row.uid);
                 }

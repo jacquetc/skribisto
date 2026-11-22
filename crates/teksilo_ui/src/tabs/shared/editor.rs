@@ -550,6 +550,9 @@ pub fn writing_column(
         .clone()
         .filter(|_| !read_only)
         .map(|f| (f, editor.handle().downgrade()));
+    // The item a resource dropped here is attached to, off the same anchor "Add as
+    // note" reads it from.
+    let drop_item = anchor.as_ref().map(|a| a.item);
     let mut bound = TypographyBoundEditor::new(
         editor,
         typo.clone(),
@@ -579,6 +582,7 @@ pub fn writing_column(
     let column = crate::resources::text_drop::ResourceDropHost::new(
         Box::new(bound.content_language(language_prop(language))),
         resource_drop.map(|(format, handle)| (handle, format)),
+        drop_item,
     );
     let capped = teksu!(
         MaxSize::width(column_width.get()) {

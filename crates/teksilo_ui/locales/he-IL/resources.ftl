@@ -129,6 +129,11 @@ resources-remove-title = להסיר את "{ $title }" מהפרויקט?
 resources-remove-text = הוא מוסר מכל פריט שהוא מצורף אליו. קובץ שמאוחסן בפרויקט הולך איתו; קובץ מקושר ודף אינטרנט נשארים במקומם. ביטול פעולה מחזיר אותו.
 resources-remove-confirm = הסרה
 resources-remove-failed = לא ניתן היה להסיר את המשאב: { $error }
+resources-removed-toast = ״{ $title }״ הוסר מהפרויקט.
+resources-removed-many-toast = { $count } משאבים הוסרו מהפרויקט.
+resources-detached-toast = ״{ $title }״ נותק.
+resources-attached-one-toast = ״{ $title }״ נוסף למשאבים של ״{ $item }״.
+resources-attached-many-toast = { $count } משאבים נוספו אל ״{ $item }״.
 
 ## לתוך הטקסט
 

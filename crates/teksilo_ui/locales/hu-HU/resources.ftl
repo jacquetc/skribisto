@@ -124,6 +124,11 @@ resources-remove-title = Eltávolítja a(z) „{ $title }” forrást a projektb
 resources-remove-text = Minden elemről lekerül, amelyhez csatolva van. A projektben tárolt fájl vele együtt távozik; a hivatkozott fájl és a weboldal ott marad, ahol van. A visszavonás visszahozza.
 resources-remove-confirm = Eltávolítás
 resources-remove-failed = Nem sikerült eltávolítani a forrást: { $error }
+resources-removed-toast = „{ $title }” eltávolítva a projektből.
+resources-removed-many-toast = { $count } forrás eltávolítva a projektből.
+resources-detached-toast = „{ $title }” leválasztva.
+resources-attached-one-toast = „{ $title }” hozzáadva a(z) „{ $item }” forrásaihoz.
+resources-attached-many-toast = { $count } forrás hozzáadva ehhez: „{ $item }”.
 
 ## A szövegbe
 

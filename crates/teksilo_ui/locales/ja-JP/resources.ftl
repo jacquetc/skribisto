@@ -119,6 +119,11 @@ resources-remove-title = 「{ $title }」をプロジェクトから削除しま
 resources-remove-text = 添付先のすべての項目から外されます。プロジェクトに保管したファイルは一緒に消えます。リンクしたファイルとウェブページは元の場所に残ります。元に戻すと復元できます。
 resources-remove-confirm = 削除
 resources-remove-failed = リソースを削除できませんでした：{ $error }
+resources-removed-toast = 「{ $title }」をプロジェクトから削除しました。
+resources-removed-many-toast = { $count } 件のリソースをプロジェクトから削除しました。
+resources-detached-toast = 「{ $title }」の添付を外しました。
+resources-attached-one-toast = 「{ $title }」を「{ $item }」のリソースに追加しました。
+resources-attached-many-toast = { $count } 件のリソースを「{ $item }」に追加しました。
 
 ## 本文へ
 

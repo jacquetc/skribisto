@@ -29,7 +29,6 @@ fn the_mock_page_lists_the_two_resources_on_no_item() {
     let app_ctx = Rc::new(frontend::AppContext::new());
     let ids = crate::app_ids::AppIds::new();
     let page = UnattachedResourcesViewModel::new(
-        app_ctx.clone(),
         ids.work_id.clone(),
         ResourcesViewModel::detached(app_ctx, ids),
     );
@@ -68,11 +67,7 @@ mod real {
             Signal::new(Some(WorkShape::Zip)),
             Signal::new(String::new()),
         );
-        let page = UnattachedResourcesViewModel::new(
-            project.app_ctx.clone(),
-            project.ids.work_id.clone(),
-            resources,
-        );
+        let page = UnattachedResourcesViewModel::new(project.ids.work_id.clone(), resources);
         Fixture {
             project,
             page,

@@ -134,6 +134,17 @@ resources-remove-title = Odebrat „{ $title }“ z projektu?
 resources-remove-text = Odpojí se od každé položky, ke které je připojen. Soubor uložený v projektu odejde s ním; propojený soubor a webová stránka zůstanou tam, kde jsou. Příkaz Vrátit zpět ho obnoví.
 resources-remove-confirm = Odebrat
 resources-remove-failed = Zdroj se nepodařilo odebrat: { $error }
+resources-removed-toast = „{ $title }“ byl odebrán z projektu.
+resources-removed-many-toast = { $count ->
+    [few] { $count } zdroje byly odebrány z projektu.
+   *[other] { $count } zdrojů bylo odebráno z projektu.
+}
+resources-detached-toast = „{ $title }“ byl odpojen.
+resources-attached-one-toast = „{ $title }“ byl přidán ke zdrojům „{ $item }“.
+resources-attached-many-toast = { $count ->
+    [few] { $count } zdroje byly přidány k „{ $item }“.
+   *[other] { $count } zdrojů bylo přidáno k „{ $item }“.
+}
 
 ## Do textu
 

@@ -139,6 +139,19 @@ resources-remove-title = Удалить «{ $title }» из проекта?
 resources-remove-text = Ресурс открепляется от всех элементов, к которым он прикреплён. Файл, хранящийся в проекте, уходит вместе с ним; связанный файл и веб-страница остаются на своём месте. Отмена возвращает его.
 resources-remove-confirm = Удалить
 resources-remove-failed = Не удалось удалить ресурс: { $error }
+resources-removed-toast = «{ $title }» удалён из проекта.
+resources-removed-many-toast = { $count ->
+    [one] Из проекта удалён { $count } ресурс.
+    [few] Из проекта удалены { $count } ресурса.
+   *[other] Из проекта удалено { $count } ресурсов.
+}
+resources-detached-toast = «{ $title }» откреплён.
+resources-attached-one-toast = «{ $title }» добавлен к ресурсам «{ $item }».
+resources-attached-many-toast = { $count ->
+    [one] К «{ $item }» добавлен { $count } ресурс.
+    [few] К «{ $item }» добавлены { $count } ресурса.
+   *[other] К «{ $item }» добавлено { $count } ресурсов.
+}
 
 ## В текст
 

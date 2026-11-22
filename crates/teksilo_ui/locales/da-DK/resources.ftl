@@ -124,6 +124,11 @@ resources-remove-title = Fjern »{ $title }« fra projektet?
 resources-remove-text = Den fjernes fra hvert element, den er knyttet til. En fil, der er gemt i projektet, forsvinder med den; en linket fil og en webside bliver, hvor de er. Fortryd bringer den tilbage.
 resources-remove-confirm = Fjern
 resources-remove-failed = Ressourcen kunne ikke fjernes: { $error }
+resources-removed-toast = “{ $title }” blev fjernet fra projektet.
+resources-removed-many-toast = { $count } ressourcer blev fjernet fra projektet.
+resources-detached-toast = “{ $title }” blev frakoblet.
+resources-attached-one-toast = “{ $title }” føjet til ressourcerne for “{ $item }”.
+resources-attached-many-toast = { $count } ressourcer føjet til “{ $item }”.
 
 ## Ind i teksten
 

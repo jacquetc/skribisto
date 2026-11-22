@@ -124,6 +124,11 @@ resources-remove-title = „{ $title }“ aus dem Projekt entfernen?
 resources-remove-text = Sie wird von jedem Eintrag gelöst, an den sie angehängt ist. Eine im Projekt abgelegte Datei verschwindet mit ihr; eine verknüpfte Datei und eine Webseite bleiben, wo sie sind. Rückgängig holt sie zurück.
 resources-remove-confirm = Entfernen
 resources-remove-failed = Die Ressource konnte nicht entfernt werden: { $error }
+resources-removed-toast = „{ $title }“ wurde aus dem Projekt entfernt.
+resources-removed-many-toast = { $count } Ressourcen wurden aus dem Projekt entfernt.
+resources-detached-toast = „{ $title }“ wurde gelöst.
+resources-attached-one-toast = „{ $title }“ zu den Ressourcen von „{ $item }“ hinzugefügt.
+resources-attached-many-toast = { $count } Ressourcen zu „{ $item }“ hinzugefügt.
 
 ## In den Text
 

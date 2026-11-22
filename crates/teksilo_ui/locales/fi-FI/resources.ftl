@@ -124,6 +124,11 @@ resources-remove-title = Poistetaanko ”{ $title }” projektista?
 resources-remove-text = Se irrotetaan jokaisesta kohteesta, johon se on liitetty. Projektiin tallennettu tiedosto lähtee sen mukana; linkitetty tiedosto ja verkkosivu pysyvät paikallaan. Kumoa tuo sen takaisin.
 resources-remove-confirm = Poista
 resources-remove-failed = Resurssia ei voitu poistaa: { $error }
+resources-removed-toast = ”{ $title }” poistettiin projektista.
+resources-removed-many-toast = { $count } resurssia poistettiin projektista.
+resources-detached-toast = ”{ $title }” irrotettiin.
+resources-attached-one-toast = ”{ $title }” lisättiin kohteen ”{ $item }” resursseihin.
+resources-attached-many-toast = { $count } resurssia lisättiin kohteeseen ”{ $item }”.
 
 ## Tekstiin
 

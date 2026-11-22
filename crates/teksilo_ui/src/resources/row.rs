@@ -34,6 +34,12 @@ use crate::shared::picture_cache::{PictureCache, PictureKey, PictureState};
 /// The thumbnail's side in a row, in logical pixels.
 const THUMB: f32 = 32.0;
 
+/// A picture's preview in a row: wide enough to recognise the picture, which the 32 px
+/// square of a file's icon was not, and landscape because most pictures are. The
+/// picture keeps its proportions inside it.
+const PICTURE_W: f32 = 112.0;
+const PICTURE_H: f32 = 72.0;
+
 /// How many items a row names before it says how many more there are.
 pub const NAMED_ITEMS: usize = 3;
 
@@ -328,6 +334,14 @@ pub fn resource_actions(
                 .on_activate_fn(move |c| super::edit_panel::present_edit(&vm, c, &row)),
         );
     }
+    {
+        // Onto more items: the same picker the Work's Resources page uses.
+        let (vm, row) = (vm.clone(), row.clone());
+        menu = menu.item(
+            MenuItem::new(tr!(resources_attach_to_items()))
+                .on_activate_fn(move |c| vm.pick_items_and_attach(c, vec![row.clone()])),
+        );
+    }
     match detach {
         DetachFrom::Focus => {
             let (vm, row) = (vm.clone(), row.clone());
@@ -415,28 +429,37 @@ pub fn list_keys(
     }
 }
 
-/// A row's leading square: a picture's thumbnail once decoded, the type's icon until then
-/// and for everything else.
+/// A row's leading box: a picture's preview once decoded (the type's icon until then), and
+/// the type's icon in a small square for everything else.
 pub struct ResourceIcon {
     kind: FileKind,
     picture: Option<(PathBuf, String)>,
-    side: f32,
+    width: f32,
+    height: f32,
     root: Option<WidgetId>,
 }
 
 impl ResourceIcon {
     pub fn new(row: &ResourceRow) -> Self {
+        let picture = picture_of(row);
+        let (width, height) = if picture.is_some() {
+            (PICTURE_W, PICTURE_H)
+        } else {
+            (THUMB, THUMB)
+        };
         Self {
             kind: kind_of(row),
-            picture: picture_of(row),
-            side: THUMB,
+            picture,
+            width,
+            height,
             root: None,
         }
     }
 
-    /// The square's side, in logical pixels: a grid tile's is larger than a row's.
+    /// A square of this side instead, in logical pixels: a grid tile's icon.
     pub fn side(mut self, side: f32) -> Self {
-        self.side = side;
+        self.width = side;
+        self.height = side;
         self
     }
 }
@@ -465,7 +488,7 @@ impl Widget for ResourceIcon {
                 let rt = ctx.app_state::<AsyncRuntimeHandle>().cloned();
                 let key = PictureKey {
                     hash: hash.clone(),
-                    edge: (self.side * 2.0) as u32,
+                    edge: (self.width.max(self.height) * 2.0) as u32,
                 };
                 let slot = PictureCache::shared().request(rt.as_ref(), path.clone(), key);
                 slot.bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
@@ -485,17 +508,21 @@ impl Widget for ResourceIcon {
             _ => Box::new(
                 // 20 px in a row's 32 px square, and in step with it in a larger one.
                 Center::new().child(
-                    crate::icons::resources::for_kind(self.kind).icon_size(self.side * 0.625),
+                    crate::icons::resources::for_kind(self.kind)
+                        .icon_size(self.width.min(self.height) * 0.625),
                 ),
             ),
         };
         let id = ctx.add(
-            FixedSize::new().width(self.side).height(self.side).child(
-                Panel::new()
-                    .background(SurfaceRole::Sunken)
-                    .corner_radius(3.0)
-                    .child(crate::tabs::Boxed::new(inner)),
-            ),
+            FixedSize::new()
+                .width(self.width)
+                .height(self.height)
+                .child(
+                    Panel::new()
+                        .background(SurfaceRole::Sunken)
+                        .corner_radius(3.0)
+                        .child(crate::tabs::Boxed::new(inner)),
+                ),
         );
         self.root = Some(id);
         vec![id]
@@ -505,7 +532,7 @@ impl Widget for ResourceIcon {
         self.root
             .and_then(|id| ctx.child_size(id, proposal))
             .map(LayoutResponse::from)
-            .unwrap_or_else(|| proposal.resolve(self.side, self.side).into())
+            .unwrap_or_else(|| proposal.resolve(self.width, self.height).into())
     }
 
     fn children(&self) -> Vec<WidgetId> {
@@ -517,6 +544,24 @@ impl Widget for ResourceIcon {
 mod tests {
     use super::*;
     use crate::models::ResourceKind;
+
+    /// Every resource's menu offers Attach to items…, wherever it is listed: the dock,
+    /// a folder's Resources view, the Gallery.
+    #[test]
+    fn a_resource_menu_offers_attach_to_items() {
+        let app_ctx = std::rc::Rc::new(frontend::AppContext::new());
+        let vm = ResourcesViewModel::detached(app_ctx, crate::app_ids::AppIds::new());
+        let row = ResourceRow {
+            kind: ResourceKind::WebLink,
+            title: "Harbour records".into(),
+            location: "https://example.org/harbour".into(),
+            ..Default::default()
+        };
+        let mut tree = teksilo::core::widget_tree::WidgetTree::new();
+        tree.add(row_menu(&row, vm, DetachFrom::Focus));
+        tree.layout(SizeProposal::exact(300.0, 600.0));
+        assert!(tree.find_by_label("Attach to items…").is_some());
+    }
 
     /// A dropped picture's thumbnail, decoded, reaches the accessibility tree without
     /// tripping teksilo's alt-text check. It panicked the moment the first one decoded:

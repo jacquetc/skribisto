@@ -129,6 +129,11 @@ resources-remove-title = Eliminați „{ $title }” din proiect?
 resources-remove-text = Este scoasă de la fiecare element la care este atașată. Un fișier păstrat în proiect pleacă odată cu ea; un fișier legat și o pagină web rămân unde sunt. Anularea o aduce înapoi.
 resources-remove-confirm = Elimină
 resources-remove-failed = Resursa nu a putut fi eliminată: { $error }
+resources-removed-toast = „{ $title }” a fost eliminată din proiect.
+resources-removed-many-toast = { $count } resurse au fost eliminate din proiect.
+resources-detached-toast = „{ $title }” a fost detașată.
+resources-attached-one-toast = „{ $title }” a fost adăugată la resursele lui „{ $item }”.
+resources-attached-many-toast = { $count } resurse au fost adăugate la „{ $item }”.
 
 ## În text
 

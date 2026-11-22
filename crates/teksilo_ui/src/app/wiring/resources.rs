@@ -90,6 +90,15 @@ pub(in crate::app) fn install(
             move |_e: &Event, c| vm.raise_change_notices(c),
         );
     }
+    // A resource dropped on a binder row: the attach writes the item's junction, and
+    // its notice waits for that event to be raised with a context.
+    {
+        let vm = vm.clone();
+        ctx.subscribe_event_with_ctx(
+            Origin::DirectAccess(DirectAccessEntity::BinderItem(EntityEvent::Updated)),
+            move |_e: &Event, c| vm.raise_attach_notices(c),
+        );
+    }
 
     // The focus-regain edge: the writer comes back from the application they edited
     // the file in.

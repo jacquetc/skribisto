@@ -139,6 +139,19 @@ resources-remove-title = Вилучити «{ $title }» з проєкту?
 resources-remove-text = Ресурс відкріплюється від усіх елементів, до яких він прикріплений. Файл, що зберігається в проєкті, зникає разом із ним; пов’язаний файл і вебсторінка залишаються на своєму місці. Скасування повертає його.
 resources-remove-confirm = Вилучити
 resources-remove-failed = Не вдалося вилучити ресурс: { $error }
+resources-removed-toast = «{ $title }» вилучено з проєкту.
+resources-removed-many-toast = { $count ->
+    [one] З проєкту вилучено { $count } ресурс.
+    [few] З проєкту вилучено { $count } ресурси.
+   *[other] З проєкту вилучено { $count } ресурсів.
+}
+resources-detached-toast = «{ $title }» відкріплено.
+resources-attached-one-toast = «{ $title }» додано до ресурсів «{ $item }».
+resources-attached-many-toast = { $count ->
+    [one] До «{ $item }» додано { $count } ресурс.
+    [few] До «{ $item }» додано { $count } ресурси.
+   *[other] До «{ $item }» додано { $count } ресурсів.
+}
 
 ## У текст
 

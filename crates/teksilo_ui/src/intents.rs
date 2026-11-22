@@ -157,6 +157,14 @@ pub enum AppIntent {
     #[name = "resources.open"]
     OpenResource { uid: String },
 
+    /// Attach the resources `resource_ids` to the item `item_id`: a resource dragged
+    /// from the dock or a Resources page and dropped on that item's text.
+    #[name = "resources.attach"]
+    AttachResources {
+        item_id: u64,
+        resource_ids: Vec<u64>,
+    },
+
     /// Open the clicked search row in the active editor pane.
     #[name = "editor.open_search_result"]
     OpenSearchResult {

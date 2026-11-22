@@ -31,6 +31,18 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     }
     {
         let vm = deps.resources.clone();
+        ctx.register_action_global(Action::new("resources.attach").on_invoke(move |i, c| {
+            if let Some(AppIntent::AttachResources {
+                item_id,
+                resource_ids,
+            }) = AppIntent::from_intent(i)
+            {
+                vm.attach_dropped(c, *item_id, resource_ids);
+            }
+        }));
+    }
+    {
+        let vm = deps.resources.clone();
         let format = deps.format.clone();
         ctx.register_action_global(
             Action::new(crate::resources::text_drop::INSERT_DROPPED_PICTURE).on_invoke(

@@ -1969,6 +1969,18 @@ impl Widget for App {
         };
         // Every tab of this window reaches it: a folder's Resources page, the Gallery.
         editors.set_resources(resources.clone());
+        // A resource dragged onto a binder row is attached to that item. The tree's data
+        // source has no event context, so the attach is made there and its notice is
+        // raised on the item's update (`wiring::resources`).
+        {
+            let vm = resources.clone();
+            self.outline.model().set_resource_drop(Rc::new(
+                move |item, rows: Vec<crate::models::ResourceRow>| {
+                    let ids: Vec<u64> = rows.iter().map(|r| r.id).collect();
+                    vm.attach_dropped_later(item, &ids);
+                },
+            ));
+        }
         let command_deps = commands::CommandDeps {
             app_ctx: self.app_ctx.clone(),
             ids: session.ids.clone(),

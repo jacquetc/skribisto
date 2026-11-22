@@ -86,6 +86,7 @@ fn a_drop_on_the_first_line_lands_inside_it() {
     tree.add(ResourceDropHost::new(
         Box::new(editor),
         Some((handle.downgrade(), FormatViewModel::detached())),
+        None,
     ));
     for _ in 0..2 {
         tree.layout(SizeProposal::exact(600.0, 200.0));
@@ -98,10 +99,12 @@ fn a_drop_on_the_first_line_lands_inside_it() {
     );
 }
 
-/// The host lays its editor out at its own size, and keeps the drop menu out of the
-/// layout until a drop asks for it.
+/// The host lays its editor out at its own size, and its drop menu takes no room until
+/// a drop opens it. That the menu then shows its choices is
+/// `the_drop_menu_opens_with_its_two_choices`: this layout check passed while the menu
+/// opened empty, twice.
 #[test]
-fn the_host_fills_its_bounds_and_holds_its_menu_dormant() {
+fn the_host_fills_its_bounds_and_holds_its_menu_closed() {
     let doc = teksilo::text_document::TextDocument::new();
     doc.set_plain_text("Text").expect("text");
     let editor = RichTextEditor::editor(doc);
@@ -110,6 +113,7 @@ fn the_host_fills_its_bounds_and_holds_its_menu_dormant() {
     let host = tree.add(ResourceDropHost::new(
         Box::new(editor),
         Some((handle.downgrade(), FormatViewModel::detached())),
+        None,
     ));
     tree.layout(SizeProposal::exact(400.0, 300.0));
     let b = tree.bounds(host);
@@ -120,7 +124,7 @@ fn the_host_fills_its_bounds_and_holds_its_menu_dormant() {
     assert_eq!(
         (menu.width, menu.height),
         (0.0, 0.0),
-        "the menu takes no room"
+        "the closed menu takes no room"
     );
 }
 
@@ -138,4 +142,72 @@ fn a_picture_chosen_as_a_picture_is_parked_for_its_command() {
     let taken = format.take_dropped_resource().expect("parked");
     assert_eq!((taken.row.id, taken.at), (1, 3));
     assert!(format.take_dropped_resource().is_none(), "taken once");
+}
+
+/// The picture-or-link menu a picture dropped on a text opens shows its two choices,
+/// laid out with a real size. Twice it opened as an empty panel in the app, while every
+/// test passed: none had ever opened it.
+#[test]
+fn the_drop_menu_opens_with_its_two_choices() {
+    use std::cell::RefCell;
+    use std::rc::Rc;
+    use teksilo::prelude::*;
+    use teksilo::widgets::{Button, VStack};
+
+    let doc = teksilo::text_document::TextDocument::new();
+    doc.set_plain_text("The keeper climbed the stair.")
+        .expect("text");
+    let editor = RichTextEditor::editor(doc);
+    let handle = editor.handle();
+    let sink: Rc<RefCell<Option<OpenMenuFn>>> = Rc::new(RefCell::new(None));
+    let host = ResourceDropHost::new(
+        Box::new(editor),
+        Some((handle.downgrade(), FormatViewModel::detached())),
+        None,
+    )
+    .expose_opener(sink.clone());
+    let opener = {
+        let sink = sink.clone();
+        let handle = handle.clone();
+        Button::new(lit!("Open the drop menu")).on_activate_fn(move |c| {
+            let open = sink.borrow().clone();
+            if let Some(open) = open {
+                open(
+                    c,
+                    DroppedResource {
+                        row: row(1, "Lighthouse", "Lighthouse.jpg"),
+                        handle: handle.clone(),
+                        at: 0,
+                    },
+                    Point::new(40.0, 120.0),
+                );
+            }
+        })
+    };
+    let mut tree = WidgetTree::new().with_text_backend(Rc::new(RefCell::new(
+        teksilo::canvas::MockTextBackend::new(),
+    )));
+    tree.add(VStack::new().child(opener).child(host));
+    for _ in 0..2 {
+        tree.layout(SizeProposal::exact(600.0, 400.0));
+        tree.render();
+    }
+    let button = tree
+        .find_by_label("Open the drop menu")
+        .expect("the test's button");
+    crate::test_support::click(&mut tree, button);
+    for _ in 0..3 {
+        tree.layout(SizeProposal::exact(600.0, 400.0));
+        tree.render();
+    }
+    for label in ["Insert the picture", "Insert a link to the resource"] {
+        let item = tree
+            .find_by_label(label)
+            .unwrap_or_else(|| panic!("no menu item {label:?}"));
+        let b = tree.bounds(item);
+        assert!(
+            b.width > 20.0 && b.height > 10.0,
+            "{label:?} has no room: {b:?}"
+        );
+    }
 }

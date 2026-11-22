@@ -124,6 +124,11 @@ resources-remove-title = Ta bort ”{ $title }” från projektet?
 resources-remove-text = Den tas bort från varje objekt den är kopplad till. En fil som är lagrad i projektet försvinner med den; en länkad fil och en webbsida stannar där de är. Ångra tar tillbaka den.
 resources-remove-confirm = Ta bort
 resources-remove-failed = Resursen kunde inte tas bort: { $error }
+resources-removed-toast = ”{ $title }” togs bort från projektet.
+resources-removed-many-toast = { $count } resurser togs bort från projektet.
+resources-detached-toast = ”{ $title }” kopplades loss.
+resources-attached-one-toast = ”{ $title }” lades till bland resurserna för ”{ $item }”.
+resources-attached-many-toast = { $count } resurser lades till ”{ $item }”.
 
 ## In i texten
 

@@ -134,6 +134,17 @@ resources-remove-title = Usunąć „{ $title }” z projektu?
 resources-remove-text = Zostanie odłączony od każdego elementu, do którego jest dołączony. Plik przechowywany w projekcie znika razem z nim; plik połączony i strona internetowa zostają tam, gdzie są. Cofnij przywraca go.
 resources-remove-confirm = Usuń
 resources-remove-failed = Nie udało się usunąć zasobu: { $error }
+resources-removed-toast = „{ $title }” usunięto z projektu.
+resources-removed-many-toast = { $count ->
+    [few] Usunięto { $count } zasoby z projektu.
+   *[other] Usunięto { $count } zasobów z projektu.
+}
+resources-detached-toast = „{ $title }” odłączono.
+resources-attached-one-toast = „{ $title }” dodano do zasobów „{ $item }”.
+resources-attached-many-toast = { $count ->
+    [few] Dodano { $count } zasoby do „{ $item }”.
+   *[other] Dodano { $count } zasobów do „{ $item }”.
+}
 
 ## Do tekstu
 

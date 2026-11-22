@@ -124,6 +124,11 @@ resources-remove-title = Remove “{ $title }” from the project?
 resources-remove-text = It is taken off every item it is attached to. A file stored in the project goes with it; a linked file and a web page stay where they are. Undo brings it back.
 resources-remove-confirm = Remove
 resources-remove-failed = The resource could not be removed: { $error }
+resources-removed-toast = “{ $title }” was removed from the project.
+resources-removed-many-toast = { $count } resources were removed from the project.
+resources-detached-toast = “{ $title }” was detached.
+resources-attached-one-toast = “{ $title }” added to the resources of “{ $item }”.
+resources-attached-many-toast = { $count } resources added to “{ $item }”.
 
 ## Into the text
 

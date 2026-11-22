@@ -119,6 +119,11 @@ resources-remove-title = 프로젝트에서 "{ $title }"을(를) 제거할까요
 resources-remove-text = 첨부된 모든 항목에서 떼어 냅니다. 프로젝트에 보관한 파일은 함께 사라지고, 연결된 파일과 웹 페이지는 있던 곳에 그대로 남습니다. 실행 취소하면 되돌릴 수 있습니다.
 resources-remove-confirm = 제거
 resources-remove-failed = 리소스를 제거할 수 없습니다: { $error }
+resources-removed-toast = “{ $title }”을(를) 프로젝트에서 제거했습니다.
+resources-removed-many-toast = 리소스 { $count }개를 프로젝트에서 제거했습니다.
+resources-detached-toast = “{ $title }”의 첨부를 해제했습니다.
+resources-attached-one-toast = “{ $title }”을(를) “{ $item }”의 리소스에 추가했습니다.
+resources-attached-many-toast = 리소스 { $count }개를 “{ $item }”에 추가했습니다.
 
 ## 본문에
 

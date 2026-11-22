@@ -124,6 +124,11 @@ resources-remove-title = “{ $title }” projeden kaldırılsın mı?
 resources-remove-text = Eklendiği her öğeden çıkarılır. Projede saklanan bir dosya onunla birlikte gider; bağlı bir dosya ve bir web sayfası oldukları yerde kalır. Geri al onu geri getirir.
 resources-remove-confirm = Kaldır
 resources-remove-failed = Kaynak kaldırılamadı: { $error }
+resources-removed-toast = “{ $title }” projeden kaldırıldı.
+resources-removed-many-toast = { $count } kaynak projeden kaldırıldı.
+resources-detached-toast = “{ $title }” ayrıldı.
+resources-attached-one-toast = “{ $title }”, “{ $item }” öğesinin kaynaklarına eklendi.
+resources-attached-many-toast = { $count } kaynak “{ $item }” öğesine eklendi.
 
 ## Metne
 

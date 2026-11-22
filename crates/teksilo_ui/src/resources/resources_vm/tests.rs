@@ -342,6 +342,57 @@ mod real {
         assert!(model.all().is_empty());
     }
 
+    /// A resource dropped on another item's text or row is attached to it, once: a
+    /// second drop of the same resource adds nothing and queues no second notice, and
+    /// the notice names the item and carries the undo step it landed on.
+    #[test]
+    fn a_dropped_resource_is_attached_to_the_item_once_with_a_notice() {
+        let fx = fixture();
+        // The scene, and any other item of the binder (the empty novel's chapter).
+        let first = fx.scene;
+        let second = crate::models::binder_stream::ordered_binder_items(
+            &fx.project.app_ctx,
+            fx.project.work_id,
+        )
+        .into_iter()
+        .map(|row| row.id)
+        .find(|id| *id != first)
+        .expect("a second item");
+        let ids = fx
+            .session
+            .model()
+            .add(
+                &[first],
+                &StoredResourceFilesDto::default(),
+                &[],
+                &[WebLink {
+                    url: "https://example.org/harbour".into(),
+                    title: "Harbour records".into(),
+                }],
+            )
+            .expect("added");
+        let vm = ResourcesViewModel::detached(fx.project.app_ctx.clone(), fx.project.ids.clone());
+        let notice = vm
+            .attach_quietly(second, &ids)
+            .expect("attached")
+            .expect("a notice");
+        assert_eq!(notice.count, 1);
+        assert_eq!(notice.title, "Harbour records");
+        assert!(notice.seq.is_some(), "an undo step to offer");
+        let on_second: Vec<u64> = fx
+            .session
+            .model()
+            .rows_for(second)
+            .iter()
+            .map(|r| r.id)
+            .collect();
+        assert_eq!(on_second, ids);
+        // Again: it is already there.
+        assert_eq!(vm.attach_quietly(second, &ids).expect("no error"), None);
+        // The first item keeps it.
+        assert_eq!(fx.session.model().rows_for(first).len(), 1);
+    }
+
     /// Option A for a single-file project: the copy another application edited
     /// replaces the stored file, the row follows, and Undo puts both back.
     #[test]

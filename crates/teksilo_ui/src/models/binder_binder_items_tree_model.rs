@@ -30,8 +30,8 @@ use frontend::common::event::{
 };
 use teksilo::core::ObserverHandle;
 use teksilo::data::{
-    DragEligibility, DropCommit, DropPosition, DropQuery, DropResponse, FlatEntry, TreeDataSlice,
-    TreeDataSource, TreeFilterMode, TreeRowFilter,
+    DragEligibility, DragSource, DropCommit, DropPosition, DropQuery, DropResponse, FlatEntry,
+    TreeDataSlice, TreeDataSource, TreeFilterMode, TreeRowFilter,
 };
 use teksilo::prelude::BuildContext;
 use teksilo::prelude::Signal;
@@ -316,9 +316,43 @@ pub struct BinderBinderItemsTreeModel {
     _filters: Rc<Vec<ObserverHandle>>,
     /// One-shot guard so `wire` subscribes to backend events only once.
     subscribed: Rc<Cell<bool>>,
+    /// What a resource dragged from the Resources dock or a Resources page does when it
+    /// is dropped onto an item's row: attach it to that item. `None` (the default, and
+    /// every tree but the binder dock's) refuses such a drop.
+    resource_drop: Rc<RefCell<Option<ResourceDropFn>>>,
+}
+
+/// Attach the dropped resources to the item with this store id.
+pub type ResourceDropFn = Rc<dyn Fn(u64, Vec<crate::models::ResourceRow>)>;
+
+/// The resource rows a drag from the Resources dock or a Resources page carries, if
+/// that is what `payload` is.
+fn dragged_resources(
+    payload: &teksilo::core::DragPayload,
+) -> Option<&teksilo::widgets::RowDragData<crate::models::ResourceRow>> {
+    payload
+        .get_typed::<teksilo::widgets::RowDragData<crate::models::ResourceRow>>()
+        .filter(|d| d.is_export())
 }
 
 impl BinderBinderItemsTreeModel {
+    /// Let resources be dropped onto item rows, attaching them with `f`. See
+    /// `resource_drop`.
+    pub fn set_resource_drop(&self, f: ResourceDropFn) {
+        *self.resource_drop.borrow_mut() = Some(f);
+    }
+
+    /// The store id of the item `target` names, when a resource may be dropped on it.
+    fn resource_target(&self, target: &BinderTreeKey) -> Option<u64> {
+        if self.resource_drop.borrow().is_none() {
+            return None;
+        }
+        match target {
+            BinderTreeKey::Item(_) => self.ids_by_uid.borrow().get(target).copied(),
+            BinderTreeKey::Binder(_) => None,
+        }
+    }
+
     pub fn new(ctx: Rc<AppContext>, work_id: Signal<Option<u64>>, filters: TreeFilters) -> Self {
         let slice = TreeDataSlice::new();
         // New nodes (e.g. a freshly-created scene) appear expanded; the user's
@@ -437,6 +471,7 @@ impl BinderBinderItemsTreeModel {
             remembered,
             _filters: Rc::new(observers),
             subscribed: Rc::new(Cell::new(false)),
+            resource_drop: Rc::new(RefCell::new(None)),
         }
     }
 
@@ -709,10 +744,36 @@ impl TreeDataSource for BinderBinderItemsTreeModel {
     }
 
     fn can_accept(&self, query: &DropQuery<'_, BinderTreeKey>) -> DropResponse {
+        // A resource lands ON an item, never between two: it attaches, it does not move.
+        if let DragSource::Foreign { payload } = &query.source
+            && dragged_resources(payload).is_some()
+        {
+            return match (self.resource_target(&query.target), query.position) {
+                (None, _) => DropResponse::Reject,
+                (Some(_), DropPosition::Into) => DropResponse::Accept,
+                (Some(_), _) => DropResponse::Redirect(DropPosition::Into),
+            };
+        }
         self.slice.can_accept(query)
     }
 
     fn accept_drop(&self, commit: DropCommit<'_, BinderTreeKey>) -> bool {
+        if let DragSource::Foreign { payload } = &commit.source
+            && let Some(data) = dragged_resources(payload)
+        {
+            let Some(item) = self.resource_target(&commit.target) else {
+                return false;
+            };
+            let rows = data.items.clone().unwrap_or_default();
+            let f = self.resource_drop.borrow().clone();
+            if rows.is_empty() {
+                return false;
+            }
+            if let Some(f) = f {
+                f(item, rows);
+            }
+            return true;
+        }
         self.slice.accept_drop(commit)
     }
 }

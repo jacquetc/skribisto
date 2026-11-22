@@ -287,6 +287,16 @@ mod imp {
             self.rows_of(ids)
         }
 
+        /// The title of the binder item `item_id`, empty when it has none or is gone:
+        /// what a toast names the item by when a resource is dropped on it.
+        pub fn item_title(&self, item_id: u64) -> String {
+            binder_item_commands::get_binder_item(&self.inner.app_ctx, &item_id)
+                .ok()
+                .flatten()
+                .map(|item| item.title)
+                .unwrap_or_default()
+        }
+
         /// The resource ids attached to each of `item_ids`, in the order they were
         /// attached. An item with none is absent or maps to an empty list.
         pub fn attachments(&self, item_ids: &[u64]) -> HashMap<u64, Vec<u64>> {
@@ -773,6 +783,10 @@ mod imp {
                 .into_iter()
                 .filter(|r| ids.contains(&r.id))
                 .collect()
+        }
+
+        pub fn item_title(&self, item_id: u64) -> String {
+            format!("Item {item_id}")
         }
 
         pub fn attachments(&self, item_ids: &[u64]) -> HashMap<u64, Vec<u64>> {

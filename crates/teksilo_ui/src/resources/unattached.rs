@@ -34,7 +34,6 @@ use teksilo::widgets::{
     TextWidget, Toast, VStack,
 };
 
-use frontend::AppContext;
 use frontend::common::entities::WorkShape;
 
 use crate::models::ResourceRow;
@@ -54,7 +53,6 @@ pub fn suggests_folder(stored_bytes: u64, shape: Option<WorkShape>) -> bool {
 }
 
 struct Inner {
-    app_ctx: Rc<AppContext>,
     work_id: Signal<Option<u64>>,
     resources: ResourcesViewModel,
 }
@@ -73,17 +71,9 @@ impl std::fmt::Debug for UnattachedResourcesViewModel {
 }
 
 impl UnattachedResourcesViewModel {
-    pub fn new(
-        app_ctx: Rc<AppContext>,
-        work_id: Signal<Option<u64>>,
-        resources: ResourcesViewModel,
-    ) -> Self {
+    pub fn new(work_id: Signal<Option<u64>>, resources: ResourcesViewModel) -> Self {
         Self {
-            inner: Rc::new(Inner {
-                app_ctx,
-                work_id,
-                resources,
-            }),
+            inner: Rc::new(Inner { work_id, resources }),
         }
     }
 
@@ -137,16 +127,8 @@ impl UnattachedResourcesViewModel {
 
     /// Ask which items to attach `rows` to, in the binder tree, then attach them.
     pub fn pick_items_and_attach(&self, ctx: &mut EventContext, rows: Vec<ResourceRow>) {
-        if rows.is_empty() {
-            return;
-        }
-        let picker =
-            DestinationPicker::multiple(self.inner.app_ctx.clone(), self.inner.work_id.clone());
-        let vm = self.clone();
-        let on_confirm: ChoseItems = Rc::new(move |c, items| {
-            vm.attach(c, &items, &rows);
-        });
-        present_attach(ctx, picker, on_confirm);
+        // The same flow the row menus' Attach to items… runs.
+        self.inner.resources.pick_items_and_attach(ctx, rows);
     }
 
     /// Delete `rows` from the project, after asking, as one undo step.

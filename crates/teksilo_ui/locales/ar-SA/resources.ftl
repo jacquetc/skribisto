@@ -144,6 +144,19 @@ resources-remove-title = هل تريد إزالة «{ $title }» من المشر
 resources-remove-text = يُفصل عن كل عنصر مرفق به. الملف المخزّن في المشروع يذهب معه، أما الملف المرتبط وصفحة الويب فيبقيان في مكانهما. التراجع يعيده.
 resources-remove-confirm = إزالة
 resources-remove-failed = تعذّرت إزالة المورد: { $error }
+resources-removed-toast = أُزيل «{ $title }» من المشروع.
+resources-removed-many-toast = { $count ->
+    [two] أُزيل موردان من المشروع.
+    [few] أُزيلت { $count } موارد من المشروع.
+   *[other] أُزيل { $count } موردًا من المشروع.
+}
+resources-detached-toast = فُصل «{ $title }».
+resources-attached-one-toast = أُضيف «{ $title }» إلى موارد «{ $item }».
+resources-attached-many-toast = { $count ->
+    [two] أُضيف موردان إلى «{ $item }».
+    [few] أُضيفت { $count } موارد إلى «{ $item }».
+   *[other] أُضيف { $count } موردًا إلى «{ $item }».
+}
 
 ## في النص
 

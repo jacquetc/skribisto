@@ -124,6 +124,11 @@ resources-remove-title = Αφαίρεση του «{ $title }» από το έρ
 resources-remove-text = Αφαιρείται από κάθε στοιχείο με το οποίο είναι συνδεδεμένος. Ένα αρχείο αποθηκευμένο μέσα στο έργο φεύγει μαζί του. Ένα συνδεδεμένο αρχείο και μια ιστοσελίδα μένουν εκεί που είναι. Η αναίρεση τον επαναφέρει.
 resources-remove-confirm = Αφαίρεση
 resources-remove-failed = Δεν ήταν δυνατή η αφαίρεση του πόρου: { $error }
+resources-removed-toast = Το «{ $title }» αφαιρέθηκε από το έργο.
+resources-removed-many-toast = { $count } πόροι αφαιρέθηκαν από το έργο.
+resources-detached-toast = Το «{ $title }» αποσυνδέθηκε.
+resources-attached-one-toast = Το «{ $title }» προστέθηκε στους πόρους του «{ $item }».
+resources-attached-many-toast = { $count } πόροι προστέθηκαν στο «{ $item }».
 
 ## Στο κείμενο
 

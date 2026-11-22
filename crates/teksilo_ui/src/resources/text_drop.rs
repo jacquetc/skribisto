@@ -117,19 +117,57 @@ pub struct ResourceDropHost {
     /// drops; `None` for one that does not (a trashed item's text, a test's bare
     /// column), where the host only passes its child through.
     drop: Option<(WeakEditorHandle, FormatViewModel)>,
+    /// The binder item this text belongs to: a resource dropped on it is attached to
+    /// it as well as put into the text. `None` for a text with no item behind it.
+    item: Option<u64>,
     root: Option<WidgetId>,
+    /// The picture-or-link menu, and whether it is open (its activation gate).
     menu: Option<WidgetId>,
+    open: Signal<bool>,
+    /// Where `build` leaves the function that opens the picture-or-link menu, for a
+    /// test to call: a drag cannot be made headless (its source view's id cannot be).
+    opener_sink: Option<Rc<RefCell<Option<OpenMenuFn>>>>,
 }
 
+/// Open the picture-or-link menu for `dropped` at the window point.
+pub(crate) type OpenMenuFn = Rc<dyn Fn(&mut EventContext, DroppedResource, Point)>;
+
 impl ResourceDropHost {
-    pub fn new(child: Box<dyn Widget>, drop: Option<(WeakEditorHandle, FormatViewModel)>) -> Self {
+    pub fn new(
+        child: Box<dyn Widget>,
+        drop: Option<(WeakEditorHandle, FormatViewModel)>,
+        item: Option<u64>,
+    ) -> Self {
         Self {
             child: Some(child),
             drop,
+            item,
             root: None,
             menu: None,
+            open: Signal::new(false),
+            opener_sink: None,
         }
     }
+
+    /// Leave the menu's opener in `sink` once built. For tests.
+    #[cfg(test)]
+    pub(crate) fn expose_opener(mut self, sink: Rc<RefCell<Option<OpenMenuFn>>>) -> Self {
+        self.opener_sink = Some(sink);
+        self
+    }
+}
+
+/// Attach `rows` to `item`, the text's own item, after a drop put them into it: a
+/// resource dropped on a text is filed on that item too (`resources.attach`, which
+/// says so with an Undo and skips what the item already carries).
+fn attach_to_item(c: &mut EventContext, item: Option<u64>, rows: &[ResourceRow]) {
+    let Some(item_id) = item else {
+        return;
+    };
+    c.send_intent(crate::intents::AppIntent::AttachResources {
+        item_id,
+        resource_ids: rows.iter().map(|r| r.id).collect(),
+    });
 }
 
 impl std::fmt::Debug for ResourceDropHost {
@@ -153,6 +191,7 @@ impl Widget for ResourceDropHost {
         let pending: Rc<RefCell<Option<DroppedResource>>> = Rc::new(RefCell::new(None));
         let menu_id: Rc<Cell<Option<WidgetId>>> = Rc::new(Cell::new(None));
 
+        let item = self.item;
         let as_picture = {
             let (pending, format, menu_id) = (pending.clone(), format.clone(), menu_id.clone());
             move |c: &mut EventContext| {
@@ -160,6 +199,7 @@ impl Widget for ResourceDropHost {
                     c.dismiss_overlay_by_content(id);
                 }
                 if let Some(dropped) = pending.borrow_mut().take() {
+                    attach_to_item(c, item, std::slice::from_ref(&dropped.row));
                     format.park_dropped_resource(dropped);
                     c.send_intent(Intent::new(INSERT_DROPPED_PICTURE));
                 }
@@ -173,18 +213,52 @@ impl Widget for ResourceDropHost {
                 }
                 if let Some(dropped) = pending.borrow_mut().take() {
                     links::insert_links(&dropped.handle, dropped.at, &[link_words(&dropped.row)]);
+                    attach_to_item(c, item, std::slice::from_ref(&dropped.row));
                 }
             }
         };
         let menu = MenuList::new()
             .item(MenuItem::new(tr!(resources_drop_insert_picture())).on_activate_fn(as_picture))
             .item(MenuItem::new(tr!(resources_drop_insert_link())).on_activate_fn(as_link));
-        let menu = ctx.add(menu);
+        // The popover's own shape (`PopoverWidget`): the panel is built the first time
+        // it opens (`add_deferred`, materialized in the opener), kept as a child gated
+        // on `open` so the host's activation never wakes it inline, and `open` is
+        // cleared however the menu is dismissed. Built eagerly and parked dormant, as
+        // it first was, the overlay opened on an empty panel.
+        let open = self.open.clone();
+        let menu = ctx.add_deferred(open.clone(), menu);
         ctx.set_dormant(menu);
+        ctx.visible_when(menu, open.clone());
         menu_id.set(Some(menu));
         self.menu = Some(menu);
 
         let anchor = ctx.self_id();
+        let open_menu: OpenMenuFn = {
+            let pending = pending.clone();
+            let open = open.clone();
+            Rc::new(
+                move |c: &mut EventContext, dropped: DroppedResource, window: Point| {
+                    *pending.borrow_mut() = Some(dropped);
+                    open.set(true);
+                    c.materialize_now(menu);
+                    c.activate(menu);
+                    let closed = open.clone();
+                    c.show_overlay(
+                        OverlayRequest::new(
+                            menu,
+                            anchor,
+                            OverlayPlacement::AtPointer(window),
+                            DismissBehavior::EscapeOrClickOutside,
+                        )
+                        .on_dismiss(Rc::new(move |_, _| closed.set(false))),
+                    );
+                    c.request_focus_into(menu);
+                },
+            )
+        };
+        if let Some(sink) = &self.opener_sink {
+            *sink.borrow_mut() = Some(open_menu.clone());
+        }
         let target = DropTarget::new()
             .accept_when(|p| {
                 p.get_typed::<RowDragData<ResourceRow>>()
@@ -209,18 +283,10 @@ impl Widget for ResourceDropHost {
                 match drop_action(&rows) {
                     DropAction::Links(links) => {
                         links::insert_links(&handle, at, &links);
+                        attach_to_item(c, item, &rows);
                     }
                     DropAction::AskPictureOrLink(row) => {
-                        *pending.borrow_mut() = Some(DroppedResource { row, handle, at });
-                        c.materialize_now(menu);
-                        c.activate(menu);
-                        c.show_overlay(OverlayRequest::new(
-                            menu,
-                            anchor,
-                            OverlayPlacement::AtPointer(window),
-                            DismissBehavior::EscapeOrClickOutside,
-                        ));
-                        c.request_focus_into(menu);
+                        open_menu(c, DroppedResource { row, handle, at }, window);
                     }
                 }
                 true

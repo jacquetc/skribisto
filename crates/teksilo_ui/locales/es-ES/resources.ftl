@@ -124,6 +124,11 @@ resources-remove-title = ¿Quitar «{ $title }» del proyecto?
 resources-remove-text = Se quita de cada elemento al que está adjunto. Un archivo guardado en el proyecto se va con él; un archivo vinculado y una página web se quedan donde están. Deshacer lo trae de vuelta.
 resources-remove-confirm = Quitar
 resources-remove-failed = No se ha podido quitar el recurso: { $error }
+resources-removed-toast = Se ha quitado «{ $title }» del proyecto.
+resources-removed-many-toast = Se han quitado { $count } recursos del proyecto.
+resources-detached-toast = Se ha separado «{ $title }».
+resources-attached-one-toast = «{ $title }» añadido a los recursos de «{ $item }».
+resources-attached-many-toast = { $count } recursos añadidos a «{ $item }».
 
 ## En el texto
 

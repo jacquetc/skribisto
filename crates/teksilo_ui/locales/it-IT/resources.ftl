@@ -124,6 +124,11 @@ resources-remove-title = Rimuovere «{ $title }» dal progetto?
 resources-remove-text = Viene tolta da ogni elemento a cui è allegata. Un file conservato nel progetto se ne va con essa; un file collegato e una pagina web restano dove sono. Annulla la riporta indietro.
 resources-remove-confirm = Rimuovi
 resources-remove-failed = Non è stato possibile rimuovere la risorsa: { $error }
+resources-removed-toast = «{ $title }» è stata rimossa dal progetto.
+resources-removed-many-toast = { $count } risorse sono state rimosse dal progetto.
+resources-detached-toast = «{ $title }» è stata staccata.
+resources-attached-one-toast = «{ $title }» aggiunta alle risorse di «{ $item }».
+resources-attached-many-toast = { $count } risorse aggiunte a «{ $item }».
 
 ## Nel testo
 

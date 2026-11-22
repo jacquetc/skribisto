@@ -124,6 +124,11 @@ resources-remove-title = Ĉu forigi «{ $title }» el la projekto?
 resources-remove-text = Ĝi estas malkroĉita de ĉiu ero, al kiu ĝi estas alkroĉita. Dosiero konservita en la projekto foriras kun ĝi; ligita dosiero kaj retpaĝo restas kie ili estas. Malfari revenigas ĝin.
 resources-remove-confirm = Forigi
 resources-remove-failed = La rimedo ne povis esti forigita: { $error }
+resources-removed-toast = „{ $title }“ estis forigita el la projekto.
+resources-removed-many-toast = { $count } rimedoj estis forigitaj el la projekto.
+resources-detached-toast = „{ $title }“ estis malligita.
+resources-attached-one-toast = „{ $title }“ aldonita al la rimedoj de „{ $item }“.
+resources-attached-many-toast = { $count } rimedoj aldonitaj al „{ $item }“.
 
 ## En la tekston
 

@@ -55,11 +55,25 @@ pub struct UndoChange {
     pub previous: FileFacts,
 }
 
+/// Resources attached by a drop that had no event context to say so with (a drop on a
+/// binder row lands in the tree's data source), waiting for a window to raise it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AttachNotice {
+    /// The undo step the attach landed on, for the toast's Undo.
+    pub seq: Option<u64>,
+    /// The resource's title when one was attached, empty for several.
+    pub title: String,
+    pub count: usize,
+    /// The item they were attached to.
+    pub item_title: String,
+}
+
 struct Inner {
     app_ctx: Rc<AppContext>,
     model: ResourcesListModel,
     opened: OpenedFiles,
     notices: RefCell<Vec<ChangeNotice>>,
+    attach_notices: RefCell<Vec<AttachNotice>>,
 }
 
 /// The Resources feature's per-project state. Cheap to clone; clones share it.
@@ -84,6 +98,7 @@ impl ResourcesSession {
                 model: ResourcesListModel::new(app_ctx, ids),
                 opened: OpenedFiles::new(),
                 notices: RefCell::new(Vec::new()),
+                attach_notices: RefCell::new(Vec::new()),
             }),
         }
     }
@@ -173,6 +188,16 @@ impl ResourcesSession {
                 previous: FileFacts::of(row),
             }),
         })
+    }
+
+    /// Queue a drop's attach notice for the next window event to raise.
+    pub fn push_attach_notice(&self, notice: AttachNotice) {
+        self.inner.attach_notices.borrow_mut().push(notice);
+    }
+
+    /// The attach notices waiting to be raised, taken: each is raised once.
+    pub fn take_attach_notices(&self) -> Vec<AttachNotice> {
+        std::mem::take(&mut *self.inner.attach_notices.borrow_mut())
     }
 
     /// The notices waiting to be raised, taken: each is raised once, by one window.

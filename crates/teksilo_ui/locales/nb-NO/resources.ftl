@@ -124,6 +124,11 @@ resources-remove-title = Fjerne «{ $title }» fra prosjektet?
 resources-remove-text = Den tas bort fra hvert element den er knyttet til. En fil som er lagret i prosjektet, forsvinner med den; en lenket fil og en nettside blir der de er. Angre henter den tilbake.
 resources-remove-confirm = Fjern
 resources-remove-failed = Ressursen kunne ikke fjernes: { $error }
+resources-removed-toast = «{ $title }» ble fjernet fra prosjektet.
+resources-removed-many-toast = { $count } ressurser ble fjernet fra prosjektet.
+resources-detached-toast = «{ $title }» ble koblet fra.
+resources-attached-one-toast = «{ $title }» lagt til ressursene for «{ $item }».
+resources-attached-many-toast = { $count } ressurser lagt til «{ $item }».
 
 ## Inn i teksten
 

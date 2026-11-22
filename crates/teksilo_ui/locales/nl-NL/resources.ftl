@@ -124,6 +124,11 @@ resources-remove-title = “{ $title }” uit het project verwijderen?
 resources-remove-text = De bron wordt losgemaakt van elk item waaraan ze hangt. Een bestand dat in het project is opgeslagen, verdwijnt mee; een gekoppeld bestand en een webpagina blijven waar ze zijn. Ongedaan maken brengt de bron terug.
 resources-remove-confirm = Verwijderen
 resources-remove-failed = De bron kon niet worden verwijderd: { $error }
+resources-removed-toast = ‘{ $title }’ is uit het project verwijderd.
+resources-removed-many-toast = { $count } bronnen zijn uit het project verwijderd.
+resources-detached-toast = ‘{ $title }’ is losgekoppeld.
+resources-attached-one-toast = ‘{ $title }’ toegevoegd aan de bronnen van ‘{ $item }’.
+resources-attached-many-toast = { $count } bronnen toegevoegd aan ‘{ $item }’.
 
 ## In de tekst
 
