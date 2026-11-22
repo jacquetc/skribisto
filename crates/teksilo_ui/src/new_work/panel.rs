@@ -281,6 +281,31 @@ impl Widget for GoalUnitField {
     }
 }
 
+/// A picker whose "none" is a real answer, so it is an **item**, first in the list.
+///
+/// As a placeholder it could only be the state the picker opens in: once the writer
+/// chose a palette there was no way back to none short of cancelling the wizard. It also
+/// reads wrong — a placeholder is announced as a hint, not as the value.
+///
+/// The combo holds its own `Option<Option<T>>` (never the outer `None`), seeded from the
+/// view-model's choice each time the step is built, and every commit writes the inner
+/// value back. Nothing else writes these choices while the page is up, so the one
+/// direction is enough.
+fn combo_with_none<T: Clone + PartialEq + 'static>(
+    items: impl IntoIterator<Item = T>,
+    chosen: Signal<Option<T>>,
+    none: LocalizedString,
+    item_label: impl Fn(&T) -> LocalizedString + 'static,
+) -> ComboBox<Option<T>> {
+    let items = std::iter::once(None).chain(items.into_iter().map(Some));
+    let shown = Signal::new(Some(chosen.get()));
+    ComboBox::from_items(items, shown, move |item: &Option<T>| match item {
+        None => none.clone(),
+        Some(value) => item_label(value),
+    })
+    .on_select(move |item: &Option<T>, _ctx| chosen.set(item.clone()))
+}
+
 /// The project language dropdown, populated from the **dictionary registry** (the languages
 /// a writer can spell-check in) — NOT the app's UI-translation locales, which are a
 /// different, unrelated list (a French-UI user may well write an English novel). Bound to
@@ -304,18 +329,22 @@ fn language_combo(vm: &NewWorkViewModel) -> ComboBox<String> {
 /// "Roman français" is not translated, because it is the name of a tradition, not a
 /// label. Empty selection means no front or back matter, which is a first-class
 /// answer and what a locale matching no tradition starts on.
-fn paratext_combo(vm: &NewWorkViewModel) -> ComboBox<String> {
+fn paratext_combo(vm: &NewWorkViewModel) -> ComboBox<Option<String>> {
     let presets = vm.paratext_presets();
     let ids: Vec<String> = presets.iter().map(|p| p.id.clone()).collect();
     let names: HashMap<String, String> = presets
         .iter()
         .map(|p| (p.id.clone(), p.name.clone()))
         .collect();
-    ComboBox::from_items(ids, vm.paratext_preset(), move |id: &String| {
-        let display = names.get(id).cloned().unwrap_or_else(|| id.clone());
-        localized(move || display.clone())
-    })
-    .placeholder(tr!(new_work_paratext_none()))
+    combo_with_none(
+        ids,
+        vm.paratext_preset(),
+        tr!(new_work_paratext_none()),
+        move |id: &String| {
+            let display = names.get(id).cloned().unwrap_or_else(|| id.clone());
+            localized(move || display.clone())
+        },
+    )
 }
 
 /// The starting tag palette. Empty selection means no tags at all, which is the default
@@ -326,29 +355,38 @@ fn paratext_combo(vm: &NewWorkViewModel) -> ComboBox<String> {
 /// language of the interface — `personnage` / `lieu` on a French UI — see
 /// [`crate::tags::presets`] for why the palettes are generated in code, and why the
 /// interface's locale rather than the project's is the right one for a tag name.
-fn tag_preset_combo(vm: &NewWorkViewModel) -> ComboBox<crate::tags::Preset> {
-    ComboBox::from_items(
-        crate::tags::Preset::ALL.to_vec(),
+fn tag_preset_combo(vm: &NewWorkViewModel) -> ComboBox<Option<crate::tags::Preset>> {
+    combo_with_none(
+        crate::tags::Preset::ALL,
         vm.tag_preset(),
+        tr!(new_work_tags_none()),
         |preset: &crate::tags::Preset| preset.label(),
     )
-    .placeholder(tr!(new_work_tags_none()))
 }
 
 /// The starting workflow ladder.
 ///
 /// Unlike the tag palette above, there is **no empty answer**: a project with no ladder has
 /// no status feature, and nothing in the app would prompt the writer to go and build one.
-/// So this has no placeholder, and an untouched form still seeds
+/// So there is no "none" item, and an untouched form still seeds
 /// [`crate::statuses::Preset::DEFAULT`] — the `None` the signal holds means "I did not choose",
 /// which `ProjectStarters` reads as the default rather than as "none".
+///
+/// The combo shows that default as its **selection**, not as a placeholder: a placeholder is
+/// announced as a hint, so a screen reader heard no value at all for a choice already made.
+/// It holds its own signal for that, seeded from the view-model's choice each time the step
+/// is built, and every commit writes back.
 fn status_preset_combo(vm: &NewWorkViewModel) -> ComboBox<crate::statuses::Preset> {
+    let chosen = vm.status_preset();
+    let shown = Signal::new(Some(
+        chosen.get().unwrap_or(crate::statuses::Preset::DEFAULT),
+    ));
     ComboBox::from_items(
-        crate::statuses::Preset::ALL.to_vec(),
-        vm.status_preset(),
+        crate::statuses::Preset::ALL,
+        shown,
         |preset: &crate::statuses::Preset| preset.label(),
     )
-    .placeholder(crate::statuses::Preset::DEFAULT.label())
+    .on_select(move |preset, _ctx| chosen.set(Some(*preset)))
 }
 
 /// One row of the Template list: a compact tile (radio · icon · title · trailing count).
@@ -434,13 +472,15 @@ fn template_tiles(vm: &NewWorkViewModel) -> RadioTileGroup {
 /// see [`crate::note_templates::presets`]. All three starter pickers on this page (tags,
 /// statuses, templates) resolve the same way, which is the point: a project's starting
 /// vocabulary must not be assembled from two locale authorities at once.
-fn template_set_combo(vm: &NewWorkViewModel) -> ComboBox<crate::note_templates::StarterSet> {
-    ComboBox::from_items(
-        crate::note_templates::StarterSet::ALL.to_vec(),
+fn template_set_combo(
+    vm: &NewWorkViewModel,
+) -> ComboBox<Option<crate::note_templates::StarterSet>> {
+    combo_with_none(
+        crate::note_templates::StarterSet::ALL,
         vm.template_set(),
+        tr!(new_work_note_templates_none()),
         |set: &crate::note_templates::StarterSet| set.label(),
     )
-    .placeholder(tr!(new_work_note_templates_none()))
 }
 
 /// What a starter picker's current choice lays down — "Tags: character, place, …" —
