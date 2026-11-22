@@ -4933,6 +4933,61 @@ fn opening_a_project_removes_the_files_of_resources_it_no_longer_has() {
     assert!(kept.is_file());
 }
 
+/// A folder project an earlier build saved, its stored file under the name that
+/// build's rule gave it (`COM¹.pdf`, which today's rule spells `_COM¹.pdf`, see
+/// `skrib_format::slug::legacy_safe_file_name`): opening it renames the file in its
+/// folder, and a save, a Save As to a single file and a reopen all keep its bytes.
+#[cfg(unix)]
+#[test]
+fn a_folder_project_with_an_earlier_builds_file_names_keeps_its_stored_files() {
+    use skrib::slug::{legacy_safe_file_name, safe_file_name};
+    let dir = tempfile::tempdir().unwrap();
+    let media_root = dir.path().join("media-root");
+    let project = dir.path().join("Novel");
+    let mut bundle = bundle_with_resources();
+    bundle.resources[0].file_name = "COM¹.pdf".into();
+    skrib::write_bundle(
+        project.to_str().unwrap(),
+        SkribShape::ExplodedFolder,
+        &bundle,
+    )
+    .unwrap();
+    let folder = project
+        .join("resources")
+        .join(common::uid::fixture_uid(800).hyphenated().to_string());
+    let today = folder.join(safe_file_name("COM¹.pdf"));
+    let earlier = folder.join(legacy_safe_file_name("COM¹.pdf").expect("renamed by today's rule"));
+    std::fs::rename(&today, &earlier).unwrap();
+
+    let (db, hub) = load_at(&project, &media_root);
+    assert_eq!(std::fs::read(&today).unwrap(), b"%PDF-1.7");
+    assert!(!earlier.exists(), "renamed, not copied");
+
+    let saved = save_at(&db, &hub, &project, &media_root);
+    assert_eq!(stored_bytes(&saved), Some(b"%PDF-1.7".to_vec()));
+    let (db, hub) = load_at(&project, &media_root);
+    let again = save_at(&db, &hub, &project, &media_root);
+    assert_eq!(stored_bytes(&again), Some(b"%PDF-1.7".to_vec()));
+
+    let zip = dir.path().join("Copy.skrib");
+    SaveAsUseCase::new(
+        Box::new(SaveAsUnitOfWorkFactory::new(&db, &hub)),
+        &SaveAsDto {
+            media_root: media_root.to_string_lossy().into_owned(),
+            work_id: live_work_id(&db),
+            file_name: zip.to_str().unwrap().to_string(),
+            as_folder: false,
+        },
+    )
+    .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
+    .expect("save as");
+    let copied = save_at(&db, &hub, &zip, &media_root);
+    assert_eq!(stored_bytes(&copied), Some(b"%PDF-1.7".to_vec()));
+    let (db, hub) = load_at(&zip, &media_root);
+    let reopened = save_at(&db, &hub, &zip, &media_root);
+    assert_eq!(stored_bytes(&reopened), Some(b"%PDF-1.7".to_vec()));
+}
+
 /// Every file under `root`, for asserting where a load put things.
 fn walkdir_files(root: &std::path::Path) -> Vec<std::path::PathBuf> {
     let mut out = Vec::new();

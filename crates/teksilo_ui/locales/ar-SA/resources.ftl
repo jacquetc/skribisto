@@ -106,6 +106,7 @@ resources-dropped-added = { $count ->
     [many] أُضيف { $count } ملفًا كموارد لهذا العنصر، ورُبطت في النص
    *[other] أُضيف { $count } ملف كموارد لهذا العنصر، ورُبطت في النص
 }
+resources-dropped-undo-kept = تغيّر النص منذ الإفلات، لذا لم يُتراجع عن شيء.
 resources-undo = تراجع
 resources-link-refused = «{ $url }» ليس عنوان ويب يستطيع Skribisto الاحتفاظ به. استخدم عنوانًا يبدأ بـ http:// أو https://، من دون اسم مستخدم أو كلمة مرور.
 

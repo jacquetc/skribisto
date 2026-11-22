@@ -86,6 +86,7 @@ resources-added = { $count ->
 resources-dropped-added = { $count ->
    *[other] 파일 { $count }개를 이 항목의 리소스로 추가하고 본문에 연결했습니다
 }
+resources-dropped-undo-kept = 놓은 뒤로 텍스트가 바뀌어서 아무것도 되돌리지 않았습니다.
 resources-undo = 실행 취소
 resources-link-refused = "{ $url }"은(는) Skribisto가 보관할 수 있는 웹 주소가 아닙니다. 사용자 이름이나 비밀번호 없이 http:// 또는 https://로 시작하는 주소를 사용하세요.
 

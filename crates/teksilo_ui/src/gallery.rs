@@ -37,7 +37,7 @@
 pub mod tiles;
 
 use std::cell::RefCell;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
 use teksilo::core::ObserverHandle;
@@ -263,7 +263,10 @@ impl GalleryViewModel {
         let Some((model, _)) = &self.inner.resources else {
             return HashMap::new();
         };
-        let attachments = model.attachments(item_ids);
+        let attachments = model.attachments(item_ids).unwrap_or_else(|e| {
+            eprintln!("resources: could not read what the items carry: {e}");
+            HashMap::new()
+        });
         let mut wanted: Vec<u64> = attachments.values().flatten().copied().collect();
         wanted.sort_unstable();
         wanted.dedup();
@@ -276,9 +279,10 @@ impl GalleryViewModel {
         attachments
             .into_iter()
             .filter_map(|(item, ids)| {
-                let mut found: Vec<ResourceRow> =
-                    ids.iter().filter_map(|id| rows.get(id).cloned()).collect();
-                found.dedup_by_key(|r| r.id);
+                let found: Vec<ResourceRow> = once_each(&ids)
+                    .iter()
+                    .filter_map(|id| rows.get(id).cloned())
+                    .collect();
                 let found = crate::resources::sorted_by_title(found);
                 (!found.is_empty()).then(|| {
                     let pictures = found
@@ -443,6 +447,16 @@ fn text_srcs(pictures: &[GalleryPicture]) -> Vec<String> {
         .filter(|p| !p.is_resource())
         .map(|p| p.image.src.clone())
         .collect()
+}
+
+/// `ids` with each kept once, where it first appears, wherever it repeats.
+///
+/// The store refuses a resource listed twice on an item, and loading a project collapses
+/// the repeats, so this only stands between a list that somehow holds one and a picture
+/// shown twice. Not `dedup`, which collapses only neighbours: `[A, B, A]` would stay.
+fn once_each(ids: &[u64]) -> Vec<u64> {
+    let mut seen = HashSet::new();
+    ids.iter().copied().filter(|id| seen.insert(*id)).collect()
 }
 
 /// A resource the Gallery shows: a file in a picture format the editor paints. A web

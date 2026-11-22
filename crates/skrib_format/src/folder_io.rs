@@ -623,16 +623,36 @@ pub(crate) fn read_folder_kept(
     // Each stored file pointed at, never read. A missing one is not an error, unlike a
     // missing asset: the resource's card loads and shows its file as missing, and the
     // writer can locate it or remove it. Its path is rebuilt from `uid` and `file_name`,
-    // the same rule the writer follows, rather than trusted from the row.
+    // the same rule the writer follows, rather than trusted from the row. One reached
+    // through a symbolic link is left out the same way, and said: its bytes are not the
+    // project's, and a blob over it would copy them into the next archive or backup
+    // (see `media::passes_through_link`).
     let mut resource_blobs = std::collections::BTreeMap::new();
     for r in &resources {
         if r.kind != common::entities::ResourceKind::StoredFile {
             continue;
         }
         let rel = crate::slug::resource_relpath(r.uid, &r.file_name);
-        let Ok(path) = locator.locate(root, &rel, "resource") else {
+        let Ok(mut path) = locator.locate(root, &rel, "resource") else {
             continue;
         };
+        // Under the name an earlier build gave it, when today's is not there: see
+        // `slug::legacy_safe_file_name` for the rules that changed. Opening the project
+        // renames it (`media::prune_resources_dir`), and a save writes today's name.
+        if fs::symlink_metadata(&path).is_err()
+            && let Some(legacy) = crate::slug::legacy_resource_relpath(r.uid, &r.file_name)
+            && let Ok(found) = locator.locate(root, &legacy, "resource")
+            && fs::symlink_metadata(&found).is_ok_and(|m| m.is_file() || m.is_symlink())
+        {
+            path = found;
+        }
+        if crate::media::passes_through_link(root, &path) {
+            eprintln!(
+                "skrib: ignoring resource {}: it is a link, not a file of the project",
+                path.display()
+            );
+            continue;
+        }
         if !path.is_file() {
             continue;
         }
@@ -647,6 +667,16 @@ pub(crate) fn read_folder_kept(
     let mut asset_blobs = std::collections::BTreeMap::new();
     for a in &assets {
         let path = locator.locate(root, &a.path, "asset")?;
+        // A picture reached through a link is left out, like a stored resource above,
+        // rather than refused: the project still opens, and its next save drops the row
+        // whose bytes it never had (`from_entities` keeps only assets with a blob).
+        if crate::media::passes_through_link(root, &path) {
+            eprintln!(
+                "skrib: ignoring asset {}: it is a link, not a file of the project",
+                path.display()
+            );
+            continue;
+        }
         let meta = fs::metadata(&path)
             .with_context(|| format!("reading asset {} ({})", a.file_name, a.path))?;
         if !meta.is_file() {

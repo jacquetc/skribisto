@@ -203,7 +203,10 @@ impl FolderResourcesViewModel {
         let items = self.items();
         let ids: Vec<u64> = items.iter().map(|i| i.id).collect();
         let model = self.inner.resources.session().model();
-        let attachments = model.attachments(&ids);
+        let attachments = model.attachments(&ids).unwrap_or_else(|e| {
+            eprintln!("resources: could not read what the items carry: {e}");
+            HashMap::new()
+        });
         let mut resource_ids: Vec<u64> = attachments.values().flatten().copied().collect();
         resource_ids.sort_unstable();
         resource_ids.dedup();

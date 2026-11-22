@@ -90,6 +90,7 @@ resources-dropped-added = { $count ->
     [one] Lisätty tämän kohteen resurssiksi ja linkitetty tekstiin
    *[other] { $count } tiedostoa lisätty tämän kohteen resursseiksi ja linkitetty tekstiin
 }
+resources-dropped-undo-kept = Teksti on muuttunut pudotuksen jälkeen, joten mitään ei kumottu.
 resources-undo = Kumoa
 resources-link-refused = ”{ $url }” ei ole verkko-osoite, jonka Skribisto voi säilyttää. Käytä osoitetta, joka alkaa http:// tai https://, ilman käyttäjänimeä tai salasanaa.
 

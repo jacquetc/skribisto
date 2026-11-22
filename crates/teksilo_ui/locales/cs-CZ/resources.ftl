@@ -98,6 +98,7 @@ resources-dropped-added = { $count ->
     [many] { $count } souboru přidáno jako zdroje této položky a propojeno v textu
    *[other] { $count } souborů přidáno jako zdroje této položky a propojeno v textu
 }
+resources-dropped-undo-kept = Text se od přetažení změnil, takže nic nebylo vráceno zpět.
 resources-undo = Vrátit zpět
 resources-link-refused = „{ $url }“ není webová adresa, kterou si Skribisto může uchovat. Použijte adresu, která začíná http:// nebo https://, bez uživatelského jména a hesla.
 

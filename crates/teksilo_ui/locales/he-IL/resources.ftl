@@ -94,6 +94,7 @@ resources-dropped-added = { $count ->
     [two] שני קבצים נוספו כמשאבים של הפריט הזה, וקושרו בטקסט
    *[other] { $count } קבצים נוספו כמשאבים של הפריט הזה, וקושרו בטקסט
 }
+resources-dropped-undo-kept = הטקסט השתנה מאז הגרירה, ולכן לא בוטל דבר.
 resources-undo = ביטול פעולה
 resources-link-refused = הכתובת "{ $url }" אינה כתובת אינטרנט ש־Skribisto יכול לשמור. יש להשתמש בכתובת שמתחילה ב־http:// או ב־https://, בלי שם משתמש או סיסמה.
 

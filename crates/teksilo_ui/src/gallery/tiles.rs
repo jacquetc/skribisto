@@ -18,7 +18,8 @@
 //! folder's tile in Nested. A resource attached to a folder is that folder's picture: a
 //! preview of its tile in Nested, a tile of its own in Flat, and, for the folder the
 //! Gallery shows, tiles ahead of everything else ([`GalleryNote::is_folder`] is false for
-//! that one row, which stands for the folder itself).
+//! that one row, which stands for the folder itself). A resource on a folder and on items
+//! inside it is one picture of that folder's tile.
 //!
 //! The order is the order of the notes the caller hands in, which is the Overview's:
 //! binder order, or the Overview's sort, with its search and filters applied
@@ -191,10 +192,14 @@ pub fn build_tiles(notes: &[GalleryNote], options: GalleryOptions) -> Vec<Galler
         if note.is_folder {
             if options.nested {
                 let beneath = subtree(notes, at);
+                // A resource on the folder and on a note inside it is one file: counted
+                // once, and one preview. A picture in two notes' texts is a copy in each.
+                let mut seen = std::collections::HashSet::new();
                 let pictures: Vec<&GalleryPicture> = note
                     .pictures
                     .iter()
                     .chain(beneath.iter().flat_map(|n| n.pictures.iter()))
+                    .filter(|p| p.resource.as_ref().is_none_or(|r| seen.insert(r.id)))
                     .collect();
                 tiles.push(GalleryTile::Folder {
                     item_id: note.item_id,
@@ -305,7 +310,8 @@ mod tests {
     fn resource(name: &str) -> GalleryPicture {
         GalleryPicture::of_resource(
             ResourceRow {
-                id: 1,
+                // One resource per name: the same name in two notes is one file on both.
+                id: name.bytes().map(u64::from).sum(),
                 uid: uuid::Uuid::from_u128(name.len() as u128),
                 title: name.to_string(),
                 kind: ResourceKind::StoredFile,
@@ -465,6 +471,23 @@ mod tests {
             "the tile knows it is a resource"
         );
         assert!(tiles[0].resource().is_none());
+    }
+
+    /// A resource attached to a folder and to a note inside it is one picture of the
+    /// folder's tile, in its count and in its previews; a picture repeated in two notes'
+    /// texts is still two.
+    #[test]
+    fn a_resource_on_a_folder_and_inside_it_is_counted_once() {
+        let notes = vec![
+            GalleryNote {
+                pictures: vec![resource("Map")],
+                ..folder(1, 0)
+            },
+            note(2, 1, &["res:Map", "a"], ""),
+            note(3, 1, &["res:Map", "a", "res:Gull"], ""),
+        ];
+        let tiles = build_tiles(&notes, GalleryOptions::default());
+        assert_eq!(srcs(&tiles), ["folder[res:Mapaares:Gull]/4"]);
     }
 
     #[test]

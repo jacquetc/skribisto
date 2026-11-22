@@ -42,15 +42,17 @@ use teksilo::widgets::{
 };
 
 use frontend::AppContext;
+use frontend::commands::undo_redo_commands;
 use frontend::common::entities::WorkShape;
 use frontend::common::event::Event;
+use frontend::common::undo_redo::UndoStatus;
 
 use crate::app_ids::AppIds;
 use crate::models::{ResourceRow, StoreStart, StoredResourceFilesDto, WebLink};
 use crate::resources::links::{self, InsertedSpan};
 use crate::resources::open_safety::{self, OpenVerdict};
 use crate::resources::opened_files::{self, OpenedWhere};
-use crate::resources::session::{AttachNotice, ChangeNotice, ResourcesSession};
+use crate::resources::session::{ChangeNotice, ResourcesSession};
 use crate::resources::{file_kind, sizes};
 use crate::shared::long_op::{TrackedOp, event_id};
 use crate::shared::progress_toast::ProgressToast;
@@ -87,6 +89,20 @@ pub enum AddTarget {
     Text { handle: EditorHandle, at: usize },
 }
 
+/// Resources attached by a drop that had no event context to say so with (a drop on a
+/// binder row lands in the tree's data source), waiting on the view-model of the window
+/// the drop was made in for its next event to raise it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AttachNotice {
+    /// The undo step the attach landed on, for the toast's Undo.
+    pub seq: Option<u64>,
+    /// The resource's title when one was attached, empty for several.
+    pub title: String,
+    pub count: usize,
+    /// The item they were attached to.
+    pub item_title: String,
+}
+
 /// A store run in flight, and what to do with its result.
 struct PendingStore {
     op: TrackedOp,
@@ -118,6 +134,11 @@ struct Inner {
     save_as_folder: RefCell<Option<SaveAsFolderFn>>,
     store: RefCell<Option<PendingStore>>,
     progress: ProgressToast,
+    /// This window's binder drops, waiting to be said: on the view-model rather than
+    /// the project's session, which every window on the project shares, so the toast
+    /// shows in the window the drop was made in and not in whichever handles the
+    /// item's update first.
+    attach_notices: RefCell<Vec<AttachNotice>>,
 }
 
 /// The Resources dock's logic for one window. Cheap to clone; clones share it.
@@ -156,6 +177,7 @@ impl ResourcesViewModel {
                 save_as_folder: RefCell::new(None),
                 store: RefCell::new(None),
                 progress: ProgressToast::default(),
+                attach_notices: RefCell::new(Vec::new()),
             }),
         }
     }
@@ -345,6 +367,36 @@ impl ResourcesViewModel {
             .present(ctx);
     }
 
+    /// Files dropped on a text that are not pictures of it: attached to `item`, the item
+    /// that text belongs to, and linked at `handle`'s caret, which the editor put where
+    /// they landed. Both name the editor the files were dropped on, never the one with
+    /// focus nor the dock's item: in a Full Chapter each scene has an editor of its own,
+    /// and the drop moves no focus (see [`crate::resources::text_drop`]).
+    pub fn link_dropped_files(
+        &self,
+        ctx: &mut EventContext,
+        handle: &EditorHandle,
+        item: Option<u64>,
+        paths: Vec<PathBuf>,
+    ) {
+        // Every writing surface of a window names its item; one with none has nothing
+        // to file a resource on.
+        let Some(item) = item else {
+            eprintln!("resources: files dropped on a text with no item behind it were not added");
+            return;
+        };
+        let at = handle.cursor_position();
+        self.add_paths_to(
+            ctx,
+            vec![item],
+            paths,
+            AddTarget::Text {
+                handle: handle.clone(),
+                at,
+            },
+        );
+    }
+
     /// Copy `store` into the project (a long operation), then add it and `link`.
     fn begin_store(
         &self,
@@ -523,7 +575,7 @@ impl ResourcesViewModel {
         mut dto: StoredResourceFilesDto,
     ) -> StoredResourceFilesDto {
         let now = self.inner.session.model().resources_dir();
-        if now.as_os_str().is_empty() || now == dest {
+        if now.as_os_str().is_empty() || same_place(&now, dest) {
             return dto;
         }
         let failed = move_stored_folders(dest, &now, &dto.uids);
@@ -594,17 +646,28 @@ impl ResourcesViewModel {
                 return;
             }
         };
+        // Straight after the add, as a stamp has to be: the drop toast's Undo takes
+        // back this step.
+        let seq = crate::shared::undo_toast::stamp(&self.inner.app_ctx);
         self.inner.session.model().reload();
         ctx.announce(tr!(resources_added(count = created.len() as i64)).resolve_now());
         if let AddTarget::Text { handle, at } = target {
-            self.link_added_at(ctx, &handle, at, &created);
+            self.link_added_at(ctx, &handle, at, &created, seq);
         }
         self.offer_folder_project(ctx, before, self.stored_bytes());
     }
 
     /// The newly added resources, linked at `at` in `handle`'s text, and a toast whose
-    /// Undo takes back both the rows and the words.
-    fn link_added_at(&self, ctx: &mut EventContext, handle: &EditorHandle, at: usize, ids: &[u64]) {
+    /// Undo takes back both the rows and the words. `seq` is the undo step the add
+    /// landed on.
+    fn link_added_at(
+        &self,
+        ctx: &mut EventContext,
+        handle: &EditorHandle,
+        at: usize,
+        ids: &[u64],
+        seq: Option<u64>,
+    ) {
         if !crate::shared::editor_writes::accepts_writes(handle) {
             return;
         }
@@ -626,20 +689,57 @@ impl ResourcesViewModel {
                 .scoped_id("resources.dropped", self.work_id())
                 .auto_dismiss_after(UNDO_GRACE)
                 .action(ToastAction::primary(tr!(resources_undo()), move |c| {
-                    vm.undo_drop(c, &handle, &span, &ids);
+                    vm.undo_drop(c, &handle, &span, &ids, seq);
                 })),
         );
     }
 
     /// Take back a drop: the link text this window inserted, and the resources.
+    ///
+    /// The words first, and only while they are still where they were put. When the
+    /// writer has typed before them since, those offsets hold other words and nothing
+    /// is deleted; the resources then stay too, since removing them would leave links in
+    /// the text pointing at nothing, and the writer is told.
+    ///
+    /// The resources go by undoing the add itself (`seq`) while it is still the last
+    /// step on the project's stack, as Ctrl+Z would, so the Undo leaves no second step
+    /// behind it. Once something else has landed on top, undoing the add would mean
+    /// undoing that first, so they are removed as a step of their own, which Ctrl+Z
+    /// takes back in turn.
     fn undo_drop(
         &self,
         ctx: &mut EventContext,
         handle: &EditorHandle,
         span: &InsertedSpan,
         ids: &[u64],
+        seq: Option<u64>,
     ) {
-        links::remove_span(handle, span);
+        if !links::remove_span(handle, span) {
+            ctx.show_toast(
+                // An id of its own: the drop's toast closes once its Undo has run,
+                // and would take this one with it under the same id.
+                Toast::info(tr!(resources_dropped_undo_kept()))
+                    .scoped_id("resources.dropped_kept", self.work_id()),
+            );
+            return;
+        }
+        if let Some(seq) = seq {
+            let stack = self.inner.ids.stack_id.get();
+            match undo_redo_commands::undo_if_head(&self.inner.app_ctx, stack, seq) {
+                Ok(UndoStatus::Undone) => {
+                    self.inner.session.model().reload();
+                    return;
+                }
+                Ok(UndoStatus::Superseded | UndoStatus::Empty) => {}
+                Err(e) => {
+                    ctx.show_toast(
+                        Toast::error(tr!(resources_remove_failed(error = e.to_string())))
+                            .scoped_id("resources.failed", self.work_id()),
+                    );
+                    return;
+                }
+            }
+        }
         if let Err(e) = self.inner.session.model().remove(ids) {
             ctx.show_toast(
                 Toast::error(tr!(resources_remove_failed(error = e)))
@@ -784,7 +884,8 @@ impl ResourcesViewModel {
             crate::shared::external_link::open_external_link(&row.location, ctx);
             return;
         }
-        if row.missing {
+        // Read now, not only when the row was built: the link may be newer.
+        if row.missing || stored_elsewhere(row) {
             self.say_missing(ctx, row);
             return;
         }
@@ -839,36 +940,40 @@ impl ResourcesViewModel {
             .present(ctx);
     }
 
-    /// Where `row`'s file opens: the file itself, or a fresh copy for a single-file
-    /// project's stored file. `None` when there is nothing to open.
-    fn file_to_hand_over(
-        &self,
-        row: &ResourceRow,
-    ) -> Result<Option<(PathBuf, OpenedWhere)>, String> {
+    /// Where `row`'s file opens: the file itself, or the copy a single-file project's
+    /// stored file opens through (see `ResourcesSession::open_copy`). A stored file is
+    /// remembered as handed over, so an edit in it comes back. `None` when there is
+    /// nothing to open.
+    fn file_to_hand_over(&self, row: &ResourceRow) -> Result<Option<PathBuf>, String> {
         let Some(path) = row.path.clone() else {
             return Ok(None);
         };
         if row.is_linked() {
-            return Ok(Some((path, OpenedWhere::InPlace)));
+            return Ok(Some(path));
+        }
+        // Every way a stored file reaches the desktop comes through here: Open, Open
+        // anyway, Show in folder, and the image viewer's Open in another app.
+        if stored_elsewhere(row) {
+            return Err(tr!(resources_not_found_toast(name = row.file_name.clone())).resolve_now());
         }
         if self.inner.shape.get() == Some(WorkShape::Folder) {
-            return Ok(Some((path, OpenedWhere::InPlace)));
+            self.remember_in_place(row, &path);
+            return Ok(Some(path));
         }
         let data = crate::identity::app_paths()
             .map(|p| p.data_dir().to_path_buf())
             .ok_or_else(|| tr!(resources_no_data_folder()).resolve_now())?;
-        let copy = opened_files::write_open_copy(&path, &data, row.uid, &row.file_name)
-            .map_err(|e| e.to_string())?;
-        Ok(Some((copy, OpenedWhere::Copy)))
+        self.inner
+            .session
+            .open_copy(row, &data)
+            .map(Some)
+            .map_err(|e| e.to_string())
     }
 
     /// Hand `row`'s file to the application the desktop opens it with.
     pub fn open_file(&self, ctx: &mut EventContext, row: &ResourceRow) {
         match self.file_to_hand_over(row) {
-            Ok(Some((path, place))) => {
-                if row.is_stored() {
-                    self.remember(row, &path, place);
-                }
+            Ok(Some(path)) => {
                 crate::shell::process::open_in_default_app(&path.to_string_lossy());
             }
             Ok(None) => {}
@@ -891,10 +996,7 @@ impl ResourcesViewModel {
             return;
         }
         match self.file_to_hand_over(row) {
-            Ok(Some((path, place))) => {
-                if row.is_stored() {
-                    self.remember(row, &path, place);
-                }
+            Ok(Some(path)) => {
                 crate::shell::process::reveal_in_file_manager(&path.to_string_lossy());
             }
             Ok(None) => {}
@@ -907,7 +1009,8 @@ impl ResourcesViewModel {
         }
     }
 
-    fn remember(&self, row: &ResourceRow, path: &Path, place: OpenedWhere) {
+    /// Remember a folder project's stored file, handed over as it is.
+    fn remember_in_place(&self, row: &ResourceRow, path: &Path) {
         let hash = if row.content_hash.is_empty() {
             opened_files::hash_file(path)
                 .map(|(_, h)| h)
@@ -918,19 +1021,15 @@ impl ResourcesViewModel {
         self.inner
             .session
             .opened()
-            .remember(row.uid, path, place, &hash);
+            .remember(row.uid, path, OpenedWhere::InPlace, &hash);
     }
 
     /// Show a picture resource in the image viewer, whose Open in another app goes
     /// through [`Self::open_file`], so its edits come back like any other.
     fn view_picture(&self, ctx: &mut EventContext, row: &ResourceRow, path: PathBuf) {
-        let hash = if row.content_hash.is_empty() {
-            opened_files::hash_file(&path)
-                .map(|(_, h)| h)
-                .unwrap_or_default()
-        } else {
-            row.content_hash.clone()
-        };
+        // A linked file has no recorded hash, and is not read here to make one: the
+        // viewer keys it by its place (see `picture_cache::file_key_hash`).
+        let hash = row.content_hash.clone();
         let entry = crate::picture_viewer::ViewerEntry {
             src: links::resource_href(row.uid),
             alt: if row.description.trim().is_empty() {
@@ -1104,17 +1203,31 @@ impl ResourcesViewModel {
     }
 
     /// [`Self::attach_dropped`] for a drop with no event context (a binder row's, which
-    /// lands in the tree's data source): the attach is made now and its toast waits
-    /// for the window's next event (`raise_attach_notices`).
-    pub fn attach_dropped_later(&self, item: u64, ids: &[u64]) {
-        if let Ok(Some(notice)) = self.attach_quietly(item, ids) {
-            self.inner.session.push_attach_notice(notice);
+    /// lands in the tree's data source): the attach is made now and its toast waits on
+    /// this view-model, this window's, for the window's next event
+    /// (`raise_attach_notices`).
+    ///
+    /// `false` when the attach failed, for the tree to refuse the drop: there is no
+    /// context to say so with, and a failed attach changes nothing, so no update would
+    /// come to raise a queued notice by either.
+    pub fn attach_dropped_later(&self, item: u64, ids: &[u64]) -> bool {
+        match self.attach_quietly(item, ids) {
+            Ok(Some(notice)) => {
+                self.inner.attach_notices.borrow_mut().push(notice);
+                true
+            }
+            Ok(None) => true,
+            Err(e) => {
+                eprintln!("resources: could not attach the resources dropped on an item: {e}");
+                false
+            }
         }
     }
 
-    /// Raise the attach notices binder drops queued.
+    /// Raise the attach notices this window's binder drops queued.
     pub fn raise_attach_notices(&self, ctx: &mut EventContext) {
-        for notice in self.inner.session.take_attach_notices() {
+        let notices = std::mem::take(&mut *self.inner.attach_notices.borrow_mut());
+        for notice in notices {
             self.raise_attach_notice(ctx, notice);
         }
     }
@@ -1123,7 +1236,10 @@ impl ResourcesViewModel {
     /// every one already.
     fn attach_quietly(&self, item: u64, ids: &[u64]) -> Result<Option<AttachNotice>, String> {
         let model = self.inner.session.model();
-        let carried = model.attachments(&[item]).remove(&item).unwrap_or_default();
+        let carried = model
+            .attachments(&[item])?
+            .remove(&item)
+            .unwrap_or_default();
         let mut new: Vec<u64> = Vec::new();
         for id in ids {
             if !carried.contains(id) && !new.contains(id) {
@@ -1212,6 +1328,7 @@ impl ResourcesViewModel {
                     _ => tr!(resources_removed_many_toast(count = rows.len() as i64)),
                 };
                 self.undo_toast(ctx, message);
+                // Its copies go now, each only if it holds no edit: see `forget`.
                 for row in rows {
                     self.inner.session.opened().forget(row.uid);
                 }
@@ -1309,9 +1426,15 @@ impl ResourcesViewModel {
         );
     }
 
-    /// Whether inserting `row` asks between the picture and a link to it.
+    /// Whether inserting `row` asks between the picture and a link to it: a file in a
+    /// format the editor paints, judged by the file that would be read (see
+    /// [`name_to_judge`]), and not past the size a picture may be, which inserting it
+    /// would refuse.
     pub fn offers_picture(row: &ResourceRow) -> bool {
-        !row.is_web_link() && !row.missing && file_kind::is_viewable_picture(&row.file_name)
+        !row.is_web_link()
+            && !row.missing
+            && row.byte_size <= document_ingest::pictures::MAX_PICTURE_BYTES
+            && file_kind::is_viewable_picture(&name_to_judge(row))
     }
 
     /// Link `row` at `at` in `handle`'s text.
@@ -1324,7 +1447,8 @@ impl ResourcesViewModel {
 
     /// Put a picture resource into `handle`'s text at `at` as a picture of the text: a
     /// copy of its bytes, stored as an `Asset` (reusing one with the same bytes), from
-    /// then on independent of the resource.
+    /// then on independent of the resource. Read and stored away from the interface
+    /// thread; it goes in once that is done, if the text is still open.
     pub fn insert_picture(
         &self,
         ctx: &mut EventContext,
@@ -1343,26 +1467,26 @@ impl ResourcesViewModel {
         } else {
             row.description.clone()
         };
-        let media_dir = self.media_dir();
-        let result = crate::shared::images::insert_picture_file(
-            &self.inner.app_ctx,
-            &self.inner.ids,
-            &media_dir,
+        let vm = self.clone();
+        crate::shared::images::insert_picture_file(
+            ctx,
+            self.inner.app_ctx.clone(),
+            self.inner.ids.clone(),
+            move || vm.media_dir(),
             handle,
             at,
-            path,
-            &alt,
+            path.to_path_buf(),
+            alt,
         );
-        if let Err(e) = result {
-            ctx.show_toast(
-                Toast::error(lit!(e.to_string())).scoped_id("images.failed", self.work_id()),
-            );
-        }
     }
 
     // ── Changes made in other applications ───────────────────────────────────
 
     /// Raise the notices the project's pickup queued: one per changed file.
+    ///
+    /// Unlike an attach notice, these stay on the project's session and go to the first
+    /// window to ask: a pickup runs where no window is (before a save), and the toast is
+    /// routed to the project's audience, every window on it, whichever raises it.
     pub fn raise_change_notices(&self, ctx: &mut EventContext) {
         for notice in self.inner.session.take_notices() {
             self.raise_notice(ctx, notice);
@@ -1504,11 +1628,22 @@ pub fn siblings_to_relink(
 
 /// Move the uid folders a store run wrote into `from` over to `to`. Returns the uids that
 /// could not be moved.
+///
+/// Nothing is moved when the two are one folder spelled two ways: the same path but for
+/// its case on a volume that ignores case (APFS, NTFS), a `.` in it, a link on the way.
+/// Compared as strings they differ, the rename onto itself fails there, and the copy
+/// that follows it copied the folder onto itself and then deleted it.
 pub fn move_stored_folders(from: &Path, to: &Path, uids: &[String]) -> Vec<String> {
+    if same_place(from, to) {
+        return Vec::new();
+    }
     let mut failed = Vec::new();
     for uid in uids {
         let source = from.join(uid);
         let target = to.join(uid);
+        if same_place(&source, &target) {
+            continue;
+        }
         let moved = std::fs::create_dir_all(to)
             .and_then(|()| std::fs::rename(&source, &target))
             .or_else(|_| {
@@ -1519,6 +1654,20 @@ pub fn move_stored_folders(from: &Path, to: &Path, uids: &[String]) -> Vec<Strin
         }
     }
     failed
+}
+
+/// Whether `a` and `b` name one place on disk: equal as paths, or once each is
+/// resolved by the file system (links followed, `.` and `..` applied, and the case a
+/// case-insensitive volume stores). A path that cannot be resolved (not there yet) is
+/// only the same as an equal one.
+pub fn same_place(a: &Path, b: &Path) -> bool {
+    if a == b {
+        return true;
+    }
+    match (std::fs::canonicalize(a), std::fs::canonicalize(b)) {
+        (Ok(a), Ok(b)) => a == b,
+        _ => false,
+    }
 }
 
 /// Copy a uid folder (one file, by construction) across file systems.
@@ -1566,13 +1715,40 @@ pub fn with_declined(setting: &str, uid: &str) -> String {
 /// system, never only the row's `file_name`. A linked file opens its `location`, and a
 /// shared project can pair a harmless name ("map.pdf") with a path to a `.desktop`
 /// launcher or a script; judged by the name it was given, it opened without asking.
-/// A stored file's path is built from its `file_name`, so the two agree there anyway.
+/// A stored file's path is built from its `file_name`, so the two agree there, unless
+/// the file is a symbolic link.
+///
+/// A symbolic link is judged by the file it points at: macOS opens that file, by its
+/// own name, so a `map.pdf` linked to a `run.command` ran it. A link to nothing gives no
+/// name to trust, and the empty name asks.
 pub(crate) fn name_to_judge(row: &ResourceRow) -> String {
-    row.path
-        .as_deref()
-        .and_then(Path::file_name)
+    let Some(path) = row.path.as_deref() else {
+        return row.file_name.clone();
+    };
+    let is_link = std::fs::symlink_metadata(path).is_ok_and(|m| m.file_type().is_symlink());
+    let opened = if is_link {
+        match std::fs::canonicalize(path) {
+            Ok(target) => target,
+            Err(_) => return String::new(),
+        }
+    } else {
+        path.to_path_buf()
+    };
+    opened
+        .file_name()
         .map(|n| n.to_string_lossy().into_owned())
         .unwrap_or_else(|| row.file_name.clone())
+}
+
+/// Whether `row` is a stored file the project does not really hold: a link out of its
+/// folder (see [`open_safety::leaves_its_folder`]). Never opened, shown or revealed: it
+/// is "not where the project expects it", and said so.
+fn stored_elsewhere(row: &ResourceRow) -> bool {
+    row.is_stored()
+        && row
+            .path
+            .as_deref()
+            .is_some_and(open_safety::leaves_its_folder)
 }
 
 #[cfg(test)]

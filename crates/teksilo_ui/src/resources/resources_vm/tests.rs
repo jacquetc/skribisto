@@ -164,6 +164,40 @@ fn stored_folders_move_to_where_the_project_now_keeps_them() {
     assert!(!from.join(uid).exists());
 }
 
+/// One folder spelled two ways is not moved onto itself. On a volume that ignores case a
+/// rename between two spellings of one folder fails, and the copy that followed copied
+/// the folder onto itself and deleted it; Linux renames it onto itself without error, so
+/// here the spellings it has (a `.`, a link on the way) stand for that.
+#[cfg(unix)]
+#[test]
+fn a_folder_spelled_two_ways_is_one_place_and_is_not_moved() {
+    let dir = tempfile::tempdir().expect("tmp");
+    let from = dir.path().join("resources");
+    let uid = "6f1c8a6e-0000-4000-8000-000000000001";
+    std::fs::create_dir_all(from.join(uid)).expect("mkdir");
+    std::fs::write(from.join(uid).join("map.pdf"), b"map").expect("write");
+    let alias = dir.path().join("alias");
+    std::os::unix::fs::symlink(&from, &alias).expect("link");
+
+    for to in [
+        from.join("."),
+        alias.clone(),
+        dir.path().join("x").join("..").join("resources"),
+    ] {
+        if let Some(parent) = to.parent() {
+            std::fs::create_dir_all(parent).expect("mkdir");
+        }
+        assert!(same_place(&from, &to), "{}", to.display());
+        assert!(move_stored_folders(&from, &to, &[uid.to_string()]).is_empty());
+        assert_eq!(
+            std::fs::read(from.join(uid).join("map.pdf")).expect("still there"),
+            b"map"
+        );
+    }
+    assert!(!same_place(&from, &dir.path().join("elsewhere")));
+    assert!(!same_place(&from, &dir.path().join("x")));
+}
+
 #[test]
 fn a_picture_asks_and_nothing_else_does() {
     let picture = ResourceRow {
@@ -183,6 +217,32 @@ fn a_picture_asks_and_nothing_else_does() {
         kind: ResourceKind::WebLink,
         location: "https://example.org/a.jpg".into(),
         ..row(3, "Page")
+    }));
+}
+
+/// Insert as picture is judged by the file that would be read, and is not offered for
+/// one past the size a picture may be: inserting it would refuse it.
+#[test]
+fn a_picture_is_offered_by_the_file_it_reads_and_within_the_picture_cap() {
+    let linked = ResourceRow {
+        kind: ResourceKind::LinkedFile,
+        file_name: "lighthouse.png".into(),
+        path: Some(PathBuf::from("/home/someone/lighthouse.png")),
+        ..row(1, "Lighthouse")
+    };
+    assert!(ResourcesViewModel::offers_picture(&linked));
+    assert!(!ResourcesViewModel::offers_picture(&ResourceRow {
+        path: Some(PathBuf::from("/home/someone/notes.pdf")),
+        ..linked.clone()
+    }));
+    let cap = document_ingest::pictures::MAX_PICTURE_BYTES;
+    assert!(ResourcesViewModel::offers_picture(&ResourceRow {
+        byte_size: cap,
+        ..linked.clone()
+    }));
+    assert!(!ResourcesViewModel::offers_picture(&ResourceRow {
+        byte_size: cap + 1,
+        ..linked
     }));
 }
 
@@ -213,7 +273,7 @@ fn a_resource_links_by_uid_and_a_web_link_by_its_address() {
 #[cfg(not(feature = "mocks"))]
 mod real {
     use super::*;
-    use crate::resources::opened_files::{OpenedWhere, write_open_copy};
+    use crate::resources::opened_files::OpenedWhere;
     use crate::test_support::RealProject;
 
     /// Store `files` into the project's resources directory, as the dock does, and
@@ -254,6 +314,17 @@ mod real {
         scene: u64,
         _data: tempfile::TempDir,
         data: PathBuf,
+    }
+
+    /// Set a file's modification time a little later, so a test does not depend on how
+    /// fine the file system's clock is.
+    fn touch_later(path: &Path) {
+        let later = std::time::SystemTime::now() + Duration::from_secs(5);
+        std::fs::File::options()
+            .write(true)
+            .open(path)
+            .and_then(|f| f.set_modified(later))
+            .expect("touch");
     }
 
     fn fixture() -> Fixture {
@@ -404,17 +475,9 @@ mod real {
         let before = fx.session.model().rows_for(fx.scene)[0].clone();
         let stored = before.path.clone().expect("path");
 
-        let copy = write_open_copy(&stored, &fx.data, before.uid, &before.file_name).expect("copy");
-        fx.session
-            .opened()
-            .remember(before.uid, &copy, OpenedWhere::Copy, &before.content_hash);
+        let copy = fx.session.open_copy(&before, &fx.data).expect("copy");
         std::fs::write(&copy, b"map, annotated in another app").expect("edit");
-        let later = std::time::SystemTime::now() + Duration::from_secs(5);
-        std::fs::File::options()
-            .write(true)
-            .open(&copy)
-            .and_then(|f| f.set_modified(later))
-            .expect("touch");
+        touch_later(&copy);
 
         fx.session.pickup_changes();
         assert_eq!(
@@ -437,12 +500,148 @@ mod real {
         let undone = fx.session.model().by_id(before.id).expect("row");
         assert_eq!(undone.content_hash, before.content_hash);
         assert_eq!(undone.byte_size, before.byte_size);
+        assert_eq!(
+            std::fs::read(&copy).expect("read"),
+            b"map, first draft",
+            "the copy the other application has open no longer shows what was undone"
+        );
 
         fx.session.pickup_changes();
         assert!(
             fx.session.take_notices().is_empty(),
             "the change was reported once"
         );
+
+        // The other application saves again: a new change, taken in like the first.
+        std::fs::write(&copy, b"map, annotated a second time").expect("edit");
+        touch_later(&copy);
+        assert!(fx.session.pickup_changes());
+        assert_eq!(fx.session.take_notices().len(), 1);
+        assert_eq!(
+            std::fs::read(&stored).expect("read"),
+            b"map, annotated a second time"
+        );
+    }
+
+    /// Undo finds the stored file where it is when asked, not where it was at the
+    /// pickup: a Save As in between moves the project's working folder.
+    #[test]
+    fn undo_puts_the_previous_version_where_the_stored_file_is_now() {
+        let fx = fixture();
+        let src = fx.data.join("Village map.pdf");
+        std::fs::write(&src, b"map, first draft").expect("write");
+        store_and_add(&fx.project.app_ctx, &fx.session, fx.scene, &[src]);
+        let before = fx.session.model().rows_for(fx.scene)[0].clone();
+        let old_dir = fx.session.model().resources_dir();
+        let old_stored = before.path.clone().expect("path");
+        let copy = fx.session.open_copy(&before, &fx.data).expect("copy");
+        std::fs::write(&copy, b"map, annotated").expect("edit");
+        touch_later(&copy);
+        fx.session.pickup_changes();
+        let undo = fx.session.take_notices()[0].undo.clone().expect("undo");
+
+        // The working folder moves, its files with it, as a Save As does.
+        fx.session.model().set_media_root(fx.data.join("moved"));
+        let new_dir = fx.session.model().resources_dir();
+        assert_ne!(new_dir, old_dir);
+        let new_stored = fx
+            .session
+            .model()
+            .by_id(before.id)
+            .and_then(|r| r.path)
+            .expect("path");
+        crate::resources::opened_files::replace_file(&old_stored, &new_stored).expect("move");
+        std::fs::remove_file(&old_stored).expect("move");
+
+        fx.session.undo_change(before.id, &undo).expect("undone");
+        assert_eq!(
+            std::fs::read(&new_stored).expect("read"),
+            b"map, first draft"
+        );
+        assert!(!old_stored.exists(), "nothing written where the file was");
+    }
+
+    /// A copy the close kept, because the writer saved it after the close's last look,
+    /// is taken in at the next open of the same resource rather than overwritten.
+    #[test]
+    fn a_copy_kept_at_close_is_taken_in_at_the_next_open() {
+        let fx = fixture();
+        let src = fx.data.join("Village map.pdf");
+        std::fs::write(&src, b"map, first draft").expect("write");
+        store_and_add(&fx.project.app_ctx, &fx.session, fx.scene, &[src]);
+        let row = fx.session.model().rows_for(fx.scene)[0].clone();
+        let stored = row.path.clone().expect("path");
+        let copy = fx.session.open_copy(&row, &fx.data).expect("copy");
+        let key = fx.session.model().resources_dir();
+        let key = key.file_name().expect("a key");
+        assert!(
+            copy.starts_with(fx.data.join("open").join(key)),
+            "under the project's own folder: {}",
+            copy.display()
+        );
+        fx.session.opened().close();
+        assert!(!copy.exists(), "unchanged, so removed");
+
+        // Saved in the other application after the close took its last look.
+        let copy = fx.session.open_copy(&row, &fx.data).expect("copy");
+        std::fs::write(&copy, b"map, annotated after the close").expect("edit");
+        fx.session.opened().close();
+        assert!(copy.exists(), "kept: the project does not hold it");
+
+        let again = fx.session.open_copy(&row, &fx.data).expect("copy");
+        assert_eq!(again, copy);
+        assert_eq!(
+            std::fs::read(&copy).expect("read"),
+            b"map, annotated after the close",
+            "not overwritten"
+        );
+        assert_eq!(
+            std::fs::read(&stored).expect("read"),
+            b"map, annotated after the close",
+            "taken in"
+        );
+        let notices = fx.session.take_notices();
+        assert_eq!(notices.len(), 1);
+        assert!(notices[0].undo.is_some(), "with its Undo");
+        assert!(!fx.session.pickup_changes(), "and settled");
+    }
+
+    /// A change that could not be taken in (the stored file could not be replaced) is
+    /// not counted as seen: the close keeps its copy, and the next pickup takes it in.
+    #[cfg(unix)]
+    #[test]
+    fn a_change_that_could_not_be_taken_in_is_retried_and_its_copy_kept() {
+        use std::os::unix::fs::PermissionsExt;
+        let fx = fixture();
+        let src = fx.data.join("Village map.pdf");
+        std::fs::write(&src, b"map, first draft").expect("write");
+        store_and_add(&fx.project.app_ctx, &fx.session, fx.scene, &[src]);
+        let row = fx.session.model().rows_for(fx.scene)[0].clone();
+        let stored = row.path.clone().expect("path");
+        let folder = stored.parent().expect("folder").to_path_buf();
+        let copy = fx.session.open_copy(&row, &fx.data).expect("copy");
+        std::fs::write(&copy, b"map, annotated").expect("edit");
+        touch_later(&copy);
+
+        let set_mode = |mode| {
+            std::fs::set_permissions(&folder, std::fs::Permissions::from_mode(mode))
+                .expect("chmod");
+        };
+        // The stored file's folder refuses the temporary file the replace goes through.
+        set_mode(0o555);
+        let refused = tempfile::tempfile_in(&folder).is_err();
+        if !refused {
+            // Running as root: nothing is refused, so there is no failure to test.
+            set_mode(0o755);
+            return;
+        }
+        assert!(!fx.session.pickup_changes(), "nothing could be taken in");
+        assert!(fx.session.take_notices().is_empty());
+        set_mode(0o755);
+
+        assert!(fx.session.pickup_changes(), "tried again, and taken in now");
+        assert_eq!(std::fs::read(&stored).expect("read"), b"map, annotated");
+        assert_eq!(fx.session.take_notices().len(), 1);
     }
 
     /// A folder project's file edited in place is the project's already: only the row
@@ -462,12 +661,7 @@ mod real {
             &before.content_hash,
         );
         std::fs::write(&stored, b"one and two").expect("edit");
-        let later = std::time::SystemTime::now() + Duration::from_secs(5);
-        std::fs::File::options()
-            .write(true)
-            .open(&stored)
-            .and_then(|f| f.set_modified(later))
-            .expect("touch");
+        touch_later(&stored);
 
         fx.session.pickup_changes();
         let after = fx.session.model().by_id(before.id).expect("row");
@@ -498,21 +692,13 @@ mod real {
         }
         save_state.mark_clean();
 
-        let copy = write_open_copy(&stored, &fx.data, row.uid, &row.file_name).expect("copy");
-        fx.session
-            .opened()
-            .remember(row.uid, &copy, OpenedWhere::Copy, &row.content_hash);
+        let copy = fx.session.open_copy(&row, &fx.data).expect("copy");
         assert!(
             !save_state.is_unsaved_on_leaving(),
             "opening a file changes nothing"
         );
         std::fs::write(&copy, b"map, annotated in another app").expect("edit");
-        let later = std::time::SystemTime::now() + Duration::from_secs(5);
-        std::fs::File::options()
-            .write(true)
-            .open(&copy)
-            .and_then(|f| f.set_modified(later))
-            .expect("touch");
+        touch_later(&copy);
 
         assert!(save_state.is_unsaved_on_leaving());
         assert_eq!(
@@ -541,6 +727,322 @@ mod real {
         save_state.request_save();
         assert_eq!(ran.get(), 1);
     }
+
+    // ── Drops ────────────────────────────────────────────────────────────────
+
+    /// A view-model for one window over the fixture's project, its dock following
+    /// `focus`.
+    fn window_vm(fx: &Fixture, focus: u64) -> ResourcesViewModel {
+        ResourcesViewModel::new(
+            fx.project.app_ctx.clone(),
+            fx.project.ids.clone(),
+            fx.session.clone(),
+            Signal::new(Some(focus)),
+            Signal::new(None),
+            Signal::new(String::new()),
+        )
+    }
+
+    /// An editor over `text`, standing for one text of a window.
+    fn editor_over(text: &str) -> EditorHandle {
+        let doc = teksilo::text_document::TextDocument::new();
+        doc.set_plain_text(text).expect("text");
+        teksilo::widgets::rich_text::RichTextEditor::editor(doc).handle()
+    }
+
+    /// A file past the large-file size, sparse so that it costs nothing on disk.
+    fn large_file(dir: &Path, name: &str) -> PathBuf {
+        let path = dir.join(name);
+        std::fs::File::create(&path)
+            .and_then(|f| f.set_len(sizes::LARGE_FILE_BYTES + 1))
+            .expect("a large file");
+        path
+    }
+
+    /// A tree with a toast host and a text backend, for a test that clicks a toast.
+    fn toast_tree(
+        fx: &Fixture,
+    ) -> (
+        teksilo::core::widget_tree::WidgetTree,
+        teksilo::widgets::ToastRegistry,
+    ) {
+        let (tree, toasts) =
+            crate::test_support::tree_with_toast_host_and_settings(&fx.project.app_ctx);
+        let tree = tree.with_text_backend(Rc::new(RefCell::new(
+            teksilo::canvas::MockTextBackend::new(),
+        )));
+        (tree, toasts)
+    }
+
+    /// Click the button labelled `label` in the toasts on screen.
+    fn click_in_toast(tree: &mut teksilo::core::widget_tree::WidgetTree, label: &str) {
+        let button = tree
+            .find_by_label(label)
+            .unwrap_or_else(|| panic!("no {label:?} on screen"));
+        crate::test_support::click(tree, button);
+        tree.layout(SizeProposal::exact(900.0, 600.0));
+    }
+
+    /// Files dropped on a text go to that text and its item, whichever editor has
+    /// focus and whatever item the dock follows: in a Full Chapter each scene has its
+    /// own editor, and the drop moves no focus.
+    #[test]
+    fn files_dropped_on_a_text_are_filed_on_its_item_and_linked_in_it() {
+        let fx = fixture();
+        let first = fx.scene;
+        let (second, _) = fx.project.add_scene_after(first, "Seven");
+        // The dock follows the first scene, and its editor is the one with focus.
+        let vm = window_vm(&fx, first);
+        let focused = editor_over("Scene three, where the caret is.");
+        {
+            let focused = focused.clone();
+            vm.connect(
+                Rc::new(move || Some(focused.clone())),
+                Rc::new(PathBuf::new),
+                Rc::new(|_| {}),
+            );
+        }
+        // The file lands in the second scene's editor, which put its caret there.
+        let dropped_on = editor_over("Scene seven. The file lands here.");
+        dropped_on.select_range(13, 13);
+        let recording = large_file(&fx.data, "Harbour recording.wav");
+        let (mut tree, _toasts) = toast_tree(&fx);
+        {
+            let (vm, dropped_on) = (vm.clone(), dropped_on.clone());
+            crate::test_support::press(&mut tree, move |c| {
+                // Linked where it is, as the writer chose once and for all.
+                large_file_signal(c).set("link".to_string());
+                vm.link_dropped_files(c, &dropped_on, Some(second), vec![recording.clone()]);
+            });
+        }
+        let model = fx.session.model();
+        assert_eq!(model.rows_for(second).len(), 1, "filed on the text's item");
+        assert!(model.rows_for(first).is_empty(), "not on the dock's item");
+        let uid = model.rows_for(second)[0].uid;
+        assert!(
+            dropped_on.to_djot().contains(&links::resource_href(uid)),
+            "linked in the editor it landed on: {}",
+            dropped_on.to_djot()
+        );
+        assert!(
+            !focused.to_djot().contains("resource:"),
+            "nothing in the editor with focus"
+        );
+    }
+
+    /// Drop a linked file on `handle`'s text at `at`, attached to the fixture's scene,
+    /// as the drop's own pipeline does once the large-file question is answered.
+    fn drop_linked(
+        fx: &Fixture,
+        tree: &mut teksilo::core::widget_tree::WidgetTree,
+        handle: &EditorHandle,
+        at: usize,
+    ) {
+        let path = fx.data.join("Tide tables.pdf");
+        std::fs::write(&path, b"%PDF-1.7 tides").expect("write");
+        let vm = window_vm(fx, fx.scene);
+        let (handle, scene) = (handle.clone(), fx.scene);
+        crate::test_support::press(tree, move |c| {
+            vm.begin_store(
+                c,
+                Vec::new(),
+                vec![path.clone()],
+                vec![scene],
+                AddTarget::Text {
+                    handle: handle.clone(),
+                    at,
+                },
+            );
+        });
+    }
+
+    /// The drop toast's Undo leaves the resources when it cannot take the words back:
+    /// the writer typed before them, so removing the rows would leave a link in the
+    /// text pointing at nothing. It says so instead.
+    #[test]
+    fn the_drop_undo_keeps_the_resources_when_the_text_has_moved() {
+        crate::test_support::with_real_messages(|| {
+            let fx = fixture();
+            let handle = editor_over("Night fell.");
+            let (mut tree, _toasts) = toast_tree(&fx);
+            drop_linked(&fx, &mut tree, &handle, 5);
+            assert_eq!(fx.session.model().all().len(), 1);
+            assert!(handle.to_djot().contains("resource:"));
+            // The writer goes on typing, before the link.
+            handle.select_range(0, 0);
+            handle.insert_text("Then ");
+            click_in_toast(&mut tree, &tr!(resources_undo()).resolve_now());
+            assert_eq!(fx.session.model().all().len(), 1, "the resource stays");
+            assert!(
+                handle.to_djot().contains("resource:"),
+                "and so does its link: {}",
+                handle.to_djot()
+            );
+            tree.layout(SizeProposal::exact(900.0, 600.0));
+            assert!(
+                tree.find_by_label(&tr!(resources_dropped_undo_kept()).resolve_now())
+                    .is_some(),
+                "the writer is told why nothing was taken back"
+            );
+        });
+    }
+
+    /// The drop toast's Undo takes back the words and undoes the add itself, leaving
+    /// no second step on the project's stack for Ctrl+Z to walk through.
+    #[test]
+    fn the_drop_undo_takes_back_the_words_and_undoes_the_add() {
+        crate::test_support::with_real_messages(|| {
+            let fx = fixture();
+            let stack = fx.project.ids.stack_id.get().expect("an undo stack");
+            let steps = || {
+                frontend::commands::undo_redo_commands::get_stack_size(&fx.project.app_ctx, stack)
+            };
+            let before = steps();
+            let handle = editor_over("Night fell.");
+            let (mut tree, _toasts) = toast_tree(&fx);
+            drop_linked(&fx, &mut tree, &handle, 5);
+            assert_eq!(steps(), before + 1, "the add is one step");
+            click_in_toast(&mut tree, &tr!(resources_undo()).resolve_now());
+            assert!(fx.session.model().all().is_empty(), "the resource is gone");
+            assert_eq!(
+                handle.to_plain_text(),
+                "Night fell.",
+                "and so are its words"
+            );
+            assert_eq!(
+                steps(),
+                before,
+                "the add was undone, not followed by a removal"
+            );
+        });
+    }
+
+    /// A resource dropped on a binder row in one window says so in that window, not in
+    /// another window on the same project that handled the item's update first.
+    #[test]
+    fn a_binder_drop_is_said_in_the_window_it_was_made_in() {
+        let fx = fixture();
+        let (second, _) = fx.project.add_scene_after(fx.scene, "Two");
+        let ids = fx
+            .session
+            .model()
+            .add(
+                &[fx.scene],
+                &StoredResourceFilesDto::default(),
+                &[],
+                &[WebLink {
+                    url: "https://example.org/harbour".into(),
+                    title: "Harbour records".into(),
+                }],
+            )
+            .expect("added");
+        // Two windows on one project: one session, a view-model each.
+        let one = window_vm(&fx, fx.scene);
+        let two = window_vm(&fx, fx.scene);
+        assert!(two.attach_dropped_later(second, &ids), "attached");
+
+        let toasts = teksilo::widgets::ToastRegistry::new(Default::default());
+        let mut tree = crate::test_support::tree_with_toast_registry(&fx.project.app_ctx, &toasts);
+        // Window one's handler runs first, as the older window's does.
+        crate::test_support::press(&mut tree, move |c| one.raise_attach_notices(c));
+        assert_eq!(toasts.live_count(), 0, "nothing in the other window");
+        crate::test_support::press(&mut tree, move |c| two.raise_attach_notices(c));
+        assert_eq!(
+            toasts.live_count(),
+            1,
+            "the notice, in the window of the drop"
+        );
+    }
+
+    /// A binder drop whose attach fails tells the tree, which refuses the drop rather
+    /// than taking it as if it had worked, and queues no notice.
+    #[test]
+    fn a_binder_drop_that_cannot_attach_is_refused() {
+        let fx = fixture();
+        let vm = window_vm(&fx, fx.scene);
+        assert!(
+            !vm.attach_dropped_later(fx.scene, &[u64::MAX]),
+            "no such resource to attach"
+        );
+        let toasts = teksilo::widgets::ToastRegistry::new(Default::default());
+        let mut tree = crate::test_support::tree_with_toast_registry(&fx.project.app_ctx, &toasts);
+        crate::test_support::press(&mut tree, move |c| vm.raise_attach_notices(c));
+        assert_eq!(toasts.live_count(), 0);
+    }
+
+    /// Removing a stored resource removes the copy it was opened through, rather than
+    /// leaving it in the data folder for the sweep, unless that copy holds an edit.
+    #[test]
+    fn removing_a_resource_removes_its_unedited_copy() {
+        let fx = fixture();
+        let a = fx.data.join("Village map.pdf");
+        let b = fx.data.join("Tide tables.pdf");
+        std::fs::write(&a, b"map").expect("write");
+        std::fs::write(&b, b"tides").expect("write");
+        store_and_add(&fx.project.app_ctx, &fx.session, fx.scene, &[a, b]);
+        let rows = sorted_by_title(fx.session.model().rows_for(fx.scene));
+        let (tides, map) = (rows[0].clone(), rows[1].clone());
+        let map_copy = fx.session.open_copy(&map, &fx.data).expect("copy");
+        let tides_copy = fx.session.open_copy(&tides, &fx.data).expect("copy");
+        std::fs::write(&tides_copy, b"tides, annotated").expect("edit");
+
+        let vm = window_vm(&fx, fx.scene);
+        let mut tree = crate::test_support::tree_with_events(&fx.project.app_ctx);
+        let removed = vec![map.clone(), tides.clone()];
+        crate::test_support::press(&mut tree, move |c| vm.remove_now(c, &removed));
+        assert!(fx.session.model().all().is_empty(), "both removed");
+        assert!(
+            !map_copy.exists(),
+            "the unedited copy goes with its resource"
+        );
+        assert_eq!(
+            std::fs::read(&tides_copy).expect("kept"),
+            b"tides, annotated",
+            "a copy holding an edit stays"
+        );
+        assert!(fx.session.opened().files().is_empty());
+    }
+
+    /// A folder project from elsewhere can hold, as a stored file's own, a link to any
+    /// file on the disk. Its row shows it missing once read, and a row read before the
+    /// link was made does not hand it to the desktop either.
+    #[cfg(unix)]
+    #[test]
+    fn a_stored_file_linked_out_of_its_folder_is_never_handed_over() {
+        let fx = fixture();
+        let src = fx.data.join("Village map.pdf");
+        std::fs::write(&src, b"%PDF-1.7 map").expect("write");
+        store_and_add(&fx.project.app_ctx, &fx.session, fx.scene, &[src]);
+        let before = fx.session.model().rows_for(fx.scene)[0].clone();
+        let stored = before.path.clone().expect("path");
+        let script = fx.data.join("run.command");
+        std::fs::write(&script, b"#!/bin/sh\necho gotcha").expect("write");
+        std::fs::remove_file(&stored).expect("remove");
+        std::os::unix::fs::symlink(&script, &stored).expect("link");
+
+        // Folder shape: without the check, the path itself would be handed over.
+        let vm = ResourcesViewModel::new(
+            fx.project.app_ctx.clone(),
+            fx.project.ids.clone(),
+            fx.session.clone(),
+            Signal::new(Some(fx.scene)),
+            Signal::new(Some(WorkShape::Folder)),
+            Signal::new(String::new()),
+        );
+        assert!(!before.missing, "read before the link was made");
+        assert!(
+            vm.file_to_hand_over(&before).is_err(),
+            "a link out of its folder is not opened"
+        );
+        assert!(
+            fx.session.opened().files().is_empty(),
+            "nor remembered as handed over"
+        );
+
+        fx.session.model().reload();
+        let after = fx.session.model().by_id(before.id).expect("row");
+        assert!(after.missing, "the project does not hold that file");
+    }
 }
 
 #[test]
@@ -566,4 +1068,39 @@ fn a_linked_file_is_judged_by_the_file_it_opens_not_by_its_name() {
         ..row(10, "Notes")
     };
     assert_eq!(name_to_judge(&bare), "notes.txt");
+}
+
+#[cfg(unix)]
+#[test]
+fn a_link_is_judged_by_the_file_it_points_at() {
+    let dir = tempfile::tempdir().expect("tmp");
+    let script = dir.path().join("run.command");
+    std::fs::write(&script, b"#!/bin/sh").expect("write");
+    let link = dir.path().join("map.pdf");
+    std::os::unix::fs::symlink(&script, &link).expect("link");
+    let disguised = ResourceRow {
+        kind: ResourceKind::LinkedFile,
+        file_name: "map.pdf".into(),
+        location: link.to_string_lossy().into_owned(),
+        path: Some(link.clone()),
+        ..row(11, "Village map")
+    };
+    assert_eq!(name_to_judge(&disguised), "run.command");
+    assert_eq!(
+        open_safety::verdict(&name_to_judge(&disguised)),
+        OpenVerdict::Ask,
+        "macOS would run what the link points at"
+    );
+    // A link to nothing has no name to trust: it asks, and is no picture.
+    let dangling = dir.path().join("photo.png");
+    std::os::unix::fs::symlink(dir.path().join("gone.png"), &dangling).expect("link");
+    let dangling = ResourceRow {
+        path: Some(dangling),
+        ..disguised.clone()
+    };
+    assert_eq!(
+        open_safety::verdict(&name_to_judge(&dangling)),
+        OpenVerdict::Ask
+    );
+    assert!(!file_kind::is_viewable_picture(&name_to_judge(&dangling)));
 }

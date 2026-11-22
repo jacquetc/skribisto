@@ -506,14 +506,28 @@ pub fn writing_column(
             handle.select_range(activation.offset, activation.offset + 1);
         });
     }
+    // The item a file or a resource dropped here is attached to, off the same anchor
+    // "Add as note" reads it from.
+    let drop_item = anchor.as_ref().map(|a| a.item);
     // Files dropped on the prose. The editor has already put the caret where
     // they landed; turning a path into a picture needs the media directory, an
     // `Asset` row and an undo stack, so the paths are parked on the view-model
-    // and the command that owns that pipeline picks them up.
+    // and the command that owns that pipeline picks them up. Parked with this
+    // editor and its item, because the drop moves no focus: in a stream of scenes or
+    // a split view, the editor with focus is often another one.
     if let Some(fvm) = &format {
         let fvm = fvm.clone();
+        // Weak, for the reason the image-activation handler above gives.
+        let handle = editor.handle().downgrade();
         editor = editor.on_files_dropped(move |paths, ctx| {
-            fvm.dropped_files().set(paths.to_vec());
+            let Some(handle) = handle.upgrade() else {
+                return;
+            };
+            fvm.park_dropped_files(crate::resources::text_drop::DroppedFiles {
+                paths: paths.to_vec(),
+                handle,
+                item: drop_item,
+            });
             ctx.send_intent(Intent::new("editor.insert_dropped_images"));
         });
     }
@@ -550,9 +564,6 @@ pub fn writing_column(
         .clone()
         .filter(|_| !read_only)
         .map(|f| (f, editor.handle().downgrade()));
-    // The item a resource dropped here is attached to, off the same anchor "Add as
-    // note" reads it from.
-    let drop_item = anchor.as_ref().map(|a| a.item);
     let mut bound = TypographyBoundEditor::new(
         editor,
         typo.clone(),

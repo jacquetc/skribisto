@@ -477,15 +477,17 @@ pub struct FormatViewModel {
     /// Cleared on every other click, so "Describe the image…" is offered only
     /// while there is actually an image in hand.
     active_image: Signal<Option<(usize, String)>>,
-    /// Paths just dropped on an editor, for the command that turns them into
-    /// pictures.
+    /// Files just dropped on an editor, for the command that turns them into
+    /// pictures and resources.
     ///
     /// The editor widget reports a drop; inserting needs the project's media
     /// directory, an `Asset` row and an undo stack, none of which an editor
     /// builder has. So the paths are parked here — per-window, like everything
     /// else on this view-model — and a global command picks them up, reusing the
-    /// same pipeline `Insert image…` runs.
-    dropped_files: Signal<Vec<std::path::PathBuf>>,
+    /// same pipeline `Insert image…` runs. They are parked with the editor they
+    /// landed on and its item, which the command writes to rather than the editor
+    /// with focus: see [`crate::resources::text_drop`].
+    dropped_files: Rc<RefCell<Option<crate::resources::text_drop::DroppedFiles>>>,
     /// A picture resource dropped on an editor whose writer chose to insert the picture
     /// itself, for the command that does it. Parked here for the reason
     /// [`Self::dropped_files`] is: see [`crate::resources::text_drop`].
@@ -633,9 +635,15 @@ impl FormatViewModel {
         self.active_image.clone()
     }
 
-    /// Paths just dropped on an editor — see [`Self::dropped_files`].
-    pub fn dropped_files(&self) -> Signal<Vec<std::path::PathBuf>> {
-        self.dropped_files.clone()
+    /// Park files just dropped on an editor for `editor.insert_dropped_images`: see
+    /// [`Self::dropped_files`].
+    pub fn park_dropped_files(&self, dropped: crate::resources::text_drop::DroppedFiles) {
+        *self.dropped_files.borrow_mut() = Some(dropped);
+    }
+
+    /// Take the files parked by [`Self::park_dropped_files`].
+    pub fn take_dropped_files(&self) -> Option<crate::resources::text_drop::DroppedFiles> {
+        self.dropped_files.borrow_mut().take()
     }
 
     /// Park a resource dropped on an editor for `resources.insert_dropped_picture`.
@@ -664,7 +672,7 @@ impl FormatViewModel {
             dock_focus_within: Signal::new(false),
             surface: Signal::new(FormatSurface::None),
             active_image: Signal::new(None),
-            dropped_files: Signal::new(Vec::new()),
+            dropped_files: Rc::new(RefCell::new(None)),
             dropped_resource: Rc::new(RefCell::new(None)),
             bold: Signal::new(false),
             italic: Signal::new(false),

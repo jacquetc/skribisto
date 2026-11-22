@@ -128,6 +128,7 @@ impl Widget for FolderResourcesPane {
                 vm: self.vm.clone(),
                 view: setting,
                 selection: SelectionModel::new(SelectionMode::Single),
+                shown: Vec::new(),
                 root: None,
             });
         let id = teksu!(ctx => VStack {
@@ -202,8 +203,12 @@ struct FolderResourcesBody {
     vm: FolderResourcesViewModel,
     view: Signal<String>,
     /// Kept across rebuilds, so a change elsewhere does not lose the row the keyboard
-    /// was on.
+    /// was on. Held by index, so each rebuild moves it to where its resource now is
+    /// ([`row::select_ids`]).
     selection: SelectionModel,
+    /// The ids of the rows the last build showed, in order: what the selection's
+    /// indices meant.
+    shown: Vec<u64>,
     root: Option<WidgetId>,
 }
 
@@ -221,7 +226,10 @@ impl Widget for FolderResourcesBody {
         self.vm.work_id().bind_to(sid, reg, BindingLevel::Rebuild);
         self.view.bind_to(sid, reg, BindingLevel::Rebuild);
 
+        let picked = row::selected_ids(&self.selection, &self.shown);
         let entries = self.vm.entries();
+        self.shown = entries.iter().map(|e| e.row.id).collect();
+        row::select_ids(&self.selection, &picked, &self.shown);
         if entries.is_empty() {
             let id = ctx.add(
                 Center::new().child(

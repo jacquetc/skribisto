@@ -24,8 +24,19 @@ use std::borrow::Cow;
 const SCHEME: &str = "resource:";
 
 /// `djot` with every `[words](resource:…)` link replaced by its `words`.
+///
+/// A picture whose source is a resource (`![words](resource:…)`) is left as it is: the app
+/// never writes one (a picture dropped into the text becomes an asset), and turning a
+/// picture into words would change the length of the text the comment rebase counts on.
 pub(crate) fn strip_resource_links(djot: &str) -> Cow<'_, str> {
-    if !djot.contains("](resource:") && !djot.contains("](RESOURCE:") {
+    // The scheme is matched in any case below, so the quick test must be too: a hand-written
+    // `](Resource:` opens in the app and has to lose its link here as well.
+    const OPENING: &[u8] = b"](resource:";
+    if !djot
+        .as_bytes()
+        .windows(OPENING.len())
+        .any(|w| w.eq_ignore_ascii_case(OPENING))
+    {
         return Cow::Borrowed(djot);
     }
     Cow::Owned(strip(djot))
@@ -154,12 +165,38 @@ fn resource_link_at(djot: &str, open: usize) -> Option<(usize, usize, usize)> {
     }
     let mut end = j + 1;
     // Attributes on the link (`{.class}`) go with it.
-    if bytes.get(end) == Some(&b'{')
-        && let Some(close_brace) = djot[end..].find('}')
-    {
-        end += close_brace + 1;
+    if let Some(after) = attributes_end(bytes, end) {
+        end = after;
     }
     Some((open + 1, close, end))
+}
+
+/// If an attribute block (`{.class key="value"}`) opens at `start`, the byte after its
+/// closing `}`.
+///
+/// The block is closed by the first `}` outside a quoted value, and a backslash escapes
+/// the byte after it, so `{title="a}b"}` goes whole. A block that meets a newline or the
+/// end of the text before it closes is no block at all: the `{` is prose and stays,
+/// rather than the export swallowing everything up to some later `}`.
+fn attributes_end(bytes: &[u8], start: usize) -> Option<usize> {
+    if bytes.get(start) != Some(&b'{') {
+        return None;
+    }
+    let mut quoted = false;
+    let mut i = start + 1;
+    while i < bytes.len() {
+        match bytes[i] {
+            b'\n' => return None,
+            b'\\' => i += 2,
+            b'"' => {
+                quoted = !quoted;
+                i += 1;
+            }
+            b'}' if !quoted => return Some(i + 1),
+            _ => i += 1,
+        }
+    }
+    None
 }
 
 #[cfg(test)]
@@ -204,6 +241,35 @@ mod tests {
     fn code_and_escapes_are_not_links() {
         let code = format!("`[x](resource:{UID})` and \\[y](resource:{UID})");
         assert_eq!(strip_resource_links(&code), code);
+    }
+
+    #[test]
+    fn a_quoted_brace_in_the_attributes_goes_with_them() {
+        let djot = format!("[map](resource:{UID}){{title=\"a}}b\" .ref}} ends.");
+        assert_eq!(strip_resource_links(&djot), "map ends.");
+    }
+
+    #[test]
+    fn an_unclosed_brace_after_a_link_stays_in_the_prose() {
+        let djot = format!("[map](resource:{UID}){{ and on.\nLater a }} closes nothing.");
+        assert_eq!(
+            strip_resource_links(&djot),
+            "map{ and on.\nLater a } closes nothing."
+        );
+        let at_the_end = format!("[map](resource:{UID}){{ open to the end");
+        assert_eq!(strip_resource_links(&at_the_end), "map{ open to the end");
+    }
+
+    #[test]
+    fn the_scheme_is_stripped_in_any_case() {
+        let djot = format!("[map](Resource:{UID}) and [chart](rEsOuRcE:{UID}).");
+        assert_eq!(strip_resource_links(&djot), "map and chart.");
+    }
+
+    #[test]
+    fn a_picture_from_a_resource_is_left_alone() {
+        let djot = format!("![gull](resource:{UID}) flies.");
+        assert_eq!(strip_resource_links(&djot), djot);
     }
 
     #[test]

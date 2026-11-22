@@ -91,7 +91,9 @@ pub(in crate::app) fn install(
         );
     }
     // A resource dropped on a binder row: the attach writes the item's junction, and
-    // its notice waits for that event to be raised with a context.
+    // its notice waits on this window's view-model for that event to be raised with a
+    // context. Each window's handler raises only its own, so the toast shows in the
+    // window the drop was made in.
     {
         let vm = vm.clone();
         ctx.subscribe_event_with_ctx(

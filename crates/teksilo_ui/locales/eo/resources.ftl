@@ -90,6 +90,7 @@ resources-dropped-added = { $count ->
     [one] Aldonita kiel rimedo de ĉi tiu ero, kaj ligita en la teksto
    *[other] { $count } dosieroj aldonitaj kiel rimedoj de ĉi tiu ero, kaj ligitaj en la teksto
 }
+resources-dropped-undo-kept = La teksto ŝanĝiĝis ekde la demeto, do nenio estis malfarita.
 resources-undo = Malfari
 resources-link-refused = «{ $url }» ne estas retadreso, kiun Skribisto povas konservi. Uzu adreson, kiu komenciĝas per http:// aŭ https://, sen uzantnomo aŭ pasvorto.
 

@@ -86,6 +86,7 @@ resources-added = { $count ->
 resources-dropped-added = { $count ->
    *[other] { $count }個のファイルをこの項目のリソースとして追加し、本文にリンクしました
 }
+resources-dropped-undo-kept = ドロップ後に本文が変更されたため、何も元に戻していません。
 resources-undo = 元に戻す
 resources-link-refused = 「{ $url }」は Skribisto が保存できるウェブアドレスではありません。http:// または https:// で始まり、ユーザー名やパスワードを含まないアドレスを使ってください。
 

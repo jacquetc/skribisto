@@ -90,6 +90,7 @@ resources-dropped-added = { $count ->
     [one] Added as a resource of this item, and linked in the text
    *[other] { $count } files added as resources of this item, and linked in the text
 }
+resources-dropped-undo-kept = The text has changed since the drop, so nothing was taken back.
 resources-undo = Undo
 resources-link-refused = “{ $url }” is not a web address Skribisto can keep. Use an address that starts with http:// or https://, without a user name or password.
 

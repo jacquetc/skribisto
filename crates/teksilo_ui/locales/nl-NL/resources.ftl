@@ -90,6 +90,7 @@ resources-dropped-added = { $count ->
     [one] Toegevoegd als bron van dit item, en gekoppeld in de tekst
    *[other] { $count } bestanden toegevoegd als bronnen van dit item, en gekoppeld in de tekst
 }
+resources-dropped-undo-kept = De tekst is sinds het neerzetten gewijzigd, dus er is niets ongedaan gemaakt.
 resources-undo = Ongedaan maken
 resources-link-refused = “{ $url }” is geen webadres dat Skribisto kan bewaren. Gebruik een adres dat begint met http:// of https://, zonder gebruikersnaam of wachtwoord.
 

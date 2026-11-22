@@ -19,7 +19,15 @@
 //! dots and spaces ignored), so `notes.pdf.exe` and `notes.exe.` both ask. A media type
 //! is never consulted: a project stores it, and a project can say anything.
 //!
-//! Not a view-model: one predicate.
+//! The name judged is the name of the file the desktop gets, which for a symbolic link is
+//! the file it points at (`ResourcesViewModel`'s `name_to_judge`): macOS opens what a link
+//! points at, so `map.pdf` pointing at `run.command` ran it in a terminal. And a stored
+//! file must be the project's own: one whose link leads out of its `resources/<uid>/`
+//! folder is not opened at all ([`leaves_its_folder`]).
+//!
+//! Not a view-model: two predicates.
+
+use std::path::Path;
 
 use super::file_kind::extension;
 
@@ -54,6 +62,32 @@ pub fn verdict(file_name: &str) -> OpenVerdict {
         OpenVerdict::Open
     } else {
         OpenVerdict::Ask
+    }
+}
+
+/// Whether the stored file at `path`, in its `resources/<uid>/` folder, is a symbolic
+/// link out of that folder, or sits in a folder that is itself a link. Such a file is
+/// not the project's: a shared folder project can point `map.pdf` at a script beside it
+/// or at any file on the disk, and opening it hands that file over. A link to another
+/// file of the same folder stays, judged by the name it leads to. `false` for a path
+/// that is no link at all, and for one that is not there (it is missing, and says so).
+pub fn leaves_its_folder(path: &Path) -> bool {
+    let is_link =
+        |p: &Path| std::fs::symlink_metadata(p).is_ok_and(|meta| meta.file_type().is_symlink());
+    let Some(folder) = path.parent() else {
+        return false;
+    };
+    if is_link(folder) {
+        return true;
+    }
+    if !is_link(path) {
+        return false;
+    }
+    match (std::fs::canonicalize(folder), std::fs::canonicalize(path)) {
+        (Ok(folder), Ok(target)) => target.parent() != Some(folder.as_path()),
+        // A link to nothing opens nothing; one whose folder cannot be read is not judged
+        // to be inside it.
+        _ => true,
     }
 }
 
@@ -103,6 +137,42 @@ mod tests {
         ] {
             assert_eq!(verdict(name), OpenVerdict::Ask, "{name}");
         }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_stored_file_linked_out_of_its_folder_is_not_the_projects() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let resources = dir.path().join("resources");
+        let folder = resources.join("uid-1");
+        std::fs::create_dir_all(&folder).expect("folder");
+        let elsewhere = dir.path().join("elsewhere");
+        std::fs::create_dir_all(&elsewhere).expect("folder");
+        std::fs::write(elsewhere.join("run.command"), b"#!/bin/sh").expect("write");
+        std::fs::write(folder.join("notes.txt"), b"notes").expect("write");
+        std::fs::write(folder.join("other.txt"), b"other").expect("write");
+
+        // Its own file, and a link to another file of its own folder.
+        assert!(!leaves_its_folder(&folder.join("notes.txt")));
+        std::os::unix::fs::symlink(folder.join("other.txt"), folder.join("alias.txt"))
+            .expect("link");
+        assert!(!leaves_its_folder(&folder.join("alias.txt")));
+        // A link out of the folder, relative or absolute, and a link to nothing.
+        std::os::unix::fs::symlink("../../elsewhere/run.command", folder.join("map.pdf"))
+            .expect("link");
+        assert!(leaves_its_folder(&folder.join("map.pdf")));
+        std::os::unix::fs::symlink(elsewhere.join("run.command"), folder.join("abs.pdf"))
+            .expect("link");
+        assert!(leaves_its_folder(&folder.join("abs.pdf")));
+        std::os::unix::fs::symlink(folder.join("gone"), folder.join("dangling.pdf")).expect("link");
+        assert!(leaves_its_folder(&folder.join("dangling.pdf")));
+        // A `<uid>` folder that is a link: whatever is in it is elsewhere.
+        std::os::unix::fs::symlink(&elsewhere, resources.join("uid-2")).expect("link");
+        assert!(leaves_its_folder(
+            &resources.join("uid-2").join("run.command")
+        ));
+        // Missing, not linked.
+        assert!(!leaves_its_folder(&folder.join("never.pdf")));
     }
 
     #[test]

@@ -118,9 +118,52 @@ impl PictureKey {
 pub fn asset_hash(src: &str) -> Option<&str> {
     let name = src.strip_prefix("assets/")?;
     let (stem, ext) = name.rsplit_once('.')?;
-    let is_hash = stem.len() == 64 && stem.bytes().all(|b| b.is_ascii_hexdigit());
     let is_ext = !ext.is_empty() && ext.bytes().all(|b| b.is_ascii_alphanumeric());
-    (is_hash && is_ext).then_some(stem)
+    (is_content_hash(stem) && is_ext).then_some(stem)
+}
+
+/// Whether `hash` has the shape of a content hash: 64 hex digits, a blake3 as hex.
+///
+/// The one rule for what may name a file in the cache directory. A resource's recorded
+/// hash comes from the project's own files, which can come from anywhere: a crafted
+/// `"../../somewhere/else"` would otherwise make a thumbnail write outside the cache.
+pub fn is_content_hash(hash: &str) -> bool {
+    hash.len() == 64 && hash.bytes().all(|b| b.is_ascii_hexdigit())
+}
+
+/// The context [`file_key_hash`] derives a key under, so a key made from a file's place
+/// is never the content hash of any file.
+const FILE_KEY_CONTEXT: &str = "Skribisto 2026 picture cache key of a file by its place";
+
+/// The hash to key the picture at `path` on, `recorded` being the content hash the
+/// project holds for it.
+///
+/// The recorded hash, when it is one ([`is_content_hash`]). A linked file has none, since
+/// adding it reads nothing, and neither has a Scrivener bookmark; a crafted project's may
+/// not be one. Such a file is keyed by where it is, its length and when it last changed,
+/// as the system reports them: an edit to the file makes a new key, so its thumbnail is
+/// never stale, and the key costs one look at the file's metadata rather than a read of
+/// its bytes. Derived under its own context, so it cannot be the content hash of any file,
+/// and still 64 hex digits, so the disk cache keeps it like any other.
+///
+/// `None` when the file's metadata cannot be read: there is nothing to show then anyway.
+pub fn file_key_hash(path: &Path, recorded: &str) -> Option<String> {
+    if is_content_hash(recorded) {
+        return Some(recorded.to_string());
+    }
+    let meta = std::fs::metadata(path).ok()?;
+    let changed = meta
+        .modified()
+        .ok()
+        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+        .map_or(0, |d| d.as_nanos());
+    let mut hasher = blake3::Hasher::new_derive_key(FILE_KEY_CONTEXT);
+    // The path first and the two fixed-width numbers after it: no two files' inputs can
+    // run into each other.
+    hasher.update(path.as_os_str().as_encoded_bytes());
+    hasher.update(&meta.len().to_le_bytes());
+    hasher.update(&changed.to_le_bytes());
+    Some(hasher.finalize().to_hex().to_string())
 }
 
 /// The file in `media_dir` a project picture's reference names, under the same rule as
@@ -137,9 +180,7 @@ pub fn asset_path(media_dir: &Path, src: &str) -> Option<PathBuf> {
 /// Runs on a worker thread. `None` for anything that does not end in pixels: a missing or
 /// unreadable file, a format the editor does not paint, a header past the ceilings.
 pub fn load(path: &Path, key: &PictureKey, disk: Option<&Path>) -> Option<Decoded> {
-    let cached = disk
-        .filter(|_| key.edge > 0)
-        .map(|dir| dir.join(format!("{}-{}.png", key.hash, key.edge)));
+    let cached = disk.and_then(|dir| cached_file(dir, key));
     if let Some(file) = &cached
         && let Some(decoded) = decode_checked(file, key.edge)
     {
@@ -159,6 +200,15 @@ pub fn load(path: &Path, key: &PictureKey, disk: Option<&Path>) -> Option<Decode
         width: small.width(),
         height: small.height(),
     })
+}
+
+/// The file in the cache directory `dir` that holds `key`'s thumbnail. `None` for a
+/// picture at its own size, which is never cached, and for a key whose hash could name
+/// anything but a file in `dir` ([`is_content_hash`]): such a picture is still decoded,
+/// only never cached.
+fn cached_file(dir: &Path, key: &PictureKey) -> Option<PathBuf> {
+    (key.edge > 0 && is_content_hash(&key.hash))
+        .then(|| dir.join(format!("{}-{}.png", key.hash, key.edge)))
 }
 
 /// Decode `path` once its header has passed the import ceilings. `max_edge`, when not `0`,
@@ -184,6 +234,15 @@ fn decode_checked(path: &Path, max_edge: u32) -> Option<Decoded> {
 /// Write a thumbnail beside its peers, through a temporary file so a reader never sees half
 /// of one. A failure costs only the next decode, so it is not reported.
 fn write_thumbnail(file: &Path, icon: &teksilo::canvas::RasterIcon) {
+    // Only ever a name `cached_file` made: a bare file name under the cache directory.
+    let named_by_a_hash = file
+        .file_stem()
+        .and_then(|stem| stem.to_str())
+        .and_then(|stem| stem.rsplit_once('-'))
+        .is_some_and(|(hash, edge)| is_content_hash(hash) && edge.parse::<u32>().is_ok());
+    if !named_by_a_hash {
+        return;
+    }
     let Some(dir) = file.parent() else { return };
     if std::fs::create_dir_all(dir).is_err() {
         return;
@@ -433,6 +492,68 @@ mod tests {
             Some(dir.join(format!("{HASH}.jpg")))
         );
         assert_eq!(asset_path(dir, "assets/evil/../x.png"), None);
+    }
+
+    /// A resource's recorded hash comes from the project's files: one that is not a
+    /// content hash is decoded from, but never names a file in the cache, which a
+    /// crafted `../..` would otherwise climb out of.
+    #[test]
+    fn a_hash_that_is_not_a_content_hash_never_names_a_cache_file() {
+        assert!(is_content_hash(HASH));
+        assert!(is_content_hash(&HASH.to_uppercase()));
+        assert!(!is_content_hash(&HASH[1..]));
+        assert!(!is_content_hash(&format!("{}/", &HASH[1..])));
+        assert!(!is_content_hash("../../home/someone/Pictures/holiday"));
+        let tmp = tempfile::tempdir().unwrap_or_else(|e| panic!("tempdir: {e}"));
+        let source = png_file(tmp.path(), "real.png", 40, 40);
+        let disk = tmp.path().join("a").join("b").join("cache");
+        let crafted = PictureKey {
+            hash: "../../escaped".into(),
+            edge: 10,
+        };
+        let decoded = load(&source, &crafted, Some(&disk)).unwrap_or_else(|| panic!("decoded"));
+        assert_eq!((decoded.width, decoded.height), (10, 10));
+        assert!(!tmp.path().join("a").join("escaped-10.png").exists());
+        assert!(
+            !disk.exists(),
+            "nothing was written for it, not even the folder"
+        );
+        let icon = teksilo::canvas::RasterIcon::from_raw(vec![0; 4], 1, 1);
+        write_thumbnail(&disk.join("../../escaped-10.png"), &icon);
+        assert!(!tmp.path().join("a").join("escaped-10.png").exists());
+    }
+
+    /// A file with no content hash recorded (a linked file, a Scrivener bookmark) is
+    /// keyed by its place, length and time, which change with it, under a key that has
+    /// a content hash's shape and is not its content hash.
+    #[test]
+    fn a_file_with_no_recorded_hash_is_keyed_by_its_place_and_its_changes() {
+        let tmp = tempfile::tempdir().unwrap_or_else(|e| panic!("tempdir: {e}"));
+        let source = png_file(tmp.path(), "linked.png", 8, 8);
+        assert_eq!(file_key_hash(&source, HASH).as_deref(), Some(HASH));
+        let key = file_key_hash(&source, "").unwrap_or_else(|| panic!("a key"));
+        assert!(is_content_hash(&key), "{key}");
+        let bytes = std::fs::read(&source).unwrap_or_default();
+        assert_ne!(key, blake3::hash(&bytes).to_hex().to_string());
+        assert_eq!(file_key_hash(&source, "").as_deref(), Some(key.as_str()));
+        assert_eq!(
+            file_key_hash(&source, "../not-a-hash").as_deref(),
+            Some(key.as_str()),
+            "a recorded hash of the wrong shape counts as none"
+        );
+        let other = png_file(tmp.path(), "other.png", 8, 8);
+        assert_ne!(
+            file_key_hash(&other, ""),
+            Some(key.clone()),
+            "another place"
+        );
+        png_file(tmp.path(), "linked.png", 16, 8);
+        assert_ne!(
+            file_key_hash(&source, ""),
+            Some(key),
+            "the file changed, so its thumbnail is another"
+        );
+        assert_eq!(file_key_hash(&tmp.path().join("gone.png"), ""), None);
     }
 
     #[test]

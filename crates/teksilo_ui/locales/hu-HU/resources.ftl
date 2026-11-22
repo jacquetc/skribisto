@@ -90,6 +90,7 @@ resources-dropped-added = { $count ->
     [one] Hozzáadva ennek az elemnek a forrásaként, és hivatkozva a szövegben
    *[other] { $count } fájl hozzáadva ennek az elemnek a forrásaiként, és hivatkozva a szövegben
 }
+resources-dropped-undo-kept = A szöveg az áthúzás óta megváltozott, így semmi sem lett visszavonva.
 resources-undo = Visszavonás
 resources-link-refused = A(z) „{ $url }” nem olyan webcím, amelyet a Skribisto megőrizhet. Olyan címet használjon, amely http:// vagy https:// előtaggal kezdődik, felhasználónév és jelszó nélkül.
 

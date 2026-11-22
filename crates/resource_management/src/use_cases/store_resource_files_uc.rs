@@ -74,6 +74,15 @@ impl LongOperation for StoreResourceFilesUseCase {
         if self.dto.dest_dir.trim().is_empty() {
             return Err(anyhow!("store_resource_files: no resources directory"));
         }
+        // A project's `resources/` that is a link is never read back (see
+        // `skrib_format::media::passes_through_link`): a file stored through it would
+        // land outside the project and be left out of its next save.
+        if std::fs::symlink_metadata(&dest_dir).is_ok_and(|m| m.is_symlink()) {
+            return Err(anyhow!(
+                "store_resource_files: the resources directory {} is a link",
+                dest_dir.display()
+            ));
+        }
         let total = self.dto.source_paths.len().max(1);
         let mut out = StoredResourceFilesDto::default();
         // Every folder this run made, removed again if it is cancelled.
@@ -347,6 +356,25 @@ mod tests {
         assert!(uc.execute(progress, cancel).is_err());
         let left = std::fs::read_dir(&dest).map(|d| d.count()).unwrap_or(0);
         assert_eq!(left, 0, "the first file's folder must be removed too");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn nothing_is_stored_through_a_linked_resources_directory() {
+        let dir = tempfile::tempdir().unwrap();
+        let elsewhere = dir.path().join("elsewhere");
+        std::fs::create_dir(&elsewhere).unwrap();
+        let linked = dir.path().join("resources");
+        std::os::unix::fs::symlink(&elsewhere, &linked).unwrap();
+        let src = dir.path().join("map.pdf");
+        std::fs::write(&src, b"map").unwrap();
+
+        assert!(run(&linked, vec![src.to_string_lossy().into_owned()], false).is_err());
+        assert_eq!(
+            std::fs::read_dir(&elsewhere).unwrap().count(),
+            0,
+            "nothing written where the link points"
+        );
     }
 
     #[test]

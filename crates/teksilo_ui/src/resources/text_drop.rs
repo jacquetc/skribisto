@@ -23,8 +23,18 @@
 //! stack, none of which an editor builder holds, so the choice is parked on the
 //! window's [`FormatViewModel`] and the `resources.insert_dropped_picture` command picks
 //! it up, as a dropped image file is picked up by `editor.insert_dropped_images`.
+//!
+//! ## Files from outside the app
+//!
+//! A file dropped from the desktop is the editor's own drop, not this target's. It is
+//! parked as [`DroppedFiles`] with the editor it landed on and that text's item, as a
+//! resource row's drop keeps its column's handle and item here, and the command writes
+//! there. Never into the editor with focus nor onto the dock's item: a Full Book or Full
+//! Chapter shows one editor per scene in one tab, a split view two panes, and a drop
+//! moves no focus.
 
 use std::cell::{Cell, RefCell};
+use std::path::PathBuf;
 use std::rc::Rc;
 
 use teksilo::core::DragPayload;
@@ -51,6 +61,27 @@ impl std::fmt::Debug for DroppedResource {
         f.debug_struct("DroppedResource")
             .field("row", &self.row.id)
             .field("at", &self.at)
+            .finish()
+    }
+}
+
+/// Files from outside the app dropped on a text, waiting for `editor.insert_dropped_images`
+/// (see the module docs).
+#[derive(Clone)]
+pub struct DroppedFiles {
+    pub paths: Vec<PathBuf>,
+    /// The editor they landed on, whose caret the drop put where they go.
+    pub handle: EditorHandle,
+    /// The item that text belongs to, which the files that are not pictures of it are
+    /// attached to. `None` for a text with no item behind it.
+    pub item: Option<u64>,
+}
+
+impl std::fmt::Debug for DroppedFiles {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("DroppedFiles")
+            .field("paths", &self.paths)
+            .field("item", &self.item)
             .finish()
     }
 }

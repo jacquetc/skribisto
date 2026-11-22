@@ -213,6 +213,13 @@ pub fn resource_relpath(uid: Uuid, file_name: &str) -> String {
     )
 }
 
+/// [`resource_relpath`] under the name an earlier build gave the file, or `None` when it
+/// is today's (see [`legacy_safe_file_name`]). For finding an existing file only.
+pub fn legacy_resource_relpath(uid: Uuid, file_name: &str) -> Option<String> {
+    let legacy = legacy_safe_file_name(file_name)?;
+    Some(format!("{RESOURCES_DIR}/{}/{legacy}", uid.hyphenated()))
+}
+
 /// `name` as one safe file name: no separator, no character a file system refuses, no
 /// name Windows reserves, not only dots, and not too long, in characters or in bytes. A
 /// name cut to fit keeps its extension, so the file still opens with the application it
@@ -222,7 +229,88 @@ pub fn resource_relpath(uid: Uuid, file_name: &str) -> String {
 /// The one rule for a file name that came from outside and has to become a path here: a
 /// resource's name comes from a shared project, and `..`, a separator or `CON` in it must
 /// not be able to escape its folder or fail the write.
+///
+/// A name Windows takes for a device gets a `_` in front, which is enough: `_CON.pdf` and
+/// `_COM¹ .tar.gz` are ordinary names everywhere. Those are `CON`, `PRN`, `AUX`, `NUL`,
+/// `CONIN$`, `CONOUT$`, and `COM` or `LPT` followed by one digit or a superscript `¹`,
+/// `²` or `³`, without case, with or without an extension, and with the spaces Windows
+/// strips before it compares.
+///
+/// What this returns for a name is where a stored resource lives on disk
+/// (`resources/<uid>/<this>`), so a change to it moves every existing file it names. The
+/// rule has changed once (see [`legacy_safe_file_name`]), and the lookups of an existing
+/// file fall back to the earlier name: [`crate::media::resource_file`] and the folder
+/// reader.
 pub fn safe_file_name(name: &str) -> String {
+    let out = made_safe(name);
+    if windows_device(&out) {
+        format!("_{out}")
+    } else {
+        out
+    }
+}
+
+/// [`safe_file_name`] as it was before it reserved every Windows device name, or `None`
+/// when that gives the same name as today's rule. Only for finding a file a project
+/// saved by an earlier build still holds under that name; nothing is written under it.
+///
+/// The earlier rule reserved `CON`, `PRN`, `AUX` and `NUL`, and `COM` or `LPT` followed by
+/// one ASCII digit, compared without case on the part of the name before its first dot,
+/// exactly as spelled. So it let through `COM¹` to `COM³` and `LPT¹` to `LPT³` (superscript
+/// digits), `CONIN$` and `CONOUT$`, and a reserved name with spaces before a first dot
+/// that does not start the extension (`CON .tar.gz`), which Windows strips before it
+/// compares. (Before a lone extension, `CON .txt`, the trim of the stem already took
+/// them, and the name was reserved.) A file stored under one of those
+/// names is renamed to today's as the project opens ([`crate::media::prune_resources_dir`]);
+/// until then, and wherever the rename could not be made, it is found under this one.
+pub fn legacy_safe_file_name(name: &str) -> Option<String> {
+    let out = made_safe(name);
+    let stem = out
+        .split('.')
+        .next()
+        .unwrap_or_default()
+        .to_ascii_uppercase();
+    let reserved = ["CON", "PRN", "AUX", "NUL"].contains(&stem.as_str())
+        || ((stem.starts_with("COM") || stem.starts_with("LPT"))
+            && stem.len() == 4
+            && stem[3..].chars().all(|c| c.is_ascii_digit()));
+    let legacy = if reserved { format!("_{out}") } else { out };
+    (legacy != safe_file_name(name)).then_some(legacy)
+}
+
+/// Whether Windows takes the file name `name` for a device rather than a file: `CON`,
+/// `PRN`, `AUX`, `NUL`, `CONIN$`, `CONOUT$`, and `COM` or `LPT` followed by one digit, `0`
+/// to `9` or a superscript `¹`, `²` or `³`. Without case, with or without an extension,
+/// and as Windows compares: on the part before the first dot, with the spaces it strips
+/// at the end of that part (`CON .tar.gz`). Dots and spaces at the very end of a name,
+/// and before a lone extension (`CON .txt`, `nul..txt`), are already gone
+/// ([`made_safe`]).
+fn windows_device(name: &str) -> bool {
+    let base = name
+        .split('.')
+        .next()
+        .unwrap_or_default()
+        .trim_end_matches(' ')
+        .to_uppercase();
+    if ["CON", "PRN", "AUX", "NUL", "CONIN$", "CONOUT$"].contains(&base.as_str()) {
+        return true;
+    }
+    let Some(digit) = base
+        .strip_prefix("COM")
+        .or_else(|| base.strip_prefix("LPT"))
+    else {
+        return false;
+    };
+    let mut chars = digit.chars();
+    matches!(
+        (chars.next(), chars.next()),
+        (Some('0'..='9' | '¹' | '²' | '³'), None)
+    )
+}
+
+/// The part of [`safe_file_name`] that both its rules share: every character made safe,
+/// the ends trimmed, the length cut, never empty. Not yet checked for a device name.
+fn made_safe(name: &str) -> String {
     use unicode_normalization::UnicodeNormalization;
     let mut out: String = name
         .nfc()
@@ -260,19 +348,8 @@ pub fn safe_file_name(name: &str) -> String {
     } else {
         format!("{kept}{extension}")
     };
-    let stem = out
-        .split('.')
-        .next()
-        .unwrap_or_default()
-        .to_ascii_uppercase();
-    let reserved = ["CON", "PRN", "AUX", "NUL"].contains(&stem.as_str())
-        || ((stem.starts_with("COM") || stem.starts_with("LPT"))
-            && stem.len() == 4
-            && stem[3..].chars().all(|c| c.is_ascii_digit()));
     if out.is_empty() {
         out = "_".to_string();
-    } else if reserved {
-        out.insert(0, '_');
     }
     out
 }
@@ -309,6 +386,65 @@ mod tests {
         assert_eq!(safe_file_name("CON.pdf"), "_CON.pdf");
         assert_eq!(safe_file_name("  "), "_");
         assert_eq!(safe_file_name("map.desktop"), "map.desktop");
+    }
+
+    /// Every name Windows takes for a device, as Windows matches it: without case, with
+    /// or without an extension, and with the spaces it strips before the extension.
+    #[test]
+    fn every_windows_device_name_is_reserved() {
+        for (name, safe) in [
+            ("COM¹.pdf", "_COM¹.pdf"),
+            ("com².pdf", "_com².pdf"),
+            ("LPT³", "_LPT³"),
+            ("lpt¹.tar.gz", "_lpt¹.tar.gz"),
+            ("CONIN$.txt", "_CONIN$.txt"),
+            ("conout$", "_conout$"),
+            // The spaces and dots before a lone extension go with the cut's trim.
+            ("CON .txt", "_CON.txt"),
+            ("Com1  .pdf", "_Com1.pdf"),
+            ("NUL..txt", "_NUL.txt"),
+            ("aux. .txt", "_aux.txt"),
+            // Before a first dot that is not the extension's, they stay, and Windows
+            // still strips them to compare.
+            ("CON .tar.gz", "_CON .tar.gz"),
+            ("nul .back-up", "_nul .back-up"),
+            ("PRN. ", "_PRN"),
+            ("nul . ", "_nul"),
+            ("LPT0.txt", "_LPT0.txt"),
+        ] {
+            assert_eq!(super::safe_file_name(name), safe, "{name:?}");
+        }
+        for name in [
+            "COM10.pdf",
+            "COM⁴.pdf",
+            "LPT.txt",
+            "CONSOLE.txt",
+            "CONIN.txt",
+            "CON-notes.txt",
+            "_CON.pdf",
+        ] {
+            assert_eq!(super::safe_file_name(name), name, "{name:?}");
+        }
+    }
+
+    /// The earlier rule, kept for finding a file an earlier build stored, gives a name
+    /// only where today's rule gives another.
+    #[test]
+    fn the_earlier_rule_answers_only_where_today_s_differs() {
+        use super::legacy_safe_file_name as legacy;
+        assert_eq!(legacy("COM¹.pdf").as_deref(), Some("COM¹.pdf"));
+        assert_eq!(legacy("CONIN$.txt").as_deref(), Some("CONIN$.txt"));
+        assert_eq!(legacy("CON .tar.gz").as_deref(), Some("CON .tar.gz"));
+        assert_eq!(legacy("CON .txt"), None);
+        assert_eq!(legacy("CON.pdf"), None);
+        assert_eq!(legacy("NUL..txt"), None);
+        assert_eq!(legacy("Village map.pdf"), None);
+        assert_eq!(legacy("Tide: tables?.pdf"), None);
+        let uid = uuid::Uuid::nil();
+        assert_eq!(
+            super::legacy_resource_relpath(uid, "COM¹.pdf").as_deref(),
+            Some("resources/00000000-0000-0000-0000-000000000000/COM¹.pdf")
+        );
     }
 
     #[test]

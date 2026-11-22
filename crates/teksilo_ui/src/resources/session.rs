@@ -11,16 +11,39 @@
 //! ## Picking up an edit made in another application
 //!
 //! [`ResourcesSession::pickup_changes`] runs when a window regains focus, before each
-//! save, and before a close or a quit decides whether anything is unsaved. A copy a single-file project opened ([`OpenedWhere::Copy`]) that changed
-//! replaces the stored file, and the previous bytes go to the scratch folder first, so
-//! the notice's Undo can put them back; a folder project's file edited in place
-//! ([`OpenedWhere::InPlace`]) is already the project's, so only its row moves and there
-//! is nothing to undo. Either way the row's size, hash and picture size are brought up
-//! to date, which is the edit that reaches the next save.
+//! save, and before a close or a quit decides whether anything is unsaved. A copy a
+//! single-file project opened ([`OpenedWhere::Copy`]) that changed replaces the stored
+//! file, and the previous bytes go to the scratch folder first, so the notice's Undo can
+//! put them back; a folder project's file edited in place ([`OpenedWhere::InPlace`]) is
+//! already the project's, so only its row moves and there is nothing to undo. Either way
+//! the row's size, hash and picture size are brought up to date, which is the edit that
+//! reaches the next save.
+//!
+//! Only a change taken in that way is settled ([`OpenedFiles::settle`]). One that fails
+//! on the way (the previous bytes could not be kept, the stored file could not be
+//! replaced, the row could not be written, the row is not found) stays unseen: it is
+//! tried again at the next pickup, and the close keeps its copy rather than deleting the
+//! only place the edit is.
+//!
+//! The copies themselves are made by [`ResourcesSession::open_copy`], under the
+//! project's own folder in `<data>/open/` (see [`crate::resources::opened_files`]). An
+//! earlier copy found there holding bytes the stored file does not (an edit saved after
+//! the last close took its look, or one that could not be taken in) is never
+//! overwritten: it is taken in at once, as if the writer had just come back from it,
+//! with the same notice and Undo, and then handed over as it is.
+//!
+//! Undo ([`ResourcesSession::undo_change`]) finds the stored file where it is at that
+//! moment, not where it was at the pickup, since a Save As in between moves it. It
+//! writes the previous bytes back there and into the copy, and settles the copy on
+//! them, so the other application's next save is a new change.
 //!
 //! Neither caller has an `EventContext` to raise the notice with (a focus change is an
 //! effect, a save request a plain call), so the notice is queued ([`ChangeNotice`]) and
 //! raised by the window that handles the `Resource` update the pickup itself caused.
+//! Its toast is routed to the project's audience, every window on the project, so which
+//! window raises it does not change where it shows. A binder drop's attach notice is
+//! not routed that way and is one window's own: it waits on that window's
+//! [`ResourcesViewModel`](crate::resources::ResourcesViewModel), not here.
 //!
 //! Not a view-model: per-project state and the file work around it.
 
@@ -32,7 +55,7 @@ use frontend::AppContext;
 
 use crate::app_ids::AppIds;
 use crate::models::{FileFacts, ResourceRow, ResourcesListModel};
-use crate::resources::opened_files::{self, OpenedFiles, OpenedWhere};
+use crate::resources::opened_files::{self, OpenCopy, OpenedFiles, OpenedWhere};
 
 /// A change picked up, waiting for a window to say so.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -49,23 +72,8 @@ pub struct ChangeNotice {
 pub struct UndoChange {
     /// The previous bytes, in the scratch folder.
     pub kept: PathBuf,
-    /// The stored file they go back to.
-    pub stored: PathBuf,
     /// The row as it was.
     pub previous: FileFacts,
-}
-
-/// Resources attached by a drop that had no event context to say so with (a drop on a
-/// binder row lands in the tree's data source), waiting for a window to raise it.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct AttachNotice {
-    /// The undo step the attach landed on, for the toast's Undo.
-    pub seq: Option<u64>,
-    /// The resource's title when one was attached, empty for several.
-    pub title: String,
-    pub count: usize,
-    /// The item they were attached to.
-    pub item_title: String,
 }
 
 struct Inner {
@@ -73,7 +81,6 @@ struct Inner {
     model: ResourcesListModel,
     opened: OpenedFiles,
     notices: RefCell<Vec<ChangeNotice>>,
-    attach_notices: RefCell<Vec<AttachNotice>>,
 }
 
 /// The Resources feature's per-project state. Cheap to clone; clones share it.
@@ -98,7 +105,6 @@ impl ResourcesSession {
                 model: ResourcesListModel::new(app_ctx, ids),
                 opened: OpenedFiles::new(),
                 notices: RefCell::new(Vec::new()),
-                attach_notices: RefCell::new(Vec::new()),
             }),
         }
     }
@@ -122,8 +128,8 @@ impl ResourcesSession {
     pub fn pickup_changes(&self) -> bool {
         let mut picked = false;
         for changed in self.inner.opened.changed() {
+            // Not settled: tried again at the next pickup, and kept by the close.
             let Some(row) = self.inner.model.by_uid(changed.uid) else {
-                self.inner.opened.forget(changed.uid);
                 continue;
             };
             let notice = match changed.place {
@@ -132,23 +138,67 @@ impl ResourcesSession {
                 }
                 OpenedWhere::InPlace => {
                     let facts = facts_of(&changed.path, &row, changed.len, &changed.hash);
-                    self.inner
-                        .model
-                        .set_file_facts(row.id, &facts)
-                        .ok()
-                        .map(|()| ChangeNotice {
+                    match self.inner.model.set_file_facts(row.id, &facts) {
+                        Ok(()) => Some(ChangeNotice {
                             row_id: row.id,
                             file_name: row.file_name.clone(),
                             undo: None,
-                        })
+                        }),
+                        Err(e) => {
+                            eprintln!("resources: could not update {}: {e}", row.file_name);
+                            None
+                        }
+                    }
                 }
             };
             if let Some(notice) = notice {
+                // Taken in: only now is the change seen.
+                self.inner
+                    .opened
+                    .settle(&changed.path, changed.stamp, &changed.hash);
                 self.inner.notices.borrow_mut().push(notice);
                 picked = true;
             }
         }
         picked
+    }
+
+    /// The copy `row`'s stored file opens through, made under `data_dir` and the
+    /// project's own folder there, and remembered so that an edit in it comes back.
+    ///
+    /// An earlier copy holding bytes the stored file does not is left as it is and taken
+    /// in now, with the notice and its Undo: it is an edit the writer saved that the
+    /// project never got (see the module docs).
+    pub fn open_copy(&self, row: &ResourceRow, data_dir: &Path) -> std::io::Result<PathBuf> {
+        let stored = row
+            .path
+            .clone()
+            .ok_or_else(|| std::io::Error::other("no stored file"))?;
+        let dir = self.inner.model.resources_dir();
+        let key = dir
+            .file_name()
+            .and_then(|n| n.to_str())
+            .ok_or_else(|| std::io::Error::other("no project to open a copy for"))?;
+        let held = if row.content_hash.is_empty() {
+            opened_files::hash_file(&stored)?.1
+        } else {
+            row.content_hash.clone()
+        };
+        match opened_files::write_open_copy(&stored, data_dir, key, row.uid, &row.file_name)? {
+            OpenCopy::Fresh(copy) => {
+                self.inner
+                    .opened
+                    .remember(row.uid, &copy, OpenedWhere::Copy, &held);
+                Ok(copy)
+            }
+            OpenCopy::Pending(copy) => {
+                self.inner
+                    .opened
+                    .remember_unsettled(row.uid, &copy, OpenedWhere::Copy, &held);
+                self.pickup_changes();
+                Ok(copy)
+            }
+        }
     }
 
     /// A single-file project's copy changed: it becomes the stored file.
@@ -181,26 +231,18 @@ impl ResourcesSession {
             return None;
         }
         let facts = facts_of(&stored, row, len, hash);
-        self.inner.model.set_file_facts(row.id, &facts).ok()?;
+        if let Err(e) = self.inner.model.set_file_facts(row.id, &facts) {
+            eprintln!("resources: could not update {}: {e}", row.file_name);
+            return None;
+        }
         Some(ChangeNotice {
             row_id: row.id,
             file_name: row.file_name.clone(),
             undo: kept.map(|kept| UndoChange {
                 kept,
-                stored,
                 previous: FileFacts::of(row),
             }),
         })
-    }
-
-    /// Queue a drop's attach notice for the next window event to raise.
-    pub fn push_attach_notice(&self, notice: AttachNotice) {
-        self.inner.attach_notices.borrow_mut().push(notice);
-    }
-
-    /// The attach notices waiting to be raised, taken: each is raised once.
-    pub fn take_attach_notices(&self) -> Vec<AttachNotice> {
-        std::mem::take(&mut *self.inner.attach_notices.borrow_mut())
     }
 
     /// The notices waiting to be raised, taken: each is raised once, by one window.
@@ -208,10 +250,29 @@ impl ResourcesSession {
         std::mem::take(&mut *self.inner.notices.borrow_mut())
     }
 
-    /// Put back the version a copy replaced, bytes and row both.
+    /// Put back the version a copy replaced: the stored file, the row, and the copy the
+    /// other application has open, settled on those bytes (see the module docs).
     pub fn undo_change(&self, row_id: u64, undo: &UndoChange) -> Result<(), String> {
-        opened_files::replace_file(&undo.kept, &undo.stored).map_err(|e| e.to_string())?;
-        self.inner.model.set_file_facts(row_id, &undo.previous)
+        // Where the stored file is now: a Save As since the pickup moved it.
+        let Some((row, stored)) = self
+            .inner
+            .model
+            .by_id(row_id)
+            .and_then(|row| row.path.clone().map(|path| (row, path)))
+        else {
+            // Removed since: its own Undo brings it back as it was when removed.
+            eprintln!("resources: the resource to undo the change of is gone");
+            return Ok(());
+        };
+        opened_files::replace_file(&undo.kept, &stored).map_err(|e| e.to_string())?;
+        self.inner.model.set_file_facts(row_id, &undo.previous)?;
+        if let Err(e) = self.inner.opened.rewrite_copies(row.uid, &stored) {
+            eprintln!(
+                "resources: could not put the previous version back into the copy of {}: {e}",
+                row.file_name
+            );
+        }
+        Ok(())
     }
 }
 

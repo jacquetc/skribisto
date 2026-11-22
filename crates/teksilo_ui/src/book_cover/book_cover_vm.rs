@@ -265,25 +265,60 @@ impl BookCoverViewModel {
                 crate::models::FolderPurpose::InsertImage,
                 &path,
             );
-            let work_id = vm.inner.ids.work_id.get();
-            let outcome = images::examine(&path)
-                .map_err(CoverError::NotStored)
-                .and_then(|image| vm.set_cover(&image));
-            let toast = match outcome {
-                Ok(()) => Toast::success(tr!(cover_set())).scoped_id("images.cover", work_id),
-                Err(CoverError::NoProject) => {
-                    Toast::warning(tr!(image_no_project())).scoped_id("images.no_project", work_id)
-                }
-                Err(CoverError::NotStored(e)) => {
-                    Toast::error(lit!(e.to_string())).scoped_id("images.failed", work_id)
-                }
-                Err(CoverError::NotRecorded(e)) => {
-                    eprintln!("book cover: recording the cover failed: {e:#}");
-                    Toast::error(tr!(image_not_recorded())).scoped_id("images.failed", work_id)
-                }
-            };
-            c.show_toast(toast);
+            vm.set_cover_from(c, path);
         });
+    }
+
+    /// [`Self::set_cover`] from the picture file at `path`: read, decoded and stored away
+    /// from the interface thread, then recorded back on it, with the toast that says how
+    /// it went. A window that has moved to another project meanwhile drops it.
+    pub fn set_cover_from(&self, ctx: &mut EventContext, path: PathBuf) {
+        let work_id = self.inner.ids.work_id.get();
+        let stored_in = self.inner.docs.media_dir();
+        if stored_in.as_os_str().is_empty() {
+            Self::report(ctx, Err(CoverError::NoProject), work_id);
+            return;
+        }
+        let shown = path.display().to_string();
+        let vm = self.clone();
+        images::off_the_interface(
+            ctx,
+            move || {
+                images::examine(&path).and_then(|image| {
+                    images::prepare(image, images::SizePolicy::KeepOriginal, &stored_in)
+                })
+            },
+            move |prepared, c| {
+                if vm.inner.ids.work_id.get() != work_id {
+                    eprintln!("book cover: the project changed while the picture was read");
+                    return;
+                }
+                // Stored already: `set_cover` finds the file in place and only records it.
+                let outcome = prepared
+                    .unwrap_or(Err(ImageError::Unreadable(shown)))
+                    .map_err(CoverError::NotStored)
+                    .and_then(|image| vm.set_cover(&image));
+                Self::report(c, outcome, work_id);
+            },
+        );
+    }
+
+    /// The toast that says how choosing a cover went.
+    fn report(c: &mut EventContext, outcome: Result<(), CoverError>, work_id: Option<u64>) {
+        let toast = match outcome {
+            Ok(()) => Toast::success(tr!(cover_set())).scoped_id("images.cover", work_id),
+            Err(CoverError::NoProject) => {
+                Toast::warning(tr!(image_no_project())).scoped_id("images.no_project", work_id)
+            }
+            Err(CoverError::NotStored(e)) => {
+                Toast::error(lit!(e.to_string())).scoped_id("images.failed", work_id)
+            }
+            Err(CoverError::NotRecorded(e)) => {
+                eprintln!("book cover: recording the cover failed: {e:#}");
+                Toast::error(tr!(image_not_recorded())).scoped_id("images.failed", work_id)
+            }
+        };
+        c.show_toast(toast);
     }
 
     /// [`Self::remove`], with the toast that says so.

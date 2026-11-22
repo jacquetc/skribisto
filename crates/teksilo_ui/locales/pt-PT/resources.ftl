@@ -90,6 +90,7 @@ resources-dropped-added = { $count ->
     [one] Adicionado como recurso deste item, e ligado no texto
    *[other] { $count } ficheiros adicionados como recursos deste item, e ligados no texto
 }
+resources-dropped-undo-kept = O texto mudou desde que foram largados, por isso nada foi anulado.
 resources-undo = Anular
 resources-link-refused = «{ $url }» não é um endereço web que o Skribisto possa guardar. Use um endereço que comece por http:// ou https://, sem nome de utilizador nem palavra-passe.
 

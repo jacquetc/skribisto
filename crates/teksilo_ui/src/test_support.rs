@@ -55,6 +55,16 @@ pub(crate) fn tree_with_events(app_ctx: &Rc<AppContext>) -> WidgetTree {
 }
 
 pub(crate) fn tree_with_settings(app_ctx: &Rc<AppContext>) -> WidgetTree {
+    let mut state: HashMap<TypeId, Box<dyn Any>> = HashMap::new();
+    state.insert(
+        TypeId::of::<SettingsStore>(),
+        Box::new(temp_settings_store()),
+    );
+    tree_with_events_and_state(app_ctx, state)
+}
+
+/// A settings store of the test's own, in a file no other test opens.
+fn temp_settings_store() -> SettingsStore {
     use std::sync::atomic::{AtomicU32, Ordering};
     static N: AtomicU32 = AtomicU32::new(0);
     let n = N.fetch_add(1, Ordering::Relaxed);
@@ -63,11 +73,7 @@ pub(crate) fn tree_with_settings(app_ctx: &Rc<AppContext>) -> WidgetTree {
         std::process::id()
     ));
     let _ = std::fs::remove_file(&path);
-    let store = SettingsStore::open(path).expect("open temp settings store");
-
-    let mut state: HashMap<TypeId, Box<dyn Any>> = HashMap::new();
-    state.insert(TypeId::of::<SettingsStore>(), Box::new(store));
-    tree_with_events_and_state(app_ctx, state)
+    SettingsStore::open(path).expect("open temp settings store")
 }
 
 /// A `WidgetTree` with a real [`ToastRegistry`] installed as `app_state`, so
@@ -94,6 +100,27 @@ pub(crate) fn tree_with_toast_registry(
 /// toast is built into widgets the way a window shows it: what a test then finds in the
 /// tree is what the writer sees, spinner included.
 pub(crate) fn tree_with_toast_host(app_ctx: &Rc<AppContext>) -> (WidgetTree, ToastRegistry) {
+    toast_host_over(app_ctx, HashMap::new())
+}
+
+/// [`tree_with_toast_host`] with a settings store of the test's own too, for a handler
+/// that reads a setting before it says anything. Real-backend only, as its one user is.
+#[cfg(not(feature = "mocks"))]
+pub(crate) fn tree_with_toast_host_and_settings(
+    app_ctx: &Rc<AppContext>,
+) -> (WidgetTree, ToastRegistry) {
+    let mut state: HashMap<TypeId, Box<dyn Any>> = HashMap::new();
+    state.insert(
+        TypeId::of::<SettingsStore>(),
+        Box::new(temp_settings_store()),
+    );
+    toast_host_over(app_ctx, state)
+}
+
+fn toast_host_over(
+    app_ctx: &Rc<AppContext>,
+    mut state: HashMap<TypeId, Box<dyn Any>>,
+) -> (WidgetTree, ToastRegistry) {
     use teksilo::presets::intui;
     use teksilo::widgets::{Expand, FixedSize, Spacer, ToastHost, ToastInstallOptions, ZStack};
 
@@ -102,7 +129,8 @@ pub(crate) fn tree_with_toast_host(app_ctx: &Rc<AppContext>) -> (WidgetTree, Toa
         ..ToastInstallOptions::default()
     };
     let registry = ToastRegistry::new(options.clone());
-    let mut tree = tree_with_toast_registry(app_ctx, &registry);
+    state.insert(TypeId::of::<ToastRegistry>(), Box::new(registry.clone()));
+    let mut tree = tree_with_events_and_state(app_ctx, state);
     tree.set_theme(intui::light());
     let page = tree.add(
         FixedSize::new()

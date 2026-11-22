@@ -29,7 +29,7 @@ use crate::intents::AppIntent;
 use crate::models::ResourceRow;
 use crate::resources::ResourcesViewModel;
 use crate::resources::file_kind::{self, FileKind};
-use crate::shared::picture_cache::{PictureCache, PictureKey, PictureState};
+use crate::shared::picture_cache::{self, PictureCache, PictureKey, PictureState};
 
 /// The thumbnail's side in a row, in logical pixels.
 const THUMB: f32 = 32.0;
@@ -377,6 +377,39 @@ pub fn resource_actions(
     menu.item(MenuItem::new(tr!(resources_remove())).on_activate_fn(move |c| vm.remove(c, &row)))
 }
 
+/// The resources `selection` holds, `shown` being the ids of the rows the list showed, in
+/// its order: what [`select_ids`] puts back once the rows have changed.
+pub fn selected_ids(selection: &SelectionModel, shown: &[u64]) -> Vec<u64> {
+    selection
+        .selected_indices()
+        .into_iter()
+        .filter_map(|i| shown.get(i).copied())
+        .collect()
+}
+
+/// Select again the rows of `ids` that are still among `rows` (the ids the list shows
+/// now, in its order), wherever they have moved, and nothing else.
+///
+/// A selection is held by index, and a list of resources is rebuilt from scratch on every
+/// change: after a rename re-sorts it, or a row ahead of it goes, the same index is
+/// another resource, and the next F2 or Delete acts on a row the writer never picked.
+pub fn select_ids(selection: &SelectionModel, ids: &[u64], rows: &[u64]) {
+    let at: Vec<usize> = rows
+        .iter()
+        .enumerate()
+        .filter(|(_, id)| ids.contains(id))
+        .map(|(i, _)| i)
+        .collect();
+    if at == selection.selected_indices() {
+        return;
+    }
+    match at.as_slice() {
+        [] => selection.clear(),
+        [one] => selection.select(*one),
+        _ => selection.select_indices(at, false),
+    }
+}
+
 /// What pasting a text on a list does with it: add its web addresses somewhere. Answers
 /// whether it added any.
 pub type PasteFn = Rc<dyn Fn(&mut EventContext, &str) -> bool>;
@@ -464,13 +497,18 @@ impl ResourceIcon {
     }
 }
 
-/// The file and content hash a row's thumbnail is decoded from: a picture the editor
-/// can paint, present, with a known hash. `None` for everything else.
+/// The file a row's thumbnail is decoded from and the hash its cache key carries: a
+/// present file in a format the editor paints, judged by the file read rather than by
+/// the name given (see [`crate::resources::name_to_judge`]). A linked file, which has no
+/// recorded hash, is keyed by its place ([`picture_cache::file_key_hash`]). `None` for
+/// everything else.
 pub fn picture_of(row: &ResourceRow) -> Option<(PathBuf, String)> {
-    (!row.missing && !row.content_hash.is_empty() && file_kind::is_viewable_picture(&row.file_name))
-        .then(|| row.path.clone())
-        .flatten()
-        .map(|p| (p, row.content_hash.clone()))
+    if row.missing || !file_kind::is_viewable_picture(&crate::resources::name_to_judge(row)) {
+        return None;
+    }
+    let path = row.path.clone()?;
+    let hash = picture_cache::file_key_hash(&path, &row.content_hash)?;
+    Some((path, hash))
 }
 
 impl std::fmt::Debug for ResourceIcon {
@@ -579,7 +617,7 @@ mod tests {
         let row = ResourceRow {
             kind: ResourceKind::StoredFile,
             file_name: "Lighthouse.png".into(),
-            content_hash: "a-hash-only-this-test-uses".into(),
+            content_hash: "a".repeat(64),
             path: Some(path),
             ..Default::default()
         };
@@ -592,5 +630,60 @@ mod tests {
         tree.layout(SizeProposal::exact(64.0, 64.0));
         tree.layout(SizeProposal::exact(64.0, 64.0));
         let _ = tree.accessibility_tree_snapshot();
+    }
+
+    #[test]
+    fn a_selection_follows_its_resources_when_the_rows_move() {
+        use teksilo::data::SelectionMode;
+        let selection = SelectionModel::new(SelectionMode::Multi);
+        selection.select(1);
+        selection.toggle(3);
+        let before = [10, 20, 30, 40];
+        let kept = selected_ids(&selection, &before);
+        assert_eq!(kept, [20, 40]);
+        // 20 was renamed to the end, 30 went, 50 came.
+        select_ids(&selection, &kept, &[10, 40, 50, 20]);
+        assert_eq!(selection.selected_indices(), [1, 3]);
+        select_ids(&selection, &[40], &[40, 10]);
+        assert_eq!(selection.selected_indices(), [0]);
+        select_ids(&selection, &[99], &[40, 10]);
+        assert!(selection.selected_indices().is_empty(), "gone, so nothing");
+    }
+
+    /// A linked picture has no recorded hash and still takes a thumbnail, keyed by its
+    /// place; a crafted hash is never the key; a picture name over another file is not
+    /// a picture.
+    #[test]
+    fn a_linked_picture_takes_a_thumbnail_and_a_disguised_file_does_not() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("Harbour.png");
+        let icon = teksilo::canvas::RasterIcon::from_raw(vec![90; 4 * 4 * 4], 4, 4);
+        std::fs::write(
+            &path,
+            crate::shared::images::encode_png(&icon).unwrap_or_default(),
+        )
+        .unwrap();
+        let linked = ResourceRow {
+            kind: ResourceKind::LinkedFile,
+            file_name: "Harbour.png".into(),
+            location: path.display().to_string(),
+            path: Some(path.clone()),
+            ..Default::default()
+        };
+        let place = picture_cache::file_key_hash(&path, "");
+        assert!(place.is_some());
+        assert_eq!(picture_of(&linked).map(|(_, h)| h), place);
+        let crafted = ResourceRow {
+            content_hash: "../../escape".into(),
+            ..linked.clone()
+        };
+        assert_eq!(picture_of(&crafted).map(|(_, h)| h), place);
+        let script = dir.path().join("run.desktop");
+        std::fs::write(&script, b"[Desktop Entry]").unwrap();
+        let disguised = ResourceRow {
+            path: Some(script),
+            ..linked
+        };
+        assert_eq!(picture_of(&disguised), None);
     }
 }

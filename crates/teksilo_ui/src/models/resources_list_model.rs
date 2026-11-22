@@ -298,35 +298,40 @@ mod imp {
         }
 
         /// The resource ids attached to each of `item_ids`, in the order they were
-        /// attached. An item with none is absent or maps to an empty list.
-        pub fn attachments(&self, item_ids: &[u64]) -> HashMap<u64, Vec<u64>> {
+        /// attached. An item with none is absent or maps to an empty list. An error when
+        /// the relationship cannot be read, never an empty map standing for one: a write
+        /// built on that would take every attachment off.
+        pub fn attachments(&self, item_ids: &[u64]) -> Result<HashMap<u64, Vec<u64>>, String> {
             if item_ids.is_empty() {
-                return HashMap::new();
+                return Ok(HashMap::new());
             }
             binder_item_commands::get_binder_item_relationship_many(
                 &self.inner.app_ctx,
                 item_ids,
                 &BinderItemRelationshipField::Resources,
             )
-            .unwrap_or_default()
+            .map_err(|e| format!("{e:#}"))
         }
 
         /// The project's resources that no item carries, trashed items included: a
-        /// resource on an item in the trash comes back with it, so it is not loose.
-        pub fn unattached(&self) -> Vec<ResourceRow> {
+        /// resource on an item in the trash comes back with it, so it is not loose. An
+        /// error when the attachments cannot be read, rather than every resource
+        /// listed as loose for a Remove to act on.
+        pub fn unattached(&self) -> Result<Vec<ResourceRow>, String> {
             let Some(work_id) = self.work_id() else {
-                return Vec::new();
+                return Ok(Vec::new());
             };
             let items: Vec<u64> =
                 crate::models::binder_stream::ordered_all_items(&self.inner.app_ctx, work_id)
                     .into_iter()
                     .map(|(_, item)| item.id)
                     .collect();
-            let held: HashSet<u64> = self.attachments(&items).into_values().flatten().collect();
-            self.all()
+            let held: HashSet<u64> = self.attachments(&items)?.into_values().flatten().collect();
+            Ok(self
+                .all()
                 .into_iter()
                 .filter(|r| !held.contains(&r.id))
-                .collect()
+                .collect())
         }
 
         /// Attach the resources `ids` to every item of `item_ids`, keeping what each
@@ -334,7 +339,7 @@ mod imp {
         pub fn attach(&self, item_ids: &[u64], ids: &[u64]) -> Result<(), String> {
             let ctx = &self.inner.app_ctx;
             let field = BinderItemRelationshipField::Resources;
-            let current = self.attachments(item_ids);
+            let current = self.attachments(item_ids)?;
             let writes: Vec<BinderItemRelationshipDto> = item_ids
                 .iter()
                 .filter_map(|item| {
@@ -549,9 +554,15 @@ mod imp {
             ResourceKind::LinkedFile => Some(PathBuf::from(&dto.location)),
             ResourceKind::WebLink => None,
         };
+        // A stored file linked out of its folder is not the project's, and shows as
+        // missing: a save leaves it out (`skrib_format::media::passes_through_link`),
+        // and nothing opens it (`open_safety::leaves_its_folder`).
         let missing = match dto.kind {
             ResourceKind::WebLink => false,
-            _ => !path.as_deref().is_some_and(Path::is_file),
+            ResourceKind::StoredFile => !path.as_deref().is_some_and(|p| {
+                p.is_file() && !crate::resources::open_safety::leaves_its_folder(p)
+            }),
+            ResourceKind::LinkedFile => !path.as_deref().is_some_and(Path::is_file),
         };
         ResourceRow {
             id: dto.id,
@@ -789,22 +800,23 @@ mod imp {
             format!("Item {item_id}")
         }
 
-        pub fn attachments(&self, item_ids: &[u64]) -> HashMap<u64, Vec<u64>> {
+        pub fn attachments(&self, item_ids: &[u64]) -> Result<HashMap<u64, Vec<u64>>, String> {
             let mut out: HashMap<u64, Vec<u64>> = HashMap::new();
             for (item, id) in self.inner.attached.borrow().iter() {
                 if item_ids.contains(item) {
                     out.entry(*item).or_default().push(*id);
                 }
             }
-            out
+            Ok(out)
         }
 
-        pub fn unattached(&self) -> Vec<ResourceRow> {
+        pub fn unattached(&self) -> Result<Vec<ResourceRow>, String> {
             let attached = self.inner.attached.borrow();
-            self.all()
+            Ok(self
+                .all()
                 .into_iter()
                 .filter(|r| !attached.iter().any(|(_, id)| *id == r.id))
-                .collect()
+                .collect())
         }
 
         pub fn attach(&self, item_ids: &[u64], ids: &[u64]) -> Result<(), String> {

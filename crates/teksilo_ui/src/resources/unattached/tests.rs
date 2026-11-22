@@ -117,6 +117,34 @@ mod real {
         assert_eq!(titles(&fx), ["Gulls", "Harbour", "Tides"]);
     }
 
+    /// An attach writes each item's whole list, built on what the item carries: read as
+    /// a result, so a read that failed could never stand for "carries nothing" and the
+    /// write take the item's other resources off.
+    #[test]
+    fn attaching_keeps_what_the_item_carries_in_its_order() {
+        let fx = fixture();
+        let first = links(&fx, &[fx.scene], &["Tides", "Harbour"]);
+        let loose = links(&fx, &[], &["Gulls"]);
+        let model = fx.page.resources().session().model();
+        model
+            .attach(&[fx.scene, fx.second], &loose)
+            .unwrap_or_else(|e| panic!("attach: {e}"));
+        let carried = model
+            .attachments(&[fx.scene, fx.second])
+            .unwrap_or_else(|e| panic!("attachments: {e}"));
+        assert_eq!(
+            carried.get(&fx.scene),
+            Some(&vec![first[0], first[1], loose[0]])
+        );
+        assert_eq!(carried.get(&fx.second), Some(&loose));
+        assert_eq!(
+            model
+                .unattached()
+                .unwrap_or_else(|e| panic!("unattached: {e}")),
+            Vec::<ResourceRow>::new()
+        );
+    }
+
     #[test]
     fn attaching_several_to_several_items_is_one_undo_step_and_empties_the_page() {
         let fx = fixture();

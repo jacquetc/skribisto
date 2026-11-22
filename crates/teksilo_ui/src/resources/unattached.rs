@@ -90,9 +90,16 @@ impl UnattachedResourcesViewModel {
         self.inner.work_id.get()
     }
 
-    /// The resources no item carries, by title.
+    /// The resources no item carries, by title. None when the attachments cannot be
+    /// read: listing every resource as loose would offer each one to Remove.
     pub fn rows(&self) -> Vec<ResourceRow> {
-        sorted_by_title(self.inner.resources.session().model().unattached())
+        match self.inner.resources.session().model().unattached() {
+            Ok(rows) => sorted_by_title(rows),
+            Err(e) => {
+                eprintln!("resources: could not read what the items carry: {e}");
+                Vec::new()
+            }
+        }
     }
 
     /// The bytes the project's stored files take, every resource counted, attached or

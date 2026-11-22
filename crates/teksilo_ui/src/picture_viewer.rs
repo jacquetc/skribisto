@@ -70,7 +70,9 @@ pub struct ViewerEntry {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ViewerFile {
     pub path: PathBuf,
-    /// The blake3 of its bytes, hex: what the thumbnail cache names it by.
+    /// The blake3 of its bytes, hex, as the project records it: what the thumbnail cache
+    /// names it by. Empty for a file the project never hashed (a linked file), which the
+    /// cache keys by its place instead.
     pub hash: String,
 }
 
@@ -234,14 +236,13 @@ impl PictureViewerViewModel {
     }
 
     /// The cache key of the current picture at `edge`.
-    fn current_key(&self, edge: u32) -> Option<PictureKey> {
+    pub(crate) fn current_key(&self, edge: u32) -> Option<PictureKey> {
         let entry = self.current()?;
         match &entry.file {
-            Some(file) if !file.hash.is_empty() => Some(PictureKey {
-                hash: file.hash.clone(),
-                edge,
-            }),
-            Some(_) => None,
+            // Never the recorded hash as it is: a linked file has none, and a crafted
+            // project's need not be one (see `picture_cache::file_key_hash`).
+            Some(file) => picture_cache::file_key_hash(&file.path, &file.hash)
+                .map(|hash| PictureKey { hash, edge }),
             None => PictureKey::for_src(&entry.src, edge),
         }
     }
@@ -713,6 +714,36 @@ mod tests {
             ..undescribed
         };
         assert_eq!(named.suggested_file_name(), "gull.jpg");
+    }
+
+    /// A resource's file opens in the viewer whether or not the project recorded its
+    /// hash, and a recorded hash that is not a content hash never becomes the key.
+    #[test]
+    fn a_resource_file_is_keyed_with_or_without_a_recorded_hash() {
+        let tmp = tempfile::tempdir().unwrap_or_else(|e| panic!("tempdir: {e}"));
+        let path = tmp.path().join("linked.png");
+        std::fs::write(&path, b"bytes").unwrap_or_else(|e| panic!("write: {e}"));
+        let place = picture_cache::file_key_hash(&path, "");
+        let recorded = "b".repeat(64);
+        let file = |hash: &str| ViewerEntry {
+            file: Some(ViewerFile {
+                path: path.clone(),
+                hash: hash.to_string(),
+            }),
+            ..entry("resource:x", "", None)
+        };
+        let vm = PictureViewerViewModel::new(
+            vec![file(&recorded), file(""), file("../../escape")],
+            0,
+            PathBuf::new(),
+        );
+        let hash_now = |vm: &PictureViewerViewModel| vm.current_key(64).map(|k| k.hash);
+        assert_eq!(hash_now(&vm), Some(recorded));
+        vm.next();
+        assert!(place.is_some());
+        assert_eq!(hash_now(&vm), place, "a linked file is keyed by its place");
+        vm.next();
+        assert_eq!(hash_now(&vm), place);
     }
 
     #[test]

@@ -260,7 +260,7 @@ fn the_viewer_walks_the_picture_tiles_in_their_order() {
 /// The project's resources, with stored pictures (and one PDF) attached where asked.
 struct Research {
     model: crate::models::ResourcesListModel,
-    _dir: tempfile::TempDir,
+    dir: tempfile::TempDir,
 }
 
 impl Research {
@@ -268,7 +268,21 @@ impl Research {
         let dir = tempfile::tempdir().unwrap_or_else(|e| panic!("tmp: {e}"));
         let model = crate::models::ResourcesListModel::new(f.app_ctx.clone(), f.ids.clone());
         model.set_media_root(dir.path().join("media"));
-        Self { model, _dir: dir }
+        Self { model, dir }
+    }
+
+    /// Link a real PNG called `name`, written beside the project, to `items`. Returns its
+    /// path and the resource's id.
+    fn link_picture(&self, items: &[u64], name: &str) -> (std::path::PathBuf, u64) {
+        let path = self.dir.path().join(name);
+        let icon = teksilo::canvas::RasterIcon::from_raw(vec![120; 8 * 6 * 4], 8, 6);
+        let png = crate::shared::images::encode_png(&icon).unwrap_or_default();
+        std::fs::write(&path, png).unwrap_or_else(|e| panic!("write: {e}"));
+        let id = self
+            .model
+            .add(items, &Default::default(), std::slice::from_ref(&path), &[])
+            .unwrap_or_else(|e| panic!("add: {e}"))[0];
+        (path, id)
     }
 
     /// Attach a stored file called `name` to `items`.
@@ -435,10 +449,13 @@ fn a_gallery_with_no_resources_model_shows_the_pictures_of_the_text_only() {
 }
 
 /// A resource reaches the Gallery, and so the viewer's "Open in another app", by the
-/// file it opens: a link named like a picture but pointing at a launcher is not one.
+/// file it opens: a link named like a picture but pointing at a launcher is not one. An
+/// honest one is shown, and its tile has a picture to decode, though a linked file never
+/// has a content hash recorded.
 #[test]
 fn a_link_named_like_a_picture_but_opening_something_else_is_not_shown() {
     use crate::models::{ResourceKind, ResourceRow};
+    use crate::shared::picture_cache::{PictureCache, PictureKey, PictureState, file_key_hash};
     let disguised = ResourceRow {
         kind: ResourceKind::LinkedFile,
         file_name: "lighthouse.png".into(),
@@ -446,11 +463,69 @@ fn a_link_named_like_a_picture_but_opening_something_else_is_not_shown() {
         ..Default::default()
     };
     assert!(!super::is_picture_resource(&disguised));
+    let dir = tempfile::tempdir().unwrap_or_else(|e| panic!("tmp: {e}"));
+    let path = dir.path().join("lighthouse.png");
+    let icon = teksilo::canvas::RasterIcon::from_raw(vec![120; 4 * 4 * 4], 4, 4);
+    std::fs::write(
+        &path,
+        crate::shared::images::encode_png(&icon).unwrap_or_default(),
+    )
+    .unwrap_or_else(|e| panic!("write: {e}"));
     let honest = ResourceRow {
         kind: ResourceKind::LinkedFile,
         file_name: "lighthouse.png".into(),
-        path: Some(std::path::PathBuf::from("/home/someone/lighthouse.png")),
+        path: Some(path.clone()),
         ..Default::default()
     };
     assert!(super::is_picture_resource(&honest));
+    let hash = file_key_hash(&path, &honest.content_hash)
+        .unwrap_or_else(|| panic!("a linked picture has a key"));
+    let slot = PictureCache::new(1 << 20, None).request(None, path, PictureKey { hash, edge: 64 });
+    assert!(matches!(slot.get(), PictureState::Ready(_)), "it decodes");
+}
+
+/// A picture linked rather than stored, as a Scrivener bookmark to a local image is too,
+/// has no content hash. The Gallery still decodes its tile, and the viewer opened on it
+/// still has a picture to show.
+#[test]
+fn a_linked_picture_has_a_tile_and_opens_in_the_viewer() {
+    use crate::shared::picture_cache::{PictureCache, PictureState};
+    let f = Fixture::new();
+    let shots = f.note("Harbour", 1, "Words only.");
+    let research = Research::new(&f);
+    let (path, id) = research.link_picture(&[shots], "Quay.png");
+    let row = research
+        .model
+        .by_id(id)
+        .unwrap_or_else(|| panic!("the resource"));
+    assert!(row.content_hash.is_empty(), "a linked file is never hashed");
+    let gallery = f.gallery_with(&research);
+    let tiles = build_tiles(&gallery.notes(), GalleryOptions::default());
+    let shown = tiles
+        .iter()
+        .find_map(GalleryTile::resource)
+        .unwrap_or_else(|| panic!("the linked picture has a tile: {tiles:?}"));
+    assert_eq!(shown.path.as_deref(), Some(path.as_path()));
+    let (entries, at) = gallery.viewer_entries(&tiles);
+    let viewer = crate::picture_viewer::PictureViewerViewModel::new(
+        entries,
+        at.iter().flatten().copied().next().unwrap_or_default(),
+        std::path::PathBuf::new(),
+    );
+    assert_eq!(viewer.current_path(), Some(path.clone()));
+    let key = viewer
+        .current_key(64)
+        .unwrap_or_else(|| panic!("the viewer has a key for it"));
+    let slot = PictureCache::new(1 << 20, None).request(None, path, key);
+    assert!(
+        matches!(slot.get(), PictureState::Ready(_)),
+        "and it decodes"
+    );
+}
+
+/// An item listing one resource twice, apart (`[A, B, A]`), shows it once.
+#[test]
+fn a_resource_listed_twice_on_an_item_is_one_picture() {
+    assert_eq!(super::once_each(&[7, 3, 7, 9, 3]), [7, 3, 9]);
+    assert!(super::once_each(&[]).is_empty());
 }

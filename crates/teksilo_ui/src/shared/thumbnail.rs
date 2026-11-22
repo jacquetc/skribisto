@@ -47,7 +47,7 @@ pub fn tile_ratio(size: Option<(u32, u32)>) -> f32 {
 pub struct Thumb {
     /// `None` for a reference outside the project's pictures, which is never read.
     path: Option<PathBuf>,
-    /// The cache key's content hash, `None` when there is none to key on.
+    /// The cache key's hash, `None` when there is nothing to key on.
     hash: Option<String>,
     alt: String,
     rt: Option<AsyncRuntimeHandle>,
@@ -77,7 +77,10 @@ impl Thumb {
         }
     }
 
-    /// A file named by its path and its content hash: a picture resource.
+    /// A file named by its path and the content hash the project records for it: a
+    /// picture resource. A file with no such hash (a linked file) is keyed by its place
+    /// instead, and a recorded hash of any other shape is never used as a file name (see
+    /// [`picture_cache::file_key_hash`]).
     pub fn of_file(
         path: Option<PathBuf>,
         hash: &str,
@@ -86,8 +89,10 @@ impl Thumb {
         edge: u32,
     ) -> Self {
         Self {
+            hash: path
+                .as_deref()
+                .and_then(|p| picture_cache::file_key_hash(p, hash)),
             path,
-            hash: (!hash.is_empty()).then(|| hash.to_string()),
             alt: alt.to_string(),
             rt,
             edge,
@@ -190,6 +195,25 @@ mod tests {
         assert_eq!(thumb_edge(400.0), 1024);
         assert_eq!(thumb_edge(5000.0), picture_cache::MAX_THUMB_EDGE);
         assert_eq!(thumb_edge(f32::NAN), 256);
+    }
+
+    /// A picture resource is keyed safely whatever its recorded hash: its own content
+    /// hash, a key from its place when it has none, never a crafted one.
+    #[test]
+    fn a_file_thumbnail_is_keyed_by_a_content_hash_or_by_its_place() {
+        let tmp = tempfile::tempdir().unwrap_or_else(|e| panic!("tempdir: {e}"));
+        let path = tmp.path().join("linked.png");
+        std::fs::write(&path, b"bytes").unwrap_or_else(|e| panic!("write: {e}"));
+        let hash = "f".repeat(64);
+        let recorded = Thumb::of_file(Some(path.clone()), &hash, "", None, 256);
+        assert_eq!(recorded.hash.as_deref(), Some(hash.as_str()));
+        let linked = Thumb::of_file(Some(path.clone()), "", "", None, 256);
+        let crafted = Thumb::of_file(Some(path.clone()), "../../escape", "", None, 256);
+        let place = picture_cache::file_key_hash(&path, "");
+        assert!(place.is_some());
+        assert_eq!(linked.hash, place);
+        assert_eq!(crafted.hash, place);
+        assert_eq!(Thumb::of_file(None, &hash, "", None, 256).hash, None);
     }
 
     #[test]

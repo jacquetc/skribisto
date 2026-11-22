@@ -25,7 +25,7 @@ use teksilo::widgets::{
     InputDialog, MessageBox, MessageBoxButton, MessageBoxButtons, StandardButton, Toast,
 };
 
-use crate::shared::images::{self, PendingImage, SizePolicy};
+use crate::shared::images::{self, ImageError, Landing, PendingImage, SizePolicy};
 use crate::toast_scope::ToastWorkExt;
 
 use super::CommandDeps;
@@ -57,8 +57,18 @@ fn policy_signal(ctx: &EventContext) -> Signal<String> {
 /// Anything that is not an image it can decode becomes a **resource** of the item
 /// instead, linked at the drop point: a map, a recording or a letter dropped on a scene
 /// is research about it, not a picture in it. That goes through the Resources dock's
-/// own pipeline (`ResourcesViewModel::add_paths`): the large-file question, the copy
-/// into the project, and a toast whose Undo takes both the resource and its link back.
+/// own pipeline (`ResourcesViewModel::link_dropped_files`): the large-file question,
+/// the copy into the project, and a toast whose Undo takes both the resource and its
+/// link back.
+///
+/// Nothing is decoded on the interface thread. The drop is sorted by each file's first
+/// bytes; the pictures are then read, decoded, stored and recorded away from it, and go
+/// in at the drop point once that is done, if their text is still open on the same
+/// project. One that turns out not to decode is linked as a resource then.
+///
+/// Everything goes to the editor the files landed on and that text's item, both
+/// parked with the paths, and not to the editor with focus: see
+/// [`crate::resources::text_drop`].
 fn register_drop(ctx: &mut BuildContext, deps: &CommandDeps) {
     let format = deps.format.clone();
     let docs = deps.session.open_docs.clone();
@@ -68,37 +78,27 @@ fn register_drop(ctx: &mut BuildContext, deps: &CommandDeps) {
 
     ctx.register_action_global(Action::new("editor.insert_dropped_images").on_invoke(
         move |_intent, c: &mut EventContext| {
-            let paths = format.dropped_files().get();
-            format.dropped_files().set(Vec::new());
-            let Some(handle) = format.writable_handle() else {
+            let Some(dropped) = format.take_dropped_files() else {
                 return;
             };
-            if paths.is_empty() {
+            let handle = dropped.handle;
+            if dropped.paths.is_empty() || !crate::shared::editor_writes::accepts_writes(&handle) {
                 return;
             }
-            // Read every file once: what decodes is a picture of the text, the rest a
-            // resource. The caret is where the drop landed, so that is where the
-            // resources' links go, ahead of any picture inserted there.
-            let (pictures, others): (Vec<_>, Vec<_>) = paths
+            // Sorted by their first bytes and their length, nothing decoded here: a file
+            // that opens like a picture within the size a picture may be is one, the rest
+            // a resource (see `images::looks_like_picture`). The caret is where the drop
+            // landed, so that is where the resources' links go, ahead of any picture
+            // inserted there.
+            let (pictures, others): (Vec<_>, Vec<_>) = dropped
+                .paths
                 .iter()
-                .map(|path| (path.clone(), images::examine(path).ok()))
-                .partition(|(_, picture)| picture.is_some());
+                .cloned()
+                .partition(|path| images::looks_like_picture(path));
             if !others.is_empty() {
-                let at = handle.cursor_position();
-                resources.add_paths(
-                    c,
-                    others.into_iter().map(|(path, _)| path).collect(),
-                    crate::resources::AddTarget::Text {
-                        handle: handle.clone(),
-                        at,
-                    },
-                );
+                resources.link_dropped_files(c, &handle, dropped.item, others);
             }
-            let batch: Vec<PendingImage> = pictures
-                .into_iter()
-                .filter_map(|(_, picture)| picture)
-                .collect();
-            if batch.is_empty() {
+            if pictures.is_empty() {
                 return;
             }
             if docs.media_dir().as_os_str().is_empty() {
@@ -109,32 +109,42 @@ fn register_drop(ctx: &mut BuildContext, deps: &CommandDeps) {
                 return;
             }
             let deps = InsertDeps {
-                format: format.clone(),
                 docs: docs.clone(),
                 ids: ids.clone(),
                 app_ctx: app_ctx.clone(),
+                landing: Landing::new(&handle, Some(handle.cursor_position()), &ids),
             };
-            // The whole drop was examined above, before inserting any of it. The
-            // size question is asked once and answered for the batch, and that
-            // answer cannot be applied to files that have not been read yet:
-            // reading first is what lets one prompt cover ten photographs
-            // instead of abandoning the nine behind the first large one.
-            let stored = stored_policy(c);
-            match stored {
-                Some(policy) => {
-                    for pending in batch {
-                        finish(&deps, c, pending, policy);
-                    }
+            let resources = resources.clone();
+            let item = dropped.item;
+            examine_all(c, pictures, move |examined, c| {
+                let (batch, failed): (Vec<_>, Vec<_>) =
+                    examined.into_iter().partition(|(_, result)| result.is_ok());
+                let Some(handle) = deps.landing.target(&deps.ids) else {
+                    return;
+                };
+                // A file that opened like a picture and does not decode is a resource
+                // after all, as one that never looked like one.
+                if !failed.is_empty() {
+                    resources.link_dropped_files(
+                        c,
+                        &handle,
+                        item,
+                        failed.into_iter().map(|(path, _)| path).collect(),
+                    );
                 }
-                None if batch.iter().any(PendingImage::is_large) => {
-                    ask_then_finish(&deps, c, batch);
+                // The whole drop was examined before inserting any of it. The size
+                // question is asked once and answered for the batch, and that answer
+                // cannot be applied to files that have not been read yet: reading first
+                // is what lets one prompt cover ten photographs instead of abandoning the
+                // nine behind the first large one.
+                let batch: Vec<PendingImage> = batch
+                    .into_iter()
+                    .filter_map(|(_, result)| result.ok())
+                    .collect();
+                if !batch.is_empty() {
+                    insert_batch(&deps, c, batch);
                 }
-                None => {
-                    for pending in batch {
-                        finish(&deps, c, pending, SizePolicy::KeepOriginal);
-                    }
-                }
-            }
+            });
         },
     ));
 }
@@ -188,27 +198,29 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
                     crate::models::FolderPurpose::InsertImage,
                     &path,
                 );
-                let pending = match images::examine(&path) {
-                    Ok(p) => p,
-                    Err(e) => {
-                        c.show_toast(
-                            Toast::error(lit!(e.to_string()))
-                                .scoped_id("images.failed", ids.work_id.get()),
-                        );
-                        return;
-                    }
+                // The text the commands act on now, which the picture goes into once it
+                // is read, wherever the caret is in it then.
+                let Some(handle) = format.writable_handle() else {
+                    return;
                 };
                 let deps = InsertDeps {
-                    format: format.clone(),
                     docs: docs.clone(),
                     ids: ids.clone(),
                     app_ctx: app_ctx.clone(),
+                    landing: Landing::new(&handle, None, &ids),
                 };
-                match stored_policy(c) {
-                    Some(policy) => finish(&deps, c, pending, policy),
-                    None if pending.is_large() => ask_then_finish(&deps, c, vec![pending]),
-                    None => finish(&deps, c, pending, SizePolicy::KeepOriginal),
-                }
+                examine_all(c, vec![path], move |examined, c| {
+                    for (_, result) in examined {
+                        match result {
+                            Err(e) => images::report(c, &e, deps.landing.work_id),
+                            Ok(pending) => {
+                                if deps.landing.target(&deps.ids).is_some() {
+                                    insert_batch(&deps, c, vec![pending]);
+                                }
+                            }
+                        }
+                    }
+                });
             });
         },
     ));
@@ -217,10 +229,59 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
 /// What `finish` needs, bundled so the closures that carry it stay readable.
 #[derive(Clone)]
 struct InsertDeps {
-    format: crate::format::FormatViewModel,
     docs: crate::models::OpenDocsStore,
     ids: crate::app_ids::AppIds,
     app_ctx: std::rc::Rc<AppContext>,
+    /// Where the pictures go: the text a drop landed on, at the drop, or the text Insert
+    /// image… acts on, at its caret.
+    landing: Landing,
+}
+
+/// Examine every file of `paths` away from the interface thread, then hand each with
+/// what came of it to `then`, back on it.
+fn examine_all(
+    ctx: &mut EventContext,
+    paths: Vec<std::path::PathBuf>,
+    then: impl FnOnce(Vec<(std::path::PathBuf, Result<PendingImage, ImageError>)>, &mut EventContext)
+    + 'static,
+) {
+    // A worker that died before answering read none of them, as far as the writer can
+    // be told.
+    let unread = paths.clone();
+    images::off_the_interface(
+        ctx,
+        move || {
+            paths
+                .into_iter()
+                .map(|path| {
+                    let examined = images::examine(&path);
+                    (path, examined)
+                })
+                .collect::<Vec<_>>()
+        },
+        move |examined, c| {
+            let examined = examined.unwrap_or_else(|| {
+                unread
+                    .into_iter()
+                    .map(|path| {
+                        let error = ImageError::Unreadable(path.display().to_string());
+                        (path, Err(error))
+                    })
+                    .collect()
+            });
+            then(examined, c);
+        },
+    );
+}
+
+/// Insert `batch` under the size the writer keeps pictures at, asking first when that
+/// is not settled and one of them is large.
+fn insert_batch(deps: &InsertDeps, ctx: &mut EventContext, batch: Vec<PendingImage>) {
+    match stored_policy(ctx) {
+        Some(policy) => finish(deps, ctx, batch, policy),
+        None if batch.iter().any(PendingImage::is_large) => ask_then_finish(deps, ctx, batch),
+        None => finish(deps, ctx, batch, SizePolicy::KeepOriginal),
+    }
 }
 
 /// Ask once about the first large image in a batch, then insert the whole batch
@@ -236,9 +297,7 @@ fn ask_then_finish(deps: &InsertDeps, ctx: &mut EventContext, batch: Vec<Pending
     let Some(prompt_for) = batch.iter().find(|p| p.is_large()).cloned() else {
         // Nothing to ask about: insert as-is rather than presenting an empty
         // question.
-        for pending in batch {
-            finish(deps, ctx, pending, SizePolicy::KeepOriginal);
-        }
+        finish(deps, ctx, batch, SizePolicy::KeepOriginal);
         return;
     };
     let megapixels =
@@ -277,15 +336,14 @@ fn ask_then_finish(deps: &InsertDeps, ctx: &mut EventContext, batch: Vec<Pending
                     .to_string(),
                 );
             }
-            for pending in batch.clone() {
-                finish(&deps, c, pending, policy);
-            }
+            finish(&deps, c, batch.clone(), policy);
         })
         .show_again_checkbox(tr!(image_large_remember()))
         .present(ctx);
 }
 
-/// Store the image, record it, and put it in the prose.
+/// Store the images, record them, and put them in the prose, one after the other at the
+/// landing.
 ///
 /// Order matters: the bytes reach disk before anything references them, so a
 /// crash between the two leaves an unreferenced file rather than prose naming a
@@ -293,59 +351,66 @@ fn ask_then_finish(deps: &InsertDeps, ctx: &mut EventContext, batch: Vec<Pending
 /// addressed, so re-inserting the same picture reuses it — but nothing reclaims
 /// it yet: there is no "remove unused images" command, so an orphan costs its
 /// bytes on disk until one exists.
-fn finish(deps: &InsertDeps, ctx: &mut EventContext, pending: PendingImage, policy: SizePolicy) {
-    let image = images::apply_policy(pending, policy);
-    let media_dir = deps.docs.media_dir();
-    if let Err(e) = images::store(&image, &media_dir) {
-        ctx.show_toast(
-            Toast::error(lit!(e.to_string())).scoped_id("images.failed", deps.ids.work_id.get()),
-        );
+///
+/// Downscaling and writing run away from the interface thread; recording and inserting
+/// back on it, once they are done ([`images::land`]).
+fn finish(deps: &InsertDeps, ctx: &mut EventContext, batch: Vec<PendingImage>, policy: SizePolicy) {
+    let work_id = deps.landing.work_id;
+    let stored_in = deps.docs.media_dir();
+    if stored_in.as_os_str().is_empty() {
+        images::report(ctx, &ImageError::NoProject, work_id);
         return;
     }
-
-    // The `Asset` row is what a save writes into the bundle; without it the file
-    // sits in the media directory and never travels with the project.
-    let work_id = deps.ids.work_id.get().unwrap_or_default();
-    let created = frontend::commands::asset_commands::create_asset(
-        &deps.app_ctx,
-        deps.ids.stack_id.get(),
-        &frontend::asset::dtos::CreateAssetDto {
-            created_at: Default::default(),
-            updated_at: Default::default(),
-            content_hash: image.content_hash.clone(),
-            file_name: image.file_name.clone(),
-            mime_type: image.mime_type.clone(),
-            width: u64::from(image.width),
-            height: u64::from(image.height),
-            byte_size: image.bytes.len() as u64,
-            alt: String::new(),
-            // Inserting a picture into the prose never makes it the cover; that
-            // is a separate, deliberate choice made from the image itself.
+    let dir = stored_in.clone();
+    let deps = deps.clone();
+    images::off_the_interface(
+        ctx,
+        move || {
+            batch
+                .into_iter()
+                .map(|pending| images::prepare(pending, policy, &dir))
+                .collect::<Vec<_>>()
         },
-        work_id,
-        -1,
+        move |prepared, c| {
+            let Some(prepared) = prepared else {
+                let error = ImageError::NotWritten(stored_in.display().to_string());
+                images::report(c, &error, work_id);
+                return;
+            };
+            let mut landing = deps.landing.clone();
+            let mut landed = None;
+            for image in prepared {
+                let outcome = image.and_then(|image| {
+                    images::land(
+                        &deps.app_ctx,
+                        &deps.ids,
+                        &deps.docs.media_dir(),
+                        &stored_in,
+                        &landing,
+                        &image,
+                        "",
+                    )
+                });
+                match outcome {
+                    Ok(Some(handle)) => {
+                        // The next one goes after this one, where the insertion left the
+                        // caret.
+                        landing.at = None;
+                        landed = Some(handle);
+                    }
+                    // Nowhere to go any more, for this one or the rest.
+                    Ok(None) => break,
+                    Err(e) => images::report(c, &e, work_id),
+                }
+            }
+            // Puts the caret back in the prose, exactly as the template-insert command
+            // documents: for a drop, in the editor it landed on, as a text dragged from
+            // one editor to another takes focus with it.
+            if let Some(handle) = landed {
+                handle.focus(c);
+            }
+        },
     );
-    if created.is_err() {
-        ctx.show_toast(
-            Toast::error(tr!(image_not_recorded()))
-                .scoped_id("images.failed", deps.ids.work_id.get()),
-        );
-        return;
-    }
-
-    let Some(handle) = deps.format.writable_handle() else {
-        return;
-    };
-    // Register before inserting: the insertion triggers a relayout, and a paint
-    // that cannot resolve the name draws nothing where the image belongs.
-    handle.add_image_resource(&image.relative_path(), &image.mime_type, &image.bytes);
-    // Under "Always forward", after a selection rather than over it.
-    crate::shared::editor_writes::collapse_selection_before_insert(&handle);
-    handle.insert_djot(&image.djot("", image.width, image.height));
-
-    // Puts the caret back in the prose, exactly as the template-insert command
-    // documents.
-    deps.format.refocus(ctx);
 }
 
 /// `image.describe` and `image.resize` — editing a picture already in the prose.

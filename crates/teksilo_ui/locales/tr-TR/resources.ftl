@@ -90,6 +90,7 @@ resources-dropped-added = { $count ->
     [one] Bu öğenin kaynağı olarak eklendi ve metinde bağlandı
    *[other] { $count } dosya bu öğenin kaynakları olarak eklendi ve metinde bağlandı
 }
+resources-dropped-undo-kept = Metin bırakıldığından beri değişti, bu yüzden hiçbir şey geri alınmadı.
 resources-undo = Geri al
 resources-link-refused = “{ $url }”, Skribisto'nun saklayabileceği bir web adresi değil. Kullanıcı adı veya parola içermeyen, http:// ya da https:// ile başlayan bir adres kullanın.
 

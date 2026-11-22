@@ -11,6 +11,7 @@ fn body(vm: FolderResourcesViewModel, view: FolderView) -> FolderResourcesBody {
         vm,
         view: Signal::new(view.as_setting().to_string()),
         selection: SelectionModel::new(SelectionMode::Single),
+        shown: Vec::new(),
         root: None,
     }
 }
@@ -145,4 +146,64 @@ fn every_kind_of_tile_builds_at_a_tiles_width() {
         assert!(b.height > 0.0, "{}: {b:?}", row.file_name);
         assert!(b.width <= TILE + 0.5, "{}: {b:?}", row.file_name);
     }
+}
+
+/// The row selected stays on its resource when a rename re-sorts the page: held by
+/// index, it moved to another resource, which the next F2 or Delete acted on.
+#[cfg(not(feature = "mocks"))]
+#[test]
+fn the_selection_follows_its_resource_when_a_rename_moves_it() {
+    use crate::models::WebLink;
+    use crate::resources::ResourcesSession;
+    let project = crate::test_support::RealProject::empty_novel();
+    let (scene, _) = project.scenes()[0];
+    let session = ResourcesSession::new(project.app_ctx.clone(), project.ids.clone());
+    let resources = ResourcesViewModel::new(
+        project.app_ctx.clone(),
+        project.ids.clone(),
+        session,
+        Signal::new(None),
+        Signal::new(Some(frontend::common::entities::WorkShape::Zip)),
+        Signal::new(String::new()),
+    );
+    let web: Vec<WebLink> = ["Apple", "Banana", "Cherry"]
+        .iter()
+        .map(|t| WebLink {
+            url: format!("https://example.org/{}", t.to_lowercase()),
+            title: (*t).to_string(),
+        })
+        .collect();
+    let model = resources.session().model().clone();
+    let ids = model
+        .add(&[scene], &Default::default(), &[], &web)
+        .unwrap_or_else(|e| panic!("add: {e}"));
+    let vm = FolderResourcesViewModel::new(
+        project.app_ctx.clone(),
+        project.ids.work_id.clone(),
+        scene,
+        Signal::new("Scene".into()),
+        resources,
+    );
+    let selection = SelectionModel::new(SelectionMode::Single);
+    let mut tree = crate::test_support::tree_with_settings(&project.app_ctx);
+    tree.add_boxed(Box::new(FolderResourcesBody {
+        selection: selection.clone(),
+        ..body(vm.clone(), FolderView::List)
+    }));
+    tree.layout(SizeProposal::exact(900.0, 700.0));
+    let titles = || -> Vec<String> { vm.entries().into_iter().map(|e| e.row.title).collect() };
+    assert_eq!(titles(), ["Apple", "Banana", "Cherry"]);
+    selection.select(1);
+
+    model
+        .edit_text(ids[0], "Zebra", "")
+        .unwrap_or_else(|e| panic!("rename: {e}"));
+    model.reload();
+    tree.layout(SizeProposal::exact(900.0, 700.0));
+    assert_eq!(titles(), ["Banana", "Cherry", "Zebra"]);
+    assert_eq!(
+        selection.selected_indices(),
+        [0],
+        "still Banana, now first, not Cherry"
+    );
 }

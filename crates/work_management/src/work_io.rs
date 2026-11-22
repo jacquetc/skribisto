@@ -138,7 +138,10 @@ impl ProjectDirs {
 ///
 /// A missing file is skipped, as a missing picture is, but its resource is not:
 /// `from_entities` still writes the row, so the card survives and shows its file as
-/// missing rather than vanishing with it.
+/// missing rather than vanishing with it. So is one reached through a symbolic link, and
+/// said on stderr: its bytes are wherever the link points, not the project's, and the
+/// archive or backup this feeds would carry them on (see
+/// `skrib_format::media::passes_through_link`).
 pub fn read_resource_blobs(
     resources: &[common::entities::Resource],
     resources_dir: &std::path::Path,
@@ -149,11 +152,24 @@ pub fn read_resource_blobs(
             continue;
         }
         let path = skrib::media::resource_file(resources_dir, r.uid, &r.file_name);
-        if path.is_file() {
+        if own_file(resources_dir, &path) {
             out.insert(r.uid.hyphenated().to_string(), skrib::Blob::file(path));
         }
     }
     out
+}
+
+/// Whether `path`, under the project directory `dir`, is a file of the project's own:
+/// there, and not reached through a symbolic link. A linked one is reported.
+fn own_file(dir: &std::path::Path, path: &std::path::Path) -> bool {
+    if skrib::media::passes_through_link(dir, path) {
+        eprintln!(
+            "skrib: leaving out {}: it is a link, not a file of the project",
+            path.display()
+        );
+        return false;
+    }
+    path.is_file()
 }
 
 /// Place a loaded bundle's stored resources into the project's resources directory,
@@ -178,8 +194,13 @@ pub fn write_resource_blobs(
             continue;
         };
         let path = skrib::media::resource_file(resources_dir, r.uid, &r.file_name);
-        // From a zip's extraction, thrown away after the load: a link is safe. A folder
-        // project's blob already is this file, and nothing is written.
+        // A folder project's blob already is the file in this folder, and nothing is
+        // written: the prune may just have given it today's name, so the blob can name
+        // a file that is not there any more (see `media::prune_resources_dir`).
+        if blob.path().is_some_and(|src| src.parent() == path.parent()) {
+            continue;
+        }
+        // From a zip's extraction, thrown away after the load: a link is safe.
         blob.link_or_place_at(&path)
             .with_context(|| format!("writing resource file {}", path.display()))?;
     }
@@ -209,7 +230,9 @@ pub fn carry_project_files(g: &Gathered, from: &ProjectDirs, to: &ProjectDirs) -
     if from.resources != to.resources {
         for r in &g.resources {
             let src = skrib::media::resource_file(&from.resources, r.uid, &r.file_name);
-            if r.kind != common::entities::ResourceKind::StoredFile || !src.is_file() {
+            if r.kind != common::entities::ResourceKind::StoredFile
+                || !own_file(&from.resources, &src)
+            {
                 continue;
             }
             let dest = skrib::media::resource_file(&to.resources, r.uid, &r.file_name);
@@ -231,7 +254,8 @@ pub fn carry_project_files(g: &Gathered, from: &ProjectDirs, to: &ProjectDirs) -
 /// failure than a save that refuses to run, and `from_entities` drops the row to
 /// match so the bundle never carries a dangling reference. The lost row is
 /// recoverable — the prose still names the hash, so restoring the file restores
-/// the picture.
+/// the picture. A file reached through a symbolic link is skipped the same way, and
+/// said: a picture is the project's own bytes, never a door to a file elsewhere.
 pub fn read_asset_blobs(
     assets: &[common::entities::Asset],
     media_dir: &std::path::Path,
@@ -240,7 +264,7 @@ pub fn read_asset_blobs(
     for a in assets {
         let ext = skrib::media::extension_for(&a.mime_type);
         let path = media_dir.join(format!("{}.{ext}", a.content_hash));
-        if path.is_file() {
+        if own_file(media_dir, &path) {
             out.insert(a.content_hash.clone(), skrib::Blob::file(path));
         }
     }
@@ -485,4 +509,107 @@ pub fn serialize_and_write(
         });
     }
     Ok(target)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use common::entities::{Asset, Resource, ResourceKind};
+
+    fn stored(uid: u128, file_name: &str) -> Resource {
+        Resource {
+            uid: uuid::Uuid::from_u128(uid),
+            kind: ResourceKind::StoredFile,
+            file_name: file_name.into(),
+            ..Default::default()
+        }
+    }
+
+    /// A save, a backup and a Save As read the project's stored files and pictures
+    /// through these, and a link among them points at bytes that are not the project's:
+    /// a folder project from elsewhere could otherwise carry `~/.ssh/id_rsa` into the
+    /// archive or backup the writer makes of it.
+    #[cfg(unix)]
+    #[test]
+    fn a_stored_file_or_picture_that_is_a_link_is_not_read() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let secret = dir.path().join("id_rsa");
+        std::fs::write(&secret, b"PRIVATE KEY").expect("write");
+        let resources_dir = dir.path().join("resources");
+        let own = stored(1, "Village map.pdf");
+        let linked = stored(2, "Tide tables.pdf");
+        for r in [&own, &linked] {
+            let folder = resources_dir.join(r.uid.hyphenated().to_string());
+            std::fs::create_dir_all(&folder).expect("folder");
+        }
+        std::fs::write(
+            skrib::media::resource_file(&resources_dir, own.uid, &own.file_name),
+            b"%PDF",
+        )
+        .expect("write");
+        std::os::unix::fs::symlink(
+            &secret,
+            skrib::media::resource_file(&resources_dir, linked.uid, &linked.file_name),
+        )
+        .expect("link");
+
+        let blobs = read_resource_blobs(&[own.clone(), linked.clone()], &resources_dir);
+        assert_eq!(
+            blobs.keys().cloned().collect::<Vec<_>>(),
+            vec![own.uid.hyphenated().to_string()]
+        );
+
+        let media_dir = dir.path().join("assets");
+        std::fs::create_dir_all(&media_dir).expect("folder");
+        let picture = Asset {
+            content_hash: "hash-of-map".into(),
+            mime_type: "image/png".into(),
+            ..Default::default()
+        };
+        std::os::unix::fs::symlink(&secret, media_dir.join("hash-of-map.png")).expect("link");
+        assert!(read_asset_blobs(&[picture], &media_dir).is_empty());
+    }
+
+    /// A Save As that moves the project's files copies only its own, never a linked one.
+    #[cfg(unix)]
+    #[test]
+    fn a_save_as_does_not_copy_a_linked_stored_file() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let secret = dir.path().join("id_rsa");
+        std::fs::write(&secret, b"PRIVATE KEY").expect("write");
+        let from = ProjectDirs {
+            media: dir.path().join("from-media"),
+            resources: dir.path().join("from"),
+        };
+        let to = ProjectDirs {
+            media: dir.path().join("to-media"),
+            resources: dir.path().join("to"),
+        };
+        let linked = stored(2, "Tide tables.pdf");
+        let src = skrib::media::resource_file(&from.resources, linked.uid, &linked.file_name);
+        std::fs::create_dir_all(src.parent().expect("parent")).expect("folder");
+        std::os::unix::fs::symlink(&secret, &src).expect("link");
+        let g = Gathered {
+            work: Default::default(),
+            tags: Vec::new(),
+            dict_words: Vec::new(),
+            text_replacement_rules: Vec::new(),
+            note_templates: Vec::new(),
+            statuses: Vec::new(),
+            assets: Vec::new(),
+            resources: vec![linked.clone()],
+            smart_punctuation: None,
+            trash_infos: Vec::new(),
+            paces: Vec::new(),
+            progress_snapshots: Vec::new(),
+            comments: Vec::new(),
+            footnotes: Vec::new(),
+            binders: Vec::new(),
+            work_info: None,
+        };
+        carry_project_files(&g, &from, &to).expect("carried");
+        assert!(
+            !skrib::media::resource_file(&to.resources, linked.uid, &linked.file_name).exists()
+        );
+    }
 }

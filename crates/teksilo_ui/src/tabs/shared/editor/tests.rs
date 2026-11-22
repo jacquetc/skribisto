@@ -960,3 +960,90 @@ fn an_editor_is_read_in_the_language_it_is_given() {
     tree.layout(SizeProposal::exact(900.0, 900.0));
     assert_eq!(language_of(&mut tree, &text_name).as_deref(), Some("de-DE"));
 }
+
+/// Files dropped from the desktop on one of two texts are parked with the editor they
+/// landed on and that text's item, for the command that puts them in. It used to park
+/// the paths alone, and the command then wrote into the editor with focus and filed the
+/// files on the dock's item: in a Full Chapter, a recording dropped on scene 7 while
+/// scene 3 had the caret was linked in scene 3 and attached to the chapter.
+#[test]
+fn files_dropped_on_a_text_are_parked_with_that_editor_and_its_item() {
+    use teksilo::core::{ExternalDropData, NoopWindowOps};
+
+    let format = crate::format::FormatViewModel::detached();
+    let scope = crate::margin_lane::LaneScope::fresh();
+    let column = |text: &str, item: u64| {
+        let doc = TextDocument::new();
+        doc.set_plain_text(text).unwrap();
+        writing_column(
+            &doc,
+            &Signal::new(700.0),
+            &test_typo(),
+            MAIN_MIN_LINES,
+            || {},
+            None,
+            None,
+            None,
+            None,
+            Some(format.clone()),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            false,
+            Some(crate::margin_lane::LaneAnchor::new(item, scope)),
+            false,
+            None,
+            None,
+            tr!(editor_text_name()),
+            None,
+        )
+    };
+    // Two scenes of one stream, one below the other.
+    let mut tree = WidgetTree::new().with_text_backend(Rc::new(std::cell::RefCell::new(
+        teksilo::canvas::MockTextBackend::new(),
+    )));
+    let root = tree.add(
+        VStack::new()
+            .child(column("Scene three, where the caret is.", 3))
+            .child(column("Scene seven, where the file lands.", 7)),
+    );
+    for _ in 0..2 {
+        tree.layout(SizeProposal::exact(900.0, 600.0));
+        let _ = tree.render();
+    }
+    let lower = tree.bounds(tree.children(root)[1]);
+    let at = teksilo::canvas::Point::new(lower.x + lower.width / 2.0, lower.y + lower.height / 2.0);
+    let data = ExternalDropData {
+        files: vec![std::path::PathBuf::from(
+            "/home/writer/Harbour recording.wav",
+        )],
+        ..Default::default()
+    };
+    tree.begin_external_drag(at, data.clone(), &mut NoopWindowOps);
+    tree.end_external_drag(at, data, &mut NoopWindowOps);
+
+    let dropped = format
+        .take_dropped_files()
+        .expect("the drop is parked for its command");
+    assert_eq!(
+        dropped.paths,
+        vec![std::path::PathBuf::from(
+            "/home/writer/Harbour recording.wav"
+        )]
+    );
+    assert_eq!(
+        dropped.item,
+        Some(7),
+        "the item of the text the file landed on"
+    );
+    assert_eq!(
+        dropped.handle.to_plain_text(),
+        "Scene seven, where the file lands.",
+        "the editor the file landed on"
+    );
+}

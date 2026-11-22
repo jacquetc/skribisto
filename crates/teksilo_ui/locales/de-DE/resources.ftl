@@ -90,6 +90,7 @@ resources-dropped-added = { $count ->
     [one] Als Ressource dieses Eintrags hinzugefügt und im Text verlinkt
    *[other] { $count } Dateien als Ressourcen dieses Eintrags hinzugefügt und im Text verlinkt
 }
+resources-dropped-undo-kept = Der Text hat sich seit dem Ablegen geändert, daher wurde nichts rückgängig gemacht.
 resources-undo = Rückgängig
 resources-link-refused = „{ $url }“ ist keine Webadresse, die Skribisto aufbewahren kann. Verwenden Sie eine Adresse, die mit http:// oder https:// beginnt, ohne Benutzernamen oder Passwort.
 

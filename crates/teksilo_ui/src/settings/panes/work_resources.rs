@@ -58,11 +58,7 @@ pub(crate) fn work_resources_body(
         let model = model.clone();
         let selection = selection.clone();
         ctx.effect(&vm.version(), move |_| {
-            let rows = vm.rows();
-            // A row that left the list (attached, deleted) must not stay selected under
-            // the index it had.
-            selection.clear();
-            model.reconcile_by_key(rows, |r| r.id);
+            follow_rows(&model, &selection, vm.rows())
         });
     }
 
@@ -114,6 +110,25 @@ pub(crate) fn work_resources_body(
         .child(crate::settings::fields::list_box(
             Expand::horizontal().child(list_card),
         ))
+}
+
+/// Bring the list to `rows`, keeping selected the resources that were and still are.
+///
+/// Every change to any resource bumps the version, a background pickup of an edited file
+/// included, so the writer's Ctrl+click picks must survive one. A row that left the list
+/// (attached, deleted) is not selected any more, and none is selected under the index
+/// another row had.
+fn follow_rows(model: &ListModel<ResourceRow>, selection: &SelectionModel, rows: Vec<ResourceRow>) {
+    let shown: Vec<u64> = (0..model.len())
+        .filter_map(|i| model.with_item(i, |r| r.id))
+        .collect();
+    let picked = crate::resources::row::selected_ids(selection, &shown);
+    // Cleared first: the list moves an index selection along as rows go and come, and
+    // the picks are put back by resource below.
+    selection.clear();
+    let now: Vec<u64> = rows.iter().map(|r| r.id).collect();
+    model.reconcile_by_key(rows, |r| r.id);
+    crate::resources::row::select_ids(selection, &picked, &now);
 }
 
 /// "Files stored in this project: 120 MB", and for a single-file project past the notice
@@ -303,4 +318,38 @@ fn row_menu(row: &ResourceRow, vm: &UnattachedResourcesViewModel) -> MenuList {
         MenuItem::new(tr!(resources_remove()))
             .on_activate_fn(move |c| vm.delete(c, std::slice::from_ref(&row))),
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use teksilo::data::{ListModel, SelectionMode, SelectionModel};
+
+    use super::follow_rows;
+    use crate::models::ResourceRow;
+
+    fn row(id: u64, title: &str) -> ResourceRow {
+        ResourceRow {
+            id,
+            title: title.into(),
+            ..Default::default()
+        }
+    }
+
+    /// The writer's picks survive a change to the resources, wherever their rows land;
+    /// one that left the list is no longer picked.
+    #[test]
+    fn a_multi_selection_survives_a_change_for_the_rows_still_listed() {
+        let model = ListModel::from_vec(vec![row(1, "A"), row(2, "B"), row(3, "C"), row(4, "D")]);
+        let selection = SelectionModel::new(SelectionMode::Multi);
+        selection.select(1);
+        selection.toggle(2);
+        selection.toggle(3);
+        // B was renamed to the end, C was attached to an item, E came in.
+        follow_rows(
+            &model,
+            &selection,
+            vec![row(1, "A"), row(4, "D"), row(5, "E"), row(2, "Z")],
+        );
+        assert_eq!(selection.selected_indices(), [1, 3], "D and B, not E");
+    }
 }

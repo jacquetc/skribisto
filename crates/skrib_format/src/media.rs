@@ -166,14 +166,62 @@ pub fn resources_dir(
 }
 
 /// Where one stored resource's file is in `resources_dir`: `<uid>/<safe name>`.
+///
+/// The name an earlier build gave the file when it is there and today's is not (see
+/// [`crate::slug::legacy_safe_file_name`]): a project saved before the rule reserved
+/// every Windows device name holds `COM¹.pdf` where today's rule says `_COM¹.pdf`, and
+/// every reader, the open-time prune and the Resources panel go through here, so the
+/// file is found where it is until opening the project renames it (see
+/// [`prune_resources_dir`]), or wherever that rename could not be made. Only a file (or
+/// a link, which the caller then judges) counts: on Windows, the earlier name may be a
+/// device, which is not the writer's file.
 pub fn resource_file(resources_dir: &Path, uid: uuid::Uuid, file_name: &str) -> PathBuf {
-    resources_dir
-        .join(uid.hyphenated().to_string())
-        .join(crate::slug::safe_file_name(file_name))
+    let folder = resources_dir.join(uid.hyphenated().to_string());
+    let path = folder.join(crate::slug::safe_file_name(file_name));
+    if std::fs::symlink_metadata(&path).is_err()
+        && let Some(legacy) = crate::slug::legacy_safe_file_name(file_name)
+    {
+        let legacy = folder.join(legacy);
+        if std::fs::symlink_metadata(&legacy).is_ok_and(|m| m.is_file() || m.is_symlink()) {
+            return legacy;
+        }
+    }
+    path
+}
+
+/// Whether `path`, somewhere under `dir`, is reached through a symbolic link: the file
+/// itself or any folder between `dir` and it. `false` for a path that does not exist
+/// (it is missing, not linked) and for one not under `dir`.
+///
+/// A project's stored files and pictures are its own bytes, and every read of them
+/// copies those bytes on: into a zip a Save As writes, into a backup, into a copy
+/// another application opens. A folder project can arrive from anywhere (a shared
+/// drive, an archive that keeps links, a synchronised folder), and a link in its
+/// `resources/<uid>/` pointing at `~/.ssh/id_rsa` would have that file travel with the
+/// next copy of the project the writer sends. So whatever reads them asks this first
+/// and leaves a linked one out, reporting it. `dir` itself is not judged: the
+/// project, or the app's data folder, may well sit behind a link the user made.
+pub fn passes_through_link(dir: &Path, path: &Path) -> bool {
+    let Ok(rel) = path.strip_prefix(dir) else {
+        return false;
+    };
+    let mut at = dir.to_path_buf();
+    for component in rel.components() {
+        at.push(component);
+        match std::fs::symlink_metadata(&at) {
+            Ok(meta) if meta.file_type().is_symlink() => return true,
+            Ok(_) => {}
+            Err(_) => return false,
+        }
+    }
+    false
 }
 
 /// Remove from `resources_dir` what no resource of the project names any more: the
 /// folder of a removed resource, and an old file left in a live resource's folder.
+///
+/// A file an earlier build stored under a name today's rule changes is renamed to
+/// today's on the way (see [`crate::slug::legacy_safe_file_name`]), not removed.
 ///
 /// Run when a project opens, never by a save. A resource removed during a session
 /// keeps its file until the project is next opened, which is what lets Undo bring it
@@ -190,10 +238,20 @@ pub fn prune_resources_dir(resources_dir: &Path, keep: &[(uuid::Uuid, String)]) 
     // case (APFS, NTFS by default) a file renamed `village map.pdf` in the file manager
     // is still the resource's, and deleting it would delete its only copy.
     let fold = |name: &str| crate::locate::nfc(name).to_lowercase();
+    // A file an earlier build stored under a name today's rule changed is renamed first,
+    // so the session hands no other application the earlier name. Kept under whichever
+    // name it is found under after that (see `resource_file`).
     for (uid, name) in keep {
+        rename_to_current_name(resources_dir, *uid, name);
+        let found = resource_file(resources_dir, *uid, name);
+        let found = found
+            .file_name()
+            .and_then(|n| n.to_str())
+            .map(str::to_string)
+            .unwrap_or_else(|| crate::slug::safe_file_name(name));
         kept.entry(uid.hyphenated().to_string())
             .or_default()
-            .insert(fold(&crate::slug::safe_file_name(name)));
+            .insert(fold(&found));
     }
     for entry in entries.flatten() {
         let path = entry.path();
@@ -207,6 +265,15 @@ pub fn prune_resources_dir(resources_dir: &Path, keep: &[(uuid::Uuid, String)]) 
                 } else {
                     let _ = std::fs::remove_file(&path);
                 }
+            }
+            // A live resource's folder that is a link is left alone: listed, it would be
+            // the folder it points at, anywhere on the disk, and the prune would delete
+            // every file there the resource does not name.
+            Some(_) if entry.file_type().is_ok_and(|t| t.is_symlink()) => {
+                eprintln!(
+                    "skrib: {} is a link, not a resource folder; nothing in it is touched",
+                    path.display()
+                );
             }
             Some(names) => {
                 let Ok(files) = std::fs::read_dir(&path) else {
@@ -224,6 +291,38 @@ pub fn prune_resources_dir(resources_dir: &Path, keep: &[(uuid::Uuid, String)]) 
                 }
             }
         }
+    }
+}
+
+/// Give a stored file that an earlier build named by the rule before today's (see
+/// [`crate::slug::legacy_safe_file_name`]) today's name, when today's is not there yet.
+///
+/// Run as a project opens, with the prune, before the session hands any file to
+/// another application: renamed later, an application still holding the earlier name
+/// would save its edit where the project no longer looks. A rename in its own folder,
+/// so no byte is copied. Nothing is done through a link (the folder or the file), and
+/// a rename that fails leaves the file where [`resource_file`] still finds it.
+fn rename_to_current_name(resources_dir: &Path, uid: uuid::Uuid, file_name: &str) {
+    let Some(earlier) = crate::slug::legacy_safe_file_name(file_name) else {
+        return;
+    };
+    let folder = resources_dir.join(uid.hyphenated().to_string());
+    if std::fs::symlink_metadata(&folder).is_ok_and(|m| m.file_type().is_symlink()) {
+        return;
+    }
+    let current = folder.join(crate::slug::safe_file_name(file_name));
+    let earlier = folder.join(earlier);
+    if std::fs::symlink_metadata(&current).is_ok()
+        || !std::fs::symlink_metadata(&earlier).is_ok_and(|m| m.is_file())
+    {
+        return;
+    }
+    if let Err(e) = std::fs::rename(&earlier, &current) {
+        eprintln!(
+            "skrib: could not rename {} to {}: {e}",
+            earlier.display(),
+            current.display()
+        );
     }
 }
 

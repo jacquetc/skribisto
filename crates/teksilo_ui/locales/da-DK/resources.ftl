@@ -90,6 +90,7 @@ resources-dropped-added = { $count ->
     [one] Tilføjet som ressource for dette element og linket i teksten
    *[other] { $count } filer tilføjet som ressourcer for dette element og linket i teksten
 }
+resources-dropped-undo-kept = Teksten er ændret siden slippet, så intet blev fortrudt.
 resources-undo = Fortryd
 resources-link-refused = »{ $url }« er ikke en webadresse, som Skribisto kan gemme. Brug en adresse, der begynder med http:// eller https://, uden brugernavn eller adgangskode.
 

@@ -4,11 +4,16 @@
 //! Copies of resources, written to a folder the writer picked: what the Work's
 //! Resources page exports.
 //!
-//! A stored file and a linked file are copied under their own names; when two would land
-//! on one name, or a file of that name is already there, the later one is numbered
-//! ("Map (2).pdf"), so nothing is ever written over. Web links are not files: they are
-//! listed, one per line with their titles, in one `links.txt` beside the copies. Never
-//! as `.url` or `.desktop` files, which a file manager would run when opened.
+//! A stored file and a linked file are copied under their own names, made safe the way
+//! a stored file's name is (`skrib_format::slug::safe_file_name`: no separator, no `:`
+//! that Windows would read as a hidden stream, no `CON` or `LPT1` it would read as a
+//! device). When two would land on one name, or something of that name is already
+//! there, the later one is numbered ("Map (2).pdf"), so nothing is ever written over.
+//! Each copy is created as a new file, never opened if there, so neither a file that
+//! appears in the meantime nor a link left in the folder (pointing anywhere, or at
+//! nothing) is written through. Web links are not files: they are listed, one per line
+//! with their titles, in one `links.txt` beside the copies. Never as `.url` or
+//! `.desktop` files, which a file manager would run when opened.
 //!
 //! A file that is not where the project expects it is left out and named in the report,
 //! as is one that could not be copied, with the reason.
@@ -16,6 +21,7 @@
 //! Not a view-model: plain file work, testable without a window.
 
 use std::collections::HashSet;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 
 use crate::models::ResourceRow;
@@ -65,7 +71,8 @@ pub fn free_name(dir: &Path, wanted: &str, taken: &mut HashSet<String>) -> Strin
             format!("{stem} ({n}){ext}")
         };
         let key = candidate.to_lowercase();
-        if !taken.contains(&key) && !dir.join(&candidate).exists() {
+        // `symlink_metadata`, not `exists`: a link to nothing is there too.
+        if !taken.contains(&key) && std::fs::symlink_metadata(dir.join(&candidate)).is_err() {
             taken.insert(key);
             return candidate;
         }
@@ -73,7 +80,8 @@ pub fn free_name(dir: &Path, wanted: &str, taken: &mut HashSet<String>) -> Strin
     }
 }
 
-/// `name` as one file name: its last component only, never empty.
+/// `name` as one file name: its last component only, never empty, and safe on every
+/// system the folder may be read on (see the module docs).
 fn safe_name(name: &str) -> String {
     let base = Path::new(name)
         .file_name()
@@ -83,7 +91,38 @@ fn safe_name(name: &str) -> String {
     if base.is_empty() || base == "." || base == ".." {
         "resource".to_string()
     } else {
-        base.to_string()
+        skrib_format::slug::safe_file_name(base)
+    }
+}
+
+/// Create a new file in `dir` under a free name for `wanted` and fill it with `fill`.
+/// Created, never opened: a name taken between [`free_name`] and here is skipped for the
+/// next one. A file that could not be filled is removed rather than left half written.
+fn write_new(
+    dir: &Path,
+    wanted: &str,
+    taken: &mut HashSet<String>,
+    fill: impl Fn(&mut std::fs::File) -> std::io::Result<()>,
+) -> std::io::Result<PathBuf> {
+    loop {
+        let target = dir.join(free_name(dir, wanted, taken));
+        let mut file = match std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&target)
+        {
+            Ok(file) => file,
+            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => continue,
+            Err(e) => return Err(e),
+        };
+        return match fill(&mut file).and_then(|()| file.flush()) {
+            Ok(()) => Ok(target),
+            Err(e) => {
+                drop(file);
+                let _ = std::fs::remove_file(&target);
+                Err(e)
+            }
+        };
     }
 }
 
@@ -120,17 +159,21 @@ pub fn export_copies(rows: &[ResourceRow], dir: &Path) -> ExportReport {
             report.missing.push(name);
             continue;
         };
-        let target = dir.join(free_name(dir, &name, &mut taken));
-        match std::fs::copy(source, &target) {
-            Ok(_) => report.copied.push(target),
+        let copied = write_new(dir, &name, &mut taken, |out| {
+            let mut from = std::fs::File::open(source)?;
+            std::io::copy(&mut from, out).map(|_| ())
+        });
+        match copied {
+            Ok(target) => report.copied.push(target),
             Err(e) => report.failed.push((name, e.to_string())),
         }
     }
     let links = links_text(rows);
     if !links.is_empty() {
-        let target = dir.join(free_name(dir, LINKS_FILE, &mut taken));
-        match std::fs::write(&target, links.as_bytes()) {
-            Ok(()) => {
+        match write_new(dir, LINKS_FILE, &mut taken, |out| {
+            out.write_all(links.as_bytes())
+        }) {
+            Ok(target) => {
                 report.links = rows.iter().filter(|r| r.is_web_link()).count();
                 report.links_file = Some(target);
             }
@@ -287,6 +330,83 @@ mod tests {
         assert_eq!(free_name(out.path(), "..", &mut taken), "resource (2)");
         assert_eq!(free_name(out.path(), "README", &mut taken), "README");
         assert_eq!(free_name(out.path(), "readme", &mut taken), "readme (2)");
-        assert_eq!(free_name(out.path(), ".hidden", &mut taken), ".hidden");
+        // Named as a stored file is: a leading dot would hide the copy.
+        assert_eq!(free_name(out.path(), ".hidden", &mut taken), "hidden");
+    }
+
+    #[test]
+    fn a_name_windows_reads_as_a_device_or_a_stream_is_not_written_as_one() {
+        let out = tempfile::tempdir().expect("tmp");
+        let mut taken = HashSet::new();
+        for (wanted, written) in [
+            ("CON", "_CON"),
+            ("con.txt", "_con.txt"),
+            ("NUL.pdf", "_NUL.pdf"),
+            ("aux", "_aux"),
+            ("PRN.tar.gz", "_PRN.tar.gz"),
+            ("COM1.mp3", "_COM1.mp3"),
+            ("lpt9", "_lpt9"),
+            ("notes.txt:secret", "notes.txt_secret"),
+            ("map:Zone.Identifier.pdf", "map_Zone.Identifier.pdf"),
+            ("Console.txt", "Console.txt"),
+        ] {
+            assert_eq!(
+                free_name(out.path(), wanted, &mut taken),
+                written,
+                "{wanted}"
+            );
+        }
+        let src = tempfile::tempdir().expect("tmp");
+        let rows = [file(src.path(), 1, "CON.txt", b"not a device")];
+        let report = export_copies(&rows, out.path());
+        assert_eq!(
+            report.copied,
+            [out.path().join("_CON.txt")],
+            "{:?}",
+            report.failed
+        );
+    }
+
+    /// A link left in the folder, pointing at a file elsewhere or at nothing, is a name
+    /// already taken: the copy goes beside it, and nothing is written through it.
+    #[cfg(unix)]
+    #[test]
+    fn a_link_in_the_folder_is_never_written_through() {
+        let src = tempfile::tempdir().expect("tmp");
+        let out = tempfile::tempdir().expect("tmp");
+        let elsewhere = tempfile::tempdir().expect("tmp");
+        let kept = elsewhere.path().join("bashrc");
+        std::fs::write(&kept, b"the writer's own").expect("write");
+        std::os::unix::fs::symlink(&kept, out.path().join("Notes.txt")).expect("link");
+        let nowhere = elsewhere.path().join("planted");
+        std::os::unix::fs::symlink(&nowhere, out.path().join("Map.pdf")).expect("link");
+        std::os::unix::fs::symlink(elsewhere.path().join("list"), out.path().join(LINKS_FILE))
+            .expect("link");
+
+        let rows = [
+            file(src.path(), 1, "Notes.txt", b"exported notes"),
+            file(src.path(), 2, "Map.pdf", b"exported map"),
+            link(3, "Harbour records", "https://example.org/harbour"),
+        ];
+        let report = export_copies(&rows, out.path());
+        assert!(report.failed.is_empty(), "{:?}", report.failed);
+        assert_eq!(std::fs::read(&kept).expect("read"), b"the writer's own");
+        assert!(
+            !nowhere.exists(),
+            "nothing was written through the dangling link"
+        );
+        assert!(!elsewhere.path().join("list").exists());
+        assert_eq!(
+            std::fs::read(out.path().join("Notes (2).txt")).expect("read"),
+            b"exported notes"
+        );
+        assert_eq!(
+            std::fs::read(out.path().join("Map (2).pdf")).expect("read"),
+            b"exported map"
+        );
+        assert_eq!(
+            report.links_file.as_deref(),
+            Some(out.path().join("links (2).txt").as_path())
+        );
     }
 }

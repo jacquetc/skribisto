@@ -94,6 +94,7 @@ resources-dropped-added = { $count ->
     [few] { $count } fișiere adăugate ca resurse ale acestui element, și legate în text
    *[other] { $count } de fișiere adăugate ca resurse ale acestui element, și legate în text
 }
+resources-dropped-undo-kept = Textul s-a schimbat de la plasare, așa că nu a fost anulat nimic.
 resources-undo = Anulează
 resources-link-refused = „{ $url }” nu este o adresă web pe care Skribisto o poate păstra. Folosiți o adresă care începe cu http:// sau https://, fără nume de utilizator sau parolă.
 

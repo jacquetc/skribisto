@@ -322,8 +322,10 @@ pub struct BinderBinderItemsTreeModel {
     resource_drop: Rc<RefCell<Option<ResourceDropFn>>>,
 }
 
-/// Attach the dropped resources to the item with this store id.
-pub type ResourceDropFn = Rc<dyn Fn(u64, Vec<crate::models::ResourceRow>)>;
+/// Attach the dropped resources to the item with this store id. `false` when that
+/// failed, which refuses the drop rather than consuming it as if it had worked: the
+/// data source has no event context to say so with.
+pub type ResourceDropFn = Rc<dyn Fn(u64, Vec<crate::models::ResourceRow>) -> bool>;
 
 /// The resource rows a drag from the Resources dock or a Resources page carries, if
 /// that is what `payload` is.
@@ -340,6 +342,17 @@ impl BinderBinderItemsTreeModel {
     /// `resource_drop`.
     pub fn set_resource_drop(&self, f: ResourceDropFn) {
         *self.resource_drop.borrow_mut() = Some(f);
+    }
+
+    /// Hand resources dropped on the item `item` to the drop callback: whether they were
+    /// attached, and so whether the drop is taken.
+    fn drop_resources(&self, item: u64, rows: Vec<crate::models::ResourceRow>) -> bool {
+        if rows.is_empty() {
+            return false;
+        }
+        // Cloned out first: the callback may reach this model again.
+        let f = self.resource_drop.borrow().clone();
+        f.is_some_and(|f| f(item, rows))
     }
 
     /// The store id of the item `target` names, when a resource may be dropped on it.
@@ -764,15 +777,7 @@ impl TreeDataSource for BinderBinderItemsTreeModel {
             let Some(item) = self.resource_target(&commit.target) else {
                 return false;
             };
-            let rows = data.items.clone().unwrap_or_default();
-            let f = self.resource_drop.borrow().clone();
-            if rows.is_empty() {
-                return false;
-            }
-            if let Some(f) = f {
-                f(item, rows);
-            }
-            return true;
+            return self.drop_resources(item, data.items.clone().unwrap_or_default());
         }
         self.slice.accept_drop(commit)
     }
