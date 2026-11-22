@@ -9,18 +9,20 @@
 
 use anyhow::{Context, Result};
 use std::fs::File;
-use std::io::Write;
 use std::path::Path;
 use tempfile::NamedTempFile;
 use walkdir::WalkDir;
 use zip::write::SimpleFileOptions;
 
 use super::bundle::WorkBundle;
-use super::folder_io::{read_folder, write_folder};
+use super::folder_io::{read_folder_kept, write_folder};
 use super::writer::{discard, persist_durably};
 
 pub fn write_zip(target: &Path, bundle: &WorkBundle) -> Result<()> {
-    let staging = tempfile::tempdir().context("creating staging dir for zip save")?;
+    // Under the scratch root, which the app keeps on the same disk as the media
+    // directory: the pictures and files are hard-linked into the staging rather
+    // than copied, and none of them lands in a RAM-backed temporary folder.
+    let staging = crate::scratch::tempdir().context("creating staging dir for zip save")?;
     write_folder(staging.path(), bundle)?;
 
     let parent = target.parent().filter(|p| !p.as_os_str().is_empty());
@@ -86,13 +88,16 @@ pub(crate) const LIMITS: crate::zip_guard::ZipLimits = crate::zip_guard::ZipLimi
 };
 
 pub fn read_zip(path: &Path) -> Result<WorkBundle> {
-    let dir = tempfile::tempdir().context("creating extract dir")?;
+    let dir = crate::scratch::tempdir().context("creating extract dir")?;
     let file = File::open(path).with_context(|| format!("opening {}", path.display()))?;
     let (mut archive, mut guard) = crate::zip_guard::ZipGuard::open(LIMITS, file)
         .with_context(|| format!("reading zip {}", path.display()))?;
     extract_guarded(&mut archive, &mut guard, dir.path())
         .with_context(|| format!("extracting zip {}", path.display()))?;
-    read_folder(dir.path())
+    // The pictures and files stay in the extraction: the bundle's blobs point at
+    // them, and the folder is removed once the last of those is dropped.
+    let dir = std::sync::Arc::new(dir);
+    read_folder_kept(dir.path(), Some(std::sync::Arc::clone(&dir)))
 }
 
 /// Extract every entry of `archive` under `dest`, refusing anything a `.skrib`
@@ -191,6 +196,22 @@ fn extract_guarded<R: std::io::Read + std::io::Seek>(
 /// already-open file — typically a [`NamedTempFile`]'s own fd, so the bytes
 /// fsynced afterwards are demonstrably the bytes just written, rather than
 /// through a second independent handle on the same path).
+/// Whether a file with this extension is compressed already, so deflating it again
+/// would spend autosave time for nothing: pictures, sound, video, archives and the
+/// office formats that are zip files themselves. Compared without case.
+fn is_already_compressed(extension: &str) -> bool {
+    const COMPRESSED: &[&str] = &[
+        // Pictures.
+        "png", "jpg", "jpeg", "webp", "gif", "avif", "heic", "heif", "jxl", // Sound.
+        "mp3", "m4a", "aac", "ogg", "oga", "opus", "flac", "wma", // Video.
+        "mp4", "m4v", "mov", "webm", "mkv", "avi", "ogv", "wmv", // Archives.
+        "zip", "gz", "tgz", "bz2", "xz", "7z", "rar", "zst",
+        // Documents that are zip archives or compress their own streams.
+        "pdf", "epub", "docx", "xlsx", "pptx", "odt", "ods", "odp", "odg",
+    ];
+    COMPRESSED.iter().any(|c| c.eq_ignore_ascii_case(extension))
+}
+
 pub fn zip_dir(src_dir: &Path, target: &mut File) -> Result<()> {
     let mut zw = zip::ZipWriter::new(target);
     let opts = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
@@ -220,16 +241,86 @@ pub fn zip_dir(src_dir: &Path, target: &mut File) -> Result<()> {
         if entry.file_type().is_dir() {
             zw.add_directory(format!("{name}/"), opts)?;
         } else {
-            let already_compressed = matches!(
-                path.extension().and_then(|e| e.to_str()),
-                Some("png" | "jpg" | "jpeg" | "webp" | "gif")
-            );
-            zw.start_file(name, if already_compressed { stored } else { opts })?;
-            let bytes =
-                std::fs::read(path).with_context(|| format!("reading {}", path.display()))?;
-            zw.write_all(&bytes)?;
+            let already_compressed = path
+                .extension()
+                .and_then(|e| e.to_str())
+                .is_some_and(is_already_compressed);
+            let mut file =
+                File::open(path).with_context(|| format!("reading {}", path.display()))?;
+            let len = file
+                .metadata()
+                .with_context(|| format!("reading {}", path.display()))?
+                .len();
+            // Past 4 GiB a member needs the zip64 extension, and the writer has to
+            // be told before it starts the entry, not discover it at the end.
+            let large = len >= u64::from(u32::MAX);
+            let entry_opts = if already_compressed { stored } else { opts }.large_file(large);
+            zw.start_file(name, entry_opts)?;
+            // Streamed, never read whole: an attached recording can be larger than
+            // the memory the app may use.
+            std::io::copy(&mut file, &mut zw)
+                .with_context(|| format!("packing {}", path.display()))?;
         }
     }
     zw.finish()?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn compressed_files_are_stored_and_text_is_deflated() {
+        let src = tempfile::tempdir().unwrap();
+        std::fs::write(src.path().join("items.ron"), "(items: [])\n".repeat(50)).unwrap();
+        std::fs::create_dir(src.path().join("resources")).unwrap();
+        std::fs::write(src.path().join("resources").join("Map.PDF"), b"%PDF-1.7").unwrap();
+        std::fs::write(src.path().join("resources").join("talk.mp3"), b"ID3").unwrap();
+
+        let mut out = tempfile::tempfile().unwrap();
+        zip_dir(src.path(), &mut out).unwrap();
+        let mut archive = zip::ZipArchive::new(out).unwrap();
+        let mut method = |name: &str| archive.by_name(name).unwrap().compression();
+        assert_eq!(method("items.ron"), zip::CompressionMethod::Deflated);
+        assert_eq!(method("resources/Map.PDF"), zip::CompressionMethod::Stored);
+        assert_eq!(method("resources/talk.mp3"), zip::CompressionMethod::Stored);
+    }
+
+    #[test]
+    fn a_zip_read_keeps_its_pictures_on_disk_after_the_read() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("Novel.skrib");
+        let mut bundle = crate::tests::build_bundle_with_bytes(
+            crate::bundle::ShapeTag::Zip,
+            std::collections::BTreeMap::new(),
+            |_| {},
+        );
+        bundle.assets = vec![crate::bundle::AssetFile {
+            file_id: 1,
+            created_at: String::new(),
+            updated_at: String::new(),
+            content_hash: "h".into(),
+            file_name: "a.png".into(),
+            mime_type: "image/png".into(),
+            width: 1,
+            height: 1,
+            byte_size: 4,
+            alt: String::new(),
+            path: crate::media::asset_relpath("h", "png"),
+        }];
+        bundle
+            .asset_blobs
+            .insert("h".into(), vec![0x89, b'P', b'N', b'G'].into());
+        write_zip(&path, &bundle).unwrap();
+
+        let back = read_zip(&path).unwrap();
+        let blob = back.asset_blobs.get("h").unwrap();
+        // Not in memory: a file in the extraction, which the blob keeps alive.
+        let file = blob.path().unwrap().to_path_buf();
+        assert!(file.is_file());
+        assert_eq!(blob.read().unwrap(), vec![0x89, b'P', b'N', b'G']);
+        drop(back);
+        assert!(!file.exists());
+    }
 }

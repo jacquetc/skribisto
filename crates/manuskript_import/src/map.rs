@@ -365,7 +365,7 @@ pub fn build_bundle(
         statuses: b.statuses,
         // Manuskript stores no images or other binary assets of its own.
         assets: Vec::new(),
-        asset_bytes: Default::default(),
+        asset_blobs: Default::default(),
         note_template_bodies: Default::default(),
         trash_infos: Vec::new(),
         orphan_footnotes: Vec::new(),

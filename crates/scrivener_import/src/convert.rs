@@ -1006,7 +1006,7 @@ impl<'c, 't, 'i, 'd, 'r> Converter<'c, 't, 'i, 'd, 'r> {
             .replace(DocumentPictures::new())
             .into_pictures();
         let mut assets = Vec::new();
-        let mut asset_bytes = BTreeMap::new();
+        let mut asset_blobs = BTreeMap::new();
         for picture in pictures {
             // Only what the stored prose names: a picture of a heading that became a title,
             // say, has nowhere to be shown.
@@ -1014,7 +1014,10 @@ impl<'c, 't, 'i, 'd, 'r> Converter<'c, 't, 'i, 'd, 'r> {
                 continue;
             }
             assets.push(picture.asset_file(self.ids.take(), &self.now));
-            asset_bytes.insert(picture.content_hash.clone(), picture.bytes);
+            asset_blobs.insert(
+                picture.content_hash.clone(),
+                skrib_format::Blob::from(picture.bytes),
+            );
         }
         self.totals.pictures = assets.len() as u32;
 
@@ -1064,7 +1067,7 @@ impl<'c, 't, 'i, 'd, 'r> Converter<'c, 't, 'i, 'd, 'r> {
             statuses,
             assets,
             note_template_bodies,
-            asset_bytes,
+            asset_blobs,
             trash_infos,
             paces,
             progress_snapshots: Vec::new(),

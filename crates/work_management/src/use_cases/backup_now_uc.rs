@@ -285,7 +285,7 @@ fn run_backup(
         std::path::Path::new(&dto.media_root),
         &unique_id,
     );
-    let asset_bytes = work_io::read_asset_bytes(&g.assets, &media_dir);
+    let asset_blobs = work_io::read_asset_blobs(&g.assets, &media_dir);
 
     let mut bundle = skrib::from_entities(
         &g.work,
@@ -295,7 +295,7 @@ fn run_backup(
         &g.note_templates,
         &g.statuses,
         &g.assets,
-        asset_bytes,
+        asset_blobs,
         g.smart_punctuation.as_ref(),
         &g.trash_infos,
         &g.paces,

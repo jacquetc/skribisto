@@ -109,7 +109,10 @@ pub fn resolve_target(
 }
 
 /// Serialise `g` and write it to `target` in `shape`. Returns `target`.
-/// Read the bytes of every gathered asset out of the project's media directory.
+/// Point at the file of every gathered asset in the project's media directory.
+///
+/// Nothing is read: each [`skrib::Blob`] names the file, and the writer streams or
+/// links it into place, so a save never holds the project's pictures in memory.
 ///
 /// An asset whose file is missing is *skipped*, not an error. That is the whole
 /// posture of this path: an image the writer can no longer see is a smaller
@@ -117,32 +120,33 @@ pub fn resolve_target(
 /// match so the bundle never carries a dangling reference. The lost row is
 /// recoverable — the prose still names the hash, so restoring the file restores
 /// the picture.
-pub fn read_asset_bytes(
+pub fn read_asset_blobs(
     assets: &[common::entities::Asset],
     media_dir: &std::path::Path,
-) -> std::collections::BTreeMap<String, Vec<u8>> {
+) -> std::collections::BTreeMap<String, skrib::Blob> {
     let mut out = std::collections::BTreeMap::new();
     for a in assets {
         let ext = skrib::media::extension_for(&a.mime_type);
         let path = media_dir.join(format!("{}.{ext}", a.content_hash));
-        if let Ok(bytes) = std::fs::read(&path) {
-            out.insert(a.content_hash.clone(), bytes);
+        if path.is_file() {
+            out.insert(a.content_hash.clone(), skrib::Blob::file(path));
         }
     }
     out
 }
 
-/// Write a loaded bundle's asset bytes into the project's media directory.
+/// Place a loaded bundle's asset files into the project's media directory.
 ///
 /// A no-op for an exploded-folder project, where the media directory *is* the
-/// bundle's own `assets/` — `write_if_changed` would compare each file against
-/// itself. Only a zip needs its images extracted to somewhere the editor can
-/// read them back.
+/// bundle's own `assets/`: each blob already points at the file it would be
+/// placed on. Only a zip needs its images moved out of the extraction to
+/// somewhere the editor can read them back, which is a hard link when the
+/// extraction and the media directory share a disk.
 ///
 /// Failing here fails the load: an image the writer can see but the next save
 /// cannot find would be written out of the project silently, which is the one
 /// outcome worth refusing to open over.
-pub fn write_asset_bytes(bundle: &skrib::WorkBundle, media_dir: &std::path::Path) -> Result<()> {
+pub fn write_asset_blobs(bundle: &skrib::WorkBundle, media_dir: &std::path::Path) -> Result<()> {
     if bundle.assets.is_empty() {
         return Ok(());
     }
@@ -156,11 +160,11 @@ pub fn write_asset_bytes(bundle: &skrib::WorkBundle, media_dir: &std::path::Path
         if path.exists() {
             continue;
         }
-        let bytes = bundle
-            .asset_bytes
+        let blob = bundle
+            .asset_blobs
             .get(&a.content_hash)
             .ok_or_else(|| anyhow!("bundle lists asset {} with no bytes", a.file_name))?;
-        std::fs::write(&path, bytes)
+        blob.place_at(&path)
             .with_context(|| format!("writing media file {}", path.display()))?;
     }
     Ok(())
@@ -276,7 +280,7 @@ pub fn serialize_and_write(
         &g.note_templates,
         &g.statuses,
         &g.assets,
-        read_asset_bytes(&g.assets, media_dir),
+        read_asset_blobs(&g.assets, media_dir),
         g.smart_punctuation.as_ref(),
         &g.trash_infos,
         &g.paces,

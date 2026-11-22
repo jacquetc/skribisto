@@ -968,6 +968,10 @@ pub struct WorkBundle {
     pub note_template_bodies: BTreeMap<u64, String>,
     /// Asset bytes keyed by `content_hash`, the `assets/*` blobs.
     ///
+    /// A [`Blob`](crate::Blob), not a `Vec<u8>`: a bundle read from disk points at
+    /// the files rather than holding them, and a writer streams or links each one
+    /// into place, so no save or open holds a project's pictures in memory.
+    ///
     /// `#[serde(skip)]` because this map is never part of the bundle's
     /// *serialised* form: the bytes are written as real files, and the only
     /// place the whole bundle is serialised is the content fingerprint, where
@@ -975,7 +979,7 @@ pub struct WorkBundle {
     /// several times its own size — on a code path that runs on every save.
     /// The hashes in `AssetFile::content_hash` already cover the bytes.
     #[serde(skip)]
-    pub asset_bytes: BTreeMap<String, Vec<u8>>,
+    pub asset_blobs: BTreeMap<String, crate::Blob>,
     pub trash_infos: Vec<TrashInfoFile>,
     pub paces: Vec<PaceFile>,
     pub progress_snapshots: Vec<ProgressSnapshotFile>,
@@ -1002,7 +1006,7 @@ pub struct WorkBundle {
     /// What each writing row said at each past save — `history/` at the bundle
     /// root. See [`crate::history`].
     ///
-    /// `#[serde(skip)]` for the same reason as [`Self::asset_bytes`], and it is
+    /// `#[serde(skip)]` for the same reason as [`Self::asset_blobs`], and it is
     /// the more load-bearing of the two: the only place a whole bundle is
     /// serialised is the content fingerprint, and a log that grows on every save
     /// would change that fingerprint on every save — so `skip_if_unchanged` would

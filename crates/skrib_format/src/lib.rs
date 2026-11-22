@@ -22,6 +22,9 @@
 
 #[cfg(test)]
 mod asset_tests;
+/// A stored file's bytes, in memory or on disk. `pub` because every producer of a
+/// bundle (the importers, the save use cases) hands its pictures and files over as one.
+pub mod blob;
 mod bundle;
 /// Preserving bundle files this build does not model, so a save never destroys
 /// what it cannot read. `pub` because every write path has to fetch the carry
@@ -88,6 +91,9 @@ pub mod retention;
 /// `pub` because every reader and writer of bundle-supplied paths has to go
 /// through it, including the zip extractor and the carry-through set.
 pub mod safe_path;
+/// Where a zip read extracts and a zip write stages. `pub` so the app can point it
+/// at a folder on disk rather than a RAM-backed temporary folder.
+pub mod scratch;
 mod shape;
 /// Filesystem-safe name shaping. `pub` because the UI's template export needs the same
 /// `slugify` the bundle writer uses — a name the writer typed must land on one safe path
@@ -125,6 +131,7 @@ mod zip_io;
 // On-disk bundle DTOs + the in-memory `WorkBundle`. Public so an external
 // producer (the Plume importer) can build a bundle directly, exactly the way
 // `from_entities` builds one from store entities.
+pub use blob::Blob;
 pub use bundle::{
     AssetFile, BinderFile, BinderItemFile, BinderStatusFile, BinderTagFile, BinderWithItems,
     BundleKind, BundledBinder, BundledItem, CarriedFile, CommentFile, CommentReplyFile,

@@ -4234,7 +4234,7 @@ fn bundle_with_book_cover(cover: u64) -> WorkBundle {
         alt: String::new(),
         path: skrib::media::asset_relpath("front", "png"),
     }];
-    bundle.asset_bytes = std::collections::BTreeMap::from([("front".to_string(), png)]);
+    bundle.asset_blobs = std::collections::BTreeMap::from([("front".to_string(), png.into())]);
     let book = bundle
         .binders
         .iter_mut()

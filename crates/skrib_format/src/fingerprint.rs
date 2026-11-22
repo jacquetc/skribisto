@@ -34,7 +34,7 @@ pub fn content_fingerprint(bundle: &WorkBundle) -> String {
 /// Zero every timestamp and backup marker so only content participates in the hash.
 fn strip_volatile(b: &mut WorkBundle) {
     // Asset *bytes* are absent from the serialised form by construction
-    // (`WorkBundle::asset_bytes` is `#[serde(skip)]`), so nothing has to be
+    // (`WorkBundle::asset_blobs` is `#[serde(skip)]`), so nothing has to be
     // stripped here for them — and nothing may be added that would include
     // them. Each asset's `content_hash` is in its metadata row, so the bytes
     // are still covered: two projects differing only in an image's content
@@ -62,7 +62,7 @@ fn strip_volatile(b: &mut WorkBundle) {
         sp.updated_at.clear();
     }
 
-    // Metadata only (bytes are `#[serde(skip)]`, see `WorkBundle::asset_bytes`'s own
+    // Metadata only (bytes are `#[serde(skip)]`, see `WorkBundle::asset_blobs`'s own
     // note above) — but the bookkeeping stamps are exactly as volatile as every other
     // entity's, and this loop was missing entirely: an asset's `updated_at` alone
     // ticking (e.g. a re-import that reuses the same `content_hash`) used to change
@@ -190,7 +190,7 @@ mod tests {
         WorkBundle {
             statuses: Vec::new(),
             assets: Vec::new(),
-            asset_bytes: Default::default(),
+            asset_blobs: Default::default(),
             manifest: ProjectManifest {
                 format_version: FORMAT_VERSION,
                 format_min_read_version: None,
@@ -240,7 +240,7 @@ mod tests {
     /// every save; if it reached the hash, every save would change the fingerprint,
     /// `skip_if_unchanged` would never skip again, and every close would write a
     /// full backup of a project nobody had edited. `strip_volatile`'s own comment
-    /// states the rule for `asset_bytes` — *"nothing may be added that would include
+    /// states the rule for `asset_blobs` — *"nothing may be added that would include
     /// them"* — and this asserts the newer field obeys it.
     #[test]
     fn the_history_log_never_reaches_the_fingerprint() {

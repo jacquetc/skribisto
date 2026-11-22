@@ -26,7 +26,7 @@
 //! ## Two invariants that are not obvious
 //!
 //! 1. **`HistoryLog` must never enter the content fingerprint.** It is
-//!    `#[serde(skip)]` on [`WorkBundle`], exactly as `asset_bytes` is, and
+//!    `#[serde(skip)]` on [`WorkBundle`], exactly as `asset_blobs` is, and
 //!    `fingerprint::strip_volatile`'s own comment states the rule: *"nothing may
 //!    be added that would include them"*. If the log were hashed, every save
 //!    would change the fingerprint, `skip_if_unchanged` would never skip again,

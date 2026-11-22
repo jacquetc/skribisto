@@ -218,7 +218,7 @@ impl IngestedPicture {
     }
 
     /// The name of its file in a project's media directory, `<hash>.<ext>`: the one a save
-    /// reads it back under (`work_management::work_io::read_asset_bytes`).
+    /// reads it back under (`work_management::work_io::read_asset_blobs`).
     pub fn stored_name(&self) -> String {
         format!("{}.{}", self.content_hash, self.extension())
     }
@@ -226,7 +226,7 @@ impl IngestedPicture {
     /// Its row in a bundle's `assets.ron`, for a converter that writes a bundle itself.
     ///
     /// `stamp` is the creation time the bundle records, written as the bundle writes every
-    /// other one. The bytes go into `WorkBundle::asset_bytes` under
+    /// other one. The bytes go into `WorkBundle::asset_blobs` under
     /// [`Self::content_hash`]; a bundle listing an asset without them is refused on write.
     pub fn asset_file(&self, file_id: u64, stamp: &str) -> skrib_format::AssetFile {
         skrib_format::AssetFile {

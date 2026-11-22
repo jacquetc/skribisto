@@ -472,7 +472,7 @@ mod imp {
             statuses: Vec::new(),
             assets: Vec::new(),
             note_template_bodies: Default::default(),
-            asset_bytes: Default::default(),
+            asset_blobs: Default::default(),
             trash_infos: Vec::new(),
             paces: Vec::new(),
             progress_snapshots: Vec::new(),

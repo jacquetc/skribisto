@@ -87,7 +87,7 @@ pub fn from_entities(
     assets: &[Asset],
     // Asset bytes keyed by content hash, read from the project's media
     // directory by the caller — this crate resolves no paths of its own.
-    asset_bytes: BTreeMap<String, Vec<u8>>,
+    asset_blobs: BTreeMap<String, crate::Blob>,
     // Deliberately **not** a slice, though every neighbour here is one: this is
     // a one-to-one child, and taking `&Option<_>` means a caller cannot pass it
     // in the wrong positional slot — the two `&[...]` parameters on either side
@@ -110,7 +110,7 @@ pub fn from_entities(
     // cover is kept only when its picture is among them.
     let written_assets: BTreeSet<u64> = assets
         .iter()
-        .filter(|a| asset_bytes.contains_key(&a.content_hash))
+        .filter(|a| asset_blobs.contains_key(&a.content_hash))
         .map(|a| a.id)
         .collect();
     let mut orphan_comments: Vec<CommentFile> = Vec::new();
@@ -399,7 +399,7 @@ pub fn from_entities(
         // and losing one unreadable image is better than losing the save.
         assets: assets
             .iter()
-            .filter(|a| asset_bytes.contains_key(&a.content_hash))
+            .filter(|a| asset_blobs.contains_key(&a.content_hash))
             .map(|a| AssetFile {
                 file_id: a.id,
                 created_at: fmt_dt(&a.created_at),
@@ -414,7 +414,7 @@ pub fn from_entities(
                 path: asset_relpath(&a.content_hash, &extension_for(&a.mime_type)),
             })
             .collect(),
-        asset_bytes,
+        asset_blobs,
         trash_infos: trash_infos
             .iter()
             .map(|ti| TrashInfoFile {

@@ -192,9 +192,10 @@ pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
     prune_dir(&templates_dir, &expected_templates, "djot", &carried)?;
 
     // Assets: an index plus one blob each, the same split templates use — but
-    // written as bytes, not text. `write_if_changed` already takes `&[u8]` and
-    // diffs against what is on disk, so an unchanged image is not rewritten and
-    // the exploded shape stays diff-minimal even with photographs in it.
+    // placed as files, not text. `Blob::place_at` leaves a file that already holds
+    // the bytes alone (a folder project saved in place reads its blobs from the
+    // very files it would write), so an unchanged image is not rewritten and the
+    // exploded shape stays diff-minimal even with photographs in it.
     //
     // The prune matters more here than anywhere else: assets are content-
     // addressed, so *replacing* an image writes a new name and leaves the old
@@ -218,14 +219,16 @@ pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
             .and_then(|n| n.to_str())
             .ok_or_else(|| anyhow::anyhow!("bad asset path '{}'", a.path))?
             .to_string();
-        let bytes = bundle.asset_bytes.get(&a.content_hash).ok_or_else(|| {
+        let blob = bundle.asset_blobs.get(&a.content_hash).ok_or_else(|| {
             anyhow::anyhow!(
                 "missing bytes for asset {} ({})",
                 a.file_name,
                 a.content_hash
             )
         })?;
-        write_if_changed(&locator.locate(root, &a.path, "asset")?, bytes)?;
+        let dest = locator.locate(root, &a.path, "asset")?;
+        blob.place_at(&dest)
+            .with_context(|| format!("writing asset {} to {}", a.file_name, dest.display()))?;
         expected_assets.insert(nfc(&fname));
     }
     prune_assets_dir(&assets_dir, &expected_assets, &carried)?;
@@ -451,6 +454,16 @@ fn prune_binder_dirs(binders_dir: &Path, keep: &BTreeSet<String>) -> Result<()> 
 }
 
 pub fn read_folder(root: &Path) -> Result<WorkBundle> {
+    read_folder_kept(root, None)
+}
+
+/// [`read_folder`], for a folder that is a scratch extraction: every blob the bundle
+/// points into it keeps `keep` alive, so the folder outlives the read for exactly as
+/// long as a blob still needs it.
+pub(crate) fn read_folder_kept(
+    root: &Path,
+    keep: Option<std::sync::Arc<tempfile::TempDir>>,
+) -> Result<WorkBundle> {
     let manifest_text = fs::read_to_string(root.join(MANIFEST_NAME))
         .with_context(|| format!("reading {}", root.join(MANIFEST_NAME).display()))?;
     let manifest: ProjectManifest = from_ron(&manifest_text, "project.skrib")?;
@@ -553,12 +566,21 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
     // Absent before v14, and an absent ladder is a legitimate "no statuses" state, so
     // `read_ron_vec` returning empty for a missing file is exactly right here.
     let statuses: Vec<BinderStatusFile> = read_ron_vec(&root.join("statuses.ron"), "statuses.ron")?;
-    let mut asset_bytes = std::collections::BTreeMap::new();
+    // Each asset is checked to be there, never read: its blob points at the file,
+    // and only a writer that copies it somewhere opens it.
+    let mut asset_blobs = std::collections::BTreeMap::new();
     for a in &assets {
         let path = locator.locate(root, &a.path, "asset")?;
-        let bytes = fs::read(&path)
+        let meta = fs::metadata(&path)
             .with_context(|| format!("reading asset {} ({})", a.file_name, a.path))?;
-        asset_bytes.insert(a.content_hash.clone(), bytes);
+        if !meta.is_file() {
+            anyhow::bail!("reading asset {} ({}): not a file", a.file_name, a.path);
+        }
+        let blob = match &keep {
+            Some(keep) => crate::Blob::file_in(path, std::sync::Arc::clone(keep)),
+            None => crate::Blob::file(path),
+        };
+        asset_blobs.insert(a.content_hash.clone(), blob);
     }
 
     // Index every binder by its file id (dir names are cosmetic).
@@ -676,7 +698,7 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
         statuses,
         note_template_bodies,
         assets,
-        asset_bytes,
+        asset_blobs,
         trash_infos,
         paces,
         progress_snapshots,

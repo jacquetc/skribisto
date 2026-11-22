@@ -49,27 +49,36 @@ pub(crate) fn bundle_with_assets() -> WorkBundle {
             path: asset_relpath("hash-map", &extension_for("image/jpeg")),
         },
     ];
-    b.asset_bytes = BTreeMap::from([
-        ("hash-cover".to_string(), png),
-        ("hash-map".to_string(), jpg),
+    b.asset_blobs = BTreeMap::from([
+        ("hash-cover".to_string(), png.into()),
+        ("hash-map".to_string(), jpg.into()),
     ]);
     b
 }
 
-fn round_trip(shape: super::SkribShape) -> WorkBundle {
+/// Write and read back. The folder is returned with the bundle: a bundle read from
+/// an exploded folder points at that folder's files rather than holding their bytes.
+fn round_trip(shape: super::SkribShape) -> (tempfile::TempDir, WorkBundle) {
     let dir = tempfile::tempdir().expect("tmp");
     let target = dir.path().join("Novel.skrib");
     let path = target.to_string_lossy().into_owned();
     super::write_bundle(&path, shape, &bundle_with_assets()).expect("write");
-    super::read_bundle(&path).expect("read")
+    let back = super::read_bundle(&path).expect("read");
+    (dir, back)
 }
 
 #[test]
 fn an_image_survives_an_exploded_folder_round_trip() {
-    let back = round_trip(super::SkribShape::ExplodedFolder);
+    let (_dir, back) = round_trip(super::SkribShape::ExplodedFolder);
     assert_eq!(back.assets.len(), 2);
-    assert_eq!(back.asset_bytes.get("hash-cover").map(|b| b.len()), Some(8));
-    assert_eq!(back.asset_bytes.get("hash-map").map(|b| b.len()), Some(5));
+    assert_eq!(
+        back.asset_blobs.get("hash-cover").map(|b| b.len().unwrap()),
+        Some(8)
+    );
+    assert_eq!(
+        back.asset_blobs.get("hash-map").map(|b| b.len().unwrap()),
+        Some(5)
+    );
 }
 
 #[test]
@@ -77,17 +86,19 @@ fn an_image_survives_a_zip_round_trip() {
     // The zip writer rebuilds the archive from a fresh staging directory, so
     // anything not modelled in `WorkBundle` vanishes on the next save. This is
     // the test that says assets are modelled.
-    let back = round_trip(super::SkribShape::ZipFile);
+    let (_dir, back) = round_trip(super::SkribShape::ZipFile);
     assert_eq!(back.assets.len(), 2);
     assert_eq!(
-        back.asset_bytes.get("hash-cover").map(|b| b.as_slice()),
-        Some([0x89, b'P', b'N', b'G', 1, 2, 3, 4].as_slice())
+        back.asset_blobs
+            .get("hash-cover")
+            .map(|b| b.read().unwrap()),
+        Some(vec![0x89, b'P', b'N', b'G', 1, 2, 3, 4])
     );
 }
 
 #[test]
 fn asset_metadata_survives_intact() {
-    let back = round_trip(super::SkribShape::ZipFile);
+    let (_dir, back) = round_trip(super::SkribShape::ZipFile);
     let cover = back
         .assets
         .iter()
@@ -119,7 +130,7 @@ fn a_replaced_image_does_not_leave_its_predecessor_behind() {
 
     let mut swapped = bundle_with_assets();
     swapped.assets.retain(|a| a.content_hash != "hash-cover");
-    swapped.asset_bytes.remove("hash-cover");
+    swapped.asset_blobs.remove("hash-cover");
     super::write_bundle(&path, super::SkribShape::ExplodedFolder, &swapped).expect("second write");
 
     assert!(
@@ -154,7 +165,7 @@ fn a_project_without_images_keeps_the_lower_floor() {
 
 #[test]
 fn image_bytes_never_reach_the_content_fingerprint() {
-    // `asset_bytes` is `#[serde(skip)]`, and the fingerprint RON-serialises the
+    // `asset_blobs` is `#[serde(skip)]`, and the fingerprint RON-serialises the
     // whole bundle on every save. Were the bytes included, each image would be
     // encoded as a bracketed decimal list several times its own size, on the
     // hottest path in the format.
@@ -164,8 +175,10 @@ fn image_bytes_never_reach_the_content_fingerprint() {
     // Same metadata, different bytes: the hash is what identifies content, and
     // it lives in the metadata, so the fingerprint still changes when an image
     // really changes — via `content_hash`, not via the pixels.
-    a.asset_bytes
-        .insert("hash-cover".to_string(), vec![7, 7, 7, 7, 7, 7, 7, 7]);
+    a.asset_blobs.insert(
+        "hash-cover".to_string(),
+        vec![7, 7, 7, 7, 7, 7, 7, 7].into(),
+    );
     assert_eq!(
         super::content_fingerprint(&a),
         before,
@@ -186,7 +199,7 @@ fn an_asset_with_no_bytes_fails_the_write_rather_than_writing_a_dangling_row() {
     // the writer it must be loud, because a bundle listing an asset it does not
     // contain reads back as a hard error on the *next* open.
     let mut b = bundle_with_assets();
-    b.asset_bytes.remove("hash-cover");
+    b.asset_blobs.remove("hash-cover");
     let dir = tempfile::tempdir().expect("tmp");
     let path = dir
         .path()
@@ -207,12 +220,15 @@ fn an_asset_with_no_bytes_fails_the_write_rather_than_writing_a_dangling_row() {
 /// whether the picture's bytes reach the writer.
 fn bundle_with_a_book_cover(shape: ShapeTag, bytes: bool) -> (WorkBundle, u64) {
     let mut book_id = 0;
-    let asset_bytes = if bytes {
-        BTreeMap::from([("hash-of-cover".to_string(), vec![0x89, b'P', b'N', b'G'])])
+    let asset_blobs = if bytes {
+        BTreeMap::from([(
+            "hash-of-cover".to_string(),
+            vec![0x89, b'P', b'N', b'G'].into(),
+        )])
     } else {
         BTreeMap::new()
     };
-    let bundle = super::tests::build_bundle_with_bytes(shape, asset_bytes, |s| {
+    let bundle = super::tests::build_bundle_with_bytes(shape, asset_blobs, |s| {
         let book = s
             .binders
             .iter_mut()

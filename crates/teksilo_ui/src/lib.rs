@@ -413,6 +413,15 @@ pub fn run() {
         } => (initial_project, is_primary, translation_dev),
     };
 
+    // Zip reads extract, and zip saves stage, beside the media directory rather
+    // than in the system's temporary folder, which is often RAM: see
+    // `skrib_format::scratch`. A platform with no data directory keeps the default.
+    if let Some(paths) = crate::identity::app_paths()
+        && let Err(e) = skrib_format::scratch::set_root(&paths.data_dir().join("scratch"))
+    {
+        eprintln!("skribisto: scratch folder unavailable, using the temporary folder: {e}");
+    }
+
     let app_ctx = Rc::new(AppContext::new());
 
     // Background event-dispatch thread.

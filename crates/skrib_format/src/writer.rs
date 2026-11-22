@@ -85,13 +85,13 @@ pub(crate) fn discard(tmp: NamedTempFile) {
 /// mount answers `ENOTTY`, which made every save on one fail. Plain `fsync` is
 /// the most such a volume offers, so it is what gets asked next, as SQLite does.
 #[cfg(unix)]
-fn sync_file(file: &File) -> io::Result<()> {
+pub(crate) fn sync_file(file: &File) -> io::Result<()> {
     sync_with_fallback(|| file.sync_all(), || plain_fsync(file))
 }
 
 /// There is only the one request to make off Unix.
 #[cfg(not(unix))]
-fn sync_file(file: &File) -> io::Result<()> {
+pub(crate) fn sync_file(file: &File) -> io::Result<()> {
     file.sync_all()
 }
 

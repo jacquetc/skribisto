@@ -344,7 +344,7 @@ fn build(spec: &Spec, chapters: &[RawChapter]) -> Result<WorkBundle> {
         note_templates: Vec::new(),
         assets: Vec::new(),
         note_template_bodies: BTreeMap::new(),
-        asset_bytes: BTreeMap::new(),
+        asset_blobs: BTreeMap::new(),
         trash_infos: Vec::new(),
         paces: Vec::new(),
         progress_snapshots: Vec::new(),

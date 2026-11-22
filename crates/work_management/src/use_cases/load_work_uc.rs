@@ -139,7 +139,7 @@ impl LoadWorkUseCase {
                     std::path::Path::new(&dto.media_root),
                     &bundle.manifest.work.unique_id,
                 );
-                crate::work_io::write_asset_bytes(&bundle, &media_dir)
+                crate::work_io::write_asset_blobs(&bundle, &media_dir)
                     .with_context(|| format!("writing media for '{file_name}'"))?;
                 skrib::bundle_to_loaded(bundle, &file_name)?
             }

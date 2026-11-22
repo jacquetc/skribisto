@@ -614,7 +614,7 @@ pub(crate) fn build_bundle_with(
 /// one the writer drops.
 pub(crate) fn build_bundle_with_bytes(
     shape: ShapeTag,
-    asset_bytes: BTreeMap<String, Vec<u8>>,
+    asset_blobs: BTreeMap<String, crate::Blob>,
     tweak: impl FnOnce(&mut SampleInputs),
 ) -> WorkBundle {
     let mut s = sample_inputs();
@@ -628,7 +628,7 @@ pub(crate) fn build_bundle_with_bytes(
         &s.note_templates,
         &s.statuses,
         &s.assets,
-        asset_bytes,
+        asset_blobs,
         Some(&s.smart_punctuation),
         &s.trash,
         &[],
