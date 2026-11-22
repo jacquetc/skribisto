@@ -10,8 +10,8 @@
 //!
 //! ## Picking up an edit made in another application
 //!
-//! [`ResourcesSession::pickup_changes`] runs when a window regains focus and before
-//! each save. A copy a single-file project opened ([`OpenedWhere::Copy`]) that changed
+//! [`ResourcesSession::pickup_changes`] runs when a window regains focus, before each
+//! save, and before a close or a quit decides whether anything is unsaved. A copy a single-file project opened ([`OpenedWhere::Copy`]) that changed
 //! replaces the stored file, and the previous bytes go to the scratch folder first, so
 //! the notice's Undo can put them back; a folder project's file edited in place
 //! ([`OpenedWhere::InPlace`]) is already the project's, so only its row moves and there
@@ -118,8 +118,9 @@ impl ResourcesSession {
     }
 
     /// Bring back what other applications changed in the files this project handed
-    /// them. See the module docs.
-    pub fn pickup_changes(&self) {
+    /// them, and say whether that changed the store. See the module docs.
+    pub fn pickup_changes(&self) -> bool {
+        let mut picked = false;
         for changed in self.inner.opened.changed() {
             let Some(row) = self.inner.model.by_uid(changed.uid) else {
                 self.inner.opened.forget(changed.uid);
@@ -144,8 +145,10 @@ impl ResourcesSession {
             };
             if let Some(notice) = notice {
                 self.inner.notices.borrow_mut().push(notice);
+                picked = true;
             }
         }
+        picked
     }
 
     /// A single-file project's copy changed: it becomes the stored file.

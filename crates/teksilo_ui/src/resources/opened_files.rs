@@ -26,6 +26,14 @@
 //! until the project closes ([`OpenedFiles::keep_previous`]), which is what the notice's
 //! Undo puts back.
 //!
+//! When the project closes, its copies go ([`OpenedFiles::close`]): the project's own
+//! file is the one that counts, and a copy left behind would only fill the data folder.
+//! The close first brings in any edit the writer saved since coming back to the window
+//! (see `ResourcesSession::pickup_changes`), and a copy that changed after that last
+//! look is left where it is rather than lost. What a crash or a forced quit leaves
+//! behind, [`sweep_stale_copies`] removes at the next start once nobody has touched it
+//! for [`STALE_COPY_AFTER`].
+//!
 //! Not a view-model: a list of files and the file-system work around it, testable on a
 //! temporary folder.
 
@@ -33,7 +41,7 @@ use std::cell::RefCell;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
-use std::time::SystemTime;
+use std::time::{Duration, SystemTime};
 
 /// Where a file handed to another application is.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -174,6 +182,34 @@ impl OpenedFiles {
         out
     }
 
+    /// The project closed: remove the copies handed over and forget every file, and drop
+    /// the previous versions kept for an Undo, which can no longer be asked for.
+    ///
+    /// A copy whose bytes changed since the last look is kept, and said on stderr: the
+    /// writer saved it after the close took in what had changed, and removing it would
+    /// lose that edit for good. [`sweep_stale_copies`] removes it once it is old.
+    pub fn close(&self) {
+        let files = std::mem::take(&mut *self.inner.files.borrow_mut());
+        for file in files {
+            if file.place != OpenedWhere::Copy {
+                continue;
+            }
+            if FileStamp::of(&file.path).is_some_and(|now| now != file.stamp)
+                && hash_file(&file.path).is_ok_and(|(_, hash)| hash != file.hash)
+            {
+                eprintln!(
+                    "resources: {} changed after the project closed; it is kept",
+                    file.path.display()
+                );
+                continue;
+            }
+            if let Some(folder) = copy_folder(&file.path) {
+                let _ = std::fs::remove_dir_all(folder);
+            }
+        }
+        self.inner.scratch.borrow_mut().take();
+    }
+
     /// Copy `stored`, about to be replaced, into the scratch folder, and say where.
     pub fn keep_previous(&self, uid: uuid::Uuid, stored: &Path) -> std::io::Result<PathBuf> {
         let dir = {
@@ -221,6 +257,60 @@ pub fn open_copy_path(data_dir: &Path, uid: uuid::Uuid, file_name: &str) -> Path
         .join("open")
         .join(uid.hyphenated().to_string())
         .join(skrib_format::slug::safe_file_name(file_name))
+}
+
+/// The `<data>/open/<uid>` folder holding the copy at `path`, or `None` for a path that is
+/// not one [`open_copy_path`] made: nothing else is ever removed.
+fn copy_folder(path: &Path) -> Option<&Path> {
+    let folder = path.parent()?;
+    let named = folder.file_name()?.to_str()?;
+    let open = folder.parent()?;
+    (uuid::Uuid::parse_str(named).is_ok() && open.file_name()? == "open").then_some(folder)
+}
+
+/// How long a copy nobody touched stays in `<data>/open/` after a close that could not
+/// remove it (a crash, a forced quit, a copy edited after the close).
+pub const STALE_COPY_AFTER: Duration = Duration::from_secs(30 * 24 * 60 * 60);
+
+/// Remove the copies under `<data_dir>/open/` that nothing changed for `max_age` at `now`.
+///
+/// Only the per-resource folders [`open_copy_path`] makes, judged by the newest of the
+/// folder and what it holds, so a copy edited in place last week is not old. Run once at
+/// start, by the first instance only: a project another one has open may still be
+/// reading its copies.
+pub fn sweep_stale_copies(data_dir: &Path, now: SystemTime, max_age: Duration) {
+    let Ok(entries) = std::fs::read_dir(data_dir.join("open")) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let folder = entry.path();
+        let is_copy_folder = entry.file_type().is_ok_and(|t| t.is_dir())
+            && entry
+                .file_name()
+                .to_str()
+                .is_some_and(|n| uuid::Uuid::parse_str(n).is_ok());
+        if !is_copy_folder {
+            continue;
+        }
+        let stale = newest_change(&folder)
+            .and_then(|newest| now.duration_since(newest).ok())
+            .is_some_and(|age| age > max_age);
+        if stale {
+            let _ = std::fs::remove_dir_all(&folder);
+        }
+    }
+}
+
+/// The latest modification time of `folder` and the files directly in it; `None` when
+/// the folder's own cannot be read.
+fn newest_change(folder: &Path) -> Option<SystemTime> {
+    let own = std::fs::metadata(folder).ok()?.modified().ok()?;
+    let inside = std::fs::read_dir(folder)
+        .into_iter()
+        .flatten()
+        .flatten()
+        .filter_map(|e| e.metadata().ok()?.modified().ok());
+    Some(inside.fold(own, SystemTime::max))
 }
 
 /// Write the copy of `stored` that opens for the resource `uid`, replacing an earlier
@@ -365,6 +455,93 @@ mod tests {
         std::fs::remove_file(&path).expect("remove");
         assert!(opened.changed().is_empty());
         assert!(opened.files().is_empty());
+    }
+
+    #[test]
+    fn closing_removes_the_copies_and_nothing_else() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let stored = dir.path().join("stored.bin");
+        std::fs::write(&stored, b"map").expect("write");
+        let copy = write_open_copy(&stored, dir.path(), uid(4), "map.pdf").expect("copy");
+        let (_, hash) = hash_file(&copy).expect("hash");
+        let opened = OpenedFiles::new();
+        opened.remember(uid(4), &copy, OpenedWhere::Copy, &hash);
+        // A folder project's file opens in place: the project's own, never removed.
+        let in_place = dir.path().join("in place.pdf");
+        std::fs::write(&in_place, b"plan").expect("write");
+        opened.remember(uid(5), &in_place, OpenedWhere::InPlace, "x");
+
+        opened.close();
+        assert!(!copy.exists(), "the copy is gone");
+        assert!(
+            !dir.path().join("open").join(uid(4).to_string()).exists(),
+            "with its folder"
+        );
+        assert!(dir.path().join("open").is_dir(), "the open folder stays");
+        assert!(in_place.exists(), "a file opened in place is the project's");
+        assert!(stored.exists());
+        assert!(opened.files().is_empty(), "nothing is remembered any more");
+    }
+
+    #[test]
+    fn closing_keeps_a_copy_edited_since_the_last_look() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let stored = dir.path().join("stored.bin");
+        std::fs::write(&stored, b"map").expect("write");
+        let copy = write_open_copy(&stored, dir.path(), uid(6), "map.pdf").expect("copy");
+        let (_, hash) = hash_file(&copy).expect("hash");
+        let opened = OpenedFiles::new();
+        opened.remember(uid(6), &copy, OpenedWhere::Copy, &hash);
+        std::fs::write(&copy, b"map, annotated").expect("write");
+        touch_later(&copy);
+
+        opened.close();
+        assert_eq!(
+            std::fs::read(&copy).expect("still there"),
+            b"map, annotated"
+        );
+        assert!(opened.files().is_empty());
+    }
+
+    #[test]
+    fn only_a_copy_path_names_a_folder_to_remove() {
+        let data = Path::new("/data");
+        let copy = open_copy_path(data, uid(1), "map.pdf");
+        assert_eq!(copy_folder(&copy), copy.parent());
+        assert_eq!(copy_folder(Path::new("/home/me/research/map.pdf")), None);
+        assert_eq!(
+            copy_folder(
+                &Path::new("/data/elsewhere")
+                    .join(uid(1).to_string())
+                    .join("a")
+            ),
+            None
+        );
+    }
+
+    #[test]
+    fn the_sweep_removes_old_copies_only() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let stored = dir.path().join("stored.bin");
+        std::fs::write(&stored, b"map").expect("write");
+        let old = write_open_copy(&stored, dir.path(), uid(8), "old.pdf").expect("copy");
+        let fresh = write_open_copy(&stored, dir.path(), uid(9), "fresh.pdf").expect("copy");
+        let other = dir.path().join("open").join("not a copy");
+        std::fs::create_dir_all(&other).expect("mkdir");
+
+        // A month and a day later, the fresh copy was edited yesterday.
+        let later = SystemTime::now() + STALE_COPY_AFTER + Duration::from_secs(24 * 60 * 60);
+        std::fs::OpenOptions::new()
+            .write(true)
+            .open(&fresh)
+            .expect("open")
+            .set_modified(later - Duration::from_secs(60 * 60))
+            .expect("set modified");
+        sweep_stale_copies(dir.path(), later, STALE_COPY_AFTER);
+
+        assert!(!old.exists(), "untouched for a month");
+        assert!(fresh.exists(), "edited in place an hour ago");
+        assert!(other.is_dir(), "not a folder the copies made");
     }
 
     #[test]

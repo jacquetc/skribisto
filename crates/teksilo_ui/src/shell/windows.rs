@@ -517,7 +517,7 @@ impl ProjectWindowFactory {
         // unless the flush itself failed, which would only fail again.
         {
             let s = session.save_state.clone();
-            project_switch.set_unsaved_probe(Rc::new(move || s.is_unsaved()));
+            project_switch.set_unsaved_probe(Rc::new(move || s.is_unsaved_on_leaving()));
             let s = session.save_state.clone();
             project_switch
                 .set_resave_probe(Rc::new(move || s.is_unsaved() && !s.last_flush_failed()));
@@ -654,7 +654,7 @@ impl ProjectWindowFactory {
                         ctx,
                         &app_ctx_guard,
                         &ids,
-                        save_state_guard.is_unsaved(),
+                        save_state_guard.is_unsaved_on_leaving(),
                         backup_mode.get(),
                         autosave.get(),
                         &pending,

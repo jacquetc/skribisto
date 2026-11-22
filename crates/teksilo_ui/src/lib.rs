@@ -422,6 +422,15 @@ pub fn run() {
     {
         eprintln!("skribisto: scratch folder unavailable, using the temporary folder: {e}");
     }
+    // The copies of stored resources a crash or a forced quit left behind. Only the
+    // first instance: another one's projects may still have theirs open.
+    if is_primary && let Some(paths) = crate::identity::app_paths() {
+        resources::opened_files::sweep_stale_copies(
+            paths.data_dir(),
+            std::time::SystemTime::now(),
+            resources::opened_files::STALE_COPY_AFTER,
+        );
+    }
 
     let app_ctx = Rc::new(AppContext::new());
 

@@ -267,7 +267,7 @@ impl QuitSequencer {
         if let Some(session) = session {
             session.workspace_layout.capture();
             session.workspace_layout.capture_tree_expansion();
-            if session.save_state.is_unsaved() && !session.backup_mode.get() {
+            if session.save_state.is_unsaved_on_leaving() && !session.backup_mode.get() {
                 // A buffer that cannot be flushed is reported by the flush
                 // itself; what the store holds is still written.
                 session.backup_scheduler.flush_all_windows();
@@ -361,9 +361,10 @@ impl QuitSequencer {
             };
             // The Work's own answer, not the pair's: a change an extension
             // reported from another thread counts (see
-            // `SaveStateViewModel::poll_external`).
+            // `SaveStateViewModel::poll_external`), and so does a resource
+            // another application edited (`is_unsaved_on_leaving`).
             let step = step_for(
-                session.save_state.is_unsaved(),
+                session.save_state.is_unsaved_on_leaving(),
                 session.backup_mode.get(),
                 self.inner.autosave.get(),
             );

@@ -251,11 +251,12 @@ impl WorkSession {
         let save_state = SaveStateViewModel::new(app_ctx.clone(), ids.clone());
 
         // An edit another application made to a file this project handed it reaches the
-        // store before every save, so the save writes it.
+        // store before every save, so the save writes it, and before a close asks whether
+        // anything is unsaved, so the close saves it.
         let resources = crate::resources::ResourcesSession::new(app_ctx.clone(), ids.clone());
         {
             let resources = resources.clone();
-            save_state.on_before_save(Rc::new(move || resources.pickup_changes()));
+            save_state.on_outside_changes(Rc::new(move || resources.pickup_changes()));
         }
 
         let work_tags = WorkTagsListModel::new(app_ctx.clone(), ids.clone());

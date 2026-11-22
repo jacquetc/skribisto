@@ -112,9 +112,10 @@ struct Inner {
     /// [`SaveStateViewModel::poll_external`], so one extension change bumps the
     /// sequence once, not once per pumped frame.
     external_seen: Cell<u64>,
-    /// Run before each save is asked for, to bring into the store what changed outside
-    /// it: a resource another application edited (`resources::ResourcesSession`).
-    before_save: RefCell<Vec<Rc<dyn Fn()>>>,
+    /// Run before each save is asked for and before a close decides whether anything
+    /// is unsaved, to bring into the store what changed outside it: a resource another
+    /// application edited (`resources::ResourcesSession`). Each says whether it did.
+    outside_changes: RefCell<Vec<Rc<dyn Fn() -> bool>>>,
     /// The save last asked for was preceded by an editor flush that failed —
     /// see [`SaveStateViewModel::request_save_after_flush`].
     flush_failed: Cell<bool>,
@@ -163,7 +164,7 @@ impl SaveStateViewModel {
                 external_saved: Cell::new(0),
                 external_in_flight: Cell::new(0),
                 external_seen: Cell::new(0),
-                before_save: RefCell::new(Vec::new()),
+                outside_changes: RefCell::new(Vec::new()),
                 flush_failed: Cell::new(false),
                 queue: RefCell::new(SaveQueue::default()),
                 last_completed: RefCell::new(None),
@@ -276,11 +277,7 @@ impl SaveStateViewModel {
     /// apart from typing during the save, which they answer with one more write;
     /// a flush that just failed would only fail again.
     pub fn request_save_after_flush(&self, flush_failed: bool) -> Option<u64> {
-        // Cloned out first: a hook is free to read this view-model back.
-        let hooks: Vec<Rc<dyn Fn()>> = self.inner.before_save.borrow().clone();
-        for hook in hooks {
-            hook();
-        }
+        self.take_outside_changes();
         let covers = self.inner.dirty_seq.get();
         // Bind the decision first so the `RefMut` from `borrow_mut` ends *before*
         // `start_save` runs. Matching on `queue.borrow_mut().request(...)` keeps
@@ -312,12 +309,36 @@ impl SaveStateViewModel {
         self.inner.flush_failed.get()
     }
 
-    /// Run `hook` before every save this Work asks for, ahead of the store being read:
-    /// for state that changes outside the store and is brought into it on demand. A
-    /// change the hook makes reaches the save that follows; the dirty mark it raises
-    /// lands with its own event.
-    pub fn on_before_save(&self, hook: Rc<dyn Fn()>) {
-        self.inner.before_save.borrow_mut().push(hook);
+    /// Run `hook` before every save this Work asks for, ahead of the store being read,
+    /// and before a close or a quit asks [`Self::is_unsaved_on_leaving`]: for state that
+    /// changes outside the store and is brought into it on demand. The hook returns
+    /// whether it changed the store; a change it makes reaches the save that follows.
+    pub fn on_outside_changes(&self, hook: Rc<dyn Fn() -> bool>) {
+        self.inner.outside_changes.borrow_mut().push(hook);
+    }
+
+    /// Run the [`Self::on_outside_changes`] hooks, and mark the Work dirty now when one
+    /// changed the store: the event its change raises is only delivered later, after a
+    /// close has already decided. Returns whether one did.
+    pub fn take_outside_changes(&self) -> bool {
+        // Cloned out first: a hook is free to read this view-model back.
+        let hooks: Vec<Rc<dyn Fn() -> bool>> = self.inner.outside_changes.borrow().clone();
+        let mut changed = false;
+        for hook in hooks {
+            changed |= hook();
+        }
+        if changed {
+            self.bump_dirty();
+        }
+        changed
+    }
+
+    /// [`Self::is_unsaved`], asked by a close, a quit or a switch about to leave the
+    /// project: what changed outside the store is brought in first, so a file the
+    /// writer edited in another application is saved rather than left behind.
+    pub fn is_unsaved_on_leaving(&self) -> bool {
+        self.take_outside_changes();
+        self.is_unsaved()
     }
 
     /// An extension-safe view onto this Work's save state — see [`WorkHandle`].

@@ -1776,6 +1776,7 @@ impl Widget for App {
             self.backup_mode.clone(),
             self.backup_context.clone(),
             workspace_layout.clone(),
+            session.resources.opened().clone(),
         );
         // The custom replacement lexicon — one wired instance behind the Settings pane
         // and the editor's typing session — resolved off `session`, same as
@@ -2266,7 +2267,8 @@ impl Widget for App {
             let my_ids = session.ids.clone();
             // The Work's own answer, not the pair's: `is_unsaved` also counts a
             // change an extension reported from a thread that cannot bump
-            // `dirty_seq` (see `SaveStateViewModel::poll_external`).
+            // `dirty_seq` (see `SaveStateViewModel::poll_external`), and asked
+            // on leaving it first takes in a resource another application edited.
             let save_state_close = session.save_state.clone();
             let autosave = settings.autosave();
             let pending = self.pending_exit.clone();
@@ -2277,7 +2279,7 @@ impl Widget for App {
                     ctx,
                     &app_ctx2,
                     &my_ids,
-                    save_state_close.is_unsaved(),
+                    save_state_close.is_unsaved_on_leaving(),
                     backup_mode.get(),
                     autosave.get(),
                     &pending,

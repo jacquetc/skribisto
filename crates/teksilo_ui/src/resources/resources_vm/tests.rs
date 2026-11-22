@@ -477,6 +477,52 @@ mod real {
         assert!(notices[0].undo.is_none());
     }
 
+    /// A clean project whose copy the writer edited, then closed without coming back
+    /// to the window first: the close sees it unsaved, so it is saved rather than
+    /// lost, and the copy goes once the project closes.
+    #[test]
+    fn a_copy_edited_before_a_close_makes_the_project_unsaved() {
+        let fx = fixture();
+        let src = fx.data.join("Village map.pdf");
+        std::fs::write(&src, b"map, first draft").expect("write");
+        store_and_add(&fx.project.app_ctx, &fx.session, fx.scene, &[src]);
+        let row = fx.session.model().rows_for(fx.scene)[0].clone();
+        let stored = row.path.clone().expect("path");
+        let save_state = crate::save::SaveStateViewModel::new(
+            fx.project.app_ctx.clone(),
+            fx.project.ids.clone(),
+        );
+        {
+            let session = fx.session.clone();
+            save_state.on_outside_changes(Rc::new(move || session.pickup_changes()));
+        }
+        save_state.mark_clean();
+
+        let copy = write_open_copy(&stored, &fx.data, row.uid, &row.file_name).expect("copy");
+        fx.session
+            .opened()
+            .remember(row.uid, &copy, OpenedWhere::Copy, &row.content_hash);
+        assert!(
+            !save_state.is_unsaved_on_leaving(),
+            "opening a file changes nothing"
+        );
+        std::fs::write(&copy, b"map, annotated in another app").expect("edit");
+        let later = std::time::SystemTime::now() + Duration::from_secs(5);
+        std::fs::File::options()
+            .write(true)
+            .open(&copy)
+            .and_then(|f| f.set_modified(later))
+            .expect("touch");
+
+        assert!(save_state.is_unsaved_on_leaving());
+        assert_eq!(
+            std::fs::read(&stored).expect("read"),
+            b"map, annotated in another app"
+        );
+        fx.session.opened().close();
+        assert!(!copy.exists(), "the copy goes with the project");
+    }
+
     /// The edit picked up reaches the save that follows: the hook runs before the
     /// save is asked for.
     #[test]
@@ -487,7 +533,10 @@ mod real {
         let ran = Rc::new(std::cell::Cell::new(0));
         {
             let ran = ran.clone();
-            save_state.on_before_save(Rc::new(move || ran.set(ran.get() + 1)));
+            save_state.on_outside_changes(Rc::new(move || {
+                ran.set(ran.get() + 1);
+                false
+            }));
         }
         save_state.request_save();
         assert_eq!(ran.get(), 1);

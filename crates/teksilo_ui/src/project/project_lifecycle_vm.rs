@@ -62,6 +62,7 @@ use crate::app_ids::AppIds;
 use crate::backup::BackupContext;
 use crate::binder::OutlineViewModel;
 use crate::models::OpenDocsStore;
+use crate::resources::opened_files::OpenedFiles;
 use crate::singles::{SingleWork, SingleWorkInfo};
 use crate::spellcheck::SpellcheckService;
 use crate::trash::TrashViewModel;
@@ -117,6 +118,8 @@ struct Inner {
     backup_context: Signal<Option<BackupContext>>,
     /// Absent in a window with no layout service (a headless or launcher build).
     workspace_layout: Option<WorkspaceLayoutViewModel>,
+    /// The files this project handed to other applications: their copies go with it.
+    opened: OpenedFiles,
 }
 
 /// Single-instance live state: one per project window, created once in `App::build` and
@@ -142,6 +145,7 @@ impl ProjectLifecycleViewModel {
         backup_mode: Signal<bool>,
         backup_context: Signal<Option<BackupContext>>,
         workspace_layout: Option<WorkspaceLayoutViewModel>,
+        opened: OpenedFiles,
     ) -> Self {
         Self {
             inner: Rc::new(Inner {
@@ -158,6 +162,7 @@ impl ProjectLifecycleViewModel {
                 backup_mode,
                 backup_context,
                 workspace_layout,
+                opened,
             }),
         }
     }
@@ -316,6 +321,9 @@ impl ProjectLifecycleViewModel {
         i.editors.mark_clean();
         i.backup_mode.set(false);
         i.backup_context.set(None);
+        // The copies a single-file project opened its stored files through. Whatever the
+        // writer changed in them was taken in before the close asked about saving.
+        i.opened.close();
     }
 }
 
