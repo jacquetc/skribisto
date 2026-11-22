@@ -1914,7 +1914,6 @@ settings-dict-tab-personal = 個人辞書の単語
 dict-installed-empty = このコンピューターに辞書は見つかりません。
 dict-get-more-search = 言語を検索
 dict-system-badge = システム内
-dict-unusable-badge = 使用不可
 dict-download-button = ダウンロード
 dict-downloading = ダウンロード中…
 dict-installed-label = インストール済み

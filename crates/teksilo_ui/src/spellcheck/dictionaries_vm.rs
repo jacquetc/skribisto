@@ -155,6 +155,13 @@ impl DictionariesViewModel {
         self.inner.settings.user_dictionaries()
     }
 
+    /// The dictionaries found on disk under a tag neither the catalogue nor the Add form knows
+    /// (a system `eo.aff`, or one copied into the data dir by hand), so the language picker can
+    /// offer them too.
+    pub fn discovered_dictionaries(&self) -> Vec<crate::models::DiscoveredDictionary> {
+        self.inner.installed.discovered()
+    }
+
     // ── licence acceptance (the download gate) ──
 
     /// The BLAKE3 of the currently-bundled licence text for `id`'s dictionary, or `None` if

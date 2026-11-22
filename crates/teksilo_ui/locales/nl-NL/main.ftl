@@ -2619,7 +2619,6 @@ settings-dict-tab-personal = Persoonlijke woorden
 dict-installed-empty = Nog geen woordenboeken gevonden op deze computer.
 dict-get-more-search = Talen zoeken
 dict-system-badge = op uw systeem
-dict-unusable-badge = onbruikbaar
 dict-download-button = Downloaden
 dict-downloading = Bezig met downloaden…
 dict-installed-label = Geïnstalleerd

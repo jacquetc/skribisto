@@ -3792,7 +3792,6 @@ settings-dict-tab-personal = الكلمات الشخصية
 dict-installed-empty = لم يُعثر على قواميس على هذا الحاسوب بعد.
 dict-get-more-search = البحث عن لغات
 dict-system-badge = على نظامك
-dict-unusable-badge = غير صالح للاستخدام
 dict-download-button = تنزيل
 dict-downloading = جارٍ التنزيل…
 dict-installed-label = مثبّت

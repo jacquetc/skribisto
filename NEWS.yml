@@ -9,6 +9,7 @@ Description:
 - "The Gallery and the Overview share their search, their tag and status filters and their order. A double click on a thumbnail opens the image viewer over the pictures the Gallery shows, in its order; a right click offers Open the note"
 - "The Help window has a new page, Pictures and the gallery"
 - "In global search, choose Open in editor from a result's menu, or middle-click the result, to open it in the active editor pane, scrolled to the match with the matching text selected"
+- "A spelling dictionary found on your computer but not offered for download, such as Esperanto in /usr/share/hunspell, can now be chosen as the language of a project or a scene. It used to appear under Settings ▸ Dictionaries ▸ Installed, sometimes marked unusable, and was missing from the list of languages. It is listed by its own name and code, Esperanto (eo), so English (en-ZA) and English (en-IE) can be told apart"
 - "On the corkboard, the tooltips of Nested and Flat say what each one shows, and Settings ▸ Corkboard says that Flat shows everything in the container, folder cards included, in reading order. They only said that the choice applies to every corkboard, and that Flat showed every scene"
 ---
 Version: 3.3.3

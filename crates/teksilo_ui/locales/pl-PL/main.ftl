@@ -3248,7 +3248,6 @@ settings-dict-tab-personal = Słowa własne
 dict-installed-empty = Nie znaleziono jeszcze słowników na tym komputerze.
 dict-get-more-search = Szukaj języków
 dict-system-badge = w systemie
-dict-unusable-badge = nie do użycia
 dict-download-button = Pobierz
 dict-downloading = Pobieranie…
 dict-installed-label = Zainstalowane

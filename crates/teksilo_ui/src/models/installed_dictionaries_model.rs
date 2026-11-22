@@ -40,7 +40,9 @@ pub struct InstalledDictionaryRow {
     pub origin: DictOrigin,
     pub aff_path: std::path::PathBuf,
     pub dic_path: std::path::PathBuf,
-    /// Whether `id` is a known registry id (an unmatched system dict is shown but greyed).
+    /// Whether `id` is a registry id or a hand-added code. An unmatched row is a dictionary
+    /// found on disk under a tag the catalogue does not know (`eo.aff`), offered by that tag —
+    /// see [`discovered_from`].
     pub matched: bool,
     /// A non-UTF-8 encoding declared by the `.aff`'s `SET` directive, if any — the loader
     /// transcodes these; `None` means UTF-8 / unspecified (the safe default).
@@ -48,6 +50,43 @@ pub struct InstalledDictionaryRow {
     /// Also present in a system directory (tier-1 row only). Drives the "also on your system"
     /// badge, so a dictionary found in both tiers is one row, not two.
     pub also_system: bool,
+}
+
+/// A dictionary on disk that neither the catalogue nor the Add form knows, offered in the
+/// language picker under the tag its files are named by.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DiscoveredDictionary {
+    /// The `dict_language` value it satisfies: the file stem as a BCP-47 tag (`en_ZA` → `en-ZA`).
+    /// The loader finds the files again from it, in either spelling.
+    pub code: String,
+    /// The language's endonym and the tag (`Esperanto (eo)`), else the file stem. The tag stays
+    /// because a distro ships many regions of one language (`en_ZA`, `en_IE`), all one endonym.
+    pub name: String,
+}
+
+/// The unmatched rows as pickable languages, one per tag, sorted by name.
+///
+/// A row is skipped when its tag resolves to a catalogue entry after all (the catalogue already
+/// offers it) or when the same tag was found in two folders.
+pub fn discovered_from(rows: &[InstalledDictionaryRow]) -> Vec<DiscoveredDictionary> {
+    let mut seen = std::collections::HashSet::new();
+    let mut out: Vec<DiscoveredDictionary> = rows
+        .iter()
+        .filter(|r| !r.matched)
+        .filter_map(|r| {
+            let code = skribisto_model::language::canonicalize_tag(&r.id);
+            if code.is_empty()
+                || crate::spellcheck::dictionary_registry::resolve_token(&code).is_some()
+                || !seen.insert(code.clone())
+            {
+                return None;
+            }
+            let name = crate::spellcheck::tag_label(&code).unwrap_or_else(|| r.id.clone());
+            Some(DiscoveredDictionary { code, name })
+        })
+        .collect();
+    out.sort_by_key(|d| d.name.to_lowercase());
+    out
 }
 
 /// Reactive list of the dictionaries present on this machine.
@@ -97,13 +136,31 @@ impl InstalledDictionariesModel {
 
     /// Whether a dictionary with this id is installed, compared **case-insensitively** — the Add
     /// form uses it to flag a re-add on a case-insensitive filesystem (`EN-US` vs `en-US`), where
-    /// an exact match would miss it.
+    /// an exact match would miss it. In the download dir `_` also reads as `-`: the
+    /// spell-checker keys `my_dict` and `my-dict` alike (see `spellcheck::language_key`), so two
+    /// copies there would load each other's files. A system copy cannot clash that way, as the
+    /// download dir is searched first.
     pub fn is_installed_ci(&self, id: &str) -> bool {
+        let key = skribisto_model::language::canonicalize_tag(id);
         (0..self.model.len()).any(|i| {
             self.model
-                .with_item(i, |r| r.id.eq_ignore_ascii_case(id))
+                .with_item(i, |r| {
+                    r.id.eq_ignore_ascii_case(id)
+                        || (r.origin == DictOrigin::Downloaded
+                            && skribisto_model::language::canonicalize_tag(&r.id)
+                                .eq_ignore_ascii_case(&key))
+                })
                 .unwrap_or(false)
         })
+    }
+
+    /// The dictionaries found on disk that the catalogue and the Add form do not know — see
+    /// [`discovered_from`].
+    pub fn discovered(&self) -> Vec<DiscoveredDictionary> {
+        let rows: Vec<InstalledDictionaryRow> = (0..self.model.len())
+            .filter_map(|i| self.model.with_item(i, Clone::clone))
+            .collect();
+        discovered_from(&rows)
     }
 
     /// The display name of the installed dictionary with this id, if present — so a caller can
@@ -156,7 +213,19 @@ mod source {
         }
 
         for dir in system_dirs() {
-            for (aff, dic) in pairs_in(&dir) {
+            // A distro aliases one dictionary under many names (`fr_BE.aff → fr.aff`), and the
+            // resolved-path dedupe keeps the first one met. Directory order is arbitrary, so
+            // put the names the catalogue knows first: otherwise `fr_BE` could take the row and
+            // `fr-FR` would read as not installed, while the picker offered the same file again
+            // as a second French.
+            let mut pairs = pairs_in(&dir);
+            pairs.sort_by_key(|(aff, _)| {
+                let stem = aff.file_stem().and_then(|s| s.to_str()).unwrap_or_default();
+                let known = dictionary_registry::by_id(stem).is_some()
+                    || dictionary_registry::id_for_basename(stem).is_some();
+                (!known, stem.to_string())
+            });
+            for (aff, dic) in pairs {
                 let key = std::fs::canonicalize(&dic).unwrap_or_else(|_| dic.clone());
                 if !seen.insert(key) {
                     continue; // a symlink alias, or already taken by tier 1
@@ -227,7 +296,10 @@ mod source {
                 .unwrap_or_else(|| id.to_string());
             (id.to_string(), name, true)
         } else {
-            (stem.clone(), format!("{stem} (system)"), false)
+            let name =
+                crate::spellcheck::endonym(&skribisto_model::language::canonicalize_tag(&stem))
+                    .unwrap_or_else(|| format!("{stem} (system)"));
+            (stem.clone(), name, false)
         };
         let encoding = match origin {
             // Our own downloads are UTF-8 by construction; skip the read.
@@ -395,5 +467,58 @@ mod tests {
             Some("en-US")
         );
         let _ = std::fs::remove_dir_all(&dir);
+    }
+}
+
+#[cfg(test)]
+mod discovered_tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    fn row(id: &str, matched: bool) -> InstalledDictionaryRow {
+        InstalledDictionaryRow {
+            id: id.to_string(),
+            display_name: id.to_string(),
+            origin: DictOrigin::System,
+            aff_path: PathBuf::from(format!("/usr/share/hunspell/{id}.aff")),
+            dic_path: PathBuf::from(format!("/usr/share/hunspell/{id}.dic")),
+            matched,
+            encoding: None,
+            also_system: false,
+        }
+    }
+
+    /// The bug report: an Esperanto dictionary on disk must become a pickable language, named
+    /// by its endonym and keyed by its tag. Catalogue and hand-added rows (matched) are offered
+    /// elsewhere, so they stay out; a tag found twice appears once; a stem is canonicalised.
+    #[test]
+    fn unmatched_rows_become_pickable_languages() {
+        let rows = [
+            row("en-US", true),
+            row("eo", false),
+            row("eo", false),
+            row("en_ZA", false),
+        ];
+        let found = discovered_from(&rows);
+        let codes: Vec<&str> = found.iter().map(|d| d.code.as_str()).collect();
+        assert_eq!(codes.len(), 2, "{codes:?}");
+        assert!(codes.contains(&"eo"));
+        assert!(codes.contains(&"en-ZA"), "underscore stem canonicalised");
+        let name = |code: &str| {
+            found
+                .iter()
+                .find(|d| d.code == code)
+                .map(|d| d.name.clone())
+        };
+        assert_eq!(name("eo").as_deref(), Some("Esperanto (eo)"));
+        // Two regions of one language must not read alike in the menu.
+        assert_eq!(name("en-ZA").as_deref(), Some("English (en-ZA)"));
+    }
+
+    /// An unmatched stem that canonicalises onto a catalogue id is already offered by the
+    /// catalogue, so it is not offered twice.
+    #[test]
+    fn a_stem_resolving_to_the_catalogue_is_not_offered_again() {
+        assert!(discovered_from(&[row("en_US", false)]).is_empty());
     }
 }

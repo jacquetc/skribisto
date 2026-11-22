@@ -2574,7 +2574,6 @@ settings-dict-tab-personal = Kişisel sözcükler
 dict-installed-empty = Bu bilgisayarda henüz sözlük bulunamadı.
 dict-get-more-search = Dillerde ara
 dict-system-badge = sisteminizde
-dict-unusable-badge = kullanılamaz
 dict-download-button = İndir
 dict-downloading = İndiriliyor…
 dict-installed-label = Kurulu

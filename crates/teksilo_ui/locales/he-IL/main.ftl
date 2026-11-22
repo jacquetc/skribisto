@@ -2964,7 +2964,6 @@ settings-dict-tab-personal = מילים אישיות
 dict-installed-empty = עדיין לא נמצאו מילונים במחשב הזה.
 dict-get-more-search = חיפוש שפות
 dict-system-badge = במערכת שלכם
-dict-unusable-badge = לא שמיש
 dict-download-button = הורדה
 dict-downloading = מוריד…
 dict-installed-label = מותקן

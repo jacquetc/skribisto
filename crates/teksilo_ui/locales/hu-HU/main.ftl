@@ -2631,7 +2631,6 @@ settings-dict-tab-personal = Saját szavak
 dict-installed-empty = Ezen a számítógépen még nem található szótár.
 dict-get-more-search = Nyelvek keresése
 dict-system-badge = a rendszerben
-dict-unusable-badge = használhatatlan
 dict-download-button = Letöltés
 dict-downloading = Letöltés folyamatban…
 dict-installed-label = Telepítve

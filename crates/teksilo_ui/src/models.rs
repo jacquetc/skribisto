@@ -94,7 +94,7 @@ pub use export_styles_file::ExportStylesService;
 pub use footnote_numbering::{NotePlacement, UNNUMBERED_MARKER, marker_for};
 pub use footnotes_list_model::{FootnoteRow, FootnotesListModel};
 pub use installed_dictionaries_model::{
-    DictOrigin, InstalledDictionariesModel, InstalledDictionaryRow,
+    DictOrigin, DiscoveredDictionary, InstalledDictionariesModel, InstalledDictionaryRow,
 };
 // The `--features mocks` build fabricates its rows rather than numbering a real
 // manuscript, so several of these have no consumer there.

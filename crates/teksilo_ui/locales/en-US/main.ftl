@@ -2975,7 +2975,6 @@ settings-dict-tab-personal = Personal words
 dict-installed-empty = No dictionaries found on this computer yet.
 dict-get-more-search = Search languages
 dict-system-badge = on your system
-dict-unusable-badge = unusable
 dict-download-button = Download
 dict-downloading = Downloading…
 dict-installed-label = Installed

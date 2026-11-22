@@ -2683,7 +2683,6 @@ settings-dict-tab-personal = Omat sanat
 dict-installed-empty = Tästä tietokoneesta ei löytynyt vielä sanakirjoja.
 dict-get-more-search = Etsi kieliä
 dict-system-badge = järjestelmässäsi
-dict-unusable-badge = käyttökelvoton
 dict-download-button = Lataa
 dict-downloading = Ladataan…
 dict-installed-label = Asennettu

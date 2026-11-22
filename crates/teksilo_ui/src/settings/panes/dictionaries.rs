@@ -81,14 +81,7 @@ fn installed_row(
                     .on_activate_fn(move |c| vm.remove(&id, c)),
             )
         }
-        DictOrigin::System => {
-            let label = if row.encoding.is_some() && !row.matched {
-                tr!(dict_unusable_badge())
-            } else {
-                tr!(dict_system_badge())
-            };
-            Box::new(Badge::new(label))
-        }
+        DictOrigin::System => Box::new(Badge::new(tr!(dict_system_badge()))),
     };
 
     let subtitle = if row.also_system {

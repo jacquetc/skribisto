@@ -1840,7 +1840,6 @@ settings-dict-tab-personal = 개인 사전 단어
 dict-installed-empty = 이 컴퓨터에서 사전을 찾지 못했습니다.
 dict-get-more-search = 언어 검색
 dict-system-badge = 이 시스템에 있음
-dict-unusable-badge = 사용 불가
 dict-download-button = 다운로드
 dict-downloading = 다운로드 중…
 dict-installed-label = 설치됨

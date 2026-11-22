@@ -879,3 +879,64 @@ fn an_idle_tick_is_a_no_op() {
         "an idle tick changes nothing"
     );
 }
+
+// ── dictionaries the catalogue does not know ──
+
+/// A tag the catalogue does not know finds its pair by the stem's canonical form: an exact
+/// spelling first, then `en_ZA` for `en-ZA`, and `en_US-large` for `en-US-large`, which no
+/// single swap of `-` and `_` rebuilds. A `.aff` without its `.dic` is not a pair.
+#[test]
+fn pair_for_tag_matches_the_stem_by_its_canonical_form() {
+    let dir = std::env::temp_dir().join(format!("skrib-pair-for-tag-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    for stem in ["eo", "en_ZA", "en-ZA", "en_US-large", "la"] {
+        std::fs::write(dir.join(format!("{stem}.aff")), "SET UTF-8\n").unwrap();
+        if stem != "la" {
+            std::fs::write(dir.join(format!("{stem}.dic")), "1\nvorto\n").unwrap();
+        }
+    }
+    let stem = |id: &str| {
+        pair_for_tag(&dir, id).map(|(aff, _)| {
+            aff.file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or_default()
+                .to_string()
+        })
+    };
+    assert_eq!(stem("eo").as_deref(), Some("eo"));
+    assert_eq!(
+        stem("en-ZA").as_deref(),
+        Some("en-ZA"),
+        "exact spelling first"
+    );
+    assert_eq!(stem("en-US-large").as_deref(), Some("en_US-large"));
+    assert_eq!(stem("la"), None, "no .dic, no pair");
+    assert_eq!(stem("fr"), None);
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+/// A stored `en_ZA` and the `en-ZA` the picker offers are one language: one cache entry, one
+/// mute. Catalogue spellings still fold to their id.
+#[test]
+fn language_key_folds_underscore_spellings() {
+    assert_eq!(language_key("en_ZA"), "en-ZA");
+    assert_eq!(language_key("en-ZA"), "en-ZA");
+    assert_eq!(language_key("en_US"), "en-US");
+    assert_eq!(language_key("fr"), "fr-FR");
+}
+
+/// The picker names an unknown tag by its endonym *and* the tag, so regions stay apart.
+#[test]
+fn tag_label_keeps_the_region_in_view() {
+    assert_eq!(tag_label("eo").as_deref(), Some("Esperanto (eo)"));
+    assert_eq!(tag_label("en-ZA").as_deref(), Some("English (en-ZA)"));
+    assert_eq!(tag_label("not a tag"), None);
+}
+
+/// A tag missing from the catalogue is named by its endonym, capitalised; an unknown one has no name.
+#[test]
+fn endonym_names_a_language_the_catalogue_lacks() {
+    assert_eq!(endonym("eo").as_deref(), Some("Esperanto"));
+    assert_eq!(endonym("not a tag"), None);
+}

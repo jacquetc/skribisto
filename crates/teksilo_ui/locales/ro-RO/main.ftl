@@ -3159,7 +3159,6 @@ settings-dict-tab-personal = Cuvinte personale
 dict-installed-empty = Încă nu s-au găsit dicționare pe acest calculator.
 dict-get-more-search = Caută limbi
 dict-system-badge = în sistem
-dict-unusable-badge = inutilizabil
 dict-download-button = Descarcă
 dict-downloading = Se descarcă…
 dict-installed-label = Instalat

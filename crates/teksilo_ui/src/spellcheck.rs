@@ -49,7 +49,7 @@ mod user_dictionary_vm;
 
 use std::cell::{Cell, RefCell};
 use std::collections::{HashMap, HashSet};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -106,29 +106,86 @@ pub(crate) fn system_dictionary_dirs() -> Vec<PathBuf> {
     }
 }
 
-/// The `.aff`/`.dic` file pair for a registry id: our download first, then a system copy under
-/// any of the entry's `system_basenames`.
+/// The `.aff`/`.dic` file pair for a dictionary key (see [`language_key`]): our download first,
+/// then a system copy under one of a catalogue entry's `system_basenames`. Any other key is a
+/// hand-added code or a dictionary discovered on disk, found by [`pair_for_tag`] in the same
+/// order, so a copy in the data dir wins over a system one there too.
 fn locate(id: &str) -> Option<(PathBuf, PathBuf)> {
-    if let Some(dir) = downloaded_dictionaries_dir() {
+    let downloaded = downloaded_dictionaries_dir();
+    if let Some(dir) = &downloaded {
         let aff = dir.join(format!("{id}.aff"));
         let dic = dir.join(format!("{id}.dic"));
         if aff.is_file() && dic.is_file() {
             return Some((aff, dic));
         }
     }
-    let basenames = dictionary_registry::by_id(id)
-        .map(|e| e.system_basenames.clone())
-        .unwrap_or_default();
-    for dir in system_dictionary_dirs() {
-        for base in &basenames {
-            let aff = dir.join(format!("{base}.aff"));
-            let dic = dir.join(format!("{base}.dic"));
-            if aff.is_file() && dic.is_file() {
-                return Some((aff, dic));
+    if let Some(entry) = dictionary_registry::by_id(id) {
+        for dir in system_dictionary_dirs() {
+            for base in &entry.system_basenames {
+                let aff = dir.join(format!("{base}.aff"));
+                let dic = dir.join(format!("{base}.dic"));
+                if aff.is_file() && dic.is_file() {
+                    return Some((aff, dic));
+                }
             }
         }
+        return None;
     }
-    None
+    downloaded
+        .into_iter()
+        .chain(system_dictionary_dirs())
+        .find_map(|dir| pair_for_tag(&dir, id))
+}
+
+/// The pair in `dir` whose file stem names the tag `id`: the stem spelled exactly as `id` if
+/// there is one, else the first stem (by name) that canonicalises to it. Matching on the
+/// canonical form rather than rebuilding a stem from the tag is what finds `en_US-large.aff`
+/// for `en-US-large`, which no single swap of `-` and `_` produces.
+fn pair_for_tag(dir: &Path, id: &str) -> Option<(PathBuf, PathBuf)> {
+    let mut stems: Vec<String> = std::fs::read_dir(dir)
+        .ok()?
+        .flatten()
+        .filter_map(|entry| {
+            let aff = entry.path();
+            if aff.extension().and_then(|e| e.to_str()) != Some("aff") {
+                return None;
+            }
+            let stem = aff.file_stem()?.to_str()?.to_string();
+            (language::canonicalize_tag(&stem) == id && aff.with_extension("dic").is_file())
+                .then_some(stem)
+        })
+        .collect();
+    stems.sort_by_key(|stem| (stem != id, stem.clone()));
+    let stem = stems.into_iter().next()?;
+    Some((
+        dir.join(format!("{stem}.aff")),
+        dir.join(format!("{stem}.dic")),
+    ))
+}
+
+/// The one key a language tag is cached, muted and offered under: its catalogue id, or the tag
+/// canonicalised (`en_ZA` → `en-ZA`). So `fr` and `fr-FR` are one language, and so are a
+/// stored `en_ZA` and the `en-ZA` the picker offers for a discovered `en_ZA.aff`.
+pub(crate) fn language_key(tag: &str) -> String {
+    dictionary_registry::resolve_token(tag)
+        .map(str::to_string)
+        .unwrap_or_else(|| language::canonicalize_tag(tag))
+}
+
+/// How the picker names a tag the catalogue does not know: its endonym and the tag,
+/// `Esperanto (eo)`. The tag stays in view because the endonym names only the language, so
+/// `en-ZA` and `en-IE` would otherwise both read `English`.
+pub(crate) fn tag_label(tag: &str) -> Option<String> {
+    endonym(tag).map(|name| format!("{name} ({tag})"))
+}
+
+/// The capitalised endonym of a language tag (`eo` → `Esperanto`, `la` → `Latina`), or `None`
+/// when ICU has no name for it. Names a dictionary the catalogue does not know, so the writer
+/// sees a language rather than a bare file stem.
+pub(crate) fn endonym(tag: &str) -> Option<String> {
+    let id = tag.parse().ok()?;
+    let name = teksilo::i18n::language_endonym(&id)?;
+    Some(skribisto_model::casing::capitalize_first(&name, tag))
 }
 
 /// Locate, read (transcoding as needed), and parse a dictionary. `None` if the files are
@@ -231,12 +288,9 @@ impl SpellcheckService {
         changed
     }
 
-    /// The cache key for a tag: its resolved registry id, or the tag itself if unrecognised —
-    /// so `fr` and `fr-FR` mute/resolve as one language.
+    /// The cache and mute key for a tag — see [`language_key`].
     fn key_of(tag: &str) -> String {
-        dictionary_registry::resolve_token(tag)
-            .map(str::to_string)
-            .unwrap_or_else(|| tag.to_string())
+        language_key(tag)
     }
 
     fn dict(&self, id: &str) -> Option<Arc<spellbook::Dictionary>> {

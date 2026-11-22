@@ -3306,7 +3306,6 @@ settings-dict-tab-personal = Особисті слова
 dict-installed-empty = На цьому комп’ютері ще не знайдено словників.
 dict-get-more-search = Шукати мови
 dict-system-badge = у вашій системі
-dict-unusable-badge = непридатний
 dict-download-button = Завантажити
 dict-downloading = Завантаження…
 dict-installed-label = Встановлено

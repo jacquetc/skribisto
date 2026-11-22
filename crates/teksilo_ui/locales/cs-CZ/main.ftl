@@ -2922,7 +2922,6 @@ settings-dict-tab-personal = Osobní slova
 dict-installed-empty = V tomto počítači zatím nebyly nalezeny žádné slovníky.
 dict-get-more-search = Hledat jazyky
 dict-system-badge = v systému
-dict-unusable-badge = nepoužitelný
 dict-download-button = Stáhnout
 dict-downloading = Stahování…
 dict-installed-label = Nainstalováno

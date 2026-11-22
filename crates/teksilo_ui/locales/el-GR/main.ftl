@@ -2670,7 +2670,6 @@ settings-dict-tab-personal = Προσωπικές λέξεις
 dict-installed-empty = Δεν βρέθηκαν ακόμη λεξικά σε αυτόν τον υπολογιστή.
 dict-get-more-search = Αναζήτηση γλωσσών
 dict-system-badge = στο σύστημά σας
-dict-unusable-badge = μη χρησιμοποιήσιμο
 dict-download-button = Λήψη
 dict-downloading = Γίνεται λήψη…
 dict-installed-label = Εγκατεστημένο

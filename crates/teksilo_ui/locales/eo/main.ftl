@@ -2533,7 +2533,6 @@ settings-dict-tab-personal = Propraj vortoj
 dict-installed-empty = Ankoraŭ neniuj vortaroj trovitaj en ĉi tiu komputilo.
 dict-get-more-search = Serĉi lingvojn
 dict-system-badge = en via sistemo
-dict-unusable-badge = neuzebla
 dict-download-button = Elŝuti
 dict-downloading = Elŝutado…
 dict-installed-label = Instalita

@@ -2542,7 +2542,6 @@ settings-dict-tab-personal = Egna ord
 dict-installed-empty = Inga ordlistor har hittats på den här datorn ännu.
 dict-get-more-search = Sök språk
 dict-system-badge = i ditt system
-dict-unusable-badge = oanvändbar
 dict-download-button = Hämta
 dict-downloading = Hämtar…
 dict-installed-label = Installerad

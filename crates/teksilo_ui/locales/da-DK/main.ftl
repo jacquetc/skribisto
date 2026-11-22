@@ -2858,7 +2858,6 @@ settings-dict-tab-personal = Personlige ord
 dict-installed-empty = Der er endnu ikke fundet ordbøger på denne computer.
 dict-get-more-search = Søg efter sprog
 dict-system-badge = på dit system
-dict-unusable-badge = ubrugelig
 dict-download-button = Hent
 dict-downloading = Henter…
 dict-installed-label = Installeret

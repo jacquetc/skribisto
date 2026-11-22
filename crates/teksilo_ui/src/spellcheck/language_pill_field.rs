@@ -8,7 +8,8 @@
 //! Each pill shows the language's **endonym** and BCP-47 tag. Clicking a pill toggles its
 //! green check — a **session** mute of that language's spell-check (never persisted, never in
 //! `dict_language`). Hovering reveals a trailing **×** that removes the language from the list.
-//! The "+" opens a menu of the languages Skribisto knows, adding one to the list.
+//! The "+" opens a menu of the languages Skribisto knows (its catalogue, the dictionaries
+//! added by hand, and any other dictionary found on disk), adding one to the list.
 //!
 //! It never knows *whose* list it edits: the caller supplies a `value` mirror signal and a
 //! `set` writer (the Inspector writes a `BinderItem`, the Settings pane writes the `Work`).
@@ -106,8 +107,8 @@ fn base_name(display: &str) -> &str {
 /// `Français (fr-FR)`. The region/variant specificity is **not** on the face — it lives in the
 /// tooltip and the "+" menu (see [`pill_detail`] / the registry `display_name`). The code
 /// disambiguates variants that share a base name (the three French dictionaries). A hand-added
-/// dictionary's code shows the user's name + code; an otherwise unrecognised tag falls back to
-/// its raw string.
+/// dictionary's code shows the user's name + code; any other tag shows its endonym + code
+/// (`Esperanto (eo)`), or its raw string when ICU has no name for it.
 fn pill_name(tag: &str, user_names: &HashMap<String, String>) -> String {
     // A hand-added dictionary's given name wins on its own code (consistent with the Installed
     // list and with loading, which both prefer the user's copy over a later catalogue entry).
@@ -118,12 +119,13 @@ fn pill_name(tag: &str, user_names: &HashMap<String, String>) -> String {
     {
         format!("{} ({})", base_name(&e.display_name), e.id)
     } else {
-        tag.to_string()
+        crate::spellcheck::tag_label(tag).unwrap_or_else(|| tag.to_string())
     }
 }
 
 /// The **full** human name for the tooltip + accessibility: a hand-added dictionary's given name,
-/// else the registry's `display_name` (with its region/variant), else the raw tag.
+/// else the registry's `display_name` (with its region/variant), else the endonym and the tag
+/// (the endonym alone would name `en-ZA` and `en-IE` alike), else the raw tag.
 fn pill_detail(tag: &str, user_names: &HashMap<String, String>) -> String {
     if let Some(name) = user_names.get(tag) {
         name.clone()
@@ -132,8 +134,14 @@ fn pill_detail(tag: &str, user_names: &HashMap<String, String>) -> String {
     {
         e.display_name.clone()
     } else {
-        tag.to_string()
+        crate::spellcheck::tag_label(tag).unwrap_or_else(|| tag.to_string())
     }
+}
+
+/// The key the "+" menu compares languages under: the spell-checker's own key, so what counts
+/// as one language here is what loads as one, and case-blind, as BCP-47 tags are.
+fn menu_key(tag: &str) -> String {
+    crate::spellcheck::language_key(tag).to_lowercase()
 }
 
 /// The list with `tag` removed.
@@ -179,16 +187,18 @@ impl Widget for LanguagePillField {
         // Hand-added dictionaries (from the app-state download view-model): a custom code shows
         // its given name here and is offered in the "+" menu. Rebuild when the installed set
         // changes (an add/remove bumps `changed`), sorted by name for a stable menu.
-        let mut user_dicts = match ctx.app_state::<DictionariesViewModel>().cloned() {
+        // The dictionaries found on disk under a tag neither the catalogue nor the Add form
+        // knows (a system `eo.aff`) come from the same rescan, so they ride the same rebuild.
+        let (mut user_dicts, discovered) = match ctx.app_state::<DictionariesViewModel>().cloned() {
             Some(vm) => {
                 vm.changed_signal().bind_to(
                     ctx.self_id(),
                     ctx.binding_registry(),
                     BindingLevel::Rebuild,
                 );
-                vm.user_dictionaries()
+                (vm.user_dictionaries(), vm.discovered_dictionaries())
             }
-            None => Vec::new(),
+            None => (Vec::new(), Vec::new()),
         };
         user_dicts.sort_by_key(|a| a.name.to_lowercase());
         let user_names: HashMap<String, String> = user_dicts
@@ -271,15 +281,14 @@ impl Widget for LanguagePillField {
             );
         }
 
-        // The "+" popover: every registry language not already in the list. Compare through
-        // `resolve_token` so a legacy spelling already present (`en_US`) still counts as its
-        // registry id (`en-US`) and isn't offered twice.
-        let present: std::collections::HashSet<&str> = language::all(&effective)
-            .map(|t| dictionary_registry::resolve_token(t).unwrap_or(t))
-            .collect();
+        // The "+" popover: every language not already in the list. Compare through
+        // `menu_key` so a spelling already present (`en_US`, `en_ZA`) still counts as the one
+        // offered (`en-US`, `en-ZA`) and isn't offered twice.
+        let present: std::collections::HashSet<String> =
+            language::all(&effective).map(menu_key).collect();
         let mut menu = MenuList::new();
         for entry in dictionary_registry::entries() {
-            if present.contains(entry.id.as_str()) {
+            if present.contains(&menu_key(&entry.id)) {
                 continue;
             }
             let set = self.set.clone();
@@ -299,7 +308,7 @@ impl Widget for LanguagePillField {
         // Then the hand-added dictionaries (offered by the name the user gave them), so a custom
         // code can actually be selected for a document — the registry doesn't know it.
         for ud in &user_dicts {
-            if present.contains(ud.code.as_str()) {
+            if present.contains(&menu_key(&ud.code)) {
                 continue;
             }
             let set = self.set.clone();
@@ -309,6 +318,30 @@ impl Widget for LanguagePillField {
             let open_docs = self.open_docs.clone();
             menu = menu.item(
                 MenuItem::new(lit!(ud.name.clone())).on_activate_fn(move |c| {
+                    let new = with(&effective, &code);
+                    value.set(new.clone());
+                    set(new, c);
+                    reattach(&open_docs, c);
+                }),
+            );
+        }
+        // Last, the dictionaries found on disk that nothing else names. Without these, a writer
+        // with an Esperanto dictionary in /usr/share/hunspell saw it listed under Installed and
+        // could never pick it. A hand-added code wins on a clash: it is already offered above.
+        let hand_added: std::collections::HashSet<String> =
+            user_dicts.iter().map(|u| menu_key(&u.code)).collect();
+        for dd in &discovered {
+            let key = menu_key(&dd.code);
+            if present.contains(&key) || hand_added.contains(&key) {
+                continue;
+            }
+            let set = self.set.clone();
+            let value = self.value.clone();
+            let effective = effective.clone();
+            let code = dd.code.clone();
+            let open_docs = self.open_docs.clone();
+            menu = menu.item(
+                MenuItem::new(lit!(dd.name.clone())).on_activate_fn(move |c| {
                     let new = with(&effective, &code);
                     value.set(new.clone());
                     set(new, c);
