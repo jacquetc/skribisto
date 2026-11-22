@@ -710,7 +710,6 @@ impl ProjectWindowFactory {
                                 app_ctx: app_ctx_root.clone(),
                                 undo_group: undo_group.clone(),
                                 export: export.clone(),
-                                single_work: single_work.clone(),
                                 single_work_info: single_work_info.clone(),
                                 ids: session.ids.clone(),
                                 autosave_menu: autosave_menu.clone(),

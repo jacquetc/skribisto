@@ -135,6 +135,10 @@ pub struct WorkSession {
     pub item_view_states: ItemViewStates,
     pub tree_expansion: TreeExpansionViewModel,
     pub open_docs: OpenDocsStore,
+    /// This Work's resources: the model, the files handed to other applications, and
+    /// the notices an edit picked up from one of them still owes. Tier 2: two windows
+    /// on one project list the same rows and pick up the same edits.
+    pub resources: crate::resources::ResourcesSession,
     /// Is this project playing the **Always forward** writing game right now?
     ///
     /// Tier 2 on purpose: two windows on one `Work` must agree about whether
@@ -246,6 +250,14 @@ impl WorkSession {
 
         let save_state = SaveStateViewModel::new(app_ctx.clone(), ids.clone());
 
+        // An edit another application made to a file this project handed it reaches the
+        // store before every save, so the save writes it.
+        let resources = crate::resources::ResourcesSession::new(app_ctx.clone(), ids.clone());
+        {
+            let resources = resources.clone();
+            save_state.on_before_save(Rc::new(move || resources.pickup_changes()));
+        }
+
         let work_tags = WorkTagsListModel::new(app_ctx.clone(), ids.clone());
         let tags = TagsViewModel::new(work_tags, ids.clone());
         let statuses = crate::statuses::StatusesViewModel::new(app_ctx.clone(), ids.clone());
@@ -315,6 +327,7 @@ impl WorkSession {
             item_view_states,
             tree_expansion,
             open_docs,
+            resources,
             always_forward,
             backup_mode,
             backup_context,

@@ -863,6 +863,7 @@ pub struct App {
     doc_comments_dock: DockWidgetId,
     footnotes_dock: DockWidgetId,
     versions_dock: DockWidgetId,
+    resources_dock: DockWidgetId,
     timeline_dock: DockWidgetId,
     /// This row's recorded past. Tier 3 — the timeline is a view of what one
     /// window is focused on, and two windows on the same Work legitimately look
@@ -876,6 +877,8 @@ pub struct App {
     trash: Option<crate::trash::TrashViewModel>,
     comments: Option<crate::comments::CommentsViewModel>,
     footnotes: Option<crate::footnotes::FootnotesViewModel>,
+    /// The Resources dock's view-model, created once on first build.
+    resources: Option<crate::resources::ResourcesViewModel>,
     /// Keeps this window's `SearchSettingsService` `Reloadable` registration alive
     /// in the shared `SettingsRegistry`, so a peer process's `search.toml` writes
     /// are picked up live — the same story as [`backup_settings_reloadable`](Self::backup_settings_reloadable).
@@ -995,12 +998,14 @@ impl App {
             search: None,
             comments: None,
             footnotes: None,
+            resources: None,
             trash_dock: DockWidgetId::from_raw(crate::docks::TRASH_DOCK_ID),
             games_dock: DockWidgetId::from_raw(crate::docks::GAMES_DOCK_ID),
             comments_dock: DockWidgetId::from_raw(crate::docks::COMMENTS_DOCK_ID),
             doc_comments_dock: DockWidgetId::from_raw(crate::docks::DOC_COMMENTS_DOCK_ID),
             footnotes_dock: DockWidgetId::from_raw(crate::docks::FOOTNOTES_DOCK_ID),
             versions_dock: DockWidgetId::from_raw(crate::docks::VERSIONS_DOCK_ID),
+            resources_dock: DockWidgetId::from_raw(crate::docks::RESOURCES_DOCK_ID),
             timeline_dock: DockWidgetId::from_raw(crate::docks::TIMELINE_DOCK_ID),
             versions: crate::versions::VersionsViewModel::new(),
             timeline: crate::timeline::TimelineViewModel::new(),
@@ -1939,6 +1944,29 @@ impl Widget for App {
         if let Some(import_scrivener) = &self.import_scrivener {
             import_scrivener.wire(ctx);
         }
+        // The Resources dock's view-model: this window's, over the project's resources.
+        let resources = {
+            let save_as_folder: crate::resources::SaveAsFolderFn = {
+                let app_ctx = self.app_ctx.clone();
+                let ids = session.ids.clone();
+                let work = session.single_work.clone();
+                let save_as = save_as_vm.clone();
+                Rc::new(move |c: &mut EventContext| {
+                    crate::shell::project_menus::work::save_as_folder(
+                        c, &app_ctx, &ids, &work, &save_as,
+                    );
+                })
+            };
+            wiring::resources::install(
+                ctx,
+                &mut self.resources,
+                &self.app_ctx,
+                &session,
+                &editors,
+                &self.format,
+                save_as_folder,
+            )
+        };
         let command_deps = commands::CommandDeps {
             app_ctx: self.app_ctx.clone(),
             ids: session.ids.clone(),
@@ -1964,6 +1992,8 @@ impl Widget for App {
             import_scrivener: self.import_scrivener.clone(),
             search_dock: self.search_dock,
             timeline_dock: self.timeline_dock,
+            resources: resources.clone(),
+            save_as: save_as_vm.clone(),
             unsaved: self.unsaved.clone(),
             backup_mode: self.backup_mode.clone(),
         };
@@ -2361,6 +2391,7 @@ impl Widget for App {
                 editors: editors.clone(),
                 comments: comments.clone(),
                 footnotes: footnotes.clone(),
+                resources: resources.clone(),
                 outline: outline.clone(),
                 search: search.clone(),
                 trash: trash.clone(),

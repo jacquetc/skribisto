@@ -25,8 +25,8 @@ use teksilo::widgets::DockSide;
 
 use super::{
     APP_DOCKS, COMMENTS_DOCK_ID, DOC_COMMENTS_DOCK_ID, FOOTNOTES_DOCK_ID, FORMAT_DOCK_ID,
-    GAMES_DOCK_ID, INSPECTOR_DOCK_ID, OUTLINE_DOCK_ID, PREVIEW_DOCK_ID, SEARCH_DOCK_ID,
-    TIMELINE_DOCK_ID, TRASH_DOCK_ID, VERSIONS_DOCK_ID,
+    GAMES_DOCK_ID, INSPECTOR_DOCK_ID, OUTLINE_DOCK_ID, PREVIEW_DOCK_ID, RESOURCES_DOCK_ID,
+    SEARCH_DOCK_ID, TIMELINE_DOCK_ID, TRASH_DOCK_ID, VERSIONS_DOCK_ID,
 };
 
 /// One panel's door.
@@ -116,6 +116,13 @@ pub(crate) const PANELS: &[PanelCommand] = &[
         title: || tr!(versions_title()),
         name: || tr!(shortcut_name_versions_show()),
         chord: Key::R,
+    },
+    PanelCommand {
+        intent: "resources.show",
+        dock: RESOURCES_DOCK_ID,
+        title: || tr!(resources_title()),
+        name: || tr!(shortcut_name_resources_show()),
+        chord: Key::X,
     },
     PanelCommand {
         intent: "preview.show",

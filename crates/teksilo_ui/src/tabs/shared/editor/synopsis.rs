@@ -133,7 +133,7 @@ pub fn synopsis_editor(
         // and a link nobody can follow reads as a broken app. Same opener, same
         // scheme allowlist, as the manuscript editors.
         .on_link_activated(|href, ctx| {
-            crate::shared::external_link::open_external_link(href, ctx);
+            crate::resources::links::activate_link(href, ctx);
         })
         .content_padding_symmetric(6.0, 30.0)
         .text_color(TextRole::Secondary)
@@ -320,7 +320,7 @@ pub fn card_synopsis_editor(
         // and a link nobody can follow reads as a broken app. Same opener, same
         // scheme allowlist, as the manuscript editors.
         .on_link_activated(|href, ctx| {
-            crate::shared::external_link::open_external_link(href, ctx);
+            crate::resources::links::activate_link(href, ctx);
         })
         .content_padding_symmetric(4.0, 8.0)
         .v_scroll_policy(ScrollPolicy::Auto)

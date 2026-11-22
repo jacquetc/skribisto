@@ -344,7 +344,7 @@ impl Widget for PreviewBody {
                         // Registered with the format view-model below, so the Link command
                         // reaches this band — and a link it makes here must be followable.
                         .on_link_activated(|href, ctx| {
-                            crate::shared::external_link::open_external_link(href, ctx);
+                            crate::resources::links::activate_link(href, ctx);
                         })
                         .style(SeamlessEditorStyle)
                         .on_change(open_doc.mark_dirty_fn())

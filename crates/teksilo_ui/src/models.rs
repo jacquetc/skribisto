@@ -55,6 +55,7 @@ mod overview_rows_model;
 mod pace_model;
 mod paratext_presets;
 mod recent_work_list_model;
+mod resources_list_model;
 mod row_search;
 pub(crate) mod scrivener_import_run;
 pub(crate) mod scrivener_inspection;
@@ -96,6 +97,10 @@ pub use footnote_numbering::{NotePlacement, UNNUMBERED_MARKER, marker_for};
 pub use footnotes_list_model::{FootnoteRow, FootnotesListModel};
 pub use installed_dictionaries_model::{
     DictOrigin, DiscoveredDictionary, InstalledDictionariesModel, InstalledDictionaryRow,
+};
+pub use resources_list_model::{
+    FileFacts, ResourceKind, ResourceRow, ResourcesListModel, StoreStart, StoredResourceFilesDto,
+    WebLink,
 };
 // The `--features mocks` build fabricates its rows rather than numbering a real
 // manuscript, so several of these have no consumer there.

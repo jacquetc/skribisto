@@ -59,7 +59,25 @@ pub struct ViewerEntry {
     /// The name the picture had when it came into the project, for Save a copy. `None` when
     /// the project does not record one.
     pub file_name: Option<String>,
+    /// A picture that is not one of the project's pictures of the text: a resource's file,
+    /// named by its path and its content hash rather than by `src`. `None` for every
+    /// picture of a text, which `src` names.
+    pub file: Option<ViewerFile>,
 }
+
+/// The file a picture entry shows when it is not a picture of the text (see
+/// [`ViewerEntry::file`]).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ViewerFile {
+    pub path: PathBuf,
+    /// The blake3 of its bytes, hex: what the thumbnail cache names it by.
+    pub hash: String,
+}
+
+/// Opens the current picture in another application, when the opener is not simply
+/// "hand the file to the desktop": a resource's stored file goes through the Resources
+/// feature, which opens a single-file project's as a copy and brings an edit back.
+pub type OpenElsewhereFn = Rc<dyn Fn(&mut EventContext)>;
 
 impl ViewerEntry {
     /// The entries for every picture of one text, in document order.
@@ -71,6 +89,7 @@ impl ViewerEntry {
                 alt: image.alt.clone(),
                 item: item.clone(),
                 file_name: None,
+                file: None,
             })
             .collect()
     }
@@ -131,6 +150,8 @@ pub struct PictureViewerViewModel {
     index: Signal<usize>,
     media_dir: PathBuf,
     stage: Rc<StageState>,
+    /// Replaces the desktop hand-over of Open in another app; see [`OpenElsewhereFn`].
+    open_elsewhere: Option<OpenElsewhereFn>,
 }
 
 impl std::fmt::Debug for PictureViewerViewModel {
@@ -151,7 +172,14 @@ impl PictureViewerViewModel {
             index: Signal::new(start),
             media_dir,
             stage: StageState::new(),
+            open_elsewhere: None,
         }
+    }
+
+    /// The same viewer, with Open in another app going through `opener`.
+    pub fn with_opener(mut self, opener: OpenElsewhereFn) -> Self {
+        self.open_elsewhere = Some(opener);
+        self
     }
 
     pub fn count(&self) -> usize {
@@ -194,13 +222,34 @@ impl PictureViewerViewModel {
     /// The file the current picture is stored in, `None` for a reference outside the
     /// project's pictures (a hand-typed path, an address on the web).
     pub fn current_path(&self) -> Option<PathBuf> {
-        picture_cache::asset_path(&self.media_dir, &self.current()?.src)
+        let entry = self.current()?;
+        match &entry.file {
+            Some(file) => Some(file.path.clone()),
+            None => picture_cache::asset_path(&self.media_dir, &entry.src),
+        }
+    }
+
+    /// The cache key of the current picture at `edge`.
+    fn current_key(&self, edge: u32) -> Option<PictureKey> {
+        let entry = self.current()?;
+        match &entry.file {
+            Some(file) if !file.hash.is_empty() => Some(PictureKey {
+                hash: file.hash.clone(),
+                edge,
+            }),
+            Some(_) => None,
+            None => PictureKey::for_src(&entry.src, edge),
+        }
     }
 
     /// Open the current picture's file in the application the desktop opens such files
     /// with. Only ever a project picture: a reference the writer typed is never handed to
     /// the desktop, so nothing in a document can make the viewer launch an arbitrary path.
-    pub fn open_externally(&self) {
+    pub fn open_externally(&self, ctx: &mut EventContext) {
+        if let Some(open) = &self.open_elsewhere {
+            open(ctx);
+            return;
+        }
         if let Some(path) = self.current_path().filter(|p| p.exists()) {
             crate::shell::process::open_in_default_app(&path.to_string_lossy());
         }
@@ -281,7 +330,27 @@ pub fn present(
     if entries.is_empty() {
         return;
     }
-    let vm = PictureViewerViewModel::new(entries, start, media_dir);
+    present_model(ctx, PictureViewerViewModel::new(entries, start, media_dir));
+}
+
+/// [`present`], with Open in another app going through `opener` (see [`OpenElsewhereFn`]).
+pub fn present_with_opener(
+    ctx: &mut EventContext,
+    entries: Vec<ViewerEntry>,
+    start: usize,
+    media_dir: PathBuf,
+    opener: OpenElsewhereFn,
+) {
+    if entries.is_empty() {
+        return;
+    }
+    present_model(
+        ctx,
+        PictureViewerViewModel::new(entries, start, media_dir).with_opener(opener),
+    );
+}
+
+fn present_model(ctx: &mut EventContext, vm: PictureViewerViewModel) {
     ctx.present_modal(
         // The app's dialog frame (`ModalContainer`): its surface, its `Role::Dialog` node
         // and the name a screen reader announces. No padding: the picture uses the whole
@@ -339,7 +408,8 @@ impl Widget for ViewerPanel {
         let body: Box<dyn Widget> = match (entry.as_ref(), vm.current_path()) {
             (Some(entry), Some(path)) => {
                 let rt = ctx.app_state::<AsyncRuntimeHandle>().cloned();
-                let state = PictureKey::for_src(&entry.src, VIEWER_EDGE)
+                let state = vm
+                    .current_key(VIEWER_EDGE)
                     .map(|key| PictureCache::shared().request(rt.as_ref(), path, key));
                 match state {
                     Some(state) => {
@@ -459,7 +529,7 @@ impl Widget for ViewerPanel {
                         crate::icons::viewer::open_external(),
                         tr!(picture_viewer_open_externally()),
                     )
-                    .on_activate_fn(move |_| open_vm.open_externally()),
+                    .on_activate_fn(move |c| open_vm.open_externally(c)),
                 )
                 .child(
                     icon(
@@ -559,6 +629,7 @@ mod tests {
                 title: title.to_string(),
             }),
             file_name: None,
+            file: None,
         }
     }
 

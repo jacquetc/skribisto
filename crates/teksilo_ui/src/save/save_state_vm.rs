@@ -112,6 +112,9 @@ struct Inner {
     /// [`SaveStateViewModel::poll_external`], so one extension change bumps the
     /// sequence once, not once per pumped frame.
     external_seen: Cell<u64>,
+    /// Run before each save is asked for, to bring into the store what changed outside
+    /// it: a resource another application edited (`resources::ResourcesSession`).
+    before_save: RefCell<Vec<Rc<dyn Fn()>>>,
     /// The save last asked for was preceded by an editor flush that failed —
     /// see [`SaveStateViewModel::request_save_after_flush`].
     flush_failed: Cell<bool>,
@@ -160,6 +163,7 @@ impl SaveStateViewModel {
                 external_saved: Cell::new(0),
                 external_in_flight: Cell::new(0),
                 external_seen: Cell::new(0),
+                before_save: RefCell::new(Vec::new()),
                 flush_failed: Cell::new(false),
                 queue: RefCell::new(SaveQueue::default()),
                 last_completed: RefCell::new(None),
@@ -272,6 +276,11 @@ impl SaveStateViewModel {
     /// apart from typing during the save, which they answer with one more write;
     /// a flush that just failed would only fail again.
     pub fn request_save_after_flush(&self, flush_failed: bool) -> Option<u64> {
+        // Cloned out first: a hook is free to read this view-model back.
+        let hooks: Vec<Rc<dyn Fn()>> = self.inner.before_save.borrow().clone();
+        for hook in hooks {
+            hook();
+        }
         let covers = self.inner.dirty_seq.get();
         // Bind the decision first so the `RefMut` from `borrow_mut` ends *before*
         // `start_save` runs. Matching on `queue.borrow_mut().request(...)` keeps
@@ -301,6 +310,14 @@ impl SaveStateViewModel {
     /// Whether the save last asked for was preceded by a failed editor flush.
     pub fn last_flush_failed(&self) -> bool {
         self.inner.flush_failed.get()
+    }
+
+    /// Run `hook` before every save this Work asks for, ahead of the store being read:
+    /// for state that changes outside the store and is brought into it on demand. A
+    /// change the hook makes reaches the save that follows; the dirty mark it raises
+    /// lands with its own event.
+    pub fn on_before_save(&self, hook: Rc<dyn Fn()>) {
+        self.inner.before_save.borrow_mut().push(hook);
     }
 
     /// An extension-safe view onto this Work's save state — see [`WorkHandle`].

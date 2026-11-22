@@ -60,6 +60,7 @@ mod format;
 mod go;
 mod help;
 mod images;
+mod resources;
 mod story_bible;
 mod templates;
 mod trash;
@@ -149,6 +150,11 @@ pub(super) struct CommandDeps {
     /// The timeline band, for `timeline.show` — the only door into it, since a
     /// hidden bottom side leaves no rail glyph behind.
     pub timeline_dock: DockWidgetId,
+    /// This window's Resources view-model: the two commands a text fires at it, and
+    /// the files dropped on a text that are not pictures.
+    pub resources: crate::resources::ResourcesViewModel,
+    /// This window's Save As view-model, for the named `work.save_as_folder` command.
+    pub save_as: crate::save::SaveAsViewModel,
     /// Derived: the work has edits not on disk.
     pub unsaved: Signal<bool>,
     /// A backup file is open here — Save is off.
@@ -175,5 +181,6 @@ pub(super) fn register_all(ctx: &mut BuildContext, deps: &CommandDeps) {
     go::register(ctx, deps);
     help::register(ctx, deps);
     images::register(ctx, deps);
+    resources::register(ctx, deps);
     story_bible::register(ctx, deps);
 }

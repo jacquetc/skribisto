@@ -54,20 +54,51 @@ fn policy_signal(ctx: &EventContext) -> Signal<String> {
 /// already where the drop landed, because the editor put it there while the
 /// drag was still in the air.
 ///
-/// Anything that is not an image it can decode is skipped in silence. A drop is
-/// often several files at once, and a toast per unsupported one would bury the
-/// pictures that did arrive.
+/// Anything that is not an image it can decode becomes a **resource** of the item
+/// instead, linked at the drop point: a map, a recording or a letter dropped on a scene
+/// is research about it, not a picture in it. That goes through the Resources dock's
+/// own pipeline (`ResourcesViewModel::add_paths`): the large-file question, the copy
+/// into the project, and a toast whose Undo takes both the resource and its link back.
 fn register_drop(ctx: &mut BuildContext, deps: &CommandDeps) {
     let format = deps.format.clone();
     let docs = deps.session.open_docs.clone();
     let ids = deps.ids.clone();
     let app_ctx = deps.app_ctx.clone();
+    let resources = deps.resources.clone();
 
     ctx.register_action_global(Action::new("editor.insert_dropped_images").on_invoke(
         move |_intent, c: &mut EventContext| {
             let paths = format.dropped_files().get();
             format.dropped_files().set(Vec::new());
-            if paths.is_empty() || format.writable_handle().is_none() {
+            let Some(handle) = format.writable_handle() else {
+                return;
+            };
+            if paths.is_empty() {
+                return;
+            }
+            // Read every file once: what decodes is a picture of the text, the rest a
+            // resource. The caret is where the drop landed, so that is where the
+            // resources' links go, ahead of any picture inserted there.
+            let (pictures, others): (Vec<_>, Vec<_>) = paths
+                .iter()
+                .map(|path| (path.clone(), images::examine(path).ok()))
+                .partition(|(_, picture)| picture.is_some());
+            if !others.is_empty() {
+                let at = handle.cursor_position();
+                resources.add_paths(
+                    c,
+                    others.into_iter().map(|(path, _)| path).collect(),
+                    crate::resources::AddTarget::Text {
+                        handle: handle.clone(),
+                        at,
+                    },
+                );
+            }
+            let batch: Vec<PendingImage> = pictures
+                .into_iter()
+                .filter_map(|(_, picture)| picture)
+                .collect();
+            if batch.is_empty() {
                 return;
             }
             if docs.media_dir().as_os_str().is_empty() {
@@ -83,19 +114,12 @@ fn register_drop(ctx: &mut BuildContext, deps: &CommandDeps) {
                 ids: ids.clone(),
                 app_ctx: app_ctx.clone(),
             };
-            let stored = stored_policy(c);
-            // Examine the whole drop before inserting any of it. The size
-            // question is asked once and answered for the batch, and that
-            // answer cannot be applied to files that have not been read yet —
+            // The whole drop was examined above, before inserting any of it. The
+            // size question is asked once and answered for the batch, and that
+            // answer cannot be applied to files that have not been read yet:
             // reading first is what lets one prompt cover ten photographs
             // instead of abandoning the nine behind the first large one.
-            let batch: Vec<PendingImage> = paths
-                .iter()
-                .filter_map(|path| images::examine(path).ok())
-                .collect();
-            if batch.is_empty() {
-                return;
-            }
+            let stored = stored_policy(c);
             match stored {
                 Some(policy) => {
                     for pending in batch {

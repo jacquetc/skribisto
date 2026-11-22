@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- An archive: the sheet with a zip running down it. -->
+  <path d="M4 1.8h5.2L12.5 5.1V14.2H4Z"/>
+  <path d="M9.2 1.8V5.1H12.5"/>
+  <path d="M7.4 2.6h1"/>
+  <path d="M7.4 4.4h1"/>
+  <path d="M7.4 6.2h1"/>
+  <rect x="6.9" y="8" width="2" height="2.6" rx="0.4"/>
+</svg>

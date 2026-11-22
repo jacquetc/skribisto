@@ -7,8 +7,8 @@
 //!
 //! The roster: [`crate::binder::dock`] (binder tree), [`crate::search::dock`], [`crate::trash::dock`],
 //! [`crate::comments::dock`] (project-wide) on the leading rail; [`inspector`],
-//! [`crate::format::dock`], a per-document comments dock, [`crate::footnotes::dock`] and
-//! [`crate::versions::dock`] on the trailing rail; [`crate::search::preview_dock`] and
+//! [`crate::format::dock`], a per-document comments dock, [`crate::footnotes::dock`],
+//! [`crate::versions::dock`] and [`crate::resources::dock`] on the trailing rail; [`crate::search::preview_dock`] and
 //! [`crate::timeline::dock`] on the bottom. See [`APP_DOCKS`] for the authoritative
 //! list and mount order.
 //!
@@ -62,6 +62,8 @@ pub const VERSIONS_DOCK_ID: u64 = DOCK_ID_BASE + 10;
 pub const TIMELINE_DOCK_ID: u64 = DOCK_ID_BASE + 11;
 /// The writer's self-imposed drafting constraints (leading rail).
 pub const GAMES_DOCK_ID: u64 = DOCK_ID_BASE + 12;
+/// The files and web links attached to the item in front of the writer (trailing rail).
+pub const RESOURCES_DOCK_ID: u64 = DOCK_ID_BASE + 13;
 
 /// One app dock's declared home: its stable id plus where it mounts on a desk
 /// nobody has arranged yet.
@@ -158,6 +160,14 @@ pub const APP_DOCKS: &[AppDock] = &[
     },
     AppDock {
         id: VERSIONS_DOCK_ID,
+        side: DockSide::Trailing,
+        own_tab: true,
+    },
+    // The resources of the item in front of the writer: research attached to it, last
+    // on the trailing rail because it is the one panel there about what is *beside*
+    // the text rather than in it.
+    AppDock {
+        id: RESOURCES_DOCK_ID,
         side: DockSide::Trailing,
         own_tab: true,
     },

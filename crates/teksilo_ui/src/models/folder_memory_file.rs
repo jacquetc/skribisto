@@ -77,6 +77,8 @@ pub enum FolderPurpose {
     /// The settings panes' import/export of tags, templates, dictionaries, text
     /// replacements, export styles and distraction-free themes.
     DataInterchange,
+    /// Attaching files to an item as resources, and locating a linked file that moved.
+    AttachResources,
 }
 
 impl FolderPurpose {
@@ -95,6 +97,7 @@ impl FolderPurpose {
         FolderPurpose::BackupDestination,
         FolderPurpose::AddDictionary,
         FolderPurpose::DataInterchange,
+        FolderPurpose::AttachResources,
     ];
 
     /// The purpose's name in the file, as its serde form spells it.
@@ -112,6 +115,7 @@ impl FolderPurpose {
             FolderPurpose::BackupDestination => "backup_destination",
             FolderPurpose::AddDictionary => "add_dictionary",
             FolderPurpose::DataInterchange => "data_interchange",
+            FolderPurpose::AttachResources => "attach_resources",
         }
     }
 
@@ -127,7 +131,10 @@ impl FolderPurpose {
     /// then forgets where it was. A purpose added since is written to `later_folders`,
     /// which they do not read. This list never grows: a later purpose goes there too.
     fn released(self) -> bool {
-        !matches!(self, FolderPurpose::ImportScrivener)
+        !matches!(
+            self,
+            FolderPurpose::ImportScrivener | FolderPurpose::AttachResources
+        )
     }
 }
 

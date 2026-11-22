@@ -25,7 +25,7 @@ use crate::go::GoAvailability;
 use crate::note_templates::NoteTemplatesViewModel;
 use crate::save::SaveAsViewModel;
 use crate::shared::FocusViewModel;
-use crate::singles::{SingleWork, SingleWorkInfo};
+use crate::singles::SingleWorkInfo;
 
 /// A Format-menu row that reflects document state: a reflect-only checkmark
 /// mirroring the same signal the dock's button binds, so the two surfaces
@@ -80,7 +80,6 @@ pub(crate) fn command(
 pub(crate) struct ProjectMenuParts {
     pub app_ctx: Rc<AppContext>,
     pub export: ExportViewModel,
-    pub single_work: SingleWork,
     pub single_work_info: SingleWorkInfo,
     pub ids: crate::app_ids::AppIds,
     pub autosave_menu: Signal<bool>,
@@ -262,7 +261,7 @@ mod document;
 mod edit;
 mod format;
 mod view;
-mod work;
+pub(crate) mod work;
 
 /// Whether a row that the macOS App menu also carries should render here.
 ///
@@ -732,7 +731,7 @@ mod tests {
     fn empty_parts() -> ProjectMenuParts {
         let app_ctx = Rc::new(frontend::AppContext::new());
         let ids = crate::app_ids::AppIds::new();
-        let single_work = SingleWork::new(app_ctx.clone());
+        let single_work = crate::singles::SingleWork::new(app_ctx.clone());
         let backup_mode = Signal::new(false);
         let format = FormatViewModel::detached();
         ProjectMenuParts {
@@ -746,7 +745,6 @@ mod tests {
                 ),
             ),
             export: ExportViewModel::new(app_ctx.clone(), ids.clone()),
-            single_work: single_work.clone(),
             single_work_info: SingleWorkInfo::new(app_ctx.clone()),
             ids: ids.clone(),
             autosave_menu: Signal::new(false),

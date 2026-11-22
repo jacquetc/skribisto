@@ -1,0 +1,137 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
+# Ressurser: filer og nettlenker som er knyttet til elementer i permen.
+
+## Panelet
+
+resources-title = Ressurser
+shortcut-name-resources-show = Vis ressursene
+resources-add-files = Legg til filer
+resources-add-files-title = Legg til filer i dette elementet
+resources-add-link = Legg til en nettlenke
+resources-drop-hint = Slipp filer eller nettadresser her for å knytte dem til
+resources-no-item = Åpne et element for å se ressursene.
+resources-empty = Ingenting er knyttet til dette elementet ennå. Legg til filer eller nettlenker med knappene over, eller slipp dem her.
+resources-actions = Handlinger
+resources-not-found = Ikke funnet
+resources-row-linked = Lenket fil
+resources-row-linked-size = Lenket fil, { $size }
+resources-row-name = { $title }, { $kind }, { $detail }
+resources-row-name-missing = { $title }, { $kind }, { $detail }, ikke funnet
+
+## Filtyper, slik en skjermleser leser dem opp
+
+resources-kind-picture = bilde
+resources-kind-pdf = PDF-dokument
+resources-kind-audio = lydopptak
+resources-kind-video = video
+resources-kind-document = dokument
+resources-kind-ebook = e-bok
+resources-kind-archive = arkiv
+resources-kind-file = fil
+resources-kind-web-link = nettlenke
+
+## Menyen for en rad
+
+resources-open = Åpne
+resources-show-in-folder = Vis i mappe
+resources-locate = Finn igjen…
+resources-insert-into-text = Sett inn i teksten
+resources-insert-picture = Sett inn bildet i teksten
+resources-insert-link = Sett inn en lenke i teksten
+resources-edit = Gi nytt navn og beskriv…
+resources-detach = Løsne fra dette elementet
+resources-remove = Fjern fra prosjektet…
+
+## De to dialogene
+
+resources-link-dialog-title = Legg til en nettlenke
+resources-link-dialog-address = Adresse
+resources-link-dialog-address-placeholder = https://
+resources-link-dialog-name = Tittel
+resources-link-dialog-name-placeholder = Navnet på nettstedet, hvis feltet står tomt
+resources-link-dialog-add = Legg til
+resources-edit-dialog-title = Gi nytt navn og beskriv
+resources-edit-dialog-name = Tittel
+resources-edit-dialog-description = Beskrivelse
+resources-edit-dialog-description-placeholder = Hva dette er, og hvorfor du tok vare på det
+resources-edit-dialog-save = Lagre
+resources-dialog-cancel = Avbryt
+
+## Legge til
+
+resources-large-title = En stor fil
+resources-large-text = «{ $name }» er på { $size }. Lagret i prosjektet følger den med hver kopi og hver sikkerhetskopi av det. Lenket blir den der den er, og prosjektet husker bare hvor den finnes.
+resources-large-text-many = «{ $name }» er på { $size }, og { $others ->
+    [one] én annen fil er
+   *[other] { $others } andre filer er
+} også store. Lagret i prosjektet følger de med hver kopi og hver sikkerhetskopi av det. Lenket blir de der de er, og prosjektet husker bare hvor de finnes.
+resources-large-store = Lagre den i prosjektet
+resources-large-link = Lenk til den i stedet
+resources-large-remember = Ikke spør igjen
+resources-storing-title = Legger til filer i prosjektet
+resources-store-cancel = Avbryt
+resources-store-cancelled = Ingen filer ble lagt til.
+resources-store-busy = Filer blir fortsatt lagt til. Prøv igjen når de er kommet inn.
+resources-store-failed = Filene kunne ikke legges til: { $error }
+resources-no-project = Åpne et prosjekt før du knytter til filer.
+resources-moved-away = Prosjektet ble flyttet mens filen ble kopiert.
+resources-some-failed = { $count ->
+    [one] Én fil kunne ikke legges til: { $names }
+   *[other] { $count } filer kunne ikke legges til: { $names }
+}
+resources-add-failed = Ressursene kunne ikke legges til: { $error }
+resources-added = { $count ->
+    [one] Én ressurs lagt til
+   *[other] { $count } ressurser lagt til
+}
+resources-dropped-added = { $count ->
+    [one] Lagt til som ressurs for dette elementet, og lenket i teksten
+   *[other] { $count } filer lagt til som ressurser for dette elementet, og lenket i teksten
+}
+resources-undo = Angre
+resources-link-refused = «{ $url }» er ikke en nettadresse Skribisto kan ta vare på. Bruk en adresse som begynner med http:// eller https://, uten brukernavn eller passord.
+
+## Meldingen for et prosjekt i én fil
+
+resources-folder-title = Dette prosjektet begynner å bli stort
+resources-folder-text = De lagrede filene tar nå { $size }. Et prosjekt som holdes i én fil, skrives helt på nytt ved hver lagring, filene også. Holdt som mappe lagrer det bare det som er endret. Du kan lagre det som mappe nå, og jobbe videre i mappen fra da av.
+resources-folder-switch = Lagre som mappe…
+resources-folder-not-now = Ikke nå
+resources-folder-never = Ikke spør igjen for dette prosjektet
+
+## Åpne
+
+resources-not-found-toast = «{ $name }» er ikke der prosjektet venter å finne den.
+resources-unsafe-title = Åpne «{ $name }»?
+resources-unsafe-text = Skribisto vet ikke om denne typen fil er trygg. Å åpne den kan starte et program på datamaskinen din, og et prosjekt kan komme fra noen andre. Vis den i mappen først for å se hva den er.
+resources-open-anyway = Åpne likevel
+resources-open-failed = Filen kunne ikke åpnes: { $error }
+resources-no-data-folder = dette systemet gir ikke Skribisto noen datamappe å åpne en kopi i
+resources-link-gone = Denne lenken peker til en ressurs prosjektet ikke lenger har.
+resources-locate-title = Hvor er «{ $name }» nå?
+resources-relinked-more = { $count ->
+    [one] Én fil til som manglet, ble funnet i samme mappe og lenket på nytt.
+   *[other] { $count } filer til som manglet, ble funnet i samme mappe og lenket på nytt.
+}
+resources-changed-elsewhere = «{ $name }» ble endret i en annen app. Prosjektet beholder den nye versjonen.
+
+## Redigere
+
+resources-edit-failed = Ressursen kunne ikke endres: { $error }
+resources-remove-title = Fjerne «{ $title }» fra prosjektet?
+resources-remove-text = Den tas bort fra hvert element den er knyttet til. En fil som er lagret i prosjektet, forsvinner med den; en lenket fil og en nettside blir der de er. Angre henter den tilbake.
+resources-remove-confirm = Fjern
+resources-remove-failed = Ressursen kunne ikke fjernes: { $error }
+
+## Inn i teksten
+
+resources-no-text = Plasser først markøren i en tekst, og sett så inn ressursen der.
+resources-drop-insert-picture = Sett inn bildet
+resources-drop-insert-link = Sett inn en lenke til ressursen
+
+## Fremdrift
+
+progress-resources-storing = Kopierer filene
+progress-resources-stored = Filene er kopiert

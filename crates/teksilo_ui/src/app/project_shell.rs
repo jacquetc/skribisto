@@ -43,6 +43,7 @@ pub(super) struct ShellParts {
     pub trash: crate::trash::TrashViewModel,
     pub comments: crate::comments::CommentsViewModel,
     pub footnotes: crate::footnotes::FootnotesViewModel,
+    pub resources: crate::resources::ResourcesViewModel,
     pub versions: crate::versions::VersionsViewModel,
     pub timeline: crate::timeline::TimelineViewModel,
     pub format: crate::format::FormatViewModel,
@@ -82,6 +83,7 @@ impl App {
             trash,
             comments,
             footnotes,
+            resources,
             versions,
             timeline,
             format,
@@ -620,6 +622,10 @@ impl App {
                     let docs = session.open_docs.clone();
                     std::rc::Rc::new(move |id| docs.item_language(id))
                 },
+            ))
+            .dock(crate::resources::dock::resources_dock(
+                resources.clone(),
+                self.resources_dock,
             ))
             .dock(crate::timeline::dock::timeline_dock(
                 timeline.clone(),

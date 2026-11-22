@@ -266,7 +266,7 @@ impl Turn {
         let editor_widget = RichTextEditor::editor(doc.clone())
             .tab_key(teksilo::widgets::TabKey::MoveFocus)
             .on_link_activated(|href, ctx| {
-                crate::shared::external_link::open_external_link(href, ctx);
+                crate::resources::links::activate_link(href, ctx);
             });
         let handle = editor_widget.handle();
         let body = {

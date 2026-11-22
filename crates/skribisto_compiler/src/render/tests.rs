@@ -4958,3 +4958,107 @@ fn an_epub_carries_its_books_cover_in_the_package_and_not_inline() {
         "{omnibus}"
     );
 }
+
+// ── Links to resources ───────────────────────────────────────────────
+
+/// A scene linking to one of the project's resources, beside an ordinary web link.
+fn book_with_resource_link() -> Gathered {
+    let mut g = flat_book();
+    for it in &mut g.binders[0].items {
+        if it.item.id == 102 {
+            it.contents = vec![c(
+                4,
+                ContentRole::SceneText,
+                "She checked the [village map](resource:12345678-9abc-def0-1234-56789abcdef0) \
+                 and the [tide page](https://example.org/tides).",
+            )];
+        }
+    }
+    g
+}
+
+/// Every entry of a zip-based export, as text where it is text.
+fn zip_texts(bytes: Vec<u8>) -> String {
+    let mut zip = zip::ZipArchive::new(std::io::Cursor::new(bytes)).unwrap();
+    let mut all = String::new();
+    for i in 0..zip.len() {
+        let mut entry = zip.by_index(i).unwrap();
+        let mut buf = Vec::new();
+        std::io::Read::read_to_end(&mut entry, &mut buf).unwrap();
+        all.push_str(&String::from_utf8_lossy(&buf));
+    }
+    all
+}
+
+/// A link to a resource prints its words and nothing else, in every format: a reader
+/// of the book has no project to open it in. A web link beside it is untouched.
+#[test]
+fn a_resource_link_exports_as_its_words_in_every_format() {
+    let g = book_with_resource_link();
+    let p = preset("neutral");
+    for fmt in [
+        ExportFormat::Djot,
+        ExportFormat::PlainText,
+        ExportFormat::Markdown,
+        ExportFormat::Html,
+        ExportFormat::Latex,
+    ] {
+        let out = render_to_string(&req(&g, &[100, 101, 102], &p, fmt)).unwrap();
+        assert!(out.contains("village map"), "{fmt:?} lost the words: {out}");
+        assert!(
+            !out.contains("resource:") && !out.contains("12345678-9abc"),
+            "{fmt:?} kept the link: {out}"
+        );
+        if fmt != ExportFormat::PlainText {
+            assert!(
+                out.contains("https://example.org/tides"),
+                "{fmt:?} dropped the web link: {out}"
+            );
+        }
+    }
+    for (fmt, ext) in [
+        (ExportFormat::Docx, "docx"),
+        (ExportFormat::Odt, "odt"),
+        (ExportFormat::Epub, "epub"),
+    ] {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join(format!("book.{ext}"));
+        render_to_file(
+            &req(&g, &[100, 101, 102], &p, fmt),
+            &path,
+            &|_| {},
+            &AtomicBool::new(false),
+        )
+        .unwrap_or_else(|e| panic!("{fmt:?} export failed: {e:#}"));
+        let all = zip_texts(std::fs::read(&path).unwrap());
+        assert!(all.contains("village map"), "{fmt:?} lost the words");
+        assert!(
+            !all.contains("resource:") && !all.contains("12345678-9abc"),
+            "{fmt:?} kept the link"
+        );
+        assert!(
+            all.contains("example.org/tides"),
+            "{fmt:?} dropped the web link"
+        );
+    }
+}
+
+/// PDF too, when the build carries it: no link annotation points at the resource.
+#[cfg(feature = "pdf")]
+#[test]
+fn a_resource_link_exports_as_its_words_in_a_pdf() {
+    let g = book_with_resource_link();
+    let p = preset("neutral");
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("book.pdf");
+    render_to_file(
+        &req(&g, &[100, 101, 102], &p, ExportFormat::Pdf),
+        &path,
+        &|_| {},
+        &AtomicBool::new(false),
+    )
+    .unwrap();
+    let bytes = std::fs::read(&path).unwrap();
+    let text = String::from_utf8_lossy(&bytes);
+    assert!(!text.contains("resource:"), "the PDF kept the link");
+}

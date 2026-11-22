@@ -655,6 +655,10 @@ fn assemble(req: &RenderRequest, progress: &dyn Fn(f32), cancel: &AtomicBool) ->
         out.push_str(&notes.definitions.join("\n\n"));
     }
 
+    // A link to one of the project's resources has nowhere to go in a book: it prints
+    // its words only, in every format (see `resource_links`).
+    let out = resource_links::strip_resource_links(&out).into_owned();
+
     let doc = TextDocument::new();
     if !out.trim().is_empty() {
         doc.set_djot(&out)?
@@ -981,6 +985,7 @@ mod tests;
 /// re-resolution and not arithmetic.
 mod emit;
 mod output;
+mod resource_links;
 
 pub use output::render_to_file;
 

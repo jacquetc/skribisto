@@ -293,6 +293,7 @@ impl GalleryViewModel {
                             title: title.clone(),
                         }),
                         file_name: None,
+                        file: None,
                     });
                 }
                 _ => at.push(None),

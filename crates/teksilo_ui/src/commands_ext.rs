@@ -268,6 +268,7 @@ const APP_INTENT_NAMESPACES: &[&str] = &[
     "outline.",
     "pace.",
     "preview.",
+    "resources.",
     "search.",
     "session.",
     "spellcheck.",

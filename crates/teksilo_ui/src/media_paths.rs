@@ -48,6 +48,29 @@ pub fn project_media_dir(
     work_id: u64,
     media_root: &std::path::Path,
 ) -> PathBuf {
+    let (project, uid) = project_place(app_ctx, work_id);
+    skrib_format::media::media_dir(std::path::Path::new(&project), &uid, media_root, &uid)
+}
+
+/// The resources directory of the open Work `work_id` where the project is now: its
+/// stored files, one `<uid>/<name>` folder each (`skrib_format::media::resources_dir`).
+///
+/// Asked each time for the reason [`project_media_dir`] is: a folder project's own
+/// `resources/` once its folder exists, a working folder under the app's data for a
+/// single-file project, and a Save As moves it. A file stored into the directory
+/// resolved before the move would sit where no save reads.
+pub fn project_resources_dir(
+    app_ctx: &frontend::AppContext,
+    work_id: u64,
+    media_root: &std::path::Path,
+) -> PathBuf {
+    let (project, uid) = project_place(app_ctx, work_id);
+    skrib_format::media::resources_dir(std::path::Path::new(&project), &uid, media_root, &uid)
+}
+
+/// The path the open Work `work_id` is saved at, and its `unique_id`: the two its
+/// directories are resolved from.
+fn project_place(app_ctx: &frontend::AppContext, work_id: u64) -> (String, String) {
     let uid = frontend::commands::work_commands::get_work(app_ctx, &work_id)
         .ok()
         .flatten()
@@ -60,7 +83,7 @@ pub fn project_media_dir(
         .find(|info| info.work == Some(work_id))
         .and_then(|info| info.file_name)
         .unwrap_or_default();
-    skrib_format::media::media_dir(std::path::Path::new(&project), &uid, media_root, &uid)
+    (project, uid)
 }
 
 #[cfg(all(test, not(feature = "mocks")))]

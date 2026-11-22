@@ -129,6 +129,21 @@ pub fn theme_mode_of(theme: &teksilo::core::styles::Theme) -> &'static str {
 pub const IMAGE_SIZE_POLICY_KEY: &str = "editor.image_size_policy";
 /// Ask, every time, until the writer says otherwise.
 pub const IMAGE_SIZE_POLICY_DEFAULT: &str = "ask";
+/// What a file over 10 MB attached as a resource does: `"ask"` (default), `"store"` (copy
+/// it into the project) or `"link"` (remember where it is).
+///
+/// A string for the reason [`IMAGE_SIZE_POLICY_KEY`] is one: the prompt's "Don't ask
+/// again" box writes the answer given, and "ask" brings the prompt back. Settings shows
+/// it later; the key exists now so the box has somewhere to write.
+pub const RESOURCES_LARGE_FILE_KEY: &str = "resources.large_file";
+/// Ask about every large file until the writer says otherwise.
+pub const RESOURCES_LARGE_FILE_DEFAULT: &str = "ask";
+/// The projects that said "Don't ask again" to the offer to keep a large single-file
+/// project as a folder: their `Work.unique_id`s, separated by spaces.
+///
+/// App-level, never in the project: the offer is about how this writer works on this
+/// machine, and a copy of the project sent to someone else must still offer it to them.
+pub const RESOURCES_FOLDER_NOTICE_DECLINED_KEY: &str = "resources.folder_notice_declined";
 /// Whether a start with a screen reader running offers the screen-reader guide (see
 /// `shared::screen_reader_offer`). On until the offer's own "Do not show this again"
 /// box turns it off; Help ▸ Using a screen reader opens the guide either way.
@@ -717,6 +732,22 @@ pub static SETTINGS: &[SettingSpec] = &[
         doc: "What to do with a large image on insert. \"ask\" prompts once per \
               image; the prompt's \"don't ask again\" box writes \"keep\" or \
               \"downscale\" here.",
+    },
+    SettingSpec {
+        key: crate::RESOURCES_LARGE_FILE_KEY,
+        ty: "string (\"ask\" | \"store\" | \"link\")",
+        default: || val(crate::RESOURCES_LARGE_FILE_DEFAULT),
+        check: check::<String>,
+        doc: "What to do with a file over 10 MB attached as a resource. \"ask\" prompts; \
+              the prompt's \"Don't ask again\" box writes \"store\" or \"link\" here.",
+    },
+    SettingSpec {
+        key: crate::RESOURCES_FOLDER_NOTICE_DECLINED_KEY,
+        ty: "string (unique ids separated by spaces)",
+        default: || val(""),
+        check: check::<String>,
+        doc: "The projects that asked never again to be offered a switch to a folder \
+              project when their stored resources pass 100 MB.",
     },
     SettingSpec {
         key: crate::DARK_KEY,

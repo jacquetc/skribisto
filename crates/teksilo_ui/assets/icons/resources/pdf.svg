@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- A PDF: the sheet, with a printed page's heading block and lines of text. -->
+  <path d="M4 1.8h5.2L12.5 5.1V14.2H4Z"/>
+  <path d="M9.2 1.8V5.1H12.5"/>
+  <rect x="5.4" y="4.6" width="2.6" height="1.6" rx="0.3"/>
+  <path d="M5.8 8h4.9"/>
+  <path d="M5.8 10h4.9"/>
+  <path d="M5.8 12h3"/>
+</svg>

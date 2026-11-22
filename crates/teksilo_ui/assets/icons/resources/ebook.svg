@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- An e-book: a book seen from the front, its spine on the left. -->
+  <path d="M4 2.2h8.2V13.8H4.9a0.9 0.9 0 0 1 -0.9 -0.9Z"/>
+  <path d="M5.6 2.2V13.8"/>
+  <path d="M7.4 5.2h3.1"/>
+  <path d="M7.4 7.2h3.1"/>
+</svg>

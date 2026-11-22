@@ -27,6 +27,8 @@
 //!     pushed into every open editor.
 //!   * [`footnotes`] — the per-window footnotes view-model: construction, backend
 //!     wiring and the renumber-on-edit hookup.
+//!   * [`resources`] — the Resources view-model, its long operation and its pickup of
+//!     edits made in other applications.
 //!   * [`shared_view_models`] — get-or-create for the search/trash/comments view-models
 //!     the docking rail shares across builds.
 
@@ -39,6 +41,7 @@ pub(super) mod long_ops;
 pub(super) mod project_events;
 pub(super) mod prose_repair;
 pub(super) mod punctuation;
+pub(super) mod resources;
 pub(super) mod save_and_exit;
 pub(super) mod shared_view_models;
 pub(super) mod spellcheck;

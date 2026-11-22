@@ -151,6 +151,12 @@ pub enum AppIntent {
     #[name = "editor.open_item"]
     OpenItem { item_id: u64, title: String },
 
+    /// Open the resource a `resource:<uid>` link in a text names: Ctrl+click on the
+    /// link (see `resources::links::activate_link`). The uid as its hyphenated text, so
+    /// the payload is the same string the link carries.
+    #[name = "resources.open"]
+    OpenResource { uid: String },
+
     /// Open the clicked search row in the active editor pane.
     #[name = "editor.open_search_result"]
     OpenSearchResult {

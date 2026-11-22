@@ -85,7 +85,7 @@ KINDS = {
     "cut-off",
     "other",
 }
-APP_FILES = {"main.ftl", "tooltips.ftl", "tags.ftl", "templates.ftl", "story_bible.ftl"}
+APP_FILES = {"main.ftl", "tooltips.ftl", "tags.ftl", "templates.ftl", "story_bible.ftl", "resources.ftl"}
 
 # One colour per label family, so a list of issues reads at a glance.
 LABEL_COLOURS = {

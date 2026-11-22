@@ -32,7 +32,6 @@ use crate::intents::AppIntent;
 pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
     let menu_ctx = parts.app_ctx.clone();
     let export_for_menu = parts.export.clone();
-    let menu_work = parts.single_work.clone();
     let menu_work_info = parts.single_work_info.clone();
     let menu_ids = parts.ids.clone();
     let menu_autosave = parts.autosave_menu.clone();
@@ -41,12 +40,8 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
     let menu_unsaved = parts.unsaved.clone();
 
     let file_ctx = menu_ctx.clone();
-    let folder_ctx = menu_ctx.clone();
     let file_ids = menu_ids.clone();
-    let folder_ids = menu_ids.clone();
-    let folder_work = menu_work.clone();
     let save_as_file_vm = menu_save_as.clone();
-    let save_as_folder_vm = menu_save_as.clone();
     // A work is open iff its WorkInfo shape is known.
     let show_open = menu_work_info.shape().map(|s| s.is_some());
     // Bug 2: offer only the *other* shape — a zip project
@@ -152,39 +147,7 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
     .item(
         MenuEntry::new(tr!(menu_save_as_folder()))
             .visible(show_save_folder)
-            .on_activate(move |ectx| {
-                let ctx = folder_ctx.clone();
-                // Bug 1: the picked folder is the *parent* —
-                // write into a subfolder named after the Work
-                // title (sanitized), falling back to the
-                // project file stem when the title is empty.
-                let title = folder_work.title().get();
-                let raw = if title.trim().is_empty() {
-                    crate::project_stem(&ctx, &folder_ids)
-                } else {
-                    title
-                };
-                let name = crate::sanitize_folder_name(&raw);
-                let req = crate::models::dialog_start_in(
-                    ectx,
-                    crate::models::FolderPurpose::SaveAs,
-                    FileDialogRequest::pick_folder()
-                        .title(tr!(dialog_save_as_folder_title()).resolve_now()),
-                );
-                let vm = save_as_folder_vm.clone();
-                let _ = ectx.pick_folder(req, move |res, ectx2| {
-                    if let FileDialogResult::Folder(Some(path)) = res {
-                        crate::models::remember_dialog_dir(
-                            ectx2,
-                            crate::models::FolderPurpose::SaveAs,
-                            &path,
-                        );
-                        let target = path.join(&name).to_string_lossy().into_owned();
-                        // Flushes the editors first — see the sibling item.
-                        vm.begin(ectx2, target, true);
-                    }
-                });
-            }),
+            .intent("work.save_as_folder"),
     )
     // Import from… sits immediately before Export. Plume starts a new
     // work; Documents land *in* the open project — both move content
@@ -318,4 +281,42 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
             .intent("app.quit")
             .shortcut("app.quit"),
     )
+}
+
+/// Save the open project as a folder at a place the writer picks: what Work ▸ Save as
+/// folder does, as the named `work.save_as_folder` command, so the Resources dock's
+/// offer to switch a large single-file project to a folder opens the same dialog.
+///
+/// The picked folder is the *parent*: the project goes into a subfolder named after
+/// the Work's title (made safe for a folder name), or after the project file's stem
+/// when the title is empty.
+pub(crate) fn save_as_folder(
+    ectx: &mut EventContext,
+    app_ctx: &std::rc::Rc<frontend::AppContext>,
+    ids: &crate::app_ids::AppIds,
+    work: &crate::singles::SingleWork,
+    save_as: &crate::save::SaveAsViewModel,
+) {
+    let title = work.title().get();
+    let raw = if title.trim().is_empty() {
+        crate::project_stem(app_ctx, ids)
+    } else {
+        title
+    };
+    let name = crate::sanitize_folder_name(&raw);
+    let req = crate::models::dialog_start_in(
+        ectx,
+        crate::models::FolderPurpose::SaveAs,
+        FileDialogRequest::pick_folder().title(tr!(dialog_save_as_folder_title()).resolve_now()),
+    );
+    let vm = save_as.clone();
+    let _ = ectx.pick_folder(req, move |res, ectx2| {
+        if let FileDialogResult::Folder(Some(path)) = res {
+            crate::models::remember_dialog_dir(ectx2, crate::models::FolderPurpose::SaveAs, &path);
+            let target = path.join(&name).to_string_lossy().into_owned();
+            // `begin` flushes the live editor buffers into the store first: the
+            // background op is read-only, so without it the pre-edit prose is written.
+            vm.begin(ectx2, target, true);
+        }
+    });
 }

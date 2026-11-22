@@ -33,6 +33,9 @@ pub(crate) const EXPORT_START: &str = "export.start";
 /// progress is not worded) reads the project through.
 pub(crate) const PROJECT_READING: &str = "project.reading";
 pub(crate) const EXPORT_WRITING: &str = "export.writing";
+/// `resource_management::store_resource_files`, copying files attached as resources.
+pub(crate) const RESOURCES_STORING: &str = "resources.storing";
+pub(crate) const RESOURCES_STORED: &str = "resources.stored";
 const COMPLETED: &str = "completed";
 
 /// The translated label for a phase code, `Some(None)` for a code that is
@@ -48,6 +51,8 @@ fn phase_label(message: &str) -> Option<Option<LocalizedString>> {
         EXPORT_START => tr!(progress_export_start()),
         PROJECT_READING => tr!(progress_project_reading()),
         EXPORT_WRITING => tr!(progress_export_writing()),
+        RESOURCES_STORING => tr!(progress_resources_storing()),
+        RESOURCES_STORED => tr!(progress_resources_stored()),
         COMPLETED | "" => return Some(None),
         _ => return None,
     }))
@@ -159,6 +164,14 @@ mod tests {
                 "export_management/src/use_cases/export_work_uc.rs",
             ),
             (PROJECT_READING, "skrib_format/src/tree_read.rs"),
+            (
+                RESOURCES_STORING,
+                "resource_management/src/use_cases/store_resource_files_uc.rs",
+            ),
+            (
+                RESOURCES_STORED,
+                "resource_management/src/use_cases/store_resource_files_uc.rs",
+            ),
         ];
         for (code, file) in sources {
             let text =

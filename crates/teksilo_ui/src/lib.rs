@@ -182,6 +182,7 @@ pub mod panels;
 pub mod picture_viewer;
 pub mod project;
 pub mod read_signal;
+pub mod resources;
 pub mod save;
 pub mod search;
 pub mod sessions;

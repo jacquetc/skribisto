@@ -327,7 +327,7 @@ pub fn writing_column(
         // edit the words. The scheme check lives in the opener: a `.skrib` can
         // come from anywhere, and a link in one is a string someone else chose.
         .on_link_activated(|href, ctx| {
-            crate::shared::external_link::open_external_link(href, ctx);
+            crate::resources::links::activate_link(href, ctx);
         })
         .content_padding_symmetric(8.0, 12.0)
         .min_lines(min_lines)
@@ -543,6 +543,13 @@ pub fn writing_column(
             handle.insert_djot(&image.djot(&image.alt, Some((resize.width, resize.height))));
         });
     }
+    // A resource dragged from the dock and dropped on this text: a writing surface that
+    // takes writes only, and only one with a formatting registry behind it (the tests'
+    // bare columns have none). See `crate::resources::text_drop`.
+    let resource_drop = format
+        .clone()
+        .filter(|_| !read_only)
+        .map(|f| (f, editor.handle().downgrade()));
     let mut bound = TypographyBoundEditor::new(
         editor,
         typo.clone(),
@@ -569,11 +576,15 @@ pub fn writing_column(
     if let Some(f) = footnotes.clone() {
         bound = bound.with_footnotes(f, doc.clone());
     }
+    let column = crate::resources::text_drop::ResourceDropHost::new(
+        Box::new(bound.content_language(language_prop(language))),
+        resource_drop.map(|(format, handle)| (handle, format)),
+    );
     let capped = teksu!(
         MaxSize::width(column_width.get()) {
             max_width: column_width.clone()
             Expand::horizontal {
-                child: bound.content_language(language_prop(language))
+                child: column
             }
         }
     );

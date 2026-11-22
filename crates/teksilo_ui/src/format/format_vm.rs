@@ -486,6 +486,10 @@ pub struct FormatViewModel {
     /// else on this view-model — and a global command picks them up, reusing the
     /// same pipeline `Insert image…` runs.
     dropped_files: Signal<Vec<std::path::PathBuf>>,
+    /// A picture resource dropped on an editor whose writer chose to insert the picture
+    /// itself, for the command that does it. Parked here for the reason
+    /// [`Self::dropped_files`] is: see [`crate::resources::text_drop`].
+    dropped_resource: Rc<RefCell<Option<crate::resources::text_drop::DroppedResource>>>,
 
     bold: Signal<bool>,
     italic: Signal<bool>,
@@ -634,6 +638,16 @@ impl FormatViewModel {
         self.dropped_files.clone()
     }
 
+    /// Park a resource dropped on an editor for `resources.insert_dropped_picture`.
+    pub fn park_dropped_resource(&self, dropped: crate::resources::text_drop::DroppedResource) {
+        *self.dropped_resource.borrow_mut() = Some(dropped);
+    }
+
+    /// Take the resource parked by [`Self::park_dropped_resource`].
+    pub fn take_dropped_resource(&self) -> Option<crate::resources::text_drop::DroppedResource> {
+        self.dropped_resource.borrow_mut().take()
+    }
+
     /// Record a click on an inline image, or clear the record.
     pub fn set_active_image(&self, image: Option<(usize, String)>) {
         self.active_image.set(image);
@@ -651,6 +665,7 @@ impl FormatViewModel {
             surface: Signal::new(FormatSurface::None),
             active_image: Signal::new(None),
             dropped_files: Signal::new(Vec::new()),
+            dropped_resource: Rc::new(RefCell::new(None)),
             bold: Signal::new(false),
             italic: Signal::new(false),
             underline: Signal::new(false),

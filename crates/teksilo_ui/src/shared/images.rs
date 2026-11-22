@@ -198,6 +198,71 @@ pub fn store(image: &PendingImage, media_dir: &Path) -> Result<PathBuf, ImageErr
     Ok(path)
 }
 
+/// Put the picture file at `path` into `handle`'s text at `at`: examined, stored in
+/// `media_dir`, recorded as an `Asset` of the open Work unless one with the same bytes
+/// already is, then referenced. Kept at its own size: a picture already in the project
+/// (a resource) was never asked about its size the way a fresh insertion is.
+///
+/// The bytes are a copy. From here on the picture is the text's, and the file it came
+/// from can change or go without the prose losing it.
+pub fn insert_picture_file(
+    app_ctx: &frontend::AppContext,
+    ids: &crate::app_ids::AppIds,
+    media_dir: &Path,
+    handle: &teksilo::widgets::rich_text::EditorHandle,
+    at: usize,
+    path: &Path,
+    alt: &str,
+) -> Result<(), ImageError> {
+    if media_dir.as_os_str().is_empty() {
+        return Err(ImageError::NotWritten(String::new()));
+    }
+    let image = examine(path)?;
+    store(&image, media_dir)?;
+    let work_id = ids.work_id.get().unwrap_or_default();
+    if !work_has_asset(app_ctx, work_id, &image.content_hash) {
+        frontend::commands::asset_commands::create_asset(
+            app_ctx,
+            ids.stack_id.get(),
+            &frontend::asset::dtos::CreateAssetDto {
+                created_at: Default::default(),
+                updated_at: Default::default(),
+                content_hash: image.content_hash.clone(),
+                file_name: image.file_name.clone(),
+                mime_type: image.mime_type.clone(),
+                width: u64::from(image.width),
+                height: u64::from(image.height),
+                byte_size: image.bytes.len() as u64,
+                alt: String::new(),
+            },
+            work_id,
+            -1,
+        )
+        .map_err(|_| ImageError::NotWritten(media_dir.display().to_string()))?;
+    }
+    // Registered before the insertion relays out, or the first paint draws nothing.
+    handle.add_image_resource(&image.relative_path(), &image.mime_type, &image.bytes);
+    handle.select_range(at, at);
+    handle.insert_djot(&image.djot(alt, image.width, image.height));
+    Ok(())
+}
+
+/// Whether the Work `work_id` already records a picture with these bytes.
+fn work_has_asset(app_ctx: &frontend::AppContext, work_id: u64, content_hash: &str) -> bool {
+    use frontend::common::direct_access::work::WorkRelationshipField;
+    let ids = frontend::commands::work_commands::get_work_relationship(
+        app_ctx,
+        &work_id,
+        &WorkRelationshipField::Assets,
+    )
+    .unwrap_or_default();
+    frontend::commands::asset_commands::get_asset_multi(app_ctx, &ids)
+        .unwrap_or_default()
+        .into_iter()
+        .flatten()
+        .any(|a| a.content_hash == content_hash)
+}
+
 /// Supplies an editor with image bytes its document does not have.
 ///
 /// Handed to `RichTextEditor::on_image_missing`, which asks when it meets a name

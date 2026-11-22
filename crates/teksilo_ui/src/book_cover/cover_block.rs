@@ -228,6 +228,7 @@ fn viewer_entry(
             alt,
             item: None,
             file_name: (!asset.file_name.trim().is_empty()).then(|| asset.file_name.clone()),
+            file: None,
         },
         path.parent().map(Path::to_path_buf).unwrap_or_default(),
     )

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- A web page: a globe, its meridians and its equator. Not the chain link, which
+       is a link in the text. -->
+  <circle cx="8" cy="8" r="5.8"/>
+  <path d="M2.2 8h11.6"/>
+  <path d="M8 2.2c-2.2 2.4 -2.2 9.2 0 11.6"/>
+  <path d="M8 2.2c2.2 2.4 2.2 9.2 0 11.6"/>
+</svg>

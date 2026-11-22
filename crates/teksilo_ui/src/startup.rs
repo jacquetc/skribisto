@@ -241,6 +241,7 @@ pub(crate) const LOCALE_FILES: &[&str] = &[
     "tags.ftl",
     "templates.ftl",
     "story_bible.ftl",
+    "resources.ftl",
 ];
 
 /// Every locale's catalogue, compiled into the binary.
@@ -279,6 +280,7 @@ pub(crate) fn app_locales() -> &'static [(&'static str, &'static [&'static str])
             "tags.ftl",
             "templates.ftl",
             "story_bible.ftl",
+            "resources.ftl",
         ],
     )
 }

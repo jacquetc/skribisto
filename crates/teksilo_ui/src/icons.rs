@@ -14,6 +14,7 @@ pub(crate) mod find;
 pub(crate) mod format;
 pub(crate) mod gallery;
 pub(crate) mod go;
+pub(crate) mod resources;
 pub(crate) mod session;
 pub(crate) mod versions;
 pub(crate) mod viewer;

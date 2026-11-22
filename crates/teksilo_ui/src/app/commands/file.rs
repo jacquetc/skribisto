@@ -28,6 +28,17 @@ use super::CommandDeps;
 use crate::shared::shortcut_group::{ShortcutGroup, ShortcutGroupExt};
 
 pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
+    // Work ▸ Save as folder, named so a second door (the Resources dock's offer to
+    // switch a large single-file project) opens the same dialog.
+    {
+        let app_ctx = deps.app_ctx.clone();
+        let ids = deps.ids.clone();
+        let work = deps.session.single_work.clone();
+        let save_as = deps.save_as.clone();
+        ctx.register_action_global(Action::new("work.save_as_folder").on_invoke(move |_i, c| {
+            crate::shell::project_menus::work::save_as_folder(c, &app_ctx, &ids, &work, &save_as);
+        }));
+    }
     ctx.register_shortcut_global(
         Shortcut::new("work.new")
             .group(ShortcutGroup::Work)
