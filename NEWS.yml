@@ -1,5 +1,5 @@
 Version: 3.4.0
-Date: 2026-11-22
+Date: 2026-11-23
 Type: stable
 Description:
 - "Resources: attach files and web links to any item of your project, a map of the village, a photograph, the recording of an interview, a page on the web. They are listed in a new panel on the right, Resources (Ctrl+Shift+X), which shows those of the item you are on. Add files with its + button or by dropping them from your file manager, and web links with its globe button, by dropping an address from your browser, or with Ctrl+V. Each row shows the file's type, a preview for a picture, its size or its address, and says Not found when a linked file is not where it was"
