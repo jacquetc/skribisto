@@ -514,7 +514,11 @@ const MENU_MNEMONIC_SCOPES: &[(&str, &[&str])] = &[
     ),
     (
         "Format > Alignment",
-        &["menu-format-align-left", "menu-format-align-center"],
+        &[
+            "menu-format-align-left",
+            "menu-format-align-center",
+            "menu-format-align-justify",
+        ],
     ),
     (
         "Format > Lists",

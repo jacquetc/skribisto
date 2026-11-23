@@ -10,7 +10,9 @@ use teksilo::prelude::*;
 use teksilo::widgets::{FormatShortcut, MenuEntry, MenuItems};
 
 use super::{ProjectMenuParts, command, mark};
-use crate::format::{ALIGN_CENTER, ALIGN_LEFT, DIR_AUTO, DIR_LTR, DIR_RTL, FormatViewModel};
+use crate::format::{
+    ALIGN_CENTER, ALIGN_JUSTIFY, ALIGN_LEFT, DIR_AUTO, DIR_LTR, DIR_RTL, FormatViewModel,
+};
 
 /// The rows of the menu, in the order they appear.
 pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
@@ -170,6 +172,7 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
             for (idx, label) in [
                 (ALIGN_LEFT, tr!(menu_format_align_left())),
                 (ALIGN_CENTER, tr!(menu_format_align_center())),
+                (ALIGN_JUSTIFY, tr!(menu_format_align_justify())),
             ] {
                 let f = f.clone();
                 s = s.item(

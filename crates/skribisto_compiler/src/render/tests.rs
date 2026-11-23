@@ -1210,6 +1210,75 @@ fn a_real_export_gives_the_title_page_no_running_header() {
     }
 }
 
+/// A paragraph the writer justified (Format ▸ Alignment ▸ Justify) stays justified in a
+/// style that sets the book ragged: the block's own alignment overrides the style's.
+#[test]
+fn a_justified_paragraph_stays_justified_under_a_ragged_style() {
+    let g = book_with_marker("{alignment=justify}\nThe letter ran to four close pages.");
+    let mut p = preset("manuscript-shunn");
+    p.justify = false;
+    // The paragraph's own properties, from the opening tag before its text to the text.
+    let paragraph_of = |xml: &str, open: &str| -> String {
+        let text = xml
+            .find("four close pages")
+            .unwrap_or_else(|| panic!("the paragraph is written: {xml}"));
+        let start = xml[..text].rfind(open).unwrap_or(0);
+        xml[start..text].to_string()
+    };
+    for (fmt, ext, part) in [
+        (ExportFormat::Docx, "docx", "word/document.xml"),
+        (ExportFormat::Odt, "odt", "content.xml"),
+    ] {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join(format!("book.{ext}"));
+        render_to_file(
+            &req(&g, &[100, 101, 102], &p, fmt),
+            &path,
+            &|_| {},
+            &AtomicBool::new(false),
+        )
+        .unwrap_or_else(|e| panic!("{fmt:?} export failed: {e:#}"));
+        let bytes = std::fs::read(&path).unwrap();
+        let mut zip = zip::ZipArchive::new(std::io::Cursor::new(bytes)).unwrap();
+        let mut xml = String::new();
+        std::io::Read::read_to_string(&mut zip.by_name(part).unwrap(), &mut xml).unwrap();
+        match fmt {
+            // OOXML's `both`. text-document before 1.16.2 wrote docx-rs's `justified`,
+            // which is not a value the schema allows.
+            ExportFormat::Docx => {
+                let props = paragraph_of(&xml, "<w:p ");
+                assert!(props.contains("<w:jc w:val=\"both\""), "{props}");
+            }
+            // ODT names the alignment in an automatic paragraph style, not on the
+            // paragraph: the style the paragraph uses must justify.
+            _ => {
+                let props = paragraph_of(&xml, "<text:p ");
+                let style = props
+                    .split("text:style-name=\"")
+                    .nth(1)
+                    .and_then(|rest| rest.split('"').next())
+                    .unwrap_or_else(|| panic!("the paragraph names a style: {props}"));
+                let definition = xml
+                    .split(&format!("style:name=\"{style}\""))
+                    .nth(1)
+                    .and_then(|rest| rest.split("</style:style>").next())
+                    .unwrap_or_else(|| panic!("style {style} is defined: {xml}"));
+                assert!(
+                    definition.contains("fo:text-align=\"justify\""),
+                    "{style}: {definition}"
+                );
+            }
+        }
+    }
+
+    let html = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::Html)).unwrap();
+    assert_eq!(
+        html.matches("text-align: justify").count(),
+        1,
+        "the one justified paragraph, and only it: {html}"
+    );
+}
+
 /// ODT writes the preset's scene-break glyph as text, as DOCX always has, rather than
 /// replacing it with a horizontal rule: Shunn's `#` is the mark an editor expects to see.
 #[test]

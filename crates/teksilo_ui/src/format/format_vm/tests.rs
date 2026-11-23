@@ -634,8 +634,49 @@ fn heading_and_alignment_round_trip_through_the_radio_indices() {
     assert_eq!(vm.alignment().get(), ALIGN_CENTER);
     assert_eq!(editor.handle().get_alignment(), Alignment::Center);
 
+    vm.set_alignment(ALIGN_JUSTIFY);
+    assert_eq!(vm.alignment().get(), ALIGN_JUSTIFY);
+    assert_eq!(editor.handle().get_alignment(), Alignment::Justify);
+
     vm.set_alignment(ALIGN_LEFT);
     assert_eq!(vm.alignment().get(), ALIGN_LEFT);
+}
+
+#[test]
+fn exactly_one_alignment_button_is_lit() {
+    let (vm, editor) = vm_over("Hello");
+    let lit = |vm: &FormatViewModel| {
+        (
+            vm.align_left().get(),
+            vm.align_center().get(),
+            vm.align_justify().get(),
+        )
+    };
+    assert_eq!(lit(&vm), (true, false, false));
+
+    vm.set_alignment(ALIGN_JUSTIFY);
+    assert_eq!(lit(&vm), (false, false, true));
+
+    vm.set_alignment(ALIGN_CENTER);
+    assert_eq!(lit(&vm), (false, true, false));
+
+    // A justified paragraph set from elsewhere (an imported file, the undo
+    // stack) lights the button too: the mirror reads the editor, not the
+    // last command.
+    editor.handle().set_alignment(Alignment::Justify);
+    vm.sync_now();
+    assert_eq!(vm.alignment().get(), ALIGN_JUSTIFY);
+    assert_eq!(lit(&vm), (false, false, true));
+}
+
+#[test]
+fn clear_formatting_takes_a_justified_paragraph_back_to_left() {
+    let (vm, editor) = vm_over("Hello");
+    vm.set_alignment(ALIGN_JUSTIFY);
+    vm.clear_formatting();
+    assert_eq!(editor.handle().get_alignment(), Alignment::Left);
+    assert_eq!(vm.alignment().get(), ALIGN_LEFT);
+    assert!(!vm.align_justify().get());
 }
 
 #[test]
@@ -654,14 +695,15 @@ fn an_out_of_range_heading_is_refused_rather_than_clamped() {
 fn an_alignment_we_do_not_offer_lights_no_button() {
     let (vm, editor) = vm_over("Hello");
     // Djot round-trips block alignment, so an imported document can arrive
-    // justified even though Skribisto offers no way to ask for it.
-    editor.handle().set_alignment(Alignment::Justify);
+    // right-aligned even though Skribisto offers no way to ask for it.
+    editor.handle().set_alignment(Alignment::Right);
     vm.sync_now();
     assert_eq!(vm.alignment().get(), ALIGN_OTHER);
+    assert!(!vm.align_left().get() && !vm.align_center().get() && !vm.align_justify().get());
 
     // And it is not a state the user can request.
     vm.set_alignment(ALIGN_OTHER);
-    assert_eq!(editor.handle().get_alignment(), Alignment::Justify);
+    assert_eq!(editor.handle().get_alignment(), Alignment::Right);
 
     // Choosing a real alignment replaces it.
     vm.set_alignment(ALIGN_LEFT);

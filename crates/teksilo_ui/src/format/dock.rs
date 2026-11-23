@@ -42,7 +42,7 @@ use teksilo::widgets::{
     MenuItem, MenuList, Padding, PopoverIconButton, ScrollArea, TextWidget, VStack, Wrap,
 };
 
-use crate::format::{ALIGN_CENTER, ALIGN_LEFT, FormatViewModel};
+use crate::format::{ALIGN_CENTER, ALIGN_JUSTIFY, ALIGN_LEFT, FormatViewModel};
 use crate::icons::format as glyph;
 use crate::tabs::shared::editor::VisibleWhen;
 
@@ -381,6 +381,13 @@ fn controls(vm: &FormatViewModel) -> Padding {
                 vm.align_center(),
                 vm.clone(),
                 |vm| vm.set_alignment(ALIGN_CENTER),
+            ))
+            .child(toggle_button(
+                glyph::align_justify(),
+                tr!(format_align_justify()),
+                vm.align_justify(),
+                vm.clone(),
+                |vm| vm.set_alignment(ALIGN_JUSTIFY),
             ))
             .child(toggle_button(
                 glyph::direction_rtl(),

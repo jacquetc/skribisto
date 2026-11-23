@@ -69,16 +69,21 @@ use crate::shared::editor_writes::{
 pub const ALIGN_LEFT: usize = 0;
 /// Index of "align centre".
 pub const ALIGN_CENTER: usize = 1;
+/// Index of "justify".
+///
+/// Per paragraph, on top of the export style's own Justify setting: DOCX, ODT,
+/// EPUB, HTML and PDF keep a justified block justified even when the style sets
+/// the book ragged, so a writer can justify one passage (a letter, a block of
+/// verse set as prose) without justifying the whole book.
+pub const ALIGN_JUSTIFY: usize = 2;
 /// What an alignment Skribisto does not offer collapses to.
 ///
-/// Right and Justify are deliberately not on the control surface — Justify
-/// duplicates the export preset's own setting and is a typesetting decision
-/// rather than a drafting one, and Right has no manuscript use. But a document
-/// can still *carry* them: Djot round-trips block alignment, so an imported or
-/// hand-edited file may arrive justified. Collapsing those to a third index
-/// leaves no button lit, which is honest — the state is real but not one of
-/// ours — and choosing Left or Center replaces it.
-pub const ALIGN_OTHER: usize = 2;
+/// Right is deliberately not on the control surface: it has no manuscript use.
+/// But a document can still *carry* it: Djot round-trips block alignment, so an
+/// imported or hand-edited file may arrive right-aligned. Collapsing that to a
+/// fourth index leaves no button lit, which is honest — the state is real but
+/// not one of ours — and choosing Left, Center or Justify replaces it.
+pub const ALIGN_OTHER: usize = 3;
 
 /// Index of "direction follows the text" in the direction radio group.
 ///
@@ -520,14 +525,15 @@ pub struct FormatViewModel {
     line_break: Signal<bool>,
     /// `0` = normal paragraph, `1..=6` = H1..H6. Doubles as the radio index.
     heading: Signal<usize>,
-    /// [`ALIGN_LEFT`], [`ALIGN_CENTER`] or [`ALIGN_OTHER`]. The menu's radio
-    /// group binds to this directly.
+    /// [`ALIGN_LEFT`], [`ALIGN_CENTER`], [`ALIGN_JUSTIFY`] or [`ALIGN_OTHER`].
+    /// The menu's radio group binds to this directly.
     alignment: Signal<usize>,
-    /// The same value as two booleans, because `IconButton::toggle` wants a
-    /// `Signal<bool>` per button. Both false when the block carries an
+    /// The same value as three booleans, because `IconButton::toggle` wants a
+    /// `Signal<bool>` per button. All false when the block carries an
     /// alignment Skribisto does not offer — see [`ALIGN_OTHER`].
     align_left: Signal<bool>,
     align_center: Signal<bool>,
+    align_justify: Signal<bool>,
     /// [`DIR_AUTO`], [`DIR_LTR`] or [`DIR_RTL`] — the direction radio
     /// group's index.
     direction: Signal<usize>,
@@ -690,6 +696,7 @@ impl FormatViewModel {
             alignment: Signal::new(ALIGN_LEFT),
             align_left: Signal::new(true),
             align_center: Signal::new(false),
+            align_justify: Signal::new(false),
             direction: Signal::new(DIR_AUTO),
             dir_rtl: Signal::new(false),
             can_undo: Signal::new(false),
@@ -1154,6 +1161,9 @@ impl FormatViewModel {
     pub fn align_center(&self) -> Signal<bool> {
         self.align_center.clone()
     }
+    pub fn align_justify(&self) -> Signal<bool> {
+        self.align_justify.clone()
+    }
     /// Is a registered editor holding the keyboard focus **right now**?
     ///
     /// Deliberately the live answer, not [`has_caret_target`](Self::has_caret_target)'s
@@ -1418,6 +1428,7 @@ impl FormatViewModel {
         set_if_changed(&self.alignment, alignment);
         set_if_changed(&self.align_left, alignment == ALIGN_LEFT);
         set_if_changed(&self.align_center, alignment == ALIGN_CENTER);
+        set_if_changed(&self.align_justify, alignment == ALIGN_JUSTIFY);
         let direction = direction_index(handle.get_direction());
         set_if_changed(&self.direction, direction);
         set_if_changed(&self.dir_rtl, direction == DIR_RTL);
@@ -1442,6 +1453,7 @@ impl FormatViewModel {
         set_if_changed(&self.alignment, ALIGN_LEFT);
         set_if_changed(&self.align_left, true);
         set_if_changed(&self.align_center, false);
+        set_if_changed(&self.align_justify, false);
         set_if_changed(&self.direction, DIR_AUTO);
         set_if_changed(&self.dir_rtl, false);
         set_if_changed(&self.can_undo, false);
@@ -1699,12 +1711,14 @@ impl FormatViewModel {
         self.with_editor(|h| h.set_heading_level(level as u8));
     }
 
-    /// [`ALIGN_LEFT`] or [`ALIGN_CENTER`]. [`ALIGN_OTHER`] is a state a document
-    /// can be *in*, never one the user can ask for, so it is ignored here.
+    /// [`ALIGN_LEFT`], [`ALIGN_CENTER`] or [`ALIGN_JUSTIFY`]. [`ALIGN_OTHER`] is a
+    /// state a document can be *in*, never one the user can ask for, so it is
+    /// ignored here.
     pub fn set_alignment(&self, index: usize) {
         let alignment = match index {
             ALIGN_LEFT => Alignment::Left,
             ALIGN_CENTER => Alignment::Center,
+            ALIGN_JUSTIFY => Alignment::Justify,
             _ => return,
         };
         self.with_editor(|h| h.set_alignment(alignment.clone()));
@@ -1945,6 +1959,7 @@ fn alignment_index(alignment: &Alignment) -> usize {
     match alignment {
         Alignment::Left => ALIGN_LEFT,
         Alignment::Center => ALIGN_CENTER,
+        Alignment::Justify => ALIGN_JUSTIFY,
         _ => ALIGN_OTHER,
     }
 }

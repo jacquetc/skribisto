@@ -626,9 +626,10 @@ fn quoted(attributes: Option<&str>, line: &str) -> String {
 ///
 /// * **`alignment`**, only where it differs from where the paragraph starts anyway: centred,
 ///   or flush with the far edge (right in left-to-right text, left in right-to-left text).
-///   Justified text is not written: it is a typesetting choice the export style makes for
-///   the whole book, and the editor offers no control for it, so every paragraph of a
-///   justified manuscript would carry an attribute the writer could not see or remove.
+///   Justified text is not written: a document justified throughout made a typesetting
+///   choice for the whole book, which is the export style's to make. Kept, it would stamp
+///   every paragraph, and a justified paragraph stays justified in an export whose style
+///   sets the book ragged.
 /// * **`direction=rtl`**. Left to right is how a paragraph with no stated direction reads
 ///   Latin text, and writing it would stamp every paragraph of a document whose default
 ///   style names it.

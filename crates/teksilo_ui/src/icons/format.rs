@@ -82,6 +82,11 @@ pub fn align_center() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/format/align-center.svg")).icon_size(ICON_SIZE)
 }
 
+/// Justify — every line flush with both edges, for a passage set apart.
+pub fn align_justify() -> IconWidget {
+    IconWidget::from_svg_icon(res!("assets/icons/format/align-justify.svg")).icon_size(ICON_SIZE)
+}
+
 /// Right-to-left paragraph direction.
 ///
 /// A *paragraph* property, not a character one — which is why it sits
@@ -201,6 +206,7 @@ mod tests {
             ("heading", heading()),
             ("align_left", align_left()),
             ("align_center", align_center()),
+            ("align_justify", align_justify()),
             ("blockquote", blockquote()),
             ("list_bullet", list_bullet()),
             ("list_numbered", list_numbered()),
@@ -217,7 +223,7 @@ mod tests {
             ("scene_break_minor", scene_break_minor()),
             ("scene_break_major", scene_break_major()),
         ];
-        assert_eq!(icons.len(), 25, "the dock's full control set");
+        assert_eq!(icons.len(), 26, "the dock's full control set");
 
         for (name, icon) in icons {
             let mut tree = WidgetTree::new();

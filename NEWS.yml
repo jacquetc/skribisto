@@ -2,6 +2,7 @@ Version: 3.4.2
 Date: 2026-11-23
 Type: stable
 Description:
+- "Paragraphs can now be justified. Justify sits beside Align left and Center in the Format panel and in Format ▸ Alignment. A justified paragraph stays justified in DOCX, ODT, EPUB, HTML and PDF exports, even when the export style sets the book ragged, so you can justify one passage, such as a letter, without justifying the whole book"
 - "A DOCX export whose style justifies the text now marks its paragraphs justified the way Word reads it. The file used a value outside the DOCX standard, which word processors could ignore and show the text ragged"
 ---
 Version: 3.4.1
