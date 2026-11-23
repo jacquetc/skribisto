@@ -1784,8 +1784,8 @@ import-scrivener-structure-looks-like-manuscript-line = { $count ->
    *[other] { $count } carpetas de primer nivel que se quedan en las notas parecen manuscrito. Puede enviarlas al manuscrito como otros libros.
 }
 import-scrivener-structure-generic-sheet-title-line = { $count ->
-    [one] 1 entrada de la biblia narrativa aún tiene el título de una plantilla, como «Héroe». Skribisto busca ese título en su texto y, en la página En la prosa, enumera cada lugar donde aparece: renombre la entrada si esa palabra es frecuente en su libro.
-   *[other] { $count } entradas de la biblia narrativa aún tienen el título de una plantilla, como «Héroe». Skribisto busca esos títulos en su texto y, en la página En la prosa, enumera cada lugar donde aparecen: renombre las entradas si esas palabras son frecuentes en su libro.
+    [one] 1 entrada de la biblia narrativa aún tiene el título de una plantilla, como «Héroe». Skribisto busca ese título en su texto y, en la página Detalles de la entrada, sugiere cada escena que lo contiene: renombre la entrada si esa palabra es frecuente en su libro.
+   *[other] { $count } entradas de la biblia narrativa aún tienen el título de una plantilla, como «Héroe». Skribisto busca esos títulos en su texto y, en la página Detalles de cada entrada, sugiere cada escena que los contiene: renombre las entradas si esas palabras son frecuentes en su libro.
 }
 import-scrivener-structure-placeholder-title-line = { $count ->
     [one] 1 título solo nombraba su nivel y se deja en blanco: el archivador y las exportaciones lo numeran.

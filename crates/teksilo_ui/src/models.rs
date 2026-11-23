@@ -114,7 +114,8 @@ pub use note_book_choice_file::{NoteBookChoiceService, PerProjectNoteBookChoice}
 pub use note_capture_file::{MAX_RECENT_TAGS, NoteCaptureService, PerProjectNoteCapture};
 pub use note_prose_rows::{
     BookChoice, BookIndex, Declaration, NoteProseRow, book_index, books_in_work,
-    declared_rows_in_book, resolve_book_choice,
+    declared_rows_in_book, resolve_book_choice, rows_to_show, suggested_in_book,
+    viewpoint_filter_changes_something,
 };
 #[allow(unused_imports)]
 pub use numbering::{

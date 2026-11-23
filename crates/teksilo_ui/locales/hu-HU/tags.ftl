@@ -129,9 +129,18 @@ note-details-backlinks-confirm-all = Hozzáadás mindenhol a szereplőkhöz
 note-details-backlinks-confirm-all-tooltip = A bejegyzés hozzáadása minden itt látható dokumentum szereplőihez, ahol még nincs megerősítve
 note-details-untitled-document = Névtelen
 note-in-prose-mentions = { $n ->
-    [one] 1 említés
-   *[other] { $n } említés
+    [one] 1 említés a megerősített jelenetekben
+   *[other] { $n } említés a megerősített jelenetekben
 }
+note-in-prose-mentions-viewpoint = { $n ->
+    [one] 1 említés a nézőpontjából írt jelenetekben
+   *[other] { $n } említés a nézőpontjából írt jelenetekben
+}
+note-in-prose-review-suggestions = { $n ->
+    [one] 1 javasolt jelenet áttekintése a Részletek nézetben
+   *[other] { $n } javasolt jelenet áttekintése a Részletek nézetben
+}
+note-in-prose-review-suggestions-tooltip = Ennek a Könyvnek azok a jelenetei, amelyek megnevezik ezt a bejegyzést, de nincs a szereplőik között. A Részletek nézet megmutatja, mi áll mindegyikben, és ott felveheti a bejegyzést a szereplői közé
 note-in-prose-mention-at = { $current } / { $total }
 note-in-prose-mention-previous = Előző említés
 note-in-prose-mention-next = Következő említés

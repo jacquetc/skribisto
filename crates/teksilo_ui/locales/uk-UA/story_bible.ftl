@@ -39,7 +39,15 @@ note-in-prose-pov = Точка зору
 note-in-prose-cast = Дійові особи
 note-in-prose-pov-and-cast = Точка зору · Дійові особи
 note-in-prose-no-books = У цьому проєкті ще немає книги
-note-in-prose-empty-book = У цій книзі ще не позначено
+# The page lists only scenes where the writer placed the entry in the cast or the point of
+# view, never the ones the scan merely found its name in, so an empty page says so: a bare
+# "nothing here" read as a search that had failed.
+note-in-prose-empty-book = У жодній сцені цієї книги цей запис ще не вказано серед дійових осіб чи як точку зору.
+note-in-prose-empty-viewpoint = Жодну сцену цієї книги ще не розказано з точки зору цього запису.
+note-in-prose-scope = «У прозі» показує лише сцени, які ви підтвердили. Сцена, де названо цей запис, лишається пропозицією, доки ви не додасте запис до її дійових осіб на сторінці «Подробиці» або в інспекторі.
+# A switch beside the Book bar: keep only the scenes this entry narrates.
+note-in-prose-viewpoint-only = Лише сцени з його точки зору
+note-in-prose-viewpoint-only-tooltip = Показати лише сцени, розказані з точки зору цього запису, і сховати ті, де він лише з’являється
 story-bible-capture-toast = «{ $name }» додано до довідника історії
 story-bible-capture-open = Відкрити
 story-bible-capture-undo = Скасувати

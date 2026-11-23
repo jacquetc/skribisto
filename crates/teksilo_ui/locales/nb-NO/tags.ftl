@@ -144,9 +144,18 @@ note-details-backlinks-confirm-all-tooltip = Legg til denne oppføringen i perso
 note-details-untitled-document = Uten tittel
 
 note-in-prose-mentions = { $n ->
-    [one] 1 omtale
-   *[other] { $n } omtaler
+    [one] 1 omtale i de bekreftede scenene dine
+   *[other] { $n } omtaler i de bekreftede scenene dine
 }
+note-in-prose-mentions-viewpoint = { $n ->
+    [one] 1 omtale i scenene fra dens synsvinkel
+   *[other] { $n } omtaler i scenene fra dens synsvinkel
+}
+note-in-prose-review-suggestions = { $n ->
+    [one] Gå gjennom 1 foreslått scene under «Detaljer»
+   *[other] Gå gjennom { $n } foreslåtte scener under «Detaljer»
+}
+note-in-prose-review-suggestions-tooltip = Scener i denne boken som nevner denne oppføringen, men ikke har den i persongalleriet. «Detaljer» viser hva hver av dem sier, og lar deg legge oppføringen til i persongalleriet
 note-in-prose-mention-at = { $current } av { $total }
 note-in-prose-mention-previous = Forrige omtale
 note-in-prose-mention-next = Neste omtale

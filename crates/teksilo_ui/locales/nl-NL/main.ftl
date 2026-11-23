@@ -1733,8 +1733,8 @@ import-scrivener-structure-looks-like-manuscript-line = { $count ->
        *[other] { $count } mappen op het hoogste niveau die bij de notities blijven, lijken op manuscript. U kunt ze als andere boeken naar het manuscript sturen.
     }
 import-scrivener-structure-generic-sheet-title-line = { $count ->
-        [one] 1 item in de verhaalbijbel heeft nog de titel van een sjabloon, zoals “Held”. Skribisto zoekt die titel in uw tekst en toont elke plek waar die voorkomt in de weergave In proza: geef het item een andere naam als dat woord vaak voorkomt in uw boek.
-       *[other] { $count } items in de verhaalbijbel hebben nog de titel van een sjabloon, zoals “Held”. Skribisto zoekt die titels in uw tekst en toont elke plek waar ze voorkomen in de weergave In proza: geef de items een andere naam als die woorden vaak voorkomen in uw boek.
+        [one] 1 item in de verhaalbijbel heeft nog de titel van een sjabloon, zoals “Held”. Skribisto zoekt die titel in uw tekst en stelt elke scène waarin die voorkomt voor in de Details van het item: geef het item een andere naam als dat woord vaak voorkomt in uw boek.
+       *[other] { $count } items in de verhaalbijbel hebben nog de titel van een sjabloon, zoals “Held”. Skribisto zoekt die titels in uw tekst en stelt elke scène waarin ze voorkomen voor in de Details van elk item: geef de items een andere naam als die woorden vaak voorkomen in uw boek.
     }
 import-scrivener-structure-placeholder-title-line = { $count ->
         [one] 1 titel noemde alleen het niveau en wordt leeg gelaten: de ordner en de exports nummeren het item.

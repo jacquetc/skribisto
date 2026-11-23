@@ -38,7 +38,15 @@ note-in-prose-pov = Bakış açısı
 note-in-prose-cast = Kadro
 note-in-prose-pov-and-cast = Bakış açısı · Kadro
 note-in-prose-no-books = Bu projede henüz Kitap yok
-note-in-prose-empty-book = Bu Kitapta henüz belirtilmedi
+# The page lists only scenes where the writer placed the entry in the cast or the point of
+# view, never the ones the scan merely found its name in, so an empty page says so: a bare
+# "nothing here" read as a search that had failed.
+note-in-prose-empty-book = Bu Kitapta henüz kadrosunda ya da bakış açısında bu kayıt bulunan bir sahne yok.
+note-in-prose-empty-viewpoint = Bu Kitapta henüz bu kaydın bakış açısından anlatılan bir sahne yok.
+note-in-prose-scope = “Metinde” yalnızca onayladığınız sahneleri gösterir. Bu kaydın adının geçtiği bir sahne, kaydı Ayrıntılar'dan ya da Denetçi'den o sahnenin kadrosuna ekleyene dek öneri olarak kalır.
+# A switch beside the Book bar: keep only the scenes this entry narrates.
+note-in-prose-viewpoint-only = Yalnızca bakış açısı sahneleri
+note-in-prose-viewpoint-only-tooltip = Yalnızca bu kaydın bakış açısından anlatılan sahneleri gösterir, kaydın yalnızca geçtiği sahneleri gizler
 
 story-bible-capture-toast = "{ $name }" hikâye rehberine eklendi
 story-bible-capture-open = Aç

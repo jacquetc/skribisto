@@ -1921,10 +1921,10 @@ import-scrivener-structure-looks-like-manuscript-line = { $count ->
        *[other] { $count } folderu najwyższego poziomu umieszczonego w notatkach przypomina rękopis. Możesz przenieść je do rękopisu jako kolejne książki.
     }
 import-scrivener-structure-generic-sheet-title-line = { $count ->
-        [one] { $count } wpis biblii opowieści nadal ma tytuł z szablonu, np. „Bohater”. Skribisto szuka tego tytułu w Twoim tekście i wymienia każde miejsce, w którym się pojawia, w widoku „W prozie”: zmień nazwę wpisu, jeśli to słowo jest częste w Twojej książce.
-        [few] { $count } wpisy biblii opowieści nadal mają tytuły z szablonu, np. „Bohater”. Skribisto szuka tych tytułów w Twoim tekście i wymienia każde miejsce, w którym się pojawiają, w widoku „W prozie”: zmień nazwy tych wpisów, jeśli te słowa są częste w Twojej książce.
-        [many] { $count } wpisów biblii opowieści nadal ma tytuły z szablonu, np. „Bohater”. Skribisto szuka tych tytułów w Twoim tekście i wymienia każde miejsce, w którym się pojawiają, w widoku „W prozie”: zmień nazwy tych wpisów, jeśli te słowa są częste w Twojej książce.
-       *[other] { $count } wpisu biblii opowieści nadal ma tytuły z szablonu, np. „Bohater”. Skribisto szuka tych tytułów w Twoim tekście i wymienia każde miejsce, w którym się pojawiają, w widoku „W prozie”: zmień nazwy tych wpisów, jeśli te słowa są częste w Twojej książce.
+        [one] { $count } wpis biblii opowieści nadal ma tytuł z szablonu, np. „Bohater”. Skribisto szuka tego tytułu w Twoim tekście i sugeruje każdą scenę, która go zawiera, w widoku „Szczegóły” wpisu: zmień nazwę wpisu, jeśli to słowo jest częste w Twojej książce.
+        [few] { $count } wpisy biblii opowieści nadal mają tytuły z szablonu, np. „Bohater”. Skribisto szuka tych tytułów w Twoim tekście i sugeruje każdą scenę, która je zawiera, w widoku „Szczegóły” każdego wpisu: zmień nazwy tych wpisów, jeśli te słowa są częste w Twojej książce.
+        [many] { $count } wpisów biblii opowieści nadal ma tytuły z szablonu, np. „Bohater”. Skribisto szuka tych tytułów w Twoim tekście i sugeruje każdą scenę, która je zawiera, w widoku „Szczegóły” każdego wpisu: zmień nazwy tych wpisów, jeśli te słowa są częste w Twojej książce.
+       *[other] { $count } wpisu biblii opowieści nadal ma tytuły z szablonu, np. „Bohater”. Skribisto szuka tych tytułów w Twoim tekście i sugeruje każdą scenę, która je zawiera, w widoku „Szczegóły” każdego wpisu: zmień nazwy tych wpisów, jeśli te słowa są częste w Twojej książce.
     }
 import-scrivener-structure-placeholder-title-line = { $count ->
         [one] { $count } tytuł zawierał tylko nazwę swojego poziomu i zostaje pusty: numerują go segregator i eksport.

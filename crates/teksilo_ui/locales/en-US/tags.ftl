@@ -204,10 +204,24 @@ note-details-untitled-document = Untitled
 ## The In prose reading's own counter: how many times this entry is named across
 ## the rows on screen, and which of them the reader has stepped to. See
 ## `teksilo_ui::story_bible::highlight::SubjectWalk`.
+## It says where it counted: the reading shows only the scenes the writer confirmed, and a
+## bare total read as a count of the whole Book.
 note-in-prose-mentions = { $n ->
-    [one] 1 mention
-   *[other] { $n } mentions
+    [one] 1 mention in your confirmed scenes
+   *[other] { $n } mentions in your confirmed scenes
 }
+# The same count while "Viewpoint scenes only" is on.
+note-in-prose-mentions-viewpoint = { $n ->
+    [one] 1 mention in its viewpoint scenes
+   *[other] { $n } mentions in its viewpoint scenes
+}
+# A link beside the counter: the scenes of this Book that name the entry without having it
+# in their cast. They are listed on the entry's Details page (segment-note-details).
+note-in-prose-review-suggestions = { $n ->
+    [one] Review 1 suggested scene in Details
+   *[other] Review { $n } suggested scenes in Details
+}
+note-in-prose-review-suggestions-tooltip = Scenes of this Book that name this entry but do not have it in their cast. Details shows what each one says, and lets you add the entry to its cast
 note-in-prose-mention-at = { $current } of { $total }
 note-in-prose-mention-previous = Previous mention
 note-in-prose-mention-next = Next mention

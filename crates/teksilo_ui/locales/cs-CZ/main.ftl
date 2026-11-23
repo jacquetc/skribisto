@@ -1864,9 +1864,9 @@ import-scrivener-structure-looks-like-manuscript-line = { $count ->
    *[other] { $count } složek nejvyšší úrovně ponechaných v poznámkách vypadá jako rukopis. Můžete je poslat do rukopisu jako další knihy.
 }
 import-scrivener-structure-generic-sheet-title-line = { $count ->
-    [one] 1 záznam bible příběhu má stále název převzatý ze šablony, například „Hrdina“. Skribisto tento název hledá ve vašem textu a každé místo, kde se objeví, uvádí v zobrazení V próze: pokud je to ve vaší knize běžné slovo, záznam přejmenujte.
-    [few] { $count } záznamy bible příběhu mají stále názvy převzaté ze šablony, například „Hrdina“. Skribisto tyto názvy hledá ve vašem textu a každé místo, kde se objeví, uvádí v zobrazení V próze: pokud jsou to ve vaší knize běžná slova, záznamy přejmenujte.
-   *[other] { $count } záznamů bible příběhu má stále názvy převzaté ze šablony, například „Hrdina“. Skribisto tyto názvy hledá ve vašem textu a každé místo, kde se objeví, uvádí v zobrazení V próze: pokud jsou to ve vaší knize běžná slova, záznamy přejmenujte.
+    [one] 1 záznam bible příběhu má stále název převzatý ze šablony, například „Hrdina“. Skribisto tento název hledá ve vašem textu a každou scénu, která jej obsahuje, navrhuje v zobrazení Podrobnosti záznamu: pokud je to ve vaší knize běžné slovo, záznam přejmenujte.
+    [few] { $count } záznamy bible příběhu mají stále názvy převzaté ze šablony, například „Hrdina“. Skribisto tyto názvy hledá ve vašem textu a každou scénu, která je obsahuje, navrhuje v zobrazení Podrobnosti každého záznamu: pokud jsou to ve vaší knize běžná slova, záznamy přejmenujte.
+   *[other] { $count } záznamů bible příběhu má stále názvy převzaté ze šablony, například „Hrdina“. Skribisto tyto názvy hledá ve vašem textu a každou scénu, která je obsahuje, navrhuje v zobrazení Podrobnosti každého záznamu: pokud jsou to ve vaší knize běžná slova, záznamy přejmenujte.
 }
 import-scrivener-structure-placeholder-title-line = { $count ->
     [one] 1 název jen pojmenovával svou úroveň a zůstane prázdný: očíslují jej pořadač a exporty.

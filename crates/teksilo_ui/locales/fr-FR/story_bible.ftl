@@ -66,7 +66,14 @@ note-in-prose-pov = Point de vue
 note-in-prose-cast = Présence
 note-in-prose-pov-and-cast = Point de vue · Présence
 note-in-prose-no-books = Ce projet n’a pas encore de livre
-note-in-prose-empty-book = Pas encore déclarée dans ce livre
+# La page ne liste que les scènes où l’auteur a placé l’entrée dans la présence ou le point
+# de vue, jamais celles où l’analyse a seulement trouvé son nom : une page vide le dit.
+note-in-prose-empty-book = Aucune scène de ce livre ne compte encore cette entrée dans sa présence ou son point de vue.
+note-in-prose-empty-viewpoint = Aucune scène de ce livre n’est encore racontée du point de vue de cette entrée.
+note-in-prose-scope = Dans le texte ne montre que les scènes que vous avez confirmées. Une scène qui nomme cette entrée reste une suggestion tant que vous ne l’avez pas ajoutée à sa présence, dans Détails ou dans l’Inspecteur.
+# Un interrupteur à côté de la barre des livres : ne garder que les scènes que cette entrée raconte.
+note-in-prose-viewpoint-only = Scènes de son point de vue seulement
+note-in-prose-viewpoint-only-tooltip = N’afficher que les scènes racontées du point de vue de cette entrée, et masquer celles où elle apparaît seulement
 
 # The capture flow: one click from a selection to a filed note.
 story-bible-capture-toast = « { $name } » ajouté à la bible narrative

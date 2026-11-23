@@ -128,9 +128,18 @@ note-details-backlinks-confirm-all = Lägg till i alla persongallerier
 note-details-backlinks-confirm-all-tooltip = Lägg till posten i persongalleriet för alla dokument som visas här och som inte har bekräftat den ännu
 note-details-untitled-document = Namnlöst
 note-in-prose-mentions = { $n ->
-       [one] 1 omnämnande
-      *[other] { $n } omnämnanden
+       [one] 1 omnämnande i dina bekräftade scener
+      *[other] { $n } omnämnanden i dina bekräftade scener
    }
+note-in-prose-mentions-viewpoint = { $n ->
+       [one] 1 omnämnande i scener ur dess perspektiv
+      *[other] { $n } omnämnanden i scener ur dess perspektiv
+   }
+note-in-prose-review-suggestions = { $n ->
+       [one] Granska 1 föreslagen scen under Detaljer
+      *[other] Granska { $n } föreslagna scener under Detaljer
+   }
+note-in-prose-review-suggestions-tooltip = Scener i den här boken som nämner posten men inte har den i sitt persongalleri. Detaljer visar vad varje scen säger och låter dig lägga till posten i dess persongalleri
 note-in-prose-mention-at = { $current } av { $total }
 note-in-prose-mention-previous = Föregående omnämnande
 note-in-prose-mention-next = Nästa omnämnande

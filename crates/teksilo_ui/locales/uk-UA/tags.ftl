@@ -138,11 +138,27 @@ note-details-backlinks-confirm-all = Додати до дійових осіб �
 note-details-backlinks-confirm-all-tooltip = Додати цей запис до дійових осіб кожного показаного тут документа, де його ще не підтверджено
 note-details-untitled-document = Без назви
 note-in-prose-mentions = { $n ->
-    [one] { $n } згадка
-    [few] { $n } згадки
-    [many] { $n } згадок
-   *[other] { $n } згадки
+    [one] { $n } згадка в підтверджених вами сценах
+    [few] { $n } згадки в підтверджених вами сценах
+    [many] { $n } згадок у підтверджених вами сценах
+   *[other] { $n } згадки в підтверджених вами сценах
 }
+# The same count while "Viewpoint scenes only" is on.
+note-in-prose-mentions-viewpoint = { $n ->
+    [one] { $n } згадка в сценах з його точки зору
+    [few] { $n } згадки в сценах з його точки зору
+    [many] { $n } згадок у сценах з його точки зору
+   *[other] { $n } згадки в сценах з його точки зору
+}
+# A link beside the counter: the scenes of this Book that name the entry without having it
+# in their cast. They are listed on the entry's Details page (segment-note-details).
+note-in-prose-review-suggestions = { $n ->
+    [one] Переглянути { $n } запропоновану сцену на сторінці «Подробиці»
+    [few] Переглянути { $n } запропоновані сцени на сторінці «Подробиці»
+    [many] Переглянути { $n } запропонованих сцен на сторінці «Подробиці»
+   *[other] Переглянути { $n } запропонованої сцени на сторінці «Подробиці»
+}
+note-in-prose-review-suggestions-tooltip = Сцени цієї книги, де названо цей запис, але його немає серед дійових осіб. На сторінці «Подробиці» видно, що каже кожна з них, і там можна додати запис до дійових осіб сцени
 note-in-prose-mention-at = { $current } з { $total }
 note-in-prose-mention-previous = Попередня згадка
 note-in-prose-mention-next = Наступна згадка

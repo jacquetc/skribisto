@@ -35,7 +35,15 @@ note-in-prose-pov = Nézőpont
 note-in-prose-cast = Szereplők
 note-in-prose-pov-and-cast = Nézőpont · Szereplők
 note-in-prose-no-books = Ebben a projektben még nincs Könyv
-note-in-prose-empty-book = Ebben a Könyvben még nincs megadva
+# The page lists only scenes where the writer placed the entry in the cast or the point of
+# view, never the ones the scan merely found its name in, so an empty page says so: a bare
+# "nothing here" read as a search that had failed.
+note-in-prose-empty-book = Ebben a Könyvben ez a bejegyzés még egyetlen jelenetnek sem szereplője vagy nézőpontja.
+note-in-prose-empty-viewpoint = Ebben a Könyvben még egyetlen jelenet sem e bejegyzés nézőpontjából szól.
+note-in-prose-scope = Itt csak az Ön által megerősített jelenetek látszanak. Az a jelenet, amely megnevezi ezt a bejegyzést, javaslat marad, amíg fel nem veszi a bejegyzést a szereplői közé a Részletek nézetben vagy a Tulajdonságok panelen.
+# A switch beside the Book bar: keep only the scenes this entry narrates.
+note-in-prose-viewpoint-only = Csak a nézőpontjából írt jelenetek
+note-in-prose-viewpoint-only-tooltip = Csak azokat a jeleneteket mutatja, amelyek e bejegyzés nézőpontjából szólnak, és elrejti azokat, amelyekben csak megjelenik
 story-bible-capture-toast = „{ $name }” hozzáadva a történetbibliához
 story-bible-capture-open = Megnyitás
 story-bible-capture-undo = Visszavonás

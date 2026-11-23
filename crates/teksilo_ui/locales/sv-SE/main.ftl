@@ -1664,8 +1664,8 @@ import-scrivener-structure-looks-like-manuscript-line = { $count ->
       *[other] { $count } mappar på översta nivån som hamnar bland anteckningarna ser ut som manus. Du kan skicka dem till manuset som fler böcker.
    }
 import-scrivener-structure-generic-sheet-title-line = { $count ->
-       [one] 1 post i berättelsebibeln har fortfarande en titel från en mall, till exempel ”Hjälte”. Skribisto söker efter den titeln i din text och listar varje ställe där den förekommer under I prosan: byt namn på posten om ordet är vanligt i din bok.
-      *[other] { $count } poster i berättelsebibeln har fortfarande en titel från en mall, till exempel ”Hjälte”. Skribisto söker efter de titlarna i din text och listar varje ställe där de förekommer under I prosan: byt namn på posterna om orden är vanliga i din bok.
+       [one] 1 post i berättelsebibeln har fortfarande en titel från en mall, till exempel ”Hjälte”. Skribisto söker efter den titeln i din text och föreslår varje scen som innehåller den, under Detaljer för posten: byt namn på posten om ordet är vanligt i din bok.
+      *[other] { $count } poster i berättelsebibeln har fortfarande en titel från en mall, till exempel ”Hjälte”. Skribisto söker efter de titlarna i din text och föreslår varje scen som innehåller dem, under Detaljer för varje post: byt namn på posterna om orden är vanliga i din bok.
    }
 import-scrivener-structure-placeholder-title-line = { $count ->
        [one] 1 titel angav bara sin nivå och lämnas tom: pärmen och exporterna numrerar den.

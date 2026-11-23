@@ -208,10 +208,24 @@ note-details-untitled-document = Sans titre
 
 ## Le compteur de la lecture « Dans le texte » : combien de fois cette entrée est
 ## nommée dans les rangées affichées, et à laquelle la lectrice s'est déplacée.
+## Il dit où il a compté : la lecture ne montre que les scènes confirmées, et un total seul
+## se lisait comme le compte du livre entier.
 note-in-prose-mentions = { $n ->
-    [one] { $n } mention
-   *[other] { $n } mentions
+    [one] { $n } mention dans vos scènes confirmées
+   *[other] { $n } mentions dans vos scènes confirmées
 }
+# Le même compte quand « Scènes de son point de vue seulement » est activé.
+note-in-prose-mentions-viewpoint = { $n ->
+    [one] { $n } mention dans les scènes de son point de vue
+   *[other] { $n } mentions dans les scènes de son point de vue
+}
+# Un lien à côté du compteur : les scènes de ce livre qui nomment l’entrée sans l’avoir dans
+# leur présence. La page Détails de l’entrée les liste (segment-note-details).
+note-in-prose-review-suggestions = { $n ->
+    [one] Examiner { $n } scène suggérée dans Détails
+   *[other] Examiner { $n } scènes suggérées dans Détails
+}
+note-in-prose-review-suggestions-tooltip = Les scènes de ce livre qui nomment cette entrée sans l’avoir dans leur présence. Détails montre ce que chacune dit, et permet d’ajouter l’entrée à sa présence
 note-in-prose-mention-at = { $current } sur { $total }
 note-in-prose-mention-previous = Mention précédente
 note-in-prose-mention-next = Mention suivante

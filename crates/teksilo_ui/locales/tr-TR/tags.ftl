@@ -143,9 +143,21 @@ note-details-backlinks-confirm-all-tooltip = Bu kaydı, burada gösterilen ve on
 note-details-untitled-document = Adsız
 
 note-in-prose-mentions = { $n ->
-    [one] 1 anılma
-   *[other] { $n } anılma
+    [one] Onayladığınız sahnelerde 1 anılma
+   *[other] Onayladığınız sahnelerde { $n } anılma
 }
+# The same count while "Viewpoint scenes only" is on.
+note-in-prose-mentions-viewpoint = { $n ->
+    [one] Bakış açısı sahnelerinde 1 anılma
+   *[other] Bakış açısı sahnelerinde { $n } anılma
+}
+# A link beside the counter: the scenes of this Book that name the entry without having it
+# in their cast. They are listed on the entry's Details page (segment-note-details).
+note-in-prose-review-suggestions = { $n ->
+    [one] Ayrıntılar'da önerilen 1 sahneyi incele
+   *[other] Ayrıntılar'da önerilen { $n } sahneyi incele
+}
+note-in-prose-review-suggestions-tooltip = Bu Kitapta bu kaydın adının geçtiği ama kadrosunda onun bulunmadığı sahneler. Ayrıntılar her birinde ne yazdığını gösterir ve kaydı o sahnenin kadrosuna eklemenizi sağlar
 note-in-prose-mention-at = { $current } / { $total }
 note-in-prose-mention-previous = Önceki anılma
 note-in-prose-mention-next = Sonraki anılma

@@ -130,9 +130,18 @@ note-details-backlinks-confirm-all = Überall zu den Beteiligten hinzufügen
 note-details-backlinks-confirm-all-tooltip = Diesen Eintrag zu den Beteiligten aller hier angezeigten Dokumente hinzufügen, in denen er noch nicht bestätigt ist
 note-details-untitled-document = Ohne Titel
 note-in-prose-mentions = { $n ->
-    [one] 1 Erwähnung
-   *[other] { $n } Erwähnungen
+    [one] 1 Erwähnung in Ihren bestätigten Szenen
+   *[other] { $n } Erwähnungen in Ihren bestätigten Szenen
 }
+note-in-prose-mentions-viewpoint = { $n ->
+    [one] 1 Erwähnung in den Szenen aus seiner Perspektive
+   *[other] { $n } Erwähnungen in den Szenen aus seiner Perspektive
+}
+note-in-prose-review-suggestions = { $n ->
+    [one] 1 vorgeschlagene Szene unter „Details“ prüfen
+   *[other] { $n } vorgeschlagene Szenen unter „Details“ prüfen
+}
+note-in-prose-review-suggestions-tooltip = Szenen dieses Buchs, die diesen Eintrag nennen, ihn aber nicht bei den Beteiligten haben. „Details“ zeigt, was jede davon sagt, und lässt Sie den Eintrag zu ihren Beteiligten hinzufügen
 note-in-prose-mention-at = { $current } von { $total }
 note-in-prose-mention-previous = Vorherige Erwähnung
 note-in-prose-mention-next = Nächste Erwähnung

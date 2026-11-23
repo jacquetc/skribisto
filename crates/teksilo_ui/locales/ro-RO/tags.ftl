@@ -204,11 +204,27 @@ note-details-untitled-document = Fără titlu
 ## The In prose reading's own counter: how many times this entry is named across
 ## the rows on screen, and which of them the reader has stepped to. See
 ## `teksilo_ui::story_bible::highlight::SubjectWalk`.
+## It says where it counted: the reading shows only the scenes the writer confirmed, and a
+## bare total read as a count of the whole Book.
 note-in-prose-mentions = { $n ->
-       [one] O mențiune
-       [few] { $n } mențiuni
-      *[other] { $n } de mențiuni
+       [one] O mențiune în scenele dumneavoastră confirmate
+       [few] { $n } mențiuni în scenele dumneavoastră confirmate
+      *[other] { $n } de mențiuni în scenele dumneavoastră confirmate
    }
+# The same count while "Viewpoint scenes only" is on.
+note-in-prose-mentions-viewpoint = { $n ->
+    [one] O mențiune în scenele din punctul său de vedere
+    [few] { $n } mențiuni în scenele din punctul său de vedere
+   *[other] { $n } de mențiuni în scenele din punctul său de vedere
+}
+# A link beside the counter: the scenes of this Book that name the entry without having it
+# in their cast. They are listed on the entry's Details page (segment-note-details).
+note-in-prose-review-suggestions = { $n ->
+    [one] Examinează o scenă sugerată în „Detalii”
+    [few] Examinează { $n } scene sugerate în „Detalii”
+   *[other] Examinează { $n } de scene sugerate în „Detalii”
+}
+note-in-prose-review-suggestions-tooltip = Scenele din această carte care numesc această intrare, dar nu o au în distribuție. „Detalii” arată ce spune fiecare și vă permite să adăugați intrarea în distribuția ei
 note-in-prose-mention-at = { $current } din { $total }
 note-in-prose-mention-previous = Mențiunea precedentă
 note-in-prose-mention-next = Mențiunea următoare

@@ -129,9 +129,18 @@ note-details-backlinks-confirm-all = Aldoni al ĉiuj rolularoj
 note-details-backlinks-confirm-all-tooltip = Aldoni ĉi tiun eron al la rolularo de ĉiu montrata dokumento, kiu ankoraŭ ne konfirmis ĝin
 note-details-untitled-document = Sentitola
 note-in-prose-mentions = { $n ->
-    [one] 1 mencio
-   *[other] { $n } mencioj
+    [one] 1 mencio en viaj konfirmitaj scenoj
+   *[other] { $n } mencioj en viaj konfirmitaj scenoj
 }
+note-in-prose-mentions-viewpoint = { $n ->
+    [one] 1 mencio en la scenoj laŭ ĝia vidpunkto
+   *[other] { $n } mencioj en la scenoj laŭ ĝia vidpunkto
+}
+note-in-prose-review-suggestions = { $n ->
+    [one] Kontroli 1 proponitan scenon en «Detaloj»
+   *[other] Kontroli { $n } proponitajn scenojn en «Detaloj»
+}
+note-in-prose-review-suggestions-tooltip = Scenoj de ĉi tiu Libro, kiuj nomas ĉi tiun eron, sed ne havas ĝin en sia rolularo. «Detaloj» montras, kion ĉiu diras, kaj ebligas aldoni la eron al ĝia rolularo
 note-in-prose-mention-at = { $current } el { $total }
 note-in-prose-mention-previous = Antaŭa mencio
 note-in-prose-mention-next = Sekva mencio

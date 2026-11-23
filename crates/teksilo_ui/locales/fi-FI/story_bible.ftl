@@ -38,7 +38,15 @@ note-in-prose-pov = Näkökulma
 note-in-prose-cast = Esiintyjät
 note-in-prose-pov-and-cast = Näkökulma · Esiintyjät
 note-in-prose-no-books = Tässä projektissa ei ole vielä kirjaa
-note-in-prose-empty-book = Ei vielä merkitty tähän kirjaan
+# The page lists only scenes where the writer placed the entry in the cast or the point of
+# view, never the ones the scan merely found its name in, so an empty page says so: a bare
+# "nothing here" read as a search that had failed.
+note-in-prose-empty-book = Tämän kirjan minkään kohtauksen esiintyjissä tai näkökulmassa ei ole vielä tätä merkintää.
+note-in-prose-empty-viewpoint = Mitään tämän kirjan kohtausta ei ole vielä kerrottu tämän merkinnän näkökulmasta.
+note-in-prose-scope = Tekstissä-näkymä näyttää vain vahvistamasi kohtaukset. Kohtaus, jossa tämä merkintä mainitaan, pysyy ehdotuksena, kunnes lisäät merkinnän sen esiintyjiin Yksityiskohdat-näkymässä tai Ominaisuudet-paneelissa.
+# A switch beside the Book bar: keep only the scenes this entry narrates.
+note-in-prose-viewpoint-only = Vain näkökulmakohtaukset
+note-in-prose-viewpoint-only-tooltip = Näytä vain kohtaukset, jotka kerrotaan tämän merkinnän näkökulmasta, ja piilota ne, joissa se vain esiintyy
 
 story-bible-capture-toast = ”{ $name }” lisätty tarinan tietopankkiin
 story-bible-capture-open = Avaa

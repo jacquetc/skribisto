@@ -38,7 +38,11 @@ note-in-prose-pov = Synsvinkel
 note-in-prose-cast = Persongalleri
 note-in-prose-pov-and-cast = Synsvinkel · Persongalleri
 note-in-prose-no-books = Dette prosjektet har ingen bok ennå
-note-in-prose-empty-book = Ikke angitt i denne boken ennå
+note-in-prose-empty-book = Ingen scene i denne boken har denne oppføringen i persongalleriet eller som synsvinkel ennå.
+note-in-prose-empty-viewpoint = Ingen scene i denne boken er fortalt fra denne oppføringens synsvinkel ennå.
+note-in-prose-scope = «I teksten» viser bare scenene du har bekreftet. En scene som nevner denne oppføringen, forblir et forslag til du legger oppføringen til i persongalleriet for scenen, under «Detaljer» eller i inspektøren.
+note-in-prose-viewpoint-only = Bare scener fra dens synsvinkel
+note-in-prose-viewpoint-only-tooltip = Vis bare scenene som fortelles fra denne oppføringens synsvinkel, og skjul dem der den bare forekommer
 
 story-bible-capture-toast = «{ $name }» er lagt til i historiebibelen
 story-bible-capture-open = Åpne

@@ -1793,8 +1793,8 @@ import-scrivener-structure-looks-like-manuscript-line = { $count ->
    *[other] { $count } muistiinpanoihin sijoitettua ylimmän tason kansiota vaikuttaa käsikirjoitukselta. Voit siirtää ne käsikirjoitukseen muina kirjoina.
 }
 import-scrivener-structure-generic-sheet-title-line = { $count ->
-    [one] 1 tietopankin merkinnällä on yhä mallin otsikko, kuten ”Sankari”. Skribisto etsii tätä otsikkoa tekstistäsi ja luettelee Tekstissä-näkymässä jokaisen kohdan, jossa se esiintyy: nimeä merkintä uudelleen, jos sana on kirjassasi yleinen.
-   *[other] { $count } tietopankin merkinnällä on yhä mallin otsikko, kuten ”Sankari”. Skribisto etsii näitä otsikoita tekstistäsi ja luettelee Tekstissä-näkymässä jokaisen kohdan, jossa ne esiintyvät: nimeä merkinnät uudelleen, jos nämä sanat ovat kirjassasi yleisiä.
+    [one] 1 tietopankin merkinnällä on yhä mallin otsikko, kuten ”Sankari”. Skribisto etsii tätä otsikkoa tekstistäsi ja ehdottaa merkinnän Yksityiskohdat-näkymässä jokaista kohtausta, jossa se esiintyy: nimeä merkintä uudelleen, jos sana on kirjassasi yleinen.
+   *[other] { $count } tietopankin merkinnällä on yhä mallin otsikko, kuten ”Sankari”. Skribisto etsii näitä otsikoita tekstistäsi ja ehdottaa kunkin merkinnän Yksityiskohdat-näkymässä jokaista kohtausta, jossa ne esiintyvät: nimeä merkinnät uudelleen, jos nämä sanat ovat kirjassasi yleisiä.
 }
 import-scrivener-structure-placeholder-title-line = { $count ->
     [one] 1 otsikko oli pelkkä tason nimi, ja se jätetään tyhjäksi: mappi ja viennit numeroivat sen.

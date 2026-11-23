@@ -1708,8 +1708,8 @@ import-scrivener-structure-looks-like-manuscript-line = { $count ->
    *[other] { $count } mapper på øverste nivå som legges i notatene, ser ut som manus. Du kan sende dem til manuset som andre bøker.
 }
 import-scrivener-structure-generic-sheet-title-line = { $count ->
-    [one] 1 oppføring i historiebibelen har fortsatt en tittel fra en mal, for eksempel «Helt». Skribisto leter etter den tittelen i teksten din og viser hvert sted den forekommer, under «I teksten»: gi oppføringen et nytt navn hvis ordet er vanlig i boken din.
-   *[other] { $count } oppføringer i historiebibelen har fortsatt en tittel fra en mal, for eksempel «Helt». Skribisto leter etter de titlene i teksten din og viser hvert sted de forekommer, under «I teksten»: gi oppføringene nye navn hvis ordene er vanlige i boken din.
+    [one] 1 oppføring i historiebibelen har fortsatt en tittel fra en mal, for eksempel «Helt». Skribisto leter etter den tittelen i teksten din og foreslår hver scene som inneholder den, under «Detaljer» for oppføringen: gi oppføringen et nytt navn hvis ordet er vanlig i boken din.
+   *[other] { $count } oppføringer i historiebibelen har fortsatt en tittel fra en mal, for eksempel «Helt». Skribisto leter etter de titlene i teksten din og foreslår hver scene som inneholder dem, under «Detaljer» for hver oppføring: gi oppføringene nye navn hvis ordene er vanlige i boken din.
 }
 import-scrivener-structure-placeholder-title-line = { $count ->
     [one] 1 tittel navnga bare nivået sitt og blir stående tom: permen og eksportene nummererer den.

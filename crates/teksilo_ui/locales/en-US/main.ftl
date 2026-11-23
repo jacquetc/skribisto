@@ -2036,11 +2036,11 @@ import-scrivener-structure-looks-like-manuscript-line = { $count ->
     [one] 1 top-level folder kept in the notes reads like manuscript. You can send it to the manuscript as another book.
    *[other] { $count } top-level folders kept in the notes read like manuscript. You can send them to the manuscript as other books.
 }
-# “In prose” is the page of a story bible entry that lists where the text names it
-# (segment-note-in-prose): use your translation of it. “Hero” is an example: translate it.
+# “Details” is the page of a story bible entry that suggests the scenes naming it
+# (segment-note-details): use your translation of it. “Hero” is an example: translate it.
 import-scrivener-structure-generic-sheet-title-line = { $count ->
-    [one] 1 story bible entry still has a template’s title, such as “Hero”. Skribisto looks for that title in your text and lists every place it appears under In prose: rename the entry if that word is common in your book.
-   *[other] { $count } story bible entries still have a template’s title, such as “Hero”. Skribisto looks for those titles in your text and lists every place they appear under In prose: rename the entries if those words are common in your book.
+    [one] 1 story bible entry still has a template’s title, such as “Hero”. Skribisto looks for that title in your text and suggests every scene that contains it, in the entry’s Details: rename the entry if that word is common in your book.
+   *[other] { $count } story bible entries still have a template’s title, such as “Hero”. Skribisto looks for those titles in your text and suggests every scene that contains them, in each entry’s Details: rename the entries if those words are common in your book.
 }
 import-scrivener-structure-placeholder-title-line = { $count ->
     [one] 1 title only named its level and is left blank: the binder and exports number it.

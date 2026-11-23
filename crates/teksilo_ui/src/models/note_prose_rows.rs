@@ -81,6 +81,54 @@ impl Declaration {
             (false, false) => None,
         }
     }
+
+    /// Whether the row is told from this note's point of view, whatever else it is.
+    pub fn is_point_of_view(self) -> bool {
+        matches!(self, Self::PointOfView | Self::Both)
+    }
+}
+
+/// Whether "Viewpoint scenes only" would change anything on a Book's reading: some of its
+/// rows are told from this note's point of view and some are not.
+///
+/// With only one kind on screen the switch has a single answer (the same rows, or none at
+/// all), and a control with one answer is chrome the writer has to read past. The caller
+/// still shows it while it is on, so a writer who moves to a Book where this would hide it
+/// can turn it back off.
+pub fn viewpoint_filter_changes_something(rows: &[NoteProseRow]) -> bool {
+    let told = rows.iter().any(|r| r.declaration.is_point_of_view());
+    let not_told = rows.iter().any(|r| !r.declaration.is_point_of_view());
+    told && not_told
+}
+
+/// The rows a reading shows: every declared row, or only those told from this note's
+/// point of view.
+pub fn rows_to_show(rows: Vec<NoteProseRow>, viewpoint_only: bool) -> Vec<NoteProseRow> {
+    if viewpoint_only {
+        rows.into_iter()
+            .filter(|r| r.declaration.is_point_of_view())
+            .collect()
+    } else {
+        rows
+    }
+}
+
+/// How many documents of one Book name this note without the writer having confirmed it
+/// there: the suggestions its Details page offers to add to a cast.
+///
+/// The same rule as that page's "Add to every cast": a confirmed cast pin is not a
+/// suggestion, and neither is a declared point of view (`set_point_of_view` writes the cast
+/// with it). `in_book` is the set of rows in the Book on screen, from [`book_index`].
+pub fn suggested_in_book(
+    backlinks: &[crate::mentions::MentionRow],
+    in_book: &std::collections::HashSet<u64>,
+) -> usize {
+    backlinks
+        .iter()
+        .filter(|r| !r.is_confirmed && !r.is_point_of_view && in_book.contains(&r.owner_id))
+        .map(|r| r.owner_id)
+        .collect::<std::collections::HashSet<_>>()
+        .len()
 }
 
 /// One row of a note's "In prose" stream: which manuscript item it is, how it is
@@ -320,6 +368,109 @@ mod tests {
     #[test]
     fn a_declaration_for_a_different_note_is_not_this_notes_declaration() {
         assert_eq!(Declaration::of(&dto_with(vec![9], vec![9]), 7), None);
+    }
+
+    // ---- "Viewpoint scenes only", pure, no backend ----
+
+    fn declared(item_id: u64, declaration: Declaration) -> NoteProseRow {
+        NoteProseRow {
+            item_id,
+            role: BinderItemRole::Item,
+            sub_role: BinderItemSubRole::Scene,
+            title: String::new(),
+            number: None,
+            fallback_label: None,
+            declaration,
+        }
+    }
+
+    /// A scene this entry narrates while also being in its cast is one it narrates: the
+    /// ordinary case, since setting a point of view writes the cast with it.
+    #[test]
+    fn a_row_told_from_the_notes_view_is_a_viewpoint_row_whatever_else_it_is() {
+        assert!(Declaration::PointOfView.is_point_of_view());
+        assert!(Declaration::Both.is_point_of_view());
+        assert!(!Declaration::Cast.is_point_of_view());
+    }
+
+    #[test]
+    fn the_viewpoint_filter_keeps_the_narrated_rows_in_manuscript_order() {
+        let rows = vec![
+            declared(1, Declaration::Cast),
+            declared(2, Declaration::Both),
+            declared(3, Declaration::Cast),
+            declared(4, Declaration::PointOfView),
+        ];
+        let ids = |rows: Vec<NoteProseRow>| rows.iter().map(|r| r.item_id).collect::<Vec<_>>();
+        assert_eq!(ids(rows_to_show(rows.clone(), true)), vec![2, 4]);
+        assert_eq!(
+            ids(rows_to_show(rows, false)),
+            vec![1, 2, 3, 4],
+            "off, every declared row"
+        );
+    }
+
+    /// Offered only when the two answers differ. A Book this entry only appears in, or
+    /// only narrates, gives the same page (or an empty one) either way.
+    #[test]
+    fn the_viewpoint_filter_is_offered_only_when_it_would_change_the_page() {
+        let mixed = [
+            declared(1, Declaration::Cast),
+            declared(2, Declaration::Both),
+        ];
+        assert!(viewpoint_filter_changes_something(&mixed));
+        let cast_only = [
+            declared(1, Declaration::Cast),
+            declared(2, Declaration::Cast),
+        ];
+        assert!(!viewpoint_filter_changes_something(&cast_only));
+        let narrated_only = [
+            declared(1, Declaration::PointOfView),
+            declared(2, Declaration::Both),
+        ];
+        assert!(!viewpoint_filter_changes_something(&narrated_only));
+        assert!(!viewpoint_filter_changes_something(&[]));
+    }
+
+    // ---- `suggested_in_book`, pure, no backend ----
+
+    fn mention(
+        owner_id: u64,
+        is_confirmed: bool,
+        is_point_of_view: bool,
+    ) -> crate::mentions::MentionRow {
+        crate::mentions::MentionRow {
+            owner_id,
+            target_id: 7,
+            title: "Devon".into(),
+            matched_names: vec!["Devon".into()],
+            is_title_match: true,
+            hit_count: 1,
+            is_confirmed,
+            is_point_of_view,
+            evidence: String::new(),
+        }
+    }
+
+    /// The suggestions Details offers to confirm, counted in one Book: a scan hit with no
+    /// pin. A cast pin is already on the In prose page, a declared point of view is too,
+    /// and a hit in another Book is not this Book's to suggest.
+    #[test]
+    fn a_suggestion_is_an_unconfirmed_hit_in_the_book_on_screen() {
+        let in_book: std::collections::HashSet<u64> = [10, 11, 12, 13].into_iter().collect();
+        let backlinks = [
+            mention(10, false, false),
+            mention(11, true, false),
+            mention(12, false, true),
+            mention(13, false, false),
+            mention(99, false, false),
+        ];
+        assert_eq!(suggested_in_book(&backlinks, &in_book), 2);
+        assert_eq!(
+            suggested_in_book(&backlinks, &std::collections::HashSet::new()),
+            0,
+            "no Book on screen, nothing to suggest in it"
+        );
     }
 
     // ---- `resolve_book_choice`, pure, no backend ----

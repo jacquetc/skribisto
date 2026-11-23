@@ -68,7 +68,15 @@ note-in-prose-pov = Punct de vedere
 note-in-prose-cast = Distribuție
 note-in-prose-pov-and-cast = Punct de vedere · Distribuție
 note-in-prose-no-books = Acest proiect nu are încă nicio carte
-note-in-prose-empty-book = Încă nu este declarată în această carte
+# The page lists only scenes where the writer placed the entry in the cast or the point of
+# view, never the ones the scan merely found its name in, so an empty page says so: a bare
+# "nothing here" read as a search that had failed.
+note-in-prose-empty-book = Nicio scenă din această carte nu are încă această intrare în distribuție sau ca punct de vedere.
+note-in-prose-empty-viewpoint = Nicio scenă din această carte nu este încă narată din punctul de vedere al acestei intrări.
+note-in-prose-scope = „În proză” arată doar scenele pe care le-ați confirmat. O scenă care numește această intrare rămâne o sugestie până când adăugați intrarea în distribuția ei, în „Detalii” sau în Inspector.
+# A switch beside the Book bar: keep only the scenes this entry narrates.
+note-in-prose-viewpoint-only = Doar scenele din punctul său de vedere
+note-in-prose-viewpoint-only-tooltip = Arată doar scenele narate din punctul de vedere al acestei intrări și ascunde-le pe cele în care doar apare
 
 # The capture flow: one click from a selection to a filed note.
 story-bible-capture-toast = „{ $name }” a fost adăugat în biblia poveștii

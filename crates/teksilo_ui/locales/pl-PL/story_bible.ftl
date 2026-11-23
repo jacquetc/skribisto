@@ -42,7 +42,15 @@ note-in-prose-pov = Punkt widzenia
 note-in-prose-cast = Obsada
 note-in-prose-pov-and-cast = Punkt widzenia · Obsada
 note-in-prose-no-books = Ten projekt nie ma jeszcze książki
-note-in-prose-empty-book = W tej książce jeszcze nie zadeklarowano obecności
+# The page lists only scenes where the writer placed the entry in the cast or the point of
+# view, never the ones the scan merely found its name in, so an empty page says so: a bare
+# "nothing here" read as a search that had failed.
+note-in-prose-empty-book = Żadna scena w tej książce nie ma jeszcze tego wpisu w obsadzie ani w punkcie widzenia.
+note-in-prose-empty-viewpoint = Żadna scena w tej książce nie jest jeszcze opowiedziana z punktu widzenia tego wpisu.
+note-in-prose-scope = Widok „W prozie” pokazuje tylko sceny potwierdzone przez Ciebie. Scena, która wymienia ten wpis, pozostaje sugestią, dopóki nie dodasz wpisu do jej obsady w widoku „Szczegóły” lub w inspektorze.
+# A switch beside the Book bar: keep only the scenes this entry narrates.
+note-in-prose-viewpoint-only = Tylko sceny z jego punktu widzenia
+note-in-prose-viewpoint-only-tooltip = Pokaż tylko sceny opowiedziane z punktu widzenia tego wpisu i ukryj te, w których tylko się pojawia
 
 story-bible-capture-toast = Dodano „{ $name }” do biblii opowieści
 story-bible-capture-open = Otwórz

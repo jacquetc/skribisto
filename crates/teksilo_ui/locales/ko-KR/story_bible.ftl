@@ -27,7 +27,15 @@ note-in-prose-pov = 시점
 note-in-prose-cast = 등장인물
 note-in-prose-pov-and-cast = 시점 · 등장인물
 note-in-prose-no-books = 이 프로젝트에는 아직 책이 없습니다
-note-in-prose-empty-book = 아직 이 책에서 등장하도록 지정되지 않음
+# The page lists only scenes where the writer placed the entry in the cast or the point of
+# view, never the ones the scan merely found its name in, so an empty page says so: a bare
+# "nothing here" read as a search that had failed.
+note-in-prose-empty-book = 아직 이 책에는 이 항목을 등장인물이나 시점에 넣은 장면이 없습니다.
+note-in-prose-empty-viewpoint = 아직 이 책에는 이 항목의 시점으로 서술된 장면이 없습니다.
+note-in-prose-scope = ‘본문 내’에는 확인한 장면만 표시됩니다. 이 항목의 이름이 나오는 장면은 ‘세부 정보’나 속성 패널에서 등장인물에 이 항목을 추가할 때까지 제안으로 남습니다.
+# A switch beside the Book bar: keep only the scenes this entry narrates.
+note-in-prose-viewpoint-only = 시점 장면만
+note-in-prose-viewpoint-only-tooltip = 이 항목의 시점으로 서술된 장면만 표시하고, 등장하기만 하는 장면은 숨깁니다
 story-bible-capture-toast = "{ $name }" 설정집에 추가됨
 story-bible-capture-open = 열기
 story-bible-capture-undo = 실행 취소

@@ -152,11 +152,27 @@ note-details-backlinks-confirm-all-tooltip = Dodaj ten wpis do obsady każdego d
 note-details-untitled-document = Bez tytułu
 
 note-in-prose-mentions = { $n ->
-        [one] { $n } wzmianka
-        [few] { $n } wzmianki
-        [many] { $n } wzmianek
-       *[other] { $n } wzmianki
+        [one] { $n } wzmianka w potwierdzonych scenach
+        [few] { $n } wzmianki w potwierdzonych scenach
+        [many] { $n } wzmianek w potwierdzonych scenach
+       *[other] { $n } wzmianki w potwierdzonych scenach
     }
+# The same count while "Viewpoint scenes only" is on.
+note-in-prose-mentions-viewpoint = { $n ->
+        [one] { $n } wzmianka w scenach z jego punktu widzenia
+        [few] { $n } wzmianki w scenach z jego punktu widzenia
+        [many] { $n } wzmianek w scenach z jego punktu widzenia
+       *[other] { $n } wzmianki w scenach z jego punktu widzenia
+    }
+# A link beside the counter: the scenes of this Book that name the entry without having it
+# in their cast. They are listed on the entry's Details page (segment-note-details).
+note-in-prose-review-suggestions = { $n ->
+        [one] Przejrzyj { $n } sugerowaną scenę w widoku „Szczegóły”
+        [few] Przejrzyj { $n } sugerowane sceny w widoku „Szczegóły”
+        [many] Przejrzyj { $n } sugerowanych scen w widoku „Szczegóły”
+       *[other] Przejrzyj { $n } sugerowanej sceny w widoku „Szczegóły”
+    }
+note-in-prose-review-suggestions-tooltip = Sceny tej książki, które wymieniają ten wpis, ale nie mają go w obsadzie. Widok „Szczegóły” pokazuje, co mówi każda z nich, i pozwala dodać wpis do jej obsady
 note-in-prose-mention-at = { $current } z { $total }
 note-in-prose-mention-previous = Poprzednia wzmianka
 note-in-prose-mention-next = Następna wzmianka

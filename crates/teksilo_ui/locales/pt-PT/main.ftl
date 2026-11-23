@@ -1734,8 +1734,8 @@ import-scrivener-structure-looks-like-manuscript-line = { $count ->
    *[other] { $count } pastas de nível superior mantidas nas notas parecem manuscrito. Pode enviá-las para o manuscrito como outros livros.
 }
 import-scrivener-structure-generic-sheet-title-line = { $count ->
-    [one] 1 entrada da bíblia da história ainda tem o título de um modelo, como «Herói». O Skribisto procura esse título no seu texto e lista, na página Em prosa, cada sítio onde ele aparece: mude o nome da entrada se essa palavra for comum no seu livro.
-   *[other] { $count } entradas da bíblia da história ainda têm o título de um modelo, como «Herói». O Skribisto procura esses títulos no seu texto e lista, na página Em prosa, cada sítio onde eles aparecem: mude o nome das entradas se essas palavras forem comuns no seu livro.
+    [one] 1 entrada da bíblia da história ainda tem o título de um modelo, como «Herói». O Skribisto procura esse título no seu texto e sugere, na página Detalhes da entrada, cada cena que o contém: mude o nome da entrada se essa palavra for comum no seu livro.
+   *[other] { $count } entradas da bíblia da história ainda têm o título de um modelo, como «Herói». O Skribisto procura esses títulos no seu texto e sugere, na página Detalhes de cada entrada, cada cena que os contém: mude o nome das entradas se essas palavras forem comuns no seu livro.
 }
 import-scrivener-structure-placeholder-title-line = { $count ->
     [one] 1 título apenas nomeava o seu nível e é deixado em branco: o arquivador e as exportações dão-lhe um número.

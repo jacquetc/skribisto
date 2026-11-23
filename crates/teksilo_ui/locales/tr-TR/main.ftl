@@ -1703,8 +1703,8 @@ import-scrivener-structure-looks-like-manuscript-line = { $count ->
    *[other] Notlarda tutulan { $count } en üst düzey klasör el yazmasına benziyor. Onları başka kitaplar olarak el yazmasına gönderebilirsiniz.
 }
 import-scrivener-structure-generic-sheet-title-line = { $count ->
-    [one] 1 hikâye rehberi kaydı hâlâ “Kahraman” gibi bir şablon başlığı taşıyor. Skribisto bu başlığı metninizde arar ve geçtiği her yeri “Metinde” altında listeler: bu sözcük kitabınızda sık geçiyorsa kaydı yeniden adlandırın.
-   *[other] { $count } hikâye rehberi kaydı hâlâ “Kahraman” gibi bir şablon başlığı taşıyor. Skribisto bu başlıkları metninizde arar ve geçtikleri her yeri “Metinde” altında listeler: bu sözcükler kitabınızda sık geçiyorsa kayıtları yeniden adlandırın.
+    [one] 1 hikâye rehberi kaydı hâlâ “Kahraman” gibi bir şablon başlığı taşıyor. Skribisto bu başlığı metninizde arar ve onu içeren her sahneyi kaydın “Ayrıntılar” sayfasında önerir: bu sözcük kitabınızda sık geçiyorsa kaydı yeniden adlandırın.
+   *[other] { $count } hikâye rehberi kaydı hâlâ “Kahraman” gibi bir şablon başlığı taşıyor. Skribisto bu başlıkları metninizde arar ve onları içeren her sahneyi her kaydın “Ayrıntılar” sayfasında önerir: bu sözcükler kitabınızda sık geçiyorsa kayıtları yeniden adlandırın.
 }
 import-scrivener-structure-placeholder-title-line = { $count ->
     [one] 1 başlık yalnızca kendi düzeyini adlandırıyordu ve boş bırakıldı: dizin ve dışa aktarmalar onu numaralandırır.

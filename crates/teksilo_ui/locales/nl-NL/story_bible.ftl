@@ -38,7 +38,11 @@ note-in-prose-pov = Vertelperspectief
 note-in-prose-cast = Rolbezetting
 note-in-prose-pov-and-cast = Vertelperspectief · Rolbezetting
 note-in-prose-no-books = Dit project heeft nog geen boek
-note-in-prose-empty-book = Nog niet aangegeven in dit boek
+note-in-prose-empty-book = Nog geen scène in dit boek heeft dit item in de rolbezetting of als vertelperspectief.
+note-in-prose-empty-viewpoint = Nog geen scène in dit boek wordt verteld vanuit het perspectief van dit item.
+note-in-prose-scope = In proza toont alleen de scènes die u hebt bevestigd. Een scène die dit item noemt, blijft een suggestie tot u het item aan de rolbezetting ervan toevoegt, in Details of in de Inspector.
+note-in-prose-viewpoint-only = Alleen scènes vanuit zijn perspectief
+note-in-prose-viewpoint-only-tooltip = Alleen de scènes tonen die vanuit het perspectief van dit item worden verteld, en de scènes verbergen waarin het alleen voorkomt
 
 story-bible-capture-toast = “{ $name }” toegevoegd aan de verhaalbijbel
 story-bible-capture-open = Openen

@@ -2,6 +2,9 @@ Version: 3.4.1
 Date: 2026-11-23
 Type: stable
 Description:
+- "A story bible entry's In prose page now says what it shows. Its counter reads “206 mentions in your confirmed scenes”, an empty page explains that only the scenes where you placed the entry in the cast or the point of view appear there, and a link, “Review 3 suggested scenes in Details”, opens the scenes of that Book that name the entry without having it in their cast. It used to say only “Not declared in this Book yet”, which read like a search that had found nothing"
+- "In prose has a new switch, Viewpoint scenes only, which keeps the scenes told from the entry's point of view and sets aside those it only appears in. It shows when a Book holds both kinds"
+- "After importing from Scrivener, the note about entries that still have a template's title, such as “Hero”, now says that the scenes naming them are suggested in each entry's Details. It used to say they were all listed under In prose, which only shows confirmed scenes"
 - "In the Starforgers example, every chapter has its own synopsis, cast and point of view again. They had slipped five rows: Chapter 1 showed the synopsis and cast of Chapter 6, and the copyright and dedication pages carried those of the Prologue and Chapter 1"
 - "When the search or the tag and status filters hide every picture of a folder, the Gallery now says No images match these filters and offers Clear the filters, which clears them in the Overview too. It used to say No images here yet, as if the folder had none"
 - "An empty Gallery offers Add images…, and takes images dropped from your file manager. They become resources of the folder and appear in its Gallery at once"

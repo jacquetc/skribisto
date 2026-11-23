@@ -66,7 +66,15 @@ note-in-prose-pov = Point of view
 note-in-prose-cast = Cast
 note-in-prose-pov-and-cast = Point of view · Cast
 note-in-prose-no-books = This project has no Book yet
-note-in-prose-empty-book = Not declared in this Book yet
+# The page lists only scenes where the writer placed the entry in the cast or the point of
+# view, never the ones the scan merely found its name in, so an empty page says so: a bare
+# "nothing here" read as a search that had failed.
+note-in-prose-empty-book = No scene in this Book has this entry in its cast or point of view yet.
+note-in-prose-empty-viewpoint = No scene in this Book is told from this entry’s point of view yet.
+note-in-prose-scope = In prose shows only the scenes you confirmed. A scene that names this entry stays a suggestion until you add the entry to its cast, in Details or in the Inspector.
+# A switch beside the Book bar: keep only the scenes this entry narrates.
+note-in-prose-viewpoint-only = Viewpoint scenes only
+note-in-prose-viewpoint-only-tooltip = Show only the scenes told from this entry’s point of view, and hide those it only appears in
 
 # The capture flow: one click from a selection to a filed note.
 story-bible-capture-toast = "{ $name }" added to the story bible

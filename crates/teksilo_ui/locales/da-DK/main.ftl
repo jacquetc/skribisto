@@ -1955,8 +1955,8 @@ import-scrivener-structure-looks-like-manuscript-line = { $count ->
    *[other] { $count } mapper på øverste niveau, der placeres i noterne, ligner manuskript. Du kan sende dem til manuskriptet som flere bøger.
 }
 import-scrivener-structure-generic-sheet-title-line = { $count ->
-    [one] 1 opslag i historiebiblen har stadig en skabelons titel, f.eks. »Helt«. Skribisto leder efter den titel i din tekst og viser hvert sted, hvor den forekommer, under »I teksten«: omdøb opslaget, hvis ordet er almindeligt i din bog.
-   *[other] { $count } opslag i historiebiblen har stadig en skabelons titel, f.eks. »Helt«. Skribisto leder efter de titler i din tekst og viser hvert sted, hvor de forekommer, under »I teksten«: omdøb opslagene, hvis ordene er almindelige i din bog.
+    [one] 1 opslag i historiebiblen har stadig en skabelons titel, f.eks. »Helt«. Skribisto leder efter den titel i din tekst og foreslår hver scene, der indeholder den, under opslagets »Detaljer«: omdøb opslaget, hvis ordet er almindeligt i din bog.
+   *[other] { $count } opslag i historiebiblen har stadig en skabelons titel, f.eks. »Helt«. Skribisto leder efter de titler i din tekst og foreslår hver scene, der indeholder dem, under hvert opslags »Detaljer«: omdøb opslagene, hvis ordene er almindelige i din bog.
 }
 import-scrivener-structure-placeholder-title-line = { $count ->
     [one] 1 titel navngav kun sit niveau og efterlades tom: ringbindet og eksporterne nummererer den.

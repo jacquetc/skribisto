@@ -39,7 +39,15 @@ note-in-prose-pov = Úhel pohledu
 note-in-prose-cast = Postavy
 note-in-prose-pov-and-cast = Úhel pohledu · Postavy
 note-in-prose-no-books = Tento projekt zatím nemá žádnou knihu
-note-in-prose-empty-book = V této knize zatím není uvedeno
+# The page lists only scenes where the writer placed the entry in the cast or the point of
+# view, never the ones the scan merely found its name in, so an empty page says so: a bare
+# "nothing here" read as a search that had failed.
+note-in-prose-empty-book = Žádná scéna v této knize zatím nemá tento záznam mezi postavami ani jako úhel pohledu.
+note-in-prose-empty-viewpoint = Žádná scéna v této knize zatím není vyprávěna z úhlu pohledu tohoto záznamu.
+note-in-prose-scope = Zobrazení V próze ukazuje jen scény, které jste potvrdili. Scéna, která tento záznam zmiňuje, zůstává návrhem, dokud záznam nepřidáte mezi její postavy, v zobrazení Podrobnosti nebo v inspektoru.
+# A switch beside the Book bar: keep only the scenes this entry narrates.
+note-in-prose-viewpoint-only = Jen scény z jeho úhlu pohledu
+note-in-prose-viewpoint-only-tooltip = Zobrazí jen scény vyprávěné z úhlu pohledu tohoto záznamu a skryje ty, ve kterých se jen objevuje
 
 story-bible-capture-toast = „{ $name }“ bylo přidáno do bible příběhu
 story-bible-capture-open = Otevřít

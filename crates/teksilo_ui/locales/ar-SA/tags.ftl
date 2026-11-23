@@ -145,13 +145,33 @@ note-details-backlinks-confirm-all = إضافة إلى الحاضرين في ك�
 note-details-backlinks-confirm-all-tooltip = إضافة هذا المدخل إلى الحاضرين في كل مستند معروض هنا لم يؤكده بعد
 note-details-untitled-document = بلا عنوان
 note-in-prose-mentions = { $n ->
-    [zero] لا إشارات
-    [one] إشارة واحدة
-    [two] إشارتان
-    [few] { $n } إشارات
-    [many] { $n } إشارة
-   *[other] { $n } إشارة
+    [zero] لا إشارات في مشاهدك المؤكدة
+    [one] إشارة واحدة في مشاهدك المؤكدة
+    [two] إشارتان في مشاهدك المؤكدة
+    [few] { $n } إشارات في مشاهدك المؤكدة
+    [many] { $n } إشارة في مشاهدك المؤكدة
+   *[other] { $n } إشارة في مشاهدك المؤكدة
 }
+# The same count while "Viewpoint scenes only" is on.
+note-in-prose-mentions-viewpoint = { $n ->
+    [zero] لا إشارات في مشاهد وجهة نظره
+    [one] إشارة واحدة في مشاهد وجهة نظره
+    [two] إشارتان في مشاهد وجهة نظره
+    [few] { $n } إشارات في مشاهد وجهة نظره
+    [many] { $n } إشارة في مشاهد وجهة نظره
+   *[other] { $n } إشارة في مشاهد وجهة نظره
+}
+# A link beside the counter: the scenes of this Book that name the entry without having it
+# in their cast. They are listed on the entry's Details page (segment-note-details).
+note-in-prose-review-suggestions = { $n ->
+    [zero] لا مشاهد مقترحة للمراجعة في التفاصيل
+    [one] مراجعة مشهد مقترح واحد في التفاصيل
+    [two] مراجعة مشهدين مقترحين في التفاصيل
+    [few] مراجعة { $n } مشاهد مقترحة في التفاصيل
+    [many] مراجعة { $n } مشهدًا مقترحًا في التفاصيل
+   *[other] مراجعة { $n } مشهد مقترح في التفاصيل
+}
+note-in-prose-review-suggestions-tooltip = مشاهد من هذا الكتاب تذكر هذا المدخل لكنه ليس بين الحاضرين فيها. تعرض «التفاصيل» ما يقوله كل منها، وتتيح لك إضافة المدخل إلى الحاضرين فيه
 note-in-prose-mention-at = { $current } من { $total }
 note-in-prose-mention-previous = الإشارة السابقة
 note-in-prose-mention-next = الإشارة التالية

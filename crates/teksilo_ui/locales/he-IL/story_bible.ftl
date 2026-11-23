@@ -38,7 +38,15 @@ note-in-prose-pov = נקודת מבט
 note-in-prose-cast = צוות הדמויות
 note-in-prose-pov-and-cast = נקודת מבט · צוות הדמויות
 note-in-prose-no-books = לפרויקט הזה עדיין אין ספר
-note-in-prose-empty-book = עדיין לא הוצהר בספר הזה
+# The page lists only scenes where the writer placed the entry in the cast or the point of
+# view, never the ones the scan merely found its name in, so an empty page says so: a bare
+# "nothing here" read as a search that had failed.
+note-in-prose-empty-book = עדיין אין בספר הזה סצנה שהרשומה הזו נמצאת בצוות הדמויות או בנקודת המבט שלה.
+note-in-prose-empty-viewpoint = עדיין אין בספר הזה סצנה שמסופרת מנקודת המבט של הרשומה הזו.
+note-in-prose-scope = הדף "בטקסט" מציג רק את הסצנות שאישרתם. סצנה שמזכירה את הרשומה הזו נשארת הצעה עד שתוסיפו את הרשומה לצוות הדמויות שלה, ב"פרטים" או בחלונית המאפיינים.
+# A switch beside the Book bar: keep only the scenes this entry narrates.
+note-in-prose-viewpoint-only = סצנות נקודת מבט בלבד
+note-in-prose-viewpoint-only-tooltip = הצגה של הסצנות שמסופרות מנקודת המבט של הרשומה הזו בלבד, והסתרה של הסצנות שהיא רק מופיעה בהן
 
 story-bible-capture-toast = "{ $name }" נוסף לתיק הסיפור
 story-bible-capture-open = פתיחה

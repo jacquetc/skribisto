@@ -152,11 +152,27 @@ note-details-backlinks-confirm-all-tooltip = Добавить эту запис�
 note-details-untitled-document = Без названия
 
 note-in-prose-mentions = { $n ->
-    [one] { $n } упоминание
-    [few] { $n } упоминания
-    [many] { $n } упоминаний
-   *[other] { $n } упоминания
+    [one] { $n } упоминание в подтверждённых вами сценах
+    [few] { $n } упоминания в подтверждённых вами сценах
+    [many] { $n } упоминаний в подтверждённых вами сценах
+   *[other] { $n } упоминания в подтверждённых вами сценах
 }
+# The same count while "Viewpoint scenes only" is on.
+note-in-prose-mentions-viewpoint = { $n ->
+    [one] { $n } упоминание в сценах с её точки зрения
+    [few] { $n } упоминания в сценах с её точки зрения
+    [many] { $n } упоминаний в сценах с её точки зрения
+   *[other] { $n } упоминания в сценах с её точки зрения
+}
+# A link beside the counter: the scenes of this Book that name the entry without having it
+# in their cast. They are listed on the entry's Details page (segment-note-details).
+note-in-prose-review-suggestions = { $n ->
+    [one] Просмотреть { $n } предложенную сцену на странице «Подробности»
+    [few] Просмотреть { $n } предложенные сцены на странице «Подробности»
+    [many] Просмотреть { $n } предложенных сцен на странице «Подробности»
+   *[other] Просмотреть { $n } предложенной сцены на странице «Подробности»
+}
+note-in-prose-review-suggestions-tooltip = Сцены этой книги, где названа эта запись, но её нет среди действующих лиц. На странице «Подробности» видно, что говорится в каждой из них, и там можно добавить запись в действующие лица сцены
 note-in-prose-mention-at = { $current } из { $total }
 note-in-prose-mention-previous = Предыдущее упоминание
 note-in-prose-mention-next = Следующее упоминание

@@ -43,7 +43,15 @@ note-in-prose-pov = وجهة النظر
 note-in-prose-cast = الحاضرون
 note-in-prose-pov-and-cast = وجهة النظر · الحاضرون
 note-in-prose-no-books = لا يوجد كتاب في هذا المشروع بعد
-note-in-prose-empty-book = لم يُعلَن حضوره في هذا الكتاب بعد
+# The page lists only scenes where the writer placed the entry in the cast or the point of
+# view, never the ones the scan merely found its name in, so an empty page says so: a bare
+# "nothing here" read as a search that had failed.
+note-in-prose-empty-book = لم يُضَف هذا المدخل بعد إلى الحاضرين أو إلى وجهة النظر في أي مشهد من هذا الكتاب.
+note-in-prose-empty-viewpoint = لم يُروَ بعد أي مشهد في هذا الكتاب من وجهة نظر هذا المدخل.
+note-in-prose-scope = لا تعرض صفحة «في النص» إلا المشاهد التي أكّدتها. يبقى المشهد الذي يذكر هذا المدخل اقتراحًا حتى تضيف المدخل إلى الحاضرين فيه، من «التفاصيل» أو من لوحة الخصائص.
+# A switch beside the Book bar: keep only the scenes this entry narrates.
+note-in-prose-viewpoint-only = مشاهد وجهة نظره فقط
+note-in-prose-viewpoint-only-tooltip = عرض المشاهد المروية من وجهة نظر هذا المدخل فقط، وإخفاء المشاهد التي يظهر فيها فحسب
 story-bible-capture-toast = أُضيف «{ $name }» إلى مرجع القصة
 story-bible-capture-open = فتح
 story-bible-capture-undo = تراجع

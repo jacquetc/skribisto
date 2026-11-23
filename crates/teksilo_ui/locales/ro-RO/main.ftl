@@ -2044,9 +2044,9 @@ import-scrivener-structure-looks-like-manuscript-line = { $count ->
    *[other] { $count } de dosare de pe primul nivel, păstrate la note, par să fie manuscris. Le puteți trimite în manuscris, ca alte cărți.
 }
 import-scrivener-structure-generic-sheet-title-line = { $count ->
-    [one] O intrare din biblia poveștii are încă titlul unui șablon, de exemplu „Erou”. Skribisto caută acest titlu în text și enumeră pe pagina „În proză” fiecare loc în care apare: redenumiți intrarea dacă acest cuvânt este frecvent în cartea dumneavoastră.
-    [few] { $count } intrări din biblia poveștii au încă titlul unui șablon, de exemplu „Erou”. Skribisto caută aceste titluri în text și enumeră pe pagina „În proză” fiecare loc în care apar: redenumiți intrările dacă aceste cuvinte sunt frecvente în cartea dumneavoastră.
-   *[other] { $count } de intrări din biblia poveștii au încă titlul unui șablon, de exemplu „Erou”. Skribisto caută aceste titluri în text și enumeră pe pagina „În proză” fiecare loc în care apar: redenumiți intrările dacă aceste cuvinte sunt frecvente în cartea dumneavoastră.
+    [one] O intrare din biblia poveștii are încă titlul unui șablon, de exemplu „Erou”. Skribisto caută acest titlu în text și sugerează, pe pagina „Detalii” a intrării, fiecare scenă care îl conține: redenumiți intrarea dacă acest cuvânt este frecvent în cartea dumneavoastră.
+    [few] { $count } intrări din biblia poveștii au încă titlul unui șablon, de exemplu „Erou”. Skribisto caută aceste titluri în text și sugerează, pe pagina „Detalii” a fiecărei intrări, fiecare scenă care le conține: redenumiți intrările dacă aceste cuvinte sunt frecvente în cartea dumneavoastră.
+   *[other] { $count } de intrări din biblia poveștii au încă titlul unui șablon, de exemplu „Erou”. Skribisto caută aceste titluri în text și sugerează, pe pagina „Detalii” a fiecărei intrări, fiecare scenă care le conține: redenumiți intrările dacă aceste cuvinte sunt frecvente în cartea dumneavoastră.
 }
 import-scrivener-structure-placeholder-title-line = { $count ->
     [one] Un titlu care doar își numea nivelul este lăsat gol: clasorul și exporturile îl numerotează.

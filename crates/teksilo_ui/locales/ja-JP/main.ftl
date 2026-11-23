@@ -1523,7 +1523,7 @@ import-scrivener-structure-claim-overruled-line = { $count ->
 }
 import-scrivener-structure-adopted-by-chapter-line = 章の後に続く文書{ $count }件は、その章の終わりの部分になります。
 import-scrivener-structure-looks-like-manuscript-line = ノートに置かれる最上位のフォルダー{ $count }件は、原稿のような内容です。別の本として原稿に移すこともできます。
-import-scrivener-structure-generic-sheet-title-line = 設定資料集の項目{ $count }件が、「主人公」のようなテンプレートのタイトルのままです。Skribisto は本文中でそのタイトルを探し、出てくる箇所をすべて「本文内」に一覧表示します。その語が本の中でよく使われる場合は、項目の名前を変更してください。
+import-scrivener-structure-generic-sheet-title-line = 設定資料集の項目{ $count }件が、「主人公」のようなテンプレートのタイトルのままです。Skribisto は本文中でそのタイトルを探し、それを含むシーンをすべて、各項目の「詳細」で候補として表示します。その語が本の中でよく使われる場合は、項目の名前を変更してください。
 import-scrivener-structure-placeholder-title-line = 階層の名前だけだったタイトル{ $count }件は空欄にします。バインダーとエクスポートで番号が付きます。
 import-scrivener-structure-untitled-item-line = Scrivener でタイトルのなかった{ $count }項目は、無題のままにします。
 import-scrivener-structure-title-cleaned-line = タイトル{ $count }件に含まれていた改行やタブを削除します。

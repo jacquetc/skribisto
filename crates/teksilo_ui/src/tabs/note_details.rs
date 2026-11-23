@@ -139,7 +139,7 @@ pub(crate) fn note_details_pane(tab: &ContentTab) -> Box<dyn Widget> {
         set_tags: tab.set_tags_fn(),
         tags: tab.tags(),
         mention_index: tab.mention_index(),
-        appears_in_book: Signal::new(None),
+        appears_in_book: tab.note_details_book.clone(),
         // Built once, here, and held for as long as this pane is: **not**
         // rebuilt fresh inside `build()`. `title_input` binds to `name.value`
         // directly; a fresh `TitleField` on every rebuild would reseed that
@@ -164,9 +164,11 @@ struct NoteDetailsPane {
     item_id: u64,
     /// Which Book's appearances the right column is showing.
     ///
-    /// Held on the pane, not minted per build: this pane rebuilds whenever a scan lands or
+    /// Held across builds, not minted per build: this pane rebuilds whenever a scan lands or
     /// a tag changes, and a fresh signal each time would throw the writer back to the
-    /// first Book mid-read. `None` until the first build picks one.
+    /// first Book mid-read. `None` until the first build picks one. The tab's own
+    /// [`ContentTab::note_details_book`], so the In prose reading can open this page on
+    /// the Book it was reading.
     appears_in_book: Signal<Option<SegmentId>>,
     mention_index: crate::mentions::MentionIndex,
     /// This item's shared editing state: read for its `tags` mirror (the same

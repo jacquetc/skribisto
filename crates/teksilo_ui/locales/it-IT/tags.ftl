@@ -129,9 +129,18 @@ note-details-backlinks-confirm-all = Aggiungi ovunque ai personaggi presenti
 note-details-backlinks-confirm-all-tooltip = Aggiungi questa voce ai personaggi presenti di ogni documento qui elencato che non l'ha ancora confermata
 note-details-untitled-document = Senza titolo
 note-in-prose-mentions = { $n ->
-    [one] 1 menzione
-   *[other] { $n } menzioni
+    [one] 1 menzione nelle tue scene confermate
+   *[other] { $n } menzioni nelle tue scene confermate
 }
+note-in-prose-mentions-viewpoint = { $n ->
+    [one] 1 menzione nelle scene dal suo punto di vista
+   *[other] { $n } menzioni nelle scene dal suo punto di vista
+}
+note-in-prose-review-suggestions = { $n ->
+    [one] Esamina 1 scena suggerita in Dettagli
+   *[other] Esamina { $n } scene suggerite in Dettagli
+}
+note-in-prose-review-suggestions-tooltip = Scene di questo libro che nominano questa voce senza averla tra i personaggi presenti. Dettagli mostra cosa dice ciascuna e permette di aggiungere la voce ai suoi personaggi presenti
 note-in-prose-mention-at = { $current } di { $total }
 note-in-prose-mention-previous = Menzione precedente
 note-in-prose-mention-next = Menzione successiva

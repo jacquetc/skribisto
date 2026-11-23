@@ -1816,11 +1816,11 @@ import-scrivener-structure-looks-like-manuscript-line = { $count ->
     [one] 1 Ordner der obersten Ebene, der bei den Notizen bleibt, wirkt wie Manuskripttext. Sie können ihn als weiteres Buch ins Manuskript übernehmen.
    *[other] { $count } Ordner der obersten Ebene, die bei den Notizen bleiben, wirken wie Manuskripttext. Sie können sie als weitere Bücher ins Manuskript übernehmen.
 }
-# “In prose” is the page of a story bible entry that lists where the text names it
-# (segment-note-in-prose): use your translation of it. “Hero” is an example: translate it.
+# “Details” is the page of a story bible entry that suggests the scenes naming it
+# (segment-note-details): use your translation of it. “Hero” is an example: translate it.
 import-scrivener-structure-generic-sheet-title-line = { $count ->
-    [one] 1 Eintrag der Geschichtenbibel trägt noch den Titel einer Vorlage, etwa „Held“. Skribisto sucht diesen Titel in Ihrem Text und listet jede Fundstelle unter „Im Text“ auf: Benennen Sie den Eintrag um, wenn dieses Wort in Ihrem Buch häufig vorkommt.
-   *[other] { $count } Einträge der Geschichtenbibel tragen noch den Titel einer Vorlage, etwa „Held“. Skribisto sucht diese Titel in Ihrem Text und listet jede Fundstelle unter „Im Text“ auf: Benennen Sie die Einträge um, wenn diese Wörter in Ihrem Buch häufig vorkommen.
+    [one] 1 Eintrag der Geschichtenbibel trägt noch den Titel einer Vorlage, etwa „Held“. Skribisto sucht diesen Titel in Ihrem Text und schlägt jede Szene, die ihn enthält, in den „Details“ des Eintrags vor: Benennen Sie den Eintrag um, wenn dieses Wort in Ihrem Buch häufig vorkommt.
+   *[other] { $count } Einträge der Geschichtenbibel tragen noch den Titel einer Vorlage, etwa „Held“. Skribisto sucht diese Titel in Ihrem Text und schlägt jede Szene, die sie enthält, in den „Details“ des jeweiligen Eintrags vor: Benennen Sie die Einträge um, wenn diese Wörter in Ihrem Buch häufig vorkommen.
 }
 import-scrivener-structure-placeholder-title-line = { $count ->
     [one] 1 Titel nannte nur seine Ebene und bleibt leer: Projektmappe und Exporte nummerieren den Eintrag.

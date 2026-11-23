@@ -146,9 +146,21 @@ note-details-backlinks-confirm-all-tooltip = Προσθήκη αυτής της 
 note-details-untitled-document = Χωρίς τίτλο
 
 note-in-prose-mentions = { $n ->
-    [one] 1 αναφορά
-   *[other] { $n } αναφορές
+    [one] 1 αναφορά στις σκηνές που επιβεβαιώσατε
+   *[other] { $n } αναφορές στις σκηνές που επιβεβαιώσατε
 }
+# The same count while "Viewpoint scenes only" is on.
+note-in-prose-mentions-viewpoint = { $n ->
+    [one] 1 αναφορά στις σκηνές από την οπτική της
+   *[other] { $n } αναφορές στις σκηνές από την οπτική της
+}
+# A link beside the counter: the scenes of this Book that name the entry without having it
+# in their cast. They are listed on the entry's Details page (segment-note-details).
+note-in-prose-review-suggestions = { $n ->
+    [one] Έλεγχος 1 προτεινόμενης σκηνής στις Λεπτομέρειες
+   *[other] Έλεγχος { $n } προτεινόμενων σκηνών στις Λεπτομέρειες
+}
+note-in-prose-review-suggestions-tooltip = Σκηνές αυτού του βιβλίου που κατονομάζουν αυτή την καταχώριση χωρίς να την έχουν στα πρόσωπά τους. Οι «Λεπτομέρειες» δείχνουν τι λέει η καθεμία και σας επιτρέπουν να προσθέσετε την καταχώριση στα πρόσωπά της
 note-in-prose-mention-at = { $current } από { $total }
 note-in-prose-mention-previous = Προηγούμενη αναφορά
 note-in-prose-mention-next = Επόμενη αναφορά

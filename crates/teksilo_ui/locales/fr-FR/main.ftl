@@ -1997,11 +1997,11 @@ import-scrivener-structure-looks-like-manuscript-line = { $count ->
     [one] { $count } dossier de premier niveau gardé dans les notes ressemble à un manuscrit. Vous pouvez l’envoyer dans le manuscrit comme un autre livre.
    *[other] { $count } dossiers de premier niveau gardés dans les notes ressemblent à un manuscrit. Vous pouvez les envoyer dans le manuscrit comme d’autres livres.
 }
-# « Dans le texte » est la page d’une fiche qui liste où le texte la nomme
-# (segment-note-in-prose).
+# « Détails » est la page d’une fiche qui suggère les scènes qui la nomment
+# (segment-note-details).
 import-scrivener-structure-generic-sheet-title-line = { $count ->
-    [one] { $count } fiche de la bible narrative porte encore le titre d’un modèle, comme « Héros ». Skribisto cherche ce titre dans votre texte et liste chaque endroit où il apparaît, sous Dans le texte : renommez la fiche si ce mot est courant dans votre livre.
-   *[other] { $count } fiches de la bible narrative portent encore le titre d’un modèle, comme « Héros ». Skribisto cherche ces titres dans votre texte et liste chaque endroit où ils apparaissent, sous Dans le texte : renommez ces fiches si ces mots sont courants dans votre livre.
+    [one] { $count } fiche de la bible narrative porte encore le titre d’un modèle, comme « Héros ». Skribisto cherche ce titre dans votre texte et suggère chaque scène qui le contient, dans les Détails de la fiche : renommez la fiche si ce mot est courant dans votre livre.
+   *[other] { $count } fiches de la bible narrative portent encore le titre d’un modèle, comme « Héros ». Skribisto cherche ces titres dans votre texte et suggère chaque scène qui les contient, dans les Détails de chaque fiche : renommez ces fiches si ces mots sont courants dans votre livre.
 }
 import-scrivener-structure-placeholder-title-line = { $count ->
     [one] { $count } titre ne faisait que nommer son niveau et est laissé vide : le classeur et les exports le numérotent.

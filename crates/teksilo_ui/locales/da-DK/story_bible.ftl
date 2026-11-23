@@ -66,7 +66,15 @@ note-in-prose-pov = Synsvinkel
 note-in-prose-cast = Persongalleri
 note-in-prose-pov-and-cast = Synsvinkel · Persongalleri
 note-in-prose-no-books = Projektet har endnu ingen bog
-note-in-prose-empty-book = Endnu ikke angivet i denne bog
+# The page lists only scenes where the writer placed the entry in the cast or the point of
+# view, never the ones the scan merely found its name in, so an empty page says so: a bare
+# "nothing here" read as a search that had failed.
+note-in-prose-empty-book = Ingen scene i denne bog har endnu dette opslag i sit persongalleri eller som synsvinkel.
+note-in-prose-empty-viewpoint = Ingen scene i denne bog fortælles endnu fra dette opslags synsvinkel.
+note-in-prose-scope = »I teksten« viser kun de scener, du har bekræftet. En scene, der nævner dette opslag, forbliver et forslag, indtil du føjer opslaget til dens persongalleri, under »Detaljer« eller i inspektøren.
+# A switch beside the Book bar: keep only the scenes this entry narrates.
+note-in-prose-viewpoint-only = Kun scener fra dets synsvinkel
+note-in-prose-viewpoint-only-tooltip = Vis kun de scener, der fortælles fra dette opslags synsvinkel, og skjul dem, hvor det blot optræder
 
 # The capture flow: one click from a selection to a filed note.
 story-bible-capture-toast = »{ $name }« er føjet til historiebiblen

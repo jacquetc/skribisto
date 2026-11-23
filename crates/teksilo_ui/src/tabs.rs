@@ -170,6 +170,19 @@ pub struct ContentTab {
     /// default (every entry, filed or not), matching every other Books surface in
     /// this edition. See [`crate::tabs::story_bible_place`].
     pub story_bible_book_filter: Signal<Option<u64>>,
+    /// Which Book a note's Details page shows the appearances of, per-tab like
+    /// [`Self::segment`]. Held here rather than on that page so the **In prose** reading's
+    /// "Review suggested scenes in Details" can open Details on the Book whose suggestions
+    /// it counted, and not on whichever one Details happened to be showing. Ids are
+    /// `SegmentId::from_u64` of the Book's store id; `None` until a Book is picked. See
+    /// [`crate::tabs::note_details`] and [`crate::tabs::note_in_prose`].
+    pub note_details_book: Signal<Option<teksilo::widgets::SegmentId>>,
+    /// The **In prose** reading's "Viewpoint scenes only" switch, per-tab like
+    /// [`Self::segment`] and for the same reason: two tabs on the same entry can be two
+    /// passes over it. Not remembered across sessions: it is a pass a writer makes ("only
+    /// the scenes she narrates"), not a setting of the Book. See
+    /// [`crate::tabs::note_in_prose`].
+    pub note_in_prose_viewpoint_only: Signal<bool>,
     /// The Overview view-model — `Some` for every container that offers the segment,
     /// gated on [`skribisto_model::overview_capable`]. That is a **wider** gate than the
     /// stream's and the corkboard's: a `Folder/Note` has no manuscript extent, so it has
@@ -994,6 +1007,8 @@ impl ContentTab {
             corkboard,
             overview,
             story_bible_book_filter: Signal::new(None),
+            note_details_book: Signal::new(None),
+            note_in_prose_viewpoint_only: Signal::new(false),
             goal_unit,
             counting_method,
             ids,

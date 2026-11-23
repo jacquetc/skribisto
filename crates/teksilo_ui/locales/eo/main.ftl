@@ -1661,8 +1661,8 @@ import-scrivener-structure-looks-like-manuscript-line = { $count ->
    *[other] { $count } supranivelaj dosierujoj konservitaj en la notoj aspektas kiel manuskripto. Vi povas sendi ilin al la manuskripto kiel aliajn librojn.
 }
 import-scrivener-structure-generic-sheet-title-line = { $count ->
-    [one] 1 ero de la rakonta gvidilo ankoraŭ havas ŝablonan titolon, ekzemple «Heroo». Skribisto serĉas tiun titolon en via teksto kaj listigas ĉiun lokon, kie ĝi aperas, sub «En la teksto»: alinomu la eron, se tiu vorto estas ofta en via libro.
-   *[other] { $count } eroj de la rakonta gvidilo ankoraŭ havas ŝablonan titolon, ekzemple «Heroo». Skribisto serĉas tiujn titolojn en via teksto kaj listigas ĉiun lokon, kie ili aperas, sub «En la teksto»: alinomu la erojn, se tiuj vortoj estas oftaj en via libro.
+    [one] 1 ero de la rakonta gvidilo ankoraŭ havas ŝablonan titolon, ekzemple «Heroo». Skribisto serĉas tiun titolon en via teksto kaj proponas ĉiun scenon, kiu enhavas ĝin, en la «Detaloj» de la ero: alinomu la eron, se tiu vorto estas ofta en via libro.
+   *[other] { $count } eroj de la rakonta gvidilo ankoraŭ havas ŝablonan titolon, ekzemple «Heroo». Skribisto serĉas tiujn titolojn en via teksto kaj proponas ĉiun scenon, kiu enhavas ilin, en la «Detaloj» de ĉiu ero: alinomu la erojn, se tiuj vortoj estas oftaj en via libro.
 }
 import-scrivener-structure-placeholder-title-line = { $count ->
     [one] 1 titolo nur nomis sian nivelon kaj restas malplena: la kolektujo kaj la eksportoj numeras ĝin.

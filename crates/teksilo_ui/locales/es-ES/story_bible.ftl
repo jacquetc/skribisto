@@ -38,7 +38,11 @@ note-in-prose-pov = Punto de vista
 note-in-prose-cast = Reparto
 note-in-prose-pov-and-cast = Punto de vista · Reparto
 note-in-prose-no-books = Este proyecto aún no tiene ningún libro
-note-in-prose-empty-book = Todavía no está declarado en este libro
+note-in-prose-empty-book = Ninguna escena de este libro tiene todavía esta entrada en su reparto ni en su punto de vista.
+note-in-prose-empty-viewpoint = Ninguna escena de este libro está narrada todavía desde el punto de vista de esta entrada.
+note-in-prose-scope = La página En la prosa muestra solo las escenas que usted ha confirmado. Una escena que nombra esta entrada sigue siendo una sugerencia hasta que añada la entrada a su reparto, en Detalles o en el Inspector.
+note-in-prose-viewpoint-only = Solo escenas de su punto de vista
+note-in-prose-viewpoint-only-tooltip = Mostrar solo las escenas narradas desde el punto de vista de esta entrada y ocultar aquellas en las que simplemente aparece
 
 story-bible-capture-toast = «{ $name }» añadido a la biblia narrativa
 story-bible-capture-open = Abrir

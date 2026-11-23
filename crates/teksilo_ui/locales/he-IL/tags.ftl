@@ -143,9 +143,21 @@ note-details-backlinks-confirm-all-tooltip = הוספת הרשומה הזו לצ
 note-details-untitled-document = ללא כותרת
 
 note-in-prose-mentions = { $n ->
-    [one] אזכור אחד
-   *[other] { $n } אזכורים
+    [one] אזכור אחד בסצנות שאישרתם
+   *[other] { $n } אזכורים בסצנות שאישרתם
 }
+# The same count while "Viewpoint scenes only" is on.
+note-in-prose-mentions-viewpoint = { $n ->
+    [one] אזכור אחד בסצנות נקודת המבט
+   *[other] { $n } אזכורים בסצנות נקודת המבט
+}
+# A link beside the counter: the scenes of this Book that name the entry without having it
+# in their cast. They are listed on the entry's Details page (segment-note-details).
+note-in-prose-review-suggestions = { $n ->
+    [one] בדיקת סצנה מוצעת אחת ב"פרטים"
+   *[other] בדיקת { $n } סצנות מוצעות ב"פרטים"
+}
+note-in-prose-review-suggestions-tooltip = סצנות בספר הזה שמזכירות את הרשומה הזו, אבל היא לא בצוות הדמויות שלהן. הדף "פרטים" מציג מה כתוב בכל אחת מהן, ומאפשר להוסיף את הרשומה לצוות הדמויות שלה
 note-in-prose-mention-at = { $current } מתוך { $total }
 note-in-prose-mention-previous = האזכור הקודם
 note-in-prose-mention-next = האזכור הבא

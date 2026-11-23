@@ -40,7 +40,15 @@ note-in-prose-pov = Οπτική γωνία
 note-in-prose-cast = Πρόσωπα
 note-in-prose-pov-and-cast = Οπτική γωνία · Πρόσωπα
 note-in-prose-no-books = Αυτό το έργο δεν έχει ακόμη βιβλίο
-note-in-prose-empty-book = Δεν έχει δηλωθεί ακόμη σε αυτό το βιβλίο
+# The page lists only scenes where the writer placed the entry in the cast or the point of
+# view, never the ones the scan merely found its name in, so an empty page says so: a bare
+# "nothing here" read as a search that had failed.
+note-in-prose-empty-book = Καμία σκηνή αυτού του βιβλίου δεν έχει ακόμη αυτή την καταχώριση στα πρόσωπα ή στην οπτική γωνία της.
+note-in-prose-empty-viewpoint = Καμία σκηνή αυτού του βιβλίου δεν είναι ακόμη γραμμένη από την οπτική γωνία αυτής της καταχώρισης.
+note-in-prose-scope = Η σελίδα «Στην πρόζα» δείχνει μόνο τις σκηνές που επιβεβαιώσατε. Μια σκηνή που κατονομάζει αυτή την καταχώριση μένει πρόταση μέχρι να προσθέσετε την καταχώριση στα πρόσωπά της, στις «Λεπτομέρειες» ή στον επιθεωρητή.
+# A switch beside the Book bar: keep only the scenes this entry narrates.
+note-in-prose-viewpoint-only = Μόνο σκηνές από την οπτική της
+note-in-prose-viewpoint-only-tooltip = Εμφάνιση μόνο των σκηνών που είναι γραμμένες από την οπτική γωνία αυτής της καταχώρισης, και απόκρυψη εκείνων όπου απλώς εμφανίζεται
 
 story-bible-capture-toast = Το «{ $name }» προστέθηκε στη βίβλο ιστορίας
 story-bible-capture-open = Άνοιγμα

@@ -144,9 +144,18 @@ note-details-backlinks-confirm-all-tooltip = Lisää tämä merkintä kaikkien t
 note-details-untitled-document = Nimetön
 
 note-in-prose-mentions = { $n ->
-       [one] 1 maininta
-      *[other] { $n } mainintaa
+       [one] 1 maininta vahvistetuissa kohtauksissasi
+      *[other] { $n } mainintaa vahvistetuissa kohtauksissasi
    }
+note-in-prose-mentions-viewpoint = { $n ->
+       [one] 1 maininta sen näkökulmakohtauksissa
+      *[other] { $n } mainintaa sen näkökulmakohtauksissa
+   }
+note-in-prose-review-suggestions = { $n ->
+       [one] Tarkista 1 ehdotettu kohtaus Yksityiskohdat-näkymässä
+      *[other] Tarkista { $n } ehdotettua kohtausta Yksityiskohdat-näkymässä
+   }
+note-in-prose-review-suggestions-tooltip = Tämän kirjan kohtaukset, joissa tämä merkintä mainitaan mutta joiden esiintyjissä sitä ei ole. Yksityiskohdat-näkymä näyttää, mitä kussakin sanotaan, ja siellä voit lisätä merkinnän sen esiintyjiin
 note-in-prose-mention-at = { $current }/{ $total }
 note-in-prose-mention-previous = Edellinen maininta
 note-in-prose-mention-next = Seuraava maininta

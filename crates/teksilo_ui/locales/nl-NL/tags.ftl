@@ -144,9 +144,18 @@ note-details-backlinks-confirm-all-tooltip = Dit item toevoegen aan de rolbezett
 note-details-untitled-document = Naamloos
 
 note-in-prose-mentions = { $n ->
-        [one] 1 vermelding
-       *[other] { $n } vermeldingen
+        [one] 1 vermelding in uw bevestigde scènes
+       *[other] { $n } vermeldingen in uw bevestigde scènes
     }
+note-in-prose-mentions-viewpoint = { $n ->
+        [one] 1 vermelding in scènes vanuit zijn perspectief
+       *[other] { $n } vermeldingen in scènes vanuit zijn perspectief
+    }
+note-in-prose-review-suggestions = { $n ->
+        [one] 1 voorgestelde scène bekijken in Details
+       *[other] { $n } voorgestelde scènes bekijken in Details
+    }
+note-in-prose-review-suggestions-tooltip = Scènes van dit boek die dit item noemen maar het niet in hun rolbezetting hebben. Details toont wat elke scène zegt, en laat u het item aan de rolbezetting ervan toevoegen
 note-in-prose-mention-at = { $current } van { $total }
 note-in-prose-mention-previous = Vorige vermelding
 note-in-prose-mention-next = Volgende vermelding

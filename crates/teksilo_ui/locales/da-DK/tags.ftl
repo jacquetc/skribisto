@@ -200,10 +200,24 @@ note-details-untitled-document = Uden titel
 ## The In prose reading's own counter: how many times this entry is named across
 ## the rows on screen, and which of them the reader has stepped to. See
 ## `teksilo_ui::story_bible::highlight::SubjectWalk`.
+## It says where it counted: the reading shows only the scenes the writer confirmed, and a
+## bare total read as a count of the whole Book.
 note-in-prose-mentions = { $n ->
-    [one] 1 omtale
-   *[other] { $n } omtaler
+    [one] 1 omtale i dine bekræftede scener
+   *[other] { $n } omtaler i dine bekræftede scener
 }
+# The same count while "Viewpoint scenes only" is on.
+note-in-prose-mentions-viewpoint = { $n ->
+    [one] 1 omtale i scener fra dets synsvinkel
+   *[other] { $n } omtaler i scener fra dets synsvinkel
+}
+# A link beside the counter: the scenes of this Book that name the entry without having it
+# in their cast. They are listed on the entry's Details page (segment-note-details).
+note-in-prose-review-suggestions = { $n ->
+    [one] Gennemgå 1 foreslået scene under »Detaljer«
+   *[other] Gennemgå { $n } foreslåede scener under »Detaljer«
+}
+note-in-prose-review-suggestions-tooltip = Scener i denne bog, der nævner dette opslag, men ikke har det i deres persongalleri. »Detaljer« viser, hvad hver af dem siger, og lader dig føje opslaget til dens persongalleri
 note-in-prose-mention-at = { $current } af { $total }
 note-in-prose-mention-previous = Forrige omtale
 note-in-prose-mention-next = Næste omtale

@@ -1747,8 +1747,8 @@ import-scrivener-structure-looks-like-manuscript-line = { $count ->
    *[other] A jegyzetek között tartott { $count } legfelső szintű mappa kéziratnak tűnik. Külön könyvekként átküldheti őket a kéziratba.
 }
 import-scrivener-structure-generic-sheet-title-line = { $count ->
-    [one] 1 történetbiblia-bejegyzés még mindig egy sablon címét viseli, például „Hős”. A Skribisto megkeresi ezt a címet a szövegben, és a bejegyzés A prózában nézetében felsorolja minden előfordulását: nevezze át a bejegyzést, ha ez a szó gyakori a könyvében.
-   *[other] { $count } történetbiblia-bejegyzés még mindig egy sablon címét viseli, például „Hős”. A Skribisto megkeresi ezeket a címeket a szövegben, és a bejegyzések A prózában nézetében felsorolja minden előfordulásukat: nevezze át a bejegyzéseket, ha ezek a szavak gyakoriak a könyvében.
+    [one] 1 történetbiblia-bejegyzés még mindig egy sablon címét viseli, például „Hős”. A Skribisto megkeresi ezt a címet a szövegben, és a bejegyzés Részletek nézetében javasolja az összes jelenetet, amelyben előfordul: nevezze át a bejegyzést, ha ez a szó gyakori a könyvében.
+   *[other] { $count } történetbiblia-bejegyzés még mindig egy sablon címét viseli, például „Hős”. A Skribisto megkeresi ezeket a címeket a szövegben, és minden bejegyzés Részletek nézetében javasolja az összes jelenetet, amelyben előfordulnak: nevezze át a bejegyzéseket, ha ezek a szavak gyakoriak a könyvében.
 }
 import-scrivener-structure-placeholder-title-line = { $count ->
     [one] 1 cím csak a szintjét nevezte meg, ezért üresen marad: az iratrendező és az exportálások megszámozzák.

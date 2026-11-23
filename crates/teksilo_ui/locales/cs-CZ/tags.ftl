@@ -148,10 +148,24 @@ note-details-backlinks-confirm-all-tooltip = Přidá tento záznam mezi postavy 
 note-details-untitled-document = Bez názvu
 
 note-in-prose-mentions = { $n ->
-    [one] 1 zmínka
-    [few] { $n } zmínky
-   *[other] { $n } zmínek
+    [one] 1 zmínka ve vašich potvrzených scénách
+    [few] { $n } zmínky ve vašich potvrzených scénách
+   *[other] { $n } zmínek ve vašich potvrzených scénách
 }
+# The same count while "Viewpoint scenes only" is on.
+note-in-prose-mentions-viewpoint = { $n ->
+    [one] 1 zmínka ve scénách z jeho úhlu pohledu
+    [few] { $n } zmínky ve scénách z jeho úhlu pohledu
+   *[other] { $n } zmínek ve scénách z jeho úhlu pohledu
+}
+# A link beside the counter: the scenes of this Book that name the entry without having it
+# in their cast. They are listed on the entry's Details page (segment-note-details).
+note-in-prose-review-suggestions = { $n ->
+    [one] Projít 1 navrženou scénu v zobrazení Podrobnosti
+    [few] Projít { $n } navržené scény v zobrazení Podrobnosti
+   *[other] Projít { $n } navržených scén v zobrazení Podrobnosti
+}
+note-in-prose-review-suggestions-tooltip = Scény této knihy, které tento záznam zmiňují, ale nemají jej mezi postavami. Zobrazení Podrobnosti ukazuje, co v každé z nich stojí, a umožní záznam přidat mezi její postavy
 note-in-prose-mention-at = { $current } z { $total }
 note-in-prose-mention-previous = Předchozí zmínka
 note-in-prose-mention-next = Další zmínka

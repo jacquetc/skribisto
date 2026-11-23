@@ -144,9 +144,18 @@ note-details-backlinks-confirm-all-tooltip = Adicionar esta entrada ao elenco de
 note-details-untitled-document = Sem título
 
 note-in-prose-mentions = { $n ->
-    [one] 1 menção
-   *[other] { $n } menções
+    [one] 1 menção nas suas cenas confirmadas
+   *[other] { $n } menções nas suas cenas confirmadas
 }
+note-in-prose-mentions-viewpoint = { $n ->
+    [one] 1 menção nas cenas do seu ponto de vista
+   *[other] { $n } menções nas cenas do seu ponto de vista
+}
+note-in-prose-review-suggestions = { $n ->
+    [one] Rever 1 cena sugerida em Detalhes
+   *[other] Rever { $n } cenas sugeridas em Detalhes
+}
+note-in-prose-review-suggestions-tooltip = Cenas deste livro que nomeiam esta entrada mas não a têm no seu elenco. Detalhes mostra o que cada uma diz e permite adicionar a entrada ao seu elenco
 note-in-prose-mention-at = { $current } de { $total }
 note-in-prose-mention-previous = Menção anterior
 note-in-prose-mention-next = Menção seguinte

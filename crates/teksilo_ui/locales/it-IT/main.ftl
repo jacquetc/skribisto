@@ -1699,8 +1699,8 @@ import-scrivener-structure-looks-like-manuscript-line = { $count ->
    *[other] { $count } cartelle di primo livello conservate nelle note sembrano manoscritto. Puoi inviarle al manoscritto come altri libri.
 }
 import-scrivener-structure-generic-sheet-title-line = { $count ->
-    [one] 1 voce della bibbia narrativa ha ancora il titolo di un modello, come «Eroe». Skribisto cerca quel titolo nel tuo testo ed elenca ogni punto in cui compare nella pagina Nel testo: rinomina la voce se quella parola è comune nel tuo libro.
-   *[other] { $count } voci della bibbia narrativa hanno ancora il titolo di un modello, come «Eroe». Skribisto cerca quei titoli nel tuo testo ed elenca ogni punto in cui compaiono nella pagina Nel testo: rinomina le voci se quelle parole sono comuni nel tuo libro.
+    [one] 1 voce della bibbia narrativa ha ancora il titolo di un modello, come «Eroe». Skribisto cerca quel titolo nel tuo testo e suggerisce ogni scena che lo contiene nella pagina Dettagli della voce: rinomina la voce se quella parola è comune nel tuo libro.
+   *[other] { $count } voci della bibbia narrativa hanno ancora il titolo di un modello, come «Eroe». Skribisto cerca quei titoli nel tuo testo e suggerisce ogni scena che li contiene nella pagina Dettagli di ciascuna voce: rinomina le voci se quelle parole sono comuni nel tuo libro.
 }
 import-scrivener-structure-placeholder-title-line = { $count ->
     [one] 1 titolo indicava soltanto il proprio livello e viene lasciato vuoto: il raccoglitore e le esportazioni lo numerano.

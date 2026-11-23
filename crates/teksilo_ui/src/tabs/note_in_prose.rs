@@ -22,6 +22,16 @@
 //! reading make the promise its caption keeps: every row on screen is one the writer put
 //! this note in themselves.
 //!
+//! **And it says so.** A scene that names the entry but has it in no cast is absent here,
+//! so a writer who knew a character was in chapter three could read the page as a search
+//! that had failed. The line above the page counts "in your confirmed scenes", links to the
+//! scan's suggestions for the Book on screen (listed in Details, where the writer decides
+//! whether each belongs), and an empty page explains what it shows. See `scope_bar`.
+//!
+//! **"Viewpoint scenes only"** narrows the rows to the ones told from this note's point of
+//! view, for a pass over the scenes a character narrates rather than every scene she is in.
+//! The counter, the marks and Ctrl+F follow the narrowed rows.
+//!
 //! **No margin lane, no comment cards, in this first cut.** Every row still carries a
 //! comment binding and a footnote binding (both plain accessors on the already-open
 //! `OpenDoc`, wired for free), so an existing thread still underlines in the text and a
@@ -40,8 +50,8 @@ use teksilo::core::BindingLevel;
 use teksilo::prelude::*;
 use teksilo::text_document::{HighlightMask, TextDocument};
 use teksilo::widgets::{
-    Divider, Expand, HStack, IconButton, Segment, SegmentId, SegmentedControl, Spacer, TextWidget,
-    VStack,
+    Button, ButtonVariant, Divider, Expand, HStack, IconButton, Segment, SegmentId,
+    SegmentedControl, Spacer, TextWidget, Toggle, VStack,
 };
 
 use frontend::common::event::{
@@ -91,6 +101,14 @@ pub(crate) fn note_in_prose_pane(tab: &ContentTab) -> Box<dyn Widget> {
     // that is also open in a tab of its own must not answer for this reading. See
     // [`crate::margin_lane::LaneScope`].
     let scope = crate::margin_lane::LaneScope::fresh();
+    // Read by the body, to pick its rows, and by the counter above the page, which says
+    // which scenes it is counting in.
+    let viewpoint_only = tab.note_in_prose_viewpoint_only.clone();
+    // What the body found to suggest in the Book on screen, for the link above the page.
+    let suggestions = Suggestions {
+        count: Signal::new(0),
+        book: Signal::new(None),
+    };
 
     let body = NoteInProseBody {
         app_ctx: tab.app_ctx(),
@@ -115,6 +133,8 @@ pub(crate) fn note_in_prose_pane(tab: &ContentTab) -> Box<dyn Widget> {
         extents: extents.clone(),
         page_scroll: page_scroll.clone(),
         selected_book: Signal::new(None),
+        viewpoint_only: viewpoint_only.clone(),
+        suggestions: suggestions.clone(),
         generation: Signal::new(0),
         docs: docs.clone(),
         highlights: highlights.clone(),
@@ -169,7 +189,13 @@ pub(crate) fn note_in_prose_pane(tab: &ContentTab) -> Box<dyn Widget> {
     let page = VStack::new()
         .spacing(0.0)
         .child(shared::centered(
-            mention_bar(walk.clone(), tab.format.clone()),
+            scope_bar(
+                walk.clone(),
+                tab.format.clone(),
+                viewpoint_only,
+                suggestions,
+                review_in_details(tab),
+            ),
             &tab.column_width,
         ))
         .child(
@@ -285,6 +311,12 @@ struct NoteInProseBody {
     extents: crate::margin_lane::RowExtents,
     page_scroll: Signal<f32>,
     selected_book: Signal<Option<SegmentId>>,
+    /// **"Viewpoint scenes only"**: keep the rows told from this note's point of view and
+    /// drop the ones it is only in the cast of. The tab's own
+    /// [`ContentTab::note_in_prose_viewpoint_only`].
+    viewpoint_only: Signal<bool>,
+    /// The Book's scan suggestions, published on every build and on every scan that lands.
+    suggestions: Suggestions,
     /// Bumped by [`reload_origins`]'s coalesced reload; bound to `BindingLevel::Rebuild`
     /// below purely to give this widget a rebuild trigger of its own; the rows are always
     /// re-read fresh, never diffed against a previous generation.
@@ -621,6 +653,47 @@ impl NoteInProseBody {
         });
     }
 
+    /// **What the scan suggests in the Book on screen**, for the link above the page.
+    ///
+    /// Counted now and again on every scan that lands, through an effect on the index's
+    /// own counter rather than a rebuild: rebuilding this page remounts every row's
+    /// editor, and a scan lands while the writer is typing in one of them.
+    fn publish_suggestions(
+        &self,
+        ctx: &mut BuildContext,
+        book_id: Option<u64>,
+        of_item: &HashMap<u64, u64>,
+    ) {
+        // The Book's own row as well as the rows inside it, the same membership the
+        // Details page groups its appearances by.
+        let in_book: std::collections::HashSet<u64> = book_id
+            .map(|book| {
+                of_item
+                    .iter()
+                    .filter(|(_, b)| **b == book)
+                    .map(|(item, _)| *item)
+                    .chain(std::iter::once(book))
+                    .collect()
+            })
+            .unwrap_or_default();
+        let count = {
+            let (index, note) = (self.mention_index.clone(), self.note_id);
+            move || crate::models::suggested_in_book(&index.backlinks_for(note), &in_book)
+        };
+        if self.suggestions.book.get() != book_id {
+            self.suggestions.book.set(book_id);
+        }
+        let published = self.suggestions.count.clone();
+        let publish = move || {
+            let n = count();
+            if published.get() != n {
+                published.set(n);
+            }
+        };
+        publish();
+        ctx.effect(&self.mention_index.changed_signal(), move |_| publish());
+    }
+
     fn book_bar(&self, books: &[BookChoice]) -> SegmentedControl {
         let mut bar = SegmentedControl::new(self.selected_book.clone());
         for book in books {
@@ -747,6 +820,8 @@ impl Widget for NoteInProseBody {
             .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
         self.generation
             .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
+        self.viewpoint_only
+            .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
 
         let book_service = ctx.app_state::<NoteBookChoiceService>().cloned();
 
@@ -755,7 +830,10 @@ impl Widget for NoteInProseBody {
             return Vec::new();
         };
 
-        let books = crate::models::books_in_work(&self.app_ctx, work_id);
+        // One walk for both the Books and which of them each row is in: the second is
+        // what scopes the suggestion count to the Book on screen.
+        let crate::models::BookIndex { books, of_item } =
+            crate::models::book_index(&self.app_ctx, work_id);
 
         // **Whose names the lane marks**, published while this reading is on screen and
         // withdrawn when it goes away. The lane's provider is registered long before this
@@ -866,11 +944,19 @@ impl Widget for NoteInProseBody {
                 .map(|b| b.item_id)
         });
 
-        let rows = selected_book_id
+        let declared = selected_book_id
             .map(|book_id| {
                 crate::models::declared_rows_in_book(&self.app_ctx, work_id, self.note_id, book_id)
             })
             .unwrap_or_default();
+        let viewpoint_only = self.viewpoint_only.get();
+        // Offered when it would change something, and kept while it is on so the writer
+        // can turn it off again in a Book where it hides every row.
+        let offer_viewpoint_filter =
+            viewpoint_only || crate::models::viewpoint_filter_changes_something(&declared);
+        let rows = crate::models::rows_to_show(declared, viewpoint_only);
+
+        self.publish_suggestions(ctx, selected_book_id, &of_item);
 
         self.sync_docs(&rows, &self.store);
         // The rows this build will actually mount, in reading order: a declared row whose
@@ -898,11 +984,24 @@ impl Widget for NoteInProseBody {
             //
             // The *scope* is unchanged: one Book is still selected and still filters the
             // rows below. Only the chrome that would let a writer change it goes.
-            if books.len() >= 2 {
-                col = col.child(shared::centered(self.book_bar(&books), &self.header_width));
+            let book_bar = (books.len() >= 2).then(|| self.book_bar(&books));
+            let filter = offer_viewpoint_filter.then(|| viewpoint_toggle(&self.viewpoint_only));
+            if book_bar.is_some() || filter.is_some() {
+                let mut bar = HStack::new().spacing(12.0);
+                if let Some(book_bar) = book_bar {
+                    bar = bar.child(book_bar);
+                }
+                bar = bar.child(Expand::horizontal().child(Spacer::new()));
+                if let Some(filter) = filter {
+                    bar = bar.child(filter);
+                }
+                col = col.child(shared::centered(bar, &self.header_width));
             }
             if rows.is_empty() {
-                col = col.child(shared::centered(empty_book_text(), &self.header_width));
+                col = col.child(shared::centered(
+                    empty_book_text(viewpoint_only),
+                    &self.header_width,
+                ));
             } else {
                 let docs = self.docs.borrow();
                 for row in &rows {
@@ -963,23 +1062,34 @@ impl Widget for NoteInProseBody {
 /// The label reads as the plain total until the reader steps into it, and as "3 of
 /// 17" after. Reporting an ordinal before anyone has moved would be claiming a
 /// position the reader has not taken.
-fn mention_bar(
+///
+/// **The total says where it counted**: "206 mentions in your confirmed scenes", or in
+/// the viewpoint scenes while that filter is on. This page reads only the scenes the
+/// writer placed the entry in, and a bare "206 mentions" read as a count of the whole
+/// Book, so a writer who knew the character was in chapter three and found no row for it
+/// could only conclude the search had failed.
+fn mention_counter(
     walk: Rc<crate::story_bible::highlight::SubjectWalk>,
     format: FormatViewModel,
+    viewpoint_only: Signal<bool>,
 ) -> impl Widget + 'static {
     let total = walk.total_signal();
     let ordinal = walk.ordinal_signal();
-    let label = total.zip(&ordinal).map(|(total, ordinal)| {
-        if *ordinal == 0 {
-            tr!(note_in_prose_mentions(n = *total as i64)).resolve_now()
-        } else {
-            tr!(note_in_prose_mention_at(
-                current = *ordinal as i64,
-                total = *total as i64
-            ))
-            .resolve_now()
-        }
-    });
+    let label = total
+        .zip3(&ordinal, &viewpoint_only)
+        .map(|(total, ordinal, viewpoint)| {
+            if *ordinal == 0 && *viewpoint {
+                tr!(note_in_prose_mentions_viewpoint(n = *total as i64)).resolve_now()
+            } else if *ordinal == 0 {
+                tr!(note_in_prose_mentions(n = *total as i64)).resolve_now()
+            } else {
+                tr!(note_in_prose_mention_at(
+                    current = *ordinal as i64,
+                    total = *total as i64
+                ))
+                .resolve_now()
+            }
+        });
     let step = |walk: Rc<crate::story_bible::highlight::SubjectWalk>,
                 format: FormatViewModel,
                 forward: bool| {
@@ -1044,9 +1154,78 @@ fn mention_bar(
                 .embedded()
                 .tooltip(tr!(note_in_prose_mention_next()))
                 .on_activate_fn(step(walk.clone(), format.clone(), true)),
-        )
-        .child(Expand::horizontal().child(Spacer::new()));
+        );
     crate::tabs::shared::editor::VisibleWhen::new(total.map(|n| *n > 0), row)
+}
+
+/// What the scan found in the Book on screen that the writer has not confirmed: how many
+/// documents, and which Book that count is for. Written by [`NoteInProseBody`], read by
+/// [`scope_bar`].
+#[derive(Clone)]
+struct Suggestions {
+    count: Signal<usize>,
+    book: Signal<Option<u64>>,
+}
+
+/// Open the tab's Details page on `book`, where the suggestions are listed with their
+/// evidence and a way to confirm each.
+type ReviewInDetails = Rc<dyn Fn(Option<u64>)>;
+
+fn review_in_details(tab: &ContentTab) -> ReviewInDetails {
+    let segment = tab.segment.clone();
+    let details_book = tab.note_details_book.clone();
+    Rc::new(move |book| {
+        // The Book first, so Details builds on it rather than on the one it was last
+        // showing and then switching.
+        if let Some(book) = book {
+            details_book.set(Some(SegmentId::from_u64(book)));
+        }
+        segment.set(Some(shared::segments::segment_id(
+            shared::segments::SEG_NOTE_DETAILS,
+        )));
+    })
+}
+
+/// **The line above the page that says what it is reading.**
+///
+/// The mention counter on the left (see [`mention_counter`]) and, on the right, a link to
+/// the scenes the scan suggests in this Book and the writer has not confirmed. The link is
+/// the next step this page cannot take itself: it shows confirmed scenes only, on purpose
+/// (see the module doc), so a scene that names the entry but has it in no cast is absent
+/// here, and Details is where the writer decides whether it belongs.
+///
+/// Each half is hidden when it has nothing to say, so a page with neither takes no room.
+fn scope_bar(
+    walk: Rc<crate::story_bible::highlight::SubjectWalk>,
+    format: FormatViewModel,
+    viewpoint_only: Signal<bool>,
+    suggestions: Suggestions,
+    review: ReviewInDetails,
+) -> impl Widget + 'static {
+    let count = suggestions.count.clone();
+    let label = count.map(|n| tr!(note_in_prose_review_suggestions(n = *n as i64)).resolve_now());
+    let book = suggestions.book.clone();
+    let link = Button::new(lit!(""))
+        .label(label)
+        .variant(ButtonVariant::Link)
+        .tooltip(tr!(note_in_prose_review_suggestions_tooltip()))
+        .on_activate_fn(move |_c| review(book.get()));
+    HStack::new()
+        .spacing(4.0)
+        .child(mention_counter(walk, format, viewpoint_only))
+        .child(Expand::horizontal().child(Spacer::new()))
+        .child(crate::tabs::shared::editor::VisibleWhen::new(
+            count.map(|n| *n > 0),
+            link,
+        ))
+}
+
+/// The switch beside the Book bar. A pass over the scenes this entry narrates, so a
+/// writer can hear whether the voice holds, without the scenes it only appears in.
+fn viewpoint_toggle(value: &Signal<bool>) -> impl Widget + 'static {
+    Toggle::new(value.clone())
+        .label(tr!(note_in_prose_viewpoint_only()))
+        .tooltip(tr!(note_in_prose_viewpoint_only_tooltip()))
 }
 
 /// The row's declaration, in plain words: whether this note holds the point of view
@@ -1070,10 +1249,28 @@ fn no_books_text() -> impl Widget {
         .color(TextRole::Secondary)
 }
 
-fn empty_book_text() -> impl Widget {
-    TextWidget::new(tr!(note_in_prose_empty_book()))
-        .style(TextStyleRole::Small)
-        .color(TextRole::Secondary)
+/// **An empty page says why it is empty.** It shows only the scenes the writer placed
+/// this entry in, never the ones that merely name it, and a bare "nothing here" read as a
+/// search that had failed to find a character the writer knew was in chapter three. The
+/// link to the suggestions, when there are any, is on the line above the page.
+fn empty_book_text(viewpoint_only: bool) -> impl Widget {
+    let headline = if viewpoint_only {
+        tr!(note_in_prose_empty_viewpoint())
+    } else {
+        tr!(note_in_prose_empty_book())
+    };
+    VStack::new()
+        .spacing(4.0)
+        .child(
+            TextWidget::new(headline)
+                .style(TextStyleRole::Small)
+                .color(TextRole::Secondary),
+        )
+        .child(
+            TextWidget::new(tr!(note_in_prose_scope()))
+                .style(TextStyleRole::Small)
+                .color(TextRole::Secondary),
+        )
 }
 
 #[cfg(test)]
@@ -1331,6 +1528,50 @@ mod tests {
         )
         .expect("declare the note in the scene's cast");
         scene
+    }
+
+    /// A Scene at `index` told from the fixture's note's point of view, and in its cast, the
+    /// two writes `set_point_of_view` makes together.
+    fn add_scene_told_by_the_note(f: &Fixture, title: &str, index: i32) -> u64 {
+        let scene = add_scene_declaring_the_note(f, title, index);
+        binder_item_commands::set_binder_item_relationship(
+            &f.ctx,
+            None,
+            &BinderItemRelationshipDto {
+                id: scene,
+                field: BinderItemRelationshipField::PointOfView,
+                right_ids: vec![f.note_id],
+            },
+        )
+        .expect("tell the scene from the note's point of view");
+        scene
+    }
+
+    /// The ids of the rows the page shows, in order: what it hands its find banner.
+    fn shown(f: &Fixture) -> Vec<u64> {
+        f.tab
+            .in_prose_docs_sink()
+            .borrow()
+            .iter()
+            .map(|(id, _)| *id)
+            .collect()
+    }
+
+    /// The largest laid-out height among the widgets whose type name ends with `suffix`:
+    /// zero when none is mounted or every one is hidden behind a dormant `VisibleWhen`.
+    fn tallest(tree: &teksilo::core::widget_tree::WidgetTree, id: WidgetId, suffix: &str) -> f32 {
+        let mine = if tree
+            .widget_type_name(id)
+            .is_some_and(|n| n.ends_with(suffix))
+        {
+            tree.bounds(id).height
+        } else {
+            0.0
+        };
+        tree.children(id)
+            .into_iter()
+            .map(|c| tallest(tree, c, suffix))
+            .fold(mine, f32::max)
     }
 
     /// Trash a row, the way the outline does: `activated` is the trashed flag inverted,
@@ -1643,6 +1884,146 @@ mod tests {
             shown(),
             vec![scene_two],
             "the reading must fall back to a Book that still exists, not to an empty page"
+        );
+    }
+
+    /// **"Viewpoint scenes only" keeps the scenes this entry narrates.**
+    ///
+    /// One pass reads every scene a character acts in; another reads only the ones told
+    /// through her eyes, to hear whether the voice holds. The second used to be impossible
+    /// here: the page showed both kinds, labelled, with no way to set the cast-only ones
+    /// aside. The search banner and the mention count follow the same rows, so the switch
+    /// is checked through what the banner is handed.
+    #[test]
+    fn the_viewpoint_switch_keeps_only_the_scenes_this_entry_narrates() {
+        let f = seed();
+        let told = add_scene_told_by_the_note(&f, "Told by the note", 2);
+
+        let mut tree = crate::test_support::tree_with_events(&f.ctx);
+        let root = tree.add_boxed(note_in_prose_pane(&f.tab));
+        tree.layout(teksilo::prelude::SizeProposal::exact(900.0, 900.0));
+        assert_eq!(
+            shown(&f),
+            vec![f.scene_id, told],
+            "off, every declared scene"
+        );
+        assert!(
+            tallest(&tree, root, "::Toggle") > 0.0,
+            "a cast scene and a narrated one, so the switch has something to do"
+        );
+
+        f.tab.note_in_prose_viewpoint_only.set(true);
+        tree.layout(teksilo::prelude::SizeProposal::exact(900.0, 900.0));
+        assert_eq!(
+            shown(&f),
+            vec![told],
+            "on, only the scene told from its view"
+        );
+        assert!(
+            tallest(&tree, root, "::Toggle") > 0.0,
+            "and the switch stays, so it can be turned off again"
+        );
+
+        f.tab.note_in_prose_viewpoint_only.set(false);
+        tree.layout(teksilo::prelude::SizeProposal::exact(900.0, 900.0));
+        assert_eq!(shown(&f), vec![f.scene_id, told], "off again, both");
+    }
+
+    /// A Book this entry only appears in gives the same page whichever way the switch is
+    /// set, apart from an empty one, so the switch is not drawn there.
+    #[test]
+    fn the_viewpoint_switch_is_not_offered_when_it_would_change_nothing() {
+        let f = seed();
+        let mut tree = crate::test_support::tree_with_events(&f.ctx);
+        let root = tree.add_boxed(note_in_prose_pane(&f.tab));
+        tree.layout(teksilo::prelude::SizeProposal::exact(900.0, 900.0));
+        assert_eq!(shown(&f), vec![f.scene_id]);
+        assert_eq!(
+            tallest(&tree, root, "::Toggle"),
+            0.0,
+            "a cast-only Book has nothing for the switch to set aside"
+        );
+    }
+
+    /// **A scene that names the entry without having it in its cast is pointed to.**
+    ///
+    /// This page shows confirmed scenes only. A writer who knew a character was in
+    /// chapter three, and found no row for it, had nothing on screen saying why or what to
+    /// do; the scan had found the name, and its suggestion sat on another page. The link
+    /// above the page counts those suggestions in the Book on screen and opens Details on
+    /// that Book.
+    #[test]
+    fn a_scene_that_only_names_the_entry_is_offered_for_review_in_details() {
+        let link_height = |suggest: bool| {
+            let mut f = seed();
+            let named = add_scene_declaring_the_note(&f, "Names the note", 2);
+            // Undeclared again: a scene that merely names the entry.
+            binder_item_commands::set_binder_item_relationship(
+                &f.ctx,
+                None,
+                &BinderItemRelationshipDto {
+                    id: named,
+                    field: BinderItemRelationshipField::References,
+                    right_ids: vec![],
+                },
+            )
+            .expect("take the note out of the cast");
+            let hit = |owner_id: u64, is_confirmed: bool| crate::mentions::MentionRow {
+                owner_id,
+                target_id: f.note_id,
+                title: "A note".into(),
+                matched_names: vec!["A note".into()],
+                is_title_match: true,
+                hit_count: 1,
+                is_confirmed,
+                is_point_of_view: false,
+                evidence: "A note was left.".into(),
+            };
+            let mut rows = vec![hit(f.scene_id, true)];
+            if suggest {
+                rows.push(hit(named, false));
+            }
+            f.tab.mention_index = crate::mentions::MentionIndex::seeded_for_tests(Vec::new(), rows);
+
+            let mut tree = crate::test_support::tree_with_events(&f.ctx);
+            let root = tree.add_boxed(note_in_prose_pane(&f.tab));
+            tree.layout(teksilo::prelude::SizeProposal::exact(900.0, 900.0));
+            assert_eq!(
+                shown(&f),
+                vec![f.scene_id],
+                "the suggestion is not a row here"
+            );
+            tallest(&tree, root, "::Button")
+        };
+        assert!(
+            link_height(true) > 0.0,
+            "one scene names the entry without having it in its cast"
+        );
+        assert_eq!(
+            link_height(false),
+            0.0,
+            "every hit is confirmed, so there is nothing to review"
+        );
+    }
+
+    /// The link lands on Details, on the Book whose suggestions it counted rather than
+    /// whichever Book Details was last showing.
+    #[test]
+    fn reviewing_the_suggestions_opens_details_on_the_book_on_screen() {
+        let f = seed();
+        f.tab
+            .note_details_book
+            .set(Some(SegmentId::from_u64(f.book_id + 1_000)));
+        review_in_details(&f.tab)(Some(f.book_id));
+        assert_eq!(
+            f.tab.segment.get(),
+            Some(shared::segments::segment_id(
+                shared::segments::SEG_NOTE_DETAILS
+            ))
+        );
+        assert_eq!(
+            f.tab.note_details_book.get(),
+            Some(SegmentId::from_u64(f.book_id))
         );
     }
 
