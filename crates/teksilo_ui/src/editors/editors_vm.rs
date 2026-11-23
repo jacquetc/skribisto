@@ -217,6 +217,9 @@ pub struct EditorsViewModel {
     /// Width of the Side synopsis column, shared live from Settings into every
     /// `ContentTab`, which seeds its own divider from it.
     synopsis_side_width: Signal<f32>,
+    /// Whether epigraphs show and whether a synopsis above the text starts folded,
+    /// shared live from Settings into every `ContentTab`.
+    page_fields: crate::settings::PageFieldsDisplay,
     typography: EditorTypographySet,
     /// Typewriter scrolling, shared live from Settings into every `ContentTab`.
     typewriter: crate::shared::TypewriterSettings,
@@ -296,6 +299,7 @@ impl EditorsViewModel {
         show_synopsis: Signal<bool>,
         synopsis_placement: Signal<crate::shared::SynopsisPlacement>,
         synopsis_side_width: Signal<f32>,
+        page_fields: crate::settings::PageFieldsDisplay,
         typography: EditorTypographySet,
         typewriter: crate::shared::TypewriterSettings,
         caret_highlight: crate::shared::CaretHighlightSettings,
@@ -358,6 +362,7 @@ impl EditorsViewModel {
             show_synopsis,
             synopsis_placement,
             synopsis_side_width,
+            page_fields,
             typography,
             typewriter,
             caret_highlight,
@@ -1065,6 +1070,7 @@ impl EditorsViewModel {
             show_synopsis,
             synopsis_placement,
             self.synopsis_side_width.clone(),
+            self.page_fields.clone(),
             self.typography.clone(),
             self.typewriter.clone(),
             caret_highlight,
@@ -1168,6 +1174,26 @@ impl EditorsViewModel {
         let focused = self.focused_side.get();
         self.with_tab(focused, item_id, |t| t.segment_shown())
             .or_else(|| self.with_tab(focused.other(), item_id, |t| t.segment_shown()))
+    }
+
+    /// What the writer chose for the synopsis folds of whichever open tab shows
+    /// `item_id`. Focused side first, for the same reason [`Self::view_state_of`]
+    /// asks it first.
+    pub fn synopsis_folds_of(&self, item_id: u64) -> Option<crate::shared::SynopsisFolds> {
+        let focused = self.focused_side.get();
+        self.with_tab(focused, item_id, |t| t.synopsis_folds())
+            .or_else(|| self.with_tab(focused.other(), item_id, |t| t.synopsis_folds()))
+    }
+
+    /// Put back the synopsis folds a **not-yet-built** tab opens with, the
+    /// workspace restore's counterpart of [`Self::seed_view_state`].
+    pub fn seed_synopsis_folds(
+        &self,
+        side: Side,
+        item_id: u64,
+        folds: crate::shared::SynopsisFolds,
+    ) {
+        self.with_tab(side, item_id, |t| t.seed_synopsis_folds(folds));
     }
 
     /// The Corkboard navigation of whichever open tab shows `item_id` — focused
@@ -1299,12 +1325,10 @@ impl EditorsViewModel {
                 if hit.field == MatchField::Synopsis
                     && crate::tabs::renders_prose(tab.role(), tab.sub_role())
                 {
-                    tab.visible_synopsis.set(true);
-                    tab.side_splitter
-                        .set_collapsed(crate::tabs::shared::editor::SYNOPSIS_PANE, false);
+                    tab.reveal_synopsis();
                 }
                 if hit.field == MatchField::Epigraph {
-                    tab.epigraph_expanded.set(true);
+                    tab.reveal_epigraph();
                 }
             }
             tab.pending_search_hit.set(hit.clone());
@@ -1440,6 +1464,10 @@ impl EditorsViewModel {
                 scroll: remembered.scroll,
             });
             t.seed_segment(&remembered.segment);
+            t.seed_synopsis_folds(crate::shared::SynopsisFolds {
+                top: remembered.synopsis_folded,
+                side: remembered.side_synopsis_folded,
+            });
         });
     }
 
@@ -1452,6 +1480,7 @@ impl EditorsViewModel {
             return;
         };
         let live = tab.capture_view_state();
+        let folds = tab.synopsis_folds();
         states.record(TabViewState {
             uid,
             caret: live.caret,
@@ -1462,6 +1491,8 @@ impl EditorsViewModel {
             // stream for a piece of state a reopened tab is happy to start fresh on.
             corkboard: Default::default(),
             segment: tab.segment_shown(),
+            synopsis_folded: folds.top,
+            side_synopsis_folded: folds.side,
         });
     }
 
@@ -2656,6 +2687,16 @@ impl EditorsViewModel {
                     self.synopsis_placement.clone(),
                     self.caret_highlight.clone(),
                 );
+                // The synopsis folds the writer chose, carried by hand for the same
+                // reason: the fresh tab would otherwise start with none, and its
+                // close would then write "never folded" over the item's memory.
+                if let Some(folds) = h
+                    .payload
+                    .downcast_ref::<ContentTab>()
+                    .map(ContentTab::synopsis_folds)
+                {
+                    tab.seed_synopsis_folds(folds);
+                }
                 let caption = self.caption(item_id, &it.title);
                 let was_selected = pane.selected.get() == Some(h.id);
                 let new_id = TabId::fresh();
@@ -2924,6 +2965,7 @@ pub(crate) mod test_support {
             Signal::new(true),
             Signal::new(crate::shared::SynopsisPlacement::default()),
             Signal::new(crate::SYNOPSIS_SIDE_WIDTH_DEFAULT),
+            crate::settings::PageFieldsDisplay::detached(),
             test_typography(),
             crate::shared::TypewriterSettings::off(),
             crate::shared::CaretHighlightSettings::off(),

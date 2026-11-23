@@ -449,6 +449,16 @@ pub(crate) fn reset_targets(vm: &SettingsViewModel) -> Vec<ResetTarget> {
             0.01,
         ),
         flag(
+            crate::SYNOPSIS_FOLDED_KEY,
+            vm.synopsis_folded(),
+            crate::SYNOPSIS_FOLDED_DEFAULT,
+        ),
+        flag(
+            crate::SHOW_EPIGRAPHS_KEY,
+            vm.show_epigraphs(),
+            crate::SHOW_EPIGRAPHS_DEFAULT,
+        ),
+        flag(
             crate::TYPEWRITER_KEY,
             vm.typewriter(),
             crate::TYPEWRITER_DEFAULT,

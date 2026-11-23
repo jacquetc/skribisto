@@ -69,11 +69,12 @@ use crate::{
     SCENE_FIRST_LINE_INDENT_KEY, SCENE_FONT_FAMILY_DEFAULT, SCENE_FONT_FAMILY_KEY,
     SCENE_LINE_HEIGHT_DEFAULT, SCENE_LINE_HEIGHT_KEY, SCENE_PARA_SPACING_AFTER_DEFAULT,
     SCENE_PARA_SPACING_AFTER_KEY, SCENE_PARA_SPACING_BEFORE_DEFAULT, SCENE_PARA_SPACING_BEFORE_KEY,
-    SCENE_SIZE_DEFAULT, SCENE_SIZE_KEY, SHOW_WELCOME_KEY, SPELLCHECK_ENABLED_DEFAULT,
-    SPELLCHECK_ENABLED_KEY, SYNOPSIS_FIRST_LINE_INDENT_DEFAULT, SYNOPSIS_FIRST_LINE_INDENT_KEY,
-    SYNOPSIS_FONT_FAMILY_DEFAULT, SYNOPSIS_FONT_FAMILY_KEY, SYNOPSIS_LINE_HEIGHT_DEFAULT,
-    SYNOPSIS_LINE_HEIGHT_KEY, SYNOPSIS_PANE_DEFAULT, SYNOPSIS_PANE_KEY,
-    SYNOPSIS_PARA_SPACING_AFTER_DEFAULT, SYNOPSIS_PARA_SPACING_AFTER_KEY,
+    SCENE_SIZE_DEFAULT, SCENE_SIZE_KEY, SHOW_EPIGRAPHS_DEFAULT, SHOW_EPIGRAPHS_KEY,
+    SHOW_WELCOME_KEY, SPELLCHECK_ENABLED_DEFAULT, SPELLCHECK_ENABLED_KEY,
+    SYNOPSIS_FIRST_LINE_INDENT_DEFAULT, SYNOPSIS_FIRST_LINE_INDENT_KEY, SYNOPSIS_FOLDED_DEFAULT,
+    SYNOPSIS_FOLDED_KEY, SYNOPSIS_FONT_FAMILY_DEFAULT, SYNOPSIS_FONT_FAMILY_KEY,
+    SYNOPSIS_LINE_HEIGHT_DEFAULT, SYNOPSIS_LINE_HEIGHT_KEY, SYNOPSIS_PANE_DEFAULT,
+    SYNOPSIS_PANE_KEY, SYNOPSIS_PARA_SPACING_AFTER_DEFAULT, SYNOPSIS_PARA_SPACING_AFTER_KEY,
     SYNOPSIS_PARA_SPACING_BEFORE_DEFAULT, SYNOPSIS_PARA_SPACING_BEFORE_KEY, SYNOPSIS_PLACEMENT_KEY,
     SYNOPSIS_SIDE_WIDTH_DEFAULT, SYNOPSIS_SIDE_WIDTH_KEY, SYNOPSIS_SIZE_DEFAULT, SYNOPSIS_SIZE_KEY,
     TAB_LIMIT_KEY, THEME_MODE_DARK, THEME_MODE_DEFAULT, THEME_MODE_KEY, THEME_MODE_LIGHT,
@@ -363,6 +364,33 @@ impl CorkboardDefaults {
     }
 }
 
+/// How the fields around a writing page's prose are shown: whether the epigraph
+/// field is there at all, and whether a synopsis above the text starts folded.
+///
+/// Both are store-backed signals shared live into every `ContentTab`, so a change in
+/// Settings reaches every open tab at once, like [`CorkboardDefaults`].
+#[derive(Clone)]
+pub struct PageFieldsDisplay {
+    /// Whether the synopsis above the manuscript starts folded. Only the default:
+    /// an item the writer folded or unfolded themselves keeps its own fold, which
+    /// `workspace.toml` remembers per item.
+    pub synopsis_folded: Signal<bool>,
+    /// Whether the epigraph field shows on the pages that can carry one. Off hides
+    /// the field and nothing else: the epigraph stays in the project and exports.
+    pub show_epigraphs: Signal<bool>,
+}
+
+impl PageFieldsDisplay {
+    /// Fresh, unshared signals at the built-in defaults, for a standalone tab
+    /// (tests) that has no `SettingsStore` to bind against.
+    pub fn detached() -> Self {
+        Self {
+            synopsis_folded: Signal::new(SYNOPSIS_FOLDED_DEFAULT),
+            show_epigraphs: Signal::new(SHOW_EPIGRAPHS_DEFAULT),
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct SettingsViewModel {
     /// The store every signal above is cached in, kept so the handful of keys
@@ -411,6 +439,8 @@ pub struct SettingsViewModel {
     synopsis_pane: Signal<bool>,
     synopsis_placement: Signal<SynopsisPlacement>,
     synopsis_side_width: Signal<f32>,
+    synopsis_folded: Signal<bool>,
+    show_epigraphs: Signal<bool>,
     /// Application-level smart punctuation — the tier a project follows when
     /// its own `SmartPunctuation` row leaves `override_app_default` off.
     punct_dashes: Signal<bool>,
@@ -605,6 +635,8 @@ impl SettingsViewModel {
             synopsis_pane: store.signal(SYNOPSIS_PANE_KEY, SYNOPSIS_PANE_DEFAULT),
             synopsis_placement: store.signal(SYNOPSIS_PLACEMENT_KEY, SynopsisPlacement::default()),
             synopsis_side_width: store.signal(SYNOPSIS_SIDE_WIDTH_KEY, SYNOPSIS_SIDE_WIDTH_DEFAULT),
+            synopsis_folded: store.signal(SYNOPSIS_FOLDED_KEY, SYNOPSIS_FOLDED_DEFAULT),
+            show_epigraphs: store.signal(SHOW_EPIGRAPHS_KEY, SHOW_EPIGRAPHS_DEFAULT),
             punct_dashes: store.signal(PUNCT_DASHES_KEY, PUNCT_DASHES_DEFAULT),
             punct_ellipsis: store.signal(PUNCT_ELLIPSIS_KEY, PUNCT_ELLIPSIS_DEFAULT),
             punct_quotes: store.signal(PUNCT_QUOTES_KEY, PUNCT_QUOTES_DEFAULT),
@@ -898,6 +930,26 @@ impl SettingsViewModel {
     /// dragged, so the next tab opens at the width the writer settled on.
     pub fn synopsis_side_width(&self) -> Signal<f32> {
         self.synopsis_side_width.clone()
+    }
+
+    /// Whether the synopsis above the manuscript starts folded on an item whose
+    /// fold the writer never set. See [`PageFieldsDisplay::synopsis_folded`].
+    pub fn synopsis_folded(&self) -> Signal<bool> {
+        self.synopsis_folded.clone()
+    }
+
+    /// Whether the epigraph field shows on part and chapter pages. See
+    /// [`PageFieldsDisplay::show_epigraphs`].
+    pub fn show_epigraphs(&self) -> Signal<bool> {
+        self.show_epigraphs.clone()
+    }
+
+    /// The two settings above, as the bundle every `ContentTab` is built with.
+    pub fn page_fields_display(&self) -> PageFieldsDisplay {
+        PageFieldsDisplay {
+            synopsis_folded: self.synopsis_folded.clone(),
+            show_epigraphs: self.show_epigraphs.clone(),
+        }
     }
     // ── Smart punctuation, application-level ─────────────────────────────
     pub fn punct_dashes(&self) -> Signal<bool> {

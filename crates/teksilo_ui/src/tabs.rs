@@ -89,6 +89,7 @@ pub(crate) mod pace;
 /// something outside the crate first tried to use it.
 pub mod shared;
 pub(crate) mod story_bible_place;
+pub(crate) mod synopsis_fold;
 
 /// Which of the item's two names this field edits.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -290,6 +291,24 @@ pub struct ContentTab {
     /// a `ProseField` owns a document and its write-back, nothing about presentation, and
     /// one document is shared by every simultaneous view of the item.
     pub epigraph_expanded: Signal<bool>,
+    /// Persisted "show epigraphs" setting (Settings ▸ Editor ▸ Editor Behavior),
+    /// shared live like [`Self::show_synopsis`].
+    pub show_epigraphs: Signal<bool>,
+    /// Whether **this tab** shows its epigraph field: the setting above, followed
+    /// live, except that a search hit landing in the epigraph shows it in this tab
+    /// alone (see [`Self::reveal_epigraph`]). The same split as
+    /// [`Self::show_synopsis`] and `visible_synopsis`.
+    pub(crate) visible_epigraph: Signal<bool>,
+    _epigraph_preference: teksilo::core::ObserverHandle,
+    /// Whether the synopsis **above** the text is unfolded. The disclosure's own
+    /// signal; the column beside the text folds on [`Self::side_splitter`] instead.
+    ///
+    /// Starts from Settings ▸ "Start with the synopsis folded" and is then this
+    /// item's own: a fold the writer makes is remembered per item (see
+    /// [`synopsis_fold`]), and [`Self::seed_synopsis_folds`] puts it back.
+    pub synopsis_expanded: Signal<bool>,
+    /// Which of the two synopsis folds the writer chose, as opposed to the app.
+    synopsis_folds: synopsis_fold::SynopsisFoldMemory,
     /// Persisted synopsis placement (above vs beside the manuscript), shared live
     /// from Settings like [`Self::column_width`].
     pub synopsis_placement: Signal<SynopsisPlacement>,
@@ -525,6 +544,9 @@ pub fn tab_for(
         // already-long argument list to do it.
         Signal::new(SynopsisPlacement::default()),
         Signal::new(crate::SYNOPSIS_SIDE_WIDTH_DEFAULT),
+        // The shipped defaults, as unshared signals. Like the placement above, a
+        // caller that wants otherwise sets `tab.show_epigraphs` afterwards.
+        crate::settings::PageFieldsDisplay::detached(),
         typography,
         // A standalone tab is never a real project window; the tab tests that
         // exercise pinning build a `ContentTab` directly and pass a live one.
@@ -764,6 +786,7 @@ impl ContentTab {
         show_synopsis: Signal<bool>,
         synopsis_placement: Signal<SynopsisPlacement>,
         synopsis_side_width: Signal<f32>,
+        page_fields: crate::settings::PageFieldsDisplay,
         typography: EditorTypographySet,
         typewriter: crate::shared::TypewriterSettings,
         caret_highlight: crate::shared::CaretHighlightSettings,
@@ -999,6 +1022,20 @@ impl ContentTab {
         let tab_synopsis = Signal::new(show_synopsis.get());
         let visible = tab_synopsis.clone();
         let synopsis_preference = show_synopsis.observe(move |shown| visible.set(*shown));
+        // The epigraph field, the same way: this tab's own flag, following the setting.
+        let tab_epigraph = Signal::new(page_fields.show_epigraphs.get());
+        let visible = tab_epigraph.clone();
+        let epigraph_preference = page_fields
+            .show_epigraphs
+            .observe(move |shown| visible.set(*shown));
+        // The synopsis above the text opens as Settings says until this item's own
+        // remembered fold, if it has one, is seeded over it.
+        let synopsis_expanded = Signal::new(!page_fields.synopsis_folded.get());
+        let synopsis_folds = synopsis_fold::SynopsisFoldMemory::new(
+            synopsis_expanded.clone(),
+            side_splitter.clone(),
+            page_fields.synopsis_folded.clone(),
+        );
         Self {
             open_doc,
             stream,
@@ -1026,6 +1063,11 @@ impl ContentTab {
             segment,
             column_width,
             epigraph_expanded: Signal::new(open_doc_epigraph_seed),
+            show_epigraphs: page_fields.show_epigraphs,
+            visible_epigraph: tab_epigraph,
+            _epigraph_preference: epigraph_preference,
+            synopsis_expanded,
+            synopsis_folds,
             show_synopsis,
             visible_synopsis: tab_synopsis,
             _synopsis_preference: synopsis_preference,
@@ -1205,6 +1247,34 @@ impl ContentTab {
     pub fn seed_remembered_view_state(&self, state: crate::shared::ViewState) {
         self.view_state.set(state);
         self.view_state_ports.request_reveal();
+    }
+
+    /// What the writer chose for this tab's two synopsis folds, for the item roster
+    /// and the workspace record. See [`synopsis_fold`].
+    pub fn synopsis_folds(&self) -> crate::shared::SynopsisFolds {
+        self.synopsis_folds.chosen()
+    }
+
+    /// Put back the synopsis folds remembered for this item: the per-item memory
+    /// seeding a freshly opened tab, and the workspace restore.
+    pub fn seed_synopsis_folds(&self, folds: crate::shared::SynopsisFolds) {
+        self.synopsis_folds.seed(folds);
+    }
+
+    /// Show this tab's synopsis for a search hit that lands in it: shown even when
+    /// the setting hides it, and unfolded wherever it sits. In this tab alone, and
+    /// not remembered as a fold the writer chose.
+    pub(crate) fn reveal_synopsis(&self) {
+        self.visible_synopsis.set(true);
+        self.synopsis_folds.reveal();
+    }
+
+    /// Show this tab's epigraph for a search hit that lands in it: shown even when
+    /// the setting hides epigraphs, and opened. In this tab alone, like
+    /// [`Self::reveal_synopsis`].
+    pub(crate) fn reveal_epigraph(&self) {
+        self.visible_epigraph.set(true);
+        self.epigraph_expanded.set(true);
     }
 
     /// Ask this tab's main editor to take keyboard focus once its pane is mounted.

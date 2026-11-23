@@ -214,6 +214,8 @@ impl WorkspaceLayoutViewModel {
                             query,
                         })
                         .unwrap_or_default();
+                    // Only the folds the writer chose; see `tabs::synopsis_fold`.
+                    let folds = editors.synopsis_folds_of(id).unwrap_or_default();
                     Some(TabViewState {
                         uid,
                         caret: s.caret,
@@ -224,6 +226,8 @@ impl WorkspaceLayoutViewModel {
                         // of the session was left on, and the scroll offset beside
                         // it was measured on a different page entirely.
                         segment: editors.segment_of(id).unwrap_or_default(),
+                        synopsis_folded: folds.top,
+                        side_synopsis_folded: folds.side,
                     })
                 })
                 .collect(),
@@ -240,6 +244,7 @@ impl WorkspaceLayoutViewModel {
                 let (Some(&uid), Some(s)) = (uid_of.get(&id), editors.view_state_of(id)) else {
                     continue;
                 };
+                let folds = editors.synopsis_folds_of(id).unwrap_or_default();
                 self.item_view_states.record(TabViewState {
                     uid,
                     caret: s.caret,
@@ -247,6 +252,8 @@ impl WorkspaceLayoutViewModel {
                     // Per pane, and only there: see `EditorsViewModel::remember_position`.
                     corkboard: CorkboardTabState::default(),
                     segment: editors.segment_of(id).unwrap_or_default(),
+                    synopsis_folded: folds.top,
+                    side_synopsis_folded: folds.side,
                 });
             }
         }
@@ -450,6 +457,15 @@ impl WorkspaceLayoutViewModel {
                     // And the page it was showing. Empty for every combination with
                     // no segmented bar, which `seed_segment` ignores.
                     editors.seed_segment(side, *id, &s.segment);
+                    // And the synopsis folds the writer chose on this item.
+                    editors.seed_synopsis_folds(
+                        side,
+                        *id,
+                        crate::shared::SynopsisFolds {
+                            top: s.synopsis_folded,
+                            side: s.side_synopsis_folded,
+                        },
+                    );
                     // And the Corkboard's own navigation. `map_while` stops at the
                     // first crumb whose uid no longer names a live item: everything
                     // deeper described a path through a container that is gone, and
@@ -1060,6 +1076,7 @@ mod tests {
             Signal::new(true),
             Signal::new(crate::shared::SynopsisPlacement::default()),
             Signal::new(crate::SYNOPSIS_SIDE_WIDTH_DEFAULT),
+            crate::settings::PageFieldsDisplay::detached(),
             test_typography(),
             crate::shared::TypewriterSettings::off(),
             crate::shared::CaretHighlightSettings::off(),
@@ -1470,6 +1487,71 @@ mod tests {
             tab_segment_seed(&editors2, Side::Primary, id),
             Some("corkboard".to_string()),
             "restore must seed the freshly opened tab with the segment capture recorded"
+        );
+    }
+
+    /// Fold a tab's synopsis above the text as the writer would, by its own signal.
+    fn fold_tab_synopsis(editors: &EditorsViewModel, side: Side, item_id: u64) {
+        let tabs = editors.tabs(side);
+        for i in 0..tabs.len() {
+            tabs.with_item(i, |h| {
+                if let Some(t) = h.payload.downcast_ref::<crate::tabs::ContentTab>()
+                    && t.item_id() == item_id
+                {
+                    t.synopsis_expanded.set(false);
+                }
+            });
+        }
+    }
+
+    /// The synopsis folds the writer chose travel through `workspace.toml` like the
+    /// caret: `capture` writes them into the pane record and the roster, and
+    /// `restore` in a fresh window puts them back on the reopened tab.
+    #[test]
+    fn capture_writes_a_tabs_synopsis_fold_and_restore_puts_it_back() {
+        let p = live_project(1);
+        let uid = p.items[0].uid;
+        let id = p.items[0].id;
+
+        p.single_work.unique_id().set("fold-roundtrip".to_string());
+        p.editors.open_in(Side::Primary, id, "S");
+        fold_tab_synopsis(&p.editors, Side::Primary, id);
+
+        p.vm.capture();
+
+        let saved = p
+            .service
+            .get("fold-roundtrip")
+            .expect("capture must have written a row");
+        let folded_in = |states: &[TabViewState]| {
+            states
+                .iter()
+                .find(|s| s.uid == uid)
+                .map(|s| (s.synopsis_folded, s.side_synopsis_folded))
+        };
+        assert_eq!(
+            folded_in(&saved.primary.view_states),
+            Some((Some(true), None)),
+            "the pane record must carry the fold, and no fold for the untouched column"
+        );
+        assert_eq!(
+            folded_in(&saved.item_view_states),
+            Some((Some(true), None)),
+            "so must the per-item roster"
+        );
+
+        let (vm2, editors2, _states2, single_work2, _backup2) =
+            wire_window(p.app_ctx.clone(), p.work_id, p.service.clone());
+        single_work2.unique_id().set("fold-roundtrip".to_string());
+        vm2.restore(false);
+
+        assert_eq!(
+            editors2.synopsis_folds_of(id),
+            Some(crate::shared::SynopsisFolds {
+                top: Some(true),
+                side: None,
+            }),
+            "restore must put the fold back on the reopened tab"
         );
     }
 

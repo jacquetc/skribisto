@@ -86,6 +86,7 @@ impl App {
         let show_synopsis = settings.synopsis_pane();
         let synopsis_placement = settings.synopsis_placement();
         let synopsis_side_width = settings.synopsis_side_width();
+        let page_fields = settings.page_fields_display();
         let typography = settings.editor_typography();
         // Typewriter scrolling: the two source signals, straight from the store,
         // so a settings change reaches every open tab's editors and its page's
@@ -150,6 +151,7 @@ impl App {
                     show_synopsis,
                     synopsis_placement,
                     synopsis_side_width,
+                    page_fields,
                     typography,
                     typewriter,
                     caret_highlight,

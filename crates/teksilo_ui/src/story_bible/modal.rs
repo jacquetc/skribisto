@@ -761,6 +761,7 @@ mod tests {
             Signal::new(true),
             Signal::new(crate::shared::SynopsisPlacement::default()),
             Signal::new(crate::SYNOPSIS_SIDE_WIDTH_DEFAULT),
+            crate::settings::PageFieldsDisplay::detached(),
             typo,
             crate::shared::TypewriterSettings::off(),
             crate::shared::CaretHighlightSettings::off(),

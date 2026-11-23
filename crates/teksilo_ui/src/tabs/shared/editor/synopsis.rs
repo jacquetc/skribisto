@@ -11,6 +11,8 @@
 
 use super::*;
 
+use teksilo::widgets::Accordion;
+
 /// How tall a *growing* synopsis editor starts: enough to invite a couple of lines,
 /// then it grows with its content like a writing column.
 pub const SYNOPSIS_MIN_LINES: u32 = 3;
@@ -528,9 +530,14 @@ impl Widget for DirtyOnEdit {
     }
 }
 
-/// "Synopsis" header + the **compact** synopsis box (a touch narrower than the main
-/// column so it reads as subordinate) — the dual-pane editor's upper half, where it
-/// sits above the prose and must not push it off screen.
+/// The **compact** synopsis box (a touch narrower than the main column so it reads as
+/// subordinate) under a "Synopsis" disclosure — the dual-pane editor's upper half, where
+/// it sits above the prose and must not push it off screen.
+///
+/// A disclosure like the epigraph's, so the writer can fold it away for one item and
+/// keep it for another. `expanded` is the tab's own
+/// [`ContentTab::synopsis_expanded`](crate::tabs::ContentTab::synopsis_expanded), which
+/// remembers that fold per item.
 ///
 /// Centred through [`CenterColumnFlowing`], **not** an `HStack` + `Spacer` — for the
 /// same reason spelled out on [`synopsis_column`], which this had quietly drifted away
@@ -583,16 +590,17 @@ pub fn synopsis_section(
     // The language this text is written in, declared on the editor alone. See
     // `writing_column`'s note. `None` on the surfaces built with no project around them.
     language: Option<Signal<Option<LanguageTag>>>,
+    // Whether the disclosure is open. Written by its header, read by the tab.
+    expanded: Signal<bool>,
 ) -> impl Widget {
     let synopsis_width = column_width.map(|w| (w - SYNOPSIS_WIDTH_INSET).max(0.0));
-    teksu!(
-        VStack {
-            spacing: 5.0
-            GroupHeader::new(tr!(synopsis())) {
-                style: TextStyleRole::SmallBold
-                color: TextRole::Secondary
-            }
-            child: CenterColumnFlowing::new(teksu!(
+    // Laid out exactly like the epigraph's disclosure (`panes::epigraph_section`): the
+    // header on the full text column, the box inset and centred under it. With the
+    // header on the inset box instead, the two headers sat `SYNOPSIS_WIDTH_INSET / 2`
+    // apart on a page that shows both.
+    centered(
+        teksu!(Accordion::new(tr!(synopsis()), expanded) {
+            content: CenterColumnFlowing::new(teksu!(
                 MaxSize::width(synopsis_width.get()) {
                     max_width: synopsis_width.clone()
                     Expand::horizontal {
@@ -621,7 +629,8 @@ pub fn synopsis_section(
                     }
                 }
             ))
-        }
+        }),
+        column_width,
     )
 }
 

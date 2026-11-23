@@ -112,4 +112,4 @@ pub use progress_recorder::ProgressRecorder;
 pub use synopsis_placement::SynopsisPlacement;
 pub use tab_limit::TabLimit;
 pub use typewriter::{TypewriterAnchor, TypewriterSettings};
-pub use view_state::{ViewState, ViewStateBinding, ViewStatePorts};
+pub use view_state::{SynopsisFolds, ViewState, ViewStateBinding, ViewStatePorts};

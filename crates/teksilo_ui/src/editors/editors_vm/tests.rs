@@ -638,6 +638,200 @@ mod captions {
                 "a hard-removed item's position must never be written down"
             );
         }
+
+        /// Fold one item's synopsis above the text and its column beside the text,
+        /// as the writer would.
+        fn fold_both(vm: &EditorsViewModel, id: u64) {
+            vm.with_tab(Side::Primary, id, |t| {
+                t.synopsis_expanded.set(false);
+                t.side_splitter
+                    .set_collapsed(crate::tabs::shared::editor::SYNOPSIS_PANE, true);
+            })
+            .expect("open");
+        }
+
+        /// Both folds as the reopened tab holds them: `(above folded, beside folded)`.
+        fn folds_on_screen(vm: &EditorsViewModel, id: u64) -> (bool, bool) {
+            vm.with_tab(Side::Primary, id, |t| {
+                (
+                    !t.synopsis_expanded.get(),
+                    t.side_splitter
+                        .is_collapsed(crate::tabs::shared::editor::SYNOPSIS_PANE),
+                )
+            })
+            .expect("open")
+        }
+
+        /// **Each item keeps its own fold.** Folding one scene's synopsis, above the
+        /// text and beside it, and closing it must bring it back folded, while a
+        /// second scene the writer never folded opens unfolded.
+        #[test]
+        fn each_item_reopens_with_the_synopsis_folds_the_writer_left() {
+            let vm = editors();
+            let binder = seed_work(&vm);
+            let states = crate::shared::ItemViewStates::new();
+            vm.set_item_view_states(states.clone());
+
+            let folded = seed_item(&vm, binder, "Folded", BinderItemSubRole::Scene, -1);
+            let other = seed_item(&vm, binder, "Other", BinderItemSubRole::Scene, -1);
+            vm.open_in(Side::Primary, folded, "Folded");
+            fold_both(&vm, folded);
+            let tab_id = vm.find_open(Side::Primary, folded).expect("just opened");
+            vm.close_in(Side::Primary, tab_id);
+
+            let uid = vm.uid_of(folded).expect("a real item has a durable uid");
+            let remembered = states.get(uid).expect("the close records the item");
+            assert_eq!(
+                (remembered.synopsis_folded, remembered.side_synopsis_folded),
+                (Some(true), Some(true)),
+                "the close must write both folds down"
+            );
+
+            vm.open_in(Side::Primary, folded, "Folded");
+            assert_eq!(
+                folds_on_screen(&vm, folded),
+                (true, true),
+                "a reopened item must come back folded the way the writer left it"
+            );
+
+            vm.open_in(Side::Primary, other, "Other");
+            assert_eq!(
+                folds_on_screen(&vm, other),
+                (false, false),
+                "another item's fold is its own, and this one was never folded"
+            );
+        }
+
+        /// An item the writer never folded records **no** fold, so it keeps
+        /// following Settings ▸ "Start with the synopsis folded" when that changes.
+        /// Recording the state it merely opened in would freeze it at the old setting.
+        #[test]
+        fn an_untouched_item_keeps_following_the_folded_by_default_setting() {
+            let vm = editors();
+            let binder = seed_work(&vm);
+            let states = crate::shared::ItemViewStates::new();
+            vm.set_item_view_states(states.clone());
+            vm.page_fields.synopsis_folded.set(true);
+
+            let id = seed_item(&vm, binder, "Plain", BinderItemSubRole::Scene, -1);
+            vm.open_in(Side::Primary, id, "Plain");
+            assert!(
+                folds_on_screen(&vm, id).0,
+                "the setting folds the synopsis above the text of a fresh item"
+            );
+            let tab_id = vm.find_open(Side::Primary, id).expect("just opened");
+            vm.close_in(Side::Primary, tab_id);
+
+            let uid = vm.uid_of(id).expect("a real item has a durable uid");
+            assert_eq!(
+                states.get(uid).map(|s| s.synopsis_folded),
+                Some(None),
+                "opening under the setting is not a fold the writer chose"
+            );
+
+            vm.page_fields.synopsis_folded.set(false);
+            vm.open_in(Side::Primary, id, "Plain");
+            assert!(
+                !folds_on_screen(&vm, id).0,
+                "with the setting off, the untouched item opens unfolded"
+            );
+        }
+
+        /// A writer who unfolds one item under a "start folded" setting keeps it
+        /// unfolded: the item's own choice wins over the default.
+        #[test]
+        fn an_item_unfolded_by_the_writer_stays_unfolded_under_the_setting() {
+            let vm = editors();
+            let binder = seed_work(&vm);
+            vm.set_item_view_states(crate::shared::ItemViewStates::new());
+            vm.page_fields.synopsis_folded.set(true);
+
+            let id = seed_item(&vm, binder, "Open", BinderItemSubRole::Scene, -1);
+            vm.open_in(Side::Primary, id, "Open");
+            vm.with_tab(Side::Primary, id, |t| t.synopsis_expanded.set(true))
+                .expect("open");
+            let tab_id = vm.find_open(Side::Primary, id).expect("just opened");
+            vm.close_in(Side::Primary, tab_id);
+
+            vm.open_in(Side::Primary, id, "Open");
+            assert!(
+                !folds_on_screen(&vm, id).0,
+                "the item's own unfold must win over the folded-by-default setting"
+            );
+        }
+
+        /// A Promote rebuilds the item's tab from scratch. The folds must survive it,
+        /// or the fresh tab's close would record "never folded" over the item's memory.
+        #[test]
+        fn a_promote_keeps_the_synopsis_folds_the_writer_chose() {
+            let vm = editors();
+            let binder = seed_work(&vm);
+            let states = crate::shared::ItemViewStates::new();
+            vm.set_item_view_states(states.clone());
+
+            let id = seed_item(&vm, binder, "Promoted", BinderItemSubRole::Scene, -1);
+            vm.open_in(Side::Primary, id, "Promoted");
+            fold_both(&vm, id);
+
+            frontend::commands::binder_item_commands::update_binder_item(
+                &vm.app_ctx,
+                None,
+                &frontend::direct_access::UpdateBinderItemDto {
+                    id,
+                    sub_role: BinderItemSubRole::ChapterScene,
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+            vm.items_updated(&[id]);
+            assert_eq!(
+                vm.with_tab(Side::Primary, id, |t| t.sub_role().clone()),
+                Some(BinderItemSubRole::ChapterScene),
+                "the tab was rebuilt as the new type"
+            );
+
+            let tab_id = vm.find_open(Side::Primary, id).expect("still open");
+            vm.close_in(Side::Primary, tab_id);
+            let uid = vm.uid_of(id).expect("a real item has a durable uid");
+            let remembered = states.get(uid).expect("recorded on close");
+            assert_eq!(
+                (remembered.synopsis_folded, remembered.side_synopsis_folded),
+                (Some(true), Some(true)),
+                "the rebuilt tab must carry the folds it replaced"
+            );
+        }
+
+        /// A search hit landing in a folded synopsis unfolds it to show the match, but
+        /// that is the app's doing, not the writer's: the item is still remembered as
+        /// folded.
+        #[test]
+        fn a_search_hit_unfolds_the_synopsis_without_changing_what_is_remembered() {
+            let vm = editors();
+            let binder = seed_work(&vm);
+            let states = crate::shared::ItemViewStates::new();
+            vm.set_item_view_states(states.clone());
+
+            let id = seed_item(&vm, binder, "Hit", BinderItemSubRole::Scene, -1);
+            vm.open_in(Side::Primary, id, "Hit");
+            fold_both(&vm, id);
+            vm.with_tab(Side::Primary, id, |t| t.reveal_synopsis())
+                .expect("open");
+            assert_eq!(
+                folds_on_screen(&vm, id),
+                (false, false),
+                "the match must be visible"
+            );
+
+            let tab_id = vm.find_open(Side::Primary, id).expect("just opened");
+            vm.close_in(Side::Primary, tab_id);
+            let uid = vm.uid_of(id).expect("a real item has a durable uid");
+            let remembered = states.get(uid).expect("recorded on close");
+            assert_eq!(
+                (remembered.synopsis_folded, remembered.side_synopsis_folded),
+                (Some(true), Some(true)),
+                "the search's unfold must not overwrite the writer's fold"
+            );
+        }
     }
 }
 
@@ -670,6 +864,7 @@ fn release_own_open_docs_releases_only_this_windows_items_never_a_siblings() {
         Signal::new(true),
         Signal::new(crate::shared::SynopsisPlacement::default()),
         Signal::new(crate::SYNOPSIS_SIDE_WIDTH_DEFAULT),
+        crate::settings::PageFieldsDisplay::detached(),
         test_typography(),
         crate::shared::TypewriterSettings::off(),
         crate::shared::CaretHighlightSettings::off(),
@@ -705,6 +900,7 @@ fn release_own_open_docs_releases_only_this_windows_items_never_a_siblings() {
         Signal::new(true),
         Signal::new(crate::shared::SynopsisPlacement::default()),
         Signal::new(crate::SYNOPSIS_SIDE_WIDTH_DEFAULT),
+        crate::settings::PageFieldsDisplay::detached(),
         test_typography(),
         crate::shared::TypewriterSettings::off(),
         crate::shared::CaretHighlightSettings::off(),

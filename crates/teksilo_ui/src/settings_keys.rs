@@ -416,6 +416,15 @@ pub const SYNOPSIS_SIDE_WIDTH_DEFAULT: f32 = 280.0;
 /// high end, since the manuscript is what the writer came for.
 pub const SYNOPSIS_SIDE_WIDTH_MIN: f32 = 180.0;
 pub const SYNOPSIS_SIDE_WIDTH_MAX: f32 = 560.0;
+/// Whether a synopsis above the manuscript starts folded on an item the writer has
+/// never folded or unfolded themselves. An item they did is remembered per item, in
+/// `workspace.toml`, and wins over this.
+pub const SYNOPSIS_FOLDED_KEY: &str = "editor.synopsis_folded";
+pub const SYNOPSIS_FOLDED_DEFAULT: bool = false;
+/// Show the epigraph field on part and chapter pages. Off hides the field only:
+/// an epigraph already written stays in the project and in every export.
+pub const SHOW_EPIGRAPHS_KEY: &str = "editor.show_epigraphs";
+pub const SHOW_EPIGRAPHS_DEFAULT: bool = true;
 /// Remember, per container item type (Book / Part / Chapter), the last
 /// `SegmentedControl` view used — so opening a new chapter lands on the same view
 /// (e.g. Full Chapter) as the last chapter. The per-type indices live under
@@ -907,6 +916,22 @@ pub static SETTINGS: &[SettingSpec] = &[
         check: check::<f32>,
         doc: "Width of the Side synopsis column. Updated by dragging its divider; the \
               range is enforced by the app, not by this schema.",
+    },
+    SettingSpec {
+        key: crate::SYNOPSIS_FOLDED_KEY,
+        ty: "bool",
+        default: || val(crate::SYNOPSIS_FOLDED_DEFAULT),
+        check: check::<bool>,
+        doc: "Start the synopsis above the manuscript folded, on every item whose fold \
+              the writer has not set themselves.",
+    },
+    SettingSpec {
+        key: crate::SHOW_EPIGRAPHS_KEY,
+        ty: "bool",
+        default: || val(crate::SHOW_EPIGRAPHS_DEFAULT),
+        check: check::<bool>,
+        doc: "Show the epigraph field on part and chapter pages. Hidden epigraphs are \
+              kept and still exported.",
     },
     SettingSpec {
         key: crate::REMEMBER_VIEW_KEY,

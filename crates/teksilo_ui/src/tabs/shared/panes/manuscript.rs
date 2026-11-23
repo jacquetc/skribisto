@@ -65,10 +65,8 @@ pub(super) fn manuscript_page(
     // Self-gating: this body is shared with Item/Scene and Item/Note, and the matrix gives
     // neither of those an `EpigraphText`, so `epigraph()` is `None` there and the section
     // never appears. Only the flat chapter (Item/ChapterScene) shows it.
-    if let Some(epi) = epigraph_section(tab) {
-        col = col
-            .child(centered(epi, &tab.column_width))
-            .child(vspace(4.0));
+    if let Some(epi) = epigraph_section(tab, 0.0, 4.0) {
+        col = col.child(epi);
     }
 
     if let (Some(s), Some(showing)) = (tab.synopsis(), compact_synopsis) {
@@ -114,6 +112,9 @@ pub(super) fn manuscript_page(
                 false,
                 tab.capture_palette(),
                 Some(tab.open_doc.content_language()),
+                // Folded and unfolded by the writer per item; see
+                // `tabs::synopsis_fold`.
+                tab.synopsis_expanded.clone(),
             );
             searchable_synopsis(tab, s, editor)
         }));

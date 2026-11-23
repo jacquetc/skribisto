@@ -88,7 +88,12 @@ fn searchable_synopsis(
 /// `SegmentedControl` with a `Switcher` **by index**, so a segment added out of order
 /// silently shows the previous view under the new label. This lives inside segment 0 and
 /// touches none of that.
-fn epigraph_section(tab: &ContentTab) -> Option<impl Widget> {
+///
+/// Settings ▸ "Show epigraphs" hides it live, through this tab's
+/// [`ContentTab::visible_epigraph`], and the space above and below it goes with it:
+/// `before` and `after` are the caller's spacing, built inside the hidden block so a
+/// page with no epigraph field does not keep the gap one would have left.
+fn epigraph_section(tab: &ContentTab, before: f32, after: f32) -> Option<impl Widget> {
     let field = tab.epigraph()?;
     // The epigraph editor's own handle, so the attribution control below can act on the
     // block the caret is in. `synopsis_column` has always taken this sink; the epigraph
@@ -146,9 +151,17 @@ fn epigraph_section(tab: &ContentTab) -> Option<impl Widget> {
                 handle,
             )
         });
-    Some(crate::widgets::tip::RichTip::new(
+    let disclosure = crate::widgets::tip::RichTip::new(
         crate::tooltip_registry::CONCEPT_EPIGRAPH,
         Accordion::new(tr!(epigraph()), tab.epigraph_expanded.clone()).content(body),
+    );
+    Some(VisibleWhen::new(
+        tab.visible_epigraph.clone(),
+        VStack::new()
+            .spacing(0.0)
+            .child(vspace(before))
+            .child(centered(disclosure, &tab.column_width))
+            .child(vspace(after)),
     ))
 }
 
@@ -553,10 +566,8 @@ pub fn folder_own_pane(tab: &ContentTab) -> Box<dyn Widget> {
     }
     // After the title, before the body — where CMOS §13.36 puts a chapter epigraph, and
     // where the compiler emits it, so the page reads in the order the export writes.
-    if let Some(epi) = epigraph_section(tab) {
-        col = col
-            .child(vspace(4.0))
-            .child(centered(epi, &tab.column_width));
+    if let Some(epi) = epigraph_section(tab, 4.0, 0.0) {
+        col = col.child(epi);
     }
     if let Some(s) = tab.synopsis() {
         col = col
@@ -810,10 +821,8 @@ pub fn heading(tab: &ContentTab) -> Box<dyn Widget> {
     // The flat encodings of the same two containers `folder_own_pane` covers, so the
     // epigraph sits in the same place on both — a Part written flat and a Part written as
     // a folder are the same Part.
-    if let Some(epi) = epigraph_section(tab) {
-        col = col
-            .child(vspace(8.0))
-            .child(centered(epi, &tab.column_width));
+    if let Some(epi) = epigraph_section(tab, 8.0, 0.0) {
+        col = col.child(epi);
     }
     if let Some(s) = tab.synopsis() {
         // On a heading tab the synopsis *is* the page — it grows, like any primary

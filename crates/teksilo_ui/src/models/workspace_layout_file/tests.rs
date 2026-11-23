@@ -172,6 +172,7 @@ fn corkboard_board_state_round_trips_through_disk() {
             query: "ferry".into(),
         },
         segment: String::new(),
+        ..Default::default()
     }];
     {
         let s = svc(d.path());
@@ -277,6 +278,7 @@ fn view_states_round_trip_through_disk() {
             query: "keep".into(),
         },
         segment: String::new(),
+        ..Default::default()
     }];
     {
         let s = svc(d.path());
@@ -295,6 +297,7 @@ fn view_states_round_trip_through_disk() {
                 query: "keep".into(),
             },
             segment: String::new(),
+            ..Default::default()
         }]
     );
 }
@@ -555,6 +558,7 @@ fn segment_and_item_view_states_round_trip_through_disk() {
         scroll: 5.0,
         corkboard: CorkboardTabState::default(),
         segment: "corkboard".into(),
+        ..Default::default()
     }];
     rec.item_view_states = vec![
         TabViewState {
@@ -563,6 +567,7 @@ fn segment_and_item_view_states_round_trip_through_disk() {
             scroll: 15.0,
             corkboard: CorkboardTabState::default(),
             segment: "overview".into(),
+            ..Default::default()
         },
         TabViewState {
             uid: u(1),
@@ -570,6 +575,7 @@ fn segment_and_item_view_states_round_trip_through_disk() {
             scroll: 0.0,
             corkboard: CorkboardTabState::default(),
             segment: String::new(),
+            ..Default::default()
         },
     ];
     {
@@ -612,6 +618,7 @@ fn the_v8_migration_is_additive_and_keeps_every_tab_pin_and_caret() {
             query: "ferry".into(),
         },
         segment: "corkboard".into(),
+        ..Default::default()
     }];
     rec.item_view_states = vec![TabViewState {
         uid: u(7),
@@ -619,6 +626,7 @@ fn the_v8_migration_is_additive_and_keeps_every_tab_pin_and_caret() {
         scroll: 15.0,
         corkboard: CorkboardTabState::default(),
         segment: "overview".into(),
+        ..Default::default()
     }];
     rec.primary.pinned.clear();
     rec.secondary.pinned.clear();
@@ -699,6 +707,110 @@ fn pinned_tabs_round_trip_through_disk() {
         got.primary.tabs,
         vec![u(3), u(7), u(1)],
         "and the tab list itself is untouched by the sidecar"
+    );
+}
+
+/// **v8 → v9 is additive.** A v8 file has no synopsis folds anywhere, and must load
+/// whole with every remembered tab reading "no fold chosen", which is exactly what it
+/// means: those items keep following the folded-by-default setting.
+#[test]
+fn the_v9_migration_reads_a_v8_file_as_no_fold_chosen() {
+    let d = tempdir().unwrap();
+    let path = d.path().join("workspace.toml");
+    std::fs::write(
+        &path,
+        r#"version = 8
+[[projects]]
+work_uid = "uid-A"
+last_path = "/x/a.skrib"
+[projects.primary]
+tabs = ["00000000-0000-0000-0000-000000000003"]
+pinned = ["00000000-0000-0000-0000-000000000003"]
+[[projects.primary.view_states]]
+uid = "00000000-0000-0000-0000-000000000003"
+caret = 412
+scroll = 96.5
+segment = "corkboard"
+[[projects.item_view_states]]
+uid = "00000000-0000-0000-0000-000000000007"
+caret = 20
+[projects.secondary]
+tabs = []
+"#,
+    )
+    .unwrap();
+
+    let s = WorkspaceLayoutService::open_at(path, Duration::ZERO).unwrap();
+    let got = s.get("uid-A").expect("the row survived the migration");
+    assert_eq!(got.primary.pinned, vec![u(3)], "a v8 file keeps its pins");
+    let vs = got.primary.view_states.first().expect("the caret survived");
+    assert_eq!((vs.caret, vs.segment.as_str()), (412, "corkboard"));
+    assert_eq!(
+        (vs.synopsis_folded, vs.side_synopsis_folded),
+        (None, None),
+        "no fold was ever chosen in a v8 file"
+    );
+    let item = got.item_view_states.first().expect("the roster survived");
+    assert_eq!(
+        (item.synopsis_folded, item.side_synopsis_folded),
+        (None, None)
+    );
+}
+
+/// The synopsis folds survive a real write and re-read, on an open tab and in the
+/// per-item roster, and a fold nobody chose is written as nothing at all rather than
+/// as a `false` that would read back as a choice.
+#[test]
+fn synopsis_folds_round_trip_through_disk() {
+    let d = tempdir().unwrap();
+    let mut rec = sample("uid-A");
+    rec.primary.view_states = vec![TabViewState {
+        uid: u(3),
+        synopsis_folded: Some(true),
+        side_synopsis_folded: Some(false),
+        ..Default::default()
+    }];
+    rec.item_view_states = vec![
+        TabViewState {
+            uid: u(7),
+            synopsis_folded: Some(false),
+            side_synopsis_folded: Some(true),
+            ..Default::default()
+        },
+        TabViewState {
+            uid: u(1),
+            ..Default::default()
+        },
+    ];
+    {
+        let s = svc(d.path());
+        s.set(rec).unwrap();
+        s.flush_now().unwrap();
+    }
+    let raw = std::fs::read_to_string(d.path().join("workspace.toml")).unwrap();
+    assert_eq!(
+        raw.matches("synopsis_folded").count(),
+        4,
+        "only the four chosen folds are written: {raw}"
+    );
+
+    let s = svc(d.path());
+    let got = s.get("uid-A").expect("row");
+    let tab = &got.primary.view_states[0];
+    assert_eq!(
+        (tab.synopsis_folded, tab.side_synopsis_folded),
+        (Some(true), Some(false))
+    );
+    let folded = &got.item_view_states[0];
+    assert_eq!(
+        (folded.synopsis_folded, folded.side_synopsis_folded),
+        (Some(false), Some(true))
+    );
+    let untouched = &got.item_view_states[1];
+    assert_eq!(
+        (untouched.synopsis_folded, untouched.side_synopsis_folded),
+        (None, None),
+        "an item nobody folded reads back as one nobody folded"
     );
 }
 

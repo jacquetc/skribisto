@@ -145,6 +145,16 @@ pub struct TabViewState {
     /// persists the string half of its own `(string id, SegmentId)` table.
     #[serde(default)]
     pub segment: String,
+    /// Whether the writer folded (`Some(true)`) or unfolded (`Some(false)`) the
+    /// synopsis **above** the text on this item. `None`, and absent from the file,
+    /// when they never did: the item then follows Settings ▸ "Start with the synopsis
+    /// folded". See [`crate::shared::SynopsisFolds`].
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub synopsis_folded: Option<bool>,
+    /// The same for the synopsis column **beside** the text, folded down to its
+    /// divider. `None` starts it open.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub side_synopsis_folded: Option<bool>,
 }
 
 /// One tab's remembered Corkboard navigation.
@@ -383,7 +393,11 @@ impl Versioned for WorkspaceLayoutFile {
     /// deserializes correctly under v8 and there is nothing to transform. The step
     /// exists only to stamp the version so an older build is *refused* by the
     /// `Migrator` rather than silently rewriting the file and unpinning every tab.
-    const CURRENT_VERSION: u32 = 8;
+    ///
+    /// **v9** records the synopsis folds the writer chose on each item
+    /// ([`TabViewState::synopsis_folded`], [`TabViewState::side_synopsis_folded`]).
+    /// Additive, with serde defaults, like every bump since v4.
+    const CURRENT_VERSION: u32 = 9;
     fn version(&self) -> u32 {
         self.version
     }
@@ -525,6 +539,12 @@ fn migrator() -> Migrator<WorkspaceLayoutFile> {
         // field it has never heard of, and unpinning every tab on its next
         // capture.
         .step(7, Ok)
+        // **v8 → v9 is the identity** too: `TabViewState::synopsis_folded` and
+        // `side_synopsis_folded` are new optional fields with serde defaults, so a
+        // v8 document reads as "no fold chosen anywhere", which is what it means.
+        // The stamp keeps an older build from rewriting a v9 file and dropping
+        // every remembered fold.
+        .step(8, Ok)
 }
 
 /// Persistent workspace-layout service. `SettingsFile` is `Clone` (shares the

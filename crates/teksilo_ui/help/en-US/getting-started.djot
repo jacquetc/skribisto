@@ -25,6 +25,7 @@ break*.
 
 Beside the main text is the *Synopsis*: a short summary you can use to plan the scene.
 You can hide it in *Settings ▸ Editor ▸ Editor Behavior*.
+Click its title to fold it away on that scene, and again to unfold it. Each scene remembers its own.
 
 To rename a scene or chapter, right-click it and choose *Rename*.
 

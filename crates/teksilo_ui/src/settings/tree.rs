@@ -267,6 +267,8 @@ pub(crate) fn search_index(spec: &[Root], work_title: &str) -> Vec<(LocalizedStr
         (tr!(settings_field_user_initials()), Pane::User),
         (tr!(settings_text_width()), Pane::EditorBehavior),
         (tr!(settings_synopsis_placement()), Pane::EditorBehavior),
+        (tr!(settings_synopsis_folded()), Pane::EditorBehavior),
+        (tr!(settings_show_epigraphs()), Pane::EditorBehavior),
         (tr!(settings_typewriter()), Pane::EditorBehavior),
         (tr!(settings_highlight_scope()), Pane::EditorBehavior),
         // The distraction-free settings are all on their own page now —

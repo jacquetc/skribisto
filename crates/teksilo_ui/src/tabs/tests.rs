@@ -154,14 +154,218 @@ fn only_the_headed_combinations_offer_an_epigraph() {
         );
 
         let mut tree = crate::test_support::tree_with_events(&ctx);
-        let id = tree.add_boxed(tab_pane(&tab));
+        tree.add_boxed(tab_pane(&tab));
         tree.layout(teksilo::prelude::SizeProposal::exact(1000.0, 700.0));
+        // By name, not by widget type: the synopsis above a scene's text is a
+        // disclosure too, so "there is an Accordion" no longer means an epigraph.
         assert_eq!(
-            first_of_type(&tree, id, "Accordion").is_some(),
+            has_disclosure(&mut tree, tr!(epigraph())),
             expected,
             "{role:?}/{sub_role:?} disagrees about mounting the epigraph disclosure"
         );
     }
+}
+
+/// Whether a disclosure header named `name` is in the accessibility tree: on the
+/// page and not hidden.
+fn has_disclosure(tree: &mut WidgetTree, name: LocalizedString) -> bool {
+    let name = name.resolve_now();
+    tree.sync_accessibility().nodes.iter().any(|(_, n)| {
+        n.role() == teksilo::core::accesskit::Role::Button && n.label() == Some(name.as_str())
+    })
+}
+
+/// A Part folder whose epigraph has text, laid out in a tree.
+fn part_with_an_epigraph() -> (WidgetTree, WidgetId, ContentTab) {
+    use BinderItemRole::*;
+    use BinderItemSubRole::*;
+    let ctx = Rc::new(AppContext::new());
+    let tab = tab_for(
+        &ctx,
+        1,
+        &Folder,
+        &Part,
+        &[ContentDto {
+            id: 78,
+            role: ContentRole::EpigraphText,
+            data: "> The sea keeps what it is given.".to_string(),
+            activated: true,
+            ..Default::default()
+        }],
+        Signal::new(700.0),
+        Signal::new(true),
+        test_typography(),
+        crate::settings::EditorViewMemory::detached(false),
+        &AppIds::new(),
+    );
+    let mut tree = crate::test_support::tree_with_events(&ctx);
+    let id = tree.add_boxed(tab_pane(&tab));
+    tree.layout(teksilo::prelude::SizeProposal::exact(1000.0, 700.0));
+    (tree, id, tab)
+}
+
+/// Settings ▸ "Show epigraphs" takes the field off an open page and puts it back,
+/// live, and leaves the epigraph itself alone: hiding is a view, not an edit.
+#[test]
+fn turning_epigraphs_off_hides_the_field_on_an_open_page_and_keeps_the_text() {
+    let (mut tree, id, tab) = part_with_an_epigraph();
+    assert!(
+        has_disclosure(&mut tree, tr!(epigraph())),
+        "shown by default"
+    );
+    let text = || tab.epigraph().and_then(|f| f.doc.to_plain_text().ok());
+    let before = text();
+    assert!(
+        before
+            .as_deref()
+            .is_some_and(|t| t.contains("The sea keeps"))
+    );
+
+    tab.show_epigraphs.set(false);
+    tree.layout(teksilo::prelude::SizeProposal::exact(1000.0, 700.0));
+    assert!(
+        !has_disclosure(&mut tree, tr!(epigraph())),
+        "the setting must hide the field on a page that is already open"
+    );
+    assert_eq!(
+        text(),
+        before,
+        "hiding the field must not touch the epigraph"
+    );
+
+    tab.show_epigraphs.set(true);
+    tree.layout(teksilo::prelude::SizeProposal::exact(1000.0, 700.0));
+    assert!(
+        has_disclosure(&mut tree, tr!(epigraph())),
+        "and turning it back on brings it back"
+    );
+    assert!(tree.bounds(id).width > 0.0);
+}
+
+/// A search hit landing in an epigraph shows it even with epigraphs hidden, in that
+/// tab only: the setting itself stays off.
+#[test]
+fn a_search_hit_shows_a_hidden_epigraph_in_its_own_tab_only() {
+    let (mut tree, _id, tab) = part_with_an_epigraph();
+    tab.show_epigraphs.set(false);
+    tab.epigraph_expanded.set(false);
+    tree.layout(teksilo::prelude::SizeProposal::exact(1000.0, 700.0));
+
+    tab.reveal_epigraph();
+    tree.layout(teksilo::prelude::SizeProposal::exact(1000.0, 700.0));
+    assert!(
+        has_disclosure(&mut tree, tr!(epigraph())),
+        "the match must be on screen"
+    );
+    assert!(tab.epigraph_expanded.get(), "and opened");
+    assert!(!tab.show_epigraphs.get(), "without changing the setting");
+}
+
+/// The synopsis above a scene's text is a disclosure the writer can fold away, and
+/// folding it gives the height back to the page.
+#[test]
+fn the_synopsis_above_the_text_folds_away() {
+    use BinderItemRole::*;
+    use BinderItemSubRole::*;
+    let ctx = Rc::new(AppContext::new());
+    let tab = tab_for(
+        &ctx,
+        1,
+        &Item,
+        &Scene,
+        &[],
+        Signal::new(700.0),
+        Signal::new(true),
+        test_typography(),
+        crate::settings::EditorViewMemory::detached(false),
+        &AppIds::new(),
+    );
+    let mut tree = crate::test_support::tree_with_events(&ctx);
+    let id = tree.add_boxed(tab_pane(&tab));
+    let settle = |tree: &mut WidgetTree| {
+        for _ in 0..30 {
+            tree.tick_animations(std::time::Duration::from_millis(16));
+            tree.layout(teksilo::prelude::SizeProposal::exact(1000.0, 700.0));
+        }
+    };
+    settle(&mut tree);
+    assert!(
+        has_disclosure(&mut tree, tr!(synopsis())),
+        "the synopsis above the text must carry a disclosure header"
+    );
+    let disclosure = first_containing(&tree, id, "Accordion").expect("mounted");
+    let open = tree.bounds(disclosure).height;
+
+    tab.synopsis_expanded.set(false);
+    settle(&mut tree);
+    let folded = tree.bounds(disclosure).height;
+    assert!(
+        folded + 40.0 < open,
+        "folding must take the synopsis box off the page ({open} → {folded})"
+    );
+
+    tab.synopsis_expanded.set(true);
+    settle(&mut tree);
+    let reopened = tree.bounds(disclosure).height;
+    // Not equal to `open` to the pixel: the first measure can precede the editor's
+    // own settled height. What matters is that the box is back.
+    assert!(
+        reopened > folded + 40.0,
+        "and unfolding brings it back ({open} → {folded} → {reopened})"
+    );
+}
+
+/// On a page that shows both, the epigraph's and the synopsis's disclosures share one
+/// left edge. The synopsis box is inset, and its header once sat on that inset box,
+/// half the inset to the right of the epigraph's.
+#[test]
+fn the_epigraph_and_synopsis_headers_line_up() {
+    use BinderItemRole::*;
+    use BinderItemSubRole::*;
+    fn headers(tree: &WidgetTree, root: WidgetId, out: &mut Vec<WidgetId>) {
+        if tree
+            .widget_type_name(root)
+            .is_some_and(|n| n.ends_with("::AccordionHeader"))
+        {
+            out.push(root);
+        }
+        for c in tree.children(root) {
+            headers(tree, c, out);
+        }
+    }
+    let ctx = Rc::new(AppContext::new());
+    let tab = tab_for(
+        &ctx,
+        1,
+        &Item,
+        &ChapterScene,
+        &[ContentDto {
+            id: 78,
+            role: ContentRole::EpigraphText,
+            data: "> The sea keeps what it is given.".to_string(),
+            activated: true,
+            ..Default::default()
+        }],
+        Signal::new(700.0),
+        Signal::new(true),
+        test_typography(),
+        crate::settings::EditorViewMemory::detached(false),
+        &AppIds::new(),
+    );
+    let mut tree = crate::test_support::tree_with_events(&ctx);
+    let id = tree.add_boxed(tab_pane(&tab));
+    tree.layout(teksilo::prelude::SizeProposal::exact(1000.0, 700.0));
+    assert!(has_disclosure(&mut tree, tr!(epigraph())));
+    assert!(has_disclosure(&mut tree, tr!(synopsis())));
+
+    let mut found = Vec::new();
+    headers(&tree, id, &mut found);
+    let lefts: Vec<f32> = found.iter().map(|&a| tree.bounds(a).x).collect();
+    assert_eq!(lefts.len(), 2, "one epigraph and one synopsis: {lefts:?}");
+    assert!(
+        (lefts[0] - lefts[1]).abs() < 0.5,
+        "the two headers must start at the same x: {lefts:?}"
+    );
 }
 
 /// An empty epigraph starts folded and an authored one starts open, so a project that
@@ -1442,6 +1646,7 @@ fn page_for(
         Signal::new(true),
         Signal::new(SynopsisPlacement::default()),
         Signal::new(crate::SYNOPSIS_SIDE_WIDTH_DEFAULT),
+        crate::settings::PageFieldsDisplay::detached(),
         test_typography(),
         crate::shared::TypewriterSettings::off(),
         crate::shared::CaretHighlightSettings::off(),
@@ -1686,6 +1891,7 @@ fn scene_page_max_scroll(typewriter: crate::shared::TypewriterSettings) -> (f32,
         Signal::new(true),
         Signal::new(SynopsisPlacement::default()),
         Signal::new(crate::SYNOPSIS_SIDE_WIDTH_DEFAULT),
+        crate::settings::PageFieldsDisplay::detached(),
         test_typography(),
         typewriter,
         crate::shared::CaretHighlightSettings::off(),
@@ -2962,6 +3168,7 @@ fn distraction_free_overrides_prose_kind_typography_while_active() {
             Signal::new(true),
             Signal::new(SynopsisPlacement::default()),
             Signal::new(crate::SYNOPSIS_SIDE_WIDTH_DEFAULT),
+            crate::settings::PageFieldsDisplay::detached(),
             typo.clone(),
             crate::shared::TypewriterSettings::off(),
             crate::shared::CaretHighlightSettings::off(),
@@ -3060,6 +3267,7 @@ fn a_stream_lane_marks_every_row_on_its_own_slice() {
         Signal::new(true),
         Signal::new(SynopsisPlacement::default()),
         Signal::new(crate::SYNOPSIS_SIDE_WIDTH_DEFAULT),
+        crate::settings::PageFieldsDisplay::detached(),
         test_typography(),
         crate::shared::TypewriterSettings::off(),
         crate::shared::CaretHighlightSettings::off(),
@@ -3163,6 +3371,7 @@ fn the_manuscript_stream_follows_the_tabs_main_typography_and_column() {
         Signal::new(true),
         Signal::new(SynopsisPlacement::default()),
         Signal::new(crate::SYNOPSIS_SIDE_WIDTH_DEFAULT),
+        crate::settings::PageFieldsDisplay::detached(),
         typo,
         crate::shared::TypewriterSettings::off(),
         crate::shared::CaretHighlightSettings::off(),
@@ -3239,6 +3448,7 @@ fn reading_a_full_book_as_exported_hides_the_working_chrome() {
         Signal::new(false),
         Signal::new(SynopsisPlacement::default()),
         Signal::new(crate::SYNOPSIS_SIDE_WIDTH_DEFAULT),
+        crate::settings::PageFieldsDisplay::detached(),
         test_typography(),
         crate::shared::TypewriterSettings::off(),
         crate::shared::CaretHighlightSettings::off(),

@@ -400,6 +400,29 @@ pub(in crate::settings) fn editor_behavior_pane(
             field_label(tr!(settings_synopsis_placement())),
             synopsis_control,
         )
+        // Only the starting state: an item the writer folded or unfolded keeps its own
+        // fold. Disabled, not hidden, while there is no synopsis at all, like the
+        // typewriter position below. It still applies under *Beside*, because a tab
+        // too narrow for two columns falls back to the synopsis above the text.
+        .line(
+            field_label(tr!(settings_synopsis_folded())),
+            Toggle::new(vm.synopsis_folded())
+                .labelled_externally()
+                .enabled(vm.synopsis_pane())
+                .rich_tooltip_content(TooltipContent::new(
+                    "settings.synopsis_folded",
+                    tr!(settings_synopsis_folded_tip()),
+                )),
+        )
+        .line(
+            field_label(tr!(settings_show_epigraphs())),
+            Toggle::new(vm.show_epigraphs())
+                .labelled_externally()
+                .rich_tooltip_content(TooltipContent::new(
+                    "settings.show_epigraphs",
+                    tr!(settings_show_epigraphs_tip()),
+                )),
+        )
         // In the label column with every other field on this page, not spanning
         // both: a `full_width` row starts at the pane's own left edge while a
         // `.line` field starts at `label_col + gap`, and mixing the two gives one

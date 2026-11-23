@@ -433,6 +433,7 @@ fn test_editors_view_model(app_ctx: &Rc<frontend::AppContext>) -> EditorsViewMod
         Signal::new(true),
         Signal::new(crate::shared::SynopsisPlacement::default()),
         Signal::new(crate::SYNOPSIS_SIDE_WIDTH_DEFAULT),
+        crate::settings::PageFieldsDisplay::detached(),
         typography,
         crate::shared::TypewriterSettings::off(),
         crate::shared::CaretHighlightSettings::off(),

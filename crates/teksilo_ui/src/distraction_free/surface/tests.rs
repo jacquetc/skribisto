@@ -82,6 +82,7 @@ fn fixture_with_column(column: f32) -> Fixture {
         Signal::new(false),
         Signal::new(crate::shared::SynopsisPlacement::default()),
         Signal::new(crate::SYNOPSIS_SIDE_WIDTH_DEFAULT),
+        crate::settings::PageFieldsDisplay::detached(),
         typography(),
         crate::shared::TypewriterSettings::off(),
         crate::shared::CaretHighlightSettings::off(),

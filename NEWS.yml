@@ -12,6 +12,9 @@ Description:
 - "Full Book, Full Part and Full Chapter have a new switch, Read as exported, which shows the book as your reader will get it in the export style chosen beside it: scenes with Include in exports turned off disappear, the dedication and the other front and back matter appear, each chapter opens on the heading the export prints with its epigraph, and scenes run on into each other unless a scene break separates them. A line marks each new page. The text stays editable, and the status, tags and menus of each scene are hidden. Fonts and pages are not shown"
 - "Each book now remembers its export style. The Export window opens on the style it was last exported with, and Read as exported follows it"
 - "In Full Book, Full Part and Full Chapter, a scene with Include in exports turned off says Not exported beside its title. It looked like every other scene, so a cut scene was easy to read as part of the book"
+- "The synopsis above the text now folds away when you click its title, like the epigraph, and each item remembers whether you folded it, after a restart too. A new switch in Settings ▸ Editor ▸ Editor Behavior, Start with the synopsis folded, folds it on every item you have not folded or unfolded yourself"
+- "The synopsis beside the text, folded with its button or by dragging its divider, is now remembered for each item as well. It used to open again on every item"
+- "Settings ▸ Editor ▸ Editor Behavior has a new switch, Show epigraphs. Turned off, part and chapter pages no longer show the epigraph field. The epigraphs you have written are kept and still appear in your exports"
 ---
 Version: 3.4.0
 Date: 2026-11-23

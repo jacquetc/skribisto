@@ -45,6 +45,22 @@ pub struct ViewState {
     pub scroll: f32,
 }
 
+/// What the writer chose for an item's two synopsis folds: the disclosure above the
+/// text (`top`) and the column beside it (`side`). `Some(true)` is folded.
+///
+/// `None` is "never folded or unfolded by the writer", which is not the same as
+/// open: the fold above the text then follows Settings ▸ "Start with the synopsis
+/// folded", so switching that setting reaches every item nobody chose for. The
+/// column beside the text has no such setting and starts open.
+///
+/// View state like [`ViewState`], and kept beside it in `workspace.toml`'s item
+/// roster, never in the project: folding a synopsis does not change the book.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct SynopsisFolds {
+    pub top: Option<bool>,
+    pub side: Option<bool>,
+}
+
 /// The page `ScrollArea`'s two live signals: its offset, and the maximum the
 /// offset may take (`content_height − viewport_height`, 0 while the content has
 /// not been laid out yet).

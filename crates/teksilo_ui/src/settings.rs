@@ -91,8 +91,8 @@ pub(crate) use fields::{
 pub(crate) use nav::{Navigator, Pane, Sec, tree_spec};
 
 pub use settings_vm::{
-    CorkboardDefaults, EditorTypography, EditorTypographySet, EditorViewMemory, SettingsViewModel,
-    TypographyKind, TypographySizeRange,
+    CorkboardDefaults, EditorTypography, EditorTypographySet, EditorViewMemory, PageFieldsDisplay,
+    SettingsViewModel, TypographyKind, TypographySizeRange,
 };
 pub use text_replacement_rules_vm::TextReplacementRulesViewModel;
 pub use tree_expansion_vm::TreeExpansionViewModel;
