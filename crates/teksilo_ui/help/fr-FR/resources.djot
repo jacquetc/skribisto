@@ -8,6 +8,10 @@ partie de votre livre : elle n’est jamais exportée.
 Le panneau *Ressources*, à droite de la fenêtre, montre les ressources de l’élément où vous
 êtes. Ouvrez-le avec son icône, un trombone, ou avec Ctrl+Maj+X.
 
+À côté de sa taille, chaque fichier montre son extension sur une petite étiquette colorée, comme
+*pdf* ou *docx*. La couleur vient de l’extension : les fichiers d’un même type ont donc toujours
+la même, un PDF en rouge, un document Word en bleu.
+
 ## Ajouter une ressource
 
 - *Ajouter des fichiers* choisit un ou plusieurs fichiers sur votre ordinateur.

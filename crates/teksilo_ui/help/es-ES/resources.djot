@@ -8,6 +8,10 @@ libro, así que nunca se exporta.
 El panel *Recursos*, a la derecha de la ventana, muestra los recursos del elemento en el que
 está. Ábralo con su icono, un clip, o con `Ctrl+Mayús+X`.
 
+Junto a su tamaño, cada archivo muestra su extensión en una pequeña etiqueta de color, como
+*pdf* o *docx*. El color depende de la extensión, así que los archivos del mismo tipo siempre lo
+comparten: un PDF es rojo, un documento de Word azul.
+
 ## Añadir un recurso
 
 - *Añadir archivos* elige uno o varios archivos de su ordenador.

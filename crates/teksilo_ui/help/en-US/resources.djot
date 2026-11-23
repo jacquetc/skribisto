@@ -8,6 +8,10 @@ exported.
 The *Resources* panel, on the right of the window, shows the resources of the item you are on.
 Open it with its icon, a paper clip, or with Ctrl+Shift+X.
 
+Beside its size, each file shows its extension on a small coloured tag, such as *pdf* or
+*docx*. The colour comes from the extension, so files of the same type always share it: a PDF is
+red, a Word document blue.
+
 ## Adding a resource
 
 - *Add files* chooses one or more files on your computer.

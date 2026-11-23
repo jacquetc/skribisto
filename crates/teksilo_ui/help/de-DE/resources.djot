@@ -8,6 +8,10 @@ Notiz. Sie ist nicht Teil Ihres Buchs und wird daher nie exportiert.
 Der Bereich *Ressourcen* rechts im Fenster zeigt die Ressourcen des Eintrags, in dem Sie sich
 befinden. Öffnen Sie ihn über sein Symbol, eine Büroklammer, oder mit `Strg+Umschalt+X`.
 
+Neben ihrer Größe zeigt jede Datei ihre Endung auf einem kleinen farbigen Etikett, etwa *pdf*
+oder *docx*. Die Farbe ergibt sich aus der Endung, Dateien desselben Typs haben also immer
+dieselbe: ein PDF ist rot, ein Word-Dokument blau.
+
 ## Eine Ressource hinzufügen
 
 - *Dateien hinzufügen* wählt eine oder mehrere Dateien auf Ihrem Computer.

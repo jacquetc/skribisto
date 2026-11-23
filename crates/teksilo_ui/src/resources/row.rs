@@ -28,6 +28,7 @@ use teksilo::widgets::{
 use crate::intents::AppIntent;
 use crate::models::ResourceRow;
 use crate::resources::ResourcesViewModel;
+use crate::resources::extension_tag;
 use crate::resources::file_kind::{self, FileKind};
 use crate::shared::picture_cache::{self, PictureCache, PictureKey, PictureState};
 
@@ -114,6 +115,27 @@ pub fn detail_line(row: &ResourceRow) -> String {
     }
 }
 
+/// The second line as a row shows it: the tag of the file's extension, then
+/// [`detail_line`]. The line is cut with "…" when space runs short, never the tag.
+pub fn detail_widget(row: &ResourceRow) -> impl Widget + use<> {
+    let tag = extension_tag::extension_tag(row);
+    let detail = detail_line(row);
+    teksu!(
+        HStack {
+            spacing: 6.0
+            child_opt: tag
+            Expand::horizontal() {
+                TextWidget::new(lit!(detail)) {
+                    style: TextStyleRole::Tiny
+                    color: TextRole::Secondary
+                    single_line
+                    overflow: TextOverflow::Ellipsis(EllipsisMode::Middle)
+                }
+            }
+        }
+    )
+}
+
 /// What a screen reader hears for a row: its title, its type, its size or address, and
 /// whether the file is missing.
 pub fn row_name(row: &ResourceRow) -> String {
@@ -164,7 +186,7 @@ pub fn resource_row(
     detach: DetachFrom,
 ) -> impl Widget + use<> {
     let title = title_of(row);
-    let detail = detail_line(row);
+    let detail = detail_widget(row);
     let attached = match &detach {
         DetachFrom::Focus | DetachFrom::Nothing => Vec::new(),
         DetachFrom::Items(items) => items.clone(),
@@ -199,12 +221,7 @@ pub fn resource_row(
                 single_line
                 overflow: TextOverflow::Ellipsis(EllipsisMode::Trailing)
             }
-            TextWidget::new(lit!(detail)) {
-                style: TextStyleRole::Tiny
-                color: TextRole::Secondary
-                single_line
-                overflow: TextOverflow::Ellipsis(EllipsisMode::Middle)
-            }
+            child: detail
             child_opt: on_items
         }
     );

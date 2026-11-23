@@ -8,6 +8,10 @@ exportado.
 O painel *Recursos*, à direita da janela, mostra os recursos do item em que está. Abra-o com o
 seu ícone, um clipe, ou com `Ctrl+Shift+X`.
 
+Ao lado do tamanho, cada ficheiro mostra a sua extensão numa pequena etiqueta colorida, como
+*pdf* ou *docx*. A cor vem da extensão, por isso os ficheiros do mesmo tipo têm sempre a mesma:
+um PDF é vermelho, um documento do Word azul.
+
 ## Adicionar um recurso
 
 - *Adicionar ficheiros* escolhe um ou vários ficheiros no seu computador.

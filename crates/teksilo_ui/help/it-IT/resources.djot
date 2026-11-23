@@ -4,6 +4,8 @@ Una risorsa è un file o una pagina web che tieni con il tuo progetto: la mappa 
 
 Il pannello *Risorse*, a destra della finestra, mostra le risorse dell'elemento in cui ti trovi. Aprilo con la sua icona, una graffetta, o con `Ctrl+Maiusc+X`.
 
+Accanto alla sua dimensione, ogni file mostra la sua estensione su una piccola etichetta colorata, come *pdf* o *docx*. Il colore dipende dall'estensione, quindi i file dello stesso tipo hanno sempre lo stesso: un PDF è rosso, un documento Word blu.
+
 ## Aggiungere una risorsa
 
 - *Aggiungi file* sceglie uno o più file sul tuo computer.

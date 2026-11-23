@@ -389,7 +389,6 @@ impl std::fmt::Debug for ResourceTile {
 impl Widget for ResourceTile {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
         let title = row::title_of(&self.row);
-        let detail = row::detail_line(&self.row);
         let badge: Option<TextWidget> = self.row.missing.then(|| {
             TextWidget::new(tr!(resources_not_found()))
                 .style(TextStyleRole::Tiny)
@@ -418,30 +417,28 @@ impl Widget for ResourceTile {
                     }
                 })
             }
-            None => teksu!(ctx => Panel {
-                background: SurfaceRole::Sunken
-                corner_radius: 4.0
-                Padding::uniform(10.0) {
-                    VStack {
-                        spacing: 6.0
-                        Center {
-                            child: (ResourceIcon::new(&self.row).side(40.0))
+            None => {
+                let detail = row::detail_widget(&self.row);
+                teksu!(ctx => Panel {
+                    background: SurfaceRole::Sunken
+                    corner_radius: 4.0
+                    Padding::uniform(10.0) {
+                        VStack {
+                            spacing: 6.0
+                            Center {
+                                child: (ResourceIcon::new(&self.row).side(40.0))
+                            }
+                            TextWidget::new(lit!(title)) {
+                                style: TextStyleRole::BodyBold
+                                max_lines: 2
+                                overflow: TextOverflow::Ellipsis(EllipsisMode::Trailing)
+                            }
+                            child: detail
+                            child_opt: badge
                         }
-                        TextWidget::new(lit!(title)) {
-                            style: TextStyleRole::BodyBold
-                            max_lines: 2
-                            overflow: TextOverflow::Ellipsis(EllipsisMode::Trailing)
-                        }
-                        TextWidget::new(lit!(detail)) {
-                            style: TextStyleRole::Tiny
-                            color: TextRole::Secondary
-                            single_line
-                            overflow: TextOverflow::Ellipsis(EllipsisMode::Middle)
-                        }
-                        child_opt: badge
                     }
-                }
-            }),
+                })
+            }
         };
         self.root = Some(id);
         vec![id]

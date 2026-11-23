@@ -11,14 +11,16 @@
 //! logic of the Work's Resources settings page, and [`text_drop`] the drop of a resource
 //! onto the text. The dock and the folder page show a resource with the same row
 //! ([`row`]). The rest is plain support code, each module testable without a window:
-//! what a file is ([`file_kind`]), which files open without a question
-//! ([`open_safety`]), the two sizes that ask ([`sizes`]), links to a resource in the text
-//! ([`links`]), the files handed to other applications ([`opened_files`]), and the copies
-//! the settings page exports ([`export`]).
+//! what a file is ([`file_kind`]) and the tag of its extension ([`extension_tag`]),
+//! which files open without a question ([`open_safety`]), the two sizes that ask
+//! ([`sizes`]), links to a resource in the text ([`links`]), the files handed to other
+//! applications ([`opened_files`]), and the copies the settings page exports
+//! ([`export`]).
 
 pub mod dock;
 pub mod edit_panel;
 pub mod export;
+pub mod extension_tag;
 pub mod file_kind;
 pub mod folder_pane;
 mod folder_vm;

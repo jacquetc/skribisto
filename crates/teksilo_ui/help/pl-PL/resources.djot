@@ -8,6 +8,10 @@ trafia do eksportu.
 Panel *Zasoby*, po prawej stronie okna, pokazuje zasoby elementu, w którym jesteś. Otwórz go
 jego ikoną, spinaczem, albo skrótem `Ctrl+Shift+X`.
 
+Obok rozmiaru każdy plik pokazuje swoje rozszerzenie na małej kolorowej etykiecie, na przykład
+*pdf* albo *docx*. Kolor wynika z rozszerzenia, więc pliki tego samego typu mają zawsze ten sam:
+PDF jest czerwony, dokument Worda niebieski.
+
 ## Dodawanie zasobu
 
 - *Dodaj pliki* wybiera jeden lub kilka plików na Twoim komputerze.

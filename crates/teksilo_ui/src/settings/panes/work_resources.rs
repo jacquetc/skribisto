@@ -25,7 +25,7 @@ use teksilo::widgets::{
 
 use crate::models::ResourceRow;
 use crate::resources::ResourcesViewModel;
-use crate::resources::row::{ResourceIcon, detail_line, row_name, title_of};
+use crate::resources::row::{ResourceIcon, detail_widget, row_name, title_of};
 use crate::resources::unattached::{SAVE_AS_FOLDER, UnattachedResourcesViewModel};
 use crate::sessions::WorkSession;
 use crate::settings::fields::group;
@@ -258,13 +258,7 @@ fn unattached_row(row: &ResourceRow, vm: &UnattachedResourcesViewModel) -> impl 
                 .single_line()
                 .overflow(TextOverflow::Ellipsis(EllipsisMode::Trailing)),
         )
-        .child(
-            TextWidget::new(lit!(detail_line(row)))
-                .style(TextStyleRole::Tiny)
-                .color(TextRole::Secondary)
-                .single_line()
-                .overflow(TextOverflow::Ellipsis(EllipsisMode::Middle)),
-        );
+        .child(detail_widget(row));
     let mut line = HStack::new()
         .spacing(8.0)
         .child(ResourceIcon::new(row))
