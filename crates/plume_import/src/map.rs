@@ -164,6 +164,7 @@ pub fn build_bundle(
         // heading's redundancy guard exists to collapse.
         number_chapters: true,
         part_resets_chapter: false,
+        export_style: String::new(),
     };
 
     // Binders, in on-disk order: Manuscript, then Story Bible (only if non-empty).

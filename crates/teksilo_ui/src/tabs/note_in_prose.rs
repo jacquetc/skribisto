@@ -1352,6 +1352,7 @@ mod tests {
                     goal_unit: w.goal_unit,
                     number_chapters: w.number_chapters,
                     part_resets_chapter: w.part_resets_chapter,
+                    export_style: w.export_style,
                 },
             )
             .expect("give the Work a uid");

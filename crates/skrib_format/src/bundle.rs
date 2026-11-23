@@ -411,6 +411,16 @@ pub struct WorkFile {
     /// bundle written before this field meant, so the bare shorthand is correct here.
     #[serde(default)]
     pub part_resets_chapter: bool,
+    /// The export style this book was last exported with (`Preset::id`), or empty for
+    /// none chosen yet.
+    ///
+    /// Additive, so no `FORMAT_VERSION` bump: the `part_resets_chapter` precedent. An
+    /// older build that resaves the bundle drops it, and the Export panel opens on the
+    /// first built-in style again, a choice re-made in one click rather than authored
+    /// content. Left out of the file while empty, so a project that never exported
+    /// writes the same manifest it always did.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub export_style: String,
 }
 
 /// The `#[serde(default = "…")]` companion for [`WorkFile::number_chapters`] — see the

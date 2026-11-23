@@ -333,6 +333,7 @@ fn build(spec: &Spec, chapters: &[RawChapter]) -> Result<WorkBundle> {
                 }),
                 number_chapters: spec.book.number_chapters,
                 part_resets_chapter: false,
+                export_style: String::new(),
             },
             binder_order: vec![binder.file_id],
             kind: BundleKind::Regular,

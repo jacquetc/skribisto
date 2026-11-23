@@ -309,6 +309,7 @@ pub(crate) fn materialize(
         custom_replacement_rules_enabled: lw.custom_replacement_rules_enabled,
         number_chapters: lw.number_chapters,
         part_resets_chapter: lw.part_resets_chapter,
+        export_style: lw.export_style.clone(),
         binders: Vec::new(),
         tags: Vec::new(),
         dict_words: Vec::new(),
@@ -1237,6 +1238,7 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
         // resetting, is what the old app did and what a new project does.
         number_chapters: true,
         part_resets_chapter: false,
+        export_style: String::new(),
         // `LoadedWork` carries the children in its own ordered vectors.
         binders: Vec::new(),
         tags: Vec::new(),

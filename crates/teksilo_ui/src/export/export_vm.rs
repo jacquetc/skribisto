@@ -30,18 +30,10 @@ use teksilo::widgets::{MessageBox, MessageBoxButtons, StandardButton, Toast, Toa
 
 use export_management::{ExportFormat, ExportScopeKind, ExportWorkDto};
 use frontend::AppContext;
-use frontend::commands::{
-    binder_commands, binder_item_commands, content_commands, export_management_commands,
-    footnote_commands, long_operation_commands, work_commands,
-};
-use frontend::common::direct_access::binder::BinderRelationshipField;
-use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
-use frontend::common::direct_access::footnote::FootnoteRelationshipField;
-use frontend::common::direct_access::work::WorkRelationshipField;
-use frontend::common::entities::{Binder, BinderItem, Content, Footnote, Work};
+use frontend::commands::{export_management_commands, long_operation_commands};
 use frontend::common::event::Event;
 
-use skrib_format::{BinderWithItems, FootnoteWithContent, Gathered, ItemWithContents};
+use skrib_format::Gathered;
 use skribisto_compiler::{HeadingScheme, LineSpacing, Preset, SceneBreak, builtin_presets};
 use skribisto_model::compile::{
     ScopeKind, StreamLevel, enclosing_head, primary_scope, resolve_scope,
@@ -197,6 +189,23 @@ pub struct ExportViewModel {
     /// Bumped on any check change; stable across rebuilds so the preview binding survives a
     /// "show non-exportable" toggle.
     custom_changed: Signal<u64>,
+
+    // ── The book's remembered style ──────────────────────────────────────────
+    /// The style the panel fell back to because the book names one this machine does not
+    /// have (a co-author's own style). Exporting in it without picking it says nothing about
+    /// the book's choice, so it is not written over the stored one.
+    style_fallback: Rc<RefCell<Option<String>>>,
+    /// The style to remember once the in-flight export succeeds.
+    style_on_success: Rc<RefCell<Option<StyleToRemember>>>,
+}
+
+/// A style an export in flight will make the book's own once it succeeds.
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct StyleToRemember {
+    work_id: u64,
+    /// The Work's undo stack, captured with it.
+    stack_id: Option<u64>,
+    style: String,
 }
 
 #[allow(dead_code)]
@@ -221,6 +230,8 @@ impl ExportViewModel {
             choose: Rc::new(RefCell::new(None)),
             choose_show: Rc::new(Cell::new(false)),
             custom_changed: Signal::new(0),
+            style_fallback: Rc::new(RefCell::new(None)),
+            style_on_success: Rc::new(RefCell::new(None)),
         }
     }
 
@@ -287,6 +298,27 @@ impl ExportViewModel {
     /// the output path from the project's location + title + the current format's extension.
     /// The caller (`App`'s `export.scope` action) flushes the editors first, so the
     /// committed export sees current prose.
+    /// Open the style picker on the style this book remembers, resolved against
+    /// `catalogue` (built-ins and the writer's own). See [`crate::export::style`].
+    ///
+    /// Separate from [`prepare`](Self::prepare) because the catalogue comes from app
+    /// state, which only the action that opens the panel can reach.
+    pub fn seed_style(&self, catalogue: &[Preset]) {
+        let remembered = self
+            .ids
+            .work_id
+            .get()
+            .map(|work_id| crate::export::style::remembered(&self.app_ctx, work_id))
+            .unwrap_or_default();
+        let resolved = crate::export::style::resolve(&remembered, catalogue);
+        let unknown = !remembered.is_empty() && !catalogue.iter().any(|p| p.id == remembered);
+        *self.style_fallback.borrow_mut() =
+            resolved.as_ref().filter(|_| unknown).map(|p| p.id.clone());
+        if let Some(preset) = resolved {
+            self.preset.set(Some(preset));
+        }
+    }
+
     pub fn prepare(&self, scope: ExportScopeKind, anchor: Option<u64>) {
         let is_custom = scope == ExportScopeKind::Custom;
         // The quick scope the "What to export" toggle can switch back to: the opening scope
@@ -313,6 +345,23 @@ impl ExportViewModel {
             self.choose.replace(None);
             self.ensure_choose();
         }
+    }
+
+    /// The style an export starting now should remember on success, with the Work and
+    /// undo stack it belongs to: the selected one, unless it is only the fallback shown for
+    /// a style this machine does not have.
+    fn style_to_remember(&self) -> Option<StyleToRemember> {
+        let chosen = self.selected_preset().id;
+        let fallback = self.style_fallback.borrow().clone();
+        self.ids
+            .work_id
+            .get()
+            .filter(|_| fallback.as_deref() != Some(chosen.as_str()))
+            .map(|work_id| StyleToRemember {
+                work_id,
+                stack_id: self.ids.stack_id.get(),
+                style: chosen,
+            })
     }
 
     /// This project's media directory, resolved from its path and `unique_id`.
@@ -616,105 +665,19 @@ impl ExportViewModel {
         )
     }
 
-    /// Read the open Work subtree into a `Gathered` from the frontend read commands,
-    /// converting each DTO to its entity. The client analogue of the backend's frozen
-    /// `gather` — best-effort (an empty store yields "no open work", and the preview then
-    /// shows its empty state).
+    /// Read the open Work subtree into a `Gathered` from the frontend read commands — see
+    /// [`gather_work`](crate::export::gather::gather_work).
     ///
     /// Resolved through `self.ids.work_id` (the Phase-1 seam), not
     /// `get_all_work(ctx)`'s first entry — see `dto`'s identical resolution just
     /// below for the same reasoning.
     fn client_gather(&self) -> anyhow::Result<Gathered> {
-        let ctx = &self.app_ctx;
         let work_id = self
             .ids
             .work_id
             .get()
             .ok_or_else(|| anyhow::anyhow!("no open work"))?;
-        let work_dto = work_commands::get_work(ctx, &work_id)?
-            .ok_or_else(|| anyhow::anyhow!("no open work"))?;
-        let work: Work = work_dto.into();
-        let binder_ids =
-            work_commands::get_work_relationship(ctx, &work.id, &WorkRelationshipField::Binders)?;
-        let binder_dtos = binder_commands::get_binder_multi(ctx, &binder_ids)?;
-        let mut binders = Vec::new();
-        for binder_dto in binder_dtos.into_iter().flatten() {
-            let binder: Binder = binder_dto.into();
-            let item_ids = binder_commands::get_binder_relationship(
-                ctx,
-                &binder.id,
-                &BinderRelationshipField::BinderItems,
-            )?;
-            let item_dtos = binder_item_commands::get_binder_item_multi(ctx, &item_ids)?;
-            let mut items = Vec::new();
-            for item_dto in item_dtos.into_iter().flatten() {
-                let item: BinderItem = item_dto.into();
-                let content_ids = binder_item_commands::get_binder_item_relationship(
-                    ctx,
-                    &item.id,
-                    &BinderItemRelationshipField::Contents,
-                )?;
-                let contents: Vec<Content> =
-                    content_commands::get_content_multi(ctx, &content_ids)?
-                        .into_iter()
-                        .flatten()
-                        .map(Content::from)
-                        .collect();
-                items.push(ItemWithContents { item, contents });
-            }
-            binders.push(BinderWithItems { binder, items });
-        }
-        // Footnotes DO reach the compiled manuscript (unlike comments), and the
-        // orphan-footnote export preflight below reads exactly this list — an empty
-        // one here means that warning can never fire, whatever the project holds.
-        //
-        // The DTO's own `content` scalar is not the relationship's source of truth
-        // (see `footnote_numbering::read_work`'s sibling note and
-        // `hydrate_footnotes` in `skrib_format::tree_read`), so it is re-read from
-        // the relationship the same way both of those do.
-        let footnote_ids =
-            work_commands::get_work_relationship(ctx, &work.id, &WorkRelationshipField::Footnotes)?;
-        let footnote_dtos = footnote_commands::get_footnote_multi(ctx, &footnote_ids)?;
-        let mut footnotes = Vec::new();
-        for footnote_dto in footnote_dtos.into_iter().flatten() {
-            let mut footnote: Footnote = footnote_dto.into();
-            footnote.content = footnote_commands::get_footnote_relationship(
-                ctx,
-                &footnote.id,
-                &FootnoteRelationshipField::Content,
-            )?
-            .into_iter()
-            .next();
-            footnotes.push(FootnoteWithContent { footnote });
-        }
-        Ok(Gathered {
-            // Export writes no bundle, so it has no reason to read the ladder — the same
-            // stance `status_multi` takes on the three analysis readers.
-            statuses: Vec::new(),
-            assets: Vec::new(),
-            // Resources are research, not the book: an export carries none.
-            resources: Vec::new(),
-            work,
-            tags: Vec::new(),
-            dict_words: Vec::new(),
-            text_replacement_rules: Vec::new(),
-            // Templates are authoring furniture, never part of the compiled manuscript.
-            note_templates: Vec::new(),
-            // Punctuation settings shape prose as it is typed; by export time the
-            // substitutions are already in the text, so there is nothing to read.
-            smart_punctuation: None,
-            trash_infos: Vec::new(),
-            // Export only needs the item stream for scope resolution, not the writing plan
-            // or the progress history.
-            paces: Vec::new(),
-            progress_snapshots: Vec::new(),
-            // Comments are working notes and never reach a compiled manuscript, so
-            // the export path has no reason to read them (see `TreeReader::reads_comments`).
-            comments: Vec::new(),
-            footnotes,
-            binders,
-            work_info: None,
-        })
+        crate::export::gather::gather_work(&self.app_ctx, work_id, true)
     }
 
     // ── Export (a long operation) ─────────────────────────────────────────────
@@ -849,6 +812,10 @@ impl ExportViewModel {
         };
         match export_management_commands::export_work(&self.app_ctx, &dto) {
             Ok(op_id) => {
+                // The style the book is exported with becomes the one it is read in and
+                // the one the panel opens on next time, once the export has succeeded. Not
+                // the fallback shown for a style this machine lacks, unless picked.
+                *self.style_on_success.borrow_mut() = self.style_to_remember();
                 // Captured NOW, bundled with the op id in one `TrackedOp` —
                 // see `long_op::TrackedOp`'s doc (F4). Every later handler for
                 // THIS op routes on this snapshot, never a live re-read of
@@ -952,8 +919,21 @@ impl ExportViewModel {
         let work_id = tracked.work_id();
         let op_id = tracked.op_id().to_string();
         self.active.set(None);
+        let remember = self.style_on_success.borrow_mut().take();
         match export_management_commands::get_export_work_result(&self.app_ctx, &op_id) {
             Ok(Some(res)) => {
+                // A failure to remember costs the writer one click next time, never the
+                // export that just landed.
+                if let Some(r) = remember
+                    && let Err(e) = crate::export::style::remember(
+                        &self.app_ctx,
+                        r.work_id,
+                        r.stack_id,
+                        &r.style,
+                    )
+                {
+                    eprintln!("export: could not remember the export style: {e:#}");
+                }
                 let done = tr!(export_done(count = res.exported_count));
                 // The two things a writer wants the moment an export lands: to look at it,
                 // or to get at it. Everything worth checking about an export (its pagination,
@@ -1024,6 +1004,8 @@ impl ExportViewModel {
         // Captured BEFORE clearing — see `Self::active_work_id`'s doc.
         let work_id = tracked.work_id();
         self.active.set(None);
+        // A cancelled or failed export was not exported in anything.
+        self.style_on_success.borrow_mut().take();
         // An `Info` notice, so it replaces the loading one rather than updating
         // it, which would keep the spinner (see `ProgressToast`).
         self.progress.end_replacing(
@@ -1051,6 +1033,8 @@ impl ExportViewModel {
         // Captured BEFORE clearing — see `Self::active_work_id`'s doc.
         let work_id = tracked.work_id();
         self.active.set(None);
+        // A cancelled or failed export was not exported in anything.
+        self.style_on_success.borrow_mut().take();
         let error = payload
             .get("error")
             .and_then(|e| e.as_str())
@@ -1108,6 +1092,7 @@ impl ExportViewModel {
 mod tests {
     use super::*;
     use frontend::commands::{binder_item_commands, work_management_commands};
+    use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
     use frontend::work_management::LoadWorkDto;
 
     fn fixture() -> String {
@@ -1142,6 +1127,43 @@ mod tests {
             .map(|it| it.id)
             .collect();
         (ExportViewModel::new(app_ctx, ids), item_ids)
+    }
+
+    /// A book that names a style this machine does not have opens the panel on the first
+    /// built-in, and exporting in it untouched keeps the book's own choice. Picking a
+    /// style, even that same fallback's neighbour, is a choice and is remembered.
+    #[test]
+    fn a_style_this_machine_lacks_is_not_overwritten_by_its_fallback() {
+        let (vm, _) = loaded_vm();
+        vm.ids.open_stack(&vm.app_ctx);
+        let work_id = vm.ids.work_id.get().expect("a work");
+        let work = frontend::commands::work_commands::get_work(&vm.app_ctx, &work_id)
+            .expect("read")
+            .expect("the work");
+        let mut dto = frontend::direct_access::UpdateWorkDto::from(work);
+        dto.export_style = "a-style-only-my-co-author-has".into();
+        frontend::commands::work_commands::update_work(&vm.app_ctx, vm.ids.stack_id.get(), &dto)
+            .expect("store the co-author's style");
+
+        let catalogue = builtin_presets();
+        vm.seed_style(&catalogue);
+        assert_eq!(
+            vm.selected_preset().id,
+            catalogue[0].id,
+            "the panel shows the first built-in"
+        );
+        assert_eq!(
+            vm.style_to_remember(),
+            None,
+            "and keeps the book's own style"
+        );
+
+        vm.preset_signal().set(Some(catalogue[1].clone()));
+        assert_eq!(
+            vm.style_to_remember().map(|r| r.style),
+            Some(catalogue[1].id.clone()),
+            "a style the writer picked is remembered"
+        );
     }
 
     #[test]

@@ -40,6 +40,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
             editors.flush_all();
             let anchor = editors.active_item().get();
             vm.prepare(scope, anchor);
+            vm.seed_style(&style_catalogue(c));
             present_export_panel(c, vm.clone());
         }));
     }
@@ -53,7 +54,13 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
             editors.flush_all();
             let anchor = editors.active_item().get();
             vm.prepare(ExportScopeKind::Custom, anchor);
+            vm.seed_style(&style_catalogue(c));
             present_export_panel(c, vm.clone());
         }));
     }
+}
+
+/// Every style the panel offers: the built-ins and the writer's own, from app state.
+fn style_catalogue(c: &EventContext) -> Vec<skribisto_compiler::Preset> {
+    crate::export::style::catalogue(c.app_state::<crate::export::ExportStylesViewModel>())
 }

@@ -136,6 +136,7 @@ pub(crate) fn sample_bundle() -> WorkBundle {
         custom_replacement_rules_enabled: false,
         number_chapters: true,
         part_resets_chapter: false,
+        export_style: String::new(),
         tags: vec![10, 11],
         dict_words: vec![20],
         text_replacement_rules: vec![],

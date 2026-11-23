@@ -312,6 +312,15 @@ entities:
   # Chapter One" framing is real and other tools expose the same choice.
   - name: part_resets_chapter
     type: boolean
+  # The export style this book was last exported with, by `Preset::id`, or empty for "none
+  # chosen yet" (the first built-in). Manuscript data, so a co-author opening the `.skrib`
+  # reads the book the same way: the Export panel opens on it, and a Full Book, Part or
+  # Chapter read "as exported" follows it.
+  #
+  # An id, not the style itself: user styles live in the app's settings, and a style this
+  # machine does not have resolves to the first built-in rather than failing.
+  - name: export_style
+    type: string
   - name: binders
     type: entity
     entity: Binder

@@ -460,6 +460,7 @@ mod imp {
                     smart_punctuation: None,
                     number_chapters: true,
                     part_resets_chapter: false,
+                    export_style: String::new(),
                 },
                 binder_order: binders.iter().map(|b| b.binder.file_id).collect(),
                 kind: BundleKind::Regular,

@@ -146,6 +146,9 @@ pub(crate) fn sample_inputs() -> SampleInputs {
         custom_replacement_rules_enabled: false,
         number_chapters: true,
         part_resets_chapter: false,
+        // Not empty, for the reason `goal_unit` is not `Words`: an empty style is also
+        // what a lost field reads back as.
+        export_style: "manuscript-shunn".into(),
         tags: vec![10, 11],
         dict_words: vec![20, 21],
         text_replacement_rules: vec![],
@@ -2293,6 +2296,42 @@ fn a_bundle_written_before_the_numbering_fields_still_numbers_its_chapters() {
     // Its companion takes the ordinary shorthand: continuous chapters across parts is both
     // the trade convention and what every older bundle meant.
     assert!(!work.part_resets_chapter);
+}
+
+/// A bundle written before `export_style` existed opens with no style chosen, and a project
+/// with none chosen writes no such key.
+///
+/// The second half is why the field is `skip_serializing_if`: a project that never exported
+/// must keep writing the manifest it always wrote, so a build without the field reads it
+/// back unchanged and nothing in a writer's git history moves for a feature they never used.
+#[test]
+fn an_unchosen_export_style_is_absent_from_the_manifest_and_reads_back_empty() {
+    let old = r#"WorkFile(
+        file_id: 1,
+        created_at: "2023-11-14T22:13:20Z",
+        updated_at: "2023-11-14T22:13:20Z",
+        title: "My Novel",
+        dict_language: ["en-US"],
+        tag_ids: [],
+        dict_word_ids: [],
+        unique_id: "uid-1",
+    )"#;
+    let work: WorkFile = ron::from_str(old).expect("a work.ron without the field must parse");
+    assert_eq!(work.export_style, "", "no style was ever chosen");
+
+    let written = ron::to_string(&work).expect("serialize");
+    assert!(
+        !written.contains("export_style"),
+        "an empty style must not be written: {written}"
+    );
+
+    let chosen = WorkFile {
+        export_style: "manuscript-shunn".into(),
+        ..work
+    };
+    let back: WorkFile =
+        ron::from_str(&ron::to_string(&chosen).expect("serialize")).expect("parse back");
+    assert_eq!(back.export_style, "manuscript-shunn");
 }
 
 // ── dict_language: the pre-v4 string form (format v4) ───────────────────────

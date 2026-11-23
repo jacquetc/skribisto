@@ -13,9 +13,11 @@
 pub(crate) mod choose;
 mod export_styles_vm;
 mod export_vm;
+pub(crate) mod gather;
 pub(crate) mod panel;
 mod paratext_presets_vm;
 pub(crate) mod split_button;
+pub(crate) mod style;
 
 pub use export_styles_vm::ExportStylesViewModel;
 pub(crate) use export_styles_vm::preset_display_name;

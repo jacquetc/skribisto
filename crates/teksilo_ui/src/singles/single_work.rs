@@ -252,6 +252,9 @@ mod imp {
                 number_chapters: self.inner.number_chapters.get(),
                 part_resets_chapter: self.inner.part_resets_chapter.get(),
                 custom_replacement_rules_enabled: self.inner.custom_replacement_rules_enabled.get(),
+                // Not this editor's field: written by `export::remember_style`, so carried
+                // through as stored, like `unique_id` above.
+                export_style: existing.export_style,
             };
             match work_commands::update_work(ctx, stack_id, &dto) {
                 Ok(_) => {

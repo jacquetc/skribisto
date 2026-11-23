@@ -136,6 +136,7 @@ fn seed_second_work(ctx: &AppContext, title: &str) -> SecondWork {
             custom_replacement_rules_enabled: false,
             number_chapters: true,
             part_resets_chapter: false,
+            export_style: String::new(),
             binders: vec![],
             tags: vec![],
             note_templates: vec![],

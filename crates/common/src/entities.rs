@@ -191,6 +191,7 @@ pub struct Work {
     pub goal_unit: GoalUnit,
     pub number_chapters: bool,
     pub part_resets_chapter: bool,
+    pub export_style: String,
     pub binders: Vec<EntityId>,
     pub tags: Vec<EntityId>,
     pub dict_words: Vec<EntityId>,

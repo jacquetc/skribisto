@@ -322,6 +322,7 @@ pub fn build_bundle(
         smart_punctuation: None,
         number_chapters: true,
         part_resets_chapter: false,
+        export_style: String::new(),
     };
 
     let mut binders = vec![make_binder(

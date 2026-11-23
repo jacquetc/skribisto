@@ -1076,6 +1076,7 @@ impl<'c, 't, 'i, 'd> Converter<'c, 't, 'i, 'd> {
             smart_punctuation: None,
             number_chapters: true,
             part_resets_chapter: false,
+            export_style: String::new(),
         };
 
         let undated = self.undated.borrow().len() as u32;

@@ -24,6 +24,7 @@ pub struct WorkDto {
     pub goal_unit: GoalUnit,
     pub number_chapters: bool,
     pub part_resets_chapter: bool,
+    pub export_style: String,
     pub binders: Vec<EntityId>,
     pub tags: Vec<EntityId>,
     pub dict_words: Vec<EntityId>,
@@ -54,6 +55,7 @@ impl From<WorkDto> for Work {
             goal_unit: dto.goal_unit,
             number_chapters: dto.number_chapters,
             part_resets_chapter: dto.part_resets_chapter,
+            export_style: dto.export_style,
             binders: dto.binders,
             tags: dto.tags,
             dict_words: dto.dict_words,
@@ -86,6 +88,7 @@ impl From<&WorkDto> for Work {
             goal_unit: dto.goal_unit.clone(),
             number_chapters: dto.number_chapters,
             part_resets_chapter: dto.part_resets_chapter,
+            export_style: dto.export_style.clone(),
             binders: dto.binders.clone(),
             tags: dto.tags.clone(),
             dict_words: dto.dict_words.clone(),
@@ -118,6 +121,7 @@ impl From<Work> for WorkDto {
             goal_unit: entity.goal_unit,
             number_chapters: entity.number_chapters,
             part_resets_chapter: entity.part_resets_chapter,
+            export_style: entity.export_style,
             binders: entity.binders,
             tags: entity.tags,
             dict_words: entity.dict_words,
@@ -148,6 +152,7 @@ pub struct CreateWorkDto {
     pub goal_unit: GoalUnit,
     pub number_chapters: bool,
     pub part_resets_chapter: bool,
+    pub export_style: String,
     pub binders: Vec<EntityId>,
     pub tags: Vec<EntityId>,
     pub dict_words: Vec<EntityId>,
@@ -178,6 +183,7 @@ impl From<CreateWorkDto> for Work {
             goal_unit: dto.goal_unit,
             number_chapters: dto.number_chapters,
             part_resets_chapter: dto.part_resets_chapter,
+            export_style: dto.export_style,
             binders: dto.binders,
             tags: dto.tags,
             dict_words: dto.dict_words,
@@ -210,6 +216,7 @@ impl From<&CreateWorkDto> for Work {
             goal_unit: dto.goal_unit.clone(),
             number_chapters: dto.number_chapters,
             part_resets_chapter: dto.part_resets_chapter,
+            export_style: dto.export_style.clone(),
             binders: dto.binders.clone(),
             tags: dto.tags.clone(),
             dict_words: dto.dict_words.clone(),
@@ -241,6 +248,7 @@ impl From<Work> for CreateWorkDto {
             goal_unit: entity.goal_unit,
             number_chapters: entity.number_chapters,
             part_resets_chapter: entity.part_resets_chapter,
+            export_style: entity.export_style,
             binders: entity.binders,
             tags: entity.tags,
             dict_words: entity.dict_words,
@@ -271,6 +279,7 @@ pub struct UpdateWorkDto {
     pub goal_unit: GoalUnit,
     pub number_chapters: bool,
     pub part_resets_chapter: bool,
+    pub export_style: String,
 }
 
 impl From<UpdateWorkDto> for Work {
@@ -288,6 +297,7 @@ impl From<UpdateWorkDto> for Work {
             goal_unit: dto.goal_unit,
             number_chapters: dto.number_chapters,
             part_resets_chapter: dto.part_resets_chapter,
+            export_style: dto.export_style,
             binders: Default::default(),
             tags: Default::default(),
             dict_words: Default::default(),
@@ -320,6 +330,7 @@ impl From<&UpdateWorkDto> for Work {
             goal_unit: dto.goal_unit.clone(),
             number_chapters: dto.number_chapters,
             part_resets_chapter: dto.part_resets_chapter,
+            export_style: dto.export_style.clone(),
             binders: Default::default(),
             tags: Default::default(),
             dict_words: Default::default(),
@@ -352,6 +363,7 @@ impl From<Work> for UpdateWorkDto {
             goal_unit: entity.goal_unit,
             number_chapters: entity.number_chapters,
             part_resets_chapter: entity.part_resets_chapter,
+            export_style: entity.export_style,
         }
     }
 }
@@ -371,6 +383,7 @@ impl From<WorkDto> for UpdateWorkDto {
             goal_unit: dto.goal_unit,
             number_chapters: dto.number_chapters,
             part_resets_chapter: dto.part_resets_chapter,
+            export_style: dto.export_style,
         }
     }
 }

@@ -319,6 +319,7 @@ pub fn from_entities(
                 goal_unit: work.goal_unit.clone(),
                 number_chapters: work.number_chapters,
                 part_resets_chapter: work.part_resets_chapter,
+                export_style: work.export_style.clone(),
                 smart_punctuation: smart_punctuation.map(|sp| SmartPunctuationFile {
                     created_at: fmt_dt(&sp.created_at),
                     updated_at: fmt_dt(&sp.updated_at),
@@ -627,6 +628,7 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
         // `default_true`, the one non-`false` legacy default in this format.
         number_chapters: m.work.number_chapters,
         part_resets_chapter: m.work.part_resets_chapter,
+        export_style: m.work.export_style.clone(),
         // Empty by design: `LoadedWork` carries the children in its own ordered
         // vectors, and `materialize` wires the real store ids on afterwards.
         binders: Vec::new(),

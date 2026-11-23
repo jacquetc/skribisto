@@ -751,6 +751,7 @@ mod tests {
                 custom_replacement_rules_enabled: false,
                 number_chapters: true,
                 part_resets_chapter: false,
+                export_style: String::new(),
                 smart_punctuation: None,
             },
             binder_order: vec![],
