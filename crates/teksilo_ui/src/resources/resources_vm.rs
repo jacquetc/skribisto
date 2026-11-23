@@ -10,6 +10,10 @@
 //!
 //! ## Adding files
 //!
+//! What the dock adds goes where its [`DockView`] says: on the item in front of the
+//! writer, or on no item in *Unattached*. The other callers (a folder's page, the
+//! Gallery, a text) name their items, and adding to none of them is refused.
+//!
 //! A file over [`sizes::LARGE_FILE_BYTES`] asks first: store it in the project, link to
 //! it where it is, or cancel, with a "Don't ask again" that sets
 //! [`crate::RESOURCES_LARGE_FILE_KEY`]. The stored ones are copied by a long operation
@@ -89,6 +93,37 @@ pub enum AddTarget {
     Text { handle: EditorHandle, at: usize },
 }
 
+/// What the Resources dock lists, the writer's choice at its top.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum DockView {
+    /// The resources of the item in front of the writer, and what is added goes on it.
+    #[default]
+    Item,
+    /// The project's resources that no item carries, and what is added goes on none:
+    /// research collected before the writer knows where it belongs.
+    Unattached,
+}
+
+impl DockView {
+    pub const ALL: [Self; 2] = [Self::Item, Self::Unattached];
+
+    /// Its place on the dock's segmented control.
+    pub fn index(self) -> usize {
+        match self {
+            Self::Item => 0,
+            Self::Unattached => 1,
+        }
+    }
+
+    pub fn from_index(index: usize) -> Self {
+        if index == 1 {
+            Self::Unattached
+        } else {
+            Self::Item
+        }
+    }
+}
+
 /// Resources attached by a drop that had no event context to say so with (a drop on a
 /// binder row lands in the tree's data source), waiting on the view-model of the window
 /// the drop was made in for its next event to raise it.
@@ -127,6 +162,9 @@ struct Inner {
     ids: AppIds,
     session: ResourcesSession,
     focus: Signal<Option<u64>>,
+    /// What the dock lists: this window's own choice, back to the item's resources in a
+    /// new window.
+    view: Signal<DockView>,
     shape: Signal<Option<WorkShape>>,
     unique_id: Signal<String>,
     editor: RefCell<Option<EditorFn>>,
@@ -170,6 +208,7 @@ impl ResourcesViewModel {
                 ids,
                 session,
                 focus,
+                view: Signal::new(DockView::default()),
                 shape,
                 unique_id,
                 editor: RefCell::new(None),
@@ -223,16 +262,51 @@ impl ResourcesViewModel {
         self.inner.session.model().version_signal()
     }
 
-    /// The item in front of the writer's resources, by title.
+    /// What the dock lists: the item's resources or the unattached ones.
+    pub fn view(&self) -> Signal<DockView> {
+        self.inner.view.clone()
+    }
+
+    /// Whether the dock's add buttons have somewhere to put a resource: on the item in
+    /// front of the writer, or, in [`DockView::Unattached`], on none.
+    pub fn can_add(&self) -> Signal<bool> {
+        self.inner
+            .focus
+            .zip(&self.inner.view)
+            .map(|(focus, view)| focus.is_some() || *view == DockView::Unattached)
+    }
+
+    /// What the dock lists, by title: the resources of the item in front of the writer,
+    /// or in [`DockView::Unattached`] those of no item.
     pub fn rows(&self) -> Vec<ResourceRow> {
-        match self.inner.focus.get() {
-            Some(item) => sorted_by_title(self.inner.session.model().rows_for(item)),
-            None => Vec::new(),
+        match (self.inner.view.get(), self.inner.focus.get()) {
+            (DockView::Unattached, _) => self.unattached_rows(),
+            (DockView::Item, Some(item)) => {
+                sorted_by_title(self.inner.session.model().rows_for(item))
+            }
+            (DockView::Item, None) => Vec::new(),
         }
     }
 
-    fn items(&self) -> Vec<u64> {
-        self.inner.focus.get().into_iter().collect()
+    /// The project's resources that no item carries, by title. None when the attachments
+    /// cannot be read: listing every resource as loose would offer each one to Remove.
+    pub fn unattached_rows(&self) -> Vec<ResourceRow> {
+        match self.inner.session.model().unattached() {
+            Ok(rows) => sorted_by_title(rows),
+            Err(e) => {
+                eprintln!("resources: could not read what the items carry: {e}");
+                Vec::new()
+            }
+        }
+    }
+
+    /// Where the dock files what is added to it: the item in front of the writer, no
+    /// item at all in [`DockView::Unattached`], or nowhere (`None`) with no item open.
+    fn dock_items(&self) -> Option<Vec<u64>> {
+        match self.inner.view.get() {
+            DockView::Unattached => Some(Vec::new()),
+            DockView::Item => self.inner.focus.get().map(|item| vec![item]),
+        }
     }
 
     fn editor(&self) -> Option<EditorHandle> {
@@ -254,14 +328,20 @@ impl ResourcesViewModel {
 
     // ── Adding ───────────────────────────────────────────────────────────────
 
-    /// Ask for files to attach to the item in front of the writer.
+    /// Ask for files to add from the dock: see [`Self::dock_items`].
     pub fn pick_files(&self, ctx: &mut EventContext) {
-        self.pick_files_for(ctx, self.items());
+        if let Some(items) = self.dock_items() {
+            let req = FileDialogRequest::pick_files().title(tr!(resources_add_files_title()));
+            self.pick_for(ctx, items, req);
+        }
     }
 
     /// Ask for files to attach to `items`: a folder's Resources page attaches to the
     /// folder, whatever is in front of the writer.
     pub fn pick_files_for(&self, ctx: &mut EventContext, items: Vec<u64>) {
+        if items.is_empty() {
+            return;
+        }
         let req = FileDialogRequest::pick_files().title(tr!(resources_add_files_title()));
         self.pick_for(ctx, items, req);
     }
@@ -269,6 +349,9 @@ impl ResourcesViewModel {
     /// Ask for pictures to attach to `items`, the dialog offering only the formats the
     /// Gallery and the image viewer draw: an empty Gallery's way to add one.
     pub fn pick_pictures_for(&self, ctx: &mut EventContext, items: Vec<u64>) {
+        if items.is_empty() {
+            return;
+        }
         let req = FileDialogRequest::pick_files()
             .title(tr!(gallery_add_images_title()))
             .add_filter(
@@ -279,11 +362,8 @@ impl ResourcesViewModel {
     }
 
     /// Run the file dialog `req` from the folder last attached from, and attach what is
-    /// picked to `items`.
+    /// picked to `items`, none meaning a resource of no item.
     fn pick_for(&self, ctx: &mut EventContext, items: Vec<u64>, req: FileDialogRequest) {
-        if items.is_empty() {
-            return;
-        }
         let req =
             crate::models::dialog_start_in(ctx, crate::models::FolderPurpose::AttachResources, req);
         let vm = self.clone();
@@ -293,15 +373,17 @@ impl ResourcesViewModel {
                 return;
             };
             if !paths.is_empty() {
-                vm.add_paths_to(c, items.clone(), paths, AddTarget::Dock);
+                vm.store_paths(c, items.clone(), paths, AddTarget::Dock);
             }
         });
     }
 
-    /// Attach `paths` to the item in front of the writer: ask about the large ones,
-    /// store the rest, link what the writer chose to link. See the module docs.
+    /// Add `paths` from the dock, filed as [`Self::dock_items`] says: ask about the large
+    /// ones, store the rest, link what the writer chose to link. See the module docs.
     pub fn add_paths(&self, ctx: &mut EventContext, paths: Vec<PathBuf>, target: AddTarget) {
-        self.add_paths_to(ctx, self.items(), paths, target);
+        if let Some(items) = self.dock_items() {
+            self.store_paths(ctx, items, paths, target);
+        }
     }
 
     /// [`Self::add_paths`], attaching to `items` rather than the item in front of the
@@ -313,7 +395,21 @@ impl ResourcesViewModel {
         paths: Vec<PathBuf>,
         target: AddTarget,
     ) {
-        if items.is_empty() || paths.is_empty() {
+        if !items.is_empty() {
+            self.store_paths(ctx, items, paths, target);
+        }
+    }
+
+    /// Add `paths` on `items`, none meaning a resource of no item: the large-file
+    /// question, then the copy and the rows.
+    fn store_paths(
+        &self,
+        ctx: &mut EventContext,
+        items: Vec<u64>,
+        paths: Vec<PathBuf>,
+        target: AddTarget,
+    ) {
+        if paths.is_empty() {
             return;
         }
         let large: Vec<(PathBuf, u64)> = paths
@@ -764,9 +860,12 @@ impl ResourcesViewModel {
         }
     }
 
-    /// Attach a web address to the item in front of the writer.
+    /// Add a web address from the dock, filed as [`Self::dock_items`] says.
     pub fn add_web_link(&self, ctx: &mut EventContext, url: &str, title: &str) -> bool {
-        self.add_web_link_to(ctx, &self.items(), url, title)
+        match self.dock_items() {
+            Some(items) => self.add_web_link_on(ctx, &items, url, title),
+            None => false,
+        }
     }
 
     /// Attach a web address to `items`.
@@ -777,9 +876,17 @@ impl ResourcesViewModel {
         url: &str,
         title: &str,
     ) -> bool {
-        if items.is_empty() {
-            return false;
-        }
+        !items.is_empty() && self.add_web_link_on(ctx, items, url, title)
+    }
+
+    /// Add a web address on `items`, none meaning a resource of no item.
+    fn add_web_link_on(
+        &self,
+        ctx: &mut EventContext,
+        items: &[u64],
+        url: &str,
+        title: &str,
+    ) -> bool {
         let url = crate::format::link_panel::normalize_href(url);
         if !is_web_address(&url) {
             ctx.show_toast(
@@ -813,17 +920,25 @@ impl ResourcesViewModel {
         }
     }
 
-    /// Text dropped or pasted on the dock: every web address in it becomes a link.
+    /// Text dropped or pasted on the dock: every web address in it becomes a link, filed
+    /// as [`Self::dock_items`] says.
     pub fn add_dropped_text(&self, ctx: &mut EventContext, text: &str) -> bool {
-        self.add_dropped_text_to(ctx, &self.items(), text)
+        match self.dock_items() {
+            Some(items) => self.add_links_in(ctx, &items, text),
+            None => false,
+        }
     }
 
     /// Text dropped or pasted on a folder's Resources page: links of `items`.
     pub fn add_dropped_text_to(&self, ctx: &mut EventContext, items: &[u64], text: &str) -> bool {
-        let urls = web_addresses_in(text);
+        !items.is_empty() && self.add_links_in(ctx, items, text)
+    }
+
+    /// Every web address in `text`, a link on `items` (none: on no item).
+    fn add_links_in(&self, ctx: &mut EventContext, items: &[u64], text: &str) -> bool {
         let mut any = false;
-        for url in urls {
-            any |= self.add_web_link_to(ctx, items, &url, "");
+        for url in web_addresses_in(text) {
+            any |= self.add_web_link_on(ctx, items, &url, "");
         }
         any
     }
@@ -1111,6 +1226,15 @@ impl ResourcesViewModel {
             return;
         };
         self.detach_from(ctx, item, row);
+    }
+
+    /// File `row`, a resource of no item just linked from the text in front of the
+    /// writer, on that text's item, with an Undo: a resource a text links to is that
+    /// text's, as a drop on it makes it. Nothing with no item open.
+    pub fn file_on_focus(&self, ctx: &mut EventContext, row: &ResourceRow) {
+        if let Some(item) = self.inner.focus.get() {
+            self.attach_dropped(ctx, item, &[row.id]);
+        }
     }
 
     /// Take `row` off `item`; it stays in the project.

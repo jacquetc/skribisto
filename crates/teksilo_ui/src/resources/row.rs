@@ -68,6 +68,9 @@ pub enum DetachFrom {
     Focus,
     /// These items, each by name: a folder's Resources page, the Gallery.
     Items(Vec<AttachedItem>),
+    /// None: a resource on no item, in the dock's Unattached view. A link to it put into
+    /// a text files it on that text's item, as dragging it there does.
+    Nothing,
 }
 
 /// The family of `row`, for its icon and its name.
@@ -163,7 +166,7 @@ pub fn resource_row(
     let title = title_of(row);
     let detail = detail_line(row);
     let attached = match &detach {
-        DetachFrom::Focus => Vec::new(),
+        DetachFrom::Focus | DetachFrom::Nothing => Vec::new(),
         DetachFrom::Items(items) => items.clone(),
     };
     let name = row_name_with_items(row, &attached);
@@ -294,6 +297,7 @@ pub fn resource_actions(
         );
     }
     menu = menu.separator();
+    let loose = detach == DetachFrom::Nothing;
     if ResourcesViewModel::offers_picture(row) {
         {
             let (vm, row) = (vm.clone(), row.clone());
@@ -310,7 +314,12 @@ pub fn resource_actions(
         menu = menu.item(
             MenuItem::new(tr!(resources_insert_link())).on_activate_fn(move |c| {
                 match vm.insertion_point() {
-                    Some((handle, at)) => vm.insert_link(&handle, at, &row),
+                    Some((handle, at)) => {
+                        vm.insert_link(&handle, at, &row);
+                        if loose {
+                            vm.file_on_focus(c, &row);
+                        }
+                    }
                     None => vm.say_no_text(c),
                 }
             }),
@@ -320,7 +329,12 @@ pub fn resource_actions(
         menu = menu.item(
             MenuItem::new(tr!(resources_insert_into_text())).on_activate_fn(move |c| {
                 match vm.insertion_point() {
-                    Some((handle, at)) => vm.insert_link(&handle, at, &row),
+                    Some((handle, at)) => {
+                        vm.insert_link(&handle, at, &row);
+                        if loose {
+                            vm.file_on_focus(c, &row);
+                        }
+                    }
                     None => vm.say_no_text(c),
                 }
             }),
@@ -372,6 +386,7 @@ pub fn resource_actions(
                 );
             }
         }
+        DetachFrom::Nothing => {}
     }
     let row = row.clone();
     menu.item(MenuItem::new(tr!(resources_remove())).on_activate_fn(move |c| vm.remove(c, &row)))
@@ -599,6 +614,34 @@ mod tests {
         tree.add(row_menu(&row, vm, DetachFrom::Focus));
         tree.layout(SizeProposal::exact(300.0, 600.0));
         assert!(tree.find_by_label("Attach to items…").is_some());
+    }
+
+    /// A resource of no item, in the dock's Unattached view, offers no Detach: there is
+    /// nothing to take it off. Attach to items… is still there.
+    #[test]
+    fn a_resource_of_no_item_offers_no_detach() {
+        let app_ctx = std::rc::Rc::new(frontend::AppContext::new());
+        let row = ResourceRow {
+            kind: ResourceKind::WebLink,
+            title: "Interview with the keeper".into(),
+            location: "https://example.org/interview".into(),
+            ..Default::default()
+        };
+        for (detach, offered) in [(DetachFrom::Focus, true), (DetachFrom::Nothing, false)] {
+            let vm = ResourcesViewModel::detached(app_ctx.clone(), crate::app_ids::AppIds::new());
+            let mut tree = teksilo::core::widget_tree::WidgetTree::new();
+            tree.add(row_menu(&row, vm, detach.clone()));
+            tree.layout(SizeProposal::exact(300.0, 600.0));
+            assert!(
+                tree.find_by_label("Attach to items…").is_some(),
+                "{detach:?}"
+            );
+            assert_eq!(
+                tree.find_by_label("Detach from this item").is_some(),
+                offered,
+                "{detach:?}"
+            );
+        }
     }
 
     /// A dropped picture's thumbnail, decoded, reaches the accessibility tree without

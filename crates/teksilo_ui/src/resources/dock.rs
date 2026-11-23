@@ -14,6 +14,13 @@
 //! badge's colour is not the only thing that says a file is missing. Double-click or
 //! Enter opens it; its menu holds everything else.
 //!
+//! At its top the writer chooses what it lists ([`DockView`]): *This item*, or
+//! *Unattached*, the project's resources that no item carries. The second is where
+//! research collected before it belongs anywhere lives: what is added there, by the
+//! buttons, a drop or Ctrl+V, goes on no item, and each row offers *Attach to items…*.
+//! Dragging such a row into a text, or putting a link to it there from its menu, files
+//! it on that text's item.
+//!
 //! The dock is a drop target for files and web addresses from outside, and its rows
 //! can be dragged into a text (see [`super::text_drop`]). The keyboard path to each is
 //! here too: the header's two buttons add files and links, Ctrl+V on the list adds the
@@ -29,13 +36,13 @@ use teksilo::platform::clipboard::ClipboardHandle;
 use teksilo::prelude::*;
 use teksilo::widgets::{
     ActivateOn, DockOpenLocation, DockSide, DockWidget, DockWidgetId, DragTransferMode, DropTarget,
-    FocusScope, IconButton, ListView, Padding, ScrollBarMode, Switcher, TextWidget, ToolbarItem,
-    TraversalScopePolicy,
+    Expand, FocusScope, IconButton, ListView, Padding, ScrollBarMode, Segment, SegmentedControl,
+    Switcher, TextWidget, ToolbarItem, TraversalScopePolicy, VStack,
 };
 
 use crate::models::ResourceRow;
 use crate::resources::row::{DetachFrom, list_keys, resource_row};
-use crate::resources::{AddTarget, ResourcesViewModel};
+use crate::resources::{AddTarget, DockView, ResourcesViewModel};
 
 /// Package the Resources panel as a trailing `DockWidget`.
 pub fn resources_dock(vm: ResourcesViewModel, dock_id: DockWidgetId) -> DockWidget {
@@ -53,14 +60,14 @@ pub fn resources_dock(vm: ResourcesViewModel, dock_id: DockWidgetId) -> DockWidg
                 IconButton::add()
                     .toolbar()
                     .tooltip(tr!(resources_add_files()))
-                    .enabled(header_vm.focus().map(Option::is_some))
+                    .enabled(header_vm.can_add())
                     .on_activate_fn(move |ctx| files_vm.pick_files(ctx)),
             ),
             ToolbarItem::custom(
                 IconButton::new(crate::icons::resources::add_link())
                     .toolbar()
                     .tooltip(tr!(resources_add_link()))
-                    .enabled(header_vm.focus().map(Option::is_some))
+                    .enabled(header_vm.can_add())
                     .on_activate_fn(move |ctx| {
                         let url = clipboard_address(ctx).unwrap_or_default();
                         super::edit_panel::present_add_link(&link_vm, ctx, &url);
@@ -77,15 +84,20 @@ pub(crate) fn clipboard_address(ctx: &EventContext) -> Option<String> {
     crate::resources::web_addresses_in(&text).into_iter().next()
 }
 
-/// The panel: the list, or why there is none, inside a drop target for files and links
-/// from outside.
+/// The panel: the choice of what it lists, and the list or why there is none, inside a
+/// drop target for files and links from outside.
 pub fn resources_panel(vm: ResourcesViewModel) -> impl Widget {
     let drop_vm = vm.clone();
     let targeted = Signal::new(false);
+    // Says where a drop goes, which the choice at the top decides.
+    let hint = vm.view().map(|view| match view {
+        DockView::Item => tr!(resources_drop_hint()).resolve_now(),
+        DockView::Unattached => tr!(resources_drop_hint_unattached()).resolve_now(),
+    });
     DropTarget::new()
         .accept_external()
         .targeted_signal(targeted)
-        .hint(TextWidget::new(tr!(resources_drop_hint())))
+        .hint(TextWidget::new(lit!("")).text(hint))
         .on_drop(move |payload, _pos, ctx| {
             let files: Vec<PathBuf> = payload.files().to_vec();
             if !files.is_empty() {
@@ -102,8 +114,8 @@ pub fn resources_panel(vm: ResourcesViewModel) -> impl Widget {
         .child(ResourcesList::new(vm))
 }
 
-/// The list, wrapped in a widget so its re-derivation effects have a context: the rows
-/// depend on the model's version and on the item in front of the writer.
+/// The choice and the list, wrapped in a widget so its effects have a context: the rows
+/// depend on the model's version, on the item in front of the writer and on the choice.
 struct ResourcesList {
     vm: ResourcesViewModel,
     model: ListModel<ResourceRow>,
@@ -128,13 +140,25 @@ impl std::fmt::Debug for ResourcesList {
     }
 }
 
-/// Which page the panel shows.
-fn page(has_item: bool, has_rows: bool) -> usize {
-    match (has_item, has_rows) {
-        (false, _) => 0,
-        (true, false) => 1,
-        (true, true) => 2,
+/// Which page the panel shows: no item open, nothing on it, the list, nothing
+/// unattached.
+fn page(view: DockView, has_item: bool, has_rows: bool) -> usize {
+    match (view, has_item, has_rows) {
+        (DockView::Item, false, _) => 0,
+        (DockView::Item, true, false) => 1,
+        (_, _, true) => 2,
+        // An unattached resource needs no item open to be listed.
+        (DockView::Unattached, _, false) => 3,
     }
+}
+
+/// The page for `vm`'s choice and rows now.
+fn page_of(vm: &ResourcesViewModel, rows: &[ResourceRow]) -> usize {
+    page(
+        vm.view().get(),
+        vm.focus().get().is_some(),
+        !rows.is_empty(),
+    )
 }
 
 impl Widget for ResourcesList {
@@ -155,13 +179,27 @@ impl Widget for ResourcesList {
                 }
             }
         );
+        let none_loose = teksu!(
+            Padding::symmetric(16.0, 24.0) {
+                TextWidget::new(tr!(resources_unattached_empty())) {
+                    style: TextStyleRole::Small
+                    color: TextRole::Secondary
+                }
+            }
+        );
 
         let list = {
             let vm = self.vm.clone();
             let model = self.model.clone();
             let open_vm = self.vm.clone();
             ListView::new(self.model.clone(), move |_i, row: &ResourceRow, _sel| {
-                Box::new(resource_row(row, vm.clone(), DetachFrom::Focus)) as Box<dyn Widget>
+                // Read when the row is made: the two lists share no resource, so a change
+                // of choice makes every row again.
+                let detach = match vm.view().get() {
+                    DockView::Item => DetachFrom::Focus,
+                    DockView::Unattached => DetachFrom::Nothing,
+                };
+                Box::new(resource_row(row, vm.clone(), detach)) as Box<dyn Widget>
             })
             .selection(self.selection.clone())
             .auto_item_height(48.0)
@@ -178,13 +216,15 @@ impl Widget for ResourcesList {
         };
 
         let state = Signal::new(page(
+            self.vm.view().get(),
             self.vm.focus().get().is_some(),
             !self.model.is_empty(),
         ));
         let switcher = Switcher::new(state.clone())
             .child(no_item)
             .child(empty)
-            .child(list);
+            .child(list)
+            .child(none_loose);
 
         let keys = {
             let paste_vm = self.vm.clone();
@@ -195,7 +235,16 @@ impl Widget for ResourcesList {
                 Rc::new(move |c, text| paste_vm.add_dropped_text(c, text)),
             )
         };
-        let id = ctx.add(switcher.on_key(keys));
+        let choice = view_choice(ctx, self.vm.view());
+        let id = teksu!(ctx => VStack {
+            spacing: 0.0
+            Padding::symmetric(10.0, 6.0) {
+                child: choice
+            }
+            Expand::new() {
+                child: switcher.on_key(keys)
+            }
+        });
         self.child = Some(id);
 
         let rederive = {
@@ -204,7 +253,7 @@ impl Widget for ResourcesList {
             let state = state.clone();
             move || {
                 let rows = vm.rows();
-                state.set_if_changed(page(vm.focus().get().is_some(), !rows.is_empty()));
+                state.set_if_changed(page_of(&vm, &rows));
                 model.reconcile_by_key(rows, |r| r.id);
             }
         };
@@ -216,6 +265,10 @@ impl Widget for ResourcesList {
         {
             let f = rederive.clone();
             ctx.effect(&self.vm.focus(), move |_| f());
+        }
+        {
+            let f = rederive.clone();
+            ctx.effect(&self.vm.view(), move |_| f());
         }
         vec![id]
     }
@@ -243,6 +296,35 @@ impl Widget for ResourcesList {
     fn children(&self) -> Vec<WidgetId> {
         self.child.into_iter().collect()
     }
+}
+
+/// *This item* · *Unattached*, bound both ways to `view` by two guarded effects, so
+/// neither writes the other back for ever.
+fn view_choice(ctx: &mut BuildContext, view: Signal<DockView>) -> SegmentedControl {
+    let index = Signal::new(view.get().index());
+    {
+        let index = index.clone();
+        ctx.effect(&view, move |v: &DockView| {
+            index.set_if_changed(v.index());
+        });
+    }
+    {
+        let view = view.clone();
+        ctx.effect(&index, move |i| {
+            view.set_if_changed(DockView::from_index(*i));
+        });
+    }
+    SegmentedControl::indexed(index)
+        .label(tr!(resources_dock_view_label()))
+        .fill_width(true)
+        .segment(
+            Segment::new(tr!(resources_dock_view_item()))
+                .tooltip(tr!(resources_dock_view_item_hint())),
+        )
+        .segment(
+            Segment::new(tr!(resources_dock_view_unattached()))
+                .tooltip(tr!(resources_dock_view_unattached_hint())),
+        )
 }
 
 #[cfg(test)]

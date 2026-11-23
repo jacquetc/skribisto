@@ -91,7 +91,18 @@ obrazach z tekstu notatek.
 Zasób przestaje być dołączony do czegokolwiek, gdy odłączysz go od ostatniego elementu. Tak
 samo dzieje się, gdy ten element zostanie usunięty na dobre. Zasób zostaje w projekcie.
 
-*Ustawienia ▸ Projekt ▸ Zasoby* je wyświetla. Wybierz jeden lub kilka, a potem:
+U góry panelu *Zasoby* wybierz *Niedołączone*, aby je tam zobaczyć. To także miejsce na
+materiały, których jeszcze nigdzie nie przypisałeś:
+
+- to, co wtedy dodasz, przyciskami, upuszczając lub skrótem `Ctrl+V`, nie jest dołączone do
+  niczego;
+- *Dołącz do elementów…* w menu zasobu dołącza go do elementów;
+- przeciągnięcie go do tekstu albo wstawienie tam odnośnika do niego dołącza go do elementu tego
+  tekstu.
+
+Wybierz *Ten element*, aby znów zobaczyć zasoby elementu, w którym jesteś.
+
+*Ustawienia ▸ Projekt ▸ Zasoby* także je wyświetla. Wybierz jeden lub kilka, a potem:
 
 - *Dołącz do elementów…*, aby znów dołączyć je do elementów;
 - *Usuń z projektu…*, aby je usunąć;

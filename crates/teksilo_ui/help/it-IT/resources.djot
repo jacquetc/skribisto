@@ -62,7 +62,15 @@ La *Galleria* di una cartella di note mostra anche le immagini risorsa, segnate 
 
 Una risorsa non è più allegata a nulla quando viene staccata dal suo ultimo elemento. Lo stesso vale quando quell'elemento viene eliminato per sempre. Resta nel progetto.
 
-*Impostazioni ▸ Progetto ▸ Risorse* le elenca. Scegline una o più, poi:
+In cima al pannello *Risorse*, scegli *Non allegate* per vederle lì. È anche il posto per le ricerche che non hai ancora sistemato:
+
+- ciò che aggiungi allora, con i pulsanti, trascinandolo o con `Ctrl+V`, non viene allegato a nulla;
+- *Allega a elementi…*, nel menu di una risorsa, la mette su degli elementi;
+- trascinarla in un testo, o inserirvi un collegamento alla risorsa, la allega all'elemento di quel testo.
+
+Scegli *Questo elemento* per rivedere le risorse dell'elemento in cui ti trovi.
+
+Anche *Impostazioni ▸ Progetto ▸ Risorse* le elenca. Scegline una o più, poi:
 
 - *Allega a elementi…* per rimetterle su degli elementi;
 - *Rimuovi dal progetto…* per eliminarle;

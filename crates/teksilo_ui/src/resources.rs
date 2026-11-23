@@ -38,7 +38,7 @@ use std::rc::Rc;
 
 pub use folder_vm::{FolderResource, FolderResourcesViewModel, FolderView, collect_in_subtree};
 pub use resources_vm::{
-    AddTarget, EditorFn, LargeFileChoice, MediaDirFn, ResourcesViewModel, SaveAsFolderFn,
+    AddTarget, DockView, EditorFn, LargeFileChoice, MediaDirFn, ResourcesViewModel, SaveAsFolderFn,
     declined_for, is_web_address, large_file_choice, move_stored_folders, siblings_to_relink,
     sorted_by_title, web_addresses_in, with_declined,
 };

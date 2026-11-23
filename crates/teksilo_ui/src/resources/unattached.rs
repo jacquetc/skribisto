@@ -38,7 +38,7 @@ use frontend::common::entities::WorkShape;
 
 use crate::models::ResourceRow;
 use crate::resources::export::{ExportReport, export_copies};
-use crate::resources::{ResourcesViewModel, sizes, sorted_by_title};
+use crate::resources::{ResourcesViewModel, sizes};
 use crate::toast_scope::ToastWorkExt;
 use crate::widgets::DestinationPicker;
 
@@ -93,13 +93,7 @@ impl UnattachedResourcesViewModel {
     /// The resources no item carries, by title. None when the attachments cannot be
     /// read: listing every resource as loose would offer each one to Remove.
     pub fn rows(&self) -> Vec<ResourceRow> {
-        match self.inner.resources.session().model().unattached() {
-            Ok(rows) => sorted_by_title(rows),
-            Err(e) => {
-                eprintln!("resources: could not read what the items carry: {e}");
-                Vec::new()
-            }
-        }
+        self.inner.resources.unattached_rows()
     }
 
     /// The bytes the project's stored files take, every resource counted, attached or

@@ -90,7 +90,17 @@ La *Galería* de una carpeta de notas muestra también las imágenes que son rec
 Un recurso deja de estar adjunto a algo cuando se separa de su último elemento. Lo mismo ocurre
 cuando ese elemento se elimina definitivamente. Sigue en el proyecto.
 
-*Configuración ▸ Proyecto ▸ Recursos* los muestra. Elija uno o varios, y luego:
+En la parte superior del panel *Recursos*, elija *Sin adjuntar* para verlos allí. Es también el
+sitio de la documentación que aún no ha clasificado:
+
+- lo que añada entonces, con los botones, soltándolo o con `Ctrl+V`, no se adjunta a nada;
+- *Adjuntar a elementos…*, en el menú de un recurso, lo pone en elementos;
+- arrastrarlo a un texto, o insertar en él un enlace al recurso, lo adjunta al elemento de ese
+  texto.
+
+Elija *Este elemento* para volver a ver los recursos del elemento en el que está.
+
+*Configuración ▸ Proyecto ▸ Recursos* también los muestra. Elija uno o varios, y luego:
 
 - *Adjuntar a elementos…* para volver a ponerlos en elementos;
 - *Quitar del proyecto…* para eliminarlos;

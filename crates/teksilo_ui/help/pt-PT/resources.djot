@@ -89,7 +89,17 @@ A *Galeria* de uma pasta de notas também mostra as imagens que são recursos, m
 Um recurso deixa de estar anexado a algum item quando é desanexado do seu último item. O mesmo
 acontece quando esse item é eliminado de vez. Fica no projeto.
 
-*Definições ▸ Projeto ▸ Recursos* lista-os. Escolha um ou vários, e depois:
+No topo do painel *Recursos*, escolha *Sem item* para os ver aí. É também o lugar da pesquisa
+que ainda não arrumou:
+
+- o que adicionar então, com os botões, largando-o ou com `Ctrl+V`, não fica anexado a nada;
+- *Anexar a itens…*, no menu de um recurso, põe-no em itens;
+- arrastá-lo para um texto, ou inserir nele uma ligação para o recurso, anexa-o ao item desse
+  texto.
+
+Escolha *Este item* para voltar a ver os recursos do item em que está.
+
+*Definições ▸ Projeto ▸ Recursos* também os lista. Escolha um ou vários, e depois:
 
 - *Anexar a itens…* para os voltar a pôr em itens;
 - *Remover do projeto…* para os eliminar;

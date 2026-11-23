@@ -5,6 +5,7 @@ Description:
 - "In the Starforgers example, every chapter has its own synopsis, cast and point of view again. They had slipped five rows: Chapter 1 showed the synopsis and cast of Chapter 6, and the copyright and dedication pages carried those of the Prologue and Chapter 1"
 - "When the search or the tag and status filters hide every picture of a folder, the Gallery now says No images match these filters and offers Clear the filters, which clears them in the Overview too. It used to say No images here yet, as if the folder had none"
 - "An empty Gallery offers Add images…, and takes images dropped from your file manager. They become resources of the folder and appear in its Gallery at once"
+- "The Resources panel has a choice at its top, This item or Unattached. Unattached lists the files and links attached to no item, which only Settings ▸ Work ▸ Resources showed, and is a place for research you have not filed yet: what you add there, with the buttons, a drop or Ctrl+V, is attached to nothing. Attach to items… puts one on items, and dragging it into a text, or inserting a link to it, attaches it to that text's item"
 ---
 Version: 3.4.0
 Date: 2026-11-23

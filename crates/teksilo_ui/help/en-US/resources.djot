@@ -87,7 +87,17 @@ pictures of the notes' text.
 A resource is attached to nothing once it is detached from its last item, or once that item is
 deleted for good. It stays in the project.
 
-*Settings ▸ Work ▸ Resources* lists them. Choose one or several, then:
+At the top of the *Resources* panel, choose *Unattached* to see them there. It is also a place
+for research you have not filed yet:
+
+- what you add while it is chosen, with the buttons, by a drop or with Ctrl+V, is attached to
+  nothing;
+- *Attach to items…*, in a resource's menu, puts it on items;
+- dragging it into a text, or inserting a link to it, attaches it to that text's item.
+
+Choose *This item* to see the resources of the item you are on again.
+
+*Settings ▸ Work ▸ Resources* lists them too. Choose one or several, then:
 
 - *Attach to items…* to put them back on items;
 - *Remove from the project…* to delete them;

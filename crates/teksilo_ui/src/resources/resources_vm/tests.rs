@@ -963,6 +963,156 @@ mod real {
         });
     }
 
+    // ── The dock's Unattached view ───────────────────────────────────────────
+
+    /// The dock lists the item's resources or those of no item, as the writer chooses,
+    /// and whether its buttons can add follows: with no item open, only Unattached can.
+    #[test]
+    fn the_dock_lists_the_item_s_resources_or_those_of_no_item() {
+        let fx = fixture();
+        let model = fx.session.model();
+        let on_scene = WebLink {
+            url: "https://example.org/harbour".into(),
+            title: "Harbour records".into(),
+        };
+        let loose = WebLink {
+            url: "https://example.org/interview".into(),
+            title: "Interview with the keeper".into(),
+        };
+        let none = StoredResourceFilesDto::default();
+        model
+            .add(&[fx.scene], &none, &[], &[on_scene])
+            .expect("added");
+        model
+            .add(&[], &none, &[], &[loose])
+            .expect("added on no item");
+        model.reload();
+
+        let vm = window_vm(&fx, fx.scene);
+        let titles = |vm: &ResourcesViewModel| -> Vec<String> {
+            vm.rows().into_iter().map(|r| r.title).collect()
+        };
+        assert_eq!(vm.view().get(), DockView::Item, "the item's, by default");
+        assert_eq!(titles(&vm), ["Harbour records"]);
+        vm.view().set(DockView::Unattached);
+        assert_eq!(titles(&vm), ["Interview with the keeper"]);
+
+        let closed = ResourcesViewModel::new(
+            fx.project.app_ctx.clone(),
+            fx.project.ids.clone(),
+            fx.session.clone(),
+            Signal::new(None),
+            Signal::new(None),
+            Signal::new(String::new()),
+        );
+        assert!(
+            !closed.can_add().get(),
+            "no item: nowhere to file a resource"
+        );
+        assert!(closed.rows().is_empty());
+        closed.view().set(DockView::Unattached);
+        assert!(closed.can_add().get(), "on no item needs no item open");
+        assert_eq!(titles(&closed), ["Interview with the keeper"]);
+    }
+
+    /// What the writer adds in the Unattached view, a pasted address or a file, goes on
+    /// no item; back on This item, it goes on the item again. With no item open, This
+    /// item adds nothing.
+    #[test]
+    fn what_is_added_in_the_unattached_view_goes_on_no_item() {
+        let fx = fixture();
+        let model = fx.session.model();
+        let vm = window_vm(&fx, fx.scene);
+        vm.view().set(DockView::Unattached);
+        let recording = large_file(&fx.data, "Keeper interview.wav");
+        let (mut tree, _toasts) = toast_tree(&fx);
+        let added = Rc::new(std::cell::Cell::new(false));
+        {
+            let (vm, added) = (vm.clone(), added.clone());
+            crate::test_support::press(&mut tree, move |c| {
+                added.set(vm.add_dropped_text(c, "see https://example.org/tides"));
+                // Linked where it is, as the writer chose once and for all.
+                large_file_signal(c).set("link".to_string());
+                vm.add_paths(c, vec![recording.clone()], AddTarget::Dock);
+            });
+        }
+        assert!(added.get());
+        let mut loose: Vec<String> = model
+            .unattached()
+            .expect("read")
+            .into_iter()
+            .map(|r| r.display_name().to_string())
+            .collect();
+        loose.sort();
+        assert_eq!(loose, ["Keeper interview.wav", "https://example.org/tides"]);
+        assert!(model.rows_for(fx.scene).is_empty(), "nothing on the item");
+        assert_eq!(vm.rows().len(), 2, "and the dock lists them");
+
+        vm.view().set(DockView::Item);
+        {
+            let vm = vm.clone();
+            crate::test_support::press(&mut tree, move |c| {
+                vm.add_dropped_text(c, "https://example.org/harbour");
+            });
+        }
+        assert_eq!(model.rows_for(fx.scene).len(), 1, "on the item again");
+
+        let closed = ResourcesViewModel::new(
+            fx.project.app_ctx.clone(),
+            fx.project.ids.clone(),
+            fx.session.clone(),
+            Signal::new(None),
+            Signal::new(None),
+            Signal::new(String::new()),
+        );
+        let refused = Rc::new(std::cell::Cell::new(true));
+        {
+            let refused = refused.clone();
+            crate::test_support::press(&mut tree, move |c| {
+                refused.set(!closed.add_dropped_text(c, "https://example.org/lost"));
+            });
+        }
+        assert!(
+            refused.get(),
+            "no item open and This item chosen: added nowhere"
+        );
+        assert_eq!(model.all().len(), 3);
+    }
+
+    /// A link to a resource of no item put into the text files it on the text's item,
+    /// as dragging it there does, so it leaves the Unattached list.
+    #[test]
+    fn a_loose_resource_linked_from_the_text_is_filed_on_its_item() {
+        let fx = fixture();
+        let model = fx.session.model();
+        let ids = model
+            .add(
+                &[],
+                &StoredResourceFilesDto::default(),
+                &[],
+                &[WebLink {
+                    url: "https://example.org/interview".into(),
+                    title: "Interview with the keeper".into(),
+                }],
+            )
+            .expect("added on no item");
+        model.reload();
+        let row = model.by_id(ids[0]).expect("the row");
+        let vm = window_vm(&fx, fx.scene);
+        vm.view().set(DockView::Unattached);
+        let (mut tree, _toasts) = toast_tree(&fx);
+        {
+            let vm = vm.clone();
+            crate::test_support::press(&mut tree, move |c| vm.file_on_focus(c, &row));
+        }
+        assert_eq!(
+            model.rows_for(fx.scene).len(),
+            1,
+            "filed on the text's item"
+        );
+        assert!(vm.rows().is_empty(), "no longer unattached");
+    }
+
     /// A resource dropped on a binder row in one window says so in that window, not in
     /// another window on the same project that handled the item's update first.
     #[test]

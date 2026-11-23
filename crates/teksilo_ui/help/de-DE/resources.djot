@@ -96,7 +96,19 @@ Bildern aus dem Text der Notizen.
 Eine Ressource hängt an nichts mehr, sobald sie von ihrem letzten Eintrag gelöst ist. Ebenso,
 wenn dieser Eintrag endgültig gelöscht wird. Sie bleibt im Projekt.
 
-*Einstellungen ▸ Projekt ▸ Ressourcen* listet sie auf. Wählen Sie eine oder mehrere, dann:
+Wählen Sie oben im Bereich *Ressourcen* die Option *Nicht angehängt*, um sie dort zu sehen. Dort
+hat auch Recherche Platz, die Sie noch nicht eingeordnet haben:
+
+- was Sie dann hinzufügen, mit den Schaltflächen, durch Ablegen oder mit `Strg+V`, hängt an
+  nichts;
+- *An Einträge anhängen…* im Menü einer Ressource hängt sie an Einträge;
+- ziehen Sie sie in einen Text oder fügen Sie dort einen Link auf sie ein, hängt sie an dessen
+  Eintrag.
+
+Wählen Sie *Dieser Eintrag*, um wieder die Ressourcen des Eintrags zu sehen, in dem Sie sich
+befinden.
+
+*Einstellungen ▸ Projekt ▸ Ressourcen* listet sie ebenfalls auf. Wählen Sie eine oder mehrere, dann:
 
 - *An Einträge anhängen…*, um sie wieder an Einträge zu hängen;
 - *Aus dem Projekt entfernen…*, um sie zu löschen;

@@ -91,7 +91,18 @@ après les images du texte des notes.
 Une ressource n’est plus attachée à rien quand elle est détachée de son dernier élément, ou quand
 cet élément est supprimé pour de bon. Elle reste dans le projet.
 
-*Paramètres ▸ Œuvre ▸ Ressources* les liste. Choisissez-en une ou plusieurs, puis :
+En haut du panneau *Ressources*, choisissez *Non attachées* pour les y voir. C’est aussi la
+place des recherches que vous n’avez pas encore classées :
+
+- ce que vous ajoutez alors, avec les boutons, en le déposant ou avec Ctrl+V, n’est attaché à
+  rien ;
+- *Attacher à des éléments…*, dans le menu d’une ressource, la met sur des éléments ;
+- la faire glisser dans un texte, ou y insérer un lien vers elle, l’attache à l’élément de ce
+  texte.
+
+Choisissez *Cet élément* pour revoir les ressources de l’élément où vous êtes.
+
+*Paramètres ▸ Œuvre ▸ Ressources* les liste aussi. Choisissez-en une ou plusieurs, puis :
 
 - *Attacher à des éléments…* pour les remettre sur des éléments ;
 - *Retirer du projet…* pour les supprimer ;

@@ -44,11 +44,16 @@ fn stored(title: &str, file: &str, size: u64) -> ResourceRow {
 /// The dock binds a model that subscribes to backend events, so a bare tree would
 /// panic in `subscribe_event`: hence `tree_with_events`.
 #[test]
-fn the_panel_builds_and_lays_out_with_and_without_an_item() {
-    for focus in [None, Some(10)] {
+fn the_panel_builds_and_lays_out_with_and_without_an_item_in_both_views() {
+    for (focus, view) in [None, Some(10)]
+        .into_iter()
+        .flat_map(|f| DockView::ALL.map(|v| (f, v)))
+    {
         let ctx = Rc::new(frontend::AppContext::new());
         let mut tree = crate::test_support::tree_with_events(&ctx);
-        let id = tree.add_boxed(Box::new(resources_panel(vm(&ctx, focus))));
+        let vm = vm(&ctx, focus);
+        vm.view().set(view);
+        let id = tree.add_boxed(Box::new(resources_panel(vm)));
         tree.layout(SizeProposal::exact(300.0, 600.0));
         let b = tree.bounds(id);
         assert!(
@@ -59,11 +64,21 @@ fn the_panel_builds_and_lays_out_with_and_without_an_item() {
 }
 
 #[test]
-fn the_panel_says_which_of_its_three_states_it_is_in() {
-    assert_eq!(page(false, false), 0, "no item in front of the writer");
-    assert_eq!(page(false, true), 0);
-    assert_eq!(page(true, false), 1, "an item with nothing attached");
-    assert_eq!(page(true, true), 2, "the list");
+fn the_panel_says_which_of_its_four_states_it_is_in() {
+    let item = DockView::Item;
+    assert_eq!(
+        page(item, false, false),
+        0,
+        "no item in front of the writer"
+    );
+    assert_eq!(page(item, false, true), 0);
+    assert_eq!(page(item, true, false), 1, "an item with nothing attached");
+    assert_eq!(page(item, true, true), 2, "the list");
+    let loose = DockView::Unattached;
+    assert_eq!(page(loose, false, true), 2, "listed with no item open");
+    assert_eq!(page(loose, true, true), 2);
+    assert_eq!(page(loose, false, false), 3, "every resource is on an item");
+    assert_eq!(page(loose, true, false), 3);
 }
 
 #[test]
