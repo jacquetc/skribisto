@@ -607,7 +607,7 @@ pub(super) fn push_epigraph(
         // entitled to its indent. Relying on "the next structural heading clears it" is not
         // enough: the binder is organisational, so nothing guarantees a heading row comes
         // next.
-        if main_prose_role(&row.item.sub_role)
+        if plan::main_prose_role(&row.item.sub_role)
             .is_some_and(|role| content_of(row.contents, role).is_some())
         {
             pending_attrs.push("text_indent=0".to_string());

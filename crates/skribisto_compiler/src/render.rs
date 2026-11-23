@@ -31,9 +31,10 @@ use text_document::{
 use skrib_format::media::escape_djot_alt;
 
 use crate::headings::{self, Level};
+use crate::plan;
 use crate::preset::{
     DirectionMode, EpigraphPlacement, ExportFormat, FootnoteNumbering, HeadingLanguage,
-    HeadingScheme, ImageHandling, LineSpacing, PageSize, Preset, SceneBreak,
+    ImageHandling, LineSpacing, PageSize, Preset, SceneBreak,
 };
 
 /// Everything a render needs: the frozen tree, the ordered ids to include, the style, the
@@ -373,65 +374,38 @@ fn assemble(req: &RenderRequest, progress: &dyn Fn(f32), cancel: &AtomicBool) ->
         if cancel.load(Ordering::Relaxed) {
             return Err(anyhow!("operation cancelled"));
         }
-        // A note swept into a structural scope is dropped unless the preset keeps notes, or
-        // the selection was explicit (Export Note / a checked Choose… item — the user
-        // pointed at it, which overrides the toggle).
-        let is_note = matches!(row.item.sub_role, BinderItemSubRole::Note);
-        if is_note && !preset.include_notes && !req.explicit_selection {
+        let heading_lang = heading_lang_of(preset, row);
+        // What this row prints is decided in one place, shared with the UI's reading view
+        // (see `crate::plan`); this loop only writes it down. `None` is a row the style
+        // leaves out whole: a note it does not keep, a paratext it drops.
+        let facts = row_facts(row, &numbers, &heading_lang);
+        let Some(row_plan) = plan::plan_row(&facts, preset, req.explicit_selection) else {
             report(i);
             continue;
-        }
-
-        // A paratext is the author's, but it is not the story. The preset can leave it
-        // out — the clean-submission case, where an editor wants the manuscript and not
-        // the acknowledgements. Decided here, beside the note gate, so the row is skipped
-        // whole.
-        //
-        // Note that a paratext emits **no heading of its own**. Its title is a binder
-        // label the writer chose to find it by — "Copyright", "front matter (draft)" —
-        // not a line of the book. A writer who wants a heading on the page writes one in
-        // the prose, where they control its wording and its level. The same reasoning
-        // keeps a `Folder/Paratext` from emitting anything at all.
-        let is_paratext = matches!(row.item.sub_role, BinderItemSubRole::Paratext);
-        if is_paratext && !preset.include_paratexts {
-            report(i);
-            continue;
-        }
-        // A paratext has no heading to carry the break, so it queues one for its own first
-        // prose block below — and, at the bottom of the loop, another for whatever follows
-        // it. What comes after the last paratext of a run is usually ordinary prose (a
-        // prologue, an opening scene) with no structural opener of its own to break on, so
-        // without that second arming the front matter's last page runs into the body.
-        if is_paratext && preset.paratext_starts_page {
-            pending_break = true;
-        }
-
-        let heading_lang = match &preset.heading_language {
-            HeadingLanguage::Fixed(l) => l.clone(),
-            HeadingLanguage::Auto => row.lang.clone(),
         };
+        let is_paratext = matches!(row.item.sub_role, BinderItemSubRole::Paratext);
         let row_rtl = is_rtl_row(preset, &row.lang);
         let heading_rtl = is_rtl_row(preset, &heading_lang);
         let mut contributed = false;
 
         let level = numbering::level_of(&row.item.sub_role);
-        if let Some(level) = level {
+        if level.is_some() {
             // Opening a structural level restarts the flow, so whatever a
             // trailing break queued for "the next paragraph" stops here. This
             // keys off the *structure*, not off whether a heading actually
             // printed: a preset whose chapter scheme is `None` emits no text,
             // and gating on that would let a break bleed across the seam.
             pending_attrs.clear();
-            // Armed on the *structure*, and armed here — above everything this row emits —
-            // because with the epigraph above the heading it is the epigraph, not the
-            // title, that opens the page.
-            if match level {
-                Level::Book => preset.book_starts_page,
-                Level::Part => preset.part_starts_page,
-                Level::Chapter => preset.chapter_starts_page,
-            } {
-                pending_break = true;
-            }
+        }
+        // Armed here, above everything this row emits: with the epigraph above the heading
+        // it is the epigraph, not the title, that opens the page. A paratext has no heading
+        // to carry the break, so its own first prose block takes it below — and, at the
+        // bottom of the loop, it arms another for whatever follows it. What comes after the
+        // last paratext of a run is usually ordinary prose (a prologue, an opening scene)
+        // with no structural opener of its own to break on, so without that second arming
+        // the front matter's last page runs into the body.
+        if row_plan.starts_page {
+            pending_break = true;
         }
 
         // 1. An omnibus's per-Book cover, on a page of its own in front of the Book. The
@@ -451,17 +425,11 @@ fn assemble(req: &RenderRequest, progress: &dyn Fn(f32), cancel: &AtomicBool) ->
             contributed = true;
         }
 
-        // The epigraph, prepared once and emitted on whichever side of the heading the
-        // style asks for. Every convention that writes the rule down puts it after the
-        // title; putting it above is a designer's choice with real currency, so the style
-        // decides and the default is the convention (see `EpigraphPlacement`).
-        let epigraph = preset
-            .include_epigraphs
-            .then(|| content_of(row.contents, ContentRole::EpigraphText))
-            .flatten()
-            .filter(|e| !e.trim().is_empty());
-        let epigraph_leads =
-            epigraph.is_some() && preset.epigraph_placement == EpigraphPlacement::BeforeHeading;
+        // The epigraph, emitted on whichever side of the heading the style asks for.
+        let epigraph = row_plan
+            .epigraph
+            .and_then(|_| content_of(row.contents, ContentRole::EpigraphText));
+        let epigraph_leads = row_plan.epigraph == Some(EpigraphPlacement::BeforeHeading);
 
         // 1a. The epigraph, when it opens the chapter.
         if epigraph_leads && let Some(epi) = epigraph {
@@ -478,42 +446,36 @@ fn assemble(req: &RenderRequest, progress: &dyn Fn(f32), cancel: &AtomicBool) ->
         }
 
         // 1b. A structural heading, if this item opens a level; else a scene title, if kept.
-        if let Some(level) = level {
-            // A book is titled, not numbered — and the title page (if on) already carries
-            // it, so the opener then emits nothing. Parts/chapters use their own schemes.
-            let scheme = match level {
-                Level::Book if preset.book_title_page => HeadingScheme::None,
-                Level::Book => HeadingScheme::TitleOnly,
-                Level::Part => preset.part_heading,
-                Level::Chapter => preset.chapter_heading,
-            };
-            let number = numbers.get(&row.item.id).map(Numbered::number);
-            if let Some(text) = heading_text(row, level, number, &heading_lang, preset, scheme) {
+        match &row_plan.heading {
+            Some(plan::RowHeading {
+                kind: plan::HeadingKind::Structure(level),
+                text,
+            }) => {
                 let lvl = present_depths
                     .iter()
-                    .position(|&d| d == depth(level))
+                    .position(|&d| d == depth(*level))
                     .map(|p| (p + 1).min(6))
                     .unwrap_or(1) as u8;
                 let mut extra = take_break(&mut pending_break, &mut anything_above);
                 // The book's title is the one heading set centred, as on the generated title
                 // page it stands in for here. Merged into the same attribute set as the
                 // break: a block takes exactly one.
-                if level == Level::Book {
+                if *level == Level::Book {
                     extra.push("alignment=center".to_string());
                 }
-                push_heading(&mut out, lvl, &text, heading_rtl, &extra);
+                push_heading(&mut out, lvl, text, heading_rtl, &extra);
                 contributed = true;
             }
-        } else if preset.include_scene_titles && row.item.sub_role.carries_scene() {
-            // A plain titled Scene (never a ChapterScene — that already emitted its chapter
-            // heading above): the title heading stands in for the scene break.
-            let t = row.item.title.trim();
-            if !t.is_empty() {
+            Some(plan::RowHeading {
+                kind: plan::HeadingKind::SceneTitle,
+                text,
+            }) => {
                 let extra = take_break(&mut pending_break, &mut anything_above);
-                push_heading(&mut out, scene_title_level, t, row_rtl, &extra);
+                push_heading(&mut out, scene_title_level, text, row_rtl, &extra);
                 pending_attrs.clear();
                 contributed = true;
             }
+            None => {}
         }
 
         // 2. The epigraph, when it follows the heading — where CMOS, French, German and
@@ -525,7 +487,8 @@ fn assemble(req: &RenderRequest, progress: &dyn Fn(f32), cancel: &AtomicBool) ->
 
         // 3. The main prose (a scene's SceneText, a note's NoteText) — appended verbatim
         //    since it is already Djot.
-        if let Some(role) = main_prose_role(&row.item.sub_role)
+        if row_plan.prose
+            && let Some(role) = plan::main_prose_role(&row.item.sub_role)
             && let Some(prose_row) = row_content_of(row.contents, role)
         {
             let prose = prose_row.data.as_str();
@@ -572,7 +535,7 @@ fn assemble(req: &RenderRequest, progress: &dyn Fn(f32), cancel: &AtomicBool) ->
         }
 
         // 4. The synopsis, if the preset keeps it.
-        if preset.include_synopses
+        if row_plan.synopsis
             && let Some(syn_row) = row_content_of(row.contents, ContentRole::SynopsisText)
         {
             // A synopsis is commentary, not the scene's prose — never
@@ -603,7 +566,7 @@ fn assemble(req: &RenderRequest, progress: &dyn Fn(f32), cancel: &AtomicBool) ->
 
         // Re-armed *after* the row: the break this row consumed was its own, and the page
         // it opened has to end somewhere too.
-        if is_paratext && preset.paratext_starts_page {
+        if is_paratext && row_plan.starts_page {
             pending_break = true;
         }
 
@@ -689,6 +652,106 @@ fn assemble(req: &RenderRequest, progress: &dyn Fn(f32), cancel: &AtomicBool) ->
         front_cover: front_cover.map(|a| a.id),
         emitted: emitted_contents,
     })
+}
+
+/// One row of the book as it will be exported, and what it prints.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PlannedRow {
+    pub item_id: u64,
+    pub plan: plan::RowPlan,
+    /// The file opens a new page in front of this row.
+    ///
+    /// Not the plan's `starts_page`, which says where the style *asks* for a break. The
+    /// break lands on the next block that prints: a book opener under a title page asks
+    /// and prints nothing, so its break falls on the row after it; a paratext asks again
+    /// once it is done, so the prose after the front matter opens a page of its own.
+    pub opens_page: bool,
+}
+
+/// The rows an export of `include` would print, in the order it prints them, each with its
+/// [`plan::RowPlan`]. A row the style leaves out whole is absent.
+///
+/// The same flattening, numbering, language and decision [`render_to_file`] makes, minus
+/// the writing: this is what the UI reads a Full Chapter, Part or Book "as exported" from,
+/// so the reading and the file cannot disagree about which rows are in the book or what
+/// heads them. It says nothing about pages and type, which no screen can show faithfully.
+pub fn reading_plan(
+    gathered: &Gathered,
+    include: &[u64],
+    preset: &Preset,
+    work_lang: &str,
+    explicit_selection: bool,
+) -> Vec<PlannedRow> {
+    // Only the fields `flatten` and the numbering read. No file is written, so there is
+    // no format to honour and no media to resolve.
+    let req = RenderRequest {
+        gathered,
+        include,
+        preset,
+        format: ExportFormat::Djot,
+        work_lang,
+        explicit_selection,
+        media_dir: Path::new(""),
+    };
+    let numbers = manuscript_numbers(&req);
+    let rows = flatten(&req);
+    // The same walk `assemble` makes with its `pending_break` and `anything_above`, minus
+    // the covers, which only ever break around a picture no screen shows.
+    let mut pending = false;
+    let mut above = preset.book_title_page && rows.iter().any(|r| r.item.sub_role.opens_book());
+    let mut out = Vec::new();
+    for row in &rows {
+        let heading_lang = heading_lang_of(preset, row);
+        let facts = row_facts(row, &numbers, &heading_lang);
+        let Some(plan) = plan::plan_row(&facts, preset, explicit_selection) else {
+            continue;
+        };
+        if plan.starts_page {
+            pending = true;
+        }
+        // What takes a queued break in `assemble`: a leading epigraph, the heading, or the
+        // prose. An epigraph after the heading and a synopsis are written without one.
+        let takes_break = plan.heading.is_some()
+            || plan.prose
+            || plan.epigraph == Some(EpigraphPlacement::BeforeHeading);
+        let opens_page = takes_break && !take_break(&mut pending, &mut above).is_empty();
+        if matches!(row.item.sub_role, BinderItemSubRole::Paratext) && plan.starts_page {
+            pending = true;
+        }
+        out.push(PlannedRow {
+            item_id: row.item.id,
+            plan,
+            opens_page,
+        });
+    }
+    out
+}
+
+/// The language a row's structural words are written in: the style's, or the row's own.
+fn heading_lang_of(preset: &Preset, row: &Row) -> String {
+    match &preset.heading_language {
+        HeadingLanguage::Fixed(l) => l.clone(),
+        HeadingLanguage::Auto => row.lang.clone(),
+    }
+}
+
+/// What [`plan::plan_row`] needs to know about `row`, read off its contents.
+fn row_facts<'a>(
+    row: &'a Row,
+    numbers: &HashMap<u64, Numbered>,
+    heading_lang: &'a str,
+) -> plan::RowFacts<'a> {
+    plan::RowFacts {
+        sub_role: &row.item.sub_role,
+        title: title_of(row),
+        number: numbers.get(&row.item.id).map(Numbered::number),
+        heading_lang,
+        has_epigraph: content_of(row.contents, ContentRole::EpigraphText)
+            .is_some_and(|e| !e.trim().is_empty()),
+        has_main: plan::main_prose_role(&row.item.sub_role)
+            .is_some_and(|role| row_content_of(row.contents, role).is_some()),
+        has_synopsis: row_content_of(row.contents, ContentRole::SynopsisText).is_some(),
+    }
 }
 
 /// Resolve the footnotes of the rows this export includes.
@@ -822,18 +885,6 @@ fn depth(level: Level) -> u8 {
     }
 }
 
-fn main_prose_role(sr: &BinderItemSubRole) -> Option<ContentRole> {
-    if sr.carries_scene() {
-        Some(ContentRole::SceneText)
-    } else if matches!(sr, BinderItemSubRole::Note) {
-        Some(ContentRole::NoteText)
-    } else if matches!(sr, BinderItemSubRole::Paratext) {
-        Some(ContentRole::ParatextText)
-    } else {
-        None
-    }
-}
-
 /// Put `{semantic_role=epigraph}` on the first block of each blockquote in `djot`.
 ///
 /// The author writes an ordinary blockquote; the marker is the compiler's business, not
@@ -914,52 +965,6 @@ fn title_of<'a>(row: &'a Row) -> Option<&'a str> {
     }
     let own = row.item.title.trim();
     (!own.is_empty()).then_some(own)
-}
-
-/// Compose one structural heading.
-///
-/// `number` is `None` when the row holds no ordinal — because the writer excluded it from
-/// numbering (a prologue), or because the manuscript is unnumbered. Every scheme then
-/// falls back to the title, and a scheme that cannot produce anything at all returns
-/// `None` rather than inventing a numeral.
-fn heading_text(
-    row: &Row,
-    level: Level,
-    number: Option<usize>,
-    lang: &str,
-    preset: &Preset,
-    scheme: HeadingScheme,
-) -> Option<String> {
-    let title = title_of(row);
-    let numbered = number.map(|n| headings::numbered(lang, level, n, preset.digit_style));
-    match scheme {
-        HeadingScheme::None => None,
-        // An unnumbered row under a numbers-only scheme still needs naming — a prologue
-        // typeset as a blank chapter opener would be a hole in the book.
-        HeadingScheme::Numbered => numbered.or_else(|| title.map(str::to_string)),
-        // `TitleOnly` degrading to a bare number when the title is empty is deliberate and
-        // long-standing — an untitled chapter is better opened by "Chapter 3" than by
-        // nothing at all — but it *is* a degrade, and worth naming as one here rather than
-        // leaving a reader of this match to infer it from an `or_else`.
-        HeadingScheme::TitleOnly => title.map(str::to_string).or(numbered),
-        HeadingScheme::NumberAndTitle => match (numbered, title) {
-            // A title that already *is* the number is not a title to append: writers name
-            // their chapters "Chapter 5" (and every project this app creates starts out
-            // that way) purely because nothing else ever showed them the number. See
-            // `headings::is_redundant_number_title` for exactly what counts as saying the
-            // same thing, and for why a *different* number is left visibly doubled.
-            (Some(n), Some(t))
-                if !headings::is_redundant_number_title(t, lang, level, number.unwrap_or(0)) =>
-            {
-                // Folded to spaces: a heading is one line (see `Preset::heading_separator`).
-                let sep = preset.heading_separator.replace(['\n', '\r'], " ");
-                Some(format!("{n}{sep}{t}"))
-            }
-            (Some(n), _) => Some(n),
-            (None, Some(t)) => Some(t.to_string()),
-            (None, None) => None,
-        },
-    }
 }
 
 fn document_direction(req: &RenderRequest, rows: &[Row]) -> Option<TextDirection> {

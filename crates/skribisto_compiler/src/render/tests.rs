@@ -7,7 +7,7 @@ use proptest::prelude::*;
 use skrib_format::{BinderWithItems, ItemWithContents};
 use text_document::{DjotImportOptions, djot_to_plain_text};
 
-use crate::preset::builtin_presets;
+use crate::preset::{HeadingScheme, builtin_presets};
 
 fn c(id: u64, role: ContentRole, data: &str) -> Content {
     Content {
@@ -5061,4 +5061,189 @@ fn a_resource_link_exports_as_its_words_in_a_pdf() {
     let bytes = std::fs::read(&path).unwrap();
     let text = String::from_utf8_lossy(&bytes);
     assert!(!text.contains("resource:"), "the PDF kept the link");
+}
+
+// ── The reading plan and the file agree ──────────────────────────────
+
+/// One generated row: its kind, and which of its fields hold text.
+fn planned_row_strategy() -> impl Strategy<Value = (SR, bool, bool, bool)> {
+    (
+        prop_oneof![
+            Just(SR::Part),
+            Just(SR::ChapterScene),
+            Just(SR::Scene),
+            Just(SR::Scene),
+            Just(SR::Paratext),
+            Just(SR::Note),
+        ],
+        any::<bool>(),
+        any::<bool>(),
+        any::<bool>(),
+    )
+}
+
+proptest! {
+    /// **What the reading view shows is what the file holds.** The UI's Full Book "read as
+    /// exported" lays out [`reading_plan`]'s rows; `assemble` writes the file. For any
+    /// stream and any of the toggles that drop or keep a kind of row or field, the prose
+    /// and synopses the plan says print are exactly the ones the compiled document
+    /// received, in the same order.
+    ///
+    /// Not a comparison of two copies of a rule (there is one, `plan::plan_row`), but of
+    /// what each side does with it: the file's record comes from the writer, so a row the
+    /// loop skipped or wrote out of step with its plan shows up here.
+    #[test]
+    fn the_reading_plan_prints_what_the_export_writes(
+        rows in proptest::collection::vec(planned_row_strategy(), 1..12),
+        include_notes in any::<bool>(),
+        include_paratexts in any::<bool>(),
+        include_epigraphs in any::<bool>(),
+        include_synopses in any::<bool>(),
+        explicit in any::<bool>(),
+        title_page in any::<bool>(),
+        paratext_page in any::<bool>(),
+        chapter_page in any::<bool>(),
+        part_page in any::<bool>(),
+        before_heading in any::<bool>(),
+    ) {
+        let mut items = vec![iwc(
+            100,
+            SR::BookBegin,
+            "en",
+            vec![c(1, ContentRole::BookTitle, "My Novel")],
+        )];
+        let mut next_content = 10;
+        let mut content = |role, text: &str| {
+            next_content += 1;
+            c(next_content, role, text)
+        };
+        for (i, (sr, main, epigraph, synopsis)) in rows.iter().enumerate() {
+            let mut contents = Vec::new();
+            if *main && let Some(role) = plan::main_prose_role(sr) {
+                contents.push(content(role, &format!("Row {i} prose.")));
+            }
+            if *epigraph && matches!(sr, SR::Part | SR::ChapterScene) {
+                contents.push(content(ContentRole::EpigraphText, "> A quotation."));
+            }
+            if *synopsis {
+                contents.push(content(ContentRole::SynopsisText, &format!("Row {i} summary.")));
+            }
+            items.push(iwc(200 + i as u64, sr.clone(), "en", contents));
+        }
+        let include: Vec<u64> = items.iter().map(|it| it.item.id).collect();
+        let g = gathered(items, "en");
+        let mut p = preset("neutral");
+        p.include_notes = include_notes;
+        p.include_paratexts = include_paratexts;
+        p.include_epigraphs = include_epigraphs;
+        p.include_synopses = include_synopses;
+        p.book_title_page = title_page;
+        p.paratext_starts_page = paratext_page;
+        p.chapter_starts_page = chapter_page;
+        p.part_starts_page = part_page;
+        p.epigraph_placement = if before_heading {
+            EpigraphPlacement::BeforeHeading
+        } else {
+            EpigraphPlacement::AfterHeading
+        };
+
+        let mut r = req(&g, &include, &p, ExportFormat::Djot);
+        r.explicit_selection = explicit;
+        let built = assemble(&r, &|_| {}, &AtomicBool::new(false)).unwrap();
+        let written: Vec<u64> = built.emitted.iter().map(|e| e.content_id).collect();
+
+        let by_id: HashMap<u64, &ItemWithContents> =
+            g.binders[0].items.iter().map(|it| (it.item.id, it)).collect();
+        let content_id = |item: u64, role: ContentRole| {
+            by_id[&item]
+                .contents
+                .iter()
+                .find(|c| c.role == role)
+                .map(|c| c.id)
+        };
+        let mut planned = Vec::new();
+        let rows = reading_plan(&g, &include, &p, "en", explicit);
+        // And the pages: the file opens one exactly where the plan says a row does. The
+        // title page carries no break of its own; the body's first block breaks from it.
+        let djot = render_to_string(&r).unwrap();
+        prop_assert_eq!(
+            rows.iter().filter(|row| row.opens_page).count(),
+            djot.matches("page_break_before=true").count(),
+            "page breaks in:\n{}",
+            djot
+        );
+        for row in rows {
+            let sr = &by_id[&row.item_id].item.sub_role;
+            if row.plan.prose
+                && let Some(id) = plan::main_prose_role(sr).and_then(|role| content_id(row.item_id, role))
+            {
+                planned.push(id);
+            }
+            if row.plan.synopsis
+                && let Some(id) = content_id(row.item_id, ContentRole::SynopsisText)
+            {
+                planned.push(id);
+            }
+        }
+        prop_assert_eq!(planned, written);
+    }
+}
+
+/// **The prose after the front matter opens a page of its own**, and the plan puts the
+/// page there too: on the prologue, which asked for nothing, not on the dedication.
+#[test]
+fn the_reading_plan_opens_a_page_where_the_file_does_after_a_paratext() {
+    let mut g = flat_book();
+    g.binders[0].items.insert(
+        1,
+        iwc(
+            103,
+            SR::Paratext,
+            "en",
+            vec![c(9, ContentRole::ParatextText, "For my mother.")],
+        ),
+    );
+    g.binders[0].items.insert(
+        2,
+        iwc(
+            104,
+            SR::Scene,
+            "en",
+            vec![c(10, ContentRole::SceneText, "The prologue opens.")],
+        ),
+    );
+    let p = Preset {
+        book_title_page: false,
+        paratext_starts_page: true,
+        ..preset("neutral")
+    };
+    let rows = reading_plan(&g, &[100, 103, 104, 101, 102], &p, "en", false);
+    let prologue = rows.iter().find(|r| r.item_id == 104).unwrap();
+    assert!(!prologue.plan.starts_page, "the prologue asks for no page");
+    assert!(prologue.opens_page, "but the file opens one in front of it");
+}
+
+/// The plan names the same heading the file prints, in the reader's words.
+#[test]
+fn the_reading_plan_heads_a_chapter_as_the_file_does() {
+    let g = book_with_epigraph();
+    let p = preset("neutral");
+    let rows = reading_plan(&g, &[100, 101], &p, "en", false);
+    let chapter = rows
+        .iter()
+        .find(|r| r.item_id == 101)
+        .and_then(|r| r.plan.heading.clone())
+        .map(|h| h.text)
+        .unwrap();
+    let djot = render_to_string(&req(&g, &[100, 101], &p, ExportFormat::Djot)).unwrap();
+    assert!(
+        djot.contains(&chapter),
+        "the planned heading {chapter:?} is the one written:\n{djot}"
+    );
+    assert!(
+        rows.iter()
+            .find(|r| r.item_id == 101)
+            .is_some_and(|r| r.plan.epigraph.is_some()),
+        "and the chapter's epigraph is in the plan as it is in the file"
+    );
 }

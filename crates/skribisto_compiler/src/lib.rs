@@ -28,6 +28,10 @@ pub mod headings;
 /// The words an export writes into the book, from a catalogue chosen by the book's
 /// language rather than the app's.
 mod manuscript;
+/// What one row puts into the exported book, decided apart from how it is written. Public
+/// because the UI's Full Chapter / Part / Book read as exported asks the same question the
+/// compiler does, and two answers to it would drift.
+pub mod plan;
 mod preset;
 /// What an export sent out, kept because the file itself cannot say.
 pub mod receipt;
@@ -40,7 +44,9 @@ pub use preset::{
     PageSize, Preset, SceneBreak, builtin_presets,
 };
 pub use receipt::{ExportReceipt, ExportedRow};
-pub use render::{RenderRequest, RenderStats, render_to_file, render_to_string};
+pub use render::{
+    PlannedRow, RenderRequest, RenderStats, reading_plan, render_to_file, render_to_string,
+};
 
 use skrib_format::Gathered;
 use skribisto_model::compile::ItemMeta;
