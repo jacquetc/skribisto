@@ -2552,6 +2552,7 @@ search-field-resource = Forrás
 search-include-in-replace = Belefoglalás az Összes cseréjébe
 search-collapse-all = Minden találat összecsukása
 search-replace-here = Ennek cseréje
+search-open-in-editor = Megnyitás a szerkesztőben
 search-dismiss = Eltávolítás a találatok közül
 search-undo-dismiss = Az utoljára eltávolított találat visszahozása
 search-replace-nothing = (semmi)

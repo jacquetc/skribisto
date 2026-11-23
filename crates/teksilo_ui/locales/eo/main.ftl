@@ -2459,6 +2459,7 @@ search-field-resource = Rimedo
 search-include-in-replace = Inkluzivi en Anstataŭigi ĉiujn
 search-collapse-all = Faldi ĉiujn rezultojn
 search-replace-here = Anstataŭigi ĉi tion
+search-open-in-editor = Malfermi en la redaktilo
 search-dismiss = Forigi el la rezultoj
 search-undo-dismiss = Revenigi la laste forigitan rezulton
 search-replace-nothing = (nenio)

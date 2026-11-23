@@ -2884,6 +2884,7 @@ search-field-resource = משאב
 search-include-in-replace = הכללה ב"החלפת הכול"
 search-collapse-all = כיווץ כל התוצאות
 search-replace-here = החלפת המופע הזה
+search-open-in-editor = פתיחה בעורך
 search-dismiss = הסרה מהתוצאות
 search-undo-dismiss = החזרת התוצאה האחרונה שהוסרה
 search-replace-nothing = (כלום)

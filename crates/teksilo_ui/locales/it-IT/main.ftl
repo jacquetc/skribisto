@@ -2518,6 +2518,7 @@ search-field-resource = Risorsa
 search-include-in-replace = Includi in Sostituisci tutto
 search-collapse-all = Comprimi tutti i risultati
 search-replace-here = Sostituisci questa corrispondenza
+search-open-in-editor = Apri nell'editor
 search-dismiss = Rimuovi dai risultati
 search-undo-dismiss = Ripristina l'ultimo risultato rimosso
 search-replace-nothing = (nulla)

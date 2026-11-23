@@ -2544,6 +2544,7 @@ search-field-resource = Recurso
 search-include-in-replace = Incluir em Substituir tudo
 search-collapse-all = Recolher todos os resultados
 search-replace-here = Substituir isto
+search-open-in-editor = Abrir no editor
 search-dismiss = Retirar dos resultados
 search-undo-dismiss = Repor o último resultado retirado
 search-replace-nothing = (nada)

@@ -1791,6 +1791,7 @@ search-field-resource = 리소스
 search-include-in-replace = 모두 바꾸기에 포함
 search-collapse-all = 모든 결과 접기
 search-replace-here = 이 항목 바꾸기
+search-open-in-editor = 편집기에서 열기
 search-dismiss = 결과에서 제외
 search-undo-dismiss = 마지막으로 제외한 결과 복원
 search-replace-nothing = (없음)

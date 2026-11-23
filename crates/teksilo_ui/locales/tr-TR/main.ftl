@@ -2497,6 +2497,7 @@ search-field-resource = Kaynak
 search-include-in-replace = Tümünü değiştir'e dahil et
 search-collapse-all = Tüm sonuçları daralt
 search-replace-here = Bunu değiştir
+search-open-in-editor = Düzenleyicide aç
 search-dismiss = Sonuçlardan çıkar
 search-undo-dismiss = Son çıkarılan sonucu geri getir
 search-replace-nothing = (hiçbir şey)

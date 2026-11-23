@@ -2601,6 +2601,7 @@ search-field-resource = Resurssi
 search-include-in-replace = Sisällytä toimintoon Korvaa kaikki
 search-collapse-all = Supista kaikki tulokset
 search-replace-here = Korvaa tämä
+search-open-in-editor = Avaa muokkaimessa
 search-dismiss = Poista tuloksista
 search-undo-dismiss = Palauta viimeinen hylätty tulos
 search-replace-nothing = (ei mitään)

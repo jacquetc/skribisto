@@ -2773,6 +2773,7 @@ search-field-resource = Ressource
 search-include-in-replace = Medtag i Erstat alle
 search-collapse-all = Fold alle resultater sammen
 search-replace-here = Erstat denne
+search-open-in-editor = Åbn i editoren
 search-dismiss = Fjern fra resultaterne
 search-undo-dismiss = Hent det senest fjernede resultat tilbage
 search-replace-nothing = (ingenting)

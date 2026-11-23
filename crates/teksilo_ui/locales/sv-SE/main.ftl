@@ -2464,6 +2464,7 @@ search-field-resource = Resurs
 search-include-in-replace = Ta med i Ersätt alla
 search-collapse-all = Fäll ihop alla resultat
 search-replace-here = Ersätt här
+search-open-in-editor = Öppna i redigeraren
 search-dismiss = Ta bort från resultaten
 search-undo-dismiss = Hämta tillbaka det senast borttagna resultatet
 search-replace-nothing = (ingenting)

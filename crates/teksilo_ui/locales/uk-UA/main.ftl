@@ -3207,6 +3207,7 @@ search-field-resource = Ресурс
 search-include-in-replace = Включити в «Замінити все»
 search-collapse-all = Згорнути всі результати
 search-replace-here = Замінити тут
+search-open-in-editor = Відкрити в редакторі
 search-dismiss = Прибрати з результатів
 search-undo-dismiss = Повернути останній прибраний результат
 search-replace-nothing = (нічого)

@@ -2596,6 +2596,7 @@ search-field-resource = Πόρος
 search-include-in-replace = Συμπερίληψη στην «Αντικατάσταση όλων»
 search-collapse-all = Σύμπτυξη όλων των αποτελεσμάτων
 search-replace-here = Αντικατάσταση αυτού
+search-open-in-editor = Άνοιγμα στον επεξεργαστή
 search-dismiss = Απόρριψη από τα αποτελέσματα
 search-undo-dismiss = Επαναφορά του τελευταίου απορριφθέντος αποτελέσματος
 search-replace-nothing = (τίποτα)

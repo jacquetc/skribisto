@@ -1864,6 +1864,7 @@ search-field-resource = リソース
 search-include-in-replace = すべて置換に含める
 search-collapse-all = すべての結果を折りたたむ
 search-replace-here = この箇所を置換
+search-open-in-editor = エディターで開く
 search-dismiss = 結果から除外
 search-undo-dismiss = 最後に除外した結果を戻す
 search-replace-nothing = （なし）

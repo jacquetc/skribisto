@@ -2542,6 +2542,7 @@ search-field-resource = Bron
 search-include-in-replace = Opnemen in Alles vervangen
 search-collapse-all = Alle resultaten invouwen
 search-replace-here = Dit vervangen
+search-open-in-editor = Openen in de editor
 search-dismiss = Uit de resultaten verwijderen
 search-undo-dismiss = Het laatst verwijderde resultaat terughalen
 search-replace-nothing = (niets)

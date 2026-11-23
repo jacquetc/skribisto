@@ -2836,6 +2836,7 @@ search-field-resource = Zdroj
 search-include-in-replace = Zahrnout do Nahradit vše
 search-collapse-all = Sbalit všechny výsledky
 search-replace-here = Nahradit zde
+search-open-in-editor = Otevřít v editoru
 search-dismiss = Odebrat z výsledků
 search-undo-dismiss = Vrátit poslední odebraný výsledek
 search-replace-nothing = (nic)

@@ -3155,6 +3155,7 @@ search-field-resource = Zasób
 search-include-in-replace = Uwzględnij w „Zastąp wszystko”
 search-collapse-all = Zwiń wszystkie wyniki
 search-replace-here = Zastąp to
+search-open-in-editor = Otwórz w edytorze
 search-dismiss = Usuń z wyników
 search-undo-dismiss = Przywróć ostatnio usunięty wynik
 search-replace-nothing = (nic)

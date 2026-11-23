@@ -3684,6 +3684,7 @@ search-field-resource = مورد
 search-include-in-replace = التضمين في «استبدال الكل»
 search-collapse-all = طي كل النتائج
 search-replace-here = استبدال هذه
+search-open-in-editor = فتح في المحرر
 search-dismiss = الإخفاء من النتائج
 search-undo-dismiss = إعادة آخر نتيجة مخفية
 search-replace-nothing = (لا شيء)

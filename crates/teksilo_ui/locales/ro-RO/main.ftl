@@ -3069,6 +3069,7 @@ search-field-resource = Resursă
 search-include-in-replace = Include în „Înlocuiește tot”
 search-collapse-all = Restrânge toate rezultatele
 search-replace-here = Înlocuiește aici
+search-open-in-editor = Deschide în editor
 search-dismiss = Scoate din rezultate
 search-undo-dismiss = Readu ultimul rezultat scos
 search-replace-nothing = (nimic)
