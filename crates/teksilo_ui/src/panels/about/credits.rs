@@ -172,11 +172,24 @@ mod tests {
     /// The interface fonts' licences are copies of teksilo's, found through
     /// `cargo metadata` at the version this workspace resolves. A teksilo release
     /// that changes one of them fails here, not silently in the About box.
+    ///
+    /// The graph is filtered to the host: offline, an unfiltered `cargo metadata`
+    /// needs every platform's crates (`accesskit_ios`…), and a Linux CI runner has
+    /// downloaded only its own.
     #[test]
     fn the_copied_licences_match_teksilos() {
         let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+        let version = std::process::Command::new(env!("CARGO"))
+            .arg("-vV")
+            .output()
+            .expect("cargo -vV runs");
+        let host = String::from_utf8_lossy(&version.stdout)
+            .lines()
+            .find_map(|line| line.strip_prefix("host: ").map(str::to_owned))
+            .expect("cargo -vV names the host");
         let output = std::process::Command::new(env!("CARGO"))
             .args(["metadata", "--format-version", "1", "--offline"])
+            .args(["--filter-platform", &host])
             .current_dir(manifest)
             .output()
             .expect("cargo metadata runs");
