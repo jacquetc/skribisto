@@ -110,7 +110,14 @@ pub fn book_add_button(
     set: PinReference,
 ) -> impl Widget {
     PopoverButton::new(Button::new(tr!(books_add())).variant(ButtonVariant::Plain))
-        .content(CastAddPopover::new(candidates, already, owner_id, set))
+        .bare()
+        .content(CastAddPopover::new(
+            tr!(books_add()),
+            candidates,
+            already,
+            owner_id,
+            set,
+        ))
 }
 
 #[cfg(test)]

@@ -637,7 +637,14 @@ fn links_section(
         PopoverButton::new(
             Button::new(tr!(note_details_links_add())).variant(ButtonVariant::Plain),
         )
-        .content(CastAddPopover::new(candidates, references, item_id, add)),
+        .bare()
+        .content(CastAddPopover::new(
+            tr!(note_details_links_add()),
+            candidates,
+            references,
+            item_id,
+            add,
+        )),
     )
 }
 

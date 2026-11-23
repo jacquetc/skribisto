@@ -443,6 +443,8 @@ impl Widget for Inspector {
                         PopoverButton::new(
                             Button::new(tr!(inspector_promote())).variant(ButtonVariant::Tinted),
                         )
+                        // A `MenuList` draws its own menu surface.
+                        .bare()
                         .content(promote_menu(outline, key)),
                     );
                 }

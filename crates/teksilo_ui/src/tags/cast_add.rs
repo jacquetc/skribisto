@@ -38,7 +38,13 @@ impl From<&DiscoverableEntity> for CastCandidate {
 }
 
 /// Filter field + scrollable list of story-bible items not already in the cast.
+///
+/// Draws its own `Panel`, so its trigger must be `.bare()`: under the popover's themed
+/// surface the list would sit in a frame inside a frame. The panel is the `Role::Dialog`
+/// the surface would otherwise have been, named after the trigger.
 pub struct CastAddPopover {
+    /// The dialog's accessible name: the trigger's own label.
+    label: LocalizedString,
     candidates: Vec<CastCandidate>,
     /// Target ids already confirmed on the focused item.
     already: std::collections::HashSet<u64>,
@@ -51,12 +57,14 @@ pub struct CastAddPopover {
 
 impl CastAddPopover {
     pub fn new(
+        label: LocalizedString,
         candidates: Vec<CastCandidate>,
         already: impl IntoIterator<Item = u64>,
         owner_id: u64,
         pin: PinReference,
     ) -> Self {
         Self {
+            label,
             candidates,
             already: already.into_iter().collect(),
             owner_id,
@@ -144,7 +152,12 @@ impl Widget for CastAddPopover {
             );
         }
 
-        let id = ctx.add(Panel::new().child(Padding::symmetric(8.0, 8.0).child(col)));
+        let id = ctx.add(
+            Panel::new()
+                .child(Padding::symmetric(8.0, 8.0).child(col))
+                .access_role(Role::Dialog)
+                .access_label(self.label.clone()),
+        );
         self.root_child = Some(id);
         vec![id]
     }
@@ -185,7 +198,14 @@ pub fn cast_add_button(
         teksilo::widgets::Button::new(tr!(cast_add()))
             .variant(teksilo::widgets::ButtonVariant::Plain),
     )
-    .content(CastAddPopover::new(candidates, already, owner_id, pin))
+    .bare()
+    .content(CastAddPopover::new(
+        tr!(cast_add()),
+        candidates,
+        already,
+        owner_id,
+        pin,
+    ))
 }
 
 /// Build candidate list from the scan's alias table.
@@ -324,5 +344,49 @@ impl LiveCastOverlay {
 impl Default for LiveCastOverlay {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use frontend::AppContext;
+    use teksilo::core::widget_tree::WidgetTree;
+
+    fn mount(label: LocalizedString) -> WidgetTree {
+        let app_ctx = Rc::new(AppContext::new());
+        let mut tree = crate::test_support::tree_with_events(&app_ctx).with_text_backend(Rc::new(
+            std::cell::RefCell::new(teksilo::canvas::MockTextBackend::new()),
+        ));
+        let pin: PinReference = Rc::new(|_, _| {});
+        let candidates = vec![CastCandidate {
+            id: 7,
+            title: "Hap".to_string(),
+        }];
+        tree.add_boxed(Box::new(CastAddPopover::new(label, candidates, [], 1, pin)));
+        tree.layout(SizeProposal::exact(280.0, 320.0));
+        tree
+    }
+
+    /// Every trigger opens this picker `.bare()`, so the popover lends it no surface and
+    /// no `Role::Dialog`: the picker's own panel must be the dialog a screen reader
+    /// lands in, named after the button that opened it.
+    #[test]
+    fn the_panel_is_the_dialog_named_after_its_trigger() {
+        crate::test_support::with_real_messages(|| {
+            let tree = mount(tr!(pov_add()));
+            let dialog = tree
+                .find_by_role(Role::Dialog)
+                .expect("the picker exposes a dialog");
+            assert_eq!(
+                tree.accessibility_node(dialog).name(),
+                Some("Set point of view…")
+            );
+            assert!(
+                tree.find_by_label("Hap").is_some(),
+                "the candidate is listed"
+            );
+        });
     }
 }
