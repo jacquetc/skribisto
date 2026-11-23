@@ -19,21 +19,37 @@
 //! carries its own `SceneText`, exactly like the flat chapter it promotes to), while a
 //! part heading shows one only in the Synopsis flavour. Nothing here special-cases a
 //! row kind for content — only for *chrome*.
+//!
+//! **Read as exported.** The Prose flavour can also show the container as its reader will
+//! get it, in the book's remembered export style: only what an export of it would print,
+//! front and back matter included, each row under the heading the export gives it and
+//! with its epigraph where the style sets it, and no working chrome (status, menu, tags,
+//! add). The rows and what each prints come from the compiler itself (see
+//! [`crate::models::ReadingRow`]); the editors are the same ones, so a passage that reads
+//! wrong is fixed where it is read. Pages and type are not shown, and not claimed.
 
+use std::cell::RefCell;
 use std::rc::Rc;
 
+use teksilo::core::BindingLevel;
 use teksilo::prelude::*;
 use teksilo::widgets::{
-    Button, Divider, Expand, HStack, IconButton, IconWidget, MenuItem, MenuList, PopoverIconButton,
-    Repeater, ScrollArea, Spacer, TextWidget, VStack,
+    Button, ComboBox, Divider, Expand, HStack, IconButton, IconWidget, MenuItem, MenuList,
+    PopoverIconButton, Repeater, ScrollArea, Spacer, TextWidget, Toggle, VStack,
 };
 
 use skribisto_model::{CreateType, SubRoleExt};
 
-use crate::models::{StreamLevel, StreamRow};
+use skribisto_compiler::EpigraphPlacement;
+use skribisto_compiler::plan::{HeadingKind, RowHeading};
+
+use crate::export::ExportStylesViewModel;
+use crate::margin_lane::RowExtents;
+use crate::models::{OpenDoc, ReadingRow, StreamLevel, StreamRow};
 use crate::settings::EditorTypography;
 use crate::shared::{is_prose_bearing, is_synopsis_bearing};
 use crate::stream::{SplitFlavour, StreamViewModel};
+use crate::widgets::Rebuilding;
 
 use super::{
     HEADING_PROSE_MIN_LINES, MAIN_MIN_LINES, SplitFn, centered, synopsis_column, vspace,
@@ -109,6 +125,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
         let (page, port, _binding) =
             crate::tabs::shared::panes::writing_page_scroll(tab, will_show);
         let page_scroll = page.scroll_y_signal().clone();
+        let page_max = page.max_scroll_y_signal().clone();
         // The zero-size companion that claims this tab's view-state ports on
         // activation. It goes anywhere inside the page, so it goes here rather
         // than being threaded out through `mapped` alongside the area.
@@ -142,11 +159,33 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
             let page_scroll = page_scroll.clone();
             move |row: &StreamRow| -> Box<dyn Widget> {
                 let item = row.item_id;
-                Box::new(crate::margin_lane::RowExtent::new(
-                    item,
-                    extents.clone(),
-                    page_scroll.clone(),
-                    stream_row(
+                let body: Box<dyn Widget> = match &row.reading {
+                    Some(reading) => Box::new(reading_row(
+                        &vm,
+                        row,
+                        reading,
+                        &ReadingKit {
+                            header_width: header_cw.clone(),
+                            editor_width: editor_cw.clone(),
+                            typo: typo.clone(),
+                            mark_dirty: md.clone(),
+                            format: format.clone(),
+                            typewriter: tw.clone(),
+                            caret: band.clone(),
+                            games: games.clone(),
+                            palette: arrival_project.as_ref().map(|p| {
+                                crate::tabs::shared::editor::CapturePalette {
+                                    tags: tags.clone(),
+                                    work_uid: p.uid.clone(),
+                                }
+                            }),
+                        },
+                        &gutter,
+                        arrival_project.as_ref(),
+                        scope,
+                        &tags,
+                    )),
+                    None => Box::new(stream_row(
                         &vm,
                         row,
                         &header_cw,
@@ -162,21 +201,68 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                         arrival_project.as_ref(),
                         scope,
                         Some(&tags),
-                    ),
+                    )),
+                };
+                Box::new(crate::margin_lane::RowExtent::new(
+                    item,
+                    extents.clone(),
+                    page_scroll.clone(),
+                    body,
                 ))
             }
         };
 
+        // Where the writer was reading when the stream switched between the draft and
+        // the book read as exported, so the switch leaves them on the same passage.
+        let anchor = ReadingAnchor::default();
         col = col
             .child(WireOnBuild::new(
                 vm.clone(),
                 flavour,
                 gutter.clone(),
                 own_comments.clone(),
+                PagePlace {
+                    anchor: anchor.clone(),
+                    extents: extents.clone(),
+                    scroll: page_scroll.clone(),
+                    max_scroll: page_max.clone(),
+                },
             ))
-            .child(vspace(12.0))
-            .child(centered(container_header(&vm), &header_cw))
+            .child(vspace(12.0));
+        // Read as exported is a Prose matter: a synopsis is not part of the book.
+        if flavour == SplitFlavour::Prose {
+            let on_flip: Rc<dyn Fn()> = {
+                let anchor = anchor.clone();
+                let extents = extents.clone();
+                let page_scroll = page_scroll.clone();
+                Rc::new(move || anchor.note(&extents, page_scroll.get()))
+            };
+            col = col
+                .child(centered(reading_bar(&vm, on_flip), &header_cw))
+                .child(vspace(8.0));
+        }
+        col = col
+            .child(centered(container_header(&vm), &header_cw).visible_when(vm.working_on()))
             .child(vspace(4.0));
+        if flavour == SplitFlavour::Prose {
+            // The container's own heading and epigraph, as the export opens it on them.
+            // Its own prose is the editor just below, the same in both modes.
+            col = col.child(head_reading(
+                &vm,
+                tab.open_doc.clone(),
+                ReadingKit {
+                    header_width: header_cw.clone(),
+                    editor_width: editor_cw.clone(),
+                    typo: editor_typo.clone(),
+                    mark_dirty: mark_dirty.clone(),
+                    format: format.clone(),
+                    typewriter: tab.typewriter.clone(),
+                    caret: tab.caret_band(),
+                    games: tab.writing_games(),
+                    palette: tab.capture_palette(),
+                },
+            ));
+        }
 
         // The container's **own** content — it is the pane header, never a row. In the
         // Prose flavour that is a chapter folder's own `SceneText` (present after
@@ -280,20 +366,53 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     Some(tab.open_doc.content_language()),
                 )),
             };
+            // Read as exported, the container's own prose is in the book only when the
+            // container is: one whose own *Include in exports* is off leaves the export,
+            // and the page with it.
+            let in_book = vm
+                .working_on()
+                .zip(&vm.head_reading())
+                .map(|(working, head)| *working || head.is_some());
             col = col
-                .child(crate::margin_lane::RowExtent::boxed(
-                    tab.item_id(),
-                    extents.clone(),
-                    page_scroll.clone(),
-                    own_col,
-                ))
+                .child(
+                    crate::margin_lane::RowExtent::boxed(
+                        tab.item_id(),
+                        extents.clone(),
+                        page_scroll.clone(),
+                        own_col,
+                    )
+                    .visible_when(in_book),
+                )
                 .child(vspace(6.0));
+        }
+        if flavour == SplitFlavour::Prose {
+            // The container's synopsis, after its prose, when the style prints synopses.
+            col = col.child(head_synopsis(
+                &vm,
+                tab.open_doc.clone(),
+                tab.open_doc
+                    .comment_binding_synopsis()
+                    .map(|b| b.with_gutter(gutter.clone())),
+                ReadingKit {
+                    header_width: header_cw.clone(),
+                    editor_width: editor_cw.clone(),
+                    // As every row's synopsis in a reading: the export prints it as prose.
+                    typo: editor_typo.clone(),
+                    mark_dirty: mark_dirty.clone(),
+                    format: format.clone(),
+                    typewriter: tab.typewriter.clone(),
+                    caret: tab.caret_band(),
+                    games: tab.writing_games(),
+                    palette: tab.capture_palette(),
+                },
+            ));
         }
 
         col = col
             .child(Repeater::new(vm.list(), factory))
             .child(vspace(10.0))
-            .child(centered(add_button(&vm), &header_cw))
+            // Adding a row is working furniture; a reading has none.
+            .child(centered(add_button(&vm), &header_cw).visible_when(vm.working_on()))
             .child(vspace(28.0));
     }
     let body: Box<dyn Widget> = match mapped {
@@ -361,6 +480,16 @@ struct WireOnBuild {
     flavour: SplitFlavour,
     gutter: Signal<f32>,
     own: Option<crate::comments::binding::CommentBinding>,
+    place: PagePlace,
+}
+
+/// The passage to land back on after a switch to or from the reading, and what it needs
+/// to find it: where every row is, and the page's scroll and how far it can go.
+struct PagePlace {
+    anchor: ReadingAnchor,
+    extents: RowExtents,
+    scroll: Signal<f32>,
+    max_scroll: Signal<f32>,
 }
 
 impl WireOnBuild {
@@ -369,12 +498,14 @@ impl WireOnBuild {
         flavour: SplitFlavour,
         gutter: Signal<f32>,
         own: Option<crate::comments::binding::CommentBinding>,
+        place: PagePlace,
     ) -> Self {
         Self {
             vm,
             flavour,
             gutter,
             own,
+            place,
         }
     }
 }
@@ -388,6 +519,17 @@ impl std::fmt::Debug for WireOnBuild {
 impl Widget for WireOnBuild {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
         self.vm.wire(ctx);
+        // The rows report where they land as they lay out after a switch, a few frames
+        // running; each report is a chance to put the page back on the noted passage.
+        {
+            let anchor = self.place.anchor.clone();
+            let extents = self.place.extents.clone();
+            let scroll = self.place.scroll.clone();
+            let max = self.place.max_scroll.clone();
+            ctx.effect(&self.place.extents.generation(), move |_| {
+                anchor.restore(&extents, &scroll, max.get());
+            });
+        }
         // Recompute the page's gutter when the comment set's *shape* changes (a
         // thread created, deleted or resolved) or when Tools ▸ Comments toggles —
         // the same two signals each row's margin rebuilds on, so the reservation
@@ -702,6 +844,15 @@ fn row_header(
                 .color(TextRole::Secondary)
                 .single_line(),
         )
+        // A row the export leaves out says so, here where the draft still shows it: the
+        // working stream keeps every row, and only this tells a cut scene from a kept one.
+        .child(
+            TextWidget::new(tr!(stream_not_exported()))
+                .style(TextStyleRole::Small)
+                .color(TextRole::Secondary)
+                .single_line()
+                .visible_when(vm.row_exportable(id).map(|on| !on)),
+        )
         // Tag dots, between the label and the rule. Takes no space when the row is untagged.
         .child(tag_dots)
         .child(Expand::horizontal().child(Divider::new()))
@@ -782,6 +933,420 @@ fn row_menu(vm: &StreamViewModel, row: &StreamRow) -> impl Widget {
         .content(list)
 }
 
+// ── Read as exported ─────────────────────────────────────────────────────────
+
+/// The switch between the working stream and the book read as exported, and the style
+/// the reading follows.
+///
+/// Rebuilt when the writer's own styles change (Settings ▸ Export Formats), so the picker
+/// always offers what the Export panel offers. `on_flip` runs just before the switch, to
+/// note the passage being read.
+fn reading_bar(vm: &StreamViewModel, on_flip: Rc<dyn Fn()>) -> impl Widget {
+    let make_vm = vm.clone();
+    Rebuilding::new(
+        |ctx: &mut BuildContext| {
+            if let Some(styles) = ctx.app_state::<ExportStylesViewModel>().cloned() {
+                styles.changed_signal().bind_to(
+                    ctx.self_id(),
+                    ctx.binding_registry(),
+                    BindingLevel::Rebuild,
+                );
+            }
+        },
+        move |ctx: &mut BuildContext| {
+            let catalogue =
+                crate::export::style::catalogue(ctx.app_state::<ExportStylesViewModel>());
+            let toggle_vm = make_vm.clone();
+            let flip = on_flip.clone();
+            let pick_vm = make_vm.clone();
+            // A new style adds and removes rows too (a dedication, a synopsis), so it keeps
+            // the passage exactly as the switch does.
+            let pick_flip = on_flip.clone();
+            let style = ComboBox::from_items(catalogue, make_vm.reading_style(), |p| {
+                crate::export::preset_display_name(p)
+            })
+            .label(tr!(stream_reading_style()))
+            .on_select(move |p, _ctx| {
+                pick_flip();
+                pick_vm.choose_reading_style(p);
+            })
+            .visible_when(make_vm.reading_on());
+            ctx.add(
+                HStack::new()
+                    .spacing(12.0)
+                    .child(
+                        Toggle::new(make_vm.reading_on())
+                            .label(tr!(stream_read_as_exported()))
+                            .tooltip(tr!(stream_read_as_exported_tip()))
+                            .on_change(move |on, _ctx| {
+                                flip();
+                                toggle_vm.set_reading_on(on);
+                            }),
+                    )
+                    .child(Expand::horizontal().child(style)),
+            )
+        },
+    )
+}
+
+/// The furniture every editor of a reading shares, threaded once rather than as a
+/// dozen arguments per row.
+#[derive(Clone)]
+struct ReadingKit {
+    /// Headings and page rules, on the tab's normal column.
+    header_width: Signal<f32>,
+    /// The prose, on whichever column this tab's surface uses.
+    editor_width: Signal<f32>,
+    typo: EditorTypography,
+    mark_dirty: Rc<dyn Fn()>,
+    format: crate::format::FormatViewModel,
+    typewriter: crate::shared::TypewriterSettings,
+    caret: crate::shared::CaretBand,
+    games: crate::writing_session::WritingGamesViewModel,
+    palette: Option<crate::tabs::shared::editor::CapturePalette>,
+}
+
+/// The container's own heading and epigraph, read as exported. Empty in the working
+/// stream, and for a container that prints neither (a book under a title page).
+fn head_reading(vm: &StreamViewModel, doc: Rc<OpenDoc>, kit: ReadingKit) -> impl Widget {
+    let head = vm.head_reading();
+    let make_head = head.clone();
+    Rebuilding::new(
+        move |ctx: &mut BuildContext| {
+            head.bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
+        },
+        move |ctx: &mut BuildContext| match make_head.get() {
+            Some(reading) => ctx.add(reading_opening(&reading, Some(&doc), &kit)),
+            None => ctx.add(VStack::new()),
+        },
+    )
+}
+
+/// The container's own synopsis in a reading, when the style prints synopses. Empty
+/// otherwise, and in the working stream, where the Full Synopsis view shows it.
+fn head_synopsis(
+    vm: &StreamViewModel,
+    doc: Rc<OpenDoc>,
+    comments: Option<crate::comments::binding::CommentBinding>,
+    kit: ReadingKit,
+) -> impl Widget {
+    let head = vm.head_reading();
+    let make_head = head.clone();
+    Rebuilding::new(
+        move |ctx: &mut BuildContext| {
+            head.bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
+        },
+        move |ctx: &mut BuildContext| {
+            let shown = make_head.get().is_some_and(|r| r.synopsis);
+            match doc.synopsis.as_ref().filter(|_| shown) {
+                Some(field) => {
+                    let md = kit.mark_dirty.clone();
+                    ctx.add(synopsis_column(
+                        &field.doc,
+                        &kit.editor_width,
+                        &kit.typo,
+                        move || md(),
+                        Option::None,
+                        doc.spell_synopsis(),
+                        doc.replacement_synopsis(),
+                        Option::None,
+                        Some(kit.format.clone()),
+                        Some(kit.typewriter.clone()),
+                        Some(kit.caret.clone()),
+                        Some(kit.games.clone()),
+                        comments.clone(),
+                        doc.images(),
+                        doc.trashed.get(),
+                        Option::None,
+                        Option::None,
+                        true,
+                        kit.palette.clone(),
+                        tr!(synopsis()),
+                        Some(doc.content_language()),
+                    ))
+                }
+                None => ctx.add(VStack::new()),
+            }
+        },
+    )
+}
+
+/// What opens a row of a reading, above its prose: the gap or page rule that separates
+/// it from the row before, then the epigraph and the heading in the order the style sets.
+fn reading_opening(reading: &ReadingRow, doc: Option<&OpenDoc>, kit: &ReadingKit) -> VStack {
+    let mut col = VStack::new().spacing(4.0).child(reading_gap(reading, kit));
+    let epigraph = |col: VStack| match doc.and_then(|d| epigraph_editor(d, kit)) {
+        Some(editor) => col.child(editor).child(vspace(6.0)),
+        None => col,
+    };
+    if reading.epigraph == Some(EpigraphPlacement::BeforeHeading) {
+        col = epigraph(col);
+    }
+    if let Some(heading) = &reading.heading {
+        col = col
+            .child(centered(reading_heading(heading), &kit.header_width))
+            .child(vspace(6.0));
+    }
+    if reading.epigraph == Some(EpigraphPlacement::AfterHeading) {
+        col = epigraph(col);
+    }
+    col
+}
+
+/// The space above a row of a reading: a rule where the style opens a new page, room
+/// above a heading, and nothing at all between two scenes the export runs together.
+///
+/// That last one is the point. The working stream heads every scene, which reads as a
+/// break; the export only breaks where the writer typed a marker, so two scenes with none
+/// between them reach the reader as one run of prose, and this is the only place they
+/// can see that.
+fn reading_gap(reading: &ReadingRow, kit: &ReadingKit) -> Box<dyn Widget> {
+    if reading.first {
+        Box::new(vspace(8.0))
+    } else if reading.starts_page {
+        Box::new(
+            VStack::new()
+                .child(vspace(26.0))
+                .child(centered(Divider::new(), &kit.header_width))
+                .child(vspace(26.0)),
+        )
+    } else if reading.heading.is_some() {
+        Box::new(vspace(22.0))
+    } else {
+        Box::new(vspace(0.0))
+    }
+}
+
+/// A heading as the export words it: centred, structure headings in the primary colour,
+/// a kept scene title quieter under them.
+fn reading_heading(heading: &RowHeading) -> impl Widget {
+    let color = match heading.kind {
+        HeadingKind::Structure(_) => TextRole::Primary,
+        HeadingKind::SceneTitle => TextRole::Secondary,
+    };
+    TextWidget::new(lit!(heading.text.clone()))
+        .style(TextStyleRole::BodyBold)
+        .color(color)
+        .text_align(TextAlign::Center)
+}
+
+/// A row's epigraph editor, or `None` for a row that has no epigraph field.
+///
+/// The same editor the chapter's own tab shows (see `panes::epigraph_section`), set in
+/// Scene typography for the same reason: an epigraph is finished-book matter. Without
+/// that tab's attribution button, which is working furniture, and without comments,
+/// which anchor to the author's own prose and not to quoted matter.
+fn epigraph_editor(doc: &OpenDoc, kit: &ReadingKit) -> Option<impl Widget> {
+    let field = doc.epigraph.as_ref()?;
+    let md = kit.mark_dirty.clone();
+    Some(synopsis_column(
+        &field.doc,
+        &kit.editor_width,
+        &kit.typo,
+        move || md(),
+        Option::None,
+        doc.spell_epigraph(),
+        doc.replacement_epigraph(),
+        Option::None,
+        Some(kit.format.clone()),
+        Some(kit.typewriter.clone()),
+        Some(kit.caret.clone()),
+        Some(kit.games.clone()),
+        Option::None,
+        doc.images(),
+        doc.trashed.get(),
+        Option::None,
+        // Not this item, for the reason `panes::epigraph_section` gives: the registry keys
+        // an editor by `(item, kind)`, and the epigraph shares its kind with the synopsis.
+        Option::None,
+        true,
+        kit.palette.clone(),
+        tr!(epigraph()),
+        Some(doc.content_language()),
+    ))
+}
+
+/// One row of a reading: its opening (see [`reading_opening`]), its prose in the same
+/// editor the working stream gives it, and its synopsis if the style prints one. No
+/// header, status, menu or tags: a reader sees none of them.
+#[allow(clippy::too_many_arguments)]
+fn reading_row(
+    vm: &StreamViewModel,
+    row: &StreamRow,
+    reading: &ReadingRow,
+    kit: &ReadingKit,
+    gutter: &Signal<f32>,
+    arrival_project: Option<&crate::tabs::shared::editor::ArrivalProject>,
+    scope: crate::margin_lane::LaneScope,
+    tags: &crate::tags::TagsViewModel,
+) -> impl Widget {
+    let id = row.item_id;
+    let doc = vm.row_doc(id);
+    let mut col = reading_opening(reading, doc.as_deref(), kit);
+    let Some(doc) = doc else {
+        return col;
+    };
+    // The row's own prose, whatever it is: a scene's, a chapter's, a paratext page's. An
+    // empty one prints nothing and shows a single blank line, so it neither hides a row
+    // the writer is in the middle of clearing nor opens a gap the reader will not see.
+    if let Some(field) = doc.main.as_ref() {
+        let md = kit.mark_dirty.clone();
+        col = col.child(writing_column(
+            &field.doc,
+            &kit.editor_width,
+            &kit.typo,
+            HEADING_PROSE_MIN_LINES,
+            move || md(),
+            // No split here: cutting a scene in two is restructuring, which a reading
+            // leaves to the working stream.
+            Option::None,
+            Option::None,
+            doc.spell_main(),
+            doc.replacement_main(),
+            Some(kit.format.clone()),
+            Some(kit.typewriter.clone()),
+            Some(kit.caret.clone()),
+            Some(kit.games.clone()),
+            Option::None,
+            // A read-through is when remarks get written, so the margin stays.
+            vm.row_comments(id, SplitFlavour::Prose)
+                .map(|b| b.with_gutter(gutter.clone())),
+            doc.footnote_binding_main(),
+            doc.images(),
+            arrival_project.cloned(),
+            doc.trashed.get(),
+            Some(crate::margin_lane::LaneAnchor::new(id, scope)),
+            true,
+            Some(tags.clone()),
+            None,
+            tr!(editor_text_name()),
+            Some(doc.content_language()),
+        ));
+    }
+    if reading.synopsis
+        && let Some(field) = doc.synopsis.as_ref()
+    {
+        let md = kit.mark_dirty.clone();
+        col = col.child(synopsis_column(
+            &field.doc,
+            &kit.editor_width,
+            &kit.typo,
+            move || md(),
+            Option::None,
+            doc.spell_synopsis(),
+            doc.replacement_synopsis(),
+            Option::None,
+            Some(kit.format.clone()),
+            Some(kit.typewriter.clone()),
+            Some(kit.caret.clone()),
+            Some(kit.games.clone()),
+            vm.row_comments(id, SplitFlavour::Synopsis)
+                .map(|b| b.with_gutter(gutter.clone())),
+            doc.images(),
+            doc.trashed.get(),
+            Option::None,
+            Option::None,
+            true,
+            kit.palette.clone(),
+            tr!(synopsis()),
+            Some(doc.content_language()),
+        ));
+    }
+    col
+}
+
+/// How long after a switch the page keeps steering back to the noted passage. The rows
+/// re-lay out over a few frames; past this, a row moving is the writer's own doing
+/// (typing) and the page must not be pulled away from them. A scroll ends it sooner.
+const ANCHOR_WINDOW: std::time::Duration = std::time::Duration::from_millis(1500);
+
+/// The passage the writer was reading when the stream switched between the draft and the
+/// book read as exported.
+///
+/// Noted by row rather than by pixel: the two modes put different rows above it (a
+/// dedication appears, a cut scene goes), so the same offset would land on a different
+/// page of the book. If the noted row is not in the new mode, the first row after it that
+/// is takes its place.
+#[derive(Clone, Default)]
+struct ReadingAnchor(Rc<RefCell<Option<Anchored>>>);
+
+struct Anchored {
+    /// The row at the top of the page, then every row after it, in page order.
+    candidates: Vec<u64>,
+    /// How far into the first one the page had scrolled.
+    offset: f32,
+    since: std::time::Instant,
+    /// Consecutive reports that found the page already in place.
+    settled: u8,
+    /// Where the page was last put, by the switch or by this anchor. The page anywhere
+    /// else means the writer scrolled it, and the anchor lets go at once.
+    placed_at: f32,
+}
+
+impl ReadingAnchor {
+    /// Note the row at the top of the page, scrolled `scroll_y` down.
+    fn note(&self, extents: &RowExtents, scroll_y: f32) {
+        let mut placed: Vec<(u64, f32, f32)> = extents
+            .items()
+            .into_iter()
+            .filter_map(|id| extents.placement(id).map(|(top, h)| (id, top, h)))
+            .collect();
+        placed.sort_by(|a, b| a.1.total_cmp(&b.1));
+        let next = placed
+            .iter()
+            .position(|(_, top, h)| top + h > scroll_y)
+            .map(|first| Anchored {
+                candidates: placed[first..].iter().map(|p| p.0).collect(),
+                offset: (scroll_y - placed[first].1).max(0.0),
+                since: std::time::Instant::now(),
+                settled: 0,
+                placed_at: scroll_y,
+            });
+        *self.0.borrow_mut() = next;
+    }
+
+    /// Put the page back on the noted passage, now that the rows have moved.
+    ///
+    /// `max_scroll` tells a page the area pulled back itself (rows left and the content
+    /// got shorter) from one the writer scrolled: only the second lets go.
+    fn restore(&self, extents: &RowExtents, scroll: &Signal<f32>, max_scroll: f32) {
+        let target = {
+            let mut slot = self.0.borrow_mut();
+            let Some(a) = slot.as_mut() else {
+                return;
+            };
+            let now = scroll.get();
+            let clamped = a.placed_at > max_scroll && (now - max_scroll).abs() < 1.0;
+            let scrolled_away = (now - a.placed_at).abs() >= 1.0 && !clamped;
+            if scrolled_away || a.since.elapsed() > ANCHOR_WINDOW || a.settled >= 2 {
+                *slot = None;
+                return;
+            }
+            let target = a.candidates.iter().enumerate().find_map(|(i, id)| {
+                extents
+                    .placement(*id)
+                    .map(|(top, _)| if i == 0 { top + a.offset } else { top })
+            });
+            match target {
+                Some(t) if (scroll.get() - t).abs() < 1.0 => {
+                    a.settled += 1;
+                    None
+                }
+                Some(t) => {
+                    a.settled = 0;
+                    a.placed_at = t.max(0.0);
+                    Some(a.placed_at)
+                }
+                None => None,
+            }
+        };
+        // Set outside the borrow: moving the page can report extents straight back.
+        if let Some(t) = target {
+            scroll.set(t);
+        }
+    }
+}
+
 /// What "Insert …" on this row will actually create — the model's default
 /// recommendation for it. A scene (or a chapter head) recommends a Scene; a *part*
 /// heading recommends a Chapter, so the label must say so rather than lie about a scene.
@@ -831,6 +1396,82 @@ mod tests {
         ));
         StreamViewModel::new(ctx, AppIds::new(), docs, 1, &Folder, &ChapterScene)
             .expect("a chapter folder hosts a stream")
+    }
+
+    /// A switch lands back on the passage being read: the noted row moved down 400 px
+    /// (a dedication appeared above it), and the page follows it, keeping the offset into
+    /// the row.
+    #[test]
+    fn the_reading_anchor_follows_the_noted_row() {
+        let extents = RowExtents::new();
+        extents.report(1, 0.0, 300.0);
+        extents.report(2, 300.0, 500.0);
+        let scroll = Signal::new(350.0);
+        let anchor = ReadingAnchor::default();
+        anchor.note(&extents, scroll.get());
+
+        extents.report(2, 700.0, 500.0);
+        anchor.restore(&extents, &scroll, 5000.0);
+        assert_eq!(scroll.get(), 750.0, "row 2, 50 px in, as before the switch");
+    }
+
+    /// A noted row the new mode leaves out hands the passage to the next one still there.
+    #[test]
+    fn a_noted_row_that_left_hands_over_to_the_next() {
+        let extents = RowExtents::new();
+        extents.report(1, 0.0, 300.0);
+        extents.report(2, 300.0, 200.0);
+        extents.report(3, 500.0, 400.0);
+        let scroll = Signal::new(320.0);
+        let anchor = ReadingAnchor::default();
+        anchor.note(&extents, scroll.get());
+
+        extents.forget(2);
+        extents.report(3, 300.0, 400.0);
+        anchor.restore(&extents, &scroll, 5000.0);
+        assert_eq!(
+            scroll.get(),
+            300.0,
+            "the cut scene's successor, from its top"
+        );
+    }
+
+    /// **The anchor never fights the writer.** Once they scroll, a row moving afterwards
+    /// (typing, a late layout) leaves the page where they put it.
+    #[test]
+    fn a_scroll_by_the_writer_releases_the_anchor() {
+        let extents = RowExtents::new();
+        extents.report(1, 0.0, 300.0);
+        extents.report(2, 300.0, 500.0);
+        let scroll = Signal::new(350.0);
+        let anchor = ReadingAnchor::default();
+        anchor.note(&extents, scroll.get());
+
+        scroll.set(1200.0);
+        extents.report(2, 700.0, 500.0);
+        anchor.restore(&extents, &scroll, 5000.0);
+        assert_eq!(scroll.get(), 1200.0, "left where the writer scrolled");
+        extents.report(2, 800.0, 500.0);
+        anchor.restore(&extents, &scroll, 5000.0);
+        assert_eq!(scroll.get(), 1200.0, "and for good");
+    }
+
+    /// The page pulled back by the area itself, because the content got shorter, is not
+    /// the writer scrolling: the anchor still puts the page on its row.
+    #[test]
+    fn a_page_the_area_clamped_is_still_anchored() {
+        let extents = RowExtents::new();
+        extents.report(1, 0.0, 300.0);
+        extents.report(2, 2000.0, 500.0);
+        let scroll = Signal::new(2100.0);
+        let anchor = ReadingAnchor::default();
+        anchor.note(&extents, scroll.get());
+
+        // A long cut scene above row 2 left: the content is shorter, and the area clamped.
+        scroll.set(900.0);
+        extents.report(2, 600.0, 500.0);
+        anchor.restore(&extents, &scroll, 900.0);
+        assert_eq!(scroll.get(), 700.0, "row 2, 100 px in");
     }
 
     /// **The majority case, and the one that must not regress.** A page with no

@@ -34,6 +34,31 @@ Then choose *Edit* on the copy.
 
 Other available formats are HTML, Markdown, Djot, Text and LaTeX.
 
+## Read your book as it will be exported
+
+Before you export, you can read the book the way your reader will get it.
+
+1. Open a book, a part or a folder chapter, and go to its *Full Book*, *Full Part* or
+   *Full Chapter* view.
+2. Turn on *Read as exported* at the top of the page.
+3. Pick the export style to follow in the list beside it.
+
+The page then shows only what that style puts in the file:
+
+- Scenes with *Include in exports* turned off disappear.
+- The dedication, the copyright page and other front and back matter appear.
+- Each chapter opens on the heading the export prints, with its epigraph.
+- Scenes run on into each other unless you typed a scene break between them.
+- A line marks each place the style starts a new page.
+
+You can still edit the text and add comments. Status, tags and the menus of each scene are
+hidden until you turn the switch off. Fonts and the page layout itself are not shown.
+
+Each book remembers its export style. *Export* opens on the style you last used, and so does
+*Read as exported*.
+
+In the ordinary view, a scene left out of exports shows *Not exported* beside its title.
+
 ## Give a book its cover
 
 Each book has its own cover. Open the book and stay on its *Book* page: under the title,

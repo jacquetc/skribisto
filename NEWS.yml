@@ -9,7 +9,9 @@ Description:
 - "When the search or the tag and status filters hide every picture of a folder, the Gallery now says No images match these filters and offers Clear the filters, which clears them in the Overview too. It used to say No images here yet, as if the folder had none"
 - "An empty Gallery offers Add images…, and takes images dropped from your file manager. They become resources of the folder and appear in its Gallery at once"
 - "The Resources panel has a choice at its top, This item or Unattached. Unattached lists the files and links attached to no item, which only Settings ▸ Work ▸ Resources showed, and is a place for research you have not filed yet: what you add there, with the buttons, a drop or Ctrl+V, is attached to nothing. Attach to items… puts one on items, and dragging it into a text, or inserting a link to it, attaches it to that text's item"
+- "Full Book, Full Part and Full Chapter have a new switch, Read as exported, which shows the book as your reader will get it in the export style chosen beside it: scenes with Include in exports turned off disappear, the dedication and the other front and back matter appear, each chapter opens on the heading the export prints with its epigraph, and scenes run on into each other unless a scene break separates them. A line marks each new page. The text stays editable, and the status, tags and menus of each scene are hidden. Fonts and pages are not shown"
 - "Each book now remembers its export style. The Export window opens on the style it was last exported with, and Read as exported follows it"
+- "In Full Book, Full Part and Full Chapter, a scene with Include in exports turned off says Not exported beside its title. It looked like every other scene, so a cut scene was easy to read as part of the book"
 ---
 Version: 3.4.0
 Date: 2026-11-23

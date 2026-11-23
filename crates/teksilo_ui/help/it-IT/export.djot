@@ -25,6 +25,33 @@ Per cambiare uno stile integrato, prima copialo: apri *Impostazioni ▸ Compilaz
 
 Sono disponibili anche HTML, Markdown, Djot, Testo e LaTeX.
 
+## Leggi il libro come sarà esportato
+
+Prima di esportare puoi leggere il libro come lo riceverà il lettore.
+
+1. Apri un libro, una parte o un capitolo cartella e passa alla vista *Libro completo*,
+   *Parte completa* o *Capitolo completo*.
+2. Attiva *Leggi come esportato* in cima alla pagina.
+3. Scegli nell'elenco accanto lo stile di esportazione da seguire.
+
+La pagina mostra allora solo ciò che quello stile mette nel file:
+
+- Le scene con *Includi nelle esportazioni* disattivato scompaiono.
+- Compaiono la dedica, la pagina del copyright e le altre pagine iniziali e finali.
+- Ogni capitolo si apre con il titolo che l'esportazione stampa e con la sua epigrafe.
+- Le scene proseguono l'una nell'altra se non hai inserito un cambio di scena tra loro.
+- Una linea segna ogni punto in cui lo stile inizia una nuova pagina.
+
+Puoi continuare a modificare il testo e ad aggiungere commenti. Stati, etichette e menu di
+ogni scena restano nascosti finché non disattivi l'interruttore. I caratteri e
+l'impaginazione non sono mostrati.
+
+Ogni libro ricorda il suo stile di esportazione. *Esporta* si apre sull'ultimo stile usato, e
+così anche *Leggi come esportato*.
+
+Nella vista normale, una scena esclusa dalle esportazioni mostra *Non esportato* accanto al
+titolo.
+
 ## Dai una copertina a un libro
 
 Ogni libro ha la sua copertina. Apri il libro e resta sulla sua pagina *Libro*: sotto il

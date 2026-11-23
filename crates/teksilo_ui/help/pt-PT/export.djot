@@ -35,6 +35,32 @@ Para alterar um estilo integrado, faça primeiro uma cópia: abra
 
 Os outros formatos disponíveis são HTML, Markdown, Djot, Texto e LaTeX.
 
+## Ler o livro como será exportado
+
+Antes de exportar, pode ler o livro tal como o leitor o vai receber.
+
+1. Abra um livro, uma parte ou um capítulo pasta e vá à vista *Livro completo*,
+   *Parte completa* ou *Capítulo completo*.
+2. Ative *Ler como exportado* no topo da página.
+3. Escolha na lista ao lado o estilo de exportação a seguir.
+
+A página mostra então apenas o que esse estilo põe no ficheiro:
+
+- As cenas com *Incluir nas exportações* desativado desaparecem.
+- Aparecem a dedicatória, a página de direitos e as outras páginas preliminares e finais.
+- Cada capítulo abre com o título que a exportação imprime e com a sua epígrafe.
+- As cenas seguem-se umas às outras, a menos que tenha escrito uma mudança de cena entre elas.
+- Uma linha marca cada lugar onde o estilo começa uma página nova.
+
+Pode continuar a editar o texto e a acrescentar comentários. Os estados, as etiquetas e os
+menus de cada cena ficam ocultos até desligar o interruptor. Os tipos de letra e a paginação
+não são mostrados.
+
+Cada livro lembra-se do seu estilo de exportação. *Exportar* abre no último estilo usado, e
+*Ler como exportado* também.
+
+Na vista habitual, uma cena excluída das exportações mostra *Não exportado* ao lado do título.
+
 ## Dar uma capa a um livro
 
 Cada livro tem a sua própria capa. Abra o livro e fique na respetiva página *Livro*: por baixo

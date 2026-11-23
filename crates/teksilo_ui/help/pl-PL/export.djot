@@ -36,6 +36,31 @@ Następnie wybierz *Edytuj* na kopii.
 
 Dostępne są też formaty HTML, Markdown, Djot, Tekst i LaTeX.
 
+## Czytaj książkę tak, jak zostanie wyeksportowana
+
+Przed eksportem możesz przeczytać książkę tak, jak otrzyma ją czytelnik.
+
+1. Otwórz książkę, część albo rozdział-folder i przejdź do widoku *Pełna książka*,
+   *Pełna część* lub *Pełny rozdział*.
+2. Włącz *Czytaj jak po eksporcie* u góry strony.
+3. Wybierz z listy obok styl eksportu, za którym ma podążać strona.
+
+Strona pokazuje wtedy tylko to, co ten styl umieszcza w pliku:
+
+- Sceny z wyłączoną opcją *Uwzględnij w eksporcie* znikają.
+- Pojawiają się dedykacja, strona praw autorskich i inne strony wstępne i końcowe.
+- Każdy rozdział zaczyna się od tytułu drukowanego przez eksport i od swojego motta.
+- Sceny przechodzą jedna w drugą, chyba że wpisano między nimi zmianę sceny.
+- Linia oznacza każde miejsce, w którym styl zaczyna nową stronę.
+
+Nadal możesz edytować tekst i dodawać komentarze. Statusy, etykiety i menu scen są ukryte,
+dopóki nie wyłączysz przełącznika. Czcionki i sam układ stron nie są pokazywane.
+
+Każda książka pamięta swój styl eksportu. *Eksportuj* otwiera się na ostatnio użytym stylu,
+a *Czytaj jak po eksporcie* także.
+
+W zwykłym widoku scena wykluczona z eksportu ma obok tytułu napis *Nieeksportowane*.
+
 ## Dodaj książce okładkę
 
 Każda książka ma własną okładkę. Otwórz książkę i zostań na jej stronie *Książka*: pod tytułem

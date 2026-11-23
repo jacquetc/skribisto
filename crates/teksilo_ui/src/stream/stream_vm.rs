@@ -50,7 +50,10 @@ use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole}
 use frontend::common::event::{DirectAccessEntity, EntityEvent, Event, Origin};
 use frontend::trash_management::TrashSelectionDto;
 
+use skribisto_compiler::Preset;
+
 use crate::app_ids::AppIds;
+use crate::export::ExportStylesViewModel;
 use crate::models::{OpenDoc, OpenDocsStore, StreamLevel, StreamRow, StreamRowsModel};
 use crate::singles::SingleBinderItem;
 
@@ -89,6 +92,19 @@ struct Inner {
     /// One handle per row, created lazily and reused across list refreshes so an edited
     /// row's document survives structural changes.
     row_handles: RefCell<HashMap<u64, RowHandle>>,
+
+    /// Whether this tab reads the stream **as exported**. Per tab, like the segment it
+    /// lives on: two panes on one book can show the draft and the book side by side.
+    reading_on: Signal<bool>,
+    /// Its negation, as a signal of its own: what the working stream's furniture (the
+    /// container header, the add button) binds its visibility to.
+    working_on: Signal<bool>,
+    /// The style a reading follows: the book's remembered export style, resolved against
+    /// every style this machine has. Kept current while the reading is off too, so the
+    /// picker shows the right entry the moment it appears.
+    reading_style: Signal<Option<Preset>>,
+    /// The writer's own export styles, from app state, captured on the first build.
+    styles: RefCell<Option<ExportStylesViewModel>>,
 }
 
 /// Release every document this stream still holds, when the tab closes (the
@@ -142,6 +158,10 @@ impl StreamViewModel {
                 rows,
                 container_probe,
                 row_handles: RefCell::new(HashMap::new()),
+                reading_on: Signal::new(false),
+                working_on: Signal::new(true),
+                reading_style: Signal::new(None),
+                styles: RefCell::new(None),
             }),
         })
     }
@@ -223,6 +243,122 @@ impl StreamViewModel {
                 },
             );
         }
+
+        // The reading follows the book's remembered style, so it moves when the Work does
+        // (a style picked here, in another pane, or by an export) and when the writer edits
+        // their styles in Settings. Every build, like the subscriptions above.
+        if self.inner.styles.borrow().is_none() {
+            *self.inner.styles.borrow_mut() = ctx.app_state::<ExportStylesViewModel>().cloned();
+        }
+        {
+            let weak = Rc::downgrade(&self.inner);
+            ctx.subscribe_event(
+                Origin::DirectAccess(DirectAccessEntity::Work(EntityEvent::Updated)),
+                move |_event: &Event| {
+                    if let Some(inner) = weak.upgrade() {
+                        StreamViewModel { inner }.sync_reading();
+                    }
+                },
+            );
+        }
+        let changed = self
+            .inner
+            .styles
+            .borrow()
+            .as_ref()
+            .map(|s| s.changed_signal());
+        if let Some(changed) = changed {
+            let weak = Rc::downgrade(&self.inner);
+            ctx.effect(&changed, move |_| {
+                if let Some(inner) = weak.upgrade() {
+                    StreamViewModel { inner }.sync_reading();
+                }
+            });
+        }
+        self.sync_reading();
+    }
+
+    // ── read as exported ──
+
+    /// Whether this tab reads the stream as exported.
+    pub fn reading_on(&self) -> Signal<bool> {
+        self.inner.reading_on.clone()
+    }
+
+    /// Whether this tab shows the working stream: the negation of
+    /// [`reading_on`](Self::reading_on).
+    pub fn working_on(&self) -> Signal<bool> {
+        self.inner.working_on.clone()
+    }
+
+    /// How the container itself reads as exported. See
+    /// [`StreamRowsModel::head_reading`](crate::models::StreamRowsModel::head_reading).
+    pub fn head_reading(&self) -> Signal<Option<crate::models::ReadingRow>> {
+        self.inner.rows.head_reading()
+    }
+
+    /// Whether the row is marked "Include in exports", live.
+    pub fn row_exportable(&self, id: u64) -> Signal<bool> {
+        match self.handle(id) {
+            Some(h) => h
+                .probe
+                .dto_signal()
+                .map(|d| d.as_ref().is_none_or(|x| x.is_exportable)),
+            None => Signal::new(true),
+        }
+    }
+
+    /// The style a reading follows (see the field's own note).
+    pub fn reading_style(&self) -> Signal<Option<Preset>> {
+        self.inner.reading_style.clone()
+    }
+
+    /// Every style the reading can follow: the built-ins, then the writer's own.
+    pub fn style_catalogue(&self) -> Vec<Preset> {
+        crate::export::style::catalogue(self.inner.styles.borrow().as_ref())
+    }
+
+    /// Read the stream as exported, or go back to the working stream.
+    pub fn set_reading_on(&self, on: bool) {
+        self.inner.reading_on.set_if_changed(on);
+        self.inner.working_on.set_if_changed(!on);
+        self.sync_reading();
+    }
+
+    /// Read the book in `style` from now on, here and in the Export panel.
+    ///
+    /// Written to the Work, on its undo stack: the style a book is read and exported in is
+    /// manuscript data a co-author shares, not a preference of this window. The Work's
+    /// own update then re-syncs every stream on the book.
+    pub fn choose_reading_style(&self, style: &Preset) {
+        let Some(work_id) = self.inner.ids.work_id.get() else {
+            return;
+        };
+        if let Err(e) = crate::export::style::remember(
+            &self.inner.app_ctx,
+            work_id,
+            self.inner.ids.stack_id.get(),
+            &style.id,
+        ) {
+            eprintln!("stream: could not remember the export style: {e:#}");
+        }
+        self.sync_reading();
+    }
+
+    /// Resolve the book's style and hand the rows the one they are read in, or none.
+    fn sync_reading(&self) {
+        let remembered = self
+            .inner
+            .ids
+            .work_id
+            .get()
+            .map(|work_id| crate::export::style::remembered(&self.inner.app_ctx, work_id))
+            .unwrap_or_default();
+        let style = crate::export::style::resolve(&remembered, &self.style_catalogue());
+        self.inner.reading_style.set_if_changed(style.clone());
+        self.inner
+            .rows
+            .set_reading(style.filter(|_| self.inner.reading_on.get()));
     }
 
     // ── reactive reads ──
@@ -851,6 +987,7 @@ mod tests {
             sub_role,
             number: None,
             fallback_label: None,
+            reading: None,
         }
     }
 

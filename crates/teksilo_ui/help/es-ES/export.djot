@@ -38,6 +38,33 @@ elija *Duplicar*. Después elija *Editar* en la copia.
 
 Los demás formatos disponibles son HTML, Markdown, Djot, Texto y LaTeX.
 
+## Leer el libro tal como se exportará
+
+Antes de exportar, puede leer el libro tal como lo recibirá su lector.
+
+1. Abra un libro, una parte o un capítulo carpeta y vaya a su vista *Libro completo*,
+   *Parte completa* o *Capítulo completo*.
+2. Active *Leer como se exporta* en la parte superior de la página.
+3. Elija en la lista de al lado el estilo de exportación que debe seguir.
+
+La página muestra entonces solo lo que ese estilo pone en el archivo:
+
+- Las escenas con *Incluir en las exportaciones* desactivado desaparecen.
+- Aparecen la dedicatoria, la página de derechos y las demás páginas preliminares y finales.
+- Cada capítulo empieza con el título que imprime la exportación y con su epígrafe.
+- Las escenas se suceden sin pausa salvo que haya escrito un cambio de escena entre ellas.
+- Una línea marca cada lugar donde el estilo empieza una página nueva.
+
+Puede seguir editando el texto y añadiendo comentarios. Los estados, las etiquetas y los
+menús de cada escena quedan ocultos hasta que desactive el interruptor. No se muestran las
+fuentes ni la maquetación de las páginas.
+
+Cada libro recuerda su estilo de exportación. *Exportar* se abre con el último estilo usado,
+y *Leer como se exporta* también.
+
+En la vista habitual, una escena excluida de las exportaciones muestra *No se exporta* junto a
+su título.
+
 ## Dar una cubierta a un libro
 
 Cada libro tiene su propia cubierta. Abra el libro y permanezca en su página *Libro*: bajo el

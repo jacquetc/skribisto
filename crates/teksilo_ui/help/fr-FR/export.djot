@@ -36,6 +36,32 @@ Pour modifier un style intégré, faites-en d’abord une copie : ouvrez
 
 Les autres formats disponibles sont HTML, Markdown, Djot, Texte et LaTeX.
 
+## Lire votre livre tel qu’il sera exporté
+
+Avant d’exporter, vous pouvez lire le livre tel que votre lecteur le recevra.
+
+1. Ouvrez un livre, une partie ou un chapitre dossier, puis allez dans sa vue
+   *Livre complet*, *Partie complète* ou *Chapitre complet*.
+2. Activez *Lire comme à l’export* en haut de la page.
+3. Choisissez dans la liste à côté le style d’export à suivre.
+
+La page ne montre alors que ce que ce style met dans le fichier :
+
+- Les scènes dont *Inclure dans les exports* est désactivé disparaissent.
+- La dédicace, la page de copyright et les autres pages liminaires et finales apparaissent.
+- Chaque chapitre s’ouvre sur le titre que l’export imprime, avec son épigraphe.
+- Les scènes s’enchaînent, sauf si vous avez tapé un saut de scène entre elles.
+- Une ligne marque chaque endroit où le style commence une nouvelle page.
+
+Vous pouvez toujours modifier le texte et ajouter des commentaires. Les statuts, les étiquettes
+et les menus de chaque scène sont masqués jusqu’à ce que vous désactiviez l’interrupteur. Les
+polices et la mise en page elle-même ne sont pas montrées.
+
+Chaque livre retient son style d’export. *Exporter* s’ouvre sur le dernier style utilisé, et
+*Lire comme à l’export* aussi.
+
+Dans la vue habituelle, une scène exclue des exports affiche *Non exporté* à côté de son titre.
+
 ## Donner une couverture à un livre
 
 Chaque livre a sa propre couverture. Ouvrez le livre et restez sur sa page *Livre* : sous le

@@ -33,6 +33,7 @@ use teksilo::widgets::{
 use super::report::ProblemKind;
 use super::translation_report_vm::{Notice, Phase, PlaceChoice, Scope, TranslationReportViewModel};
 use crate::shared::shortcut_group::{ShortcutGroup, ShortcutGroupExt};
+use crate::widgets::Rebuilding;
 
 /// Ctrl+W (⌘W on macOS) closes the window, as it closes every other one. In the
 /// `help.` namespace: the window is a Help-menu door, and its tree is its own.
@@ -637,59 +638,6 @@ fn build_status(vm: &TranslationReportViewModel, ctx: &mut BuildContext) -> Widg
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
-
-/// A block rebuilt from scratch whenever one of the signals `bind` binds changes.
-///
-/// For the parts of the window that are a function of the view-model's state and
-/// hold nothing the writer is typing into.
-struct Rebuilding {
-    bind: Box<dyn Fn(&mut BuildContext)>,
-    make: Box<dyn Fn(&mut BuildContext) -> WidgetId>,
-    root_child: Option<WidgetId>,
-}
-
-impl Rebuilding {
-    fn new(
-        bind: impl Fn(&mut BuildContext) + 'static,
-        make: impl Fn(&mut BuildContext) -> WidgetId + 'static,
-    ) -> Self {
-        Self {
-            bind: Box::new(bind),
-            make: Box::new(make),
-            root_child: None,
-        }
-    }
-}
-
-impl std::fmt::Debug for Rebuilding {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Rebuilding").finish_non_exhaustive()
-    }
-}
-
-impl Widget for Rebuilding {
-    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        (self.bind)(ctx);
-        let id = (self.make)(ctx);
-        self.root_child = Some(id);
-        vec![id]
-    }
-
-    fn layout_response(
-        &self,
-        proposal: SizeProposal,
-        ctx: &LayoutContext,
-    ) -> teksilo::core::widget::LayoutResponse {
-        self.root_child
-            .and_then(|id| ctx.child_size(id, proposal))
-            .map(Into::into)
-            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
-    }
-
-    fn children(&self) -> Vec<WidgetId> {
-        self.root_child.into_iter().collect()
-    }
-}
 
 #[cfg(test)]
 mod tests;

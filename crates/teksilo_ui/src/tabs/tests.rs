@@ -3210,6 +3210,128 @@ fn the_manuscript_stream_follows_the_tabs_main_typography_and_column() {
     );
 }
 
+/// **Read as exported takes the working chrome off the page and gives it back.**
+///
+/// A Full Book switched to its reading loses every row's options menu and status
+/// picker (a reader sees neither), and the rows it shows are the ones the compiler
+/// planned; switched back, the working stream is whole again.
+#[cfg(feature = "mocks")]
+#[test]
+fn reading_a_full_book_as_exported_hides_the_working_chrome() {
+    use BinderItemRole::*;
+    use BinderItemSubRole::*;
+    let ctx = Rc::new(AppContext::new());
+    let open_doc = Rc::new(OpenDoc::build(
+        &ctx,
+        101,
+        &Folder,
+        &Book,
+        &[],
+        Signal::new(0),
+        std::path::Path::new(""),
+    ));
+    let tab = ContentTab::new(
+        ctx.clone(),
+        AppIds::new(),
+        OpenDocsStore::new(ctx.clone()),
+        open_doc,
+        Signal::new(700.0),
+        Signal::new(false),
+        Signal::new(SynopsisPlacement::default()),
+        Signal::new(crate::SYNOPSIS_SIDE_WIDTH_DEFAULT),
+        test_typography(),
+        crate::shared::TypewriterSettings::off(),
+        crate::shared::CaretHighlightSettings::off(),
+        crate::settings::EditorViewMemory::detached(false),
+        crate::settings::CorkboardDefaults::detached(),
+        crate::settings::TreeExpansionViewModel::new(
+            ctx.clone(),
+            AppIds::new(),
+            crate::models::TreeExpansionService::in_memory_default(),
+        ),
+        Signal::new(true),
+        Signal::new(420.0),
+        crate::format::FormatViewModel::detached(),
+        crate::writing_session::WritingGamesViewModel::detached(),
+        crate::save::WorkHandle::detached(ctx.clone(), AppIds::new()),
+        Signal::new(GoalUnit::default()),
+        crate::tags::TagsViewModel::detached(ctx.clone(), AppIds::new()),
+        crate::statuses::StatusesViewModel::new(ctx.clone(), AppIds::new()),
+        crate::mentions::MentionIndex::new(ctx.clone(), AppIds::new()),
+    );
+    tab.segment
+        .set(Some(crate::tabs::shared::segments::segment_id(
+            crate::tabs::shared::segments::SEG_MANUSCRIPT,
+        )));
+    let mut tree = crate::test_support::tree_with_events(&ctx);
+    let id = tree.add_boxed(tab_pane(&tab));
+    let size = teksilo::prelude::SizeProposal::exact(1400.0, 900.0);
+    tree.layout(size);
+
+    // A row's options menu and its status picker both mount as this, inside the rows'
+    // `Repeater`; the page has one more of its own, outside it.
+    let menus = |tree: &WidgetTree| {
+        let rows = find_type(
+            tree,
+            id,
+            "Repeater<teksilo_ui::models::stream_rows_model::StreamRow>",
+        )
+        .expect("the stream's rows");
+        count_type(
+            tree,
+            rows,
+            "PopoverWidget<teksilo_widgets::icon_button::IconButton>",
+        )
+    };
+    let working = menus(&tree);
+    assert!(working > 0, "fixture: the working stream has row menus");
+
+    let vm = tab.stream().cloned().expect("a Book hosts a stream");
+    vm.set_reading_on(true);
+    tree.layout(size);
+    tree.layout(size);
+    assert!(
+        vm.rows().iter().all(|r| r.reading.is_some()),
+        "every row the reading shows was planned by the compiler"
+    );
+    assert_eq!(menus(&tree), 0, "a reading has no row menus");
+
+    vm.set_reading_on(false);
+    tree.layout(size);
+    tree.layout(size);
+    assert_eq!(
+        menus(&tree),
+        working,
+        "and the working stream gets them all back"
+    );
+}
+
+/// The first widget in the subtree whose type name ends in `name`.
+fn find_type(tree: &WidgetTree, root: WidgetId, name: &str) -> Option<WidgetId> {
+    if tree
+        .widget_type_name(root)
+        .is_some_and(|n| n.ends_with(name))
+    {
+        return Some(root);
+    }
+    tree.children(root)
+        .into_iter()
+        .find_map(|c| find_type(tree, c, name))
+}
+
+/// How many widgets in the subtree have a type name ending in `name`.
+fn count_type(tree: &WidgetTree, root: WidgetId, name: &str) -> usize {
+    fn walk(tree: &WidgetTree, id: WidgetId, name: &str) -> usize {
+        let own = usize::from(tree.widget_type_name(id).is_some_and(|n| n.ends_with(name)));
+        own + tree
+            .children(id)
+            .into_iter()
+            .map(|c| walk(tree, c, name))
+            .sum::<usize>()
+    }
+    walk(tree, root, name)
+}
+
 /// Every laid-out `MaxSize` cap in the subtree — the writing columns.
 fn all_max_size_widths(tree: &WidgetTree, root: WidgetId) -> Vec<f32> {
     let mut out = Vec::new();

@@ -36,6 +36,32 @@ Um einen vorinstallierten Stil zu ändern, erstellen Sie zuerst eine Kopie: Öff
 
 Weitere Formate sind HTML, Markdown, Djot, Text und LaTeX.
 
+## Das Buch lesen, wie es exportiert wird
+
+Vor dem Export können Sie das Buch so lesen, wie Ihre Leserinnen und Leser es erhalten.
+
+1. Öffnen Sie ein Buch, einen Teil oder ein Kapitel als Ordner und wechseln Sie zur Ansicht
+   *Ganzes Buch*, *Ganzer Teil* oder *Ganzes Kapitel*.
+2. Schalten Sie oben auf der Seite *Wie exportiert lesen* ein.
+3. Wählen Sie in der Liste daneben den Exportstil, dem die Seite folgen soll.
+
+Die Seite zeigt dann nur, was dieser Stil in die Datei schreibt:
+
+- Szenen, bei denen *In Exporte einschließen* ausgeschaltet ist, verschwinden.
+- Die Widmung, das Impressum und die übrigen Vor- und Nachspannseiten erscheinen.
+- Jedes Kapitel beginnt mit der Überschrift, die der Export druckt, und mit seinem Motto.
+- Szenen gehen ineinander über, wenn Sie keinen Szenenwechsel dazwischen gesetzt haben.
+- Eine Linie markiert jede Stelle, an der der Stil eine neue Seite beginnt.
+
+Sie können den Text weiter bearbeiten und kommentieren. Status, Tags und die Menüs der
+Szenen sind ausgeblendet, bis Sie den Schalter ausschalten. Schriften und das Seitenlayout
+selbst werden nicht gezeigt.
+
+Jedes Buch merkt sich seinen Exportstil. *Exportieren* öffnet sich mit dem zuletzt
+verwendeten Stil, und *Wie exportiert lesen* ebenso.
+
+In der normalen Ansicht steht neben dem Titel einer ausgeschlossenen Szene *Nicht exportiert*.
+
 ## Einem Buch einen Umschlag geben
 
 Jedes Buch hat seinen eigenen Umschlag. Öffnen Sie das Buch und bleiben Sie auf seiner Seite

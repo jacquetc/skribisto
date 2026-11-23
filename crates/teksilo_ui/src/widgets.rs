@@ -28,6 +28,7 @@ pub mod margin_lane;
 /// Distribute preview.
 /// Words or characters: the project's counting unit, in New Work and in Settings.
 pub mod pill;
+pub mod rebuilding;
 pub mod structure_number;
 /// A registry rich tooltip on content that has no builder of its own.
 pub mod tip;
@@ -42,4 +43,5 @@ pub use margin_lane::{
     MIN_MARK_HEIGHT, MarginLane, ResolvedMark, TEXTURE_DIVIDER,
 };
 pub use pill::{Pill, PillTooltip, attach_labelled_composite_tooltip};
+pub use rebuilding::Rebuilding;
 pub use structure_number::StructureNumber;
