@@ -1333,7 +1333,7 @@ dependencies = [
  "libc",
  "option-ext",
  "redox_users",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -1540,7 +1540,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -3655,7 +3655,7 @@ version = "0.50.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7957b9740744892f114936ab4a57b3f487491bbeafaf8083688b16841a4240e5"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -4167,7 +4167,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7d8fae84b431384b68627d0f9b3b1245fcf9f46f6c0e3dc902e9dce64edd1967"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -5169,7 +5169,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys 0.12.1",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -6094,8 +6094,8 @@ version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0d204abcbdf8e88729306a8d0ca01a79d8a49969fe1f84696909d6dbc4321c1a"
 dependencies = [
- "foldhash 0.2.0",
- "hashbrown 0.17.1",
+ "foldhash 0.1.5",
+ "hashbrown 0.15.5",
 ]
 
 [[package]]
@@ -6144,7 +6144,7 @@ dependencies = [
  "cfg-if",
  "libc",
  "psm",
- "windows-sys 0.61.2",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
@@ -6784,10 +6784,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
 dependencies = [
  "fastrand",
- "getrandom 0.4.3",
+ "getrandom 0.3.4",
  "once_cell",
  "rustix 1.1.4",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -6810,9 +6810,9 @@ dependencies = [
 
 [[package]]
 name = "text-document"
-version = "1.16.1"
+version = "1.16.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ecbfc7ab7acf6550d522d83ebaaf94c2548c503687bf7d39a555ad0497eb9603"
+checksum = "e45a27c154027e57f3f707e29a8e4a4c5b49c091d6e5c6a276d5d96246b1f7c0"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -6827,9 +6827,9 @@ dependencies = [
 
 [[package]]
 name = "text-document-common"
-version = "1.16.1"
+version = "1.16.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6f7b30cbf319693637e2f6bfd000247a1b44b332e4cc670e899823a175c7372b"
+checksum = "f65bb79c546eef841973a94e26956affe27702ccc4c640dd11e304ac24014f42"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -6852,9 +6852,9 @@ dependencies = [
 
 [[package]]
 name = "text-document-direct-access"
-version = "1.16.1"
+version = "1.16.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e9d5a64c90656d61ba1c6a68c97c982bc158e794da82db511d7bae2b4112ca15"
+checksum = "18c2cb57fd2a02d1216fa0eb68c57564cb1c9642cda7b559acf55dc4cf206850"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6867,9 +6867,9 @@ dependencies = [
 
 [[package]]
 name = "text-document-editing"
-version = "1.16.1"
+version = "1.16.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "490b9341eb7438e5c0d58226bb8d722d9e8930fbf044d0dfb446b4bfd04c9975"
+checksum = "d0022ab4032c4ef775097305c240ced81b6cdd2fb338b23c44ed2e0782e7a0f8"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6882,9 +6882,9 @@ dependencies = [
 
 [[package]]
 name = "text-document-formatting"
-version = "1.16.1"
+version = "1.16.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b0df59a4048139122192bd3f116d4372c9403c8bf52a988b5d0c24907cacc6c"
+checksum = "43fbb77c42e38b121bcfe5e2eb76075e9d0c41733554bef214673cdea0460cbd"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6897,9 +6897,9 @@ dependencies = [
 
 [[package]]
 name = "text-document-frontend"
-version = "1.16.1"
+version = "1.16.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "69c5e600ed58f6cdf3ccad87689e6063afcb375c8c66185fb2f32050a3707dc6"
+checksum = "58b1f752f57a98830c2546de3e9b985c310ad4f19de97d241d5d05118a915a9a"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6917,9 +6917,9 @@ dependencies = [
 
 [[package]]
 name = "text-document-inspection"
-version = "1.16.1"
+version = "1.16.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b5b229384cba0434fc3858f5ac1bf4911083cdcf46746abac9354f751822ac15"
+checksum = "7702589dcf425214891a95b37b79e30c0b173a4e7807d814114ae2e44713efa7"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6932,9 +6932,9 @@ dependencies = [
 
 [[package]]
 name = "text-document-io"
-version = "1.16.1"
+version = "1.16.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "74cc9713ac1976aa8b4027331006cac98f2ef4d8b24d8ad48f519daa855b60a1"
+checksum = "cde31ca2268e91b52bdc9dde98c9e7666abf2874ac5a705e345e6a71889fc5dd"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6958,9 +6958,9 @@ dependencies = [
 
 [[package]]
 name = "text-document-macros"
-version = "1.16.1"
+version = "1.16.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "103aaa0f717a56a31c78260de04aa6728799ebbed42d06a2dcc5f35a434d7863"
+checksum = "81e32d2a47a50072f5fb5878e128713f51026e05b7a8645dba8ded21ac0073ce"
 dependencies = [
  "heck",
  "proc-macro2",
@@ -6970,9 +6970,9 @@ dependencies = [
 
 [[package]]
 name = "text-document-search"
-version = "1.16.1"
+version = "1.16.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3e8f809b62e2b928867a056edbec7414aad9d0ab6599efa73f8f5638ecf17154"
+checksum = "33df435b0085dc259d81b6b4bfedb475e1901e6badc510df3a6fde821dfc279b"
 dependencies = [
  "anyhow",
  "caseless",
@@ -7758,7 +7758,7 @@ checksum = "f2f6fb2847f6742cd76af783a2a2c49e9375d0a111c7bef6f71cd9e738c72d6e"
 dependencies = [
  "memoffset",
  "tempfile",
- "windows-sys 0.61.2",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
@@ -8578,7 +8578,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
