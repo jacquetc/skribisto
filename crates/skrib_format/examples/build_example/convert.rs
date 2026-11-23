@@ -118,7 +118,7 @@ fn check_titles(spec: &Spec, chapters: &[RawChapter]) -> Result<()> {
 /// table of contents reads `Où Passepartout…`. Comparing the two literally would
 /// reject the book. NFD splits each accented letter into its base plus a combining
 /// mark, and a combining mark is not alphanumeric, so the filter below removes it.
-fn letters(s: &str) -> String {
+pub(crate) fn letters(s: &str) -> String {
     use unicode_normalization::UnicodeNormalization;
     s.nfd()
         .filter(|c| c.is_alphanumeric())

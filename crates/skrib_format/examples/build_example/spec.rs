@@ -215,7 +215,8 @@ pub struct Chapter {
     #[serde(default)]
     pub file_id: Option<u64>,
     /// The chapter's title. `convert` writes it and checks it against the heading
-    /// actually found in the source; `enrich` ignores it.
+    /// actually found in the source; `enrich` checks it against the row it
+    /// addresses (that row's title, or the opening line of its text).
     #[serde(default)]
     pub title: String,
     /// Markdown.

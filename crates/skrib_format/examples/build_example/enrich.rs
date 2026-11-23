@@ -30,44 +30,65 @@ use skrib_format::{
     prose_relpath, read_bundle, write_bundle,
 };
 
+use crate::convert::letters;
 use crate::spec::{Entry, Spec, uid_for};
 
 pub fn run(spec_path: &str, bundle_path: &str) -> Result<()> {
     let spec = Spec::load(spec_path)?;
     let mut bundle = read_bundle(bundle_path)?;
-    let before = prose_snapshot(&bundle);
+    let done = enrich(&mut bundle, &spec)?;
+    write_bundle(bundle_path, SkribShape::ZipFile, &bundle)?;
+    println!(
+        "enrich: {bundle_path} — {} chapters annotated, {} story-bible notes, {} tags, \
+         {} statuses, {} rows no longer addressed cleared",
+        done.chapters, done.notes, done.tags, done.statuses, done.abandoned
+    );
+    Ok(())
+}
 
-    let tags = ensure_tags(&mut bundle, &spec);
-    let statuses = ensure_statuses(&mut bundle, &spec);
+/// What one run did, for the summary line.
+struct Done {
+    chapters: usize,
+    notes: usize,
+    tags: usize,
+    statuses: usize,
+    abandoned: usize,
+}
+
+/// The whole subcommand, in memory, so the tests can hold a shipped bundle to it.
+fn enrich(bundle: &mut WorkBundle, spec: &Spec) -> Result<Done> {
+    let before = prose_snapshot(bundle);
+
+    let tags = ensure_tags(bundle, spec);
+    let statuses = ensure_statuses(bundle, spec);
     // `bible` is keyed by name *and* by every alias, so its length is not the number
     // of notes written — count the entries themselves.
     let notes = spec.entries().count();
 
-    // The order of these four is load-bearing: **everything this tool wrote last
+    // The order of these steps is load-bearing: **everything this tool wrote last
     // time is removed before anything new is numbered.** Strip the synopses, drop
     // and rebuild the bible, then write. Getting it wrong does not corrupt the
     // bundle — it just makes every content id climb by a few dozen on every run, so
     // the same TOML produces a different file each time and no diff of an example is
     // readable.
-    let targets = resolve_targets(&bundle, &spec)?;
-    strip_synopses(&mut bundle, &targets);
-    let bible = build_bible(&mut bundle, &spec, &tags)?;
-    let chapters = write_chapters(&mut bundle, &spec, &tags, &statuses, &bible, &targets)?;
+    let targets = resolve_targets(bundle, spec)?;
+    strip_synopses(bundle, &targets);
+    let abandoned = clear_abandoned(bundle, spec, &targets);
+    let bible = build_bible(bundle, spec, &tags)?;
+    let chapters = write_chapters(bundle, spec, &tags, &statuses, &bible, &targets)?;
 
-    let after = prose_snapshot(&bundle);
+    let after = prose_snapshot(bundle);
     ensure!(
         before == after,
         "the author's prose changed — this subcommand may only add metadata"
     );
-
-    write_bundle(bundle_path, SkribShape::ZipFile, &bundle)?;
-    println!(
-        "enrich: {bundle_path} — {chapters} chapters annotated, {notes} story-bible \
-         notes, {} tags, {} statuses",
-        tags.len(),
-        statuses.len()
-    );
-    Ok(())
+    Ok(Done {
+        chapters,
+        notes,
+        tags: tags.len(),
+        statuses: statuses.len(),
+        abandoned,
+    })
 }
 
 /// Every scene, paratext page and epigraph, keyed by (item uid, content id).
@@ -422,13 +443,45 @@ fn resolve_targets<'a>(
             (_, Some(id)) => id,
             _ => bail!("[[chapter]] must set `number` or `file_id`"),
         };
+        let row = bundle.binders[0]
+            .items
+            .iter()
+            .find(|b| b.item.file_id == id)
+            .ok_or_else(|| {
+                anyhow!("[[chapter]] addresses row {id}, which is not in the manuscript")
+            })?;
+        // An id is only a number, and the bundle's author can renumber every row by
+        // adding a front-matter page. Starforgers shipped exactly that way: its ids
+        // were carried over from an older bundle, landed five rows early, and wrote
+        // Chapter 1's synopsis and cast onto the dedication.
+        let names = row_names(row);
         ensure!(
-            bundle.binders[0].items.iter().any(|b| b.item.file_id == id),
-            "[[chapter]] addresses row {id}, which is not in the manuscript"
+            declared.title.is_empty()
+                || names.iter().any(|n| letters(n) == letters(&declared.title)),
+            "[[chapter]] {:?} addresses row {id}, which calls itself {names:?}",
+            declared.title
         );
         targets.push((id, declared));
     }
     Ok(targets)
+}
+
+/// What a row calls itself: its binder title, and the opening line of its scene
+/// text. Both are needed. Starforgers' chapter rows have no binder title, only a
+/// `## Chapter 1` heading in the prose, while its Prologue has a title and opens
+/// straight into the text.
+fn row_names(row: &BundledItem) -> Vec<&str> {
+    let opening = row
+        .item
+        .prose_refs
+        .iter()
+        .filter(|r| r.role == ContentRole::SceneText)
+        .filter_map(|r| row.prose.get(&r.file_id))
+        .filter_map(|text| text.lines().map(str::trim).find(|l| !l.is_empty()));
+    std::iter::once(row.item.title.as_str())
+        .filter(|t| !t.is_empty())
+        .chain(opening)
+        .collect()
 }
 
 /// Drop every synopsis on an addressed row. Replacing rather than appending is what
@@ -455,6 +508,47 @@ fn strip_synopses(bundle: &mut WorkBundle, targets: &[(u64, &crate::spec::Chapte
             .prose_refs
             .retain(|r| r.role != ContentRole::SynopsisText);
     }
+}
+
+/// Clear what an earlier run wrote on a row the TOML no longer addresses, and return
+/// how many rows that was.
+///
+/// Such a row is recognised by its synopsis: [`write_chapters`] gives each one a uid
+/// derived from the row's id, which no synopsis written in the app can carry. Without
+/// this, a `[[chapter]]` that moves or goes away leaves its old synopsis, cast and
+/// point of view behind on a row nothing describes any more. Starforgers was
+/// corrected exactly that way, and its front matter kept Chapter 1's cast.
+fn clear_abandoned(
+    bundle: &mut WorkBundle,
+    spec: &Spec,
+    targets: &[(u64, &crate::spec::Chapter)],
+) -> usize {
+    let addressed: BTreeSet<u64> = targets.iter().map(|(id, _)| *id).collect();
+    let project = &spec.book.unique_id;
+    let mut cleared = 0;
+    for bundled in &mut bundle.binders[0].items {
+        let id = bundled.item.file_id;
+        if addressed.contains(&id) {
+            continue;
+        }
+        let ours = uid_for(project, "synopsis", &id.to_string());
+        let Some(pos) = bundled
+            .item
+            .prose_refs
+            .iter()
+            .position(|r| r.role == ContentRole::SynopsisText && r.uid == ours)
+        else {
+            continue;
+        };
+        let gone = bundled.item.prose_refs.remove(pos);
+        bundled.prose.remove(&gone.file_id);
+        bundled.item.point_of_view_ids.clear();
+        bundled.item.reference_ids.clear();
+        bundled.item.tag_ids.clear();
+        bundled.item.status_id = None;
+        cleared += 1;
+    }
+    cleared
 }
 
 /// Write each chapter's synopsis, point of view, references, tags, status and label.
@@ -614,5 +708,89 @@ fn blank(file_id: u64, uid: uuid::Uuid, now: &str) -> BinderItemFile {
         point_of_view_ids: Vec::new(),
         book_ids: Vec::new(),
         tag_ids: Vec::new(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const EXAMPLES: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../resources/examples");
+
+    /// Each shipped bundle must be exactly what its TOML builds: enriching it again
+    /// changes nothing. That also runs the title check over every `[[chapter]]`, so
+    /// a spec whose rows drifted, as Starforgers' did, fails here rather than in
+    /// front of a writer opening Chapter 1.
+    #[test]
+    fn every_shipped_example_is_what_its_spec_builds() {
+        for (spec, bundle) in [
+            (
+                "starforgers/starforgers.toml",
+                "starforgers/Starforgers.skrib",
+            ),
+            (
+                "le_tour_du_monde_en_80_jours/le-tour-du-monde-en-quatre-vingts-jours.toml",
+                "le_tour_du_monde_en_80_jours/le-tour-du-monde-en-quatre-vingts-jours.skrib",
+            ),
+        ] {
+            let spec = Spec::load(&format!("{EXAMPLES}/{spec}")).unwrap();
+            let shipped = read_bundle(&format!("{EXAMPLES}/{bundle}")).unwrap();
+            let mut rebuilt = shipped.clone();
+            enrich(&mut rebuilt, &spec).unwrap();
+            assert!(
+                rebuilt == shipped,
+                "{bundle} is stale: rerun `build_example enrich` on it"
+            );
+        }
+    }
+
+    /// The check that would have caught Starforgers: an id one row off is refused.
+    #[test]
+    fn a_chapter_addressing_the_wrong_row_is_refused() {
+        let mut spec = Spec::load(&format!("{EXAMPLES}/starforgers/starforgers.toml")).unwrap();
+        let bundle = read_bundle(&format!("{EXAMPLES}/starforgers/Starforgers.skrib")).unwrap();
+        // Chapter 1 is row 9; row 4 is the dedication.
+        let chapter_1 = spec
+            .chapter
+            .iter_mut()
+            .find(|c| c.title == "Chapter 1")
+            .unwrap();
+        chapter_1.file_id = Some(4);
+        let err = resolve_targets(&bundle, &spec).unwrap_err().to_string();
+        assert!(err.contains("Dedication"), "{err}");
+    }
+
+    /// A row the TOML stops addressing loses what the last run wrote on it, and a
+    /// synopsis the writer typed in the app is left alone.
+    #[test]
+    fn a_row_no_longer_addressed_is_cleared_of_our_synopsis_only() {
+        let mut spec = Spec::load(&format!("{EXAMPLES}/starforgers/starforgers.toml")).unwrap();
+        let mut bundle = read_bundle(&format!("{EXAMPLES}/starforgers/Starforgers.skrib")).unwrap();
+        let row = |b: &WorkBundle, id: u64| {
+            b.binders[0]
+                .items
+                .iter()
+                .find(|i| i.item.file_id == id)
+                .unwrap()
+                .clone()
+        };
+        let synopses = |i: &BundledItem| {
+            i.item
+                .prose_refs
+                .iter()
+                .filter(|r| r.role == ContentRole::SynopsisText)
+                .count()
+        };
+        assert_eq!(synopses(&row(&bundle, 9)), 1);
+        assert!(!row(&bundle, 9).item.reference_ids.is_empty());
+
+        spec.chapter.retain(|c| c.title != "Chapter 1");
+        enrich(&mut bundle, &spec).unwrap();
+        let chapter_1 = row(&bundle, 9);
+        assert_eq!(synopses(&chapter_1), 0);
+        assert!(chapter_1.item.reference_ids.is_empty());
+        assert!(chapter_1.item.point_of_view_ids.is_empty());
+        // Chapter 2 is still addressed and keeps everything.
+        assert_eq!(synopses(&row(&bundle, 10)), 1);
     }
 }
