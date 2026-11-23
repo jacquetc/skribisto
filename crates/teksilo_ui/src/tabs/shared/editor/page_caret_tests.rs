@@ -32,6 +32,7 @@ fn typo_with_spacing(para_spacing_after: f32) -> EditorTypography {
         first_line_indent: Signal::new(0.0),
         para_spacing_before: Signal::new(0.0),
         para_spacing_after: Signal::new(para_spacing_after),
+        justify_new_text: Signal::new(false),
         size_range: crate::settings::TypographySizeRange::default(),
     }
 }

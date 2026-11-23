@@ -129,7 +129,7 @@ pub(super) fn manuscript_page(
             let editor = writing_section(
                 &m.doc,
                 tab.main_column_width(),
-                tab.main_typography(),
+                &tab.main_typography(),
                 tab.mark_dirty_fn(),
                 find.clone(),
                 tab.open_doc.spell_main(),

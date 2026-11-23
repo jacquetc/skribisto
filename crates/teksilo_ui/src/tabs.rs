@@ -1490,14 +1490,22 @@ impl ContentTab {
     /// content-type one, so it must win regardless of Scene vs Note); otherwise
     /// the Notes bundle for a Note, the Scene bundle for everything else (Scene /
     /// ChapterScene, and a safe fallback for any layout without a `kind`).
-    pub fn main_typography(&self) -> &EditorTypography {
-        if self.distraction_free.get() {
-            return &self.typography.distraction_free;
-        }
-        match self.open_doc.kind {
+    ///
+    /// Owned, because the distraction-free bundle is not returned as it is: it
+    /// dresses a Scene and a Note alike, but whether a new text starts justified
+    /// belongs to the text, so it takes the Scene or Notes switch of the text shown.
+    pub fn main_typography(&self) -> EditorTypography {
+        let text = match self.open_doc.kind {
             Some(ProseKind::Note) => &self.typography.notes,
             _ => &self.typography.scene,
+        };
+        if self.distraction_free.get() {
+            return EditorTypography {
+                justify_new_text: text.justify_new_text.clone(),
+                ..self.typography.distraction_free.clone()
+            };
         }
+        text.clone()
     }
 
     /// Whether this tab's page is a **floating card** on the distraction-free

@@ -337,6 +337,10 @@ pub const SCENE_PARA_SPACING_BEFORE_KEY: &str = "editor.scene.para_spacing_befor
 pub const SCENE_PARA_SPACING_BEFORE_DEFAULT: f32 = 0.0;
 pub const SCENE_PARA_SPACING_AFTER_KEY: &str = "editor.scene.para_spacing_after";
 pub const SCENE_PARA_SPACING_AFTER_DEFAULT: f32 = 0.0;
+/// Justify the paragraph the writer begins an empty text with (see
+/// [`EditorTypography::justify_new_text`](crate::settings::EditorTypography::justify_new_text)).
+pub const SCENE_JUSTIFY_NEW_TEXT_KEY: &str = "editor.scene.justify_new_text";
+pub const SCENE_JUSTIFY_NEW_TEXT_DEFAULT: bool = false;
 
 /// Synopsis editor typography (the subordinate summary pane).
 pub const SYNOPSIS_FONT_FAMILY_KEY: &str = "editor.synopsis.font_family";
@@ -355,6 +359,8 @@ pub const SYNOPSIS_PARA_SPACING_AFTER_KEY: &str = "editor.synopsis.para_spacing_
 // Block-style spacing: with no first-line indent, a paragraph must be delimited by
 // vertical space or multi-paragraph summaries run together into one wall of text.
 pub const SYNOPSIS_PARA_SPACING_AFTER_DEFAULT: f32 = 8.0;
+pub const SYNOPSIS_JUSTIFY_NEW_TEXT_KEY: &str = "editor.synopsis.justify_new_text";
+pub const SYNOPSIS_JUSTIFY_NEW_TEXT_DEFAULT: bool = false;
 
 /// Notes editor typography.
 pub const NOTES_FONT_FAMILY_KEY: &str = "editor.notes.font_family";
@@ -371,6 +377,8 @@ pub const NOTES_PARA_SPACING_AFTER_KEY: &str = "editor.notes.para_spacing_after"
 // Block-style spacing (notes have no indent) — notes are fragments/lists, so a
 // paragraph gap is what a notes surface is expected to look like.
 pub const NOTES_PARA_SPACING_AFTER_DEFAULT: f32 = 8.0;
+pub const NOTES_JUSTIFY_NEW_TEXT_KEY: &str = "editor.notes.justify_new_text";
+pub const NOTES_JUSTIFY_NEW_TEXT_DEFAULT: bool = false;
 
 /// Distraction-free mode's own typography (Settings ▸ Editor ▸ Typography ▸
 /// Distraction-free) — a fifth bundle alongside Scene / Synopsis / Notes /
@@ -1213,6 +1221,29 @@ pub static SETTINGS: &[SettingSpec] = &[
         default: || val(crate::NOTES_PARA_SPACING_AFTER_DEFAULT),
         check: check::<f32>,
         doc: "Notes editor space below each paragraph.",
+    },
+    SettingSpec {
+        key: crate::SCENE_JUSTIFY_NEW_TEXT_KEY,
+        ty: "bool",
+        default: || val(crate::SCENE_JUSTIFY_NEW_TEXT_DEFAULT),
+        check: check::<bool>,
+        doc: "Justify the first paragraph typed into an empty manuscript text; Enter carries \
+              it on to the next paragraphs.",
+    },
+    SettingSpec {
+        key: crate::SYNOPSIS_JUSTIFY_NEW_TEXT_KEY,
+        ty: "bool",
+        default: || val(crate::SYNOPSIS_JUSTIFY_NEW_TEXT_DEFAULT),
+        check: check::<bool>,
+        doc: "Justify the first paragraph typed into an empty synopsis, in every synopsis \
+              editor including the corkboard's cards.",
+    },
+    SettingSpec {
+        key: crate::NOTES_JUSTIFY_NEW_TEXT_KEY,
+        ty: "bool",
+        default: || val(crate::NOTES_JUSTIFY_NEW_TEXT_DEFAULT),
+        check: check::<bool>,
+        doc: "Justify the first paragraph typed into an empty note.",
     },
     // ── Distraction-free mode ─────────────────────────────────────────────────
     SettingSpec {

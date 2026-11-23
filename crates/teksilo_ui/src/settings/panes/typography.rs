@@ -6,6 +6,8 @@
 //! All three are the *same* form over a different [`EditorTypography`] bundle, so the page
 //! title is a parameter rather than three near-identical bodies.
 
+use teksilo::widgets::tooltip::TooltipContent;
+
 #[allow(unused_imports)]
 use super::super::*;
 
@@ -98,9 +100,11 @@ pub(crate) fn typography_rows(
         )
 }
 
-/// One per-editor-type typography page (Scene / Synopsis / Notes): nothing but
-/// [`typography_rows`] under its own page heading. Distraction-free and Corkboard
-/// append the same rows into pages of their own alongside other fields.
+/// One per-editor-type typography page (Scene / Synopsis / Notes): [`typography_rows`]
+/// under its own page heading, then the switch that starts a new text of this kind
+/// justified. Distraction-free and Corkboard append the same typography rows into
+/// pages of their own alongside other fields, but not the switch: they dress texts
+/// whose kind already has one (see `EditorTypography::justify_new_text`).
 pub(in crate::settings) fn typography_pane(
     ctx: &mut BuildContext,
     crumbs: &Crumbs,
@@ -111,6 +115,18 @@ pub(in crate::settings) fn typography_pane(
         .label(pane.label())
         .label_gap(16.0)
         .row_spacing(14.0);
-    let form = typography_rows(ctx, form, typo);
+    let form = typography_rows(ctx, form, typo)
+        // A group of its own: every row above only dresses the editor, while this
+        // one writes an alignment into the text.
+        .full_width(group(tr!(settings_group_new_text())))
+        .line(
+            field_label(tr!(settings_justify_new_text())),
+            Toggle::new(typo.justify_new_text.clone())
+                .labelled_externally()
+                .rich_tooltip_content(TooltipContent::new(
+                    "settings.justify_new_text",
+                    tr!(settings_justify_new_text_tip()),
+                )),
+        );
     pane_frame(crumbs.of(pane), form)
 }

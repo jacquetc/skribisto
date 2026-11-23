@@ -108,7 +108,7 @@ fn epigraph_section(tab: &ContentTab, before: f32, after: f32) -> Option<impl Wi
                 &tab.column_width,
                 // Scene typography, not the synopsis's: an epigraph is finished-book matter
                 // that ships in the manuscript, not editorial commentary about it.
-                tab.main_typography(),
+                &tab.main_typography(),
                 tab.mark_dirty_fn(),
                 Option::None,
                 tab.open_doc.spell_epigraph(),
@@ -618,7 +618,7 @@ pub fn folder_own_pane(tab: &ContentTab) -> Box<dyn Widget> {
             let editor = writing_section(
                 &m.doc,
                 tab.main_column_width(),
-                tab.main_typography(),
+                &tab.main_typography(),
                 tab.mark_dirty_fn(),
                 // The banner is mounted over the whole page below, not inside this
                 // section — so it spans the prose it searches and stays pinned above it.
@@ -1341,6 +1341,7 @@ mod item_note_segmented_tests {
             first_line_indent: Signal::new(0.0),
             para_spacing_before: Signal::new(0.0),
             para_spacing_after: Signal::new(0.0),
+            justify_new_text: Signal::new(false),
             size_range: crate::settings::TypographySizeRange::default(),
         };
         EditorTypographySet {

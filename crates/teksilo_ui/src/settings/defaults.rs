@@ -366,6 +366,26 @@ pub(crate) fn reset_targets(vm: &SettingsViewModel) -> Vec<ResetTarget> {
             para_spacing_after: crate::NOTES_PARA_SPACING_AFTER_DEFAULT,
         },
     ));
+    // The three "Start justified" switches. Not in `typography`: the corkboard and
+    // distraction-free bundles carry the Synopsis and Scene switches rather than
+    // keys of their own, so a per-bundle row would name keys that do not exist.
+    rows.extend([
+        flag(
+            crate::SCENE_JUSTIFY_NEW_TEXT_KEY,
+            typo.scene.justify_new_text.clone(),
+            crate::SCENE_JUSTIFY_NEW_TEXT_DEFAULT,
+        ),
+        flag(
+            crate::SYNOPSIS_JUSTIFY_NEW_TEXT_KEY,
+            typo.synopsis.justify_new_text.clone(),
+            crate::SYNOPSIS_JUSTIFY_NEW_TEXT_DEFAULT,
+        ),
+        flag(
+            crate::NOTES_JUSTIFY_NEW_TEXT_KEY,
+            typo.notes.justify_new_text.clone(),
+            crate::NOTES_JUSTIFY_NEW_TEXT_DEFAULT,
+        ),
+    ]);
     rows.extend(typography(
         "corkboard",
         &typo.corkboard,

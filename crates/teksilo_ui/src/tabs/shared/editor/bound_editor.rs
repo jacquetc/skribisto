@@ -177,6 +177,9 @@ pub(super) struct TypographyBoundEditor {
     /// What a screen reader adds to this editor's name. Put on the editor at build:
     /// it has to sit on the editor's own node, which this wrapper is not.
     pub(super) access_description: Option<LocalizedString>,
+    /// This editor's document, for [`NewTextJustifier`], which reads its history.
+    /// `None` leaves a new text as the writer types it.
+    pub(super) new_text: Option<TextDocument>,
 }
 
 impl TypographyBoundEditor {
@@ -206,7 +209,15 @@ impl TypographyBoundEditor {
             anchor: None,
             find: None,
             access_description: None,
+            new_text: None,
         }
+    }
+
+    /// Justify the paragraph a writer begins an empty text with, while the bundle's
+    /// `justify_new_text` switch is on. See [`super::new_text`].
+    pub(super) fn with_new_text(mut self, doc: TextDocument) -> Self {
+        self.new_text = Some(doc);
+        self
     }
 
     /// What a screen reader adds to this editor's name.
@@ -525,6 +536,21 @@ impl Widget for TypographyBoundEditor {
         // back.
         if let Some((doc, replacement)) = self.replacement.clone().filter(|_| !read_only) {
             wire_replacements(ctx, &handle, &doc, &replacement);
+        }
+        // Starting a new text justified, from the frame tick for the reason
+        // `wire_replacements` gives, and with its activation gate: a parked tab's
+        // editor is not where anyone is typing. Not on a read-only editor, which
+        // nobody begins a text in.
+        if let Some(doc) = self.new_text.take().filter(|_| !read_only) {
+            let justifier = NewTextJustifier::new(doc, self.typo.justify_new_text.clone());
+            let h = handle.clone();
+            let active = ctx.activation_signal(ctx.self_id());
+            let tick = ctx.frame_tick();
+            ctx.effect(&tick, move |_| {
+                if active.get() {
+                    justifier.tick(&h);
+                }
+            });
         }
         // The outward half of the footnote link: tell the dock which note the
         // caret is standing on. An effect on the caret signal rather than a click

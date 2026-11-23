@@ -209,7 +209,8 @@ pub fn synopsis_editor(
         replacement.map(|s| (doc.clone(), s)),
         EditorKind::Synopsis,
         format,
-    );
+    )
+    .with_new_text(doc.clone());
     if let Some(g) = games {
         bound = bound.with_writing_games(g);
     }
@@ -367,7 +368,8 @@ pub fn card_synopsis_editor(
         replacement.map(|s| (doc.clone(), s)),
         EditorKind::Synopsis,
         format,
-    );
+    )
+    .with_new_text(doc.clone());
     if let Some(g) = games {
         bound = bound.with_writing_games(g);
     }

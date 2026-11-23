@@ -329,6 +329,19 @@ pub(crate) fn search_index(spec: &[Root], work_title: &str) -> Vec<(LocalizedStr
             ));
         }
     }
+    // "Start justified" is on the three pages that name a kind of text, and only
+    // there, so it is disambiguated the same way.
+    for (page, pane) in [
+        (tr!(settings_page_scene()), Pane::SceneTypography),
+        (tr!(settings_page_synopsis()), Pane::SynopsisTypography),
+        (tr!(settings_page_notes()), Pane::NotesTypography),
+    ] {
+        let field = tr!(settings_justify_new_text());
+        idx.push((
+            localized(move || format!("{} — {}", page.resolve_now(), field.resolve_now())),
+            pane,
+        ));
+    }
     // ── Pages: every row of the tree, off the same spec the tree is built from.
     //
     // Parents included — a section and the Typography group are pages like any

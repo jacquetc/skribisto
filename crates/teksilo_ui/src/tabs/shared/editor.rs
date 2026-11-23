@@ -30,6 +30,7 @@ use teksilo::widgets::{
 /// a search page, not a compact IntelliJ-style bar.
 mod bound_editor;
 mod find_banner;
+mod new_text;
 pub(crate) mod page_caret;
 mod scroll_sync;
 mod synopsis;
@@ -49,6 +50,7 @@ pub use synopsis::{
 
 use bound_editor::*;
 use find_banner::*;
+use new_text::NewTextJustifier;
 
 const FIND_FIELD_MAX_WIDTH: f32 = 240.0;
 
@@ -577,7 +579,8 @@ pub fn writing_column(
         replacement.map(|s| (doc.clone(), s)),
         EditorKind::Prose,
         format,
-    );
+    )
+    .with_new_text(doc.clone());
     if let Some(g) = games {
         bound = bound.with_writing_games(g);
     }

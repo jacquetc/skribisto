@@ -165,6 +165,16 @@ pub struct EditorTypography {
     pub para_spacing_before: Signal<f32>,
     /// Space (px) below each body paragraph.
     pub para_spacing_after: Signal<f32>,
+    /// Justify the paragraph the writer begins an empty text with.
+    ///
+    /// Unlike every field above, this one writes into the document: the first
+    /// keystroke into an empty text sets its paragraph to `Alignment::Justify`,
+    /// and Enter carries that on to each paragraph after it. The rest only dress
+    /// the editor. So it follows the *text*, not the surface: the corkboard's
+    /// bundle carries the Synopsis switch and distraction-free mode the switch of
+    /// the Scene or the Note it shows (see `ContentTab::main_typography`). Only the
+    /// Scene, Synopsis and Notes pages have a key of their own.
+    pub justify_new_text: Signal<bool>,
     /// Which bundle this is, how far its `size` may travel, and where it
     /// resets to. Not a `Signal` — see [`TypographySizeRange`].
     pub size_range: TypographySizeRange,
@@ -513,6 +523,10 @@ impl SettingsViewModel {
                     SCENE_PARA_SPACING_AFTER_KEY,
                     SCENE_PARA_SPACING_AFTER_DEFAULT,
                 ),
+                justify_new_text: store.signal(
+                    crate::SCENE_JUSTIFY_NEW_TEXT_KEY,
+                    crate::SCENE_JUSTIFY_NEW_TEXT_DEFAULT,
+                ),
                 size_range: TypographySizeRange::standard(
                     TypographyKind::Scene,
                     SCENE_SIZE_DEFAULT,
@@ -537,6 +551,10 @@ impl SettingsViewModel {
                     SYNOPSIS_PARA_SPACING_AFTER_KEY,
                     SYNOPSIS_PARA_SPACING_AFTER_DEFAULT,
                 ),
+                justify_new_text: store.signal(
+                    crate::SYNOPSIS_JUSTIFY_NEW_TEXT_KEY,
+                    crate::SYNOPSIS_JUSTIFY_NEW_TEXT_DEFAULT,
+                ),
                 size_range: TypographySizeRange::standard(
                     TypographyKind::Synopsis,
                     SYNOPSIS_SIZE_DEFAULT,
@@ -556,6 +574,10 @@ impl SettingsViewModel {
                 para_spacing_after: store.signal(
                     NOTES_PARA_SPACING_AFTER_KEY,
                     NOTES_PARA_SPACING_AFTER_DEFAULT,
+                ),
+                justify_new_text: store.signal(
+                    crate::NOTES_JUSTIFY_NEW_TEXT_KEY,
+                    crate::NOTES_JUSTIFY_NEW_TEXT_DEFAULT,
                 ),
                 size_range: TypographySizeRange::standard(
                     TypographyKind::Notes,
@@ -580,6 +602,12 @@ impl SettingsViewModel {
                 para_spacing_after: store.signal(
                     CORKBOARD_PARA_SPACING_AFTER_KEY,
                     CORKBOARD_PARA_SPACING_AFTER_DEFAULT,
+                ),
+                // The Synopsis page's switch, not one of its own: a card holds a
+                // synopsis. The store caches one signal per key, so this is that one.
+                justify_new_text: store.signal(
+                    crate::SYNOPSIS_JUSTIFY_NEW_TEXT_KEY,
+                    crate::SYNOPSIS_JUSTIFY_NEW_TEXT_DEFAULT,
                 ),
                 size_range: TypographySizeRange::standard(
                     TypographyKind::Corkboard,
@@ -607,6 +635,12 @@ impl SettingsViewModel {
                 para_spacing_after: store.signal(
                     DISTRACTION_FREE_PARA_SPACING_AFTER_KEY,
                     DISTRACTION_FREE_PARA_SPACING_AFTER_DEFAULT,
+                ),
+                // The Scene page's switch. A Note shown distraction-free gets the
+                // Notes one instead, from `ContentTab::main_typography`.
+                justify_new_text: store.signal(
+                    crate::SCENE_JUSTIFY_NEW_TEXT_KEY,
+                    crate::SCENE_JUSTIFY_NEW_TEXT_DEFAULT,
                 ),
                 size_range: TypographySizeRange::standard(
                     TypographyKind::DistractionFree,
@@ -1287,6 +1321,36 @@ mod tests {
             assert_ne!(b.font_family.get(), "EB Garamond");
             assert_ne!(b.first_line_indent.get(), 40.0);
         }
+    }
+
+    /// "Start justified" has a key on the Scene, Synopsis and Notes pages only. The
+    /// corkboard's cards hold synopses and distraction-free mode shows a Scene (or a
+    /// Note, see `ContentTab::main_typography`), so their bundles carry those switches
+    /// rather than switches of their own nobody could reach.
+    #[test]
+    fn the_corkboard_and_distraction_free_share_the_start_justified_switches() {
+        let store = temp_store();
+        let vm = SettingsViewModel::new(&store);
+        let t = vm.editor_typography();
+        t.synopsis.justify_new_text.set(true);
+        assert!(t.corkboard.justify_new_text.get());
+        assert!(!t.scene.justify_new_text.get());
+        assert!(!t.notes.justify_new_text.get());
+        t.scene.justify_new_text.set(true);
+        assert!(t.distraction_free.justify_new_text.get());
+        assert!(!t.notes.justify_new_text.get());
+
+        // Persisted under its own key, and put back off by Reset.
+        store.flush_now().expect("flush");
+        let reopened = SettingsStore::open(store.path().to_path_buf()).expect("reopen");
+        assert!(
+            reopened
+                .signal(crate::SCENE_JUSTIFY_NEW_TEXT_KEY, false)
+                .get()
+        );
+        vm.reset_editor_defaults();
+        assert!(!t.scene.justify_new_text.get());
+        assert!(!t.synopsis.justify_new_text.get());
     }
 
     /// The four distraction-free chrome toggles round-trip through the store

@@ -105,10 +105,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
         // synopses use the Synopsis bundle — a synopsis is a working note at any
         // size of window, so it does not follow the surface.
         let (editor_cw, editor_typo) = match flavour {
-            SplitFlavour::Prose => (
-                tab.main_column_width().clone(),
-                tab.main_typography().clone(),
-            ),
+            SplitFlavour::Prose => (tab.main_column_width().clone(), tab.main_typography()),
             SplitFlavour::Synopsis => (tab.column_width.clone(), tab.typography.synopsis.clone()),
         };
         let format = tab.format.clone();

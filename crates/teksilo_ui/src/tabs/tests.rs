@@ -24,6 +24,7 @@ fn test_typography() -> EditorTypographySet {
         first_line_indent: Signal::new(0.0),
         para_spacing_before: Signal::new(0.0),
         para_spacing_after: Signal::new(0.0),
+        justify_new_text: Signal::new(false),
         size_range: crate::settings::TypographySizeRange::default(),
     };
     EditorTypographySet {
@@ -1127,6 +1128,7 @@ fn a_press_in_a_card_synopsis_does_not_arm_an_ancestor_drag() {
             first_line_indent: Signal::new(0.0),
             para_spacing_before: Signal::new(0.0),
             para_spacing_after: Signal::new(0.0),
+            justify_new_text: Signal::new(false),
             size_range: crate::settings::TypographySizeRange::default(),
         };
         crate::tabs::shared::editor::card_synopsis_editor(
@@ -3214,6 +3216,14 @@ fn distraction_free_overrides_prose_kind_typography_while_active() {
     );
     assert_eq!(scene.main_column_width().get(), 620.0);
     assert_eq!(note.main_column_width().get(), 620.0);
+
+    // But not the "Start justified" switch: that belongs to the text, so a Note
+    // shown distraction-free still follows the Notes page, a Scene the Scene page.
+    typo.scene.justify_new_text.set(false);
+    typo.notes.justify_new_text.set(true);
+    typo.distraction_free.justify_new_text.set(false);
+    assert!(!scene.main_typography().justify_new_text.get());
+    assert!(note.main_typography().justify_new_text.get());
 
     // The distraction-free width is itself live, exactly like every other
     // Settings-backed signal — dragging the slider must reach an already

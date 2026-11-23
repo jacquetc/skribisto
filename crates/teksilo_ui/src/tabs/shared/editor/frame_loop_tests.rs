@@ -20,6 +20,7 @@ fn typo() -> EditorTypography {
         first_line_indent: Signal::new(0.0),
         para_spacing_before: Signal::new(0.0),
         para_spacing_after: Signal::new(0.0),
+        justify_new_text: Signal::new(false),
         size_range: crate::settings::TypographySizeRange::default(),
     }
 }
@@ -38,6 +39,19 @@ fn column() -> (
 /// [`column`], with the read-only gate a trashed item's tab sets.
 fn column_with(
     read_only: bool,
+) -> (
+    TextDocument,
+    EditorHandle,
+    Rc<TextReplacementSession>,
+    WidgetTree,
+) {
+    column_dressed(read_only, &typo())
+}
+
+/// [`column_with`], dressed in `typo` rather than the default bundle.
+fn column_dressed(
+    read_only: bool,
+    typo: &EditorTypography,
 ) -> (
     TextDocument,
     EditorHandle,
@@ -68,7 +82,7 @@ fn column_with(
     let col = writing_column(
         &doc,
         &Signal::new(700.0),
-        &typo(),
+        typo,
         MAIN_MIN_LINES,
         || {},
         None,
@@ -460,4 +474,44 @@ fn idle_frames_change_nothing() {
         frame(&mut tree);
     }
     assert_eq!(plain(&doc), "btw", "no delimiter typed, so nothing fires");
+}
+
+// ── starting a new text justified ───────────────────────────────────────
+
+/// A column whose bundle has the "Start justified" switch on, with the writer in it.
+fn justifying_column(read_only: bool) -> (EditorHandle, WidgetTree) {
+    let typo = typo();
+    typo.justify_new_text.set(true);
+    let (_doc, handle, _session, tree) = column_dressed(read_only, &typo);
+    handle.focused_signal().set(true);
+    (handle, tree)
+}
+
+/// The switch reaches the editor `writing_column` builds, and the frame tick is
+/// what applies it: the unit tests in `new_text` call the justifier by hand.
+#[test]
+fn a_new_text_starts_justified_from_the_frame_tick() {
+    use teksilo::text_document::Alignment;
+    let (handle, mut tree) = justifying_column(false);
+    frame(&mut tree);
+    assert_eq!(
+        handle.get_alignment(),
+        Alignment::Left,
+        "opening writes nothing"
+    );
+
+    handle.insert_text("I");
+    frame(&mut tree);
+    assert_eq!(handle.get_alignment(), Alignment::Justify);
+}
+
+/// A trashed item's text is not begun by anyone, so nothing is written into it.
+#[test]
+fn a_trashed_items_empty_text_is_not_justified() {
+    use teksilo::text_document::Alignment;
+    let (handle, mut tree) = justifying_column(true);
+    // The programmatic API is not gated (see above), so this does fill the text.
+    handle.insert_text("I");
+    frame(&mut tree);
+    assert_eq!(handle.get_alignment(), Alignment::Left);
 }
