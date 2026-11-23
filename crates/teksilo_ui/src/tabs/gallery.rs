@@ -21,6 +21,10 @@
 //! reader hears), opens in the viewer with the others, and its right click offers what
 //! the Resources dock offers for a resource, after the Gallery's own two doors.
 //!
+//! A Gallery with no tile says why ([`GalleryEmpty`]): *Clear the filters* when the
+//! filters hide every picture, else *Add images…*, and a drop of pictures from outside,
+//! which become resources of the folder shown.
+//!
 //! The thumbnails are decoded off the interface thread and cached
 //! ([`crate::shared::thumbnail`]); a tile shows a placeholder of its final size until
 //! its picture arrives, so the columns do not move when it does.
@@ -32,18 +36,24 @@ use teksilo::core::BindingLevel;
 use teksilo::data::{ListModel, SortDirection, TreeDataSource};
 use teksilo::prelude::*;
 use teksilo::settings::SettingsExt;
+use teksilo::tokens::HAlignment;
 use teksilo::widgets::tooltip::TooltipContent;
 use teksilo::widgets::{
-    AspectRatio, Badge, Breadcrumb, BreadcrumbItem, Center, ComboBox, Expand, GridSizing, GridView,
-    HStack, IconButton, MaxSize, MenuItem, MenuList, Padding, Panel, SearchField, Segment,
-    SegmentedControl, Shrinkable, Slider, TextWidget, TileContext, VStack,
+    AspectRatio, Badge, Breadcrumb, BreadcrumbItem, Button, ComboBox, DropTarget, Expand,
+    GridSizing, GridView, HStack, IconButton, MaxSize, MenuItem, MenuList, Padding, Panel,
+    SearchField, Segment, SegmentedControl, Shrinkable, Slider, Spacer, TextWidget, TileContext,
+    VStack,
 };
 
-use crate::gallery::{GalleryOptions, GalleryPicture, GalleryTile, GalleryViewModel, tiles};
+use crate::gallery::{
+    GalleryEmpty, GalleryOptions, GalleryPicture, GalleryTile, GalleryViewModel, pictures_among,
+    tiles,
+};
 use crate::intents::AppIntent;
 use crate::models::{COL_STATUS, COL_TITLE};
-use crate::resources::ResourcesViewModel;
+use crate::resources::file_kind::VIEWABLE_PICTURE_EXTENSIONS;
 use crate::resources::row::{AttachedItem, DetachFrom, resource_actions};
+use crate::resources::{AddTarget, ResourcesViewModel};
 use crate::shared::thumbnail::{Thumb, thumb_edge, tile_ratio};
 use crate::tabs::shared::flow_row::{FILTER_MIN_WIDTH, FlowRow, ROW_LINE_GAP};
 
@@ -528,23 +538,21 @@ impl Widget for GalleryGrid {
         self.settings
             .text_notes
             .bind_to(sid, reg, BindingLevel::Rebuild);
+        // The empty page reads the filters themselves, not only the rows they shape: it
+        // says whether one is on.
+        let filters = self.vm.overview().filters();
+        filters.query.bind_to(sid, reg, BindingLevel::Rebuild);
+        filters.tag_filter.bind_to(sid, reg, BindingLevel::Rebuild);
+        filters
+            .status_filter
+            .bind_to(sid, reg, BindingLevel::Rebuild);
 
         let options = self.settings.options();
         let notes = self.vm.notes();
         let tiles = tiles::build_tiles(&notes, options);
         if tiles.is_empty() {
-            let hint = if !options.text_notes && tiles::has_text_only_notes(&notes) {
-                tr!(gallery_empty_text_notes_hint())
-            } else {
-                tr!(gallery_empty())
-            };
-            let id = ctx.add(
-                Center::new().child(
-                    TextWidget::new(hint)
-                        .style(TextStyleRole::Body)
-                        .color(TextRole::Secondary),
-                ),
-            );
+            let reason = self.vm.empty_reason(&notes, options);
+            let id = ctx.add_boxed(empty_page(reason, &self.vm, &self.resources));
             self.root = Some(id);
             return vec![id];
         }
@@ -687,6 +695,69 @@ impl Widget for GalleryGrid {
     fn children(&self) -> Vec<WidgetId> {
         self.root.into_iter().collect()
     }
+}
+
+/// What a Gallery with no tile shows, for `reason`: a line saying why, and the way out.
+///
+/// Filtered, the way out is *Clear the filters*. Otherwise it is *Add images…*, and the page
+/// takes pictures dropped from outside too, each attached to the folder shown.
+fn empty_page(
+    reason: GalleryEmpty,
+    vm: &GalleryViewModel,
+    resources: &ResourcesViewModel,
+) -> Box<dyn Widget> {
+    let message = match reason {
+        GalleryEmpty::NoMatch => tr!(gallery_no_match()),
+        GalleryEmpty::TextNotesHidden => tr!(gallery_empty_text_notes_hint()),
+        GalleryEmpty::NoPictures => tr!(gallery_empty()),
+    };
+    let action = if reason.offers_adding() {
+        let (vm, resources) = (vm.clone(), resources.clone());
+        Button::new(tr!(gallery_add_images()))
+            .tooltip(tr!(gallery_add_images_hint()))
+            .on_activate_fn(move |c| resources.pick_pictures_for(c, vec![vm.current_folder()]))
+    } else {
+        let vm = vm.clone();
+        Button::new(tr!(gallery_clear_filters())).on_activate_fn(move |_| vm.clear_filters())
+    };
+    // A column, not a `Center`: a `Center` proposes no width, so the line would never
+    // wrap and would run off a narrow pane on both sides.
+    let page = teksu!(
+        VStack {
+            alignment: HAlignment::Center
+            Spacer::new()
+            Padding::symmetric(24.0, 24.0) {
+                VStack {
+                    spacing: 12.0
+                    alignment: HAlignment::Center
+                    TextWidget::new(message) {
+                        style: TextStyleRole::Body
+                        color: TextRole::Secondary
+                    }
+                    child: action
+                }
+            }
+            Spacer::new()
+        }
+    );
+    if !reason.offers_adding() {
+        return Box::new(page);
+    }
+    let (vm, resources) = (vm.clone(), resources.clone());
+    Box::new(
+        DropTarget::new()
+            .accept_external_extensions(VIEWABLE_PICTURE_EXTENSIONS)
+            .hint(TextWidget::new(tr!(gallery_drop_hint())))
+            .on_drop(move |payload, _pos, c| {
+                let pictures = pictures_among(payload.files().to_vec());
+                if pictures.is_empty() {
+                    return false;
+                }
+                resources.add_paths_to(c, vec![vm.current_folder()], pictures, AddTarget::Dock);
+                true
+            })
+            .child(page),
+    )
 }
 
 /// What a screen reader hears for a tile: what it is and whose.

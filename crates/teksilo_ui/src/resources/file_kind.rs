@@ -80,14 +80,15 @@ pub fn kind_of(file_name: &str, mime: &str) -> FileKind {
     })
 }
 
+/// The extensions of the formats the editor decodes, lower-case: what
+/// [`is_viewable_picture`] accepts, and what a file dialog asking for pictures offers.
+pub const VIEWABLE_PICTURE_EXTENSIONS: [&str; 4] = ["png", "jpg", "jpeg", "webp"];
+
 /// Whether the image viewer and the thumbnails can draw this file: the formats the
 /// editor decodes, and nothing else. A `.heic` is a picture to the eye and still opens in
 /// another application.
 pub fn is_viewable_picture(file_name: &str) -> bool {
-    matches!(
-        extension(file_name).as_str(),
-        "png" | "jpg" | "jpeg" | "webp"
-    )
+    VIEWABLE_PICTURE_EXTENSIONS.contains(&extension(file_name).as_str())
 }
 
 impl FileKind {

@@ -75,6 +75,16 @@ Bildbetrachter zu öffnen. Die Pfeiltasten gehen dann durch die Bilder, die die 
 in ihrer Reihenfolge. Klicken Sie mit der rechten Maustaste auf ein Vorschaubild und wählen
 Sie *Notiz öffnen*, um die Notiz zu öffnen, in der es steht.
 
+## Wenn die Galerie leer ist
+
+Wenn eine Suche oder ein Filter alle Bilder ausblendet, zeigt die Galerie *Keine Bilder passen
+zu diesen Filtern*. Wählen Sie *Filter zurücksetzen*, um wieder alle zu sehen, auch in der
+*Übersicht*.
+
+Ein Ordner noch ohne Bilder bietet *Bilder hinzufügen…* an. Die gewählten Bilder werden
+Ressourcen des Ordners und erscheinen in seiner Galerie. Sie können Bilder auch aus Ihrem
+Dateimanager auf die leere Galerie ziehen.
+
 ## Recherche aus Scrivener
 
 Die Recherchebilder eines Scrivener-Projekts kommen als Ressourcen des Ordners an, in dem sie

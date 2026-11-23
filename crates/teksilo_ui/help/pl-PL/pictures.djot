@@ -71,6 +71,15 @@ Klawisze strzałek przechodzą wtedy przez obrazy pokazywane w galerii, w jej ko
 Kliknij miniaturę prawym przyciskiem myszy i wybierz *Otwórz notatkę*, aby otworzyć notatkę,
 w której się znajduje.
 
+## Gdy galeria jest pusta
+
+Gdy wyszukiwanie lub filtr ukrywa wszystkie obrazy, galeria pokazuje *Żaden obraz nie pasuje do
+tych filtrów*. Wybierz *Wyczyść filtry*, aby znów zobaczyć wszystkie, także w widoku *Przegląd*.
+
+Folder, który nie ma jeszcze obrazów, proponuje *Dodaj obrazy…*. Wybrane obrazy stają się
+zasobami folderu i pojawiają się w jego galerii. Możesz też upuścić obrazy z menedżera plików na
+pustą galerię.
+
 ## Materiały z programu Scrivener
 
 Obrazy z materiałów projektu Scrivener stają się zasobami folderu, w którym się znajdowały

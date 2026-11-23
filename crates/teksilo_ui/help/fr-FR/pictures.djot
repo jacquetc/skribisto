@@ -70,6 +70,16 @@ Double-cliquez sur une vignette, ou appuyez sur Entrée, pour l’ouvrir dans la
 flèches parcourent alors les images que la galerie montre, dans son ordre. Faites un clic droit
 sur une vignette et choisissez *Ouvrir la note* pour ouvrir la note où elle se trouve.
 
+## Quand la galerie est vide
+
+Quand une recherche ou un filtre cache toutes les images, la galerie indique *Aucune image ne
+correspond à ces filtres*. Choisissez *Effacer les filtres* pour les revoir toutes, dans la *Vue
+d’ensemble* aussi.
+
+Un dossier encore sans image propose *Ajouter des images…*. Les images choisies deviennent des
+ressources du dossier et apparaissent dans sa galerie. Vous pouvez aussi déposer des images
+depuis votre gestionnaire de fichiers sur la galerie vide.
+
 ## Les recherches venues de Scrivener
 
 Les images des recherches d’un projet Scrivener arrivent comme ressources du dossier où elles

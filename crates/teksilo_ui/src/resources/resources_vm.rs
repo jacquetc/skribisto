@@ -262,14 +262,30 @@ impl ResourcesViewModel {
     /// Ask for files to attach to `items`: a folder's Resources page attaches to the
     /// folder, whatever is in front of the writer.
     pub fn pick_files_for(&self, ctx: &mut EventContext, items: Vec<u64>) {
+        let req = FileDialogRequest::pick_files().title(tr!(resources_add_files_title()));
+        self.pick_for(ctx, items, req);
+    }
+
+    /// Ask for pictures to attach to `items`, the dialog offering only the formats the
+    /// Gallery and the image viewer draw: an empty Gallery's way to add one.
+    pub fn pick_pictures_for(&self, ctx: &mut EventContext, items: Vec<u64>) {
+        let req = FileDialogRequest::pick_files()
+            .title(tr!(gallery_add_images_title()))
+            .add_filter(
+                tr!(image_filter_label()).resolve_now(),
+                &super::file_kind::VIEWABLE_PICTURE_EXTENSIONS,
+            );
+        self.pick_for(ctx, items, req);
+    }
+
+    /// Run the file dialog `req` from the folder last attached from, and attach what is
+    /// picked to `items`.
+    fn pick_for(&self, ctx: &mut EventContext, items: Vec<u64>, req: FileDialogRequest) {
         if items.is_empty() {
             return;
         }
-        let req = crate::models::dialog_start_in(
-            ctx,
-            crate::models::FolderPurpose::AttachResources,
-            FileDialogRequest::pick_files().title(tr!(resources_add_files_title())),
-        );
+        let req =
+            crate::models::dialog_start_in(ctx, crate::models::FolderPurpose::AttachResources, req);
         let vm = self.clone();
         let _ = ctx.pick_files(req, move |res, c| {
             crate::models::remember_pick(c, crate::models::FolderPurpose::AttachResources, &res);

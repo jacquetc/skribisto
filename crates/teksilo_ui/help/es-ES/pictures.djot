@@ -71,6 +71,16 @@ Haga doble clic en una miniatura, o pulse `Intro`, para abrirla en el visor de i
 flechas recorren entonces las imágenes que muestra la galería, en su orden. Haga clic con el
 botón derecho en una miniatura y elija *Abrir la nota* para abrir la nota en la que está.
 
+## Cuando la galería está vacía
+
+Cuando una búsqueda o un filtro oculta todas las imágenes, la galería dice *Ninguna imagen
+coincide con estos filtros*. Elija *Borrar los filtros* para volver a verlas todas, también en
+la *Vista general*.
+
+Una carpeta todavía sin imágenes ofrece *Añadir imágenes…*. Las imágenes que elija pasan a ser
+recursos de la carpeta y aparecen en su galería. También puede soltar imágenes desde su gestor
+de archivos sobre la galería vacía.
+
 ## La investigación de Scrivener
 
 Las imágenes de la investigación de un proyecto Scrivener llegan como recursos de la carpeta en

@@ -70,6 +70,16 @@ Faça duplo clique numa miniatura, ou prima `Enter`, para a abrir no visualizado
 As setas percorrem então as imagens que a galeria mostra, pela sua ordem. Clique com o botão
 direito numa miniatura e escolha *Abrir a nota* para abrir a nota onde ela está.
 
+## Quando a galeria está vazia
+
+Quando uma pesquisa ou um filtro esconde todas as imagens, a galeria diz *Nenhuma imagem
+corresponde a estes filtros*. Escolha *Limpar os filtros* para voltar a vê-las todas, também na
+*Vista geral*.
+
+Uma pasta ainda sem imagens oferece *Adicionar imagens…*. As imagens que escolher passam a ser
+recursos da pasta e aparecem na sua galeria. Também pode largar imagens do seu gestor de
+ficheiros sobre a galeria vazia.
+
 ## A pesquisa vinda do Scrivener
 
 As imagens da pesquisa de um projeto Scrivener chegam como recursos da pasta onde estavam

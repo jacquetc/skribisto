@@ -630,3 +630,139 @@ fn a_resource_listed_twice_on_an_item_is_one_picture() {
     assert_eq!(super::once_each(&[7, 3, 7, 9, 3]), [7, 3, 9]);
     assert!(super::once_each(&[]).is_empty());
 }
+
+// ── The empty Gallery ────────────────────────────────────────────────────────
+
+/// A search that hides every picture must not read as an empty folder: the writer would
+/// think their photographs were gone.
+#[test]
+fn a_search_that_hides_every_picture_says_so_not_that_the_folder_is_empty() {
+    let f = Fixture::new();
+    f.note("Platform", 1, &picture(A));
+    f.note("Ticket hall", 1, &picture(B));
+    let gallery = f.gallery();
+    assert!(!gallery.is_filtered());
+    gallery
+        .overview()
+        .search_query_signal()
+        .set("harbour".into());
+    assert!(gallery.is_filtered());
+    let notes = gallery.notes();
+    assert!(build_tiles(&notes, GalleryOptions::default()).is_empty());
+    let reason = gallery.empty_reason(&notes, GalleryOptions::default());
+    assert_eq!(reason, GalleryEmpty::NoMatch);
+    assert!(!reason.offers_adding(), "the folder may well have pictures");
+
+    gallery.clear_filters();
+    assert!(!gallery.is_filtered());
+    assert_eq!(gallery.overview().search_query_signal().get(), "");
+    let titles: Vec<String> = gallery.notes().into_iter().map(|n| n.title).collect();
+    assert_eq!(titles, ["Platform", "Ticket hall"]);
+}
+
+/// A tag or a status filter counts as much as the search, and clearing drops them all
+/// but leaves the order, which hides nothing.
+#[test]
+fn clearing_the_filters_drops_the_tags_and_statuses_and_keeps_the_order() {
+    let f = Fixture::new();
+    f.note("Platform", 1, &picture(A));
+    let gallery = f.gallery();
+    let filters = gallery.overview().filters();
+    let order = Some((
+        crate::models::COL_TITLE.to_string(),
+        teksilo::data::SortDirection::Descending,
+    ));
+    filters.sort.set(order.clone());
+    assert!(!gallery.is_filtered(), "an order is not a filter");
+    // Spaces alone search for nothing, as the Overview reads them.
+    filters.query.set("   ".into());
+    assert!(!gallery.is_filtered());
+
+    filters.tag_filter.set(vec![999]);
+    assert!(gallery.is_filtered());
+    assert_eq!(
+        gallery.empty_reason(&gallery.notes(), GalleryOptions::default()),
+        GalleryEmpty::NoMatch
+    );
+    filters.tag_filter.set(Vec::new());
+    filters.status_filter.set(vec![999]);
+    assert!(gallery.is_filtered());
+
+    filters.tag_filter.set(vec![998]);
+    gallery.clear_filters();
+    assert!(!gallery.is_filtered());
+    assert!(filters.tag_filter.get().is_empty());
+    assert!(filters.status_filter.get().is_empty());
+    assert_eq!(filters.sort.get(), order);
+    assert_eq!(gallery.notes().len(), 1);
+}
+
+#[test]
+fn an_unfiltered_empty_gallery_offers_to_add_pictures() {
+    let f = Fixture::new();
+    let gallery = f.gallery();
+    let reason = gallery.empty_reason(&gallery.notes(), GalleryOptions::default());
+    assert_eq!(reason, GalleryEmpty::NoPictures);
+    assert!(reason.offers_adding());
+
+    // Only words: the hint about Notes without images comes first, and adding stays.
+    f.note("Typed quote", 1, "Only words here.");
+    let notes = gallery.notes();
+    let reason = gallery.empty_reason(&notes, GalleryOptions::default());
+    assert_eq!(reason, GalleryEmpty::TextNotesHidden);
+    assert!(reason.offers_adding());
+    let with_text = GalleryOptions {
+        text_notes: true,
+        ..GalleryOptions::default()
+    };
+    assert!(!build_tiles(&notes, with_text).is_empty());
+}
+
+/// What the empty page adds goes on the folder shown, a subfolder once one is entered,
+/// and appears there at once: a folder's own pictures are tiles.
+#[test]
+fn a_picture_added_to_the_folder_shown_appears_in_its_gallery() {
+    let f = Fixture::new();
+    f.note("Outside", 1, &picture(A));
+    let threads = f.item("Threads", BinderItemRole::Folder, 1, true);
+    let research = Research::new(&f);
+    let gallery = f.gallery_with(&research);
+    gallery.enter(threads, "Threads".into());
+    let notes = gallery.notes();
+    assert_eq!(
+        gallery.empty_reason(&notes, GalleryOptions::default()),
+        GalleryEmpty::NoPictures
+    );
+
+    research.link_picture(&[gallery.current_folder()], "Street entrance.png");
+    let notes = gallery.notes();
+    assert_eq!(holdings(&notes), ["Threads: Street entrance.png"]);
+    assert_eq!(build_tiles(&notes, GalleryOptions::default()).len(), 1);
+}
+
+/// Only the files the Gallery can show are attached by a drop on it, whatever the case
+/// of their extension.
+#[test]
+fn a_drop_keeps_only_the_pictures_the_gallery_draws() {
+    use std::path::PathBuf;
+    let dropped: Vec<PathBuf> = [
+        "/r/platform.PNG",
+        "/r/interview.pdf",
+        "/r/hall.jpeg",
+        "/r/README",
+        "/r/plan.heic",
+        "/r/entrance.webp",
+        "/r/.png",
+    ]
+    .into_iter()
+    .map(PathBuf::from)
+    .collect();
+    assert_eq!(
+        super::pictures_among(dropped),
+        [
+            PathBuf::from("/r/platform.PNG"),
+            PathBuf::from("/r/hall.jpeg"),
+            PathBuf::from("/r/entrance.webp"),
+        ]
+    );
+}

@@ -65,6 +65,15 @@ Double-click a thumbnail, or press Enter, to open it in the image viewer. The ar
 go through the pictures the gallery shows, in its order. Right-click a thumbnail and choose
 *Open the note* to open the note it is in.
 
+## When the gallery is empty
+
+When a search or a filter hides every picture, the gallery says *No images match these filters*.
+Choose *Clear the filters* to see them all again, in the *Overview* too.
+
+A folder with no pictures yet offers *Add images…*. The images you choose become resources of
+the folder and appear in its gallery. You can also drop images from your file manager onto the
+empty gallery.
+
 ## Research from Scrivener
 
 A Scrivener project's research pictures arrive as resources of the folder they sat in (see

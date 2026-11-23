@@ -51,6 +51,12 @@ Nella galleria una ricerca trova anche un'immagine risorsa dal suo titolo, dal n
 
 Fai doppio clic su una miniatura, o premi `Invio`, per aprirla nel visualizzatore di immagini. Le frecce scorrono poi le immagini mostrate dalla galleria, nel suo ordine. Fai clic con il pulsante destro su una miniatura e scegli *Apri la nota* per aprire la nota che la contiene.
 
+## Quando la galleria è vuota
+
+Quando una ricerca o un filtro nasconde tutte le immagini, la galleria dice *Nessuna immagine corrisponde a questi filtri*. Scegli *Cancella filtri* per rivederle tutte, anche nella *Panoramica*.
+
+Una cartella ancora senza immagini offre *Aggiungi immagini…*. Le immagini scelte diventano risorse della cartella e compaiono nella sua galleria. Puoi anche trascinare le immagini dal tuo gestore di file sulla galleria vuota.
+
 ## La ricerca da Scrivener
 
 Le immagini della ricerca di un progetto Scrivener arrivano come risorse della cartella in cui si trovavano (consulta [Passare da Scrivener](:help-import-scrivener) e [File e link per le tue ricerche](:help-resources)). Apri quella cartella e scegli *Galleria* per vederle insieme alle altre immagini, segnate con *Risorsa*.

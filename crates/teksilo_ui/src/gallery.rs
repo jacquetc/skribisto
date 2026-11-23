@@ -43,6 +43,14 @@
 //! Overview's alone: they ask about notes, a picture has neither, and the folder's own
 //! pictures leave while one narrows the notes.
 //!
+//! ## An empty Gallery says why
+//!
+//! A Gallery with no tile tells a folder with no pictures from one whose pictures the
+//! filters hide ([`GalleryEmpty`]). Filtered, it says no picture matches and offers to
+//! clear the filters, the Overview's with them. Otherwise it offers to add pictures to
+//! the folder shown, as resources, from a file dialog or by a drop: the folder's own
+//! pictures are tiles, so they appear at once.
+//!
 //! Plain Rust over the backend; the widgets are in [`crate::tabs::gallery`].
 
 pub mod tiles;
@@ -64,6 +72,41 @@ use crate::overview::OverviewViewModel;
 use crate::picture_viewer::{ViewerEntry, ViewerFile, ViewerItem};
 use crate::shared::images::{ImageRef, parse_images};
 pub use tiles::{GalleryNote, GalleryOptions, GalleryPicture, GalleryTile};
+
+/// Why a Gallery shows no tile, from [`GalleryViewModel::empty_reason`].
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GalleryEmpty {
+    /// The search, a tag or a status hides every picture. Saying "no images here" would
+    /// make a writer think their photographs were lost: the page says the filters match
+    /// none, and offers to clear them.
+    NoMatch,
+    /// The folder's notes hold only text, and *Notes without images* is off.
+    TextNotesHidden,
+    /// Nothing in the folder to show: the page offers to add pictures to it.
+    NoPictures,
+}
+
+impl GalleryEmpty {
+    /// Whether the page offers to add pictures to the folder, by a button or a drop. Not
+    /// while filtered: the folder may well have pictures, and one added there might not
+    /// match the filters either.
+    pub fn offers_adding(self) -> bool {
+        !matches!(self, Self::NoMatch)
+    }
+}
+
+/// The files among `paths` the Gallery can show, the others left out: a file dropped on
+/// an empty Gallery is attached to its folder only when it would then appear there.
+pub fn pictures_among(paths: Vec<std::path::PathBuf>) -> Vec<std::path::PathBuf> {
+    paths
+        .into_iter()
+        .filter(|p| {
+            p.file_name().is_some_and(|name| {
+                crate::resources::file_kind::is_viewable_picture(&name.to_string_lossy())
+            })
+        })
+        .collect()
+}
 
 /// A row of a folder's subtree, as the Overview shapes it.
 type OverviewTreeRow = teksilo::data::TreeRow<uuid::Uuid, crate::models::OverviewRow>;
@@ -196,6 +239,42 @@ impl GalleryViewModel {
         if depth < trail.len() {
             trail.truncate(depth);
             self.inner.trail.set(trail);
+        }
+    }
+
+    /// Whether the search, a tag or a status is narrowing the folder now. The order is not
+    /// a filter: it hides nothing.
+    pub fn is_filtered(&self) -> bool {
+        let filters = self.inner.overview.filters();
+        search_needle(&filters.query.get()).is_some()
+            || !filters.tag_filter.get().is_empty()
+            || !filters.status_filter.get().is_empty()
+    }
+
+    /// Drop the search and the tag and status filters, in the Overview too, since they are
+    /// its own. The order stays.
+    pub fn clear_filters(&self) {
+        let filters = self.inner.overview.filters();
+        if !filters.query.get().is_empty() {
+            filters.query.set(String::new());
+        }
+        if !filters.tag_filter.get().is_empty() {
+            filters.tag_filter.set(Vec::new());
+        }
+        if !filters.status_filter.get().is_empty() {
+            filters.status_filter.set(Vec::new());
+        }
+    }
+
+    /// Why the Gallery has no tile for `notes` (what [`Self::notes`] gave) under
+    /// `options`: what its empty page says, and what it offers.
+    pub fn empty_reason(&self, notes: &[GalleryNote], options: GalleryOptions) -> GalleryEmpty {
+        if self.is_filtered() {
+            GalleryEmpty::NoMatch
+        } else if !options.text_notes && tiles::has_text_only_notes(notes) {
+            GalleryEmpty::TextNotesHidden
+        } else {
+            GalleryEmpty::NoPictures
         }
     }
 
@@ -541,11 +620,6 @@ fn text_srcs(pictures: &[GalleryPicture]) -> Vec<String> {
         .collect()
 }
 
-/// `ids` with each kept once, where it first appears, wherever it repeats.
-///
-/// The store refuses a resource listed twice on an item, and loading a project collapses
-/// the repeats, so this only stands between a list that somehow holds one and a picture
-/// shown twice. Not `dedup`, which collapses only neighbours: `[A, B, A]` would stay.
 /// Whether a search for `needle` (lower-cased) names this picture: a resource by its
 /// title, its file name or its description. A picture of the text has no name of its own.
 fn picture_matches(picture: &GalleryPicture, needle: &str) -> bool {
@@ -555,6 +629,11 @@ fn picture_matches(picture: &GalleryPicture, needle: &str) -> bool {
         .is_some_and(|r| row_matches(needle, &[&r.title, &r.file_name, &r.description]))
 }
 
+/// `ids` with each kept once, where it first appears, wherever it repeats.
+///
+/// The store refuses a resource listed twice on an item, and loading a project collapses
+/// the repeats, so this only stands between a list that somehow holds one and a picture
+/// shown twice. Not `dedup`, which collapses only neighbours: `[A, B, A]` would stay.
 fn once_each(ids: &[u64]) -> Vec<u64> {
     let mut seen = HashSet::new();
     ids.iter().copied().filter(|id| seen.insert(*id)).collect()
