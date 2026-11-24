@@ -226,6 +226,17 @@ pub(crate) fn build_tree(
     for ancestor in ancestors_of(spec, selected_pane.get()) {
         expand(ancestor);
     }
+    // …and scroll its row into view. Expanding is not enough once the window can
+    // open on the page the writer went to last: Work ▸ Punctuation is the last of
+    // 22 rows in a rail that shows about 18, so the page opened with its highlight
+    // below the fold and the rail at the top. The search field keeps the focus, and
+    // the tree only scrolls to its selection when it takes the focus itself.
+    // Nearest, not top: a row already in view leaves the rail where it is.
+    if let (Some(slice), Some(id)) = (tree.tree_slice(), nodes.get(&selected_pane.get()))
+        && let Some(index) = slice.flat_index_of(*id)
+    {
+        tree.handle().ensure_index_visible(index);
+    }
 
     // The same expand set the chevrons and the loops above drive, handed out so
     // a jump that lands inside a folded branch can open it. `tree_slice()` is

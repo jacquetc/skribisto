@@ -467,6 +467,114 @@ fn the_editor_behavior_split_puts_each_page_and_field_where_it_belongs() {
     }
 }
 
+/// Every page the tree places is found again by its id, and a page this tree does
+/// not place is not: the two halves of reopening Settings on the page shown last.
+#[test]
+fn a_page_is_found_again_by_its_id() {
+    let spec = full_spec();
+    for pane in all_panes(&spec) {
+        assert_eq!(
+            super::nav::pane_by_id(&spec, pane.id()),
+            Some(pane),
+            "'{}' does not come back from its own id",
+            pane.id()
+        );
+    }
+    let launcher = tree_spec(false, &[]);
+    assert_eq!(
+        super::nav::pane_by_id(&launcher, Pane::WorkTags.id()),
+        None,
+        "the Launcher has no Work section to land in"
+    );
+    assert_eq!(super::nav::pane_by_id(&launcher, "editor-behavior"), None);
+    assert_eq!(super::nav::pane_by_id(&launcher, ""), None);
+}
+
+/// Builds `panel` over `store`, lays it out, and hands back its live selection
+/// with the tree that owns the panel's observers (dropping it would unregister
+/// them and leave the assertions passing against nothing).
+fn open_settings(
+    store: &teksilo::settings::SettingsStore,
+    panel: SettingsPanel,
+) -> (Signal<Pane>, teksilo::core::widget_tree::WidgetTree) {
+    let app_ctx = std::rc::Rc::new(frontend::AppContext::new());
+    let selected = panel.selected_pane.clone();
+    let mut tree = crate::test_support::tree_with_settings_store(&app_ctx, store);
+    tree.add(panel);
+    tree.layout(SizeProposal::exact(CARD_W, CARD_H));
+    (selected, tree)
+}
+
+/// **Settings opens again on the page the writer went to last, after a restart
+/// too.**
+///
+/// The first opening lands on the default and records nothing for it. Moving to a
+/// page writes its id; the next opening (a new panel over the same store, as Ctrl+,
+/// builds one each time) lands there, and so does one over a store opened afresh
+/// from the same file, as the next run of the app opens it.
+///
+/// That last half is the one that failed in the running app: the panel asked
+/// `SettingsStore::has`, which knows only the keys read in this run, so a store
+/// that had just been opened said no and the page was forgotten at every restart.
+#[test]
+fn settings_reopens_on_the_page_last_gone_to() {
+    let store = crate::test_support::temp_settings_store();
+
+    let (selected, tree) = open_settings(&store, SettingsPanel::without_project());
+    assert_eq!(selected.get(), DEFAULT_PANE);
+    let last = store.signal(crate::SETTINGS_LAST_PAGE_KEY, String::new());
+    assert_eq!(last.get(), "", "the page Settings opened on was recorded");
+
+    selected.set(Pane::Focus);
+    selected.set(Pane::Keymap);
+    assert_eq!(last.get(), "keymap");
+    drop(tree);
+
+    let (selected, tree) = open_settings(&store, SettingsPanel::without_project());
+    assert_eq!(selected.get(), Pane::Keymap);
+    drop(tree);
+
+    store.flush_now().expect("flush the store");
+    let restarted =
+        teksilo::settings::SettingsStore::open(store.path().to_path_buf()).expect("reopen");
+    let (selected, _tree) = open_settings(&restarted, SettingsPanel::without_project());
+    assert_eq!(
+        selected.get(),
+        Pane::Keymap,
+        "the page did not survive a restart"
+    );
+}
+
+/// A door that names its page opens there whatever was remembered, and does not
+/// overwrite the memory just by opening: the writer did not choose that page.
+#[test]
+fn a_door_to_one_page_ignores_and_keeps_the_remembered_page() {
+    let store = crate::test_support::temp_settings_store();
+    let last = store.signal(crate::SETTINGS_LAST_PAGE_KEY, String::new());
+    last.set(Pane::Keymap.id().to_string());
+
+    let (selected, _tree) = open_settings(
+        &store,
+        SettingsPanel::without_project_at(Pane::Dictionaries),
+    );
+    assert_eq!(selected.get(), Pane::Dictionaries);
+    assert_eq!(last.get(), "keymap", "the door's own page was recorded");
+}
+
+/// A remembered page this window does not place (a Work page, in the Launcher,
+/// which has no Work section) opens the default, and is kept for when a project
+/// is open again rather than replaced by the default.
+#[test]
+fn a_remembered_page_the_window_lacks_opens_the_default_and_is_kept() {
+    let store = crate::test_support::temp_settings_store();
+    let last = store.signal(crate::SETTINGS_LAST_PAGE_KEY, String::new());
+    last.set(Pane::WorkTags.id().to_string());
+
+    let (selected, _tree) = open_settings(&store, SettingsPanel::without_project());
+    assert_eq!(selected.get(), DEFAULT_PANE);
+    assert_eq!(last.get(), Pane::WorkTags.id());
+}
+
 /// The whole window builds and lays out with **no project open**.
 ///
 /// `SettingsPanel::without_project` is what the Launcher opens, and every

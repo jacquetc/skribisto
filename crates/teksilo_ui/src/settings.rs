@@ -213,7 +213,8 @@ pub fn present(ctx: &mut EventContext, open: impl FnOnce() -> SettingsPanel + 's
 
 pub struct SettingsPanel {
     /// The active page — a panel field so it survives rebuilds (and seeds the
-    /// tree selection + the content `Switcher`). Defaults to Editor ▸ Scene.
+    /// tree selection + the content `Switcher`). Starts on the page the window was
+    /// opened at, or, opened in general, on the one the writer went to last.
     selected_pane: Signal<Pane>,
     /// The rail's search field, captured for [`Widget::initial_focus_hint`] —
     /// see that method for why the header ✕ must not have it.
@@ -269,7 +270,8 @@ pub struct SettingsPanel {
     _undo_suspend: Option<crate::edit::UndoSuspend>,
 }
 
-/// Where the window lands when nobody asked for a particular page:
+/// Where the window lands when nobody asked for a particular page and the writer
+/// has not been anywhere yet (see [`SettingsPanel::remember_the_page`]):
 /// **Appearance & Behavior ▸ Appearance**.
 ///
 /// Not Editor ▸ Scene, which is where this window used to land. Scene sits two
@@ -293,7 +295,8 @@ pub struct SettingsPanel {
 pub(crate) const DEFAULT_PANE: Pane = Pane::Appearance;
 
 impl SettingsPanel {
-    /// Opens on [`DEFAULT_PANE`] — Appearance & Behavior ▸ Appearance.
+    /// Opens on the page the writer went to last, or on [`DEFAULT_PANE`] —
+    /// Appearance & Behavior ▸ Appearance — before they have gone anywhere.
     pub fn new(session: WorkSession, undo: &crate::edit::UndoGroupViewModel) -> Self {
         Self::opening_at(DEFAULT_PANE, Some(session), Some(undo)).at_no_page_in_particular()
     }
@@ -305,9 +308,10 @@ impl SettingsPanel {
     /// them to accommodate the one caller that cannot would put the burden on
     /// the wrong side.
     ///
-    /// Lands on [`DEFAULT_PANE`] like [`Self::new`] — and here that is not just
-    /// consistency: Appearance is the one page that is fully live with no
-    /// project open.
+    /// Lands where [`Self::new`] does: the page went to last, or [`DEFAULT_PANE`],
+    /// which here is not just consistency, since Appearance is the one page that is
+    /// fully live with no project open. A remembered Work page is not in this tree,
+    /// so it opens on the default.
     pub fn without_project() -> Self {
         Self::opening_at(DEFAULT_PANE, None, None).at_no_page_in_particular()
     }
@@ -386,10 +390,45 @@ impl SettingsPanel {
 
     /// Settings opened in general (Ctrl+,, the menu), not to show one page: the
     /// reader starts in the search field, which is where a first keystroke is useful
-    /// in a window of ~30 pages.
+    /// in a window of ~30 pages, on the page they went to last (see
+    /// [`Self::remember_the_page`]).
     fn at_no_page_in_particular(mut self) -> Self {
         self.lands_on_page = false;
         self
+    }
+
+    /// Open on the page the writer went to last, and note each page they go to.
+    ///
+    /// Only a window opened in general takes the remembered page: a door that names
+    /// a page (a toast's "Open settings", Help ▸ Keyboard shortcuts) opens where it
+    /// promised. A remembered page this window does not place, such as a Work page in
+    /// the Launcher, leaves it on [`DEFAULT_PANE`].
+    ///
+    /// The note is written on a *move* only: `ctx.effect` does not fire for the page
+    /// the window opens on, so a door's page is not recorded unless the writer goes
+    /// back to it, and a fallback to the default does not overwrite the Work page the
+    /// writer will find again once a project is open.
+    ///
+    /// ⚠ Not guarded by `SettingsStore::has`: that answers whether a key has been
+    /// *read in this run*, not whether `general.toml` holds it, so after a restart it
+    /// said no and the window forgot the page. Reading the key seeds it, which costs
+    /// an empty `ui.settings_last_page` line on the first opening.
+    fn remember_the_page(
+        &self,
+        ctx: &mut BuildContext,
+        vm: &SettingsViewModel,
+        spec: &[nav::Root],
+    ) {
+        if !self.lands_on_page
+            && let Some(pane) = nav::pane_by_id(spec, &vm.settings_last_page().get())
+        {
+            self.selected_pane.set_if_changed(pane);
+        }
+        let vm = vm.clone();
+        ctx.effect(&self.selected_pane, move |pane: &Pane| {
+            vm.settings_last_page()
+                .set_if_changed(pane.id().to_string());
+        });
     }
 
     /// Ctrl+W (⌘W on macOS) closes Settings, as it closes a window: the fourth
@@ -516,6 +555,7 @@ impl Widget for SettingsPanel {
                 .is_some_and(|s| s.single_work.id().is_some()),
             &extension_ids,
         );
+        self.remember_the_page(ctx, &vm, &spec);
         // The two Work pages edit the *entity*, not the settings store, so they go through
         // their own view-model rather than calling `SingleWork::set_*` + `save` from a pane.
         // THIS WINDOW's own session (never `ctx.app_state`), same reasoning as `work` above.

@@ -291,6 +291,15 @@ pub const SHOW_WELCOME_KEY: &str = "ui.show_welcome";
 pub const CHECK_FOR_UPDATES_KEY: &str = "ui.check_for_updates";
 pub const CHECK_FOR_UPDATES_DEFAULT: bool = true;
 
+/// The Settings page the writer went to last, by its stable id
+/// (`settings::nav::Pane::id`): Settings opened from the menu or with Ctrl+, opens
+/// on it again. Empty until the writer first moves to another page.
+///
+/// Not a preference, so Reset to defaults leaves it alone, and only a page the
+/// writer moved to is written: the doors that open Settings on a page of their own
+/// choosing (a toast's "Open settings", Help ▸ Keyboard shortcuts) do not count.
+pub const SETTINGS_LAST_PAGE_KEY: &str = "ui.settings_last_page";
+
 /// Show the writing-plan summary when a project with an active plan opens.
 ///
 /// App-global rather than per-project, because the projects it *would* be wrong for are
@@ -856,6 +865,14 @@ pub static SETTINGS: &[SettingSpec] = &[
         doc: "Ask the project's website, once a day at most, whether a newer release \
               exists. Installs that a software centre already keeps up to date never \
               ask, whatever this says.",
+    },
+    SettingSpec {
+        key: crate::SETTINGS_LAST_PAGE_KEY,
+        ty: "string (a Settings page id, such as \"focus\")",
+        default: || val(""),
+        check: check::<String>,
+        doc: "The Settings page shown last, which Settings opens on again. Empty, or a \
+              page that is not there, opens Appearance.",
     },
     SettingSpec {
         key: teksilo::settings::TEXT_SCALE_KEY.key,

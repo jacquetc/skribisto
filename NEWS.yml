@@ -19,6 +19,7 @@ Description:
 - "Turning Read as exported on or off at the top of Full Book, Full Part or Full Chapter now leaves the page where it was. It used to scroll down to the first part, chapter or scene, out of sight of the switch you had just used"
 - "Help ▸ Report a Translation Error… has a new button, Continue on Discord, for writers without a GitHub account. It copies your report and opens the project’s translation channel on Discord, where you paste it into a message. The text under What will be public now offers it, and so does the help page"
 - "Settings ▸ Editor ▸ Editor Behavior had grown too long and is now four pages. Page layout holds the text width, Indent by level, and where the synopsis and the epigraphs go. Focus holds typewriter scrolling, Highlight around the caret and Fade the rest of the text. Images & files holds what happens to large images you insert and to files over 10 MB you attach. Tabs kept open and Remember the last view for each item type are on a new page, Appearance & Behavior ▸ Tabs & views. Every setting keeps its value"
+- "Settings now opens on the page you were on last, instead of always on Appearance. A message that offers to open one page of Settings, and Help ▸ Keyboard shortcuts, still open on their own page"
 ---
 Version: 3.4.1
 Date: 2026-11-23

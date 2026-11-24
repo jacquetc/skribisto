@@ -55,16 +55,23 @@ pub(crate) fn tree_with_events(app_ctx: &Rc<AppContext>) -> WidgetTree {
 }
 
 pub(crate) fn tree_with_settings(app_ctx: &Rc<AppContext>) -> WidgetTree {
+    tree_with_settings_store(app_ctx, &temp_settings_store())
+}
+
+/// [`tree_with_settings`] over a store the test keeps, so it can write a key before
+/// the widgets under test read it, read back what they wrote, and hand the same store
+/// to a second tree, as a second opening of a window would find it.
+pub(crate) fn tree_with_settings_store(
+    app_ctx: &Rc<AppContext>,
+    store: &SettingsStore,
+) -> WidgetTree {
     let mut state: HashMap<TypeId, Box<dyn Any>> = HashMap::new();
-    state.insert(
-        TypeId::of::<SettingsStore>(),
-        Box::new(temp_settings_store()),
-    );
+    state.insert(TypeId::of::<SettingsStore>(), Box::new(store.clone()));
     tree_with_events_and_state(app_ctx, state)
 }
 
 /// A settings store of the test's own, in a file no other test opens.
-fn temp_settings_store() -> SettingsStore {
+pub(crate) fn temp_settings_store() -> SettingsStore {
     use std::sync::atomic::{AtomicU32, Ordering};
     static N: AtomicU32 = AtomicU32::new(0);
     let n = N.fetch_add(1, Ordering::Relaxed);

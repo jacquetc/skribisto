@@ -783,6 +783,14 @@ impl SettingsViewModel {
     // the store caches one cell per key, so these hand back the same live
     // signal every other reader holds.
 
+    /// The id of the Settings page the writer went to last
+    /// ([`crate::SETTINGS_LAST_PAGE_KEY`]). Read when Settings opens in general and
+    /// written each time the writer moves to another page.
+    pub fn settings_last_page(&self) -> Signal<String> {
+        self.store
+            .signal(crate::SETTINGS_LAST_PAGE_KEY, String::new())
+    }
+
     /// What to do with an over-large image on insert: `"ask"`, `"keep"` or
     /// `"downscale"`. The same cached [`crate::IMAGE_SIZE_POLICY_KEY`] signal the
     /// insert path reads, so a control bound here changes the next insert.
