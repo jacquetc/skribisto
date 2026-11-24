@@ -28,10 +28,7 @@ use teksilo::widgets::{GridViewHandle, InputDialog, ScrollAnchor};
 
 use frontend::AppContext;
 use frontend::binder_item_management::{MergeTwoScenesDto, MovePlace, SplitSceneDto};
-use frontend::commands::{
-    binder_item_commands, binder_item_management_commands, trash_management_commands,
-    undo_redo_commands,
-};
+use frontend::commands::{binder_item_management_commands, trash_management_commands};
 use frontend::common::entities::ContentRole;
 use frontend::trash_management::TrashSelectionDto;
 
@@ -45,9 +42,7 @@ use crate::models::{CorkboardCard, CorkboardCardsModel, OpenDoc, OpenDocsStore};
 use crate::settings::EditorTypography;
 use crate::singles::SingleBinderItem;
 
-use crate::shared::binder_ops::{
-    self, is_prose_bearing, opens_a_section, split_djot, update_item_dto,
-};
+use crate::shared::binder_ops::{self, is_prose_bearing, opens_a_section, split_djot};
 
 /// The sort column ids bound into the projection (see [`CorkboardCardsModel::projection`]).
 pub const SORT_TITLE: &str = "title";
@@ -996,27 +991,10 @@ impl CorkboardViewModel {
         self.set_label_many(ctx, &[id], label);
     }
 
-    /// Write `label` to every id, as **one** undo entry when there is more than one
-    /// — a batch the writer performed as a single gesture must undo as one too.
+    /// Write `label` to every id, as **one** undo entry: a batch the writer performed
+    /// as a single gesture must undo as one too. See [`binder_ops::set_labels`].
     pub fn set_label_many(&self, _ctx: &mut EventContext, ids: &[u64], label: &str) {
-        if ids.is_empty() {
-            return;
-        }
-        let stack = self.stack();
-        let composite = ids.len() > 1;
-        if composite {
-            let _ = undo_redo_commands::begin_composite(&self.inner.app_ctx, stack);
-        }
-        for id in ids {
-            if let Some(it) = binder_ops::item_dto(&self.inner.app_ctx, *id) {
-                let mut dto = update_item_dto(&it);
-                dto.label = label.to_string();
-                let _ = binder_item_commands::update_binder_item(&self.inner.app_ctx, stack, &dto);
-            }
-        }
-        if composite {
-            undo_redo_commands::end_composite(&self.inner.app_ctx);
-        }
+        binder_ops::set_labels(&self.inner.app_ctx, self.stack(), ids, label);
     }
 
     /// Duplicate `ids` (one backend call — the use case already takes a list, and

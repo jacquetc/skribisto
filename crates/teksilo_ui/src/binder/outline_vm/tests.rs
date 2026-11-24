@@ -1160,6 +1160,241 @@ mod recommend {
     }
 }
 
+// ── "Set label" in the binder context menu ──
+#[cfg(not(feature = "mocks"))]
+mod set_label {
+    use super::recommend::{binder_key_of, key_of, seed, seed_item};
+    use super::*;
+
+    const SET_LABEL: frontend::common::undo_redo::UndoLabel =
+        frontend::common::undo_redo::UndoLabel::act("set_label");
+
+    fn label_of(outline: &OutlineViewModel, id: u64) -> String {
+        outline.item_dto(id).unwrap().label
+    }
+
+    fn two_scenes(outline: &OutlineViewModel, binder: u64) -> (u64, u64) {
+        let a = seed_item(
+            outline,
+            binder,
+            BinderItemRole::Item,
+            BinderItemSubRole::Scene,
+            0,
+            0,
+        );
+        let b = seed_item(
+            outline,
+            binder,
+            BinderItemRole::Item,
+            BinderItemSubRole::Scene,
+            0,
+            1,
+        );
+        (a, b)
+    }
+
+    /// A binder row carries no label: it is never a target, and right-clicking one does
+    /// not offer "Set label" even inside a selection holding items. Offered there, the
+    /// dialog would open empty (a binder has no label to seed it) and OK would clear
+    /// every selected item's label without having shown any of them.
+    #[test]
+    fn set_label_is_offered_on_item_rows_only() {
+        let (outline, binder) = seed();
+        let (a, _) = two_scenes(&outline, binder);
+        let binder_key = binder_key_of(&outline, binder);
+        let a_key = key_of(&outline, a);
+
+        assert!(outline.offers_set_label(a_key));
+        assert!(!outline.offers_set_label(binder_key));
+        assert!(outline.label_targets(&[binder_key]).is_empty());
+        assert_eq!(outline.label_targets(&[binder_key, a_key]), vec![a]);
+    }
+
+    /// The batch convention of Duplicate and Trash: every item in the batch gets the
+    /// label, a binder row among them is skipped, and the whole set is one Ctrl+Z that
+    /// gives each item back the label it had, not an empty one.
+    #[test]
+    fn a_batch_gets_the_label_in_one_undo_step() {
+        let (outline, binder) = seed();
+        outline.init_stack();
+        let (a, b) = two_scenes(&outline, binder);
+        let keys = [
+            binder_key_of(&outline, binder),
+            key_of(&outline, a),
+            key_of(&outline, b),
+        ];
+        let stack = outline.stack();
+        outline.set_label_keys(&keys[2..], "Old");
+
+        outline.set_label_keys(&keys, "Draft 2");
+        assert_eq!(label_of(&outline, a), "Draft 2");
+        assert_eq!(label_of(&outline, b), "Draft 2");
+        assert_eq!(
+            undo_redo_commands::undo_label(&outline.app_ctx, stack),
+            Some(SET_LABEL),
+            "Edit ▸ Undo names the batch a label change"
+        );
+
+        undo_redo_commands::undo(&outline.app_ctx, stack).unwrap();
+        assert_eq!(
+            label_of(&outline, a),
+            "",
+            "one undo reverses the whole batch"
+        );
+        assert_eq!(
+            label_of(&outline, b),
+            "Old",
+            "each item gets its own label back"
+        );
+
+        undo_redo_commands::undo(&outline.app_ctx, stack).unwrap();
+        assert_eq!(
+            label_of(&outline, b),
+            "",
+            "the earlier single set was its own step"
+        );
+        assert!(
+            !undo_redo_commands::can_undo(&outline.app_ctx, stack),
+            "the batch was a single entry"
+        );
+    }
+
+    /// Setting the label an item already has changes nothing and leaves nothing to
+    /// undo; an emptied field clears the label, as an undoable step of its own.
+    #[test]
+    fn an_unchanged_label_adds_no_undo_step_and_an_empty_one_clears() {
+        let (outline, binder) = seed();
+        outline.init_stack();
+        let (a, _) = two_scenes(&outline, binder);
+        let key = key_of(&outline, a);
+        let stack = outline.stack();
+
+        outline.set_label_keys(&[key], "Check");
+        assert_eq!(label_of(&outline, a), "Check");
+        assert_eq!(
+            undo_redo_commands::undo_label(&outline.app_ctx, stack),
+            Some(SET_LABEL),
+            "one item is named a label change too, not a rename"
+        );
+        outline.set_label_keys(&[key], "Check");
+        assert_eq!(label_of(&outline, a), "Check");
+
+        outline.set_label_keys(&[key], "");
+        assert_eq!(label_of(&outline, a), "", "an empty label clears it");
+
+        undo_redo_commands::undo(&outline.app_ctx, stack).unwrap();
+        assert_eq!(
+            label_of(&outline, a),
+            "Check",
+            "the clear undoes on its own"
+        );
+        undo_redo_commands::undo(&outline.app_ctx, stack).unwrap();
+        assert_eq!(
+            label_of(&outline, a),
+            "",
+            "the second undo reaches the first set: the repeat pushed nothing"
+        );
+        assert!(!undo_redo_commands::can_undo(&outline.app_ctx, stack));
+    }
+
+    /// The menu wiring end to end: `begin_set_label` presents the dialog pre-filled
+    /// with the right-clicked row's label, and OK writes the new one to the batch.
+    #[test]
+    fn the_dialog_is_prefilled_from_the_anchor_and_ok_labels_the_batch() {
+        use teksilo::core::ModalContent;
+        use teksilo::core::accessibility::widget_id_to_node_id;
+        use teksilo::core::widget_id::WidgetId;
+        use teksilo::core::widget_tree::WidgetTree;
+        use teksilo::i18n::lit;
+        use teksilo::widgets::Button;
+
+        fn collect(tree: &WidgetTree, root: WidgetId, needle: &str, out: &mut Vec<WidgetId>) {
+            if tree
+                .widget_type_name(root)
+                .is_some_and(|t| t.contains(needle))
+            {
+                out.push(root);
+            }
+            for c in tree.children(root) {
+                collect(tree, c, needle, out);
+            }
+        }
+
+        let (outline, binder) = seed();
+        let (a, b) = two_scenes(&outline, binder);
+        let (a_key, b_key) = (key_of(&outline, a), key_of(&outline, b));
+        outline.set_label_keys(&[a_key], "Old");
+
+        // Mirrors `binder_context_menu`'s "Set label" `MenuItem`.
+        let vm = outline.clone();
+        let mut tree = WidgetTree::new().with_theme(intui::light());
+        let trigger = tree.add(
+            Button::new(lit!("set label"))
+                .on_activate_fn(move |ctx| vm.begin_set_label(a_key, vec![a_key, b_key], ctx)),
+        );
+        tree.layout(SizeProposal::exact(420.0, 60.0));
+        tree.dispatch_event(WidgetEvent::AccessAction {
+            action: teksilo::core::accesskit::Action::Click,
+            target: Some(trigger),
+            target_node: widget_id_to_node_id(trigger),
+            data: None,
+        });
+
+        assert!(tree.has_pending_modal_requests(), "the dialog must appear");
+        let request = tree.drain_pending_modal_requests().pop().unwrap().request;
+        let ModalContent::Deferred(builder) = request.content else {
+            panic!("InputDialog must present as deferred content");
+        };
+        let content_id = builder(&mut tree);
+        tree.layout(SizeProposal::exact(420.0, 180.0));
+
+        let mut fields = Vec::new();
+        collect(&tree, content_id, "TextInputField", &mut fields);
+        let field = *fields.first().expect("the dialog must mount its field");
+        {
+            let update = tree.sync_accessibility();
+            let field_node = widget_id_to_node_id(field);
+            let value = update
+                .nodes
+                .iter()
+                .find(|(id, _)| *id == field_node)
+                .and_then(|(_, n)| n.value());
+            assert_eq!(value, Some("Old"), "pre-filled from the anchor's label");
+        }
+
+        tree.dispatch_event(WidgetEvent::AccessAction {
+            action: teksilo::core::accesskit::Action::SetValue,
+            target: Some(field),
+            target_node: widget_id_to_node_id(field),
+            data: Some(teksilo::core::accesskit::ActionData::Value(
+                "  Revise  ".into(),
+            )),
+        });
+        // The field's edit reaches the dialog's signal on a frame tick.
+        tree.request_frame();
+        tree.tick_animations(std::time::Duration::from_millis(16));
+        tree.layout(SizeProposal::exact(420.0, 180.0));
+
+        let mut buttons = Vec::new();
+        collect(&tree, content_id, "Button", &mut buttons);
+        // Footer order is Cancel, then OK.
+        let ok = *buttons.last().expect("the dialog must mount OK/Cancel");
+        tree.dispatch_event(WidgetEvent::AccessAction {
+            action: teksilo::core::accesskit::Action::Click,
+            target: Some(ok),
+            target_node: widget_id_to_node_id(ok),
+            data: None,
+        });
+
+        assert_eq!(label_of(&outline, a), "Revise", "trimmed and applied");
+        assert_eq!(
+            label_of(&outline, b),
+            "Revise",
+            "applied to the whole batch"
+        );
+    }
+}
+
 // ── explicit language propagation ("Apply to children") ──
 //
 // Nothing inherits a language from a container any more (`skribisto_model::language`

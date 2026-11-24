@@ -37,9 +37,7 @@ use uuid::Uuid;
 
 use frontend::AppContext;
 use frontend::binder_item_management::{DuplicateDto, MovePlace};
-use frontend::commands::{
-    binder_item_commands, binder_item_management_commands, trash_management_commands,
-};
+use frontend::commands::{binder_item_management_commands, trash_management_commands};
 use frontend::trash_management::TrashSelectionDto;
 
 use skribisto_model::counting::CountingMethodSetting;
@@ -581,12 +579,7 @@ impl OverviewViewModel {
     }
 
     fn set_label(&self, item_id: u64, label: &str) {
-        if let Some(it) = binder_ops::item_dto(&self.inner.app_ctx, item_id) {
-            let mut dto = binder_ops::update_item_dto(&it);
-            dto.label = label.to_string();
-            let _ =
-                binder_item_commands::update_binder_item(&self.inner.app_ctx, self.stack(), &dto);
-        }
+        binder_ops::set_labels(&self.inner.app_ctx, self.stack(), &[item_id], label);
     }
 
     // ── Create ───────────────────────────────────────────────────────────────

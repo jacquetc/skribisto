@@ -360,14 +360,14 @@ fn key_of(node: &TreeNode) -> BinderTreeKey {
 }
 
 /// The per-row context menu: ("Open to the Side" for item rows) / Add ▸ / rename
-/// / duplicate / trash. The "Add ▸" submenu holds the recommended new-item types
-/// for the row (see [`add_recommendations_menu`]).
+/// / set label / duplicate / trash. The "Add ▸" submenu holds the recommended
+/// new-item types for the row (see [`add_recommendations_menu`]).
 ///
-/// Multi-select convention for the **batch** actions (duplicate / trash): a
-/// right-click *inside* the current selection acts on the whole selection; a
-/// right-click on a row *outside* it acts on just that row (and, per the call
-/// site, without disturbing the selection). The single-target actions (new /
-/// rename) always anchor on the clicked row.
+/// Multi-select convention for the **batch** actions (set label / duplicate /
+/// trash): a right-click *inside* the current selection acts on the whole
+/// selection; a right-click on a row *outside* it acts on just that row (and, per
+/// the call site, without disturbing the selection). The single-target actions
+/// (new / rename) always anchor on the clicked row.
 fn binder_context_menu(outline: OutlineViewModel, key: BinderTreeKey) -> MenuList {
     let selected = outline.selection().selected_keys();
     let batch: Vec<BinderTreeKey> = if selected.contains(&key) {
@@ -385,7 +385,7 @@ fn binder_context_menu(outline: OutlineViewModel, key: BinderTreeKey) -> MenuLis
     let duplicate = outline.clone();
     let dup_batch = batch.clone();
     let trash = outline.clone();
-    let trash_batch = batch;
+    let trash_batch = batch.clone();
     let mut menu = MenuList::new();
     if let Some((item_id, title)) = open_side {
         menu = menu
@@ -445,28 +445,37 @@ fn binder_context_menu(outline: OutlineViewModel, key: BinderTreeKey) -> MenuLis
         );
     }
 
-    menu.separator()
-        .item(
-            MenuItem::new(tr!(ctx_rename()))
-                .on_activate_fn(move |ctx| rename.begin_rename(key, ctx)),
-        )
-        .item(
-            MenuItem::new(tr!(ctx_duplicate()))
-                .on_activate_fn(move |_| duplicate.duplicate_keys(&dup_batch)),
-        )
-        .separator()
-        // Sends the intent rather than calling a view-model, unlike its neighbours:
-        // the wizard's view-model is Tier 3 and this menu holds only the outline's, so
-        // `App` mediates and the graph stays a DAG.
-        .item(
-            MenuItem::new(tr!(ctx_import_here())).on_activate_fn(move |c| {
-                c.send_intent(crate::intents::AppIntent::ImportHere { destination: key });
-            }),
-        )
-        .separator()
-        .item(
-            MenuItem::new(tr!(ctx_trash())).on_activate_fn(move |_| trash.trash_keys(&trash_batch)),
-        )
+    menu = menu.separator().item(
+        MenuItem::new(tr!(ctx_rename())).on_activate_fn(move |ctx| rename.begin_rename(key, ctx)),
+    );
+
+    // "Set label" is a batch action like Duplicate and Trash, and like them it skips
+    // binder rows, which carry no label. Offered only on an item row: see
+    // `offers_set_label`.
+    if outline.offers_set_label(key) {
+        let label_vm = outline.clone();
+        let label_batch = batch.clone();
+        menu = menu.item(
+            MenuItem::new(tr!(ctx_set_label()))
+                .on_activate_fn(move |ctx| label_vm.begin_set_label(key, label_batch.clone(), ctx)),
+        );
+    }
+
+    menu.item(
+        MenuItem::new(tr!(ctx_duplicate()))
+            .on_activate_fn(move |_| duplicate.duplicate_keys(&dup_batch)),
+    )
+    .separator()
+    // Sends the intent rather than calling a view-model, unlike its neighbours:
+    // the wizard's view-model is Tier 3 and this menu holds only the outline's, so
+    // `App` mediates and the graph stays a DAG.
+    .item(
+        MenuItem::new(tr!(ctx_import_here())).on_activate_fn(move |c| {
+            c.send_intent(crate::intents::AppIntent::ImportHere { destination: key });
+        }),
+    )
+    .separator()
+    .item(MenuItem::new(tr!(ctx_trash())).on_activate_fn(move |_| trash.trash_keys(&trash_batch)))
 }
 
 /// The "Convert to ▸" submenu: every type `key` may become, each behind the guards in

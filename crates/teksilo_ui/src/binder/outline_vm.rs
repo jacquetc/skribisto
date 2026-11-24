@@ -648,6 +648,65 @@ impl OutlineViewModel {
         }
     }
 
+    /// The item ids among `keys` that can carry a label. A binder row has no label, and
+    /// a row that has left the tree has nothing to write to; `item_id_of` is `None` for
+    /// both.
+    fn label_targets(&self, keys: &[BinderTreeKey]) -> Vec<u64> {
+        keys.iter()
+            .filter_map(|k| self.model.item_id_of(k))
+            .collect()
+    }
+
+    /// Whether right-clicking `anchor` offers "Set label": only on an item row.
+    ///
+    /// Not "whenever the batch holds an item". A binder row inside a selection of
+    /// labelled scenes would open the dialog seeded from a binder, which has no label,
+    /// so the field would show empty and OK would clear every selected scene's label
+    /// without ever having shown it.
+    pub fn offers_set_label(&self, anchor: BinderTreeKey) -> bool {
+        self.model.item_id_of(&anchor).is_some()
+    }
+
+    /// Begin "Set label": present a modal `InputDialog`, applying
+    /// [`Self::set_label_keys`] to `batch` on OK.
+    ///
+    /// The field is seeded from `anchor`'s current label, the row the writer
+    /// right-clicked: with a selection whose labels differ, that is the only one they
+    /// can be said to have picked. An emptied field clears the label, which is the only
+    /// way to remove one from here.
+    pub fn begin_set_label(
+        &self,
+        anchor: BinderTreeKey,
+        batch: Vec<BinderTreeKey>,
+        ctx: &mut EventContext,
+    ) {
+        let current = self
+            .model
+            .item_id_of(&anchor)
+            .and_then(|id| self.item_dto(id))
+            .map(|d| d.label)
+            .unwrap_or_default();
+        let vm = self.clone();
+        InputDialog::new(tr!(dialog_set_label()))
+            .default_text(current)
+            .on_result(move |result, _ctx| {
+                if let Some(label) = result {
+                    vm.set_label_keys(&batch, label.trim());
+                }
+            })
+            .present(ctx);
+    }
+
+    /// Write `label` to every item among `keys` (binder rows are skipped) through
+    /// [`binder_ops::set_labels`]: one undo step, a batch set in one gesture undoing
+    /// in one too, and no step at all when nothing changes.
+    pub fn set_label_keys(&self, keys: &[BinderTreeKey], label: &str) {
+        let ids = self.label_targets(keys);
+        if binder_ops::set_labels(&self.app_ctx, self.stack(), &ids, label) > 0 {
+            self.reload();
+        }
+    }
+
     /// Move the selected items to trash (the `binder.trash_selected` command).
     pub fn trash_selected(&self) {
         let sel = self.selection.selected_keys();

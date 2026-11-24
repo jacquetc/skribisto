@@ -833,6 +833,23 @@ fn added_locales_additional_menu_entries_have_unique_mnemonics() {
                 "ctx-promote",
                 "ctx-number",
                 "ctx-rename",
+                "ctx-set-label",
+                "ctx-duplicate",
+                "ctx-import-here",
+                "ctx-trash",
+            ],
+        ),
+        // The same menu on a chapter that is already numbered: the toggle reads "Do not
+        // number this chapter" instead, with its own access key.
+        (
+            "Binder, numbered chapter",
+            &[
+                "ctx-open-to-side",
+                "ctx-add",
+                "ctx-promote",
+                "ctx-unnumber",
+                "ctx-rename",
+                "ctx-set-label",
                 "ctx-duplicate",
                 "ctx-import-here",
                 "ctx-trash",

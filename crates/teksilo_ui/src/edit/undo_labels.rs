@@ -51,6 +51,7 @@ fn entity_text(label: &UndoLabel) -> LocalizedString {
         ("split_scene", _) => tr!(undo_target_split()),
         ("promote", _) => tr!(undo_target_promote()),
         ("clear_titles", _) => tr!(undo_target_tidy_titles()),
+        ("set_label", _) => tr!(undo_target_set_label()),
         ("import_tags", _) => tr!(undo_target_import_tags()),
         ("import_note_templates", _) => tr!(undo_target_import_templates()),
 
@@ -62,5 +63,25 @@ fn entity_text(label: &UndoLabel) -> LocalizedString {
         (_, "set_relationship" | "move_relationship") => tr!(undo_target_move()),
 
         _ => tr!(undo_target_project()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A label change is not a rename. Every label writer goes through
+    /// `binder_ops::set_labels`, which names its group `set_label`; a bare
+    /// `("binder_item", "update")` would still read as *renaming*.
+    #[test]
+    fn a_label_change_is_named_as_one() {
+        assert_eq!(
+            entity_text(&UndoLabel::act("set_label")).resolve_now(),
+            tr!(undo_target_set_label()).resolve_now()
+        );
+        assert_ne!(
+            entity_text(&UndoLabel::act("set_label")).resolve_now(),
+            entity_text(&UndoLabel::new("binder_item", "update")).resolve_now()
+        );
     }
 }

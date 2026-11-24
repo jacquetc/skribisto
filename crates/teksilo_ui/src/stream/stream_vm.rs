@@ -46,7 +46,7 @@ use crate::comments::binding::CommentBinding;
 
 use frontend::AppContext;
 use frontend::binder_item_management::{MergeTwoScenesDto, MovePlace, SplitSceneDto};
-use frontend::commands::{binder_item_commands, trash_management_commands};
+use frontend::commands::trash_management_commands;
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
 use frontend::common::event::{DirectAccessEntity, EntityEvent, Event, Origin};
 use frontend::trash_management::TrashSelectionDto;
@@ -60,9 +60,7 @@ use crate::singles::SingleBinderItem;
 
 use super::DepthFilter;
 
-use crate::shared::binder_ops::{
-    self, is_prose_bearing, opens_a_section, split_djot, update_item_dto,
-};
+use crate::shared::binder_ops::{self, is_prose_bearing, opens_a_section, split_djot};
 
 /// Which of a row's two writing surfaces an action came from. The stream pane picks
 /// its body with this, and a split cuts *that* role at the caret.
@@ -862,14 +860,10 @@ impl StreamViewModel {
     }
 
     pub fn set_row_label(&self, _ctx: &mut EventContext, id: u64, label: &str) {
-        if let Some(it) = binder_ops::item_dto(&self.inner.app_ctx, id) {
-            let mut dto = update_item_dto(&it);
-            dto.label = label.to_string();
-            let _ =
-                binder_item_commands::update_binder_item(&self.inner.app_ctx, self.stack(), &dto);
-            if let Some(h) = self.handle(id) {
-                h.probe.set_id(Some(id));
-            }
+        if binder_ops::set_labels(&self.inner.app_ctx, self.stack(), &[id], label) > 0
+            && let Some(h) = self.handle(id)
+        {
+            h.probe.set_id(Some(id));
         }
     }
 
@@ -1149,6 +1143,9 @@ fn can_merge_row(rows: &[StreamRow], id: u64) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    // Only the backend-seeding tests use it, and they are compiled out under `mocks`.
+    #[cfg(not(feature = "mocks"))]
+    use frontend::commands::binder_item_commands;
     use frontend::common::entities::BinderItemRole::{Folder, Item};
     use frontend::common::entities::BinderItemSubRole::{Book, ChapterScene, Note, Part, Scene};
 

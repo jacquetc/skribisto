@@ -442,6 +442,51 @@ pub(crate) fn promote_targets_of(
     }
 }
 
+// ── Writes ───────────────────────────────────────────────────────────────────
+
+/// Write `label` to every item in `ids`, as **one** undo step that Edit ▸ Undo names
+/// "changing the label". Returns how many items changed.
+///
+/// The single door for Set label, shared by the binder, the corkboard, Full Chapter and
+/// the Overview. A bare `update_binder_item` is named after its entity and action, and
+/// `("binder_item", "update")` reads as *renaming*, so a label change undid as "Undo
+/// renaming". The group is opened even for one item to carry the name.
+///
+/// Items already carrying `label`, and ids that no longer resolve, are skipped, so a
+/// no-op leaves no empty step on the undo stack. An empty `label` clears it.
+pub(crate) fn set_labels(
+    app_ctx: &AppContext,
+    stack: Option<u64>,
+    ids: &[u64],
+    label: &str,
+) -> usize {
+    let changes: Vec<BinderItemDto> = ids
+        .iter()
+        .filter_map(|id| item_dto(app_ctx, *id))
+        .filter(|it| it.label != label)
+        .collect();
+    if changes.is_empty() {
+        return 0;
+    }
+    // Refused only on the untracked stack, whose commands are dropped anyway: the
+    // writes still go through, ungrouped.
+    let grouped = undo_redo_commands::begin_composite_labeled(
+        app_ctx,
+        stack,
+        Some(UndoLabel::act("set_label")),
+    )
+    .is_ok();
+    for it in &changes {
+        let mut dto = update_item_dto(it);
+        dto.label = label.to_string();
+        let _ = binder_item_commands::update_binder_item(app_ctx, stack, &dto);
+    }
+    if grouped {
+        undo_redo_commands::end_composite(app_ctx);
+    }
+    changes.len()
+}
+
 // ── Pure helpers ─────────────────────────────────────────────────────────────
 
 /// Build a scalar-only `UpdateBinderItemDto` from a fetched item.
