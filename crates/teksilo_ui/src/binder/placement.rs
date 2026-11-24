@@ -22,7 +22,8 @@
 use std::collections::HashMap;
 
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
-use skribisto_model::{Relation, SubRoleExt};
+use skribisto_model::compile::{StreamLevel, is_boundary};
+use skribisto_model::{CreateType, Relation, SubRoleExt};
 
 /// `{item_id -> (role, indent, sub_role)}` for one binder's items — what the walks below
 /// need, fetched once by the caller.
@@ -107,6 +108,79 @@ pub fn insertion_point_for_item(
             (end, aind)
         }
     }
+}
+
+/// `(insert_index, indent)` for an item of `create_type` added at the **end** of a
+/// manuscript stream: the "Add new chapter" of a Full Part or Full Book, the "Add new
+/// scene" of a Full Chapter.
+///
+/// `container_pos` is the stream's container in `order`, and `rows` the positions of its
+/// rows, in order (see `skribisto_model::compile::row_indices`). `created_sub_role` is
+/// the sub-role `create_type` resolves to.
+///
+/// Anchoring on the last row's own recommendation is not enough: in a Full Part that
+/// row is usually a scene, which recommends another scene, so the stream's "Add new
+/// chapter" used to make a scene. Anchoring on the container as its child is not
+/// enough either: a stream follows the flat order, not the nesting, so in a binder
+/// whose chapters sit beside their part rather than inside it, the child of the part
+/// lands *before* every chapter.
+///
+/// So the item goes after every row's own subtree, and never past the boundary that
+/// ends the stream; and it takes the indent of the last row it is a peer of (another
+/// chapter) or a child of (a part, for a chapter), or one deeper than the container
+/// when the stream holds neither. An empty stream gets the container's child.
+pub fn stream_append_point(
+    order: &[u64],
+    meta: &ItemMeta,
+    container_pos: usize,
+    rows: &[usize],
+    level: StreamLevel,
+    create_type: CreateType,
+    created_sub_role: &BinderItemSubRole,
+) -> (usize, i64) {
+    let indent_at = |pos: usize| {
+        order
+            .get(pos)
+            .and_then(|id| meta.get(id))
+            .map(|(_role, indent, _sr)| *indent)
+    };
+    let container_indent = indent_at(container_pos).unwrap_or(0);
+    let Some(&last) = rows.last() else {
+        return insertion_point_for_item(
+            order,
+            meta,
+            container_pos,
+            container_indent,
+            Relation::Child,
+        );
+    };
+    let limit = ((last + 1)..order.len())
+        .find(|&k| {
+            meta.get(&order[k])
+                .is_some_and(|(_role, _ind, sr)| is_boundary(level, sr))
+        })
+        .unwrap_or(order.len());
+    let index = rows
+        .iter()
+        .filter_map(|&pos| indent_at(pos).map(|ind| subtree_end(order, meta, pos, ind)))
+        .max()
+        .unwrap_or(last + 1)
+        .min(limit);
+    let indent = rows
+        .iter()
+        .rev()
+        .find_map(|&pos| {
+            let (role, ind, sr) = meta.get(order.get(pos)?)?;
+            if sr == created_sub_role {
+                return Some(*ind);
+            }
+            skribisto_model::recommendations(role, sr)
+                .iter()
+                .any(|r| r.create_type == create_type && r.relation == Relation::Child)
+                .then_some(ind + 1)
+        })
+        .unwrap_or(container_indent + 1);
+    (index, indent)
 }
 
 /// The Next/Previous target (if any) for each [`skribisto_model::GoKind`], resolved
@@ -362,5 +436,176 @@ mod tests {
         assert_eq!(targets.get(Chapter, Previous), targets.prev_chapter);
         assert_eq!(targets.get(Note, Next), targets.next_note);
         assert_eq!(targets.get(Note, Previous), targets.prev_note);
+    }
+
+    // ── stream_append_point ──
+
+    /// `(id, role, indent, sub_role)` rows into `(order, meta)`.
+    fn binder(rows: &[(u64, BinderItemRole, i64, BinderItemSubRole)]) -> (Vec<u64>, ItemMeta) {
+        let order = rows.iter().map(|r| r.0).collect();
+        let meta = rows
+            .iter()
+            .map(|(id, role, ind, sr)| (*id, (role.clone(), *ind, sr.clone())))
+            .collect();
+        (order, meta)
+    }
+
+    /// The positions of `ids` in `order`: a stream's rows.
+    fn positions(order: &[u64], ids: &[u64]) -> Vec<usize> {
+        ids.iter()
+            .filter_map(|id| order.iter().position(|x| x == id))
+            .collect()
+    }
+
+    /// The case a tester hit: a Full Part whose last row is a scene. The new chapter
+    /// closes the last chapter, inside the part, before the next part.
+    #[test]
+    fn a_chapter_added_to_a_part_follows_its_last_chapter() {
+        let (order, meta) = binder(&[
+            (1, Folder, 0, Book),
+            (2, Folder, 1, Part),
+            (3, Folder, 2, ChapterScene),
+            (4, Item, 3, Scene),
+            (5, Folder, 2, ChapterScene),
+            (6, Item, 3, Scene),
+            (7, Item, 3, Note),
+            (8, Folder, 1, Part),
+            (9, Item, 1, BookEnd),
+        ]);
+        let rows = positions(&order, &[3, 4, 5, 6]);
+        assert_eq!(
+            stream_append_point(
+                &order,
+                &meta,
+                1,
+                &rows,
+                StreamLevel::Part,
+                CreateType::Chapter,
+                &ChapterScene
+            ),
+            (7, 2),
+            "after the last chapter's scenes and notes, at chapter depth"
+        );
+    }
+
+    /// Chapters beside their part, not under it: the child of the part would land
+    /// before the first chapter. Flat chapters with their scenes at the same depth.
+    #[test]
+    fn a_chapter_added_to_a_flat_part_goes_after_its_last_scene() {
+        let (order, meta) = binder(&[
+            (1, Folder, 0, Part),
+            (2, Item, 0, ChapterScene),
+            (3, Item, 0, Scene),
+            (4, Item, 0, ChapterScene),
+            (5, Item, 0, Scene),
+            (6, Folder, 0, Part),
+        ]);
+        let rows = positions(&order, &[2, 3, 4, 5]);
+        assert_eq!(
+            stream_append_point(
+                &order,
+                &meta,
+                0,
+                &rows,
+                StreamLevel::Part,
+                CreateType::Chapter,
+                &ChapterScene
+            ),
+            (5, 0)
+        );
+    }
+
+    /// A Full Book whose last part has no chapter yet: the chapter goes into that part.
+    #[test]
+    fn a_chapter_added_to_a_book_goes_into_its_empty_last_part() {
+        let (order, meta) = binder(&[
+            (1, Folder, 0, Book),
+            (2, Folder, 1, Part),
+            (3, Folder, 2, ChapterScene),
+            (4, Item, 3, Scene),
+            (5, Folder, 1, Part),
+            (6, Item, 1, BookEnd),
+        ]);
+        let rows = positions(&order, &[2, 3, 4, 5]);
+        assert_eq!(
+            stream_append_point(
+                &order,
+                &meta,
+                0,
+                &rows,
+                StreamLevel::Book,
+                CreateType::Chapter,
+                &ChapterScene
+            ),
+            (5, 2)
+        );
+    }
+
+    /// A Full Chapter: the new scene follows the last one, at its depth.
+    #[test]
+    fn a_scene_added_to_a_chapter_follows_its_last_scene() {
+        let (order, meta) = binder(&[
+            (1, Folder, 1, ChapterScene),
+            (2, Item, 2, Scene),
+            (3, Item, 2, Scene),
+            (4, Folder, 1, ChapterScene),
+        ]);
+        let rows = positions(&order, &[2, 3]);
+        assert_eq!(
+            stream_append_point(
+                &order,
+                &meta,
+                0,
+                &rows,
+                StreamLevel::Chapter,
+                CreateType::Scene,
+                &Scene
+            ),
+            (3, 2)
+        );
+    }
+
+    /// An empty stream: the container's child, which keeps a book's end marker last.
+    #[test]
+    fn an_empty_book_gets_its_first_chapter_before_its_end_marker() {
+        let (order, meta) = binder(&[(1, Folder, 0, Book), (2, Item, 1, BookEnd)]);
+        assert_eq!(
+            stream_append_point(
+                &order,
+                &meta,
+                0,
+                &[],
+                StreamLevel::Book,
+                CreateType::Chapter,
+                &ChapterScene
+            ),
+            (1, 1)
+        );
+    }
+
+    /// Nesting that runs past the stream's end (the next part filed under the last
+    /// chapter) cannot carry the new chapter into the next part.
+    #[test]
+    fn the_new_item_never_lands_past_the_stream_boundary() {
+        let (order, meta) = binder(&[
+            (1, Folder, 0, Part),
+            (2, Folder, 1, ChapterScene),
+            (3, Item, 2, Scene),
+            (4, Folder, 2, Part),
+            (5, Item, 3, Scene),
+        ]);
+        let rows = positions(&order, &[2, 3]);
+        assert_eq!(
+            stream_append_point(
+                &order,
+                &meta,
+                0,
+                &rows,
+                StreamLevel::Part,
+                CreateType::Chapter,
+                &ChapterScene
+            ),
+            (3, 1)
+        );
     }
 }

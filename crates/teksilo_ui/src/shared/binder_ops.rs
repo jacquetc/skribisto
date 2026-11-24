@@ -161,7 +161,7 @@ pub(crate) fn go_targets(
 /// Silently does nothing when the anchor has no recommendation, when the resulting
 /// combination fails the constraint matrix, or when the anchor cannot be located — all
 /// three mean "there is no valid item to create here", which is not an error the user
-/// needs told about.
+/// needs told about. An empty `title` is the writer's choice: see [`title_or_initial`].
 pub(crate) fn create_by_recommendation(
     app_ctx: &AppContext,
     ids: &AppIds,
@@ -187,7 +187,92 @@ pub(crate) fn create_by_recommendation(
     let anchor_indent = meta.get(&anchor_id).map(|(_role, i, _sr)| *i).unwrap_or(0);
     let (index, indent) =
         placement::insertion_point_for_item(&order, &meta, pos, anchor_indent, rec.relation);
+    let title = title_or_initial(title, rec.create_type);
+    create_item(app_ctx, ids, binder, index, indent, role, sub_role, &title);
+}
 
+/// `title`, or when the writer left it empty, the title ＋ Create gives a new item of
+/// this type: none for a book, a part or a chapter, "New scene" for a scene (see
+/// [`initial_title`](crate::binder::create_labels::initial_title)). An empty name in the
+/// stream's and the corkboard's dialogs is a choice, not a cancel.
+fn title_or_initial(title: &str, create_type: skribisto_model::CreateType) -> String {
+    match title.trim() {
+        "" => crate::binder::create_labels::initial_title(create_type),
+        named => named.to_string(),
+    }
+}
+
+/// What the recommendation-driven "Insert …" and "Add …" actions create from an item
+/// of this kind: the model's first recommendation, the type [`create_by_recommendation`]
+/// creates. A label or a dialog naming the action asks this, so it names what the
+/// action makes.
+pub(crate) fn recommended_type(
+    role: &BinderItemRole,
+    sub_role: &BinderItemSubRole,
+) -> Option<skribisto_model::CreateType> {
+    skribisto_model::recommendations(role, sub_role)
+        .first()
+        .map(|r| r.create_type)
+}
+
+/// Add an item of the type `container_id` recommends (a chapter in a part or a book, a
+/// scene in a chapter) at the end of its manuscript stream, whose rows are `row_ids`.
+///
+/// Placed by [`placement::stream_append_point`]; see there for why neither the last
+/// row nor the container makes a good anchor. Does nothing when the container is gone
+/// or recommends nothing.
+pub(crate) fn append_to_stream(
+    app_ctx: &AppContext,
+    ids: &AppIds,
+    container_id: u64,
+    row_ids: &[u64],
+    level: skribisto_model::compile::StreamLevel,
+    title: &str,
+) {
+    let Some(container) = item_dto(app_ctx, container_id) else {
+        return;
+    };
+    let Some(create_type) = recommended_type(&container.role, &container.sub_role) else {
+        return;
+    };
+    let (role, sub_role) = create_type.combo(chapter_mode(app_ctx, ids));
+    if skribisto_model::validate_item(&role, &sub_role, &[]).is_err() {
+        return;
+    }
+    let Some((binder, order, container_pos)) = locate(app_ctx, ids, container_id) else {
+        return;
+    };
+    let meta = item_meta(app_ctx, &order);
+    let rows: Vec<usize> = row_ids
+        .iter()
+        .filter_map(|id| order.iter().position(|x| x == id))
+        .collect();
+    let (index, indent) = placement::stream_append_point(
+        &order,
+        &meta,
+        container_pos,
+        &rows,
+        level,
+        create_type,
+        &sub_role,
+    );
+    let title = title_or_initial(title, create_type);
+    create_item(app_ctx, ids, binder, index, indent, role, sub_role, &title);
+}
+
+/// Create one item at `index` of `binder`, at `indent`: the write both creation paths
+/// above end in.
+#[allow(clippy::too_many_arguments)]
+fn create_item(
+    app_ctx: &AppContext,
+    ids: &AppIds,
+    binder: u64,
+    index: usize,
+    indent: i64,
+    role: BinderItemRole,
+    sub_role: BinderItemSubRole,
+    title: &str,
+) {
     let is_note = sub_role == BinderItemSubRole::Note;
     let dto = CreateBinderItemDto {
         status: None,
@@ -1478,5 +1563,194 @@ mod tests {
             .data;
         assert_eq!(words_at(&merged, on_lamp).as_deref(), Some("lamp"));
         assert_eq!(words_at(&merged, on_house).as_deref(), Some("house"));
+    }
+
+    /// "Add new chapter" at the end of a Full Book makes a chapter, after the last one,
+    /// and "Add new scene" at the end of a Full Chapter makes a scene. A tester's "Add
+    /// new chapter" opened a dialog titled "New scene" and made a scene (2026-11-24):
+    /// it anchored on the stream's last row, a scene, which recommends another scene.
+    #[cfg(not(feature = "mocks"))]
+    #[test]
+    fn adding_to_a_stream_makes_what_its_container_recommends() {
+        use crate::models::{StreamLevel, StreamRowsModel};
+
+        let project = crate::test_support::RealProject::empty_novel();
+        let ctx = project.app_ctx.clone();
+        let ids = project.ids.clone();
+        let items = binder_item_commands::get_all_binder_item(&ctx).expect("items");
+        let id_of = |sub_role: BinderItemSubRole| {
+            items
+                .iter()
+                .find(|it| it.sub_role == sub_role && it.activated)
+                .map(|it| it.id)
+                .unwrap_or_else(|| panic!("the empty novel has a {sub_role:?}"))
+        };
+        let (book, chapter) = (id_of(Book), id_of(ChapterScene));
+        let rows = |head: u64, level: StreamLevel| {
+            let model = StreamRowsModel::new(ctx.clone(), ids.work_id.clone(), head, level);
+            model.refill();
+            model.rows()
+        };
+        let title = |id: u64| item_dto(&ctx, id).expect("the row exists").title;
+
+        let before = rows(book, StreamLevel::Book);
+        assert_eq!(
+            before.last().map(|r| r.sub_role.clone()),
+            Some(Scene),
+            "the book's last row is a scene, the anchor that used to make one"
+        );
+        let row_ids: Vec<u64> = before.iter().map(|r| r.item_id).collect();
+        append_to_stream(&ctx, &ids, book, &row_ids, StreamLevel::Book, "The Forge");
+        let after = rows(book, StreamLevel::Book);
+        let added = after.last().expect("the book has rows");
+        assert_eq!(added.sub_role, ChapterScene, "a chapter, not a scene");
+        assert_eq!(title(added.item_id), "The Forge");
+        assert_eq!(after.len(), before.len() + 1);
+        assert_eq!(
+            after[..before.len()],
+            before[..],
+            "after every row the book already had"
+        );
+
+        let before = rows(chapter, StreamLevel::Chapter);
+        let row_ids: Vec<u64> = before.iter().map(|r| r.item_id).collect();
+        append_to_stream(&ctx, &ids, chapter, &row_ids, StreamLevel::Chapter, "Dawn");
+        let after = rows(chapter, StreamLevel::Chapter);
+        let added = after.last().expect("the chapter has rows");
+        assert_eq!(added.sub_role, Scene);
+        assert_eq!(title(added.item_id), "Dawn");
+        assert_eq!(after.len(), before.len() + 1);
+    }
+
+    /// The Insert and Add actions are named after what they create, and so are the
+    /// dialogs they open.
+    #[test]
+    fn the_action_labels_follow_the_recommended_type() {
+        use crate::binder::create_labels::{add_action_label, insert_action_label};
+        use teksilo::prelude::tr;
+        let resolve = |l: Option<teksilo::i18n::LocalizedString>| l.map(|l| l.resolve_now());
+        let expect = |l: teksilo::i18n::LocalizedString| Some(l.resolve_now());
+        assert_eq!(
+            resolve(add_action_label(recommended_type(&Folder, &Part))),
+            expect(tr!(add_chapter()))
+        );
+        assert_eq!(
+            resolve(add_action_label(recommended_type(&Folder, &Book))),
+            expect(tr!(add_chapter()))
+        );
+        assert_eq!(
+            resolve(add_action_label(recommended_type(&Folder, &ChapterScene))),
+            expect(tr!(add_scene()))
+        );
+        assert_eq!(
+            resolve(insert_action_label(recommended_type(&Folder, &Part))),
+            expect(tr!(insert_chapter()))
+        );
+        assert_eq!(
+            resolve(insert_action_label(recommended_type(&Item, &Scene))),
+            expect(tr!(insert_scene()))
+        );
+        assert_eq!(
+            resolve(insert_action_label(recommended_type(&Item, &ChapterScene))),
+            expect(tr!(insert_chapter()))
+        );
+        // A note card on the corkboard inserts a note, and used to say "Insert scene".
+        assert_eq!(
+            resolve(insert_action_label(recommended_type(&Item, &Note))),
+            expect(tr!(insert_note()))
+        );
+        assert_eq!(
+            resolve(insert_action_label(recommended_type(&Folder, &Note))),
+            expect(tr!(insert_note()))
+        );
+        assert_eq!(resolve(insert_action_label(None)), None);
+    }
+
+    /// Every item that recommends something has an Insert named after it, so no card
+    /// or row offers an Insert that says one type and makes another. A new
+    /// recommendation without a label of its own fails here, not on a writer's board.
+    #[test]
+    fn every_recommendation_has_an_insert_label() {
+        use crate::binder::create_labels::insert_action_label;
+        use frontend::common::entities::BinderItemSubRole as S;
+        let sub_roles = [
+            S::Text,
+            S::None,
+            S::Note,
+            S::Book,
+            S::Part,
+            S::Scene,
+            S::ChapterScene,
+            S::BookBegin,
+            S::BookEnd,
+            S::Paratext,
+        ];
+        for role in [Folder, Item] {
+            for sub_role in &sub_roles {
+                let recommended = recommended_type(&role, sub_role);
+                assert_eq!(
+                    insert_action_label(recommended).is_some(),
+                    recommended.is_some(),
+                    "{role:?}/{sub_role:?} recommends {recommended:?}"
+                );
+            }
+        }
+    }
+
+    /// OK on an empty name creates the item: a chapter untitled, so the binder and the
+    /// export name it by its number, and a scene under the name ＋ Create gives one. An
+    /// empty OK used to do nothing, as if it were Cancel.
+    #[cfg(not(feature = "mocks"))]
+    #[test]
+    fn an_empty_name_creates_the_item_under_its_initial_title() {
+        use crate::models::{StreamLevel, StreamRowsModel};
+
+        let project = crate::test_support::RealProject::empty_novel();
+        let ctx = project.app_ctx.clone();
+        let ids = project.ids.clone();
+        let items = binder_item_commands::get_all_binder_item(&ctx).expect("items");
+        let book = items
+            .iter()
+            .find(|it| it.sub_role == Book && it.activated)
+            .expect("the empty novel has a Book")
+            .id;
+        let rows = || {
+            let model =
+                StreamRowsModel::new(ctx.clone(), ids.work_id.clone(), book, StreamLevel::Book);
+            model.refill();
+            model.rows()
+        };
+
+        let row_ids: Vec<u64> = rows().iter().map(|r| r.item_id).collect();
+        append_to_stream(&ctx, &ids, book, &row_ids, StreamLevel::Book, "  ");
+        let chapter = rows().last().cloned().expect("the book has rows");
+        assert_eq!(chapter.sub_role, ChapterScene);
+        assert_eq!(
+            item_dto(&ctx, chapter.item_id).expect("the chapter").title,
+            ""
+        );
+        assert!(
+            chapter.fallback_label.is_some(),
+            "the stream names the untitled chapter itself"
+        );
+
+        let scene = rows()
+            .into_iter()
+            .find(|r| r.sub_role == Scene)
+            .expect("a scene")
+            .item_id;
+        let before = rows().len();
+        create_by_recommendation(&ctx, &ids, scene, &Item, &Scene, "");
+        let after = rows();
+        assert_eq!(after.len(), before + 1);
+        let added = after
+            .iter()
+            .find(|r| !row_ids.contains(&r.item_id) && r.item_id != chapter.item_id)
+            .expect("the new scene");
+        assert_eq!(added.sub_role, Scene);
+        assert_eq!(
+            item_dto(&ctx, added.item_id).expect("the scene").title,
+            crate::binder::create_labels::initial_title(skribisto_model::CreateType::Scene)
+        );
     }
 }

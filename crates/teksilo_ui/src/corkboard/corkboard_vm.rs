@@ -963,14 +963,27 @@ impl CorkboardViewModel {
             .present(ctx);
     }
 
+    /// What "Insert …" on card `id` is called: what the card's action creates (a part
+    /// recommends a chapter, a note another note). The dialog it opens is titled the
+    /// same. `None` when the card has nothing to insert.
+    pub fn insert_label(&self, id: u64) -> Option<teksilo::i18n::LocalizedString> {
+        let card = self.ordered_cards().into_iter().find(|c| c.item_id == id);
+        crate::binder::create_labels::insert_action_label(
+            card.and_then(|c| binder_ops::recommended_type(&c.role, &c.sub_role)),
+        )
+    }
+
+    /// Ask for the new card's name and insert it after card `id`. An empty name is a
+    /// choice, not a cancel: see
+    /// [`name_dialog`](crate::binder::create_labels::name_dialog).
     pub fn begin_insert_after(&self, ctx: &mut EventContext, id: u64) {
+        let Some(label) = self.insert_label(id) else {
+            return;
+        };
         let vm = self.clone();
-        InputDialog::new(tr!(dialog_new_scene()))
-            .placeholder(tr!(placeholder_scene_name()))
+        crate::binder::create_labels::name_dialog(label)
             .on_result(move |r, ctx| {
-                if let Some(name) = r
-                    && !name.trim().is_empty()
-                {
+                if let Some(name) = r {
                     vm.insert_after(ctx, id, name.trim());
                 }
             })

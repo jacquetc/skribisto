@@ -16,6 +16,7 @@
 
 use teksilo::i18n::LocalizedString;
 use teksilo::prelude::*; // tr!
+use teksilo::widgets::InputDialog;
 
 use crate::tooltip_registry as tt;
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
@@ -38,6 +39,52 @@ pub fn recommendation_label(create_type: CreateType) -> LocalizedString {
         CreateType::EndOfBook => tr!(create_book_end()),
         CreateType::StoryBibleEntry => tr!(create_story_bible_entry()),
     }
+}
+
+/// What a row's or a card's **Insert** action is called, after the type it creates (see
+/// `shared::binder_ops::recommended_type`): "Insert chapter", "Insert note"… The dialog
+/// it opens is titled with the same words, so the two cannot name different things.
+///
+/// `None` when there is nothing to insert, or for a type no item recommends first: the
+/// caller then offers no Insert at all, rather than one that does nothing. A test holds
+/// every first recommendation the model makes to a label of its own.
+pub fn insert_action_label(create_type: Option<CreateType>) -> Option<LocalizedString> {
+    match create_type? {
+        CreateType::Chapter => Some(tr!(insert_chapter())),
+        CreateType::Scene => Some(tr!(insert_scene())),
+        CreateType::Note => Some(tr!(insert_note())),
+        CreateType::Paratext => Some(tr!(insert_paratext())),
+        // After an end-of-book marker, the next book.
+        CreateType::Book => Some(tr!(insert_book())),
+        CreateType::Part
+        | CreateType::NoteFolder
+        | CreateType::Folder
+        | CreateType::ParatextFolder
+        | CreateType::EndOfBook
+        | CreateType::StoryBibleEntry => None,
+    }
+}
+
+/// "Add new chapter" or "Add new scene": the button at the end of a manuscript stream,
+/// after the type its container recommends. Only a book, a part or a chapter hosts a
+/// stream, and they recommend nothing else; `None` otherwise, and no button.
+pub fn add_action_label(create_type: Option<CreateType>) -> Option<LocalizedString> {
+    match create_type? {
+        CreateType::Chapter => Some(tr!(add_chapter())),
+        CreateType::Scene => Some(tr!(add_scene())),
+        _ => None,
+    }
+}
+
+/// The dialog that names a new row, titled with the action that opened it ("Add new
+/// chapter", "Insert scene"), so it says what it creates.
+///
+/// OK on an empty field creates the row anyway, under the name the outline's ＋ Create
+/// gives it: none for a chapter, a part or a book, which the binder and the export then
+/// call "Chapter 4"; "New scene" for a scene. Only Cancel creates nothing. It used to
+/// read an empty OK as a cancel, so a chapter added here could not be left untitled.
+pub fn name_dialog(action: LocalizedString) -> InputDialog {
+    InputDialog::new(action).placeholder(tr!(placeholder_title()))
 }
 
 /// The per-type **placeholder name** for a freshly created row — "New chapter" for a

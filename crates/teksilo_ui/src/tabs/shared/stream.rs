@@ -38,14 +38,14 @@ use teksilo::widgets::{
     PopoverIconButton, Repeater, ScrollArea, Spacer, TextWidget, Toggle, VStack,
 };
 
-use skribisto_model::{CreateType, SubRoleExt};
+use skribisto_model::SubRoleExt;
 
 use skribisto_compiler::EpigraphPlacement;
 use skribisto_compiler::plan::{HeadingKind, RowHeading};
 
 use crate::export::ExportStylesViewModel;
 use crate::margin_lane::RowExtents;
-use crate::models::{OpenDoc, ReadingRow, StreamLevel, StreamRow};
+use crate::models::{OpenDoc, ReadingRow, StreamRow};
 use crate::settings::EditorTypography;
 use crate::shared::{is_prose_bearing, is_synopsis_bearing};
 use crate::stream::{SplitFlavour, StreamViewModel};
@@ -591,16 +591,18 @@ fn container_header(vm: &StreamViewModel) -> impl Widget {
 
 /// The trailing "Add …" action. What it *creates* is the model's own default
 /// recommendation for this container — a Scene inside a chapter, a Chapter inside a
-/// part or a book — so the label names that type rather than hardcoding "scene".
+/// part or a book — and the label, the dialog and the creation all ask the view-model
+/// for that one type.
 fn add_button(vm: &StreamViewModel) -> impl Widget {
-    let label = match vm.level() {
-        StreamLevel::Chapter => tr!(add_scene()),
-        StreamLevel::Part | StreamLevel::Book => tr!(add_chapter()),
-    };
-    let vm = vm.clone();
-    HStack::new()
-        .child(Spacer::new())
-        .child(Button::new(label).on_activate_fn(move |ctx| vm.begin_add_row(ctx)))
+    let row = HStack::new().child(Spacer::new());
+    match vm.add_label() {
+        Some(label) => {
+            let vm = vm.clone();
+            row.child(Button::new(label).on_activate_fn(move |ctx| vm.begin_add_row(ctx)))
+        }
+        // A container with nothing to add: no button rather than one that does nothing.
+        None => row,
+    }
 }
 
 /// One row: a header, and — when the matrix allows it for this flavour — the row's
@@ -897,11 +899,13 @@ fn row_menu(vm: &StreamViewModel, row: &StreamRow) -> impl Widget {
         .item(
             MenuItem::new(tr!(set_label())).on_activate_fn(mk(|v, c, id| v.begin_set_label(c, id))),
         )
-        .separator()
-        .item(
-            MenuItem::new(insert_label(row))
-                .on_activate_fn(mk(|v, c, id| v.begin_insert_after(c, id))),
-        )
+        .separator();
+    // Named after what it creates; absent when the row recommends nothing.
+    if let Some(label) = vm.insert_label(id) {
+        list = list
+            .item(MenuItem::new(label).on_activate_fn(mk(|v, c, id| v.begin_insert_after(c, id))));
+    }
+    list = list
         .item(MenuItem::new(tr!(move_up())).on_activate_fn(mk(|v, c, id| v.move_row_up(c, id))))
         .item(
             MenuItem::new(tr!(move_down())).on_activate_fn(mk(|v, c, id| v.move_row_down(c, id))),
@@ -1341,19 +1345,6 @@ impl ReadingAnchor {
         if let Some(t) = target {
             scroll.set(t);
         }
-    }
-}
-
-/// What "Insert …" on this row will actually create — the model's default
-/// recommendation for it. A scene (or a chapter head) recommends a Scene; a *part*
-/// heading recommends a Chapter, so the label must say so rather than lie about a scene.
-fn insert_label(row: &StreamRow) -> LocalizedString {
-    let recommended = skribisto_model::recommendations(&row.role, &row.sub_role)
-        .first()
-        .map(|r| r.create_type);
-    match recommended {
-        Some(CreateType::Chapter) => tr!(insert_chapter()),
-        _ => tr!(insert_scene()),
     }
 }
 

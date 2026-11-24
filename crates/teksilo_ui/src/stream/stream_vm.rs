@@ -37,6 +37,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use teksilo::data::ListModel;
+use teksilo::i18n::LocalizedString;
 use teksilo::prelude::*; // EventContext, Signal, BuildContext, tr!
 use teksilo::text_document::TextDocument;
 use teksilo::widgets::InputDialog;
@@ -625,28 +626,54 @@ impl StreamViewModel {
             .present(ctx);
     }
 
+    /// What "Insert …" on row `id` is called. It names what the row's action creates
+    /// (a part heading recommends a chapter, a scene another scene), and the dialog it
+    /// opens is titled the same. `None` when the row has nothing to insert.
+    pub fn insert_label(&self, id: u64) -> Option<LocalizedString> {
+        let row = self.rows().into_iter().find(|r| r.item_id == id);
+        crate::binder::create_labels::insert_action_label(
+            row.and_then(|r| binder_ops::recommended_type(&r.role, &r.sub_role)),
+        )
+    }
+
+    /// What the "Add …" button at the end of the stream is called: what the container
+    /// recommends, a chapter in a part or a book and a scene in a chapter. The dialog it
+    /// opens is titled the same.
+    pub fn add_label(&self) -> Option<LocalizedString> {
+        crate::binder::create_labels::add_action_label(binder_ops::recommended_type(
+            &BinderItemRole::Folder,
+            &self.inner.container_sub_role,
+        ))
+    }
+
+    /// Ask for the new row's name and insert it after row `id`. An empty name is a
+    /// choice, not a cancel: see
+    /// [`name_dialog`](crate::binder::create_labels::name_dialog).
     pub fn begin_insert_after(&self, ctx: &mut EventContext, id: u64) {
+        let Some(label) = self.insert_label(id) else {
+            return;
+        };
         let vm = self.clone();
-        InputDialog::new(tr!(dialog_new_scene()))
-            .placeholder(tr!(placeholder_scene_name()))
+        crate::binder::create_labels::name_dialog(label)
             .on_result(move |r, ctx| {
-                if let Some(name) = r
-                    && !name.trim().is_empty()
-                {
+                if let Some(name) = r {
                     vm.insert_after(ctx, id, name.trim());
                 }
             })
             .present(ctx);
     }
 
+    /// Ask for the new row's name and add it at the end of the stream. An empty name
+    /// is a choice, not a cancel: see
+    /// [`name_dialog`](crate::binder::create_labels::name_dialog).
     pub fn begin_add_row(&self, ctx: &mut EventContext) {
+        let Some(label) = self.add_label() else {
+            return;
+        };
         let vm = self.clone();
-        InputDialog::new(tr!(dialog_new_scene()))
-            .placeholder(tr!(placeholder_scene_name()))
+        crate::binder::create_labels::name_dialog(label)
             .on_result(move |r, ctx| {
-                if let Some(name) = r
-                    && !name.trim().is_empty()
-                {
+                if let Some(name) = r {
                     vm.add_row(ctx, name.trim());
                 }
             })
@@ -698,22 +725,18 @@ impl StreamViewModel {
         );
     }
 
-    /// Append to the stream: after its last row if it has one, else as the container's
-    /// first child.
-    pub fn add_row(&self, ctx: &mut EventContext, title: &str) {
-        if let Some(last) = self.rows().last().map(|r| r.item_id) {
-            self.insert_after(ctx, last, title);
-        } else {
-            let sub_role = self.inner.container_sub_role.clone();
-            binder_ops::create_by_recommendation(
-                &self.inner.app_ctx,
-                &self.inner.ids,
-                self.inner.container_id,
-                &BinderItemRole::Folder,
-                &sub_role,
-                title,
-            );
-        }
+    /// Append what the container recommends (see [`add_label`](Self::add_label)) at the
+    /// end of the stream: a chapter after the last chapter of a part, a scene after the
+    /// last scene of a chapter. Placed by `binder_ops::append_to_stream`.
+    pub fn add_row(&self, _ctx: &mut EventContext, title: &str) {
+        binder_ops::append_to_stream(
+            &self.inner.app_ctx,
+            &self.inner.ids,
+            self.inner.container_id,
+            &self.inner.rows.ids(),
+            self.inner.level,
+            title,
+        );
     }
 
     pub fn move_row_up(&self, _ctx: &mut EventContext, id: u64) {
@@ -1052,5 +1075,102 @@ mod tests {
             "a part heading carries no prose to split"
         );
         assert!(!can_split_row(&rows, 999), "unknown row");
+    }
+
+    /// "Add new chapter" on a Full Book, answered with OK and no name, adds an untitled
+    /// chapter; answered with Cancel, adds nothing. The dialog is titled with the
+    /// button's own words. A tester's "Add new chapter" opened "New scene", and an
+    /// empty OK used to be read as Cancel (2026-11-24).
+    #[cfg(not(feature = "mocks"))]
+    #[test]
+    fn add_new_chapter_with_no_name_adds_an_untitled_chapter() {
+        use teksilo::core::ModalContent;
+        use teksilo::core::accessibility::widget_id_to_node_id;
+        use teksilo::core::widget_id::WidgetId;
+        use teksilo::core::widget_tree::WidgetTree;
+
+        let project = crate::test_support::RealProject::empty_novel();
+        let ctx = project.app_ctx.clone();
+        let book = binder_item_commands::get_all_binder_item(&ctx)
+            .expect("items")
+            .into_iter()
+            .find(|it| it.sub_role == Book && it.activated)
+            .expect("the empty novel has a Book")
+            .id;
+        let docs = OpenDocsStore::new(ctx.clone());
+        let vm = StreamViewModel::new(ctx.clone(), project.ids.clone(), docs, book, &Folder, &Book)
+            .expect("a Book hosts a stream");
+        let chapters = || -> Vec<(u64, String)> {
+            binder_item_commands::get_all_binder_item(&ctx)
+                .expect("items")
+                .into_iter()
+                .filter(|it| it.sub_role == ChapterScene && it.activated)
+                .map(|it| (it.id, it.title))
+                .collect()
+        };
+
+        fn buttons(tree: &WidgetTree, root: WidgetId, out: &mut Vec<WidgetId>) {
+            if tree
+                .widget_type_name(root)
+                .is_some_and(|t| t.ends_with("Button"))
+            {
+                out.push(root);
+            }
+            for c in tree.children(root) {
+                buttons(tree, c, out);
+            }
+        }
+        // Press "Add new chapter", check the dialog's title, and click its OK (the last
+        // footer button) or its Cancel (the first) without typing anything.
+        let answer = |ok: bool| {
+            let mut tree = WidgetTree::new();
+            let v = vm.clone();
+            crate::test_support::press(&mut tree, move |c| v.begin_add_row(c));
+            let request = tree
+                .drain_pending_modal_requests()
+                .pop()
+                .expect("the dialog appears")
+                .request;
+            assert_eq!(
+                request.title,
+                Some(tr!(add_chapter()).resolve_now()),
+                "titled with the button's words"
+            );
+            let ModalContent::Deferred(builder) = request.content else {
+                panic!("InputDialog presents deferred content");
+            };
+            let content = builder(&mut tree);
+            tree.layout(SizeProposal::exact(420.0, 180.0));
+            let mut found = Vec::new();
+            buttons(&tree, content, &mut found);
+            let target = if ok { found.last() } else { found.first() };
+            let target = *target.expect("the dialog has its buttons");
+            tree.dispatch_event(WidgetEvent::AccessAction {
+                action: teksilo::core::accesskit::Action::Click,
+                target: Some(target),
+                target_node: widget_id_to_node_id(target),
+                data: None,
+            });
+        };
+
+        let before = chapters();
+        answer(false);
+        assert_eq!(chapters(), before, "Cancel adds nothing");
+
+        answer(true);
+        let after = chapters();
+        assert_eq!(
+            after.len(),
+            before.len() + 1,
+            "OK with no name adds a chapter"
+        );
+        let added = after
+            .iter()
+            .find(|c| !before.contains(c))
+            .expect("the new chapter");
+        assert_eq!(
+            added.1, "",
+            "untitled, so the binder and the book number it"
+        );
     }
 }

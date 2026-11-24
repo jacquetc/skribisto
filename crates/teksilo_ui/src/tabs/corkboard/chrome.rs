@@ -118,11 +118,13 @@ fn card_menu(vm: &CorkboardViewModel, card: &CorkboardCard) -> impl Widget {
         // Rename opens the inline title editor on this card (same as F2 /
         // double-clicking the title) — no modal. Single-card by nature: there is
         // one title field, and it is this card's.
-        .item(MenuItem::new(tr!(rename())).on_activate_fn(mk(|v, _c, id| v.begin_rename(id))))
-        .item(
-            MenuItem::new(insert_label(card))
-                .on_activate_fn(mk(|v, c, id| v.begin_insert_after(c, id))),
-        )
+        .item(MenuItem::new(tr!(rename())).on_activate_fn(mk(|v, _c, id| v.begin_rename(id))));
+    // Named after what it creates; absent when the card recommends nothing.
+    if let Some(label) = insert_label(card) {
+        list = list
+            .item(MenuItem::new(label).on_activate_fn(mk(|v, c, id| v.begin_insert_after(c, id))));
+    }
+    list = list
         .item(
             MenuItem::new(batched(
                 tr!(set_label()),
@@ -203,15 +205,13 @@ fn batched(one: LocalizedString, many: LocalizedString, count: usize) -> Localiz
 }
 
 /// What "Insert …" on a card creates — the model's default recommendation for it
-/// — so the menu item names that type rather than always saying "scene".
-pub(super) fn insert_label(card: &CorkboardCard) -> LocalizedString {
-    let recommended = skribisto_model::recommendations(&card.role, &card.sub_role)
-        .first()
-        .map(|r| r.create_type);
-    match recommended {
-        Some(skribisto_model::CreateType::Chapter) => tr!(insert_chapter()),
-        _ => tr!(insert_scene()),
-    }
+/// — so the menu item names that type rather than always saying "scene". `None` when
+/// the card recommends nothing, and the menu then has no Insert.
+pub(super) fn insert_label(card: &CorkboardCard) -> Option<LocalizedString> {
+    crate::binder::create_labels::insert_action_label(crate::shared::binder_ops::recommended_type(
+        &card.role,
+        &card.sub_role,
+    ))
 }
 
 /// The concise accessible name a screen reader announces for a card's `GridCell`:
