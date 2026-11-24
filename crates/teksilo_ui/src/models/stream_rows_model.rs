@@ -258,10 +258,9 @@ mod imp {
         /// document the stream ever opened would leak. `StreamViewModel::wire` passes
         /// a `Weak`-capturing closure.
         ///
-        /// Rename (`BinderItem::Updated`) is intentionally NOT watched — titles are
-        /// reactive on the per-row single, so a rename must not disturb the list.
-        /// `Promote` *is* watched: it rewrites a row's `(role, sub_role)` in place,
-        /// which `reconcile` turns into an in-place `set`.
+        /// `Promote` rewrites a row's `(role, sub_role)` in place, which `reconcile` turns
+        /// into an in-place `set`. A rename (`BinderItem::Updated`) is watched too, for
+        /// the one thing about a title a row bakes in: see [`working_origins`].
         pub fn wire(&self, ctx: &mut BuildContext, on_removed: impl Fn(&[u64]) + 'static) {
             *self.inner.on_removed.borrow_mut() = Some(Box::new(on_removed));
             // Subscribe on **every** build. `BuildContext::subscribe_event` scopes a
@@ -270,35 +269,18 @@ mod imp {
             // host widget rebuilt. Re-subscribing cannot duplicate: the old callbacks are
             // already gone.
             {
-                use DirectAccessEntity::BinderItem;
                 use EntityEvent::{Created, Removed, Updated};
-                let origins = [
-                    Origin::DirectAccess(BinderItem(Created)),
-                    Origin::DirectAccess(BinderItem(Removed)),
-                    // A `Work` update carries the numbering settings — flipping them in
-                    // Settings changes every ordinal badge here, and nothing else here
-                    // would notice.
-                    Origin::DirectAccess(DirectAccessEntity::Work(Updated)),
-                    Origin::BinderItemManagement(BinderItemManagementEvent::Duplicate),
-                    Origin::BinderItemManagement(BinderItemManagementEvent::MoveItems),
-                    Origin::BinderItemManagement(BinderItemManagementEvent::MergeTwoScenes),
-                    Origin::BinderItemManagement(BinderItemManagementEvent::SplitScene),
-                    Origin::BinderItemManagement(BinderItemManagementEvent::Promote),
-                    Origin::TrashManagement(TrashManagementEvent::TrashBinderItems),
-                    Origin::TrashManagement(TrashManagementEvent::RestoreItems),
-                    Origin::TrashManagement(TrashManagementEvent::EmptyTrash),
-                ];
-                for origin in origins {
+                for origin in working_origins() {
                     let me = self.clone();
                     ctx.subscribe_event(origin, move |_event: &Event| me.refresh());
                 }
                 // Read as exported, a row's own fields decide whether it is in the book at
                 // all: "Include in exports", its title (the heading), whether its epigraph
-                // or synopsis holds text. None of them is structural, so the working stream
-                // rightly ignores them, and nothing else here would notice. The refill is a
-                // no-op diff when nothing a reading shows has moved.
+                // or synopsis holds text. The working stream already refills on a
+                // `BinderItem` update (see `working_origins`); the content ones are not
+                // structural, so it rightly ignores them, and nothing else here would
+                // notice. The refill is a no-op diff when nothing a reading shows has moved.
                 let reading_only = [
-                    Origin::DirectAccess(BinderItem(Updated)),
                     Origin::DirectAccess(DirectAccessEntity::Content(Created)),
                     Origin::DirectAccess(DirectAccessEntity::Content(Updated)),
                     Origin::DirectAccess(DirectAccessEntity::Content(Removed)),
@@ -374,6 +356,39 @@ mod imp {
                 }
             }
         }
+    }
+
+    /// Every backend event the stream refills on, read as exported or not.
+    ///
+    /// A `BinderItem` update is among them for an untitled chapter or part. Its header
+    /// shows the name the stream generates for it ("Chapter 3"), baked into its
+    /// [`StreamRow::fallback_label`] because a generated name has no live source to
+    /// follow; a titled row shows the live title instead. Renaming the untitled row
+    /// left the baked name on screen, in the stream only, until something else refilled
+    /// the list; clearing a title left a blank heading the same way. The refill is a
+    /// no-op diff for every other update (a titled row's rename, a label, a status), so
+    /// the rows and their editors stay put: only a row whose generated name came or went
+    /// is rebuilt. The binder, the Overview and the corkboard refill on it already.
+    pub(super) fn working_origins() -> [Origin; 12] {
+        use DirectAccessEntity::BinderItem;
+        use EntityEvent::{Created, Removed, Updated};
+        [
+            Origin::DirectAccess(BinderItem(Created)),
+            Origin::DirectAccess(BinderItem(Updated)),
+            Origin::DirectAccess(BinderItem(Removed)),
+            // A `Work` update carries the numbering settings — flipping them in
+            // Settings changes every ordinal badge here, and nothing else here
+            // would notice.
+            Origin::DirectAccess(DirectAccessEntity::Work(Updated)),
+            Origin::BinderItemManagement(BinderItemManagementEvent::Duplicate),
+            Origin::BinderItemManagement(BinderItemManagementEvent::MoveItems),
+            Origin::BinderItemManagement(BinderItemManagementEvent::MergeTwoScenes),
+            Origin::BinderItemManagement(BinderItemManagementEvent::SplitScene),
+            Origin::BinderItemManagement(BinderItemManagementEvent::Promote),
+            Origin::TrashManagement(TrashManagementEvent::TrashBinderItems),
+            Origin::TrashManagement(TrashManagementEvent::RestoreItems),
+            Origin::TrashManagement(TrashManagementEvent::EmptyTrash),
+        ]
     }
 
     /// The container's ordered rows, per the extent + row rules.
@@ -967,6 +982,82 @@ mod reading_tests {
             model.head_reading().get(),
             None,
             "and leaves it out of the reading"
+        );
+    }
+
+    /// Renaming an untitled chapter shows its new title in the working stream, and
+    /// clearing a title shows the generated name again. The header draws an untitled row
+    /// from its baked `fallback_label` and a titled one from the live title, so the row
+    /// itself has to change when a title comes or goes: a tester renamed untitled
+    /// chapters in the outline and the Full Synopsis kept their generated names
+    /// (2026-11-24).
+    #[test]
+    fn renaming_an_untitled_chapter_drops_its_generated_name_from_the_stream() {
+        use frontend::common::event::{DirectAccessEntity, EntityEvent, Origin};
+        use skribisto_model::SubRoleExt;
+
+        let (ctx, ids, items) = starforgers();
+        ids.open_stack(&ctx);
+        let book = items
+            .iter()
+            .find(|it| it.role == BinderItemRole::Folder && it.sub_role == BinderItemSubRole::Book)
+            .expect("a Book")
+            .id;
+        let model = StreamRowsModel::new(ctx.clone(), ids.work_id.clone(), book, StreamLevel::Book);
+
+        // A binder rename reaches the working stream: it is the event `refill` stands
+        // in for below.
+        assert!(
+            super::imp::working_origins().contains(&Origin::DirectAccess(
+                DirectAccessEntity::BinderItem(EntityEvent::Updated)
+            )),
+            "the working stream refills on a BinderItem update"
+        );
+
+        let row_of = |model: &StreamRowsModel, id: u64| {
+            model
+                .rows()
+                .into_iter()
+                .find(|r| r.item_id == id)
+                .expect("the chapter is a row of the Full Book")
+        };
+        model.refill();
+        let chapter = model
+            .rows()
+            .into_iter()
+            .find(|r| r.sub_role.opens_chapter())
+            .expect("Starforgers has a chapter")
+            .item_id;
+        let rename = |title: &str| {
+            let dto = binder_item_commands::get_binder_item(&ctx, &chapter)
+                .expect("read")
+                .expect("the chapter");
+            let mut update = UpdateBinderItemDto::from(dto);
+            update.title = title.to_string();
+            binder_item_commands::update_binder_item(&ctx, ids.stack_id.get(), &update)
+                .expect("rename the chapter");
+        };
+
+        rename("");
+        model.refill();
+        assert!(
+            row_of(&model, chapter).fallback_label.is_some(),
+            "an untitled chapter is shown under its generated name"
+        );
+
+        rename("The Forge");
+        model.refill();
+        assert_eq!(
+            row_of(&model, chapter).fallback_label,
+            None,
+            "once titled, the row shows its live title, not the generated name"
+        );
+
+        rename("");
+        model.refill();
+        assert!(
+            row_of(&model, chapter).fallback_label.is_some(),
+            "and clearing the title brings the generated name back"
         );
     }
 }

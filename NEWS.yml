@@ -9,6 +9,7 @@ Description:
 - "A DOCX export whose style justifies the text now marks its paragraphs justified the way Word reads it. The file used a value outside the DOCX standard, which word processors could ignore and show the text ragged"
 - "In the Resources panel, a folder's Resources page and Settings ▸ Work ▸ Resources, each file now shows its extension on a small coloured tag beside its size, such as pdf or docx. A title is the file's name without its extension, so two files called Map looked alike but for their icon. The colour comes from the extension: a PDF is red, a Word document blue, and files of the same type always share theirs"
 - "Scenes and chapters no longer share an icon shape. A scene now shows the three marks that separate scenes in a printed book, * * *, above two lines of text, and a chapter shows a page whose top is filled in, like the title area of a chapter's first page. They used to be the same page with a small difference inside it, which was hard to tell apart in the editor tabs. The new icons appear in the binder, the editor tabs, the corkboard, the Overview, the Search panel, the Trash, Go to, the destination pickers and Export"
+- "Renaming a chapter or a part that had no title now shows the new title in Full Part, Full Book and Full Synopsis straight away. These pages kept the name Skribisto gives an untitled chapter, such as Chapter 3, and switching to another page and back did not always bring the new title. Clearing a title now shows that name again instead of an empty heading"
 ---
 Version: 3.4.1
 Date: 2026-11-23
