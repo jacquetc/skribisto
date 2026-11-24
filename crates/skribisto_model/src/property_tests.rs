@@ -518,6 +518,72 @@ proptest! {
     }
 }
 
+/// The rows of a stream, as [`crate::compile::row_indices`] selects them: parts, chapters
+/// and scenes in any order, which is what a writer can arrange. A Part or Chapter stream is
+/// the same draw without its part (or chapter) rows, so this covers all three.
+fn stream_rows_strategy() -> impl Strategy<Value = Vec<BinderItemSubRole>> {
+    prop::collection::vec(
+        prop::sample::select(vec![
+            BinderItemSubRole::Part,
+            BinderItemSubRole::ChapterScene,
+            BinderItemSubRole::Scene,
+        ]),
+        0..40,
+    )
+}
+
+proptest! {
+    /// **The indentation describes a well-formed outline.** Every row is between one and
+    /// three levels in, a part is always at the top, and a row deeper than one has a parent:
+    /// the nearest row above it that sits further out is exactly one level out and of an
+    /// outer kind. A view indented by these depths can therefore never show a row stepping
+    /// in by two at once, or under a row that cannot hold it, and a row hidden by a filter
+    /// always has that parent to hand the reader over to.
+    #[test]
+    fn row_depths_describe_a_well_formed_outline(rows in stream_rows_strategy()) {
+        use crate::compile::{RowRank, row_depths};
+        let depths = row_depths(&rows);
+        prop_assert_eq!(depths.len(), rows.len());
+        for (i, (sr, depth)) in rows.iter().zip(&depths).enumerate() {
+            prop_assert!((1..=3).contains(depth), "row {} at depth {}", i, depth);
+            let rank = RowRank::of(sr).expect("every drawn sub-role is a row");
+            if rank == RowRank::Part {
+                prop_assert_eq!(*depth, 1, "a part at row {} is not at the top", i);
+            }
+            if *depth > 1 {
+                let parent = (0..i).rev().find(|&j| depths[j] < *depth);
+                let Some(parent) = parent else {
+                    prop_assert!(false, "row {} at depth {} has no parent: {:?}", i, depth, rows);
+                    return Ok(());
+                };
+                prop_assert_eq!(depths[parent], depth - 1, "row {} skips a level: {:?}", i, rows);
+                let outer = RowRank::of(&rows[parent]).expect("a row");
+                prop_assert!(outer < rank, "row {} sits under a row of its own kind or deeper: {:?}", i, rows);
+            }
+        }
+    }
+
+    /// **Hiding the deeper levels moves nothing that stays.** A filter that shows only
+    /// parts and chapters (or only parts) takes rows away; the depth of every row it keeps
+    /// is the depth it had with everything shown, so the view does not shift under the
+    /// writer, and computing the depths before or after filtering gives one answer.
+    #[test]
+    fn hiding_deeper_rows_keeps_every_shown_row_where_it_was(rows in stream_rows_strategy()) {
+        use crate::compile::{RowRank, row_depths};
+        let all = row_depths(&rows);
+        for limit in [RowRank::Part, RowRank::Chapter, RowRank::Scene] {
+            let kept: Vec<usize> = (0..rows.len())
+                .filter(|&i| RowRank::of(&rows[i]).is_some_and(|r| r <= limit))
+                .collect();
+            let shown: Vec<BinderItemSubRole> = kept.iter().map(|&i| rows[i].clone()).collect();
+            let alone = row_depths(&shown);
+            for (k, &i) in kept.iter().enumerate() {
+                prop_assert_eq!(alone[k], all[i], "row {} moved when rows below {:?} were hidden", i, limit);
+            }
+        }
+    }
+}
+
 // ───────────────────────────────────────────────────────────────────────────────
 // The two live text engines
 // ───────────────────────────────────────────────────────────────────────────────

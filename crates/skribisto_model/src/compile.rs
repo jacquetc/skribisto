@@ -95,6 +95,77 @@ pub fn row_indices(sub_roles: &[BinderItemSubRole], head: usize, level: StreamLe
     out
 }
 
+/// The structural kind of a stream row: what decides how far in a Full Chapter, Part or
+/// Book sets it, and what a filter on those views hides or shows.
+///
+/// Ordered outermost first, so `rank <= limit` reads "at `limit` or above it".
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum RowRank {
+    /// A part heading.
+    Part,
+    /// A chapter, folder or flat: it opens a chapter, and its own prose is the chapter's.
+    Chapter,
+    /// A scene.
+    Scene,
+}
+
+impl RowRank {
+    /// The rank of a row with this sub-role, or `None` for one that is never a row (see
+    /// [`is_row`]).
+    pub fn of(sr: &BinderItemSubRole) -> Option<Self> {
+        if sr.opens_part() {
+            Some(Self::Part)
+        } else if sr.opens_chapter() {
+            Some(Self::Chapter)
+        } else if sr.carries_scene() {
+            Some(Self::Scene)
+        } else {
+            None
+        }
+    }
+}
+
+/// How deep each row of a stream sits under its container, in row order: the hierarchy
+/// a Full Chapter, Part or Book is indented by.
+///
+/// `rows` are the rows' sub-roles in order, as [`row_indices`] selects them. The
+/// container itself is depth 0, and its rows start at 1.
+///
+/// A fold over the rows, the same state machine the compiler runs over the stream: a part
+/// opens a part and closes any open chapter, a chapter opens a chapter, and a scene sits
+/// under whatever is open. So in a Book a part is at 1, a chapter at 1 plus one if a part
+/// is open, and a scene at 1 plus one for each of the two that is open. A chapter that
+/// comes before the book's first part sits at 1, beside the parts, and a scene a part
+/// holds before its first chapter sits at 2, beside that part's chapters.
+///
+/// **Binder nesting is not consulted**, for the reason [`row_indices`] gives: a book
+/// written as a flat run of markers nests exactly as one built of folders, which is the
+/// whole point of the writing model.
+///
+/// The depth of a row never depends on the rows deeper than it, since only parts and
+/// chapters open anything. Hiding the scenes leaves every part and chapter where it was.
+///
+/// An entry that is not a row is given the depth content would have there and opens
+/// nothing.
+pub fn row_depths(rows: &[BinderItemSubRole]) -> Vec<u8> {
+    let mut part_open = false;
+    let mut chapter_open = false;
+    rows.iter()
+        .map(|sr| match RowRank::of(sr) {
+            Some(RowRank::Part) => {
+                part_open = true;
+                chapter_open = false;
+                1
+            }
+            Some(RowRank::Chapter) => {
+                chapter_open = true;
+                1 + u8::from(part_open)
+            }
+            Some(RowRank::Scene) | None => 1 + u8::from(part_open) + u8::from(chapter_open),
+        })
+        .collect()
+}
+
 /// [`row_indices`], but over the whole work's `ItemMeta` stream and stopping at the
 /// container's **own binder's edge**.
 ///
@@ -487,5 +558,61 @@ mod tests {
             None,
             "a row in another binder is in no Book, not in the work's last one"
         );
+    }
+
+    /// A Book with parts: every level nests under the one that opened before it.
+    #[test]
+    fn a_book_nests_parts_then_chapters_then_scenes() {
+        use SR::{ChapterScene as Ch, Part as P, Scene as S};
+        assert_eq!(
+            row_depths(&[P, Ch, S, S, Ch, S, P, Ch, S]),
+            vec![1, 2, 3, 3, 2, 3, 1, 2, 3]
+        );
+    }
+
+    /// The shapes a real book takes that a strict outline would not: a chapter before
+    /// the first part, and a scene a part holds before its first chapter.
+    #[test]
+    fn a_row_outside_the_usual_nesting_sits_beside_its_siblings() {
+        use SR::{ChapterScene as Ch, Part as P, Scene as S};
+        // A prologue chapter beside the parts, its scene under it.
+        assert_eq!(row_depths(&[Ch, S, P, Ch, S]), vec![1, 2, 1, 2, 3]);
+        // An interlude scene directly in a part, beside that part's chapters.
+        assert_eq!(row_depths(&[P, S, Ch, S]), vec![1, 2, 2, 3]);
+        // A part closes the chapter before it: its first scene is not that chapter's.
+        assert_eq!(row_depths(&[Ch, S, P, S]), vec![1, 2, 1, 2]);
+    }
+
+    /// A Part's stream never holds a part row (a part ends it), and a Chapter's never
+    /// holds a chapter row, so their rows start at 1 the same way.
+    #[test]
+    fn part_and_chapter_streams_start_at_one() {
+        use SR::{ChapterScene as Ch, Scene as S};
+        assert_eq!(row_depths(&[Ch, S, S, Ch]), vec![1, 2, 2, 1]);
+        assert_eq!(row_depths(&[S, Ch, S]), vec![1, 1, 2]);
+        assert_eq!(row_depths(&[S, S]), vec![1, 1]);
+        assert!(row_depths(&[]).is_empty());
+    }
+
+    /// Each row kind has its rank, a chapter whichever encoding it uses, and the ranks
+    /// order outermost first.
+    #[test]
+    fn every_row_has_a_rank_and_nothing_else_does() {
+        assert_eq!(RowRank::of(&SR::Part), Some(RowRank::Part));
+        assert_eq!(RowRank::of(&SR::ChapterScene), Some(RowRank::Chapter));
+        assert_eq!(RowRank::of(&SR::Scene), Some(RowRank::Scene));
+        for sr in [
+            SR::Note,
+            SR::Text,
+            SR::None,
+            SR::Book,
+            SR::BookBegin,
+            SR::BookEnd,
+            SR::Paratext,
+        ] {
+            assert_eq!(RowRank::of(&sr), None, "{sr:?} is not a stream row");
+            assert!(!is_row(&sr), "and is_row agrees about {sr:?}");
+        }
+        assert!(RowRank::Part < RowRank::Chapter && RowRank::Chapter < RowRank::Scene);
     }
 }
