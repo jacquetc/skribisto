@@ -228,6 +228,9 @@ impl WorkspaceLayoutViewModel {
                         segment: editors.segment_of(id).unwrap_or_default(),
                         synopsis_folded: folds.top,
                         side_synopsis_folded: folds.side,
+                        // And the levels its streams showed: the scroll offset was
+                        // measured on that page.
+                        depth_filter: editors.depth_filter_of(id),
                     })
                 })
                 .collect(),
@@ -254,6 +257,7 @@ impl WorkspaceLayoutViewModel {
                     segment: editors.segment_of(id).unwrap_or_default(),
                     synopsis_folded: folds.top,
                     side_synopsis_folded: folds.side,
+                    depth_filter: editors.depth_filter_of(id),
                 });
             }
         }
@@ -457,6 +461,9 @@ impl WorkspaceLayoutViewModel {
                     // And the page it was showing. Empty for every combination with
                     // no segmented bar, which `seed_segment` ignores.
                     editors.seed_segment(side, *id, &s.segment);
+                    // And the levels its streams showed, before the page is built, so
+                    // the scroll offset lands on the page it was measured on.
+                    editors.seed_depth_filter(side, *id, s.depth_filter.as_deref());
                     // And the synopsis folds the writer chose on this item.
                     editors.seed_synopsis_folds(
                         side,
@@ -1555,6 +1562,104 @@ mod tests {
                 side: None,
             }),
             "restore must put the fold back on the reopened tab"
+        );
+    }
+
+    /// The levels a container tab showed travel through `workspace.toml` like its
+    /// segment: `capture` writes the filter into the pane record and the roster, and
+    /// `restore` in a fresh window shows the same levels on the reopened tab, before its
+    /// page is built, so the scroll offset beside it lands on the page it was measured on.
+    ///
+    /// Real backend only: a tab learns its item's type through `SingleBinderItem`, which
+    /// the mocks build fabricates from its own fixture instead of reading the store, so
+    /// there the Book this test creates is not what the tab opens on, and no stream exists
+    /// to filter.
+    #[cfg(not(feature = "mocks"))]
+    #[test]
+    fn capture_writes_a_tabs_levels_shown_and_restore_puts_them_back() {
+        use crate::stream::DepthFilter;
+        let p = live_project(1);
+        let binder = work_commands::get_work_relationship(
+            &p.app_ctx,
+            &p.work_id,
+            &frontend::common::direct_access::work::WorkRelationshipField::Binders,
+        )
+        .expect("the project's binders")[0];
+        let book = binder_item_commands::create_binder_item(
+            &p.app_ctx,
+            None,
+            &CreateBinderItemDto {
+                status: None,
+                title: "Book".into(),
+                role: BinderItemRole::Folder,
+                sub_role: BinderItemSubRole::Book,
+                activated: true,
+                is_exportable: true,
+                indent: 0,
+                ..Default::default()
+            },
+            binder,
+            1,
+        )
+        .expect("seed a Book")
+        .id;
+        let uid = binder_item_commands::get_binder_item(&p.app_ctx, &book)
+            .expect("get_binder_item")
+            .expect("the Book exists")
+            .uid;
+
+        p.single_work
+            .unique_id()
+            .set("levels-roundtrip".to_string());
+        p.editors.open_in(Side::Primary, book, "Book");
+        let tabs = p.editors.tabs(Side::Primary);
+        for i in 0..tabs.len() {
+            tabs.with_item(i, |h| {
+                if let Some(t) = h.payload.downcast_ref::<crate::tabs::ContentTab>()
+                    && t.item_id() == book
+                {
+                    t.stream()
+                        .expect("a Book tab has a stream")
+                        .set_depth_filter(DepthFilter::DownToChapters);
+                }
+            });
+        }
+        assert_eq!(
+            p.editors.depth_filter_of(book),
+            Some("chapters".to_string())
+        );
+
+        p.vm.capture();
+
+        let saved = p
+            .service
+            .get("levels-roundtrip")
+            .expect("capture must have written a row");
+        let levels_in = |states: &[TabViewState]| {
+            states
+                .iter()
+                .find(|s| s.uid == uid)
+                .and_then(|s| s.depth_filter.clone())
+        };
+        assert_eq!(
+            levels_in(&saved.primary.view_states),
+            Some("chapters".to_string()),
+            "the pane record must carry the levels the tab showed"
+        );
+        assert_eq!(
+            levels_in(&saved.item_view_states),
+            Some("chapters".to_string()),
+            "so must the per-item roster"
+        );
+
+        let (vm2, editors2, _states2, single_work2, _backup2) =
+            wire_window(p.app_ctx.clone(), p.work_id, p.service.clone());
+        single_work2.unique_id().set("levels-roundtrip".to_string());
+        vm2.restore(false);
+        assert_eq!(
+            editors2.depth_filter_of(book),
+            Some("chapters".to_string()),
+            "restore must show the same levels on the reopened tab"
         );
     }
 

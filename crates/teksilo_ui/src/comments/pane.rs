@@ -102,28 +102,24 @@ impl ColumnWithMargin {
     /// `placement`, with the column set in by this pair's inset, and the column's size
     /// measured again at the narrower width.
     ///
-    /// The inset is asked for the width the margin rules **left the column**, not the
-    /// pane's: that is the width the column is placed in. Unsqueezed it is the same
-    /// number a row's header is set in by, so the two stay aligned. In a pane too tight
-    /// for the pair, where the column already gave up width to its cards (184 dp beside a
-    /// 328 dp margin in a 512 dp pane), the pane's width would ask for the full step and
-    /// crush a deep row to the column's floor, two levels landing on the same edge; the
-    /// column's own width keeps every level apart and two thirds of the column for the
-    /// deepest.
+    /// The inset is asked with the **pane's** width, the same width a row's header asks
+    /// with, so the two get the same number and a title stays aligned with its text. What
+    /// the cards leave the column is accounted for by whoever builds the inset (for a
+    /// stream, `crate::stream::reference_width`, which measures every row against the
+    /// width beside the page's comment gutter), not here, where only this row's own
+    /// squeeze is known.
     ///
     /// The margin is put back against the column's trailing edge: unchanged in a
     /// left-to-right interface, where that edge does not move, and following the column
     /// in a right-to-left one, where the inset is taken off the side the margin is on.
     fn indented(
         &self,
+        available: f32,
         placement: PanePlacement,
         column: Size,
         ctx: &LayoutContext,
     ) -> (PanePlacement, Size) {
-        let inset = self
-            .inset
-            .as_ref()
-            .map_or(0.0, |i| i.leading(placement.column_width));
+        let inset = self.inset.as_ref().map_or(0.0, |i| i.leading(available));
         if inset <= 0.0 {
             return (placement, column);
         }
@@ -181,7 +177,7 @@ impl ColumnWithMargin {
     /// again.
     fn resolve(&self, available: f32, ctx: &LayoutContext) -> (PanePlacement, Size, f32) {
         let (placement, column, margin_h) = self.place_pair(available, ctx);
-        let (placement, column) = self.indented(placement, column, ctx);
+        let (placement, column) = self.indented(available, placement, column, ctx);
         (placement, column, margin_h)
     }
 
@@ -456,51 +452,75 @@ mod tests {
         assert_eq!(margin.x, column.x + column.width, "flush to the text");
     }
 
-    /// **In a pane too tight for the pair, the levels stay apart.** The margin rules
-    /// left the column 184 dp beside a 328 dp margin; a scene three levels deep, at the
-    /// medium step, is set in against those 184 dp, keeping two thirds of them. Set in
-    /// against the pane's 512 it asked for 96, was clamped to the column's floor, and
-    /// landed on the same edge as a row two levels deep.
+    /// **In a pane too tight for the pair, a row's title and its text stay aligned, and
+    /// the levels stay apart.** The margin rules leave the text 184 dp beside a 328 dp
+    /// margin in a 512 dp pane, against the leading edge, where the row's title also
+    /// starts. Both ask the row's inset with the pane's width; the inset measures against
+    /// what the page's gutter leaves (`stream::reference_width`), so both are set in by the
+    /// same amount, and a scene three levels deep keeps two thirds of its 184.
     #[test]
-    fn a_squeezed_column_is_set_in_against_its_own_width() {
-        let depth = |d: u8| {
-            crate::shared::column_inset::ColumnInset::new(
-                move |available| crate::stream::level_inset(32.0, available.min(700.0), d, 3),
-                |_| {},
+    fn a_titles_and_its_squeezed_texts_inset_agree() {
+        let inset = |d: u8| {
+            crate::stream::row_inset(
+                Signal::new(d),
+                Signal::new(3u8),
+                Signal::new(crate::stream::StreamIndent::Medium),
+                Signal::new(700.0),
+                Signal::new(328.0),
             )
         };
-        let place = |d: u8| -> Rect {
+        let text = |d: u8| -> Rect {
             let mut tree = WidgetTree::new();
             let root = tree.add(
                 ColumnWithMargin::new(column(600.0), margin(328.0), Signal::new(600.0))
-                    .indent(depth(d)),
+                    .indent(inset(d)),
             );
             tree.layout(SizeProposal::with_width(512.0));
             tree.bounds(tree.children(root)[0])
         };
-        let (plain, _) = place_squeezed();
+        let title = |d: u8| -> Rect {
+            let mut tree = WidgetTree::new();
+            let root = tree.add(
+                crate::tabs::shared::CenterColumnFlowing::new(
+                    MaxSize::width(700.0).child(
+                        teksilo::widgets::Expand::horizontal().child(
+                            FixedSize::new()
+                                .height(20.0)
+                                .child(teksilo::widgets::Spacer::new()),
+                        ),
+                    ),
+                )
+                .indent(inset(d)),
+            );
+            tree.layout(SizeProposal::with_width(512.0));
+            tree.bounds(tree.children(root)[0])
+        };
+        let (plain, _) = place(512.0, 600.0, 328.0);
         assert_eq!(
-            plain.width, 184.0,
-            "fixture: the margin rules squeeze the column"
+            (plain.x, plain.width),
+            (0.0, 184.0),
+            "fixture: the text is squeezed against the leading edge"
         );
-        let deepest = place(3);
+        for d in 1..=3u8 {
+            assert!(
+                (text(d).x - title(d).x).abs() < 0.01,
+                "depth {d}: the title starts at {} and its text at {}",
+                title(d).x,
+                text(d).x
+            );
+        }
+        let deepest = text(3);
         assert!(
             (deepest.width - 184.0 * 2.0 / 3.0).abs() < 0.01,
-            "the deepest row keeps two thirds of its column, not the floor: {}",
+            "the deepest text keeps two thirds of its column: {}",
             deepest.width
         );
-        let middle = place(2);
-        assert!(middle.x < deepest.x, "two levels never share an edge");
+        assert!(text(2).x < deepest.x, "two levels never share an edge");
         assert_eq!(
             deepest.x + deepest.width,
-            plain.x + plain.width,
-            "and the trailing edge stays flush against the cards"
+            184.0,
+            "and its trailing edge stays flush against the cards"
         );
-    }
-
-    /// The pair placed in that tight pane with no inset.
-    fn place_squeezed() -> (Rect, Rect) {
-        place(512.0, 600.0, 328.0)
     }
 
     /// The pair reports the narrowed column's height, so an indented row's last lines

@@ -3836,6 +3836,105 @@ fn a_screen_reader_hears_the_stream_as_an_outline() {
     assert_eq!(every_of_type(&tree, root, "RichTextEditor"), editors);
 }
 
+/// **While levels are hidden, a banner says so**, pinned above the page; it goes while
+/// the book is read as exported (which shows every row it prints) and when every level
+/// is shown again. The levels control is on both of a Book's stream pages.
+#[cfg(feature = "mocks")]
+#[test]
+fn hiding_levels_shows_the_banner_until_everything_is_shown() {
+    use crate::stream::DepthFilter;
+    use crate::tabs::shared::segments::{SEG_MANUSCRIPT, SEG_SYNOPSIS};
+    let ctx = Rc::new(AppContext::new());
+    let tab = container_tab(&ctx, BinderItemSubRole::Book);
+    show_segment(&tab, SEG_MANUSCRIPT);
+    let mut tree = crate::test_support::tree_with_events(&ctx);
+    let root = tree.add_boxed(tab_pane(&tab));
+    let size = teksilo::prelude::SizeProposal::exact(1400.0, 900.0);
+    let settle = |tree: &mut WidgetTree| {
+        tree.layout(size);
+        tree.layout(size);
+    };
+    settle(&mut tree);
+    let levels_control = "ComboBox<teksilo_ui::stream::depth_filter::DepthFilter>";
+    assert!(
+        find_type(&tree, root, levels_control).is_some(),
+        "a Full Book offers the levels"
+    );
+    // Asked of the accessibility tree, which holds only what is live: a banner parked
+    // by its gate, or on a page the segment bar left, keeps its last bounds but leaves
+    // the tree, as it leaves the screen.
+    let banner_shown = |tree: &mut WidgetTree| -> bool {
+        let title = tr!(stream_hidden_scenes()).resolve_now();
+        tree.sync_accessibility()
+            .nodes
+            .iter()
+            .any(|(_, node)| node.label().is_some_and(|l| l == title))
+    };
+    assert!(
+        !banner_shown(&mut tree),
+        "no banner while every level is shown"
+    );
+
+    let vm = tab.stream().cloned().expect("a Book hosts a stream");
+    vm.set_depth_filter(DepthFilter::DownToChapters);
+    settle(&mut tree);
+    assert_eq!(vm.rows().len(), 3, "the part and its two chapters");
+    assert!(
+        banner_shown(&mut tree),
+        "the banner shows while scenes are hidden"
+    );
+
+    vm.set_reading_on(true);
+    settle(&mut tree);
+    assert!(
+        !banner_shown(&mut tree),
+        "a reading hides nothing, so no banner"
+    );
+    vm.set_reading_on(false);
+    settle(&mut tree);
+    assert!(banner_shown(&mut tree));
+
+    show_segment(&tab, SEG_SYNOPSIS);
+    settle(&mut tree);
+    assert!(
+        find_type(&tree, root, levels_control).is_some(),
+        "the Full Synopsis offers the levels too"
+    );
+    assert!(banner_shown(&mut tree), "and its page shows the banner too");
+
+    vm.set_depth_filter(DepthFilter::Everything);
+    settle(&mut tree);
+    assert!(
+        !banner_shown(&mut tree),
+        "and goes once every level is shown"
+    );
+    assert_eq!(vm.rows().len(), 7);
+}
+
+/// A Full Chapter holds scenes alone, so it offers no levels to hide, on either page.
+#[cfg(feature = "mocks")]
+#[test]
+fn a_full_chapter_offers_no_levels() {
+    use crate::tabs::shared::segments::{SEG_MANUSCRIPT, SEG_SYNOPSIS};
+    let ctx = Rc::new(AppContext::new());
+    let tab = container_tab(&ctx, BinderItemSubRole::ChapterScene);
+    for segment in [SEG_MANUSCRIPT, SEG_SYNOPSIS] {
+        show_segment(&tab, segment);
+        let mut tree = crate::test_support::tree_with_events(&ctx);
+        let root = tree.add_boxed(tab_pane(&tab));
+        tree.layout(teksilo::prelude::SizeProposal::exact(1400.0, 900.0));
+        assert!(
+            find_type(
+                &tree,
+                root,
+                "ComboBox<teksilo_ui::stream::depth_filter::DepthFilter>"
+            )
+            .is_none(),
+            "{segment}: no levels control on a Full Chapter"
+        );
+    }
+}
+
 /// The first widget in the subtree whose type name ends in `name`.
 fn find_type(tree: &WidgetTree, root: WidgetId, name: &str) -> Option<WidgetId> {
     if tree

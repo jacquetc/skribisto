@@ -1189,6 +1189,22 @@ impl EditorsViewModel {
             .or_else(|| self.with_tab(focused.other(), item_id, |t| t.segment_shown()))
     }
 
+    /// The levels whichever open tab shows `item_id` shows in its streams, as the
+    /// filter's stable string (`None` for every level). Focused side first, for the same
+    /// reason [`Self::view_state_of`] asks it first.
+    pub fn depth_filter_of(&self, item_id: u64) -> Option<String> {
+        let focused = self.focused_side.get();
+        self.with_tab(focused, item_id, |t| t.depth_filter_id())
+            .or_else(|| self.with_tab(focused.other(), item_id, |t| t.depth_filter_id()))
+            .flatten()
+    }
+
+    /// Show, in a **not-yet-built** tab, the levels it was remembered showing. The
+    /// workspace restore's counterpart of [`Self::seed_segment`].
+    pub fn seed_depth_filter(&self, side: Side, item_id: u64, id: Option<&str>) {
+        self.with_tab(side, item_id, |t| t.seed_depth_filter(id));
+    }
+
     /// What the writer chose for the synopsis folds of whichever open tab shows
     /// `item_id`. Focused side first, for the same reason [`Self::view_state_of`]
     /// asks it first.
@@ -1481,6 +1497,7 @@ impl EditorsViewModel {
                 top: remembered.synopsis_folded,
                 side: remembered.side_synopsis_folded,
             });
+            t.seed_depth_filter(remembered.depth_filter.as_deref());
         });
     }
 
@@ -1506,6 +1523,7 @@ impl EditorsViewModel {
             segment: tab.segment_shown(),
             synopsis_folded: folds.top,
             side_synopsis_folded: folds.side,
+            depth_filter: tab.depth_filter_id(),
         });
     }
 

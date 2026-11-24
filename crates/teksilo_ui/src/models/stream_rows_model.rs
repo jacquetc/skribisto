@@ -34,6 +34,7 @@ use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
 // callers (`stream`, `tabs::shared::stream`) are unchanged. Under `mocks` the
 // real `imp` (the only `row_indices` caller) is cfg'd out, so allow the unused re-export
 // there — exactly as the lifted functions carried `allow(dead_code)` before.
+use skribisto_model::compile::RowRank;
 #[cfg_attr(feature = "mocks", allow(unused_imports))]
 pub use skribisto_model::compile::{StreamLevel, row_indices};
 use teksilo::prelude::Signal;
@@ -121,7 +122,7 @@ impl ReadingRow {
     }
 }
 
-/// Where each row of a stream sits in the outline, and how deep the page shows.
+/// Where each row of a stream sits in the outline, and which levels the page shows.
 ///
 /// Kept **beside** the row list rather than in [`StreamRow`]. A row's depth changes
 /// whenever a part or a chapter is added, moved or removed above it, and a change to a
@@ -134,6 +135,8 @@ impl ReadingRow {
 pub(crate) struct Outline {
     depths: std::cell::RefCell<std::collections::HashMap<u64, Signal<u8>>>,
     deepest: Signal<u8>,
+    /// The deepest kind of row the working stream shows (see `stream::DepthFilter`).
+    limit: std::cell::Cell<RowRank>,
 }
 
 impl Outline {
@@ -141,7 +144,14 @@ impl Outline {
         Self {
             depths: std::cell::RefCell::new(std::collections::HashMap::new()),
             deepest: Signal::new(0),
+            limit: std::cell::Cell::new(RowRank::Scene),
         }
+    }
+
+    /// Show the working stream's rows down to `limit`. `true` when that is a change,
+    /// which the caller answers by refilling.
+    pub(crate) fn set_limit(&self, limit: RowRank) -> bool {
+        self.limit.replace(limit) != limit
     }
 
     /// How deep the row `id` sits, live. A row this outline has not seen yet reads 0
@@ -160,13 +170,18 @@ impl Outline {
         self.deepest.clone()
     }
 
-    /// The working stream's rows, with every row's depth published.
+    /// The working stream's rows, filtered: every row's depth published, then the rows
+    /// below the limit taken out.
     ///
-    /// Published before the caller reconciles the list, so a row being inserted reads
-    /// its own depth on its first build.
+    /// The depths are worked out over **all** the rows, before the filter, and a row
+    /// that stays keeps the depth it has unfiltered (`row_depths` is built that way,
+    /// and its tests prove it): hiding the scenes moves no chapter. They are published
+    /// before the caller reconciles the list, so a row being inserted reads its own
+    /// depth on its first build.
     pub(crate) fn working(&self, all: Vec<StreamRow>) -> Vec<StreamRow> {
         let sub_roles: Vec<BinderItemSubRole> = all.iter().map(|r| r.sub_role.clone()).collect();
         let depths = skribisto_model::compile::row_depths(&sub_roles);
+        let limit = self.limit.get();
         let mut shown = Vec::with_capacity(all.len());
         let mut deepest = 0u8;
         let mut updates = Vec::with_capacity(all.len());
@@ -180,8 +195,10 @@ impl Outline {
                     .or_insert_with(|| Signal::new(depth))
                     .clone();
                 updates.push((signal, depth));
-                deepest = deepest.max(depth);
-                shown.push(row);
+                if RowRank::of(&row.sub_role).is_none_or(|rank| rank <= limit) {
+                    deepest = deepest.max(depth);
+                    shown.push(row);
+                }
             }
         }
         // Set outside the borrow: a row's layout binding can run on the change, and must
@@ -193,8 +210,9 @@ impl Outline {
         shown
     }
 
-    /// The rows of a reading are set in by nothing: a reader's book has no outline
-    /// indentation.
+    /// The rows of a reading are shown whole and set in by nothing, whatever the
+    /// filter: a reader's book has no outline indentation, and a reading that hid rows
+    /// would not be the export it claims to show.
     pub(crate) fn reading(&self) {
         self.deepest.set_if_changed(0);
     }
@@ -223,6 +241,7 @@ mod imp {
     use skribisto_model::compile::{ScopeKind, resolve_scope};
 
     use super::{Outline, ReadingRow, StreamLevel, StreamRow, row_indices};
+    use skribisto_model::compile::RowRank;
 
     /// Called with the ids of rows that left the stream, so the owner can release
     /// their shared documents. Stored (not one-shot) — it fires from every refresh.
@@ -323,6 +342,14 @@ mod imp {
             }
             *self.inner.reading.borrow_mut() = style;
             self.refresh();
+        }
+
+        /// Show the working stream's rows down to `limit` (a scene for all of them), and
+        /// refill if that changes anything. A reading shows every row whatever this says.
+        pub fn set_shown_down_to(&self, limit: RowRank) {
+            if self.inner.outline.set_limit(limit) {
+                self.refresh();
+            }
         }
 
         /// How deep the row `id` sits under the container, live: 1 for its first level.
@@ -1173,6 +1200,7 @@ mod imp {
     use skribisto_compiler::plan::{RowFacts, plan_row};
 
     use super::{Outline, ReadingRow, StreamLevel, StreamRow};
+    use skribisto_model::compile::RowRank;
     use std::cell::RefCell;
 
     #[derive(Clone)]
@@ -1252,6 +1280,13 @@ mod imp {
                 head_reading: Signal::new(None),
                 reading: Rc::new(RefCell::new(None)),
                 outline,
+            }
+        }
+
+        /// Show the fixture's working rows down to `limit`, as the real model does.
+        pub fn set_shown_down_to(&self, limit: RowRank) {
+            if self.outline.set_limit(limit) {
+                self.refill();
             }
         }
 

@@ -814,6 +814,91 @@ fn synopsis_folds_round_trip_through_disk() {
     );
 }
 
+/// **v9 → v10 is additive.** A v9 file names no levels anywhere, and loads whole with
+/// every tab showing every level, which is what it means; what v9 did record survives.
+#[test]
+fn the_v10_migration_reads_a_v9_file_as_every_level_shown() {
+    let d = tempdir().unwrap();
+    let path = d.path().join("workspace.toml");
+    std::fs::write(
+        &path,
+        r#"version = 9
+[[projects]]
+work_uid = "uid-A"
+last_path = "/x/a.skrib"
+[projects.primary]
+tabs = ["00000000-0000-0000-0000-000000000003"]
+[[projects.primary.view_states]]
+uid = "00000000-0000-0000-0000-000000000003"
+scroll = 96.5
+segment = "manuscript"
+synopsis_folded = true
+[projects.secondary]
+tabs = []
+"#,
+    )
+    .unwrap();
+
+    let s = WorkspaceLayoutService::open_at(path, Duration::ZERO).unwrap();
+    let got = s.get("uid-A").expect("the row survived the migration");
+    let vs = got.primary.view_states.first().expect("the tab survived");
+    assert_eq!(
+        (vs.segment.as_str(), vs.synopsis_folded),
+        ("manuscript", Some(true)),
+        "what v9 recorded is kept"
+    );
+    assert_eq!(
+        vs.depth_filter, None,
+        "no level was ever hidden in a v9 file"
+    );
+}
+
+/// The levels a tab showed survive a real write and re-read, and a tab showing every
+/// level writes nothing for it.
+#[test]
+fn a_tabs_levels_shown_round_trip_through_disk() {
+    let d = tempdir().unwrap();
+    let mut rec = sample("uid-A");
+    rec.primary.view_states = vec![
+        TabViewState {
+            uid: u(3),
+            depth_filter: Some("chapters".to_string()),
+            ..Default::default()
+        },
+        TabViewState {
+            uid: u(4),
+            ..Default::default()
+        },
+    ];
+    rec.item_view_states = vec![TabViewState {
+        uid: u(7),
+        depth_filter: Some("parts".to_string()),
+        ..Default::default()
+    }];
+    {
+        let s = svc(d.path());
+        s.set(rec).unwrap();
+        s.flush_now().unwrap();
+    }
+    let raw = std::fs::read_to_string(d.path().join("workspace.toml")).unwrap();
+    assert_eq!(
+        raw.matches("depth_filter").count(),
+        2,
+        "only the two chosen filters are written: {raw}"
+    );
+    let s = svc(d.path());
+    let got = s.get("uid-A").expect("row");
+    assert_eq!(
+        got.primary.view_states[0].depth_filter.as_deref(),
+        Some("chapters")
+    );
+    assert_eq!(got.primary.view_states[1].depth_filter, None);
+    assert_eq!(
+        got.item_view_states[0].depth_filter.as_deref(),
+        Some("parts")
+    );
+}
+
 /// **The `PartialEq` fast path must be able to see a pin.**
 /// [`WorkspaceLayoutService::set`] returns early when the stored row already
 /// equals the new one — which is what keeps an autosave tick from rewriting an

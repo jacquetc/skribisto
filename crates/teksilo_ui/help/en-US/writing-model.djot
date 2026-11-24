@@ -58,6 +58,11 @@ Each chapter sits further in than its part, and each scene further in than its c
 so you can see the outline at a glance. To change how far, open *Settings ▸ Editor ▸
 Editor Behavior* and choose *Indent by level*. *None* lines everything up.
 
+To read a book or a part as its outline, choose *Show down to chapters* or *Show parts
+only* above the text. A banner says which levels are hidden. While they are, adding,
+moving, merging and splitting are turned off. Choose *Show everything* to bring every
+level back. Each tab remembers what it shows.
+
 ## Paratext: in the book, not in the story
 
 A *Paratext* belongs to the book but not to its story: a preface, a dedication, an

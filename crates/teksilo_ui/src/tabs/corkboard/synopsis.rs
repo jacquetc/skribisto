@@ -12,15 +12,15 @@ use super::*;
 pub(super) fn synopsis_split_fn(
     vm: &CorkboardViewModel,
     card: &CorkboardCard,
-) -> Option<crate::tabs::shared::editor::SplitFn> {
+) -> Option<crate::tabs::shared::editor::SplitAction> {
     if !vm.can_split(card) {
         return None;
     }
     let vm = vm.clone();
     let id = card.item_id;
-    Some(Rc::new(move |ctx: &mut EventContext, caret: usize| {
-        vm.split_synopsis(ctx, id, caret)
-    }))
+    Some(crate::tabs::shared::editor::SplitAction::new(
+        move |ctx: &mut EventContext, caret: usize| vm.split_synopsis(ctx, id, caret),
+    ))
 }
 
 /// Build the card's editable synopsis over its shared `OpenDoc`. It uses the

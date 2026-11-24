@@ -97,9 +97,54 @@ fn wire_replacements(
     });
 }
 
-/// A caret-aware "split scene" action for a writing editor's context menu:
-/// invoked with the event context and the current caret offset.
-pub type SplitFn = Rc<dyn Fn(&mut EventContext, usize)>;
+/// A caret-aware "Split scene" for a writing editor's context menu: what it does with
+/// the caret's offset, and whether the menu offers it right now.
+///
+/// Whether is asked when the menu opens, not when the editor is built. A stream row's
+/// editor outlives a change of the levels shown, and while levels are hidden a split,
+/// which makes a scene, is not offered: the scene it made could be one of the hidden.
+#[derive(Clone)]
+pub struct SplitAction {
+    run: SplitRun,
+    offered: Option<Signal<bool>>,
+}
+
+/// What a split does, given the caret's offset.
+type SplitRun = Rc<dyn Fn(&mut EventContext, usize)>;
+
+impl SplitAction {
+    /// A split that runs `run` with the caret's offset, offered whenever the menu opens.
+    pub fn new(run: impl Fn(&mut EventContext, usize) + 'static) -> Self {
+        Self {
+            run: Rc::new(run),
+            offered: None,
+        }
+    }
+
+    /// Offered only while `offered` holds.
+    pub fn offered_while(mut self, offered: Signal<bool>) -> Self {
+        self.offered = Some(offered);
+        self
+    }
+
+    /// Whether the menu opening now offers it.
+    pub fn is_offered(&self) -> bool {
+        self.offered.as_ref().is_none_or(|offered| offered.get())
+    }
+
+    /// Split at `caret`.
+    pub fn run(&self, ctx: &mut EventContext, caret: usize) {
+        (self.run)(ctx, caret);
+    }
+}
+
+impl std::fmt::Debug for SplitAction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SplitAction")
+            .field("offered", &self.is_offered())
+            .finish_non_exhaustive()
+    }
+}
 
 /// How much narrower (px, total across both margins) the synopsis column is than
 /// the main writing column, so it reads as the subordinate pane.
@@ -149,7 +194,7 @@ pub fn writing_column(
     typo: &EditorTypography,
     min_lines: u32,
     on_change: impl Fn() + 'static,
-    split: Option<SplitFn>,
+    split: Option<SplitAction>,
     find: Option<FindViewModel>,
     spell: Option<Rc<SpellSession>>,
     replacement: Option<Rc<TextReplacementSession>>,
@@ -1002,7 +1047,7 @@ fn render_capture_menu(
 fn editor_context_menu(
     handle: EditorHandle,
     cursor: Signal<usize>,
-    split: Option<SplitFn>,
+    split: Option<SplitAction>,
     doc: TextDocument,
     spell: Option<Rc<SpellSession>>,
     comments: Option<crate::comments::binding::CommentBinding>,
@@ -1179,9 +1224,10 @@ fn editor_context_menu(
     list = list.separator().item(
         MenuItem::new(tr!(menu_select_all())).on_activate_fn(move |_ctx| select.select_all()),
     );
-    if let Some(split) = split.filter(|_| writable) {
+    if let Some(split) = split.filter(|s| writable && s.is_offered()) {
         list = list.separator().item(
-            MenuItem::new(tr!(split_scene())).on_activate_fn(move |ctx| split(ctx, cursor.get())),
+            MenuItem::new(tr!(split_scene()))
+                .on_activate_fn(move |ctx| split.run(ctx, cursor.get())),
         );
     }
     list

@@ -1313,6 +1313,23 @@ impl ContentTab {
         self.view_state_ports.request_focus();
     }
 
+    /// The levels this tab's streams show, as the filter's stable string, or `None` when
+    /// every level is (and for a tab with no stream). What a tab is remembered with.
+    pub fn depth_filter_id(&self) -> Option<String> {
+        self.stream()
+            .and_then(|vm| vm.depth_filter().id())
+            .map(str::to_string)
+    }
+
+    /// Show the levels a remembered tab showed, by the filter's stable string. A no-op
+    /// on a tab with no stream; a string this container's level does not offer shows
+    /// every level (see `crate::stream::DepthFilter::within`).
+    pub fn seed_depth_filter(&self, id: Option<&str>) {
+        if let Some(vm) = self.stream() {
+            vm.seed_depth_filter(id);
+        }
+    }
+
     /// Set the segment this tab should open on, as its stable string id. Consumed
     /// once, by `RememberSegment::wrap`, which is the only place that knows whether
     /// the string still names a segment this container has.

@@ -58,7 +58,7 @@ pub fn synopsis_editor(
     typo: &EditorTypography,
     fit: SynopsisFit,
     on_change: impl Fn() + 'static,
-    split: Option<SplitFn>,
+    split: Option<SplitAction>,
     spell: Option<Rc<SpellSession>>,
     replacement: Option<Rc<TextReplacementSession>>,
     // Where to re-attach this editor's handle so tab-level commands can find
@@ -276,7 +276,7 @@ pub fn card_synopsis_editor(
     doc: TextDocument,
     typo: EditorTypography,
     on_change: impl Fn() + 'static,
-    split: Option<SplitFn>,
+    split: Option<SplitAction>,
     spell: Option<Rc<SpellSession>>,
     replacement: Option<Rc<TextReplacementSession>>,
     format: Option<FormatViewModel>,
@@ -652,7 +652,7 @@ pub fn synopsis_column(
     column_width: &Signal<f32>,
     typo: &EditorTypography,
     on_change: impl Fn() + 'static,
-    split: Option<SplitFn>,
+    split: Option<SplitAction>,
     spell: Option<Rc<SpellSession>>,
     replacement: Option<Rc<TextReplacementSession>>,
     // Where the built editor re-attaches its handle, so tab-level commands

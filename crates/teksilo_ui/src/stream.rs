@@ -13,10 +13,13 @@
 //!
 //! Each row is set in by how deep it sits in the outline, a chapter further in than its
 //! part and a scene further in than its chapter: [`StreamIndent`] is the setting and
-//! [`level_inset`] the rule.
+//! [`level_inset`] the rule. A Book or a Part can also be read as its outline, its
+//! deeper levels hidden: [`DepthFilter`].
 
+mod depth_filter;
 mod indent;
 mod stream_vm;
 
-pub use indent::{INDENT_SHARE, StreamIndent, level_inset, row_inset};
+pub use depth_filter::DepthFilter;
+pub use indent::{INDENT_SHARE, StreamIndent, level_inset, reference_width, row_inset};
 pub use stream_vm::{SplitFlavour, StreamViewModel};

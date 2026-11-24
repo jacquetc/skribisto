@@ -9,7 +9,8 @@
 //!
 //! ```text
 //! s   = the step Settings asks for: None 0, Small 16, Medium 32, Large 48 dp
-//! R   = min(width the row is placed in, Settings ▸ Text width)
+//! R   = min(width the row is placed in, Settings ▸ Text width,
+//!           that width less the comment gutter the page reserves)
 //! D   = the deepest level among the rows shown (0: nothing to indent)
 //! s'  = min(s, R / (3·D))      all the levels together take at most a third of R
 //! I_d = d · s'                 for a row d levels deep (1 ≤ d ≤ D)
@@ -35,6 +36,15 @@
 //! **What the text width does.** It caps `R`. Widening the column in Settings widens
 //! every row and leaves the step alone, until a narrow column makes the cap bind; a pane
 //! narrower than the column is what usually does.
+//!
+//! **What comments do.** Once any row on the page has comment cards, the page reserves a
+//! gutter for them, and a row whose cards do not fit beside a centred column has its text
+//! squeezed into the width left beside them. `R` is never wider than that width, for
+//! every row and for every column of a row: so a row's title and its text, which the
+//! squeezing pushes against the same leading edge, are set in by the same amount and stay
+//! aligned, the step is the same on every row of the page, and the deepest text keeps two
+//! thirds of the width it is squeezed to. With no comments on the page the gutter is zero
+//! and this changes nothing.
 
 use serde::{Deserialize, Serialize};
 use teksilo::core::BindingLevel;
@@ -114,24 +124,46 @@ pub fn level_inset(step: f32, reference: f32, depth: u8, deepest: u8) -> f32 {
     f32::from(depth.min(deepest)) * per_level
 }
 
-/// The inset every column of one stream row shares: its depth, the deepest level the
-/// page shows, the setting, and the text width it is measured against, all live.
+/// The width a row's levels are measured against, `R` in the [module docs](self): the
+/// narrower of the width the row is placed in and the text width, and never wider than
+/// what is left beside the comment `gutter` the page reserves (zero with no comments).
 ///
-/// The four signals are bound at `Relayout` on each widget that places one of the row's
-/// columns, so a new setting, a part added above the row or a filter that changes the
-/// deepest level moves the row without rebuilding its editors.
+/// What is left beside the gutter is floored at the column's own floor, so a pane too
+/// narrow for any column beside the cards still measures something.
+pub fn reference_width(available: f32, text_width: f32, gutter: f32) -> f32 {
+    let beside = if gutter > 0.0 {
+        (available - gutter).max(crate::tabs::shared::MIN_COLUMN_WIDTH)
+    } else {
+        available
+    };
+    available.min(text_width).min(beside)
+}
+
+/// The inset every column of one stream row shares: its depth, the deepest level the
+/// page shows, the setting, the text width and the page's comment gutter it is measured
+/// against (see [`reference_width`]), all live.
+///
+/// Every column of the row (its header, its prose, its synopsis) asks with the width of
+/// the row, so they all get the same number, comments or not.
+///
+/// The five signals are bound at `Relayout` on each widget that places one of the row's
+/// columns, so a new setting, a part added above the row, a filter that changes the
+/// deepest level or a first comment on the page moves the row without rebuilding its
+/// editors.
 pub fn row_inset(
     depth: Signal<u8>,
     deepest: Signal<u8>,
     scale: Signal<StreamIndent>,
     column_width: Signal<f32>,
+    gutter: Signal<f32>,
 ) -> ColumnInset {
     let bind = {
-        let (depth, deepest, scale, column_width) = (
+        let (depth, deepest, scale, column_width, gutter) = (
             depth.clone(),
             deepest.clone(),
             scale.clone(),
             column_width.clone(),
+            gutter.clone(),
         );
         move |ctx: &mut BuildContext| {
             let me = ctx.self_id();
@@ -139,13 +171,14 @@ pub fn row_inset(
             deepest.bind_to(me, ctx.binding_registry(), BindingLevel::Relayout);
             scale.bind_to(me, ctx.binding_registry(), BindingLevel::Relayout);
             column_width.bind_to(me, ctx.binding_registry(), BindingLevel::Relayout);
+            gutter.bind_to(me, ctx.binding_registry(), BindingLevel::Relayout);
         }
     };
     ColumnInset::new(
         move |available| {
             level_inset(
                 scale.get().step(),
-                available.min(column_width.get()),
+                reference_width(available, column_width.get(), gutter.get()),
                 depth.get(),
                 deepest.get(),
             )
@@ -238,15 +271,39 @@ mod tests {
         );
     }
 
-    /// The row's inset reads its signals live, against the narrower of the pane and the
-    /// text width.
+    /// The reference is the narrowest of the row, the text width and what the page's
+    /// comment gutter leaves; with no gutter, the gutter changes nothing.
+    #[test]
+    fn the_reference_is_never_wider_than_what_the_comments_leave() {
+        assert_eq!(reference_width(1400.0, 700.0, 0.0), 700.0);
+        assert_eq!(reference_width(512.0, 700.0, 0.0), 512.0);
+        // A wide pane: the cards fit beside a full column, the reference is the column.
+        assert_eq!(reference_width(1400.0, 700.0, 328.0), 700.0);
+        // A tight one: the text is squeezed to what the cards leave, and so is `R`.
+        assert_eq!(reference_width(512.0, 700.0, 328.0), 184.0);
+        // Narrower still: floored at the column's own floor.
+        assert_eq!(
+            reference_width(380.0, 700.0, 328.0),
+            crate::tabs::shared::MIN_COLUMN_WIDTH
+        );
+    }
+
+    /// The row's inset reads its signals live, against the narrowest of the pane, the
+    /// text width and what the page's comment gutter leaves.
     #[test]
     fn a_row_inset_follows_its_signals() {
         let depth = Signal::new(2u8);
         let deepest = Signal::new(3u8);
         let scale = Signal::new(StreamIndent::Large);
         let width = Signal::new(700.0f32);
-        let inset = row_inset(depth.clone(), deepest.clone(), scale.clone(), width.clone());
+        let gutter = Signal::new(0.0f32);
+        let inset = row_inset(
+            depth.clone(),
+            deepest.clone(),
+            scale.clone(),
+            width.clone(),
+            gutter.clone(),
+        );
         assert_eq!(inset.leading(1400.0), 96.0);
         // The pane narrower than the text width: the pane is the reference.
         assert_eq!(inset.leading(360.0), 80.0);
@@ -263,5 +320,11 @@ mod tests {
         deepest.set(0);
         scale.set(StreamIndent::Large);
         assert_eq!(inset.leading(1400.0), 0.0, "an empty page indents nothing");
+        // A first comment on the page in a tight pane: every row measures against what
+        // the cards leave, 184 of 512.
+        deepest.set(3);
+        depth.set(3);
+        gutter.set(328.0);
+        assert!((inset.leading(512.0) - 3.0 * 184.0 / 9.0).abs() < 0.001);
     }
 }

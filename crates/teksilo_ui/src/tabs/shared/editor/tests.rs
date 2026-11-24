@@ -1048,3 +1048,18 @@ fn files_dropped_on_a_text_are_parked_with_that_editor_and_its_item() {
         "the editor the file landed on"
     );
 }
+
+/// A split offered while a signal holds follows it, asked when the menu opens: an
+/// editor in a stream outlives a change of the levels shown.
+#[test]
+fn a_split_offered_while_a_signal_holds_follows_it() {
+    let offered = Signal::new(true);
+    let split = SplitAction::new(|_, _| {}).offered_while(offered.clone());
+    assert!(split.is_offered());
+    offered.set(false);
+    assert!(!split.is_offered(), "the menu opening now leaves it out");
+    assert!(
+        SplitAction::new(|_, _| {}).is_offered(),
+        "a split with no condition is always offered"
+    );
+}

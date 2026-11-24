@@ -28,6 +28,11 @@
 //! [`crate::shared::column_inset`]. A screen reader hears the same outline: each row's
 //! title is a heading one level under the row it sits in.
 //!
+//! **Levels shown.** A Full Book or Full Part can be read as its outline: its scenes, or
+//! its chapters and scenes, hidden ([`DepthFilter`]). A banner pinned above the page says
+//! so while it is, and offers the way back; adding, moving, merging and splitting rows
+//! are turned off meanwhile, since what they would move or make could be out of sight.
+//!
 //! **Read as exported.** The Prose flavour can also show the container as its reader will
 //! get it, in the book's remembered export style: only what an export of it would print,
 //! front and back matter included, each row under the heading the export gives it and
@@ -56,11 +61,11 @@ use crate::margin_lane::RowExtents;
 use crate::models::{OpenDoc, ReadingRow, StreamRow};
 use crate::settings::EditorTypography;
 use crate::shared::{is_prose_bearing, is_synopsis_bearing};
-use crate::stream::{SplitFlavour, StreamViewModel};
+use crate::stream::{DepthFilter, SplitFlavour, StreamViewModel};
 use crate::widgets::Rebuilding;
 
 use super::{
-    HEADING_PROSE_MIN_LINES, MAIN_MIN_LINES, SplitFn, centered, synopsis_column, vspace,
+    HEADING_PROSE_MIN_LINES, MAIN_MIN_LINES, SplitAction, centered, synopsis_column, vspace,
     writing_column,
 };
 
@@ -105,6 +110,9 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
         crate::margin_lane::LaneScope,
         ScrollArea,
     )> = None;
+    // What the levels banner's "Show everything" runs first, to keep the passage: built
+    // with the page's anchor below, used by the banner the page is wrapped in.
+    let mut mapped_levels: Option<Rc<dyn Fn()>> = None;
 
     if let Some(vm) = tab.stream().cloned() {
         let mark_dirty: Rc<dyn Fn()> = Rc::new(tab.mark_dirty_fn());
@@ -220,8 +228,9 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
         };
 
         // Where the writer was reading when the stream switched between the draft and
-        // the book read as exported, so the switch leaves them on the same passage.
-        let anchor = ReadingAnchor::default();
+        // the book read as exported, or showed more or fewer levels, so the switch
+        // leaves them on the same passage.
+        let anchor = PassageAnchor::default();
         col = col
             .child(WireOnBuild::new(
                 vm.clone(),
@@ -236,8 +245,22 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                 },
             ))
             .child(vspace(12.0));
-        // Read as exported is a Prose matter: a synopsis is not part of the book.
-        if flavour == SplitFlavour::Prose {
+        // Note the passage before the levels shown change, so the page stays on it: on
+        // the row at the top of the page if it stays, else on the nearest row it sits
+        // under that does (the chapter a hidden scene was in).
+        let on_levels: Rc<dyn Fn()> = {
+            let anchor = anchor.clone();
+            let extents = extents.clone();
+            let page_scroll = page_scroll.clone();
+            let vm = vm.clone();
+            Rc::new(move || {
+                anchor.note_within(&extents, page_scroll.get(), |id| vm.row_parents(id))
+            })
+        };
+        // The bar over the rows. Read as exported is a Prose matter (a synopsis is not
+        // part of the book); the levels shown are a Book's and a Part's, on both pages.
+        let offers_levels = !vm.depth_filters_offered().is_empty();
+        if flavour == SplitFlavour::Prose || offers_levels {
             let on_flip: Rc<dyn Fn()> = {
                 let anchor = anchor.clone();
                 let extents = extents.clone();
@@ -245,9 +268,13 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                 Rc::new(move || anchor.note(&extents, page_scroll.get()))
             };
             col = col
-                .child(centered(reading_bar(&vm, on_flip), &header_cw))
+                .child(centered(
+                    stream_bar(&vm, flavour, on_flip, on_levels.clone()),
+                    &header_cw,
+                ))
                 .child(vspace(8.0));
         }
+        mapped_levels = Some(on_levels);
         col = col
             .child(centered(container_header(&vm), &header_cw).visible_when(vm.working_on()))
             .child(vspace(4.0));
@@ -427,6 +454,13 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
             let laned = crate::tabs::shared::panes::laned_stream(
                 tab, &vm, flavour, scope, extents, page, col,
             );
+            // The levels banner goes outside the lane and inside the find banner, for the
+            // reason the find banner's own note gives: a strip above the page, pinned.
+            let laned = levels_banner_over(
+                &vm,
+                mapped_levels.clone().unwrap_or_else(|| Rc::new(|| {})),
+                laned,
+            );
             // **Ctrl+F reads the whole stream.** A Full Chapter, Part or Book is one
             // manuscript to the writer in front of it, so the banner searches the
             // container's own prose and every row's as one run, and Next steps out of a
@@ -493,7 +527,7 @@ struct WireOnBuild {
 /// The passage to land back on after a switch to or from the reading, and what it needs
 /// to find it: where every row is, and the page's scroll and how far it can go.
 struct PagePlace {
-    anchor: ReadingAnchor,
+    anchor: PassageAnchor,
     extents: RowExtents,
     scroll: Signal<f32>,
     max_scroll: Signal<f32>,
@@ -700,8 +734,14 @@ fn add_button(vm: &StreamViewModel) -> impl Widget {
     let row = HStack::new().child(Spacer::new());
     match vm.add_label() {
         Some(label) => {
+            let editable = vm.structure_editable();
             let vm = vm.clone();
-            row.child(Button::new(label).on_activate_fn(move |ctx| vm.begin_add_row(ctx)))
+            row.child(
+                Button::new(label)
+                    // Greyed while levels are hidden: what it adds could be one of them.
+                    .enabled(editable)
+                    .on_activate_fn(move |ctx| vm.begin_add_row(ctx)),
+            )
         }
         // A container with nothing to add: no button rather than one that does nothing.
         None => row,
@@ -758,6 +798,10 @@ fn stream_row(
         vm.deepest(),
         indent.clone(),
         header_width.clone(),
+        // The page's comment gutter: once a row has cards, every row measures against
+        // what they leave, so a squeezed row's title and text stay aligned and the step
+        // stays even down the page.
+        gutter.clone(),
     );
 
     let mut col = VStack::new()
@@ -778,11 +822,15 @@ fn stream_row(
 
         // "Split scene" reads the caret and splits *this* editor's text there; the other
         // role stays whole on the source. Only offered where the backend accepts it.
-        let split: Option<SplitFn> = vm.can_split(id).then(|| {
+        // And only while every level is shown: a split makes a scene, and while levels
+        // are hidden it could be one of them.
+        let split: Option<SplitAction> = vm.can_split(id).then(|| {
+            let offered = vm.structure_editable();
             let vm = vm.clone();
-            Rc::new(move |ctx: &mut EventContext, caret: usize| {
+            SplitAction::new(move |ctx: &mut EventContext, caret: usize| {
                 vm.split_row(ctx, id, flavour, caret)
-            }) as SplitFn
+            })
+            .offered_while(offered)
         });
 
         match flavour {
@@ -1022,20 +1070,35 @@ fn row_menu(vm: &StreamViewModel, row: &StreamRow) -> impl Widget {
             MenuItem::new(tr!(set_label())).on_activate_fn(mk(|v, c, id| v.begin_set_label(c, id))),
         )
         .separator();
-    // Named after what it creates; absent when the row recommends nothing.
+    // Named after what it creates; absent when the row recommends nothing. Greyed while
+    // levels are hidden, like Move and Merge below, and bound to a signal rather than
+    // decided here, because the row is reused, not rebuilt, when the levels shown change:
+    // each of these acts on rows a hidden level can be made of (a flat chapter moved up
+    // past a hidden scene takes that scene into it), and an action whose effect would
+    // land out of sight is not offered.
     if let Some(label) = vm.insert_label(id) {
-        list = list
-            .item(MenuItem::new(label).on_activate_fn(mk(|v, c, id| v.begin_insert_after(c, id))));
+        list = list.item(
+            MenuItem::new(label)
+                .enabled(vm.structure_editable())
+                .on_activate_fn(mk(|v, c, id| v.begin_insert_after(c, id))),
+        );
     }
     list = list
-        .item(MenuItem::new(tr!(move_up())).on_activate_fn(mk(|v, c, id| v.move_row_up(c, id))))
         .item(
-            MenuItem::new(tr!(move_down())).on_activate_fn(mk(|v, c, id| v.move_row_down(c, id))),
+            MenuItem::new(tr!(move_up()))
+                .enabled(vm.structure_editable())
+                .on_activate_fn(mk(|v, c, id| v.move_row_up(c, id))),
+        )
+        .item(
+            MenuItem::new(tr!(move_down()))
+                .enabled(vm.structure_editable())
+                .on_activate_fn(mk(|v, c, id| v.move_row_down(c, id))),
         );
 
     if vm.can_merge_into_previous(id) {
         list = list.item(
             MenuItem::new(tr!(merge_with_previous()))
+                .enabled(vm.structure_editable())
                 .on_activate_fn(mk(|v, c, id| v.merge_into_previous(c, id))),
         );
     }
@@ -1057,6 +1120,95 @@ fn row_menu(vm: &StreamViewModel, row: &StreamRow) -> impl Widget {
 }
 
 // ── Read as exported ─────────────────────────────────────────────────────────
+
+/// The bar over the rows: the switch to read the book as exported and its style, on the
+/// prose page; the levels shown, for a Book or a Part, on both pages.
+fn stream_bar(
+    vm: &StreamViewModel,
+    flavour: SplitFlavour,
+    on_flip: Rc<dyn Fn()>,
+    on_levels: Rc<dyn Fn()>,
+) -> impl Widget {
+    let mut bar = HStack::new().spacing(12.0);
+    bar = if flavour == SplitFlavour::Prose {
+        bar.child(Expand::horizontal().child(reading_bar(vm, on_flip)))
+    } else {
+        bar.child(Spacer::new())
+    };
+    if !vm.depth_filters_offered().is_empty() {
+        bar = bar.child(levels_control(vm, on_levels));
+    }
+    bar
+}
+
+/// The levels shown: the choices this container offers (see [`DepthFilter::offered`]).
+/// Gone while the book is read as exported, which shows every row it prints.
+///
+/// `before` runs ahead of every change, to note the passage being read.
+fn levels_control(vm: &StreamViewModel, before: Rc<dyn Fn()>) -> impl Widget {
+    let pick = vm.clone();
+    ComboBox::from_items(
+        vm.depth_filters_offered().iter().copied(),
+        vm.depth_choice(),
+        |filter: &DepthFilter| filter.label(),
+    )
+    .label(tr!(stream_levels_shown()))
+    .on_select(move |filter, _ctx| {
+        before();
+        pick.set_depth_filter(*filter);
+    })
+    .visible_when(vm.working_on())
+}
+
+/// `body` under the levels banner: what is hidden, that the structural actions are off,
+/// and the way back. Pinned above the page like the find banner, since the writer deep
+/// in a long Full Book is the one who needs reminding; occupying nothing while every
+/// level is shown.
+fn levels_banner_over(
+    vm: &StreamViewModel,
+    before: Rc<dyn Fn()>,
+    body: impl Widget + 'static,
+) -> impl Widget {
+    VStack::new()
+        .spacing(0.0)
+        .child(crate::tabs::shared::editor::VisibleWhen::new(
+            vm.filter_on(),
+            levels_banner(vm, before),
+        ))
+        .child(Expand::new().child(body))
+}
+
+/// The banner's content, rebuilt when the choice changes so its title names what is
+/// hidden now. An info banner, not a warning: nothing is wrong, something is out of
+/// sight. It reads as a status to a screen reader, so the change is announced.
+fn levels_banner(vm: &StreamViewModel, before: Rc<dyn Fn()>) -> impl Widget {
+    let choice = vm.depth_choice();
+    let make_vm = vm.clone();
+    Rebuilding::new(
+        move |ctx: &mut BuildContext| {
+            choice.bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
+        },
+        move |ctx: &mut BuildContext| {
+            // Never shown without something hidden; the fallback only fills the slot.
+            let title = make_vm
+                .depth_filter()
+                .hidden()
+                .unwrap_or_else(|| tr!(stream_show_everything()));
+            let show_all = make_vm.clone();
+            let before = before.clone();
+            ctx.add(
+                teksilo::widgets::Banner::info(title)
+                    .description(tr!(stream_hidden_locked()))
+                    .action(Button::new(tr!(stream_show_everything())).on_activate_fn(
+                        move |_ctx| {
+                            before();
+                            show_all.set_depth_filter(DepthFilter::Everything);
+                        },
+                    )),
+            )
+        },
+    )
+}
 
 /// The switch between the working stream and the book read as exported, and the style
 /// the reading follows.
@@ -1384,14 +1536,15 @@ fn reading_row(
 const ANCHOR_WINDOW: std::time::Duration = std::time::Duration::from_millis(1500);
 
 /// The passage the writer was reading when the stream switched between the draft and the
-/// book read as exported.
+/// book read as exported, or showed more or fewer levels.
 ///
 /// Noted by row rather than by pixel: the two modes put different rows above it (a
-/// dedication appears, a cut scene goes), so the same offset would land on a different
-/// page of the book. If the noted row is not in the new mode, the first row after it that
-/// is takes its place.
+/// dedication appears, a cut scene goes, the scenes are hidden), so the same offset would
+/// land on a different page of the book. If the noted row is not in the new mode, the
+/// first row after it that is takes its place, or for a change of levels the nearest row
+/// it sits under (see [`note_within`](Self::note_within)).
 #[derive(Clone, Default)]
-struct ReadingAnchor(Rc<RefCell<Option<Anchored>>>);
+struct PassageAnchor(Rc<RefCell<Option<Anchored>>>);
 
 struct Anchored {
     /// The row at the top of the page, then every row after it, in page order.
@@ -1406,7 +1559,7 @@ struct Anchored {
     placed_at: f32,
 }
 
-impl ReadingAnchor {
+impl PassageAnchor {
     /// Note the row at the top of the page, scrolled `scroll_y` down.
     fn note(&self, extents: &RowExtents, scroll_y: f32) {
         let mut placed: Vec<(u64, f32, f32)> = extents
@@ -1426,6 +1579,27 @@ impl ReadingAnchor {
                 placed_at: scroll_y,
             });
         *self.0.borrow_mut() = next;
+    }
+
+    /// Note the row at the top of the page, scrolled `scroll_y` down, before a change of
+    /// the levels shown. Should the change hide that row, the page goes to the nearest of
+    /// `parents(row)` still shown (the chapter a hidden scene was in, then its part)
+    /// before any row after it: hiding the scenes of the chapter being read leaves the
+    /// writer on that chapter, not on the next one.
+    fn note_within(&self, extents: &RowExtents, scroll_y: f32, parents: impl Fn(u64) -> Vec<u64>) {
+        self.note(extents, scroll_y);
+        let mut slot = self.0.borrow_mut();
+        if let Some(a) = slot.as_mut()
+            && let Some(&top) = a.candidates.first()
+        {
+            let parents = parents(top);
+            let after: Vec<u64> = a.candidates[1..]
+                .iter()
+                .copied()
+                .filter(|id| !parents.contains(id))
+                .collect();
+            a.candidates = std::iter::once(top).chain(parents).chain(after).collect();
+        }
     }
 
     /// Put the page back on the noted passage, now that the rows have moved.
@@ -1517,7 +1691,7 @@ mod tests {
         extents.report(1, 0.0, 300.0);
         extents.report(2, 300.0, 500.0);
         let scroll = Signal::new(350.0);
-        let anchor = ReadingAnchor::default();
+        let anchor = PassageAnchor::default();
         anchor.note(&extents, scroll.get());
 
         extents.report(2, 700.0, 500.0);
@@ -1533,7 +1707,7 @@ mod tests {
         extents.report(2, 300.0, 200.0);
         extents.report(3, 500.0, 400.0);
         let scroll = Signal::new(320.0);
-        let anchor = ReadingAnchor::default();
+        let anchor = PassageAnchor::default();
         anchor.note(&extents, scroll.get());
 
         extents.forget(2);
@@ -1554,7 +1728,7 @@ mod tests {
         extents.report(1, 0.0, 300.0);
         extents.report(2, 300.0, 500.0);
         let scroll = Signal::new(350.0);
-        let anchor = ReadingAnchor::default();
+        let anchor = PassageAnchor::default();
         anchor.note(&extents, scroll.get());
 
         scroll.set(1200.0);
@@ -1574,7 +1748,7 @@ mod tests {
         extents.report(1, 0.0, 300.0);
         extents.report(2, 2000.0, 500.0);
         let scroll = Signal::new(2100.0);
-        let anchor = ReadingAnchor::default();
+        let anchor = PassageAnchor::default();
         anchor.note(&extents, scroll.get());
 
         // A long cut scene above row 2 left: the content is shorter, and the area clamped.
@@ -1582,6 +1756,44 @@ mod tests {
         extents.report(2, 600.0, 500.0);
         anchor.restore(&extents, &scroll, 900.0);
         assert_eq!(scroll.get(), 700.0, "row 2, 100 px in");
+    }
+
+    /// Hiding the passage being read lands the page on the row it sat under (the
+    /// chapter a hidden scene was in), not on the next row still shown.
+    #[test]
+    fn a_hidden_row_hands_the_passage_to_the_row_it_sits_under() {
+        let extents = RowExtents::new();
+        extents.report(1, 0.0, 100.0);
+        extents.report(2, 100.0, 500.0);
+        extents.report(3, 600.0, 100.0);
+        let scroll = Signal::new(350.0);
+        let anchor = PassageAnchor::default();
+        anchor.note_within(&extents, scroll.get(), |id| {
+            if id == 2 { vec![1] } else { Vec::new() }
+        });
+
+        // The scene is hidden: it leaves, and the next chapter moves up under the first.
+        extents.forget(2);
+        extents.report(3, 100.0, 100.0);
+        anchor.restore(&extents, &scroll, 5000.0);
+        assert_eq!(scroll.get(), 0.0, "on the chapter the scene was in");
+    }
+
+    /// Showing more levels keeps the row being read: its offset into the row holds
+    /// while the rows that appear above push it down.
+    #[test]
+    fn showing_more_levels_keeps_the_row_being_read() {
+        let extents = RowExtents::new();
+        extents.report(1, 0.0, 100.0);
+        extents.report(3, 100.0, 300.0);
+        let scroll = Signal::new(150.0);
+        let anchor = PassageAnchor::default();
+        anchor.note_within(&extents, scroll.get(), |_| Vec::new());
+
+        extents.report(2, 100.0, 500.0);
+        extents.report(3, 600.0, 300.0);
+        anchor.restore(&extents, &scroll, 5000.0);
+        assert_eq!(scroll.get(), 650.0, "row 3, 50 px in, as before");
     }
 
     /// **The majority case, and the one that must not regress.** A page with no

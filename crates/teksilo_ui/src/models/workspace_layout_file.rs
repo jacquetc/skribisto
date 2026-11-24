@@ -155,6 +155,14 @@ pub struct TabViewState {
     /// divider. `None` starts it open.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub side_synopsis_folded: Option<bool>,
+    /// The levels a container tab's Full Book or Full Part showed, as the filter's
+    /// stable string (see `crate::stream::DepthFilter::id`). `None`, and absent from the
+    /// file, when every level was shown, as on any tab with no stream.
+    ///
+    /// Remembered with the tab because the scroll offset beside it was measured on the
+    /// filtered page: restored on the whole one, it would land somewhere else.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub depth_filter: Option<String>,
 }
 
 /// One tab's remembered Corkboard navigation.
@@ -397,7 +405,11 @@ impl Versioned for WorkspaceLayoutFile {
     /// **v9** records the synopsis folds the writer chose on each item
     /// ([`TabViewState::synopsis_folded`], [`TabViewState::side_synopsis_folded`]).
     /// Additive, with serde defaults, like every bump since v4.
-    const CURRENT_VERSION: u32 = 9;
+    ///
+    /// **v10** records the levels each container tab's streams showed
+    /// ([`TabViewState::depth_filter`]). Additive, with a serde default, like every bump
+    /// since v4.
+    const CURRENT_VERSION: u32 = 10;
     fn version(&self) -> u32 {
         self.version
     }
@@ -545,6 +557,11 @@ fn migrator() -> Migrator<WorkspaceLayoutFile> {
         // The stamp keeps an older build from rewriting a v9 file and dropping
         // every remembered fold.
         .step(8, Ok)
+        // **v9 → v10 is the identity** too: `TabViewState::depth_filter` is a new
+        // optional field with a serde default, so a v9 document reads as "every level
+        // shown", which is what it means. The stamp keeps an older build from rewriting
+        // a v10 file and showing every hidden level again on the next launch.
+        .step(9, Ok)
 }
 
 /// Persistent workspace-layout service. `SettingsFile` is `Clone` (shares the

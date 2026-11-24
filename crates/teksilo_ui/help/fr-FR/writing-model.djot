@@ -64,6 +64,12 @@ Chaque chapitre est plus en retrait que sa partie, et chaque scène plus que son
 le plan se lit d’un coup d’œil. Pour changer ce retrait, ouvrez *Paramètres ▸ Éditeur ▸
 Comportement de l’éditeur* et choisissez *Retrait par niveau*. *Aucun* aligne tout.
 
+Pour lire un livre ou une partie comme un plan, choisissez *Afficher jusqu’aux chapitres*
+ou *N’afficher que les parties* au-dessus du texte. Un bandeau indique les niveaux
+masqués ; tant qu’ils le sont, l’ajout, le déplacement, la fusion et la scission sont
+désactivés. Choisissez *Tout afficher* pour retrouver tous les niveaux. Chaque onglet se
+souvient de ce qu’il affiche.
+
 ## Le paratexte : dans le livre, pas dans l’histoire
 
 Un *Paratexte* appartient au livre mais pas à son histoire : une préface, une dédicace,

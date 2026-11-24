@@ -58,6 +58,8 @@ use crate::export::ExportStylesViewModel;
 use crate::models::{OpenDoc, OpenDocsStore, StreamLevel, StreamRow, StreamRowsModel};
 use crate::singles::SingleBinderItem;
 
+use super::DepthFilter;
+
 use crate::shared::binder_ops::{
     self, is_prose_bearing, opens_a_section, split_djot, update_item_dto,
 };
@@ -112,6 +114,18 @@ struct Inner {
     /// without this the reading followed the writer to the Full Synopsis, which then
     /// showed the book's prose with no switch on the page to turn it off.
     shown: Cell<SplitFlavour>,
+    /// The levels this tab shows (see [`DepthFilter`]). Per tab, shared by its two stream
+    /// pages, which show one row list. `Option` because that is what the page's
+    /// `ComboBox` binds; `None` reads as no filter.
+    depth_choice: Signal<Option<DepthFilter>>,
+    /// Whether the page on screen hides levels: a filter is chosen, and the page shows
+    /// the working stream (a reading shows every row). What the banner shows on.
+    filter_on: Signal<bool>,
+    /// Its negation, as a signal of its own: whether rows may be added, moved, merged or
+    /// split. Each of those acts on rows a hidden level can be made of (a flat chapter
+    /// moved up past a hidden scene takes that scene into it), so while levels are hidden
+    /// they are greyed out, and refused here as well.
+    structure_editable: Signal<bool>,
     /// The style a reading follows: the book's remembered export style, resolved against
     /// every style this machine has. Kept current while the reading is off too, so the
     /// picker shows the right entry the moment it appears.
@@ -174,6 +188,9 @@ impl StreamViewModel {
                 reading_on: Signal::new(false),
                 working_on: Signal::new(true),
                 shown: Cell::new(SplitFlavour::Prose),
+                depth_choice: Signal::new(Some(DepthFilter::Everything)),
+                filter_on: Signal::new(false),
+                structure_editable: Signal::new(true),
                 reading_style: Signal::new(None),
                 styles: RefCell::new(None),
             }),
@@ -409,6 +426,89 @@ impl StreamViewModel {
         let reading = self.reading_shown();
         self.inner.working_on.set_if_changed(!reading);
         self.inner.rows.set_reading(style.filter(|_| reading));
+        self.sync_filter_flags();
+    }
+
+    // ── levels shown ──
+
+    /// The filters this container offers, the first being none; empty for a Chapter.
+    pub fn depth_filters_offered(&self) -> &'static [DepthFilter] {
+        DepthFilter::offered(self.inner.level)
+    }
+
+    /// The levels chosen, as the page's `ComboBox` binds them.
+    pub fn depth_choice(&self) -> Signal<Option<DepthFilter>> {
+        self.inner.depth_choice.clone()
+    }
+
+    /// The levels chosen.
+    pub fn depth_filter(&self) -> DepthFilter {
+        self.inner.depth_choice.get().unwrap_or_default()
+    }
+
+    /// Show the levels `filter` keeps. A filter this container does not offer shows
+    /// everything (see [`DepthFilter::within`]).
+    pub fn set_depth_filter(&self, filter: DepthFilter) {
+        let filter = filter.within(self.inner.level);
+        self.inner.depth_choice.set_if_changed(Some(filter));
+        self.inner.rows.set_shown_down_to(filter.limit());
+        self.sync_filter_flags();
+    }
+
+    /// Restore the filter a tab was remembered with, by its stable string (see
+    /// [`DepthFilter::id`]).
+    pub fn seed_depth_filter(&self, id: Option<&str>) {
+        self.set_depth_filter(DepthFilter::from_id(id));
+    }
+
+    /// Whether the page on screen hides levels. See [`Inner::filter_on`].
+    pub fn filter_on(&self) -> Signal<bool> {
+        self.inner.filter_on.clone()
+    }
+
+    /// Whether rows may be added, moved, merged or split. See
+    /// [`Inner::structure_editable`].
+    pub fn structure_editable(&self) -> Signal<bool> {
+        self.inner.structure_editable.clone()
+    }
+
+    /// The rows `id` sits under, nearest first: the chapter a scene is in, then the part
+    /// that chapter is in. Empty for a row at the first level, and for anything that is
+    /// not a row (the container's own text).
+    ///
+    /// Where the page goes when a filter hides the passage being read: to the nearest of
+    /// these that is still shown.
+    pub fn row_parents(&self, id: u64) -> Vec<u64> {
+        let rows = self.inner.rows.ids();
+        let Some(pos) = rows.iter().position(|&r| r == id) else {
+            return Vec::new();
+        };
+        let mut depth = self.row_depth(id).get();
+        let mut parents = Vec::new();
+        for &above in rows[..pos].iter().rev() {
+            if depth <= 1 {
+                break;
+            }
+            let d = self.row_depth(above).get();
+            if d < depth {
+                parents.push(above);
+                depth = d;
+            }
+        }
+        parents
+    }
+
+    /// Keep the banner and the structural actions in step with the filter and with
+    /// what the page on screen shows.
+    fn sync_filter_flags(&self) {
+        let on = self.depth_filter() != DepthFilter::Everything && !self.reading_shown();
+        self.inner.filter_on.set_if_changed(on);
+        self.inner.structure_editable.set_if_changed(!on);
+    }
+
+    /// Whether a structural action may run now. See [`Inner::structure_editable`].
+    fn structure_unlocked(&self) -> bool {
+        self.inner.structure_editable.get()
     }
 
     // ── reactive reads ──
@@ -711,6 +811,9 @@ impl StreamViewModel {
     /// choice, not a cancel: see
     /// [`name_dialog`](crate::binder::create_labels::name_dialog).
     pub fn begin_insert_after(&self, ctx: &mut EventContext, id: u64) {
+        if !self.structure_unlocked() {
+            return;
+        }
         let Some(label) = self.insert_label(id) else {
             return;
         };
@@ -728,6 +831,9 @@ impl StreamViewModel {
     /// is a choice, not a cancel: see
     /// [`name_dialog`](crate::binder::create_labels::name_dialog).
     pub fn begin_add_row(&self, ctx: &mut EventContext) {
+        if !self.structure_unlocked() {
+            return;
+        }
         let Some(label) = self.add_label() else {
             return;
         };
@@ -773,6 +879,9 @@ impl StreamViewModel {
     /// recommendation is `Child`, and that shortcut would drop the new scene *outside*
     /// the chapter it was added to.
     pub fn insert_after(&self, _ctx: &mut EventContext, id: u64, title: &str) {
+        if !self.structure_unlocked() {
+            return;
+        }
         let Some(row) = self.rows().into_iter().find(|r| r.item_id == id) else {
             return;
         };
@@ -790,6 +899,9 @@ impl StreamViewModel {
     /// end of the stream: a chapter after the last chapter of a part, a scene after the
     /// last scene of a chapter. Placed by `binder_ops::append_to_stream`.
     pub fn add_row(&self, _ctx: &mut EventContext, title: &str) {
+        if !self.structure_unlocked() {
+            return;
+        }
         binder_ops::append_to_stream(
             &self.inner.app_ctx,
             &self.inner.ids,
@@ -801,6 +913,9 @@ impl StreamViewModel {
     }
 
     pub fn move_row_up(&self, _ctx: &mut EventContext, id: u64) {
+        if !self.structure_unlocked() {
+            return;
+        }
         let ids = self.inner.rows.ids();
         let Some(pos) = ids.iter().position(|&x| x == id) else {
             return;
@@ -818,6 +933,9 @@ impl StreamViewModel {
     }
 
     pub fn move_row_down(&self, _ctx: &mut EventContext, id: u64) {
+        if !self.structure_unlocked() {
+            return;
+        }
         let ids = self.inner.rows.ids();
         let Some(pos) = ids.iter().position(|&x| x == id) else {
             return;
@@ -838,7 +956,7 @@ impl StreamViewModel {
     /// roles, so the survivor must reload both — the old chapter view reloaded only the
     /// prose and left a stale synopsis on screen.
     pub fn merge_into_previous(&self, ctx: &mut EventContext, id: u64) {
-        if !self.can_merge_into_previous(id) {
+        if !self.structure_unlocked() || !self.can_merge_into_previous(id) {
             return;
         }
         let rows = self.rows();
@@ -881,7 +999,7 @@ impl StreamViewModel {
     /// empty to the new scene — which is exactly "it stays entirely on the original
     /// scene". See `split_scene_uc`, which applies both roles uniformly.
     pub fn split_row(&self, ctx: &mut EventContext, id: u64, which: SplitFlavour, caret: usize) {
-        if !self.can_split(id) {
+        if !self.structure_unlocked() || !self.can_split(id) {
             return;
         }
         let Some(doc) = self.row_doc(id) else { return };
@@ -1232,6 +1350,193 @@ mod tests {
         assert_eq!(
             added.1, "",
             "untitled, so the binder and the book number it"
+        );
+    }
+
+    /// A Book offers every level, a Part its chapters and scenes, a Chapter nothing: a
+    /// filter there could only empty the page.
+    #[test]
+    fn a_container_offers_the_levels_it_holds() {
+        let book = vm(Folder, Book).expect("a book hosts a stream");
+        assert_eq!(book.depth_filters_offered().len(), 3);
+        let part = vm(Folder, Part).expect("a part hosts a stream");
+        assert_eq!(part.depth_filters_offered().len(), 2);
+        let chapter = vm(Folder, ChapterScene).expect("a chapter folder hosts a stream");
+        assert!(chapter.depth_filters_offered().is_empty());
+        chapter.set_depth_filter(DepthFilter::DownToChapters);
+        assert_eq!(
+            chapter.depth_filter(),
+            DepthFilter::Everything,
+            "a chapter cannot hide its own scenes"
+        );
+        assert!(!chapter.filter_on().get());
+    }
+
+    /// While levels are hidden the banner shows and the structural actions are off. A
+    /// reading shows every row, so neither while it is on; the synopsis page shows the
+    /// working rows, so both again there; and showing everything puts both back.
+    #[test]
+    fn hidden_levels_turn_the_banner_on_and_the_structural_actions_off() {
+        let book = vm(Folder, Book).expect("a book hosts a stream");
+        assert!(!book.filter_on().get() && book.structure_editable().get());
+
+        book.set_depth_filter(DepthFilter::DownToChapters);
+        assert!(book.filter_on().get() && !book.structure_editable().get());
+
+        book.set_reading_on(true);
+        assert!(
+            !book.filter_on().get() && book.structure_editable().get(),
+            "a reading shows every row it prints"
+        );
+        book.show_flavour(SplitFlavour::Synopsis);
+        assert!(
+            book.filter_on().get() && !book.structure_editable().get(),
+            "the synopsis page is never a reading, so the filter is on there"
+        );
+        book.show_flavour(SplitFlavour::Prose);
+        book.set_reading_on(false);
+        assert!(book.filter_on().get());
+
+        book.set_depth_filter(DepthFilter::Everything);
+        assert!(!book.filter_on().get() && book.structure_editable().get());
+    }
+
+    /// A remembered filter comes back by its string, and anything else shows every
+    /// level.
+    #[test]
+    fn a_remembered_filter_is_restored_by_its_string() {
+        let book = vm(Folder, Book).expect("a book hosts a stream");
+        book.seed_depth_filter(Some("parts"));
+        assert_eq!(book.depth_filter(), DepthFilter::PartsOnly);
+        book.seed_depth_filter(Some("an older build's word"));
+        assert_eq!(book.depth_filter(), DepthFilter::Everything);
+        let part = vm(Folder, Part).expect("a part hosts a stream");
+        part.seed_depth_filter(Some("parts"));
+        assert_eq!(
+            part.depth_filter(),
+            DepthFilter::Everything,
+            "a Part has no parts to show alone"
+        );
+    }
+
+    /// The mocks' book: a part, a chapter folder with three scenes, a flat chapter with
+    /// one. Hiding the scenes keeps the part and both chapters, each where it was; parts
+    /// alone keep the part; showing everything brings every row back.
+    #[cfg(feature = "mocks")]
+    #[test]
+    fn a_filter_hides_the_deeper_rows_and_moves_none_that_stay() {
+        let book = vm(Folder, Book).expect("a book hosts a stream");
+        let ids = |v: &StreamViewModel| v.rows().iter().map(|r| r.item_id).collect::<Vec<_>>();
+        assert_eq!(ids(&book), vec![301, 104, 201, 202, 203, 302, 303]);
+        assert_eq!(book.deepest().get(), 3);
+
+        book.set_depth_filter(DepthFilter::DownToChapters);
+        assert_eq!(ids(&book), vec![301, 104, 302]);
+        assert_eq!(
+            [301, 104, 302].map(|id| book.row_depth(id).get()),
+            [1, 2, 2],
+            "no row that stays moves"
+        );
+        assert_eq!(
+            book.deepest().get(),
+            2,
+            "the deepest level shown is the chapters'"
+        );
+
+        book.set_depth_filter(DepthFilter::PartsOnly);
+        assert_eq!(ids(&book), vec![301]);
+        assert_eq!(book.deepest().get(), 1);
+
+        book.set_depth_filter(DepthFilter::Everything);
+        assert_eq!(ids(&book), vec![301, 104, 201, 202, 203, 302, 303]);
+        assert_eq!(book.deepest().get(), 3);
+    }
+
+    /// The rows a row sits under, nearest first: where a hidden passage hands over to.
+    #[cfg(feature = "mocks")]
+    #[test]
+    fn a_rows_parents_are_the_rows_it_sits_under_nearest_first() {
+        let book = vm(Folder, Book).expect("a book hosts a stream");
+        assert_eq!(book.row_parents(303), vec![302, 301]);
+        assert_eq!(book.row_parents(202), vec![104, 301]);
+        assert_eq!(book.row_parents(302), vec![301]);
+        assert!(
+            book.row_parents(301).is_empty(),
+            "a part sits under nothing"
+        );
+        assert!(
+            book.row_parents(1).is_empty(),
+            "the container's own text is not a row"
+        );
+    }
+
+    /// **A structural action does nothing while levels are hidden**, however it is
+    /// reached: the menu items are greyed, and this is the guard behind them. Once
+    /// every level is shown, the same action works.
+    #[cfg(not(feature = "mocks"))]
+    #[test]
+    fn structural_actions_wait_until_every_level_is_shown() {
+        use crate::test_support::RealProject;
+        let project = RealProject::empty_novel();
+        let order = |p: &RealProject| -> Vec<u64> {
+            crate::models::binder_stream::ordered_binder_items(&p.app_ctx, p.work_id)
+                .into_iter()
+                .map(|r| r.id)
+                .collect()
+        };
+        let folder_of = |p: &RealProject, wanted: BinderItemSubRole| -> u64 {
+            order(p)
+                .into_iter()
+                .find(|id| {
+                    binder_item_commands::get_binder_item(&p.app_ctx, id)
+                        .ok()
+                        .flatten()
+                        .is_some_and(|it| it.role == Folder && it.sub_role == wanted)
+                })
+                .expect("the novel has this folder")
+        };
+        let book_id = folder_of(&project, Book);
+        let chapter = folder_of(&project, ChapterScene);
+        let book = StreamViewModel::new(
+            project.app_ctx.clone(),
+            project.ids.clone(),
+            OpenDocsStore::new(project.app_ctx.clone()),
+            book_id,
+            &Folder,
+            &Book,
+        )
+        .expect("a book hosts a stream");
+        book.inner.rows.refill();
+        assert_eq!(book.rows().len(), 2, "fixture: a chapter and its scene");
+
+        book.set_depth_filter(DepthFilter::DownToChapters);
+        assert_eq!(book.rows().len(), 1, "the scene is hidden");
+        let before = order(&project);
+        {
+            let book = book.clone();
+            crate::editors::test_support::with_event_context(move |ctx| {
+                book.insert_after(ctx, chapter, "Out of sight");
+                book.add_row(ctx, "Out of sight too");
+                book.move_row_down(ctx, chapter);
+            });
+        }
+        assert_eq!(
+            order(&project),
+            before,
+            "nothing was created or moved while the scenes were hidden"
+        );
+
+        book.set_depth_filter(DepthFilter::Everything);
+        {
+            let book = book.clone();
+            crate::editors::test_support::with_event_context(move |ctx| {
+                book.insert_after(ctx, chapter, "In sight");
+            });
+        }
+        assert_eq!(
+            order(&project).len(),
+            before.len() + 1,
+            "and the same action works once everything is shown"
         );
     }
 }
