@@ -279,7 +279,7 @@ pub fn writing_column(
     // row around it: the comment margin beside the editor holds interface text.
     // `None` on the surfaces built with no project around them.
     language: Option<Signal<Option<LanguageTag>>>,
-) -> HStack {
+) -> WritingColumn {
     // Stand by to supply an image this document does not have. A picture
     // pasted in from another editor arrives as a reference — pixels live on the
     // document that owns them, and a clipboard fragment is not a document — so
@@ -613,10 +613,8 @@ pub fn writing_column(
         }
     );
 
-    // Always an `HStack`, with or without comments: a single-child stack around an
-    // `Expand` lays out identically to the bare column, and one return type keeps
-    // every caller free of boxing.
-    let row = HStack::new().spacing(0.0);
+    // One return type with or without comments, which keeps every caller free of
+    // boxing; see `WritingColumn`.
     match comments {
         // With comments on this document, the writing column shares the pane with
         // a margin holding their cards — the LibreOffice arrangement. The two are
@@ -633,21 +631,102 @@ pub fn writing_column(
                 handle_for_margin,
                 palette,
             );
-            row.child(
-                Expand::horizontal().child(
-                    crate::comments::pane::ColumnWithMargin::new(
-                        capped,
-                        margin,
-                        column_width.clone(),
-                    )
+            WritingColumn::new(ColumnPlacement::WithMargin(
+                crate::comments::pane::ColumnWithMargin::new(capped, margin, column_width.clone())
                     .reserve(gutter)
                     .caret_beside(page_caret),
-                ),
-            )
+            ))
         }
-        None => row.child(
-            Expand::horizontal().child(CenterColumnFlowing::new(capped).caret_beside(page_caret)),
-        ),
+        None => WritingColumn::new(ColumnPlacement::Alone(
+            CenterColumnFlowing::new(capped).caret_beside(page_caret),
+        )),
+    }
+}
+
+/// The writing column [`writing_column`] builds: placed alone, or beside its comment
+/// margin, across the whole width it is given.
+///
+/// One type for both placements, so every caller can take the result as it is, and the
+/// one door to the placement's [`indent`](Self::indent), which a stream sets each row's
+/// prose in with. Inside, it is the single-child `HStack` around an `Expand` that this
+/// function always returned, so it lays out exactly as that did, under a bounded
+/// proposal and under an unbounded one alike.
+pub struct WritingColumn {
+    placement: Option<ColumnPlacement>,
+    child_id: Option<WidgetId>,
+}
+
+/// How a writing column is placed across its pane.
+enum ColumnPlacement {
+    /// Centred, with nothing beside it.
+    Alone(CenterColumnFlowing),
+    /// Beside the comment margin, the pair placed by the margin's rules.
+    WithMargin(crate::comments::pane::ColumnWithMargin),
+}
+
+impl WritingColumn {
+    fn new(placement: ColumnPlacement) -> Self {
+        Self {
+            placement: Some(placement),
+            child_id: None,
+        }
+    }
+
+    /// Set the column in from its leading edge by `inset`, live. With comments, the
+    /// margin stays flush against the column's trailing edge, which the inset does not
+    /// move (see [`crate::shared::column_inset`]).
+    pub fn indent(mut self, inset: crate::shared::column_inset::ColumnInset) -> Self {
+        self.placement = self.placement.map(|placement| match placement {
+            ColumnPlacement::Alone(column) => ColumnPlacement::Alone(column.indent(inset)),
+            ColumnPlacement::WithMargin(pair) => ColumnPlacement::WithMargin(pair.indent(inset)),
+        });
+        self
+    }
+}
+
+impl std::fmt::Debug for WritingColumn {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("WritingColumn").finish_non_exhaustive()
+    }
+}
+
+impl Widget for WritingColumn {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        if let Some(placement) = self.placement.take() {
+            let row = HStack::new().spacing(0.0);
+            let row = match placement {
+                ColumnPlacement::Alone(column) => row.child(Expand::horizontal().child(column)),
+                ColumnPlacement::WithMargin(pair) => row.child(Expand::horizontal().child(pair)),
+            };
+            self.child_id = Some(ctx.add(row));
+        }
+        self.child_id.into_iter().collect()
+    }
+
+    // The stack's **whole** response, its grow and shrink weights and its floor as well
+    // as its size: a parent that distributes space by them must see exactly what it saw
+    // when the stack was returned bare.
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        self.child_id
+            .and_then(|id| ctx.child_layout_response(id, proposal))
+            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    }
+
+    fn place_children(
+        &self,
+        bounds: Rect,
+        _proposal: SizeProposal,
+        children: &mut [WidgetPlacement],
+        _ctx: &LayoutContext,
+    ) {
+        for child in children.iter_mut() {
+            child.origin = bounds.origin();
+            child.size = bounds.size();
+        }
+    }
+
+    fn children(&self) -> Vec<WidgetId> {
+        self.child_id.into_iter().collect()
     }
 }
 
@@ -1511,7 +1590,7 @@ fn column_width(available: f32) -> f32 {
 ///
 /// [`CenterColumnFlowing`] proposes a **bounded** width, which is exactly what lets
 /// `MaxSize` resolve to `min(cap, available)` and actually shrink.
-pub fn centered(child: impl Widget + 'static, column_width: &Signal<f32>) -> impl Widget {
+pub fn centered(child: impl Widget + 'static, column_width: &Signal<f32>) -> CenterColumnFlowing {
     CenterColumnFlowing::new(teksu!(
         MaxSize::width(column_width.get()) {
             max_width: column_width.clone()
@@ -1575,11 +1654,16 @@ impl RichTextEditorStyle for WritingEditorStyle {
 /// With [`caret_beside`](Self::caret_beside), a press in the empty space either
 /// side of the column puts the caret in its editor, on the line at that height
 /// (see [`page_caret`]).
+///
+/// With [`indent`](Self::indent), the column is set in from its leading edge: placed
+/// as above, then narrowed from that edge alone (see [`crate::shared::column_inset`]).
 #[derive(Debug)]
 pub struct CenterColumnFlowing {
     child_id: Option<WidgetId>,
     pending: Option<Box<dyn Widget>>,
     caret: Option<PageCaret>,
+    /// How far in from its leading edge the column is set; `None` for no inset.
+    inset: Option<crate::shared::column_inset::ColumnInset>,
     /// Where `place_children` put the column, for the press handler.
     span: page_caret::ColumnSpan,
 }
@@ -1590,6 +1674,7 @@ impl CenterColumnFlowing {
             child_id: None,
             pending: Some(Box::new(child)),
             caret: None,
+            inset: None,
             span: Rc::new(Cell::new((0.0, 0.0))),
         }
     }
@@ -1599,12 +1684,49 @@ impl CenterColumnFlowing {
         self.caret = Some(caret);
         self
     }
+
+    /// Set the column in from its leading edge by `inset`, live.
+    pub fn indent(mut self, inset: crate::shared::column_inset::ColumnInset) -> Self {
+        self.inset = Some(inset);
+        self
+    }
+
+    /// Where the column goes in a pane `available` wide, and its size there: the one
+    /// answer both `layout_response` and `place_children` use, so the height reported is
+    /// the height placed.
+    ///
+    /// Centred and measured as it always was; then, with an inset, narrowed from its
+    /// leading edge and **measured again** at that width, because narrower text wraps
+    /// taller. `None` with no child to measure.
+    fn resolve(&self, available: f32, ctx: &LayoutContext) -> Option<(f32, Size)> {
+        let id = self.child_id?;
+        let natural = ctx.child_size(id, SizeProposal::with_width(column_width(available)))?;
+        let x0 = ((available - natural.width) / 2.0).max(0.0);
+        let inset = self.inset.as_ref().map_or(0.0, |i| i.leading(available));
+        if inset <= 0.0 {
+            return Some((x0, natural));
+        }
+        let (x, width) =
+            crate::shared::column_inset::inset_frame(x0, natural.width, inset, ctx.is_rtl());
+        if width >= natural.width {
+            return Some((x0, natural));
+        }
+        let narrowed = ctx
+            .child_size(id, SizeProposal::with_width(width))
+            .unwrap_or(Size::new(width, natural.height));
+        // Centred in the narrowed frame. Every column this places fills the width it is
+        // offered, so it lands on the frame exactly; one that does not stays inside it.
+        Some((x + ((width - narrowed.width) / 2.0).max(0.0), narrowed))
+    }
 }
 
 impl Widget for CenterColumnFlowing {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
         if let Some(w) = self.pending.take() {
             self.child_id = Some(ctx.add_boxed(w));
+        }
+        if let Some(inset) = &self.inset {
+            inset.bind(ctx);
         }
         if let Some(caret) = self.caret.clone() {
             let me = ctx.self_id();
@@ -1626,9 +1748,8 @@ impl Widget for CenterColumnFlowing {
     fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
         let width = proposal.resolve(0.0, 0.0).width;
         let height = self
-            .child_id
-            .and_then(|id| ctx.child_size(id, SizeProposal::with_width(column_width(width))))
-            .map(|s| s.height)
+            .resolve(width, ctx)
+            .map(|(_, size)| size.height)
             .unwrap_or(0.0);
         Size::new(width, height).into()
     }
@@ -1640,14 +1761,10 @@ impl Widget for CenterColumnFlowing {
         children: &mut [WidgetPlacement],
         ctx: &LayoutContext,
     ) {
+        let (dx, size) = self
+            .resolve(bounds.width, ctx)
+            .unwrap_or((0.0, bounds.size()));
         for child in children.iter_mut() {
-            let size = ctx
-                .child_size(
-                    child.id,
-                    SizeProposal::with_width(column_width(bounds.width)),
-                )
-                .unwrap_or_else(|| bounds.size());
-            let dx = ((bounds.width - size.width) / 2.0).max(0.0);
             child.origin = Point::new(bounds.x + dx, bounds.y);
             child.size = size;
             self.span.set((dx, size.width));
@@ -1712,6 +1829,10 @@ mod text_size_tests;
 
 #[cfg(test)]
 mod width_probe_tests;
+
+/// A column set in from its leading edge, measured on real layouts.
+#[cfg(test)]
+mod inset_tests;
 
 /// A press on the page around a writing editor, from the pointer to the caret.
 #[cfg(test)]

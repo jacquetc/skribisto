@@ -339,6 +339,9 @@ pub struct ContentTab {
     /// caret's sentence or paragraph is drawn faded, and how far. Every writing surface this
     /// tab builds reads it, through the same [`CaretBand`](crate::shared::CaretBand) as the band.
     pub caret_dim: crate::shared::CaretDimSettings,
+    /// How far each level of this tab's streams is set in, shared live from Settings.
+    /// Read by the Full Chapter, Part or Book and Full Synopsis pages alone.
+    pub stream_indent: Signal<crate::stream::StreamIndent>,
     /// Every editor this tab builds is one part of this page for the fade: the scene's text,
     /// its synopsis and notes, a stream's rows, the corkboard's cards. While the writer is in
     /// one of them, the others fade whole, as the rest of the text should.
@@ -563,6 +566,9 @@ pub fn tab_for(
         // draws neither.
         crate::shared::CaretHighlightSettings::off(),
         crate::shared::CaretDimSettings::off(),
+        // The shipped indent, as an unshared signal: a caller that wants another sets
+        // `tab.stream_indent` afterwards, like the placement above.
+        Signal::new(crate::stream::StreamIndent::default()),
         view_memory,
         crate::settings::CorkboardDefaults::detached(),
         crate::settings::TreeExpansionViewModel::new(
@@ -801,6 +807,7 @@ impl ContentTab {
         typewriter: crate::shared::TypewriterSettings,
         caret_highlight: crate::shared::CaretHighlightSettings,
         caret_dim: crate::shared::CaretDimSettings,
+        stream_indent: Signal<crate::stream::StreamIndent>,
         view_memory: crate::settings::EditorViewMemory,
         corkboard_defaults: crate::settings::CorkboardDefaults,
         tree_expansion: crate::settings::TreeExpansionViewModel,
@@ -1095,6 +1102,7 @@ impl ContentTab {
             typewriter,
             caret_highlight,
             caret_dim,
+            stream_indent,
             caret_page,
             caret_locale,
             distraction_free,

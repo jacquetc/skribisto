@@ -272,6 +272,7 @@ pub(crate) fn search_index(spec: &[Root], work_title: &str) -> Vec<(LocalizedStr
         (tr!(settings_typewriter()), Pane::EditorBehavior),
         (tr!(settings_highlight_scope()), Pane::EditorBehavior),
         (tr!(settings_dim_text()), Pane::EditorBehavior),
+        (tr!(settings_stream_indent()), Pane::EditorBehavior),
         // The distraction-free settings are all on their own page now —
         // typography, the column width and the strip's toggles together —
         // so every one of them searches there.

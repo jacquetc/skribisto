@@ -48,6 +48,16 @@ A project can hold several books, one after another in the same binder. A book r
 where it starts until the first of three things: an *End of Book* item, the start of the
 next book, or the end of its binder.
 
+## Read a whole book, part or chapter
+
+To read a book, a part or a chapter from start to finish, open it and choose *Full
+Book*, *Full Part* or *Full Chapter* at the top. *Full Synopsis* shows the synopses in
+the same way.
+
+Each chapter sits further in than its part, and each scene further in than its chapter,
+so you can see the outline at a glance. To change how far, open *Settings ▸ Editor ▸
+Editor Behavior* and choose *Indent by level*. *None* lines everything up.
+
 ## Paratext: in the book, not in the story
 
 A *Paratext* belongs to the book but not to its story: a preface, a dedication, an

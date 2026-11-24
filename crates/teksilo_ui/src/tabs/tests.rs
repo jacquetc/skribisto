@@ -1653,6 +1653,7 @@ fn page_for(
         crate::shared::TypewriterSettings::off(),
         crate::shared::CaretHighlightSettings::off(),
         crate::shared::CaretDimSettings::off(),
+        Signal::new(crate::stream::StreamIndent::default()),
         crate::settings::EditorViewMemory::detached(false),
         crate::settings::CorkboardDefaults::detached(),
         crate::settings::TreeExpansionViewModel::new(
@@ -1899,6 +1900,7 @@ fn scene_page_max_scroll(typewriter: crate::shared::TypewriterSettings) -> (f32,
         typewriter,
         crate::shared::CaretHighlightSettings::off(),
         crate::shared::CaretDimSettings::off(),
+        Signal::new(crate::stream::StreamIndent::default()),
         crate::settings::EditorViewMemory::detached(false),
         crate::settings::CorkboardDefaults::detached(),
         crate::settings::TreeExpansionViewModel::new(
@@ -3217,6 +3219,7 @@ fn distraction_free_overrides_prose_kind_typography_while_active() {
             crate::shared::TypewriterSettings::off(),
             crate::shared::CaretHighlightSettings::off(),
             crate::shared::CaretDimSettings::off(),
+            Signal::new(crate::stream::StreamIndent::default()),
             crate::settings::EditorViewMemory::detached(false),
             crate::settings::CorkboardDefaults::detached(),
             crate::settings::TreeExpansionViewModel::new(
@@ -3325,6 +3328,7 @@ fn a_stream_lane_marks_every_row_on_its_own_slice() {
         crate::shared::TypewriterSettings::off(),
         crate::shared::CaretHighlightSettings::off(),
         crate::shared::CaretDimSettings::off(),
+        Signal::new(crate::stream::StreamIndent::default()),
         crate::settings::EditorViewMemory::detached(false),
         crate::settings::CorkboardDefaults::detached(),
         crate::settings::TreeExpansionViewModel::new(
@@ -3430,6 +3434,7 @@ fn the_manuscript_stream_follows_the_tabs_main_typography_and_column() {
         crate::shared::TypewriterSettings::off(),
         crate::shared::CaretHighlightSettings::off(),
         crate::shared::CaretDimSettings::off(),
+        Signal::new(crate::stream::StreamIndent::default()),
         crate::settings::EditorViewMemory::detached(false),
         crate::settings::CorkboardDefaults::detached(),
         crate::settings::TreeExpansionViewModel::new(
@@ -3508,6 +3513,7 @@ fn reading_a_full_book_as_exported_hides_the_working_chrome() {
         crate::shared::TypewriterSettings::off(),
         crate::shared::CaretHighlightSettings::off(),
         crate::shared::CaretDimSettings::off(),
+        Signal::new(crate::stream::StreamIndent::default()),
         crate::settings::EditorViewMemory::detached(false),
         crate::settings::CorkboardDefaults::detached(),
         crate::settings::TreeExpansionViewModel::new(
@@ -3599,6 +3605,7 @@ fn container_tab(ctx: &Rc<AppContext>, sub_role: BinderItemSubRole) -> ContentTa
         crate::shared::TypewriterSettings::off(),
         crate::shared::CaretHighlightSettings::off(),
         crate::shared::CaretDimSettings::off(),
+        Signal::new(crate::stream::StreamIndent::default()),
         crate::settings::EditorViewMemory::detached(false),
         crate::settings::CorkboardDefaults::detached(),
         crate::settings::TreeExpansionViewModel::new(
@@ -3674,6 +3681,159 @@ fn the_full_synopsis_stays_a_working_view_while_the_book_is_read_as_exported() {
         vm.rows().iter().all(|r| r.reading.is_some()) && !vm.working_on().get(),
         "and back on the Full Book, the book reads as exported again"
     );
+}
+
+/// Every widget in the subtree whose type name ends in `suffix`, in tree order, as a
+/// list: [`all_of_type`] for a caller that wants one back.
+fn every_of_type(tree: &WidgetTree, root: WidgetId, suffix: &str) -> Vec<WidgetId> {
+    let mut out = Vec::new();
+    all_of_type(tree, root, suffix, &mut out);
+    out
+}
+
+/// Each row of the mounted stream under `root`, in row order: where its header's column
+/// and its editor's column were placed. Every row of a Full Synopsis has both (a part, a
+/// chapter and a scene all carry a synopsis), the header first.
+#[cfg(feature = "mocks")]
+fn row_columns(
+    tree: &WidgetTree,
+    root: WidgetId,
+) -> Vec<(teksilo::canvas::Rect, teksilo::canvas::Rect)> {
+    let rows = find_type(
+        tree,
+        root,
+        "Repeater<teksilo_ui::models::stream_rows_model::StreamRow>",
+    )
+    .expect("the stream's rows");
+    every_of_type(tree, rows, "RowExtent")
+        .into_iter()
+        .map(|row| {
+            let columns = every_of_type(tree, row, "CenterColumnFlowing");
+            assert_eq!(columns.len(), 2, "a header and a synopsis per row");
+            let placed = |c: WidgetId| tree.bounds(tree.children(c)[0]);
+            (placed(columns[0]), placed(columns[1]))
+        })
+        .collect()
+}
+
+/// **Each level of a Full Synopsis is set in by one step**, header and box together,
+/// from the left edge alone.
+///
+/// The mocks' book: a part, then a chapter folder with three scenes, then a flat chapter
+/// with one scene, so every depth a Book has is on the page. At the medium step, each
+/// level sits 32 px further in than the one above it; every row ends at the same right
+/// edge (the status glyphs and menus stay one column down the page); and every synopsis
+/// box keeps the 24 px offset under its header that it has with no indent at all.
+#[cfg(feature = "mocks")]
+#[test]
+fn a_full_synopsis_sets_each_level_in_by_one_step() {
+    use crate::tabs::shared::segments::SEG_SYNOPSIS;
+    let ctx = Rc::new(AppContext::new());
+    let tab = container_tab(&ctx, BinderItemSubRole::Book);
+    show_segment(&tab, SEG_SYNOPSIS);
+    let mut tree = crate::test_support::tree_with_events(&ctx);
+    let root = tree.add_boxed(tab_pane(&tab));
+    let size = teksilo::prelude::SizeProposal::exact(1400.0, 900.0);
+    tree.layout(size);
+    tree.layout(size);
+
+    let vm = tab.stream().cloned().expect("a Book hosts a stream");
+    let depths: Vec<u8> = vm
+        .rows()
+        .iter()
+        .map(|r| vm.row_depth(r.item_id).get())
+        .collect();
+    assert_eq!(
+        depths,
+        vec![1, 2, 3, 3, 3, 2, 3],
+        "fixture: the mock book's outline"
+    );
+    assert_eq!(vm.deepest().get(), 3);
+
+    let check = |tree: &WidgetTree, step: f32| {
+        let columns = row_columns(tree, root);
+        assert_eq!(columns.len(), depths.len());
+        let (first, _) = columns[0];
+        for ((header, synopsis), depth) in columns.iter().zip(&depths) {
+            let expected = f32::from(depth - 1) * step;
+            assert!(
+                (header.x - first.x - expected).abs() < 0.5,
+                "a row {depth} deep sits {expected} px in at step {step}, not {}",
+                header.x - first.x
+            );
+            assert!(
+                (header.x + header.width - first.x - first.width).abs() < 0.5,
+                "every row ends at the same right edge"
+            );
+            assert!(
+                (synopsis.x - header.x - crate::tabs::shared::SYNOPSIS_WIDTH_INSET / 2.0).abs()
+                    < 0.5,
+                "the box keeps its offset under its header at depth {depth}"
+            );
+        }
+    };
+    check(&tree, crate::stream::StreamIndent::Medium.step());
+
+    // A new setting moves every row, and rebuilds none: the editors are the same ones.
+    let editors = every_of_type(&tree, root, "RichTextEditor");
+    assert!(!editors.is_empty(), "fixture: the rows have editors");
+    tab.stream_indent.set(crate::stream::StreamIndent::Large);
+    tree.layout(size);
+    tree.layout(size);
+    check(&tree, crate::stream::StreamIndent::Large.step());
+    assert_eq!(
+        every_of_type(&tree, root, "RichTextEditor"),
+        editors,
+        "the setting relays the rows out without rebuilding their editors"
+    );
+
+    tab.stream_indent.set(crate::stream::StreamIndent::None);
+    tree.layout(size);
+    tree.layout(size);
+    check(&tree, 0.0);
+}
+
+/// **A screen reader hears the stream as an outline**: the container's title is a
+/// level-one heading and each row's title a heading one level under the row it sits in.
+/// When a row's depth moves (a part added above it, a chapter taken away), its level
+/// follows, without the row being rebuilt.
+#[cfg(feature = "mocks")]
+#[test]
+fn a_screen_reader_hears_the_stream_as_an_outline() {
+    use crate::tabs::shared::segments::SEG_MANUSCRIPT;
+    use teksilo::core::accesskit::Role;
+    let ctx = Rc::new(AppContext::new());
+    let tab = container_tab(&ctx, BinderItemSubRole::Book);
+    show_segment(&tab, SEG_MANUSCRIPT);
+    let mut tree = crate::test_support::tree_with_events(&ctx);
+    let root = tree.add_boxed(tab_pane(&tab));
+    let size = teksilo::prelude::SizeProposal::exact(1400.0, 900.0);
+    tree.layout(size);
+    tree.layout(size);
+
+    // AccessKit counts levels from zero: `set_level(1)` reads back as 0.
+    let levels = |tree: &mut WidgetTree| {
+        let mut levels: Vec<usize> = tree
+            .sync_accessibility()
+            .nodes
+            .iter()
+            .filter(|(_, node)| node.role() == Role::Heading)
+            .filter_map(|(_, node)| node.level())
+            .collect();
+        levels.sort_unstable();
+        levels
+    };
+    // The book; its part; two chapters; four scenes.
+    assert_eq!(levels(&mut tree), vec![0, 1, 2, 2, 3, 3, 3, 3]);
+
+    // The last scene comes out from under its chapter (one level up): its heading
+    // follows, and nothing was rebuilt to get it there.
+    let vm = tab.stream().cloned().expect("a Book hosts a stream");
+    let editors = every_of_type(&tree, root, "RichTextEditor");
+    vm.row_depth(303).set(2);
+    tree.layout(size);
+    assert_eq!(levels(&mut tree), vec![0, 1, 2, 2, 2, 3, 3, 3]);
+    assert_eq!(every_of_type(&tree, root, "RichTextEditor"), editors);
 }
 
 /// The first widget in the subtree whose type name ends in `name`.

@@ -546,6 +546,9 @@ pub const DIM_STRENGTH_KEY: &str = "editor.dim_strength";
 /// How many unpinned tabs each editor pane keeps: one, the five most recently used, or
 /// all of them. See [`crate::shared::TabLimit`], stored by variant name.
 pub const TAB_LIMIT_KEY: &str = "editor.tab_limit";
+/// How far each level of a Full Chapter, Part or Book (and its Full Synopsis) is set in.
+/// See [`crate::stream::StreamIndent`], stored by variant name.
+pub const STREAM_INDENT_KEY: &str = "editor.stream_indent";
 
 // ── Goals & word count (Settings ▸ Editor ▸ Goals) ────────────────────────────
 /// How words are counted for the live status-bar / focused count: `Auto` (per the
@@ -658,6 +661,7 @@ use frontend::common::entities::QuoteStyle;
 use skribisto_model::counting::CountingMethodSetting;
 
 use crate::shared::{DimScope, DimStrength, HighlightScope, TabLimit, TypewriterAnchor};
+use crate::stream::StreamIndent;
 
 /// One settable key: what it is called, what it holds, and what it means.
 ///
@@ -1052,6 +1056,14 @@ pub static SETTINGS: &[SettingSpec] = &[
         default: || val(DimStrength::default()),
         check: check::<DimStrength>,
         doc: "How far the text outside the caret's sentence or paragraph fades.",
+    },
+    SettingSpec {
+        key: crate::STREAM_INDENT_KEY,
+        ty: "one of: None | Small | Medium | Large",
+        default: || val(StreamIndent::default()),
+        check: check::<StreamIndent>,
+        doc: "How far each level of a Full Chapter, Part or Book is set in: a chapter \
+              further in than its part, a scene further in than its chapter.",
     },
     SettingSpec {
         key: crate::TAB_LIMIT_KEY,

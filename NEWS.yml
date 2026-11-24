@@ -14,6 +14,7 @@ Description:
 - "On the corkboard, Insert on a note card now reads Insert note, on a front or back matter card Insert paratext, and on the end of a book Insert book. It said Insert scene on every card that was not a chapter, whatever it then added"
 - "Full Synopsis now always shows the synopses. After turning on Read as exported in Full Book, Full Part or Full Chapter, switching to Full Synopsis used to show the exported text instead, with no switch on that page to turn it off. Read as exported stays on and applies again when you switch back"
 - "In the margin marks, the dialogue texture now follows the text when its lines wrap differently, after the window is resized for example. A paragraph's bar could stay a line away from its paragraph until the next edit to that scene"
+- "Full Book, Full Part, Full Chapter and Full Synopsis now show their outline: each chapter sits further in than its part, and each scene further in than its chapter. Choose how far in Settings ▸ Editor ▸ Editor Behavior ▸ Indent by level, from None to Large. With a screen reader, each title is a heading one level below the one it belongs to"
 ---
 Version: 3.4.1
 Date: 2026-11-23

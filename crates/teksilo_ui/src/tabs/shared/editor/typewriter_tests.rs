@@ -68,7 +68,7 @@ fn fixture_column(
     find: &crate::search::FindViewModel,
     typewriter: Option<TypewriterSettings>,
     caret: Option<crate::shared::CaretBand>,
-) -> HStack {
+) -> WritingColumn {
     writing_column(
         doc,
         &Signal::new(700.0),

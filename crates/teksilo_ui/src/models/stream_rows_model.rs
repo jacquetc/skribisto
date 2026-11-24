@@ -36,6 +36,7 @@ use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
 // there — exactly as the lifted functions carried `allow(dead_code)` before.
 #[cfg_attr(feature = "mocks", allow(unused_imports))]
 pub use skribisto_model::compile::{StreamLevel, row_indices};
+use teksilo::prelude::Signal;
 
 /// One row in a stream. Carries the full `(role, sub_role)` — the view needs it to
 /// pick the row's chrome (part heading / chapter heading / scene header) and to ask
@@ -120,6 +121,85 @@ impl ReadingRow {
     }
 }
 
+/// Where each row of a stream sits in the outline, and how deep the page shows.
+///
+/// Kept **beside** the row list rather than in [`StreamRow`]. A row's depth changes
+/// whenever a part or a chapter is added, moved or removed above it, and a change to a
+/// row's value rebuilds that row in the `Repeater`, editor, caret and all: adding a part
+/// at the top of a Full Book would rebuild every editor below it. As one signal per row,
+/// the depth moves and the row only lays out again.
+///
+/// Written once for both models: what they fabricate or query differs, the outline of
+/// the rows and the filter over them do not.
+pub(crate) struct Outline {
+    depths: std::cell::RefCell<std::collections::HashMap<u64, Signal<u8>>>,
+    deepest: Signal<u8>,
+}
+
+impl Outline {
+    pub(crate) fn new() -> Self {
+        Self {
+            depths: std::cell::RefCell::new(std::collections::HashMap::new()),
+            deepest: Signal::new(0),
+        }
+    }
+
+    /// How deep the row `id` sits, live. A row this outline has not seen yet reads 0
+    /// until the next fill, which always comes before the row is shown.
+    pub(crate) fn depth(&self, id: u64) -> Signal<u8> {
+        self.depths
+            .borrow_mut()
+            .entry(id)
+            .or_insert_with(|| Signal::new(0))
+            .clone()
+    }
+
+    /// The deepest level among the rows shown, 0 when none is: what every row's inset is
+    /// measured against.
+    pub(crate) fn deepest(&self) -> Signal<u8> {
+        self.deepest.clone()
+    }
+
+    /// The working stream's rows, with every row's depth published.
+    ///
+    /// Published before the caller reconciles the list, so a row being inserted reads
+    /// its own depth on its first build.
+    pub(crate) fn working(&self, all: Vec<StreamRow>) -> Vec<StreamRow> {
+        let sub_roles: Vec<BinderItemSubRole> = all.iter().map(|r| r.sub_role.clone()).collect();
+        let depths = skribisto_model::compile::row_depths(&sub_roles);
+        let mut shown = Vec::with_capacity(all.len());
+        let mut deepest = 0u8;
+        let mut updates = Vec::with_capacity(all.len());
+        {
+            let mut map = self.depths.borrow_mut();
+            let live: std::collections::HashSet<u64> = all.iter().map(|r| r.item_id).collect();
+            map.retain(|id, _| live.contains(id));
+            for (row, depth) in all.into_iter().zip(depths) {
+                let signal = map
+                    .entry(row.item_id)
+                    .or_insert_with(|| Signal::new(depth))
+                    .clone();
+                updates.push((signal, depth));
+                deepest = deepest.max(depth);
+                shown.push(row);
+            }
+        }
+        // Set outside the borrow: a row's layout binding can run on the change, and must
+        // be free to ask for a depth.
+        for (signal, depth) in updates {
+            signal.set_if_changed(depth);
+        }
+        self.deepest.set_if_changed(deepest);
+        shown
+    }
+
+    /// The rows of a reading are set in by nothing: a reader's book has no outline
+    /// indentation.
+    pub(crate) fn reading(&self) {
+        self.deepest.set_if_changed(0);
+    }
+}
+
 #[cfg(not(feature = "mocks"))]
 mod imp {
     use std::cell::RefCell;
@@ -142,7 +222,7 @@ mod imp {
     use skribisto_compiler::Preset;
     use skribisto_model::compile::{ScopeKind, resolve_scope};
 
-    use super::{ReadingRow, StreamLevel, StreamRow, row_indices};
+    use super::{Outline, ReadingRow, StreamLevel, StreamRow, row_indices};
 
     /// Called with the ids of rows that left the stream, so the owner can release
     /// their shared documents. Stored (not one-shot) — it fires from every refresh.
@@ -161,6 +241,8 @@ mod imp {
         /// How the container itself reads, when the stream is read as exported. See
         /// [`StreamRowsModel::head_reading`].
         head_reading: Signal<Option<ReadingRow>>,
+        /// Where each row sits in the outline, and the levels shown.
+        outline: Outline,
     }
 
     #[derive(Clone)]
@@ -188,6 +270,7 @@ mod imp {
                     on_removed: RefCell::new(None),
                     reading: RefCell::new(None),
                     head_reading: Signal::new(None),
+                    outline: Outline::new(),
                 }),
             }
         }
@@ -240,6 +323,17 @@ mod imp {
             }
             *self.inner.reading.borrow_mut() = style;
             self.refresh();
+        }
+
+        /// How deep the row `id` sits under the container, live: 1 for its first level.
+        pub fn depth(&self, id: u64) -> Signal<u8> {
+            self.inner.outline.depth(id)
+        }
+
+        /// The deepest level among the rows shown, live; 0 in a reading and on an empty
+        /// page.
+        pub fn deepest(&self) -> Signal<u8> {
+            self.inner.outline.deepest()
         }
 
         /// Refill now, as an event would. For tests, which build no widget to wire.
@@ -323,15 +417,18 @@ mod imp {
                     style,
                 ),
                 None => (
-                    query(
+                    self.inner.outline.working(query(
                         &self.inner.ctx,
                         self.inner.work_id.get(),
                         self.inner.head_id,
                         self.inner.level,
-                    ),
+                    )),
                     None,
                 ),
             };
+            if reading.is_some() {
+                self.inner.outline.reading();
+            }
             // A field shown a moment ago stays shown while its text is cleared: see
             // `ReadingRow::keep_shown_fields`.
             let (next, head) = match &reading {
@@ -1075,13 +1172,17 @@ mod imp {
     use skribisto_compiler::Preset;
     use skribisto_compiler::plan::{RowFacts, plan_row};
 
-    use super::{ReadingRow, StreamLevel, StreamRow};
+    use super::{Outline, ReadingRow, StreamLevel, StreamRow};
+    use std::cell::RefCell;
 
     #[derive(Clone)]
     pub struct StreamRowsModel {
         model: ListModel<StreamRow>,
         level: StreamLevel,
         head_reading: Signal<Option<ReadingRow>>,
+        /// The style the fixture is read in, or `None` for the working stream.
+        reading: Rc<RefCell<Option<Preset>>>,
+        outline: Rc<Outline>,
     }
 
     /// Fabricated rows matching the mock binder fixture in
@@ -1143,12 +1244,23 @@ mod imp {
             _head_id: u64,
             level: StreamLevel,
         ) -> Self {
+            let outline = Rc::new(Outline::new());
             Self {
-                model: ListModel::from_vec(mock_rows(level)),
+                model: ListModel::from_vec(outline.working(mock_rows(level))),
                 level,
                 // The fixture's containers carry no heading text of their own to read.
                 head_reading: Signal::new(None),
+                reading: Rc::new(RefCell::new(None)),
+                outline,
             }
+        }
+
+        pub fn depth(&self, id: u64) -> Signal<u8> {
+            self.outline.depth(id)
+        }
+
+        pub fn deepest(&self) -> Signal<u8> {
+            self.outline.deepest()
         }
 
         pub fn head_reading(&self) -> Signal<Option<ReadingRow>> {
@@ -1159,10 +1271,19 @@ mod imp {
         /// [`plan_row`] over facts invented for the fixture: every row has prose, and the
         /// chapter folder (104) carries an epigraph.
         pub fn set_reading(&self, style: Option<Preset>) {
+            *self.reading.borrow_mut() = style;
+            self.refill();
+        }
+
+        /// Fill the list for the current reading and filter. A whole replacement: the
+        /// fixture has no editors whose survival a test watches across a refill.
+        fn refill(&self) {
             let rows = mock_rows(self.level);
+            let style = self.reading.borrow().clone();
             let next = match style {
-                None => rows,
+                None => self.outline.working(rows),
                 Some(style) => {
+                    self.outline.reading();
                     let mut out: Vec<StreamRow> = Vec::new();
                     for row in rows {
                         let facts = RowFacts {

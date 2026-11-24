@@ -779,3 +779,32 @@ pub(crate) fn work_with_uid(ctx: &frontend::AppContext, uid: &str) -> u64 {
     .expect("work")
     .id
 }
+
+/// A stand-in writing column whose text wraps: it takes the width it is offered and is as
+/// tall as `area / width`, so a narrower column is a taller one, as prose is.
+///
+/// For the geometry tests that must tell the height a column was measured at from the
+/// height it is placed at: a fixed-height stand-in reports the same number at every
+/// width, and so cannot catch a widget that narrows a column and keeps the wide height.
+#[derive(Debug)]
+pub(crate) struct WrapsLikeProse {
+    pub area: f32,
+}
+
+impl teksilo::prelude::Widget for WrapsLikeProse {
+    fn build(
+        &mut self,
+        _ctx: &mut teksilo::prelude::BuildContext,
+    ) -> Vec<teksilo::prelude::WidgetId> {
+        Vec::new()
+    }
+
+    fn layout_response(
+        &self,
+        proposal: teksilo::prelude::SizeProposal,
+        _ctx: &teksilo::prelude::LayoutContext,
+    ) -> teksilo::prelude::LayoutResponse {
+        let width = proposal.resolve(0.0, 0.0).width.max(1.0);
+        teksilo::prelude::Size::new(width, self.area / width).into()
+    }
+}

@@ -9,6 +9,7 @@ use teksilo::widgets::tooltip::TooltipContent;
 use teksilo::widgets::{ComboBox, Segment, SegmentedControl};
 
 use crate::shared::{DimScope, DimStrength, SynopsisPlacement, TabLimit};
+use crate::stream::StreamIndent;
 
 #[allow(unused_imports)]
 use super::super::*;
@@ -246,6 +247,39 @@ fn bridge_dim_strength(ctx: &mut BuildContext, strength: Signal<DimStrength>) ->
     index
 }
 
+/// Display name for each stream indent.
+fn stream_indent_label(indent: StreamIndent) -> LocalizedString {
+    match indent {
+        StreamIndent::None => tr!(settings_stream_indent_none()),
+        StreamIndent::Small => tr!(settings_stream_indent_small()),
+        StreamIndent::Medium => tr!(settings_stream_indent_medium()),
+        StreamIndent::Large => tr!(settings_stream_indent_large()),
+    }
+}
+
+/// Bridge the stored stream indent to its `SegmentedControl`'s `usize`, the fade
+/// strength's shape: two guarded effects, whose `!=` guards stop the two signals writing
+/// each other back and forth for ever.
+fn bridge_stream_indent(ctx: &mut BuildContext, indent: Signal<StreamIndent>) -> Signal<usize> {
+    let index: Signal<usize> = Signal::new(indent.get().to_index());
+    {
+        let index = index.clone();
+        ctx.effect(&indent, move |s: &StreamIndent| {
+            let i = s.to_index();
+            if index.get() != i {
+                index.set(i);
+            }
+        });
+    }
+    ctx.effect(&index, move |i| {
+        let s = StreamIndent::from_index(*i);
+        if indent.get() != s {
+            indent.set(s);
+        }
+    });
+    index
+}
+
 /// Display name for each tab limit.
 fn tab_limit_label(limit: TabLimit) -> LocalizedString {
     match limit {
@@ -478,6 +512,11 @@ pub(in crate::settings) fn editor_behavior_pane(
         },
     );
 
+    let stream_indent_control = StreamIndent::all().into_iter().fold(
+        SegmentedControl::indexed(bridge_stream_indent(ctx, vm.stream_indent())),
+        |control, i| control.segment(Segment::new(stream_indent_label(i))),
+    );
+
     let tab_limit_index = bridge_tab_limit(ctx, vm.tab_limit());
     let tab_limit_control = TabLimit::all().into_iter().fold(
         SegmentedControl::indexed(tab_limit_index),
@@ -503,6 +542,13 @@ pub(in crate::settings) fn editor_behavior_pane(
                 crate::shared::units::pixels(v as f64)
             }),
         )
+        // With the column it narrows: a level sets its rows in from the column's
+        // leading edge, and the text width is what that inset is measured against.
+        .line(
+            field_label(tr!(settings_stream_indent())),
+            stream_indent_control,
+        )
+        .full_width(hint(tr!(settings_hint_stream_indent())))
         // These three are general writing-surface options and apply in every mode; their
         // own group heading keeps them from reading as part of "Distraction-free" below.
         .full_width(group(tr!(settings_group_writing_view())))

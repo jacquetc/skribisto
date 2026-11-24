@@ -20,6 +20,14 @@
 //! part heading shows one only in the Synopsis flavour. Nothing here special-cases a
 //! row kind for content — only for *chrome*.
 //!
+//! **Set in by level.** Each row sits further in the deeper it is in the outline (a
+//! chapter under its part, a scene under its chapter), its header and its editor by the
+//! same amount, so the two keep their offset at every depth. The depth comes from the
+//! rows' own structure (`skribisto_model::compile::row_depths`), the step from Settings
+//! ([`crate::stream::StreamIndent`]), and how a column is narrowed from
+//! [`crate::shared::column_inset`]. A screen reader hears the same outline: each row's
+//! title is a heading one level under the row it sits in.
+//!
 //! **Read as exported.** The Prose flavour can also show the container as its reader will
 //! get it, in the book's remembered export style: only what an export of it would print,
 //! front and back matter included, each row under the heading the export gives it and
@@ -154,6 +162,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
             let tags = tab.tags();
             let extents = extents.clone();
             let page_scroll = page_scroll.clone();
+            let indent = tab.stream_indent.clone();
             move |row: &StreamRow| -> Box<dyn Widget> {
                 let item = row.item_id;
                 let body: Box<dyn Widget> = match &row.reading {
@@ -198,6 +207,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                         arrival_project.as_ref(),
                         scope,
                         Some(&tags),
+                        &indent,
                     )),
                 };
                 Box::new(crate::margin_lane::RowExtent::new(
@@ -581,7 +591,11 @@ fn container_header(vm: &StreamViewModel) -> impl Widget {
                 // The rename button after the `Spacer` has to stay reachable, and a
                 // wrapping label reports its full width — so a container named at any
                 // length would push it off the end. See `binder::dock`.
-                .single_line(),
+                .single_line()
+                // The top of the page's outline: every row's title is a heading under it
+                // (see `OutlineHeading`).
+                .access_role(teksilo::core::accesskit::Role::Heading)
+                .access_customize(|node| node.set_level(1)),
         )
         .child(Spacer::new())
         .child(
@@ -590,6 +604,92 @@ fn container_header(vm: &StreamViewModel) -> impl Widget {
                 .tooltip(tr!(rename()))
                 .on_activate_fn(move |ctx| rename_vm.begin_rename_container(ctx)),
         )
+}
+
+/// A row's title, heard by a screen reader as a heading one level under the row it sits
+/// in: level 2 for a row at the first level, under the container's own level-1 title.
+///
+/// The indent's counterpart. A sighted writer sees a scene set in under its chapter; a
+/// screen reader user hears a level-3 heading under a level-2 one, and can move through
+/// a Full Book by heading level as through any outline. The level follows the row's
+/// depth live: the depth signal is bound at `AccessibilityOnly`, so a part added above
+/// re-levels the rows below it without rebuilding them.
+///
+/// Laid out as its title alone: the title's own response, its shrink weight included,
+/// is what lets a long one truncate in the header's row.
+struct OutlineHeading {
+    depth: Signal<u8>,
+    pending: Option<Box<dyn Widget>>,
+    child_id: Option<WidgetId>,
+}
+
+impl OutlineHeading {
+    fn new(depth: Signal<u8>, title: impl Widget + 'static) -> Self {
+        Self {
+            depth,
+            pending: Some(Box::new(title)),
+            child_id: None,
+        }
+    }
+}
+
+impl std::fmt::Debug for OutlineHeading {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("OutlineHeading").finish_non_exhaustive()
+    }
+}
+
+impl Widget for OutlineHeading {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        if let Some(title) = self.pending.take() {
+            self.child_id = Some(ctx.add_boxed(title));
+        }
+        if let Some(title) = self.child_id {
+            self.depth.bind_to(
+                ctx.self_id(),
+                ctx.binding_registry(),
+                BindingLevel::AccessibilityOnly,
+            );
+            let depth = self.depth.clone();
+            ctx.apply_handlers(
+                title,
+                teksilo::core::widget_builder::HandlerSet::new().access_customize(move |node| {
+                    node.set_role(teksilo::core::accesskit::Role::Heading);
+                    node.set_level(heading_level(depth.get()));
+                }),
+            );
+        }
+        self.child_id.into_iter().collect()
+    }
+
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        self.child_id
+            .and_then(|id| ctx.child_layout_response(id, proposal))
+            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    }
+
+    fn place_children(
+        &self,
+        bounds: Rect,
+        _proposal: SizeProposal,
+        children: &mut [teksilo::core::widget::WidgetPlacement],
+        _ctx: &LayoutContext,
+    ) {
+        for child in children.iter_mut() {
+            child.origin = bounds.origin();
+            child.size = bounds.size();
+        }
+    }
+
+    fn children(&self) -> Vec<WidgetId> {
+        self.child_id.into_iter().collect()
+    }
+}
+
+/// The heading level of a row `depth` levels deep: one under the container's level 1.
+/// A row whose depth is not known yet reads as the first level.
+fn heading_level(depth: u8) -> usize {
+    usize::from(depth.max(1)) + 1
 }
 
 /// The trailing "Add …" action. What it *creates* is the model's own default
@@ -644,15 +744,27 @@ fn stream_row(
     // This project's palette, for the capture submenu on each row's editor. Threaded,
     // not reached for: Tier-2 state, so `app_state` would answer with another Work's.
     tags: Option<&crate::tags::TagsViewModel>,
+    // How far each level is set in, live from Settings.
+    indent: &Signal<crate::stream::StreamIndent>,
 ) -> impl Widget {
     let id = row.item_id;
     let is_heading = row.sub_role.opens_chapter() || row.sub_role.opens_part();
+    // How far in this row sits: its depth, against the deepest level the page shows, at
+    // the step Settings asks for, measured against the tab's own text width. One inset
+    // for the header and the editor alike, so the two keep the offset they have with no
+    // indent at all, whatever the row's depth and whichever column the prose follows.
+    let inset = crate::stream::row_inset(
+        vm.row_depth(id),
+        vm.deepest(),
+        indent.clone(),
+        header_width.clone(),
+    );
 
     let mut col = VStack::new()
         .spacing(4.0)
         // Structure headings breathe more than the scenes under them.
         .child(vspace(if is_heading { 22.0 } else { 10.0 }))
-        .child(centered(row_header(vm, row, tags), header_width));
+        .child(centered(row_header(vm, row, tags), header_width).indent(inset.clone()));
 
     // Does this row have a surface in *this* flavour? The constraint matrix answers —
     // a part heading has no prose, but it does have a synopsis.
@@ -684,93 +796,99 @@ fn stream_row(
                     } else {
                         MAIN_MIN_LINES
                     };
-                    col = col.child(writing_column(
-                        &field.doc,
-                        editor_width,
-                        typo,
-                        min_lines,
-                        on_change,
-                        split,
-                        Option::None,
-                        doc.spell_main(),
-                        doc.replacement_main(),
-                        Some(format.clone()),
-                        Some(typewriter.clone()),
-                        Some(caret.clone()),
-                        Some(games.clone()),
-                        // Per-row editor — see the container's own column above.
-                        Option::None,
-                        // This row's own threads. `row_doc` shares its document with
-                        // any tab open on the same item, so the binding — and the
-                        // cards it puts in the margin — are the same either way.
-                        vm.row_comments(id, flavour)
-                            .map(|b| b.with_gutter(gutter.clone())),
-                        // The caret report only — see the container's own column
-                        // above for why a stream row takes no seek.
-                        doc.footnote_binding_main(),
-                        doc.images(),
-                        // Every row of a stream is the same project's, so they all count
-                        // into one tally — which is the whole point of it being the
-                        // project's rather than the editor's.
-                        arrival_project.cloned(),
-                        // Each row answers for itself: a stream shows many items, and only the
-                        // ones actually in the trash are locked.
-                        doc.trashed.get(),
-                        // Which row this is. The reason the registry carries it at all:
-                        // a lane maps every row on this page at once, and all but one
-                        // of them will never have focus.
-                        Some(crate::margin_lane::LaneAnchor::new(id, scope)),
-                        // See the container's own column above.
-                        true,
-                        tags.cloned(),
-                        // Nothing private on a stream row: the default `all()`.
-                        None,
-                        tr!(editor_text_name()),
-                        Some(doc.content_language()),
-                    ));
+                    col = col.child(
+                        writing_column(
+                            &field.doc,
+                            editor_width,
+                            typo,
+                            min_lines,
+                            on_change,
+                            split,
+                            Option::None,
+                            doc.spell_main(),
+                            doc.replacement_main(),
+                            Some(format.clone()),
+                            Some(typewriter.clone()),
+                            Some(caret.clone()),
+                            Some(games.clone()),
+                            // Per-row editor — see the container's own column above.
+                            Option::None,
+                            // This row's own threads. `row_doc` shares its document with
+                            // any tab open on the same item, so the binding — and the
+                            // cards it puts in the margin — are the same either way.
+                            vm.row_comments(id, flavour)
+                                .map(|b| b.with_gutter(gutter.clone())),
+                            // The caret report only — see the container's own column
+                            // above for why a stream row takes no seek.
+                            doc.footnote_binding_main(),
+                            doc.images(),
+                            // Every row of a stream is the same project's, so they all count
+                            // into one tally — which is the whole point of it being the
+                            // project's rather than the editor's.
+                            arrival_project.cloned(),
+                            // Each row answers for itself: a stream shows many items, and only the
+                            // ones actually in the trash are locked.
+                            doc.trashed.get(),
+                            // Which row this is. The reason the registry carries it at all:
+                            // a lane maps every row on this page at once, and all but one
+                            // of them will never have focus.
+                            Some(crate::margin_lane::LaneAnchor::new(id, scope)),
+                            // See the container's own column above.
+                            true,
+                            tags.cloned(),
+                            // Nothing private on a stream row: the default `all()`.
+                            None,
+                            tr!(editor_text_name()),
+                            Some(doc.content_language()),
+                        )
+                        .indent(inset.clone()),
+                    );
                 }
             }
             SplitFlavour::Synopsis => {
                 if let Some(field) = doc.synopsis.as_ref() {
-                    col = col.child(synopsis_column(
-                        &field.doc,
-                        editor_width,
-                        typo,
-                        on_change,
-                        split,
-                        doc.spell_synopsis(),
-                        doc.replacement_synopsis(),
-                        // One synopsis per stream row — see the sibling call.
-                        // Formatting reaches it through the editor registry.
-                        Option::None,
-                        Some(format.clone()),
-                        Some(typewriter.clone()),
-                        Some(caret.clone()),
-                        Some(games.clone()),
-                        // This row's synopsis threads — see above.
-                        vm.row_comments(id, flavour)
-                            .map(|b| b.with_gutter(gutter.clone())),
-                        doc.images(),
-                        // Each row answers for itself: a stream shows many items, and only the
-                        // ones actually in the trash are locked.
-                        doc.trashed.get(),
-                        // One synopsis per stream row, so there is no single "the"
-                        // caret for the tab to remember. Same reason as the absent sink.
-                        Option::None,
-                        // Which row this is — see the prose flavour above.
-                        Some(crate::margin_lane::LaneAnchor::new(id, scope)),
-                        // See the container's own column above.
-                        true,
-                        // Built here rather than taken from the tab: a stream row is
-                        // handed the palette and the project separately, and this is
-                        // the same pair the prose flavour above passes.
-                        tags.map(|tags| crate::tabs::shared::editor::CapturePalette {
-                            tags: tags.clone(),
-                            work_uid: arrival_project.and_then(|p| p.uid.clone()),
-                        }),
-                        tr!(synopsis()),
-                        Some(doc.content_language()),
-                    ));
+                    col = col.child(
+                        synopsis_column(
+                            &field.doc,
+                            editor_width,
+                            typo,
+                            on_change,
+                            split,
+                            doc.spell_synopsis(),
+                            doc.replacement_synopsis(),
+                            // One synopsis per stream row — see the sibling call.
+                            // Formatting reaches it through the editor registry.
+                            Option::None,
+                            Some(format.clone()),
+                            Some(typewriter.clone()),
+                            Some(caret.clone()),
+                            Some(games.clone()),
+                            // This row's synopsis threads — see above.
+                            vm.row_comments(id, flavour)
+                                .map(|b| b.with_gutter(gutter.clone())),
+                            doc.images(),
+                            // Each row answers for itself: a stream shows many items, and only the
+                            // ones actually in the trash are locked.
+                            doc.trashed.get(),
+                            // One synopsis per stream row, so there is no single "the"
+                            // caret for the tab to remember. Same reason as the absent sink.
+                            Option::None,
+                            // Which row this is — see the prose flavour above.
+                            Some(crate::margin_lane::LaneAnchor::new(id, scope)),
+                            // See the container's own column above.
+                            true,
+                            // Built here rather than taken from the tab: a stream row is
+                            // handed the palette and the project separately, and this is
+                            // the same pair the prose flavour above passes.
+                            tags.map(|tags| crate::tabs::shared::editor::CapturePalette {
+                                tags: tags.clone(),
+                                work_uid: arrival_project.and_then(|p| p.uid.clone()),
+                            }),
+                            tr!(synopsis()),
+                            Some(doc.content_language()),
+                        )
+                        .indent(inset),
+                    );
                 }
             }
         }
@@ -820,7 +938,8 @@ fn row_header(
         // exporter puts it. A scene has none, and `StructureNumber` renders nothing for
         // `None`, so the titles below stay aligned with the ones above.
         .child(crate::widgets::StructureNumber::new(badge))
-        .child(
+        .child(OutlineHeading::new(
+            vm.row_depth(id),
             // The generated name when the row has no title of its own, else the live one —
             // a rename must still show here without a reload, and a generated name has
             // nothing live to follow.
@@ -838,7 +957,7 @@ fn row_header(
                     // the title truncates. See `binder::dock`.
                     .single_line(),
             },
-        )
+        ))
         // The row's free-text label (blank when unset).
         .child(
             TextWidget::new(lit!(""))

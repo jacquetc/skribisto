@@ -1082,6 +1082,7 @@ mod tests {
             crate::shared::TypewriterSettings::off(),
             crate::shared::CaretHighlightSettings::off(),
             crate::shared::CaretDimSettings::off(),
+            Signal::new(crate::stream::StreamIndent::default()),
             crate::settings::EditorViewMemory::detached(false),
             crate::settings::CorkboardDefaults::detached(),
             ids.clone(),

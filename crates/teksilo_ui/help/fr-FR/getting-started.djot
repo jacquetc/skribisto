@@ -65,6 +65,10 @@ Pour découvrir un projet d’exemple, ouvrez *Exemples* dans la barre latérale
   ▸ Éditeur ▸ Comportement de l’éditeur*. Avec *Un seul*, chaque élément que vous ouvrez
   remplace l’onglet où vous étiez. Avec *5 derniers*, en ouvrir un sixième ferme celui que
   vous n’avez pas regardé depuis le plus longtemps. Un onglet épinglé reste toujours ouvert.
+- Dans *Livre complet*, *Partie complète*, *Chapitre complet* et *Synopsis complet*,
+  chaque niveau est plus en retrait que celui auquel il appartient. *Retrait par niveau*,
+  dans *Paramètres ▸ Éditeur ▸ Comportement de l’éditeur*, règle ce retrait, d’*Aucun* à
+  *Grand*.
 - À la création du projet, *Chapitres à plat* permet d’écrire directement dans chaque chapitre,
   sans le diviser en scènes. Le format *Dossier* conserve le projet dans un dossier plutôt
   que dans un fichier unique.

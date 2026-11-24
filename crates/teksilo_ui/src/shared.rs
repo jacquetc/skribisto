@@ -34,6 +34,10 @@ pub(crate) mod address_input;
 
 mod caret_dim;
 mod caret_highlight;
+// A centred writing column set in from its leading edge, and where that puts it: the
+// one geometry both widgets that centre a column apply. (A plain comment: an outer doc
+// comment here would make rustdoc resolve the module's own intra-doc links in `shared`.)
+pub mod column_inset;
 pub mod editor_size;
 /// Whether a command may write into an editor's text: the one question every
 /// command that writes through an `EditorHandle` asks, so a trashed item's text

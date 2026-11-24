@@ -428,6 +428,18 @@ impl StreamViewModel {
         self.inner.level
     }
 
+    /// How deep the row `id` sits under the container, live: 1 for its first level.
+    /// What the row is set in by (see `crate::stream::level_inset`).
+    pub fn row_depth(&self, id: u64) -> Signal<u8> {
+        self.inner.rows.depth(id)
+    }
+
+    /// The deepest level among the rows shown, live; 0 in a reading and on an empty
+    /// page.
+    pub fn deepest(&self) -> Signal<u8> {
+        self.inner.rows.deepest()
+    }
+
     pub fn container_title(&self) -> Signal<String> {
         self.inner.container_probe.title()
     }

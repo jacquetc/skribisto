@@ -35,6 +35,7 @@ use crate::settings::{EditorTypography, SettingsViewModel};
 use crate::shared::{
     DimScope, DimStrength, HighlightScope, SynopsisPlacement, TabLimit, TypewriterAnchor,
 };
+use crate::stream::StreamIndent;
 use teksilo::prelude::{
     GLYPH_RENDERING_KEY, GlyphRenderingPreference, TEXT_CONTRAST_KEY, TextContrastLevel,
 };
@@ -513,6 +514,12 @@ pub(crate) fn reset_targets(vm: &SettingsViewModel) -> Vec<ResetTarget> {
             vm.dim_strength(),
             DimStrength::default(),
             DimStrength::Strong,
+        ),
+        choice(
+            crate::STREAM_INDENT_KEY,
+            vm.stream_indent(),
+            StreamIndent::default(),
+            StreamIndent::None,
         ),
         choice(
             crate::TAB_LIMIT_KEY,

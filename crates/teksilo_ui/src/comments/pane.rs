@@ -22,6 +22,15 @@
 //! width, because its *height* depends on where the prose wraps, and reporting the
 //! first pass's height for a narrower column would leave the page's last lines
 //! outside the scrollable extent.
+//!
+//! ## Set in by a level
+//!
+//! A stream row sits further in the deeper it is in the outline (see
+//! [`crate::shared::column_inset`]). The pair is placed by the rules above as if it were
+//! not set in at all, and only then is the column narrowed, from its leading edge alone,
+//! and measured once more at that width. The margin follows the column's **trailing**
+//! edge, which the inset does not move in a left-to-right interface, so a row's cards
+//! stay flush against its text and line up with every other row's down the page.
 
 use teksilo::canvas::{Point, Rect, Size};
 use teksilo::core::widget::{LayoutContext, LayoutResponse, Widget, WidgetPlacement};
@@ -52,6 +61,8 @@ pub struct ColumnWithMargin {
     /// What a press on the empty space around the column puts the caret in — see
     /// [`Self::caret_beside`].
     caret: Option<crate::tabs::shared::PageCaret>,
+    /// How far in from its leading edge the column is set — see [`Self::indent`].
+    inset: Option<crate::shared::column_inset::ColumnInset>,
     /// Where `place_children` put the column, for the press handler.
     span: crate::tabs::shared::editor::page_caret::ColumnSpan,
 }
@@ -76,8 +87,67 @@ impl ColumnWithMargin {
             cap,
             reserve: Signal::new(0.0),
             caret: None,
+            inset: None,
             span: std::rc::Rc::new(std::cell::Cell::new((0.0, 0.0))),
         }
+    }
+
+    /// Set the column in from its leading edge by `inset`, live. The pair is placed as
+    /// without it first; see the module docs.
+    pub fn indent(mut self, inset: crate::shared::column_inset::ColumnInset) -> Self {
+        self.inset = Some(inset);
+        self
+    }
+
+    /// `placement`, with the column set in by this pair's inset, and the column's size
+    /// measured again at the narrower width.
+    ///
+    /// The inset is asked for the width the margin rules **left the column**, not the
+    /// pane's: that is the width the column is placed in. Unsqueezed it is the same
+    /// number a row's header is set in by, so the two stay aligned. In a pane too tight
+    /// for the pair, where the column already gave up width to its cards (184 dp beside a
+    /// 328 dp margin in a 512 dp pane), the pane's width would ask for the full step and
+    /// crush a deep row to the column's floor, two levels landing on the same edge; the
+    /// column's own width keeps every level apart and two thirds of the column for the
+    /// deepest.
+    ///
+    /// The margin is put back against the column's trailing edge: unchanged in a
+    /// left-to-right interface, where that edge does not move, and following the column
+    /// in a right-to-left one, where the inset is taken off the side the margin is on.
+    fn indented(
+        &self,
+        placement: PanePlacement,
+        column: Size,
+        ctx: &LayoutContext,
+    ) -> (PanePlacement, Size) {
+        let inset = self
+            .inset
+            .as_ref()
+            .map_or(0.0, |i| i.leading(placement.column_width));
+        if inset <= 0.0 {
+            return (placement, column);
+        }
+        let (x, width) = crate::shared::column_inset::inset_frame(
+            placement.column_x,
+            placement.column_width,
+            inset,
+            ctx.is_rtl(),
+        );
+        if width >= placement.column_width {
+            return (placement, column);
+        }
+        let narrowed = self
+            .column
+            .and_then(|id| ctx.child_size(id, SizeProposal::with_width(width)))
+            .unwrap_or(Size::new(width, column.height));
+        (
+            PanePlacement {
+                column_x: x,
+                column_width: width,
+                margin_x: placement.margin_x.map(|_| x + width),
+            },
+            narrowed,
+        )
     }
 
     /// Put the caret in `caret`'s editor on a press beside the column, on the
@@ -103,12 +173,20 @@ impl ColumnWithMargin {
         w.max(crate::tabs::shared::editor::MIN_COLUMN_WIDTH)
     }
 
-    /// Measure both children and decide where each goes.
+    /// Measure both children and decide where each goes, the column set in by its
+    /// inset if it has one.
     ///
     /// Returns the placement, the column's resolved size, and the height the
-    /// margin's cards want — so the caller can report a size without measuring a
-    /// third time.
+    /// margin's cards want — so the caller can report a size without measuring
+    /// again.
     fn resolve(&self, available: f32, ctx: &LayoutContext) -> (PanePlacement, Size, f32) {
+        let (placement, column, margin_h) = self.place_pair(available, ctx);
+        let (placement, column) = self.indented(placement, column, ctx);
+        (placement, column, margin_h)
+    }
+
+    /// The pair placed by the margin's rules, as if the column were not set in.
+    fn place_pair(&self, available: f32, ctx: &LayoutContext) -> (PanePlacement, Size, f32) {
         // Asked with an *unspecified* proposal, because the question is what the
         // margin wants, not what it would accept: its width is a fixed column or
         // nothing at all, never a share of what is going — and its height is what
@@ -183,6 +261,9 @@ impl Widget for ColumnWithMargin {
         }
         if let Some(w) = self.pending_margin.take() {
             self.margin = Some(ctx.add_boxed(w));
+        }
+        if let Some(inset) = &self.inset {
+            inset.bind(ctx);
         }
         if let Some(caret) = self.caret.clone() {
             use crate::tabs::shared::editor::page_caret;
@@ -298,6 +379,142 @@ mod tests {
         tree.layout(SizeProposal::exact(available, 600.0));
         let kids = tree.children(root);
         (tree.bounds(kids[0]), tree.bounds(kids[1]))
+    }
+
+    /// The pair placed in a pane `available` wide with the column set in by `inset`:
+    /// the column's bounds, the margin's, and the height the pair reported. The column
+    /// wraps like prose, so a narrower one is taller.
+    fn place_indented(
+        available: f32,
+        cap: f32,
+        margin_w: f32,
+        inset: f32,
+        rtl: bool,
+    ) -> (Rect, Rect, f32) {
+        let mut tree = WidgetTree::new();
+        if rtl {
+            tree.set_layout_direction(teksilo::core::environment::LayoutDirection::RightToLeft);
+        }
+        let column = MaxSize::width(cap).child(
+            teksilo::widgets::Expand::horizontal()
+                .child(crate::test_support::WrapsLikeProse { area: 120_000.0 }),
+        );
+        let root = tree.add(
+            ColumnWithMargin::new(column, margin(margin_w), Signal::new(cap))
+                .indent(crate::shared::column_inset::ColumnInset::fixed(inset)),
+        );
+        tree.layout(SizeProposal::with_width(available));
+        let kids = tree.children(root);
+        (
+            tree.bounds(kids[0]),
+            tree.bounds(kids[1]),
+            tree.bounds(root).height,
+        )
+    }
+
+    /// **Set in by a level, a row keeps its cards flush.** The pair is placed as if the
+    /// column were not set in (centred, the margin flush to its right), then the
+    /// column's left edge moves in: its right edge, and so the margin, stay put, and line
+    /// up with every other row's down the page.
+    #[test]
+    fn an_indented_column_keeps_its_margin_flush_and_in_place() {
+        let (plain, plain_margin) = place(1400.0, 600.0, 300.0);
+        let (column, margin, _) = place_indented(1400.0, 600.0, 300.0, 96.0, false);
+        assert_eq!(
+            (column.x, column.width),
+            (plain.x + 96.0, plain.width - 96.0)
+        );
+        assert_eq!(margin.x, plain_margin.x, "the margin did not move");
+        assert_eq!(
+            margin.x,
+            column.x + column.width,
+            "and is flush to the text"
+        );
+    }
+
+    /// A pane too tight to centre the pair (rule 3 pulled it left): the inset applies
+    /// on top of where the rules put the column, and the margin stays flush.
+    #[test]
+    fn in_a_tight_pane_the_inset_applies_after_the_margin_rules() {
+        let (plain, plain_margin) = place(800.0, 600.0, 300.0);
+        assert_eq!(
+            (plain.x, plain.width),
+            (0.0, 500.0),
+            "fixture: rule 3 applies"
+        );
+        let (column, margin, _) = place_indented(800.0, 600.0, 300.0, 48.0, false);
+        assert_eq!((column.x, column.width), (48.0, 452.0));
+        assert_eq!(margin.x, plain_margin.x);
+    }
+
+    /// Right to left, the inset comes off the right edge, and the margin, which this
+    /// pair places on the right, follows it so the cards stay against the text.
+    #[test]
+    fn right_to_left_the_margin_follows_the_column() {
+        let (column, margin, _) = place_indented(1400.0, 600.0, 300.0, 96.0, true);
+        assert_eq!((column.x, column.width), (400.0, 504.0));
+        assert_eq!(margin.x, column.x + column.width, "flush to the text");
+    }
+
+    /// **In a pane too tight for the pair, the levels stay apart.** The margin rules
+    /// left the column 184 dp beside a 328 dp margin; a scene three levels deep, at the
+    /// medium step, is set in against those 184 dp, keeping two thirds of them. Set in
+    /// against the pane's 512 it asked for 96, was clamped to the column's floor, and
+    /// landed on the same edge as a row two levels deep.
+    #[test]
+    fn a_squeezed_column_is_set_in_against_its_own_width() {
+        let depth = |d: u8| {
+            crate::shared::column_inset::ColumnInset::new(
+                move |available| crate::stream::level_inset(32.0, available.min(700.0), d, 3),
+                |_| {},
+            )
+        };
+        let place = |d: u8| -> Rect {
+            let mut tree = WidgetTree::new();
+            let root = tree.add(
+                ColumnWithMargin::new(column(600.0), margin(328.0), Signal::new(600.0))
+                    .indent(depth(d)),
+            );
+            tree.layout(SizeProposal::with_width(512.0));
+            tree.bounds(tree.children(root)[0])
+        };
+        let (plain, _) = place_squeezed();
+        assert_eq!(
+            plain.width, 184.0,
+            "fixture: the margin rules squeeze the column"
+        );
+        let deepest = place(3);
+        assert!(
+            (deepest.width - 184.0 * 2.0 / 3.0).abs() < 0.01,
+            "the deepest row keeps two thirds of its column, not the floor: {}",
+            deepest.width
+        );
+        let middle = place(2);
+        assert!(middle.x < deepest.x, "two levels never share an edge");
+        assert_eq!(
+            deepest.x + deepest.width,
+            plain.x + plain.width,
+            "and the trailing edge stays flush against the cards"
+        );
+    }
+
+    /// The pair placed in that tight pane with no inset.
+    fn place_squeezed() -> (Rect, Rect) {
+        place(512.0, 600.0, 328.0)
+    }
+
+    /// The pair reports the narrowed column's height, so an indented row's last lines
+    /// stay inside the page's scrollable extent.
+    #[test]
+    fn an_indented_pair_reports_the_narrowed_columns_height() {
+        let (column, _, height) = place_indented(1400.0, 600.0, 300.0, 96.0, false);
+        let expected = 120_000.0 / 504.0;
+        assert!(
+            (column.height - expected).abs() < 0.01,
+            "placed {}",
+            column.height
+        );
+        assert!((height - expected).abs() < 0.01, "reported {height}");
     }
 
     /// **The stream-row fix.** A row is only as tall as its own few lines, so a

@@ -29,6 +29,7 @@ use frontend::common::entities::QuoteStyle;
 use crate::shared::{
     DimScope, DimStrength, HighlightScope, SynopsisPlacement, TabLimit, TypewriterAnchor,
 };
+use crate::stream::StreamIndent;
 use teksilo::prelude::{
     GLYPH_RENDERING_KEY, GlyphRenderingPreference, TEXT_CONTRAST_KEY, TextContrastLevel,
 };
@@ -73,7 +74,7 @@ use crate::{
     SCENE_LINE_HEIGHT_DEFAULT, SCENE_LINE_HEIGHT_KEY, SCENE_PARA_SPACING_AFTER_DEFAULT,
     SCENE_PARA_SPACING_AFTER_KEY, SCENE_PARA_SPACING_BEFORE_DEFAULT, SCENE_PARA_SPACING_BEFORE_KEY,
     SCENE_SIZE_DEFAULT, SCENE_SIZE_KEY, SHOW_EPIGRAPHS_DEFAULT, SHOW_EPIGRAPHS_KEY,
-    SHOW_WELCOME_KEY, SPELLCHECK_ENABLED_DEFAULT, SPELLCHECK_ENABLED_KEY,
+    SHOW_WELCOME_KEY, SPELLCHECK_ENABLED_DEFAULT, SPELLCHECK_ENABLED_KEY, STREAM_INDENT_KEY,
     SYNOPSIS_FIRST_LINE_INDENT_DEFAULT, SYNOPSIS_FIRST_LINE_INDENT_KEY, SYNOPSIS_FOLDED_DEFAULT,
     SYNOPSIS_FOLDED_KEY, SYNOPSIS_FONT_FAMILY_DEFAULT, SYNOPSIS_FONT_FAMILY_KEY,
     SYNOPSIS_LINE_HEIGHT_DEFAULT, SYNOPSIS_LINE_HEIGHT_KEY, SYNOPSIS_PANE_DEFAULT,
@@ -469,6 +470,7 @@ pub struct SettingsViewModel {
     dim_enabled: Signal<bool>,
     dim_scope: Signal<DimScope>,
     dim_strength: Signal<DimStrength>,
+    stream_indent: Signal<StreamIndent>,
     tab_limit: Signal<TabLimit>,
     remember_view: Signal<bool>,
     // ── Goals & word count ──
@@ -691,6 +693,7 @@ impl SettingsViewModel {
             dim_enabled: store.signal(DIM_ENABLED_KEY, DIM_ENABLED_DEFAULT),
             dim_scope: store.signal(DIM_SCOPE_KEY, DimScope::default()),
             dim_strength: store.signal(DIM_STRENGTH_KEY, DimStrength::default()),
+            stream_indent: store.signal(STREAM_INDENT_KEY, StreamIndent::default()),
             tab_limit: store.signal(TAB_LIMIT_KEY, TabLimit::default()),
             remember_view: store.signal(REMEMBER_VIEW_KEY, REMEMBER_VIEW_DEFAULT),
             counting_method: store
@@ -1044,6 +1047,10 @@ impl SettingsViewModel {
     /// How far the rest of the text fades.
     pub fn dim_strength(&self) -> Signal<DimStrength> {
         self.dim_strength.clone()
+    }
+    /// How far each level of a stream is set in. Read live by every stream page.
+    pub fn stream_indent(&self) -> Signal<StreamIndent> {
+        self.stream_indent.clone()
     }
     /// How many unpinned tabs each editor pane keeps. The same store-backed signal
     /// every window's `EditorsViewModel` reads at each open.
@@ -1455,6 +1462,31 @@ mod tests {
         assert_eq!(
             reread(),
             (false, DimScope::default(), DimStrength::default()),
+            "Reset reaches the file too"
+        );
+    }
+
+    /// The stream indent is an enum in a store that speaks TOML scalars: each setting has to
+    /// survive the file, and Reset has to bring back the default, Medium.
+    #[test]
+    fn the_stream_indent_persists_every_setting_and_resets() {
+        let store = temp_store();
+        let vm = SettingsViewModel::new(&store);
+        assert_eq!(vm.stream_indent().get(), StreamIndent::Medium);
+        let reread = || {
+            store.flush_now().expect("write the settings file");
+            let fresh = SettingsStore::open(store.path().to_path_buf()).expect("reopen it");
+            SettingsViewModel::new(&fresh).stream_indent().get()
+        };
+        for indent in StreamIndent::all() {
+            vm.stream_indent().set(indent);
+            assert_eq!(reread(), indent, "{indent:?} must survive the file");
+        }
+        vm.stream_indent().set(StreamIndent::None);
+        vm.reset_editor_defaults();
+        assert_eq!(
+            reread(),
+            StreamIndent::default(),
             "Reset reaches the file too"
         );
     }

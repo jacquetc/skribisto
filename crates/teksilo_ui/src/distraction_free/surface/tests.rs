@@ -92,6 +92,7 @@ fn fixture_with_column(column: f32) -> Fixture {
         crate::shared::TypewriterSettings::off(),
         crate::shared::CaretHighlightSettings::off(),
         crate::shared::CaretDimSettings::from_settings(&settings),
+        Signal::new(crate::stream::StreamIndent::default()),
         crate::settings::EditorViewMemory::detached(false),
         crate::settings::CorkboardDefaults::detached(),
         ids.clone(),

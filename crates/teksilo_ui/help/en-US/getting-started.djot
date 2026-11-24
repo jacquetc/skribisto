@@ -60,6 +60,9 @@ To explore a sample project, open *Examples* in the sidebar.
   Behavior*. With *One*, each item you open replaces the tab you were on. With *Last five*,
   opening a sixth closes the one you have not looked at for the longest time. A pinned tab
   always stays open.
+- In *Full Book*, *Full Part*, *Full Chapter* and *Full Synopsis*, each level sits
+  further in than the one it belongs to. *Indent by level* in *Settings ▸ Editor ▸ Editor
+  Behavior* chooses how far, from *None* to *Large*.
 - When creating a project, *Flat chapters* lets you write directly in each chapter instead
   of dividing it into scenes. *Bundle* saves the project as a folder instead of a single file.
 

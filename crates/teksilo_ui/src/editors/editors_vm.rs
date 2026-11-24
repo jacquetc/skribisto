@@ -229,6 +229,9 @@ pub struct EditorsViewModel {
     /// the distraction-free surface's included: unlike the band's colour, nothing about
     /// it depends on the page it is drawn on.
     caret_dim: crate::shared::CaretDimSettings,
+    /// How far each level of a stream is set in, shared live from Settings into every
+    /// `ContentTab`.
+    stream_indent: Signal<crate::stream::StreamIndent>,
     /// The flag every **pane** tab is built with — a constant `false`, supplied
     /// by `App::build`. A pane is never distraction-free: the mode mounts its
     /// own surface with its own tab (see [`Self::open_surface_tab`]) rather than
@@ -308,6 +311,7 @@ impl EditorsViewModel {
         typewriter: crate::shared::TypewriterSettings,
         caret_highlight: crate::shared::CaretHighlightSettings,
         caret_dim: crate::shared::CaretDimSettings,
+        stream_indent: Signal<crate::stream::StreamIndent>,
         view_memory: crate::settings::EditorViewMemory,
         corkboard_defaults: crate::settings::CorkboardDefaults,
         ids: AppIds,
@@ -372,6 +376,7 @@ impl EditorsViewModel {
             typewriter,
             caret_highlight,
             caret_dim,
+            stream_indent,
             distraction_free,
             distraction_free_width,
             view_memory,
@@ -1081,6 +1086,7 @@ impl EditorsViewModel {
             self.typewriter.clone(),
             caret_highlight,
             self.caret_dim.clone(),
+            self.stream_indent.clone(),
             self.view_memory.clone(),
             self.corkboard_defaults.clone(),
             self.tree_expansion.clone(),
@@ -2978,6 +2984,7 @@ pub(crate) mod test_support {
             crate::shared::TypewriterSettings::off(),
             crate::shared::CaretHighlightSettings::off(),
             crate::shared::CaretDimSettings::off(),
+            Signal::new(crate::stream::StreamIndent::default()),
             crate::settings::EditorViewMemory::detached(false),
             crate::settings::CorkboardDefaults::detached(),
             ids,

@@ -105,6 +105,9 @@ impl App {
         // The fade around the caret: three store-backed signals and nothing resolved, so,
         // unlike the band, it needs no theme effect and the same bundle serves every window.
         let caret_dim = crate::shared::CaretDimSettings::from_settings(&settings);
+        // How far each level of a stream is set in: one store-backed signal, read live by
+        // every stream page of every window.
+        let stream_indent = settings.stream_indent();
         let view_memory = crate::settings::EditorViewMemory::new(ctx.settings());
         let corkboard_defaults = settings.corkboard_defaults();
         let ids = self.outline.ids();
@@ -159,6 +162,7 @@ impl App {
                     typewriter,
                     caret_highlight,
                     caret_dim,
+                    stream_indent,
                     view_memory,
                     corkboard_defaults,
                     ids,

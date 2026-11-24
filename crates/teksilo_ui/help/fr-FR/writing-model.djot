@@ -54,6 +54,16 @@ Un projet peut contenir plusieurs livres, l’un après l’autre dans le même 
 livre court depuis son début jusqu’à la première de ces trois limites : un élément *Fin
 du livre*, le début du livre suivant, ou la fin de son classeur.
 
+## Lire un livre, une partie ou un chapitre en entier
+
+Pour lire un livre, une partie ou un chapitre du début à la fin, ouvrez-le et choisissez
+*Livre complet*, *Partie complète* ou *Chapitre complet* en haut. *Synopsis complet*
+montre les synopsis de la même façon.
+
+Chaque chapitre est plus en retrait que sa partie, et chaque scène plus que son chapitre :
+le plan se lit d’un coup d’œil. Pour changer ce retrait, ouvrez *Paramètres ▸ Éditeur ▸
+Comportement de l’éditeur* et choisissez *Retrait par niveau*. *Aucun* aligne tout.
+
 ## Le paratexte : dans le livre, pas dans l’histoire
 
 Un *Paratexte* appartient au livre mais pas à son histoire : une préface, une dédicace,
