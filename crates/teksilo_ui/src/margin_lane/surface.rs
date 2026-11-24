@@ -206,6 +206,42 @@ impl MappedRow {
     }
 }
 
+/// What a row's measured paragraphs were measured against: its text and its layout.
+///
+/// The layout is two numbers, because neither alone names it: a reflow at a new width
+/// can leave the height unchanged, and two widths can break the same text into lines of
+/// the same total height. See [`LaneHost::row_units`].
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+struct UnitsKey {
+    revision: u64,
+    height: u32,
+    width: u32,
+}
+
+impl UnitsKey {
+    fn of(revision: u64, handle: &teksilo::widgets::rich_text::EditorHandle) -> Self {
+        Self {
+            revision,
+            height: handle.content_height().unwrap_or(0.0).to_bits(),
+            width: handle.layout_width().unwrap_or(0.0).to_bits(),
+        }
+    }
+}
+
+/// One row's layout, as two fingerprint terms: the height of its laid-out text and the
+/// width its lines were broken at.
+///
+/// A row with no laid-out text yet (or no editor at all) is distinguished from one whose
+/// text happens to be zero pixels tall or wide, so the frame that gains geometry is never
+/// mistaken for the frame before it.
+fn layout_terms(handle: Option<&teksilo::widgets::rich_text::EditorHandle>) -> [u64; 2] {
+    let term = |px: Option<f32>| px.map_or(u64::MAX, |px| u64::from(px.to_bits()));
+    [
+        term(handle.and_then(|h| h.content_height())),
+        term(handle.and_then(|h| h.layout_width())),
+    ]
+}
+
 /// **Where an editor's laid-out text begins, in window space.**
 ///
 /// The same offset asked for in both spaces and subtracted: `window_y` is where the
@@ -500,10 +536,10 @@ struct LaneHost {
     map: Rc<RefCell<Vec<RowSpan>>>,
     /// Each row's weight, against the document revision it was counted at.
     weights: RefCell<HashMap<EntityId, (u64, f32)>>,
-    /// Each row's paragraphs in its own coordinates, against the text revision and
-    /// laid-out height they were measured at. See [`LaneHost::row_units`].
+    /// Each row's paragraphs in its own coordinates, against the text revision and the
+    /// layout they were measured at. See [`LaneHost::row_units`].
     #[allow(clippy::type_complexity)]
-    row_units: RefCell<HashMap<EntityId, ((u64, u32), Rc<Vec<texture::Paragraph>>)>>,
+    row_units: RefCell<HashMap<EntityId, (UnitsKey, Rc<Vec<texture::Paragraph>>)>>,
     /// Bumped by the cursor and focus watches, and bound at `Relayout` so the
     /// next pass re-reads the caret. A counter rather than the answer itself,
     /// because the watches fire where the answer cannot safely be computed -- see
@@ -579,8 +615,9 @@ impl LaneHost {
     ///
     /// Every term is O(1): a document revision per row, the arbiter's generation,
     /// each comment set's generation, the row extents' generation (which is what a
-    /// reflow moves), the theme's own generation, and **each row's laid-out text
-    /// height**.
+    /// reflow moves), the theme's own generation, and **each row's layout**: the
+    /// height of its laid-out text and the width its lines were broken at (see
+    /// [`layout_terms`]).
     ///
     /// That last one is not redundant with the extents, and leaving it out was a real
     /// bug rather than a hypothetical. On the frame a page is first laid out there is
@@ -589,6 +626,13 @@ impl LaneHost {
     /// lane stays empty **for the life of the tab**. The height is the term that
     /// distinguishes "not laid out" from "laid out", so it is what lets the second
     /// frame do the work the first could not.
+    ///
+    /// The width is there for the reflow the height cannot see: re-broken at a new
+    /// width, one paragraph can gain a line as another loses one, and the text is as
+    /// tall as before. Every bar below the first of them has moved, and with the height
+    /// alone the guard turned the pass away. A stream that sets its rows in by their
+    /// level re-wraps rows that way whenever the setting changes or a part is added
+    /// above them.
     ///
     /// Deliberately **not** the marks themselves: deciding whether to recompute by
     /// recomputing would defeat the whole guard.
@@ -634,14 +678,9 @@ impl LaneHost {
             // a writer clicking away from a word they had just typed would
             // watch the page squiggle it and the lane not.
             h.add(row.spell.as_ref().map_or(0, |s| s.generation()));
-            h.add(
-                self.handle_for(row.item)
-                    .and_then(|handle| handle.content_height())
-                    // A row with no laid-out text yet is distinguished from one whose
-                    // text happens to be zero pixels tall, so the frame that gains
-                    // geometry is never mistaken for the frame before it.
-                    .map_or(u64::MAX, |px| px.to_bits() as u64),
-            );
+            for term in layout_terms(self.handle_for(row.item).as_ref()) {
+                h.add(term);
+            }
         }
         h.finish()
     }
@@ -995,18 +1034,21 @@ impl LaneHost {
     /// this walk was **185 ms** -- 98% of it. A keystroke changes one scene, and the
     /// other 32 were being re-walked and re-queried to produce the identical answer.
     ///
-    /// The key is the pair that can invalidate it. `content_revision` covers the
-    /// text; `content_height` covers the layout, because a row that reflows at a new
-    /// width moves every paragraph inside it without changing a character. Keying on
-    /// the revision alone would have left the bars wrong after a window resize,
-    /// which is the sort of staleness that looks like a rendering bug for weeks.
+    /// The key is everything that can invalidate it (see [`UnitsKey`]).
+    /// `content_revision` covers the text; the layout's height **and width** cover a
+    /// row that reflows at a new width, which moves every paragraph inside it without
+    /// changing a character. Keying on the revision alone would have left the bars
+    /// wrong after a window resize, which is the sort of staleness that looks like a
+    /// rendering bug for weeks.
     ///
-    /// The height is a proxy for the width, and one case slips through it: a reflow
-    /// where one paragraph gains a line and another loses one, leaving the row's
-    /// total height bit-identical. Those bars stay as they were until the next edit
-    /// to that scene. It needs the two changes to cancel to the bit, it moves a bar
-    /// by one line, and it heals itself -- worth knowing about, not worth threading
-    /// the laid-out width through the editor handle to prevent.
+    /// The height alone was once the proxy for the width, and one case slipped through
+    /// it: a reflow where one paragraph gains a line and another loses one, leaving the
+    /// row's total height bit-identical, and its bars where the old lines had put them
+    /// until the next edit to that scene. It was rare while only a window resize could
+    /// do it. A stream that sets each row in by its level made it routine (a new
+    /// setting, a part added above, a filter that changes the deepest level shown all
+    /// re-wrap rows without touching their text), so the key carries the width the
+    /// lines were actually broken at, which the editor now reports.
     ///
     /// Deliberately **not** keyed on the extent. Local coordinates do not depend on
     /// it, which is the whole reason they are stored that way: typing one character
@@ -1018,10 +1060,7 @@ impl LaneHost {
         row: &LaneRow,
         handle: &teksilo::widgets::rich_text::EditorHandle,
     ) -> Rc<Vec<texture::Paragraph>> {
-        let key = (
-            row.doc.content_revision(),
-            handle.content_height().unwrap_or(0.0).to_bits(),
-        );
+        let key = UnitsKey::of(row.doc.content_revision(), handle);
         if let Some((seen, cached)) = self.row_units.borrow().get(&row.item)
             && *seen == key
         {
@@ -2032,10 +2071,10 @@ so the geometry is not degenerate.\n\nAnd a second one.";
         let host = host_over(&[(1, &prose(100), 0.0, 500.0)]);
         host.row_units
             .borrow_mut()
-            .insert(1, ((0, 0), Rc::new(Vec::new())));
+            .insert(1, (UnitsKey::default(), Rc::new(Vec::new())));
         host.row_units
             .borrow_mut()
-            .insert(404, ((0, 0), Rc::new(Vec::new())));
+            .insert(404, (UnitsKey::default(), Rc::new(Vec::new())));
 
         let _ = host.resolve(0.0);
 
@@ -2046,6 +2085,94 @@ so the geometry is not degenerate.\n\nAnd a second one.";
             "the scene that is still mapped keeps its paragraphs; the one that is \
              gone must not"
         );
+    }
+
+    /// An editor over `doc`, laid out and painted at `width`: the engine lays out in
+    /// `paint`, so the first render is what gives the second pass real geometry.
+    fn laid_out(
+        doc: &teksilo::text_document::TextDocument,
+    ) -> (
+        teksilo::core::widget_tree::WidgetTree,
+        teksilo::widgets::rich_text::EditorHandle,
+    ) {
+        let editor = teksilo::widgets::rich_text::RichTextEditor::editor(doc.clone());
+        let handle = editor.handle();
+        let mut tree = teksilo::core::widget_tree::WidgetTree::new();
+        let _ = tree.add(editor);
+        (tree, handle)
+    }
+
+    fn lay_out_at(tree: &mut teksilo::core::widget_tree::WidgetTree, width: f32) {
+        for _ in 0..2 {
+            tree.layout(teksilo::canvas::SizeProposal::exact(width, 200.0));
+            let _ = tree.render();
+        }
+    }
+
+    /// **A row re-wrapped at a new width is measured again, at the same height too.**
+    ///
+    /// The cache used to be keyed on the text and its laid-out height, the height
+    /// standing in for the width. A reflow where one paragraph gains a line as another
+    /// loses one keeps the height and moves the bars, and slipped past it. Once rare,
+    /// routine since a stream sets each row in by its level.
+    ///
+    /// The fixture is the clean case of "same height, another width": one short line,
+    /// which fits on one line at either width.
+    #[test]
+    fn a_row_laid_out_at_a_new_width_is_measured_again_even_at_the_same_height() {
+        let host = host_over(&[(1, "Short.", 0.0, 40.0)]);
+        let row = host
+            .inputs
+            .rows
+            .placed_rows()
+            .into_iter()
+            .next()
+            .expect("the fixture's row");
+        let (mut tree, handle) = laid_out(&row.doc);
+
+        lay_out_at(&mut tree, 320.0);
+        let height = handle.content_height();
+        let width = handle.layout_width();
+        assert!(height.is_some() && width.is_some(), "fixture: laid out");
+        let first = host.row_units(&row, &handle);
+        assert!(
+            Rc::ptr_eq(&first, &host.row_units(&row, &handle)),
+            "nothing moved, so the cache answers"
+        );
+
+        lay_out_at(&mut tree, 300.0);
+        assert_eq!(
+            handle.content_height(),
+            height,
+            "fixture: one line either way, so the height did not move"
+        );
+        assert_ne!(handle.layout_width(), width, "fixture: the width did");
+        let second = host.row_units(&row, &handle);
+        assert!(
+            !Rc::ptr_eq(&first, &second),
+            "the paragraphs are measured again against the new layout"
+        );
+    }
+
+    /// The recompute guard sees the same thing: a new width at an unchanged height is a
+    /// different layout, and a row with no layout yet is different from both.
+    #[test]
+    fn the_recompute_guard_hears_a_new_width_at_the_same_height() {
+        let doc = teksilo::text_document::TextDocument::new();
+        doc.set_plain_text("Short.").expect("plain text");
+        let (mut tree, handle) = laid_out(&doc);
+        assert_eq!(
+            layout_terms(Some(&handle)),
+            [u64::MAX, u64::MAX],
+            "not laid out yet"
+        );
+        lay_out_at(&mut tree, 320.0);
+        let wide = layout_terms(Some(&handle));
+        lay_out_at(&mut tree, 300.0);
+        let narrow = layout_terms(Some(&handle));
+        assert_eq!(wide[0], narrow[0], "fixture: the height did not move");
+        assert_ne!(wide, narrow, "the width is a term of its own");
+        assert_eq!(layout_terms(None), [u64::MAX, u64::MAX], "no editor at all");
     }
 
     /// `n` characters of prose, as one paragraph.
