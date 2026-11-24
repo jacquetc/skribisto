@@ -1,11 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter">
-  <!-- Chapter (Item or Folder) — framed document under one solid heading band.
-       The band is a *fill*, not a stroke, and deliberately the heaviest mark
-       inside any page glyph: it is what tells a chapter from a scene at 16px,
-       where the two frames are identical. See `scene.svg` for why the pair is
-       separated by ink mass rather than by how many bars sit inside.
-       Filled rects take integer bounds — a half-grid x would soften both ends. -->
-  <path d="M9.5 2.5H4.5a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V5.5Z"/>
-  <path d="M9.5 2.5V5.5H12.5"/>
-  <rect x="5" y="8" width="6" height="2" fill="currentColor" stroke="none"/>
+  <!-- Chapter (Item or Folder) — a chapter's opening page: the upper part of the
+       sheet solid (the title area), prose sunk below it. The solid head is the
+       heaviest mark in the manuscript family and sits at the top, where the eye
+       lands first, so a chapter row reads before its title does. Scene has no
+       frame at all (see `scene.svg`), so the pair differs by silhouette as well.
+       The fill takes integer bounds (x3..13, y2..7); the open outline below it is
+       on the half-grid, so its 1-wide sides land flush with the fill's edges. -->
+  <path d="M3 3.5A1.5 1.5 0 0 1 4.5 2H10L13 5V7H3Z" fill="currentColor" stroke="none"/>
+  <path d="M3.5 7V12.5a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V7"/>
+  <path d="M5 9.5H11"/>
+  <path d="M5 11.5H9"/>
 </svg>

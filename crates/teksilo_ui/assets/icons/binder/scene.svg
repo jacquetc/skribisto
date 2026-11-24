@@ -1,12 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter">
-  <!-- Item/Scene — framed document, two equal prose bars (no heading).
-       Scene and Chapter share this frame, so the *interior* carries the whole
-       distinction, and it is drawn as a difference of ink mass, not of bar count:
-       two 1-unit strokes here against Chapter's one solid 2-unit band. Counting
-       strokes is what a 16px raster destroys; comparing mass is what survives it.
-       Bars on the half-grid, 2 apart, so a whole pixel row of gap is left. -->
-  <path d="M9.5 2.5H4.5a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V5.5Z"/>
-  <path d="M9.5 2.5V5.5H12.5"/>
-  <path d="M5 8.5H11"/>
-  <path d="M5 10.5H11"/>
+  <!-- Item/Scene — a dinkus over two prose bars, and no page frame.
+       The dinkus is the "* * *" that separates scenes in print, so the glyph names
+       the unit by its boundary. Scene used to share Chapter's framed page and differ
+       only inside it; at 16px that read as two near-identical pages. Now the pair
+       differs by silhouette (open vs closed outline) and by where the ink sits.
+       Only text.svg (legacy fallback, never offered for creation) is also frameless
+       bars; the solid dinkus row keeps them apart.
+       Dinkus squares take integer bounds, 2 apart, so a whole pixel column of gap
+       is left between them; bars on the half-grid. -->
+  <rect x="3" y="3" width="2" height="2" fill="currentColor" stroke="none"/>
+  <rect x="7" y="3" width="2" height="2" fill="currentColor" stroke="none"/>
+  <rect x="11" y="3" width="2" height="2" fill="currentColor" stroke="none"/>
+  <path d="M3 8.5H13"/>
+  <path d="M3 11.5H11"/>
 </svg>

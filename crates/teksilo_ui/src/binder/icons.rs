@@ -26,9 +26,10 @@
 //!
 //! * **Differentiate by silhouette or by ink mass, never by counting interior
 //!   strokes.** Anything closer than about two units merges into one grey smear,
-//!   so "one bar vs two bars" is not a distinction at this size. Scene and
-//!   Chapter share a frame and are separated by two thin strokes against one
-//!   solid band; Part is the set's only diagonal; Note keeps its tail.
+//!   so "one bar vs two bars" is not a distinction at this size. Chapter is a
+//!   framed page with a solid head, Scene a frameless dinkus over prose: they
+//!   used to share the frame and differ only inside it, and read as one glyph.
+//!   Part is the set's only diagonal; Note keeps its tail.
 //! * **Never distinguish a pair by mirroring it.** Left/right mirrored glyphs are
 //!   the hardest pair to tell apart at a glance, and RTL layout flips them again.
 //!   BookBegin and BookEnd are unrelated shapes for exactly this reason.
@@ -86,9 +87,8 @@ pub fn sub_role_icon(sub_role: &BinderItemSubRole) -> IconWidget {
 /// Paratexts and notes distinguish the two, and they have to: a folder and the pages
 /// inside it sit next to each other in the same subtree, and with one glyph between them
 /// the tree read as a list of identical rows. A paratext folder differs from its pages by
-/// ink mass (a line for the leaf, a band for the container), the same device that
-/// separates Scene from Chapter, because a raster at 16px preserves mass and destroys
-/// stroke counts. A notes folder is the plain folder holding a solid bubble: the folder
+/// ink mass (a line for the leaf, a band for the container), because a raster at 16px
+/// preserves mass and destroys stroke counts. A notes folder is the plain folder holding a solid bubble: the folder
 /// outline says container, the solid mark says notes.
 pub fn role_sub_role_icon(role: &BinderItemRole, sub_role: &BinderItemSubRole) -> IconWidget {
     match (role, sub_role) {
