@@ -67,11 +67,16 @@ A long report, or one in a script such as Japanese or Arabic, may not fit in the
 Skribisto then copies the whole report for you, and the fields that could not travel say
 to paste it.
 
+No GitHub account? Press *Continue on Discord* instead. Skribisto copies the whole report,
+and your browser opens the project’s translation channel on Discord. Paste the report into a
+message there and send it. The channel is public too, and you need a free Discord account.
+
 ## If something goes wrong
 
 - If your browser did not open, press *Copy link* and paste the link into your browser.
 - If GitHub shows an error page or loses your report, press *Copy text*. Open a new
   translation report on GitHub and paste it.
-- *Copy text* also suits other channels, such as the project’s Discord.
+- On Discord, if the report is no longer in your clipboard, press *Copy text* and paste it
+  again.
 
 Press *Report another* to start again in the same language.

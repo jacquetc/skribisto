@@ -5129,7 +5129,8 @@ import-plume-untitled-project = Імпортований проєкт Plume
 
 ## Help ▸ Report a Translation Error…
 ## The window that finds a translated string and sends a report about it to the
-## project's public issue tracker, through the writer's browser.
+## project's public issue tracker, or to its translation channel on Discord, through
+## the writer's browser.
 
 translation-report-window-title = Повідомити про помилку перекладу
 settings-report-translation = Повідомити про помилку перекладу
@@ -5200,15 +5201,20 @@ translation-report-hint-select = Цей текст змінюється зале
 translation-report-public = Що стане публічним
 translation-report-public-cost = Ваше повідомлення стане публічним зверненням на GitHub. Потрібен безкоштовний обліковий запис GitHub, а сторінка англійською мовою.
 translation-report-public-steps = На GitHub увійдіть в обліковий запис, позначте прапорець щодо Contributor License Agreement (ліцензійна угода учасника) і натисніть «Create».
+translation-report-public-discord = Немає облікового запису GitHub? Натисніть «Продовжити в Discord»: Skribisto скопіює ваше повідомлення й відкриє канал перекладу проєкту, куди ви його вставите. Цей канал теж публічний, і потрібен безкоштовний обліковий запис Discord.
 translation-report-public-title = Заголовок: { $title }
 translation-report-copy-text = Копіювати текст
 translation-report-copy-link = Копіювати посилання
 translation-report-close = Закрити
 translation-report-continue = Продовжити на GitHub
+translation-report-continue-discord = Продовжити в Discord
 translation-report-another = Повідомити про іншу помилку
 translation-report-continued = Зараз ваш браузер має показувати повідомлення на GitHub, готове до перевірки й надсилання.
 translation-report-continued-copied = Повідомлення було задовге для посилання, тому Skribisto скопіював його: вставте його в поля, де про це сказано.
 translation-report-continued-help = Якщо браузер не відкрився, натисніть «Копіювати посилання» і вставте посилання в браузер. Якщо GitHub загубив ваше повідомлення або показує сторінку помилки (наприклад, після створення облікового запису), натисніть «Копіювати текст», відкрийте на GitHub нове повідомлення про помилку перекладу і вставте текст.
+translation-report-continued-discord = Зараз ваш браузер має показувати канал перекладу проєкту в Discord.
+translation-report-continued-discord-paste = Skribisto скопіював ваше повідомлення: вставте його в чат каналу й надішліть.
+translation-report-continued-discord-help = Якщо браузер не відкрився, натисніть «Копіювати посилання» і вставте посилання в браузер. Якщо вашого повідомлення вже немає в буфері обміну, натисніть «Копіювати текст».
 translation-report-open-failed = Skribisto не зміг відкрити ваш браузер ({ $error }). Натисніть «Копіювати посилання» і вставте посилання в браузер.
 translation-report-text-copied = Повідомлення скопійовано
 translation-report-link-copied = Посилання скопійовано

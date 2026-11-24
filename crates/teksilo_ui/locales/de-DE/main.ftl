@@ -4394,7 +4394,8 @@ import-plume-untitled-project = Importiertes Plume-Projekt
 
 ## Help ▸ Report a Translation Error…
 ## The window that finds a translated string and sends a report about it to the
-## project's public issue tracker, through the writer's browser.
+## project's public issue tracker, or to its translation channel on Discord, through
+## the writer's browser.
 
 translation-report-window-title = Übersetzungsfehler melden
 settings-report-translation = Übersetzungsfehler melden
@@ -4463,15 +4464,20 @@ translation-report-hint-select = Dieser Text ändert sich mit einer Zahl. Änder
 translation-report-public = Was öffentlich wird
 translation-report-public-cost = Ihre Meldung wird auf GitHub zu einem öffentlichen Fehlerbericht. Sie brauchen ein kostenloses GitHub-Konto, und die Seite ist auf Englisch.
 translation-report-public-steps = Melden Sie sich auf GitHub an, setzen Sie das Häkchen beim Contributor License Agreement (der Vereinbarung über Ihre Beiträge) und klicken Sie auf „Create“.
+translation-report-public-discord = Kein GitHub-Konto? Klicken Sie auf „Weiter auf Discord“: Skribisto kopiert Ihre Meldung und öffnet den Übersetzungskanal des Projekts, wo Sie sie einfügen. Auch dieser Kanal ist öffentlich, und Sie brauchen ein kostenloses Discord-Konto.
 translation-report-public-title = Titel: { $title }
 translation-report-copy-text = Text kopieren
 translation-report-copy-link = Link kopieren
 translation-report-close = Schließen
 translation-report-continue = Weiter auf GitHub
+translation-report-continue-discord = Weiter auf Discord
 translation-report-another = Noch einen Fehler melden
 translation-report-continued = Ihr Browser sollte jetzt die Meldung auf GitHub zeigen, bereit zum Prüfen und Absenden.
 translation-report-continued-copied = Die Meldung war zu lang für den Link, deshalb hat Skribisto sie kopiert: Fügen Sie sie in die Felder ein, die darum bitten.
 translation-report-continued-help = Falls sich Ihr Browser nicht geöffnet hat, klicken Sie auf „Link kopieren“ und fügen Sie den Link in Ihren Browser ein. Falls GitHub Ihre Meldung verloren hat oder eine Fehlerseite zeigt (zum Beispiel nachdem Sie ein Konto angelegt haben), klicken Sie auf „Text kopieren“, eröffnen Sie auf GitHub eine neue Übersetzungsmeldung und fügen Sie den Text dort ein.
+translation-report-continued-discord = Ihr Browser sollte jetzt den Übersetzungskanal des Projekts auf Discord zeigen.
+translation-report-continued-discord-paste = Skribisto hat Ihre Meldung kopiert: Fügen Sie sie dort in eine Nachricht ein und senden Sie sie ab.
+translation-report-continued-discord-help = Falls sich Ihr Browser nicht geöffnet hat, klicken Sie auf „Link kopieren“ und fügen Sie den Link in Ihren Browser ein. Falls Ihre Meldung nicht mehr in der Zwischenablage ist, klicken Sie auf „Text kopieren“.
 translation-report-open-failed = Skribisto konnte Ihren Browser nicht öffnen ({ $error }). Klicken Sie auf „Link kopieren“ und fügen Sie den Link in Ihren Browser ein.
 translation-report-text-copied = Meldung kopiert
 translation-report-link-copied = Link kopiert

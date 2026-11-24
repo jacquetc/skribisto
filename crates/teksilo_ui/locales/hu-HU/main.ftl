@@ -4296,7 +4296,8 @@ import-plume-untitled-project = Importált Plume-projekt
 
 ## Help ▸ Report a Translation Error…
 ## The window that finds a translated string and sends a report about it to the
-## project's public issue tracker, through the writer's browser.
+## project's public issue tracker, or to its translation channel on Discord, through
+## the writer's browser.
 
 translation-report-window-title = Fordítási hiba bejelentése
 settings-report-translation = Fordítási hiba bejelentése
@@ -4365,15 +4366,20 @@ translation-report-hint-select = Ez a szöveg egy számtól függően változik.
 translation-report-public = Mi lesz nyilvános
 translation-report-public-cost = A bejelentése nyilvános hibajegy lesz a GitHubon. Ehhez ingyenes GitHub-fiók kell, és az oldal angol nyelvű.
 translation-report-public-steps = A GitHubon jelentkezzen be, jelölje be a Contributor License Agreementről (közreműködői licencszerződés) szóló négyzetet, és nyomja meg a „Create” gombot.
+translation-report-public-discord = Nincs GitHub-fiókja? Nyomja meg a „Folytatás a Discordon” gombot: a Skribisto kimásolja a bejelentést, és megnyitja a projekt fordítási csatornáját, ahová beillesztheti. Ez a csatorna is nyilvános, és ingyenes Discord-fiók kell hozzá.
 translation-report-public-title = Cím: { $title }
 translation-report-copy-text = Szöveg másolása
 translation-report-copy-link = Hivatkozás másolása
 translation-report-close = Bezárás
 translation-report-continue = Folytatás a GitHubon
+translation-report-continue-discord = Folytatás a Discordon
 translation-report-another = Újabb hiba bejelentése
 translation-report-continued = A böngészőben most a GitHubon kell látnia a bejelentést, ellenőrzésre és elküldésre készen.
 translation-report-continued-copied = A bejelentés túl hosszú volt a hivatkozáshoz, ezért a Skribisto a vágólapra másolta: illessze be azokba a mezőkbe, amelyek ezt kérik.
 translation-report-continued-help = Ha a böngésző nem nyílt meg, nyomja meg a „Hivatkozás másolása” gombot, és illessze be a hivatkozást a böngészőbe. Ha a GitHub elveszítette a bejelentést, vagy hibaoldalt mutat (például fiók létrehozása után), nyomja meg a „Szöveg másolása” gombot, nyisson a GitHubon egy új fordítási hibabejelentést, és illessze be a szöveget.
+translation-report-continued-discord = A böngészőben most a projekt fordítási csatornáját kell látnia a Discordon.
+translation-report-continued-discord-paste = A Skribisto kimásolta a bejelentést: illessze be ott egy üzenetbe, és küldje el.
+translation-report-continued-discord-help = Ha a böngésző nem nyílt meg, nyomja meg a „Hivatkozás másolása” gombot, és illessze be a hivatkozást a böngészőbe. Ha a bejelentés már nincs a vágólapon, nyomja meg a „Szöveg másolása” gombot.
 translation-report-open-failed = A Skribisto nem tudta megnyitni a böngészőt ({ $error }). Nyomja meg a „Hivatkozás másolása” gombot, és illessze be a hivatkozást a böngészőbe.
 translation-report-text-copied = A bejelentés vágólapra másolva
 translation-report-link-copied = A hivatkozás vágólapra másolva

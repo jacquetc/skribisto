@@ -4810,7 +4810,8 @@ import-plume-untitled-project = Projet Plume importé
 
 ## Help ▸ Report a Translation Error…
 ## The window that finds a translated string and sends a report about it to the
-## project's public issue tracker, through the writer's browser.
+## project's public issue tracker, or to its translation channel on Discord, through
+## the writer's browser.
 
 translation-report-window-title = Signaler une erreur de traduction
 settings-report-translation = Signaler une erreur de traduction
@@ -4879,15 +4880,20 @@ translation-report-hint-select = Ce texte change avec un nombre. Ne modifiez que
 translation-report-public = Ce qui sera public
 translation-report-public-cost = Votre signalement devient un ticket public sur GitHub. Il vous faut un compte GitHub gratuit, et la page est en anglais.
 translation-report-public-steps = Sur GitHub, connectez-vous, cochez la case du Contributor License Agreement (l’accord de licence des contributeurs) et appuyez sur Create.
+translation-report-public-discord = Pas de compte GitHub ? Appuyez sur Continuer sur Discord : Skribisto copie votre signalement et ouvre le salon de traduction du projet, où vous le collez. Ce salon est public lui aussi, et il vous faut un compte Discord gratuit.
 translation-report-public-title = Titre : { $title }
 translation-report-copy-text = Copier le texte
 translation-report-copy-link = Copier le lien
 translation-report-close = Fermer
 translation-report-continue = Continuer sur GitHub
+translation-report-continue-discord = Continuer sur Discord
 translation-report-another = Signaler autre chose
 translation-report-continued = Votre navigateur devrait maintenant afficher le signalement sur GitHub, prêt à être vérifié et envoyé.
 translation-report-continued-copied = Le signalement était trop long pour le lien, alors Skribisto l’a copié : collez-le dans les champs qui le demandent.
 translation-report-continued-help = Si votre navigateur ne s’est pas ouvert, appuyez sur Copier le lien et collez le lien dans votre navigateur. Si GitHub a perdu votre signalement ou affiche une page d’erreur (par exemple après la création d’un compte), appuyez sur Copier le texte, ouvrez un nouveau signalement de traduction sur GitHub et collez-le.
+translation-report-continued-discord = Votre navigateur devrait maintenant afficher le salon de traduction du projet sur Discord.
+translation-report-continued-discord-paste = Skribisto a copié votre signalement : collez-le dans un message, puis envoyez-le.
+translation-report-continued-discord-help = Si votre navigateur ne s’est pas ouvert, appuyez sur Copier le lien et collez le lien dans votre navigateur. Si votre signalement n’est plus dans le presse-papiers, appuyez sur Copier le texte.
 translation-report-open-failed = Skribisto n’a pas pu ouvrir votre navigateur ({ $error }). Appuyez sur Copier le lien et collez le lien dans votre navigateur.
 translation-report-text-copied = Signalement copié
 translation-report-link-copied = Lien copié

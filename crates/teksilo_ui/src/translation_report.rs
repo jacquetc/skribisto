@@ -5,7 +5,9 @@
 //!
 //! A writer who meets a wrong string finds it by the words they saw, says what is
 //! wrong and how they would put it, and continues to a prefilled public issue on the
-//! project's tracker, in their own browser. The application itself sends nothing.
+//! project's tracker, in their own browser. A writer with no GitHub account continues
+//! to the project's translation channel on Discord instead, with the report on the
+//! clipboard to paste there. The application itself sends nothing.
 //!
 //! - [`catalogue`]: every translated string the app ships, with its file and line.
 //! - [`display`]: what a catalogue line shows on screen, for the search to match.

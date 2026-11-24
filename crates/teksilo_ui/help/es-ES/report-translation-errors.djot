@@ -70,11 +70,17 @@ Un informe largo, o en una escritura como la japonesa o la árabe, puede no cabe
 Skribisto copia entonces el informe completo por usted, y los campos que no pudieron pasar le
 piden que lo pegue.
 
+¿No tiene cuenta de GitHub? Haga clic en *Continuar en Discord*. Skribisto copia el informe
+completo, y su navegador abre el canal de traducción del proyecto en Discord. Pegue allí el
+informe en un mensaje y envíelo. El canal también es público, y necesita una cuenta gratuita
+de Discord.
+
 ## Si algo falla
 
 - Si su navegador no se abrió, haga clic en *Copiar enlace* y pegue el enlace en el navegador.
 - Si GitHub muestra una página de error o pierde su informe, haga clic en *Copiar texto*. Abra
   un nuevo informe de traducción en GitHub y pegue ahí el texto.
-- *Copiar texto* también sirve para otros canales, como el Discord del proyecto.
+- En Discord, si su informe ya no está en el portapapeles, haga clic en *Copiar texto* y
+  péguelo de nuevo.
 
 Haga clic en *Informar de otro* para empezar de nuevo en el mismo idioma.

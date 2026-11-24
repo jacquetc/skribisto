@@ -4699,7 +4699,8 @@ import-plume-untitled-project = פרויקט Plume מיובא
 
 ## Help ▸ Report a Translation Error…
 ## The window that finds a translated string and sends a report about it to the
-## project's public issue tracker, through the writer's browser.
+## project's public issue tracker, or to its translation channel on Discord, through
+## the writer's browser.
 
 translation-report-window-title = דיווח על שגיאת תרגום
 settings-report-translation = דיווח על שגיאת תרגום
@@ -4769,15 +4770,20 @@ translation-report-hint-select = הטקסט הזה משתנה לפי מספר. �
 translation-report-public = מה יהיה ציבורי
 translation-report-public-cost = הדיווח שלכם יפורסם ב־GitHub כדיווח ציבורי. צריך חשבון GitHub חינמי, והדף הוא באנגלית.
 translation-report-public-steps = ב־GitHub, התחברו לחשבון, סמנו את התיבה שעוסקת ב־Contributor License Agreement (הסכם הרישיון לתורמים), ולחצו על Create.
+translation-report-public-discord = אין לכם חשבון GitHub? לחצו על "המשך ב־Discord": Skribisto מעתיק את הדיווח ופותח את ערוץ התרגום של הפרויקט, ושם מדביקים אותו. גם הערוץ הזה ציבורי, וצריך חשבון Discord חינמי.
 translation-report-public-title = כותרת: { $title }
 translation-report-copy-text = העתקת הטקסט
 translation-report-copy-link = העתקת הקישור
 translation-report-close = סגירה
 translation-report-continue = המשך ב־GitHub
+translation-report-continue-discord = המשך ב־Discord
 translation-report-another = דיווח נוסף
 translation-report-continued = הדפדפן אמור להציג עכשיו את הדיווח ב־GitHub, מוכן לבדיקה ולשליחה.
 translation-report-continued-copied = הדיווח היה ארוך מדי בשביל הקישור, ולכן Skribisto העתיקה אותו: הדביקו אותו בשדות שמבקשים זאת.
 translation-report-continued-help = אם הדפדפן לא נפתח, לחצו על "העתקת הקישור" והדביקו את הקישור בדפדפן. אם הדיווח אבד ב־GitHub או שמוצג דף שגיאה (למשל אחרי שיצרתם חשבון), לחצו על "העתקת הטקסט", פתחו ב־GitHub דיווח חדש על שגיאת תרגום, והדביקו אותו שם.
+translation-report-continued-discord = הדפדפן אמור להציג עכשיו את ערוץ התרגום של הפרויקט ב־Discord.
+translation-report-continued-discord-paste = Skribisto העתיק את הדיווח: הדביקו אותו בהודעה בערוץ ושלחו אותה.
+translation-report-continued-discord-help = אם הדפדפן לא נפתח, לחצו על "העתקת הקישור" והדביקו את הקישור בדפדפן. אם הדיווח כבר לא נמצא בלוח העריכה, לחצו על "העתקת הטקסט".
 translation-report-open-failed = ‏Skribisto לא הצליחה לפתוח את הדפדפן ({ $error }). לחצו על "העתקת הקישור" והדביקו את הקישור בדפדפן.
 translation-report-text-copied = הדיווח הועתק
 translation-report-link-copied = הקישור הועתק

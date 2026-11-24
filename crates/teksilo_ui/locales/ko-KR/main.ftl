@@ -3321,7 +3321,8 @@ import-plume-untitled-project = 가져온 Plume 프로젝트
 
 ## Help ▸ Report a Translation Error…
 ## The window that finds a translated string and sends a report about it to the
-## project's public issue tracker, through the writer's browser.
+## project's public issue tracker, or to its translation channel on Discord, through
+## the writer's browser.
 
 translation-report-window-title = 번역 오류 신고
 settings-report-translation = 번역 오류 신고
@@ -3389,15 +3390,20 @@ translation-report-hint-select = 이 텍스트는 숫자에 따라 바뀝니다.
 translation-report-public = 공개되는 내용
 translation-report-public-cost = 신고 내용은 GitHub에 공개 이슈로 올라갑니다. 무료 GitHub 계정이 필요하며, 페이지는 영어로 되어 있습니다.
 translation-report-public-steps = GitHub에서 로그인하고, Contributor License Agreement(기여자 라이선스 동의서)에 관한 상자에 체크한 다음 ‘Create’를 누르세요.
+translation-report-public-discord = GitHub 계정이 없나요? ‘Discord에서 계속’을 누르세요. Skribisto가 신고 내용을 복사하고 프로젝트의 번역 채널을 열면, 거기에 붙여 넣으면 됩니다. 이 채널도 공개되어 있으며, 무료 Discord 계정이 필요합니다.
 translation-report-public-title = 제목: { $title }
 translation-report-copy-text = 텍스트 복사
 translation-report-copy-link = 링크 복사
 translation-report-close = 닫기
 translation-report-continue = GitHub에서 계속
+translation-report-continue-discord = Discord에서 계속
 translation-report-another = 다른 오류 신고
 translation-report-continued = 이제 브라우저에 GitHub 신고 페이지가 열려 있을 것입니다. 내용을 확인한 뒤 보내세요.
 translation-report-continued-copied = 신고 내용이 링크에 담기에는 너무 길어서 Skribisto가 복사해 두었습니다. 안내가 있는 칸에 붙여 넣으세요.
 translation-report-continued-help = 브라우저가 열리지 않았다면 ‘링크 복사’를 누르고 브라우저에 링크를 붙여 넣으세요. GitHub에서 신고 내용이 사라졌거나 오류 페이지가 표시되면(예: 계정을 만든 뒤) ‘텍스트 복사’를 누르고, GitHub에서 새 번역 오류 신고를 연 다음 붙여 넣으세요.
+translation-report-continued-discord = 이제 브라우저에 Discord의 프로젝트 번역 채널이 열려 있을 것입니다.
+translation-report-continued-discord-paste = Skribisto가 신고 내용을 복사했습니다. 채널의 메시지 입력란에 붙여 넣고 보내세요.
+translation-report-continued-discord-help = 브라우저가 열리지 않았다면 ‘링크 복사’를 누르고 브라우저에 링크를 붙여 넣으세요. 신고 내용이 더 이상 클립보드에 없다면 ‘텍스트 복사’를 누르세요.
 translation-report-open-failed = Skribisto가 브라우저를 열 수 없습니다({ $error }). ‘링크 복사’를 누르고 브라우저에 링크를 붙여 넣으세요.
 translation-report-text-copied = 신고 내용을 복사했습니다
 translation-report-link-copied = 링크를 복사했습니다

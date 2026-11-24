@@ -76,12 +76,18 @@ Un long signalement, ou un signalement dans une écriture comme le japonais ou l
 peut ne pas tenir dans le lien. Skribisto copie alors tout le signalement pour vous, et les
 champs qui n’ont pas pu passer disent de le coller.
 
+Pas de compte GitHub ? Appuyez plutôt sur *Continuer sur Discord*. Skribisto copie tout le
+signalement, et votre navigateur ouvre le salon de traduction du projet sur Discord. Collez le
+signalement dans un message et envoyez-le. Ce salon est public lui aussi, et il vous faut un
+compte Discord gratuit.
+
 ## Si quelque chose ne va pas
 
 - Si votre navigateur ne s’est pas ouvert, appuyez sur *Copier le lien* et collez le lien
   dans votre navigateur.
 - Si GitHub affiche une page d’erreur ou perd votre signalement, appuyez sur *Copier le
   texte*. Ouvrez un nouveau signalement de traduction sur GitHub et collez-le.
-- *Copier le texte* convient aussi à d’autres canaux, comme le Discord du projet.
+- Sur Discord, si le signalement n’est plus dans le presse-papiers, appuyez sur *Copier le
+  texte* et collez-le à nouveau.
 
 Appuyez sur *Signaler autre chose* pour recommencer dans la même langue.

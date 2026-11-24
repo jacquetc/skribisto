@@ -4732,7 +4732,8 @@ import-plume-untitled-project = Importovaný projekt Plume
 
 ## Help ▸ Report a Translation Error…
 ## The window that finds a translated string and sends a report about it to the
-## project's public issue tracker, through the writer's browser.
+## project's public issue tracker, or to its translation channel on Discord, through
+## the writer's browser.
 
 translation-report-window-title = Nahlásit chybu v překladu
 settings-report-translation = Nahlásit chybu v překladu
@@ -4803,15 +4804,20 @@ translation-report-hint-select = Tento text se mění podle čísla. Měňte jen
 translation-report-public = Co bude veřejné
 translation-report-public-cost = Vaše hlášení se stane veřejným požadavkem na GitHubu. Potřebujete bezplatný účet GitHub a stránka je v angličtině.
 translation-report-public-steps = Na GitHubu se přihlaste, zaškrtněte políčko týkající se Contributor License Agreement (licenční smlouva přispěvatele) a stiskněte „Create“.
+translation-report-public-discord = Nemáte účet GitHub? Stiskněte „Pokračovat na Discordu“: Skribisto zkopíruje vaše hlášení a otevře překladatelský kanál projektu, kam ho vložíte. I tento kanál je veřejný a potřebujete bezplatný účet Discord.
 translation-report-public-title = Název: { $title }
 translation-report-copy-text = Kopírovat text
 translation-report-copy-link = Kopírovat odkaz
 translation-report-close = Zavřít
 translation-report-continue = Pokračovat na GitHubu
+translation-report-continue-discord = Pokračovat na Discordu
 translation-report-another = Nahlásit další chybu
 translation-report-continued = Váš prohlížeč by teď měl zobrazovat hlášení na GitHubu, připravené ke kontrole a odeslání.
 translation-report-continued-copied = Hlášení bylo pro odkaz příliš dlouhé, proto ho aplikace Skribisto zkopírovala: vložte ho do polí, která o to žádají.
 translation-report-continued-help = Pokud se prohlížeč neotevřel, stiskněte „Kopírovat odkaz“ a vložte odkaz do prohlížeče. Pokud GitHub vaše hlášení ztratil nebo zobrazuje chybovou stránku (například po vytvoření účtu), stiskněte „Kopírovat text“, otevřete na GitHubu nové hlášení chyby v překladu a text do něj vložte.
+translation-report-continued-discord = Váš prohlížeč by teď měl zobrazovat překladatelský kanál projektu na Discordu.
+translation-report-continued-discord-paste = Skribisto zkopírovalo vaše hlášení: vložte ho tam do zprávy a odešlete.
+translation-report-continued-discord-help = Pokud se prohlížeč neotevřel, stiskněte „Kopírovat odkaz“ a vložte odkaz do prohlížeče. Pokud vaše hlášení už není ve schránce, stiskněte „Kopírovat text“.
 translation-report-open-failed = Aplikace Skribisto nemohla otevřít váš prohlížeč ({ $error }). Stiskněte „Kopírovat odkaz“ a vložte odkaz do prohlížeče.
 translation-report-text-copied = Hlášení zkopírováno
 translation-report-link-copied = Odkaz zkopírován

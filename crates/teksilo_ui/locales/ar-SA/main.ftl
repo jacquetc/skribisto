@@ -5768,7 +5768,8 @@ import-plume-untitled-project = مشروع Plume مستورد
 
 ## Help ▸ Report a Translation Error…
 ## The window that finds a translated string and sends a report about it to the
-## project's public issue tracker, through the writer's browser.
+## project's public issue tracker, or to its translation channel on Discord, through
+## the writer's browser.
 
 translation-report-window-title = الإبلاغ عن خطأ في الترجمة
 settings-report-translation = الإبلاغ عن خطأ في الترجمة
@@ -5841,15 +5842,20 @@ translation-report-hint-select = يتغير هذا النص بحسب العدد.
 translation-report-public = ما سيصبح علنيًا
 translation-report-public-cost = يصبح بلاغك بلاغًا علنيًا على GitHub. تحتاج إلى حساب GitHub مجاني، والصفحة بالإنجليزية.
 translation-report-public-steps = على GitHub، سجّل الدخول، وحدّد المربع الخاص بـ Contributor License Agreement (اتفاقية ترخيص المساهمين)، ثم اضغط Create.
+translation-report-public-discord = ليس لديك حساب GitHub؟ اضغط «المتابعة على Discord»: ينسخ Skribisto بلاغك ويفتح قناة الترجمة الخاصة بالمشروع، حيث تلصقه. القناة علنية أيضًا، وتحتاج إلى حساب Discord مجاني.
 translation-report-public-title = العنوان: { $title }
 translation-report-copy-text = نسخ النص
 translation-report-copy-link = نسخ الرابط
 translation-report-close = إغلاق
 translation-report-continue = المتابعة على GitHub
+translation-report-continue-discord = المتابعة على Discord
 translation-report-another = الإبلاغ عن خطأ آخر
 translation-report-continued = يُفترض أن يعرض متصفحك الآن البلاغ على GitHub، جاهزًا لتراجعه وترسله.
 translation-report-continued-copied = كان البلاغ أطول من أن يتسع له الرابط، فنسخه Skribisto: الصقه في الحقول التي تطلب ذلك.
 translation-report-continued-help = إن لم يُفتح متصفحك، فاضغط «نسخ الرابط» والصق الرابط في متصفحك. وإن فقد GitHub بلاغك أو عرض صفحة خطأ (مثلًا بعد إنشائك حسابًا)، فاضغط «نسخ النص»، وافتح بلاغًا جديدًا عن خطأ في الترجمة على GitHub، والصقه فيه.
+translation-report-continued-discord = يُفترض أن يعرض متصفحك الآن قناة الترجمة الخاصة بالمشروع على Discord.
+translation-report-continued-discord-paste = نسخ Skribisto بلاغك: الصقه في رسالة هناك، ثم أرسله.
+translation-report-continued-discord-help = إن لم يُفتح متصفحك، فاضغط «نسخ الرابط» والصق الرابط في متصفحك. وإن لم يعد بلاغك في لوحة القصاصات، فاضغط «نسخ النص».
 translation-report-open-failed = تعذّر على Skribisto فتح متصفحك ({ $error }). اضغط «نسخ الرابط» والصق الرابط في متصفحك.
 translation-report-text-copied = نُسخ البلاغ
 translation-report-link-copied = نُسخ الرابط

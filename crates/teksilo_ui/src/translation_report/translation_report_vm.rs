@@ -21,7 +21,10 @@
 //!    as written, mnemonic and placeholders included, so the writer edits instead of
 //!    retyping, and a fix to a plural keeps every form.
 //! 4. **Continue on GitHub** ([`TranslationReportViewModel::prepare_continue`]): the link, and the whole
-//!    report for the clipboard when the link could not carry all of it.
+//!    report for the clipboard when the link could not carry all of it. Or **Continue
+//!    on Discord** ([`TranslationReportViewModel::discord_with`]), for a writer with
+//!    no GitHub account: the whole report on the clipboard, and the project's
+//!    translation channel opened to paste it in.
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -111,13 +114,19 @@ pub(crate) enum PlaceChoice {
     One(usize),
 }
 
-/// Where the report stands after **Continue on GitHub**.
+/// Where the report stands after **Continue on GitHub** or **Continue on Discord**.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum Phase {
     Editing,
     /// The browser was asked to open the link; `copied` when the report had to go
     /// through the clipboard too.
     Continued {
+        copied: bool,
+    },
+    /// The browser was asked to open the Discord channel; `copied` when the report
+    /// is on the clipboard, ready to paste there. Discord takes no prefilled
+    /// message, so the clipboard is the report's only way there.
+    OnDiscord {
         copied: bool,
     },
     /// The browser could not be asked, with the error.
@@ -801,12 +810,7 @@ impl TranslationReportViewModel {
             return;
         };
         let clipboard = ctx.app_state::<ClipboardHandle>().cloned();
-        self.continue_with(&plan, clipboard.as_ref(), |url| {
-            crate::shared::external_link::try_open_external_link(url).map_err(|e| match e {
-                crate::shared::external_link::OpenLinkError::Refused => String::new(),
-                crate::shared::external_link::OpenLinkError::Failed(error) => error,
-            })
-        });
+        self.continue_with(&plan, clipboard.as_ref(), open_in_browser);
     }
 
     /// [`Self::continue_on_github`] with the clipboard and the opener passed in.
@@ -827,6 +831,44 @@ impl TranslationReportViewModel {
             Err(error) => self.inner.phase.set(Phase::OpenFailed(error)),
         }
         if plan.clipboard.is_some() && !copied {
+            self.inner.notice.set(Some(Notice::CopyFailed));
+        }
+    }
+
+    /// The channel **Continue on Discord** opens, or `None` when the running edition
+    /// declares none: the button is then not built.
+    pub(crate) fn discord_channel() -> Option<String> {
+        crate::identity::links().translation_discord
+    }
+
+    /// Continue on Discord: copy the whole report, then ask the desktop to open the
+    /// project's translation channel, where the writer pastes it.
+    pub(crate) fn continue_on_discord(&self, ctx: &mut EventContext) {
+        let clipboard = ctx.app_state::<ClipboardHandle>().cloned();
+        self.discord_with(clipboard.as_ref(), open_in_browser);
+    }
+
+    /// [`Self::continue_on_discord`] with the clipboard and the opener passed in. Does
+    /// nothing while the report is incomplete or the edition declares no channel.
+    pub(crate) fn discord_with(
+        &self,
+        clipboard: Option<&ClipboardHandle>,
+        open: impl FnOnce(&str) -> Result<(), String>,
+    ) {
+        let Some(channel) = Self::discord_channel() else {
+            return;
+        };
+        let Some(report) = self.report() else {
+            return;
+        };
+        let copied = clipboard.is_some_and(|c| c.set_text(&report.clipboard_text()).is_ok());
+        *self.inner.last_link.borrow_mut() = Some(channel.clone());
+        self.inner.notice.set(None);
+        match open(&channel) {
+            Ok(()) => self.inner.phase.set(Phase::OnDiscord { copied }),
+            Err(error) => self.inner.phase.set(Phase::OpenFailed(error)),
+        }
+        if !copied {
             self.inner.notice.set(Some(Notice::CopyFailed));
         }
     }
@@ -878,6 +920,16 @@ impl TranslationReportViewModel {
         self.inner.phase.set(Phase::Editing);
         self.edited();
     }
+}
+
+/// Ask the desktop to open `url` in the writer's browser, with the error to show
+/// when it could not. A refused link (a scheme `open_external_link` does not allow)
+/// has no error of its own to show.
+fn open_in_browser(url: &str) -> Result<(), String> {
+    crate::shared::external_link::try_open_external_link(url).map_err(|e| match e {
+        crate::shared::external_link::OpenLinkError::Refused => String::new(),
+        crate::shared::external_link::OpenLinkError::Failed(error) => error,
+    })
 }
 
 /// The interface language's tag, as the app names it.

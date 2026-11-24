@@ -3399,7 +3399,8 @@ import-plume-untitled-project = インポートした Plume プロジェクト
 
 ## Help ▸ Report a Translation Error…
 ## The window that finds a translated string and sends a report about it to the
-## project's public issue tracker, through the writer's browser.
+## project's public issue tracker, or to its translation channel on Discord, through
+## the writer's browser.
 
 translation-report-window-title = 翻訳の誤りを報告
 settings-report-translation = 翻訳の誤りを報告
@@ -3467,15 +3468,20 @@ translation-report-hint-select = このテキストは数によって変わり�
 translation-report-public = 公開される内容
 translation-report-public-cost = 報告は GitHub 上で誰でも読める形で公開されます。無料の GitHub アカウントが必要で、ページは英語です。
 translation-report-public-steps = GitHub でサインインし、Contributor License Agreement（貢献者ライセンス契約）についてのチェックボックスにチェックを入れて、「Create」を押してください。
+translation-report-public-discord = GitHub アカウントがない場合は、「Discord で続ける」を押してください。Skribisto が報告をコピーしてプロジェクトの翻訳チャンネルを開くので、そこに貼り付けます。このチャンネルも公開されており、無料の Discord アカウントが必要です。
 translation-report-public-title = タイトル：{ $title }
 translation-report-copy-text = テキストをコピー
 translation-report-copy-link = リンクをコピー
 translation-report-close = 閉じる
 translation-report-continue = GitHub で続ける
+translation-report-continue-discord = Discord で続ける
 translation-report-another = 別の誤りを報告
 translation-report-continued = ブラウザーに GitHub の報告が表示されているはずです。内容を確認して送信してください。
 translation-report-continued-copied = 報告がリンクに収まらないほど長かったため、Skribisto がコピーしました。指示のある欄に貼り付けてください。
 translation-report-continued-help = ブラウザーが開かなかった場合は、「リンクをコピー」を押してリンクをブラウザーに貼り付けてください。GitHub で報告が消えたり、エラーページが表示されたりした場合（アカウントを作成した後など）は、「テキストをコピー」を押し、GitHub で翻訳の誤りの報告を新しく開いて貼り付けてください。
+translation-report-continued-discord = ブラウザーに Discord のプロジェクトの翻訳チャンネルが表示されているはずです。
+translation-report-continued-discord-paste = Skribisto が報告をコピーしました。チャンネルのメッセージ欄に貼り付けて送信してください。
+translation-report-continued-discord-help = ブラウザーが開かなかった場合は、「リンクをコピー」を押してリンクをブラウザーに貼り付けてください。報告がクリップボードに残っていない場合は、「テキストをコピー」を押してください。
 translation-report-open-failed = Skribisto はブラウザーを開けませんでした（{ $error }）。「リンクをコピー」を押して、リンクをブラウザーに貼り付けてください。
 translation-report-text-copied = 報告をコピーしました
 translation-report-link-copied = リンクをコピーしました

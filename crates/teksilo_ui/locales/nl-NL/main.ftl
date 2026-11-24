@@ -4308,7 +4308,8 @@ import-plume-untitled-project = Geïmporteerd Plume-project
 
 ## Help ▸ Report a Translation Error…
 ## The window that finds a translated string and sends a report about it to the
-## project's public issue tracker, through the writer's browser.
+## project's public issue tracker, or to its translation channel on Discord, through
+## the writer's browser.
 
 translation-report-window-title = Een vertaalfout melden
 settings-report-translation = Een vertaalfout melden
@@ -4377,15 +4378,20 @@ translation-report-hint-select = Deze tekst verandert met een getal. Wijzig alle
 translation-report-public = Wat openbaar wordt
 translation-report-public-cost = Uw melding wordt openbaar op GitHub geplaatst. U hebt een gratis GitHub-account nodig, en de pagina is in het Engels.
 translation-report-public-steps = Meld u op GitHub aan, vink het vakje over de Contributor License Agreement (de overeenkomst voor bijdragers) aan en klik op “Create”.
+translation-report-public-discord = Geen GitHub-account? Klik op “Verder op Discord”: Skribisto kopieert uw melding en opent het vertaalkanaal van het project, waar u haar plakt. Ook dat kanaal is openbaar, en u hebt een gratis Discord-account nodig.
 translation-report-public-title = Titel: { $title }
 translation-report-copy-text = Tekst kopiëren
 translation-report-copy-link = Link kopiëren
 translation-report-close = Sluiten
 translation-report-continue = Verder op GitHub
+translation-report-continue-discord = Verder op Discord
 translation-report-another = Nog een fout melden
 translation-report-continued = Uw browser toont nu als het goed is de melding op GitHub, klaar om te controleren en te verzenden.
 translation-report-continued-copied = De melding was te lang voor de link, daarom heeft Skribisto hem gekopieerd: plak hem in de velden waar daarom gevraagd wordt.
 translation-report-continued-help = Als uw browser niet is geopend, klik dan op “Link kopiëren” en plak de link in uw browser. Als GitHub uw melding kwijt is of een foutpagina toont (bijvoorbeeld nadat u een account hebt aangemaakt), klik dan op “Tekst kopiëren”, open op GitHub een nieuwe vertaalmelding en plak de tekst erin.
+translation-report-continued-discord = Uw browser toont nu als het goed is het vertaalkanaal van het project op Discord.
+translation-report-continued-discord-paste = Skribisto heeft uw melding gekopieerd: plak haar daar in een bericht en verstuur het.
+translation-report-continued-discord-help = Als uw browser niet is geopend, klik dan op “Link kopiëren” en plak de link in uw browser. Als uw melding niet meer op het klembord staat, klik dan op “Tekst kopiëren”.
 translation-report-open-failed = Skribisto kon uw browser niet openen ({ $error }). Klik op “Link kopiëren” en plak de link in uw browser.
 translation-report-text-copied = Melding gekopieerd
 translation-report-link-copied = Link gekopieerd

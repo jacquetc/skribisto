@@ -69,11 +69,16 @@ Uma comunicação longa, ou numa escrita como a japonesa ou a árabe, pode não 
 Skribisto copia então a comunicação inteira por si, e os campos que não conseguiram passar
 pedem-lhe que a cole.
 
+Não tem conta no GitHub? Clique em *Continuar no Discord*. O Skribisto copia a comunicação
+inteira, e o navegador abre o canal de tradução do projeto no Discord. Cole lá a comunicação
+numa mensagem e envie-a. O canal também é público, e precisa de uma conta gratuita no Discord.
+
 ## Se algo correr mal
 
 - Se o navegador não abriu, clique em *Copiar ligação* e cole a ligação no navegador.
 - Se o GitHub mostrar uma página de erro ou perder a sua comunicação, clique em *Copiar texto*.
   Abra uma nova comunicação de tradução no GitHub e cole lá o texto.
-- *Copiar texto* também serve para outros canais, como o Discord do projeto.
+- No Discord, se a comunicação já não estiver na área de transferência, clique em
+  *Copiar texto* e cole-a de novo.
 
 Clique em *Comunicar outro* para recomeçar no mesmo idioma.

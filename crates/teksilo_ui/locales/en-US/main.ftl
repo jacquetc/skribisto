@@ -4907,7 +4907,8 @@ import-plume-untitled-project = Imported Plume project
 
 ## Help ▸ Report a Translation Error…
 ## The window that finds a translated string and sends a report about it to the
-## project's public issue tracker, through the writer's browser.
+## project's public issue tracker, or to its translation channel on Discord, through
+## the writer's browser.
 
 translation-report-window-title = Report a translation error
 settings-report-translation = Report a translation error
@@ -4976,15 +4977,20 @@ translation-report-hint-select = This text changes with a number. Change only th
 translation-report-public = What will be public
 translation-report-public-cost = Your report becomes a public issue on GitHub. You need a free GitHub account, and the page is in English.
 translation-report-public-steps = On GitHub, sign in, tick the box about the Contributor License Agreement, and press Create.
+translation-report-public-discord = No GitHub account? Press Continue on Discord: Skribisto copies your report and opens the project’s translation channel, where you paste it. The channel is public too, and you need a free Discord account.
 translation-report-public-title = Title: { $title }
 translation-report-copy-text = Copy text
 translation-report-copy-link = Copy link
 translation-report-close = Close
 translation-report-continue = Continue on GitHub
+translation-report-continue-discord = Continue on Discord
 translation-report-another = Report another
 translation-report-continued = Your browser should now show the report on GitHub, ready for you to check and send.
 translation-report-continued-copied = The report was too long for the link, so Skribisto copied it: paste it into the fields that say so.
 translation-report-continued-help = If your browser did not open, press Copy link and paste the link into your browser. If GitHub lost your report or shows an error page (for example after you created an account), press Copy text, open a new translation report on GitHub, and paste it.
+translation-report-continued-discord = Your browser should now show the project’s translation channel on Discord.
+translation-report-continued-discord-paste = Skribisto copied your report: paste it into a message there, and send it.
+translation-report-continued-discord-help = If your browser did not open, press Copy link and paste the link into your browser. If your report is no longer in the clipboard, press Copy text.
 translation-report-open-failed = Skribisto could not open your browser ({ $error }). Press Copy link and paste the link into your browser.
 translation-report-text-copied = Report copied
 translation-report-link-copied = Link copied

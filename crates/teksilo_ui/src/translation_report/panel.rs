@@ -429,8 +429,8 @@ fn build_card(vm: &TranslationReportViewModel, ctx: &mut BuildContext) -> Widget
     ctx.add(column)
 }
 
-/// "What will be public": the cost and the steps always, the exact title and body
-/// on request.
+/// "What will be public": the cost and the steps always, the Discord alternative
+/// when the edition has a channel, the exact title and body on request.
 fn public_preview(vm: &TranslationReportViewModel) -> impl Widget + 'static {
     let open = Signal::new(false);
     let toggle_open = open.clone();
@@ -498,12 +498,16 @@ fn public_preview(vm: &TranslationReportViewModel) -> impl Widget + 'static {
             )
         },
     );
+    let offers_discord = TranslationReportViewModel::discord_channel().is_some();
     teksu!(
         VStack {
             spacing: 6.0
             child: toggle
             note(tr!(translation_report_public_cost()))
             note(tr!(translation_report_public_steps()))
+            if offers_discord {
+                note(tr!(translation_report_public_discord()))
+            }
             child: body
         }
     )
@@ -549,8 +553,10 @@ fn footer(vm: &TranslationReportViewModel) -> impl Widget + 'static {
     );
 
     let copy_vm = vm.clone();
+    let discord_vm = vm.clone();
     let continue_vm = vm.clone();
     let can_continue = vm.can_continue();
+    let offers_discord = TranslationReportViewModel::discord_channel().is_some();
     teksu!(
         Padding::symmetric(12.0, 16.0) {
             HStack {
@@ -568,6 +574,14 @@ fn footer(vm: &TranslationReportViewModel) -> impl Widget + 'static {
                 Button::new(tr!(translation_report_close())) {
                     on_activate_fn: |ctx| ctx.close_window()
                 }
+                // Beside GitHub rather than instead of it: the tracker stays the main
+                // road, the channel is for a writer with no GitHub account.
+                if offers_discord {
+                    Button::new(tr!(translation_report_continue_discord())) {
+                        enabled: can_continue.clone()
+                        on_activate_fn: move |ctx| discord_vm.continue_on_discord(ctx)
+                    }
+                }
                 Button::new(tr!(translation_report_continue())) {
                     variant: ButtonVariant::Filled
                     enabled: can_continue
@@ -579,7 +593,7 @@ fn footer(vm: &TranslationReportViewModel) -> impl Widget + 'static {
 }
 
 /// What the last action did, with **Copy link** and **Report another** once the
-/// report has gone to the browser.
+/// report has gone to the browser (to GitHub, or to the Discord channel).
 fn build_status(vm: &TranslationReportViewModel, ctx: &mut BuildContext) -> WidgetId {
     let mut column = VStack::new().spacing(4.0);
     let phase = vm.phase().get();
@@ -599,6 +613,13 @@ fn build_status(vm: &TranslationReportViewModel, ctx: &mut BuildContext) -> Widg
                 column = column.child(note(tr!(translation_report_continued_copied())));
             }
             column = column.child(note(tr!(translation_report_continued_help())));
+        }
+        Phase::OnDiscord { copied } => {
+            column = column.child(note(tr!(translation_report_continued_discord())));
+            if *copied {
+                column = column.child(note(tr!(translation_report_continued_discord_paste())));
+            }
+            column = column.child(note(tr!(translation_report_continued_discord_help())));
         }
         Phase::OpenFailed(error) => {
             column = column.child(note(tr!(translation_report_open_failed(

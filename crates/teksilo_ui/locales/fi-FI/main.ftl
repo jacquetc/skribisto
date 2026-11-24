@@ -4374,7 +4374,8 @@ import-plume-untitled-project = Tuotu Plume-projekti
 
 ## Help ▸ Report a Translation Error…
 ## The window that finds a translated string and sends a report about it to the
-## project's public issue tracker, through the writer's browser.
+## project's public issue tracker, or to its translation channel on Discord, through
+## the writer's browser.
 
 translation-report-window-title = Ilmoita käännösvirheestä
 settings-report-translation = Ilmoita käännösvirheestä
@@ -4443,15 +4444,20 @@ translation-report-hint-select = Tämä teksti muuttuu luvun mukaan. Muuta vain 
 translation-report-public = Mikä tulee julkiseksi
 translation-report-public-cost = Ilmoituksesi julkaistaan GitHubissa kaikkien nähtäväksi. Tarvitset maksuttoman GitHub-tilin, ja sivu on englanniksi.
 translation-report-public-steps = Kirjaudu GitHubiin, rastita Contributor License Agreement -sopimusta (osallistujan lisenssisopimus) koskeva ruutu ja paina ”Create”.
+translation-report-public-discord = Eikö sinulla ole GitHub-tiliä? Paina ”Jatka Discordissa”: Skribisto kopioi ilmoituksesi ja avaa projektin käännöskanavan, johon liität sen. Kanava on myös julkinen, ja tarvitset maksuttoman Discord-tilin.
 translation-report-public-title = Otsikko: { $title }
 translation-report-copy-text = Kopioi teksti
 translation-report-copy-link = Kopioi linkki
 translation-report-close = Sulje
 translation-report-continue = Jatka GitHubissa
+translation-report-continue-discord = Jatka Discordissa
 translation-report-another = Ilmoita toisesta
 translation-report-continued = Selaimesi pitäisi nyt näyttää ilmoitus GitHubissa valmiina tarkistettavaksi ja lähetettäväksi.
 translation-report-continued-copied = Ilmoitus oli liian pitkä linkkiin, joten Skribisto kopioi sen: liitä se kenttiin, joissa sitä pyydetään.
 translation-report-continued-help = Jos selaimesi ei avautunut, paina ”Kopioi linkki” ja liitä linkki selaimeesi. Jos GitHub hukkasi ilmoituksesi tai näyttää virhesivun (esimerkiksi tilin luomisen jälkeen), paina ”Kopioi teksti”, avaa GitHubissa uusi käännösvirheilmoitus ja liitä teksti siihen.
+translation-report-continued-discord = Selaimesi pitäisi nyt näyttää projektin käännöskanava Discordissa.
+translation-report-continued-discord-paste = Skribisto kopioi ilmoituksesi: liitä se siellä viestiin ja lähetä se.
+translation-report-continued-discord-help = Jos selaimesi ei avautunut, paina ”Kopioi linkki” ja liitä linkki selaimeesi. Jos ilmoituksesi ei ole enää leikepöydällä, paina ”Kopioi teksti”.
 translation-report-open-failed = Skribisto ei voinut avata selaintasi ({ $error }). Paina ”Kopioi linkki” ja liitä linkki selaimeesi.
 translation-report-text-copied = Ilmoitus kopioitu
 translation-report-link-copied = Linkki kopioitu

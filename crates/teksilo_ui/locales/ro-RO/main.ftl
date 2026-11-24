@@ -5158,7 +5158,8 @@ import-plume-untitled-project = Proiect Plume importat
 
 ## Help ▸ Report a Translation Error…
 ## The window that finds a translated string and sends a report about it to the
-## project's public issue tracker, through the writer's browser.
+## project's public issue tracker, or to its translation channel on Discord, through
+## the writer's browser.
 
 translation-report-window-title = Raportează o eroare de traducere
 settings-report-translation = Raportează o eroare de traducere
@@ -5228,15 +5229,20 @@ translation-report-hint-select = Acest text se schimbă în funcție de un numă
 translation-report-public = Ce va fi public
 translation-report-public-cost = Raportul dumneavoastră devine un tichet public pe GitHub. Aveți nevoie de un cont GitHub gratuit, iar pagina este în engleză.
 translation-report-public-steps = Pe GitHub, autentificați-vă, bifați caseta despre Contributor License Agreement (acordul de licență pentru contribuitori) și apăsați „Create”.
+translation-report-public-discord = Nu aveți cont GitHub? Apăsați „Continuă pe Discord”: Skribisto vă copiază raportul și deschide canalul de traducere al proiectului, unde îl lipiți. Și acest canal este public, iar aveți nevoie de un cont Discord gratuit.
 translation-report-public-title = Titlu: { $title }
 translation-report-copy-text = Copiază textul
 translation-report-copy-link = Copiază legătura
 translation-report-close = Închide
 translation-report-continue = Continuă pe GitHub
+translation-report-continue-discord = Continuă pe Discord
 translation-report-another = Raportează alta
 translation-report-continued = Navigatorul ar trebui să afișeze acum raportul pe GitHub, gata să îl verificați și să îl trimiteți.
 translation-report-continued-copied = Raportul era prea lung pentru legătură, așa că Skribisto l-a copiat: lipiți-l în câmpurile care cer acest lucru.
 translation-report-continued-help = Dacă navigatorul nu s-a deschis, apăsați Copiază legătura și lipiți legătura în navigator. Dacă GitHub v-a pierdut raportul sau afișează o pagină de eroare (de exemplu după ce v-ați creat un cont), apăsați Copiază textul, deschideți un nou raport de traducere pe GitHub și lipiți-l.
+translation-report-continued-discord = Navigatorul ar trebui să afișeze acum canalul de traducere al proiectului pe Discord.
+translation-report-continued-discord-paste = Skribisto v-a copiat raportul: lipiți-l acolo într-un mesaj și trimiteți-l.
+translation-report-continued-discord-help = Dacă navigatorul nu s-a deschis, apăsați Copiază legătura și lipiți legătura în navigator. Dacă raportul nu mai este în clipboard, apăsați Copiază textul.
 translation-report-open-failed = Skribisto nu a putut deschide navigatorul ({ $error }). Apăsați Copiază legătura și lipiți legătura în navigator.
 translation-report-text-copied = Raport copiat
 translation-report-link-copied = Legătură copiată

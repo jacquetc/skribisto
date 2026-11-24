@@ -5141,7 +5141,8 @@ import-plume-untitled-project = Zaimportowany projekt Plume
 
 ## Help ▸ Report a Translation Error…
 ## The window that finds a translated string and sends a report about it to the
-## project's public issue tracker, through the writer's browser.
+## project's public issue tracker, or to its translation channel on Discord, through
+## the writer's browser.
 
 translation-report-window-title = Zgłoś błąd tłumaczenia
 settings-report-translation = Zgłoś błąd tłumaczenia
@@ -5212,15 +5213,20 @@ translation-report-hint-select = Ten tekst zmienia się zależnie od liczby. Zmi
 translation-report-public = Co będzie publiczne
 translation-report-public-cost = Twój raport stanie się publicznym zgłoszeniem w serwisie GitHub. Potrzebujesz bezpłatnego konta GitHub, a strona jest po angielsku.
 translation-report-public-steps = W serwisie GitHub zaloguj się, zaznacz pole dotyczące Contributor License Agreement (umowy licencyjnej współtwórcy) i naciśnij „Create”.
+translation-report-public-discord = Nie masz konta GitHub? Naciśnij „Kontynuuj na Discordzie”: Skribisto skopiuje raport i otworzy kanał tłumaczeń projektu, gdzie go wkleisz. Ten kanał też jest publiczny i potrzebujesz bezpłatnego konta Discord.
 translation-report-public-title = Tytuł: { $title }
 translation-report-copy-text = Kopiuj tekst
 translation-report-copy-link = Kopiuj odnośnik
 translation-report-close = Zamknij
 translation-report-continue = Kontynuuj w serwisie GitHub
+translation-report-continue-discord = Kontynuuj na Discordzie
 translation-report-another = Zgłoś kolejny błąd
 translation-report-continued = Przeglądarka powinna teraz pokazywać raport w serwisie GitHub, gotowy do sprawdzenia i wysłania.
 translation-report-continued-copied = Raport był za długi na odnośnik, więc został skopiowany do schowka: wklej go w pola, które o to proszą.
 translation-report-continued-help = Jeśli przeglądarka się nie otworzyła, naciśnij „Kopiuj odnośnik” i wklej odnośnik w przeglądarce. Jeśli GitHub zgubił raport albo pokazuje stronę błędu (na przykład po założeniu konta), naciśnij „Kopiuj tekst”, otwórz w serwisie GitHub nowe zgłoszenie błędu tłumaczenia i wklej tekst.
+translation-report-continued-discord = Przeglądarka powinna teraz pokazywać kanał tłumaczeń projektu na Discordzie.
+translation-report-continued-discord-paste = Skribisto skopiowało raport: wklej go tam w wiadomości i wyślij.
+translation-report-continued-discord-help = Jeśli przeglądarka się nie otworzyła, naciśnij „Kopiuj odnośnik” i wklej odnośnik w przeglądarce. Jeśli raportu nie ma już w schowku, naciśnij „Kopiuj tekst”.
 translation-report-open-failed = Nie udało się otworzyć przeglądarki ({ $error }). Naciśnij „Kopiuj odnośnik” i wklej odnośnik w przeglądarce.
 translation-report-text-copied = Skopiowano raport
 translation-report-link-copied = Skopiowano odnośnik

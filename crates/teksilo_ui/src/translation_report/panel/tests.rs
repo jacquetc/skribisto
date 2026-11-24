@@ -35,6 +35,8 @@ fn mounted_at(vm: &TranslationReportViewModel, at: SizeProposal) -> WidgetTree {
 #[test]
 fn every_control_is_there_by_name() {
     with_shipped_messages("en-US", || {
+        // The Discord button and its line follow the registered edition's links.
+        let _serial = crate::identity::lock_for_test();
         let vm = TranslationReportViewModel::new();
         let tree = mounted(&vm);
         for label in [
@@ -47,7 +49,9 @@ fn every_control_is_there_by_name() {
             tr!(translation_report_public()),
             tr!(translation_report_copy_text()),
             tr!(translation_report_close()),
+            tr!(translation_report_continue_discord()),
             tr!(translation_report_continue()),
+            tr!(translation_report_public_discord()),
         ] {
             let label = label.resolve_now();
             assert!(
@@ -139,6 +143,58 @@ fn after_continue_the_link_can_be_copied() {
         assert!(tree.find_by_label(&copy_link).is_some());
         assert!(
             tree.find_by_label(&tr!(translation_report_another()).resolve_now())
+                .is_some()
+        );
+    });
+}
+
+/// After Continue on Discord, the status says to paste the report there, and Copy
+/// link and Report another appear as after GitHub.
+#[test]
+fn after_discord_the_status_says_to_paste() {
+    with_shipped_messages("en-US", || {
+        let _serial = crate::identity::lock_for_test();
+        let vm = TranslationReportViewModel::new();
+        let mut tree = mounted(&vm);
+        vm.query().set("Report a Problem…".to_string());
+        vm.pick_row(0);
+        vm.choose_kind(ProblemKind::Unnatural);
+        let clipboard = ClipboardHandle::new(teksilo::platform::clipboard::MemoryClipboard::new());
+        vm.discord_with(Some(&clipboard), |_| Ok(()));
+        tree.layout(size());
+        for label in [
+            tr!(translation_report_continued_discord()),
+            tr!(translation_report_continued_discord_paste()),
+            tr!(translation_report_copy_link()),
+            tr!(translation_report_another()),
+        ] {
+            let label = label.resolve_now();
+            assert!(tree.find_by_label(&label).is_some(), "no {label:?}");
+        }
+    });
+}
+
+/// An edition with no translation channel builds no Discord button and offers none.
+#[test]
+fn an_edition_without_a_channel_offers_no_discord() {
+    with_shipped_messages("en-US", || {
+        let _serial = crate::identity::lock_for_test();
+        let _h = crate::identity::register(crate::identity::AppIdentity::new(
+            "eu",
+            "acme-writer",
+            "Acme Writer",
+        ));
+        let vm = TranslationReportViewModel::new();
+        let tree = mounted(&vm);
+        for label in [
+            tr!(translation_report_continue_discord()),
+            tr!(translation_report_public_discord()),
+        ] {
+            let label = label.resolve_now();
+            assert!(tree.find_by_label(&label).is_none(), "{label:?} is built");
+        }
+        assert!(
+            tree.find_by_label(&tr!(translation_report_continue()).resolve_now())
                 .is_some()
         );
     });
@@ -342,6 +398,9 @@ fn nothing_paints_past_the_window_at_its_smallest() {
                 vm.continue_with(&plan, None, |_| Ok(()));
                 check(&mut tree, "continued");
             }
+
+            vm.discord_with(None, |_| Ok(()));
+            check(&mut tree, "continued on Discord");
 
             vm.report_another();
             vm.cannot_find();

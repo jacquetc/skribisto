@@ -328,6 +328,82 @@ fn a_short_report_leaves_the_clipboard_alone() {
     });
 }
 
+/// Continue on Discord puts the whole report on the clipboard, short or long, since
+/// Discord takes no prefilled message, and opens the project's translation channel.
+#[test]
+fn discord_gets_the_whole_report_through_the_clipboard() {
+    with_shipped_messages("fr-FR", || {
+        let _serial = crate::identity::lock_for_test();
+        let channel = TranslationReportViewModel::discord_channel()
+            .expect("the community edition has a translation channel");
+        let vm = TranslationReportViewModel::new();
+        vm.query().set(String::from("Signaler un problème…"));
+        vm.pick_row(row(&vm, "Signaler un problème…"));
+        vm.choose_kind(ProblemKind::WrongMeaning);
+        let clipboard = ClipboardHandle::new(MemoryClipboard::new());
+        let _ = clipboard.set_text("the writer's own clipboard");
+
+        let mut opened = None;
+        vm.discord_with(Some(&clipboard), |url| {
+            opened = Some(url.to_string());
+            Ok(())
+        });
+        assert_eq!(opened.as_deref(), Some(channel.as_str()));
+        assert_eq!(vm.phase().get(), Phase::OnDiscord { copied: true });
+        assert_eq!(vm.notice().get(), None);
+        let pasted = clipboard.get_text().unwrap_or_default();
+        assert!(pasted.contains("menu-help-report"), "{pasted}");
+
+        // Copy link gives the channel, not the GitHub form.
+        vm.copy_link(Some(&clipboard));
+        assert_eq!(clipboard.get_text().ok(), Some(channel.clone()));
+
+        // A clipboard that refuses is said, beside the channel that still opened.
+        vm.discord_with(None, |_| Ok(()));
+        assert_eq!(vm.phase().get(), Phase::OnDiscord { copied: false });
+        assert_eq!(vm.notice().get(), Some(Notice::CopyFailed));
+
+        vm.discord_with(Some(&clipboard), |_| Err("no browser".to_string()));
+        assert_eq!(
+            vm.phase().get(),
+            Phase::OpenFailed("no browser".to_string())
+        );
+    });
+}
+
+/// An incomplete report, or an edition with no channel, opens nothing and leaves the
+/// clipboard alone.
+#[test]
+fn discord_waits_for_a_report_and_a_channel() {
+    with_shipped_messages("fr-FR", || {
+        let _serial = crate::identity::lock_for_test();
+        let clipboard = ClipboardHandle::new(MemoryClipboard::new());
+        let _ = clipboard.set_text("the writer's own clipboard");
+        let untouched = |clipboard: &ClipboardHandle| {
+            clipboard.get_text().ok().as_deref() == Some("the writer's own clipboard")
+        };
+
+        let vm = TranslationReportViewModel::new();
+        vm.query().set(String::from("Signaler un problème…"));
+        vm.pick_row(row(&vm, "Signaler un problème…"));
+        vm.discord_with(Some(&clipboard), |_| panic!("no kind yet: nothing to open"));
+        assert_eq!(vm.phase().get(), Phase::Editing);
+        assert!(untouched(&clipboard));
+
+        let _h = crate::identity::register(crate::identity::AppIdentity::new(
+            "eu",
+            "acme-writer",
+            "Acme Writer",
+        ));
+        assert!(TranslationReportViewModel::discord_channel().is_none());
+        vm.choose_kind(ProblemKind::WrongMeaning);
+        assert!(vm.report().is_some());
+        vm.discord_with(Some(&clipboard), |_| panic!("no channel: nothing to open"));
+        assert_eq!(vm.phase().get(), Phase::Editing);
+        assert!(untouched(&clipboard));
+    });
+}
+
 /// An edition that declares no translation form gets no link to open.
 #[test]
 fn an_edition_without_a_form_cannot_continue() {

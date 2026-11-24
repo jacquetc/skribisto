@@ -4260,7 +4260,8 @@ import-plume-untitled-project = İçe aktarılan Plume projesi
 
 ## Help ▸ Report a Translation Error…
 ## The window that finds a translated string and sends a report about it to the
-## project's public issue tracker, through the writer's browser.
+## project's public issue tracker, or to its translation channel on Discord, through
+## the writer's browser.
 
 translation-report-window-title = Çeviri hatası bildir
 settings-report-translation = Çeviri hatası bildir
@@ -4329,15 +4330,20 @@ translation-report-hint-select = Bu metin bir sayıya göre değişir. Yalnızca
 translation-report-public = Neler herkese açık olacak
 translation-report-public-cost = Bildiriminiz GitHub'da herkese açık bir kayıt olur. Ücretsiz bir GitHub hesabına ihtiyacınız var ve sayfa İngilizcedir.
 translation-report-public-steps = GitHub'da oturum açın, Contributor License Agreement (katkıda bulunan lisans sözleşmesi) ile ilgili kutuyu işaretleyin ve “Create” düğmesine basın.
+translation-report-public-discord = GitHub hesabınız yok mu? “Discord'da devam et” düğmesine basın: Skribisto bildiriminizi kopyalar ve projenin çeviri kanalını açar, siz de onu oraya yapıştırırsınız. Bu kanal da herkese açıktır ve ücretsiz bir Discord hesabına ihtiyacınız var.
 translation-report-public-title = Başlık: { $title }
 translation-report-copy-text = Metni kopyala
 translation-report-copy-link = Bağlantıyı kopyala
 translation-report-close = Kapat
 translation-report-continue = GitHub'da devam et
+translation-report-continue-discord = Discord'da devam et
 translation-report-another = Başka bir hata bildir
 translation-report-continued = Tarayıcınız şimdi bildirimi GitHub'da, kontrol edip göndermeniz için hazır olarak göstermelidir.
 translation-report-continued-copied = Bildirim bağlantıya sığmayacak kadar uzundu, bu yüzden Skribisto onu kopyaladı: bunu isteyen alanlara yapıştırın.
 translation-report-continued-help = Tarayıcınız açılmadıysa “Bağlantıyı kopyala” düğmesine basın ve bağlantıyı tarayıcınıza yapıştırın. GitHub bildiriminizi kaybettiyse ya da bir hata sayfası gösteriyorsa (örneğin bir hesap oluşturduktan sonra), “Metni kopyala” düğmesine basın, GitHub'da yeni bir çeviri hatası bildirimi açın ve metni yapıştırın.
+translation-report-continued-discord = Tarayıcınız şimdi projenin Discord'daki çeviri kanalını göstermelidir.
+translation-report-continued-discord-paste = Skribisto bildiriminizi kopyaladı: oradaki bir mesaja yapıştırıp gönderin.
+translation-report-continued-discord-help = Tarayıcınız açılmadıysa “Bağlantıyı kopyala” düğmesine basın ve bağlantıyı tarayıcınıza yapıştırın. Bildiriminiz artık panoda değilse “Metni kopyala” düğmesine basın.
 translation-report-open-failed = Skribisto tarayıcınızı açamadı ({ $error }). “Bağlantıyı kopyala” düğmesine basın ve bağlantıyı tarayıcınıza yapıştırın.
 translation-report-text-copied = Bildirim kopyalandı
 translation-report-link-copied = Bağlantı kopyalandı

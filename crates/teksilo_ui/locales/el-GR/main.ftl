@@ -4415,7 +4415,8 @@ import-plume-untitled-project = Εισηγμένο έργο Plume
 
 ## Help ▸ Report a Translation Error…
 ## The window that finds a translated string and sends a report about it to the
-## project's public issue tracker, through the writer's browser.
+## project's public issue tracker, or to its translation channel on Discord, through
+## the writer's browser.
 
 translation-report-window-title = Αναφορά σφάλματος μετάφρασης
 settings-report-translation = Αναφορά σφάλματος μετάφρασης
@@ -4484,15 +4485,20 @@ translation-report-hint-select = Αυτό το κείμενο αλλάζει α�
 translation-report-public = Τι θα γίνει δημόσιο
 translation-report-public-cost = Η αναφορά σας γίνεται δημόσιο ζήτημα στο GitHub. Χρειάζεστε έναν δωρεάν λογαριασμό GitHub, και η σελίδα είναι στα αγγλικά.
 translation-report-public-steps = Στο GitHub, συνδεθείτε, τσεκάρετε το πλαίσιο για το Contributor License Agreement (τη συμφωνία άδειας για όσους συνεισφέρουν) και πατήστε «Create».
+translation-report-public-discord = Δεν έχετε λογαριασμό GitHub; Πατήστε «Συνέχεια στο Discord»: το Skribisto αντιγράφει την αναφορά σας και ανοίγει το κανάλι μετάφρασης του έργου, όπου την επικολλάτε. Το κανάλι είναι κι αυτό δημόσιο, και χρειάζεστε έναν δωρεάν λογαριασμό Discord.
 translation-report-public-title = Τίτλος: { $title }
 translation-report-copy-text = Αντιγραφή κειμένου
 translation-report-copy-link = Αντιγραφή συνδέσμου
 translation-report-close = Κλείσιμο
 translation-report-continue = Συνέχεια στο GitHub
+translation-report-continue-discord = Συνέχεια στο Discord
 translation-report-another = Αναφορά άλλου
 translation-report-continued = Το πρόγραμμα περιήγησης θα πρέπει τώρα να δείχνει την αναφορά στο GitHub, έτοιμη για να την ελέγξετε και να τη στείλετε.
 translation-report-continued-copied = Η αναφορά ήταν πολύ μεγάλη για τον σύνδεσμο, γι' αυτό το Skribisto την αντέγραψε: επικολλήστε τη στα πεδία που το ζητούν.
 translation-report-continued-help = Αν δεν άνοιξε το πρόγραμμα περιήγησης, πατήστε Αντιγραφή συνδέσμου και επικολλήστε τον σύνδεσμο στο πρόγραμμα περιήγησης. Αν το GitHub έχασε την αναφορά σας ή δείχνει σελίδα σφάλματος (για παράδειγμα αφού δημιουργήσατε λογαριασμό), πατήστε Αντιγραφή κειμένου, ανοίξτε μια νέα αναφορά μετάφρασης στο GitHub και επικολλήστε το.
+translation-report-continued-discord = Το πρόγραμμα περιήγησης θα πρέπει τώρα να δείχνει το κανάλι μετάφρασης του έργου στο Discord.
+translation-report-continued-discord-paste = Το Skribisto αντέγραψε την αναφορά σας: επικολλήστε την σε ένα μήνυμα εκεί και στείλτε την.
+translation-report-continued-discord-help = Αν δεν άνοιξε το πρόγραμμα περιήγησης, πατήστε Αντιγραφή συνδέσμου και επικολλήστε τον σύνδεσμο στο πρόγραμμα περιήγησης. Αν η αναφορά σας δεν βρίσκεται πια στο πρόχειρο, πατήστε Αντιγραφή κειμένου.
 translation-report-open-failed = Το Skribisto δεν μπόρεσε να ανοίξει το πρόγραμμα περιήγησης ({ $error }). Πατήστε Αντιγραφή συνδέσμου και επικολλήστε τον σύνδεσμο στο πρόγραμμα περιήγησης.
 translation-report-text-copied = Η αναφορά αντιγράφηκε
 translation-report-link-copied = Ο σύνδεσμος αντιγράφηκε

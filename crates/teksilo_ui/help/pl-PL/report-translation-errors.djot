@@ -69,12 +69,18 @@ Długie zgłoszenie albo zgłoszenie w piśmie takim jak japońskie czy arabskie
 się w odnośniku. Skribisto skopiuje wtedy całe zgłoszenie za Ciebie, a pola, które się nie
 zmieściły, poproszą o jego wklejenie.
 
+Nie masz konta GitHub? Kliknij *Kontynuuj na Discordzie*. Skribisto skopiuje całe zgłoszenie,
+a przeglądarka otworzy kanał tłumaczeń projektu na Discordzie. Wklej tam zgłoszenie
+w wiadomości i wyślij je. Ten kanał też jest publiczny i potrzebujesz bezpłatnego konta
+Discord.
+
 ## Gdy coś pójdzie nie tak
 
 - Jeśli przeglądarka się nie otworzyła, kliknij *Kopiuj odnośnik* i wklej odnośnik do
   przeglądarki.
 - Jeśli GitHub pokaże stronę błędu lub zgubi zgłoszenie, kliknij *Kopiuj tekst*. Otwórz
   w serwisie GitHub nowe zgłoszenie dotyczące tłumaczenia i wklej tekst.
-- *Kopiuj tekst* przyda się też w innych kanałach, na przykład na Discordzie projektu.
+- Jeśli na Discordzie zgłoszenia nie ma już w schowku, kliknij *Kopiuj tekst* i wklej je
+  ponownie.
 
 Kliknij *Zgłoś kolejny błąd*, aby zacząć od nowa w tym samym języku.

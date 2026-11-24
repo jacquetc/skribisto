@@ -4142,7 +4142,8 @@ import-plume-untitled-project = Importita Plume-projekto
 
 ## Help ▸ Report a Translation Error…
 ## The window that finds a translated string and sends a report about it to the
-## project's public issue tracker, through the writer's browser.
+## project's public issue tracker, or to its translation channel on Discord, through
+## the writer's browser.
 
 translation-report-window-title = Raporti tradukan eraron
 settings-report-translation = Raporti tradukan eraron
@@ -4211,15 +4212,20 @@ translation-report-hint-select = Ĉi tiu teksto ŝanĝiĝas laŭ nombro. Ŝanĝu
 translation-report-public = Kio estos publika
 translation-report-public-cost = Via raporto aperos publike en GitHub. Vi bezonas senpagan GitHub-konton, kaj la paĝo estas angla.
 translation-report-public-steps = En GitHub, ensalutu, marku la skatolon pri la Contributor License Agreement (la licenca interkonsento por kontribuantoj), kaj premu «Create».
+translation-report-public-discord = Ĉu vi ne havas GitHub-konton? Premu «Daŭrigi en Discord»: Skribisto kopias vian raporton kaj malfermas la tradukan kanalon de la projekto, kie vi algluas ĝin. Ankaŭ la kanalo estas publika, kaj vi bezonas senpagan Discord-konton.
 translation-report-public-title = Titolo: { $title }
 translation-report-copy-text = Kopii tekston
 translation-report-copy-link = Kopii ligilon
 translation-report-close = Fermi
 translation-report-continue = Daŭrigi en GitHub
+translation-report-continue-discord = Daŭrigi en Discord
 translation-report-another = Raporti alian
 translation-report-continued = Via retumilo nun montru la raporton en GitHub, pretan por ke vi kontrolu kaj sendu ĝin.
 translation-report-continued-copied = La raporto estis tro longa por la ligilo, do Skribisto kopiis ĝin: algluu ĝin en la kampojn, kiuj petas tion.
 translation-report-continued-help = Se via retumilo ne malfermiĝis, premu Kopii ligilon kaj algluu la ligilon en vian retumilon. Se GitHub perdis vian raporton aŭ montras erarpaĝon (ekzemple post kiam vi kreis konton), premu Kopii tekston, malfermu novan tradukan raporton en GitHub kaj algluu ĝin.
+translation-report-continued-discord = Via retumilo nun montru la tradukan kanalon de la projekto en Discord.
+translation-report-continued-discord-paste = Skribisto kopiis vian raporton: algluu ĝin en mesaĝon tie, kaj sendu ĝin.
+translation-report-continued-discord-help = Se via retumilo ne malfermiĝis, premu Kopii ligilon kaj algluu la ligilon en vian retumilon. Se via raporto ne plu estas en la tondujo, premu Kopii tekston.
 translation-report-open-failed = Skribisto ne povis malfermi vian retumilon ({ $error }). Premu Kopii ligilon kaj algluu la ligilon en vian retumilon.
 translation-report-text-copied = Raporto kopiita
 translation-report-link-copied = Ligilo kopiita

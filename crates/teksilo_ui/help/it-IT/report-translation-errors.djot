@@ -48,10 +48,12 @@ Ti serve un account GitHub gratuito, e la pagina è in inglese. *Che cosa sarà 
 
 Una segnalazione lunga, o scritta in una scrittura come quella giapponese o araba, potrebbe non entrare nel collegamento. Allora Skribisto copia per te l'intera segnalazione, e i campi che non sono passati ti chiedono di incollarla.
 
+Non hai un account GitHub? Fai clic su *Continua su Discord*. Skribisto copia l'intera segnalazione, e il browser apre il canale di traduzione del progetto su Discord. Incolla lì la segnalazione in un messaggio e inviala. Anche il canale è pubblico, e ti serve un account Discord gratuito.
+
 ## Se qualcosa va storto
 
 - Se il browser non si è aperto, fai clic su *Copia collegamento* e incolla il collegamento nel browser.
 - Se GitHub mostra una pagina di errore o perde la segnalazione, fai clic su *Copia testo*. Apri su GitHub una nuova segnalazione di traduzione e incolla il testo.
-- *Copia testo* va bene anche per altri canali, come il Discord del progetto.
+- Su Discord, se la segnalazione non è più negli appunti, fai clic su *Copia testo* e incollala di nuovo.
 
 Fai clic su *Segnalane un altro* per ricominciare nella stessa lingua.

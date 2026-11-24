@@ -73,6 +73,11 @@ Eine lange Meldung oder eine in japanischer oder arabischer Schrift passt unter 
 in den Link. Skribisto kopiert dann die ganze Meldung für Sie, und die Felder, die nicht
 mitkamen, bitten Sie, sie einzufügen.
 
+Kein GitHub-Konto? Klicken Sie stattdessen auf *Weiter auf Discord*. Skribisto kopiert die
+ganze Meldung, und Ihr Browser öffnet den Übersetzungskanal des Projekts auf Discord. Fügen
+Sie die Meldung dort in eine Nachricht ein und senden Sie sie ab. Auch dieser Kanal ist
+öffentlich, und Sie brauchen ein kostenloses Discord-Konto.
+
 ## Wenn etwas schiefgeht
 
 - Hat sich Ihr Browser nicht geöffnet, klicken Sie auf *Link kopieren* und fügen Sie den Link
@@ -80,6 +85,7 @@ mitkamen, bitten Sie, sie einzufügen.
 - Zeigt GitHub eine Fehlerseite oder geht Ihre Meldung verloren, klicken Sie auf
   *Text kopieren*. Öffnen Sie auf GitHub eine neue Übersetzungsmeldung und fügen Sie den Text
   dort ein.
-- *Text kopieren* eignet sich auch für andere Wege, etwa den Discord des Projekts.
+- Ist Ihre Meldung auf Discord nicht mehr in der Zwischenablage, klicken Sie auf
+  *Text kopieren* und fügen Sie sie erneut ein.
 
 Klicken Sie auf *Noch einen Fehler melden*, um in derselben Sprache neu zu beginnen.

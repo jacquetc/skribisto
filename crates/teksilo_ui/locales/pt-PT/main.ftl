@@ -4301,7 +4301,8 @@ import-plume-untitled-project = Projeto Plume importado
 
 ## Help ▸ Report a Translation Error…
 ## The window that finds a translated string and sends a report about it to the
-## project's public issue tracker, through the writer's browser.
+## project's public issue tracker, or to its translation channel on Discord, through
+## the writer's browser.
 
 translation-report-window-title = Comunicar um erro de tradução
 settings-report-translation = Comunicar um erro de tradução
@@ -4370,15 +4371,20 @@ translation-report-hint-select = Este texto muda consoante um número. Altere ap
 translation-report-public = O que será público
 translation-report-public-cost = A sua comunicação torna-se uma questão pública no GitHub. Precisa de uma conta gratuita no GitHub, e a página está em inglês.
 translation-report-public-steps = No GitHub, inicie sessão, assinale a caixa sobre o Contributor License Agreement (o acordo de licença para contribuidores) e prima «Create».
+translation-report-public-discord = Não tem conta no GitHub? Prima «Continuar no Discord»: o Skribisto copia a sua comunicação e abre o canal de tradução do projeto, onde a cola. O canal também é público, e precisa de uma conta gratuita no Discord.
 translation-report-public-title = Título: { $title }
 translation-report-copy-text = Copiar texto
 translation-report-copy-link = Copiar ligação
 translation-report-close = Fechar
 translation-report-continue = Continuar no GitHub
+translation-report-continue-discord = Continuar no Discord
 translation-report-another = Comunicar outro
 translation-report-continued = O seu navegador deve agora mostrar a comunicação no GitHub, pronta para a verificar e enviar.
 translation-report-continued-copied = A comunicação era demasiado longa para a ligação, por isso o Skribisto copiou-a: cole-a nos campos que o indicam.
 translation-report-continued-help = Se o navegador não abriu, prima Copiar ligação e cole a ligação no navegador. Se o GitHub perdeu a sua comunicação ou mostra uma página de erro (por exemplo, depois de criar uma conta), prima Copiar texto, abra uma nova comunicação de tradução no GitHub e cole-o.
+translation-report-continued-discord = O seu navegador deve agora mostrar o canal de tradução do projeto no Discord.
+translation-report-continued-discord-paste = O Skribisto copiou a sua comunicação: cole-a lá numa mensagem e envie-a.
+translation-report-continued-discord-help = Se o navegador não abriu, prima Copiar ligação e cole a ligação no navegador. Se a sua comunicação já não estiver na área de transferência, prima Copiar texto.
 translation-report-open-failed = O Skribisto não conseguiu abrir o seu navegador ({ $error }). Prima Copiar ligação e cole a ligação no navegador.
 translation-report-text-copied = Comunicação copiada
 translation-report-link-copied = Ligação copiada

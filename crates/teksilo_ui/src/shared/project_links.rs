@@ -33,6 +33,11 @@ const COMMUNITY_GITHUB: &str = "https://github.com/jacquetc/skribisto";
 /// The community chat.
 const COMMUNITY_DISCORD: &str = "https://discord.gg/5BSkvQmyVH";
 
+/// The community chat's channel for translations, where a writer without a GitHub
+/// account can paste a translation report.
+const COMMUNITY_TRANSLATION_DISCORD: &str =
+    "https://discord.com/channels/880391811049332746/1574809631493197894";
+
 /// The community issue tracker.
 const COMMUNITY_ISSUES: &str = "https://github.com/jacquetc/skribisto/issues";
 
@@ -64,6 +69,11 @@ pub struct ProjectLinks {
     /// it, so it must already carry a query. Unset, the action and every door to it
     /// are not built.
     pub translation_form: Option<String>,
+    /// Help ▸ Report a Translation Error…, **Continue on Discord**: the chat channel
+    /// where a writer pastes the report instead of filing it on the tracker. Named
+    /// after the service because the button names it. Unset, the button and the line
+    /// that offers it are not built; the rest of the window does not depend on it.
+    pub translation_discord: Option<String>,
 }
 
 impl ProjectLinks {
@@ -76,6 +86,7 @@ impl ProjectLinks {
             discord: Some(COMMUNITY_DISCORD.to_string()),
             issues: Some(COMMUNITY_ISSUES.to_string()),
             translation_form: Some(COMMUNITY_TRANSLATION_FORM.to_string()),
+            translation_discord: Some(COMMUNITY_TRANSLATION_DISCORD.to_string()),
         }
     }
 }
@@ -93,8 +104,16 @@ mod tests {
             discord,
             issues,
             translation_form,
+            translation_discord,
         } = links;
-        vec![website, github, discord, issues, translation_form]
+        vec![
+            website,
+            github,
+            discord,
+            issues,
+            translation_form,
+            translation_discord,
+        ]
     }
 
     #[test]
@@ -160,7 +179,11 @@ mod tests {
         assert!(!files.is_empty(), "the walk found no source at {root:?}");
 
         let this = root.join("shared").join("project_links.rs");
-        let needles = [COMMUNITY_GITHUB, COMMUNITY_DISCORD];
+        let needles = [
+            COMMUNITY_GITHUB,
+            COMMUNITY_DISCORD,
+            COMMUNITY_TRANSLATION_DISCORD,
+        ];
         let offenders: Vec<String> = files
             .iter()
             .filter(|f| **f != this)

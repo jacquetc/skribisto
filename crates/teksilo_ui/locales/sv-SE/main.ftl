@@ -4168,7 +4168,8 @@ import-plume-untitled-project = Importerat Plume-projekt
 
 ## Help ▸ Report a Translation Error…
 ## The window that finds a translated string and sends a report about it to the
-## project's public issue tracker, through the writer's browser.
+## project's public issue tracker, or to its translation channel on Discord, through
+## the writer's browser.
 
 translation-report-window-title = Rapportera ett översättningsfel
 settings-report-translation = Rapportera ett översättningsfel
@@ -4237,15 +4238,20 @@ translation-report-hint-select = Den här texten ändras med ett tal. Ändra bar
 translation-report-public = Det här blir offentligt
 translation-report-public-cost = Din rapport blir ett offentligt ärende på GitHub. Du behöver ett gratis GitHub-konto, och sidan är på engelska.
 translation-report-public-steps = Logga in på GitHub, kryssa i rutan om Contributor License Agreement (avtalet om dina bidrag) och klicka på ”Create”.
+translation-report-public-discord = Inget GitHub-konto? Klicka på ”Fortsätt på Discord”: Skribisto kopierar din rapport och öppnar projektets översättningskanal, där du klistrar in den. Kanalen är också offentlig, och du behöver ett gratis Discord-konto.
 translation-report-public-title = Rubrik: { $title }
 translation-report-copy-text = Kopiera text
 translation-report-copy-link = Kopiera länk
 translation-report-close = Stäng
 translation-report-continue = Fortsätt på GitHub
+translation-report-continue-discord = Fortsätt på Discord
 translation-report-another = Rapportera ett till
 translation-report-continued = Webbläsaren bör nu visa rapporten på GitHub, klar för dig att granska och skicka.
 translation-report-continued-copied = Rapporten var för lång för länken, så Skribisto kopierade den: klistra in den i fälten som ber om det.
 translation-report-continued-help = Om webbläsaren inte öppnades, klicka på ”Kopiera länk” och klistra in länken i webbläsaren. Om GitHub tappade bort din rapport eller visar en felsida (till exempel efter att du skapat ett konto), klicka på ”Kopiera text”, öppna en ny översättningsrapport på GitHub och klistra in texten.
+translation-report-continued-discord = Webbläsaren bör nu visa projektets översättningskanal på Discord.
+translation-report-continued-discord-paste = Skribisto har kopierat din rapport: klistra in den i ett meddelande där och skicka det.
+translation-report-continued-discord-help = Om webbläsaren inte öppnades, klicka på ”Kopiera länk” och klistra in länken i webbläsaren. Om din rapport inte längre finns i urklipp, klicka på ”Kopiera text”.
 translation-report-open-failed = Skribisto kunde inte öppna webbläsaren ({ $error }). Klicka på ”Kopiera länk” och klistra in länken i webbläsaren.
 translation-report-text-copied = Rapport kopierad
 translation-report-link-copied = Länk kopierad
