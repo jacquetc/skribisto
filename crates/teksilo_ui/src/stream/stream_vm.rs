@@ -32,7 +32,7 @@
 //! each `begin_*` presents the dialog and the matching apply-method does the undoable
 //! backend call. Plain Rust → headless-testable.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -96,10 +96,22 @@ struct Inner {
 
     /// Whether this tab reads the stream **as exported**. Per tab, like the segment it
     /// lives on: two panes on one book can show the draft and the book side by side.
+    ///
+    /// The switch, not what is on screen: it only takes effect while the prose page is
+    /// the one shown (see [`shown`](Self::shown)).
     reading_on: Signal<bool>,
-    /// Its negation, as a signal of its own: what the working stream's furniture (the
-    /// container header, the add button) binds its visibility to.
+    /// Whether the page on screen shows the working stream, as a signal of its own: what
+    /// the working stream's furniture (the container header, the add button) binds its
+    /// visibility to. The negation of "the switch is on **and** the prose page is shown".
     working_on: Signal<bool>,
+    /// Which of the two stream pages was last put on screen, reported by the page itself
+    /// as it becomes active.
+    ///
+    /// Read as exported is a Prose matter: a synopsis is not part of the book, and the
+    /// switch is on the prose page only. Both pages show the same row list, though, so
+    /// without this the reading followed the writer to the Full Synopsis, which then
+    /// showed the book's prose with no switch on the page to turn it off.
+    shown: Cell<SplitFlavour>,
     /// The style a reading follows: the book's remembered export style, resolved against
     /// every style this machine has. Kept current while the reading is off too, so the
     /// picker shows the right entry the moment it appears.
@@ -161,6 +173,7 @@ impl StreamViewModel {
                 row_handles: RefCell::new(HashMap::new()),
                 reading_on: Signal::new(false),
                 working_on: Signal::new(true),
+                shown: Cell::new(SplitFlavour::Prose),
                 reading_style: Signal::new(None),
                 styles: RefCell::new(None),
             }),
@@ -286,8 +299,8 @@ impl StreamViewModel {
         self.inner.reading_on.clone()
     }
 
-    /// Whether this tab shows the working stream: the negation of
-    /// [`reading_on`](Self::reading_on).
+    /// Whether the stream page on screen shows the working stream: false only while
+    /// [`reading_on`](Self::reading_on) is on and the prose page is the one shown.
     pub fn working_on(&self) -> Signal<bool> {
         self.inner.working_on.clone()
     }
@@ -322,8 +335,44 @@ impl StreamViewModel {
     /// Read the stream as exported, or go back to the working stream.
     pub fn set_reading_on(&self, on: bool) {
         self.inner.reading_on.set_if_changed(on);
-        self.inner.working_on.set_if_changed(!on);
         self.sync_reading();
+    }
+
+    /// The `flavour` page has just been put on screen. Called by the page as it becomes
+    /// active, so the rows follow whichever of the two is shown: the reading on the
+    /// prose page, the working rows on the synopsis page. See [`Inner::shown`].
+    pub fn show_flavour(&self, flavour: SplitFlavour) {
+        if self.inner.shown.replace(flavour) != flavour {
+            self.sync_reading();
+        }
+    }
+
+    /// Follow the `flavour` page as it comes on screen and goes: call once per build of
+    /// that page, from inside it.
+    ///
+    /// The page's own activation, not the tab's segment: a `Switcher` parks a page it
+    /// leaves rather than dropping it, and only activation says which of the two built
+    /// pages is the one on screen. Captures a **`Weak`**, like every closure in
+    /// [`wire`](Self::wire), so a parked page cannot keep a closed tab's rows alive.
+    pub fn follow_page(&self, ctx: &mut BuildContext, flavour: SplitFlavour) {
+        let active = ctx.activation_signal(ctx.self_id());
+        // Seeded: an effect fires on later changes only, and a page is normally already
+        // active by the time it builds.
+        if active.get() {
+            self.show_flavour(flavour);
+        }
+        let weak = Rc::downgrade(&self.inner);
+        ctx.effect(&active, move |&on| {
+            if on && let Some(inner) = weak.upgrade() {
+                StreamViewModel { inner }.show_flavour(flavour);
+            }
+        });
+    }
+
+    /// Whether the rows are read as exported right now: the switch is on and the page
+    /// on screen is the prose one.
+    fn reading_shown(&self) -> bool {
+        self.inner.reading_on.get() && self.inner.shown.get() == SplitFlavour::Prose
     }
 
     /// Read the book in `style` from now on, here and in the Export panel.
@@ -357,9 +406,9 @@ impl StreamViewModel {
             .unwrap_or_default();
         let style = crate::export::style::resolve(&remembered, &self.style_catalogue());
         self.inner.reading_style.set_if_changed(style.clone());
-        self.inner
-            .rows
-            .set_reading(style.filter(|_| self.inner.reading_on.get()));
+        let reading = self.reading_shown();
+        self.inner.working_on.set_if_changed(!reading);
+        self.inner.rows.set_reading(style.filter(|_| reading));
     }
 
     // ── reactive reads ──

@@ -12,6 +12,7 @@ Description:
 - "Renaming a chapter or a part that had no title now shows the new title in Full Part, Full Book and Full Synopsis straight away. These pages kept the name Skribisto gives an untitled chapter, such as Chapter 3, and switching to another page and back did not always bring the new title. Clearing a title now shows that name again instead of an empty heading"
 - "Add new chapter, at the end of Full Part and Full Book, now adds a chapter after the last one. It used to add a scene to the last chapter, in a window titled New scene. The windows that Add new chapter, Add new scene, Insert chapter and Insert scene open, on the corkboard too, now carry the name of the button you clicked. Clicking OK with no name now adds the item anyway: a chapter then has no title of its own and is numbered like any other, and a scene is called New scene. It used to do nothing, as if you had clicked Cancel"
 - "On the corkboard, Insert on a note card now reads Insert note, on a front or back matter card Insert paratext, and on the end of a book Insert book. It said Insert scene on every card that was not a chapter, whatever it then added"
+- "Full Synopsis now always shows the synopses. After turning on Read as exported in Full Book, Full Part or Full Chapter, switching to Full Synopsis used to show the exported text instead, with no switch on that page to turn it off. Read as exported stays on and applies again when you switch back"
 ---
 Version: 3.4.1
 Date: 2026-11-23

@@ -3572,6 +3572,110 @@ fn reading_a_full_book_as_exported_hides_the_working_chrome() {
     );
 }
 
+/// A container tab over the mocks' fabricated project (item 101, whatever the type), as
+/// the editors build one: the shape every stream test below starts from.
+#[cfg(feature = "mocks")]
+fn container_tab(ctx: &Rc<AppContext>, sub_role: BinderItemSubRole) -> ContentTab {
+    let open_doc = Rc::new(OpenDoc::build(
+        ctx,
+        101,
+        &BinderItemRole::Folder,
+        &sub_role,
+        &[],
+        Signal::new(0),
+        std::path::Path::new(""),
+    ));
+    ContentTab::new(
+        ctx.clone(),
+        AppIds::new(),
+        OpenDocsStore::new(ctx.clone()),
+        open_doc,
+        Signal::new(700.0),
+        Signal::new(false),
+        Signal::new(SynopsisPlacement::default()),
+        Signal::new(crate::SYNOPSIS_SIDE_WIDTH_DEFAULT),
+        crate::settings::PageFieldsDisplay::detached(),
+        test_typography(),
+        crate::shared::TypewriterSettings::off(),
+        crate::shared::CaretHighlightSettings::off(),
+        crate::shared::CaretDimSettings::off(),
+        crate::settings::EditorViewMemory::detached(false),
+        crate::settings::CorkboardDefaults::detached(),
+        crate::settings::TreeExpansionViewModel::new(
+            ctx.clone(),
+            AppIds::new(),
+            crate::models::TreeExpansionService::in_memory_default(),
+        ),
+        Signal::new(false),
+        Signal::new(crate::DISTRACTION_FREE_WIDTH_DEFAULT),
+        crate::format::FormatViewModel::detached(),
+        crate::writing_session::WritingGamesViewModel::detached(),
+        crate::save::WorkHandle::detached(ctx.clone(), AppIds::new()),
+        Signal::new(GoalUnit::default()),
+        crate::tags::TagsViewModel::detached(ctx.clone(), AppIds::new()),
+        crate::statuses::StatusesViewModel::new(ctx.clone(), AppIds::new()),
+        crate::mentions::MentionIndex::new(ctx.clone(), AppIds::new()),
+    )
+}
+
+/// Show `segment` on `tab`, by its stable string id.
+#[cfg(feature = "mocks")]
+fn show_segment(tab: &ContentTab, segment: &str) {
+    tab.segment
+        .set(Some(crate::tabs::shared::segments::segment_id(segment)));
+}
+
+/// **The Full Synopsis stays a working view while the book is read as exported.**
+///
+/// Read as exported is a Prose matter (a synopsis is not part of the book), and its
+/// switch is on the Full Book page alone. The two pages share one row list, though,
+/// so the reading followed the writer to the Full Synopsis: its rows came back as the
+/// export plans them, prose and no options menu, on a page with no switch to turn it
+/// off and its container header gone.
+#[cfg(feature = "mocks")]
+#[test]
+fn the_full_synopsis_stays_a_working_view_while_the_book_is_read_as_exported() {
+    use crate::tabs::shared::segments::{SEG_MANUSCRIPT, SEG_SYNOPSIS};
+    let ctx = Rc::new(AppContext::new());
+    let tab = container_tab(&ctx, BinderItemSubRole::Book);
+    show_segment(&tab, SEG_MANUSCRIPT);
+    let mut tree = crate::test_support::tree_with_events(&ctx);
+    tree.add_boxed(tab_pane(&tab));
+    let size = teksilo::prelude::SizeProposal::exact(1400.0, 900.0);
+    let settle = |tree: &mut WidgetTree| {
+        tree.layout(size);
+        tree.layout(size);
+    };
+    settle(&mut tree);
+
+    let vm = tab.stream().cloned().expect("a Book hosts a stream");
+    vm.set_reading_on(true);
+    settle(&mut tree);
+    assert!(
+        !vm.rows().is_empty() && vm.rows().iter().all(|r| r.reading.is_some()),
+        "fixture: the Full Book reads as exported"
+    );
+
+    show_segment(&tab, SEG_SYNOPSIS);
+    settle(&mut tree);
+    assert!(
+        !vm.rows().is_empty() && vm.rows().iter().all(|r| r.reading.is_none()),
+        "the Full Synopsis shows the working rows, each with its synopsis"
+    );
+    assert!(
+        vm.working_on().get(),
+        "and its working furniture: the container header, the add button"
+    );
+
+    show_segment(&tab, SEG_MANUSCRIPT);
+    settle(&mut tree);
+    assert!(vm.reading_on().get(), "the switch is still on");
+    assert!(
+        vm.rows().iter().all(|r| r.reading.is_some()) && !vm.working_on().get(),
+        "and back on the Full Book, the book reads as exported again"
+    );
+}
+
 /// The first widget in the subtree whose type name ends in `name`.
 fn find_type(tree: &WidgetTree, root: WidgetId, name: &str) -> Option<WidgetId> {
     if tree

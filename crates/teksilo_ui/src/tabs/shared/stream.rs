@@ -516,6 +516,9 @@ impl std::fmt::Debug for WireOnBuild {
 impl Widget for WireOnBuild {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
         self.vm.wire(ctx);
+        // Both stream pages show one row list, and the reading belongs to the prose page
+        // alone: each page says when it is the one on screen.
+        self.vm.follow_page(ctx, self.flavour);
         // The rows report where they land as they lay out after a switch, a few frames
         // running; each report is a chance to put the page back on the noted passage.
         {
