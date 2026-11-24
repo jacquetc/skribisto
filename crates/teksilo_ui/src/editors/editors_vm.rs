@@ -225,6 +225,10 @@ pub struct EditorsViewModel {
     typewriter: crate::shared::TypewriterSettings,
     /// The ambient caret band, shared live from Settings into every `ContentTab`.
     caret_highlight: crate::shared::CaretHighlightSettings,
+    /// The fade around the caret, shared live from Settings into every `ContentTab`,
+    /// the distraction-free surface's included: unlike the band's colour, nothing about
+    /// it depends on the page it is drawn on.
+    caret_dim: crate::shared::CaretDimSettings,
     /// The flag every **pane** tab is built with — a constant `false`, supplied
     /// by `App::build`. A pane is never distraction-free: the mode mounts its
     /// own surface with its own tab (see [`Self::open_surface_tab`]) rather than
@@ -303,6 +307,7 @@ impl EditorsViewModel {
         typography: EditorTypographySet,
         typewriter: crate::shared::TypewriterSettings,
         caret_highlight: crate::shared::CaretHighlightSettings,
+        caret_dim: crate::shared::CaretDimSettings,
         view_memory: crate::settings::EditorViewMemory,
         corkboard_defaults: crate::settings::CorkboardDefaults,
         ids: AppIds,
@@ -366,6 +371,7 @@ impl EditorsViewModel {
             typography,
             typewriter,
             caret_highlight,
+            caret_dim,
             distraction_free,
             distraction_free_width,
             view_memory,
@@ -1074,6 +1080,7 @@ impl EditorsViewModel {
             self.typography.clone(),
             self.typewriter.clone(),
             caret_highlight,
+            self.caret_dim.clone(),
             self.view_memory.clone(),
             self.corkboard_defaults.clone(),
             self.tree_expansion.clone(),
@@ -2970,6 +2977,7 @@ pub(crate) mod test_support {
             test_typography(),
             crate::shared::TypewriterSettings::off(),
             crate::shared::CaretHighlightSettings::off(),
+            crate::shared::CaretDimSettings::off(),
             crate::settings::EditorViewMemory::detached(false),
             crate::settings::CorkboardDefaults::detached(),
             ids,

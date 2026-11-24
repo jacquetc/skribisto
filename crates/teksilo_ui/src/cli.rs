@@ -263,6 +263,9 @@ pub(crate) fn read_prefs() -> Prefs {
             spellcheck: store
                 .signal(SPELLCHECK_ENABLED_KEY, SPELLCHECK_ENABLED_DEFAULT)
                 .get(),
+            dim_text: store
+                .signal(crate::DIM_ENABLED_KEY, crate::DIM_ENABLED_DEFAULT)
+                .get(),
             show_welcome: store.signal(SHOW_WELCOME_KEY, true).get(),
         },
         Err(_) => Prefs::fallback(theme_mode, locale),
@@ -287,6 +290,8 @@ pub(crate) struct Prefs {
     pub locale: Option<String>,
     pub autosave: bool,
     pub spellcheck: bool,
+    /// The fade around the caret, for the title-bar toggle's first frame.
+    pub dim_text: bool,
     pub show_welcome: bool,
 }
 
@@ -301,6 +306,7 @@ impl Prefs {
             locale,
             autosave: false,
             spellcheck: SPELLCHECK_ENABLED_DEFAULT,
+            dim_text: crate::DIM_ENABLED_DEFAULT,
             show_welcome: true,
         }
     }

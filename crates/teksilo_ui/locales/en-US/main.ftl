@@ -53,6 +53,8 @@ side-end-hidden = Right panel hidden
 side-end-shown = Right panel shown
 side-bottom-hidden = Bottom panel hidden
 side-bottom-shown = Bottom panel shown
+dim-text-on-announcement = The rest of the text is faded
+dim-text-off-announcement = All the text is at full strength
 menu-fullscreen = &Fullscreen
 menu-focus-mode = &Distraction-free Mode
 menu-format = F&ormat
@@ -231,6 +233,7 @@ statusbar-focus-exit = Exit distraction-free mode
 # actions as the shortcut and the Go menu's generic pair.
 statusbar-focus-synopsis = Synopsis
 statusbar-focus-comments = Comments
+statusbar-focus-dim-text = Fade the rest of the text
 statusbar-focus-go-prev = Previous item (Alt+Up)
 statusbar-focus-go-next = Next item (Alt+Down)
 
@@ -436,6 +439,20 @@ settings-highlight-scope-paragraph = Paragraph
 settings-highlight-scope-tip-none = Leave the page plain. Nothing is shaded as you write.
 settings-highlight-scope-tip-sentence = Shade the sentence you are writing, so it stands out from the ones around it.
 settings-highlight-scope-tip-paragraph = Shade the whole paragraph you are writing, to keep the passage you are working on in view.
+settings-dim-text = Fade the rest of the text
+settings-dim-text-tip = Draw everything but what you are writing fainter, so your eye stays on it. F8 turns it on and off.
+settings-dim-scope = Keep bright
+settings-dim-scope-sentence = Sentence
+settings-dim-scope-paragraph = Paragraph
+settings-dim-scope-tip-sentence = Only the sentence you are writing stays at full strength.
+settings-dim-scope-tip-paragraph = The whole paragraph you are writing stays at full strength.
+settings-dim-strength = Strength
+settings-dim-strength-light = Light
+settings-dim-strength-medium = Medium
+settings-dim-strength-strong = Strong
+settings-dim-strength-tip-light = The rest of the text is only softened, and stays easy to read.
+settings-dim-strength-tip-medium = The rest of the text recedes, and can still be read at a glance.
+settings-dim-strength-tip-strong = The rest of the text nearly disappears.
 settings-group-tabs = Tabs
 settings-tab-limit = Tabs kept open
 settings-tab-limit-one = One
@@ -3194,6 +3211,8 @@ shortcut-name-edit-select-all = Select all
 ## Spell-check: the master switch (title bar / View menu / F7 / Settings ▸ Spelling)
 titlebar-spellcheck-on = Spell-checking is on. Click to stop checking (F7)
 titlebar-spellcheck-off = Spell-checking is off. Click to check again (F7)
+titlebar-dim-text-on = The rest of the text is faded. Click to show all of it at full strength (F8)
+titlebar-dim-text-off = Click to fade the rest of the text (F8)
 titlebar-distraction-free = Enter distraction-free mode (F11)
 menu-spellcheck = &Check spelling
 menu-comments = Co&mments
@@ -4553,6 +4572,7 @@ settings-margin-lane-surface-editor = Text editor
 settings-margin-lane-surface-stream = Streams
 settings-margin-lane-surface-search-preview = Search preview
 menu-margin-lane = &Margin marks
+menu-dim-text = Fade the rest of the &text
 
 ## Statuses: the project's workflow ladder.
 ## A rung's name is project DATA: these are resolved once, when a ladder is seeded, and
@@ -4758,6 +4778,7 @@ dialog-filter-hunspell-dic = Hunspell dictionary (.dic)
 dialog-filter-export = Exported file
 # Help ▸ Keyboard shortcuts / Settings ▸ Keymap / command palette.
 shortcut-name-view-margin-lane = Toggle Margin Marks
+shortcut-name-view-dim-text = Toggle Fading the Rest of the Text
 
 ## The built-in distraction-free themes' names (distraction_free::theme).
 df-theme-paper = Paper

@@ -42,6 +42,8 @@ side-end-hidden = Το δεξί πλαίσιο κρύφτηκε
 side-end-shown = Το δεξί πλαίσιο εμφανίστηκε
 side-bottom-hidden = Το κάτω πλαίσιο κρύφτηκε
 side-bottom-shown = Το κάτω πλαίσιο εμφανίστηκε
+dim-text-on-announcement = Το υπόλοιπο κείμενο εξασθένησε
+dim-text-off-announcement = Όλο το κείμενο εμφανίζεται κανονικά
 menu-fullscreen = Π&λήρης οθόνη
 menu-focus-mode = Λειτουργία χωρίς περι&σπασμούς
 menu-format = &Μορφή
@@ -189,6 +191,7 @@ statusbar-focus-exit = Έξοδος από τη λειτουργία χωρίς 
 
 statusbar-focus-synopsis = Σύνοψη
 statusbar-focus-comments = Σχόλια
+statusbar-focus-dim-text = Εξασθένηση του υπόλοιπου κειμένου
 statusbar-focus-go-prev = Προηγούμενο στοιχείο (Alt+Πάνω)
 statusbar-focus-go-next = Επόμενο στοιχείο (Alt+Κάτω)
 
@@ -378,6 +381,20 @@ settings-highlight-scope-paragraph = Παράγραφος
 settings-highlight-scope-tip-none = Η σελίδα μένει απλή. Τίποτα δεν σκιάζεται καθώς γράφετε.
 settings-highlight-scope-tip-sentence = Σκιάζει την πρόταση που γράφετε, ώστε να ξεχωρίζει από τις γύρω της.
 settings-highlight-scope-tip-paragraph = Σκιάζει ολόκληρη την παράγραφο που γράφετε, ώστε το απόσπασμα στο οποίο δουλεύετε να μένει στο οπτικό σας πεδίο.
+settings-dim-text = Εξασθένηση του υπόλοιπου κειμένου
+settings-dim-text-tip = Δείχνει πιο αχνό όλο το κείμενο εκτός από αυτό που γράφετε, ώστε το βλέμμα σας να μένει εκεί. Το F8 την ενεργοποιεί και την απενεργοποιεί.
+settings-dim-scope = Μένει καθαρή
+settings-dim-scope-sentence = Πρόταση
+settings-dim-scope-paragraph = Παράγραφος
+settings-dim-scope-tip-sentence = Μόνο η πρόταση που γράφετε μένει καθαρή.
+settings-dim-scope-tip-paragraph = Ολόκληρη η παράγραφος που γράφετε μένει καθαρή.
+settings-dim-strength = Ένταση
+settings-dim-strength-light = Ήπια
+settings-dim-strength-medium = Μέτρια
+settings-dim-strength-strong = Έντονη
+settings-dim-strength-tip-light = Το υπόλοιπο κείμενο απλώς απαλύνεται και διαβάζεται εύκολα.
+settings-dim-strength-tip-medium = Το υπόλοιπο κείμενο υποχωρεί, αλλά διαβάζεται ακόμα με μια ματιά.
+settings-dim-strength-tip-strong = Το υπόλοιπο κείμενο σχεδόν εξαφανίζεται.
 settings-group-tabs = Καρτέλες
 settings-tab-limit = Ανοιχτές καρτέλες
 settings-tab-limit-one = Μία
@@ -2876,6 +2893,8 @@ shortcut-name-edit-select-all = Επιλογή όλων
 
 titlebar-spellcheck-on = Ο ορθογραφικός έλεγχος είναι ενεργός. Κάντε κλικ για να σταματήσει ο έλεγχος (F7)
 titlebar-spellcheck-off = Ο ορθογραφικός έλεγχος είναι ανενεργός. Κάντε κλικ για να ξαναρχίσει ο έλεγχος (F7)
+titlebar-dim-text-on = Το υπόλοιπο κείμενο είναι εξασθενημένο. Κάντε κλικ για να εμφανιστεί όλο κανονικά (F8)
+titlebar-dim-text-off = Κάντε κλικ για να εξασθενήσει το υπόλοιπο κείμενο (F8)
 titlebar-distraction-free = Μετάβαση στη λειτουργία χωρίς περισπασμούς (F11)
 menu-spellcheck = Έλεγχος &ορθογραφίας
 menu-comments = Σ&χόλια
@@ -4077,6 +4096,7 @@ settings-margin-lane-surface-editor = Επεξεργαστής κειμένου
 settings-margin-lane-surface-stream = Ροές
 settings-margin-lane-surface-search-preview = Προεπισκόπηση αναζήτησης
 menu-margin-lane = Σημάδια περ&ιθωρίου
+menu-dim-text = &Εξασθένηση του υπόλοιπου κειμένου
 
 status-preset-drafting = Συγγραφή
 status-preset-passes = Γύροι επιμέλειας
@@ -4274,6 +4294,7 @@ dialog-filter-hunspell-dic = Λεξικό Hunspell (.dic)
 dialog-filter-export = Εξαγόμενο αρχείο
 # Help ▸ Keyboard shortcuts / Settings ▸ Keymap / command palette.
 shortcut-name-view-margin-lane = Εμφάνιση ή απόκρυψη σημαδιών περιθωρίου
+shortcut-name-view-dim-text = Εναλλαγή εξασθένησης του υπόλοιπου κειμένου
 
 ## The built-in distraction-free themes' names (distraction_free::theme).
 df-theme-paper = Χαρτί

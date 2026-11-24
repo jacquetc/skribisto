@@ -286,6 +286,17 @@ impl Widget for FocusStrip {
                     .toggle(settings.comments_visible())
                     .tooltip(tr!(statusbar_focus_comments())),
             ));
+            // The fade around the caret, pinned beside them for the same reason: the title
+            // bar's toggle and View ▸ Fade the rest of the text are both parked with the
+            // rest of the chrome here, and this is the mode a writer is most likely to want
+            // it in. F8 still works; a button is the way that does not have to be
+            // remembered. The **same setting** every other surface flips, as above.
+            bar = bar.item(ToolbarItem::custom(
+                IconButton::new(crate::icons::editor::dim_text_on())
+                    .size(IconButtonSize::Compact)
+                    .toggle(settings.dim_enabled())
+                    .tooltip(tr!(statusbar_focus_dim_text())),
+            ));
         }
 
         if self.chrome.go.get() {

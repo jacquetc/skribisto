@@ -56,6 +56,11 @@ Pour découvrir un projet d’exemple, ouvrez *Exemples* dans la barre latérale
 - Appuyez sur `F9`, ou choisissez *Affichage ▸ Panneau de gauche*, pour afficher ou masquer
   les panneaux de gauche. `Ctrl+Maj+B` affiche le Classeur lui-même.
 - Appuyez sur `Ctrl+Entrée` sur un élément sélectionné pour l’ouvrir dans l’autre volet d’édition.
+- Pour garder les yeux sur ce que vous écrivez, appuyez sur `F8` ou choisissez *Affichage ▸
+  Estomper le reste du texte*. Le reste du texte s’affiche plus pâle pendant que vous
+  écrivez. Dans *Paramètres ▸ Éditeur ▸ Comportement de l’éditeur*, *Garder net* indique si
+  c’est la phrase ou tout le paragraphe qui reste net, et *Intensité* règle à quel point le
+  reste s’efface.
 - Pour que les onglets ne s’accumulent pas, réglez *Onglets gardés ouverts* dans *Paramètres
   ▸ Éditeur ▸ Comportement de l’éditeur*. Avec *Un seul*, chaque élément que vous ouvrez
   remplace l’onglet où vous étiez. Avec *5 derniers*, en ouvrir un sixième ferme celui que

@@ -49,6 +49,8 @@ side-end-hidden = Panoul din dreapta este ascuns
 side-end-shown = Panoul din dreapta este afișat
 side-bottom-hidden = Panoul de jos este ascuns
 side-bottom-shown = Panoul de jos este afișat
+dim-text-on-announcement = Restul textului este estompat
+dim-text-off-announcement = Tot textul este afișat clar
 menu-fullscreen = &Ecran complet
 menu-focus-mode = Mod fără &distrageri
 menu-format = &Formatare
@@ -233,6 +235,7 @@ statusbar-focus-exit = Ieși din modul fără distrageri
 # actions as the shortcut and the Go menu's generic pair.
 statusbar-focus-synopsis = Sinopsis
 statusbar-focus-comments = Comentarii
+statusbar-focus-dim-text = Estompează restul textului
 statusbar-focus-go-prev = Elementul precedent (Alt+Sus)
 statusbar-focus-go-next = Elementul următor (Alt+Jos)
 
@@ -437,6 +440,20 @@ settings-highlight-scope-paragraph = Paragraful
 settings-highlight-scope-tip-none = Pagina rămâne simplă. Nimic nu este umbrit în timp ce scrieți.
 settings-highlight-scope-tip-sentence = Umbrește propoziția pe care o scrieți, ca să iasă în evidență față de cele din jur.
 settings-highlight-scope-tip-paragraph = Umbrește tot paragraful pe care îl scrieți, ca pasajul la care lucrați să rămână la vedere.
+settings-dim-text = Estompează restul textului
+settings-dim-text-tip = Afișează mai palid tot textul în afară de cel pe care îl scrieți, ca privirea să rămână pe el. F8 activează și dezactivează opțiunea.
+settings-dim-scope = Fără estompare
+settings-dim-scope-sentence = Propoziția
+settings-dim-scope-paragraph = Paragraful
+settings-dim-scope-tip-sentence = Doar propoziția pe care o scrieți rămâne clară.
+settings-dim-scope-tip-paragraph = Tot paragraful pe care îl scrieți rămâne clar.
+settings-dim-strength = Intensitate
+settings-dim-strength-light = Slabă
+settings-dim-strength-medium = Medie
+settings-dim-strength-strong = Puternică
+settings-dim-strength-tip-light = Restul textului este doar atenuat și se citește ușor.
+settings-dim-strength-tip-medium = Restul textului trece în plan secund, dar se poate citi dintr-o privire.
+settings-dim-strength-tip-strong = Restul textului aproape dispare.
 settings-group-tabs = File
 settings-tab-limit = File păstrate deschise
 settings-tab-limit-one = Una
@@ -3387,6 +3404,8 @@ shortcut-name-edit-select-all = Selectează tot
 ## Spell-check: the master switch (title bar / View menu / F7 / Settings ▸ Spelling)
 titlebar-spellcheck-on = Verificarea ortografică este activă. Clic pentru a o opri (F7)
 titlebar-spellcheck-off = Verificarea ortografică este oprită. Clic pentru a o reporni (F7)
+titlebar-dim-text-on = Restul textului este estompat. Clic pentru a afișa tot textul clar (F8)
+titlebar-dim-text-off = Clic pentru a estompa restul textului (F8)
 titlebar-distraction-free = Intră în modul fără distrageri (F11)
 menu-spellcheck = Verificare &ortografică
 menu-comments = Co&mentarii
@@ -4790,6 +4809,7 @@ settings-margin-lane-surface-editor = Editorul de text
 settings-margin-lane-surface-stream = Fluxurile
 settings-margin-lane-surface-search-preview = Previzualizarea căutării
 menu-margin-lane = &Bandă de margine
+menu-dim-text = Estompează restul &textului
 
 ## Statuses: the project's workflow ladder.
 ## A rung's name is project DATA: these are resolved once, when a ladder is seeded, and
@@ -5009,6 +5029,7 @@ dialog-filter-hunspell-dic = Dicționar Hunspell (.dic)
 dialog-filter-export = Fișier exportat
 # Help ▸ Keyboard shortcuts / Settings ▸ Keymap / command palette.
 shortcut-name-view-margin-lane = Afișează sau ascunde banda de margine
+shortcut-name-view-dim-text = Comută estomparea restului textului
 
 ## The built-in distraction-free themes' names (distraction_free::theme).
 df-theme-paper = Hârtie

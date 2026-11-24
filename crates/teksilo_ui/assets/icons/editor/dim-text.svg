@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Dim text on: five lines of prose, the middle one drawn full length and
+       heavy, the two above and the two below thin, shorter and faded. Only the
+       line being written stays bright, as in a focus mode. The fade is carried
+       by weight and length first and by `stroke-opacity` second, so it still
+       reads in high contrast. Every stroke sits on whole or half pixels. -->
+  <path stroke-width="1" stroke-opacity="0.45" d="M2.5 2.5H11.5M2.5 4.5H13.5"/>
+  <path stroke-width="2" d="M2 8H14"/>
+  <path stroke-width="1" stroke-opacity="0.45" d="M2.5 11.5H12.5M2.5 13.5H8.5"/>
+</svg>

@@ -41,6 +41,8 @@ side-end-hidden = Правая панель скрыта
 side-end-shown = Правая панель показана
 side-bottom-hidden = Нижняя панель скрыта
 side-bottom-shown = Нижняя панель показана
+dim-text-on-announcement = Остальной текст приглушён
+dim-text-off-announcement = Весь текст показан с полной яркостью
 menu-fullscreen = П&олный экран
 menu-focus-mode = Р&ежим без отвлечений
 menu-format = &Формат
@@ -191,6 +193,7 @@ session-readout-timed = { $words ->
 statusbar-focus-exit = Выйти из режима без отвлечений
 statusbar-focus-synopsis = Синопсис
 statusbar-focus-comments = Комментарии
+statusbar-focus-dim-text = Приглушать остальной текст
 statusbar-focus-go-prev = Предыдущий элемент (Alt+Вверх)
 statusbar-focus-go-next = Следующий элемент (Alt+Вниз)
 
@@ -378,6 +381,20 @@ settings-highlight-scope-paragraph = Абзац
 settings-highlight-scope-tip-none = Страница остаётся чистой. Во время письма ничего не подсвечивается.
 settings-highlight-scope-tip-sentence = Подсвечивать предложение, которое вы пишете, чтобы оно выделялось среди соседних.
 settings-highlight-scope-tip-paragraph = Подсвечивать весь абзац, который вы пишете, чтобы фрагмент, над которым вы работаете, оставался на виду.
+settings-dim-text = Приглушать остальной текст
+settings-dim-text-tip = Показывать бледнее весь текст, кроме того, что вы пишете, чтобы взгляд оставался на нём. F8 включает и выключает приглушение.
+settings-dim-scope = Не приглушать
+settings-dim-scope-sentence = Предложение
+settings-dim-scope-paragraph = Абзац
+settings-dim-scope-tip-sentence = Полную яркость сохраняет только предложение, которое вы пишете.
+settings-dim-scope-tip-paragraph = Полную яркость сохраняет весь абзац, который вы пишете.
+settings-dim-strength = Сила
+settings-dim-strength-light = Слабая
+settings-dim-strength-medium = Средняя
+settings-dim-strength-strong = Сильная
+settings-dim-strength-tip-light = Остальной текст лишь слегка смягчается и легко читается.
+settings-dim-strength-tip-medium = Остальной текст отступает на второй план, но его можно прочесть одним взглядом.
+settings-dim-strength-tip-strong = Остальной текст почти исчезает.
 settings-group-tabs = Вкладки
 settings-tab-limit = Открытые вкладки
 settings-tab-limit-one = Одна
@@ -3594,6 +3611,8 @@ shortcut-name-edit-select-all = Выделить всё
 
 titlebar-spellcheck-on = Проверка орфографии включена. Щёлкните, чтобы выключить (F7)
 titlebar-spellcheck-off = Проверка орфографии выключена. Щёлкните, чтобы включить (F7)
+titlebar-dim-text-on = Остальной текст приглушён. Щёлкните, чтобы показать весь текст с полной яркостью (F8)
+titlebar-dim-text-off = Щёлкните, чтобы приглушить остальной текст (F8)
 titlebar-distraction-free = Перейти в режим без отвлечений (F11)
 menu-spellcheck = Проверять &орфографию
 menu-comments = &Комментарии
@@ -4902,6 +4921,7 @@ settings-margin-lane-surface-editor = Текстовый редактор
 settings-margin-lane-surface-stream = Потоки
 settings-margin-lane-surface-search-preview = Предпросмотр поиска
 menu-margin-lane = По&метки на полях
+menu-dim-text = Приглушать остальной &текст
 
 status-preset-drafting = Черновая работа
 status-preset-passes = Этапы редактуры
@@ -5122,6 +5142,7 @@ dialog-filter-hunspell-dic = Словарь Hunspell (.dic)
 dialog-filter-export = Экспортированный файл
 # Help ▸ Keyboard shortcuts / Settings ▸ Keymap / command palette.
 shortcut-name-view-margin-lane = Показать или скрыть пометки на полях
+shortcut-name-view-dim-text = Включить или выключить приглушение остального текста
 
 ## The built-in distraction-free themes' names (distraction_free::theme).
 df-theme-paper = Бумага

@@ -38,6 +38,14 @@ pub(super) fn push_caret_band(handle: &EditorHandle, band: &crate::shared::Caret
     handle.set_caret_highlight(band.resolve());
 }
 
+/// Push `band`'s current fade (on or off, scope, strength) onto a live editor. Idempotent, and
+/// called on mount and on every change to any of the three, for the reason
+/// [`push_caret_band`] gives. Kept apart from it so a light/dark switch, which moves only the
+/// band's colour, does not re-push the fade, and a fade toggle does not re-push the band.
+pub(super) fn push_caret_dim(handle: &EditorHandle, band: &crate::shared::CaretBand) {
+    handle.set_caret_dim(band.resolve_dim());
+}
+
 /// Wire a prose editor's `handle` to its document's caret-aware [`SpellSession`]: feed this view's
 /// focus + caret (read **live** via `EditorHandle::cursor_position()` — the caret signal lags a
 /// frame behind a just-typed character, so the effects only *ping* "something changed") and drive
@@ -143,11 +151,11 @@ pub(super) struct TypographyBoundEditor {
     /// compact synopsis box and the corkboard cards, both small bounded boxes
     /// where holding a line at a fixed height means nothing.
     pub(super) typewriter: Option<crate::shared::TypewriterSettings>,
-    /// The ambient caret band for this editor. `None` on the surfaces built with no app
-    /// around them (the widget tests), which draw none.
+    /// The ambient caret band and the fade around the caret for this editor. `None` on the
+    /// surfaces built with no app around them (the widget tests), which draw neither.
     pub(super) caret: Option<crate::shared::CaretBand>,
     /// The handle this editor was mounted with, kept **only** so `Drop` can retire the
-    /// band — see there for why nothing else may.
+    /// band and the fade — see there for why nothing else may.
     pub(super) banded: Option<EditorHandle>,
     /// The writing games this project is playing, if any. Read live on every
     /// change so switching the game on reaches editors that are already mounted —
@@ -315,8 +323,15 @@ impl Drop for TypographyBoundEditor {
         // distraction-free theme's colour. It was invisible before that theme
         // had a band of its own, because the leftover was the same shade as the
         // band the pane draws for itself.
+        //
+        // The fade is retired with it, for a narrower reason. It is drawn by
+        // this view alone and never reaches the document, so a leftover could
+        // not show anywhere else; but its resolver holds a subscription to the
+        // document, which a stale state would otherwise keep alive for as long
+        // as anything holds the handle.
         if let Some(handle) = self.banded.take() {
             handle.set_caret_highlight(None);
+            handle.set_caret_dim(None);
         }
     }
 }
@@ -480,6 +495,22 @@ impl Widget for TypographyBoundEditor {
                 // The colour signal is driven by `app.rs`'s theme effect, so this is what makes
                 // an open band follow a light/dark switch.
                 ctx.effect(&band.settings.color, move |_| push_caret_band(&h, &b));
+            }
+            // The fade around the caret, from the same bundle: one effect per source signal,
+            // for the reason above. The switch is the one the quick toggle (F8, the title bar,
+            // the View menu) flips, so this is what makes it reach editors already open.
+            push_caret_dim(&handle, &band);
+            {
+                let (h, b) = (handle.clone(), band.clone());
+                ctx.effect(&band.dim.enabled, move |_| push_caret_dim(&h, &b));
+            }
+            {
+                let (h, b) = (handle.clone(), band.clone());
+                ctx.effect(&band.dim.scope, move |_| push_caret_dim(&h, &b));
+            }
+            {
+                let (h, b) = (handle.clone(), band.clone());
+                ctx.effect(&band.dim.strength, move |_| push_caret_dim(&h, &b));
             }
         }
         // Writing games. Pushed once up front so an editor built while a game is

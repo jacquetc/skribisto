@@ -192,6 +192,7 @@ fn test_factory(app_ctx: Rc<AppContext>, registry: WorkRegistry) -> ProjectWindo
         Signal::new(true),
         Signal::new(true),
         Signal::new(true),
+        Signal::new(false),
     )
 }
 
@@ -793,6 +794,7 @@ fn added_locales_additional_menu_entries_have_unique_mnemonics() {
             "View",
             &[
                 "menu-margin-lane",
+                "menu-dim-text",
                 "menu-text-size-increase",
                 "menu-text-size-decrease",
                 "menu-text-size-reset",

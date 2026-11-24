@@ -444,6 +444,7 @@ mod tests {
             Signal::new(true),  // spellcheck_menu (default on)
             Signal::new(true),  // comments_menu (default on)
             Signal::new(true),  // margin_lane_menu (default on)
+            Signal::new(false), // dim_text_menu (default off)
         )
     }
 

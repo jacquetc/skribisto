@@ -41,6 +41,8 @@ side-end-hidden = Panel derecho oculto
 side-end-shown = Panel derecho visible
 side-bottom-hidden = Panel inferior oculto
 side-bottom-shown = Panel inferior visible
+dim-text-on-announcement = Resto del texto atenuado
+dim-text-off-announcement = Todo el texto a plena intensidad
 menu-fullscreen = P&antalla completa
 menu-focus-mode = M&odo sin distracciones
 menu-format = &Formato
@@ -177,6 +179,7 @@ session-readout-timed = { $words ->
 statusbar-focus-exit = Salir del modo sin distracciones
 statusbar-focus-synopsis = Sinopsis
 statusbar-focus-comments = Comentarios
+statusbar-focus-dim-text = Atenuar el resto del texto
 statusbar-focus-go-prev = Elemento anterior (Alt+Arriba)
 statusbar-focus-go-next = Elemento siguiente (Alt+Abajo)
 
@@ -364,6 +367,20 @@ settings-highlight-scope-paragraph = Párrafo
 settings-highlight-scope-tip-none = Deja la página lisa. No se sombrea nada mientras escribe.
 settings-highlight-scope-tip-sentence = Sombrea la oración que está escribiendo, para que destaque entre las que la rodean.
 settings-highlight-scope-tip-paragraph = Sombrea todo el párrafo que está escribiendo, para mantener a la vista el pasaje en el que trabaja.
+settings-dim-text = Atenuar el resto del texto
+settings-dim-text-tip = Muestra más tenue todo salvo lo que está escribiendo, para que la vista se quede ahí. F8 lo activa y lo desactiva.
+settings-dim-scope = Sin atenuar
+settings-dim-scope-sentence = Oración
+settings-dim-scope-paragraph = Párrafo
+settings-dim-scope-tip-sentence = Solo la oración que está escribiendo conserva su plena intensidad.
+settings-dim-scope-tip-paragraph = Todo el párrafo que está escribiendo conserva su plena intensidad.
+settings-dim-strength = Intensidad
+settings-dim-strength-light = Ligera
+settings-dim-strength-medium = Media
+settings-dim-strength-strong = Fuerte
+settings-dim-strength-tip-light = El resto del texto solo se suaviza y se lee sin esfuerzo.
+settings-dim-strength-tip-medium = El resto del texto pasa a segundo plano, pero aún se lee de un vistazo.
+settings-dim-strength-tip-strong = El resto del texto casi desaparece.
 settings-group-tabs = Pestañas
 settings-tab-limit = Pestañas abiertas
 settings-tab-limit-one = Una
@@ -2872,6 +2889,8 @@ shortcut-name-edit-select-all = Seleccionar todo
 
 titlebar-spellcheck-on = La revisión ortográfica está activada. Haga clic para dejar de revisar (F7)
 titlebar-spellcheck-off = La revisión ortográfica está desactivada. Haga clic para volver a revisar (F7)
+titlebar-dim-text-on = El resto del texto está atenuado. Haga clic para mostrarlo todo con plena intensidad (F8)
+titlebar-dim-text-off = Haga clic para atenuar el resto del texto (F8)
 titlebar-distraction-free = Entrar en el modo sin distracciones (F11)
 menu-spellcheck = Revisar la &ortografía
 menu-comments = &Comentarios
@@ -4061,6 +4080,7 @@ settings-margin-lane-surface-editor = Editor de texto
 settings-margin-lane-surface-stream = Flujos
 settings-margin-lane-surface-search-preview = Vista previa de búsqueda
 menu-margin-lane = &Marcas del margen
+menu-dim-text = Atenuar el resto del te&xto
 
 status-preset-drafting = Redacción
 status-preset-passes = Pasadas de revisión
@@ -4258,6 +4278,7 @@ dialog-filter-hunspell-dic = Diccionario de Hunspell (.dic)
 dialog-filter-export = Archivo exportado
 # Help ▸ Keyboard shortcuts / Settings ▸ Keymap / command palette.
 shortcut-name-view-margin-lane = Mostrar u ocultar las marcas del margen
+shortcut-name-view-dim-text = Activar o desactivar la atenuación del resto del texto
 
 ## The built-in distraction-free themes' names (distraction_free::theme).
 df-theme-paper = Papel

@@ -438,6 +438,7 @@ fn test_editors_view_model(app_ctx: &Rc<frontend::AppContext>) -> EditorsViewMod
         typography,
         crate::shared::TypewriterSettings::off(),
         crate::shared::CaretHighlightSettings::off(),
+        crate::shared::CaretDimSettings::off(),
         crate::settings::EditorViewMemory::detached(false),
         crate::settings::CorkboardDefaults::detached(),
         ids.clone(),

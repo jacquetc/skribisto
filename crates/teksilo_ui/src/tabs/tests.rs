@@ -1652,6 +1652,7 @@ fn page_for(
         test_typography(),
         crate::shared::TypewriterSettings::off(),
         crate::shared::CaretHighlightSettings::off(),
+        crate::shared::CaretDimSettings::off(),
         crate::settings::EditorViewMemory::detached(false),
         crate::settings::CorkboardDefaults::detached(),
         crate::settings::TreeExpansionViewModel::new(
@@ -1897,6 +1898,7 @@ fn scene_page_max_scroll(typewriter: crate::shared::TypewriterSettings) -> (f32,
         test_typography(),
         typewriter,
         crate::shared::CaretHighlightSettings::off(),
+        crate::shared::CaretDimSettings::off(),
         crate::settings::EditorViewMemory::detached(false),
         crate::settings::CorkboardDefaults::detached(),
         crate::settings::TreeExpansionViewModel::new(
@@ -2106,6 +2108,46 @@ fn tab_for_loads_allowed_fields() {
 
     let end = mk(BookEnd);
     assert!(end.main().is_none() && end.synopsis().is_none() && end.title().is_none());
+}
+
+/// Every editor a tab builds is one part of one page for the fade around the caret: the
+/// scene's text, its synopsis and notes, a stream's rows all get the same page, so the text the
+/// writer is not in fades as one page whichever editor holds it. Two tabs are two pages: a
+/// split view's other pane is a page of its own and stays plain.
+#[test]
+fn a_tabs_editors_share_one_fade_page_and_two_tabs_do_not() {
+    use BinderItemRole::*;
+    use BinderItemSubRole::*;
+    let ctx = Rc::new(AppContext::new());
+    let mk = || {
+        tab_for(
+            &ctx,
+            1,
+            &Item,
+            &Scene,
+            &[],
+            Signal::new(700.0),
+            Signal::new(true),
+            test_typography(),
+            crate::settings::EditorViewMemory::detached(false),
+            &AppIds::new(),
+        )
+    };
+    let tab = mk();
+    let page = tab
+        .caret_band()
+        .page
+        .expect("a tab's editors are on a page");
+    assert_eq!(
+        tab.caret_band().page,
+        Some(page.clone()),
+        "every band the tab hands out names the same page"
+    );
+    assert_ne!(
+        mk().caret_band().page,
+        Some(page),
+        "another tab is another page"
+    );
 }
 
 /// A tab hands out the **same** backend handles it was built with.
@@ -3174,6 +3216,7 @@ fn distraction_free_overrides_prose_kind_typography_while_active() {
             typo.clone(),
             crate::shared::TypewriterSettings::off(),
             crate::shared::CaretHighlightSettings::off(),
+            crate::shared::CaretDimSettings::off(),
             crate::settings::EditorViewMemory::detached(false),
             crate::settings::CorkboardDefaults::detached(),
             crate::settings::TreeExpansionViewModel::new(
@@ -3281,6 +3324,7 @@ fn a_stream_lane_marks_every_row_on_its_own_slice() {
         test_typography(),
         crate::shared::TypewriterSettings::off(),
         crate::shared::CaretHighlightSettings::off(),
+        crate::shared::CaretDimSettings::off(),
         crate::settings::EditorViewMemory::detached(false),
         crate::settings::CorkboardDefaults::detached(),
         crate::settings::TreeExpansionViewModel::new(
@@ -3385,6 +3429,7 @@ fn the_manuscript_stream_follows_the_tabs_main_typography_and_column() {
         typo,
         crate::shared::TypewriterSettings::off(),
         crate::shared::CaretHighlightSettings::off(),
+        crate::shared::CaretDimSettings::off(),
         crate::settings::EditorViewMemory::detached(false),
         crate::settings::CorkboardDefaults::detached(),
         crate::settings::TreeExpansionViewModel::new(
@@ -3462,6 +3507,7 @@ fn reading_a_full_book_as_exported_hides_the_working_chrome() {
         test_typography(),
         crate::shared::TypewriterSettings::off(),
         crate::shared::CaretHighlightSettings::off(),
+        crate::shared::CaretDimSettings::off(),
         crate::settings::EditorViewMemory::detached(false),
         crate::settings::CorkboardDefaults::detached(),
         crate::settings::TreeExpansionViewModel::new(

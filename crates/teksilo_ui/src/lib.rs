@@ -457,6 +457,7 @@ pub fn run() {
         i18n,
         autosave_init,
         spellcheck_init,
+        dim_text_init,
         show_welcome_init,
     } = startup::build_ui_config(translation_dev);
 
@@ -505,6 +506,10 @@ pub fn run() {
     // feeds only a menu checkmark, and `App::build` writes the stored value into
     // it in the same frame — before the menu can be opened.
     let margin_lane_menu = Signal::new(MARGIN_LANE_ENABLED_DEFAULT);
+    // The fade around the caret: seeded from the store like `spellcheck_menu`, and for the
+    // same reason. It feeds a title-bar button that paints from the very first frame, so a
+    // seed from the default would flash the wrong icon on a launch with the fade on.
+    let dim_text_menu = Signal::new(dim_text_init);
     // `unsaved` (exit-guard state shared between the window close guard / Close
     // Work menu and `App`) and `pending_exit` (a deferred close/quit awaiting an
     // in-flight save) are **not** constructed here any more (Scope E): both used
@@ -570,6 +575,7 @@ pub fn run() {
         spellcheck_menu.clone(),
         comments_menu.clone(),
         margin_lane_menu.clone(),
+        dim_text_menu.clone(),
     );
 
     // ── Decide the initial window: launcher-window model ────────────────

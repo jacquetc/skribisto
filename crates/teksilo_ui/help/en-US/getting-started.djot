@@ -52,6 +52,10 @@ To explore a sample project, open *Examples* in the sidebar.
 - Press `F9`, or choose *View ▸ Left panel*, to show or hide the panels on the left.
   `Ctrl+Shift+B` brings the Binder itself to the front.
 - Press `Ctrl+Enter` on a selected item to open it in the other editor pane.
+- To keep your eye on what you are writing, press `F8` or choose *View ▸ Fade the rest of
+  the text*. Everything but what you are writing is drawn fainter. In *Settings ▸
+  Editor ▸ Editor Behavior*, *Keep bright* chooses whether the sentence or the whole
+  paragraph stays at full strength, and *Strength* chooses how far the rest fades.
 - To keep tabs from piling up, choose *Tabs kept open* in *Settings ▸ Editor ▸ Editor
   Behavior*. With *One*, each item you open replaces the tab you were on. With *Last five*,
   opening a sixth closes the one you have not looked at for the longest time. A pinned tab

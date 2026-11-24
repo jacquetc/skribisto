@@ -57,6 +57,7 @@ use crate::format::FormatViewModel;
 use crate::models::{TreeExpansionService, WorkspaceLayoutService};
 use crate::save::SaveAsViewModel;
 use crate::sessions::{WorkRegistry, WorkSession};
+use crate::shell::dim_text_button::DimTextToggleButton;
 use crate::shell::project_switcher_button::ProjectSwitcherButton;
 use crate::spellcheck::SpellcheckService;
 use crate::spellcheck::toggle_button::SpellcheckToggleButton;
@@ -186,6 +187,10 @@ pub struct ProjectWindowFactory {
     /// Shared process-wide like `comments_menu` above: one persisted app
     /// preference, not anything a window owns.
     margin_lane_menu: Signal<bool>,
+    /// Plain mirror of the fade-around-the-caret switch, read by the title bar's toggle and
+    /// View ▸ Fade the rest of the text. Shared process-wide like `spellcheck_menu`: one
+    /// persisted app preference, not anything a window owns.
+    dim_text_menu: Signal<bool>,
     /// The app-global quit sequencer, built **here** rather than per window and
     /// rather than in `main`: a quit spans every window, so two windows each
     /// running their own sequence over the same Works would prompt twice for
@@ -212,6 +217,7 @@ impl ProjectWindowFactory {
         spellcheck_menu: Signal<bool>,
         comments_menu: Signal<bool>,
         margin_lane_menu: Signal<bool>,
+        dim_text_menu: Signal<bool>,
     ) -> Self {
         Self {
             quit: crate::project::QuitSequencer::new(
@@ -229,6 +235,7 @@ impl ProjectWindowFactory {
             spellcheck_menu,
             comments_menu,
             margin_lane_menu,
+            dim_text_menu,
         }
     }
 
@@ -425,6 +432,7 @@ impl ProjectWindowFactory {
         let spellcheck_menu = self.spellcheck_menu.clone();
         let comments_menu = self.comments_menu.clone();
         let margin_lane_menu = self.margin_lane_menu.clone();
+        let dim_text_menu = self.dim_text_menu.clone();
         // Per WINDOW, not per process: unlike `spellcheck_menu` (a global
         // setting, correctly shared), this tracks which surface *this* window
         // has focused. A process-wide one would let a second project window
@@ -716,6 +724,7 @@ impl ProjectWindowFactory {
                                 spellcheck_menu: spellcheck_menu.clone(),
                                 comments_menu: comments_menu.clone(),
                                 margin_lane_menu: margin_lane_menu.clone(),
+                                dim_text_menu: dim_text_menu.clone(),
                                 scene_focused: scene_focused.clone(),
                                 binder_has_selection: binder_has_selection.clone(),
                                 templates_submenu_id,
@@ -801,6 +810,7 @@ impl ProjectWindowFactory {
                                 spacing: 5.0
                                 alignment: teksilo::tokens::VAlignment::Center
                                 SpellcheckToggleButton::new(spellcheck_menu.clone())
+                                DimTextToggleButton::new(dim_text_menu.clone())
                                 crate::distraction_free::enter_button::enter_button()
                                 ExportSplitButton::new(export.clone())
                             }
@@ -874,6 +884,7 @@ impl ProjectWindowFactory {
                     spellcheck_menu.clone(),
                     comments_menu.clone(),
                     margin_lane_menu.clone(),
+                    dim_text_menu.clone(),
                     scene_focused.clone(),
                     binder_has_selection.clone(),
                     templates_menu,

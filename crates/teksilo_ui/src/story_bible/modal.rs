@@ -766,6 +766,7 @@ mod tests {
             typo,
             crate::shared::TypewriterSettings::off(),
             crate::shared::CaretHighlightSettings::off(),
+            crate::shared::CaretDimSettings::off(),
             crate::settings::EditorViewMemory::detached(false),
             crate::settings::CorkboardDefaults::detached(),
             f.ids.clone(),

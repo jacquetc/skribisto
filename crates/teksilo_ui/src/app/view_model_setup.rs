@@ -102,6 +102,9 @@ impl App {
         // Replace preview dock also uses; duplicating it here is how one of the two ends up not
         // following a light/dark switch.
         let caret_highlight = crate::shared::CaretHighlightSettings::from_context(ctx);
+        // The fade around the caret: three store-backed signals and nothing resolved, so,
+        // unlike the band, it needs no theme effect and the same bundle serves every window.
+        let caret_dim = crate::shared::CaretDimSettings::from_settings(&settings);
         let view_memory = crate::settings::EditorViewMemory::new(ctx.settings());
         let corkboard_defaults = settings.corkboard_defaults();
         let ids = self.outline.ids();
@@ -155,6 +158,7 @@ impl App {
                     typography,
                     typewriter,
                     caret_highlight,
+                    caret_dim,
                     view_memory,
                     corkboard_defaults,
                     ids,

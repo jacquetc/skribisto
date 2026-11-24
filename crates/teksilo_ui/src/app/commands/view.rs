@@ -56,6 +56,16 @@ fn side_change_message(side: DockSide, visible: bool) -> String {
     .into()
 }
 
+/// What a reader hears when the fade around the caret has just been turned on or off.
+fn dim_text_message(on: bool) -> String {
+    if on {
+        tr!(dim_text_on_announcement())
+    } else {
+        tr!(dim_text_off_announcement())
+    }
+    .into()
+}
+
 pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // F9, not Ctrl+B: Ctrl+B is the editor's built-in bold command, and a Global shortcut is
     // resolved *before* the focused widget sees the raw key — so a Ctrl+B binding here would
@@ -133,6 +143,31 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
         );
         ctx.register_action_global(Action::new("view.margin_lane").on_invoke(move |_i, _c| {
             enabled.set(!enabled.get());
+        }));
+    }
+
+    // F8 — the fade around the caret. The key Typora gives its own focus mode, and free here:
+    // F7 is spell-check, F9 the outline, F10 the menu bar and F11 distraction-free. Global for
+    // the reason F9 is: it must work from inside the editor, whose own key handling would
+    // otherwise see the key first.
+    ctx.register_shortcut_global(
+        Shortcut::new("view.dim_text")
+            .group(ShortcutGroup::View)
+            .name(tr!(shortcut_name_view_dim_text()))
+            .primary(KeyStroke::new(Key::F8, Modifiers::NONE))
+            .build(),
+    );
+    {
+        // The setting *is* the state, as with the margin lane above: the title bar, the
+        // strip, the menu row and Settings all read this one signal, and this action is the
+        // way the key, the button and the row write it.
+        let enabled = crate::settings::SettingsViewModel::new(ctx.settings()).dim_enabled();
+        ctx.register_action_global(Action::new("view.dim_text").on_invoke(move |_i, c| {
+            let now_on = !enabled.get();
+            enabled.set(now_on);
+            // Said aloud, because nothing at the keyboard's position changes: the fade is
+            // drawn, not focused, and a screen reader cannot see it at all.
+            c.announce(dim_text_message(now_on));
         }));
     }
 

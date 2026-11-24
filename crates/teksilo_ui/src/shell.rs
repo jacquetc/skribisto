@@ -30,6 +30,7 @@
 /// (30 dp) — `Large` is 40 and would spill out of the strip.
 pub(crate) const TITLE_BAR_HEIGHT: f32 = 34.0;
 
+pub(crate) mod dim_text_button;
 pub(crate) mod first_run_window;
 pub(crate) mod instance;
 pub(crate) mod ipc;

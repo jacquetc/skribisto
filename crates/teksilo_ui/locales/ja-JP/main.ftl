@@ -41,6 +41,8 @@ side-end-hidden = 右パネルを非表示にしました
 side-end-shown = 右パネルを表示しました
 side-bottom-hidden = 下パネルを非表示にしました
 side-bottom-shown = 下パネルを表示しました
+dim-text-on-announcement = 入力中の箇所以外の文字を薄く表示しました
+dim-text-off-announcement = すべての文字をはっきり表示しました
 menu-fullscreen = 全画面表示(&F)
 menu-focus-mode = 集中モード(&D)
 menu-format = 書式(&O)
@@ -159,6 +161,7 @@ session-readout-timed = { $words }語 · 残り { $time }
 statusbar-focus-exit = 集中モードを終了
 statusbar-focus-synopsis = あらすじ
 statusbar-focus-comments = コメント
+statusbar-focus-dim-text = 入力中の箇所以外を薄く表示
 statusbar-focus-go-prev = 前の項目 (Alt+Up)
 statusbar-focus-go-next = 次の項目 (Alt+Down)
 
@@ -346,6 +349,20 @@ settings-highlight-scope-paragraph = 段落
 settings-highlight-scope-tip-none = 入力中に背景を強調しません。
 settings-highlight-scope-tip-sentence = 入力中の文の背景を強調します。
 settings-highlight-scope-tip-paragraph = 入力中の段落全体の背景を強調します。
+settings-dim-text = 入力中の箇所以外を薄く表示
+settings-dim-text-tip = 入力中の箇所以外の文字をすべて薄く表示し、視線がそこに留まるようにします。F8 キーでオン/オフを切り替えます。
+settings-dim-scope = はっきり表示する範囲
+settings-dim-scope-sentence = 文
+settings-dim-scope-paragraph = 段落
+settings-dim-scope-tip-sentence = 入力中の文だけをはっきり表示します。
+settings-dim-scope-tip-paragraph = 入力中の段落全体をはっきり表示します。
+settings-dim-strength = 強さ
+settings-dim-strength-light = 弱め
+settings-dim-strength-medium = 中程度
+settings-dim-strength-strong = 強め
+settings-dim-strength-tip-light = 残りの文字はわずかに薄くなるだけで、楽に読めます。
+settings-dim-strength-tip-medium = 残りの文字は目立たなくなりますが、ひと目で読むこともできます。
+settings-dim-strength-tip-strong = 残りの文字はほとんど見えなくなります。
 settings-group-tabs = タブ
 settings-tab-limit = 開いたままにするタブ
 settings-tab-limit-one = 1つ
@@ -2089,6 +2106,8 @@ shortcut-name-edit-select-all = すべて選択
 
 titlebar-spellcheck-on = スペルチェックは有効です。クリックして停止 (F7)
 titlebar-spellcheck-off = スペルチェックは無効です。クリックして再開 (F7)
+titlebar-dim-text-on = 入力中の箇所以外の文字は薄く表示されています。クリックしてすべてはっきり表示 (F8)
+titlebar-dim-text-off = クリックして入力中の箇所以外を薄く表示 (F8)
 titlebar-distraction-free = 集中モードに切り替え (F11)
 menu-spellcheck = スペルチェック(&C)
 menu-comments = コメント(&M)
@@ -3117,6 +3136,7 @@ settings-margin-lane-surface-editor = テキストエディター
 settings-margin-lane-surface-stream = 連続表示
 settings-margin-lane-surface-search-preview = 検索プレビュー
 menu-margin-lane = 余白のマーク(&M)
+menu-dim-text = 入力中の箇所以外を薄く表示(&T)
 
 status-preset-drafting = 下書きから最終稿まで
 status-preset-passes = 改稿の段階
@@ -3269,6 +3289,7 @@ dialog-filter-hunspell-dic = Hunspell 辞書 (.dic)
 dialog-filter-export = エクスポートしたファイル
 # Help ▸ Keyboard shortcuts / Settings ▸ Keymap / command palette.
 shortcut-name-view-margin-lane = 余白のマークの表示を切り替え
+shortcut-name-view-dim-text = 入力中の箇所以外を薄く表示するかを切り替え
 
 ## The built-in distraction-free themes' names (distraction_free::theme).
 df-theme-paper = 紙

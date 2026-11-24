@@ -400,8 +400,12 @@ impl Widget for PreviewBody {
                     // is where every other surface picks the band up.
                     {
                         let handle = editor.handle();
+                        // No fade here, though: the preview exists to show a match in its
+                        // context, and fading the paragraphs around the caret would hide
+                        // exactly that context.
                         let band = crate::shared::CaretBand::new(
                             crate::shared::CaretHighlightSettings::from_context(ctx),
+                            crate::shared::CaretDimSettings::off(),
                             self.vm.preview_locale(open_doc.item_id),
                         );
                         handle.set_caret_highlight(band.resolve());

@@ -26,7 +26,9 @@ use skribisto_model::counting::CountingMethodSetting;
 
 use frontend::common::entities::QuoteStyle;
 
-use crate::shared::{HighlightScope, SynopsisPlacement, TabLimit, TypewriterAnchor};
+use crate::shared::{
+    DimScope, DimStrength, HighlightScope, SynopsisPlacement, TabLimit, TypewriterAnchor,
+};
 use teksilo::prelude::{
     GLYPH_RENDERING_KEY, GlyphRenderingPreference, TEXT_CONTRAST_KEY, TextContrastLevel,
 };
@@ -42,6 +44,7 @@ use crate::{
     CORKBOARD_PARA_SPACING_BEFORE_KEY, CORKBOARD_SHOW_CARD_NUMBERS_DEFAULT,
     CORKBOARD_SHOW_CARD_NUMBERS_KEY, CORKBOARD_SHOW_WORD_COUNT_DEFAULT,
     CORKBOARD_SHOW_WORD_COUNT_KEY, CORKBOARD_SIZE_DEFAULT, CORKBOARD_SIZE_KEY, DARK_KEY,
+    DIM_ENABLED_DEFAULT, DIM_ENABLED_KEY, DIM_SCOPE_KEY, DIM_STRENGTH_KEY,
     DISTRACTION_FREE_FIRST_LINE_INDENT_DEFAULT, DISTRACTION_FREE_FIRST_LINE_INDENT_KEY,
     DISTRACTION_FREE_FONT_FAMILY_DEFAULT, DISTRACTION_FREE_FONT_FAMILY_KEY,
     DISTRACTION_FREE_GO_DEFAULT, DISTRACTION_FREE_GO_KEY, DISTRACTION_FREE_GO_TO_DEFAULT,
@@ -463,6 +466,9 @@ pub struct SettingsViewModel {
     typewriter: Signal<bool>,
     typewriter_anchor: Signal<Option<TypewriterAnchor>>,
     highlight_scope: Signal<HighlightScope>,
+    dim_enabled: Signal<bool>,
+    dim_scope: Signal<DimScope>,
+    dim_strength: Signal<DimStrength>,
     tab_limit: Signal<TabLimit>,
     remember_view: Signal<bool>,
     // ── Goals & word count ──
@@ -682,6 +688,9 @@ impl SettingsViewModel {
             typewriter_anchor: store
                 .signal(TYPEWRITER_ANCHOR_KEY, Some(TypewriterAnchor::default())),
             highlight_scope: store.signal(HIGHLIGHT_SCOPE_KEY, HighlightScope::default()),
+            dim_enabled: store.signal(DIM_ENABLED_KEY, DIM_ENABLED_DEFAULT),
+            dim_scope: store.signal(DIM_SCOPE_KEY, DimScope::default()),
+            dim_strength: store.signal(DIM_STRENGTH_KEY, DimStrength::default()),
             tab_limit: store.signal(TAB_LIMIT_KEY, TabLimit::default()),
             remember_view: store.signal(REMEMBER_VIEW_KEY, REMEMBER_VIEW_DEFAULT),
             counting_method: store
@@ -1022,6 +1031,19 @@ impl SettingsViewModel {
     /// How much text around the caret gets an ambient band while you write.
     pub fn highlight_scope(&self) -> Signal<HighlightScope> {
         self.highlight_scope.clone()
+    }
+    /// Whether everything but the text around the caret is drawn faded. The signal the
+    /// Settings toggle, F8, the title-bar button and the View menu all move.
+    pub fn dim_enabled(&self) -> Signal<bool> {
+        self.dim_enabled.clone()
+    }
+    /// Which unit around the caret stays at full strength while the rest fades.
+    pub fn dim_scope(&self) -> Signal<DimScope> {
+        self.dim_scope.clone()
+    }
+    /// How far the rest of the text fades.
+    pub fn dim_strength(&self) -> Signal<DimStrength> {
+        self.dim_strength.clone()
     }
     /// How many unpinned tabs each editor pane keeps. The same store-backed signal
     /// every window's `EditorsViewModel` reads at each open.
@@ -1386,6 +1408,55 @@ mod tests {
         vm.highlight_scope().set(HighlightScope::Paragraph);
         vm.reset_editor_defaults();
         assert_eq!(vm.highlight_scope().get(), HighlightScope::default());
+    }
+
+    /// The fade around the caret is three keys: the switch and two enums in a store that speaks
+    /// TOML scalars. Each value has to survive the trip through `general.toml` and back, and
+    /// Reset has to reach all three like every other editor preference.
+    ///
+    /// Read back through a **second store** opened on the same file: a second view-model over
+    /// the same store would hand back the very signal it was given, the store's cache, and so
+    /// prove nothing about what was written.
+    #[test]
+    fn the_caret_fade_persists_every_value_and_resets() {
+        let store = temp_store();
+        let vm = SettingsViewModel::new(&store);
+        assert!(!vm.dim_enabled().get(), "off until asked for");
+        assert_eq!(vm.dim_scope().get(), DimScope::Paragraph);
+        assert_eq!(vm.dim_strength().get(), DimStrength::Medium);
+
+        let reread = || {
+            store.flush_now().expect("write the settings file");
+            let fresh = SettingsStore::open(store.path().to_path_buf()).expect("reopen it");
+            let vm = SettingsViewModel::new(&fresh);
+            (
+                vm.dim_enabled().get(),
+                vm.dim_scope().get(),
+                vm.dim_strength().get(),
+            )
+        };
+
+        vm.dim_enabled().set(true);
+        for scope in DimScope::all() {
+            vm.dim_scope().set(scope);
+            let (enabled, read, _) = reread();
+            assert!(enabled);
+            assert_eq!(read, scope, "{scope:?} must survive the file");
+        }
+        for strength in DimStrength::all() {
+            vm.dim_strength().set(strength);
+            let (_, _, read) = reread();
+            assert_eq!(read, strength, "{strength:?} must survive the file");
+        }
+
+        vm.dim_scope().set(DimScope::Sentence);
+        vm.dim_strength().set(DimStrength::Strong);
+        vm.reset_editor_defaults();
+        assert_eq!(
+            reread(),
+            (false, DimScope::default(), DimStrength::default()),
+            "Reset reaches the file too"
+        );
     }
 
     /// The tab limit is an enum in a store that speaks TOML scalars, so each variant has

@@ -41,6 +41,8 @@ side-end-hidden = 오른쪽 패널 숨김
 side-end-shown = 오른쪽 패널 표시
 side-bottom-hidden = 아래쪽 패널 숨김
 side-bottom-shown = 아래쪽 패널 표시
+dim-text-on-announcement = 나머지 텍스트 흐리게 표시
+dim-text-off-announcement = 모든 텍스트 선명하게 표시
 menu-fullscreen = 전체 화면 (&F)
 menu-focus-mode = 집중 모드 (&D)
 menu-format = 서식 (&O)
@@ -159,6 +161,7 @@ session-readout-timed = { $words }단어 · { $time } 남음
 statusbar-focus-exit = 집중 모드 종료
 statusbar-focus-synopsis = 줄거리 요약
 statusbar-focus-comments = 댓글
+statusbar-focus-dim-text = 나머지 텍스트 흐리게 표시
 statusbar-focus-go-prev = 이전 항목 (Alt+Up)
 statusbar-focus-go-next = 다음 항목 (Alt+Down)
 
@@ -346,6 +349,20 @@ settings-highlight-scope-paragraph = 문단
 settings-highlight-scope-tip-none = 입력 중 배경을 강조하지 않습니다.
 settings-highlight-scope-tip-sentence = 입력 중인 문장의 배경을 강조합니다.
 settings-highlight-scope-tip-paragraph = 입력 중인 문단 전체의 배경을 강조합니다.
+settings-dim-text = 나머지 텍스트 흐리게 표시
+settings-dim-text-tip = 지금 쓰고 있는 곳을 뺀 모든 텍스트를 흐리게 표시하여 그곳에 시선이 머물게 합니다. F8 키로 켜고 끕니다.
+settings-dim-scope = 선명하게 유지
+settings-dim-scope-sentence = 문장
+settings-dim-scope-paragraph = 문단
+settings-dim-scope-tip-sentence = 입력 중인 문장만 선명하게 유지됩니다.
+settings-dim-scope-tip-paragraph = 입력 중인 문단 전체가 선명하게 유지됩니다.
+settings-dim-strength = 강도
+settings-dim-strength-light = 약하게
+settings-dim-strength-medium = 보통
+settings-dim-strength-strong = 강하게
+settings-dim-strength-tip-light = 나머지 텍스트가 살짝 흐려질 뿐, 쉽게 읽을 수 있습니다.
+settings-dim-strength-tip-medium = 나머지 텍스트가 뒤로 물러나지만, 한눈에 읽을 수는 있습니다.
+settings-dim-strength-tip-strong = 나머지 텍스트가 거의 보이지 않습니다.
 settings-group-tabs = 탭
 settings-tab-limit = 열어 둘 탭
 settings-tab-limit-one = 하나
@@ -2016,6 +2033,8 @@ shortcut-name-edit-select-all = 모두 선택
 
 titlebar-spellcheck-on = 맞춤법 검사 켜짐. 클릭하여 끄기 (F7)
 titlebar-spellcheck-off = 맞춤법 검사 꺼짐. 클릭하여 켜기 (F7)
+titlebar-dim-text-on = 나머지 텍스트 흐리게 표시 중. 클릭하여 모두 선명하게 표시 (F8)
+titlebar-dim-text-off = 클릭하여 나머지 텍스트 흐리게 표시 (F8)
 titlebar-distraction-free = 집중 모드로 전환 (F11)
 menu-spellcheck = 맞춤법 검사 (&C)
 menu-comments = 댓글 (&M)
@@ -3039,6 +3058,7 @@ settings-margin-lane-surface-editor = 텍스트 편집기
 settings-margin-lane-surface-stream = 연속 보기
 settings-margin-lane-surface-search-preview = 검색 미리 보기
 menu-margin-lane = 여백 표시 (&M)
+menu-dim-text = 나머지 텍스트 흐리게 표시 (&T)
 
 status-preset-drafting = 초안 작성
 status-preset-passes = 수정 단계
@@ -3191,6 +3211,7 @@ dialog-filter-hunspell-dic = Hunspell 사전 (.dic)
 dialog-filter-export = 내보낸 파일
 # Help ▸ Keyboard shortcuts / Settings ▸ Keymap / command palette.
 shortcut-name-view-margin-lane = 여백 표시 보이기/숨기기
+shortcut-name-view-dim-text = 나머지 텍스트 흐리게 표시 전환
 
 ## The built-in distraction-free themes' names (distraction_free::theme).
 df-theme-paper = 종이

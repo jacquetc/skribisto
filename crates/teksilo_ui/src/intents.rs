@@ -30,6 +30,12 @@ pub enum AppIntent {
     #[name = "view.margin_lane"]
     ToggleMarginLane,
 
+    /// Toggle the fade around the caret: everything but the sentence or paragraph being
+    /// written drawn lighter. F8, the title-bar button, the distraction-free strip and
+    /// View ▸ Fade the rest of the text.
+    #[name = "view.dim_text"]
+    ToggleDimText,
+
     /// Clear the chapter and part titles that say nothing but their own number.
     ///
     /// Every project this app creates starts with its chapters titled "Chapter 1".."Chapter

@@ -1697,6 +1697,12 @@ mod typewriter_tests;
 #[cfg(all(test, feature = "mocks"))]
 mod caret_band_tests;
 
+/// The fade around the caret, from its settings bundle to the editor: the same chain as the
+/// band's above, ending at `EditorHandle::get_caret_dim` because the fade never reaches the
+/// document. What is then drawn is teksilo's to test.
+#[cfg(all(test, feature = "mocks"))]
+mod caret_dim_tests;
+
 /// Ctrl+Wheel, from the gesture to the persisted size preference.
 ///
 /// Gated with the other whole-column fixtures above, and for the same reason:

@@ -308,6 +308,8 @@ pub(crate) struct UiConfig {
     pub i18n: I18nConfig,
     pub autosave_init: bool,
     pub spellcheck_init: bool,
+    /// The fade around the caret, for the title-bar toggle's first frame.
+    pub dim_text_init: bool,
     pub show_welcome_init: bool,
 }
 
@@ -412,6 +414,7 @@ pub(crate) fn build_ui_config(
         locale: chosen_locale,
         autosave: autosave_init,
         spellcheck: spellcheck_init,
+        dim_text: dim_text_init,
         show_welcome: show_welcome_init,
     } = cli::read_prefs();
 
@@ -482,6 +485,7 @@ pub(crate) fn build_ui_config(
         i18n,
         autosave_init,
         spellcheck_init,
+        dim_text_init,
         show_welcome_init,
     }
 }

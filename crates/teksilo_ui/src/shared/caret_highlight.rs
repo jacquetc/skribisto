@@ -172,40 +172,78 @@ impl CaretHighlightSettings {
     }
 }
 
-/// One writing surface's band: the app-wide preference, plus the language of the document that
-/// surface is over.
+/// What one writing surface does around its caret: the app-wide band and fade preferences,
+/// plus the language of the document that surface is over.
 ///
-/// The two travel together because a surface needs both and neither belongs to the other — the
-/// preference is one shared value across every open tab, while the language is a property of
-/// the scene being edited (and matters only to the sentence scope; a paragraph is a paragraph
-/// in any language).
+/// They travel together because a surface needs all three and none belongs to another: the
+/// two preferences are shared values across every open tab, while the language is a property
+/// of the scene being edited (and matters only to the sentence scopes; a paragraph is a
+/// paragraph in any language).
+///
+/// The band and the fade stay two bundles because they reach the editor differently: the band
+/// is a range session on the shared document, the fade a property of one view's drawing. The
+/// one place both are pushed is `push_caret_band` in the editor wiring.
 ///
 /// The language is resolved when the tab is built, from the same
 /// `OpenDocsStore::effective_language` the spell-checker reads. Changing a project's language
-/// therefore reaches open bands on the next tab build, exactly as it reaches their typography.
+/// therefore reaches open surfaces on the next tab build, exactly as it reaches their typography.
 #[derive(Clone)]
 pub struct CaretBand {
     pub settings: CaretHighlightSettings,
+    pub dim: super::CaretDimSettings,
     pub locale: Option<String>,
+    /// The page the surface's editor is one part of, when a tab shows several editors as one
+    /// page (a manuscript stream, a synopsis above its text). While one of them is being
+    /// written in, the others fade whole rather than stay bright. See [`Self::on_page`].
+    pub page: Option<teksilo::widgets::rich_text::caret_dim::CaretDimPage>,
 }
 
 impl CaretBand {
-    pub fn new(settings: CaretHighlightSettings, locale: Option<String>) -> Self {
-        Self { settings, locale }
+    pub fn new(
+        settings: CaretHighlightSettings,
+        dim: super::CaretDimSettings,
+        locale: Option<String>,
+    ) -> Self {
+        Self {
+            settings,
+            dim,
+            locale,
+            page: None,
+        }
     }
 
-    /// No band — for the surfaces that never draw one, and for the widget tests, which build
-    /// editors with no app around them.
+    /// The same band and fade, for an editor that is one part of `page`. A tab gives every
+    /// editor it builds the same page, so the text the writer is not in fades as one page,
+    /// whichever editor it belongs to.
+    pub fn on_page(mut self, page: teksilo::widgets::rich_text::caret_dim::CaretDimPage) -> Self {
+        self.page = Some(page);
+        self
+    }
+
+    /// No band and no fade: for the surfaces that never draw one, and for the widget tests,
+    /// which build editors with no app around them.
     pub fn off() -> Self {
         Self {
             settings: CaretHighlightSettings::off(),
+            dim: super::CaretDimSettings::off(),
             locale: None,
+            page: None,
         }
     }
 
     /// The band to push onto an editor right now.
     pub fn resolve(&self) -> Option<CaretHighlight> {
         self.settings.caret_highlight(self.locale.clone())
+    }
+
+    /// The fade to push onto an editor right now.
+    pub fn resolve_dim(&self) -> Option<teksilo::widgets::rich_text::caret_dim::CaretDim> {
+        self.dim.caret_dim(self.locale.clone()).map(|dim| {
+            teksilo::widgets::rich_text::caret_dim::CaretDim {
+                page: self.page.clone(),
+                ..dim
+            }
+        })
     }
 }
 

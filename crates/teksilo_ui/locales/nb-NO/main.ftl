@@ -41,6 +41,8 @@ side-end-hidden = Høyre panel skjult
 side-end-shown = Høyre panel vist
 side-bottom-hidden = Nederste panel skjult
 side-bottom-shown = Nederste panel vist
+dim-text-on-announcement = Resten av teksten er dempet
+dim-text-off-announcement = All teksten vises tydelig
 menu-fullscreen = F&ullskjerm
 menu-focus-mode = Distraksjonsfri m&odus
 menu-format = F&ormat
@@ -177,6 +179,7 @@ session-readout-timed = { $words ->
 statusbar-focus-exit = Avslutt distraksjonsfri modus
 statusbar-focus-synopsis = Synopsis
 statusbar-focus-comments = Kommentarer
+statusbar-focus-dim-text = Demp resten av teksten
 statusbar-focus-go-prev = Forrige element (Alt+Opp)
 statusbar-focus-go-next = Neste element (Alt+Ned)
 
@@ -364,6 +367,20 @@ settings-highlight-scope-paragraph = Avsnitt
 settings-highlight-scope-tip-none = La siden være ren. Ingenting skyggelegges mens du skriver.
 settings-highlight-scope-tip-sentence = Skyggelegg setningen du skriver, så den skiller seg ut fra dem rundt.
 settings-highlight-scope-tip-paragraph = Skyggelegg hele avsnittet du skriver, så du har partiet du arbeider med, i fokus.
+settings-dim-text = Demp resten av teksten
+settings-dim-text-tip = Vis alt unntatt det du skriver svakere, så blikket blir værende der. F8 slår det av og på.
+settings-dim-scope = Hold tydelig
+settings-dim-scope-sentence = Setning
+settings-dim-scope-paragraph = Avsnitt
+settings-dim-scope-tip-sentence = Bare setningen du skriver, vises tydelig.
+settings-dim-scope-tip-paragraph = Hele avsnittet du skriver, vises tydelig.
+settings-dim-strength = Styrke
+settings-dim-strength-light = Svak
+settings-dim-strength-medium = Middels
+settings-dim-strength-strong = Sterk
+settings-dim-strength-tip-light = Resten av teksten blir bare mykere og er fortsatt lett å lese.
+settings-dim-strength-tip-medium = Resten av teksten trer tilbake, men kan fortsatt leses med et blikk.
+settings-dim-strength-tip-strong = Resten av teksten forsvinner nesten.
 settings-group-tabs = Faner
 settings-tab-limit = Faner som holdes åpne
 settings-tab-limit-one = Én
@@ -2791,6 +2808,8 @@ shortcut-name-edit-select-all = Merk alt
 
 titlebar-spellcheck-on = Stavekontroll er på. Klikk for å slå den av (F7)
 titlebar-spellcheck-off = Stavekontroll er av. Klikk for å slå den på igjen (F7)
+titlebar-dim-text-on = Resten av teksten er dempet. Klikk for å vise all teksten tydelig (F8)
+titlebar-dim-text-off = Klikk for å dempe resten av teksten (F8)
 titlebar-distraction-free = Gå til distraksjonsfri modus (F11)
 menu-spellcheck = &Kontroller stavemåte
 menu-comments = Ko&mmentarer
@@ -3975,6 +3994,7 @@ settings-margin-lane-surface-editor = Tekstredigering
 settings-margin-lane-surface-stream = Strømmer
 settings-margin-lane-surface-search-preview = Søkeforhåndsvisning
 menu-margin-lane = &Margmerker
+menu-dim-text = &Demp resten av teksten
 
 status-preset-drafting = Utkastskriving
 status-preset-passes = Revisjonsrunder
@@ -4172,6 +4192,7 @@ dialog-filter-hunspell-dic = Hunspell-ordbok (.dic)
 dialog-filter-export = Eksportert fil
 # Help ▸ Keyboard shortcuts / Settings ▸ Keymap / command palette.
 shortcut-name-view-margin-lane = Vis/skjul margmerker
+shortcut-name-view-dim-text = Slå demping av/på for resten av teksten
 
 ## The built-in distraction-free themes' names (distraction_free::theme).
 df-theme-paper = Papir

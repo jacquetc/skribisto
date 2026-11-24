@@ -531,6 +531,18 @@ pub const PUNCT_AUTO_LISTS_DEFAULT: bool = true;
 /// would be a lie. The old key is simply never read again — it never had an effect to lose,
 /// since nothing outside the settings pane ever consumed it.
 pub const HIGHLIGHT_SCOPE_KEY: &str = "editor.highlight_scope";
+/// Whether everything but the text around the caret is drawn faded. Its own key, apart from
+/// [`DIM_SCOPE_KEY`], so the quick toggle (F8, the title bar, the View menu) flips the fade
+/// without forgetting which unit and how strong.
+pub const DIM_ENABLED_KEY: &str = "editor.dim_enabled";
+/// Off: a writing app looks plain until asked otherwise, as the band does.
+pub const DIM_ENABLED_DEFAULT: bool = false;
+/// Which unit stays at full strength while the rest fades: the sentence or the paragraph. See
+/// [`crate::shared::DimScope`], stored by variant name.
+pub const DIM_SCOPE_KEY: &str = "editor.dim_scope";
+/// How far the rest of the text fades. See [`crate::shared::DimStrength`], stored by variant
+/// name.
+pub const DIM_STRENGTH_KEY: &str = "editor.dim_strength";
 /// How many unpinned tabs each editor pane keeps: one, the five most recently used, or
 /// all of them. See [`crate::shared::TabLimit`], stored by variant name.
 pub const TAB_LIMIT_KEY: &str = "editor.tab_limit";
@@ -645,7 +657,7 @@ pub const CORKBOARD_PARA_SPACING_AFTER_DEFAULT: f32 = 6.0;
 use frontend::common::entities::QuoteStyle;
 use skribisto_model::counting::CountingMethodSetting;
 
-use crate::shared::{HighlightScope, TabLimit, TypewriterAnchor};
+use crate::shared::{DimScope, DimStrength, HighlightScope, TabLimit, TypewriterAnchor};
 
 /// One settable key: what it is called, what it holds, and what it means.
 ///
@@ -1019,6 +1031,27 @@ pub static SETTINGS: &[SettingSpec] = &[
         default: || val(HighlightScope::default()),
         check: check::<HighlightScope>,
         doc: "How much text around the caret gets an ambient highlight band.",
+    },
+    SettingSpec {
+        key: crate::DIM_ENABLED_KEY,
+        ty: "bool",
+        default: || val(crate::DIM_ENABLED_DEFAULT),
+        check: check::<bool>,
+        doc: "Draw everything but the text around the caret faded.",
+    },
+    SettingSpec {
+        key: crate::DIM_SCOPE_KEY,
+        ty: "one of: Sentence | Paragraph",
+        default: || val(DimScope::default()),
+        check: check::<DimScope>,
+        doc: "Which unit around the caret stays at full strength while the rest fades.",
+    },
+    SettingSpec {
+        key: crate::DIM_STRENGTH_KEY,
+        ty: "one of: Light | Medium | Strong",
+        default: || val(DimStrength::default()),
+        check: check::<DimStrength>,
+        doc: "How far the text outside the caret's sentence or paragraph fades.",
     },
     SettingSpec {
         key: crate::TAB_LIMIT_KEY,

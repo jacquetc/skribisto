@@ -54,7 +54,7 @@
 //!         shortcut: Some(ShortcutSpec {
 //!             name: "acme.next_beat",
 //!             label: "Next beat",
-//!             primary: KeyStroke::new(Key::F8, Modifiers::NONE),
+//!             primary: KeyStroke::new(Key::B, Modifiers::CTRL | Modifiers::ALT),
 //!         }),
 //!         menu_row: Some(MenuRow { label: Rc::new(|| tr!(acme_next_beat())), enabled: None }),
 //!     },

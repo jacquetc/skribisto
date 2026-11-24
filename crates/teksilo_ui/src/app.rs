@@ -797,6 +797,10 @@ pub struct App {
     /// store-backed setting into it — the menu row never writes it back.
     comments_menu: Signal<bool>,
     margin_lane_menu: Signal<bool>,
+    /// Plain mirror of the persisted fade-around-the-caret switch, read by the title bar's
+    /// toggle and the View menu's row (both built outside `App`). `App::build` mirrors the
+    /// store-backed setting into it; neither surface writes it back.
+    dim_text_menu: Signal<bool>,
     /// Live "a scene's prose is the active surface" flag, shared with the
     /// title-bar's Format menu so its entries grey out off a scene. Written by
     /// `EditorsViewModel`, which is the only thing that can compute it.
@@ -942,6 +946,7 @@ impl App {
         spellcheck_menu: Signal<bool>,
         comments_menu: Signal<bool>,
         margin_lane_menu: Signal<bool>,
+        dim_text_menu: Signal<bool>,
         scene_focused: Signal<bool>,
         binder_has_selection: Signal<bool>,
         templates_menu: Option<(
@@ -995,6 +1000,7 @@ impl App {
             spellcheck_menu,
             comments_menu,
             margin_lane_menu,
+            dim_text_menu,
             scene_focused,
             binder_has_selection,
             templates_menu,
@@ -2235,6 +2241,21 @@ impl Widget for App {
                 // Not a real flip → don't re-attach every open document for nothing.
                 if spell.set_enabled(*on) {
                     docs.attach_all();
+                }
+            });
+        }
+        // ── The fade around the caret ────────────────────────────────────────
+        // One setting, five surfaces (Settings ▸ Editor ▸ Editor Behavior, F8, View ▸ Fade
+        // the rest of the text, the title-bar toggle, the distraction-free strip). The
+        // editors read the store-backed signal directly, through `CaretDimSettings`; only
+        // the two surfaces built outside `App` need this plain mirror, pushed one way.
+        {
+            let enabled = settings.dim_enabled();
+            self.dim_text_menu.set(enabled.get());
+            let menu = self.dim_text_menu.clone();
+            ctx.effect(&enabled, move |on| {
+                if menu.get() != *on {
+                    menu.set(*on);
                 }
             });
         }

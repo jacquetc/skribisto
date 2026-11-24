@@ -49,6 +49,8 @@ side-end-hidden = Panneau de droite masqué
 side-end-shown = Panneau de droite affiché
 side-bottom-hidden = Panneau du bas masqué
 side-bottom-shown = Panneau du bas affiché
+dim-text-on-announcement = Le reste du texte est estompé
+dim-text-off-announcement = Tout le texte est affiché normalement
 menu-fullscreen = P&lein écran
 menu-focus-mode = Mode sans &distraction
 menu-format = Fo&rmat
@@ -220,6 +222,7 @@ statusbar-focus-exit = Quitter le mode sans distraction
 # actions go.next/go.prev que le raccourci et la paire générique du menu Aller à.
 statusbar-focus-synopsis = Synopsis
 statusbar-focus-comments = Commentaires
+statusbar-focus-dim-text = Estomper le reste du texte
 statusbar-focus-go-prev = Élément précédent (Alt+Haut)
 statusbar-focus-go-next = Élément suivant (Alt+Bas)
 
@@ -424,6 +427,20 @@ settings-highlight-scope-paragraph = Paragraphe
 settings-highlight-scope-tip-none = Laisser la page unie. Rien n’est teinté pendant l’écriture.
 settings-highlight-scope-tip-sentence = Teinter la phrase en cours d’écriture, pour la distinguer de celles qui l’entourent.
 settings-highlight-scope-tip-paragraph = Teinter tout le paragraphe en cours d’écriture, pour garder sous les yeux le passage travaillé.
+settings-dim-text = Estomper le reste du texte
+settings-dim-text-tip = Afficher plus pâle tout le texte sauf celui que vous écrivez, pour que le regard y reste. F8 l’active et le désactive.
+settings-dim-scope = Garder net
+settings-dim-scope-sentence = Phrase
+settings-dim-scope-paragraph = Paragraphe
+settings-dim-scope-tip-sentence = Seule la phrase en cours d’écriture reste nette.
+settings-dim-scope-tip-paragraph = Tout le paragraphe en cours d’écriture reste net.
+settings-dim-strength = Intensité
+settings-dim-strength-light = Légère
+settings-dim-strength-medium = Moyenne
+settings-dim-strength-strong = Forte
+settings-dim-strength-tip-light = Le reste du texte est seulement adouci et se lit sans effort.
+settings-dim-strength-tip-medium = Le reste du texte s’efface, mais se lit encore d’un coup d’œil.
+settings-dim-strength-tip-strong = Le reste du texte disparaît presque.
 settings-group-tabs = Onglets
 settings-tab-limit = Onglets gardés ouverts
 settings-tab-limit-one = Un seul
@@ -3161,6 +3178,8 @@ shortcut-name-edit-select-all = Tout sélectionner
 ## Orthographe: l'interrupteur principal (barre de titre / menu Affichage / F7 / Paramètres ▸ Orthographe)
 titlebar-spellcheck-on = La vérification orthographique est active. Cliquez pour l’arrêter (F7)
 titlebar-spellcheck-off = La vérification orthographique est désactivée. Cliquez pour la réactiver (F7)
+titlebar-dim-text-on = Le reste du texte est estompé. Cliquez pour tout afficher normalement (F8)
+titlebar-dim-text-off = Cliquez pour estomper le reste du texte (F8)
 titlebar-distraction-free = Passer en mode sans distraction (F11)
 menu-spellcheck = &Vérifier l’orthographe
 menu-comments = &Commentaires
@@ -4462,6 +4481,7 @@ settings-margin-lane-surface-editor = Éditeur de texte
 settings-margin-lane-surface-stream = Flux
 settings-margin-lane-surface-search-preview = Aperçu de recherche
 menu-margin-lane = Repères de &marge
+menu-dim-text = &Estomper le reste du texte
 
 ## Statuts : l'échelle d'avancement du projet.
 ## Le nom d'un échelon est une DONNÉE du projet : ces chaînes sont résolues une seule fois,
@@ -4672,6 +4692,7 @@ dialog-filter-hunspell-dic = Dictionnaire Hunspell (.dic)
 dialog-filter-export = Fichier exporté
 # Help ▸ Keyboard shortcuts / Settings ▸ Keymap / command palette.
 shortcut-name-view-margin-lane = Afficher/masquer les repères de marge
+shortcut-name-view-dim-text = Activer/désactiver l’estompage du reste du texte
 
 ## The built-in distraction-free themes' names (distraction_free::theme).
 df-theme-paper = Papier

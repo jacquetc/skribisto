@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Dim text off: the same five lines as `dim-text.svg`, struck through. The
+       body is identical between the two states so the toggle swaps a strike
+       rather than redrawing the glyph. -->
+  <path stroke-width="1" stroke-opacity="0.45" d="M2.5 2.5H11.5M2.5 4.5H13.5"/>
+  <path stroke-width="2" d="M2 8H14"/>
+  <path stroke-width="1" stroke-opacity="0.45" d="M2.5 11.5H12.5M2.5 13.5H8.5"/>
+  <path d="M2.4 13.6 L13.6 2.4"/>
+</svg>

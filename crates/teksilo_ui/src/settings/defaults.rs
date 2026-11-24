@@ -32,7 +32,9 @@ use frontend::common::entities::QuoteStyle;
 
 use super::TEXT_SCALE_DEFAULT;
 use crate::settings::{EditorTypography, SettingsViewModel};
-use crate::shared::{HighlightScope, SynopsisPlacement, TabLimit, TypewriterAnchor};
+use crate::shared::{
+    DimScope, DimStrength, HighlightScope, SynopsisPlacement, TabLimit, TypewriterAnchor,
+};
 use teksilo::prelude::{
     GLYPH_RENDERING_KEY, GlyphRenderingPreference, TEXT_CONTRAST_KEY, TextContrastLevel,
 };
@@ -494,6 +496,23 @@ pub(crate) fn reset_targets(vm: &SettingsViewModel) -> Vec<ResetTarget> {
             vm.highlight_scope(),
             HighlightScope::default(),
             HighlightScope::Paragraph,
+        ),
+        flag(
+            crate::DIM_ENABLED_KEY,
+            vm.dim_enabled(),
+            crate::DIM_ENABLED_DEFAULT,
+        ),
+        choice(
+            crate::DIM_SCOPE_KEY,
+            vm.dim_scope(),
+            DimScope::default(),
+            DimScope::Sentence,
+        ),
+        choice(
+            crate::DIM_STRENGTH_KEY,
+            vm.dim_strength(),
+            DimStrength::default(),
+            DimStrength::Strong,
         ),
         choice(
             crate::TAB_LIMIT_KEY,

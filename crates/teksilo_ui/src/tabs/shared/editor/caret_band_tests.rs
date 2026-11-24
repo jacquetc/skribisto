@@ -20,7 +20,11 @@ fn band(scope: HighlightScope) -> (CaretBand, Signal<HighlightScope>, Signal<Col
     let color_sig = Signal::new(BAND);
     let settings = CaretHighlightSettings::new(scope_sig.clone(), color_sig.clone());
     (
-        CaretBand::new(settings, Some("en".into())),
+        CaretBand::new(
+            settings,
+            crate::shared::CaretDimSettings::off(),
+            Some("en".into()),
+        ),
         scope_sig,
         color_sig,
     )
@@ -39,7 +43,7 @@ fn banded(doc: &TextDocument, color: Color) -> Vec<(usize, usize)> {
     }
 }
 
-fn pump(tree: &mut WidgetTree) {
+pub(super) fn pump(tree: &mut WidgetTree) {
     tree.request_frame();
     tree.tick_animations(std::time::Duration::from_millis(16));
     tree.layout(SizeProposal::exact(900.0, 600.0));
@@ -48,7 +52,7 @@ fn pump(tree: &mut WidgetTree) {
 /// Click into the column so the editor takes focus. The band deliberately shows only in
 /// the **focused** view (that is what keeps a split banding once, not twice), so a test
 /// that never focuses would see nothing however well the wiring works.
-fn click_into(tree: &mut WidgetTree) {
+pub(super) fn click_into(tree: &mut WidgetTree) {
     let _ = tree.render();
     tree.dispatch_event(teksilo::core::WidgetEvent::pointer_down(
         teksilo::canvas::Point::new(450.0, 20.0),

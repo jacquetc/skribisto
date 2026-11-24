@@ -50,6 +50,19 @@ pub fn spellcheck_off() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/editor/spellcheck-off.svg")).icon_size(ICON_SIZE)
 }
 
+/// The fade around the caret **on**: lines of prose with only the middle one at full
+/// strength. The title-bar toggle's glyph when the fade is on, and the distraction-free
+/// strip's toggle.
+pub fn dim_text_on() -> IconWidget {
+    IconWidget::from_svg_icon(res!("assets/icons/editor/dim-text.svg")).icon_size(ICON_SIZE)
+}
+
+/// The fade around the caret **off**: the same glyph struck through, a separate asset for the
+/// reason [`spellcheck_off`] gives.
+pub fn dim_text_off() -> IconWidget {
+    IconWidget::from_svg_icon(res!("assets/icons/editor/dim-text-off.svg")).icon_size(ICON_SIZE)
+}
+
 /// Distraction-free — lines of prose inside full-screen corners; the title bar's
 /// way into the mode.
 pub fn distraction_free() -> IconWidget {

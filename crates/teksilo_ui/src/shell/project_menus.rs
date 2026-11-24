@@ -91,6 +91,9 @@ pub(crate) struct ProjectMenuParts {
     /// The same signal Settings ▸ Editor ▸ Margin marks binds, so the two
     /// surfaces are one switch rather than two that can drift apart.
     pub margin_lane_menu: Signal<bool>,
+    /// Mirror of the persisted fade-around-the-caret switch, for View ▸ Dim the text around
+    /// the caret and the title bar's toggle.
+    pub dim_text_menu: Signal<bool>,
     pub scene_focused: Signal<bool>,
     /// Whether this window's binder has a selection — the Document menu's per-item rows
     /// grey out without one.
@@ -751,6 +754,7 @@ mod tests {
             spellcheck_menu: Signal::new(false),
             comments_menu: Signal::new(true),
             margin_lane_menu: Signal::new(true),
+            dim_text_menu: Signal::new(false),
             scene_focused: Signal::new(false),
             binder_has_selection: Signal::new(false),
             templates_submenu_id: MenuItemId::next(),

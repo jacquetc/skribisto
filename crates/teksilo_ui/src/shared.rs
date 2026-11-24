@@ -32,6 +32,7 @@ pub(crate) mod binder_ops;
 /// A field for an address or a path, left to right in every interface.
 pub(crate) mod address_input;
 
+mod caret_dim;
 mod caret_highlight;
 pub mod editor_size;
 /// Whether a command may write into an editor's text: the one question every
@@ -104,6 +105,7 @@ pub(crate) mod undo_toast;
 mod view_state;
 
 pub(crate) use binder_ops::{is_prose_bearing, is_synopsis_bearing};
+pub use caret_dim::{CaretDimSettings, DimScope, DimStrength};
 pub use caret_highlight::{CaretBand, CaretHighlightSettings, HighlightScope};
 pub use focus_vm::FocusViewModel;
 pub use fullscreen_vm::FullscreenViewModel;

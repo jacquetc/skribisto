@@ -49,6 +49,8 @@ side-end-hidden = Højre panel skjult
 side-end-shown = Højre panel vist
 side-bottom-hidden = Nederste panel skjult
 side-bottom-shown = Nederste panel vist
+dim-text-on-announcement = Resten af teksten dæmpet
+dim-text-off-announcement = Al tekst vist i fuld styrke
 menu-fullscreen = F&uld skærm
 menu-focus-mode = Dis&traktionsfri tilstand
 menu-format = F&ormat
@@ -227,6 +229,7 @@ statusbar-focus-exit = Afslut distraktionsfri tilstand
 # actions as the shortcut and the Go menu's generic pair.
 statusbar-focus-synopsis = Synopsis
 statusbar-focus-comments = Kommentarer
+statusbar-focus-dim-text = Dæmp resten af teksten
 statusbar-focus-go-prev = Forrige element (Alt+Op)
 statusbar-focus-go-next = Næste element (Alt+Ned)
 
@@ -431,6 +434,20 @@ settings-highlight-scope-paragraph = Afsnit
 settings-highlight-scope-tip-none = Lad siden være ren. Intet skygges, mens du skriver.
 settings-highlight-scope-tip-sentence = Skyg den sætning, du skriver, så den skiller sig ud fra sætningerne omkring den.
 settings-highlight-scope-tip-paragraph = Skyg hele det afsnit, du skriver, så den passage, du arbejder på, bliver i syne.
+settings-dim-text = Dæmp resten af teksten
+settings-dim-text-tip = Vis alt andet end det, du skriver, svagere, så blikket bliver ved det. F8 slår det til og fra.
+settings-dim-scope = Hold tydeligt
+settings-dim-scope-sentence = Sætning
+settings-dim-scope-paragraph = Afsnit
+settings-dim-scope-tip-sentence = Kun den sætning, du skriver, står i fuld styrke.
+settings-dim-scope-tip-paragraph = Hele det afsnit, du skriver, står i fuld styrke.
+settings-dim-strength = Styrke
+settings-dim-strength-light = Let
+settings-dim-strength-medium = Middel
+settings-dim-strength-strong = Kraftig
+settings-dim-strength-tip-light = Resten af teksten bliver kun mildnet og er stadig let at læse.
+settings-dim-strength-tip-medium = Resten af teksten træder i baggrunden, men kan stadig læses med et hurtigt blik.
+settings-dim-strength-tip-strong = Resten af teksten forsvinder næsten.
 settings-group-tabs = Faner
 settings-tab-limit = Faner, der holdes åbne
 settings-tab-limit-one = Én
@@ -3078,6 +3095,8 @@ shortcut-name-edit-select-all = Markér alt
 ## Spell-check: the master switch (title bar / View menu / F7 / Settings ▸ Spelling)
 titlebar-spellcheck-on = Stavekontrol er slået til. Klik for at stoppe kontrollen (F7)
 titlebar-spellcheck-off = Stavekontrol er slået fra. Klik for at kontrollere igen (F7)
+titlebar-dim-text-on = Resten af teksten er dæmpet. Klik for at vise det hele i fuld styrke (F8)
+titlebar-dim-text-off = Klik for at dæmpe resten af teksten (F8)
 titlebar-distraction-free = Skift til distraktionsfri tilstand (F11)
 menu-spellcheck = &Kontrollér stavning
 menu-comments = Ko&mmentarer
@@ -4424,6 +4443,7 @@ settings-margin-lane-surface-editor = Teksteditor
 settings-margin-lane-surface-stream = Forløb
 settings-margin-lane-surface-search-preview = Søgeforhåndsvisning
 menu-margin-lane = &Margenmærker
+menu-dim-text = &Dæmp resten af teksten
 
 ## Statuses: the project's workflow ladder.
 ## A rung's name is project DATA: these are resolved once, when a ladder is seeded, and
@@ -4629,6 +4649,7 @@ dialog-filter-hunspell-dic = Hunspell-ordbog (.dic)
 dialog-filter-export = Eksporteret fil
 # Help ▸ Keyboard shortcuts / Settings ▸ Keymap / command palette.
 shortcut-name-view-margin-lane = Vis eller skjul margenmærker
+shortcut-name-view-dim-text = Dæmpning af resten af teksten til/fra
 
 ## The built-in distraction-free themes' names (distraction_free::theme).
 df-theme-paper = Papir

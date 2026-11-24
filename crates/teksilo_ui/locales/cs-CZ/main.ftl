@@ -41,6 +41,8 @@ side-end-hidden = Pravý panel skrytý
 side-end-shown = Pravý panel zobrazený
 side-bottom-hidden = Dolní panel skrytý
 side-bottom-shown = Dolní panel zobrazený
+dim-text-on-announcement = Zbytek textu ztlumený
+dim-text-off-announcement = Celý text zobrazený naplno
 menu-fullscreen = &Celá obrazovka
 menu-focus-mode = Režim &bez rozptylování
 menu-format = &Formát
@@ -183,6 +185,7 @@ session-readout-timed = { $words ->
 statusbar-focus-exit = Ukončit režim bez rozptylování
 statusbar-focus-synopsis = Synopse
 statusbar-focus-comments = Komentáře
+statusbar-focus-dim-text = Ztlumit zbytek textu
 statusbar-focus-go-prev = Předchozí položka (Alt+šipka nahoru)
 statusbar-focus-go-next = Další položka (Alt+šipka dolů)
 
@@ -370,6 +373,20 @@ settings-highlight-scope-paragraph = Odstavec
 settings-highlight-scope-tip-none = Stránka zůstane čistá. Při psaní se nic nestínuje.
 settings-highlight-scope-tip-sentence = Podbarví větu, kterou píšete, aby vynikla mezi okolními.
 settings-highlight-scope-tip-paragraph = Podbarví celý odstavec, který píšete, abyste měli pasáž, na které pracujete, na očích.
+settings-dim-text = Ztlumit zbytek textu
+settings-dim-text-tip = Vše kromě toho, co píšete, se zobrazí slaběji, aby u toho váš pohled zůstal. Klávesa F8 tuto volbu zapíná a vypíná.
+settings-dim-scope = Ponechat naplno
+settings-dim-scope-sentence = Věta
+settings-dim-scope-paragraph = Odstavec
+settings-dim-scope-tip-sentence = Naplno zůstane jen věta, kterou píšete.
+settings-dim-scope-tip-paragraph = Naplno zůstane celý odstavec, který píšete.
+settings-dim-strength = Síla
+settings-dim-strength-light = Slabá
+settings-dim-strength-medium = Střední
+settings-dim-strength-strong = Silná
+settings-dim-strength-tip-light = Zbytek textu je jen zjemněný a dobře se čte.
+settings-dim-strength-tip-medium = Zbytek textu ustoupí do pozadí, ale přečtete ho i letmým pohledem.
+settings-dim-strength-tip-strong = Zbytek textu téměř zmizí.
 settings-group-tabs = Karty
 settings-tab-limit = Otevřené karty
 settings-tab-limit-one = Jedna
@@ -3129,6 +3146,8 @@ shortcut-name-edit-select-all = Vybrat vše
 
 titlebar-spellcheck-on = Kontrola pravopisu je zapnutá. Kliknutím ji vypnete (F7)
 titlebar-spellcheck-off = Kontrola pravopisu je vypnutá. Kliknutím ji znovu zapnete (F7)
+titlebar-dim-text-on = Zbytek textu je ztlumený. Kliknutím zobrazíte celý text naplno (F8)
+titlebar-dim-text-off = Kliknutím ztlumíte zbytek textu (F8)
 titlebar-distraction-free = Přejít do režimu bez rozptylování (F11)
 menu-spellcheck = &Kontrolovat pravopis
 menu-comments = Ko&mentáře
@@ -4377,6 +4396,7 @@ settings-margin-lane-surface-editor = Textový editor
 settings-margin-lane-surface-stream = Souvislé zobrazení
 settings-margin-lane-surface-search-preview = Náhled hledání
 menu-margin-lane = &Značky na okraji
+menu-dim-text = Ztl&umit zbytek textu
 
 status-preset-drafting = Psaní konceptu
 status-preset-passes = Revizní kola
@@ -4588,6 +4608,7 @@ dialog-filter-hunspell-dic = Slovník Hunspell (.dic)
 dialog-filter-export = Exportovaný soubor
 # Help ▸ Keyboard shortcuts / Settings ▸ Keymap / command palette.
 shortcut-name-view-margin-lane = Zobrazit nebo skrýt značky na okraji
+shortcut-name-view-dim-text = Zapnout nebo vypnout ztlumení zbytku textu
 
 ## The built-in distraction-free themes' names (distraction_free::theme).
 df-theme-paper = Papír

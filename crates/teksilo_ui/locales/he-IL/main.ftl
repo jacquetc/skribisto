@@ -41,6 +41,8 @@ side-end-hidden = החלונית השמאלית הוסתרה
 side-end-shown = החלונית השמאלית מוצגת
 side-bottom-hidden = החלונית התחתונה הוסתרה
 side-bottom-shown = החלונית התחתונה מוצגת
+dim-text-on-announcement = שאר הטקסט עומעם
+dim-text-off-announcement = כל הטקסט מוצג בעוצמה מלאה
 menu-fullscreen = מסך מלא (&F)
 menu-focus-mode = מצב ללא הסחות דעת (&D)
 menu-format = עיצוב (&O)
@@ -181,6 +183,7 @@ session-readout-timed = { $words ->
 statusbar-focus-exit = יציאה ממצב ללא הסחות דעת
 statusbar-focus-synopsis = תקציר
 statusbar-focus-comments = הערות
+statusbar-focus-dim-text = עמעום שאר הטקסט
 statusbar-focus-go-prev = הפריט הקודם (Alt+חץ למעלה)
 statusbar-focus-go-next = הפריט הבא (Alt+חץ למטה)
 
@@ -368,6 +371,20 @@ settings-highlight-scope-paragraph = פסקה
 settings-highlight-scope-tip-none = העמוד נשאר נקי. שום דבר לא מוצלל בזמן הכתיבה.
 settings-highlight-scope-tip-sentence = הצללת המשפט שבכתיבה, כך שיבלוט מהמשפטים שסביבו.
 settings-highlight-scope-tip-paragraph = הצללת כל הפסקה שבכתיבה, כדי שהקטע שעליו עובדים יישאר בעין.
+settings-dim-text = עמעום שאר הטקסט
+settings-dim-text-tip = הצגת כל הטקסט מלבד מה שכותבים בעוצמה חלשה יותר, כדי שהעין תישאר עליו. F8 מפעיל ומכבה את האפשרות.
+settings-dim-scope = ללא עמעום
+settings-dim-scope-sentence = משפט
+settings-dim-scope-paragraph = פסקה
+settings-dim-scope-tip-sentence = רק המשפט שבכתיבה נשאר בעוצמה מלאה.
+settings-dim-scope-tip-paragraph = כל הפסקה שבכתיבה נשארת בעוצמה מלאה.
+settings-dim-strength = עוצמה
+settings-dim-strength-light = קלה
+settings-dim-strength-medium = בינונית
+settings-dim-strength-strong = חזקה
+settings-dim-strength-tip-light = שאר הטקסט רק מתרכך, ונשאר קל לקריאה.
+settings-dim-strength-tip-medium = שאר הטקסט נסוג לרקע, ועדיין אפשר לקרוא אותו במבט חטוף.
+settings-dim-strength-tip-strong = שאר הטקסט כמעט נעלם.
 settings-group-tabs = לשוניות
 settings-tab-limit = לשוניות שנשארות פתוחות
 settings-tab-limit-one = אחת
@@ -3161,6 +3178,8 @@ shortcut-name-edit-select-all = בחירת הכול
 
 titlebar-spellcheck-on = בדיקת האיות פועלת. לחיצה להפסקת הבדיקה (F7)
 titlebar-spellcheck-off = בדיקת האיות כבויה. לחיצה לחידוש הבדיקה (F7)
+titlebar-dim-text-on = שאר הטקסט מעומעם. לחיצה להצגת כל הטקסט בעוצמה מלאה (F8)
+titlebar-dim-text-off = לחיצה לעמעום שאר הטקסט (F8)
 titlebar-distraction-free = מעבר למצב ללא הסחות דעת (F11)
 menu-spellcheck = בדיקת איות (&C)
 menu-comments = הערות (&M)
@@ -4349,6 +4368,7 @@ settings-margin-lane-surface-editor = עורך הטקסט
 settings-margin-lane-surface-stream = רצפים
 settings-margin-lane-surface-search-preview = התצוגה המקדימה של החיפוש
 menu-margin-lane = סימני שוליים (&M)
+menu-dim-text = עמעום שאר הטקסט (&T)
 
 status-preset-drafting = כתיבת טיוטה
 status-preset-passes = סבבי עריכה
@@ -4557,6 +4577,7 @@ dialog-filter-hunspell-dic = מילון Hunspell ‏(‎.dic)
 dialog-filter-export = קובץ מיוצא
 # Help ▸ Keyboard shortcuts / Settings ▸ Keymap / command palette.
 shortcut-name-view-margin-lane = הצגה או הסתרה של סימני השוליים
+shortcut-name-view-dim-text = הפעלה או כיבוי של עמעום שאר הטקסט
 
 ## The built-in distraction-free themes' names (distraction_free::theme).
 df-theme-paper = נייר

@@ -77,6 +77,10 @@ fn fixture_with_column(column: f32) -> Fixture {
     let app_ctx = Rc::new(AppContext::new());
     let ids = AppIds::new();
     let docs = OpenDocsStore::new(app_ctx.clone());
+    // Built before the editors so they can be handed the settings-backed fade, as `App::build`
+    // hands it: the mode reads that one preference rather than owning one of its own.
+    let store = temp_store();
+    let settings = crate::settings::SettingsViewModel::new(&store);
     let editors = EditorsViewModel::new(
         app_ctx.clone(),
         Signal::new(NORMAL_COLUMN),
@@ -87,6 +91,7 @@ fn fixture_with_column(column: f32) -> Fixture {
         typography(),
         crate::shared::TypewriterSettings::off(),
         crate::shared::CaretHighlightSettings::off(),
+        crate::shared::CaretDimSettings::from_settings(&settings),
         crate::settings::EditorViewMemory::detached(false),
         crate::settings::CorkboardDefaults::detached(),
         ids.clone(),
@@ -143,8 +148,6 @@ fn fixture_with_column(column: f32) -> Fixture {
         GoToViewModel::new(app_ctx.clone(), ids.clone()),
         ids,
     );
-    let store = temp_store();
-    let settings = crate::settings::SettingsViewModel::new(&store);
     let stats = StatsModel::new(
         docs.clone(),
         editors.active_item(),
@@ -1109,6 +1112,131 @@ fn the_strip_shows_and_hides_comments_through_the_shared_setting() {
     visible.set(false);
     tree.layout(SizeProposal::exact(1200.0, 800.0));
     assert_eq!(comments_toggle_state(&mut tree), Some(false));
+}
+
+/// The strip's fade toggle, as the accessibility layer sees it: its pressed state, or `None`
+/// when the strip carries no such control.
+fn dim_toggle_state(tree: &mut WidgetTree) -> Option<bool> {
+    let name = tr!(statusbar_focus_dim_text()).resolve_now();
+    tree.sync_accessibility()
+        .nodes
+        .iter()
+        .find(|(_, n)| n.label() == Some(name.as_str()))
+        .map(|(_, n)| n.toggled() == Some(teksilo::core::accesskit::Toggled::True))
+}
+
+/// **The fade can be turned on and off from inside the mode.** The title bar's toggle and the
+/// View menu are parked with the rest of the chrome, so the strip carries one; it is the one
+/// shared setting, so the page the writer comes back to agrees.
+#[test]
+fn the_strip_toggles_the_fade_through_the_shared_setting() {
+    let fx = fixture();
+    fx.editors.active_item().set(Some(1));
+    fx.focus.active_signal().set(true);
+    let mut tree = mount(&fx);
+
+    let enabled = fx.settings.dim_enabled();
+    enabled.set(true);
+    tree.layout(SizeProposal::exact(1200.0, 800.0));
+    assert_eq!(
+        dim_toggle_state(&mut tree),
+        Some(true),
+        "no fade toggle on the strip, or it does not read the shared setting"
+    );
+
+    enabled.set(false);
+    tree.layout(SizeProposal::exact(1200.0, 800.0));
+    assert_eq!(dim_toggle_state(&mut tree), Some(false));
+}
+
+/// **The whole chain inside the mode, ending in what is painted.** The setting reaches the
+/// surface's own tab through the editors' shared bundle, and once the writer clicks into the
+/// prose, the sentence the caret is not in is drawn faded. Turning the setting off brings it
+/// back without leaving the mode.
+#[test]
+fn the_mode_fades_the_text_around_the_caret() {
+    let fx = fixture();
+    {
+        // The whole text set here rather than appended: a `mocks` build seeds item 1 with
+        // fabricated prose of its own, and the glyph counts below must not depend on it.
+        let doc = fx.docs.peek(1).expect("seeded");
+        let prose = &doc.main.as_ref().expect("a Scene has prose").doc;
+        prose
+            .set_plain_text(
+                "The rain kept on for three days and then it stopped. \
+                 Then the wind came, and the river rose.",
+            )
+            .unwrap();
+    }
+    fx.settings
+        .dim_scope()
+        .set(crate::shared::DimScope::Sentence);
+    fx.editors.active_item().set(Some(1));
+    fx.focus.active_signal().set(true);
+
+    let mut tree = mount(&fx);
+    let settle = |tree: &mut WidgetTree| {
+        for _ in 0..4 {
+            tree.layout(SizeProposal::exact(1200.0, 800.0));
+        }
+        tree.tick_animations(std::time::Duration::from_millis(400));
+        tree.layout(SizeProposal::exact(1200.0, 800.0));
+    };
+    settle(&mut tree);
+
+    // Click at the very start of the prose: the caret lands in the first sentence.
+    let column = all_editor_rects(&tree)
+        .into_iter()
+        .next()
+        .expect("the mode mounts one writing column");
+    let _ = tree.render();
+    let at = teksilo::canvas::Point::new(column.x + 4.0, column.y + 10.0);
+    tree.dispatch_event(teksilo::core::WidgetEvent::pointer_down(
+        at,
+        teksilo::core::PointerButton::Primary,
+        teksilo::core::Modifiers::NONE,
+    ));
+    tree.dispatch_event(teksilo::core::WidgetEvent::pointer_up(
+        at,
+        teksilo::core::PointerButton::Primary,
+        teksilo::core::Modifiers::NONE,
+    ));
+    settle(&mut tree);
+    assert!(tree.focused().is_some(), "the click must focus the editor");
+
+    // The colours the page is painted in with the fade off. The fade mixes ink toward the
+    // theme's page, so a faded glyph is one drawn in a colour that is none of these; that holds
+    // on any theme, which keeps this test about the wiring rather than about one palette.
+    let colours = |tree: &mut WidgetTree| -> Vec<[f32; 4]> {
+        tree.render().glyphs.iter().map(|g| g.color).collect()
+    };
+    let plain = colours(&mut tree);
+    let unseen = |painted: &[[f32; 4]]| {
+        painted
+            .iter()
+            .filter(|c| {
+                !plain
+                    .iter()
+                    .any(|p| p.iter().zip(c.iter()).all(|(a, b)| (a - b).abs() < 1e-4))
+            })
+            .count()
+    };
+
+    fx.settings.dim_enabled().set(true);
+    settle(&mut tree);
+    assert_eq!(
+        unseen(&colours(&mut tree)),
+        "Thenthewindcame,andtheriverrose.".len(),
+        "exactly the second sentence is faded"
+    );
+
+    fx.settings.dim_enabled().set(false);
+    settle(&mut tree);
+    assert_eq!(
+        unseen(&colours(&mut tree)),
+        0,
+        "turned off from Settings, nothing fades"
+    );
 }
 
 /// The window the way `shell::windows` builds it: the project shell behind a

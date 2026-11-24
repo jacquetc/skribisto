@@ -92,6 +92,15 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
             .intent("view.margin_lane")
             .shortcut("view.margin_lane"),
     )
+    // The fade around the caret. Reflect-only, like the margin lane above it: the row
+    // mirrors the setting and the intent writes it, so F8, the title bar, the distraction-free
+    // strip, this row and Settings ▸ Editor ▸ Editor Behavior are one switch.
+    .item(
+        MenuEntry::new(tr!(menu_dim_text()))
+            .checked(parts.dim_text_menu.clone())
+            .intent("view.dim_text")
+            .shortcut("view.dim_text"),
+    )
     .separator()
     // Increment 1 of distraction-free: plain fullscreen,
     // not the collapsed-chrome mode itself (that is a

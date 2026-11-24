@@ -335,6 +335,14 @@ pub struct ContentTab {
     /// The ambient caret band, shared live from Settings — how much text around the caret
     /// is shaded, and in what colour. Every writing surface this tab builds reads it.
     pub caret_highlight: crate::shared::CaretHighlightSettings,
+    /// The fade around the caret, shared live from Settings: whether the text outside the
+    /// caret's sentence or paragraph is drawn faded, and how far. Every writing surface this
+    /// tab builds reads it, through the same [`CaretBand`](crate::shared::CaretBand) as the band.
+    pub caret_dim: crate::shared::CaretDimSettings,
+    /// Every editor this tab builds is one part of this page for the fade: the scene's text,
+    /// its synopsis and notes, a stream's rows, the corkboard's cards. While the writer is in
+    /// one of them, the others fade whole, as the rest of the text should.
+    caret_page: teksilo::widgets::rich_text::caret_dim::CaretDimPage,
     /// The language of this tab's document, resolved once at build from the same
     /// `effective_language` the spell-checker reads. Only the band's sentence scope needs it.
     caret_locale: Option<String>,
@@ -551,8 +559,10 @@ pub fn tab_for(
         // A standalone tab is never a real project window; the tab tests that
         // exercise pinning build a `ContentTab` directly and pass a live one.
         crate::shared::TypewriterSettings::off(),
-        // Likewise for the caret band: no Settings behind a standalone tab, so it draws none.
+        // Likewise for the caret band and the fade: no Settings behind a standalone tab, so it
+        // draws neither.
         crate::shared::CaretHighlightSettings::off(),
+        crate::shared::CaretDimSettings::off(),
         view_memory,
         crate::settings::CorkboardDefaults::detached(),
         crate::settings::TreeExpansionViewModel::new(
@@ -790,6 +800,7 @@ impl ContentTab {
         typography: EditorTypographySet,
         typewriter: crate::shared::TypewriterSettings,
         caret_highlight: crate::shared::CaretHighlightSettings,
+        caret_dim: crate::shared::CaretDimSettings,
         view_memory: crate::settings::EditorViewMemory,
         corkboard_defaults: crate::settings::CorkboardDefaults,
         tree_expansion: crate::settings::TreeExpansionViewModel,
@@ -837,32 +848,38 @@ impl ContentTab {
         // Read here, while `docs` is still in hand — `stream` takes it below. Resolved once
         // per tab build, exactly as the typography and the spell dictionaries are.
         let caret_locale = docs.effective_language(open_doc.item_id).first().cloned();
+        // One page for every editor the tab builds, the corkboard's cards included.
+        let caret_page = teksilo::widgets::rich_text::caret_dim::CaretDimPage::new();
         // The Corkboard exists for exactly the folder containers a stream does. Built
         // before `stream` consumes `app_ctx`.
-        let corkboard = crate::models::StreamLevel::for_container(
-            &open_doc.role,
-            &open_doc.sub_role,
-        )
-        .map(|_| {
-            let cd = &corkboard_defaults;
-            crate::corkboard::CorkboardViewModel::new(
-                app_ctx.clone(),
-                ids.clone(),
-                docs.clone(),
-                open_doc.item_id,
-                cd.nested.clone(),
-                cd.card_size.clone(),
-                cd.show_word_count.clone(),
-                cd.show_card_numbers.clone(),
-                cd.modal_size.clone(),
-                cd.counting_method.clone(),
-                typography.corkboard.clone(),
-                crate::shared::CaretBand::new(caret_highlight.clone(), caret_locale.clone()),
-                writing_games.clone(),
-                format.clone(),
-                tags.clone(),
-            )
-        });
+        let corkboard =
+            crate::models::StreamLevel::for_container(&open_doc.role, &open_doc.sub_role).map(
+                |_| {
+                    let cd = &corkboard_defaults;
+                    crate::corkboard::CorkboardViewModel::new(
+                        app_ctx.clone(),
+                        ids.clone(),
+                        docs.clone(),
+                        open_doc.item_id,
+                        cd.nested.clone(),
+                        cd.card_size.clone(),
+                        cd.show_word_count.clone(),
+                        cd.show_card_numbers.clone(),
+                        cd.modal_size.clone(),
+                        cd.counting_method.clone(),
+                        typography.corkboard.clone(),
+                        crate::shared::CaretBand::new(
+                            caret_highlight.clone(),
+                            caret_dim.clone(),
+                            caret_locale.clone(),
+                        )
+                        .on_page(caret_page.clone()),
+                        writing_games.clone(),
+                        format.clone(),
+                        tags.clone(),
+                    )
+                },
+            );
         // The Overview gates on `overview_capable`, which is deliberately *not* the
         // stream's gate — a notes folder gets a table but no stream. Built before
         // `stream` consumes `app_ctx`. It reuses the corkboard's counting-method setting
@@ -1077,6 +1094,8 @@ impl ContentTab {
             typography,
             typewriter,
             caret_highlight,
+            caret_dim,
+            caret_page,
             caret_locale,
             distraction_free,
             distraction_free_width,
@@ -1479,9 +1498,14 @@ impl ContentTab {
         self.open_doc.flush(stack)
     }
 
-    /// This tab's caret band: the shared preference plus this document's language.
+    /// This tab's caret band and fade: the shared preferences plus this document's language.
     pub fn caret_band(&self) -> crate::shared::CaretBand {
-        crate::shared::CaretBand::new(self.caret_highlight.clone(), self.caret_locale.clone())
+        crate::shared::CaretBand::new(
+            self.caret_highlight.clone(),
+            self.caret_dim.clone(),
+            self.caret_locale.clone(),
+        )
+        .on_page(self.caret_page.clone())
     }
 
     /// The typography bundle for this tab's **main** prose editor: the

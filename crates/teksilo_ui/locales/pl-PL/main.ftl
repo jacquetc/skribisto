@@ -41,6 +41,8 @@ side-end-hidden = Prawy panel ukryty
 side-end-shown = Prawy panel widoczny
 side-bottom-hidden = Dolny panel ukryty
 side-bottom-shown = Dolny panel widoczny
+dim-text-on-announcement = Reszta tekstu przygaszona
+dim-text-off-announcement = Cały tekst w pełni wyraźny
 menu-fullscreen = P&ełny ekran
 menu-focus-mode = &Tryb bez rozpraszania
 menu-format = &Format
@@ -191,6 +193,7 @@ session-readout-timed = { $words ->
 statusbar-focus-exit = Wyjdź z trybu bez rozpraszania
 statusbar-focus-synopsis = Streszczenie
 statusbar-focus-comments = Komentarze
+statusbar-focus-dim-text = Przygaś resztę tekstu
 statusbar-focus-go-prev = Poprzedni element (Alt+Strzałka w górę)
 statusbar-focus-go-next = Następny element (Alt+Strzałka w dół)
 
@@ -378,6 +381,20 @@ settings-highlight-scope-paragraph = Akapit
 settings-highlight-scope-tip-none = Strona pozostaje czysta. Podczas pisania nic nie jest cieniowane.
 settings-highlight-scope-tip-sentence = Cieniuje pisane zdanie, aby wyróżniało się spośród sąsiednich.
 settings-highlight-scope-tip-paragraph = Cieniuje cały pisany akapit, aby fragment, nad którym pracujesz, pozostawał w polu widzenia.
+settings-dim-text = Przygaś resztę tekstu
+settings-dim-text-tip = Wyświetla mniej wyraźnie wszystko poza tym, co piszesz, aby wzrok na tym pozostawał. F8 włącza i wyłącza tę opcję.
+settings-dim-scope = Co pozostaje wyraźne
+settings-dim-scope-sentence = Zdanie
+settings-dim-scope-paragraph = Akapit
+settings-dim-scope-tip-sentence = Tylko pisane zdanie pozostaje w pełni wyraźne.
+settings-dim-scope-tip-paragraph = Cały pisany akapit pozostaje w pełni wyraźny.
+settings-dim-strength = Siła
+settings-dim-strength-light = Słaba
+settings-dim-strength-medium = Średnia
+settings-dim-strength-strong = Mocna
+settings-dim-strength-tip-light = Reszta tekstu jest tylko złagodzona i nadal łatwo się ją czyta.
+settings-dim-strength-tip-medium = Reszta tekstu schodzi na dalszy plan, ale wciąż da się ją odczytać jednym spojrzeniem.
+settings-dim-strength-tip-strong = Reszta tekstu prawie znika.
 settings-group-tabs = Karty
 settings-tab-limit = Otwarte karty
 settings-tab-limit-one = Jedna
@@ -3465,6 +3482,8 @@ shortcut-name-edit-select-all = Zaznacz wszystko
 
 titlebar-spellcheck-on = Sprawdzanie pisowni jest włączone. Kliknij, aby przestać sprawdzać (F7)
 titlebar-spellcheck-off = Sprawdzanie pisowni jest wyłączone. Kliknij, aby sprawdzić ponownie (F7)
+titlebar-dim-text-on = Reszta tekstu jest przygaszona. Kliknij, aby pokazać cały tekst w pełni wyraźnie (F8)
+titlebar-dim-text-off = Kliknij, aby przygasić resztę tekstu (F8)
 titlebar-distraction-free = Przejdź do trybu bez rozpraszania (F11)
 menu-spellcheck = &Sprawdź pisownię
 menu-comments = &Komentarze
@@ -4759,6 +4778,7 @@ settings-margin-lane-surface-editor = Edytor tekstu
 settings-margin-lane-surface-stream = Strumienie
 settings-margin-lane-surface-search-preview = Podgląd wyszukiwania
 menu-margin-lane = &Znaczniki marginesu
+menu-dim-text = Przy&gaś resztę tekstu
 
 status-preset-drafting = Szkicowanie
 status-preset-passes = Kolejne redakcje
@@ -4989,6 +5009,7 @@ dialog-filter-hunspell-dic = Słownik Hunspell (.dic)
 dialog-filter-export = Wyeksportowany plik
 # Help ▸ Keyboard shortcuts / Settings ▸ Keymap / command palette.
 shortcut-name-view-margin-lane = Pokaż lub ukryj znaczniki marginesu
+shortcut-name-view-dim-text = Przełącz przygaszanie reszty tekstu
 
 ## The built-in distraction-free themes' names (distraction_free::theme).
 df-theme-paper = Papier
