@@ -16,6 +16,7 @@ Description:
 - "In the margin marks, the dialogue texture now follows the text when its lines wrap differently, after the window is resized for example. A paragraph's bar could stay a line away from its paragraph until the next edit to that scene"
 - "Full Book, Full Part, Full Chapter and Full Synopsis now show their outline: each chapter sits further in than its part, and each scene further in than its chapter. Choose how far in Settings ▸ Editor ▸ Editor Behavior ▸ Indent by level, from None to Large. With a screen reader, each title is a heading one level below the one it belongs to"
 - "Full Book and Full Part, and their Full Synopsis, can now show only their outline: choose Show down to chapters or Show parts only above the text. A banner says what is hidden, and adding, moving, merging and splitting wait until everything is shown again. Each tab remembers its choice"
+- "Turning Read as exported on or off at the top of Full Book, Full Part or Full Chapter now leaves the page where it was. It used to scroll down to the first part, chapter or scene, out of sight of the switch you had just used"
 ---
 Version: 3.4.1
 Date: 2026-11-23

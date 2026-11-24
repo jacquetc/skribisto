@@ -1549,7 +1549,9 @@ struct PassageAnchor(Rc<RefCell<Option<Anchored>>>);
 struct Anchored {
     /// The row at the top of the page, then every row after it, in page order.
     candidates: Vec<u64>,
-    /// How far into the first one the page had scrolled.
+    /// How far into the first one the page had scrolled. Negative only when the page
+    /// had stopped in the gap between two rows; never at the top of the page, which
+    /// notes nothing at all (see [`PassageAnchor::note`]).
     offset: f32,
     since: std::time::Instant,
     /// Consecutive reports that found the page already in place.
@@ -1561,6 +1563,14 @@ struct Anchored {
 
 impl PassageAnchor {
     /// Note the row at the top of the page, scrolled `scroll_y` down.
+    ///
+    /// **Nothing is noted while the page's head is on screen**: the bar, the container's
+    /// header and anything above the first row. That is where every switch lives, and
+    /// the writer who just used one is looking at it; the page stays exactly where it is,
+    /// whatever appears or goes below. Noting the first row there and putting it back
+    /// would scroll the page by whatever changed above that row (front matter a reading
+    /// adds, an interlude scene a filter hides or shows), and with it the switch out of
+    /// sight.
     fn note(&self, extents: &RowExtents, scroll_y: f32) {
         let mut placed: Vec<(u64, f32, f32)> = extents
             .items()
@@ -1568,12 +1578,16 @@ impl PassageAnchor {
             .filter_map(|id| extents.placement(id).map(|(top, h)| (id, top, h)))
             .collect();
         placed.sort_by(|a, b| a.1.total_cmp(&b.1));
+        if placed.first().is_some_and(|(_, top, _)| *top > scroll_y) {
+            *self.0.borrow_mut() = None;
+            return;
+        }
         let next = placed
             .iter()
             .position(|(_, top, h)| top + h > scroll_y)
             .map(|first| Anchored {
                 candidates: placed[first..].iter().map(|p| p.0).collect(),
-                offset: (scroll_y - placed[first].1).max(0.0),
+                offset: scroll_y - placed[first].1,
                 since: std::time::Instant::now(),
                 settled: 0,
                 placed_at: scroll_y,
@@ -1619,10 +1633,12 @@ impl PassageAnchor {
                 *slot = None;
                 return;
             }
+            // Clamped here, before it is compared, so a page that is already at its top
+            // reads as in place rather than as a target it can never reach.
             let target = a.candidates.iter().enumerate().find_map(|(i, id)| {
                 extents
                     .placement(*id)
-                    .map(|(top, _)| if i == 0 { top + a.offset } else { top })
+                    .map(|(top, _)| if i == 0 { top + a.offset } else { top }.max(0.0))
             });
             match target {
                 Some(t) if (scroll.get() - t).abs() < 1.0 => {
@@ -1631,8 +1647,8 @@ impl PassageAnchor {
                 }
                 Some(t) => {
                     a.settled = 0;
-                    a.placed_at = t.max(0.0);
-                    Some(a.placed_at)
+                    a.placed_at = t;
+                    Some(t)
                 }
                 None => None,
             }
@@ -1756,6 +1772,43 @@ mod tests {
         extents.report(2, 600.0, 500.0);
         anchor.restore(&extents, &scroll, 900.0);
         assert_eq!(scroll.get(), 700.0, "row 2, 100 px in");
+    }
+
+    /// **A switch made at the top of the page leaves it at the top**, whatever the
+    /// switch changes below: the bar and the header the writer just used stay in sight.
+    /// Noting the first row there used to put the page onto it, out of sight of both.
+    #[test]
+    fn a_switch_at_the_top_of_the_page_leaves_it_at_the_top() {
+        // Rows that go: the levels hidden take the second row away.
+        let extents = RowExtents::new();
+        extents.report(1, 120.0, 300.0);
+        extents.report(2, 420.0, 500.0);
+        let scroll = Signal::new(0.0);
+        let anchor = PassageAnchor::default();
+        anchor.note_within(&extents, scroll.get(), |_| Vec::new());
+        extents.forget(2);
+        anchor.restore(&extents, &scroll, 5000.0);
+        assert_eq!(
+            scroll.get(),
+            0.0,
+            "rows going below leave the page where it was"
+        );
+
+        // The first row itself goes (a prologue chapter beside the parts, under "Show
+        // parts only"), with nothing above it to hand over to.
+        let anchor = PassageAnchor::default();
+        anchor.note_within(&extents, scroll.get(), |_| Vec::new());
+        extents.forget(1);
+        extents.report(3, 120.0, 400.0);
+        anchor.restore(&extents, &scroll, 5000.0);
+        assert_eq!(scroll.get(), 0.0, "the first row going leaves it too");
+
+        // Something appears above the first row (front matter a reading prints).
+        let anchor = PassageAnchor::default();
+        anchor.note(&extents, scroll.get());
+        extents.report(3, 150.0, 400.0);
+        anchor.restore(&extents, &scroll, 5000.0);
+        assert_eq!(scroll.get(), 0.0, "and so does something growing above it");
     }
 
     /// Hiding the passage being read lands the page on the row it sat under (the
