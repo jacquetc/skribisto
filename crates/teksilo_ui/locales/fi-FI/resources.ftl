@@ -220,7 +220,7 @@ resources-export-failed = { $count ->
    *[other] { $count } tiedostoa ei voitu kopioida: { $names }
 }
 
-## Suurten tiedostojen asetus (Editorin toiminta)
+## Suurten tiedostojen asetus (Muokkain ▸ Kuvat ja tiedostot)
 
 settings-resources-large-file = Yli 10 Mt:n tiedostot
 settings-resources-large-ask = Kysy joka kerta

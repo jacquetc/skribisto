@@ -207,7 +207,7 @@ resources-export-failed = { $count ->
    *[other] { $count }件のファイルをコピーできませんでした: { $names }
 }
 
-## 大きなファイルの設定 (エディターの動作)
+## 大きなファイルの設定 (エディター ▸ 画像とファイル)
 
 settings-resources-large-file = 10 MB を超えるファイル
 settings-resources-large-ask = 毎回確認

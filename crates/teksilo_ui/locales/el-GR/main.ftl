@@ -239,7 +239,10 @@ settings-page-notifications = Ειδοποιήσεις
 settings-page-scene = Σκηνή
 settings-page-synopsis = Σύνοψη
 settings-page-notes = Σημειώσεις
-settings-page-editor-behavior = Συμπεριφορά επεξεργαστή
+settings-page-page-layout = Διάταξη σελίδας
+settings-page-focus = Εστίαση
+settings-page-images-files = Εικόνες και αρχεία
+settings-page-tabs-views = Καρτέλες και προβολές
 settings-page-goals = Στόχοι και πλήθος λέξεων
 settings-page-games = Παιχνίδια γραφής
 settings-page-corkboard = Φελλοπίνακας
@@ -252,7 +255,7 @@ settings-page-keymap = Συντομεύσεις πληκτρολογίου
 
 settings-keymap-filter = Φιλτράρισμα συντομεύσεων
 
-settings-desc-sec-appearance-behaviour = Η εμφάνιση της ίδιας της εφαρμογής και τι κάνει κατά την εκκίνηση.
+settings-desc-sec-appearance-behaviour = Η εμφάνιση της ίδιας της εφαρμογής, τι κάνει κατά την εκκίνηση και πώς χειρίζεται τις καρτέλες.
 settings-desc-sec-editor = Η επιφάνεια γραφής: η εμφάνισή της και τι κάνει καθώς πληκτρολογείτε.
 settings-desc-sec-spelling = Ο ορθογραφικός έλεγχος και τα λεξικά του.
 settings-desc-sec-backup = Πώς η δουλειά σας γράφεται στον δίσκο και ποια αντίγραφα διατηρούνται.
@@ -268,7 +271,10 @@ settings-desc-notes = Η στοιχειοθεσία των σημειώσεων,
 settings-desc-corkboard = Μέγεθος καρτών, τι δείχνει μια κάρτα και πώς τις τακτοποιεί ο πίνακας.
 settings-desc-distraction-free = Τυπογραφία, πλάτος στήλης και λωρίδα ελέγχου για τη γραφή σε πλήρη οθόνη.
 settings-desc-distraction-free-themes = Η βιβλιοθήκη θεμάτων για τη γραφή σε πλήρη οθόνη: τα ενσωματωμένα και τα δικά σας.
-settings-desc-editor-behavior = Πλάτος κειμένου, θέση σύνοψης, κύλιση γραφομηχανής και τονισμός γύρω από τον δρομέα.
+settings-desc-page-layout = Πλάτος κειμένου, εσοχή ανά επίπεδο και θέση της σύνοψης και των μότο.
+settings-desc-focus = Κύλιση γραφομηχανής, τονισμός γύρω από τον δρομέα και εξασθένηση του υπόλοιπου κειμένου.
+settings-desc-images-files = Τι γίνεται με τις μεγάλες εικόνες που εισάγονται και τα μεγάλα αρχεία που επισυνάπτονται.
+settings-desc-tabs-views = Πόσες καρτέλες κρατά ανοιχτές ο επεξεργαστής και σε ποια προβολή ανοίγει ένας περιέκτης.
 settings-desc-punctuation = Το τυπογραφικό ύφος από το οποίο ξεκινούν τα νέα έργα. Κάθε έργο το ακολουθεί, εκτός αν ορίσει το δικό του.
 settings-desc-goals = Στόχοι λέξεων και χαρακτήρων και ο τρόπος καταμέτρησης των λέξεων.
 settings-desc-games = Περιορισμοί που θέτετε στον εαυτό σας κατά τη συγγραφή του πρώτου σχεδίου, όπως το «Πάντα μπροστά».
@@ -301,7 +307,10 @@ settings-desc-work-punctuation = Τα εισαγωγικά, οι παύλες κ
 
 settings-group-typography = Τυπογραφία
 settings-group-writing-column = Στήλη γραφής
-settings-group-writing-view = Προβολή γραφής
+settings-group-around-the-text = Γύρω από το κείμενο
+settings-group-scrolling = Κύλιση
+settings-group-highlight-fade = Τονισμός και εξασθένηση
+settings-group-images = Εικόνες
 
 settings-group-distraction-free-strip = Λωρίδα ελέγχου
 settings-group-theme = Θέμα

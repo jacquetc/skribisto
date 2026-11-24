@@ -233,7 +233,7 @@ resources-export-failed = { $count ->
    *[other] { $count } de fișiere nu au putut fi copiate: { $names }
 }
 
-## Preferința pentru fișierele mari (Comportamentul editorului)
+## Preferința pentru fișierele mari (Editor ▸ Imagini și fișiere)
 
 settings-resources-large-file = Fișiere de peste 10 MB
 settings-resources-large-ask = Întreabă de fiecare dată

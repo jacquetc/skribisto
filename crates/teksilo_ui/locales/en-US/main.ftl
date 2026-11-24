@@ -285,7 +285,10 @@ settings-page-notifications = Notifications
 settings-page-scene = Scene
 settings-page-synopsis = Synopsis
 settings-page-notes = Notes
-settings-page-editor-behavior = Editor Behavior
+settings-page-page-layout = Page layout
+settings-page-focus = Focus
+settings-page-images-files = Images & files
+settings-page-tabs-views = Tabs & views
 settings-page-goals = Goals & Word Count
 settings-page-games = Writing games
 settings-page-corkboard = Corkboard
@@ -302,7 +305,7 @@ settings-keymap-filter = Filter shortcuts
 # One line per page, shown under that page's link on its parent's page and,
 # for a parent, under its own title. Keep them to one line: they describe what
 # the page holds, not how to use it.
-settings-desc-sec-appearance-behaviour = How the application itself looks, and what it does when it starts.
+settings-desc-sec-appearance-behaviour = How the application itself looks, what it does when it starts, and how it handles tabs.
 settings-desc-sec-editor = The writing surface: how it looks, and what it does as you type.
 settings-desc-sec-spelling = Spell-checking, and the dictionaries behind it.
 settings-desc-sec-backup = How your work reaches the disk, and what copies are kept.
@@ -318,7 +321,10 @@ settings-desc-notes = How notes are set, independently of the manuscript.
 settings-desc-corkboard = Card size, what a card shows, and how the board arranges them.
 settings-desc-distraction-free = Typography, column width and control strip for full-screen writing.
 settings-desc-distraction-free-themes = The theme library for full-screen writing: the shipped ones and your own.
-settings-desc-editor-behavior = Text width, synopsis position, typewriter scrolling and the caret highlight.
+settings-desc-page-layout = Text width, indent by level, and where the synopsis and epigraphs go.
+settings-desc-focus = Typewriter scrolling, the highlight around the caret, and fading the rest of the text.
+settings-desc-images-files = What happens to large images you insert and large files you attach.
+settings-desc-tabs-views = How many tabs the editor keeps open, and which view a container opens on.
 settings-desc-punctuation = The typographic house style new projects start from. Every project follows this unless it sets its own.
 settings-desc-goals = Word and character targets, and how words are counted.
 settings-desc-games = Constraints you set yourself while drafting, such as Always forward.
@@ -352,7 +358,10 @@ settings-desc-work-punctuation = The quotes, dashes and spacing this project's p
 ## Settings window: fields
 settings-group-typography = Typography
 settings-group-writing-column = Writing column
-settings-group-writing-view = Writing view
+settings-group-around-the-text = Around the text
+settings-group-scrolling = Scrolling
+settings-group-highlight-fade = Highlight and fade
+settings-group-images = Images
 # The distraction-free control strip's optional items (Exit is never optional).
 settings-group-distraction-free-strip = Control strip
 settings-group-theme = Theme

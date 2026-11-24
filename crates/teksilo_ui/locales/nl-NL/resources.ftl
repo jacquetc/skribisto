@@ -220,7 +220,7 @@ resources-export-failed = { $count ->
    *[other] { $count } bestanden konden niet worden gekopieerd: { $names }
 }
 
-## De voorkeur voor grote bestanden (Gedrag van de editor)
+## De voorkeur voor grote bestanden (Editor ▸ Afbeeldingen en bestanden)
 
 settings-resources-large-file = Bestanden boven 10 MB
 settings-resources-large-ask = Elke keer vragen

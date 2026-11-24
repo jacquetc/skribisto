@@ -2245,7 +2245,7 @@ impl Widget for App {
             });
         }
         // ── The fade around the caret ────────────────────────────────────────
-        // One setting, five surfaces (Settings ▸ Editor ▸ Editor Behavior, F8, View ▸ Fade
+        // One setting, five surfaces (Settings ▸ Editor ▸ Focus, F8, View ▸ Fade
         // the rest of the text, the title-bar toggle, the distraction-free strip). The
         // editors read the store-backed signal directly, through `CaretDimSettings`; only
         // the two surfaces built outside `App` need this plain mirror, pushed one way.

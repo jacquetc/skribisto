@@ -63,11 +63,26 @@ pub(crate) enum Pane {
     SceneTypography,
     SynopsisTypography,
     NotesTypography,
-    EditorBehavior,
+    /// Editor ▸ Page layout: the writing column's width, the full views' indent, and
+    /// the synopsis and epigraphs around the text. With [`Pane::Focus`],
+    /// [`Pane::ImagesFiles`] and [`Pane::TabsViews`] it replaced the one Editor
+    /// Behavior page, whose "Writing view" heading had come to hold the focus aids and
+    /// an image-insert policy beside the synopsis position.
+    PageLayout,
+    /// Editor ▸ Focus: typewriter scrolling, the highlight around the caret, and the
+    /// fade over the rest of the text.
+    Focus,
+    /// Editor ▸ Images & files: the answers behind the image-insert prompt's and the
+    /// Resources dock's "Don't ask again", and the way to change them.
+    ImagesFiles,
+    /// Appearance & Behavior ▸ Tabs & views: the tab limit and the container-view
+    /// memory. About how the window manages what is open, not about the writing
+    /// surface, hence not under Editor.
+    TabsViews,
     Goals,
     /// Editor ▸ Writing games — the self-imposed drafting constraints
-    /// ("Always forward"). Its own page rather than a corner of Editor
-    /// Behavior: the switch at the top of it is per-session state, not a
+    /// ("Always forward"). Its own page rather than a corner of the page-layout
+    /// or focus pages: the switch at the top of it is per-session state, not a
     /// setting, which is a distinction that needs room to be explained.
     Games,
     MarginLane,
@@ -158,7 +173,10 @@ impl Pane {
             Pane::SceneTypography => "scene-typography",
             Pane::SynopsisTypography => "synopsis-typography",
             Pane::NotesTypography => "notes-typography",
-            Pane::EditorBehavior => "editor-behavior",
+            Pane::PageLayout => "page-layout",
+            Pane::Focus => "focus",
+            Pane::ImagesFiles => "images-files",
+            Pane::TabsViews => "tabs-views",
             Pane::Goals => "goals",
             Pane::Games => "games",
             Pane::MarginLane => "margin_lane",
@@ -203,7 +221,10 @@ impl Pane {
             Pane::SceneTypography => tr!(settings_page_scene()),
             Pane::SynopsisTypography => tr!(settings_page_synopsis()),
             Pane::NotesTypography => tr!(settings_page_notes()),
-            Pane::EditorBehavior => tr!(settings_page_editor_behavior()),
+            Pane::PageLayout => tr!(settings_page_page_layout()),
+            Pane::Focus => tr!(settings_page_focus()),
+            Pane::ImagesFiles => tr!(settings_page_images_files()),
+            Pane::TabsViews => tr!(settings_page_tabs_views()),
             Pane::Goals => tr!(settings_page_goals()),
             Pane::Games => tr!(settings_page_games()),
             Pane::MarginLane => tr!(settings_page_margin_lane()),
@@ -264,7 +285,10 @@ impl Pane {
             Pane::SceneTypography => tr!(settings_desc_scene()),
             Pane::SynopsisTypography => tr!(settings_desc_synopsis()),
             Pane::NotesTypography => tr!(settings_desc_notes()),
-            Pane::EditorBehavior => tr!(settings_desc_editor_behavior()),
+            Pane::PageLayout => tr!(settings_desc_page_layout()),
+            Pane::Focus => tr!(settings_desc_focus()),
+            Pane::ImagesFiles => tr!(settings_desc_images_files()),
+            Pane::TabsViews => tr!(settings_desc_tabs_views()),
             Pane::Goals => tr!(settings_desc_goals()),
             Pane::Games => tr!(settings_desc_games()),
             Pane::MarginLane => tr!(settings_desc_margin_lane()),
@@ -469,6 +493,10 @@ pub(crate) fn tree_spec(has_work: bool, extension_pages: &[&'static str]) -> Vec
             vec![
                 Branch::Page(Pane::Appearance),
                 Branch::Page(Pane::Notifications),
+                // Here rather than under Editor: how many tabs stay open and which
+                // view a container opens on are about how the window manages what is
+                // open, and the Editor section is the writing surface.
+                Branch::Page(Pane::TabsViews),
             ],
         ),
         Root::Section(
@@ -490,12 +518,14 @@ pub(crate) fn tree_spec(has_work: bool, extension_pages: &[&'static str]) -> Vec
                         Pane::DistractionFreeThemes,
                     ],
                 ),
-                Branch::Page(Pane::EditorBehavior),
-                // Beside Editor Behavior: both are about what the editor does around
-                // the words, rather than about how the page looks.
+                Branch::Page(Pane::PageLayout),
+                Branch::Page(Pane::Focus),
+                // Beside Focus: both are about what the editor does around the
+                // words, rather than about how the page looks.
                 Branch::Page(Pane::MarginLane),
-                // Beside Editor Behavior: the other set of switches that change
-                // what happens as the writer types, rather than how the page looks.
+                Branch::Page(Pane::ImagesFiles),
+                // The other set of switches that change what happens as the writer
+                // types, rather than how the page looks.
                 Branch::Page(Pane::Punctuation),
                 Branch::Page(Pane::Goals),
                 // Beside Goals: both are about what the writer is asking of

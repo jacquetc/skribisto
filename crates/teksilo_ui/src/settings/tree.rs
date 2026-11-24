@@ -265,14 +265,24 @@ pub(crate) fn search_index(spec: &[Root], work_title: &str) -> Vec<(LocalizedStr
         // type "initials" — the word they saw beside a comment — than "user".
         (tr!(settings_field_user_name()), Pane::User),
         (tr!(settings_field_user_initials()), Pane::User),
-        (tr!(settings_text_width()), Pane::EditorBehavior),
-        (tr!(settings_synopsis_placement()), Pane::EditorBehavior),
-        (tr!(settings_synopsis_folded()), Pane::EditorBehavior),
-        (tr!(settings_show_epigraphs()), Pane::EditorBehavior),
-        (tr!(settings_typewriter()), Pane::EditorBehavior),
-        (tr!(settings_highlight_scope()), Pane::EditorBehavior),
-        (tr!(settings_dim_text()), Pane::EditorBehavior),
-        (tr!(settings_stream_indent()), Pane::EditorBehavior),
+        (tr!(settings_text_width()), Pane::PageLayout),
+        (tr!(settings_preview_width()), Pane::PageLayout),
+        (tr!(settings_stream_indent()), Pane::PageLayout),
+        (tr!(settings_synopsis_placement()), Pane::PageLayout),
+        (tr!(settings_synopsis_folded()), Pane::PageLayout),
+        (tr!(settings_show_epigraphs()), Pane::PageLayout),
+        (tr!(settings_typewriter()), Pane::Focus),
+        (tr!(settings_typewriter_position()), Pane::Focus),
+        (tr!(settings_highlight_scope()), Pane::Focus),
+        (tr!(settings_dim_text()), Pane::Focus),
+        (tr!(settings_dim_scope()), Pane::Focus),
+        (tr!(settings_dim_strength()), Pane::Focus),
+        // The two "Don't ask again" answers: someone looking for the way back types
+        // the words the question used, not the page's name.
+        (tr!(settings_field_image_size_policy()), Pane::ImagesFiles),
+        (tr!(settings_resources_large_file()), Pane::ImagesFiles),
+        (tr!(settings_tab_limit()), Pane::TabsViews),
+        (tr!(settings_remember_view()), Pane::TabsViews),
         // The distraction-free settings are all on their own page now —
         // typography, the column width and the strip's toggles together —
         // so every one of them searches there.

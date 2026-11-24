@@ -26,7 +26,7 @@ pub(in crate::settings) fn distraction_free_form(
     let form = super::typography::typography_rows(ctx, form, typo);
     form
         // The mode's own column width — a flat pixel measure like the two on the
-        // Editor Behavior page (not a character-count cap: `teksilo-text`'s
+        // Page layout page (not a character-count cap: `teksilo-text`'s
         // reachable surface has no horizontal glyph-advance metrics to fake
         // one), and its own setting so widening the normal Scene column can
         // never silently widen (or narrow) this one.

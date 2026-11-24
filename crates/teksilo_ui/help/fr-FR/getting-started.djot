@@ -25,7 +25,7 @@ paragraphe, pour les vers d’un poème, d’une chanson ou les lignes d’une l
 `Maj+Entrée`, ou choisissez *Format ▸ Insérer un saut de ligne*.
 
 À côté du texte principal, le *Synopsis* est un court résumé qui peut vous servir à préparer
-la scène. Vous pouvez le masquer dans *Paramètres ▸ Éditeur ▸ Comportement de l’éditeur*.
+la scène. Vous pouvez le masquer dans *Paramètres ▸ Éditeur ▸ Mise en page*.
 Cliquez sur son titre pour le replier sur cette scène, puis à nouveau pour le déplier. Chaque
 scène s’en souvient.
 
@@ -58,16 +58,16 @@ Pour découvrir un projet d’exemple, ouvrez *Exemples* dans la barre latérale
 - Appuyez sur `Ctrl+Entrée` sur un élément sélectionné pour l’ouvrir dans l’autre volet d’édition.
 - Pour garder les yeux sur ce que vous écrivez, appuyez sur `F8` ou choisissez *Affichage ▸
   Estomper le reste du texte*. Le reste du texte s’affiche plus pâle pendant que vous
-  écrivez. Dans *Paramètres ▸ Éditeur ▸ Comportement de l’éditeur*, *Garder net* indique si
+  écrivez. Dans *Paramètres ▸ Éditeur ▸ Concentration*, *Garder net* indique si
   c’est la phrase ou tout le paragraphe qui reste net, et *Intensité* règle à quel point le
   reste s’efface.
 - Pour que les onglets ne s’accumulent pas, réglez *Onglets gardés ouverts* dans *Paramètres
-  ▸ Éditeur ▸ Comportement de l’éditeur*. Avec *Un seul*, chaque élément que vous ouvrez
-  remplace l’onglet où vous étiez. Avec *5 derniers*, en ouvrir un sixième ferme celui que
+  ▸ Apparence et comportement ▸ Onglets et vues*. Avec *Un seul*, chaque élément que vous
+  ouvrez remplace l’onglet où vous étiez. Avec *5 derniers*, en ouvrir un sixième ferme celui que
   vous n’avez pas regardé depuis le plus longtemps. Un onglet épinglé reste toujours ouvert.
 - Dans *Livre complet*, *Partie complète*, *Chapitre complet* et *Synopsis complet*,
   chaque niveau est plus en retrait que celui auquel il appartient. *Retrait par niveau*,
-  dans *Paramètres ▸ Éditeur ▸ Comportement de l’éditeur*, règle ce retrait, d’*Aucun* à
+  dans *Paramètres ▸ Éditeur ▸ Mise en page*, règle ce retrait, d’*Aucun* à
   *Grand*.
 - À la création du projet, *Chapitres à plat* permet d’écrire directement dans chaque chapitre,
   sans le diviser en scènes. Le format *Dossier* conserve le projet dans un dossier plutôt

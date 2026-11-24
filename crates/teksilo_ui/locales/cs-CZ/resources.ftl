@@ -252,7 +252,7 @@ resources-export-failed = { $count ->
    *[other] { $count } souborů nešlo zkopírovat: { $names }
 }
 
-## Předvolba pro velké soubory (Chování editoru)
+## Předvolba pro velké soubory (Editor ▸ Obrázky a soubory)
 
 settings-resources-large-file = Soubory nad 10 MB
 settings-resources-large-ask = Pokaždé se zeptat

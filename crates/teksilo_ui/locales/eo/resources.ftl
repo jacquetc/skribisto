@@ -220,7 +220,7 @@ resources-export-failed = { $count ->
    *[other] { $count } dosieroj ne povis esti kopiitaj: { $names }
 }
 
-## La prefero por grandaj dosieroj (Konduto de la redaktilo)
+## La prefero por grandaj dosieroj (Redaktilo ▸ Bildoj kaj dosieroj)
 
 settings-resources-large-file = Dosieroj super 10 MB
 settings-resources-large-ask = Demandi ĉiufoje

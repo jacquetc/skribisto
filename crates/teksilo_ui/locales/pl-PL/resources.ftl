@@ -252,7 +252,7 @@ resources-export-failed = { $count ->
    *[other] Nie udało się skopiować { $count } pliku: { $names }
 }
 
-## Ustawienie dla dużych plików (Zachowanie edytora)
+## Ustawienie dla dużych plików (Edytor ▸ Obrazy i pliki)
 
 settings-resources-large-file = Pliki powyżej 10 MB
 settings-resources-large-ask = Pytaj za każdym razem

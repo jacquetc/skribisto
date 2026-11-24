@@ -23,7 +23,7 @@ Um ficheiro é guardado no projeto: acompanha cada cópia e cada cópia de segur
 Com um ficheiro com mais de 10 MB, o Skribisto pergunta primeiro. *Guardá-lo no projeto*, ou
 *Ligá-lo em vez disso*: um ficheiro ligado fica onde está, e o projeto lembra-se apenas de onde
 o encontrar. *Não voltar a perguntar* guarda a sua resposta. Pode mudá-la mais tarde em
-*Definições ▸ Editor ▸ Comportamento do editor*, em *Ficheiros com mais de 10 MB*.
+*Definições ▸ Editor ▸ Imagens e ficheiros*, em *Ficheiros com mais de 10 MB*.
 
 Quando os ficheiros guardados de um projeto num só ficheiro passam dos 100 MB, o Skribisto
 propõe uma vez guardá-lo antes como pasta. Um projeto em pasta só grava o que mudou.

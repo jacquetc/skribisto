@@ -23,7 +23,7 @@ Eine Datei wird im Projekt abgelegt: Sie reist mit jeder Kopie und jeder Sicheru
 Projekts. Bei einer Datei über 10 MB fragt Skribisto zuerst. *Im Projekt ablegen* oder
 *Stattdessen verknüpfen*: Eine verknüpfte Datei bleibt, wo sie ist, und das Projekt merkt sich
 nur, wo sie zu finden ist. *Nicht mehr fragen* behält Ihre Antwort. Sie können sie später unter
-*Einstellungen ▸ Editor ▸ Editorverhalten* ändern, bei *Dateien über 10 MB*.
+*Einstellungen ▸ Editor ▸ Bilder und Dateien* ändern, bei *Dateien über 10 MB*.
 
 Überschreiten die abgelegten Dateien eines Projekts, das als einzelne Datei gespeichert ist,
 100 MB, bietet Skribisto einmal an, es stattdessen als Ordner zu speichern. Ein Projekt als

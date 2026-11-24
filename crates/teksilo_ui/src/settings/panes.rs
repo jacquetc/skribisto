@@ -5,7 +5,7 @@
 //!
 //! `settings.rs` keeps the *shell* — the category tree, the search field, the
 //! pane-switcher and the footer — and each page's form lives here, one `*_pane` function per
-//! page (29 modules today; `backup` carries two pages, the app-level one and the Work one).
+//! page (33 modules today; `backup` carries two pages, the app-level one and the Work one).
 //! Each reaches the shell's shared helpers (`field_label`, `hint`, `group`, `slider_field`,
 //! `pane_frame`, and the [`Crumbs`](super::Crumbs) handle every page asks for its own
 //! breadcrumb) through `use super::super::*` — child modules can see a parent's private items,
@@ -33,17 +33,20 @@ pub(super) mod corkboard;
 pub(super) mod dictionaries;
 pub(super) mod distraction_free;
 pub(super) mod distraction_free_themes;
-pub(super) mod editor_behavior;
 pub(super) mod export_styles;
+pub(super) mod focus;
 pub(super) mod games;
 pub(super) mod goals;
+pub(super) mod images_files;
 pub(super) mod keymap;
 pub(super) mod margin_lane;
 pub(super) mod notifications;
 pub(super) mod overview;
+pub(super) mod page_layout;
 pub(super) mod paratext;
 pub(super) mod punctuation;
 pub(super) mod spellcheck;
+pub(super) mod tabs_views;
 pub(super) mod text_replacements;
 pub(crate) mod typography;
 pub(super) mod user;

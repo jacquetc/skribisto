@@ -207,7 +207,7 @@ resources-export-failed = { $count ->
    *[other] 파일 { $count }개를 복사하지 못했습니다: { $names }
 }
 
-## 큰 파일 설정 (편집기 동작)
+## 큰 파일 설정 (편집기 ▸ 이미지와 파일)
 
 settings-resources-large-file = 10 MB가 넘는 파일
 settings-resources-large-ask = 매번 묻기

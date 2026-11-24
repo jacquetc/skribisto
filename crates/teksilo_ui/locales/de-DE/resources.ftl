@@ -220,7 +220,7 @@ resources-export-failed = { $count ->
    *[other] { $count } Dateien konnten nicht kopiert werden: { $names }
 }
 
-## Die Einstellung für große Dateien (Editorverhalten)
+## Die Einstellung für große Dateien (Editor ▸ Bilder und Dateien)
 
 settings-resources-large-file = Dateien über 10 MB
 settings-resources-large-ask = Jedes Mal fragen

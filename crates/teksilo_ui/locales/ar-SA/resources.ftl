@@ -280,7 +280,7 @@ resources-export-failed = { $count ->
    *[other] تعذّر نسخ { $count } ملف: { $names }
 }
 
-## تفضيل الملفات الكبيرة (سلوك المحرر)
+## تفضيل الملفات الكبيرة (المحرر ▸ الصور والملفات)
 
 settings-resources-large-file = الملفات الأكبر من 10 ميغابايت
 settings-resources-large-ask = السؤال في كل مرة

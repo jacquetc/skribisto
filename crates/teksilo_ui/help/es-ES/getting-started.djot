@@ -21,7 +21,7 @@ el botón de creación de la parte superior del *Archivador*. Su menú le permit
 *Escena* u otro tipo de elemento.
 
 Junto al texto principal está la *Sinopsis*: un resumen breve que puede usar para planificar
-la escena. Puede ocultarla en *Configuración ▸ Editor ▸ Comportamiento del editor*.
+la escena. Puede ocultarla en *Configuración ▸ Editor ▸ Diseño de página*.
 Haga clic en su título para plegarla en esa escena, y de nuevo para desplegarla. Cada escena
 lo recuerda.
 
@@ -53,8 +53,8 @@ Para explorar un proyecto de muestra, abra *Ejemplos* en la barra lateral.
   izquierda. `Ctrl+Mayús+B` muestra el propio Archivador.
 - Pulse `Ctrl+Intro` sobre un elemento seleccionado para abrirlo en el otro panel del editor.
 - Para que no se acumulen pestañas, elija una opción en *Pestañas abiertas*, en
-  *Configuración ▸ Editor ▸ Comportamiento del editor*. Con *Una*, cada elemento que abre
-  sustituye a la pestaña en la que estaba. Con *Últimas 5*, abrir una sexta cierra la que
+  *Configuración ▸ Apariencia y comportamiento ▸ Pestañas y vistas*. Con *Una*, cada
+  elemento que abre sustituye a la pestaña en la que estaba. Con *Últimas 5*, abrir una sexta cierra la que
   lleva más tiempo sin mirar. Una pestaña fijada siempre queda abierta.
 - Al crear un proyecto, *Capítulos planos* le permite escribir directamente en cada capítulo
   en lugar de dividirlo en escenas. *Carpeta* guarda el proyecto como una carpeta en lugar de

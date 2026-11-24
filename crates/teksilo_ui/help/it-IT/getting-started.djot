@@ -13,7 +13,7 @@ Un progetto riunisce manoscritto e note. Ecco come iniziare a scrivere.
 
 Il pannello *Raccoglitore* a sinistra elenca capitoli, scene e note. Fai clic su una scena per aprirla e iniziare a scrivere. Per aggiungerne una, seleziona un capitolo e usa il pulsante di creazione in cima al *Raccoglitore*. Il menu permette di scegliere *Scena* o un altro tipo di elemento.
 
-Accanto al testo principale trovi la *Sinossi*: un breve riassunto per pianificare la scena. Puoi nasconderla in *Impostazioni ▸ Editor ▸ Comportamento dell'editor*. Fai clic sul suo titolo per chiuderla in quella scena, e di nuovo per riaprirla. Ogni scena lo ricorda.
+Accanto al testo principale trovi la *Sinossi*: un breve riassunto per pianificare la scena. Puoi nasconderla in *Impostazioni ▸ Editor ▸ Impaginazione*. Fai clic sul suo titolo per chiuderla in quella scena, e di nuovo per riaprirla. Ogni scena lo ricorda.
 
 Per rinominare una scena o un capitolo, fai clic con il pulsante destro e scegli *Rinomina*.
 
@@ -33,7 +33,7 @@ Nella finestra iniziale, *Crea da…* avvia un progetto da [documenti](:help-imp
 
 - Premi `F9`, oppure scegli *Visualizza ▸ Pannello sinistro*, per mostrare o nascondere i pannelli a sinistra. `Ctrl+Maiusc+B` porta in primo piano il Raccoglitore stesso.
 - Premi `Ctrl+Invio` su un elemento selezionato per aprirlo nell'altro riquadro dell'editor.
-- Per evitare che le schede si accumulino, scegli un'opzione in *Schede tenute aperte*, in *Impostazioni ▸ Editor ▸ Comportamento dell'editor*. Con *Una*, ogni elemento che apri sostituisce la scheda in cui eri. Con *Ultime 5*, aprirne una sesta chiude quella che non guardi da più tempo. Una scheda fissata resta sempre aperta.
+- Per evitare che le schede si accumulino, scegli un'opzione in *Schede tenute aperte*, in *Impostazioni ▸ Aspetto e comportamento ▸ Schede e viste*. Con *Una*, ogni elemento che apri sostituisce la scheda in cui eri. Con *Ultime 5*, aprirne una sesta chiude quella che non guardi da più tempo. Una scheda fissata resta sempre aperta.
 - Quando crei un progetto, *Capitoli singoli* permette di scrivere direttamente in ciascun capitolo senza dividerlo in scene. *Cartella* salva il progetto come cartella anziché come file singolo.
 
 Consulta [libri, capitoli e scene](:help-writing-model) per saperne di più sull'organizzazione del manoscritto.

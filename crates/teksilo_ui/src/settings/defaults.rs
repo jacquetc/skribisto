@@ -279,7 +279,7 @@ pub(crate) fn reset_targets(vm: &SettingsViewModel) -> Vec<ResetTarget> {
             "keep",
         ),
         // The Resources dock's large-file question has the same "Don't ask again" door,
-        // and Editor behavior the same control: Reset brings the question back.
+        // and Editor ▸ Images & files the same control: Reset brings the question back.
         text(
             crate::RESOURCES_LARGE_FILE_KEY,
             vm.resources_large_file(),

@@ -220,7 +220,7 @@ resources-export-failed = { $count ->
    *[other] { $count } filer kunne ikke kopieres: { $names }
 }
 
-## Indstillingen for store filer (Editorens adfærd)
+## Indstillingen for store filer (Editor ▸ Billeder og filer)
 
 settings-resources-large-file = Filer over 10 MB
 settings-resources-large-ask = Spørg hver gang

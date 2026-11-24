@@ -920,7 +920,7 @@ impl SettingsViewModel {
     }
 
     /// Max width of the writing column while distraction-free mode is active
-    /// (Settings ▸ Editor ▸ Editor Behavior's "Distraction-free" group) —
+    /// (Settings ▸ Editor ▸ Typography ▸ Distraction-free) —
     /// independent from [`Self::column_width`].
     pub fn distraction_free_width(&self) -> Signal<f32> {
         self.distraction_free_width.clone()

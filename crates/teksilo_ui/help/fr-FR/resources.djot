@@ -23,7 +23,7 @@ Un fichier est rangé dans le projet : il suit chaque copie et chaque copie de s
 fichier de plus de 10 Mo pose d’abord la question. *Le ranger dans le projet*, ou *Le lier
 plutôt* : un fichier lié reste où il est, et le projet se souvient seulement de l’endroit où le
 trouver. *Ne plus demander* garde votre réponse. Vous pourrez la changer dans *Paramètres ▸
-Éditeur ▸ Comportement de l’éditeur*, sous *Fichiers de plus de 10 Mo*.
+Éditeur ▸ Images et fichiers*, sous *Fichiers de plus de 10 Mo*.
 
 Quand les fichiers rangés d’un projet en un seul fichier dépassent 100 Mo, Skribisto propose une
 fois de l’enregistrer plutôt comme dossier. Un projet en dossier n’enregistre que ce qui a

@@ -220,7 +220,7 @@ resources-export-failed = { $count ->
    *[other] { $count } αρχεία δεν ήταν δυνατό να αντιγραφούν: { $names }
 }
 
-## Η προτίμηση για τα μεγάλα αρχεία (Συμπεριφορά επεξεργαστή)
+## Η προτίμηση για τα μεγάλα αρχεία (Επεξεργαστής ▸ Εικόνες και αρχεία)
 
 settings-resources-large-file = Αρχεία άνω των 10 MB
 settings-resources-large-ask = Ερώτηση κάθε φορά

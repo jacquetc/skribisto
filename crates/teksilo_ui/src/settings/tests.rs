@@ -65,7 +65,10 @@ fn every_built_in_pane() -> Vec<Pane> {
         Pane::SceneTypography,
         Pane::SynopsisTypography,
         Pane::NotesTypography,
-        Pane::EditorBehavior,
+        Pane::PageLayout,
+        Pane::Focus,
+        Pane::ImagesFiles,
+        Pane::TabsViews,
         Pane::Goals,
         Pane::Games,
         Pane::MarginLane,
@@ -396,6 +399,72 @@ fn every_app_level_section_survives_with_no_project_open() {
         );
     }
     assert!(!panes.contains(&Pane::Section(Sec::Work)));
+}
+
+/// **The old Editor Behavior page is four pages, each where it belongs, and every
+/// setting it held is still found by name.**
+///
+/// The page had grown to sixteen controls under five headings, three of them about
+/// something other than the writing surface. Its controls went to Page layout,
+/// Focus and Images & files under Editor, and to Tabs & views under Appearance &
+/// Behavior. A page landing in the wrong section, or a search row still pointing at
+/// a page that no longer holds the field, would each send the writer to the wrong
+/// place without any other test noticing.
+#[test]
+fn the_editor_behavior_split_puts_each_page_and_field_where_it_belongs() {
+    let spec = tree_spec(false, &[]);
+
+    let editor = children_of(&spec, Pane::Section(Sec::Editor));
+    for pane in [Pane::PageLayout, Pane::Focus, Pane::ImagesFiles] {
+        assert!(
+            editor.contains(&pane),
+            "'{}' is not under Editor: {editor:?}",
+            pane.id()
+        );
+    }
+    assert!(
+        !editor.contains(&Pane::TabsViews),
+        "Tabs & views is about the window, not the writing surface"
+    );
+    assert_eq!(
+        children_of(&spec, Pane::Section(Sec::AppearanceBehaviour)),
+        vec![Pane::Appearance, Pane::Notifications, Pane::TabsViews],
+    );
+
+    let index = super::tree::search_index(&spec, "");
+    let page_of = |field: &LocalizedString| {
+        let want = field.resolve_now();
+        index
+            .iter()
+            .find(|(label, _)| label.resolve_now() == want)
+            .map(|(_, pane)| *pane)
+    };
+    for (field, pane) in [
+        (tr!(settings_text_width()), Pane::PageLayout),
+        (tr!(settings_preview_width()), Pane::PageLayout),
+        (tr!(settings_stream_indent()), Pane::PageLayout),
+        (tr!(settings_synopsis_placement()), Pane::PageLayout),
+        (tr!(settings_synopsis_folded()), Pane::PageLayout),
+        (tr!(settings_show_epigraphs()), Pane::PageLayout),
+        (tr!(settings_typewriter()), Pane::Focus),
+        (tr!(settings_typewriter_position()), Pane::Focus),
+        (tr!(settings_highlight_scope()), Pane::Focus),
+        (tr!(settings_dim_text()), Pane::Focus),
+        (tr!(settings_dim_scope()), Pane::Focus),
+        (tr!(settings_dim_strength()), Pane::Focus),
+        (tr!(settings_field_image_size_policy()), Pane::ImagesFiles),
+        (tr!(settings_resources_large_file()), Pane::ImagesFiles),
+        (tr!(settings_tab_limit()), Pane::TabsViews),
+        (tr!(settings_remember_view()), Pane::TabsViews),
+    ] {
+        assert_eq!(
+            page_of(&field),
+            Some(pane),
+            "searching for '{}' must land on '{}'",
+            field.resolve_now(),
+            pane.id()
+        );
+    }
 }
 
 /// The whole window builds and lays out with **no project open**.

@@ -220,7 +220,7 @@ resources-export-failed = { $count ->
    *[other] { $count } file non sono stati copiati: { $names }
 }
 
-## La preferenza per i file grandi (Comportamento dell'editor)
+## La preferenza per i file grandi (Editor ▸ Immagini e file)
 
 settings-resources-large-file = File oltre 10 MB
 settings-resources-large-ask = Chiedi ogni volta

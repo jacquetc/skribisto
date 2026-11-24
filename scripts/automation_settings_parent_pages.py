@@ -13,8 +13,8 @@ Asserts, against the live AT tree:
 
   1. selecting the **Editor** section shows a page whose links are exactly its
      children — Typography (the nested group, as ONE link, not its six pages),
-     Editor Behavior, Margin marks, Punctuation defaults, Goals & Word Count,
-     Writing games;
+     Page layout, Focus, Margin marks, Images & files, Punctuation defaults,
+     Goals & Word Count, Writing games;
   2. following the **Typography** link lands on the group's own page, whose links
      are its six typography pages — so a parent's page is reachable from its
      parent's page, two levels deep;
@@ -28,7 +28,7 @@ Asserts, against the live AT tree:
      (`Navigator::go`). "Highlighted" and "on screen" are one assertion here
      because a `rail_row` lookup only sees realized rows;
   4. the **Work: `<title>`** section's page carries the open project's name in its
-     title and links to that project's ten pages;
+     title and links to that project's eleven pages;
   5. every link on every parent's page carries a description line under it (the
      one thing a link has that the tree row above it doesn't).
 
@@ -257,8 +257,16 @@ def rail_row(label):
     """The category row whose own label is exactly `label`, wheeling the rail
     until a virtualized row below the fold materializes."""
     want = label.lower()
+    return rail_row_where(lambda text: text == want)
+
+
+def rail_row_where(matches):
+    """The first category row whose lower-cased label satisfies `matches`, wheeling
+    the rail until a virtualized row below the fold materializes."""
+    pick = lambda rs: next(
+        (r for r in rs if matches((r.get("label") or "").strip().lower())), None)
     tree, rows = settings_tree()
-    hit = next((r for r in rows if (r.get("label") or "").strip().lower() == want), None)
+    hit = pick(rows)
     if hit or not tree:
         return hit
     sig = lambda rs: tuple(sorted((r.get("label") or "") for r in rs))
@@ -268,7 +276,7 @@ def rail_row(label):
         s.call("scroll", {"node": tree["id"], "dx": 0, "dy": dy})
         time.sleep(0.35)
         tree, rows = settings_tree()
-        hit = next((r for r in rows if (r.get("label") or "").strip().lower() == want), None)
+        hit = pick(rows)
         if hit:
             return hit
         if sig(rows) == before:
@@ -358,8 +366,8 @@ select_row("Editor")
 if not row_is_selected("Editor"):
     fail("the Editor row did not take the selection", s.app, s.mcp, s.log)
 require_links(
-    ["Typography", "Editor Behavior", "Margin marks", "Punctuation defaults",
-     "Goals & Word Count", "Writing games"],
+    ["Typography", "Page layout", "Focus", "Margin marks", "Images & files",
+     "Punctuation defaults", "Goals & Word Count", "Writing games"],
     "Editor section page",
 )
 # The nested group is ONE entry: flattening it would undo the reason it exists.
@@ -399,8 +407,9 @@ print(f"  Scene form has {len(sliders)} sliders and no links.")
 
 # 4 ── the open project's section names the project ───────────────────────────
 print("== 4. the Work section's own page ==")
-work_row = next((r for r in settings_tree()[1]
-                 if (r.get("label") or "").lower().startswith("work:")), None)
+# Wheeled to, not read off the realized rows: with Editor and its Typography group
+# unfolded by steps 1 to 3, the Work header sits below the rail's fold.
+work_row = rail_row_where(lambda text: text.startswith("work:"))
 if not work_row:
     fail("no 'Work: <title>' section — the example did not open?", s.app, s.mcp, s.log)
 work_label = (work_row.get("label") or "").strip()
@@ -411,7 +420,7 @@ select_row(work_label)
 # that read alike. The app-level page one section up is "Punctuation defaults".
 require_links(
     ["Author", "Structure", "Language", "Backups", "Personal dictionary", "Tags",
-     "Statuses", "Templates", "Text replacements", "Punctuation"],
+     "Statuses", "Templates", "Resources", "Text replacements", "Punctuation"],
     "Work section page",
 )
 if joined().count(work_label.lower()) < 2:
@@ -427,7 +436,7 @@ shots.append(s.shot(os.path.join(fixture.SCRATCH, "settings-parent-work.png")))
 # inside.
 print("== 5. every other section's page ==")
 for section, children in [
-    ("Appearance & Behavior", ["Appearance", "Notifications"]),
+    ("Appearance & Behavior", ["Appearance", "Notifications", "Tabs & views"]),
     ("Spelling", ["Spell-checking", "Dictionaries"]),
     ("Backup & Sync", ["Autosave", "Backup defaults"]),
     ("Compile & Export", ["Export Formats", "Paratext Structures"]),

@@ -354,7 +354,11 @@ def main():
     # is toggles and radio groups, so that slot silently exercised nothing.
     # Corkboard shares `typography_rows`, so it has the same `FontPicker` Scene
     # does, and it sits in the Typography group this walk already unfolds.)
-    pages = ("Appearance", "Editor Behavior", "Scene", "Corkboard")
+    # (Images & files took the place of the old Editor Behavior page, whose one
+    # combo this walk could open was Files over 10 MB. Focus is left out: its Line
+    # position combo sits right under the Typewriter scrolling switch, whose rich
+    # tooltip opens over it and takes the click.)
+    pages = ("Appearance", "Images & files", "Scene", "Corkboard")
     for page in pages:
         prepare_rail()
         if not select_page(page):

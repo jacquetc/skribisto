@@ -220,7 +220,7 @@ resources-export-failed = { $count ->
    *[other] { $count } fájlt nem sikerült átmásolni: { $names }
 }
 
-## A nagy fájlok beállítása (Szerkesztő viselkedése)
+## A nagy fájlok beállítása (Szerkesztő ▸ Képek és fájlok)
 
 settings-resources-large-file = 10 MB-nál nagyobb fájlok
 settings-resources-large-ask = Rákérdezés minden alkalommal

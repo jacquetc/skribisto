@@ -94,7 +94,7 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
     )
     // The fade around the caret. Reflect-only, like the margin lane above it: the row
     // mirrors the setting and the intent writes it, so F8, the title bar, the distraction-free
-    // strip, this row and Settings ▸ Editor ▸ Editor Behavior are one switch.
+    // strip, this row and Settings ▸ Editor ▸ Focus are one switch.
     .item(
         MenuEntry::new(tr!(menu_dim_text()))
             .checked(parts.dim_text_menu.clone())

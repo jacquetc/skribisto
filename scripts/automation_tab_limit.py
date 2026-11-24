@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-"""Settings ▸ Editor ▸ Editor Behavior ▸ Tabs kept open, driven end to end.
+"""Settings ▸ Appearance & Behavior ▸ Tabs & views ▸ Tabs kept open, driven end to end.
 
 The headless tests in `editors/editors_vm/tests.rs` prove the view-model's rules
 (least recently used, pinned tabs exempt, per pane, an unsaved tab kept). What only
@@ -174,16 +174,17 @@ def settings_row(label):
     return None
 
 
-# Editor Behavior sits under the Editor section, which may start folded.
-if not settings_row("Editor Behavior"):
-    section = settings_row("Editor")
+# Tabs & views sits under the Appearance & Behavior section, which starts open but
+# may have been folded by an earlier run.
+if not settings_row("Tabs & views"):
+    section = settings_row("Appearance & Behavior")
     if not section:
-        die("Settings opened with no Editor section in its tree")
+        die("Settings opened with no Appearance & Behavior section in its tree")
     call("invoke_action", {"node": section["id"], "action": "expand"})
     time.sleep(0.6)
-page = settings_row("Editor Behavior")
+page = settings_row("Tabs & views")
 if not page:
-    die("no Editor Behavior row in the Settings tree")
+    die("no Tabs & views row in the Settings tree")
 call("invoke_action", {"node": page["id"], "action": "click"})
 time.sleep(1.0)
 

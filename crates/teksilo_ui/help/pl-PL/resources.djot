@@ -23,7 +23,7 @@ Plik jest przechowywany w projekcie: trafia do każdej kopii i każdej kopii zap
 Przy pliku powyżej 10 MB Skribisto najpierw pyta. *Przechowaj go w projekcie* albo *Zamiast
 tego połącz*: połączony plik zostaje tam, gdzie jest, a projekt pamięta tylko, gdzie go
 znaleźć. *Nie pytaj ponownie* zapamiętuje Twoją odpowiedź. Możesz ją później zmienić
-w *Ustawienia ▸ Edytor ▸ Zachowanie edytora*, w pozycji *Pliki powyżej 10 MB*.
+w *Ustawienia ▸ Edytor ▸ Obrazy i pliki*, w pozycji *Pliki powyżej 10 MB*.
 
 Gdy przechowywane pliki projektu zapisanego jako jeden plik przekroczą 100 MB, Skribisto raz
 proponuje zapisanie go jako folderu. Projekt w folderze zapisuje tylko to, co się zmieniło.

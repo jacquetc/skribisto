@@ -183,7 +183,7 @@ pub const EDITOR_WIDTH_DEFAULT: f32 = 700.0;
 pub const PREVIEW_WIDTH_KEY: &str = "search.preview_width";
 pub const PREVIEW_WIDTH_DEFAULT: f32 = 700.0;
 /// Max width (px) of the writing column while distraction-free mode is active
-/// (Settings ▸ Editor ▸ Editor Behavior). Independent from [`EDITOR_WIDTH_KEY`]
+/// (Settings ▸ Editor ▸ Typography ▸ Distraction-free). Independent from [`EDITOR_WIDTH_KEY`]
 /// — the two never share a value, so widening the normal Scene column can
 /// never silently widen (or narrow) the distraction-free one. ~68 characters
 /// is the width every typography source surveyed converges on for comfortable
@@ -406,7 +406,8 @@ pub const DISTRACTION_FREE_PARA_SPACING_AFTER_KEY: &str =
     "editor.distraction_free.para_spacing_after";
 pub const DISTRACTION_FREE_PARA_SPACING_AFTER_DEFAULT: f32 = 0.0;
 
-// ── Editor behaviour (Settings ▸ Editor ▸ Editor Behavior) ───────────────────
+// ── Editor behaviour (Settings ▸ Editor ▸ Page layout / Focus / Images & files,
+//    and Appearance & Behavior ▸ Tabs & views) ─────────────────────────────────
 /// Show the synopsis pane above the manuscript in the dual-pane writing editor
 /// (Skribisto's signature layout). Consumed live by the `shared::prose` body.
 pub const SYNOPSIS_PANE_KEY: &str = "editor.synopsis_pane";

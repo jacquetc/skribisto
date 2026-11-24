@@ -281,7 +281,10 @@ settings-page-notifications = Meddelelser
 settings-page-scene = Scene
 settings-page-synopsis = Synopsis
 settings-page-notes = Noter
-settings-page-editor-behavior = Editorens adfærd
+settings-page-page-layout = Sidelayout
+settings-page-focus = Fokus
+settings-page-images-files = Billeder og filer
+settings-page-tabs-views = Faner og visninger
 settings-page-goals = Mål og ordantal
 settings-page-games = Skrivelege
 settings-page-corkboard = Opslagstavle
@@ -298,7 +301,7 @@ settings-keymap-filter = Filtrér genveje
 # One line per page, shown under that page's link on its parent's page and,
 # for a parent, under its own title. Keep them to one line: they describe what
 # the page holds, not how to use it.
-settings-desc-sec-appearance-behaviour = Hvordan selve programmet ser ud, og hvad det gør, når det starter.
+settings-desc-sec-appearance-behaviour = Hvordan selve programmet ser ud, hvad det gør, når det starter, og hvordan det håndterer faner.
 settings-desc-sec-editor = Skrivefladen: hvordan den ser ud, og hvad den gør, mens du skriver.
 settings-desc-sec-spelling = Stavekontrol og ordbøgerne bag den.
 settings-desc-sec-backup = Hvordan dit arbejde kommer ned på disken, og hvilke kopier der gemmes.
@@ -314,7 +317,10 @@ settings-desc-notes = Hvordan noter sættes, uafhængigt af manuskriptet.
 settings-desc-corkboard = Kortstørrelse, hvad et kort viser, og hvordan tavlen arrangerer kortene.
 settings-desc-distraction-free = Typografi, kolonnebredde og kontrolbjælke til skrivning i fuld skærm.
 settings-desc-distraction-free-themes = Temabiblioteket til skrivning i fuld skærm: de medfølgende temaer og dine egne.
-settings-desc-editor-behavior = Tekstbredde, synopsens placering, skrivemaskinerulning og fremhævning omkring markøren.
+settings-desc-page-layout = Tekstbredde, indrykning efter niveau, og hvor synopsen og mottoerne står.
+settings-desc-focus = Skrivemaskinerulning, fremhævning omkring markøren og dæmpning af resten af teksten.
+settings-desc-images-files = Hvad der sker med store indsatte billeder og store vedhæftede filer.
+settings-desc-tabs-views = Hvor mange faner editoren holder åbne, og hvilken visning en beholder åbner i.
 settings-desc-punctuation = Den typografiske husstil, som nye projekter starter med. Alle projekter følger den, medmindre de har deres egen.
 settings-desc-goals = Mål for ord og tegn, og hvordan ord tælles.
 settings-desc-games = Begrænsninger, du selv vælger, mens du skriver udkast, f.eks. Altid fremad.
@@ -348,7 +354,10 @@ settings-desc-work-punctuation = De anførselstegn, tankestreger og mellemrum, p
 ## Settings window: fields
 settings-group-typography = Typografi
 settings-group-writing-column = Skrivekolonne
-settings-group-writing-view = Skrivevisning
+settings-group-around-the-text = Omkring teksten
+settings-group-scrolling = Rulning
+settings-group-highlight-fade = Fremhævning og dæmpning
+settings-group-images = Billeder
 # The distraction-free control strip's optional items (Exit is never optional).
 settings-group-distraction-free-strip = Kontrolbjælke
 settings-group-theme = Tema

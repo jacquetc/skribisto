@@ -23,7 +23,7 @@ Un archivo se guarda en el proyecto: viaja con cada copia y cada copia de seguri
 proyecto. Con un archivo de más de 10 MB, Skribisto pregunta primero. *Guardarlo en el
 proyecto*, o *Vincularlo en su lugar*: un archivo vinculado se queda donde está, y el proyecto
 solo recuerda dónde encontrarlo. *No volver a preguntar* conserva su respuesta. Puede cambiarla
-más tarde en *Configuración ▸ Editor ▸ Comportamiento del editor*, en *Archivos de más de
+más tarde en *Configuración ▸ Editor ▸ Imágenes y archivos*, en *Archivos de más de
 10 MB*.
 
 Cuando los archivos guardados de un proyecto en un solo archivo pasan de 100 MB, Skribisto

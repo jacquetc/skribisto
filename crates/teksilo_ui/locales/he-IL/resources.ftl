@@ -233,7 +233,7 @@ resources-export-failed = { $count ->
    *[other] לא ניתן היה להעתיק { $count } קבצים: { $names }
 }
 
-## ההעדפה לקבצים גדולים (התנהגות העורך)
+## ההעדפה לקבצים גדולים (עורך ▸ תמונות וקבצים)
 
 settings-resources-large-file = קבצים מעל 10 MB
 settings-resources-large-ask = לשאול בכל פעם

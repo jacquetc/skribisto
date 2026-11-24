@@ -218,7 +218,7 @@ fn a_surface_that_never_pins_passes_no_setting_at_all() {
 
 #[test]
 fn toggling_the_setting_reaches_an_already_open_editor() {
-    // The live path: Settings ▸ Editor Behavior flips the signal while tabs
+    // The live path: Settings ▸ Editor ▸ Focus flips the signal while tabs
     // are open. Both source signals must drive it — a combined derived
     // signal would panic on observe, which is why the wiring registers one
     // effect per field.

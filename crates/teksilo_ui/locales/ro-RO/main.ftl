@@ -287,7 +287,10 @@ settings-page-notifications = Notificări
 settings-page-scene = Scenă
 settings-page-synopsis = Sinopsis
 settings-page-notes = Note
-settings-page-editor-behavior = Comportamentul editorului
+settings-page-page-layout = Așezarea în pagină
+settings-page-focus = Concentrare
+settings-page-images-files = Imagini și fișiere
+settings-page-tabs-views = File și vizualizări
 settings-page-goals = Obiective și număr de cuvinte
 settings-page-games = Jocuri de scriere
 settings-page-corkboard = Avizier
@@ -304,7 +307,7 @@ settings-keymap-filter = Filtrează comenzile rapide
 # One line per page, shown under that page's link on its parent's page and,
 # for a parent, under its own title. Keep them to one line: they describe what
 # the page holds, not how to use it.
-settings-desc-sec-appearance-behaviour = Cum arată aplicația și ce face la pornire.
+settings-desc-sec-appearance-behaviour = Cum arată aplicația, ce face la pornire și cum gestionează filele.
 settings-desc-sec-editor = Suprafața de scris: cum arată și ce face în timp ce tastați.
 settings-desc-sec-spelling = Verificarea ortografică și dicționarele pe care se bazează.
 settings-desc-sec-backup = Cum ajunge munca dumneavoastră pe disc și ce copii se păstrează.
@@ -320,7 +323,10 @@ settings-desc-notes = Cum sunt așezate notele, independent de manuscris.
 settings-desc-corkboard = Mărimea fișelor, ce afișează o fișă și cum le aranjează avizierul.
 settings-desc-distraction-free = Tipografia, lățimea coloanei și bara de control pentru scrisul pe tot ecranul.
 settings-desc-distraction-free-themes = Biblioteca de teme pentru scrisul pe tot ecranul: cele incluse și ale dumneavoastră.
-settings-desc-editor-behavior = Lățimea textului, poziția sinopsisului, derularea de tip mașină de scris și evidențierea din jurul cursorului.
+settings-desc-page-layout = Lățimea textului, indentarea pe nivel și locul sinopsisului și al mottourilor.
+settings-desc-focus = Derularea de tip mașină de scris, evidențierea din jurul cursorului și estomparea restului textului.
+settings-desc-images-files = Ce se întâmplă cu imaginile mari inserate și cu fișierele mari atașate.
+settings-desc-tabs-views = Câte file păstrează deschise editorul și în ce vizualizare se deschide un container.
 settings-desc-punctuation = Stilul tipografic de la care pornesc proiectele noi. Fiecare proiect îl urmează, dacă nu își stabilește propriul stil.
 settings-desc-goals = Obiective de cuvinte și de caractere și felul în care sunt numărate cuvintele.
 settings-desc-games = Constrângeri pe care vi le impuneți singur(ă) în timp ce scrieți ciorna, cum ar fi „Mereu înainte”.
@@ -354,7 +360,10 @@ settings-desc-work-punctuation = Ghilimelele, liniile de dialog și spațierea p
 ## Settings window: fields
 settings-group-typography = Tipografie
 settings-group-writing-column = Coloana de scris
-settings-group-writing-view = Vizualizarea de scris
+settings-group-around-the-text = În jurul textului
+settings-group-scrolling = Derulare
+settings-group-highlight-fade = Evidențiere și estompare
+settings-group-images = Imagini
 # The distraction-free control strip's optional items (Exit is never optional).
 settings-group-distraction-free-strip = Bara de control
 settings-group-theme = Temă

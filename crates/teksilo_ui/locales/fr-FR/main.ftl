@@ -274,7 +274,10 @@ settings-page-notifications = Notifications
 settings-page-scene = Scène
 settings-page-synopsis = Synopsis
 settings-page-notes = Notes
-settings-page-editor-behavior = Comportement de l’éditeur
+settings-page-page-layout = Mise en page
+settings-page-focus = Concentration
+settings-page-images-files = Images et fichiers
+settings-page-tabs-views = Onglets et vues
 settings-page-goals = Objectifs et nombre de mots
 settings-page-games = Jeux d’écriture
 settings-page-corkboard = Tableau de liège
@@ -291,7 +294,7 @@ settings-keymap-filter = Filtrer les raccourcis
 # Une ligne par page, affichée sous son lien dans la page de son parent et,
 # pour un parent, sous son propre titre. Une seule ligne : elles disent ce que
 # la page contient, pas comment s'en servir.
-settings-desc-sec-appearance-behaviour = L’aspect de l’application elle-même, et ce qu’elle fait au démarrage.
+settings-desc-sec-appearance-behaviour = L’aspect de l’application elle-même, ce qu’elle fait au démarrage, et sa gestion des onglets.
 settings-desc-sec-editor = La surface d’écriture : son aspect, et ce qu’elle fait pendant que vous tapez.
 settings-desc-sec-spelling = La vérification orthographique et les dictionnaires qui la nourrissent.
 settings-desc-sec-backup = Comment votre travail atteint le disque, et quelles copies sont conservées.
@@ -307,7 +310,10 @@ settings-desc-notes = La mise en page des notes, indépendante du manuscrit.
 settings-desc-corkboard = La taille des cartes, ce qu’elles montrent, et la disposition du tableau.
 settings-desc-distraction-free = Typographie, largeur de colonne et bande de contrôle du plein écran.
 settings-desc-distraction-free-themes = La bibliothèque de thèmes du plein écran : ceux fournis et les vôtres.
-settings-desc-editor-behavior = Largeur du texte, place du synopsis, défilement machine à écrire et surlignage du curseur.
+settings-desc-page-layout = Largeur du texte, retrait par niveau, et place du synopsis et des épigraphes.
+settings-desc-focus = Défilement machine à écrire, mise en évidence autour du curseur et estompage du reste du texte.
+settings-desc-images-files = Ce que deviennent les grandes images insérées et les gros fichiers joints.
+settings-desc-tabs-views = Combien d’onglets l’éditeur garde ouverts, et sur quelle vue s’ouvre un conteneur.
 settings-desc-punctuation = Le style typographique dont héritent les nouveaux projets. Chaque projet suit ces réglages, sauf s’il définit les siens.
 settings-desc-goals = Les objectifs en mots et en caractères, et la façon de compter les mots.
 settings-desc-games = Les contraintes que vous vous imposez en écrivant, comme « Droit devant ».
@@ -341,7 +347,10 @@ settings-desc-work-punctuation = Les guillemets, tirets et espacements que suit 
 ## Fenêtre des paramètres: champs
 settings-group-typography = Typographie
 settings-group-writing-column = Colonne d’écriture
-settings-group-writing-view = Affichage de l’écriture
+settings-group-around-the-text = Autour du texte
+settings-group-scrolling = Défilement
+settings-group-highlight-fade = Mise en évidence et estompage
+settings-group-images = Images
 # Les éléments optionnels de la bande de contrôle du mode sans distraction
 # (Quitter n'est jamais optionnel).
 settings-group-distraction-free-strip = Bande de contrôle

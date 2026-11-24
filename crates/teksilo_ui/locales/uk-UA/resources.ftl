@@ -267,7 +267,7 @@ resources-export-failed = { $count ->
    *[other] Не вдалося скопіювати { $count } файлу: { $names }
 }
 
-## Налаштування для великих файлів (Поведінка редактора)
+## Налаштування для великих файлів (Редактор ▸ Зображення і файли)
 
 settings-resources-large-file = Файли понад 10 МБ
 settings-resources-large-ask = Щоразу питати

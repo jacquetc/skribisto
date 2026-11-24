@@ -226,7 +226,7 @@ mod tests {
             Pane::Section(Sec::Editor),
             Sec::Editor.label(),
             &crumbs,
-            vec![Pane::EditorBehavior, Pane::Goals],
+            vec![Pane::PageLayout, Pane::Goals],
             nav,
         ));
         tree.layout(SizeProposal::exact(657.0, 519.0));

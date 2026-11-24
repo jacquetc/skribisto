@@ -413,10 +413,20 @@ pub(super) fn build(
             )),
         ),
         (
-            Pane::EditorBehavior,
-            Box::new(panes::editor_behavior::editor_behavior_pane(
-                ctx, &crumbs, vm,
-            )),
+            Pane::TabsViews,
+            Box::new(panes::tabs_views::tabs_views_pane(ctx, &crumbs, vm)),
+        ),
+        (
+            Pane::PageLayout,
+            Box::new(panes::page_layout::page_layout_pane(ctx, &crumbs, vm)),
+        ),
+        (
+            Pane::Focus,
+            Box::new(panes::focus::focus_pane(ctx, &crumbs, vm)),
+        ),
+        (
+            Pane::ImagesFiles,
+            Box::new(panes::images_files::images_files_pane(ctx, &crumbs, vm)),
         ),
         (
             Pane::Goals,

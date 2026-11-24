@@ -22,8 +22,8 @@ red, a Word document blue.
 A file is stored in the project: it travels with every copy and every backup of it. A file
 larger than 10 MB asks first. *Store it in the project*, or *Link to it instead*: a linked file
 stays where it is, and the project only remembers where to find it. *Don't ask again* keeps your
-answer. You can change it later in *Settings ▸ Editor ▸ Editor Behavior*, under *Files over
-10 MB*.
+answer. You can change it later in *Settings ▸ Editor ▸ Images & files*, under *Files
+over 10 MB*.
 
 When the stored files of a project kept as a single file pass 100 MB, Skribisto offers once to
 save it as a folder instead. A folder project saves only what changed.

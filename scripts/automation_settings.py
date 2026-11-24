@@ -10,7 +10,7 @@ Launcher entirely under the launcher-window model — see `teksilo_ui::main`'s
 module docs), opens Settings (Ctrl+, with a menu fallback), then asserts:
 
    1. the category TreeView holds every section + page (Appearance & Behavior,
-      Editor ▸ Scene/Synopsis/Notes/Editor Behavior/Goals/Corkboard, Spelling,
+      Editor ▸ Scene/Synopsis/Notes/Page layout/Focus/Goals/Corkboard, Spelling,
       Backup & Sync, Compile & Export, Keymap), and each row is AT-drivable:
       role + name + level + actions all on ONE node, and an action nothing
       handles comes back as an error rather than a silent success;
@@ -234,7 +234,8 @@ print("example loaded.")
 # NOTE: the panel was restructured (independently of the launcher-window
 # model) — "Manuscript & Fonts" no longer exists as a single page. Editor ▸
 # Scene/Synopsis/Notes now each carry their own typography form, Editor ▸
-# Editor Behavior carries the synopsis-pane/typewriter/highlight toggles, and
+# Page layout carries the synopsis-pane toggles, Editor ▸ Focus the
+# typewriter/highlight ones, and
 # the Theme/Interface-text-size controls moved to Appearance & Behavior ▸
 # Appearance — which is also where the window now *lands* (it used to land on
 # Editor ▸ Scene; see step 3's comment for why that had to stop).

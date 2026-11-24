@@ -292,7 +292,7 @@ pub struct EditorsViewModel {
     /// a never-seeded `AppIds`. That index's own `fire` returns early with no `work_id`,
     /// so it never scans anything and the column is empty for the whole session.
     mention_index: crate::mentions::MentionIndex,
-    /// How many unpinned tabs each pane keeps (Settings ▸ Editor ▸ Editor Behavior),
+    /// How many unpinned tabs each pane keeps (Settings ▸ Appearance & Behavior ▸ Tabs & views),
     /// read at each open by [`Self::enforce_tab_limit`]. Never observed: a smaller limit
     /// closes nothing until the next open.
     tab_limit: Signal<crate::shared::TabLimit>,

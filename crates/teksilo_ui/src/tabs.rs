@@ -291,7 +291,7 @@ pub struct ContentTab {
     /// a `ProseField` owns a document and its write-back, nothing about presentation, and
     /// one document is shared by every simultaneous view of the item.
     pub epigraph_expanded: Signal<bool>,
-    /// Persisted "show epigraphs" setting (Settings ▸ Editor ▸ Editor Behavior),
+    /// Persisted "show epigraphs" setting (Settings ▸ Editor ▸ Page layout),
     /// shared live like [`Self::show_synopsis`].
     pub show_epigraphs: Signal<bool>,
     /// Whether **this tab** shows its epigraph field: the setting above, followed
@@ -358,7 +358,7 @@ pub struct ContentTab {
     /// Scene/Notes split — nothing else on the tab branches on it.
     pub distraction_free: Signal<bool>,
     /// Max width (px) of the writing column while [`Self::distraction_free`] is
-    /// active (Settings ▸ Editor ▸ Editor Behavior's own "Column width" slider),
+    /// active (Settings ▸ Editor ▸ Typography ▸ Distraction-free's "Column width"),
     /// shared live from Settings — same shape as [`Self::column_width`], kept as
     /// its own field so widening the normal column can never silently widen (or
     /// narrow) the distraction-free one. Read by [`Self::main_column_width`].
@@ -1643,7 +1643,7 @@ impl ContentTab {
     /// axis [`Self::main_typography`] checks, and for the same reason (it must
     /// win regardless of prose kind). Nothing but the main editor's column reads
     /// this: the title, synopsis and every other pane still centre on
-    /// [`Self::column_width`], per the Settings ▸ Editor Behavior hint.
+    /// [`Self::column_width`], per the Settings ▸ Editor ▸ Page layout hint.
     pub fn main_column_width(&self) -> &Signal<f32> {
         if self.distraction_free.get() {
             &self.distraction_free_width

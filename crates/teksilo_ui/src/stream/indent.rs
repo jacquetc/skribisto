@@ -52,7 +52,7 @@ use teksilo::prelude::*;
 
 use crate::shared::column_inset::ColumnInset;
 
-/// How much the levels of a stream are set in: Settings ▸ Editor ▸ Editor Behavior ▸
+/// How much the levels of a stream are set in: Settings ▸ Editor ▸ Page layout ▸
 /// Indent by level. Stored by variant name under [`crate::STREAM_INDENT_KEY`].
 #[derive(Serialize, Deserialize, Default, Clone, Copy, Debug, PartialEq, Eq)]
 pub enum StreamIndent {

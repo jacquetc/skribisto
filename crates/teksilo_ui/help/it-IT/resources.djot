@@ -12,7 +12,7 @@ Accanto alla sua dimensione, ogni file mostra la sua estensione su una piccola e
 - *Aggiungi un collegamento web* chiede un indirizzo e, se vuoi, un titolo.
 - Puoi anche trascinare sul pannello dei file, o un indirizzo web preso dal tuo browser. `Ctrl+V` sull'elenco aggiunge gli indirizzi web che hai copiato.
 
-Un file viene conservato nel progetto: viaggia con ogni copia e ogni backup del progetto. Per un file oltre 10 MB, Skribisto chiede prima. *Conservalo nel progetto*, oppure *Collegalo invece*: un file collegato resta dov'è, e il progetto ricorda soltanto dove trovarlo. *Non chiedere più* tiene la tua risposta. Puoi cambiarla in seguito in *Impostazioni ▸ Editor ▸ Comportamento dell'editor*, alla voce *File oltre 10 MB*.
+Un file viene conservato nel progetto: viaggia con ogni copia e ogni backup del progetto. Per un file oltre 10 MB, Skribisto chiede prima. *Conservalo nel progetto*, oppure *Collegalo invece*: un file collegato resta dov'è, e il progetto ricorda soltanto dove trovarlo. *Non chiedere più* tiene la tua risposta. Puoi cambiarla in seguito in *Impostazioni ▸ Editor ▸ Immagini e file*, alla voce *File oltre 10 MB*.
 
 Quando i file conservati di un progetto salvato come file unico superano i 100 MB, Skribisto propone una volta di salvarlo invece come cartella. Un progetto salvato come cartella registra solo ciò che è cambiato.
 

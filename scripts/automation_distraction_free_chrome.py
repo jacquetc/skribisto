@@ -326,9 +326,9 @@ s.shot(os.path.join(fixture.SCRATCH, "df-chrome-after.png"))
 # ── 4. The settings surface exists and is on the right page ─────────────────
 # These checkboxes are the only way a writer changes any of this, so a pane that
 # silently failed to grow them would leave the feature unreachable even though
-# every gate below it works. They moved off Editor Behavior when the mode's
-# settings were consolidated onto one page — typography, column width and the
-# strip's items together — so this looks for that page now.
+# every gate below it works. They moved off the old Editor Behavior page when the
+# mode's settings were consolidated onto one page — typography, column width and
+# the strip's items together — so this looks for that page now.
 print("== Settings ▸ Editor ▸ Distraction-free carries the strip checkboxes ==")
 
 

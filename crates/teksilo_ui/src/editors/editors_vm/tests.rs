@@ -2158,7 +2158,7 @@ fn go_next_opens_the_next_scene_and_asks_for_the_caret_in_it() {
     );
 }
 
-// ── The tab limit (Settings ▸ Editor ▸ Editor Behavior ▸ Tabs) ─────────────────
+// ── The tab limit (Settings ▸ Appearance & Behavior ▸ Tabs & views) ─────────────
 
 /// Push a Scene tab and bring it forward, as an open or a click on the strip does:
 /// the per-pane selection effect in `focus_sync` ends in `set_focused`, which is where

@@ -220,7 +220,7 @@ resources-export-failed = { $count ->
    *[other] { $count } dosya kopyalanamadı: { $names }
 }
 
-## Büyük dosyalar tercihi (Düzenleyici davranışı)
+## Büyük dosyalar tercihi (Düzenleyici ▸ Resimler ve dosyalar)
 
 settings-resources-large-file = 10 MB'tan büyük dosyalar
 settings-resources-large-ask = Her seferinde sor
