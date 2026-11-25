@@ -23,8 +23,10 @@ on:
       - "v[0-9]+.[0-9]+.[0-9]+"
       - "v[0-9]+.[0-9]+.[0-9]+-*" # pre-releases: v3.0.0-beta.1
 
+# Read-only by default. Only `release`, which publishes the GitHub Release,
+# gets `contents: write`; the Flathub job pushes with its own fork token.
 permissions:
-  contents: write
+  contents: read
 
 env:
   CARGO_TERM_COLOR: always
@@ -34,7 +36,8 @@ jobs:
   validate:
     name: Validate
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    # A cold build, plus the Typst compile behind the `pdf` test step.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/install-linux-deps
@@ -44,6 +47,10 @@ jobs:
           shared-key: linux
       - name: Test
         run: cargo test --workspace
+      # The PDF export tests only compile with `pdf`, which every release
+      # artifact is built with.
+      - name: Test (pdf)
+        run: cargo test -p skribisto-compiler --features pdf
 
       # The release notes a Linux software centre shows come from the AppStream
       # metainfo, NOT from the GitHub Release, and Flathub reads it from the tag.
@@ -527,6 +534,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: release
+    # The one job that writes: action-gh-release creates the Release and
+    # uploads its files with GITHUB_TOKEN.
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v6
 
