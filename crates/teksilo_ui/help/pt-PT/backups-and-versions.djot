@@ -45,7 +45,7 @@ No topo do painel, escolha o que quer consultar:
 - *Texto*, o texto do próprio item.
 - *Bloco de notas*, as notas que guarda junto ao item. Consulte [o bloco de notas](:help-scratchpad).
 
-*Restaurar esta versão* recupera o texto anterior. O Skribisto cria primeiro uma cópia de segurança e `Ctrl+Z` anula o restauro.
+*Restaurar esta versão* recupera o texto anterior, ou as notas anteriores quando *Bloco de notas* está escolhido. O Skribisto cria primeiro uma cópia de segurança e `Ctrl+Z` anula o restauro. Um item que está no lixo tem de ser restaurado a partir do lixo antes de se poder restaurar uma das suas versões.
 
 Fixe uma versão proveniente de uma cópia de segurança para impedir que a limpeza dos ficheiros antigos a elimine.
 

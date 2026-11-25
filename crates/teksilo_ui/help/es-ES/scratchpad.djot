@@ -1,6 +1,7 @@
-Cada elemento de su proyecto tiene un bloc de notas: una página de notas junto a su texto.
-Úselo para lo que el texto aún necesita, como una pregunta por resolver, un dato por
-comprobar o una lista de cambios para la próxima versión.
+Cada elemento de su proyecto que contiene texto tiene un bloc de notas: una página de notas
+junto a su texto. Úselo para lo que el texto aún necesita, como una pregunta por resolver, un
+dato por comprobar o una lista de cambios para la próxima versión. Los marcadores que no
+contienen texto no lo tienen: consulte *Elementos sin bloc de notas* al final de esta página.
 
 ## Notas que siguen siendo privadas
 
@@ -29,8 +30,11 @@ nombra.
 
 - En una escena, una nota o cualquier otro elemento abierto en una pestaña, es el bloc de
   notas de ese elemento.
-- En el texto completo de un capítulo, una parte o un libro, sigue la escena en la que está
-  el cursor. Cuando hace clic en el bloc de notas para escribir, se queda en esa escena.
+- En *Libro completo*, *Parte completa*, *Capítulo completo* y *Sinopsis completa*, sigue la
+  escena u otro elemento donde estuvo el cursor por última vez. Se queda en ese elemento
+  cuando hace clic en el bloc de notas, en otro panel o en el *Archivador*. Mientras el cursor
+  no haya estado en ningún elemento de esa vista, muestra el bloc de notas del propio
+  capítulo, parte o libro.
 - En la página propia de un capítulo, su tablón de corcho o su vista general, es el bloc de
   notas del capítulo.
 

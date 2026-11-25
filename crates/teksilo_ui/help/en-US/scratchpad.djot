@@ -1,6 +1,7 @@
-Every item in your project has a scratchpad: a page of notes kept beside its text. Use it for
-what the text still needs, such as a question to settle, a fact to check or a list of changes
-for the next draft.
+Every item in your project that holds text has a scratchpad: a page of notes kept beside its
+text. Use it for what the text still needs, such as a question to settle, a fact to check or a
+list of changes for the next draft. The markers that hold no text have none: see *Items
+without a scratchpad* at the end of this page.
 
 ## Notes that stay private
 
@@ -26,8 +27,10 @@ The panel shows the scratchpad of the item in front of you, and the line at its 
 that item.
 
 - In a scene, a note or any other item open in a tab, it is that item's scratchpad.
-- In the full text of a chapter, a part or a book, it follows the scene your cursor is in.
-  When you click into the scratchpad to write, it stays on that scene.
+- In *Full Book*, *Full Part*, *Full Chapter* and *Full Synopsis*, it follows the scene, or
+  other item, your cursor was in last. It stays on that item when you click into the
+  scratchpad, another panel or the *Binder*. Before your cursor has been in any item of that
+  view, it shows the scratchpad of the chapter, part or book itself.
 - On a chapter's own page, its corkboard or its overview, it is the chapter's scratchpad.
 
 While the project is open, each scratchpad remembers where you left the cursor.

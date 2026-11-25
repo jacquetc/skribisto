@@ -60,8 +60,9 @@ At its top, choose what to look back through:
 - *Text*, the item's own text.
 - *Scratchpad*, the notes you keep beside the item. See [the scratchpad](:help-scratchpad).
 
-*Restore this version* puts the older text back. Skribisto takes a safety backup first, and
-`Ctrl+Z` undoes it.
+*Restore this version* puts the older text back, or the older notes when *Scratchpad* is
+chosen. Skribisto takes a safety backup first, and `Ctrl+Z` undoes it. An item in the trash
+must be restored from the trash before one of its versions can be restored.
 
 Pin a version that came from a backup and clearing out old files will never delete it.
 

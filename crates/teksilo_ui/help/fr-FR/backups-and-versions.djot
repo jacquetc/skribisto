@@ -68,8 +68,10 @@ En haut du panneau, choisissez ce que vous voulez revoir :
 - *Bloc-notes*, les notes que vous gardez à côté de l’élément. Voir
   [le bloc-notes](:help-scratchpad).
 
-*Restaurer cette version* remet l’ancien texte en place. Skribisto crée d’abord une copie de
-sécurité, et `Ctrl+Z` annule l’opération.
+*Restaurer cette version* remet l’ancien texte en place, ou les anciennes notes quand
+*Bloc-notes* est choisi. Skribisto crée d’abord une copie de sécurité, et `Ctrl+Z` annule
+l’opération. Un élément qui est dans la corbeille doit d’abord être restauré depuis la
+corbeille : avant, aucune de ses versions ne peut être restaurée.
 
 Épinglez une version issue d’une copie de secours et le nettoyage ne supprimera jamais ce
 fichier.

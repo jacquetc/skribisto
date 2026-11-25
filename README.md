@@ -71,8 +71,9 @@ braille display. Please get in touch if you hit a glaring gap.
 - Anchored comments in the margin (LibreOffice-style), with threaded replies and both a
   project-wide and a per-document comments dock
 - Footnotes, numbered by the book rather than stored, so inserting one renumbers the rest
-- A private scratchpad beside every item, for the questions and to-dos of the next draft:
-  never exported, never counted, and following the scene you are in even in a Full Chapter
+- A private scratchpad beside every item that holds text, for the questions and to-dos of the
+  next draft: never exported, never counted, and following the scene you are in even in a Full
+  Chapter
 - Note templates: built-in presets (character sheet, location, object, beat sheet, faction,
   research note) or save your own
 - Images in the prose, a map or a character reference or a photograph of a street, carried

@@ -1,6 +1,7 @@
-Jeder Eintrag Ihres Projekts hat einen Notizblock: eine Seite mit Notizen neben seinem Text.
-Notieren Sie dort, was der Text noch braucht, etwa eine offene Frage, eine Tatsache zum
-Nachprüfen oder eine Liste von Änderungen für die nächste Fassung.
+Jeder Eintrag Ihres Projekts, der Text enthält, hat einen Notizblock: eine Seite mit Notizen
+neben seinem Text. Notieren Sie dort, was der Text noch braucht, etwa eine offene Frage, eine
+Tatsache zum Nachprüfen oder eine Liste von Änderungen für die nächste Fassung. Markierungen
+ohne Text haben keinen: siehe *Einträge ohne Notizblock* am Ende dieser Seite.
 
 ## Notizen, die privat bleiben
 
@@ -28,9 +29,11 @@ ihn.
 
 - In einer Szene, einer Notiz oder einem anderen Eintrag, der in einem Tab geöffnet ist, ist
   es der Notizblock dieses Eintrags.
-- Im vollständigen Text eines Kapitels, eines Teils oder eines Buchs folgt er der Szene, in
-  der Ihr Cursor steht. Wenn Sie zum Schreiben in den Notizblock klicken, bleibt er bei dieser
-  Szene.
+- In *Ganzes Buch*, *Ganzer Teil*, *Ganzes Kapitel* und *Gesamte Zusammenfassung* folgt er
+  der Szene oder dem anderen Eintrag, in dem Ihr Cursor zuletzt stand. Er bleibt dabei, wenn
+  Sie in den Notizblock, einen anderen Bereich oder die *Projektmappe* klicken. Solange Ihr
+  Cursor in noch keinem Eintrag dieser Ansicht war, zeigt er den Notizblock des Kapitels, des
+  Teils oder des Buchs selbst.
 - Auf der eigenen Seite eines Kapitels, seiner Pinnwand oder seiner Übersicht ist es der
   Notizblock des Kapitels.
 

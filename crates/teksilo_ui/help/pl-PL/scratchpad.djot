@@ -1,6 +1,7 @@
-Każdy element projektu ma brudnopis: stronę notatek trzymaną obok jego tekstu. Zapisuj w nim
-to, czego tekst jeszcze potrzebuje, na przykład pytanie do rozstrzygnięcia, fakt do
-sprawdzenia albo listę zmian na następną wersję.
+Każdy element projektu, który zawiera tekst, ma brudnopis: stronę notatek trzymaną obok jego
+tekstu. Zapisuj w nim to, czego tekst jeszcze potrzebuje, na przykład pytanie do
+rozstrzygnięcia, fakt do sprawdzenia albo listę zmian na następną wersję. Znaczniki bez
+tekstu go nie mają: zobacz *Elementy bez brudnopisu* na końcu tej strony.
 
 ## Notatki, które pozostają prywatne
 
@@ -25,8 +26,10 @@ rozmiar tekstu wybierasz sam, w *Ustawienia ▸ Edytor ▸ Typografia ▸ Brudno
 Panel pokazuje brudnopis elementu, który masz przed sobą, a wiersz u góry panelu go nazywa.
 
 - W scenie, notatce lub innym elemencie otwartym w karcie to brudnopis tego elementu.
-- W pełnym tekście rozdziału, części lub książki podąża za sceną, w której jest kursor. Gdy
-  klikniesz w brudnopis, aby pisać, zostaje przy tej scenie.
+- W widokach *Pełna książka*, *Pełna część*, *Pełny rozdział* i *Pełne streszczenie* podąża
+  za sceną lub innym elementem, w którym ostatnio był kursor. Zostaje przy nim, gdy klikniesz
+  w brudnopis, w inny panel lub w *Segregator*. Dopóki kursor nie był jeszcze w żadnym
+  elemencie tego widoku, pokazuje brudnopis samego rozdziału, części lub książki.
 - Na własnej stronie rozdziału, jego tablicy korkowej lub przeglądzie to brudnopis rozdziału.
 
 Dopóki projekt jest otwarty, każdy brudnopis pamięta, gdzie zostawiłeś kursor.

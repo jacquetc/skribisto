@@ -173,8 +173,8 @@ scratchpad-title = Bloc-notes
 scratchpad-header = Bloc-notes · { $title }
 scratchpad-description = Vos notes personnelles sur { $title }, jamais exportées ni comptées
 scratchpad-trashed = Cet élément est dans la corbeille : ses notes sont en lecture seule.
-scratchpad-no-item = Ouvrez un élément pour garder vos notes à côté.
-scratchpad-none = Ce repère ne contient pas de texte : il n’a donc pas de bloc-notes.
+scratchpad-no-item = Ouvrez un élément pour garder vos notes à côté de son texte.
+scratchpad-none = Ce marqueur ne contient pas de texte : il n’a donc pas de bloc-notes.
 promote-blocked-title = Chapitre non vide
 promote-blocked-text = { $count ->
     [one] Ce chapitre contient encore { $count } élément. Déplacez-le ou mettez-le à la corbeille avant de le convertir en chapitre à plat.
@@ -2873,7 +2873,7 @@ search-tip-synopsis = Synopsis : rechercher dans le résumé de chaque élémen
 search-tip-label = Libellé : rechercher dans le court texte affiché sous le titre d’un élément.
 search-tip-comment = Commentaires : rechercher dans le texte des fils de commentaires et de leurs réponses. Un commentaire porte sur le manuscrit sans en faire partie, d’où son propre bouton, et un remplacement laisse les commentaires décochés tant que vous ne les cochez pas.
 search-tip-resource = Ressources : rechercher dans les titres, les descriptions, les noms de fichiers et les adresses web des fichiers et des liens joints à vos éléments. Leurs résultats sont listés pour que vous les retrouviez, et un remplacement ne les modifie jamais.
-search-tip-scratchpad = Bloc-notes : rechercher dans les notes personnelles gardées à côté de chaque élément. Désactivé tant que vous ne l’activez pas. Désactivé, un remplacement ne modifie jamais un bloc-notes ; activé, les résultats trouvés dans les blocs-notes sont listés décochés, et un remplacement ne les modifie que si vous les cochez.
+search-tip-scratchpad = Bloc-notes : rechercher dans les notes personnelles gardées à côté de chaque élément. Désactivé tant que vous ne l’activez pas. Désactivé, un remplacement ne modifie jamais un bloc-notes ; activé, les résultats trouvés dans les blocs-notes sont listés décochés, et « Tout remplacer » ne les modifie que si vous les cochez.
 search-tip-book = Livres : le conteneur du livre et ses marqueurs de début / fin.
 search-tip-part = Parties : les séparateurs de partie.
 search-tip-chapter = Chapitres : les chapitres, quel que soit leur stockage.
@@ -4102,6 +4102,7 @@ versions-clear-filters = Effacer les filtres
 versions-last-30-days = 30 derniers jours
 versions-restore-button = Restaurer cette version
 versions-restore-confirm-title = Remplacer ce texte par la version du { $date } ?
+versions-restore-confirm-scratchpad-title = Remplacer ces notes par la version du { $date } ?
 versions-restore-confirm-text = Ce que vous avez maintenant sera remplacé par le texte de cet élément au { $date }.
 versions-restore-confirm-scratchpad = Les notes de ce bloc-notes seront remplacées par celles qu’il contenait au { $date }.
 versions-restore-confirm-with-comments = Ce que vous avez maintenant sera remplacé par le texte de cet élément au { $date }. { $count ->
@@ -4112,6 +4113,7 @@ versions-restore-confirm-undo-note = Une copie de sécurité est faite d’abord
 versions-restored-toast = Version du { $date } restaurée
 versions-undo = Annuler
 versions-restore-row-gone = Cet élément n’est plus dans ce projet
+versions-restore-trashed = Cet élément est dans la corbeille : son texte ne peut pas être modifié. Restaurez-le d’abord depuis la corbeille.
 versions-restore-no-home = Cet élément a changé de type depuis, et l’ancien texte n’y a plus sa place
 versions-restore-no-safety-copy = Votre copie de sécurité n’a pas été faite, rien n’a été modifié
 versions-restore-failed = La restauration a échoué : { $error }
@@ -4730,8 +4732,8 @@ import-notice-versions-unplaced = { $count ->
    *[other] { $count } versions antérieures appartiennent à un élément qui ne figure plus dans le projet et n’ont pas pu être placées.
 }
 import-notice-note-links-not-kept = { $count ->
-    [1] Les notes d’un élément renvoyaient à des personnages, des entrées de l’univers, des intrigues ou d’autres éléments. Elles sont dans son bloc-notes, les noms écrits en toutes lettres, mais les références à ces personnages, entrées de l’univers, intrigues et éléments n’ont pas été conservées.
-   *[other] Les notes de { $count } éléments renvoyaient à des personnages, des entrées de l’univers, des intrigues ou d’autres éléments. Elles sont dans le bloc-notes de chacun, les noms écrits en toutes lettres, mais les références à ces personnages, entrées de l’univers, intrigues et éléments n’ont pas été conservées.
+    [1] Les notes d’un élément renvoyaient à des personnages, des entrées de l’univers, des intrigues ou d’autres éléments. Elles sont dans son bloc-notes, les noms écrits en toutes lettres, mais les références à ces personnages, à ces entrées de l’univers, à ces intrigues et à ces éléments n’ont pas été conservées.
+   *[other] Les notes de { $count } éléments renvoyaient à des personnages, des entrées de l’univers, des intrigues ou d’autres éléments. Elles sont dans le bloc-notes de chacun, les noms écrits en toutes lettres, mais les références à ces personnages, à ces entrées de l’univers, à ces intrigues et à ces éléments n’ont pas été conservées.
 }
 
 ## Native file dialogs: the window title, and the label of the file-type filter.

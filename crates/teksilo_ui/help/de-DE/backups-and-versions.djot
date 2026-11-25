@@ -62,8 +62,10 @@ Wählen Sie oben im Bereich, was Sie zurückverfolgen möchten:
 - *Notizblock*: die Notizen, die Sie neben dem Eintrag führen. Siehe
   [Notizblock](:help-scratchpad).
 
-*Diese Version wiederherstellen* setzt den älteren Text zurück. Skribisto erstellt zuvor eine
-Sicherheitskopie; `Strg+Z` macht den Vorgang rückgängig.
+*Diese Version wiederherstellen* setzt den älteren Text zurück, bei *Notizblock* die älteren
+Notizen. Skribisto erstellt zuvor eine Sicherheitskopie; `Strg+Z` macht den Vorgang
+rückgängig. Ein Eintrag im Papierkorb muss erst aus dem Papierkorb wiederhergestellt werden,
+bevor sich eine seiner Versionen wiederherstellen lässt.
 
 Heften Sie eine Version aus einer Sicherung an, damit die automatische Bereinigung ihre Datei
 nie löscht.

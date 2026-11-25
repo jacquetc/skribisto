@@ -47,7 +47,7 @@ U góry panelu wybierz, co chcesz przejrzeć:
 - *Tekst*, czyli tekst samego elementu.
 - *Brudnopis*, czyli notatki prowadzone obok elementu. Zobacz [brudnopis](:help-scratchpad).
 
-*Przywróć tę wersję* przywraca starszy tekst. Najpierw powstaje kopia bezpieczeństwa, a `Ctrl+Z` cofa przywrócenie.
+*Przywróć tę wersję* przywraca starszy tekst, a gdy wybrano *Brudnopis*, starsze notatki. Najpierw powstaje kopia bezpieczeństwa, a `Ctrl+Z` cofa przywrócenie. Element w koszu trzeba najpierw przywrócić z kosza, zanim będzie można przywrócić którąś z jego wersji.
 
 Przypnij wersję pochodzącą z kopii zapasowej, aby usuwanie starych plików jej nie skasowało.
 

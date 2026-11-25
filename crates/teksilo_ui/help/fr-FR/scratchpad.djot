@@ -1,6 +1,8 @@
-Chaque élément de votre projet a un bloc-notes : une page de notes gardée à côté de son texte.
-Servez-vous-en pour ce qui reste à faire dans le texte : une question à trancher, un fait à
-vérifier, une liste de changements pour la prochaine version.
+Chaque élément de votre projet qui contient du texte a un bloc-notes : une page de notes
+gardée à côté de son texte. Servez-vous-en pour ce qui reste à faire dans le texte : une
+question à trancher, un fait à vérifier, une liste de changements pour la prochaine version.
+Les marqueurs qui ne contiennent pas de texte n’en ont pas : voir *Les éléments sans
+bloc-notes* à la fin de cette page.
 
 ## Des notes qui restent personnelles
 
@@ -18,7 +20,7 @@ texte.
 Le panneau *Bloc-notes* se trouve à droite de la fenêtre. Ouvrez-le avec son icône, un carnet
 à spirale, ou avec `Ctrl+Maj+A`. *Affichage ▸ Panneaux* le propose aussi.
 
-Écrivez-y comme dans n’importe quel texte : le gras, les listes et les liens fonctionnent de la
+Écrivez-y comme dans n’importe quel texte : le gras, les listes et les liens fonctionnent de la
 même façon. Sa police et la taille de son texte sont à votre choix, dans *Paramètres ▸ Éditeur
 ▸ Typographie ▸ Bloc-notes*.
 
@@ -29,9 +31,11 @@ panneau le nomme.
 
 - Dans une scène, une note ou tout autre élément ouvert dans un onglet, c’est le bloc-notes de
   cet élément.
-- Dans le texte complet d’un chapitre, d’une partie ou d’un livre, il suit la scène où se
-  trouve votre curseur. Quand vous cliquez dans le bloc-notes pour écrire, il reste sur cette
-  scène.
+- Dans *Livre complet*, *Partie complète*, *Chapitre complet* et *Synopsis complet*, il suit
+  la scène, ou l’autre élément, où votre curseur était en dernier. Il y reste quand vous
+  cliquez dans le bloc-notes, dans un autre panneau ou dans le *Classeur*. Tant que votre
+  curseur n’est passé dans aucun élément de cette vue, il montre le bloc-notes du chapitre, de
+  la partie ou du livre lui-même.
 - Sur la page propre d’un chapitre, son tableau de liège ou sa vue d’ensemble, c’est le
   bloc-notes du chapitre.
 
@@ -72,5 +76,5 @@ en remet une en place, et `Ctrl+Z` dans le bloc-notes annule l’opération. Voi
 
 ## Les éléments sans bloc-notes
 
-Le repère *Fin du livre*, et les autres repères qui ne contiennent pas de texte, n’ont pas de
-bloc-notes. Le panneau le dit quand l’un d’eux est devant vous.
+Le marqueur *Fin du livre*, et les autres marqueurs qui ne contiennent pas de texte, n’ont pas
+de bloc-notes. Le panneau le dit quand l’un d’eux est devant vous.

@@ -51,7 +51,7 @@ In alto nel pannello, scegli cosa consultare:
 - *Testo*, il testo dell'elemento stesso.
 - *Blocco note*, gli appunti che tieni accanto all'elemento. Vedi [il blocco note](:help-scratchpad).
 
-*Ripristina questa versione* rimette il testo precedente. Skribisto crea prima un backup di sicurezza e `Ctrl+Z` annulla il ripristino.
+*Ripristina questa versione* rimette il testo precedente, o gli appunti precedenti quando è scelto *Blocco note*. Skribisto crea prima un backup di sicurezza e `Ctrl+Z` annulla il ripristino. Un elemento nel cestino va ripristinato dal cestino prima di poter ripristinare una delle sue versioni.
 
 Fissa una versione proveniente da un backup per impedire che la pulizia dei vecchi file la elimini.
 

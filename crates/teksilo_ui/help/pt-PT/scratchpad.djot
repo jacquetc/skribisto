@@ -1,6 +1,7 @@
-Cada item do seu projeto tem um bloco de notas: uma página de notas ao lado do seu texto.
-Use-o para o que o texto ainda precisa, como uma pergunta por resolver, um facto por
-confirmar ou uma lista de alterações para a próxima versão.
+Cada item do seu projeto que contém texto tem um bloco de notas: uma página de notas ao lado
+do seu texto. Use-o para o que o texto ainda precisa, como uma pergunta por resolver, um facto
+por confirmar ou uma lista de alterações para a próxima versão. Os marcadores que não contêm
+texto não o têm: consulte *Itens sem bloco de notas* no fim desta página.
 
 ## Notas que continuam privadas
 
@@ -29,8 +30,10 @@ nomeia-o.
 
 - Numa cena, numa nota ou em qualquer outro item aberto num separador, é o bloco de notas
   desse item.
-- No texto completo de um capítulo, de uma parte ou de um livro, segue a cena onde está o
-  cursor. Quando clica no bloco de notas para escrever, fica nessa cena.
+- Em *Livro completo*, *Parte completa*, *Capítulo completo* e *Sinopse completa*, segue a
+  cena, ou outro item, onde o cursor esteve por último. Fica nesse item quando clica no bloco
+  de notas, noutro painel ou no *Arquivador*. Enquanto o cursor não tiver estado em nenhum
+  item dessa vista, mostra o bloco de notas do próprio capítulo, parte ou livro.
 - Na página própria de um capítulo, no seu quadro de cortiça ou na sua vista geral, é o bloco
   de notas do capítulo.
 

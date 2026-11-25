@@ -66,6 +66,11 @@ pub fn restore_version(
     let Some(item) = probe.dto() else {
         return refuse(ctx, RestoreRefusal::RowGone);
     };
+    // Said before the confirmation, as every blocker known now is: the text of an item
+    // in the Trash is read-only, and the Scratchpad panel says so of its notes.
+    if !item.activated {
+        return refuse(ctx, RestoreRefusal::Trashed);
+    }
     let target = match version_restore::resolve_role(&item.role, &item.sub_role, &req.recorded_role)
     {
         Ok(t) => t,
@@ -206,8 +211,15 @@ impl RestoreWording {
         } else {
             tr!(versions_restore_confirm_text(date = when.clone()))
         };
+        let title = if scratchpad {
+            tr!(versions_restore_confirm_scratchpad_title(
+                date = when.clone()
+            ))
+        } else {
+            tr!(versions_restore_confirm_title(date = when.clone()))
+        };
         Self {
-            title: tr!(versions_restore_confirm_title(date = when.clone())),
+            title,
             body,
             restored: tr!(versions_restored_toast(date = when)),
         }
@@ -220,6 +232,7 @@ impl RestoreWording {
 fn refuse(ctx: &mut EventContext, why: RestoreRefusal) {
     let message = match why {
         RestoreRefusal::RowGone => tr!(versions_restore_row_gone()),
+        RestoreRefusal::Trashed => tr!(versions_restore_trashed()),
         RestoreRefusal::RoleHasNoHome { .. } | RestoreRefusal::NotEditableText { .. } => {
             tr!(versions_restore_no_home())
         }
@@ -285,6 +298,11 @@ mod tests {
             tr!(versions_restore_confirm_scratchpad(date = date())).resolve_now(),
         );
         assert_ne!(notes.body.resolve_now(), plain.body.resolve_now());
+        assert_eq!(
+            notes.title.resolve_now(),
+            tr!(versions_restore_confirm_scratchpad_title(date = date())).resolve_now(),
+            "and so does its title"
+        );
 
         // A plural message resolves to its own id with no bundle installed,
         // which would make this comparison pass whatever the date.

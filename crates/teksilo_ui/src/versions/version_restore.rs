@@ -148,6 +148,9 @@ impl RecreateRequest {
 pub enum RestoreRefusal {
     /// The row no longer exists in this project.
     RowGone,
+    /// The item is in the Trash, where its text is read-only: no key, menu or panel
+    /// writes it, and neither does a restore. It can be restored from the Trash first.
+    Trashed,
     /// The row has since become something with no room for this text.
     RoleHasNoHome { recorded: ContentRole },
     /// The role remaps, but not onto a field that holds a document.
@@ -298,6 +301,10 @@ pub fn apply(
     let Some(doc) = docs.open(item_id) else {
         return Err(RestoreRefusal::RowGone);
     };
+    if doc.trashed.get() {
+        docs.release(item_id, stack);
+        return Err(RestoreRefusal::Trashed);
+    }
     if slot == Slot::Scratchpad {
         // Built on demand, so a restore into a scratchpad nobody has opened builds it.
         docs.ensure_scratchpad(&doc);
@@ -801,6 +808,45 @@ mod tests {
         assert!(
             saved_notes.contains("trust the keeper"),
             "the file holds the restored notes: {saved_notes:?}"
+        );
+    }
+
+    /// An item in the Trash is read-only: its notes and its text are not rewritten by a
+    /// restore any more than by a key. The restore wrote them anyway while the
+    /// Scratchpad panel said the notes were read-only.
+    #[cfg(not(feature = "mocks"))]
+    #[test]
+    fn a_trashed_items_text_and_notes_are_not_restored() {
+        use frontend::commands::binder_item_commands;
+        let project = crate::test_support::RealProject::empty_novel();
+        let docs = OpenDocsStore::new(project.app_ctx.clone());
+        let (item_id, _) = scene_with_notes(&project, &docs);
+        let stack = project.ids.stack_id.get();
+        let mut dto = binder_item_commands::get_binder_item(&project.app_ctx, &item_id)
+            .expect("read")
+            .expect("the scene");
+        dto.activated = false;
+        binder_item_commands::update_binder_item(&project.app_ctx, None, &dto.into())
+            .expect("trashed");
+
+        for role in [ContentRole::ScratchpadText, ContentRole::SceneText] {
+            let refused = apply(&docs, item_id, &role, "Something else.", stack, None);
+            assert!(
+                matches!(refused, Err(RestoreRefusal::Trashed)),
+                "{role:?}: {refused:?}"
+            );
+        }
+        assert_eq!(
+            stored(&project.app_ctx, item_id, ContentRole::ScratchpadText).as_deref(),
+            Some("Ask about the oil.")
+        );
+        assert_eq!(
+            stored(&project.app_ctx, item_id, ContentRole::SceneText).as_deref(),
+            Some("The keeper climbed to the lamp.")
+        );
+        assert!(
+            docs.peek(item_id).is_none(),
+            "the refusal gave its reference back"
         );
     }
 

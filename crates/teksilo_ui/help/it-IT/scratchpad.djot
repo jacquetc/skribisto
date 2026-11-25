@@ -1,6 +1,7 @@
-Ogni elemento del progetto ha un blocco note: una pagina di appunti tenuta accanto al suo
-testo. Usalo per ciò che manca ancora al testo, come una domanda da risolvere, un fatto da
-verificare o un elenco di modifiche per la prossima stesura.
+Ogni elemento del progetto che contiene testo ha un blocco note: una pagina di appunti tenuta
+accanto al suo testo. Usalo per ciò che manca ancora al testo, come una domanda da risolvere,
+un fatto da verificare o un elenco di modifiche per la prossima stesura. I segnaposto che non
+contengono testo non ne hanno: vedi *Elementi senza blocco note* alla fine di questa pagina.
 
 ## Appunti che restano privati
 
@@ -27,8 +28,11 @@ Il pannello mostra il blocco note dell'elemento che hai davanti, e la riga in al
 
 - In una scena, una nota o qualsiasi altro elemento aperto in una scheda, è il blocco note di
   quell'elemento.
-- Nel testo completo di un capitolo, di una parte o di un libro, segue la scena in cui si
-  trova il cursore. Quando fai clic nel blocco note per scrivere, resta su quella scena.
+- In *Libro completo*, *Parte completa*, *Capitolo completo* e *Sinossi completa*, segue la
+  scena, o l'altro elemento, in cui si trovava per ultimo il cursore. Resta su quell'elemento
+  quando fai clic nel blocco note, in un altro pannello o nel *Raccoglitore*. Finché il cursore
+  non è stato in nessun elemento di quella vista, mostra il blocco note del capitolo, della
+  parte o del libro stesso.
 - Sulla pagina propria di un capitolo, sulla sua bacheca o sulla sua panoramica, è il blocco
   note del capitolo.
 

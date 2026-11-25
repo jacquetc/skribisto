@@ -68,8 +68,10 @@ En la parte superior del panel, elija qué quiere revisar:
 - *Bloc de notas*, las notas que guarda junto al elemento. Consulte
   [el bloc de notas](:help-scratchpad).
 
-*Restaurar esta versión* vuelve a poner el texto anterior. Skribisto hace antes una copia de
-seguridad de precaución, y `Ctrl+Z` lo deshace.
+*Restaurar esta versión* vuelve a poner el texto anterior, o las notas anteriores cuando está
+elegido *Bloc de notas*. Skribisto hace antes una copia de seguridad de precaución, y `Ctrl+Z`
+lo deshace. Un elemento que está en la papelera debe restaurarse desde la papelera antes de
+poder restaurar una de sus versiones.
 
 Fije una versión procedente de una copia de seguridad y la limpieza de archivos antiguos
 nunca la eliminará.
