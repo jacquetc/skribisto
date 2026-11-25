@@ -772,8 +772,8 @@ pub fn run() {
         // `text_replacements` are NOT in that handful — every consumer of
         // either (`App::build`, `SettingsPanel::build`) already reads them off
         // `session` directly, so unlike the fields below they need no
-        // `app_state` registration at all.
-        .app_state(initial_state.session.ids.clone())
+        // `app_state` registration at all. Neither is `ids`: `AppIds` is
+        // deliberately never registered (see `app_ids`'s module doc).
         .app_state(initial_state.session.open_docs.clone())
         .app_state(spellcheck.clone())
         .app_state(dictionaries.clone())

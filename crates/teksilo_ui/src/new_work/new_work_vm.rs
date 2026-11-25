@@ -431,12 +431,12 @@ pub enum NewWorkPurpose {
 enum CreateTarget {
     /// Replace the presenting window's own project, in place. The `AppIds` is
     /// **that window's own** — read (`.work_id.get()`) at [`NewWorkViewModel::create`]
-    /// time to close the outgoing Work before replacing it, never
-    /// `ctx.app_state::<AppIds>()`, which is one process-wide slot fixed at
-    /// builder time from the *first* window's session (see
+    /// time to close the outgoing Work before replacing it. There is no app-wide
+    /// `AppIds` (see `crate::app_ids`'s module doc and
     /// `crate::app::close_outgoing_work`'s doc): with a second Work open in a
-    /// second window, that slot would name the WRONG window's Work, and closing
-    /// it would tear a sibling window's live, untouched Work out from under it.
+    /// second window, any other source could name the WRONG window's Work, and
+    /// closing it would tear a sibling window's live, untouched Work out from
+    /// under it.
     InPlace(crate::app_ids::AppIds),
     /// Create it in a **new** project window, which performs the creation on its
     /// own first build ([`crate::app::PendingAction::New`]).

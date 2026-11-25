@@ -8,10 +8,17 @@
 //! itself keeps only the handful of ids those handles point at — the open
 //! `Work`, its `WorkInfo`, and the per-`Work` undo stack.
 //!
-//! Seeded once per `LoadWork` (see `App::build`), shared everywhere by clone, and
-//! registered as `app_state` so any widget can reach it via
-//! `ctx.app_state::<AppIds>()`. Singles/models read these signals to know what to
-//! point at and refresh themselves on fine-grained backend events thereafter.
+//! Seeded once per `LoadWork` (see `App::build`) and shared by clone. Singles and
+//! models read these signals to know what to point at and refresh themselves on
+//! fine-grained backend events thereafter.
+//!
+//! **Each window has its own `AppIds`, and it is never registered as
+//! `app_state`.** Whoever needs one receives the window's own clone through a
+//! constructor parameter. `app_state` holds one value per type for the whole
+//! process, so a registered `AppIds` could only ever be the first window's: with a
+//! second Work open in a second window, a reader would act on the wrong Work (and
+//! closing that Work would tear a sibling window's project out from under it).
+//! `ctx.app_state::<AppIds>()` therefore always answers `None`.
 //!
 //! **`root_id` lives on [`crate::sessions::WorkRegistry`], not here.** Every
 //! field below is per-open-`Work` (Tier 2 in the multi-Work migration's terms

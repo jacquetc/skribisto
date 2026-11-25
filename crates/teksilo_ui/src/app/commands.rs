@@ -76,9 +76,8 @@ pub(super) struct CommandDeps {
     pub app_ctx: Rc<AppContext>,
     /// This window's own id-only Work state — threaded so `app.quit`'s guard
     /// (and any future close-adjacent command) resolves the *right* Work via
-    /// `guard_unsaved_exit`, never `ctx.app_state::<AppIds>()` (see
-    /// `close_work_and_return_to_launcher`'s doc for why that lookup is unsound
-    /// the moment a second Work's window exists).
+    /// `guard_unsaved_exit`. There is no app-wide `AppIds` (see
+    /// `crate::app_ids`'s module doc and `close_outgoing_work`'s doc for why).
     pub ids: crate::app_ids::AppIds,
     /// The whole Tier-2 bundle for this window's own Work — threaded so
     /// `app.settings` can build `SettingsPanel` over the RIGHT Work's session

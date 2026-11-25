@@ -25,8 +25,9 @@
 //! on "Create Work" (`NewWorkViewModel::create`), so cancelling the form never
 //! leaves the window projectless. The outgoing Work's id is threaded through as
 //! a plain parameter, resolved by each of the four doors from THEIR OWN
-//! window's `AppIds` — never `ctx.app_state::<AppIds>()`, which would answer
-//! with the wrong window's id once a second Work is open elsewhere.
+//! window's `AppIds`. There is no app-wide `AppIds` (see `crate::app_ids`'s
+//! module doc): a process-wide one would answer with the wrong window's id once
+//! a second Work is open elsewhere.
 //!
 //! This view-model *is* that guard, factored so all four doors share one branch
 //! order — [`unsaved_decision`], which `work.close` also matches on, so the two

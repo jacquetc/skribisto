@@ -163,10 +163,9 @@ pub struct BackupSchedulerViewModel {
     app_ctx: Rc<AppContext>,
     /// This session's own id-only state — needed so [`Self::do_close`] can name
     /// the *right* Work when it calls `close_work_and_return_to_launcher`
-    /// (multi-Work migration: it used to resolve "which Work" via
-    /// `ctx.app_state::<AppIds>()`, a single process-wide slot that can only
-    /// ever answer with whichever window's `AppIds` the builder happened to
-    /// register — wrong the instant a second Work's window exists).
+    /// (multi-Work migration: it used to resolve "which Work" from a single
+    /// process-wide `app_state` slot that held the first window's `AppIds`,
+    /// wrong the instant a second Work's window exists; that slot is gone).
     ids: AppIds,
     /// This session's own `WorkspaceLayoutViewModel` — needed for the same reason as
     /// `ids`: [`Self::do_close`] hands it straight to

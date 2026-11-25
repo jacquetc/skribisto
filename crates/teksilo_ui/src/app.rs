@@ -454,12 +454,11 @@ pub(crate) fn capture_workspace_layout(
 /// `ProjectLifecycleViewModel::on_close`.
 ///
 /// **The caller must resolve `work_id` from the window's OWN `AppIds`
-/// (`ids.work_id.get()`), captured before anything re-points it** — never
-/// `ctx.app_state::<AppIds>()`, which is one process-wide slot fixed at
-/// builder time from the *first* window's session: with a second Work open in
-/// a second window, that slot answers with the WRONG window's `work_id`, and
-/// closing it would tear a sibling window's live, untouched Work out from
-/// under it.
+/// (`ids.work_id.get()`), captured before anything re-points it.** There is no
+/// app-wide `AppIds` to fall back on (see `crate::app_ids`'s module doc): with a
+/// second Work open in a second window, any other source could name the wrong
+/// Work, and closing it would tear a sibling window's live, untouched Work out
+/// from under it.
 ///
 /// `WorkRegistry`'s session/undo-stack bookkeeping is untouched by this (by
 /// design — see `on_close`'s own doc): that half already runs from

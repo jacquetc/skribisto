@@ -20,12 +20,14 @@
 //! backend sweep was removed as part of the same migration (see
 //! `work_management::load_work_uc`).
 //!
-//! **What moved here, and why `main.rs`'s existing `.app_state(...)`
-//! registrations for these same instances are left in place.** Every field
-//! below is still registered as `app_state` too (in `main.rs`), unchanged —
-//! this bundle does not replace those registrations, it replaces the dozen
-//! independent local variables `main.rs` used to construct and thread through
-//! by hand. Widgets that already reach a field via `ctx.app_state::<T>()`
+//! **What moved here, and why the existing `.app_state(...)` registrations
+//! for some of these same instances are left in place.** Several fields below
+//! (the first window's) are also registered as `app_state`, in `crate::run`;
+//! the list there is the authority. `ids` is deliberately not among them: a
+//! process-wide `AppIds` would name the first window's Work in every window
+//! (see `crate::app_ids`). This bundle does not replace those registrations, it
+//! replaces the dozen independent local variables `main.rs` used to construct
+//! and thread through by hand. Widgets that already reach a field via `ctx.app_state::<T>()`
 //! (there are many: `docks/inspector.rs`, `tags/tag_chip.rs`,
 //! `spellcheck/language_pill_field.rs`, `settings.rs`, …) keep working exactly
 //! as today, reaching the *same* instance either way — per the design doc's
