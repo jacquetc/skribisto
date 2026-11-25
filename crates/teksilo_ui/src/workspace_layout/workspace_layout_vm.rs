@@ -39,7 +39,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use teksilo::prelude::Signal;
-use teksilo::widgets::{DockLayoutState, DockSide, DockingModel};
+use teksilo::widgets::{DockLayoutState, DockSide, DockTabId, DockingModel};
 
 use frontend::AppContext;
 
@@ -361,7 +361,7 @@ impl WorkspaceLayoutViewModel {
             .and_then(|r| r.docks.as_ref().map(|d| (d, &r.known_docks)))
         {
             Some((docks, known)) => {
-                self.docking.import_state(docks);
+                self.docking.import_state(&with_fresh_tab_ids(docks));
                 self.mount_docks_added_since(known);
             }
             None => self.apply_default_docks(),
@@ -600,6 +600,47 @@ const DOCK_SIDES: [DockSide; 4] = [
     DockSide::Bottom,
 ];
 
+/// `state` with every tab given an id minted by this run of the app.
+///
+/// A tab id means something only inside the process that minted it: teksilo counts
+/// them from 1 in each run (`DockTabId::fresh`), and `import_state` takes a saved desk's
+/// ids as they are without moving that count past them. So the tab
+/// [`WorkspaceLayoutViewModel::mount_docks_added_since`] opened for a dock the desk had
+/// never heard of took the next number of this run, which a tab of the saved desk
+/// already had: the Scratchpad's tab got the id the Resources tab had been given the
+/// same way one run earlier. Two tabs sharing an id are one tab to the rail: clicking
+/// the Scratchpad selected the Resources tab and showed its panel, and the panel's
+/// widget was claimed twice in the accessibility tree.
+///
+/// Nothing outside the process refers to a tab by its id (a side's selection is an
+/// index), so renumbering the whole desk on the way in loses nothing, and it also
+/// repairs a desk already saved with two tabs sharing an id.
+///
+/// **A workaround for teksilo-widgets 0.29.1 and earlier: remove it with the teksilo
+/// release that holds commit `4e9192ce` ("a dock activity opened after an import gets an
+/// id of its own", branch `fix/dock-tab-id-collision`, 2026-11-25).** From that release,
+/// `import_state` itself keeps each saved id unless an earlier restored tab has it, moves
+/// the counter past them, and re-mints the repeats. This renumbering is then unnecessary
+/// but harmless (its ids are distinct and in range, so the import keeps them). On that
+/// bump: call `import_state(docks)` directly in [`WorkspaceLayoutViewModel::restore`],
+/// delete this function, and keep
+/// `a_desk_with_tab_ids_from_another_run_restores_every_tab_as_its_own` as the regression
+/// test, importing the saved desk as it is.
+fn with_fresh_tab_ids(state: &DockLayoutState) -> DockLayoutState {
+    let mut state = state.clone();
+    for side in [
+        &mut state.leading,
+        &mut state.trailing,
+        &mut state.top,
+        &mut state.bottom,
+    ] {
+        for tab in &mut side.tabs {
+            tab.id = DockTabId::fresh().raw();
+        }
+    }
+    state
+}
+
 /// Roster ids that `known` does not list — the docks a saved desk had never heard
 /// of, in roster order.
 ///
@@ -722,6 +763,71 @@ mod tests {
 
     fn is_open(model: &DockingModel, id: u64) -> bool {
         model.dock_location(DockWidgetId::from_raw(id)).is_some()
+    }
+
+    /// A desk saved before the Scratchpad existed, by a run whose tab ids are those a
+    /// later run mints again (teksilo counts them from 1 in every run): here every
+    /// tab has the same id, the extreme of the Resources and Scratchpad tabs both
+    /// being 15 in a writer's `workspace.toml`. Restored as it was, two tabs with one
+    /// id were one tab to the rail: the Scratchpad's icon showed the Resources panel.
+    /// Restored through `with_fresh_tab_ids`, every tab is its own, and selecting the
+    /// Scratchpad's shows the Scratchpad.
+    #[test]
+    fn a_desk_with_tab_ids_from_another_run_restores_every_tab_as_its_own() {
+        use crate::docks::{RESOURCES_DOCK_ID, SCRATCHPAD_DOCK_ID};
+        let model = registered_model();
+        let earlier: Vec<u64> = crate::docks::app_dock_ids()
+            .into_iter()
+            .filter(|id| *id != SCRATCHPAD_DOCK_ID)
+            .collect();
+        for dock in crate::docks::all_docks()
+            .iter()
+            .filter(|d| earlier.contains(&d.id))
+        {
+            model.open_dock(dock.widget_id(), dock.location());
+        }
+        let mut saved = model.export_state();
+        for side in [
+            &mut saved.leading,
+            &mut saved.trailing,
+            &mut saved.top,
+            &mut saved.bottom,
+        ] {
+            for tab in &mut side.tabs {
+                tab.id = 15;
+            }
+        }
+
+        let fresh = registered_model();
+        let vm = vm_with(fresh.clone());
+        fresh.import_state(&with_fresh_tab_ids(&saved));
+        vm.mount_docks_added_since(&earlier);
+
+        let desk = fresh.export_state();
+        let mut ids: Vec<u64> = [&desk.leading, &desk.trailing, &desk.top, &desk.bottom]
+            .iter()
+            .flat_map(|side| side.tabs.iter().map(|t| t.id))
+            .collect();
+        let count = ids.len();
+        ids.sort_unstable();
+        ids.dedup();
+        assert_eq!(ids.len(), count, "no two tabs share an id");
+
+        for dock in [SCRATCHPAD_DOCK_ID, RESOURCES_DOCK_ID] {
+            let at = desk
+                .trailing
+                .tabs
+                .iter()
+                .position(|t| t.panes == vec![dock])
+                .expect("the dock has a trailing tab of its own");
+            fresh.select_tab(DockSide::Trailing, at);
+            let shown = &fresh.export_state().trailing;
+            assert_eq!(
+                shown.tabs[shown.selected_tab].panes,
+                vec![dock],
+                "selecting the tab of {dock:#x} shows that dock"
+            );
+        }
     }
 
     /// **The bug, pinned.** A desk captured before the comments docks existed
