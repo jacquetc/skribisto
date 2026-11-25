@@ -187,7 +187,8 @@ fn progress_is_reported_monotonically_to_completion() {
         100.0,
         "a successful import must finish at 100%"
     );
-    assert_eq!(summary.imported_items, 15);
+    // Two notes are scratchpads of their own items, not items of their own.
+    assert_eq!(summary.imported_items, 13);
 }
 
 #[test]
@@ -236,7 +237,8 @@ fn terminal_project_full_structure() {
 
     // Trashed: Trashed Chapter + Trashed Scene + Deleted Book = 3.
     assert_eq!(summary.skipped_trashed, 3);
-    assert_eq!(summary.imported_items, 15);
+    // Scene 1.1's and Direct Chapter's notes are their scratchpads, no items of their own.
+    assert_eq!(summary.imported_items, 13);
     assert_eq!(bundle.binders.len(), 2);
 
     let manuscript = &bundle.binders[0];
@@ -283,15 +285,21 @@ fn terminal_project_full_structure() {
     // The Qt <style> block must not leak into the prose.
     assert!(!prose(scene11, ContentRole::SceneText).contains("margin"));
 
-    // Scene note became a following-sibling Note.
-    let scene11_notes = find(manuscript, "Scene 1.1 (notes)");
-    assert_eq!(scene11_notes.item.sub_role, SubRole::Note);
-    assert_eq!(scene11_notes.item.indent, 3);
-    assert!(prose(scene11_notes, ContentRole::NoteText).contains("Note for scene 1.1."));
+    // The scene's note is its own scratchpad, not a Note beside it.
+    assert!(prose(scene11, ContentRole::ScratchpadText).contains("Note for scene 1.1."));
+    assert!(!has(manuscript, "Scene 1.1 (notes)"));
+    // A scene with no note has no scratchpad, not a blank one.
+    let scene12 = find(manuscript, "Scene 1.2");
+    assert!(
+        scene12
+            .item
+            .prose_refs
+            .iter()
+            .all(|p| p.role != ContentRole::ScratchpadText)
+    );
 
     // Separator → a scene-break marker appended to the PRECEDING scene's
-    // prose, not an item of its own. Note that `Scene 1.1` pushed a sibling
-    // Note after itself, so this also exercises the backward walk past it.
+    // prose, not an item of its own.
     assert!(
         !manuscript.items.iter().any(|i| i.item.title == "* * *"),
         "a separator must no longer occupy a binder slot"
@@ -310,7 +318,9 @@ fn terminal_project_full_structure() {
     assert_eq!(direct.item.indent, 1);
     assert_eq!(inline(direct, ContentRole::ChapterTitle), "Direct Chapter");
     assert!(prose(direct, ContentRole::SceneText).contains("Direct chapter prose."));
-    assert!(has(manuscript, "Direct Chapter (notes)")); // its N → sibling note
+    // Its N is its scratchpad.
+    assert!(prose(direct, ContentRole::ScratchpadText).contains("Direct chapter note."));
+    assert!(!has(manuscript, "Direct Chapter (notes)"));
 
     // Multi-book + BookEnd markers (one per book).
     assert!(has(manuscript, "Book Two"));
@@ -373,8 +383,8 @@ fn terminal_project_full_structure() {
 }
 
 /// The titles the import makes up are the caller's words, in the writer's language: a
-/// French interface gets French titles for a container's own text and notes, a French name
-/// for a project that names none, and nothing English.
+/// French interface gets a French title for a container's own text, a French name for a
+/// project that names none, and nothing English.
 #[test]
 fn the_titles_the_import_makes_up_are_the_callers_words() {
     let slot = skrib_format::importing::TITLE_SLOT;
@@ -394,7 +404,6 @@ fn the_titles_the_import_makes_up_are_the_callers_words() {
     write_zip(&src, &members);
     let seeded = SeededNames {
         untitled_project: "Projet importé".into(),
-        notes_of: format!("Notes de « {slot} »"),
         content_of: format!("Texte de « {slot} »"),
         ..SeededNames::default()
     };
@@ -414,7 +423,6 @@ fn the_titles_the_import_makes_up_are_the_callers_words() {
     assert_eq!(bundle.manifest.work.title, "Projet importé");
     let manuscript = &bundle.binders[0];
     assert_eq!(manuscript.binder.name, "Manuscrit");
-    assert!(has(manuscript, "Notes de « Scene 1.1 »"));
     assert!(has(manuscript, "Texte de « Act I »"));
     let english = manuscript
         .items
@@ -422,6 +430,75 @@ fn the_titles_the_import_makes_up_are_the_callers_words() {
         .map(|i| i.item.title.as_str())
         .find(|t| t.contains("(notes)") || t.contains("(text)") || t.contains("Imported"));
     assert_eq!(english, None);
+}
+
+/// Every node's own note arrives in its scratchpad, whatever the node became: a book, an
+/// act (a part), a chapter folder, a leaf chapter and a scene. No note is made beside
+/// any of them, the scratchpad is written as its own `.scratchpad.djot` file, and a
+/// separator's note, which has nowhere to go, is still said to be dropped.
+#[test]
+fn every_node_keeps_its_own_note_in_its_scratchpad() {
+    let mut members = terminal_members();
+    members.extend([
+        ("text/N1.html", "<p>Book one plan.</p>"),
+        ("text/N2.html", "<p>Act one beats.</p>"),
+        ("text/N3.html", "<p>Chapter one aims.</p>"),
+        ("text/N10001.html", "<p>Separator aside.</p>"),
+    ]);
+    let (summary, bundle) = import_zip(&members);
+    let manuscript = &bundle.binders[0];
+    for (title, words, sub_role) in [
+        ("Book One", "Book one plan.", SubRole::Book),
+        ("Act I", "Act one beats.", SubRole::Part),
+        ("Chapter 1", "Chapter one aims.", SubRole::ChapterScene),
+        (
+            "Direct Chapter",
+            "Direct chapter note.",
+            SubRole::ChapterScene,
+        ),
+        ("Scene 1.1", "Note for scene 1.1.", SubRole::Scene),
+    ] {
+        let item = find(manuscript, title);
+        assert_eq!(item.item.sub_role, sub_role, "{title}");
+        assert!(
+            prose(item, ContentRole::ScratchpadText).contains(words),
+            "{title}: {:?}",
+            prose(item, ContentRole::ScratchpadText)
+        );
+        let pad = item
+            .item
+            .prose_refs
+            .iter()
+            .find(|p| p.role == ContentRole::ScratchpadText)
+            .unwrap();
+        assert!(pad.path.ends_with(".scratchpad.djot"), "{}", pad.path);
+    }
+    assert!(
+        manuscript
+            .items
+            .iter()
+            .all(|i| i.item.sub_role != SubRole::Note),
+        "no note beside anything: {:?}",
+        manuscript
+            .items
+            .iter()
+            .map(|i| &i.item.title)
+            .collect::<Vec<_>>()
+    );
+    assert!(
+        summary
+            .warnings
+            .contains(&ImportNotice::SeparatorTextDropped {
+                name: "* * *".into()
+            }),
+        "{:?}",
+        summary.warnings
+    );
+    assert_eq!(
+        bundle.manifest.format_min_read_version,
+        Some(18),
+        "a scratchpad claims the floor that reads it"
+    );
 }
 
 /// The importer builds its `ProjectManifest` as a hand-written literal, never through

@@ -372,7 +372,17 @@ pub(crate) const TABLE: &[Entry] = &[
         Some(Differently),
     ),
     e(
+        "scrivener-structure-notes-in-scratchpad",
+        BeforeImport,
+        Some(Differently),
+    ),
+    e(
         "scrivener-structure-document-notes",
+        BeforeImport,
+        Some(Differently),
+    ),
+    e(
+        "scrivener-structure-marked-notes-beside",
         BeforeImport,
         Some(Differently),
     ),
@@ -1863,8 +1873,18 @@ pub(crate) fn summary_line(key: &str, findings: &[&ScrivenerFinding]) -> Option<
                 words = num(a, "words")
             ))
         }
+        "scrivener-structure-notes-in-scratchpad" => {
+            tr!(import_scrivener_structure_notes_in_scratchpad_line(
+                count = count
+            ))
+        }
         "scrivener-structure-document-notes" => {
             tr!(import_scrivener_structure_document_notes_line(
+                count = count
+            ))
+        }
+        "scrivener-structure-marked-notes-beside" => {
+            tr!(import_scrivener_structure_marked_notes_beside_line(
                 count = count
             ))
         }

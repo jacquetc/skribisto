@@ -17,6 +17,7 @@ use std::time::Duration;
 use common::database::db_context::DbContext;
 use common::event::EventHub;
 use common::long_operation::{LongOperationManager, OperationStatus};
+use common::types::EntityId;
 use import_management::failure::{FailureReason, ProjectImportFailure};
 use import_management::import_management_controller as controller;
 use import_management::{
@@ -58,6 +59,73 @@ impl Backend {
     fn last_phase(&self, op: &str) -> Option<String> {
         self.long_ops.get_operation_progress(op)?.message
     }
+}
+
+/// Each item holding a scratchpad, by title, with the scratchpad as the editor reads it.
+/// Each one is checked to be its own `.scratchpad.djot` file in the saved project.
+fn scratchpads(bundle: &skrib_format::WorkBundle) -> Vec<(String, String)> {
+    bundle
+        .binders
+        .iter()
+        .flat_map(|b| b.items.iter())
+        .filter_map(|item| {
+            let pad = item
+                .item
+                .prose_refs
+                .iter()
+                .find(|p| p.role == common::entities::ContentRole::ScratchpadText)?;
+            assert!(pad.path.ends_with(".scratchpad.djot"), "{}", pad.path);
+            let djot = item.prose.get(&pad.file_id).expect("the file was read");
+            let text = skrib_format::djot_plain_text(djot).expect("it reads").0;
+            Some((item.item.title.clone(), text.trim().to_string()))
+        })
+        .collect()
+}
+
+/// Each item holding a scratchpad once `load_work` has opened `output`, by title, with
+/// the scratchpad's stored Djot.
+fn opened_scratchpads(output: &std::path::Path, media: &std::path::Path) -> Vec<(String, String)> {
+    use common::direct_access::binder_item::BinderItemRelationshipField;
+    use direct_access::binder_item::binder_item_controller;
+    use direct_access::content::content_controller;
+    use work_management::{LoadWorkDto, work_management_controller as work};
+    let db = DbContext::new().expect("in-memory store");
+    if let Err(e) = work::load_work(
+        &db,
+        &Arc::new(EventHub::new()),
+        &LoadWorkDto {
+            file_name: output.to_string_lossy().into_owned(),
+            media_root: media.to_string_lossy().into_owned(),
+        },
+    ) {
+        panic!("load_work refuses the imported project: {e:#}");
+    }
+    let rows: Vec<(EntityId, String)> = db
+        .get_store()
+        .binder_items
+        .read()
+        .expect("the store reads")
+        .values()
+        .map(|r| (r.id, r.title.clone()))
+        .collect();
+    let mut out: Vec<(String, String)> = rows
+        .into_iter()
+        .flat_map(|(id, title)| {
+            binder_item_controller::get_relationship(
+                &db,
+                &id,
+                &BinderItemRelationshipField::Contents,
+            )
+            .expect("its contents")
+            .into_iter()
+            .filter_map(|c| content_controller::get(&db, &c).expect("a content"))
+            .filter(|c| c.role == common::entities::ContentRole::ScratchpadText)
+            .map(move |c| (title.clone(), c.data))
+            .collect::<Vec<_>>()
+        })
+        .collect();
+    out.sort();
+    out
 }
 
 /// The notices a result carries, read back as the interface reads them.
@@ -177,6 +245,12 @@ fn a_manuskript_import_s_notices_cross_the_result_channel_typed() {
         notices
             .iter()
             .any(|n| matches!(n, ImportNotice::FolderWithoutMetadata { .. })),
+        "{notices:?}"
+    );
+    // Twelve chapters' notes name the plot "Le pari": the notes are each chapter's
+    // scratchpad, and the links they made are said to be lost.
+    assert!(
+        notices.contains(&ImportNotice::NoteLinksNotKept { count: 12 }),
         "{notices:?}"
     );
 }
@@ -336,6 +410,10 @@ fn every_notice_survives_the_json_round_trip() {
             title: s("A"),
             text: TextKind::Scene,
         },
+        ImportNotice::TextWithoutFileName {
+            title: s("B"),
+            text: TextKind::Scratchpad,
+        },
         ImportNotice::UnknownLabel {
             title: s("A"),
             index: 9,
@@ -356,6 +434,7 @@ fn every_notice_survives_the_json_round_trip() {
             kept: 12,
         },
         ImportNotice::VersionsUnplaced { count: 1 },
+        ImportNotice::NoteLinksNotKept { count: 12 },
     ];
     let manuskript = ImportManuskriptProjectResultDto {
         output_path: s("/out/novel.skrib"),
@@ -373,8 +452,10 @@ fn every_notice_survives_the_json_round_trip() {
 }
 
 /// Every title an import makes up is the interface's word, in its language: with a French
-/// interface, a Plume project that names itself nowhere and a Manuskript project's notes
-/// arrive with French titles, and nothing English is written into either.
+/// interface, a Plume project that names itself nowhere arrives with French titles, and
+/// nothing English is written into either import. The notes of a Plume scene and of a
+/// Manuskript row make up no title: each arrives in its own item's scratchpad, saved as
+/// that item's `.scratchpad.djot` file.
 #[test]
 fn the_titles_an_import_makes_up_are_the_interface_s_words() {
     let dir = tempfile::tempdir().expect("tempdir");
@@ -406,7 +487,6 @@ fn the_titles_an_import_makes_up_are_the_interface_s_words() {
         "items_group" => "Objets".to_string(),
         "places_group" => "Lieux".to_string(),
         "untitled_project" => "Projet Plume importé".to_string(),
-        "notes_of" => format!("{TITLE_SLOT} (notes de l’auteur)"),
         "content_of" => format!("{TITLE_SLOT} (texte)"),
         other => panic!("a seeded name this test does not know: {other}"),
     };
@@ -438,7 +518,19 @@ fn the_titles_an_import_makes_up_are_the_interface_s_words() {
         .flat_map(|b| b.items.iter())
         .map(|i| i.item.title.as_str())
         .collect();
-    assert!(titles.contains(&"Scène (notes de l’auteur)"), "{titles:?}");
+    assert!(
+        !titles.iter().any(|t| t.contains("notes")),
+        "no note beside the scene: {titles:?}"
+    );
+    assert_eq!(
+        scratchpads(&bundle),
+        [("Scène".to_string(), "Une note.".to_string())],
+        "the scene's note is its scratchpad"
+    );
+    let opened = opened_scratchpads(&output, &dir.path().join("media-plume"));
+    assert_eq!(opened.len(), 1, "{opened:?}");
+    assert_eq!(opened[0].0, "Scène");
+    assert!(opened[0].1.contains("Une note."), "{opened:?}");
     assert_eq!(bundle.binders[0].binder.name, "Manuscrit");
     // The story bible's groups of a project older than 0.4, which named none of them.
     let tags: Vec<&str> = bundle.tags.iter().map(|t| t.name.as_str()).collect();
@@ -475,7 +567,6 @@ fn the_titles_an_import_makes_up_are_the_interface_s_words() {
             .iter()
             .map(|key| match *key {
                 "untitled_project" => "Projet Manuskript importé".to_string(),
-                "notes_of" => format!("{TITLE_SLOT} (notes de l’auteur)"),
                 _ => String::new(),
             })
             .collect(),
@@ -496,9 +587,19 @@ fn the_titles_an_import_makes_up_are_the_interface_s_words() {
         .map(|i| i.item.title.clone())
         .collect();
     assert!(
-        titles.iter().any(|t| t.ends_with(" (notes de l’auteur)")),
-        "{titles:?}"
+        !titles.iter().any(|t| t.contains("notes")),
+        "no note beside a row: {titles:?}"
     );
+    let pads = scratchpads(&bundle);
+    assert_eq!(pads.len(), 12, "every chapter with notes: {pads:?}");
+    for (title, text) in &pads {
+        assert_eq!(
+            text, "Le pari traverse ce chapitre.",
+            "{title}: the marker is written out as the plot's name"
+        );
+    }
+    let opened = opened_scratchpads(&output, &dir.path().join("media-manuskript"));
+    assert_eq!(opened.len(), 12, "{opened:?}");
     for words in [&titles, &vec![bundle.manifest.work.title.clone()]] {
         assert!(
             !words

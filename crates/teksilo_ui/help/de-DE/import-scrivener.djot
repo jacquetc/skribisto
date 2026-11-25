@@ -112,7 +112,10 @@ schlägt ihren eigenen Titel vor.
 - Ihr Text, in der Reihenfolge der Projektmappe, mit Fettdruck, Kursivschrift, Listen, Tabellen
   und Bildern.
 - Die Zusammenfassung jedes Dokuments, als seine Zusammenfassung in Skribisto.
-- Die Notizen jedes Dokuments, als Notiz daneben.
+- Die Notizen jedes Dokuments, in seinem [Notizblock](:help-scratchpad): den privaten Notizen
+  neben ihm, im Bereich *Notizblock*. Notizen mit Fußnoten oder Kommentaren, die ein Notizblock
+  nicht zeigen kann, werden stattdessen zu einer Notiz neben dem Dokument. Ebenso die Notizen
+  von allem, was kein eigener Eintrag wird, etwa der Papierkorb oder eine Dokumentvorlage.
 - Ihre Kommentare und Fußnoten, einschließlich der im Text geschriebenen. Eine Inline-Anmerkung
   wird zu einem Kommentar.
 - Ihre Labels als farbige Schlagwörter und Ihre Statusliste als Statusstufen des Projekts.

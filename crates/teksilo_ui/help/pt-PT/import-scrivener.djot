@@ -102,7 +102,11 @@ então esse nome e deixa o *Autor* vazio. Um modelo propõe o seu próprio títu
 - O seu texto, pela ordem do arquivador, com o negrito, o itálico, as listas, as tabelas e as
   imagens.
 - A sinopse de cada documento, como a sua sinopse no Skribisto.
-- As notas de cada documento, como uma nota ao lado dele.
+- As notas de cada documento, no seu [bloco de notas](:help-scratchpad): as notas pessoais
+  guardadas ao lado dele, no painel *Bloco de notas*. As notas que contêm notas de rodapé ou
+  comentários, que um bloco de notas não consegue mostrar, tornam-se antes uma nota ao lado do
+  documento. O mesmo acontece às notas daquilo que não se torna um item próprio, como o Lixo ou
+  um modelo de documento.
 - Os seus comentários e notas de rodapé, incluindo os que foram escritos dentro do texto. Uma
   anotação em linha torna-se um comentário.
 - Os seus rótulos como etiquetas coloridas, e a sua lista de estados como os estados do projeto.

@@ -107,7 +107,11 @@ título.
 - Su texto, en el orden del archivador, con sus negritas, cursivas, listas, tablas e
   imágenes.
 - La sinopsis de cada documento, como su sinopsis en Skribisto.
-- Las notas de cada documento, como una nota a su lado.
+- Las notas de cada documento, en su [bloc de notas](:help-scratchpad): las notas personales que
+  se guardan a su lado, en el panel *Bloc de notas*. Las notas que contienen notas al pie o
+  comentarios, que un bloc de notas no puede mostrar, se convierten en cambio en una nota junto
+  al documento. Lo mismo ocurre con las notas de lo que no se convierte en un elemento propio,
+  como la Papelera o una plantilla de documento.
 - Sus comentarios y sus notas al pie, incluidos los escritos dentro del texto. Una anotación
   en línea se convierte en un comentario.
 - Sus rótulos, como etiquetas de colores, y su lista de estados, como los estados del

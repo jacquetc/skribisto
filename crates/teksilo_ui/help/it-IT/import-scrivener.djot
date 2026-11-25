@@ -58,7 +58,7 @@ Scrivener 3 conserva il titolo e l'autore solo nelle impostazioni di compilazion
 
 - Il testo, nell'ordine del raccoglitore, con grassetto, corsivo, elenchi, tabelle e immagini.
 - La sinossi di ogni documento, che diventa la sua sinossi in Skribisto.
-- Le note di ogni documento, che diventano una nota accanto a esso.
+- Le note di ogni documento, nel suo [blocco note](:help-scratchpad): le note personali tenute accanto a esso, nel pannello *Blocco note*. Le note che contengono note a piè di pagina o commenti, che un blocco note non può mostrare, diventano invece una nota accanto al documento. Lo stesso vale per le note di ciò che non diventa un elemento a sé, come il Cestino o un modello di documento.
 - I commenti e le note a piè di pagina, compresi quelli scritti all'interno del testo. Un'annotazione in linea diventa un commento.
 - Le diciture, che diventano etichette colorate, e l'elenco degli stati, che diventa quello degli stati del progetto.
 - Le parole chiave, le raccolte e i campi personalizzati di tipo elenco e casella di controllo, che diventano etichette sui documenti che li portano. Il posto di una parola chiave tra le altre si trova nei dettagli della sua etichetta. Una casella selezionata per impostazione predefinita risulta selezionata su ogni documento in cui non l'hai deselezionata.

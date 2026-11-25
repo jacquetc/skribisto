@@ -41,7 +41,9 @@ Im Ordnermodus funktioniert beides. Der Import meldet, welche Kopie eingelesen w
 
 ## Was aus Manuskript übernommen wird
 
-- Ihre Texte, Notizen und Wortziele.
+- Ihre Texte und Wortziele.
+- Die Notizen eines Eintrags, in seinem [Notizblock](:help-scratchpad): den privaten Notizen
+  neben ihm, im Bereich *Notizblock*.
 - Das Häkchen „compile“ wird zu *In Exporte einschließen*. Ein deaktivierter Eintrag bleibt
   samt Inhalt deaktiviert.
 - Die Zusammenfassungen eines Eintrags werden zu einer verbunden: zuerst der Ein-Satz-Überblick,
@@ -55,7 +57,10 @@ Im Ordnermodus funktioniert beides. Der Import meldet, welche Kopie eingelesen w
 
 Manuskript speicherte im Text Markierungen für Figuren, Welteneinträge, Handlungsstränge oder
 andere Einträge. Sie werden durch die zugehörigen Wörter ersetzt, mit einer Verknüpfung zum
-benannten Eintrag.
+benannten Eintrag. In den Notizen eines Eintrags bleiben nur die Wörter: Die Verweise auf diese
+Figuren, Welteneinträge, Handlungsstränge und Einträge werden nicht übernommen, denn ein Verweis
+am Eintrag hieße, dass sie darin vorkommen. Der Import sagt Ihnen, wie viele Einträge das
+betrifft.
 
 ## Was hier kein entsprechendes Feld hat
 
@@ -87,7 +92,8 @@ Die Typen erklärt [Wie ein Buch aufgebaut ist](:help-writing-model).
 
 Wählen Sie eine `.plume`- oder `.plume_backup`-Datei aus einer beliebigen Plume-Version.
 
-- Bücher, Akte, Kapitel und Szenen kommen mit Text, Zusammenfassungen und Notizen an.
+- Bücher, Akte, Kapitel und Szenen kommen mit Text und Zusammenfassungen an. Die Notizen
+  jedes Eintrags kommen in seinen Notizblock.
 - Ein Szenentrenner wird zu einer Trennmarkierung im darüberliegenden Text.
 - Plumes Figuren- und Ortsgruppen werden zu Notizordnern mit jeweils eigenem Schlagwort.
   Weitere Namen eines Eintrags erscheinen unter *Auch bekannt als*.

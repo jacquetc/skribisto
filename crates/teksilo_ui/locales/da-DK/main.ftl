@@ -1147,7 +1147,6 @@ import-plume-source-not-file = Stien er ikke en fil
 # Binder names passed to the backend (which can't do i18n)
 import-plume-manuscript-binder = Manuskript
 import-plume-story-bible-binder = Historiebibel
-import-plume-notes-of = { $name } (noter)
 import-plume-content-of = { $name } (tekst)
 # Progress toast (the import runs as a long operation)
 import-plume-progress-title = Importerer Plume-projekt…
@@ -1198,7 +1197,6 @@ import-manuskript-summary-note = Resumé
 import-manuskript-importance-minor = Mindre
 import-manuskript-importance-secondary = Sekundær
 import-manuskript-importance-main = Hovedperson
-import-manuskript-notes-of = { $title } (noter)
 # Progress toast (the import is a long operation)
 import-manuskript-progress-title = Importerer Manuskript-projekt…
 # Result
@@ -2069,6 +2067,14 @@ import-scrivener-structure-paratext-not-counted-line = { $documents ->
 import-scrivener-structure-document-notes-line = { $count ->
     [one] Noterne til 1 dokument bliver til en note ved siden af det.
    *[other] Noterne til { $count } dokumenter bliver til noter ved siden af dem.
+}
+import-scrivener-structure-notes-in-scratchpad-line = { $count ->
+    [one] Noterne til 1 dokument kommer i dets kladdeblok.
+   *[other] Noterne til { $count } dokumenter kommer i deres kladdeblokke.
+}
+import-scrivener-structure-marked-notes-beside-line = { $count ->
+    [one] Noterne til 1 dokument indeholder fodnoter eller kommentarer, som en kladdeblok ikke kan vise, så de bliver en note ved siden af det.
+   *[other] Noterne til { $count } dokumenter indeholder fodnoter eller kommentarer, som en kladdeblok ikke kan vise, så de bliver noter ved siden af dem.
 }
 import-scrivener-structure-draft-content-as-note-line = Manuskriptmappens egen tekst bliver til en note øverst i manuskriptet.
 import-scrivener-structure-story-bible-folder-line = { $count ->
@@ -4654,6 +4660,7 @@ import-notice-text-without-file-name = { $kind ->
     [scene] Scenetekst
     [note] Notetekst
     [synopsis] Synopsis
+    [scratchpad] Kladdeblokken
    *[title] Titel
 } i »{ $title }« kunne ikke få et filnavn, så den blev ikke importeret.
 import-notice-unknown-label = »{ $title }« har etiket { $index }, som ikke findes i projektets etiketliste. Elementet blev importeret uden etiket.
@@ -4678,6 +4685,10 @@ import-notice-versions-kept = { $found ->
 import-notice-versions-unplaced = { $count ->
     [one] Én tidligere version hører til en række, der ikke længere er i projektet, og kunne ikke placeres.
    *[other] { $count } tidligere versioner hører til en række, der ikke længere er i projektet, og kunne ikke placeres.
+}
+import-notice-note-links-not-kept = { $count ->
+    [one] Noterne til ét element henviste til personer, elementer i verdenen, plot eller andre elementer. De ligger i elementets kladdeblok med navnene skrevet ud, men henvisningerne til disse personer, elementer i verdenen, plot og elementer blev ikke bevaret.
+   *[other] Noterne til { $count } elementer henviste til personer, elementer i verdenen, plot eller andre elementer. De ligger i hvert elements kladdeblok med navnene skrevet ud, men henvisningerne til disse personer, elementer i verdenen, plot og elementer blev ikke bevaret.
 }
 
 ## Native file dialogs: the window title, and the label of the file-type filter.

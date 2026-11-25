@@ -41,7 +41,9 @@ cualquiera de los dos sirve. La importación le indica qué copia ha leído.
 
 ## Lo que trae Manuskript
 
-- Su texto, sus notas y sus objetivos de palabras.
+- Su texto y sus objetivos de palabras.
+- Las notas de un elemento, en su [bloc de notas](:help-scratchpad): las notas personales que
+  se guardan a su lado, en el panel *Bloc de notas*.
 - La casilla «compile», que se convierte en *Incluir en las exportaciones*. Un elemento
   desactivado sigue desactivado, con todo lo que contiene.
 - Los resúmenes de un elemento, unidos en su única sinopsis: primero el resumen de una frase,
@@ -54,9 +56,11 @@ cualquiera de los dos sirve. La importación le indica qué copia ha leído.
 - Su historial de revisiones: abra una escena y sus versiones anteriores estarán en el panel
   *Versiones*.
 
-En su prosa, Manuskript guardaba un marcador para un personaje, una entrada de mundo, una
-trama u otro elemento. Esos marcadores se sustituyen por las palabras que representaban, con
-un enlace a lo que nombraban.
+En su prosa, Manuskript guardaba un marcador para un personaje, una entrada de mundo, una trama
+u otro elemento. Esos marcadores se sustituyen por las palabras que representaban, con un enlace
+a lo que nombraban. En las notas de un elemento quedan solo las palabras: las referencias a esos
+personajes, entradas de mundo, tramas y elementos no se conservan, porque una referencia en el
+elemento diría que aparecen en él. La importación le indica a cuántos elementos les ha pasado.
 
 ## Lo que no tiene lugar aquí
 
@@ -89,7 +93,8 @@ tipo.
 
 Elija un archivo `.plume` o `.plume_backup`, de cualquier versión de Plume.
 
-- Los libros, actos, capítulos y escenas llegan con su texto, sus sinopsis y sus notas.
+- Los libros, actos, capítulos y escenas llegan con su texto y sus sinopsis. Las notas de cada
+  uno pasan a su bloc de notas.
 - Un separador de escenas se convierte en un separador de escena en la prosa que lo precede.
 - Los grupos de personajes y de lugares de Plume se convierten en carpetas de notas, cada
   grupo con su propia etiqueta. Los otros nombres de una entrada llegan como su lista

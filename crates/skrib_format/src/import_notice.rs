@@ -39,6 +39,7 @@ pub enum TextKind {
     Note,
     Synopsis,
     Title,
+    Scratchpad,
 }
 
 /// One thing an importer has to tell the writer.
@@ -143,6 +144,10 @@ pub enum ImportNotice {
     VersionsKept { found: u64, kept: u64 },
     /// Earlier versions naming a row no longer in the project.
     VersionsUnplaced { count: u64 },
+    /// Rows whose notes pointed at a character, a world entry, a plot or another row.
+    /// The notes are in each row's scratchpad with the names written out; the links
+    /// were not kept.
+    NoteLinksNotKept { count: u64 },
 }
 
 impl ProjectContainer {
@@ -161,6 +166,7 @@ impl TextKind {
             TextKind::Note => "note text",
             TextKind::Synopsis => "synopsis",
             TextKind::Title => "title",
+            TextKind::Scratchpad => "scratchpad",
         }
     }
 }
@@ -402,6 +408,13 @@ impl fmt::Display for ImportNotice {
                 f,
                 "{count} earlier version{} named a row that is no longer in the project and \
                  could not be placed.",
+                s(*count)
+            ),
+            NoteLinksNotKept { count } => write!(
+                f,
+                "The notes of {count} row{} pointed to characters, world entries, plots or \
+                 other rows. They are in each row's scratchpad with the names written out, \
+                 but a scratchpad keeps no links, so those links were not kept.",
                 s(*count)
             ),
         }

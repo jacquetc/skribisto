@@ -972,7 +972,6 @@ import-plume-source-missing = Filen finns inte
 import-plume-source-not-file = Sökvägen är inte en fil
 import-plume-manuscript-binder = Manus
 import-plume-story-bible-binder = Berättelsebibel
-import-plume-notes-of = { $name } (anteckningar)
 import-plume-content-of = { $name } (text)
 import-plume-progress-title = Importerar Plume-projekt…
 import-plume-done = { $imported ->
@@ -1005,7 +1004,6 @@ import-manuskript-summary-note = Sammanfattning
 import-manuskript-importance-minor = Mindre viktig
 import-manuskript-importance-secondary = Sekundär
 import-manuskript-importance-main = Huvudperson
-import-manuskript-notes-of = { $title } (anteckningar)
 import-manuskript-progress-title = Importerar Manuskript-projekt…
 import-manuskript-done = { $imported ->
        [one] { $imported } objekt importerat.
@@ -1779,6 +1777,14 @@ import-scrivener-structure-document-notes-line = { $count ->
        [one] Anteckningarna till 1 dokument blir en anteckning bredvid det.
       *[other] Anteckningarna till { $count } dokument blir anteckningar bredvid dem.
    }
+import-scrivener-structure-notes-in-scratchpad-line = { $count ->
+    [one] Anteckningarna till 1 dokument hamnar i dess kladdblock.
+   *[other] Anteckningarna till { $count } dokument hamnar i deras kladdblock.
+}
+import-scrivener-structure-marked-notes-beside-line = { $count ->
+    [one] Anteckningarna till 1 dokument innehåller fotnoter eller kommentarer, som ett kladdblock inte kan visa, så de blir en anteckning bredvid det.
+   *[other] Anteckningarna till { $count } dokument innehåller fotnoter eller kommentarer, som ett kladdblock inte kan visa, så de blir anteckningar bredvid dem.
+}
 import-scrivener-structure-draft-content-as-note-line = Manusmappens egen text blir en anteckning överst i manuset.
 import-scrivener-structure-story-bible-folder-line = { $count ->
        [one] 1 mapp med personer eller platser blir en tagg för berättelsebibeln.
@@ -4075,6 +4081,7 @@ import-notice-text-without-file-name = { $kind ->
        [scene] Scentexten
        [note] Anteckningstexten
        [synopsis] Synopsisen
+       [scratchpad] Kladdblocket
       *[title] Titeln
    } för ”{ $title }” kunde inte få något filnamn och importerades därför inte.
 import-notice-unknown-label = ”{ $title }” har etikett { $index }, som inte finns i projektets etikettlista. Objektet importerades utan etikett.
@@ -4100,6 +4107,10 @@ import-notice-versions-unplaced = { $count ->
        [one] En tidigare version hör till en rad som inte längre finns i projektet och kunde inte placeras.
       *[other] { $count } tidigare versioner hör till en rad som inte längre finns i projektet och kunde inte placeras.
    }
+import-notice-note-links-not-kept = { $count ->
+    [one] Anteckningarna till ett objekt hänvisade till personer, poster i världen, intriger eller andra objekt. De ligger i objektets kladdblock med namnen utskrivna, men hänvisningarna till dessa personer, poster i världen, intriger och objekt behölls inte.
+   *[other] Anteckningarna till { $count } objekt hänvisade till personer, poster i världen, intriger eller andra objekt. De ligger i varje objekts kladdblock med namnen utskrivna, men hänvisningarna till dessa personer, poster i världen, intriger och objekt behölls inte.
+}
 dialog-open-work-title = Öppna Skribisto-projekt
 dialog-save-as-file-title = Spara som en enda .skrib-fil
 dialog-save-as-folder-title = Välj en överordnad mapp för projektet

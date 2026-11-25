@@ -1011,7 +1011,6 @@ import-plume-source-missing = Dit bestand bestaat niet
 import-plume-source-not-file = Dit pad is geen bestand
 import-plume-manuscript-binder = Manuscript
 import-plume-story-bible-binder = Verhaalbijbel
-import-plume-notes-of = { $name } (notities)
 import-plume-content-of = { $name } (tekst)
 import-plume-progress-title = Plume-project wordt geïmporteerd…
 import-plume-done = { $imported ->
@@ -1045,7 +1044,6 @@ import-manuskript-summary-note = Samenvatting
 import-manuskript-importance-minor = Bijfiguur
 import-manuskript-importance-secondary = Secundair
 import-manuskript-importance-main = Hoofdpersonage
-import-manuskript-notes-of = { $title } (notities)
 import-manuskript-progress-title = Manuskript-project wordt geïmporteerd…
 import-manuskript-done = { $imported ->
         [one] { $imported } item geïmporteerd.
@@ -1848,6 +1846,14 @@ import-scrivener-structure-document-notes-line = { $count ->
         [one] De notities van 1 document worden een notitie ernaast.
        *[other] De notities van { $count } documenten worden notities ernaast.
     }
+import-scrivener-structure-notes-in-scratchpad-line = { $count ->
+    [one] De notities van 1 document komen in het kladblok ervan.
+   *[other] De notities van { $count } documenten komen in hun kladblokken.
+}
+import-scrivener-structure-marked-notes-beside-line = { $count ->
+    [one] De notities van 1 document bevatten voetnoten of opmerkingen, die een kladblok niet kan tonen, dus worden ze een notitie ernaast.
+   *[other] De notities van { $count } documenten bevatten voetnoten of opmerkingen, die een kladblok niet kan tonen, dus worden ze notities ernaast.
+}
 import-scrivener-structure-draft-content-as-note-line = De eigen tekst van de manuscriptmap wordt een notitie bovenaan het manuscript.
 import-scrivener-structure-story-bible-folder-line = { $count ->
         [one] 1 map met personages of plaatsen wordt een tag in de verhaalbijbel.
@@ -4215,6 +4221,7 @@ import-notice-text-without-file-name = { $kind ->
     [scene] De scènetekst
     [note] De notitietekst
     [synopsis] De synopsis
+    [scratchpad] Het kladblok
    *[title] De titel
 } van “{ $title }” kon geen bestandsnaam krijgen en is daarom niet geïmporteerd.
 import-notice-unknown-label = “{ $title }” heeft label { $index }, dat niet in de labellijst van dit project staat. Het is zonder label geïmporteerd.
@@ -4239,6 +4246,10 @@ import-notice-versions-kept = { $found ->
 import-notice-versions-unplaced = { $count ->
     [one] Eén eerdere versie hoort bij een item dat niet meer in het project staat en kon niet worden geplaatst.
    *[other] { $count } eerdere versies horen bij een item dat niet meer in het project staat en konden niet worden geplaatst.
+}
+import-notice-note-links-not-kept = { $count ->
+    [one] De notities van één item verwezen naar personages, onderdelen van de wereld, verhaallijnen of andere items. Ze staan in het kladblok van dat item met de namen uitgeschreven, maar de verwijzingen naar die personages, onderdelen van de wereld, verhaallijnen en items zijn niet behouden.
+   *[other] De notities van { $count } items verwezen naar personages, onderdelen van de wereld, verhaallijnen of andere items. Ze staan in het kladblok van elk item met de namen uitgeschreven, maar de verwijzingen naar die personages, onderdelen van de wereld, verhaallijnen en items zijn niet behouden.
 }
 dialog-open-work-title = Skribisto-project openen
 dialog-save-as-file-title = Opslaan als één .skrib-bestand

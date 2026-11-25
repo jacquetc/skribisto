@@ -1011,7 +1011,6 @@ import-plume-source-missing = Tätä tiedostoa ei ole olemassa
 import-plume-source-not-file = Tämä polku ei ole tiedosto
 import-plume-manuscript-binder = Käsikirjoitus
 import-plume-story-bible-binder = Tarinan tietopankki
-import-plume-notes-of = { $name } (muistiinpanot)
 import-plume-content-of = { $name } (teksti)
 import-plume-progress-title = Tuodaan Plume-projektia…
 import-plume-done = Tuotiin { $imported ->
@@ -1045,7 +1044,6 @@ import-manuskript-summary-note = Yhteenveto
 import-manuskript-importance-minor = Vähäinen
 import-manuskript-importance-secondary = Sivuhenkilö
 import-manuskript-importance-main = Päähenkilö
-import-manuskript-notes-of = { $title } (muistiinpanot)
 import-manuskript-progress-title = Tuodaan Manuskript-projektia…
 import-manuskript-done = { $imported ->
        [one] { $imported } kohde tuotiin.
@@ -1907,6 +1905,14 @@ import-scrivener-structure-paratext-not-counted-line = { $documents ->
 import-scrivener-structure-document-notes-line = { $count ->
     [one] 1 asiakirjan muistiinpanoista tulee muistiinpano sen viereen.
    *[other] { $count } asiakirjan muistiinpanoista tulee muistiinpanoja niiden viereen.
+}
+import-scrivener-structure-notes-in-scratchpad-line = { $count ->
+    [one] 1 asiakirjan muistiinpanot siirtyvät sen muistilehtiöön.
+   *[other] { $count } asiakirjan muistiinpanot siirtyvät niiden muistilehtiöihin.
+}
+import-scrivener-structure-marked-notes-beside-line = { $count ->
+    [one] 1 dokumentin muistiinpanoissa on alaviitteitä tai kommentteja, joita muistilehtiö ei voi näyttää, joten niistä tulee muistiinpano sen viereen.
+   *[other] { $count } dokumentin muistiinpanoissa on alaviitteitä tai kommentteja, joita muistilehtiö ei voi näyttää, joten niistä tulee muistiinpanoja niiden viereen.
 }
 import-scrivener-structure-draft-content-as-note-line = Käsikirjoituskansion oma teksti muuttuu muistiinpanoksi käsikirjoituksen alkuun.
 import-scrivener-structure-story-bible-folder-line = { $count ->
@@ -4281,6 +4287,7 @@ import-notice-text-without-file-name = Kohteen ”{ $title }” { $kind ->
     [scene] kohtaustekstille
     [note] muistiinpanotekstille
     [synopsis] tiivistelmälle
+    [scratchpad] muistilehtiölle
    *[title] otsikolle
 } ei voitu antaa tiedostonimeä, joten sitä ei tuotu.
 import-notice-unknown-label = Kohteella ”{ $title }” on nimiö { $index }, jota ei ole tämän projektin nimiöluettelossa. Se tuotiin ilman nimiötä.
@@ -4305,6 +4312,10 @@ import-notice-versions-kept = { $found ->
 import-notice-versions-unplaced = { $count ->
     [one] Yksi aiempi versio kuuluu kohteeseen, jota ei enää ole projektissa, eikä sitä voitu sijoittaa.
    *[other] { $count } aiempaa versiota kuuluu kohteeseen, jota ei enää ole projektissa, eikä niitä voitu sijoittaa.
+}
+import-notice-note-links-not-kept = { $count ->
+    [one] Yhden kohteen muistiinpanot viittasivat henkilöihin, maailman kohteisiin, juoniin tai muihin kohteisiin. Ne ovat sen muistilehtiössä nimet kirjoitettuina, mutta viittauksia näihin henkilöihin, maailman kohteisiin, juoniin ja kohteisiin ei säilytetty.
+   *[other] { $count } kohteen muistiinpanot viittasivat henkilöihin, maailman kohteisiin, juoniin tai muihin kohteisiin. Ne ovat kunkin kohteen muistilehtiössä nimet kirjoitettuina, mutta viittauksia näihin henkilöihin, maailman kohteisiin, juoniin ja kohteisiin ei säilytetty.
 }
 dialog-open-work-title = Avaa Skribisto-projekti
 dialog-save-as-file-title = Tallenna yhtenä .skrib-tiedostona

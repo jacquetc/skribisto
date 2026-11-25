@@ -1167,7 +1167,6 @@ import-plume-source-not-file = This path is not a file
 # Binder names passed to the backend (which can't do i18n)
 import-plume-manuscript-binder = Manuscript
 import-plume-story-bible-binder = Story Bible
-import-plume-notes-of = { $name } (notes)
 # The title of the scene that takes a Plume Creator folder's own text, after the folder's
 # name. Stored in the new project as written.
 import-plume-content-of = { $name } (text)
@@ -1219,7 +1218,6 @@ import-manuskript-summary-note = Summary
 import-manuskript-importance-minor = Minor
 import-manuskript-importance-secondary = Secondary
 import-manuskript-importance-main = Main
-import-manuskript-notes-of = { $title } (notes)
 # Progress toast (the import is a long operation)
 import-manuskript-progress-title = Importing Manuskript project…
 # Result
@@ -2160,6 +2158,14 @@ import-scrivener-structure-paratext-not-counted-line = { $documents ->
 import-scrivener-structure-document-notes-line = { $count ->
     [one] The notes of 1 document become a note beside it.
    *[other] The notes of { $count } documents become notes beside them.
+}
+import-scrivener-structure-notes-in-scratchpad-line = { $count ->
+    [one] The notes of 1 document go into its scratchpad.
+   *[other] The notes of { $count } documents go into their scratchpads.
+}
+import-scrivener-structure-marked-notes-beside-line = { $count ->
+    [one] The notes of 1 document hold footnotes or comments, which a scratchpad cannot show, so they become a note beside it.
+   *[other] The notes of { $count } documents hold footnotes or comments, which a scratchpad cannot show, so they become notes beside them.
 }
 import-scrivener-structure-draft-content-as-note-line = The manuscript folder’s own text becomes a note at the top of the manuscript.
 import-scrivener-structure-story-bible-folder-line = { $count ->
@@ -4790,6 +4796,7 @@ import-notice-text-without-file-name = The { $kind ->
     [scene] scene text
     [note] note text
     [synopsis] synopsis
+    [scratchpad] scratchpad
    *[title] title
 } of “{ $title }” could not be given a file name, so it was not imported.
 import-notice-unknown-label = “{ $title }” has label { $index }, which is not in this project’s label list. It was imported without a label.
@@ -4814,6 +4821,10 @@ import-notice-versions-kept = { $found ->
 import-notice-versions-unplaced = { $count ->
     [one] One earlier version belongs to a row that is no longer in the project and could not be placed.
    *[other] { $count } earlier versions belong to a row that is no longer in the project and could not be placed.
+}
+import-notice-note-links-not-kept = { $count ->
+    [one] The notes of one item pointed to characters, world entries, plots or other items. They are in its scratchpad with the names written out, but the references to those characters, world entries, plots and items were not kept.
+   *[other] The notes of { $count } items pointed to characters, world entries, plots or other items. They are in each item’s scratchpad with the names written out, but the references to those characters, world entries, plots and items were not kept.
 }
 
 ## Native file dialogs: the window title, and the label of the file-type filter.

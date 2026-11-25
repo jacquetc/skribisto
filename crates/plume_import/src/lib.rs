@@ -49,8 +49,8 @@ pub struct ImportSummary {
 
 /// Text the import writes into the project that Plume itself does not store: the
 /// three story-bible groups an old (0.3 and earlier) project implies without naming,
-/// the title of a project that names itself nowhere, and the titles the import makes
-/// up for a sheet's or a folder's own notes and a folder's own text.
+/// the title of a project that names itself nowhere, and the title the import makes
+/// up for a folder's own text. (A node's own notes are its scratchpad: no title.)
 ///
 /// Seeded text, so not this crate's to word: the app resolves it in the interface
 /// language, once, and it is stored as it is from then on. [`Default`] is the
@@ -63,21 +63,20 @@ pub struct SeededNames {
     pub items_group: String,
     pub places_group: String,
     pub untitled_project: String,
-    /// The title of a note holding a sheet's or a folder's own notes, with
+    /// The title of a scene holding a folder's own text, with
     /// [`TITLE_SLOT`](skrib_format::importing::TITLE_SLOT) where its name goes.
-    pub notes_of: String,
-    /// The title of a scene holding a folder's own text, the same way.
     pub content_of: String,
 }
 
 impl SeededNames {
-    /// The order the names travel in. Append, never reorder.
-    pub const ORDER: [&'static str; 6] = [
+    /// The order the names travel in. Append, never reorder. The interface builds its
+    /// list from this array, so a name removed from it (`notes_of`, 2026-11-25) moves
+    /// both sides together.
+    pub const ORDER: [&'static str; 5] = [
         "characters_group",
         "items_group",
         "places_group",
         "untitled_project",
-        "notes_of",
         "content_of",
     ];
 
@@ -90,7 +89,6 @@ impl SeededNames {
             &mut names.items_group,
             &mut names.places_group,
             &mut names.untitled_project,
-            &mut names.notes_of,
             &mut names.content_of,
         ];
         for (slot, given) in slots.into_iter().zip(list) {
@@ -99,11 +97,6 @@ impl SeededNames {
             }
         }
         names
-    }
-
-    /// The title of the note holding `name`'s own notes.
-    pub(crate) fn notes_title(&self, name: &str) -> String {
-        fill_title(&self.notes_of, name)
     }
 
     /// The title of the scene holding `name`'s own text.
@@ -119,7 +112,6 @@ impl Default for SeededNames {
             items_group: "Items".to_string(),
             places_group: "Places".to_string(),
             untitled_project: "Imported Plume project".to_string(),
-            notes_of: format!("{} (notes)", skrib_format::importing::TITLE_SLOT),
             content_of: format!("{} (text)", skrib_format::importing::TITLE_SLOT),
         }
     }

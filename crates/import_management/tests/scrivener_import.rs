@@ -783,18 +783,25 @@ fn with_french_words_no_english_reaches_the_project() {
             .map(|b| b.binder.name.as_str())
             .collect();
         assert_eq!(binders, ["Manuscrit", "Notes et documentation"]);
-        let mut notes_titles = 0;
+        let mut scratchpads = 0;
         for item in bundle.binders.iter().flat_map(|b| b.items.iter()) {
             let title = &item.item.title;
             assert!(
                 own.contains(title) || from_the_interface(title),
                 "{generation:?}: the import titled a row {title:?}"
             );
-            if title.starts_with("Notes de « ") {
-                notes_titles += 1;
-            }
+            assert!(
+                !title.starts_with("Notes de « "),
+                "{generation:?}: a document's notes are its scratchpad, not {title:?}"
+            );
+            scratchpads += item
+                .item
+                .prose_refs
+                .iter()
+                .filter(|p| p.role == common::entities::ContentRole::ScratchpadText)
+                .count();
         }
-        assert!(notes_titles > 0, "no document notes came across");
+        assert!(scratchpads > 0, "no document notes came across");
         if generation == Generation::Format15 {
             assert!(
                 bundle
@@ -895,4 +902,95 @@ fn the_review_foresees_the_metadata_the_import_reports() {
             );
         }
     }
+}
+
+/// A document's notes arrive in its own row's scratchpad, end to end: the saved project
+/// holds them as the row's `.scratchpad.djot` file, `load_work` opens them as the row's
+/// `ScratchpadText`, no note "(notes)" is made beside it, and the report's finding about
+/// them names that very row.
+#[test]
+fn a_documents_notes_arrive_in_its_scratchpad() {
+    use common::direct_access::binder_item::BinderItemRelationshipField;
+    use common::entities::ContentRole;
+    use direct_access::binder_item::binder_item_controller;
+    use direct_access::content::content_controller;
+    use work_management::{LoadWorkDto, work_management_controller as work};
+
+    let dir = tempfile::tempdir().expect("tempdir");
+    let spec = Spec::novel(Generation::Format20, Platform::Mac);
+    let source = write(&spec, dir.path());
+    let mut backend = Backend::new();
+    let analysis = backend.analyse(&analysis_request(&source));
+    let output = dir.path().join("novel.skrib");
+    let result = backend.imported(&import_request(&source, &analysis, &output));
+    let words = scrivener_fixtures::text::sentence(5);
+
+    let bundle = skrib_format::read_bundle(&output.to_string_lossy()).expect("reads back");
+    let items: Vec<&skrib_format::BundledItem> =
+        bundle.binders.iter().flat_map(|b| b.items.iter()).collect();
+    assert!(
+        items.iter().all(|i| !i.item.title.starts_with("Notes de")),
+        "no note beside the scene"
+    );
+    let arrival = items
+        .iter()
+        .find(|i| i.item.title == "Arrival")
+        .expect("the scene arrived");
+    let pad = arrival
+        .item
+        .prose_refs
+        .iter()
+        .find(|p| p.role == ContentRole::ScratchpadText)
+        .expect("the scene has a scratchpad");
+    assert!(pad.path.ends_with(".scratchpad.djot"), "{}", pad.path);
+    let saved = arrival.prose.get(&pad.file_id).expect("its file was read");
+    assert!(saved.contains(words), "{saved:?}");
+
+    let db = DbContext::new().expect("in-memory store");
+    if let Err(e) = work::load_work(
+        &db,
+        &Arc::new(EventHub::new()),
+        &LoadWorkDto {
+            file_name: output.to_string_lossy().into_owned(),
+            media_root: dir.path().join("media").to_string_lossy().into_owned(),
+        },
+    ) {
+        panic!("load_work refuses the imported project: {e:#}");
+    }
+    let row = db
+        .get_store()
+        .binder_items
+        .read()
+        .expect("the store reads")
+        .values()
+        .find(|r| r.title == "Arrival")
+        .cloned()
+        .expect("the scene is in the store");
+    let opened: Vec<String> = binder_item_controller::get_relationship(
+        &db,
+        &row.id,
+        &BinderItemRelationshipField::Contents,
+    )
+    .expect("its contents")
+    .iter()
+    .filter_map(|id| content_controller::get(&db, id).expect("a content"))
+    .filter(|c| c.role == ContentRole::ScratchpadText)
+    .map(|c| c.data)
+    .collect();
+    assert_eq!(opened.len(), 1, "{opened:?}");
+    assert!(opened[0].contains(words), "{opened:?}");
+
+    let finding = result
+        .findings
+        .iter()
+        .find_map(|f| match f {
+            ScrivenerFinding::Reported { key, item_uid, .. }
+                if key == "scrivener-structure-notes-in-scratchpad" =>
+            {
+                Some(*item_uid)
+            }
+            _ => None,
+        })
+        .expect("the report says where the notes went");
+    assert_eq!(finding, Some(row.uid), "it names the scene's row");
 }

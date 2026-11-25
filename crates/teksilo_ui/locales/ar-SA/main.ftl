@@ -1053,7 +1053,6 @@ import-plume-source-missing = هذا الملف غير موجود
 import-plume-source-not-file = هذا المسار ليس ملفًا
 import-plume-manuscript-binder = المخطوطة
 import-plume-story-bible-binder = مرجع القصة
-import-plume-notes-of = { $name } (ملاحظات)
 import-plume-content-of = { $name } (النص)
 import-plume-progress-title = جارٍ استيراد مشروع Plume…
 import-plume-done = { $imported ->
@@ -1094,7 +1093,6 @@ import-manuskript-summary-note = الخلاصة
 import-manuskript-importance-minor = ثانوية جدًا
 import-manuskript-importance-secondary = ثانوية
 import-manuskript-importance-main = رئيسية
-import-manuskript-notes-of = { $title } (ملاحظات)
 import-manuskript-progress-title = جارٍ استيراد مشروع Manuskript…
 import-manuskript-done = { $imported ->
     [zero] لم يُستورد أي عنصر.
@@ -2244,6 +2242,22 @@ import-scrivener-structure-document-notes-line = { $count ->
     [few] تصبح ملاحظات { $count } مستندات ملاحظاتٍ بجانبها.
     [many] تصبح ملاحظات { $count } مستندًا ملاحظاتٍ بجانبها.
    *[other] تصبح ملاحظات { $count } مستند ملاحظاتٍ بجانبها.
+}
+import-scrivener-structure-notes-in-scratchpad-line = { $count ->
+    [zero] لا ملاحظات مستندات.
+    [one] تذهب ملاحظات مستند واحد إلى مفكرته.
+    [two] تذهب ملاحظات مستندين إلى مفكرتيهما.
+    [few] تذهب ملاحظات { $count } مستندات إلى مفكراتها.
+    [many] تذهب ملاحظات { $count } مستندًا إلى مفكراتها.
+   *[other] تذهب ملاحظات { $count } مستند إلى مفكراتها.
+}
+import-scrivener-structure-marked-notes-beside-line = { $count ->
+    [zero] لا ملاحظات مستندات.
+    [one] تحتوي ملاحظات مستند واحد على حواشٍ أو تعليقات لا تستطيع المفكرة عرضها، فتصبح ملاحظة بجانبه.
+    [two] تحتوي ملاحظات مستندين على حواشٍ أو تعليقات لا تستطيع المفكرة عرضها، فتصبح ملاحظات بجانبهما.
+    [few] تحتوي ملاحظات { $count } مستندات على حواشٍ أو تعليقات لا تستطيع المفكرة عرضها، فتصبح ملاحظات بجانبها.
+    [many] تحتوي ملاحظات { $count } مستندًا على حواشٍ أو تعليقات لا تستطيع المفكرة عرضها، فتصبح ملاحظات بجانبها.
+   *[other] تحتوي ملاحظات { $count } مستند على حواشٍ أو تعليقات لا تستطيع المفكرة عرضها، فتصبح ملاحظات بجانبها.
 }
 import-scrivener-structure-draft-content-as-note-line = يصبح النص الخاص بمجلد المخطوطة ملاحظةً في أعلى المخطوطة.
 import-scrivener-structure-story-bible-folder-line = { $count ->
@@ -5624,6 +5638,7 @@ import-notice-text-without-file-name = تعذّر إعطاء { $kind ->
     [scene] نص المشهد
     [note] نص الملاحظة
     [synopsis] ملخص
+    [scratchpad] مفكرة
    *[title] عنوان
 } «{ $title }» اسمَ ملف، فلم يُستورد.
 import-notice-unknown-label = لـ«{ $title }» التسمية { $index }، وهي ليست في قائمة تسميات هذا المشروع. استُورد بلا تسمية.
@@ -5665,6 +5680,14 @@ import-notice-versions-unplaced = { $count ->
     [few] تنتمي { $count } إصدارات سابقة إلى عنصر لم يعد في المشروع، فتعذّر وضعها في مكانها.
     [many] ينتمي { $count } إصدارًا سابقًا إلى عنصر لم يعد في المشروع، فتعذّر وضعها في مكانها.
    *[other] ينتمي { $count } إصدار سابق إلى عنصر لم يعد في المشروع، فتعذّر وضعها في مكانها.
+}
+import-notice-note-links-not-kept = { $count ->
+    [zero] لم تفقد ملاحظات أي عنصر روابطها.
+    [one] كانت ملاحظات عنصر واحد تشير إلى شخصيات أو مدخلات من العالم أو حبكات أو عناصر أخرى. هي في مفكرته والأسماء مكتوبة كاملة، لكن الإحالات إلى تلك الشخصيات والمدخلات والحبكات والعناصر لم تُحفظ.
+    [two] كانت ملاحظات عنصرين تشير إلى شخصيات أو مدخلات من العالم أو حبكات أو عناصر أخرى. هي في مفكرة كل منهما والأسماء مكتوبة كاملة، لكن الإحالات إلى تلك الشخصيات والمدخلات والحبكات والعناصر لم تُحفظ.
+    [few] كانت ملاحظات { $count } عناصر تشير إلى شخصيات أو مدخلات من العالم أو حبكات أو عناصر أخرى. هي في مفكرة كل منها والأسماء مكتوبة كاملة، لكن الإحالات إلى تلك الشخصيات والمدخلات والحبكات والعناصر لم تُحفظ.
+    [many] كانت ملاحظات { $count } عنصرًا تشير إلى شخصيات أو مدخلات من العالم أو حبكات أو عناصر أخرى. هي في مفكرة كل منها والأسماء مكتوبة كاملة، لكن الإحالات إلى تلك الشخصيات والمدخلات والحبكات والعناصر لم تُحفظ.
+   *[other] كانت ملاحظات { $count } عنصر تشير إلى شخصيات أو مدخلات من العالم أو حبكات أو عناصر أخرى. هي في مفكرة كل منها والأسماء مكتوبة كاملة، لكن الإحالات إلى تلك الشخصيات والمدخلات والحبكات والعناصر لم تُحفظ.
 }
 
 ## Native file dialogs: the window title, and the label of the file-type filter.

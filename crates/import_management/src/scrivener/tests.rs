@@ -68,8 +68,9 @@ fn notes(row: u32) -> RowRef {
     }
 }
 
-/// Where the four items went: the scene's notes in a row of their own, its synopsis on its
-/// own row, a project note and a recovered text in the notes binder.
+/// Where the four items went: the scene's notes in a row of their own (the note beside an
+/// item that has no row of its own to hold them in its scratchpad), its synopsis on its own
+/// row, a project note and a recovered text in the notes binder.
 fn written() -> (Vec<Placement>, Vec<WrittenRow>) {
     let placements = vec![
         Placement::default(),
@@ -396,7 +397,9 @@ fn every_structure_notice() -> Vec<StructureNotice> {
             documents: 2,
             words: 900,
         },
+        StructureNotice::NotesInScratchpad { item: 2 },
         StructureNotice::DocumentNotes { item: 2 },
+        StructureNotice::MarkedNotesBeside { item: 2 },
         StructureNotice::DraftContentAsNote { item: 0 },
         StructureNotice::StoryBibleFolder {
             item: 3,
@@ -650,6 +653,47 @@ fn every_notice_is_a_typed_row_named_where_the_writer_knew_it() {
         name: s("item_key"),
         value: s("77")
     }));
+}
+
+/// A report line about an item's document notes opens the row that holds them. For a
+/// scene that is its own row's scratchpad, or the note they became beside it; for an
+/// item with no row of its own and no text (a Draft split into several books, with only a
+/// synopsis and notes), the note made for what was left of it. Located like any other
+/// item, that line had no row to open: the item has none, and its text went nowhere.
+#[test]
+fn a_notes_line_opens_the_row_that_holds_the_notes() {
+    let names = names();
+    let (mut placements, rows) = written();
+    // The Draft: no row of its own, no text, its notes in the scratchpad of the note
+    // made for it (row manuscript(1) stands in for that note here).
+    placements[0] = Placement {
+        notes: Some(manuscript(1)),
+        synopsis: Some(manuscript(1)),
+        ..Placement::default()
+    };
+    let after = Locator::after_import(&names, &placements, &rows);
+    let line = |notice: StructureNotice| row(super::structure_notice(&notice, &after));
+
+    let draft = line(StructureNotice::NotesInScratchpad { item: 0 });
+    assert_eq!(
+        draft.uid,
+        Some(uid(11)),
+        "the note holding the Draft's notes"
+    );
+    assert_eq!(draft.place, ScrivenerPlace::Item);
+    assert_eq!(draft.item, 0);
+
+    for notice in [
+        StructureNotice::DocumentNotes { item: 2 },
+        StructureNotice::MarkedNotesBeside { item: 2 },
+    ] {
+        assert_eq!(line(notice).uid, Some(uid(13)), "the note beside the scene");
+    }
+    // An item whose notes went nowhere is still found by its own row.
+    assert_eq!(
+        line(StructureNotice::NotesInScratchpad { item: 1 }).uid,
+        Some(uid(11))
+    );
 }
 
 #[test]

@@ -1053,7 +1053,6 @@ import-plume-source-missing = Ten plik nie istnieje
 import-plume-source-not-file = Ta ścieżka nie jest plikiem
 import-plume-manuscript-binder = Rękopis
 import-plume-story-bible-binder = Biblia opowieści
-import-plume-notes-of = { $name } (notatki)
 import-plume-content-of = { $name } (tekst)
 import-plume-progress-title = Importowanie projektu Plume…
 import-plume-done = Zaimportowano { $imported ->
@@ -1091,7 +1090,6 @@ import-manuskript-summary-note = Podsumowanie
 import-manuskript-importance-minor = Epizodyczna
 import-manuskript-importance-secondary = Drugoplanowa
 import-manuskript-importance-main = Pierwszoplanowa
-import-manuskript-notes-of = { $title } (notatki)
 import-manuskript-progress-title = Importowanie projektu Manuskript…
 import-manuskript-done = { $imported ->
         [one] Zaimportowano { $imported } element.
@@ -2074,6 +2072,18 @@ import-scrivener-structure-document-notes-line = { $count ->
         [many] Notatki { $count } dokumentów stają się notatkami obok nich.
        *[other] Notatki { $count } dokumentu stają się notatkami obok nich.
     }
+import-scrivener-structure-notes-in-scratchpad-line = { $count ->
+    [one] Notatki { $count } dokumentu trafiają do jego brudnopisu.
+    [few] Notatki { $count } dokumentów trafiają do ich brudnopisów.
+    [many] Notatki { $count } dokumentów trafiają do ich brudnopisów.
+   *[other] Notatki { $count } dokumentu trafiają do ich brudnopisów.
+}
+import-scrivener-structure-marked-notes-beside-line = { $count ->
+    [one] Notatki { $count } dokumentu zawierają przypisy lub komentarze, których brudnopis nie potrafi pokazać, więc stają się notatką obok niego.
+    [few] Notatki { $count } dokumentów zawierają przypisy lub komentarze, których brudnopis nie potrafi pokazać, więc stają się notatkami obok nich.
+    [many] Notatki { $count } dokumentów zawierają przypisy lub komentarze, których brudnopis nie potrafi pokazać, więc stają się notatkami obok nich.
+   *[other] Notatki { $count } dokumentu zawierają przypisy lub komentarze, których brudnopis nie potrafi pokazać, więc stają się notatkami obok nich.
+}
 import-scrivener-structure-draft-content-as-note-line = Własny tekst folderu rękopisu staje się notatką na początku rękopisu.
 import-scrivener-structure-story-bible-folder-line = { $count ->
         [one] { $count } folder postaci lub miejsc staje się znacznikiem biblii opowieści.
@@ -5006,6 +5016,7 @@ import-notice-text-without-file-name = Nie udało się nadać nazwy pliku { $kin
         [scene] tekstowi sceny
         [note] tekstowi notatki
         [synopsis] streszczeniu
+        [scratchpad] brudnopisowi
        *[title] tytułowi
     } elementu „{ $title }”, więc nie został zaimportowany.
 import-notice-unknown-label = „{ $title }” ma etykietę { $index }, której nie ma na liście etykiet tego projektu. Zaimportowano go bez etykiety.
@@ -5041,6 +5052,12 @@ import-notice-versions-unplaced = { $count ->
         [many] { $count } wcześniejszych wersji należy do wiersza, którego nie ma już w projekcie, i nie dało się ich umieścić.
        *[other] { $count } wcześniejszej wersji należy do wiersza, którego nie ma już w projekcie, i nie dało się ich umieścić.
     }
+import-notice-note-links-not-kept = { $count ->
+    [one] Notatki jednego elementu odsyłały do postaci, elementów świata, wątków lub innych elementów. Są w jego brudnopisie z wypisanymi nazwami, ale odnośników do tych postaci, elementów świata, wątków i elementów nie zachowano.
+    [few] Notatki { $count } elementów odsyłały do postaci, elementów świata, wątków lub innych elementów. Są w brudnopisie każdego z nich z wypisanymi nazwami, ale odnośników do tych postaci, elementów świata, wątków i elementów nie zachowano.
+    [many] Notatki { $count } elementów odsyłały do postaci, elementów świata, wątków lub innych elementów. Są w brudnopisie każdego z nich z wypisanymi nazwami, ale odnośników do tych postaci, elementów świata, wątków i elementów nie zachowano.
+   *[other] Notatki { $count } elementu odsyłały do postaci, elementów świata, wątków lub innych elementów. Są w brudnopisie każdego z nich z wypisanymi nazwami, ale odnośników do tych postaci, elementów świata, wątków i elementów nie zachowano.
+}
 
 ## Native file dialogs: the window title, and the label of the file-type filter.
 dialog-open-work-title = Otwórz projekt Skribisto

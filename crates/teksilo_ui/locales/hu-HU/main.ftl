@@ -973,7 +973,6 @@ import-plume-source-missing = Ez a fájl nem létezik
 import-plume-source-not-file = Ez az útvonal nem fájl
 import-plume-manuscript-binder = Kézirat
 import-plume-story-bible-binder = Történetbiblia
-import-plume-notes-of = { $name } (jegyzetek)
 import-plume-content-of = { $name } (szöveg)
 import-plume-progress-title = Plume-projekt importálása…
 import-plume-done = Importálva: { $imported ->
@@ -1008,7 +1007,6 @@ import-manuskript-summary-note = Összefoglaló
 import-manuskript-importance-minor = Mellékes
 import-manuskript-importance-secondary = Másodlagos
 import-manuskript-importance-main = Fő
-import-manuskript-notes-of = { $title } (jegyzetek)
 import-manuskript-progress-title = Manuskript-projekt importálása folyamatban…
 import-manuskript-done = { $imported ->
     [one] { $imported } elem importálva.
@@ -1861,6 +1859,14 @@ import-scrivener-structure-paratext-not-counted-line = { $documents ->
 import-scrivener-structure-document-notes-line = { $count ->
     [one] 1 dokumentum jegyzeteiből egy mellette álló jegyzet lesz.
    *[other] { $count } dokumentum jegyzeteiből mellettük álló jegyzetek lesznek.
+}
+import-scrivener-structure-notes-in-scratchpad-line = { $count ->
+    [one] 1 dokumentum jegyzetei a jegyzettömbjébe kerülnek.
+   *[other] { $count } dokumentum jegyzetei a saját jegyzettömbjükbe kerülnek.
+}
+import-scrivener-structure-marked-notes-beside-line = { $count ->
+    [one] 1 dokumentum jegyzetei lábjegyzeteket vagy megjegyzéseket tartalmaznak, amelyeket a jegyzettömb nem tud megjeleníteni, ezért a dokumentum melletti jegyzetté válnak.
+   *[other] { $count } dokumentum jegyzetei lábjegyzeteket vagy megjegyzéseket tartalmaznak, amelyeket a jegyzettömb nem tud megjeleníteni, ezért a dokumentumok melletti jegyzetekké válnak.
 }
 import-scrivener-structure-draft-content-as-note-line = A kéziratmappa saját szövegéből jegyzet lesz a kézirat elején.
 import-scrivener-structure-story-bible-folder-line = { $count ->
@@ -4179,6 +4185,7 @@ import-notice-text-without-file-name = A(z) „{ $title }” { $kind ->
     [scene] jelenetszövegének
     [note] jegyzetszövegének
     [synopsis] szinopszisának
+    [scratchpad] jegyzettömbjének
    *[title] címének
 } nem lehetett fájlnevet adni, ezért nem lett importálva.
 import-notice-unknown-label = A(z) „{ $title }” felirata { $index }, ami nem szerepel a projekt feliratlistájában. Felirat nélkül lett importálva.
@@ -4203,6 +4210,10 @@ import-notice-versions-kept = { $found ->
 import-notice-versions-unplaced = { $count ->
     [one] Egy korábbi változat olyan sorhoz tartozik, amely már nincs a projektben, ezért nem lehetett elhelyezni.
    *[other] { $count } korábbi változat olyan sorhoz tartozik, amely már nincs a projektben, ezért nem lehetett elhelyezni őket.
+}
+import-notice-note-links-not-kept = { $count ->
+    [one] Egy elem jegyzetei szereplőkre, a világ elemeire, cselekményszálakra vagy más elemekre hivatkoztak. Az elem jegyzettömbjében vannak, a nevek kiírva, de az ezekre a szereplőkre, a világ elemeire, cselekményszálakra és elemekre mutató hivatkozások nem maradtak meg.
+   *[other] { $count } elem jegyzetei szereplőkre, a világ elemeire, cselekményszálakra vagy más elemekre hivatkoztak. Mindegyik a saját elemének jegyzettömbjében van, a nevek kiírva, de az ezekre a szereplőkre, a világ elemeire, cselekményszálakra és elemekre mutató hivatkozások nem maradtak meg.
 }
 
 ## Native file dialogs: the window title, and the label of the file-type filter.

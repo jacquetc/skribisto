@@ -947,7 +947,6 @@ import-plume-source-missing = このファイルは存在しません
 import-plume-source-not-file = このパスはファイルではありません
 import-plume-manuscript-binder = 原稿
 import-plume-story-bible-binder = 設定資料集
-import-plume-notes-of = { $name }（ノート）
 import-plume-content-of = { $name }（本文）
 import-plume-progress-title = Plume プロジェクトをインポート中…
 import-plume-done = { $imported }項目をインポートしました。ごみ箱内の{ $skipped }項目は移行しませんでした。
@@ -977,7 +976,6 @@ import-manuskript-summary-note = 要約
 import-manuskript-importance-minor = 端役
 import-manuskript-importance-secondary = 脇役
 import-manuskript-importance-main = 主役
-import-manuskript-notes-of = { $title }（ノート）
 import-manuskript-progress-title = Manuskript プロジェクトをインポート中…
 import-manuskript-done = { $imported }項目をインポートしました。{ $revisions ->
     [0] { "" }
@@ -1597,6 +1595,8 @@ import-scrivener-structure-prologue-not-numbered-line = プロローグまたは
 import-scrivener-structure-matter-inside-book-line = 原稿の外にある前付けまたは後付けの項目{ $count }件は、パラテクストとして本の中に入れます。含めるように設定するまで、エクスポートからは除外されます。
 import-scrivener-structure-paratext-not-counted-line = 原稿の文書{ $documents }件がパラテクスト（前付けまたは後付け）になるため、{ $words }語が原稿の分量に含まれなくなります。
 import-scrivener-structure-document-notes-line = 文書{ $count }件のノートは、それぞれの文書の隣のノートになります。
+import-scrivener-structure-notes-in-scratchpad-line = 文書{ $count }件のノートは、それぞれの文書のメモ帳に入ります。
+import-scrivener-structure-marked-notes-beside-line = 文書{ $count }件のノートには、メモ帳では表示できない脚注やコメントがあるため、それぞれの文書の横のノートになります。
 import-scrivener-structure-draft-content-as-note-line = 原稿フォルダー自体の本文は、原稿の先頭のノートになります。
 import-scrivener-structure-story-bible-folder-line = 登場人物や場所のフォルダー{ $count }件は、設定資料集のタグになります。
 import-scrivener-structure-templates-created-line = 文書テンプレート{ $count }件は、ノートのテンプレートになります。
@@ -3306,6 +3306,7 @@ import-notice-text-without-file-name = 「{ $title }」の{ $kind ->
     [scene] シーン本文
     [note] ノート本文
     [synopsis] あらすじ
+    [scratchpad] メモ帳
    *[title] タイトル
 }にファイル名を付けられなかったため、インポートしていません。
 import-notice-unknown-label = 「{ $title }」のラベル { $index } は、このプロジェクトのラベル一覧にありません。ラベルなしでインポートしました。
@@ -3316,6 +3317,7 @@ import-notice-custom-icons = { $count }行にカスタムアイコンが設定�
 import-notice-character-colors = 登場人物{ $count }人の名前の横に色が付いていました。Skribisto では行ではなくタグに色を付けるため、色はインポートしていません。登場人物そのものはすべてインポートしました。
 import-notice-versions-kept = このプロジェクトには以前のバージョンが{ $found }件記録されていました。Skribisto が自身の履歴を間引くのと同じ方法で間引き、{ $kept }件を残しました。バージョンパネルで確認できます。
 import-notice-versions-unplaced = 以前のバージョン{ $count }件は、プロジェクトにもう存在しない行のものだったため、配置できませんでした。
+import-notice-note-links-not-kept = 項目{ $count }件のノートは、登場人物、世界設定の項目、筋書き、または他の項目を指していました。ノートは名前を書き出した形でそれぞれの項目のメモ帳に入っていますが、それらの登場人物、世界設定の項目、筋書き、項目への参照は引き継いでいません。
 
 ## Native file dialogs: the window title, and the label of the file-type filter.
 dialog-open-work-title = Skribisto プロジェクトを開く

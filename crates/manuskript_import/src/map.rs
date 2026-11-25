@@ -97,7 +97,7 @@ pub struct Names {
 }
 
 /// The section headings an import writes into its notes, the title a project with no
-/// name of its own is given, and the title of the note holding a row's own notes.
+/// name of its own is given.
 ///
 /// Manuskript keeps a character's motivation, a plot's result, a world entry's
 /// passion in separate fields; Skribisto writes each as a headed section of one
@@ -140,16 +140,13 @@ pub struct SectionNames {
     pub full: String,
     /// The title of a project that names itself nowhere.
     pub untitled_project: String,
-    /// The title of a note holding a row's own notes, with
-    /// [`TITLE_SLOT`](skrib_format::importing::TITLE_SLOT) where the row's title goes.
-    pub notes_of: String,
 }
 
 impl SectionNames {
     /// The order the names travel in, as a list. Append, never reorder: a list
     /// built against an older order would put every heading after the change
     /// under the wrong section.
-    pub const ORDER: [&'static str; 24] = [
+    pub const ORDER: [&'static str; 23] = [
         "paragraph_summary",
         "full_summary",
         "motivation",
@@ -173,10 +170,9 @@ impl SectionNames {
         "page",
         "full",
         "untitled_project",
-        "notes_of",
     ];
 
-    fn slots(&mut self) -> [&mut String; 24] {
+    fn slots(&mut self) -> [&mut String; 23] {
         [
             &mut self.paragraph_summary,
             &mut self.full_summary,
@@ -201,7 +197,6 @@ impl SectionNames {
             &mut self.page,
             &mut self.full,
             &mut self.untitled_project,
-            &mut self.notes_of,
         ]
     }
 
@@ -245,7 +240,6 @@ impl Default for SectionNames {
             page: s("Page"),
             full: s("Full"),
             untitled_project: s("Imported Manuskript project"),
-            notes_of: format!("{} (notes)", skrib_format::importing::TITLE_SLOT),
         }
     }
 }
@@ -455,6 +449,9 @@ struct Builder<'a> {
     imported_items: u64,
     dropped_icons: usize,
     dropped_colors: usize,
+    /// Rows whose notes pointed at a character, a world entry, a plot or another row:
+    /// links their scratchpad cannot keep.
+    unlinked_notes: usize,
     report: &'a dyn Fn(f32, &str),
     cancel: &'a AtomicBool,
     total: u64,
@@ -490,6 +487,7 @@ impl<'a> Builder<'a> {
             imported_items: 0,
             dropped_icons: 0,
             dropped_colors: 0,
+            unlinked_notes: 0,
             report,
             cancel,
             total,
@@ -659,6 +657,7 @@ impl<'a> Builder<'a> {
                                 ContentRole::SceneText => TextKind::Scene,
                                 ContentRole::NoteText => TextKind::Note,
                                 ContentRole::SynopsisText => TextKind::Synopsis,
+                                ContentRole::ScratchpadText => TextKind::Scratchpad,
                                 _ => TextKind::Title,
                             },
                         });
@@ -1280,6 +1279,13 @@ impl Builder<'_> {
         }
         contents.push((ContentRole::SceneText, text));
         contents.push((ContentRole::SynopsisText, synopsis));
+        // A row's notes are its own scratchpad, the writer's private notes beside it
+        // (decided 2026-11-25; they were a Note of their own before). Every shape an
+        // outline row takes carries one, which `every_outline_shape_carries_a_scratchpad`
+        // holds, so they are never dropped here.
+        if let Some(notes) = self.scratchpad_of(row, &body.references) {
+            contents.push((ContentRole::ScratchpadText, notes));
+        }
 
         let (id, mut item) = self.make_item(
             MANUSCRIPT_INDEX,
@@ -1298,13 +1304,6 @@ impl Builder<'_> {
             self.outline_item.insert(key.clone(), id);
             self.outline_uid.insert(key, self.last_uid(out));
         }
-
-        // A row's notes become a Note of their own: the matrix gives neither a
-        // scene nor a chapter folder anywhere else to keep them. A folder's note
-        // is its first child; a leaf's is the sibling that follows it, which is
-        // where the reader meets it either way.
-        let note_indent = if row.is_folder() { indent + 1 } else { indent };
-        self.emit_notes(binder, row, note_indent, out);
 
         for child in &row.children {
             self.emit_row(
@@ -1453,51 +1452,38 @@ impl Builder<'_> {
         }
     }
 
-    /// A row's notes, as a Note item.
-    fn emit_notes(
-        &mut self,
-        binder: &str,
-        row: &OutlineItem,
-        indent: i64,
-        out: &mut Vec<BundledItem>,
-    ) {
+    /// A row's notes as Djot for its scratchpad, or `None` when it has none.
+    ///
+    /// Notes are plain text in Manuskript, with no `type` of their own, so unlike the
+    /// body they are converted here rather than at the reader, and verbatim: read as
+    /// Markdown, a note's `*` and `_` became emphasis and its line breaks spaces. Their
+    /// reference markers are written out as the names they stand for. The links those
+    /// markers made (to a character, a world entry, a plot, another row) cannot be kept:
+    /// a scratchpad links to nothing, and putting them on the row would claim the
+    /// character appears in the scene. Each row that loses one is counted, and the
+    /// report says how many. A link the row's own text makes too (`body`) is not lost:
+    /// the row keeps it from there, so a note naming a character the scene already
+    /// names costs nothing.
+    fn scratchpad_of(&mut self, row: &OutlineItem, body: &[Reference]) -> Option<String> {
         if row.notes.trim().is_empty() {
-            return;
+            return None;
         }
-        // Notes are plain text in Manuskript, with no `type` of their own, so
-        // unlike the body they are converted here rather than at the reader, and
-        // verbatim: read as Markdown, a note's `*` and `_` became emphasis and its
-        // line breaks spaces.
         let scanned = self.rewrite_prose(&row.notes, &row.title);
-        let note = plain_text_to_djot_verbatim(&scanned.text);
-        let title = skrib_format::importing::fill_title(&self.names.sections.notes_of, &row.title);
-        let (_, mut item) = self.make_item(
-            MANUSCRIPT_INDEX,
-            binder,
-            Role::Item,
-            SubRole::Note,
-            &title,
-            indent,
-            // A note is not part of the book, whichever door made it.
-            false,
-            vec![(ContentRole::NoteText, note)],
-        );
-        let mut ids: Vec<u64> = Vec::new();
-        for reference in &scanned.references {
-            match reference.kind {
-                'C' => ids.extend(self.character_item.get(&reference.id).copied()),
-                'W' => ids.extend(self.world_item.get(&reference.id).copied()),
-                'P' => ids.extend(self.plot_item.get(&reference.id).copied()),
-                'T' => self
-                    .pending_outline_refs
-                    .push((item.item.file_id, reference.id.clone())),
-                _ => {}
-            }
+        let linked = scanned.references.iter().any(|reference| {
+            let to_itself = reference.kind == 'T' && row.id.as_deref() == Some(&reference.id);
+            let kept_by_the_text = body
+                .iter()
+                .any(|b| b.kind == reference.kind && b.id == reference.id);
+            !to_itself
+                && !kept_by_the_text
+                && self
+                    .reference_targets
+                    .contains_key(&(reference.kind, reference.id.clone()))
+        });
+        if linked {
+            self.unlinked_notes += 1;
         }
-        ids.sort_unstable();
-        ids.dedup();
-        item.item.reference_ids = ids;
-        out.push(item);
+        Some(plain_text_to_djot_verbatim(&scanned.text))
     }
 
     /// Say once what had nowhere to go, rather than once per row.
@@ -1511,6 +1497,11 @@ impl Builder<'_> {
             let n = self.dropped_colors;
             self.warnings
                 .push(ImportNotice::CharacterColours { count: n as u64 });
+        }
+        if self.unlinked_notes > 0 {
+            let n = self.unlinked_notes;
+            self.warnings
+                .push(ImportNotice::NoteLinksNotKept { count: n as u64 });
         }
     }
 
@@ -1658,6 +1649,25 @@ fn collect_outline_targets(items: &[OutlineItem], out: &mut HashMap<(char, Strin
 #[cfg(test)]
 mod section_names_tests {
     use super::*;
+
+    /// A row's notes go into its scratchpad, so no shape an outline row can take may
+    /// lack one: `make_item` would drop the notes without a word.
+    #[test]
+    fn every_outline_shape_carries_a_scratchpad() {
+        let mut shapes = vec![(Role::Item, SubRole::Scene)];
+        for max_depth in 0..5 {
+            for depth in 0..5 {
+                let (role, sub_role, _) = folder_shape(depth, max_depth);
+                shapes.push((role, sub_role));
+            }
+        }
+        for (role, sub_role) in shapes {
+            assert!(
+                content_allowed(&role, &sub_role, &ContentRole::ScratchpadText),
+                "{role:?}/{sub_role:?}"
+            );
+        }
+    }
 
     #[test]
     fn the_order_names_every_slot_once() {

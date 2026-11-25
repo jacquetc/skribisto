@@ -235,7 +235,6 @@ pub(crate) const SEEDING_SITES: &[SeedingSite] = &[
         file: "import_manuskript/import_manuskript_vm.rs",
         markers: &["fn section_name("],
         keys: &[
-            "import-manuskript-notes-of",
             "import-manuskript-section-description",
             "import-manuskript-section-email",
             "import-manuskript-section-epiphany",
@@ -279,7 +278,6 @@ pub(crate) const SEEDING_SITES: &[SeedingSite] = &[
             "import-plume-group-characters",
             "import-plume-group-items",
             "import-plume-group-places",
-            "import-plume-notes-of",
             "import-plume-untitled-project",
         ],
     },

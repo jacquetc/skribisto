@@ -1015,7 +1015,6 @@ import-plume-source-missing = הקובץ הזה אינו קיים
 import-plume-source-not-file = הנתיב הזה אינו קובץ
 import-plume-manuscript-binder = כתב יד
 import-plume-story-bible-binder = תיק הסיפור
-import-plume-notes-of = { $name } (פתקים)
 import-plume-content-of = { $name } (טקסט)
 import-plume-progress-title = מייבא פרויקט Plume…
 import-plume-done = { $imported ->
@@ -1051,7 +1050,6 @@ import-manuskript-summary-note = תקציר
 import-manuskript-importance-minor = שולית
 import-manuskript-importance-secondary = משנית
 import-manuskript-importance-main = ראשית
-import-manuskript-notes-of = { $title } (פתקים)
 import-manuskript-progress-title = מייבא פרויקט Manuskript…
 import-manuskript-done = { $imported ->
     [one] יובא פריט אחד.
@@ -2001,6 +1999,16 @@ import-scrivener-structure-document-notes-line = { $count ->
     [one] הפתקים של מסמך אחד הופכים לפתק לצדו.
     [two] הפתקים של שני מסמכים הופכים לפתקים לצדם.
    *[other] הפתקים של { $count } מסמכים הופכים לפתקים לצדם.
+}
+import-scrivener-structure-notes-in-scratchpad-line = { $count ->
+    [one] הפתקים של מסמך אחד עוברים לפנקס הטיוטה שלו.
+    [two] הפתקים של שני מסמכים עוברים לפנקסי הטיוטה שלהם.
+   *[other] הפתקים של { $count } מסמכים עוברים לפנקסי הטיוטה שלהם.
+}
+import-scrivener-structure-marked-notes-beside-line = { $count ->
+    [one] הפתקים של מסמך אחד מכילים הערות שוליים או הערות, שפנקס טיוטה אינו יכול להציג, ולכן הם הופכים לפתק לצדו.
+    [two] הפתקים של שני מסמכים מכילים הערות שוליים או הערות, שפנקס טיוטה אינו יכול להציג, ולכן הם הופכים לפתקים לצדם.
+   *[other] הפתקים של { $count } מסמכים מכילים הערות שוליים או הערות, שפנקס טיוטה אינו יכול להציג, ולכן הם הופכים לפתקים לצדם.
 }
 import-scrivener-structure-draft-content-as-note-line = הטקסט של תיקיית כתב היד עצמה הופך לפתק בראש כתב היד.
 import-scrivener-structure-story-bible-folder-line = { $count ->
@@ -4578,6 +4586,7 @@ import-notice-text-without-file-name = לא ניתן היה לתת שם קובץ
     [scene] לטקסט הסצנה של "{ $title }", ולכן הוא לא יובא.
     [note] לטקסט הפתק של "{ $title }", ולכן הוא לא יובא.
     [synopsis] לתקציר של "{ $title }", ולכן הוא לא יובא.
+    [scratchpad] לפנקס הטיוטה של "{ $title }", ולכן הוא לא יובא.
    *[title] לכותרת של "{ $title }", ולכן היא לא יובאה.
 }
 import-notice-unknown-label = לפריט "{ $title }" יש תווית { $index }, שאינה ברשימת התוויות של הפרויקט הזה. הוא יובא בלי תווית.
@@ -4607,6 +4616,11 @@ import-notice-versions-unplaced = { $count ->
     [one] גרסה קודמת אחת שייכת לפריט שכבר אינו בפרויקט, ולא ניתן היה למקם אותה.
     [two] שתי גרסאות קודמות שייכות לפריט שכבר אינו בפרויקט, ולא ניתן היה למקם אותן.
    *[other] { $count } גרסאות קודמות שייכות לפריט שכבר אינו בפרויקט, ולא ניתן היה למקם אותן.
+}
+import-notice-note-links-not-kept = { $count ->
+    [one] הפתקים של פריט אחד הפנו לדמויות, לרשומות של העולם, לעלילות או לפריטים אחרים. הם נמצאים בפנקס הטיוטה שלו והשמות כתובים במלואם, אבל ההפניות לדמויות, לרשומות, לעלילות ולפריטים האלה לא נשמרו.
+    [two] הפתקים של שני פריטים הפנו לדמויות, לרשומות של העולם, לעלילות או לפריטים אחרים. הם נמצאים בפנקס הטיוטה של כל אחד מהם והשמות כתובים במלואם, אבל ההפניות לדמויות, לרשומות, לעלילות ולפריטים האלה לא נשמרו.
+   *[other] הפתקים של { $count } פריטים הפנו לדמויות, לרשומות של העולם, לעלילות או לפריטים אחרים. הם נמצאים בפנקס הטיוטה של כל אחד מהם והשמות כתובים במלואם, אבל ההפניות לדמויות, לרשומות, לעלילות ולפריטים האלה לא נשמרו.
 }
 
 ## Native file dialogs: the window title, and the label of the file-type filter.

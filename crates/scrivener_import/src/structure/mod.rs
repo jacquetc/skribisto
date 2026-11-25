@@ -28,9 +28,13 @@
 //! other file of the notes binder's part becomes a resource of the new project,
 //! attached to the row its parent became ([`PlannedResource`]); one that carries
 //! more than its file keeps a note of its own, which the resource is attached to.
-//! The Templates folder becomes note templates. The decisions and their measurements are in
-//! the design note `D3-structure.md` and its critique; each rule below names its
-//! decision (D3.n).
+//! The Templates folder becomes note templates. An item's document notes go into the
+//! scratchpad of the row it became, the writer's private notes beside that row (decided
+//! 2026-11-25, in place of D3.10, which made them a note beside it, titled after the item
+//! with "(notes)" added); an item with no row of its own (the Draft split into several
+//! books, the Trash folder, the Templates folder, a template), when nothing else of it
+//! needs a row, still gets that note. The decisions and their measurements are in the design note `D3-structure.md` and
+//! its critique; each rule below names its decision (D3.n).
 //!
 //! # The invariants
 //!
@@ -155,8 +159,9 @@ pub enum PlannedTitle {
     /// The item's own title, cleaned (D3.18). May be empty: a blank title is
     /// named by its number in the binder, never by an invented word.
     Own(String),
-    /// A note holding another item's document notes: the converter adds the
-    /// "(notes)" suffix in the writer's language. The item's title, cleaned.
+    /// A note holding another item's document notes, or a recovered copy of
+    /// them: the converter adds the "(notes)" suffix in the writer's language.
+    /// The item's title, cleaned.
     NotesOf(String),
     /// The project's title, which the Save page edits (the book takes it when
     /// the Draft kept a default name). The value known now: the project's own
@@ -308,7 +313,8 @@ pub enum Origin {
     OwnText {
         item: u32,
     },
-    /// An item's document notes, beside it (D3.10).
+    /// An item's document notes, beside it (D3.10), for an item with no row of
+    /// its own whose scratchpad could hold them.
     DocumentNotes {
         item: u32,
     },
@@ -719,7 +725,8 @@ pub struct Shape {
     pub scenes: u32,
     pub paratexts: u32,
     pub plain_folders: u32,
-    /// Notes rows in the manuscript binder (document notes, notes-claimed items).
+    /// Notes rows in the manuscript binder (notes-claimed items, media, the Draft's own
+    /// writing beside several books, the document notes of an item with no row).
     pub manuscript_notes: u32,
     pub notes_rows: u32,
     pub trashed_rows: u32,

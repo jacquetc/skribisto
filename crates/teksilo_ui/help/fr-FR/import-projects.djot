@@ -42,7 +42,9 @@ dossier, les deux fonctionnent. L’import vous dit quelle copie il a lue.
 
 ## Ce que Manuskript apporte avec lui
 
-- Votre texte, vos notes et vos objectifs de mots.
+- Votre texte et vos objectifs de mots.
+- Les notes d’un élément, dans son [bloc-notes](:help-scratchpad) : les notes personnelles
+  gardées à côté de lui, dans le panneau *Bloc-notes*.
 - La case « compile », qui devient *Inclure dans les exports*. Un élément désactivé reste
   désactivé, et tout ce qu’il contient aussi.
 - Les résumés d’un élément, réunis en un seul synopsis : le résumé d’une phrase d’abord, puis le
@@ -57,7 +59,10 @@ dossier, les deux fonctionnent. L’import vous dit quelle copie il a lue.
 
 Dans votre prose, Manuskript plaçait un marqueur pour un personnage, une entrée d’univers, une
 intrigue ou un autre élément. Ces marqueurs reprennent les mots qu’ils représentaient, avec un
-lien vers ce qu’ils désignaient.
+lien vers ce qu’ils désignaient. Dans les notes d’un élément, ils ne reprennent que les mots :
+les références à ces personnages, entrées d’univers, intrigues et éléments ne sont pas
+conservées, car une référence posée sur l’élément dirait qu’il les met en scène. L’import vous
+dit combien d’éléments sont concernés.
 
 ## Ce qui n’a pas de place ici
 
@@ -90,8 +95,8 @@ Voir [le modèle d’écriture](:help-writing-model) pour ce qu’est chaque typ
 
 Choisissez un fichier `.plume` ou `.plume_backup`, de n’importe quelle version de Plume.
 
-- Les livres, actes, chapitres et scènes arrivent avec leur texte, leurs synopsis et leurs
-  notes.
+- Les livres, actes, chapitres et scènes arrivent avec leur texte et leurs synopsis. Les notes
+  de chacun vont dans son bloc-notes.
 - Un séparateur de scène devient un saut de scène dans la prose au-dessus de lui.
 - Les groupes de personnages et de lieux de Plume deviennent des dossiers de notes, chaque
   groupe avec sa propre étiquette. Les autres noms d’une entrée arrivent dans sa liste *Autres

@@ -1013,7 +1013,6 @@ import-plume-source-missing = Este archivo no existe
 import-plume-source-not-file = Esta ruta no es un archivo
 import-plume-manuscript-binder = Manuscrito
 import-plume-story-bible-binder = Biblia narrativa
-import-plume-notes-of = { $name } (notas)
 import-plume-content-of = { $name } (texto)
 import-plume-progress-title = Importando el proyecto de Plume…
 import-plume-done = { $imported ->
@@ -1049,7 +1048,6 @@ import-manuskript-summary-note = Resumen
 import-manuskript-importance-minor = Menor
 import-manuskript-importance-secondary = Secundario
 import-manuskript-importance-main = Principal
-import-manuskript-notes-of = { $title } (notas)
 import-manuskript-progress-title = Importando el proyecto de Manuskript…
 import-manuskript-done = { $imported ->
     [one] { $imported } elemento importado.
@@ -1898,6 +1896,14 @@ import-scrivener-structure-paratext-not-counted-line = { $documents ->
 import-scrivener-structure-document-notes-line = { $count ->
     [one] Las notas de 1 documento se convierten en una nota junto a él.
    *[other] Las notas de { $count } documentos se convierten en notas junto a ellos.
+}
+import-scrivener-structure-notes-in-scratchpad-line = { $count ->
+    [one] Las notas de 1 documento pasan a su bloc de notas.
+   *[other] Las notas de { $count } documentos pasan a sus blocs de notas.
+}
+import-scrivener-structure-marked-notes-beside-line = { $count ->
+    [one] Las notas de 1 documento contienen notas al pie o comentarios, que un bloc de notas no puede mostrar, así que se convierten en una nota junto a él.
+   *[other] Las notas de { $count } documentos contienen notas al pie o comentarios, que un bloc de notas no puede mostrar, así que se convierten en notas junto a ellos.
 }
 import-scrivener-structure-draft-content-as-note-line = El texto propio de la carpeta del manuscrito se convierte en una nota al principio del manuscrito.
 import-scrivener-structure-story-bible-folder-line = { $count ->
@@ -4283,6 +4289,7 @@ import-notice-text-without-file-name = No se pudo dar un nombre de archivo { $ki
     [scene] al texto de la escena
     [note] al texto de la nota
     [synopsis] a la sinopsis
+    [scratchpad] al bloc de notas
    *[title] al título
 } de «{ $title }», así que ese contenido no se ha importado.
 import-notice-unknown-label = «{ $title }» tiene el rótulo { $index }, que no está en la lista de rótulos de este proyecto. Se ha importado sin rótulo.
@@ -4307,6 +4314,10 @@ import-notice-versions-kept = { $found ->
 import-notice-versions-unplaced = { $count ->
     [one] Una versión anterior pertenece a un elemento que ya no está en el proyecto y no se ha podido ubicar.
    *[other] { $count } versiones anteriores pertenecen a un elemento que ya no está en el proyecto y no se han podido ubicar.
+}
+import-notice-note-links-not-kept = { $count ->
+    [one] Las notas de un elemento remitían a personajes, entradas del mundo, tramas u otros elementos. Están en su bloc de notas con los nombres escritos, pero las referencias a esos personajes, entradas del mundo, tramas y elementos no se han conservado.
+   *[other] Las notas de { $count } elementos remitían a personajes, entradas del mundo, tramas u otros elementos. Están en el bloc de notas de cada uno con los nombres escritos, pero las referencias a esos personajes, entradas del mundo, tramas y elementos no se han conservado.
 }
 
 ## Native file dialogs: the window title, and the label of the file-type filter.

@@ -1014,7 +1014,6 @@ import-plume-source-missing = Este ficheiro não existe
 import-plume-source-not-file = Este caminho não é um ficheiro
 import-plume-manuscript-binder = Manuscrito
 import-plume-story-bible-binder = Bíblia da história
-import-plume-notes-of = { $name } (notas)
 import-plume-content-of = { $name } (texto)
 import-plume-progress-title = A importar o projeto Plume…
 import-plume-done = { $imported ->
@@ -1048,7 +1047,6 @@ import-manuskript-summary-note = Resumo
 import-manuskript-importance-minor = Menor
 import-manuskript-importance-secondary = Secundária
 import-manuskript-importance-main = Principal
-import-manuskript-notes-of = { $title } (notas)
 import-manuskript-progress-title = A importar o projeto Manuskript…
 import-manuskript-done = { $imported ->
     [one] { $imported } item importado.
@@ -1848,6 +1846,14 @@ import-scrivener-structure-paratext-not-counted-line = { $documents ->
 import-scrivener-structure-document-notes-line = { $count ->
     [one] As notas de 1 documento tornam-se uma nota ao lado dele.
    *[other] As notas de { $count } documentos tornam-se notas ao lado deles.
+}
+import-scrivener-structure-notes-in-scratchpad-line = { $count ->
+    [one] As notas de 1 documento vão para o bloco de notas dele.
+   *[other] As notas de { $count } documentos vão para os blocos de notas deles.
+}
+import-scrivener-structure-marked-notes-beside-line = { $count ->
+    [one] As notas de 1 documento contêm notas de rodapé ou comentários, que um bloco de notas não consegue mostrar, por isso passam a ser uma nota junto dele.
+   *[other] As notas de { $count } documentos contêm notas de rodapé ou comentários, que um bloco de notas não consegue mostrar, por isso passam a ser notas junto deles.
 }
 import-scrivener-structure-draft-content-as-note-line = O texto próprio da pasta do manuscrito torna-se uma nota no topo do manuscrito.
 import-scrivener-structure-story-bible-folder-line = { $count ->
@@ -4217,6 +4223,7 @@ import-notice-text-without-file-name = Não foi possível dar um nome de ficheir
     [scene] ao texto da cena
     [note] ao texto da nota
     [synopsis] à sinopse
+    [scratchpad] ao bloco de notas
    *[title] ao título
 } de «{ $title }», por isso ficou por importar.
 import-notice-unknown-label = «{ $title }» tem o rótulo { $index }, que não está na lista de rótulos deste projeto. Foi importado sem rótulo.
@@ -4241,6 +4248,10 @@ import-notice-versions-kept = { $found ->
 import-notice-versions-unplaced = { $count ->
     [one] Uma versão anterior pertence a um item que já não está no projeto e não pôde ser colocada.
    *[other] { $count } versões anteriores pertencem a um item que já não está no projeto e não puderam ser colocadas.
+}
+import-notice-note-links-not-kept = { $count ->
+    [one] As notas de um item remetiam para personagens, entradas do mundo, enredos ou outros itens. Estão no bloco de notas dele com os nomes escritos por extenso, mas as referências a essas personagens, entradas do mundo, enredos e itens não foram mantidas.
+   *[other] As notas de { $count } itens remetiam para personagens, entradas do mundo, enredos ou outros itens. Estão no bloco de notas de cada um com os nomes escritos por extenso, mas as referências a essas personagens, entradas do mundo, enredos e itens não foram mantidas.
 }
 dialog-open-work-title = Abrir projeto Skribisto
 dialog-save-as-file-title = Guardar como um único ficheiro .skrib

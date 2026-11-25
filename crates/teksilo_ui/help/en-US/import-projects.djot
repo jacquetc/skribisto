@@ -39,7 +39,9 @@ works. The import tells you which copy it read.
 
 ## What Manuskript brings with it
 
-- Your text, your notes and your word goals.
+- Your text and your word goals.
+- An item's notes, in its [scratchpad](:help-scratchpad): the private notes kept beside it, in
+  the *Scratchpad* panel.
 - The "compile" tick, which becomes *Include in exports*. An item switched off stays off, with
   everything inside it.
 - An item's summaries, joined into its one synopsis: the one-sentence summary first, then the
@@ -52,7 +54,10 @@ works. The import tells you which copy it read.
 - Your revision history: open a scene, and its earlier versions are in the *Versions* panel.
 
 In your prose, Manuskript stored a marker for a character, a world entry, a plot or another
-item. Those markers are put back as the words they stood for, with a link to what they named.
+item. Those markers are put back as the words they stood for, with a link to what they named. In
+an item's notes they become the words alone: the references to those characters, world entries,
+plots and items are not kept, since a reference on the item would say that it features them. The
+import tells you how many items this happened to.
 
 ## What has no home here
 
@@ -83,7 +88,8 @@ You can change an item’s type afterwards with *Convert to* in the Binder’s r
 
 Choose a `.plume` or `.plume_backup` file, from any version of Plume.
 
-- Books, acts, chapters and scenes arrive with their text, their synopses and their notes.
+- Books, acts, chapters and scenes arrive with their text and their synopses. The notes of
+  each go into its scratchpad.
 - A scene separator becomes a scene break in the prose above it.
 - Plume's groups of characters and places become folders of notes, each group with its own tag.
   An entry's other names arrive as its *Also known as* list.

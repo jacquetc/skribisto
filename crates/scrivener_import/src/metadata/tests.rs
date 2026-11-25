@@ -123,6 +123,7 @@ impl P {
             headings: Vec::new(),
             lead: Carries::Yes,
             letters: Default::default(),
+            marks: false,
         };
         i
     }
@@ -579,7 +580,8 @@ fn a_project_with_no_status_list_starts_with_the_default_ladder() {
 }
 
 /// A container's status and label go to it and to the first child holding its own text
-/// (D4-1, split containers), never to the note holding its document notes.
+/// (D4-1, split containers). Its document notes are in its own row's scratchpad, so no
+/// note of them is left to wear them or not.
 #[test]
 fn a_containers_status_goes_to_every_row_carrying_it() {
     let mut p = P::new();
@@ -603,18 +605,27 @@ fn a_containers_status_goes_to_every_row_carrying_it() {
         assert_eq!(v.row_rungs[*binder][*row], Some(0));
         assert_eq!(v.row_tags[*binder][*row], Some(0));
     }
-    let notes: Vec<usize> = plan
+    assert!(
+        !plan
+            .manuscript
+            .iter()
+            .any(|r| matches!(r.origin, Origin::DocumentNotes { .. })),
+        "no note of the document notes"
+    );
+    let own = plan
         .manuscript
         .iter()
-        .enumerate()
-        .filter(|(_, r)| matches!(r.origin, Origin::DocumentNotes { .. }))
-        .map(|(i, _)| i)
-        .collect();
-    assert!(!notes.is_empty());
-    for r in notes {
-        assert_eq!(v.row_rungs[0][r], None, "the document notes' note");
-        assert_eq!(v.row_tags[0][r], None);
-    }
+        .position(|r| r.origin == Origin::Item { item: part })
+        .expect("the part has a row");
+    assert!(
+        plan.manuscript[own]
+            .contents
+            .iter()
+            .any(|c| c.role == common::entities::ContentRole::ScratchpadText),
+        "its notes are its scratchpad"
+    );
+    assert_eq!(v.row_rungs[0][own], Some(0));
+    assert_eq!(v.row_tags[0][own], Some(0));
 }
 
 /// A label or status on an item that has no row (a document template) does not come

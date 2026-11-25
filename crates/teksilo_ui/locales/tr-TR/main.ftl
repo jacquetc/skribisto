@@ -1010,7 +1010,6 @@ import-plume-source-missing = Bu dosya yok
 import-plume-source-not-file = Bu yol bir dosya değil
 import-plume-manuscript-binder = El yazması
 import-plume-story-bible-binder = Hikâye rehberi
-import-plume-notes-of = { $name } (notlar)
 import-plume-content-of = { $name } (metin)
 import-plume-progress-title = Plume projesi içe aktarılıyor…
 import-plume-done = { $imported ->
@@ -1044,7 +1043,6 @@ import-manuskript-summary-note = Özet
 import-manuskript-importance-minor = Küçük
 import-manuskript-importance-secondary = İkincil
 import-manuskript-importance-main = Ana
-import-manuskript-notes-of = { $title } (notlar)
 import-manuskript-progress-title = Manuskript projesi içe aktarılıyor…
 import-manuskript-done = { $imported ->
     [one] { $imported } öğe içe aktarıldı.
@@ -1817,6 +1815,14 @@ import-scrivener-structure-paratext-not-counted-line = { $documents ->
 import-scrivener-structure-document-notes-line = { $count ->
     [one] 1 belgenin notları, belgenin yanında bir nota dönüşür.
    *[other] { $count } belgenin notları, her belgenin yanında bir nota dönüşür.
+}
+import-scrivener-structure-notes-in-scratchpad-line = { $count ->
+    [one] 1 belgenin notları, belgenin karalama defterine gider.
+   *[other] { $count } belgenin notları, her belgenin kendi karalama defterine gider.
+}
+import-scrivener-structure-marked-notes-beside-line = { $count ->
+    [one] 1 belgenin notları, karalama defterinin gösteremediği dipnotlar ya da yorumlar içeriyor; bu yüzden belgenin yanında bir not oluyor.
+   *[other] { $count } belgenin notları, karalama defterinin gösteremediği dipnotlar ya da yorumlar içeriyor; bu yüzden belgelerin yanında birer not oluyor.
 }
 import-scrivener-structure-draft-content-as-note-line = El yazması klasörünün kendi metni, el yazmasının en üstünde bir nota dönüşür.
 import-scrivener-structure-story-bible-folder-line = { $count ->
@@ -4169,6 +4175,7 @@ import-notice-text-without-file-name = “{ $title }” öğesinin { $kind ->
     [scene] sahne metnine
     [note] not metnine
     [synopsis] özetine
+    [scratchpad] karalama defterine
    *[title] başlığına
 } bir dosya adı verilemedi, bu yüzden içe aktarılmadı.
 import-notice-unknown-label = “{ $title }” öğesinin etiketi { $index }, ama bu numara projenin etiket listesinde yok. Etiketsiz olarak içe aktarıldı.
@@ -4193,6 +4200,10 @@ import-notice-versions-kept = { $found ->
 import-notice-versions-unplaced = { $count ->
     [one] Daha önceki bir sürüm artık projede olmayan bir satıra ait ve yerleştirilemedi.
    *[other] Daha önceki { $count } sürüm artık projede olmayan bir satıra ait ve yerleştirilemedi.
+}
+import-notice-note-links-not-kept = { $count ->
+    [one] Bir öğenin notları kişilere, dünya kayıtlarına, olay örgülerine ya da başka öğelere bağlantı veriyordu. Notlar, adlar açıkça yazılmış olarak öğenin karalama defterinde, ancak bu kişilere, dünya kayıtlarına, olay örgülerine ve öğelere yapılan göndermeler korunmadı.
+   *[other] { $count } öğenin notları kişilere, dünya kayıtlarına, olay örgülerine ya da başka öğelere bağlantı veriyordu. Notlar, adlar açıkça yazılmış olarak her öğenin kendi karalama defterinde, ancak bu kişilere, dünya kayıtlarına, olay örgülerine ve öğelere yapılan göndermeler korunmadı.
 }
 
 dialog-open-work-title = Skribisto projesi aç

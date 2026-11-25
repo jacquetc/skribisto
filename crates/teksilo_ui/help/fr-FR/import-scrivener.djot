@@ -110,7 +110,11 @@ titre.
 - Votre texte, dans l’ordre du classeur, avec son gras, son italique, ses listes, ses tableaux
   et ses images.
 - Le synopsis de chaque document, qui devient son synopsis dans Skribisto.
-- Les notes de chaque document, en une note placée à côté de lui.
+- Les notes de chaque document, dans son [bloc-notes](:help-scratchpad) : les notes personnelles
+  gardées à côté de lui, dans le panneau *Bloc-notes*. Des notes qui contiennent des notes de
+  bas de page ou des commentaires, qu’un bloc-notes ne peut pas afficher, deviennent plutôt une
+  note à côté du document. De même pour les notes de ce qui ne devient pas un élément à lui
+  seul, comme le dossier Corbeille ou un modèle de document.
 - Vos commentaires et vos notes de bas de page, y compris ceux écrits dans le texte même. Une
   annotation dans le texte devient un commentaire.
 - Vos libellés en étiquettes colorées, et votre liste d’états en statuts du projet.

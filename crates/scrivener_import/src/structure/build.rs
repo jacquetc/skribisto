@@ -736,9 +736,90 @@ impl<'a> Builder<'a> {
         }
     }
 
-    /// An item's document notes, as a note (D3.10): the first child of a
-    /// container, the next sibling of a leaf.
-    fn notes_row(&mut self, binder: BinderKind, i: u32, depth: u16, activated: bool, of: &str) {
+    /// An item's document notes, in the scratchpad of row `at` of `binder`, the row
+    /// that represents the item (decided 2026-11-25, in place of D3.10's note beside
+    /// it). Every combination an item's row takes here carries a scratchpad; should
+    /// one not, the notes become the note beside it at `beside` instead, the first
+    /// child of a container or the next sibling of a leaf, rather than be lost.
+    ///
+    /// Notes holding a footnote or a comment (or unread, so possibly holding one) are
+    /// that note beside it too: a scratchpad shows neither, and keeping them on it
+    /// would store what the writer can never see. A note shows both and keeps them as
+    /// they were, where flattening them into the scratchpad's text would lose where
+    /// each was anchored. The report says why they are not in the scratchpad.
+    fn notes_into(&mut self, binder: BinderKind, at: u32, i: u32, beside: u16) {
+        if !self.has_notes(i) {
+            return;
+        }
+        if self.facts.items[i as usize].notes_marked {
+            let activated = match binder {
+                BinderKind::Manuscript => self.manuscript.get(at as usize),
+                BinderKind::Notes => self.notes.get(at as usize),
+            }
+            .is_none_or(|row| row.activated);
+            let of = self.title(i);
+            self.notes_beside_because(
+                binder,
+                i,
+                beside,
+                activated,
+                &of,
+                StructureNotice::MarkedNotesBeside { item: i },
+            );
+            return;
+        }
+        let rows = match binder {
+            BinderKind::Manuscript => &mut self.manuscript,
+            BinderKind::Notes => &mut self.notes,
+        };
+        let Some(row) = rows.get_mut(at as usize) else {
+            let of = self.title(i);
+            self.notes_beside(binder, i, beside, true, &of);
+            return;
+        };
+        if !skribisto_model::content_allowed(&row.role, &row.sub_role, &ContentRole::ScratchpadText)
+        {
+            let activated = row.activated;
+            let of = self.title(i);
+            self.notes_beside(binder, i, beside, activated, &of);
+            return;
+        }
+        row.contents.push(PlannedContent {
+            role: ContentRole::ScratchpadText,
+            body: Body::From(vec![Source::Notes { item: i }]),
+        });
+        self.notices
+            .push(StructureNotice::NotesInScratchpad { item: i });
+    }
+
+    /// An item's document notes, as a note of their own (D3.10): the first child
+    /// of a container, the next sibling of a leaf. Only for an item with no row
+    /// of its own to hold them in its scratchpad: the Draft split into several
+    /// books, the Trash folder, the Templates folder and a template, each when
+    /// nothing else of it needs a row.
+    ///
+    /// Reported as notes that hold a footnote or a comment when they do: they would be
+    /// beside the item for that reason alone had it a row, and the report says so
+    /// wherever they end up, as `notes_into` and the Trash do.
+    fn notes_beside(&mut self, binder: BinderKind, i: u32, depth: u16, activated: bool, of: &str) {
+        let notice = if self.facts.items[i as usize].notes_marked {
+            StructureNotice::MarkedNotesBeside { item: i }
+        } else {
+            StructureNotice::DocumentNotes { item: i }
+        };
+        self.notes_beside_because(binder, i, depth, activated, of, notice);
+    }
+
+    /// [`Self::notes_beside`], reported with `notice`.
+    fn notes_beside_because(
+        &mut self,
+        binder: BinderKind,
+        i: u32,
+        depth: u16,
+        activated: bool,
+        of: &str,
+        notice: StructureNotice,
+    ) {
         if !self.has_notes(i) {
             return;
         }
@@ -759,8 +840,7 @@ impl<'a> Builder<'a> {
             tag: None,
         };
         self.push(binder, row, None);
-        self.notices
-            .push(StructureNotice::DocumentNotes { item: i });
+        self.notices.push(notice);
     }
 
     /// A container's own writing as its first child, titled as the container
@@ -1105,7 +1185,14 @@ impl<'a> Builder<'a> {
         crate::metadata::folder_title(self.project)
     }
 
-    fn book_row(&mut self, title: PlannedTitle, synopsis: Option<Body>, origin: Origin, why: Why) {
+    /// A book's row, at the top of the manuscript; its index.
+    fn book_row(
+        &mut self,
+        title: PlannedTitle,
+        synopsis: Option<Body>,
+        origin: Origin,
+        why: Why,
+    ) -> u32 {
         let row = PlannedRow {
             depth: 0,
             role: Role::Folder,
@@ -1122,7 +1209,7 @@ impl<'a> Builder<'a> {
             why,
             tag: None,
         };
-        self.push(BinderKind::Manuscript, row, None);
+        self.push(BinderKind::Manuscript, row, None)
     }
 
     fn book_end(&mut self) {
@@ -1145,7 +1232,7 @@ impl<'a> Builder<'a> {
     /// One book synthesised from the Draft (D3.8, D3.9).
     fn one_book(&mut self, draft: Option<u32>, front: &[u32], back: &[u32]) {
         let title = self.book_title(draft);
-        match draft {
+        let book = match draft {
             Some(d) => {
                 let synopsis = self.synopsis_body(d);
                 self.book_row(
@@ -1153,10 +1240,10 @@ impl<'a> Builder<'a> {
                     synopsis,
                     Origin::Item { item: d },
                     Why::Synthesised,
-                );
+                )
             }
             None => self.book_row(title.clone(), None, Origin::Book, Why::Synthesised),
-        }
+        };
         for f in front {
             self.matter(*f, 1);
         }
@@ -1203,7 +1290,8 @@ impl<'a> Builder<'a> {
                 self.push(BinderKind::Manuscript, row, Some(0));
             }
             self.card_left_behind(d);
-            self.notes_row(BinderKind::Manuscript, d, 1, true, title.text());
+            // The book is the Draft's row: its notes are the book's scratchpad.
+            self.notes_into(BinderKind::Manuscript, book, d, 1);
             let height = self.book_height(&self.tree.children[d as usize].clone(), true);
             let stop = self.tree.end[d as usize];
             let depth = self.tree.depth[d as usize];
@@ -1221,6 +1309,7 @@ impl<'a> Builder<'a> {
     /// back matter closes the last, so neither falls outside every book.
     fn several_books(&mut self, draft: u32, books: &[u32], front: &[u32], back: &[u32]) {
         let books: HashSet<u32> = books.iter().copied().collect();
+        let mut draft_row = None;
         if self.text(draft) || self.synopsis(draft) || self.card(draft) || self.media(draft) {
             let row = PlannedRow {
                 depth: 0,
@@ -1246,12 +1335,19 @@ impl<'a> Builder<'a> {
                 why: Why::Synthesised,
                 tag: None,
             };
-            self.push(BinderKind::Manuscript, row, None);
+            draft_row = Some(self.push(BinderKind::Manuscript, row, None));
             self.notices
                 .push(StructureNotice::DraftContentAsNote { item: draft });
         }
-        let draft_title = self.title(draft);
-        self.notes_row(BinderKind::Manuscript, draft, 0, true, &draft_title);
+        // The Draft has no row of its own here: its notes join the note holding its
+        // writing when there is one, and are a note of their own otherwise.
+        match draft_row {
+            Some(at) => self.notes_into(BinderKind::Manuscript, at, draft, 0),
+            None => {
+                let draft_title = self.title(draft);
+                self.notes_beside(BinderKind::Manuscript, draft, 0, true, &draft_title);
+            }
+        }
         self.absence[draft as usize] = Some(Absence::SpecialFolder);
         let draft_depth = self.tree.depth[draft as usize];
         let mut pending: Vec<u32> = Vec::new();
@@ -1266,7 +1362,7 @@ impl<'a> Builder<'a> {
                 let why = self.claims.claim[c as usize]
                     .as_ref()
                     .map_or(Why::Synthesised, |cl| cl.why.clone());
-                self.book_row(title, synopsis, Origin::Item { item: c }, why);
+                let book = self.book_row(title, synopsis, Origin::Item { item: c }, why);
                 self.edited_notice(c);
                 if !open {
                     for f in front {
@@ -1285,8 +1381,7 @@ impl<'a> Builder<'a> {
                     Some(1),
                 );
                 self.card_left_behind(c);
-                let title = self.title(c);
-                self.notes_row(BinderKind::Manuscript, c, 1, true, &title);
+                self.notes_into(BinderKind::Manuscript, book, c, 1);
                 for p in std::mem::take(&mut pending) {
                     let stop = self.tree.end[p as usize];
                     let height = self.book_height(&[p], false);
@@ -1315,7 +1410,7 @@ impl<'a> Builder<'a> {
     fn extra_book(&mut self, r: u32) {
         let title = self.structural_title(r, Rung::Book);
         let synopsis = self.synopsis_body(r);
-        self.book_row(title, synopsis, Origin::Item { item: r }, Why::Choice);
+        let book = self.book_row(title, synopsis, Origin::Item { item: r }, Why::Choice);
         self.edited_notice(r);
         let exportable = self.row(r).meta.include_in_compile;
         self.own_text(
@@ -1329,8 +1424,7 @@ impl<'a> Builder<'a> {
             Some(1),
         );
         self.card_left_behind(r);
-        let title = self.title(r);
-        self.notes_row(BinderKind::Manuscript, r, 1, true, &title);
+        self.notes_into(BinderKind::Manuscript, book, r, 1);
         let stop = self.tree.end[r as usize];
         let height = self.book_height(&self.tree.children[r as usize].clone(), true);
         let depth = self.tree.depth[r as usize];
@@ -1854,14 +1948,14 @@ impl<'a> Builder<'a> {
                     why,
                     tag: None,
                 };
-                self.push(ms, row, rel);
+                let at = self.push(ms, row, rel);
                 self.chapter_notices(j, prologue, exportable);
                 if is_text_kind {
                     self.notices
                         .push(StructureNotice::TextWithChildren { item: j });
                 }
                 self.card_left_behind(j);
-                self.notes_row(ms, j, depth + 1, true, &title);
+                self.notes_into(ms, at, j, depth + 1);
             }
             Decision::Container { rung, why } => {
                 let (sub_role, heading) = match rung {
@@ -1892,7 +1986,7 @@ impl<'a> Builder<'a> {
                     why,
                     tag: None,
                 };
-                self.push(ms, row, rel);
+                let at = self.push(ms, row, rel);
                 if heading.is_some() && !exportable {
                     self.notices.push(StructureNotice::NotCompiled { item: j });
                 }
@@ -1911,7 +2005,7 @@ impl<'a> Builder<'a> {
                     rel,
                 );
                 self.card_left_behind(j);
-                self.notes_row(ms, j, depth + 1, true, &title);
+                self.notes_into(ms, at, j, depth + 1);
             }
             Decision::ParatextFolder => {
                 self.paratext_folder(j, depth, exportable, Why::ParatextChildren, rel);
@@ -1940,10 +2034,10 @@ impl<'a> Builder<'a> {
                     why,
                     tag: None,
                 };
-                self.push(ms, row, rel);
+                let at = self.push(ms, row, rel);
                 self.chapter_notices(j, prologue, exportable);
                 self.card_left_behind(j);
-                self.notes_row(ms, j, depth, true, &title);
+                self.notes_into(ms, at, j, depth);
             }
             Decision::PartLeaf { why } => {
                 opens_heading = true;
@@ -1964,7 +2058,7 @@ impl<'a> Builder<'a> {
                     why,
                     tag: None,
                 };
-                self.push(ms, row, rel);
+                let at = self.push(ms, row, rel);
                 if !exportable {
                     self.notices.push(StructureNotice::NotCompiled { item: j });
                 }
@@ -1979,7 +2073,7 @@ impl<'a> Builder<'a> {
                     rel,
                 );
                 self.card_left_behind(j);
-                self.notes_row(ms, j, depth + 1, true, &title);
+                self.notes_into(ms, at, j, depth + 1);
             }
             Decision::Scene { why } => {
                 let row = PlannedRow {
@@ -2001,12 +2095,12 @@ impl<'a> Builder<'a> {
                     why,
                     tag: None,
                 };
-                self.push(ms, row, rel);
+                let at = self.push(ms, row, rel);
                 if !exportable {
                     self.notices.push(StructureNotice::NotCompiled { item: j });
                 }
                 self.card_left_behind(j);
-                self.notes_row(ms, j, depth, true, &title);
+                self.notes_into(ms, at, j, depth);
             }
             Decision::Split { chapter, why } => {
                 self.split(j, depth, chapter, why, exportable, rel);
@@ -2040,10 +2134,10 @@ impl<'a> Builder<'a> {
                     why,
                     tag: None,
                 };
-                self.push(ms, row, rel);
+                let at = self.push(ms, row, rel);
                 self.chapter_notices(j, prologue, exportable);
                 self.card_left_behind(j);
-                self.notes_row(ms, j, depth + 1, true, &title);
+                self.notes_into(ms, at, j, depth + 1);
                 for (k, heading) in headings.iter().enumerate() {
                     let part = k as u32 + 1;
                     if part <= first {
@@ -2097,12 +2191,12 @@ impl<'a> Builder<'a> {
                         why,
                         tag: None,
                     };
-                    self.push(ms, row, rel);
+                    let at = self.push(ms, row, rel);
                     if !exportable {
                         self.notices.push(StructureNotice::NotCompiled { item: j });
                     }
                     self.card_left_behind(j);
-                    self.notes_row(ms, j, depth, true, &title);
+                    self.notes_into(ms, at, j, depth);
                 }
             }
             Decision::Note { why } => {
@@ -2155,7 +2249,7 @@ impl<'a> Builder<'a> {
             why,
             tag: None,
         };
-        self.push(ms, row, rel);
+        let at = self.push(ms, row, rel);
         self.own_text(
             ms,
             j,
@@ -2167,7 +2261,7 @@ impl<'a> Builder<'a> {
             rel,
         );
         self.card_left_behind(j);
-        self.notes_row(ms, j, depth + 1, true, &title);
+        self.notes_into(ms, at, j, depth + 1);
     }
 
     /// A note item in either binder: a folder with its own writing as a first
@@ -2198,7 +2292,7 @@ impl<'a> Builder<'a> {
                 why,
                 tag: None,
             };
-            self.push(binder, row, rel);
+            let at = self.push(binder, row, rel);
             // A text with entries under it is an entry itself; a folder's own text
             // is not (it would make the folder's name a mention target).
             let own_tag = if is_folder_kind(&self.row(j).kind) {
@@ -2220,7 +2314,7 @@ impl<'a> Builder<'a> {
                 own_tag,
                 rel,
             );
-            self.notes_row(binder, j, depth + 1, activated, &title);
+            self.notes_into(binder, at, j, depth + 1);
         } else {
             let row = PlannedRow {
                 depth,
@@ -2245,12 +2339,12 @@ impl<'a> Builder<'a> {
                 why,
                 tag: entry_tag,
             };
-            self.push(binder, row, rel);
+            let at = self.push(binder, row, rel);
             if entry_tag.is_some() && lexicon::is_generic_sheet_title(&title) {
                 self.notices
                     .push(StructureNotice::GenericSheetTitle { item: j });
             }
-            self.notes_row(binder, j, depth, activated, &title);
+            self.notes_into(binder, at, j, depth);
         }
     }
 
@@ -2272,6 +2366,8 @@ impl<'a> Builder<'a> {
         let headings: Vec<String> = text.headings.iter().map(|h| h.title.clone()).collect();
         let lead = text.lead.counts();
         let mut first = true;
+        // The row that represents the item: the lead, else the first chapter.
+        let mut own = None;
         let mut synopsis = self.synopsis_body(j);
         if lead {
             let (role, sub_role, mut parts) = if chapter {
@@ -2306,7 +2402,7 @@ impl<'a> Builder<'a> {
                 why: why.clone(),
                 tag: None,
             };
-            self.push(ms, row, rel);
+            own = Some(self.push(ms, row, rel));
             first = false;
         }
         for (k, heading) in headings.iter().enumerate() {
@@ -2336,10 +2432,14 @@ impl<'a> Builder<'a> {
                 tag: None,
             };
             first = false;
-            self.push(ms, row, rel);
+            let at = self.push(ms, row, rel);
+            own.get_or_insert(at);
         }
         self.card_left_behind(j);
-        self.notes_row(ms, j, depth, true, &title);
+        match own {
+            Some(at) => self.notes_into(ms, at, j, depth),
+            None => self.notes_beside(ms, j, depth, true, &title),
+        }
     }
 
     /// Root front or back matter, inside the book and out of export (D3.11).
@@ -2376,10 +2476,10 @@ impl<'a> Builder<'a> {
                     },
                     tag: None,
                 };
-                self.push(ms, row, None);
+                let at = self.push(ms, row, None);
                 self.own_text(ms, j, depth + 1, SubRole::Paratext, false, true, None, None);
                 self.card_left_behind(j);
-                self.notes_row(ms, j, depth + 1, true, &title);
+                self.notes_into(ms, at, j, depth + 1);
                 frames.push((d, depth + 1));
             } else {
                 let row = PlannedRow {
@@ -2408,9 +2508,9 @@ impl<'a> Builder<'a> {
                     },
                     tag: None,
                 };
-                self.push(ms, row, None);
+                let at = self.push(ms, row, None);
                 self.card_left_behind(j);
-                self.notes_row(ms, j, depth, true, &title);
+                self.notes_into(ms, at, j, depth);
             }
         }
     }
@@ -2536,6 +2636,7 @@ impl<'a> Builder<'a> {
         ]);
         let synopsis = self.synopsis_body(t);
         let title_t = self.title(t);
+        let mut own_row = None;
         if own.is_some() || synopsis.is_some() {
             let row = PlannedRow {
                 depth: indent,
@@ -2553,11 +2654,16 @@ impl<'a> Builder<'a> {
                 why: Why::Synthesised,
                 tag: None,
             };
-            self.push(nb, row, None);
+            own_row = Some(self.push(nb, row, None));
             self.notices
                 .push(StructureNotice::TemplateKeptAsNote { item: t });
         }
-        self.notes_row(nb, t, indent, true, &title_t);
+        // The folder has no row: its notes join the note of what no template holds,
+        // or are a note of their own when there is none.
+        match own_row {
+            Some(at) => self.notes_into(nb, at, t, indent),
+            None => self.notes_beside(nb, t, indent, true, &title_t),
+        }
         let stop = self.tree.end[t as usize];
         let before = self.templates.len();
         for k in t + 1..stop {
@@ -2589,6 +2695,7 @@ impl<'a> Builder<'a> {
                 self.notices
                     .push(StructureNotice::TemplateKeptAsNote { item: k });
             }
+            let mut leftover_row = None;
             if leftover.is_some() || synopsis.is_some() {
                 let row = PlannedRow {
                     depth: indent,
@@ -2606,9 +2713,14 @@ impl<'a> Builder<'a> {
                     why: Why::Synthesised,
                     tag: None,
                 };
-                self.push(nb, row, None);
+                leftover_row = Some(self.push(nb, row, None));
             }
-            self.notes_row(nb, k, indent, true, &title);
+            // A template is no row: its notes go into the scratchpad of the note
+            // holding what it could not, else into a note of their own.
+            match leftover_row {
+                Some(at) => self.notes_into(nb, at, k, indent),
+                None => self.notes_beside(nb, k, indent, true, &title),
+            }
         }
         let count = (self.templates.len() - before) as u32;
         if count > 0 {
@@ -2735,6 +2847,7 @@ impl<'a> Builder<'a> {
             TrashChoice::Import => {
                 let nb = BinderKind::Notes;
                 let title = self.title(t);
+                let mut own_row = None;
                 if own && (self.text(t) || self.synopsis(t) || self.card(t) || self.media(t)) {
                     // Writing on the Trash folder itself: a deleted note of its own.
                     let root = self.notes.len() as u32;
@@ -2761,20 +2874,35 @@ impl<'a> Builder<'a> {
                         why: Why::Notes,
                         tag: None,
                     };
-                    self.push(nb, row, None);
+                    own_row = Some(self.push(nb, row, None));
                     self.trash_roots.push(root);
                 }
-                if self.has_notes(t) {
-                    let root = self.notes.len() as u32;
-                    self.notes_row(nb, t, 0, false, &title);
-                    self.trash_roots.push(root);
+                // The Trash folder has no row: its notes go into the scratchpad of
+                // that note, else into a deleted note of their own.
+                // Notes holding a footnote or a comment are a deleted note of their own
+                // too, since a scratchpad shows neither (see `notes_into`).
+                let marked = self.facts.items[t as usize].notes_marked;
+                match own_row {
+                    Some(at) if !marked => self.notes_into(nb, at, t, 0),
+                    _ if self.has_notes(t) => {
+                        let root = self.notes.len() as u32;
+                        let notice = if marked {
+                            StructureNotice::MarkedNotesBeside { item: t }
+                        } else {
+                            StructureNotice::DocumentNotes { item: t }
+                        };
+                        self.notes_beside_because(nb, t, 0, false, &title, notice);
+                        self.trash_roots.push(root);
+                    }
+                    _ => {}
                 }
                 for c in self.tree.children[t as usize].clone() {
                     let root = self.notes.len() as u32;
                     let stop = self.tree.end[c as usize];
                     self.walk_notes(c, stop, 0, false, false);
-                    // A root can end with its notes row, a sibling at depth 0:
-                    // each depth-0 row it made is a trash entry of its own.
+                    // Each depth-0 row a root made is a trash entry of its own:
+                    // a root is one row, and a root whose row could hold no
+                    // scratchpad would end with its notes beside it.
                     let end = self.notes.len() as u32;
                     for r in root..end {
                         if self.notes[r as usize].depth == 0 {

@@ -974,7 +974,6 @@ import-plume-source-missing = Ĉi tiu dosiero ne ekzistas
 import-plume-source-not-file = Ĉi tiu vojo ne estas dosiero
 import-plume-manuscript-binder = Manuskripto
 import-plume-story-bible-binder = Rakonta gvidilo
-import-plume-notes-of = { $name } (notoj)
 import-plume-content-of = { $name } (teksto)
 import-plume-progress-title = Importado de Plume-projekto…
 import-plume-done = { $imported ->
@@ -1007,7 +1006,6 @@ import-manuskript-summary-note = Resumo
 import-manuskript-importance-minor = Malĉefa
 import-manuskript-importance-secondary = Duaranga
 import-manuskript-importance-main = Ĉefa
-import-manuskript-notes-of = { $title } (notoj)
 import-manuskript-progress-title = Importado de Manuskript-projekto…
 import-manuskript-done = { $imported ->
     [one] { $imported } ero importita.
@@ -1775,6 +1773,14 @@ import-scrivener-structure-paratext-not-counted-line = { $documents ->
 import-scrivener-structure-document-notes-line = { $count ->
     [one] La notoj de 1 dokumento fariĝas noto apud ĝi.
    *[other] La notoj de { $count } dokumentoj fariĝas notoj apud ili.
+}
+import-scrivener-structure-notes-in-scratchpad-line = { $count ->
+    [one] La notoj de 1 dokumento iras en ĝian notblokon.
+   *[other] La notoj de { $count } dokumentoj iras en iliajn notblokojn.
+}
+import-scrivener-structure-marked-notes-beside-line = { $count ->
+    [one] La notoj de 1 dokumento enhavas piednotojn aŭ komentojn, kiujn notbloko ne povas montri, do ili fariĝas noto apud ĝi.
+   *[other] La notoj de { $count } dokumentoj enhavas piednotojn aŭ komentojn, kiujn notbloko ne povas montri, do ili fariĝas notoj apud ili.
 }
 import-scrivener-structure-draft-content-as-note-line = La propra teksto de la manuskripta dosierujo fariĝas noto ĉe la komenco de la manuskripto.
 import-scrivener-structure-story-bible-folder-line = { $count ->
@@ -4054,6 +4060,7 @@ import-notice-text-without-file-name = { $kind ->
     [scene] La sceno-teksto
     [note] La noto-teksto
     [synopsis] La resumo
+    [scratchpad] La notbloko
    *[title] La titolo
 } de «{ $title }» ne povis ricevi dosiernomon, do ĝi ne estis importita.
 import-notice-unknown-label = «{ $title }» havas surskribon { $index }, kiu ne estas en la surskribolisto de ĉi tiu projekto. Ĝi estis importita sen surskribo.
@@ -4078,6 +4085,10 @@ import-notice-versions-kept = { $found ->
 import-notice-versions-unplaced = { $count ->
     [one] Unu pli frua versio apartenas al ero, kiu ne plu estas en la projekto, kaj ne povis esti lokita.
    *[other] { $count } pli fruaj versioj apartenas al ero, kiu ne plu estas en la projekto, kaj ne povis esti lokitaj.
+}
+import-notice-note-links-not-kept = { $count ->
+    [one] La notoj de unu ero montris al roluloj, eroj de la mondo, intrigoj aŭ aliaj eroj. Ili estas en ĝia notbloko kun la nomoj skribitaj plene, sed la referencoj al tiuj roluloj, eroj de la mondo, intrigoj kaj eroj ne estis konservitaj.
+   *[other] La notoj de { $count } eroj montris al roluloj, eroj de la mondo, intrigoj aŭ aliaj eroj. Ili estas en la notbloko de ĉiu ero kun la nomoj skribitaj plene, sed la referencoj al tiuj roluloj, eroj de la mondo, intrigoj kaj eroj ne estis konservitaj.
 }
 dialog-open-work-title = Malfermi Skribisto-verkon
 dialog-save-as-file-title = Konservi kiel unu .skrib-dosieron

@@ -1153,7 +1153,6 @@ import-plume-source-not-file = Ce chemin n’est pas un fichier
 # Noms de classeurs transmis au backend (qui ne fait pas d'i18n)
 import-plume-manuscript-binder = Manuscrit
 import-plume-story-bible-binder = Bible narrative
-import-plume-notes-of = { $name } (notes)
 # Le titre de la scène qui reçoit le texte propre d’un dossier Plume Creator, après le nom
 # du dossier. Enregistré tel quel dans le nouveau projet.
 import-plume-content-of = { $name } (texte)
@@ -1205,7 +1204,6 @@ import-manuskript-summary-note = Résumé
 import-manuskript-importance-minor = Mineur
 import-manuskript-importance-secondary = Secondaire
 import-manuskript-importance-main = Principal
-import-manuskript-notes-of = { $title } (notes)
 # Toast de progression (l'import est une opération longue)
 import-manuskript-progress-title = Importation du projet Manuskript…
 # Résultat
@@ -2114,6 +2112,14 @@ import-scrivener-structure-paratext-not-counted-line = { $documents ->
 import-scrivener-structure-document-notes-line = { $count ->
     [one] Les notes de { $count } document deviennent une note à côté de lui.
    *[other] Les notes de { $count } documents deviennent des notes à côté d’eux.
+}
+import-scrivener-structure-notes-in-scratchpad-line = { $count ->
+    [one] Les notes de { $count } document vont dans son bloc-notes.
+   *[other] Les notes de { $count } documents vont dans leurs blocs-notes.
+}
+import-scrivener-structure-marked-notes-beside-line = { $count ->
+    [one] Les notes de { $count } document contiennent des notes de bas de page ou des commentaires, qu’un bloc-notes ne peut pas afficher : elles deviennent une note à côté de lui.
+   *[other] Les notes de { $count } documents contiennent des notes de bas de page ou des commentaires, qu’un bloc-notes ne peut pas afficher : elles deviennent des notes à côté d’eux.
 }
 import-scrivener-structure-draft-content-as-note-line = Le texte propre du dossier du manuscrit devient une note en tête du manuscrit.
 import-scrivener-structure-story-bible-folder-line = { $count ->
@@ -4697,6 +4703,7 @@ import-notice-text-without-file-name = { $kind ->
     [scene] Le texte de scène
     [note] Le texte de note
     [synopsis] Le synopsis
+    [scratchpad] Le bloc-notes
    *[title] Le titre
 } de « { $title } » n’a pas pu recevoir de nom de fichier ; il n’a donc pas été importé.
 import-notice-unknown-label = « { $title } » porte le libellé { $index }, absent de la liste des libellés de ce projet. Il a été importé sans libellé.
@@ -4721,6 +4728,10 @@ import-notice-versions-kept = { $found ->
 import-notice-versions-unplaced = { $count ->
     [1] Une version antérieure appartient à un élément qui ne figure plus dans le projet et n’a pas pu être placée.
    *[other] { $count } versions antérieures appartiennent à un élément qui ne figure plus dans le projet et n’ont pas pu être placées.
+}
+import-notice-note-links-not-kept = { $count ->
+    [1] Les notes d’un élément renvoyaient à des personnages, des entrées de l’univers, des intrigues ou d’autres éléments. Elles sont dans son bloc-notes, les noms écrits en toutes lettres, mais les références à ces personnages, entrées de l’univers, intrigues et éléments n’ont pas été conservées.
+   *[other] Les notes de { $count } éléments renvoyaient à des personnages, des entrées de l’univers, des intrigues ou d’autres éléments. Elles sont dans le bloc-notes de chacun, les noms écrits en toutes lettres, mais les références à ces personnages, entrées de l’univers, intrigues et éléments n’ont pas été conservées.
 }
 
 ## Native file dialogs: the window title, and the label of the file-type filter.

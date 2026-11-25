@@ -1051,7 +1051,6 @@ import-plume-source-not-file = Αυτή η διαδρομή δεν είναι α
 
 import-plume-manuscript-binder = Χειρόγραφο
 import-plume-story-bible-binder = Βίβλος ιστορίας
-import-plume-notes-of = { $name } (σημειώσεις)
 import-plume-content-of = { $name } (κείμενο)
 
 import-plume-progress-title = Εισαγωγή έργου Plume…
@@ -1092,7 +1091,6 @@ import-manuskript-summary-note = Περίληψη
 import-manuskript-importance-minor = Δευτερεύον
 import-manuskript-importance-secondary = Δεύτερο πλάνο
 import-manuskript-importance-main = Κεντρικό
-import-manuskript-notes-of = { $title } (σημειώσεις)
 
 import-manuskript-progress-title = Εισαγωγή έργου Manuskript…
 
@@ -1896,6 +1894,14 @@ import-scrivener-structure-paratext-not-counted-line = { $documents ->
 import-scrivener-structure-document-notes-line = { $count ->
     [one] Οι σημειώσεις 1 εγγράφου γίνονται σημείωση δίπλα του.
    *[other] Οι σημειώσεις { $count } εγγράφων γίνονται σημειώσεις δίπλα τους.
+}
+import-scrivener-structure-notes-in-scratchpad-line = { $count ->
+    [one] Οι σημειώσεις 1 εγγράφου μπαίνουν στο σημειωματάριό του.
+   *[other] Οι σημειώσεις { $count } εγγράφων μπαίνουν στα σημειωματάριά τους.
+}
+import-scrivener-structure-marked-notes-beside-line = { $count ->
+    [one] Οι σημειώσεις 1 εγγράφου περιέχουν υποσημειώσεις ή σχόλια, που ένα σημειωματάριο δεν μπορεί να δείξει, οπότε γίνονται μια σημείωση δίπλα του.
+   *[other] Οι σημειώσεις { $count } εγγράφων περιέχουν υποσημειώσεις ή σχόλια, που ένα σημειωματάριο δεν μπορεί να δείξει, οπότε γίνονται σημειώσεις δίπλα τους.
 }
 import-scrivener-structure-draft-content-as-note-line = Το δικό κείμενο του φακέλου του χειρογράφου γίνεται σημείωση στην κορυφή του χειρογράφου.
 import-scrivener-structure-story-bible-folder-line = { $count ->
@@ -4299,6 +4305,7 @@ import-notice-text-without-file-name = Δεν ήταν δυνατό να δοθ�
     [scene] στο κείμενο σκηνής
     [note] στο κείμενο σημείωσης
     [synopsis] στη σύνοψη
+    [scratchpad] στο σημειωματάριο
    *[title] στον τίτλο
 } του «{ $title }», γι' αυτό δεν εισήχθη.
 import-notice-unknown-label = Το «{ $title }» έχει τη λεζάντα { $index }, που δεν υπάρχει στη λίστα λεζαντών αυτού του έργου. Εισήχθη χωρίς λεζάντα.
@@ -4323,6 +4330,10 @@ import-notice-versions-kept = { $found ->
 import-notice-versions-unplaced = { $count ->
     [one] Μία προηγούμενη έκδοση ανήκει σε μια γραμμή που δεν υπάρχει πια στο έργο και δεν μπόρεσε να τοποθετηθεί.
    *[other] { $count } προηγούμενες εκδόσεις ανήκουν σε μια γραμμή που δεν υπάρχει πια στο έργο και δεν μπόρεσαν να τοποθετηθούν.
+}
+import-notice-note-links-not-kept = { $count ->
+    [one] Οι σημειώσεις ενός στοιχείου παρέπεμπαν σε πρόσωπα, καταχωρίσεις του κόσμου, πλοκές ή άλλα στοιχεία. Βρίσκονται στο σημειωματάριό του με τα ονόματα γραμμένα ολόκληρα, αλλά οι παραπομπές σε αυτά τα πρόσωπα, τις καταχωρίσεις του κόσμου, τις πλοκές και τα στοιχεία δεν διατηρήθηκαν.
+   *[other] Οι σημειώσεις { $count } στοιχείων παρέπεμπαν σε πρόσωπα, καταχωρίσεις του κόσμου, πλοκές ή άλλα στοιχεία. Βρίσκονται στο σημειωματάριο του καθενός με τα ονόματα γραμμένα ολόκληρα, αλλά οι παραπομπές σε αυτά τα πρόσωπα, τις καταχωρίσεις του κόσμου, τις πλοκές και τα στοιχεία δεν διατηρήθηκαν.
 }
 
 ## Native file dialogs: the window title, and the label of the file-type filter.

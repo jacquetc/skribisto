@@ -40,7 +40,9 @@ działa jedno i drugie. Import informuje, którą kopię odczytał.
 
 ## Co przenosi Manuskript
 
-- Twój tekst, notatki i cele liczby słów.
+- Twój tekst i cele liczby słów.
+- Notatki elementu, w jego [brudnopisie](:help-scratchpad): prywatnych notatkach trzymanych
+  obok niego, w panelu *Brudnopis*.
 - Pole wyboru „kompiluj”, które staje się opcją *Uwzględnij w eksporcie*. Wyłączony element
   pozostaje wyłączony wraz z całą zawartością.
 - Streszczenia elementu, połączone w jedno streszczenie: najpierw jednozdaniowe, potem
@@ -53,8 +55,10 @@ działa jedno i drugie. Import informuje, którą kopię odczytał.
 - Historię zmian: otwórz scenę, a jej wcześniejsze wersje znajdziesz w panelu *Wersje*.
 
 W prozie Manuskript zapisywał znacznik odsyłający do postaci, elementu świata, wątku lub innego
-elementu. Takie znaczniki są zamieniane z powrotem na słowa, które zastępowały, wraz z odnośnikiem
-do wskazanego elementu.
+elementu. Takie znaczniki są zamieniane z powrotem na słowa, które zastępowały, wraz z
+odnośnikiem do wskazanego elementu. W notatkach elementu zostają same słowa: odnośniki do tych
+postaci, elementów świata, wątków i elementów nie są zachowywane, bo odnośnik przy elemencie
+oznaczałby, że one w nim występują. Import podaje, ilu elementów to dotyczy.
 
 ## Czego nie da się przenieść
 
@@ -87,7 +91,8 @@ segregatora. Opis poszczególnych typów znajdziesz w temacie
 
 Wybierz plik `.plume` lub `.plume_backup` z dowolnej wersji programu Plume.
 
-- Książki, akty, rozdziały i sceny przychodzą ze swoim tekstem, streszczeniami i notatkami.
+- Książki, akty, rozdziały i sceny przychodzą ze swoim tekstem i streszczeniami. Notatki
+  każdego z nich trafiają do jego brudnopisu.
 - Separator scen staje się separatorem sceny w prozie nad nim.
 - Grupy postaci i miejsc z Plume stają się folderami notatek, każda grupa z własnym znacznikiem.
   Inne nazwy wpisu trafiają na jego listę *Inne nazwy*.

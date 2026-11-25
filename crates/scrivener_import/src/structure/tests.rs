@@ -131,12 +131,20 @@ impl P {
             headings: Vec::new(),
             lead: Carries::Yes,
             letters: Default::default(),
+            marks: false,
         };
         i
     }
 
     fn with_notes(&mut self, i: u32) -> u32 {
         self.facts.items[i as usize].notes = Carries::Yes;
+        i
+    }
+
+    /// Notes holding a footnote or a comment.
+    fn with_marked_notes(&mut self, i: u32) -> u32 {
+        self.facts.items[i as usize].notes = Carries::Yes;
+        self.facts.items[i as usize].notes_marked = true;
         i
     }
 
@@ -209,6 +217,18 @@ fn show(rows: &[PlannedRow]) -> Vec<String> {
             )
             .trim_end()
             .to_string()
+        })
+        .collect()
+}
+
+/// What a row's scratchpad is made from: nothing when it has none.
+fn scratchpad(row: &PlannedRow) -> Vec<Source> {
+    row.contents
+        .iter()
+        .filter(|c| c.role == ContentRole::ScratchpadText)
+        .flat_map(|c| match &c.body {
+            Body::From(sources) => sources.clone(),
+            Body::Title | Body::Generated(_) => Vec::new(),
         })
         .collect()
 }
@@ -613,7 +633,7 @@ fn an_empty_folder_takes_its_siblings_level_or_stays_plain() {
 // ---------------------------------------------------------------- D3.5, D3.6, D3.10
 
 #[test]
-fn a_chapter_folder_keeps_its_prose_and_its_notes_follow_it() {
+fn a_chapter_folder_keeps_its_prose_and_its_notes_go_into_its_scratchpad() {
     let mut p = P::new();
     p.draft();
     let chapter = p.folder(1, "Introduction: Lorem Ipsum");
@@ -628,9 +648,7 @@ fn a_chapter_folder_keeps_its_prose_and_its_notes_follow_it() {
         [
             "Folder/Book [Novel]",
             "  Folder/ChapterScene Introduction: Lorem Ipsum",
-            "    Item/Note Introduction: Lorem Ipsum (notes)",
             "    Item/Scene Section",
-            "    Item/Note Section (notes)",
             "  Item/BookEnd",
         ]
     );
@@ -641,14 +659,202 @@ fn a_chapter_folder_keeps_its_prose_and_its_notes_follow_it() {
         [
             ContentRole::ChapterTitle,
             ContentRole::SceneText,
-            ContentRole::SynopsisText
+            ContentRole::SynopsisText,
+            ContentRole::ScratchpadText,
+        ]
+    );
+    assert_eq!(scratchpad(row), [Source::Notes { item: chapter }]);
+    assert_eq!(
+        scratchpad(row_of(&plan, scene)),
+        [Source::Notes { item: scene }]
+    );
+    assert_eq!(
+        plan.placements[scene as usize].notes, plan.placements[scene as usize].item,
+        "the notes are where the item is"
+    );
+    assert!(has(
+        &plan,
+        &StructureNotice::NotesInScratchpad { item: scene }
+    ));
+    assert!(has(
+        &plan,
+        &StructureNotice::NotesInScratchpad { item: chapter }
+    ));
+    assert!(!keys(&plan).contains(&"scrivener-structure-document-notes"));
+}
+
+/// Notes holding a footnote or a comment are not put in a scratchpad, which shows
+/// neither: they become the note beside the item, as D3.10 had it, where both are shown
+/// and kept, and the report says why. The item's row carries no scratchpad content, and
+/// the plain notes of the scene beside it still go into its scratchpad.
+#[test]
+fn notes_with_footnotes_or_comments_become_the_note_beside_the_item() {
+    let mut p = P::new();
+    p.draft();
+    let chapter = p.folder(1, "Arrival");
+    p.with_text(chapter);
+    let marked = p.text(2, "Harbour");
+    p.with_marked_notes(marked);
+    let plain = p.text(2, "Market");
+    p.with_notes(plain);
+    let plan = p.plan();
+    assert_eq!(
+        show(&plan.manuscript),
+        [
+            "Folder/Book [Novel]",
+            "  Folder/ChapterScene Arrival",
+            "    Item/Scene Harbour",
+            "    Item/Note Harbour (notes)",
+            "    Item/Scene Market",
+            "  Item/BookEnd",
         ]
     );
     assert!(
-        !plan.manuscript[2].exportable,
-        "document notes never export"
+        scratchpad(row_of(&plan, marked)).is_empty(),
+        "no scratchpad content"
     );
-    assert!(has(&plan, &StructureNotice::DocumentNotes { item: scene }));
+    assert_eq!(
+        scratchpad(row_of(&plan, plain)),
+        [Source::Notes { item: plain }]
+    );
+    assert!(has(
+        &plan,
+        &StructureNotice::MarkedNotesBeside { item: marked }
+    ));
+    assert!(!has(
+        &plan,
+        &StructureNotice::NotesInScratchpad { item: marked }
+    ));
+    assert!(!has(
+        &plan,
+        &StructureNotice::DocumentNotes { item: marked }
+    ));
+    assert!(has(
+        &plan,
+        &StructureNotice::NotesInScratchpad { item: plain }
+    ));
+}
+
+/// An item that becomes no row of its own has no scratchpad to hold its notes, so they
+/// stay a note beside where it was: the Draft split into several books, the Templates
+/// folder, a template, the Trash folder. When something else of it already needs a note
+/// (the Draft's synopsis, what a template cannot hold), the notes go into that note's
+/// scratchpad instead.
+/// Notes that hold a footnote or a comment, on an item with no row of its own (a Draft
+/// split into several books, here): the note beside it holds them as on any item, and the
+/// report says why a scratchpad could not, as it does for an item with a row. It used to
+/// report them as ordinary notes made a note only for want of a row.
+#[test]
+fn marked_notes_with_no_row_to_hold_them_are_reported_as_marked() {
+    let mut p = P::new();
+    let draft = p.draft();
+    p.with_marked_notes(draft);
+    p.folder(1, "Book One");
+    p.folder(2, "Chapter 1");
+    p.text(3, "a");
+    p.folder(1, "Book Two");
+    p.folder(2, "Chapter 1");
+    p.text(3, "b");
+    let plan = p.plan();
+    assert_eq!(
+        show(&plan.manuscript)[..2],
+        ["Item/Note Draft (notes)", "Folder/Book Book One"]
+    );
+    assert!(has(
+        &plan,
+        &StructureNotice::MarkedNotesBeside { item: draft }
+    ));
+    assert!(!has(&plan, &StructureNotice::DocumentNotes { item: draft }));
+}
+
+#[test]
+fn an_item_with_no_row_of_its_own_keeps_its_notes_beside_it() {
+    let books = |synopsis: bool| {
+        let mut p = P::new();
+        let draft = p.draft();
+        p.with_notes(draft);
+        if synopsis {
+            p.with_synopsis(draft);
+        }
+        p.folder(1, "Book One");
+        p.folder(2, "Chapter 1");
+        p.text(3, "a");
+        p.folder(1, "Book Two");
+        p.folder(2, "Chapter 1");
+        p.text(3, "b");
+        (p.plan(), draft)
+    };
+    let (alone, draft) = books(false);
+    assert_eq!(
+        show(&alone.manuscript)[..2],
+        ["Item/Note Draft (notes)", "Folder/Book Book One"]
+    );
+    assert_eq!(
+        alone.manuscript[0].origin,
+        Origin::DocumentNotes { item: draft }
+    );
+    assert!(has(&alone, &StructureNotice::DocumentNotes { item: draft }));
+    assert!(!has(
+        &alone,
+        &StructureNotice::NotesInScratchpad { item: draft }
+    ));
+    let (joined, draft) = books(true);
+    assert_eq!(
+        show(&joined.manuscript)[..2],
+        ["Item/Note Draft", "Folder/Book Book One"]
+    );
+    assert_eq!(
+        scratchpad(&joined.manuscript[0]),
+        [Source::Notes { item: draft }]
+    );
+    assert!(has(
+        &joined,
+        &StructureNotice::NotesInScratchpad { item: draft }
+    ));
+    assert!(!keys(&joined).contains(&"scrivener-structure-document-notes"));
+
+    let mut p = P::new();
+    p.draft();
+    p.text(1, "Scene");
+    let templates = p.folder(0, "Templates");
+    p.with_notes(templates);
+    let sketch = p.text(1, "Character Sketch");
+    p.with_synopsis(sketch);
+    p.with_notes(sketch);
+    let bare = p.text(1, "Blank sheet");
+    p.with_notes(bare);
+    p.project.template_folder = p.project.binder[templates as usize].key;
+    let trash = p.add(0, ItemKind::TrashFolder, "Trash");
+    p.with_notes(trash);
+    let plan = p.plan();
+    assert_eq!(
+        show(&plan.notes),
+        [
+            "Item/Note Templates (notes)",
+            "Item/Note Character Sketch",
+            "Item/Note Blank sheet (notes)",
+            "Item/Note Trash (notes) ~",
+        ]
+    );
+    assert_eq!(scratchpad(&plan.notes[1]), [Source::Notes { item: sketch }]);
+    assert!(scratchpad(&plan.notes[0]).is_empty() && scratchpad(&plan.notes[2]).is_empty());
+    assert_eq!(plan.trash_roots, [3]);
+    for item in [templates, bare, trash] {
+        assert!(
+            has(&plan, &StructureNotice::DocumentNotes { item }),
+            "{item}"
+        );
+    }
+    assert!(has(
+        &plan,
+        &StructureNotice::NotesInScratchpad { item: sketch }
+    ));
+    for item in [sketch, bare] {
+        assert!(
+            has(&plan, &StructureNotice::TemplateKeptAsNote { item }),
+            "{item}"
+        );
+    }
 }
 
 #[test]
@@ -667,11 +873,11 @@ fn a_part_hands_its_prose_to_a_first_child_titled_as_it_is() {
         [
             "  Folder/Part The Coast",
             "    Item/Scene The Coast",
-            "    Item/Note The Coast (notes)",
             "    Folder/ChapterScene Landfall",
+            "      Item/Scene Arrival",
         ]
     );
-    // The synopsis stays on the folder (D3.19); the prose is on the child.
+    // The synopsis and the notes stay on the folder (D3.19); the prose is on the child.
     let folder = row_of(&plan, part);
     assert!(
         folder
@@ -679,6 +885,8 @@ fn a_part_hands_its_prose_to_a_first_child_titled_as_it_is() {
             .iter()
             .any(|c| c.role == ContentRole::SynopsisText)
     );
+    assert_eq!(scratchpad(folder), [Source::Notes { item: part }]);
+    assert!(scratchpad(&plan.manuscript[2]).is_empty());
     let child = &plan.manuscript[2];
     assert_eq!(child.origin, Origin::OwnText { item: part });
     assert_eq!(
@@ -916,7 +1124,6 @@ fn root_front_and_back_matter_go_inside_the_book_out_of_export() {
             "Folder/Book [Novel]",
             "  Folder/Paratext Elementos pré-textuais",
             "    Item/Paratext Dedicatória",
-            "    Item/Note Dedicatória (notes)",
             "  Item/Paratext Metadata page",
             "  Item/Scene Scene",
             "  Folder/Paratext Back Matter",
@@ -925,7 +1132,11 @@ fn root_front_and_back_matter_go_inside_the_book_out_of_export() {
             "  Item/BookEnd",
         ]
     );
-    for row in &plan.manuscript[1..9] {
+    assert_eq!(
+        scratchpad(row_of(&plan, dedication)),
+        [Source::Notes { item: dedication }]
+    );
+    for row in &plan.manuscript[1..8] {
         if row.origin != (Origin::Item { item: 3 }) {
             assert!(!row.exportable || row.sub_role == SubRole::Scene, "{row:?}");
         }
@@ -1316,10 +1527,10 @@ fn the_trash_comes_across_deleted_or_is_left_out_and_said_so() {
             "Folder/Note Old branch ~",
             "  Item/Note Gone ~",
             "Item/Note Cut scene ~",
-            "Item/Note Cut scene (notes) ~",
         ]
     );
-    assert_eq!(plan.trash_roots, [0, 2, 3]);
+    assert_eq!(scratchpad(&plan.notes[2]), [Source::Notes { item: leaf }]);
+    assert_eq!(plan.trash_roots, [0, 2]);
     assert!(has(
         &plan,
         &StructureNotice::TrashBroughtAcross {
@@ -2332,7 +2543,8 @@ fn the_checker_catches_what_the_mappers_own_bookkeeping_would_not() {
     for content in &mut row_at(&mut bad, at).contents {
         content.role = match content.role {
             ContentRole::SceneText => ContentRole::SynopsisText,
-            _ => ContentRole::SceneText,
+            ContentRole::SynopsisText => ContentRole::SceneText,
+            ref other => other.clone(),
         };
     }
     replan(&p, &mut bad, &absences);
@@ -2343,9 +2555,10 @@ fn the_checker_catches_what_the_mappers_own_bookkeeping_would_not() {
     // A scene's document notes folded into its prose, which exports.
     let mut bad = good.clone();
     let at = item_row(&bad, 2);
-    bad.manuscript
-        .retain(|r| r.origin != Origin::DocumentNotes { item: 2 });
-    for content in &mut row_at(&mut bad, at).contents {
+    let row = row_at(&mut bad, at);
+    row.contents
+        .retain(|c| c.role != ContentRole::ScratchpadText);
+    for content in &mut row.contents {
         if content.role == ContentRole::SceneText
             && let Body::From(sources) = &mut content.body
         {
@@ -2355,6 +2568,44 @@ fn the_checker_catches_what_the_mappers_own_bookkeeping_would_not() {
     replan(&p, &mut bad, &absences);
     if !matches!(violation(&p, &bad), Some(Violation::Misrouted { .. })) {
         missed.push("document notes exported as prose");
+    }
+
+    // A scene's text in its scratchpad, where nothing but its notes belongs.
+    let mut bad = good.clone();
+    let at = item_row(&bad, 2);
+    for content in &mut row_at(&mut bad, at).contents {
+        if content.role == ContentRole::ScratchpadText
+            && let Body::From(sources) = &mut content.body
+        {
+            sources.push(Source::Text { item: 2 });
+        }
+    }
+    for content in &mut row_at(&mut bad, at).contents {
+        if content.role == ContentRole::SceneText
+            && let Body::From(sources) = &mut content.body
+        {
+            sources.retain(|s| *s != Source::Text { item: 2 });
+        }
+    }
+    replan(&p, &mut bad, &absences);
+    if !matches!(violation(&p, &bad), Some(Violation::Misrouted { .. })) {
+        missed.push("a text in a scratchpad");
+    }
+
+    // A scene's document notes in another item's scratchpad.
+    let mut bad = good.clone();
+    let from = item_row(&bad, 2);
+    let to = item_row(&bad, 1);
+    row_at(&mut bad, from)
+        .contents
+        .retain(|c| c.role != ContentRole::ScratchpadText);
+    row_at(&mut bad, to).contents.push(PlannedContent {
+        role: ContentRole::ScratchpadText,
+        body: Body::From(vec![Source::Notes { item: 2 }]),
+    });
+    replan(&p, &mut bad, &absences);
+    if !matches!(violation(&p, &bad), Some(Violation::Misrouted { .. })) {
+        missed.push("notes in another item's scratchpad");
     }
 
     // A root folder the writer kept, left out as if they had asked.
@@ -2371,10 +2622,11 @@ fn the_checker_catches_what_the_mappers_own_bookkeeping_would_not() {
         missed.push("a kept root left out");
     }
 
-    // Where each item went, with its notes named as its synopsis.
+    // Where each item went, with its notes named as another row's (its own row holds
+    // its notes and its synopsis alike, so swapping those two would change nothing).
     let mut bad = good.clone();
-    let placement = &mut bad.placements[2];
-    std::mem::swap(&mut placement.notes, &mut placement.synopsis);
+    let elsewhere = item_row(&bad, 1);
+    bad.placements[2].notes = Some(elsewhere);
     if !matches!(
         violation(&p, &bad),
         Some(Violation::PlacementsDisagree { .. })
@@ -2506,7 +2758,9 @@ fn every_notice_has_one_listed_key_and_a_group() {
             documents: 1,
             words: 1,
         },
+        StructureNotice::NotesInScratchpad { item: 0 },
         StructureNotice::DocumentNotes { item: 0 },
+        StructureNotice::MarkedNotesBeside { item: 0 },
         StructureNotice::DraftContentAsNote { item: 0 },
         StructureNotice::StoryBibleFolder {
             item: 0,

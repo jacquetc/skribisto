@@ -37,6 +37,7 @@ fn text_kind(k: TextKind) -> &'static str {
         TextKind::Note => "note",
         TextKind::Synopsis => "synopsis",
         TextKind::Title => "title",
+        TextKind::Scratchpad => "scratchpad",
     }
 }
 
@@ -178,6 +179,7 @@ fn worded(notice: ImportNotice) -> LocalizedString {
             kept = n(kept)
         )),
         VersionsUnplaced { count } => tr!(import_notice_versions_unplaced(count = n(count))),
+        NoteLinksNotKept { count } => tr!(import_notice_note_links_not_kept(count = n(count))),
     }
 }
 
@@ -207,6 +209,36 @@ mod tests {
             many.replace('4', ""),
             "one and other read the same: {one} / {many}"
         );
+    }
+
+    /// The Manuskript notice about the links a row's notes lose names how many rows, and
+    /// tells one from many.
+    #[test]
+    fn the_lost_note_links_are_counted() {
+        let one = sentence(&ImportNotice::NoteLinksNotKept { count: 1 }.encode()).resolve_now();
+        let many = sentence(&ImportNotice::NoteLinksNotKept { count: 3 }.encode()).resolve_now();
+        assert!(many.contains('3'), "{many}");
+        assert!(!many.contains("NoteLinksNotKept"), "{many}");
+        assert_ne!(
+            one.replace('1', ""),
+            many.replace('3', ""),
+            "one and other read the same: {one} / {many}"
+        );
+    }
+
+    /// A scratchpad that could not be given a file name is named as one.
+    #[test]
+    fn a_scratchpad_without_a_file_name_is_named() {
+        let text = sentence(
+            &ImportNotice::TextWithoutFileName {
+                title: "The Mill".into(),
+                text: TextKind::Scratchpad,
+            }
+            .encode(),
+        )
+        .resolve_now();
+        assert!(text.to_lowercase().contains("scratchpad"), "{text}");
+        assert!(text.contains("The Mill"), "{text}");
     }
 
     #[test]

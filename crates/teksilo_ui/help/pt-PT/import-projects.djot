@@ -40,7 +40,9 @@ qualquer um dos dois funciona. A importação indica qual das cópias leu.
 
 ## O que vem do Manuskript
 
-- O seu texto, as suas notas e os seus objetivos de palavras.
+- O seu texto e os seus objetivos de palavras.
+- As notas de um item, no seu [bloco de notas](:help-scratchpad): as notas pessoais guardadas
+  ao lado dele, no painel *Bloco de notas*.
 - A marca «compilar», que se torna *Incluir nas exportações*. Um item desativado continua
   desativado, com tudo o que contém.
 - Os resumos de um item, reunidos na sua sinopse única: primeiro o resumo de uma frase, depois
@@ -55,7 +57,9 @@ qualquer um dos dois funciona. A importação indica qual das cópias leu.
 
 Na sua prosa, o Manuskript guardava um marcador para uma personagem, uma entrada do mundo, um
 enredo ou outro item. Esses marcadores são repostos como as palavras que representavam, com uma
-ligação para aquilo que nomeavam.
+ligação para aquilo que nomeavam. Nas notas de um item ficam só as palavras: as referências a
+essas personagens, entradas do mundo, enredos e itens não são mantidas, porque uma referência no
+item diria que eles aparecem nele. A importação indica-lhe a quantos itens isso aconteceu.
 
 ## O que não tem lugar aqui
 
@@ -87,7 +91,8 @@ Arquivador. Consulte [o modelo de escrita](:help-writing-model) para saber o que
 
 Escolha um ficheiro `.plume` ou `.plume_backup`, de qualquer versão do Plume.
 
-- Os livros, atos, capítulos e cenas chegam com o seu texto, as suas sinopses e as suas notas.
+- Os livros, atos, capítulos e cenas chegam com o seu texto e as suas sinopses. As notas de cada
+  um vão para o seu bloco de notas.
 - Um separador de cena torna-se uma quebra de cena na prosa que o precede.
 - Os grupos de personagens e de lugares do Plume tornam-se pastas de notas, cada grupo com a
   sua própria etiqueta. Os outros nomes de uma entrada chegam como a sua lista *Também

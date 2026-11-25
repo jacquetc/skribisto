@@ -795,9 +795,14 @@ fn the_second_half_survives_the_store() {
     use common::long_operation::{LongOperationManager, OperationStatus};
     use work_management::{LoadWorkDto, SaveWorkDto, work_management_controller as controller};
 
-    let spec = Spec::novel(Generation::Format20, Platform::Mac)
+    let mut spec = Spec::novel(Generation::Format20, Platform::Mac)
         .with_metadata()
         .with_s2();
+    // Document notes arrive in scratchpads, which claim a floor (18) above the research
+    // files' this test weighs.
+    for item in &mut spec.items {
+        item.notes.clear();
+    }
     let (dir, imported, _summary) = converted(&spec, Some("en-US"));
     let out = dir.path().join("novel.skrib");
     let media = dir.path().join("media");

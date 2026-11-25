@@ -1031,7 +1031,6 @@ import-plume-source-missing = Tento soubor neexistuje
 import-plume-source-not-file = Tato cesta není soubor
 import-plume-manuscript-binder = Rukopis
 import-plume-story-bible-binder = Bible příběhu
-import-plume-notes-of = { $name } (poznámky)
 import-plume-content-of = { $name } (text)
 import-plume-progress-title = Importování projektu Plume…
 import-plume-done = { $imported ->
@@ -1069,7 +1068,6 @@ import-manuskript-summary-note = Shrnutí
 import-manuskript-importance-minor = Vedlejší
 import-manuskript-importance-secondary = Druhořadá
 import-manuskript-importance-main = Hlavní
-import-manuskript-notes-of = { $title } (poznámky)
 import-manuskript-progress-title = Importování projektu Manuskript…
 import-manuskript-done = { $imported ->
     [one] Importována { $imported } položka.
@@ -1996,6 +1994,16 @@ import-scrivener-structure-document-notes-line = { $count ->
     [one] Poznámky 1 dokumentu se stanou poznámkou vedle něj.
     [few] Poznámky { $count } dokumentů se stanou poznámkami vedle nich.
    *[other] Poznámky { $count } dokumentů se stanou poznámkami vedle nich.
+}
+import-scrivener-structure-notes-in-scratchpad-line = { $count ->
+    [one] Poznámky 1 dokumentu přejdou do jeho poznámkového bloku.
+    [few] Poznámky { $count } dokumentů přejdou do jejich poznámkových bloků.
+   *[other] Poznámky { $count } dokumentů přejdou do jejich poznámkových bloků.
+}
+import-scrivener-structure-marked-notes-beside-line = { $count ->
+    [one] Poznámky 1 dokumentu obsahují poznámky pod čarou nebo komentáře, které poznámkový blok neumí zobrazit, proto se z nich stane poznámka vedle něj.
+    [few] Poznámky { $count } dokumentů obsahují poznámky pod čarou nebo komentáře, které poznámkový blok neumí zobrazit, proto se z nich stanou poznámky vedle nich.
+   *[other] Poznámky { $count } dokumentů obsahují poznámky pod čarou nebo komentáře, které poznámkový blok neumí zobrazit, proto se z nich stanou poznámky vedle nich.
 }
 import-scrivener-structure-draft-content-as-note-line = Vlastní text složky rukopisu se stane poznámkou na začátku rukopisu.
 import-scrivener-structure-story-bible-folder-line = { $count ->
@@ -4609,6 +4617,7 @@ import-notice-text-without-file-name = Pro { $kind ->
     [scene] text scény
     [note] text poznámky
     [synopsis] synopsi
+    [scratchpad] poznámkový blok
    *[title] název
 } položky „{ $title }“ nešlo vytvořit název souboru; tato část nebyla importována.
 import-notice-unknown-label = „{ $title }“ má popisek { $index }, který v seznamu popisků tohoto projektu není. Položka byla importována bez popisku.
@@ -4638,6 +4647,11 @@ import-notice-versions-unplaced = { $count ->
     [one] Jedna dřívější verze patří k řádku, který už v projektu není, a nešlo ji umístit.
     [few] { $count } dřívější verze patří k řádku, který už v projektu není, a nešlo je umístit.
    *[other] { $count } dřívějších verzí patří k řádku, který už v projektu není, a nešlo je umístit.
+}
+import-notice-note-links-not-kept = { $count ->
+    [one] Poznámky jedné položky odkazovaly na postavy, prvky světa, dějové linie nebo jiné položky. Jsou v jejím poznámkovém bloku a jména jsou vypsaná, ale odkazy na tyto postavy, prvky světa, dějové linie a položky nebyly zachovány.
+    [few] Poznámky { $count } položek odkazovaly na postavy, prvky světa, dějové linie nebo jiné položky. Jsou v poznámkovém bloku každé z nich a jména jsou vypsaná, ale odkazy na tyto postavy, prvky světa, dějové linie a položky nebyly zachovány.
+   *[other] Poznámky { $count } položek odkazovaly na postavy, prvky světa, dějové linie nebo jiné položky. Jsou v poznámkovém bloku každé z nich a jména jsou vypsaná, ale odkazy na tyto postavy, prvky světa, dějové linie a položky nebyly zachovány.
 }
 
 ## Native file dialogs: the window title, and the label of the file-type filter.

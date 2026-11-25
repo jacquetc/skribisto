@@ -83,8 +83,15 @@ pub enum StructureNotice {
     /// longer count as manuscript, so the word count differs from Scrivener's
     /// (D3.7).
     ParatextNotCounted { documents: u32, words: u64 },
-    /// An item's document notes, now a note beside it (D3.10).
+    /// An item's document notes, now in the scratchpad of the row it became
+    /// (decided 2026-11-25).
+    NotesInScratchpad { item: u32 },
+    /// An item's document notes, now a note beside it (D3.10): only for an item
+    /// with no row of its own to hold them in its scratchpad.
     DocumentNotes { item: u32 },
+    /// An item's document notes holding footnotes or comments, which a scratchpad
+    /// cannot show: a note beside it instead of its scratchpad, where they are kept.
+    MarkedNotesBeside { item: u32 },
     /// With several books, the Draft's own text or synopsis, now a note at the
     /// top of the manuscript (D3.8).
     DraftContentAsNote { item: u32 },
@@ -147,7 +154,9 @@ impl StructureNotice {
         "scrivener-structure-prologue-not-numbered",
         "scrivener-structure-matter-inside-book",
         "scrivener-structure-paratext-not-counted",
+        "scrivener-structure-notes-in-scratchpad",
         "scrivener-structure-document-notes",
+        "scrivener-structure-marked-notes-beside",
         "scrivener-structure-draft-content-as-note",
         "scrivener-structure-story-bible-folder",
         "scrivener-structure-templates-created",
@@ -196,7 +205,9 @@ impl StructureNotice {
             StructureNotice::ParatextNotCounted { .. } => {
                 "scrivener-structure-paratext-not-counted"
             }
+            StructureNotice::NotesInScratchpad { .. } => "scrivener-structure-notes-in-scratchpad",
             StructureNotice::DocumentNotes { .. } => "scrivener-structure-document-notes",
+            StructureNotice::MarkedNotesBeside { .. } => "scrivener-structure-marked-notes-beside",
             StructureNotice::DraftContentAsNote { .. } => {
                 "scrivener-structure-draft-content-as-note"
             }
@@ -250,7 +261,9 @@ impl StructureNotice {
             | StructureNotice::PrologueNotNumbered { .. }
             | StructureNotice::MatterInsideBook { .. }
             | StructureNotice::ParatextNotCounted { .. }
+            | StructureNotice::NotesInScratchpad { .. }
             | StructureNotice::DocumentNotes { .. }
+            | StructureNotice::MarkedNotesBeside { .. }
             | StructureNotice::DraftContentAsNote { .. }
             | StructureNotice::StoryBibleFolder { .. }
             | StructureNotice::TemplatesCreated { .. }
@@ -288,7 +301,9 @@ impl StructureNotice {
             | StructureNotice::BookInsideBook { item }
             | StructureNotice::PrologueNotNumbered { item }
             | StructureNotice::MatterInsideBook { item, .. }
+            | StructureNotice::NotesInScratchpad { item }
             | StructureNotice::DocumentNotes { item }
+            | StructureNotice::MarkedNotesBeside { item }
             | StructureNotice::DraftContentAsNote { item }
             | StructureNotice::StoryBibleFolder { item, .. }
             | StructureNotice::TemplateNestingFlattened { item }

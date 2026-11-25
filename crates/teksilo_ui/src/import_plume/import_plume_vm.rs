@@ -243,9 +243,9 @@ impl ImportPlumeViewModel {
             manuscript_binder_name: tr!(import_plume_manuscript_binder()).into(),
             story_bible_binder_name: tr!(import_plume_story_bible_binder()).into(),
             // What the import seeds that Plume never names: an old project's three
-            // story-bible groups, the title of a project with none, and the titles it
-            // makes up for a container's own notes and text. In the importer's order,
-            // in the interface's language.
+            // story-bible groups, the title of a project with none, and the title it
+            // makes up for a container's own text. In the importer's order, in the
+            // interface's language.
             seeded_names: plume_import::SeededNames::ORDER
                 .iter()
                 .map(|key| seeded_name(key))
@@ -298,9 +298,7 @@ fn seeded_name(key: &str) -> String {
         "items_group" => tr!(import_plume_group_items()),
         "places_group" => tr!(import_plume_group_places()),
         "untitled_project" => tr!(import_plume_untitled_project()),
-        // A pattern's argument is the slot the converter fills with the sheet's or
-        // folder's name.
-        "notes_of" => tr!(import_plume_notes_of(name = TITLE_SLOT.to_string())),
+        // The pattern's argument is the slot the converter fills with the folder's name.
         "content_of" => tr!(import_plume_content_of(name = TITLE_SLOT.to_string())),
         _ => return String::new(),
     };
@@ -400,7 +398,7 @@ mod tests {
                     .iter()
                     .zip(&dto.seeded_names);
                 let (patterns, names): (Vec<_>, Vec<_>) =
-                    seeded.partition(|(key, _)| matches!(**key, "notes_of" | "content_of"));
+                    seeded.partition(|(key, _)| **key == "content_of");
                 let words = [&dto.manuscript_binder_name, &dto.story_bible_binder_name]
                     .into_iter()
                     .chain(names.into_iter().map(|(_, word)| word));

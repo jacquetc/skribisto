@@ -34,7 +34,6 @@ use teksilo::widgets::ValidationState;
 use frontend::AppContext;
 use frontend::commands::import_management_commands;
 use frontend::import_management::ImportManuskriptProjectDto;
-use skrib_format::importing::TITLE_SLOT;
 
 use super::messages;
 use crate::intents::AppIntent;
@@ -348,8 +347,6 @@ fn section_name(key: &str) -> String {
         "page" => tr!(import_manuskript_section_page()),
         "full" => tr!(import_manuskript_section_full()),
         "untitled_project" => tr!(import_manuskript_untitled_project()),
-        // The pattern's argument is the slot the converter fills with the row's title.
-        "notes_of" => tr!(import_manuskript_notes_of(title = TITLE_SLOT.to_string())),
         _ => return String::new(),
     };
     name.into()
@@ -417,8 +414,8 @@ mod tests {
     }
 
     /// Every word the import writes into the project is resolved in the interface's
-    /// language, in both shipped locales: never a message id, and the notes pattern holds
-    /// the slot the row's title goes into exactly once.
+    /// language, in both shipped locales: never a message id, and every key of the
+    /// importer's order is named (a row's notes are its scratchpad, so no title for them).
     #[test]
     fn the_words_written_into_the_project_are_the_interface_s() {
         for locale in ["en-US", "fr-FR"] {
@@ -436,26 +433,13 @@ mod tests {
                 words.extend(dto.importance_names.iter());
                 let order = manuskript_import::map::SectionNames::ORDER;
                 assert_eq!(dto.section_names.len(), order.len());
-                let mut notes_of = None;
-                for (key, word) in order.iter().zip(&dto.section_names) {
-                    if *key == "notes_of" {
-                        notes_of = Some(word);
-                    } else {
-                        words.push(word);
-                    }
-                }
+                words.extend(dto.section_names.iter());
                 for word in words {
                     assert!(
                         !word.trim().is_empty() && !word.starts_with("import-manuskript-"),
                         "{locale}: {word:?}"
                     );
                 }
-                let notes_of = notes_of.expect("the notes title is seeded");
-                assert_eq!(
-                    notes_of.matches(TITLE_SLOT).count(),
-                    1,
-                    "{locale}: {notes_of:?}"
-                );
             });
         }
     }

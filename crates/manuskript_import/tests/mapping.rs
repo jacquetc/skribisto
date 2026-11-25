@@ -267,17 +267,45 @@ fn a_chapter_folder_carries_its_summary() {
     );
 }
 
-/// Neither a scene nor a chapter folder may hold note text, so a row's notes
-/// become a Note of their own.
+/// A row's notes are its own scratchpad: private notes beside the scene, never part of
+/// the book, and no item of their own.
 #[test]
-fn a_rows_notes_become_a_note_that_is_not_part_of_the_book() {
+fn a_rows_notes_become_its_scratchpad() {
     let mut row = scene("1", "Opening", "Words.");
     row.notes = "Check the date.".into();
     let mapped = build(&project_with(vec![row]));
-    let note = find(&mapped, 0, "Opening (notes)");
-    assert_eq!(note.item.sub_role, SubRole::Note);
-    assert!(prose(note, ContentRole::NoteText).contains("Check the date."));
-    assert!(!note.item.is_exportable, "a note is not part of the book");
+    let opening = find(&mapped, 0, "Opening");
+    assert_eq!(opening.item.sub_role, SubRole::Scene);
+    assert!(prose(opening, ContentRole::ScratchpadText).contains("Check the date."));
+    assert!(
+        !prose(opening, ContentRole::SceneText).contains("Check the date."),
+        "the notes are not the scene's prose"
+    );
+    let pad = opening
+        .item
+        .prose_refs
+        .iter()
+        .find(|p| p.role == ContentRole::ScratchpadText)
+        .expect("a scratchpad row");
+    assert!(pad.path.ends_with(".scratchpad.djot"), "{}", pad.path);
+    let titles: Vec<String> = manuscript(&mapped).into_iter().map(|r| r.2).collect();
+    assert_eq!(titles, ["A Novel", "Opening", ""], "no note beside it");
+}
+
+/// A row with no notes has no scratchpad, not a blank one.
+#[test]
+fn a_row_without_notes_has_no_scratchpad() {
+    let mut row = scene("1", "Opening", "Words.");
+    row.notes = "  \n ".into();
+    let mapped = build(&project_with(vec![row]));
+    let opening = find(&mapped, 0, "Opening");
+    assert!(
+        opening
+            .item
+            .prose_refs
+            .iter()
+            .all(|p| p.role != ContentRole::ScratchpadText)
+    );
 }
 
 /// What the pinned parser reads a stored Djot string back as, which is what the writer
@@ -304,7 +332,7 @@ fn a_rows_summaries_and_notes_read_back_as_typed() {
         "Meet at 10:30:45.\nI. The *first* part\nII. The second -- \"quoted\"",
         "stored as {synopsis:?}"
     );
-    let note = prose(find(&mapped, 0, "Opening (notes)"), ContentRole::NoteText);
+    let note = prose(find(&mapped, 0, "Opening"), ContentRole::ScratchpadText);
     assert_eq!(
         read_back(&note),
         "- keep the dash\n_not_ emphasis, don't",
@@ -347,24 +375,84 @@ fn a_character_sheets_fields_read_back_as_typed() {
     );
 }
 
+/// A folder's notes are its scratchpad too, whatever level the folder became: a part,
+/// a chapter, a plain folder below them.
 #[test]
-fn a_folders_notes_become_its_first_child_and_a_leaf_gets_its_next_sibling() {
-    let mut chapter = folder("1", "Chapter", vec![scene("2", "Scene", "x")]);
-    chapter.summary_full = "".into();
+fn a_folders_notes_become_its_scratchpad_at_every_level() {
+    let mut inner = folder("3", "Inner", vec![scene("4", "Scene", "x")]);
+    inner.notes = "About the inner folder.".into();
+    let mut chapter = folder("2", "Chapter", vec![inner]);
     chapter.notes = "About the chapter.".into();
-    let mapped = build(&project_with(vec![chapter]));
+    let mut part = folder("1", "Part", vec![chapter]);
+    part.notes = "About the part.".into();
+    let mapped = build(&project_with(vec![part]));
     let titles: Vec<String> = manuscript(&mapped).into_iter().map(|r| r.2).collect();
     assert_eq!(
         titles,
-        ["A Novel", "Chapter", "Chapter (notes)", "Scene", ""],
-        "the note sits between the chapter and its scenes"
+        ["A Novel", "Part", "Chapter", "Inner", "Scene", ""],
+        "no note between a folder and its children"
     );
-    let indents: Vec<i64> = mapped.bundle.binders[0]
-        .items
-        .iter()
-        .map(|i| i.item.indent)
-        .collect();
-    assert_eq!(indents[2], 2, "a folder's note is a child of it");
+    for (title, sub_role, words) in [
+        ("Part", SubRole::Part, "About the part."),
+        ("Chapter", SubRole::ChapterScene, "About the chapter."),
+        ("Inner", SubRole::None, "About the inner folder."),
+    ] {
+        let row = find(&mapped, 0, title);
+        assert_eq!(row.item.sub_role, sub_role, "{title}");
+        assert!(
+            prose(row, ContentRole::ScratchpadText).contains(words),
+            "{title}"
+        );
+    }
+}
+
+/// The markers in a row's notes are written out as the names they stand for, but a
+/// scratchpad links to nothing: the row does not gain the notes' characters as
+/// story-bible presences, and the report says how many rows' notes lost their links.
+#[test]
+fn the_links_in_a_rows_notes_are_counted_not_kept() {
+    let mut project = peopled();
+    project.outline[0].notes = "Ask {C:1:Paul} about {P:0:The rift}.".into();
+    let mut second = scene("2", "Second", "Plain words.");
+    second.notes = "Nothing linked here.".into();
+    let mut third = scene("3", "Third", "More words.");
+    third.notes = "Like {T:1:the opening} and {C:9:Nobody}.".into();
+    // The notes name Paul, and so does the scene's own text: the row keeps that link
+    // from its text, so nothing of the notes is lost.
+    let mut fourth = scene("4", "Fourth", &converted("Paul again: {C:1:Paul}."));
+    fourth.notes = "Is {C:1:Paul} too old?".into();
+    project.outline.extend([second, third, fourth]);
+    let mapped = build(&project);
+    let opening = find(&mapped, 0, "Opening");
+    let pad = read_back(&prose(opening, ContentRole::ScratchpadText));
+    assert_eq!(pad, "Ask Paul about The rift.");
+    let paul = find(&mapped, 1, "Paul").item.file_id;
+    let rift = find(&mapped, 1, "The rift").item.file_id;
+    assert!(
+        !opening.item.reference_ids.contains(&paul) && !opening.item.reference_ids.contains(&rift),
+        "a name in the notes is no presence in the scene: {:?}",
+        opening.item.reference_ids
+    );
+    assert!(
+        read_back(&prose(
+            find(&mapped, 0, "Third"),
+            ContentRole::ScratchpadText
+        ))
+        .starts_with("Like Opening and"),
+    );
+    let fourth = find(&mapped, 0, "Fourth");
+    let paul = find(&mapped, 1, "Paul").item.file_id;
+    assert!(
+        fourth.item.reference_ids.contains(&paul),
+        "the scene's own text keeps the link"
+    );
+    assert!(
+        mapped
+            .warnings
+            .contains(&skrib_format::import_notice::ImportNotice::NoteLinksNotKept { count: 2 }),
+        "Opening and Third lost links, Second had none, Fourth's text keeps its own: {:?}",
+        mapped.warnings
+    );
 }
 
 // ── The compile flag ────────────────────────────────────────────────────────
@@ -1030,15 +1118,13 @@ fn a_project_with_no_name_anywhere_still_gets_one() {
 }
 
 /// The titles the import makes up are the caller's words, in the writer's language: a
-/// French interface gets a French note title and a French name for a project that has
-/// none, and nothing English.
+/// French interface gets a French name for a project that has none, and nothing English.
+/// A row's notes make up no title: they are its scratchpad.
 #[test]
 fn the_titles_the_import_makes_up_are_the_callers_words() {
-    let slot = skrib_format::importing::TITLE_SLOT;
     let names = Names {
         sections: map::SectionNames {
             untitled_project: "Projet importé".into(),
-            notes_of: format!("Notes de « {slot} »"),
             ..map::SectionNames::default()
         },
         ..names()
@@ -1055,8 +1141,10 @@ fn the_titles_the_import_makes_up_are_the_callers_words() {
         &AtomicBool::new(false),
     );
     assert_eq!(mapped.bundle.manifest.work.title, "Projet importé");
-    let note = find(&mapped, 0, "Notes de « Ouverture »");
-    assert_eq!(note.item.sub_role, SubRole::Note);
+    assert!(
+        prose(find(&mapped, 0, "Ouverture"), ContentRole::ScratchpadText)
+            .contains("Vérifier la date.")
+    );
     let titles: Vec<&str> = mapped.bundle.binders[0]
         .items
         .iter()

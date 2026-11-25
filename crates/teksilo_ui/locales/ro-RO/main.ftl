@@ -1168,7 +1168,6 @@ import-plume-source-not-file = Această cale nu este un fișier
 # Binder names passed to the backend (which can't do i18n)
 import-plume-manuscript-binder = Manuscris
 import-plume-story-bible-binder = Biblia poveștii
-import-plume-notes-of = { $name } (note)
 import-plume-content-of = { $name } (text)
 # Progress toast (the import runs as a long operation)
 import-plume-progress-title = Se importă proiectul Plume…
@@ -1221,7 +1220,6 @@ import-manuskript-summary-note = Rezumat
 import-manuskript-importance-minor = Minor
 import-manuskript-importance-secondary = Secundar
 import-manuskript-importance-main = Principal
-import-manuskript-notes-of = { $title } (note)
 # Progress toast (the import is a long operation)
 import-manuskript-progress-title = Se importă proiectul Manuskript…
 # Result
@@ -2176,6 +2174,16 @@ import-scrivener-structure-document-notes-line = { $count ->
     [one] Notele unui document devin o notă alături de el.
     [few] Notele a { $count } documente devin note alături de ele.
    *[other] Notele a { $count } de documente devin note alături de ele.
+}
+import-scrivener-structure-notes-in-scratchpad-line = { $count ->
+    [one] Notele unui document ajung în carnetul lui de notițe.
+    [few] Notele a { $count } documente ajung în carnetele lor de notițe.
+   *[other] Notele a { $count } de documente ajung în carnetele lor de notițe.
+}
+import-scrivener-structure-marked-notes-beside-line = { $count ->
+    [one] Notele unui document conțin note de subsol sau comentarii, pe care un carnet de notițe nu le poate afișa, așa că devin o notă lângă el.
+    [few] Notele a { $count } documente conțin note de subsol sau comentarii, pe care un carnet de notițe nu le poate afișa, așa că devin note lângă ele.
+   *[other] Notele a { $count } de documente conțin note de subsol sau comentarii, pe care un carnet de notițe nu le poate afișa, așa că devin note lângă ele.
 }
 import-scrivener-structure-draft-content-as-note-line = Textul propriu al dosarului manuscrisului devine o notă la începutul manuscrisului.
 import-scrivener-structure-story-bible-folder-line = { $count ->
@@ -5030,6 +5038,7 @@ import-notice-text-without-file-name = { $kind ->
     [scene] Textul de scenă
     [note] Textul de notă
     [synopsis] Sinopsisul
+    [scratchpad] Carnetul de notițe
    *[title] Titlul
 } lui „{ $title }” nu a putut primi un nume de fișier, așa că nu a fost importat.
 import-notice-unknown-label = „{ $title }” are legenda { $index }, care nu se află în lista de legende a acestui proiect. A fost importat fără legendă.
@@ -5059,6 +5068,11 @@ import-notice-versions-unplaced = { $count ->
     [one] O versiune anterioară aparține unui rând care nu mai există în proiect și nu a putut fi plasată.
     [few] { $count } versiuni anterioare aparțin unui rând care nu mai există în proiect și nu au putut fi plasate.
    *[other] { $count } de versiuni anterioare aparțin unui rând care nu mai există în proiect și nu au putut fi plasate.
+}
+import-notice-note-links-not-kept = { $count ->
+    [one] Notele unui element trimiteau la personaje, intrări din lume, intrigi sau alte elemente. Sunt în carnetul lui de notițe, cu numele scrise în întregime, dar trimiterile la acele personaje, intrări din lume, intrigi și elemente nu au fost păstrate.
+    [few] Notele a { $count } elemente trimiteau la personaje, intrări din lume, intrigi sau alte elemente. Sunt în carnetul de notițe al fiecăruia, cu numele scrise în întregime, dar trimiterile la acele personaje, intrări din lume, intrigi și elemente nu au fost păstrate.
+   *[other] Notele a { $count } de elemente trimiteau la personaje, intrări din lume, intrigi sau alte elemente. Sunt în carnetul de notițe al fiecăruia, cu numele scrise în întregime, dar trimiterile la acele personaje, intrări din lume, intrigi și elemente nu au fost păstrate.
 }
 
 ## Native file dialogs: the window title, and the label of the file-type filter.

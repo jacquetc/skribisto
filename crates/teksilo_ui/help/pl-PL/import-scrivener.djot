@@ -104,7 +104,10 @@ proponuje wtedy tę nazwę, a pole *Autor* zostawia puste. Szablon proponuje wł
 - Twój tekst, w kolejności segregatora, z pogrubieniem, kursywą, listami, tabelami
   i obrazami.
 - Streszczenie każdego dokumentu, jako jego streszczenie w Skribisto.
-- Notatki każdego dokumentu, jako notatkę obok niego.
+- Notatki każdego dokumentu, w jego [brudnopisie](:help-scratchpad): prywatnych notatkach
+  trzymanych obok niego, w panelu *Brudnopis*. Notatki zawierające przypisy lub komentarze,
+  których brudnopis nie potrafi pokazać, stają się zamiast tego notatką obok dokumentu. Tak samo
+  notatki tego, co nie staje się osobnym elementem, na przykład Kosza czy szablonu dokumentu.
 - Komentarze i przypisy, również te zapisane w samym tekście. Adnotacja w tekście staje się
   komentarzem.
 - Etykiety, jako kolorowe znaczniki, a listę statusów jako statusy projektu.

@@ -628,9 +628,9 @@ impl<'a> Builder<'a> {
         }
     }
 
-    /// A container node (Book/Act/Chapter-with-scenes). Emits the folder, then its
-    /// overflow prose/notes as synthetic first children, then its real children,
-    /// then a `BookEnd` marker (books only).
+    /// A container node (Book/Act/Chapter-with-scenes). Emits the folder, its own
+    /// notes as its scratchpad, then its overflow prose as a synthetic first child,
+    /// then its real children, then a `BookEnd` marker (books only).
     #[allow(clippy::too_many_arguments)]
     fn emit_container(
         &mut self,
@@ -648,6 +648,8 @@ impl<'a> Builder<'a> {
         if !synopsis.is_empty() {
             contents.push((ContentRole::SynopsisText, synopsis));
         }
+        // Every folder kind a container becomes carries a scratchpad.
+        self.with_note(node, &mut contents);
         let refs = self.resolve_attend(&node.attend);
         // Plume's own revision rung for this node, resolved against the ladder minted
         // in `prepare_statuses`. `None` when the node carries no status, when the
@@ -669,7 +671,7 @@ impl<'a> Builder<'a> {
         self.apply_badge(&node.badge, &mut bi);
         out.push(bi);
 
-        // Overflow: the container's own T prose → a child Scene; own N → a child Note.
+        // Overflow: the container's own T prose → a child Scene.
         let own_text = self.text_djot(node.number);
         if !own_text.is_empty() {
             let (_i, cbi) = self.make_item(
@@ -689,26 +691,6 @@ impl<'a> Builder<'a> {
                 None,
             );
             out.push(cbi);
-        }
-        let own_note = self.note_djot(node.number);
-        if !own_note.is_empty() {
-            let (_i, nbi) = self.make_item(
-                bindex,
-                bname,
-                Role::Item,
-                SubRole::Note,
-                &self.seeded.notes_title(&node.name),
-                indent + 1,
-                false,
-                vec![
-                    (ContentRole::NoteText, own_note),
-                    (ContentRole::SynopsisText, String::new()),
-                ],
-                Vec::new(),
-                "",
-                None,
-            );
-            out.push(nbi);
         }
 
         for child in &node.children {
@@ -734,7 +716,7 @@ impl<'a> Builder<'a> {
     }
 
     /// A leaf chapter (no scene children) → a `ChapterScene` the user writes
-    /// straight into. Its own note becomes a following-sibling `Note`.
+    /// straight into. Its own note is its scratchpad.
     fn emit_chapter_scene(
         &mut self,
         node: &PlumeNode,
@@ -750,6 +732,12 @@ impl<'a> Builder<'a> {
         // in `prepare_statuses`. `None` when the node carries no status, when the
         // caller supplied no vocabulary, or when the index falls past its end.
         let status = self.status_for(node);
+        let mut contents = vec![
+            (ContentRole::ChapterTitle, node.name.clone()),
+            (ContentRole::SceneText, scene),
+            (ContentRole::SynopsisText, synopsis),
+        ];
+        self.with_note(node, &mut contents);
         let (_id, mut bi) = self.make_item(
             bindex,
             bname,
@@ -758,18 +746,13 @@ impl<'a> Builder<'a> {
             &node.name,
             indent,
             true,
-            vec![
-                (ContentRole::ChapterTitle, node.name.clone()),
-                (ContentRole::SceneText, scene),
-                (ContentRole::SynopsisText, synopsis),
-            ],
+            contents,
             refs,
             &node.badge,
             status,
         );
         self.apply_badge(&node.badge, &mut bi);
         out.push(bi);
-        self.emit_sibling_note(node, indent, bindex, bname, out);
         self.warn_dropped_separators(node);
     }
 
@@ -788,6 +771,11 @@ impl<'a> Builder<'a> {
         // in `prepare_statuses`. `None` when the node carries no status, when the
         // caller supplied no vocabulary, or when the index falls past its end.
         let status = self.status_for(node);
+        let mut contents = vec![
+            (ContentRole::SceneText, scene),
+            (ContentRole::SynopsisText, synopsis),
+        ];
+        self.with_note(node, &mut contents);
         let (_id, mut bi) = self.make_item(
             bindex,
             bname,
@@ -796,17 +784,13 @@ impl<'a> Builder<'a> {
             &node.name,
             indent,
             true,
-            vec![
-                (ContentRole::SceneText, scene),
-                (ContentRole::SynopsisText, synopsis),
-            ],
+            contents,
             refs,
             &node.badge,
             status,
         );
         self.apply_badge(&node.badge, &mut bi);
         out.push(bi);
-        self.emit_sibling_note(node, indent, bindex, bname, out);
     }
 
     /// A Plume separator becomes a scene-break marker in the *preceding* scene's
@@ -833,37 +817,15 @@ impl<'a> Builder<'a> {
         }
     }
 
-    /// Emit a scene/chapter-scene's own note as a following sibling `Note` (those
-    /// leaves cannot themselves hold `NoteText`).
-    fn emit_sibling_note(
-        &mut self,
-        node: &PlumeNode,
-        indent: i64,
-        bindex: usize,
-        bname: &str,
-        out: &mut Vec<BundledItem>,
-    ) {
+    /// A node's own note as its scratchpad, appended to `contents` (decided 2026-11-25;
+    /// a scene's or a leaf chapter's was a following sibling `Note` before, since
+    /// neither can hold `NoteText`, and a container's a first child). Nothing when the
+    /// note is empty: a scratchpad exists only once something is written in it.
+    fn with_note(&mut self, node: &PlumeNode, contents: &mut Vec<(ContentRole, String)>) {
         let note = self.note_djot(node.number);
-        if note.is_empty() {
-            return;
+        if !note.is_empty() {
+            contents.push((ContentRole::ScratchpadText, note));
         }
-        let (_i, nbi) = self.make_item(
-            bindex,
-            bname,
-            Role::Item,
-            SubRole::Note,
-            &self.seeded.notes_title(&node.name),
-            indent,
-            false,
-            vec![
-                (ContentRole::NoteText, note),
-                (ContentRole::SynopsisText, String::new()),
-            ],
-            Vec::new(),
-            "",
-            None,
-        );
-        out.push(nbi);
     }
 
     fn warn_dropped_separators(&mut self, node: &PlumeNode) {

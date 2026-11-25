@@ -65,6 +65,12 @@ pub struct ItemFacts {
     pub text: TextFacts,
     pub notes: Carries,
     pub synopsis: Carries,
+    /// Whether the notes hold a footnote or a comment (see [`TextFacts::marks`]), or
+    /// could not be read to tell. Such notes cannot go into a scratchpad, which shows
+    /// neither: the mapping makes them a note beside the item instead, where both are
+    /// shown and kept.
+    #[serde(default)]
+    pub notes_marked: bool,
 }
 
 /// What an item's main text holds.
@@ -84,6 +90,13 @@ pub struct TextFacts {
     /// the project states none (I3 A8).
     #[serde(default)]
     pub letters: Letters,
+    /// Whether it holds a footnote or a comment of any of the kinds the conversion turns
+    /// into one: an RTF footnote or annotation, an inline footnote or inline annotation
+    /// (`{\Scrv_fn=`, `{\Scrv_annot`, written as text), or a linked comment or
+    /// footnote (a `scrivcmt://` field). A superset: an annotation kept as prose (the
+    /// text holds nothing else) still counts. Only read of a document's notes.
+    #[serde(default)]
+    pub marks: bool,
 }
 
 /// Letters counted by the script they are written in. Marks, digits, punctuation and
@@ -207,9 +220,14 @@ impl ContentFacts {
                             headings: Vec::new(),
                             lead: carries,
                             letters: Letters::default(),
+                            marks: false,
                         },
                         notes: member(&row.payload.notes, &row.payload.salvaged.notes),
                         synopsis: member(&row.payload.synopsis, &row.payload.salvaged.synopsis),
+                        // Unread notes may hold anything: a note beside the item keeps
+                        // whatever they turn out to hold.
+                        notes_marked: member(&row.payload.notes, &row.payload.salvaged.notes)
+                            == Carries::Unknown,
                     }
                 })
                 .collect(),
@@ -259,13 +277,19 @@ pub(crate) fn measure(
             (None, Some(salvaged)) => plain(salvaged),
             (None, None) => TextFacts::default(),
         };
-        let notes = match (&row.payload.notes, &row.payload.salvaged.notes) {
+        let (notes, notes_marked) = match (&row.payload.notes, &row.payload.salvaged.notes) {
             (Some(m), _) => match read(m)? {
-                Read::Bytes(bytes) => rtf(&bytes).carries,
-                Read::Unreadable => Carries::Unknown,
+                Read::Bytes(bytes) => {
+                    let facts = rtf(&bytes);
+                    // Unreadable as RTF: unknown, and so possibly marked.
+                    let marked = facts.marks || facts.carries == Carries::Unknown;
+                    (facts.carries, marked)
+                }
+                Read::Unreadable => (Carries::Unknown, true),
             },
-            (None, Some(salvaged)) => plain(salvaged).carries,
-            (None, None) => Carries::No,
+            // What the search index kept is plain text: no footnote, no comment.
+            (None, Some(salvaged)) => (plain(salvaged).carries, false),
+            (None, None) => (Carries::No, false),
         };
         let synopsis = match (&row.payload.synopsis, &row.payload.salvaged.synopsis) {
             (Some(m), _) => match read(m)? {
@@ -279,6 +303,7 @@ pub(crate) fn measure(
             text,
             notes,
             synopsis,
+            notes_marked,
         });
     }
     for note in project_notes {
@@ -310,6 +335,7 @@ impl TextFacts {
             headings: Vec::new(),
             lead: Carries::Unknown,
             letters: Letters::default(),
+            marks: false,
         }
     }
 }
@@ -329,6 +355,7 @@ pub(crate) fn plain(text: &str) -> TextFacts {
         headings: Vec::new(),
         lead: carries,
         letters,
+        marks: false,
     }
 }
 
@@ -343,6 +370,8 @@ pub fn rtf(bytes: &[u8]) -> TextFacts {
     let mut facts = TextFacts::default();
     let mut candidates: Vec<Candidate> = Vec::new();
     let mut first_carrying: Option<u32> = None;
+    // An inline footnote or annotation, written as text: see `TextFacts::marks`.
+    let mut inline_note = false;
     for (index, block) in doc.body.iter().enumerate() {
         let mut block_carries = false;
         for paragraph in rtf_reader::paragraphs(std::slice::from_ref(block)) {
@@ -358,6 +387,9 @@ pub fn rtf(bytes: &[u8]) -> TextFacts {
                     | rtf_reader::Inline::AnnotationReference(_) => block_carries = true,
                     _ => {}
                 }
+            }
+            if raw.contains("\\Scrv_fn=") || raw.contains("\\Scrv_annot") {
+                inline_note = true;
             }
             let text = strip_markers(&raw);
             if text.chars().any(|c| !c.is_whitespace() && c != '\u{FFFC}') {
@@ -384,6 +416,15 @@ pub fn rtf(bytes: &[u8]) -> TextFacts {
         (Some(_), None) => Carries::Yes,
         _ => Carries::No,
     };
+    // A linked comment or footnote: a field over the words it marks.
+    let linked = doc.fields.iter().any(|field| {
+        matches!(
+            field.kind(),
+            rtf_reader::FieldKind::Hyperlink { target: Some(target), .. }
+                if target.trim().to_ascii_lowercase().starts_with("scrivcmt://")
+        )
+    });
+    facts.marks = inline_note || linked || !doc.notes.is_empty() || !doc.annotations.is_empty();
     // A footnote or comment written with no text around it is still writing.
     let any = first_carrying.is_some() || !doc.notes.is_empty() || !doc.annotations.is_empty();
     facts.carries = if any { Carries::Yes } else { Carries::No };
@@ -498,6 +539,102 @@ mod tests {
         assert_eq!(strip_markers("x < y and <b>"), "x < y and <b>");
         assert_eq!(strip_markers("<$Scr_H::1>Chapter 1"), "Chapter 1");
         assert_eq!(strip_markers("<"), "<");
+    }
+
+    /// Every kind of footnote and comment the conversion makes is seen as one, so notes
+    /// holding one never land in a scratchpad that cannot show it. Plain notes, and a
+    /// web link, are not.
+    #[test]
+    fn footnotes_and_comments_of_every_kind_are_marks() {
+        let marked: [(&str, &[u8]); 5] = [
+            (
+                "an inline footnote",
+                br"{\rtf1 The ferry\{\\Scrv_fn=It always was.\\end_Scrv_fn\} again.\par}",
+            ),
+            (
+                "an inline annotation",
+                br"{\rtf1 The keeper \{\\Scrv_annot \\text=Check this.\\end_Scrv_annot\} counted.\par}",
+            ),
+            (
+                "an RTF footnote",
+                br"{\rtf1 The ferry{\super\chftn{\footnote\pard\chftn It always was.}} again.\par}",
+            ),
+            (
+                "an RTF annotation",
+                br"{\rtf1 The keeper{\*\atnid K}{\*\annotation Check this.} counted.\par}",
+            ),
+            (
+                "a linked comment",
+                br#"{\rtf1 The {\field{\*\fldinst{HYPERLINK "scrivcmt://4C3E-11"}}{\fldrslt keeper}} counted.\par}"#,
+            ),
+        ];
+        for (what, bytes) in marked {
+            let facts = rtf(bytes);
+            assert!(facts.marks, "{what}");
+            assert_eq!(facts.carries, Carries::Yes, "{what}");
+        }
+        let plain: [(&str, &[u8]); 2] = [
+            ("plain notes", br"{\rtf1 Ask about the keeper.\par}"),
+            (
+                "a web link",
+                br#"{\rtf1 See {\field{\*\fldinst{HYPERLINK "https://example.org"}}{\fldrslt the map}}.\par}"#,
+            ),
+        ];
+        for (what, bytes) in plain {
+            assert!(!rtf(bytes).marks, "{what}");
+        }
+    }
+
+    /// The facts measured of an item's notes: marked when they hold a footnote, and
+    /// when they could not be read (they might).
+    #[test]
+    fn notes_that_cannot_be_read_count_as_marked() {
+        let rows = [BinderRow {
+            depth: 1,
+            key: None,
+            number: Some(1),
+            owns_key: true,
+            kind: crate::model::ItemKind::Text,
+            title: Some("Harbour".into()),
+            created: None,
+            modified: None,
+            meta: crate::model::ItemMeta::default(),
+            keyword_ids: Vec::new(),
+            links: Vec::new(),
+            target: None,
+            script_mode: false,
+            default_child_template: None,
+            binder_separator: false,
+            payload: crate::model::Payload {
+                notes: Some(MemberRef {
+                    path: "Files/Docs/1_notes.rtf".into(),
+                    size: 10,
+                    modified_ns: None,
+                }),
+                ..Default::default()
+            },
+            snapshots: 0,
+        }];
+        let facts = |bytes: Option<&[u8]>| {
+            let mut read = |_: &MemberRef| match bytes {
+                Some(b) => Ok(Read::Bytes(b.to_vec())),
+                None => Ok(Read::Unreadable),
+            };
+            match measure(&rows, &[], &[], &mut read) {
+                Ok(f) => f.items[0].clone(),
+                Err(_) => panic!("measured"),
+            }
+        };
+        let plain = facts(Some(br"{\rtf1 Ask about the keeper.\par}"));
+        assert_eq!(plain.notes, Carries::Yes);
+        assert!(!plain.notes_marked);
+        let footnote = facts(Some(
+            br"{\rtf1 The ferry\{\\Scrv_fn=It always was.\\end_Scrv_fn\} again.\par}",
+        ));
+        assert!(footnote.notes_marked);
+        let unread = facts(None);
+        assert_eq!(unread.notes, Carries::Unknown);
+        assert!(unread.notes_marked);
     }
 
     #[test]

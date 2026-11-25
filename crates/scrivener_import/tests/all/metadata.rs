@@ -721,6 +721,14 @@ fn without_research_files(spec: &mut Spec) {
     }
 }
 
+/// The spec with no document notes: they arrive in scratchpads, which claim a read floor
+/// (18) above the ladder's, and the tests below weigh the ladder's alone.
+fn without_document_notes(spec: &mut Spec) {
+    for item in &mut spec.items {
+        item.notes.clear();
+    }
+}
+
 /// The written project loads into a real store through `load_work` and saves back out with
 /// its tags, its ladder, every row's tags and rung, and every row's dates.
 #[test]
@@ -733,6 +741,7 @@ fn tags_the_ladder_and_dates_survive_the_store() {
     let dir = temp();
     let mut spec = Spec::novel(Generation::Format20, Platform::Mac).with_metadata();
     without_research_files(&mut spec);
+    without_document_notes(&mut spec);
     let folder = write(&spec, dir.path());
     let out = dir.path().join("novel.skrib");
     convert_stated(&folder, &out);
@@ -886,6 +895,7 @@ fn no_ladder_claims_no_read_floor() {
     let dir = temp();
     let mut spec = Spec::novel(Generation::Format20, Platform::Mac);
     without_research_files(&mut spec);
+    without_document_notes(&mut spec);
     spec.statuses = vec![(-1, "No Status".to_string())];
     for item in &mut spec.items {
         item.status = None;

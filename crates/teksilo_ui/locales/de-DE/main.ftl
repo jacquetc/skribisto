@@ -974,7 +974,6 @@ import-plume-source-missing = Diese Datei existiert nicht
 import-plume-source-not-file = Dieser Pfad ist keine Datei
 import-plume-manuscript-binder = Manuskript
 import-plume-story-bible-binder = Geschichtenbibel
-import-plume-notes-of = { $name } (Notizen)
 # The title of the scene that takes a Plume Creator folder's own text, after the folder's
 # name. Stored in the new project as written.
 import-plume-content-of = { $name } (Text)
@@ -1011,7 +1010,6 @@ import-manuskript-summary-note = Inhaltsangabe
 import-manuskript-importance-minor = Nebensächlich
 import-manuskript-importance-secondary = Zweitrangig
 import-manuskript-importance-main = Zentral
-import-manuskript-notes-of = { $title } (Notizen)
 import-manuskript-progress-title = Manuskript-Projekt wird importiert…
 import-manuskript-done = { $imported ->
     [one] { $imported } Eintrag importiert.
@@ -1933,6 +1931,14 @@ import-scrivener-structure-paratext-not-counted-line = { $documents ->
 import-scrivener-structure-document-notes-line = { $count ->
     [one] Die Notizen von 1 Dokument werden zu einer Notiz daneben.
    *[other] Die Notizen von { $count } Dokumenten werden zu Notizen daneben.
+}
+import-scrivener-structure-notes-in-scratchpad-line = { $count ->
+    [one] Die Notizen von 1 Dokument kommen in seinen Notizblock.
+   *[other] Die Notizen von { $count } Dokumenten kommen in deren Notizblöcke.
+}
+import-scrivener-structure-marked-notes-beside-line = { $count ->
+    [one] Die Notizen von 1 Dokument enthalten Fußnoten oder Kommentare, die ein Notizblock nicht zeigen kann, daher werden sie zu einer Notiz daneben.
+   *[other] Die Notizen von { $count } Dokumenten enthalten Fußnoten oder Kommentare, die ein Notizblock nicht zeigen kann, daher werden sie zu Notizen daneben.
 }
 import-scrivener-structure-draft-content-as-note-line = Der eigene Text des Manuskriptordners wird zu einer Notiz am Anfang des Manuskripts.
 import-scrivener-structure-story-bible-folder-line = { $count ->
@@ -4281,6 +4287,7 @@ import-notice-text-without-file-name = { $kind ->
     [scene] Für den Szenentext
     [note] Für den Notiztext
     [synopsis] Für die Zusammenfassung
+    [scratchpad] Für den Notizblock
    *[title] Für den Titel
 } von „{ $title }“ konnte kein Dateiname vergeben werden; dieser Inhalt wurde daher nicht importiert.
 import-notice-unknown-label = „{ $title }“ hat die Kennzeichnung { $index }, die in der Kennzeichnungsliste dieses Projekts nicht vorkommt. Es wurde ohne Kennzeichnung importiert.
@@ -4305,6 +4312,10 @@ import-notice-versions-kept = { $found ->
 import-notice-versions-unplaced = { $count ->
     [one] Eine frühere Version gehört zu einem Eintrag, der nicht mehr im Projekt ist, und konnte nicht zugeordnet werden.
    *[other] { $count } frühere Versionen gehören zu einem Eintrag, der nicht mehr im Projekt ist, und konnten nicht zugeordnet werden.
+}
+import-notice-note-links-not-kept = { $count ->
+    [one] Die Notizen eines Eintrags verwiesen auf Figuren, Einträge der Welt, Handlungsstränge oder andere Einträge. Sie stehen in seinem Notizblock, die Namen ausgeschrieben, aber die Verweise auf diese Figuren, Einträge der Welt, Handlungsstränge und Einträge wurden nicht übernommen.
+   *[other] Die Notizen von { $count } Einträgen verwiesen auf Figuren, Einträge der Welt, Handlungsstränge oder andere Einträge. Sie stehen jeweils im Notizblock des Eintrags, die Namen ausgeschrieben, aber die Verweise auf diese Figuren, Einträge der Welt, Handlungsstränge und Einträge wurden nicht übernommen.
 }
 
 ## Native file dialogs: the window title, and the label of the file-type filter.

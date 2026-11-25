@@ -139,6 +139,21 @@ impl<'a> Locator<'a> {
         }
     }
 
+    /// An item as a whole, opened on the row that holds its document notes: its own
+    /// row's scratchpad, or the note they became. That row is not always the item's own
+    /// or the one holding its text: the notes of a Draft split into several books, or
+    /// of a template, are in the scratchpad of a note made for what was left of it, and
+    /// a report line pointing elsewhere could not open the only row that has them.
+    fn item_notes(&self, item: u32) -> Located {
+        let at = self
+            .placement(item)
+            .and_then(|p| p.notes.or(p.item).or(p.text.as_ref().map(|(at, _)| *at)));
+        Located {
+            uid: self.uid(at),
+            ..self.item(item)
+        }
+    }
+
     /// An item as a whole, as `place`: its picture or file, its index-card picture.
     fn item_as(&self, item: u32, place: ScrivenerPlace) -> Located {
         Located {
@@ -798,7 +813,6 @@ pub(crate) fn structure_notice(
         | StructureNotice::EmptyFolderPlain { item: i }
         | StructureNotice::BookInsideBook { item: i }
         | StructureNotice::PrologueNotNumbered { item: i }
-        | StructureNotice::DocumentNotes { item: i }
         | StructureNotice::DraftContentAsNote { item: i }
         | StructureNotice::TemplateNestingFlattened { item: i }
         | StructureNotice::TemplateKeptAsNote { item: i }
@@ -808,6 +822,16 @@ pub(crate) fn structure_notice(
         | StructureNotice::DefaultTemplateNotLinked { item: i }
         | StructureNotice::PageBreakNotKept { item: i }
         | StructureNotice::CompileAsIsNotKept { item: i } => item(*i, Vec::new()),
+        // Opened where the notes are.
+        StructureNotice::NotesInScratchpad { item: i }
+        | StructureNotice::DocumentNotes { item: i }
+        | StructureNotice::MarkedNotesBeside { item: i } => at(
+            key,
+            Structure,
+            group.clone(),
+            locator.item_notes(*i),
+            Vec::new(),
+        ),
         StructureNotice::ParatextNotCounted { documents, words } => {
             project(vec![count("documents", *documents), count("words", *words)])
         }

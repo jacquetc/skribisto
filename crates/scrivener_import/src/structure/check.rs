@@ -85,8 +85,9 @@ pub enum Violation {
     /// An item whose parent has a row, not under that row.
     SubtreeSplit { item: u32 },
     /// A source in a content, or on a row, it does not belong to: a synopsis
-    /// written as prose, document notes folded into a scene, a picture on a
-    /// row that prints, one item's writing on another item's row.
+    /// written as prose, document notes folded into a scene, anything but document
+    /// notes in a scratchpad, a picture on a row that prints, one item's writing on
+    /// another item's row.
     Misrouted {
         binder: BinderKind,
         row: u32,
@@ -273,9 +274,10 @@ fn speaks_for(origin: &Origin, item: u32) -> bool {
 }
 
 /// Every source sits in a content of its kind, on a row of its own item: a
-/// synopsis only as a synopsis, document notes only on their notes row, a
-/// picture or file only where no export prints it as prose, a card image only
-/// in a note, each part of a split text on its own chapter.
+/// synopsis only as a synopsis, document notes only in the scratchpad of their
+/// item's row or on their notes row, a scratchpad holding nothing but document
+/// notes, a picture or file only where no export prints it as prose, a card
+/// image only in a note, each part of a split text on its own chapter.
 fn routing(plan: &StructurePlan) -> Result<(), Violation> {
     let binders = [
         (BinderKind::Manuscript, plan.manuscript.as_slice()),
@@ -301,7 +303,10 @@ fn routing(plan: &StructurePlan) -> Result<(), Violation> {
                 };
                 let role = &content.role;
                 for source in sources {
+                    let scratchpad = *role == ContentRole::ScratchpadText;
                     let ok = match *source {
+                        Source::Notes { item } if scratchpad => speaks_for(&row.origin, item),
+                        _ if scratchpad => false,
                         Source::Text { item } => {
                             *role != ContentRole::SynopsisText && speaks_for(&row.origin, item)
                         }

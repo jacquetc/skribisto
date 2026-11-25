@@ -17,7 +17,7 @@ use common::entities::{
     BinderItemSubRole as SubRole, CommentAnchorKind, ContentRole, ResourceKind,
 };
 use scrivener_fixtures::{Bookmark, Generation, Item, Kind, Platform, Spec, TINY_PNG};
-use scrivener_import::structure::Choices;
+use scrivener_import::structure::{Choices, Origin, StructureNotice};
 use scrivener_import::{
     Answers, ConvertError, ProseChoices, ProseNotice, Request, Summary, TITLE_SLOT, Words, convert,
 };
@@ -253,10 +253,13 @@ fn every_generation_converts_into_a_project_that_loads() {
             "{label}: the synopsis, as plain text"
         );
         if generation != Generation::IosStub {
-            let notes = item(&bundle, "Arrival W-notes");
             assert!(
-                !prose(notes, ContentRole::NoteText).is_empty(),
-                "{label}: the document notes, beside the scene"
+                !prose(arrival, ContentRole::ScratchpadText).is_empty(),
+                "{label}: the document notes, in the scene's scratchpad"
+            );
+            assert!(
+                items(&bundle).all(|i| i.item.title != "Arrival W-notes"),
+                "{label}: no note beside the scene"
             );
             // The picture and the PDF in Research are resources of the Research folder,
             // stored inside the project, with no note of their own.
@@ -652,7 +655,11 @@ fn a_format_1_0_range_comment_lands_on_its_words() {
     loads(bundle, &out);
 }
 
-/// A comment and a footnote inside a document's notes, and a comment over two paragraphs.
+/// A footnote inside a document's notes, and a comment over two paragraphs of its text.
+/// A scratchpad shows no footnote, so notes holding one are the note beside the scene,
+/// as before scratchpads, and the footnote stays on that note's text. The scene has no
+/// scratchpad, and nothing of the notes is stored where nothing would show it. The
+/// summary says why the notes are not in the scratchpad.
 #[test]
 fn notes_hold_their_own_footnotes_and_a_comment_may_span_paragraphs() {
     let notes = r"{\rtf1\ansi\ansicpg1252\cocoartf2761
@@ -684,17 +691,50 @@ Second} line} ends.}",
         ],
     );
     let out = dir.path().join("novel.skrib");
-    converted(&folder, &out);
+    let summary = converted(&folder, &out);
+    assert!(
+        summary
+            .structure
+            .iter()
+            .any(|n| matches!(n, StructureNotice::MarkedNotesBeside { .. })),
+        "the report says why the notes are not in the scratchpad"
+    );
     let bundle = read(&out);
-    let note_row = item(&bundle, "Arrival W-notes");
-    let note_notes: Vec<String> = note_row
+    let arrival = item(&bundle, "Arrival");
+    assert!(
+        arrival
+            .item
+            .prose_refs
+            .iter()
+            .all(|p| p.role != ContentRole::ScratchpadText),
+        "no scratchpad: it could not show the footnote"
+    );
+    let beside = item(&bundle, "Arrival W-notes");
+    let Some(note_text) = beside
+        .item
+        .prose_refs
+        .iter()
+        .find(|p| p.role == ContentRole::NoteText)
+    else {
+        panic!("the notes are the note beside the scene");
+    };
+    assert!(
+        addressable(&prose(beside, ContentRole::NoteText)).starts_with("Research on tides"),
+        "{:?}",
+        prose(beside, ContentRole::NoteText)
+    );
+    let note_footnotes: Vec<String> = beside
         .footnotes
-        .values()
+        .get(&note_text.file_id)
+        .into_iter()
         .flatten()
         .map(|n| addressable(&n.body))
         .collect();
-    assert_eq!(note_notes, ["Tables of 1901."]);
-    let arrival = item(&bundle, "Arrival");
+    assert_eq!(note_footnotes, ["Tables of 1901."]);
+    assert!(
+        arrival.footnotes.is_empty(),
+        "nothing kept on the scene where nothing shows it"
+    );
     let comment = arrival.comments.values().flatten().next().cloned();
     let Some(comment) = comment else {
         panic!("the comment arrived");
@@ -1439,6 +1479,167 @@ fn document_links_become_references_where_skribisto_shows_them() {
             .prose
             .iter()
             .any(|n| matches!(n, ProseNotice::DocumentLinksKept { count: 1, .. }))
+    );
+    loads(bundle, &out);
+}
+
+/// A link written in a document's notes is not the scene's: the notes are the item's
+/// scratchpad, which keeps no link, and a link put on the row would make whatever it
+/// names a presence of the scene. Its words stay in the scratchpad, the link is reported
+/// as not kept, and the row gains no reference (Mara's notes link to Ideas, a note beside
+/// it, which a link in Mara's own text would have kept).
+#[test]
+fn a_link_in_a_documents_notes_is_reported_and_never_kept() {
+    let dir = temp();
+    let spec = Spec::novel(Generation::Format20, Platform::Mac);
+    let ideas = spec.uuid(spec.index_of("Ideas").unwrap_or_default());
+    let notes = [
+        r"{\rtf1\ansi\ansicpg1252\cocoartf2761
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+\pard\f0\fs24 See {\field{\*\fldinst{HYPERLINK ",
+        &format!("\"scrivlnk://{ideas}\""),
+        r"}}{\fldrslt the ideas}} for more.}",
+    ]
+    .concat();
+    let folder = novel_with(
+        Generation::Format20,
+        Platform::Mac,
+        dir.path(),
+        &[("Mara", "notes.rtf", notes)],
+    );
+    let out = dir.path().join("novel.skrib");
+    let summary = converted(&folder, &out);
+    let bundle = read(&out);
+    let mara = item(&bundle, "Mara");
+    assert!(
+        mara.item.reference_ids.is_empty(),
+        "no reference from the notes: {:?}",
+        mara.item.reference_ids
+    );
+    assert_eq!(
+        addressable(&prose(mara, ContentRole::ScratchpadText)),
+        "See the ideas for more.",
+        "the words stay, in the scratchpad"
+    );
+    assert!(
+        summary
+            .prose
+            .iter()
+            .any(|n| matches!(n, ProseNotice::DocumentLinksDropped { count: 1, .. })),
+        "{:?}",
+        summary.prose
+    );
+    assert!(
+        !summary
+            .prose
+            .iter()
+            .any(|n| matches!(n, ProseNotice::DocumentLinksKept { .. }))
+    );
+    loads(bundle, &out);
+}
+
+/// A link in a document's notes to what the document's own text already links to: the
+/// row keeps that reference through its text, so the one in the scratchpad loses
+/// nothing and is not reported as a link with no place. It used to be counted as
+/// dropped beside the "kept" line for the same target.
+#[test]
+fn a_notes_link_the_text_already_keeps_is_not_reported_dropped() {
+    let dir = temp();
+    let spec = Spec::novel(Generation::Format20, Platform::Mac);
+    let ideas = spec.uuid(spec.index_of("Ideas").unwrap_or_default());
+    let link = [
+        r"{\rtf1\ansi\ansicpg1252\cocoartf2761
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+\pard\f0\fs24 See {\field{\*\fldinst{HYPERLINK ",
+        &format!("\"scrivlnk://{ideas}\""),
+        r"}}{\fldrslt the ideas}} for more.}",
+    ]
+    .concat();
+    let folder = novel_with(
+        Generation::Format20,
+        Platform::Mac,
+        dir.path(),
+        &[("Mara", "", link.clone()), ("Mara", "notes.rtf", link)],
+    );
+    let out = dir.path().join("novel.skrib");
+    let summary = converted(&folder, &out);
+    let bundle = read(&out);
+    let mara = item(&bundle, "Mara");
+    let ideas_id = item(&bundle, "Ideas").item.file_id;
+    assert_eq!(
+        mara.item.reference_ids,
+        [ideas_id],
+        "kept once, by the text"
+    );
+    assert_eq!(
+        addressable(&prose(mara, ContentRole::ScratchpadText)),
+        "See the ideas for more."
+    );
+    assert!(
+        summary
+            .prose
+            .iter()
+            .any(|n| matches!(n, ProseNotice::DocumentLinksKept { count: 1, .. })),
+        "{:?}",
+        summary.prose
+    );
+    assert!(
+        !summary
+            .prose
+            .iter()
+            .any(|n| matches!(n, ProseNotice::DocumentLinksDropped { .. })),
+        "{:?}",
+        summary.prose
+    );
+    loads(bundle, &out);
+}
+
+/// Notes the plan sent to the scratchpad that convert to nothing (here, nothing but a
+/// picture whose file is missing) leave no scratchpad, and the summary does not say
+/// they went into one.
+#[test]
+fn notes_that_convert_to_nothing_are_not_said_to_be_in_the_scratchpad() {
+    let dir = temp();
+    // An attachment of an `.rtfd` package, written as the byte that stands for it.
+    let mut notes = br"{\rtf1\mac\ansicpg10000 {{\NeXTGraphic Missing.tif \width2560 \height1920
+}"
+    .to_vec();
+    notes.push(0xAC);
+    notes.extend_from_slice(br"}\par}");
+    let spec = Spec::novel(Generation::Format20, Platform::Mac);
+    let mut files = spec.build();
+    let Some(index) = spec.index_of("Arrival") else {
+        panic!("no fixture item Arrival");
+    };
+    files.put(format!("{}notes.rtf", spec.payload_prefix(index)), notes);
+    let folder = write_files(&files, dir.path(), &spec.folder());
+    let out = dir.path().join("novel.skrib");
+    let summary = converted(&folder, &out);
+    let bundle = read(&out);
+    let arrival = item(&bundle, "Arrival");
+    assert!(
+        arrival
+            .item
+            .prose_refs
+            .iter()
+            .all(|p| p.role != ContentRole::ScratchpadText),
+        "nothing to keep, no scratchpad: {:?}",
+        prose(arrival, ContentRole::ScratchpadText)
+    );
+    let arrival_index = summary
+        .rows
+        .iter()
+        .find(|r| r.uid == arrival.item.uid)
+        .map(|r| r.origin);
+    let Some(Origin::Item { item: arrival_item }) = arrival_index else {
+        panic!("the scene was written from its item: {arrival_index:?}");
+    };
+    assert!(
+        !summary
+            .structure
+            .contains(&StructureNotice::NotesInScratchpad { item: arrival_item }),
+        "{:?}",
+        summary.structure
     );
     loads(bundle, &out);
 }

@@ -947,7 +947,6 @@ import-plume-source-missing = 파일이 존재하지 않습니다
 import-plume-source-not-file = 이 경로는 파일이 아닙니다
 import-plume-manuscript-binder = 원고
 import-plume-story-bible-binder = 설정집
-import-plume-notes-of = { $name } (노트)
 import-plume-content-of = { $name } (본문)
 import-plume-progress-title = Plume 프로젝트 가져오는 중…
 import-plume-done = 항목 { $imported }개를 가져왔습니다. 휴지통의 항목 { $skipped }개는 옮기지 않았습니다.
@@ -975,7 +974,6 @@ import-manuskript-summary-note = 요약
 import-manuskript-importance-minor = 단역
 import-manuskript-importance-secondary = 조연
 import-manuskript-importance-main = 주요 인물
-import-manuskript-notes-of = { $title } (노트)
 import-manuskript-progress-title = Manuskript 프로젝트 가져오는 중…
 import-manuskript-done = 항목 { $imported }개와 이전 버전 { $revisions }개를 가져왔습니다.
 import-manuskript-nested-too-deep = 가져오지 않았습니다. "{ $part }" 파일의 중첩이 { $limit }단계를 넘습니다. 정상적인 Manuskript 프로젝트보다 훨씬 깊어 앱이 중단될 수 있습니다. 기록된 내용은 없습니다.
@@ -1528,6 +1526,8 @@ import-scrivener-structure-prologue-not-numbered-line = 프롤로그나 에필�
 import-scrivener-structure-matter-inside-book-line = 원고 밖에 있던 앞부분 또는 뒷부분 부속 글 항목 { $count }개가 본문 외 글로 책 안에 들어갑니다. 직접 포함하기 전까지는 내보내기에서 제외됩니다.
 import-scrivener-structure-paratext-not-counted-line = 원고 문서 { $documents }개가 본문 외 글(앞부분 또는 뒷부분 부속 글)이 되어, { $words }단어가 더 이상 원고 분량에 포함되지 않습니다.
 import-scrivener-structure-document-notes-line = 문서 { $count }개의 노트가 각 문서 옆의 노트가 됩니다.
+import-scrivener-structure-notes-in-scratchpad-line = 문서 { $count }개의 노트가 각 문서의 메모장에 들어갑니다.
+import-scrivener-structure-marked-notes-beside-line = 문서 { $count }개의 노트에는 메모장이 보여 줄 수 없는 각주나 주석이 있어, 각 문서 옆의 노트가 됩니다.
 import-scrivener-structure-draft-content-as-note-line = 원고 폴더 자체의 글은 원고 맨 위의 노트가 됩니다.
 import-scrivener-structure-story-bible-folder-line = 인물이나 장소 폴더 { $count }개가 설정집 태그가 됩니다.
 import-scrivener-structure-templates-created-line = 문서 템플릿 { $count }개가 노트 템플릿이 됩니다.
@@ -3228,6 +3228,7 @@ import-notice-text-without-file-name = "{ $title }"의 { $kind ->
     [scene] 장면 본문
     [note] 노트 본문
     [synopsis] 줄거리 요약
+    [scratchpad] 메모장
    *[title] 제목
 }에 파일 이름을 붙일 수 없어 가져오지 않았습니다.
 import-notice-unknown-label = "{ $title }"의 레이블 { $index }은(는) 이 프로젝트의 레이블 목록에 없습니다. 레이블 없이 가져왔습니다.
@@ -3238,6 +3239,7 @@ import-notice-custom-icons = 행 { $count }개에 사용자 지정 아이콘이 
 import-notice-character-colors = 등장인물 { $count }명의 이름 옆에 색이 있었습니다. Skribisto는 행이 아니라 태그에 색을 입히므로 색은 가져오지 않았습니다. 등장인물은 모두 가져왔습니다.
 import-notice-versions-kept = 이 프로젝트에는 이전 버전이 { $found }개 기록되어 있었습니다. Skribisto가 자체 이력을 줄이는 방식과 같은 방식으로 줄여 { $kept }개를 남겼습니다. 버전 패널에서 볼 수 있습니다.
 import-notice-versions-unplaced = 이전 버전 { $count }개는 더 이상 프로젝트에 없는 행에 속해 있어 배치할 수 없었습니다.
+import-notice-note-links-not-kept = 항목 { $count }개의 노트가 등장인물, 세계관 항목, 줄거리 또는 다른 항목을 가리키고 있었습니다. 노트는 이름을 풀어 쓴 채 각 항목의 메모장에 들어 있지만, 그 등장인물, 세계관 항목, 줄거리, 항목에 대한 참조는 가져오지 않았습니다.
 
 ## Native file dialogs: the window title, and the label of the file-type filter.
 dialog-open-work-title = Skribisto 프로젝트 열기

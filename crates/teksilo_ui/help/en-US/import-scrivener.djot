@@ -99,7 +99,10 @@ proposes that name and leaves *Author* empty. A template proposes its own title.
 
 - Your text, in binder order, with its bold, italics, lists, tables and pictures.
 - Each document's synopsis, as its synopsis in Skribisto.
-- Each document's notes, as a note beside it.
+- Each document's notes, in its [scratchpad](:help-scratchpad): the private notes kept beside
+  it, in the *Scratchpad* panel. Notes that hold footnotes or comments, which a scratchpad
+  cannot show, become a note beside the document instead. So do the notes of anything that
+  becomes no item of its own, such as the Trash folder or a document template.
 - Your comments and footnotes, including the ones written inside the text. An inline
   annotation becomes a comment.
 - Your labels as colored tags, and your status list as the project's statuses.

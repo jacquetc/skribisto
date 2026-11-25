@@ -102,7 +102,9 @@ pub struct Words {
     pub manuscript_binder: String,
     pub notes_binder: String,
     /// The title of a note holding an item's document notes, with [`TITLE_SLOT`] where the
-    /// item's title goes. A pattern without the slot has the title put before it.
+    /// item's title goes. A pattern without the slot has the title put before it. Only an
+    /// item with no row of its own to hold its notes in its scratchpad gets such a note,
+    /// and so does a recovered copy of an item's notes.
     pub notes_of: String,
     /// The folder of format 1.x project notes.
     pub project_notes: String,
@@ -408,7 +410,17 @@ fn build(
     let bundle = converter.run(report, cancel)?;
     Ok(Built {
         totals: converter.totals,
-        structure: plan.notices.clone(),
+        structure: plan
+            .notices
+            .iter()
+            .filter(|notice| match notice {
+                StructureNotice::NotesInScratchpad { item } => {
+                    !converter.notes_came_to_nothing.contains(item)
+                }
+                _ => true,
+            })
+            .cloned()
+            .collect(),
         prose: std::mem::take(&mut converter.notices),
         metadata: std::mem::take(&mut converter.metadata),
         placements: plan.placements.clone(),
@@ -503,6 +515,10 @@ struct Converter<'c, 't, 'i, 'd> {
     totals: Totals,
     /// Every row written, in the plan's order.
     written: Vec<WrittenRow>,
+    /// Items whose document notes were planned into their row's scratchpad and
+    /// converted to nothing: the plan's "notes go into the scratchpad" is not true of
+    /// them, and the summary leaves it out.
+    notes_came_to_nothing: HashSet<u32>,
 }
 
 impl<'c, 't, 'i, 'd> Converter<'c, 't, 'i, 'd> {
@@ -548,6 +564,7 @@ impl<'c, 't, 'i, 'd> Converter<'c, 't, 'i, 'd> {
             printed: Cell::new(false),
             totals: Totals::default(),
             written: Vec::new(),
+            notes_came_to_nothing: HashSet::new(),
         }
     }
 
@@ -659,7 +676,7 @@ impl<'c, 't, 'i, 'd> Converter<'c, 't, 'i, 'd> {
         let mut binders: Vec<BundledBinder> = Vec::new();
         let mut binder_order: Vec<u64> = Vec::new();
         // Links each row's texts hold, to resolve once every row exists.
-        let mut links: Vec<(BinderKind, usize, Place, Vec<String>)> = Vec::new();
+        let mut links: Vec<RowLinks> = Vec::new();
         for (kind, binder_id, name, index) in [
             (
                 BinderKind::Manuscript,
@@ -720,7 +737,8 @@ impl<'c, 't, 'i, 'd> Converter<'c, 't, 'i, 'd> {
                     sheet: extended.sheets.get(&at).map(String::as_str),
                     extended: &extended,
                 };
-                let (item, row_links) = self.row(kind, row, row_ids[index][r], &dir, worn)?;
+                let (item, row_links, notes_links) =
+                    self.row(kind, row, row_ids[index][r], &dir, worn)?;
                 self.written.push(WrittenRow {
                     at: RowRef {
                         binder: kind,
@@ -730,7 +748,22 @@ impl<'c, 't, 'i, 'd> Converter<'c, 't, 'i, 'd> {
                     origin: row.origin,
                 });
                 if let Some((place, targets)) = row_links {
-                    links.push((kind, r, place, targets));
+                    links.push(RowLinks {
+                        binder: kind,
+                        row: r,
+                        place,
+                        targets,
+                        in_scratchpad: false,
+                    });
+                }
+                if let Some((place, targets)) = notes_links {
+                    links.push(RowLinks {
+                        binder: kind,
+                        row: r,
+                        place,
+                        targets,
+                        in_scratchpad: true,
+                    });
                 }
                 let title = item.item.title.clone();
                 items.push(item);
@@ -1407,7 +1440,8 @@ impl<'c, 't, 'i, 'd> Converter<'c, 't, 'i, 'd> {
         (created.unwrap_or_else(|| self.now.clone()), updated)
     }
 
-    /// One row of a binder, and the links its texts hold.
+    /// One row of a binder, the links its texts hold, and apart from them the links its
+    /// scratchpad holds (the item's document notes), which a scratchpad cannot keep.
     #[allow(clippy::type_complexity)]
     fn row(
         &mut self,
@@ -1416,7 +1450,14 @@ impl<'c, 't, 'i, 'd> Converter<'c, 't, 'i, 'd> {
         file_id: u64,
         dir: &str,
         worn: Worn,
-    ) -> Result<(BundledItem, Option<(Place, Vec<String>)>), Stop> {
+    ) -> Result<
+        (
+            BundledItem,
+            Option<(Place, Vec<String>)>,
+            Option<(Place, Vec<String>)>,
+        ),
+        Stop,
+    > {
         let item_uid = common::uid::new_uid();
         let title = self.title(&row.title);
         let (created, updated) = self.dates(&row.origin);
@@ -1426,6 +1467,7 @@ impl<'c, 't, 'i, 'd> Converter<'c, 't, 'i, 'd> {
         let mut comments = BTreeMap::new();
         let mut footnotes = BTreeMap::new();
         let mut row_links: Option<(Place, Vec<String>)> = None;
+        let mut notes_links: Option<(Place, Vec<String>)> = None;
         let item_title = row_item_title(self.project, &row.origin);
         for content in &row.contents {
             if !skribisto_model::content_allowed(&row.role, &row.sub_role, &content.role) {
@@ -1443,6 +1485,7 @@ impl<'c, 't, 'i, 'd> Converter<'c, 't, 'i, 'd> {
                     text: title.clone(),
                 }),
                 Body::From(sources) => {
+                    let scratchpad = content.role == ContentRole::ScratchpadText;
                     let Some((out, extra)) = self.content(
                         binder,
                         content.role.clone(),
@@ -1451,12 +1494,29 @@ impl<'c, 't, 'i, 'd> Converter<'c, 't, 'i, 'd> {
                         item_title.as_deref(),
                     )?
                     else {
+                        // Notes planned into the scratchpad that hold nothing once
+                        // converted: the report must not say they went there.
+                        if scratchpad {
+                            for source in sources {
+                                if let Source::Notes { item } = source {
+                                    self.notes_came_to_nothing.insert(*item);
+                                }
+                            }
+                        }
                         continue;
                     };
+                    // A scratchpad's links are its own: they are not the scene's cast
+                    // (a character named in the notes is not one who appears), and the
+                    // scratchpad keeps none of its own. They are reported as not kept.
+                    let into = if scratchpad {
+                        &mut notes_links
+                    } else {
+                        &mut row_links
+                    };
                     if let Some((place, targets)) = extra {
-                        match &mut row_links {
+                        match into {
                             Some((_, all)) => all.extend(targets),
-                            None => row_links = Some((place, targets)),
+                            None => *into = Some((place, targets)),
                         }
                     }
                     if binder == BinderKind::Manuscript
@@ -1583,6 +1643,7 @@ impl<'c, 't, 'i, 'd> Converter<'c, 't, 'i, 'd> {
                 footnotes,
             },
             row_links,
+            notes_links,
         ))
     }
 
@@ -2145,7 +2206,7 @@ impl<'c, 't, 'i, 'd> Converter<'c, 't, 'i, 'd> {
         &mut self,
         binders: &mut [BundledBinder],
         row_ids: &[Vec<u64>; 2],
-        links: Vec<(BinderKind, usize, Place, Vec<String>)>,
+        links: Vec<RowLinks>,
     ) {
         let project = self.project;
         let mut by_key: HashMap<String, usize> = HashMap::new();
@@ -2169,7 +2230,20 @@ impl<'c, 't, 'i, 'd> Converter<'c, 't, 'i, 'd> {
             BinderKind::Notes => 1,
         };
         let mut notices = Vec::new();
-        for (kind, r, place, targets) in links {
+        // The targets each row keeps as references, read by its scratchpad's links: a
+        // link there to a target the row's own text already keeps loses nothing, so it
+        // is not reported as dropped. The rows' own links go first for that reason.
+        let mut kept_by_row: HashMap<(usize, usize), Vec<u64>> = HashMap::new();
+        let (own, scratchpads): (Vec<RowLinks>, Vec<RowLinks>) =
+            links.into_iter().partition(|l| !l.in_scratchpad);
+        for RowLinks {
+            binder: kind,
+            row: r,
+            place,
+            targets,
+            in_scratchpad,
+        } in own.into_iter().chain(scratchpads)
+        {
             let Some(owner) = rows_of(kind).get(r) else {
                 continue;
             };
@@ -2199,10 +2273,20 @@ impl<'c, 't, 'i, 'd> Converter<'c, 't, 'i, 'd> {
                 if Some(target_id) == owner_id {
                     continue;
                 }
+                if in_scratchpad
+                    && kept_by_row
+                        .get(&(binder_index(kind), r))
+                        .is_some_and(|row_keeps| row_keeps.contains(&target_id))
+                {
+                    continue; // the row's own text already keeps this reference
+                }
                 let note = |row: &PlannedRow| row.sub_role == SubRole::Note;
-                let shown = (note(owner) && note(target))
-                    || (skribisto_model::counts_prose(&owner.role, &owner.sub_role)
-                        && target.tag.is_some());
+                // A link in the scratchpad has no place: kept on the row, it would make
+                // the character it names one who appears in the scene.
+                let shown = !in_scratchpad
+                    && ((note(owner) && note(target))
+                        || (skribisto_model::counts_prose(&owner.role, &owner.sub_role)
+                            && target.tag.is_some()));
                 if shown {
                     if !kept.contains(&target_id) {
                         kept.push(target_id);
@@ -2212,6 +2296,10 @@ impl<'c, 't, 'i, 'd> Converter<'c, 't, 'i, 'd> {
                 }
             }
             if !kept.is_empty() {
+                kept_by_row
+                    .entry((binder_index(kind), r))
+                    .or_default()
+                    .extend(kept.iter().copied());
                 notices.push(ProseNotice::DocumentLinksKept {
                     at: place,
                     count: kept.len() as u32,
@@ -2239,6 +2327,18 @@ impl<'c, 't, 'i, 'd> Converter<'c, 't, 'i, 'd> {
         }
         self.notices.extend(notices);
     }
+}
+
+/// The links one content group of a row holds: its texts', or its scratchpad's apart.
+struct RowLinks {
+    binder: BinderKind,
+    row: usize,
+    /// Where the first of them was written, for the report.
+    place: Place,
+    /// Each target as written, each time it occurs.
+    targets: Vec<String>,
+    /// Written in the row's scratchpad (the item's document notes): never kept.
+    in_scratchpad: bool,
 }
 
 /// The pictures of a project, each once, from its texts and its items.

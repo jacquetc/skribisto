@@ -69,7 +69,6 @@ fn every_generation_plans_the_same_novel() {
         "  Folder/Part Part One",
         "    Folder/ChapterScene Chapter 1",
         "      Item/Scene Arrival",
-        "      Item/Note Arrival (notes)",
         "      Item/Scene The Harbour",
         "    Folder/ChapterScene Chapter 2",
         "      Item/Scene Night Watch",
@@ -90,20 +89,25 @@ fn every_generation_plans_the_same_novel() {
         let plan = checked(&read);
         let label = format!("{generation:?} {platform:?}");
         let stub = generation == Generation::IosStub;
-        let manuscript: Vec<String> = show(&plan.manuscript)
-            .into_iter()
-            .filter(|l| !(stub && l.ends_with("(notes)")))
-            .collect();
-        let expected: Vec<String> = expected_manuscript
+        assert_eq!(show(&plan.manuscript), expected_manuscript, "{label}");
+        // A document's notes are its own row's scratchpad, never a note beside it.
+        let scratchpads: Vec<String> = plan
+            .manuscript
             .iter()
-            .filter(|l| !(stub && l.ends_with("(notes)")))
-            .map(|s| s.to_string())
+            .chain(&plan.notes)
+            .filter(|r| {
+                r.contents
+                    .iter()
+                    .any(|c| c.role == structure::ContentRole::ScratchpadText)
+            })
+            .map(title_of)
             .collect();
-        assert_eq!(manuscript, expected, "{label}");
+        let expected_pads: &[&str] = if stub { &[] } else { &["Arrival", "Mara"] };
+        assert_eq!(scratchpads, expected_pads, "{label}");
         let mut notes = vec!["Folder/Note Research"];
         if !stub {
             // The picture and the PDF are resources of the Research folder, not notes.
-            notes.extend(["  Item/Note Mara", "  Item/Note Mara (notes)"]);
+            notes.push("  Item/Note Mara");
             let research = structure::RowRef {
                 binder: structure::BinderKind::Notes,
                 row: 0,
@@ -172,7 +176,7 @@ fn every_generation_plans_the_same_novel() {
                 .iter()
                 .any(|c| c.role == structure::ContentRole::SceneText)
         );
-        assert!(plan.manuscript[8].contents.is_empty(), "{label}");
+        assert!(plan.manuscript[7].contents.is_empty(), "{label}");
     }
 }
 
