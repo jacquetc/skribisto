@@ -140,6 +140,10 @@ const FIELD_ELEMENTS: &[&str] = &[
 /// ([`ImportDiagnostic::SpacesShortened`]); the words around it are untouched.
 pub(crate) const MAX_SPACE_RUN: usize = 1_000;
 
+/// The deepest list level ODF has: a list style describes levels 1 to 10, and a
+/// `text:level` outside them names no level at all.
+const MAX_LIST_LEVEL: usize = 10;
+
 /// How many spaces a `<text:s>` stands for, at most [`MAX_SPACE_RUN`], and whether the
 /// count it gave was cut to that.
 ///
@@ -495,10 +499,16 @@ impl StyleTable {
                 "list-level-style-bullet" | "list-level-style-image" => false,
                 _ => continue,
             };
+            // ODF list levels run from 1 to 10. A level outside them is not one this
+            // style can be asked about, and taken as given it would index before the
+            // first level (`0`) or ask for a table of a trillion levels: ignored.
             let level: usize = child
                 .attribute((NS_TEXT, "level"))
                 .and_then(|v| v.parse().ok())
                 .unwrap_or(levels.len() + 1);
+            if !(1..=MAX_LIST_LEVEL).contains(&level) {
+                continue;
+            }
             if levels.len() < level {
                 levels.resize(level, false);
             }
