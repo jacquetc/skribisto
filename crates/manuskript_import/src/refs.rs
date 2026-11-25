@@ -116,20 +116,76 @@ pub fn rewrite_djot(
 /// Every marker in `text`, with the byte range it occupies, in order. A `{` that opens
 /// no marker is skipped and the scan carries on from the next character, so prose that
 /// legitimately contains a brace is not mangled.
+///
+/// A marker ends at the first `}` after its `{`, and is no marker if a line break comes
+/// first. Looking for both from every `{` again would read the rest of the text once per
+/// brace: a scene holding a megabyte of `{` and no `}` took half a minute. So each is found
+/// once and kept until the scan passes it, and the whole scan reads the text a bounded
+/// number of times, whatever it holds.
 fn markers(text: &str) -> Vec<(std::ops::Range<usize>, Reference)> {
     let mut found = Vec::new();
+    let mut closes = NextMatch::new(|c| c == '}');
+    let mut breaks = NextMatch::new(|c| c == '\n' || c == '\u{2028}');
     let mut from = 0;
     while let Some(offset) = text[from..].find('{') {
         let open = from + offset;
-        match parse_marker(&text[open..]) {
-            Some((reference, len)) => {
-                found.push((open..open + len, reference));
-                from = open + len;
+        // No `}` after this `{` means none after any later one either.
+        let Some(close) = closes.at_or_after(text, open + 1) else {
+            break;
+        };
+        // Manuskript's `.*?` does not cross a line, and neither does a marker here: in
+        // converted prose a `\n` is a paragraph boundary, and a line separator (U+2028)
+        // a line break inside a paragraph.
+        let crosses_a_line = breaks
+            .at_or_after(text, open + 1)
+            .is_some_and(|at| at < close);
+        match (!crosses_a_line)
+            .then(|| parse_marker(&text[open + 1..close]))
+            .flatten()
+        {
+            Some(reference) => {
+                found.push((open..close + 1, reference));
+                from = close + 1;
             }
             None => from = open + 1,
         }
     }
     found
+}
+
+/// The first character matching a predicate at or after a position, remembered so that
+/// asking again from a later position does not read the same text twice.
+struct NextMatch<P> {
+    is_match: P,
+    /// Where the last search started, and what it found: the first match at or after
+    /// that position, `None` for none to the end of the text.
+    last: Option<(usize, Option<usize>)>,
+}
+
+impl<P: Fn(char) -> bool> NextMatch<P> {
+    fn new(is_match: P) -> Self {
+        Self {
+            is_match,
+            last: None,
+        }
+    }
+
+    /// The byte offset of the first match at or after `from`, which must be a character
+    /// boundary of `text`, the same `text` every call.
+    fn at_or_after(&mut self, text: &str, from: usize) -> Option<usize> {
+        if let Some((searched_from, result)) = self.last
+            && searched_from <= from
+            && result.is_none_or(|at| at >= from)
+        {
+            return result;
+        }
+        let result = text
+            .get(from..)
+            .and_then(|rest| rest.find(&self.is_match))
+            .map(|offset| from + offset);
+        self.last = Some((from, result));
+        result
+    }
 }
 
 /// The words a marker is replaced by: the target's name, else the marker's own display
@@ -149,23 +205,12 @@ fn record(references: &mut Vec<Reference>, reference: Reference) {
     }
 }
 
-/// Parse a marker at the start of `s`, returning it and the bytes it occupies.
+/// Parse what sits between a marker's `{` and its `}`, which holds neither a `}` nor a
+/// line break.
 ///
 /// Mirrors `{(\w):(\d+):?.*?}`: one word character, a colon, at least one digit,
-/// then optionally a colon and a display string, then the first `}`.
-fn parse_marker(s: &str) -> Option<(Reference, usize)> {
-    let bytes = s.as_bytes();
-    if bytes.first() != Some(&b'{') {
-        return None;
-    }
-    let close = s.find('}')?;
-    let inner = &s[1..close];
-    // Manuskript's `.*?` does not cross a line, and neither does a marker here: in
-    // converted prose a `\n` is a paragraph boundary, and a line separator (U+2028) a line
-    // break inside a paragraph.
-    if inner.contains(['\n', '\u{2028}']) {
-        return None;
-    }
+/// then optionally a colon and a display string.
+fn parse_marker(inner: &str) -> Option<Reference> {
     let mut parts = inner.splitn(3, ':');
     let kind_part = parts.next()?;
     let mut kind_chars = kind_part.chars();
@@ -179,14 +224,11 @@ fn parse_marker(s: &str) -> Option<(Reference, usize)> {
         return None;
     }
     let display = parts.next().unwrap_or_default();
-    Some((
-        Reference {
-            kind,
-            id: id.to_string(),
-            display: display.to_string(),
-        },
-        close + 1,
-    ))
+    Some(Reference {
+        kind,
+        id: id.to_string(),
+        display: display.to_string(),
+    })
 }
 
 #[cfg(test)]
@@ -334,6 +376,74 @@ mod tests {
             assert_eq!(out.text, djot);
             assert!(out.references.is_empty());
         }
+    }
+
+    /// The scan as it was written before it kept its matches: every `{` looked for its
+    /// `}` to the end of the text. Kept to prove the faster scan finds the same markers.
+    fn markers_by_rescanning(text: &str) -> Vec<(std::ops::Range<usize>, Reference)> {
+        let mut found = Vec::new();
+        let mut from = 0;
+        while let Some(offset) = text[from..].find('{') {
+            let open = from + offset;
+            let marker = text[open..].find('}').and_then(|close| {
+                let inner = &text[open + 1..open + close];
+                if inner.contains(['\n', '\u{2028}']) {
+                    None
+                } else {
+                    parse_marker(inner).map(|r| (r, close + 1))
+                }
+            });
+            match marker {
+                Some((reference, len)) => {
+                    found.push((open..open + len, reference));
+                    from = open + len;
+                }
+                None => from = open + 1,
+            }
+        }
+        found
+    }
+
+    #[test]
+    fn the_scan_finds_what_rescanning_from_every_brace_finds() {
+        for text in [
+            "",
+            "{",
+            "}",
+            "{}",
+            "{{C:1:a}}",
+            "{C:1:a}{C:2:b}",
+            "{C:1:a\n}{C:2:b}",
+            "{ {C:1:a} }",
+            "{C:1:{C:2:b}",
+            "{C:1:a\u{2028}b} {T:3}",
+            "{\n{C:1:x}\n}",
+            "Été {P:12:Chloé à l'aube} et {W:7:} puis {C:x:y} {é:4:z}",
+            "{C:1:a}}}{{{{T:2:b\n{P:3}",
+            "{_:9:under} {C::x} {C:1:} {CC:1:x} {:1:x}",
+            "\u{2028}{C:1:x\u{2028}}{C:2:y}",
+        ] {
+            assert_eq!(markers(text), markers_by_rescanning(text), "{text:?}");
+        }
+    }
+
+    /// A scene full of braces that close nothing used to cost a read of the rest of
+    /// the text per brace: a megabyte of them took half a minute. Now it takes one pass.
+    #[test]
+    fn a_long_run_of_unclosed_braces_is_scanned_at_once() {
+        let started = std::time::Instant::now();
+        for text in [
+            "{".repeat(1 << 20),
+            "{C:1:".repeat(1 << 18),
+            // Closed only at the very end, past a line break every marker would cross.
+            format!("{}\n}}", "{C:1:x".repeat(1 << 17)),
+        ] {
+            let out = rewrite(&text, named("X"));
+            assert_eq!(out.text, text);
+            assert!(out.references.is_empty());
+        }
+        let took = started.elapsed();
+        assert!(took < std::time::Duration::from_secs(2), "took {took:?}");
     }
 
     #[test]
