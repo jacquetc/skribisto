@@ -24,6 +24,187 @@ fn the_body_scope_covers_every_kind_of_rows_text() {
         Some(&ContentRole::EpigraphText),
         "a Part's epigraph is its only text, and comes after every body role",
     );
+    assert!(
+        !roles.contains(&ContentRole::ScratchpadText),
+        "a scene's scratchpad is not its text, and the Text scope must never show it",
+    );
+    assert!(
+        !VersionScope::Synopsis
+            .roles()
+            .contains(&ContentRole::ScratchpadText)
+    );
+}
+
+#[test]
+fn the_scratchpad_scope_reads_the_scratchpad_alone() {
+    assert_eq!(
+        VersionScope::Scratchpad.roles(),
+        &[ContentRole::ScratchpadText]
+    );
+    // Its place in the control is last, so the writer's choice of the first two
+    // keeps its index.
+    assert_eq!(
+        VersionScope::ALL
+            .iter()
+            .map(|s| s.index())
+            .collect::<Vec<_>>(),
+        vec![0, 1, 2]
+    );
+    assert_eq!(VersionScope::Scratchpad.index(), 2);
+}
+
+/// Every type that carries any text has a scratchpad, and the control offers it
+/// there; the two markers that hold nothing are offered the first two scopes alone.
+#[test]
+fn the_scratchpad_scope_is_offered_exactly_where_a_scratchpad_can_exist() {
+    use common::entities::{BinderItemRole as R, BinderItemSubRole as S};
+    let carrying = [
+        (R::Item, S::BookBegin),
+        (R::Item, S::Scene),
+        (R::Item, S::ChapterScene),
+        (R::Item, S::Part),
+        (R::Item, S::Note),
+        (R::Item, S::Paratext),
+        (R::Folder, S::None),
+        (R::Folder, S::ChapterScene),
+        (R::Folder, S::Part),
+        (R::Folder, S::Book),
+        (R::Folder, S::Note),
+        (R::Folder, S::Paratext),
+    ];
+    for (role, sub_role) in &carrying {
+        assert_eq!(
+            VersionScope::offered_for(role, sub_role),
+            &VersionScope::ALL,
+            "{role:?}/{sub_role:?} carries a scratchpad",
+        );
+    }
+    for (role, sub_role) in [(R::Item, S::BookEnd), (R::Item, S::Text)] {
+        assert_eq!(
+            VersionScope::offered_for(&role, &sub_role),
+            &[VersionScope::Synopsis, VersionScope::Prose],
+            "{role:?}/{sub_role:?} holds no text, so it has no scratchpad",
+        );
+    }
+}
+
+/// The view-model follows the item in front: the scratchpad scope appears with a
+/// scene, cannot be chosen on a marker, and falls back to the synopsis when the
+/// writer moves from a scene's scratchpad to a marker.
+#[test]
+fn the_control_offers_the_scratchpad_scope_by_the_item_in_front() {
+    use common::entities::{BinderItemRole as R, BinderItemSubRole as S};
+    let vm = VersionsViewModel::new();
+    assert_eq!(
+        vm.offered_scopes().get(),
+        &[VersionScope::Synopsis, VersionScope::Prose],
+        "nothing in front: the two scopes every item has",
+    );
+    vm.set_scope(VersionScope::Scratchpad);
+    assert_eq!(
+        vm.scope(),
+        VersionScope::Synopsis,
+        "not offered, not chosen"
+    );
+
+    vm.set_item_kind(Some((R::Item, S::Scene)));
+    assert_eq!(vm.offered_scopes().get(), &VersionScope::ALL);
+    vm.set_scope(VersionScope::Scratchpad);
+    assert_eq!(vm.scope(), VersionScope::Scratchpad);
+    assert_eq!(vm.scope_index().get(), 2);
+
+    // Another scene keeps the writer's choice.
+    vm.set_item_kind(Some((R::Folder, S::ChapterScene)));
+    assert_eq!(vm.scope(), VersionScope::Scratchpad);
+
+    vm.set_item_kind(Some((R::Item, S::BookEnd)));
+    assert_eq!(
+        vm.offered_scopes().get(),
+        &[VersionScope::Synopsis, VersionScope::Prose]
+    );
+    assert_eq!(vm.scope(), VersionScope::Synopsis);
+    assert_eq!(
+        vm.scope_index().get(),
+        0,
+        "the control is never left pointing past its last segment",
+    );
+
+    // The text scope survives a marker, since every item offers it.
+    vm.set_item_kind(Some((R::Item, S::Scene)));
+    vm.set_scope(VersionScope::Prose);
+    vm.set_item_kind(Some((R::Item, S::Text)));
+    assert_eq!(vm.scope(), VersionScope::Prose);
+}
+
+/// The writer's choice of scope outlives the items that cannot show it. Chosen on a
+/// scene, the scratchpad is shown as the synopsis on a marker, or with nothing in front,
+/// and comes back on the next scene. Passing over one used to overwrite the choice for
+/// good. A segment the writer picks on the marker is a new choice, and sticks.
+#[test]
+fn the_chosen_scope_survives_an_item_that_cannot_show_it() {
+    use common::entities::{BinderItemRole as R, BinderItemSubRole as S};
+    let vm = VersionsViewModel::new();
+    vm.set_item_kind(Some((R::Item, S::Scene)));
+    vm.set_scope(VersionScope::Scratchpad);
+
+    for passing in [Some((R::Item, S::BookEnd)), None, Some((R::Item, S::Text))] {
+        vm.set_item_kind(passing.clone());
+        assert_eq!(vm.scope(), VersionScope::Synopsis, "{passing:?}: shown");
+        // The dock calls it from every build: still the fallback, still the choice.
+        vm.set_item_kind(passing.clone());
+        assert_eq!(vm.chosen_scope(), VersionScope::Scratchpad, "{passing:?}");
+        vm.set_item_kind(Some((R::Item, S::Scene)));
+        assert_eq!(
+            vm.scope(),
+            VersionScope::Scratchpad,
+            "{passing:?}: back on a scene, the scratchpad again"
+        );
+        assert_eq!(vm.scope_index().get(), 2);
+    }
+
+    // On the marker the writer clicks Text in the control, which writes its index.
+    vm.set_item_kind(Some((R::Item, S::BookEnd)));
+    vm.scope_index().set(VersionScope::Prose.index());
+    vm.set_item_kind(Some((R::Item, S::Scene)));
+    assert_eq!(
+        vm.scope(),
+        VersionScope::Prose,
+        "a pick on the marker is a choice"
+    );
+}
+
+/// Scans finish in any order. A slow scan for a row the writer has left lands after
+/// the one for where they are now, and is dropped rather than shown over it.
+#[test]
+fn a_late_scan_for_an_earlier_row_does_not_replace_the_current_one() {
+    let vm = VersionsViewModel::new();
+    let project = ProjectHandle {
+        path: "/nonexistent/Novel.skrib".into(),
+        unique_id: "u".into(),
+        destinations: vec!["/nonexistent".into()],
+        revision: 0,
+    };
+    vm.set_project(project.clone());
+    let earlier = LoadKey {
+        uid: Some(uuid::Uuid::from_u128(1)),
+        scope: 0,
+        project: project.clone(),
+    };
+    vm.load_for(Some(uuid::Uuid::from_u128(2)));
+    let current = vm.loaded.borrow().clone().expect("the current load");
+    assert!(current != earlier);
+
+    vm.finish_for(
+        &earlier,
+        view_with(&["Old row, old words."], None),
+        String::new(),
+    );
+    assert!(
+        vm.view().get().is_empty(),
+        "the earlier row's timeline is not shown"
+    );
+    vm.finish_for(&current, view_with(&["This row."], None), String::new());
+    assert!(!vm.view().get().is_empty(), "the current row's is");
 }
 
 #[test]
@@ -826,6 +1007,68 @@ fn a_chapters_text_is_its_prose_even_with_an_epigraph() {
         view.texts,
         vec!["It began at night.".to_string(), "It began.".to_string()],
     );
+}
+
+/// The scratchpad's recorded past, listed in its own scope: two saved wordings of a
+/// scene's notes are two versions, and the Text scope of the same scene lists only
+/// the scene's own wordings.
+#[test]
+fn a_scenes_scratchpad_with_two_recorded_wordings_shows_two_versions() {
+    use common::entities::{BinderItemRole, BinderItemSubRole};
+    let dir = tempfile::tempdir().expect("tmp");
+    let scene = uuid::Uuid::from_u128(0x7006);
+    let notes = [
+        "Check the tide tables.",
+        "Check the tide tables. The keeper lies about the lamp.",
+    ];
+    let path = saved_twice(
+        dir.path(),
+        row(
+            scene,
+            "Low tide",
+            BinderItemRole::Item,
+            BinderItemSubRole::Scene,
+        ),
+        |n| {
+            vec![
+                body(1, ContentRole::SceneText, "The water went out."),
+                body(2, ContentRole::ScratchpadText, notes[n]),
+            ]
+        },
+    );
+
+    let vm = VersionsViewModel::new();
+    vm.set_project(ProjectHandle {
+        path: path.clone(),
+        unique_id: "one-row-project".into(),
+        destinations: Vec::new(),
+        revision: 0,
+    });
+    vm.set_item_kind(Some((BinderItemRole::Item, BinderItemSubRole::Scene)));
+    vm.set_scope(VersionScope::Scratchpad);
+    vm.load_for(Some(scene));
+    assert!(!vm.loading().get(), "with no executor the scan runs inline");
+    assert!(vm.error().get().is_empty(), "{}", vm.error().get());
+    let view = vm.view().get();
+    assert_eq!(view.role, Some(ContentRole::ScratchpadText));
+    assert_eq!(vm.visible_count(), 2, "two saved wordings of the notes");
+    assert_eq!(
+        view.texts,
+        vec![notes[1].to_string(), notes[0].to_string()],
+        "newest first, each with the notes it recorded",
+    );
+
+    // What restoring the newest-but-one would ask for names the scratchpad.
+    vm.selection().select(1);
+    let req = vm.restore_request(300).expect("a version is selected");
+    assert_eq!(req.recorded_role, ContentRole::ScratchpadText);
+    assert_eq!(req.past, notes[0]);
+
+    // The scene's own text never changed, so its scope holds one version, and none
+    // of the notes.
+    let (_, prose) = prose_versions_of(path, scene);
+    assert_eq!(prose.role, Some(ContentRole::SceneText));
+    assert_eq!(prose.texts, vec!["The water went out.".to_string()]);
 }
 
 // ── dates, on the writer's calendar ─────────────────────────────────────────

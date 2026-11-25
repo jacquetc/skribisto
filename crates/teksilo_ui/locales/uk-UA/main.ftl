@@ -4376,9 +4376,11 @@ import-document-diagnostics = { $errors ->
 import-document-diagnostics-none = Немає про що повідомити.
 versions-title = Версії
 versions-scope-synopsis = Синопсис
-versions-scope-prose = Основний текст
+versions-scope-prose = Текст
+versions-scope-scratchpad = Блокнот
 versions-loading = Перегляд ваших резервних копій…
 versions-empty = Попередніх версій цього ще немає
+versions-empty-scratchpad = Попередніх версій цього блокнота ще немає
 versions-error = Не вдалося прочитати ваші резервні копії. Нічого не втрачено, але цей список може бути неповним
 versions-did-not-exist = Станом на { $date } ще не існувало
 versions-deleted-after = Видалено десь після { $date }
@@ -4436,6 +4438,7 @@ versions-last-30-days = Останні 30 днів
 versions-restore-button = Відновити цю версію
 versions-restore-confirm-title = Замінити цей текст версією від { $date }?
 versions-restore-confirm-text = Поточний текст буде замінено текстом, який цей елемент мав { $date }.
+versions-restore-confirm-scratchpad = Нотатки в цьому блокноті буде замінено тими, що були в ньому { $date }.
 versions-restore-confirm-with-comments = Поточний текст буде замінено текстом, який цей елемент мав { $date }. { $count ->
     [one] { $count } коментар прив’язаний до поточного тексту й може втратити прив’язку.
     [few] { $count } коментарі прив’язані до поточного тексту й можуть утратити прив’язку.

@@ -49,6 +49,13 @@ que restaure el elemento.
   uno vacío.
 - *Duplicar* copia el bloc de notas con el elemento.
 
+## Versiones anteriores
+
+El proyecto guarda las versiones anteriores del bloc de notas, igual que las de su texto. Para
+verlas, abra el panel *Versiones* y elija *Bloc de notas* en la parte superior. *Restaurar esta
+versión* vuelve a poner una, y `Ctrl+Z` en el bloc de notas lo deshace. Consulte
+[Copias de seguridad y versiones](:help-backups-and-versions).
+
 ## Elementos sin bloc de notas
 
 El marcador *Fin del libro*, y los demás marcadores que no contienen texto, no tienen bloc de

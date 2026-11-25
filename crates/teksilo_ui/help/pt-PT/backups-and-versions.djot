@@ -39,6 +39,12 @@ O histórico acompanha uma cena, nota ou sinopse de cada vez. Cada entrada indic
 
 O painel *Versões* fica à direita, junto a Comentários e Formato.
 
+No topo do painel, escolha o que quer consultar:
+
+- *Sinopse*, o resumo do item.
+- *Texto*, o texto do próprio item.
+- *Bloco de notas*, as notas que guarda junto ao item. Consulte [o bloco de notas](:help-scratchpad).
+
 *Restaurar esta versão* recupera o texto anterior. O Skribisto cria primeiro uma cópia de segurança e `Ctrl+Z` anula o restauro.
 
 Fixe uma versão proveniente de uma cópia de segurança para impedir que a limpeza dos ficheiros antigos a elimine.

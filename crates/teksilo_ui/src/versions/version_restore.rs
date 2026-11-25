@@ -310,7 +310,11 @@ pub fn apply(
         // the restore rather than from the Djot that produced it: `past` is
         // markup, and counting its asterisks would report more text than the
         // row now holds.
-        if let Some(work) = work
+        //
+        // Not for a scratchpad: the writer's notes beside an item are never
+        // counted, and an arrival is a count of text that reached the manuscript.
+        if slot != Slot::Scratchpad
+            && let Some(work) = work
             && let Ok(plain) = document.to_plain_text()
         {
             common::arrival::shared().record(
@@ -681,5 +685,219 @@ mod tests {
         project.save();
         let (saved, _) = crate::test_support::saved_scene(&project.path, uid);
         assert_eq!(saved, past, "the file holds the version put back, whole");
+    }
+
+    // ── a scratchpad's past ─────────────────────────────────────────────────
+
+    /// The item's stored text of `role`, trimmed, if it has a row.
+    #[cfg(not(feature = "mocks"))]
+    fn stored(app_ctx: &frontend::AppContext, item: u64, role: ContentRole) -> Option<String> {
+        use frontend::commands::{binder_item_commands, content_commands};
+        use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
+        let ids = binder_item_commands::get_binder_item_relationship(
+            app_ctx,
+            &item,
+            &BinderItemRelationshipField::Contents,
+        )
+        .expect("the item's contents");
+        content_commands::get_content_multi(app_ctx, &ids)
+            .expect("the content rows")
+            .into_iter()
+            .flatten()
+            .find(|c| c.role == role)
+            .map(|c| c.data.trim().to_string())
+    }
+
+    /// A scene with stored text and stored notes, as a reopened project holds it.
+    #[cfg(not(feature = "mocks"))]
+    fn scene_with_notes(
+        project: &crate::test_support::RealProject,
+        docs: &OpenDocsStore,
+    ) -> (u64, uuid::Uuid) {
+        let (item_id, uid) = project.scenes()[0];
+        let stack = project.ids.stack_id.get();
+        let doc = docs.open(item_id).expect("the scene opens");
+        let main = doc.main.as_ref().expect("a scene has prose");
+        main.doc
+            .cursor_at(0)
+            .insert_text("The keeper climbed to the lamp.")
+            .expect("the scene is typed");
+        let pad = docs
+            .ensure_scratchpad(&doc)
+            .expect("a scene has a scratchpad");
+        pad.doc
+            .cursor_at(0)
+            .insert_text("Ask about the oil.")
+            .expect("the notes are typed");
+        (doc.mark_dirty_fn())();
+        (doc.mark_scratchpad_dirty_fn())();
+        doc.flush(stack).expect("both are stored");
+        docs.release(item_id, stack);
+        (item_id, uid)
+    }
+
+    /// Restoring a scratchpad version writes the scratchpad, through to the file, and
+    /// nothing else of the item: the scene's text is the writer's, as it was. Nor is the
+    /// restored text counted as text arriving in the manuscript.
+    #[cfg(not(feature = "mocks"))]
+    #[test]
+    fn a_scratchpad_restore_writes_the_scratchpad_and_not_the_scene() {
+        let project = crate::test_support::RealProject::empty_novel();
+        let docs = OpenDocsStore::new(project.app_ctx.clone());
+        let (item_id, uid) = scene_with_notes(&project, &docs);
+        let stack = project.ids.stack_id.get();
+        let work = common::open_work::OpenWork::detached();
+
+        let past = "Ask about the oil. *Never* trust the keeper.";
+        apply(
+            &docs,
+            item_id,
+            &ContentRole::ScratchpadText,
+            past,
+            stack,
+            Some(work),
+        )
+        .expect("the version goes back");
+
+        let notes = stored(&project.app_ctx, item_id, ContentRole::ScratchpadText)
+            .expect("the scratchpad is stored");
+        assert!(
+            notes.starts_with("Ask about the oil.") && notes.contains("Never* trust the keeper."),
+            "the restored notes are stored, with their emphasis: {notes:?}"
+        );
+        assert_eq!(
+            stored(&project.app_ctx, item_id, ContentRole::SceneText).as_deref(),
+            Some("The keeper climbed to the lamp."),
+            "the scene's own text is untouched"
+        );
+        assert_eq!(
+            common::arrival::shared().peek(work, common::arrival::Arrival::Programmatic),
+            0,
+            "a scratchpad's text never arrives in the manuscript"
+        );
+
+        project.save();
+        let bundle = skrib_format::read_bundle(&project.path.to_string_lossy())
+            .expect("the saved project reads back");
+        let row = bundle
+            .binders
+            .iter()
+            .flat_map(|b| &b.items)
+            .find(|r| r.item.uid == uid)
+            .expect("the scene is saved");
+        let text_of = |role: ContentRole| {
+            row.item
+                .prose_refs
+                .iter()
+                .find(|p| p.role == role)
+                .and_then(|p| row.prose.get(&p.file_id))
+                .map(|t| t.trim().to_string())
+        };
+        assert_eq!(
+            text_of(ContentRole::SceneText).as_deref(),
+            Some("The keeper climbed to the lamp.")
+        );
+        let saved_notes = text_of(ContentRole::ScratchpadText).expect("the notes are saved");
+        assert!(
+            saved_notes.contains("trust the keeper"),
+            "the file holds the restored notes: {saved_notes:?}"
+        );
+    }
+
+    /// The control case for the test above: the same restore into the scene's text
+    /// is counted, so the zero there is the scratchpad's doing.
+    #[cfg(not(feature = "mocks"))]
+    #[test]
+    fn a_scene_restore_is_still_counted_as_an_arrival() {
+        let project = crate::test_support::RealProject::empty_novel();
+        let docs = OpenDocsStore::new(project.app_ctx.clone());
+        let (item_id, _) = scene_with_notes(&project, &docs);
+        let work = common::open_work::OpenWork::detached();
+        apply(
+            &docs,
+            item_id,
+            &ContentRole::SceneText,
+            "The lamp was out.",
+            project.ids.stack_id.get(),
+            Some(work),
+        )
+        .expect("the version goes back");
+        assert_eq!(
+            common::arrival::shared().peek(work, common::arrival::Arrival::Programmatic),
+            "The lamp was out.".chars().count() as u64
+        );
+        assert_eq!(
+            stored(&project.app_ctx, item_id, ContentRole::ScratchpadText).as_deref(),
+            Some("Ask about the oil."),
+            "and a scene restore leaves the notes alone"
+        );
+    }
+
+    /// With the Scratchpad dock showing the item, the restore lands in the very
+    /// document its editor shows, as one step of the scratchpad's own history: one
+    /// undo there brings the writer's notes back, and the scene's history is not
+    /// touched.
+    #[cfg(not(feature = "mocks"))]
+    #[test]
+    fn a_restore_into_the_scratchpad_the_dock_shows_is_one_undo_step() {
+        use crate::scratchpad::{ScratchpadState, ScratchpadViewModel};
+
+        let project = crate::test_support::RealProject::empty_novel();
+        let docs = OpenDocsStore::new(project.app_ctx.clone());
+        let (item_id, _) = scene_with_notes(&project, &docs);
+
+        let dock =
+            ScratchpadViewModel::new(project.app_ctx.clone(), docs.clone(), project.ids.clone());
+        dock.view_changed(Some(item_id), false, None);
+        let ScratchpadState::Ready { doc, field } = dock.state() else {
+            panic!("the dock shows the scene's scratchpad");
+        };
+        // What the writer had typed into it since it was opened.
+        field
+            .doc
+            .cursor_at(0)
+            .insert_text("Later thought. ")
+            .expect("typed in the dock");
+        (doc.mark_scratchpad_dirty_fn())();
+        let before = field.doc.to_plain_text().expect("text");
+        let scene_could_undo = doc.main.as_ref().expect("prose").doc.can_undo();
+
+        apply(
+            &docs,
+            item_id,
+            &ContentRole::ScratchpadText,
+            "Notes from March.",
+            project.ids.stack_id.get(),
+            None,
+        )
+        .expect("the version goes back");
+
+        assert_eq!(
+            field.doc.to_plain_text().expect("text").trim(),
+            "Notes from March.",
+            "the dock's own document shows the restored notes"
+        );
+        assert!(
+            dock.doc().is_some_and(|d| std::rc::Rc::ptr_eq(&d, &doc)),
+            "the dock still holds the same document: the restore's release was not its last"
+        );
+        assert_eq!(
+            stored(&project.app_ctx, item_id, ContentRole::ScratchpadText).as_deref(),
+            Some("Notes from March."),
+            "and stored at once"
+        );
+
+        field.doc.undo().expect("undo");
+        assert_eq!(
+            field.doc.to_plain_text().expect("text"),
+            before,
+            "one undo brings back the notes the writer had, not half of them"
+        );
+        assert_eq!(
+            doc.main.as_ref().expect("prose").doc.can_undo(),
+            scene_could_undo,
+            "the scene's history did not move"
+        );
+        dock.release();
     }
 }

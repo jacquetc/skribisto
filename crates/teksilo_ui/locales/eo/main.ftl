@@ -3503,8 +3503,10 @@ import-document-diagnostics-none = Nenio raportenda.
 versions-title = Versioj
 versions-scope-synopsis = Resumo
 versions-scope-prose = Teksto
+versions-scope-scratchpad = Notbloko
 versions-loading = Esplorado de viaj sekurkopioj…
 versions-empty = Ankoraŭ neniu pli frua versio
+versions-empty-scratchpad = Ankoraŭ neniu pli frua versio de ĉi tiu notbloko
 versions-error = Ne eblis legi viajn sekurkopiojn. Nenio perdiĝis, sed ĉi tiu listo eble estas nekompleta
 versions-did-not-exist = Ankoraŭ ne ekzistis je { $date }
 versions-deleted-after = Forigita iam post { $date }
@@ -3552,6 +3554,7 @@ versions-last-30-days = Lastaj 30 tagoj
 versions-restore-button = Restarigi ĉi tiun version
 versions-restore-confirm-title = Ĉu anstataŭigi ĉi tiun tekston per la versio de { $date }?
 versions-restore-confirm-text = La nuna teksto estos anstataŭigita per tiu de ĉi tiu ero je { $date }.
+versions-restore-confirm-scratchpad = La notoj en ĉi tiu notbloko estos anstataŭigitaj per tiuj, kiujn ĝi enhavis je { $date }.
 versions-restore-confirm-with-comments = La nuna teksto estos anstataŭigita per tiu de ĉi tiu ero je { $date }. { $count ->
     [one] { $count } komento estas ligita al la nuna teksto kaj eble perdos sian ligon.
    *[other] { $count } komentoj estas ligitaj al la nuna teksto kaj eble perdos siajn ligojn.

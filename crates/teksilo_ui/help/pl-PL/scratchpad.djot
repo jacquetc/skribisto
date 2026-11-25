@@ -43,6 +43,13 @@ przywrócisz elementu.
 - *Podziel scenę* zostawia brudnopis przy pierwszej scenie. Nowa scena zaczyna z pustym.
 - *Duplikuj* kopiuje brudnopis razem z elementem.
 
+## Wcześniejsze wersje
+
+Projekt przechowuje wcześniejsze wersje brudnopisu, tak jak wersje tekstu. Aby je zobaczyć,
+otwórz panel *Wersje* i wybierz u góry *Brudnopis*. *Przywróć tę wersję* przywraca jedną
+z nich, a `Ctrl+Z` w brudnopisie cofa przywrócenie. Zobacz
+[Kopie zapasowe i wersje](:help-backups-and-versions).
+
 ## Elementy bez brudnopisu
 
 Znacznik *Koniec książki* i inne znaczniki bez tekstu nie mają brudnopisu. Panel mówi o tym,

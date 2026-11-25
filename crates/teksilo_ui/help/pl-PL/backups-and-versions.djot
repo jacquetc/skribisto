@@ -41,6 +41,12 @@ Historia dotyczy jednej sceny, notatki lub streszczenia naraz. Każdy wpis wskaz
 
 Panel *Wersje* znajduje się po prawej stronie, obok paneli *Komentarze* i *Format*.
 
+U góry panelu wybierz, co chcesz przejrzeć:
+
+- *Streszczenie*, czyli streszczenie elementu.
+- *Tekst*, czyli tekst samego elementu.
+- *Brudnopis*, czyli notatki prowadzone obok elementu. Zobacz [brudnopis](:help-scratchpad).
+
 *Przywróć tę wersję* przywraca starszy tekst. Najpierw powstaje kopia bezpieczeństwa, a `Ctrl+Z` cofa przywrócenie.
 
 Przypnij wersję pochodzącą z kopii zapasowej, aby usuwanie starych plików jej nie skasowało.

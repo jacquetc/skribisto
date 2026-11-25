@@ -3512,8 +3512,10 @@ import-document-diagnostics-none = Inget att rapportera.
 versions-title = Versioner
 versions-scope-synopsis = Synopsis
 versions-scope-prose = Text
+versions-scope-scratchpad = Kladdblock
 versions-loading = Går igenom dina säkerhetskopior…
 versions-empty = Ingen tidigare version av detta ännu
+versions-empty-scratchpad = Ingen tidigare version av det här kladdblocket ännu
 versions-error = Det gick inte att läsa dina säkerhetskopior. Inget har gått förlorat, men listan kan vara ofullständig
 versions-did-not-exist = Fanns ännu inte den { $date }
 versions-deleted-after = Borttaget någon gång efter { $date }
@@ -3561,6 +3563,7 @@ versions-last-30-days = Senaste 30 dagarna
 versions-restore-button = Återställ den här versionen
 versions-restore-confirm-title = Ersätta den här texten med versionen från { $date }?
 versions-restore-confirm-text = Det du har nu ersätts med texten som objektet hade den { $date }.
+versions-restore-confirm-scratchpad = Anteckningarna i det här kladdblocket ersätts med dem det innehöll den { $date }.
 versions-restore-confirm-with-comments = Det du har nu ersätts med texten som objektet hade den { $date }. { $count ->
        [one] { $count } kommentar är förankrad i den nuvarande texten och kan bli övergiven.
       *[other] { $count } kommentarer är förankrade i den nuvarande texten och kan bli övergivna.

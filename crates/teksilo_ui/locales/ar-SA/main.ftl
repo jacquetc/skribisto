@@ -4942,8 +4942,10 @@ import-document-diagnostics-none = لا شيء للإبلاغ عنه.
 versions-title = الإصدارات
 versions-scope-synopsis = الملخص
 versions-scope-prose = النص
+versions-scope-scratchpad = مفكرة
 versions-loading = جارٍ البحث في نسخك الاحتياطية…
 versions-empty = لا يوجد إصدار سابق لهذا بعد
+versions-empty-scratchpad = لا يوجد إصدار سابق لهذه المفكرة بعد
 versions-error = تعذّرت قراءة نسخك الاحتياطية. لم يُفقد شيء، لكن هذه القائمة قد تكون ناقصة
 versions-did-not-exist = لم يكن موجودًا بعد في { $date }
 versions-deleted-after = حُذف في وقت ما بعد { $date }
@@ -5011,6 +5013,7 @@ versions-last-30-days = آخر 30 يومًا
 versions-restore-button = استعادة هذا الإصدار
 versions-restore-confirm-title = استبدال هذا النص بإصدار { $date }؟
 versions-restore-confirm-text = سيُستبدل ما لديك الآن بالنص الذي كان لهذا العنصر في { $date }.
+versions-restore-confirm-scratchpad = ستُستبدل الملاحظات في هذه المفكرة بما كانت تحتويه في { $date }.
 versions-restore-confirm-with-comments = سيُستبدل ما لديك الآن بالنص الذي كان لهذا العنصر في { $date }. { $count ->
     [zero] لا تعليقات مرتبطة بالنص الحالي.
     [one] تعليق واحد مرتبط بالنص الحالي وقد يصبح يتيمًا.

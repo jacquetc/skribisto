@@ -45,6 +45,13 @@ you restore the item.
   one.
 - *Duplicate* copies the scratchpad with the item.
 
+## Earlier versions
+
+The project keeps the scratchpad's earlier versions, as it does for your text. To see them,
+open the *Versions* panel and choose *Scratchpad* at its top. *Restore this version* puts one
+back, and `Ctrl+Z` in the scratchpad undoes that. See
+[Backups and versions](:help-backups-and-versions).
+
 ## Items without a scratchpad
 
 The *End of Book* marker, and the other markers that hold no text, have no scratchpad. The

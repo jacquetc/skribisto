@@ -4340,8 +4340,10 @@ import-document-diagnostics-none = Nimic de raportat.
 versions-title = Versiuni
 versions-scope-synopsis = Sinopsis
 versions-scope-prose = Text
+versions-scope-scratchpad = Carnet de notițe
 versions-loading = Se caută prin copiile de siguranță…
 versions-empty = Încă nu există o versiune anterioară
+versions-empty-scratchpad = Încă nu există o versiune anterioară a acestui carnet de notițe
 versions-error = Copiile de siguranță nu au putut fi citite. Nu s-a pierdut nimic, dar această listă poate fi incompletă
 versions-did-not-exist = Nu exista încă la { $date }
 versions-deleted-after = Șters la un moment dat după { $date }
@@ -4402,6 +4404,7 @@ versions-last-30-days = Ultimele 30 de zile
 versions-restore-button = Restaurează această versiune
 versions-restore-confirm-title = Înlocuiți acest text cu versiunea din { $date }?
 versions-restore-confirm-text = Ce aveți acum va fi înlocuit cu textul pe care acest element îl avea la { $date }.
+versions-restore-confirm-scratchpad = Notițele din acest carnet vor fi înlocuite cu cele pe care le conținea la { $date }.
 versions-restore-confirm-with-comments = Ce aveți acum va fi înlocuit cu textul pe care acest element îl avea la { $date }. { $count ->
        [one] { $count } comentariu este ancorat în textul actual și poate rămâne orfan.
        [few] { $count } comentarii sunt ancorate în textul actual și pot rămâne orfane.

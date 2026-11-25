@@ -39,7 +39,7 @@ use crate::editors::EditorsViewModel;
 use crate::models::OpenDocsStore;
 use crate::toast_scope::ToastWorkExt;
 use crate::versions::version_restore::{
-    self, RestoreRefusal, RestoreRequest, content_id_for, slot_for,
+    self, RestoreRefusal, RestoreRequest, Slot, content_id_for, slot_for,
 };
 
 /// One toast per feature: a second restore replaces its own snackbar rather than
@@ -91,7 +91,11 @@ pub fn restore_version(
         return refuse_backup(ctx, blocked);
     }
 
-    let wording = RestoreWording::new(req.taken_at, comments_at_risk);
+    let wording = RestoreWording::new(
+        req.taken_at,
+        comments_at_risk,
+        slot_for(&target) == Some(Slot::Scratchpad),
+    );
 
     let (docs, scheduler, editors, stack_id) = (
         docs.clone(),
@@ -182,9 +186,19 @@ struct RestoreWording {
 }
 
 impl RestoreWording {
-    fn new(taken_at: chrono::DateTime<chrono::Utc>, comments_at_risk: usize) -> Self {
+    /// `scratchpad` when the text put back is the item's scratchpad: the question
+    /// then names the notes, not "the text this item had", which a writer would
+    /// read as the scene itself. No comment can be anchored in a scratchpad, so
+    /// that sentence never carries the count.
+    fn new(
+        taken_at: chrono::DateTime<chrono::Utc>,
+        comments_at_risk: usize,
+        scratchpad: bool,
+    ) -> Self {
         let when = crate::shared::stamps::iso_stamp(taken_at);
-        let body = if comments_at_risk > 0 {
+        let body = if scratchpad {
+            tr!(versions_restore_confirm_scratchpad(date = when.clone()))
+        } else if comments_at_risk > 0 {
             tr!(versions_restore_confirm_with_comments(
                 date = when.clone(),
                 count = comments_at_risk as i64
@@ -250,7 +264,7 @@ mod tests {
             .with_timezone(&chrono::Utc);
         let date = || "2026-03-04 08:30".to_string();
 
-        let plain = RestoreWording::new(taken_at, 0);
+        let plain = RestoreWording::new(taken_at, 0, false);
         assert_eq!(
             plain.title.resolve_now(),
             tr!(versions_restore_confirm_title(date = date())).resolve_now(),
@@ -264,10 +278,18 @@ mod tests {
             tr!(versions_restored_toast(date = date())).resolve_now(),
         );
 
+        // A scratchpad's question names the notes, not the item's text.
+        let notes = RestoreWording::new(taken_at, 0, true);
+        assert_eq!(
+            notes.body.resolve_now(),
+            tr!(versions_restore_confirm_scratchpad(date = date())).resolve_now(),
+        );
+        assert_ne!(notes.body.resolve_now(), plain.body.resolve_now());
+
         // A plural message resolves to its own id with no bundle installed,
         // which would make this comparison pass whatever the date.
         crate::test_support::with_real_messages(|| {
-            let with_comments = RestoreWording::new(taken_at, 2);
+            let with_comments = RestoreWording::new(taken_at, 2, false);
             assert_eq!(
                 with_comments.body.resolve_now(),
                 "What you have now will be replaced by the text this item had on \

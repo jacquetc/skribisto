@@ -3571,8 +3571,10 @@ import-document-diagnostics-none = Nulla da segnalare.
 versions-title = Versioni
 versions-scope-synopsis = Sinossi
 versions-scope-prose = Testo
+versions-scope-scratchpad = Blocco note
 versions-loading = Esame dei backup…
 versions-empty = Nessuna versione precedente disponibile
+versions-empty-scratchpad = Nessuna versione precedente di questo blocco note
 versions-error = Impossibile leggere i backup. Nulla è andato perso, ma l'elenco potrebbe essere incompleto
 versions-did-not-exist = Non esisteva ancora il { $date }
 versions-deleted-after = Eliminato dopo il { $date }
@@ -3620,6 +3622,7 @@ versions-last-30-days = Ultimi 30 giorni
 versions-restore-button = Ripristina questa versione
 versions-restore-confirm-title = Sostituire questo testo con la versione del { $date }?
 versions-restore-confirm-text = Il testo attuale verrà sostituito con quello che questo elemento aveva il { $date }.
+versions-restore-confirm-scratchpad = Le note di questo blocco note verranno sostituite con quelle che conteneva il { $date }.
 versions-restore-confirm-with-comments = Il testo attuale verrà sostituito con quello che questo elemento aveva il { $date }. { $count ->
     [one] { $count } commento è ancorato al testo attuale e potrebbe restare orfano.
    *[other] { $count } commenti sono ancorati al testo attuale e potrebbero restare orfani.

@@ -3580,8 +3580,10 @@ import-document-diagnostics-none = Bildirilecek bir şey yok.
 versions-title = Sürümler
 versions-scope-synopsis = Özet
 versions-scope-prose = Metin
+versions-scope-scratchpad = Karalama defteri
 versions-loading = Yedekleriniz inceleniyor…
 versions-empty = Bunun henüz daha eski bir sürümü yok
+versions-empty-scratchpad = Bu karalama defterinin henüz daha eski bir sürümü yok
 versions-error = Yedekleriniz okunamadı. Hiçbir şey kaybolmadı ama bu liste eksik olabilir
 versions-did-not-exist = { $date } tarihinde henüz yoktu
 versions-deleted-after = { $date } tarihinden bir süre sonra silindi
@@ -3629,6 +3631,7 @@ versions-last-30-days = Son 30 gün
 versions-restore-button = Bu sürümü geri yükle
 versions-restore-confirm-title = Bu metin { $date } tarihli sürümle değiştirilsin mi?
 versions-restore-confirm-text = Şu anki metin, bu öğenin { $date } tarihindeki metniyle değiştirilecek.
+versions-restore-confirm-scratchpad = Bu karalama defterindeki notlar, defterin { $date } tarihindeki notlarıyla değiştirilecek.
 versions-restore-confirm-with-comments = Şu anki metin, bu öğenin { $date } tarihindeki metniyle değiştirilecek. { $count ->
     [one] { $count } yorum şu anki metne bağlı ve sahipsiz kalabilir.
    *[other] { $count } yorum şu anki metne bağlı ve sahipsiz kalabilir.

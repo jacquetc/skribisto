@@ -3627,8 +3627,10 @@ import-document-diagnostics-none = Niets te melden.
 versions-title = Versies
 versions-scope-synopsis = Synopsis
 versions-scope-prose = Tekst
+versions-scope-scratchpad = Kladblok
 versions-loading = Uw reservekopieën worden doorzocht…
 versions-empty = Nog geen eerdere versie hiervan
+versions-empty-scratchpad = Nog geen eerdere versie van dit kladblok
 versions-error = Kan uw reservekopieën niet lezen. Er is niets verloren gegaan, maar deze lijst is mogelijk onvolledig
 versions-did-not-exist = Bestond nog niet op { $date }
 versions-deleted-after = Verwijderd enige tijd na { $date }
@@ -3676,6 +3678,7 @@ versions-last-30-days = Afgelopen 30 dagen
 versions-restore-button = Deze versie herstellen
 versions-restore-confirm-title = Deze tekst vervangen door de versie van { $date }?
 versions-restore-confirm-text = Wat u nu hebt, wordt vervangen door de tekst die dit item op { $date } had.
+versions-restore-confirm-scratchpad = De notities in dit kladblok worden vervangen door wat het op { $date } bevatte.
 versions-restore-confirm-with-comments = Wat u nu hebt, wordt vervangen door de tekst die dit item op { $date } had. { $count ->
         [one] { $count } opmerking is in de huidige tekst verankerd en kan verweesd raken.
        *[other] { $count } opmerkingen zijn in de huidige tekst verankerd en kunnen verweesd raken.

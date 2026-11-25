@@ -55,6 +55,13 @@ Quellen, die bei jedem Eintrag genannt werden:
 
 Der Bereich *Versionen* liegt rechts im Fenster neben Kommentaren und Format.
 
+Wählen Sie oben im Bereich, was Sie zurückverfolgen möchten:
+
+- *Zusammenfassung*: die Zusammenfassung des Eintrags.
+- *Text*: der Text des Eintrags selbst.
+- *Notizblock*: die Notizen, die Sie neben dem Eintrag führen. Siehe
+  [Notizblock](:help-scratchpad).
+
 *Diese Version wiederherstellen* setzt den älteren Text zurück. Skribisto erstellt zuvor eine
 Sicherheitskopie; `Strg+Z` macht den Vorgang rückgängig.
 

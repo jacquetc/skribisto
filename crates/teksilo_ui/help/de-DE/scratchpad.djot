@@ -50,6 +50,13 @@ wenn Sie den Eintrag wiederhergestellt haben.
   leeren.
 - *Duplizieren* kopiert den Notizblock mit dem Eintrag.
 
+## Frühere Versionen
+
+Das Projekt bewahrt frühere Versionen des Notizblocks auf, wie bei Ihrem Text. Um sie zu
+sehen, öffnen Sie den Bereich *Versionen* und wählen oben *Notizblock*. *Diese Version
+wiederherstellen* setzt eine davon zurück, und `Strg+Z` im Notizblock macht das rückgängig.
+Siehe [Sicherungen und Versionen](:help-backups-and-versions).
+
 ## Einträge ohne Notizblock
 
 Die Markierung *Buchende* und die anderen Markierungen ohne Text haben keinen Notizblock. Der

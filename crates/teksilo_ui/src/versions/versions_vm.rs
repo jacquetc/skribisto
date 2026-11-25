@@ -37,7 +37,7 @@
 //! surface shows its empty state, which is the honest answer for a build with no
 //! backend.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use skrib_format::changes::{Timeline, timeline_for};
@@ -75,14 +75,55 @@ pub struct Pins {
 /// meaningful once you say which. The synopsis leads because it is short enough to
 /// read at a glance — a 3,000-word scene is a wall, and the row you are checking
 /// is usually the one you just changed.
+///
+/// The scratchpad comes last, and only on an item that can have one (see
+/// [`VersionScope::offered_for`]): the writer's notes beside the item are recorded
+/// with the project like its text, but they are not the text, so they never share
+/// a scope with it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum VersionScope {
     #[default]
     Synopsis,
     Prose,
+    Scratchpad,
 }
 
 impl VersionScope {
+    /// Every scope, in the order the segmented control shows them. A scope's
+    /// position here is its index in the control, so a new one goes last and the
+    /// writer's choice of the first two keeps its meaning.
+    pub const ALL: [VersionScope; 3] = [
+        VersionScope::Synopsis,
+        VersionScope::Prose,
+        VersionScope::Scratchpad,
+    ];
+
+    /// The scopes the dock offers for an item of this kind.
+    ///
+    /// The scratchpad is offered exactly where the item's type can carry one,
+    /// asked of the constraint matrix rather than listed here: the two markers that
+    /// hold no text at all (the end of a book, a text marker) have none, and every
+    /// other type has one, whether or not the writer has typed in it yet.
+    pub fn offered_for(
+        role: &common::entities::BinderItemRole,
+        sub_role: &common::entities::BinderItemSubRole,
+    ) -> &'static [VersionScope] {
+        if skribisto_model::content_allowed(role, sub_role, &ContentRole::ScratchpadText) {
+            &Self::ALL
+        } else {
+            &Self::ALL[..2]
+        }
+    }
+
+    /// This scope's position in the segmented control.
+    pub fn index(self) -> usize {
+        match self {
+            VersionScope::Synopsis => 0,
+            VersionScope::Prose => 1,
+            VersionScope::Scratchpad => 2,
+        }
+    }
+
     /// The content role this scope reads, for a row of the given kind.
     ///
     /// A Note's body is `NoteText`, a Scene's is `SceneText` and a paratext's (a
@@ -96,6 +137,9 @@ impl VersionScope {
     /// without it here the dock reported a Part with a recorded past as having
     /// none. A chapter carries an epigraph *and* prose, and its prose comes
     /// first: the chapter's text is what "Text" means there.
+    ///
+    /// `ScratchpadText` is never a body role: a scene's scratchpad is not its
+    /// text, and the scratchpad scope reads it alone.
     pub fn roles(self) -> &'static [ContentRole] {
         match self {
             VersionScope::Synopsis => &[ContentRole::SynopsisText],
@@ -105,6 +149,7 @@ impl VersionScope {
                 ContentRole::ParatextText,
                 ContentRole::EpigraphText,
             ],
+            VersionScope::Scratchpad => &[ContentRole::ScratchpadText],
         }
     }
 }
@@ -197,6 +242,19 @@ pub struct VersionsViewModel {
     /// mirrored back through an effect — two signals that can disagree, and an
     /// effect re-registered on every rebuild.
     scope_index: Signal<usize>,
+    /// The scopes the control offers for the item in front: all three where the
+    /// item can carry a scratchpad, the first two where it cannot. See
+    /// [`Self::set_item_kind`].
+    offered: Signal<&'static [VersionScope]>,
+    /// The scope the writer chose, which the control shows wherever it is offered.
+    /// Kept apart from [`Self::scope_index`], which is what the control shows: on an
+    /// item that has no scratchpad, a chosen Scratchpad is shown as the synopsis, and
+    /// comes back on the next item that has one. Read back from the control at each
+    /// change of item, so a segment the writer picked is the new choice.
+    chosen: Rc<Cell<VersionScope>>,
+    /// Whether the control shows the synopsis only because the chosen scope is not
+    /// offered here: the one case in which what it shows is not the writer's choice.
+    falling_back: Rc<Cell<bool>>,
     /// Which version's diff is shown. Held here rather than built in the dock so
     /// the highlight survives a rebuild.
     selection: SelectionModel,
@@ -251,6 +309,9 @@ impl VersionsViewModel {
             loading: Signal::new(false),
             error: Signal::new(String::new()),
             scope_index: Signal::new(0),
+            offered: Signal::new(&VersionScope::ALL[..2]),
+            chosen: Rc::new(Cell::new(VersionScope::Synopsis)),
+            falling_back: Rc::new(Cell::new(false)),
             // Single: a diff compares one version with the one before it, so a
             // multi-select cursor would have nothing to mean.
             selection: SelectionModel::new(SelectionMode::Single),
@@ -539,11 +600,75 @@ impl VersionsViewModel {
         self.view.set(view);
     }
 
+    /// The scope the control has selected, among those it offers.
     pub fn scope(&self) -> VersionScope {
-        match self.scope_index.get() {
-            0 => VersionScope::Synopsis,
-            _ => VersionScope::Prose,
+        let offered = self.offered.get();
+        offered
+            .get(self.scope_index.get())
+            .copied()
+            .unwrap_or_default()
+    }
+
+    /// The scopes the control offers for the item in front, in control order.
+    pub fn offered_scopes(&self) -> Signal<&'static [VersionScope]> {
+        self.offered.clone()
+    }
+
+    /// Tell the view-model what kind of item is in front, so the control offers
+    /// the scratchpad exactly where the item can have one.
+    ///
+    /// `None` (nothing in front, or an item the lookup no longer finds) offers the
+    /// two scopes every item had before scratchpads existed. A chosen scratchpad scope
+    /// is *shown* as the synopsis on an item with no scratchpad (the only items without
+    /// one are the two markers that hold no text at all, so the fallback hides nothing
+    /// the writer could have been reading), and it is not forgotten: the next item
+    /// that has a scratchpad shows its scratchpad again. Passing over a marker, or over
+    /// nothing at all, used to overwrite the writer's choice for good.
+    ///
+    /// Idempotent, like [`Self::set_project`]: the dock calls it from `build`.
+    pub fn set_item_kind(
+        &self,
+        kind: Option<(
+            common::entities::BinderItemRole,
+            common::entities::BinderItemSubRole,
+        )>,
+    ) {
+        // What the writer picked in the control since, under the list it picked from.
+        self.read_choice_back();
+        let offered = match &kind {
+            Some((role, sub_role)) => VersionScope::offered_for(role, sub_role),
+            None => &VersionScope::ALL[..2],
+        };
+        if self.offered.get() != offered {
+            self.offered.set(offered);
         }
+        let chosen = self.chosen.get();
+        let (shown, falling_back) = if offered.contains(&chosen) {
+            (chosen, false)
+        } else {
+            (VersionScope::Synopsis, true)
+        };
+        self.falling_back.set(falling_back);
+        if self.scope_index.get() != shown.index() {
+            self.scope_index.set(shown.index());
+        }
+    }
+
+    /// The scope the writer chose, whether or not the item in front offers it.
+    pub fn chosen_scope(&self) -> VersionScope {
+        self.read_choice_back();
+        self.chosen.get()
+    }
+
+    /// Take what the control shows as the writer's choice, unless it shows the
+    /// synopsis only as the fallback for a choice this item does not offer.
+    fn read_choice_back(&self) {
+        let shown = self.scope();
+        if self.falling_back.get() && shown == VersionScope::Synopsis {
+            return;
+        }
+        self.falling_back.set(false);
+        self.chosen.set(shown);
     }
 
     // ── wiring ──────────────────────────────────────────────────────────────
@@ -572,11 +697,15 @@ impl VersionsViewModel {
         }
     }
 
+    /// Select `scope` in the control. A scope the item in front does not offer
+    /// (the scratchpad of a marker) is not selected: see [`Self::set_item_kind`].
     pub fn set_scope(&self, scope: VersionScope) {
-        let want = match scope {
-            VersionScope::Synopsis => 0,
-            VersionScope::Prose => 1,
-        };
+        if !self.offered.get().contains(&scope) {
+            return;
+        }
+        self.chosen.set(scope);
+        self.falling_back.set(false);
+        let want = scope.index();
         if self.scope_index.get() != want {
             self.scope_index.set(want);
         }
@@ -623,9 +752,10 @@ impl VersionsViewModel {
                 let this = self.clone();
                 rt.spawn_local(async move {
                     match spawn_blocking(work).await {
-                        Ok(Ok(v)) => this.finish(v, String::new()),
-                        Ok(Err(e)) => this.finish(TimelineView::default(), e),
-                        Err(_) => this.finish(
+                        Ok(Ok(v)) => this.finish_for(&key, v, String::new()),
+                        Ok(Err(e)) => this.finish_for(&key, TimelineView::default(), e),
+                        Err(_) => this.finish_for(
+                            &key,
                             TimelineView::default(),
                             "the scan did not finish".to_string(),
                         ),
@@ -644,6 +774,20 @@ impl VersionsViewModel {
         self.view.set(view);
         self.error.set(error);
         self.loading.set(false);
+    }
+
+    /// Show the timeline a scan for `key` found, if `key` is still what the dock wants.
+    ///
+    /// Scans run off the UI thread and do not finish in the order they started: a slow
+    /// one for the row or the scope the writer has just left could land after the quick
+    /// one for where they are, and replace it. Checked against the key of the latest
+    /// load, a late answer to an earlier question is dropped (and `loading` left to the
+    /// scan still running).
+    fn finish_for(&self, key: &LoadKey, view: TimelineView, error: String) {
+        if self.loaded.borrow().as_ref() != Some(key) {
+            return;
+        }
+        self.finish(view, error);
     }
 
     /// Recompute the diff for the currently selected version, if it changed.

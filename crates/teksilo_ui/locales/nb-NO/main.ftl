@@ -3599,8 +3599,10 @@ import-document-diagnostics-none = Ingenting å rapportere.
 versions-title = Versjoner
 versions-scope-synopsis = Synopsis
 versions-scope-prose = Tekst
+versions-scope-scratchpad = Kladdeblokk
 versions-loading = Ser gjennom sikkerhetskopiene dine…
 versions-empty = Ingen tidligere versjon av dette ennå
+versions-empty-scratchpad = Ingen tidligere versjon av denne kladdeblokken ennå
 versions-error = Kunne ikke lese sikkerhetskopiene dine. Ingenting er tapt, men listen kan være ufullstendig
 versions-did-not-exist = Fantes ikke ennå { $date }
 versions-deleted-after = Slettet en gang etter { $date }
@@ -3648,6 +3650,7 @@ versions-last-30-days = Siste 30 dager
 versions-restore-button = Gjenopprett denne versjonen
 versions-restore-confirm-title = Vil du erstatte denne teksten med versjonen fra { $date }?
 versions-restore-confirm-text = Det du har nå, erstattes med teksten dette elementet hadde { $date }.
+versions-restore-confirm-scratchpad = Notatene i denne kladdeblokken erstattes med dem den inneholdt { $date }.
 versions-restore-confirm-with-comments = Det du har nå, erstattes med teksten dette elementet hadde { $date }. { $count ->
     [one] { $count } kommentar er forankret i den nåværende teksten og kan bli foreldreløs.
    *[other] { $count } kommentarer er forankret i den nåværende teksten og kan bli foreldreløse.

@@ -47,6 +47,13 @@ non ripristini l'elemento.
   note vuoto.
 - *Duplica* copia il blocco note insieme all'elemento.
 
+## Versioni precedenti
+
+Il progetto conserva le versioni precedenti del blocco note, come per il tuo testo. Per
+vederle, apri il pannello *Versioni* e scegli *Blocco note* in alto. *Ripristina questa
+versione* ne rimette una, e `Ctrl+Z` nel blocco note annulla il ripristino. Vedi
+[Backup e versioni](:help-backups-and-versions).
+
 ## Elementi senza blocco note
 
 Il segnaposto *Fine del libro*, e gli altri segnaposto che non contengono testo, non hanno un

@@ -3697,8 +3697,10 @@ import-document-diagnostics-none = Τίποτα προς αναφορά.
 versions-title = Εκδόσεις
 versions-scope-synopsis = Σύνοψη
 versions-scope-prose = Κείμενο
+versions-scope-scratchpad = Σημειωματάριο
 versions-loading = Αναζήτηση στα αντίγραφα ασφαλείας σας…
 versions-empty = Δεν υπάρχει ακόμη προηγούμενη έκδοση
+versions-empty-scratchpad = Δεν υπάρχει ακόμη προηγούμενη έκδοση αυτού του σημειωματαρίου
 versions-error = Δεν ήταν δυνατή η ανάγνωση των αντιγράφων ασφαλείας σας. Δεν χάθηκε τίποτα, αλλά αυτή η λίστα μπορεί να είναι ελλιπής
 versions-did-not-exist = Δεν υπήρχε ακόμη στις { $date }
 versions-deleted-after = Διαγράφηκε κάποια στιγμή μετά τις { $date }
@@ -3750,6 +3752,7 @@ versions-last-30-days = Τελευταίες 30 ημέρες
 versions-restore-button = Επαναφορά αυτής της έκδοσης
 versions-restore-confirm-title = Αντικατάσταση αυτού του κειμένου με την έκδοση της { $date };
 versions-restore-confirm-text = Ό,τι έχετε τώρα θα αντικατασταθεί από το κείμενο που είχε αυτό το στοιχείο στις { $date }.
+versions-restore-confirm-scratchpad = Οι σημειώσεις αυτού του σημειωματαρίου θα αντικατασταθούν από όσες περιείχε στις { $date }.
 versions-restore-confirm-with-comments = Ό,τι έχετε τώρα θα αντικατασταθεί από το κείμενο που είχε αυτό το στοιχείο στις { $date }. { $count ->
     [one] { $count } σχόλιο είναι αγκυρωμένο στο τρέχον κείμενο και μπορεί να μείνει ορφανό.
    *[other] { $count } σχόλια είναι αγκυρωμένα στο τρέχον κείμενο και μπορεί να μείνουν ορφανά.

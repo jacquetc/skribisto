@@ -4125,8 +4125,10 @@ import-document-diagnostics-none = Nothing to report.
 versions-title = Versions
 versions-scope-synopsis = Synopsis
 versions-scope-prose = Text
+versions-scope-scratchpad = Scratchpad
 versions-loading = Looking through your backups…
 versions-empty = No earlier version of this yet
+versions-empty-scratchpad = No earlier version of this scratchpad yet
 versions-error = Couldn't read your backups. Nothing has been lost, but this list may be incomplete
 versions-did-not-exist = Didn't exist yet on { $date }
 versions-deleted-after = Deleted some time after { $date }
@@ -4182,6 +4184,7 @@ versions-last-30-days = Last 30 days
 versions-restore-button = Restore this version
 versions-restore-confirm-title = Replace this text with the version from { $date }?
 versions-restore-confirm-text = What you have now will be replaced by the text this item had on { $date }.
+versions-restore-confirm-scratchpad = The notes in this scratchpad will be replaced by the ones it held on { $date }.
 versions-restore-confirm-with-comments = What you have now will be replaced by the text this item had on { $date }. { $count ->
     [one] { $count } comment is anchored in the current text and may be left orphaned.
    *[other] { $count } comments are anchored in the current text and may be left orphaned.

@@ -3985,8 +3985,10 @@ import-document-diagnostics-none = Není co hlásit.
 versions-title = Verze
 versions-scope-synopsis = Synopse
 versions-scope-prose = Text
+versions-scope-scratchpad = Poznámkový blok
 versions-loading = Procházení vašich záloh…
 versions-empty = Zatím žádná dřívější verze
+versions-empty-scratchpad = Zatím žádná dřívější verze tohoto poznámkového bloku
 versions-error = Vaše zálohy nebylo možné přečíst. Nic se neztratilo, ale tento seznam může být neúplný
 versions-did-not-exist = K { $date } ještě neexistovalo
 versions-deleted-after = Smazáno někdy po { $date }
@@ -4039,6 +4041,7 @@ versions-last-30-days = Posledních 30 dní
 versions-restore-button = Obnovit tuto verzi
 versions-restore-confirm-title = Nahradit tento text verzí z { $date }?
 versions-restore-confirm-text = To, co máte teď, bude nahrazeno textem, který tato položka měla k { $date }.
+versions-restore-confirm-scratchpad = Poznámky v tomto poznámkovém bloku budou nahrazeny těmi, které obsahoval k { $date }.
 versions-restore-confirm-with-comments = To, co máte teď, bude nahrazeno textem, který tato položka měla k { $date }. { $count ->
     [one] { $count } komentář je ukotven v současném textu a může zůstat osiřelý.
     [few] { $count } komentáře jsou ukotveny v současném textu a mohou zůstat osiřelé.

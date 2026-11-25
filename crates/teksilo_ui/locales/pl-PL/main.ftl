@@ -4349,8 +4349,10 @@ import-document-diagnostics-none = Nic do zgłoszenia.
 versions-title = Wersje
 versions-scope-synopsis = Streszczenie
 versions-scope-prose = Tekst
+versions-scope-scratchpad = Brudnopis
 versions-loading = Przeglądanie kopii zapasowych…
 versions-empty = Brak jeszcze wcześniejszej wersji
+versions-empty-scratchpad = Brak jeszcze wcześniejszej wersji tego brudnopisu
 versions-error = Nie udało się odczytać kopii zapasowych. Nic nie zostało utracone, ale ta lista może być niepełna
 versions-did-not-exist = Jeszcze nie istniało w dniu { $date }
 versions-deleted-after = Usunięto jakiś czas po { $date }
@@ -4408,6 +4410,7 @@ versions-last-30-days = Ostatnie 30 dni
 versions-restore-button = Przywróć tę wersję
 versions-restore-confirm-title = Zastąpić ten tekst wersją z { $date }?
 versions-restore-confirm-text = To, co masz teraz, zostanie zastąpione tekstem, który ten element miał w dniu { $date }.
+versions-restore-confirm-scratchpad = Notatki w tym brudnopisie zostaną zastąpione tymi, które zawierał w dniu { $date }.
 versions-restore-confirm-with-comments = To, co masz teraz, zostanie zastąpione tekstem, który ten element miał w dniu { $date }. { $count ->
         [one] { $count } komentarz jest zakotwiczony w bieżącym tekście i może zostać osierocony.
         [few] { $count } komentarze są zakotwiczone w bieżącym tekście i mogą zostać osierocone.

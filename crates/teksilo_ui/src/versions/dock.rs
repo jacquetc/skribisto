@@ -45,8 +45,8 @@ use teksilo::widgets::rich_text::{RichTextEditor, ScrollPolicy};
 use teksilo::widgets::{
     Button, ButtonVariant, DateRangeEdit, Divider, DockOpenLocation, DockSide, DockWidget,
     DockWidgetId, Expand, FixedSize, FocusScope, HStack, IconButton, IconButtonSize, ListView,
-    Padding, ProgressBar, ScrollBarMode, Segment, SegmentedControl, Spacer, StandardListItem,
-    TextWidget, TraversalScopePolicy, VStack,
+    Padding, ProgressBar, ScrollBarMode, Segment, SegmentOverflow, SegmentSizing, SegmentedControl,
+    Spacer, StandardListItem, TextWidget, TraversalScopePolicy, VStack,
 };
 
 use skrib_format::changes::Change;
@@ -54,7 +54,7 @@ use skrib_format::versions::SourceKind;
 
 use crate::shared::stamps::Zone;
 use crate::versions::version_diff::{self, CollapseRule};
-use crate::versions::{TimelineView, VersionDiff, VersionsViewModel};
+use crate::versions::{TimelineView, VersionDiff, VersionScope, VersionsViewModel};
 use crate::widgets::DiffPane;
 
 /// Package the versions panel as a trailing `DockWidget`.
@@ -65,11 +65,13 @@ pub fn versions_dock(
     uid_of: UidLookup,
     restore: RestoreFn,
     language_of: LanguageLookup,
+    kind_of: KindLookup,
 ) -> DockWidget {
     DockWidget::new(dock_id, tr!(versions_title()), move |_id| {
         FocusScope::new(TraversalScopePolicy::Continue).child(
             VersionsPanel::new(vm.clone(), focus.clone(), uid_of.clone(), restore.clone())
-                .with_language(language_of.clone()),
+                .with_language(language_of.clone())
+                .with_kind(kind_of.clone()),
         )
     })
     .icon(crate::icons::activity::versions_icon)
@@ -88,6 +90,18 @@ pub type UidLookup = Rc<dyn Fn(u64) -> Option<uuid::Uuid>>;
 /// The language an item is written in, by its store id, for the comparison's text.
 pub type LanguageLookup = Rc<dyn Fn(u64) -> Option<LanguageTag>>;
 
+/// What kind of item a store id is, for the scopes the dock offers it: the
+/// scratchpad scope exists only where the item's type can carry a scratchpad.
+/// `None` when the item is not found.
+pub type KindLookup = Rc<
+    dyn Fn(
+        u64,
+    ) -> Option<(
+        common::entities::BinderItemRole,
+        common::entities::BinderItemSubRole,
+    )>,
+>;
+
 /// Put a past version back.
 ///
 /// A closure for the same reason [`UidLookup`] is one: the guarded sequence
@@ -104,6 +118,8 @@ struct VersionsPanel {
     restore: RestoreFn,
     /// `None` in the headless tests, which build the panel with no project.
     language_of: Option<LanguageLookup>,
+    /// `None` in the headless tests that need no scratchpad scope.
+    kind_of: Option<KindLookup>,
     pane: DiffPane,
     root_child: Option<WidgetId>,
 }
@@ -121,6 +137,7 @@ impl VersionsPanel {
             uid_of,
             restore,
             language_of: None,
+            kind_of: None,
             pane: DiffPane::new(),
             root_child: None,
         }
@@ -129,6 +146,12 @@ impl VersionsPanel {
     /// Declare the comparison's text in the language of the item it belongs to.
     fn with_language(mut self, language_of: LanguageLookup) -> Self {
         self.language_of = Some(language_of);
+        self
+    }
+
+    /// Offer the scratchpad scope on the items whose type can carry one.
+    fn with_kind(mut self, kind_of: KindLookup) -> Self {
+        self.kind_of = Some(kind_of);
         self
     }
 }
@@ -150,6 +173,9 @@ impl Widget for VersionsPanel {
         self.vm
             .scope_index()
             .bind_to(sid, reg, BindingLevel::Rebuild);
+        self.vm
+            .offered_scopes()
+            .bind_to(sid, reg, BindingLevel::Rebuild);
         self.vm.view().bind_to(sid, reg, BindingLevel::Rebuild);
         // The project's identity lands after the shell is built, and it is what
         // makes the first scan possible at all.
@@ -170,9 +196,14 @@ impl Widget for VersionsPanel {
 
         self.vm
             .set_async_runtime(ctx.app_state::<AsyncRuntimeHandle>().cloned());
-        // Both are no-ops when nothing they depend on moved, which is what makes
-        // them safe to call from a function every one of their own signals
-        // rebuilds.
+        // All three are no-ops when nothing they depend on moved, which is what
+        // makes them safe to call from a function every one of their own signals
+        // rebuilds. The kind comes first: it decides which scope the load reads.
+        let kind = self
+            .focus
+            .get()
+            .and_then(|id| self.kind_of.as_ref().and_then(|of| of(id)));
+        self.vm.set_item_kind(kind);
         self.vm
             .load_for(self.focus.get().and_then(|id| (self.uid_of)(id)));
         self.vm.sync_diff();
@@ -219,7 +250,12 @@ impl VersionsPanel {
         }
         let view = vm.view().get();
         if view.is_empty() && view.timeline.unreadable.is_empty() {
-            return Box::new(note(tr!(versions_empty())));
+            // A scratchpad nobody has written in yet is the common case, and "no
+            // earlier version of this" would read as a claim about the item's text.
+            return Box::new(note(match vm.scope() {
+                VersionScope::Scratchpad => tr!(versions_empty_scratchpad()),
+                VersionScope::Synopsis | VersionScope::Prose => tr!(versions_empty()),
+            }));
         }
         if vm.visible_count() == 0 {
             // The row has a past; the filters just exclude all of it. Saying "no
@@ -409,31 +445,56 @@ impl VersionsPanel {
     }
 }
 
-/// Synopsis / Prose. Which content a version is *of* is not a detail: a row that
-/// says "changed" and opens onto an identical text destroys trust immediately.
+/// Synopsis / Prose / Scratchpad. Which content a version is *of* is not a
+/// detail: a row that says "changed" and opens onto an identical text destroys
+/// trust immediately.
+///
+/// The segments are the view-model's offered scopes, so the scratchpad segment
+/// appears exactly on the items that can have one.
 fn scope_bar(vm: VersionsViewModel) -> impl Widget + use<> {
+    scope_bar_around(scope_control(&vm), vm)
+}
+
+/// The scope control, each segment as wide as its own name, and never one of them
+/// behind an overflow menu.
+///
+/// Every scope on the strip, at the default 300 dp width of the dock and in every
+/// locale: three equal segments, each as wide as the longest name, needed more than
+/// the rail has once the scratchpad came, and the control put the third behind its
+/// overflow menu, where a writer looking for their notes' past would not think to
+/// look. Each segment at the width of its own name fits ("Text" is short in every
+/// language), and so does the longest set of names the locales hold, which
+/// `every_scope_is_on_the_strip_in_every_locale` measures. A dock made narrower than
+/// that shortens the names rather than hiding one; each segment's tooltip still says
+/// it whole.
+fn scope_control(vm: &VersionsViewModel) -> SegmentedControl {
     // The segmented control writes the view-model's own signal, so there is
     // nothing to mirror and no effect to re-register on each rebuild.
-    let scope = SegmentedControl::indexed(vm.scope_index())
-        .segment(Segment::new(tr!(versions_scope_synopsis())))
-        .segment(Segment::new(tr!(versions_scope_prose())));
-    let only = vm.pinned_only().get();
-    let filter_vm = vm.clone();
+    vm.offered_scopes()
+        .get()
+        .iter()
+        .fold(
+            SegmentedControl::indexed(vm.scope_index()),
+            |control, scope| {
+                control.segment(Segment::new(scope_label(*scope)).tooltip(scope_label(*scope)))
+            },
+        )
+        .sizing(SegmentSizing::Fit)
+        .overflow(SegmentOverflow::Compress)
+}
+
+/// The scope control on a row of its own, the dates, and the filters (the pinned-only
+/// switch among them).
+///
+/// The scope control has the whole width of the dock: with the pinned-only switch
+/// beside it, the three names did not fit in the longest locales.
+fn scope_bar_around(scope: SegmentedControl, vm: VersionsViewModel) -> impl Widget + use<> {
     teksu!(
         Padding::symmetric(8.0, 8.0) {
             VStack {
                 spacing: 6.0
-                HStack {
-                    spacing: 6.0
-                    Expand::horizontal {
-                        child: scope
-                    }
-                    IconButton::new(crate::icons::versions::pinned()) {
-                        size: IconButtonSize::Compact
-                        icon_role: if only { TextRole::Accent } else { TextRole::Secondary }
-                        tooltip: tr!(versions_pinned_only())
-                        on_activate_fn: move |_| filter_vm.toggle_pinned_only()
-                    }
+                Expand::horizontal {
+                    child: scope
                 }
                 // Its own row: `DateRangeEdit` is two date fields, an arrow and a
                 // calendar button, and there is no compact form of it. Beside the
@@ -451,6 +512,15 @@ fn scope_bar(vm: VersionsViewModel) -> impl Widget + use<> {
     )
 }
 
+/// The name a scope wears in the control.
+fn scope_label(scope: VersionScope) -> LocalizedString {
+    match scope {
+        VersionScope::Synopsis => tr!(versions_scope_synopsis()),
+        VersionScope::Prose => tr!(versions_scope_prose()),
+        VersionScope::Scratchpad => tr!(versions_scope_scratchpad()),
+    }
+}
+
 /// The preset, and the way back out of it.
 ///
 /// The two belong together: a one-click way *into* a filtered list needs a
@@ -459,15 +529,28 @@ fn scope_bar(vm: VersionsViewModel) -> impl Widget + use<> {
 /// filtering, so the row is empty in the ordinary case.
 fn filter_row(vm: VersionsViewModel) -> impl Widget + use<> {
     let recent_vm = vm.clone();
+    let pin_vm = vm.clone();
+    let only = vm.pinned_only().get();
     // The same glyph the Timeline band's preset wears: one control, one picture,
     // whichever surface a writer meets it on.
-    let mut row = HStack::new().spacing(6.0).child(teksu!(
-        IconButton::new(crate::icons::versions::recent()) {
-            size: IconButtonSize::Compact
-            tooltip: tr!(versions_last_30_days())
-            on_activate_fn: move |_| recent_vm.set_last_days(crate::timeline::dock::RECENT_DAYS)
-        }
-    ));
+    let mut row = HStack::new()
+        .spacing(6.0)
+        .child(teksu!(
+            IconButton::new(crate::icons::versions::recent()) {
+                size: IconButtonSize::Compact
+                tooltip: tr!(versions_last_30_days())
+                on_activate_fn: move |_| recent_vm.set_last_days(crate::timeline::dock::RECENT_DAYS)
+            }
+        ))
+        // Pinned only: a filter like the other two, so it sits with them.
+        .child(teksu!(
+            IconButton::new(crate::icons::versions::pinned()) {
+                size: IconButtonSize::Compact
+                icon_role: if only { TextRole::Accent } else { TextRole::Secondary }
+                tooltip: tr!(versions_pinned_only())
+                on_activate_fn: move |_| pin_vm.toggle_pinned_only()
+            }
+        ));
     if vm.is_filtered() {
         let clear_vm = vm.clone();
         row = row.child(teksu!(
@@ -720,7 +803,7 @@ use crate::shared::text::dock_note as note;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::versions::{Pins, ProjectHandle, VersionScope};
+    use crate::versions::{Pins, ProjectHandle};
     use teksilo::core::widget_tree::WidgetTree;
 
     fn panel(vm: VersionsViewModel, focus: Option<u64>) -> VersionsPanel {
@@ -730,6 +813,46 @@ mod tests {
             Rc::new(|_| Some(uuid::Uuid::from_u128(1))),
             Rc::new(|_, _| {}),
         )
+    }
+
+    /// All three scopes fit on the strip at their full names, at the dock's default
+    /// 300 dp in every locale the app ships, measured with real text metrics (the
+    /// bundled Inter): with the mock 8 px a character no name would ever be too long.
+    /// Each locale's names, whichever scope is selected.
+    #[test]
+    fn every_scope_is_on_the_strip_in_every_locale() {
+        use common::entities::{BinderItemRole, BinderItemSubRole};
+        for &locale in crate::startup::SUPPORTED_LOCALES {
+            crate::test_support::with_shipped_messages(locale, || {
+                for selected in VersionScope::ALL {
+                    let vm = VersionsViewModel::new();
+                    vm.set_item_kind(Some((BinderItemRole::Item, BinderItemSubRole::Scene)));
+                    vm.set_scope(selected);
+                    // The production control compresses rather than overflows, so
+                    // `is_overflowing` would say nothing. The same segments asked to
+                    // overflow instead do so exactly when their names, at their own
+                    // widths, do not fit: that is what this measures.
+                    let control = scope_control(&vm).overflow(SegmentOverflow::Menu);
+                    let overflowing = control.is_overflowing();
+                    let app_ctx = Rc::new(frontend::AppContext::new());
+                    let mut tree = crate::test_support::tree_with_settings(&app_ctx)
+                        .with_text_backend(Rc::new(std::cell::RefCell::new(
+                            teksilo::text::TypesetterBridge::new_with_default_font(),
+                        )));
+                    let id = tree.add(scope_bar_around(control, vm.clone()));
+                    tree.layout(SizeProposal::exact(300.0, 600.0));
+                    assert!(tree.bounds(id).width > 0.0);
+                    let names: Vec<String> = VersionScope::ALL
+                        .iter()
+                        .map(|s| scope_label(*s).resolve_now())
+                        .collect();
+                    assert!(
+                        !overflowing.get(),
+                        "{locale}: {names:?} do not all fit at 300 dp ({selected:?} selected)"
+                    );
+                }
+            });
+        }
     }
 
     /// The dock lays out in every state it can be in, including the ones a writer
@@ -772,6 +895,78 @@ mod tests {
                 "the versions dock laid out to zero width in the '{name}' state",
             );
         }
+    }
+
+    /// Every name and value the accessibility walk gives the panel's nodes: a
+    /// segment is heard by its name, a note by its text.
+    fn spoken_names(tree: &mut WidgetTree) -> Vec<String> {
+        tree.sync_accessibility()
+            .nodes
+            .iter()
+            .flat_map(|(_, node)| [node.label(), node.value()])
+            .flatten()
+            .map(str::to_string)
+            .collect()
+    }
+
+    /// The panel over the item `kind`, with the scratchpad scope chosen if offered.
+    fn scratchpad_panel(
+        kind: (
+            common::entities::BinderItemRole,
+            common::entities::BinderItemSubRole,
+        ),
+    ) -> (WidgetTree, VersionsViewModel) {
+        let vm = VersionsViewModel::new();
+        vm.set_item_kind(Some(kind.clone()));
+        let lookup: KindLookup = Rc::new(move |_| Some(kind.clone()));
+        vm.set_scope(VersionScope::Scratchpad);
+        let mut tree = WidgetTree::new();
+        tree.add_boxed(Box::new(panel(vm.clone(), Some(7)).with_kind(lookup)));
+        tree.layout(SizeProposal::exact(300.0, 600.0));
+        (tree, vm)
+    }
+
+    /// A scene's panel names the scratchpad among its scopes and, with nothing
+    /// recorded yet, says so about the scratchpad rather than about the item.
+    #[test]
+    fn a_scenes_panel_offers_its_scratchpad_and_says_when_it_has_no_past() {
+        use common::entities::{BinderItemRole, BinderItemSubRole};
+        let (mut tree, vm) = scratchpad_panel((BinderItemRole::Item, BinderItemSubRole::Scene));
+        assert_eq!(vm.scope(), VersionScope::Scratchpad);
+        let names = spoken_names(&mut tree);
+        let scope = tr!(versions_scope_scratchpad()).resolve_now();
+        assert!(
+            names.iter().any(|n| n == &scope),
+            "the scratchpad segment is named: {names:?}"
+        );
+        let empty = tr!(versions_empty_scratchpad()).resolve_now();
+        let generic = tr!(versions_empty()).resolve_now();
+        assert!(
+            names.iter().any(|n| n == &empty),
+            "the empty state names the scratchpad: {names:?}"
+        );
+        assert!(!names.iter().any(|n| n == &generic));
+    }
+
+    /// A marker that holds no text has no scratchpad segment, and the panel falls
+    /// back to the synopsis rather than pointing past its last segment.
+    #[test]
+    fn a_markers_panel_has_no_scratchpad_segment() {
+        use common::entities::{BinderItemRole, BinderItemSubRole};
+        let (mut tree, vm) = scratchpad_panel((BinderItemRole::Item, BinderItemSubRole::BookEnd));
+        assert_eq!(vm.scope(), VersionScope::Synopsis);
+        let names = spoken_names(&mut tree);
+        let scope = tr!(versions_scope_scratchpad()).resolve_now();
+        assert!(
+            !names.iter().any(|n| n == &scope),
+            "no scratchpad segment on a marker: {names:?}"
+        );
+        assert!(
+            names
+                .iter()
+                .any(|n| n == &tr!(versions_scope_prose()).resolve_now()),
+            "the two other scopes are still there: {names:?}"
+        );
     }
 
     /// Every line of text the panel draws, however deep.

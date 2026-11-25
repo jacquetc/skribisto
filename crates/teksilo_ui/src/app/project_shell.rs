@@ -638,6 +638,13 @@ impl App {
                     let docs = session.open_docs.clone();
                     std::rc::Rc::new(move |id| docs.item_language(id))
                 },
+                {
+                    let app_ctx = self.app_ctx.clone();
+                    std::rc::Rc::new(move |id| {
+                        crate::shared::binder_ops::item_dto(&app_ctx, id)
+                            .map(|dto| (dto.role, dto.sub_role))
+                    })
+                },
             ))
             .dock(crate::resources::dock::resources_dock(
                 resources.clone(),

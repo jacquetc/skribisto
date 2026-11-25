@@ -45,6 +45,12 @@ La cronologia segue una scena, nota o sinossi alla volta. Proviene da due fonti,
 
 Il pannello *Versioni* è a destra della finestra, accanto a Commenti e Formato.
 
+In alto nel pannello, scegli cosa consultare:
+
+- *Sinossi*, il riassunto dell'elemento.
+- *Testo*, il testo dell'elemento stesso.
+- *Blocco note*, gli appunti che tieni accanto all'elemento. Vedi [il blocco note](:help-scratchpad).
+
 *Ripristina questa versione* rimette il testo precedente. Skribisto crea prima un backup di sicurezza e `Ctrl+Z` annulla il ripristino.
 
 Fissa una versione proveniente da un backup per impedire che la pulizia dei vecchi file la elimini.

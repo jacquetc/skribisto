@@ -54,6 +54,12 @@ every entry tells you which one:
 
 The *Versions* panel sits on the right of the window, beside Comments and Format.
 
+At its top, choose what to look back through:
+
+- *Synopsis*, the item's summary.
+- *Text*, the item's own text.
+- *Scratchpad*, the notes you keep beside the item. See [the scratchpad](:help-scratchpad).
+
 *Restore this version* puts the older text back. Skribisto takes a safety backup first, and
 `Ctrl+Z` undoes it.
 

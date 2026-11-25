@@ -3707,8 +3707,10 @@ import-document-diagnostics-none = Keine Hinweise.
 versions-title = Versionen
 versions-scope-synopsis = Zusammenfassung
 versions-scope-prose = Text
+versions-scope-scratchpad = Notizblock
 versions-loading = Sicherungen werden durchsucht…
 versions-empty = Noch keine frühere Version vorhanden
+versions-empty-scratchpad = Noch keine frühere Version dieses Notizblocks vorhanden
 versions-error = Ihre Sicherungen konnten nicht gelesen werden. Nichts ist verloren, aber diese Liste ist möglicherweise unvollständig
 versions-did-not-exist = War am { $date } noch nicht vorhanden
 versions-deleted-after = Nach dem { $date } gelöscht
@@ -3756,6 +3758,7 @@ versions-last-30-days = Letzte 30 Tage
 versions-restore-button = Diese Version wiederherstellen
 versions-restore-confirm-title = Diesen Text durch die Version vom { $date } ersetzen?
 versions-restore-confirm-text = Der aktuelle Text wird durch den Stand dieses Eintrags vom { $date } ersetzt.
+versions-restore-confirm-scratchpad = Die Notizen in diesem Notizblock werden durch den Stand vom { $date } ersetzt.
 versions-restore-confirm-with-comments = Der aktuelle Text wird durch den Stand dieses Eintrags vom { $date } ersetzt. { $count ->
     [one] { $count } Kommentar ist im aktuellen Text verankert und könnte verwaisen.
    *[other] { $count } Kommentare sind im aktuellen Text verankert und könnten verwaisen.

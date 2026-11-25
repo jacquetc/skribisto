@@ -61,6 +61,13 @@ lugares, y cada entrada le indica cuál:
 
 El panel *Versiones* está a la derecha de la ventana, junto a Comentarios y Formato.
 
+En la parte superior del panel, elija qué quiere revisar:
+
+- *Sinopsis*, el resumen del elemento.
+- *Texto*, el texto del propio elemento.
+- *Bloc de notas*, las notas que guarda junto al elemento. Consulte
+  [el bloc de notas](:help-scratchpad).
+
 *Restaurar esta versión* vuelve a poner el texto anterior. Skribisto hace antes una copia de
 seguridad de precaución, y `Ctrl+Z` lo deshace.
 

@@ -61,6 +61,13 @@ endroits, et chaque entrée vous dit lequel :
 Le panneau *Versions* se trouve à droite de la fenêtre, à côté de Commentaires et Mise en
 forme.
 
+En haut du panneau, choisissez ce que vous voulez revoir :
+
+- *Synopsis*, le résumé de l’élément ;
+- *Texte*, le texte de l’élément lui-même ;
+- *Bloc-notes*, les notes que vous gardez à côté de l’élément. Voir
+  [le bloc-notes](:help-scratchpad).
+
 *Restaurer cette version* remet l’ancien texte en place. Skribisto crée d’abord une copie de
 sécurité, et `Ctrl+Z` annule l’opération.
 

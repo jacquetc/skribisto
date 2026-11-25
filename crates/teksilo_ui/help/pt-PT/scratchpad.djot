@@ -49,6 +49,13 @@ item.
   notas vazio.
 - *Duplicar* copia o bloco de notas com o item.
 
+## Versões anteriores
+
+O projeto guarda as versões anteriores do bloco de notas, tal como as do seu texto. Para as
+ver, abra o painel *Versões* e escolha *Bloco de notas* no topo. *Restaurar esta versão*
+repõe uma delas, e `Ctrl+Z` no bloco de notas anula o restauro. Consulte
+[Cópias de segurança e versões](:help-backups-and-versions).
+
 ## Itens sem bloco de notas
 
 O marcador *Fim do livro*, e os outros marcadores que não contêm texto, não têm bloco de

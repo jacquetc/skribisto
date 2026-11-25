@@ -3975,8 +3975,10 @@ import-document-diagnostics-none = אין מה לדווח.
 versions-title = גרסאות
 versions-scope-synopsis = תקציר
 versions-scope-prose = טקסט
+versions-scope-scratchpad = פנקס טיוטה
 versions-loading = מחפש בגיבויים שלכם…
 versions-empty = אין עדיין גרסה קודמת של זה
+versions-empty-scratchpad = אין עדיין גרסה קודמת של פנקס הטיוטה הזה
 versions-error = לא ניתן היה לקרוא את הגיבויים שלכם. שום דבר לא אבד, אבל ייתכן שהרשימה הזו חלקית
 versions-did-not-exist = עדיין לא היה קיים ב־{ $date }
 versions-deleted-after = נמחק זמן מה אחרי { $date }
@@ -4024,6 +4026,7 @@ versions-last-30-days = 30 הימים האחרונים
 versions-restore-button = שחזור הגרסה הזו
 versions-restore-confirm-title = להחליף את הטקסט הזה בגרסה מ־{ $date }?
 versions-restore-confirm-text = מה שיש לכם עכשיו יוחלף בטקסט שהיה לפריט הזה ב־{ $date }.
+versions-restore-confirm-scratchpad = ההערות בפנקס הטיוטה הזה יוחלפו במה שהיה בו ב־{ $date }.
 versions-restore-confirm-with-comments = מה שיש לכם עכשיו יוחלף בטקסט שהיה לפריט הזה ב־{ $date }. { $count ->
     [one] הערה אחת מעוגנת בטקסט הנוכחי ועלולה להישאר יתומה.
    *[other] { $count } הערות מעוגנות בטקסט הנוכחי ועלולות להישאר יתומות.

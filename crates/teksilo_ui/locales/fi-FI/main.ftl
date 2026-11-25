@@ -3693,8 +3693,10 @@ import-document-diagnostics-none = Ei mitään raportoitavaa.
 versions-title = Versiot
 versions-scope-synopsis = Tiivistelmä
 versions-scope-prose = Teksti
+versions-scope-scratchpad = Muistilehtiö
 versions-loading = Käydään läpi varmuuskopioitasi…
 versions-empty = Tästä ei ole vielä aiempaa versiota
+versions-empty-scratchpad = Tästä muistilehtiöstä ei ole vielä aiempaa versiota
 versions-error = Varmuuskopioitasi ei voitu lukea. Mitään ei ole kadonnut, mutta tämä luettelo voi olla puutteellinen
 versions-did-not-exist = Ei ollut vielä olemassa { $date }
 versions-deleted-after = Poistettu joskus { $date } jälkeen
@@ -3742,6 +3744,7 @@ versions-last-30-days = Viimeiset 30 päivää
 versions-restore-button = Palauta tämä versio
 versions-restore-confirm-title = Korvataanko tämä teksti versiolla ajankohdalta { $date }?
 versions-restore-confirm-text = Nykyinen teksti korvataan tekstillä, joka tällä kohteella oli ajankohtana { $date }.
+versions-restore-confirm-scratchpad = Tämän muistilehtiön muistiinpanot korvataan niillä, jotka siinä oli ajankohtana { $date }.
 versions-restore-confirm-with-comments = Nykyinen teksti korvataan tekstillä, joka tällä kohteella oli ajankohtana { $date }. { $count ->
        [one] { $count } kommentti on ankkuroitu nykyiseen tekstiin ja voi jäädä orvoksi.
       *[other] { $count } kommenttia on ankkuroitu nykyiseen tekstiin ja voi jäädä orvoiksi.

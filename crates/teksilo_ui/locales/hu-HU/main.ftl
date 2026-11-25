@@ -3605,8 +3605,10 @@ import-document-diagnostics-none = Nincs mit jelenteni.
 versions-title = Változatok
 versions-scope-synopsis = Szinopszis
 versions-scope-prose = Szöveg
+versions-scope-scratchpad = Jegyzettömb
 versions-loading = A biztonsági másolatok átnézése…
 versions-empty = Ennek még nincs korábbi változata
+versions-empty-scratchpad = Ennek a jegyzettömbnek még nincs korábbi változata
 versions-error = Nem sikerült beolvasni a biztonsági másolatokat. Semmi sem veszett el, de ez a lista hiányos lehet
 versions-did-not-exist = { $date } idején még nem létezett
 versions-deleted-after = Valamikor { $date } után törölve
@@ -3654,6 +3656,7 @@ versions-last-30-days = Az utolsó 30 nap
 versions-restore-button = A változat visszaállítása
 versions-restore-confirm-title = Lecseréli ezt a szöveget a(z) { $date } időpontban rögzített változatra?
 versions-restore-confirm-text = A jelenlegi szöveget az a szöveg váltja fel, amely ennél az elemnél { $date } időpontban volt.
+versions-restore-confirm-scratchpad = A jegyzettömb jelenlegi jegyzeteit azok váltják fel, amelyek { $date } időpontban voltak benne.
 versions-restore-confirm-with-comments = A jelenlegi szöveget az a szöveg váltja fel, amely ennél az elemnél { $date } időpontban volt. { $count ->
     [one] { $count } megjegyzés a jelenlegi szöveghez van kötve, és gazdátlanná válhat.
    *[other] { $count } megjegyzés a jelenlegi szöveghez van kötve, és gazdátlanná válhat.
