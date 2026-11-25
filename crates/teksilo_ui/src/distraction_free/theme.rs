@@ -11,7 +11,8 @@
 //! colour looks like a violation and is not one, because the colours never reach
 //! a widget: they are applied with `WidgetTree::set_theme_override`, which
 //! rewrites what the **tokens** resolve to for one subtree. Every widget
-//! underneath still asks only for `SurfaceRole::Content` or `TextRole::Primary`;
+//! underneath still asks only for a role (`SurfaceRole::Content`, `TextRole::Primary`,
+//! or, for the prose editor, which names no colour, teksilo's `editor_fg`);
 //! the theme decides what those *mean* there. The hex lives in data — the same
 //! sanctioned status tag colours already have — but routed through the token
 //! system rather than around it.
@@ -23,7 +24,7 @@
 //! | Override on            | Tokens                        | Controls                      |
 //! |------------------------|-------------------------------|-------------------------------|
 //! | the surface root       | `surface_main`, `text_*`      | general background, widget text |
-//! | the editor's backdrop  | `surface_content`, `text_primary` | paper, ink                |
+//! | the editor's backdrop  | `surface_content`, `text_primary`, `editor_fg`, `editor_caret` | paper, ink |
 //!
 //! ## …except the caret band, which is data, not paint
 //!
@@ -325,7 +326,13 @@ pub fn apply_to(theme: &mut teksilo::prelude::Theme, t: &DistractionFreeTheme) {
     theme.colors = base.colors;
     theme.colors.surface_main = Color::from_hex(&t.general_background);
     theme.colors.surface_content = Color::from_hex(&t.editor_background);
-    theme.colors.text_primary = Color::from_hex(&t.editor_text);
+    let ink = Color::from_hex(&t.editor_text);
+    theme.colors.text_primary = ink;
+    // The prose sets no colour of its own, so teksilo paints it, and its caret,
+    // with these two roles (as it does a synopsis set to Normal). Without them
+    // the prose kept the base palette's ink on the theme's page.
+    theme.colors.editor_fg = ink;
+    theme.colors.editor_caret = ink;
     theme.colors.text_secondary = Color::from_hex(&t.widget_text);
     theme.colors.editor_current_line_bg = t.caret_band_color();
 }
@@ -560,6 +567,16 @@ mod tests {
         );
         assert_eq!(
             theme.colors.text_primary,
+            Color::from_hex(&night.editor_text)
+        );
+        assert_eq!(
+            theme.colors.editor_fg,
+            Color::from_hex(&night.editor_text),
+            "the prose paints with `editor_fg`: without it the theme's ink never \
+             reaches the text"
+        );
+        assert_eq!(
+            theme.colors.editor_caret,
             Color::from_hex(&night.editor_text)
         );
         assert_eq!(

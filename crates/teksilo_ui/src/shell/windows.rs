@@ -976,7 +976,9 @@ impl ProjectWindowFactory {
                 //
                 //   surface_content → the page (and the strip, which is themed as
                 //                     the page's own footer)
-                //   text_primary    → the prose
+                //   text_primary,   → the prose and its caret (the editor
+                //   editor_fg,        paints with `editor_fg`/`editor_caret`,
+                //   editor_caret      the rest of the surface with `text_primary`)
                 //   text_secondary  → the strip's readouts and the item name
                 //   surface_main    → whatever is not the page: a container tab's
                 //                     segmented bar and the gaps around it

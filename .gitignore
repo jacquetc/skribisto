@@ -71,3 +71,4 @@ package/flatpak/cargo-sources.json
 .aider*
 .codeium/
 .continue/
+graphify-out/
