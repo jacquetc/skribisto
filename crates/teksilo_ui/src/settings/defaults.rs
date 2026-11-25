@@ -369,7 +369,19 @@ pub(crate) fn reset_targets(vm: &SettingsViewModel) -> Vec<ResetTarget> {
             para_spacing_after: crate::NOTES_PARA_SPACING_AFTER_DEFAULT,
         },
     ));
-    // The three "Start justified" switches. Not in `typography`: the corkboard and
+    rows.extend(typography(
+        "editor.scratchpad",
+        &typo.scratchpad,
+        &TypographyDefaults {
+            family: crate::SCRATCHPAD_FONT_FAMILY_DEFAULT,
+            size: crate::SCRATCHPAD_SIZE_DEFAULT,
+            line_height: crate::SCRATCHPAD_LINE_HEIGHT_DEFAULT,
+            first_line_indent: crate::SCRATCHPAD_FIRST_LINE_INDENT_DEFAULT,
+            para_spacing_before: crate::SCRATCHPAD_PARA_SPACING_BEFORE_DEFAULT,
+            para_spacing_after: crate::SCRATCHPAD_PARA_SPACING_AFTER_DEFAULT,
+        },
+    ));
+    // The four "Start justified" switches. Not in `typography`: the corkboard and
     // distraction-free bundles carry the Synopsis and Scene switches rather than
     // keys of their own, so a per-bundle row would name keys that do not exist.
     rows.extend([
@@ -387,6 +399,11 @@ pub(crate) fn reset_targets(vm: &SettingsViewModel) -> Vec<ResetTarget> {
             crate::NOTES_JUSTIFY_NEW_TEXT_KEY,
             typo.notes.justify_new_text.clone(),
             crate::NOTES_JUSTIFY_NEW_TEXT_DEFAULT,
+        ),
+        flag(
+            crate::SCRATCHPAD_JUSTIFY_NEW_TEXT_KEY,
+            typo.scratchpad.justify_new_text.clone(),
+            crate::SCRATCHPAD_JUSTIFY_NEW_TEXT_DEFAULT,
         ),
     ]);
     rows.extend(typography(

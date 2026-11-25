@@ -425,6 +425,7 @@ fn test_editors_view_model(app_ctx: &Rc<frontend::AppContext>) -> EditorsViewMod
         notes: bundle(),
         corkboard: bundle(),
         distraction_free: bundle(),
+        scratchpad: bundle(),
     };
     let ids = crate::app_ids::AppIds::new();
     let save_state = crate::save::SaveStateViewModel::new(app_ctx.clone(), ids.clone());

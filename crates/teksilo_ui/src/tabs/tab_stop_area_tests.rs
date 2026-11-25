@@ -46,6 +46,7 @@ fn typography() -> EditorTypographySet {
         notes: bundle("Inter"),
         corkboard: bundle("Literata"),
         distraction_free: bundle("Literata"),
+        scratchpad: bundle("Literata"),
     }
 }
 

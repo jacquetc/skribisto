@@ -755,6 +755,7 @@ mod tests {
             notes: blank_typography(),
             corkboard: blank_typography(),
             distraction_free: blank_typography(),
+            scratchpad: blank_typography(),
         };
         crate::editors::EditorsViewModel::new(
             f.app_ctx.clone(),

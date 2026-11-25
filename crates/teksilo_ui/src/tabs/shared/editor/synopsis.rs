@@ -109,6 +109,104 @@ pub fn synopsis_editor(
     // `writing_column`'s note. `None` on the surfaces built with no project around them.
     language: Option<Signal<Option<LanguageTag>>>,
 ) -> impl Widget {
+    field_editor(
+        doc,
+        typo,
+        fit,
+        on_change,
+        split,
+        spell,
+        replacement,
+        handle_sink,
+        format,
+        typewriter,
+        caret,
+        games,
+        comments,
+        images,
+        read_only,
+        anchor,
+        estimate_height,
+        capture,
+        name,
+        language,
+        EditorKind::Synopsis,
+        TextRole::Secondary,
+        (6.0, 30.0),
+        None,
+    )
+}
+
+/// The one construction behind [`synopsis_editor`] and [`scratchpad_editor`]: a bordered
+/// (or, for [`SynopsisFit::Side`], borderless) field editor over a document that is not the
+/// item's main text.
+///
+/// `kind` is what the formatting registry and the writing games know the editor as,
+/// `text_color` its ink (a synopsis is dimmed, a scratchpad is not), `padding` its margins, and `description` what
+/// a screen reader adds to its name. Every other difference between the two is an `Option`
+/// the caller leaves `None`.
+#[allow(clippy::too_many_arguments)]
+fn field_editor(
+    doc: &TextDocument,
+    typo: &EditorTypography,
+    fit: SynopsisFit,
+    on_change: impl Fn() + 'static,
+    split: Option<SplitAction>,
+    spell: Option<Rc<SpellSession>>,
+    replacement: Option<Rc<TextReplacementSession>>,
+    // Where to re-attach this editor's handle so tab-level commands can find
+    // it. `None` for surfaces with no tab (the corkboard card's own editor).
+    handle_sink: Option<Rc<RefCell<Option<EditorHandle>>>>,
+    format: Option<FormatViewModel>,
+    typewriter: Option<crate::shared::TypewriterSettings>,
+    // The ambient caret band for this surface — the shared preference plus this
+    // document's language. `None` on the surfaces built without an app around
+    // them (the widget tests), which draw no band.
+    caret: Option<crate::shared::CaretBand>,
+    // The writing games this project is playing (currently "Always forward"),
+    // which may freeze this surface while one is on. `None` on the surfaces
+    // built with no app around them (the widget tests). Which surfaces a game
+    // covers is the game's own decision, taken against this editor's kind.
+    games: Option<crate::writing_session::WritingGamesViewModel>,
+    // The synopsis is a *different* `Content` row than the body, so it carries
+    // its own binding — anchoring both to "the item" would merge two distinct
+    // annotations into one.
+    comments: Option<crate::comments::binding::CommentBinding>,
+    // Where this editor fetches an image it meets but its document does not
+    // have — a picture pasted in from another editor, or brought back by an
+    // undo. `None` on the surfaces built without a project around them.
+    images: Option<crate::shared::images::ImageSource>,
+    // Whether this surface may be typed into — see `writing_column`.
+    read_only: bool,
+    // The `BinderItem` whose synopsis this is **and the surface showing it**,
+    // announced to the formatting registry so a lane can reach this editor by name
+    // rather than through focus. `None` on the surfaces built with no project
+    // around them.
+    //
+    // The surface travels with the item because the item alone does not identify an
+    // editor — see `crate::margin_lane::LaneAnchor`.
+    anchor: Option<crate::margin_lane::LaneAnchor>,
+    // Forwarded straight to the editor — see [`writing_column`]'s own note.
+    estimate_height: bool,
+    // This project's tags, for the "Add as note" submenu — a writer picks a name out of
+    // a synopsis as readily as out of the prose. `None` on the surfaces built with no
+    // project around them and on the corkboard card, which is a preview rather than a
+    // writing surface; the row is then not offered at all.
+    capture: Option<crate::tabs::shared::editor::CapturePalette>,
+    // What a screen reader calls this editor: "Synopsis", or "Epigraph" for the
+    // quotation that opens a chapter, which is built here too. Without one, the two
+    // were announced as bare edit fields, indistinguishable from each other and from
+    // the text.
+    name: LocalizedString,
+    // The language this text is written in, declared on the editor alone. See
+    // `writing_column`'s note. `None` on the surfaces built with no project around them.
+    language: Option<Signal<Option<LanguageTag>>>,
+    kind: EditorKind,
+    text_color: TextRole,
+    // The (vertical, horizontal) gap between the text and the editor's edge.
+    padding: (f32, f32),
+    description: Option<LocalizedString>,
+) -> impl Widget {
     // Stand by to supply an image this document does not have. A picture
     // pasted in from another editor arrives as a reference — pixels live on the
     // document that owns them, and a clipboard fragment is not a document — so
@@ -137,8 +235,8 @@ pub fn synopsis_editor(
         .on_link_activated(|href, ctx| {
             crate::resources::links::activate_link(href, ctx);
         })
-        .content_padding_symmetric(6.0, 30.0)
-        .text_color(TextRole::Secondary)
+        .content_padding_symmetric(padding.0, padding.1)
+        .text_color(text_color)
         .typography_defaults(typo_defaults(typo))
         .font_size_scale(typo.size.get());
     if fit == SynopsisFit::Side {
@@ -207,10 +305,13 @@ pub fn synopsis_editor(
         typo.clone(),
         spell,
         replacement.map(|s| (doc.clone(), s)),
-        EditorKind::Synopsis,
+        kind,
         format,
     )
     .with_new_text(doc.clone());
+    if let Some(description) = description {
+        bound = bound.with_access_description(description);
+    }
     if let Some(g) = games {
         bound = bound.with_writing_games(g);
     }
@@ -243,6 +344,81 @@ pub fn synopsis_editor(
             corner_radius: radius
             child: bound.content_language(super::language_prop(language))
         }
+    )
+}
+
+/// The scratchpad editor: an item's private free text, filling a dock pane.
+///
+/// Built on the same construction as [`synopsis_editor`], with these differences:
+///
+/// * It is an [`EditorKind::Scratchpad`], so the writing games never freeze it, and it is
+///   registered with **no** `LaneAnchor`, so no `(item, kind)` lookup finds it.
+/// * It has no comment binding, no footnote binding, no arrival tally, no typewriter, no
+///   writing game and no "Split scene" or "Add as note" row: a scratchpad is not part of
+///   the work. The context menu keeps cut, copy, paste, the formatting strip and the
+///   spelling group (suggestions, Add to dictionary).
+/// * Its ink is the normal text colour, not the dimmed one a synopsis uses.
+/// * It fills the pane it is given and scrolls inside it (greedy, like
+///   [`SynopsisFit::Side`], whose sizing and flush look it shares), so give it a pane of an
+///   exact height.
+/// * The caret band is drawn, but the fade around the caret never is: the fade is for the
+///   manuscript, and `caret`'s own fade setting is replaced by "off".
+///
+/// `on_change` is the caller's: the dock passes the open document's
+/// `mark_scratchpad_dirty_fn`, which flags the autosave without touching `edit_gen`. It runs
+/// inside the editor's frame tick, so it must not call an `EditorHandle` method.
+/// `name` is what a screen reader calls the editor and `description` what it adds to that.
+/// `read_only` is for a trashed item. `handle_sink` receives the editor's handle on every
+/// build, as [`synopsis_editor`]'s does; hold it weakly or not at all in any stored callback.
+// Many parameters, each a distinct thing this surface has to be handed, for the reason
+// given on `synopsis_editor`.
+#[allow(clippy::too_many_arguments)]
+pub fn scratchpad_editor(
+    doc: &TextDocument,
+    typo: &EditorTypography,
+    on_change: impl Fn() + 'static,
+    spell: Option<Rc<SpellSession>>,
+    replacement: Option<Rc<TextReplacementSession>>,
+    handle_sink: Option<Rc<RefCell<Option<EditorHandle>>>>,
+    format: Option<FormatViewModel>,
+    caret: Option<crate::shared::CaretBand>,
+    images: Option<crate::shared::images::ImageSource>,
+    read_only: bool,
+    name: LocalizedString,
+    description: LocalizedString,
+    language: Option<Signal<Option<LanguageTag>>>,
+) -> impl Widget {
+    // The band, never the fade, and never a page to fade as one with other editors.
+    let caret = caret.map(|band| crate::shared::CaretBand {
+        dim: crate::shared::CaretDimSettings::off(),
+        page: None,
+        ..band
+    });
+    field_editor(
+        doc,
+        typo,
+        SynopsisFit::Side,
+        on_change,
+        None,
+        spell,
+        replacement,
+        handle_sink,
+        format,
+        None,
+        caret,
+        None,
+        None,
+        images,
+        read_only,
+        None,
+        false,
+        None,
+        name,
+        language,
+        EditorKind::Scratchpad,
+        TextRole::Primary,
+        (8.0, 12.0),
+        Some(description),
     )
 }
 

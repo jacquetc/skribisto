@@ -1991,3 +1991,77 @@ fn writing_focused_follows_the_keyboard_focus_and_is_never_latched() {
         "the premise: the caret latch itself does outlive the focus"
     );
 }
+
+/// A scratchpad is formatted as a synopsis, takes no footnote even with a binding, and
+/// is the target of Ctrl+= for its **own** bundle only.
+#[test]
+fn a_scratchpad_is_a_synopsis_surface_with_no_footnote_and_its_own_size_bundle() {
+    let (_tab_editor, tab_handle) = loose_editor("tab prose");
+    let resolved = tab_handle.clone();
+    let vm = FormatViewModel::new(Rc::new(move || {
+        (Some(resolved.clone()), FormatSurface::Scene)
+    }));
+    let w = ids(2);
+    let (_notes_editor, notes) = loose_editor("a note");
+    let (_pad_editor, pad) = loose_editor("jotted down");
+    vm.register(w[0], notes.clone(), EditorKind::Prose);
+    vm.set_registered_typography(w[0], bundle(crate::settings::TypographyKind::Notes));
+    vm.register(w[1], pad.clone(), EditorKind::Scratchpad);
+    vm.set_registered_typography(w[1], bundle(crate::settings::TypographyKind::Scratchpad));
+    // Even with a footnote door on it, the registry must refuse it.
+    vm.set_registered_footnotes(w[1], binding_over(33));
+
+    pad.focused_signal().set(true);
+    assert_eq!(
+        vm.target().1,
+        FormatSurface::Synopsis,
+        "the resolver said Scene; the scratchpad classifies as a synopsis"
+    );
+    assert!(
+        vm.footnote_target().is_none(),
+        "a footnote must never go into a scratchpad"
+    );
+    assert_eq!(
+        vm.focused_typography().map(|t| t.size_range.kind),
+        Some(crate::settings::TypographyKind::Scratchpad),
+        "Ctrl+= in a scratchpad must resolve the scratchpad bundle, not Notes"
+    );
+    vm.toggle_bold();
+    assert!(pad.is_bold(), "the focused scratchpad took the command");
+    assert!(!tab_handle.is_bold());
+
+    pad.focused_signal().set(false);
+    notes.focused_signal().set(true);
+    assert_eq!(
+        vm.focused_typography().map(|t| t.size_range.kind),
+        Some(crate::settings::TypographyKind::Notes),
+    );
+}
+
+/// A scratchpad is registered with no item, so it answers no `(item, kind)` lookup
+/// whatever kind or item is asked for: the margin lane, the comment layer and the cast
+/// overlay must never be handed it as an item's text.
+#[test]
+fn a_scratchpad_answers_no_item_lookup() {
+    let vm = vm_detached();
+    let w = ids(1);
+    let (_editor, pad) = loose_editor("jotted down");
+    vm.register(w[0], pad, EditorKind::Scratchpad);
+
+    for item in [0, 1, 11, 33] {
+        for kind in [
+            EditorKind::Prose,
+            EditorKind::Synopsis,
+            EditorKind::Scratchpad,
+        ] {
+            assert!(
+                vm.handle_for_item(item, kind, None).is_none(),
+                "{item} {kind:?}"
+            );
+            assert!(vm.document_view(item, kind).is_none(), "{item} {kind:?}");
+        }
+    }
+    assert!(vm.handles_by_item(EditorKind::Scratchpad).is_empty());
+    assert!(vm.handles_by_item(EditorKind::Prose).is_empty());
+    assert!(vm.handles_by_item(EditorKind::Synopsis).is_empty());
+}

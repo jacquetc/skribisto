@@ -257,6 +257,20 @@ pub enum EditorKind {
     Prose,
     /// A synopsis editor — the tab's own, a stream row's, or a corkboard card's.
     Synopsis,
+    /// The scratchpad editor: an item's private free text, shown in its own dock.
+    ///
+    /// It is a kind of its own, rather than a `Synopsis` or a `Prose`, for two reasons.
+    /// A scratchpad is not part of the work, so the writing games must never freeze it
+    /// ([`WritingGamesViewModel::covers`](crate::writing_session::WritingGamesViewModel::covers)
+    /// answers false). And it is registered with **no** [`LaneAnchor`](crate::margin_lane::LaneAnchor),
+    /// so no `(item, kind)` lookup ([`FormatViewModel::handle_for_item`],
+    /// [`FormatViewModel::document_view`], [`FormatViewModel::handles_by_item`]) can
+    /// ever return it: the margin lane, the comment layer and the cast overlay ask
+    /// those for the item's *text*, and a scratchpad is none of them.
+    ///
+    /// For formatting it behaves as a synopsis: every group but scene breaks
+    /// (see [`FormatSurface::Synopsis`]). It takes no footnote, as a synopsis takes none.
+    Scratchpad,
 }
 
 /// One live editor widget, registered while it is mounted.
@@ -824,7 +838,8 @@ impl FormatViewModel {
     /// scene — manuscript prose, where scene breaks belong.
     fn classify(&self, kind: EditorKind, resolved: FormatSurface) -> FormatSurface {
         match kind {
-            EditorKind::Synopsis => FormatSurface::Synopsis,
+            // A scratchpad is formatted as a synopsis: every group but scene breaks.
+            EditorKind::Synopsis | EditorKind::Scratchpad => FormatSurface::Synopsis,
             EditorKind::Prose if resolved == FormatSurface::Note => FormatSurface::Note,
             EditorKind::Prose => FormatSurface::Scene,
         }
@@ -1053,12 +1068,14 @@ impl FormatViewModel {
     /// editor" is momentarily nothing at all.
     ///
     /// `None` for a **synopsis**: it is planning text, and a note attached there
-    /// prints into a synopsis export and nowhere in the book. `None` too for an
+    /// prints into a synopsis export and nowhere in the book. `None` for a
+    /// **scratchpad** for the same reason, and because it is never exported at all. `None` too for an
     /// editor that takes no writes, a trashed item's text: inserting the marker
     /// is a write (see [`crate::shared::editor_writes`]).
     pub fn footnote_target(&self) -> Option<(EditorHandle, crate::footnotes::FootnoteBinding)> {
         let (id, handle, kind) = self.resolved_registration()?;
-        if kind == EditorKind::Synopsis || !accepts_writes(&handle) {
+        if matches!(kind, EditorKind::Synopsis | EditorKind::Scratchpad) || !accepts_writes(&handle)
+        {
             return None;
         }
         let binding = self

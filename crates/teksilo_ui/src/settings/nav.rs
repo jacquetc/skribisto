@@ -63,6 +63,7 @@ pub(crate) enum Pane {
     SceneTypography,
     SynopsisTypography,
     NotesTypography,
+    ScratchpadTypography,
     /// Editor ▸ Page layout: the writing column's width, the full views' indent, and
     /// the synopsis and epigraphs around the text. With [`Pane::Focus`],
     /// [`Pane::ImagesFiles`] and [`Pane::TabsViews`] it replaced the one Editor
@@ -172,6 +173,7 @@ impl Pane {
             Pane::SceneTypography => "scene-typography",
             Pane::SynopsisTypography => "synopsis-typography",
             Pane::NotesTypography => "notes-typography",
+            Pane::ScratchpadTypography => "scratchpad-typography",
             Pane::PageLayout => "page-layout",
             Pane::Focus => "focus",
             Pane::ImagesFiles => "images-files",
@@ -220,6 +222,7 @@ impl Pane {
             Pane::SceneTypography => tr!(settings_page_scene()),
             Pane::SynopsisTypography => tr!(settings_page_synopsis()),
             Pane::NotesTypography => tr!(settings_page_notes()),
+            Pane::ScratchpadTypography => tr!(settings_page_scratchpad()),
             Pane::PageLayout => tr!(settings_page_page_layout()),
             Pane::Focus => tr!(settings_page_focus()),
             Pane::ImagesFiles => tr!(settings_page_images_files()),
@@ -284,6 +287,7 @@ impl Pane {
             Pane::SceneTypography => tr!(settings_desc_scene()),
             Pane::SynopsisTypography => tr!(settings_desc_synopsis()),
             Pane::NotesTypography => tr!(settings_desc_notes()),
+            Pane::ScratchpadTypography => tr!(settings_desc_scratchpad()),
             Pane::PageLayout => tr!(settings_desc_page_layout()),
             Pane::Focus => tr!(settings_desc_focus()),
             Pane::ImagesFiles => tr!(settings_desc_images_files()),
@@ -491,7 +495,7 @@ pub(crate) fn tree_spec(has_work: bool, extension_pages: &[&'static str]) -> Vec
         Root::Section(
             Sec::Editor,
             vec![
-                // The five typography-shaped pages (Scene / Synopsis / Notes /
+                // The typography-shaped pages (Scene / Synopsis / Notes / Scratchpad /
                 // Corkboard / Distraction-free — all four fields plus
                 // font/size/line-height/indent), and the Distraction-free theme
                 // library, live under their own nested group rather than as six
@@ -502,6 +506,7 @@ pub(crate) fn tree_spec(has_work: bool, extension_pages: &[&'static str]) -> Vec
                         Pane::SceneTypography,
                         Pane::SynopsisTypography,
                         Pane::NotesTypography,
+                        Pane::ScratchpadTypography,
                         Pane::Corkboard,
                         Pane::DistractionFree,
                         Pane::DistractionFreeThemes,

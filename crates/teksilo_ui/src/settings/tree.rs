@@ -326,11 +326,12 @@ pub(crate) fn search_index(spec: &[Root], work_title: &str) -> Vec<(LocalizedStr
     // Typeface / Size / Line height / First-line indent / the two paragraph
     // spacings repeat on every typography page, so disambiguate each by page
     // ("Scene — Typeface"). All six, not four: the two spacings were left out, so
-    // "paragraph spacing" found nothing on any of the five pages that set it.
+    // "paragraph spacing" found nothing on any of the pages that set it.
     for (page, pane) in [
         (tr!(settings_page_scene()), Pane::SceneTypography),
         (tr!(settings_page_synopsis()), Pane::SynopsisTypography),
         (tr!(settings_page_notes()), Pane::NotesTypography),
+        (tr!(settings_page_scratchpad()), Pane::ScratchpadTypography),
         (tr!(settings_page_distraction_free()), Pane::DistractionFree),
         (
             tr!(settings_page_distraction_free_themes()),
@@ -352,12 +353,13 @@ pub(crate) fn search_index(spec: &[Root], work_title: &str) -> Vec<(LocalizedStr
             ));
         }
     }
-    // "Start justified" is on the three pages that name a kind of text, and only
+    // "Start justified" is on the four pages that name a kind of text, and only
     // there, so it is disambiguated the same way.
     for (page, pane) in [
         (tr!(settings_page_scene()), Pane::SceneTypography),
         (tr!(settings_page_synopsis()), Pane::SynopsisTypography),
         (tr!(settings_page_notes()), Pane::NotesTypography),
+        (tr!(settings_page_scratchpad()), Pane::ScratchpadTypography),
     ] {
         let field = tr!(settings_justify_new_text());
         idx.push((

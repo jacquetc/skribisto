@@ -44,8 +44,8 @@ pub(crate) use scroll_sync::{
 };
 pub(crate) use synopsis::searchable_title_input;
 pub use synopsis::{
-    SYNOPSIS_MIN_LINES, SynopsisFit, card_synopsis_editor, synopsis_column, synopsis_editor,
-    synopsis_section, title_input,
+    SYNOPSIS_MIN_LINES, SynopsisFit, card_synopsis_editor, scratchpad_editor, synopsis_column,
+    synopsis_editor, synopsis_section, title_input,
 };
 
 use bound_editor::*;

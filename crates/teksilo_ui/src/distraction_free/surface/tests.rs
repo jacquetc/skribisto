@@ -50,6 +50,7 @@ fn typography() -> EditorTypographySet {
         notes: bundle("Inter"),
         corkboard: bundle("Literata"),
         distraction_free: bundle("Distraction Serif"),
+        scratchpad: bundle("Distraction Serif"),
     }
 }
 

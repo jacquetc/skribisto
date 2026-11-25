@@ -413,6 +413,15 @@ pub(super) fn build(
             )),
         ),
         (
+            Pane::ScratchpadTypography,
+            Box::new(panes::typography::typography_pane(
+                ctx,
+                &crumbs,
+                Pane::ScratchpadTypography,
+                &typo.scratchpad,
+            )),
+        ),
+        (
             Pane::TabsViews,
             Box::new(panes::tabs_views::tabs_views_pane(ctx, &crumbs, vm)),
         ),

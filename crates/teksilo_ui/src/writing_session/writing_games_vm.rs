@@ -161,6 +161,10 @@ impl WritingGamesViewModel {
         match kind {
             EditorKind::Prose => self.forward_in_prose.get(),
             EditorKind::Synopsis => self.forward_in_synopsis.get(),
+            // A scratchpad is where a writer parks the fix the game forbids in the
+            // draft, as the synopsis is by default; freezing it would close that
+            // escape, and it is not part of the work the game protects.
+            EditorKind::Scratchpad => false,
         }
     }
 
@@ -222,6 +226,21 @@ mod tests {
             CommandFilter::All,
             "the synopsis stays editable — it is where the forbidden fix gets noted"
         );
+    }
+
+    /// A scratchpad is never part of what the game protects: not with the game on and
+    /// both surface options on, and not through the command filter an editor runs under.
+    #[test]
+    fn a_scratchpad_is_never_covered() {
+        let vm = WritingGamesViewModel::detached();
+        assert!(!vm.covers(EditorKind::Scratchpad));
+        vm.set_always_forward(true);
+        vm.forward_in_prose().set(true);
+        vm.forward_in_synopsis().set(true);
+        assert!(vm.covers(EditorKind::Prose), "the game is on for prose");
+        assert!(vm.covers(EditorKind::Synopsis), "and for the synopsis");
+        assert!(!vm.covers(EditorKind::Scratchpad));
+        assert_eq!(vm.filter_for(EditorKind::Scratchpad), CommandFilter::All);
     }
 
     #[test]

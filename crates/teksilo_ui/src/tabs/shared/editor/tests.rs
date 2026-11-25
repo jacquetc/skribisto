@@ -1063,3 +1063,156 @@ fn a_split_offered_while_a_signal_holds_follows_it() {
         "a split with no condition is always offered"
     );
 }
+
+/// What `scratchpad_editor` builds, mounted under a formatting registry with no app
+/// around it, and the handle it published.
+fn mounted_scratchpad(
+    read_only: bool,
+    format: &FormatViewModel,
+    typo: &EditorTypography,
+    text: &str,
+) -> (WidgetTree, EditorHandle, TextDocument) {
+    let doc = TextDocument::new();
+    doc.set_plain_text(text).expect("plain text");
+    let sink = Rc::new(RefCell::new(None));
+    let editor = scratchpad_editor(
+        &doc,
+        typo,
+        || {},
+        None,
+        None,
+        Some(sink.clone()),
+        Some(format.clone()),
+        None,
+        None,
+        read_only,
+        tr!(content_scratchpad_text()),
+        tr!(synopsis()),
+        None,
+    );
+    let mut tree = WidgetTree::new();
+    tree.add(editor);
+    tree.layout(SizeProposal::exact(320.0, 240.0));
+    let _ = tree.render();
+    let handle = sink
+        .borrow()
+        .clone()
+        .expect("the scratchpad editor publishes its handle");
+    (tree, handle, doc)
+}
+
+/// A mounted scratchpad editor registers itself with the formatting registry as a
+/// scratchpad: it is the format target while focused, formatted as a synopsis, resized
+/// through its own bundle, and invisible to every `(item, kind)` lookup, because it is
+/// registered with no anchor.
+#[test]
+fn a_mounted_scratchpad_is_the_format_target_but_answers_no_item_lookup() {
+    use crate::format::FormatSurface;
+    let format = FormatViewModel::new(Rc::new(|| (None, FormatSurface::None)));
+    let mut typo = test_typo();
+    typo.size_range = crate::settings::TypographySizeRange::standard(
+        crate::settings::TypographyKind::Scratchpad,
+        1.0,
+    );
+    let (_tree, handle, _doc) = mounted_scratchpad(false, &format, &typo, "jotted down");
+
+    handle.focused_signal().set(true);
+    handle.select_range(0, 6);
+    format.toggle_bold();
+    assert!(handle.is_bold(), "the scratchpad took the format command");
+    format.refresh();
+    assert_eq!(
+        format.surface_signal().get(),
+        FormatSurface::Synopsis,
+        "a scratchpad is formatted as a synopsis"
+    );
+    assert_eq!(
+        format.focused_typography().map(|t| t.size_range.kind),
+        Some(crate::settings::TypographyKind::Scratchpad),
+    );
+    assert!(format.footnote_target().is_none());
+
+    for item in [0, 1, 7, 42] {
+        for kind in [
+            EditorKind::Prose,
+            EditorKind::Synopsis,
+            EditorKind::Scratchpad,
+        ] {
+            assert!(format.handle_for_item(item, kind, None).is_none());
+            assert!(format.document_view(item, kind).is_none());
+        }
+    }
+    assert!(format.handles_by_item(EditorKind::Scratchpad).is_empty());
+}
+
+/// A scratchpad of a trashed item is a read-only editor; a live one takes writes. And
+/// both are announced by the name and description they were given.
+#[test]
+fn a_read_only_scratchpad_takes_no_writes_and_a_live_one_does() {
+    use crate::format::FormatSurface;
+    let format = FormatViewModel::new(Rc::new(|| (None, FormatSurface::None)));
+    let typo = test_typo();
+    let (mut live_tree, live, _doc) = mounted_scratchpad(false, &format, &typo, "to do");
+    assert!(accepts_writes(&live), "a live scratchpad must take writes");
+
+    let (_trashed_tree, trashed, _doc) = mounted_scratchpad(true, &format, &typo, "to do");
+    assert!(
+        !accepts_writes(&trashed),
+        "a trashed scratchpad is read-only"
+    );
+
+    crate::test_support::with_real_messages(|| {
+        let names = editor_names(&mut live_tree);
+        assert!(
+            names.contains(&"Scratchpad".to_string()),
+            "the scratchpad is not announced by its name: {names:?}"
+        );
+    });
+}
+
+/// An edit in the scratchpad reaches the caller's `on_change`, and nothing else is
+/// asked of the editor.
+#[test]
+fn an_edit_in_a_scratchpad_calls_the_callers_on_change() {
+    use std::cell::Cell;
+    let doc = TextDocument::new();
+    let changes = Rc::new(Cell::new(0u32));
+    let seen = changes.clone();
+    let sink = Rc::new(RefCell::new(None));
+    let editor = scratchpad_editor(
+        &doc,
+        &test_typo(),
+        move || seen.set(seen.get() + 1),
+        None,
+        None,
+        Some(sink.clone()),
+        None,
+        None,
+        None,
+        false,
+        tr!(content_scratchpad_text()),
+        tr!(synopsis()),
+        None,
+    );
+    let mut tree = WidgetTree::new();
+    let root = tree.add(editor);
+    let mut noop = teksilo::core::window::NoopWindowOps;
+    tree.layout(SizeProposal::exact(320.0, 240.0));
+    tree.run_mount_actions(&mut noop);
+    tree.layout(SizeProposal::exact(320.0, 240.0));
+    let _ = tree.render();
+    let stop = *tree
+        .tab_stops_within(root)
+        .first()
+        .expect("the scratchpad editor must be a Tab stop");
+    tree.focus(stop);
+    let handle = sink
+        .borrow()
+        .clone()
+        .expect("the scratchpad editor publishes its handle");
+    handle.insert_text("x");
+    tree.layout(SizeProposal::exact(320.0, 240.0));
+    let _ = tree.render();
+    assert_eq!(doc.to_plain_text().unwrap_or_default(), "x");
+    assert!(changes.get() > 0, "on_change did not run after an edit");
+}

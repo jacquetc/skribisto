@@ -585,6 +585,7 @@ fn typography() -> crate::settings::EditorTypographySet {
         notes: blank_typography(),
         corkboard: blank_typography(),
         distraction_free: blank_typography(),
+        scratchpad: blank_typography(),
     }
 }
 

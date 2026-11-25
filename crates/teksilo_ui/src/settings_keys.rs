@@ -389,6 +389,24 @@ pub const NOTES_PARA_SPACING_AFTER_DEFAULT: f32 = 8.0;
 pub const NOTES_JUSTIFY_NEW_TEXT_KEY: &str = "editor.notes.justify_new_text";
 pub const NOTES_JUSTIFY_NEW_TEXT_DEFAULT: bool = false;
 
+/// Scratchpad editor typography: its own bundle, with the Notes defaults, so Ctrl+= in a
+/// scratchpad resizes scratchpads only.
+pub const SCRATCHPAD_FONT_FAMILY_KEY: &str = "editor.scratchpad.font_family";
+pub const SCRATCHPAD_FONT_FAMILY_DEFAULT: &str = "Inter";
+pub const SCRATCHPAD_SIZE_KEY: &str = "editor.scratchpad.size";
+pub const SCRATCHPAD_SIZE_DEFAULT: f32 = 1.0;
+pub const SCRATCHPAD_LINE_HEIGHT_KEY: &str = "editor.scratchpad.line_height";
+pub const SCRATCHPAD_LINE_HEIGHT_DEFAULT: f32 = 1.5;
+pub const SCRATCHPAD_FIRST_LINE_INDENT_KEY: &str = "editor.scratchpad.first_line_indent";
+pub const SCRATCHPAD_FIRST_LINE_INDENT_DEFAULT: f32 = 0.0;
+pub const SCRATCHPAD_PARA_SPACING_BEFORE_KEY: &str = "editor.scratchpad.para_spacing_before";
+pub const SCRATCHPAD_PARA_SPACING_BEFORE_DEFAULT: f32 = 0.0;
+pub const SCRATCHPAD_PARA_SPACING_AFTER_KEY: &str = "editor.scratchpad.para_spacing_after";
+// Block-style spacing, as for notes: a scratchpad holds fragments and lists.
+pub const SCRATCHPAD_PARA_SPACING_AFTER_DEFAULT: f32 = 8.0;
+pub const SCRATCHPAD_JUSTIFY_NEW_TEXT_KEY: &str = "editor.scratchpad.justify_new_text";
+pub const SCRATCHPAD_JUSTIFY_NEW_TEXT_DEFAULT: bool = false;
+
 /// Distraction-free mode's own typography (Settings ▸ Editor ▸ Typography ▸
 /// Distraction-free) — a fifth bundle alongside Scene / Synopsis / Notes /
 /// Corkboard, selected at render time by `ContentTab::main_typography` whenever
@@ -1285,6 +1303,49 @@ pub static SETTINGS: &[SettingSpec] = &[
         check: check::<f32>,
         doc: "Notes editor space below each paragraph.",
     },
+    // ── Editor typography: Scratchpad ──────────────────────────────────────────────
+    SettingSpec {
+        key: crate::SCRATCHPAD_FONT_FAMILY_KEY,
+        ty: "string (a font family the typesetter can resolve)",
+        default: || val(crate::SCRATCHPAD_FONT_FAMILY_DEFAULT),
+        check: check::<String>,
+        doc: "Scratchpad editor typeface.",
+    },
+    SettingSpec {
+        key: crate::SCRATCHPAD_SIZE_KEY,
+        ty: "float (1.0 = 100 %)",
+        default: || val(crate::SCRATCHPAD_SIZE_DEFAULT),
+        check: check::<f32>,
+        doc: "Scratchpad editor font-size scale.",
+    },
+    SettingSpec {
+        key: crate::SCRATCHPAD_LINE_HEIGHT_KEY,
+        ty: "float (multiple of font size)",
+        default: || val(crate::SCRATCHPAD_LINE_HEIGHT_DEFAULT),
+        check: check::<f32>,
+        doc: "Scratchpad editor line height.",
+    },
+    SettingSpec {
+        key: crate::SCRATCHPAD_FIRST_LINE_INDENT_KEY,
+        ty: "float (px)",
+        default: || val(crate::SCRATCHPAD_FIRST_LINE_INDENT_DEFAULT),
+        check: check::<f32>,
+        doc: "Scratchpad editor first-line indent.",
+    },
+    SettingSpec {
+        key: crate::SCRATCHPAD_PARA_SPACING_BEFORE_KEY,
+        ty: "float (px)",
+        default: || val(crate::SCRATCHPAD_PARA_SPACING_BEFORE_DEFAULT),
+        check: check::<f32>,
+        doc: "Scratchpad editor space above each paragraph.",
+    },
+    SettingSpec {
+        key: crate::SCRATCHPAD_PARA_SPACING_AFTER_KEY,
+        ty: "float (px)",
+        default: || val(crate::SCRATCHPAD_PARA_SPACING_AFTER_DEFAULT),
+        check: check::<f32>,
+        doc: "Scratchpad editor space below each paragraph.",
+    },
     SettingSpec {
         key: crate::SCENE_JUSTIFY_NEW_TEXT_KEY,
         ty: "bool",
@@ -1307,6 +1368,13 @@ pub static SETTINGS: &[SettingSpec] = &[
         default: || val(crate::NOTES_JUSTIFY_NEW_TEXT_DEFAULT),
         check: check::<bool>,
         doc: "Justify the first paragraph typed into an empty note.",
+    },
+    SettingSpec {
+        key: crate::SCRATCHPAD_JUSTIFY_NEW_TEXT_KEY,
+        ty: "bool",
+        default: || val(crate::SCRATCHPAD_JUSTIFY_NEW_TEXT_DEFAULT),
+        check: check::<bool>,
+        doc: "Justify the first paragraph typed into an empty scratchpad.",
     },
     // ── Distraction-free mode ─────────────────────────────────────────────────
     SettingSpec {

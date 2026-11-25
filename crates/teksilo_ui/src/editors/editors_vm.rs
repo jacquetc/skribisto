@@ -2964,6 +2964,7 @@ pub(crate) mod test_support {
             notes: bundle("Inter"),
             corkboard: bundle("Literata"),
             distraction_free: bundle("Literata"),
+            scratchpad: bundle("Inter"),
         }
     }
 

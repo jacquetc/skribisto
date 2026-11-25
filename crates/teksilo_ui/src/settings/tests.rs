@@ -65,6 +65,7 @@ fn every_built_in_pane() -> Vec<Pane> {
         Pane::SceneTypography,
         Pane::SynopsisTypography,
         Pane::NotesTypography,
+        Pane::ScratchpadTypography,
         Pane::PageLayout,
         Pane::Focus,
         Pane::ImagesFiles,
@@ -212,7 +213,7 @@ fn a_section_lists_a_nested_group_as_one_entry() {
     );
     assert_eq!(
         children_of(&spec, Pane::Group(GroupKind::Typography)).len(),
-        6
+        7
     );
 }
 
@@ -2210,4 +2211,56 @@ fn every_list_page_fits_a_narrow_settings_window() {
             );
         });
     }
+}
+
+/// **The scratchpad has a typography page of its own, in the Typography group, found by
+/// search and reopened on.**
+///
+/// Its page title, its description and the fields that repeat on every typography page
+/// ("Scratchpad — Size") each have to lead to it, and its id is what "reopen Settings on
+/// the page visited last" stores, so it must be stable and survive a restart.
+#[test]
+fn the_scratchpad_page_is_in_the_typography_group_searchable_and_reopened_on() {
+    assert_eq!(Pane::ScratchpadTypography.id(), "scratchpad-typography");
+    let spec = tree_spec(false, &[]);
+    assert!(
+        children_of(&spec, Pane::Group(GroupKind::Typography))
+            .contains(&Pane::ScratchpadTypography),
+        "the scratchpad page is not under Editor > Typography"
+    );
+
+    let index = super::tree::search_index(&spec, "");
+    let found_as = |label: String| {
+        index
+            .iter()
+            .find(|(l, _)| l.resolve_now() == label)
+            .map(|(_, pane)| *pane)
+    };
+    let page = tr!(settings_page_scratchpad()).resolve_now();
+    assert_eq!(page, "Scratchpad");
+    assert_eq!(
+        found_as(page.clone()),
+        Some(Pane::ScratchpadTypography),
+        "searching for the page's own name must land on it"
+    );
+    for field in [
+        tr!(settings_field_size()).resolve_now(),
+        tr!(settings_field_typeface()).resolve_now(),
+        tr!(settings_justify_new_text()).resolve_now(),
+    ] {
+        assert_eq!(
+            found_as(format!("{page} — {field}")),
+            Some(Pane::ScratchpadTypography),
+            "'{field}' on the scratchpad page is not searchable"
+        );
+    }
+
+    let store = crate::test_support::temp_settings_store();
+    let (selected, tree) = open_settings(&store, SettingsPanel::without_project());
+    selected.set(Pane::ScratchpadTypography);
+    let last = store.signal(crate::SETTINGS_LAST_PAGE_KEY, String::new());
+    assert_eq!(last.get(), "scratchpad-typography");
+    drop(tree);
+    let (selected, _tree) = open_settings(&store, SettingsPanel::without_project());
+    assert_eq!(selected.get(), Pane::ScratchpadTypography);
 }

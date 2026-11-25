@@ -112,9 +112,9 @@ pub fn reset(typo: &EditorTypography) -> f32 {
 }
 
 /// The readout for one bundle, naming the surface so a writer who was pointing
-/// at a synopsis is never left guessing which of the six sizes just moved.
+/// at a synopsis is never left guessing which of the sizes just moved.
 ///
-/// Six whole messages rather than one `{ $surface }: { $percent }` template fed
+/// One whole message per bundle rather than one `{ $surface }: { $percent }` template fed
 /// a nested label. A Fluent argument is a string or a number, not another
 /// message — and even if it could nest, "Manuscript" and "Corkboard (expanded)"
 /// do not necessarily take the same connector, article or word order in every
@@ -131,6 +131,7 @@ fn readout(kind: TypographyKind, percent: String) -> LocalizedString {
         TypographyKind::DistractionFree => {
             tr!(editor_size_changed_distraction_free(percent = percent))
         }
+        TypographyKind::Scratchpad => tr!(editor_size_changed_scratchpad(percent = percent)),
     }
 }
 

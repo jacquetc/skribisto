@@ -73,7 +73,12 @@ use crate::{
     SCENE_FIRST_LINE_INDENT_KEY, SCENE_FONT_FAMILY_DEFAULT, SCENE_FONT_FAMILY_KEY,
     SCENE_LINE_HEIGHT_DEFAULT, SCENE_LINE_HEIGHT_KEY, SCENE_PARA_SPACING_AFTER_DEFAULT,
     SCENE_PARA_SPACING_AFTER_KEY, SCENE_PARA_SPACING_BEFORE_DEFAULT, SCENE_PARA_SPACING_BEFORE_KEY,
-    SCENE_SIZE_DEFAULT, SCENE_SIZE_KEY, SHOW_EPIGRAPHS_DEFAULT, SHOW_EPIGRAPHS_KEY,
+    SCENE_SIZE_DEFAULT, SCENE_SIZE_KEY, SCRATCHPAD_FIRST_LINE_INDENT_DEFAULT,
+    SCRATCHPAD_FIRST_LINE_INDENT_KEY, SCRATCHPAD_FONT_FAMILY_DEFAULT, SCRATCHPAD_FONT_FAMILY_KEY,
+    SCRATCHPAD_LINE_HEIGHT_DEFAULT, SCRATCHPAD_LINE_HEIGHT_KEY,
+    SCRATCHPAD_PARA_SPACING_AFTER_DEFAULT, SCRATCHPAD_PARA_SPACING_AFTER_KEY,
+    SCRATCHPAD_PARA_SPACING_BEFORE_DEFAULT, SCRATCHPAD_PARA_SPACING_BEFORE_KEY,
+    SCRATCHPAD_SIZE_DEFAULT, SCRATCHPAD_SIZE_KEY, SHOW_EPIGRAPHS_DEFAULT, SHOW_EPIGRAPHS_KEY,
     SHOW_WELCOME_KEY, SPELLCHECK_ENABLED_DEFAULT, SPELLCHECK_ENABLED_KEY, STREAM_INDENT_KEY,
     SYNOPSIS_FIRST_LINE_INDENT_DEFAULT, SYNOPSIS_FIRST_LINE_INDENT_KEY, SYNOPSIS_FOLDED_DEFAULT,
     SYNOPSIS_FOLDED_KEY, SYNOPSIS_FONT_FAMILY_DEFAULT, SYNOPSIS_FONT_FAMILY_KEY,
@@ -86,11 +91,11 @@ use crate::{
     USER_INITIALS_KEY, USER_NAME_KEY,
 };
 
-/// Which of the six writing surfaces a typography bundle dresses.
+/// Which of the writing surfaces a typography bundle dresses.
 ///
-/// The six `Signal`s below cannot say this about themselves, and two callers
+/// The `Signal`s below cannot say this about themselves, and two callers
 /// need it: Ctrl+0 (what does "default" mean for *this* editor?) and the
-/// size gesture's toast (which of the six did the writer just change?).
+/// size gesture's toast (which of them did the writer just change?).
 /// Deliberately finer-grained than `format::EditorKind`, which only separates
 /// prose from synopsis — a `Prose` editor may be dressed by Scene, Notes *or*
 /// Distraction-free, and a `Synopsis` one by three different bundles again.
@@ -105,6 +110,9 @@ pub enum TypographyKind {
     /// and its own wider range — see [`TypographySizeRange`].
     CorkboardExpanded,
     DistractionFree,
+    /// The scratchpad dock's editor, dressed by its own bundle (defaults those of
+    /// Notes) so that resizing it never touches a note, and the reverse.
+    Scratchpad,
 }
 
 /// The legal span of a bundle's `size`, and what it resets to.
@@ -184,7 +192,8 @@ pub struct EditorTypography {
     pub size_range: TypographySizeRange,
 }
 
-/// The per-editor-type typography bundles (Scene / Synopsis / Notes / Corkboard),
+/// The per-editor-type typography bundles (Scene / Synopsis / Notes / Corkboard /
+/// Distraction-free / Scratchpad),
 /// created once and threaded through `EditorsViewModel` into every `ContentTab`.
 #[derive(Clone)]
 pub struct EditorTypographySet {
@@ -199,6 +208,9 @@ pub struct EditorTypographySet {
     /// window is in distraction-free mode. Independent, compile-time defaults
     /// like every bundle here (never seeded from Scene).
     pub distraction_free: EditorTypography,
+    /// The scratchpad editor's own bundle. Independent of `notes`: the same defaults,
+    /// separate keys, so the two never follow each other.
+    pub scratchpad: EditorTypography,
 }
 
 /// Per-container-type "last view" memory: the `SegmentedControl` index a freshly
@@ -437,6 +449,7 @@ pub struct SettingsViewModel {
     notes_typo: EditorTypography,
     corkboard_typo: EditorTypography,
     distraction_free_typo: EditorTypography,
+    scratchpad_typo: EditorTypography,
     /// Max width (px) of the writing column while distraction-free mode is
     /// active — independent from [`Self::column_width`].
     distraction_free_width: Signal<f32>,
@@ -653,6 +666,35 @@ impl SettingsViewModel {
                 size_range: TypographySizeRange::standard(
                     TypographyKind::DistractionFree,
                     DISTRACTION_FREE_SIZE_DEFAULT,
+                ),
+            },
+            scratchpad_typo: EditorTypography {
+                font_family: store.signal(
+                    SCRATCHPAD_FONT_FAMILY_KEY,
+                    SCRATCHPAD_FONT_FAMILY_DEFAULT.to_string(),
+                ),
+                size: store.signal(SCRATCHPAD_SIZE_KEY, SCRATCHPAD_SIZE_DEFAULT),
+                line_height: store
+                    .signal(SCRATCHPAD_LINE_HEIGHT_KEY, SCRATCHPAD_LINE_HEIGHT_DEFAULT),
+                first_line_indent: store.signal(
+                    SCRATCHPAD_FIRST_LINE_INDENT_KEY,
+                    SCRATCHPAD_FIRST_LINE_INDENT_DEFAULT,
+                ),
+                para_spacing_before: store.signal(
+                    SCRATCHPAD_PARA_SPACING_BEFORE_KEY,
+                    SCRATCHPAD_PARA_SPACING_BEFORE_DEFAULT,
+                ),
+                para_spacing_after: store.signal(
+                    SCRATCHPAD_PARA_SPACING_AFTER_KEY,
+                    SCRATCHPAD_PARA_SPACING_AFTER_DEFAULT,
+                ),
+                justify_new_text: store.signal(
+                    crate::SCRATCHPAD_JUSTIFY_NEW_TEXT_KEY,
+                    crate::SCRATCHPAD_JUSTIFY_NEW_TEXT_DEFAULT,
+                ),
+                size_range: TypographySizeRange::standard(
+                    TypographyKind::Scratchpad,
+                    SCRATCHPAD_SIZE_DEFAULT,
                 ),
             },
             distraction_free_width: store
@@ -918,6 +960,7 @@ impl SettingsViewModel {
             notes: self.notes_typo.clone(),
             corkboard: self.corkboard_typo.clone(),
             distraction_free: self.distraction_free_typo.clone(),
+            scratchpad: self.scratchpad_typo.clone(),
         }
     }
 
@@ -1364,6 +1407,61 @@ mod tests {
     /// corkboard's cards hold synopses and distraction-free mode shows a Scene (or a
     /// Note, see `ContentTab::main_typography`), so their bundles carry those switches
     /// rather than switches of their own nobody could reach.
+    /// The scratchpad's bundle starts as the Notes bundle and then goes its own way:
+    /// resizing one never moves the other, in either direction, and neither does a
+    /// reset of the other.
+    #[test]
+    fn the_scratchpad_bundle_is_independent_of_notes() {
+        let store = temp_store();
+        let vm = SettingsViewModel::new(&store);
+        let t = vm.editor_typography();
+        assert_eq!(t.scratchpad.font_family.get(), NOTES_FONT_FAMILY_DEFAULT);
+        assert_eq!(t.scratchpad.size.get(), NOTES_SIZE_DEFAULT);
+        assert_eq!(t.scratchpad.line_height.get(), NOTES_LINE_HEIGHT_DEFAULT);
+        assert_eq!(
+            t.scratchpad.first_line_indent.get(),
+            NOTES_FIRST_LINE_INDENT_DEFAULT
+        );
+        assert_eq!(
+            t.scratchpad.para_spacing_before.get(),
+            NOTES_PARA_SPACING_BEFORE_DEFAULT
+        );
+        assert_eq!(
+            t.scratchpad.para_spacing_after.get(),
+            NOTES_PARA_SPACING_AFTER_DEFAULT
+        );
+        assert_eq!(t.scratchpad.size_range.kind, TypographyKind::Scratchpad);
+        assert_eq!(t.notes.size_range.kind, TypographyKind::Notes);
+
+        t.notes.size.set(1.4);
+        t.notes.font_family.set("EB Garamond".into());
+        assert_eq!(t.scratchpad.size.get(), SCRATCHPAD_SIZE_DEFAULT);
+        assert_eq!(
+            t.scratchpad.font_family.get(),
+            SCRATCHPAD_FONT_FAMILY_DEFAULT
+        );
+
+        t.scratchpad.size.set(0.8);
+        t.scratchpad.justify_new_text.set(true);
+        assert_eq!(t.notes.size.get(), 1.4, "the scratchpad moved Notes");
+        assert!(!t.notes.justify_new_text.get());
+
+        // Their own keys: a second view-model over the same store sees both.
+        let again = SettingsViewModel::new(&store).editor_typography();
+        assert_eq!(again.scratchpad.size.get(), 0.8);
+        assert_eq!(again.notes.size.get(), 1.4);
+        assert_ne!(SCRATCHPAD_SIZE_KEY, NOTES_SIZE_KEY);
+
+        vm.reset_editor_defaults();
+        let t = vm.editor_typography();
+        assert_eq!(t.scratchpad.size.get(), SCRATCHPAD_SIZE_DEFAULT);
+        assert_eq!(
+            t.scratchpad.font_family.get(),
+            SCRATCHPAD_FONT_FAMILY_DEFAULT
+        );
+        assert!(!t.scratchpad.justify_new_text.get());
+    }
+
     #[test]
     fn the_corkboard_and_distraction_free_share_the_start_justified_switches() {
         let store = temp_store();
