@@ -1,11 +1,6 @@
 Version: 3.5.0
 Date: 2026-11-25
 Type: stable
-Description: []
----
-Version: 3.4.2
-Date: 2026-11-23
-Type: stable
 Description:
 - "Everything but what you are writing can now fade back. Press F8, click the new button beside the spell-check one at the top right, or choose View ▸ Fade the rest of the text. In Settings ▸ Editor ▸ Focus you choose whether the sentence or the whole paragraph you are in keeps its full strength, and how far the rest fades: Light, Medium or Strong. In Full Chapter, Full Part and Full Book the other scenes fade as well, and so does the synopsis while you write the text below it. It works in distraction-free mode too, where the strip at the bottom has its own button, and it combines with Highlight around the caret and with typewriter scrolling"
 - "Paragraphs can now be justified. Justify sits beside Align left and Center in the Format panel and in Format ▸ Alignment. A justified paragraph stays justified in DOCX, ODT, EPUB, HTML and PDF exports, even when the export style sets the book ragged, so you can justify one passage, such as a letter, without justifying the whole book"
