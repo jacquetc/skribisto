@@ -52,6 +52,7 @@ use crate::diagnostics::{Refusal, file_name, unreadable};
 
 use crate::version::{self, FormatVersion};
 use skrib_format::import_notice::{ImportNotice, ProjectContainer};
+use skrib_format::regular_file;
 
 /// The format-0 member holding a Python pickle. Read past, never parsed.
 pub const PICKLE_MEMBER: &str = "settings.pickle";
@@ -431,9 +432,18 @@ fn normalise_member(raw: &str) -> Option<String> {
 /// Walk the project folder `root` into the member map, keyed exactly as the zip
 /// path keys.
 ///
-/// A folder can be nested as deep as a path can be long, or without end when a link
-/// inside it points back up, so the walk stops at the ceiling every other tree an
-/// importer reads is held to, with the typed refusal the writer is shown.
+/// A folder can be nested as deep as a path can be long, so the walk stops at the
+/// ceiling every other tree an importer reads is held to, with the typed refusal the
+/// writer is shown.
+///
+/// A link is never followed, to a folder or to a file, and nothing but a regular file
+/// is read: a project folder may have come out of an archive someone sent, and a link
+/// in it named like a scene could point at `~/.ssh/id_rsa` (read in as prose), at
+/// `/dev/zero` (read until memory runs out) or at a FIFO (a read that never returns).
+/// Each one skipped is named in a notice, as an unreadable file is. A file is opened
+/// through [`skrib_format::regular_file`], which checks again through the open handle,
+/// and is read no further than the size the whole project has left, so the ceiling
+/// holds before the bytes are in memory.
 ///
 /// It is a loop over the folders still to read, never a recursion. A recursive walk
 /// keeps a stack frame and an open directory for every level it is inside, and the
@@ -466,7 +476,10 @@ fn read_dir_into(
             if name.starts_with('.') {
                 continue;
             }
-            if path.is_dir() {
+            // The entry's own type: a link is reported as a link, never as what it
+            // points at.
+            let kind = entry.file_type();
+            if kind.as_ref().is_ok_and(fs::FileType::is_dir) {
                 if depth + 1 > skrib_format::MAX_XML_DEPTH {
                     let folder = path.strip_prefix(root).unwrap_or(&path);
                     return Err(anyhow::Error::new(skrib_format::FoldersTooDeep {
@@ -491,9 +504,32 @@ fn read_dir_into(
             // A file that cannot be read costs that file and nothing else. A
             // project folder is a directory on someone's disk: it collects broken
             // symlinks, half-synced files and things the current user may not
-            // read, and none of that is a reason to refuse a manuscript.
-            let bytes = match fs::read(&path) {
+            // read, and none of that is a reason to refuse a manuscript. A link,
+            // a FIFO or a device is skipped the same way, unopened.
+            let opened = match kind {
+                Ok(kind) if kind.is_file() => regular_file::open_regular(&path),
+                Ok(_) => Err(regular_file::not_a_regular_file()),
+                Err(e) => Err(e),
+            };
+            let file = match opened {
+                Ok(file) => file,
+                Err(e) => {
+                    notices.push(ImportNotice::FileUnreadable {
+                        member: key.clone(),
+                        error: e.to_string(),
+                    });
+                    continue;
+                }
+            };
+            let modified = file.metadata().ok().and_then(|m| modified_of(&m));
+            let left = MAX_TOTAL_BYTES.saturating_sub(*total);
+            let bytes = match regular_file::read_limited(file, left) {
                 Ok(bytes) => bytes,
+                Err(e) if e.kind() == std::io::ErrorKind::FileTooLarge => {
+                    return Err(anyhow::Error::new(Refusal::TooLarge {
+                        limit_mib: MAX_TOTAL_BYTES / (1 << 20),
+                    }));
+                }
                 Err(e) => {
                     notices.push(ImportNotice::FileUnreadable {
                         member: key.clone(),
@@ -503,12 +539,7 @@ fn read_dir_into(
                 }
             };
             *total = total.saturating_add(bytes.len() as u64);
-            if *total > MAX_TOTAL_BYTES {
-                return Err(anyhow::Error::new(Refusal::TooLarge {
-                    limit_mib: MAX_TOTAL_BYTES / (1 << 20),
-                }));
-            }
-            if let Some(at) = modified_at(&path)
+            if let Some(at) = modified
                 && newest.map(|n| at > n).unwrap_or(true)
             {
                 *newest = Some(at);
@@ -534,10 +565,11 @@ fn note_if_not_utf8(member: &str, bytes: &[u8], notices: &mut Vec<ImportNotice>)
 }
 
 fn modified_at(path: &Path) -> Option<DateTime<Utc>> {
-    fs::metadata(path)
-        .and_then(|m| m.modified())
-        .ok()
-        .map(DateTime::<Utc>::from)
+    fs::metadata(path).ok().and_then(|m| modified_of(&m))
+}
+
+fn modified_of(metadata: &fs::Metadata) -> Option<DateTime<Utc>> {
+    metadata.modified().ok().map(DateTime::<Utc>::from)
 }
 
 #[cfg(test)]
@@ -571,6 +603,97 @@ mod tests {
     use super::*;
     use std::io::Write;
     use std::time::{Duration, SystemTime};
+
+    /// Whether a notice names `member`.
+    fn named_in_a_notice(src: &ManuskriptSource, member: &str) -> bool {
+        src.notices
+            .iter()
+            .any(|n| matches!(n, ImportNotice::FileUnreadable { member: m, .. } if m == member))
+    }
+
+    /// A link named like a scene, pointing at a file outside the project (a key, in
+    /// an archive someone sent), is not followed: its target never becomes prose.
+    #[test]
+    #[cfg(unix)]
+    fn a_link_to_a_file_outside_the_project_is_not_read() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let secret = dir.path().join("id_rsa");
+        fs::write(&secret, "PRIVATE KEY").expect("secret");
+        let root = dir.path().join("A Novel");
+        folder(&root, &v1_members());
+        let member = "outline/0-Chapter_One/1-Key.md";
+        std::os::unix::fs::symlink(&secret, root.join(member)).expect("symlink");
+
+        let src = ManuskriptSource::open(&root.to_string_lossy()).expect("open");
+        assert!(!src.has(member));
+        assert!(named_in_a_notice(&src, member), "{:?}", src.notices);
+        for name in src.members() {
+            let bytes = src.bytes(name).unwrap_or_default();
+            assert!(
+                !String::from_utf8_lossy(bytes).contains("PRIVATE KEY"),
+                "{name} holds the key"
+            );
+        }
+        assert_eq!(src.members_under("outline/").len(), 2);
+    }
+
+    /// A link to a folder outside the project is not walked into.
+    #[test]
+    #[cfg(unix)]
+    fn a_link_to_a_folder_is_not_walked() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let elsewhere = dir.path().join("elsewhere");
+        fs::create_dir(&elsewhere).expect("elsewhere");
+        fs::write(elsewhere.join("0-Secret.md"), "Not yours.").expect("secret");
+        let root = dir.path().join("A Novel");
+        folder(&root, &v1_members());
+        std::os::unix::fs::symlink(&elsewhere, root.join("outline/1-Linked")).expect("symlink");
+
+        let src = ManuskriptSource::open(&root.to_string_lossy()).expect("open");
+        assert!(!src.has("outline/1-Linked/0-Secret.md"));
+        assert!(
+            named_in_a_notice(&src, "outline/1-Linked"),
+            "{:?}",
+            src.notices
+        );
+        assert_eq!(src.members_under("outline/").len(), 2);
+    }
+
+    /// `/dev/zero` never ends: followed, the read fills memory until the app dies.
+    #[test]
+    #[cfg(unix)]
+    fn a_link_to_a_device_is_skipped_unread() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let root = dir.path().join("A Novel");
+        folder(&root, &v1_members());
+        let member = "outline/0-Chapter_One/1-Zero.md";
+        std::os::unix::fs::symlink("/dev/zero", root.join(member)).expect("symlink");
+
+        let src = ManuskriptSource::open(&root.to_string_lossy()).expect("open");
+        assert!(!src.has(member));
+        assert!(named_in_a_notice(&src, member), "{:?}", src.notices);
+    }
+
+    /// A FIFO with no writer would block the read forever, past the cancel button.
+    #[test]
+    #[cfg(unix)]
+    fn a_fifo_is_skipped_without_blocking() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let root = dir.path().join("A Novel");
+        folder(&root, &v1_members());
+        let member = "outline/0-Chapter_One/1-Pipe.md";
+        let made = std::process::Command::new("mkfifo")
+            .arg(root.join(member))
+            .status();
+        if !made.is_ok_and(|s| s.success()) {
+            eprintln!("mkfifo is not available here; skipping");
+            return;
+        }
+
+        let src = ManuskriptSource::open(&root.to_string_lossy()).expect("open");
+        assert!(!src.has(member));
+        assert!(named_in_a_notice(&src, member), "{:?}", src.notices);
+    }
 
     /// Write a project folder from `(relative path, content)` pairs.
     fn folder(root: &Path, members: &[(&str, &str)]) {

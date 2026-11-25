@@ -170,7 +170,10 @@ pub fn import_with_progress(
     let output = StagedOutput::begin(output_path, overwrite)?;
 
     report(2.0, "import.opening");
-    let src = PlumeSource::open(source_path)?;
+    let mut src = PlumeSource::open(source_path)?;
+    // The files an old-system folder held that were left unread come first in the
+    // summary: they are about the source, before anything was converted.
+    let mut warnings = std::mem::take(&mut src.notices);
     bail_if_cancelled(cancel)?;
 
     // Everything from the first parse to the finished bundle runs on the parser
@@ -194,6 +197,7 @@ pub fn import_with_progress(
     // Written beside the target, then moved over it: an existing target
     // (overwrite) is only replaced once the write fully succeeded and no late
     // cancel arrived. Every return before `commit` removes what was written.
+    warnings.extend(mapped.warnings);
     report(92.0, "import.writing");
     output.write(&mapped.bundle)?;
     bail_if_cancelled(cancel)?;
@@ -204,7 +208,7 @@ pub fn import_with_progress(
         output_path: output_path.to_string(),
         imported_items: mapped.imported_items,
         skipped_trashed: mapped.skipped_trashed,
-        warnings: mapped.warnings,
+        warnings,
     })
 }
 

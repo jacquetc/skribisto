@@ -20,8 +20,9 @@ publish = false
 name = "scrivener_import"
 
 [dependencies]
-# The bounded XML parse (`xml_depth`) and the guarded archive reader
-# (`zip_guard`) every importer shares.
+# The bounded XML parse (`xml_depth`), the guarded archive reader (`zip_guard`)
+# and the file open that follows no link and never blocks (`regular_file`) every
+# importer shares.
 skrib_format = { workspace = true }
 # The manifests, the search index, the sidecars. The same parser and version the
 # other importers use, always behind `xml_depth`'s ceiling.
@@ -58,10 +59,6 @@ document_ingest = { workspace = true, features = ["rtf"] }
 # The scratch folder research files are stored in, one at a time, until the project is
 # written: each stored file's blob keeps it alive.
 tempfile = "3"
-
-[target.'cfg(unix)'.dependencies]
-# Opening a member without following a link or blocking on a FIFO.
-libc = "0.2"
 
 [dev-dependencies]
 # Projects of every generation and container, and the traps, built at test time.

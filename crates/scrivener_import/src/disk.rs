@@ -32,6 +32,13 @@ use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 
+// Every read opens its file the way every importer reading a folder does: without
+// following a link or blocking, refusing anything but a regular file. A read
+// refusing something that is not a regular file says so with `NotARegularFile`,
+// told apart from the system's own errors by that payload.
+pub(crate) use skrib_format::regular_file::NotARegularFile;
+use skrib_format::regular_file::{open_regular, read_regular};
+
 /// What kind of thing a path is, without following a link.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum EntryKind {
@@ -171,13 +178,7 @@ impl Disk for RealDisk {
     }
 
     fn read(&self, path: &Path, limit: u64) -> io::Result<Vec<u8>> {
-        let file = open_regular(path)?;
-        let mut out = Vec::new();
-        file.take(limit.saturating_add(1)).read_to_end(&mut out)?;
-        if out.len() as u64 > limit {
-            return Err(io::Error::from(io::ErrorKind::FileTooLarge));
-        }
-        Ok(out)
+        read_regular(path, limit)
     }
 
     fn read_head(&self, path: &Path, count: u64) -> io::Result<Vec<u8>> {
@@ -250,48 +251,6 @@ impl Disk for Cancellable<'_> {
         self.go_on()?;
         self.inner.copy(path, limit, out)
     }
-}
-
-/// Open `path` for reading without following a link or blocking, and make sure
-/// what was opened is a regular file.
-fn open_regular(path: &Path) -> io::Result<std::fs::File> {
-    let mut options = std::fs::OpenOptions::new();
-    options.read(true);
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::OpenOptionsExt;
-        options.custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK);
-    }
-    #[cfg(not(unix))]
-    {
-        // Windows opens a link's target; check what is at the path first.
-        let md = std::fs::symlink_metadata(path)?;
-        if !md.file_type().is_file() {
-            return Err(not_a_regular_file());
-        }
-    }
-    let file = options.open(path)?;
-    if !file.metadata()?.file_type().is_file() {
-        return Err(not_a_regular_file());
-    }
-    Ok(file)
-}
-
-/// The error a read returns for something that is not a regular file, told
-/// apart from the system's own by its payload.
-#[derive(Debug)]
-pub(crate) struct NotARegularFile;
-
-impl std::fmt::Display for NotARegularFile {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str("not a regular file")
-    }
-}
-
-impl std::error::Error for NotARegularFile {}
-
-fn not_a_regular_file() -> io::Error {
-    io::Error::new(io::ErrorKind::InvalidInput, NotARegularFile)
 }
 
 #[cfg(test)]

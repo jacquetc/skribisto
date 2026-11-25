@@ -682,6 +682,131 @@ fn old_system_bare_directory_is_imported() {
     assert!(has(&bundle.binders[1], "Carol Jones"));
 }
 
+/// A pre-0.3 project folder holding one scene, `LooseScene` (node 3), with no
+/// `text/` folder yet. Returns the loose `.plume` tree file.
+fn old_system_folder(root: &Path) -> std::path::PathBuf {
+    let tree = root.join("Loose.plume");
+    std::fs::write(
+        &tree,
+        r#"<!DOCTYPE plume><plume version="0.2" projectName="LooseProj">
+            <book number="1" name="LooseBook"><chapter number="2" name="LooseChap">
+              <scene number="3" name="LooseScene"/></chapter></book></plume>"#,
+    )
+    .unwrap();
+    tree
+}
+
+/// Import the old-system project at `tree` into `root/out.skrib`.
+fn import_old_system(root: &Path, tree: &Path) -> (ImportSummary, skrib_format::WorkBundle) {
+    let out = root.join("out.skrib");
+    let summary = import(
+        tree.to_str().unwrap(),
+        out.to_str().unwrap(),
+        false,
+        "Manuscript",
+        "Story Bible",
+        &ladder(),
+    )
+    .unwrap();
+    let bundle = read_bundle(out.to_str().unwrap()).unwrap();
+    (summary, bundle)
+}
+
+/// Every prose text an item holds, joined: empty when it holds none.
+fn all_prose(item: &BundledItem) -> String {
+    item.prose.values().cloned().collect::<Vec<_>>().join("\n")
+}
+
+fn names_unread(summary: &ImportSummary, member: &str) -> bool {
+    summary
+        .warnings
+        .iter()
+        .any(|w| matches!(w, ImportNotice::FileUnreadable { member: m, .. } if m == member))
+}
+
+/// `text/T3.html -> ~/.ssh/id_rsa` in a folder someone sent: the key must not
+/// become the scene's prose. The link is named in the summary instead.
+#[test]
+#[cfg(unix)]
+fn old_system_link_to_a_file_outside_the_project_is_not_read() {
+    let dir = tempfile::tempdir().unwrap();
+    let secret = dir.path().join("id_rsa");
+    std::fs::write(&secret, "PRIVATE KEY").unwrap();
+    let root = dir.path().join("project");
+    std::fs::create_dir(&root).unwrap();
+    let tree = old_system_folder(&root);
+    std::fs::create_dir(root.join("text")).unwrap();
+    std::os::unix::fs::symlink(&secret, root.join("text/T3.html")).unwrap();
+    // A `.prjinfo` that is a link is not read either.
+    std::os::unix::fs::symlink(&secret, root.join("Loose.prjinfo")).unwrap();
+
+    let (summary, bundle) = import_old_system(&root, &tree);
+    let scene = find(&bundle.binders[0], "LooseScene");
+    assert!(!all_prose(scene).contains("PRIVATE KEY"));
+    assert!(
+        names_unread(&summary, "text/T3.html"),
+        "{:?}",
+        summary.warnings
+    );
+    assert!(
+        names_unread(&summary, "Loose.prjinfo"),
+        "{:?}",
+        summary.warnings
+    );
+}
+
+/// A `text` folder that is a link to a folder elsewhere is not walked.
+#[test]
+#[cfg(unix)]
+fn old_system_linked_text_folder_is_not_walked() {
+    let dir = tempfile::tempdir().unwrap();
+    let elsewhere = dir.path().join("elsewhere");
+    std::fs::create_dir(&elsewhere).unwrap();
+    std::fs::write(elsewhere.join("T3.html"), "<p>Not yours.</p>").unwrap();
+    let root = dir.path().join("project");
+    std::fs::create_dir(&root).unwrap();
+    let tree = old_system_folder(&root);
+    std::os::unix::fs::symlink(&elsewhere, root.join("text")).unwrap();
+
+    let (summary, bundle) = import_old_system(&root, &tree);
+    let scene = find(&bundle.binders[0], "LooseScene");
+    assert!(!all_prose(scene).contains("Not yours."));
+    assert!(names_unread(&summary, "text"), "{:?}", summary.warnings);
+}
+
+/// A FIFO with no writer would block the import forever; a device would be read
+/// without end. Both are left unread and named, and the rest still imports.
+#[test]
+#[cfg(unix)]
+fn old_system_fifo_and_device_are_skipped() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("project");
+    std::fs::create_dir(&root).unwrap();
+    let tree = old_system_folder(&root);
+    std::fs::create_dir(root.join("text")).unwrap();
+    std::fs::write(root.join("text/T3.html"), "<p>Loose scene prose.</p>").unwrap();
+    std::os::unix::fs::symlink("/dev/zero", root.join("text/N3.html")).unwrap();
+    let fifo = root.join("text/S3.html");
+    let made = std::process::Command::new("mkfifo").arg(&fifo).status();
+    let have_fifo = made.is_ok_and(|s| s.success());
+
+    let (summary, bundle) = import_old_system(&root, &tree);
+    let scene = find(&bundle.binders[0], "LooseScene");
+    assert!(prose(scene, ContentRole::SceneText).contains("Loose scene prose."));
+    assert!(
+        names_unread(&summary, "text/N3.html"),
+        "{:?}",
+        summary.warnings
+    );
+    if have_fifo {
+        assert!(
+            names_unread(&summary, "text/S3.html"),
+            "{:?}",
+            summary.warnings
+        );
+    }
+}
+
 #[test]
 fn rejects_non_plume_and_refuses_overwrite() {
     let dir = tempfile::tempdir().unwrap();

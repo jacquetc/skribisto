@@ -90,6 +90,10 @@ mod normalisation_tests;
 #[cfg(test)]
 mod property_tests;
 mod reader;
+/// Opening a file in a folder someone else made without following a link or
+/// blocking on a FIFO. `pub` because every importer that reads a project folder
+/// (Manuskript, Plume Creator, Scrivener) reads its files through it.
+pub mod regular_file;
 #[cfg(test)]
 mod resource_tests;
 pub mod retention;

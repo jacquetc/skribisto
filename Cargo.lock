@@ -5900,7 +5900,6 @@ dependencies = [
  "blake3",
  "chrono",
  "gethostname",
- "libc",
  "proptest",
  "roxmltree 0.21.1",
  "serde",

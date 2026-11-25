@@ -12,6 +12,7 @@ Description:
 - "Files that a newer Skribisto or an extension keeps in a binder's folder now follow the binder when you rename or move it. They used to be deleted with the old folder"
 - "If Skribisto stops in the middle of saving a folder project, the project still opens. Renaming a scene, a note template or a picture, or deleting a binder, could leave a project that refused to open"
 - "A file stored in a project's resources now survives when Skribisto repairs its identifier as the project opens. The project used to fail to open, and the file was deleted"
+- "Importing a Manuskript project folder, or an old Plume Creator project folder, no longer reads files that are links to somewhere else, or special files that could freeze the import. A link inside a project someone sent you could pull an unrelated file from your computer into your book. Each file left out is named in the import summary"
 ---
 Version: 3.5.0
 Date: 2026-11-25
