@@ -33,8 +33,9 @@ pub fn confirm_and_replace(vm: &SearchReplaceViewModel, ctx: &mut EventContext) 
     }
     let query = vm.query_signal().get();
     let replacement = vm.replacement_signal().get();
-    let occurrences = vm.match_count_signal().get();
-    let items = vm.item_count_signal().get();
+    // What will change, not what was found: an unticked hit is not replaced, so it is
+    // not counted in the promise either.
+    let (occurrences, items) = vm.replace_all_reach();
 
     // A scratchpad among the ticked rows is named: the writer's private notes are not
     // what "replace in the project" brings to mind, and they start unticked for that

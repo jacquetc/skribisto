@@ -1005,7 +1005,15 @@ impl SearchReplaceViewModel {
                 occurrence_starts.push(at);
             }
         }
+        // A row excluded whole stays out, except the row the writer named one
+        // occurrence of: "Replace this" on a hit is the writer saying so, as plainly as
+        // a tick, and re-excluding the row made the backend drop it before reading the
+        // occurrence, so the button succeeded in silence and changed nothing. A
+        // resource's row stays out regardless: nothing rewrites a resource.
         for id in self.excluded.get() {
+            if named.contains(&id) && !self.is_resource_row(id) {
+                continue;
+            }
             if !excluded_rows.contains(&id) {
                 excluded_rows.push(id);
             }
@@ -1148,6 +1156,36 @@ impl SearchReplaceViewModel {
             }
         });
         n
+    }
+
+    /// What Replace All would change now: the occurrences it would rewrite and the items
+    /// they are in. The search's own totals count every hit, the unticked ones too (a
+    /// comment, a scratchpad, a resource, an occurrence ticked out), so a confirmation
+    /// built on them offered to replace hits Replace All then left alone. Counted the
+    /// way [`Self::replace_all`] and the backend leave them out: a row excluded whole, a
+    /// resource, a scratchpad while the Scratchpads switch is off, and each occurrence
+    /// ticked out of a row that is otherwise in.
+    pub fn replace_all_reach(&self) -> (u64, u64) {
+        let whole = self.excluded.get();
+        let singles = self.excluded_occurrences.get();
+        let scratchpads = self.search_scratchpad.get();
+        let mut occurrences = 0u64;
+        let mut items: HashSet<u64> = HashSet::new();
+        self.results.for_each(|r| {
+            if whole.contains(&r.id)
+                || r.match_field == MatchField::Resource
+                || (!scratchpads && r.match_field == MatchField::Scratchpad)
+            {
+                return;
+            }
+            let ticked_out = singles.iter().filter(|(row, _)| *row == r.id).count() as u64;
+            let left = r.occurrence_count.saturating_sub(ticked_out);
+            if left > 0 {
+                occurrences += left;
+                items.insert(r.binder_item_id);
+            }
+        });
+        (occurrences, items.len() as u64)
     }
 
     /// The binder-item ids Replace All will touch (ticked results only), deduped —
@@ -2077,6 +2115,114 @@ pub(super) mod tests {
         assert_eq!(
             rows(ContentRole::SceneText).map(|c| c.data).as_deref(),
             Some("The warden climbed the stair.")
+        );
+    }
+
+    /// Two Replace actions on a scratchpad hit that is still unticked. "Replace this" on
+    /// one of its occurrences replaces that occurrence: the writer named it. It used to
+    /// put the row back among the excluded ones, so the backend dropped it before reading
+    /// the occurrence and the button changed nothing, in silence. And the Replace All
+    /// confirmation counts what Replace All would change, not every hit found: the
+    /// unticked scratchpad's two occurrences are not in its promise until ticked, nor an
+    /// occurrence ticked out of it.
+    #[cfg(not(feature = "mocks"))]
+    #[test]
+    fn replace_this_reaches_an_unticked_hit_and_the_confirmation_counts_what_changes() {
+        use frontend::commands::{binder_item_commands, content_commands};
+        use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
+        use frontend::common::entities::ContentRole;
+        use frontend::direct_access::CreateContentDto;
+
+        let project = crate::test_support::RealProject::empty_novel();
+        let (scene, _) = project.scenes()[0];
+        let ctx = &project.app_ctx;
+        let text_of = |role: ContentRole| {
+            let ids = binder_item_commands::get_binder_item_relationship(
+                ctx,
+                &scene,
+                &BinderItemRelationshipField::Contents,
+            )
+            .expect("contents");
+            content_commands::get_content_multi(ctx, &ids)
+                .expect("rows")
+                .into_iter()
+                .flatten()
+                .find(|c| c.role == role)
+                .map(|c| c.data)
+        };
+        let ids = binder_item_commands::get_binder_item_relationship(
+            ctx,
+            &scene,
+            &BinderItemRelationshipField::Contents,
+        )
+        .expect("contents");
+        let mut prose = content_commands::get_content_multi(ctx, &ids)
+            .expect("rows")
+            .into_iter()
+            .flatten()
+            .find(|c| c.role == ContentRole::SceneText)
+            .expect("the scene's text row");
+        prose.data = "The keeper climbed the stair.".into();
+        content_commands::update_content(ctx, None, &prose.into()).expect("update");
+        content_commands::create_content(
+            ctx,
+            None,
+            &CreateContentDto {
+                role: ContentRole::ScratchpadText,
+                activated: true,
+                data: "Is the keeper too old? The keeper sleeps.".into(),
+                ..Default::default()
+            },
+            scene,
+            -1,
+        )
+        .expect("create");
+
+        let vm = SearchReplaceViewModel::new(
+            ctx.clone(),
+            project.ids.clone(),
+            SearchResultsModel::new(ctx.clone(), project.ids.work_info_id.clone()),
+            SearchSettingsService::in_memory_default(),
+            OpenDocsStore::new(ctx.clone()),
+            DockingModel::new(),
+            DockWidgetId::fresh(),
+            DockWidgetId::fresh(),
+        );
+        vm.query_signal().set("keeper".into());
+        vm.replacement_signal().set("warden".into());
+        vm.set_search_scratchpad(true);
+        vm.run_now();
+        let mut pad = None;
+        vm.results().for_each(|r| {
+            if r.match_field == MatchField::Scratchpad {
+                pad = Some(r.id);
+            }
+        });
+        let pad = pad.expect("the scratchpad hit is listed");
+        assert_eq!(vm.match_count_signal().get(), 3, "three hits found");
+        assert_eq!(vm.replace_all_reach(), (1, 1), "only the scene's is ticked");
+        vm.set_excluded(pad, false);
+        assert_eq!(
+            vm.replace_all_reach(),
+            (3, 1),
+            "the scratchpad's two join it"
+        );
+        vm.set_excluded_occurrence(pad, 7, true);
+        assert_eq!(vm.replace_all_reach(), (2, 1), "less the one ticked out");
+        vm.set_excluded_occurrence(pad, 7, false);
+        vm.set_excluded(pad, true);
+        assert_eq!(vm.replace_all_reach(), (1, 1));
+
+        vm.replace_occurrence(pad, 7).expect("replace this");
+        assert_eq!(
+            text_of(ContentRole::ScratchpadText).as_deref(),
+            Some("Is the warden too old? The keeper sleeps."),
+            "the named occurrence is replaced, and only it"
+        );
+        assert_eq!(
+            text_of(ContentRole::SceneText).as_deref(),
+            Some("The keeper climbed the stair."),
+            "the scene's text is not touched"
         );
     }
 
