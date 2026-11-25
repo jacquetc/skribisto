@@ -82,9 +82,11 @@ pub(in crate::app) fn install(ctx: &mut BuildContext, deps: &AutosaveDeps) {
     // Dirty tracking + debounced autosave-to-disk. Every mutation (editor
     // typing via the editors' `edited` signal, plus tree/metadata events)
     // marks the work `unsaved` and — when autosave is on — (re)schedules a
-    // one-shot wake ~1.5 s out. `wake_at` keeps the loop asleep until the
-    // deadline (no 60 fps drain); the `frame_tick` effect only runs on the
-    // frames that actually pump, and fires the save when the deadline passes.
+    // one-shot wake ~1.5 s out, never more than 30 s after the first change
+    // still unsaved (a writer who never pauses still gets a save). `wake_at`
+    // keeps the loop asleep until the deadline (no 60 fps drain); the
+    // `frame_tick` effect only runs on the frames that actually pump, and
+    // fires the save when the deadline passes.
     // The countdown policy lives in `crate::save::timers` (pure, `now`-injected,
     // unit-tested); `App` keeps only the two effects it must own — arming the
     // framework's `wake_at` and actually writing to disk.
@@ -109,6 +111,20 @@ pub(in crate::app) fn install(ctx: &mut BuildContext, deps: &AutosaveDeps) {
             ctx.effect(&deps.save_state.dirty_seq(), move |_| {
                 if let Some(at) = countdown.on_mutation(Instant::now(), autosave.get()) {
                     wake.set(Some(at));
+                }
+            });
+        }
+
+        // A save from anywhere else (Ctrl+S, a close, a project switch, a
+        // follow-up save landing) that leaves nothing unsaved ends the current
+        // maximum wait: the next change counts its 30 s from itself, not from a
+        // word that is already on disk.
+        {
+            let countdown = countdown.clone();
+            let save_state = deps.save_state.clone();
+            ctx.effect(&deps.save_state.saved_seq(), move |_| {
+                if !save_state.is_unsaved() {
+                    countdown.on_saved();
                 }
             });
         }
