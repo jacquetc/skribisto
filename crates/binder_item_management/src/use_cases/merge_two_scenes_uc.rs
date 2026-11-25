@@ -32,6 +32,7 @@ use common::direct_access::footnote::FootnoteRelationshipField;
 use common::direct_access::trash_info::TrashInfoRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::entities::{BinderItem, Content, ContentRole, Footnote, TrashInfo, Work};
+use common::prose_keep::join_text;
 use common::snapshot::EntityTreeSnapshot;
 use common::types::EntityId;
 use skribisto_model::SubRoleExt;
@@ -275,14 +276,14 @@ impl MergeTwoScenesUseCase {
             ContentRole::SynopsisText,
             ContentRole::ScratchpadText,
         ] {
-            let b_row = b_rows.iter().find(|c| c.role == role);
-            let b_text = b_row.map(|c| c.data.clone()).unwrap_or_default();
+            let Some(b_row) = b_rows.iter().find(|c| c.role == role) else {
+                continue; // the source has no row of this role: nothing to append
+            };
+            let b_text = b_row.data.clone();
             if b_text.trim().is_empty() {
                 continue; // nothing to append for this role
             }
-            // `b_row` is `Some` here: a non-empty `b_text` can only have come from a
-            // row that exists.
-            let b_content_id = b_row.expect("non-empty b_text implies a source row").id;
+            let b_content_id = b_row.id;
             match a_rows.iter().find(|c| c.role == role).cloned() {
                 Some(mut row) => {
                     row.data = join_text(&row.data, &b_text);
@@ -385,24 +386,6 @@ fn work_id(uow: &dyn MergeTwoScenesUnitOfWorkTrait, requested: EntityId) -> Resu
         .ok_or_else(|| anyhow!("work {requested} is not open"))
 }
 
-/// Append `b` onto `a` with a blank-line separator (paragraph break in Djot).
-///
-/// Only the line breaks at the join are trimmed, since the separator replaces them. A merge
-/// cuts no paragraph, so every paragraph keeps the blanks it opens and ends with, as a split
-/// keeps a paragraph's indentation (`teksilo_ui`'s `split_djot`): the ones the editor writes
-/// behind an empty `{}` never touch the join, and a no-break or ideographic space it writes
-/// bare there is text. `str::trim` knew none of that and took those last two, so merging a
-/// scene whose first paragraph opened with an ideographic-space indent lost the indent.
-fn join_text(a: &str, b: &str) -> String {
-    let line_break = |c: char| matches!(c, '\n' | '\r');
-    let b = b.trim_start_matches(line_break);
-    if a.trim().is_empty() {
-        b.to_string()
-    } else {
-        format!("{}\n\n{b}", a.trim_end_matches(line_break))
-    }
-}
-
 use common::undo_redo::UndoRedoCommand;
 use std::any::Any;
 impl UndoRedoCommand for MergeTwoScenesUseCase {
@@ -448,7 +431,7 @@ impl UndoRedoCommand for MergeTwoScenesUseCase {
 
 #[cfg(test)]
 mod tests {
-    use super::join_text;
+    use common::prose_keep::join_text;
 
     /// The join adds one paragraph break and takes nothing from either side but the line
     /// breaks it replaces: a trailing `{}`-guarded pair of spaces, a tab-indented first

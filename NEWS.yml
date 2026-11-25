@@ -23,6 +23,7 @@ Description:
 - "In Danish, Nummerér ikke dette kapitel in the binder's right-click menu now has U as its access key. It shared I with Importér her…, so the key could not reach both"
 - "Settings ▸ Editor ▸ Editor Behavior had grown too long and is now four pages. Page layout holds the text width, Indent by level, and where the synopsis and the epigraphs go. Focus holds typewriter scrolling, Highlight around the caret and Fade the rest of the text. Images & files holds what happens to large images you insert and to files over 10 MB you attach. Tabs kept open and Remember the last view for each item type are on a new page, Appearance & Behavior ▸ Tabs & views. Every setting keeps its value"
 - "Settings now opens on the page you were on last, instead of always on Appearance. A message that offers to open one page of Settings, and Help ▸ Keyboard shortcuts, still open on their own page"
+- "Undoing a move, a merge, a split or a duplicate in the binder now keeps the words you typed after it into a text that was still empty, such as a chapter's own text, a synopsis or an epigraph. The undo used to remove that text along with what it undid"
 ---
 Version: 3.4.1
 Date: 2026-11-23
