@@ -32,7 +32,10 @@
 //! own running copy.
 //!
 //! Crash-safe by construction: a lock whose pid is no longer alive is reaped on
-//! [`scan`]; the mere presence of a file never means "open". [`scan`] also reaps
+//! [`scan`]; the mere presence of a file never means "open". A lock is written
+//! whole or not at all ([`write_lock`]: a temporary file beside it, then a rename),
+//! because [`scan`] reaps a lock it cannot parse, and a lock caught half written
+//! used to be reaped as stale while its project was open. [`scan`] also reaps
 //! this instance's IPC socket files (`ipc-{pid}.sock`) once their owning pid is
 //! dead — sockets are not otherwise cleaned up by anything else, so on macOS
 //! (whose fallback directory is persistent) they would otherwise accumulate
@@ -44,7 +47,9 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
+use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 
@@ -497,9 +502,7 @@ pub fn claim(path: &str, title: &str) {
         title: title.to_string(),
         importing: false,
     };
-    if let Ok(json) = serde_json::to_string(&entry)
-        && std::fs::write(&lock, json).is_ok()
-    {
+    if write_lock(&lock, &entry).is_ok() {
         CLAIMED.with(|c| {
             c.borrow_mut().insert(spelled, lock);
         });
@@ -612,9 +615,7 @@ pub fn claim_import(path: &str) -> ImportClaim {
         title: String::new(),
         importing: true,
     };
-    let lock = lock.filter(|lock| {
-        serde_json::to_string(&entry).is_ok_and(|json| std::fs::write(lock, json).is_ok())
-    });
+    let lock = lock.filter(|lock| write_lock(lock, &entry).is_ok());
     ImportClaim { key, lock }
 }
 
@@ -716,6 +717,59 @@ pub fn scan_open() -> Vec<OpenEntry> {
         .collect()
 }
 
+/// The name every temporary lock file starts with, followed by the writing
+/// process's pid and a `-`, so [`scan`] can reap one a crash left behind.
+const TEMP_PREFIX: &str = "tmp-";
+
+/// The extension of a temporary lock file: anything but `lock`, so [`scan`] never
+/// reads one as a claim.
+const TEMP_EXTENSION: &str = "tmp";
+
+/// How long a lock that cannot be parsed is left alone before [`scan`] reaps it.
+///
+/// [`write_lock`] never leaves a lock half written, but a copy of Skribisto from
+/// before it wrote its lock in place, and one scanning at that moment read it empty
+/// or cut short. A few seconds is far longer than any such write takes, and far
+/// shorter than anyone waits for a crashed copy's lock to go.
+const UNREADABLE_GRACE: Duration = Duration::from_secs(10);
+
+/// Write `entry` as the lock file `lock`, whole or not at all: into a temporary
+/// file in the same folder, then renamed over `lock`.
+///
+/// Writing `lock` in place truncated it first, and a [`scan`] in another copy that
+/// read it in between found nothing to parse and deleted it as stale: the project
+/// was open, and nothing said so any more. A rename within one folder replaces the
+/// file in one step, so a reader sees the old lock or the new one. The temporary
+/// file is named so that [`scan`] does not read it as a lock ([`TEMP_EXTENSION`])
+/// and reaps it if its writer died before the rename ([`TEMP_PREFIX`]).
+fn write_lock(lock: &Path, entry: &OpenEntry) -> std::io::Result<()> {
+    let json = serde_json::to_string(entry).map_err(std::io::Error::other)?;
+    let folder = lock
+        .parent()
+        .ok_or_else(|| std::io::Error::other("a lock file has no folder"))?;
+    let mut temp = tempfile::Builder::new()
+        .prefix(&format!("{TEMP_PREFIX}{}-", my_pid()))
+        .suffix(&format!(".{TEMP_EXTENSION}"))
+        .tempfile_in(folder)?;
+    temp.write_all(json.as_bytes())?;
+    temp.persist(lock).map_err(|e| e.error)?;
+    Ok(())
+}
+
+/// Whether a lock [`scan`] could not parse, last written `age` ago, is stale. One
+/// written moments ago may be in the middle of being written by an older copy (see
+/// [`UNREADABLE_GRACE`]). An age that cannot be read (no modification time, or one
+/// in the future) does not hold the reap back: the lock is as unreadable either
+/// way, and keeping it forever would show a project open that is not.
+fn unreadable_lock_is_stale(age: Option<Duration>) -> bool {
+    age.is_none_or(|age| age >= UNREADABLE_GRACE)
+}
+
+/// How long ago the file at `p` was last written, when the platform can say.
+fn age_of(p: &Path) -> Option<Duration> {
+    std::fs::metadata(p).ok()?.modified().ok()?.elapsed().ok()
+}
+
 /// Every project currently open across live instances (undeduped — the same
 /// path may legitimately appear twice if two processes both hold it), reaping
 /// any lock or IPC socket whose owning process is gone. Includes this
@@ -737,10 +791,26 @@ pub fn scan() -> Vec<OpenEntry> {
                 };
                 match serde_json::from_str::<OpenEntry>(&text) {
                     Ok(entry) if pid_alive(entry.pid) => out.push(entry),
-                    // Unparsable or dead-owner ⇒ stale; reap it.
-                    _ => {
+                    // Dead owner ⇒ stale; reap it.
+                    Ok(_) => {
                         let _ = std::fs::remove_file(&p);
                     }
+                    // Unparsable ⇒ stale, unless it may be in the middle of being
+                    // written by an older copy.
+                    Err(_) => {
+                        if unreadable_lock_is_stale(age_of(&p)) {
+                            let _ = std::fs::remove_file(&p);
+                        }
+                    }
+                }
+            }
+            Some(TEMP_EXTENSION) => {
+                // A lock on its way in (`write_lock`). Never a claim; reaped only
+                // when the process writing it is gone.
+                if let Some(pid) = temp_pid(&p)
+                    && !pid_alive(pid)
+                {
+                    let _ = std::fs::remove_file(&p);
                 }
             }
             Some("sock") => {
@@ -756,6 +826,13 @@ pub fn scan() -> Vec<OpenEntry> {
         }
     }
     out
+}
+
+/// Parse the pid out of a `tmp-{pid}-{random}.tmp` file name ([`write_lock`]).
+fn temp_pid(p: &Path) -> Option<u32> {
+    let stem = p.file_stem()?.to_str()?;
+    let (pid, _) = stem.strip_prefix(TEMP_PREFIX)?.split_once('-')?;
+    pid.parse().ok()
 }
 
 /// Parse the pid out of an `ipc-{pid}.sock` file name.
@@ -778,8 +855,8 @@ pub(crate) fn pretend_another_copy_imports(pid: u32, path: &str) {
         title: String::new(),
         importing: true,
     };
-    if let (Some(lock), Ok(json)) = (lock, serde_json::to_string(&entry)) {
-        let _ = std::fs::write(lock, json);
+    if let Some(lock) = lock {
+        let _ = write_lock(&lock, &entry);
     }
 }
 
@@ -1453,6 +1530,94 @@ mod tests {
             "a lock naming another pid must never be deleted"
         );
         let _ = std::fs::remove_file(&lock);
+    }
+
+    /// A claim lands as one whole lock file, with no temporary file left beside
+    /// it, and claiming again (the title changes once the project has loaded)
+    /// replaces it whole.
+    #[test]
+    fn a_claim_writes_its_lock_whole_and_leaves_nothing_else() {
+        let d = setup("atomic-claim");
+        let path = "/tmp/skribisto-registry-test-atomic.skrib";
+
+        claim(path, "Draft");
+        claim(path, "Le Tour du monde");
+
+        let names: Vec<String> = std::fs::read_dir(&d)
+            .unwrap()
+            .flatten()
+            .map(|e| e.file_name().to_string_lossy().into_owned())
+            .collect();
+        assert_eq!(names.len(), 1, "one lock and no temporary file: {names:?}");
+        let entries = scan();
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].title, "Le Tour du monde");
+        release(path);
+    }
+
+    /// A temporary lock is never read as a claim, is left alone while its writer
+    /// lives, and is reaped once a crash left it behind.
+    #[test]
+    fn a_temporary_lock_is_not_a_claim_and_is_reaped_once_its_writer_is_gone() {
+        let d = setup("temp-reap");
+        let (alive, dead) = (999_105, 999_106);
+        PID_OVERRIDE.with(|m| {
+            m.borrow_mut().insert(alive, true);
+            m.borrow_mut().insert(dead, false);
+        });
+        let json = serde_json::to_string(&OpenEntry {
+            pid: alive,
+            path: canonical("/tmp/skribisto-registry-test-temp.skrib"),
+            title: "Brouillon".into(),
+            importing: false,
+        })
+        .unwrap();
+        let writing = d.join(format!("tmp-{alive}-a1b2c3.tmp"));
+        let orphan = d.join(format!("tmp-{dead}-d4e5f6.tmp"));
+        std::fs::write(&writing, &json).unwrap();
+        std::fs::write(&orphan, &json).unwrap();
+
+        assert!(scan().is_empty(), "a temporary file is not a claim");
+        assert!(
+            writing.exists(),
+            "its writer may still rename it into place"
+        );
+        assert!(!orphan.exists(), "a dead writer's temporary file is reaped");
+    }
+
+    /// A lock that cannot be parsed is reaped only once it is a few seconds old:
+    /// an older copy of Skribisto may be in the middle of writing it in place.
+    #[test]
+    fn an_unreadable_lock_is_reaped_only_once_it_has_settled() {
+        let d = setup("unreadable-grace");
+        let fresh = d.join("open-999107-0.lock");
+        let old = d.join("open-999108-0.lock");
+        std::fs::write(&fresh, b"").unwrap();
+        std::fs::write(&old, b"{\"pid\": 99").unwrap();
+        let long_ago = std::time::SystemTime::now() - UNREADABLE_GRACE * 2;
+        std::fs::File::options()
+            .write(true)
+            .open(&old)
+            .unwrap()
+            .set_modified(long_ago)
+            .unwrap();
+
+        assert!(scan().is_empty());
+        assert!(fresh.exists(), "possibly half written: left alone");
+        assert!(!old.exists(), "unreadable for longer than any write takes");
+    }
+
+    #[test]
+    fn the_unreadable_grace_period() {
+        assert!(!unreadable_lock_is_stale(Some(Duration::ZERO)));
+        assert!(!unreadable_lock_is_stale(Some(
+            UNREADABLE_GRACE - Duration::from_millis(1)
+        )));
+        assert!(unreadable_lock_is_stale(Some(UNREADABLE_GRACE)));
+        assert!(
+            unreadable_lock_is_stale(None),
+            "an age that cannot be read does not keep a lock forever"
+        );
     }
 
     #[test]

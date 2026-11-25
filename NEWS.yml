@@ -18,6 +18,7 @@ Description:
 - "With autosave on, your text now reaches the disk at least every 30 seconds while you type. Autosave used to wait for a pause of a second and a half, so a writer who never paused, in a sprint or in the Always forward game, could lose everything typed since the last pause in a crash"
 - "Opening a project from a terminal with a relative path while Skribisto is already running now opens the file you named. The running copy used to look for that path from its own folder, and could open another project or none"
 - "Skribisto no longer crashes at launch when it is handed a file name that is not valid Unicode. It now says it cannot open that name"
+- "With two copies of Skribisto running, a project open in one is no longer sometimes treated as closed by the other"
 ---
 Version: 3.5.0
 Date: 2026-11-25
