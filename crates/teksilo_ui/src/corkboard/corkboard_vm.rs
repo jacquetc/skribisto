@@ -1615,4 +1615,87 @@ mod tests {
             );
         }
     }
+
+    /// A focused card treats every Ctrl+A as the board's (Select all cards), with or
+    /// without Shift. Ctrl+Shift+A, the Scratchpad's chord, still opens the Scratchpad
+    /// from inside a card: a registered shortcut resolves before the focused widget sees
+    /// the key, so the card's own key handler never gets to swallow it.
+    #[test]
+    fn ctrl_shift_a_in_a_card_still_opens_the_scratchpad() {
+        use teksilo::core::shortcut::KeyStroke;
+        use teksilo::widgets::Button;
+
+        assert!(
+            is_a_board_key(Key::A, Modifiers::COMMAND | Modifiers::SHIFT),
+            "the premise: the card would take the chord if it ever saw it"
+        );
+
+        struct Host {
+            vm: CorkboardViewModel,
+            shown: Rc<Cell<u32>>,
+        }
+        impl std::fmt::Debug for Host {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                f.write_str("Host")
+            }
+        }
+        impl Widget for Host {
+            fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+                let panel = crate::docks::panels::PANELS
+                    .iter()
+                    .find(|p| p.dock == crate::docks::SCRATCHPAD_DOCK_ID)
+                    .expect("the Scratchpad's door");
+                // Registered as `register_panel_commands` registers every panel's.
+                ctx.register_shortcut_global(
+                    Shortcut::new(panel.intent)
+                        .primary(KeyStroke::ctrl_shift(panel.chord))
+                        .build(),
+                );
+                let shown = self.shown.clone();
+                ctx.register_action_global(Action::new(panel.intent).on_invoke(move |_i, _c| {
+                    shown.set(shown.get() + 1);
+                }));
+                // A control inside a card, its keys going up through the card's handler.
+                let vm = self.vm.clone();
+                let card = ctx.add(
+                    Button::new(lit!("Low tide")).on_key(move |ev, ctx| match ev {
+                        WidgetEvent::KeyDown { key, modifiers, .. } => {
+                            vm.card_key(ctx, 7, *key, *modifiers)
+                        }
+                        _ => EventResponse::Ignored,
+                    }),
+                );
+                vec![card]
+            }
+            fn layout_response(
+                &self,
+                proposal: SizeProposal,
+                _ctx: &LayoutContext,
+            ) -> LayoutResponse {
+                Size::new(
+                    proposal.width.unwrap_or(300.0),
+                    proposal.height.unwrap_or(40.0),
+                )
+                .into()
+            }
+        }
+
+        let shown = Rc::new(Cell::new(0));
+        let mut tree = teksilo::core::WidgetTree::new();
+        let host = tree.add(Host {
+            vm: vm(),
+            shown: shown.clone(),
+        });
+        tree.layout(SizeProposal::exact(300.0, 40.0));
+        let card = tree
+            .children(host)
+            .into_iter()
+            .next()
+            .expect("the card's control");
+        tree.focus(card);
+
+        // `COMMAND`, not `CTRL`: a declared Ctrl chord is registered as Cmd on macOS.
+        tree.press_key(Key::A, Modifiers::COMMAND | Modifiers::SHIFT);
+        assert_eq!(shown.get(), 1, "Ctrl+Shift+A opened the Scratchpad");
+    }
 }

@@ -655,7 +655,7 @@ mod tests {
     use super::*;
     use crate::docks::{
         COMMENTS_DOCK_ID, DOC_COMMENTS_DOCK_ID, FOOTNOTES_DOCK_ID, GAMES_DOCK_ID, OUTLINE_DOCK_ID,
-        RESOURCES_DOCK_ID, TIMELINE_DOCK_ID, TRASH_DOCK_ID, VERSIONS_DOCK_ID,
+        RESOURCES_DOCK_ID, SCRATCHPAD_DOCK_ID, TIMELINE_DOCK_ID, TRASH_DOCK_ID, VERSIONS_DOCK_ID,
     };
     use teksilo::prelude::*;
     use teksilo::widgets::{DockWidget, DockWidgetId, DockingLayout, RectWidget};
@@ -833,7 +833,8 @@ mod tests {
 
     /// The subtraction itself, including the case that actually shipped: today's
     /// roster minus a v4 stamp is the two comments docks, the footnotes dock, the
-    /// versions dock, the resources dock, the timeline band and the writing-games panel.
+    /// versions dock, the resources dock, the scratchpad dock, the timeline band and the
+    /// writing-games panel.
     /// A dock added
     /// to `project_shell` but not
     /// to `APP_DOCKS` would leave this list short — which is the failure mode the
@@ -854,9 +855,10 @@ mod tests {
                 FOOTNOTES_DOCK_ID,
                 VERSIONS_DOCK_ID,
                 RESOURCES_DOCK_ID,
+                SCRATCHPAD_DOCK_ID,
                 TIMELINE_DOCK_ID,
             ],
-            "these seven, and only these seven, postdate a v4 desk"
+            "these eight, and only these eight, postdate a v4 desk"
         );
         // Order follows the roster, not the known set.
         assert_eq!(unknown_dock_ids(&[3, 1, 2], &[2]), vec![3, 1]);

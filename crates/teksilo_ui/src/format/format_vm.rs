@@ -356,6 +356,13 @@ struct RegisteredEditor {
     /// The width the editor was last laid out at, in logical pixels: the measure a picture
     /// in it is capped to. `None` until its first layout.
     width: Option<f32>,
+    /// Whether this editor sits in a dock rather than in a tab: the search preview band.
+    ///
+    /// It shows an item's text and takes the formatting commands like any writing
+    /// surface, but it is not where the writer is writing, so
+    /// [`FormatViewModel::caret_item`] does not follow it. Set by
+    /// [`FormatViewModel::set_registered_in_dock`].
+    in_dock: bool,
 }
 
 /// One gate per control group, for the dock to hang `visible_when` on.
@@ -630,6 +637,18 @@ pub struct FormatViewModel {
     /// per-frame call is nearly free when nothing has moved. [`NEVER_SEEN`] when
     /// the mirrors hold nothing worth comparing against.
     last_seen: Rc<Cell<(u64, usize)>>,
+
+    /// The item whose text holds the caret, among this window's editors in tabs: a scene
+    /// tab's own text or synopsis, or one row of a Full Chapter, Part or Book. `None`
+    /// while the caret is anywhere else (a dock, the binder, a corkboard card, the
+    /// scratchpad itself).
+    ///
+    /// Live rather than sticky, on purpose: it says where the caret *is*, and a reader
+    /// that wants "where it last was" keeps its own memory of the last `Some`, as the
+    /// Scratchpad dock does. A sticky value would have to decide, here, when to forget,
+    /// and only the reader knows what a change of view means to it. A plain mutable
+    /// signal so a reader can observe it. Pushed by [`Self::refresh`], once a frame.
+    caret_item: Signal<Option<EntityId>>,
 }
 
 impl std::fmt::Debug for FormatViewModel {
@@ -726,6 +745,7 @@ impl FormatViewModel {
             can_delete_in_table: Signal::new(false),
             group_visible: GroupVisibility::new(FormatSurface::None),
             last_seen: Rc::new(Cell::new(NEVER_SEEN)),
+            caret_item: Signal::new(None),
         }
     }
 
@@ -760,6 +780,7 @@ impl FormatViewModel {
                 item: None,
                 scope: None,
                 width: None,
+                in_dock: false,
             }),
         }
         // A rebuild of the editor the menu is sticky on must re-point the latch
@@ -781,6 +802,37 @@ impl FormatViewModel {
         if sticky.as_ref().is_some_and(|(s, _, _)| *s == id) {
             *sticky = None;
         }
+    }
+
+    /// Say that a registered editor sits in a dock (the search preview band), so the
+    /// caret in it is not a place in the tabs: see [`Self::caret_item`].
+    pub fn set_registered_in_dock(&self, id: WidgetId) {
+        if let Some(entry) = self.registry.borrow_mut().iter_mut().find(|e| e.id == id) {
+            entry.in_dock = true;
+        }
+    }
+
+    /// The item whose text holds the caret, among this window's editors in tabs, live:
+    /// `None` whenever the caret is not in one. See the field of the same name.
+    ///
+    /// What the Scratchpad dock follows inside a stream, where the tab's own item is the
+    /// container and the writer is typing in one of its rows. It never names the
+    /// scratchpad editor's item (an [`EditorKind::Scratchpad`] registration is skipped)
+    /// nor a dock's editor, so moving the caret into either reads as "not in a tab" and
+    /// a reader keeping the last `Some` keeps it.
+    pub fn caret_item(&self) -> Signal<Option<EntityId>> {
+        self.caret_item.clone()
+    }
+
+    /// The focused registered editor's item, when it is an editor in a tab that shows
+    /// one item's text. The reading behind [`Self::caret_item`].
+    fn focused_tab_item(&self) -> Option<EntityId> {
+        self.registry
+            .borrow()
+            .iter()
+            .find(|e| e.handle.focused_signal().get())
+            .filter(|e| e.kind != EditorKind::Scratchpad && !e.in_dock)
+            .and_then(|e| e.item)
     }
 
     /// The registered editor holding keyboard focus, if any. At most one widget
@@ -1345,6 +1397,7 @@ impl FormatViewModel {
         // presence means the writer has put a caret in one.
         set_if_changed(&self.has_caret_target, self.sticky.borrow().is_some());
         set_if_changed(&self.writing_focused, self.editor_focused());
+        set_if_changed(&self.caret_item, self.focused_tab_item());
         self.sync_write_mirrors(handle.as_ref());
 
         let Some(handle) = handle else {

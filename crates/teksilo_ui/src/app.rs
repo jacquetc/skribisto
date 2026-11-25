@@ -891,6 +891,7 @@ pub struct App {
     footnotes_dock: DockWidgetId,
     versions_dock: DockWidgetId,
     resources_dock: DockWidgetId,
+    scratchpad_dock: DockWidgetId,
     timeline_dock: DockWidgetId,
     /// This row's recorded past. Tier 3 — the timeline is a view of what one
     /// window is focused on, and two windows on the same Work legitimately look
@@ -906,6 +907,8 @@ pub struct App {
     footnotes: Option<crate::footnotes::FootnotesViewModel>,
     /// The Resources dock's view-model, created once on first build.
     resources: Option<crate::resources::ResourcesViewModel>,
+    /// The Scratchpad dock's view-model, created once on first build.
+    scratchpad: Option<crate::scratchpad::ScratchpadViewModel>,
     /// Keeps this window's `SearchSettingsService` `Reloadable` registration alive
     /// in the shared `SettingsRegistry`, so a peer process's `search.toml` writes
     /// are picked up live — the same story as [`backup_settings_reloadable`](Self::backup_settings_reloadable).
@@ -1028,6 +1031,7 @@ impl App {
             comments: None,
             footnotes: None,
             resources: None,
+            scratchpad: None,
             trash_dock: DockWidgetId::from_raw(crate::docks::TRASH_DOCK_ID),
             games_dock: DockWidgetId::from_raw(crate::docks::GAMES_DOCK_ID),
             comments_dock: DockWidgetId::from_raw(crate::docks::COMMENTS_DOCK_ID),
@@ -1035,6 +1039,7 @@ impl App {
             footnotes_dock: DockWidgetId::from_raw(crate::docks::FOOTNOTES_DOCK_ID),
             versions_dock: DockWidgetId::from_raw(crate::docks::VERSIONS_DOCK_ID),
             resources_dock: DockWidgetId::from_raw(crate::docks::RESOURCES_DOCK_ID),
+            scratchpad_dock: DockWidgetId::from_raw(crate::docks::SCRATCHPAD_DOCK_ID),
             timeline_dock: DockWidgetId::from_raw(crate::docks::TIMELINE_DOCK_ID),
             versions: crate::versions::VersionsViewModel::new(),
             timeline: crate::timeline::TimelineViewModel::new(),
@@ -1407,8 +1412,8 @@ pub(crate) fn build_stack_teardown(
 
 /// Build this window's [`WindowTeardown`] — what `WorkRegistry::remove_window`
 /// runs once teksilo's `on_removed` hook confirms this window is really gone
-/// (see `shell::windows`'s wiring): release this window's own `OpenDoc` refs
-/// and retire its backup flush-hook registration.
+/// (see `shell::windows`'s wiring): release this window's own `OpenDoc` refs (its
+/// tabs' and its Scratchpad dock's) and retire its backup flush-hook registration.
 ///
 /// Unlike [`StackTeardown`], this must run **only** on a real close, never on
 /// an in-place Load/New switching this window to a different Work: this
@@ -1449,6 +1454,7 @@ pub(crate) fn build_stack_teardown(
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn build_window_teardown(
     editors: EditorsViewModel,
+    scratchpad: crate::scratchpad::ScratchpadViewModel,
     backup_scheduler: BackupSchedulerViewModel,
     toast_registry: Option<ToastRegistry>,
     window_id: TeksiloWindowId,
@@ -1457,6 +1463,7 @@ pub(crate) fn build_window_teardown(
 ) -> WindowTeardown {
     Rc::new(move |is_last: bool| {
         editors.release_own_open_docs(stack_id);
+        scratchpad.release();
         backup_scheduler.unregister_flush_hook(window_id);
         if let Some(reg) = &toast_registry {
             reg.forget_window(window_id);
@@ -1999,6 +2006,15 @@ impl Widget for App {
         };
         // Every tab of this window reaches it: a folder's Resources page, the Gallery.
         editors.set_resources(resources.clone());
+        // The Scratchpad dock's view-model: this window's view of the items' notes.
+        let scratchpad = wiring::scratchpad::install(
+            ctx,
+            &mut self.scratchpad,
+            &self.app_ctx,
+            &session,
+            &editors,
+            &self.format,
+        );
         // A resource dragged onto a binder row is attached to that item. The tree's data
         // source has no event context, so the attach is made there and its notice waits
         // on this window's view-model for the item's update (`wiring::resources`); an
@@ -2141,6 +2157,7 @@ impl Widget for App {
                 registry: self.registry.clone(),
                 lifecycle: lifecycle.clone(),
                 editors: editors.clone(),
+                scratchpad: scratchpad.clone(),
                 outline: outline.clone(),
                 trash: trash.clone(),
                 search: search.clone(),
@@ -2453,6 +2470,7 @@ impl Widget for App {
                 comments: comments.clone(),
                 footnotes: footnotes.clone(),
                 resources: resources.clone(),
+                scratchpad: scratchpad.clone(),
                 outline: outline.clone(),
                 search: search.clone(),
                 trash: trash.clone(),

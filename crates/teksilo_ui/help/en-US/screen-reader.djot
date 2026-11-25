@@ -10,7 +10,7 @@ A project window has four areas:
 - *On the left*, the panels about the whole project: *Binder*, *Search*, *Trash*,
   *Comments* and *Writing games*. One of them shows at a time.
 - *On the right*, the panels about the item in front of you: *Inspector*, *Format*,
-  *This document*, *Footnotes* and *Versions*.
+  *This document*, *Footnotes*, *Versions*, *Resources* and *Scratchpad*.
 - *At the bottom*, *Preview* and *Go back in time*. They stay hidden until you open them.
 
 `F6` jumps from one area to the next, and `Shift+F6` to the one before. Your screen reader
@@ -19,8 +19,8 @@ says where you arrive: *Left panel*, *Main area* or *Right panel*.
 `Tab` moves through the window in reading order: the title bar, the left, the centre, the
 right and the status bar. The text you write keeps `Tab` for itself, to indent a list or
 insert a tab: to leave it, press `Ctrl+Tab`, and `Ctrl+Shift+Tab` to go back the other way.
-A synopsis, an epigraph, a comment and a footnote are fields like the others, and `Tab`
-leaves them.
+A synopsis, an epigraph, a comment, a footnote and the scratchpad are fields like the
+others, and `Tab` leaves them.
 
 ## Open a panel with its shortcut
 
@@ -29,7 +29,8 @@ Each panel has its own shortcut, which brings it to the front and puts you in it
 - On the left: `Ctrl+Shift+B` *Binder*, `Ctrl+Shift+F` *Search*, `Ctrl+Shift+T` *Trash*,
   `Ctrl+Shift+C` *Comments* and `Ctrl+Shift+G` *Writing games*.
 - On the right: `Ctrl+Shift+I` *Inspector*, `Ctrl+Shift+O` *Format*, `Ctrl+Shift+D`
-  *This document*, `Ctrl+Shift+K` *Footnotes* and `Ctrl+Shift+R` *Versions*.
+  *This document*, `Ctrl+Shift+K` *Footnotes*, `Ctrl+Shift+R` *Versions*, `Ctrl+Shift+X`
+  *Resources* and `Ctrl+Shift+A` *Scratchpad*.
 - At the bottom: `Ctrl+Shift+J` *Preview* and `Ctrl+Shift+L` *Go back in time*.
 
 *View ▸ Panels* lists the same panels with their shortcuts, and `F9` shows or hides the

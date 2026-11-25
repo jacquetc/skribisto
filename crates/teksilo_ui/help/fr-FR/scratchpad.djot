@@ -1,0 +1,57 @@
+Chaque élément de votre projet a un bloc-notes : une page de notes gardée à côté de son texte.
+Servez-vous-en pour ce qui reste à faire dans le texte : une question à trancher, un fait à
+vérifier, une liste de changements pour la prochaine version.
+
+## Des notes qui restent personnelles
+
+Le bloc-notes vous appartient, il ne fait pas partie du livre.
+
+- Il n’est jamais exporté.
+- Il ne compte jamais dans vos mots, vos objectifs ni votre rythme.
+- La recherche dans le projet ne le parcourt pas.
+
+Il est enregistré avec le projet et conservé dans chaque sauvegarde, comme le reste de votre
+texte.
+
+## Ouvrir le bloc-notes
+
+Le panneau *Bloc-notes* se trouve à droite de la fenêtre. Ouvrez-le avec son icône, un carnet
+à spirale, ou avec `Ctrl+Maj+A`. *Affichage ▸ Panneaux* le propose aussi.
+
+Écrivez-y comme dans n’importe quel texte : le gras, les listes et les liens fonctionnent de la
+même façon. Sa police et la taille de son texte sont à votre choix, dans *Paramètres ▸ Éditeur
+▸ Typographie ▸ Bloc-notes*.
+
+## L’élément qu’il montre
+
+Le panneau montre le bloc-notes de l’élément qui est devant vous, et la ligne en haut du
+panneau le nomme.
+
+- Dans une scène, une note ou tout autre élément ouvert dans un onglet, c’est le bloc-notes de
+  cet élément.
+- Dans le texte complet d’un chapitre, d’une partie ou d’un livre, il suit la scène où se
+  trouve votre curseur. Quand vous cliquez dans le bloc-notes pour écrire, il reste sur cette
+  scène.
+- Sur la page propre d’un chapitre, son tableau de liège ou sa vue d’ensemble, c’est le
+  bloc-notes du chapitre.
+
+Tant que le projet est ouvert, chaque bloc-notes se souvient de l’endroit où vous avez laissé
+le curseur.
+
+## Les éléments dans la corbeille
+
+Un élément mis à la corbeille garde son bloc-notes. Vous pouvez le lire, mais pas le modifier,
+tant que vous n’avez pas restauré l’élément.
+
+## Fusionner, scinder, dupliquer
+
+- *Fusionner avec la précédente* réunit les deux blocs-notes. Les notes de la scène que vous
+  fusionnez s’ajoutent après celles de la scène qui la précède.
+- *Scinder la scène* laisse le bloc-notes à la première scène. La nouvelle scène commence avec
+  un bloc-notes vide.
+- *Dupliquer* copie le bloc-notes avec l’élément.
+
+## Les éléments sans bloc-notes
+
+Le repère *Fin du livre*, et les autres repères qui ne contiennent pas de texte, n’ont pas de
+bloc-notes. Le panneau le dit quand l’un d’eux est devant vous.

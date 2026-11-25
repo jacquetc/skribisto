@@ -10,7 +10,7 @@ Una finestra di progetto ha quattro zone:
 - *A sinistra*, i pannelli che riguardano tutto il progetto: *Raccoglitore*, *Cerca*,
   *Cestino*, *Commenti* e *Giochi di scrittura*. Se ne vede uno alla volta.
 - *A destra*, i pannelli che riguardano l'elemento che hai davanti: *Proprietà*, *Formato*,
-  *Questo documento*, *Note a piè di pagina* e *Versioni*.
+  *Questo documento*, *Note a piè di pagina*, *Versioni*, *Risorse* e *Blocco note*.
 - *In basso*, *Anteprima* e *Torna indietro nel tempo*. Restano nascosti finché non li apri.
 
 `F6` passa da una zona alla successiva, e `Maiusc+F6` alla precedente. Il tuo lettore di
@@ -19,8 +19,8 @@ schermo dice dove arrivi: *Pannello sinistro*, *Area principale* o *Pannello des
 `Tab` attraversa la finestra nell'ordine di lettura: la barra del titolo, la sinistra, il
 centro, la destra e la barra di stato. Il testo che scrivi tiene `Tab` per sé, per far
 rientrare un elenco o inserire una tabulazione: per uscirne premi `Ctrl+Tab`, e
-`Ctrl+Maiusc+Tab` per tornare indietro. Una sinossi, un'epigrafe, un commento e una nota a
-piè di pagina sono campi come gli altri, e `Tab` ne esce.
+`Ctrl+Maiusc+Tab` per tornare indietro. Una sinossi, un'epigrafe, un commento, una nota a
+piè di pagina e il blocco note sono campi come gli altri, e `Tab` ne esce.
 
 ## Aprire un pannello con la sua scorciatoia
 
@@ -29,7 +29,8 @@ Ogni pannello ha una scorciatoia propria, che lo porta in primo piano e ti ci po
 - A sinistra: `Ctrl+Maiusc+B` *Raccoglitore*, `Ctrl+Maiusc+F` *Cerca*, `Ctrl+Maiusc+T`
   *Cestino*, `Ctrl+Maiusc+C` *Commenti* e `Ctrl+Maiusc+G` *Giochi di scrittura*.
 - A destra: `Ctrl+Maiusc+I` *Proprietà*, `Ctrl+Maiusc+O` *Formato*, `Ctrl+Maiusc+D`
-  *Questo documento*, `Ctrl+Maiusc+K` *Note a piè di pagina* e `Ctrl+Maiusc+R` *Versioni*.
+  *Questo documento*, `Ctrl+Maiusc+K` *Note a piè di pagina*, `Ctrl+Maiusc+R` *Versioni*,
+  `Ctrl+Maiusc+X` *Risorse* e `Ctrl+Maiusc+A` *Blocco note*.
 - In basso: `Ctrl+Maiusc+J` *Anteprima* e `Ctrl+Maiusc+L` *Torna indietro nel tempo*.
 
 *Visualizza ▸ Pannelli* elenca gli stessi pannelli con le loro scorciatoie, e `F9` mostra o

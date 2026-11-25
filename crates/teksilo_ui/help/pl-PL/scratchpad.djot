@@ -1,0 +1,49 @@
+Każdy element projektu ma brudnopis: stronę notatek trzymaną obok jego tekstu. Zapisuj w nim
+to, czego tekst jeszcze potrzebuje, na przykład pytanie do rozstrzygnięcia, fakt do
+sprawdzenia albo listę zmian na następną wersję.
+
+## Notatki, które pozostają prywatne
+
+Brudnopis należy do ciebie, nie do książki.
+
+- Nigdy nie jest eksportowany.
+- Nigdy nie liczy się do twoich słów, celów ani tempa.
+- Wyszukiwanie w projekcie go nie przeszukuje.
+
+Zapisuje się razem z projektem i trafia do każdej kopii zapasowej, jak wszystko, co piszesz.
+
+## Otwieranie brudnopisu
+
+Panel *Brudnopis* jest po prawej stronie okna. Otwórz go jego ikoną, notesem na spirali, albo
+skrótem `Ctrl+Shift+A`. Znajdziesz go też w *Widok ▸ Panele*.
+
+Pisz w nim jak w każdym tekście: pogrubienie, listy i odnośniki działają tak samo. Czcionkę i
+rozmiar tekstu wybierasz sam, w *Ustawienia ▸ Edytor ▸ Typografia ▸ Brudnopis*.
+
+## Który element pokazuje
+
+Panel pokazuje brudnopis elementu, który masz przed sobą, a wiersz u góry panelu go nazywa.
+
+- W scenie, notatce lub innym elemencie otwartym w karcie to brudnopis tego elementu.
+- W pełnym tekście rozdziału, części lub książki podąża za sceną, w której jest kursor. Gdy
+  klikniesz w brudnopis, aby pisać, zostaje przy tej scenie.
+- Na własnej stronie rozdziału, jego tablicy korkowej lub przeglądzie to brudnopis rozdziału.
+
+Dopóki projekt jest otwarty, każdy brudnopis pamięta, gdzie zostawiłeś kursor.
+
+## Elementy w koszu
+
+Element w koszu zachowuje swój brudnopis. Możesz go czytać, ale nie zmienisz go, dopóki nie
+przywrócisz elementu.
+
+## Scalanie, dzielenie, duplikowanie
+
+- *Scal z poprzednią* łączy oba brudnopisy. Notatki scalanej sceny trafiają za notatki sceny
+  poprzedniej.
+- *Podziel scenę* zostawia brudnopis przy pierwszej scenie. Nowa scena zaczyna z pustym.
+- *Duplikuj* kopiuje brudnopis razem z elementem.
+
+## Elementy bez brudnopisu
+
+Znacznik *Koniec książki* i inne znaczniki bez tekstu nie mają brudnopisu. Panel mówi o tym,
+gdy jeden z nich jest przed tobą.

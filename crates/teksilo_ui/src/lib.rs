@@ -184,6 +184,7 @@ pub mod project;
 pub mod read_signal;
 pub mod resources;
 pub mod save;
+pub mod scratchpad;
 pub mod search;
 pub mod sessions;
 pub mod settings;

@@ -11,7 +11,8 @@ Une fenêtre de projet a quatre zones :
 - *À gauche*, les panneaux qui portent sur tout le projet : *Classeur*, *Rechercher*,
   *Corbeille*, *Commentaires* et *Jeux d’écriture*. Un seul s’affiche à la fois.
 - *À droite*, les panneaux qui portent sur l’élément devant vous : *Inspecteur*,
-  *Mise en forme*, *Ce document*, *Notes de bas de page* et *Versions*.
+  *Mise en forme*, *Ce document*, *Notes de bas de page*, *Versions*, *Ressources* et
+  *Bloc-notes*.
 - *En bas*, *Aperçu* et *Remonter le temps*. Ils restent masqués tant que vous ne les ouvrez
   pas.
 
@@ -21,8 +22,8 @@ où vous arrivez : *Panneau de gauche*, *Zone principale* ou *Panneau de droite*
 `Tab` parcourt la fenêtre dans l’ordre de lecture : la barre de titre, la gauche, le centre,
 la droite et la barre d’état. Le texte que vous écrivez garde `Tab` pour lui, pour décaler
 une liste ou insérer une tabulation : pour le quitter, appuyez sur `Ctrl+Tab`, et sur
-`Ctrl+Maj+Tab` pour revenir en arrière. Un synopsis, une épigraphe, un commentaire et une
-note de bas de page sont des champs comme les autres, et `Tab` les quitte.
+`Ctrl+Maj+Tab` pour revenir en arrière. Un synopsis, une épigraphe, un commentaire, une
+note de bas de page et le bloc-notes sont des champs comme les autres, et `Tab` les quitte.
 
 ## Ouvrir un panneau par son raccourci
 
@@ -31,7 +32,8 @@ Chaque panneau a son propre raccourci, qui le fait passer au premier plan et vou
 - À gauche : `Ctrl+Maj+B` *Classeur*, `Ctrl+Maj+F` *Rechercher*, `Ctrl+Maj+T` *Corbeille*,
   `Ctrl+Maj+C` *Commentaires* et `Ctrl+Maj+G` *Jeux d’écriture*.
 - À droite : `Ctrl+Maj+I` *Inspecteur*, `Ctrl+Maj+O` *Mise en forme*, `Ctrl+Maj+D`
-  *Ce document*, `Ctrl+Maj+K` *Notes de bas de page* et `Ctrl+Maj+R` *Versions*.
+  *Ce document*, `Ctrl+Maj+K` *Notes de bas de page*, `Ctrl+Maj+R` *Versions*,
+  `Ctrl+Maj+X` *Ressources* et `Ctrl+Maj+A` *Bloc-notes*.
 - En bas : `Ctrl+Maj+J` *Aperçu* et `Ctrl+Maj+L` *Remonter le temps*.
 
 *Affichage ▸ Panneaux* liste les mêmes panneaux avec leurs raccourcis, et `F9` affiche ou

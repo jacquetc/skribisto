@@ -8,7 +8,8 @@
 //! The roster: [`crate::binder::dock`] (binder tree), [`crate::search::dock`], [`crate::trash::dock`],
 //! [`crate::comments::dock`] (project-wide) on the leading rail; [`inspector`],
 //! [`crate::format::dock`], a per-document comments dock, [`crate::footnotes::dock`],
-//! [`crate::versions::dock`] and [`crate::resources::dock`] on the trailing rail; [`crate::search::preview_dock`] and
+//! [`crate::versions::dock`], [`crate::resources::dock`] and [`crate::scratchpad::dock`] on the
+//! trailing rail; [`crate::search::preview_dock`] and
 //! [`crate::timeline::dock`] on the bottom. See [`APP_DOCKS`] for the authoritative
 //! list and mount order.
 //!
@@ -64,6 +65,8 @@ pub const TIMELINE_DOCK_ID: u64 = DOCK_ID_BASE + 11;
 pub const GAMES_DOCK_ID: u64 = DOCK_ID_BASE + 12;
 /// The files and web links attached to the item in front of the writer (trailing rail).
 pub const RESOURCES_DOCK_ID: u64 = DOCK_ID_BASE + 13;
+/// The private scratchpad of the item in front of the writer (trailing rail).
+pub const SCRATCHPAD_DOCK_ID: u64 = DOCK_ID_BASE + 14;
 
 /// One app dock's declared home: its stable id plus where it mounts on a desk
 /// nobody has arranged yet.
@@ -168,6 +171,14 @@ pub const APP_DOCKS: &[AppDock] = &[
     // the text rather than in it.
     AppDock {
         id: RESOURCES_DOCK_ID,
+        side: DockSide::Trailing,
+        own_tab: true,
+    },
+    // The scratchpad of the item in front of the writer: their private notes beside
+    // it, after the resources because both are about what sits beside the text, and
+    // the notes are the one panel there the writer types into.
+    AppDock {
+        id: SCRATCHPAD_DOCK_ID,
         side: DockSide::Trailing,
         own_tab: true,
     },

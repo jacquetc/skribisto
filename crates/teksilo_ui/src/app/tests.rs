@@ -339,6 +339,7 @@ fn window_teardown_forgets_the_toast_registry_entry_too() {
 
     let teardown = build_window_teardown(
         editors,
+        test_scratchpad(&app_ctx, &session),
         session.backup_scheduler.clone(),
         Some(registry.clone()),
         window_id,
@@ -388,6 +389,7 @@ fn the_project_close_out_runs_only_on_the_last_window() {
         let ran = ran.clone();
         build_window_teardown(
             test_editors_view_model(&app_ctx),
+            test_scratchpad(&app_ctx, &session),
             session.backup_scheduler.clone(),
             None,
             window_id,
@@ -406,6 +408,18 @@ fn the_project_close_out_runs_only_on_the_last_window() {
 
     teardown(true);
     assert_eq!(ran.get(), 1, "the last window performs the close-out");
+}
+
+/// A Scratchpad view-model over `session`'s documents, holding nothing.
+fn test_scratchpad(
+    app_ctx: &Rc<frontend::AppContext>,
+    session: &crate::sessions::WorkSession,
+) -> crate::scratchpad::ScratchpadViewModel {
+    crate::scratchpad::ScratchpadViewModel::new(
+        app_ctx.clone(),
+        session.open_docs.clone(),
+        session.ids.clone(),
+    )
 }
 
 fn test_editors_view_model(app_ctx: &Rc<frontend::AppContext>) -> EditorsViewModel {
@@ -708,4 +722,135 @@ fn hovering_a_pane_does_not_mark_it_focused() {
     tree.pointer_move(Point::new(PANE_W * 1.5, PANE_H - 10.0));
 
     assert_eq!(editors.focused_side(), Side::Primary);
+}
+
+/// The right-hand rail with seven panels, as `project_shell` arranges it, in the
+/// smallest window the app allows (600 high, less a title bar and a status bar), with
+/// the bottom band open at `band` high. What a screen reader is told about it.
+fn trailing_rail_in_a_short_window(band: f32) -> teksilo::core::accesskit::TreeUpdate {
+    use teksilo::core::WidgetTree;
+    use teksilo::widgets::{
+        DockCorner, DockOpenLocation, DockRailItemSize, DockSide, DockWidget, DockWidgetId,
+        DockingLayout, DockingModel, TextWidget,
+    };
+
+    let model = DockingModel::new();
+    model.set_side_size(DockSide::Trailing, 300.0);
+    model.set_side_rail(DockSide::Trailing, 48.0);
+    model.set_side_size(DockSide::Bottom, band);
+    model.set_corner(DockCorner::BottomLeading, DockSide::Leading);
+    model.set_side_rail(DockSide::Bottom, 36.0);
+    model.set_side_rail_size(DockSide::Bottom, DockRailItemSize::Compact);
+    let mut layout = DockingLayout::new(model.clone())
+        .rail(super::project_shell::trailing_rail())
+        .center(TextWidget::new(lit!("The text")));
+    let trailing = crate::docks::APP_DOCKS
+        .iter()
+        .filter(|d| d.side == DockSide::Trailing);
+    for (i, dock) in trailing.clone().enumerate() {
+        let title = format!("Panel {i}");
+        layout = layout.dock(
+            DockWidget::new(
+                DockWidgetId::from_raw(dock.id),
+                lit!(title.clone()),
+                move |_| TextWidget::new(lit!(title.clone())),
+            )
+            .icon(crate::icons::activity::scratchpad_icon),
+        );
+    }
+    let band_id = DockWidgetId::from_raw(crate::docks::TIMELINE_DOCK_ID);
+    layout = layout.dock(DockWidget::new(band_id, lit!("Band"), |_| {
+        TextWidget::new(lit!("band"))
+    }));
+    for dock in trailing {
+        model.open_dock(DockWidgetId::from_raw(dock.id), dock.location());
+    }
+    model.open_dock(band_id, DockOpenLocation::side(DockSide::Bottom));
+
+    let mut tree = WidgetTree::new();
+    tree.add(layout);
+    // The rail parks what does not fit during layout, and the parking settles on the
+    // next pass.
+    for _ in 0..3 {
+        tree.layout(SizeProposal::exact(800.0, 600.0 - 2.0 * 36.0));
+        let _ = tree.render();
+    }
+    tree.sync_accessibility()
+}
+
+/// Which of the seven panels' glyphs sit inside the right-hand rail.
+fn panels_on_the_rail(update: &teksilo::core::accesskit::TreeUpdate) -> usize {
+    let rail = update
+        .nodes
+        .iter()
+        .find(|(_, n)| n.label() == Some("Right activity bar"))
+        .and_then(|(_, n)| n.bounds())
+        .expect("the right-hand rail");
+    (0..7)
+        .filter(|i| {
+            let name = format!("Panel {i}");
+            update.nodes.iter().any(|(_, n)| {
+                n.label() == Some(name.as_str())
+                    && n.bounds().is_some_and(|b| {
+                        b.x0 >= rail.x0 && b.y0 >= rail.y0 && b.y1 <= rail.y1 + 0.5
+                    })
+            })
+        })
+        .count()
+}
+
+/// The right-hand rail holds seven panels. In the smallest window the app allows, with
+/// the bottom band open at its first size, every glyph is on the rail. With the band
+/// dragged taller, the ones that no longer fit are parked behind the rail's overflow
+/// button instead of being cut off out of reach.
+#[test]
+fn every_right_hand_panel_is_reachable_in_the_smallest_window() {
+    let trailing = crate::docks::APP_DOCKS
+        .iter()
+        .filter(|d| d.side == teksilo::widgets::DockSide::Trailing)
+        .count();
+    assert_eq!(trailing, 7, "the premise: seven panels on the right");
+
+    let update = trailing_rail_in_a_short_window(180.0);
+    assert_eq!(panels_on_the_rail(&update), 7, "all seven fit");
+
+    let update = trailing_rail_in_a_short_window(330.0);
+    assert!(
+        panels_on_the_rail(&update) < 7,
+        "the premise: a taller band leaves no room for all seven"
+    );
+    assert!(
+        update
+            .nodes
+            .iter()
+            .any(|(_, n)| n.label() == Some("More panels")),
+        "the rest wait behind the overflow button"
+    );
+}
+
+/// A window going away gives back the reference its Scratchpad dock held, so the
+/// document it showed is flushed and let go rather than pinned for the rest of the
+/// project's life in the other windows.
+#[cfg(not(feature = "mocks"))]
+#[test]
+fn window_teardown_releases_the_scratchpads_document() {
+    let project = crate::test_support::RealProject::empty_novel();
+    let session = project.session();
+    let (scene, _) = project.scenes()[0];
+    let scratchpad = test_scratchpad(&project.app_ctx, &session);
+    scratchpad.view_changed(Some(scene), false, None);
+    assert_eq!(session.open_docs.refs_for_test(scene), Some(1));
+
+    let teardown = build_window_teardown(
+        test_editors_view_model(&project.app_ctx),
+        scratchpad.clone(),
+        session.backup_scheduler.clone(),
+        None,
+        TeksiloWindowId::new(1),
+        None,
+        Rc::new(|| {}),
+    );
+    teardown(false);
+    assert_eq!(session.open_docs.refs_for_test(scene), None, "let go");
+    assert_eq!(scratchpad.target().get(), None);
 }

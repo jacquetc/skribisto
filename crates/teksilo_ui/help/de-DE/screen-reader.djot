@@ -11,7 +11,7 @@ Ein Projektfenster hat vier Bereiche:
 - *Links* die Bereiche für das ganze Projekt: *Projektmappe*, *Suchen*, *Papierkorb*,
   *Kommentare* und *Schreibspiele*. Es ist immer nur einer davon zu sehen.
 - *Rechts* die Bereiche für den Eintrag vor Ihnen: *Inspektor*, *Format*,
-  *Dieses Dokument*, *Fußnoten* und *Versionen*.
+  *Dieses Dokument*, *Fußnoten*, *Versionen*, *Ressourcen* und *Notizblock*.
 - *Unten* *Vorschau* und *In der Zeit zurückgehen*. Sie bleiben verborgen, bis Sie sie
   öffnen.
 
@@ -21,8 +21,8 @@ sagt, wo Sie ankommen: *Linker Bereich*, *Hauptbereich* oder *Rechter Bereich*.
 `Tab` führt in Leserichtung durch das Fenster: die Titelleiste, links, die Mitte, rechts und
 die Statusleiste. Der Text, den Sie schreiben, behält `Tab` für sich, um eine Liste
 einzurücken oder einen Tabulator einzufügen: Sie verlassen ihn mit `Strg+Tab`, und mit
-`Strg+Umschalt+Tab` geht es in die andere Richtung. Eine Synopse, ein Motto, ein Kommentar
-und eine Fußnote sind Felder wie die anderen, und `Tab` verlässt sie.
+`Strg+Umschalt+Tab` geht es in die andere Richtung. Eine Synopse, ein Motto, ein Kommentar,
+eine Fußnote und der Notizblock sind Felder wie die anderen, und `Tab` verlässt sie.
 
 ## Einen Bereich mit seinem Tastenkürzel öffnen
 
@@ -31,7 +31,8 @@ Jeder Bereich hat ein eigenes Tastenkürzel, das ihn nach vorn holt und Sie hine
 - Links: `Strg+Umschalt+B` *Projektmappe*, `Strg+Umschalt+F` *Suchen*, `Strg+Umschalt+T`
   *Papierkorb*, `Strg+Umschalt+C` *Kommentare* und `Strg+Umschalt+G` *Schreibspiele*.
 - Rechts: `Strg+Umschalt+I` *Inspektor*, `Strg+Umschalt+O` *Format*, `Strg+Umschalt+D`
-  *Dieses Dokument*, `Strg+Umschalt+K` *Fußnoten* und `Strg+Umschalt+R` *Versionen*.
+  *Dieses Dokument*, `Strg+Umschalt+K` *Fußnoten*, `Strg+Umschalt+R` *Versionen*,
+  `Strg+Umschalt+X` *Ressourcen* und `Strg+Umschalt+A` *Notizblock*.
 - Unten: `Strg+Umschalt+J` *Vorschau* und `Strg+Umschalt+L` *In der Zeit zurückgehen*.
 
 *Ansicht ▸ Bereiche* listet dieselben Bereiche mit ihren Tastenkürzeln, und `F9` blendet

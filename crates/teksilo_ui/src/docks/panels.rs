@@ -19,6 +19,8 @@
 //! own and stays, H (replace), M (margin marks), N (new window), P (command palette),
 //! V and Z (Paste as plain text, Redo). Avoided: U (IBus' Unicode entry on Linux takes
 //! it first), S, W, Q and Y, which read as Save as, close, quit and redo elsewhere.
+//! A is the Scratchpad's: Ctrl+A alone is Select all, which the Shift keeps apart, and a
+//! focused corkboard card lets the Shift through for exactly that reason.
 
 use teksilo::prelude::*;
 use teksilo::widgets::DockSide;
@@ -26,7 +28,7 @@ use teksilo::widgets::DockSide;
 use super::{
     APP_DOCKS, COMMENTS_DOCK_ID, DOC_COMMENTS_DOCK_ID, FOOTNOTES_DOCK_ID, FORMAT_DOCK_ID,
     GAMES_DOCK_ID, INSPECTOR_DOCK_ID, OUTLINE_DOCK_ID, PREVIEW_DOCK_ID, RESOURCES_DOCK_ID,
-    SEARCH_DOCK_ID, TIMELINE_DOCK_ID, TRASH_DOCK_ID, VERSIONS_DOCK_ID,
+    SCRATCHPAD_DOCK_ID, SEARCH_DOCK_ID, TIMELINE_DOCK_ID, TRASH_DOCK_ID, VERSIONS_DOCK_ID,
 };
 
 /// One panel's door.
@@ -123,6 +125,13 @@ pub(crate) const PANELS: &[PanelCommand] = &[
         title: || tr!(resources_title()),
         name: || tr!(shortcut_name_resources_show()),
         chord: Key::X,
+    },
+    PanelCommand {
+        intent: "scratchpad.show",
+        dock: SCRATCHPAD_DOCK_ID,
+        title: || tr!(scratchpad_title()),
+        name: || tr!(shortcut_name_scratchpad_show()),
+        chord: Key::A,
     },
     PanelCommand {
         intent: "preview.show",

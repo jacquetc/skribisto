@@ -1,0 +1,55 @@
+Cada item do seu projeto tem um bloco de notas: uma página de notas ao lado do seu texto.
+Use-o para o que o texto ainda precisa, como uma pergunta por resolver, um facto por
+confirmar ou uma lista de alterações para a próxima versão.
+
+## Notas que continuam privadas
+
+O bloco de notas é seu, não do livro.
+
+- Nunca é exportado.
+- Nunca conta para as suas palavras, os seus objetivos ou o seu ritmo.
+- A pesquisa no projeto não o percorre.
+
+É guardado com o projeto e conservado em cada cópia de segurança, como o resto do que
+escreve.
+
+## Abrir o bloco de notas
+
+O painel *Bloco de notas* fica à direita da janela. Abra-o com o seu ícone, um caderno de
+argolas, ou com `Ctrl+Shift+A`. *Ver ▸ Painéis* também o inclui.
+
+Escreva nele como em qualquer texto: o negrito, as listas e as ligações funcionam da mesma
+forma. O tipo de letra e o tamanho do texto são escolha sua, em *Definições ▸ Editor ▸
+Tipografia ▸ Bloco de notas*.
+
+## Que item mostra
+
+O painel mostra o bloco de notas do item que tem à frente, e a linha no topo do painel
+nomeia-o.
+
+- Numa cena, numa nota ou em qualquer outro item aberto num separador, é o bloco de notas
+  desse item.
+- No texto completo de um capítulo, de uma parte ou de um livro, segue a cena onde está o
+  cursor. Quando clica no bloco de notas para escrever, fica nessa cena.
+- Na página própria de um capítulo, no seu quadro de cortiça ou na sua vista geral, é o bloco
+  de notas do capítulo.
+
+Enquanto o projeto está aberto, cada bloco de notas lembra-se de onde deixou o cursor.
+
+## Itens no lixo
+
+Um item no lixo mantém o seu bloco de notas. Pode lê-lo, mas não alterá-lo até restaurar o
+item.
+
+## Juntar, dividir, duplicar
+
+- *Juntar com o anterior* junta os dois blocos de notas. As notas da cena que junta ficam a
+  seguir às da cena anterior.
+- *Dividir a cena* deixa o bloco de notas na primeira cena. A nova cena começa com um bloco de
+  notas vazio.
+- *Duplicar* copia o bloco de notas com o item.
+
+## Itens sem bloco de notas
+
+O marcador *Fim do livro*, e os outros marcadores que não contêm texto, não têm bloco de
+notas. O painel di-lo quando um deles está à sua frente.

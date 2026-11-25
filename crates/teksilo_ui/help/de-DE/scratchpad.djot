@@ -1,0 +1,56 @@
+Jeder Eintrag Ihres Projekts hat einen Notizblock: eine Seite mit Notizen neben seinem Text.
+Notieren Sie dort, was der Text noch braucht, etwa eine offene Frage, eine Tatsache zum
+Nachprüfen oder eine Liste von Änderungen für die nächste Fassung.
+
+## Notizen, die privat bleiben
+
+Der Notizblock gehört Ihnen, nicht dem Buch.
+
+- Er wird nie exportiert.
+- Er zählt nie zu Ihren Wörtern, Ihren Zielen oder Ihrem Tempo.
+- Die Suche im Projekt durchsucht ihn nicht.
+
+Er wird mit dem Projekt gespeichert und in jeder Sicherung aufbewahrt, wie alles, was Sie
+schreiben.
+
+## Den Notizblock öffnen
+
+Der Bereich *Notizblock* liegt rechts im Fenster. Öffnen Sie ihn mit seinem Symbol, einem
+Spiralblock, oder mit `Strg+Umschalt+A`. Auch *Ansicht ▸ Bereiche* führt ihn auf.
+
+Schreiben Sie darin wie in jedem Text: Fett, Listen und Links funktionieren genauso. Schrift
+und Textgröße wählen Sie selbst, unter *Einstellungen ▸ Editor ▸ Typografie ▸ Notizblock*.
+
+## Welchen Eintrag er zeigt
+
+Der Bereich zeigt den Notizblock des Eintrags vor Ihnen, und die Zeile oben im Bereich nennt
+ihn.
+
+- In einer Szene, einer Notiz oder einem anderen Eintrag, der in einem Tab geöffnet ist, ist
+  es der Notizblock dieses Eintrags.
+- Im vollständigen Text eines Kapitels, eines Teils oder eines Buchs folgt er der Szene, in
+  der Ihr Cursor steht. Wenn Sie zum Schreiben in den Notizblock klicken, bleibt er bei dieser
+  Szene.
+- Auf der eigenen Seite eines Kapitels, seiner Pinnwand oder seiner Übersicht ist es der
+  Notizblock des Kapitels.
+
+Solange das Projekt geöffnet ist, merkt sich jeder Notizblock, wo Sie den Cursor gelassen
+haben.
+
+## Einträge im Papierkorb
+
+Ein Eintrag im Papierkorb behält seinen Notizblock. Sie können ihn lesen, aber erst ändern,
+wenn Sie den Eintrag wiederhergestellt haben.
+
+## Zusammenführen, teilen, duplizieren
+
+- *Mit vorherigem Eintrag zusammenführen* vereint die beiden Notizblöcke. Die Notizen der
+  Szene, die Sie zusammenführen, kommen nach den Notizen der Szene davor.
+- *Szene teilen* lässt den Notizblock bei der ersten Szene. Die neue Szene beginnt mit einem
+  leeren.
+- *Duplizieren* kopiert den Notizblock mit dem Eintrag.
+
+## Einträge ohne Notizblock
+
+Die Markierung *Buchende* und die anderen Markierungen ohne Text haben keinen Notizblock. Der
+Bereich sagt es, wenn eine davon vor Ihnen liegt.

@@ -1,0 +1,51 @@
+Every item in your project has a scratchpad: a page of notes kept beside its text. Use it for
+what the text still needs, such as a question to settle, a fact to check or a list of changes
+for the next draft.
+
+## Notes that stay private
+
+The scratchpad belongs to you, not to the book.
+
+- It is never exported.
+- It never counts towards your words, your targets or your pace.
+- Searching the project does not look in it.
+
+It is saved with the project and kept in every backup, like the rest of your writing.
+
+## Opening the scratchpad
+
+The *Scratchpad* panel is on the right of the window. Open it with its icon, a spiral pad, or
+with `Ctrl+Shift+A`. *View ▸ Panels* lists it too.
+
+Write in it as in any text: bold, lists and links work the same way. Its font and text size
+are your own choice, in *Settings ▸ Editor ▸ Typography ▸ Scratchpad*.
+
+## Which item it shows
+
+The panel shows the scratchpad of the item in front of you, and the line at its top names
+that item.
+
+- In a scene, a note or any other item open in a tab, it is that item's scratchpad.
+- In the full text of a chapter, a part or a book, it follows the scene your cursor is in.
+  When you click into the scratchpad to write, it stays on that scene.
+- On a chapter's own page, its corkboard or its overview, it is the chapter's scratchpad.
+
+While the project is open, each scratchpad remembers where you left the cursor.
+
+## Items in the trash
+
+An item in the trash keeps its scratchpad. You can read it, but you cannot change it until
+you restore the item.
+
+## Merging, splitting and duplicating
+
+- *Merge with previous* joins the two scratchpads. The notes of the scene you merge are added
+  after the notes of the scene before it.
+- *Split scene* leaves the scratchpad with the first scene. The new scene starts with an empty
+  one.
+- *Duplicate* copies the scratchpad with the item.
+
+## Items without a scratchpad
+
+The *End of Book* marker, and the other markers that hold no text, have no scratchpad. The
+panel says so when one of them is in front of you.

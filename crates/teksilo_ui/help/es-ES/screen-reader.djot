@@ -10,7 +10,7 @@ Una ventana de proyecto tiene cuatro zonas:
 - *A la izquierda*, los paneles sobre todo el proyecto: *Archivador*, *Buscar*, *Papelera*,
   *Comentarios* y *Juegos de escritura*. Se muestra uno cada vez.
 - *A la derecha*, los paneles sobre el elemento que tiene delante: *Inspector*, *Formato*,
-  *Este documento*, *Notas al pie* y *Versiones*.
+  *Este documento*, *Notas al pie*, *Versiones*, *Recursos* y *Bloc de notas*.
 - *Abajo*, *Vista previa* y *Volver al pasado*. Permanecen ocultos hasta que los abre.
 
 `F6` pasa de una zona a la siguiente, y `Mayús+F6` a la anterior. Su lector de pantalla dice
@@ -19,8 +19,8 @@ adónde llega: *Panel izquierdo*, *Área principal* o *Panel derecho*.
 `Tab` recorre la ventana en orden de lectura: la barra de título, la izquierda, el centro,
 la derecha y la barra de estado. El texto que escribe se queda con `Tab`, para sangrar una
 lista o insertar una tabulación: para salir de él, pulse `Ctrl+Tab`, y `Ctrl+Mayús+Tab` para
-volver atrás. Una sinopsis, un epígrafe, un comentario y una nota al pie son campos como los
-demás, y `Tab` sale de ellos.
+volver atrás. Una sinopsis, un epígrafe, un comentario, una nota al pie y el bloc de notas son
+campos como los demás, y `Tab` sale de ellos.
 
 ## Abrir un panel con su atajo
 
@@ -29,7 +29,8 @@ Cada panel tiene su propio atajo, que lo trae al frente y le lleva dentro:
 - A la izquierda: `Ctrl+Mayús+B` *Archivador*, `Ctrl+Mayús+F` *Buscar*, `Ctrl+Mayús+T`
   *Papelera*, `Ctrl+Mayús+C` *Comentarios* y `Ctrl+Mayús+G` *Juegos de escritura*.
 - A la derecha: `Ctrl+Mayús+I` *Inspector*, `Ctrl+Mayús+O` *Formato*, `Ctrl+Mayús+D`
-  *Este documento*, `Ctrl+Mayús+K` *Notas al pie* y `Ctrl+Mayús+R` *Versiones*.
+  *Este documento*, `Ctrl+Mayús+K` *Notas al pie*, `Ctrl+Mayús+R` *Versiones*,
+  `Ctrl+Mayús+X` *Recursos* y `Ctrl+Mayús+A` *Bloc de notas*.
 - Abajo: `Ctrl+Mayús+J` *Vista previa* y `Ctrl+Mayús+L` *Volver al pasado*.
 
 *Ver ▸ Paneles* enumera los mismos paneles con sus atajos, y `F9` muestra u oculta todo el

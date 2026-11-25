@@ -175,6 +175,19 @@ content-chapter-title = Chapter title
 content-epigraph-text = Epigraph
 content-paratext-text = Paratext
 content-scratchpad-text = Scratchpad
+
+# The Scratchpad dock: the private notes of the item in front of the writer. The
+# editor's accessible name reuses `content-scratchpad-text`.
+scratchpad-title = Scratchpad
+# The line above the notes. { $title } is the item's name.
+scratchpad-header = Scratchpad · { $title }
+# What a screen reader adds to the editor's name. { $title } is the item's name.
+scratchpad-description = Your private notes on { $title }, never exported or counted
+scratchpad-trashed = This item is in the Trash, so its notes are read-only.
+scratchpad-no-item = Open an item to keep your notes beside it.
+# For the end-of-book mark and the other markers that carry no text.
+scratchpad-none = This marker holds no text, so it has no scratchpad.
+
 promote-blocked-title = Chapter not empty
 promote-blocked-text = { $count ->
     [one] This chapter still holds { $count } item. Move or trash it before converting it to a flat chapter.
@@ -4438,6 +4451,7 @@ help-topic-drafts-and-old-versions = Keeping an older draft
 help-topic-goals-and-pace = Targets and pace
 help-topic-pictures = Pictures and the gallery
 help-topic-resources = Files and links for your research
+help-topic-scratchpad = Private notes beside each item
 help-topic-comments = Comments
 help-topic-round-trip = Sending your book to a reader
 help-topic-export = Exporting
@@ -4507,6 +4521,7 @@ shortcut-name-format-show = Show the formatting panel
 shortcut-name-document-comments-show = Show this document's comments
 shortcut-name-footnotes-show = Show the footnotes
 shortcut-name-versions-show = Show the versions
+shortcut-name-scratchpad-show = Show the scratchpad
 shortcut-name-preview-show = Show the search preview
 shortcut-name-timeline-show = Go back in time
 shortcut-name-side-end-toggle = Show or hide the right panel

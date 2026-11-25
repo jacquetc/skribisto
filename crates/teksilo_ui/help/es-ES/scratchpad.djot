@@ -1,0 +1,55 @@
+Cada elemento de su proyecto tiene un bloc de notas: una página de notas junto a su texto.
+Úselo para lo que el texto aún necesita, como una pregunta por resolver, un dato por
+comprobar o una lista de cambios para la próxima versión.
+
+## Notas que siguen siendo privadas
+
+El bloc de notas es suyo, no del libro.
+
+- Nunca se exporta.
+- Nunca cuenta en sus palabras, sus objetivos ni su ritmo.
+- La búsqueda en el proyecto no lo recorre.
+
+Se guarda con el proyecto y se conserva en cada copia de seguridad, como el resto de lo que
+escribe.
+
+## Abrir el bloc de notas
+
+El panel *Bloc de notas* está a la derecha de la ventana. Ábralo con su icono, un cuaderno de
+espiral, o con `Ctrl+Mayús+A`. *Ver ▸ Paneles* también lo incluye.
+
+Escriba en él como en cualquier texto: la negrita, las listas y los enlaces funcionan igual. La
+fuente y el tamaño del texto los elige usted, en *Configuración ▸ Editor ▸ Tipografía ▸ Bloc
+de notas*.
+
+## Qué elemento muestra
+
+El panel muestra el bloc de notas del elemento que tiene delante, y la línea de arriba lo
+nombra.
+
+- En una escena, una nota o cualquier otro elemento abierto en una pestaña, es el bloc de
+  notas de ese elemento.
+- En el texto completo de un capítulo, una parte o un libro, sigue la escena en la que está
+  el cursor. Cuando hace clic en el bloc de notas para escribir, se queda en esa escena.
+- En la página propia de un capítulo, su tablón de corcho o su vista general, es el bloc de
+  notas del capítulo.
+
+Mientras el proyecto está abierto, cada bloc de notas recuerda dónde dejó el cursor.
+
+## Elementos en la papelera
+
+Un elemento en la papelera conserva su bloc de notas. Puede leerlo, pero no cambiarlo hasta
+que restaure el elemento.
+
+## Fusionar, dividir, duplicar
+
+- *Fusionar con la anterior* une los dos blocs de notas. Las notas de la escena que fusiona se
+  añaden después de las de la escena anterior.
+- *Dividir la escena* deja el bloc de notas en la primera escena. La nueva escena empieza con
+  uno vacío.
+- *Duplicar* copia el bloc de notas con el elemento.
+
+## Elementos sin bloc de notas
+
+El marcador *Fin del libro*, y los demás marcadores que no contienen texto, no tienen bloc de
+notas. El panel lo indica cuando uno de ellos está delante de usted.

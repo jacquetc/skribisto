@@ -559,6 +559,12 @@ pub fn builtin_topics() -> Vec<HelpTopicSpec> {
             body: djot_topic!("resources"),
         },
         HelpTopicSpec {
+            key: "help-scratchpad",
+            section: HelpSection::Writing,
+            title: Rc::new(|| tr!(help_topic_scratchpad())),
+            body: djot_topic!("scratchpad"),
+        },
+        HelpTopicSpec {
             key: "help-comments",
             section: HelpSection::Reviewing,
             title: Rc::new(|| tr!(help_topic_comments())),

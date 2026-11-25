@@ -10,7 +10,7 @@ Okno projektu ma cztery obszary:
 - *Po lewej* panele dotyczące całego projektu: *Segregator*, *Szukaj*, *Kosz*,
   *Komentarze* i *Gry pisarskie*. Widać naraz tylko jeden z nich.
 - *Po prawej* panele dotyczące elementu, który masz przed sobą: *Inspektor*, *Format*,
-  *Ten dokument*, *Przypisy* i *Wersje*.
+  *Ten dokument*, *Przypisy*, *Wersje*, *Zasoby* i *Brudnopis*.
 - *Na dole* *Podgląd* i *Cofnij się w czasie*. Pozostają ukryte, dopóki ich nie otworzysz.
 
 `F6` przechodzi do następnego obszaru, a `Shift+F6` do poprzedniego. Czytnik ekranu mówi,
@@ -19,8 +19,8 @@ dokąd trafiasz: *Lewy panel*, *Obszar główny* albo *Prawy panel*.
 `Tab` przechodzi przez okno w kolejności czytania: pasek tytułu, lewa strona, środek, prawa
 strona i pasek stanu. Tekst, który piszesz, zatrzymuje `Tab` dla siebie, aby wciąć listę
 albo wstawić tabulator: aby go opuścić, naciśnij `Ctrl+Tab`, a `Ctrl+Shift+Tab`, aby wrócić
-w drugą stronę. Streszczenie, motto, komentarz i przypis to pola jak inne i `Tab` je
-opuszcza.
+w drugą stronę. Streszczenie, motto, komentarz, przypis i brudnopis to pola jak inne i
+`Tab` je opuszcza.
 
 ## Otwieranie panelu jego skrótem
 
@@ -29,7 +29,8 @@ Każdy panel ma własny skrót, który wysuwa go na wierzch i przenosi cię do n
 - Po lewej: `Ctrl+Shift+B` *Segregator*, `Ctrl+Shift+F` *Szukaj*, `Ctrl+Shift+T` *Kosz*,
   `Ctrl+Shift+C` *Komentarze* i `Ctrl+Shift+G` *Gry pisarskie*.
 - Po prawej: `Ctrl+Shift+I` *Inspektor*, `Ctrl+Shift+O` *Format*, `Ctrl+Shift+D`
-  *Ten dokument*, `Ctrl+Shift+K` *Przypisy* i `Ctrl+Shift+R` *Wersje*.
+  *Ten dokument*, `Ctrl+Shift+K` *Przypisy*, `Ctrl+Shift+R` *Wersje*, `Ctrl+Shift+X`
+  *Zasoby* i `Ctrl+Shift+A` *Brudnopis*.
 - Na dole: `Ctrl+Shift+J` *Podgląd* i `Ctrl+Shift+L` *Cofnij się w czasie*.
 
 *Widok ▸ Panele* wymienia te same panele z ich skrótami, a `F9` pokazuje lub ukrywa całą

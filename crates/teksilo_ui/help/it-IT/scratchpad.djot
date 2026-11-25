@@ -1,0 +1,53 @@
+Ogni elemento del progetto ha un blocco note: una pagina di appunti tenuta accanto al suo
+testo. Usalo per ciò che manca ancora al testo, come una domanda da risolvere, un fatto da
+verificare o un elenco di modifiche per la prossima stesura.
+
+## Appunti che restano privati
+
+Il blocco note appartiene a te, non al libro.
+
+- Non viene mai esportato.
+- Non conta mai nelle tue parole, nei tuoi obiettivi o nel tuo ritmo.
+- La ricerca nel progetto non lo esamina.
+
+Viene salvato con il progetto e conservato in ogni backup, come il resto di ciò che scrivi.
+
+## Aprire il blocco note
+
+Il pannello *Blocco note* si trova a destra della finestra. Aprilo con la sua icona, un
+taccuino a spirale, o con `Ctrl+Maiusc+A`. Lo trovi anche in *Visualizza ▸ Pannelli*.
+
+Scrivi come in qualsiasi testo: grassetto, elenchi e link funzionano allo stesso modo. Il
+carattere e la dimensione del testo li scegli tu, in *Impostazioni ▸ Editor ▸ Tipografia ▸
+Blocco note*.
+
+## Quale elemento mostra
+
+Il pannello mostra il blocco note dell'elemento che hai davanti, e la riga in alto lo nomina.
+
+- In una scena, una nota o qualsiasi altro elemento aperto in una scheda, è il blocco note di
+  quell'elemento.
+- Nel testo completo di un capitolo, di una parte o di un libro, segue la scena in cui si
+  trova il cursore. Quando fai clic nel blocco note per scrivere, resta su quella scena.
+- Sulla pagina propria di un capitolo, sulla sua bacheca o sulla sua panoramica, è il blocco
+  note del capitolo.
+
+Finché il progetto è aperto, ogni blocco note ricorda dove hai lasciato il cursore.
+
+## Elementi nel cestino
+
+Un elemento nel cestino conserva il suo blocco note. Puoi leggerlo, ma non modificarlo finché
+non ripristini l'elemento.
+
+## Unire, dividere, duplicare
+
+- *Unisci al precedente* riunisce i due blocchi note. Gli appunti della scena che unisci si
+  aggiungono dopo quelli della scena precedente.
+- *Dividi scena* lascia il blocco note alla prima scena. La nuova scena comincia con un blocco
+  note vuoto.
+- *Duplica* copia il blocco note insieme all'elemento.
+
+## Elementi senza blocco note
+
+Il segnaposto *Fine del libro*, e gli altri segnaposto che non contengono testo, non hanno un
+blocco note. Il pannello lo dice quando uno di essi è davanti a te.

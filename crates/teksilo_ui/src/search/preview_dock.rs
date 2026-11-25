@@ -440,6 +440,9 @@ impl Widget for PreviewBody {
                             self_id,
                             crate::margin_lane::LaneAnchor::new(open_doc.item_id, scope),
                         );
+                        // A dock, not a tab: the caret here is not where the writer is
+                        // writing, so the Scratchpad does not move to this item.
+                        format.set_registered_in_dock(self_id);
                         self.format_view = Some((format, self_id));
                     }
                     Box::new(laned_band(

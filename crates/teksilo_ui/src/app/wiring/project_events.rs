@@ -371,6 +371,8 @@ pub(in crate::app) struct LifecycleDeps {
     pub registry: WorkRegistry,
     pub lifecycle: ProjectLifecycleViewModel,
     pub editors: EditorsViewModel,
+    /// This window's Scratchpad view-model: its document reference goes with the window.
+    pub scratchpad: crate::scratchpad::ScratchpadViewModel,
     pub outline: OutlineViewModel,
     pub trash: TrashViewModel,
     pub search: SearchReplaceViewModel,
@@ -492,6 +494,7 @@ pub(in crate::app) fn install_lifecycle(
         let registry_for_load = deps.registry.clone();
         let toast_registry_for_load = deps.toast_registry.clone();
         let editors_for_teardown = deps.editors.clone();
+        let scratchpad_for_teardown = deps.scratchpad.clone();
         let app_ctx_for_teardown = deps.app_ctx.clone();
         let backup_scheduler_for_teardown = deps.backup_scheduler.clone();
         let window_ordinal_for_load = deps.window_ordinal.clone();
@@ -511,6 +514,7 @@ pub(in crate::app) fn install_lifecycle(
                         );
                         let window_teardown = crate::app::build_window_teardown(
                             editors_for_teardown.clone(),
+                            scratchpad_for_teardown.clone(),
                             backup_scheduler_for_teardown.clone(),
                             toast_registry_for_load.clone(),
                             window_id,
@@ -541,6 +545,7 @@ pub(in crate::app) fn install_lifecycle(
         let ids = deps.ids.clone();
         let app_ctx = deps.app_ctx.clone();
         let editors = deps.editors.clone();
+        let scratchpad = deps.scratchpad.clone();
         let backup_scheduler = deps.backup_scheduler.clone();
         let toast_registry = deps.toast_registry.clone();
         let window_ordinal = deps.window_ordinal.clone();
@@ -563,6 +568,7 @@ pub(in crate::app) fn install_lifecycle(
                         crate::app::build_stack_teardown(app_ctx.clone(), ids.stack_id.get());
                     let window_teardown = crate::app::build_window_teardown(
                         editors.clone(),
+                        scratchpad.clone(),
                         backup_scheduler.clone(),
                         toast_registry.clone(),
                         window_id,
@@ -640,6 +646,7 @@ pub(in crate::app) fn install_lifecycle(
         let registry_for_new = deps.registry.clone();
         let toast_registry_for_new = deps.toast_registry.clone();
         let editors_for_teardown = deps.editors.clone();
+        let scratchpad_for_teardown = deps.scratchpad.clone();
         let app_ctx_for_teardown = deps.app_ctx.clone();
         let backup_scheduler_for_teardown = deps.backup_scheduler.clone();
         let window_ordinal_for_new = deps.window_ordinal.clone();
@@ -678,6 +685,7 @@ pub(in crate::app) fn install_lifecycle(
                         );
                         let window_teardown = crate::app::build_window_teardown(
                             editors_for_teardown.clone(),
+                            scratchpad_for_teardown.clone(),
                             backup_scheduler_for_teardown.clone(),
                             toast_registry_for_new.clone(),
                             window_id,

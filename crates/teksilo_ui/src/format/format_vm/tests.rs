@@ -2065,3 +2065,54 @@ fn a_scratchpad_answers_no_item_lookup() {
     assert!(vm.handles_by_item(EditorKind::Prose).is_empty());
     assert!(vm.handles_by_item(EditorKind::Synopsis).is_empty());
 }
+
+/// **The caret's item is the tab editor the writer is typing in, and nothing else.**
+///
+/// What the Scratchpad dock follows inside a Full Chapter: the row with the caret. It
+/// is live, so it goes back to `None` when focus leaves the editors, and it never names
+/// the scratchpad editor (registered with no anchor and as a scratchpad) or an editor in
+/// a dock (the search preview band, which shows an item's text but is not where the
+/// writer is writing). Either reads as "not in a tab", so the dock keeps its row.
+#[test]
+fn the_caret_item_is_the_tab_editor_with_focus_and_never_a_dock() {
+    let (_row_a, a_handle) = loose_editor("row one");
+    let (_row_b, b_handle) = loose_editor("row two");
+    let (_preview, preview_handle) = loose_editor("row two, in the preview band");
+    let (_pad, pad_handle) = loose_editor("notes");
+    let vm = FormatViewModel::new(Rc::new(|| (None, FormatSurface::None)));
+    let w = ids(4);
+    vm.register(w[0], a_handle.clone(), EditorKind::Prose);
+    vm.set_registered_anchor(w[0], anchor(11));
+    vm.register(w[1], b_handle.clone(), EditorKind::Synopsis);
+    vm.set_registered_anchor(w[1], anchor(22));
+    vm.register(w[2], preview_handle.clone(), EditorKind::Prose);
+    vm.set_registered_anchor(w[2], anchor(22));
+    vm.set_registered_in_dock(w[2]);
+    vm.register(w[3], pad_handle.clone(), EditorKind::Scratchpad);
+
+    vm.refresh();
+    assert_eq!(vm.caret_item().get(), None, "nothing focused");
+
+    a_handle.focused_signal().set(true);
+    vm.refresh();
+    assert_eq!(vm.caret_item().get(), Some(11));
+
+    a_handle.focused_signal().set(false);
+    b_handle.focused_signal().set(true);
+    vm.refresh();
+    assert_eq!(vm.caret_item().get(), Some(22), "a synopsis row counts too");
+
+    b_handle.focused_signal().set(false);
+    pad_handle.focused_signal().set(true);
+    vm.refresh();
+    assert_eq!(
+        vm.caret_item().get(),
+        None,
+        "the scratchpad is no tab editor"
+    );
+
+    pad_handle.focused_signal().set(false);
+    preview_handle.focused_signal().set(true);
+    vm.refresh();
+    assert_eq!(vm.caret_item().get(), None, "neither is the preview band");
+}

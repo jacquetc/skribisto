@@ -439,6 +439,20 @@ impl EditorsViewModel {
         self.focused_side.clone()
     }
 
+    /// The segment bar signal of the focused pane's active tab: which of a container's
+    /// views (its own page, the Full Chapter, the Corkboard…) is in front. `None` when no
+    /// tab is open.
+    ///
+    /// The signal of *one* tab, so a reader that follows the view in front re-reads this
+    /// whenever [`Self::active_context`] or [`Self::focused_side_signal`] moves: those are
+    /// the two edges at which the active tab can change (a Promote rebuilds the tab, and
+    /// moves `active_context` with the new type).
+    pub(crate) fn focused_segment_signal(
+        &self,
+    ) -> Option<Signal<Option<teksilo::widgets::SegmentId>>> {
+        self.with_focused_tab(|t| Some(t.segment.clone()))
+    }
+
     // ── Focus / active item ─────────────────────────────────────────────────
 
     /// Mark `side` as the focused pane and refresh the open-item marker. Called

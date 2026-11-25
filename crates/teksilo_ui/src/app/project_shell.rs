@@ -12,7 +12,7 @@ use teksilo::prelude::*;
 use teksilo::widgets::{
     Divider, DockAction, DockActionId, DockActionPlacement, DockCorner, DockRail, DockRailItemSize,
     DockSide, DockingLayout, DropRegion, DropTarget, DropTargetVariant, Expand, HStack, IconButton,
-    IconButtonSize, NotificationArchiveModel, RowDragData, Spacer, Splitter, StatusBar,
+    IconButtonSize, IconWidget, NotificationArchiveModel, RowDragData, Spacer, Splitter, StatusBar,
     TabBarVisibility, TextWidget, VStack,
 };
 
@@ -44,6 +44,7 @@ pub(super) struct ShellParts {
     pub comments: crate::comments::CommentsViewModel,
     pub footnotes: crate::footnotes::FootnotesViewModel,
     pub resources: crate::resources::ResourcesViewModel,
+    pub scratchpad: crate::scratchpad::ScratchpadViewModel,
     pub versions: crate::versions::VersionsViewModel,
     pub timeline: crate::timeline::TimelineViewModel,
     pub format: crate::format::FormatViewModel,
@@ -73,6 +74,19 @@ pub(super) fn go_to_opens(editors: &crate::editors::EditorsViewModel) -> crate::
     std::rc::Rc::new(move |item_id, title, ctx| editors.activate(item_id, title, ctx))
 }
 
+/// The right-hand rail: one glyph per panel about what is in front of the writer.
+///
+/// It holds seven activities (Inspector, Format, this document's Comments, Footnotes,
+/// Versions, Resources, Scratchpad), so on a short window with the bottom band open the
+/// glyphs no longer fit: the surplus is parked behind an overflow button rather than
+/// clipped out of reach.
+pub(super) fn trailing_rail() -> DockRail {
+    DockRail::new(DockSide::Trailing)
+        .background(SurfaceRole::Main)
+        .divider()
+        .overflow_icon(|| IconWidget::chevron_down(18.0))
+}
+
 impl App {
     /// Build the docking layout + status bar + banners; return the root widget id.
     pub(super) fn build_shell(&mut self, ctx: &mut BuildContext, parts: ShellParts) -> WidgetId {
@@ -84,6 +98,7 @@ impl App {
             comments,
             footnotes,
             resources,
+            scratchpad,
             versions,
             timeline,
             format,
@@ -538,11 +553,7 @@ impl App {
                         .placement(DockActionPlacement::Pinned),
                     ),
             )
-            .rail(
-                DockRail::new(DockSide::Trailing)
-                    .background(SurfaceRole::Main)
-                    .divider(),
-            )
+            .rail(trailing_rail())
             .rail(
                 DockRail::new(DockSide::Bottom)
                     .background(SurfaceRole::Main)
@@ -631,6 +642,11 @@ impl App {
             .dock(crate::resources::dock::resources_dock(
                 resources.clone(),
                 self.resources_dock,
+            ))
+            .dock(crate::scratchpad::dock::scratchpad_dock(
+                scratchpad.clone(),
+                format.clone(),
+                self.scratchpad_dock,
             ))
             .dock(crate::timeline::dock::timeline_dock(
                 timeline.clone(),

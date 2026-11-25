@@ -10,7 +10,7 @@ Uma janela de projeto tem quatro zonas:
 - *À esquerda*, os painéis sobre todo o projeto: *Arquivador*, *Pesquisar*, *Lixo*,
   *Comentários* e *Jogos de escrita*. Aparece um de cada vez.
 - *À direita*, os painéis sobre o item que tem à frente: *Inspetor*, *Formato*,
-  *Este documento*, *Notas de rodapé* e *Versões*.
+  *Este documento*, *Notas de rodapé*, *Versões*, *Recursos* e *Bloco de notas*.
 - *Em baixo*, *Pré-visualização* e *Voltar atrás no tempo*. Ficam escondidos até os abrir.
 
 `F6` passa de uma zona para a seguinte, e `Shift+F6` para a anterior. O seu leitor de ecrã
@@ -19,8 +19,8 @@ diz onde chega: *Painel esquerdo*, *Área principal* ou *Painel direito*.
 `Tab` percorre a janela pela ordem de leitura: a barra de título, a esquerda, o centro, a
 direita e a barra de estado. O texto que escreve guarda `Tab` para si, para avançar uma
 lista ou inserir uma tabulação: para sair dele, prima `Ctrl+Tab`, e `Ctrl+Shift+Tab` para
-voltar atrás. Uma sinopse, uma epígrafe, um comentário e uma nota de rodapé são campos como
-os outros, e `Tab` sai deles.
+voltar atrás. Uma sinopse, uma epígrafe, um comentário, uma nota de rodapé e o bloco de notas são
+campos como os outros, e `Tab` sai deles.
 
 ## Abrir um painel com o seu atalho
 
@@ -29,7 +29,8 @@ Cada painel tem o seu próprio atalho, que o traz para a frente e o leva para de
 - À esquerda: `Ctrl+Shift+B` *Arquivador*, `Ctrl+Shift+F` *Pesquisar*, `Ctrl+Shift+T`
   *Lixo*, `Ctrl+Shift+C` *Comentários* e `Ctrl+Shift+G` *Jogos de escrita*.
 - À direita: `Ctrl+Shift+I` *Inspetor*, `Ctrl+Shift+O` *Formato*, `Ctrl+Shift+D`
-  *Este documento*, `Ctrl+Shift+K` *Notas de rodapé* e `Ctrl+Shift+R` *Versões*.
+  *Este documento*, `Ctrl+Shift+K` *Notas de rodapé*, `Ctrl+Shift+R` *Versões*,
+  `Ctrl+Shift+X` *Recursos* e `Ctrl+Shift+A` *Bloco de notas*.
 - Em baixo: `Ctrl+Shift+J` *Pré-visualização* e `Ctrl+Shift+L` *Voltar atrás no tempo*.
 
 *Ver ▸ Painéis* lista os mesmos painéis com os seus atalhos, e `F9` mostra ou oculta todo o
