@@ -674,7 +674,9 @@ mod tests {
     #[test]
     fn a_source_sorts_before_its_position() {
         let mut all = [
+            MatchField::Scratchpad,
             MatchField::Footnote,
+            MatchField::Resource,
             MatchField::Body,
             MatchField::CommentReply,
             MatchField::Epigraph,
@@ -695,6 +697,8 @@ mod tests {
                 MatchField::Comment,
                 MatchField::CommentReply,
                 MatchField::Footnote,
+                MatchField::Resource,
+                MatchField::Scratchpad,
             ]
         );
     }
@@ -712,6 +716,8 @@ mod tests {
             MatchField::Comment,
             MatchField::CommentReply,
             MatchField::Footnote,
+            MatchField::Resource,
+            MatchField::Scratchpad,
         ];
         let mut ranks: Vec<u8> = all.iter().map(field_rank).collect();
         ranks.sort_unstable();

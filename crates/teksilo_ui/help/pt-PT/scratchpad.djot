@@ -8,7 +8,7 @@ O bloco de notas é seu, não do livro.
 
 - Nunca é exportado.
 - Nunca conta para as suas palavras, os seus objetivos ou o seu ritmo.
-- A pesquisa no projeto não o percorre.
+- A pesquisa no projeto deixa-o de fora, a menos que ligue o seu próprio interruptor.
 
 É guardado com o projeto e conservado em cada cópia de segurança, como o resto do que
 escreve.
@@ -48,6 +48,19 @@ item.
 - *Dividir a cena* deixa o bloco de notas na primeira cena. A nova cena começa com um bloco de
   notas vazio.
 - *Duplicar* copia o bloco de notas com o item.
+
+## Pesquisar nos blocos de notas
+
+A pesquisa deixa de fora os seus blocos de notas até ligar o interruptor *Blocos de notas*
+nas opções de pesquisa, o do caderno de espiral. As suas correspondências aparecem então com
+as outras.
+
+- Abrir uma correspondência abre o seu item e seleciona as palavras no bloco de notas.
+- *Substituir tudo* deixa desmarcadas as correspondências nos blocos de notas, como as dos
+  comentários: só as altera depois de as marcar, e nunca enquanto o interruptor estiver
+  desligado.
+
+O painel de pesquisa memoriza o interruptor para cada projeto.
 
 ## Versões anteriores
 

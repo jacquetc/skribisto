@@ -3087,6 +3087,7 @@ search-tip-synopsis = Sinopsis: caută în rezumatul fiecărui element de scris.
 search-tip-label = Legendă: caută în nota scurtă afișată sub titlul unui element din clasor.
 search-tip-comment = Comentarii: caută în textul firelor de comentarii și al răspunsurilor. Un comentariu este despre manuscris, nu parte din el, așa că are propriul comutator, iar la înlocuire potrivirile din comentarii rămân nebifate până când le bifați.
 search-tip-resource = Resurse: căutați în titlurile, descrierile, numele de fișiere și adresele web ale fișierelor și linkurilor atașate elementelor dumneavoastră. Rezultatele lor sunt afișate ca să le găsiți, iar o înlocuire nu le modifică niciodată.
+search-tip-scratchpad = Carnete de notițe: caută în notițele private păstrate lângă fiecare element. Dezactivat până când îl activați. Cât timp este dezactivat, o înlocuire nu modifică niciodată un carnet de notițe; când este activat, potrivirile găsite acolo apar nebifate, iar o înlocuire le modifică doar după ce le bifați.
 search-tip-book = Cărți: containerul cărții și marcajele sale de început și de sfârșit.
 search-tip-part = Părți: separatoarele la nivel de parte.
 search-tip-chapter = Capitole: capitolele, în orice formă le stochează proiectul.
@@ -3147,6 +3148,11 @@ search-replace-confirm-text =
            [few] { $items } documente
           *[other] { $items } de documente
        }? Puteți anula ulterior din notificare.
+search-replace-confirm-scratchpads = { $count ->
+    [one] Înlocuirea modifică și 1 carnet de notițe, notițele dumneavoastră private de lângă un element.
+    [few] Înlocuirea modifică și { $count } carnete de notițe, notițele dumneavoastră private de lângă elemente.
+   *[other] Înlocuirea modifică și { $count } de carnete de notițe, notițele dumneavoastră private de lângă elemente.
+}
 search-replace-done-title = Înlocuire încheiată
 search-replace-done =
        { $occurrences ->

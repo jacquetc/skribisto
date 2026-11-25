@@ -270,6 +270,7 @@ fn search(
             search_labels: false,
             search_comments: false,
             search_resources: resources,
+            search_scratchpad: false,
             include_trashed: false,
         },
     )

@@ -1094,6 +1094,7 @@ pub(crate) fn create_trunk(
         search_synopsis: false,
         search_labels: false,
         search_resources: false,
+        search_scratchpad: false,
         include_trashed: false,
         truncated: false,
         results: Vec::new(),

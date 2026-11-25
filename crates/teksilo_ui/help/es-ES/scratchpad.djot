@@ -8,7 +8,7 @@ El bloc de notas es suyo, no del libro.
 
 - Nunca se exporta.
 - Nunca cuenta en sus palabras, sus objetivos ni su ritmo.
-- La búsqueda en el proyecto no lo recorre.
+- La búsqueda en el proyecto lo deja fuera, salvo que active su propio interruptor.
 
 Se guarda con el proyecto y se conserva en cada copia de seguridad, como el resto de lo que
 escribe.
@@ -48,6 +48,20 @@ que restaure el elemento.
 - *Dividir la escena* deja el bloc de notas en la primera escena. La nueva escena empieza con
   uno vacío.
 - *Duplicar* copia el bloc de notas con el elemento.
+
+## Buscar en sus blocs de notas
+
+La búsqueda deja fuera sus blocs de notas hasta que active el interruptor *Blocs de notas*
+entre las opciones de búsqueda, el del cuaderno de espiral. Sus coincidencias aparecen
+entonces con las demás.
+
+- Al abrir una coincidencia se abre su elemento y se seleccionan las palabras en su bloc de
+  notas.
+- *Reemplazar todo* deja sin marcar las coincidencias de los blocs de notas, como las de los
+  comentarios: solo las cambia cuando usted las marca, y nunca mientras el interruptor está
+  desactivado.
+
+El panel de búsqueda recuerda el interruptor para cada proyecto.
 
 ## Versiones anteriores
 

@@ -887,6 +887,7 @@ fn run_search_only_searches_the_requested_work() {
                 search_labels: false,
                 search_comments: false,
                 search_resources: false,
+                search_scratchpad: false,
                 include_trashed: false,
             },
         )
@@ -978,6 +979,7 @@ fn replace_in_project_only_replaces_in_the_requested_work() {
                 search_labels: false,
                 search_comments: false,
                 search_resources: false,
+                search_scratchpad: false,
                 include_trashed: false,
             },
         )
@@ -994,6 +996,7 @@ fn replace_in_project_only_replaces_in_the_requested_work() {
                 excluded_occurrence_starts: vec![],
                 only_occurrence_rows: vec![],
                 only_occurrence_starts: vec![],
+                search_scratchpad: false,
             },
         )
         .expect("replace_in_project");

@@ -262,6 +262,8 @@ impl RunSearchUseCase {
             search_titles: dto.search_titles,
             search_synopsis: dto.search_synopsis,
             search_labels: dto.search_labels,
+            search_resources: dto.search_resources,
+            search_scratchpad: dto.search_scratchpad,
             include_trashed: dto.include_trashed,
             truncated,
             ..search
@@ -743,8 +745,12 @@ impl RunSearchUseCase {
 
         // Comments need this walk too, even with every prose scope off: it is the only
         // place that learns which item a `Content` row belongs to, and a comment hit
-        // has to be able to name its scene.
-        if !dto.search_body && !dto.search_synopsis && !dto.search_comments {
+        // has to be able to name its scene. Scratchpads are rows of this walk too.
+        if !dto.search_body
+            && !dto.search_synopsis
+            && !dto.search_comments
+            && !dto.search_scratchpad
+        {
             return Ok(true);
         }
         let content_ids =
@@ -783,9 +789,8 @@ impl RunSearchUseCase {
                 MatchField::Synopsis => dto.search_synopsis,
                 // The writer's private scratchpad is not the manuscript, so neither the
                 // body toggle nor the synopsis one reaches it. It answers to a toggle of
-                // its own, off by default, and the search dto carries none yet: until it
-                // does, nothing searches a scratchpad.
-                MatchField::Scratchpad => false,
+                // its own, which the interface keeps off until the writer turns it on.
+                MatchField::Scratchpad => dto.search_scratchpad,
                 // Not reachable from a `Content` row: titles and labels live on the
                 // `BinderItem`, comments on their own entities, and all four are scanned
                 // in their own passes. `field_of_role` never returns them, and the

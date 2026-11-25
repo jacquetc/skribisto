@@ -2574,6 +2574,7 @@ search-tip-synopsis = Szinopszis: keresés minden írási elem összefoglalójá
 search-tip-label = Felirat: keresés az iratrendező elemeinek címe alatt látható rövid szövegben.
 search-tip-comment = Megjegyzések: keresés a megjegyzésszálak és a rájuk adott válaszok szövegében. A megjegyzés a kéziratról szól, nem része annak, ezért külön kapcsolója van, és a csere nem jelöli be a megjegyzésekben talált egyezéseket, amíg Ön be nem jelöli őket.
 search-tip-resource = Források: keresés az elemeidhez csatolt fájlok és hivatkozások címeiben, leírásaiban, fájlneveiben és webcímeiben. A találataik megjelennek, hogy megtaláld őket, a csere pedig sosem módosítja őket.
+search-tip-scratchpad = Jegyzettömbök: keresés az egyes elemek mellett vezetett személyes jegyzetekben. Kikapcsolva marad, amíg be nem kapcsolja. Amíg ki van kapcsolva, a csere soha nem módosít jegyzettömböt; bekapcsolva az ott talált egyezések bejelöletlenül jelennek meg, és a csere csak akkor módosítja őket, ha bejelöli őket.
 search-tip-book = Könyvek: a könyvtároló és a kezdetét és végét jelölő elemek.
 search-tip-part = Részek: a részszintű elválasztók.
 search-tip-chapter = Fejezetek: a fejezetek, bármilyen formában tárolja is őket a projekt.
@@ -2628,6 +2629,10 @@ search-replace-confirm-text =
         [one] { $items } dokumentumban
        *[other] { $items } dokumentumban
     }? Utána az értesítésből visszavonhatja.
+search-replace-confirm-scratchpads = { $count ->
+    [one] A csere 1 jegyzettömböt is módosít: egy elem melletti személyes jegyzeteit.
+   *[other] A csere { $count } jegyzettömböt is módosít: az elemek melletti személyes jegyzeteit.
+}
 search-replace-done-title = A csere kész
 search-replace-done =
     { $occurrences ->

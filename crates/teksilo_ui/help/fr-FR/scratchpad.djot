@@ -8,7 +8,7 @@ Le bloc-notes vous appartient, il ne fait pas partie du livre.
 
 - Il n’est jamais exporté.
 - Il ne compte jamais dans vos mots, vos objectifs ni votre rythme.
-- La recherche dans le projet ne le parcourt pas.
+- La recherche dans le projet le laisse de côté, sauf si vous activez son propre bouton.
 
 Il est enregistré avec le projet et conservé dans chaque sauvegarde, comme le reste de votre
 texte.
@@ -50,6 +50,18 @@ tant que vous n’avez pas restauré l’élément.
 - *Scinder la scène* laisse le bloc-notes à la première scène. La nouvelle scène commence avec
   un bloc-notes vide.
 - *Dupliquer* copie le bloc-notes avec l’élément.
+
+## Chercher dans vos blocs-notes
+
+La recherche laisse vos blocs-notes de côté tant que vous n’activez pas le bouton *Bloc-notes*
+parmi les options de recherche, celui qui montre un carnet à spirale. Leurs résultats
+s’ajoutent alors aux autres.
+
+- Ouvrir un résultat ouvre son élément et sélectionne les mots dans son bloc-notes.
+- *Tout remplacer* liste les résultats des blocs-notes décochés, comme les commentaires : il ne
+  les modifie que si vous les cochez, et jamais quand ce bouton est désactivé.
+
+Le panneau de recherche retient ce bouton pour chaque projet.
 
 ## Les versions précédentes
 

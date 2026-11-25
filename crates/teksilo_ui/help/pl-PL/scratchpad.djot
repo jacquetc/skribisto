@@ -8,7 +8,7 @@ Brudnopis należy do ciebie, nie do książki.
 
 - Nigdy nie jest eksportowany.
 - Nigdy nie liczy się do twoich słów, celów ani tempa.
-- Wyszukiwanie w projekcie go nie przeszukuje.
+- Wyszukiwanie w projekcie go pomija, chyba że włączysz jego własny przełącznik.
 
 Zapisuje się razem z projektem i trafia do każdej kopii zapasowej, jak wszystko, co piszesz.
 
@@ -42,6 +42,18 @@ przywrócisz elementu.
   poprzedniej.
 - *Podziel scenę* zostawia brudnopis przy pierwszej scenie. Nowa scena zaczyna z pustym.
 - *Duplikuj* kopiuje brudnopis razem z elementem.
+
+## Wyszukiwanie w brudnopisach
+
+Wyszukiwanie pomija twoje brudnopisy, dopóki nie włączysz przełącznika *Brudnopisy* wśród
+opcji wyszukiwania, tego z notesem na spirali. Ich wyniki pojawiają się wtedy razem z
+pozostałymi.
+
+- Otwarcie wyniku otwiera jego element i zaznacza słowa w jego brudnopisie.
+- *Zastąp wszystko* pozostawia wyniki w brudnopisach niezaznaczone, tak jak w komentarzach:
+  zmienia je dopiero po ich zaznaczeniu i nigdy, gdy przełącznik jest wyłączony.
+
+Panel wyszukiwania pamięta przełącznik osobno dla każdego projektu.
 
 ## Wcześniejsze wersje
 

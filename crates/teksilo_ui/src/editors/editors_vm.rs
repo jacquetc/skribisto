@@ -1334,6 +1334,9 @@ impl EditorsViewModel {
         self.focus_main_editor(Side::Primary, item_id, ctx);
     }
 
+    /// Open a search result's item in the focused pane, and hand its hit to the editor
+    /// that holds it. For a hit in a scratchpad, the tab opens on the item's own page and
+    /// takes no hit: the caller hands that one to the Scratchpad panel.
     pub(crate) fn open_search_result(
         &self,
         item: u64,
@@ -1374,7 +1377,12 @@ impl EditorsViewModel {
                     tab.reveal_epigraph();
                 }
             }
-            tab.pending_search_hit.set(hit.clone());
+            // A scratchpad hit is not in any of the tab's editors: the Scratchpad panel,
+            // which follows the item, shows it (`ScratchpadViewModel::select_when_shown`).
+            // The segment above still matters, since on a container's own page the
+            // panel shows the container rather than a row of its stream.
+            tab.pending_search_hit
+                .set(hit.clone().filter(|h| h.field != MatchField::Scratchpad));
         });
         if hit.is_none() {
             self.focus_main_editor(side, item, ctx);

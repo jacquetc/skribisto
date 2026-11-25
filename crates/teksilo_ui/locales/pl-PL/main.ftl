@@ -3169,6 +3169,7 @@ search-tip-synopsis = Streszczenie: przeszukuje streszczenie każdego elementu z
 search-tip-label = Etykieta: przeszukuje krótką adnotację wyświetlaną pod tytułem elementu segregatora.
 search-tip-comment = Komentarze: przeszukuje tekst wątków komentarzy i odpowiedzi. Komentarz dotyczy rękopisu, a nie jest jego częścią, więc ma osobny przełącznik, a przy zastępowaniu trafienia w komentarzach pozostają niezaznaczone, dopóki ich nie zaznaczysz.
 search-tip-resource = Zasoby: szukaj w tytułach, opisach, nazwach plików i adresach internetowych plików i odnośników dołączonych do Twoich elementów. Ich wyniki są wyświetlane, abyś je odnalazł, a zamiana nigdy ich nie zmienia.
+search-tip-scratchpad = Brudnopisy: szukaj w prywatnych notatkach prowadzonych obok każdego elementu. Wyłączone, dopóki tego nie włączysz. Gdy jest wyłączone, zamiana nigdy nie zmienia brudnopisu; gdy jest włączone, znalezione w nich wyniki są wyświetlane jako niezaznaczone, a zamiana zmienia je dopiero po ich zaznaczeniu.
 search-tip-book = Książki: kontener książki i jej znaczniki początku / końca.
 search-tip-part = Części: separatory na poziomie części.
 search-tip-chapter = Rozdziały: rozdziały, niezależnie od tego, w jaki sposób projekt je przechowuje.
@@ -3235,6 +3236,12 @@ search-replace-confirm-text =
         [many] { $items } dokumentach
        *[other] { $items } dokumentu
     }? Później można to cofnąć z poziomu powiadomienia.
+search-replace-confirm-scratchpads = { $count ->
+    [one] Zamiana zmienia też 1 brudnopis, Twoje prywatne notatki obok elementu.
+    [few] Zamiana zmienia też { $count } brudnopisy, Twoje prywatne notatki obok elementów.
+    [many] Zamiana zmienia też { $count } brudnopisów, Twoje prywatne notatki obok elementów.
+   *[other] Zamiana zmienia też { $count } brudnopisu, Twoje prywatne notatki obok elementów.
+}
 search-replace-done-title = Zastępowanie zakończone
 search-replace-done =
     Zastąpiono { $occurrences ->

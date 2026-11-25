@@ -6,8 +6,9 @@
 //! never part of the book.
 //!
 //! Each test builds its own project, with one scene carrying a scene text, a synopsis
-//! and a scratchpad, and checks one place a scratchpad must leave alone: the search
-//! (it has no toggle yet, so it is never searched), Replace All, and the word count.
+//! and a scratchpad, and checks one place a scratchpad must leave alone unless asked:
+//! the search and Replace All, which reach it only through its own toggle, and the word
+//! count, which never does.
 //! The last ones save and reopen the project, which is where a blank scratchpad is left
 //! out and a written one comes back.
 
@@ -136,7 +137,8 @@ fn row_of(ctx: &AppContext, item: EntityId, role: ContentRole) -> Option<String>
         .map(|c| c.data)
 }
 
-/// Every scope on: body, titles, synopses, labels, comments, resources.
+/// Every scope on: body, titles, synopses, labels, comments, resources. Scratchpads
+/// stay off, as the interface keeps them until the writer turns them on.
 fn search(work: EntityId, query: &str) -> RunSearchDto {
     RunSearchDto {
         work_id: work,
@@ -151,8 +153,88 @@ fn search(work: EntityId, query: &str) -> RunSearchDto {
         search_labels: true,
         search_comments: true,
         search_resources: true,
+        search_scratchpad: false,
         include_trashed: true,
     }
+}
+
+/// [`search`] with the scratchpad toggle on.
+fn search_with_scratchpads(work: EntityId, query: &str) -> RunSearchDto {
+    RunSearchDto {
+        search_scratchpad: true,
+        ..search(work, query)
+    }
+}
+
+/// [`search_with_scratchpads`] with every other prose scope off: only scratchpads.
+fn search_scratchpads_only(work: EntityId, query: &str) -> RunSearchDto {
+    RunSearchDto {
+        search_body: false,
+        search_titles: false,
+        search_synopsis: false,
+        search_labels: false,
+        search_comments: false,
+        search_resources: false,
+        ..search_with_scratchpads(work, query)
+    }
+}
+
+/// The current result rows: id and field.
+fn result_rows(ctx: &AppContext, work: EntityId) -> Vec<(EntityId, MatchField)> {
+    let wi = work_info_commands::get_all_work_info(ctx)
+        .unwrap()
+        .into_iter()
+        .find(|wi| wi.work == Some(work))
+        .expect("the work has a WorkInfo");
+    let ids = search_commands::get_search_relationship(
+        ctx,
+        &wi.search,
+        &SearchRelationshipField::Results,
+    )
+    .unwrap();
+    search_result_commands::get_search_result_multi(ctx, &ids)
+        .unwrap()
+        .into_iter()
+        .flatten()
+        .map(|r| (r.id, r.match_field))
+        .collect()
+}
+
+/// Replace every listed occurrence of the current search with `replacement`, leaving
+/// out the result rows in `excluded`, from a window whose Scratchpad switch is on.
+fn replace_all(
+    p: &Project,
+    stack: Option<u64>,
+    replacement: &str,
+    excluded: Vec<EntityId>,
+) -> search_management::ReplaceInProjectResultDto {
+    replace_all_from(p, stack, replacement, excluded, true)
+}
+
+/// [`replace_all`], from a window whose Scratchpad switch is `switch`.
+fn replace_all_from(
+    p: &Project,
+    stack: Option<u64>,
+    replacement: &str,
+    excluded: Vec<EntityId>,
+    switch: bool,
+) -> search_management::ReplaceInProjectResultDto {
+    search_management_commands::replace_in_project(
+        &p.ctx,
+        stack,
+        &ReplaceInProjectDto {
+            work_id: p.work,
+            replacement: replacement.to_string(),
+            preserve_case: true,
+            excluded_result_ids: excluded,
+            excluded_occurrence_rows: vec![],
+            excluded_occurrence_starts: vec![],
+            only_occurrence_rows: vec![],
+            only_occurrence_starts: vec![],
+            search_scratchpad: switch,
+        },
+    )
+    .expect("replace_in_project")
 }
 
 fn results(ctx: &AppContext, work: EntityId) -> Vec<MatchField> {
@@ -234,8 +316,8 @@ fn reopen(p: &Project) -> (AppContext, EntityId) {
     (ctx, scene)
 }
 
-/// A word that is only in the scratchpad finds nothing, with every scope on. The same
-/// search finds a word of the scene text, so the search itself works.
+/// With its toggle off, a word that is only in the scratchpad finds nothing, every other
+/// scope on. The same search finds a word of the scene text, so the search itself works.
 #[test]
 fn a_word_only_in_a_scratchpad_is_not_found() {
     let p = project("search", Some(SCRATCHPAD));
@@ -258,8 +340,8 @@ fn a_word_only_in_a_scratchpad_is_not_found() {
     );
 }
 
-/// Replace All rewrites the scene text and the synopsis, and leaves the scratchpad word
-/// for word as it was, though it holds the same word.
+/// With the toggle off, Replace All rewrites the scene text and the synopsis, and leaves
+/// the scratchpad word for word as it was, though it holds the same word.
 #[test]
 fn replace_all_never_touches_a_scratchpad() {
     let p = project("replace", Some(SCRATCHPAD));
@@ -277,6 +359,7 @@ fn replace_all_never_touches_a_scratchpad() {
             excluded_occurrence_starts: vec![],
             only_occurrence_rows: vec![],
             only_occurrence_starts: vec![],
+            search_scratchpad: false,
         },
     )
     .expect("replace_in_project");
@@ -289,6 +372,196 @@ fn replace_all_never_touches_a_scratchpad() {
         row_of(&p.ctx, p.scene, ContentRole::ScratchpadText).as_deref(),
         Some(SCRATCHPAD),
         "the scratchpad keeps its 'keeper'"
+    );
+}
+
+/// With the toggle on, a word only in the scratchpad is found there and nowhere else, and
+/// a word in all three texts is found in each, the scratchpad reported as its own field.
+/// The `Search` keeps a record of the toggle, and the occurrences of the scratchpad row
+/// are read from the scratchpad, not from the scene text.
+#[test]
+fn the_scratchpad_toggle_finds_a_word_in_a_scratchpad() {
+    let p = project("search-on", Some(SCRATCHPAD));
+    let out = search_management_commands::run_search(
+        &p.ctx,
+        &search_with_scratchpads(p.work, "lighthouse"),
+    )
+    .unwrap();
+    assert_eq!(out.match_count, 1, "found once, in the scratchpad");
+    assert_eq!(out.item_count, 1);
+    assert_eq!(results(&p.ctx, p.work), vec![MatchField::Scratchpad]);
+
+    let wi = work_info_commands::get_all_work_info(&p.ctx)
+        .unwrap()
+        .into_iter()
+        .find(|wi| wi.work == Some(p.work))
+        .unwrap();
+    let record = search_commands::get_search(&p.ctx, &wi.search)
+        .unwrap()
+        .expect("the work's search");
+    assert!(record.search_scratchpad, "the Search records the toggle");
+
+    let out =
+        search_management_commands::run_search(&p.ctx, &search_with_scratchpads(p.work, "keeper"))
+            .unwrap();
+    assert_eq!(
+        out.match_count, 3,
+        "the scene text, the synopsis and the scratchpad"
+    );
+    let rows = result_rows(&p.ctx, p.work);
+    let pad = rows
+        .iter()
+        .find(|(_, f)| *f == MatchField::Scratchpad)
+        .expect("the scratchpad is reported")
+        .0;
+    let occurrences = search_management_commands::occurrences_for_result(
+        &p.ctx,
+        &search_management::OccurrencesForResultDto {
+            work_id: p.work,
+            result_id: pad,
+        },
+    )
+    .expect("occurrences_for_result");
+    // "Is the keeper too old?": the word sits seven characters in, where the scene's own
+    // "The keeper climbed" has it at four.
+    assert_eq!(occurrences.char_starts, vec![7]);
+    assert_eq!(occurrences.snippets_match, vec!["keeper".to_string()]);
+
+    // Only the scratchpad toggle: the scene and its synopsis are not reported.
+    let out =
+        search_management_commands::run_search(&p.ctx, &search_scratchpads_only(p.work, "keeper"))
+            .unwrap();
+    assert_eq!(out.match_count, 1);
+    assert_eq!(results(&p.ctx, p.work), vec![MatchField::Scratchpad]);
+}
+
+/// With the toggle on, Replace All rewrites the scratchpad with the rest, and one undo
+/// puts all three back.
+#[test]
+fn replace_all_with_the_toggle_on_rewrites_the_scratchpad() {
+    let p = project("replace-on", Some(SCRATCHPAD));
+    let stack = Some(undo_redo_commands::create_new_stack(&p.ctx));
+    search_management_commands::run_search(&p.ctx, &search_with_scratchpads(p.work, "keeper"))
+        .unwrap();
+    let out = replace_all(&p, stack, "warden", vec![]);
+    assert_eq!(out.occurrences_replaced, 3);
+    assert_eq!(
+        out.items_changed, 1,
+        "one item: its text, synopsis and notes"
+    );
+    assert_eq!(
+        row_of(&p.ctx, p.scene, ContentRole::ScratchpadText).as_deref(),
+        Some("Is the warden too old? Ask about the *lighthouse* records.")
+    );
+    assert_eq!(
+        row_of(&p.ctx, p.scene, ContentRole::SceneText).as_deref(),
+        Some("The warden climbed the stair and lit the lamp.")
+    );
+
+    undo_redo_commands::undo(&p.ctx, stack).expect("undo");
+    assert_eq!(
+        row_of(&p.ctx, p.scene, ContentRole::ScratchpadText).as_deref(),
+        Some(SCRATCHPAD)
+    );
+    assert_eq!(
+        row_of(&p.ctx, p.scene, ContentRole::SceneText).as_deref(),
+        Some(SCENE)
+    );
+}
+
+/// A scratchpad hit rewrites the scratchpad and only it: searching scratchpads alone,
+/// the scene text and the synopsis of the same item keep their "keeper". And the
+/// writer can leave the scratchpad row out of a replace that finds it.
+#[test]
+fn a_scratchpad_hit_never_rewrites_the_scene_beside_it() {
+    let p = project("replace-only", Some(SCRATCHPAD));
+    let stack = Some(undo_redo_commands::create_new_stack(&p.ctx));
+    search_management_commands::run_search(&p.ctx, &search_scratchpads_only(p.work, "keeper"))
+        .unwrap();
+    let out = replace_all(&p, stack, "warden", vec![]);
+    assert_eq!(out.occurrences_replaced, 1);
+    assert_eq!(
+        row_of(&p.ctx, p.scene, ContentRole::ScratchpadText).as_deref(),
+        Some("Is the warden too old? Ask about the *lighthouse* records.")
+    );
+    assert_eq!(
+        row_of(&p.ctx, p.scene, ContentRole::SceneText).as_deref(),
+        Some(SCENE),
+        "the scene text beside the notes is untouched"
+    );
+    assert_eq!(
+        row_of(&p.ctx, p.scene, ContentRole::SynopsisText).as_deref(),
+        Some(SYNOPSIS)
+    );
+
+    // Found with the rest, but left out by the writer.
+    let p = project("replace-excluded", Some(SCRATCHPAD));
+    search_management_commands::run_search(&p.ctx, &search_with_scratchpads(p.work, "keeper"))
+        .unwrap();
+    let pad: Vec<EntityId> = result_rows(&p.ctx, p.work)
+        .into_iter()
+        .filter(|(_, f)| *f == MatchField::Scratchpad)
+        .map(|(id, _)| id)
+        .collect();
+    assert_eq!(pad.len(), 1);
+    let out = replace_all(&p, None, "warden", pad);
+    assert_eq!(out.occurrences_replaced, 2);
+    assert_eq!(
+        row_of(&p.ctx, p.scene, ContentRole::ScratchpadText).as_deref(),
+        Some(SCRATCHPAD)
+    );
+}
+
+/// The Work has one stored search, shared by its windows. Window A searched with its
+/// Scratchpad switch on, so the stored results hold A's scratchpad rows; window B, its
+/// switch off, runs Replace All over them. The scratchpad is not B's to rewrite: the
+/// replace touches the scene text and the synopsis and leaves it word for word.
+#[test]
+fn a_replace_from_a_window_with_the_switch_off_never_reaches_a_scratchpad() {
+    let p = project("replace-other-window", Some(SCRATCHPAD));
+    search_management_commands::run_search(&p.ctx, &search_with_scratchpads(p.work, "keeper"))
+        .unwrap();
+    assert!(results(&p.ctx, p.work).contains(&MatchField::Scratchpad));
+
+    let out = replace_all_from(&p, None, "warden", vec![], false);
+    assert_eq!(
+        out.occurrences_replaced, 2,
+        "the scene text and the synopsis"
+    );
+    assert_eq!(
+        row_of(&p.ctx, p.scene, ContentRole::ScratchpadText).as_deref(),
+        Some(SCRATCHPAD),
+        "the scratchpad keeps its 'keeper'"
+    );
+    assert_eq!(
+        row_of(&p.ctx, p.scene, ContentRole::SceneText).as_deref(),
+        Some("The warden climbed the stair and lit the lamp.")
+    );
+}
+
+/// Both must say yes: a caller asking for scratchpads over a stored search that did not
+/// look in them (its record says the switch was off) rewrites none either.
+#[test]
+fn a_replace_needs_the_stored_search_to_have_looked_in_scratchpads_too() {
+    let p = project("replace-stored-off", Some(SCRATCHPAD));
+    search_management_commands::run_search(&p.ctx, &search_with_scratchpads(p.work, "keeper"))
+        .unwrap();
+    let wi = work_info_commands::get_all_work_info(&p.ctx)
+        .unwrap()
+        .into_iter()
+        .find(|wi| wi.work == Some(p.work))
+        .unwrap();
+    let mut record = search_commands::get_search(&p.ctx, &wi.search)
+        .unwrap()
+        .expect("the work's search");
+    record.search_scratchpad = false;
+    search_commands::update_search(&p.ctx, &record.into()).unwrap();
+
+    let out = replace_all_from(&p, None, "warden", vec![], true);
+    assert_eq!(out.occurrences_replaced, 2);
+    assert_eq!(
+        row_of(&p.ctx, p.scene, ContentRole::ScratchpadText).as_deref(),
+        Some(SCRATCHPAD)
     );
 }
 

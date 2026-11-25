@@ -2053,6 +2053,8 @@ impl Widget for App {
             import_scrivener: self.import_scrivener.clone(),
             search_dock: self.search_dock,
             timeline_dock: self.timeline_dock,
+            scratchpad_dock: self.scratchpad_dock,
+            scratchpad: scratchpad.clone(),
             resources: resources.clone(),
             save_as: save_as_vm.clone(),
             unsaved: self.unsaved.clone(),

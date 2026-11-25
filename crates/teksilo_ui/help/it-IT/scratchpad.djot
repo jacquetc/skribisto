@@ -8,7 +8,7 @@ Il blocco note appartiene a te, non al libro.
 
 - Non viene mai esportato.
 - Non conta mai nelle tue parole, nei tuoi obiettivi o nel tuo ritmo.
-- La ricerca nel progetto non lo esamina.
+- La ricerca nel progetto lo esclude, a meno che tu non attivi il suo interruttore.
 
 Viene salvato con il progetto e conservato in ogni backup, come il resto di ciò che scrivi.
 
@@ -46,6 +46,19 @@ non ripristini l'elemento.
 - *Dividi scena* lascia il blocco note alla prima scena. La nuova scena comincia con un blocco
   note vuoto.
 - *Duplica* copia il blocco note insieme all'elemento.
+
+## Cercare nei blocchi note
+
+La ricerca esclude i tuoi blocchi note finché non attivi l'interruttore *Blocchi note* tra le
+opzioni di ricerca, quello con il quaderno a spirale. Le loro corrispondenze compaiono allora
+insieme alle altre.
+
+- Aprire una corrispondenza apre il suo elemento e seleziona le parole nel suo blocco note.
+- *Sostituisci tutto* lascia non spuntate le corrispondenze nei blocchi note, come quelle nei
+  commenti: le modifica solo dopo che le hai spuntate, e mai mentre l'interruttore è
+  disattivato.
+
+Il pannello di ricerca ricorda l'interruttore per ogni progetto.
 
 ## Versioni precedenti
 

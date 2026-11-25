@@ -210,7 +210,8 @@ fn matching_options(vm: SearchReplaceViewModel) -> impl Widget {
         ))
 }
 
-/// Which fields to search — body / title / synopsis / label.
+/// Which fields to search: body, title, synopsis, label, comments, resources and
+/// scratchpads.
 fn scope_options(vm: SearchReplaceViewModel) -> impl Widget {
     use crate::icons::find as ic;
     Wrap::new()
@@ -255,6 +256,14 @@ fn scope_options(vm: SearchReplaceViewModel) -> impl Widget {
             vm.search_resources_signal(),
             "search-tip-resource".into(),
             tr!(search_tip_resource()),
+        ))
+        // And the writer's private scratchpads, last and off by default: with this off,
+        // neither the search nor Replace All reaches one.
+        .child(option_toggle(
+            crate::icons::activity::scratchpad_icon(),
+            vm.search_scratchpad_signal(),
+            "search-tip-scratchpad".into(),
+            tr!(search_tip_scratchpad()),
         ))
 }
 
@@ -858,6 +867,22 @@ mod tests {
         let mut incompatible = node.clone();
         incompatible.match_field = MatchField::Comment;
         assert!(vm.editor_target(&incompatible).is_none());
+        // A scratchpad occurrence opens its item with the hit, named as a scratchpad
+        // hit: the Scratchpad panel shows it, never the item's own text.
+        let mut notes = node.clone();
+        notes.match_field = MatchField::Scratchpad;
+        assert!(matches!(
+            vm.editor_target(&notes),
+            Some(AppIntent::OpenSearchResult {
+                item_id: 105,
+                hit: Some(crate::search::editor_result::EditorHit {
+                    field: MatchField::Scratchpad,
+                    start: 17,
+                    ..
+                }),
+                ..
+            })
+        ));
         let mut header = node.clone();
         header.is_item = true;
         assert!(matches!(

@@ -41,6 +41,53 @@ fn only_the_full_text_and_the_full_synopsis_are_streams() {
     assert!(!is_stream_segment(None));
 }
 
+/// A search hit waits for the panel to show its item: asked for another item it stays,
+/// taken for its own it gives the range found, and it is taken only once. A hit whose
+/// words have moved since the search selects nothing, and the project closing forgets
+/// one still waiting.
+#[test]
+fn a_search_hit_waits_for_its_item_and_is_taken_once() {
+    use crate::search::editor_result::EditorHit;
+    use frontend::common::entities::MatchField;
+    use teksilo::text_document::TextDocument;
+
+    let ctx = Rc::new(AppContext::new());
+    let vm = ScratchpadViewModel::new(
+        ctx.clone(),
+        OpenDocsStore::new(ctx),
+        crate::app_ids::AppIds::new(),
+    );
+    let notes = TextDocument::new();
+    notes
+        .set_plain_text("Is the keeper too old?")
+        .expect("the notes");
+    let hit = |start| EditorHit {
+        field: MatchField::Scratchpad,
+        start,
+        matched: "keeper".into(),
+    };
+    let requests = vm.hit_requests().get();
+
+    vm.select_when_shown(9, hit(7));
+    assert_ne!(vm.hit_requests().get(), requests, "the panel is told");
+    assert_eq!(vm.take_hit_for(4, &notes), None, "not for another item");
+    assert_eq!(vm.take_hit_for(9, &notes), Some((7, 13)));
+    assert_eq!(vm.take_hit_for(9, &notes), None, "taken once");
+
+    // The notes changed since the search: the words are no longer at 3.
+    vm.select_when_shown(9, hit(3));
+    assert_eq!(vm.take_hit_for(9, &notes), None);
+    assert_eq!(
+        vm.take_hit_for(9, &notes),
+        None,
+        "and it is not left waiting"
+    );
+
+    vm.select_when_shown(9, hit(7));
+    vm.release();
+    assert_eq!(vm.take_hit_for(9, &notes), None, "the project closed");
+}
+
 #[cfg(not(feature = "mocks"))]
 mod real {
     use super::*;

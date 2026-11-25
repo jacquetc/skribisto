@@ -105,6 +105,7 @@ pub struct Search {
     pub search_synopsis: bool,
     pub search_labels: bool,
     pub search_resources: bool,
+    pub search_scratchpad: bool,
     pub include_trashed: bool,
     pub truncated: bool,
     pub results: Vec<EntityId>,

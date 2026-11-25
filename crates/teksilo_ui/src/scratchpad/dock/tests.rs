@@ -245,6 +245,55 @@ mod real {
         let _ = &m.ctx;
     }
 
+    /// A search hit found in another item's scratchpad is selected, with the caret in the
+    /// editor, once the panel moves to that item; a hit in the item already shown is
+    /// selected straight away.
+    #[test]
+    fn a_search_hit_is_selected_when_the_panel_shows_its_item() {
+        use crate::search::editor_result::EditorHit;
+        use frontend::common::entities::MatchField;
+
+        let mut m = mounted();
+        let (a, b) = (m.items[0], m.items[1]);
+        // Held open, as the search preview holds the item whose result is selected.
+        let doc = m.docs.open(b).expect("b opens");
+        let pad = m.docs.ensure_scratchpad(&doc).expect("a scene has one");
+        pad.doc
+            .set_plain_text("Is the keeper too old?")
+            .expect("the notes");
+        m.vm.view_changed(Some(a), false, None);
+        m.settle();
+
+        let hit = EditorHit {
+            field: MatchField::Scratchpad,
+            start: 7,
+            matched: "keeper".into(),
+        };
+        m.vm.select_when_shown(b, hit.clone());
+        m.settle();
+        assert_eq!(
+            m.vm.remembered_caret(b),
+            None,
+            "nothing is selected while the panel still shows another item"
+        );
+
+        m.vm.view_changed(Some(b), false, None);
+        m.settle();
+        assert!(
+            m.tree.focused_is_text_surface(),
+            "the caret is in the scratchpad"
+        );
+        assert_eq!(m.editor().selection(), (7, 13), "on the words found");
+
+        // Already showing the item: the hit is selected without moving anywhere.
+        m.editor().select_range(0, 0);
+        m.settle();
+        m.vm.select_when_shown(b, hit);
+        m.settle();
+        assert_eq!(m.editor().selection(), (7, 13));
+        m.docs.release(b, None);
+    }
+
     /// Leaving an item and coming back puts the caret and the selection back where the
     /// writer left them, though the editor was rebuilt in between.
     #[test]

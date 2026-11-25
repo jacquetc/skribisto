@@ -61,6 +61,7 @@ fn dto(ctx: &AppContext, query: &str) -> RunSearchDto {
         search_labels: false,
         search_comments: false,
         search_resources: false,
+        search_scratchpad: false,
         include_trashed: false,
     }
 }
@@ -605,6 +606,7 @@ fn dto_for(work_id: u64, query: &str) -> RunSearchDto {
         search_labels: false,
         search_comments: true,
         search_resources: false,
+        search_scratchpad: false,
         include_trashed: false,
     }
 }

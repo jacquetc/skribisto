@@ -2453,3 +2453,38 @@ fn global_search_opens_hidden_fields_in_the_active_pane_only() {
     assert_eq!(editors.tabs(Side::Secondary).len(), 1);
     assert!(!editors.show_synopsis().get());
 }
+
+/// A hit in a scratchpad opens its item on the item's own page, so the Scratchpad panel
+/// follows the item rather than a row of its stream, and parks nothing in the tab: no
+/// editor of the tab holds the scratchpad, and the panel selects the hit itself.
+#[cfg(feature = "mocks")]
+#[test]
+fn a_scratchpad_hit_opens_the_items_own_page_and_parks_nothing_in_the_tab() {
+    use crate::search::editor_result::EditorHit;
+    use crate::tabs::shared::segments;
+    use frontend::common::entities::MatchField;
+    use teksilo::core::{NoopWindowOps, widget_tree::WidgetTree};
+
+    let editors = editors();
+    let mut tree = WidgetTree::new();
+    tree.run_with_event_context(&mut NoopWindowOps, |ctx| {
+        // The mock binder's chapter folder.
+        editors.open_search_result(
+            104,
+            "Chapter Two",
+            Some(EditorHit {
+                field: MatchField::Scratchpad,
+                start: 7,
+                matched: "keeper".into(),
+            }),
+            ctx,
+        );
+    });
+    let (segment, parked) = editors
+        .with_tab(editors.focused_side(), 104, |tab| {
+            (tab.segment.get(), tab.pending_search_hit.get())
+        })
+        .expect("the item's tab is open");
+    assert_eq!(segment, Some(segments::segment_id(segments::SEG_OWN)));
+    assert_eq!(parked, None, "the tab's editors do not hold the scratchpad");
+}

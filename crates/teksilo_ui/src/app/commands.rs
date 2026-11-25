@@ -150,6 +150,12 @@ pub(super) struct CommandDeps {
     /// The timeline band, for `timeline.show` — the only door into it, since a
     /// hidden bottom side leaves no rail glyph behind.
     pub timeline_dock: DockWidgetId,
+    /// The Scratchpad panel, revealed when a search result found in a scratchpad is
+    /// opened.
+    pub scratchpad_dock: DockWidgetId,
+    /// This window's Scratchpad view-model, which selects such a result once its panel
+    /// shows the item.
+    pub scratchpad: crate::scratchpad::ScratchpadViewModel,
     /// This window's Resources view-model: the two commands a text fires at it, and
     /// the files dropped on a text that are not pictures.
     pub resources: crate::resources::ResourcesViewModel,

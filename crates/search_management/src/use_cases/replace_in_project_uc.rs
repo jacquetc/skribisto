@@ -203,6 +203,13 @@ impl ReplaceInProjectUseCase {
 
         // The rows the writer reviewed, minus the ones they unticked.
         let excluded: HashSet<EntityId> = dto.excluded_result_ids.iter().copied().collect();
+        // A scratchpad is the writer's private notes, and the stored results are the
+        // Work's one search, shared by every window on it. So its rows are rewritten only
+        // when both say so: the search that found them looked in scratchpads, AND the
+        // caller's own switch is on. Another window's results, or this window's from
+        // before its switch was turned off (inside the search's debounce), never reach
+        // the notes of a writer who did not ask.
+        let scratchpads = search.search_scratchpad && dto.search_scratchpad;
         let result_ids =
             uow.get_search_relationship(&work_info.search, &SearchRelationshipField::Results)?;
         let rows: Vec<SearchResult> = uow
@@ -210,6 +217,7 @@ impl ReplaceInProjectUseCase {
             .into_iter()
             .flatten()
             .filter(|r| !excluded.contains(&r.id))
+            .filter(|r| scratchpads || r.match_field != MatchField::Scratchpad)
             .collect();
 
         // The language every item is written in, resolved per item (own tag, else the Work) over
@@ -436,10 +444,6 @@ impl ReplaceInProjectUseCase {
                 // A resource's words are its filing card, not the book: Replace All
                 // leaves them alone, and the results list says so on the row.
                 MatchField::Resource => continue,
-                // The writer's private scratchpad. No search reports it while it has no
-                // toggle of its own (see `run_search`), and a row that did would still be
-                // left alone: Replace All rewrites the manuscript, never these notes.
-                MatchField::Scratchpad => continue,
                 MatchField::Footnote => {
                     let Some(mut footnote) = uow.get_footnote(&row.footnote_id)? else {
                         skipped_stale.push(row.id);
@@ -478,7 +482,16 @@ impl ReplaceInProjectUseCase {
                     )?;
                 }
                 // Prose. Spliced INSIDE the document — never surgery on the markup.
-                MatchField::Body | MatchField::Synopsis | MatchField::Epigraph => {
+                //
+                // A scratchpad row is here only when the writer searched scratchpads
+                // (its toggle, off by default, is the only way `run_search` reports
+                // one), and it resolves to the item's `ScratchpadText` row and nothing
+                // else: `content_of` matches on the field the row recorded, so a hit in
+                // the notes can never rewrite the scene text beside them.
+                MatchField::Body
+                | MatchField::Synopsis
+                | MatchField::Epigraph
+                | MatchField::Scratchpad => {
                     let Some(mut content) = Self::content_of(&mut uow, row)? else {
                         skipped_stale.push(row.id);
                         spent_rows.push(row.id);

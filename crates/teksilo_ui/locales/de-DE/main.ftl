@@ -2676,6 +2676,7 @@ search-tip-synopsis = Zusammenfassung: Die Zusammenfassung jedes Schreibeintrags
 search-tip-label = Kennzeichnung: Die kurze Anmerkung unter dem Titel eines Projektmappeneintrags durchsuchen.
 search-tip-comment = Kommentare: Kommentarstränge und ihre Antworten durchsuchen. Ein Kommentar bezieht sich auf das Manuskript, gehört aber nicht dazu. Deshalb hat er einen eigenen Schalter. Beim Ersetzen bleiben Kommentartreffer abgewählt, bis Sie sie selbst auswählen.
 search-tip-resource = Ressourcen: in den Titeln, Beschreibungen, Dateinamen und Webadressen der Dateien und Links suchen, die an Ihre Elemente angehängt sind. Ihre Treffer werden aufgelistet, damit Sie sie finden, und Ersetzen ändert sie nie.
+search-tip-scratchpad = Notizblöcke: in den privaten Notizen neben jedem Eintrag suchen. Aus, bis Sie es einschalten. Solange es aus ist, ändert Ersetzen nie einen Notizblock; ist es an, erscheinen die dort gefundenen Treffer abgewählt, und Ersetzen ändert sie erst, wenn Sie sie auswählen.
 search-tip-book = Bücher: Der Bucheintrag und seine Anfangs- und Endmarkierungen.
 search-tip-part = Teile: Unterteilungen auf Teilebene.
 search-tip-chapter = Kapitel: Kapitel in jeder vom Projekt verwendeten Form.
@@ -2730,6 +2731,10 @@ search-replace-confirm-text =
         [one] { $items } Dokument
        *[other] { $items } Dokumenten
     } ersetzen? Sie können dies anschließend über die Benachrichtigung rückgängig machen.
+search-replace-confirm-scratchpads = { $count ->
+    [one] Das Ersetzen ändert auch 1 Notizblock, Ihre privaten Notizen neben einem Eintrag.
+   *[other] Das Ersetzen ändert auch { $count } Notizblöcke, Ihre privaten Notizen neben den Einträgen.
+}
 search-replace-done-title = Ersetzen abgeschlossen
 search-replace-done =
     { $occurrences ->

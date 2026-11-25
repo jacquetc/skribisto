@@ -8,7 +8,7 @@ Der Notizblock gehört Ihnen, nicht dem Buch.
 
 - Er wird nie exportiert.
 - Er zählt nie zu Ihren Wörtern, Ihren Zielen oder Ihrem Tempo.
-- Die Suche im Projekt durchsucht ihn nicht.
+- Die Suche im Projekt lässt ihn aus, außer Sie schalten seinen eigenen Schalter ein.
 
 Er wird mit dem Projekt gespeichert und in jeder Sicherung aufbewahrt, wie alles, was Sie
 schreiben.
@@ -49,6 +49,18 @@ wenn Sie den Eintrag wiederhergestellt haben.
 - *Szene teilen* lässt den Notizblock bei der ersten Szene. Die neue Szene beginnt mit einem
   leeren.
 - *Duplizieren* kopiert den Notizblock mit dem Eintrag.
+
+## In Notizblöcken suchen
+
+Die Suche lässt Ihre Notizblöcke aus, bis Sie unter den Suchoptionen den Schalter
+*Notizblöcke* einschalten, den mit dem Spiralblock. Ihre Treffer erscheinen dann bei den
+anderen.
+
+- Ein Treffer öffnet seinen Eintrag und markiert die Wörter in dessen Notizblock.
+- *Alle ersetzen* führt Treffer in Notizblöcken wie Kommentare abgewählt auf: Es ändert sie
+  erst, wenn Sie sie auswählen, und nie, solange der Schalter aus ist.
+
+Der Suchbereich merkt sich den Schalter für jedes Projekt.
 
 ## Frühere Versionen
 

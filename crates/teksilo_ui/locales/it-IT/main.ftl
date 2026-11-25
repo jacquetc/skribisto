@@ -2540,6 +2540,7 @@ search-tip-synopsis = Sinossi: cerca nel riassunto di ogni elemento di scrittura
 search-tip-label = Dicitura: cerca nella breve annotazione sotto il titolo di un elemento.
 search-tip-comment = Commenti: cerca nelle discussioni e nelle risposte. Un commento riguarda il manoscritto ma non ne fa parte, quindi ha un interruttore proprio; nella sostituzione i commenti restano deselezionati finché non li selezioni.
 search-tip-resource = Risorse: cerca nei titoli, nelle descrizioni, nei nomi dei file e negli indirizzi web dei file e dei link allegati ai tuoi elementi. I loro risultati sono elencati perché tu li ritrovi, e una sostituzione non li modifica mai.
+search-tip-scratchpad = Blocchi note: cerca negli appunti privati tenuti accanto a ogni elemento. Disattivato finché non lo attivi. Finché è disattivato, una sostituzione non modifica mai un blocco note; quando è attivo, le corrispondenze trovate lì compaiono non spuntate, e una sostituzione le modifica solo dopo che le hai spuntate.
 search-tip-book = Libri: il contenitore del libro e i suoi marcatori di inizio e fine.
 search-tip-part = Parti: le divisioni a livello di parte.
 search-tip-chapter = Capitoli: in qualsiasi forma siano memorizzati nel progetto.
@@ -2594,6 +2595,10 @@ search-replace-confirm-text =
         [one] { $items } documento
        *[other] { $items } documenti
     }? Potrai annullare l'operazione dalla notifica successiva.
+search-replace-confirm-scratchpads = { $count ->
+    [one] La sostituzione modifica anche 1 blocco note, i tuoi appunti privati accanto a un elemento.
+   *[other] La sostituzione modifica anche { $count } blocchi note, i tuoi appunti privati accanto agli elementi.
+}
 search-replace-done-title = Sostituzione completata
 search-replace-done =
     { $occurrences ->

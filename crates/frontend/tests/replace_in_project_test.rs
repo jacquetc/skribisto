@@ -62,6 +62,7 @@ fn search(ctx: &AppContext, query: &str) -> RunSearchDto {
         search_labels: false,
         search_comments: false,
         search_resources: false,
+        search_scratchpad: false,
         include_trashed: false,
     }
 }
@@ -116,6 +117,7 @@ fn a_replace_is_one_undoable_step() {
             excluded_occurrence_starts: vec![],
             only_occurrence_rows: vec![],
             only_occurrence_starts: vec![],
+            search_scratchpad: false,
         },
     )
     .expect("replace_in_project");
@@ -185,6 +187,7 @@ fn excluded_rows_are_left_untouched() {
             excluded_occurrence_starts: vec![],
             only_occurrence_rows: vec![],
             only_occurrence_starts: vec![],
+            search_scratchpad: false,
         },
     )
     .expect("replace_in_project");
@@ -276,6 +279,7 @@ fn a_field_that_moved_under_us_is_skipped_and_reported() {
             excluded_occurrence_starts: vec![],
             only_occurrence_rows: vec![],
             only_occurrence_starts: vec![],
+            search_scratchpad: false,
         },
     )
     .expect("replace_in_project");
@@ -359,6 +363,7 @@ fn preserve_case_keeps_the_case_it_found() {
             excluded_occurrence_starts: vec![],
             only_occurrence_rows: vec![],
             only_occurrence_starts: vec![],
+            search_scratchpad: false,
         },
     )
     .expect("replace_in_project");
@@ -452,6 +457,7 @@ fn a_rename_spares_the_markup_and_keeps_the_styling() {
             excluded_occurrence_starts: vec![],
             only_occurrence_rows: vec![],
             only_occurrence_starts: vec![],
+            search_scratchpad: false,
         },
     )
     .expect("replace_in_project");
@@ -637,6 +643,7 @@ fn a_replace_inside_a_formatted_comment_body_does_not_corrupt_its_djot_markers()
             excluded_occurrence_starts: vec![],
             only_occurrence_rows: vec![],
             only_occurrence_starts: vec![],
+            search_scratchpad: false,
         },
     )
     .expect("replace_in_project");
@@ -834,6 +841,7 @@ fn a_rename_across_more_scenes_than_the_old_cap_still_goes_through() {
             excluded_occurrence_starts: vec![],
             only_occurrence_rows: vec![],
             only_occurrence_starts: vec![],
+            search_scratchpad: false,
         },
     )
     .expect("replace_in_project");
@@ -1029,6 +1037,7 @@ fn only_the_named_occurrence_is_replaced() {
             excluded_occurrence_starts: vec![],
             only_occurrence_rows: vec![row],
             only_occurrence_starts: vec![at[2]],
+            search_scratchpad: false,
         },
     )
     .expect("replace_in_project");
@@ -1086,6 +1095,7 @@ fn naming_one_hit_survives_a_field_with_more_hits_than_a_tree_will_list() {
             excluded_occurrence_starts: vec![],
             only_occurrence_rows: vec![row],
             only_occurrence_starts: vec![listed[0]],
+            search_scratchpad: false,
         },
     )
     .expect("replace_in_project");
@@ -1113,6 +1123,7 @@ fn naming_one_hit_survives_a_field_with_more_hits_than_a_tree_will_list() {
             excluded_occurrence_starts: others,
             only_occurrence_rows: vec![],
             only_occurrence_starts: vec![],
+            search_scratchpad: false,
         },
     )
     .expect("replace_in_project");
@@ -1147,6 +1158,7 @@ fn excluded_occurrences_are_left_alone() {
             excluded_occurrence_starts: vec![at[1], at[3]],
             only_occurrence_rows: vec![],
             only_occurrence_starts: vec![],
+            search_scratchpad: false,
         },
     )
     .expect("replace_in_project");
@@ -1191,6 +1203,7 @@ fn a_row_with_hits_left_is_restated_and_the_untouched_rows_stay() {
             excluded_occurrence_starts: vec![],
             only_occurrence_rows: vec![row],
             only_occurrence_starts: vec![at[0]],
+            search_scratchpad: false,
         },
     )
     .expect("replace_in_project");
@@ -1241,6 +1254,7 @@ fn a_row_with_nothing_left_is_dropped_while_its_neighbours_stay() {
             excluded_occurrence_starts: vec![],
             only_occurrence_rows: vec![],
             only_occurrence_starts: vec![],
+            search_scratchpad: false,
         },
     )
     .expect("replace_in_project");
@@ -1284,6 +1298,7 @@ fn an_offset_naming_no_hit_refuses_the_row() {
             excluded_occurrence_starts: vec![7],
             only_occurrence_rows: vec![],
             only_occurrence_starts: vec![],
+            search_scratchpad: false,
         },
     )
     .expect("replace_in_project");
@@ -1338,6 +1353,7 @@ fn typed_punctuation_is_found_and_replaced_as_typed() {
             excluded_occurrence_starts: vec![],
             only_occurrence_rows: vec![],
             only_occurrence_starts: vec![],
+            search_scratchpad: false,
         },
     )
     .expect("replace_in_project");

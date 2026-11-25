@@ -2486,6 +2486,7 @@ search-tip-synopsis = Synopsis: sök i varje skrivobjekts sammanfattning.
 search-tip-label = Etikett: sök i den korta anteckning som visas under ett objekts titel i pärmen.
 search-tip-comment = Kommentarer: sök i texten i kommentarstrådar och deras svar. En kommentar handlar om manuset snarare än är en del av det, så den har en egen brytare, och vid ersättning lämnas kommentarsträffar omarkerade tills du markerar dem.
 search-tip-resource = Resurser: sök i titlar, beskrivningar, filnamn och webbadresser för filerna och länkarna som är kopplade till dina objekt. Deras träffar visas så att du hittar dem, och en ersättning ändrar dem aldrig.
+search-tip-scratchpad = Kladdblock: sök i de privata anteckningarna bredvid varje objekt. Av tills du slår på det. Så länge det är av ändrar en ersättning aldrig ett kladdblock; när det är på visas träffarna som hittas där utan bock, och en ersättning ändrar dem först när du bockar för dem.
 search-tip-book = Böcker: bokbehållaren och dess start- och slutmarkörer.
 search-tip-part = Delar: avdelare på delnivå.
 search-tip-chapter = Kapitel: kapitel, hur projektet än lagrar dem.
@@ -2540,6 +2541,10 @@ search-replace-confirm-text =
            [one] { $items } dokument
           *[other] { $items } dokument
        }? Du kan ångra detta från aviseringen efteråt.
+search-replace-confirm-scratchpads = { $count ->
+    [one] Ersättningen ändrar också 1 kladdblock, dina privata anteckningar bredvid ett objekt.
+   *[other] Ersättningen ändrar också { $count } kladdblock, dina privata anteckningar bredvid objekten.
+}
 search-replace-done-title = Ersättningen är klar
 search-replace-done =
        { $occurrences ->

@@ -38,6 +38,16 @@
 //! a fresh one, so [`ScratchpadViewModel::state`] re-reads it on every call, and
 //! [`ScratchpadViewModel::poll_document`] notices the swap and bumps
 //! [`ScratchpadViewModel::generation`] for the panel to rebuild on.
+//!
+//! ## A search hit
+//!
+//! Opening a search result found in a scratchpad opens its item, and the dock follows the
+//! item as it follows any other. The hit waits here
+//! ([`ScratchpadViewModel::select_when_shown`]) until the panel shows that item, and the
+//! panel then takes it ([`ScratchpadViewModel::take_hit_for`]) and selects it. Waiting
+//! rather than selecting at once is what keeps the order of the two events free: the
+//! request can arrive before the dock has moved to the item, and a selection made in
+//! the scratchpad still on screen would land in the wrong item's notes.
 
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
@@ -50,6 +60,7 @@ use frontend::AppContext;
 
 use crate::app_ids::AppIds;
 use crate::models::{OpenDoc, OpenDocsStore};
+use crate::search::editor_result::EditorHit;
 use crate::tabs::ProseField;
 
 /// Which item the dock shows: the stream row the caret was last in when the tab in front
@@ -124,6 +135,11 @@ struct Inner {
     generation: Signal<u64>,
     /// The target's name, for the header and the editor's description.
     title: Signal<String>,
+    /// A search hit waiting for the panel to show its item: the item and the hit.
+    pending_hit: RefCell<Option<(u64, EditorHit)>>,
+    /// Bumped on each hit asked for, so the panel rebuilds and takes it even when it
+    /// already shows the item.
+    hit_requests: Signal<u64>,
 }
 
 /// The Scratchpad dock's per-window logic. Cheap to clone; clones share one state.
@@ -159,6 +175,8 @@ impl ScratchpadViewModel {
                 shown: RefCell::new(Weak::new()),
                 generation: Signal::new(0),
                 title: Signal::new(String::new()),
+                pending_hit: RefCell::new(None),
+                hit_requests: Signal::new(0),
             }),
         }
     }
@@ -206,6 +224,7 @@ impl ScratchpadViewModel {
         self.inner.row.set(None);
         self.switch_to(None);
         self.inner.carets.borrow_mut().clear();
+        *self.inner.pending_hit.borrow_mut() = None;
     }
 
     // ── Outputs ─────────────────────────────────────────────────────────────
@@ -263,6 +282,50 @@ impl ScratchpadViewModel {
     /// Where the caret was left in `item`'s scratchpad, if the writer was ever in it.
     pub fn remembered_caret(&self, item: u64) -> Option<Caret> {
         self.inner.carets.borrow().get(&item).copied()
+    }
+
+    // ── A search hit ────────────────────────────────────────────────────────
+
+    /// Select `hit` in `item`'s scratchpad once the panel shows that item: a search
+    /// result found in a scratchpad and opened. The dock follows the item the result
+    /// opened, so this only waits for it to get there. A later request replaces an
+    /// earlier one still waiting.
+    pub fn select_when_shown(&self, item: u64, hit: EditorHit) {
+        *self.inner.pending_hit.borrow_mut() = Some((item, hit));
+        self.inner
+            .hit_requests
+            .set(self.inner.hit_requests.get().wrapping_add(1));
+    }
+
+    /// Bumped by [`Self::select_when_shown`]. The panel rebuilds on it.
+    pub fn hit_requests(&self) -> Signal<u64> {
+        self.inner.hit_requests.clone()
+    }
+
+    /// The range to select in `item`'s scratchpad, `doc`, if a hit is waiting for that
+    /// item: `(start, end)` in the document's characters. Taken once.
+    ///
+    /// A hit for another item is left waiting. A hit whose words are no longer where the
+    /// search found them (the notes were edited since) is dropped and selects nothing:
+    /// selecting whatever now sits there would point the writer at the wrong words.
+    pub fn take_hit_for(
+        &self,
+        item: u64,
+        doc: &teksilo::text_document::TextDocument,
+    ) -> Option<(usize, usize)> {
+        let hit = {
+            let mut pending = self.inner.pending_hit.borrow_mut();
+            match pending.as_ref() {
+                Some((waiting, _)) if *waiting == item => pending.take().map(|(_, hit)| hit),
+                _ => None,
+            }
+        }?;
+        let len = hit.matched.chars().count();
+        let end = hit.start.checked_add(len)?;
+        // A search's one-line snippet shows a soft line break as a space.
+        let found = doc.text_at(hit.start, len).ok()?;
+        (found.replace(teksilo::text_document::LINE_SEPARATOR, " ") == hit.matched)
+            .then_some((hit.start, end))
     }
 
     // ── The document under the target ───────────────────────────────────────

@@ -2519,6 +2519,7 @@ search-tip-synopsis = Özet: her yazı öğesinin özetinde arar.
 search-tip-label = Açıklama: bir dizin öğesinin başlığının altında gösterilen kısa notta arar.
 search-tip-comment = Yorumlar: yorum dizilerinin ve yanıtlarının metninde arar. Yorum el yazmasının bir parçası değil, onun hakkındadır; bu yüzden kendi anahtarı vardır ve değiştirme işlemi siz işaretleyene kadar yorum eşleşmelerini işaretsiz bırakır.
 search-tip-resource = Kaynaklar: öğelerinize eklenen dosya ve bağlantıların başlıklarında, açıklamalarında, dosya adlarında ve web adreslerinde arayın. Eşleşmeleri bulabilmeniz için listelenir, değiştirme ise onları asla değiştirmez.
+search-tip-scratchpad = Karalama defterleri: her öğenin yanında tutulan özel notlarda ara. Siz açana kadar kapalıdır. Kapalıyken değiştirme bir karalama defterini asla değiştirmez; açıkken orada bulunan eşleşmeler işaretsiz listelenir ve değiştirme onları ancak siz işaretlediğinizde değiştirir.
 search-tip-book = Kitaplar: kitap kapsayıcısı ve başlangıç / bitiş işaretleri.
 search-tip-part = Kısımlar: kısım düzeyindeki ayırıcılar.
 search-tip-chapter = Bölümler: proje bölümleri hangi biçimde saklıyorsa.
@@ -2573,6 +2574,10 @@ search-replace-confirm-text =
         [one] { $occurrences } geçişi
        *[other] { $occurrences } geçişi
     } "{ $replacement }" ile değiştirilsin mi? Bunu daha sonra bildirimden geri alabilirsiniz.
+search-replace-confirm-scratchpads = { $count ->
+    [one] Değiştirme 1 karalama defterini de değiştirir: bir öğenin yanındaki özel notlarınız.
+   *[other] Değiştirme { $count } karalama defterini de değiştirir: öğelerin yanındaki özel notlarınız.
+}
 search-replace-done-title = Değiştirme tamamlandı
 search-replace-done =
     { $items ->

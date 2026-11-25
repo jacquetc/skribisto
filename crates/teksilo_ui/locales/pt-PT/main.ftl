@@ -2566,6 +2566,7 @@ search-tip-synopsis = Sinopse: pesquisar o resumo de cada item de escrita.
 search-tip-label = Rótulo: pesquisar a nota curta mostrada por baixo do título de um item do arquivador.
 search-tip-comment = Comentários: pesquisar o texto das conversas de comentários e das suas respostas. Um comentário é sobre o manuscrito e não faz parte dele, por isso tem o seu próprio interruptor, e uma substituição deixa as correspondências em comentários desmarcadas até que as marque.
 search-tip-resource = Recursos: pesquisar nos títulos, descrições, nomes de ficheiro e endereços web dos ficheiros e ligações anexados aos seus elementos. Os resultados são listados para que os encontre, e uma substituição nunca os altera.
+search-tip-scratchpad = Blocos de notas: procurar nas notas privadas guardadas junto a cada item. Desligado até o ligar. Enquanto estiver desligado, uma substituição nunca altera um bloco de notas; quando estiver ligado, as correspondências aí encontradas aparecem desmarcadas, e uma substituição só as altera depois de as marcar.
 search-tip-book = Livros: o contentor do livro e os seus marcadores de início e de fim.
 search-tip-part = Partes: divisões ao nível da parte.
 search-tip-chapter = Capítulos: os capítulos, seja qual for a forma como o projeto os guarda.
@@ -2620,6 +2621,10 @@ search-replace-confirm-text =
         [one] { $items } documento
        *[other] { $items } documentos
     }? Pode anular esta ação a partir da notificação.
+search-replace-confirm-scratchpads = { $count ->
+    [one] A substituição altera também 1 bloco de notas, as suas notas privadas junto a um item.
+   *[other] A substituição altera também { $count } blocos de notas, as suas notas privadas junto aos itens.
+}
 search-replace-done-title = Substituição concluída
 search-replace-done =
     { $occurrences ->

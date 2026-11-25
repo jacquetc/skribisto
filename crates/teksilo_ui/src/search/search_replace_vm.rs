@@ -91,6 +91,9 @@ pub struct SearchReplaceViewModel {
     /// Resources' titles, descriptions, file names and addresses — see
     /// `RunSearchDto.search_resources`. Their hits are listed, never replaced.
     search_resources: Signal<bool>,
+    /// The writer's private scratchpads (see `RunSearchDto.search_scratchpad`). Off
+    /// by default: with it off, neither the search nor Replace All reaches one.
+    search_scratchpad: Signal<bool>,
     include_trashed: Signal<bool>,
     /// One two-way `Signal<bool>` per facet chip, indexed by the chip's position
     /// in [`SearchFacet::ALL`]. Individual signals (not one `HashSet`) because the
@@ -205,6 +208,7 @@ impl SearchReplaceViewModel {
             search_labels: Signal::new(p.search_labels),
             search_comments: Signal::new(p.search_comments),
             search_resources: Signal::new(p.search_resources),
+            search_scratchpad: Signal::new(p.search_scratchpad),
             include_trashed: Signal::new(p.include_trashed),
             facets: facet_signals_from_codes(&p.facets),
             match_count: Signal::new(0),
@@ -305,6 +309,9 @@ impl SearchReplaceViewModel {
     }
     pub fn search_resources_signal(&self) -> Signal<bool> {
         self.search_resources.clone()
+    }
+    pub fn search_scratchpad_signal(&self) -> Signal<bool> {
+        self.search_scratchpad.clone()
     }
     pub fn include_trashed_signal(&self) -> Signal<bool> {
         self.include_trashed.clone()
@@ -422,6 +429,9 @@ impl SearchReplaceViewModel {
     pub fn set_search_resources(&self, v: bool) {
         self.search_resources.set(v);
     }
+    pub fn set_search_scratchpad(&self, v: bool) {
+        self.search_scratchpad.set(v);
+    }
     pub fn set_search_labels(&self, v: bool) {
         self.search_labels.set(v);
     }
@@ -464,6 +474,7 @@ impl SearchReplaceViewModel {
             search_labels: self.search_labels.get(),
             search_comments: self.search_comments.get(),
             search_resources: self.search_resources.get(),
+            search_scratchpad: self.search_scratchpad.get(),
             include_trashed: self.include_trashed.get(),
         }
     }
@@ -504,14 +515,14 @@ impl SearchReplaceViewModel {
         // A new result set invalidates the old per-field exclusions (the rows are
         // recreated with fresh ids on every search).
         self.excluded.set(HashSet::new());
-        match search_management_commands::run_search(&self.app_ctx, &dto) {
+        let found = match search_management_commands::run_search(&self.app_ctx, &dto) {
             Ok(r) => {
                 self.match_count.set(r.match_count);
                 self.item_count.set(r.item_count);
                 self.truncated.set(r.truncated);
                 self.ran.set(has_query);
                 self.error.set(None);
-                self.exclude_comment_rows();
+                true
             }
             Err(e) => {
                 self.match_count.set(0);
@@ -519,14 +530,21 @@ impl SearchReplaceViewModel {
                 self.truncated.set(false);
                 self.ran.set(has_query);
                 self.error.set(Some(e.to_string()));
+                false
             }
-        }
+        };
         // Reload the result list from the store the search just wrote. Driven
         // directly (not via a backend-event subscription) because the search dock
         // is a switchable tab whose content — and any subscription registered in
         // it — is torn down when the writer flips to the binder tab; see
         // `SearchResultsModel::wire`.
         self.results.reload();
+        // Over the rows just read, not before: unticking ahead of the reload walked
+        // the previous search's rows, whose ids the new search had already replaced,
+        // so a comment hit arrived ticked.
+        if found {
+            self.exclude_comment_rows();
+        }
         // Nothing is standing on an occurrence of a result set that no longer
         // exists.
         self.selected_occurrence.set(None);
@@ -579,6 +597,9 @@ impl SearchReplaceViewModel {
                 }
                 MatchField::Synopsis => roles.contains(&ContentRole::SynopsisText),
                 MatchField::Epigraph => roles.contains(&ContentRole::EpigraphText),
+                // Opens the item and shows the hit in the Scratchpad panel, which
+                // follows the item; never in the scene's own text.
+                MatchField::Scratchpad => roles.contains(&ContentRole::ScratchpadText),
                 MatchField::Body => roles.iter().any(|role| {
                     matches!(
                         role,
@@ -670,6 +691,13 @@ impl SearchReplaceViewModel {
             let doc = self.docs.open(item_id);
             *self.preview_open_id.borrow_mut() = doc.as_ref().map(|_| item_id);
             self.preview.set(doc);
+        }
+        // A scratchpad is built on demand, and a search hit in one is a demand: the band
+        // shows the scratchpad itself, never the scene's text in its place.
+        if row.match_field == MatchField::Scratchpad
+            && let Some(doc) = self.preview.get()
+        {
+            self.docs.ensure_scratchpad(&doc);
         }
         self.preview_field.set(Some(row.match_field.clone()));
         self.selected_result.set(Some(result_id));
@@ -1062,15 +1090,18 @@ impl SearchReplaceViewModel {
             && self.included_count() > 0
     }
 
-    /// Untick every comment hit and every resource hit, leaving prose ticked. A
-    /// resource's row cannot be ticked back on at all (see `is_resource_row`).
+    /// Untick every comment hit, every scratchpad hit and every resource hit, leaving
+    /// prose ticked. A resource's row cannot be ticked back on at all (see
+    /// `is_resource_row`).
     ///
     /// Run after each search, because a fresh result set clears the exclusions and
     /// every row would otherwise arrive included. A comment is the writer's own
     /// record of a decision, and rewriting it changes what that record says — so
     /// renaming a character across the manuscript must be able to fix the notes that
     /// quote the old name, but only when the writer says so. They are listed, they
-    /// are tickable, they simply do not go along for the ride.
+    /// are tickable, they simply do not go along for the ride. A scratchpad is the
+    /// same: the writer's private notes beside the item, found because the writer
+    /// asked to search them, rewritten only when they tick them too.
     ///
     /// Deliberately not enforced in the backend: `replace_in_project` rewrites
     /// exactly the rows it is handed, and a second opinion there would make the
@@ -1080,12 +1111,31 @@ impl SearchReplaceViewModel {
         self.results.for_each(|row| {
             if matches!(
                 row.match_field,
-                MatchField::Comment | MatchField::CommentReply | MatchField::Resource
+                MatchField::Comment
+                    | MatchField::CommentReply
+                    | MatchField::Resource
+                    | MatchField::Scratchpad
             ) {
                 set.insert(row.id);
             }
         });
         self.excluded.set(set);
+    }
+
+    /// How many scratchpad rows a Replace All would rewrite now: ticked, and the
+    /// Scratchpad switch on. The confirmation names scratchpads when there are any.
+    pub fn ticked_scratchpad_count(&self) -> usize {
+        if !self.search_scratchpad.get() {
+            return 0;
+        }
+        let excluded = self.excluded.get();
+        let mut n = 0usize;
+        self.results.for_each(|r| {
+            if r.match_field == MatchField::Scratchpad && !excluded.contains(&r.id) {
+                n += 1;
+            }
+        });
+        n
     }
 
     /// How many result rows are ticked (not excluded).
@@ -1181,10 +1231,25 @@ impl SearchReplaceViewModel {
             .work_id
             .get()
             .ok_or_else(|| anyhow::anyhow!("replace: no open project"))?;
+        // The switch as it is now, not as it was when the results were found: turned off
+        // within the search's debounce, the rows still on screen came from a search that
+        // looked in scratchpads, and none of them is the writer's to rewrite any more.
+        // Left out here, and refused by the backend too (`search_scratchpad` below), which
+        // also guards against another window's results.
+        let search_scratchpad = self.search_scratchpad.get();
+        let mut excluded_result_ids = excluded_result_ids;
+        if !search_scratchpad {
+            self.results.for_each(|r| {
+                if r.match_field == MatchField::Scratchpad && !excluded_result_ids.contains(&r.id) {
+                    excluded_result_ids.push(r.id);
+                }
+            });
+        }
         let dto = ReplaceInProjectDto {
             work_id,
             replacement: self.replacement.get(),
             preserve_case: self.preserve_case.get(),
+            search_scratchpad,
             excluded_result_ids,
             // Parallel by index, as the DTO's own note records: the manifest's
             // field types are primitives, so a list of pairs is two lists.
@@ -1273,6 +1338,7 @@ impl SearchReplaceViewModel {
         self.search_labels.set(p.search_labels);
         self.search_comments.set(p.search_comments);
         self.search_resources.set(p.search_resources);
+        self.search_scratchpad.set(p.search_scratchpad);
         self.include_trashed.set(p.include_trashed);
         set_facets_from_codes(&self.facets, &p.facets);
         // The restored prefs are, by definition, what is on disk — cache them so
@@ -1330,6 +1396,7 @@ impl SearchReplaceViewModel {
         arm_on!(self.search_labels);
         arm_on!(self.search_comments);
         arm_on!(self.search_resources);
+        arm_on!(self.search_scratchpad);
         arm_on!(self.include_trashed);
         for sig in &self.facets {
             arm_on!(sig);
@@ -1385,6 +1452,7 @@ impl SearchReplaceViewModel {
             search_labels: self.search_labels.get(),
             search_comments: self.search_comments.get(),
             search_resources: self.search_resources.get(),
+            search_scratchpad: self.search_scratchpad.get(),
             include_trashed: self.include_trashed.get(),
             facets: self.facet_codes(),
         }
@@ -1862,6 +1930,153 @@ pub(super) mod tests {
                 SearchFacet::Note.code() as i64
             ],
             "facet codes are sorted for a stable persisted order"
+        );
+    }
+
+    /// The scratchpad toggle starts off, reaches the search when turned on, and is part
+    /// of what is saved for the project.
+    #[test]
+    fn the_scratchpad_toggle_starts_off_and_reaches_the_search() {
+        let vm = vm();
+        assert!(!vm.search_scratchpad_signal().get());
+        assert!(!vm.build_dto().search_scratchpad, "off unless turned on");
+        assert!(!vm.current_prefs().search_scratchpad);
+
+        vm.set_search_scratchpad(true);
+        let dto = vm.build_dto();
+        assert!(dto.search_scratchpad);
+        assert!(
+            dto.search_body && dto.search_synopsis,
+            "the other scopes are their own"
+        );
+        assert!(vm.current_prefs().search_scratchpad, "and it is saved");
+    }
+
+    /// Selecting a scratchpad hit previews the item's scratchpad: its document is built,
+    /// so the band can show the notes themselves and never the scene's text instead.
+    #[cfg(not(feature = "mocks"))]
+    #[test]
+    fn selecting_a_scratchpad_hit_builds_the_scratchpad_it_shows() {
+        let project = crate::test_support::RealProject::empty_novel();
+        let (scene, _) = project.scenes()[0];
+        let docs = OpenDocsStore::new(project.app_ctx.clone());
+        let vm = SearchReplaceViewModel::new(
+            project.app_ctx.clone(),
+            project.ids.clone(),
+            SearchResultsModel::new(project.app_ctx.clone(), project.ids.work_info_id.clone()),
+            SearchSettingsService::in_memory_default(),
+            docs.clone(),
+            DockingModel::new(),
+            DockWidgetId::fresh(),
+            DockWidgetId::fresh(),
+        );
+        let row = SearchResultDto {
+            binder_item_id: scene,
+            match_field: MatchField::Scratchpad,
+            snippet_match: "keeper".into(),
+            occurrence_count: 1,
+            ..footnote_row(3, scene)
+        };
+        vm.apply_selected_row(3, &row);
+        let doc = vm.preview_signal().get().expect("the item is previewed");
+        assert!(doc.scratchpad().is_some(), "its scratchpad was built");
+        assert_eq!(
+            vm.preview_field_signal().get(),
+            Some(MatchField::Scratchpad)
+        );
+        vm.clear_preview();
+    }
+
+    /// The scratchpad switch on, a scratchpad hit starts unticked like a comment's, and
+    /// counts for the confirmation once ticked. Turned off before the next search has
+    /// run (inside the debounce), Replace All leaves the scratchpad alone though its row
+    /// is still on screen, and rewrites the scene text beside it.
+    #[cfg(not(feature = "mocks"))]
+    #[test]
+    fn a_scratchpad_hit_starts_unticked_and_the_switch_off_keeps_replace_all_out() {
+        use frontend::commands::{binder_item_commands, content_commands};
+        use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
+        use frontend::common::entities::ContentRole;
+        use frontend::direct_access::CreateContentDto;
+
+        let project = crate::test_support::RealProject::empty_novel();
+        let (scene, _) = project.scenes()[0];
+        let ctx = &project.app_ctx;
+        let rows = |role: ContentRole| {
+            let ids = binder_item_commands::get_binder_item_relationship(
+                ctx,
+                &scene,
+                &BinderItemRelationshipField::Contents,
+            )
+            .expect("contents");
+            content_commands::get_content_multi(ctx, &ids)
+                .expect("rows")
+                .into_iter()
+                .flatten()
+                .find(|c| c.role == role)
+        };
+        let write = |role: ContentRole, text: &str| match rows(role.clone()) {
+            Some(mut row) => {
+                row.data = text.to_string();
+                content_commands::update_content(ctx, None, &row.into()).expect("update");
+            }
+            None => {
+                content_commands::create_content(
+                    ctx,
+                    None,
+                    &CreateContentDto {
+                        role,
+                        activated: true,
+                        data: text.to_string(),
+                        ..Default::default()
+                    },
+                    scene,
+                    -1,
+                )
+                .expect("create");
+            }
+        };
+        write(ContentRole::SceneText, "The keeper climbed the stair.");
+        write(ContentRole::ScratchpadText, "Is the keeper too old?");
+
+        let vm = SearchReplaceViewModel::new(
+            ctx.clone(),
+            project.ids.clone(),
+            SearchResultsModel::new(ctx.clone(), project.ids.work_info_id.clone()),
+            SearchSettingsService::in_memory_default(),
+            OpenDocsStore::new(ctx.clone()),
+            DockingModel::new(),
+            DockWidgetId::fresh(),
+            DockWidgetId::fresh(),
+        );
+        vm.query_signal().set("keeper".into());
+        vm.replacement_signal().set("warden".into());
+        vm.set_search_scratchpad(true);
+        vm.run_now();
+        let mut pad = None;
+        vm.results().for_each(|r| {
+            if r.match_field == MatchField::Scratchpad {
+                pad = Some(r.id);
+            }
+        });
+        let pad = pad.expect("the scratchpad hit is listed");
+        assert!(vm.is_excluded(pad), "it starts unticked");
+        assert_eq!(vm.ticked_scratchpad_count(), 0);
+        vm.set_excluded(pad, false);
+        assert_eq!(vm.ticked_scratchpad_count(), 1, "the confirmation names it");
+
+        // Switched off; the debounced search has not run yet.
+        vm.set_search_scratchpad(false);
+        assert_eq!(vm.ticked_scratchpad_count(), 0);
+        vm.replace_all().expect("replace all");
+        assert_eq!(
+            rows(ContentRole::ScratchpadText).map(|c| c.data).as_deref(),
+            Some("Is the keeper too old?"),
+            "the scratchpad keeps its 'keeper'"
+        );
+        assert_eq!(
+            rows(ContentRole::SceneText).map(|c| c.data).as_deref(),
+            Some("The warden climbed the stair.")
         );
     }
 

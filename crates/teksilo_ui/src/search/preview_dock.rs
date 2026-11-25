@@ -33,7 +33,6 @@ use frontend::common::entities::MatchField;
 use crate::format::{EditorKind, FormatViewModel};
 use crate::models::OpenDoc;
 use crate::search::SearchReplaceViewModel;
-use crate::tabs::ProseField;
 
 /// An editor that paints **no background of its own**, so it sits flush on the
 /// dock's surface (rather than reading as a floating card dropped onto it).
@@ -95,6 +94,8 @@ struct PreviewBody {
     /// which id. Withdrawn on a doc-switch rebuild and on drop, so the Format
     /// dock and menu can never act through a preview that is no longer shown.
     format_view: Option<(FormatViewModel, WidgetId)>,
+    /// Keeps a previewed scratchpad's spell checking awake while the band shows it.
+    scratchpad_view: Option<crate::models::ScratchpadViewerGuard>,
 }
 
 impl PreviewBody {
@@ -111,6 +112,7 @@ impl PreviewBody {
             find: std::rc::Rc::new(std::cell::RefCell::new(None)),
             spell_view: None,
             format_view: None,
+            scratchpad_view: None,
         }
     }
 
@@ -299,14 +301,16 @@ impl Widget for PreviewBody {
         if let Some((old, tok)) = self.spell_view.take() {
             old.on_blur(tok);
         }
+        self.scratchpad_view = None;
         let doc = self.vm.preview_signal().get();
         let field = self.vm.preview_field_signal().get();
         // Cloned into the closure below (`MatchField` is not `Copy`) so `field`
         // itself survives to be read again in the `None` arm's footnote check.
         let child: Box<dyn Widget> =
             match doc.as_ref().and_then(|d| editable_field(d, field.clone())) {
-                Some((open_doc, prose, spell, kind)) => {
-                    self.install_find_highlight(ctx, &prose.doc);
+                Some((open_doc, text, spell, kind)) => {
+                    self.install_find_highlight(ctx, &text);
+                    let scratchpad = kind == EditorKind::Scratchpad;
                     // This band's own token. The scene being previewed is very often the
                     // one open in a tab as well, and both register an editor for the same
                     // item — so the band's lane has to be able to say which of the two is
@@ -336,9 +340,16 @@ impl Widget for PreviewBody {
                         BindingLevel::Rebuild,
                     );
                     let editor = if read_only {
-                        RichTextEditor::read_only(prose.doc.clone()).show_highlights(true)
+                        RichTextEditor::read_only(text.clone()).show_highlights(true)
                     } else {
-                        RichTextEditor::editor(prose.doc.clone())
+                        RichTextEditor::editor(text.clone())
+                    };
+                    // A note typed into the scratchpad here marks the project unsaved like
+                    // one typed in its panel, without waking what watches the item's text.
+                    let on_change: Box<dyn Fn()> = if scratchpad {
+                        Box::new(open_doc.mark_scratchpad_dirty_fn())
+                    } else {
+                        Box::new(open_doc.mark_dirty_fn())
                     };
                     let editor = editor
                         // Registered with the format view-model below, so the Link command
@@ -347,7 +358,7 @@ impl Widget for PreviewBody {
                             crate::resources::links::activate_link(href, ctx);
                         })
                         .style(SeamlessEditorStyle)
-                        .on_change(open_doc.mark_dirty_fn())
+                        .on_change(on_change)
                         .content_padding_symmetric(8.0, 8.0)
                         .min_lines(1)
                         .v_scroll_policy(ScrollPolicy::AlwaysOff)
@@ -435,29 +446,41 @@ impl Widget for PreviewBody {
                         // …and which item it is showing, which is the one thing a margin
                         // lane needs and focus cannot answer. `TypographyBoundEditor`
                         // does the same for every other writing surface; this band
-                        // bypasses it, so it says so itself.
-                        format.set_registered_anchor(
-                            self_id,
-                            crate::margin_lane::LaneAnchor::new(open_doc.item_id, scope),
-                        );
+                        // bypasses it, so it says so itself. Not for a scratchpad, which
+                        // has no margin lane anywhere: its marks belong to the item's text.
+                        if !scratchpad {
+                            format.set_registered_anchor(
+                                self_id,
+                                crate::margin_lane::LaneAnchor::new(open_doc.item_id, scope),
+                            );
+                        }
                         // A dock, not a tab: the caret here is not where the writer is
                         // writing, so the Scratchpad does not move to this item.
                         format.set_registered_in_dock(self_id);
                         self.format_view = Some((format, self_id));
                     }
-                    Box::new(laned_band(
-                        &self.vm,
-                        &self.format,
-                        open_doc.item_id,
-                        scope,
-                        prose.doc.clone(),
-                        kind,
-                        // The previewed text in its own language, as in its tab.
+                    // The previewed text in its own language, as in its tab.
+                    let column =
                         Padding::symmetric(12.0, 8.0).child(crate::tabs::shared::editor::centered(
                             editor.content_language(open_doc.content_language()),
                             &width,
-                        )),
-                    ))
+                        ));
+                    if scratchpad {
+                        // Its spell checking sleeps while no view shows it; this one does.
+                        self.scratchpad_view = Some(open_doc.acquire_scratchpad_viewer());
+                        // No margin lane: the lane's marks are those of the item's text.
+                        Box::new(ScrollArea::new().child(column))
+                    } else {
+                        Box::new(laned_band(
+                            &self.vm,
+                            &self.format,
+                            open_doc.item_id,
+                            scope,
+                            text.clone(),
+                            kind,
+                            column,
+                        ))
+                    }
                 }
                 None => {
                     // Nothing previewed — drop any highlight layer.
@@ -507,22 +530,27 @@ impl Widget for PreviewBody {
 /// resolved to. They travel together because the *matched* field is not always
 /// the field shown (see the fallbacks below), so re-deriving any one of them
 /// downstream would risk disagreeing with the others.
-type PreviewTarget<'a> = (
+///
+/// The document travels as a handle rather than a borrow of its field: the scratchpad's
+/// field is shared out of a cell (it is built on demand), so it cannot be lent for as
+/// long as the three built with the doc can.
+type PreviewTarget = (
     std::rc::Rc<OpenDoc>,
-    &'a ProseField,
+    teksilo::text_document::TextDocument,
     Option<std::rc::Rc<crate::spellcheck::SpellSession>>,
     EditorKind,
 );
 
 /// The editable prose field to preview for a match, and the doc that owns it (for
-/// the dirty hook). A synopsis match shows the synopsis; everything else (body,
+/// the dirty hook). A synopsis match shows the synopsis, a scratchpad match the
+/// scratchpad alone (no fallback); everything else (body,
 /// and title/label matches, which have no rich field of their own) shows the main
 /// prose — falling back to whichever field the item actually has. `None` when the
 /// item has no editable prose at all (a folder / heading).
 fn editable_field(
     open_doc: &std::rc::Rc<OpenDoc>,
     field: Option<MatchField>,
-) -> Option<PreviewTarget<'_>> {
+) -> Option<PreviewTarget> {
     // Pair the resolved prose field with ITS spell session (main vs synopsis), honouring the same
     // fallback, so the preview drives the right document's squiggles. The kind rides along for the
     // formatting registry — the fallbacks mean the *matched* field is not always the field shown,
@@ -544,6 +572,18 @@ fn editable_field(
         | Some(MatchField::Footnote)
         | Some(MatchField::Resource) => {
             return None;
+        }
+        // A scratchpad hit shows the scratchpad, which selecting the result built, and
+        // nothing else. No fallback: the scene's text beside it is not what the writer
+        // searched, and editing it here in the scratchpad's place would be a trap.
+        Some(MatchField::Scratchpad) => {
+            let pad = open_doc.scratchpad()?;
+            return Some((
+                open_doc.clone(),
+                pad.doc.clone(),
+                open_doc.spell_scratchpad(),
+                EditorKind::Scratchpad,
+            ));
         }
         Some(MatchField::Synopsis) => match open_doc.synopsis.as_ref() {
             Some(p) => (p, open_doc.spell_synopsis(), EditorKind::Synopsis),
@@ -579,7 +619,7 @@ fn editable_field(
             },
         },
     };
-    Some((open_doc.clone(), prose, spell, kind))
+    Some((open_doc.clone(), prose.doc.clone(), spell, kind))
 }
 
 /// The empty state. With a result selected but no editable prose, a plain note.
@@ -1023,5 +1063,118 @@ mod tests {
                 if playing { "on" } else { "off" }
             );
         }
+    }
+
+    /// A scratchpad hit shows the item's scratchpad, as a scratchpad, and nothing else:
+    /// not before the scratchpad is built (selecting the result builds it), and never the
+    /// scene's text in its place.
+    #[cfg(not(feature = "mocks"))]
+    #[test]
+    fn a_scratchpad_hit_resolves_to_the_scratchpad_alone() {
+        let project = crate::test_support::RealProject::empty_novel();
+        let (scene, _) = project.scenes()[0];
+        let docs = OpenDocsStore::new(project.app_ctx.clone());
+        let doc = docs.open(scene).expect("the scene opens");
+        doc.main
+            .as_ref()
+            .expect("a scene has prose")
+            .doc
+            .set_plain_text("The keeper climbed the stair.")
+            .expect("the scene's text");
+        assert!(
+            editable_field(&doc, Some(MatchField::Scratchpad)).is_none(),
+            "no scratchpad built yet, and no fallback to the scene"
+        );
+
+        let pad = docs.ensure_scratchpad(&doc).expect("a scene has one");
+        pad.doc
+            .set_plain_text("Is the keeper too old?")
+            .expect("the notes");
+        let (_, text, spell, kind) =
+            editable_field(&doc, Some(MatchField::Scratchpad)).expect("the scratchpad");
+        assert_eq!(kind, EditorKind::Scratchpad);
+        assert_eq!(
+            text.to_plain_text().expect("text").trim(),
+            "Is the keeper too old?"
+        );
+        assert!(
+            spell
+                .zip(doc.spell_scratchpad())
+                .is_some_and(|(a, b)| Rc::ptr_eq(&a, &b)),
+            "with the scratchpad's own spell session"
+        );
+        drop(pad);
+        docs.release(scene, None);
+    }
+
+    /// Mounted over a scratchpad hit, the band registers a scratchpad editor (never a
+    /// prose one), wakes the scratchpad's spell checking while it is shown, and is not
+    /// frozen by "Always forward", which covers the manuscript and not the notes.
+    #[cfg(not(feature = "mocks"))]
+    #[test]
+    fn the_band_shows_a_scratchpad_hit_as_a_scratchpad() {
+        use teksilo::widgets::rich_text::CommandFilter;
+
+        let project = crate::test_support::RealProject::empty_novel();
+        let (scene, _) = project.scenes()[0];
+        let docs = OpenDocsStore::new(project.app_ctx.clone());
+        let vm = SearchReplaceViewModel::new(
+            project.app_ctx.clone(),
+            project.ids.clone(),
+            SearchResultsModel::new(project.app_ctx.clone(), Signal::new(None)),
+            SearchSettingsService::in_memory_default(),
+            docs.clone(),
+            DockingModel::new(),
+            DockWidgetId::fresh(),
+            DockWidgetId::fresh(),
+        );
+        let doc = docs.open(scene).expect("the scene opens");
+        docs.ensure_scratchpad(&doc).expect("a scene has one");
+        vm.preview_signal().set(Some(doc.clone()));
+        vm.preview_field_signal().set(Some(MatchField::Scratchpad));
+
+        let games = crate::writing_session::WritingGamesViewModel::detached();
+        games.set_always_forward(true);
+        let format = FormatViewModel::detached();
+        let mut tree = crate::test_support::tree_with_settings(&project.app_ctx);
+        let root = tree.add(PreviewBody::new(vm, format.clone(), games.clone()));
+        tree.layout(SizeProposal::exact(900.0, 400.0));
+        assert!(
+            format
+                .handles_by_item(crate::format::EditorKind::Prose)
+                .is_empty(),
+            "the scene's text is not what the band shows, and the notes have no lane"
+        );
+        let stop = *tree
+            .tab_stops_within(root)
+            .first()
+            .expect("the band mounts an editor");
+        tree.focus(stop);
+        let handle = format
+            .handle_for_commands()
+            .expect("the band's editor is the format target");
+        // What is typed there lands in the scratchpad, and the scene's text is untouched.
+        handle.insert_text("Ask the keeper.");
+        let text_of = |d: &teksilo::text_document::TextDocument| {
+            d.to_plain_text().expect("text").trim().to_string()
+        };
+        assert_eq!(
+            text_of(&doc.scratchpad().expect("built").doc),
+            "Ask the keeper."
+        );
+        assert_eq!(text_of(&doc.main.as_ref().expect("prose").doc), "");
+        assert_eq!(
+            handle.command_filter(),
+            CommandFilter::All,
+            "the notes stay writable while the manuscript only goes forward"
+        );
+        assert_eq!(doc.scratchpad_viewers(), 1, "its spell checking is awake");
+        drop(tree);
+        assert_eq!(
+            doc.scratchpad_viewers(),
+            0,
+            "and sleeps again once the band goes"
+        );
+        docs.release(scene, None);
     }
 }

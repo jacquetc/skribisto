@@ -149,6 +149,10 @@ entities:
   # Resources' titles, descriptions, file names and addresses.
   - name: search_resources
     type: boolean
+  # The writer's private scratchpads beside each item. Off by default (see
+  # search.toml), so neither Search nor Replace All reaches them unasked.
+  - name: search_scratchpad
+    type: boolean
   - name: include_trashed
     type: boolean
   - name: truncated
@@ -3671,6 +3675,11 @@ features:
       # Resources' titles, descriptions, file names and addresses.
       - name: search_resources
         type: boolean
+      # The writer's private scratchpads. A switch of its own, never part of
+      # `search_body` or `search_synopsis`: a scratchpad is not the manuscript,
+      # and Replace All must not rewrite one the writer did not ask to search.
+      - name: search_scratchpad
+        type: boolean
       - name: include_trashed
         type: boolean
     dto_out:
@@ -3846,6 +3855,13 @@ features:
       - name: only_occurrence_starts
         type: integer
         is_list: true
+      # Whether the caller's own Scratchpad switch is on. A scratchpad row is
+      # rewritten only when this AND the stored Search's `search_scratchpad` are
+      # both true: the stored Search is the Work's one, shared by every window on
+      # it, so another window's switch (or this one's, flipped within the
+      # search's debounce) must not reach the writer's private notes.
+      - name: search_scratchpad
+        type: boolean
     dto_out:
       name: ReplaceInProjectResultDto
       fields:

@@ -2867,6 +2867,7 @@ search-tip-synopsis = Synopsis : rechercher dans le résumé de chaque élémen
 search-tip-label = Libellé : rechercher dans le court texte affiché sous le titre d’un élément.
 search-tip-comment = Commentaires : rechercher dans le texte des fils de commentaires et de leurs réponses. Un commentaire porte sur le manuscrit sans en faire partie, d’où son propre bouton, et un remplacement laisse les commentaires décochés tant que vous ne les cochez pas.
 search-tip-resource = Ressources : rechercher dans les titres, les descriptions, les noms de fichiers et les adresses web des fichiers et des liens joints à vos éléments. Leurs résultats sont listés pour que vous les retrouviez, et un remplacement ne les modifie jamais.
+search-tip-scratchpad = Bloc-notes : rechercher dans les notes personnelles gardées à côté de chaque élément. Désactivé tant que vous ne l’activez pas. Désactivé, un remplacement ne modifie jamais un bloc-notes ; activé, les résultats trouvés dans les blocs-notes sont listés décochés, et un remplacement ne les modifie que si vous les cochez.
 search-tip-book = Livres : le conteneur du livre et ses marqueurs de début / fin.
 search-tip-part = Parties : les séparateurs de partie.
 search-tip-chapter = Chapitres : les chapitres, quel que soit leur stockage.
@@ -2921,6 +2922,10 @@ search-replace-confirm-text =
         [one] { $items } document
        *[other] { $items } documents
     } ? Vous pourrez annuler depuis la notification.
+search-replace-confirm-scratchpads = { $count ->
+    [one] Le remplacement modifie aussi { $count } bloc-notes, vos notes personnelles à côté d’un élément.
+   *[other] Le remplacement modifie aussi { $count } blocs-notes, vos notes personnelles à côté des éléments.
+}
 search-replace-done-title = Remplacement terminé
 search-replace-done =
     { $occurrences ->

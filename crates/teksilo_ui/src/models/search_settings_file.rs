@@ -68,6 +68,12 @@ pub struct SearchPrefs {
     /// `search.toml` written before resources existed reads as on.
     #[serde(default = "yes")]
     pub search_resources: bool,
+    /// The writer's private scratchpads beside each item. **Off** by default, and a
+    /// `search.toml` written before scratchpads existed reads as off too: a scratchpad
+    /// is not the manuscript, so neither Search nor Replace All reaches one until the
+    /// writer turns this on.
+    #[serde(default)]
+    pub search_scratchpad: bool,
     /// Include trashed items in the scan.
     pub include_trashed: bool,
     /// The ticked facet chips as `skribisto_model::SearchFacet::code()` values.
@@ -96,6 +102,7 @@ impl Default for SearchPrefs {
             search_labels: true,
             search_comments: true,
             search_resources: true,
+            search_scratchpad: false,
             include_trashed: false,
             facets: Vec::new(),
         }
@@ -360,6 +367,33 @@ mod tests {
             .join("\n");
         let prefs: SearchPrefs = toml::from_str(&text).unwrap();
         assert!(prefs.search_resources);
+    }
+
+    /// Scratchpads are off by default, and a `search.toml` written before they existed
+    /// (no `search_scratchpad` line) reads as off, so an upgrade never starts searching
+    /// and replacing inside the writer's private notes.
+    #[test]
+    fn scratchpads_are_not_searched_unless_turned_on() {
+        assert!(!SearchPrefs::default().search_scratchpad);
+        let on = SearchPrefs {
+            search_scratchpad: true,
+            ..SearchPrefs::default()
+        };
+        let text = toml::to_string(&on).unwrap();
+        assert!(text.contains("search_scratchpad = true"));
+        let back: SearchPrefs = toml::from_str(&text).unwrap();
+        assert!(
+            back.search_scratchpad,
+            "a turned-on toggle survives the file"
+        );
+
+        let old: String = text
+            .lines()
+            .filter(|l| !l.starts_with("search_scratchpad"))
+            .collect::<Vec<_>>()
+            .join("\n");
+        let prefs: SearchPrefs = toml::from_str(&old).unwrap();
+        assert!(!prefs.search_scratchpad);
     }
     use tempfile::tempdir;
 

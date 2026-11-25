@@ -93,6 +93,7 @@ impl ScratchpadPanel {
         ctx: &mut BuildContext,
         doc: &Rc<crate::models::OpenDoc>,
         field: &Rc<crate::tabs::ProseField>,
+        active: &Signal<bool>,
     ) -> WidgetId {
         let item = doc.item_id;
         let read_only = doc.trashed.get();
@@ -124,8 +125,28 @@ impl ScratchpadPanel {
         // Back where the writer left it. Before the editor is mounted is fine: the handle
         // is the editor's own state, minted when it was constructed.
         let handle = sink.borrow().clone();
-        if let (Some(handle), Some((anchor, position))) = (handle, self.vm.remembered_caret(item)) {
+        if let Some(handle) = &handle
+            && let Some((anchor, position)) = self.vm.remembered_caret(item)
+        {
             handle.select_range(anchor, position);
+        }
+        // A search hit opened from the Search panel: selected, and once the editor is
+        // mounted, focused and scrolled into view, so the writer lands on the words found.
+        if let Some(handle) = handle
+            && let Some((start, end)) = self.vm.take_hit_for(item, &field.doc)
+        {
+            handle.select_range(start, end);
+            let active = active.clone();
+            ctx.run_after_mount(move |ctx| {
+                if !active.get() {
+                    return;
+                }
+                handle.focus(ctx);
+                if !handle.reveal_range(ctx, start, end) {
+                    // Not painted yet: bring the editor into view at least.
+                    handle.reveal_widget(ctx);
+                }
+            });
         }
         self.sink = sink;
         self.shown_item = Some(item);
@@ -189,6 +210,10 @@ impl Widget for ScratchpadPanel {
         // The name is in the editor's description, which a screen reader reads from the
         // built editor: a rename rebuilds it, the caret kept as for any other rebuild.
         self.vm.title().bind_to(sid, reg, BindingLevel::Rebuild);
+        // A search hit to select, perhaps in the item already shown.
+        self.vm
+            .hit_requests()
+            .bind_to(sid, reg, BindingLevel::Rebuild);
 
         self.keep_caret();
         // The previous item's scratchpad is no longer on screen here.
@@ -209,7 +234,7 @@ impl Widget for ScratchpadPanel {
                 doc.trashed
                     .bind_to(sid, ctx.binding_registry(), BindingLevel::Rebuild);
                 self.vm.note_shown(&doc);
-                let id = self.ready(ctx, &doc, &field);
+                let id = self.ready(ctx, &doc, &field, &active);
                 // Awake while on screen, asleep while the rail parks the panel.
                 let guard = self.guard.clone();
                 let show = move |on: bool| {

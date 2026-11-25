@@ -2533,6 +2533,7 @@ search-tip-synopsis = Synopsis: søk i sammendraget til hvert skriveelement.
 search-tip-label = Etikett: søk i den korte merknaden som vises under tittelen til et element i permen.
 search-tip-comment = Kommentarer: søk i teksten i kommentartråder og svarene på dem. En kommentar handler om manuset og er ikke en del av det, så den har sin egen bryter, og ved erstatning er kommentartreff ikke avkrysset før du krysser dem av.
 search-tip-resource = Ressurser: søk i titler, beskrivelser, filnavn og nettadresser for filene og lenkene som er knyttet til elementene dine. Treffene deres vises slik at du finner dem, og en erstatning endrer dem aldri.
+search-tip-scratchpad = Kladdeblokker: søk i de private notatene som ligger ved siden av hvert element. Av til du slår det på. Så lenge det er av, endrer en erstatning aldri en kladdeblokk; når det er på, vises treffene som finnes der uten hake, og en erstatning endrer dem først når du huker dem av.
 search-tip-book = Bøker: bokbeholderen og markørene for start og slutt.
 search-tip-part = Deler: skillene på delnivå.
 search-tip-chapter = Kapitler: kapitler, uansett hvordan prosjektet lagrer dem.
@@ -2587,6 +2588,10 @@ search-replace-confirm-text =
         [one] { $items } dokument
        *[other] { $items } dokumenter
     }? Du kan angre dette fra varselet etterpå.
+search-replace-confirm-scratchpads = { $count ->
+    [one] Erstatningen endrer også 1 kladdeblokk, dine private notater ved siden av et element.
+   *[other] Erstatningen endrer også { $count } kladdeblokker, dine private notater ved siden av elementene.
+}
 search-replace-done-title = Erstatning fullført
 search-replace-done =
     { $occurrences ->

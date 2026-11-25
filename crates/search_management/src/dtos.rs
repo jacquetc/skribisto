@@ -19,6 +19,7 @@ pub struct RunSearchDto {
     pub search_labels: bool,
     pub search_comments: bool,
     pub search_resources: bool,
+    pub search_scratchpad: bool,
     pub include_trashed: bool,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -51,6 +52,7 @@ pub struct ReplaceInProjectDto {
     pub excluded_occurrence_starts: Vec<i64>,
     pub only_occurrence_rows: Vec<u64>,
     pub only_occurrence_starts: Vec<i64>,
+    pub search_scratchpad: bool,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct ReplaceInProjectResultDto {

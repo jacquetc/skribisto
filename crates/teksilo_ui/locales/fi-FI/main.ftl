@@ -2623,6 +2623,7 @@ search-tip-synopsis = Tiivistelmä: hae kunkin kirjoituskohteen tiivistelmästä
 search-tip-label = Nimiö: hae lyhyestä merkinnästä, joka näkyy mapin kohteen otsikon alla.
 search-tip-comment = Kommentit: hae kommenttiketjujen ja niiden vastausten tekstistä. Kommentti koskee käsikirjoitusta mutta ei ole osa sitä, joten sillä on oma kytkimensä, ja korvattaessa kommenttien osumat jäävät valitsematta, kunnes valitset ne.
 search-tip-resource = Resurssit: hae kohteisiisi liitettyjen tiedostojen ja linkkien otsikoista, kuvauksista, tiedostonimistä ja verkko-osoitteista. Niiden osumat näytetään, jotta löydät ne, eikä korvaus koskaan muuta niitä.
+search-tip-scratchpad = Muistilehtiöt: hae kunkin kohteen viereen tallennetuista yksityisistä muistiinpanoista. Pois päältä, kunnes otat sen käyttöön. Kun se on pois päältä, korvaus ei koskaan muuta muistilehtiötä; kun se on päällä, niistä löytyneet osumat näytetään valitsemattomina, ja korvaus muuttaa ne vasta, kun valitset ne.
 search-tip-book = Kirjat: kirjasäiliö ja sen alku- ja loppumerkit.
 search-tip-part = Osat: osatason jakajat.
 search-tip-chapter = Luvut: luvut, tallentaa projekti ne kummalla tavalla tahansa.
@@ -2677,6 +2678,10 @@ search-replace-confirm-text =
            [one] { $items } asiakirja
           *[other] { $items } asiakirjaa
        })? Voit kumota tämän jälkeenpäin ilmoituksesta.
+search-replace-confirm-scratchpads = { $count ->
+    [one] Korvaus muuttaa myös 1 muistilehtiön, kohteen viereen tallennetut yksityiset muistiinpanosi.
+   *[other] Korvaus muuttaa myös { $count } muistilehtiötä, kohteiden viereen tallennetut yksityiset muistiinpanosi.
+}
 search-replace-done-title = Korvaus valmis
 search-replace-done =
        { $occurrences ->

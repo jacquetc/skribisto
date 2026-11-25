@@ -76,6 +76,9 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
 
     {
         let editors = deps.editors.clone();
+        let scratchpad = deps.scratchpad.clone();
+        let docking = deps.outline.docking();
+        let scratchpad_dock = deps.scratchpad_dock;
         ctx.register_action_global(Action::new("editor.open_search_result").on_invoke(
             move |i, ctx| {
                 if let Some(AppIntent::OpenSearchResult {
@@ -85,6 +88,14 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
                 }) = AppIntent::from_intent(i)
                 {
                     editors.open_search_result(*item_id, title, hit.clone(), ctx);
+                    // A hit in the item's scratchpad: the Scratchpad panel follows the
+                    // item just opened, and selects the hit once it shows it.
+                    if let Some(hit) = hit
+                        && hit.field == frontend::common::entities::MatchField::Scratchpad
+                    {
+                        scratchpad.select_when_shown(*item_id, hit.clone());
+                        docking.reveal_dock(scratchpad_dock);
+                    }
                 }
             },
         ));

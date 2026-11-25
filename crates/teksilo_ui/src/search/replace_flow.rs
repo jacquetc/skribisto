@@ -36,14 +36,26 @@ pub fn confirm_and_replace(vm: &SearchReplaceViewModel, ctx: &mut EventContext) 
     let occurrences = vm.match_count_signal().get();
     let items = vm.item_count_signal().get();
 
+    // A scratchpad among the ticked rows is named: the writer's private notes are not
+    // what "replace in the project" brings to mind, and they start unticked for that
+    // reason, so a confirmation that would rewrite them says so.
+    let scratchpads = vm.ticked_scratchpad_count();
+
     let vm = vm.clone();
-    MessageBox::warning(tr!(search_replace_confirm_title()))
-        .text(tr!(search_replace_confirm_text(
+    let mut message = MessageBox::warning(tr!(search_replace_confirm_title())).text(tr!(
+        search_replace_confirm_text(
             query = query,
             replacement = display_replacement(&replacement),
             occurrences = occurrences as i64,
             items = items as i64
-        )))
+        )
+    ));
+    if scratchpads > 0 {
+        message = message.informative_text(tr!(search_replace_confirm_scratchpads(
+            count = scratchpads as i64
+        )));
+    }
+    message
         .buttons(MessageBoxButtons::OkCancel)
         .on_result(move |r: MessageBoxResult, ctx| {
             if r.button == StandardButton::Ok {

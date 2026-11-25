@@ -66,6 +66,7 @@ fn search(ctx: &AppContext, query: &str) -> RunSearchDto {
         search_labels: false,
         search_comments: false,
         search_resources: false,
+        search_scratchpad: false,
         include_trashed: false,
     }
 }
@@ -226,6 +227,7 @@ fn one_rename_uppercases_each_scene_under_its_own_rules() {
             excluded_occurrence_starts: vec![],
             only_occurrence_rows: vec![],
             only_occurrence_starts: vec![],
+            search_scratchpad: false,
         },
     )
     .expect("replace_in_project");

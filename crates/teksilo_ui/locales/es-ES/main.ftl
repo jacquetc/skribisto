@@ -2614,6 +2614,7 @@ search-tip-synopsis = Sinopsis: busca en el resumen de cada elemento de escritur
 search-tip-label = Rótulo: busca en la nota breve que aparece bajo el título de un elemento del archivador.
 search-tip-comment = Comentarios: busca en el texto de los hilos de comentarios y sus respuestas. Un comentario trata sobre el manuscrito en lugar de formar parte de él, así que tiene su propio interruptor, y al reemplazar, las coincidencias en comentarios quedan sin marcar hasta que usted las marque.
 search-tip-resource = Recursos: buscar en los títulos, las descripciones, los nombres de archivo y las direcciones web de los archivos y enlaces adjuntos a sus elementos. Sus coincidencias se muestran para que las encuentre, y un reemplazo nunca las cambia.
+search-tip-scratchpad = Blocs de notas: buscar en las notas privadas que se guardan junto a cada elemento. Desactivado hasta que lo active. Mientras está desactivado, un reemplazo nunca cambia un bloc de notas; cuando está activado, las coincidencias que encuentra en ellos aparecen sin marcar, y un reemplazo solo las cambia cuando usted las marca.
 search-tip-book = Libros: el contenedor del libro y sus marcadores de inicio y fin.
 search-tip-part = Partes: los divisores de nivel de parte.
 search-tip-chapter = Capítulos: los capítulos, sea cual sea la forma en que el proyecto los guarde.
@@ -2668,6 +2669,10 @@ search-replace-confirm-text =
         [one] { $items } documento
        *[other] { $items } documentos
     }? Podrá deshacerlo después desde la notificación.
+search-replace-confirm-scratchpads = { $count ->
+    [one] El reemplazo también cambia 1 bloc de notas, sus notas privadas junto a un elemento.
+   *[other] El reemplazo también cambia { $count } blocs de notas, sus notas privadas junto a los elementos.
+}
 search-replace-done-title = Reemplazo completado
 search-replace-done =
     { $occurrences ->

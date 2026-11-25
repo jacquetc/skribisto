@@ -2564,6 +2564,7 @@ search-tip-synopsis = Synopsis: de samenvatting van elk schrijfitem doorzoeken.
 search-tip-label = Label: de korte notitie onder de titel van een item in de ordner doorzoeken.
 search-tip-comment = Opmerkingen: de tekst van opmerkingen en hun antwoorden doorzoeken. Een opmerking gaat over het manuscript en maakt er geen deel van uit; daarom heeft ze een eigen schakelaar, en bij vervangen blijven treffers in opmerkingen uitgevinkt totdat u ze aanvinkt.
 search-tip-resource = Bronnen: zoek in de titels, beschrijvingen, bestandsnamen en webadressen van de bestanden en links die aan uw items zijn gekoppeld. Hun resultaten worden getoond zodat u ze vindt, en vervangen verandert ze nooit.
+search-tip-scratchpad = Kladblokken: zoeken in de persoonlijke notities naast elk item. Uit tot u het aanzet. Zolang het uit staat, wijzigt vervangen nooit een kladblok; staat het aan, dan verschijnen de overeenkomsten die daar gevonden worden zonder vinkje, en wijzigt vervangen ze pas als u ze aanvinkt.
 search-tip-book = Boeken: de boekcontainer en de markeringen voor begin en einde.
 search-tip-part = Delen: scheidingen op het niveau van delen.
 search-tip-chapter = Hoofdstukken: hoofdstukken, op welke manier het project ze ook opslaat.
@@ -2618,6 +2619,10 @@ search-replace-confirm-text =
         [one] { $items } document
        *[other] { $items } documenten
     }? U kunt dit achteraf ongedaan maken vanuit de melding.
+search-replace-confirm-scratchpads = { $count ->
+    [one] Het vervangen wijzigt ook 1 kladblok, uw persoonlijke notities naast een item.
+   *[other] Het vervangen wijzigt ook { $count } kladblokken, uw persoonlijke notities naast de items.
+}
 search-replace-done-title = Vervangen voltooid
 search-replace-done =
     { $occurrences ->

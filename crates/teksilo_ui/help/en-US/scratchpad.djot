@@ -8,7 +8,7 @@ The scratchpad belongs to you, not to the book.
 
 - It is never exported.
 - It never counts towards your words, your targets or your pace.
-- Searching the project does not look in it.
+- Searching the project leaves it out, unless you turn on its own switch.
 
 It is saved with the project and kept in every backup, like the rest of your writing.
 
@@ -44,6 +44,17 @@ you restore the item.
 - *Split scene* leaves the scratchpad with the first scene. The new scene starts with an empty
   one.
 - *Duplicate* copies the scratchpad with the item.
+
+## Searching your scratchpads
+
+Search leaves your scratchpads out until you turn on the *Scratchpads* switch among the
+search options, the one with a spiral pad. Their matches are then listed with the others.
+
+- Opening a match opens its item and selects the words in its scratchpad.
+- *Replace All* lists the matches in scratchpads unticked, as it does comments: it changes them
+  only once you tick them, and never while the switch is off.
+
+The search panel remembers the switch for each project.
 
 ## Earlier versions
 
