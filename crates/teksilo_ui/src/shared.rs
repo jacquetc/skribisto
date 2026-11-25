@@ -11,7 +11,7 @@
 //! doc comments if not yet in their behaviour — or as a view-model/support
 //! module read by several features once the great `view_models/` → feature-dir
 //! move reached it (`CaretHighlightSettings`, `FocusViewModel`,
-//! `FullscreenViewModel`, `TypewriterSettings`, `SynopsisPlacement`,
+//! `FullscreenViewModel`, `TypewriterSettings`, `SynopsisPlacement`, `SynopsisInk`,
 //! `ViewState`, `ProgressRecorder`, `images`, `long_op`).
 //!
 //! This is deliberately *not* `widgets/`. That directory holds app-level shared
@@ -94,6 +94,7 @@ pub(crate) mod seeded_strings;
 pub(crate) mod shortcut_group;
 pub mod slug;
 pub mod stamps;
+mod synopsis_ink;
 mod synopsis_placement;
 mod tab_limit;
 pub mod text;
@@ -115,6 +116,7 @@ pub use focus_vm::FocusViewModel;
 pub use fullscreen_vm::FullscreenViewModel;
 pub use item_view_states::ItemViewStates;
 pub use progress_recorder::ProgressRecorder;
+pub use synopsis_ink::SynopsisInk;
 pub use synopsis_placement::SynopsisPlacement;
 pub use tab_limit::TabLimit;
 pub use typewriter::{TypewriterAnchor, TypewriterSettings};

@@ -101,7 +101,7 @@ fn glyph_rendering_segment(
 /// A `SegmentedControl` over `segments`, bound to `stored` through
 /// [`bridge_choice`]: the choices and their segments come from one list, so a
 /// segment's position is always its choice's index.
-fn choice_control<T: Copy + PartialEq + 'static>(
+pub(in crate::settings) fn choice_control<T: Copy + PartialEq + 'static>(
     ctx: &mut BuildContext,
     stored: Signal<T>,
     segments: Vec<(T, Segment)>,

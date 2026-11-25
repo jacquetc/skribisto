@@ -11,6 +11,7 @@
 
 use super::*;
 
+use teksilo::core::color_prop::ColorProp;
 use teksilo::widgets::Accordion;
 
 /// How tall a *growing* synopsis editor starts: enough to invite a couple of lines,
@@ -131,10 +132,26 @@ pub fn synopsis_editor(
         name,
         language,
         EditorKind::Synopsis,
-        TextRole::Secondary,
+        synopsis_ink(typo),
         (6.0, 30.0),
         None,
     )
+}
+
+/// The colour a synopsis editor set in `typo` writes in.
+///
+/// The bundle's own choice when it has one, which only the Synopsis bundle does, and
+/// the manuscript's ink otherwise: see [`EditorTypography::ink`] for the texts that
+/// reach this editor through another bundle and why none of them is dimmed.
+///
+/// A role, never a resolved colour, so the editor resolves it against the theme in
+/// force at every paint. And bound to the setting rather than read once, so a change
+/// on the Synopsis page repaints every open synopsis without rebuilding it.
+pub(crate) fn synopsis_ink(typo: &EditorTypography) -> ColorProp {
+    match &typo.ink {
+        Some(ink) => ink.map(|ink| ink.text_role()).into(),
+        None => crate::shared::SynopsisInk::Normal.text_role().into(),
+    }
 }
 
 /// The one construction behind [`synopsis_editor`] and [`scratchpad_editor`]: a bordered
@@ -142,7 +159,8 @@ pub fn synopsis_editor(
 /// item's main text.
 ///
 /// `kind` is what the formatting registry and the writing games know the editor as,
-/// `text_color` its ink (a synopsis is dimmed, a scratchpad is not), `padding` its margins, and `description` what
+/// `text_color` its ink (a synopsis's is the writer's choice, see [`synopsis_ink`]; a
+/// scratchpad's is the interface's), `padding` its margins, and `description` what
 /// a screen reader adds to its name. Every other difference between the two is an `Option`
 /// the caller leaves `None`.
 #[allow(clippy::too_many_arguments)]
@@ -202,7 +220,7 @@ fn field_editor(
     // `writing_column`'s note. `None` on the surfaces built with no project around them.
     language: Option<Signal<Option<LanguageTag>>>,
     kind: EditorKind,
-    text_color: TextRole,
+    text_color: ColorProp,
     // The (vertical, horizontal) gap between the text and the editor's edge.
     padding: (f32, f32),
     description: Option<LocalizedString>,
@@ -357,7 +375,7 @@ fn field_editor(
 ///   writing game and no "Split scene" or "Add as note" row: a scratchpad is not part of
 ///   the work. The context menu keeps cut, copy, paste, the formatting strip and the
 ///   spelling group (suggestions, Add to dictionary).
-/// * Its ink is the normal text colour, not the dimmed one a synopsis uses.
+/// * Its ink is the interface's text colour, whatever the Synopsis page says.
 /// * It fills the pane it is given and scrolls inside it (greedy, like
 ///   [`SynopsisFit::Side`], whose sizing and flush look it shares), so give it a pane of an
 ///   exact height.
@@ -416,7 +434,7 @@ pub fn scratchpad_editor(
         name,
         language,
         EditorKind::Scratchpad,
-        TextRole::Primary,
+        TextRole::Primary.into(),
         (8.0, 12.0),
         Some(description),
     )

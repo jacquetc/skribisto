@@ -2264,3 +2264,93 @@ fn the_scratchpad_page_is_in_the_typography_group_searchable_and_reopened_on() {
     let (selected, _tree) = open_settings(&store, SettingsPanel::without_project());
     assert_eq!(selected.get(), Pane::ScratchpadTypography);
 }
+
+/// The radio button (a `SegmentedControl` cell) whose accessible label is `label`,
+/// anywhere in `tree`.
+fn radio_labelled(tree: &teksilo::core::widget_tree::WidgetTree, label: &str) -> Option<WidgetId> {
+    let mut all = Vec::new();
+    for root in tree.roots() {
+        subtree(tree, root, &mut all);
+    }
+    all.into_iter().find(|id| {
+        let node = tree.accessibility_node(*id);
+        node.role() == teksilo::core::accesskit::Role::RadioButton && node.name() == Some(label)
+    })
+}
+
+/// **The Synopsis page offers the synopsis's text color, and picking a segment sets
+/// it.** The other typography pages have no such row: they dress texts that are never
+/// dimmed.
+#[test]
+fn the_synopsis_page_sets_the_synopsis_text_color() {
+    crate::test_support::with_real_messages(|| {
+        let store = crate::test_support::temp_settings_store();
+        let ink = store.signal(
+            crate::SYNOPSIS_TEXT_COLOR_KEY,
+            crate::shared::SynopsisInk::default(),
+        );
+        let panel = SettingsPanel::without_project();
+        panel.selected_pane.set(Pane::SynopsisTypography);
+        let (_, mut tree) = open_settings(&store, panel);
+        settle(&mut tree, SizeProposal::exact(CARD_W, CARD_H));
+
+        let normal = tr!(settings_synopsis_ink_normal()).resolve_now();
+        let dimmed = tr!(settings_synopsis_ink_dimmed()).resolve_now();
+        assert!(
+            radio_labelled(&tree, &dimmed).is_some(),
+            "the Synopsis page has no Dimmed segment"
+        );
+        let Some(target) = radio_labelled(&tree, &normal) else {
+            panic!("the Synopsis page has no Normal segment");
+        };
+        crate::test_support::click(&mut tree, target);
+        settle(&mut tree, SizeProposal::exact(CARD_W, CARD_H));
+        assert_eq!(ink.get(), crate::shared::SynopsisInk::Normal);
+
+        // Reset puts the segment back too: the control follows the stored value.
+        SettingsViewModel::new(&store).reset_editor_defaults();
+        settle(&mut tree, SizeProposal::exact(CARD_W, CARD_H));
+        assert_eq!(ink.get(), crate::shared::SynopsisInk::Dimmed);
+        let Some(dimmed_cell) = radio_labelled(&tree, &dimmed) else {
+            panic!("the Dimmed segment went away");
+        };
+        assert!(
+            tree.accessibility_node(dimmed_cell).is_toggled(),
+            "after Reset the control still shows Normal"
+        );
+
+        for pane in [
+            Pane::SceneTypography,
+            Pane::NotesTypography,
+            Pane::ScratchpadTypography,
+        ] {
+            let panel = SettingsPanel::without_project();
+            panel.selected_pane.set(pane);
+            let (_, mut tree) = open_settings(&store, panel);
+            settle(&mut tree, SizeProposal::exact(CARD_W, CARD_H));
+            assert!(
+                radio_labelled(&tree, &dimmed).is_none(),
+                "{pane:?} offers a text color it does not apply"
+            );
+        }
+    });
+}
+
+/// "Synopsis — Text color" finds the Synopsis page.
+#[test]
+fn the_synopsis_text_color_is_searchable() {
+    let spec = tree_spec(false, &[]);
+    let index = super::tree::search_index(&spec, "");
+    let want = format!(
+        "{} — {}",
+        tr!(settings_page_synopsis()).resolve_now(),
+        tr!(settings_synopsis_ink()).resolve_now()
+    );
+    assert_eq!(
+        index
+            .iter()
+            .find(|(l, _)| l.resolve_now() == want)
+            .map(|(_, pane)| *pane),
+        Some(Pane::SynopsisTypography)
+    );
+}

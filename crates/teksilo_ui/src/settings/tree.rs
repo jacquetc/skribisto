@@ -367,6 +367,15 @@ pub(crate) fn search_index(spec: &[Root], work_title: &str) -> Vec<(LocalizedStr
             pane,
         ));
     }
+    // "Text color" is on the Synopsis page alone, but bare it would read as a setting
+    // for all the text, so it is named with its page like the rows above.
+    {
+        let (page, field) = (tr!(settings_page_synopsis()), tr!(settings_synopsis_ink()));
+        idx.push((
+            localized(move || format!("{} — {}", page.resolve_now(), field.resolve_now())),
+            Pane::SynopsisTypography,
+        ));
+    }
     // ── Pages: every row of the tree, off the same spec the tree is built from.
     //
     // Parents included — a section and the Typography group are pages like any

@@ -431,6 +431,7 @@ fn test_editors_view_model(app_ctx: &Rc<frontend::AppContext>) -> EditorsViewMod
         para_spacing_before: Signal::new(0.0),
         para_spacing_after: Signal::new(0.0),
         justify_new_text: Signal::new(false),
+        ink: None,
         size_range: crate::settings::TypographySizeRange::default(),
     };
     let typography = crate::settings::EditorTypographySet {

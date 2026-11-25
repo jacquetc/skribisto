@@ -33,7 +33,8 @@ use frontend::common::entities::QuoteStyle;
 use super::TEXT_SCALE_DEFAULT;
 use crate::settings::{EditorTypography, SettingsViewModel};
 use crate::shared::{
-    DimScope, DimStrength, HighlightScope, SynopsisPlacement, TabLimit, TypewriterAnchor,
+    DimScope, DimStrength, HighlightScope, SynopsisInk, SynopsisPlacement, TabLimit,
+    TypewriterAnchor,
 };
 use crate::stream::StreamIndent;
 use teksilo::prelude::{
@@ -406,6 +407,14 @@ pub(crate) fn reset_targets(vm: &SettingsViewModel) -> Vec<ResetTarget> {
             crate::SCRATCHPAD_JUSTIFY_NEW_TEXT_DEFAULT,
         ),
     ]);
+    // The synopsis's text color. Not in `typography` either: only the Synopsis
+    // bundle carries one.
+    rows.push(choice(
+        crate::SYNOPSIS_TEXT_COLOR_KEY,
+        vm.synopsis_ink(),
+        SynopsisInk::default(),
+        SynopsisInk::Normal,
+    ));
     rows.extend(typography(
         "corkboard",
         &typo.corkboard,

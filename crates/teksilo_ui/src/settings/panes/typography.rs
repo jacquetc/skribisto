@@ -7,6 +7,9 @@
 //! title is a parameter rather than three near-identical bodies.
 
 use teksilo::widgets::tooltip::TooltipContent;
+use teksilo::widgets::{Segment, SegmentedControl};
+
+use crate::shared::SynopsisInk;
 
 #[allow(unused_imports)]
 use super::super::*;
@@ -100,11 +103,40 @@ pub(crate) fn typography_rows(
         )
 }
 
+/// One segment of the synopsis's "Text color" choice, with the tooltip that says
+/// what it does.
+fn synopsis_ink_segment(ink: SynopsisInk) -> Segment {
+    let (label, key, tip) = match ink {
+        SynopsisInk::Normal => (
+            tr!(settings_synopsis_ink_normal()),
+            "settings.synopsis_ink.normal",
+            tr!(settings_synopsis_ink_tip_normal()),
+        ),
+        SynopsisInk::Dimmed => (
+            tr!(settings_synopsis_ink_dimmed()),
+            "settings.synopsis_ink.dimmed",
+            tr!(settings_synopsis_ink_tip_dimmed()),
+        ),
+    };
+    Segment::new(label).rich_tooltip_content(TooltipContent::new(key, tip))
+}
+
+/// Normal / Dimmed, bound to the synopsis's stored ink.
+fn synopsis_ink_control(ctx: &mut BuildContext, ink: Signal<SynopsisInk>) -> SegmentedControl {
+    let segments = SynopsisInk::all()
+        .into_iter()
+        .map(|choice| (choice, synopsis_ink_segment(choice)))
+        .collect();
+    super::appearance::choice_control(ctx, ink, segments)
+}
+
 /// One per-editor-type typography page (Scene / Synopsis / Notes): [`typography_rows`]
-/// under its own page heading, then the switch that starts a new text of this kind
-/// justified. Distraction-free and Corkboard append the same typography rows into
-/// pages of their own alongside other fields, but not the switch: they dress texts
-/// whose kind already has one (see `EditorTypography::justify_new_text`).
+/// under its own page heading, the synopsis's text color on the one page whose bundle
+/// carries it, then the switch that starts a new text of this kind justified.
+/// Distraction-free and Corkboard append the same typography rows into pages of their
+/// own alongside other fields, but neither of the other two: they dress texts whose
+/// kind already has a switch (see `EditorTypography::justify_new_text`), and they are
+/// never dimmed (see `EditorTypography::ink`).
 pub(in crate::settings) fn typography_pane(
     ctx: &mut BuildContext,
     crumbs: &Crumbs,
@@ -115,7 +147,16 @@ pub(in crate::settings) fn typography_pane(
         .label(pane.label())
         .label_gap(16.0)
         .row_spacing(14.0);
-    let form = typography_rows(ctx, form, typo)
+    let mut form = typography_rows(ctx, form, typo);
+    // In the Typography group, under the rows it sits beside: like them it only
+    // dresses the editor, and writes nothing into the text.
+    if let Some(ink) = &typo.ink {
+        form = form.line(
+            field_label(tr!(settings_synopsis_ink())),
+            synopsis_ink_control(ctx, ink.clone()),
+        );
+    }
+    let form = form
         // A group of its own: every row above only dresses the editor, while this
         // one writes an alignment into the text.
         .full_width(group(tr!(settings_group_new_text())))

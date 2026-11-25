@@ -27,7 +27,8 @@ use skribisto_model::counting::CountingMethodSetting;
 use frontend::common::entities::QuoteStyle;
 
 use crate::shared::{
-    DimScope, DimStrength, HighlightScope, SynopsisPlacement, TabLimit, TypewriterAnchor,
+    DimScope, DimStrength, HighlightScope, SynopsisInk, SynopsisPlacement, TabLimit,
+    TypewriterAnchor,
 };
 use crate::stream::StreamIndent;
 use teksilo::prelude::{
@@ -187,6 +188,17 @@ pub struct EditorTypography {
     /// the Scene or the Note it shows (see `ContentTab::main_typography`). Only the
     /// Scene, Synopsis and Notes pages have a key of their own.
     pub justify_new_text: Signal<bool>,
+    /// The colour a synopsis set in this bundle is written in: the Synopsis page's
+    /// "Text color" choice, and so `Some` on the Synopsis bundle alone.
+    ///
+    /// `None` everywhere else, which the synopsis editor reads as
+    /// [`SynopsisInk::Normal`]. That is what keeps the choice off the two other
+    /// texts built by that editor: an epigraph, set in Scene typography because it
+    /// is finished-book matter, and a synopsis printed in a reading, which the
+    /// export sets as prose. The corkboard bundle is `None` too, and the card
+    /// editor (on the card and in a card opened to write in) never reads the field:
+    /// the corkboard is always in the normal colour.
+    pub ink: Option<Signal<SynopsisInk>>,
     /// Which bundle this is, how far its `size` may travel, and where it
     /// resets to. Not a `Signal` — see [`TypographySizeRange`].
     pub size_range: TypographySizeRange,
@@ -548,6 +560,7 @@ impl SettingsViewModel {
                     crate::SCENE_JUSTIFY_NEW_TEXT_KEY,
                     crate::SCENE_JUSTIFY_NEW_TEXT_DEFAULT,
                 ),
+                ink: None,
                 size_range: TypographySizeRange::standard(
                     TypographyKind::Scene,
                     SCENE_SIZE_DEFAULT,
@@ -576,6 +589,7 @@ impl SettingsViewModel {
                     crate::SYNOPSIS_JUSTIFY_NEW_TEXT_KEY,
                     crate::SYNOPSIS_JUSTIFY_NEW_TEXT_DEFAULT,
                 ),
+                ink: Some(store.signal(crate::SYNOPSIS_TEXT_COLOR_KEY, SynopsisInk::default())),
                 size_range: TypographySizeRange::standard(
                     TypographyKind::Synopsis,
                     SYNOPSIS_SIZE_DEFAULT,
@@ -600,6 +614,7 @@ impl SettingsViewModel {
                     crate::NOTES_JUSTIFY_NEW_TEXT_KEY,
                     crate::NOTES_JUSTIFY_NEW_TEXT_DEFAULT,
                 ),
+                ink: None,
                 size_range: TypographySizeRange::standard(
                     TypographyKind::Notes,
                     NOTES_SIZE_DEFAULT,
@@ -630,6 +645,7 @@ impl SettingsViewModel {
                     crate::SYNOPSIS_JUSTIFY_NEW_TEXT_KEY,
                     crate::SYNOPSIS_JUSTIFY_NEW_TEXT_DEFAULT,
                 ),
+                ink: None,
                 size_range: TypographySizeRange::standard(
                     TypographyKind::Corkboard,
                     CORKBOARD_SIZE_DEFAULT,
@@ -663,6 +679,7 @@ impl SettingsViewModel {
                     crate::SCENE_JUSTIFY_NEW_TEXT_KEY,
                     crate::SCENE_JUSTIFY_NEW_TEXT_DEFAULT,
                 ),
+                ink: None,
                 size_range: TypographySizeRange::standard(
                     TypographyKind::DistractionFree,
                     DISTRACTION_FREE_SIZE_DEFAULT,
@@ -692,6 +709,7 @@ impl SettingsViewModel {
                     crate::SCRATCHPAD_JUSTIFY_NEW_TEXT_KEY,
                     crate::SCRATCHPAD_JUSTIFY_NEW_TEXT_DEFAULT,
                 ),
+                ink: None,
                 size_range: TypographySizeRange::standard(
                     TypographyKind::Scratchpad,
                     SCRATCHPAD_SIZE_DEFAULT,
@@ -962,6 +980,14 @@ impl SettingsViewModel {
             distraction_free: self.distraction_free_typo.clone(),
             scratchpad: self.scratchpad_typo.clone(),
         }
+    }
+
+    /// The colour a synopsis is written in (Settings ▸ Editor ▸ Synopsis ▸ Text
+    /// color): the same live signal as the Synopsis bundle's
+    /// [`EditorTypography::ink`], since the store caches one signal per key.
+    pub fn synopsis_ink(&self) -> Signal<SynopsisInk> {
+        self.store
+            .signal(crate::SYNOPSIS_TEXT_COLOR_KEY, SynopsisInk::default())
     }
 
     /// The corkboard card synopsis typography bundle — bound by the Corkboard
@@ -1645,6 +1671,60 @@ mod tests {
         );
         let reopened = SettingsViewModel::new(&store);
         assert_eq!(reopened.text_contrast().get(), TextContrastLevel::Strongest);
+    }
+
+    /// **The synopsis's text color lives on the Synopsis bundle alone, survives a
+    /// restart, and comes back from Reset.**
+    ///
+    /// Every other bundle must have none: the synopsis editor reads `None` as the
+    /// normal colour, and that is the only thing keeping an epigraph (set in Scene
+    /// typography) and the scratchpad from being dimmed with the synopsis.
+    #[test]
+    fn the_synopsis_ink_is_the_synopsis_bundles_alone_persists_and_resets() {
+        let store = temp_store();
+        let vm = SettingsViewModel::new(&store);
+        let t = vm.editor_typography();
+        assert!(
+            [
+                &t.scene,
+                &t.notes,
+                &t.corkboard,
+                &t.distraction_free,
+                &t.scratchpad
+            ]
+            .iter()
+            .all(|b| b.ink.is_none()),
+            "only the Synopsis bundle may carry a text color"
+        );
+        let Some(ink) = t.synopsis.ink.clone() else {
+            panic!("the Synopsis bundle has no text color");
+        };
+        assert_eq!(
+            ink.get(),
+            SynopsisInk::Dimmed,
+            "an existing synopsis must look exactly as it did"
+        );
+
+        // The bundle's signal and the view-model's are one: a choice made on the
+        // Synopsis page reaches every editor already holding the bundle.
+        vm.synopsis_ink().set(SynopsisInk::Normal);
+        assert_eq!(ink.get(), SynopsisInk::Normal);
+
+        store.flush_now().expect("flush the store");
+        let restarted = SettingsStore::open(store.path().to_path_buf()).expect("reopen");
+        let reopened = SettingsViewModel::new(&restarted);
+        assert_eq!(reopened.synopsis_ink().get(), SynopsisInk::Normal);
+        assert_eq!(
+            reopened
+                .editor_typography()
+                .synopsis
+                .ink
+                .map(|ink| ink.get()),
+            Some(SynopsisInk::Normal)
+        );
+
+        vm.reset_editor_defaults();
+        assert_eq!(ink.get(), SynopsisInk::Dimmed);
     }
 
     /// The synopsis placement and its column width round-trip the store and come

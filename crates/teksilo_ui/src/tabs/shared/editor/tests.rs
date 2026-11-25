@@ -13,6 +13,7 @@ fn test_typo() -> EditorTypography {
         para_spacing_before: Signal::new(0.0),
         para_spacing_after: Signal::new(0.0),
         justify_new_text: Signal::new(false),
+        ink: None,
         size_range: crate::settings::TypographySizeRange::default(),
     }
 }
@@ -1215,4 +1216,51 @@ fn an_edit_in_a_scratchpad_calls_the_callers_on_change() {
     let _ = tree.render();
     assert_eq!(doc.to_plain_text().unwrap_or_default(), "x");
     assert!(changes.get() > 0, "on_change did not run after an edit");
+}
+
+/// **A synopsis is written in the colour its bundle names, and follows a change to it
+/// without being rebuilt.**
+///
+/// The prop the editor is handed is resolved against a real theme, light and dark, the
+/// way the editor resolves it at every paint: Dimmed is the theme's secondary text,
+/// Normal the manuscript's own ink (`editor_fg`, which differs from the interface's
+/// `text_primary` in the dark theme). Changing the setting moves the *same* prop, which
+/// is what lets an open synopsis repaint in place.
+#[test]
+fn a_synopsis_is_inked_as_its_bundle_says_and_follows_the_setting() {
+    use crate::shared::SynopsisInk;
+    let ink = Signal::new(SynopsisInk::Dimmed);
+    let typo = EditorTypography {
+        ink: Some(ink.clone()),
+        ..test_typo()
+    };
+    let prop = super::synopsis::synopsis_ink(&typo);
+    assert!(
+        prop.is_bound(),
+        "the ink must follow the setting, not a copy of it"
+    );
+    for theme in [crate::style::light(), crate::style::dark()] {
+        ink.set(SynopsisInk::Dimmed);
+        assert_eq!(prop.resolve(&theme, true), theme.colors.text_secondary);
+        ink.set(SynopsisInk::Normal);
+        assert_eq!(prop.resolve(&theme, true), theme.colors.editor_fg);
+    }
+    let dark = crate::style::dark();
+    assert_ne!(
+        dark.colors.editor_fg, dark.colors.text_primary,
+        "if the two met, this test could not tell the manuscript ink from the interface's"
+    );
+}
+
+/// **An epigraph is never dimmed.** It is built by the synopsis editor but set in a
+/// bundle with no ink of its own (Scene typography, or distraction-free), which this
+/// editor reads as the manuscript's colour, whatever the Synopsis page says.
+#[test]
+fn a_bundle_without_an_ink_writes_in_the_manuscript_colour() {
+    let typo = test_typo();
+    assert!(typo.ink.is_none());
+    let prop = super::synopsis::synopsis_ink(&typo);
+    for theme in [crate::style::light(), crate::style::dark()] {
+        assert_eq!(prop.resolve(&theme, true), theme.colors.editor_fg);
+    }
 }

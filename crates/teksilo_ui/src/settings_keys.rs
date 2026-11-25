@@ -370,6 +370,9 @@ pub const SYNOPSIS_PARA_SPACING_AFTER_KEY: &str = "editor.synopsis.para_spacing_
 pub const SYNOPSIS_PARA_SPACING_AFTER_DEFAULT: f32 = 8.0;
 pub const SYNOPSIS_JUSTIFY_NEW_TEXT_KEY: &str = "editor.synopsis.justify_new_text";
 pub const SYNOPSIS_JUSTIFY_NEW_TEXT_DEFAULT: bool = false;
+/// The colour a synopsis is written in: a [`crate::shared::SynopsisInk`], stored by
+/// variant name. Its default is the type's own, `Dimmed`.
+pub const SYNOPSIS_TEXT_COLOR_KEY: &str = "editor.synopsis.text_color";
 
 /// Notes editor typography.
 pub const NOTES_FONT_FAMILY_KEY: &str = "editor.notes.font_family";
@@ -1361,6 +1364,15 @@ pub static SETTINGS: &[SettingSpec] = &[
         check: check::<bool>,
         doc: "Justify the first paragraph typed into an empty synopsis, in every synopsis \
               editor including the corkboard's cards.",
+    },
+    SettingSpec {
+        key: crate::SYNOPSIS_TEXT_COLOR_KEY,
+        ty: "one of: Normal | Dimmed",
+        default: || val(crate::shared::SynopsisInk::default()),
+        check: check::<crate::shared::SynopsisInk>,
+        doc: "The colour of a synopsis: Normal (the manuscript's) or Dimmed (the theme's \
+              secondary text colour). Not the corkboard (its cards and a card opened \
+              to write in), nor an epigraph, which are always Normal.",
     },
     SettingSpec {
         key: crate::NOTES_JUSTIFY_NEW_TEXT_KEY,

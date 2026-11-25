@@ -1,3 +1,10 @@
+Version: 3.5.1
+Date: 2026-11-25
+Type: stable
+Description:
+- "Settings ▸ Editor ▸ Synopsis has a new choice, Text color. Dimmed writes synopses in the softer color they have always had, so they read as notes beside your text. Normal writes them in the same color as your text, which is easier to read for long. The corkboard keeps the normal color as before, on its cards and in a card you open"
+- "Epigraphs are now in the same color as your text. They were in the softer color of synopses, though an epigraph is part of the book. With Read as exported on, the synopses a style prints are in the text's color too, as the export shows them"
+---
 Version: 3.5.0
 Date: 2026-11-25
 Type: stable
