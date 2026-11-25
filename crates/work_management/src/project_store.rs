@@ -213,13 +213,6 @@ impl<T> WorkScoped<T> {
         self.store.with_by_work(self.work, f)
     }
 
-    pub fn get_or_default(&self) -> T
-    where
-        T: Clone + Default,
-    {
-        self.get().unwrap_or_default()
-    }
-
     pub fn set(&self, value: T) {
         self.store.set_by_work(self.work, value);
     }

@@ -152,16 +152,6 @@ pub fn bundle_relative(raw: &str) -> Result<PathBuf, UnsafePath> {
     Ok(path.to_path_buf())
 }
 
-/// Validate `raw` and join it onto `root`.
-///
-/// The pairing every caller actually wants, kept here so no call site can
-/// perform the join and forget the check. `context` names what was being read or
-/// written, for the error message.
-pub fn join_checked(root: &Path, raw: &str, context: &str) -> anyhow::Result<PathBuf> {
-    let rel = bundle_relative(raw).map_err(|e| anyhow::anyhow!("{context}: {e}"))?;
-    Ok(root.join(rel))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -303,13 +293,5 @@ mod tests {
         assert_eq!(e.raw, "../secret");
         assert!(e.to_string().contains("../secret"), "{e}");
         assert!(e.to_string().contains(".."), "{e}");
-    }
-
-    #[test]
-    fn join_checked_refuses_rather_than_escaping() {
-        let root = Path::new("/tmp/bundle");
-        assert!(join_checked(root, "assets/a.png", "asset").is_ok());
-        let err = join_checked(root, "/etc/passwd", "asset").unwrap_err();
-        assert!(err.to_string().contains("asset"), "{err}");
     }
 }

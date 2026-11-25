@@ -29,7 +29,6 @@ base64 = "0.22"
 # The observed-shape fence reads the census and parses what the builders write.
 serde_json = "1.0"
 roxmltree = "0.21.1"
-tempfile = "3"
 
 [lints]
 workspace = true

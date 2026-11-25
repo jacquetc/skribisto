@@ -1041,15 +1041,6 @@ impl SearchReplaceViewModel {
                 .contains(&(result_id, char_start))
     }
 
-    /// Tick/untick one occurrence for Replace All.
-    pub fn toggle_excluded_occurrence(&self, result_id: u64, char_start: i64) {
-        let excluded = self
-            .excluded_occurrences
-            .get()
-            .contains(&(result_id, char_start));
-        self.set_excluded_occurrence(result_id, char_start, !excluded);
-    }
-
     /// Set whether one occurrence is excluded from Replace All.
     ///
     /// Ticking an occurrence back on inside a row that is excluded whole also
@@ -1073,18 +1064,6 @@ impl SearchReplaceViewModel {
             self.excluded_occurrences.set(set);
             self.sync_dismissed();
         }
-    }
-
-    /// How many of `result_id`'s listed occurrences are ticked out on their own.
-    ///
-    /// What a parent row's part-ticked state is drawn from, together with the row's
-    /// own `occurrence_count`.
-    pub fn excluded_occurrence_count(&self, result_id: u64) -> usize {
-        self.excluded_occurrences
-            .get()
-            .iter()
-            .filter(|(row, _)| *row == result_id)
-            .count()
     }
 
     /// Whether Replace All may run: a non-empty query produced results, the scan

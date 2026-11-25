@@ -220,12 +220,6 @@ pub struct ImportPlan {
     pub diagnostics: Vec<ImportDiagnostic>,
 }
 
-impl ImportPlan {
-    pub fn included_rows(&self) -> impl Iterator<Item = &PlannedRow> {
-        self.rows.iter().filter(|r| r.included)
-    }
-}
-
 /// What one row stores, assembled from its blocks and proved.
 ///
 /// Narrow on purpose: everything here follows from the row's own blocks, and nothing

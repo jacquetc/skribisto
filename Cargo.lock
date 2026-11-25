@@ -5888,7 +5888,6 @@ dependencies = [
  "base64 0.22.1",
  "roxmltree 0.21.1",
  "serde_json",
- "tempfile",
  "zip 9.1.2",
 ]
 
@@ -6735,7 +6734,6 @@ dependencies = [
  "csv",
  "dhat",
  "dirs",
- "encoding_rs",
  "fluent-syntax",
  "interprocess",
  "jiff",
@@ -6768,7 +6766,6 @@ dependencies = [
  "tempfile",
  "toml 1.1.5+spec-1.1.0",
  "unicode-normalization",
- "unicode-segmentation",
  "ureq",
  "uuid",
  "windows",

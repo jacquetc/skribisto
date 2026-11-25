@@ -54,7 +54,7 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result};
 use chrono::{DateTime, Utc};
 
-use super::bundle::{CommentFile, ItemsFile};
+use super::bundle::ItemsFile;
 use super::history::{self, HistoryLog};
 use super::shape::{SkribShape, detect_shape, folder_root};
 use common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
@@ -222,17 +222,6 @@ pub trait VersionSource {
     }
     /// One blob's prose.
     fn prose(&self, v: &VersionRef, blob_path: &str) -> Result<String>;
-    /// The comment thread stored beside one prose blob, if any.
-    ///
-    /// Free, and nothing else in the category offers it: comment sidecars are
-    /// derivable from the blob's own name (`…djot` → `….comments.ron`), so the
-    /// same read path that recovers old prose also recovers *what the note on that
-    /// paragraph said before it was resolved*.
-    ///
-    /// A body past the Djot ceiling ([`crate::djot_depth`]) fails the read, naming
-    /// the sidecar, exactly as [`Self::prose`] fails on a blob past it: a comment's
-    /// body and a reply's are Djot the comment cards parse.
-    fn comments(&self, v: &VersionRef, blob_path: &str) -> Result<Vec<CommentFile>>;
 }
 
 /// What a complete copy of the project says about one role of `row`, the row
@@ -337,10 +326,6 @@ impl VersionSource for OneRow<'_> {
     fn prose(&self, v: &VersionRef, blob_path: &str) -> Result<String> {
         self.source.prose(v, blob_path)
     }
-
-    fn comments(&self, v: &VersionRef, blob_path: &str) -> Result<Vec<CommentFile>> {
-        self.source.comments(v, blob_path)
-    }
 }
 
 // ── backups ────────────────────────────────────────────────────────────────────
@@ -411,29 +396,6 @@ impl VersionSource for BackupVersions {
         // backup, which travels exactly as a project does.
         crate::djot_depth::admit(text).with_context(|| format!("version blob {blob_path}"))
     }
-
-    fn comments(&self, v: &VersionRef, blob_path: &str) -> Result<Vec<CommentFile>> {
-        let sidecar = comments_sidecar(blob_path);
-        match read_entry(&v.path, &sidecar) {
-            Ok(text) => {
-                let mut threads: Vec<CommentFile> = ron::from_str(&text).unwrap_or_default();
-                // The same refusal `prose` gives a blob past the ceiling, and for the
-                // same reason: whoever asks for these parses every body in them.
-                crate::djot_depth::admit_comments(&mut threads)
-                    .with_context(|| format!("version comments {sidecar}"))?;
-                Ok(threads)
-            }
-            // No sidecar means no comments — the common case, not a failure.
-            Err(_) => Ok(Vec::new()),
-        }
-    }
-}
-
-/// `12-the-lamp.scene.djot` → `12-the-lamp.scene.comments.ron`, the naming
-/// `folder_io::comments_file_name` already writes.
-fn comments_sidecar(blob_path: &str) -> String {
-    let stem = blob_path.strip_suffix(".djot").unwrap_or(blob_path);
-    format!("{stem}.comments.ron")
 }
 
 /// Read one entry out of a bundle, whatever shape it is, without parsing the rest.
@@ -833,29 +795,11 @@ impl VersionSource for LogVersions {
             .cloned()
             .ok_or_else(|| anyhow::anyhow!("history blob {hash} is not in the log"))
     }
-
-    fn comments(&self, _v: &VersionRef, _blob_path: &str) -> Result<Vec<CommentFile>> {
-        // The log deliberately stores prose only. Comments live in sidecars beside
-        // the *bundle's* blobs, which a backup carries and this log does not —
-        // recording them here would double the log's size for a far rarer question.
-        Ok(Vec::new())
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn a_comment_sidecar_is_derived_from_its_blob_name() {
-        assert_eq!(
-            comments_sidecar("binders/01-manuscript/text/12-the-lamp.scene.djot"),
-            "binders/01-manuscript/text/12-the-lamp.scene.comments.ron",
-        );
-        // Defensive: a name without the expected suffix still produces something
-        // addressable rather than panicking.
-        assert_eq!(comments_sidecar("odd"), "odd.comments.ron");
-    }
 
     /// A nil uid must fail the index loudly.
     ///

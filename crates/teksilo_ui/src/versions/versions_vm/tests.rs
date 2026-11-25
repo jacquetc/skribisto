@@ -1195,14 +1195,6 @@ impl VersionSource for BookInEveryBackup {
     ) -> anyhow::Result<String> {
         Ok("A book about a lighthouse.".into())
     }
-
-    fn comments(
-        &self,
-        _v: &skrib_format::versions::VersionRef,
-        _blob_path: &str,
-    ) -> anyhow::Result<Vec<skrib_format::CommentFile>> {
-        Ok(Vec::new())
-    }
 }
 
 /// A log with nothing in it.
@@ -1229,14 +1221,6 @@ impl VersionSource for NoLog {
         _blob_path: &str,
     ) -> anyhow::Result<String> {
         anyhow::bail!("the log holds nothing")
-    }
-
-    fn comments(
-        &self,
-        _v: &skrib_format::versions::VersionRef,
-        _blob_path: &str,
-    ) -> anyhow::Result<Vec<skrib_format::CommentFile>> {
-        Ok(Vec::new())
     }
 }
 

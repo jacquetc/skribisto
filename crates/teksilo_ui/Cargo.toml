@@ -235,17 +235,9 @@ zip = "9.1.2"
 spellbook = "0.4"
 # The misspelling predicate and suggestion ranking, store- and widget-free.
 spellcheck_engine = { workspace = true }
-# UAX#29 word segmentation — spellbook delegates tokenisation to the caller, and
-# a naive `split_whitespace` would butcher accented words and contractions.
-unicode-segmentation = "1"
 # The Resources dock sorts by title as a reader looks a title up, accents aside
 # (`resources::resources_vm::sorted_by_title`). Already in the tree through `skrib_format`.
 unicode-normalization = "0.1"
-# Transcode a system dictionary that declares a legacy 8-bit encoding (`SET
-# ISO8859-1`) to UTF-8 before spellbook, which takes `&str` and does not itself
-# honour the `.aff` `SET` directive. Our own downloads are UTF-8, so this only
-# ever runs on tier-2 system dictionaries.
-encoding_rs = "0.8"
 # `automation` enables the debug-only in-app automation bridge
 # (`install_automation_bridge_in_debug()`); a no-op in release. `async` enables
 # the main-thread async executor (`ctx.spawn_local`/`spawn_local_with` +

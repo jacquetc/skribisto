@@ -231,21 +231,6 @@ impl TreeNode {
             updated_at: None,
         }
     }
-
-    /// A binder row carrying its entity timestamps.
-    pub fn binder_stamped(
-        name: String,
-        binder_id: u64,
-        uid: Uuid,
-        created_at: chrono::DateTime<chrono::Utc>,
-        updated_at: chrono::DateTime<chrono::Utc>,
-    ) -> Self {
-        Self {
-            created_at: Some(created_at),
-            updated_at: Some(updated_at),
-            ..Self::binder(name, binder_id, uid)
-        }
-    }
 }
 
 /// Reorder hook injected by the view-model: `(dragged, target, position) ->

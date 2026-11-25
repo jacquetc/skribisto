@@ -2203,19 +2203,6 @@ impl ImportDocumentViewModel {
 
     // ── block-level decisions ───────────────────────────────────────────────
 
-    /// The blocks that differ between the project's prose and the returning
-    /// file's, for one merge row.
-    ///
-    /// Empty when the row has no destination side, which is also when the
-    /// Compare button is hidden — there is nothing to compare a new row against.
-    pub fn hunks_for(&self, row: &MergeRowView) -> Vec<super::hunk_merge::Hunk> {
-        let (local, incoming) = self.compare_prose(row);
-        if local.is_empty() && incoming.is_empty() {
-            return Vec::new();
-        }
-        super::hunk_merge::hunks(&local, &incoming)
-    }
-
     /// Which of this row's hunks the writer has taken.
     pub fn accepted_hunks(&self, key: MergeRowKey) -> std::collections::BTreeSet<usize> {
         self.hunk_decisions

@@ -332,20 +332,6 @@ impl SearchTreeModel {
         !self.slice.expanded_keys().is_empty()
     }
 
-    /// Where every fetched occurrence of one result row starts.
-    ///
-    /// What "replace just this one" needs: the replace runs over the whole result
-    /// set minus exclusions, so singling one occurrence out means naming all the
-    /// others. Empty for a row nobody has opened, which is correct — nothing there
-    /// can be singled out yet either.
-    pub fn occurrence_offsets(&self, result_id: u64) -> Vec<i64> {
-        self.fetched
-            .borrow()
-            .get(&result_id)
-            .map(|list| list.iter().map(|o| o.char_start).collect())
-            .unwrap_or_default()
-    }
-
     /// Whether `TEKSILO_SEARCH_DEBUG` asked for a trace of the fetch, in a build
     /// with the `debug-traces` feature.
     ///

@@ -30,7 +30,6 @@
 //! it the moment enumerating Books gets inconvenient.
 
 use frontend::AppContext;
-use frontend::commands::binder_item_commands;
 use frontend::common::entities::BinderItemSubRole;
 
 use crate::models::binder_stream::ordered_flat_items;
@@ -74,22 +73,6 @@ pub fn book_containing(ctx: &AppContext, work_id: u64, item_id: u64) -> Option<u
         }
     }
     None
-}
-
-/// The item's own `books` field, read fresh from the store.
-///
-/// Used when a fresh entry is filed *from* an existing note (a folder's "apply to
-/// children" cousin, at creation time rather than by hand): the source is itself
-/// unscoped by binder position, so copying its declared value once is the honest
-/// pre-set, not a positional guess. A one-shot snapshot, never a live binding: see
-/// [`crate::story_bible::modal`]'s own doc for why the copy must never track the
-/// source afterward.
-pub fn declared_books(ctx: &AppContext, item_id: u64) -> Vec<u64> {
-    binder_item_commands::get_binder_item(ctx, &item_id)
-        .ok()
-        .flatten()
-        .map(|it| it.books)
-        .unwrap_or_default()
 }
 
 #[cfg(test)]

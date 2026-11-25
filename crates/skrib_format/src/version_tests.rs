@@ -473,31 +473,6 @@ fn a_silent_moment_does_not_split_one_change_into_two() {
     );
 }
 
-#[test]
-fn historical_comments_come_back_with_the_prose_they_annotate() {
-    // Nothing else in the category offers this, and it costs one extra entry read:
-    // the sidecar's name is derivable from the blob's own.
-    let b = bundle();
-    let (_dir, path, _back) = round_trip(&b, SkribShape::ZipFile);
-    let src = backup_source(std::path::Path::new("/unused"), &path);
-    let v = super::versions::VersionRef {
-        path: std::path::PathBuf::from(&path),
-        taken_at: now(),
-        source: SourceKind::Backup,
-    };
-    let index = src.index(&v).expect("index");
-    let (_, blob, _) = index
-        .rows
-        .iter()
-        .flat_map(|r| &r.prose)
-        .next()
-        .expect("a prose blob");
-
-    // The fixture has no comments; the contract is that this is an empty answer,
-    // never an error, because "no sidecar" is the common case.
-    assert!(src.comments(&v, blob).expect("comments").is_empty());
-}
-
 // ── change detection ───────────────────────────────────────────────────────────
 
 use super::changes::{Timeline, timeline_for};
@@ -904,13 +879,6 @@ impl VersionSource for Counted<'_> {
     fn prose(&self, v: &VersionRef, blob_path: &str) -> anyhow::Result<String> {
         self.inner.prose(v, blob_path)
     }
-    fn comments(
-        &self,
-        v: &VersionRef,
-        blob_path: &str,
-    ) -> anyhow::Result<Vec<super::bundle::CommentFile>> {
-        self.inner.comments(v, blob_path)
-    }
 }
 
 /// Asking for each of a row's roles in turn reads each backup once, and every
@@ -1044,9 +1012,8 @@ fn a_backup_blob_nested_past_the_djot_ceiling_is_refused_by_name() {
 }
 
 /// A past version whose paragraph holds more lines than the ceiling is handed to the
-/// diff pane joined into one line, as the load joins the live prose, and a comment's or
-/// a reply's body beside it the same way, in either shape of backup. Before, the version
-/// was refused as unreadable, and so was the comment thread.
+/// diff pane joined into one line, as the load joins the live prose. Before, the version
+/// was refused as unreadable.
 #[test]
 fn a_backup_blob_whose_lines_the_load_joins_is_handed_over_joined() {
     for (name, held, _) in super::djot_depth::tests::joined_by_the_load() {
@@ -1074,185 +1041,6 @@ fn a_backup_blob_whose_lines_the_load_joins_is_handed_over_joined() {
         match src.prose(&v, blob) {
             Ok(text) => assert_eq!(text, joined, "{name}"),
             Err(e) => panic!("{name}: {e:#}"),
-        }
-
-        for shape in [SkribShape::ZipFile, SkribShape::ExplodedFolder] {
-            for reply in [false, true] {
-                let dir = tempfile::tempdir().expect("tmp");
-                let mut b = bundle();
-                let (blob, _) = plant_in_a_thread(&mut b, reply, &held);
-                let path = write_backup_shaped(&b, dir.path(), now(), shape);
-                let src = backups_in(dir.path(), &b);
-                let v = super::versions::VersionRef {
-                    path: std::path::PathBuf::from(&path),
-                    taken_at: now(),
-                    source: SourceKind::Backup,
-                };
-                let threads = match src.comments(&v, &blob) {
-                    Ok(threads) => threads,
-                    Err(e) => panic!("{name}, {shape:?}, reply {reply}: {e:#}"),
-                };
-                let bodies: Vec<&String> = threads
-                    .iter()
-                    .flat_map(|c| std::iter::once(&c.body).chain(c.replies.iter().map(|r| &r.body)))
-                    .collect();
-                assert!(
-                    bodies.contains(&&joined),
-                    "{name}, {shape:?}, reply {reply}"
-                );
-                assert!(!bodies.contains(&&held), "{name}, {shape:?}, reply {reply}");
-                assert_eq!(parse_every_body(&threads), Ok(()), "{name}, {shape:?}");
-            }
-        }
-    }
-}
-
-/// Write `b` as a backup into `dir` in `shape`, stamped at `at`, and return its path.
-fn write_backup_shaped(
-    b: &WorkBundle,
-    dir: &std::path::Path,
-    at: chrono::DateTime<chrono::Utc>,
-    shape: SkribShape,
-) -> String {
-    let mut copy = b.clone();
-    super::mark_as_backup(&mut copy, "/original/Novel.skrib".to_string(), at);
-    let path = dir
-        .join("Novel-20260801-100000.skrib")
-        .to_string_lossy()
-        .into_owned();
-    write_bundle(&path, shape, &copy).expect("write backup");
-    path
-}
-
-/// Put `text` in the body of the first comment beside a prose blob, or of the first
-/// reply there, and return that blob's path and its comment sidecar's.
-fn plant_in_a_thread(b: &mut WorkBundle, reply: bool, text: &str) -> (String, String) {
-    for bb in &mut b.binders {
-        for item in &mut bb.items {
-            for (content, thread) in &mut item.comments {
-                let Some(comment) = thread.iter_mut().find(|c| !reply || !c.replies.is_empty())
-                else {
-                    continue;
-                };
-                if reply {
-                    comment.replies[0].body = text.to_string();
-                } else {
-                    comment.body = text.to_string();
-                }
-                let Some(prose_ref) = item.item.prose_refs.iter().find(|p| p.file_id == *content)
-                else {
-                    panic!("a comment sidecar sits beside a prose blob");
-                };
-                let blob = prose_ref.path.clone();
-                let sidecar = super::folder_io::comments_file_name(&blob);
-                return (blob, sidecar);
-            }
-        }
-    }
-    panic!("the fixture must hold a comment thread with a reply");
-}
-
-/// Parse every body in `threads` from a long operation's stack, as the comment cards
-/// and the exporter do.
-fn parse_every_body(threads: &[super::CommentFile]) -> Result<(), String> {
-    for comment in threads {
-        let bodies = std::iter::once(&comment.body).chain(comment.replies.iter().map(|r| &r.body));
-        for body in bodies {
-            super::djot_depth::tests::parse_on_a_long_operation_stack(body.clone())?;
-        }
-    }
-    Ok(())
-}
-
-/// A backup carries its comment sidecars, and a comment's body and each reply's are
-/// Djot the comment cards parse, exactly as the diff pane parses a past version's
-/// prose. Every shape of nesting past the ceiling, in either body, in either shape of
-/// backup, is refused by naming the sidecar. Before `comments` held the bodies to the
-/// ceiling it handed every one of them over, and the parse below aborted the process.
-#[test]
-fn a_backup_comment_nested_past_the_djot_ceiling_is_refused_by_name() {
-    let nested = super::djot_depth::tests::past_the_parsers_limit()
-        .into_iter()
-        .map(|(name, text)| (name, text, "nests"));
-    // With the Djot the parser cannot be given though it nests nothing.
-    for (name, deep, says) in nested.chain(super::djot_depth::tests::beyond_the_parser()) {
-        for shape in [SkribShape::ZipFile, SkribShape::ExplodedFolder] {
-            for reply in [false, true] {
-                let dir = tempfile::tempdir().expect("tmp");
-                let mut b = bundle();
-                let (blob, sidecar) = plant_in_a_thread(&mut b, reply, &deep);
-                let path = write_backup_shaped(&b, dir.path(), now(), shape);
-                let src = backups_in(dir.path(), &b);
-                let v = super::versions::VersionRef {
-                    path: std::path::PathBuf::from(&path),
-                    taken_at: now(),
-                    source: SourceKind::Backup,
-                };
-
-                match src.comments(&v, &blob) {
-                    Err(e) => {
-                        let msg = format!("{e:#}");
-                        assert!(
-                            msg.contains(&sidecar),
-                            "{name}, {shape:?}: names the sidecar: {msg}"
-                        );
-                        assert!(msg.contains(says), "{name}, {shape:?}: {msg}");
-                        assert!(
-                            msg.contains(if reply {
-                                "reply 1 to comment"
-                            } else {
-                                "comment 1"
-                            }),
-                            "{name}, {shape:?}: names the body: {msg}"
-                        );
-                    }
-                    Ok(threads) => {
-                        let parsed = parse_every_body(&threads);
-                        panic!(
-                            "{name}, {shape:?}: a body past the ceiling was handed over: {parsed:?}"
-                        );
-                    }
-                }
-            }
-        }
-    }
-}
-
-/// The same bodies at the ceiling come back whole, from either shape of backup, and
-/// parse from a long operation's stack.
-#[test]
-fn a_backup_comment_at_the_djot_ceiling_comes_back_and_parses() {
-    for marker in ["- ", "1. ", "(iv) ", "- [ ] ", "[^a]: ", ": ", "> "] {
-        let text = super::djot_depth::tests::one_line(marker, super::MAX_DJOT_DEPTH);
-        for shape in [SkribShape::ZipFile, SkribShape::ExplodedFolder] {
-            let dir = tempfile::tempdir().expect("tmp");
-            let mut b = bundle();
-            let (blob, _) = plant_in_a_thread(&mut b, false, &text);
-            plant_in_a_thread(&mut b, true, &text);
-            let path = write_backup_shaped(&b, dir.path(), now(), shape);
-            let src = backups_in(dir.path(), &b);
-            let v = super::versions::VersionRef {
-                path: std::path::PathBuf::from(&path),
-                taken_at: now(),
-                source: SourceKind::Backup,
-            };
-
-            let threads = match src.comments(&v, &blob) {
-                Ok(threads) => threads,
-                Err(e) => panic!("{marker:?}, {shape:?}: {e:#}"),
-            };
-            let at_the_ceiling = threads
-                .iter()
-                .flat_map(|c| std::iter::once(&c.body).chain(c.replies.iter().map(|r| &r.body)))
-                .filter(|body| **body == text)
-                .count();
-            assert_eq!(
-                at_the_ceiling, 2,
-                "{marker:?}, {shape:?}: both bodies come back"
-            );
-            if let Err(e) = parse_every_body(&threads) {
-                panic!("{marker:?}, {shape:?}: the parser refused a body: {e}");
-            }
         }
     }
 }

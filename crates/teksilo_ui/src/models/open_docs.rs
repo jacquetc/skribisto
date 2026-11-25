@@ -728,16 +728,6 @@ impl OpenDoc {
         )
     }
 
-    /// The same for the synopsis document.
-    pub fn footnote_binding_synopsis(&self) -> Option<crate::footnotes::FootnoteBinding> {
-        Some(
-            self.footnotes
-                .borrow()
-                .clone()?
-                .binding(self.synopsis.as_ref()?.content()),
-        )
-    }
-
     /// Install the footnotes view-model on this doc (on open, and on the
     /// back-fill when `App` wires one after documents are already open).
     pub fn attach_footnotes(&self, vm: crate::footnotes::FootnotesViewModel) {

@@ -65,17 +65,6 @@ impl BucketUnit {
         }
     }
 
-    /// Roughly how long one bucket lasts. For choosing a unit against a span, not
-    /// for arithmetic on real dates — months are not all the same length.
-    pub fn approx_seconds(self) -> i64 {
-        match self {
-            BucketUnit::Hour => 3600,
-            BucketUnit::Day => 86_400,
-            BucketUnit::Week => 604_800,
-            BucketUnit::Month => 2_629_746, // the mean Gregorian month
-        }
-    }
-
     /// Coarsest last, so a caller can walk up until the buckets fit.
     pub const ASCENDING: [BucketUnit; 4] = [
         BucketUnit::Hour,
