@@ -133,6 +133,7 @@ content-part-title = 부 제목
 content-chapter-title = 장 제목
 content-epigraph-text = 머리말 인용문
 content-paratext-text = 본문 외 글
+content-scratchpad-text = 메모장
 promote-blocked-title = 장이 비어 있지 않습니다
 promote-blocked-text = 이 장에는 아직 항목 { $count }개가 있습니다. 단일 장으로 바꾸기 전에 이동하거나 휴지통에 넣으세요.
 
@@ -1840,6 +1841,7 @@ search-field-comment = 댓글
 search-field-comment-reply = 답글
 search-field-footnote = 각주
 search-field-resource = 리소스
+search-field-scratchpad = 메모장
 search-include-in-replace = 모두 바꾸기에 포함
 search-collapse-all = 모든 결과 접기
 search-replace-here = 이 항목 바꾸기

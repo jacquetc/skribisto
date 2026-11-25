@@ -74,6 +74,10 @@ fn prose_text(role: &ContentRole) -> String {
         ContentRole::ParatextText => {
             "Every place in this book is real. Every person in it is not.".to_string()
         }
+        ContentRole::ScratchpadText => {
+            "Ask the harbour master about the *second* lamp.\n\n- tide tables\n- the 1911 storm"
+                .to_string()
+        }
         // Two quotations in one row, separated by a genuine blank line — a `>`-only
         // continuation would fold them into a single blockquote. The round-trip test
         // is what pins that they stay two.
@@ -2790,6 +2794,7 @@ fn a_bundle_from_a_newer_format_is_refused() {
     // Isolated to the template axis: the fixture also carries epigraphs, which would
     // hold the floor at 6 and stop this asserting the v5 case it is named for.
     let mut bundle = build_bundle(ShapeTag::Folder);
+    strip_scratchpads(&mut bundle);
     strip_epigraphs(&mut bundle);
     strip_resources(&mut bundle);
     assert!(
@@ -3125,27 +3130,36 @@ pub(crate) fn strip_resources(bundle: &mut WorkBundle) {
     }
 }
 
-/// Drop every epigraph row (and its blob) from a bundle, so a test can isolate one
-/// floor axis from the other. Epigraph text is prose-role, so it lives in `prose_refs`
-/// with its body in `BundledItem::prose`, keyed by the same `file_id`.
-fn strip_epigraphs(bundle: &mut WorkBundle) {
+/// Drop every prose row of `role` (and its blob) from a bundle. Prose rows live in
+/// `prose_refs` with their body in `BundledItem::prose`, keyed by the same `file_id`.
+fn strip_prose_role(bundle: &mut WorkBundle, role: &ContentRole) {
     for binder in &mut bundle.binders {
         for item in &mut binder.items {
             let dropped: Vec<u64> = item
                 .item
                 .prose_refs
                 .iter()
-                .filter(|p| p.role == ContentRole::EpigraphText)
+                .filter(|p| &p.role == role)
                 .map(|p| p.file_id)
                 .collect();
-            item.item
-                .prose_refs
-                .retain(|p| p.role != ContentRole::EpigraphText);
+            item.item.prose_refs.retain(|p| &p.role != role);
             for id in dropped {
                 item.prose.remove(&id);
             }
         }
     }
+}
+
+/// Drop every epigraph row (and its blob) from a bundle, so a test can isolate one
+/// floor axis from the other.
+fn strip_epigraphs(bundle: &mut WorkBundle) {
+    strip_prose_role(bundle, &ContentRole::EpigraphText);
+}
+
+/// Drop every scratchpad row (and its blob) from a bundle, so a test can judge another
+/// axis of the read floor without the v18 one holding it up.
+pub(crate) fn strip_scratchpads(bundle: &mut WorkBundle) {
+    strip_prose_role(bundle, &ContentRole::ScratchpadText);
 }
 
 /// Each content kind raises the floor only when actually present, and each axis is
@@ -3154,19 +3168,29 @@ fn strip_epigraphs(bundle: &mut WorkBundle) {
 /// single number would lock a plain project out of the previous build the instant one
 /// tick landed.
 ///
-/// Peeled one axis at a time — epigraphs (v6) then templates (v5) — because the axes
-/// have to be separable to be worth anything: a project with templates but no epigraph
-/// must still claim 5, not 6, or every v5 build loses files it can read perfectly well.
+/// Peeled one axis at a time — scratchpads (v18), resources (v17), epigraphs (v6) then
+/// templates (v5) — because the axes have to be separable to be worth anything: a project
+/// with templates but no epigraph must still claim 5, not 6, or every v5 build loses files
+/// it can read perfectly well.
 #[test]
 fn the_floor_rises_only_for_content_that_needs_it() {
     let everything = build_bundle(ShapeTag::Folder);
     assert_eq!(
         crate::version_gate::compute_min_read_version(&everything),
+        18,
+        "scratchpads are the v18 axis and the fixture carries them"
+    );
+
+    let mut no_scratchpads = build_bundle(ShapeTag::Folder);
+    strip_scratchpads(&mut no_scratchpads);
+    assert_eq!(
+        crate::version_gate::compute_min_read_version(&no_scratchpads),
         17,
         "resources are the v17 axis and the fixture carries them"
     );
 
     let mut no_resources = build_bundle(ShapeTag::Folder);
+    strip_scratchpads(&mut no_resources);
     strip_resources(&mut no_resources);
     assert_eq!(
         crate::version_gate::compute_min_read_version(&no_resources),
@@ -3175,6 +3199,7 @@ fn the_floor_rises_only_for_content_that_needs_it() {
     );
 
     let mut no_epigraphs = build_bundle(ShapeTag::Folder);
+    strip_scratchpads(&mut no_epigraphs);
     strip_resources(&mut no_epigraphs);
     strip_epigraphs(&mut no_epigraphs);
     assert_eq!(
@@ -3184,6 +3209,7 @@ fn the_floor_rises_only_for_content_that_needs_it() {
     );
 
     let mut without = build_bundle(ShapeTag::Folder);
+    strip_scratchpads(&mut without);
     strip_resources(&mut without);
     strip_epigraphs(&mut without);
     without.note_templates.clear();
@@ -3208,12 +3234,13 @@ fn the_floor_is_recomputed_at_every_write_not_carried_over() {
     .unwrap();
     assert_eq!(
         peek_manifest(path).unwrap().format_min_read_version,
-        Some(17),
-        "resources must have raised the stamped floor"
+        Some(18),
+        "scratchpads must have raised the stamped floor"
     );
 
     let mut shed = read_bundle(path).unwrap();
-    assert_eq!(shed.manifest.format_min_read_version, Some(17));
+    assert_eq!(shed.manifest.format_min_read_version, Some(18));
+    strip_scratchpads(&mut shed);
     strip_resources(&mut shed);
     strip_epigraphs(&mut shed);
     shed.note_templates.clear();
@@ -3225,6 +3252,299 @@ fn the_floor_is_recomputed_at_every_write_not_carried_over() {
         Some(4),
         "dropping the templates must drop the floor back — nothing is sticky"
     );
+}
+
+/// `from_entities` over the sample inputs with nothing optional: no statuses, assets,
+/// resources, comments or footnotes, so the only floors left are the content rows'.
+fn bundle_from_binders(s: &SampleInputs) -> WorkBundle {
+    from_entities(
+        &s.work,
+        &s.tags,
+        &s.dict_words,
+        &[],
+        &[],
+        &[],
+        &[],
+        Default::default(),
+        &[],
+        Default::default(),
+        Some(&s.smart_punctuation),
+        &s.trash,
+        &[],
+        &[],
+        &[],
+        &[],
+        &s.binders,
+        ShapeTag::Folder,
+    )
+}
+
+/// Every file under `dir`, recursively.
+fn walk_files(dir: &Path) -> Vec<std::path::PathBuf> {
+    let mut out = Vec::new();
+    let mut stack = vec![dir.to_path_buf()];
+    while let Some(d) = stack.pop() {
+        let Ok(entries) = fs::read_dir(&d) else {
+            continue;
+        };
+        for e in entries.flatten() {
+            let p = e.path();
+            if p.is_dir() {
+                stack.push(p);
+            } else {
+                out.push(p);
+            }
+        }
+    }
+    out
+}
+
+/// Set the text of every content row of `role` in the sample inputs.
+fn set_role_text(s: &mut SampleInputs, role: &ContentRole, text: &str) {
+    for b in &mut s.binders {
+        for iwc in &mut b.items {
+            for c in &mut iwc.contents {
+                if &c.role == role {
+                    c.data = text.to_string();
+                }
+            }
+        }
+    }
+}
+
+/// A scratchpad is written as `<shortid>-<slug>.scratchpad.djot` beside the item's
+/// other prose and reads back word for word, as a `ScratchpadText` row of its item.
+#[test]
+fn a_scratchpad_round_trips_as_its_own_djot_file() {
+    let bundle = build_bundle(ShapeTag::Folder);
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("Scratch");
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+
+    let scene_item = bundle.binders[0]
+        .items
+        .iter()
+        .find(|bi| bi.item.sub_role == BinderItemSubRole::Scene)
+        .expect("the fixture has a scene");
+    let pr = scene_item
+        .item
+        .prose_refs
+        .iter()
+        .find(|p| p.role == ContentRole::ScratchpadText)
+        .expect("the scene carries a scratchpad");
+    assert!(
+        pr.path.ends_with(".scratchpad.djot"),
+        "unexpected scratchpad path {}",
+        pr.path
+    );
+    let on_disk = fs::read_to_string(root.join(&pr.path)).unwrap();
+    assert_eq!(on_disk, prose_text(&ContentRole::ScratchpadText));
+
+    let read = read_bundle(root.to_str().unwrap()).unwrap();
+    assert_round_trip(&bundle, &read);
+    let loaded = bundle_to_loaded(read, root.to_str().unwrap()).expect("load");
+    let scene = loaded.binders[0]
+        .items
+        .iter()
+        .find(|i| i.item.sub_role == BinderItemSubRole::Scene)
+        .expect("the scene reads back");
+    let scratchpad = scene
+        .contents
+        .iter()
+        .find(|c| c.role == ContentRole::ScratchpadText)
+        .expect("the scratchpad reads back as its own row");
+    assert_eq!(scratchpad.data, prose_text(&ContentRole::ScratchpadText));
+    let main = scene
+        .contents
+        .iter()
+        .find(|c| c.role == ContentRole::SceneText)
+        .expect("the scene text reads back");
+    assert_eq!(
+        main.data,
+        prose_text(&ContentRole::SceneText),
+        "the scratchpad must not leak into the scene's own prose"
+    );
+}
+
+/// Only a project with a scratchpad that holds something claims v18. The same project
+/// with every scratchpad left blank writes none of them and keeps its lower floor.
+#[test]
+fn the_floor_is_18_only_with_a_scratchpad() {
+    let s = sample_inputs();
+    let with = bundle_from_binders(&s);
+    assert_eq!(crate::version_gate::compute_min_read_version(&with), 18);
+
+    let mut blank = sample_inputs();
+    set_role_text(&mut blank, &ContentRole::ScratchpadText, "  \n\n ");
+    let without = bundle_from_binders(&blank);
+    assert!(
+        without.binders.iter().flat_map(|b| &b.items).all(|bi| bi
+            .item
+            .prose_refs
+            .iter()
+            .all(|p| p.role != ContentRole::ScratchpadText)),
+        "a blank scratchpad row must not be written"
+    );
+    assert_eq!(
+        crate::version_gate::compute_min_read_version(&without),
+        6,
+        "the epigraphs are what is left, at 6"
+    );
+}
+
+/// Emptying the last scratchpad drops the floor on the next write: the row is still in
+/// the store, but nothing of it reaches the bundle.
+#[test]
+fn emptying_the_last_scratchpad_drops_the_floor_on_the_next_write() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("Emptied");
+    let path = root.to_str().unwrap();
+
+    let mut s = sample_inputs();
+    let first = bundle_from_binders(&s);
+    let carriers = first
+        .binders
+        .iter()
+        .flat_map(|b| &b.items)
+        .filter(|bi| !bi.item.prose_refs.is_empty())
+        .count();
+    write_bundle(path, SkribShape::ExplodedFolder, &first).unwrap();
+    assert_eq!(
+        peek_manifest(path).unwrap().format_min_read_version,
+        Some(18)
+    );
+    let text_dir = root.join("binders");
+    let count_scratchpads = || {
+        walk_files(&text_dir)
+            .iter()
+            .filter(|p| p.to_string_lossy().ends_with(".scratchpad.djot"))
+            .count()
+    };
+    assert!(carriers >= 8, "the fixture must carry several scratchpads");
+    assert_eq!(count_scratchpads(), carriers, "one per content-bearing row");
+
+    set_role_text(&mut s, &ContentRole::ScratchpadText, "");
+    write_bundle(path, SkribShape::ExplodedFolder, &bundle_from_binders(&s)).unwrap();
+    assert_eq!(
+        peek_manifest(path).unwrap().format_min_read_version,
+        Some(6),
+        "no scratchpad holds anything, so the v18 floor must go"
+    );
+    assert_eq!(
+        count_scratchpads(),
+        0,
+        "the emptied scratchpads are pruned from the folder"
+    );
+}
+
+/// The epigraph gets the same treatment, which is what makes `FORMAT_VERSION`'s v6
+/// paragraph true: empty every epigraph and the next save drops back below 6.
+#[test]
+fn emptying_every_epigraph_drops_the_v6_floor() {
+    let mut s = sample_inputs();
+    set_role_text(&mut s, &ContentRole::ScratchpadText, "");
+    set_role_text(&mut s, &ContentRole::EpigraphText, "\n");
+    let bundle = bundle_from_binders(&s);
+    assert_eq!(crate::version_gate::compute_min_read_version(&bundle), 4);
+    assert!(
+        bundle.binders.iter().flat_map(|b| &b.items).all(|bi| bi
+            .item
+            .prose_refs
+            .iter()
+            .all(|p| p.role != ContentRole::EpigraphText)),
+        "a blank epigraph row must not be written"
+    );
+}
+
+/// A blank row of every other prose role is still written: a scene, a note or a synopsis
+/// is created with its item, and dropping it would move nothing.
+#[test]
+fn a_blank_scene_synopsis_or_note_row_is_still_written() {
+    let mut s = sample_inputs();
+    for role in [
+        ContentRole::SceneText,
+        ContentRole::SynopsisText,
+        ContentRole::NoteText,
+    ] {
+        set_role_text(&mut s, &role, "");
+    }
+    let bundle = bundle_from_binders(&s);
+    let scene = bundle.binders[0]
+        .items
+        .iter()
+        .find(|bi| bi.item.sub_role == BinderItemSubRole::Scene)
+        .expect("a scene");
+    let roles: Vec<&ContentRole> = scene.item.prose_refs.iter().map(|p| &p.role).collect();
+    assert!(roles.contains(&&ContentRole::SceneText));
+    assert!(roles.contains(&&ContentRole::SynopsisText));
+}
+
+/// The history log names a role on every entry. A recorded state of a scratchpad holds
+/// the floor at 18 even when no live row has one: an older build would fail to parse
+/// `history/index.ron`, read an empty log, and prune the whole history on its next save.
+#[test]
+fn a_history_entry_alone_holds_its_roles_floor() {
+    let mut s = sample_inputs();
+    set_role_text(&mut s, &ContentRole::ScratchpadText, "");
+    set_role_text(&mut s, &ContentRole::EpigraphText, "");
+    let mut bundle = bundle_from_binders(&s);
+    assert_eq!(crate::version_gate::compute_min_read_version(&bundle), 4);
+
+    let uid = bundle.binders[0].items[1].item.uid;
+    let text = "An old scratchpad state.".to_string();
+    let hash = blake3::hash(text.as_bytes()).to_hex().to_string();
+    let entry = |role: ContentRole| crate::history::HistoryEntry {
+        at: ts().to_rfc3339(),
+        item_uid: uid,
+        role,
+        hash: hash.clone(),
+        bytes: text.len() as u64,
+        thinned_away: 0,
+    };
+    bundle.history.blobs.insert(hash.clone(), text.clone());
+
+    bundle
+        .history
+        .entries
+        .push(entry(ContentRole::EpigraphText));
+    assert_eq!(
+        crate::version_gate::compute_min_read_version(&bundle),
+        6,
+        "a recorded epigraph state claims v6, as a live one does"
+    );
+    bundle
+        .history
+        .entries
+        .push(entry(ContentRole::ScratchpadText));
+    assert_eq!(
+        crate::version_gate::compute_min_read_version(&bundle),
+        18,
+        "a recorded scratchpad state claims v18 with no live scratchpad left"
+    );
+
+    // And the stamp on disk says so.
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("HistoryOnly");
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+    assert_eq!(
+        peek_manifest(root.to_str().unwrap())
+            .unwrap()
+            .format_min_read_version,
+        Some(18)
+    );
+}
+
+/// A v17 bundle migrates to v18 with nothing to heal: no scratchpad appears.
+#[test]
+fn a_v17_bundle_migrates_to_v18_without_a_scratchpad() {
+    let mut s = sample_inputs();
+    set_role_text(&mut s, &ContentRole::ScratchpadText, "");
+    let mut bundle = bundle_from_binders(&s);
+    bundle.manifest.format_version = 17;
+    let before = bundle.binders.clone();
+    crate::migration::migrate_bundle(&mut bundle).expect("migrate");
+    assert_eq!(bundle.manifest.format_version, 18);
+    assert_eq!(bundle.binders, before, "the step changes nothing");
 }
 
 /// The floor must be scored on what actually reaches disk. `from_entities` drops content
@@ -3379,6 +3699,8 @@ fn an_orphaned_footnote_survives_a_round_trip_via_the_orphanage() {
 #[test]
 fn the_version_floor_tracks_whether_footnotes_are_present() {
     let mut bundle = build_bundle_with_footnotes(ShapeTag::Folder);
+    // Isolated to the footnote axis: the fixture's scratchpads would hold it at 18.
+    strip_scratchpads(&mut bundle);
     assert_eq!(
         crate::version_gate::compute_min_read_version(&bundle),
         9,
@@ -3509,7 +3831,7 @@ fn a_status_ladder_round_trips_through_the_bundle() {
     // One item wearing a rung and the rest bare, so "no status" is covered too.
     s.binders[0].items[0].item.status = Some(draft);
 
-    let bundle = from_entities(
+    let mut bundle = from_entities(
         &s.work,
         &s.tags,
         &s.dict_words,
@@ -3529,6 +3851,8 @@ fn a_status_ladder_round_trips_through_the_bundle() {
         &s.binders,
         ShapeTag::Folder,
     );
+    // Isolated to the ladder axis: the fixture's scratchpads would hold the floor at 18.
+    strip_scratchpads(&mut bundle);
 
     // Written: the ladder in order, and the reference on the right row.
     assert_eq!(
@@ -3585,7 +3909,7 @@ fn a_status_ladder_round_trips_through_the_bundle() {
 #[test]
 fn a_project_without_a_ladder_keeps_its_lower_floor() {
     let s = sample_inputs();
-    let bundle = from_entities(
+    let mut bundle = from_entities(
         &s.work,
         &s.tags,
         &s.dict_words,
@@ -3605,6 +3929,7 @@ fn a_project_without_a_ladder_keeps_its_lower_floor() {
         &s.binders,
         ShapeTag::Folder,
     );
+    strip_scratchpads(&mut bundle);
     assert!(bundle.statuses.is_empty());
     assert!(
         crate::version_gate::compute_min_read_version(&bundle) < 14,

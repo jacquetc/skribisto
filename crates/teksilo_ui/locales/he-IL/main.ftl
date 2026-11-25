@@ -132,6 +132,7 @@ content-part-title = כותרת החלק
 content-chapter-title = כותרת הפרק
 content-epigraph-text = מוטו
 content-paratext-text = טקסט נלווה
+content-scratchpad-text = פנקס טיוטה
 promote-blocked-title = הפרק אינו ריק
 promote-blocked-text = { $count ->
     [one] פרק זה עדיין מכיל פריט אחד. יש להעביר אותו או להעביר אותו לאשפה לפני המרת הפרק לפרק שטוח.
@@ -2933,6 +2934,7 @@ search-field-comment = הערה
 search-field-comment-reply = תשובה
 search-field-footnote = הערת שוליים
 search-field-resource = משאב
+search-field-scratchpad = פנקס טיוטה
 search-include-in-replace = הכללה ב"החלפת הכול"
 search-collapse-all = כיווץ כל התוצאות
 search-replace-here = החלפת המופע הזה

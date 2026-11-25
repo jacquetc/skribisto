@@ -277,6 +277,7 @@ fn a_log_version_reports_each_rows_newest_state_at_or_before_that_moment() {
         .expect("a row with prose");
     let uid = item.item.uid;
     let fid = item.item.prose_refs[0].file_id;
+    let role = item.item.prose_refs[0].role.clone();
     item.prose.insert(fid, "the later wording".to_string());
     history::record(&mut b, now() + chrono::Duration::hours(1));
 
@@ -289,7 +290,11 @@ fn a_log_version_reports_each_rows_newest_state_at_or_before_that_moment() {
     let row = idx
         .row(uid)
         .expect("the edited row exists at the earlier moment");
-    let (_, blob, _) = &row.prose[0];
+    let (_, blob, _) = row
+        .prose
+        .iter()
+        .find(|(r, _, _)| r == &role)
+        .expect("the edited role at the earlier moment");
     assert_ne!(
         src.prose(earlier, blob).expect("prose"),
         "the later wording",
@@ -299,7 +304,11 @@ fn a_log_version_reports_each_rows_newest_state_at_or_before_that_moment() {
     let latest = &list[0];
     let idx = src.index(latest).expect("index");
     let row = idx.row(uid).expect("row");
-    let (_, blob, _) = &row.prose[0];
+    let (_, blob, _) = row
+        .prose
+        .iter()
+        .find(|(r, _, _)| r == &role)
+        .expect("the edited role at the latest moment");
     assert_eq!(src.prose(latest, blob).expect("prose"), "the later wording");
 }
 
@@ -949,6 +958,7 @@ fn one_row_reads_each_backup_once_and_answers_every_role_as_the_backups_do() {
         ContentRole::ParatextText,
         ContentRole::EpigraphText,
         ContentRole::SynopsisText,
+        ContentRole::ScratchpadText,
     ];
     let versions = backups.list().expect("list").len();
     for role in &roles {

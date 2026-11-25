@@ -133,6 +133,7 @@ content-part-title = Tytuł części
 content-chapter-title = Tytuł rozdziału
 content-epigraph-text = Motto
 content-paratext-text = Paratekst
+content-scratchpad-text = Brudnopis
 promote-blocked-title = Rozdział nie jest pusty
 promote-blocked-text = { $count ->
         [one] Ten rozdział zawiera jeszcze { $count } element. Przenieś go gdzie indziej lub do kosza, zanim przekształcisz rozdział w płaski.
@@ -3204,6 +3205,7 @@ search-field-comment = Komentarz
 search-field-comment-reply = Odpowiedź
 search-field-footnote = Przypis
 search-field-resource = Zasób
+search-field-scratchpad = Brudnopis
 search-include-in-replace = Uwzględnij w „Zastąp wszystko”
 search-collapse-all = Zwiń wszystkie wyniki
 search-replace-here = Zastąp to

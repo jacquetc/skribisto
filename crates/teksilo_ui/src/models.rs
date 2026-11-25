@@ -109,7 +109,9 @@ pub use folder_memory_file::{
     remember_dialog_file, remember_pick,
 };
 pub use import_prefs_file::ImportPrefsService;
-pub use manuscript_digest::{LiveRow, digest_of, live_manuscript, live_prose};
+pub use manuscript_digest::{
+    LiveRow, counts_towards_row_digest, digest_of, digest_of_roles, live_manuscript, live_prose,
+};
 pub use note_book_choice_file::{NoteBookChoiceService, PerProjectNoteBookChoice};
 pub use note_capture_file::{MAX_RECENT_TAGS, NoteCaptureService, PerProjectNoteCapture};
 pub use note_prose_rows::{
@@ -122,7 +124,10 @@ pub use numbering::{
     NameContext, fallback_label_for, item_meta_of, label_and_badge, numbers_for_items,
     numbers_for_work, ordered_item_dtos, work_language_tags,
 };
-pub use open_docs::{FlushFailure, OpenDoc, OpenDocsStore, SynopsisViewerGuard, WeakOpenDocsStore};
+pub use open_docs::{
+    FlushFailure, OpenDoc, OpenDocsStore, ScratchpadViewerGuard, SynopsisViewerGuard,
+    WeakOpenDocsStore,
+};
 pub use overview_rows_model::{
     COL_BOOKS, COL_GOAL, COL_LABEL, COL_OPEN_COMMENTS, COL_OWN_WORDS, COL_STATUS, COL_TAGS,
     COL_TITLE, COL_TOTAL_COMMENTS, COL_TOTAL_WORDS, COL_TYPE, OverviewFilters, OverviewRow,

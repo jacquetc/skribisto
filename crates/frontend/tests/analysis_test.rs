@@ -674,3 +674,38 @@ fn the_projects_quote_style_reaches_the_dialogue_measurement() {
         "the same words must now measure as speech, got {after:?}"
     );
 }
+
+/// A scratchpad is not the scene's prose, so the analysis measures a scene with one
+/// exactly as it measures the scene without it: same words for the row and the book.
+#[test]
+fn a_scratchpad_changes_nothing_in_the_analysis() {
+    let fx = fixture();
+    let before = analyze(&fx);
+    let row_words = |dto: &BookAnalysisResultDto| {
+        measured(dto)
+            .into_iter()
+            .find(|(id, _, _)| *id == fx.scene_a)
+            .map(|(_, _, w)| w)
+    };
+
+    content_commands::create_content_multi(
+        &fx.ctx,
+        Some(fx.setup),
+        &[CreateContentDto {
+            uid: Default::default(),
+            created_at: now(),
+            updated_at: now(),
+            activated: true,
+            role: ContentRole::ScratchpadText,
+            data: prose("scratch", 150),
+        }],
+        fx.scene_a,
+        -1,
+    )
+    .unwrap();
+    let after = analyze(&fx);
+
+    assert!(row_words(&before).is_some_and(|w| w > 0));
+    assert_eq!(row_words(&after), row_words(&before));
+    assert_eq!(after.total_words, before.total_words);
+}

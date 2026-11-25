@@ -154,6 +154,7 @@ pub enum MatchField {
     CommentReply,
     Footnote,
     Resource,
+    Scratchpad,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -590,6 +591,7 @@ pub enum ContentRole {
     ChapterTitle,
     EpigraphText,
     ParatextText,
+    ScratchpadText,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]

@@ -979,3 +979,60 @@ fn a_name_with_an_apostrophe_is_found_in_prose_saved_by_the_editor() {
         .expect("the scene names the character");
     assert_eq!(names, vec![name.to_string()]);
 }
+
+/// A scratchpad is the writer's private notes beside an item, not its prose: a name that
+/// appears only there is not a mention, so the scene does not join the character's
+/// backlinks. The fixture's own scene, which names her in its text, still does.
+#[test]
+fn a_name_only_in_a_scratchpad_is_not_a_mention() {
+    let fx = fixture();
+    let binder =
+        work_commands::get_work_relationship(&fx.ctx, &fx.work, &WorkRelationshipField::Binders)
+            .unwrap()
+            .pop()
+            .unwrap();
+    let quiet = binder_item_commands::create_binder_item_multi(
+        &fx.ctx,
+        Some(fx.setup),
+        &[item(BinderItemSubRole::Scene, "The ferry")],
+        binder,
+        -1,
+    )
+    .unwrap()[0]
+        .id;
+    content_commands::create_content_multi(
+        &fx.ctx,
+        Some(fx.setup),
+        &[
+            CreateContentDto {
+                uid: Default::default(),
+                created_at: now(),
+                updated_at: now(),
+                activated: true,
+                role: ContentRole::SceneText,
+                data: "The ferry left without anyone on the quay.".to_string(),
+            },
+            CreateContentDto {
+                uid: Default::default(),
+                created_at: now(),
+                updated_at: now(),
+                activated: true,
+                role: ContentRole::ScratchpadText,
+                data: format!("Should {CHARACTER} be on the quay here? Ask {CHARACTER} Sarraute."),
+            },
+        ],
+        quiet,
+        -1,
+    )
+    .unwrap();
+
+    let targets = hit_targets(&scan(&fx));
+    assert!(
+        targets.contains(&(fx.scene, fx.character)),
+        "the scene naming her in its prose is still found: {targets:?}"
+    );
+    assert!(
+        !targets.iter().any(|(owner, _)| *owner == quiet),
+        "a name only in the scratchpad must not make the scene a mention: {targets:?}"
+    );
+}

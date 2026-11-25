@@ -123,6 +123,7 @@ content-part-title = Parttitolo
 content-chapter-title = Ĉapitrotitolo
 content-epigraph-text = Epigrafo
 content-paratext-text = Parateksto
+content-scratchpad-text = Notbloko
 promote-blocked-title = La ĉapitro ne estas malplena
 promote-blocked-text = { $count ->
     [one] Ĉi tiu ĉapitro ankoraŭ enhavas { $count } eron. Movu ĝin aliloken aŭ en la rubujon antaŭ konverti al plata ĉapitro.
@@ -2508,6 +2509,7 @@ search-field-comment = Komento
 search-field-comment-reply = Respondo
 search-field-footnote = Piednoto
 search-field-resource = Rimedo
+search-field-scratchpad = Notbloko
 search-include-in-replace = Inkluzivi en Anstataŭigi ĉiujn
 search-collapse-all = Faldi ĉiujn rezultojn
 search-replace-here = Anstataŭigi ĉi tion

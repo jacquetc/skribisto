@@ -181,6 +181,11 @@ impl LongOperation for ScanMentionsUseCase {
 /// Synopses and notes count, not just scene text: a synopsis is where a writer records who a
 /// scene is *about* before writing it, and note↔note links are half of what the story bible
 /// is for.
+///
+/// The scratchpad (`ScratchpadText`) does not. It is where a writer jots "ask Elena about
+/// the key" or "should Marc be here at all?", so a name in it says nothing about who the
+/// item is about, and counting it would list a scene under a character it only wonders
+/// about.
 fn is_prose(role: &ContentRole) -> bool {
     matches!(
         role,

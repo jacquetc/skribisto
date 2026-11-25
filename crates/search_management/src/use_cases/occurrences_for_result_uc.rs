@@ -239,7 +239,10 @@ impl OccurrencesForResultUseCase {
             }
             // Prose on a `Content` row of this item. Which row is decided by the same
             // role mapping that decided which field the result reported.
-            MatchField::Body | MatchField::Epigraph | MatchField::Synopsis => {
+            MatchField::Body
+            | MatchField::Epigraph
+            | MatchField::Synopsis
+            | MatchField::Scratchpad => {
                 let content_ids = uow.get_binder_item_relationship(
                     &item_id,
                     &BinderItemRelationshipField::Contents,

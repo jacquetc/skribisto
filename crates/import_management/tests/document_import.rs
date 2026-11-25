@@ -4807,3 +4807,68 @@ fn an_analysis_never_makes_its_picture_folder_again() {
         ctx.long_ops.get_operation_status(&op)
     );
 }
+
+// ── The scratchpad ──────────────────────────────────────────────────────────
+//
+// A row's scratchpad is the writer's notes beside it, never exported, so a returning
+// file carries none and an update has nothing to say about it.
+
+fn scratchpad_of(ctx: &Ctx, item_id: EntityId) -> Option<String> {
+    contents_of(ctx, item_id)
+        .into_iter()
+        .find(|(role, _)| *role == ContentRole::ScratchpadText)
+        .map(|(_, data)| data)
+}
+
+/// Taking the editor's wording rewrites the prose and leaves the row's scratchpad word
+/// for word as it was, in its own row.
+#[test]
+fn a_reimport_leaves_the_rows_scratchpad_untouched() {
+    let mut ctx = Ctx::new();
+    let (item_id, tag) = a_project_with_one_row(&mut ctx);
+    content_controller::create(
+        &ctx.db,
+        &ctx.hub,
+        &mut ctx.undo,
+        None,
+        &direct_access::content::dtos::CreateContentDto {
+            role: ContentRole::ScratchpadText,
+            activated: true,
+            data: "Send to Marie before the 12th. *Not* the epilogue.".into(),
+            ..Default::default()
+        },
+        item_id,
+        -1,
+    )
+    .expect("a scratchpad on the row");
+
+    ctx.apply_rows(vec![update_row(
+        &tag,
+        true,
+        "The editor's better wording.",
+        vec![an_editors_comment(
+            "Is this the right word?",
+            "better",
+            "The editor's ",
+            " wording.",
+        )],
+    )]);
+
+    assert_eq!(
+        ctx.prose_of(item_id).as_deref(),
+        Some("The editor's better wording.")
+    );
+    assert_eq!(
+        scratchpad_of(&ctx, item_id).as_deref(),
+        Some("Send to Marie before the 12th. *Not* the epilogue."),
+        "the re-import must not touch the scratchpad"
+    );
+    assert_eq!(
+        contents_of(&ctx, item_id)
+            .iter()
+            .filter(|(role, _)| *role == ContentRole::ScratchpadText)
+            .count(),
+        1,
+        "and must not add a second one"
+    );
+}

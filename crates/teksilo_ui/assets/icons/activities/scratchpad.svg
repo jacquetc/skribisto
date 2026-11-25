@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Scratchpad — a spiral-bound pad with a scribble and a short line: notes kept
+       beside the page, not the page. The rings at the top are what tell it apart
+       from the binder's own document glyphs, which are plain sheets. -->
+  <rect x="3" y="3.6" width="10" height="10.4" rx="1.2"/>
+  <path d="M5.6 2.2 V5"/>
+  <path d="M8 2.2 V5"/>
+  <path d="M10.4 2.2 V5"/>
+  <path d="M5.2 8.1 q0.9 -1 1.8 0 t1.8 0 t1.8 0"/>
+  <path d="M5.2 11.2 H8.6"/>
+</svg>

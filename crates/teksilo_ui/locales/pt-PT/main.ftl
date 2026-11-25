@@ -133,6 +133,7 @@ content-part-title = Título da parte
 content-chapter-title = Título do capítulo
 content-epigraph-text = Epígrafe
 content-paratext-text = Paratexto
+content-scratchpad-text = Bloco de notas
 promote-blocked-title = O capítulo não está vazio
 promote-blocked-text = { $count ->
     [one] Este capítulo ainda contém { $count } item. Mova-o ou envie-o para o lixo antes de o converter num capítulo simples.
@@ -2593,6 +2594,7 @@ search-field-comment = Comentário
 search-field-comment-reply = Resposta
 search-field-footnote = Nota de rodapé
 search-field-resource = Recurso
+search-field-scratchpad = Bloco de notas
 search-include-in-replace = Incluir em Substituir tudo
 search-collapse-all = Recolher todos os resultados
 search-replace-here = Substituir isto

@@ -55,8 +55,10 @@ use std::collections::BTreeMap;
 /// exhaustive match from compiling until it is given a version. An older build cannot
 /// deserialize the variant at all, so the floor refuses the bundle rather than letting
 /// `items.ron` fail with a raw "unexpected variant". Like v5, the floor is claimed only
-/// by projects that actually carry one: delete every epigraph and the next save drops
-/// back to 4. `step_v5_to_v6` has nothing to do — the data is additive on read.
+/// by projects that actually carry one: empty every epigraph and the next save drops
+/// back to 4, because `from_entities` does not write a blank epigraph row (see
+/// `is_droppable_blank` in `mapping`). `step_v5_to_v6` has nothing to do — the data is
+/// additive on read.
 ///
 /// v7 added **paratexts** — `BinderItemSubRole::Paratext` and `ContentRole::ParatextText`,
 /// a text that belongs to the book but not to its body. Two new enum variants, so the
@@ -207,7 +209,23 @@ use std::collections::BTreeMap;
 /// reader takes each hard break for the end of a paragraph, so the lines come back as
 /// paragraphs, and only a row it then edits (see `is_stale` in the editor) is saved that
 /// way. The words survive; their layout is re-made in a keystroke a line.
-pub const FORMAT_VERSION: u32 = 17;
+///
+/// # v17 → v18: the scratchpad
+///
+/// `ContentRole::ScratchpadText`, the writer's private scratchpad beside an item, stored
+/// as `*.scratchpad.djot` beside the item's other prose and recorded in the history log
+/// like it. Never part of the book: the compiler, the counts and the mention scan all
+/// leave it out.
+///
+/// **This one claims a floor**, the v6/v7 call, and caught the same way: the new variant
+/// stopped `compute_min_read_version`'s exhaustive match from compiling. An older build
+/// cannot deserialize the variant in `items.ron`, nor in `history/index.ron`, where its
+/// reader would degrade the failure to an empty log and its next save would prune every
+/// recorded state of every row. So the floor counts the roles of the history entries as
+/// well as the live rows. Claimed only by a project that has a scratchpad with something
+/// in it, or a recorded state of one: a blank scratchpad row is never written.
+/// `step_v17_to_v18` has nothing to do.
+pub const FORMAT_VERSION: u32 = 18;
 
 /// Read `dict_language` as a list, accepting the pre-v4 space-separated string.
 ///

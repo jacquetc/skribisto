@@ -170,6 +170,7 @@ content-part-title = Titlul părții
 content-chapter-title = Titlul capitolului
 content-epigraph-text = Motto
 content-paratext-text = Paratext
+content-scratchpad-text = Carnet de notițe
 promote-blocked-title = Capitolul nu este gol
 promote-blocked-text = { $count ->
        [one] Acest capitol mai conține { $count } element. Mutați-l sau aruncați-l la coșul de gunoi înainte de a-l converti în capitol simplu.
@@ -3118,6 +3119,7 @@ search-field-comment = Comentariu
 search-field-comment-reply = Răspuns
 search-field-footnote = Notă de subsol
 search-field-resource = Resursă
+search-field-scratchpad = Carnet de notițe
 search-include-in-replace = Include în „Înlocuiește tot”
 search-collapse-all = Restrânge toate rezultatele
 search-replace-here = Înlocuiește aici

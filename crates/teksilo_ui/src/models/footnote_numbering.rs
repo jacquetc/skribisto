@@ -216,7 +216,9 @@ fn prose_of_item(
         let Some(c) = stored.get(&cid) else {
             continue;
         };
-        if !c.activated {
+        // A scratchpad shows no footnote and is never exported: a marker that ended up
+        // in one (pasted there with the sentence that held it) takes no number.
+        if !c.activated || skribisto_model::is_private_note(&c.role) {
             continue;
         }
         let data = live
@@ -354,6 +356,58 @@ mod tests {
 
     fn labels(ls: &[&str]) -> Vec<String> {
         ls.iter().map(|s| s.to_string()).collect()
+    }
+
+    /// A marker that ended up in a scratchpad (cut from the scene with its sentence)
+    /// is not read for numbering: the scratchpad is never exported, and counting it
+    /// moved every later badge up by one against the book. The scene's own marker,
+    /// and the synopsis's, still are.
+    #[cfg(not(feature = "mocks"))]
+    #[test]
+    fn a_marker_in_a_scratchpad_is_not_read_for_numbering() {
+        use frontend::AppContext;
+        use frontend::common::entities::ContentRole;
+        let ctx = AppContext::new();
+        let item = binder_item_commands::create_orphan_binder_item(
+            &ctx,
+            None,
+            &frontend::direct_access::CreateBinderItemDto {
+                role: BinderItemRole::Item,
+                sub_role: BinderItemSubRole::Scene,
+                ..Default::default()
+            },
+        )
+        .expect("creating the scene");
+        let mut ids = Vec::new();
+        for (role, data) in [
+            (ContentRole::SceneText, "Alpha[^a]."),
+            (ContentRole::ScratchpadText, "Hold for later[^private]."),
+            (ContentRole::SynopsisText, "Gist[^g]."),
+        ] {
+            let row = content_commands::create_content(
+                &ctx,
+                None,
+                &frontend::direct_access::CreateContentDto {
+                    role,
+                    activated: true,
+                    data: data.to_string(),
+                    ..Default::default()
+                },
+                item.id,
+                -1,
+            )
+            .expect("creating a row");
+            ids.push(row.id);
+        }
+        let read: Vec<u64> = prose_of_item(&ctx, item.id, None)
+            .into_iter()
+            .map(|(id, _)| id)
+            .collect();
+        assert_eq!(
+            read,
+            vec![ids[0], ids[2]],
+            "the scratchpad's row is not read"
+        );
     }
 
     /// The badge is the number the book prints, in manuscript order.

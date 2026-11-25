@@ -3199,3 +3199,210 @@ fn removing_the_picture_leaves_the_book_without_a_cover() {
     asset_commands::remove_asset(&fx.ctx, Some(fx.setup), &picture).expect("remove asset");
     assert_eq!(item(&fx.ctx, book).cover, None);
 }
+
+// ───────────────────────── the scratchpad across structural edits ─────────────────────────
+
+fn scratchpad_text(fx: &Fixture, item_id: EntityId) -> String {
+    content_data(fx, item_id, ContentRole::ScratchpadText)
+}
+
+/// Merging folds the second scene's scratchpad into the first's, as it folds the
+/// synopsis: the notes of both belong to the scene that survives, never to the trashed
+/// source alone. The undo puts both back as they were.
+#[test]
+fn merge_folds_the_second_scratchpad_into_the_first() {
+    let fx = make_fixture();
+    let a = mk_scene(&fx, "SceneA");
+    let b = mk_scene(&fx, "SceneB");
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[a, b]);
+    add_content(&fx, a, ContentRole::SceneText, "Alpha.");
+    add_content(&fx, b, ContentRole::SceneText, "Bravo.");
+    add_content(
+        &fx,
+        a,
+        ContentRole::ScratchpadText,
+        "Ask Lena about the key.",
+    );
+    add_content(
+        &fx,
+        b,
+        ContentRole::ScratchpadText,
+        "- the 1911 storm\n- tide tables",
+    );
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    binder_item_management_commands::merge_two_scenes(
+        &fx.ctx,
+        Some(stack),
+        &MergeTwoScenesDto {
+            work_id: fx.work,
+            target_id: a,
+            source_id: b,
+        },
+    )
+    .expect("merge");
+
+    assert_eq!(scene_text(&fx, a), "Alpha.\n\nBravo.");
+    assert_eq!(
+        scratchpad_text(&fx, a),
+        "Ask Lena about the key.\n\n- the 1911 storm\n- tide tables"
+    );
+
+    undo_redo_commands::undo(&fx.ctx, Some(stack)).expect("undo merge");
+    assert_eq!(scratchpad_text(&fx, a), "Ask Lena about the key.");
+    assert_eq!(scratchpad_text(&fx, b), "- the 1911 storm\n- tide tables");
+}
+
+/// A target with no scratchpad of its own takes the source's whole.
+#[test]
+fn merge_gives_the_target_the_sources_scratchpad_when_it_has_none() {
+    let fx = make_fixture();
+    let a = mk_scene(&fx, "SceneA");
+    let b = mk_scene(&fx, "SceneB");
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[a, b]);
+    add_content(&fx, a, ContentRole::SceneText, "Alpha.");
+    add_content(&fx, b, ContentRole::SceneText, "Bravo.");
+    add_content(
+        &fx,
+        b,
+        ContentRole::ScratchpadText,
+        "Only the second had notes.",
+    );
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    binder_item_management_commands::merge_two_scenes(
+        &fx.ctx,
+        Some(stack),
+        &MergeTwoScenesDto {
+            work_id: fx.work,
+            target_id: a,
+            source_id: b,
+        },
+    )
+    .expect("merge");
+    assert_eq!(scratchpad_text(&fx, a), "Only the second had notes.");
+
+    undo_redo_commands::undo(&fx.ctx, Some(stack)).expect("undo merge");
+    assert!(
+        !has_content_role(&fx, a, ContentRole::ScratchpadText),
+        "the row the merge created goes with its undo"
+    );
+}
+
+/// Splitting cuts the prose, not the notes: the scratchpad stays whole on the source,
+/// and the new scene starts with none.
+#[test]
+fn split_keeps_the_scratchpad_on_the_source() {
+    let fx = make_fixture();
+    let s = mk_scene(&fx, "Full");
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[s]);
+    add_content(&fx, s, ContentRole::SceneText, "AB");
+    add_content(&fx, s, ContentRole::ScratchpadText, "Keep the gull motif.");
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    binder_item_management_commands::split_scene(
+        &fx.ctx,
+        Some(stack),
+        &SplitSceneDto {
+            source_id: s,
+            before_text: "A".into(),
+            after_text: "B".into(),
+            before_synopsis: String::new(),
+            after_synopsis: String::new(),
+            new_title: "Second".into(),
+        },
+    )
+    .expect("split");
+
+    let new_scene = order(&fx.ctx, fx.binder2)[1];
+    assert_eq!(scratchpad_text(&fx, s), "Keep the gull motif.");
+    assert!(!has_content_role(
+        &fx,
+        new_scene,
+        ContentRole::ScratchpadText
+    ));
+}
+
+/// Duplicating copies the scratchpad into a row of the copy's own.
+#[test]
+fn duplicate_copies_the_scratchpad() {
+    let fx = make_fixture();
+    let s = mk_scene(&fx, "Original");
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[s]);
+    add_content(&fx, s, ContentRole::SceneText, "Prose.");
+    let original = add_content(&fx, s, ContentRole::ScratchpadText, "Draft two: slower.");
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    let ret = binder_item_management_commands::duplicate(
+        &fx.ctx,
+        Some(stack),
+        &DuplicateDto { item_ids: vec![s] },
+    )
+    .expect("duplicate");
+    let copy = ret.new_item_ids[0];
+    assert_eq!(scratchpad_text(&fx, copy), "Draft two: slower.");
+    let copy_rows = binder_item_commands::get_binder_item_relationship(
+        &fx.ctx,
+        &copy,
+        &BinderItemRelationshipField::Contents,
+    )
+    .expect("contents");
+    assert!(
+        !copy_rows.contains(&original),
+        "the copy owns a row of its own, not the original's"
+    );
+}
+
+/// Promote and demote keep the scratchpad as it is, on both kinds of toggle: Scene to
+/// Note (which remaps the prose role) and a chapter's two encodings.
+#[test]
+fn promote_keeps_the_scratchpad() {
+    let fx = make_fixture();
+    let s = mk_scene(&fx, "Scene");
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[s]);
+    add_content(&fx, s, ContentRole::SceneText, "prose");
+    add_content(
+        &fx,
+        s,
+        ContentRole::ScratchpadText,
+        "Is this a note after all?",
+    );
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    binder_item_management_commands::promote(
+        &fx.ctx,
+        Some(stack),
+        &PromoteDto {
+            item_id: s,
+            target: PromoteTarget::Note.code(),
+        },
+    )
+    .expect("promote");
+    assert_eq!(item(&fx.ctx, s).sub_role, BinderItemSubRole::Note);
+    assert_eq!(scratchpad_text(&fx, s), "Is this a note after all?");
+
+    undo_redo_commands::undo(&fx.ctx, Some(stack)).expect("undo");
+    assert_eq!(scratchpad_text(&fx, s), "Is this a note after all?");
+
+    let chapter = mk_scene(&fx, "Chapter");
+    set_sub_role(&fx, chapter, BinderItemSubRole::ChapterScene);
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[s, chapter]);
+    add_content(
+        &fx,
+        chapter,
+        ContentRole::ScratchpadText,
+        "Open on the quay.",
+    );
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    binder_item_management_commands::promote(
+        &fx.ctx,
+        Some(stack),
+        &PromoteDto {
+            item_id: chapter,
+            target: PromoteTarget::ChapterFolder.code(),
+        },
+    )
+    .expect("promote the chapter to its folder encoding");
+    assert_eq!(item(&fx.ctx, chapter).role, BinderItemRole::Folder);
+    assert_eq!(scratchpad_text(&fx, chapter), "Open on the quay.");
+}

@@ -106,6 +106,12 @@ struct Combination {
 /// listed here is an invalid combination *by construction*; the structural rule
 /// "folders cannot carry text / book-begin / book-end" therefore needs no
 /// special case (no such row exists).
+///
+/// `ScratchpadText`, the writer's private scratchpad beside an item, is carried by
+/// every combination that carries any content at all, and by neither of the two content-free
+/// markers (`Item/BookEnd`, `Item/Text`): giving it to those would make them
+/// [`status_capable`], which is derived from "carries any content". Both chapter
+/// encodings carry it, so promote and demote keep it like any other row.
 const COMBINATIONS: &[Combination] = &[
     // role = Item (leaf; the compile-stream markers live here)
     Combination {
@@ -114,7 +120,7 @@ const COMBINATIONS: &[Combination] = &[
         // Symmetric with the `Folder/Book` container: the flat book-start marker
         // carries the book's synopsis too, so a book outline has no hole whichever
         // encoding the book uses.
-        allowed: &[BookTitle, BookSubtitle, SynopsisText],
+        allowed: &[BookTitle, BookSubtitle, SynopsisText, ScratchpadText],
     },
     Combination {
         role: Role::Item,
@@ -124,22 +130,28 @@ const COMBINATIONS: &[Combination] = &[
     Combination {
         role: Role::Item,
         sub_role: SubRole::Scene,
-        allowed: &[SceneText, SynopsisText],
+        allowed: &[SceneText, SynopsisText, ScratchpadText],
     },
     Combination {
         role: Role::Item,
         sub_role: SubRole::ChapterScene,
-        allowed: &[ChapterTitle, EpigraphText, SceneText, SynopsisText],
+        allowed: &[
+            ChapterTitle,
+            EpigraphText,
+            SceneText,
+            SynopsisText,
+            ScratchpadText,
+        ],
     },
     Combination {
         role: Role::Item,
         sub_role: SubRole::Part,
-        allowed: &[PartTitle, EpigraphText, SynopsisText],
+        allowed: &[PartTitle, EpigraphText, SynopsisText, ScratchpadText],
     },
     Combination {
         role: Role::Item,
         sub_role: SubRole::Note,
-        allowed: &[NoteText, SynopsisText],
+        allowed: &[NoteText, SynopsisText, ScratchpadText],
     },
     Combination {
         role: Role::Item,
@@ -150,7 +162,7 @@ const COMBINATIONS: &[Combination] = &[
     Combination {
         role: Role::Folder,
         sub_role: SubRole::None,
-        allowed: &[SynopsisText],
+        allowed: &[SynopsisText, ScratchpadText],
     },
     Combination {
         role: Role::Folder,
@@ -162,22 +174,28 @@ const COMBINATIONS: &[Combination] = &[
         // is lossless by construction. There is no prose-less chapter, so there is no
         // separate `Chapter` sub_role at all.
         sub_role: SubRole::ChapterScene,
-        allowed: &[ChapterTitle, EpigraphText, SceneText, SynopsisText],
+        allowed: &[
+            ChapterTitle,
+            EpigraphText,
+            SceneText,
+            SynopsisText,
+            ScratchpadText,
+        ],
     },
     Combination {
         role: Role::Folder,
         sub_role: SubRole::Part,
-        allowed: &[PartTitle, EpigraphText, SynopsisText],
+        allowed: &[PartTitle, EpigraphText, SynopsisText, ScratchpadText],
     },
     Combination {
         role: Role::Folder,
         sub_role: SubRole::Book,
-        allowed: &[BookTitle, BookSubtitle, SynopsisText],
+        allowed: &[BookTitle, BookSubtitle, SynopsisText, ScratchpadText],
     },
     Combination {
         role: Role::Folder,
         sub_role: SubRole::Note,
-        allowed: &[SynopsisText],
+        allowed: &[SynopsisText, ScratchpadText],
     },
     // A text that cannot be part of the book body: a preface, a dedication, an afterword,
     // an *achevé d'imprimer*. Excluded from the word count and every other statistic —
@@ -193,14 +211,14 @@ const COMBINATIONS: &[Combination] = &[
     Combination {
         role: Role::Item,
         sub_role: SubRole::Paratext,
-        allowed: &[ParatextText, SynopsisText],
+        allowed: &[ParatextText, SynopsisText, ScratchpadText],
     },
     // Organisational only — somewhere to keep the paratexts so they do not clutter the
     // binder. It emits nothing into the export, so its name never reaches the book.
     Combination {
         role: Role::Folder,
         sub_role: SubRole::Paratext,
-        allowed: &[SynopsisText],
+        allowed: &[SynopsisText, ScratchpadText],
     },
 ];
 
@@ -269,6 +287,23 @@ pub fn content_allowed(role: &Role, sub_role: &SubRole, content: &ContentRole) -
 /// excluded from the manuscript count.
 pub fn counts_prose(role: &Role, sub_role: &SubRole) -> bool {
     content_allowed(role, sub_role, &SceneText)
+}
+
+/// Whether a content role is the writer's **private scratchpad** rather than text of the
+/// item itself.
+///
+/// The one place the Timeline's two digests ask whether a role counts towards "this row
+/// changed": the live side (the manuscript as it stands) and the recorded side (a backup
+/// or the history log) must leave out the same roles, or every row with a scratchpad
+/// would read as changed on one side and not the other. A note jotted beside a scene is
+/// not an edit of the scene.
+///
+/// The footnote numbering (the export's, the editor badge's and the export preflight's)
+/// asks it too, since it walks every row of an item: a marker left in a scratchpad takes
+/// no number. The compiler's prose, the word counts and the mention scan need no such
+/// test: each names the roles it reads, and none names this one.
+pub fn is_private_note(role: &ContentRole) -> bool {
+    matches!(role, ScratchpadText)
 }
 
 /// Whether this `(role, sub_role)` may carry a workflow **status**.

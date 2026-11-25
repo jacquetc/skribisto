@@ -122,6 +122,7 @@ content-part-title = Delens titel
 content-chapter-title = Kapitelrubrik
 content-epigraph-text = Motto
 content-paratext-text = Paratext
+content-scratchpad-text = Kladdblock
 promote-blocked-title = Kapitlet är inte tomt
 promote-blocked-text = { $count ->
        [one] Kapitlet innehåller fortfarande { $count } objekt. Flytta det eller lägg det i papperskorgen innan du konverterar kapitlet till ett platt kapitel.
@@ -2513,6 +2514,7 @@ search-field-comment = Kommentar
 search-field-comment-reply = Svar
 search-field-footnote = Fotnot
 search-field-resource = Resurs
+search-field-scratchpad = Kladdblock
 search-include-in-replace = Ta med i Ersätt alla
 search-collapse-all = Fäll ihop alla resultat
 search-replace-here = Ersätt här

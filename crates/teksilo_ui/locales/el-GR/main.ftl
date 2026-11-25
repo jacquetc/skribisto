@@ -138,6 +138,7 @@ content-part-title = Τίτλος μέρους
 content-chapter-title = Τίτλος κεφαλαίου
 content-epigraph-text = Μότο
 content-paratext-text = Παρακείμενο
+content-scratchpad-text = Σημειωματάριο
 promote-blocked-title = Το κεφάλαιο δεν είναι κενό
 promote-blocked-text = { $count ->
     [one] Αυτό το κεφάλαιο περιέχει ακόμη { $count } στοιχείο. Μετακινήστε το ή στείλτε το στον κάδο πριν μετατρέψετε το κεφάλαιο σε αυτοτελές.
@@ -2645,6 +2646,7 @@ search-field-comment = Σχόλιο
 search-field-comment-reply = Απάντηση
 search-field-footnote = Υποσημείωση
 search-field-resource = Πόρος
+search-field-scratchpad = Σημειωματάριο
 search-include-in-replace = Συμπερίληψη στην «Αντικατάσταση όλων»
 search-collapse-all = Σύμπτυξη όλων των αποτελεσμάτων
 search-replace-here = Αντικατάσταση αυτού

@@ -123,6 +123,7 @@ content-part-title = Назва частини
 content-chapter-title = Назва розділу
 content-epigraph-text = Епіграф
 content-paratext-text = Паратекст
+content-scratchpad-text = Блокнот
 promote-blocked-title = Розділ не порожній
 promote-blocked-text = { $count ->
     [one] Цей розділ ще містить { $count } елемент. Перемістіть його або надішліть у кошик, перш ніж перетворювати розділ на простий.
@@ -3256,6 +3257,7 @@ search-field-comment = Коментар
 search-field-comment-reply = Відповідь на коментар
 search-field-footnote = Виноска
 search-field-resource = Ресурс
+search-field-scratchpad = Блокнот
 search-include-in-replace = Включити в «Замінити все»
 search-collapse-all = Згорнути всі результати
 search-replace-here = Замінити тут

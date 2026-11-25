@@ -429,6 +429,7 @@ fn every_prose_role_is_something_this_can_open() {
         ContentRole::SynopsisText,
         ContentRole::EpigraphText,
         ContentRole::ParatextText,
+        ContentRole::ScratchpadText,
         ContentRole::BookTitle,
         ContentRole::BookSubtitle,
         ContentRole::PartTitle,

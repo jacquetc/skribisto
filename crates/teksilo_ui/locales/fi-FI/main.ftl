@@ -133,6 +133,7 @@ content-part-title = Osan otsikko
 content-chapter-title = Luvun otsikko
 content-epigraph-text = Motto
 content-paratext-text = Parateksti
+content-scratchpad-text = Muistilehtiö
 promote-blocked-title = Luku ei ole tyhjä
 promote-blocked-text = { $count ->
        [one] Tässä luvussa on vielä { $count } kohde. Siirrä se muualle tai roskakoriin ennen kuin muunnat luvun kansiottomaksi.
@@ -2650,6 +2651,7 @@ search-field-comment = Kommentti
 search-field-comment-reply = Vastaus
 search-field-footnote = Alaviite
 search-field-resource = Resurssi
+search-field-scratchpad = Muistilehtiö
 search-include-in-replace = Sisällytä toimintoon Korvaa kaikki
 search-collapse-all = Supista kaikki tulokset
 search-replace-here = Korvaa tämä

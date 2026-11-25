@@ -72,6 +72,25 @@ pub(crate) fn quote_style_from_name(name: &str) -> QuoteStyle {
 // store entities -> WorkBundle (save path)
 // ---------------------------------------------------------------------------
 
+/// Whether a content row is left out of the bundle because it holds nothing.
+///
+/// Only for the optional rows that claim a read floor of their own and that every reader
+/// treats an absent row and a blank one alike: the scratchpad (v18) and the epigraph
+/// (v6). Writing a blank one would hold the floor up for nothing, so a writer who empties
+/// every scratchpad in a project would still have it refused by an older build. Leaving
+/// it out is lossless: the editor creates the row again on the first keystroke, and the
+/// history log keeps its last written state.
+///
+/// Every other role keeps its blank rows. A scene, a note, a synopsis or a paratext row
+/// is created with its item and read back by `find(|c| c.role == role)` everywhere, and
+/// none of them moves the floor, so there is nothing to gain from dropping one.
+fn is_droppable_blank(c: &Content) -> bool {
+    matches!(
+        c.role,
+        common::entities::ContentRole::ScratchpadText | common::entities::ContentRole::EpigraphText
+    ) && c.data.trim().is_empty()
+}
+
 /// Build a [`WorkBundle`] from already-fetched, ordered store data.
 ///
 /// Content rows are filtered through `skribisto_model::content_allowed`, so an
@@ -188,6 +207,12 @@ pub fn from_entities(
             for c in &iwc.contents {
                 if !content_allowed(&item.role, &item.sub_role, &c.role) {
                     continue; // invalid for this item — never serialise it
+                }
+                if is_droppable_blank(c)
+                    && !comments_by_content.contains_key(&c.id)
+                    && !footnotes_by_content.contains_key(&c.id)
+                {
+                    continue; // nothing in it, and its absence reads back the same
                 }
                 match prose_kind(&c.role) {
                     None => inline_contents.push(InlineContent {

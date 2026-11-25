@@ -437,3 +437,121 @@ mod imp {
 }
 
 pub use imp::{children, measure};
+
+#[cfg(all(test, not(feature = "mocks")))]
+mod tests {
+    use frontend::AppContext;
+    use frontend::commands::{
+        binder_commands, binder_item_commands, content_commands, work_commands,
+    };
+    use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole, GoalUnit};
+    use frontend::direct_access::{
+        CreateBinderDto, CreateBinderItemDto, CreateContentDto, CreateWorkDto,
+    };
+    use skribisto_model::counting::CountingMethodSetting;
+
+    /// A chapter folder holding one scene, each with its own prose, and the ids.
+    fn chapter_with_a_scene(ctx: &AppContext) -> (u64, u64, u64) {
+        let work = work_commands::create_orphan_work(ctx, None, &CreateWorkDto::default())
+            .unwrap()
+            .id;
+        let binder = binder_commands::create_binder(
+            ctx,
+            None,
+            &CreateBinderDto {
+                name: "B".into(),
+                activated: true,
+                ..Default::default()
+            },
+            work,
+            0,
+        )
+        .unwrap()
+        .id;
+        let item = |role, sub_role, indent| CreateBinderItemDto {
+            status: None,
+            role,
+            sub_role,
+            indent,
+            activated: true,
+            is_exportable: true,
+            ..Default::default()
+        };
+        let chapter = binder_item_commands::create_binder_item(
+            ctx,
+            None,
+            &item(BinderItemRole::Folder, BinderItemSubRole::ChapterScene, 0),
+            binder,
+            -1,
+        )
+        .unwrap()
+        .id;
+        let scene = binder_item_commands::create_binder_item(
+            ctx,
+            None,
+            &item(BinderItemRole::Item, BinderItemSubRole::Scene, 1),
+            binder,
+            -1,
+        )
+        .unwrap()
+        .id;
+        for (owner, text) in [(chapter, "One two three."), (scene, "Four five.")] {
+            add(ctx, owner, ContentRole::SceneText, text);
+        }
+        (work, chapter, scene)
+    }
+
+    fn add(ctx: &AppContext, item: u64, role: ContentRole, data: &str) {
+        content_commands::create_content(
+            ctx,
+            None,
+            &CreateContentDto {
+                role,
+                activated: true,
+                data: data.to_string(),
+                ..Default::default()
+            },
+            item,
+            -1,
+        )
+        .unwrap();
+    }
+
+    /// The scratchpads of a chapter and of its scene add nothing to what a goal measures:
+    /// not the row's own count, not the subtree's, not a child's.
+    #[test]
+    fn a_scratchpad_changes_nothing_a_goal_measures() {
+        let ctx = AppContext::new();
+        let (work, chapter, scene) = chapter_with_a_scene(&ctx);
+        let method = CountingMethodSetting::Whitespace;
+        let before = super::measure(&ctx, work, chapter, method, &GoalUnit::Words).unwrap();
+        let kids_before = super::children(&ctx, work, chapter, method, &GoalUnit::Words);
+        assert_eq!(before.subtree.words, 5);
+
+        add(
+            &ctx,
+            chapter,
+            ContentRole::ScratchpadText,
+            "Too long? Cut the second half and move the storm earlier.",
+        );
+        add(
+            &ctx,
+            scene,
+            ContentRole::ScratchpadText,
+            "Ask about the lamp oil.",
+        );
+        let after = super::measure(&ctx, work, chapter, method, &GoalUnit::Words).unwrap();
+        assert_eq!(after, before);
+        assert_eq!(
+            super::children(&ctx, work, chapter, method, &GoalUnit::Words),
+            kids_before
+        );
+        assert_eq!(
+            super::measure(&ctx, work, chapter, method, &GoalUnit::Characters)
+                .unwrap()
+                .subtree
+                .chars,
+            before.subtree.chars
+        );
+    }
+}

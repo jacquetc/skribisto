@@ -44,9 +44,9 @@
 //! share**, not as an absolute index: one scene written since would otherwise
 //! shift every row after it and report the whole book as rearranged.
 //!
-//! Both sides digest their text through [`crate::models::digest_of`], so the two
-//! can only disagree about the text itself and never about how each happened to
-//! concatenate it.
+//! Both sides digest their text through [`crate::models::digest_of_roles`], so the two
+//! can only disagree about the text itself, never about how each happened to
+//! concatenate it nor about which roles count (the scratchpad does not).
 //!
 //! ## Threading
 //!
@@ -69,7 +69,7 @@ use skrib_format::versions::{
     BackupVersions, LogVersions, SourceKind, VersionRef, VersionRow, VersionSource,
 };
 
-use crate::models::{LiveRow, digest_of};
+use crate::models::LiveRow;
 use crate::shared::stamps::Zone;
 use crate::versions::ProjectHandle;
 
@@ -789,16 +789,19 @@ fn compare(handle: &ProjectHandle, moment: &Moment, now: &[LiveRow]) -> Vec<RowC
         .rows
         .iter()
         .map(|row| {
-            let roles: Vec<(String, String)> = row
+            // Through the same `digest_of_roles` as the live side, so both leave out
+            // the same roles; filtered before the read too, so a scratchpad's blob is
+            // never read only to be thrown away.
+            let roles: Vec<(&ContentRole, String)> = row
                 .prose
                 .iter()
+                .filter(|(role, _, _)| crate::models::counts_towards_row_digest(role))
                 .filter_map(|(role, blob, _)| {
-                    let kind = skrib_format::slug::prose_kind(role)?;
                     let text = source.prose(&moment.from, blob).ok()?;
-                    Some((kind.to_string(), text))
+                    Some((role, text))
                 })
                 .collect();
-            ((), row, digest_of(&roles))
+            ((), row, crate::models::digest_of_roles(roles))
         })
         .collect();
 
@@ -958,12 +961,15 @@ fn main_blob(row: &VersionRow) -> Option<(ContentRole, String)> {
 /// here does not degrade gracefully, it makes rows that carry only that role
 /// unopenable. Adding a prose role to `ContentRole` should fail that test rather
 /// than quietly ship an empty reader.
-const READING_ORDER: [ContentRole; 5] = [
+const READING_ORDER: [ContentRole; 6] = [
     ContentRole::SceneText,
     ContentRole::NoteText,
     ContentRole::ParatextText,
     ContentRole::EpigraphText,
     ContentRole::SynopsisText,
+    // Last: a row's own text and its synopsis come first, and the scratchpad is opened
+    // only for a row that recorded nothing else.
+    ContentRole::ScratchpadText,
 ];
 
 #[cfg(test)]

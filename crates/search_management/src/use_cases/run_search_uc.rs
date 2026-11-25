@@ -781,6 +781,11 @@ impl RunSearchUseCase {
             let wanted = match field {
                 MatchField::Body | MatchField::Epigraph => dto.search_body,
                 MatchField::Synopsis => dto.search_synopsis,
+                // The writer's private scratchpad is not the manuscript, so neither the
+                // body toggle nor the synopsis one reaches it. It answers to a toggle of
+                // its own, off by default, and the search dto carries none yet: until it
+                // does, nothing searches a scratchpad.
+                MatchField::Scratchpad => false,
                 // Not reachable from a `Content` row: titles and labels live on the
                 // `BinderItem`, comments on their own entities, and all four are scanned
                 // in their own passes. `field_of_role` never returns them, and the

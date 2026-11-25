@@ -267,7 +267,14 @@ impl MergeTwoScenesUseCase {
         // (source row id, target row id) for every role whose text actually moved —
         // fed to the footnote reanchor pass below, once every role has been folded in.
         let mut moved_role_content: Vec<(EntityId, EntityId)> = Vec::new();
-        for role in [ContentRole::SceneText, ContentRole::SynopsisText] {
+        // The scratchpad folds in like the synopsis: both items' private notes belong to
+        // the scene that survives, so the second one's are appended, never dropped with
+        // the trashed source.
+        for role in [
+            ContentRole::SceneText,
+            ContentRole::SynopsisText,
+            ContentRole::ScratchpadText,
+        ] {
             let b_row = b_rows.iter().find(|c| c.role == role);
             let b_text = b_row.map(|c| c.data.clone()).unwrap_or_default();
             if b_text.trim().is_empty() {

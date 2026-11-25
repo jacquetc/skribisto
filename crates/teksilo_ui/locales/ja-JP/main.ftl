@@ -133,6 +133,7 @@ content-part-title = 部のタイトル
 content-chapter-title = 章のタイトル
 content-epigraph-text = エピグラフ
 content-paratext-text = パラテクスト
+content-scratchpad-text = メモ帳
 promote-blocked-title = 章が空ではありません
 promote-blocked-text = この章にはまだ{ $count }項目があります。単独の章に変換する前に移動するか、ごみ箱に入れてください。
 
@@ -1913,6 +1914,7 @@ search-field-comment = コメント
 search-field-comment-reply = 返信
 search-field-footnote = 脚注
 search-field-resource = リソース
+search-field-scratchpad = メモ帳
 search-include-in-replace = すべて置換に含める
 search-collapse-all = すべての結果を折りたたむ
 search-replace-here = この箇所を置換

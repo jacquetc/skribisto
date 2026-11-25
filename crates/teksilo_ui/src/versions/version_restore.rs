@@ -165,6 +165,9 @@ pub enum Slot {
     Main,
     Synopsis,
     Epigraph,
+    /// The item's scratchpad, built on demand (see
+    /// [`OpenDocsStore::ensure_scratchpad`](crate::models::OpenDocsStore::ensure_scratchpad)).
+    Scratchpad,
 }
 
 /// The document slot a content role is edited in, or `None` for the roles that
@@ -180,6 +183,9 @@ pub fn slot_for(role: &ContentRole) -> Option<Slot> {
             Some(Slot::Main)
         }
         ContentRole::EpigraphText => Some(Slot::Epigraph),
+        // A document like the others, so a recorded scratchpad can be put back, and a
+        // row recreated from the Timeline comes back with its notes.
+        ContentRole::ScratchpadText => Some(Slot::Scratchpad),
         ContentRole::BookTitle
         | ContentRole::PartTitle
         | ContentRole::ChapterTitle
@@ -224,13 +230,17 @@ pub fn replace_all(doc: &TextDocument, past: &str) -> Result<()> {
 }
 
 /// The document a slot names, if this row has one.
-pub fn document_for(doc: &OpenDoc, slot: Slot) -> Option<&TextDocument> {
-    let field = match slot {
-        Slot::Main => doc.main.as_ref(),
-        Slot::Synopsis => doc.synopsis.as_ref(),
-        Slot::Epigraph => doc.epigraph.as_ref(),
-    };
-    field.map(|f| &f.doc)
+///
+/// A handle rather than a borrow: a [`TextDocument`] is a cheap shared handle, and the
+/// scratchpad lives in a cell that cannot lend its field past the call. The scratchpad
+/// is there only once it is built; [`apply`] builds it first.
+pub fn document_for(doc: &OpenDoc, slot: Slot) -> Option<TextDocument> {
+    match slot {
+        Slot::Main => doc.main.as_ref().map(|f| f.doc.clone()),
+        Slot::Synopsis => doc.synopsis.as_ref().map(|f| f.doc.clone()),
+        Slot::Epigraph => doc.epigraph.as_ref().map(|f| f.doc.clone()),
+        Slot::Scratchpad => doc.scratchpad().map(|f| f.doc.clone()),
+    }
 }
 
 /// The `Content` row id behind a slot — what a comment on that text anchors to.
@@ -241,6 +251,9 @@ pub fn content_id_for(doc: &OpenDoc, slot: Slot) -> Option<u64> {
         // No comment layer is created on an epigraph (quoted matter is not the
         // author's own text to annotate), so nothing can be anchored there.
         Slot::Epigraph => None,
+        // Nor on the scratchpad: the writer's own notes beside the item are not the
+        // text a comment discusses.
+        Slot::Scratchpad => None,
     }
 }
 
@@ -285,10 +298,14 @@ pub fn apply(
     let Some(doc) = docs.open(item_id) else {
         return Err(RestoreRefusal::RowGone);
     };
+    if slot == Slot::Scratchpad {
+        // Built on demand, so a restore into a scratchpad nobody has opened builds it.
+        docs.ensure_scratchpad(&doc);
+    }
     let outcome = (|| -> Result<()> {
         let document = document_for(&doc, slot)
             .ok_or_else(|| anyhow::anyhow!("this row has no {target:?} to restore into"))?;
-        replace_all(document, past)?;
+        replace_all(&document, past)?;
         // The characters as a reader meets them, taken from the document after
         // the restore rather than from the Djot that produced it: `past` is
         // markup, and counting its asterisks would report more text than the
@@ -350,10 +367,17 @@ mod tests {
                 (ContentRole::SceneText, "the body"),
                 (ContentRole::SynopsisText, "the summary"),
                 (ContentRole::EpigraphText, "a quotation"),
+                (ContentRole::ScratchpadText, "the writer's notes"),
             ],
         );
         let writable = req.writable_prose();
-        assert_eq!(writable.len(), 3);
+        assert_eq!(writable.len(), 4);
+        assert!(
+            writable
+                .iter()
+                .any(|(r, t)| *r == ContentRole::ScratchpadText && t == "the writer's notes"),
+            "a recreated row comes back with its scratchpad"
+        );
         assert!(
             writable
                 .iter()
@@ -504,6 +528,10 @@ mod tests {
         assert_eq!(slot_for(&ContentRole::ParatextText), Some(Slot::Main));
         assert_eq!(slot_for(&ContentRole::SynopsisText), Some(Slot::Synopsis));
         assert_eq!(slot_for(&ContentRole::EpigraphText), Some(Slot::Epigraph));
+        assert_eq!(
+            slot_for(&ContentRole::ScratchpadText),
+            Some(Slot::Scratchpad)
+        );
         // The names are `Signal<String>`s, not documents.
         for role in [
             ContentRole::BookTitle,

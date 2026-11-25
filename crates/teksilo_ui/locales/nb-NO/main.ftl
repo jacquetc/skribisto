@@ -133,6 +133,7 @@ content-part-title = Deltittel
 content-chapter-title = Kapitteltittel
 content-epigraph-text = Epigraf
 content-paratext-text = Paratekst
+content-scratchpad-text = Kladdeblokk
 promote-blocked-title = Kapittelet er ikke tomt
 promote-blocked-text = { $count ->
     [one] Dette kapittelet inneholder fortsatt { $count } element. Flytt det eller legg det i papirkurven før du konverterer kapittelet til et flatt kapittel.
@@ -2560,6 +2561,7 @@ search-field-comment = Kommentar
 search-field-comment-reply = Svar
 search-field-footnote = Fotnote
 search-field-resource = Ressurs
+search-field-scratchpad = Kladdeblokk
 search-include-in-replace = Ta med i Erstatt alle
 search-collapse-all = Fold sammen alle resultater
 search-replace-here = Erstatt dette

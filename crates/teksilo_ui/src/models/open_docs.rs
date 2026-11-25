@@ -71,6 +71,16 @@ pub struct OpenDoc {
     /// `Content` row finds it by `.find(|c| c.role == role)`, first match wins, so a
     /// second row of the same role would be invisible to all of them forever.
     pub epigraph: Option<ProseField>,
+    /// The item's private scratchpad (`ContentRole::ScratchpadText`): the writer's notes
+    /// beside the item, never part of the work.
+    ///
+    /// **Built lazily**, unlike every field above, by [`OpenDocsStore::ensure_scratchpad`]
+    /// when a surface asks to show it. An `OpenDoc` is built for every stream row and every
+    /// corkboard card, and none of them shows a scratchpad, so building one in
+    /// [`build_in`](Self::build_in) would parse a document per row for nothing. `None`
+    /// until then, and always for the two content-free markers the matrix gives none.
+    /// An `Rc` so a caller can hold the field without holding a borrow of this cell.
+    scratchpad: RefCell<Option<Rc<ProseField>>>,
     /// `true` once any editor bound to this doc edited a field since the last
     /// save. Cleared by [`flush`](Self::flush).
     pub dirty: Signal<bool>,
@@ -101,6 +111,10 @@ pub struct OpenDoc {
     spell_main: Option<Rc<SpellSession>>,
     spell_synopsis: Option<Rc<SpellSession>>,
     spell_epigraph: Option<Rc<SpellSession>>,
+    /// The scratchpad's spell session, created with the field by
+    /// [`OpenDocsStore::ensure_scratchpad`]. Asleep while nobody shows the scratchpad:
+    /// see [`acquire_scratchpad_viewer`](Self::acquire_scratchpad_viewer).
+    spell_scratchpad: RefCell<Option<Rc<SpellSession>>>,
     /// The comment highlight layer on each prose document, if that field exists.
     ///
     /// It hangs here rather than on a tab or an editor widget for the same reason
@@ -136,6 +150,10 @@ pub struct OpenDoc {
     /// smart-punctuation engine exists for — and the locale-aware quote pairs matter more
     /// here than anywhere else in the manuscript.
     replacement_epigraph: RefCell<Option<Rc<TextReplacementSession>>>,
+    /// The scratchpad's replace-while-typing session, once the scratchpad is built. Its
+    /// notes are typed like any other text, so they get the lexicon and the punctuation
+    /// rules of the project too.
+    replacement_scratchpad: RefCell<Option<Rc<TextReplacementSession>>>,
     /// The language this item is written in, for every editor that shows it: its
     /// own dictionary language, else the project's. `None` until the store first
     /// resolves it, and for a project that names no language.
@@ -159,6 +177,9 @@ pub struct OpenDoc {
     /// Maintained through [`acquire_synopsis_viewer`](Self::acquire_synopsis_viewer)
     /// and its guard, mirroring the store's own open/release refcount above.
     synopsis_viewers: Cell<u32>,
+    /// How many mounted views currently show this doc's scratchpad: the same count as
+    /// [`synopsis_viewers`](Self::synopsis_viewers), for the scratchpad's spell session.
+    scratchpad_viewers: Cell<u32>,
 }
 
 /// Keeps a doc's synopsis spell session awake for as long as it is held.
@@ -175,6 +196,20 @@ pub struct SynopsisViewerGuard {
 impl Drop for SynopsisViewerGuard {
     fn drop(&mut self) {
         self.doc.release_synopsis_viewer();
+    }
+}
+
+/// Keeps a doc's scratchpad spell session awake for as long as it is held, for the
+/// reason [`SynopsisViewerGuard`] exists: the view showing a scratchpad can go away by
+/// a close, a Promote or a window teardown, and dropping the guard is what all of them
+/// share.
+pub struct ScratchpadViewerGuard {
+    doc: Rc<OpenDoc>,
+}
+
+impl Drop for ScratchpadViewerGuard {
+    fn drop(&mut self) {
+        self.doc.release_scratchpad_viewer();
     }
 }
 
@@ -241,6 +276,7 @@ impl OpenDoc {
             main: None,
             synopsis: None,
             epigraph: None,
+            scratchpad: RefCell::new(None),
             dirty: Signal::new(false),
             trashed: Signal::new(false),
             tags: Signal::new(Vec::new()),
@@ -254,6 +290,7 @@ impl OpenDoc {
             spell_main: None,
             spell_synopsis: None,
             spell_epigraph: None,
+            spell_scratchpad: RefCell::new(None),
             comments_main: None,
             comments_synopsis: None,
             images: None,
@@ -262,8 +299,10 @@ impl OpenDoc {
             replacement_main: RefCell::new(None),
             replacement_synopsis: RefCell::new(None),
             replacement_epigraph: RefCell::new(None),
+            replacement_scratchpad: RefCell::new(None),
             language: Signal::new(None),
             synopsis_viewers: Cell::new(0),
+            scratchpad_viewers: Cell::new(0),
         };
         for cr in skribisto_model::allowed_content(role, sub_role) {
             let existing = contents.iter().find(|c| &c.role == cr);
@@ -291,6 +330,9 @@ impl OpenDoc {
                 ContentRole::BookTitle | ContentRole::ChapterTitle | ContentRole::PartTitle => {
                     doc.title = Some(title_field(ctx, item_id, TitlePart::Title))
                 }
+                // Never here: built on demand by `OpenDocsStore::ensure_scratchpad`, so a
+                // stream row or a corkboard card never parses one. See `scratchpad`.
+                ContentRole::ScratchpadText => {}
             }
         }
         // Give each present prose document its caret-aware spell-check range session. Empty until
@@ -348,6 +390,20 @@ impl OpenDoc {
         }
     }
 
+    /// The `on_change` hook for the scratchpad's editor: mark the doc dirty and bump the
+    /// store's aggregate edit counter, so autosave runs and the window reads as unsaved,
+    /// but **not** [`edit_gen`](Self::edit_gen). That one wakes the observers of this
+    /// item's own text (the cast overlay, the gallery), and a note jotted beside the
+    /// scene changes nothing they show.
+    pub fn mark_scratchpad_dirty_fn(&self) -> impl Fn() + 'static {
+        let dirty = self.dirty.clone();
+        let edited = self.edited.clone();
+        move || {
+            dirty.set(true);
+            edited.set(edited.get().wrapping_add(1));
+        }
+    }
+
     /// Persist every changed field back to its `Content` row (creating the row on
     /// first save) via each field's `SingleContent`. Idempotent (clean fields are
     /// a no-op). Routes through the undo `stack`.
@@ -365,14 +421,20 @@ impl OpenDoc {
         //
         // Every field is attempted even after one fails: a title the store
         // refused must not keep the prose beside it from reaching the store.
-        // `dirty` is cleared only once all five landed, so the next flush
+        // `dirty` is cleared only once all six landed, so the next flush
         // retries the one that did not; the first error is the one reported.
+        //
+        // The scratchpad flushes like the prose, and only once it is built: a
+        // scratchpad nobody opened has nothing in it to write, and one opened and
+        // left untouched is not stale, so neither creates a row.
+        let scratchpad = self.scratchpad();
         let outcomes = [
             self.title.as_ref().map(|f| f.flush(stack)),
             self.subtitle.as_ref().map(|f| f.flush(stack)),
             self.main.as_ref().map(|f| f.flush()),
             self.synopsis.as_ref().map(|f| f.flush()),
             self.epigraph.as_ref().map(|f| f.flush()),
+            scratchpad.as_deref().map(ProseField::flush),
         ];
         let mut first_error = None;
         for outcome in outcomes.into_iter().flatten() {
@@ -404,9 +466,23 @@ impl OpenDoc {
     /// `ProseField`'s own test for the property this proves.
     #[allow(dead_code)]
     pub fn is_stale(&self) -> bool {
-        self.main.as_ref().is_some_and(ProseField::is_stale)
-            || self.synopsis.as_ref().is_some_and(ProseField::is_stale)
-            || self.epigraph.as_ref().is_some_and(ProseField::is_stale)
+        self.prose_fields().into_iter().any(|f| f.is_stale())
+    }
+
+    /// Every prose field this doc has: the three built with it, and the scratchpad once
+    /// it is built. The one list the per-field passes below walk, so a pass cannot leave
+    /// the scratchpad out by accident; the passes that must (footnote markers, comment
+    /// layers) name their fields instead.
+    fn prose_fields(&self) -> Vec<FieldRef<'_>> {
+        let mut out: Vec<FieldRef<'_>> = [&self.main, &self.synopsis, &self.epigraph]
+            .into_iter()
+            .flatten()
+            .map(FieldRef::Owned)
+            .collect();
+        if let Some(pad) = self.scratchpad() {
+            out.push(FieldRef::Lazy(pad));
+        }
+        out
     }
 
     /// Discard the live edits and re-read every present field from its persisted
@@ -418,11 +494,53 @@ impl OpenDoc {
     /// frame afterwards, since `set_djot` only queues a document event.
     /// The `Content` row ids this doc's prose fields read and write.
     pub fn content_ids(&self) -> Vec<u64> {
-        [&self.main, &self.synopsis, &self.epigraph]
-            .into_iter()
-            .flatten()
+        self.prose_fields()
+            .iter()
             .filter_map(|f| f.content_id())
             .collect()
+    }
+
+    /// Whether a prose field of this doc has no `Content` row yet: one nobody has
+    /// typed into, whose row its first flush will create.
+    ///
+    /// Such a field is invisible to [`content_ids`](Self::content_ids), so a command
+    /// that creates the row for it (a merge folding a scratchpad or a synopsis into a
+    /// target that had none) cannot be traced back to it by id. The store asks this
+    /// instead, to know which docs to re-read when a row is created.
+    pub fn has_rowless_field(&self) -> bool {
+        self.prose_fields().iter().any(|f| f.content_id().is_none())
+    }
+
+    /// Re-read, by `(item, role)`, the prose fields that have no `Content` row yet, and
+    /// only those: a command created the row one of them was waiting for (a merge folding
+    /// a scratchpad into a target that had none). Returns whether any reloaded.
+    ///
+    /// A field that already has a row is never touched here. Its row changing is the
+    /// `Content(Updated)` path's to handle, and that path says so when it resets a
+    /// typing history; reloading it from here would reset one in silence.
+    pub fn reload_rowless_fields(&self) -> bool {
+        let mut any = false;
+        for f in self.prose_fields() {
+            if f.content_id().is_none() {
+                any |= f.reload_if_diverged();
+            }
+        }
+        any
+    }
+
+    /// Re-read, by `(item, role)`, the prose fields whose `Content` row is among
+    /// `removed`: a command took the row away (an undo removing a row made since, a
+    /// redo folding it into the row it brings back). Each is bound to whatever row of its
+    /// role the item holds now, or to none, and shows its text. Returns whether any
+    /// reloaded.
+    pub fn reload_fields_of_removed_rows(&self, removed: &[u64]) -> bool {
+        let mut any = false;
+        for f in self.prose_fields() {
+            if f.content_id().is_some_and(|id| removed.contains(&id)) {
+                any |= f.reload_if_diverged();
+            }
+        }
+        any
     }
 
     /// Does every prose field still agree with its stored row?
@@ -433,10 +551,7 @@ impl OpenDoc {
     /// text that no longer exists, and restoring them would quietly resurrect
     /// it. See [`crate::models::OpenDocsStore::release`].
     pub fn agrees_with_store(&self) -> bool {
-        [&self.main, &self.synopsis, &self.epigraph]
-            .into_iter()
-            .flatten()
-            .all(ProseField::agrees_with_store)
+        self.prose_fields().iter().all(|f| f.agrees_with_store())
     }
 
     /// Has anything been typed into this document that could still be undone?
@@ -444,10 +559,7 @@ impl OpenDoc {
     /// Remembering a document nobody edited would spend memory to preserve an
     /// empty history.
     pub fn has_history(&self) -> bool {
-        [&self.main, &self.synopsis, &self.epigraph]
-            .into_iter()
-            .flatten()
-            .any(ProseField::has_history)
+        self.prose_fields().iter().any(|f| f.has_history())
     }
 
     /// Re-read only the prose fields that have genuinely diverged. Returns
@@ -458,10 +570,7 @@ impl OpenDoc {
     /// bound to, and which follow their entity's own `Updated` event.
     pub fn reload_if_diverged(&self) -> bool {
         let mut any = false;
-        for f in [&self.main, &self.synopsis, &self.epigraph]
-            .into_iter()
-            .flatten()
-        {
+        for f in self.prose_fields() {
             any |= f.reload_if_diverged();
         }
         any
@@ -482,6 +591,14 @@ impl OpenDoc {
         }
         if let Some(f) = &self.epigraph {
             f.reload();
+        }
+        // By `(item, role)`, like the others: a merge may have created the row the
+        // scratchpad had none of, and the folded text has to show. But only when the
+        // stored text moved: a merge or a split calls this on the scene that stays,
+        // whose scratchpad the command most often leaves as it was, and an unconditional
+        // reload cleared the typing history of a scratchpad nobody had touched.
+        if let Some(f) = self.scratchpad() {
+            f.reload_if_diverged();
         }
         self.dirty.set(false);
     }
@@ -506,7 +623,24 @@ impl OpenDoc {
             s.set_checker(checker.clone(), color);
         }
         if let Some(s) = &self.spell_epigraph {
+            s.set_checker(checker.clone(), color);
+        }
+        if let Some(s) = self.spell_scratchpad() {
             s.set_checker(checker, color);
+        }
+    }
+
+    /// Point the scratchpad's spell session alone at `tags`: what a scratchpad built
+    /// after the doc was opened needs, without making every other field recompute.
+    pub fn attach_spell_scratchpad(
+        &self,
+        spell: &SpellcheckService,
+        tags: &[String],
+        color: Color,
+        work_id: Option<u64>,
+    ) {
+        if let Some(s) = self.spell_scratchpad() {
+            s.set_checker(spell.build_checker(tags, work_id), color);
         }
     }
 
@@ -615,6 +749,9 @@ impl OpenDoc {
     /// Every field, not just the main prose: a reference can sit in a synopsis or
     /// an epigraph as readily as in a scene, and a document left without the map
     /// falls back to drawing the raw label.
+    ///
+    /// Not the scratchpad: a footnote belongs to the book, and the scratchpad refuses
+    /// one, so there is no marker in it to print.
     pub fn set_footnote_markers(&self, markers: &std::collections::HashMap<String, String>) {
         for field in [&self.main, &self.synopsis, &self.epigraph]
             .into_iter()
@@ -639,6 +776,80 @@ impl OpenDoc {
     /// would silently merge them.
     pub fn synopsis_content_id(&self) -> Option<u64> {
         self.synopsis.as_ref().and_then(|f| f.content_id())
+    }
+
+    /// The `Content` row id behind the scratchpad, if it is built and has a row.
+    pub fn scratchpad_content_id(&self) -> Option<u64> {
+        self.scratchpad().and_then(|f| f.content_id())
+    }
+
+    /// The scratchpad field, if [`OpenDocsStore::ensure_scratchpad`] has built it.
+    pub fn scratchpad(&self) -> Option<Rc<ProseField>> {
+        self.scratchpad.borrow().clone()
+    }
+
+    /// Whether this item's type has a scratchpad at all: every type that carries any
+    /// content, so not the two content-free markers.
+    pub fn carries_scratchpad(&self) -> bool {
+        skribisto_model::content_allowed(&self.role, &self.sub_role, &ContentRole::ScratchpadText)
+    }
+
+    /// The scratchpad's spell session, once the scratchpad is built.
+    pub fn spell_scratchpad(&self) -> Option<Rc<SpellSession>> {
+        self.spell_scratchpad.borrow().clone()
+    }
+
+    /// The scratchpad's replace-while-typing session, once the scratchpad is built and
+    /// the store has a lexicon to give it.
+    pub fn replacement_scratchpad(&self) -> Option<Rc<TextReplacementSession>> {
+        self.replacement_scratchpad.borrow().clone()
+    }
+
+    /// Install a freshly built scratchpad field with its spell session. Only
+    /// [`OpenDocsStore::ensure_scratchpad`] builds one; a second install keeps the first.
+    fn install_scratchpad(&self, field: ProseField) -> Rc<ProseField> {
+        if let Some(existing) = self.scratchpad() {
+            return existing;
+        }
+        let spell = SpellSession::new(&field.doc);
+        // Asleep until a view shows it, as the synopsis is: see
+        // `acquire_scratchpad_viewer`.
+        spell.set_active(self.scratchpad_viewers.get() > 0);
+        *self.spell_scratchpad.borrow_mut() = Some(spell);
+        let field = Rc::new(field);
+        *self.scratchpad.borrow_mut() = Some(field.clone());
+        field
+    }
+
+    /// Register a mounted view as showing this doc's scratchpad, waking its spell session
+    /// on the first. Release by dropping the guard. The scratchpad twin of
+    /// [`acquire_synopsis_viewer`](Self::acquire_synopsis_viewer).
+    pub fn acquire_scratchpad_viewer(self: &Rc<Self>) -> ScratchpadViewerGuard {
+        let next = self.scratchpad_viewers.get() + 1;
+        self.scratchpad_viewers.set(next);
+        if next == 1
+            && let Some(s) = self.spell_scratchpad()
+        {
+            s.set_active(true);
+        }
+        ScratchpadViewerGuard { doc: self.clone() }
+    }
+
+    /// The 1→0 edge, reached only by dropping a [`ScratchpadViewerGuard`].
+    fn release_scratchpad_viewer(&self) {
+        let next = self.scratchpad_viewers.get().saturating_sub(1);
+        self.scratchpad_viewers.set(next);
+        if next == 0
+            && let Some(s) = self.spell_scratchpad()
+        {
+            s.set_active(false);
+        }
+    }
+
+    /// How many mounted views currently show this doc's scratchpad.
+    #[cfg(test)]
+    pub fn scratchpad_viewers(&self) -> u32 {
+        self.scratchpad_viewers.get()
     }
 
     /// Register a mounted view as *showing* this doc's synopsis, waking its spell
@@ -692,6 +903,10 @@ impl OpenDoc {
         if self.epigraph.is_some() && self.replacement_epigraph.borrow().is_none() {
             *self.replacement_epigraph.borrow_mut() = Some(TextReplacementSession::new(vm.clone()));
         }
+        if self.scratchpad.borrow().is_some() && self.replacement_scratchpad.borrow().is_none() {
+            *self.replacement_scratchpad.borrow_mut() =
+                Some(TextReplacementSession::new(vm.clone()));
+        }
     }
 
     /// The language this item is written in, for its editors' `content_language`.
@@ -723,6 +938,7 @@ impl OpenDoc {
             &self.replacement_main,
             &self.replacement_synopsis,
             &self.replacement_epigraph,
+            &self.replacement_scratchpad,
         ] {
             if let Some(s) = session.borrow().as_ref() {
                 s.set_locale(tag);
@@ -744,6 +960,7 @@ impl OpenDoc {
             &self.replacement_main,
             &self.replacement_synopsis,
             &self.replacement_epigraph,
+            &self.replacement_scratchpad,
         ] {
             if let Some(s) = session.borrow().as_ref() {
                 s.set_punctuation(flags.clone());
@@ -769,6 +986,25 @@ impl OpenDoc {
     /// The caret-aware spell session on the epigraph document, if any.
     pub fn spell_epigraph(&self) -> Option<Rc<SpellSession>> {
         self.spell_epigraph.clone()
+    }
+}
+
+/// One of an [`OpenDoc`]'s prose fields, as [`OpenDoc::prose_fields`] hands them out:
+/// borrowed for the three built with the doc, shared for the scratchpad, which lives in
+/// a cell and cannot be lent past its borrow.
+enum FieldRef<'a> {
+    Owned(&'a ProseField),
+    Lazy(Rc<ProseField>),
+}
+
+impl std::ops::Deref for FieldRef<'_> {
+    type Target = ProseField;
+
+    fn deref(&self) -> &ProseField {
+        match self {
+            FieldRef::Owned(f) => f,
+            FieldRef::Lazy(f) => f,
+        }
     }
 }
 
@@ -835,6 +1071,9 @@ struct Inner {
     item_probe: SingleBinderItem,
     /// Aggregate "an edit happened" counter shared by every open doc.
     edited: Signal<u64>,
+    /// Bumped each time [`OpenDocsStore::rebuild`] replaces a document, after the swap,
+    /// so a holder of an id (the Scratchpad dock) re-peeks it then rather than polling.
+    rebuilt: Signal<u64>,
     /// The spell-check engine, set once by `App`. `None` until then (headless tests, or before
     /// the first project loads) — every attach is then a no-op, so opening still works.
     spell: RefCell<Option<SpellcheckService>>,
@@ -1027,6 +1266,7 @@ impl OpenDocsStore {
                 item_probe: SingleBinderItem::new(app_ctx.clone()),
                 app_ctx,
                 edited: Signal::new(0),
+                rebuilt: Signal::new(0),
                 spell: RefCell::new(None),
                 text_replacements: RefCell::new(None),
                 comments: RefCell::new(None),
@@ -1367,6 +1607,10 @@ impl OpenDocsStore {
         if let Some(s) = doc.spell_synopsis() {
             s.set_active(doc.synopsis_viewers.get() > 0);
         }
+        // The scratchpad the same way, when a remembered doc comes back with one built.
+        if let Some(s) = doc.spell_scratchpad() {
+            s.set_active(doc.scratchpad_viewers.get() > 0);
+        }
         let tags = self.language_for(doc.item_id);
         doc.attach_spell(
             &spell,
@@ -1598,6 +1842,62 @@ impl OpenDocsStore {
         Some(doc)
     }
 
+    /// Build `doc`'s scratchpad if it has none yet, and hand it back. `None` for an item
+    /// whose type carries no scratchpad.
+    ///
+    /// The one door to a scratchpad: [`OpenDoc::build_in`] never builds it, so a stream
+    /// row or a corkboard card does not pay for a document nobody shows there. It re-reads
+    /// the row by `(item, role)` rather than trusting what the doc was opened with, since
+    /// the scratchpad may have been written (a merge folding one in, another window)
+    /// after the doc was built. The field gets what every other prose field gets on open:
+    /// its images registered, a spell session in the item's language (asleep until a view
+    /// shows it), and a replace-while-typing session with the project's locale and
+    /// punctuation rules. Not a comment layer and not the footnote markers: a scratchpad
+    /// is the writer's own notes, not the text either of them belongs to.
+    pub fn ensure_scratchpad(&self, doc: &Rc<OpenDoc>) -> Option<Rc<ProseField>> {
+        if let Some(field) = doc.scratchpad() {
+            return Some(field);
+        }
+        if !doc.carries_scratchpad() {
+            return None;
+        }
+        let existing = self
+            .load_contents(doc.item_id, &doc.role, &doc.sub_role)
+            .into_iter()
+            .find(|c| c.role == ContentRole::ScratchpadText);
+        let field = prose_field(
+            &self.inner.app_ctx,
+            &self.inner.doc_backend,
+            doc.item_id,
+            ContentRole::ScratchpadText,
+            existing.as_ref(),
+        );
+        let media_dir = doc
+            .images()
+            .map(|images| images.media_dir())
+            .unwrap_or_else(|| self.media_dir());
+        let djot = field.doc.to_djot().unwrap_or_default();
+        crate::shared::images::register_referenced(&field.doc, &djot, &media_dir);
+        let field = doc.install_scratchpad(field);
+
+        let tags = self.language_for(doc.item_id);
+        if let Some(vm) = self.inner.text_replacements.borrow().clone() {
+            // Idempotent for the fields that already have theirs.
+            doc.attach_replacements(&vm);
+        }
+        doc.set_replacement_locale(&tags);
+        doc.set_punctuation(self.inner.punctuation.borrow().clone());
+        if let Some(spell) = self.inner.spell.borrow().clone() {
+            doc.attach_spell_scratchpad(
+                &spell,
+                &tags,
+                self.inner.squiggle.get(),
+                self.inner.work_id.get(),
+            );
+        }
+        Some(field)
+    }
+
     /// Rebuild `item_id`'s document **in place**, keeping its reference count.
     ///
     /// An `OpenDoc`'s fields are decided once, at construction, from the constraint
@@ -1646,7 +1946,19 @@ impl OpenDocsStore {
             entry.doc = fresh.clone();
         }
         self.attach_one(&fresh);
+        // After the swap and the attach, so whoever re-peeks on it gets the fresh doc,
+        // fully set up.
+        self.inner
+            .rebuilt
+            .set(self.inner.rebuilt.get().wrapping_add(1));
         Some(fresh)
+    }
+
+    /// Bumped each time [`Self::rebuild`] has replaced a document (a Promote retyped its
+    /// item). A view that holds an item's id rather than its `Rc<OpenDoc>` observes it
+    /// to re-peek the document and notice the swap.
+    pub fn rebuilt(&self) -> Signal<u64> {
+        self.inner.rebuilt.clone()
     }
 
     /// Release one reference to `item_id`. On the **last** reference, flush the
@@ -1839,6 +2151,84 @@ impl OpenDocsStore {
                     .any(|c| content_ids.contains(c))
             })
             .map(|(item, _)| *item)
+            .collect()
+    }
+
+    /// Which **open** items have a prose field with no `Content` row yet (see
+    /// [`OpenDoc::has_rowless_field`]).
+    ///
+    /// When a command creates a row, its id names no open field, so
+    /// [`items_owning_contents`](Self::items_owning_contents) cannot find the doc it
+    /// belongs to. These are the only docs it can belong to.
+    pub fn items_with_rowless_fields(&self) -> Vec<u64> {
+        self.inner
+            .open
+            .borrow()
+            .iter()
+            .filter(|(_, entry)| entry.doc.has_rowless_field())
+            .map(|(item, _)| *item)
+            .collect()
+    }
+
+    /// Which **open** items a command just gave one of the `created` rows to, among
+    /// those with a field still waiting for its row: the item's stored contents now list
+    /// it. Asked of the store per candidate, so a row created for an item that is not
+    /// open, or for one whose fields all have their rows, reloads nothing.
+    pub fn items_given_rows(&self, created: &[u64]) -> Vec<u64> {
+        if created.is_empty() {
+            return Vec::new();
+        }
+        let ctx = &*self.inner.app_ctx;
+        self.items_with_rowless_fields()
+            .into_iter()
+            .filter(|item| {
+                binder_item_commands::get_binder_item_relationship(
+                    ctx,
+                    item,
+                    &BinderItemRelationshipField::Contents,
+                )
+                .unwrap_or_default()
+                .iter()
+                .any(|c| created.contains(c))
+            })
+            .collect()
+    }
+
+    /// Bind the open fields waiting for a row to the rows a command just `created` for
+    /// them, and show their text: only the docs of the items given one
+    /// ([`Self::items_given_rows`]), and in those only the fields with no row
+    /// ([`OpenDoc::reload_rowless_fields`]). Returns the items that reloaded.
+    ///
+    /// No typing history is lost: a field with no row has had nothing saved, and every
+    /// field that has a row is left as it is.
+    pub fn bind_created_rows(&self, created: &[u64]) -> Vec<u64> {
+        let given = self.items_given_rows(created);
+        if given.is_empty() {
+            return Vec::new();
+        }
+        let map = self.inner.open.borrow();
+        given
+            .into_iter()
+            .filter(|id| map.get(id).is_some_and(|e| e.doc.reload_rowless_fields()))
+            .collect()
+    }
+
+    /// Re-read the open fields whose row a command just `removed`, binding each to the
+    /// row of its role its item holds now (see [`OpenDoc::reload_fields_of_removed_rows`]).
+    /// An item that is gone with its rows is left alone: its tabs are closing. Returns
+    /// the items that reloaded.
+    pub fn rebind_removed_rows(&self, removed: &[u64]) -> Vec<u64> {
+        let touched = self.items_owning_contents(removed);
+        let live: Vec<u64> = touched
+            .into_iter()
+            .filter(|id| self.item_is_live(*id))
+            .collect();
+        let map = self.inner.open.borrow();
+        live.into_iter()
+            .filter(|id| {
+                map.get(id)
+                    .is_some_and(|e| e.doc.reload_fields_of_removed_rows(removed))
+            })
             .collect()
     }
 
@@ -2965,5 +3355,493 @@ mod content_language_tests {
         );
         assert_eq!(content_language_of(&list(&["not a tag!"])), None);
         assert_eq!(content_language_of(&[]), None);
+    }
+}
+
+#[cfg(all(test, not(feature = "mocks")))]
+mod scratchpad_tests {
+    use super::*;
+    use frontend::commands::{binder_item_management_commands, content_commands, work_commands};
+    use frontend::direct_access::{
+        CreateBinderDto, CreateBinderItemDto, CreateContentDto, CreateWorkDto,
+    };
+
+    /// A real store over a real project holding `count` scenes, and the Work's id.
+    fn project(count: usize) -> (Rc<AppContext>, OpenDocsStore, u64, Vec<u64>) {
+        let ctx = Rc::new(AppContext::new());
+        let work = work_commands::create_orphan_work(&ctx, None, &CreateWorkDto::default())
+            .unwrap()
+            .id;
+        let binder = binder_commands::create_binder(
+            &ctx,
+            None,
+            &CreateBinderDto {
+                name: "B".into(),
+                activated: true,
+                ..Default::default()
+            },
+            work,
+            0,
+        )
+        .unwrap();
+        let items = (0..count)
+            .map(|i| {
+                binder_item_commands::create_binder_item(
+                    &ctx,
+                    None,
+                    &CreateBinderItemDto {
+                        status: None,
+                        title: format!("Scene {i}"),
+                        role: BinderItemRole::Item,
+                        sub_role: BinderItemSubRole::Scene,
+                        activated: true,
+                        is_exportable: true,
+                        ..Default::default()
+                    },
+                    binder.id,
+                    -1,
+                )
+                .unwrap()
+                .id
+            })
+            .collect();
+        let store = OpenDocsStore::new(ctx.clone());
+        (ctx, store, work, items)
+    }
+
+    fn add_row(ctx: &AppContext, item: u64, role: ContentRole, data: &str) -> u64 {
+        content_commands::create_content(
+            ctx,
+            None,
+            &CreateContentDto {
+                role,
+                activated: true,
+                data: data.to_string(),
+                ..Default::default()
+            },
+            item,
+            -1,
+        )
+        .unwrap()
+        .id
+    }
+
+    /// The item's stored row of `role`, as (id, text).
+    fn stored(ctx: &AppContext, item: u64, role: ContentRole) -> Option<(u64, String)> {
+        let ids = binder_item_commands::get_binder_item_relationship(
+            ctx,
+            &item,
+            &BinderItemRelationshipField::Contents,
+        )
+        .unwrap();
+        content_commands::get_content_multi(ctx, &ids)
+            .unwrap()
+            .into_iter()
+            .flatten()
+            .find(|c| c.role == role)
+            .map(|c| (c.id, c.data))
+    }
+
+    fn type_into(field: &ProseField, text: &str) {
+        field.doc.cursor_at(0).insert_text(text).unwrap();
+    }
+
+    fn text_of(field: &ProseField) -> String {
+        field.doc.to_plain_text().unwrap().trim().to_string()
+    }
+
+    /// Opening an item never builds its scratchpad, even when it has one stored: a stream
+    /// opens a document per row and none of them shows it. The stored row is left alone.
+    #[test]
+    fn opening_an_item_never_builds_its_scratchpad() {
+        let (ctx, store, _, items) = project(1);
+        add_row(&ctx, items[0], ContentRole::SceneText, "The lamp.");
+        let pad = add_row(
+            &ctx,
+            items[0],
+            ContentRole::ScratchpadText,
+            "Check the oil.",
+        );
+
+        let doc = store.open(items[0]).expect("opens");
+        assert!(doc.carries_scratchpad());
+        assert!(doc.scratchpad().is_none(), "not built on open");
+        assert!(doc.spell_scratchpad().is_none());
+        assert!(!doc.content_ids().contains(&pad));
+        doc.flush(None).unwrap();
+        assert_eq!(
+            stored(&ctx, items[0], ContentRole::ScratchpadText),
+            Some((pad, "Check the oil.".to_string()))
+        );
+    }
+
+    /// `ensure_scratchpad` reads the stored row, and a second call hands back the same
+    /// field rather than building another.
+    #[test]
+    fn ensuring_the_scratchpad_reads_its_row_once() {
+        let (ctx, store, _, items) = project(1);
+        let pad = add_row(
+            &ctx,
+            items[0],
+            ContentRole::ScratchpadText,
+            "Check the oil.",
+        );
+        let doc = store.open(items[0]).expect("opens");
+
+        let field = store.ensure_scratchpad(&doc).expect("a scene has one");
+        assert_eq!(text_of(&field), "Check the oil.");
+        assert_eq!(doc.scratchpad_content_id(), Some(pad));
+        assert!(doc.content_ids().contains(&pad));
+        assert!(doc.spell_scratchpad().is_some(), "with its spell session");
+        let again = store.ensure_scratchpad(&doc).expect("still there");
+        assert!(Rc::ptr_eq(&field, &again), "built once");
+    }
+
+    /// The two content-free markers have no scratchpad to build.
+    #[test]
+    fn a_book_end_marker_has_no_scratchpad() {
+        let (ctx, store, _, items) = project(1);
+        let mut dto = binder_item_commands::get_binder_item(&ctx, &items[0])
+            .unwrap()
+            .unwrap();
+        dto.sub_role = BinderItemSubRole::BookEnd;
+        binder_item_commands::update_binder_item(&ctx, None, &dto.into()).unwrap();
+
+        let doc = store.open(items[0]).expect("opens");
+        assert!(!doc.carries_scratchpad());
+        assert!(store.ensure_scratchpad(&doc).is_none());
+    }
+
+    /// A scratchpad shown and left untouched writes no row and marks nothing: the
+    /// project is not unsaved, and a save has nothing to write for it.
+    #[test]
+    fn an_untouched_scratchpad_writes_no_row_and_marks_nothing() {
+        let (ctx, store, _, items) = project(1);
+        let doc = store.open(items[0]).expect("opens");
+        let edited = store.edited_any().get();
+
+        let field = store.ensure_scratchpad(&doc).expect("built");
+        assert_eq!(text_of(&field), "");
+        assert!(!doc.is_stale());
+        doc.flush(None).unwrap();
+        assert_eq!(stored(&ctx, items[0], ContentRole::ScratchpadText), None);
+        assert!(!doc.dirty.get());
+        assert_eq!(store.edited_any().get(), edited, "nothing to autosave");
+        assert!(doc.has_rowless_field());
+    }
+
+    /// The first flush of a typed scratchpad creates its row. Typing marks the doc
+    /// dirty and bumps the store's edit counter, but never the doc's own `edit_gen`:
+    /// the cast overlay and the gallery watch the item's text, not its notes.
+    #[test]
+    fn typing_marks_the_doc_and_the_first_flush_creates_the_row() {
+        let (ctx, store, _, items) = project(1);
+        let doc = store.open(items[0]).expect("opens");
+        let field = store.ensure_scratchpad(&doc).expect("built");
+        let edited = store.edited_any().get();
+        let gen_before = doc.edit_gen.get();
+
+        type_into(&field, "Ask about the keeper.");
+        (doc.mark_scratchpad_dirty_fn())();
+        assert!(doc.dirty.get());
+        assert_eq!(store.edited_any().get(), edited.wrapping_add(1));
+        assert_eq!(doc.edit_gen.get(), gen_before, "edit_gen untouched");
+        assert!(doc.is_stale());
+
+        doc.flush(None).unwrap();
+        let (id, text) =
+            stored(&ctx, items[0], ContentRole::ScratchpadText).expect("the row now exists");
+        assert_eq!(text.trim(), "Ask about the keeper.");
+        assert_eq!(doc.scratchpad_content_id(), Some(id));
+        assert!(
+            doc.has_rowless_field(),
+            "the scene text, never typed into, still has none"
+        );
+        assert!(
+            stored(&ctx, items[0], ContentRole::SceneText).is_none(),
+            "the scene text was not typed into, so it writes nothing"
+        );
+    }
+
+    /// A document closed after only its scratchpad was typed into is remembered, and
+    /// comes back with the scratchpad built and its typing history in it.
+    #[test]
+    fn the_remembered_pool_keeps_the_scratchpads_history() {
+        let (_ctx, store, _, items) = project(1);
+        let id = items[0];
+        let doc = store.open(id).expect("opens");
+        let field = store.ensure_scratchpad(&doc).expect("built");
+        type_into(&field, "First thought.");
+        assert!(doc.has_history(), "the scratchpad's history counts");
+        drop(field);
+        drop(doc);
+        store.release(id, None);
+        assert_eq!(store.remembered_count(), 1);
+
+        let doc = store.open(id).expect("reopens");
+        let field = doc.scratchpad().expect("handed back built");
+        assert!(field.doc.can_undo(), "with its history");
+        field.doc.undo().unwrap();
+        assert_eq!(text_of(&field), "");
+    }
+
+    /// A merge folds the source's scratchpad into the target's. The target's scratchpad,
+    /// built with no row, re-reads by `(item, role)` and shows the folded text, bound to
+    /// the row the merge created, so its next flush updates that row instead of creating
+    /// a second one. `reload` does it, and so does the `Content(Created)` path, which
+    /// finds the doc through the new row's owner (`bind_created_rows`).
+    #[test]
+    fn a_reload_after_a_merge_picks_up_the_folded_scratchpad() {
+        for through_created_event in [false, true] {
+            let (ctx, store, work, items) = project(2);
+            let (target, source) = (items[0], items[1]);
+            add_row(&ctx, target, ContentRole::SceneText, "Alpha.");
+            add_row(&ctx, source, ContentRole::SceneText, "Bravo.");
+            add_row(
+                &ctx,
+                source,
+                ContentRole::ScratchpadText,
+                "Reread the join.",
+            );
+            let doc = store.open(target).expect("opens");
+            let field = store.ensure_scratchpad(&doc).expect("built");
+            assert_eq!(text_of(&field), "");
+
+            binder_item_management_commands::merge_two_scenes(
+                &ctx,
+                None,
+                &frontend::binder_item_management::MergeTwoScenesDto {
+                    work_id: work,
+                    target_id: target,
+                    source_id: source,
+                },
+            )
+            .expect("merge");
+
+            if through_created_event {
+                let (created, _) =
+                    stored(&ctx, target, ContentRole::ScratchpadText).expect("the merge made it");
+                assert_eq!(store.bind_created_rows(&[created]), vec![target]);
+            } else {
+                doc.reload();
+            }
+            assert_eq!(text_of(&field), "Reread the join.");
+            let (row, _) = stored(&ctx, target, ContentRole::ScratchpadText).expect("created");
+            assert_eq!(doc.scratchpad_content_id(), Some(row));
+
+            type_into(&field, "Merged. ");
+            doc.flush(None).unwrap();
+            let rows = binder_item_commands::get_binder_item_relationship(
+                &ctx,
+                &target,
+                &BinderItemRelationshipField::Contents,
+            )
+            .unwrap();
+            let pads = content_commands::get_content_multi(&ctx, &rows)
+                .unwrap()
+                .into_iter()
+                .flatten()
+                .filter(|c| c.role == ContentRole::ScratchpadText)
+                .count();
+            assert_eq!(pads, 1, "one scratchpad row, never a second");
+        }
+    }
+
+    /// A row created for one open item reloads that item's fields that were waiting for
+    /// a row, and nothing else: not another open doc that also has a field waiting, and
+    /// not a field of its own item that already has a row, even one whose stored text
+    /// moved under it. Re-reading every field of every open doc on each created row, as
+    /// this path did, reset typing histories in silence.
+    #[test]
+    fn a_created_row_reloads_only_its_owners_fields_without_a_row() {
+        let (ctx, store, _, items) = project(2);
+        let (owner, other) = (items[0], items[1]);
+        let owner_text = add_row(&ctx, owner, ContentRole::SceneText, "Low tide.");
+        add_row(&ctx, other, ContentRole::SceneText, "Fog.");
+        let owner_doc = store.open(owner).expect("opens");
+        let other_doc = store.open(other).expect("opens");
+        let owner_pad = store.ensure_scratchpad(&owner_doc).expect("built");
+        let other_pad = store.ensure_scratchpad(&other_doc).expect("built");
+        assert!(owner_doc.has_rowless_field() && other_doc.has_rowless_field());
+
+        // The owner's scene text moves under its editor (another writer), and then a
+        // command gives the owner a scratchpad row.
+        let mut row = content_commands::get_content(&ctx, &owner_text)
+            .unwrap()
+            .unwrap();
+        row.data = "Low tide, rewritten elsewhere.".into();
+        content_commands::update_content(&ctx, None, &row.into()).unwrap();
+        let created = add_row(
+            &ctx,
+            owner,
+            ContentRole::ScratchpadText,
+            "Check the tide tables.",
+        );
+
+        assert_eq!(store.items_given_rows(&[created]), vec![owner]);
+        assert_eq!(store.bind_created_rows(&[created]), vec![owner]);
+        assert_eq!(text_of(&owner_pad), "Check the tide tables.");
+        assert_eq!(owner_doc.scratchpad_content_id(), Some(created));
+        let main = owner_doc.main.as_ref().expect("a scene text field");
+        assert_eq!(
+            main.doc.to_plain_text().unwrap_or_default().trim(),
+            "Low tide.",
+            "a field with a row is the Updated path's, never reloaded here"
+        );
+        assert_eq!(text_of(&other_pad), "", "the other doc is not touched");
+        assert!(store.bind_created_rows(&[created + 10_000]).is_empty());
+    }
+
+    /// A command that takes away the row a field writes to (here, removed outright)
+    /// leaves the field bound to whatever row of its role the item holds now: none, so
+    /// it shows nothing and its next flush creates the row again rather than writing to
+    /// one that is gone.
+    #[test]
+    fn a_removed_row_rebinds_the_field_that_wrote_to_it() {
+        let (ctx, store, _, items) = project(1);
+        let doc = store.open(items[0]).expect("opens");
+        let field = store.ensure_scratchpad(&doc).expect("built");
+        type_into(&field, "Ask about the keeper.");
+        doc.flush(None).unwrap();
+        let (row, _) = stored(&ctx, items[0], ContentRole::ScratchpadText).expect("written");
+
+        content_commands::remove_content(&ctx, None, &row).unwrap();
+        assert_eq!(store.rebind_removed_rows(&[row]), vec![items[0]]);
+        assert_eq!(doc.scratchpad_content_id(), None);
+        assert_eq!(text_of(&field), "");
+
+        type_into(&field, "Again.");
+        doc.flush(None).unwrap();
+        let (again, text) =
+            stored(&ctx, items[0], ContentRole::ScratchpadText).expect("created again");
+        assert_ne!(again, row);
+        assert_eq!(text.trim(), "Again.");
+    }
+
+    /// A merge folds the source's scratchpad into a target that had none; undone, the
+    /// writer starts one on the target; the redo brings the merged one back and joins the
+    /// new note onto its end (`common::prose_keep`). The open scratchpad was bound to the
+    /// row the redo took away: the `Content(Removed)` path binds it to the merged row and
+    /// shows the joined text.
+    #[test]
+    fn a_merge_redo_shows_the_note_typed_while_it_was_undone() {
+        let (ctx, store, work, items) = project(2);
+        let (target, source) = (items[0], items[1]);
+        add_row(&ctx, target, ContentRole::SceneText, "Alpha.");
+        add_row(&ctx, source, ContentRole::SceneText, "Bravo.");
+        add_row(
+            &ctx,
+            source,
+            ContentRole::ScratchpadText,
+            "Ask Marthe about the lighthouse.",
+        );
+        let stack = Some(frontend::commands::undo_redo_commands::create_new_stack(
+            &ctx,
+        ));
+        binder_item_management_commands::merge_two_scenes(
+            &ctx,
+            stack,
+            &frontend::binder_item_management::MergeTwoScenesDto {
+                work_id: work,
+                target_id: target,
+                source_id: source,
+            },
+        )
+        .expect("merge");
+        frontend::commands::undo_redo_commands::undo(&ctx, stack).expect("undo");
+
+        let doc = store.open(target).expect("opens");
+        let field = store.ensure_scratchpad(&doc).expect("built");
+        type_into(&field, "The tide turns at four.");
+        doc.flush(None).unwrap();
+        let typed = doc.scratchpad_content_id().expect("its own row");
+
+        frontend::commands::undo_redo_commands::redo(&ctx, stack).expect("redo");
+        assert_eq!(store.rebind_removed_rows(&[typed]), vec![target]);
+        let shown: Vec<String> = text_of(&field)
+            .lines()
+            .filter(|l| !l.trim().is_empty())
+            .map(str::to_string)
+            .collect();
+        assert_eq!(
+            shown,
+            [
+                "Ask Marthe about the lighthouse.",
+                "The tide turns at four."
+            ],
+            "the merged note, then the one typed while the merge was undone"
+        );
+        let (merged, _) = stored(&ctx, target, ContentRole::ScratchpadText).expect("one row");
+        assert_eq!(doc.scratchpad_content_id(), Some(merged));
+    }
+
+    /// A merge reloads the scene that stays (`OpenDoc::reload`). A scratchpad the merge
+    /// left as it was keeps its typing history: only a scratchpad whose stored text moved
+    /// is re-read.
+    #[test]
+    fn a_merge_keeps_the_history_of_a_scratchpad_it_did_not_change() {
+        let (ctx, store, work, items) = project(2);
+        let (target, source) = (items[0], items[1]);
+        add_row(&ctx, target, ContentRole::SceneText, "Alpha.");
+        add_row(&ctx, source, ContentRole::SceneText, "Bravo.");
+        let doc = store.open(target).expect("opens");
+        let field = store.ensure_scratchpad(&doc).expect("built");
+        type_into(&field, "Reread the join.");
+        doc.flush(None).unwrap();
+        assert!(field.doc.can_undo(), "precondition: a history to keep");
+
+        binder_item_management_commands::merge_two_scenes(
+            &ctx,
+            None,
+            &frontend::binder_item_management::MergeTwoScenesDto {
+                work_id: work,
+                target_id: target,
+                source_id: source,
+            },
+        )
+        .expect("merge");
+        doc.reload();
+        assert!(field.doc.can_undo(), "the history is still there");
+        assert_eq!(text_of(&field), "Reread the join.");
+    }
+
+    /// Restoring a recorded scratchpad into a row whose scratchpad nobody has opened
+    /// builds it, writes the past into it and stores it.
+    #[test]
+    fn a_version_restore_reaches_an_unbuilt_scratchpad() {
+        let (ctx, store, _, items) = project(1);
+        let outcome = crate::versions::version_restore::apply(
+            &store,
+            items[0],
+            &ContentRole::ScratchpadText,
+            "What the notes said in March.",
+            None,
+            None,
+        );
+        assert_eq!(outcome, Ok(()));
+        let (_, text) =
+            stored(&ctx, items[0], ContentRole::ScratchpadText).expect("written to the store");
+        assert_eq!(text.trim(), "What the notes said in March.");
+        assert!(
+            stored(&ctx, items[0], ContentRole::SceneText).is_none(),
+            "nothing else of the row was written"
+        );
+    }
+
+    /// The scratchpad's spell session sleeps until a view shows it, and goes back to
+    /// sleep when the last one goes.
+    #[test]
+    fn the_scratchpad_viewer_count_follows_its_guards() {
+        let (_ctx, store, _, items) = project(1);
+        let doc = store.open(items[0]).expect("opens");
+        store.ensure_scratchpad(&doc).expect("built");
+        assert_eq!(doc.scratchpad_viewers(), 0);
+        let a = doc.acquire_scratchpad_viewer();
+        let b = doc.acquire_scratchpad_viewer();
+        assert_eq!(doc.scratchpad_viewers(), 2);
+        drop(a);
+        assert_eq!(doc.scratchpad_viewers(), 1);
+        drop(b);
+        assert_eq!(doc.scratchpad_viewers(), 0);
     }
 }

@@ -124,6 +124,7 @@ content-part-title = Teiltitel
 content-chapter-title = Kapiteltitel
 content-epigraph-text = Motto
 content-paratext-text = Paratext
+content-scratchpad-text = Notizblock
 promote-blocked-title = Kapitel nicht leer
 promote-blocked-text = { $count ->
     [one] Dieses Kapitel enthält noch { $count } Eintrag. Verschieben Sie ihn an eine andere Stelle oder in den Papierkorb, bevor Sie das Kapitel in ein Einzelkapitel umwandeln.
@@ -2703,6 +2704,7 @@ search-field-comment = Kommentar
 search-field-comment-reply = Antwort
 search-field-footnote = Fußnote
 search-field-resource = Ressource
+search-field-scratchpad = Notizblock
 search-include-in-replace = In „Alle ersetzen“ einschließen
 search-collapse-all = Alle Ergebnisse zuklappen
 search-replace-here = Diesen Treffer ersetzen

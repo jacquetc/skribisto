@@ -793,13 +793,15 @@ fn footnote_bodies(req: &RenderRequest, rows: &[Row]) -> CompiledNotes {
     let labels: Vec<String> = by_label.keys().map(|l| l.to_string()).collect();
 
     // Prose per item, from the whole tree — numbering must not see the selection.
+    // A scratchpad is never printed, so a marker left in one takes no number: it
+    // would shift every note after it and append a body nothing in the book cites.
     let mut prose_by_item: std::collections::HashMap<u64, Vec<&str>> =
         std::collections::HashMap::new();
     for bwi in &req.gathered.binders {
         for iwc in &bwi.items {
             let mut datas: Vec<&str> = Vec::new();
             for c in &iwc.contents {
-                if c.activated {
+                if c.activated && !skribisto_model::is_private_note(&c.role) {
                     datas.push(c.data.as_str());
                 }
             }
@@ -831,7 +833,7 @@ fn footnote_bodies(req: &RenderRequest, rows: &[Row]) -> CompiledNotes {
     let mut markers = std::collections::HashMap::new();
     for row in rows {
         for content in row.contents {
-            if !content.activated {
+            if !content.activated || skribisto_model::is_private_note(&content.role) {
                 continue;
             }
             for (_, label) in footnote_numbering::references_in(&content.data, &labels) {

@@ -133,6 +133,7 @@ content-part-title = Název části
 content-chapter-title = Název kapitoly
 content-epigraph-text = Motto
 content-paratext-text = Paratext
+content-scratchpad-text = Poznámkový blok
 promote-blocked-title = Kapitola není prázdná
 promote-blocked-text = { $count ->
     [one] Tato kapitola ještě obsahuje { $count } položku. Před převodem na plochou kapitolu ji přesuňte nebo vyhoďte do koše.
@@ -2885,6 +2886,7 @@ search-field-comment = Komentář
 search-field-comment-reply = Odpověď
 search-field-footnote = Poznámka pod čarou
 search-field-resource = Zdroj
+search-field-scratchpad = Poznámkový blok
 search-include-in-replace = Zahrnout do Nahradit vše
 search-collapse-all = Sbalit všechny výsledky
 search-replace-here = Nahradit zde

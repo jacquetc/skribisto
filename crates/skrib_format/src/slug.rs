@@ -74,6 +74,7 @@ pub fn prose_kind(role: &ContentRole) -> Option<&'static str> {
         ContentRole::SynopsisText => Some("synopsis"),
         ContentRole::EpigraphText => Some("epigraph"),
         ContentRole::ParatextText => Some("paratext"),
+        ContentRole::ScratchpadText => Some("scratchpad"),
         ContentRole::BookTitle
         | ContentRole::BookSubtitle
         | ContentRole::PartTitle

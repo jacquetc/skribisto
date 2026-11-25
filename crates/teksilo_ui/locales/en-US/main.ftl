@@ -174,6 +174,7 @@ content-part-title = Part title
 content-chapter-title = Chapter title
 content-epigraph-text = Epigraph
 content-paratext-text = Paratext
+content-scratchpad-text = Scratchpad
 promote-blocked-title = Chapter not empty
 promote-blocked-text = { $count ->
     [one] This chapter still holds { $count } item. Move or trash it before converting it to a flat chapter.
@@ -2938,6 +2939,7 @@ search-field-comment = Comment
 search-field-comment-reply = Reply
 search-field-footnote = Footnote
 search-field-resource = Resource
+search-field-scratchpad = Scratchpad
 search-include-in-replace = Include in Replace All
 search-collapse-all = Collapse all results
 search-replace-here = Replace this

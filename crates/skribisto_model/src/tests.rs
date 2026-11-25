@@ -139,13 +139,103 @@ fn a_paratext_is_prose_that_is_not_the_body() {
     }
 }
 
-/// The folder is organisational only — it holds nothing but a synopsis, so it can
-/// never become a second place the writer's words hide.
+/// The folder is organisational only — it holds nothing but a synopsis and the
+/// writer's private scratchpad, so it can never become a second place the book's words
+/// hide.
 #[test]
 fn a_paratext_folder_holds_only_a_synopsis() {
     assert_eq!(
         allowed_content(&Role::Folder, &SubRole::Paratext),
-        &[SynopsisText]
+        &[SynopsisText, ScratchpadText]
+    );
+}
+
+/// The scratchpad is carried by exactly the twelve combinations that carry any content,
+/// named here one by one rather than derived, so a fifteenth combination fails until
+/// someone decides whether it has a scratchpad.
+#[test]
+fn a_scratchpad_belongs_to_exactly_the_twelve_content_bearing_combinations() {
+    let carriers = [
+        (Role::Item, SubRole::BookBegin),
+        (Role::Item, SubRole::Scene),
+        (Role::Item, SubRole::ChapterScene),
+        (Role::Item, SubRole::Part),
+        (Role::Item, SubRole::Note),
+        (Role::Item, SubRole::Paratext),
+        (Role::Folder, SubRole::None),
+        (Role::Folder, SubRole::ChapterScene),
+        (Role::Folder, SubRole::Part),
+        (Role::Folder, SubRole::Book),
+        (Role::Folder, SubRole::Note),
+        (Role::Folder, SubRole::Paratext),
+    ];
+    assert_eq!(carriers.len(), 12);
+    for c in COMBINATIONS {
+        let expected = carriers
+            .iter()
+            .any(|(r, s)| r == &c.role && s == &c.sub_role);
+        assert_eq!(
+            c.allowed.contains(&ScratchpadText),
+            expected,
+            "{:?}/{:?} disagrees about carrying a scratchpad",
+            c.role,
+            c.sub_role
+        );
+    }
+    // The two content-free markers stay content-free, and so not status-capable.
+    for (role, sub_role) in [(Role::Item, SubRole::BookEnd), (Role::Item, SubRole::Text)] {
+        assert!(allowed_content(&role, &sub_role).is_empty());
+        assert!(!status_capable(&role, &sub_role));
+    }
+}
+
+/// A scratchpad is never manuscript prose: carrying one does not make a combination
+/// count, so a Note or a Part with a scratchpad still adds nothing to the word count.
+#[test]
+fn a_scratchpad_never_makes_a_combination_count() {
+    for c in COMBINATIONS {
+        assert_eq!(
+            counts_prose(&c.role, &c.sub_role),
+            c.allowed.contains(&SceneText),
+            "{:?}/{:?} counts for a reason other than its SceneText",
+            c.role,
+            c.sub_role
+        );
+    }
+    assert!(!counts_prose(&Role::Item, &SubRole::Note));
+    assert!(!counts_prose(&Role::Folder, &SubRole::None));
+}
+
+/// Every promote and demote keeps the scratchpad as it is: every target carries the
+/// role, so `remap_content` never moves it and `promote_content_loss` never reports it.
+#[test]
+fn promote_and_demote_keep_the_scratchpad() {
+    for c in COMBINATIONS {
+        for t in promote_targets(&c.role, &c.sub_role) {
+            let (tr, tsr) = t.combo();
+            assert_eq!(
+                remap_content(&tr, &tsr, &ScratchpadText),
+                Some(ScratchpadText),
+                "{:?}/{:?} -> {:?} does not keep the scratchpad",
+                c.role,
+                c.sub_role,
+                t
+            );
+            assert!(promote_content_loss(&tr, &tsr, &[ScratchpadText]).is_empty());
+        }
+    }
+    // The pairs a writer meets most, spelled out.
+    assert_eq!(
+        remap_content(&Role::Item, &SubRole::Note, &ScratchpadText),
+        Some(ScratchpadText)
+    );
+    assert_eq!(
+        remap_content(&Role::Folder, &SubRole::ChapterScene, &ScratchpadText),
+        Some(ScratchpadText)
+    );
+    assert_eq!(
+        remap_content(&Role::Item, &SubRole::ChapterScene, &ScratchpadText),
+        Some(ScratchpadText)
     );
 }
 
@@ -742,7 +832,7 @@ fn structural_rows_have_no_go_kind() {
 #[test]
 fn chapter_promote_is_content_lossless() {
     // Every ChapterScene content role is already allowed by Folder/Chapter.
-    for c in [ChapterTitle, SceneText, SynopsisText] {
+    for c in [ChapterTitle, SceneText, SynopsisText, ScratchpadText] {
         assert_eq!(
             remap_content(&Role::Folder, &SubRole::ChapterScene, &c),
             Some(c.clone())

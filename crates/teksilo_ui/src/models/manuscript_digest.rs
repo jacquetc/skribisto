@@ -20,10 +20,16 @@
 //! synopsis into the scene body would leave the concatenation identical and the
 //! row would read as unchanged.
 //!
+//! Both sides also leave out the same roles: the scratchpad, by
+//! [`skribisto_model::is_private_note`]. A note jotted beside a scene is not an
+//! edit of the scene, so a row whose scratchpad alone moved reads as unchanged.
+//!
 //! Read here (Layer A) rather than in the view-model that consumes it, per the
 //! repo's read-through-Layer-A rule, and following the same real/mock seam as
 //! [`crate::models::binder_stream`] — a mocks build has no backend, so it reports
 //! an empty manuscript and every comparison honestly finds nothing.
+
+use common::entities::ContentRole;
 
 /// One live row, reduced to what a comparison against a recorded version needs.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -58,6 +64,26 @@ pub fn digest_of(roles: &[(String, String)]) -> String {
     hasher.finalize().to_hex().to_string()
 }
 
+/// Whether a role's text goes into a row's digest: a prose role, and not the
+/// scratchpad ([`skribisto_model::is_private_note`]). Asked by both sides, through
+/// [`digest_of_roles`] and before the recorded side reads a blob.
+pub fn counts_towards_row_digest(role: &ContentRole) -> bool {
+    skrib_format::slug::prose_kind(role).is_some() && !skribisto_model::is_private_note(role)
+}
+
+/// The digest of one row from its `(role, text)` pairs, as both sides hold them: the
+/// roles [`counts_towards_row_digest`] keeps, each under its prose slug.
+pub fn digest_of_roles<'a>(roles: impl IntoIterator<Item = (&'a ContentRole, String)>) -> String {
+    let roles: Vec<(String, String)> = roles
+        .into_iter()
+        .filter(|(role, _)| counts_towards_row_digest(role))
+        .filter_map(|(role, text)| {
+            skrib_format::slug::prose_kind(role).map(|kind| (kind.to_string(), text))
+        })
+        .collect();
+    digest_of(&roles)
+}
+
 #[cfg(not(feature = "mocks"))]
 mod imp {
     use std::collections::HashMap;
@@ -67,7 +93,7 @@ mod imp {
     use frontend::common::direct_access::binder::BinderRelationshipField;
     use frontend::common::direct_access::work::WorkRelationshipField;
 
-    use super::{LiveRow, digest_of};
+    use super::{LiveRow, digest_of_roles};
     use crate::models::NameContext;
     use common::entities::ContentRole;
 
@@ -125,15 +151,12 @@ mod imp {
 
     /// One item's prose, digested. Only the roles that are prose — a title is a
     /// name, and the recorded side stores no blob for it, so including it here
-    /// would make every row differ from every version forever.
+    /// would make every row differ from every version forever. And not the
+    /// scratchpad: see [`skribisto_model::is_private_note`], which the recorded
+    /// side asks too.
     fn digest_for_item(ctx: &AppContext, item_id: u64) -> String {
-        let roles: Vec<(String, String)> = crate::shared::binder_ops::contents_of(ctx, item_id)
-            .into_iter()
-            .filter_map(|c| {
-                skrib_format::slug::prose_kind(&c.role).map(|k| (k.to_string(), c.data))
-            })
-            .collect();
-        digest_of(&roles)
+        let contents = crate::shared::binder_ops::contents_of(ctx, item_id);
+        digest_of_roles(contents.iter().map(|c| (&c.role, c.data.clone())))
     }
 
     /// One live row's text for **one** content role, as it stands now.
@@ -229,6 +252,47 @@ mod tests {
             before, after,
             "the same words in a different field is a change, not a coincidence",
         );
+    }
+
+    /// A note jotted in the scratchpad is not an edit of the row: the digest is the
+    /// same whatever the scratchpad holds, and the same as with no scratchpad at all.
+    /// Both sides digest through `digest_of_roles`, so neither can count it alone.
+    #[test]
+    fn a_scratchpad_never_moves_a_rows_digest() {
+        let scene = ContentRole::SceneText;
+        let synopsis = ContentRole::SynopsisText;
+        let pad = ContentRole::ScratchpadText;
+        let without = digest_of_roles([
+            (&scene, "The lamp went out.".to_string()),
+            (&synopsis, "Dark.".to_string()),
+        ]);
+        let with_one = digest_of_roles([
+            (&scene, "The lamp went out.".to_string()),
+            (&synopsis, "Dark.".to_string()),
+            (&pad, "Check the oil.".to_string()),
+        ]);
+        let with_another = digest_of_roles([
+            (&pad, "Rewrite: too quiet.".to_string()),
+            (&scene, "The lamp went out.".to_string()),
+            (&synopsis, "Dark.".to_string()),
+        ]);
+        assert_eq!(without, with_one);
+        assert_eq!(with_one, with_another);
+        assert!(
+            digest_of_roles([(&pad, "Only notes so far.".to_string())]).is_empty(),
+            "a row holding only a scratchpad has no text of its own"
+        );
+        assert_ne!(
+            without,
+            digest_of_roles([
+                (&scene, "The lamp went out at last.".to_string()),
+                (&synopsis, "Dark.".to_string()),
+            ]),
+            "an edit of the scene itself still moves it"
+        );
+        assert!(!counts_towards_row_digest(&pad));
+        assert!(counts_towards_row_digest(&ContentRole::EpigraphText));
+        assert!(!counts_towards_row_digest(&ContentRole::ChapterTitle));
     }
 
     #[test]

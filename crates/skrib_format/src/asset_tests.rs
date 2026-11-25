@@ -149,8 +149,10 @@ fn a_project_with_images_raises_its_read_floor() {
     // bundle holds, so its first save would delete every image. The floor makes
     // that a refusal to open instead.
     let mut with = bundle_with_assets();
-    // Isolated to the asset axis: the fixture's resources would hold the floor at 17.
+    // Isolated to the asset axis: the fixture's resources would hold the floor at 17,
+    // and its scratchpads at 18.
     super::tests::strip_resources(&mut with);
+    super::tests::strip_scratchpads(&mut with);
     assert_eq!(super::version_gate::compute_min_read_version(&with), 8);
 }
 
@@ -160,6 +162,7 @@ fn a_project_without_images_keeps_the_lower_floor() {
     // existing project out of every older build.
     let mut without = super::tests::build_bundle(ShapeTag::Folder);
     super::tests::strip_resources(&mut without);
+    super::tests::strip_scratchpads(&mut without);
     assert!(
         super::version_gate::compute_min_read_version(&without) < 8,
         "an image-free project should still open in an older build"

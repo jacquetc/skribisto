@@ -133,6 +133,7 @@ content-part-title = Название части
 content-chapter-title = Название главы
 content-epigraph-text = Эпиграф
 content-paratext-text = Паратекст
+content-scratchpad-text = Блокнот
 promote-blocked-title = Глава не пустая
 promote-blocked-text = { $count ->
     [one] В этой главе ещё есть { $count } элемент. Переместите его или отправьте в корзину, прежде чем преобразовать главу в плоскую.
@@ -3326,6 +3327,7 @@ search-field-comment = Комментарий
 search-field-comment-reply = Ответ
 search-field-footnote = Сноска
 search-field-resource = Ресурс
+search-field-scratchpad = Блокнот
 search-include-in-replace = Включить в «Заменить всё»
 search-collapse-all = Свернуть все результаты
 search-replace-here = Заменить это

@@ -72,6 +72,16 @@ pub fn footnotes_icon() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/activities/footnotes.svg"))
 }
 
+/// The Scratchpad icon: a spiral-bound pad with a scribble, the writer's private notes
+/// kept beside an item.
+///
+/// The rings are the point. Every other text glyph in the app is a plain sheet (the
+/// binder's documents, the Versions page), and a pad with its binding is the one shape
+/// that reads as "loose notes" rather than "a page of the book".
+pub fn scratchpad_icon() -> IconWidget {
+    IconWidget::from_svg_icon(res!("assets/icons/activities/scratchpad.svg"))
+}
+
 /// The Resources activity icon: a paper clip, what is attached to a page without
 /// being part of it.
 ///

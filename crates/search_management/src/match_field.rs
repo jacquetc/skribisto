@@ -40,6 +40,11 @@ pub fn field_of_role(role: &ContentRole) -> Option<MatchField> {
         }
         ContentRole::SynopsisText => Some(MatchField::Synopsis),
         ContentRole::EpigraphText => Some(MatchField::Epigraph),
+        // Its own field, never `Body` or `Synopsis`: a scene carries `SceneText`,
+        // `SynopsisText` and `ScratchpadText` at once, and a hit in the scratchpad must
+        // resolve to the scratchpad and nothing else. Which toggle searches it is
+        // `run_search`'s business, as for the others.
+        ContentRole::ScratchpadText => Some(MatchField::Scratchpad),
         // Titles live on the `BinderItem`, so a title hit is `MatchField::Title` recorded
         // against the item — never against one of these mirror rows.
         ContentRole::BookTitle
@@ -59,42 +64,91 @@ pub fn role_matches_field(field: &MatchField, role: &ContentRole) -> bool {
 mod tests {
     use super::*;
 
-    /// Every role that search can match must be resolvable back to itself. This is the
-    /// property whose absence let an epigraph hit rewrite a chapter's scene prose.
+    /// Every `ContentRole`. The exhaustive match in [`role_index`] stops compiling when a
+    /// variant is added, which is the reminder to list it here too.
+    const ALL_ROLES: [ContentRole; 10] = [
+        ContentRole::SceneText,
+        ContentRole::NoteText,
+        ContentRole::SynopsisText,
+        ContentRole::BookTitle,
+        ContentRole::BookSubtitle,
+        ContentRole::PartTitle,
+        ContentRole::ChapterTitle,
+        ContentRole::EpigraphText,
+        ContentRole::ParatextText,
+        ContentRole::ScratchpadText,
+    ];
+
+    fn role_index(role: &ContentRole) -> usize {
+        match role {
+            ContentRole::SceneText => 0,
+            ContentRole::NoteText => 1,
+            ContentRole::SynopsisText => 2,
+            ContentRole::BookTitle => 3,
+            ContentRole::BookSubtitle => 4,
+            ContentRole::PartTitle => 5,
+            ContentRole::ChapterTitle => 6,
+            ContentRole::EpigraphText => 7,
+            ContentRole::ParatextText => 8,
+            ContentRole::ScratchpadText => 9,
+        }
+    }
+
+    /// Every `MatchField`, kept complete the same way through [`field_index`].
+    const ALL_FIELDS: [MatchField; 10] = [
+        MatchField::Body,
+        MatchField::Title,
+        MatchField::Synopsis,
+        MatchField::Label,
+        MatchField::Epigraph,
+        MatchField::Comment,
+        MatchField::CommentReply,
+        MatchField::Footnote,
+        MatchField::Resource,
+        MatchField::Scratchpad,
+    ];
+
+    fn field_index(field: &MatchField) -> usize {
+        match field {
+            MatchField::Body => 0,
+            MatchField::Title => 1,
+            MatchField::Synopsis => 2,
+            MatchField::Label => 3,
+            MatchField::Epigraph => 4,
+            MatchField::Comment => 5,
+            MatchField::CommentReply => 6,
+            MatchField::Footnote => 7,
+            MatchField::Resource => 8,
+            MatchField::Scratchpad => 9,
+        }
+    }
+
+    /// The two lists above are complete and in step with their matches: each variant sits
+    /// at the index its match gives it, so a variant added to the match but not to the
+    /// list fails here.
+    #[test]
+    fn the_role_and_field_lists_cover_every_variant() {
+        for (i, role) in ALL_ROLES.iter().enumerate() {
+            assert_eq!(role_index(role), i, "{role:?} is out of place");
+        }
+        for (i, field) in ALL_FIELDS.iter().enumerate() {
+            assert_eq!(field_index(field), i, "{field:?} is out of place");
+        }
+    }
+
+    /// Every role that search can match must be resolvable back to itself, and to no
+    /// other field. This is the property whose absence let an epigraph hit rewrite a
+    /// chapter's scene prose.
     #[test]
     fn the_mapping_round_trips_for_every_content_role() {
-        let all = [
-            ContentRole::SceneText,
-            ContentRole::NoteText,
-            ContentRole::SynopsisText,
-            ContentRole::EpigraphText,
-            ContentRole::BookTitle,
-            ContentRole::BookSubtitle,
-            ContentRole::PartTitle,
-            ContentRole::ChapterTitle,
-        ];
-        for role in &all {
-            match field_of_role(role) {
-                Some(field) => assert!(
-                    role_matches_field(&field, role),
-                    "{role:?} reports {field:?} but does not resolve back to itself"
-                ),
-                None => {
-                    for field in [
-                        MatchField::Body,
-                        MatchField::Synopsis,
-                        MatchField::Epigraph,
-                        MatchField::Title,
-                        MatchField::Label,
-                        MatchField::Comment,
-                        MatchField::CommentReply,
-                    ] {
-                        assert!(
-                            !role_matches_field(&field, role),
-                            "{role:?} is not searched, so no field may resolve to it"
-                        );
-                    }
-                }
+        for role in &ALL_ROLES {
+            let own = field_of_role(role);
+            for field in &ALL_FIELDS {
+                assert_eq!(
+                    role_matches_field(field, role),
+                    own.as_ref() == Some(field),
+                    "{role:?} reports {own:?} but {field:?} disagrees about resolving to it"
+                );
             }
         }
     }
@@ -112,5 +166,32 @@ mod tests {
         );
         assert!(!role_matches_field(&prose, &ContentRole::EpigraphText));
         assert!(!role_matches_field(&epigraph, &ContentRole::SceneText));
+    }
+
+    /// A scene carries its prose, its synopsis and its scratchpad at once. A scratchpad
+    /// hit reports its own field, and neither the body nor the synopsis field ever
+    /// resolves to the scratchpad row, so Replace All cannot rewrite one for the other.
+    #[test]
+    fn a_scratchpad_is_its_own_field_never_body_or_synopsis() {
+        assert_eq!(
+            field_of_role(&ContentRole::ScratchpadText),
+            Some(MatchField::Scratchpad)
+        );
+        assert!(!role_matches_field(
+            &MatchField::Body,
+            &ContentRole::ScratchpadText
+        ));
+        assert!(!role_matches_field(
+            &MatchField::Synopsis,
+            &ContentRole::ScratchpadText
+        ));
+        assert!(!role_matches_field(
+            &MatchField::Scratchpad,
+            &ContentRole::SceneText
+        ));
+        assert!(!role_matches_field(
+            &MatchField::Scratchpad,
+            &ContentRole::NoteText
+        ));
     }
 }

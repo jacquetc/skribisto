@@ -135,6 +135,16 @@ pub fn compute_min_read_version(bundle: &WorkBundle) -> u32 {
         }
     }
 
+    // The history log names a `ContentRole` on every entry, so an older build that does
+    // not know a role recorded there cannot parse `history/index.ron` at all. Its reader
+    // degrades a parse failure to an empty log, and its next save then prunes the whole
+    // `history/` tree: every recorded state of every row, not only the new kind. So a
+    // role weighs the same in the log as in the live rows, and a row whose last live
+    // text is gone still holds the floor while the log keeps a state of it.
+    for e in &bundle.history.entries {
+        floor = floor.max(content_role_min_version(&e.role));
+    }
+
     floor
 }
 
@@ -162,6 +172,10 @@ fn content_role_min_version(role: &ContentRole) -> u32 {
         // cannot deserialize the variant, so the gate refuses the bundle rather than
         // letting `items.ron` fail with a raw "unexpected variant".
         ContentRole::ParatextText => 7,
+        // v18. Same reasoning again: a build that predates scratchpads cannot deserialize
+        // the variant. Only a bundle that carries a scratchpad with something in it claims
+        // the floor, since `from_entities` never writes a blank one.
+        ContentRole::ScratchpadText => 18,
     }
 }
 

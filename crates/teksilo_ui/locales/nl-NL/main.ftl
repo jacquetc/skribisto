@@ -133,6 +133,7 @@ content-part-title = Titel van het deel
 content-chapter-title = Titel van het hoofdstuk
 content-epigraph-text = Motto
 content-paratext-text = Paratekst
+content-scratchpad-text = Kladblok
 promote-blocked-title = Hoofdstuk is niet leeg
 promote-blocked-text = { $count ->
         [one] Dit hoofdstuk bevat nog { $count } item. Verplaats het of gooi het in de prullenbak voordat u het omzet naar een plat hoofdstuk.
@@ -2591,6 +2592,7 @@ search-field-comment = Opmerking
 search-field-comment-reply = Antwoord
 search-field-footnote = Voetnoot
 search-field-resource = Bron
+search-field-scratchpad = Kladblok
 search-include-in-replace = Opnemen in Alles vervangen
 search-collapse-all = Alle resultaten invouwen
 search-replace-here = Dit vervangen

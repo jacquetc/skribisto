@@ -207,6 +207,11 @@ entities:
       # names it; `binder_item_id` is one item it is attached to (one result per
       # item), or 0 for a resource attached to nothing.
       - Resource
+      # An item's private scratchpad (`ContentRole::ScratchpadText`). Its own field,
+      # never folded into `Body` or `Synopsis`: Replace All resolves a result back to
+      # its row through this field, and a scratchpad is searched only when its own
+      # toggle is on.
+      - Scratchpad
   # The comment THREAD a `Comment` / `CommentReply` hit belongs to — the opening
   # `Comment`'s id in both cases, because that is what the margin and the docks
   # reveal: a thread is one card, replies included. 0 for every other match field.
@@ -595,7 +600,8 @@ entities:
   undoable: true
 # One comment thread anchored to one PROSE Content row (SceneText / NoteText /
 # SynopsisText — title rows are plain TextInputs with no document behind them and are
-# deliberately not comment targets).
+# deliberately not comment targets, and a ScratchpadText is the writer's private note
+# beside the item, not the manuscript a comment discusses).
 #
 # `content` is a weak, optional many_to_one, exactly like Milestone.target_item and
 # TrashInfo.trashed_binder_item: trashing or purging the anchored item must ORPHAN this
@@ -1118,6 +1124,11 @@ entities:
       - ChapterTitle
       - EpigraphText
       - ParatextText
+      # The item's private scratchpad: free rich text kept beside the item and
+      # never part of the work. Never exported, counted, numbered or scanned for
+      # story-bible mentions. Carried by the twelve content-bearing combinations,
+      # created on first typing, never seeded.
+      - ScratchpadText
   - name: data
     type: string
   undoable: true

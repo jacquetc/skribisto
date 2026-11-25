@@ -781,7 +781,9 @@ impl ExportViewModel {
                 let datas: Vec<&str> = iwc
                     .contents
                     .iter()
-                    .filter(|c| c.activated)
+                    // A scratchpad is never exported: a note cited only there is
+                    // as orphaned as one cited nowhere.
+                    .filter(|c| c.activated && !skribisto_model::is_private_note(&c.role))
                     .map(|c| c.data.as_str())
                     .collect();
                 if !datas.is_empty() {

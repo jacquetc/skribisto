@@ -165,9 +165,12 @@ fn a_crafted_file_name_stays_inside_its_resource_folder() {
 
 #[test]
 fn the_read_floor_is_17_only_with_resources() {
-    let with = build_bundle(ShapeTag::Folder);
+    // Isolated to the resource axis: the fixture's scratchpads would hold it at 18.
+    let mut with = build_bundle(ShapeTag::Folder);
+    super::tests::strip_scratchpads(&mut with);
     assert_eq!(super::version_gate::compute_min_read_version(&with), 17);
     let mut without = build_bundle(ShapeTag::Folder);
+    super::tests::strip_scratchpads(&mut without);
     super::tests::strip_resources(&mut without);
     assert!(super::version_gate::compute_min_read_version(&without) < 17);
 }

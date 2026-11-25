@@ -132,6 +132,7 @@ content-part-title = Kısım başlığı
 content-chapter-title = Bölüm başlığı
 content-epigraph-text = Epigraf
 content-paratext-text = Yan metin
+content-scratchpad-text = Karalama defteri
 promote-blocked-title = Bölüm boş değil
 promote-blocked-text = { $count ->
     [one] Bu bölümde hâlâ { $count } öğe var. Düz bölüme dönüştürmeden önce onu taşıyın ya da çöp kutusuna atın.
@@ -2546,6 +2547,7 @@ search-field-comment = Yorum
 search-field-comment-reply = Yanıt
 search-field-footnote = Dipnot
 search-field-resource = Kaynak
+search-field-scratchpad = Karalama defteri
 search-include-in-replace = Tümünü değiştir'e dahil et
 search-collapse-all = Tüm sonuçları daralt
 search-replace-here = Bunu değiştir

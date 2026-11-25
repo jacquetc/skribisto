@@ -123,6 +123,7 @@ content-part-title = Részcím
 content-chapter-title = Fejezetcím
 content-epigraph-text = Mottó
 content-paratext-text = Paratextus
+content-scratchpad-text = Jegyzettömb
 promote-blocked-title = A fejezet nem üres
 promote-blocked-text = { $count ->
     [one] Ez a fejezet még { $count } elemet tartalmaz. Helyezze át vagy dobja a kukába, mielőtt egyszerű fejezetté alakítja.
@@ -2601,6 +2602,7 @@ search-field-comment = Megjegyzés
 search-field-comment-reply = Válasz
 search-field-footnote = Lábjegyzet
 search-field-resource = Forrás
+search-field-scratchpad = Jegyzettömb
 search-include-in-replace = Belefoglalás az Összes cseréjébe
 search-collapse-all = Minden találat összecsukása
 search-replace-here = Ennek cseréje

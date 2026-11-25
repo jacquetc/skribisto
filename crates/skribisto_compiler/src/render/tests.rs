@@ -5316,3 +5316,145 @@ fn the_reading_plan_heads_a_chapter_as_the_file_does() {
         "and the chapter's epigraph is in the plan as it is in the file"
     );
 }
+
+// ── The scratchpad never reaches the book ─────────────────────────────
+
+/// A book whose chapter, scene, note and book marker each carry a scratchpad, beside a
+/// synopsis, so every toggle that keeps a kind of row or field has something to let in.
+fn book_with_scratchpads(with: bool) -> Gathered {
+    let pad = |id: u64, text: &str| -> Vec<Content> {
+        if with {
+            vec![c(id, ContentRole::ScratchpadText, text)]
+        } else {
+            Vec::new()
+        }
+    };
+    let mut book = vec![c(1, ContentRole::BookTitle, "My Novel")];
+    book.extend(pad(90, "Working title only. Ask the agent."));
+    let mut chapter = vec![
+        c(2, ContentRole::ChapterTitle, "Storms"),
+        c(3, ContentRole::SceneText, "The wind rose over the hills."),
+        c(6, ContentRole::SynopsisText, "The storm arrives."),
+    ];
+    chapter.extend(pad(91, "Too slow? *Cut the second paragraph.*"));
+    let mut scene = vec![c(4, ContentRole::SceneText, "She walked on into the dark.")];
+    scene.extend(pad(92, "- lamp oil\n- the keeper's dog"));
+    let mut note = vec![c(5, ContentRole::NoteText, "Research: local weather.")];
+    note.extend(pad(93, "Find the 1911 almanac."));
+    gathered(
+        vec![
+            iwc(100, SR::BookBegin, "en", book),
+            iwc(101, SR::ChapterScene, "en", chapter),
+            iwc(102, SR::Scene, "en", scene),
+            iwc(103, SR::Note, "en", note),
+        ],
+        "en",
+    )
+}
+
+/// The scratchpad is the writer's notes beside an item, never part of the book: an export
+/// of a book carrying scratchpads is byte for byte the export of the same book without
+/// them, in every text format and with notes and synopses let in, and counts the same
+/// words. The compiler picks each role it prints by name, so this holds by construction;
+/// the test is what keeps a later change from picking it up by accident.
+#[test]
+fn a_scratchpad_changes_nothing_in_an_export() {
+    let with = book_with_scratchpads(true);
+    let without = book_with_scratchpads(false);
+    let ids = [100u64, 101, 102, 103];
+    for (notes, synopses) in [(false, false), (true, true)] {
+        let mut p = preset("neutral");
+        p.include_notes = notes;
+        p.include_synopses = synopses;
+        for f in [
+            ExportFormat::Djot,
+            ExportFormat::PlainText,
+            ExportFormat::Markdown,
+            ExportFormat::Html,
+            ExportFormat::Latex,
+        ] {
+            let a = render_to_string(&req(&with, &ids, &p, f)).unwrap();
+            let b = render_to_string(&req(&without, &ids, &p, f)).unwrap();
+            assert_eq!(a, b, "{f:?} (notes {notes}, synopses {synopses})");
+            for leak in ["agent", "second paragraph", "lamp oil", "almanac"] {
+                assert!(!a.contains(leak), "{f:?} printed a scratchpad: {a}");
+            }
+            if notes {
+                assert!(a.contains("Research"), "the note itself is in: {a}");
+            }
+        }
+        let wa = assemble(
+            &req(&with, &ids, &p, ExportFormat::Djot),
+            &|_| {},
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+        let wb = assemble(
+            &req(&without, &ids, &p, ExportFormat::Djot),
+            &|_| {},
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+        assert_eq!(wa.stats.words, wb.stats.words, "the same words are counted");
+        assert!(wa.stats.words > 0);
+        assert!(
+            wa.emitted
+                .iter()
+                .all(|e| ![90, 91, 92, 93].contains(&e.content_id)),
+            "no scratchpad row reached the compiled document"
+        );
+    }
+}
+
+/// A footnote marker can end up in a scratchpad, cut from a scene with the sentence that
+/// held it. The scratchpad is never printed, so the marker must not take a number: it
+/// moved every later note up by one and appended a body nothing in the book cites.
+#[test]
+fn a_footnote_marker_in_a_scratchpad_takes_no_number() {
+    let book = |with_pad: bool| {
+        let mut first = vec![c(1, ContentRole::SceneText, "Alpha[^a].")];
+        if with_pad {
+            first.push(c(
+                9,
+                ContentRole::ScratchpadText,
+                "Hold for later[^private].",
+            ));
+        }
+        let mut g = gathered(
+            vec![
+                iwc(100, SR::Scene, "", first),
+                iwc(
+                    101,
+                    SR::Scene,
+                    "",
+                    vec![c(2, ContentRole::SceneText, "Beta[^b].")],
+                ),
+            ],
+            "en",
+        );
+        g.footnotes = vec![
+            note(7000, 1, "a", "The first body."),
+            note(7001, 9, "private", "PRIVATEBODY."),
+            note(7002, 2, "b", "The second body."),
+        ];
+        g
+    };
+    let p = preset("neutral");
+    let with = book(true);
+    let without = book(false);
+    for f in [ExportFormat::Djot, ExportFormat::Html] {
+        let a = render_to_string(&req(&with, &[100, 101], &p, f)).unwrap();
+        let b = render_to_string(&req(&without, &[100, 101], &p, f)).unwrap();
+        assert!(!a.contains("PRIVATEBODY"), "{f:?} appended its body: {a}");
+        assert_eq!(a, b, "{f:?}: the scratchpad's marker changed the export");
+    }
+    let html = render_to_string(&req(&with, &[100, 101], &p, ExportFormat::Html)).unwrap();
+    assert!(
+        html.contains("<sup>2</sup>"),
+        "b is the second note: {html}"
+    );
+    assert!(
+        !html.contains("<sup>3</sup>"),
+        "b was moved up by one: {html}"
+    );
+}

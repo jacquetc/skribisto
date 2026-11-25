@@ -543,6 +543,9 @@ fn field_rank(field: &MatchField) -> u8 {
         MatchField::CommentReply => 6,
         MatchField::Footnote => 7,
         MatchField::Resource => 8,
+        // The writer's private notes beside the item: after everything that belongs to
+        // the book or is attached to it.
+        MatchField::Scratchpad => 9,
     }
 }
 

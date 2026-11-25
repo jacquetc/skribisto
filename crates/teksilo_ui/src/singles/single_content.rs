@@ -30,6 +30,19 @@ mod imp {
 
     use crate::singles::LoadingStatus;
 
+    /// The text a handle with no row of its own writes into the row of its role it
+    /// found: its own text after the row's, as a merge joins two texts. A blank row
+    /// adds nothing, and a row that already holds the same text is not doubled.
+    fn joined_onto(stored: &str, own: &str) -> String {
+        if stored.trim().is_empty() || stored.trim() == own.trim() {
+            own.to_string()
+        } else if own.trim().is_empty() {
+            stored.to_string()
+        } else {
+            frontend::common::prose_keep::join_text(stored, own)
+        }
+    }
+
     struct Inner {
         /// The owning `BinderItem` — needed to create the row if it doesn't exist.
         item_id: Cell<Option<u64>>,
@@ -141,6 +154,16 @@ mod imp {
         /// has no id yet (remembering the new id + `created_at`), else **update**
         /// it (preserving `created_at`). No-op when clean. Role-aware by
         /// construction: a handle only ever writes its own `ContentRole`.
+        ///
+        /// One row per role, whatever happened under the handle. A handle with no
+        /// row, or whose row a command took away (an undo, a redo joining it onto
+        /// another), first looks for the row of its role its item holds now: a
+        /// command may have made one while this handle still held unsaved text (a
+        /// merge folding the other scene's scratchpad in). It writes into that row,
+        /// its text joined after the row's as the merge joins them, rather than
+        /// create a second row nothing would ever show, or update a row that is no
+        /// longer in the store, which brought it back owned by nothing and lost the
+        /// text with the next save.
         pub fn save(&self, stack: Option<u64>) -> anyhow::Result<()> {
             if !self.inner.dirty.get() {
                 return Ok(());
@@ -148,7 +171,22 @@ mod imp {
             let ctx = &*self.inner.ctx;
             let now = chrono::Utc::now();
             let role = self.inner.role.borrow().clone();
-            let data = self.inner.data.get();
+            let mut data = self.inner.data.get();
+            let gone = self
+                .inner
+                .id
+                .get()
+                .is_some_and(|id| matches!(content_commands::get_content(ctx, &id), Ok(None)));
+            if self.inner.id.get().is_none() || gone {
+                self.inner.id.set(None);
+                if let Some(row) = self.row_of_role(&role) {
+                    data = joined_onto(&row.data, &data);
+                    self.inner.id.set(Some(row.id));
+                    self.inner.created_at.set(row.created_at);
+                    self.inner.uid.set(row.uid);
+                    self.inner.data.set(data.clone());
+                }
+            }
             match self.inner.id.get() {
                 Some(id) => {
                     content_commands::update_content(
@@ -213,6 +251,22 @@ mod imp {
         /// remembers to do.
         pub fn save_untracked(&self) -> anyhow::Result<()> {
             self.save(Some(common::undo_redo::UNTRACKED_STACK_ID))
+        }
+
+        /// The row of `role` the owning item holds now, read from the store.
+        fn row_of_role(&self, role: &ContentRole) -> Option<ContentDto> {
+            let item_id = self.inner.item_id.get()?;
+            let content_ids = binder_item_commands::get_binder_item_relationship(
+                &self.inner.ctx,
+                &item_id,
+                &BinderItemRelationshipField::Contents,
+            )
+            .unwrap_or_default();
+            content_commands::get_content_multi(&self.inner.ctx, &content_ids)
+                .unwrap_or_default()
+                .into_iter()
+                .flatten()
+                .find(|c| &c.role == role)
         }
 
         /// Re-fetch this field's row **by `(item_id, role)`**, not by cached row id
@@ -367,6 +421,11 @@ mod imp {
                 "> The sea is not a place; it is a going.\n>\n> {alignment=right}\n> — Anon., *Tidewater*"
                     .to_string()
             }
+            // The writer's own loose notes, in the shape they take: a question, a list.
+            ContentRole::ScratchpadText => format!(
+                "Fabricated scratchpad for item {item_id}: is this scene in the right place?\n\n\
+                 - check the tide tables\n- *slower* opening"
+            ),
         }
     }
 
@@ -381,7 +440,17 @@ mod imp {
     /// build — which is exactly the build the feature is meant to be demonstrable
     /// in.
     pub fn mock_content_id(item_id: u64, role: &ContentRole) -> u64 {
-        let slot = match role {
+        900_000 + item_id * MOCK_SLOTS_PER_ITEM + mock_slot(role)
+    }
+
+    /// How many content ids each mock item reserves. Room for every role and to spare:
+    /// with ten slots per item, a tenth role took slot 10, which is the next item's
+    /// slot 0, and two rows of two items shared an id.
+    const MOCK_SLOTS_PER_ITEM: u64 = 100;
+
+    /// A role's slot within its item's block, below [`MOCK_SLOTS_PER_ITEM`].
+    fn mock_slot(role: &ContentRole) -> u64 {
+        match role {
             ContentRole::SceneText => 1,
             ContentRole::NoteText => 2,
             ContentRole::SynopsisText => 3,
@@ -391,8 +460,8 @@ mod imp {
             ContentRole::ChapterTitle => 7,
             ContentRole::EpigraphText => 8,
             ContentRole::ParatextText => 9,
-        };
-        900_000 + item_id * 10 + slot
+            ContentRole::ScratchpadText => 10,
+        }
     }
 
     #[allow(dead_code)] // identical surface to the real variant; some unused under mocks
@@ -492,3 +561,164 @@ mod imp {
 pub use imp::SingleContent;
 #[cfg(feature = "mocks")]
 pub use imp::mock_content_id;
+
+#[cfg(all(test, feature = "mocks"))]
+mod mock_id_tests {
+    use frontend::common::entities::ContentRole;
+
+    /// Every role of every item gets an id of its own. With ten slots per item the tenth
+    /// role (the scratchpad, slot 10) landed on the next item's first id.
+    #[test]
+    fn no_two_fabricated_rows_share_an_id() {
+        let roles = [
+            ContentRole::SceneText,
+            ContentRole::NoteText,
+            ContentRole::SynopsisText,
+            ContentRole::BookTitle,
+            ContentRole::BookSubtitle,
+            ContentRole::PartTitle,
+            ContentRole::ChapterTitle,
+            ContentRole::EpigraphText,
+            ContentRole::ParatextText,
+            ContentRole::ScratchpadText,
+        ];
+        let mut seen = std::collections::HashSet::new();
+        for item in 0..500u64 {
+            for role in &roles {
+                let id = super::mock_content_id(item, role);
+                assert!(seen.insert(id), "item {item} {role:?} reuses id {id}");
+            }
+        }
+    }
+}
+
+#[cfg(all(test, not(feature = "mocks")))]
+mod one_row_per_role_tests {
+    use std::rc::Rc;
+
+    use frontend::AppContext;
+    use frontend::commands::{binder_item_commands, content_commands};
+    use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
+    use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
+    use frontend::direct_access::{ContentDto, CreateBinderItemDto, CreateContentDto};
+
+    use super::SingleContent;
+
+    fn scene(ctx: &AppContext) -> u64 {
+        binder_item_commands::create_orphan_binder_item(
+            ctx,
+            None,
+            &CreateBinderItemDto {
+                role: BinderItemRole::Item,
+                sub_role: BinderItemSubRole::Scene,
+                ..Default::default()
+            },
+        )
+        .expect("creating the scene")
+        .id
+    }
+
+    fn scratchpad_row(ctx: &AppContext, item: u64, text: &str) -> ContentDto {
+        content_commands::create_content(
+            ctx,
+            None,
+            &CreateContentDto {
+                role: ContentRole::ScratchpadText,
+                activated: true,
+                data: text.to_string(),
+                ..Default::default()
+            },
+            item,
+            -1,
+        )
+        .expect("creating the scratchpad row")
+    }
+
+    fn scratchpads(ctx: &AppContext, item: u64) -> Vec<String> {
+        let ids = binder_item_commands::get_binder_item_relationship(
+            ctx,
+            &item,
+            &BinderItemRelationshipField::Contents,
+        )
+        .expect("contents");
+        content_commands::get_content_multi(ctx, &ids)
+            .expect("rows")
+            .into_iter()
+            .flatten()
+            .filter(|c| c.role == ContentRole::ScratchpadText)
+            .map(|c| c.data)
+            .collect()
+    }
+
+    /// A handle with no row yet, holding unsaved text, while a command made the row of
+    /// its role underneath it (a merge folding the other scene's scratchpad in). Its
+    /// save writes into that row, its text after the folded one, instead of creating a
+    /// second row the scratchpad would never show.
+    #[test]
+    fn a_handle_with_no_row_writes_into_the_row_a_command_made() {
+        let ctx = Rc::new(AppContext::new());
+        let item = scene(&ctx);
+        let handle = SingleContent::for_field(ctx.clone(), item, ContentRole::ScratchpadText, None);
+        handle.set_data("The tide turns at four.".to_string());
+        let folded = scratchpad_row(&ctx, item, "Ask Marthe about the lighthouse.");
+
+        handle.save(None).expect("save");
+        assert_eq!(
+            scratchpads(&ctx, item),
+            vec!["Ask Marthe about the lighthouse.\n\nThe tide turns at four.".to_string()],
+            "one row, both notes"
+        );
+        assert_eq!(
+            handle.id(),
+            Some(folded.id),
+            "the handle now writes that row"
+        );
+
+        handle.set_data("Ask Marthe about the lighthouse.\n\nAt four.".to_string());
+        handle.save(None).expect("second save");
+        assert_eq!(
+            scratchpads(&ctx, item),
+            vec!["Ask Marthe about the lighthouse.\n\nAt four.".to_string()],
+            "the next save updates it as usual"
+        );
+    }
+
+    /// A handle whose row a command took away (an undo removing a row made since,
+    /// a redo joining it onto another). Updating the id brought the row back owned by
+    /// nothing, so the text was never saved with the project. The save goes to the row
+    /// of its role the item holds now, or to a new one when it holds none.
+    #[test]
+    fn a_handle_whose_row_was_taken_away_writes_to_the_items_row() {
+        let ctx = Rc::new(AppContext::new());
+        let item = scene(&ctx);
+        let own = scratchpad_row(&ctx, item, "Check the ferry.");
+        let handle =
+            SingleContent::for_field(ctx.clone(), item, ContentRole::ScratchpadText, Some(&own));
+        content_commands::remove_content(&ctx, None, &own.id).expect("removing the row");
+
+        handle.set_data("Check the ferry timetable.".to_string());
+        handle.save(None).expect("save");
+        assert_eq!(
+            scratchpads(&ctx, item),
+            vec!["Check the ferry timetable.".to_string()],
+            "a new row, owned by the item"
+        );
+        assert!(
+            matches!(content_commands::get_content(&ctx, &own.id), Ok(None)),
+            "the removed row was not brought back"
+        );
+
+        let now = handle.id().expect("the handle has a row again");
+        content_commands::remove_content(&ctx, None, &now).expect("removing it again");
+        let joined = scratchpad_row(&ctx, item, "Ask Marthe about the lighthouse.");
+        handle.set_data("Check the ferry timetable. Twice.".to_string());
+        handle.save(None).expect("save");
+        assert_eq!(
+            scratchpads(&ctx, item),
+            vec![
+                "Ask Marthe about the lighthouse.\n\nCheck the ferry timetable. Twice.".to_string()
+            ],
+        );
+        assert_eq!(handle.id(), Some(joined.id));
+    }
+}

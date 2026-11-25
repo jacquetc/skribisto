@@ -123,6 +123,7 @@ content-part-title = عنوان الجزء
 content-chapter-title = عنوان الفصل
 content-epigraph-text = الاقتباس الاستهلالي
 content-paratext-text = نص موازٍ
+content-scratchpad-text = مفكرة
 promote-blocked-title = الفصل ليس فارغًا
 promote-blocked-text = { $count ->
         [zero] لا يحتوي هذا الفصل على أي عنصر.
@@ -3733,6 +3734,7 @@ search-field-comment = تعليق
 search-field-comment-reply = رد
 search-field-footnote = حاشية سفلية
 search-field-resource = مورد
+search-field-scratchpad = مفكرة
 search-include-in-replace = التضمين في «استبدال الكل»
 search-collapse-all = طي كل النتائج
 search-replace-here = استبدال هذه
