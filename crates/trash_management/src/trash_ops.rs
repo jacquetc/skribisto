@@ -115,23 +115,35 @@ pub(crate) fn assert_work_owns<S: TrashIndex + ?Sized>(
     Ok(())
 }
 
-/// Load `ids`, set `activated`, write them back. A no-op for an empty list.
+/// Load `ids`, set `activated` to `value` on the rows that do not already have
+/// it, write those back, and return their ids. A no-op for an empty list.
+///
+/// The returned ids are what an undo must flip back, and nothing more. A row of
+/// the cascade that was already trashed belongs to an earlier trash entry:
+/// reactivating it on undo would bring it back to the manuscript while that
+/// entry stays in the bin, and the next "Empty trash" would delete a row the
+/// writer can see.
 pub(crate) fn set_activated<S: ItemStore + ?Sized>(
     store: &S,
     ids: &[EntityId],
     value: bool,
-) -> Result<()> {
+) -> Result<Vec<EntityId>> {
     if ids.is_empty() {
-        return Ok(());
+        return Ok(Vec::new());
     }
-    let mut items = store.items(ids)?;
+    let mut items: Vec<BinderItem> = store
+        .items(ids)?
+        .into_iter()
+        .filter(|item| item.activated != value)
+        .collect();
     if items.is_empty() {
-        return Ok(());
+        return Ok(Vec::new());
     }
     for item in &mut items {
         item.activated = value;
     }
-    store.save_items(&items)
+    store.save_items(&items)?;
+    Ok(items.into_iter().map(|item| item.id).collect())
 }
 
 /// Set `activated` on a whole `Binder` row. Silently does nothing if it is gone
@@ -206,37 +218,20 @@ pub(crate) fn unfile_trash_infos<S: TrashIndex + ?Sized>(
 /// item) and the full *cascade* (each root plus its contiguous subtree), in
 /// binder order.
 ///
-/// Pure. A binder has no parent/child graph — depth is the `indent` integer —
-/// so a subtree is a run of following rows at a strictly greater indent, and
-/// nesting has to be detected rather than looked up.
+/// Pure, and read off [`binder_ordering::walk_subtrees`], the same walk a move
+/// uses, so what a trash hides and what a move relocates cannot disagree.
 pub(crate) fn roots_and_cascade(
     order: &[EntityId],
     indent: &HashMap<EntityId, i64>,
     requested: &HashSet<EntityId>,
 ) -> (Vec<EntityId>, Vec<EntityId>) {
-    let mut roots = Vec::new();
-    let mut cascade = Vec::new();
-    let mut covered: HashSet<EntityId> = HashSet::new();
-    let mut i = 0usize;
-    while i < order.len() {
-        let id = order[i];
-        if requested.contains(&id) && !covered.contains(&id) {
-            roots.push(id);
-            let root_indent = *indent.get(&id).unwrap_or(&0);
-            let mut j = i;
-            loop {
-                cascade.push(order[j]);
-                covered.insert(order[j]);
-                j += 1;
-                if j >= order.len() || *indent.get(&order[j]).unwrap_or(&0) <= root_indent {
-                    break;
-                }
-            }
-            i = j;
-        } else {
-            i += 1;
-        }
-    }
+    let walked = binder_ordering::walk_subtrees(order, indent, requested);
+    let roots = walked
+        .iter()
+        .filter(|(_, is_root)| *is_root)
+        .map(|(id, _)| *id)
+        .collect();
+    let cascade = walked.into_iter().map(|(id, _)| id).collect();
     (roots, cascade)
 }
 

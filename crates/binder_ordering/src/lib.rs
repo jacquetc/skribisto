@@ -17,8 +17,8 @@
 //!
 //! No unit-of-work access here — callers fetch the order/indent map themselves
 //! and pass it in; these functions only compute. Shared by
-//! `binder_item_management::move_items` and
-//! `trash_management::restore_items_to` so the ordering math lives once.
+//! `binder_item_management::move_items` and `trash_management` (trashing,
+//! restoring and purging) so the ordering math lives once.
 
 use anyhow::{Result, anyhow};
 use common::types::EntityId;
@@ -91,7 +91,11 @@ pub fn subtree_end(
 /// deeper than the last, so "not deeper than the root currently open" recognises the second
 /// root inside one subtree and misses it across two — which is exactly the mistake that
 /// makes a selection of a chapter plus a far-away scene collapse into one block.
-fn walk_subtrees(
+///
+/// Public so trashing (`trash_management::trash_ops::roots_and_cascade`) reads its roots
+/// and cascade from this same walk: what a move relocates and what a trash hides must be
+/// the same rows.
+pub fn walk_subtrees(
     order: &[EntityId],
     indent: &HashMap<EntityId, i64>,
     requested: &HashSet<EntityId>,

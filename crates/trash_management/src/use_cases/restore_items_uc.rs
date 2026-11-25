@@ -4,8 +4,12 @@
 // Custom implementation: restore trashed entities indexed by the given
 // TrashInfos. A TrashedBinder reactivates the binder and all its items; a
 // TrashedBinderItem reactivates the item and its contiguous subtree in place.
+// Either way, a row that another entry still in the bin covers (a scene trashed
+// before its chapter) stays trashed: it goes when that entry is purged, so it
+// must not be visible.
 // An item is reported `orphaned` — left indexed, for the caller to re-home
-// through restore_items_to — when its binder no longer exists, or when the row
+// through restore_items_to — when its binder no longer exists or is itself in
+// the trash, when a row it is nested in is still in the trash, or when the row
 // it was nested in is no longer a Folder (its container was collapsed to a leaf
 // while it sat in the trash).
 // Restored TrashInfos are unlinked from Work.trash_infos.
@@ -14,6 +18,7 @@
 use crate::RestoreItemsDto;
 use crate::RestoreResultDto;
 use anyhow::{Result, anyhow};
+use binder_ordering::{expand_to_subtrees, subtree_of};
 use common::database::CommandUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
 use common::direct_access::trash_info::TrashInfoRelationshipField;
@@ -120,86 +125,101 @@ impl RestoreItemsUseCase {
         // Work-scoped snapshot, before the first mutation.
         let snap_before = uow.snapshot_work(&[work_id])?;
 
+        // What each requested entry points at. Read before any row changes.
+        let mut targets: Vec<(EntityId, Target)> = Vec::with_capacity(info_ids.len());
+        for info_id in &info_ids {
+            targets.push((*info_id, target_of(uow.as_ref(), *info_id)?));
+        }
+        // Whole binders first, then items, each item after its ancestors: a row whose
+        // container is restored in the same call must find that container live.
+        targets.sort_by_key(|(_, t)| match t {
+            Target::Binder(_) => (0, 0, 0),
+            Target::Item {
+                binder: Some((binder, pos)),
+                ..
+            } => (1, *binder, *pos),
+            Target::Item { binder: None, .. } => (2, 0, 0),
+            Target::Stale => (3, 0, 0),
+        });
+
+        // The entries that stay in the bin. A row one of them covers is still in the
+        // trash, whatever else this call brings back: reactivating it would leave a
+        // visible row with a trash entry, and the next "Empty trash" would delete it.
+        let requested: HashSet<EntityId> = info_ids.iter().copied().collect();
+        let mut staying_items: HashSet<EntityId> = HashSet::new();
+        for info in indexed.iter().filter(|id| !requested.contains(id)) {
+            if let Some(item) = uow
+                .get_trash_info_relationship(info, &TrashInfoRelationshipField::TrashedBinderItem)?
+                .into_iter()
+                .next()
+            {
+                staying_items.insert(item);
+            }
+        }
+
         let mut restored_count: i64 = 0;
         let mut orphaned = false;
         let mut consumed: HashSet<EntityId> = HashSet::new(); // TrashInfos to drop from the index
         let mut touched: Vec<EntityId> = Vec::new();
 
-        for info_id in &info_ids {
-            let trashed_binder = uow
-                .get_trash_info_relationship(info_id, &TrashInfoRelationshipField::TrashedBinder)?
-                .into_iter()
-                .next();
-            let trashed_item = uow
-                .get_trash_info_relationship(
-                    info_id,
-                    &TrashInfoRelationshipField::TrashedBinderItem,
-                )?
-                .into_iter()
-                .next();
-
-            if let Some(binder_id) = trashed_binder {
-                match uow.get_binder(&binder_id)? {
+        for (info_id, target) in &targets {
+            match *target {
+                Target::Binder(binder_id) => match uow.get_binder(&binder_id)? {
                     Some(mut binder) => {
                         binder.activated = true;
                         uow.update_binder(&binder)?;
-                        let item_ids = uow.get_binder_relationship(
-                            &binder_id,
-                            &BinderRelationshipField::BinderItems,
-                        )?;
-                        reactivate(uow.as_ref(), &item_ids)?;
+                        let rows = Rows::read(uow.as_ref(), binder_id)?;
+                        let back = rows.not_covered(&rows.order, &staying_items);
+                        reactivate(uow.as_ref(), &back)?;
                         touched.push(binder_id);
-                        touched.extend(item_ids);
+                        touched.extend(back);
                         restored_count += 1;
                         consumed.insert(*info_id);
                     }
                     None => orphaned = true,
-                }
-            } else if let Some(item_id) = trashed_item {
-                // Resolve the item's current binder (trashed items stay in place).
-                let binder = uow
-                    .get_binder_relationships_from_right_ids(
-                        &BinderRelationshipField::BinderItems,
-                        &[item_id],
-                    )?
-                    .into_iter()
-                    .next()
-                    .map(|(b, _)| b);
-                match binder {
-                    Some(binder_id) => {
-                        let order = uow.get_binder_relationship(
-                            &binder_id,
-                            &BinderRelationshipField::BinderItems,
-                        )?;
-                        let mut indent: HashMap<EntityId, i64> = HashMap::new();
-                        let mut role: HashMap<EntityId, BinderItemRole> = HashMap::new();
-                        for it in uow.get_binder_item_multi(&order)?.into_iter().flatten() {
-                            indent.insert(it.id, it.indent);
-                            role.insert(it.id, it.role);
-                        }
-                        // Only a Folder may hold nested rows, and the container this item
-                        // sat in can have been collapsed to a leaf while it was trashed
-                        // (the demote guard counts only live children). Reactivating in
-                        // place would then strand it under a leaf, so report it orphaned
-                        // instead and leave its TrashInfo indexed for restore_items_to.
-                        let nested_under_a_leaf = parent_of(&order, &indent, item_id)
-                            .and_then(|p| role.get(&p))
-                            .is_some_and(|r| *r != BinderItemRole::Folder);
-                        if nested_under_a_leaf {
-                            orphaned = true;
-                            continue;
-                        }
-                        let subtree = subtree_of(&order, &indent, item_id);
-                        reactivate(uow.as_ref(), &subtree)?;
-                        touched.extend(subtree);
-                        restored_count += 1;
-                        consumed.insert(*info_id);
+                },
+                Target::Item {
+                    item: item_id,
+                    binder: Some((binder_id, _)),
+                } => {
+                    // A binder still in the trash hides the row whatever its flag says,
+                    // and purging that binder takes the row with it. Reactivating in place
+                    // would only look like a restore, so report it orphaned and leave its
+                    // TrashInfo indexed for restore_items_to.
+                    let binder_live = uow
+                        .get_binder(&binder_id)?
+                        .is_some_and(|binder| binder.activated);
+                    let rows = Rows::read(uow.as_ref(), binder_id)?;
+                    let ancestors = ancestors_of(&rows.order, &rows.indent, item_id);
+                    // Only a Folder may hold nested rows, and the container this item
+                    // sat in can have been collapsed to a leaf while it was trashed
+                    // (the demote guard counts only live children). Reactivating in
+                    // place would then strand it under a leaf.
+                    let nested_under_a_leaf = ancestors
+                        .first()
+                        .and_then(|p| rows.role.get(p))
+                        .is_some_and(|r| *r != BinderItemRole::Folder);
+                    // A container still in the trash: the row would come back inside a
+                    // hidden chapter, and go when that chapter is purged.
+                    let inside_a_trashed_row = ancestors
+                        .iter()
+                        .any(|a| !*rows.activated.get(a).unwrap_or(&true));
+                    if !binder_live || nested_under_a_leaf || inside_a_trashed_row {
+                        orphaned = true;
+                        continue;
                     }
-                    None => orphaned = true,
+                    let subtree = subtree_of(&rows.order, &rows.indent, item_id);
+                    let back = rows.not_covered(&subtree, &staying_items);
+                    reactivate(uow.as_ref(), &back)?;
+                    touched.extend(back);
+                    restored_count += 1;
+                    consumed.insert(*info_id);
                 }
-            } else {
-                // A TrashInfo with neither relationship is stale — drop it.
-                consumed.insert(*info_id);
+                Target::Item { binder: None, .. } => orphaned = true,
+                // A TrashInfo with neither relationship is stale: drop it.
+                Target::Stale => {
+                    consumed.insert(*info_id);
+                }
             }
         }
 
@@ -242,29 +262,110 @@ fn reactivate(uow: &dyn RestoreItemsUnitOfWorkTrait, ids: &[EntityId]) -> Result
     Ok(())
 }
 
-/// The row `root` is nested inside: the nearest one before it in binder order with a
-/// strictly smaller indent. `None` for a top-level row — nothing shallower precedes it,
-/// which is always a valid place to sit.
-///
-/// The model has no parent pointers; containment is encoded by position + indent alone,
-/// so this walk *is* "who is my parent".
-fn parent_of(
-    order: &[EntityId],
-    indent: &HashMap<EntityId, i64>,
-    root: EntityId,
-) -> Option<EntityId> {
-    let pos = order.iter().position(|&x| x == root)?;
-    let root_indent = *indent.get(&root).unwrap_or(&0);
-    order[..pos]
-        .iter()
-        .rev()
-        .find(|id| *indent.get(id).unwrap_or(&0) < root_indent)
-        .copied()
+/// What one TrashInfo points at.
+enum Target {
+    /// A whole binder.
+    Binder(EntityId),
+    /// One item and, when some binder still lists it, that binder and the item's
+    /// position in it.
+    Item {
+        item: EntityId,
+        binder: Option<(EntityId, usize)>,
+    },
+    /// Neither relationship is set.
+    Stale,
 }
 
-/// The contiguous subtree rooted at `root` (root plus following items whose
-/// indent is strictly greater), in binder order.
-fn subtree_of(
+fn target_of(uow: &dyn RestoreItemsUnitOfWorkTrait, info: EntityId) -> Result<Target> {
+    if let Some(binder) = uow
+        .get_trash_info_relationship(&info, &TrashInfoRelationshipField::TrashedBinder)?
+        .into_iter()
+        .next()
+    {
+        return Ok(Target::Binder(binder));
+    }
+    let Some(item) = uow
+        .get_trash_info_relationship(&info, &TrashInfoRelationshipField::TrashedBinderItem)?
+        .into_iter()
+        .next()
+    else {
+        return Ok(Target::Stale);
+    };
+    // Trashed items stay in place, so the binder listing the item is the one it
+    // comes back into.
+    let Some((binder, _)) = uow
+        .get_binder_relationships_from_right_ids(&BinderRelationshipField::BinderItems, &[item])?
+        .into_iter()
+        .next()
+    else {
+        return Ok(Target::Item { item, binder: None });
+    };
+    let order = uow.get_binder_relationship(&binder, &BinderRelationshipField::BinderItems)?;
+    let pos = order
+        .iter()
+        .position(|&id| id == item)
+        .unwrap_or(order.len());
+    Ok(Target::Item {
+        item,
+        binder: Some((binder, pos)),
+    })
+}
+
+/// One binder's rows as they are now: order, depth, role and trashed flag.
+struct Rows {
+    order: Vec<EntityId>,
+    indent: HashMap<EntityId, i64>,
+    role: HashMap<EntityId, BinderItemRole>,
+    activated: HashMap<EntityId, bool>,
+}
+
+impl Rows {
+    fn read(uow: &dyn RestoreItemsUnitOfWorkTrait, binder: EntityId) -> Result<Self> {
+        let order = uow.get_binder_relationship(&binder, &BinderRelationshipField::BinderItems)?;
+        let mut indent = HashMap::new();
+        let mut role = HashMap::new();
+        let mut activated = HashMap::new();
+        for it in uow.get_binder_item_multi(&order)?.into_iter().flatten() {
+            indent.insert(it.id, it.indent);
+            role.insert(it.id, it.role);
+            activated.insert(it.id, it.activated);
+        }
+        Ok(Rows {
+            order,
+            indent,
+            role,
+            activated,
+        })
+    }
+
+    /// `ids` minus every row inside the subtree of a `staying` root: those are still
+    /// in the trash under their own entry.
+    fn not_covered(&self, ids: &[EntityId], staying: &HashSet<EntityId>) -> Vec<EntityId> {
+        let roots: HashSet<EntityId> = self
+            .order
+            .iter()
+            .copied()
+            .filter(|id| staying.contains(id))
+            .collect();
+        if roots.is_empty() {
+            return ids.to_vec();
+        }
+        let covered: HashSet<EntityId> = expand_to_subtrees(&self.order, &self.indent, &roots)
+            .into_iter()
+            .collect();
+        ids.iter()
+            .copied()
+            .filter(|id| !covered.contains(id))
+            .collect()
+    }
+}
+
+/// The rows `root` is nested inside, nearest first: walking back in binder order,
+/// each row shallower than every row seen so far.
+///
+/// The model has no parent pointers; containment is encoded by position + indent alone,
+/// so this walk *is* "who are my parents". Empty for a top-level row.
+fn ancestors_of(
     order: &[EntityId],
     indent: &HashMap<EntityId, i64>,
     root: EntityId,
@@ -272,15 +373,14 @@ fn subtree_of(
     let Some(pos) = order.iter().position(|&x| x == root) else {
         return Vec::new();
     };
-    let root_indent = *indent.get(&root).unwrap_or(&0);
-    let mut out = vec![root];
-    let mut j = pos + 1;
-    while j < order.len() {
-        if *indent.get(&order[j]).unwrap_or(&0) <= root_indent {
-            break;
+    let mut depth = *indent.get(&root).unwrap_or(&0);
+    let mut out = Vec::new();
+    for id in order[..pos].iter().rev() {
+        let d = *indent.get(id).unwrap_or(&0);
+        if d < depth {
+            out.push(*id);
+            depth = d;
         }
-        out.push(order[j]);
-        j += 1;
     }
     out
 }

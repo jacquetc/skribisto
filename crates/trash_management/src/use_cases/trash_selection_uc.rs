@@ -121,11 +121,14 @@ pub struct TrashSelectionUseCase {
     uow_factory: Box<dyn TrashSelectionUnitOfWorkFactoryTrait>,
     work_id: EntityId,
     trashed_at: DateTime<Utc>,
-    /// Whole binders, and every item inside each — trashed and reactivated together.
+    /// Whole binders, and every item inside each, trashed together.
     binders: Vec<(EntityId, Vec<EntityId>)>,
     /// Loose item roots grouped by the binder they came from, with each group's
     /// full contiguous cascade.
     groups: Vec<ItemGroup>,
+    /// The item rows this command hid: the ones that were still visible. Undo
+    /// reactivates these and nothing else.
+    deactivated: Vec<EntityId>,
     created_trash: Vec<EntityId>,
 }
 
@@ -143,6 +146,7 @@ impl TrashSelectionUseCase {
             trashed_at: Utc::now(),
             binders: Vec::new(),
             groups: Vec::new(),
+            deactivated: Vec::new(),
             created_trash: Vec::new(),
         }
     }
@@ -254,9 +258,10 @@ impl TrashSelectionUseCase {
     /// Forward (execute + redo).
     fn apply(&mut self, store: &dyn TrashSelectionUnitOfWorkTrait) -> Result<()> {
         let mut created = Vec::new();
+        let mut deactivated = Vec::new();
         for (binder, items) in &self.binders {
             set_binder_activated(store, *binder, false)?;
-            set_activated(store, items, false)?;
+            deactivated.extend(set_activated(store, items, false)?);
             created.extend(file_trash_infos(
                 store,
                 self.work_id,
@@ -268,7 +273,7 @@ impl TrashSelectionUseCase {
             )?);
         }
         for group in &self.groups {
-            set_activated(store, &group.cascade, false)?;
+            deactivated.extend(set_activated(store, &group.cascade, false)?);
             let origin = group.binder as i64;
             created.extend(file_trash_infos(
                 store,
@@ -280,18 +285,17 @@ impl TrashSelectionUseCase {
             )?);
         }
         self.created_trash = created;
+        self.deactivated = deactivated;
         Ok(())
     }
 
     /// Inverse (undo).
     fn revert(&self, store: &dyn TrashSelectionUnitOfWorkTrait) -> Result<()> {
-        for (binder, items) in &self.binders {
+        for (binder, _) in &self.binders {
             set_binder_activated(store, *binder, true)?;
-            set_activated(store, items, true)?;
         }
-        for group in &self.groups {
-            set_activated(store, &group.cascade, true)?;
-        }
+        // Only the rows `apply` hid: one trashed before this command keeps its own entry.
+        set_activated(store, &self.deactivated, true)?;
         unfile_trash_infos(store, self.work_id, &self.created_trash)
     }
 

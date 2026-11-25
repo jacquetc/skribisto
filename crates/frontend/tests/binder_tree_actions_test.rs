@@ -32,7 +32,7 @@ use binder_item_management::{
 use skribisto_model::PromoteTarget;
 use trash_management::{
     DeleteTrashEntriesDto, DropPosition, EmptyTrashDto, RestoreItemsDto, RestoreItemsToDto,
-    TrashBinderDto, TrashBinderItemsDto,
+    TrashBinderDto, TrashBinderItemsDto, TrashSelectionDto,
 };
 
 // ───────────────────────────── fixture helpers ─────────────────────────────
@@ -3405,4 +3405,264 @@ fn promote_keeps_the_scratchpad() {
     .expect("promote the chapter to its folder encoding");
     assert_eq!(item(&fx.ctx, chapter).role, BinderItemRole::Folder);
     assert_eq!(scratchpad_text(&fx, chapter), "Open on the quay.");
+}
+
+// ─────────── a row trashed on its own stays trashed under its own entry ───────────
+//
+// Trash scene A1, then its chapter A. A1's own entry is still in the bin, so
+// nothing that brings A back may bring A1 back with it: "Empty trash" would then
+// delete a scene the writer can see.
+
+/// The trash entry filed for `root`.
+fn entry_of(fx: &Fixture, root: EntityId) -> EntityId {
+    trash_info_commands::get_all_trash_info(&fx.ctx)
+        .unwrap()
+        .into_iter()
+        .find(|i| i.trashed_binder_item == Some(root))
+        .expect("trash info for root")
+        .id
+}
+
+fn empty_the_trash(fx: &Fixture) {
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::empty_trash(
+        &fx.ctx,
+        Some(stack),
+        &EmptyTrashDto { work_id: fx.work },
+    )
+    .expect("empty");
+}
+
+fn exists(fx: &Fixture, id: EntityId) -> bool {
+    binder_item_commands::get_binder_item(&fx.ctx, &id)
+        .unwrap()
+        .is_some()
+}
+
+#[test]
+fn undoing_a_chapter_trash_leaves_a_scene_trashed_before_it_in_the_bin() {
+    let fx = make_fixture();
+    add_content(&fx, fx.a1, ContentRole::SceneText, "trashed on its own");
+    add_content(&fx, fx.a2, ContentRole::SceneText, "came back");
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let a1_entry = trash_item(&fx, s1, fx.a1);
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_item(&fx, s2, fx.a);
+
+    undo_redo_commands::undo(&fx.ctx, Some(s2)).expect("undo the chapter");
+    assert!(activated(&fx.ctx, fx.a));
+    assert!(activated(&fx.ctx, fx.a2));
+    assert!(!activated(&fx.ctx, fx.a1), "A1 went in first and stays");
+    assert_eq!(indexed_trash(&fx), vec![a1_entry]);
+
+    empty_the_trash(&fx);
+    assert!(!exists(&fx, fx.a1));
+    for id in [fx.a, fx.a2] {
+        assert!(
+            exists(&fx, id),
+            "row {id} is in the manuscript and survives"
+        );
+    }
+    assert_eq!(content_commands::get_all_content(&fx.ctx).unwrap().len(), 1);
+
+    // Redo after undo still hides the whole chapter.
+    let fx = make_fixture();
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_item(&fx, s1, fx.a1);
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_item(&fx, s2, fx.a);
+    undo_redo_commands::undo(&fx.ctx, Some(s2)).expect("undo");
+    undo_redo_commands::redo(&fx.ctx, Some(s2)).expect("redo");
+    for id in [fx.a, fx.a1, fx.a2] {
+        assert!(!activated(&fx.ctx, id), "row {id} is trashed again");
+    }
+    undo_redo_commands::undo(&fx.ctx, Some(s2)).expect("undo again");
+    assert!(!activated(&fx.ctx, fx.a1));
+}
+
+#[test]
+fn restoring_a_chapter_leaves_a_scene_trashed_before_it_in_the_bin() {
+    let fx = make_fixture();
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let a1_entry = trash_item(&fx, s1, fx.a1);
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let a_entry = trash_item(&fx, s2, fx.a);
+
+    let s3 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let res = trash_management_commands::restore_items(
+        &fx.ctx,
+        Some(s3),
+        &RestoreItemsDto {
+            work_id: fx.work,
+            trash_info_ids: vec![a_entry as i64],
+        },
+    )
+    .expect("restore");
+    assert_eq!(res.restored_count, 1);
+    assert!(!res.orphaned);
+    assert!(activated(&fx.ctx, fx.a));
+    assert!(activated(&fx.ctx, fx.a2));
+    assert!(!activated(&fx.ctx, fx.a1));
+    assert_eq!(indexed_trash(&fx), vec![a1_entry]);
+
+    empty_the_trash(&fx);
+    assert!(!exists(&fx, fx.a1));
+    assert!(exists(&fx, fx.a));
+    assert!(exists(&fx, fx.a2));
+}
+
+#[test]
+fn restoring_a_scene_and_its_chapter_together_brings_both_back() {
+    let fx = make_fixture();
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let a1_entry = trash_item(&fx, s1, fx.a1);
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let a_entry = trash_item(&fx, s2, fx.a);
+
+    // The scene listed first: the chapter is still restored before it.
+    let s3 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let res = trash_management_commands::restore_items(
+        &fx.ctx,
+        Some(s3),
+        &RestoreItemsDto {
+            work_id: fx.work,
+            trash_info_ids: vec![a1_entry as i64, a_entry as i64],
+        },
+    )
+    .expect("restore");
+    assert_eq!(res.restored_count, 2);
+    assert!(!res.orphaned);
+    for id in [fx.a, fx.a1, fx.a2] {
+        assert!(activated(&fx.ctx, id), "row {id} is back");
+    }
+    assert!(indexed_trash(&fx).is_empty());
+}
+
+#[test]
+fn restoring_a_scene_whose_chapter_is_still_trashed_asks_where_to_put_it() {
+    let fx = make_fixture();
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let a1_entry = trash_item(&fx, s1, fx.a1);
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let a_entry = trash_item(&fx, s2, fx.a);
+
+    let s3 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let res = trash_management_commands::restore_items(
+        &fx.ctx,
+        Some(s3),
+        &RestoreItemsDto {
+            work_id: fx.work,
+            trash_info_ids: vec![a1_entry as i64],
+        },
+    )
+    .expect("restore");
+    // Reactivated in place, A1 would sit inside a hidden chapter and go with it on
+    // the next "Empty trash". Orphaned sends the writer to the destination picker.
+    assert!(res.orphaned);
+    assert_eq!(res.restored_count, 0);
+    assert!(!activated(&fx.ctx, fx.a1));
+    assert_eq!(indexed_trash(&fx), vec![a1_entry, a_entry]);
+}
+
+#[test]
+fn a_binder_trash_and_its_restore_leave_a_row_trashed_before_it_in_the_bin() {
+    let fx = make_fixture();
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let a1_entry = trash_item(&fx, s1, fx.a1);
+
+    // Undo of the binder trash.
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::trash_binder(
+        &fx.ctx,
+        Some(s2),
+        &TrashBinderDto {
+            work_id: fx.work,
+            binder_id: fx.binder1 as i64,
+        },
+    )
+    .expect("trash binder");
+    undo_redo_commands::undo(&fx.ctx, Some(s2)).expect("undo");
+    assert!(activated(&fx.ctx, fx.a));
+    assert!(activated(&fx.ctx, fx.a2));
+    assert!(!activated(&fx.ctx, fx.a1));
+    assert_eq!(indexed_trash(&fx), vec![a1_entry]);
+
+    // Restore of the binder entry.
+    undo_redo_commands::redo(&fx.ctx, Some(s2)).expect("redo");
+    let binder_entry = trash_info_commands::get_all_trash_info(&fx.ctx)
+        .unwrap()
+        .into_iter()
+        .find(|i| i.trashed_binder == Some(fx.binder1))
+        .expect("binder entry")
+        .id;
+    let s3 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let res = trash_management_commands::restore_items(
+        &fx.ctx,
+        Some(s3),
+        &RestoreItemsDto {
+            work_id: fx.work,
+            trash_info_ids: vec![binder_entry as i64],
+        },
+    )
+    .expect("restore binder");
+    assert_eq!(res.restored_count, 1);
+    for id in [fx.a, fx.a2, fx.b, fx.b1, fx.c] {
+        assert!(activated(&fx.ctx, id), "row {id} is back");
+    }
+    assert!(!activated(&fx.ctx, fx.a1));
+    assert_eq!(indexed_trash(&fx), vec![a1_entry]);
+
+    empty_the_trash(&fx);
+    assert!(!exists(&fx, fx.a1));
+    assert!(exists(&fx, fx.a));
+}
+
+#[test]
+fn undoing_a_selection_trash_leaves_a_row_trashed_before_it_in_the_bin() {
+    let fx = make_fixture();
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    let a1_entry = trash_item(&fx, s1, fx.a1);
+
+    let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_management_commands::trash_selection(
+        &fx.ctx,
+        Some(s2),
+        &TrashSelectionDto {
+            work_id: fx.work,
+            binder_ids: vec![fx.binder2],
+            binder_item_ids: vec![fx.a],
+        },
+    )
+    .expect("trash selection");
+    undo_redo_commands::undo(&fx.ctx, Some(s2)).expect("undo");
+    assert!(activated(&fx.ctx, fx.a));
+    assert!(activated(&fx.ctx, fx.a2));
+    assert!(!activated(&fx.ctx, fx.a1));
+    assert_eq!(indexed_trash(&fx), vec![a1_entry]);
+}
+
+#[test]
+fn emptying_the_trash_spares_a_live_row_with_a_stale_entry() {
+    let fx = make_fixture();
+    let s1 = undo_redo_commands::create_new_stack(&fx.ctx);
+    trash_item(&fx, s1, fx.a1);
+    let stale = entry_of(&fx, fx.a1);
+    // A project saved before the fix can hold this: a visible row whose own entry
+    // is still in the bin.
+    let mut row: frontend::direct_access::UpdateBinderItemDto = item(&fx.ctx, fx.a1).into();
+    row.activated = true;
+    binder_item_commands::update_binder_item(&fx.ctx, Some(fx.setup), &row).expect("reactivate");
+
+    empty_the_trash(&fx);
+    assert!(exists(&fx, fx.a1), "the writer can see it, so it stays");
+    assert_eq!(
+        order(&fx.ctx, fx.binder1),
+        vec![fx.a, fx.a1, fx.a2, fx.b, fx.b1, fx.c]
+    );
+    assert!(!indexed_trash(&fx).contains(&stale));
+    assert!(
+        trash_info_commands::get_all_trash_info(&fx.ctx)
+            .unwrap()
+            .is_empty()
+    );
 }

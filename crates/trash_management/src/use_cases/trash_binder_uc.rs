@@ -111,6 +111,8 @@ pub struct TrashBinderUseCase {
     binder_id: EntityId,
     work_id: EntityId,
     item_ids: Vec<EntityId>,
+    /// The rows of `item_ids` this command hid: the ones that were still visible.
+    deactivated: Vec<EntityId>,
     trashed_at: DateTime<Utc>,
     created_trash: Vec<EntityId>,
 }
@@ -122,6 +124,7 @@ impl TrashBinderUseCase {
             binder_id: 0,
             work_id: 0,
             item_ids: Vec::new(),
+            deactivated: Vec::new(),
             trashed_at: Utc::now(),
             created_trash: Vec::new(),
         }
@@ -162,7 +165,7 @@ impl TrashBinderUseCase {
 
     fn apply(&mut self, uow: &dyn TrashBinderUnitOfWorkTrait) -> Result<()> {
         set_binder_activated(uow, self.binder_id, false)?;
-        set_activated(uow, &self.item_ids, false)?;
+        self.deactivated = set_activated(uow, &self.item_ids, false)?;
         self.created_trash = file_trash_infos(
             uow,
             self.work_id,
@@ -177,7 +180,8 @@ impl TrashBinderUseCase {
 
     fn revert(&self, uow: &dyn TrashBinderUnitOfWorkTrait) -> Result<()> {
         set_binder_activated(uow, self.binder_id, true)?;
-        set_activated(uow, &self.item_ids, true)?;
+        // Only what `apply` hid: a row trashed before the binder keeps its own entry.
+        set_activated(uow, &self.deactivated, true)?;
         unfile_trash_infos(uow, self.work_id, &self.created_trash)
     }
 }

@@ -195,6 +195,10 @@ pub(crate) fn plan_purge<U: PurgeAccess + ?Sized>(
             remove_items.extend(items);
             remove_binders.push(binder_id);
         } else if let Some(item_id) = trashed_item
+            // An entry whose item is live is stale: the row is in the manuscript, and
+            // emptying the trash must never delete what the writer can see. The entry
+            // itself still goes with the others.
+            && !item_is_live(uow, item_id)?
             && let Some((binder_id, _)) = uow
                 .get_binder_relationships_from_right_ids(
                     &BinderRelationshipField::BinderItems,
@@ -259,6 +263,15 @@ pub(crate) fn plan_purge<U: PurgeAccess + ?Sized>(
         drop_from_binder,
         collateral,
     })
+}
+
+/// Whether `item` exists and is not trashed.
+fn item_is_live<U: PurgeAccess + ?Sized>(uow: &U, item: EntityId) -> Result<bool> {
+    Ok(uow
+        .get_binder_item_multi(&[item])?
+        .into_iter()
+        .flatten()
+        .any(|it| it.activated))
 }
 
 /// Apply a previously-computed plan: prune subtrees from surviving binders' order,

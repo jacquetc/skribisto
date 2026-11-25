@@ -6,8 +6,8 @@
 // false and one TrashInfo per requested root is indexed under Work.trash_infos.
 //
 // Undoable via a targeted inverse (this is a high-frequency op): undo reactivates
-// exactly the cascade it trashed and removes exactly the TrashInfo rows it
-// created. Post-reparent TrashInfo lives in the Work trunk alongside the items,
+// exactly the rows of the cascade it hid (a row already in the trash under an
+// earlier entry stays there) and removes exactly the TrashInfo rows it created. Post-reparent TrashInfo lives in the Work trunk alongside the items,
 // so no cross-trunk snapshot is needed.
 //
 // dto.work_id must be validated against the open Works before use.
@@ -107,6 +107,8 @@ pub struct TrashBinderItemsUseCase {
     trashed_at: DateTime<Utc>,
     roots: Vec<EntityId>,
     cascade: Vec<EntityId>,
+    /// The rows of `cascade` this command hid: the ones that were still visible.
+    deactivated: Vec<EntityId>,
     created_trash: Vec<EntityId>,
 }
 
@@ -119,6 +121,7 @@ impl TrashBinderItemsUseCase {
             trashed_at: Utc::now(),
             roots: Vec::new(),
             cascade: Vec::new(),
+            deactivated: Vec::new(),
             created_trash: Vec::new(),
         }
     }
@@ -169,7 +172,7 @@ impl TrashBinderItemsUseCase {
     /// Forward (execute + redo): flip the cascade to trashed and index one
     /// TrashInfo per root under Work.trash_infos, recording the new ids.
     fn apply(&mut self, uow: &dyn TrashBinderItemsUnitOfWorkTrait) -> Result<()> {
-        set_activated(uow, &self.cascade, false)?;
+        self.deactivated = set_activated(uow, &self.cascade, false)?;
         let origin = self.origin_binder as i64;
         self.created_trash = file_trash_infos(
             uow,
@@ -182,10 +185,10 @@ impl TrashBinderItemsUseCase {
         Ok(())
     }
 
-    /// Inverse (undo): reactivate the cascade and drop this command's TrashInfo
-    /// rows, unlinking them from Work.trash_infos.
+    /// Inverse (undo): reactivate the rows this command hid and drop its
+    /// TrashInfo rows, unlinking them from Work.trash_infos.
     fn revert(&self, uow: &dyn TrashBinderItemsUnitOfWorkTrait) -> Result<()> {
-        set_activated(uow, &self.cascade, true)?;
+        set_activated(uow, &self.deactivated, true)?;
         unfile_trash_infos(uow, self.work_id, &self.created_trash)
     }
 }
