@@ -813,6 +813,7 @@ could-not-open-link = { $url } açılamadı: { $error }
 could-not-create-work = Proje oluşturulamadı: { $error }
 saving-as-file = { $target } olarak kaydediliyor…
 saving-as-folder = { $target }/ olarak kaydediliyor…
+save-as-folder-taken = { $folder } klasöründe zaten başka bir proje ya da başka dosyalar var. Başka bir klasör seçin.
 saved-as = Şuraya kaydedildi: { $target }
 save-error = Kaydedilemedi: { $error }
 save-flush-failed = Kaydetme tamamlandı ama şu belgeler kaydetmeye aktarılamadı ve hâlâ kaydedilmemiş durumda: { $titles } ({ $error })

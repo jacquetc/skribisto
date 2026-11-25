@@ -936,6 +936,7 @@ could-not-open-link = { $url } kunne ikke åbnes: { $error }
 could-not-create-work = Projektet kunne ikke oprettes: { $error }
 saving-as-file = Gemmer som { $target }…
 saving-as-folder = Gemmer som { $target }/…
+save-as-folder-taken = Mappen { $folder } indeholder allerede et andet projekt eller andre filer. Vælg en anden mappe.
 saved-as = Gemt i { $target }
 save-error = Der kunne ikke gemmes: { $error }
 save-flush-failed = Gemningen gik igennem, men disse dokumenter kunne ikke overdrages til den og er stadig ikke gemt: { $titles } ({ $error })

@@ -816,6 +816,7 @@ could-not-open-link = Не вдалося відкрити { $url }: { $error }
 could-not-create-work = Не вдалося створити проєкт: { $error }
 saving-as-file = Збереження як { $target }…
 saving-as-folder = Збереження як { $target }/…
+save-as-folder-taken = Тека { $folder } уже містить інший проєкт або інші файли. Виберіть іншу теку.
 saved-as = Збережено в { $target }
 save-error = Не вдалося зберегти: { $error }
 save-flush-failed = Збереження виконано, але ці документи не вдалося до нього передати, і вони досі не збережені: { $titles } ({ $error })

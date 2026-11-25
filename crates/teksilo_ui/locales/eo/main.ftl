@@ -774,6 +774,7 @@ could-not-open-link = Ne eblis malfermi { $url }: { $error }
 could-not-create-work = Ne eblis krei la verkon: { $error }
 saving-as-file = Konservado kiel { $target }…
 saving-as-folder = Konservado kiel { $target }/…
+save-as-folder-taken = La dosierujo { $folder } jam enhavas alian projekton aŭ aliajn dosierojn. Elektu alian dosierujon.
 saved-as = Konservita en { $target }
 save-error = Ne eblis konservi: { $error }
 save-flush-failed = La konservado finiĝis, sed ĉi tiuj dokumentoj ne povis esti inkluzivitaj kaj restas nekonservitaj: { $titles } ({ $error })

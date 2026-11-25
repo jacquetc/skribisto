@@ -814,6 +814,7 @@ could-not-open-link = Osoitetta { $url } ei voitu avata: { $error }
 could-not-create-work = Projektia ei voitu luoda: { $error }
 saving-as-file = Tallennetaan nimellä { $target }…
 saving-as-folder = Tallennetaan nimellä { $target }/…
+save-as-folder-taken = Kansiossa { $folder } on jo toinen projekti tai muita tiedostoja. Valitse toinen kansio.
 saved-as = Tallennettu: { $target }
 save-error = Tallennus epäonnistui: { $error }
 save-flush-failed = Tallennus onnistui, mutta näitä asiakirjoja ei voitu välittää sille, joten ne ovat yhä tallentamatta: { $titles } ({ $error })

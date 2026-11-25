@@ -783,6 +783,7 @@ could-not-open-link = Impossibile aprire { $url }: { $error }
 could-not-create-work = Impossibile creare il progetto: { $error }
 saving-as-file = Salvataggio come { $target }…
 saving-as-folder = Salvataggio come { $target }/…
+save-as-folder-taken = La cartella { $folder } contiene già un altro progetto o altri file. Scegli un’altra cartella.
 saved-as = Salvato in { $target }
 save-error = Impossibile salvare: { $error }
 save-flush-failed = Il salvataggio è riuscito, ma questi documenti non hanno potuto esservi inclusi e restano non salvati: { $titles } ({ $error })

@@ -244,6 +244,15 @@ fn run_save_as(
     let (target, shape, tag) =
         work_io::resolve_target(&dto.file_name, g.work_info.as_ref(), Some(forced))?;
     let work_id = g.work.id;
+    // A folder is written in place and then pruned of every file the project does
+    // not list, so a folder holding another project would lose that project. The UI
+    // asks first; this is the refusal every other caller gets.
+    let current = g.work_info.as_ref().and_then(|wi| wi.file_name.as_deref());
+    if dto.as_folder && folder_holds_another_project(&target, &g.work.unique_id, current) {
+        return Err(anyhow!(
+            "'{target}' already holds another project; choose another folder"
+        ));
+    }
     // The per-project media directory, resolved from where the project's bytes
     // are *now* — its current path — not from where this Save As is about to put
     // them. The destination does not exist yet, so it can never be recognised as
@@ -301,4 +310,45 @@ fn run_save_as(
             output_path: output,
         },
     ))
+}
+
+/// Whether writing the project `unique_id` as a folder at `target` would write over
+/// something else: `target` is a folder that is not empty, and it is neither this
+/// project's own current location (`current`) nor a folder project with the same
+/// `unique_id`.
+///
+/// A folder Save As writes into `target` in place and then deletes the files the
+/// project does not list, so another book there loses its binders, prose and
+/// history. A folder holding no project at all (no readable manifest) counts as
+/// taken too: nothing says what its files are.
+pub fn folder_holds_another_project(target: &str, unique_id: &str, current: Option<&str>) -> bool {
+    let path = std::path::Path::new(target);
+    // Absent, or not a folder: nothing to write over here. A file in the way makes
+    // the write itself fail, with its own error.
+    let Ok(mut entries) = std::fs::read_dir(path) else {
+        return false;
+    };
+    if entries.next().is_none() {
+        return false;
+    }
+    if current.is_some_and(|cur| same_place(path, cur)) {
+        return false;
+    }
+    match skrib_format::peek_manifest(target) {
+        Ok(manifest) => unique_id.is_empty() || manifest.work.unique_id != unique_id,
+        Err(_) => true,
+    }
+}
+
+/// Whether `target` is where the project at `current` lives. `current` names the
+/// folder or its `project.skrib`; both are compared after resolving links.
+fn same_place(target: &std::path::Path, current: &str) -> bool {
+    let current = skrib_format::canonical_project_path(current);
+    match (
+        target.canonicalize(),
+        std::path::Path::new(&current).canonicalize(),
+    ) {
+        (Ok(a), Ok(b)) => a == b,
+        _ => false,
+    }
 }

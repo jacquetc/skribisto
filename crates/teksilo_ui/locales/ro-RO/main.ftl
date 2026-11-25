@@ -954,6 +954,7 @@ could-not-open-link = { $url } nu a putut fi deschis: { $error }
 could-not-create-work = Proiectul nu a putut fi creat: { $error }
 saving-as-file = Se salvează ca { $target }…
 saving-as-folder = Se salvează ca { $target }/…
+save-as-folder-taken = Dosarul { $folder } conține deja alt proiect sau alte fișiere. Alegeți alt dosar.
 saved-as = Salvat în { $target }
 save-error = Salvarea nu a reușit: { $error }
 save-flush-failed = Salvarea s-a făcut, dar aceste documente nu i-au putut fi transmise și sunt încă nesalvate: { $titles } ({ $error })

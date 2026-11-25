@@ -289,7 +289,8 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
 ///
 /// The picked folder is the *parent*: the project goes into a subfolder named after
 /// the Work's title (made safe for a folder name), or after the project file's stem
-/// when the title is empty.
+/// when the title is empty. A subfolder that already holds something other than this
+/// project is refused with a toast, before anything is written.
 pub(crate) fn save_as_folder(
     ectx: &mut EventContext,
     app_ctx: &std::rc::Rc<frontend::AppContext>,
@@ -304,6 +305,9 @@ pub(crate) fn save_as_folder(
         title
     };
     let name = crate::sanitize_folder_name(&raw);
+    let unique_id = work.unique_id().get();
+    let current = crate::current_project_path(app_ctx, ids);
+    let work_id = ids.work_id.get();
     let req = crate::models::dialog_start_in(
         ectx,
         crate::models::FolderPurpose::SaveAs,
@@ -314,6 +318,20 @@ pub(crate) fn save_as_folder(
         if let FileDialogResult::Folder(Some(path)) = res {
             crate::models::remember_dialog_dir(ectx2, crate::models::FolderPurpose::SaveAs, &path);
             let target = path.join(&name).to_string_lossy().into_owned();
+            // The project is written into that folder in place, and then every file it
+            // does not list is deleted: another book already there would be lost.
+            if frontend::work_management::folder_holds_another_project(
+                &target,
+                &unique_id,
+                current.as_deref(),
+            ) {
+                use crate::toast_scope::ToastWorkExt;
+                ectx2.show_toast(
+                    teksilo::widgets::Toast::error(tr!(save_as_folder_taken(folder = target)))
+                        .target_work(work_id),
+                );
+                return;
+            }
             // `begin` flushes the live editor buffers into the store first: the
             // background op is read-only, so without it the pre-edit prose is written.
             vm.begin(ectx2, target, true);

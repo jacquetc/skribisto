@@ -2165,6 +2165,90 @@ fn failed_save_as_does_not_roll_back_the_store() {
     );
 }
 
+fn save_as_folder(
+    db: &DbContext,
+    hub: &Arc<EventHub>,
+    target: &std::path::Path,
+) -> anyhow::Result<()> {
+    SaveAsUseCase::new(
+        Box::new(SaveAsUnitOfWorkFactory::new(db, hub)),
+        &SaveAsDto {
+            media_root: String::new(),
+            work_id: live_work_id(db),
+            file_name: target.to_str().unwrap().to_string(),
+            as_folder: true,
+        },
+    )
+    .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
+    .map(|_| ())
+}
+
+/// Save As ▸ Folder onto a folder holding another book refuses, and leaves that
+/// book exactly as it was: the write is in place and prunes what the copy does
+/// not list, so going ahead would have deleted the other book's binders.
+#[test]
+fn save_as_folder_onto_another_project_refuses_and_keeps_it() {
+    let (dir, db, hub) = load_sample();
+    let other = dir.path().join("Other");
+    let mut bundle = sample_bundle();
+    bundle.manifest.work.unique_id = "another-book".to_string();
+    skrib::write_bundle(other.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+    let before = skrib::read_bundle(other.to_str().unwrap()).unwrap();
+
+    let err = save_as_folder(&db, &hub, &other).expect_err("another project is in the way");
+    assert!(err.to_string().contains("another project"), "{err}");
+    assert_eq!(skrib::read_bundle(other.to_str().unwrap()).unwrap(), before);
+
+    // A folder of the writer's own files is refused too.
+    let notes = dir.path().join("Notes");
+    std::fs::create_dir(&notes).unwrap();
+    std::fs::write(notes.join("ideas.txt"), "mine").unwrap();
+    assert!(save_as_folder(&db, &hub, &notes).is_err());
+    assert_eq!(
+        std::fs::read_to_string(notes.join("ideas.txt")).unwrap(),
+        "mine"
+    );
+}
+
+/// The cases a folder Save As must still accept: a new folder, an empty one, an
+/// older copy of the same book, and the project's own folder.
+#[test]
+fn save_as_folder_accepts_a_free_folder_or_the_same_project() {
+    let (dir, db, hub) = load_sample();
+    let fresh = dir.path().join("Fresh");
+    save_as_folder(&db, &hub, &fresh).expect("a new folder");
+    let empty = dir.path().join("Empty");
+    std::fs::create_dir(&empty).unwrap();
+    save_as_folder(&db, &hub, &empty).expect("an empty folder");
+    // `Fresh` now holds this same book: saving over it again is allowed.
+    save_as_folder(&db, &hub, &fresh).expect("an older copy of the same book");
+    save_as_folder(&db, &hub, &dir.path().join("Original")).expect("its own folder");
+}
+
+/// The check alone, for the one case the use-case tests cannot reach: a project
+/// whose manifest carries no uid is only "the same project" at its own path.
+#[test]
+fn a_project_with_no_uid_is_only_the_same_at_its_own_path() {
+    let dir = tempfile::tempdir().unwrap();
+    let book = dir.path().join("Book");
+    let mut bundle = sample_bundle();
+    bundle.manifest.work.unique_id = String::new();
+    skrib::write_bundle(book.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+    let target = book.to_str().unwrap();
+    assert!(crate::folder_holds_another_project(target, "", None));
+    let manifest = book.join("project.skrib");
+    assert!(!crate::folder_holds_another_project(
+        target,
+        "",
+        Some(manifest.to_str().unwrap())
+    ));
+    assert!(!crate::folder_holds_another_project(
+        target,
+        "",
+        Some(target)
+    ));
+}
+
 /// A `BackupNowDto` with every retention/skip field at its "do nothing extra"
 /// default (no pruning, no skip-if-unchanged) — the shape every pre-existing
 /// test wants; tests that exercise T1-3/T1-7/T2-2/T2-11 build their own.

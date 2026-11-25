@@ -846,6 +846,7 @@ could-not-open-link = Αδυναμία ανοίγματος του { $url }: { $
 could-not-create-work = Αδυναμία δημιουργίας του έργου: { $error }
 saving-as-file = Αποθήκευση ως { $target }…
 saving-as-folder = Αποθήκευση ως { $target }/…
+save-as-folder-taken = Ο φάκελος { $folder } περιέχει ήδη άλλο έργο ή άλλα αρχεία. Επιλέξτε άλλο φάκελο.
 saved-as = Αποθηκεύτηκε στο { $target }
 save-error = Αδυναμία αποθήκευσης: { $error }
 save-flush-failed = Η αποθήκευση έγινε, αλλά τα παρακάτω έγγραφα δεν ήταν δυνατό να συμπεριληφθούν και παραμένουν μη αποθηκευμένα: { $titles } ({ $error })

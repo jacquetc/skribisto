@@ -831,6 +831,7 @@ could-not-open-link = Nelze otevřít { $url }: { $error }
 could-not-create-work = Projekt nelze vytvořit: { $error }
 saving-as-file = Ukládání jako { $target }…
 saving-as-folder = Ukládání jako { $target }/…
+save-as-folder-taken = Složka { $folder } už obsahuje jiný projekt nebo jiné soubory. Vyberte jinou složku.
 saved-as = Uloženo do { $target }
 save-error = Nelze uložit: { $error }
 save-flush-failed = Uložení proběhlo, ale tyto dokumenty mu nebylo možné předat a zůstávají neuložené: { $titles } ({ $error })

@@ -759,6 +759,7 @@ could-not-open-link = { $url }을 열 수 없습니다: { $error }
 could-not-create-work = 프로젝트를 만들 수 없습니다: { $error }
 saving-as-file = { $target }(으)로 저장 중…
 saving-as-folder = { $target }/에 저장 중…
+save-as-folder-taken = { $folder } 폴더에 이미 다른 프로젝트나 다른 파일이 있습니다. 다른 폴더를 선택하세요.
 saved-as = { $target }에 저장했습니다
 save-error = 저장할 수 없습니다: { $error }
 save-flush-failed = 저장은 완료되었지만 다음 문서를 전달하지 못해 아직 저장되지 않았습니다: { $titles } ({ $error })

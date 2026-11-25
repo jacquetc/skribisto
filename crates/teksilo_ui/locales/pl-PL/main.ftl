@@ -850,6 +850,7 @@ could-not-open-link = Nie można otworzyć { $url }: { $error }
 could-not-create-work = Nie można utworzyć projektu: { $error }
 saving-as-file = Zapisywanie jako { $target }…
 saving-as-folder = Zapisywanie jako { $target }/…
+save-as-folder-taken = Folder { $folder } zawiera już inny projekt lub inne pliki. Wybierz inny folder.
 saved-as = Zapisano w { $target }
 save-error = Nie można zapisać: { $error }
 save-flush-failed = Zapis się powiódł, ale tych dokumentów nie udało się do niego przekazać i nadal są niezapisane: { $titles } ({ $error })

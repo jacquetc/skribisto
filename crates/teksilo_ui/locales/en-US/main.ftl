@@ -956,6 +956,7 @@ could-not-open-link = Could not open { $url }: { $error }
 could-not-create-work = Could not create work: { $error }
 saving-as-file = Saving as { $target }…
 saving-as-folder = Saving as { $target }/…
+save-as-folder-taken = The folder { $folder } already holds another project or other files. Choose another folder.
 saved-as = Saved to { $target }
 save-error = Could not save: { $error }
 save-flush-failed = The save went through, but these documents could not be handed to it and are still unsaved: { $titles } ({ $error })

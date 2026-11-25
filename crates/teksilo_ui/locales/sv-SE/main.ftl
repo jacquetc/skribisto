@@ -781,6 +781,7 @@ could-not-open-link = Det gick inte att öppna { $url }: { $error }
 could-not-create-work = Det gick inte att skapa projektet: { $error }
 saving-as-file = Sparar som { $target }…
 saving-as-folder = Sparar som { $target }/…
+save-as-folder-taken = Mappen { $folder } innehåller redan ett annat projekt eller andra filer. Välj en annan mapp.
 saved-as = Sparat i { $target }
 save-error = Det gick inte att spara: { $error }
 save-flush-failed = Sparningen genomfördes, men de här dokumenten kunde inte lämnas över till den och är fortfarande osparade: { $titles } ({ $error })

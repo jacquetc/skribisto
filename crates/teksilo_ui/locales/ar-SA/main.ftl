@@ -850,6 +850,7 @@ could-not-open-link = تعذّر فتح { $url }: { $error }
 could-not-create-work = تعذّر إنشاء المشروع: { $error }
 saving-as-file = جارٍ الحفظ باسم { $target }…
 saving-as-folder = جارٍ الحفظ باسم { $target }/…
+save-as-folder-taken = المجلد { $folder } يحتوي على مشروع آخر أو ملفات أخرى. اختر مجلدًا آخر.
 saved-as = حُفظ في { $target }
 save-error = تعذّر الحفظ: { $error }
 save-flush-failed = تم الحفظ، لكن تعذّر تسليم هذه المستندات إليه وما زالت غير محفوظة: { $titles } ({ $error })

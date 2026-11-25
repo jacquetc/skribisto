@@ -783,6 +783,7 @@ could-not-open-link = { $url } konnte nicht geöffnet werden: { $error }
 could-not-create-work = Projekt konnte nicht erstellt werden: { $error }
 saving-as-file = Wird als { $target } gespeichert…
 saving-as-folder = Wird als { $target }/ gespeichert…
+save-as-folder-taken = Der Ordner { $folder } enthält bereits ein anderes Projekt oder andere Dateien. Wählen Sie einen anderen Ordner.
 saved-as = Gespeichert unter { $target }
 save-error = Speichern fehlgeschlagen: { $error }
 save-flush-failed = Das Speichern war erfolgreich, aber diese Dokumente konnten nicht übergeben werden und sind weiterhin ungespeichert: { $titles } ({ $error })

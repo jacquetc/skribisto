@@ -814,6 +814,7 @@ could-not-open-link = Kunne ikke åpne { $url }: { $error }
 could-not-create-work = Kunne ikke opprette prosjekt: { $error }
 saving-as-file = Lagrer som { $target }…
 saving-as-folder = Lagrer som { $target }/…
+save-as-folder-taken = Mappen { $folder } inneholder allerede et annet prosjekt eller andre filer. Velg en annen mappe.
 saved-as = Lagret til { $target }
 save-error = Kunne ikke lagre: { $error }
 save-flush-failed = Lagringen ble fullført, men disse dokumentene kunne ikke sendes med og er fortsatt ulagret: { $titles } ({ $error })

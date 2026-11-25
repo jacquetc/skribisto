@@ -814,6 +814,7 @@ could-not-open-link = Não foi possível abrir { $url }: { $error }
 could-not-create-work = Não foi possível criar o projeto: { $error }
 saving-as-file = A guardar como { $target }…
 saving-as-folder = A guardar como { $target }/…
+save-as-folder-taken = A pasta { $folder } já contém outro projeto ou outros ficheiros. Escolha outra pasta.
 saved-as = Guardado em { $target }
 save-error = Não foi possível guardar: { $error }
 save-flush-failed = A gravação foi feita, mas estes documentos não lhe puderam ser entregues e continuam por guardar: { $titles } ({ $error })

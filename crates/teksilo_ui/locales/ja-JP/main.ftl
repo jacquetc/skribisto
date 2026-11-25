@@ -759,6 +759,7 @@ could-not-open-link = { $url } を開けませんでした：{ $error }
 could-not-create-work = プロジェクトを作成できませんでした：{ $error }
 saving-as-file = { $target } として保存中…
 saving-as-folder = { $target }/ に保存中…
+save-as-folder-taken = フォルダー { $folder } には別のプロジェクトまたは別のファイルがすでにあります。別のフォルダーを選んでください。
 saved-as = { $target } に保存しました
 save-error = 保存できませんでした：{ $error }
 save-flush-failed = 保存は完了しましたが、次の文書は保存処理に渡せず、未保存のままです：{ $titles } ({ $error })

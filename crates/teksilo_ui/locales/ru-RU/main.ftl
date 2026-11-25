@@ -851,6 +851,7 @@ could-not-open-link = Не удалось открыть { $url }: { $error }
 could-not-create-work = Не удалось создать проект: { $error }
 saving-as-file = Сохранение как { $target }…
 saving-as-folder = Сохранение как { $target }/…
+save-as-folder-taken = Папка { $folder } уже содержит другой проект или другие файлы. Выберите другую папку.
 saved-as = Сохранено в { $target }
 save-error = Не удалось сохранить: { $error }
 save-flush-failed = Сохранение выполнено, но эти документы не удалось в него передать, и они всё ещё не сохранены: { $titles } ({ $error })

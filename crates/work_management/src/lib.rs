@@ -30,3 +30,6 @@ pub mod work_management_controller;
 mod save_load_test;
 
 pub use dtos::*;
+/// Asked by the UI before a folder Save As, so the writer can pick another place
+/// instead of the backend refusing after the fact.
+pub use use_cases::save_as_uc::folder_holds_another_project;

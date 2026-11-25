@@ -782,6 +782,7 @@ could-not-open-link = Nem sikerült megnyitni: { $url }: { $error }
 could-not-create-work = Nem sikerült létrehozni a projektet: { $error }
 saving-as-file = Mentés ide: { $target }…
 saving-as-folder = Mentés ide: { $target }/…
+save-as-folder-taken = A(z) { $folder } mappa már egy másik projektet vagy más fájlokat tartalmaz. Válasszon másik mappát.
 saved-as = Mentve ide: { $target }
 save-error = Nem sikerült menteni: { $error }
 save-flush-failed = A mentés megtörtént, de ezeket a dokumentumokat nem sikerült átadni neki, így még nincsenek mentve: { $titles } ({ $error })

@@ -814,6 +814,7 @@ could-not-open-link = No se pudo abrir { $url }: { $error }
 could-not-create-work = No se pudo crear el proyecto: { $error }
 saving-as-file = Guardando como { $target }…
 saving-as-folder = Guardando como { $target }/…
+save-as-folder-taken = La carpeta { $folder } ya contiene otro proyecto u otros archivos. Elija otra carpeta.
 saved-as = Guardado en { $target }
 save-error = No se pudo guardar: { $error }
 save-flush-failed = El guardado se completó, pero estos documentos no se le pudieron entregar y siguen sin guardar: { $titles } ({ $error })

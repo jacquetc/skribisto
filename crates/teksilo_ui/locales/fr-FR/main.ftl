@@ -936,6 +936,7 @@ could-not-open-link = Impossible d’ouvrir { $url } : { $error }
 could-not-create-work = Impossible de créer l’œuvre : { $error }
 saving-as-file = Enregistrement sous { $target }…
 saving-as-folder = Enregistrement sous { $target }/…
+save-as-folder-taken = Le dossier { $folder } contient déjà un autre projet ou d’autres fichiers. Choisissez un autre dossier.
 saved-as = Enregistré dans { $target }
 save-error = Impossible d’enregistrer : { $error }
 save-flush-failed = L’enregistrement a eu lieu, mais ces documents n’ont pas pu lui être transmis et restent non enregistrés : { $titles } ({ $error })

@@ -818,6 +818,7 @@ could-not-open-link = לא ניתן לפתוח את { $url }: { $error }
 could-not-create-work = לא ניתן ליצור את הפרויקט: { $error }
 saving-as-file = שמירה בשם { $target }…
 saving-as-folder = שמירה בשם { $target }/…
+save-as-folder-taken = התיקייה { $folder } כבר מכילה פרויקט אחר או קבצים אחרים. בחרו תיקייה אחרת.
 saved-as = נשמר אל { $target }
 save-error = לא ניתן לשמור: { $error }
 save-flush-failed = השמירה בוצעה, אבל לא ניתן היה להעביר אליה את המסמכים האלה והם עדיין לא נשמרו: { $titles } ({ $error })

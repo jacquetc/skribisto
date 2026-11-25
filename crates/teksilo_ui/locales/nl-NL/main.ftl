@@ -814,6 +814,7 @@ could-not-open-link = Kan { $url } niet openen: { $error }
 could-not-create-work = Kan het project niet aanmaken: { $error }
 saving-as-file = Opslaan als { $target }…
 saving-as-folder = Opslaan als { $target }/…
+save-as-folder-taken = De map { $folder } bevat al een ander project of andere bestanden. Kies een andere map.
 saved-as = Opgeslagen in { $target }
 save-error = Kan niet opslaan: { $error }
 save-flush-failed = Het opslaan is gelukt, maar deze documenten konden er niet aan worden doorgegeven en zijn nog niet opgeslagen: { $titles } ({ $error })
