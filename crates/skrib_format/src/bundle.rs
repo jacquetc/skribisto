@@ -57,8 +57,11 @@ use std::collections::BTreeMap;
 /// `items.ron` fail with a raw "unexpected variant". Like v5, the floor is claimed only
 /// by projects that actually carry one: empty every epigraph and the next save drops
 /// back to 4, because `from_entities` does not write a blank epigraph row (see
-/// `is_droppable_blank` in `mapping`). `step_v5_to_v6` has nothing to do — the data is
-/// additive on read.
+/// `is_droppable_blank` in `mapping`), as long as the history log holds no epigraph
+/// state either: `compute_min_read_version` counts the role of every recorded entry too,
+/// since an older build cannot parse a log naming a role it does not know, so an
+/// epigraph recorded in the project's history keeps the floor at 6 until that history
+/// is pruned away. `step_v5_to_v6` has nothing to do — the data is additive on read.
 ///
 /// v7 added **paratexts** — `BinderItemSubRole::Paratext` and `ContentRole::ParatextText`,
 /// a text that belongs to the book but not to its body. Two new enum variants, so the

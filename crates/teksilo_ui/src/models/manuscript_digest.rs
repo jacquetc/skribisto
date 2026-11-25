@@ -24,6 +24,12 @@
 //! [`skribisto_model::is_private_note`]. A note jotted beside a scene is not an
 //! edit of the scene, so a row whose scratchpad alone moved reads as unchanged.
 //!
+//! And both leave out a role whose text is blank. A save writes no blank epigraph
+//! (or scratchpad) row at all (`skrib_format`'s `is_droppable_blank`), while an older
+//! save wrote one and the live store may hold one: "an empty epigraph" and "no
+//! epigraph" are the same text, and hashing the first as `("epigraph", "")` made a row
+//! whose epigraph had been emptied read as changed against every backup since.
+//!
 //! Read here (Layer A) rather than in the view-model that consumes it, per the
 //! repo's read-through-Layer-A rule, and following the same real/mock seam as
 //! [`crate::models::binder_stream`] — a mocks build has no backend, so it reports
@@ -72,11 +78,13 @@ pub fn counts_towards_row_digest(role: &ContentRole) -> bool {
 }
 
 /// The digest of one row from its `(role, text)` pairs, as both sides hold them: the
-/// roles [`counts_towards_row_digest`] keeps, each under its prose slug.
+/// roles [`counts_towards_row_digest`] keeps, each under its prose slug, and only those
+/// with text (a blank role reads as an absent one: see the module docs).
 pub fn digest_of_roles<'a>(roles: impl IntoIterator<Item = (&'a ContentRole, String)>) -> String {
     let roles: Vec<(String, String)> = roles
         .into_iter()
         .filter(|(role, _)| counts_towards_row_digest(role))
+        .filter(|(_, text)| !text.trim().is_empty())
         .filter_map(|(role, text)| {
             skrib_format::slug::prose_kind(role).map(|kind| (kind.to_string(), text))
         })
@@ -251,6 +259,31 @@ mod tests {
         assert_ne!(
             before, after,
             "the same words in a different field is a change, not a coincidence",
+        );
+    }
+
+    /// A blank epigraph is no epigraph. A save no longer writes one, an older backup
+    /// holds one, and the live store may too: all three must digest alike, or the row
+    /// reads as changed against every backup taken before the save that dropped it.
+    #[test]
+    fn a_blank_role_digests_as_an_absent_one() {
+        let scene = ContentRole::SceneText;
+        let epigraph = ContentRole::EpigraphText;
+        let without = digest_of_roles([(&scene, "The lamp went out.".to_string())]);
+        for blank in ["", "  ", "\n"] {
+            let with_blank = digest_of_roles([
+                (&scene, "The lamp went out.".to_string()),
+                (&epigraph, blank.to_string()),
+            ]);
+            assert_eq!(with_blank, without, "{blank:?}");
+        }
+        let with_text = digest_of_roles([
+            (&scene, "The lamp went out.".to_string()),
+            (&epigraph, "Night is a thief.".to_string()),
+        ]);
+        assert_ne!(
+            with_text, without,
+            "an epigraph with words is the row's text"
         );
     }
 

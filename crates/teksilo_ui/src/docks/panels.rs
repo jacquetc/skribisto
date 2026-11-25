@@ -19,8 +19,10 @@
 //! own and stays, H (replace), M (margin marks), N (new window), P (command palette),
 //! V and Z (Paste as plain text, Redo). Avoided: U (IBus' Unicode entry on Linux takes
 //! it first), S, W, Q and Y, which read as Save as, close, quit and redo elsewhere.
-//! A is the Scratchpad's: Ctrl+A alone is Select all, which the Shift keeps apart, and a
-//! focused corkboard card lets the Shift through for exactly that reason.
+//! A is the Scratchpad's: Ctrl+A alone is Select all, which the Shift keeps apart. A
+//! focused corkboard card would take Ctrl+Shift+A as its own Select all (it reads any
+//! Ctrl+A as the board's), but never sees it: a registered shortcut resolves before the
+//! focused widget is handed the key (`ctrl_shift_a_in_a_card_still_opens_the_scratchpad`).
 
 use teksilo::prelude::*;
 use teksilo::widgets::DockSide;
