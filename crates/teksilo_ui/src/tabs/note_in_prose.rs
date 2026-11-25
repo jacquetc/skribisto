@@ -100,7 +100,7 @@ pub(crate) fn note_in_prose_pane(tab: &ContentTab) -> Box<dyn Widget> {
     // One token for this page. Every editor on it is the same surface, and a scene
     // that is also open in a tab of its own must not answer for this reading. See
     // [`crate::margin_lane::LaneScope`].
-    let scope = crate::margin_lane::LaneScope::fresh();
+    let scope = crate::margin_lane::LaneScope::in_tab(tab.item_id());
     // Read by the body, to pick its rows, and by the counter above the page, which says
     // which scenes it is counting in.
     let viewpoint_only = tab.note_in_prose_viewpoint_only.clone();

@@ -101,23 +101,47 @@ pub fn install_builtin_providers() -> Vec<LaneProviderHandle> {
 /// surface and handed to every editor that surface builds **and** to the lane
 /// beside them. It is never persisted and never leaves the process — a fresh
 /// value each launch is exactly right, unlike a dock or segment id.
+///
+/// A surface built by a tab also names the tab's item ([`LaneScope::in_tab`]), so
+/// a reader of the caret can tell an editor of the tab in front from one of a tab
+/// it has just left (see [`crate::format::CaretItem`]). The item rides along with
+/// the token and never decides equality on its own: one token, one surface.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct LaneScope(u64);
+pub struct LaneScope {
+    token: u64,
+    tab: Option<common::types::EntityId>,
+}
 
 impl LaneScope {
-    /// A token no other surface holds.
+    /// A token no other surface holds, for a surface no tab built (the search
+    /// preview band, a test).
     ///
     /// A plain thread-local counter: every mint and every read is on the UI
     /// thread by construction, the same argument the provider registry itself
     /// rests on.
     pub fn fresh() -> Self {
+        Self::mint(None)
+    }
+
+    /// A token no other surface holds, for a surface built by the tab showing
+    /// `item`: its own page, one of its streams, its reading.
+    pub fn in_tab(item: common::types::EntityId) -> Self {
+        Self::mint(Some(item))
+    }
+
+    /// The item of the tab whose surface this is, if a tab built it.
+    pub fn tab(&self) -> Option<common::types::EntityId> {
+        self.tab
+    }
+
+    fn mint(tab: Option<common::types::EntityId>) -> Self {
         thread_local! {
             static NEXT: std::cell::Cell<u64> = const { std::cell::Cell::new(1) };
         }
         NEXT.with(|next| {
-            let id = next.get();
-            next.set(id.wrapping_add(1));
-            Self(id)
+            let token = next.get();
+            next.set(token.wrapping_add(1));
+            Self { token, tab }
         })
     }
 }

@@ -592,6 +592,58 @@ mod imp {
         Vec::new()
     }
 
+    /// Whether `row` is one of the rows of the working stream `head_id` heads: an
+    /// activated item inside the container's extent that the stream lists, by the same
+    /// extent and row rules as [`StreamRowsModel`] (no numbering, no reading: only the
+    /// membership). `false` when `head_id` heads no stream or either item is gone.
+    ///
+    /// What a reader holding on to a row of a stream (the Scratchpad dock) asks after a
+    /// structural change, to know whether the row is still there: trashed, moved to
+    /// another chapter or deleted, it is not.
+    pub fn stream_has_row(ctx: &AppContext, work_id: Option<u64>, head_id: u64, row: u64) -> bool {
+        let Some(work_id) = work_id else {
+            return false;
+        };
+        let Some(head) = binder_item_commands::get_binder_item(ctx, &head_id)
+            .ok()
+            .flatten()
+        else {
+            return false;
+        };
+        let Some(level) = StreamLevel::for_container(&head.role, &head.sub_role) else {
+            return false;
+        };
+        let binder_ids =
+            work_commands::get_work_relationship(ctx, &work_id, &WorkRelationshipField::Binders)
+                .unwrap_or_default();
+        for binder_id in &binder_ids {
+            let item_ids = binder_commands::get_binder_relationship(
+                ctx,
+                binder_id,
+                &BinderRelationshipField::BinderItems,
+            )
+            .unwrap_or_default();
+            if !item_ids.contains(&head_id) {
+                continue;
+            }
+            let flat: Vec<_> = binder_item_commands::get_binder_item_multi(ctx, &item_ids)
+                .unwrap_or_default()
+                .into_iter()
+                .flatten()
+                .filter(|it| it.activated)
+                .collect();
+            let Some(pos) = flat.iter().position(|it| it.id == head_id) else {
+                return false;
+            };
+            let sub_roles: Vec<BinderItemSubRole> =
+                flat.iter().map(|it| it.sub_role.clone()).collect();
+            return row_indices(&sub_roles, pos, level)
+                .into_iter()
+                .any(|i| flat[i].id == row);
+        }
+        false
+    }
+
     /// The container read as exported in `style`: the rows an export of it would print,
     /// in the order it prints them.
     ///
@@ -1265,6 +1317,17 @@ mod imp {
         }
     }
 
+    /// A mocks build's rows are fabricated and nothing moves them: a row the fixture
+    /// streams stays in its stream, so any row asked about is still there.
+    pub fn stream_has_row(
+        _ctx: &AppContext,
+        _work_id: Option<u64>,
+        _head_id: u64,
+        _row: u64,
+    ) -> bool {
+        true
+    }
+
     impl StreamRowsModel {
         pub fn new(
             _ctx: Rc<AppContext>,
@@ -1372,7 +1435,7 @@ mod imp {
     }
 }
 
-pub use imp::StreamRowsModel;
+pub use imp::{StreamRowsModel, stream_has_row};
 
 #[cfg(test)]
 mod tests {

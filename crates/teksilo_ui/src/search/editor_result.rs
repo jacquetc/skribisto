@@ -50,6 +50,11 @@ impl Destination {
         }
     }
 
+    /// Deliver a hit into a text editor: select the words found and scroll them into
+    /// view, or, when they are no longer where the search found them (the text was
+    /// edited since), put the caret in the editor where it was and select nothing. The
+    /// writer asked to go to this text; ending up nowhere, with the focus left in the
+    /// search panel, read as the result not opening at all.
     pub fn prose(
         child: impl Widget + 'static,
         pending: PendingHit,
@@ -59,28 +64,41 @@ impl Destination {
     ) -> Self {
         let doc = doc.clone();
         Self::new(child, pending, field, move |hit, _, ctx| {
-            let len = hit.matched.chars().count();
-            let Some(end) = hit.start.checked_add(len) else {
+            let Some(handle) = &handle else {
                 return true;
             };
-            // Global search records document character positions. Its single-line
-            // snippets display a soft line break as a space.
-            if doc.text_at(hit.start, len).is_ok_and(|text| {
-                text.replace(teksilo::text_document::LINE_SEPARATOR, " ") == hit.matched
-            }) && let Some(handle) = &handle
-            {
-                handle.focus(ctx);
-                handle.select_range(hit.start, end);
-                if !handle.reveal_range(ctx, hit.start, end) {
-                    // An editor below the fold may have mounted without ever
-                    // painting. Bring it into view, then locate the range.
+            handle.focus(ctx);
+            match hit_range(&doc, hit) {
+                Some((start, end)) => {
+                    handle.select_range(start, end);
+                    if !handle.reveal_range(ctx, start, end) {
+                        // An editor below the fold may have mounted without ever
+                        // painting. Bring it into view, then locate the range.
+                        handle.reveal_widget(ctx);
+                        return false;
+                    }
+                }
+                None => {
                     handle.reveal_widget(ctx);
-                    return false;
                 }
             }
             true
         })
     }
+}
+
+/// Where `hit` is in `doc`, as `(start, end)` in the document's characters, if its words
+/// are still there: `None` when the text was edited since the search, since selecting
+/// whatever sits at those positions now would point the writer at the wrong words.
+///
+/// Global search records document character positions, and its one-line snippets show a
+/// soft line break as a space.
+pub fn hit_range(doc: &TextDocument, hit: &EditorHit) -> Option<(usize, usize)> {
+    let len = hit.matched.chars().count();
+    let end = hit.start.checked_add(len)?;
+    let found = doc.text_at(hit.start, len).ok()?;
+    (found.replace(teksilo::text_document::LINE_SEPARATOR, " ") == hit.matched)
+        .then_some((hit.start, end))
 }
 
 impl std::fmt::Debug for Destination {
@@ -193,5 +211,55 @@ mod tests {
         pending.set(Some(hit(6)));
         settle();
         assert_eq!(handle.cursor_position(), 8, "stale hit moved the selection");
+        assert_eq!(
+            pending.get(),
+            None,
+            "a stale hit is spent, not left waiting"
+        );
+    }
+
+    /// The words moved since the search: nothing is selected, but the caret still goes
+    /// into the editor the writer asked to open, where it was.
+    #[test]
+    fn a_hit_whose_words_moved_still_focuses_the_editor() {
+        let doc = TextDocument::new();
+        doc.set_plain_text("Is the keeper too old?").unwrap();
+        let pending = Signal::new(Some(EditorHit {
+            field: MatchField::Scratchpad,
+            start: 3,
+            matched: "keeper".into(),
+        }));
+        let editor = RichTextEditor::editor(doc.clone());
+        let handle = editor.handle();
+        handle.select_range(1, 1);
+        let mut tree = WidgetTree::new();
+        tree.add_boxed(Box::new(Destination::prose(
+            editor,
+            pending.clone(),
+            MatchField::Scratchpad,
+            &doc,
+            Some(handle.clone()),
+        )));
+        for _ in 0..3 {
+            tree.layout(SizeProposal::exact(400.0, 200.0));
+            tree.run_mount_actions(&mut NoopWindowOps);
+        }
+        assert!(tree.focused_is_text_surface(), "the caret is in the editor");
+        assert_eq!(handle.selection(), (1, 1), "and nothing was selected");
+        assert_eq!(pending.get(), None);
+    }
+
+    #[test]
+    fn the_range_is_found_only_where_the_words_still_are() {
+        let doc = TextDocument::new();
+        doc.set_plain_text("Is the keeper too old?").unwrap();
+        let hit = |start| EditorHit {
+            field: MatchField::Body,
+            start,
+            matched: "keeper".into(),
+        };
+        assert_eq!(hit_range(&doc, &hit(7)), Some((7, 13)));
+        assert_eq!(hit_range(&doc, &hit(3)), None);
+        assert_eq!(hit_range(&doc, &hit(usize::MAX)), None);
     }
 }

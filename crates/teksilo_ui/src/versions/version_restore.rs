@@ -848,7 +848,7 @@ mod tests {
 
         let dock =
             ScratchpadViewModel::new(project.app_ctx.clone(), docs.clone(), project.ids.clone());
-        dock.view_changed(Some(item_id), false, None);
+        dock.view_changed(crate::scratchpad::FrontView::page(item_id), None);
         let ScratchpadState::Ready { doc, field } = dock.state() else {
             panic!("the dock shows the scene's scratchpad");
         };

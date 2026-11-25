@@ -93,7 +93,6 @@ impl ScratchpadPanel {
         ctx: &mut BuildContext,
         doc: &Rc<crate::models::OpenDoc>,
         field: &Rc<crate::tabs::ProseField>,
-        active: &Signal<bool>,
     ) -> WidgetId {
         let item = doc.item_id;
         let read_only = doc.trashed.get();
@@ -119,7 +118,7 @@ impl ScratchpadPanel {
             doc.images(),
             read_only,
             tr!(content_scratchpad_text()),
-            tr!(scratchpad_description(title = title)),
+            tr!(scratchpad_description(title = title.clone())),
             Some(doc.content_language()),
         );
         // Back where the writer left it. Before the editor is mounted is fine: the handle
@@ -130,37 +129,30 @@ impl ScratchpadPanel {
         {
             handle.select_range(anchor, position);
         }
-        // A search hit opened from the Search panel: selected, and once the editor is
-        // mounted, focused and scrolled into view, so the writer lands on the words found.
-        if let Some(handle) = handle
-            && let Some((start, end)) = self.vm.take_hit_for(item, &field.doc)
-        {
-            handle.select_range(start, end);
-            let active = active.clone();
-            ctx.run_after_mount(move |ctx| {
-                if !active.get() {
-                    return;
-                }
-                handle.focus(ctx);
-                if !handle.reveal_range(ctx, start, end) {
-                    // Not painted yet: bring the editor into view at least.
-                    handle.reveal_widget(ctx);
-                }
-            });
-        }
+        // A search hit opened from the Search panel, delivered the way a tab's editor
+        // takes one: selected if its words are still there, focused and scrolled into
+        // view once the editor is mounted and painted, the caret in the editor either way.
+        let pending: crate::search::editor_result::PendingHit =
+            Signal::new(self.vm.take_hit_for(item));
+        let editor = crate::search::editor_result::Destination::prose(
+            editor,
+            pending,
+            frontend::common::entities::MatchField::Scratchpad,
+            &field.doc,
+            handle,
+        );
         self.sink = sink;
         self.shown_item = Some(item);
 
-        // Re-resolved on every read, so a rename and a change of language both reach it.
-        let header = self
-            .vm
-            .title()
-            .map(|title| tr!(scratchpad_header(title = title.clone())).resolve_now());
+        // A localized string, so a change of language reaches it as it reaches the Trash
+        // line; a rename rebuilds the panel (`build` binds the title), so the name in it
+        // is never stale either. A string resolved once froze the sentence in the
+        // language it was first read in.
+        let header = tr!(scratchpad_header(title = title));
         teksu!(ctx => VStack {
             spacing: 0.0
             Padding::symmetric(8.0, 12.0) {
-                TextWidget::new(lit!("")) {
-                    text: header
+                TextWidget::new(header) {
                     style: TextStyleRole::Small
                     color: TextRole::Secondary
                 }
@@ -234,7 +226,7 @@ impl Widget for ScratchpadPanel {
                 doc.trashed
                     .bind_to(sid, ctx.binding_registry(), BindingLevel::Rebuild);
                 self.vm.note_shown(&doc);
-                let id = self.ready(ctx, &doc, &field, &active);
+                let id = self.ready(ctx, &doc, &field);
                 // Awake while on screen, asleep while the rail parks the panel.
                 let guard = self.guard.clone();
                 let show = move |on: bool| {

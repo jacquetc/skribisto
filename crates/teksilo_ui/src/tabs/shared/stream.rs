@@ -134,7 +134,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
         // and each row — is the same surface as the lane beside them, and a scene
         // that is also open in a tab of its own must not answer for this one. See
         // `crate::margin_lane::LaneScope`.
-        let scope = crate::margin_lane::LaneScope::fresh();
+        let scope = crate::margin_lane::LaneScope::in_tab(tab.item_id());
         let (page, port, _binding) =
             crate::tabs::shared::panes::writing_page_scroll(tab, will_show);
         let page_scroll = page.scroll_y_signal().clone();

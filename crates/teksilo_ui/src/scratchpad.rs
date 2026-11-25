@@ -17,5 +17,5 @@ pub mod dock;
 mod scratchpad_vm;
 
 pub use scratchpad_vm::{
-    Caret, ScratchpadState, ScratchpadViewModel, is_stream_segment, resolve_target,
+    Caret, FrontView, ScratchpadState, ScratchpadViewModel, is_stream_segment, resolve_target,
 };

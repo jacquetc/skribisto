@@ -2562,9 +2562,7 @@ impl EditorsViewModel {
     /// binder on, for exactly the same reason; a name shown in two docks must change in both
     /// at once.
     pub fn wire(&self, ctx: &mut BuildContext) {
-        use frontend::common::event::{
-            BinderItemManagementEvent, DirectAccessEntity as E, EntityEvent, TrashManagementEvent,
-        };
+        use frontend::common::event::{DirectAccessEntity as E, EntityEvent};
 
         {
             let me = self.clone();
@@ -2580,28 +2578,7 @@ impl EditorsViewModel {
                 move |event: &Event| me.items_removed(&event.ids),
             );
         }
-        let structural = [
-            // A new chapter above an untitled one renumbers it, and nothing about the
-            // untitled one itself changes.
-            Origin::DirectAccess(E::BinderItem(EntityEvent::Created)),
-            Origin::DirectAccess(E::Binder(EntityEvent::Created)),
-            // A binder's item *order* lives on the binder, so a reorder is a `Binder`
-            // update — not an item one.
-            Origin::DirectAccess(E::Binder(EntityEvent::Updated)),
-            Origin::DirectAccess(E::Binder(EntityEvent::Removed)),
-            // "Number chapters and parts" and "Restart chapter numbers at each part" are
-            // `Work` fields: turning either off renames every untitled chapter on screen.
-            Origin::DirectAccess(E::Work(EntityEvent::Updated)),
-            Origin::BinderItemManagement(BinderItemManagementEvent::Duplicate),
-            Origin::BinderItemManagement(BinderItemManagementEvent::MoveItems),
-            Origin::BinderItemManagement(BinderItemManagementEvent::MergeTwoScenes),
-            Origin::BinderItemManagement(BinderItemManagementEvent::SplitScene),
-            Origin::TrashManagement(TrashManagementEvent::TrashBinderItems),
-            Origin::TrashManagement(TrashManagementEvent::TrashBinder),
-            Origin::TrashManagement(TrashManagementEvent::RestoreItems),
-            Origin::TrashManagement(TrashManagementEvent::EmptyTrash),
-        ];
-        for origin in structural {
+        for origin in structural_origins() {
             let me = self.clone();
             ctx.subscribe_event(origin, move |_e: &Event| me.refresh_captions());
         }
@@ -3186,6 +3163,39 @@ pub(crate) mod test_support {
         tree.layout(teksilo::prelude::SizeProposal::exact(200.0, 60.0));
         crate::test_support::click(&mut tree, trigger);
     }
+}
+
+/// The backend changes that rename an untitled row without touching it: they renumber
+/// the manuscript, and an untitled chapter's name *is* its number. The open tabs
+/// re-caption on them ([`EditorsViewModel::wire`]), and so does every other place that
+/// shows such a name (the Scratchpad dock's header); the binder re-sources on the same
+/// set. A `BinderItem` update is not among them: it names the items it changed, and
+/// each reader handles it on its own.
+pub(crate) fn structural_origins() -> [Origin; 13] {
+    use frontend::common::event::{
+        BinderItemManagementEvent, DirectAccessEntity as E, EntityEvent, TrashManagementEvent,
+    };
+    [
+        // A new chapter above an untitled one renumbers it, and nothing about the
+        // untitled one itself changes.
+        Origin::DirectAccess(E::BinderItem(EntityEvent::Created)),
+        Origin::DirectAccess(E::Binder(EntityEvent::Created)),
+        // A binder's item *order* lives on the binder, so a reorder is a `Binder`
+        // update — not an item one.
+        Origin::DirectAccess(E::Binder(EntityEvent::Updated)),
+        Origin::DirectAccess(E::Binder(EntityEvent::Removed)),
+        // "Number chapters and parts" and "Restart chapter numbers at each part" are
+        // `Work` fields: turning either off renames every untitled chapter on screen.
+        Origin::DirectAccess(E::Work(EntityEvent::Updated)),
+        Origin::BinderItemManagement(BinderItemManagementEvent::Duplicate),
+        Origin::BinderItemManagement(BinderItemManagementEvent::MoveItems),
+        Origin::BinderItemManagement(BinderItemManagementEvent::MergeTwoScenes),
+        Origin::BinderItemManagement(BinderItemManagementEvent::SplitScene),
+        Origin::TrashManagement(TrashManagementEvent::TrashBinderItems),
+        Origin::TrashManagement(TrashManagementEvent::TrashBinder),
+        Origin::TrashManagement(TrashManagementEvent::RestoreItems),
+        Origin::TrashManagement(TrashManagementEvent::EmptyTrash),
+    ]
 }
 
 #[cfg(test)]

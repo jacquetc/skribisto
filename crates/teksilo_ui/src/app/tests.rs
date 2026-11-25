@@ -838,7 +838,7 @@ fn window_teardown_releases_the_scratchpads_document() {
     let session = project.session();
     let (scene, _) = project.scenes()[0];
     let scratchpad = test_scratchpad(&project.app_ctx, &session);
-    scratchpad.view_changed(Some(scene), false, None);
+    scratchpad.view_changed(crate::scratchpad::FrontView::page(scene), None);
     assert_eq!(session.open_docs.refs_for_test(scene), Some(1));
 
     let teardown = build_window_teardown(

@@ -184,7 +184,7 @@ mod real {
     fn an_item_shows_its_scratchpad_under_its_name() {
         crate::test_support::with_real_messages(|| {
             let mut m = mounted();
-            m.vm.view_changed(Some(m.items[0]), false, None);
+            m.vm.view_changed(crate::scratchpad::FrontView::page(m.items[0]), None);
             m.settle();
             let said = spoken(&mut m.tree);
             assert!(
@@ -205,7 +205,7 @@ mod real {
     fn a_marker_says_it_has_no_scratchpad() {
         crate::test_support::with_real_messages(|| {
             let mut m = mounted();
-            m.vm.view_changed(Some(m.items[2]), false, None);
+            m.vm.view_changed(crate::scratchpad::FrontView::page(m.items[2]), None);
             m.settle();
             let said = spoken(&mut m.tree);
             assert!(
@@ -223,7 +223,7 @@ mod real {
     #[test]
     fn typing_in_the_dock_marks_the_project_changed() {
         let mut m = mounted();
-        m.vm.view_changed(Some(m.items[1]), false, None);
+        m.vm.view_changed(crate::scratchpad::FrontView::page(m.items[1]), None);
         m.settle();
         let edited = m.docs.edited_any().get();
         let handle = m.editor();
@@ -261,7 +261,7 @@ mod real {
         pad.doc
             .set_plain_text("Is the keeper too old?")
             .expect("the notes");
-        m.vm.view_changed(Some(a), false, None);
+        m.vm.view_changed(crate::scratchpad::FrontView::page(a), None);
         m.settle();
 
         let hit = EditorHit {
@@ -277,7 +277,7 @@ mod real {
             "nothing is selected while the panel still shows another item"
         );
 
-        m.vm.view_changed(Some(b), false, None);
+        m.vm.view_changed(crate::scratchpad::FrontView::page(b), None);
         m.settle();
         assert!(
             m.tree.focused_is_text_surface(),
@@ -300,14 +300,14 @@ mod real {
     fn the_caret_comes_back_with_the_item() {
         let mut m = mounted();
         let (a, b) = (m.items[0], m.items[1]);
-        m.vm.view_changed(Some(a), false, None);
+        m.vm.view_changed(crate::scratchpad::FrontView::page(a), None);
         m.settle();
         let handle = m.editor();
         handle.insert_text("Check the tide tables.");
         handle.select_range(6, 9);
         m.settle();
 
-        m.vm.view_changed(Some(b), false, None);
+        m.vm.view_changed(crate::scratchpad::FrontView::page(b), None);
         m.settle();
         assert_eq!(m.vm.remembered_caret(a), Some((6, 9)));
         let other = m.editor();
@@ -315,10 +315,10 @@ mod real {
         other.select_range(2, 2);
         m.settle();
 
-        m.vm.view_changed(Some(a), false, None);
+        m.vm.view_changed(crate::scratchpad::FrontView::page(a), None);
         m.settle();
         assert_eq!(m.editor().selection(), (6, 9), "A's selection is back");
-        m.vm.view_changed(Some(b), false, None);
+        m.vm.view_changed(crate::scratchpad::FrontView::page(b), None);
         m.settle();
         assert_eq!(m.editor().selection(), (2, 2), "and B's caret");
     }
@@ -329,7 +329,7 @@ mod real {
     fn a_trashed_item_s_scratchpad_is_read_only() {
         crate::test_support::with_real_messages(|| {
             let mut m = mounted();
-            m.vm.view_changed(Some(m.items[0]), false, None);
+            m.vm.view_changed(crate::scratchpad::FrontView::page(m.items[0]), None);
             m.settle();
             assert!(crate::shared::editor_writes::accepts_writes(&m.editor()));
 
@@ -356,12 +356,12 @@ mod real {
     fn the_viewer_count_follows_what_the_panel_shows() {
         let mut m = mounted();
         let (a, b) = (m.items[0], m.items[1]);
-        m.vm.view_changed(Some(a), false, None);
+        m.vm.view_changed(crate::scratchpad::FrontView::page(a), None);
         m.settle();
         let doc_a = m.vm.doc().expect("A");
         assert_eq!(doc_a.scratchpad_viewers(), 1);
 
-        m.vm.view_changed(Some(b), false, None);
+        m.vm.view_changed(crate::scratchpad::FrontView::page(b), None);
         m.settle();
         let doc_b = m.vm.doc().expect("B");
         assert_eq!(doc_a.scratchpad_viewers(), 0);
@@ -378,7 +378,7 @@ mod real {
     fn a_rename_reaches_the_header_and_the_description() {
         crate::test_support::with_real_messages(|| {
             let mut m = mounted();
-            m.vm.view_changed(Some(m.items[1]), false, None);
+            m.vm.view_changed(crate::scratchpad::FrontView::page(m.items[1]), None);
             m.settle();
             let handle = m.editor();
             handle.insert_text("Who rang the bell?");
@@ -405,5 +405,45 @@ mod real {
             );
             assert_eq!(m.editor().selection(), (4, 8));
         });
+    }
+
+    /// A change of interface language reaches the header, as it reaches the Trash line
+    /// beside it. The header used to be a sentence resolved once, frozen in the
+    /// language it was first read in until the item changed.
+    #[test]
+    fn a_change_of_language_reaches_the_header() {
+        use teksilo::i18n::config::I18nConfig;
+        use teksilo::i18n::manager::I18nManager;
+        use teksilo::i18n::thread_local::{clear, install, with_active};
+        let tag = |t: &str| -> teksilo::i18n::LanguageIdentifier {
+            t.parse().unwrap_or_else(|e| panic!("{t}: {e:?}"))
+        };
+        // The app's catalogue in English and French, switched the way Settings
+        // switches it: the manager's locale, then the tree told to read again.
+        clear();
+        let cfg = I18nConfig::new()
+            .source_locale(tag("en-US"))
+            .supported_locales([tag("en-US"), tag("fr-FR")])
+            .compile_in(crate::startup::app_locales())
+            .auto_detect_os_locale(false)
+            .fallback_locale(tag("en-US"));
+        let manager = I18nManager::from_config(&cfg);
+        manager.set_locale(tag("en-US"));
+        install(manager);
+
+        let mut m = mounted();
+        m.vm.view_changed(crate::scratchpad::FrontView::page(m.items[1]), None);
+        m.settle();
+        let title = m.vm.title().get();
+        let english = format!("Scratchpad · {title}");
+        assert!(spoken(&mut m.tree).contains(&english));
+
+        with_active(|manager| manager.set_locale(tag("fr-FR")));
+        m.tree.set_locale("fr-FR".to_owned());
+        m.settle();
+        let said = spoken(&mut m.tree);
+        clear();
+        assert!(said.contains(&format!("Bloc-notes · {title}")), "{said:?}");
+        assert!(!said.contains(&english), "{said:?}");
     }
 }

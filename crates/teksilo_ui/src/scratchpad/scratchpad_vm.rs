@@ -20,11 +20,27 @@
 //!
 //! In a stream the dock follows the row; anywhere else, the tab's item. The row is
 //! *sticky*: the caret leaving the tabs (into the scratchpad itself, another dock, the
-//! binder) reads as "nowhere", and nowhere never replaces the row. It is forgotten when the
-//! view in front changes (another tab, the other pane), and then re-read from where the
-//! caret is at that moment, so a click that moved the caret and the pane in one gesture is
-//! not lost to the order the two signals happened to fire in. Changing segment keeps it:
-//! back on the Full Chapter from the Corkboard, the dock shows the row the writer left.
+//! binder) reads as "nowhere", and nowhere never replaces the row. Only a caret in an
+//! editor **of the tab in front** moves it ([`CaretItem::tab`]): the caret is read once a
+//! frame, so for a frame after the writer clicks another tab it still names the editor
+//! of the tab they left, and taking that as a row of the new tab followed a scene the
+//! new tab does not show.
+//!
+//! The row is forgotten when the view in front really changes ([`FrontView`]: another
+//! tab, the other pane, another segment), and then re-read from where the caret is at
+//! that moment, under the same rule, so a click that moved the caret and the pane in one
+//! gesture is not lost to the order the two signals happened to fire in. The edges the
+//! wiring pushes on fire far more often than that (each time focus enters a pane, each
+//! tab selection, even of the tab already selected), so a push that names the view
+//! already in front changes nothing: clicking a row's title after typing in the
+//! scratchpad no longer sends the dock back to the chapter. Changing segment keeps the
+//! row: back on the Full Chapter from the Corkboard, the dock shows the row the writer
+//! left.
+//!
+//! The row is also checked after every structural change
+//! ([`ScratchpadViewModel::structure_changed`]): trashed, deleted or moved out of the
+//! stream in front, it is no longer a row of it, and the dock goes back to the tab's
+//! item.
 //!
 //! None of this changes what the other docks follow. They read `active_item`, which this
 //! module only reads.
@@ -35,9 +51,10 @@
 //! before the next one is taken, as the search preview does, so a document still live in a
 //! tab is neither evicted early nor pinned for ever. The id is held, never the `Rc`: a
 //! Promote rebuilds the document in place (`OpenDocsStore::rebuild`) and hands every holder
-//! a fresh one, so [`ScratchpadViewModel::state`] re-reads it on every call, and
-//! [`ScratchpadViewModel::poll_document`] notices the swap and bumps
-//! [`ScratchpadViewModel::generation`] for the panel to rebuild on.
+//! a fresh one, so [`ScratchpadViewModel::state`] re-reads it on every call. The store
+//! says when it rebuilt one ([`OpenDocsStore::rebuilt`]), after the swap; the view-model
+//! then compares and bumps [`ScratchpadViewModel::generation`] for the panel to rebuild
+//! on.
 //!
 //! ## A search hit
 //!
@@ -47,21 +64,55 @@
 //! panel then takes it ([`ScratchpadViewModel::take_hit_for`]) and selects it. Waiting
 //! rather than selecting at once is what keeps the order of the two events free: the
 //! request can arrive before the dock has moved to the item, and a selection made in
-//! the scratchpad still on screen would land in the wrong item's notes.
+//! the scratchpad still on screen would land in the wrong item's notes. A hit still
+//! waiting when the dock moves on to some other item is dropped: the writer went
+//! elsewhere, and selecting it whenever they next pass by that item would be a surprise.
+//! The panel hands it to the same `Destination` as a tab's editor
+//! ([`crate::search::editor_result`]), which checks the words are still there and
+//! focuses the editor either way.
 
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::rc::{Rc, Weak};
 
+use teksilo::core::ObserverHandle;
 use teksilo::prelude::*;
 use teksilo::widgets::SegmentId;
 
 use frontend::AppContext;
 
 use crate::app_ids::AppIds;
+use crate::editors::Side;
+use crate::format::CaretItem;
 use crate::models::{OpenDoc, OpenDocsStore};
 use crate::search::editor_result::EditorHit;
 use crate::tabs::ProseField;
+
+/// What is in front of the writer: the focused pane, its active tab's item, and the
+/// segment that tab's bar shows. The row is forgotten only when this changes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct FrontView {
+    /// The focused pane's active tab item, `None` with no tab open.
+    pub active: Option<u64>,
+    /// The focused pane.
+    pub pane: Side,
+    /// The segment the tab's bar shows. `None` is the bar's first segment.
+    pub segment: Option<SegmentId>,
+}
+
+impl FrontView {
+    /// Nothing in front: no tab, in the main pane.
+    pub const NOTHING: FrontView = FrontView {
+        active: None,
+        pane: Side::Primary,
+        segment: None,
+    };
+
+    /// Whether the tab shows one of its streams.
+    pub fn in_stream(&self) -> bool {
+        is_stream_segment(self.segment)
+    }
+}
 
 /// Which item the dock shows: the stream row the caret was last in when the tab in front
 /// shows a stream, else the tab's own item, and nothing with no tab open.
@@ -81,6 +132,28 @@ pub fn resolve_target(active: Option<u64>, in_stream: bool, row: Option<u64>) ->
 pub fn is_stream_segment(segment: Option<SegmentId>) -> bool {
     use crate::tabs::shared::segments::{SEG_MANUSCRIPT, SEG_SYNOPSIS, segment_id};
     segment.is_some_and(|s| s == segment_id(SEG_MANUSCRIPT) || s == segment_id(SEG_SYNOPSIS))
+}
+
+#[cfg(all(test, not(feature = "mocks")))]
+impl FrontView {
+    /// A tab in the main pane showing `item`'s own page.
+    pub(crate) fn page(item: u64) -> Self {
+        Self {
+            active: Some(item),
+            pane: Side::Primary,
+            segment: None,
+        }
+    }
+
+    /// A tab in the main pane showing `item`'s Full Chapter, Part or Book.
+    pub(crate) fn stream(item: u64) -> Self {
+        use crate::tabs::shared::segments::{SEG_MANUSCRIPT, segment_id};
+        Self {
+            active: Some(item),
+            pane: Side::Primary,
+            segment: Some(segment_id(SEG_MANUSCRIPT)),
+        }
+    }
 }
 
 /// What the dock has to show.
@@ -115,12 +188,15 @@ struct Inner {
     app_ctx: Rc<AppContext>,
     docs: OpenDocsStore,
     ids: AppIds,
-    /// The focused pane's active tab item.
-    active: Cell<Option<u64>>,
-    /// Whether that tab shows a stream.
-    in_stream: Cell<bool>,
-    /// The tab editor the caret was last in, kept until the view in front changes.
+    /// What is in front of the writer.
+    view: Cell<FrontView>,
+    /// The editor of the tab in front the caret was last in, kept until the view in
+    /// front changes, or until a structural change takes it out of that tab.
     row: Cell<Option<u64>>,
+    /// The row a structural change last took out of the tab in front, until the row
+    /// or the view changes again: a merge empties the row before it says which scene
+    /// the row went into (its entity events come first), and the dock follows it there.
+    let_go: Cell<Option<u64>>,
     /// What the dock shows. Mutable, so the panel can rebuild on it.
     target: Signal<Option<u64>>,
     /// The item this view-model holds a store reference on. Never the `Rc`: see the
@@ -140,6 +216,9 @@ struct Inner {
     /// Bumped on each hit asked for, so the panel rebuilds and takes it even when it
     /// already shows the item.
     hit_requests: Signal<u64>,
+    /// The store's "a document was rebuilt" signal, observed for as long as this
+    /// view-model lives.
+    rebuilt_watch: RefCell<Option<ObserverHandle>>,
 }
 
 /// The Scratchpad dock's per-window logic. Cheap to clone; clones share one state.
@@ -161,14 +240,15 @@ impl ScratchpadViewModel {
     /// A view-model over this Work's open documents, showing nothing until the wiring
     /// tells it what is in front.
     pub fn new(app_ctx: Rc<AppContext>, docs: OpenDocsStore, ids: AppIds) -> Self {
-        Self {
+        let rebuilt = docs.rebuilt();
+        let vm = Self {
             inner: Rc::new(Inner {
                 app_ctx,
                 docs,
                 ids,
-                active: Cell::new(None),
-                in_stream: Cell::new(false),
+                view: Cell::new(FrontView::NOTHING),
                 row: Cell::new(None),
+                let_go: Cell::new(None),
                 target: Signal::new(None),
                 held: Cell::new(None),
                 carets: RefCell::new(HashMap::new()),
@@ -177,52 +257,121 @@ impl ScratchpadViewModel {
                 title: Signal::new(String::new()),
                 pending_hit: RefCell::new(None),
                 hit_requests: Signal::new(0),
+                rebuilt_watch: RefCell::new(None),
             }),
-        }
+        };
+        // Weak: the store outlives this view-model, and its signal must not keep it.
+        let weak = Rc::downgrade(&vm.inner);
+        let watch = rebuilt.observe(move |_| {
+            if let Some(inner) = weak.upgrade() {
+                ScratchpadViewModel { inner }.document_rebuilt();
+            }
+        });
+        *vm.inner.rebuilt_watch.borrow_mut() = Some(watch);
+        vm
     }
 
     // ── Inputs ──────────────────────────────────────────────────────────────
 
-    /// The view in front changed: another tab, the other pane, or the project closed.
-    /// `active` is the focused tab's item, `in_stream` whether it shows a stream, and
-    /// `caret_now` where the caret is at this moment (the live caret item), which becomes
-    /// the row to follow. The row of the previous view is forgotten.
-    pub fn view_changed(&self, active: Option<u64>, in_stream: bool, caret_now: Option<u64>) {
-        self.inner.active.set(active);
-        self.inner.in_stream.set(in_stream);
-        self.inner.row.set(caret_now);
+    /// The wiring saw an edge at which the view in front may have changed: a pane
+    /// gaining focus, a tab selected, the active item moving. `view` is what is in
+    /// front now, and `caret_now` where the caret is at this moment (the live caret).
+    ///
+    /// Nothing happens unless `view` differs from the view already in front: those
+    /// edges fire on every click into a pane, and forgetting the row on each of them
+    /// sent the dock back to the chapter whenever the writer clicked a row's title.
+    /// When it does differ, the row of the previous view is forgotten and the caret
+    /// becomes the row, if it is in an editor of the tab now in front.
+    pub fn view_changed(&self, view: FrontView, caret_now: Option<CaretItem>) {
+        if self.inner.view.get() == view {
+            return;
+        }
+        self.inner.view.set(view);
+        self.inner
+            .row
+            .set(caret_now.and_then(|caret| self.row_of(caret)));
+        self.inner.let_go.set(None);
         self.resolve();
     }
 
     /// The tab in front switched segment: a stream, or another of its views. The row is
     /// kept, so coming back to the stream shows the row the writer left.
-    pub fn segment_changed(&self, in_stream: bool) {
-        if self.inner.in_stream.get() != in_stream {
-            self.inner.in_stream.set(in_stream);
+    pub fn segment_changed(&self, segment: Option<SegmentId>) {
+        let mut view = self.inner.view.get();
+        if view.segment == segment {
+            return;
+        }
+        let was = view.in_stream();
+        view.segment = segment;
+        self.inner.view.set(view);
+        if view.in_stream() != was {
             self.resolve();
         }
     }
 
-    /// The caret moved: `Some(item)` into a tab editor showing `item`'s text, `None`
-    /// anywhere else. Only the first moves the row: the caret going into the scratchpad,
-    /// a dock or the binder leaves the dock on the row it was showing.
-    pub fn caret_moved(&self, item: Option<u64>) {
-        if let Some(item) = item
+    /// The caret moved: into an editor in a tab, or anywhere else (`None`). Only a caret
+    /// in an editor of the tab in front moves the row: the caret going into the
+    /// scratchpad, a dock or the binder leaves the dock on the row it was showing, and
+    /// so does a caret still read in the tab the writer has just left.
+    pub fn caret_moved(&self, caret: Option<CaretItem>) {
+        if let Some(item) = caret.and_then(|caret| self.row_of(caret))
             && self.inner.row.get() != Some(item)
         {
             self.inner.row.set(Some(item));
+            self.inner.let_go.set(None);
             self.resolve();
         }
     }
 
-    /// The window's project closed, or the window is going away: give the reference
-    /// back and show nothing. What was remembered about carets goes too, since the ids it
-    /// is keyed by mean nothing in the next project.
+    /// `merged` was merged into `survivor`: its text, synopsis and scratchpad are now on
+    /// `survivor`, and `merged` is in the Trash. When the dock was on `merged`, it goes
+    /// on to `survivor`, where the notes it showed now are, instead of falling back to
+    /// the chapter as it does for a scene trashed, moved or deleted. The stream's merge
+    /// leaves the caret where it was, so no caret move would bring it there.
+    pub fn scenes_merged(&self, survivor: u64, merged: u64) {
+        let was = self.inner.row.get().or(self.inner.let_go.get());
+        if was == Some(merged) && self.row_belongs_to_tab(survivor) {
+            self.inner.row.set(Some(survivor));
+            self.inner.let_go.set(None);
+            self.resolve();
+        }
+    }
+
+    /// Something moved in the binder: an item created, moved, trashed, restored,
+    /// deleted, merged or split, a binder reordered, the numbering changed. The row is
+    /// dropped if it is no longer a row of the stream in front (trashed, deleted, moved
+    /// to another chapter), and the name in the header is re-read if the renumbering
+    /// may have renamed it.
+    pub fn structure_changed(&self) {
+        self.check_row();
+        self.renumbered();
+    }
+
+    /// Items were updated (`ids`): a rename, a type change, a trashing. The target's
+    /// own name is re-read when it is among them; any other may have renumbered it,
+    /// or taken the row out of the stream in front.
+    pub fn items_updated(&self, ids: &[u64]) {
+        self.check_row();
+        match self.inner.target.get() {
+            Some(target) if ids.contains(&target) => self.refresh_title(),
+            _ => self.renumbered(),
+        }
+    }
+
+    /// The window's project closed: give the reference back and show nothing. What was
+    /// remembered about carets goes too, since the ids it is keyed by mean nothing in
+    /// the next project.
     pub fn release(&self) {
-        self.inner.active.set(None);
-        self.inner.in_stream.set(false);
+        self.release_on(self.inner.ids.stack_id.get());
+    }
+
+    /// [`Self::release`], flushing on `stack`: the window's own stack, snapshotted
+    /// before its teardown began, since the live id may already have been cleared or
+    /// handed to the next project by then.
+    pub fn release_on(&self, stack: Option<u64>) {
+        self.inner.view.set(FrontView::NOTHING);
         self.inner.row.set(None);
-        self.switch_to(None);
+        self.switch_to(None, stack);
         self.inner.carets.borrow_mut().clear();
         *self.inner.pending_hit.borrow_mut() = None;
     }
@@ -302,30 +451,16 @@ impl ScratchpadViewModel {
         self.inner.hit_requests.clone()
     }
 
-    /// The range to select in `item`'s scratchpad, `doc`, if a hit is waiting for that
-    /// item: `(start, end)` in the document's characters. Taken once.
-    ///
-    /// A hit for another item is left waiting. A hit whose words are no longer where the
-    /// search found them (the notes were edited since) is dropped and selects nothing:
-    /// selecting whatever now sits there would point the writer at the wrong words.
-    pub fn take_hit_for(
-        &self,
-        item: u64,
-        doc: &teksilo::text_document::TextDocument,
-    ) -> Option<(usize, usize)> {
-        let hit = {
-            let mut pending = self.inner.pending_hit.borrow_mut();
-            match pending.as_ref() {
-                Some((waiting, _)) if *waiting == item => pending.take().map(|(_, hit)| hit),
-                _ => None,
-            }
-        }?;
-        let len = hit.matched.chars().count();
-        let end = hit.start.checked_add(len)?;
-        // A search's one-line snippet shows a soft line break as a space.
-        let found = doc.text_at(hit.start, len).ok()?;
-        (found.replace(teksilo::text_document::LINE_SEPARATOR, " ") == hit.matched)
-            .then_some((hit.start, end))
+    /// The hit waiting for `item`, if one is: taken once, for the panel to hand to the
+    /// editor's `Destination` ([`crate::search::editor_result`]), which selects it if
+    /// its words are still where the search found them and focuses the editor either
+    /// way. A hit for another item is left waiting.
+    pub fn take_hit_for(&self, item: u64) -> Option<EditorHit> {
+        let mut pending = self.inner.pending_hit.borrow_mut();
+        match pending.as_ref() {
+            Some((waiting, _)) if *waiting == item => pending.take().map(|(_, hit)| hit),
+            _ => None,
+        }
     }
 
     // ── The document under the target ───────────────────────────────────────
@@ -335,11 +470,11 @@ impl ScratchpadViewModel {
         *self.inner.shown.borrow_mut() = Rc::downgrade(doc);
     }
 
-    /// Compare the document the panel shows with the one the store holds for the target,
-    /// and bump [`Self::generation`] when a Promote replaced it. Called once a frame: the
-    /// swap happens inside other handlers of the same event, in an order nothing here can
-    /// rely on, and a frame later every one of them has run.
-    pub fn poll_document(&self) {
+    /// The store rebuilt a document (a Promote retyped its item): compare the one the
+    /// panel shows with the one the store now holds for the target, and bump
+    /// [`Self::generation`] when it was replaced. Called by the store's own signal,
+    /// after the swap.
+    pub fn document_rebuilt(&self) {
         let shown = self.inner.shown.borrow().upgrade();
         let Some(shown) = shown else {
             return;
@@ -365,25 +500,74 @@ impl ScratchpadViewModel {
         }
     }
 
+    /// Re-read the target's name after a change that renumbers the manuscript, when
+    /// the name can depend on it: only an untitled target is named by its number, so a
+    /// titled one costs one read of its title and no walk of the manuscript.
+    pub fn renumbered(&self) {
+        let Some(id) = self.inner.target.get() else {
+            return;
+        };
+        let titled = crate::shared::binder_ops::item_dto(&self.inner.app_ctx, id)
+            .is_some_and(|dto| !dto.title.trim().is_empty());
+        if !titled {
+            self.refresh_title();
+        }
+    }
+
     // ── Internals ───────────────────────────────────────────────────────────
 
+    /// The row a caret names, when its editor belongs to the tab in front.
+    fn row_of(&self, caret: CaretItem) -> Option<u64> {
+        let active = self.inner.view.get().active?;
+        (caret.tab == Some(active)).then_some(caret.item)
+    }
+
+    /// Drop the row if it no longer belongs to the tab in front.
+    fn check_row(&self) {
+        if let Some(row) = self.inner.row.get()
+            && !self.row_belongs_to_tab(row)
+        {
+            self.inner.row.set(None);
+            self.inner.let_go.set(Some(row));
+            self.resolve();
+        }
+    }
+
+    /// Whether `row` still belongs to the tab in front: the tab's own item, or a row of
+    /// the stream it heads.
+    fn row_belongs_to_tab(&self, row: u64) -> bool {
+        let Some(active) = self.inner.view.get().active else {
+            return false;
+        };
+        row == active
+            || crate::models::stream_has_row(
+                &self.inner.app_ctx,
+                self.inner.ids.work_id.get(),
+                active,
+                row,
+            )
+    }
+
     fn resolve(&self) {
-        let target = resolve_target(
-            self.inner.active.get(),
-            self.inner.in_stream.get(),
-            self.inner.row.get(),
-        );
-        self.switch_to(target);
+        let view = self.inner.view.get();
+        let target = resolve_target(view.active, view.in_stream(), self.inner.row.get());
+        self.switch_to(target, self.inner.ids.stack_id.get());
     }
 
     /// Point the dock at `target`: the previous reference is given back **before** the
-    /// next is taken, so a document that only this view-model still held is flushed and
-    /// let go, and the next one is opened once.
-    fn switch_to(&self, target: Option<u64>) {
+    /// next is taken, so a document that only this view-model still held is flushed (on
+    /// `stack`) and let go, and the next one is opened once. A search hit still waiting
+    /// for some other item is dropped: the dock went elsewhere.
+    fn switch_to(&self, target: Option<u64>, stack: Option<u64>) {
         if self.inner.held.get() == target && self.inner.target.get() == target {
             return;
         }
-        let stack = self.inner.ids.stack_id.get();
+        if let Some(to) = target {
+            let mut pending = self.inner.pending_hit.borrow_mut();
+            if pending.as_ref().is_some_and(|(item, _)| *item != to) {
+                *pending = None;
+            }
+        }
         if let Some(old) = self.inner.held.take() {
             self.inner.docs.release(old, stack);
         }

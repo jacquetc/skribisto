@@ -22,6 +22,6 @@ pub mod link_panel;
 pub mod marks;
 
 pub use format_vm::{
-    ALIGN_CENTER, ALIGN_JUSTIFY, ALIGN_LEFT, DIR_AUTO, DIR_LTR, DIR_RTL, EditorKind, FormatSurface,
-    FormatViewModel, LinkRequest,
+    ALIGN_CENTER, ALIGN_JUSTIFY, ALIGN_LEFT, CaretItem, DIR_AUTO, DIR_LTR, DIR_RTL, EditorKind,
+    FormatSurface, FormatViewModel, LinkRequest,
 };

@@ -1463,7 +1463,9 @@ pub(crate) fn build_window_teardown(
 ) -> WindowTeardown {
     Rc::new(move |is_last: bool| {
         editors.release_own_open_docs(stack_id);
-        scratchpad.release();
+        // On the snapshotted stack too: by now the live id may be cleared, or already
+        // another project's.
+        scratchpad.release_on(stack_id);
         backup_scheduler.unregister_flush_hook(window_id);
         if let Some(reg) = &toast_registry {
             reg.forget_window(window_id);

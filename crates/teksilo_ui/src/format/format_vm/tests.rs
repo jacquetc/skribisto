@@ -2081,8 +2081,10 @@ fn the_caret_item_is_the_tab_editor_with_focus_and_never_a_dock() {
     let (_pad, pad_handle) = loose_editor("notes");
     let vm = FormatViewModel::new(Rc::new(|| (None, FormatSurface::None)));
     let w = ids(4);
+    // Rows 11 and 22 of chapter 5's Full Chapter.
+    let chapter = crate::margin_lane::LaneScope::in_tab(5);
     vm.register(w[0], a_handle.clone(), EditorKind::Prose);
-    vm.set_registered_anchor(w[0], anchor(11));
+    vm.set_registered_anchor(w[0], crate::margin_lane::LaneAnchor::new(11, chapter));
     vm.register(w[1], b_handle.clone(), EditorKind::Synopsis);
     vm.set_registered_anchor(w[1], anchor(22));
     vm.register(w[2], preview_handle.clone(), EditorKind::Prose);
@@ -2095,12 +2097,26 @@ fn the_caret_item_is_the_tab_editor_with_focus_and_never_a_dock() {
 
     a_handle.focused_signal().set(true);
     vm.refresh();
-    assert_eq!(vm.caret_item().get(), Some(11));
+    assert_eq!(
+        vm.caret_item().get(),
+        Some(CaretItem {
+            item: 11,
+            tab: Some(5)
+        }),
+        "the row, and the tab whose stream it is a row of"
+    );
 
     a_handle.focused_signal().set(false);
     b_handle.focused_signal().set(true);
     vm.refresh();
-    assert_eq!(vm.caret_item().get(), Some(22), "a synopsis row counts too");
+    assert_eq!(
+        vm.caret_item().get(),
+        Some(CaretItem {
+            item: 22,
+            tab: None
+        }),
+        "a synopsis row counts too; a surface no tab built names no tab"
+    );
 
     b_handle.focused_signal().set(false);
     pad_handle.focused_signal().set(true);

@@ -520,7 +520,7 @@ pub fn folder_own_pane(tab: &ContentTab) -> Box<dyn Widget> {
     // One token for this page: the editors below and the lane beside them are the
     // same surface, and nothing else may answer for it. See
     // `crate::margin_lane::LaneScope`.
-    let scope = crate::margin_lane::LaneScope::fresh();
+    let scope = crate::margin_lane::LaneScope::in_tab(tab.item_id());
 
     let mut col = VStack::new().spacing(8.0).child(vspace(12.0));
     if let Some(t) = tab.title() {
@@ -715,8 +715,8 @@ fn prose_body(tab: &ContentTab) -> impl Widget {
     // being a question with one answer. Each arm's editors and the lane beside them
     // are handed the same token; nothing else holds it. See
     // `crate::margin_lane::LaneScope`, which records what went wrong without it.
-    let top_scope = crate::margin_lane::LaneScope::fresh();
-    let side_scope = crate::margin_lane::LaneScope::fresh();
+    let top_scope = crate::margin_lane::LaneScope::in_tab(tab.item_id());
+    let side_scope = crate::margin_lane::LaneScope::in_tab(tab.item_id());
 
     // The Top layout — today's flowing page, unchanged: title, tags, the compact
     // synopsis box and the prose all scroll together.
@@ -780,7 +780,7 @@ pub fn heading(tab: &ContentTab) -> Box<dyn Widget> {
     // One token for this page: the editors below and the lane beside them are the
     // same surface, and nothing else may answer for it. See
     // `crate::margin_lane::LaneScope`.
-    let scope = crate::margin_lane::LaneScope::fresh();
+    let scope = crate::margin_lane::LaneScope::in_tab(tab.item_id());
 
     let mut col = VStack::new().spacing(8.0).child(vspace(20.0));
 
@@ -944,7 +944,7 @@ fn folder_synopsis_body(tab: &ContentTab, will_show: bool) -> impl Widget {
     // One token for this page: the editors below and the lane beside them are the
     // same surface, and nothing else may answer for it. See
     // `crate::margin_lane::LaneScope`.
-    let scope = crate::margin_lane::LaneScope::fresh();
+    let scope = crate::margin_lane::LaneScope::in_tab(tab.item_id());
 
     let mut col = VStack::new().spacing(8.0).child(vspace(12.0));
     if let Some(s) = tab.synopsis() {

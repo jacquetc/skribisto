@@ -4,17 +4,22 @@
 //! The Scratchpad's per-window view-model: minted once, and told on every build what is
 //! in front of the writer.
 //!
-//! - **The view in front**: the focused pane's active tab item and whether that tab shows
-//!   a stream. Pushed on the two edges at which the active tab can change (its item, and
-//!   the pane with focus), and then on every switch of that tab's segment bar, through an
-//!   observer re-pointed at each new tab.
+//! - **The view in front**: the focused pane, its active tab item and the segment its
+//!   bar shows. Pushed on the two edges at which the active tab can change (its item,
+//!   and the pane with focus), and then on every switch of that tab's segment bar,
+//!   through an observer re-pointed at each new tab. Those edges fire on every click
+//!   into a pane; the view-model ignores a push that names the view already in front.
 //! - **The caret**: the window formatting view-model's live `caret_item`, from which the
-//!   view-model keeps the stream row the writer was last in.
-//! - **The name**: re-read on every binder item update (a rename, a renumbering).
-//! - **A Promote**: polled once a frame, since the document is rebuilt by other handlers
-//!   of the same event, in an order nothing here can rely on.
+//!   view-model keeps the stream row the writer was last in, when the editor belongs to
+//!   the tab in front.
+//! - **The binder moving**: a rename, a renumbering, a row trashed, deleted or moved out
+//!   of the stream in front. The name in the header is re-read, and a row no longer in
+//!   the stream is let go. The same structural events the open tabs re-caption on
+//!   ([`crate::editors::structural_origins`]).
+//! - **A Promote**: the store says when it rebuilt a document, and the view-model
+//!   observes that itself.
 //! - **The project closing** in this window gives its reference back. The window going
-//!   away does too, through `build_window_teardown`.
+//!   away does too, through `build_window_teardown`, on the window's own stack.
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -23,11 +28,13 @@ use teksilo::core::ObserverHandle;
 use teksilo::prelude::*;
 
 use frontend::AppContext;
-use frontend::common::event::{DirectAccessEntity, EntityEvent, Event, Origin};
+use frontend::common::event::{
+    BinderItemManagementEvent, DirectAccessEntity, EntityEvent, Event, Origin,
+};
 
 use crate::editors::EditorsViewModel;
 use crate::format::FormatViewModel;
-use crate::scratchpad::{ScratchpadViewModel, is_stream_segment};
+use crate::scratchpad::{FrontView, ScratchpadViewModel};
 use crate::sessions::WorkSession;
 
 pub(in crate::app) fn install(
@@ -58,17 +65,17 @@ pub(in crate::app) fn install(
             let caret = format.caret_item();
             Rc::new(move || {
                 let segment = editors.focused_segment_signal();
-                let in_stream = segment.as_ref().is_some_and(|s| is_stream_segment(s.get()));
                 // Re-pointed at this tab's bar; the previous tab's observer is dropped.
-                *segment_watch.borrow_mut() = segment.map(|s| {
+                *segment_watch.borrow_mut() = segment.as_ref().map(|s| {
                     let vm = vm.clone();
-                    s.observe(move |seg| vm.segment_changed(is_stream_segment(*seg)))
+                    s.observe(move |seg| vm.segment_changed(*seg))
                 });
-                vm.view_changed(
-                    editors.active_context().get().map(|item| item.id),
-                    in_stream,
-                    caret.get(),
-                );
+                let view = FrontView {
+                    active: editors.active_context().get().map(|item| item.id),
+                    pane: editors.focused_side(),
+                    segment: segment.and_then(|s| s.get()),
+                };
+                vm.view_changed(view, caret.get());
             })
         };
         view_changed();
@@ -82,23 +89,39 @@ pub(in crate::app) fn install(
     // Where the caret is.
     {
         let vm = vm.clone();
-        ctx.effect(&format.caret_item(), move |item| vm.caret_moved(*item));
+        ctx.effect(&format.caret_item(), move |caret| vm.caret_moved(*caret));
     }
 
-    // The name in the header.
+    // The binder moving: the name in the header, and whether the row is still there.
     {
         let vm = vm.clone();
         ctx.subscribe_event(
             Origin::DirectAccess(DirectAccessEntity::BinderItem(EntityEvent::Updated)),
-            move |_e: &Event| vm.refresh_title(),
+            move |e: &Event| vm.items_updated(&e.ids),
         );
     }
-
-    // A Promote's rebuilt document.
     {
         let vm = vm.clone();
-        let tick = ctx.frame_tick();
-        ctx.effect(&tick, move |_| vm.poll_document());
+        ctx.subscribe_event(
+            Origin::DirectAccess(DirectAccessEntity::BinderItem(EntityEvent::Removed)),
+            move |_e: &Event| vm.structure_changed(),
+        );
+    }
+    for origin in crate::editors::structural_origins() {
+        let vm = vm.clone();
+        ctx.subscribe_event(origin, move |_e: &Event| vm.structure_changed());
+    }
+    // A merge names the scene that stays and the one merged into it, in that order.
+    {
+        let vm = vm.clone();
+        ctx.subscribe_event(
+            Origin::BinderItemManagement(BinderItemManagementEvent::MergeTwoScenes),
+            move |e: &Event| {
+                if let [survivor, merged, ..] = e.ids[..] {
+                    vm.scenes_merged(survivor, merged);
+                }
+            },
+        );
     }
 
     // This window's own project closing: nothing of it is shown any more.

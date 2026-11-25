@@ -648,7 +648,26 @@ pub struct FormatViewModel {
     /// Scratchpad dock does. A sticky value would have to decide, here, when to forget,
     /// and only the reader knows what a change of view means to it. A plain mutable
     /// signal so a reader can observe it. Pushed by [`Self::refresh`], once a frame.
-    caret_item: Signal<Option<EntityId>>,
+    caret_item: Signal<Option<CaretItem>>,
+}
+
+/// Where the caret is among the editors in tabs: the item whose text holds it, and the
+/// item of the tab whose surface that editor belongs to ([`LaneScope::tab`]).
+///
+/// The two differ inside a stream (the row, and the chapter whose Full Chapter it is a
+/// row of) and agree on a scene's own page. The tab is what lets a reader tell an
+/// editor of the tab in front from one of a tab the writer has just left: the caret is
+/// read once a frame, so for a frame after a tab switch it still names the editor of
+/// the previous tab, and a reader that took it as a place in the new one followed a
+/// row that is not there.
+///
+/// [`LaneScope::tab`]: crate::margin_lane::LaneScope::tab
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CaretItem {
+    /// The item whose text holds the caret.
+    pub item: EntityId,
+    /// The item of the tab that built the editor, `None` for an editor no tab built.
+    pub tab: Option<EntityId>,
 }
 
 impl std::fmt::Debug for FormatViewModel {
@@ -820,19 +839,25 @@ impl FormatViewModel {
     /// scratchpad editor's item (an [`EditorKind::Scratchpad`] registration is skipped)
     /// nor a dock's editor, so moving the caret into either reads as "not in a tab" and
     /// a reader keeping the last `Some` keeps it.
-    pub fn caret_item(&self) -> Signal<Option<EntityId>> {
+    pub fn caret_item(&self) -> Signal<Option<CaretItem>> {
         self.caret_item.clone()
     }
 
-    /// The focused registered editor's item, when it is an editor in a tab that shows
-    /// one item's text. The reading behind [`Self::caret_item`].
-    fn focused_tab_item(&self) -> Option<EntityId> {
+    /// The focused registered editor's item and the tab it belongs to, when it is an
+    /// editor in a tab that shows one item's text. The reading behind
+    /// [`Self::caret_item`].
+    fn focused_tab_item(&self) -> Option<CaretItem> {
         self.registry
             .borrow()
             .iter()
             .find(|e| e.handle.focused_signal().get())
             .filter(|e| e.kind != EditorKind::Scratchpad && !e.in_dock)
-            .and_then(|e| e.item)
+            .and_then(|e| {
+                e.item.map(|item| CaretItem {
+                    item,
+                    tab: e.scope.and_then(|s| s.tab()),
+                })
+            })
     }
 
     /// The registered editor holding keyboard focus, if any. At most one widget

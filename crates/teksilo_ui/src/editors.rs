@@ -21,6 +21,7 @@ mod editors_vm;
 pub mod tab_menu;
 mod tab_menu_vm;
 
+pub(crate) use editors_vm::structural_origins;
 pub use editors_vm::{EditorsViewModel, Side, TabMenuInstaller};
 pub use tab_menu_vm::{TabMenuItem, TabMenuRow, TabMenuViewModel};
 
