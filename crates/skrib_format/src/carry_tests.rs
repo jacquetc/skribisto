@@ -255,3 +255,192 @@ fn a_bundle_inside_the_bundle_is_left_alone_not_carried() {
         "only the root: deeper down, an unknown file is what carrying is for"
     );
 }
+
+/// Hidden names (a `.git` folder, a Mac's `.DS_Store` and `._` files, a crash's
+/// leftover `.tmp…` file) are not the project's: neither reader carries one, and a save
+/// leaves each on disk exactly as it was, outside the folders the format prunes.
+///
+/// Carried, a project kept under git read its whole repository on every autosave,
+/// copied it into every backup and Save As, and wrote a stale `.git/index` back.
+#[test]
+fn hidden_files_in_a_folder_are_neither_carried_nor_touched() {
+    let hidden: &[(&str, &[u8])] = &[
+        (".git/HEAD", b"ref: refs/heads/main\n"),
+        (".git/objects/ab/cdef0123", b"\x78\x01blob"),
+        (".DS_Store", b"\x00\x00\x00\x01Bud1"),
+        ("binders/{binder}/.tmpA1b2C3", b"half a write"),
+        ("binders/{binder}/._structure.ron", b"AppleDouble"),
+        ("notes/.cache/index", b"cache"),
+    ];
+    let mut planted = hidden.to_vec();
+    planted.push(("structure.ron", b"(kept: true)"));
+    let (_dir, path, planted) = plant_and_read(SkribShape::ExplodedFolder, &planted);
+
+    let loaded = read_bundle(&path).expect("read");
+    let carried: Vec<&String> = loaded.carried.keys().collect();
+    assert_eq!(
+        carried,
+        vec!["structure.ron"],
+        "only the visible file is carried"
+    );
+    let for_save: Vec<String> = super::carry::load(&path).into_keys().collect();
+    assert_eq!(
+        for_save,
+        vec!["structure.ron".to_string()],
+        "…by either reader"
+    );
+
+    write_bundle(&path, SkribShape::ExplodedFolder, &loaded).expect("rewrite");
+    let root = super::shape::folder_root(&path);
+    for (rel, bytes) in &planted {
+        assert_eq!(
+            std::fs::read(root.join(rel)).ok().as_deref(),
+            Some(bytes.as_slice()),
+            "`{rel}` was changed or removed by a save"
+        );
+    }
+}
+
+/// The same for an archive: a hidden member is not carried by either reader, so the
+/// next archive written from it no longer holds it.
+#[test]
+fn hidden_members_of_a_zip_are_not_carried() {
+    let (_dir, path, _) = plant_and_read(
+        SkribShape::ZipFile,
+        &[
+            (".git/HEAD", b"ref: refs/heads/main\n"),
+            ("binders/{binder}/.tmpA1b2C3", b"half a write"),
+            ("structure.ron", b"(kept: true)"),
+        ],
+    );
+    let loaded = read_bundle(&path).expect("read");
+    assert_eq!(
+        loaded.carried.keys().collect::<Vec<_>>(),
+        vec!["structure.ron"]
+    );
+    assert_eq!(
+        super::carry::load(&path).into_keys().collect::<Vec<_>>(),
+        vec!["structure.ron".to_string()]
+    );
+}
+
+#[test]
+fn hidden_names_are_recognised() {
+    for rel in [".git/HEAD", ".DS_Store", "binders/01-a/.tmpX", "a/._b.ron"] {
+        assert!(super::carry::is_hidden(rel), "`{rel}` is hidden");
+    }
+    for rel in ["structure.ron", "binders/01-a/text/x.djot", "a.b/c"] {
+        assert!(!super::carry::is_hidden(rel), "`{rel}` is not hidden");
+    }
+}
+
+/// Rename the first binder in `bundle` the way a save from the store would see it:
+/// its folder and every prose path in it follow the new name. Returns the old and the
+/// new folder name.
+fn rename_first_binder(bundle: &mut super::bundle::WorkBundle, name: &str) -> (String, String) {
+    let old = super::slug::binder_dir_name(0, &bundle.binders[0].binder.name);
+    let new = super::slug::binder_dir_name(0, name);
+    assert_ne!(old, new);
+    bundle.binders[0].binder.name = name.to_string();
+    for item in &mut bundle.binders[0].items {
+        for pr in &mut item.item.prose_refs {
+            pr.path = pr
+                .path
+                .replacen(&format!("binders/{old}/"), &format!("binders/{new}/"), 1);
+        }
+    }
+    (old, new)
+}
+
+const BINDER_FILES: &[(&str, &[u8])] = &[
+    ("binders/{binder}/structure.ron", b"(bound: [1, 2, 3])"),
+    ("binders/{binder}/text/plot.beats.ron", b"(beats: [])"),
+];
+
+/// Files carried from a binder's folder follow the binder when it is renamed, in the
+/// bundle read with the project (`read_bundle`) and in the one a save reads from disk
+/// (`carry::load`), for both shapes.
+///
+/// A binder's folder is named by its position and its name, so a rename gives it a new
+/// folder and the old one is pruned. The carried files used to be written back into the
+/// old folder just before it was removed, and were lost with it.
+#[test]
+fn carried_files_follow_their_binder_when_it_is_renamed() {
+    for shape in [SkribShape::ExplodedFolder, SkribShape::ZipFile] {
+        for from_disk in [false, true] {
+            let (_dir, path, planted) = plant_and_read(shape, BINDER_FILES);
+            let mut loaded = read_bundle(&path).expect("read");
+            let (old, new) = rename_first_binder(&mut loaded, "Renamed binder");
+            if from_disk {
+                // What `save_work` does: the store's bundle, the disk's carried files.
+                loaded.carried = super::carry::load(&path);
+            }
+            write_bundle(&path, shape, &loaded).expect("save after the rename");
+
+            let again = read_bundle(&path).expect("reread");
+            for (rel, bytes) in &planted {
+                let moved = rel.replacen(&format!("binders/{old}/"), &format!("binders/{new}/"), 1);
+                assert_eq!(
+                    again.carried.get(&moved).map(|f| f.bytes.as_slice()),
+                    Some(bytes.as_slice()),
+                    "`{rel}` did not follow its binder to `{moved}` ({shape:?}, from disk: {from_disk})"
+                );
+                assert!(!again.carried.contains_key(rel), "`{rel}` stayed behind");
+            }
+            if shape == SkribShape::ExplodedFolder {
+                let root = super::shape::folder_root(&path);
+                assert!(
+                    !root.join("binders").join(&old).exists(),
+                    "the old folder is pruned"
+                );
+            }
+        }
+    }
+}
+
+/// A binder deleted, and a new one of the same name made in its place, takes over its
+/// folder name. What was carried from the deleted binder's folder goes with it rather
+/// than being handed to the new binder.
+#[test]
+fn a_deleted_binders_carried_files_go_with_it() {
+    let (_dir, path, planted) = plant_and_read(SkribShape::ExplodedFolder, BINDER_FILES);
+    let mut loaded = read_bundle(&path).expect("read");
+    // Another binder now, in the same place and with the same name.
+    loaded.binders[0].binder.uid = uuid::Uuid::new_v4();
+    write_bundle(&path, SkribShape::ExplodedFolder, &loaded).expect("save");
+
+    let root = super::shape::folder_root(&path);
+    for (rel, _) in &planted {
+        assert!(
+            !root.join(rel).exists(),
+            "`{rel}` was handed to the new binder"
+        );
+    }
+    let again = read_bundle(&path).expect("reread");
+    assert!(
+        again.carried.is_empty(),
+        "{:?}",
+        again.carried.keys().collect::<Vec<_>>()
+    );
+}
+
+/// A file carried from a binder's folder knows which binder that was; one elsewhere
+/// does not.
+#[test]
+fn a_carried_file_in_a_binder_folder_knows_its_binder() {
+    let (_dir, path, planted) = plant_and_read(
+        SkribShape::ExplodedFolder,
+        &[
+            ("binders/{binder}/structure.ron", b"x"),
+            ("structure.ron", b"y"),
+        ],
+    );
+    let loaded = read_bundle(&path).expect("read");
+    let uid = loaded.binders[0].binder.uid;
+    assert!(!uid.is_nil());
+    assert_eq!(loaded.carried[&planted[0].0].binder, Some(uid));
+    assert_eq!(loaded.carried["structure.ron"].binder, None);
+    let for_save = super::carry::load(&path);
+    assert_eq!(for_save[&planted[0].0].binder, Some(uid));
+    assert_eq!(for_save["structure.ron"].binder, None);
+}

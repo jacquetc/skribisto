@@ -183,12 +183,43 @@ fn own_file(dir: &std::path::Path, path: &std::path::Path) -> bool {
 /// and remove what no resource names any more (see `media::prune_resources_dir`).
 ///
 /// For an exploded folder every blob already is the file it would be placed on, so
-/// only the prune does anything. A resource whose file the bundle lacks is left as it
-/// is: missing, shown so, never a reason to refuse the project.
+/// only the prune does anything, except for a resource whose uid the load gave anew
+/// (`WorkBundle::heal_resource_uids`): its blob is the file in the folder of its old
+/// uid, copied here into the folder of its new one. A resource whose file the bundle
+/// lacks is left as it is: missing, shown so, never a reason to refuse the project.
+///
+/// Every file is placed before the prune runs. The prune keeps only the folders of
+/// today's uids, so run first it would delete the old uid's folder, and with it the
+/// only copy of the file the copy below reads.
 pub fn write_resource_blobs(
     bundle: &skrib::WorkBundle,
     resources_dir: &std::path::Path,
 ) -> Result<()> {
+    for r in &bundle.resources {
+        let Some(blob) = bundle.resource_blobs.get(&r.uid.hyphenated().to_string()) else {
+            continue;
+        };
+        let path = skrib::media::resource_file(resources_dir, r.uid, &r.file_name);
+        // A folder project's blob already is the file in this folder, and nothing is
+        // written: it may be under the name an earlier build gave it, which the prune
+        // below renames to today's (see `media::prune_resources_dir`).
+        if blob.path().is_some_and(|src| src.parent() == path.parent()) {
+            continue;
+        }
+        // From a zip's extraction, thrown away after the load: a link is safe. From
+        // another uid's folder of this project: a copy, never a link, since two rows
+        // that shared a file each keep their own, and an application editing one must
+        // not change the other.
+        let placed = if blob
+            .path()
+            .is_some_and(|src| src.starts_with(resources_dir))
+        {
+            blob.place_at(&path)
+        } else {
+            blob.link_or_place_at(&path)
+        };
+        placed.with_context(|| format!("writing resource file {}", path.display()))?;
+    }
     let keep: Vec<(uuid::Uuid, String)> = bundle
         .resources
         .iter()
@@ -200,21 +231,6 @@ pub fn write_resource_blobs(
         &keep,
         &bundle.manifest.legacy_resource_dirs,
     );
-    for r in &bundle.resources {
-        let Some(blob) = bundle.resource_blobs.get(&r.uid.hyphenated().to_string()) else {
-            continue;
-        };
-        let path = skrib::media::resource_file(resources_dir, r.uid, &r.file_name);
-        // A folder project's blob already is the file in this folder, and nothing is
-        // written: the prune may just have given it today's name, so the blob can name
-        // a file that is not there any more (see `media::prune_resources_dir`).
-        if blob.path().is_some_and(|src| src.parent() == path.parent()) {
-            continue;
-        }
-        // From a zip's extraction, thrown away after the load: a link is safe.
-        blob.link_or_place_at(&path)
-            .with_context(|| format!("writing resource file {}", path.display()))?;
-    }
     Ok(())
 }
 
@@ -532,6 +548,102 @@ mod tests {
             file_name: file_name.into(),
             ..Default::default()
         }
+    }
+
+    /// A stored row of a bundle, with `uid`, as a folder project lists it.
+    fn stored_row(file_id: u64, uid: uuid::Uuid, file_name: &str) -> skrib::ResourceFile {
+        skrib::ResourceFile {
+            file_id,
+            uid,
+            created_at: String::new(),
+            updated_at: String::new(),
+            title: file_name.into(),
+            description: String::new(),
+            kind: ResourceKind::StoredFile,
+            location: String::new(),
+            file_name: file_name.into(),
+            mime_type: "application/pdf".into(),
+            byte_size: 8,
+            content_hash: String::new(),
+            width: 0,
+            height: 0,
+            path: skrib::slug::resource_relpath(uid, file_name),
+        }
+    }
+
+    /// A folder project whose rows name the stored file in the folder of `uid`, with
+    /// that file on disk, healed the way a load heals it. Returns the bundle and the
+    /// file's path.
+    fn healed_folder_project(
+        resources_dir: &std::path::Path,
+        uid: uuid::Uuid,
+        rows: usize,
+    ) -> (skrib::WorkBundle, std::path::PathBuf) {
+        let name = "Village map.pdf";
+        let file = skrib::media::resource_file(resources_dir, uid, name);
+        std::fs::create_dir_all(file.parent().expect("parent")).expect("folder");
+        std::fs::write(&file, b"%PDF-1.7").expect("write");
+        let mut bundle = crate::save_load_test::sample_bundle();
+        bundle.resources = (0..rows)
+            .map(|i| stored_row(800 + i as u64, uid, name))
+            .collect();
+        bundle.resource_blobs = std::collections::BTreeMap::from([(
+            uid.hyphenated().to_string(),
+            skrib::Blob::file(file.clone()),
+        )]);
+        bundle.heal_resource_uids();
+        (bundle, file)
+    }
+
+    /// A stored resource with no uid gets one as the project opens, and its file moves
+    /// to the new uid's folder.
+    ///
+    /// The prune used to run first: it kept only today's uids, so it deleted the old
+    /// folder, and the copy then read the file it had just deleted. The open failed and
+    /// the only copy of the file was gone.
+    #[test]
+    fn a_resource_given_a_new_uid_on_open_keeps_its_file() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let resources_dir = dir.path().join("resources");
+        let (bundle, old) = healed_folder_project(&resources_dir, uuid::Uuid::nil(), 1);
+        let r = &bundle.resources[0];
+        assert!(!r.uid.is_nil());
+
+        write_resource_blobs(&bundle, &resources_dir).expect("the open places the file");
+
+        let new = skrib::media::resource_file(&resources_dir, r.uid, &r.file_name);
+        assert_eq!(std::fs::read(&new).ok().as_deref(), Some(&b"%PDF-1.7"[..]));
+        assert!(
+            !old.exists(),
+            "the nil folder, which no row names now, is pruned"
+        );
+    }
+
+    /// Two rows that shared one uid each keep a copy of the file, not two names for one
+    /// file: an application editing one must not change the other.
+    #[test]
+    fn rows_that_shared_a_uid_each_keep_their_own_copy() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let resources_dir = dir.path().join("resources");
+        let shared = uuid::Uuid::from_u128(7);
+        let (bundle, kept) = healed_folder_project(&resources_dir, shared, 2);
+        let other = bundle
+            .resources
+            .iter()
+            .find(|r| r.uid != shared)
+            .expect("the second row got a uid of its own");
+
+        write_resource_blobs(&bundle, &resources_dir).expect("the open places the file");
+
+        let copy = skrib::media::resource_file(&resources_dir, other.uid, &other.file_name);
+        assert_eq!(std::fs::read(&copy).ok().as_deref(), Some(&b"%PDF-1.7"[..]));
+        // Rewritten in place, as an editor saving over the file does.
+        std::fs::write(&kept, b"%PDF-2.0 edited").expect("edit");
+        assert_eq!(
+            std::fs::read(&copy).ok().as_deref(),
+            Some(&b"%PDF-1.7"[..]),
+            "editing one row's file changed the other's"
+        );
     }
 
     /// A save, a backup and a Save As read the project's stored files and pictures

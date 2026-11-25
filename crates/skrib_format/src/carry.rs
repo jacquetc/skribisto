@@ -135,6 +135,45 @@ pub fn is_stray_bundle(rel: &str) -> bool {
     !rel.contains('/') && rel != MANIFEST_NAME && rel.ends_with(".skrib")
 }
 
+/// Whether the bundle-relative `rel` is, or lies under, a hidden name: one starting
+/// with a dot.
+///
+/// The format writes no such name, and none is the writer's: a `.git` folder kept
+/// beside the book, a `.DS_Store` or `._` file a Mac leaves, a sync client's own
+/// files, the `.tmp…` and `.blob…` temporary files a write cut short by a crash leaves
+/// beside its target (`tempfile`'s names, which every atomic write here uses). Carried,
+/// a repository would be read on every save, copied into every backup and archive, and
+/// written back, stale, over the one beside the book; a crash's leftover would travel
+/// with the project for good. So none is carried. Nor is one deleted for not being
+/// carried: it stays on disk as it is, unless it sits in a folder the format fills and
+/// prunes itself (`assets/`, a binder's `text/`), where it goes like any stray file
+/// there, which is how a crash's leftover in such a folder is cleaned up.
+pub fn is_hidden(rel: &str) -> bool {
+    rel.split('/').any(|part| part.starts_with('.'))
+}
+
+/// Whether a walk of a project folder enters `entry`: not a hidden one (see
+/// [`is_hidden`]), so a `.git` folder is not even listed. The project folder itself is
+/// always entered, whatever its name.
+pub(crate) fn walk_enters(entry: &walkdir::DirEntry) -> bool {
+    entry.depth() == 0 || !entry.file_name().as_encoded_bytes().starts_with(b".")
+}
+
+/// The binder folder `rel` lies in and its path inside that folder, for a path under
+/// `binders/<folder>/`: `binders/02-notes/text/x.ron` gives `("02-notes", "text/x.ron")`.
+pub(crate) fn binder_folder(rel: &str) -> Option<(&str, &str)> {
+    let (folder, rest) = rel.strip_prefix("binders/")?.split_once('/')?;
+    (!folder.is_empty() && !rest.is_empty()).then_some((folder, rest))
+}
+
+/// The binder `uid` an `items.ron` names, or `None` when it does not parse or names
+/// none (a project written before binders had one).
+pub(crate) fn binder_uid_of(items_ron: &[u8]) -> Option<uuid::Uuid> {
+    let text = std::str::from_utf8(items_ron).ok()?;
+    let file: crate::bundle::ItemsFile = ron::from_str(text).ok()?;
+    Some(file.binder.uid).filter(|uid| !uid.is_nil())
+}
+
 /// Read the unmodelled files of the bundle at `path`, whatever its shape.
 ///
 /// Mirrors [`crate::history::load`], and exists for the same reason: this is the
@@ -175,7 +214,14 @@ fn load_folder(
     modelled: impl Fn(&str) -> bool,
 ) -> BTreeMap<String, CarriedFile> {
     let mut out = BTreeMap::new();
-    for entry in walkdir::WalkDir::new(root).sort_by_file_name() {
+    // The binder each binder folder holds, read from its `items.ron` when a carried
+    // file is first found in it (see `CarriedFile::binder`).
+    let mut binders: BTreeMap<String, Option<uuid::Uuid>> = BTreeMap::new();
+    let walk = walkdir::WalkDir::new(root)
+        .sort_by_file_name()
+        .into_iter()
+        .filter_entry(walk_enters);
+    for entry in walk {
         let Ok(entry) = entry else { continue };
         // A link is not a file to a walk that does not follow links (`WalkDir`'s
         // default), and a linked folder is not descended: nothing reached through one
@@ -205,9 +251,19 @@ fn load_folder(
             eprintln!("skrib: not carrying {e}");
             continue;
         }
-        if let Ok(bytes) = std::fs::read(entry.path()) {
-            out.insert(rel, CarriedFile::new(bytes));
-        }
+        let Ok(bytes) = std::fs::read(entry.path()) else {
+            continue;
+        };
+        let binder = binder_folder(&rel).and_then(|(folder, _)| {
+            *binders.entry(folder.to_string()).or_insert_with(|| {
+                let items = root.join("binders").join(folder).join("items.ron");
+                if crate::media::passes_through_link(root, &items) {
+                    return None;
+                }
+                std::fs::read(&items).ok().and_then(|b| binder_uid_of(&b))
+            })
+        });
+        out.insert(rel, CarriedFile::new(bytes).in_binder(binder));
     }
     out
 }
@@ -237,7 +293,7 @@ fn load_zip(
     let unmodelled: Vec<String> = archive
         .file_names()
         .filter_map(Result::ok)
-        .filter(|n| !n.ends_with('/') && !modelled(n) && !is_stray_bundle(n))
+        .filter(|n| !n.ends_with('/') && !modelled(n) && !is_stray_bundle(n) && !is_hidden(n))
         .filter(|n| match crate::safe_path::bundle_relative(n) {
             Ok(_) => true,
             Err(e) => {
@@ -249,6 +305,7 @@ fn load_zip(
         .collect();
 
     let mut out = BTreeMap::new();
+    let mut binders: BTreeMap<String, Option<uuid::Uuid>> = BTreeMap::new();
     for name in unmodelled {
         // Bounded by the shared guard: a carried file this build does not model is
         // still a zip member from an untrusted bundle, so it inflates under the same
@@ -256,7 +313,24 @@ fn load_zip(
         // the archive's running total, exactly as it would be on extraction.
         match guard.read_named(&mut archive, &name) {
             Ok(Some(bytes)) => {
-                out.insert(name, CarriedFile::new(bytes));
+                let folder = binder_folder(&name).map(|(folder, _)| folder.to_string());
+                let binder = match folder {
+                    Some(folder) => match binders.get(&folder) {
+                        Some(uid) => *uid,
+                        None => {
+                            let items = format!("binders/{folder}/items.ron");
+                            let uid = match guard.read_named(&mut archive, &items) {
+                                Ok(Some(b)) => binder_uid_of(&b),
+                                Ok(None) => None,
+                                Err(_) => break,
+                            };
+                            binders.insert(folder, uid);
+                            uid
+                        }
+                    },
+                    None => None,
+                };
+                out.insert(name, CarriedFile::new(bytes).in_binder(binder));
             }
             Ok(None) => {}
             // A member past the budget: stop carrying. Carry is best-effort by

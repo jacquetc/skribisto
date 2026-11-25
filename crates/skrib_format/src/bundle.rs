@@ -1186,19 +1186,45 @@ impl WorkBundle {
 /// fingerprint. Skipping both would make carried data invisible to
 /// skip-if-unchanged, and a project whose only change was an extension's
 /// structure plan would silently stop being backed up.
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct CarriedFile {
     /// blake3 of [`Self::bytes`], hex. Cheap to hash, stable across runs, and
     /// the only part of a carried file the fingerprint needs to see.
     pub digest: String,
     #[serde(skip)]
     pub bytes: Vec<u8>,
+    /// For a file read from a binder's folder (`binders/<folder>/…`), the `uid` of the
+    /// binder that folder's `items.ron` names; `None` for any other file, and for one
+    /// written by hand or by an extension, which names its place itself.
+    ///
+    /// A binder's folder is named by its position and its name (`02-notes`), so a
+    /// binder renamed or moved gets another folder and the old one is pruned. This is
+    /// what lets a write put the file in the binder's folder of today rather than lose
+    /// it with the old one (`folder_io::place_carried`). Where the file came from, not
+    /// what it holds: left out of the fingerprint and of equality.
+    #[serde(skip)]
+    pub binder: Option<uuid::Uuid>,
+}
+
+impl PartialEq for CarriedFile {
+    fn eq(&self, other: &Self) -> bool {
+        self.digest == other.digest && self.bytes == other.bytes
+    }
 }
 
 impl CarriedFile {
     pub fn new(bytes: Vec<u8>) -> Self {
         let digest = blake3::hash(&bytes).to_hex().to_string();
-        Self { digest, bytes }
+        Self {
+            digest,
+            bytes,
+            binder: None,
+        }
+    }
+
+    /// The same file, read from the folder of the binder `binder` (see [`Self::binder`]).
+    pub fn in_binder(self, binder: Option<uuid::Uuid>) -> Self {
+        Self { binder, ..self }
     }
 }
 

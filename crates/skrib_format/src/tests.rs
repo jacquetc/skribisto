@@ -3936,3 +3936,220 @@ fn a_project_without_a_ladder_keeps_its_lower_floor() {
         "a project with no ladder should still open in an older build"
     );
 }
+
+// ── A list file that is there but cannot be read ───────────────────────────────
+
+/// Write a fresh folder project with comments and footnotes, and return its root.
+fn written_with_footnotes(dir: &tempfile::TempDir) -> std::path::PathBuf {
+    let root = dir.path().join("Novel");
+    let bundle = build_bundle_with_footnotes(ShapeTag::Folder);
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+    root
+}
+
+/// The one file under `root` whose name ends with `suffix`.
+fn file_ending(root: &Path, suffix: &str) -> std::path::PathBuf {
+    walk_files(root)
+        .into_iter()
+        .find(|p| p.to_str().is_some_and(|s| s.ends_with(suffix)))
+        .unwrap_or_else(|| panic!("the sample project has a file ending {suffix}"))
+}
+
+/// A comment list, a footnote list or a work-level list that is there but cannot be
+/// read refuses the project, exactly as one that does not parse does.
+///
+/// Read as missing, the scene opened with no footnotes, and the first autosave, seeing
+/// none to keep, deleted the sidecar: one stray byte cost every footnote of the scene.
+/// A byte that is not UTF-8 stands for every read error here: `read_to_string` fails on
+/// it the way it fails on a permission refused or a file a sync client holds locked.
+#[test]
+fn a_list_file_that_cannot_be_read_refuses_the_project() {
+    for (suffix, named) in [
+        (".comments.ron", "comments"),
+        (".footnotes.ron", "footnotes"),
+        ("/tags.ron", "tags.ron"),
+    ] {
+        let dir = tempfile::tempdir().unwrap();
+        let root = written_with_footnotes(&dir);
+        let target = file_ending(&root, suffix);
+        let mut bytes = fs::read(&target).unwrap();
+        bytes.insert(0, 0xFF);
+        fs::write(&target, &bytes).unwrap();
+
+        let err = match read_bundle(root.to_str().unwrap()) {
+            Ok(_) => panic!("a {suffix} that cannot be read opened as if it were absent"),
+            Err(e) => format!("{e:#}"),
+        };
+        assert!(err.contains(named), "the refusal names the file: {err}");
+        assert_eq!(
+            fs::read(&target).unwrap(),
+            bytes,
+            "the file is left as it is"
+        );
+    }
+}
+
+/// A sidecar the writer may not read refuses the project too. Running as root the
+/// file is read anyway, and the test then proves nothing but still holds.
+#[cfg(unix)]
+#[test]
+fn a_footnote_list_the_writer_may_not_read_refuses_the_project() {
+    use std::os::unix::fs::PermissionsExt;
+    let dir = tempfile::tempdir().unwrap();
+    let root = written_with_footnotes(&dir);
+    let target = file_ending(&root, ".footnotes.ron");
+    fs::set_permissions(&target, fs::Permissions::from_mode(0o000)).unwrap();
+    let readable = fs::read(&target).is_ok();
+    let got = read_bundle(root.to_str().unwrap());
+    fs::set_permissions(&target, fs::Permissions::from_mode(0o644)).unwrap();
+    if readable {
+        return;
+    }
+    assert!(
+        got.is_err(),
+        "a footnote list that cannot be read opened as if it had no footnotes"
+    );
+}
+
+/// A sidecar that is simply not there still reads as "none": the refusal is for a
+/// file that is there, nothing more.
+#[test]
+fn a_missing_footnote_list_still_opens_as_no_footnotes() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = written_with_footnotes(&dir);
+    fs::remove_file(file_ending(&root, ".footnotes.ron")).unwrap();
+    let read = read_bundle(root.to_str().unwrap()).unwrap();
+    assert!(
+        read.binders
+            .iter()
+            .flat_map(|b| &b.items)
+            .all(|i| i.footnotes.is_empty())
+    );
+}
+
+// ── A save cut short ──────────────────────────────────────────────────────────
+//
+// Each test below makes one folder of a project read-only, so that a save fails at a
+// known step the way a crash or a full disk would stop it there, and then checks that
+// what the save left on disk still opens. Running as root the folder is written
+// anyway; the save then succeeds and the test has nothing to prove.
+
+#[cfg(unix)]
+fn set_mode(path: &Path, mode: u32) {
+    use std::os::unix::fs::PermissionsExt;
+    fs::set_permissions(path, fs::Permissions::from_mode(mode)).unwrap();
+}
+
+/// Write `bundle` into the project at `root` with `read_only` made read-only, and
+/// return whether the write failed.
+#[cfg(unix)]
+fn write_with_read_only(root: &Path, read_only: &Path, bundle: &WorkBundle) -> bool {
+    set_mode(read_only, 0o555);
+    let got = write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, bundle);
+    set_mode(read_only, 0o755);
+    got.is_err()
+}
+
+/// A scene renamed (its file name changes) and a save stopped before the binder's
+/// `items.ron` is written: the old file is still there for the old `items.ron`.
+///
+/// The prunes used to run first, so the old prose file was gone while the `items.ron`
+/// on disk still named it, and the project failed to open on "reading prose".
+#[cfg(unix)]
+#[test]
+fn a_save_stopped_before_items_ron_leaves_the_old_prose_in_place() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("Novel");
+    let bundle = build_bundle(ShapeTag::Folder);
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+
+    let mut renamed = bundle.clone();
+    let pr = renamed
+        .binders
+        .iter_mut()
+        .flat_map(|b| b.items.iter_mut())
+        .flat_map(|i| i.item.prose_refs.iter_mut())
+        .next()
+        .expect("the sample has prose");
+    pr.path = pr.path.replace(".djot", "-renamed.djot");
+    let bdir = root
+        .join(&pr.path)
+        .parent()
+        .and_then(Path::parent)
+        .unwrap()
+        .to_path_buf();
+
+    if !write_with_read_only(&root, &bdir, &renamed) {
+        return;
+    }
+    let read = read_bundle(root.to_str().unwrap())
+        .expect("a save stopped before items.ron must leave a project that opens");
+    assert_eq!(prose_paths(&read), prose_paths(&bundle));
+}
+
+/// A note template renamed and a save stopped before its new body is written: the
+/// index on disk is still the old one, naming the old body, which is still there.
+#[cfg(unix)]
+#[test]
+fn a_save_stopped_before_a_template_body_leaves_the_old_index() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("Novel");
+    let bundle = build_bundle(ShapeTag::Folder);
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+
+    let mut renamed = bundle.clone();
+    let t = renamed
+        .note_templates
+        .first_mut()
+        .expect("the sample has a template");
+    t.path = t.path.replace(".djot", "-renamed.djot");
+
+    if !write_with_read_only(&root, &root.join(crate::slug::TEMPLATES_DIR), &renamed) {
+        return;
+    }
+    let read = read_bundle(root.to_str().unwrap())
+        .expect("a save stopped before a template body must leave a project that opens");
+    assert_eq!(read.note_templates, bundle.note_templates);
+}
+
+/// A picture added and a save stopped before its file is placed: `assets.ron` does
+/// not name it yet, so the project opens without it rather than not at all.
+#[cfg(unix)]
+#[test]
+fn a_save_stopped_before_a_picture_is_placed_leaves_the_old_index() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("Novel");
+    let bundle = build_bundle(ShapeTag::Folder);
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+    let assets = root.join(crate::slug::ASSETS_DIR);
+    fs::create_dir_all(&assets).unwrap();
+
+    if !write_with_read_only(&root, &assets, &crate::asset_tests::bundle_with_assets()) {
+        return;
+    }
+    let read = read_bundle(root.to_str().unwrap())
+        .expect("a save stopped before a picture is placed must leave a project that opens");
+    assert!(read.assets.is_empty());
+}
+
+/// A binder deleted and a save stopped before the manifest is written: the manifest
+/// on disk still lists the binder, so its folder must still be there.
+#[cfg(unix)]
+#[test]
+fn a_save_stopped_before_the_manifest_keeps_a_deleted_binders_folder() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("Novel");
+    let bundle = build_bundle(ShapeTag::Folder);
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+
+    let mut deleted = bundle.clone();
+    deleted.binders.clear();
+    deleted.manifest.binder_order.clear();
+
+    if !write_with_read_only(&root, &root, &deleted) {
+        return;
+    }
+    let read = read_bundle(root.to_str().unwrap())
+        .expect("a save stopped before the manifest must leave a project that opens");
+    assert_eq!(read.binders.len(), bundle.binders.len());
+}

@@ -27,7 +27,9 @@
 //! 1. **A contributor cannot touch a modelled path.** Anything
 //!    [`skrib_format::carry::is_modelled`] recognises — the manifest, prose
 //!    blobs, sidecars, assets — is refused. An extension may add to a project;
-//!    it may never rewrite the book.
+//!    it may never rewrite the book. So is a hidden path
+//!    ([`skrib_format::carry::is_hidden`]): the reader never carries one back, so
+//!    the file would be written once and lost on the next open.
 //! 2. **A contributor can never fail a save.** An error, or a refused path, is
 //!    reported on stderr and skipped. The alternative is a broken extension
 //!    that stops a writer saving their manuscript, which is precisely the
@@ -294,6 +296,14 @@ pub(crate) fn collect(
                 );
                 continue;
             }
+            if skrib_format::carry::is_hidden(&path) {
+                eprintln!(
+                    "skribisto: bundle contributor '{}' tried to write '{path}', a hidden name \
+                     a project never reads back: refused",
+                    r.namespace
+                );
+                continue;
+            }
             out.insert(path, bytes);
         }
     }
@@ -433,6 +443,30 @@ mod tests {
             got.get("guard/ok.ron").map(Vec::as_slice),
             Some(&b"fine"[..])
         );
+    }
+
+    /// A hidden path is never read back as carried (`carry::is_hidden`), so a file
+    /// written there would be lost on the next open: refused like a modelled one.
+    #[test]
+    fn a_contributor_may_not_write_a_hidden_path() {
+        let _h = register(
+            "test.hidden-guard",
+            Fixed::for_uid(
+                "uid-hidden",
+                vec![
+                    (".plans/a.ron", b"lost"),
+                    ("plans/.cache", b"lost"),
+                    ("plans/a.ron", b"kept"),
+                ],
+            ),
+        );
+        let got = collect(
+            &bundle("hidden"),
+            OpenWork::detached(),
+            "uid-hidden",
+            SaveKind::Save,
+        );
+        assert_eq!(got.keys().collect::<Vec<_>>(), vec!["plans/a.ron"]);
     }
 
     #[test]
