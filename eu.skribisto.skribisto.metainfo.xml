@@ -442,25 +442,7 @@
     <keyword xml:lang="uk">story</keyword>
   </keywords>
   <releases>
-    <release type="stable" version="3.4.1" date="2026-11-23T00:00:00Z">
-      <description>
-        <ul>
-          <li>A story bible entry's In prose page now says what it shows. Its counter reads “206 mentions in your confirmed scenes”, an empty page explains that only the scenes where you placed the entry in the cast or the point of view appear there, and a link, “Review 3 suggested scenes in Details”, opens the scenes of that Book that name the entry without having it in their cast. It used to say only “Not declared in this Book yet”, which read like a search that had found nothing</li>
-          <li>In prose has a new switch, Viewpoint scenes only, which keeps the scenes told from the entry's point of view and sets aside those it only appears in. It shows when a Book holds both kinds</li>
-          <li>After importing from Scrivener, the note about entries that still have a template's title, such as “Hero”, now says that the scenes naming them are suggested in each entry's Details. It used to say they were all listed under In prose, which only shows confirmed scenes</li>
-          <li>In the Starforgers example, every chapter has its own synopsis, cast and point of view again. They had slipped five rows: Chapter 1 showed the synopsis and cast of Chapter 6, and the copyright and dedication pages carried those of the Prologue and Chapter 1</li>
-          <li>When the search or the tag and status filters hide every picture of a folder, the Gallery now says No images match these filters and offers Clear the filters, which clears them in the Overview too. It used to say No images here yet, as if the folder had none</li>
-          <li>An empty Gallery offers Add images…, and takes images dropped from your file manager. They become resources of the folder and appear in its Gallery at once</li>
-          <li>The Resources panel has a choice at its top, This item or Unattached. Unattached lists the files and links attached to no item, which only Settings ▸ Work ▸ Resources showed, and is a place for research you have not filed yet: what you add there, with the buttons, a drop or Ctrl+V, is attached to nothing. Attach to items… puts one on items, and dragging it into a text, or inserting a link to it, attaches it to that text's item</li>
-          <li>Full Book, Full Part and Full Chapter have a new switch, Read as exported, which shows the book as your reader will get it in the export style chosen beside it: scenes with Include in exports turned off disappear, the dedication and the other front and back matter appear, each chapter opens on the heading the export prints with its epigraph, and scenes run on into each other unless a scene break separates them. A line marks each new page. The text stays editable, and the status, tags and menus of each scene are hidden. Fonts and pages are not shown</li>
-          <li>Each book now remembers its export style. The Export window opens on the style it was last exported with, and Read as exported follows it</li>
-          <li>In Full Book, Full Part and Full Chapter, a scene with Include in exports turned off says Not exported beside its title. It looked like every other scene, so a cut scene was easy to read as part of the book</li>
-          <li>The synopsis above the text now folds away when you click its title, like the epigraph, and each item remembers whether you folded it, after a restart too. A new switch in Settings ▸ Editor ▸ Editor Behavior, Start with the synopsis folded, folds it on every item you have not folded or unfolded yourself</li>
-          <li>The synopsis beside the text, folded with its button or by dragging its divider, is now remembered for each item as well. It used to open again on every item</li>
-          <li>Settings ▸ Editor ▸ Editor Behavior has a new switch, Show epigraphs. Turned off, part and chapter pages no longer show the epigraph field. The epigraphs you have written are kept and still appear in your exports</li>
-        </ul>
-      </description>
-    </release>
+    <release type="stable" version="3.5.0" date="2026-11-25T00:00:00Z"/>
   </releases>
   <content_rating type="oars-1.1"/>
 </component>
