@@ -16,6 +16,8 @@ Description:
 - "Importing a Manuskript scene that holds a long run of curly braces no longer stalls the import"
 - "Importing an OpenDocument (.odt) file whose list styles name an impossible list level now works. Such a file used to crash the app"
 - "With autosave on, your text now reaches the disk at least every 30 seconds while you type. Autosave used to wait for a pause of a second and a half, so a writer who never paused, in a sprint or in the Always forward game, could lose everything typed since the last pause in a crash"
+- "Opening a project from a terminal with a relative path while Skribisto is already running now opens the file you named. The running copy used to look for that path from its own folder, and could open another project or none"
+- "Skribisto no longer crashes at launch when it is handed a file name that is not valid Unicode. It now says it cannot open that name"
 ---
 Version: 3.5.0
 Date: 2026-11-25

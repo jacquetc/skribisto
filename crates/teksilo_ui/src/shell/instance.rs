@@ -50,6 +50,7 @@
 //! developer's own running copy, and every subsequent launch would hand its
 //! project off into a tempdir.
 
+use std::ffi::OsStr;
 use std::io::{BufRead, BufReader, Write};
 // Only [`primary_socket`] needs it, and that is Unix-only. See its own cfg.
 #[cfg(unix)]
@@ -285,12 +286,27 @@ pub(crate) fn bootstrap() -> Bootstrap {
     // `--new-instance`, `--config`, `--dump-config`, `--style`,
     // `--translation-dev` and a bare `.skrib` path are the whole argument
     // surface; `parse_args` is a pure function so that surface is unit-tested.
-    let args = parse_args(std::env::args().skip(1));
-    let initial_project = args.project.clone();
+    //
+    // `args_os`, not `args`: `std::env::args` panics on an argument that is not
+    // valid Unicode, which a file manager hands over for a file named in another
+    // encoding. `parse_args` turns that into the same startup error any other bad
+    // argument gets, rather than a crash or a lossy spelling of another file.
+    let args = parse_args(std::env::args_os().skip(1));
     if let Some(error) = &args.error {
         eprintln!("skribisto: {error}");
         std::process::exit(2);
     }
+    // Absolute before anything uses it. A remote hands this path to a primary that
+    // was started from another folder; a relative path resolved there named a
+    // different file, or none.
+    let initial_project = match args.project.as_deref().map(absolute_project_path) {
+        None => None,
+        Some(Ok(path)) => Some(path),
+        Some(Err(error)) => {
+            eprintln!("skribisto: {error}");
+            std::process::exit(2);
+        }
+    };
 
     // ── The design language, before anything at all is built ─────────────────
     //
@@ -392,6 +408,29 @@ pub(crate) fn bootstrap() -> Bootstrap {
     }
 }
 
+/// `path`, as typed on the command line, made absolute against this process's
+/// working directory.
+///
+/// Every path a remote forwards crosses to a process with its own working
+/// directory, so it has to be absolute before it leaves; this is the one place a
+/// relative path enters. `std::path::absolute` does not touch the filesystem, so
+/// a path to a file that does not exist yet stays as it was spelled, only rooted.
+///
+/// An error, never a lossy spelling, when the result is not valid Unicode (the
+/// working directory can be, even when the argument is not): the rest of the app
+/// holds paths as `String`, and a replacement character in one would open another
+/// file or none.
+fn absolute_project_path(path: &str) -> Result<String, String> {
+    let absolute = std::path::absolute(path)
+        .map_err(|e| format!("cannot resolve the project path `{path}`: {e}"))?;
+    absolute.into_os_string().into_string().map_err(|absolute| {
+        format!(
+            "the project path `{}` is not valid Unicode",
+            absolute.to_string_lossy()
+        )
+    })
+}
+
 /// The command-line flag that opts out of the election entirely.
 ///
 /// Needed by `scripts/automation_two_process.py`, which deliberately runs two
@@ -434,7 +473,8 @@ pub const TRANSLATION_DEV_FLAG: &str = "--translation-dev";
 pub struct LaunchArgs {
     /// `--new-instance`: skip the election, run standalone.
     pub new_instance: bool,
-    /// The optional `.skrib` path to open.
+    /// The optional `.skrib` path to open, as typed. [`bootstrap`] makes it
+    /// absolute before anything uses it.
     pub project: Option<String>,
     /// `--config <file>`: the settings-pin file to apply before startup.
     pub config: Option<String>,
@@ -521,23 +561,67 @@ fn unknown_style(value: &str) -> String {
     )
 }
 
+/// The error for an argument that is not valid Unicode, shown lossily since it
+/// can be shown no other way.
+fn not_unicode(arg: &OsStr) -> String {
+    format!("`{}` is not valid Unicode", arg.to_string_lossy())
+}
+
+/// Take the value of a flag written `--flag value`: the next argument, unless it
+/// is missing, blank or itself a flag.
+///
+/// Peek, never take, when it is not a value: consuming a value that turned out to
+/// be the next flag disables that flag too, one mistake turned into two. Leaving it
+/// in the stream means the rest of the command line still parses as written.
+///
+/// `Some(Err(_))` is a value that is not valid Unicode.
+fn take_value<I, S>(rest: &mut std::iter::Peekable<I>) -> Option<Result<String, String>>
+where
+    I: Iterator<Item = S>,
+    S: AsRef<OsStr>,
+{
+    let value = rest.next_if(|v| {
+        let v = v.as_ref().to_string_lossy();
+        !v.trim().is_empty() && !v.starts_with("--")
+    })?;
+    let value = value.as_ref();
+    Some(
+        value
+            .to_str()
+            .map(str::to_string)
+            .ok_or_else(|| not_unicode(value)),
+    )
+}
+
 /// Split `argv` (excluding argv\[0\]) into the flags and the optional project path.
 ///
 /// A pure function so the whole argument surface is unit-testable without a
-/// process: `main` calls it with `std::env::args().skip(1)`.
+/// process: `main` calls it with `std::env::args_os().skip(1)`.
 ///
 /// Unknown `--flags` are left alone (the first one becomes the project path, as it
 /// always did). Only the flags named here are interpreted.
+///
+/// An argument that is not valid Unicode is an error when it would be used (the
+/// project path, a flag's value) and ignored where any other argument would be. It
+/// is never spelled lossily: that would open another file, or none.
 pub fn parse_args<I, S>(args: I) -> LaunchArgs
 where
     I: IntoIterator<Item = S>,
-    S: AsRef<str>,
+    S: AsRef<OsStr>,
 {
     let mut out = LaunchArgs::default();
     let mut rest = args.into_iter().peekable();
 
-    while let Some(arg) = rest.next() {
-        let arg = arg.as_ref();
+    while let Some(raw) = rest.next() {
+        let raw = raw.as_ref();
+        let Some(arg) = raw.to_str() else {
+            // Every flag is ASCII, so this is a path: the project's if none came
+            // before it, and ignored past it like any second path.
+            if out.project.is_none() {
+                out.error = Some(not_unicode(raw));
+            }
+            continue;
+        };
         if arg == NEW_INSTANCE_FLAG {
             out.new_instance = true;
         } else if arg == DUMP_CONFIG_FLAG {
@@ -554,22 +638,18 @@ where
                 None => out.error = Some(unknown_style(value)),
             }
         } else if arg == STYLE_FLAG {
-            // Peek, never take — same reasoning as `--config` below: consuming a
-            // value that turned out to be the next flag disables that flag too.
-            let is_value = rest
-                .peek()
-                .is_some_and(|v| !v.as_ref().trim().is_empty() && !v.as_ref().starts_with("--"));
-            if is_value {
-                let value = rest.next().expect("just peeked");
-                match crate::style::AppStyle::from_name(value.as_ref()) {
+            match take_value(&mut rest) {
+                Some(Ok(value)) => match crate::style::AppStyle::from_name(&value) {
                     Some(style) => out.style = Some(style),
-                    None => out.error = Some(unknown_style(value.as_ref())),
+                    None => out.error = Some(unknown_style(&value)),
+                },
+                Some(Err(e)) => out.error = Some(e),
+                None => {
+                    out.error = Some(format!(
+                        "{STYLE_FLAG} needs a name ({})",
+                        crate::style::names().join(", ")
+                    ));
                 }
-            } else {
-                out.error = Some(format!(
-                    "{STYLE_FLAG} needs a name ({})",
-                    crate::style::names().join(", ")
-                ));
             }
         } else if let Some(value) = arg.strip_prefix("--translation-dev=") {
             match parse_translation_dev(value) {
@@ -577,35 +657,23 @@ where
                 Err(e) => out.error = Some(e),
             }
         } else if arg == TRANSLATION_DEV_FLAG {
-            // Peek, never take: same reasoning as `--config` below.
-            let is_value = rest
-                .peek()
-                .is_some_and(|v| !v.as_ref().trim().is_empty() && !v.as_ref().starts_with("--"));
-            if is_value {
-                let value = rest.next().expect("just peeked");
-                match parse_translation_dev(value.as_ref()) {
-                    Ok(entry) => out.translation_dev.push(entry),
-                    Err(e) => out.error = Some(e),
+            match take_value(&mut rest).map(|value| value.and_then(|v| parse_translation_dev(&v))) {
+                Some(Ok(entry)) => out.translation_dev.push(entry),
+                Some(Err(e)) => out.error = Some(e),
+                None => {
+                    out.error = Some(format!(
+                        "{TRANSLATION_DEV_FLAG} needs <locale>=<path> (locales: {})",
+                        crate::startup::SUPPORTED_LOCALES.join(", ")
+                    ));
                 }
-            } else {
-                out.error = Some(format!(
-                    "{TRANSLATION_DEV_FLAG} needs <locale>=<path> (locales: {})",
-                    crate::startup::SUPPORTED_LOCALES.join(", ")
-                ));
             }
         } else if arg == CONFIG_FLAG {
-            // Peek rather than take: a value that is itself a flag means the path
-            // was forgotten, and *consuming* it would disable that flag as well as
-            // failing here — one mistake turned into two. Leaving it in the stream
-            // means the rest of the command line still parses as written.
-            let is_value = rest
-                .peek()
-                .is_some_and(|v| !v.as_ref().trim().is_empty() && !v.as_ref().starts_with("--"));
-            if is_value {
-                let value = rest.next().expect("just peeked");
-                out.config = Some(value.as_ref().to_string());
-            } else {
-                out.error = Some(format!("{CONFIG_FLAG} needs a file path"));
+            // A value that is itself a flag means the path was forgotten: see
+            // `take_value` for why it is left in the stream.
+            match take_value(&mut rest) {
+                Some(Ok(value)) => out.config = Some(value),
+                Some(Err(e)) => out.error = Some(e),
+                None => out.error = Some(format!("{CONFIG_FLAG} needs a file path")),
             }
         } else if out.project.is_none() && !arg.trim().is_empty() {
             out.project = Some(arg.to_string());
@@ -649,6 +717,55 @@ mod tests {
         );
         assert_eq!(a.project.as_deref(), Some("/tmp/a.skrib"));
         assert_eq!(b.project.as_deref(), Some("/tmp/a.skrib"));
+    }
+
+    /// A relative path becomes absolute against this process's working directory,
+    /// the folder it was launched from, and an absolute one is kept as spelled. A
+    /// primary started elsewhere then opens the file the user named.
+    #[test]
+    fn a_relative_project_path_is_made_absolute_here() {
+        let cwd = std::env::current_dir().unwrap();
+        let relative = absolute_project_path("Chapitres/roman.skrib").unwrap();
+        assert!(std::path::Path::new(&relative).is_absolute(), "{relative}");
+        assert_eq!(
+            std::path::PathBuf::from(&relative),
+            cwd.join("Chapitres").join("roman.skrib")
+        );
+
+        let already = cwd.join("roman.skrib");
+        let kept = absolute_project_path(already.to_str().unwrap()).unwrap();
+        assert_eq!(std::path::PathBuf::from(kept), already);
+    }
+
+    /// `std::env::args` panicked on these. Now the project path that is not valid
+    /// Unicode is a startup error, like any other bad argument, and never a lossy
+    /// spelling that would open another file.
+    #[cfg(unix)]
+    #[test]
+    fn a_project_path_that_is_not_unicode_is_an_error_not_a_crash() {
+        use std::ffi::OsString;
+        use std::os::unix::ffi::OsStringExt;
+        let latin1 = OsString::from_vec(b"/tmp/r\xe9cit.skrib".to_vec());
+
+        let args = parse_args([latin1.clone()]);
+        assert_eq!(args.project, None, "never spelled lossily");
+        let error = args.error.unwrap();
+        assert!(error.contains("not valid Unicode"), "{error}");
+
+        // The same for a flag's value, and the flag after it still parses.
+        let args = parse_args([
+            OsString::from("--config"),
+            latin1.clone(),
+            OsString::from("--new-instance"),
+        ]);
+        assert_eq!(args.config, None);
+        assert!(args.error.is_some());
+        assert!(args.new_instance);
+
+        // Past the project, it is ignored like any second path.
+        let args = parse_args([OsString::from("/tmp/a.skrib"), latin1]);
+        assert_eq!(args.project.as_deref(), Some("/tmp/a.skrib"));
+        assert_eq!(args.error, None);
     }
 
     /// The pre-Phase-4 reader was `std::env::args().nth(1).filter(non-empty)`.
