@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+#
+# Advisories `cargo audit` may skip, each one checked against how Skribisto
+# actually uses the crate. Every entry needs a crate we don't own to move
+# before it can be fixed; delete it as soon as that happens. Anything new
+# still fails the Security Audit workflow.
+
+[advisories]
+ignore = [
+    # zip 6.0.0 (epub-builder, write only) and zip 8.6.0 (docx-rs, and
+    # document_ingest's `zip_docx`, which must match docx-rs). Skribisto's own
+    # archives are on zip 9, which is patched. Neither older copy can be moved
+    # until epub-builder and docx-rs release on zip 9. Not reachable:
+    # - extraction: nothing outside tests calls `extract`, and those tests use zip 9;
+    "RUSTSEC-2026-0367",
+    "RUSTSEC-2026-0368",
+    "RUSTSEC-2026-0369",
+    "RUSTSEC-2026-0429",
+    "RUSTSEC-2026-0546",
+    # - AES entries: the `aes-crypto` feature is off, so they are never decrypted;
+    "RUSTSEC-2026-0545",
+    # - Shrink/Reduce/Implode: the `legacy-zip` feature is off;
+    "RUSTSEC-2026-0547",
+    # - `ZipStreamReader`: never used, every read goes through `ZipArchive`.
+    "RUSTSEC-2026-0548",
+
+    # quick-xml 0.38.4, through typst's hayagriva -> citationberg (0.7.0 is the
+    # latest), only in the `pdf` feature. citationberg parses CSL styles, and
+    # the PDF export never hands it one: text-document compiles a detached
+    # Typst source with every `#` escaped, and the only files it resolves are
+    # the exported images.
+    "RUSTSEC-2026-0194",
+    "RUSTSEC-2026-0195",
+]

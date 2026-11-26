@@ -5,14 +5,16 @@ name: Security Audit
 
 on:
   push:
-    branches: [master]
+    branches: [master, dev]
     paths:
       - "**/Cargo.toml"
       - "**/Cargo.lock"
+      - ".cargo/audit.toml"
   pull_request:
     paths:
       - "**/Cargo.toml"
       - "**/Cargo.lock"
+      - ".cargo/audit.toml"
   schedule:
     - cron: "0 0 * * *" # Daily — new advisories land against a static Cargo.lock
 
@@ -30,10 +32,27 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install cargo-audit
         uses: taiki-e/install-action@cargo-audit
 
+      # Advisories checked and found unreachable are listed, with the reason, in
+      # .cargo/audit.toml. Anything else fails this step.
       - name: Audit dependencies
-        run: cargo audit
+        run: |
+          set -o pipefail
+          cargo audit --color never 2>&1 | tee audit.txt
+
+      # The full report, including the ignored advisories and the unmaintained or
+      # unsound warnings that never fail the run, on the run's summary page.
+      - name: Report
+        if: always()
+        run: |
+          [ -f audit.txt ] || exit 0
+          {
+            echo '## cargo audit'
+            echo '```'
+            cat audit.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

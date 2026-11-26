@@ -23,6 +23,7 @@ Description:
 - "A save of a folder project that cannot read one of its files, for example while a sync app or an antivirus holds it, now stops with a message naming the file, which stays as it was. Saving used to carry on without it, and could delete that file"
 - "Temporary files left in a folder project by a save that was cut short are now cleaned up by a later save. They used to stay there for good"
 - "With two project windows open, opening another project in the second window now remembers the tabs that window had open. It saved the first window's tabs instead, and the second window's latest tab changes were lost"
+- "Opening a project made with a Skribisto older than version 3 now goes through SQLite 3.54.1. With the earlier SQLite, such a project sent to you along with a doctored companion file could fill parts of your book with stray bytes from Skribisto's memory"
 ---
 Version: 3.5.0
 Date: 2026-11-25
