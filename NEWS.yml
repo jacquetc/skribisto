@@ -1,5 +1,5 @@
 Version: 3.5.1
-Date: 2026-11-25
+Date: 2026-11-26
 Type: stable
 Description:
 - "Settings ▸ Editor ▸ Synopsis has a new choice, Text color. Dimmed writes synopses in the softer color they have always had, so they read as notes beside your text. Normal writes them in the same color as your text, which is easier to read for long. The corkboard keeps the normal color as before, on its cards and in a card you open"
@@ -23,6 +23,8 @@ Description:
 - "A save of a folder project that cannot read one of its files, for example while a sync app or an antivirus holds it, now stops with a message naming the file, which stays as it was. Saving used to carry on without it, and could delete that file"
 - "Temporary files left in a folder project by a save that was cut short are now cleaned up by a later save. They used to stay there for good"
 - "With two project windows open, opening another project in the second window now remembers the tabs that window had open. It saved the first window's tabs instead, and the second window's latest tab changes were lost"
+- "A window you close while it is maximized or full screen now gets its normal size back when you un-maximize it after relaunching Skribisto. It used to come back as large as the screen"
+- "A damaged settings file, for example after editing it by hand, is now set aside under a new name, and Skribisto starts with the default settings. It used to stop your settings from loading at every launch, and some damage silently stopped Skribisto from saving any setting, window size or recent project for the rest of the session"
 - "Opening a project made with a Skribisto older than version 3 now goes through SQLite 3.54.1. With the earlier SQLite, such a project sent to you along with a doctored companion file could fill parts of your book with stray bytes from Skribisto's memory"
 ---
 Version: 3.5.0
