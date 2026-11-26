@@ -2249,6 +2249,28 @@ fn a_project_with_no_uid_is_only_the_same_at_its_own_path() {
     ));
 }
 
+/// A folder holding only hidden files (a Finder's `.DS_Store`, a `.git`) is free: a
+/// folder save never writes, reads or deletes a hidden name. A visible file still makes
+/// it taken, and naming the folder's `project.skrib` checks the folder itself.
+#[test]
+fn hidden_files_alone_do_not_make_a_folder_taken() {
+    let dir = tempfile::tempdir().unwrap();
+    let folder = dir.path().join("Book");
+    std::fs::create_dir_all(folder.join(".git")).unwrap();
+    std::fs::write(folder.join(".DS_Store"), b"finder").unwrap();
+    let target = folder.to_str().unwrap();
+    assert!(!crate::folder_holds_another_project(target, "uid-1", None));
+
+    std::fs::write(folder.join("notes.txt"), b"mine").unwrap();
+    assert!(crate::folder_holds_another_project(target, "uid-1", None));
+    let manifest = folder.join("project.skrib");
+    assert!(crate::folder_holds_another_project(
+        manifest.to_str().unwrap(),
+        "uid-1",
+        None
+    ));
+}
+
 /// A `BackupNowDto` with every retention/skip field at its "do nothing extra"
 /// default (no pruning, no skip-if-unchanged) — the shape every pre-existing
 /// test wants; tests that exercise T1-3/T1-7/T2-2/T2-11 build their own.

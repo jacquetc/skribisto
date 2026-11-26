@@ -784,7 +784,6 @@ pub fn run() {
         .app_state(initial_state.session.single_work.clone())
         .app_state(initial_state.session.single_work_info.clone())
         .app_state(initial_state.outline.clone())
-        .app_state(initial_state.session.workspace_layout.clone())
         .app_state(initial_state.session.tree_expansion.clone())
         .app_state(initial_state.session.mention_index.clone())
         .app_state(initial_state.session.progress_recorder.clone())

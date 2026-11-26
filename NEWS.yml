@@ -6,7 +6,7 @@ Description:
 - "Epigraphs are now in the same color as your text. They were in the softer color of synopses, though an epigraph is part of the book. With Read as exported on, the synopses a style prints are in the text's color too, as the export shows them"
 - "In distraction-free mode, your text and the cursor are now in the text color of the theme you chose. They kept the color of the app's light or dark theme instead, so the theme's own color reached the strip at the bottom but not your words: under Midnight they were grey rather than white, and under Sepia black rather than brown. A synopsis set to Normal follows the theme's text color too"
 - "Emptying the trash no longer deletes a scene you can see. If you trashed a scene and then its chapter, undoing that or restoring the chapter brought the scene back too while it stayed in the trash, and Empty trash then deleted it. The scene now stays in the trash until you restore it, and restoring it while its chapter is still in the trash asks where to put it. The same goes for trashing a selection or a whole binder, and for restoring a chapter to another place. In a project saved by an earlier version, restoring such a scene now brings it back instead of leaving it hidden with no way to get it back"
-- "Save as folder now refuses a folder that already holds another project or other files, and says so. It used to write into that folder and delete the other project's binders, texts and history"
+- "Save as folder now refuses a folder that already holds another project or other files, and says so. Hidden files, such as the .DS_Store a Mac leaves in every folder it shows, do not count. It used to write into that folder and delete the other project's binders, texts and history"
 - "A folder project whose comments, footnotes or tags file cannot be read now refuses to open and names the file. It used to open without them, and the next save deleted the file"
 - "A folder project kept in a git repository, or holding hidden files such as .DS_Store, no longer copies them into every save, backup and Save as. The whole .git folder used to be read at each autosave, and could be written back out of date"
 - "Files that a newer Skribisto or an extension keeps in a binder's folder now follow the binder when you rename or move it. They used to be deleted with the old folder"
@@ -22,6 +22,7 @@ Description:
 - "Emptying the trash no longer deletes a row you can see. Indenting a row just below something in the trash could tuck it, out of sight, under the trashed item, and emptying the trash then deleted it with its text. Indent now places the row under the one you see above it"
 - "A save of a folder project that cannot read one of its files, for example while a sync app or an antivirus holds it, now stops with a message naming the file, which stays as it was. Saving used to carry on without it, and could delete that file"
 - "Temporary files left in a folder project by a save that was cut short are now cleaned up by a later save. They used to stay there for good"
+- "With two project windows open, opening another project in the second window now remembers the tabs that window had open. It saved the first window's tabs instead, and the second window's latest tab changes were lost"
 ---
 Version: 3.5.0
 Date: 2026-11-25

@@ -175,7 +175,7 @@ pub use markup_depth::{
 };
 pub use reader::{peek_manifest, read_bundle};
 pub use safe_path::{UnsafePath, bundle_relative};
-pub use shape::{SkribShape, canonical_project_path, detect_shape};
+pub use shape::{SkribShape, canonical_project_path, detect_shape, folder_root};
 pub use slug::{
     binder_dir_name, nearest_titled_ancestor, nearest_titled_ancestors, prose_file_name,
     prose_kind, prose_relpath, short_id, slugify,

@@ -193,6 +193,9 @@ pub struct ProjectSwitchViewModel {
     /// The switch the writer chose Discard for, waiting for [`Self::perform_discarded`].
     /// See [`Self::after_discard`].
     discarded: Rc<RefCell<DiscardedSwitch>>,
+    /// This window's own desk, captured before an in-place switch leaves the
+    /// project. See [`Self::set_workspace_layout`].
+    workspace_layout: Rc<RefCell<Option<crate::workspace_layout::WorkspaceLayoutViewModel>>>,
 }
 
 impl ProjectSwitchViewModel {
@@ -218,7 +221,15 @@ impl ProjectSwitchViewModel {
                 Rc::new(|_: &mut EventContext| {}) as Rc<dyn Fn(&mut EventContext)>
             )),
             discarded: Rc::new(RefCell::new(None)),
+            workspace_layout: Rc::new(RefCell::new(None)),
         }
+    }
+
+    /// Install this window's own [`WorkspaceLayoutViewModel`](crate::workspace_layout::WorkspaceLayoutViewModel),
+    /// whose desk an in-place switch saves before it leaves the project. Each project
+    /// window installs its own; without one (headless tests) no desk is saved.
+    pub fn set_workspace_layout(&self, layout: crate::workspace_layout::WorkspaceLayoutViewModel) {
+        *self.workspace_layout.borrow_mut() = Some(layout);
     }
 
     /// Install "flush the editors and ask for a disk write", from `App::build`.
@@ -394,22 +405,11 @@ impl ProjectSwitchViewModel {
         // ordinal. (For New Work, the form is only *shown* here; the current desk
         // captured now is the one being left.)
         //
-        // `ProjectSwitchViewModel` is a single, Tier-1 shared instance (see this
-        // view-model's module doc) — a known, disclosed boundary, the same shape as
-        // `tags::tag_chip`/`overview`'s app_state fallback. It cannot
-        // yet resolve "this window's own `WorkspaceLayoutViewModel`" the way
-        // `close_work_and_return_to_launcher` does (taking it as an explicit
-        // argument), so it still reaches for the process-wide `app_state`
-        // registration — correct only while this is the first (and, for in-place
-        // New/Open, still the *only* still-live) window.
-        // (Unlike this, `outgoing_work_id` above is NOT resolved this way — the
-        // caller supplies its own window's real id — because closing the wrong
-        // window's Work is a correctness hazard `capture`-ing the wrong layout is
-        // not: see `close_outgoing_work`'s doc.)
-        if let Some(workspace_layout) = ctx
-            .app_state::<crate::workspace_layout::WorkspaceLayoutViewModel>()
-            .cloned()
-        {
+        // The desk is this window's own, installed by the window that built this
+        // view-model. A process-wide lookup would find the first window's, so an
+        // Open in a second window saved the first window's tabs and lost its own.
+        let workspace_layout = self.workspace_layout.borrow().clone();
+        if let Some(workspace_layout) = workspace_layout {
             crate::app::capture_workspace_layout(&workspace_layout);
         }
         match switch {

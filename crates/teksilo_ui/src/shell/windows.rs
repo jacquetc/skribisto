@@ -518,6 +518,7 @@ impl ProjectWindowFactory {
             backup_mode.clone(),
             self.autosave_menu.clone(),
         );
+        project_switch.set_workspace_layout(session.workspace_layout.clone());
         // The switch guard's own answer to "unsaved?" is the Work's, not the
         // pair's: `SaveStateViewModel::is_unsaved` also counts a change an
         // extension reported from a thread that cannot bump `dirty_seq`. And a

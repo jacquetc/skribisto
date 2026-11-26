@@ -321,17 +321,28 @@ fn run_save_as(
 /// project does not list, so another book there loses its binders, prose and
 /// history. A folder holding no project at all (no readable manifest) counts as
 /// taken too: nothing says what its files are.
+///
+/// Hidden names do not count: a folder save never writes, reads or deletes one (see
+/// [`skrib_format::carry::is_hidden`]), and a Mac leaves a `.DS_Store` in every
+/// folder Finder has shown. `target` may also name the folder's `project.skrib`,
+/// which the writer resolves to the folder itself, so the check does too.
 pub fn folder_holds_another_project(target: &str, unique_id: &str, current: Option<&str>) -> bool {
-    let path = std::path::Path::new(target);
+    let root = skrib_format::folder_root(target);
     // Absent, or not a folder: nothing to write over here. A file in the way makes
     // the write itself fail, with its own error.
-    let Ok(mut entries) = std::fs::read_dir(path) else {
+    let Ok(entries) = std::fs::read_dir(&root) else {
         return false;
     };
-    if entries.next().is_none() {
+    // An entry that cannot be listed counts as something there.
+    let mut visible = entries.filter(|entry| {
+        entry.as_ref().map_or(true, |e| {
+            !e.file_name().as_encoded_bytes().starts_with(b".")
+        })
+    });
+    if visible.next().is_none() {
         return false;
     }
-    if current.is_some_and(|cur| same_place(path, cur)) {
+    if current.is_some_and(|cur| same_place(&root, cur)) {
         return false;
     }
     match skrib_format::peek_manifest(target) {
