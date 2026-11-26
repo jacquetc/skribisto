@@ -61,6 +61,41 @@ pub fn subtree_of(
     out
 }
 
+/// The rows of [`subtree_of`] `root` that are still in the trash: every live row is left
+/// out, and so is everything nested under a live row. Empty when `root` itself is live.
+///
+/// Indent alone does not say what a trash entry holds. A live row can sit inside a
+/// trashed row's subtree by indent (a row indented after a trashed one by an older
+/// build, or the children of a merged-away scene), and the binder tree shows it under
+/// the nearest *live* row above it, not under the trashed one. Whatever deletes,
+/// restores or lists a trashed subtree must therefore skip it, and skip what hangs
+/// under it too: those rows belong to the live row, not to the entry.
+pub fn trashed_subtree_of(
+    order: &[EntityId],
+    indent: &HashMap<EntityId, i64>,
+    is_live: impl Fn(EntityId) -> bool,
+    root: EntityId,
+) -> Vec<EntityId> {
+    let mut out = Vec::new();
+    // While set, rows deeper than this indent hang under a live row and are skipped.
+    let mut under_live: Option<i64> = None;
+    for id in subtree_of(order, indent, root) {
+        let depth = *indent.get(&id).unwrap_or(&0);
+        if let Some(live_depth) = under_live {
+            if depth > live_depth {
+                continue;
+            }
+            under_live = None;
+        }
+        if is_live(id) {
+            under_live = Some(depth);
+            continue;
+        }
+        out.push(id);
+    }
+    out
+}
+
 /// First index `j > pos` whose item indent is `<= base_indent`, or `order.len()`
 /// — i.e. the end (exclusive) of the subtree rooted at `pos`.
 pub fn subtree_end(
@@ -285,6 +320,25 @@ mod tests {
         let order = vec![1, 2];
         let indent = indent_map(&[(1, 0), (2, 0)]);
         assert!(subtree_of(&order, &indent, 99).is_empty());
+    }
+
+    #[test]
+    fn trashed_subtree_leaves_out_live_rows_and_what_hangs_under_them() {
+        // 1(0)t 2(1)t 3(1) 4(2)t 5(1)t 6(0)
+        let order = vec![1, 2, 3, 4, 5, 6];
+        let indent = indent_map(&[(1, 0), (2, 1), (3, 1), (4, 2), (5, 1), (6, 0)]);
+        let live: HashSet<EntityId> = [3, 6].into_iter().collect();
+        let is_live = |id| live.contains(&id);
+        // 3 is live and 4 hangs under it; 5 comes after 3's own subtree.
+        assert_eq!(
+            trashed_subtree_of(&order, &indent, is_live, 1),
+            vec![1, 2, 5]
+        );
+        assert!(
+            trashed_subtree_of(&order, &indent, is_live, 3).is_empty(),
+            "a live root has nothing in the trash"
+        );
+        assert!(trashed_subtree_of(&order, &indent, is_live, 99).is_empty());
     }
 
     #[test]

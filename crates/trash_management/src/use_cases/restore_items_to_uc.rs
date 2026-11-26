@@ -7,9 +7,12 @@
 // binder is trashed), restoring it in place would leave it hidden, so this op
 // always RELOCATES the reactivated block to an active destination.
 //
-// For each requested item, the currently-trashed contiguous subtree hanging off
-// it is reactivated (activated = true) and moved out of its source binder into
-// the destination at the resolved anchor/indent. A post-pass sweep then unlinks
+// For each requested item, the currently-trashed subtree hanging off it is
+// reactivated (activated = true) and moved out of its source binder into the
+// destination at the resolved anchor/indent. A live row nested under it by
+// indent, and what hangs under that row, stays where it is. A row of the block
+// that another entry still in the bin holds moves too but stays trashed, so
+// that entry survives the sweep. A post-pass sweep then unlinks
 // from Work.trash_infos any TrashInfo whose trashed_binder_item is now active or
 // gone — which consumes a fully-restored root and LEAVES a root whose subtree
 // was only partially peeled. Whole-binder (trashed_binder) TrashInfos are never
@@ -20,6 +23,7 @@
 use crate::RestoreItemsToDto;
 use crate::RestoreItemsToResultDto;
 use crate::dtos::DropPosition;
+use crate::trash_ops::{BinderRows, ItemStore};
 use anyhow::{Result, anyhow};
 use binder_ordering::{DropPlace, anchor_for_binder_target, insert_block, resolve_item_target};
 use common::database::CommandUnitOfWork;
@@ -81,38 +85,33 @@ pub struct RestoreItemsToUseCase {
 }
 
 /// A resolved restore target: the requested item, its source binder (None = a
-/// dangling orphan linked to no binder), the reactivatable trashed subtree, and
-/// the root's current indent (for the reindent delta).
+/// dangling orphan linked to no binder), the trashed subtree that moves, the rows of
+/// it that come back to the manuscript, and the root's current indent (for the
+/// reindent delta).
 struct Plan {
     root: EntityId,
     src_binder: Option<EntityId>,
     subtree: Vec<EntityId>,
+    /// `subtree` minus the rows another entry still in the bin holds: those move with
+    /// the block but stay trashed, so that entry can still be restored or purged.
+    wake: HashSet<EntityId>,
     root_old_indent: i64,
 }
 
-/// One source binder's order with each row's indent and trash state, as read
-/// before any mutation.
-struct BinderRows {
-    order: Vec<EntityId>,
-    indent: HashMap<EntityId, i64>,
-    activated: HashMap<EntityId, bool>,
-}
-
-impl BinderRows {
-    fn read(uow: &dyn RestoreItemsToUnitOfWorkTrait, binder_id: EntityId) -> Result<Self> {
-        let order =
-            uow.get_binder_relationship(&binder_id, &BinderRelationshipField::BinderItems)?;
-        let mut indent: HashMap<EntityId, i64> = HashMap::new();
-        let mut activated: HashMap<EntityId, bool> = HashMap::new();
-        for it in uow.get_binder_item_multi(&order)?.into_iter().flatten() {
-            indent.insert(it.id, it.indent);
-            activated.insert(it.id, it.activated);
-        }
-        Ok(BinderRows {
-            order,
-            indent,
-            activated,
-        })
+impl ItemStore for dyn RestoreItemsToUnitOfWorkTrait + '_ {
+    fn binder_items(&self, binder: EntityId) -> Result<Vec<EntityId>> {
+        self.get_binder_relationship(&binder, &BinderRelationshipField::BinderItems)
+    }
+    fn items(&self, ids: &[EntityId]) -> Result<Vec<BinderItem>> {
+        Ok(self
+            .get_binder_item_multi(ids)?
+            .into_iter()
+            .flatten()
+            .collect())
+    }
+    fn save_items(&self, items: &[BinderItem]) -> Result<()> {
+        self.update_binder_item_multi(items)?;
+        Ok(())
     }
 }
 
@@ -206,13 +205,15 @@ impl RestoreItemsToUseCase {
                         Entry::Occupied(e) => e.into_mut(),
                         Entry::Vacant(e) => e.insert(BinderRows::read(uow.as_ref(), src)?),
                     };
-                    let subtree =
-                        trashed_subtree_of(&rows.order, &rows.indent, &rows.activated, item_id);
+                    // A live row nested under it by indent is not part of what is
+                    // restored: it stays where the writer sees it.
+                    let subtree = rows.trashed_subtree(item_id);
                     let root_old_indent = *rows.indent.get(&item_id).unwrap_or(&0);
                     candidates.push(Plan {
                         root: item_id,
                         src_binder: Some(src),
                         subtree,
+                        wake: HashSet::new(), // filled once every candidate is known
                         root_old_indent,
                     });
                 }
@@ -224,6 +225,7 @@ impl RestoreItemsToUseCase {
                         root: item_id,
                         src_binder: None,
                         subtree: vec![item_id],
+                        wake: HashSet::from([item_id]),
                         root_old_indent: item.indent,
                     });
                 }
@@ -237,10 +239,44 @@ impl RestoreItemsToUseCase {
             .iter()
             .flat_map(|p| p.subtree.iter().copied().filter(move |&id| id != p.root))
             .collect();
-        let plan: Vec<Plan> = candidates
+        let mut plan: Vec<Plan> = candidates
             .into_iter()
             .filter(|p| !covered.contains(&p.root))
             .collect();
+
+        // A row inside a moving block that another entry still in the bin holds (a
+        // scene trashed on its own before its chapter) moves with the block but stays
+        // trashed, with everything under it: reactivating it would let the sweep below
+        // use up that entry, and the scene could never be restored on its own again.
+        // An id the caller asked for is not held back, whatever entry it has.
+        let requested: HashSet<EntityId> = dto.binder_item_ids.iter().copied().collect();
+        let mut staying_items: HashSet<EntityId> = HashSet::new();
+        for info in uow.get_work_relationship(&work_id, &WorkRelationshipField::TrashInfos)? {
+            if let Some(item) = uow
+                .get_trash_info_relationship(&info, &TrashInfoRelationshipField::TrashedBinderItem)?
+                .into_iter()
+                .next()
+                && !requested.contains(&item)
+            {
+                staying_items.insert(item);
+            }
+        }
+        for p in &mut plan {
+            let Some(rows) = p.src_binder.and_then(|src| source_rows.get(&src)) else {
+                continue; // a dangling orphan: its `wake` is already itself
+            };
+            // Every row of the subtree is trashed, so membership is all it takes.
+            let held: HashSet<EntityId> = p
+                .subtree
+                .iter()
+                .copied()
+                .filter(|&id| id != p.root && staying_items.contains(&id))
+                .collect();
+            p.wake = rows
+                .without_subtrees_of(&p.subtree, &held)
+                .into_iter()
+                .collect();
+        }
         let all_moving: HashSet<EntityId> = plan
             .iter()
             .flat_map(|p| p.subtree.iter().copied())
@@ -323,13 +359,15 @@ impl RestoreItemsToUseCase {
         let mut restored_count: i64 = 0;
         let mut touched: Vec<EntityId> = Vec::new();
 
-        // 1) Reactivate + reindent every moving subtree (one write).
+        // 1) Reindent every moving subtree and reactivate what comes back (one write).
         let mut updated: Vec<BinderItem> = Vec::new();
         for p in &plan {
             let delta = base_indent - p.root_old_indent;
             for it in uow.get_binder_item_multi(&p.subtree)?.into_iter().flatten() {
                 let mut it = it;
-                it.activated = true;
+                if p.wake.contains(&it.id) {
+                    it.activated = true;
+                }
                 it.indent += delta;
                 updated.push(it);
             }
@@ -430,38 +468,6 @@ impl RestoreItemsToUseCase {
             orphaned,
         })
     }
-}
-
-/// The contiguous CURRENTLY-TRASHED subtree rooted at `root`: `root` plus every
-/// following item whose indent is strictly greater AND whose `activated` is
-/// still false — stopping at the first item at/above the root's indent, or one
-/// already reactivated. Distinct from `binder_ordering::subtree_of` because it's
-/// the one place ordering logic needs the `activated` flag (peeling a still-
-/// trashed run out of a larger trashed subtree).
-fn trashed_subtree_of(
-    order: &[EntityId],
-    indent: &HashMap<EntityId, i64>,
-    activated: &HashMap<EntityId, bool>,
-    root: EntityId,
-) -> Vec<EntityId> {
-    let Some(pos) = order.iter().position(|&x| x == root) else {
-        return Vec::new();
-    };
-    let root_indent = *indent.get(&root).unwrap_or(&0);
-    let mut out = vec![root];
-    let mut j = pos + 1;
-    while j < order.len() {
-        let id = order[j];
-        if *indent.get(&id).unwrap_or(&0) <= root_indent {
-            break;
-        }
-        if *activated.get(&id).unwrap_or(&true) {
-            break;
-        }
-        out.push(id);
-        j += 1;
-    }
-    out
 }
 
 // `get_work_relationship` doesn't validate that `id` is a real, open Work, so

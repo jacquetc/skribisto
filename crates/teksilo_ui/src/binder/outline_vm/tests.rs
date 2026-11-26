@@ -2016,3 +2016,106 @@ mod reveal {
         assert!(outline.is_visible().get(), "and the left side must show");
     }
 }
+
+// ── Indent next to the trash ──
+//
+// A trashed row keeps its place in the binder, hidden. Indenting a row against it, or
+// leaving it inside its subtree, stored a structure the writer never saw: the row showed
+// under the live row above, and emptying the trash deleted it with the hidden one.
+
+#[test]
+fn indent_caps_on_the_live_row_above_and_steps_in_front_of_a_shallower_trashed_row() {
+    // (indent, live) per id.
+    let rows: HashMap<u64, (i64, bool)> = [
+        (1, (0, true)),  // B
+        (2, (0, false)), // C, trashed
+        (3, (0, true)),  // D
+        (4, (1, false)), // a trashed scene of B
+        (5, (2, true)),  // a row two levels down
+    ]
+    .into_iter()
+    .collect();
+    let row = |id: u64| rows.get(&id).copied();
+
+    // B, C(trashed), D: D nests under B, in front of C.
+    assert_eq!(indent_target(&[1, 2, 3], row, 2), Some((1, Some(2))));
+    // B, its trashed scene, D: D nests under B after the scene, nothing to step over.
+    assert_eq!(indent_target(&[1, 4, 3], row, 2), Some((1, None)));
+    // Only trashed rows above: D is the first row the writer sees, so it stays put.
+    assert_eq!(indent_target(&[2, 3], row, 1), None);
+    assert_eq!(indent_target(&[3], row, 0), None);
+    // Indent never takes a row shallower than it is.
+    assert_eq!(indent_target(&[1, 5], row, 1), None);
+}
+
+#[cfg(not(feature = "mocks"))]
+mod indent_next_to_the_trash {
+    use super::recommend::{key_of, seed, seed_item};
+    use super::*;
+    use frontend::trash_management::EmptyTrashDto;
+
+    fn order_of(outline: &OutlineViewModel, binder: u64) -> Vec<u64> {
+        binder_commands::get_binder_relationship(
+            &outline.app_ctx,
+            &binder,
+            &BinderRelationshipField::BinderItems,
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn a_row_indented_after_a_trashed_chapter_nests_under_the_live_one_and_survives_the_trash() {
+        let (outline, binder) = seed();
+        outline.init_stack();
+        let folder = |indent, index| {
+            seed_item(
+                &outline,
+                binder,
+                BinderItemRole::Folder,
+                BinderItemSubRole::ChapterScene,
+                indent,
+                index,
+            )
+        };
+        let b = folder(0, 0);
+        let c = folder(0, 1);
+        let d = folder(0, 2);
+        outline.trash_keys(&[key_of(&outline, c)]);
+        let stack = outline.stack();
+
+        outline.selection.select(key_of(&outline, d));
+        outline.indent_selected();
+
+        let dto = |id| outline.item_dto(id).unwrap();
+        assert_eq!(
+            dto(d).indent,
+            1,
+            "D nests under B, the row the writer sees above it"
+        );
+        assert_eq!(
+            order_of(&outline, binder),
+            vec![b, d, c],
+            "and is stored there: in front of the trashed chapter, not inside it"
+        );
+        assert!(!dto(c).activated);
+        assert_eq!(dto(c).indent, 0);
+
+        // One undo step puts everything back.
+        undo_redo_commands::undo(&outline.app_ctx, stack).unwrap();
+        assert_eq!(order_of(&outline, binder), vec![b, c, d]);
+        assert_eq!(dto(d).indent, 0);
+        undo_redo_commands::redo(&outline.app_ctx, stack).unwrap();
+        assert_eq!(order_of(&outline, binder), vec![b, d, c]);
+        assert_eq!(dto(d).indent, 1);
+
+        let work_id = outline.ids.work_id.get().unwrap();
+        trash_management_commands::empty_trash(&outline.app_ctx, stack, &EmptyTrashDto { work_id })
+            .unwrap();
+        assert!(outline.item_dto(c).is_none(), "the trashed chapter goes");
+        assert!(
+            outline.item_dto(d).is_some(),
+            "the row the writer sees stays"
+        );
+        assert_eq!(order_of(&outline, binder), vec![b, d]);
+    }
+}

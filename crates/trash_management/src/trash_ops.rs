@@ -41,7 +41,7 @@
 use anyhow::{Result, anyhow};
 use chrono::{DateTime, Utc};
 use common::direct_access::trash_info::TrashInfoRelationshipField;
-use common::entities::{Binder, BinderItem, TrashInfo};
+use common::entities::{Binder, BinderItem, BinderItemRole, TrashInfo};
 use common::types::EntityId;
 use std::collections::{HashMap, HashSet};
 
@@ -246,4 +246,107 @@ pub(crate) fn indents<S: ItemStore + ?Sized>(
         .into_iter()
         .map(|it| (it.id, it.indent))
         .collect())
+}
+
+/// One binder's rows as they are now: order, depth, role and trash state, read in one
+/// multi-get. The single reader behind restoring in place, restoring elsewhere and
+/// purging, so the three agree on what a trashed subtree holds.
+pub(crate) struct BinderRows {
+    pub(crate) order: Vec<EntityId>,
+    pub(crate) indent: HashMap<EntityId, i64>,
+    role: HashMap<EntityId, BinderItemRole>,
+    activated: HashMap<EntityId, bool>,
+}
+
+impl BinderRows {
+    /// Build from a binder's order and its rows, for a caller that fetched them itself.
+    pub(crate) fn new(order: Vec<EntityId>, items: impl IntoIterator<Item = BinderItem>) -> Self {
+        let mut indent = HashMap::new();
+        let mut role = HashMap::new();
+        let mut activated = HashMap::new();
+        for it in items {
+            indent.insert(it.id, it.indent);
+            role.insert(it.id, it.role);
+            activated.insert(it.id, it.activated);
+        }
+        BinderRows {
+            order,
+            indent,
+            role,
+            activated,
+        }
+    }
+
+    /// Read `binder`'s rows.
+    pub(crate) fn read<S: ItemStore + ?Sized>(store: &S, binder: EntityId) -> Result<Self> {
+        let order = store.binder_items(binder)?;
+        let items = store.items(&order)?;
+        Ok(Self::new(order, items))
+    }
+
+    /// Whether `id` is a row of this binder that is in the trash. A row the store no
+    /// longer has is not: nothing may be done to it on the strength of a trash flag.
+    pub(crate) fn is_trashed(&self, id: EntityId) -> bool {
+        self.activated.get(&id) == Some(&false)
+    }
+
+    pub(crate) fn role(&self, id: EntityId) -> Option<&BinderItemRole> {
+        self.role.get(&id)
+    }
+
+    /// `root` and every row nested under it by indent, live or not.
+    pub(crate) fn subtree(&self, root: EntityId) -> Vec<EntityId> {
+        binder_ordering::subtree_of(&self.order, &self.indent, root)
+    }
+
+    /// The part of `root`'s subtree that is in the trash: see
+    /// [`binder_ordering::trashed_subtree_of`]. Empty when `root` is live.
+    pub(crate) fn trashed_subtree(&self, root: EntityId) -> Vec<EntityId> {
+        binder_ordering::trashed_subtree_of(
+            &self.order,
+            &self.indent,
+            |id| !self.is_trashed(id),
+            root,
+        )
+    }
+
+    /// The rows `root` is nested inside, nearest first: walking back in binder order,
+    /// each row shallower than every row seen so far.
+    ///
+    /// The model has no parent pointers; containment is encoded by position + indent
+    /// alone, so this walk *is* "who are my parents". Empty for a top-level row.
+    pub(crate) fn ancestors(&self, root: EntityId) -> Vec<EntityId> {
+        let Some(pos) = self.order.iter().position(|&x| x == root) else {
+            return Vec::new();
+        };
+        let mut depth = *self.indent.get(&root).unwrap_or(&0);
+        let mut out = Vec::new();
+        for id in self.order[..pos].iter().rev() {
+            let d = *self.indent.get(id).unwrap_or(&0);
+            if d < depth {
+                out.push(*id);
+                depth = d;
+            }
+        }
+        out
+    }
+
+    /// `ids` minus every row inside the subtree of one of `roots`.
+    pub(crate) fn without_subtrees_of(
+        &self,
+        ids: &[EntityId],
+        roots: &HashSet<EntityId>,
+    ) -> Vec<EntityId> {
+        if roots.is_empty() {
+            return ids.to_vec();
+        }
+        let covered: HashSet<EntityId> =
+            binder_ordering::expand_to_subtrees(&self.order, &self.indent, roots)
+                .into_iter()
+                .collect();
+        ids.iter()
+            .copied()
+            .filter(|id| !covered.contains(id))
+            .collect()
+    }
 }

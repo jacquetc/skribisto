@@ -1243,16 +1243,23 @@ impl OutlineViewModel {
                 continue;
             };
             let new_indent = if delta > 0 {
-                // Indent ≤ predecessor sibling's indent + 1 (can't indent the
-                // first child of a level).
-                let pred = if pos == 0 {
-                    -1
-                } else {
-                    self.item_dto(order[pos - 1])
-                        .map(|p| p.indent)
-                        .unwrap_or(-1)
+                let rows: HashMap<u64, (i64, bool)> =
+                    binder_item_commands::get_binder_item_multi(ctx, &order)
+                        .unwrap_or_default()
+                        .into_iter()
+                        .flatten()
+                        .map(|r| (r.id, (r.indent, r.activated)))
+                        .collect();
+                let Some((new_indent, in_front_of)) =
+                    indent_target(&order, |id| rows.get(&id).copied(), pos)
+                else {
+                    continue;
                 };
-                (it.indent + 1).min(pred + 1).max(0)
+                if let Some(anchor) = in_front_of {
+                    self.indent_in_front_of(i, anchor, new_indent, stack);
+                    continue;
+                }
+                new_indent
             } else {
                 (it.indent - 1).max(0)
             };
@@ -1267,6 +1274,90 @@ impl OutlineViewModel {
         }
         self.reload();
     }
+
+    /// Indent `item` to `indent` after moving it, with its subtree, in front of the
+    /// trashed row `anchor`, as one undo step.
+    ///
+    /// Indented where it is, the row would land inside the trashed row's subtree: shown
+    /// under the live row above, stored under the hidden one, deleted with it when the
+    /// trash is emptied, and moved under it if it is restored. In front of it, what is
+    /// stored is what the writer sees.
+    fn indent_in_front_of(&self, item: u64, anchor: u64, indent: i64, stack: Option<u64>) {
+        let ctx = &*self.app_ctx;
+        let grouped = undo_redo_commands::begin_composite(ctx, stack).is_ok();
+        let moved = binder_item_management_commands::move_items(
+            ctx,
+            stack,
+            &MoveDto {
+                item_ids: vec![item],
+                target_id: Some(anchor),
+                target_is_binder: false,
+                move_place: MovePlace::Before,
+            },
+        );
+        match moved {
+            Ok(()) => {
+                // Re-read: the move rebases the block onto the anchor's indent.
+                if let Some(it) = self.item_dto(item)
+                    && it.indent != indent
+                {
+                    let mut dto = update_item_dto(&it);
+                    dto.indent = indent;
+                    if let Err(e) = binder_item_commands::update_binder_item(ctx, stack, &dto) {
+                        eprintln!("skribisto: indent: could not indent row {item}: {e}");
+                    }
+                }
+            }
+            // Indenting in place instead would hide the row inside the trash: do nothing.
+            Err(e) => eprintln!("skribisto: indent: could not move row {item}: {e}"),
+        }
+        if grouped {
+            undo_redo_commands::end_composite(ctx);
+        }
+    }
+}
+
+/// What Indent does to the row at `order[pos]`: its new indent, and the trashed row it
+/// must first move in front of, if any. `None` when Indent changes nothing.
+///
+/// `row` gives each id's `(indent, live)`. The cap comes from the nearest **live** row
+/// above, the one the binder tree shows right above this row: trashed rows in between
+/// are hidden, so the writer indents against that live row, never against one of them.
+/// A row with no live row above it is the first of its level and cannot be indented.
+///
+/// Indented in place, the row would sit inside the subtree of any trashed row in
+/// between that is shallower than its new indent. The earliest such row is returned:
+/// moved in front of it, the row follows only trashed rows at least as deep as itself,
+/// so it nests under the live row above, exactly as shown.
+fn indent_target(
+    order: &[u64],
+    row: impl Fn(u64) -> Option<(i64, bool)>,
+    pos: usize,
+) -> Option<(i64, Option<u64>)> {
+    let (own, _) = row(*order.get(pos)?)?;
+    // Trashed rows between this row and the live row above, nearest first.
+    let mut hidden: Vec<(u64, i64)> = Vec::new();
+    let mut live_above = None;
+    for &id in order[..pos].iter().rev() {
+        match row(id) {
+            Some((indent, true)) => {
+                live_above = Some(indent);
+                break;
+            }
+            Some((indent, false)) => hidden.push((id, indent)),
+            None => {}
+        }
+    }
+    let new = (own + 1).min(live_above? + 1);
+    if new <= own {
+        return None;
+    }
+    let in_front_of = hidden
+        .iter()
+        .rev()
+        .find(|(_, indent)| *indent < new)
+        .map(|(id, _)| *id);
+    Some((new, in_front_of))
 }
 
 /// Apply a single-item move through the backend (undoable). Free function so the

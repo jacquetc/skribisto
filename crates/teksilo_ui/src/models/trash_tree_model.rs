@@ -252,7 +252,7 @@ impl TreeDataSource for TrashTreeModel {
 
 #[cfg(not(feature = "mocks"))]
 mod rows {
-    use std::collections::HashMap;
+    use std::collections::{HashMap, HashSet};
 
     use teksilo::data::TreeRow;
     use teksilo::prelude::Signal;
@@ -274,13 +274,13 @@ mod rows {
 
     /// Find the binder whose order contains `item_id` (trashed items stay in
     /// place). Fast path: `origin_binder_id`; fall back to a scan of the Work's
-    /// binders. Returns `(binder order, indent map for that order)`.
+    /// binders.
     fn resolve_item_binder(
         ctx: &AppContext,
         binder_ids: &[EntityId],
         origin: EntityId,
         item_id: EntityId,
-    ) -> Option<(Vec<EntityId>, HashMap<EntityId, i64>)> {
+    ) -> Option<ItemBinderRows> {
         let candidates = std::iter::once(origin).chain(binder_ids.iter().copied());
         let mut tried = std::collections::HashSet::new();
         for b in candidates {
@@ -295,17 +295,33 @@ mod rows {
             .unwrap_or_default();
             if order.contains(&item_id) {
                 let mut indent = HashMap::new();
+                let mut live = HashSet::new();
                 for it in binder_item_commands::get_binder_item_multi(ctx, &order)
                     .unwrap_or_default()
                     .into_iter()
                     .flatten()
                 {
                     indent.insert(it.id, it.indent);
+                    if it.activated {
+                        live.insert(it.id);
+                    }
                 }
-                return Some((order, indent));
+                return Some(ItemBinderRows {
+                    order,
+                    indent,
+                    live,
+                });
             }
         }
         None
+    }
+
+    /// The binder holding a trashed item: its order, each row's indent, and the
+    /// rows that are live.
+    struct ItemBinderRows {
+        order: Vec<EntityId>,
+        indent: HashMap<EntityId, i64>,
+        live: HashSet<EntityId>,
     }
 
     pub fn load(
@@ -401,15 +417,25 @@ mod rows {
                     },
                     0,
                 ));
-                // Read-only cascade preview: the contiguous subtree in the item's
-                // binder order (all deactivated along with the root).
-                if let Some((order, indent)) = resolve_item_binder(
+                // Read-only cascade preview: the trashed part of the subtree in the
+                // item's binder order, what emptying the trash removes with the root.
+                // A live row nested under it by indent is in the manuscript, not here.
+                if let Some(ItemBinderRows {
+                    order,
+                    indent,
+                    live,
+                }) = resolve_item_binder(
                     ctx,
                     &binder_ids,
                     info.origin_binder_id.max(0) as u64,
                     item_id,
                 ) {
-                    let subtree = binder_ordering::subtree_of(&order, &indent, item_id);
+                    let subtree = binder_ordering::trashed_subtree_of(
+                        &order,
+                        &indent,
+                        |id| live.contains(&id),
+                        item_id,
+                    );
                     if subtree.len() > 1 {
                         let descendants: Vec<EntityId> = subtree[1..].to_vec();
                         for it in binder_item_commands::get_binder_item_multi(ctx, &descendants)
