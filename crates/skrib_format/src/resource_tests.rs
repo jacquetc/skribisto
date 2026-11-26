@@ -277,6 +277,45 @@ fn a_resource_with_no_uid_or_a_shared_one_gets_its_own_and_keeps_its_file() {
     }
 }
 
+/// Healing the same rows again gives them the same uids, and never one another row
+/// already has.
+///
+/// Opening a project does not mark it unsaved, so the uid a heal gives is not written
+/// until something else is saved, and the next open heals the same rows again. A fresh
+/// uid then named another folder, the open's prune removed the one the last open had
+/// copied the file into, and the file was gone.
+#[test]
+fn healing_the_same_rows_again_gives_the_same_uids() {
+    let mut bundle = build_bundle(ShapeTag::Folder);
+    let shared = bundle.resources[0].uid;
+    let mut twin = bundle.resources[0].clone();
+    twin.file_id = 63;
+    let mut nil = bundle.resources[0].clone();
+    nil.file_id = 64;
+    nil.uid = uuid::Uuid::nil();
+    bundle.resources.push(twin);
+    bundle.resources.push(nil);
+    let before: Vec<uuid::Uuid> = bundle.resources.iter().map(|r| r.uid).collect();
+
+    let mut first = bundle.clone();
+    first.heal_resource_uids();
+    let mut again = bundle.clone();
+    again.heal_resource_uids();
+    let uids = |b: &super::WorkBundle| b.resources.iter().map(|r| r.uid).collect::<Vec<_>>();
+    assert_eq!(uids(&first), uids(&again));
+
+    let healed = uids(&first);
+    assert_eq!(healed[0], shared, "the first row keeps its uid");
+    let distinct: std::collections::BTreeSet<_> = healed.iter().collect();
+    assert_eq!(distinct.len(), healed.len());
+    assert!(healed.iter().all(|u| !u.is_nil()));
+    for (old, new) in before.iter().zip(&healed) {
+        if old != new {
+            assert!(!before.contains(new), "a healed uid took another row's");
+        }
+    }
+}
+
 #[test]
 fn unknown_resource_entries_survive_open_and_save_as() {
     let (dir, _) = round_trip(SkribShape::ExplodedFolder, &build_bundle(ShapeTag::Folder));
@@ -318,13 +357,14 @@ fn an_older_projects_uuid_named_research_directory_survives_upgrade_and_backup()
     );
     assert_eq!(std::fs::read(file).unwrap(), b"research");
     back.manifest.format_version = super::FORMAT_VERSION;
-    back.carried = super::carry::load_for_save(path, &back.resources);
+    back.carried = super::carry::load_for_save(path, &back.resources).unwrap();
     write_bundle(path, SkribShape::ExplodedFolder, &back).unwrap();
     let upgraded = read_bundle(path).unwrap();
     let (backup, restored) = round_trip(SkribShape::ZipFile, &upgraded);
     assert_eq!(restored.carried[&rel].bytes, b"research");
     assert_eq!(
-        super::carry::load(backup.path().join("Novel.skrib").to_str().unwrap())[&rel].bytes,
+        super::carry::load(backup.path().join("Novel.skrib").to_str().unwrap()).unwrap()[&rel]
+            .bytes,
         b"research"
     );
 }

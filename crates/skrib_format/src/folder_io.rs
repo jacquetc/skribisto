@@ -484,7 +484,20 @@ fn write_folder_placing(root: &Path, bundle: &WorkBundle, placing: Placing) -> R
         prune_dir(&history_dir, &expected_blobs, "djot", &carried)?;
     }
 
+    // Binders, in three steps across all of them, so that a save cut short anywhere
+    // leaves every item named by some binder's `items.ron`, with its prose on disk:
+    //
+    // 1. every binder's prose and sidecars, deleting nothing;
+    // 2. every binder's `items.ron` ([`write_binder_lists`]);
+    // 3. after the manifest, the prunes of every `text/` and of the binder folders.
+    //
+    // Binder by binder, an item moved from the first binder to the second was dropped
+    // from the first `items.ron` and its prose pruned before the second `items.ron`
+    // named it: a save stopped between the two lost the item.
     let mut expected_binder_dirs: BTreeSet<String> = BTreeSet::new();
+    let mut lists: Vec<(PathBuf, ItemsFile)> = Vec::with_capacity(bundle.binders.len());
+    let mut text_prunes: Vec<(PathBuf, BTreeSet<String>, BTreeSet<String>)> =
+        Vec::with_capacity(bundle.binders.len());
 
     for (index, bb) in bundle.binders.iter().enumerate() {
         let dir_name = binder_dir_name(index, &bb.binder.name);
@@ -549,27 +562,19 @@ fn write_folder_placing(root: &Path, bundle: &WorkBundle, placing: Placing) -> R
                 }
             }
         }
-        // items.ron after its prose blobs exist, and before the prunes: until it is
-        // written the `items.ron` on disk still names the old files (a renamed scene's
-        // file name changes), and a save cut short with those gone would leave a
-        // project that does not open.
         let items_file = ItemsFile {
             binder: bb.binder.clone(),
             items: bb.items.iter().map(|i| i.item.clone()).collect(),
+            moving_out: Vec::new(),
         };
-        write_if_changed(
-            root,
-            &bdir.join("items.ron"),
-            to_ron(&items_file)?.as_bytes(),
-        )?;
-
-        prune_dir(&tdir, &expected_prose, "djot", &carried)?;
-        // Prunes a sidecar whose last comment or footnote was deleted, too —
-        // `expected_sidecars` only holds the ones that still have content.
-        // `items.ron` lives in the binder dir, not `text/`, so pruning "ron" here
-        // cannot reach it.
-        prune_dir(&tdir, &expected_sidecars, "ron", &carried)?;
+        lists.push((bdir, items_file));
+        text_prunes.push((tdir, expected_prose, expected_sidecars));
     }
+    // Every `items.ron` after all the prose exists, and before any prune: until it is
+    // written the `items.ron` on disk still names the old files (a renamed scene's file
+    // name changes, a moved scene's folder does), and a save cut short with those gone
+    // would leave a project that does not open, or opens without the scene.
+    write_binder_lists(root, &binders_dir, &lists)?;
 
     // Commit point — written last.
     //
@@ -596,9 +601,19 @@ fn write_folder_placing(root: &Path, bundle: &WorkBundle, placing: Placing) -> R
         to_ron(&manifest)?.as_bytes(),
     )?;
 
-    // After the commit point: until the manifest is written, the one on disk still
-    // lists a binder the writer deleted, and the reader refuses a project whose
-    // manifest names a binder with no folder.
+    // After the commit point: every `items.ron` is written by now, so no file pruned
+    // below is one an `items.ron` on disk still names.
+    for (tdir, expected_prose, expected_sidecars) in &text_prunes {
+        prune_dir(tdir, expected_prose, "djot", &carried)?;
+        // Prunes a sidecar whose last comment or footnote was deleted, too —
+        // `expected_sidecars` only holds the ones that still have content.
+        // `items.ron` lives in the binder dir, not `text/`, so pruning "ron" here
+        // cannot reach it.
+        prune_dir(tdir, expected_sidecars, "ron", &carried)?;
+    }
+    // Until the manifest is written, the one on disk still lists a binder the writer
+    // deleted, and the reader refuses a project whose manifest names a binder with no
+    // folder. This also removes the lists [`write_binder_lists`] set aside.
     prune_binder_dirs(root, &binders_dir, &expected_binder_dirs)?;
     // What a carried file left behind where it moved from (see `place_carried`), once
     // its new copy is down. Never through a link, like every prune here.
@@ -608,6 +623,267 @@ fn write_folder_placing(root: &Path, bundle: &WorkBundle, placing: Placing) -> R
         {
             fs::remove_file(&old).ok();
         }
+    }
+
+    // A staging folder is new, so it holds no leftover from an earlier write.
+    if let Placing::Keep = placing {
+        let mut written: BTreeSet<PathBuf> = [
+            root.to_path_buf(),
+            root.join(TEMPLATES_DIR),
+            assets_dir,
+            history_dir,
+            binders_dir,
+        ]
+        .into_iter()
+        .collect();
+        for (bdir, _) in &lists {
+            written.insert(bdir.join("text"));
+            written.insert(bdir.clone());
+        }
+        for r in &bundle.resources {
+            let rel = crate::slug::resource_relpath(r.uid, &r.file_name);
+            if let Ok(file) = locator.locate(root, &rel, "resource")
+                && let Some(parent) = file.parent()
+            {
+                written.insert(parent.to_path_buf());
+            }
+        }
+        for rel in placed.keys() {
+            if let Ok(file) = locator.locate(root, rel, "carried file")
+                && let Some(parent) = file.parent()
+            {
+                written.insert(parent.to_path_buf());
+            }
+        }
+        for dir in &written {
+            sweep_temp_leftovers(root, dir);
+        }
+    }
+    Ok(())
+}
+
+/// How long a temporary file must have been left alone before a save takes it for a
+/// crash's leftover. A write in progress keeps touching its file, and every write here
+/// renames its file into place the moment it is done, so a file this old belongs to no
+/// write still running, in this process or another.
+const TEMP_LEFTOVER_AGE: std::time::Duration = std::time::Duration::from_secs(15 * 60);
+
+/// Whether `name` is one this crate gives a temporary file beside its target: `.tmp`
+/// (`tempfile`'s default, which [`write_if_changed`] and the zip writer use) or `.blob`
+/// ([`crate::Blob::place_at`]), then six letters or digits. Nothing else is ever taken
+/// for a leftover, however it is named.
+fn is_temp_leftover_name(name: &str) -> bool {
+    [".tmp", ".blob"].iter().any(|prefix| {
+        name.strip_prefix(prefix)
+            .is_some_and(|rest| rest.len() == 6 && rest.bytes().all(|b| b.is_ascii_alphanumeric()))
+    })
+}
+
+/// Remove from the folder `dir` of the project at `root` the temporary files a write cut
+/// short (a crash, a power cut) left there: names [`is_temp_leftover_name`] accepts, on
+/// plain files not modified for [`TEMP_LEFTOVER_AGE`]. The prunes match by extension and
+/// a temporary name has none, and since such names are hidden they are not carried
+/// either (see [`super::carry::is_hidden`]), so without this they stayed for good.
+///
+/// The age is the modification time: the temporary files written into a project folder
+/// are filled as they are written. The one kind that is not, the hard link
+/// [`crate::Blob::link_or_place_at`] makes under a temporary name, is made only in a
+/// zip's staging folder or outside the project folder, never in a folder swept here.
+///
+/// Best effort: a leftover that cannot be removed now is met again by the next save.
+/// Never through a link, like every prune here.
+fn sweep_temp_leftovers(root: &Path, dir: &Path) {
+    if crate::media::passes_through_link(root, dir) {
+        return;
+    }
+    let Ok(entries) = fs::read_dir(dir) else {
+        return;
+    };
+    let now = std::time::SystemTime::now();
+    for entry in entries.flatten() {
+        if !entry
+            .file_name()
+            .to_str()
+            .is_some_and(is_temp_leftover_name)
+        {
+            continue;
+        }
+        // `DirEntry::metadata` does not follow a link, so a link is never a file here.
+        let Ok(meta) = entry.metadata() else {
+            continue;
+        };
+        let old_enough = meta
+            .modified()
+            .ok()
+            .and_then(|touched| now.duration_since(touched).ok())
+            .is_some_and(|age| age >= TEMP_LEFTOVER_AGE);
+        if meta.is_file() && old_enough {
+            fs::remove_file(entry.path()).ok();
+        }
+    }
+}
+
+/// Whether two binder rows name the same binder: by `uid` when both have one, else by
+/// `file_id` (a project written before binders had a uid).
+fn same_binder(a: &BinderFile, b: &BinderFile) -> bool {
+    if a.uid.is_nil() || b.uid.is_nil() {
+        a.file_id == b.file_id
+    } else {
+        a.uid == b.uid
+    }
+}
+
+/// The name, in the folder `binders/`, of the folder that keeps, until the next manifest
+/// is written, a binder list a save had to write over in the folder `folder`. Hidden, so
+/// it is neither carried nor read before a binder's own folder.
+fn set_aside_name(folder: &std::ffi::OsStr) -> std::ffi::OsString {
+    let mut name = std::ffi::OsString::from(".set-aside-");
+    name.push(folder);
+    name
+}
+
+/// The binder list in the folder `bdir` of the project at `root` as it is on disk: its
+/// bytes and what they hold. `None` when there is none, when it is reached through a
+/// link, or when it does not parse, which the reader could not take either. One that
+/// cannot be read is an error: the save stops before it writes over it.
+fn list_on_disk(root: &Path, bdir: &Path) -> Result<Option<(Vec<u8>, ItemsFile)>> {
+    let path = bdir.join("items.ron");
+    if crate::media::passes_through_link(root, &path) {
+        return Ok(None);
+    }
+    match fs::read(&path) {
+        Ok(bytes) => {
+            let parsed = std::str::from_utf8(&bytes)
+                .ok()
+                .and_then(|text| ron::from_str::<ItemsFile>(text).ok());
+            Ok(parsed.map(|list| (bytes, list)))
+        }
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
+        Err(e) => Err(e).with_context(|| format!("reading {}", path.display())),
+    }
+}
+
+/// Write each binder's `items.ron` (`lists`: the binder's folder and its list), so that
+/// at every moment of the write every item is named by some `items.ron` on disk, and
+/// every binder the manifest on disk lists is found.
+///
+/// Two things would break that, written one binder after the other:
+///
+/// * **An item moved between binders.** Its old binder's list drops it, its new
+///   binder's list names it, and whichever is written first, there is a moment when
+///   the other is not, or when both are. So it goes in three steps. First every list on
+///   disk that holds items now another binder's is rewritten where it is, the same
+///   items, with those marked as moving out ([`ItemsFile::moving_out`]). Then every
+///   binder gets its new list, a binder that loses items *with those items still in
+///   it*, still marked. Last, those binders get their lists without them. Cut short
+///   anywhere, a moved item is in its old binder's list or its new one, often both, and
+///   whenever it is in both, the copy in the old binder's is marked: the reader keeps
+///   only the other ([`drop_interrupted_moves`]).
+/// * **A folder that holds another binder's list.** A binder's folder is named by its
+///   position and its name, so two binders of the same name that swap places swap
+///   folders, and a binder made where a deleted one was takes its folder. Before
+///   writing over another binder's list, the save keeps a copy of it in a hidden
+///   folder beside ([`set_aside_name`]), which the reader takes only for a binder no
+///   other folder holds, and which the prune of binder folders removes once the
+///   manifest is written.
+///
+/// The prose these lists name is already on disk, and nothing is pruned until the
+/// manifest is written, so every list on disk, old or new, names files that are there.
+fn write_binder_lists(
+    root: &Path,
+    binders_dir: &Path,
+    lists: &[(PathBuf, ItemsFile)],
+) -> Result<()> {
+    // The binder each item now belongs to, by its position in `lists`.
+    let mut home: BTreeMap<uuid::Uuid, usize> = BTreeMap::new();
+    for (index, (_, list)) in lists.iter().enumerate() {
+        for item in &list.items {
+            if !item.uid.is_nil() {
+                home.insert(item.uid, index);
+            }
+        }
+    }
+    // Every list on disk now, by its folder's name, before anything is written. No two
+    // binders of `lists` share a folder, so each folder's entry is still what is on disk
+    // when its binder is written below. The set-aside folders of an earlier save cut
+    // short are left out: their binders' own folders are read instead.
+    let mut on_disk: BTreeMap<std::ffi::OsString, (Vec<u8>, ItemsFile)> = BTreeMap::new();
+    if let Ok(entries) = fs::read_dir(binders_dir) {
+        for entry in entries.flatten() {
+            let folder = entry.file_name();
+            if folder.as_encoded_bytes().starts_with(b".") {
+                continue;
+            }
+            if let Some(list) = list_on_disk(root, &entry.path())? {
+                on_disk.insert(folder, list);
+            }
+        }
+    }
+
+    // Step one: mark, in place, every list on disk holding items that now belong to
+    // another binder, before any list names one of them anew. A binder the writer
+    // deleted is marked too: until the manifest is written, it is still read.
+    for (folder, (bytes, old)) in on_disk.iter_mut() {
+        let moving: Vec<uuid::Uuid> = old
+            .items
+            .iter()
+            .filter(|item| {
+                home.get(&item.uid)
+                    .is_some_and(|&to| !same_binder(&lists[to].1.binder, &old.binder))
+            })
+            .map(|item| item.uid)
+            .filter(|uid| !old.moving_out.contains(uid))
+            .collect();
+        if moving.is_empty() {
+            continue;
+        }
+        old.moving_out.extend(moving);
+        let marked = to_ron(&*old)?.into_bytes();
+        write_if_changed(root, &binders_dir.join(folder).join("items.ron"), &marked)?;
+        *bytes = marked;
+    }
+
+    // Step two: every binder's new list, still holding, marked, what it loses.
+    let mut second_pass = Vec::new();
+    for (index, (bdir, list)) in lists.iter().enumerate() {
+        // The items this binder's list on disk holds that are now another binder's.
+        let mut seen = BTreeSet::new();
+        let moved_out: Vec<BinderItemFile> = on_disk
+            .values()
+            .map(|(_, old)| old)
+            .filter(|old| same_binder(&old.binder, &list.binder))
+            .flat_map(|old| &old.items)
+            .filter(|item| home.get(&item.uid).is_some_and(|&to| to != index))
+            .filter(|item| seen.insert(item.uid))
+            .cloned()
+            .collect();
+        let first = if moved_out.is_empty() {
+            to_ron(list)?
+        } else {
+            second_pass.push(index);
+            // Marked, so that a reader meeting a copy in the item's new binder too knows
+            // this one for the leftover (see `drop_interrupted_moves`).
+            to_ron(&ItemsFile {
+                binder: list.binder.clone(),
+                moving_out: moved_out.iter().map(|item| item.uid).collect(),
+                items: list.items.iter().cloned().chain(moved_out).collect(),
+            })?
+        };
+        // Another binder's list in this folder is copied aside before it is written over.
+        if let Some(folder) = bdir.file_name()
+            && let Some((bytes, old)) = on_disk.get(folder)
+            && !same_binder(&old.binder, &list.binder)
+        {
+            let aside = binders_dir.join(set_aside_name(folder));
+            own_dir(root, &aside)?;
+            write_if_changed(root, &aside.join("items.ron"), bytes)?;
+        }
+        write_if_changed(root, &bdir.join("items.ron"), first.as_bytes())?;
+    }
+    // Step three: the lists without what moved out, now that its new binders name it.
+    for index in second_pass {
+        let (bdir, list) = &lists[index];
+        write_if_changed(root, &bdir.join("items.ron"), to_ron(list)?.as_bytes())?;
     }
     Ok(())
 }
@@ -943,33 +1219,41 @@ pub(crate) fn read_folder_kept(
     // Index every binder by its file id (dir names are cosmetic).
     let mut by_id: std::collections::HashMap<u64, (ItemsFile, PathBuf)> =
         std::collections::HashMap::new();
-    // The binder each folder holds, by its folder name, for the files carried from it
-    // (see `CarriedFile::binder`).
-    let mut folder_binders: BTreeMap<String, uuid::Uuid> = BTreeMap::new();
     let binders_dir = root.join("binders");
     if let Ok(entries) = fs::read_dir(&binders_dir) {
-        for entry in entries.flatten() {
+        // A hidden folder holds a list a save cut short had set aside (see
+        // `write_binder_lists`): read last, and taken only for a binder no other folder
+        // holds, since the binder's own folder, once written, is the newer list.
+        let mut entries: Vec<fs::DirEntry> = entries.flatten().collect();
+        entries.sort_by_key(|e| e.file_name().as_encoded_bytes().starts_with(b"."));
+        for entry in entries {
+            let set_aside = entry.file_name().as_encoded_bytes().starts_with(b".");
             let items_path = entry.path().join("items.ron");
             crate::media::refuse_link(root, &items_path, "the binder list")?;
             if items_path.is_file() {
                 let text = fs::read_to_string(&items_path)
                     .with_context(|| format!("reading {}", items_path.display()))?;
                 let itf: ItemsFile = from_ron(&text, "items.ron")?;
-                if !itf.binder.uid.is_nil()
-                    && let Some(folder) = entry.file_name().to_str()
-                {
-                    folder_binders.insert(folder.to_string(), itf.binder.uid);
+                if set_aside && by_id.contains_key(&itf.binder.file_id) {
+                    continue;
                 }
                 by_id.insert(itf.binder.file_id, (itf, entry.path()));
             }
         }
     }
 
-    let mut binders = Vec::with_capacity(manifest.binder_order.len());
+    let mut lists = Vec::with_capacity(manifest.binder_order.len());
     for bid in &manifest.binder_order {
         let (itf, _dir) = by_id.remove(bid).ok_or_else(|| {
             anyhow::anyhow!("binder {bid} listed in manifest but no items.ron found")
         })?;
+        lists.push(itf);
+    }
+    // Before any prose is read: a leftover copy is not read at all.
+    drop_interrupted_moves(&mut lists);
+
+    let mut binders = Vec::with_capacity(lists.len());
+    for itf in lists {
         let mut items = Vec::with_capacity(itf.items.len());
         for item in itf.items {
             let mut prose = std::collections::BTreeMap::new();
@@ -1093,9 +1377,12 @@ pub(crate) fn read_folder_kept(
         }
         let bytes = fs::read(entry.path())
             .with_context(|| format!("reading unmodelled bundle file {key}"))?;
-        let binder = super::carry::binder_folder(&key)
-            .and_then(|(folder, _)| folder_binders.get(folder).copied());
-        carried.insert(key, CarriedFile::new(bytes).in_binder(binder));
+        // Not told which binder it came from (`CarriedFile::binder`). Every save the
+        // application makes reads what it carries from disk again, binder and all
+        // (`carry::load_for_save`), and none uses this map. A tool that writes back a
+        // bundle read here after renaming or moving a binder has to do the same, or
+        // the files carried from that binder's folder go with the old folder.
+        carried.insert(key, CarriedFile::new(bytes));
     }
 
     manifest.legacy_resource_dirs = carried
@@ -1123,6 +1410,80 @@ pub(crate) fn read_folder_kept(
         binders,
         carried,
     })
+}
+
+/// Leave every binder item in one binder's list only, for `lists` read in manifest order.
+///
+/// A save cut short while it moved an item between binders leaves it in both lists: the
+/// old binder's list still holds it, marked as moving out ([`ItemsFile::moving_out`]),
+/// and the new binder's may name it already (see `write_binder_lists`). Read as it is,
+/// the project would hold two items with one uid, and everything that finds an item by
+/// its uid (an open tab, a mention, the version history, an extension) would find either
+/// one. So a marked copy is dropped wherever another copy of the item is: the one in the
+/// new binder is the one the writer last saw. A marked copy that is the only one is kept,
+/// since the new binder's list does not name the item yet, and the marks themselves are
+/// never kept past the read.
+///
+/// An item that is still in two lists after that was not put there by a save cut short
+/// (a hand edit, say), and nothing tells which copy is stale. Both are kept, so no words
+/// are lost, and each later copy gets a uid of its own, derived from its binder, its
+/// place and its old uid (`bundle::derived_uid`), so that reading the same lists again
+/// gives the same uid until a save writes it. Only the item's own uid is given anew.
+///
+/// A pure function of the lists: a second read of the same folder gives the same result.
+fn drop_interrupted_moves(lists: &mut [ItemsFile]) {
+    let mut copies: BTreeMap<uuid::Uuid, usize> = BTreeMap::new();
+    for item in lists.iter().flat_map(|list| &list.items) {
+        if !item.uid.is_nil() {
+            *copies.entry(item.uid).or_default() += 1;
+        }
+    }
+    for list in lists.iter_mut() {
+        let moving: BTreeSet<uuid::Uuid> =
+            std::mem::take(&mut list.moving_out).into_iter().collect();
+        if moving.is_empty() {
+            continue;
+        }
+        list.items.retain(|item| {
+            let left_over =
+                moving.contains(&item.uid) && copies.get(&item.uid).is_some_and(|&count| count > 1);
+            if left_over && let Some(count) = copies.get_mut(&item.uid) {
+                *count -= 1;
+            }
+            !left_over
+        });
+    }
+
+    let mut seen: BTreeSet<uuid::Uuid> = BTreeSet::new();
+    for list in lists.iter_mut() {
+        for (row, item) in list.items.iter_mut().enumerate() {
+            if item.uid.is_nil() || seen.insert(item.uid) {
+                continue;
+            }
+            let old = item.uid;
+            item.uid = (0u32..)
+                .map(|attempt| {
+                    super::bundle::derived_uid(
+                        "skribisto binder item uid heal 2026-11",
+                        &[
+                            list.binder.uid.as_bytes(),
+                            &list.binder.file_id.to_le_bytes(),
+                            &(row as u64).to_le_bytes(),
+                            old.as_bytes(),
+                            &attempt.to_le_bytes(),
+                        ],
+                    )
+                })
+                .find(|uid| !copies.contains_key(uid) && !seen.contains(uid))
+                .unwrap_or_else(uuid::Uuid::new_v4);
+            seen.insert(item.uid);
+            eprintln!(
+                "skrib: the item {old} is in more than one binder; the copy in binder {} is \
+                 given the uid {}",
+                list.binder.file_id, item.uid
+            );
+        }
+    }
 }
 
 /// Hold the bodies in one file of comment threads to what the Djot parser can be given

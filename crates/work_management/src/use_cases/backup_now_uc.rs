@@ -342,7 +342,7 @@ fn run_backup(
     // Before the fingerprint on purpose: `CarriedFile` serialises its digest for
     // exactly this reason, so a project whose only change is an extension's own
     // data is not skipped as unchanged.
-    bundle.carried = skrib::carry::load_for_save(&source, &bundle.resources);
+    bundle.carried = skrib::carry::load_for_save(&source, &bundle.resources)?;
     for (path, bytes) in contributed {
         bundle.carried.insert(path, skrib::CarriedFile::new(bytes));
     }

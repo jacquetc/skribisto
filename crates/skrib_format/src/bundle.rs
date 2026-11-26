@@ -1040,6 +1040,14 @@ pub struct BinderItemFile {
 pub struct ItemsFile {
     pub binder: BinderFile,
     pub items: Vec<BinderItemFile>,
+    /// The uids of the items in [`Self::items`] that a save is moving to another binder,
+    /// kept here only until that binder's list names them. Empty, and not written, in
+    /// every list but the one a save writes first while it moves items between binders
+    /// (`folder_io::write_binder_lists`), so a list on disk holds it only when that save
+    /// was cut short. The reader then drops these copies wherever the item's new binder
+    /// already holds it. Additive: a build that does not know the field ignores it.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub moving_out: Vec<uuid::Uuid>,
 }
 
 /// The whole document, in memory. Not serialised as a single file — `writer`
@@ -1160,13 +1168,29 @@ impl WorkBundle {
     /// bundle, before the load places the files, and the bytes follow the new uid: a uid
     /// minted only once the rows exist named a folder nothing was in, and the next open
     /// pruned the bytes away. Two rows that shared a file each keep a copy.
+    ///
+    /// The new uid is derived from what the row is (`healed_resource_uid`), not drawn
+    /// at random, so healing the same `resources.ron` again gives the same uids. That is
+    /// what keeps the file. Opening a project changes nothing that marks it unsaved, so
+    /// `resources.ron` can keep the old uid through any number of opens; the load copies
+    /// the file into the new uid's folder and prunes every folder no uid names. With a
+    /// fresh uid at every open, the second open named another folder, pruned the first
+    /// one, and the copy in it was the only one left.
     pub fn heal_resource_uids(&mut self) {
+        // Every uid a row already has, so a derived one never takes a later row's.
+        let mut taken: std::collections::BTreeSet<uuid::Uuid> =
+            self.resources.iter().map(|r| r.uid).collect();
         let mut seen = std::collections::BTreeSet::new();
         let mut blobs = BTreeMap::new();
-        for r in &mut self.resources {
+        let project = self.manifest.work.unique_id.clone();
+        for (row, r) in self.resources.iter_mut().enumerate() {
             let old = r.uid.hyphenated().to_string();
             if r.uid.is_nil() || !seen.insert(r.uid) {
-                r.uid = uuid::Uuid::new_v4();
+                r.uid = (0u32..)
+                    .map(|attempt| healed_resource_uid(&project, row, r.uid, &r.file_name, attempt))
+                    .find(|uid| !taken.contains(uid))
+                    .unwrap_or_else(uuid::Uuid::new_v4);
+                taken.insert(r.uid);
                 seen.insert(r.uid);
             }
             if let Some(blob) = self.resource_blobs.get(&old) {
@@ -1175,6 +1199,46 @@ impl WorkBundle {
         }
         self.resource_blobs = blobs;
     }
+}
+
+/// The uid [`WorkBundle::heal_resource_uids`] gives the resource row at position `row`,
+/// whose uid `old` is nil or another row's: the same for the same project, row, old uid,
+/// file name and `attempt`, which counts the derived uids already found taken. A uid in
+/// the shape of a random (version 4) one, so nothing that reads it can tell the
+/// difference.
+fn healed_resource_uid(
+    project: &str,
+    row: usize,
+    old: uuid::Uuid,
+    file_name: &str,
+    attempt: u32,
+) -> uuid::Uuid {
+    derived_uid(
+        "skribisto resource uid heal 2026-11",
+        &[
+            project.as_bytes(),
+            &(row as u64).to_le_bytes(),
+            old.as_bytes(),
+            file_name.as_bytes(),
+            &attempt.to_le_bytes(),
+        ],
+    )
+}
+
+/// A uid that is the same every time it is derived from the same `parts` for the same
+/// `purpose`, in the shape of a random (version 4) one, so nothing that reads it can tell
+/// the difference. For a uid a read has to give a row anew, and has to give it the same
+/// way at every read until a save writes it down.
+pub(crate) fn derived_uid(purpose: &str, parts: &[&[u8]]) -> uuid::Uuid {
+    let mut hasher = blake3::Hasher::new_derive_key(purpose);
+    for part in parts {
+        // Each part's length first, so no two lists of parts hash alike.
+        hasher.update(&(part.len() as u64).to_le_bytes());
+        hasher.update(part);
+    }
+    let mut bytes = [0u8; 16];
+    bytes.copy_from_slice(&hasher.finalize().as_bytes()[..16]);
+    uuid::Builder::from_random_bytes(bytes).into_uuid()
 }
 
 /// One unmodelled bundle file, held as opaque bytes plus a digest.
@@ -1193,9 +1257,10 @@ pub struct CarriedFile {
     pub digest: String,
     #[serde(skip)]
     pub bytes: Vec<u8>,
-    /// For a file read from a binder's folder (`binders/<folder>/…`), the `uid` of the
-    /// binder that folder's `items.ron` names; `None` for any other file, and for one
-    /// written by hand or by an extension, which names its place itself.
+    /// For a file a save read from a binder's folder (`binders/<folder>/…`, read by
+    /// `carry::load_for_save`), the `uid` of the binder that folder's `items.ron` names;
+    /// `None` for any other file, for every file of a bundle `read_bundle` returned, and
+    /// for one written by hand or by an extension, which names its place itself.
     ///
     /// A binder's folder is named by its position and its name (`02-notes`), so a
     /// binder renamed or moved gets another folder and the old one is pruned. This is

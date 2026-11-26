@@ -215,7 +215,7 @@ fn a_linked_unmodelled_file_is_not_carried() {
     let back = read_bundle(path).expect("the project opens");
     let keys: Vec<&String> = back.carried.keys().collect();
     assert_eq!(keys, vec!["notes/own.txt"]);
-    let keys: Vec<String> = super::carry::load(path).into_keys().collect();
+    let keys: Vec<String> = super::carry::load(path).unwrap().into_keys().collect();
     assert_eq!(keys, vec!["notes/own.txt".to_string()]);
 }
 

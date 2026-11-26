@@ -35,6 +35,8 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
+use anyhow::Context;
+
 use crate::bundle::{CarriedFile, ProjectManifest, ResourceFile};
 use crate::history::{HISTORY_DIR, HISTORY_INDEX};
 use crate::shape::MANIFEST_NAME;
@@ -145,9 +147,11 @@ pub fn is_stray_bundle(rel: &str) -> bool {
 /// a repository would be read on every save, copied into every backup and archive, and
 /// written back, stale, over the one beside the book; a crash's leftover would travel
 /// with the project for good. So none is carried. Nor is one deleted for not being
-/// carried: it stays on disk as it is, unless it sits in a folder the format fills and
-/// prunes itself (`assets/`, a binder's `text/`), where it goes like any stray file
-/// there, which is how a crash's leftover in such a folder is cleaned up.
+/// carried: it stays on disk as it is. The exceptions are a stray file in `assets/`,
+/// which that folder's prune removes whatever its name, and a crash's leftover itself,
+/// which a folder save removes from every folder it writes once it is old enough that
+/// no write can still be using it (`folder_io::sweep_temp_leftovers`). The other prunes
+/// match by extension, and a temporary name has none.
 pub fn is_hidden(rel: &str) -> bool {
     rel.split('/').any(|part| part.starts_with('.'))
 }
@@ -187,16 +191,27 @@ pub(crate) fn binder_uid_of(items_ron: &[u8]) -> Option<uuid::Uuid> {
 /// consulted for names first — so the common case (a project with nothing
 /// unmodelled in it) costs one central-directory read and no inflation.
 ///
-/// A missing, unreadable or legacy bundle yields an empty map rather than an
-/// error: there is nothing to carry, which is an ordinary state for a brand-new
-/// project, not a failure.
-pub fn load(path: &str) -> BTreeMap<String, CarriedFile> {
+/// A missing or legacy bundle yields an empty map: there is nothing to carry, which is
+/// an ordinary state for a brand-new project, not a failure. So does a file that
+/// vanishes while it is read, as a sync client may remove one.
+///
+/// Any other failure to read is an error naming the file (a permission refused, a file
+/// a sync client or an antivirus holds locked). A file left out of the map is a file
+/// the write deletes: the prunes keep only what the map holds, and a binder's renamed
+/// folder takes along only what the map lists. So a save that cannot read a carried
+/// file fails, visibly, and deletes nothing; the project stays unsaved and the next
+/// save tries again. The open path refuses such a file the same way.
+pub fn load(path: &str) -> anyhow::Result<BTreeMap<String, CarriedFile>> {
     load_for_save(path, &[])
 }
 
-/// Known live resources include files newly added to a pre-v17 folder before its
-/// first save. They are streamed by the writer, never buffered as legacy files.
-pub fn load_for_save(path: &str, resources: &[ResourceFile]) -> BTreeMap<String, CarriedFile> {
+/// [`load`], knowing the live resources. Known live resources include files newly added
+/// to a pre-v17 folder before its first save. They are streamed by the writer, never
+/// buffered as legacy files.
+pub fn load_for_save(
+    path: &str,
+    resources: &[ResourceFile],
+) -> anyhow::Result<BTreeMap<String, CarriedFile>> {
     // Most projects need no extra manifest read to classify their files.
     let manifest = std::cell::LazyCell::new(|| crate::peek_manifest(path).ok());
     let live = stored_uids(resources);
@@ -205,14 +220,53 @@ pub fn load_for_save(path: &str, resources: &[ResourceFile]) -> BTreeMap<String,
     match detect_shape(path) {
         Ok(SkribShape::ExplodedFolder) => load_folder(&folder_root(path), modelled),
         Ok(SkribShape::ZipFile) => load_zip(std::path::Path::new(path), modelled),
-        _ => BTreeMap::new(),
+        Ok(SkribShape::LegacySqlite) => Ok(BTreeMap::new()),
+        // Nothing there, a folder with no manifest, a file of another kind: nothing to
+        // carry. A file that is there and cannot be read is another matter: written
+        // over, the files it carries would be gone.
+        Err(e) => match e.chain().find_map(|c| c.downcast_ref::<std::io::Error>()) {
+            Some(io) if io.kind() != std::io::ErrorKind::NotFound => {
+                Err(e.context(format!("reading {path} for the files it carries")))
+            }
+            _ => Ok(BTreeMap::new()),
+        },
+    }
+}
+
+/// The error a save stops on for the I/O failure `e` met reading `what`, or `None` when
+/// `e` says the file is simply not there (any more): see [`load`].
+fn unless_gone(e: std::io::Error, what: &std::path::Path) -> Option<anyhow::Error> {
+    (e.kind() != std::io::ErrorKind::NotFound).then(|| {
+        anyhow::Error::new(e).context(format!(
+            "reading {}, a file the project carries (nothing was saved, so nothing is lost)",
+            what.display()
+        ))
+    })
+}
+
+/// The binder the folder `binders/<folder>/` of the project at `root` holds, read from
+/// its `items.ron`: `None` when there is none, when it names none or does not parse, or
+/// when it is reached through a link; an error when it is there and cannot be read.
+/// Read as `None`, a renamed binder's carried files would stay in its old folder and be
+/// pruned with it.
+fn folder_binder(root: &std::path::Path, folder: &str) -> anyhow::Result<Option<uuid::Uuid>> {
+    let items = root.join("binders").join(folder).join("items.ron");
+    if crate::media::passes_through_link(root, &items) {
+        return Ok(None);
+    }
+    match std::fs::read(&items) {
+        Ok(bytes) => Ok(binder_uid_of(&bytes)),
+        Err(e) => match unless_gone(e, &items) {
+            Some(err) => Err(err),
+            None => Ok(None),
+        },
     }
 }
 
 fn load_folder(
     root: &std::path::Path,
     modelled: impl Fn(&str) -> bool,
-) -> BTreeMap<String, CarriedFile> {
+) -> anyhow::Result<BTreeMap<String, CarriedFile>> {
     let mut out = BTreeMap::new();
     // The binder each binder folder holds, read from its `items.ron` when a carried
     // file is first found in it (see `CarriedFile::binder`).
@@ -222,7 +276,21 @@ fn load_folder(
         .into_iter()
         .filter_entry(walk_enters);
     for entry in walk {
-        let Ok(entry) = entry else { continue };
+        // A folder that cannot be listed may hold carried files: skipped, they would be
+        // pruned or left behind by a renamed binder, so the save stops instead.
+        let entry = match entry {
+            Ok(entry) => entry,
+            Err(e) => {
+                let at = e.path().unwrap_or(root).to_path_buf();
+                match e.into_io_error() {
+                    Some(io) => match unless_gone(io, &at) {
+                        Some(err) => return Err(err),
+                        None => continue,
+                    },
+                    None => anyhow::bail!("walking {}: it loops back on itself", at.display()),
+                }
+            }
+        };
         // A link is not a file to a walk that does not follow links (`WalkDir`'s
         // default), and a linked folder is not descended: nothing reached through one
         // is carried, as `folder_io::read_folder_kept` carries none.
@@ -251,35 +319,53 @@ fn load_folder(
             eprintln!("skrib: not carrying {e}");
             continue;
         }
-        let Ok(bytes) = std::fs::read(entry.path()) else {
-            continue;
+        let bytes = match std::fs::read(entry.path()) {
+            Ok(bytes) => bytes,
+            Err(e) => match unless_gone(e, entry.path()) {
+                Some(err) => return Err(err),
+                None => continue,
+            },
         };
-        let binder = binder_folder(&rel).and_then(|(folder, _)| {
-            *binders.entry(folder.to_string()).or_insert_with(|| {
-                let items = root.join("binders").join(folder).join("items.ron");
-                if crate::media::passes_through_link(root, &items) {
-                    return None;
+        let binder = match binder_folder(&rel) {
+            Some((folder, _)) => match binders.get(folder) {
+                Some(uid) => *uid,
+                None => {
+                    let uid = folder_binder(root, folder)?;
+                    binders.insert(folder.to_string(), uid);
+                    uid
                 }
-                std::fs::read(&items).ok().and_then(|b| binder_uid_of(&b))
-            })
-        });
+            },
+            None => None,
+        };
         out.insert(rel, CarriedFile::new(bytes).in_binder(binder));
     }
-    out
+    Ok(out)
 }
 
+/// The zip side of [`load`]. The archive is replaced whole by the save, so a member
+/// left out here is gone from the project: an archive that cannot be opened or read
+/// stops the save, as it would refuse the open. Only a member past the size budget is
+/// dropped, see below.
 fn load_zip(
     path: &std::path::Path,
     modelled: impl Fn(&str) -> bool,
-) -> BTreeMap<String, CarriedFile> {
-    let Ok(file) = std::fs::File::open(path) else {
-        return BTreeMap::new();
+) -> anyhow::Result<BTreeMap<String, CarriedFile>> {
+    let file = match std::fs::File::open(path) {
+        Ok(file) => file,
+        Err(e) => {
+            return match unless_gone(e, path) {
+                Some(err) => Err(err),
+                None => Ok(BTreeMap::new()),
+            };
+        }
     };
-    let Ok((mut archive, mut guard)) =
-        crate::zip_guard::ZipGuard::open(crate::zip_io::LIMITS, file)
-    else {
-        return BTreeMap::new();
-    };
+    let (mut archive, mut guard) = crate::zip_guard::ZipGuard::open(crate::zip_io::LIMITS, file)
+        .with_context(|| {
+            format!(
+                "reading {} for the files it carries (nothing was saved, so nothing is lost)",
+                path.display()
+            )
+        })?;
     // Names first, from the central directory, so the decision of what to
     // inflate is made without inflating anything.
     // The names are taken verbatim — that is the point of carrying — so they are
@@ -306,41 +392,51 @@ fn load_zip(
 
     let mut out = BTreeMap::new();
     let mut binders: BTreeMap<String, Option<uuid::Uuid>> = BTreeMap::new();
-    for name in unmodelled {
-        // Bounded by the shared guard: a carried file this build does not model is
-        // still a zip member from an untrusted bundle, so it inflates under the same
-        // ratio and ceiling as any other. One past its budget is dropped along with
-        // the archive's running total, exactly as it would be on extraction.
-        match guard.read_named(&mut archive, &name) {
-            Ok(Some(bytes)) => {
-                let folder = binder_folder(&name).map(|(folder, _)| folder.to_string());
-                let binder = match folder {
-                    Some(folder) => match binders.get(&folder) {
-                        Some(uid) => *uid,
-                        None => {
-                            let items = format!("binders/{folder}/items.ron");
-                            let uid = match guard.read_named(&mut archive, &items) {
-                                Ok(Some(b)) => binder_uid_of(&b),
-                                Ok(None) => None,
-                                Err(_) => break,
-                            };
-                            binders.insert(folder, uid);
-                            uid
-                        }
-                    },
-                    None => None,
-                };
-                out.insert(name, CarriedFile::new(bytes).in_binder(binder));
-            }
-            Ok(None) => {}
-            // A member past the budget: stop carrying. Carry is best-effort by
-            // design (a missing carry set is a normal state), and a bundle whose
-            // unmodelled members are a bomb is one this build will refuse to open
-            // through `read_zip` anyway.
-            Err(_) => break,
+    // Bounded by the shared guard: a carried file this build does not model is still a
+    // zip member from an untrusted bundle, so it inflates under the same ratio and
+    // ceiling as any other. A member past its budget stops the carrying, along with the
+    // archive's running total, exactly as it would stop an extraction: a bundle whose
+    // unmodelled members are a bomb is one `read_zip` refuses to open anyway, and its
+    // bytes are no writer's. Any other failure (a damaged member, a read error) stops
+    // the save, as it refuses the open.
+    let mut read = |archive: &mut zip::ZipArchive<std::fs::File>,
+                    name: &str|
+     -> anyhow::Result<Option<Option<Vec<u8>>>> {
+        match guard.read_named(archive, name) {
+            Ok(bytes) => Ok(Some(bytes)),
+            Err(e) if e.is::<crate::zip_guard::ZipRefused>() => Ok(None),
+            Err(e) => Err(e.context(format!(
+                "reading {} for the files it carries (nothing was saved, so nothing is lost)",
+                path.display()
+            ))),
         }
+    };
+    'members: for name in unmodelled {
+        let bytes = match read(&mut archive, &name)? {
+            Some(Some(bytes)) => bytes,
+            Some(None) => continue,
+            None => break,
+        };
+        let folder = binder_folder(&name).map(|(folder, _)| folder.to_string());
+        let binder = match folder {
+            Some(folder) => match binders.get(&folder) {
+                Some(uid) => *uid,
+                None => {
+                    let items = format!("binders/{folder}/items.ron");
+                    let uid = match read(&mut archive, &items)? {
+                        Some(Some(b)) => binder_uid_of(&b),
+                        Some(None) => None,
+                        None => break 'members,
+                    };
+                    binders.insert(folder, uid);
+                    uid
+                }
+            },
+            None => None,
+        };
+        out.insert(name, CarriedFile::new(bytes).in_binder(binder));
     }
-    out
+    Ok(out)
 }
 
 #[cfg(test)]

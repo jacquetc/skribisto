@@ -191,10 +191,15 @@ fn own_file(dir: &std::path::Path, path: &std::path::Path) -> bool {
 /// Every file is placed before the prune runs. The prune keeps only the folders of
 /// today's uids, so run first it would delete the old uid's folder, and with it the
 /// only copy of the file the copy below reads.
+///
+/// Rows that shared one file each get a file of their own, never two names for one
+/// file (a hard link), so an application editing one does not change the other.
 pub fn write_resource_blobs(
     bundle: &skrib::WorkBundle,
     resources_dir: &std::path::Path,
 ) -> Result<()> {
+    // The files already placed from, in this pass.
+    let mut placed_from: std::collections::BTreeSet<std::path::PathBuf> = Default::default();
     for r in &bundle.resources {
         let Some(blob) = bundle.resource_blobs.get(&r.uid.hyphenated().to_string()) else {
             continue;
@@ -206,17 +211,27 @@ pub fn write_resource_blobs(
         if blob.path().is_some_and(|src| src.parent() == path.parent()) {
             continue;
         }
-        // From a zip's extraction, thrown away after the load: a link is safe. From
-        // another uid's folder of this project: a copy, never a link, since two rows
-        // that shared a file each keep their own, and an application editing one must
-        // not change the other.
-        let placed = if blob
+        let from_this_project = blob
             .path()
-            .is_some_and(|src| src.starts_with(resources_dir))
-        {
-            blob.place_at(&path)
-        } else {
+            .is_some_and(|src| src.starts_with(resources_dir));
+        // From another uid's folder of this project: a row whose uid the load gave anew.
+        // The uid is derived from the row, the same at every open until a save writes it
+        // (see `heal_resource_uids`), so a file already in its folder is the copy an
+        // earlier open made, perhaps edited since: it is the row's own, and kept.
+        if from_this_project && path.is_file() {
+            continue;
+        }
+        // From a zip's extraction, thrown away after the load: a link is safe, for the
+        // first row placed from that file. From another uid's folder of this project,
+        // or from a file an earlier row of this pass was placed from: a copy.
+        let first_from_extraction = !from_this_project
+            && blob
+                .path()
+                .is_none_or(|src| placed_from.insert(src.to_path_buf()));
+        let placed = if first_from_extraction {
             blob.link_or_place_at(&path)
+        } else {
+            blob.place_at(&path)
         };
         placed.with_context(|| format!("writing resource file {}", path.display()))?;
     }
@@ -484,7 +499,7 @@ pub fn serialize_and_write(
     bundle.carried = if foreign {
         Default::default()
     } else {
-        skrib::carry::load_for_save(history.source(), &bundle.resources)
+        skrib::carry::load_for_save(history.source(), &bundle.resources)?
     };
 
     // The contributors' files then land **over** the on-disk read. That
@@ -641,6 +656,84 @@ mod tests {
         std::fs::write(&kept, b"%PDF-2.0 edited").expect("edit");
         assert_eq!(
             std::fs::read(&copy).ok().as_deref(),
+            Some(&b"%PDF-1.7"[..]),
+            "editing one row's file changed the other's"
+        );
+    }
+
+    /// A folder project whose `resources.ron` gives a stored file no uid, opened again and
+    /// again with nothing saved in between: the file is there after every open.
+    ///
+    /// An open gives the row a uid and copies the file into that uid's folder, but marks
+    /// nothing unsaved, so `resources.ron` keeps no uid. Each open used to give another
+    /// one: the second open pruned the folder the first had copied the file into, and the
+    /// nil folder was already gone, so the file was lost.
+    #[test]
+    fn a_healed_resource_keeps_its_file_through_opens_without_a_save() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let project = dir.path().join("Novel");
+        let path = project.to_str().expect("utf-8").to_string();
+        let name = "Village map.pdf";
+        let nil = uuid::Uuid::nil();
+        let mut bundle = crate::save_load_test::sample_bundle();
+        bundle.resources = vec![stored_row(800, nil, name)];
+        bundle.resource_blobs = std::collections::BTreeMap::from([(
+            nil.hyphenated().to_string(),
+            skrib::Blob::from(b"%PDF-1.7".to_vec()),
+        )]);
+        skrib::write_bundle(&path, SkribShape::ExplodedFolder, &bundle).expect("write");
+        let resources_dir = project.join(skrib::slug::RESOURCES_DIR);
+
+        let mut uids = Vec::new();
+        for open in 1..=3 {
+            let mut loaded = skrib::read_bundle(&path).expect("open");
+            assert_eq!(loaded.resources[0].uid, nil, "nothing saved the healed uid");
+            loaded.heal_resource_uids();
+            write_resource_blobs(&loaded, &resources_dir).expect("the open places the file");
+            let r = &loaded.resources[0];
+            let file = skrib::media::resource_file(&resources_dir, r.uid, &r.file_name);
+            assert_eq!(
+                std::fs::read(&file).ok().as_deref(),
+                Some(&b"%PDF-1.7"[..]),
+                "the file is gone after open {open}"
+            );
+            uids.push(r.uid);
+        }
+        assert!(uids.windows(2).all(|w| w[0] == w[1]), "{uids:?}");
+    }
+
+    /// Two rows of a single-file project that shared one uid: placed from the one file
+    /// the archive was extracted to, each gets a file of its own, not a second name for
+    /// the first one's, so editing one does not change the other.
+    #[test]
+    fn rows_that_shared_a_uid_in_a_zip_each_get_their_own_file() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let extraction = dir.path().join("extraction");
+        let shared = uuid::Uuid::from_u128(7);
+        let name = "Village map.pdf";
+        let src = skrib::media::resource_file(&extraction, shared, name);
+        std::fs::create_dir_all(src.parent().expect("parent")).expect("folder");
+        std::fs::write(&src, b"%PDF-1.7").expect("write");
+        let mut bundle = crate::save_load_test::sample_bundle();
+        bundle.resources = vec![stored_row(800, shared, name), stored_row(801, shared, name)];
+        bundle.resource_blobs = std::collections::BTreeMap::from([(
+            shared.hyphenated().to_string(),
+            skrib::Blob::file(src),
+        )]);
+        bundle.heal_resource_uids();
+        let resources_dir = dir.path().join("media").join("resources");
+
+        write_resource_blobs(&bundle, &resources_dir).expect("the open places the files");
+
+        let files: Vec<std::path::PathBuf> = bundle
+            .resources
+            .iter()
+            .map(|r| skrib::media::resource_file(&resources_dir, r.uid, &r.file_name))
+            .collect();
+        // Rewritten in place, as an application saving over the file does.
+        std::fs::write(&files[0], b"%PDF-2.0 edited").expect("edit");
+        assert_eq!(
+            std::fs::read(&files[1]).ok().as_deref(),
             Some(&b"%PDF-1.7"[..]),
             "editing one row's file changed the other's"
         );

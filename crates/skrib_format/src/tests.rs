@@ -4153,3 +4153,356 @@ fn a_save_stopped_before_the_manifest_keeps_a_deleted_binders_folder() {
         .expect("a save stopped before the manifest must leave a project that opens");
     assert_eq!(read.binders.len(), bundle.binders.len());
 }
+
+/// The sample, with a second binder named `name` after the first, holding the first
+/// binder's last item, as a save from the store writes it.
+fn with_second_binder(name: &str) -> WorkBundle {
+    let mut bundle = build_bundle(ShapeTag::Folder);
+    let mut second = bundle.binders[0].clone();
+    second.binder.uid = uuid::Uuid::from_u128(0xB1DE);
+    second.binder.file_id = 101;
+    second.binder.name = name.to_string();
+    second.items.clear();
+    bundle.binders.push(second);
+    bundle.manifest.binder_order.push(101);
+    move_last_item(&mut bundle, 0, 1);
+    bundle
+}
+
+/// Every binder's prose paths pointed at its folder of today, as `from_entities` writes
+/// them after a binder moves, or an item moves between binders.
+fn refile_prose(bundle: &mut WorkBundle) {
+    for (index, bb) in bundle.binders.iter_mut().enumerate() {
+        let folder = crate::slug::binder_dir_name(index, &bb.binder.name);
+        for item in &mut bb.items {
+            for pr in &mut item.item.prose_refs {
+                let file = pr.path.rsplit('/').next().unwrap_or_default().to_string();
+                pr.path = crate::slug::prose_relpath(&folder, &file);
+            }
+        }
+    }
+}
+
+/// Move the last item of binder `from` to the end of binder `to`, prose and all.
+/// Returns its uid.
+fn move_last_item(bundle: &mut WorkBundle, from: usize, to: usize) -> uuid::Uuid {
+    let mut item = bundle.binders[from].items.pop().expect("an item to move");
+    assert!(
+        !item.item.prose_refs.is_empty(),
+        "the moved item has words to lose"
+    );
+    item.item.indent = 0;
+    let uid = item.item.uid;
+    bundle.binders[to].items.push(item);
+    refile_prose(bundle);
+    uid
+}
+
+/// Every item uid of `bundle`, with its prose, in binder order.
+fn items_and_words(bundle: &WorkBundle) -> Vec<(uuid::Uuid, Vec<String>)> {
+    let mut out: Vec<_> = bundle
+        .binders
+        .iter()
+        .flat_map(|b| &b.items)
+        .map(|i| (i.item.uid, i.prose.values().cloned().collect()))
+        .collect();
+    out.sort();
+    out
+}
+
+/// No folder a save set aside is left once a save completes.
+fn no_set_aside_left(root: &Path) {
+    let hidden: Vec<String> = fs::read_dir(root.join("binders"))
+        .unwrap()
+        .filter_map(Result::ok)
+        .map(|e| e.file_name().to_string_lossy().into_owned())
+        .filter(|n| n.starts_with('.'))
+        .collect();
+    assert!(hidden.is_empty(), "left behind: {hidden:?}");
+}
+
+/// An item moved from the first binder to the second, and a save stopped after the
+/// first binder's `items.ron`: the project opens with the item and its words.
+///
+/// Binder by binder, the first binder's `items.ron` dropped the item and its prose was
+/// pruned before the second binder's `items.ron` named it, so a save stopped there left
+/// the item in no binder at all.
+#[cfg(unix)]
+#[test]
+fn a_save_stopped_between_two_binders_keeps_an_item_moved_between_them() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("Novel");
+    let bundle = with_second_binder("Notes");
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+
+    let mut moved = bundle.clone();
+    let uid = move_last_item(&mut moved, 0, 1);
+    let second = root
+        .join("binders")
+        .join(crate::slug::binder_dir_name(1, "Notes"));
+
+    if !write_with_read_only(&root, &second, &moved) {
+        return;
+    }
+    let read = read_bundle(root.to_str().unwrap())
+        .expect("a save stopped between two binders must leave a project that opens");
+    let found: Vec<(uuid::Uuid, Vec<String>)> = items_and_words(&read)
+        .into_iter()
+        .filter(|(u, _)| *u == uid)
+        .collect();
+    let words = items_and_words(&bundle)
+        .into_iter()
+        .find(|(u, _)| *u == uid)
+        .map(|(_, w)| w);
+    assert!(
+        !found.is_empty(),
+        "the moved item is in no binder after a save stopped between the two"
+    );
+    assert!(found.iter().all(|(_, w)| Some(w) == words.as_ref()));
+    // The first binder's list on disk holds the item marked as moving out, so a reader
+    // meeting it in the second binder's list too would keep only that one.
+    let first = root.join("binders").join(crate::slug::binder_dir_name(
+        0,
+        &bundle.binders[0].binder.name,
+    ));
+    let on_disk: ItemsFile =
+        ron::from_str(&fs::read_to_string(first.join("items.ron")).unwrap()).unwrap();
+    assert_eq!(on_disk.moving_out, vec![uid]);
+
+    // The save that then goes through leaves the item once, in its new binder.
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &moved).unwrap();
+    let read = read_bundle(root.to_str().unwrap()).unwrap();
+    assert_eq!(items_and_words(&read), items_and_words(&moved));
+    assert!(read.binders[1].items.iter().any(|i| i.item.uid == uid));
+    no_set_aside_left(&root);
+}
+
+/// What a save moving the second binder's last item to the first leaves on disk when it
+/// is cut short just after the first binder's new list is written: the item is in both
+/// lists, and the second binder's still holds it as it did, `marked` as moving out or
+/// not. Returns the project folder, the bundle the save was writing, and the moved
+/// item's uid.
+fn cut_short_mid_move(dir: &Path, marked: bool) -> (std::path::PathBuf, WorkBundle, uuid::Uuid) {
+    let root = dir.join("Novel");
+    let bundle = with_second_binder("Notes");
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+    let second = root
+        .join("binders")
+        .join(crate::slug::binder_dir_name(1, "Notes"));
+    let old_list = fs::read_to_string(second.join("items.ron")).unwrap();
+    let old_text: Vec<(std::path::PathBuf, Vec<u8>)> = fs::read_dir(second.join("text"))
+        .unwrap()
+        .filter_map(Result::ok)
+        .map(|e| (e.path(), fs::read(e.path()).unwrap()))
+        .collect();
+
+    let mut moved = bundle.clone();
+    let uid = move_last_item(&mut moved, 1, 0);
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &moved).unwrap();
+
+    // Put back what the save had not reached: the second binder's list, marked by the
+    // save's first step, and the prose it names, which only the last step prunes.
+    let mut list: ItemsFile = ron::from_str(&old_list).unwrap();
+    assert!(list.items.iter().any(|i| i.uid == uid));
+    if marked {
+        list.moving_out = vec![uid];
+    }
+    let cfg = ron::ser::PrettyConfig::new().struct_names(true);
+    fs::write(
+        second.join("items.ron"),
+        ron::ser::to_string_pretty(&list, cfg).unwrap(),
+    )
+    .unwrap();
+    for (path, bytes) in old_text {
+        fs::write(path, bytes).unwrap();
+    }
+    (root, moved, uid)
+}
+
+/// The uids more than one item of `bundle` has.
+fn shared_item_uids(bundle: &WorkBundle) -> Vec<uuid::Uuid> {
+    let mut seen = std::collections::BTreeSet::new();
+    bundle
+        .binders
+        .iter()
+        .flat_map(|b| &b.items)
+        .map(|i| i.item.uid)
+        .filter(|u| !seen.insert(*u))
+        .collect()
+}
+
+/// How many items of `bundle` hold exactly `words`. Other items of the sample may hold
+/// the same words, so tests compare this with the count in the bundle the save wrote.
+fn copies_of(bundle: &WorkBundle, words: &[String]) -> usize {
+    items_and_words(bundle)
+        .iter()
+        .filter(|(_, w)| w.as_slice() == words)
+        .count()
+}
+
+/// A save moving an item between binders, cut short when the item's new binder names it
+/// and its old binder still does: the project reads back with the item once, in its new
+/// binder, and stays so through a save of what was read and every read after.
+///
+/// Both lists used to be read as they were, so the project opened with two items of one
+/// uid, which every later save wrote back, and everything that finds an item by its uid
+/// (an open tab, a mention, the version history) found either one.
+#[test]
+fn a_move_cut_short_reads_back_with_the_item_once() {
+    let dir = tempfile::tempdir().unwrap();
+    let (root, moved, uid) = cut_short_mid_move(dir.path(), true);
+    let path = root.to_str().unwrap();
+    let words = items_and_words(&moved)
+        .into_iter()
+        .find(|(u, _)| *u == uid)
+        .map(|(_, w)| w)
+        .expect("the moved item has words");
+
+    let read = read_bundle(path).expect("the project opens");
+    assert_eq!(read, read_bundle(path).unwrap(), "a second read differs");
+    assert!(
+        shared_item_uids(&read).is_empty(),
+        "{:?}",
+        shared_item_uids(&read)
+    );
+    assert_eq!(copies_of(&read, &words), copies_of(&moved, &words));
+    assert!(read.binders[0].items.iter().any(|i| i.item.uid == uid));
+
+    // What the application does next: save what it read.
+    write_bundle(path, SkribShape::ExplodedFolder, &read).unwrap();
+    let again = read_bundle(path).unwrap();
+    assert!(shared_item_uids(&again).is_empty());
+    assert_eq!(copies_of(&again, &words), copies_of(&moved, &words));
+    assert_eq!(items_and_words(&again), items_and_words(&moved));
+    no_set_aside_left(&root);
+}
+
+/// An item in two binders' lists with neither copy marked, which no save of this build
+/// leaves: both copies are kept, so no words are lost, under two uids, and the uid the
+/// second copy gets is the same at every read until a save writes it.
+#[test]
+fn an_item_in_two_binders_unmarked_keeps_both_copies_under_their_own_uids() {
+    let dir = tempfile::tempdir().unwrap();
+    let (root, moved, uid) = cut_short_mid_move(dir.path(), false);
+    let path = root.to_str().unwrap();
+    let words = items_and_words(&moved)
+        .into_iter()
+        .find(|(u, _)| *u == uid)
+        .map(|(_, w)| w)
+        .expect("the moved item has words");
+
+    let read = read_bundle(path).expect("the project opens");
+    assert_eq!(read, read_bundle(path).unwrap(), "a second read differs");
+    assert!(shared_item_uids(&read).is_empty());
+    assert_eq!(copies_of(&read, &words), copies_of(&moved, &words) + 1);
+
+    write_bundle(path, SkribShape::ExplodedFolder, &read).unwrap();
+    let again = read_bundle(path).unwrap();
+    assert!(shared_item_uids(&again).is_empty());
+    assert_eq!(copies_of(&again, &words), copies_of(&moved, &words) + 1);
+    assert_eq!(items_and_words(&again), items_and_words(&read));
+}
+
+/// Two binders of the same name that swap places swap folders, and a save stopped after
+/// the first of them is written: both binders, and every item, are still there.
+///
+/// The first binder written took the folder of the other, and wrote over its
+/// `items.ron`: a save stopped there left the manifest naming a binder no folder held,
+/// and the project did not open.
+#[cfg(unix)]
+#[test]
+fn a_save_stopped_while_two_binders_swap_folders_keeps_both() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("Novel");
+    let name = build_bundle(ShapeTag::Folder).binders[0]
+        .binder
+        .name
+        .clone();
+    let bundle = with_second_binder(&name);
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+
+    let mut swapped = bundle.clone();
+    swapped.binders.swap(0, 1);
+    swapped.manifest.binder_order.swap(0, 1);
+    refile_prose(&mut swapped);
+    // The second binder written is the one going into the second folder.
+    let second = root
+        .join("binders")
+        .join(crate::slug::binder_dir_name(1, &name));
+
+    if !write_with_read_only(&root, &second, &swapped) {
+        return;
+    }
+    let read = read_bundle(root.to_str().unwrap())
+        .expect("a save stopped while two binders swap folders must leave a project that opens");
+    assert_eq!(read.binders.len(), 2);
+    assert_eq!(items_and_words(&read), items_and_words(&bundle));
+
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &swapped).unwrap();
+    let read = read_bundle(root.to_str().unwrap()).unwrap();
+    let uids = |b: &WorkBundle| b.binders.iter().map(|b| b.binder.uid).collect::<Vec<_>>();
+    assert_eq!(uids(&read), uids(&swapped));
+    assert_eq!(items_and_words(&read), items_and_words(&swapped));
+    no_set_aside_left(&root);
+}
+
+/// A folder save removes the temporary files a crash left in the folders it writes,
+/// once they are old, and nothing else.
+///
+/// They have no extension, so the prunes never matched them, and as hidden names they
+/// are not carried: they stayed in the project for good.
+#[test]
+fn a_folder_save_removes_old_temporary_leftovers_and_nothing_else() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("Novel");
+    let bundle = build_bundle(ShapeTag::Folder);
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+    let text = root
+        .join("binders")
+        .join(crate::slug::binder_dir_name(
+            0,
+            &bundle.binders[0].binder.name,
+        ))
+        .join("text");
+    let templates = root.join(crate::slug::TEMPLATES_DIR);
+    let hour_ago = std::time::SystemTime::now() - std::time::Duration::from_secs(3600);
+    let plant = |path: &Path, old: bool| {
+        fs::write(path, b"half written").unwrap();
+        if old {
+            fs::File::options()
+                .write(true)
+                .open(path)
+                .unwrap()
+                .set_modified(hour_ago)
+                .unwrap();
+        }
+    };
+    let gone = [
+        text.join(".tmpAb12Cd"),
+        templates.join(".blobXy34Zw"),
+        root.join(".tmp9Zz9Zz"),
+    ];
+    let kept = [
+        // Too new: a write in progress, perhaps.
+        (text.join(".tmpFresh1"), false),
+        // Not a name this crate gives a temporary file.
+        (text.join(".tmpnotours"), true),
+        (root.join(".blob_x"), true),
+        (root.join(".tmp-notes"), true),
+    ];
+    for path in &gone {
+        plant(path, true);
+    }
+    for (path, old) in &kept {
+        plant(path, *old);
+    }
+
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+
+    for path in &gone {
+        assert!(!path.exists(), "{} was left", path.display());
+    }
+    for (path, _) in &kept {
+        assert!(path.exists(), "{} was removed", path.display());
+    }
+}

@@ -3472,6 +3472,76 @@ fn an_unmodelled_file_survives_a_real_save_work() {
     );
 }
 
+/// A file the format does not model that a save cannot read (a sync client or an
+/// antivirus holding it, here a permission): the save fails, naming it, and the file is
+/// still on disk afterwards.
+///
+/// It used to be skipped as if it were not there, and the prune of the binder's `text/`
+/// folder then deleted it. A failed save leaves the project unsaved, so the next save
+/// tries again once the lock is gone. Running as root the file is read anyway, and the
+/// test has nothing to prove.
+#[cfg(unix)]
+#[test]
+fn a_save_that_cannot_read_an_unmodelled_file_fails_and_keeps_it() {
+    use std::os::unix::fs::PermissionsExt;
+    let dir = tempfile::tempdir().unwrap();
+    let project = dir.path().join("Novel");
+    let path = project.to_str().unwrap().to_string();
+    skrib::write_bundle(&path, SkribShape::ExplodedFolder, &sample_bundle()).unwrap();
+    let binder_dir = std::fs::read_dir(project.join("binders"))
+        .unwrap()
+        .filter_map(Result::ok)
+        .map(|e| e.path())
+        .find(|p| p.is_dir())
+        .expect("the sample project has a binder directory");
+    let planted = binder_dir.join("text").join("12-scene.beats.ron");
+    std::fs::write(&planted, b"(beats: [(at: 0.5)])").unwrap();
+
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+    work_management_controller::load_work(
+        &db,
+        &hub,
+        &LoadWorkDto {
+            media_root: String::new(),
+            file_name: path.clone(),
+        },
+    )
+    .expect("load");
+
+    std::fs::set_permissions(&planted, std::fs::Permissions::from_mode(0o000)).unwrap();
+    let readable = std::fs::read(&planted).is_ok();
+    let uc = SaveWorkUseCase::new(
+        Box::new(SaveWorkUnitOfWorkFactory::new(&db, &hub)),
+        &SaveWorkDto {
+            media_root: String::new(),
+            work_id: live_work_id(&db),
+            file_name: path.clone(),
+            overwrite: true,
+        },
+    );
+    let got = uc.execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)));
+    // `.ok()`: a save that went ahead deleted it.
+    std::fs::set_permissions(&planted, std::fs::Permissions::from_mode(0o644)).ok();
+    if readable {
+        return;
+    }
+
+    let err = match got {
+        Ok(_) => panic!("a save that could not read a file it carries went ahead"),
+        Err(e) => format!("{e:#}"),
+    };
+    assert!(
+        err.contains("12-scene.beats.ron"),
+        "the error names the file: {err}"
+    );
+    assert_eq!(
+        std::fs::read(&planted).ok().as_deref(),
+        Some(b"(beats: [(at: 0.5)])".as_slice()),
+        "the save deleted the file it could not read"
+    );
+}
+
 /// A registered contributor's files reach the bundle, and **override** the copy
 /// already on disk.
 ///
@@ -4420,7 +4490,7 @@ impl crate::lifecycle::LifecycleListener for PlanLoader {
             && unique_id == self.uid
         {
             // A project with no plan gets no slot, as the real consumer does.
-            if let Some(file) = skrib::carry::load(path).get(PLAN_FILE) {
+            if let Some(file) = skrib::carry::load(path).unwrap_or_default().get(PLAN_FILE) {
                 self.plans
                     .scoped(*work)
                     .set(String::from_utf8_lossy(&file.bytes).into_owned());
@@ -4535,6 +4605,7 @@ fn save_work_to(db: &DbContext, hub: &Arc<EventHub>, work_id: u64, path: &str) {
 
 fn plan_on_disk(path: &str) -> Option<String> {
     skrib::carry::load(path)
+        .ok()?
         .get(PLAN_FILE)
         .map(|f| String::from_utf8_lossy(&f.bytes).into_owned())
 }

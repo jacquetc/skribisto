@@ -235,6 +235,7 @@ fn a_bundle_inside_the_bundle_is_left_alone_not_carried() {
     );
     assert!(
         super::carry::load(&path)
+            .expect("carry")
             .keys()
             .all(|k| !k.ends_with(".skrib")),
         "…by either reader"
@@ -283,7 +284,10 @@ fn hidden_files_in_a_folder_are_neither_carried_nor_touched() {
         vec!["structure.ron"],
         "only the visible file is carried"
     );
-    let for_save: Vec<String> = super::carry::load(&path).into_keys().collect();
+    let for_save: Vec<String> = super::carry::load(&path)
+        .expect("carry")
+        .into_keys()
+        .collect();
     assert_eq!(
         for_save,
         vec!["structure.ron".to_string()],
@@ -319,7 +323,10 @@ fn hidden_members_of_a_zip_are_not_carried() {
         vec!["structure.ron"]
     );
     assert_eq!(
-        super::carry::load(&path).into_keys().collect::<Vec<_>>(),
+        super::carry::load(&path)
+            .expect("carry")
+            .into_keys()
+            .collect::<Vec<_>>(),
         vec!["structure.ron".to_string()]
     );
 }
@@ -357,9 +364,8 @@ const BINDER_FILES: &[(&str, &[u8])] = &[
     ("binders/{binder}/text/plot.beats.ron", b"(beats: [])"),
 ];
 
-/// Files carried from a binder's folder follow the binder when it is renamed, in the
-/// bundle read with the project (`read_bundle`) and in the one a save reads from disk
-/// (`carry::load`), for both shapes.
+/// Files carried from a binder's folder follow the binder when it is renamed, as a save
+/// reads them from disk (`carry::load`), for both shapes.
 ///
 /// A binder's folder is named by its position and its name, so a rename gives it a new
 /// folder and the old one is pruned. The carried files used to be written back into the
@@ -367,33 +373,29 @@ const BINDER_FILES: &[(&str, &[u8])] = &[
 #[test]
 fn carried_files_follow_their_binder_when_it_is_renamed() {
     for shape in [SkribShape::ExplodedFolder, SkribShape::ZipFile] {
-        for from_disk in [false, true] {
-            let (_dir, path, planted) = plant_and_read(shape, BINDER_FILES);
-            let mut loaded = read_bundle(&path).expect("read");
-            let (old, new) = rename_first_binder(&mut loaded, "Renamed binder");
-            if from_disk {
-                // What `save_work` does: the store's bundle, the disk's carried files.
-                loaded.carried = super::carry::load(&path);
-            }
-            write_bundle(&path, shape, &loaded).expect("save after the rename");
+        let (_dir, path, planted) = plant_and_read(shape, BINDER_FILES);
+        let mut loaded = read_bundle(&path).expect("read");
+        let (old, new) = rename_first_binder(&mut loaded, "Renamed binder");
+        // What `save_work` does: the store's bundle, the disk's carried files.
+        loaded.carried = super::carry::load(&path).expect("carry");
+        write_bundle(&path, shape, &loaded).expect("save after the rename");
 
-            let again = read_bundle(&path).expect("reread");
-            for (rel, bytes) in &planted {
-                let moved = rel.replacen(&format!("binders/{old}/"), &format!("binders/{new}/"), 1);
-                assert_eq!(
-                    again.carried.get(&moved).map(|f| f.bytes.as_slice()),
-                    Some(bytes.as_slice()),
-                    "`{rel}` did not follow its binder to `{moved}` ({shape:?}, from disk: {from_disk})"
-                );
-                assert!(!again.carried.contains_key(rel), "`{rel}` stayed behind");
-            }
-            if shape == SkribShape::ExplodedFolder {
-                let root = super::shape::folder_root(&path);
-                assert!(
-                    !root.join("binders").join(&old).exists(),
-                    "the old folder is pruned"
-                );
-            }
+        let again = read_bundle(&path).expect("reread");
+        for (rel, bytes) in &planted {
+            let moved = rel.replacen(&format!("binders/{old}/"), &format!("binders/{new}/"), 1);
+            assert_eq!(
+                again.carried.get(&moved).map(|f| f.bytes.as_slice()),
+                Some(bytes.as_slice()),
+                "`{rel}` did not follow its binder to `{moved}` ({shape:?})"
+            );
+            assert!(!again.carried.contains_key(rel), "`{rel}` stayed behind");
+        }
+        if shape == SkribShape::ExplodedFolder {
+            let root = super::shape::folder_root(&path);
+            assert!(
+                !root.join("binders").join(&old).exists(),
+                "the old folder is pruned"
+            );
         }
     }
 }
@@ -407,6 +409,8 @@ fn a_deleted_binders_carried_files_go_with_it() {
     let mut loaded = read_bundle(&path).expect("read");
     // Another binder now, in the same place and with the same name.
     loaded.binders[0].binder.uid = uuid::Uuid::new_v4();
+    // What `save_work` does: the store's bundle, the disk's carried files.
+    loaded.carried = super::carry::load(&path).expect("carry");
     write_bundle(&path, SkribShape::ExplodedFolder, &loaded).expect("save");
 
     let root = super::shape::folder_root(&path);
@@ -424,8 +428,8 @@ fn a_deleted_binders_carried_files_go_with_it() {
     );
 }
 
-/// A file carried from a binder's folder knows which binder that was; one elsewhere
-/// does not.
+/// A file a save carries from a binder's folder knows which binder that was; one
+/// elsewhere does not.
 #[test]
 fn a_carried_file_in_a_binder_folder_knows_its_binder() {
     let (_dir, path, planted) = plant_and_read(
@@ -438,9 +442,74 @@ fn a_carried_file_in_a_binder_folder_knows_its_binder() {
     let loaded = read_bundle(&path).expect("read");
     let uid = loaded.binders[0].binder.uid;
     assert!(!uid.is_nil());
-    assert_eq!(loaded.carried[&planted[0].0].binder, Some(uid));
-    assert_eq!(loaded.carried["structure.ron"].binder, None);
-    let for_save = super::carry::load(&path);
+    let for_save = super::carry::load(&path).expect("carry");
     assert_eq!(for_save[&planted[0].0].binder, Some(uid));
     assert_eq!(for_save["structure.ron"].binder, None);
+}
+
+/// What a save carries cannot be read: the carry read is an error naming the file, so
+/// the save stops before it writes anything, and the file stays on disk as it was.
+///
+/// Each case is one way a sync client or an antivirus holding a lock looks to a save,
+/// with a permission standing in for the lock: a carried file, the `items.ron` that
+/// says which binder a carried file belongs to, a folder holding carried files, and a
+/// single-file project as a whole. Each used to read as "nothing to carry", and the
+/// save then pruned the carried file, left it behind in a renamed binder's old folder,
+/// or wrote the archive without it. Running as root the files are read anyway, and the
+/// test has nothing to prove.
+#[cfg(unix)]
+#[test]
+fn a_save_that_cannot_read_what_it_carries_stops_and_keeps_it() {
+    use std::os::unix::fs::PermissionsExt;
+    let carried = "binders/{binder}/text/12-scene.beats.ron";
+    for (shape, locked) in [
+        (SkribShape::ExplodedFolder, Some(carried)),
+        (
+            SkribShape::ExplodedFolder,
+            Some("binders/{binder}/items.ron"),
+        ),
+        (SkribShape::ExplodedFolder, Some("binders/{binder}/text")),
+        (SkribShape::ZipFile, None),
+    ] {
+        let (_dir, path, planted) = plant_and_read(shape, &[(carried, b"(beats: [])")]);
+        let binder = super::slug::binder_dir_name(
+            0,
+            &read_bundle(&path).expect("read").binders[0].binder.name,
+        );
+        let target = match locked {
+            Some(rel) => super::shape::folder_root(&path).join(rel.replace("{binder}", &binder)),
+            None => std::path::PathBuf::from(&path),
+        };
+        let before = std::fs::metadata(&target)
+            .expect("there")
+            .permissions()
+            .mode();
+        std::fs::set_permissions(&target, std::fs::Permissions::from_mode(0o000)).unwrap();
+        let readable = std::fs::read(&target).is_ok() || std::fs::read_dir(&target).is_ok();
+        let got = super::carry::load(&path);
+        std::fs::set_permissions(&target, std::fs::Permissions::from_mode(before)).unwrap();
+        if readable {
+            return;
+        }
+        let err = match got {
+            Ok(map) => panic!(
+                "{target:?} could not be read and the save went on carrying {:?}",
+                map.keys().collect::<Vec<_>>()
+            ),
+            Err(e) => format!("{e:#}"),
+        };
+        let named = target
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or_default();
+        assert!(err.contains(named), "the error names {named}: {err}");
+        if shape == SkribShape::ExplodedFolder {
+            let file = super::shape::folder_root(&path).join(&planted[0].0);
+            assert_eq!(
+                std::fs::read(&file).ok().as_deref(),
+                Some(&b"(beats: [])"[..]),
+                "the carried file is still there"
+            );
+        }
+    }
 }
