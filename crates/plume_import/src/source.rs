@@ -24,9 +24,13 @@
 //! `text/T1.html -> ~/.ssh/id_rsa` imports the key as a scene's prose. So no link is
 //! followed, to a file or to one of the `text`, `attend` and `dicts` folders, and
 //! nothing but a regular file is read (no FIFO, which would block the read forever,
-//! and no device). Each file skipped is named in a notice. A file is opened through
+//! no socket and no device): an entry that is not one, by its own type, is not even
+//! opened. Each file skipped is named in a notice. A file is opened through
 //! [`skrib_format::regular_file`] and read no further than the zip limits below
 //! allow, so a huge loose file is refused before it is in memory.
+//!
+//! The `.plume` the writer picked is read the same way, after one step: a link
+//! there was picked on purpose, so it is resolved once before the guarded open.
 
 use std::collections::HashMap;
 use std::fs;
@@ -103,12 +107,14 @@ impl PlumeSource {
     /// loose `.plume` tree file of an old-system project).
     pub fn open(source_path: &str) -> Result<Self> {
         let path = Path::new(source_path);
-        let bytes = fs::read(path).map_err(|e| unreadable(path, &e))?;
+        // A picked link is followed once, and an old-system project read where it
+        // leads: its loose files sit beside the tree file itself, not beside the link.
+        let (resolved, bytes) = read_picked(path)?;
 
         // Modern zip? (Plume's own zip-vs-loose discriminator.)
         match skrib_format::zip_guard::ZipGuard::open(LIMITS, std::io::Cursor::new(&bytes[..])) {
             Ok((archive, guard)) => Self::from_zip(path, archive, guard),
-            Err(_) => Self::from_old_system(path, &bytes),
+            Err(_) => Self::from_old_system(&resolved, &bytes),
         }
     }
 
@@ -187,19 +193,18 @@ impl PlumeSource {
 
         // Locate the loose sibling metadata files by extension.
         let attendance_xml = match first_file_with_ext(dir, "attend") {
-            Some(p) => loose.read(&p, file_name_of(&p))?,
+            Some((p, kind)) => loose.read_entry(&p, kind, file_name_of(&p))?,
             None => None,
         };
         let info_xml = match first_file_with_ext(dir, "prjinfo") {
-            Some(p) => loose.read(&p, file_name_of(&p))?,
+            Some((p, kind)) => loose.read_entry(&p, kind, file_name_of(&p))?,
             None => None,
         };
         let dict = if loose.folder(dir, "dicts") {
             let p = dir.join(DICT_MEMBER);
-            if fs::symlink_metadata(&p).is_ok() {
-                loose.read(&p, DICT_MEMBER.to_string())?
-            } else {
-                None
+            match fs::symlink_metadata(&p) {
+                Ok(md) => loose.read_entry(&p, Ok(md.file_type()), DICT_MEMBER.to_string())?,
+                Err(_) => None,
             }
         } else {
             None
@@ -215,13 +220,14 @@ impl PlumeSource {
             for entry in fs::read_dir(&subdir).map_err(|e| unreadable(&subdir, &e))? {
                 let entry = entry.map_err(|e| unreadable(&subdir, &e))?;
                 // The entry's own type: a link is a link here, never what it points at.
-                if entry.file_type().is_ok_and(|t| t.is_dir()) {
+                let kind = entry.file_type();
+                if kind.as_ref().is_ok_and(|t| t.is_dir()) {
                     continue;
                 }
                 let path = entry.path();
                 if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
                     let member = format!("{sub}/{name}");
-                    if let Some(text) = loose.read(&path, member.clone())? {
+                    if let Some(text) = loose.read_entry(&path, kind, member.clone())? {
                         html.insert(member, text);
                     }
                 }
@@ -299,16 +305,47 @@ impl LooseReader {
         Ok(Some(String::from_utf8_lossy(&bytes).into_owned()))
     }
 
+    /// The folder entry at `path`, whose own type is `kind` (a link's type is that
+    /// of a link, never of what it points at): read as [`Self::read`] reads it when
+    /// it is a regular file, else left unopened and named in a notice.
+    ///
+    /// Only a regular file is opened at all. Opening a socket fails with the
+    /// system's own error rather than as "not a regular file", and that error
+    /// refused the whole project over a file it never needed.
+    fn read_entry(
+        &mut self,
+        path: &Path,
+        kind: std::io::Result<fs::FileType>,
+        member: String,
+    ) -> Result<Option<String>> {
+        match kind {
+            Ok(kind) if kind.is_file() => self.read(path, member),
+            Ok(_) => {
+                self.skip(member, &regular_file::not_a_regular_file());
+                Ok(None)
+            }
+            Err(e) => {
+                self.skip(member, &e);
+                Ok(None)
+            }
+        }
+    }
+
+    /// Name `member` in a notice as left unread, for `error`.
+    fn skip(&mut self, member: String, error: &std::io::Error) {
+        self.notices.push(ImportNotice::FileUnreadable {
+            member,
+            error: error.to_string(),
+        });
+    }
+
     /// Whether `dir/name` is a folder to read: a real one, not a link to one. A link
     /// is named in a notice; nothing there at all is no notice.
     fn folder(&mut self, dir: &Path, name: &str) -> bool {
         match fs::symlink_metadata(dir.join(name)) {
             Ok(md) if md.is_dir() => true,
             Ok(md) if md.file_type().is_symlink() => {
-                self.notices.push(ImportNotice::FileUnreadable {
-                    member: name.to_string(),
-                    error: regular_file::not_a_regular_file().to_string(),
-                });
+                self.skip(name.to_string(), &regular_file::not_a_regular_file());
                 false
             }
             _ => false,
@@ -322,21 +359,50 @@ fn file_name_of(path: &Path) -> String {
         .unwrap_or_default()
 }
 
-/// The first entry in `dir` that is not a folder and whose extension is `ext`
-/// (case-insensitive), if any. A link is listed as a link, not as what it points at;
-/// [`LooseReader::read`] then refuses it.
-fn first_file_with_ext(dir: &Path, ext: &str) -> Option<PathBuf> {
-    let mut matches: Vec<PathBuf> = fs::read_dir(dir)
+/// The entry in `dir` whose extension is `ext` (case-insensitive) to read, with its
+/// own type, if there is one: the first regular file by name, else the first entry
+/// that is not a folder.
+///
+/// A link is listed as a link, not as what it points at, and
+/// [`LooseReader::read_entry`] then leaves it unread. So a regular file is preferred
+/// over one: with `A.attend` a link and `B.attend` a real file, the first by name is
+/// the link, and taking it would lose the attendance `B.attend` holds. Only when no
+/// regular file is there is the link (or FIFO, or device) returned, to be named in
+/// a notice.
+fn first_file_with_ext(dir: &Path, ext: &str) -> Option<(PathBuf, std::io::Result<fs::FileType>)> {
+    let mut matches: Vec<(PathBuf, std::io::Result<fs::FileType>)> = fs::read_dir(dir)
         .ok()?
         .filter_map(Result::ok)
-        .filter(|e| !e.file_type().is_ok_and(|t| t.is_dir()))
-        .map(|e| e.path())
-        .filter(|p| {
+        .map(|e| (e.path(), e.file_type()))
+        .filter(|(_, kind)| !kind.as_ref().is_ok_and(|t| t.is_dir()))
+        .filter(|(p, _)| {
             p.extension()
                 .and_then(|e| e.to_str())
                 .is_some_and(|e| e.eq_ignore_ascii_case(ext))
         })
         .collect();
-    matches.sort();
+    let is_regular =
+        |kind: &std::io::Result<fs::FileType>| kind.as_ref().is_ok_and(|t| t.is_file());
+    // Regular files first, then by name.
+    matches.sort_by(|(a, a_kind), (b, b_kind)| {
+        (!is_regular(a_kind), a).cmp(&(!is_regular(b_kind), b))
+    });
     matches.into_iter().next()
+}
+
+/// Read the `.plume` file the writer picked, no more than a `.plume` may hold.
+///
+/// A link there was picked on purpose and is followed, once: the path is resolved
+/// first, and what it resolves to is opened through the guard, which follows
+/// nothing further and refuses anything but a regular file. So a `.plume` that is a
+/// FIFO, or a link to `/dev/zero` out of an unpacked archive, is refused before a
+/// byte is read and without waiting on a writer, and a file past the limit is
+/// refused before it is in memory.
+///
+/// Returns the resolved path with the bytes.
+fn read_picked(path: &Path) -> Result<(PathBuf, Vec<u8>)> {
+    let resolved = fs::canonicalize(path).map_err(|e| unreadable(path, &e))?;
+    let bytes = regular_file::read_regular(&resolved, LIMITS.max_total_bytes)
+        .map_err(|e| unreadable(path, &e))?;
+    Ok((resolved, bytes))
 }

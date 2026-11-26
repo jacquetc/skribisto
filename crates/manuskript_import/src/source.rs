@@ -42,7 +42,7 @@
 
 use std::collections::BTreeMap;
 use std::fs;
-use std::io::Read;
+use std::io::{Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
 
 use anyhow::Result;
@@ -68,6 +68,10 @@ const LEGACY_MARKER: &str = "VERSION";
 /// source and an unbounded extract is a denial of service.
 const MAX_MEMBERS: usize = 100_000;
 const MAX_TOTAL_BYTES: u64 = 1 << 30; // 1 GiB
+
+/// The most a `.msk` stub may hold. It holds a bare format number, so anything longer
+/// is not a stub.
+const STUB_LIMIT: u64 = 32;
 
 /// What a zipped `.msk` may hold, before and while it inflates (see
 /// [`skrib_format::zip_guard`]). The entry count and total match the folder reader's
@@ -152,25 +156,39 @@ impl ManuskriptSource {
         if !p.exists() {
             return Err(anyhow::Error::new(Refusal::Missing { file: file_name(p) }));
         }
-        if looks_like_a_zip(p)? {
-            return Self::from_zip(p);
+        // From here on the project is read where a picked link leads: a stub's
+        // folder is the one beside the stub itself, not beside the link.
+        let (p, mut file) = open_picked(p)?;
+        let p = p.as_path();
+        let is_a_zip = starts_like_a_zip(&mut file).map_err(|e| unreadable(p, &e))?;
+        // Either reader starts from the first byte the sniff has already read.
+        file.seek(SeekFrom::Start(0))
+            .map_err(|e| unreadable(p, &e))?;
+        if is_a_zip {
+            return Self::from_zip(p, file);
         }
-        Self::from_stub(p)
+        Self::from_stub(p, file)
     }
 
     /// A `.msk` that is not a zip is the one-byte stub naming the folder beside it.
-    fn from_stub(stub: &Path) -> Result<Self> {
-        let raw = fs::read(stub).map_err(|e| unreadable(stub, &e))?;
+    /// `file` is the stub, open, read from its start.
+    fn from_stub(stub: &Path, file: fs::File) -> Result<Self> {
         let not_a_project_file = || {
             anyhow::Error::new(Refusal::NotAProjectFile {
                 file: file_name(stub),
             })
         };
         // The stub holds a bare number. Anything longer is not one, and saying so
-        // is more useful than failing later on a missing folder.
-        if raw.len() > 32 {
-            return Err(not_a_project_file());
-        }
+        // is more useful than failing later on a missing folder. The limit holds
+        // before the bytes are in memory, so a large file given the `.msk` name is
+        // turned down after 33 bytes rather than read whole.
+        let raw = match regular_file::read_limited(file, STUB_LIMIT) {
+            Ok(raw) => raw,
+            Err(e) if e.kind() == std::io::ErrorKind::FileTooLarge => {
+                return Err(not_a_project_file());
+            }
+            Err(e) => return Err(unreadable(stub, &e)),
+        };
         // A path with no stem or no folder around it (the root, `..`) cannot name
         // the folder a stub points at.
         let stem = stub
@@ -210,8 +228,9 @@ impl ManuskriptSource {
         Self::finish(Container::Folder, project_name, files, notices, newest)
     }
 
-    fn from_zip(archive_path: &Path) -> Result<Self> {
-        let file = fs::File::open(archive_path).map_err(|e| unreadable(archive_path, &e))?;
+    /// `file` is the archive at `archive_path`, open, read from its start.
+    fn from_zip(archive_path: &Path, file: fs::File) -> Result<Self> {
+        let newest = file.metadata().ok().and_then(|m| modified_of(&m));
         // An archive that opens but cannot be read through is damaged, and says so
         // by name. A size refusal from the guard stays what it is: the typed
         // `ZipRefused` the interface words itself.
@@ -261,7 +280,6 @@ impl ManuskriptSource {
             .file_stem()
             .map(|s| s.to_string_lossy().into_owned())
             .unwrap_or_default();
-        let newest = modified_at(archive_path);
         Self::finish(Container::Zip, project_name, files, notices, newest)
     }
 
@@ -320,7 +338,10 @@ impl ManuskriptSource {
         }
         // A stub is a handful of bytes; only an actual archive means the project
         // has moved to single-file mode and left this folder behind.
-        if !matches!(looks_like_a_zip(&sibling), Ok(true)) {
+        // The writer did not pick it, so a link there is not followed.
+        let is_a_zip =
+            regular_file::open_regular(&sibling).and_then(|mut file| starts_like_a_zip(&mut file));
+        if !matches!(is_a_zip, Ok(true)) {
             return;
         }
         let (Some(zip_at), Some(folder_at)) = (modified_at(&sibling), self.newest_modified) else {
@@ -375,18 +396,41 @@ impl ManuskriptSource {
     }
 }
 
+/// Open the `.msk` the writer picked, which is not a folder.
+///
+/// A link there was picked on purpose and is followed, once: the path is resolved
+/// first, and what it resolves to is opened through the guard, which follows
+/// nothing further and refuses anything but a regular file. So a `Novel.msk` that
+/// is a FIFO, or a link to `/dev/zero` out of an unpacked archive, is refused as not
+/// a project file, before a byte is read and without waiting on a writer.
+///
+/// Returns the resolved path with the open file.
+fn open_picked(path: &Path) -> Result<(PathBuf, fs::File)> {
+    let resolved = fs::canonicalize(path).map_err(|e| unreadable(path, &e))?;
+    match regular_file::open_regular(&resolved) {
+        Ok(file) => Ok((resolved, file)),
+        Err(e) if regular_file::is_not_a_regular_file(&e) => {
+            Err(anyhow::Error::new(Refusal::NotAProjectFile {
+                file: file_name(path),
+            }))
+        }
+        Err(e) => Err(unreadable(path, &e)),
+    }
+}
+
 /// True when the file starts with a zip local-file or end-of-central-directory
-/// signature — the same sniff `skrib_format::detect_shape` uses, and the same
-/// question Manuskript answers by trying to open it as an archive.
-fn looks_like_a_zip(path: &Path) -> Result<bool> {
-    let mut file = fs::File::open(path).map_err(|e| unreadable(path, &e))?;
+/// signature, the same sniff `skrib_format::detect_shape` uses, and the same
+/// question Manuskript answers by trying to open it as an archive. Reads at most
+/// four bytes, from where the file is.
+fn starts_like_a_zip(file: &mut fs::File) -> std::io::Result<bool> {
     let mut magic = [0u8; 4];
     let mut read = 0usize;
     while read < magic.len() {
         match file.read(&mut magic[read..]) {
             Ok(0) => break,
             Ok(n) => read += n,
-            Err(e) => return Err(unreadable(path, &e)),
+            Err(e) if e.kind() == std::io::ErrorKind::Interrupted => {}
+            Err(e) => return Err(e),
         }
     }
     if read < 4 {
@@ -695,6 +739,122 @@ mod tests {
         assert!(named_in_a_notice(&src, member), "{:?}", src.notices);
     }
 
+    /// Open `path` on another thread, and fail rather than hang if the open does not
+    /// come back within a few seconds.
+    #[cfg(unix)]
+    fn open_or_time_out(path: &Path) -> Result<ManuskriptSource> {
+        let path = path.to_string_lossy().into_owned();
+        let (tx, rx) = std::sync::mpsc::channel();
+        std::thread::spawn(move || {
+            let _ = tx.send(ManuskriptSource::open(&path));
+        });
+        rx.recv_timeout(Duration::from_secs(5))
+            .expect("the open blocked instead of returning")
+    }
+
+    /// The refusal behind `result`, which must be one.
+    fn refusal_of(result: Result<ManuskriptSource>) -> Refusal {
+        match result {
+            Ok(_) => panic!("expected a refusal"),
+            Err(e) => e
+                .downcast_ref::<Refusal>()
+                .cloned()
+                .expect("a typed refusal"),
+        }
+    }
+
+    /// A FIFO named like the project file, picked by the writer (out of an unpacked
+    /// archive), blocked the sniff for a zip forever.
+    #[test]
+    #[cfg(unix)]
+    fn a_fifo_picked_as_the_msk_is_refused_without_blocking() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        folder(&dir.path().join("A Novel"), &v1_members());
+        let picked = dir.path().join("A Novel.msk");
+        let made = std::process::Command::new("mkfifo").arg(&picked).status();
+        if !made.is_ok_and(|s| s.success()) {
+            eprintln!("mkfifo is not available here; skipping");
+            return;
+        }
+
+        assert_eq!(
+            refusal_of(open_or_time_out(&picked)),
+            Refusal::NotAProjectFile {
+                file: "A Novel.msk".into()
+            }
+        );
+    }
+
+    /// A `.msk` that is a link to `/dev/zero` sniffed as no zip, then was read as a
+    /// stub until memory ran out and the app was killed.
+    #[test]
+    #[cfg(unix)]
+    fn a_msk_linked_to_a_device_is_refused_unread() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        folder(&dir.path().join("A Novel"), &v1_members());
+        let picked = dir.path().join("A Novel.msk");
+        std::os::unix::fs::symlink("/dev/zero", &picked).expect("symlink");
+
+        assert_eq!(
+            refusal_of(open_or_time_out(&picked)),
+            Refusal::NotAProjectFile {
+                file: "A Novel.msk".into()
+            }
+        );
+    }
+
+    /// A link the writer picked on purpose is followed, once, and the project read
+    /// where it leads: an archive opens, and a stub finds the folder beside the stub
+    /// itself, not beside the link.
+    #[test]
+    #[cfg(unix)]
+    fn a_msk_picked_through_a_link_opens_what_it_points_at() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let writing = dir.path().join("Writing");
+        let desktop = dir.path().join("Desktop");
+        fs::create_dir_all(&desktop).expect("desktop");
+
+        let archive = writing.join("Archived.msk");
+        fs::create_dir_all(&writing).expect("writing");
+        zip_of(&archive, &v1_members());
+        let to_archive = desktop.join("Shortcut.msk");
+        std::os::unix::fs::symlink(&archive, &to_archive).expect("symlink");
+        let src = open_or_time_out(&to_archive).expect("open the archive");
+        assert_eq!(src.container, Container::Zip);
+        assert_eq!(src.project_name, "Archived");
+        assert_eq!(src.members_under("outline/").len(), 2);
+
+        folder(&writing.join("A Novel"), &v1_members());
+        let stub = writing.join("A Novel.msk");
+        fs::write(&stub, "1").expect("stub");
+        let to_stub = desktop.join("A Novel.msk");
+        std::os::unix::fs::symlink(&stub, &to_stub).expect("symlink");
+        let src = open_or_time_out(&to_stub).expect("open the stub");
+        assert_eq!(src.container, Container::Folder);
+        assert_eq!(src.project_name, "A Novel");
+        assert_eq!(src.members_under("outline/").len(), 2);
+    }
+
+    /// A stub holds a bare number: a longer file given the name is not one.
+    #[test]
+    fn a_msk_longer_than_a_stub_is_not_a_project_file() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        folder(&dir.path().join("A Novel"), &v1_members());
+        let picked = dir.path().join("A Novel.msk");
+        fs::write(&picked, "1".repeat(33)).expect("stub");
+        assert_eq!(
+            refusal_of(ManuskriptSource::open(&picked.to_string_lossy())),
+            Refusal::NotAProjectFile {
+                file: "A Novel.msk".into()
+            }
+        );
+        // Exactly as long as a stub may be still reads as one; the folder's own
+        // marker then wins over the number it holds.
+        fs::write(&picked, "1".repeat(32)).expect("stub");
+        let src = ManuskriptSource::open(&picked.to_string_lossy()).expect("open");
+        assert_eq!(src.format, FormatVersion::V1);
+    }
+
     /// Write a project folder from `(relative path, content)` pairs.
     fn folder(root: &Path, members: &[(&str, &str)]) {
         for (name, content) in members {
@@ -778,6 +938,28 @@ mod tests {
         assert_eq!(src.container, Container::Folder);
         assert_eq!(src.format, FormatVersion::V1);
         assert_eq!(src.project_name, "A Novel");
+    }
+
+    /// The stub's number answers for a folder that lost its own marker, so the stub
+    /// is read whole, from its first byte, after the sniff for a zip.
+    #[test]
+    fn a_stub_answers_for_a_folder_without_its_marker() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let members: Vec<_> = v1_members()
+            .into_iter()
+            .filter(|(name, _)| *name != MARKER)
+            .collect();
+        folder(&dir.path().join("A Novel"), &members);
+        let stub = dir.path().join("A Novel.msk");
+        fs::write(&stub, "1").expect("stub");
+        let src = ManuskriptSource::open(&stub.to_string_lossy()).expect("open");
+        assert_eq!(src.format, FormatVersion::V1);
+        // Four bytes and more: the sniff reads them before the stub reader does.
+        fs::write(&stub, "  2\n").expect("stub");
+        assert!(matches!(
+            refusal_of(ManuskriptSource::open(&stub.to_string_lossy())),
+            Refusal::FormatTooNew { version: 2, .. }
+        ));
     }
 
     #[test]

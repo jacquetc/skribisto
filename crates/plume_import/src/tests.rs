@@ -807,6 +807,161 @@ fn old_system_fifo_and_device_are_skipped() {
     }
 }
 
+/// Opening a socket fails with the system's own error, not as "not a regular
+/// file", and that error used to refuse the whole project. A socket in `text/` is
+/// now left unopened and named, and the rest imports.
+#[test]
+#[cfg(unix)]
+fn old_system_socket_is_skipped_and_the_project_still_imports() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("project");
+    std::fs::create_dir(&root).unwrap();
+    let tree = old_system_folder(&root);
+    std::fs::create_dir(root.join("text")).unwrap();
+    std::fs::write(root.join("text/T3.html"), "<p>Loose scene prose.</p>").unwrap();
+    let _socket = std::os::unix::net::UnixListener::bind(root.join("text/N3.html")).unwrap();
+
+    let (summary, bundle) = import_old_system(&root, &tree);
+    let scene = find(&bundle.binders[0], "LooseScene");
+    assert!(prose(scene, ContentRole::SceneText).contains("Loose scene prose."));
+    assert!(
+        names_unread(&summary, "text/N3.html"),
+        "{:?}",
+        summary.warnings
+    );
+}
+
+/// With `A.attend` a link and `B.attend` a real file, the first by name is the
+/// link: taking it lost the characters `B.attend` holds. A regular file wins.
+#[test]
+#[cfg(unix)]
+fn old_system_attendance_prefers_a_real_file_over_a_link_sorted_before_it() {
+    let dir = tempfile::tempdir().unwrap();
+    let elsewhere = dir.path().join("elsewhere.attend");
+    std::fs::write(&elsewhere, "<attendance/>").unwrap();
+    let root = dir.path().join("project");
+    std::fs::create_dir(&root).unwrap();
+    let tree = old_system_folder(&root);
+    std::os::unix::fs::symlink(&elsewhere, root.join("A.attend")).unwrap();
+    std::fs::write(
+        root.join("B.attend"),
+        r#"<!DOCTYPE plume-attendance><attendance version="0.2" levelsNames="Main" rolesNames="None">
+            <char number="5" firstName="Carol" lastName="Jones"/></attendance>"#,
+    )
+    .unwrap();
+
+    let (summary, bundle) = import_old_system(&root, &tree);
+    assert!(
+        has(&bundle.binders[1], "Carol Jones"),
+        "{:?}",
+        summary.warnings
+    );
+}
+
+/// With only a link there, it is still named in the summary rather than passed
+/// over in silence.
+#[test]
+#[cfg(unix)]
+fn old_system_attendance_that_is_only_a_link_is_named() {
+    let dir = tempfile::tempdir().unwrap();
+    let elsewhere = dir.path().join("elsewhere.attend");
+    std::fs::write(&elsewhere, "<attendance/>").unwrap();
+    let root = dir.path().join("project");
+    std::fs::create_dir(&root).unwrap();
+    let tree = old_system_folder(&root);
+    std::os::unix::fs::symlink(&elsewhere, root.join("A.attend")).unwrap();
+
+    let (summary, _bundle) = import_old_system(&root, &tree);
+    assert!(names_unread(&summary, "A.attend"), "{:?}", summary.warnings);
+}
+
+/// Import `src` on another thread into `out`, and fail rather than hang if the
+/// import does not come back within a few seconds.
+#[cfg(unix)]
+fn import_or_time_out(src: &Path, out: &Path) -> anyhow::Result<ImportSummary> {
+    let src = src.to_string_lossy().into_owned();
+    let out = out.to_string_lossy().into_owned();
+    let (tx, rx) = std::sync::mpsc::channel();
+    std::thread::spawn(move || {
+        let _ = tx.send(import(
+            &src,
+            &out,
+            false,
+            "Manuscript",
+            "Story Bible",
+            &ladder(),
+        ));
+    });
+    rx.recv_timeout(std::time::Duration::from_secs(5))
+        .expect("the import blocked instead of returning")
+}
+
+/// Assert `result` is the refusal of `file` as not a regular file: turned down
+/// before it was read, not read until the system ran out of memory for it.
+#[cfg(unix)]
+fn assert_refused_as_not_a_regular_file(result: anyhow::Result<ImportSummary>, file: &str) {
+    let refused = result.err().expect("a refusal");
+    assert_eq!(
+        refused.downcast_ref::<Refusal>(),
+        Some(&Refusal::Unreadable {
+            file: file.to_string(),
+            reason: skrib_format::regular_file::not_a_regular_file().to_string(),
+        }),
+        "{refused:#}"
+    );
+}
+
+/// A FIFO named like a project, picked by the writer (out of an unpacked
+/// archive), blocked the import forever.
+#[test]
+#[cfg(unix)]
+fn a_fifo_picked_as_the_plume_is_refused_without_blocking() {
+    let dir = tempfile::tempdir().unwrap();
+    let picked = dir.path().join("Novel.plume");
+    let made = std::process::Command::new("mkfifo").arg(&picked).status();
+    if !made.is_ok_and(|s| s.success()) {
+        eprintln!("mkfifo is not available here; skipping");
+        return;
+    }
+    let result = import_or_time_out(&picked, &dir.path().join("out.skrib"));
+    assert_refused_as_not_a_regular_file(result, "Novel.plume");
+}
+
+/// A `.plume` that is a link to `/dev/zero` was read until memory ran out and the
+/// app was killed.
+#[test]
+#[cfg(unix)]
+fn a_plume_linked_to_a_device_is_refused_unread() {
+    let dir = tempfile::tempdir().unwrap();
+    let picked = dir.path().join("Novel.plume");
+    std::os::unix::fs::symlink("/dev/zero", &picked).unwrap();
+    let result = import_or_time_out(&picked, &dir.path().join("out.skrib"));
+    assert_refused_as_not_a_regular_file(result, "Novel.plume");
+}
+
+/// A link the writer picked on purpose is followed, once, and an old-system
+/// project read where it leads: its loose files beside the tree file itself.
+#[test]
+#[cfg(unix)]
+fn an_old_system_tree_picked_through_a_link_reads_the_folder_it_points_into() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("project");
+    std::fs::create_dir(&root).unwrap();
+    let tree = old_system_folder(&root);
+    std::fs::create_dir(root.join("text")).unwrap();
+    std::fs::write(root.join("text/T3.html"), "<p>Loose scene prose.</p>").unwrap();
+    let desktop = dir.path().join("Desktop");
+    std::fs::create_dir(&desktop).unwrap();
+    let shortcut = desktop.join("Loose.plume");
+    std::os::unix::fs::symlink(&tree, &shortcut).unwrap();
+
+    let out = desktop.join("out.skrib");
+    import_or_time_out(&shortcut, &out).unwrap();
+    let bundle = read_bundle(out.to_str().unwrap()).unwrap();
+    let scene = find(&bundle.binders[0], "LooseScene");
+    assert!(prose(scene, ContentRole::SceneText).contains("Loose scene prose."));
+}
+
 #[test]
 fn rejects_non_plume_and_refuses_overwrite() {
     let dir = tempfile::tempdir().unwrap();

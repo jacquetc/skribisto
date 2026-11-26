@@ -210,20 +210,34 @@ fn record(references: &mut Vec<Reference>, reference: Reference) {
 ///
 /// Mirrors `{(\w):(\d+):?.*?}`: one word character, a colon, at least one digit,
 /// then optionally a colon and a display string.
+///
+/// The scan hands over everything up to the next `}`, which can be the rest of a long
+/// line, for every `{` on it. So a span that cannot be a marker is turned down from its
+/// first two characters, and the id is read only as far as its digits go: no `{` costs
+/// a read of the whole span after it.
 fn parse_marker(inner: &str) -> Option<Reference> {
-    let mut parts = inner.splitn(3, ':');
-    let kind_part = parts.next()?;
-    let mut kind_chars = kind_part.chars();
-    let kind = kind_chars.next()?;
-    // `\w` is one character, so anything longer is not a marker.
-    if kind_chars.next().is_some() || !(kind.is_alphanumeric() || kind == '_') {
+    let mut chars = inner.char_indices();
+    let (_, kind) = chars.next()?;
+    // `\w` is one character, followed at once by the colon.
+    if !(kind.is_alphanumeric() || kind == '_') {
         return None;
     }
-    let id = parts.next()?;
-    if id.is_empty() || !id.chars().all(|c| c.is_ascii_digit()) {
+    let Some((colon, ':')) = chars.next() else {
+        return None;
+    };
+    let rest = &inner[colon + 1..];
+    let digits = rest.bytes().take_while(u8::is_ascii_digit).count();
+    if digits == 0 {
         return None;
     }
-    let display = parts.next().unwrap_or_default();
+    let (id, after) = rest.split_at(digits);
+    // The id ends the span, or a colon ends the id; a digit run followed by anything
+    // else is not an id.
+    let display = match after.strip_prefix(':') {
+        Some(display) => display,
+        None if after.is_empty() => "",
+        None => return None,
+    };
     Some(Reference {
         kind,
         id: id.to_string(),
@@ -444,6 +458,82 @@ mod tests {
         }
         let took = started.elapsed();
         assert!(took < std::time::Duration::from_secs(2), "took {took:?}");
+    }
+
+    /// Braces that are all closed by one `}` at the end of the line: each `{` hands the
+    /// rest of the line to the parser, which used to look through all of it for a
+    /// colon. A megabyte of them took half a minute.
+    #[test]
+    fn a_long_run_of_braces_closed_once_at_the_end_is_scanned_at_once() {
+        let started = std::time::Instant::now();
+        for text in [
+            format!("{}}}", "{".repeat(1 << 20)),
+            format!("{}}}", "{a".repeat(1 << 19)),
+            // A kind, a colon and digits, then something that is not a colon.
+            format!("{}}}", "{C:1x".repeat(1 << 18)),
+        ] {
+            let out = rewrite(&text, named("X"));
+            assert_eq!(out.text, text);
+            assert!(out.references.is_empty());
+        }
+        let took = started.elapsed();
+        assert!(took < std::time::Duration::from_secs(2), "took {took:?}");
+    }
+
+    /// The parser as it was before it stopped early: it split the span on its colons.
+    /// Kept to prove the faster parser accepts and reads exactly the same markers.
+    fn parse_marker_by_splitting(inner: &str) -> Option<Reference> {
+        let mut parts = inner.splitn(3, ':');
+        let kind_part = parts.next()?;
+        let mut kind_chars = kind_part.chars();
+        let kind = kind_chars.next()?;
+        if kind_chars.next().is_some() || !(kind.is_alphanumeric() || kind == '_') {
+            return None;
+        }
+        let id = parts.next()?;
+        if id.is_empty() || !id.chars().all(|c| c.is_ascii_digit()) {
+            return None;
+        }
+        let display = parts.next().unwrap_or_default();
+        Some(Reference {
+            kind,
+            id: id.to_string(),
+            display: display.to_string(),
+        })
+    }
+
+    #[test]
+    fn the_parser_reads_what_splitting_on_colons_reads() {
+        for inner in [
+            "",
+            "C",
+            "C:",
+            "C:1",
+            "C:1:",
+            "C:1:Peter",
+            "C:1:a:b:c",
+            "C:12x",
+            "C:12x:y",
+            "C::x",
+            "C:x:1",
+            "CC:1:x",
+            ":1:x",
+            "_:9:under",
+            "é:4:Chloé",
+            "Ü:42:",
+            "{C:1:x",
+            "{:1",
+            "C:١٢:x",
+            "C:0123456789:{{{",
+            "-:1:x",
+            " C:1:x",
+        ] {
+            assert_eq!(
+                parse_marker(inner),
+                parse_marker_by_splitting(inner),
+                "{inner:?}"
+            );
+        }
     }
 
     #[test]

@@ -343,10 +343,11 @@ impl<'d> Index<'d> {
             file: label.clone(),
             reason: e.to_string(),
         })?;
-        let file = std::fs::File::open(path).map_err(|e| Refusal::Unreadable {
-            file: label.clone(),
-            reason: e.to_string(),
-        })?;
+        let file =
+            skrib_format::regular_file::open_regular(path).map_err(|e| Refusal::Unreadable {
+                file: label.clone(),
+                reason: e.to_string(),
+            })?;
         let mut index = Index::of_archive(disk, Box::new(file), label)?;
         index.container_file = Some((path.to_path_buf(), meta));
         Ok(index)

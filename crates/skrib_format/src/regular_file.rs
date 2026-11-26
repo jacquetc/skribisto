@@ -12,6 +12,13 @@
 //! its files through [`open_regular`](crate::regular_file::open_regular), so none of
 //! that can happen.
 //!
+//! The file the writer picks in the import panel is opened through it too, after one
+//! step. A link there was picked on purpose (a shortcut to a project kept elsewhere),
+//! so the importer resolves the path first, following that link once, and opens what
+//! it resolves to here. A FIFO or a device that the picked name stands for, or
+//! resolves to, is then refused as anywhere else, before a byte is read, and the
+//! read stops at a limit (see [`read_limited`](crate::regular_file::read_limited)).
+//!
 //! # Unix and Windows
 //!
 //! On Unix the file is opened with `O_NOFOLLOW | O_NONBLOCK`: a link at the path
