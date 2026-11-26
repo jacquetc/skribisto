@@ -39,7 +39,7 @@ jobs:
     # A cold build, plus the Typst compile behind the `pdf` test step.
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/install-linux-deps
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
@@ -106,7 +106,7 @@ jobs:
       # crates/teksilo_ui/src/updates/channel.rs.
       SKRIBISTO_CHANNEL: tarball
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/install-linux-deps
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
@@ -226,7 +226,7 @@ jobs:
       # distribution building its own package stamps `distro` instead.
       SKRIBISTO_CHANNEL: tarball
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/install-linux-deps
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
@@ -376,7 +376,7 @@ jobs:
       # carry different stamps. Neither self-updates, so neither needs to.
       SKRIBISTO_CHANNEL: windows
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -539,7 +539,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Download all artifacts
         uses: actions/download-artifact@v8
@@ -593,7 +593,7 @@ jobs:
           echo "----- notes -----"; cat release_notes.md
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           name: ${{ github.ref_name }}
           body_path: release_notes.md
@@ -699,7 +699,7 @@ jobs:
 
       - name: Check out the Flathub fork
         if: steps.creds.outputs.enabled == 'true'
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: jacquetc/eu.skribisto.skribisto
           token: ${{ secrets.FLATHUB_FORK_TOKEN }}

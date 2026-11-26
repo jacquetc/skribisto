@@ -34,8 +34,8 @@ jobs:
     timeout-minutes: 5
     steps:
       # Pinned to a commit, unlike the build workflows: this job holds a token that
-      # writes to issues and handles text from anyone. v6.1.0.
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      # writes to issues and handles text from anyone. v7.0.1.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
           sparse-checkout: |
